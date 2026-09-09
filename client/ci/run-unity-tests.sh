@@ -25,12 +25,11 @@ printf '%s  %s\n' "$sha256" "$cli" | sha256sum --check
 chmod +x "$cli"
 
 # The Action wrapper emits --no-coverageEnabled, which this CLI rejects.
-# Use the explicit boolean value and the registered ULF licensing method.
+# Use the explicit boolean value; let the CLI select account-based Personal activation.
 exec "$cli" test --docker --engine=unity client \
   --testPlatforms="$mode" \
   --dockerShmSize=1025m \
   --coverageEnabled=false \
-  --unityLicensingMethod=file \
   --customImage="unityci/editor:${UNITY_VERSION:?UNITY_VERSION is required}-linux-il2cpp-3" \
   --customParameters="-assemblyNames $assembly" \
   --artifactsPath="client/TestResults/$mode"

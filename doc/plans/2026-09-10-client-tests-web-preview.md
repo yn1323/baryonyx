@@ -50,6 +50,7 @@ Unity Test Runner Actionが生成する `--no-coverageEnabled` を、固定版Ga
 同じCLI版でこの失敗を再現し、`--coverageEnabled=false` とその他のテスト引数が受理されることを、Unity起動前に停止するローカル検証で確認した。
 
 テストは固定版CLIを直接呼び出す方式へ変更し、配布バイナリのハッシュ確認とキャッシュを追加した。
-登録したULFで認証する方法を明示し、テスト用のLinuxプレイヤーモジュールを含むイメージへ切り替えた。
+Personal認証はCLIのアカウント認証を利用し、端末にひも付いたULFの直接読み込みは指定しない。
+テスト用のLinuxプレイヤーモジュールを含むイメージへ切り替えた。
 workflowと実行スクリプトの構文検査は成功している。
 実際のEditMode・PlayModeと後続のWebビルドの結果は、修正後のGitHub実行で確認する。

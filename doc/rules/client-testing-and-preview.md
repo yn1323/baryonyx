@@ -99,7 +99,9 @@ Secretsが未登録の場合は、最初のUnity jobが不足している名前�
 GitHub上の実行確認とローカル検証の結果は [導入計画](../plans/2026-09-10-client-tests-web-preview.md) に分けて記録する。
 
 テストの実行には [run-unity-tests.sh](../../client/ci/run-unity-tests.sh) から固定版のGameCI CLIを使う。
-取得時とキャッシュ復元後に配布バイナリのSHA-256を検査し、登録したULFによる認証と `--coverageEnabled=false` を明示する。
+取得時とキャッシュ復元後に配布バイナリのSHA-256を検査し、`--coverageEnabled=false` を明示する。
+Personalの認証はCLIの自動選択に従い、メールアドレスとパスワードで行う。
+端末にひも付いたULFを別のrunnerで直接読み込む方式は指定しない。
 Unity Test Runner Actionが生成する `--no-coverageEnabled` はこのCLI版では受理されないため、CLIを直接呼び出す。
 テスト用イメージにはLinuxのプレイヤー用モジュールを含む `linux-il2cpp-3` を使う。
 
