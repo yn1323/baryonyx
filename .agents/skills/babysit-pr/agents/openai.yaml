@@ -1,0 +1,6 @@
+interface:
+  display_name: "PRチェックと自動レビューを完遂"
+  short_description: "GHAと自動レビューを修正込みで最新HEADへ収束する"
+  default_prompt: "Use $babysit-pr to commit and push the scoped changes, open or update the PR, address every valid automated-review comment regardless of priority, and resolve the latest-head checks without bypassing required checks or approval gates."
+policy:
+  allow_implicit_invocation: false
