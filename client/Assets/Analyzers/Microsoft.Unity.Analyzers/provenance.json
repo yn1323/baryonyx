@@ -1,0 +1,9 @@
+{
+  "package": "Microsoft.Unity.Analyzers",
+  "version": "1.27.0",
+  "source": "https://api.nuget.org/v3-flatcontainer/microsoft.unity.analyzers/1.27.0/microsoft.unity.analyzers.1.27.0.nupkg",
+  "sourceCommit": "430235584207fc24c041da9617c033c20ba888e4",
+  "packageSha256": "ab385f8186caca478273132b686577e3a3a747008e95bb5b55dd4b1476cde7eb",
+  "dllSha256": "da18985c3216a4859abea0049dbc8cc2f9e37b86d532c4812fde1c14eead9251",
+  "license": "MIT"
+}

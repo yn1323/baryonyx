@@ -1,0 +1,7 @@
+{
+  "name": "Baryonyx.PlayModeTests",
+  "rootNamespace": "Baryonyx.Tests.PlayMode",
+  "references": ["Baryonyx.Runtime"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

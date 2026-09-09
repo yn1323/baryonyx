@@ -69,3 +69,12 @@ local.properties
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Temporary screenshots for visual checks.
+/Assets/DevCaptures/
+/Assets/DevCaptures.meta
+
+# Unity Test Framework output and local Python validation cache.
+/TestResults/
+/CodeCoverage/
+__pycache__/

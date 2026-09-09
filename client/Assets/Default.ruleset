@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Baryonyx Unity rules" Description="Unity API misuse fails compilation." ToolsVersion="10.0">
+  <Rules AnalyzerId="Microsoft.Unity.Analyzers" RuleNamespace="Microsoft.Unity.Analyzers">
+    <Rule Id="UNT0006" Action="Error" />
+    <Rule Id="UNT0007" Action="Error" />
+    <Rule Id="UNT0008" Action="Error" />
+    <Rule Id="UNT0010" Action="Error" />
+    <Rule Id="UNT0011" Action="Error" />
+  </Rules>
+  <Rules AnalyzerId="Microsoft.CodeAnalysis" RuleNamespace="Microsoft.CodeAnalysis">
+    <Rule Id="CS8032" Action="Error" />
+    <Rule Id="CS8033" Action="Error" />
+    <Rule Id="CS8034" Action="Error" />
+    <Rule Id="CS9057" Action="Error" />
+    <Rule Id="AD0001" Action="Error" />
+    <Rule Id="AD0002" Action="Error" />
+    <Rule Id="CS8784" Action="Error" />
+    <Rule Id="CS8785" Action="Error" />
+  </Rules>
+</RuleSet>
