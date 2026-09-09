@@ -1,20 +1,20 @@
 # Unityクライアントの整形と静的解析の導入計画
 
-状態：提案
+状態：進行中
 作成日：2026-09-10
 更新日：2026-09-10
 
 `client/` にCSharpierとMicrosoft.Unity.Analyzersを導入し、ローカルとGitHub Actionsで同じバージョンとルールを使う。
 未整形のC#と、Errorに指定したUnity Analyzerの違反をCIで検出できる状態を目指す。
 利用するUnityライセンスはPersonal（無料）である。
-この文書は実装前の計画であり、以下の追加予定ファイルやコマンドはまだ導入していない。
+以下の計画に沿って実装・検証を進めている。GitHub上の初回実行結果は、ローカル検証と区別して記録する。
 
-## 対象範囲と現在の状態
+## 対象範囲と導入前の状態
 
 対象はC#の整形、Unity固有の静的解析、その実行に必要なUnityコンパイル、開発手順の文書化とする。
 EditMode・PlayModeの機能テスト、VRT、Web Preview、E2E、Androidアプリのビルドは今回に含めない。
 
-確認した現在の状態は次のとおり。
+計画作成時に確認した導入前の状態は次のとおり。
 
 - Unityは `client/ProjectSettings/ProjectVersion.txt` に記録された `6000.6.0f1`。
 - `Assets/` にあるC#は、テンプレート由来の `TutorialInfo/Readme.cs` と `TutorialInfo/Editor/ReadmeEditor.cs` の2ファイル。
@@ -92,7 +92,8 @@ Unityの重大度設定はrule setを正本とし、`.editorconfig` に同じ診
 参照：[UnityのAnalyzerとrule setの適用範囲](https://docs.unity3d.com/6000.6/Documentation/Manual/analyzer-scope-and-diagnostics.html)。
 
 IDEのプロジェクトファイルを再生成し、固定版DLLとrule setの参照を確認する。
-VS Code拡張由来の同名Analyzerと二重に読み込まれる場合に限り、Unityのプロジェクト生成フックで重複を除く。
+実装中に追加されたZed連携では、生成されたプロジェクトにAnalyzerとrule setが含まれないことを確認した。
+Unityの生成フックで不足する参照を補い、IDE由来の同名Analyzerと重複する場合は固定版だけを残す。
 Microsoft.Unity.Analyzers以外のAnalyzerやSource Generatorは保持する。
 参照：[Microsoftの重複診断に関する説明](https://github.com/microsoft/Microsoft.Unity.Analyzers#handling-duplicate-diagnostics)。
 
@@ -108,10 +109,13 @@ Microsoft.Unity.Analyzers以外のAnalyzerやSource Generatorは保持する。
 初期導入ではWindows・macOSの整形結果と改行を両方確認する。
 Unityコンパイルのjobは1環境で実行し、Editorバージョンを `ProjectVersion.txt` に合わせる。
 
-GameCIのカスタム `buildMethod` へ、コンパイル確認用の小さなEditorメソッドを指定する案とする。
+GameCIのカスタム `buildMethod` に、コンパイル確認用のEditorメソッドを指定する。
 このメソッドではアプリのビルドや機能テストを開始せず、コンパイル後の確認結果を返す。
 コンパイルエラー、Analyzerの読み込み失敗、Error指定の診断がjobの失敗になることを確認する。
 成功には終了コードだけでなく、確認メソッドへの到達とAnalyzerの設定・読み込みの確認を必要とする。
+設定確認後にコンパイラのキャッシュをクリアして再コンパイルし、完了コールバックで診断レポートを保存して終了する。
+Unityは再コンパイル後のDLLが同じ場合にも `assemblyCompilationNotRequired` を通知するため、この通知も完了確認に含める。
+Analyzerの読み込み・実行失敗を表すRoslyn診断をrulesetでErrorにし、メソッドへ到達する前の失敗も検出する。
 参照：[GameCIのカスタムbuildMethod](https://game.ci/docs/github/builder/#buildmethod)、[Unity Editorのバッチ実行](https://docs.unity3d.com/6000.6/Documentation/Manual/EditorCommandLineArguments.html)。
 
 今回はCIのEditorターゲットで有効なC#を解析する。
@@ -154,7 +158,7 @@ Secretsを利用できないfork PRでは、Analyzerを実行できたことに�
 | `client/Assets/Analyzers/Microsoft.Unity.Analyzers/` | DLL、取得情報、ライセンス |
 | `client/Assets/Default.ruleset` | Analyzer診断の重大度 |
 | `client/Assets/Editor/CI/CompileCheck.cs` | コンパイル確認の入口 |
-| `client/Assets/Editor/AnalyzerProjectSettings.cs` | IDEで重複が生じた場合だけ追加する生成フック |
+| `client/Assets/Editor/AnalyzerProjectSettings.cs` | IDEのAnalyzer参照を補い、同名Analyzerの重複を除く生成フック |
 | `.github/workflows/client-ci.yml` | 整形・静的解析のチェック |
 | `doc/rules/client-code-quality.md` | 実装で確定した導入・確認・更新手順 |
 | `doc/README.md` | 計画と開発ルールへのリンク |
@@ -179,5 +183,32 @@ Unityが開いている作業ディレクトリへ別のバッチ実行を重ね
 ローカル確認はEditor内で行うか、一時コピーのプロジェクトで実行する。
 OSごとの確認結果とGitHub上で実行した範囲は分けて記録する。
 
-この計画の作成時点ではコード・設定の実装、SDK導入、commit、push、Secrets登録は行わない。
-実装済みでもGitHubでの初回成功が未確認なら「CI確認待ち」と記録し、計画を完了扱いにしない。
+## 実装・検証結果
+
+状態：ローカル実装・検証済み。GitHubの初回実行はCI確認待ち。
+確定した開発手順は [クライアントの整形と静的解析](../rules/client-code-quality.md) を参照する。
+
+| 確認項目 | 結果 |
+|---|---|
+| CSharpier 1.3.0の復元と実行 | Windows・.NET SDK 10.0.401で成功 |
+| 整形違反と除外 | 未整形は終了1、整形後は終了0。テンプレート・XMLの除外とLFを確認 |
+| Unityへの適用 | コンパイル引数に固定DLLと `Assets/Default.ruleset` を確認 |
+| キャッシュを持つUnityプロジェクトの確認 | 79アセンブリ、完了記録あり、終了0 |
+| UNT0008違反 | 一時コピーで `error UNT0008`、終了1 |
+| RoslynAnalyzerラベル欠落 | 設定検証で失敗、終了1 |
+| Analyzer DLL破損 | SHA-256不一致で失敗、終了1 |
+| 元に戻した後のコンパイル | 完了記録あり、終了0 |
+| Libraryなしの最終構成 | 79アセンブリ、完了記録あり、終了0 |
+| Zed向けのプロジェクト再生成 | 生成されたC#・Editor両プロジェクトに固定版Analyzerとrulesetの参照を確認 |
+| IDE由来の重複参照 | 一時コピーで同名Analyzerだけを重複排除し、別のSource Generatorを保持することを確認 |
+| GitHub workflow構文 | actionlint 1.7.12で成功 |
+| macOS上の整形とGitHub上のUnity | 初回CI実行待ち |
+
+.NET SDKは公式配布のSHA-512を照合し、一時領域へ展開してローカル検証に使用した。
+通常の開発環境では、開発手順に従って指定版SDKを導入する。
+Unityの検証は6000.6.0f1とローカルのPersonalライセンスを使い、開いているプロジェクトへバッチ処理を重ねずに実施した。
+Unity CLIの `unity` はこの検証シェルで見つからなかったため、Editorのバッチ起動で確認した。
+
+GitHubのRepository secretsは確認時点で未登録である。
+`UNITY_LICENSE`・`UNITY_EMAIL`・`UNITY_PASSWORD` の登録と、許可されたcommit・push後の初回実行が残る。
+GitHubでの初回成功が未確認のため、この計画は完了扱いにしない。
