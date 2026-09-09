@@ -34,14 +34,15 @@ commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行�
 | Web Build Support | ローカルの6000.6.0f1へHub経由で追加済み |
 | Webプレイヤーの実ビルド | 正常終了。約13 MB、最大ファイル約9.4 MB。Cloudflare Pagesのサイズ検査も成功 |
 | ブラウザでの起動 | ローカルHTTP経由でWebプレイヤーを起動し、SampleSceneの表示を確認 |
-| GitHub上の実行 | 初回はSecrets不足で停止。[登録後の再実行](https://github.com/yn1323/baryonyx/actions/runs/34380262829) で整形・Analyzerは成功。テストは実行ツールの引数エラーを確認し、修正後の実行待ち |
+| GitHub上の初回実行 | 初回はSecrets不足で停止。[登録後の再実行](https://github.com/yn1323/baryonyx/actions/runs/34380262829) で整形・Analyzerは成功。テスト実行ツールの引数と認証方式は、次節のとおり修正 |
+| GitHub上のテスト | [ae077f8の実行](https://github.com/yn1323/baryonyx/actions/runs/34386192137) でEditMode 5件・PlayMode 1件が成功し、それぞれのLibraryキャッシュを保存 |
 | Cloudflare公開 | 指定により無効化。コメントアウトした設定のみ準備 |
 
 検証は、開いている `client/` とは別の一時コピーで行う。
 ブラウザではURPのFSR用シェーダーが利用できず、ポストプロセスを実行しない旨の警告が1件出た。
 初期シーンの表示は確認できたが、今後ポストプロセスを使う場合はWebの描画設定も確認する。
 この計画の完了は、依頼された初期設定とローカル検証の完了を示す。
-Cloudflareの公開と、GitHub上のUnityテスト・Webビルドの成功確認は残っている。
+Cloudflareの公開は対象外とし、GitHub上の最新結果は [PR #1のチェック](https://github.com/yn1323/baryonyx/pull/1/checks) で確認する。
 既存の整形・Analyzer導入のGitHub確認結果は [先行計画](2026-09-10-client-code-quality.md) に記録した。
 
 ## GitHub初回実行での修正

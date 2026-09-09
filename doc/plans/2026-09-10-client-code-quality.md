@@ -1,13 +1,13 @@
 # Unityクライアントの整形と静的解析の導入計画
 
-状態：実装済み（GitHubでキャッシュ復元後の起動修正を検証中）
+状態：完了（ローカル検証・GitHub CI・キャッシュ復元後の起動修正）
 作成日：2026-09-10
 更新日：2026-09-10
 
 `client/` にCSharpierとMicrosoft.Unity.Analyzersを導入し、ローカルとGitHub Actionsで同じバージョンとルールを使う。
 未整形のC#と、Errorに指定したUnity Analyzerの違反をCIで検出できる状態を目指す。
 利用するUnityライセンスはPersonal（無料）である。
-以下の計画に沿って実装と検証を行い、GitHubでキャッシュ復元後の起動問題を修正している。
+以下の計画に沿って実装と検証を行い、GitHubでキャッシュ復元後の起動問題も修正した。
 GitHub上の実行結果は、ローカル検証と区別して記録する。
 
 ## 対象範囲と導入前の状態
@@ -229,3 +229,6 @@ Unity 6000.6.0f1同梱の `Burst.EditorIntegration.Client.dll` を調べると�
 CIと同じ削除処理を先に行うとプロセスは終了せず、同じLibrary内の `ArtifactDB` も保持されることを確認した。
 復元したPIDと新しいコンテナ内のPIDが衝突する経路を除くため、各Unity jobの起動前に `burst.pid` と `ilpp.pid` を削除する。
 Libraryのキャッシュキーと、import・コンパイル済みデータは維持する。
+
+修正後の [ae077f8のGitHub CI](https://github.com/yn1323/baryonyx/actions/runs/34386192137/job/102582944860) では、直前の失敗時と同じLibraryキャッシュを復元し、コンパイル完了記録の検査まで成功した。
+この実行のAnalyzer jobは約4分21秒だった。
