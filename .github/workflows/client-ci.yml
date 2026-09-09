@@ -73,6 +73,8 @@ jobs:
             client-Library-${{ runner.os }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
       - name: Prepare compiler report
         run: |
+          # Cached PIDs belong to a previous container; Burst may kill a reused PID.
+          rm -f -- client/Library/burst.pid client/Library/ilpp.pid
           mkdir -p client/Logs
           rm -f client/Logs/client-compile.txt
       - name: Compile Unity scripts and run analyzers
@@ -145,6 +147,8 @@ jobs:
         with:
           path: ${{ runner.temp }}/baryonyx-game-ci
           key: game-ci-cli-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('client/ci/run-unity-tests.sh') }}
+      - name: Remove stale Unity process IDs
+        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
       - name: Run Unity tests
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -185,6 +189,8 @@ jobs:
           key: client-WebGL-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
           restore-keys: |
             client-WebGL-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+      - name: Remove stale Unity process IDs
+        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
       - name: Build Web player
         uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
         env:
