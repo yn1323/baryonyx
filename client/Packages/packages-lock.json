@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.superjura.unity-zed-integration": {
+      "version": "https://github.com/SuperJura/unity-zed-integration.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ide.visualstudio": "2.0.20"
+      },
+      "hash": "f0db8fd5b16aa3609d6904825960b3ec233a5dde"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.14",
       "depth": 0,
