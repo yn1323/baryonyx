@@ -1,0 +1,71 @@
+# Unity-generated files (relative to this Unity project).
+# Reference: https://github.com/github/gitignore/blob/main/Unity.gitignore
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/.utmp/
+*.log
+
+# Build output, captures, and crash reports.
+/[Bb]uild/
+/[Bb]uilds/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/ExportedObj/
+/*.apk
+/*.aab
+/*.app
+/sysinfo.txt
+/mono_crash.*
+
+# Generated IDE projects and local IDE state.
+/*.csproj
+/*.unityproj
+/*.sln
+/*.slnx
+/*.booproj
+/.vs/
+/.idea/
+/.consulo/
+*.suo
+*.user
+*.userprefs
+*.DotSettings.user
+*.pidb
+*.pidb.meta
+*.opendb
+*.VC.db
+
+# Shared .vscode settings remain tracked.
+# Keep Assets (including .meta), Packages, and ProjectSettings tracked.
+
+# Android build caches and local signing credentials.
+.gradle/
+local.properties
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+
+# Unity-generated assets and schemas.
+/[Aa]ssets/Plugins/Editor/JetBrains*
+/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+/[Aa]ssets/[Ss]ceneDependencyCache*
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers/
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+/UIElementsSchema/
+
+# Editor backups and OS metadata.
+*.blend1
+*.blend1.meta
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
