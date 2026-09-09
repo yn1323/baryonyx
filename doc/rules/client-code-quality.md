@@ -75,7 +75,9 @@ Unityが生成する `.csproj` は手書きで変更せず、External Toolsか�
 | Client format (macos-15) | macOSで同じ整形を検査 |
 | Client analyzers | UbuntuでUnityを起動し、コンパイルとAnalyzerを実行 |
 
-`client/**` またはworkflowの変更を含むpush・PRで起動し、手動実行にも対応する。
+`client/**` またはworkflowの変更を含むPRの作成・更新と、同じ変更条件を満たす `main` へのpushで起動する。
+作業ブランチへのpushでは起動せず、PRとの二重実行を避ける。
+手動実行にも対応する。
 Unity版は `ProjectVersion.txt` から読み、対応するGameCIのbaseイメージを使う。
 Editor版を更新するときは、対応するイメージの公開状況も確認する。
 

@@ -128,8 +128,9 @@ APIの応答テストは、ポートを開かない `app.request()` を基本と
 
 ## GitHub Actions
 
-[server-ci.yml](../../.github/workflows/server-ci.yml) は、全ブランチのpushとPRで実行する。
-変更パスによる絞り込みはなく、クライアントや文書だけのpushも対象になる。
+[server-ci.yml](../../.github/workflows/server-ci.yml) は、PRの作成・更新と `main` へのpushで実行する。
+作業ブランチへのpushでは起動せず、PRとの二重実行を避ける。
+変更パスによる絞り込みはなく、クライアントや文書だけの変更も対象になる。
 Ubuntuの1ジョブで依存をインストールし、lint、型チェック、test、buildを順に実行する。
 いずれかのstepが失敗すると、後続stepはスキップされる。
 
