@@ -34,7 +34,7 @@ commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行�
 | Web Build Support | ローカルの6000.6.0f1へHub経由で追加済み |
 | Webプレイヤーの実ビルド | 正常終了。約13 MB、最大ファイル約9.4 MB。Cloudflare Pagesのサイズ検査も成功 |
 | ブラウザでの起動 | ローカルHTTP経由でWebプレイヤーを起動し、SampleSceneの表示を確認 |
-| GitHub上の実行 | [PR #1の初回CI](https://github.com/yn1323/baryonyx/actions/runs/34379926795) で整形はWindows・Macとも成功。Analyzerの前提確認がUnity用Secrets不足で失敗し、後続のテスト・WebビルドはSkip |
+| GitHub上の実行 | 初回はSecrets不足で停止。[登録後の再実行](https://github.com/yn1323/baryonyx/actions/runs/34380262829) で整形・Analyzerは成功。テストは実行ツールの引数エラーを確認し、修正後の実行待ち |
 | Cloudflare公開 | 指定により無効化。コメントアウトした設定のみ準備 |
 
 検証は、開いている `client/` とは別の一時コピーで行う。
@@ -42,4 +42,14 @@ commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行�
 初期シーンの表示は確認できたが、今後ポストプロセスを使う場合はWebの描画設定も確認する。
 この計画の完了は、依頼された初期設定とローカル検証の完了を示す。
 Cloudflareの公開と、GitHub上のUnityテスト・Webビルドの成功確認は残っている。
-既存の整形・Analyzer導入についてのGitHub初回確認待ちは [先行計画](2026-09-10-client-code-quality.md) に引き継ぐ。
+既存の整形・Analyzer導入のGitHub確認結果は [先行計画](2026-09-10-client-code-quality.md) に記録した。
+
+## GitHub初回実行での修正
+
+Unity Test Runner Actionが生成する `--no-coverageEnabled` を、固定版GameCI CLI v0.1.55が `Unknown argument: noCoverageEnabled` として拒否した。
+同じCLI版でこの失敗を再現し、`--coverageEnabled=false` とその他のテスト引数が受理されることを、Unity起動前に停止するローカル検証で確認した。
+
+テストは固定版CLIを直接呼び出す方式へ変更し、配布バイナリのハッシュ確認とキャッシュを追加した。
+登録したULFで認証する方法を明示し、テスト用のLinuxプレイヤーモジュールを含むイメージへ切り替えた。
+workflowと実行スクリプトの構文検査は成功している。
+実際のEditMode・PlayModeと後続のWebビルドの結果は、修正後のGitHub実行で確認する。

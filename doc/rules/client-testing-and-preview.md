@@ -98,6 +98,28 @@ Secretsが未登録の場合は、最初のUnity jobが不足している名前�
 まだGitHubへ反映していない設定も、リポジトリに置いたworkflowでは有効なjobとして記述している。
 GitHub上の実行確認とローカル検証の結果は [導入計画](../plans/2026-09-10-client-tests-web-preview.md) に分けて記録する。
 
+テストの実行には [run-unity-tests.sh](../../client/ci/run-unity-tests.sh) から固定版のGameCI CLIを使う。
+取得時とキャッシュ復元後に配布バイナリのSHA-256を検査し、登録したULFによる認証と `--coverageEnabled=false` を明示する。
+Unity Test Runner Actionが生成する `--no-coverageEnabled` はこのCLI版では受理されないため、CLIを直接呼び出す。
+テスト用イメージにはLinuxのプレイヤー用モジュールを含む `linux-il2cpp-3` を使う。
+
+## キャッシュと所要時間
+
+Unityの `client/Library` を、Analyzer・EditMode・PlayMode・Webビルドごとに分けて保存する。
+Unity版と依存パッケージ・Analyzer設定が同じなら、前回のLibraryを復元し、変更に応じてUnityが必要な部分を更新する。
+Unity版やこれらの依存設定を変えた場合は、別のキャッシュを作成する。
+GameCI CLIのバイナリもキャッシュする。
+
+初回とは、対象jobで復元できるキャッシュがない実行を指す。
+同じPR内では前回分を再利用でき、新しいPRでは `main` など共有範囲内に一致するキャッシュがあれば利用できる。
+別のPRだけに保存されたキャッシュは利用できない。
+共有範囲は [GitHubのキャッシュ仕様](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache) に従う。
+
+キャッシュはjob成功時に保存されるが、テストやビルドの実行を省略するものではない。
+Analyzerは毎回C#を再コンパイルして解析する。
+Unityコンテナの取得、Editorの起動、キャッシュの転送、変更部分の取り込み、テスト、Webビルドには毎回時間がかかる。
+Dockerイメージ自体をjob間で永続化する設定は追加していない。
+
 ## Cloudflare Pagesの公開を有効にするとき
 
 現時点では公開・Cloudflareリソースの作成を行わない。

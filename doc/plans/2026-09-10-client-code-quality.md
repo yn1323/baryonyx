@@ -1,13 +1,14 @@
 # Unityクライアントの整形と静的解析の導入計画
 
-状態：進行中
+状態：完了（実装・ローカル検証・GitHub CI）
 作成日：2026-09-10
 更新日：2026-09-10
 
 `client/` にCSharpierとMicrosoft.Unity.Analyzersを導入し、ローカルとGitHub Actionsで同じバージョンとルールを使う。
 未整形のC#と、Errorに指定したUnity Analyzerの違反をCIで検出できる状態を目指す。
 利用するUnityライセンスはPersonal（無料）である。
-以下の計画に沿って実装・検証を進めている。GitHub上の初回実行結果は、ローカル検証と区別して記録する。
+以下の計画に沿って実装・検証を完了した。
+GitHub上の実行結果は、ローカル検証と区別して記録する。
 
 ## 対象範囲と導入前の状態
 
@@ -185,7 +186,7 @@ OSごとの確認結果とGitHub上で実行した範囲は分けて記録する
 
 ## 実装・検証結果
 
-状態：ローカル実装・検証済み。GitHubの整形チェックは成功し、UnityジョブはSecrets登録待ち。
+状態：ローカル実装・検証済み。GitHubの整形チェックとUnityコンパイル・Analyzerも成功。
 確定した開発手順は [クライアントの整形と静的解析](../rules/client-code-quality.md) を参照する。
 
 | 確認項目 | 結果 |
@@ -203,14 +204,14 @@ OSごとの確認結果とGitHub上で実行した範囲は分けて記録する
 | IDE由来の重複参照 | 一時コピーで同名Analyzerだけを重複排除し、別のSource Generatorを保持することを確認 |
 | GitHub workflow構文 | actionlint 1.7.12で成功 |
 | GitHub上の整形 | Windows 2025・macOS 15の両方で、固定版SDK・CSharpierの復元と整形チェック成功 |
-| GitHub上のUnity | 初回実行はSecrets不足を検出して失敗。コンパイル処理には未到達 |
+| GitHub上のUnity | 初回はSecrets不足で停止。登録後の再実行でUnityコンパイル・Analyzer検証と完了記録の検査が成功 |
 
 .NET SDKは公式配布のSHA-512を照合し、一時領域へ展開してローカル検証に使用した。
 通常の開発環境では、開発手順に従って指定版SDKを導入する。
 Unityの検証は6000.6.0f1とローカルのPersonalライセンスを使い、開いているプロジェクトへバッチ処理を重ねずに実施した。
 Unity CLIの `unity` はこの検証シェルで見つからなかったため、Editorのバッチ起動で確認した。
 
-GitHubのRepository secretsは確認時点で未登録である。
 [PR #1の初回CI](https://github.com/yn1323/baryonyx/actions/runs/34379926795) で、`UNITY_LICENSE`・`UNITY_EMAIL`・`UNITY_PASSWORD` の不足がそれぞれエラーとして表示された。
-commit・pushとPR作成は実施済みであり、残る作業はSecretsの登録とUnityジョブの再実行である。
-GitHubでのUnityコンパイル・Analyzerの成功が未確認のため、この計画は完了扱いにしない。
+その後、Secretsが利用できる状態で [再実行](https://github.com/yn1323/baryonyx/actions/runs/34380262829) され、`1e87113` のAnalyzer jobが成功した。
+GitHub上でWindows・Macの整形とUnityコンパイル・Analyzerを確認できたため、この計画は完了とする。
+後続のUnityテスト・Webビルドは [追加の導入計画](2026-09-10-client-tests-web-preview.md) で管理する。

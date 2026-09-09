@@ -128,24 +128,20 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: client/Library
-          key: client-tests-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          key: client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
           restore-keys: |
-            client-tests-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+            client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+      - name: Restore GameCI CLI
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}/baryonyx-game-ci
+          key: game-ci-cli-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('client/ci/run-unity-tests.sh') }}
       - name: Run Unity tests
-        uses: game-ci/unity-test-runner@32e57712352b500e17974b245a6dce9e11a73213 # v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          projectPath: client
-          cliVersion: v0.1.55
-          customImage: unityci/editor:${{ env.UNITY_VERSION }}-base-3
-          testMode: ${{ matrix.mode }}
-          customParameters: -assemblyNames ${{ matrix.assembly }}
-          artifactsPath: client/TestResults/${{ matrix.mode }}
-          coverageEnabled: false
-          githubToken: ''
+        run: bash client/ci/run-unity-tests.sh ${{ matrix.mode }} ${{ matrix.assembly }}
       - name: Require executed and passing tests
         run: python3 client/ci/verify-test-results.py client/TestResults/${{ matrix.mode }} ${{ matrix.assembly }}
       - name: Upload test results
