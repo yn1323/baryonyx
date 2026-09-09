@@ -1,0 +1,13 @@
+*.cs text eol=lf
+/.editorconfig text eol=lf
+/.csharpierignore text eol=lf
+/.gitattributes text eol=lf
+/global.json text eol=lf
+/.config/*.json text eol=lf
+/.vscode/*.json text eol=lf
+/Assets/Default.ruleset text eol=lf
+/Assets/Analyzers/**/*.dll binary
+/Assets/Analyzers/**/*.md text eol=lf
+/Assets/**/*.asmdef text eol=lf
+/ci/*.py text eol=lf
+/ci/*.sh text eol=lf

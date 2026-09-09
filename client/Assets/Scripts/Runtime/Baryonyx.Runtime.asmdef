@@ -1,0 +1,6 @@
+{
+  "name": "Baryonyx.Runtime",
+  "rootNamespace": "Baryonyx",
+  "references": [],
+  "autoReferenced": true
+}
