@@ -185,7 +185,7 @@ OSごとの確認結果とGitHub上で実行した範囲は分けて記録する
 
 ## 実装・検証結果
 
-状態：ローカル実装・検証済み。GitHubの初回実行はCI確認待ち。
+状態：ローカル実装・検証済み。GitHubの整形チェックは成功し、UnityジョブはSecrets登録待ち。
 確定した開発手順は [クライアントの整形と静的解析](../rules/client-code-quality.md) を参照する。
 
 | 確認項目 | 結果 |
@@ -202,7 +202,8 @@ OSごとの確認結果とGitHub上で実行した範囲は分けて記録する
 | Zed向けのプロジェクト再生成 | 生成されたC#・Editor両プロジェクトに固定版Analyzerとrulesetの参照を確認 |
 | IDE由来の重複参照 | 一時コピーで同名Analyzerだけを重複排除し、別のSource Generatorを保持することを確認 |
 | GitHub workflow構文 | actionlint 1.7.12で成功 |
-| macOS上の整形とGitHub上のUnity | 初回CI実行待ち |
+| GitHub上の整形 | Windows 2025・macOS 15の両方で、固定版SDK・CSharpierの復元と整形チェック成功 |
+| GitHub上のUnity | 初回実行はSecrets不足を検出して失敗。コンパイル処理には未到達 |
 
 .NET SDKは公式配布のSHA-512を照合し、一時領域へ展開してローカル検証に使用した。
 通常の開発環境では、開発手順に従って指定版SDKを導入する。
@@ -210,5 +211,6 @@ Unityの検証は6000.6.0f1とローカルのPersonalライセンスを使い、
 Unity CLIの `unity` はこの検証シェルで見つからなかったため、Editorのバッチ起動で確認した。
 
 GitHubのRepository secretsは確認時点で未登録である。
-`UNITY_LICENSE`・`UNITY_EMAIL`・`UNITY_PASSWORD` の登録と、許可されたcommit・push後の初回実行が残る。
-GitHubでの初回成功が未確認のため、この計画は完了扱いにしない。
+[PR #1の初回CI](https://github.com/yn1323/baryonyx/actions/runs/34379926795) で、`UNITY_LICENSE`・`UNITY_EMAIL`・`UNITY_PASSWORD` の不足がそれぞれエラーとして表示された。
+commit・pushとPR作成は実施済みであり、残る作業はSecretsの登録とUnityジョブの再実行である。
+GitHubでのUnityコンパイル・Analyzerの成功が未確認のため、この計画は完了扱いにしない。

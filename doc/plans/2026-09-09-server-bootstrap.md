@@ -1,12 +1,12 @@
 # serverのHono開発環境とCIの導入計画
 
-状態：完了（実装・ローカル検証・文書更新）
+状態：完了（実装・ローカル検証・GitHub CI・文書更新）
 作成日：2026-09-09
 更新日：2026-09-10
 
 `server/` にHonoの開発環境とGitHub ActionsのCIを導入した。
 ローカル検証と関連文書の更新は完了している。
-GitHub上での初回CI実行は、push後の確認事項として残る。
+GitHub上での初回CI実行も、後続のcommit・push依頼で成功を確認した。
 
 ## 必須要件と実装範囲
 
@@ -68,6 +68,7 @@ Windowsの作業環境で、固定したNode.js 24.21.0とpnpm 12.3.4を使用�
 | `pnpm dev` | 実HTTPで `/health` の200・JSON応答と、未定義パスの404を確認した |
 | build後の `pnpm start` | 開発起動と同じ実HTTPの応答を確認した |
 | GitHub Actionsの設定 | actionlint 1.7.12で構文を検査した。Actionの入力と `server/` 配下の参照パスも確認した |
+| GitHub Actionsの初回実行 | [PR #1のServer CI](https://github.com/yn1323/baryonyx/actions/runs/34379926731) で、Ubuntu 24.04上の依存インストール・lint・型チェック・テスト・ビルドが成功した |
 
 検査の失敗を確認するための一時ファイルは削除し、変更した設定は元に戻した。
 その後、lint・型チェック・test・buildがすべて成功することを確認した。
@@ -82,9 +83,8 @@ Windowsの作業環境で、固定したNode.js 24.21.0とpnpm 12.3.4を使用�
 
 ## 未確認事項と後続の候補
 
-GitHub上でのCI実行は未確認である。
-最初のpush後にActions画面で、依存のインストールと全検査の成功を確認する。
-macOS・Linuxでの実行は未確認であり、Windowsでの検証結果とは区別する。
+GitHub上のLinux環境では、依存のインストールと全検査の成功を確認済みである。
+macOSでの実行は未確認であり、WindowsとLinuxでの検証結果とは区別する。
 実環境へのデプロイは今回の範囲に含めていない。
 
 | 後続の候補 | 導入する時点 |

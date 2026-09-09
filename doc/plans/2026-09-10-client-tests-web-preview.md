@@ -6,7 +6,8 @@
 
 既存のCSharpier・Microsoft.Unity.Analyzersに、EditMode・PlayModeテストとWebビルドを追加する。
 PR Previewの公開先はCloudflare Pagesとし、利用者の指定により公開jobをコメントアウトして準備する。
-公開先やSecretsの登録、commit・pushは今回の追加依頼では実施していない。
+公開先やSecretsの登録は実施していない。
+commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行結果を以下に記録した。
 
 ## 実装内容
 
@@ -33,11 +34,12 @@ PR Previewの公開先はCloudflare Pagesとし、利用者の指定により公
 | Web Build Support | ローカルの6000.6.0f1へHub経由で追加済み |
 | Webプレイヤーの実ビルド | 正常終了。約13 MB、最大ファイル約9.4 MB。Cloudflare Pagesのサイズ検査も成功 |
 | ブラウザでの起動 | ローカルHTTP経由でWebプレイヤーを起動し、SampleSceneの表示を確認 |
-| GitHub上の実行 | commit・pushとUnity用Secrets登録後に確認 |
+| GitHub上の実行 | [PR #1の初回CI](https://github.com/yn1323/baryonyx/actions/runs/34379926795) で整形はWindows・Macとも成功。Analyzerの前提確認がUnity用Secrets不足で失敗し、後続のテスト・WebビルドはSkip |
 | Cloudflare公開 | 指定により無効化。コメントアウトした設定のみ準備 |
 
 検証は、開いている `client/` とは別の一時コピーで行う。
 ブラウザではURPのFSR用シェーダーが利用できず、ポストプロセスを実行しない旨の警告が1件出た。
 初期シーンの表示は確認できたが、今後ポストプロセスを使う場合はWebの描画設定も確認する。
-Cloudflareの公開とGitHub上の初回実行を済ませたという意味での完了ではなく、今回依頼された初期設定とローカル検証の完了を示す。
+この計画の完了は、依頼された初期設定とローカル検証の完了を示す。
+Cloudflareの公開と、GitHub上のUnityテスト・Webビルドの成功確認は残っている。
 既存の整形・Analyzer導入についてのGitHub初回確認待ちは [先行計画](2026-09-10-client-code-quality.md) に引き継ぐ。
