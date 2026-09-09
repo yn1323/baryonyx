@@ -86,10 +86,17 @@ jobs:
           targetPlatform: StandaloneLinux64
           buildMethod: Baryonyx.Editor.CI.CompileCheck.Run
           manualExit: true
+          customParameters: -nographics
           versioning: None
       - name: Verify compiler completion
         run: |
           grep -q '^BARYONYX_COMPILE_OK: ' client/Logs/client-compile.txt
+      - name: Report runner resources after a failure
+        if: failure()
+        run: |
+          free -m
+          df -h
+          sudo dmesg --level=err,warn | tail -n 40 || true
       - name: Upload compiler diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

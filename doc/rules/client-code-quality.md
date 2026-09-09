@@ -80,6 +80,8 @@ Unity版は `ProjectVersion.txt` から読み、対応するGameCIのbaseイメ�
 Editor版を更新するときは、対応するイメージの公開状況も確認する。
 
 Unityの入口は [CompileCheck.Run](../../client/Assets/Editor/CI/CompileCheck.cs) である。
+解析jobは `-nographics` を渡し、描画機能を初期化せずに起動する。
+失敗時はrunnerのメモリ・ディスク状況とカーネル警告もログに残す。
 DLLのハッシュ、Plugin設定、ラベル、各アセンブリのAnalyzer・ruleset適用を確認してから、スクリプトを再コンパイルする。
 コンパイル完了を確認したメソッドがUnityを終了するため、GameCIでは `manualExit: true` を指定する。
 Libraryを復元した場合もコンパイラのキャッシュをクリアして検査する。

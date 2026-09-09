@@ -1,13 +1,13 @@
 # Unityクライアントの整形と静的解析の導入計画
 
-状態：完了（実装・ローカル検証・GitHub CI）
+状態：進行中（初回CI成功済み・再実行の強制終了を調査中）
 作成日：2026-09-10
 更新日：2026-09-10
 
 `client/` にCSharpierとMicrosoft.Unity.Analyzersを導入し、ローカルとGitHub Actionsで同じバージョンとルールを使う。
 未整形のC#と、Errorに指定したUnity Analyzerの違反をCIで検出できる状態を目指す。
 利用するUnityライセンスはPersonal（無料）である。
-以下の計画に沿って実装・検証を完了した。
+以下の計画に沿って実装と初回検証を行い、現在はGitHub再実行時の強制終了を調査している。
 GitHub上の実行結果は、ローカル検証と区別して記録する。
 
 ## 対象範囲と導入前の状態
@@ -213,5 +213,9 @@ Unity CLIの `unity` はこの検証シェルで見つからなかったため�
 
 [PR #1の初回CI](https://github.com/yn1323/baryonyx/actions/runs/34379926795) で、`UNITY_LICENSE`・`UNITY_EMAIL`・`UNITY_PASSWORD` の不足がそれぞれエラーとして表示された。
 その後、Secretsが利用できる状態で [再実行](https://github.com/yn1323/baryonyx/actions/runs/34380262829) され、`1e87113` のAnalyzer jobが成功した。
-GitHub上でWindows・Macの整形とUnityコンパイル・Analyzerを確認できたため、この計画は完了とする。
+GitHub上でWindows・Macの整形とUnityコンパイル・Analyzerの初回成功を確認した。
 後続のUnityテスト・Webビルドは [追加の導入計画](2026-09-10-client-tests-web-preview.md) で管理する。
+
+`6a01207` のPR側では、Library復元後のUnity起動が2回とも `Killed`・終了コード137で中断した。
+ログだけではメモリ不足などの原因を確定できないため、解析をローカル検証と同じ `-nographics` で起動するよう変更し、失敗時のrunner診断を追加した。
+再実行の安定性は、この変更後のGitHub CIで確認する。
