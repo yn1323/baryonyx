@@ -224,35 +224,67 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Cloudflare Pagesは後日設定する。公開するときに以下のjobを有効にする。
+  # 公開設定と検証スクリプトは、先にPRのbaseブランチへ反映する。
   # 詳細: doc/rules/client-testing-and-preview.md
-  # preview:
-  #   name: Client PR Preview
-  #   needs: web-build
-  #   if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-  #   runs-on: ubuntu-24.04
-  #   timeout-minutes: 10
-  #   environment:
-  #     name: client-preview
-  #     url: ${{ steps.deploy.outputs.deployment-url }}
-  #   steps:
-  #     - name: Checkout deployment helpers from the PR base
-  #       uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-  #       with:
-  #         ref: ${{ github.event.pull_request.base.sha }}
-  #         persist-credentials: false
-  #     - name: Download Web player
-  #       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-  #       with:
-  #         name: client-web
-  #         path: preview
-  #     - name: Check Cloudflare Pages asset limits
-  #       run: python3 client/ci/verify-web-build.py preview --pages-limit
-  #     - name: Deploy PR Preview
-  #       id: deploy
-  #       uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
-  #       with:
-  #         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  #         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  #         wranglerVersion: '4.130.0'
-  #         command: pages deploy preview --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=pr-${{ github.event.pull_request.number }}
+  preview:
+    name: Client PR Preview
+    needs: web-build
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      preview-url: ${{ steps.deploy.outputs.deployment-url }}
+    environment:
+      name: client-preview
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Checkout deployment helpers from the PR base
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Check preview prerequisites
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [[ ! -f client/wrangler.jsonc ]]; then
+            echo '::error::Merge client/wrangler.jsonc and the updated Web verifier into the PR base branch first.'
+            exit 1
+          fi
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret: $name"
+              exit 1
+            fi
+          done
+      - name: Download Web player
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: client-web
+          path: client/Builds/WebGL/Web
+      - name: Check Cloudflare Static Assets limits
+        run: python3 client/ci/verify-web-build.py client/Builds/WebGL/Web --cloudflare-limit
+      - name: Set up Node.js for Wrangler
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+      - name: Upload PR Preview version
+        id: deploy
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: client
+          packageManager: npm
+          wranglerVersion: '4.130.0'
+          command: versions upload --config wrangler.jsonc --preview-alias pr-${{ github.event.pull_request.number }}
+      - name: Require preview URL
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          if [[ -z "$PREVIEW_URL" ]]; then
+            echo '::error::Cloudflare did not return a version preview URL. Enable Preview URLs for baryonyx-preview.'
+            exit 1
+          fi
+          printf '### Client PR Preview\n\n[Open preview](%s)\n' "$PREVIEW_URL" >> "$GITHUB_STEP_SUMMARY"

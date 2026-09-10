@@ -78,3 +78,8 @@ Desktop.ini
 /TestResults/
 /CodeCoverage/
 __pycache__/
+
+# Wrangler local state and development secrets.
+/.wrangler/
+.dev.vars
+.dev.vars.*
