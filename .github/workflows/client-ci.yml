@@ -166,8 +166,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  web-build:
-    name: Client Web build
+  android-build:
+    name: Client Android build
+    outputs:
+      artifact-url: ${{ steps.apk.outputs.artifact-url }}
     needs: [format, analyzers, tests]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -182,16 +184,16 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: bash client/ci/unity-preflight.sh
-      - name: Restore Web Library
+      - name: Restore Android Library
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: client/Library
-          key: client-WebGL-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          key: client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
           restore-keys: |
-            client-WebGL-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+            client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
       - name: Remove stale Unity process IDs
         run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
-      - name: Build Web player
+      - name: Build Android APK
         uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -200,91 +202,61 @@ jobs:
         with:
           projectPath: client
           unityVersion: ${{ env.UNITY_VERSION }}
-          customImage: unityci/editor:${{ env.UNITY_VERSION }}-webgl-3
-          targetPlatform: WebGL
-          buildMethod: Baryonyx.Editor.CI.WebBuild.Build
+          customImage: unityci/editor:${{ env.UNITY_VERSION }}-android-3
+          targetPlatform: Android
+          buildMethod: Baryonyx.Editor.CI.AndroidBuild.Build
           buildsPath: client/Builds
-          buildName: Web
+          buildName: baryonyx
+          androidTargetSdkVersion: 36
+          androidSdkManagerParameters: platforms;android-36
           versioning: None
-      - name: Verify Web player files
-        run: python3 client/ci/verify-web-build.py client/Builds/WebGL/Web
-      - name: Upload Web player
+      - name: Upload Android APK
+        id: apk
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: client-web
-          path: client/Builds/WebGL/Web
+          name: client-android-apk-${{ github.run_attempt }}
+          path: client/Builds/Android/baryonyx.apk
           if-no-files-found: error
           retention-days: 7
-      - name: Upload Web build report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: client-web-build-report
-          path: client/Logs/web-build.txt
-          if-no-files-found: ignore
-          retention-days: 7
 
-  # 公開設定と検証スクリプトは、先にPRのbaseブランチへ反映する。
-  # 詳細: doc/rules/client-testing-and-preview.md
-  preview:
-    name: Client PR Preview
-    needs: web-build
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  android-comment:
+    name: Client Android APK link
+    needs: android-build
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    outputs:
-      preview-url: ${{ steps.deploy.outputs.deployment-url }}
-    environment:
-      name: client-preview
-      url: ${{ steps.deploy.outputs.deployment-url }}
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
     steps:
-      - name: Checkout deployment helpers from the PR base
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          persist-credentials: false
-      - name: Check preview prerequisites
+      - name: Post APK download link
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [[ ! -f client/wrangler.jsonc ]]; then
-            echo '::error::Merge client/wrangler.jsonc and the updated Web verifier into the PR base branch first.'
-            exit 1
-          fi
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
-            if [[ -z "${!name}" ]]; then
-              echo "::error::Missing repository secret: $name"
-              exit 1
-            fi
-          done
-      - name: Download Web player
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+          APK_URL: ${{ needs.android-build.outputs.artifact-url }}
         with:
-          name: client-web
-          path: client/Builds/WebGL/Web
-      - name: Check Cloudflare Static Assets limits
-        run: python3 client/ci/verify-web-build.py client/Builds/WebGL/Web --cloudflare-limit
-      - name: Set up Node.js for Wrangler
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.21.0'
-      - name: Upload PR Preview version
-        id: deploy
-        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: client
-          packageManager: npm
-          wranglerVersion: '4.130.0'
-          command: versions upload --config wrangler.jsonc --preview-alias pr-${{ github.event.pull_request.number }}
-      - name: Require preview URL
-        env:
-          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
-        run: |
-          if [[ -z "$PREVIEW_URL" ]]; then
-            echo '::error::Cloudflare did not return a version preview URL. Enable Preview URLs for baryonyx-preview.'
-            exit 1
-          fi
-          printf '### Client PR Preview\n\n[Open preview](%s)\n' "$PREVIEW_URL" >> "$GITHUB_STEP_SUMMARY"
+          script: |
+            const pr = context.payload.pull_request;
+            const { data: current } = await github.rest.pulls.get({ ...context.repo, pull_number: pr.number });
+            if (current.state !== 'open' || current.head.sha !== pr.head.sha) return;
+            if (!process.env.APK_URL) throw new Error('APK artifact URL is missing');
+            const marker = '<!-- baryonyx-android-apk -->';
+            const body = [
+              marker,
+              'Androidビルドが成功しました。',
+              '',
+              `[APKをダウンロード（ZIP）](${process.env.APK_URL})`,
+              '',
+              `対象コミット: ${pr.head.sha}`,
+              '保存期間は7日間です。ダウンロードにはGitHubへのログインとリポジトリの閲覧権限が必要です。',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number: pr.number, per_page: 100,
+            });
+            const previous = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: pr.number, body });
+            }

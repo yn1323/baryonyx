@@ -26,7 +26,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 cameras.Any(camera => camera.isActiveAndEnabled),
                 Is.True,
-                "The startup scene needs an active camera to render the Web preview."
+                "The startup scene needs an active camera to render the startup scene."
             );
         }
 

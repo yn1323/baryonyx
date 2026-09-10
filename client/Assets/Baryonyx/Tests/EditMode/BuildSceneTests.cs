@@ -5,7 +5,7 @@ using UnityEditor.Build;
 
 namespace Baryonyx.Tests.EditMode
 {
-    public sealed class WebBuildSceneTests
+    public sealed class BuildSceneTests
     {
         private const string SampleScene = "Assets/Scenes/SampleScene.unity";
 
@@ -17,13 +17,16 @@ namespace Baryonyx.Tests.EditMode
                 new EditorBuildSettingsScene("Assets/Scenes/Missing.unity", false),
                 new EditorBuildSettingsScene(SampleScene, true),
             };
-            Assert.That(WebBuild.GetEnabledScenePaths(scenes), Is.EqualTo(new[] { SampleScene }));
+            Assert.That(
+                BuildScenes.GetEnabledScenePaths(scenes),
+                Is.EqualTo(new[] { SampleScene })
+            );
         }
 
         [Test]
         public void NoEnabledSceneIsRejected() =>
             Assert.Throws<BuildFailedException>(() =>
-                WebBuild.GetEnabledScenePaths(
+                BuildScenes.GetEnabledScenePaths(
                     new[] { new EditorBuildSettingsScene(SampleScene, false) }
                 )
             );
@@ -31,7 +34,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void MissingEnabledSceneIsRejected() =>
             Assert.Throws<BuildFailedException>(() =>
-                WebBuild.GetEnabledScenePaths(
+                BuildScenes.GetEnabledScenePaths(
                     new[] { new EditorBuildSettingsScene("Assets/Missing.unity", true) }
                 )
             );
@@ -39,7 +42,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void DuplicateEnabledSceneIsRejected() =>
             Assert.Throws<BuildFailedException>(() =>
-                WebBuild.GetEnabledScenePaths(
+                BuildScenes.GetEnabledScenePaths(
                     new[]
                     {
                         new EditorBuildSettingsScene(SampleScene, true),
@@ -50,6 +53,6 @@ namespace Baryonyx.Tests.EditMode
 
         [Test]
         public void ProjectHasValidEnabledScenes() =>
-            Assert.That(WebBuild.GetEnabledScenePaths(EditorBuildSettings.scenes), Is.Not.Empty);
+            Assert.That(BuildScenes.GetEnabledScenePaths(EditorBuildSettings.scenes), Is.Not.Empty);
     }
 }
