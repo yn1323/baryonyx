@@ -1,8 +1,8 @@
 # UnityのテストとWebプレビュー
 
 EditMode・PlayModeテストとWebビルドを [Client CI](../../.github/workflows/client-ci.yml) で実行する。
-Cloudflare PagesへのPR Preview公開jobは、利用者の指定によりコメントアウトしている。
-現在はWebビルドを `client-web` artifactとして保存するところまでが有効である。
+同一リポジトリのPRでは、Webビルドの成功後にCloudflare Workers Static AssetsへPR Previewを公開する。
+公開先は `baryonyx-preview` とし、公開jobの設定・スクリプトはPRのbaseブランチから取得する。
 VRT、Web E2E、Android向け検証の着手条件と完了条件は [クライアントCIの積み残し](../plans/2026-09-10-client-ci-backlog.md) で管理する。
 
 ## コードとテストの配置
@@ -127,23 +127,60 @@ Analyzerは毎回C#を再コンパイルして解析する。
 Unityコンテナの取得、Editorの起動、キャッシュの転送、変更部分の取り込み、テスト、Webビルドには毎回時間がかかる。
 Dockerイメージ自体をjob間で永続化する設定は追加していない。
 
-## Cloudflare Pagesの公開を有効にするとき
+## Cloudflare WorkersのPR Preview
 
-現時点では公開・Cloudflareリソースの作成を行わない。
-workflow末尾の `preview` job全体をコメントアウトしてあり、Secretsの未登録だけで公開を止める構成にはしていない。
+[Wrangler設定](../../client/wrangler.jsonc)で、Worker名を `baryonyx-preview`、配信対象を `client/Builds/WebGL/Web/` に固定する。
+Workerスクリプトの入口は指定せず、UnityのWeb成果物をStatic Assetsとして配信する。
+HonoサーバーのWorkers対応は、この公開jobに含めない。
 
-後日、次の設定を行ってから有効にする。
+### 初回設定とmainへの反映
 
-1. Cloudflare Pagesで、ビルド済みファイルをアップロードするDirect Uploadのプロジェクトを作成する。production branchは `main` とし、`pr-数字` を指定しない。
-2. GitHub Repository secretsへ `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録する。API Tokenの権限は対象アカウントのCloudflare Pages編集に限定する。
-3. Repository variablesへ `CLOUDFLARE_PAGES_PROJECT_NAME` を登録する。
-4. この設定と検証スクリプトがPRのbaseブランチに存在する状態にしてから、`preview` jobのコメントを外す。
+1. 対象アカウントで `baryonyx-preview` を作成する。Workerの `Settings > Domains & Routes` で、`workers.dev` と `Preview URLs` を有効にする。
+2. GitHub Repository secretsへ `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録する。API Tokenには対象アカウントのWorkers編集権限を付与する。
+3. `client/wrangler.jsonc` と、`--cloudflare-limit` に対応した `client/ci/verify-web-build.py` を、PRのbaseブランチ（通常はmain）へ反映する。
+4. 反映後のmainをbaseとする、client変更を含む同一リポジトリのPRで公開を確認する。
 
-有効化後は、同一リポジトリからのPRで成功した `client-web` artifactをダウンロードし、`pr-<PR番号>` ブランチ名で配信する。
-デプロイはWebビルドと別jobで行い、CloudflareのTokenをUnityの実行へ渡さない。
-公開先はGitHubの `client-preview` environmentに表示する。
-参考：[CloudflareのCIからのDirect Upload手順](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)。
+公開jobはPRのbaseコミットをcheckoutするため、この設定を初めて追加するPRでは、base側の準備不足を表示して停止する。
+CloudflareでのWorker作成とGitHubのSecrets登録は利用者が完了したと申告しているが、CIでの認証とWeb成果物の公開は、設定を反映した後に確認する。
+Pages用の `CLOUDFLARE_PAGES_PROJECT_NAME` は使用しない。
+参考：[GitHub Actionsの認証設定](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)。
 
-Cloudflare Pagesには1ファイル25 MiBの上限があるため、有効化したjobではアップロード前にサイズも検査する。
+### 公開の動作とURL
+
+同一リポジトリのPRでWebビルドが成功すると、`preview` jobが同じ実行の `client-web` artifactを取得する。
+公開用の設定と検証スクリプトはbase側を使い、CloudflareのTokenはUnityの実行へ渡さない。
+fork PR、mainへのpush、手動実行では、この公開jobを実行しない。
+
+公開jobではNode.js 24.21.0を準備し、固定版Wrangler 4.130.0から次のコマンドを `client/` で実行する。
+
+```text
+wrangler versions upload --config wrangler.jsonc --preview-alias pr-<PR番号>
+```
+
+この操作はプレビュー用のバージョンを追加し、Workerの通常URLへの配信バージョンは更新しない。
+`pr-<PR番号>` の別名URLは同じPRの更新で差し替わる。
+今回のバージョン固有URLをGitHubの `client-preview` environmentとjob summaryへ表示し、後続jobには `needs.preview.outputs.preview-url` で渡せるようにする。
+URLが返らない場合は公開jobを失敗にする。
+プレビューURLは公開されるため、閲覧者を制限する場合はCloudflare Accessを別途設定する。
+参考：[WorkersのPreview URLs](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/)。
+
+公開前には、必須ファイルと1ファイル25 MiBの上限を検査する。
+ローカルでも次のコマンドで同じ検査を実行できる。
+
+```text
+python client/ci/verify-web-build.py <出力先> --cloudflare-limit
+```
+
+以前の `--pages-limit` は互換用の別名として維持する。
 上限を超えた場合はアセットの削減・分割や配信先の構成を検討し、検査だけを外して成功扱いにしない。
-参考：[Cloudflare Pagesの制限](https://developers.cloudflare.com/pages/platform/limits/#file-size)。
+参考：[Workers Static Assetsの設定](https://developers.cloudflare.com/workers/static-assets/binding/)、[Workersの制限](https://developers.cloudflare.com/workers/platform/limits/)。
+
+### 検証結果と残る確認
+
+2026-09-10に、actionlint 1.7.12でworkflowの構文を検査した。
+既存CIが生成したWeb成果物の検査と、固定版Wrangler 4.130.0による `deploy --dry-run`、`versions upload --preview-alias pr-123 --dry-run` は成功した。
+サイズ検査では25 MiBちょうどを受理し、上限超過と空・欠落したwasmを拒否することを確認した。
+公開前の確認では、Secrets・base側の設定・公開URLの欠落を失敗にすることを確認した。
+
+GitHub上での認証・バージョン作成・URL表示と、公開URLでのUnity起動は未確認である。
+ビルドコミットの記録・URLとの照合、Webスモーク・E2Eは [クライアントCIの拡張計画](../plans/2026-09-10-client-ci-backlog.md) の後続作業として残す。

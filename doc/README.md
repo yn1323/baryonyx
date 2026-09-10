@@ -8,7 +8,7 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 - [機能一覧](features/README.md)：実装済みの機能と詳細文書への入口。
 - [バックエンドの開発環境](rules/backend-design.md)：導入、起動、整形、テスト、CIの手順と構成。
 - [Unityクライアントの整形と静的解析](rules/client-code-quality.md)：CSharpier、Analyzer、GitHub CIとライセンス設定。
-- [UnityのテストとWebプレビュー](rules/client-testing-and-preview.md)：EditMode・PlayModeテスト、Webビルド、後日有効にするCloudflare Pages設定。
+- [UnityのテストとWebプレビュー](rules/client-testing-and-preview.md)：EditMode・PlayModeテスト、Webビルド、Cloudflare WorkersのPR Preview設定と初回反映手順。
 - [文書管理方針](rules/documentation-policy.md)：文書の配置、役割、更新方法。
 - [エージェント共通指示](../AGENTS.md)：リポジトリ全体の作業ルール。
 - [serverのHono開発環境とCIの導入計画](plans/2026-09-09-server-bootstrap.md)：導入の判断、実施結果、残る確認事項。

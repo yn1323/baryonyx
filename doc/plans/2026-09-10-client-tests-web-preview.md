@@ -9,6 +9,9 @@ PR Previewの公開先はCloudflare Pagesとし、利用者の指定により公
 公開先やSecretsの登録は実施していない。
 commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行結果を以下に記録した。
 
+以下は初期導入時の記録である。
+その後のWorkersへの切り替えと公開jobの有効化は [現在の公開手順](../rules/client-testing-and-preview.md#cloudflare-workersのpr-preview) を参照する。
+
 ## 実装内容
 
 - Runtime・Editor・EditModeテスト・PlayModeテストのasmdefを分け、後からゲームロジックとテストを追加できる構成にした。
