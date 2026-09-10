@@ -1,6 +1,6 @@
 {
   "name": "Baryonyx.Runtime",
   "rootNamespace": "Baryonyx",
-  "references": [],
+  "references": ["UMoth.GoogleSignIn", "Utils.Singleton"],
   "autoReferenced": true
 }

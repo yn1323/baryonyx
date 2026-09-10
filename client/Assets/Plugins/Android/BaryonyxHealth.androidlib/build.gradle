@@ -1,0 +1,27 @@
+plugins {
+    id 'com.android.library'
+    // Unityが無効にするKotlinコンパイルを、このモジュールだけ有効にする。
+    id 'com.android.built-in-kotlin' version '9.0.0'
+}
+// UnityのAssets内に中間生成物を作らない。
+layout.buildDirectory = file("${rootProject.projectDir}/build/health")
+
+android {
+    namespace 'com.baryonyx.health'
+    compileSdk 36
+    sourceSets { main { manifest.srcFile 'AndroidManifest.xml' } }
+    defaultConfig {
+        minSdk 26
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.health.connect:connect-client:1.1.0'
+    implementation 'androidx.activity:activity-ktx:1.10.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+}

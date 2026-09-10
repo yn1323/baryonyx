@@ -1,0 +1,5 @@
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+rootProject.name = 'BaryonyxHealthCheck'
+include ':health'
+project(':health').projectDir = file('../../Assets/Plugins/Android/BaryonyxHealth.androidlib')
