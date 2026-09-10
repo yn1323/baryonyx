@@ -6,12 +6,30 @@ import {
   ensureDatabase,
   targetNames,
   verifyHttp,
+  workerVariables,
 } from "./deploy.mjs";
 
 const database = {
   name: "baryonyx-server-pr-12",
   uuid: "01234567-89ab-cdef-0123-456789abcdef",
 };
+
+test("公開WorkerへビルドSHAと設定したGoogleクライアントIDを渡す", () => {
+  const revision = "a".repeat(40);
+  assert.deepEqual(workerVariables(revision, " test-client-id "), {
+    BUILD_SHA: revision,
+    GOOGLE_CLIENT_ID: "test-client-id",
+  });
+});
+
+test("GoogleクライアントIDの未設定を公開前に拒否する", () => {
+  for (const clientId of [undefined, "", " \n\t "]) {
+    assert.throws(
+      () => workerVariables("a".repeat(40), clientId),
+      /公開先のGOOGLE_CLIENT_IDが必要です/,
+    );
+  }
+});
 
 test("PreviewのPR番号を検証し、他環境を指定した削除対象を生成しない", () => {
   for (const pr of [

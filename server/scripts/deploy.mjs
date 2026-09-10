@@ -151,6 +151,12 @@ export async function verifyHttp(
   }
 }
 
+export function workerVariables(revision, googleClientId) {
+  const audience = googleClientId?.trim();
+  assert.ok(audience, "公開先のGOOGLE_CLIENT_IDが必要です");
+  return { BUILD_SHA: revision, GOOGLE_CLIENT_ID: audience };
+}
+
 async function deploy(api, stage, pr) {
   const names = targetNames(stage, pr);
   const artifact = resolve(
@@ -165,6 +171,7 @@ async function deploy(api, stage, pr) {
     /^[a-f0-9]{40}$/i,
     "ビルドしたGitコミットのSHAが必要です",
   );
+  const vars = workerVariables(info.revision, process.env.GOOGLE_CLIENT_ID);
   assert.match(info.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(
     Array.isArray(info.compatibility_flags) &&
@@ -211,7 +218,7 @@ async function deploy(api, stage, pr) {
       compatibility_flags: info.compatibility_flags,
       workers_dev: true,
       preview_urls: false,
-      vars: { BUILD_SHA: info.revision },
+      vars,
       d1_databases: [
         {
           binding: "DB",

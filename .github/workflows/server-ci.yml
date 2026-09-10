@@ -132,6 +132,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           SERVER_ARTIFACT_DIR: .wrangler/artifact
         run: node scripts/deploy.mjs deploy preview "$PR_NUMBER"
