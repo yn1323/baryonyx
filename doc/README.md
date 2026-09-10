@@ -15,6 +15,7 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 - [Unityクライアントの整形と静的解析の導入計画](plans/2026-09-10-client-code-quality.md)：CSharpier、Microsoft.Unity.AnalyzersとGitHub Actionsの導入案。
 - [UnityテストとWebビルドの初期設定](plans/2026-09-10-client-tests-web-preview.md)：追加した初期設定と検証結果。
 - [クライアントCIの積み残し](plans/2026-09-10-client-ci-backlog.md)：VRT、Web E2E、Androidビルド、Androidスモーク／E2Eと実機での歩数取得の未着手項目。
+- [Health Connect連携とiOS拡張の実装計画](plans/2026-09-10-health-connect-integration.md)：前面での同期、権限対応、Google認証、保存・取得APIとHealthKitへの拡張方針。
 
 ## 文書の配置
 

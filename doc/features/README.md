@@ -8,6 +8,7 @@
 | 機能名 | 概要 | クライアントの入口 | サーバーの入口 | 実装状況 |
 |---|---|---|---|---|
 | [サーバーの疎通確認](server-health.md) | HonoアプリへのHTTP接続を確認する | なし | [app.ts](../../server/src/app.ts) | 実装・Windowsでのローカル確認済み。デプロイ未実施 |
+| [健康データの読み取りと保存](health-data.md) | Google認証と、前面でのHealth Connect歩数取得・保存 | [HealthClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthClient.cs) | [routes.ts](../../server/src/features/health/routes.ts) | Android向けコードと自動テストを追加。OAuth設定・実機での接続確認は未完了 |
 
 ## 一覧の更新
 
