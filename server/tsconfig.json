@@ -11,6 +11,11 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "vitest.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "worker-configuration.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

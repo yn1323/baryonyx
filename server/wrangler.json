@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "baryonyx-server-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": { "BUILD_SHA": "local" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "baryonyx-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

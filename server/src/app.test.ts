@@ -17,4 +17,14 @@ describe("HTTPの疎通確認", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("DBのbindingがない場合もhealthは成功し、readyは503を返す", async () => {
+    const response = await app.request("/ready");
+    expect(response.status).toBe(503);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(await response.json()).toEqual({
+      status: "unavailable",
+      database: "unavailable",
+    });
+  });
 });
