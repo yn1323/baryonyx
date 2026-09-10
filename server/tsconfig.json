@@ -15,6 +15,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "vitest.config.ts",
+    "drizzle.config.ts",
     "worker-configuration.d.ts"
   ],
   "exclude": ["node_modules", "dist"]

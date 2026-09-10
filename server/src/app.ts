@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { createHealthApi } from "./features/health/routes.js";
+import { createDatabase } from "./shared/db.js";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -13,9 +15,9 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/ready", async (c) => {
   c.header("Cache-Control", "no-store");
   try {
-    const result = await c.env.DB.prepare("SELECT 1 AS ok").first<{
-      ok: number;
-    }>();
+    const result = await createDatabase(c.env.DB).get<{ ok: number }>(
+      sql`SELECT 1 AS ok`,
+    );
     if (result?.ok === 1) {
       return c.json({ status: "ok", database: "ok" });
     }

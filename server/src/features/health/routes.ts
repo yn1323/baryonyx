@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createRemoteJWKSet, type JWTVerifyGetKey, jwtVerify } from "jose";
+import { createHealthRepository } from "./repository.js";
 import { parseDays, validId } from "./schema.js";
 
 export type HealthEnv = {
@@ -80,29 +81,13 @@ export function createHealthApi(
     } catch {
       return c.json({ error: "invalid_identity" }, 401);
     }
-    const db = c.env.DB;
-    await db
-      .prepare(
-        "INSERT INTO app_users(id, google_sub) VALUES (?, ?) ON CONFLICT(google_sub) DO NOTHING",
-      )
-      .bind(crypto.randomUUID(), subject)
-      .run();
-    const userId = await db
-      .prepare("SELECT id FROM app_users WHERE google_sub = ?")
-      .bind(subject)
-      .first<string>("id");
+    const repository = createHealthRepository(c.env.DB);
+    const userId = await repository.findOrCreateUser(subject);
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
       b.toString(16).padStart(2, "0"),
     ).join("");
     const expiresAt = Date.now() + 3_600_000;
-    await db.batch([
-      db
-        .prepare("DELETE FROM app_sessions WHERE expires_at <= ?")
-        .bind(Date.now()),
-      db
-        .prepare("INSERT INTO app_sessions VALUES (?, ?, ?)")
-        .bind(await hashToken(token), userId, expiresAt),
-    ]);
+    await repository.createSession(await hashToken(token), userId, expiresAt);
     return c.json({
       token,
       userId,
@@ -115,20 +100,16 @@ export function createHealthApi(
     if (!/^Bearer [a-f0-9]{64}$/.test(header))
       return c.json({ error: "unauthorized" }, 401);
     const tokenHash = await hashToken(header.slice(7));
-    const userId = await c.env.DB.prepare(
-      "SELECT user_id FROM app_sessions WHERE token_hash = ? AND expires_at > ?",
-    )
-      .bind(tokenHash, Date.now())
-      .first<string>("user_id");
+    const userId = await createHealthRepository(c.env.DB).findSessionUser(
+      tokenHash,
+    );
     if (!userId) return c.json({ error: "unauthorized" }, 401);
     c.set("userId", userId);
     c.set("tokenHash", tokenHash);
     await next();
   });
   api.post("/auth/logout", async (c) => {
-    await c.env.DB.prepare("DELETE FROM app_sessions WHERE token_hash = ?")
-      .bind(c.get("tokenHash"))
-      .run();
+    await createHealthRepository(c.env.DB).deleteSession(c.get("tokenHash"));
     return c.body(null, 204);
   });
   api.post("/health/syncs", async (c) => {
@@ -139,12 +120,11 @@ export function createHealthApi(
     )
       return c.json({ error: "invalid_request" }, 400);
     // サーバー発行の版で、再起動・時計ずれ・遅延送信による上書きを防ぐ。
-    const result =
-      await c.env.DB.prepare(`INSERT INTO health_sources(id, user_id, provider, revision) VALUES (?, ?, ?, 1)
-      ON CONFLICT(id) DO UPDATE SET revision = revision + 1 WHERE user_id = excluded.user_id AND provider = excluded.provider
-      RETURNING revision`)
-        .bind(body.sourceId, c.get("userId"), body.provider)
-        .first<{ revision: number }>();
+    const result = await createHealthRepository(c.env.DB).beginSync(
+      body.sourceId,
+      c.get("userId"),
+      body.provider,
+    );
     if (!result) return c.json({ error: "source_unavailable" }, 404);
     return c.json(result);
   });
@@ -159,63 +139,28 @@ export function createHealthApi(
       body.revision < 1
     )
       return c.json({ error: "invalid_request" }, 400);
-    const db = c.env.DB;
     const now = new Date().toISOString();
-    const statements = days.map((day) =>
-      db
-        .prepare(`INSERT INTO health_days
-      (source_id, day, zone, start_at, end_at, has_value, steps, last_known_steps, last_known_observed_at, observed_at, received_at, revision)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS
-      (SELECT 1 FROM health_sources WHERE id = ? AND user_id = ? AND revision = ?)
-      ON CONFLICT(source_id, day, zone) DO UPDATE SET start_at = excluded.start_at, end_at = excluded.end_at,
-      has_value = excluded.has_value, steps = excluded.steps,
-      last_known_steps = COALESCE(excluded.steps, health_days.last_known_steps), observed_at = excluded.observed_at,
-      last_known_observed_at = COALESCE(excluded.last_known_observed_at, health_days.last_known_observed_at),
-      received_at = excluded.received_at, revision = excluded.revision
-      WHERE health_days.revision < excluded.revision`)
-        .bind(
-          sourceId,
-          day.day,
-          day.zone,
-          day.startAt,
-          day.endAt,
-          day.hasValue ? 1 : 0,
-          day.hasValue ? day.steps : null,
-          day.hasValue ? day.steps : null,
-          day.hasValue ? day.observedAt : null,
-          day.observedAt,
-          now,
-          body.revision,
-          sourceId,
-          c.get("userId"),
-          body.revision,
-        ),
+    const saved = await createHealthRepository(c.env.DB).saveDays(
+      sourceId,
+      c.get("userId"),
+      body.revision,
+      days,
+      now,
     );
-    const results = await db.batch(statements);
-    if (results.every((r) => r.meta.changes === 0))
-      return c.json({ error: "sync_conflict" }, 409);
+    if (!saved) return c.json({ error: "sync_conflict" }, 409);
     return c.json({ revision: body.revision, receivedAt: now });
   });
   api.get("/health/sources/:sourceId/days", async (c) => {
     const sourceId = c.req.param("sourceId");
     if (!validId(sourceId)) return c.json({ error: "invalid_request" }, 400);
-    const source = await c.env.DB.prepare(
-      "SELECT provider, revision FROM health_sources WHERE id = ? AND user_id = ?",
-    )
-      .bind(sourceId, c.get("userId"))
-      .first();
+    const repository = createHealthRepository(c.env.DB);
+    const source = await repository.findSource(sourceId, c.get("userId"));
     if (!source) return c.json({ error: "source_unavailable" }, 404);
-    const result =
-      await c.env.DB.prepare(`SELECT day, zone, start_at AS startAt, end_at AS endAt,
-      has_value AS hasValue, steps, last_known_steps AS lastKnownSteps, last_known_observed_at AS lastKnownObservedAt, observed_at AS observedAt,
-      received_at AS receivedAt, revision FROM health_days WHERE source_id = ? ORDER BY day DESC LIMIT 100`)
-        .bind(sourceId)
-        .all();
+    const days = await repository.listDays(sourceId);
     return c.json({
       ...source,
-      days: result.results.map((row) => ({
+      days: days.map((row) => ({
         ...row,
-        hasValue: row.hasValue === 1,
         hasLastKnownValue: row.lastKnownSteps !== null,
       })),
     });

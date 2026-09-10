@@ -3,8 +3,12 @@ import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { eq } from "drizzle-orm";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { appSessions, appUsers } from "../../src/features/health/db-schema.js";
+import { createHealthRepository } from "../../src/features/health/repository.js";
+import { createDatabase } from "../../src/shared/db.js";
 
 describe("WorkersとD1の結合", () => {
   let worker: Miniflare;
@@ -68,6 +72,66 @@ describe("WorkersとD1の結合", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toEqual({ status: "ok", database: "ok" });
+  });
+
+  it("既存SQLのデータをDrizzleで扱い、セッション作成失敗時は期限切れ削除も戻す", async () => {
+    const binding = (await worker.getD1Database("DB")) as unknown as D1Database;
+    const db = createDatabase(binding);
+    const repository = createHealthRepository(binding);
+    const userId = "legacy-'quoted";
+    await binding
+      .prepare("INSERT INTO app_users(id, google_sub) VALUES (?, ?)")
+      .bind(userId, "legacy-subject")
+      .run();
+    try {
+      expect(await repository.findOrCreateUser("legacy-subject")).toBe(userId);
+      await db
+        .update(appUsers)
+        .set({ googleSub: "updated-subject" })
+        .where(eq(appUsers.id, userId));
+      expect(
+        await db.select().from(appUsers).where(eq(appUsers.id, userId)).get(),
+      ).toEqual({
+        id: userId,
+        googleSub: "updated-subject",
+      });
+      await db
+        .insert(appSessions)
+        .values({ tokenHash: "expired", userId, expiresAt: 0 });
+
+      await expect(
+        repository.createSession("failed", "missing-user", Date.now() + 60_000),
+      ).rejects.toThrow();
+      expect(
+        await db
+          .select()
+          .from(appSessions)
+          .where(eq(appSessions.tokenHash, "expired"))
+          .get(),
+      ).toBeDefined();
+      expect(
+        await db
+          .select()
+          .from(appSessions)
+          .where(eq(appSessions.tokenHash, "failed"))
+          .get(),
+      ).toBeUndefined();
+
+      await repository.createSession("valid", userId, Date.now() + 60_000);
+      expect(await repository.findSessionUser("valid")).toBe(userId);
+      expect(
+        await db
+          .select()
+          .from(appSessions)
+          .where(eq(appSessions.tokenHash, "expired"))
+          .get(),
+      ).toBeUndefined();
+      await repository.deleteSession("valid");
+      expect(await repository.findSessionUser("valid")).toBeUndefined();
+    } finally {
+      await db.delete(appSessions).where(eq(appSessions.userId, userId));
+      await db.delete(appUsers).where(eq(appUsers.id, userId));
+    }
   });
 
   it("D1で作成・取得・更新・削除でき、失敗したバッチはロールバックする", async () => {

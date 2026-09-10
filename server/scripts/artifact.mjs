@@ -1,9 +1,21 @@
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 
 // CIではビルド済みWorkerとSQLだけを、認証情報を持つ公開jobへ渡す。
 const config = JSON.parse(await readFile("wrangler.json", "utf8"));
-await mkdir("dist", { recursive: true });
-await cp("migrations", "dist/migrations", { recursive: true });
+await rm("dist/migrations", { recursive: true, force: true });
+await mkdir("dist/migrations", { recursive: true });
+for (const file of await readdir("migrations", { withFileTypes: true })) {
+  if (file.isFile() && file.name.endsWith(".sql")) {
+    await copyFile(`migrations/${file.name}`, `dist/migrations/${file.name}`);
+  }
+}
 await writeFile(
   "dist/build-info.json",
   JSON.stringify({

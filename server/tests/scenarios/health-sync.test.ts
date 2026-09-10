@@ -39,7 +39,8 @@ describe("歩数の同期", () => {
     expect((await put(1)).status).toBe(409);
     expect(await (await lease()).json()).toEqual({ revision: 2 });
     expect((await put(1, days(999))).status).toBe(409);
-    expect((await put(2, days(12))).status).toBe(200);
+    const knownDays = days(12);
+    expect((await put(2, knownDays)).status).toBe(200);
     const response = await request(
       `/health/sources/${sourceId}/days`,
       "GET",
@@ -97,12 +98,84 @@ describe("歩数の同期", () => {
         user.token,
       )
     ).json()) as {
-      days: { steps: unknown; lastKnownSteps: number; hasValue: boolean }[];
+      days: {
+        steps: unknown;
+        lastKnownSteps: number;
+        hasValue: boolean;
+        hasLastKnownValue: boolean;
+        lastKnownObservedAt: string;
+      }[];
     };
     expect(
       empty.days.every(
-        (d) => d.steps === null && d.lastKnownSteps === 12 && !d.hasValue,
+        (d) =>
+          d.steps === null &&
+          d.lastKnownSteps === 12 &&
+          !d.hasValue &&
+          d.hasLastKnownValue &&
+          d.lastKnownObservedAt === knownDays[0].observedAt,
       ),
     ).toBe(true);
+  });
+
+  it("未取得と0歩を区別し、Providerの変更で取得元の版を進めない", async () => {
+    const { login, request } = scenario;
+    const user = await login("zero-steps-subject");
+    const source = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb";
+    const lease = (provider = "healthkit") =>
+      request(
+        "/health/syncs",
+        "POST",
+        { sourceId: source, provider },
+        user.token,
+      );
+    expect(await (await lease()).json()).toEqual({ revision: 1 });
+    const unknownDays = days(0).map((day) => ({ ...day, hasValue: false }));
+    const put = (revision: number, values: ReturnType<typeof days>) =>
+      request(
+        `/health/sources/${source}/days`,
+        "PUT",
+        { revision, days: values },
+        user.token,
+      );
+    expect((await put(1, unknownDays)).status).toBe(200);
+    const read = async () =>
+      (
+        await request(
+          `/health/sources/${source}/days`,
+          "GET",
+          undefined,
+          user.token,
+        )
+      ).json() as Promise<{ days: Record<string, unknown>[] }>;
+    const unknown = await read();
+    expect(unknown.days).toHaveLength(7);
+    for (const day of unknown.days) {
+      expect(day).toMatchObject({
+        hasValue: false,
+        steps: null,
+        hasLastKnownValue: false,
+        lastKnownSteps: null,
+        lastKnownObservedAt: null,
+      });
+    }
+    expect((await lease("health_connect")).status).toBe(404);
+    expect(await (await lease()).json()).toEqual({ revision: 2 });
+    const zeroDays = days(0);
+    expect((await put(2, zeroDays)).status).toBe(200);
+    const saved = await read();
+    expect(saved.days).toHaveLength(7);
+    for (const day of saved.days) {
+      expect(day).toMatchObject({
+        hasValue: true,
+        steps: 0,
+        hasLastKnownValue: true,
+        lastKnownSteps: 0,
+        lastKnownObservedAt: zeroDays[0].observedAt,
+      });
+    }
+    expect(saved.days.map((day) => day.day)).toEqual(
+      zeroDays.map((day) => day.day).reverse(),
+    );
   });
 });
