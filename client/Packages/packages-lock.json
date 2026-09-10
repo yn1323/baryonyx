@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.google.external-dependency-manager": {
+      "version": "https://github.com/googlesamples/unity-jar-resolver.git?path=upm#1a9384872d6b8b954a8c0115fdcdf146c995062a",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "1a9384872d6b8b954a8c0115fdcdf146c995062a"
+    },
     "com.superjura.unity-zed-integration": {
       "version": "https://github.com/SuperJura/unity-zed-integration.git",
       "depth": 0,
@@ -213,6 +220,31 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.uralstech.umoth": {
+      "version": "https://github.com/Uralstech/UMoth.git#3e1f5bba1b70647e568751d5e8732306c96d6d0e",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.uralstech.utils.singleton": "1.2.1",
+        "com.uralstech.utils.loggers": "1.1.0"
+      },
+      "hash": "3e1f5bba1b70647e568751d5e8732306c96d6d0e"
+    },
+    "com.uralstech.utils.loggers": {
+      "version": "https://github.com/Uralstech/Utils.Loggers.git#50b8126aeb550bc621410e1518a48411b0e7f76e",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "50b8126aeb550bc621410e1518a48411b0e7f76e"
+    },
+    "com.uralstech.utils.singleton": {
+      "version": "https://github.com/Uralstech/Utils.Singleton.git#65dabdaacc30b7aa847b6efc87d16ee9fb6598c4",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "65dabdaacc30b7aa847b6efc87d16ee9fb6598c4"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
