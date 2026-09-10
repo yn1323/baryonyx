@@ -104,9 +104,13 @@ namespace Baryonyx.Health
                 EnsureCurrent();
                 if (result.Status != HealthReadStatus.Success)
                     return Complete(
-                        result.Status == HealthReadStatus.PermissionRequired
-                            ? HealthSyncStatus.PermissionRequired
-                            : HealthSyncStatus.Failed
+                        result.Status switch
+                        {
+                            HealthReadStatus.PermissionRequired =>
+                                HealthSyncStatus.PermissionRequired,
+                            HealthReadStatus.Unavailable => HealthSyncStatus.Unavailable,
+                            _ => HealthSyncStatus.Failed,
+                        }
                     );
                 if (result.Days.Length != 7)
                     return Complete(HealthSyncStatus.Failed);

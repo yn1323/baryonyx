@@ -100,18 +100,26 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(api.Saves, Is.EqualTo(1));
         }
 
-        [Test]
-        public async Task RevokedPermissionDuringReadDoesNotUpload()
+        [TestCase(HealthReadStatus.PermissionRequired, HealthSyncStatus.PermissionRequired)]
+        [TestCase(HealthReadStatus.Unavailable, HealthSyncStatus.Unavailable)]
+        [TestCase(HealthReadStatus.Failed, HealthSyncStatus.Failed)]
+        public async Task UnsuccessfulReadDoesNotUpload(
+            HealthReadStatus readStatus,
+            HealthSyncStatus expected
+        )
         {
             var api = new Api();
             using var service = new HealthSyncService(
-                new Provider { Result = new HealthReadResult(HealthReadStatus.PermissionRequired) },
+                new Provider { Result = new HealthReadResult(readStatus) },
                 api,
                 "source"
             );
             service.SetSession(Session());
-            Assert.That(await service.SyncAsync(), Is.EqualTo(HealthSyncStatus.PermissionRequired));
+            Assert.That(await service.SyncAsync(), Is.EqualTo(expected));
+            Assert.That(service.Status, Is.EqualTo(expected));
+            Assert.That(api.Leases, Is.EqualTo(1));
             Assert.That(api.Saves, Is.Zero);
+            Assert.That(service.LastSavedAt, Is.Null);
         }
 
         [TestCase(401, HealthSyncStatus.SignInRequired)]
