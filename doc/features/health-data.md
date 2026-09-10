@@ -13,8 +13,9 @@ AndroidのHealth Connectから当日を含む直近7暦日の歩数を取得し�
 | [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthApiClient.cs) | サーバーへの認証・保存・取得要求 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
-| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | Googleの本人確認、セッション、取得元の所有者確認、D1保存・取得 |
-| [DB定義](../../server/migrations/0002_health.sql)・[過去値の取得日時](../../server/migrations/0003_health_observation.sql) | ユーザー、セッション、取得元、日別歩数 |
+| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | Googleの本人確認、セッション、HTTP要求の検証 |
+| [DB操作](../../server/src/features/health/repository.ts) | Drizzleによるセッション管理、取得元の所有者確認、日別歩数の保存・取得 |
+| [DBスキーマ](../../server/src/features/health/db-schema.ts)・[初期マイグレーション](../../server/migrations/0000_initial.sql) | ユーザー、セッション、取得元、日別歩数と過去値の取得日時 |
 
 HTTPのパスと入出力はサーバールートと入力検証コードを正とする。
 認証以外の機能で必要になるまでは、健康データ機能の外へ認証の共通基盤を広げない。
@@ -27,7 +28,7 @@ Unityの `Initialize` に渡すGoogleクライアントIDと、サーバーの `
 設定がないサーバーはログインを503で拒否する。
 ユーザーから受け取っていない実際のID・URLをコードへ埋め込んでいない。
 
-ローカルのサーバーでは、[設定例](../../server/.env.example)を `server/.dev.vars` へコピーして値を設定する。
+ローカルのサーバーでは `server/.dev.vars` を作成し、`GOOGLE_CLIENT_ID` にGoogle OAuthのWebクライアントIDを設定する。
 D1マイグレーションを適用してから起動する。
 具体的な起動・環境別の公開手順は [バックエンドの開発環境](../rules/backend-design.md) に従う。
 この機能の作業でリモートDBや公開環境は変更していない。

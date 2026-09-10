@@ -1,6 +1,6 @@
 # バックエンドの開発環境
 
-`server/` のHonoアプリをCloudflare Workersで実行し、D1へ接続する。
+`server/` のHonoアプリをCloudflare Workersで実行し、Drizzle ORM経由でD1へ接続する。
 Node.jsは開発ツールとCIで使い、ローカルのWorkerもWranglerとMiniflareで動かす。
 Google認証・健康データの業務APIは、この基盤と別の機能として実装・検証する。
 実装とテストの配置は [server/AGENTS.md](../../server/AGENTS.md) のコロケーション方針に従う。
@@ -62,24 +62,46 @@ WorkersのバージョンPreview URLを共有する方式ではなく、各PR用
 既存DBを再利用し、未適用のマイグレーションだけを追加する。
 PRを閉じてから再び開いた場合は、新しいDBで開始する。
 
+## DrizzleによるDB操作
+
+DB操作には `drizzle-orm/d1` を使い、リクエストのD1 bindingから [createDatabase](../../server/src/shared/db.ts) で接続を作る。
+テーブル定義は所有する機能の `db-schema.ts`、DB操作は同じ機能の `repository.ts` に置く。
+健康データでは [DBスキーマ](../../server/src/features/health/db-schema.ts) と [repository](../../server/src/features/health/repository.ts) が対応する。
+HTTPの入力検証は `schema.ts` に残し、DBスキーマと分ける。
+
+取得・更新にはDrizzleのクエリービルダーを使い、値をSQLへ埋め込む場合はパラメーター化する `sql` タグを使う。
+複数の書き込みを一括で確定する処理はD1対応の `db.batch()` を使う。
+健康データの保存では、所有者と同期の版を確認する条件をINSERT SELECTに含め、確認と書き込みの間に別の同期が割り込むことを防ぐ。
+`has_value` はSQLiteの整数とTypeScriptのbooleanをDrizzleで相互変換する。
+
 ## マイグレーション
 
-SQLは [migrations/](../../server/migrations/) に置き、`0001_baseline.sql` のように4桁の連番と英小文字の名前を付ける。
-最初のSQLは `SELECT 1` のみで、Wranglerの適用履歴を開始するために置いている。
-業務テーブルは各機能の実装時に新しいSQLとして追加する。
+テーブル定義を変更したら、Drizzle Kitで差分SQLを生成する。
+[drizzle.config.ts](../../server/drizzle.config.ts) は各機能の `db-schema.ts` を読み、[migrations/](../../server/migrations/) に4桁の連番付きSQLと `meta/` のスナップショットを出力する。
+SQLとスナップショットを一緒にGitへ追加し、生成結果の制約、データ移行、既存Workerとの互換性を確認する。
+
+未デプロイの段階でDrizzleを導入したため、初期状態は [0000_initial.sql](../../server/migrations/0000_initial.sql) に統合した。
+このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
 
 ```sh
-pnpm exec wrangler d1 migrations create DB add_example
+pnpm db:generate --name add_example
+pnpm db:check
 pnpm db:migrate:local
 ```
 
-適用済みSQLを書き換えず、新しいSQLを追加する。
+生成はDB接続や認証情報を必要としない。
+`pnpm db:export` は現在のスキーマ全体のSQLを表示する確認用コマンドで、差分の生成・適用には使わない。
+データ補正などの手書きSQLは `pnpm db:generate --custom --name backfill_example` で履歴を追加する。
+適用済みSQLとスナップショットを書き換えず、以後の変更は新しいマイグレーションにする。
+
+DBへの適用はWranglerに統一し、`drizzle-kit migrate` や `push` は使用しない。
 Preview・Dev・Prodの公開処理も同じSQLを使い、適用履歴は `d1_migrations` に記録する。
+Drizzleの `meta/` は差分生成に使い、公開artifactにはSQLだけを含める。
 公開時はマイグレーションが成功してからWorkerを更新し、失敗時は公開を止める。
 DBの変更後にWorkerの公開が失敗した場合、DBの変更は残るため、旧Workerと互換性を保つSQLを用意する。
 コードを古いコミットへ戻しても、DBの適用履歴やデータは巻き戻らない。
 
-参考：[D1のマイグレーション](https://developers.cloudflare.com/d1/reference/migrations/)。
+参考：[DrizzleとD1の接続](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1)、[Drizzle KitのSQL生成](https://orm.drizzle.team/docs/drizzle-kit-generate)、[D1のマイグレーション](https://developers.cloudflare.com/d1/reference/migrations/)。
 
 ## 検査とMiniflareテスト
 
@@ -88,16 +110,19 @@ DBの変更後にWorkerの公開が失敗した場合、DBの変更は残るた�
 | `pnpm lint` | Biomeによるlint・整形・import整理 |
 | `pnpm lint:fix` / `pnpm format` | ソースの修正・整形 |
 | `pnpm types` | Wrangler設定からWorkerとD1の型を生成する |
-| `pnpm typecheck` | 型生成後、ソース・テスト・Vitest設定を検査する |
+| `pnpm typecheck` | 型生成後、ソース・テスト・Vitest設定・Drizzle設定を検査する |
+| `pnpm db:generate --name <名前>` | DBスキーマから差分SQLとスナップショットを生成する |
+| `pnpm db:check` | Drizzleのマイグレーション履歴の整合を検査する |
 | `pnpm test` | Workerをビルドし、APIテストとMiniflare結合テストを実行する |
 | `pnpm test:watch` | 最初にWorkerをビルドし、Vitestを監視実行する |
-| `pnpm test:ci` | 公開スクリプトの環境分離、DB保持、削除順序などを検査する |
+| `pnpm test:ci` | 公開スクリプト、SQLだけのartifact生成、DBスキーマの未生成差分を検査する |
 | `pnpm build` | Cloudflareへ接続せずWorkerをバンドルする |
 | `pnpm artifact` | CI公開用のSQLとビルド情報を `dist/` へまとめる |
 
 アプリとD1の結合テストは [tests/integration/d1.test.ts](../../server/tests/integration/d1.test.ts) に置く。
 一時DBにWranglerで全マイグレーションを2回適用して、適用履歴の重複がないことを確認する。
 そのDBをMiniflareへ渡し、ビルド済みHonoからのD1接続、パラメーター付きSQLの作成・取得・更新・削除、失敗したバッチのロールバックを検証する。
+Drizzle経由の取得・更新と、セッション作成に失敗した場合に期限切れセッションの削除も戻ることを確認する。
 テスト用テーブルは一時DBだけに作り、Previewや本番のDBへ投入しない。
 
 `test:watch` 中にHonoの実装を変更した場合は、別のターミナルで `pnpm build` を実行してからテストを再実行する。
