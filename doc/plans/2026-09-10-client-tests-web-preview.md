@@ -10,7 +10,9 @@ PR Previewの公開先はCloudflare Pagesとし、利用者の指定により公
 commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行結果を以下に記録した。
 
 以下は初期導入時の記録である。
-その後のWorkersへの切り替えと公開jobの有効化は [現在の公開手順](../rules/client-testing-and-preview.md#cloudflare-workersのpr-preview) を参照する。
+その後Workers公開へ切り替えたが、Webビルドと公開jobは再構成で削除した。
+2026-09-10にWebビルドとWorkers公開CIを廃止する方針へ変更した。
+後続作業は [クライアントCIの再構成計画](2026-09-10-client-ci-backlog.md) に従い、この文書には初期導入時の記録を残す。
 
 ## 実装内容
 
@@ -21,7 +23,7 @@ commit・pushとPR作成は後続の依頼で実施し、GitHubの初回実行�
 - テスト0件や失敗、Web成果物の欠落を検査するスクリプトを追加した。
 - Cloudflare Pages向けPR Preview jobを、全体をコメントアウトした状態で追加した。
 
-日常の手順と公開時の設定は [UnityのテストとWebプレビュー](../rules/client-testing-and-preview.md) にまとめる。
+現在の手順は [UnityのテストとCI](../rules/client-testing.md) にまとめる。
 
 ## 検証結果
 

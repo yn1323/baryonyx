@@ -95,7 +95,8 @@ Libraryを復元した場合もコンパイラのキャッシュをクリアし�
 
 このjobはLinux Editorターゲットで有効なC#を検査する。
 Android専用の条件付きコードは、このAnalyzer jobの対象に含まない。
-追加したEditMode・PlayModeテスト、Webビルド、Cloudflare WorkersのPR Preview公開設定は [UnityのテストとWebプレビュー](client-testing-and-preview.md) を参照する。
+EditMode・PlayMode、Androidビルドの構成は [UnityのテストとCI](client-testing.md) を参照する。
+Unity WebビルドとWorkersのPR Preview公開は廃止した。
 
 パス指定で起動を絞っているため、これらのjobをそのままブランチ保護の必須チェックに指定しない。
 必須化するときは、clientに変更のないPRでも結果を返すjobを設ける。

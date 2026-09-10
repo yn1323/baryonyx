@@ -124,7 +124,8 @@ UMothのAndroid依存関係とGradleテンプレートは、EDM4UのResolve操�
 ネイティブ部分だけを検証するGradleプロジェクトは [client/ci/health-native](../../client/ci/health-native/settings.gradle) に置く。
 リポジトリ直下から、Unity同梱のGradleに `-p client/ci/health-native :health:assembleDebug` を指定してビルドする。
 Androidアプリ全体は既存の [AndroidBuild](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) とCIを使う。
-最終APKには [組み込み検査](../../client/ci/verify-health-apk.py) を実行し、Health Connect・UMothのクラス、歩数読み取り権限、バックグラウンド権限がないことを確認する。
+必要に応じて最終APKへ [組み込み検査](../../client/ci/verify-health-apk.py) を手動で実行し、Health Connect・UMothのクラス、歩数読み取り権限、バックグラウンド権限がないことを確認する。
+Android CIはビルドの成否確認とAPK保存に絞り、この追加検査は実行しない。
 
 ## 検証と残る確認
 

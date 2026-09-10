@@ -8,13 +8,14 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 - [機能一覧](features/README.md)：実装済みの機能と詳細文書への入口。
 - [バックエンドの開発環境](rules/backend-design.md)：導入、起動、整形、テスト、CIの手順と構成。
 - [Unityクライアントの整形と静的解析](rules/client-code-quality.md)：CSharpier、Analyzer、GitHub CIとライセンス設定。
-- [UnityのテストとWebプレビュー](rules/client-testing-and-preview.md)：EditMode・PlayModeテスト、Webビルド、Cloudflare WorkersのPR Preview設定と初回反映手順。
+- [UnityのテストとCI](rules/client-testing.md)：EditMode・PlayMode、入力fixtureとCIの実行方法。
+- [Androidビルドと実機確認](rules/client-android-testing.md)：検証用APKの生成・ダウンロードと手動確認の範囲。
 - [文書管理方針](rules/documentation-policy.md)：文書の配置、役割、更新方法。
 - [エージェント共通指示](../AGENTS.md)：リポジトリ全体の作業ルール。
 - [serverのHono開発環境とCIの導入計画](plans/2026-09-09-server-bootstrap.md)：導入の判断、実施結果、残る確認事項。
 - [Unityクライアントの整形と静的解析の導入計画](plans/2026-09-10-client-code-quality.md)：CSharpier、Microsoft.Unity.AnalyzersとGitHub Actionsの導入案。
 - [UnityテストとWebビルドの初期設定](plans/2026-09-10-client-tests-web-preview.md)：追加した初期設定と検証結果。
-- [クライアントCIの積み残し](plans/2026-09-10-client-ci-backlog.md)：VRT、Web E2E、Androidビルド、Androidスモーク／E2Eと実機での歩数取得の未着手項目。
+- [クライアントCIの再構成計画](plans/2026-09-10-client-ci-backlog.md)：Web・Workers公開CIの削除、Androidビルド、PlayModeシナリオ、APKのPRコメント。
 - [Health Connect連携とiOS拡張の実装計画](plans/2026-09-10-health-connect-integration.md)：前面での同期、権限対応、Google認証、保存・取得APIとHealthKitへの拡張方針。
 
 ## 文書の配置
