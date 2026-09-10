@@ -128,7 +128,7 @@ Androidアプリ全体は既存の [AndroidBuild](../../client/Assets/Baryonyx/E
 
 ## 検証と残る確認
 
-自動テストは [Unityの同期テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/HealthSyncTests.cs)、[署名検証テスト](../../server/src/features/health/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/health.test.ts) に置く。
+自動テストは [Unityの同期テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/HealthSyncTests.cs)、[署名検証テスト](../../server/src/features/health/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
 Unity側は既存の `Baryonyx.EditModeTests` アセンブリへ含め、CIの実行対象を維持する。
 サーバーの健康データ専用 [fixture](../../server/src/features/health/fixtures.ts) は機能内に置き、認証・同期・保存・取得を通すAPIシナリオからも参照する。
 

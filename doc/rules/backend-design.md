@@ -1,143 +1,153 @@
 # バックエンドの開発環境
 
-バックエンドは `server/` のHonoアプリをNode.jsで実行する。
-TypeScriptのESM構成とし、pnpmで依存関係を管理する。
-Cloudflare、認証、DB、デプロイの設定は含めていない。
-
-## バージョンと依存関係
-
-Node.jsは [`.node-version`](../../server/.node-version)、pnpmと直接の依存パッケージは [package.json](../../server/package.json) に固定する。
-Node.jsの対応系列はpackage.jsonの `engines.node` にも記す。
-推移的な依存関係を含むインストール結果は [pnpm-lock.yaml](../../server/pnpm-lock.yaml) で固定する。
-
-実行時に必要なパッケージは `hono` と `@hono/node-server` である。
-TypeScript、Node.jsの型定義、tsx、Biome、Vitest、Vitestが使用するViteは開発時の依存パッケージとして管理する。
-
-[pnpm-workspace.yaml](../../server/pnpm-workspace.yaml) は、tsxが使用するesbuildのインストール処理を許可するために置く。
-このファイルには複数パッケージの定義を追加せず、`server/` 単独のプロジェクトとして扱う。
-lockfileはpnpmで更新し、手で編集しない。
+`server/` のHonoアプリをCloudflare Workersで実行し、D1へ接続する。
+Node.jsは開発ツールとCIで使い、ローカルのWorkerもWranglerとMiniflareで動かす。
+Google認証・健康データの業務APIは、この基盤と別の機能として実装・検証する。
+実装とテストの配置は [server/AGENTS.md](../../server/AGENTS.md) のコロケーション方針に従う。
 
 ## 初回の準備
 
-リポジトリ直下から `server/` に移動する。
-以降のコマンドはWindows・macOSとも、このディレクトリから実行する。
+Node.jsは [`.node-version`](../../server/.node-version)、pnpmと依存パッケージは [package.json](../../server/package.json) に固定する。
+指定版のNode.jsとpnpmを用意し、以降のコマンドは `server/` から実行する。
 
 ```sh
 cd server
-```
-
-`.node-version` に記載されたNode.jsを用意する。
-既存のバージョン管理ツールを使う場合も、このファイルの値に合わせる。
-インストーラーを使う場合は [Node.jsの公式配布一覧](https://nodejs.org/dist/) から指定バージョンを選ぶ。
-
-pnpmをまだ導入していない場合は、Node.js 24に付属するCorepackを有効にする。
-Corepackはpackage.jsonの `packageManager` を読み、指定されたpnpmを用意する。
-
-```sh
-corepack enable pnpm
 node --version
 pnpm --version
-```
-
-初回はpnpmのダウンロード確認が表示される場合がある。
-Node.jsが `v24.21.0`、pnpmが `12.3.4` と表示されることを確認してから、依存パッケージをインストールする。
-バージョンを変更した際は、この手順も更新する。
-
-```sh
 pnpm install --frozen-lockfile
-```
-
-インストールにはレジストリへのネットワーク接続が必要である。
-設定値や秘密情報を用意せずに起動できる。
-
-## 開発起動とビルド後の起動
-
-開発中は、ファイル変更時に再起動するコマンドを使う。
-
-```sh
+pnpm db:migrate:local
 pnpm dev
 ```
 
-起動したら、ブラウザーで [ローカルの疎通確認](http://127.0.0.1:3000/health) を開く。
-正常時のJSON応答を確認できる。
-起動中のターミナルで `Ctrl+C` を押すと停止する。
+CIの指定版はNode.js `24.21.0`、pnpm `12.3.4` である。
+インストールにはnpmレジストリへの接続が必要だが、ローカル開発と結合テストにCloudflareのアカウントやSecretsは不要である。
+[pnpm-workspace.yaml](../../server/pnpm-workspace.yaml) でesbuildとworkerdのインストール処理を許可している。
+lockfileはpnpmで更新し、手で編集しない。
 
-生成したJavaScriptでの動作は、次の順で確認する。
+## ローカル実行
+
+`pnpm dev` はソース変更を反映しながら `127.0.0.1:3000` で待ち受ける。
+[HTTPの疎通確認](http://127.0.0.1:3000/health) と [D1の疎通確認](http://127.0.0.1:3000/ready) を開いて確認する。
+停止は `Ctrl+C` とする。
 
 ```sh
 pnpm build
 pnpm start
 ```
 
-`start` は事前に生成された `dist/index.js` を実行する。
-ソースを変更した後は、再度buildしてから起動する。
-開発起動とビルド後の起動は同じポートを使うため、同時には実行しない。
+`build` はWranglerのdry runで `dist/index.js` を生成し、`start` はその成果物をローカルのWorkersランタイムで実行する。
+型チェックは `pnpm typecheck` で別に行う。
+開発起動とビルド後の起動は同じポートを使うため、同時には起動しない。
 
-待ち受け先は `127.0.0.1:3000` とし、同じPCから利用する。
-UnityのAndroid実機など、別の端末から接続するための待ち受け設定は未導入である。
+[wrangler.json](../../server/wrangler.json) はLocal専用で、DBの識別子もローカル用の固定値である。
+`--local` を明示してリモートDBへの接続を防ぎ、データは `.wrangler/` 以下に保持する。
+この設定で直接リモート公開せず、クラウド側は後述の公開workflowを使う。
+Android実機から同じPCへの接続設定は含めていない。
 
-## 整形と検査
+## 環境とDBの保持
 
-開発者とCIは、同じpackage.jsonのscriptsを使う。
+| 環境 | Worker・DB | データの扱い |
+|---|---|---|
+| Local | 手元のWranglerとD1 | 再起動しても保持する |
+| Miniflareテスト | テスト実行専用の一時ディレクトリ | 毎回空のDBから開始し、終了時に削除する |
+| Preview | PRごとの `baryonyx-server-pr-<番号>` | 同じPRでは保持し、PR終了時にWorkerとDBを削除する |
+| Dev | `baryonyx-server-dev` | 保持する |
+| Prod | `baryonyx-server-prod` | 保持する |
 
-| コマンド | 用途 |
-|---|---|
-| `pnpm format` / `npm run format` | Biomeで対応ファイルを整形する |
-| `pnpm lint` | Biomeでlint・整形・import整理を検査する。警告も失敗にする |
-| `pnpm lint:fix` | 整形と安全なlint・import整理の修正を適用する |
-| `pnpm typecheck` | ソース・テスト・Vitest設定を型チェックする |
-| `pnpm test` | Vitestを1回実行して終了する |
-| `pnpm test:watch` | 変更を監視してテストを再実行する |
-| `pnpm build` | 実行用のJavaScriptを生成する |
+PreviewはPRごとに独立したWorkerとD1を持つ。
+WorkersのバージョンPreview URLを共有する方式ではなく、各PR用Workerの `workers.dev` URLを使用する。
+別PR、Dev、ProdのDBを共有しない。
 
-CIと同じ検査を手元で実行するときは、次の順で行う。
+通常のPreview更新でDBをリフレッシュする処理はない。
+既存DBを再利用し、未適用のマイグレーションだけを追加する。
+PRを閉じてから再び開いた場合は、新しいDBで開始する。
+
+## マイグレーション
+
+SQLは [migrations/](../../server/migrations/) に置き、`0001_baseline.sql` のように4桁の連番と英小文字の名前を付ける。
+最初のSQLは `SELECT 1` のみで、Wranglerの適用履歴を開始するために置いている。
+業務テーブルは各機能の実装時に新しいSQLとして追加する。
 
 ```sh
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm exec wrangler d1 migrations create DB add_example
+pnpm db:migrate:local
 ```
 
-リポジトリ直下から実行する場合は、たとえば `pnpm --dir server test` と書く。
-依存の追加・更新にはpnpmを使い、npmは必要に応じたscriptの実行に使う。
+適用済みSQLを書き換えず、新しいSQLを追加する。
+Preview・Dev・Prodの公開処理も同じSQLを使い、適用履歴は `d1_migrations` に記録する。
+公開時はマイグレーションが成功してからWorkerを更新し、失敗時は公開を止める。
+DBの変更後にWorkerの公開が失敗した場合、DBの変更は残るため、旧Workerと互換性を保つSQLを用意する。
+コードを古いコミットへ戻しても、DBの適用履歴やデータは巻き戻らない。
 
-Biomeの規則は [biome.json](../../server/biome.json) に集約する。
-推奨のlint規則、2スペースのインデント、LF改行を使用する。
-生成物、依存パッケージ、カバレッジ出力は検査対象から除き、Gitにも追加しない。
-[.gitattributes](../../server/.gitattributes) でも `server/` 内のテキストをLFに揃える。
+参考：[D1のマイグレーション](https://developers.cloudflare.com/d1/reference/migrations/)。
 
-## ソースとテストの配置
+## 検査とMiniflareテスト
 
-| ファイル | 責務 |
+| コマンド | 確認内容 |
 |---|---|
-| [src/app.ts](../../server/src/app.ts) | Honoアプリとルートの定義。HTTPサーバーを起動しない |
-| [src/index.ts](../../server/src/index.ts) | Node.jsアダプターによる起動と終了シグナルの処理 |
-| [src/app.test.ts](../../server/src/app.test.ts) | `app.request()` で正常応答と未定義パスの応答を確認する |
-| [vitest.config.ts](../../server/vitest.config.ts) | Node環境で `src/**/*.test.ts` を実行する |
-| [tsconfig.json](../../server/tsconfig.json) | ソース・テスト・Vitest設定のstrictな型チェック |
-| [tsconfig.build.json](../../server/tsconfig.build.json) | 実行用ソースを `dist/` へ出力する。テストと設定は出力しない |
+| `pnpm lint` | Biomeによるlint・整形・import整理 |
+| `pnpm lint:fix` / `pnpm format` | ソースの修正・整形 |
+| `pnpm types` | Wrangler設定からWorkerとD1の型を生成する |
+| `pnpm typecheck` | 型生成後、ソース・テスト・Vitest設定を検査する |
+| `pnpm test` | Workerをビルドし、APIテストとMiniflare結合テストを実行する |
+| `pnpm test:watch` | 最初にWorkerをビルドし、Vitestを監視実行する |
+| `pnpm test:ci` | 公開スクリプトの環境分離、DB保持、削除順序などを検査する |
+| `pnpm build` | Cloudflareへ接続せずWorkerをバンドルする |
+| `pnpm artifact` | CI公開用のSQLとビルド情報を `dist/` へまとめる |
 
-相対importは、Node.jsで生成後のファイルを解決できるよう `.js` 拡張子で書く。
-buildは型エラーがあると失敗し、新しいJavaScriptを出力しない。
-既存の `dist/` は残るため、buildが失敗した場合はstartへ進まない。
+アプリとD1の結合テストは [tests/integration/d1.test.ts](../../server/tests/integration/d1.test.ts) に置く。
+一時DBにWranglerで全マイグレーションを2回適用して、適用履歴の重複がないことを確認する。
+そのDBをMiniflareへ渡し、ビルド済みHonoからのD1接続、パラメーター付きSQLの作成・取得・更新・削除、失敗したバッチのロールバックを検証する。
+テスト用テーブルは一時DBだけに作り、Previewや本番のDBへ投入しない。
 
-APIの応答テストは、ポートを開かない `app.request()` を基本とする。
-起動処理やビルド設定を変えたときは、実際に起動してHTTPでの疎通も確認する。
-テストが0件の状態を成功にする設定は使用しない。
+`test:watch` 中にHonoの実装を変更した場合は、別のターミナルで `pnpm build` を実行してからテストを再実行する。
+Miniflareはバンドル済みのWorkerを使うため、ソースだけを変更しても結合テストのWorkerには反映されない。
+健康データAPIの業務シナリオは、[認証・入力エラー](../../server/tests/scenarios/health-auth.test.ts)、[歩数の同期](../../server/tests/scenarios/health-sync.test.ts)、[セッションの失効](../../server/tests/scenarios/health-session.test.ts) に分ける。
+各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
+入力検証の単体テストは [schema.test.ts](../../server/src/features/health/schema.test.ts) に置き、実装と同じ機能内で管理する。
+
+[Vitest設定](../../server/vitest.config.ts) でファイル間の並列実行を有効にし、単体・結合・シナリオテストを合わせて最大3並列に固定する。
+ファイル内のテストは順番に実行する。
+DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) に従う。
+
+Wrangler `4.130.0` と、その依存に合わせたMiniflare `5.20260908.0-alpha` を固定する。
+Miniflareの設定は同パッケージが提供する `convertV4MiniflareOptions` を通している。
+Vitest `5.0.0` を維持するため、Vitest `4.1` 系を要求する `@cloudflare/vitest-plugin` は導入していない。
+
+[biome.json](../../server/biome.json) は2スペース・LFを使用する。
+生成型 `worker-configuration.d.ts`、`.wrangler/`、`dist/`、依存パッケージ、SecretsファイルはGitへ追加しない。
 
 ## GitHub Actions
 
-[server-ci.yml](../../.github/workflows/server-ci.yml) は、PRの作成・更新と `main` へのpushで実行する。
-作業ブランチへのpushでは起動せず、PRとの二重実行を避ける。
-変更パスによる絞り込みはなく、クライアントや文書だけの変更も対象になる。
-Ubuntuの1ジョブで依存をインストールし、lint、型チェック、test、buildを順に実行する。
-いずれかのstepが失敗すると、後続stepはスキップされる。
+[Server CI](../../.github/workflows/server-ci.yml) はPRの作成・更新・再オープンと `main` へのpushで検査する。
+変更パスによる絞り込みはなく、fork PRでも認証情報を使わない検査は実行する。
+検査jobは依存を固定してインストールし、lint、型チェック、ビルド、Miniflareを含むテスト、公開スクリプトのテストを実行する。
+成功したWorker・SQL・ビルド情報だけをartifactに保存する。
 
-CIはリポジトリの設定からNode.js・pnpmのバージョンを読み、`--frozen-lockfile` でインストールする。
-pnpmのstoreをlockfileに基づいてキャッシュする。
-使用するActionはコミットSHAで固定し、リポジトリの権限は `contents: read`、ジョブの制限時間は10分とする。
-デプロイや外部サービス用のSecretsは必要ない。
+同一リポジトリのPRでは、検査成功後に `server-preview` environmentへ公開する。
+認証情報を使うjobはPRのbaseブランチから公開ヘルパーと依存設定を取得し、PR側のビルドフックを実行しない。
+PRが既に閉じられていれば再公開をスキップし、PR終了イベントでは専用WorkerとD1を削除する。
+同じPRのworkflowは並列に動かさず、途中の自動キャンセルも行わない。
+削除に失敗した場合は、終了イベントのworkflowを再実行する。
 
-バージョンを更新したときは、設定とlockfileを更新し、上記のローカル検査と起動確認を行う。
-GitHub上でのCI実行は、push後にリポジトリのActions画面で確認する。
+公開先では対象コミットの `X-Build-SHA` と `/health`・`/ready` を確認する。
+業務シナリオはMiniflareで検証し、公開先の確認でデータの書き込みやリセットは行わない。
+APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得できる。
+クライアントのPreviewへこのAPI URLを渡す処理は、クライアントの通信機能を実装するときに追加する。
+
+[Server deploy](../../.github/workflows/server-deploy.yml) は手動実行で `dev` または `prod` を選ぶ。
+指定したGit参照を検査してから公開し、DBがなければ作成し、あれば再利用する。
+`main` へのpushだけではDev・Prodへ公開しない。
+
+### 初回の公開準備
+
+1. 対象Cloudflareアカウントで `workers.dev` のサブドメインを設定する。
+2. GitHub Repository secretsへ `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を登録する。トークンには対象アカウントのWorkers ScriptsとD1の編集権限を付ける。
+3. このサーバー基盤をPRのbaseブランチへ先に反映する。ヘルパーがないbaseを使うPreview jobは理由を表示して失敗する。
+4. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。Dev・ProdはGitHub Actionsの `Server deploy` から環境を選択する。
+
+Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ごとに固定し、取得したDB IDを使う設定を `.wrangler/deploy/` へ生成する。
+実行時に環境を指定するため、リポジトリへ実アカウントのDB IDを記入する必要はない。
+環境別の承認や公開元ブランチを制限する場合は、GitHubの `server-dev`・`server-prod` environmentで設定する。
+
+参考：[GitHub Actionsの認証設定](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)、[D1の環境分離](https://developers.cloudflare.com/d1/configuration/environments/)。
