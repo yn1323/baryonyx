@@ -168,8 +168,9 @@ APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得�
 
 1. 対象Cloudflareアカウントで `workers.dev` のサブドメインを設定する。
 2. GitHub Repository secretsへ `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を登録する。トークンには対象アカウントのWorkers ScriptsとD1の編集権限を付ける。
-3. このサーバー基盤をPRのbaseブランチへ先に反映する。ヘルパーがないbaseを使うPreview jobは理由を表示して失敗する。
-4. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。Dev・ProdはGitHub Actionsの `Server deploy` から環境を選択する。
+3. `server-preview`・`server-dev`・`server-prod` の各GitHub environmentに、Unityと同じGoogle OAuthのWebクライアントIDを変数 `GOOGLE_CLIENT_ID` として登録する。全環境で共通ならRepository variablesへ登録してもよい。公開処理はこの値をWorkerのbindingへ渡し、未設定ならDB更新・Worker公開前に停止する。
+4. このサーバー基盤をPRのbaseブランチへ先に反映する。ヘルパーがないbaseを使うPreview jobは理由を表示して失敗する。
+5. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。Dev・ProdはGitHub Actionsの `Server deploy` から環境を選択する。
 
 Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ごとに固定し、取得したDB IDを使う設定を `.wrangler/deploy/` へ生成する。
 実行時に環境を指定するため、リポジトリへ実アカウントのDB IDを記入する必要はない。
