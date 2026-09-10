@@ -1,0 +1,14 @@
+# Inspect C# only; keep directories traversable.
+*
+!*/
+!*.cs
+
+# Unity template, third-party code, and generated sources.
+/Assets/TutorialInfo/
+/Assets/Plugins/
+/Assets/ThirdParty/
+/Assets/**/Generated/
+*.generated.cs
+*.g.cs
+*.g.i.cs
+*.designer.cs

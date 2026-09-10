@@ -1,0 +1,262 @@
+name: Client CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+      - '.github/workflows/client-ci.yml'
+  pull_request:
+    paths:
+      - 'client/**'
+      - '.github/workflows/client-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Client format (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: client
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: client/global.json
+      - name: Restore CSharpier
+        run: dotnet tool restore
+      - name: Check C# formatting
+        run: dotnet csharpier check Assets
+
+  analyzers:
+    name: Client analyzers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check Unity prerequisites
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash client/ci/unity-preflight.sh
+      - name: Restore Unity Library
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: client/Library
+          key: client-Library-${{ runner.os }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          restore-keys: |
+            client-Library-${{ runner.os }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+      - name: Prepare compiler report
+        run: |
+          # Cached PIDs belong to a previous container; Burst may kill a reused PID.
+          rm -f -- client/Library/burst.pid client/Library/ilpp.pid
+          mkdir -p client/Logs
+          rm -f client/Logs/client-compile.txt
+      - name: Compile Unity scripts and run analyzers
+        uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: client
+          unityVersion: ${{ env.UNITY_VERSION }}
+          customImage: unityci/editor:${{ env.UNITY_VERSION }}-base-3
+          targetPlatform: StandaloneLinux64
+          buildMethod: Baryonyx.Editor.CI.CompileCheck.Run
+          manualExit: true
+          customParameters: -nographics
+          versioning: None
+      - name: Verify compiler completion
+        run: |
+          grep -q '^BARYONYX_COMPILE_OK: ' client/Logs/client-compile.txt
+      - name: Report runner resources after a failure
+        if: failure()
+        run: |
+          free -m
+          df -h
+          sudo dmesg --level=err,warn | tail -n 40 || true
+      - name: Upload compiler diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-compiler-diagnostics
+          path: client/Logs/client-compile.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  tests:
+    name: Client tests (${{ matrix.mode }})
+    needs: analyzers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - mode: editmode
+            assembly: Baryonyx.EditModeTests
+          - mode: playmode
+            assembly: Baryonyx.PlayModeTests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check Unity prerequisites
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash client/ci/unity-preflight.sh
+      - name: Restore Unity Library
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: client/Library
+          key: client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          restore-keys: |
+            client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+      - name: Restore GameCI CLI
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}/baryonyx-game-ci
+          key: game-ci-cli-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('client/ci/run-unity-tests.sh') }}
+      - name: Remove stale Unity process IDs
+        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
+      - name: Run Unity tests
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash client/ci/run-unity-tests.sh ${{ matrix.mode }} ${{ matrix.assembly }}
+      - name: Require executed and passing tests
+        run: python3 client/ci/verify-test-results.py client/TestResults/${{ matrix.mode }} ${{ matrix.assembly }}
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-tests-${{ matrix.mode }}
+          path: client/TestResults/${{ matrix.mode }}
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android-build:
+    name: Client Android build
+    outputs:
+      artifact-url: ${{ steps.apk.outputs.artifact-url }}
+    needs: [format, analyzers, tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check Unity prerequisites
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash client/ci/unity-preflight.sh
+      - name: Restore Android Library
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: client/Library
+          key: client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          restore-keys: |
+            client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+      - name: Remove stale Unity process IDs
+        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
+      - name: Build Android APK
+        uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: client
+          unityVersion: ${{ env.UNITY_VERSION }}
+          customImage: unityci/editor:${{ env.UNITY_VERSION }}-android-3
+          targetPlatform: Android
+          buildMethod: Baryonyx.Editor.CI.AndroidBuild.Build
+          buildsPath: client/Builds
+          buildName: baryonyx
+          androidTargetSdkVersion: 36
+          androidSdkManagerParameters: platforms;android-36
+          versioning: None
+      - name: Upload Android APK
+        id: apk
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-android-apk-${{ github.run_attempt }}
+          path: client/Builds/Android/baryonyx.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  android-comment:
+    name: Client Android APK link
+    needs: android-build
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post APK download link
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          APK_URL: ${{ needs.android-build.outputs.artifact-url }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { data: current } = await github.rest.pulls.get({ ...context.repo, pull_number: pr.number });
+            if (current.state !== 'open' || current.head.sha !== pr.head.sha) return;
+            if (!process.env.APK_URL) throw new Error('APK artifact URL is missing');
+            const marker = '<!-- baryonyx-android-apk -->';
+            const body = [
+              marker,
+              'Androidビルドが成功しました。',
+              '',
+              `[APKをダウンロード（ZIP）](${process.env.APK_URL})`,
+              '',
+              `対象コミット: ${pr.head.sha}`,
+              '保存期間は7日間です。ダウンロードにはGitHubへのログインとリポジトリの閲覧権限が必要です。',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number: pr.number, per_page: 100,
+            });
+            const previous = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: pr.number, body });
+            }

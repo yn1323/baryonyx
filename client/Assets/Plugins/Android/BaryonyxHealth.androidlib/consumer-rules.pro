@@ -1,0 +1,2 @@
+-keep class com.baryonyx.health.HealthBridge { public *; }
+-keep interface com.baryonyx.health.HealthCallback { *; }
