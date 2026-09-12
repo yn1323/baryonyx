@@ -46,6 +46,8 @@ jobs:
         run: python3 -B -m unittest discover -s client/ci -p 'test_upload_drive_apk.py'
       - name: Test trusted distribution source selection
         run: node --test client/ci/resolve-drive-distribution.test.cjs
+      - name: Test Unity CI helpers
+        run: python3 -B -m unittest discover -s client/ci -p 'test_unity_ci.py'
 
   format:
     name: Client format (${{ matrix.os }})
@@ -137,19 +139,11 @@ jobs:
           retention-days: 7
 
   tests:
-    name: Client tests (${{ matrix.mode }})
+    name: Client tests
     needs: analyzers
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - mode: editmode
-            assembly: Baryonyx.EditModeTests
-          - mode: playmode
-            assembly: Baryonyx.PlayModeTests
+    # Each mode keeps its 30-minute limit, with time for setup and artifacts.
+    timeout-minutes: 65
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -165,30 +159,55 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: client/Library
-          key: client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+          key: client-tests-linux-il2cpp-combined-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
           restore-keys: |
-            client-tests-linux-il2cpp-${{ matrix.mode }}-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+            client-tests-linux-il2cpp-combined-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+            client-tests-linux-il2cpp-editmode-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+            client-tests-linux-il2cpp-playmode-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
       - name: Restore GameCI CLI
+        id: setup
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ runner.temp }}/baryonyx-game-ci
           key: game-ci-cli-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('client/ci/run-unity-tests.sh') }}
-      - name: Remove stale Unity process IDs
-        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
-      - name: Run Unity tests
+      - name: Run EditMode tests
+        id: editmode
+        timeout-minutes: 30
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        run: bash client/ci/run-unity-tests.sh ${{ matrix.mode }} ${{ matrix.assembly }}
-      - name: Require executed and passing tests
-        run: python3 client/ci/verify-test-results.py client/TestResults/${{ matrix.mode }} ${{ matrix.assembly }}
-      - name: Upload test results
+        run: bash client/ci/run-unity-tests.sh editmode Baryonyx.EditModeTests
+      - name: Require executed and passing EditMode tests
+        if: ${{ !cancelled() && steps.editmode.outcome != 'skipped' }}
+        run: python3 client/ci/verify-test-results.py client/TestResults/editmode Baryonyx.EditModeTests
+      - name: Upload EditMode results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: client-tests-${{ matrix.mode }}
-          path: client/TestResults/${{ matrix.mode }}
+          name: client-tests-editmode
+          path: client/TestResults/editmode
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Run PlayMode tests
+        id: playmode
+        # A failed mode must not hide the other mode's results or become a success.
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        timeout-minutes: 30
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash client/ci/run-unity-tests.sh playmode Baryonyx.PlayModeTests
+      - name: Require executed and passing PlayMode tests
+        if: ${{ !cancelled() && steps.playmode.outcome != 'skipped' }}
+        run: python3 client/ci/verify-test-results.py client/TestResults/playmode Baryonyx.PlayModeTests
+      - name: Upload PlayMode results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-tests-playmode
+          path: client/TestResults/playmode
           if-no-files-found: ignore
           retention-days: 7
 
