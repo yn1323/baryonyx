@@ -182,6 +182,47 @@ exit "${TEST_CHECKSUM_EXIT_CODE:-0}"
         self.assertFalse((self.directory / "invocations.txt").exists())
         self.assertFalse((self.results / "editmode/stale.xml").exists())
 
+    def simulate_container_owned_files(self):
+        # Simulate the host runner being unable to remove files made by Docker.
+        self.write_executable(self.bin_directory / "rm", "#!/bin/bash\necho 'Permission denied' >&2\nexit 1\n")
+        self.write_executable(self.bin_directory / "sudo", """#!/bin/bash
+set -euo pipefail
+printf '%s\\n' "$@" >> privileged-cleanup.txt
+test "$1" = '--non-interactive'
+test "$2" = 'rm'
+shift 2
+if [ "${TEST_SUDO_EXIT_CODE:-0}" != 0 ]; then exit "$TEST_SUDO_EXIT_CODE"; fi
+exec /usr/bin/rm "$@"
+""")
+
+    def test_container_owned_files_do_not_block_the_next_mode(self):
+        first = self.run_mode("editmode")
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.simulate_container_owned_files()
+
+        result = self.run_mode("playmode")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((self.results / "editmode/run.log").is_file())
+        self.assertTrue((self.results / "playmode/run.log").is_file())
+        self.assertFalse((self.results / "playmode/stale.xml").exists())
+        self.assertEqual((self.library / "imported-assets").read_text(encoding="utf-8"), "keep")
+        cleanup = (self.directory / "privileged-cleanup.txt").read_text(encoding="utf-8")
+        self.assertEqual(cleanup.splitlines(), [
+            "--non-interactive", "rm", "-rf", "--", "client/TestResults/playmode",
+            "--non-interactive", "rm", "-f", "--", "client/Library/burst.pid", "client/Library/ilpp.pid",
+        ])
+
+    def test_failed_privileged_cleanup_prevents_execution(self):
+        self.simulate_container_owned_files()
+
+        result = self.run_mode("playmode", TEST_SUDO_EXIT_CODE="7")
+
+        self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
+        self.assertFalse((self.directory / "invocations.txt").exists())
+        self.assertTrue((self.results / "playmode/stale.xml").is_file())
+        self.assertTrue((self.library / "imported-assets").is_file())
+
     def test_invalid_mode_or_assembly_does_not_remove_files(self):
         for mode, assembly in [("../Library", ASSEMBLIES["editmode"]), ("editmode", ASSEMBLIES["playmode"])]:
             with self.subTest(mode=mode, assembly=assembly):

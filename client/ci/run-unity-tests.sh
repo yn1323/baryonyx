@@ -10,8 +10,14 @@ esac
 
 # Keep imported assets between modes, but never reuse results or container PIDs.
 results_directory="client/TestResults/$mode"
-rm -rf -- "$results_directory"
-rm -f -- client/Library/burst.pid client/Library/ilpp.pid
+cleanup_stale_files() {
+  if ! rm "$@"; then
+    # Docker can leave root-owned files after the preceding test mode.
+    sudo --non-interactive rm "$@"
+  fi
+}
+cleanup_stale_files -rf -- "$results_directory"
+cleanup_stale_files -f -- client/Library/burst.pid client/Library/ilpp.pid
 
 version=v0.1.55
 sha256=2c8b84640377f3cfbccd1549df4723a111ba8016d7891b591a61444789cb3ecc
