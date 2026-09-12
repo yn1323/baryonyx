@@ -12,6 +12,16 @@ on:
       - 'client/**'
       - '.github/workflows/client-ci.yml'
   workflow_dispatch:
+    inputs:
+      environment:
+        description: APKの配布名（アプリ内の接続先・署名は共通）
+        type: choice
+        required: true
+        default: dev
+        options: [dev, prod, preview]
+
+env:
+  APK_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'preview' || (github.event_name == 'workflow_dispatch' && inputs.environment || 'dev') }}
 
 permissions:
   contents: read
@@ -21,6 +31,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-scripts:
+    name: Client CI scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test Drive uploader
+        run: python3 -B -m unittest discover -s client/ci -p 'test_upload_drive_apk.py'
+
   format:
     name: Client format (${{ matrix.os }})
     strategy:
@@ -169,8 +191,8 @@ jobs:
   android-build:
     name: Client Android build
     outputs:
-      artifact-url: ${{ steps.apk.outputs.artifact-url }}
-    needs: [format, analyzers, tests]
+      artifact-id: ${{ steps.apk.outputs.artifact-id }}
+    needs: [format, analyzers, tests, ci-scripts]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -219,9 +241,45 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  android-drive:
+    name: Client Android Google Drive
+    needs: android-build
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: client-android-google-drive
+      cancel-in-progress: false
+    outputs:
+      drive-url: ${{ steps.drive.outputs.drive-url }}
+      apk-name: ${{ steps.drive.outputs.apk-name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Download Android APK
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.android-build.outputs.artifact-id }}
+          path: client/Builds/Android
+          merge-multiple: true
+      - name: Upload APK to Google Drive
+        id: drive
+        env:
+          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+          GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
+        run: >-
+          python3 client/ci/upload-drive-apk.py client/Builds/Android/baryonyx.apk
+          --folder-id 1iNgsGNtCDyMhyJsAjS2HmzxKVEuY4y8k
+          --environment "$APK_ENVIRONMENT"
+
   android-comment:
     name: Client Android APK link
-    needs: android-build
+    needs: android-drive
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -233,22 +291,24 @@ jobs:
       - name: Post APK download link
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
-          APK_URL: ${{ needs.android-build.outputs.artifact-url }}
+          APK_URL: ${{ needs.android-drive.outputs.drive-url }}
+          APK_NAME: ${{ needs.android-drive.outputs.apk-name }}
         with:
           script: |
             const pr = context.payload.pull_request;
             const { data: current } = await github.rest.pulls.get({ ...context.repo, pull_number: pr.number });
             if (current.state !== 'open' || current.head.sha !== pr.head.sha) return;
-            if (!process.env.APK_URL) throw new Error('APK artifact URL is missing');
+            if (!process.env.APK_URL) throw new Error('APK Drive URL is missing');
             const marker = '<!-- baryonyx-android-apk -->';
             const body = [
               marker,
               'Androidビルドが成功しました。',
               '',
-              `[APKをダウンロード（ZIP）](${process.env.APK_URL})`,
+              `[${process.env.APK_NAME}をGoogle Driveから取得](${process.env.APK_URL})`,
               '',
-              `対象コミット: ${pr.head.sha}`,
-              '保存期間は7日間です。ダウンロードにはGitHubへのログインとリポジトリの閲覧権限が必要です。',
+              `このPRのビルド対象コミット: ${pr.head.sha}`,
+              'PreviewのAPKは他のPRを含む次のPreview配布で上書きされます。現在の内容はDriveのファイル説明にあるコミット・CI実行URLで確認してください。',
+              '取得には保存先への閲覧権限があるGoogleアカウントでログインしてください。ZIPの展開は不要です。',
             ].join('\n');
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...context.repo, issue_number: pr.number, per_page: 100,

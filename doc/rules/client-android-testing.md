@@ -21,25 +21,82 @@ CI用に変更したPlayer Settingsは `finally` で元へ戻す。
 ## ビルドの成否とAPKの取得
 
 Unityの `BuildResult` が成功であることを確認し、失敗した場合は例外でCIを失敗にする。
-成功したAPKだけを `client-android-apk-<run attempt>` artifactに7日間保存する。
+成功したAPKを `android-drive` jobでGoogle Driveへ配布する。
+CI内の受け渡しとビルドごとの保存には、`client-android-apk-<run attempt>` artifactを7日間残す。
 APKが生成されていない場合もアップロードを失敗にする。
 APK内部や署名の追加検査、独自のJSON・ビルドレポート出力は行わない。
 
 同一リポジトリのPRでは、成功したAPKの保存先をPRコメントへ掲載する。
 再び成功したときは同じbotコメントを更新し、対象コミットも表示する。
-mainへのpushと手動実行では、Actionsの実行画面からartifactを取得する。
-fork PRにはコメントを投稿しない。
+mainへのpushと手動実行では、Actionsの実行サマリーからDriveのリンクを開く。
+fork PRではDriveへの配布とPRコメントを実行しない。
 
-ダウンロードするZIPには `baryonyx.apk` が入っている。
-リンクの利用にはGitHubへのログインとリポジトリの閲覧権限が必要であり、保存期間が過ぎると取得できなくなる。
-URLは [upload-artifactの公式出力](https://github.com/actions/upload-artifact/tree/v4#outputs) を使用する。
-Cloudflareや別の公開サーバーの設定は不要である。
+保存先は個人のマイドライブの [Android配布フォルダー](https://drive.google.com/drive/folders/1iNgsGNtCDyMhyJsAjS2HmzxKVEuY4y8k) とする。
+[upload-drive-apk.py](../../client/ci/upload-drive-apk.py) がAPKを環境別の名前でそのまま保存するため、Android側でZIPを展開する必要はない。
+フォルダーを閲覧できるGoogleアカウントでログインし、APKをダウンロードして開く。
+CIは共有権限を変更しない。
+
+| CIの起動条件 | 配布区分 | Driveのファイル名 |
+|---|---|---|
+| mainへのpush | Dev | `baryonyx-dev.apk` |
+| 同一リポジトリのPR | Preview | `baryonyx-preview.apk` |
+| 手動実行で `dev` を選択（既定値） | Dev | `baryonyx-dev.apk` |
+| 手動実行で `prod` を選択 | Prod | `baryonyx-prod.apk` |
+| 手動実行で `preview` を選択 | Preview | `baryonyx-preview.apk` |
+
+この区分は配布ファイル名だけに適用する。
+各APKのAPI接続先、Application ID、Developmentビルド設定、デバッグ署名の扱いは共通であり、Prodという名前だけでは本番用ビルドにならない。
+Unityが出力するローカルのファイル名は従来どおり `baryonyx.apk` とする。
+
+同名ファイルが一つあれば、そのファイルIDと共有設定を保って内容を更新する。
+存在しなければ新規作成し、同名ファイルが複数ある場合や同名のフォルダー・ショートカットがある場合は失敗にする。
+この場合は保存先で残すファイルを一つに整理してから再実行する。
+配布jobはリポジトリ全体で直列化し、アップロード後のサイズとチェックサムを照合する。
+認証・転送・照合の失敗はjobの失敗として扱い、成功リンクを出さない。
+
+Driveの各ファイルは、その配布区分で最後に配布が完了したAPKになる。
+Dev・Prod・Previewは互いに上書きしない。
+Previewは全PRで一つを共有する。
+CI開始順は保証せず、PRコメントのリンク先も次の配布で内容が変わる。
+現在のAPKに対応するコミットとCI実行URLは、Driveのファイル説明で確認する。
+過去の特定ビルドが必要な場合は、保存期間内のGitHub artifactを使う。
+
+## Google Driveの初回認証
+
+個人のマイドライブへの書き込みには、所有者のGoogleアカウントでOAuth認証を行う。
+個人フォルダーの共有設定を変えても、CIの認証は省略できない。
+サービスアカウントには個人用の保存容量がないため、今回は使用しない。[Google公式の制約](https://developers.google.com/workspace/drive/api/guides/about-shareddrives)
+
+1. このCI用のGoogle Cloudプロジェクトを選び、Google Drive APIを有効にする。
+2. Google Auth PlatformでOAuth同意画面を設定する。継続運用では公開ステータスを「本番環境」にする。「テスト」のままDrive権限を認可すると、更新トークンは7日で期限切れになる。[更新トークンの有効期間](https://developers.google.com/identity/protocols/oauth2#expiration)
+3. OAuthクライアントを「ウェブアプリケーション」として作成し、承認済みリダイレクトURIに `https://developers.google.com/oauthplayground` を登録する。
+4. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/) の設定で `Use your own OAuth credentials` を有効にし、作成したクライアントIDとシークレットを入力する。`Access type` は `Offline`、`Force prompt` は `Consent Screen` を選ぶ。
+5. スコープ `https://www.googleapis.com/auth/drive` を指定し、保存先フォルダーを所有するアカウントで認可する。`Exchange authorization code for tokens` で更新トークンを取得する。
+6. [リポジトリのActions Secrets](https://github.com/yn1323/baryonyx/settings/secrets/actions) に以下の3項目を登録する。秘密値はチャットやリポジトリ内のファイルへ貼り付けない。
+
+| Secret名 | 値 |
+|---|---|
+| `GOOGLE_DRIVE_CLIENT_ID` | 自分で作成したOAuthクライアントID |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | そのクライアントのシークレット |
+| `GOOGLE_DRIVE_REFRESH_TOKEN` | 保存先アカウントで発行した更新トークン |
+
+指定済みのフォルダーと既存の同名ファイルを検索・更新するため、この手順ではDrive全体への権限を認可する。
+スクリプトの書き込み先は指定フォルダー内の上記3種類のAPKに限るが、トークン自体の権限はそのフォルダーだけに限定されない。
+`drive.file` はアプリにアクセスを許可したファイルに限られるため、スコープの置き換えだけでは既存フォルダーを扱えない。[スコープの違い](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)
+Playground標準のクライアントでは更新トークンが24時間後に失効するため、手順4で自分のクライアントを指定する。
+
+Secrets登録後にClient CIを実行し、初回作成と、次の実行で同じファイルIDへの更新を確認する。
+認証が失効した場合は同じアカウントで再認可し、`GOOGLE_DRIVE_REFRESH_TOKEN` を更新する。
+実装と模擬APIによる検証は済んでいるが、OAuth設定と実際のDriveへの配布確認は未完了である。
+
+## ローカルビルドと配布処理の検証
 
 ローカルではAndroid Build Support、SDK・NDK・OpenJDKを同じUnity版へ導入する。
 対象Editorを閉じるか検証コピーを用意し、次を実行する。
 
 ```text
 unity build <clientの絶対パス> --target Android --execute-method Baryonyx.Editor.CI.AndroidBuild.Build --allow-dirty-build --timeout 1800
+python -B -m unittest discover -s client/ci -p "test_upload_drive_apk.py"
 ```
 
 ## 手動で残す確認
