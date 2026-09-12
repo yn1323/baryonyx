@@ -7,7 +7,7 @@
 |---|---|
 | Unity | `ProjectVersion.txt` の版。現在は `6000.6.0f1` |
 | 成果物 | `Builds/Android/baryonyx.apk` |
-| Application ID | `dev.baryonyx.ci` |
+| Application ID | `com.croissantlab.baryonyx` |
 | backend・ABI | IL2CPP・ARM64のみ |
 | 最小・対象SDK | API 26・36 |
 | ビルド・署名 | Development APK・Android debug署名 |
@@ -112,6 +112,10 @@ node --test client/ci/resolve-drive-distribution.test.cjs
 ```
 
 ## 手動で残す確認
+
+画面の変更時は [UI設計ルール](ui-design.md#機種差を確認する条件) に従い、縦画面、SafeArea、文字の読みやすさ、タップ領域、OS画面からの復帰を実機で確認する。
+「1週間の歩数」は、認証、接続、更新、一覧末尾の選択、JSON詳細、閉じる操作、サインアウトまでを確認する。
+実機がない場合は、GameビューやSimulatorでの確認結果と実機の未確認項目を分けて記録する。
 
 Androidスモーク・Android E2EをCIへ導入しない。
 debug鍵は実行環境ごとに変わり得るため、署名不一致時は検証用アプリを入れ直す。

@@ -10,6 +10,7 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 - [依存関係の更新](rules/dependency-updates.md)：Renovateの更新タイミング、対象、有効化と設定の検証。
 - [Unityクライアントの整形と静的解析](rules/client-code-quality.md)：CSharpier、Analyzer、GitHub CIとライセンス設定。
 - [UnityのテストとCI](rules/client-testing.md)：EditMode・PlayMode、入力fixtureとCIの実行方法。
+- [UnityのUI設計ルール](rules/ui-design.md)：縦画面、SafeArea、スクロール、文字・操作領域、機種差の確認条件。
 - [Androidビルドと実機確認](rules/client-android-testing.md)：検証用APKの生成・ダウンロードと手動確認の範囲。
 - [文書管理方針](rules/documentation-policy.md)：文書の配置、役割、更新方法。
 - [エージェント共通指示](../AGENTS.md)：リポジトリ全体の作業ルール。
@@ -18,6 +19,8 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 - [UnityテストとWebビルドの初期設定](plans/2026-09-10-client-tests-web-preview.md)：追加した初期設定と検証結果。
 - [クライアントCIの再構成計画](plans/2026-09-10-client-ci-backlog.md)：Web・Workers公開CIの削除、Androidビルド、PlayModeシナリオ、APKのPRコメント。
 - [Health Connect連携とiOS拡張の実装計画](plans/2026-09-10-health-connect-integration.md)：前面での同期、権限対応、Google認証、保存・取得APIとHealthKitへの拡張方針。
+- [Google認証からHealth Connectの一覧・JSON詳細を表示する計画](plans/2026-09-13-health-connect-local-display.md)：Googleサインイン、歩数への接続、7日分の一覧とJSON詳細。バックエンド接続・アプリ側の永続化は対象外。
+- [縦画面と機種差に対応するUIの実装計画](plans/2026-09-13-portrait-ui.md)：既存の「1週間の歩数」のスマートフォン向け改修、縦画面の設定、機種差の検証とUIルールの整備。
 
 ## 文書の配置
 
@@ -30,7 +33,6 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 | `rules/frontend-design.md` | クライアントの配置、責務、依存方向 |
 | `rules/backend-design.md` | バックエンドの配置、責務、依存方向 |
 | `rules/testing-policy.md` | テスト対象とテスト層の選び方 |
-| `rules/ui-design.md` | 画面、操作、表示の判断基準 |
 | `plans/YYYY-MM-DD-<変更名>.md` | 提案、変更理由、実装手順、受入条件 |
 
 現時点では `guides/` と `product.md` は設けない。
