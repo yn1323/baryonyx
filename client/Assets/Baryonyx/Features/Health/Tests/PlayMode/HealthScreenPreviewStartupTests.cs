@@ -17,17 +17,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator EditorPlayStartsWithSamplesEvenWithoutOAuthSettings()
         {
-            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                HealthScreenTestAssets.Source
-            );
-            Assert.That(prefab, Is.Not.Null);
-            screen = Object.Instantiate(prefab).GetComponent<HealthScreenView>();
-            application = new GameObject("Preview startup test");
-            var bootstrap = application.AddComponent<HealthScreenBootstrap>();
-            bootstrap.Screen = screen;
-            bootstrap.Settings = null;
-            yield return null;
-            yield return null;
+            yield return CreateFocusedPreview();
 
             Assert.That(
                 screen.DayButtons.Count(button => button.gameObject.activeSelf),
@@ -39,6 +29,79 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(screen.RefreshButton.interactable, Is.True);
             Assert.That(screen.SignInButton.gameObject.activeSelf, Is.False);
             Assert.That(screen.DetailsOverlay.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator FocusLossClearsDataUntilFocusAndPauseBothAllowForeground()
+        {
+            yield return CreateFocusedPreview();
+            screen.DayButtons[0].onClick.Invoke();
+            Assert.That(screen.DetailsOverlay.activeSelf, Is.True);
+            application.SendMessage(
+                "OnApplicationFocus",
+                true,
+                SendMessageOptions.DontRequireReceiver
+            );
+            application.SendMessage("OnApplicationPause", false);
+            Assert.That(screen.DetailsOverlay.activeSelf, Is.True);
+
+            application.SendMessage(
+                "OnApplicationFocus",
+                false,
+                SendMessageOptions.DontRequireReceiver
+            );
+            Assert.That(screen.DayButtons.Any(button => button.gameObject.activeSelf), Is.False);
+            Assert.That(screen.DetailsOverlay.activeSelf, Is.False);
+            application.SendMessage("OnApplicationPause", false);
+            Assert.That(screen.DayButtons.Any(button => button.gameObject.activeSelf), Is.False);
+            application.SendMessage(
+                "OnApplicationFocus",
+                true,
+                SendMessageOptions.DontRequireReceiver
+            );
+            Assert.That(
+                screen.DayButtons.Count(button => button.gameObject.activeSelf),
+                Is.EqualTo(7)
+            );
+
+            application.SendMessage("OnApplicationPause", true);
+            application.SendMessage(
+                "OnApplicationFocus",
+                false,
+                SendMessageOptions.DontRequireReceiver
+            );
+            application.SendMessage(
+                "OnApplicationFocus",
+                true,
+                SendMessageOptions.DontRequireReceiver
+            );
+            Assert.That(screen.DayButtons.Any(button => button.gameObject.activeSelf), Is.False);
+            application.SendMessage("OnApplicationPause", false);
+            Assert.That(
+                screen.DayButtons.Count(button => button.gameObject.activeSelf),
+                Is.EqualTo(7)
+            );
+        }
+
+        private IEnumerator CreateFocusedPreview()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                HealthScreenTestAssets.Source
+            );
+            Assert.That(prefab, Is.Not.Null);
+            screen = Object.Instantiate(prefab).GetComponent<HealthScreenView>();
+            application = new GameObject("Preview startup test");
+            var bootstrap = application.AddComponent<HealthScreenBootstrap>();
+            bootstrap.Screen = screen;
+            bootstrap.Settings = null;
+            yield return null;
+            yield return null;
+            // Give this test-owned app focus independently of the Editor window.
+            application.SendMessage(
+                "OnApplicationFocus",
+                true,
+                SendMessageOptions.DontRequireReceiver
+            );
         }
 
         [UnityTearDown]

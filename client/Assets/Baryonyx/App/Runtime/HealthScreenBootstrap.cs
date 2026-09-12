@@ -8,6 +8,8 @@ namespace Baryonyx.App
         public HealthConnectionSettings Settings;
         public HealthScreenView Screen;
         private HealthScreenPresenter presenter;
+        private bool paused;
+        private bool focused = true;
 #if UNITY_ANDROID && !UNITY_EDITOR
         private UmothGoogleSignInProvider authentication;
 #endif
@@ -34,6 +36,7 @@ namespace Baryonyx.App
             RenderPreview();
             _ = StartPreviewAsync();
 #endif
+            ApplyForeground();
         }
 
 #if UNITY_EDITOR || !UNITY_ANDROID
@@ -67,7 +70,19 @@ namespace Baryonyx.App
         }
 #endif
 
-        private void OnApplicationPause(bool paused) => presenter?.SetForeground(!paused);
+        private void OnApplicationPause(bool value)
+        {
+            paused = value;
+            ApplyForeground();
+        }
+
+        private void OnApplicationFocus(bool value)
+        {
+            focused = value;
+            ApplyForeground();
+        }
+
+        private void ApplyForeground() => presenter?.SetForeground(!paused && focused);
 
         private void OnDestroy()
         {
