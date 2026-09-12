@@ -118,6 +118,9 @@ importers:
       jose:
         specifier: 6.1.3
         version: 6.1.3
+      zod:
+        specifier: 4.6.1
+        version: 4.6.1
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.12
@@ -1787,6 +1790,9 @@ packages:
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
 
+  zod@4.6.1:
+    resolution: {integrity: sha512-341aRWQsve0rvronKNTqZpjmzdbUDlFuzHaI/XLg/Ej82qffDJRRfBTCuv7+9q/rMjB6LSLyEBnW4InJeMtt/Q==}
+
 snapshots:
 
   '@biomejs/biome@2.5.12':
@@ -2880,3 +2886,5 @@ snapshots:
       '@speed-highlight/core': 1.2.24
       cookie: 1.1.1
       youch-core: 0.3.3
+
+  zod@4.6.1: {}

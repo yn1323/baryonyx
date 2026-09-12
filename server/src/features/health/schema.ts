@@ -1,52 +1,42 @@
-export interface HealthDay {
-  day: string;
-  zone: string;
-  startAt: string;
-  endAt: string;
-  hasValue: boolean;
-  steps: number;
-  observedAt: string;
-}
+import { z } from "zod";
 
-export const validId = (value: unknown): value is string =>
-  typeof value === "string" && /^[a-f0-9-]{36}$/.test(value);
+export const sourceIdSchema = z.string().regex(/^[a-f0-9-]{36}$/);
 
-export function parseDays(
-  value: unknown,
-  now = Date.now(),
-): HealthDay[] | null {
-  if (!Array.isArray(value) || value.length !== 7) return null;
+export const googleAuthSchema = z.object({
+  idToken: z.string().max(12_000),
+});
+
+export const beginSyncSchema = z.object({
+  sourceId: sourceIdSchema,
+  provider: z.enum(["health_connect", "healthkit"]),
+});
+
+const timestampSchema = z
+  .string()
+  .regex(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,7})?Z$/)
+  .refine((value) => Number.isFinite(Date.parse(value)));
+
+const healthDaySchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  zone: z.string().max(80),
+  startAt: timestampSchema,
+  endAt: timestampSchema,
+  hasValue: z.boolean(),
+  steps: z.number().int().min(0).max(1_000_000),
+  observedAt: timestampSchema,
+});
+
+export type HealthDay = z.infer<typeof healthDaySchema>;
+
+function validDays(value: HealthDay[], now: number): boolean {
   const keys = new Set<string>();
   let zone: string | undefined;
   let previousEnd: number | undefined;
   for (const day of value) {
-    if (!day || typeof day !== "object") return null;
-    if (typeof day.day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day.day))
-      return null;
-    if (
-      typeof day.zone !== "string" ||
-      day.zone.length > 80 ||
-      (zone && zone !== day.zone)
-    )
-      return null;
+    if (zone !== undefined && zone !== day.zone) return false;
     zone = day.zone;
-    if (
-      typeof day.hasValue !== "boolean" ||
-      !Number.isSafeInteger(day.steps) ||
-      day.steps < 0 ||
-      day.steps > 1_000_000
-    )
-      return null;
-    if (!day.hasValue && day.steps !== 0) return null;
+    if (!day.hasValue && day.steps !== 0) return false;
     const times = [day.startAt, day.endAt, day.observedAt];
-    if (
-      times.some(
-        (time) =>
-          typeof time !== "string" ||
-          !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,7})?Z$/.test(time),
-      )
-    )
-      return null;
     const [start, end, observed] = times.map(Date.parse);
     if (
       ![start, end, observed].every(Number.isFinite) ||
@@ -56,8 +46,8 @@ export function parseDays(
       start < now - 9 * 86_400_000 ||
       end - start > 26 * 3_600_000
     )
-      return null;
-    if (previousEnd !== undefined && previousEnd !== start) return null;
+      return false;
+    if (previousEnd !== undefined && previousEnd !== start) return false;
     previousEnd = end;
     try {
       const parts = new Intl.DateTimeFormat("en-CA", {
@@ -77,12 +67,26 @@ export function parseDays(
         part("minute") !== "00" ||
         part("second") !== "00"
       )
-        return null;
+        return false;
     } catch {
-      return null;
+      return false;
     }
-    if (keys.has(day.day)) return null;
+    if (keys.has(day.day)) return false;
     keys.add(day.day);
   }
-  return value as HealthDay[];
+  return true;
+}
+
+export function createDaysSchema(now = Date.now()) {
+  return z
+    .array(healthDaySchema)
+    .length(7)
+    .refine((value) => validDays(value, now));
+}
+
+export function createSaveDaysSchema(now = Date.now()) {
+  return z.object({
+    revision: z.number().int().min(1),
+    days: createDaysSchema(now),
+  });
 }

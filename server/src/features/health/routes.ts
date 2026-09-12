@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createRemoteJWKSet, type JWTVerifyGetKey, jwtVerify } from "jose";
 import { createHealthRepository } from "./repository.js";
-import { parseDays, validId } from "./schema.js";
+import {
+  beginSyncSchema,
+  createSaveDaysSchema,
+  googleAuthSchema,
+  sourceIdSchema,
+} from "./schema.js";
 
 export type HealthEnv = {
   Bindings: Env & { GOOGLE_CLIENT_ID?: string };
@@ -72,9 +77,11 @@ export function createHealthApi(
   api.post("/auth/google", async (c) => {
     const audience = c.env.GOOGLE_CLIENT_ID;
     if (!audience) return c.json({ error: "auth_not_configured" }, 503);
-    const body = await c.req.json().catch(() => null);
-    if (typeof body?.idToken !== "string" || body.idToken.length > 12_000)
-      return c.json({ error: "invalid_request" }, 400);
+    const parsed = googleAuthSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const body = parsed.data;
     let subject: string;
     try {
       subject = await verifyIdentity(body.idToken, audience);
@@ -113,12 +120,11 @@ export function createHealthApi(
     return c.body(null, 204);
   });
   api.post("/health/syncs", async (c) => {
-    const body = await c.req.json().catch(() => null);
-    if (
-      !validId(body?.sourceId) ||
-      !["health_connect", "healthkit"].includes(body?.provider)
-    )
-      return c.json({ error: "invalid_request" }, 400);
+    const parsed = beginSyncSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const body = parsed.data;
     // サーバー発行の版で、再起動・時計ずれ・遅延送信による上書きを防ぐ。
     const result = await createHealthRepository(c.env.DB).beginSync(
       body.sourceId,
@@ -129,34 +135,31 @@ export function createHealthApi(
     return c.json(result);
   });
   api.put("/health/sources/:sourceId/days", async (c) => {
-    const sourceId = c.req.param("sourceId");
-    const body = await c.req.json().catch(() => null);
-    const days = parseDays(body?.days);
-    if (
-      !validId(sourceId) ||
-      !days ||
-      !Number.isSafeInteger(body?.revision) ||
-      body.revision < 1
-    )
+    const source = sourceIdSchema.safeParse(c.req.param("sourceId"));
+    const parsed = createSaveDaysSchema().safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!source.success || !parsed.success)
       return c.json({ error: "invalid_request" }, 400);
+    const body = parsed.data;
     const now = new Date().toISOString();
     const saved = await createHealthRepository(c.env.DB).saveDays(
-      sourceId,
+      source.data,
       c.get("userId"),
       body.revision,
-      days,
+      body.days,
       now,
     );
     if (!saved) return c.json({ error: "sync_conflict" }, 409);
     return c.json({ revision: body.revision, receivedAt: now });
   });
   api.get("/health/sources/:sourceId/days", async (c) => {
-    const sourceId = c.req.param("sourceId");
-    if (!validId(sourceId)) return c.json({ error: "invalid_request" }, 400);
+    const sourceId = sourceIdSchema.safeParse(c.req.param("sourceId"));
+    if (!sourceId.success) return c.json({ error: "invalid_request" }, 400);
     const repository = createHealthRepository(c.env.DB);
-    const source = await repository.findSource(sourceId, c.get("userId"));
+    const source = await repository.findSource(sourceId.data, c.get("userId"));
     if (!source) return c.json({ error: "source_unavailable" }, 404);
-    const days = await repository.listDays(sourceId);
+    const days = await repository.listDays(sourceId.data);
     return c.json({
       ...source,
       days: days.map((row) => ({

@@ -62,6 +62,21 @@ WorkersのバージョンPreview URLを共有する方式ではなく、各PR用
 既存DBを再利用し、未適用のマイグレーションだけを追加する。
 PRを閉じてから再び開いた場合は、新しいDBで開始する。
 
+## Zodによる入力検証
+
+バリデーションライブラリには **Zod** を使用する。
+HTTP要求のスキーマは所有する機能の `schema.ts` に置き、Honoのhandlerで `safeParse()` を使って検証する。
+業務処理とDB操作には検証済みの `data` を渡し、TypeScriptの型は `z.infer` でスキーマから導出する。
+依存バージョンは [package.json](../../server/package.json) に固定する。
+
+健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は、ログイン、同期開始、取得元ID、歩数保存の要求を検証する。
+日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
+現在時刻に依存するスキーマはリクエストごとに生成する。
+不正なJSONとスキーマ違反には、既存の `400 {"error":"invalid_request"}` を返す。
+Zodのエラー詳細や入力値はHTTP応答へ含めない。
+
+参考：[Zodの基本的な使い方](https://zod.dev/basics)、[Honoの入力検証](https://hono.dev/docs/guides/validation)。
+
 ## DrizzleによるDB操作
 
 DB操作には `drizzle-orm/d1` を使い、リクエストのD1 bindingから [createDatabase](../../server/src/shared/db.ts) で接続を作る。
