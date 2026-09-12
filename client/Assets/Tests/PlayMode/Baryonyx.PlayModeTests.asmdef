@@ -4,8 +4,12 @@
   "references": [
     "Baryonyx.Runtime",
     "Unity.InputSystem",
-    "Unity.InputSystem.TestFramework"
+    "Unity.InputSystem.TestFramework",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
   "optionalUnityReferences": [
     "TestAssemblies"
   ],

@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Linq;
+using Baryonyx.App;
+using Baryonyx.Health;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,6 +29,26 @@ namespace Baryonyx.Tests.PlayMode
                 cameras.Any(camera => camera.isActiveAndEnabled),
                 Is.True,
                 "The startup scene needs an active camera to render the startup scene."
+            );
+            var roots = loadedScene.GetRootGameObjects();
+            var bootstrap = roots
+                .SelectMany(root => root.GetComponentsInChildren<HealthScreenBootstrap>())
+                .Single();
+            Assert.That(bootstrap.Screen, Is.Not.Null);
+            Assert.That(bootstrap.Settings, Is.Not.Null);
+            Assert.That(bootstrap.Screen.DayButtons.Length, Is.EqualTo(7));
+            Assert.That(
+                roots.SelectMany(root => root.GetComponentsInChildren<HealthClient>()),
+                Is.Empty,
+                "The local preview must not initialize server synchronization."
+            );
+            Assert.That(
+                roots
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<UnityEngine.EventSystems.EventSystem>()
+                    )
+                    .Count(),
+                Is.EqualTo(1)
             );
         }
 

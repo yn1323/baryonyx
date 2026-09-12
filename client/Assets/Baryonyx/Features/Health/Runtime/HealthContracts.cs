@@ -42,11 +42,17 @@ namespace Baryonyx.Health
     {
         public HealthReadStatus Status { get; }
         public HealthDay[] Days { get; }
+        public string RawJson { get; }
 
-        public HealthReadResult(HealthReadStatus status, HealthDay[] days = null)
+        public HealthReadResult(
+            HealthReadStatus status,
+            HealthDay[] days = null,
+            string rawJson = null
+        )
         {
             Status = status;
             Days = days ?? Array.Empty<HealthDay>();
+            RawJson = rawJson;
         }
     }
 

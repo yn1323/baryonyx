@@ -14,7 +14,8 @@ namespace Baryonyx.Health
             var reply = await CallAsync("availability", token);
             return reply.status == "available" ? HealthAvailability.Available
                 : reply.status == "update_required" ? HealthAvailability.UpdateRequired
-                : HealthAvailability.Unavailable;
+                : reply.status == "unavailable" ? HealthAvailability.Unavailable
+                : throw new InvalidOperationException("Health Connect availability check failed.");
         }
 
         public async Task<HealthPermission> GetPermissionAsync(CancellationToken token) =>
@@ -24,7 +25,10 @@ namespace Baryonyx.Health
             Permission(await CallAsync("requestPermission", token));
 
         private static HealthPermission Permission(Reply reply) =>
-            reply.status == "granted" ? HealthPermission.Granted : HealthPermission.NotGranted;
+            reply.status == "granted" ? HealthPermission.Granted
+            : reply.status == "not_granted" ? HealthPermission.NotGranted
+            : reply.status == "unavailable" ? HealthPermission.Unknown
+            : throw new InvalidOperationException("Health Connect permission check failed.");
 
         public async Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
         {
@@ -34,7 +38,8 @@ namespace Baryonyx.Health
                     : reply.status == "permission_required" ? HealthReadStatus.PermissionRequired
                     : reply.status == "unavailable" ? HealthReadStatus.Unavailable
                     : HealthReadStatus.Failed,
-                reply.days
+                reply.days,
+                reply.rawJson
             );
         }
 
@@ -83,7 +88,9 @@ namespace Baryonyx.Health
             string json = await completion.Task;
             GC.KeepAlive(callback);
             token.ThrowIfCancellationRequested();
-            return JsonUtility.FromJson<Reply>(json);
+            var reply = JsonUtility.FromJson<Reply>(json);
+            reply.rawJson = json;
+            return reply;
 #else
             await Task.CompletedTask;
             return new Reply { status = "unavailable" };
@@ -95,6 +102,9 @@ namespace Baryonyx.Health
         {
             public string status;
             public HealthDay[] days;
+
+            [NonSerialized]
+            public string rawJson;
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
