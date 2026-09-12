@@ -6,7 +6,8 @@ baryonyxの文書は、リポジトリ直下の `doc/` に集約する。
 ## 現在の文書
 
 - [機能一覧](features/README.md)：実装済みの機能と詳細文書への入口。
-- [バックエンドの開発環境](rules/backend-design.md)：導入、起動、整形、テスト、CIの手順と構成。
+- [バックエンドの開発環境](rules/backend-design.md)：導入、起動、Zodによる入力検証、整形、テスト、CIの手順と構成。
+- [依存関係の更新](rules/dependency-updates.md)：Renovateの更新タイミング、対象、有効化と設定の検証。
 - [Unityクライアントの整形と静的解析](rules/client-code-quality.md)：CSharpier、Analyzer、GitHub CIとライセンス設定。
 - [UnityのテストとCI](rules/client-testing.md)：EditMode・PlayMode、入力fixtureとCIの実行方法。
 - [Androidビルドと実機確認](rules/client-android-testing.md)：検証用APKの生成・ダウンロードと手動確認の範囲。
