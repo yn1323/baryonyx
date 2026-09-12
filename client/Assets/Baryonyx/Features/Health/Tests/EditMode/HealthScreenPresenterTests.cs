@@ -223,6 +223,30 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task RepeatedBackgroundBeforeCancellationFinishesResumesOnlyOnce()
+        {
+            await presenter.SignInAsync();
+            await presenter.ConnectAsync();
+            var pending = new TaskCompletionSource<HealthReadResult>();
+            provider.Pending = pending;
+            var read = presenter.RefreshAsync();
+            presenter.SetForeground(false);
+            presenter.SetForeground(true);
+            presenter.SetForeground(false);
+            provider.Pending = null;
+            pending.SetResult(Week());
+            await read;
+            Assert.That(presenter.Days, Is.Empty);
+            Assert.That(provider.Reads, Is.EqualTo(2));
+
+            presenter.SetForeground(true);
+
+            Assert.That(provider.Reads, Is.EqualTo(3));
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.Ready));
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
+        }
+
+        [Test]
         public async Task DisposeRejectsDelayedAuthentication()
         {
             authentication.Pending = new TaskCompletionSource<GoogleSignInStatus>();

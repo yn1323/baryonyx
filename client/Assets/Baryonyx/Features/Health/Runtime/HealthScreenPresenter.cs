@@ -85,6 +85,7 @@ namespace Baryonyx.Health
 
         private Task RunAsync(Func<int, CancellationToken, Task> action)
         {
+            resumeRequested = false;
             busy = true;
             operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
             active = RunCoreAsync(action, generation, operation);
