@@ -103,10 +103,12 @@ def upload(apk, folder_id, env, environment):
         raise ValueError("The destination must be a writable, non-trashed Google Drive folder.")
     existing_id = find_existing_file(folder_id, token, apk_name)
     metadata = {"name": apk_name, "mimeType": APK_MIME}
-    if env.get("GITHUB_SHA"):
+    source_sha = env.get("SOURCE_HEAD_SHA") or env.get("GITHUB_SHA")
+    source_run = env.get("SOURCE_RUN_ID") or env.get("GITHUB_RUN_ID")
+    if source_sha:
         metadata["description"] = (
-            f"Distribution: {environment}\nCommit: {env['GITHUB_SHA']}\n"
-            f"CI: https://github.com/{env['GITHUB_REPOSITORY']}/actions/runs/{env['GITHUB_RUN_ID']}"
+            f"Distribution: {environment}\nCommit: {source_sha}\n"
+            f"CI: https://github.com/{env['GITHUB_REPOSITORY']}/actions/runs/{source_run}"
         )
     url = UPLOAD_API
     if existing_id:

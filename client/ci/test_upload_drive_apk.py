@@ -77,6 +77,16 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(urlsplit(start.full_url).path, "/upload/drive/v3/files/file-123")
         self.assertNotIn("parents", json.loads(start.data))
 
+    def test_description_references_source_build_instead_of_distribution_run(self):
+        env = {**ENV, "SOURCE_HEAD_SHA": "source-sha", "SOURCE_RUN_ID": "100",
+               "GITHUB_SHA": "trusted-sha", "GITHUB_RUN_ID": "200", "GITHUB_REPOSITORY": "owner/repo"}
+        with patch.object(uploader, "urlopen", side_effect=self.responses()) as http:
+            uploader.upload(self.apk, "folder-123", env, "dev")
+        description = json.loads(http.call_args_list[3].args[0].data)["description"]
+        self.assertIn("Commit: source-sha", description)
+        self.assertIn("actions/runs/100", description)
+        self.assertNotIn("trusted-sha", description)
+
     def test_each_environment_searches_and_updates_only_its_own_name(self):
         for environment in ("dev", "prod", "preview"):
             with self.subTest(environment=environment), patch.object(uploader, "urlopen", side_effect=self.responses(files=[{"id": "file-123", "mimeType": uploader.APK_MIME}])) as http:

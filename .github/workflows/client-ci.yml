@@ -7,10 +7,12 @@ on:
     paths:
       - 'client/**'
       - '.github/workflows/client-ci.yml'
+      - '.github/workflows/client-distribute.yml'
   pull_request:
     paths:
       - 'client/**'
       - '.github/workflows/client-ci.yml'
+      - '.github/workflows/client-distribute.yml'
   workflow_dispatch:
     inputs:
       environment:
@@ -42,6 +44,8 @@ jobs:
           persist-credentials: false
       - name: Test Drive uploader
         run: python3 -B -m unittest discover -s client/ci -p 'test_upload_drive_apk.py'
+      - name: Test trusted distribution source selection
+        run: node --test client/ci/resolve-drive-distribution.test.cjs
 
   format:
     name: Client format (${{ matrix.os }})
@@ -236,87 +240,7 @@ jobs:
         id: apk
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: client-android-apk-${{ github.run_attempt }}
+          name: client-android-apk-${{ env.APK_ENVIRONMENT }}-${{ github.run_attempt }}
           path: client/Builds/Android/baryonyx.apk
           if-no-files-found: error
           retention-days: 7
-
-  android-drive:
-    name: Client Android Google Drive
-    needs: android-build
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    concurrency:
-      group: client-android-google-drive
-      cancel-in-progress: false
-    outputs:
-      drive-url: ${{ steps.drive.outputs.drive-url }}
-      apk-name: ${{ steps.drive.outputs.apk-name }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - name: Download Android APK
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          artifact-ids: ${{ needs.android-build.outputs.artifact-id }}
-          path: client/Builds/Android
-          merge-multiple: true
-      - name: Upload APK to Google Drive
-        id: drive
-        env:
-          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
-          GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
-          GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
-        run: >-
-          python3 client/ci/upload-drive-apk.py client/Builds/Android/baryonyx.apk
-          --folder-id 1iNgsGNtCDyMhyJsAjS2HmzxKVEuY4y8k
-          --environment "$APK_ENVIRONMENT"
-
-  android-comment:
-    name: Client Android APK link
-    needs: android-drive
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Post APK download link
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        env:
-          APK_URL: ${{ needs.android-drive.outputs.drive-url }}
-          APK_NAME: ${{ needs.android-drive.outputs.apk-name }}
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const { data: current } = await github.rest.pulls.get({ ...context.repo, pull_number: pr.number });
-            if (current.state !== 'open' || current.head.sha !== pr.head.sha) return;
-            if (!process.env.APK_URL) throw new Error('APK Drive URL is missing');
-            const marker = '<!-- baryonyx-android-apk -->';
-            const body = [
-              marker,
-              'Androidビルドが成功しました。',
-              '',
-              `[${process.env.APK_NAME}をGoogle Driveから取得](${process.env.APK_URL})`,
-              '',
-              `このPRのビルド対象コミット: ${pr.head.sha}`,
-              'PreviewのAPKは他のPRを含む次のPreview配布で上書きされます。現在の内容はDriveのファイル説明にあるコミット・CI実行URLで確認してください。',
-              '取得には保存先への閲覧権限があるGoogleアカウントでログインしてください。ZIPの展開は不要です。',
-            ].join('\n');
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              ...context.repo, issue_number: pr.number, per_page: 100,
-            });
-            const previous = comments.find(comment =>
-              comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
-            if (previous) {
-              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
-            } else {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: pr.number, body });
-            }
