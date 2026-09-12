@@ -21,15 +21,20 @@ CI用に変更したPlayer Settingsは `finally` で元へ戻す。
 ## ビルドの成否とAPKの取得
 
 Unityの `BuildResult` が成功であることを確認し、失敗した場合は例外でCIを失敗にする。
-成功したAPKを `android-drive` jobでGoogle Driveへ配布する。
-CI内の受け渡しとビルドごとの保存には、`client-android-apk-<run attempt>` artifactを7日間残す。
+Client CI全体が成功した後、[Client Android distribution](../../.github/workflows/client-distribute.yml) の `distribute` jobがAPKをGoogle Driveへ配布する。
+CI内の受け渡しとビルドごとの保存には、`client-android-apk-<dev|prod|preview>-<run attempt>` artifactを7日間残す。
 APKが生成されていない場合もアップロードを失敗にする。
 APK内部や署名の追加検査、独自のJSON・ビルドレポート出力は行わない。
 
 同一リポジトリのPRでは、成功したAPKの保存先をPRコメントへ掲載する。
 再び成功したときは同じbotコメントを更新し、対象コミットも表示する。
-mainへのpushと手動実行では、Actionsの実行サマリーからDriveのリンクを開く。
+mainへのpushと手動実行では、配布workflowの実行サマリーからDriveのリンクを開く。
 fork PRではDriveへの配布とPRコメントを実行しない。
+
+配布workflowは `workflow_run` で起動し、既定ブランチのコミットに固定したスクリプトだけを実行する。
+PRから受け取るのはAPK artifactであり、PR内のスクリプトへDriveの秘密値を渡さない。
+GitHub APIで実行元、成功状態、最新のPR head、artifactの区分と再実行番号を確認し、終了済み・更新済みのPRや不一致の成果物を配布しない。
+初回は配布workflowと補助スクリプトを既定ブランチ `main` へ反映する必要があり、`develop` への反映だけでは起動しない。[workflow_runの起動条件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run)
 
 保存先は個人のマイドライブの [Android配布フォルダー](https://drive.google.com/drive/folders/1iNgsGNtCDyMhyJsAjS2HmzxKVEuY4y8k) とする。
 [upload-drive-apk.py](../../client/ci/upload-drive-apk.py) がAPKを環境別の名前でそのまま保存するため、Android側でZIPを展開する必要はない。
@@ -40,9 +45,9 @@ CIは共有権限を変更しない。
 |---|---|---|
 | mainへのpush | Dev | `baryonyx-dev.apk` |
 | 同一リポジトリのPR | Preview | `baryonyx-preview.apk` |
-| 手動実行で `dev` を選択（既定値） | Dev | `baryonyx-dev.apk` |
-| 手動実行で `prod` を選択 | Prod | `baryonyx-prod.apk` |
-| 手動実行で `preview` を選択 | Preview | `baryonyx-preview.apk` |
+| 既定ブランチの手動実行で `dev` を選択（既定値） | Dev | `baryonyx-dev.apk` |
+| 既定ブランチの手動実行で `prod` を選択 | Prod | `baryonyx-prod.apk` |
+| 既定ブランチの手動実行で `preview` を選択 | Preview | `baryonyx-preview.apk` |
 
 この区分は配布ファイル名だけに適用する。
 各APKのAPI接続先、Application ID、Developmentビルド設定、デバッグ署名の扱いは共通であり、Prodという名前だけでは本番用ビルドにならない。
@@ -52,6 +57,8 @@ Unityが出力するローカルのファイル名は従来どおり `baryonyx.a
 存在しなければ新規作成し、同名ファイルが複数ある場合や同名のフォルダー・ショートカットがある場合は失敗にする。
 この場合は保存先で残すファイルを一つに整理してから再実行する。
 配布jobはリポジトリ全体で直列化し、アップロード後のサイズとチェックサムを照合する。
+`queue: max` で最大100件を待機させ、待機開始順に処理する。
+上限を超えた実行はキャンセルされるため、該当するClient CIの再実行が必要になる。[GitHubのconcurrency仕様](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 認証・転送・照合の失敗はjobの失敗として扱い、成功リンクを出さない。
 
 Driveの各ファイルは、その配布区分で最後に配布が完了したAPKになる。
@@ -72,7 +79,8 @@ CI開始順は保証せず、PRコメントのリンク先も次の配布で内�
 3. OAuthクライアントを「ウェブアプリケーション」として作成し、承認済みリダイレクトURIに `https://developers.google.com/oauthplayground` を登録する。
 4. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/) の設定で `Use your own OAuth credentials` を有効にし、作成したクライアントIDとシークレットを入力する。`Access type` は `Offline`、`Force prompt` は `Consent Screen` を選ぶ。
 5. スコープ `https://www.googleapis.com/auth/drive` を指定し、保存先フォルダーを所有するアカウントで認可する。`Exchange authorization code for tokens` で更新トークンを取得する。
-6. [リポジトリのActions Secrets](https://github.com/yn1323/baryonyx/settings/secrets/actions) に以下の3項目を登録する。秘密値はチャットやリポジトリ内のファイルへ貼り付けない。
+6. [リポジトリのEnvironments](https://github.com/yn1323/baryonyx/settings/environments) で `client-distribution` を作成する。Deployment branches and tagsを `Selected branches and tags` にし、許可するbranchを `main` だけに設定する。PRのmerge ref、他のbranch、tagは許可しない。
+7. `client-distribution` のEnvironment secretsに以下の3項目を登録する。Repository secretsや、このリポジトリから使えるOrganization secretsに同名の値を残さない。既に登録済みなら所有者が環境へ登録し直し、広い範囲の登録を削除する。秘密値はチャットやリポジトリ内のファイルへ貼り付けない。
 
 | Secret名 | 値 |
 |---|---|
@@ -80,14 +88,17 @@ CI開始順は保証せず、PRコメントのリンク先も次の配布で内�
 | `GOOGLE_DRIVE_CLIENT_SECRET` | そのクライアントのシークレット |
 | `GOOGLE_DRIVE_REFRESH_TOKEN` | 保存先アカウントで発行した更新トークン |
 
+Environment secretsとブランチ制限を組み合わせ、PRから変更できるworkflowがDriveの秘密値を取得できないようにする。
+workflowに `environment: client-distribution` を書くだけでは、Repository secretsの利用範囲は制限されない。[Environmentの保護とSecrets](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
+
 指定済みのフォルダーと既存の同名ファイルを検索・更新するため、この手順ではDrive全体への権限を認可する。
 スクリプトの書き込み先は指定フォルダー内の上記3種類のAPKに限るが、トークン自体の権限はそのフォルダーだけに限定されない。
 `drive.file` はアプリにアクセスを許可したファイルに限られるため、スコープの置き換えだけでは既存フォルダーを扱えない。[スコープの違い](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)
 Playground標準のクライアントでは更新トークンが24時間後に失効するため、手順4で自分のクライアントを指定する。
 
-Secrets登録後にClient CIを実行し、初回作成と、次の実行で同じファイルIDへの更新を確認する。
+Environmentの保護、Secretsの移設、既定ブランチへの反映後にClient CIを実行し、初回作成と、次の実行で同じファイルIDへの更新を確認する。
 認証が失効した場合は同じアカウントで再認可し、`GOOGLE_DRIVE_REFRESH_TOKEN` を更新する。
-実装と模擬APIによる検証は済んでいるが、OAuth設定と実際のDriveへの配布確認は未完了である。
+実装と模擬APIによる検証は済んでいるが、保護されたEnvironmentへの設定と実際のDriveへの配布確認は未完了である。
 
 ## ローカルビルドと配布処理の検証
 
@@ -97,6 +108,7 @@ Secrets登録後にClient CIを実行し、初回作成と、次の実行で同�
 ```text
 unity build <clientの絶対パス> --target Android --execute-method Baryonyx.Editor.CI.AndroidBuild.Build --allow-dirty-build --timeout 1800
 python -B -m unittest discover -s client/ci -p "test_upload_drive_apk.py"
+node --test client/ci/resolve-drive-distribution.test.cjs
 ```
 
 ## 手動で残す確認

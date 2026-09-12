@@ -96,7 +96,7 @@ test('expired, duplicate and old-attempt artifacts are rejected', async () => {
 });
 
 test('PR CI has no Drive secrets and distribution runs trusted code with queued concurrency', () => {
-  const root = path.resolve(__dirname, '../..', '..');
+  const root = path.resolve(__dirname, '../..');
   const ci = fs.readFileSync(path.join(root, '.github/workflows/client-ci.yml'), 'utf8');
   const distribution = fs.readFileSync(path.join(root, '.github/workflows/client-distribute.yml'), 'utf8');
   assert.doesNotMatch(ci, /secrets\.GOOGLE_DRIVE_/);
