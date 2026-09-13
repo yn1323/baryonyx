@@ -1,6 +1,7 @@
 # 健康データの読み取りと保存
 
-Android版の起動シーンでは、Googleで認証してからHealth Connectへ接続し、当日を含む直近7暦日の歩数と日別のJSON詳細を表示する。
+Android版の起動シーンでは、Health Connectへ接続し、当日を含む直近7暦日の歩数と日別のJSON詳細を表示する。
+Google接続は任意の独立した操作とし、歩数の読み取りには要求しない。
 EditorとAndroid以外の実行環境では、7日分のサンプルデータを使うプレビューを自動で表示する。
 この画面はバックエンドへ接続せず、認証状態と歩数をメモリにだけ保持する。
 既存のサーバー同期処理は残しているが、今回の起動経路からは呼ばない。
@@ -8,8 +9,10 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 
 ## ローカル表示画面
 
-Android版で [SampleScene](../../client/Assets/Scenes/SampleScene.unity) を起動すると、Google認証からHealth Connectへ接続する画面を表示する。
-認証成功後に接続ボタンを表示し、ユーザーが接続を選ぶと利用可否と歩数の読み取り権限を確認する。
+Android版で [SampleScene](../../client/Assets/Scenes/SampleScene.unity) を起動すると、「Health Connectに接続」と「Googleに接続」を別のパネルに表示する。
+Google未接続でもHealth Connectの接続ボタンを使用でき、利用可否と歩数の読み取り権限を確認する。
+Google接続の成功・失敗・解除は、Health Connectの接続状態や取得済みの一覧・JSON詳細を変更しない。
+Google接続が成功しても歩数を自動取得せず、読み取りはHealth Connect側の操作で開始する。
 権限を拒否してもGoogleの認証状態は維持し、再接続とHealth Connect設定への導線を表示する。
 更新・復帰時は権限を再確認し、OSの権限要求を自動で繰り返さない。
 
@@ -23,9 +26,10 @@ JSONは上下・左右へスクロールでき、「閉じる」またはAndroid
 Health Connectの個々の生レコードや、Googleの資格情報を表示するものではない。
 元の応答を保持し、未知の項目、null、整数、日付文字列の型を保って整形する。
 画面表示のために健康データを再取得したり、ファイルやPlayerPrefsへ保存したりしない。
-通常の背面移行、サインアウト、画面破棄で一覧と詳細を消去する。
+通常の背面移行と画面破棄で一覧と詳細を消去する。
 Androidの分割画面などで操作フォーカスを失った場合も一覧と詳細を消去し、一時停止が解除され、かつフォーカスが戻ったときに読み取りを再開する。
 OSの認証・権限画面の完了を待ち、前面へ戻ってから続行する。
+Googleの認証画面への移動で一覧を消去した場合も、既にHealth Connectを利用していれば復帰後に権限を再確認して読み直す。
 
 GoogleサインインとHealth Connectの許可は別の状態であり、Googleアカウントを変えても端末内の健康データの取得元が切り替わるわけではない。
 今回の認証成功はUMothがGoogleの資格情報を返したことを指し、サーバーのセッション発行・本人確認は行わない。
@@ -40,7 +44,7 @@ UnityのPlayでは、OAuth設定やAndroid端末の接続なしで7日分の架�
 更新すると実行時点の日付で生成し直す。
 
 日別の行、JSON詳細、更新は実際の画面と同じ操作で確認できる。
-「プレビューを終了」で表示を消去し、「プレビューを開始」から「サンプルデータを表示」で再開できる。
+Google未接続のサンプル状態で一覧を表示し、「Google接続を試す（サンプル）」と「Google接続を解除（サンプル）」でGoogle側の状態だけを切り替えられる。
 Google認証、Health Connect、バックエンドへの通信や資格情報の生成は行わない。
 
 切り替えはUSB接続の有無ではなく、[HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) の `UNITY_ANDROID && !UNITY_EDITOR` で決める。
@@ -50,10 +54,10 @@ Android以外のビルドもプレビュー対象とし、iOSの実データ取�
 
 ### スマートフォン向けの画面構成
 
-「1週間の歩数」は縦画面を基本とし、見出し、接続状態と操作、対象期間と更新、7日分の一覧、注記とサインアウトを縦一列に配置する。
+「1週間の歩数」は縦画面を基本とし、見出し、Health Connectの接続パネル、Googleの接続パネル、対象期間と更新、7日分の一覧、注記を縦一列に配置する。
 画面全体を一つのScrollRectでスクロールし、通常の説明文や長い数値は必要な高さへ伸ばす。
 認証後は認証ボタンを状態表示へ置き換え、取得後は更新を表示する。
-サインアウトは認証済みの場合に末尾へ表示する。
+「Google接続を解除」は認証済みの場合にGoogleのパネル内へ表示する。
 
 日別の行は日付・曜日、歩数または「データなし」、矢印を別の部品として配置する。
 行全体をタップするとJSON詳細が開く。
@@ -85,7 +89,7 @@ OSの文字拡大への追従や入力欄のキーボード回避は、現在の
 
 1. 同じGoogle Cloudプロジェクトで、Googleログイン用のWebクライアントと、実際のアプリID・署名証明書に対応するAndroidクライアントを用意する。
 2. [HealthConnectionSettings](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) の `Google Web Client Id` に、末尾が `.apps.googleusercontent.com` のWebクライアントIDを設定する。クライアントシークレットはアプリに入れない。
-3. Androidビルドを端末にインストールし、Google認証、Health Connect接続、歩数の読み取りを順に確認する。
+3. Androidビルドを端末にインストールし、Google認証と、Google未接続でのHealth Connect接続・歩数の読み取りをそれぞれ確認する。
 
 設定アセットにはWebクライアントIDが保存されている。
 Google Cloud側の登録内容とAndroidのアプリID・署名との整合、実機での認証成功は未確認である。
@@ -126,6 +130,19 @@ PlayModeは実Prefabと仮想入力を使い、外部Providerだけをテスト�
 日本語にはNoto Sans CJK JP、JSONにはNoto Sans Monoを同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/) に置く。
 いずれもSIL Open Font Licenseで再配布できる。[Notoの利用条件](https://notofonts.github.io/noto-docs/website/use/)
 JSONにはUPMの `com.unity.nuget.newtonsoft-json@3.2.2` を直接依存として使う。
+
+### 2026-09-13の接続分離の検証
+
+Google接続とHealth Connect接続を別のパネルに分け、Google未接続でも歩数の取得・更新・JSON詳細を利用できるようにした。
+Google接続の失敗や解除でHealth Connectの状態を変更せず、認証画面から戻った場合も必要な権限確認と再取得を行う。
+
+- EditMode 61件、PlayMode 13件が成功した。Google未接続での取得、認証失敗後の継続、Google接続解除後の一覧保持、復帰時の権限取り消し、実Prefabのボタン操作とJSON詳細を含む。
+- 変更したC# 8ファイルのCSharpier検査が成功し、再コンパイル・画面確認後のUnity Consoleにエラーがないことを確認した。
+- 1080×2400のGameビューで初期画面とGoogle未接続の歩数一覧を撮影し、両パネルの配置と日本語表示を確認した。画像はGit対象外の `client/Assets/DevCaptures/health-independent-initial.png`、`health-independent-week.png` に置く。一覧の画像はサンプルデータである。
+- ローカルの `shortcuts/build-apk-to-drive.bat` でAPKをビルドし、Google Drive for desktopの配置先フォルダーへコピーした。APKの署名検証と [組み込み検査](../../client/ci/verify-health-apk.py) が成功し、コピー元と配置先のSHA-256が一致した。Google Driveのクラウド側への同期完了は確認していない。
+
+今回の自動検証ではGoogleとHealth Connectの応答をテスト用Providerに置き換えている。
+変更後のAPKでのGoogle認証とOSの権限画面は、Androidエミュレーターで別途確認する。
 
 ### 2026-09-13のローカル表示画面の検証
 
