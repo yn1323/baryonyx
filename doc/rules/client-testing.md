@@ -1,6 +1,7 @@
 # UnityのテストとCI
 
-[Client CI](../../.github/workflows/client-ci.yml) は整形、Analyzer、EditMode、PlayMode、Android APK生成を実行する。
+[Client CI](../../.github/workflows/client-ci.yml) は整形、Analyzer、EditMode、PlayMode、CI補助スクリプトのテストを実行する。
+Android APK生成とDrive配布は一時停止中である（[停止範囲と再開方法](client-android-testing.md)）。
 Unity Webビルド、ブラウザでの起動確認、Web成果物のWorkers公開は廃止した。
 
 ## テストの配置

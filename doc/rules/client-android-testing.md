@@ -1,6 +1,10 @@
 # Androidビルドと実機確認
 
-[Client CI](../../.github/workflows/client-ci.yml) の `android-build` は、整形・解析・テストが成功した後にAPKを生成する。
+[Client CI](../../.github/workflows/client-ci.yml) の `android-build` と `distribute` はコメントアウトし、CIでのAPK生成・Drive配布・APKリンクのPRコメントを一時停止している。
+再開時は同ファイルの2つのジョブのコメントを解除する。
+以下のCIビルド・配布の説明は再開後に適用する。
+
+`android-build` は、整形・解析・テストが成功した後にAPKを生成する。
 ビルド入口は [AndroidBuild.Build](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) である。
 
 | 項目 | CIの設定 |

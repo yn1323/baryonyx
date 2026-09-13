@@ -214,76 +214,77 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  android-build:
-    name: Client Android build
-    outputs:
-      artifact-id: ${{ steps.apk.outputs.artifact-id }}
-      environment: ${{ env.APK_ENVIRONMENT }}
-    needs: [format, analyzers, tests, ci-scripts]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - name: Check Unity prerequisites
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        run: bash client/ci/unity-preflight.sh
-      - name: Restore Android Library
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: client/Library
-          key: client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
-          restore-keys: |
-            client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
-      - name: Remove stale Unity process IDs
-        run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
-      - name: Build Android APK
-        uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          projectPath: client
-          unityVersion: ${{ env.UNITY_VERSION }}
-          customImage: unityci/editor:${{ env.UNITY_VERSION }}-android-3
-          targetPlatform: Android
-          buildMethod: Baryonyx.Editor.CI.AndroidBuild.Build
-          buildsPath: client/Builds
-          buildName: baryonyx
-          androidTargetSdkVersion: 36
-          androidSdkManagerParameters: platforms;android-36
-          versioning: None
-      - name: Upload Android APK
-        id: apk
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: client-android-apk-${{ env.APK_ENVIRONMENT }}-${{ github.run_attempt }}
-          path: client/Builds/Android/baryonyx.apk
-          if-no-files-found: error
-          retention-days: 7
+  # Android APKのビルドとDrive配布は一時停止中。再開時は以下の2ジョブのコメントを解除する。
+  # android-build:
+  #   name: Client Android build
+  #   outputs:
+  #     artifact-id: ${{ steps.apk.outputs.artifact-id }}
+  #     environment: ${{ env.APK_ENVIRONMENT }}
+  #   needs: [format, analyzers, tests, ci-scripts]
+  #   runs-on: ubuntu-24.04
+  #   timeout-minutes: 60
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+  #       with:
+  #         persist-credentials: false
+  #     - name: Check Unity prerequisites
+  #       env:
+  #         UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  #         UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+  #         UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+  #       run: bash client/ci/unity-preflight.sh
+  #     - name: Restore Android Library
+  #       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+  #       with:
+  #         path: client/Library
+  #         key: client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-${{ github.sha }}
+  #         restore-keys: |
+  #           client-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('client/Packages/**', 'client/Assets/Analyzers/**', 'client/Assets/**/*.ruleset') }}-
+  #     - name: Remove stale Unity process IDs
+  #       run: rm -f -- client/Library/burst.pid client/Library/ilpp.pid
+  #     - name: Build Android APK
+  #       uses: game-ci/unity-builder@4423ee75828dff56037d1d1cfdac6b68e3a6ba00 # v4
+  #       env:
+  #         UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  #         UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+  #         UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+  #       with:
+  #         projectPath: client
+  #         unityVersion: ${{ env.UNITY_VERSION }}
+  #         customImage: unityci/editor:${{ env.UNITY_VERSION }}-android-3
+  #         targetPlatform: Android
+  #         buildMethod: Baryonyx.Editor.CI.AndroidBuild.Build
+  #         buildsPath: client/Builds
+  #         buildName: baryonyx
+  #         androidTargetSdkVersion: 36
+  #         androidSdkManagerParameters: platforms;android-36
+  #         versioning: None
+  #     - name: Upload Android APK
+  #       id: apk
+  #       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+  #       with:
+  #         name: client-android-apk-${{ env.APK_ENVIRONMENT }}-${{ github.run_attempt }}
+  #         path: client/Builds/Android/baryonyx.apk
+  #         if-no-files-found: error
+  #         retention-days: 7
 
-  distribute:
-    name: Distribute Android APK
-    needs: android-build
-    if: >-
-      needs.android-build.outputs.artifact-id != '' &&
-      (github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository)
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-    uses: ./.github/workflows/client-distribute.yml
-    with:
-      artifact-id: ${{ needs.android-build.outputs.artifact-id }}
-      environment: ${{ needs.android-build.outputs.environment }}
-    secrets:
-      GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
-      GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
-      GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
+  # distribute:
+  #   name: Distribute Android APK
+  #   needs: android-build
+  #   if: >-
+  #     needs.android-build.outputs.artifact-id != '' &&
+  #     (github.event_name != 'pull_request' ||
+  #     github.event.pull_request.head.repo.full_name == github.repository)
+  #   permissions:
+  #     contents: read
+  #     actions: read
+  #     pull-requests: write
+  #   uses: ./.github/workflows/client-distribute.yml
+  #   with:
+  #     artifact-id: ${{ needs.android-build.outputs.artifact-id }}
+  #     environment: ${{ needs.android-build.outputs.environment }}
+  #   secrets:
+  #     GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+  #     GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+  #     GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
