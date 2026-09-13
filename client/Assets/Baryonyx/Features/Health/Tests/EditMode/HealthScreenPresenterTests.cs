@@ -27,15 +27,23 @@ namespace Baryonyx.Tests.EditMode
         public void TearDown() => presenter.Dispose();
 
         [Test]
-        public async Task AuthenticationGatesHealthAndDoesNotAutoConnect()
+        public async Task HealthConnectWorksWithoutGoogleAndGoogleDoesNotAutoConnect()
         {
-            await presenter.ConnectAsync();
-            Assert.That(provider.AvailabilityChecks, Is.Zero);
-            await presenter.SignInAsync();
+            Assert.That(presenter.CanSignIn, Is.True);
             Assert.That(presenter.CanConnect, Is.True);
+            await presenter.SignInAsync();
             Assert.That(provider.AvailabilityChecks, Is.Zero);
+            await presenter.SignOutAsync();
             await presenter.ConnectAsync();
+            Assert.That(authentication.Calls, Is.EqualTo(1));
+            Assert.That(presenter.SignedIn, Is.False);
             Assert.That(presenter.Days.Count, Is.EqualTo(7));
+            presenter.SelectDay(0);
+            Assert.That(presenter.SelectedDay, Is.Not.Null);
+            var days = presenter.Days;
+            await presenter.SignInAsync();
+            Assert.That(presenter.Days, Is.SameAs(days));
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.Ready));
             Assert.That(provider.Reads, Is.EqualTo(1));
         }
 
@@ -48,8 +56,10 @@ namespace Baryonyx.Tests.EditMode
             await presenter.SignInAsync();
             Assert.That(presenter.SignedIn, Is.False);
             Assert.That(presenter.CanSignIn, Is.True);
-            Assert.That(presenter.CanConnect, Is.False);
+            Assert.That(presenter.CanConnect, Is.True);
             Assert.That(provider.Reads, Is.Zero);
+            await presenter.ConnectAsync();
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
         }
 
         [Test]
@@ -116,7 +126,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public async Task LateReadAfterSignOutCannotRestoreData()
+        public async Task GoogleSignOutDoesNotCancelHealthRead()
         {
             await presenter.SignInAsync();
             await presenter.ConnectAsync();
@@ -130,8 +140,87 @@ namespace Baryonyx.Tests.EditMode
             provider.Pending.SetResult(Week());
             await read;
             await signOut;
-            Assert.That(presenter.Days, Is.Empty);
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
+            Assert.That(presenter.CanRefresh, Is.True);
             Assert.That(presenter.CanSignIn, Is.True);
+        }
+
+        [Test]
+        public async Task GoogleSignOutPreservesHealthSnapshots()
+        {
+            await presenter.SignInAsync();
+            await presenter.ConnectAsync();
+            presenter.SelectDay(0);
+            var days = presenter.Days;
+            var selected = presenter.SelectedDay;
+            await presenter.SignOutAsync();
+            Assert.That(presenter.SignedIn, Is.False);
+            Assert.That(presenter.Days, Is.SameAs(days));
+            Assert.That(presenter.SelectedDay, Is.SameAs(selected));
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.Ready));
+            Assert.That(presenter.CanRefresh, Is.True);
+        }
+
+        [TestCase(GoogleSignInStatus.Incomplete)]
+        [TestCase(GoogleSignInStatus.NotConfigured)]
+        [TestCase(GoogleSignInStatus.Unsupported)]
+        public async Task GoogleFailurePreservesHealthState(GoogleSignInStatus result)
+        {
+            await presenter.ConnectAsync();
+            var days = presenter.Days;
+            var message = presenter.Message;
+            authentication.Result = result;
+            await presenter.SignInAsync();
+            Assert.That(presenter.SignedIn, Is.False);
+            Assert.That(presenter.Days, Is.SameAs(days));
+            Assert.That(presenter.Message, Is.EqualTo(message));
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.Ready));
+            Assert.That(presenter.CanRefresh, Is.True);
+        }
+
+        [Test]
+        public async Task GoogleExceptionPreservesHealthState()
+        {
+            await presenter.ConnectAsync();
+            var days = presenter.Days;
+            authentication.Pending = new TaskCompletionSource<GoogleSignInStatus>();
+            var pending = presenter.SignInAsync();
+            authentication.Pending.SetException(new InvalidOperationException());
+            await pending;
+            Assert.That(presenter.Days, Is.SameAs(days));
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.Ready));
+            Assert.That(presenter.GoogleMessage, Does.Contain("Google接続を完了できません"));
+        }
+
+        [TestCase(GoogleSignInStatus.Success)]
+        [TestCase(GoogleSignInStatus.Incomplete)]
+        public async Task GoogleDialogRechecksHealthPermissionOnReturn(GoogleSignInStatus result)
+        {
+            await presenter.ConnectAsync();
+            authentication.Pending = new TaskCompletionSource<GoogleSignInStatus>();
+            var pending = presenter.SignInAsync();
+            presenter.SetForeground(false);
+            Assert.That(presenter.Days, Is.Empty);
+            provider.Permission = HealthPermission.NotGranted;
+            authentication.Pending.SetResult(result);
+            presenter.SetForeground(true);
+            await pending;
+            Assert.That(presenter.Phase, Is.EqualTo(HealthScreenPhase.PermissionRequired));
+            Assert.That(presenter.CanOpenSettings, Is.True);
+            Assert.That(provider.Reads, Is.EqualTo(1));
+            Assert.That(provider.PermissionRequests, Is.Zero);
+        }
+
+        [Test]
+        public async Task HealthConnectionRestoresOnResumeWithoutGoogle()
+        {
+            await presenter.ConnectAsync();
+            presenter.SetForeground(false);
+            Assert.That(presenter.Days, Is.Empty);
+            presenter.SetForeground(true);
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
+            Assert.That(provider.Reads, Is.EqualTo(2));
+            Assert.That(authentication.Calls, Is.Zero);
         }
 
         [Test]

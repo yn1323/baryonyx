@@ -112,7 +112,12 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator ClickThroughAuthenticationConnectionAndJsonDetails()
         {
-            Assert.That(view.ConnectButton.interactable, Is.False);
+            Assert.That(view.ConnectButton.interactable, Is.True);
+            Assert.That(view.SignInButton.gameObject.activeSelf, Is.True);
+            Assert.That(
+                view.ConnectButton.transform.parent,
+                Is.Not.SameAs(view.SignInButton.transform.parent)
+            );
             yield return Click(view.SignInButton);
             Assert.That(view.ConnectButton.interactable, Is.True);
             Assert.That(provider.Reads, Is.Zero);
@@ -173,22 +178,28 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator IncompleteAuthenticationCanBeRetriedAndSignOutClearsList()
+        public IEnumerator HealthWorksAfterGoogleFailureAndSignOutPreservesList()
         {
             authentication.Result = GoogleSignInStatus.Incomplete;
             yield return Click(view.SignInButton);
             Assert.That(view.SignInButton.interactable, Is.True);
-            Assert.That(view.ConnectButton.interactable, Is.False);
+            Assert.That(view.ConnectButton.interactable, Is.True);
+            yield return Click(view.ConnectButton);
+            Assert.That(presenter.SignedIn, Is.False);
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
+            yield return Click(view.DayButtons[0]);
+            Assert.That(view.DetailsOverlay.activeSelf, Is.True);
+            yield return Click(view.CloseButton);
             authentication.Result = GoogleSignInStatus.Success;
             yield return Click(view.SignInButton);
-            yield return Click(view.ConnectButton);
             Assert.That(presenter.Days.Count, Is.EqualTo(7));
             yield return Click(view.SignOutButton);
-            Assert.That(view.EmptyState.activeSelf, Is.True);
-            Assert.That(presenter.Days, Is.Empty);
-            Assert.That(view.ConnectButton.interactable, Is.False);
+            Assert.That(view.EmptyState.activeSelf, Is.False);
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
+            Assert.That(view.RefreshButton.interactable, Is.True);
+            Assert.That(view.SignInButton.interactable, Is.True);
             foreach (var label in view.DayLabels)
-                Assert.That(label.text, Is.Empty);
+                Assert.That(label.text, Is.Not.Empty);
         }
 
         [UnityTest]

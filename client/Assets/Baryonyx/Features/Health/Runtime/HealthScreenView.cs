@@ -12,6 +12,7 @@ namespace Baryonyx.Health
     {
         public TMP_Text Progress;
         public TMP_Text Status;
+        public TMP_Text GoogleStatus;
         public TMP_Text Period;
         public TMP_Text Footnote;
         public UnityEngine.UI.Button SignInButton;
@@ -113,14 +114,11 @@ namespace Baryonyx.Health
         {
             bool detailOpen = presenter.SelectedDay != null;
             bool showRefresh =
-                presenter.SignedIn
-                && (
-                    presenter.Phase == HealthScreenPhase.Ready
-                    || presenter.Phase == HealthScreenPhase.Reading
-                    || (presenter.Phase == HealthScreenPhase.Failed && presenter.CanRefresh)
-                );
+                presenter.Phase == HealthScreenPhase.Ready
+                || presenter.Phase == HealthScreenPhase.Reading
+                || (presenter.Phase == HealthScreenPhase.Failed && presenter.CanRefresh);
             SignInButton.gameObject.SetActive(!presenter.SignedIn);
-            ConnectButton.gameObject.SetActive(presenter.SignedIn && !showRefresh);
+            ConnectButton.gameObject.SetActive(!showRefresh);
             RefreshButton.gameObject.SetActive(showRefresh);
             SignOutButton.gameObject.SetActive(presenter.SignedIn);
             if (detailOpen && !DetailsOverlay.activeSelf)
@@ -134,15 +132,15 @@ namespace Baryonyx.Health
             SignOutButton.interactable = presenter.SignedIn && !presenter.IsBusy && !detailOpen;
             SettingsButton.gameObject.SetActive(presenter.CanOpenSettings);
             SettingsButton.interactable = !detailOpen;
+            GoogleStatus.text = presenter.GoogleMessage;
             Status.text = presenter.Message;
             Status.gameObject.SetActive(presenter.Phase != HealthScreenPhase.Ready);
             Progress.text = presenter.Phase switch
             {
-                HealthScreenPhase.SigningIn => "Googleで認証中",
                 HealthScreenPhase.Connecting => "Health Connectに接続中",
                 HealthScreenPhase.Reading => "歩数を取得中",
                 HealthScreenPhase.Ready => "Health Connectに接続済み",
-                _ => presenter.SignedIn ? "Google認証済み" : "はじめにGoogleで認証",
+                _ => "Health Connect接続",
             };
             if (!ReferenceEquals(renderedDays, presenter.Days))
             {
@@ -178,7 +176,7 @@ namespace Baryonyx.Health
                     ? $"{renderedDays[0].Zone}  /  今日は取得時点までの集計"
                     : "歩数データは画面を開いている間だけ保持します。";
             }
-            Period.gameObject.SetActive(presenter.Days.Count > 0 || presenter.SignedIn);
+            Period.gameObject.SetActive(presenter.Days.Count > 0);
             foreach (var button in DayButtons)
                 button.interactable = !presenter.IsBusy && !detailOpen;
             if (detailOpen && !DetailsOverlay.activeSelf)

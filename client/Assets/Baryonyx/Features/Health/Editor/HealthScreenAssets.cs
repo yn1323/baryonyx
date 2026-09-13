@@ -76,21 +76,14 @@ namespace Baryonyx.Health.Editor
                 var connection = Rect("Connection", content);
                 Image(connection, Color.white, false);
                 Vertical(connection, 24, new RectOffset(28, 28, 28, 28));
-                view.Progress = Label("Progress", connection, "はじめにGoogleで認証", 40, Green, 0);
+                view.Progress = Label("Progress", connection, "Health Connect接続", 40, Green, 0);
                 view.Status = Label(
                     "Status",
                     connection,
-                    "Googleで認証してから、歩数の読み取りを許可してください。",
+                    "接続して、歩数の読み取りを許可してください。",
                     35,
                     Muted,
                     0
-                );
-                view.SignInButton = Button(
-                    "SignIn",
-                    connection,
-                    "Googleで認証",
-                    Green,
-                    Color.white
                 );
                 view.ConnectButton = Button(
                     "Connect",
@@ -106,8 +99,27 @@ namespace Baryonyx.Health.Editor
                     new Color(0.86f, 0.91f, 0.88f),
                     Ink
                 );
-                view.ConnectButton.gameObject.SetActive(false);
                 view.SettingsButton.gameObject.SetActive(false);
+
+                var googleConnection = Rect("GoogleConnection", content);
+                Image(googleConnection, Color.white, false);
+                Vertical(googleConnection, 24, new RectOffset(28, 28, 28, 28));
+                Label("GoogleTitle", googleConnection, "Google接続（任意）", 40, Green, 0);
+                view.GoogleStatus = Label(
+                    "GoogleStatus",
+                    googleConnection,
+                    "未接続。歩数の表示には不要です。",
+                    35,
+                    Muted,
+                    0
+                );
+                view.SignInButton = Button(
+                    "SignIn",
+                    googleConnection,
+                    "Googleに接続",
+                    Green,
+                    Color.white
+                );
 
                 view.Period = Label("Period", content, "今日を含む直近7日間", 35, Ink, 0);
                 view.RefreshButton = Button("Refresh", content, "更新", Green, Color.white);
@@ -158,8 +170,8 @@ namespace Baryonyx.Health.Editor
                 );
                 view.SignOutButton = Button(
                     "SignOut",
-                    content,
-                    "サインアウト",
+                    googleConnection,
+                    "Google接続を解除",
                     new Color(0.86f, 0.91f, 0.88f),
                     Ink
                 );
@@ -221,10 +233,7 @@ namespace Baryonyx.Health.Editor
                     Color.white
                 );
                 overlay.gameObject.SetActive(false);
-                view.ConnectButton.interactable =
-                    view.SignOutButton.interactable =
-                    view.RefreshButton.interactable =
-                        false;
+                view.SignOutButton.interactable = view.RefreshButton.interactable = false;
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssets();
             }

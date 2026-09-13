@@ -28,9 +28,9 @@ namespace Baryonyx.App
             Screen.Bind(presenter);
             presenter.Changed += RenderPreview;
             Screen.SignInButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
-                "プレビューを開始";
+                "Google接続を試す（サンプル）";
             Screen.SignOutButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
-                "プレビューを終了";
+                "Google接続を解除（サンプル）";
             Screen.ConnectButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
                 "サンプルデータを表示";
             RenderPreview();
@@ -42,7 +42,6 @@ namespace Baryonyx.App
 #if UNITY_EDITOR || !UNITY_ANDROID
         private async System.Threading.Tasks.Task StartPreviewAsync()
         {
-            await presenter.SignInAsync();
             await presenter.ConnectAsync();
         }
 
@@ -52,12 +51,13 @@ namespace Baryonyx.App
             if (Screen == null)
                 return;
             Screen.Progress.text = "サンプルデータ / プレビュー";
+            Screen.GoogleStatus.text = presenter.SignedIn
+                ? "Google接続済みのサンプルです。実際の認証は行いません。"
+                : "未接続のサンプルです。歩数の表示とは別に操作できます。";
             Screen.Footnote.text =
                 "架空の歩数データです。Google認証・Health Connectには接続しません。";
             Screen.Status.text = presenter.Phase switch
             {
-                HealthScreenPhase.SignedOut =>
-                    "プレビューを開始すると、サンプル画面を操作できます。",
                 HealthScreenPhase.ReadyToConnect =>
                     "サンプルデータを表示して、日別の歩数を確認できます。",
                 HealthScreenPhase.Ready => "日付を選ぶとサンプルJSONを確認できます。",

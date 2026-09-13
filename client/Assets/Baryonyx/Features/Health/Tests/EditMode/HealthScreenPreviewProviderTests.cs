@@ -69,7 +69,7 @@ namespace Baryonyx.Tests.EditMode
             await presenter.RefreshAsync();
             Assert.That(presenter.Days.Count, Is.EqualTo(7));
             await presenter.SignOutAsync();
-            Assert.That(presenter.Days, Is.Empty);
+            Assert.That(presenter.Days.Count, Is.EqualTo(7));
             Assert.That(presenter.SignedIn, Is.False);
             await presenter.SignInAsync();
             await presenter.ConnectAsync();

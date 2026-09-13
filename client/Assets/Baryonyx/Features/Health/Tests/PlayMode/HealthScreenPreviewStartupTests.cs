@@ -27,7 +27,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(screen.Progress.text, Does.Contain("サンプルデータ"));
             Assert.That(screen.Footnote.text, Does.Contain("架空"));
             Assert.That(screen.RefreshButton.interactable, Is.True);
-            Assert.That(screen.SignInButton.gameObject.activeSelf, Is.False);
+            Assert.That(screen.SignInButton.gameObject.activeSelf, Is.True);
+            Assert.That(screen.GoogleStatus.text, Does.Contain("未接続"));
             Assert.That(screen.DetailsOverlay.activeSelf, Is.False);
         }
 

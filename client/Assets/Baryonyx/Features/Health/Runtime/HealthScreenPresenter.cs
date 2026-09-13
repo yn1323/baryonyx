@@ -7,8 +7,6 @@ namespace Baryonyx.Health
 {
     public enum HealthScreenPhase
     {
-        SignedOut,
-        SigningIn,
         ReadyToConnect,
         Connecting,
         Reading,
@@ -29,6 +27,7 @@ namespace Baryonyx.Health
         private Task active = Task.CompletedTask;
         private TaskCompletionSource<bool> foregroundSignal;
         private bool busy;
+        private bool authenticating;
         private bool signingOut;
         private bool foreground = true;
         private bool systemDialog;
@@ -39,16 +38,17 @@ namespace Baryonyx.Health
         private int generation;
 
         public event Action Changed;
-        public HealthScreenPhase Phase { get; private set; } = HealthScreenPhase.SignedOut;
+        public HealthScreenPhase Phase { get; private set; } = HealthScreenPhase.ReadyToConnect;
         public bool SignedIn { get; private set; }
         public bool IsBusy => busy || signingOut;
+        public string GoogleMessage { get; private set; } = "未接続。歩数の表示には不要です。";
         public string Message { get; private set; } =
-            "Googleで認証してから、歩数の読み取りを許可してください。";
+            "接続して、歩数の読み取りを許可してください。";
         public IReadOnlyList<HealthDaySnapshot> Days { get; private set; } =
             Array.Empty<HealthDaySnapshot>();
         public HealthDaySnapshot SelectedDay { get; private set; }
         public bool CanSignIn => !disposed && foreground && !SignedIn && !IsBusy;
-        public bool CanConnect => !disposed && foreground && SignedIn && !IsBusy;
+        public bool CanConnect => !disposed && foreground && !IsBusy;
         public bool CanRefresh => CanConnect && connected;
         public bool CanOpenSettings =>
             CanConnect
@@ -68,7 +68,13 @@ namespace Baryonyx.Health
             this.health = health ?? throw new ArgumentNullException(nameof(health));
         }
 
-        public Task SignInAsync() => CanSignIn ? RunAsync(SignInCoreAsync) : Task.CompletedTask;
+        public Task SignInAsync()
+        {
+            if (!CanSignIn)
+                return Task.CompletedTask;
+            authenticating = true;
+            return RunAsync(SignInCoreAsync);
+        }
 
         public Task ConnectAsync()
         {
@@ -105,24 +111,37 @@ namespace Baryonyx.Health
             catch (OperationCanceledException)
             {
                 if (Current(version))
-                    SetPhase(
-                        SignedIn ? HealthScreenPhase.ReadyToConnect : HealthScreenPhase.SignedOut,
-                        "処理を中断しました。もう一度お試しください。"
-                    );
+                {
+                    if (authenticating)
+                        SetGoogleMessage("Google接続を中断しました。もう一度お試しください。");
+                    else
+                        SetPhase(
+                            HealthScreenPhase.ReadyToConnect,
+                            "処理を中断しました。もう一度お試しください。"
+                        );
+                }
             }
             catch (Exception)
             {
                 if (Current(version))
                 {
-                    ClearDays();
-                    SetPhase(
-                        SignedIn ? HealthScreenPhase.Failed : HealthScreenPhase.SignedOut,
-                        "処理を完了できませんでした。もう一度お試しください。"
-                    );
+                    if (authenticating)
+                        SetGoogleMessage(
+                            "Google接続を完了できませんでした。もう一度お試しください。"
+                        );
+                    else
+                    {
+                        ClearDays();
+                        SetPhase(
+                            HealthScreenPhase.Failed,
+                            "処理を完了できませんでした。もう一度お試しください。"
+                        );
+                    }
                 }
             }
             finally
             {
+                authenticating = false;
                 systemDialog = false;
                 busy = false;
                 operation = null;
@@ -131,7 +150,7 @@ namespace Baryonyx.Health
                 if (resumeRequested && Current(version) && foreground && !signingOut)
                 {
                     resumeRequested = false;
-                    if (SignedIn && connectionRequested)
+                    if (connectionRequested)
                         _ = RunAsync((current, token) => ReadAsync(false, current, token));
                 }
             }
@@ -139,28 +158,24 @@ namespace Baryonyx.Health
 
         private async Task SignInCoreAsync(int version, CancellationToken token)
         {
-            SetPhase(HealthScreenPhase.SigningIn, "Googleの画面で認証してください。");
+            SetGoogleMessage("Googleの画面で認証してください。");
             systemDialog = true;
             var result = await authentication.SignInAsync(lifetime.Token);
             await WaitForForegroundAsync();
             systemDialog = false;
-            if (!Current(version))
+            if (!Current(version) || signingOut)
                 return;
             token.ThrowIfCancellationRequested();
             SignedIn = result == GoogleSignInStatus.Success;
             string message = result switch
             {
-                GoogleSignInStatus.Success => "認証できました。Health Connectに接続してください。",
+                GoogleSignInStatus.Success => "Googleに接続済みです。",
                 GoogleSignInStatus.NotConfigured =>
-                    "Google認証の設定が必要です。HealthConnectionSettingsにWebクライアントIDを設定してください。",
-                GoogleSignInStatus.Unsupported =>
-                    "Google認証とHealth ConnectはAndroid実機で利用できます。",
+                    "Google接続の設定が未完了です。歩数の表示は利用できます。",
+                GoogleSignInStatus.Unsupported => "この環境ではGoogle接続を利用できません。",
                 _ => "認証を完了できませんでした。キャンセルした場合も、ここからやり直せます。",
             };
-            SetPhase(
-                SignedIn ? HealthScreenPhase.ReadyToConnect : HealthScreenPhase.SignedOut,
-                message
-            );
+            SetGoogleMessage(message);
         }
 
         private async Task ReadAsync(bool requestPermission, int version, CancellationToken token)
@@ -252,7 +267,7 @@ namespace Baryonyx.Health
 
         public void SelectDay(int index)
         {
-            if (IsBusy || !foreground || !SignedIn || index < 0 || index >= Days.Count)
+            if (disposed || IsBusy || !foreground || index < 0 || index >= Days.Count)
                 return;
             SelectedDay = Days[index];
             Notify();
@@ -286,14 +301,8 @@ namespace Baryonyx.Health
             if (disposed || signingOut)
                 return;
             signingOut = true;
-            generation++;
-            operation?.Cancel();
             SignedIn = false;
-            connected = false;
-            connectionRequested = false;
-            resumeRequested = false;
-            ClearDays();
-            SetPhase(HealthScreenPhase.SignedOut, "サインアウトしています…");
+            SetGoogleMessage("Google接続を解除しています…");
             try
             {
                 // Wait for a pending system dialog before another SDK operation.
@@ -301,25 +310,25 @@ namespace Baryonyx.Health
                 if (disposed)
                     return;
                 bool success = await authentication.SignOutAsync(lifetime.Token);
-                SetPhase(
-                    HealthScreenPhase.SignedOut,
+                SetGoogleMessage(
                     success
-                        ? "サインアウトしました。Googleで認証してください。"
-                        : "画面のデータを消去しました。Googleのサインアウトを完了できませんでした。"
+                        ? "Google接続を解除しました。歩数の表示は引き続き利用できます。"
+                        : "Google接続を解除できませんでした。もう一度接続してお試しください。"
                 );
             }
             catch (Exception)
             {
                 if (!disposed)
-                    SetPhase(
-                        HealthScreenPhase.SignedOut,
-                        "画面のデータを消去しました。Googleのサインアウトを完了できませんでした。"
+                    SetGoogleMessage(
+                        "Google接続を解除できませんでした。もう一度接続してお試しください。"
                     );
             }
             finally
             {
                 signingOut = false;
                 Notify();
+                if (resumeRequested && !disposed && foreground && connectionRequested)
+                    _ = RunAsync((version, token) => ReadAsync(false, version, token));
             }
         }
 
@@ -333,6 +342,9 @@ namespace Baryonyx.Health
                 foregroundSignal = new TaskCompletionSource<bool>(
                     TaskCreationOptions.RunContinuationsAsynchronously
                 );
+                // Restore health snapshots after returning from a Google dialog, too.
+                if (authenticating)
+                    resumeRequested = connectionRequested;
                 ClearDays();
                 if (!systemDialog)
                     operation?.Cancel();
@@ -342,9 +354,9 @@ namespace Baryonyx.Health
             foregroundSignal?.TrySetResult(true);
             if (systemDialog)
                 return;
-            if (busy)
-                resumeRequested = connectionRequested && SignedIn;
-            else if (SignedIn && connectionRequested && !signingOut)
+            if (IsBusy)
+                resumeRequested = connectionRequested;
+            else if (connectionRequested)
                 _ = RunAsync((version, token) => ReadAsync(false, version, token));
             else
                 Notify();
@@ -365,6 +377,12 @@ namespace Baryonyx.Health
         {
             Phase = phase;
             Message = message;
+            Notify();
+        }
+
+        private void SetGoogleMessage(string message)
+        {
+            GoogleMessage = message;
             Notify();
         }
 
