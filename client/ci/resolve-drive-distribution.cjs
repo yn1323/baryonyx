@@ -1,11 +1,12 @@
-// Only GitHub API metadata decides which build and environment may be published.
-module.exports = async function resolveDistribution(github, context) {
+// The calling build supplies its exact artifact ID; GitHub confirms its source.
+module.exports = async function resolveDistribution(github, context, input) {
   const { owner, repo } = context.repo;
   const fullName = `${owner}/${repo}`;
   const { data: run } = await github.rest.actions.getWorkflowRun({
-    owner, repo, run_id: context.payload.workflow_run.id,
+    owner, repo, run_id: context.runId,
   });
-  if (run.status !== 'completed' || run.conclusion !== 'success' ||
+  if ((run.status !== 'in_progress' &&
+      !(run.status === 'completed' && run.conclusion === 'success')) ||
       run.path !== '.github/workflows/client-ci.yml' ||
       run.repository.full_name !== fullName || run.head_repository?.full_name !== fullName) {
     return null;
@@ -23,20 +24,33 @@ module.exports = async function resolveDistribution(github, context) {
     environment = 'preview';
     prNumber = String(pr.number);
   } else if (run.event === 'push' && run.head_branch === 'main') {
+    environment = 'prod';
+  } else if (run.event === 'push' && ['dev', 'develop'].includes(run.head_branch)) {
     environment = 'dev';
   } else if (run.event !== 'workflow_dispatch' ||
-      run.head_branch !== context.payload.repository.default_branch) {
+      !['main', 'dev', 'develop'].includes(run.head_branch)) {
     return null;
+  }
+  if (!['dev', 'prod', 'preview'].includes(input.environment) ||
+      (environment && environment !== input.environment)) {
+    throw new Error('APK environment does not match the CI event.');
+  }
+  const artifactId = Number(input.artifactId);
+  if (!Number.isSafeInteger(artifactId) || artifactId <= 0) {
+    throw new Error('Invalid APK artifact ID from the Android build.');
   }
   const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
     owner, repo, run_id: run.id, per_page: 100,
   });
-  const pattern = new RegExp(`^client-android-apk-(dev|prod|preview)-${run.run_attempt}$`);
-  const matching = artifacts.filter(artifact => !artifact.expired && pattern.test(artifact.name));
-  if (matching.length !== 1) throw new Error('Expected exactly one APK artifact for the completed run attempt.');
+  // A retry of only this job keeps the artifact ID from the successful build.
+  const pattern = /^client-android-apk-(dev|prod|preview)-([1-9]\d*)$/;
+  const matching = artifacts.filter(artifact => !artifact.expired && artifact.id === artifactId);
+  if (matching.length !== 1 || !pattern.test(matching[0].name)) {
+    throw new Error('Expected exactly one APK artifact from the successful Android build.');
+  }
   const artifact = matching[0];
   const artifactEnvironment = pattern.exec(artifact.name)[1];
-  if (environment && artifactEnvironment !== environment) {
+  if (artifactEnvironment !== input.environment) {
     throw new Error('APK artifact environment does not match the CI event.');
   }
   if (!/^[a-f0-9]{40}$/.test(run.head_sha) || !Number.isSafeInteger(artifact.id) || artifact.id <= 0) {

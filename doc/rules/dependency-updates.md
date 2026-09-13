@@ -24,7 +24,8 @@
 リリース日時が得られない更新は、Renovateの既定動作に従って保留される。
 セキュリティ更新など、通常の更新制限の対象外となる処理もある。[Renovateのスケジュール](https://docs.renovatebot.com/key-concepts/scheduling/)、[リリース後の待機](https://docs.renovatebot.com/key-concepts/minimum-release-age/)
 
-このリポジトリのCIは `main` へのpushとPRを起点とし、Renovateブランチへのpushだけでは実行されない。
+このリポジトリのCIは `main` へのpushとPRを起点とし、Client CIは `dev`・`develop` へのpushも対象にする。
+Renovateブランチへのpushだけでは実行されない。
 PR作成前の待機が止まらないように `internalChecksAsSuccess: true` を設定する。
 PR作成後は既存のServer CI・Client CIで変更内容を検証する。
 
