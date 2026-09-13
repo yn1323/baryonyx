@@ -166,8 +166,45 @@ class UploadTests(unittest.TestCase):
     def test_http_error_does_not_expose_response_body(self):
         error = HTTPError("https://oauth2.googleapis.com/token", 400, "secret-response", {}, io.BytesIO(b"test-refresh"))
         with patch.object(uploader, "urlopen", side_effect=error):
-            with self.assertRaisesRegex(RuntimeError, r"^Google API request failed \(HTTP 400\)\.$"):
+            with self.assertRaisesRegex(RuntimeError, r"^OAuth token refresh failed \(HTTP 400\)\.$"):
                 uploader.upload(self.apk, "folder-123", ENV, "dev")
+
+    def test_oauth_error_reports_only_known_code_and_operation(self):
+        payload = {"error": "invalid_grant", "error_description": "test-refresh test-secret user@example.com"}
+        error = HTTPError("https://oauth2.googleapis.com/token", 400, "private-reason", {}, io.BytesIO(json.dumps(payload).encode()))
+        with patch.object(uploader, "urlopen", side_effect=error) as http:
+            with self.assertRaisesRegex(RuntimeError, r"^OAuth token refresh failed \(HTTP 400, invalid_grant\)\.$"):
+                uploader.upload(self.apk, "folder-123", ENV, "dev")
+        self.assertEqual(http.call_count, 1)
+
+    def test_folder_error_is_distinct_from_authentication_error(self):
+        payload = {"error": {"message": "private-folder", "errors": [{"reason": "notFound", "message": "private-folder"}]}}
+        error = HTTPError("https://www.googleapis.com/drive/v3/files/private-folder", 404, "private-reason", {}, io.BytesIO(json.dumps(payload).encode()))
+        with patch.object(uploader, "urlopen", side_effect=[Response({"access_token": "test-access"}), error]) as http:
+            with self.assertRaisesRegex(RuntimeError, r"^Drive folder lookup failed \(HTTP 404, notFound\)\.$"):
+                uploader.upload(self.apk, "folder-123", ENV, "dev")
+        self.assertEqual(http.call_count, 2)
+
+    def test_unknown_or_malformed_error_payload_cannot_leak_details(self):
+        for payload in [
+            {"error": "test-refresh"}, {"error": {"errors": [{"reason": "test-secret"}]}},
+            {"error": {"errors": "test-access"}}, {"error": ["test-refresh"]},
+            ["test-secret"], {"error": {"errors": [{"reason": ["test-secret"]}]}},
+        ]:
+            error = HTTPError("https://oauth2.googleapis.com/token", 400, "private-reason", {}, io.BytesIO(json.dumps(payload).encode()))
+            with self.subTest(payload=payload), patch.object(uploader, "urlopen", side_effect=error):
+                with self.assertRaisesRegex(RuntimeError, r"^OAuth token refresh failed \(HTTP 400\)\.$"):
+                    uploader.upload(self.apk, "folder-123", ENV, "dev")
+
+    def test_file_search_session_and_upload_failures_identify_the_operation(self):
+        for index, operation in [(2, "Drive file lookup"), (3, "Drive upload session"), (4, "Drive APK upload")]:
+            responses = self.responses()[:index]
+            payload = {"error": {"errors": [{"reason": "badRequest", "message": "test-refresh"}]}}
+            responses.append(HTTPError(SESSION, 400, "private-reason", {}, io.BytesIO(json.dumps(payload).encode())))
+            with self.subTest(operation=operation), patch.object(uploader, "urlopen", side_effect=responses):
+                with self.assertRaises(RuntimeError) as caught:
+                    uploader.upload(self.apk, "folder-123", ENV, "dev")
+            self.assertEqual(str(caught.exception), f"{operation} failed (HTTP 400, badRequest).")
 
     def test_upload_failure_does_not_delete_existing_file(self):
         responses = self.responses(files=[{"id": "file-123", "mimeType": uploader.APK_MIME}])

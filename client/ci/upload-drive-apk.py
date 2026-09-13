@@ -17,9 +17,34 @@ UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files"
 ENVIRONMENTS = ("dev", "prod", "preview")
 APK_MIME = "application/vnd.android.package-archive"
 FOLDER_MIME = "application/vnd.google-apps.folder"
+SAFE_ERROR_CODES = frozenset({
+    "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client",
+    "unsupported_grant_type", "invalid_scope", "access_denied",
+    "badRequest", "notFound", "authError", "insufficientPermissions",
+    "insufficientFilePermissions", "storageQuotaExceeded", "rateLimitExceeded",
+    "userRateLimitExceeded", "dailyLimitExceeded", "domainPolicy",
+})
 
 
-def request(method, url, *, token=None, data=None, headers=None):
+def safe_error_code(error):
+    # Free-form messages can contain tokens, IDs or personal data. Never return them.
+    try:
+        payload = json.loads(error.read(4096))
+    except (ValueError, OSError):
+        return None
+    detail = payload.get("error") if isinstance(payload, dict) else None
+    if isinstance(detail, str):
+        return detail if detail in SAFE_ERROR_CODES else None
+    reasons = detail.get("errors") if isinstance(detail, dict) else None
+    if isinstance(reasons, list):
+        for item in reasons:
+            code = item.get("reason") if isinstance(item, dict) else None
+            if isinstance(code, str) and code in SAFE_ERROR_CODES:
+                return code
+    return None
+
+
+def request(method, url, *, operation, token=None, data=None, headers=None):
     headers = dict(headers or {})
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -28,10 +53,11 @@ def request(method, url, *, token=None, data=None, headers=None):
             body = response.read()
             return (json.loads(body) if body else {}), response.headers
     except HTTPError as error:
-        # Do not log response bodies, OAuth tokens or resumable session URLs.
-        raise RuntimeError(f"Google API request failed (HTTP {error.code}).") from None
+        code = safe_error_code(error)
+        detail = f", {code}" if code else ""
+        raise RuntimeError(f"{operation} failed (HTTP {error.code}{detail}).") from None
     except (URLError, TimeoutError):
-        raise RuntimeError("Google API connection failed; rerun the upload job.") from None
+        raise RuntimeError(f"{operation} connection failed; rerun the upload job.") from None
 
 
 def require_id(value):
@@ -47,6 +73,7 @@ def refresh_access_token(env):
         raise ValueError("Missing GitHub Actions secrets: " + ", ".join(missing))
     result, _ = request(
         "POST", "https://oauth2.googleapis.com/token",
+        operation="OAuth token refresh",
         data=urlencode({
             "client_id": env[names[0]],
             "client_secret": env[names[1]],
@@ -70,7 +97,7 @@ def find_existing_file(folder_id, token, apk_name):
     }
     files = []
     while True:
-        page, _ = request("GET", API + "?" + urlencode(params), token=token)
+        page, _ = request("GET", API + "?" + urlencode(params), operation="Drive file lookup", token=token)
         files.extend(page.get("files", []))
         if len(files) > 1:
             raise ValueError(f"Multiple {apk_name} files exist in the destination; keep only one before uploading.")
@@ -96,7 +123,7 @@ def upload(apk, folder_id, env, environment):
     folder, _ = request(
         "GET", API + "/" + folder_id + "?" + urlencode({
             "fields": "mimeType,trashed,capabilities(canAddChildren)",
-        }), token=token,
+        }), operation="Drive folder lookup", token=token,
     )
     if (folder.get("mimeType") != FOLDER_MIME or folder.get("trashed")
             or not folder.get("capabilities", {}).get("canAddChildren")):
@@ -118,6 +145,7 @@ def upload(apk, folder_id, env, environment):
     url += "?" + urlencode({"uploadType": "resumable", "fields": "id,size,md5Checksum"})
     _, headers = request(
         "PATCH" if existing_id else "POST", url, token=token,
+        operation="Drive upload session",
         data=json.dumps(metadata).encode(),
         headers={
             "Content-Type": "application/json; charset=UTF-8",
@@ -134,6 +162,7 @@ def upload(apk, folder_id, env, environment):
     content = apk.read_bytes()
     result, _ = request(
         "PUT", session_url, token=token, data=content,
+        operation="Drive APK upload",
         headers={"Content-Type": APK_MIME, "Content-Length": str(len(content))},
     )
     file_id = require_id(result.get("id"))

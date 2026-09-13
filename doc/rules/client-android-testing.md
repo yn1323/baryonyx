@@ -63,6 +63,10 @@ Client CIも同じPR・ブランチで順に実行し、新しいpushで進行�
 `queue: max` で最大100件を待機させ、待機開始順に処理する。
 上限を超えた実行はキャンセルされるため、該当するClient CIの再実行が必要になる。[GitHubのconcurrency仕様](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 認証・転送・照合の失敗はjobの失敗として扱い、成功リンクを出さない。
+HTTPエラーでは、認証更新・フォルダー確認・同名ファイル検索・アップロード開始・APK転送のどの工程で失敗したかと、HTTPステータス、既知のエラー種別だけを記録する。
+Googleが返す自由記述の説明、トークン、通信先の認証付きURLはログへ出さない。
+`OAuth token refresh` の `invalid_grant` は更新トークン、`invalid_client` はクライアントID・シークレットの組み合わせを確認する手掛かりになる。
+HTTP 400だけで期限切れや権限不足とは断定せず、失敗した工程とエラー種別を確認してから再認可や設定の修正を行う。
 
 Driveの各ファイルは、その配布区分で最後に配布が完了したAPKになる。
 Dev・Prod・Previewは互いに上書きしない。
