@@ -1,11 +1,7 @@
 using System.IO;
-using Baryonyx.App;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
 
@@ -70,25 +66,32 @@ namespace Baryonyx.Health.Editor
                     .FitMode
                     .PreferredSize;
 
-                Label("Title", content, "1週間の歩数", 60, Ink, 0);
-                Label("Brand", content, "BARYONYX / HEALTH", 30, Green, 0);
-                Label("Subtitle", content, "Health Connectで、日ごとの歩数を確認。", 35, Muted, 0);
+                Label("Title", content, "1週間の歩数", 44, Ink, 0);
+                Label("Brand", content, "BARYONYX / HEALTH", 22, Green, 0);
+                Label(
+                    "Subtitle",
+                    content,
+                    "Androidの運動データを、日ごとの一覧で確認。",
+                    26,
+                    Muted,
+                    0
+                );
                 var connection = Rect("Connection", content);
                 Image(connection, Color.white, false);
                 Vertical(connection, 24, new RectOffset(28, 28, 28, 28));
-                view.Progress = Label("Progress", connection, "Health Connect接続", 40, Green, 0);
+                view.Progress = Label("Progress", connection, "Health Connect接続", 30, Green, 0);
                 view.Status = Label(
                     "Status",
                     connection,
-                    "接続して、歩数の読み取りを許可してください。",
-                    35,
+                    "Health Connectに接続し、「歩数」の読み取りを許可してください。",
+                    26,
                     Muted,
                     0
                 );
                 view.ConnectButton = Button(
                     "Connect",
                     connection,
-                    "Health Connectに接続",
+                    "運動データに接続",
                     Ink,
                     Color.white
                 );
@@ -104,12 +107,12 @@ namespace Baryonyx.Health.Editor
                 var googleConnection = Rect("GoogleConnection", content);
                 Image(googleConnection, Color.white, false);
                 Vertical(googleConnection, 24, new RectOffset(28, 28, 28, 28));
-                Label("GoogleTitle", googleConnection, "Google接続（任意）", 40, Green, 0);
+                Label("GoogleTitle", googleConnection, "Google接続（任意）", 30, Green, 0);
                 view.GoogleStatus = Label(
                     "GoogleStatus",
                     googleConnection,
                     "未接続。歩数の表示には不要です。",
-                    35,
+                    26,
                     Muted,
                     0
                 );
@@ -121,16 +124,23 @@ namespace Baryonyx.Health.Editor
                     Color.white
                 );
 
-                view.Period = Label("Period", content, "今日を含む直近7日間", 35, Ink, 0);
-                view.RefreshButton = Button("Refresh", content, "更新", Green, Color.white);
+                Label("ExerciseTitle", connection, "運動データ / 歩数", 30, Green, 0);
+                view.Period = Label("Period", connection, "今日を含む直近7日間", 26, Ink, 0);
+                view.RefreshButton = Button(
+                    "Refresh",
+                    connection,
+                    "歩数を更新",
+                    Green,
+                    Color.white
+                );
                 view.RefreshButton.gameObject.SetActive(false);
-                var days = Rect("Days", content);
+                var days = Rect("Days", connection);
                 Vertical(days, 20, new RectOffset());
                 view.EmptyState = Label(
                     "EmptyState",
                     days,
                     "接続すると、ここに7日分の歩数が表示されます。",
-                    35,
+                    26,
                     Muted,
                     0
                 ).gameObject;
@@ -150,21 +160,21 @@ namespace Baryonyx.Health.Editor
                     group.childForceExpandWidth = group.childForceExpandHeight = false;
                     group.childAlignment = TextAnchor.MiddleLeft;
                     row.gameObject.AddComponent<LayoutElement>().minHeight = 140;
-                    view.DayDates[i] = Label("Date", row, "", 35, Ink, 0);
+                    view.DayDates[i] = Label("Date", row, "", 26, Ink, 0);
                     FlexibleWidth(view.DayDates[i].rectTransform, 1);
-                    view.DayLabels[i] = Label("Steps", row, "", 40, Ink, 0);
+                    view.DayLabels[i] = Label("Steps", row, "", 30, Ink, 0);
                     view.DayLabels[i].alignment = TextAlignmentOptions.MidlineRight;
                     FlexibleWidth(view.DayLabels[i].rectTransform, 1.6f);
-                    var arrow = Label("DetailsArrow", row, "›", 40, Green, 0);
+                    var arrow = Label("DetailsArrow", row, "›", 30, Green, 0);
                     var arrowSize = arrow.gameObject.AddComponent<LayoutElement>();
                     arrowSize.minWidth = arrowSize.preferredWidth = 32;
                     row.gameObject.SetActive(false);
                 }
                 view.Footnote = Label(
                     "Footnote",
-                    content,
+                    connection,
                     "歩数データは画面を開いている間だけ保持します。",
-                    35,
+                    26,
                     Muted,
                     0
                 );
@@ -191,15 +201,15 @@ namespace Baryonyx.Health.Editor
                     "DetailsTitle",
                     screenLayout.DetailsPanel,
                     "JSON",
-                    40,
+                    30,
                     Ink,
                     0
                 );
                 Label(
                     "DetailsHint",
                     screenLayout.DetailsPanel,
-                    "日別集計のJSON。上下・左右にスクロールできます。",
-                    35,
+                    "健康データのJSON。上下・左右にスクロールできます。",
+                    26,
                     Muted,
                     0
                 );
@@ -219,19 +229,35 @@ namespace Baryonyx.Health.Editor
                 jsonContent.anchorMax = new Vector2(0, 1);
                 view.JsonText = jsonContent.gameObject.AddComponent<TextMeshProUGUI>();
                 view.JsonText.font = mono;
-                view.JsonText.fontSize = 36;
+                view.JsonText.fontSize = 22;
                 view.JsonText.color = new Color(0.79f, 0.93f, 0.84f);
                 view.JsonText.richText = false;
                 view.JsonText.textWrappingMode = TextWrappingModes.NoWrap;
                 view.JsonText.margin = new Vector4(20, 20, 24, 20);
                 view.JsonText.raycastTarget = false;
+                var detailActions = Rect("DetailsActions", screenLayout.DetailsPanel);
+                var actionsLayout =
+                    detailActions.gameObject.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
+                actionsLayout.spacing = 24;
+                actionsLayout.childControlWidth = actionsLayout.childControlHeight = true;
+                actionsLayout.childForceExpandWidth = true;
+                actionsLayout.childForceExpandHeight = false;
+                view.CopyButton = Button(
+                    "CopyJson",
+                    detailActions,
+                    "JSONをコピー",
+                    new Color(0.86f, 0.91f, 0.88f),
+                    Ink
+                );
+                view.CopyButton.GetComponent<LayoutElement>().flexibleWidth = 1;
                 view.CloseButton = Button(
                     "CloseDetails",
-                    screenLayout.DetailsPanel,
+                    detailActions,
                     "閉じる",
                     Green,
                     Color.white
                 );
+                view.CloseButton.GetComponent<LayoutElement>().flexibleWidth = 1;
                 overlay.gameObject.SetActive(false);
                 view.SignOutButton.interactable = view.RefreshButton.interactable = false;
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
@@ -241,31 +267,6 @@ namespace Baryonyx.Health.Editor
             {
                 Object.DestroyImmediate(root.gameObject);
             }
-        }
-
-        [MenuItem("Baryonyx/Health/Attach Screen To Current Scene")]
-        public static void AttachToCurrentScene()
-        {
-            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            if (scene.isDirty || EditorApplication.isPlaying)
-                throw new System.InvalidOperationException(
-                    "Save the scene and stop Play Mode first."
-                );
-            if (Object.FindAnyObjectByType<HealthScreenBootstrap>() != null)
-                return;
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            var screen = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-            var app = new GameObject("HealthApp").AddComponent<HealthScreenBootstrap>();
-            app.Screen = screen.GetComponent<HealthScreenView>();
-            app.Settings = AssetDatabase.LoadAssetAtPath<HealthConnectionSettings>(SettingsPath);
-            if (Object.FindAnyObjectByType<EventSystem>() == null)
-                new GameObject(
-                    "EventSystem",
-                    typeof(EventSystem),
-                    typeof(InputSystemUIInputModule)
-                );
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
         }
 
         private static TMP_FontAsset Font(string source, string name)
@@ -382,7 +383,7 @@ namespace Baryonyx.Health.Editor
             var element = rect.gameObject.AddComponent<LayoutElement>();
             element.minHeight = element.minWidth = 120;
             Vertical(rect, 0, new RectOffset(24, 24, 20, 20));
-            var label = Label("Label", rect, text, 40, color, 0);
+            var label = Label("Label", rect, text, 30, color, 0);
             label.alignment = TextAlignmentOptions.Center;
             return button;
         }

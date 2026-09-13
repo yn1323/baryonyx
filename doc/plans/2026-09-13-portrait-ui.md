@@ -17,10 +17,10 @@
 |---|---|---|
 | [Player設定](../../client/ProjectSettings/ProjectSettings.asset) | 自動回転で4方向を許可 | 通常の縦向きを指定する |
 | [画面の生成処理](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | CanvasScalerは800×1100、Scale With Screen Size、Expand | 拡縮の基準を維持し、文字と操作領域の寸法を見直す |
-| [画面の表示処理](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthScreenView.cs) | 毎フレームSafeAreaのアンカーとパネル幅を書き換える | 初期表示と表示条件が変わったときに更新する |
+| [画面の表示処理](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs) | 毎フレームSafeAreaのアンカーとパネル幅を書き換える | 初期表示と表示条件が変わったときに更新する |
 | メイン画面 | 一覧だけがスクロールし、説明・状態表示・ボタンは高さが固定 | 内容全体を縦スクロールし、文章に応じて高さを確保する |
 | JSON詳細 | 整形済みJSONを折り返さず、上下・左右へスクロール | この操作を維持し、閉じるボタンを安全領域内に置く |
-| [既存の画面テスト](../../client/Assets/Baryonyx/Features/Health/Tests/PlayMode/HealthScreenScenarioTests.cs) | 認証、接続、一覧、モーダル、JSONスクロールを検査 | 画面サイズ変更と小さい表示領域での操作を追加する |
+| [既存の画面テスト](../../client/Assets/Baryonyx/Features/Health/Tests/PlayMode/Presentation/HealthScreenScenarioTests.cs) | 認証、接続、一覧、モーダル、JSONスクロールを検査 | 画面サイズ変更と小さい表示領域での操作を追加する |
 
 現状のボタン高は50〜88基準単位で、端末上の48dpを保証する値ではない。
 本文にも固定高があるため、折り返し設定だけでは長文を表示しきれない。
@@ -28,7 +28,7 @@
 
 ## 「1週間の歩数」のスマートフォン向け改修
 
-[SampleScene](../../client/Assets/Scenes/SampleScene.unity) から起動する既存の「1週間の歩数」を、今回のUIルールを適用する画面とする。
+[Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) から起動する既存の「1週間の歩数」を、今回のUIルールを適用する画面とする。
 画面の向きを指定する作業と併せて、認証・接続操作、日別一覧、JSON詳細の配置を改修する。
 既存の緑系の配色、日本語フォント、等幅のJSON表示を引き継ぎ、次の順序で縦一列に配置する。
 
@@ -47,7 +47,7 @@
 
 ### 状態ごとの操作
 
-操作の可否は [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthScreenPresenter.cs) の既存状態に従い、表示の優先順位を次のようにする。
+操作の可否は [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) の既存状態に従い、表示の優先順位を次のようにする。
 
 | 状態 | 優先する表示と操作 |
 |---|---|
@@ -151,8 +151,8 @@ Androidでは48×48dp以上のタップ領域と8dp以上の間隔を目安と�
 | 対象 | 変更内容 |
 |---|---|
 | `client/ProjectSettings/ProjectSettings.asset` | 画面方向と回転の許可値 |
-| `client/Assets/Baryonyx/Features/Health/Runtime/HealthScreenLayout.cs`（新規予定） | 表示条件の比較、SafeArea、パネル寸法の更新 |
-| `client/Assets/Baryonyx/Features/Health/Runtime/HealthScreenView.cs` | レイアウト責務の移管、状態別の操作表示、日付と歩数の個別表示、スクロールの参照と復帰処理 |
+| `client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenLayout.cs`（新規予定） | 表示条件の比較、SafeArea、パネル寸法の更新 |
+| `client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs` | レイアウト責務の移管、状態別の操作表示、日付と歩数の個別表示、スクロールの参照と復帰処理 |
 | `client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs` | 縦一列の階層、日別の行、モーダル、参照、文字・操作領域の寸法を生成する処理 |
 | `client/Assets/Baryonyx/Features/Health/UI/HealthScreen.prefab` | 生成処理から再生成した画面 |
 | `client/Assets/Baryonyx/Features/Health/Tests/` | 寸法の検査と実Prefabを使う操作・レイアウトテスト |

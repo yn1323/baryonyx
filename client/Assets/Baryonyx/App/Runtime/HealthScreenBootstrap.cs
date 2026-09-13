@@ -16,6 +16,8 @@ namespace Baryonyx.App
 
         private void Start()
         {
+            Application.targetFrameRate = 60;
+
 #if UNITY_ANDROID && !UNITY_EDITOR
             authentication = new UmothGoogleSignInProvider(
                 Settings != null ? Settings.GoogleWebClientId : ""
@@ -25,50 +27,14 @@ namespace Baryonyx.App
 #else
             var preview = new HealthScreenPreviewProvider();
             presenter = new HealthScreenPresenter(preview, preview);
-            Screen.Bind(presenter);
-            presenter.Changed += RenderPreview;
-            Screen.SignInButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
-                "Google接続を試す（サンプル）";
-            Screen.SignOutButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
-                "Google接続を解除（サンプル）";
-            Screen.ConnectButton.GetComponentInChildren<TMPro.TMP_Text>(true).text =
-                "サンプルデータを表示";
-            RenderPreview();
-            _ = StartPreviewAsync();
+            Screen.Bind(presenter, preview: true);
+            _ = presenter.ConnectAsync();
 #endif
             ApplyForeground();
-        }
-
-#if UNITY_EDITOR || !UNITY_ANDROID
-        private async System.Threading.Tasks.Task StartPreviewAsync()
-        {
-            await presenter.ConnectAsync();
-        }
-
-        // Subscribe after the view so its normal rendering cannot hide the preview label.
-        private void RenderPreview()
-        {
-            if (Screen == null)
-                return;
-            Screen.Progress.text = "サンプルデータ / プレビュー";
-            Screen.GoogleStatus.text = presenter.SignedIn
-                ? "Google接続済みのサンプルです。実際の認証は行いません。"
-                : "未接続のサンプルです。歩数の表示とは別に操作できます。";
-            Screen.Footnote.text =
-                "架空の歩数データです。Google認証・Health Connectには接続しません。";
-            Screen.Status.text = presenter.Phase switch
-            {
-                HealthScreenPhase.ReadyToConnect =>
-                    "サンプルデータを表示して、日別の歩数を確認できます。",
-                HealthScreenPhase.Ready => "日付を選ぶとサンプルJSONを確認できます。",
-                HealthScreenPhase.Failed =>
-                    "プレビューを表示できませんでした。もう一度お試しください。",
-                _ => "サンプルデータを準備しています…",
-            };
-            if (presenter.SelectedDay != null)
-                Screen.DetailsTitle.text = presenter.SelectedDay.Day + " / サンプルJSON";
-        }
+#if UNITY_ANDROID && !UNITY_EDITOR
+            _ = presenter.InitializeAsync();
 #endif
+        }
 
         private void OnApplicationPause(bool value)
         {

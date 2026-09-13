@@ -115,6 +115,11 @@ Repository secretsの登録後にClient CIを実行し、環境名付きAPKの�
 
 ## ローカルビルドと配布処理の検証
 
+Windowsで手動ビルドする場合は [build-apk.bat](../../shortcuts/build-apk.bat) を使える。
+ビルド後に指定のGoogle Driveフォルダーへコピーする場合は [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat) を使う。
+配置先、上書き動作、前提条件は [手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) に従う。
+Androidエミュレーターの準備とAPKインストールは [WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md) に従う。
+
 ローカルではAndroid Build Support、SDK・NDK・OpenJDKを同じUnity版へ導入する。
 対象Editorを閉じるか検証コピーを用意し、次を実行する。
 
