@@ -67,7 +67,7 @@ namespace Baryonyx.Health.Editor
                     .PreferredSize;
 
                 Label("Title", content, "1週間の歩数", 44, Ink, 0);
-                Label("Brand", content, "BARYONYX / HEALTH", 22, Green, 0);
+                Label("Brand", content, PlayerSettings.productName, 22, Green, 0);
                 Label(
                     "Subtitle",
                     content,

@@ -12,6 +12,9 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 
 ## ローカル表示画面
 
+画面上部には「1週間の歩数」と、[正式なアプリ名](../game/overview.md)を表示する。
+画面アセットの生成時に、ブランド表記へPlayer Settingsの `productName` を設定する。
+
 ディレクトリと依存方向は [クライアントの構成と依存関係](../rules/frontend-design.md) に従う。
 表示処理はHealthの `Runtime/Presentation/`、利用条件の判定は `Runtime/Requirements/`、サンプルProviderは `Runtime/Preview/`、既存のサーバー同期は `Runtime/Sync/` に分ける。
 AppはProviderを選択し、`HealthScreenView.Bind` の `preview` 引数で表示モードを渡す。

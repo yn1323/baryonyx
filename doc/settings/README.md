@@ -11,6 +11,7 @@
 | 設定 | 正本・確認先 | 用途・変更手順 |
 |---|---|---|
 | Unityの版 | [ProjectVersion.txt](../../client/ProjectSettings/ProjectVersion.txt) | [ビルド手順](../rules/client-android-testing.md) |
+| アプリ表示名 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) の `productName` | 正式名は[ゲーム概要](../game/overview.md)。Player Settingsの `Product Name` を変更し、[画面Prefab](../../client/Assets/Baryonyx/Features/Health/UI/HealthScreen.prefab)のブランド表記も合わせる。[生成処理](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs)は同じ設定値を使う |
 | Player Settings・描画・画面方向 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) | [UIルール](../rules/ui-design.md)・[エミュレーター](../rules/client-android-emulator.md) |
 | ビルド対象シーン | [EditorBuildSettings.asset](../../client/ProjectSettings/EditorBuildSettings.asset) | [クライアント構成](../rules/frontend-design.md) |
 | APKのアプリID・SDK・ABI・署名・出力先 | [AndroidBuild.cs](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) | [Androidビルド](../rules/client-android-testing.md)。ビルド時の上書き設定も確認する |
@@ -37,7 +38,7 @@
 | キャラ・装備・敵などの数値と設定 | [個別データ](../catalog/README.md) |
 | ユーザーが変更できる設定・既定値 | [ユーザー設定](../features/player-settings.md) |
 | ゲームマスタの実行形式・配信・版管理 | [全体構成](../architecture.md) |
-| 公開地域・言語・正式名 | [ゲーム概要](../game/overview.md) |
+| 公開地域・言語 | [ゲーム概要](../game/overview.md) |
 
 設定を追加するときは、用途、設定元、適用先、既定値の確認先、変更時の検証方法を記す。
 外部管理画面の状態は、確認日と確認範囲を添えて記録する。

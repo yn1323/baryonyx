@@ -10,6 +10,7 @@
 | 項目 | CIの設定 |
 |---|---|
 | Unity | `ProjectVersion.txt` の版。現在は `6000.6.0f1` |
+| アプリ表示名 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) の `productName`。正式名は[ゲーム概要](../game/overview.md)を参照 |
 | 成果物 | `Builds/Android/baryonyx.apk` |
 | Application ID | `com.croissantlab.baryonyx` |
 | backend・ABI | IL2CPP・ARM64のみ |
