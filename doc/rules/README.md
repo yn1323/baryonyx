@@ -4,7 +4,7 @@
 
 | 分野 | 正本となる文書 |
 |---|---|
-| 文書の形式・更新・正本・未決の扱い | [文書管理方針](documentation-policy.md) |
+| 文書の形式・更新・正本・未決・仕様追加時の矛盾確認 | [文書管理方針](documentation-policy.md) |
 | Unityの配置・依存方向 | [クライアント構成](frontend-design.md) |
 | Workers・D1・Zod・Drizzle・公開 | [バックエンド構成](backend-design.md) |
 | UIの配置・文字・操作・機種差 | [UI設計](ui-design.md) |

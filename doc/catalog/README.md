@@ -22,10 +22,10 @@
 | [レア度](rarities/README.md) | キャラ・武器・防具等の適用対象 | `rarity-` |
 | [素材・通貨](resources/README.md) | 用途・入手先・消費先 | `resource-` |
 | [強化・合成](upgrades/README.md) | 対象・前提条件・段階・上限 | `upgrade-` |
-| [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・ステージ・危険度・目標ID | `loot-` |
+| [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・場所・目標ID | `loot-` |
 | [運動目標](goals/README.md) | 対象運動・指標・単位 | `goal-` |
-| [危険度・デイリー変異の条件](stage-modifiers/README.md) | 危険度または変異としての分類 | `modifier-` |
-| [ステージ](stages/README.md) | 地域ID・解放条件・推奨の強さ | `stage-` |
+| [デイリー変異などの条件](stage-modifiers/README.md) | 採用する場合の変異の分類 | `modifier-` |
+| [探索する場所・ステージ](stages/README.md) | 地域・部屋・分岐・解放条件 | `stage-` |
 | [実績・ミッション・称号](achievements/README.md) | 種別・解放条件・達成条件 | `achievement-` |
 | [世界の人物・地域・組織](world/README.md) | 人物・地域・組織などの種別 | `world-` |
 
