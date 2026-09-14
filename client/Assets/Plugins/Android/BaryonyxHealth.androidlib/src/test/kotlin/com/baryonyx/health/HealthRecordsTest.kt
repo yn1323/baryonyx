@@ -28,6 +28,40 @@ class HealthRecordsTest {
                 device = Device(Device.TYPE_PHONE, "Example", "Test phone"))
                 .populatedWithTestValues(id = "test-record-$source", dataOrigin = DataOrigin(source), lastModifiedTime = end))
 
+    @Test fun everySupportedTypePreservesItsValueUnitAndDayBoundary() {
+        val cases = linkedMapOf<String, Triple<Record, String, Double>>(
+            "steps" to Triple(steps("android", 12), "count", 12.0),
+            "weight" to Triple(weight(), "kilograms", 62.5),
+            "bodyFat" to Triple(BodyFatRecord(time = start, zoneOffset = null, percentage = Percentage(20.0), metadata = metadata), "percent", 20.0),
+            "height" to Triple(HeightRecord(time = start, zoneOffset = null, height = Length.meters(1.7), metadata = metadata), "meters", 1.7),
+            "bloodPressure" to Triple(BloodPressureRecord(time = start, zoneOffset = null, metadata = metadata, systolic = Pressure.millimetersOfMercury(118.0), diastolic = Pressure.millimetersOfMercury(76.0)), "systolicMmHg", 118.0),
+            "heartRate" to Triple(HeartRateRecord(start, null, end, null, listOf(HeartRateRecord.Sample(start, 72)), metadata), "sampleCount", 1.0),
+            "restingHeartRate" to Triple(RestingHeartRateRecord(time = start, zoneOffset = null, beatsPerMinute = 60, metadata = metadata), "beatsPerMinute", 60.0),
+            "oxygenSaturation" to Triple(OxygenSaturationRecord(time = start, zoneOffset = null, percentage = Percentage(98.0), metadata = metadata), "percent", 98.0),
+            "respiratoryRate" to Triple(RespiratoryRateRecord(time = start, zoneOffset = null, rate = 12.0, metadata = metadata), "ratePerMinute", 12.0),
+            "bodyTemperature" to Triple(BodyTemperatureRecord(time = start, zoneOffset = null, temperature = Temperature.celsius(36.5), metadata = metadata), "celsius", 36.5),
+            "bloodGlucose" to Triple(BloodGlucoseRecord(time = start, zoneOffset = null, level = BloodGlucose.millimolesPerLiter(5.0), metadata = metadata), "millimolesPerLiter", 5.0),
+            "sleep" to Triple(SleepSessionRecord(start, null, end, null, metadata), "stageCount", 0.0),
+            "distance" to Triple(DistanceRecord(start, null, end, null, Length.meters(1200.0), metadata), "meters", 1200.0),
+            "activeCaloriesBurned" to Triple(ActiveCaloriesBurnedRecord(start, null, end, null, Energy.kilocalories(200.0), metadata), "kilocalories", 200.0),
+            "totalCaloriesBurned" to Triple(TotalCaloriesBurnedRecord(start, null, end, null, Energy.kilocalories(1800.0), metadata), "kilocalories", 1800.0),
+            "exercise" to Triple(ExerciseSessionRecord(start, null, end, null, metadata, ExerciseSessionRecord.EXERCISE_TYPE_WALKING), "exerciseType", ExerciseSessionRecord.EXERCISE_TYPE_WALKING.toDouble()),
+        )
+        assertEquals(cases.keys, HealthRecords.types.keys)
+        assertEquals(cases.values.map { HealthPermission.getReadPermission(it.first::class) }.toSet(), HealthRecords.permissions)
+        for ((name, case) in cases) {
+            val (record, key, expected) = case
+            val results = mapOf(name to HealthRecords.Result("success", listOf(record)))
+            val day = HealthRecords.dayJson(results, start, end).getJSONObject(name)
+            assertEquals("success", day.getString("status"))
+            val json = day.getJSONArray("records").getJSONObject(0)
+            assertEquals(name, expected, json.getDouble(key), 0.001)
+            assertEquals(record.metadata.dataOrigin.packageName, json.getString("sourceApp"))
+            assertEquals(start.toString(), json.optString("time", json.optString("startAt")))
+            assertEquals("empty", HealthRecords.dayJson(results, end, end.plusSeconds(86400)).getJSONObject(name).getString("status"))
+        }
+    }
+
     @Test fun noPermissionDoesNotCallSdkAndWeightAloneIsEnough() = runBlocking {
         assertFalse(HealthRecords.hasPermission(emptySet()))
         assertTrue(HealthRecords.hasPermission(setOf(weightPermission)))

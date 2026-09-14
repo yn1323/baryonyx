@@ -1,3 +1,10 @@
+---
+id: feature-health-data
+type: specification
+status: 運用中
+updated: 2026-09-14
+---
+
 # 健康データの読み取りと保存
 
 Android版の起動シーンでは、Health Connectへ接続し、当日を含む直近7暦日の歩数一覧と、血圧・体重などの健康データを含む日別のJSON詳細を表示する。
@@ -90,6 +97,7 @@ Google Playシステム更新の画面への機種固有の直接遷移は使わ
 ### 歩数の元レコードと追加項目のJSON詳細
 
 歩数の元レコードと追加項目は [HealthRecords.kt](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthRecords.kt) で読み取る。
+対応する型、時刻、JSONへの値の変換は [HealthRecordCatalog.kt](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthRecordCatalog.kt) の型別定義で管理し、読み取り権限もそこから導出する。
 対象は歩数、体重、体脂肪率、身長、血圧、心拍、安静時心拍、酸素飽和度、呼吸数、体温、血糖値、睡眠、距離、活動時消費カロリー、総消費カロリー、運動記録の16種類である。
 栄養・水分・月経関連・医療記録や運動ルートは今回の対象に含めない。
 
@@ -209,9 +217,11 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 | [HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | 実行環境に応じたProviderと画面の組み立て、前面・背面・終了通知 |
 | [HealthScreenPreviewProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview/HealthScreenPreviewProvider.cs) | Android以外で使う仮の認証結果と、日本時間の直近7日分のサンプルデータ |
 | [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Authentication/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。資格情報を画面に渡さない |
-| [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、状態遷移、多重実行防止、遅延結果の破棄 |
+| [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、画面の状態遷移、設定画面から戻った後の再確認 |
+| [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) | 多重実行防止、中断、OS画面の前面復帰待ち、遅延結果の世代判定 |
 | [HealthDaySnapshot](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthDaySnapshot.cs) | 7日分の検査と、一覧値・元JSONの対応 |
-| [HealthScreenView](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs) | uGUIの入力、通常・プレビューの文言、状態別の操作、日別一覧、JSONモーダル、閲覧位置の復帰 |
+| [HealthScreenView](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs) | uGUIの入力、通常・プレビューの文言、状態別の操作、日別一覧、閲覧位置の調整 |
+| [HealthJsonDetails](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthJsonDetails.cs) | JSONモーダルの開閉、コピー、スクロールの初期化、一覧の選択復元 |
 | [HealthScreenLayout](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenLayout.cs) | SafeAreaと表示領域の変更への追従、パネルの最大幅 |
 | [HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Unity APIで専用Prefabとフォントを生成するEditorコマンド |
 | [HealthAppSceneSetup](../../client/Assets/Baryonyx/App/Editor/HealthAppSceneSetup.cs) | HealthのPrefab・設定とAppの起動処理を現在のシーンへ配置するEditorコマンド |
@@ -317,7 +327,8 @@ Android実機は接続されていないため、端末回転、システムバ�
 | [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | サーバーへの認証・保存・取得要求 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
-| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | Googleの本人確認、セッション、HTTP要求の検証 |
+| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | HTTP要求の検証、認証middlewareと応答、単日と週全体の制約 |
+| [認証処理](../../server/src/features/health/auth.ts) | Googleの本人確認、セッション発行、トークンのハッシュ化と確認 |
 | [DB操作](../../server/src/features/health/repository.ts) | Drizzleによるセッション管理、取得元の所有者確認、日別歩数の保存・取得 |
 | [DBスキーマ](../../server/src/features/health/db-schema.ts)・[初期マイグレーション](../../server/migrations/0000_initial.sql) | ユーザー、セッション、取得元、日別歩数と過去値の取得日時 |
 

@@ -1,3 +1,10 @@
+---
+id: rule-backend-design
+type: reference
+status: 運用中
+updated: 2026-09-14
+---
+
 # バックエンドの開発環境
 
 `server/` のHonoアプリをCloudflare Workersで実行し、Drizzle ORM経由でD1へ接続する。
@@ -71,11 +78,21 @@ HTTP要求のスキーマは所有する機能の `schema.ts` に置き、Hono�
 
 健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は、ログイン、同期開始、取得元ID、歩数保存の要求を検証する。
 日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
+単日では欠損と歩数、取得時刻の範囲、指定タイムゾーンの日付境界を検証し、週全体では同一タイムゾーン、区間の連続性、日付の重複を検証する。
+区間の連続性はUTC日時を数値へ変換して比較し、日時文字列の小数秒の表記差や夏時間による1日の長さの変化を受け入れる。
 現在時刻に依存するスキーマはリクエストごとに生成する。
 不正なJSONとスキーマ違反には、既存の `400 {"error":"invalid_request"}` を返す。
 Zodのエラー詳細や入力値はHTTP応答へ含めない。
 
 参考：[Zodの基本的な使い方](https://zod.dev/basics)、[Honoの入力検証](https://hono.dev/docs/guides/validation)。
+
+## 健康データの認証
+
+[routes.ts](../../server/src/features/health/routes.ts) はHTTPのパス、入力検証、認証middlewareの適用順と応答を管理する。
+[auth.ts](../../server/src/features/health/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
+DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ委譲する。
+署名検証テストはルート定義を読み込まずに認証処理を検証し、HTTPの認証失敗・期限切れ・ログアウトはAPIシナリオで確認する。
+認証はHealth機能内に置き、ほかの機能で実際に必要になるまで共通化しない。
 
 ## DrizzleによるDB操作
 

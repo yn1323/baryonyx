@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Baryonyx.Health
@@ -36,8 +35,7 @@ namespace Baryonyx.Health
         private bool preview;
 #endif
         private IReadOnlyList<HealthDaySnapshot> renderedDays;
-        private HealthDaySnapshot renderedDetail;
-        private GameObject previousSelection;
+        private HealthJsonDetails details;
         private HealthScreenPhase? renderedPhase;
         private HealthRequirementCode renderedRequirement;
         private RectTransform revealAfterLayout;
@@ -65,8 +63,16 @@ namespace Baryonyx.Health
                     _ = presenter.SignOutAsync();
             });
             SettingsButton.onClick.AddListener(() => presenter?.OpenSettings());
-            CopyButton.onClick.AddListener(CopyJson);
-            CloseButton.onClick.AddListener(() => presenter?.CloseDetails());
+            details = new HealthJsonDetails(
+                DetailsOverlay,
+                MainScroll,
+                JsonScroll,
+                DetailsTitle,
+                JsonText,
+                CopyButton,
+                CloseButton,
+                () => presenter?.CloseDetails()
+            );
             for (int i = 0; i < DayButtons.Length; i++)
             {
                 int index = i;
@@ -83,27 +89,12 @@ namespace Baryonyx.Health
             this.preview = preview;
 #endif
             renderedDays = null;
-            renderedDetail = null;
+            details.Reset();
             presenter.Changed += Render;
             Render();
         }
 
-        private void Update()
-        {
-            if (
-                DetailsOverlay.activeSelf
-                && Keyboard.current?.escapeKey.wasPressedThisFrame == true
-            )
-                presenter?.CloseDetails();
-        }
-
-        private void CopyJson()
-        {
-            if (!DetailsOverlay.activeSelf || presenter?.SelectedDay == null)
-                return;
-            GUIUtility.systemCopyBuffer = presenter.SelectedDay.Json;
-            CopyButton.GetComponentInChildren<TMP_Text>(true).text = "コピーしました";
-        }
+        private void Update() => details.HandleInput();
 
         private void LateUpdate()
         {
@@ -132,6 +123,23 @@ namespace Baryonyx.Health
         private void Render()
         {
             bool detailOpen = presenter.SelectedDay != null;
+#if UNITY_EDITOR || !UNITY_ANDROID
+            details.Render(presenter.SelectedDay, preview);
+#else
+            details.Render(presenter.SelectedDay, false);
+#endif
+            RenderActions(detailOpen);
+            RenderStatus();
+            RenderDays(detailOpen);
+            RevealStatusOnChange(detailOpen);
+#if UNITY_EDITOR || !UNITY_ANDROID
+            if (preview)
+                RenderPreview();
+#endif
+        }
+
+        private void RenderActions(bool detailOpen)
+        {
             bool showRefresh =
                 presenter.Phase == HealthScreenPhase.Ready
                 || presenter.Phase == HealthScreenPhase.Reading
@@ -144,11 +152,6 @@ namespace Baryonyx.Health
                 presenter.RequiresStepsPermission ? "歩数の読み取りを許可" : "運動データに接続";
             RefreshButton.gameObject.SetActive(showRefresh);
             SignOutButton.gameObject.SetActive(presenter.SignedIn);
-            if (detailOpen && !DetailsOverlay.activeSelf)
-            {
-                var events = UnityEngine.EventSystems.EventSystem.current;
-                previousSelection = events != null ? events.currentSelectedGameObject : null;
-            }
             SignInButton.interactable = presenter.CanSignIn && !detailOpen;
             ConnectButton.interactable = presenter.CanConnect && !detailOpen;
             RefreshButton.interactable = presenter.CanRefresh && !detailOpen;
@@ -159,6 +162,10 @@ namespace Baryonyx.Health
                 presenter.RequirementNotice.Destination == HealthSettingsDestination.Device
                     ? "端末の設定を開く"
                     : "Health Connectの設定を開く";
+        }
+
+        private void RenderStatus()
+        {
             GoogleStatus.text = presenter.GoogleMessage;
             Status.text = presenter.StatusMessage;
             Status.gameObject.SetActive(
@@ -174,6 +181,10 @@ namespace Baryonyx.Health
                 HealthScreenPhase.Ready => "Health Connectに接続済み",
                 _ => "Health Connect接続",
             };
+        }
+
+        private void RenderDays(bool detailOpen)
+        {
             if (!ReferenceEquals(renderedDays, presenter.Days))
             {
                 renderedDays = presenter.Days;
@@ -215,35 +226,10 @@ namespace Baryonyx.Health
             Period.gameObject.SetActive(presenter.Days.Count > 0);
             foreach (var button in DayButtons)
                 button.interactable = !presenter.IsBusy && !detailOpen;
-            if (detailOpen && !DetailsOverlay.activeSelf)
-            {
-                MainScroll.StopMovement();
-                DetailsOverlay.SetActive(true);
-                CloseButton.Select();
-            }
-            else if (!detailOpen && DetailsOverlay.activeSelf)
-            {
-                DetailsOverlay.SetActive(false);
-                JsonText.text = "";
-                var events = UnityEngine.EventSystems.EventSystem.current;
-                if (
-                    previousSelection != null
-                    && previousSelection.activeInHierarchy
-                    && events != null
-                )
-                    events.SetSelectedGameObject(previousSelection);
-                previousSelection = null;
-            }
-            MainScroll.enabled = !detailOpen;
-            if (detailOpen && !ReferenceEquals(renderedDetail, presenter.SelectedDay))
-            {
-                DetailsTitle.text = presenter.SelectedDay.Day + "  /  JSON";
-                JsonText.text = presenter.SelectedDay.Json;
-                CopyButton.GetComponentInChildren<TMP_Text>(true).text = "JSONをコピー";
-                Canvas.ForceUpdateCanvases();
-                JsonScroll.normalizedPosition = new Vector2(0, 1);
-            }
-            renderedDetail = presenter.SelectedDay;
+        }
+
+        private void RevealStatusOnChange(bool detailOpen)
+        {
             if (
                 (
                     renderedPhase != presenter.Phase
@@ -258,10 +244,6 @@ namespace Baryonyx.Health
                         : Progress.rectTransform;
             renderedPhase = presenter.Phase;
             renderedRequirement = presenter.RequirementNotice.Code;
-#if UNITY_EDITOR || !UNITY_ANDROID
-            if (preview)
-                RenderPreview();
-#endif
         }
 
 #if UNITY_EDITOR || !UNITY_ANDROID
@@ -287,8 +269,6 @@ namespace Baryonyx.Health
                     "プレビューを表示できませんでした。もう一度お試しください。",
                 _ => "サンプルデータを準備しています…",
             };
-            if (presenter.SelectedDay != null)
-                DetailsTitle.text = presenter.SelectedDay.Day + " / サンプルJSON";
         }
 #endif
 
@@ -296,8 +276,7 @@ namespace Baryonyx.Health
         {
             if (presenter != null)
                 presenter.Changed -= Render;
-            if (JsonText != null)
-                JsonText.text = "";
+            details?.Dispose();
         }
     }
 }

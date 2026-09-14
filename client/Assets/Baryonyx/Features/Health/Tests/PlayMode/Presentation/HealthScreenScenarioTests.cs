@@ -273,6 +273,43 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        [UnityTest]
+        public IEnumerator CopyUsesTheCurrentDayAndResetsWhenDetailsChange()
+        {
+            string previousClipboard = GUIUtility.systemCopyBuffer;
+            try
+            {
+                yield return Click(view.ConnectButton);
+                yield return Click(view.DayButtons[0]);
+                yield return Click(view.CopyButton);
+                Assert.That(GUIUtility.systemCopyBuffer, Is.EqualTo(presenter.SelectedDay.Json));
+                Assert.That(
+                    view.CopyButton.GetComponentInChildren<TMPro.TMP_Text>().text,
+                    Is.EqualTo("コピーしました")
+                );
+
+                yield return Click(view.CloseButton);
+                yield return Click(view.DayButtons[1]);
+                Assert.That(
+                    view.CopyButton.GetComponentInChildren<TMPro.TMP_Text>().text,
+                    Is.EqualTo("JSONをコピー")
+                );
+                yield return Click(view.CopyButton);
+                Assert.That(GUIUtility.systemCopyBuffer, Is.EqualTo(presenter.SelectedDay.Json));
+
+                view.Bind(presenter, preview: true);
+                Assert.That(view.DetailsTitle.text, Does.Contain("サンプルJSON"));
+                Assert.That(
+                    view.CopyButton.GetComponentInChildren<TMPro.TMP_Text>().text,
+                    Is.EqualTo("JSONをコピー")
+                );
+            }
+            finally
+            {
+                GUIUtility.systemCopyBuffer = previousClipboard;
+            }
+        }
+
         private IEnumerator Click(UnityEngine.UI.Button button)
         {
             yield return Reveal(button);

@@ -8,6 +8,66 @@ import {
 } from "./schema.js";
 
 describe("日別歩数の検証", () => {
+  it.each([
+    [
+      "取得区間の隙間",
+      (values: ReturnType<typeof days>) => {
+        values[0].endAt = new Date(
+          Date.parse(values[0].endAt) - 1,
+        ).toISOString();
+      },
+    ],
+    [
+      "異なるタイムゾーン名",
+      (values: ReturnType<typeof days>) => {
+        values[1].zone = "Etc/UTC";
+      },
+    ],
+    [
+      "日付順の逆転",
+      (values: ReturnType<typeof days>) => {
+        values.reverse();
+      },
+    ],
+    [
+      "取得日時より後の終了",
+      (values: ReturnType<typeof days>) => {
+        values[6].endAt = new Date(
+          Date.parse(values[6].observedAt) + 1,
+        ).toISOString();
+      },
+    ],
+  ])("単日と週全体の制約を維持する: %s", (_, change) => {
+    const values = days();
+    change(values);
+    expect(createDaysSchema().safeParse(values).success).toBe(false);
+  });
+
+  it("夏時間終了による25時間の日とUTC日時の表記差を受け入れる", () => {
+    const starts = [
+      "2026-10-29T04:00:00Z",
+      "2026-10-30T04:00:00Z",
+      "2026-10-31T04:00:00Z",
+      "2026-11-01T04:00:00Z",
+      "2026-11-02T05:00:00Z",
+      "2026-11-03T05:00:00Z",
+      "2026-11-04T05:00:00Z",
+    ];
+    const observedAt = "2026-11-04T16:00:00Z";
+    const values = starts.map((startAt, index) => ({
+      day: startAt.slice(0, 10),
+      zone: "America/New_York",
+      startAt,
+      endAt: new Date(starts[index + 1] ?? observedAt).toISOString(),
+      observedAt,
+      hasValue: true,
+      steps: 0,
+    }));
+    expect(
+      createDaysSchema(Date.parse(observedAt)).safeParse(values).success,
+    ).toBe(true);
+  });
+
   it("夏時間による23時間の日を受け入れ、期間の重なりを拒否する", () => {
     const starts = [
       "2026-03-05T05:00:00Z",

@@ -1,3 +1,10 @@
+---
+id: rule-frontend-design
+type: reference
+status: 運用中
+updated: 2026-09-14
+---
+
 # クライアントの構成と依存関係
 
 Unityクライアントの自作コードと専用アセットは `client/Assets/Baryonyx/` にまとめる。
@@ -81,6 +88,15 @@ client/
 | [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | サーバーのセッション、API要求、同期。現在の起動シーンからは呼ばない |
 | [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Health専用のPrefab・フォント・設定アセットを生成する |
 
+HealthのPresenterは、認証・権限・取得結果に応じた画面状態と、次に実行する操作を決める。
+[HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) は多重起動の防止、キャンセル、OS画面からの前面復帰待ち、操作世代と寿命を管理する。
+通常の背面移行では取得を中断し、OSの認証・権限画面は結果と前面復帰を待つ。
+設定画面への移動は、Presenterが未移動・移動待ち・復帰待ちの状態で管理する。
+
+Viewの描画は操作ボタン、状態文言、日別一覧、閲覧位置に分ける。
+[HealthJsonDetails](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthJsonDetails.cs) がJSONモーダルの開閉、コピー、スクロールの初期化、選択の復元を担当する。
+これらはHealth専用の通常のC#クラスとし、Prefabの参照はViewから渡す。
+
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
 AppのEditor処理はAppの起動処理とHealthのアセット定義を参照し、HealthのEditor処理はAppのオブジェクトを生成しない。
 `Baryonyx/App/Attach Health Screen To Current Scene` メニューで、保存済みの現在のシーンへ画面を配置する。
@@ -143,6 +159,11 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 [ci/health-native/settings.gradle](../../client/ci/health-native/settings.gradle) は、その同じソースを検証用Gradleプロジェクトから参照する。
 製品ソースをCI側へ複製しない。
 外部プラグイン本体はUPMまたは配布元が指定する配置で管理する。
+
+Androidの [HealthRecordCatalog](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthRecordCatalog.kt) は、健康データの型ごとにJSON項目名、SDKの型、時刻の取り出し方、値の変換を一つの定義へまとめる。
+読み取り権限はその定義から導出する。
+[HealthRecords](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthRecords.kt) は部分許可、ページ取得、取得件数の上限、日別の振り分けを担当する。
+型を追加するときは、その値・単位・日付境界と権限のテストも追加する。
 
 Unity内のビルド処理は `Baryonyx/Editor/CI/`、Unityの実行・結果検査・公開を補助する処理は `client/ci/` に置く。
 Windows用の手動実行ショートカットは、[ルートの作業ルール](../../AGENTS.md#手動実行用ショートカット) に従って `shortcuts/` で管理する。

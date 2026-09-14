@@ -24,31 +24,30 @@ namespace Baryonyx.Health
             "Health Connectに接続し、「歩数」の読み取りを許可してください。";
         private readonly IGoogleSignInProvider authentication;
         private readonly IHealthDataProvider health;
-        private readonly CancellationTokenSource lifetime = new();
-        private CancellationTokenSource operation;
-        private Task active = Task.CompletedTask;
-        private TaskCompletionSource<bool> foregroundSignal;
-        private bool busy;
+        private readonly HealthScreenOperations operations = new();
         private bool authenticating;
         private bool signingOut;
-        private bool foreground = true;
-        private bool systemDialog;
         private bool resumeRequested;
         private bool connected;
         private bool connectionRequested;
         private bool initialized;
         private bool requirementCheckPending;
         private bool checkingRequirements;
-        private bool settingsPending;
-        private bool settingsLeftApp;
+
+        private enum SettingsVisit
+        {
+            None,
+            WaitingForDeparture,
+            WaitingForReturn,
+        }
+
+        private SettingsVisit settingsVisit;
         private HealthRequirementState requirementState;
-        private bool disposed;
-        private int generation;
 
         public event Action Changed;
         public HealthScreenPhase Phase { get; private set; } = HealthScreenPhase.ReadyToConnect;
         public bool SignedIn { get; private set; }
-        public bool IsBusy => busy || signingOut;
+        public bool IsBusy => operations.IsBusy || signingOut;
         public bool HasReadFailures { get; private set; }
         public bool RequiresStepsPermission { get; private set; }
         public HealthRequirementMessage RequirementNotice { get; private set; } =
@@ -67,8 +66,9 @@ namespace Baryonyx.Health
         public IReadOnlyList<HealthDaySnapshot> Days { get; private set; } =
             Array.Empty<HealthDaySnapshot>();
         public HealthDaySnapshot SelectedDay { get; private set; }
-        public bool CanSignIn => !disposed && foreground && !SignedIn && !IsBusy;
-        public bool CanConnect => !disposed && foreground && !IsBusy;
+        public bool CanSignIn =>
+            !operations.IsDisposed && operations.IsForeground && !SignedIn && !IsBusy;
+        public bool CanConnect => !operations.IsDisposed && operations.IsForeground && !IsBusy;
         public bool CanRefresh => CanConnect && connected;
         public bool CanOpenSettings =>
             CanConnect
@@ -92,7 +92,7 @@ namespace Baryonyx.Health
 
         public Task InitializeAsync()
         {
-            if (disposed || initialized || health is not IHealthRequirementProvider)
+            if (operations.IsDisposed || initialized || health is not IHealthRequirementProvider)
                 return Task.CompletedTask;
             initialized = true;
             requirementCheckPending = true;
@@ -101,7 +101,7 @@ namespace Baryonyx.Health
 
         private Task RunPendingAsync()
         {
-            if (disposed || !foreground || IsBusy)
+            if (operations.IsDisposed || !operations.IsForeground || IsBusy)
                 return Task.CompletedTask;
             if (requirementCheckPending)
             {
@@ -121,7 +121,7 @@ namespace Baryonyx.Health
             {
                 var state = await ((IHealthRequirementProvider)health).GetRequirementsAsync(token);
                 token.ThrowIfCancellationRequested();
-                if (!Current(version) || !foreground)
+                if (!Current(version) || !operations.IsForeground)
                     return;
                 requirementState = state ?? new HealthRequirementState();
                 RequirementNotice = HealthRequirementCheck.Evaluate(requirementState);
@@ -180,21 +180,30 @@ namespace Baryonyx.Health
         private Task RunAsync(Func<int, CancellationToken, Task> action)
         {
             resumeRequested = false;
-            busy = true;
-            operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
-            active = RunCoreAsync(action, generation, operation);
-            return active;
+            return operations.RunAsync(
+                (version, token) => RunCoreAsync(action, version, token),
+                OperationCompleted
+            );
+        }
+
+        private void OperationCompleted()
+        {
+            authenticating = false;
+            checkingRequirements = false;
+            Notify();
+            if (!operations.IsDisposed)
+                _ = RunPendingAsync();
         }
 
         private async Task RunCoreAsync(
             Func<int, CancellationToken, Task> action,
             int version,
-            CancellationTokenSource cancellation
+            CancellationToken token
         )
         {
             try
             {
-                await action(version, cancellation.Token);
+                await action(version, token);
             }
             catch (OperationCanceledException)
             {
@@ -227,27 +236,12 @@ namespace Baryonyx.Health
                     }
                 }
             }
-            finally
-            {
-                authenticating = false;
-                checkingRequirements = false;
-                systemDialog = false;
-                busy = false;
-                operation = null;
-                cancellation.Dispose();
-                Notify();
-                if (Current(version))
-                    _ = RunPendingAsync();
-            }
         }
 
         private async Task SignInCoreAsync(int version, CancellationToken token)
         {
             SetGoogleMessage("Googleの画面で認証してください。");
-            systemDialog = true;
-            var result = await authentication.SignInAsync(lifetime.Token);
-            await WaitForForegroundAsync();
-            systemDialog = false;
+            var result = await operations.RunSystemDialogAsync(authentication.SignInAsync);
             if (!Current(version) || signingOut)
                 return;
             token.ThrowIfCancellationRequested();
@@ -299,10 +293,7 @@ namespace Baryonyx.Health
             // An explicit connection also offers data types added since the previous version.
             if (requestPermission)
             {
-                systemDialog = true;
-                permission = await health.RequestPermissionAsync(lifetime.Token);
-                await WaitForForegroundAsync();
-                systemDialog = false;
+                permission = await operations.RunSystemDialogAsync(health.RequestPermissionAsync);
                 if (!Current(version))
                     return;
                 token.ThrowIfCancellationRequested();
@@ -387,7 +378,13 @@ namespace Baryonyx.Health
 
         public void SelectDay(int index)
         {
-            if (disposed || IsBusy || !foreground || index < 0 || index >= Days.Count)
+            if (
+                operations.IsDisposed
+                || IsBusy
+                || !operations.IsForeground
+                || index < 0
+                || index >= Days.Count
+            )
                 return;
             SelectedDay = Days[index];
             Notify();
@@ -408,9 +405,8 @@ namespace Baryonyx.Health
 
         private async Task OpenSettingsCoreAsync(int version, CancellationToken token)
         {
-            settingsPending = true;
-            settingsLeftApp = false;
-            systemDialog = true;
+            settingsVisit = SettingsVisit.WaitingForDeparture;
+            operations.BeginSystemDialog();
             Notify();
             try
             {
@@ -418,7 +414,7 @@ namespace Baryonyx.Health
                 {
                     bool opened = await requirements.OpenSettingsAsync(
                         RequirementNotice.Destination,
-                        lifetime.Token
+                        operations.LifetimeToken
                     );
                     if (!Current(version))
                         return;
@@ -433,8 +429,7 @@ namespace Baryonyx.Health
             }
             catch (Exception)
             {
-                settingsPending = false;
-                settingsLeftApp = false;
+                settingsVisit = SettingsVisit.None;
                 requirementCheckPending = false;
                 if (Current(version))
                     SetPhase(
@@ -446,7 +441,7 @@ namespace Baryonyx.Health
 
         public async Task SignOutAsync()
         {
-            if (disposed || signingOut)
+            if (operations.IsDisposed || signingOut)
                 return;
             signingOut = true;
             SignedIn = false;
@@ -454,10 +449,10 @@ namespace Baryonyx.Health
             try
             {
                 // Wait for a pending system dialog before another SDK operation.
-                await active;
-                if (disposed)
+                await operations.Active;
+                if (operations.IsDisposed)
                     return;
-                bool success = await authentication.SignOutAsync(lifetime.Token);
+                bool success = await authentication.SignOutAsync(operations.LifetimeToken);
                 SetGoogleMessage(
                     success
                         ? "Google接続を解除しました。歩数の表示は引き続き利用できます。"
@@ -466,7 +461,7 @@ namespace Baryonyx.Health
             }
             catch (Exception)
             {
-                if (!disposed)
+                if (!operations.IsDisposed)
                     SetGoogleMessage(
                         "Google接続を解除できませんでした。もう一度接続してお試しください。"
                     );
@@ -481,33 +476,26 @@ namespace Baryonyx.Health
 
         public void SetForeground(bool value)
         {
-            if (disposed || foreground == value)
+            if (!operations.SetForeground(value))
                 return;
-            foreground = value;
             if (!value)
             {
-                if (settingsPending)
-                    settingsLeftApp = true;
-                foregroundSignal = new TaskCompletionSource<bool>(
-                    TaskCreationOptions.RunContinuationsAsynchronously
-                );
+                if (settingsVisit == SettingsVisit.WaitingForDeparture)
+                    settingsVisit = SettingsVisit.WaitingForReturn;
                 // Restore health snapshots after returning from a Google dialog, too.
                 if (authenticating)
                     resumeRequested = connectionRequested;
                 ClearDays();
-                if (!systemDialog)
-                    operation?.Cancel();
+                operations.CancelBackgroundOperation();
                 Notify();
                 return;
             }
-            foregroundSignal?.TrySetResult(true);
-            if (settingsPending && settingsLeftApp)
+            if (settingsVisit == SettingsVisit.WaitingForReturn)
             {
-                settingsPending = false;
-                settingsLeftApp = false;
+                settingsVisit = SettingsVisit.None;
                 requirementCheckPending = health is IHealthRequirementProvider;
             }
-            if (systemDialog)
+            if (operations.IsSystemDialog)
                 return;
             if (IsBusy)
                 resumeRequested = connectionRequested;
@@ -519,10 +507,7 @@ namespace Baryonyx.Health
             }
         }
 
-        private Task WaitForForegroundAsync() =>
-            foreground || disposed ? Task.CompletedTask : foregroundSignal.Task;
-
-        private bool Current(int version) => !disposed && version == generation;
+        private bool Current(int version) => operations.IsCurrent(version);
 
         private void ClearDays()
         {
@@ -547,23 +532,19 @@ namespace Baryonyx.Health
 
         private void Notify()
         {
-            if (!disposed)
+            if (!operations.IsDisposed)
                 Changed?.Invoke();
         }
 
         public void Dispose()
         {
-            if (disposed)
+            if (operations.IsDisposed)
                 return;
-            disposed = true;
-            generation++;
             SignedIn = false;
             connected = false;
             ClearDays();
             Changed = null;
-            lifetime.Cancel();
-            foregroundSignal?.TrySetResult(true);
-            lifetime.Dispose();
+            operations.Dispose();
         }
     }
 }
