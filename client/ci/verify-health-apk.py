@@ -10,6 +10,7 @@ def verify(path: Path) -> None:
         dex = b"".join(apk.read(name) for name in apk.namelist() if name.endswith(".dex"))
         for name in (
             "com/baryonyx/health/HealthBridge",
+            "com/baryonyx/health/HealthRecords",
             "com/baryonyx/health/HealthCallback",
             "com/baryonyx/health/HealthPermissionActivity",
             "com/baryonyx/health/HealthRationaleActivity",
@@ -22,11 +23,17 @@ def verify(path: Path) -> None:
         def contains(permission: str) -> bool:
             return any(permission.encode(encoding) in manifest for encoding in ("utf-8", "utf-16le"))
 
-        for required in ("android.permission.health.READ_STEPS", "android.permission.INTERNET"):
+        health_types = (
+            "STEPS", "WEIGHT", "BODY_FAT", "HEIGHT", "BLOOD_PRESSURE", "HEART_RATE",
+            "RESTING_HEART_RATE", "OXYGEN_SATURATION", "RESPIRATORY_RATE", "BODY_TEMPERATURE",
+            "BLOOD_GLUCOSE", "SLEEP", "DISTANCE", "ACTIVE_CALORIES_BURNED",
+            "TOTAL_CALORIES_BURNED", "EXERCISE",
+        )
+        for required in ("android.permission.INTERNET", *(f"android.permission.health.READ_{kind}" for kind in health_types)):
             if not contains(required):
                 raise AssertionError(f"Missing permission: {required}")
         for forbidden in (
-            "android.permission.health.WRITE_STEPS",
+            "android.permission.health.WRITE_",
             "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND",
             "android.permission.health.READ_HEALTH_DATA_HISTORY",
             "android.permission.FOREGROUND_SERVICE",

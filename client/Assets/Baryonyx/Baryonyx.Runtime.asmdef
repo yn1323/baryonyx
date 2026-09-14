@@ -1,0 +1,6 @@
+{
+  "name": "Baryonyx.Runtime",
+  "rootNamespace": "Baryonyx",
+  "references": ["UMoth.GoogleSignIn", "Utils.Singleton", "Unity.TextMeshPro", "UnityEngine.UI", "Unity.InputSystem"],
+  "autoReferenced": true
+}

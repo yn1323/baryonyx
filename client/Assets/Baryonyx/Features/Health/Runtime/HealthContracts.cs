@@ -42,11 +42,17 @@ namespace Baryonyx.Health
     {
         public HealthReadStatus Status { get; }
         public HealthDay[] Days { get; }
+        public string RawJson { get; }
 
-        public HealthReadResult(HealthReadStatus status, HealthDay[] days = null)
+        public HealthReadResult(
+            HealthReadStatus status,
+            HealthDay[] days = null,
+            string rawJson = null
+        )
         {
             Status = status;
             Days = days ?? Array.Empty<HealthDay>();
+            RawJson = rawJson;
         }
     }
 
@@ -58,36 +64,5 @@ namespace Baryonyx.Health
         Task<HealthPermission> RequestPermissionAsync(CancellationToken token);
         Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token);
         void OpenSettings();
-    }
-
-    public sealed class HealthSession
-    {
-        public string UserId { get; }
-        public string Token { get; }
-        public DateTimeOffset ExpiresAt { get; }
-
-        public HealthSession(string userId, string token, DateTimeOffset expiresAt)
-        {
-            UserId = userId;
-            Token = token;
-            ExpiresAt = expiresAt;
-        }
-    }
-
-    public interface IHealthApi
-    {
-        Task<long> BeginSyncAsync(
-            HealthSession session,
-            string sourceId,
-            string provider,
-            CancellationToken token
-        );
-        Task SaveAsync(
-            HealthSession session,
-            string sourceId,
-            long revision,
-            HealthDay[] days,
-            CancellationToken token
-        );
     }
 }

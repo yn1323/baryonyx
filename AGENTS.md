@@ -18,17 +18,18 @@
 |---|---|
 | [client/AGENTS.md](client/AGENTS.md) | Unityクライアントの配置と作業ルール |
 | [server/AGENTS.md](server/AGENTS.md) | Honoバックエンドの配置と作業ルール |
-| [doc/README.md](doc/README.md) | 機能、設計ルール、計画の入口 |
+| [doc/README.md](doc/README.md) | 機能、設計ルール、計画、QAの入口 |
 | [文書管理方針](doc/rules/documentation-policy.md) | 文書の配置と更新方法 |
+| `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド |
 | `.agents/skills/` | 特定作業の手順 |
 
-設計ルールは `doc/rules/`、機能仕様は `doc/features/`、変更計画は `doc/plans/` に置く。
+設計ルールは `doc/rules/`、機能仕様は `doc/features/`、変更計画は `doc/plans/`、ユーザーから想定される質問と回答は `doc/qa/` に置く。
 技術固有の指示と実行コマンドは、採用技術や実際の設定を確認してから追加する。
 
 ## ディレクトリ構成と狙い
 
 実行・ビルド・依存管理の単位を `client/` と `server/` で分け、機能仕様と開発ルールは `doc/` から横断して参照する。
-配置の共通方針はこのファイル、各実装の具体的な配置はそれぞれの `AGENTS.md` で管理する。
+配置の共通方針はこのファイル、各実装の具体的な配置はそれぞれの `AGENTS.md` またはそこから参照する設計文書で管理する。
 
 ```text
 baryonyx/
@@ -45,7 +46,9 @@ baryonyx/
 ├── doc/
 │   ├── features/          client・serverを横断する機能仕様
 │   ├── rules/             継続的な設計・開発ルール
-│   └── plans/             個別の変更計画
+│   ├── plans/             個別の変更計画
+│   └── qa/                ユーザーから想定される質問と回答
+├── shortcuts/            手動実行用の単体スクリプト
 ├── .github/workflows/     CIの起動条件と実行順序
 └── .agents/skills/        特定作業の手順
 ```
@@ -73,6 +76,54 @@ baryonyx/
 - commit、push、PR作成は、ユーザーが依頼した場合に行う。必要な操作が既に許可されていれば、同じ確認を繰り返さない。
 - 環境へ接続するときは対象を確認する。参照元の別プロジェクトのURLや権限設定を流用しない。
 - 自動生成ファイルは生成元または生成手順を更新する。依存関係のロックファイルは対応する管理ツールで更新する。
+
+## デバッグ環境
+
+- デバッグにはUnityエディターを利用する。
+- 端末環境での確認が必要なデバッグは、Androidエミュレーターで行う。
+- エミュレーターの起動は、必ずユーザーが手動で行う。AIは、検証時も含めてエミュレーターを起動しない。
+- 調査・実装は、これらのデバッグ環境を前提に進める。
+- ログの取得・確認や操作が必要な場合は、ユーザーに依頼する。
+
+## 手動実行用ショートカット
+
+ルートの `shortcuts/` に、1ファイルで処理が完結するWindows用 `.bat` ファイルを置く。
+共通スクリプトへの依存を作らず、実行時の作業ディレクトリに依存しないパスを使う。
+`shortcuts/` にファイルを追加するときは、同じ変更でこの `AGENTS.md` の一覧にファイルへのリンク・用途・実行方法を記載し、必要な引数や前提条件も追記する。
+エミュレーター起動とAPKインストールでは、`ANDROID_HOME`、`ANDROID_SDK_ROOT`、`%LOCALAPPDATA%\Android\Sdk` の順に必要なAndroid SDKのツールを探す。
+対象の仮想端末（AVD）は、Android 16（API 36）・Google APIs・x86_64のGoogle Pixel 8a `Pixel_8a_API_36` とする。
+初回準備、Unity側の設定、起動できない場合の確認は [WindowsでのUnityとAndroidエミュレーター](doc/rules/client-android-emulator.md) に従う。
+起動確認済みのAndroid Emulatorは37.1.11で、起動引数は `-gpu host -feature -Vulkan -no-snapshot` とする。
+エミュレーター本体の更新とAndroidシステムイメージの追加は別の操作であり、API 34の既存AVDを標準の確認先として使わない。
+
+| ファイル | ユーザーの操作と動作 |
+|---|---|
+| [build-apk.bat](shortcuts/build-apk.bat) | このプロジェクトをUnityで閉じてからダブルクリックし、`client/Builds/Android/baryonyx.apk` をビルドする。 |
+| [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。APKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーする。 |
+| [start-pixel-8a.bat](shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
+| [install-apk-pixel-8a.bat](shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
+
+APKビルドは [ProjectVersion.txt](client/ProjectSettings/ProjectVersion.txt) のUnityを使い、CIと同じ [AndroidBuild.Build](client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を呼び出す。
+APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーする。
+コピー先は [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) の `$destinationDirectory` と一致させる。
+通常は `build-apk-to-drive.bat` を使い、`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に同じコピーを行う。
+コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
+
+`build-apk.bat` と `build-apk-to-drive.bat` はWindows標準のPowerShellで処理し、それぞれ必要なコードを同じファイル内に持つ。
+Unity Hubの標準配置 `%ProgramFiles%\Unity\Hub\Editor\<バージョン>\Editor\Unity.exe` を探し、別の配置では同じバージョンの `Unity.exe` のパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
+対象バージョンのAndroid Build Supportと有効なUnityライセンスが必要となる。
+ログはそれぞれ `client/Logs/build-apk.log`、`client/Logs/build-apk-to-drive.log` に実行ごとに上書きする。
+`build-apk.bat` はAPK生成のみを行い、テスト・配布・エミュレーター起動・インストールは行わない。
+
+`build-apk-to-drive.bat` は配置先フォルダーが存在し、アクセスできることを前提とする。
+ビルド失敗時は配置先のAPKを更新せず、コピー失敗時もエラーで終了する。
+コピー後も `client/Builds/Android/baryonyx.apk` を残す。
+Google Driveへの同期はGoogle Drive for desktopが行うため、同期完了は同アプリで確認する。
+
+APKのインストール先は、起動中のエミュレーターに `adb shell getprop ro.boot.qemu.avd_name` を実行してAVD名で特定する。
+対象AVDが未起動・起動途中・同名で複数起動の場合はエラーで終了し、自動起動しない。
+既存アプリのデータを保持して更新する `adb install -r` を使う（[Android公式ドキュメント](https://developer.android.com/tools/adb?hl=ja#move)）。
+結果を確認できるよう、各ファイルは終了時にキー入力を待つ。
 
 ## 検証と報告
 

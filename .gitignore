@@ -1,0 +1,5 @@
+.env
+
+# Local build output and temporary conversation attachments.
+/Build/
+/.codex-remote-attachments/

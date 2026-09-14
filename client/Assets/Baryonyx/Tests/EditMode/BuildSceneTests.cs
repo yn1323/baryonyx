@@ -7,27 +7,24 @@ namespace Baryonyx.Tests.EditMode
 {
     public sealed class BuildSceneTests
     {
-        private const string SampleScene = "Assets/Scenes/SampleScene.unity";
+        private const string MainScene = "Assets/Baryonyx/App/Scenes/Main.unity";
 
         [Test]
         public void DisabledScenesAreExcluded()
         {
             var scenes = new[]
             {
-                new EditorBuildSettingsScene("Assets/Scenes/Missing.unity", false),
-                new EditorBuildSettingsScene(SampleScene, true),
+                new EditorBuildSettingsScene("Assets/Baryonyx/App/Scenes/Missing.unity", false),
+                new EditorBuildSettingsScene(MainScene, true),
             };
-            Assert.That(
-                BuildScenes.GetEnabledScenePaths(scenes),
-                Is.EqualTo(new[] { SampleScene })
-            );
+            Assert.That(BuildScenes.GetEnabledScenePaths(scenes), Is.EqualTo(new[] { MainScene }));
         }
 
         [Test]
         public void NoEnabledSceneIsRejected() =>
             Assert.Throws<BuildFailedException>(() =>
                 BuildScenes.GetEnabledScenePaths(
-                    new[] { new EditorBuildSettingsScene(SampleScene, false) }
+                    new[] { new EditorBuildSettingsScene(MainScene, false) }
                 )
             );
 
@@ -45,8 +42,8 @@ namespace Baryonyx.Tests.EditMode
                 BuildScenes.GetEnabledScenePaths(
                     new[]
                     {
-                        new EditorBuildSettingsScene(SampleScene, true),
-                        new EditorBuildSettingsScene(SampleScene, true),
+                        new EditorBuildSettingsScene(MainScene, true),
+                        new EditorBuildSettingsScene(MainScene, true),
                     }
                 )
             );

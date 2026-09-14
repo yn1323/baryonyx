@@ -1,0 +1,49 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "timezone": "Asia/Tokyo",
+  "labels": ["renovate"],
+  "baseBranchPatterns": ["main"],
+  "automerge": false,
+  "rebaseWhen": "conflicted",
+  "minimumReleaseAge": "2 days",
+  "prCreation": "not-pending",
+  "internalChecksFilter": "strict",
+  "internalChecksAsSuccess": true,
+  "schedule": ["* * * * *"],
+  "prConcurrentLimit": 10,
+  "branchConcurrentLimit": 10,
+  "prHourlyLimit": 10,
+  "commitHourlyLimit": 10,
+  "includePaths": [
+    "server/package.json",
+    "server/pnpm-lock.yaml",
+    "server/pnpm-workspace.yaml",
+    "server/.node-version",
+    "server/biome.json",
+    ".github/workflows/**",
+    "client/global.json",
+    "client/.config/dotnet-tools.json",
+    "client/ProjectSettings/ProjectVersion.txt",
+    "client/ci/health-native/*.gradle",
+    "client/Assets/Plugins/Android/BaryonyxHealth.androidlib/build.gradle"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^server\\/biome\\.json$/"],
+      "matchStrings": [
+        "\"\\$schema\"\\s*:\\s*\"https://biomejs\\.dev/schemas/(?<currentValue>[^/]+)/schema\\.json\""
+      ],
+      "depNameTemplate": "@biomejs/biome",
+      "datasourceTemplate": "npm",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "groupName": "Biome",
+      "matchPackageNames": ["@biomejs/biome"]
+    }
+  ]
+}
