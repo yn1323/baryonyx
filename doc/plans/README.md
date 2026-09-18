@@ -16,6 +16,7 @@
 | 2026-09-13 | [健康データのローカル表示](2026-09-13-health-connect-local-display.md) |
 | 2026-09-13 | [縦画面と機種差](2026-09-13-portrait-ui.md) |
 | 2026-09-13 | [Health Connect利用条件の案内](2026-09-13-health-connect-requirement-notice.md) |
+| 2026-09-18 | [主要画面の遷移とUnityワイヤー](2026-09-18-game-wireframe.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 現在の独立した接続の動作は[健康データ仕様](../features/health-data.md)を参照する。

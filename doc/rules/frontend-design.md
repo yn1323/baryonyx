@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-09-14
+updated: 2026-09-19
 ---
 
 # クライアントの構成と依存関係
@@ -24,7 +24,7 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/Main.unity         起動シーン
+│   │   │   ├── Scenes/                   Main.unityとWireframe.unity
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンとプレビュー起動の検査
 │   │   ├── Features/Health/
@@ -47,6 +47,12 @@ client/
 │   │   │       │   ├── Preview/
 │   │   │       │   └── Sync/
 │   │   │       └── PlayMode/Presentation/
+│   │   ├── Features/Wireframe/          画面遷移と仮データの試作
+│   │   │   ├── Runtime/                 Session、View、SafeArea配置
+│   │   │   ├── UI/                      専用Prefabとフォント
+│   │   │   ├── Data/                    仮のキャラ・武器
+│   │   │   ├── Editor/                  専用アセットの生成
+│   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
@@ -106,6 +112,11 @@ AppのEditor処理はAppの起動処理とHealthのアセット定義を参照�
 通常表示とプレビュー表示の文言はViewの同じ描画処理で決まり、Appからの表示上書きやイベント購読順に依存しない。
 認証・健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
 機能の詳しい動作は [健康データの機能文書](../features/health-data.md) を参照する。
+
+WireframeもAppがSession・View・仮データを組み立てる。
+[WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs)から健康データのProviderやサーバーを呼ばない。
+[WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/WireframeSession.cs)は遷移と実行中の仮状態を管理し、Viewは入力と表示を担当する。
+起動・対象画面・操作方法は[画面ワイヤー](../features/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト
 

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 734a2dbf113ba4a42af1f9f12f46814b, type: 3}
+  m_Name: WireframeSamples
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Wireframe.WireframeData
+  Characters:
+  - Name: "\u30A2\u30EA\u30A2"
+    Role: "\u5B88\u308A\u624B"
+    Skills:
+    - "\u304B\u3070\u3046"
+    - "\u76FE\u306E\u4E00\u6483"
+    - "\u9244\u58C1\u306E\u69CB\u3048"
+  - Name: "\u30C8\u30FC\u30DE"
+    Role: "\u9B54\u6CD5\u4F7F\u3044"
+    Skills:
+    - "\u706B\u306E\u77E2"
+    - "\u5927\u304D\u306A\u706B\u7403"
+    - "\u661F\u964D\u308B\u591C\u306E\u9B54\u6CD5\u9663"
+  - Name: "\u30EB\u30AB"
+    Role: "\u65A5\u5019"
+    Skills:
+    - "\u901F\u7A81\u304D"
+    - "\u8DB3\u6255\u3044"
+    - "\u8FFD\u3044\u98A8\u306E\u9023\u6483"
+  - Name: "\u30DF\u30CA"
+    Role: "\u7652\u3057\u624B"
+    Skills:
+    - "\u624B\u5F53\u3066"
+    - "\u5B88\u308A\u306E\u5149"
+    - "\u307F\u3093\u306A\u3092\u5305\u3080\u7948\u308A"
+  - Name: "\u30CE\u30A8\u30EB"
+    Role: "\u65C5\u306E\u6226\u58EB"
+    Skills:
+    - "\u6A2A\u306A\u304E"
+    - "\u7815\u304D\u6253\u3061"
+    - "\u6E3E\u8EAB\u306E\u4E00\u632F\u308A"
+  Equipment:
+  - Name: "\u65C5\u7ACB\u3061\u306E\u6B66\u5668"
+    Power: 12
+    Down: 8
+  - Name: "\u53E4\u3044\u8B77\u8EAB\u306E\u6B66\u5668"
+    Power: 9
+    Down: 16
+  - Name: "\u5B9D\u7BB1\u306E\u6B66\u5668"
+    Power: 18
+    Down: 14
+  Places:
+  - "\u6728\u6F0F\u308C\u65E5\u306E\u68EE"
+  - "\u53E4\u3044\u5751\u9053"
