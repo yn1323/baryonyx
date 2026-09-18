@@ -1,0 +1,3 @@
+interface:
+  display_name: "RPGキャラ設定"
+  short_description: "外見の必須6項目、笑えるフレーバー、50フレームの動作設定を作成"

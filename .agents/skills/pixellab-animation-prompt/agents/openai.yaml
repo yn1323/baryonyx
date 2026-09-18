@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pixellab Animation Prompt"
+policy:
+  allow_implicit_invocation: false
