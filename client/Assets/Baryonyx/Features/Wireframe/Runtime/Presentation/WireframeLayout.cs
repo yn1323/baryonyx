@@ -9,6 +9,7 @@ namespace Baryonyx.Wireframe
         public RectTransform Viewport;
         public RectTransform PopupPanel;
         public RectTransform DebugPanel;
+        public RectTransform HealthDetailsPanel;
         public UnityEngine.UI.GridLayoutGroup HpGrid;
         public UnityEngine.UI.LayoutElement HpSize;
         public UnityEngine.UI.LayoutElement[] PageSizes;
@@ -75,14 +76,19 @@ namespace Baryonyx.Wireframe
                 RectTransform.Axis.Horizontal,
                 Mathf.Max(0, Mathf.Min(420, width))
             );
+            if (HealthDetailsPanel != null)
+                HealthDetailsPanel.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Horizontal,
+                    Mathf.Max(0, Mathf.Min(420, width))
+                );
             Viewport.offsetMin = new Vector2(0, navigation ? 86 : 24);
             Viewport.offsetMax = new Vector2(0, -62);
             foreach (var page in PageSizes)
                 page.minHeight = Mathf.Max(0, height - (navigation ? 148 : 86));
-            int columns = height >= 760 ? 1 : 2;
+            int columns = 4;
             HpGrid.constraintCount = columns;
-            HpGrid.cellSize = new Vector2(Mathf.Max(0, (width - (columns - 1) * 8) / columns), 54);
-            HpSize.minHeight = HpSize.preferredHeight = columns == 1 ? 240 : 116;
+            HpGrid.cellSize = new Vector2(Mathf.Max(0, (width - (columns - 1) * 8) / columns), 52);
+            HpSize.minHeight = HpSize.preferredHeight = 52;
             lastScreen = screen;
             lastCanvas = canvas;
             lastSafe = safe;

@@ -116,7 +116,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void RevivalPreservesEnemyDisplayWithoutSpendingRunes()
+        public void RevivalPreservesEnemyDisplayAndSpendsRunesOnce()
         {
             Explore();
             session.EnterDoor();
@@ -125,13 +125,13 @@ namespace Baryonyx.Tests.EditMode
             session.ConfirmRevive();
             session.ConfirmRevive();
             Assert.That(session.Screen, Is.EqualTo(WireScreen.Battle));
-            Assert.That(session.EnemyHp, Is.EqualTo(38));
+            Assert.That(session.EnemyHp, Is.EqualTo(100));
             Assert.That(session.CombatState, Is.EqualTo(WireCombatState.Weak));
-            Assert.That(session.Runes, Is.EqualTo(860));
+            Assert.That(session.Runes, Is.EqualTo(760));
         }
 
         [Test]
-        public void BattleCannotOpenManagementOrEscapeAndSkillsDoNotDamage()
+        public void BattleCannotOpenManagementOrEscapeAndSkillsWaitForCast()
         {
             Explore();
             session.EnterDoor();

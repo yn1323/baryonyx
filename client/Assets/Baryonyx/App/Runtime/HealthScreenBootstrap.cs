@@ -7,33 +7,19 @@ namespace Baryonyx.App
     {
         public HealthConnectionSettings Settings;
         public HealthScreenView Screen;
-        private HealthScreenPresenter presenter;
+        private HealthRuntime health;
+        private HealthScreenPresenter presenter => health?.Presenter;
         private bool paused;
         private bool focused = true;
-#if UNITY_ANDROID && !UNITY_EDITOR
-        private UmothGoogleSignInProvider authentication;
-#endif
 
         private void Start()
         {
             Application.targetFrameRate = 60;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-            authentication = new UmothGoogleSignInProvider(
-                Settings != null ? Settings.GoogleWebClientId : ""
-            );
-            presenter = new HealthScreenPresenter(authentication, new HealthConnectProvider());
-            Screen.Bind(presenter);
-#else
-            var preview = new HealthScreenPreviewProvider();
-            presenter = new HealthScreenPresenter(preview, preview);
-            Screen.Bind(presenter, preview: true);
-            _ = presenter.ConnectAsync();
-#endif
+            health = new HealthRuntime(Settings);
+            Screen.Bind(presenter, preview: health.Preview);
             ApplyForeground();
-#if UNITY_ANDROID && !UNITY_EDITOR
-            _ = presenter.InitializeAsync();
-#endif
+            health.Initialize();
         }
 
         private void OnApplicationPause(bool value)
@@ -50,12 +36,6 @@ namespace Baryonyx.App
 
         private void ApplyForeground() => presenter?.SetForeground(!paused && focused);
 
-        private void OnDestroy()
-        {
-            presenter?.Dispose();
-#if UNITY_ANDROID && !UNITY_EDITOR
-            authentication?.Dispose();
-#endif
-        }
+        private void OnDestroy() => health?.Dispose();
     }
 }

@@ -53,11 +53,18 @@ namespace Baryonyx.Tests.EditMode
         public void HeaderAndModalCloseStayInsideAsymmetricSafeArea(int width, int height)
         {
             Size(width, height, new Rect(24, 64, width - 60, height - 152));
-            AssertInside((RectTransform)view.Button("Back").transform, layout.SafeArea);
-            AssertInside((RectTransform)view.Button("Preview").transform, layout.SafeArea);
+            AssertInside((RectTransform)view.Button("HeaderSettings").transform, layout.SafeArea);
             AssertInside((RectTransform)view.Button("PopupClose").transform, layout.SafeArea);
             Assert.That(layout.Panel.rect.width, Is.LessThanOrEqualTo(layout.SafeArea.rect.width));
+            Assert.That(
+                layout.HealthDetailsPanel.rect.width,
+                Is.LessThanOrEqualTo(layout.SafeArea.rect.width)
+            );
             Assert.That(view.Session.Popup, Is.EqualTo(WirePopup.Intro));
+            view.Session.Back();
+            view.Session.Open(WireScreen.Destination);
+            Size(width, height, new Rect(24, 64, width - 60, height - 152));
+            AssertInside((RectTransform)view.Button("Back").transform, layout.SafeArea);
         }
 
         [Test]
@@ -86,7 +93,7 @@ namespace Baryonyx.Tests.EditMode
                 }
             )
                 AssertInside((RectTransform)view.Button(name).transform, view.PageScroll.viewport);
-            Assert.That(view.HpFills[3].anchorMax.x, Is.EqualTo(.55f).Within(.001f));
+            Assert.That(view.HpFills[3].anchorMax.x, Is.EqualTo(1f).Within(.001f));
         }
 
         [Test]
@@ -135,10 +142,16 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(result.texture, Is.EqualTo(backdrop.texture));
             var enemy = System.Array.Find(images, image => image.name == "BattleEnemyArt0");
             float normal = enemy.color.r;
-            s.ToggleDebug();
-            s.PreviewCombat(WireCombatState.Down);
+            s.SelectSlot(0);
+            s.ChooseSkill(1);
+            s.UseSkill();
+            s.AdvanceBattle(1);
+            s.SelectSlot(2);
+            s.ChooseSkill(1);
+            s.UseSkill();
+            s.AdvanceBattle(1);
             Assert.That(enemy.color.r, Is.LessThan(normal));
-            Assert.That(s.EnemyHp, Is.EqualTo(100));
+            Assert.That(s.Battle.Enemies[0].IsDown, Is.True);
         }
 
         private static void AssertInside(RectTransform child, RectTransform container)

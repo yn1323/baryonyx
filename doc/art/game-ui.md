@@ -11,19 +11,18 @@ updated: 2026-09-19
 
 ## 対象と確認状況
 
-2026-09-19の「全画面のワイヤーをUIに置き換える」という依頼に対応する。
-ホーム、冒険先、探索、仲間・編成、装備、戦闘、敗北、結果、運動目標、設定の10画面と、初回案内・獲得・確認・目標設定などのダイアログが対象である。
-状態遷移とサンプルデータを維持し、見た目と探索入口への短い移動を追加する。
+2026-09-19の「遊べる試作へ進む」を参照した全面改修に対応する。
+ホーム、冒険先、探索、仲間・編成、装備、戦闘、敗北、結果、運動目標、設定と歩数の11画面、初回案内・獲得・確認・目標設定・日別JSONなどのダイアログが対象である。
+全画面の見た目を統一し、実際に進む戦闘とHealth Connectの読み取りを接続した。
 
-参照タスク「UIの枠をドット絵で作るか検討」は、アプリの読み取りで対象を取得できなかった。
-その議論・サンプルとの一致は未確認である。
-現段階の配色と素材は、既存のアート方針に基づく実装案として扱う。
-Unityでアセットを再生成し、操作・表示を検証した。
-UIのPrefabと素材は元のプロジェクトへ反映済みである。
+参照会話「遊べる試作へ進む」のテキストから、4人のパーティ、今日の歩数、余白、控えめなルーン表示、冒険への主要操作を反映した。
+最新の生成画像は会話の取得結果に含まれず、ブラウザーも未ログインだったため取得できなかった。
+既存の森・坑道・キャラ素材を活用し、出発地点の背景を追加生成した。
+画像そのものとの一致と、今回の見た目のユーザー評価は未確認である。
 
 ## 見た目と配置
 
-濃い青緑の背景と枠、淡い生成りの日本語、金色の主要操作・選択表示を組み合わせる。
+生成りの背景に濃い緑の文字を置き、深緑の主要操作、淡い緑の選択表示、控えめな金色を組み合わせる。
 枠は24×24ピクセルでUnityから生成し、6ピクセルの境界を持つ9-sliceで角を保つ。
 本文は既存の日本語フォントを使い、自動縮小で押し込まない。
 360×640の設計座標、SafeArea、最大幅と縦スクロールは[UI設計ルール](../rules/ui-design.md)に従う。
@@ -32,20 +31,21 @@ UIのPrefabと素材は元のプロジェクトへ反映済みである。
 
 | 画面 | 主な表示 |
 |---|---|
-| ホーム | 森と現在の4人、冒険への主要操作、ルーン、日次目標 |
+| ホーム | 明るい出発地点と現在の4人、今日の歩数、冒険への主要操作、ルーン |
 | 冒険先 | 森・坑道の背景付き選択カードと短いヒント |
 | 探索 | 部屋の背景、パーティ、絵の入口に重ねた行き先操作、獲得案内 |
-| 仲間・編成 | 4枠のキャラ画像、候補の全身像、役割と技、所持仲間の一覧 |
+| 仲間・編成 | 4枠のキャラ画像、候補の全身像、役割と技、待機中の仲間の一覧 |
 | 装備 | 対象キャラ、装備中と候補の性能、所持武器と選択状態 |
 | 戦闘 | 冒険先に対応した背景、左の味方4人、右の敵、予告、HP・技の操作 |
 | 敗北・結果 | パーティと背景、保護される成果、再戦・帰還の主要操作 |
-| 運動目標 | 日次・週次のカードと進捗。未設定・未確認には進捗バーを出さない |
-| 設定 | 音量の表示とゲージ、運動データ連携案内 |
+| 運動目標 | 日次・週次の条件。未実装の達成履歴や仮の実績バーは出さない |
+| 設定 | 音量の表示例とゲージ、Health Connectへの入口 |
+| 歩数 | 7日間の棒グラフと数値、取得状態、接続・更新・設定、日別JSON |
 
 敵HPのバーとダウン状態の濃淡は別に表す。
 ダウン残量のゲージやリングは追加しない。
 味方を入れ替えると、ホーム・探索・編成・装備・戦闘の画像も更新する。
-探索入口を選ぶと0.28秒の歩行表示後に既存の状態遷移を実行する。
+探索入口を選ぶと1.1秒の歩行表示後に既存の状態遷移を実行する。
 移動中の二重操作を抑止し、戻る操作で確認ダイアログを開いた場合は移動を取り消す。
 
 ## 素材と生成記録
@@ -57,7 +57,8 @@ UIのPrefabと素材は元のプロジェクトへ反映済みである。
 | 素材 | 内容・扱い |
 |---|---|
 | [Adventurers.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
-| [Forest.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Forest.png) | 石のアーチと脇道がある森。背景、ホーム、探索、戦闘に利用する |
+| [Departure.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png) | 明るい森の出発地点。ホームで4人の背後へ配置する |
+| [Forest.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘に利用する |
 | [Mine.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png) | 中央と右側に入口がある坑道。冒険先、探索、戦闘に利用する |
 
 PNGはPoint、MipMapなし、非圧縮で読み込む。
@@ -68,15 +69,16 @@ PNGはPoint、MipMapなし、非圧縮で読み込む。
 ## 実装と再生成
 
 - [画面生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenAssets.cs)：Prefab、フォント、SafeArea、操作部品。
-- [画面別の見た目](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenArt.cs)：枠の生成、画像の読み込み、10画面の組み立て。
-- [状態と画像の対応](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/WireframeArt.cs)：編成・敵状態・背景・進捗表示と探索移動。
+- [画面別の見た目](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenArt.cs)：枠の生成、画像の読み込み、画像を使う部品。
+- [ページ生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframePageAssets.cs)：通常ページの組み立て。戦闘と歩数は専用ファイルへ分離。
+- [状態と画像の対応](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Presentation/WireframeArt.cs)：編成・敵状態・背景・進捗表示と探索移動。
 
 Unityで再生を停止し、`Baryonyx/Wireframe/Create Screen Assets` を実行する。
 生成後は `Baryonyx/Wireframe/Open Scene` から画面を開き、PlayModeで確認する。
 画像の追加生成は再生成処理に含まれず、保存済みPNGを利用する。
-正式な認証、健康データ取得、保存、戦闘計算はこのUI更新に含まれない。
+戦闘計算と健康データ取得を接続した。ゲームの永続保存は含まない。
 
-## 2026-09-19の検証結果
+## 全面改修前の検証記録
 
 元のEditorへの操作要求がタイムアウトしたため、[テスト手順](../rules/client-testing.md)に従い、`client/Temp/PixelUiVerification` の検証コピーをUnity 6000.6.0f1で開いた。
 元のEditorを終了・再起動せず、コピー側で実際に生成したPrefab・フォント・追加素材のメタデータを元のプロジェクトへ反映した。
@@ -91,7 +93,7 @@ Unityで再生を停止し、`Baryonyx/Wireframe/Create Screen Assets` を実行
 
 Android上のタップ・戻る・システムバーと、参照タスクのサンプルとの一致は未確認である。
 
-## APKのビルドと配置
+## 全面改修前のAPKの記録
 
 2026-09-19に、検証コピーで `Baryonyx.App.Editor.WireframeSceneSetup.BuildAndroid` を実行した。
 この入口から共通の `AndroidBuild.Build` を呼び、Wireframeシーンだけを起動対象にしてARM64・IL2CPPのAPKを生成した。
@@ -103,3 +105,28 @@ Android上のタップ・戻る・システムバーと、参照タスクのサ�
 ビルドと配置の記録は `client/Logs/pixel-ui-android-build.log` と `client/Logs/pixel-ui-apk-delivery.json` に保存している。
 
 Google Drive for desktopによるクラウド同期の完了と、Android端末での起動は未確認である。
+
+## 全面改修の検証
+
+元のMainシーンに未保存の変更があり、Editorが保存確認待ちになったため、`client/Temp/AdventureMvpVerification` の作業用コピーで検証した。
+元のEditorを終了せず、コピー側でUnityのAssetDatabaseを使って配置を整理し、GUIDと内容の一致を確認して元のファイルへ反映した。
+リファクタ後のEditModeは121件成功し、戦闘の実計算、ボス攻略、回復・防護、7日分の集計と配置を含む。
+PlayModeは25件成功し、実入力による画面遷移、通常戦の自動勝利・報酬、歩数グラフ・元JSONを含む。
+Gameビューで全11画面、初回案内・獲得・目標設定・復活・JSONのダイアログとスクロール下部を確認した。
+720×1280を基準に、720×1560の戦闘、1024×768のJSONも撮影した。
+検証画像は `client/Assets/DevCaptures/mvp-*.png`、一覧は `mvp-gallery.html` に保存する。
+歩数を写した画像はEditor用サンプルであり、端末の健康記録ではない。
+C#の整形と文書のリンク・ID・参照の検査も成功した。
+Android端末での権限操作・実記録との一致、操作感、Google Driveのクラウド同期完了は未確認である。
+
+## 全面改修のAPK
+
+2026-09-19 11:15（日本時間）に、検証コピーで `Baryonyx.App.Editor.WireframeSceneSetup.BuildAndroid` を実行し、共通の `AndroidBuild.Build` からビルドした。
+Wireframeシーンを起動するARM64・IL2CPPのAPKで、サイズは98,844,553バイトである。
+署名、アーカイブのCRC、起動シーン、ARM64ライブラリ、Health Connectの読み取り権限と必要なクラスを検査した。
+Androidの生成物にEditor用サンプルプロバイダーが含まれず、実際のHealth Connectプロバイダーを使う構成であることも確認した。
+
+生成物を `client/Builds/Android/baryonyx.apk` に保存し、`G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーした。
+ビルド元、ローカル配置先、Drive配置先のSHA-256は、いずれも `ED49598F1E9BCF87B2118CC4D54AD34EF489B40B160BFF09350618743266FF5C` で一致した。
+ビルドと配置の記録は `client/Logs/adventure-mvp-editor.log`、`adventure-mvp-build-result.json`、`adventure-mvp-apk-delivery.json` に保存する。
+Google Drive for desktopによるクラウド同期と、Android上での起動・権限操作・実記録の表示は未確認である。

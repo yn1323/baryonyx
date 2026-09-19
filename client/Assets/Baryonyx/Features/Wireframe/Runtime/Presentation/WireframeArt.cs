@@ -20,6 +20,7 @@ namespace Baryonyx.Wireframe
         private CanvasGroup input;
         private Vector2 partyOrigin;
         private bool prepared;
+        private WireframeBattleFeedback feedback;
 
         public static Rect ActorUv(int index) =>
             new((index % 4) * .25f, index < 4 ? .5f : 0, .25f, .5f);
@@ -36,8 +37,11 @@ namespace Baryonyx.Wireframe
                 input = gameObject.AddComponent<CanvasGroup>();
                 partyOrigin = ExplorationParty.anchoredPosition;
                 prepared = true;
+                feedback = gameObject.AddComponent<WireframeBattleFeedback>();
+                feedback.Initialize(images, view);
             }
             var s = view.Session;
+            feedback.Bind(s.Battle);
             if (
                 travel != null
                 && (s.Screen != WireScreen.Explore || s.Popup != WirePopup.None || s.DebugOpen)
@@ -66,9 +70,9 @@ namespace Baryonyx.Wireframe
                 Selected("EquipmentSlot" + i, s.Slot == i);
                 Selected("Hp" + i, s.Slot == i);
                 view.Button("Ally" + i).image.color =
-                    s.Slot == i
-                        ? new Color(.86f, .82f, .55f, .62f)
-                        : new Color(.6f, .75f, .68f, .12f);
+                    s.SkillSelection && s.Slot == i
+                        ? new Color(.86f, .82f, .55f, .20f)
+                        : Color.clear;
             }
             for (int i = 0; i < 5; i++)
             {
@@ -84,10 +88,14 @@ namespace Baryonyx.Wireframe
                 var enemy = images["BattleEnemyArt" + i];
                 enemy.uvRect = ActorUv(s.IsBoss ? 7 : (i == 1 ? 6 : 5));
                 float brightness = 1;
-                if (s.CombatState == WireCombatState.Weak)
-                    brightness = .60f;
-                if (s.CombatState == WireCombatState.Down)
-                    brightness = .40f;
+                if (s.Battle != null && i < s.Battle.Enemies.Length)
+                {
+                    var state = s.Battle.Enemies[i];
+                    brightness =
+                        state.IsDown ? .42f
+                        : state.DownRatio < .35f ? .65f
+                        : 1;
+                }
                 enemy.color = new Color(brightness, brightness, brightness, 1);
                 view.Button("Enemy" + i).image.color =
                     s.SkillSelection && s.Target == i
@@ -118,33 +126,21 @@ namespace Baryonyx.Wireframe
             Selected("NavHome", s.Screen == WireScreen.Home);
             Selected("NavParty", s.Screen == WireScreen.Party);
             Selected("NavGoals", s.Screen == WireScreen.Goals);
-            GoalProgress("GoalsDailyProgress", false);
-            GoalProgress("GoalsWeeklyProgress", true);
+            // Only the Health chart displays measured progress in this prototype.
+            rects["GoalsDailyProgress"].gameObject.SetActive(false);
+            rects["GoalsWeeklyProgress"].gameObject.SetActive(false);
             rects["VolumeProgressFill"].anchorMax = new Vector2(s.Volume / 100f, 1);
         }
 
         private void Selected(string name, bool selected)
         {
             var button = view.Button(name);
-            button.image.color = selected ? new Color(1.48f, 1.35f, .90f) : Color.white;
+            button.image.color = selected ? new Color(.77f, .88f, .76f) : Color.white;
             var text = button.GetComponentInChildren<TMP_Text>();
             text.color =
                 !button.interactable ? new Color(.50f, .57f, .55f)
-                : selected ? new Color(1, .88f, .59f)
-                : new Color(.94f, .90f, .78f);
-        }
-
-        private void GoalProgress(string name, bool weekly)
-        {
-            var state = view.Session.Goal(weekly);
-            bool visible = state is WireGoalState.Progress or WireGoalState.Achieved;
-            rects[name].gameObject.SetActive(visible);
-            float amount =
-                state == WireGoalState.Achieved ? 1
-                : view.Session.GoalUsesDistance(weekly) ? (weekly ? 8.2f / 15 : .6f)
-                : weekly ? .728f
-                : .764f;
-            rects[name + "Fill"].anchorMax = new Vector2(amount, 1);
+                : name.StartsWith("Skill", StringComparison.Ordinal) ? new Color(.98f, .97f, .91f)
+                : new Color(.16f, .23f, .20f);
         }
 
         public void Travel(bool sidePath, Action arrived)
@@ -160,7 +156,7 @@ namespace Baryonyx.Wireframe
             var party = ExplorationParty;
             Vector2 end = partyOrigin + new Vector2(sidePath ? 100 : -22, sidePath ? 40 : 92);
             float start = Time.unscaledTime;
-            const float duration = .28f;
+            const float duration = 1.1f;
             while (Time.unscaledTime - start < duration)
             {
                 float t = (Time.unscaledTime - start) / duration;

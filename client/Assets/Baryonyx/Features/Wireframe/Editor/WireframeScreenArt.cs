@@ -10,11 +10,12 @@ namespace Baryonyx.Wireframe.Editor
     public static partial class WireframeScreenAssets
     {
         private const string ArtPath = "Assets/Baryonyx/Features/Wireframe/UI/Art/";
-        private static readonly Color Gold = new(.82f, .68f, .40f);
-        private static readonly Color Muted = new(.60f, .69f, .66f);
+        private static readonly Color Gold = new(.57f, .40f, .19f);
+        private static readonly Color Muted = new(.43f, .49f, .43f);
         private static Texture2D actors;
         private static Texture2D forest;
         private static Texture2D mine;
+        private static Texture2D departure;
         private static Sprite frame;
         private static Sprite panelFrame;
 
@@ -23,11 +24,12 @@ namespace Baryonyx.Wireframe.Editor
             actors = ImportArt("Adventurers.png");
             forest = ImportArt("Forest.png");
             mine = ImportArt("Mine.png");
-            frame = CreateFrame("ButtonFrame", new Color(.13f, .20f, .20f), Gold);
+            departure = ImportArt("Departure.png");
+            frame = CreateFrame("ButtonFrame", Accent, Accent);
             panelFrame = CreateFrame(
                 "PanelFrame",
-                new Color(.09f, .14f, .15f),
-                new Color(.34f, .42f, .38f)
+                new Color(.90f, .92f, .86f),
+                new Color(.90f, .92f, .86f)
             );
         }
 
@@ -65,13 +67,10 @@ namespace Baryonyx.Wireframe.Editor
             {
                 int distance = Mathf.Min(x, y, 23 - x, 23 - y);
                 bool cut = (x < 2 || x > 21) && (y < 2 || y > 21);
-                Color color = distance == 0 ? new Color(.025f, .04f, .045f) : fill;
-                if (distance == 1)
-                    color = edge;
-                if (distance == 2)
-                    color = Color.Lerp(edge, fill, .7f);
-                if (distance == 3 && y > 12)
-                    color = Color.Lerp(fill, Color.white, .09f);
+                Color color = fill;
+                float dx = Mathf.Max(5 - x, x - 18, 0);
+                float dy = Mathf.Max(5 - y, y - 18, 0);
+                cut = dx * dx + dy * dy > 25;
                 texture.SetPixel(x, y, cut ? Color.clear : color);
             }
             texture.Apply();
@@ -189,156 +188,16 @@ namespace Baryonyx.Wireframe.Editor
 
         private static void PartyLandscape(RectTransform parent, string name, float height)
         {
-            var landscape = Illustration(name, parent, forest, height, new Rect(0, .20f, 1, .60f));
+            var landscape = Illustration(name, parent, departure, height, new Rect(0, 0, 1, 1));
             for (int i = 0; i < 4; i++)
                 Actor(
                     name + "Actor" + i,
                     landscape,
                     i,
-                    new Vector2(.18f + i * .21f, .14f),
-                    new Vector2(62, 94)
+                    new Vector2(.17f + i * .22f, i % 2 == 0 ? .08f : .12f),
+                    new Vector2(72, 110)
                 );
-            OverlayLabel(
-                name + "Caption",
-                landscape,
-                "小さな一歩が、冒険になる。",
-                15,
-                new Vector2(0, .76f),
-                Vector2.one
-            );
-        }
-
-        private static void BuildFinishedPage(
-            WireScreen screen,
-            RectTransform page,
-            WireframeLayout layout
-        )
-        {
-            switch (screen)
-            {
-                case WireScreen.Home:
-                    Label("HomeEyebrow", page, "WALK INTO AN ADVENTURE", 9, 12).color = Gold;
-                    Label("HomeBrand", page, "てくてくダンジョン", 24, 32);
-                    PartyLandscape(page, "HomeLandscape", 112);
-                    Label("HomeParty", page, "", 11, 18).alignment = TextAlignmentOptions.Center;
-                    Button("HomeAdventure", page, "冒険へ出かける   →", 54, 19, true);
-                    Card("HomeRunes", page, "", 32, 17);
-                    Card("HomeProgress", page, "", 70, 14);
-                    var home = Row(page, "HomeActions");
-                    Button("HomeEquipment", home, "装備を整える", 48, 14);
-                    Button("HomeSettings", home, "設定", 48, 14);
-                    break;
-                case WireScreen.Destination:
-                    Eyebrow("DestinationEyebrow", page, "CHOOSE YOUR JOURNEY");
-                    Label("DestinationIntro", page, "今日は、どこへ向かおう？", 22, 46);
-                    DestinationCard(page, 0, forest, "木漏れ日の森", "獣の気配 / 武器を探す");
-                    DestinationCard(page, 1, mine, "古い坑道", "硬い敵 / 宝箱を探す");
-                    Label("DestinationHint", page, "探索の続きから、いつでも。", 13, 42).color =
-                        Muted;
-                    break;
-                case WireScreen.Explore:
-                    BuildExploration(page);
-                    break;
-                case WireScreen.Party:
-                    Eyebrow("PartyEyebrow", page, "YOUR COMPANIONS");
-                    Label("PartyHint", page, "枠を選んで、仲間を入れ替える", 16, 36);
-                    PortraitSlots(page, "PartySlot");
-                    CharacterFeature(page, "PartyPortrait", "PartyDetails", 138);
-                    Eyebrow("RosterEyebrow", page, "仲間の一覧");
-                    for (int i = 0; i < 5; i++)
-                        PortraitButton("Character" + i, page, i, 62);
-                    Button("PartyConfirm", page, "この仲間を編成", primary: true);
-                    Button("PartyEquipment", page, "選択した仲間の装備へ");
-                    break;
-                case WireScreen.Equipment:
-                    Eyebrow("EquipmentEyebrow", page, "READY FOR THE ROAD");
-                    PortraitSlots(page, "EquipmentSlot");
-                    CharacterFeature(page, "EquipmentPortrait", "EquipmentCompare", 184);
-                    Eyebrow("WeaponEyebrow", page, "所持している武器");
-                    for (int i = 0; i < 3; i++)
-                    {
-                        var b = Button("Equipment" + i, page, "武器", 64, 16);
-                        PixelEmblem(b.transform as RectTransform, "WeaponIcon" + i, i);
-                        b.GetComponentInChildren<TMP_Text>().margin = new Vector4(56, 6, 12, 6);
-                        b.GetComponentInChildren<TMP_Text>().alignment =
-                            TextAlignmentOptions.MidlineLeft;
-                    }
-                    Button("EquipmentConfirm", page, "この武器に変更", primary: true);
-                    Label(
-                        "EquipmentHint",
-                        page,
-                        "武器の性能は体験用のサンプルです。",
-                        12,
-                        36
-                    ).color = Muted;
-                    break;
-                case WireScreen.Battle:
-                    BuildBattle(page, layout);
-                    DecorateBattle(page);
-                    break;
-                case WireScreen.Defeat:
-                    Eyebrow("DefeatEyebrow", page, "TAKE A BREATH");
-                    var rest = Illustration(
-                        "RestLandscape",
-                        page,
-                        forest,
-                        138,
-                        new Rect(0, .1f, 1, .55f)
-                    );
-                    rest.GetComponentInChildren<UnityEngine.UI.RawImage>().color = new Color(
-                        .48f,
-                        .56f,
-                        .61f
-                    );
-                    Actor("RestActor", rest, 0, new Vector2(.5f, .08f), new Vector2(75, 112));
-                    Label("DefeatTitle", page, "もう一度、挑める。", 26, 44);
-                    Card("DefeatSummary", page, "", 106, 14);
-                    Button("DefeatRetry", page, "無料で再戦する", primary: true);
-                    Button("DefeatParty", page, "仲間の編成を見直す");
-                    Button("DefeatPath", page, "別の道を探す");
-                    Button("DefeatEnd", page, "ホームへ帰る");
-                    Button("DefeatRevive", page, "ルーンで復活", fontSize: 14);
-                    break;
-                case WireScreen.Result:
-                    Eyebrow("ResultEyebrow", page, "JOURNEY COMPLETE");
-                    PartyLandscape(page, "ResultLandscape", 146);
-                    var cleared = Label("ResultTitle", page, "冒険のひと区切り", 25, 48);
-                    cleared.color = Gold;
-                    Card("ResultSummary", page, "", 224, 16);
-                    Button("ResultHome", page, "ホームへ帰る", primary: true);
-                    break;
-                case WireScreen.Goals:
-                    Eyebrow("GoalsEyebrow", page, "EVERY STEP COUNTS");
-                    Label("GoalsTitle", page, "日々の歩みを、冒険の力に。", 20, 48);
-                    GoalCard("GoalsDaily", page, "TODAY", false);
-                    GoalCard("GoalsWeekly", page, "THIS WEEK", true);
-                    Button("GoalsEdit", page, "目標を設定・変更する", primary: true);
-                    Button("GoalsHistory", page, "これまでの歩み");
-                    Button("GoalsCancel", page, "変更予約を取り消す");
-                    Button("GoalsClear", page, "目標を外す", fontSize: 14);
-                    break;
-                case WireScreen.Settings:
-                    Eyebrow("SettingsEyebrow", page, "MAKE YOURSELF AT HOME");
-                    Label("SettingsIntro", page, "自分のペースで、冒険しよう。", 21, 64);
-                    Card(
-                        "SettingsGuide",
-                        page,
-                        "音と運動データ\nいつでもここから見直せます。",
-                        82,
-                        16
-                    );
-                    Button("SettingsVolume", page, "音量 50%", 70);
-                    VolumeTrack(page);
-                    Button("SettingsData", page, "運動データの連携案内   →", 70);
-                    Label(
-                        "SettingsNote",
-                        page,
-                        "この体験版は表示と操作を確認するためのものです。設定は終了すると元に戻ります。",
-                        13,
-                        110
-                    ).color = Muted;
-                    break;
-            }
+            OverlayLabel(name + "Caption", landscape, "", 15, new Vector2(0, .76f), Vector2.one);
         }
 
         private static void DestinationCard(
@@ -349,7 +208,7 @@ namespace Baryonyx.Wireframe.Editor
             string hint
         )
         {
-            var button = Button("Destination" + index, page, title + "\n" + hint, 192, 18, true);
+            var button = Button("Destination" + index, page, title + "\n" + hint, 202, 18, true);
             var art = Art(
                 "DestinationArt" + index,
                 (RectTransform)button.transform,
@@ -372,9 +231,8 @@ namespace Baryonyx.Wireframe.Editor
 
         private static void BuildExploration(RectTransform page)
         {
-            Eyebrow("ExploreEyebrow", page, "FOLLOW THE PATH");
             Label("ExplorePlace", page, "", 20, 38);
-            var map = Illustration("ExploreMap", page, forest, 258, new Rect(0, 0, 1, 1));
+            var map = Illustration("ExploreMap", page, forest, 350, new Rect(0, 0, 1, 1));
             map.GetComponent<UnityEngine.UI.LayoutElement>().flexibleHeight = 1;
             var party = Rect("ExplorePartyVisual", map);
             page.GetComponentInParent<WireframeArt>().ExplorationParty = party;
@@ -391,14 +249,14 @@ namespace Baryonyx.Wireframe.Editor
                 );
             MapExit("ExploreDoor", map, new Vector2(.09f, .51f), new Vector2(.56f, .73f));
             MapExit("ExploreChest", map, new Vector2(.59f, .48f), new Vector2(.98f, .70f));
-            Label("ExplorePartyText", page, "", 12, 24).alignment = TextAlignmentOptions.Center;
-            Card("ExploreNotice", page, "", 54, 14);
+            Label("ExplorePartyText", page, "", 12, 0).gameObject.SetActive(false);
+            Label("ExploreNotice", page, "", 13, 32);
             var manage = Row(page, "ExploreManage");
             Button("ExploreParty", manage, "仲間・編成");
             Button("ExploreEquipment", manage, "装備");
             var menu = Row(page, "ExploreMenu");
-            Button("ExploreSettings", menu, "設定", fontSize: 14);
-            Button("ExploreEnd", menu, "冒険を終える", fontSize: 14);
+            Button("ExploreSettings", menu, "設定", 48, 12);
+            Button("ExploreEnd", menu, "帰還", 48, 12);
         }
 
         private static void MapExit(string name, RectTransform map, Vector2 min, Vector2 max)
@@ -412,11 +270,25 @@ namespace Baryonyx.Wireframe.Editor
 
         private static void PortraitSlots(RectTransform page, string prefix)
         {
-            for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+            for (int rowIndex = 0; rowIndex < 1; rowIndex++)
             {
                 var row = Row(page, prefix + "Row" + rowIndex);
-                for (int i = 0; i < 2; i++)
-                    PortraitButton(prefix + (rowIndex * 2 + i), row, rowIndex * 2 + i, 64);
+                for (int i = 0; i < 4; i++)
+                {
+                    PortraitButton(prefix + i, row, i, 112);
+                    var b = row.Find(prefix + i);
+                    var image = b.GetComponentInChildren<UnityEngine.UI.RawImage>();
+                    image.rectTransform.anchorMin = image.rectTransform.anchorMax = new Vector2(
+                        .5f,
+                        .24f
+                    );
+                    image.rectTransform.anchoredPosition = Vector2.zero;
+                    image.rectTransform.sizeDelta = new Vector2(49, 72);
+                    var label = b.GetComponentInChildren<TMP_Text>();
+                    label.fontSize = 12;
+                    label.margin = new Vector4(0, 0, 0, 5);
+                    label.alignment = TextAlignmentOptions.Bottom;
+                }
             }
         }
 
@@ -467,11 +339,12 @@ namespace Baryonyx.Wireframe.Editor
                     "BattleAllyArt" + i,
                     (RectTransform)button.transform,
                     i,
-                    new Vector2(.38f, 0),
-                    new Vector2(34, 48)
+                    new Vector2(.5f, .08f),
+                    new Vector2(59, 87)
                 );
                 var label = button.GetComponentInChildren<TMP_Text>();
                 label.fontSize = 10;
+                label.color = Color.white;
                 label.alignment = TextAlignmentOptions.MidlineRight;
                 label.margin = new Vector4(50, 0, 3, 0);
                 label.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectColor = Color.black;
@@ -496,6 +369,7 @@ namespace Baryonyx.Wireframe.Editor
                 aspect.aspectRatio = .75f;
                 var label = button.GetComponentInChildren<TMP_Text>();
                 label.fontSize = 10;
+                label.color = Color.white;
                 label.alignment = TextAlignmentOptions.Bottom;
                 label.margin = new Vector4(2, 0, 2, 6);
                 label.gameObject.AddComponent<UnityEngine.UI.Shadow>().effectColor = Color.black;
@@ -511,8 +385,8 @@ namespace Baryonyx.Wireframe.Editor
             var group = card.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             group.padding = new RectOffset(14, 14, 12, 14);
             Label(name + "Eyebrow", card, title, 11, 18).color = Gold;
-            Label(name, card, "", 15, 112);
-            ProgressTrack(name + "Progress", card, weekly ? .728f : .764f, 6);
+            Label(name, card, "", 15, 68);
+            ProgressTrack(name + "Progress", card, 0, 6);
         }
 
         private static void VolumeTrack(RectTransform page) =>

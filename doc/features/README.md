@@ -47,14 +47,16 @@
 
 ## 現在の実装
 
-2026-09-19時点で、健康データ機能に加え、RPGの画面遷移を確認する専用ワイヤーがある。
-ワイヤーはサンプルを使った画面操作であり、戦闘・報酬・保存などのRPG機能は未実装である。
+2026-09-19時点で、健康データ機能に加え、冒険・獲得・装備・戦闘を続けて試せる専用シーンがある。
+通常攻撃・スキル・ダウン・勝敗・簡易報酬を実装し、同じシーンからHealth Connectの7日分の歩数を数値と棒グラフで表示する。
+ゲーム状態の永続保存、目標評価、サーバーへの保存はこのシーンから呼ばない。
 
 | 機能 | 現行仕様 | 実装の入口 |
 |---|---|---|
 | 健康データの読み取りと保存 | [機能詳細](health-data.md) | [画面起動](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)・[同期クライアント](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthClient.cs)・[API](../../server/src/features/health/routes.ts) |
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
 | 画面の操作ワイヤー | [操作と制約](game-wireframe.md) | [起動シーン](../../client/Assets/Baryonyx/App/Scenes/Wireframe.unity) |
+| 戦闘MVP | [試作値と実装範囲](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
 
 現在の起動画面はHealth Connectと任意のGoogle接続を独立して扱い、サーバー同期は呼ばない。
 詳細な制約・検証済み範囲・実環境で残る確認は各機能詳細を参照する。

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Baryonyx.Combat;
 
 namespace Baryonyx.Wireframe
 {
@@ -15,6 +16,7 @@ namespace Baryonyx.Wireframe
         Result,
         Goals,
         Settings,
+        Health,
     }
 
     public enum WirePopup
@@ -82,6 +84,7 @@ namespace Baryonyx.Wireframe
         }
 
         public event Action Changed;
+        public CombatEncounter Battle { get; private set; }
         public WireframeData Data { get; }
         public WireScreen Screen { get; private set; } = WireScreen.Home;
         public WirePopup Popup { get; private set; } = WirePopup.Intro;
@@ -174,6 +177,7 @@ namespace Baryonyx.Wireframe
             bool allowed = Screen switch
             {
                 WireScreen.Home => screen == WireScreen.Destination
+                    || screen == WireScreen.Health
                     || screen == WireScreen.Party
                     || screen == WireScreen.Equipment
                     || screen == WireScreen.Goals
@@ -183,6 +187,7 @@ namespace Baryonyx.Wireframe
                     || screen == WireScreen.Settings,
                 WireScreen.Defeat => screen == WireScreen.Party,
                 WireScreen.Party => screen == WireScreen.Equipment,
+                WireScreen.Settings or WireScreen.Goals => screen == WireScreen.Health,
                 _ => false,
             };
             if (!allowed)
@@ -396,8 +401,8 @@ namespace Baryonyx.Wireframe
             if (
                 !Ready(WireScreen.Battle)
                 || index < 0
-                || index >= (ThreeSkills ? 3 : 2)
-                || CombatState == WireCombatState.Cooldown
+                || index >= 2
+                || (Battle != null && !Battle.CanUse(Slot, index))
             )
                 return;
             SkillSelection = true;
@@ -417,10 +422,34 @@ namespace Baryonyx.Wireframe
         {
             if (!Ready(WireScreen.Battle) || !SkillSelection || Skill < 0)
                 return;
+            if (Battle == null || !Battle.Use(Slot, Skill, Target))
+                return;
             CombatState = WireCombatState.Casting;
             CastingSlot = Slot;
             SkillSelection = false;
             Notify();
+        }
+
+        public void AdvanceBattle(float seconds)
+        {
+            if (!Ready(WireScreen.Battle) || Battle == null)
+                return;
+            Battle.Target = Target;
+            Battle.Advance(seconds, SkillSelection);
+            if (Battle.Outcome != CombatOutcome.Running)
+                FinishBattle(Battle.Outcome == CombatOutcome.Victory);
+            else
+            {
+                if (!Battle.Enemies[Target].Alive)
+                    for (int i = 0; i < Battle.Enemies.Length; i++)
+                        if (Battle.Enemies[i].Alive)
+                        {
+                            Target = i;
+                            break;
+                        }
+                EnemyHp = (int)(Battle.Enemies[Target].HpRatio * 100);
+                Notify();
+            }
         }
 
         public void FinishBattle(bool victory)
@@ -431,7 +460,7 @@ namespace Baryonyx.Wireframe
             SkillSelection = false;
             if (!victory)
             {
-                EnemyHp = 38;
+                EnemyHp = Battle != null ? (int)(Battle.Enemies[Target].HpRatio * 100) : 38;
                 CombatState = WireCombatState.Weak;
                 Root(WireScreen.Defeat);
             }
@@ -470,11 +499,13 @@ namespace Baryonyx.Wireframe
 
         public void ConfirmRevive()
         {
-            if (Popup != WirePopup.Revive || Screen != WireScreen.Defeat)
+            if (Popup != WirePopup.Revive || Screen != WireScreen.Defeat || Runes < 100)
                 return;
+            Runes -= 100;
+            Battle?.Revive();
             Root(WireScreen.Battle);
             AlliesRecovered = true;
-            Notice = "復活の表示サンプル。ルーンは減りません。";
+            Notice = "100ルーンで復活した。";
             Notify();
         }
 
@@ -681,6 +712,19 @@ namespace Baryonyx.Wireframe
 
         private void ResetBattle()
         {
+            var allies = new CombatAlly[4];
+            for (int i = 0; i < allies.Length; i++)
+            {
+                int character = party[i];
+                var weapon = Data.Equipment[equipment[character]];
+                allies[i] = CombatPrototype.Ally(
+                    character,
+                    Data.Characters[character].Name,
+                    weapon.Power,
+                    weapon.Down
+                );
+            }
+            Battle = new CombatEncounter(allies, CombatPrototype.Enemies(IsBoss, Area));
             CombatState = WireCombatState.Normal;
             EnemyHp = 100;
             Target = 0;

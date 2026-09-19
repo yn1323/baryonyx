@@ -15,9 +15,9 @@ namespace Baryonyx.Wireframe.Editor
             "Assets/Baryonyx/Features/Wireframe/UI/WireframeScreen.prefab";
         public const string DataPath =
             "Assets/Baryonyx/Features/Wireframe/Data/WireframeSamples.asset";
-        private static readonly Color Ink = new(.94f, .90f, .78f);
-        private static readonly Color Paper = new(.055f, .085f, .09f);
-        private static readonly Color Accent = new(.19f, .32f, .29f);
+        private static readonly Color Ink = new(.16f, .23f, .20f);
+        private static readonly Color Paper = new(.96f, .95f, .90f);
+        private static readonly Color Accent = new(.19f, .36f, .29f);
         private static TMP_FontAsset font;
         private static Scene generationScene;
 
@@ -76,6 +76,7 @@ namespace Baryonyx.Wireframe.Editor
                 root.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
                 Image(root, Paper, false);
                 var view = root.gameObject.AddComponent<WireframeView>();
+                var health = root.gameObject.AddComponent<WireframeHealthView>();
                 var skin = root.gameObject.AddComponent<WireframeArt>();
                 skin.Actors = actors;
                 skin.Forest = forest;
@@ -95,6 +96,7 @@ namespace Baryonyx.Wireframe.Editor
                 title.alignment = TextAlignmentOptions.MidlineLeft;
                 title.GetComponent<UnityEngine.UI.LayoutElement>().flexibleWidth = 1;
                 Button("Preview", header, "確認", 54, 12, false, 48);
+                Button("HeaderSettings", header, "設定", 54, 12, false, 48);
                 var scrollRoot = Rect("PageScroll", layout.Panel);
                 Stretch(scrollRoot);
                 layout.Viewport = scrollRoot;
@@ -123,12 +125,12 @@ namespace Baryonyx.Wireframe.Editor
                 Horizontal(nav);
                 Button("NavHome", nav, "ホーム");
                 Button("NavParty", nav, "仲間");
-                Button("NavGoals", nav, "運動目標");
+                Button("NavGoals", nav, "歩み・目標");
                 view.Navigation = layout.Navigation = nav.gameObject;
                 var sample = Label(
                     "SampleFooter",
                     layout.Panel,
-                    "体験版 / サンプルデータ・保存なし",
+                    "てくてくダンジョン  /  試作版",
                     10,
                     18
                 );
@@ -182,6 +184,7 @@ namespace Baryonyx.Wireframe.Editor
                     Button("DebugGoal" + i, debugContent, "目標：" + goals[i]);
                 Button("DebugReset", debugContent, "初回状態へリセット");
                 Close("DebugClose", debugPanel);
+                BuildHealthDetails(root, layout.SafeArea, health);
                 view.PopupOverlay.SetActive(false);
                 view.DebugOverlay.SetActive(false);
                 DecorateNavigation(nav);
@@ -195,69 +198,6 @@ namespace Baryonyx.Wireframe.Editor
                 EditorSceneManager.ClosePreviewScene(generationScene);
                 generationScene = default;
             }
-        }
-
-        private static void BuildBattle(RectTransform page, WireframeLayout layout)
-        {
-            Card("BattleWarning", page, "敵の予告", 42, 12);
-            var field = Rect("Battlefield", page);
-            var fieldSize = field.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
-            fieldSize.minHeight = 160;
-            var view = layout.GetComponent<WireframeView>();
-            fieldSize.flexibleHeight = 1;
-            Image(field, new Color(.84f, .86f, .87f), false);
-            for (int i = 0; i < 4; i++)
-            {
-                var ally = Button("Ally" + i, field, "味方", 54, 13);
-                var rect = (RectTransform)ally.transform;
-                rect.anchorMin = new Vector2(0, 1 - (i + 1) / 4f);
-                rect.anchorMax = new Vector2(.37f, 1 - i / 4f);
-                rect.offsetMin = new Vector2(4, 2);
-                rect.offsetMax = new Vector2(-4, -2);
-            }
-            for (int i = 0; i < 3; i++)
-            {
-                var enemy = Button("Enemy" + i, field, "敵", 54, 14, true);
-                var rect = (RectTransform)enemy.transform;
-                rect.anchorMin = new Vector2(.56f, .69f - i * .32f);
-                rect.anchorMax = new Vector2(.98f, .98f - i * .32f);
-                rect.offsetMin = rect.offsetMax = Vector2.zero;
-                view.HpFills[i + 4] = HealthBar(enemy);
-            }
-            var hp = Rect("HpGrid", page);
-            layout.HpGrid = hp.gameObject.AddComponent<UnityEngine.UI.GridLayoutGroup>();
-            layout.HpGrid.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
-            layout.HpGrid.constraintCount = 2;
-            layout.HpGrid.spacing = new Vector2(8, 8);
-            layout.HpGrid.cellSize = new Vector2(168, 54);
-            layout.HpSize = hp.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
-            layout.HpSize.minHeight = layout.HpSize.preferredHeight = 116;
-            for (int i = 0; i < 4; i++)
-                view.HpFills[i] = HealthBar(Button("Hp" + i, hp, "HP", 54, 14));
-            var selection = Row(page, "BattleSelectionRow");
-            var selectionText = Label("BattleSelection", selection, "キャラを選択", 12, 50);
-            selectionText.GetComponent<UnityEngine.UI.LayoutElement>().flexibleWidth = 1;
-            Button("UseSkill", selection, "使う", 50, 15, true, 62);
-            var skills = Row(page, "Skills");
-            for (int i = 0; i < 3; i++)
-                Button("Skill" + i, skills, "スキル", 54, 13, true);
-        }
-
-        private static RectTransform HealthBar(UnityEngine.UI.Button button)
-        {
-            var track = Rect(button.name + "Track", button.transform);
-            track.anchorMin = Vector2.zero;
-            track.anchorMax = new Vector2(1, 0);
-            track.pivot = new Vector2(.5f, 0);
-            track.sizeDelta = new Vector2(-16, 5);
-            track.anchoredPosition = new Vector2(0, 6);
-            Image(track, new Color(.035f, .065f, .07f), false);
-            var fill = Rect(button.name + "Fill", track);
-            Stretch(fill);
-            Image(fill, new Color(.42f, .68f, .49f), false);
-            ((RectTransform)button.GetComponentInChildren<TMP_Text>().transform).offsetMin +=
-                new Vector2(0, 9);
-            return fill;
         }
 
         private static RectTransform Rect(string name, Transform parent)
@@ -403,7 +343,7 @@ namespace Baryonyx.Wireframe.Editor
             Stretch((RectTransform)label.transform);
             label.margin = new Vector4(6, 3, 6, 3);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = primary ? new Color(1, .92f, .71f) : Ink;
+            label.color = primary ? new Color(.98f, .97f, .91f) : Ink;
             if (primary)
                 label.fontStyle = FontStyles.Bold;
             return button;
@@ -453,7 +393,7 @@ namespace Baryonyx.Wireframe.Editor
             panel = Rect(name + "Panel", safe);
             Center(panel, 344, 8);
             Image(panel, Paper, true);
-            Frame(panel, true);
+            Frame(panel);
             var scroll = Rect(name + "Scroll", panel);
             Stretch(scroll);
             scroll.offsetMin = new Vector2(12, 12);

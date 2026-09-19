@@ -47,8 +47,13 @@ client/
 │   │   │       │   ├── Preview/
 │   │   │       │   └── Sync/
 │   │   │       └── PlayMode/Presentation/
-│   │   ├── Features/Wireframe/          画面遷移と仮データの試作
-│   │   │   ├── Runtime/                 Session、View、SafeArea配置
+│   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ
+│   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗
+│   │   │   └── Tests/EditMode/          計算・時間・再開の検査
+│   │   ├── Features/Wireframe/          冒険・戦闘・歩数の操作試作
+│   │   │   ├── Runtime/
+│   │   │   │   ├── Flow/               画面遷移、所持状態、戦闘結果の反映
+│   │   │   │   └── Presentation/       入力、各画面の表示、演出、SafeArea
 │   │   │   ├── UI/                      専用Prefabとフォント
 │   │   │   ├── Data/                    仮のキャラ・武器
 │   │   │   ├── Editor/                  専用アセットの生成
@@ -113,9 +118,15 @@ AppのEditor処理はAppの起動処理とHealthのアセット定義を参照�
 認証・健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
 機能の詳しい動作は [健康データの機能文書](../features/health-data.md) を参照する。
 
-WireframeもAppがSession・View・仮データを組み立てる。
-[WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs)から健康データのProviderやサーバーを呼ばない。
-[WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/WireframeSession.cs)は遷移と実行中の仮状態を管理し、Viewは入力と表示を担当する。
+WireframeもAppがSession・View・試作データを組み立てる。
+[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)はMainとWireframeに共通するProvider選択とPresenterの寿命を管理する。
+[WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs)は健康データのPresenterを歩数画面へ渡し、前面・背面を通知する。
+サーバー同期は呼ばない。
+[WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Flow/WireframeSession.cs)は画面遷移と実行中の所持状態を管理する。
+戦闘計算はCombatへ委譲し、Presentationは入力、通常ページ、戦闘、ダイアログ、歩数、演出と配置を分担する。
+CombatはWireframe・App・Unityの画面へ依存しない。
+健康データの並べ替え・集計はHealth内のHealthWeekSummaryへ置き、表示用の仮数値をゲームのSessionへ持ち込まない。
+Editorの共通uGUI生成部品はWireframeScreenAssetsに置き、ページ・戦闘・歩数の組み立ては用途別のファイルへ分ける。
 起動・対象画面・操作方法は[画面ワイヤー](../features/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト

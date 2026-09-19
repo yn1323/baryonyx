@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Baryonyx.Health;
 using Baryonyx.Wireframe;
 using NUnit.Framework;
 using UnityEngine;
@@ -123,7 +124,7 @@ namespace Baryonyx.Tests.PlayMode
             Release(Mouse.leftButton);
             yield return null;
             if (waitForTravel && (name is "ExploreDoor" or "ExploreChest"))
-                yield return new WaitForSecondsRealtime(.35f);
+                yield return new WaitForSecondsRealtime(1.2f);
         }
 
         private IEnumerator Explore()
@@ -136,7 +137,8 @@ namespace Baryonyx.Tests.PlayMode
 
         private IEnumerator Win()
         {
-            yield return Click("Preview");
+            view.Session.ToggleDebug();
+            yield return null;
             yield return Click("DebugWin");
         }
 
@@ -157,7 +159,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Session.Screen, Is.EqualTo(WireScreen.Explore));
             Assert.That(view.GetComponent<CanvasGroup>().interactable, Is.False);
             view.Session.Back();
-            yield return new WaitForSecondsRealtime(.35f);
+            yield return new WaitForSecondsRealtime(1.2f);
             Assert.That(view.Session.Screen, Is.EqualTo(WireScreen.Explore));
             Assert.That(view.Session.Popup, Is.EqualTo(WirePopup.EndAdventure));
             Assert.That(party.anchoredPosition, Is.EqualTo(origin));
@@ -174,7 +176,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return Click("Skill0");
             yield return Click("Enemy1");
             yield return Click("UseSkill");
-            Assert.That(view.Session.EnemyHp, Is.EqualTo(100));
+            Assert.That(view.Session.Battle.Allies[1].Cooldowns[0], Is.GreaterThan(0));
             yield return Win();
             yield return Click("PopupPrimary");
             yield return Click("EquipmentConfirm");
@@ -199,7 +201,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return Click("PartyConfirm");
             Assert.That(view.Session.PartyMember(2), Is.EqualTo(4));
             yield return Click("ExploreDoor");
-            yield return Click("Preview");
+            view.Session.ToggleDebug();
+            yield return null;
             yield return Click("DebugLose");
             yield return Click("DefeatParty");
             yield return Click("PartyEquipment");
@@ -217,7 +220,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             yield return null;
             // The header stays visible even when the test runner uses a short landscape view.
-            var button = view.Button("Preview");
+            var button = view.Button("HeaderSettings");
             var rect = (RectTransform)button.transform;
             var pointer = new PointerEventData(EventSystem.current)
             {
@@ -240,6 +243,46 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Session.Popup, Is.EqualTo(WirePopup.None));
             Assert.That(view.Session.Screen, Is.EqualTo(WireScreen.Home));
         }
+
+        [UnityTest]
+        public IEnumerator ActualAutoCombatReachesItsRewardWithoutThePreviewControls()
+        {
+            yield return Explore();
+            yield return Click("ExploreDoor");
+            float deadline = Time.realtimeSinceStartup + 60;
+            while (view.Session.Screen == WireScreen.Battle && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(view.Session.Screen, Is.EqualTo(WireScreen.Explore));
+            Assert.That(view.Session.Popup, Is.EqualTo(WirePopup.NewEquipment));
+            Assert.That(view.Session.Runes, Is.EqualTo(980));
+        }
+
+#if UNITY_EDITOR
+        [UnityTest]
+        public IEnumerator HealthChartShowsZeroAndMissingDaysAndOpensOriginalJson()
+        {
+            var provider = new HealthScreenPreviewProvider(() =>
+                DateTimeOffset.Parse("2026-09-19T12:00:00+09:00")
+            );
+            using var presenter = new HealthScreenPresenter(provider, provider);
+            var health = view.GetComponent<WireframeHealthView>();
+            health.Bind(presenter, true);
+            yield return Click("PopupPrimary");
+            yield return Click("HomeSteps");
+            yield return Click("HealthConnect");
+            Assert.That(view.Session.Screen, Is.EqualTo(WireScreen.Health));
+            Assert.That(health.Values[4].text, Is.EqualTo("0"));
+            Assert.That(health.Values[5].text, Is.EqualTo("記録なし"));
+            Assert.That(health.Values[6].text, Is.EqualTo("6,432"));
+            Assert.That(health.Dates[0].text, Is.EqualTo("09/13"));
+            Assert.That(health.Bars[2].anchorMax.y, Is.EqualTo(1));
+            yield return Click("HealthDay6");
+            Assert.That(health.DetailsOpen, Is.True);
+            Assert.That(health.Detail.text, Is.EqualTo(presenter.Days[0].Json));
+            yield return Click("HealthDetailsClose");
+            Assert.That(health.DetailsOpen, Is.False);
+        }
+#endif
 
         [UnityTest]
         public IEnumerator GoalNoticeAndIndependentSlotsAreDisplayed()

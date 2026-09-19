@@ -18,6 +18,12 @@
       "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png",
       "generationPrompt": "Use case: stylized-concept. Create a production environment background for an original 16-bit fantasy RPG mobile game, square 1024x1024. Crisp high-quality pixel art with clear square pixel clusters, subdued dark blue slate rocks, teal minerals and warm amber lanterns. Three-quarter elevated camera looks into an old abandoned mine hall. Two visible exits: large arched tunnel with timber supports in upper middle x45% y27%, narrower right-hand tunnel upper right x83% y40%. Empty broad stone floor covering lower 60% for a 4-person party and battle sprites. Old mine tracks subtly lead towards central tunnel. Small treasure chest beside right entrance. Rich stone and wood details around edges, atmospheric depth, quiet adventurous mystery, balanced contrast. Same visual language as a refined late-16-bit Japanese fantasy RPG, antique gold/dark spruce interface will overlay this. No characters, enemies, text, labels, interface, borders, watermarks. Original game art.",
       "selectedOutput": "exec-eb9ddbfe-609d-4829-a09b-4317cc94d91a.png"
+    },
+    {
+      "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png",
+      "generationPrompt": "Use case: stylized-concept. Asset type: actual background artwork for the home screen of a Japanese portrait mobile pixel-art RPG. Use the provided forest image only as a reference for the pixel texture, deep moss greens and warm golden sunlight. Create a NEW wide landscape illustration, 1536x1024: a peaceful sunlit departure clearing, pale green and warm cream morning sky in upper half, distant layered forest and tiny ruined tower, broad simple sunlit grassy dirt ground across bottom half, room in the lower center for four separately rendered adventurer sprites. More airy, brighter, softer and less busy than the input, restrained crisp pixel clusters, charming premium JRPG environment, gentle depth and dappled light. No characters, no creatures, no objects covering center foreground, no interface, no lettering, no slogans, no border. Background only; opaque.",
+      "reference": "Forest.png",
+      "selectedOutput": "exec-95b6e32e-59f7-4c7d-ab0f-6a573bc29bc2.png"
     }
   ]
 }

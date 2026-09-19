@@ -2,7 +2,7 @@
 id: feature-health-data
 type: specification
 status: 運用中
-updated: 2026-09-14
+updated: 2026-09-19
 ---
 
 # 健康データの読み取りと保存
@@ -18,6 +18,13 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 利用時に歩数が表示されない場合は、[Health Connectで歩数が「データなし」になるときの対処法](../qa/health-connect-no-steps.md)を参照する。
 
 ## ローカル表示画面
+
+[冒険の試作画面](game-wireframe.md)にも同じHealth Connect接続を組み込んだ。
+ホームに今日の歩数、専用画面に直近7日間の数値と棒グラフを古い日から順に表示する。
+取得済みの0歩と記録なし・権限不足・失敗を区別し、日付列から元のJSONを開く。
+Providerの選択と寿命はAppのHealthRuntimeで共通化し、集計はHealthWeekSummaryが担当する。
+この起動経路もサーバー・DBへ保存せず、Androidではサンプル値を使わない。
+以下の一覧・認証ボタン・コピー操作の説明は、既存のMainシーンの健康データ画面に対応する。
 
 画面上部には「1週間の歩数」と、[正式なアプリ名](../game/overview.md)を表示する。
 画面アセットの生成時に、ブランド表記へPlayer Settingsの `productName` を設定する。
