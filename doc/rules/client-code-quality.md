@@ -64,7 +64,7 @@ Analyzer・Source Generatorの読み込みや実行失敗を表す診断もError
 `Assets/` にアセンブリ別のrulesetを追加するときは、共通の診断を継承する構成とCIの検証を一緒に更新する。
 現時点のCIは、プロジェクトの各C#アセンブリが `Default.ruleset` を使うことを確認する。
 Unityが生成する `.csproj` は手書きで変更せず、External Toolsから再生成する。
-[生成フック](../../client/Assets/Editor/AnalyzerProjectSettings.cs) が、Zedなどで不足する固定版Analyzerとrulesetの参照を補い、IDE側の同名Analyzerとの重複を除く。
+[生成フック](../../client/Assets/Baryonyx/Editor/AnalyzerProjectSettings.cs) が、Zedなどで不足する固定版Analyzerとrulesetの参照を補い、IDE側の同名Analyzerとの重複を除く。
 他のAnalyzerやSource Generatorの既存参照は保持する。
 
 ## GitHub Actions
@@ -75,13 +75,13 @@ Unityが生成する `.csproj` は手書きで変更せず、External Toolsか�
 | Client format (macos-15) | macOSで同じ整形を検査 |
 | Client analyzers | UbuntuでUnityを起動し、コンパイルとAnalyzerを実行 |
 
-`client/**` またはworkflowの変更を含むPRの作成・更新と、同じ変更条件を満たす `main` へのpushで起動する。
+`client/**` またはworkflowの変更を含むPRの作成・更新と、同じ変更条件を満たす `main`・`dev`・`develop` へのpushで起動する。
 作業ブランチへのpushでは起動せず、PRとの二重実行を避ける。
 手動実行にも対応する。
 Unity版は `ProjectVersion.txt` から読み、対応するGameCIのbaseイメージを使う。
 Editor版を更新するときは、対応するイメージの公開状況も確認する。
 
-Unityの入口は [CompileCheck.Run](../../client/Assets/Editor/CI/CompileCheck.cs) である。
+Unityの入口は [CompileCheck.Run](../../client/Assets/Baryonyx/Editor/CI/CompileCheck.cs) である。
 解析jobは `-nographics` を渡し、描画機能を初期化せずに起動する。
 失敗時はrunnerのメモリ・ディスク状況とカーネル警告もログに残す。
 DLLのハッシュ、Plugin設定、ラベル、各アセンブリのAnalyzer・ruleset適用を確認してから、スクリプトを再コンパイルする。

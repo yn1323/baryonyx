@@ -1,0 +1,139 @@
+name: Client APK distribution
+
+on:
+  workflow_call:
+    inputs:
+      artifact-id:
+        description: 成功したAndroidビルドが保存したAPK artifactのID
+        required: true
+        type: string
+      environment:
+        description: APKの配布名（dev・prod・preview）
+        required: true
+        type: string
+    secrets:
+      GOOGLE_DRIVE_CLIENT_ID:
+        required: true
+      GOOGLE_DRIVE_CLIENT_SECRET:
+        required: true
+      GOOGLE_DRIVE_REFRESH_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+concurrency:
+  group: client-android-google-drive
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  distribute:
+    name: Upload Android APK to Drive
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      drive-url: ${{ steps.drive.outputs.drive-url }}
+      apk-name: ${{ steps.drive.outputs.apk-name }}
+      pr-number: ${{ steps.source.outputs.pr-number }}
+      head-sha: ${{ steps.source.outputs.head-sha }}
+    steps:
+      - name: Checkout distribution helpers
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Use the same commit as the calling build, including same-repository PRs.
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Resolve the successful APK build
+        id: source
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          APK_ARTIFACT_ID: ${{ inputs.artifact-id }}
+          APK_ENVIRONMENT: ${{ inputs.environment }}
+        with:
+          script: |
+            const resolve = require('./client/ci/resolve-drive-distribution.cjs');
+            const source = await resolve(github, context, {
+              artifactId: process.env.APK_ARTIFACT_ID,
+              environment: process.env.APK_ENVIRONMENT,
+            });
+            if (!source) {
+              core.notice('This build is not eligible for Drive distribution.');
+              return;
+            }
+            for (const [key, value] of Object.entries(source)) core.setOutput(key, value);
+      - name: Download only the selected APK artifact
+        if: steps.source.outputs.artifact-id != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.source.outputs.run-id }}
+          artifact-ids: ${{ steps.source.outputs.artifact-id }}
+          path: ${{ runner.temp }}/drive-artifact
+          merge-multiple: true
+      - name: Upload APK using repository secrets
+        if: steps.source.outputs.artifact-id != ''
+        id: drive
+        env:
+          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+          GOOGLE_DRIVE_REFRESH_TOKEN: ${{ secrets.GOOGLE_DRIVE_REFRESH_TOKEN }}
+          APK_ENVIRONMENT: ${{ steps.source.outputs.environment }}
+          SOURCE_HEAD_SHA: ${{ steps.source.outputs.head-sha }}
+          SOURCE_RUN_ID: ${{ steps.source.outputs.run-id }}
+        run: >-
+          python3 client/ci/upload-drive-apk.py "$RUNNER_TEMP/drive-artifact/baryonyx.apk"
+          --folder-id 1iNgsGNtCDyMhyJsAjS2HmzxKVEuY4y8k
+          --environment "$APK_ENVIRONMENT"
+
+  comment:
+    name: Client Android APK link
+    needs: distribute
+    if: needs.distribute.outputs.drive-url != '' && needs.distribute.outputs.pr-number != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post APK download link
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          APK_URL: ${{ needs.distribute.outputs.drive-url }}
+          APK_NAME: ${{ needs.distribute.outputs.apk-name }}
+          PR_NUMBER: ${{ needs.distribute.outputs.pr-number }}
+          HEAD_SHA: ${{ needs.distribute.outputs.head-sha }}
+        with:
+          script: |
+            const number = Number(process.env.PR_NUMBER);
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: number });
+            if (pr.state !== 'open' || pr.head.sha !== process.env.HEAD_SHA) return;
+            const marker = '<!-- baryonyx-android-apk -->';
+            const body = [
+              marker,
+              'Androidビルドが成功しました。',
+              '',
+              `[${process.env.APK_NAME}をGoogle Driveから取得](${process.env.APK_URL})`,
+              '',
+              `このPRのビルド対象コミット: ${process.env.HEAD_SHA}`,
+              'PreviewのAPKは他のPRを含む次のPreview配布で上書きされます。現在の内容はDriveのファイル説明にあるコミット・CI実行URLで確認してください。',
+              '取得には保存先への閲覧権限があるGoogleアカウントでログインしてください。ZIPの展開は不要です。',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo, issue_number: number, per_page: 100,
+            });
+            const previous = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: number, body });
+            }

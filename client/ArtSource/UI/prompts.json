@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-19",
+  "tool": "Built-in image_gen",
+  "scope": "Baryonyx UI preview; sample characters, not final character master data",
+  "assets": [
+    {
+      "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Adventurers.png",
+      "generationPrompt": "Use case: stylized-concept. Create a finished production sprite sheet for an original classic fantasy mobile RPG. Transparent background with actual alpha, no text, no labels, no grid lines, no ground, no glow outside silhouettes. One 1536x1024 PNG atlas arranged in a STRICT 4-column by 2-row equal grid (each cell 384x512). Each sprite entirely within its cell with at least 48px transparent padding and centered, full body. Deliberate crisp pixel art, late-16-bit Japanese RPG look, 3-head-tall small characters, limited colors, strong silhouette, hard pixel clusters, no antialiasing. Top row left to right: 1 female knight with dark auburn hair, ivory tunic, blue mantle, steel shield and sword, facing right; 2 young male mage in plum robe and tall hat holding amber staff facing right; 3 male scout in moss green cloak with brown hair and dagger facing right; 4 female healer with pale gold hair in ivory-and-teal robe holding staff facing right. Bottom row left to right: 1 travelling male warrior with silver hair, russet scarf, heavy sword facing right; 2 moss-covered gray wolf with amber eyes facing left; 3 small turquoise horned slime facing left; 4 ancient hulking woodland guardian of roots, dark stones and a gold rune in chest facing left. Original designs. Consistent pixel scale and tasteful muted spruce, warm gold, ivory, plum palette. Characters use about 200px tall, wolf and slime similarly centered, guardian about 350px tall. This is a sprite atlas consumed by Unity, not a mockup.",
+      "editPrompt": "Edit this exact sprite atlas. Remove ALL background including the dark gradient, colored halo, lights and shadows around the characters. Make background truly transparent alpha=0. Keep every character exactly unchanged, same positions and pixel art. Fit each inside its 4x2 equal grid cell with transparent separation. No background color, no checkerboard drawn into image, no glow. Output a transparent PNG game sprite sheet.",
+      "selectedOutput": "exec-5bcbdb31-6668-4463-bfa6-289e6b6fe950.png"
+    },
+    {
+      "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Forest.png",
+      "generationPrompt": "Use case: stylized-concept. Production environment background for an original 16-bit fantasy RPG in portrait mobile UI. 1024x1024 square image. Refined hand-crafted pixel art with crisp visible square pixel clusters, subdued teal green forest, warm pale gold sunlight, old mossy stone ruins. Camera slightly elevated, 3/4 view into an inviting forest clearing. Two clearly separated exits: a tall weathered stone archway in the upper middle at x45% y27%, and a shadowy path under tangled tree roots at the upper right x83% y40%. Clear empty earthy floor through lower 60% for a party and battles, broad footpath leading towards the arch. Ferns and tiny pale flowers at edges, a small closed wooden chest beside the right path. Layered tree silhouettes behind. Beautiful atmospheric depth but maintain hard pixel edges, gentle light shafts. Palette coordinated for dark spruce and antique gold interface. No people, no creatures, no text, no UI, no frames. Original SNES-inspired fantasy environment, not a screenshot of any existing game.",
+      "selectedOutput": "exec-eb980493-dd8e-4d47-8201-9c38d18d2ff3.png"
+    },
+    {
+      "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png",
+      "generationPrompt": "Use case: stylized-concept. Create a production environment background for an original 16-bit fantasy RPG mobile game, square 1024x1024. Crisp high-quality pixel art with clear square pixel clusters, subdued dark blue slate rocks, teal minerals and warm amber lanterns. Three-quarter elevated camera looks into an old abandoned mine hall. Two visible exits: large arched tunnel with timber supports in upper middle x45% y27%, narrower right-hand tunnel upper right x83% y40%. Empty broad stone floor covering lower 60% for a 4-person party and battle sprites. Old mine tracks subtly lead towards central tunnel. Small treasure chest beside right entrance. Rich stone and wood details around edges, atmospheric depth, quiet adventurous mystery, balanced contrast. Same visual language as a refined late-16-bit Japanese fantasy RPG, antique gold/dark spruce interface will overlay this. No characters, enemies, text, labels, interface, borders, watermarks. Original game art.",
+      "selectedOutput": "exec-eb9ddbfe-609d-4829-a09b-4317cc94d91a.png"
+    },
+    {
+      "file": "Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png",
+      "generationPrompt": "Use case: stylized-concept. Asset type: actual background artwork for the home screen of a Japanese portrait mobile pixel-art RPG. Use the provided forest image only as a reference for the pixel texture, deep moss greens and warm golden sunlight. Create a NEW wide landscape illustration, 1536x1024: a peaceful sunlit departure clearing, pale green and warm cream morning sky in upper half, distant layered forest and tiny ruined tower, broad simple sunlit grassy dirt ground across bottom half, room in the lower center for four separately rendered adventurer sprites. More airy, brighter, softer and less busy than the input, restrained crisp pixel clusters, charming premium JRPG environment, gentle depth and dappled light. No characters, no creatures, no objects covering center foreground, no interface, no lettering, no slogans, no border. Background only; opaque.",
+      "reference": "Forest.png",
+      "selectedOutput": "exec-95b6e32e-59f7-4c7d-ab0f-6a573bc29bc2.png"
+    }
+  ]
+}

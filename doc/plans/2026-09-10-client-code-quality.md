@@ -158,8 +158,8 @@ Secretsを利用できないfork PRでは、Analyzerを実行できたことに�
 | `client/.vscode/settings.json`、`extensions.json` | 既存設定へCSharpier連携を追記 |
 | `client/Assets/Analyzers/Microsoft.Unity.Analyzers/` | DLL、取得情報、ライセンス |
 | `client/Assets/Default.ruleset` | Analyzer診断の重大度 |
-| `client/Assets/Editor/CI/CompileCheck.cs` | コンパイル確認の入口 |
-| `client/Assets/Editor/AnalyzerProjectSettings.cs` | IDEのAnalyzer参照を補い、同名Analyzerの重複を除く生成フック |
+| `client/Assets/Baryonyx/Editor/CI/CompileCheck.cs` | コンパイル確認の入口 |
+| `client/Assets/Baryonyx/Editor/AnalyzerProjectSettings.cs` | IDEのAnalyzer参照を補い、同名Analyzerの重複を除く生成フック |
 | `.github/workflows/client-ci.yml` | 整形・静的解析のチェック |
 | `doc/rules/client-code-quality.md` | 実装で確定した導入・確認・更新手順 |
 | `doc/README.md` | 計画と開発ルールへのリンク |
