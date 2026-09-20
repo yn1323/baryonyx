@@ -105,19 +105,12 @@ namespace Baryonyx.Wireframe
                 (safeMinY + safeMaxY - coreHeight) * .5f
             );
             Panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Max(0, width));
-            PopupPanel.SetSizeWithCurrentAnchors(
-                RectTransform.Axis.Horizontal,
-                Mathf.Max(0, Mathf.Min(420, width))
-            );
-            DebugPanel.SetSizeWithCurrentAnchors(
-                RectTransform.Axis.Horizontal,
-                Mathf.Max(0, Mathf.Min(420, width))
-            );
+            float modalWidth = Mathf.Max(0, Mathf.Min(420, width));
+            float safeHeight = canvas.y * (maximum.y - minimum.y);
+            ApplyModalBounds(PopupPanel, modalWidth, safeHeight);
+            ApplyModalBounds(DebugPanel, modalWidth, safeHeight);
             if (HealthDetailsPanel != null)
-                HealthDetailsPanel.SetSizeWithCurrentAnchors(
-                    RectTransform.Axis.Horizontal,
-                    Mathf.Max(0, Mathf.Min(420, width))
-                );
+                ApplyModalBounds(HealthDetailsPanel, modalWidth, safeHeight);
             Viewport.offsetMin = new Vector2(0, navigation ? 86 : 24);
             Viewport.offsetMax = new Vector2(0, -62);
             foreach (var page in PageSizes)
@@ -131,6 +124,16 @@ namespace Baryonyx.Wireframe
             lastSafe = safe;
             lastNavigation = navigation;
             applied = true;
+        }
+
+        private static void ApplyModalBounds(RectTransform modal, float width, float safeHeight)
+        {
+            if (modal == null)
+                return;
+            modal.anchorMin = modal.anchorMax = Vector2.one * .5f;
+            modal.pivot = Vector2.one * .5f;
+            modal.sizeDelta = new Vector2(width, Mathf.Min(520, Mathf.Max(0, safeHeight - 32)));
+            modal.anchoredPosition = Vector2.zero;
         }
     }
 }

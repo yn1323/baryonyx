@@ -252,6 +252,14 @@ namespace Baryonyx.Wireframe.Editor
             rect.anchoredPosition = Vector2.zero;
         }
 
+        private static void CenterModal(RectTransform rect, float width, float height)
+        {
+            rect.anchorMin = rect.anchorMax = Vector2.one * .5f;
+            rect.pivot = Vector2.one * .5f;
+            rect.sizeDelta = new Vector2(width, height);
+            rect.anchoredPosition = Vector2.zero;
+        }
+
         private static void AnchorTop(RectTransform rect, float height)
         {
             rect.anchorMin = new Vector2(0, 1);
@@ -424,7 +432,7 @@ namespace Baryonyx.Wireframe.Editor
             var follower = safe.gameObject.AddComponent<WireframeSafeAreaFollower>();
             follower.Source = safeArea;
             panel = Rect(name + "Panel", safe);
-            Center(panel, 344, 8);
+            CenterModal(panel, 344, 520);
             Image(panel, Paper, true);
             Frame(panel);
             var scroll = Rect(name + "Scroll", panel);
