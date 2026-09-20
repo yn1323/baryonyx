@@ -209,11 +209,11 @@ OSの文字拡大への追従や入力欄のキーボード回避は、現在の
 
 1. 同じGoogle Cloudプロジェクトで、Googleログイン用のWebクライアントと、実際のアプリID・署名証明書に対応するAndroidクライアントを用意する。
 2. [HealthConnectionSettings](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) の `Google Web Client Id` に、末尾が `.apps.googleusercontent.com` のWebクライアントIDを設定する。クライアントシークレットはアプリに入れない。
-3. 同じ設定アセットの `Server Base Url` に、開発中は `http://127.0.0.1:3000`、公開先は認証APIのHTTPSベースURLを設定する。Androidビルドでは `SERVER_BASE_URL` が指定されていればその値を使い、未指定ならDevのWorkers URLを使う。
+3. 同じ設定アセットの `Server Base Url` に、認証APIを公開するサーバーのHTTPSベースURLを設定する。空欄ならローカル表示だけを使う。
 4. Androidビルドを端末にインストールし、Google認証と、Google未接続でのHealth Connect接続・歩数の読み取りをそれぞれ確認する。
 
 設定アセットにはWebクライアントIDが保存されている。
-運動報酬APIのURLは開発時の設定アセットに保存する。Androidビルドはビルド中だけ `ServerBaseUrl` を差し替え、ビルド後に元の設定へ戻す。
+運動報酬APIのURLは未設定であるため、公開環境へ接続する場合は端末へ配布する設定アセットへ別途設定する。
 Google Cloud側の登録内容とAndroidのアプリID・署名との整合、実機での認証成功は未確認である。
 空のまま認証ボタンを押すと設定不足を表示し、成功した扱いにはしない。
 EditorではネイティブSDKを作らず、前述のプレビューを表示する。

@@ -124,9 +124,6 @@ Androidエミュレーターの準備とAPKインストールは [WindowsでのU
 ローカルではAndroid Build Support、SDK・NDK・OpenJDKを同じUnity版へ導入する。
 対象Editorを閉じるか検証コピーを用意し、次を実行する。
 
-Androidビルドの接続先は環境変数 `SERVER_BASE_URL` で上書きできる。
-未指定時は `https://baryonyx-server-dev.croissant-lab.workers.dev` を使い、空文字を指定した場合はサーバー連携を無効にする。
-開発中の設定アセットには `http://127.0.0.1:3000` を保存し、ビルド中だけDevのURLへ差し替える。
 
 ```text
 unity build <clientの絶対パス> --target Android --execute-method Baryonyx.Editor.CI.AndroidBuild.Build --allow-dirty-build --timeout 1800

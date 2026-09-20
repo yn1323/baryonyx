@@ -17,7 +17,6 @@
 | APKのアプリID・SDK・ABI・署名・出力先 | [AndroidBuild.cs](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) | [Androidビルド](../rules/client-android-testing.md)。ビルド時の上書き設定も確認する |
 | 目標FPS | [HealthScreenBootstrap.cs](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | [現行画面の仕様](../features/health-data.md) |
 | ゲーム内Google認証 | [設定型](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectionSettings.cs)・[設定アセット](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) | [認証設定](../features/health-data.md#google認証の設定)。外部のOAuth登録との整合は別途確認する |
-| Androidビルド時のサーバー接続先 | [AndroidBuild.cs](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs)・`SERVER_BASE_URL` | 未指定時はDevのWorkers URLを使い、設定アセットの既定値はLocal |
 | UPMとAndroid依存 | [manifest.json](../../client/Packages/manifest.json)・[build.gradle](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/build.gradle) | [プラグイン設定](../features/health-data.md#プラグインとandroidビルド) |
 | .NET・整形・解析 | [global.json](../../client/global.json)・[ツール設定](../../client/.config/dotnet-tools.json)・[.editorconfig](../../client/.editorconfig) | [コード品質](../rules/client-code-quality.md) |
 | Node.js・pnpm・サーバー依存 | [.node-version](../../server/.node-version)・[package.json](../../server/package.json) | [バックエンド](../rules/backend-design.md) |
