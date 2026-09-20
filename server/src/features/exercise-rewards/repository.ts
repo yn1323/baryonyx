@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
 import {
   exerciseRewardDays,
@@ -82,64 +82,76 @@ export function createExerciseRewardsRepository(binding: D1Database) {
       };
     }
 
-    const previous =
-      sourceDays.length === 0
-        ? []
-        : await db
-            .select()
-            .from(exerciseRewardDays)
-            .where(
-              and(
-                eq(exerciseRewardDays.userId, userId),
-                eq(exerciseRewardDays.sourceId, sourceId),
-                eq(exerciseRewardDays.activityType, ACTIVITY_TYPE),
-                eq(exerciseRewardDays.metricType, METRIC_TYPE),
-                inArray(
-                  exerciseRewardDays.day,
-                  sourceDays.map((day) => day.day),
-                ),
-              ),
-            )
-            .all();
-    const previousByKey = new Map(
-      previous.map((row) => [`${row.day}\u0000${row.zone}`, row]),
-    );
     const claimId = crypto.randomUUID();
-    const dayWrites = [];
+    const claimOwner = sql`EXISTS (
+      SELECT 1
+      FROM ${runeClaims}
+      WHERE ${runeClaims.id} = ${claimId}
+        AND ${runeClaims.userId} = ${userId}
+        AND ${runeClaims.requestId} = ${requestId}
+    )`;
+    const claimInsert = db
+      .insert(runeClaims)
+      .values({
+        id: claimId,
+        userId,
+        sourceId,
+        requestId,
+        grantedRunes: 0,
+        balanceAfter: 0,
+        createdAt: now,
+      })
+      .onConflictDoNothing({ target: runeClaims.requestId });
+    const initialDayWrites = [];
     const ledgerWrites = [];
-    let grantedRunes = 0;
+    const dayWrites = [];
 
     for (const sourceDay of sourceDays) {
-      const key = `${sourceDay.day}\u0000${sourceDay.zone}`;
-      const current = previousByKey.get(key);
-      const previousValue = current?.creditedThroughValue ?? 0;
       const observedValue = sourceDay.hasValue ? sourceDay.steps : null;
-      const nextValue = Math.max(previousValue, observedValue ?? 0);
-      const delta = nextValue - previousValue;
-      const rewardDayId = current?.id ?? crypto.randomUUID();
-      grantedRunes += delta;
-      dayWrites.push(
+      const rewardDayId = crypto.randomUUID();
+      const ledgerId = crypto.randomUUID();
+      const dayKey = and(
+        eq(exerciseRewardDays.userId, userId),
+        eq(exerciseRewardDays.sourceId, sourceId),
+        eq(exerciseRewardDays.day, sourceDay.day),
+        eq(exerciseRewardDays.zone, sourceDay.zone),
+        eq(exerciseRewardDays.activityType, ACTIVITY_TYPE),
+        eq(exerciseRewardDays.metricType, METRIC_TYPE),
+      );
+
+      initialDayWrites.push(
         db
           .insert(exerciseRewardDays)
-          .values({
-            id: rewardDayId,
-            userId,
-            sourceId,
-            day: sourceDay.day,
-            zone: sourceDay.zone,
-            activityType: ACTIVITY_TYPE,
-            metricType: METRIC_TYPE,
-            hasValue: sourceDay.hasValue,
-            observedValue,
-            creditedThroughValue: nextValue,
-            creditedRunes: (current?.creditedRunes ?? 0) + delta,
-            ruleVersion: RULE_VERSION,
-            lastObservedAt: sourceDay.hasValue
-              ? sourceDay.observedAt
-              : (current?.lastObservedAt ?? null),
-            updatedAt: now,
-          })
-          .onConflictDoUpdate({
+          .select(
+            db
+              .select({
+                id: sql<string>`${rewardDayId}`.as("id"),
+                userId: sql<string>`${userId}`.as("user_id"),
+                sourceId: sql<string>`${sourceId}`.as("source_id"),
+                day: sql<string>`${sourceDay.day}`.as("day"),
+                zone: sql<string>`${sourceDay.zone}`.as("zone"),
+                activityType: sql<string>`${ACTIVITY_TYPE}`.as("activity_type"),
+                metricType: sql<string>`${METRIC_TYPE}`.as("metric_type"),
+                hasValue: sql<boolean>`0`.as("has_value"),
+                observedValue: sql<number | null>`NULL`.as("observed_value"),
+                creditedThroughValue: sql<number>`0`.as(
+                  "credited_through_value",
+                ),
+                creditedRunes: sql<number>`0`.as("credited_runes"),
+                ruleVersion: sql<string>`${RULE_VERSION}`.as("rule_version"),
+                lastObservedAt: sql<string | null>`NULL`.as("last_observed_at"),
+                updatedAt: sql<string>`${now}`.as("updated_at"),
+              })
+              .from(runeClaims)
+              .where(
+                and(
+                  eq(runeClaims.id, claimId),
+                  eq(runeClaims.userId, userId),
+                  eq(runeClaims.requestId, requestId),
+                ),
+              ),
+          )
+          .onConflictDoNothing({
             target: [
               exerciseRewardDays.userId,
               exerciseRewardDays.sourceId,
@@ -148,65 +160,117 @@ export function createExerciseRewardsRepository(binding: D1Database) {
               exerciseRewardDays.activityType,
               exerciseRewardDays.metricType,
             ],
-            set: {
-              hasValue: sourceDay.hasValue,
-              observedValue,
-              creditedThroughValue: nextValue,
-              creditedRunes: (current?.creditedRunes ?? 0) + delta,
-              ruleVersion: RULE_VERSION,
-              lastObservedAt: sourceDay.hasValue
-                ? sourceDay.observedAt
-                : (current?.lastObservedAt ?? null),
-              updatedAt: now,
-            },
           }),
       );
-      if (delta > 0) {
+
+      if (observedValue !== null) {
         ledgerWrites.push(
-          db.insert(runeLedger).values({
-            id: crypto.randomUUID(),
-            userId,
-            claimId,
-            rewardDayId,
-            delta,
-            reason: "exercise_steps",
-            fromValue: previousValue,
-            toValue: nextValue,
-            ruleVersion: RULE_VERSION,
-            createdAt: now,
-          }),
+          db.insert(runeLedger).select(
+            db
+              .select({
+                id: sql<string>`${ledgerId}`.as("id"),
+                userId: exerciseRewardDays.userId,
+                claimId: sql<string>`${claimId}`.as("claim_id"),
+                rewardDayId: exerciseRewardDays.id,
+                delta:
+                  sql<number>`${observedValue} - ${exerciseRewardDays.creditedThroughValue}`.as(
+                    "delta",
+                  ),
+                reason: sql<string>`'exercise_steps'`.as("reason"),
+                fromValue: exerciseRewardDays.creditedThroughValue,
+                toValue: sql<number>`${observedValue}`.as("to_value"),
+                ruleVersion: sql<string>`${RULE_VERSION}`.as("rule_version"),
+                createdAt: sql<string>`${now}`.as("created_at"),
+              })
+              .from(exerciseRewardDays)
+              .where(
+                and(
+                  dayKey,
+                  sql`${exerciseRewardDays.creditedThroughValue} < ${observedValue}`,
+                  claimOwner,
+                ),
+              ),
+          ),
         );
       }
+
+      dayWrites.push(
+        db
+          .update(exerciseRewardDays)
+          .set({
+            hasValue: sourceDay.hasValue,
+            observedValue,
+            creditedThroughValue:
+              observedValue === null
+                ? exerciseRewardDays.creditedThroughValue
+                : sql`max(${exerciseRewardDays.creditedThroughValue}, ${observedValue})`,
+            creditedRunes:
+              observedValue === null
+                ? exerciseRewardDays.creditedRunes
+                : sql`${exerciseRewardDays.creditedRunes} + max(0, ${observedValue} - ${exerciseRewardDays.creditedThroughValue})`,
+            ruleVersion: RULE_VERSION,
+            lastObservedAt: sourceDay.hasValue
+              ? sourceDay.observedAt
+              : exerciseRewardDays.lastObservedAt,
+            updatedAt: now,
+          })
+          .where(and(dayKey, claimOwner)),
+      );
     }
 
-    const wallet = await db
-      .select({ balance: runeWallets.balance })
-      .from(runeWallets)
-      .where(eq(runeWallets.userId, userId))
-      .get();
-    const balance = (wallet?.balance ?? 0) + grantedRunes;
     const statements = [
-      db.insert(runeClaims).values({
-        id: claimId,
-        userId,
-        sourceId,
-        requestId,
-        grantedRunes,
-        balanceAfter: balance,
-        createdAt: now,
-      }),
+      claimInsert,
+      ...initialDayWrites,
+      ...ledgerWrites,
+      ...dayWrites,
       db
         .insert(runeWallets)
-        .values({ userId, balance, updatedAt: now })
-        .onConflictDoUpdate({
-          target: runeWallets.userId,
-          set: { balance, updatedAt: now },
-        }),
-      ...dayWrites,
-      ...ledgerWrites,
+        .values({ userId, balance: 0, updatedAt: now })
+        .onConflictDoNothing({ target: runeWallets.userId }),
+      db
+        .update(runeWallets)
+        .set({
+          balance: sql`${runeWallets.balance} + COALESCE(
+            (SELECT SUM(${runeLedger.delta})
+             FROM ${runeLedger}
+             WHERE ${runeLedger.claimId} = ${claimId}),
+            0
+          )`,
+          updatedAt: now,
+        })
+        .where(and(eq(runeWallets.userId, userId), claimOwner)),
+      db
+        .update(runeClaims)
+        .set({
+          grantedRunes: sql`COALESCE(
+            (SELECT SUM(${runeLedger.delta})
+             FROM ${runeLedger}
+             WHERE ${runeLedger.claimId} = ${claimId}),
+            0
+          )`,
+          balanceAfter: sql`COALESCE(
+            (SELECT ${runeWallets.balance}
+             FROM ${runeWallets}
+             WHERE ${runeWallets.userId} = ${userId}),
+            0
+          )`,
+        })
+        .where(
+          and(
+            eq(runeClaims.id, claimId),
+            eq(runeClaims.userId, userId),
+            eq(runeClaims.requestId, requestId),
+          ),
+        ),
     ];
     await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
-    return { grantedRunes, balance, days: await listDays(userId, sourceId) };
+    const completed = await findExistingClaim(userId, requestId);
+    if (!completed) throw new Error("Rune claim reservation was not created");
+    return {
+      grantedRunes: completed.grantedRunes,
+      balance: completed.balanceAfter,
+      days: await listDays(userId, completed.sourceId),
+    };
   }
 
   async function getBalance(userId: string) {
