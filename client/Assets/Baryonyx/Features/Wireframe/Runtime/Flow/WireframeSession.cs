@@ -87,7 +87,7 @@ namespace Baryonyx.Wireframe
         public CombatEncounter Battle { get; private set; }
         public WireframeData Data { get; }
         public WireScreen Screen { get; private set; } = WireScreen.Home;
-        public WirePopup Popup { get; private set; } = WirePopup.Intro;
+        public WirePopup Popup { get; private set; }
         public WireCombatState CombatState { get; private set; }
         public WireGoalState GoalState => goals[GoalWeekly ? 1 : 0];
         public bool HasGoalSchedule =>
@@ -150,14 +150,23 @@ namespace Baryonyx.Wireframe
         private static string DescribeGoal(bool weekly, bool distance, bool timed) =>
             $"{(weekly ? "1週間" : "1日")}の目標：{(timed ? "19〜20時" : "時間帯指定なし")}・{(distance ? (weekly ? "ウォーキング 15km" : "ウォーキング 3km") : (weekly ? "25,000歩" : "5,000歩"))}";
 
-        public WireframeSession(WireframeData data)
+        public WireframeSession(WireframeData data, bool showIntro = true)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
             Data = data;
+            Popup = showIntro ? WirePopup.Intro : WirePopup.None;
         }
 
         public int PartyMember(int slot) => party[slot];
+
+        public void SetRuneBalance(long balance)
+        {
+            int next = (int)Math.Min(Math.Max(balance, 0), int.MaxValue);
+            if (Runes == next)
+                return;
+            Runes = next;
+        }
 
         public int Equipped(int character) => equipment[character];
 

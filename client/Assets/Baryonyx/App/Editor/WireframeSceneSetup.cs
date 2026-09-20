@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using Baryonyx.Health;
+using Baryonyx.Health.Editor;
 using Baryonyx.Wireframe;
 using Baryonyx.Wireframe.Editor;
 using UnityEditor;
@@ -67,6 +69,9 @@ namespace Baryonyx.App.Editor
                 app.View = screen.GetComponent<WireframeView>();
                 app.Data = AssetDatabase.LoadAssetAtPath<WireframeData>(
                     WireframeScreenAssets.DataPath
+                );
+                app.HealthSettings = AssetDatabase.LoadAssetAtPath<HealthConnectionSettings>(
+                    HealthScreenAssets.SettingsPath
                 );
                 var events = new GameObject(
                     "EventSystem",

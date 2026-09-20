@@ -18,6 +18,7 @@ namespace Baryonyx.Wireframe.Editor
         private static Texture2D departure;
         private static Sprite frame;
         private static Sprite panelFrame;
+        private static Sprite equipmentFrame;
 
         private static void PrepareArt()
         {
@@ -30,6 +31,11 @@ namespace Baryonyx.Wireframe.Editor
                 "PanelFrame",
                 new Color(.90f, .92f, .86f),
                 new Color(.90f, .92f, .86f)
+            );
+            equipmentFrame = CreateFrame(
+                "EquipmentFrame",
+                new Color(.08f, .12f, .17f),
+                new Color(.65f, .49f, .23f)
             );
         }
 
@@ -65,13 +71,17 @@ namespace Baryonyx.Wireframe.Editor
             for (int y = 0; y < 24; y++)
             for (int x = 0; x < 24; x++)
             {
-                int distance = Mathf.Min(x, y, 23 - x, 23 - y);
                 bool cut = (x < 2 || x > 21) && (y < 2 || y > 21);
                 Color color = fill;
                 float dx = Mathf.Max(5 - x, x - 18, 0);
                 float dy = Mathf.Max(5 - y, y - 18, 0);
                 cut = dx * dx + dy * dy > 25;
-                texture.SetPixel(x, y, cut ? Color.clear : color);
+                bool border = x < 2 || x > 21 || y < 2 || y > 21;
+                texture.SetPixel(
+                    x,
+                    y,
+                    cut ? Color.clear : border ? edge : color
+                );
             }
             texture.Apply();
             var sprite = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
@@ -96,10 +106,15 @@ namespace Baryonyx.Wireframe.Editor
 
         private static void Frame(RectTransform rect, bool button = false)
         {
+            Frame(rect, button ? frame : panelFrame);
+        }
+
+        private static void Frame(RectTransform rect, Sprite sprite)
+        {
             var image = rect.GetComponent<UnityEngine.UI.Image>();
             if (image == null)
                 image = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
-            image.sprite = button ? frame : panelFrame;
+            image.sprite = sprite;
             image.type = UnityEngine.UI.Image.Type.Sliced;
             image.color = Color.white;
         }
@@ -311,11 +326,12 @@ namespace Baryonyx.Wireframe.Editor
             RectTransform page,
             string artName,
             string textName,
-            float height
+            float height,
+            bool equipmentStyle = false
         )
         {
             var card = Rect(textName + "Card", page);
-            Frame(card);
+            Frame(card, equipmentStyle ? equipmentFrame : panelFrame);
             card.GetComponent<UnityEngine.UI.Image>().raycastTarget = false;
             var size = card.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             size.minHeight = size.preferredHeight = height;
@@ -323,6 +339,8 @@ namespace Baryonyx.Wireframe.Editor
             var label = Label(textName, card, "", 14, 0);
             Stretch((RectTransform)label.transform);
             label.margin = new Vector4(102, 12, 12, 12);
+            if (equipmentStyle)
+                label.color = new Color(.96f, .94f, .86f);
         }
 
         private static void DecorateBattle(RectTransform page)
@@ -422,7 +440,9 @@ namespace Baryonyx.Wireframe.Editor
                 part.anchoredPosition = new Vector2(0, 13 - i * 5);
                 Image(
                     part,
-                    i < 4 ? (variant == 2 ? Gold : Ink) : new Color(.49f, .32f, .19f),
+                    i < 4
+                        ? (variant == 2 ? Gold : new Color(.86f, .83f, .72f))
+                        : new Color(.49f, .32f, .19f),
                     false
                 );
             }

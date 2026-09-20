@@ -1,22 +1,25 @@
 # UnityのUI設計ルール
 
-スマートフォンは縦画面を基本にし、表示領域の大きさが変わっても文章を読めて、必要な操作へ到達できるようにする。
+スマートフォンの健康データ画面も含め、アプリは横画面に固定し、表示領域の大きさが変わっても文章を読めて必要な操作へ到達できるようにする。
+ゲーム画面のワイヤーは中央の16:9 Core Areaへ必須UIを収める。
 現在はuGUIを使う「1週間の歩数」と[画面ワイヤー](../features/game-wireframe.md)に適用している。
 画面固有の構成と寸法は [健康データの仕様](../features/health-data.md#スマートフォン向けの画面構成) に置く。
 
 ## 画面方向と拡縮
 
-通常の向きはPlayer設定の `Portrait` とする。
-自動回転の許可値も通常の縦向きに揃え、画面ごとの処理から向きを繰り返し設定しない。
+アプリの通常の向きはPlayer設定の `LandscapeLeft` とする。
+起動時にも自動回転を無効にする。
+自動回転の許可値は対象画面の向きに揃え、画面ごとの処理から向きを繰り返し設定しない。
 AndroidとiOSで共有される設定であるため、検証したOSの範囲は機能仕様に明記する。[UnityのPlayer設定](https://docs.unity3d.com/6000.6/Documentation/Manual/class-PlayerSettingsAndroid.html)
 
 CanvasScalerの `Scale With Screen Size` を使い、基準解像度を設計上の座標として扱う。
+ゲーム画面の基準解像度は1920×1080とし、CanvasScalerは高さを基準に拡縮する。
 基準解像度を端末の物理解像度や対応端末の制限と見なさない。
 アンカーとLayout Groupで利用可能な幅に追従し、本文には最大幅を設けて大きい画面で中央に配置する。[CanvasScalerの仕様](https://docs.unity3d.com/Packages/com.unity.ugui@2.0/manual/script-CanvasScaler.html)
 
 OSから横向きやサイズ変更を適用された場合も、内容をスクロールして操作できるようにする。
 Androidの大画面では向きの指定が上書きされる条件とゲーム区分などの例外があるため、生成APKのManifestと実機で確認する。
-縦向きの指定だけを表示崩れへの対策としない。[Androidの画面方向とサイズ変更](https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability)
+横向きの指定だけを表示崩れへの対策としない。[Androidの画面方向とサイズ変更](https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability)
 
 ## 安全領域とレイアウトの更新
 

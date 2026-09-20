@@ -2,17 +2,19 @@
 id: feature-health-data
 type: specification
 status: 運用中
-updated: 2026-09-19
+updated: 2026-09-21
 ---
 
 # 健康データの読み取りと保存
 
-Android版の起動シーンでは、Health Connectへ接続し、当日を含む直近7暦日の歩数一覧と、血圧・体重などの健康データを含む日別のJSON詳細を表示する。
+Android版の起動シーンではホームを表示したままHealth Connectへ接続し、当日を含む直近7暦日の歩数取得を開始する。
+歩数一覧と、血圧・体重などの健康データを含む日別のJSON詳細はホームから開く歩数画面に表示する。
 Google接続は任意の独立した操作とし、健康データの読み取りには要求しない。
 EditorとAndroid以外の実行環境では、7日分のサンプルデータを使うプレビューを自動で表示する。
-この画面はバックエンドへ接続せず、認証状態と健康データをメモリに保持する。
+サーバーURLを設定しない場合、この画面はバックエンドへ接続せず、認証状態と健康データをメモリに保持する。
+サーバーURLを設定したAndroid版では、Google認証後にHealth Connectの直近7日分をサーバーへ保存し、歩数報酬の請求と履歴取得を行う。
 ユーザーがJSONをコピーした場合は、OSのクリップボードにも残る。
-既存のサーバー同期処理は残しているが、今回の起動経路からは呼ばない。
+サーバー報酬の同期は起動時のHealth Connect取得後と、画面上の明示操作後に実行する。
 バックグラウンド同期、Health Connectへの書き込み、iOSの実装は対象外である。
 
 利用時に歩数が表示されない場合は、[Health Connectで歩数が「データなし」になるときの対処法](../qa/health-connect-no-steps.md)を参照する。
@@ -23,8 +25,8 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 ホームに今日の歩数、専用画面に直近7日間の数値と棒グラフを古い日から順に表示する。
 取得済みの0歩と記録なし・権限不足・失敗を区別し、日付列から元のJSONを開く。
 Providerの選択と寿命はAppのHealthRuntimeで共通化し、集計はHealthWeekSummaryが担当する。
-この起動経路もサーバー・DBへ保存せず、Androidではサンプル値を使わない。
-以下の一覧・認証ボタン・コピー操作の説明は、既存のMainシーンの健康データ画面に対応する。
+サーバーURLが未設定の起動経路はサーバー・DBへ保存せず、Androidではサンプル値を使わない。
+以下の一覧・認証ボタン・コピー操作の説明は、ホームから開く歩数画面に対応する。
 
 画面上部には「1週間の歩数」と、[正式なアプリ名](../game/overview.md)を表示する。
 画面アセットの生成時に、ブランド表記へPlayer Settingsの `productName` を設定する。
@@ -37,12 +39,14 @@ AppはProviderを選択し、`HealthScreenView.Bind` の `preview` 引数で表�
 起動時に `Application.targetFrameRate = 60` を設定し、目標フレームレートを60 FPSにする。
 実際のFPSは端末の画面更新頻度と処理負荷によって下がる場合がある。
 
-Android版で [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) を起動すると、「運動データに接続」と「Googleに接続」を別のパネルに表示する。
+Android版で [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) を起動すると、冒険と運動データの入口を持つホームを表示する。
+起動直後からHealth Connectの利用条件確認と接続・歩数取得を開始し、ホームの今日の歩数と歩数画面へ結果を反映する。
+歩数画面では「運動データに接続」と「Googleに接続」を別のパネルに表示する。
 運動データの取得元はHealth Connectとし、「歩数」の読み取りを許可すると7日分の日別歩数を表示する。
 接続ボタン、運動データの一覧、「歩数を更新」を同じパネルにまとめる。
 Google未接続でもHealth Connectの接続ボタンを使用でき、利用可否と健康データの読み取り権限を確認する。
 Google接続の成功・失敗・解除は、Health Connectの接続状態や取得済みの一覧・JSON詳細を変更しない。
-Google接続が成功しても歩数を自動取得せず、読み取りはHealth Connect側の操作で開始する。
+Google接続が成功してもHealth Connectの状態は変えない。歩数の読み取りは起動時のHealth Connect接続処理または歩数画面の操作で開始する。
 権限を拒否してもGoogleの認証状態は維持し、再接続とHealth Connect設定への導線を表示する。
 更新・復帰時は権限を再確認し、OSの権限要求を自動で繰り返さない。
 「運動データに接続」を押したときは、既に歩数を許可済みでも追加項目の権限を要求する。
@@ -69,15 +73,15 @@ OSの認証・権限画面の完了を待ち、前面へ戻ってから続行す
 Googleの認証画面への移動で一覧を消去した場合も、既にHealth Connectを利用していれば復帰後に権限を再確認して読み直す。
 
 GoogleサインインとHealth Connectの許可は別の状態であり、Googleアカウントを変えても端末内の健康データの取得元が切り替わるわけではない。
-今回の認証成功はUMothがGoogleの資格情報を返したことを指し、サーバーのセッション発行・本人確認は行わない。
-Google認証では外部通信が発生するが、取得した健康データを外部へ送信する処理はこの画面にない。
+サーバーURLを設定した場合だけ、Googleの資格情報をサーバーのセッション発行へ使い、Health Connectから取得した7日分の歩数を報酬計算の入力として送信する。
+サーバーURLを設定しない場合は、Google認証では外部通信が発生しても健康データをゲームサーバーへ送信しない。
 GoogleアカウントやHealth Connectの許可はOS側に残り得るため、アプリのメモリ保持とは区別する。
 
 ### 起動時と設定画面からの復帰時の案内
 
 Android版は起動時に1回、Health Connectの利用可否、このアプリの歩数読み取り権限、端末の自動計測への対応、歩数データの有無を確認する。
-Google接続や、ユーザーによる接続ボタンの操作を確認開始の条件にしない。
-確認処理から権限ダイアログは開かず、未許可の場合は接続操作または設定で許可するよう案内する。
+確認後は起動時の接続処理で読み取り権限を要求し、未許可の場合はAndroidの許可画面を表示する。
+ホームは表示したまま接続処理を進め、許可を拒否した場合は歩数画面から再接続または設定へ進める。
 
 アプリから開いた設定画面から戻ると、条件を再確認して案内を更新する。
 通常のアプリ切り替え・ロック解除・Google認証からの復帰では、要件チェックを追加実行しない。
@@ -145,7 +149,8 @@ Google Fitと端末で同じ時間帯を記録していても、元レコード�
 点の測定は端末タイムゾーンの日付に振り分ける。歩数や睡眠などの区間記録は重なる日ごとに元の区間全体を表示し、日別に分割・按分しない。
 上限と日付をまたぐ記録の扱いも、元レコードの合計と日別集計が異なる理由になる。
 
-既存APKから更新した場合は、アプリを開き直して「Health Connectに接続」を押し、確認する項目を許可する。
+既存APKから更新した場合は、アプリを開き直すと起動時の接続処理が始まるため、表示されたHealth Connectの許可画面で確認する項目を許可する。
+許可を後回しにした場合は、ホームから歩数画面を開いて「Health Connectに接続」を押す。
 接続中の権限変更はHealth Connect設定で行い、アプリへ戻ると再取得する。
 Health Connect自体に記録がない種類は、許可後も `empty` になる。
 
@@ -204,9 +209,11 @@ OSの文字拡大への追従や入力欄のキーボード回避は、現在の
 
 1. 同じGoogle Cloudプロジェクトで、Googleログイン用のWebクライアントと、実際のアプリID・署名証明書に対応するAndroidクライアントを用意する。
 2. [HealthConnectionSettings](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) の `Google Web Client Id` に、末尾が `.apps.googleusercontent.com` のWebクライアントIDを設定する。クライアントシークレットはアプリに入れない。
-3. Androidビルドを端末にインストールし、Google認証と、Google未接続でのHealth Connect接続・歩数の読み取りをそれぞれ確認する。
+3. 同じ設定アセットの `Server Base Url` に、開発中は `http://127.0.0.1:3000`、公開先は認証APIのHTTPSベースURLを設定する。Androidビルドでは `SERVER_BASE_URL` が指定されていればその値を使い、未指定ならDevのWorkers URLを使う。
+4. Androidビルドを端末にインストールし、Google認証と、Google未接続でのHealth Connect接続・歩数の読み取りをそれぞれ確認する。
 
 設定アセットにはWebクライアントIDが保存されている。
+運動報酬APIのURLは開発時の設定アセットに保存する。Androidビルドはビルド中だけ `ServerBaseUrl` を差し替え、ビルド後に元の設定へ戻す。
 Google Cloud側の登録内容とAndroidのアプリID・署名との整合、実機での認証成功は未確認である。
 空のまま認証ボタンを押すと設定不足を表示し、成功した扱いにはしない。
 EditorではネイティブSDKを作らず、前述のプレビューを表示する。
@@ -223,8 +230,9 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 |---|---|
 | [HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | 実行環境に応じたProviderと画面の組み立て、前面・背面・終了通知 |
 | [HealthScreenPreviewProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview/HealthScreenPreviewProvider.cs) | Android以外で使う仮の認証結果と、日本時間の直近7日分のサンプルデータ |
-| [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Authentication/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。資格情報を画面に渡さない |
-| [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、画面の状態遷移、設定画面から戻った後の再確認 |
+| [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Authentication/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。サーバー連携用の資格情報は報酬サービスへだけ渡す |
+| [ExerciseRewardService](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/ExerciseRewardService.cs) | Googleセッション、Health Connectの7日分保存、ルーン請求、残高と履歴の取得 |
+| [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、報酬請求、画面の状態遷移、設定画面から戻った後の再確認 |
 | [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) | 多重実行防止、中断、OS画面の前面復帰待ち、遅延結果の世代判定 |
 | [HealthDaySnapshot](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthDaySnapshot.cs) | 7日分の検査と、一覧値・元JSONの対応 |
 | [HealthScreenView](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs) | uGUIの入力、通常・プレビューの文言、状態別の操作、日別一覧、閲覧位置の調整 |
@@ -364,10 +372,11 @@ Androidのパッケージ名は、ローカル・CIともに `com.croissantlab.b
 Google OAuthのAndroidクライアントには、このパッケージ名と実機へインストールするAPKの署名証明書のSHA-1を登録する。
 ローカルとCIで署名証明書が異なる場合は、それぞれの組み合わせを登録する。
 
-## サーバー同期を利用する場合の呼び出し
+## 既存のサーバー同期APIを直接利用する場合
 
-サーバー同期を組み込む場合は、存続させるGameObjectへ `HealthClient` を追加して初期化する。
-以下は将来の接続用の例であり、現在のシーンはこの経路を呼ばない。
+既存の `HealthClient` は、健康データの保存APIを直接呼ぶ低レベルの入口として残している。
+運動報酬を使う現在の起動経路は `HealthRuntime`、`HealthScreenPresenter`、`ExerciseRewardService` が担当し、Health Connectの7日分を保存してからルーンを請求する。
+`HealthClient` を直接利用する場合は、存続させるGameObjectへ追加して初期化する。
 
 ```csharp
 var health = gameObject.AddComponent<Baryonyx.Health.HealthClient>();

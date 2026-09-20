@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Health;
+using Baryonyx.Wireframe;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -32,11 +33,15 @@ namespace Baryonyx.Tests.PlayMode
             );
             var roots = loadedScene.GetRootGameObjects();
             var bootstrap = roots
-                .SelectMany(root => root.GetComponentsInChildren<HealthScreenBootstrap>())
+                .SelectMany(root => root.GetComponentsInChildren<WireframeBootstrap>())
                 .Single();
-            Assert.That(bootstrap.Screen, Is.Not.Null);
-            Assert.That(bootstrap.Settings, Is.Not.Null);
-            Assert.That(bootstrap.Screen.DayButtons.Length, Is.EqualTo(7));
+            Assert.That(bootstrap.View, Is.Not.Null);
+            Assert.That(bootstrap.Data, Is.Not.Null);
+            Assert.That(bootstrap.HealthSettings, Is.Not.Null);
+            yield return null;
+            Assert.That(bootstrap.View.Session, Is.Not.Null);
+            Assert.That(bootstrap.View.Session.Screen, Is.EqualTo(WireScreen.Home));
+            Assert.That(bootstrap.View.Session.Popup, Is.EqualTo(WirePopup.None));
             Assert.That(
                 roots.SelectMany(root => root.GetComponentsInChildren<HealthClient>()),
                 Is.Empty,

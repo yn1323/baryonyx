@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,9 +40,18 @@ namespace Baryonyx.Health
         private HealthScreenPhase? renderedPhase;
         private HealthRequirementCode renderedRequirement;
         private RectTransform revealAfterLayout;
+        private GameObject rewardOverlay;
+        private TMP_Text rewardOverlayTitle;
+        private TMP_Text rewardOverlayBody;
+        private TMP_Text rewardOverlayHistory;
+        private Button rewardClaimButton;
+        private Button rewardHistoryButton;
+        private Button rewardCloseButton;
+        private int renderedRewardClaimVersion;
 
         private void Awake()
         {
+            CreateRewardUi();
             SignInButton.onClick.AddListener(() =>
             {
                 if (presenter != null)
@@ -131,6 +141,7 @@ namespace Baryonyx.Health
             RenderActions(detailOpen);
             RenderStatus();
             RenderDays(detailOpen);
+            RenderRewards();
             RevealStatusOnChange(detailOpen);
 #if UNITY_EDITOR || !UNITY_ANDROID
             if (preview)
@@ -162,6 +173,180 @@ namespace Baryonyx.Health
                 presenter.RequirementNotice.Destination == HealthSettingsDestination.Device
                     ? "端末の設定を開く"
                     : "Health Connectの設定を開く";
+            if (rewardClaimButton != null)
+            {
+                rewardClaimButton.gameObject.SetActive(presenter.RewardsEnabled);
+                rewardClaimButton.interactable = presenter.CanClaimRewards && !detailOpen;
+                rewardClaimButton.GetComponentInChildren<TMP_Text>(true).text =
+                    $"ルーンを取得（残高 {presenter.RuneBalance:N0}）";
+            }
+            if (rewardHistoryButton != null)
+            {
+                rewardHistoryButton.gameObject.SetActive(presenter.RewardsEnabled);
+                rewardHistoryButton.interactable = !detailOpen && !presenter.IsBusy;
+            }
+        }
+
+        private void RenderRewards()
+        {
+            if (rewardOverlay == null || !presenter.RewardsEnabled)
+                return;
+            if (presenter.RewardClaimVersion > renderedRewardClaimVersion)
+            {
+                renderedRewardClaimVersion = presenter.RewardClaimVersion;
+                rewardOverlayTitle.text = presenter.LastGrantedRunes > 0
+                    ? "ルーンを取得しました"
+                    : "ルーンの確認結果";
+                rewardOverlayBody.text = presenter.RewardMessage;
+                rewardOverlayHistory.text = FormatRewardHistory();
+                rewardOverlay.SetActive(true);
+            }
+            else if (rewardOverlay.activeSelf)
+            {
+                rewardOverlayBody.text = presenter.RewardMessage;
+                rewardOverlayHistory.text = FormatRewardHistory();
+            }
+        }
+
+        private string FormatRewardHistory()
+        {
+            var history = presenter.RewardDays;
+            if (history == null || history.Count == 0)
+                return "直近7日分のルーン履歴はありません。";
+            var text = new StringBuilder("直近7日分のルーン履歴\n");
+            foreach (var day in history)
+            {
+                text.Append(day.day);
+                text.Append("  ");
+                text.Append(day.creditedRunes.ToString("N0", CultureInfo.InvariantCulture));
+                text.Append(" ルーン（");
+                text.Append(day.creditedThroughValue.ToString("N0", CultureInfo.InvariantCulture));
+                text.Append("歩）\n");
+            }
+            return text.ToString().TrimEnd();
+        }
+
+        private void CreateRewardUi()
+        {
+            var root = transform as RectTransform;
+            if (root == null)
+                return;
+            rewardClaimButton = CreateButton(
+                "RewardClaimButton",
+                root,
+                new Vector2(1, 1),
+                new Vector2(1, 1),
+                new Vector2(-24, -24),
+                new Vector2(260, 56),
+                "ルーンを取得"
+            );
+            rewardClaimButton.onClick.AddListener(() => _ = presenter?.ClaimRewardsAsync());
+            rewardHistoryButton = CreateButton(
+                "RewardHistoryButton",
+                root,
+                new Vector2(1, 1),
+                new Vector2(1, 1),
+                new Vector2(-24, -88),
+                new Vector2(260, 48),
+                "ルーン履歴"
+            );
+            rewardHistoryButton.onClick.AddListener(() =>
+            {
+                if (rewardOverlay != null)
+                {
+                    rewardOverlayTitle.text = "ルーン履歴";
+                    rewardOverlayBody.text = presenter?.RewardMessage ?? "";
+                    rewardOverlayHistory.text = FormatRewardHistory();
+                    rewardOverlay.SetActive(true);
+                }
+            });
+            rewardOverlay = new GameObject("RewardOverlay", typeof(RectTransform), typeof(Image));
+            rewardOverlay.transform.SetParent(root, false);
+            var overlayRect = (RectTransform)rewardOverlay.transform;
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+            rewardOverlay.GetComponent<Image>().color = new Color(0, 0, 0, 0.72f);
+            var panel = new GameObject("RewardPanel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(rewardOverlay.transform, false);
+            var panelRect = (RectTransform)panel.transform;
+            panelRect.anchorMin = new Vector2(0.12f, 0.16f);
+            panelRect.anchorMax = new Vector2(0.88f, 0.84f);
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            panel.GetComponent<Image>().color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
+            rewardOverlayTitle = CreateText("Title", panel.transform, 30, TextAlignmentOptions.Top);
+            rewardOverlayTitle.rectTransform.anchorMin = new Vector2(0.06f, 0.78f);
+            rewardOverlayTitle.rectTransform.anchorMax = new Vector2(0.94f, 0.96f);
+            rewardOverlayTitle.rectTransform.offsetMin = Vector2.zero;
+            rewardOverlayTitle.rectTransform.offsetMax = Vector2.zero;
+            rewardOverlayBody = CreateText("Body", panel.transform, 24, TextAlignmentOptions.Top);
+            rewardOverlayBody.rectTransform.anchorMin = new Vector2(0.08f, 0.61f);
+            rewardOverlayBody.rectTransform.anchorMax = new Vector2(0.92f, 0.78f);
+            rewardOverlayBody.rectTransform.offsetMin = Vector2.zero;
+            rewardOverlayBody.rectTransform.offsetMax = Vector2.zero;
+            rewardOverlayHistory = CreateText("History", panel.transform, 20, TextAlignmentOptions.TopLeft);
+            rewardOverlayHistory.rectTransform.anchorMin = new Vector2(0.1f, 0.18f);
+            rewardOverlayHistory.rectTransform.anchorMax = new Vector2(0.9f, 0.6f);
+            rewardOverlayHistory.rectTransform.offsetMin = Vector2.zero;
+            rewardOverlayHistory.rectTransform.offsetMax = Vector2.zero;
+            rewardCloseButton = CreateButton(
+                "Close",
+                panel.transform,
+                new Vector2(0.3f, 0.04f),
+                new Vector2(0.7f, 0.16f),
+                Vector2.zero,
+                Vector2.zero,
+                "閉じる"
+            );
+            rewardCloseButton.onClick.AddListener(() => rewardOverlay.SetActive(false));
+            rewardOverlay.SetActive(false);
+        }
+
+        private static TMP_Text CreateText(
+            string name,
+            Transform parent,
+            float size,
+            TextAlignmentOptions alignment
+        )
+        {
+            var text = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI))
+                .GetComponent<TextMeshProUGUI>();
+            text.transform.SetParent(parent, false);
+            text.fontSize = size;
+            text.alignment = alignment;
+            text.color = Color.white;
+            text.textWrappingMode = TextWrappingModes.Normal;
+            return text;
+        }
+
+        private static Button CreateButton(
+            string name,
+            Transform parent,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 position,
+            Vector2 size,
+            string label
+        )
+        {
+            var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            var rect = (RectTransform)buttonObject.transform;
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = new Vector2(1, 1);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            buttonObject.GetComponent<Image>().color = new Color(0.18f, 0.35f, 0.58f, 0.98f);
+            var text = CreateText("Label", buttonObject.transform, 20, TextAlignmentOptions.Center);
+            text.rectTransform.anchorMin = Vector2.zero;
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.offsetMin = Vector2.zero;
+            text.rectTransform.offsetMax = Vector2.zero;
+            text.text = label;
+            return buttonObject.GetComponent<Button>();
         }
 
         private void RenderStatus()

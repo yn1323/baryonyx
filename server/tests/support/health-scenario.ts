@@ -1,6 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
+import { Hono } from "hono";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import { expect } from "vitest";
+import { createExerciseRewardsApi } from "../../src/features/exercise-rewards/routes.js";
 import {
   createHealthApi,
   type HealthEnv,
@@ -38,10 +40,15 @@ export async function createHealthScenario() {
       BUILD_SHA: "local",
       GOOGLE_CLIENT_ID: "test-audience",
     } as unknown as HealthEnv["Bindings"];
-    const api = createHealthApi(async (token) => {
-      if (token === "invalid") throw new Error();
-      return token;
-    });
+    const api = new Hono<HealthEnv>();
+    api.route(
+      "/",
+      createHealthApi(async (token) => {
+        if (token === "invalid") throw new Error();
+        return token;
+      }),
+    );
+    api.route("/", createExerciseRewardsApi());
     const request = (
       path: string,
       method = "GET",

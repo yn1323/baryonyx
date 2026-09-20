@@ -12,7 +12,7 @@ namespace Baryonyx.Wireframe
             Set("HomeParty", string.Join(" ・ ", names));
             Set("HomeRunes", $"ルーン  {s.Runes:N0}");
             Set("HomeProgress", Session.Goal(false) == WireGoalState.Unset ? "" : "目標 5,000歩");
-            Set("ExplorePlace", $"{s.Place}  /  区間 {s.Step + 1}");
+            Set("ExplorePlace", $"現在地：{s.Place}  /  区間 {s.Step + 1}");
             Set("ExplorePartyText", string.Join(" ・ ", names));
             Set("ExploreNotice", string.IsNullOrEmpty(s.Notice) ? "" : s.Notice);
             Caption(

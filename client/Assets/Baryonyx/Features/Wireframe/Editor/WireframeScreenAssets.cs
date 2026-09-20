@@ -68,11 +68,13 @@ namespace Baryonyx.Wireframe.Editor
                 root = Rect("WireframeScreen", null);
                 var canvas = root.gameObject.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.pixelPerfect = true;
+                canvas.pixelPerfect = false;
                 var scaler = root.gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
                 scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(360, 640);
-                scaler.matchWidthOrHeight = 0;
+                // Landscape UI is authored at 1920x1080. Matching the height keeps the
+                // logical UI size stable on 19.5:9 and 20:9 screens; only the margins grow.
+                scaler.referenceResolution = new Vector2(1920, 1080);
+                scaler.matchWidthOrHeight = 1;
                 root.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
                 Image(root, Paper, false);
                 var view = root.gameObject.AddComponent<WireframeView>();
@@ -82,9 +84,23 @@ namespace Baryonyx.Wireframe.Editor
                 skin.Forest = forest;
                 skin.Mine = mine;
                 var layout = root.gameObject.AddComponent<WireframeLayout>();
+                layout.CoreArea = Rect("CoreArea", root);
+                layout.CoreArea.anchorMin = layout.CoreArea.anchorMax = Vector2.one * .5f;
+                layout.CoreArea.pivot = Vector2.one * .5f;
+                layout.CoreArea.sizeDelta = WireframeLayout.ReferenceResolution;
+                Image(layout.CoreArea, new Color(1, 1, 1, 0), false);
+                var battlefieldAmbient = Rect("BattlefieldAmbient", root);
+                Stretch(battlefieldAmbient);
+                var ambientImage = battlefieldAmbient.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+                ambientImage.texture = forest;
+                ambientImage.color = new Color(1, 1, 1, .18f);
+                ambientImage.raycastTarget = false;
+                battlefieldAmbient.SetAsFirstSibling();
+                layout.BattlefieldAmbient = battlefieldAmbient.gameObject;
+                layout.BattlefieldAmbient.SetActive(false);
                 layout.SafeArea = Rect("SafeArea", root);
                 Stretch(layout.SafeArea);
-                layout.Panel = Rect("Panel", layout.SafeArea);
+                layout.Panel = Rect("Panel", layout.CoreArea);
                 Center(layout.Panel, 344, 0);
                 var header = Rect("Header", layout.Panel);
                 AnchorTop(header, 54);
@@ -116,16 +132,20 @@ namespace Baryonyx.Wireframe.Editor
                 }
                 view.Pages = pageObjects.ToArray();
                 layout.PageSizes = pageSizes.ToArray();
-                var nav = Rect("Navigation", layout.Panel);
+                // Navigation is edge UI: it follows the device Safe Area instead of the
+                // fixed-width content column used by the three game screens.
+                var nav = Rect("Navigation", layout.SafeArea);
                 nav.anchorMin = new Vector2(0, 0);
                 nav.anchorMax = new Vector2(1, 0);
                 nav.pivot = new Vector2(.5f, 0);
                 nav.sizeDelta = new Vector2(0, 54);
                 nav.anchoredPosition = new Vector2(0, 24);
                 Horizontal(nav);
-                Button("NavHome", nav, "ホーム");
-                Button("NavParty", nav, "仲間");
-                Button("NavGoals", nav, "歩み・目標");
+                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth = false;
+                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+                Button("NavHome", nav, "ホーム", 54, 14, false, 192);
+                Button("NavParty", nav, "仲間", 54, 14, false, 192);
+                Button("NavGoals", nav, "歩み・目標", 54, 14, false, 192);
                 view.Navigation = layout.Navigation = nav.gameObject;
                 var sample = Label(
                     "SampleFooter",
@@ -317,12 +337,13 @@ namespace Baryonyx.Wireframe.Editor
             float height = 54,
             float fontSize = 16,
             bool primary = false,
-            float width = 0
+            float width = 0,
+            Sprite frameOverride = null
         )
         {
             var rect = Rect(name, parent);
             Image(rect, Color.white, true);
-            Frame(rect, primary);
+            Frame(rect, frameOverride ?? (primary ? frame : panelFrame));
             var button = rect.gameObject.AddComponent<UnityEngine.UI.Button>();
             button.targetGraphic = rect.GetComponent<UnityEngine.UI.Image>();
             var colors = button.colors;
@@ -343,7 +364,11 @@ namespace Baryonyx.Wireframe.Editor
             Stretch((RectTransform)label.transform);
             label.margin = new Vector4(6, 3, 6, 3);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = primary ? new Color(.98f, .97f, .91f) : Ink;
+            label.color = frameOverride == equipmentFrame
+                ? new Color(.96f, .94f, .86f)
+                : primary
+                    ? new Color(.98f, .97f, .91f)
+                    : Ink;
             if (primary)
                 label.fontStyle = FontStyles.Bold;
             return button;
@@ -382,7 +407,9 @@ namespace Baryonyx.Wireframe.Editor
             out RectTransform content
         )
         {
-            // Full-screen raycast shield, with the controls following the same safe area.
+            // Keep the raycast shield at the root so system-bar margins are also blocked;
+            // the modal controls live under the SafeArea follower and therefore remain
+            // inside the usable rectangle on notched or gesture-navigation devices.
             var shield = Rect(name + "Overlay", root);
             Stretch(shield);
             Image(shield, new Color(0, 0, 0, .65f), true);

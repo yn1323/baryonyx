@@ -192,9 +192,11 @@ PRが既に閉じられていれば再公開をスキップし、PR終了イベ�
 APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得できる。
 クライアントのPreviewへこのAPI URLを渡す処理は、クライアントの通信機能を実装するときに追加する。
 
-[Server deploy](../../.github/workflows/server-deploy.yml) は手動実行で `dev` または `prod` を選ぶ。
-指定したGit参照を検査してから公開し、DBがなければ作成し、あれば再利用する。
-`main` へのpushだけではDev・Prodへ公開しない。
+[Server deploy](../../.github/workflows/server-deploy.yml) は、`develop` へマージされたPRをDevへ、`main` へマージされたPRをProdへ自動公開する。
+マージコミットを検査してから公開し、DBがなければ作成し、あれば再利用する。
+PRをマージせずに閉じた場合は公開しない。
+手動実行では `dev` または `prod` を選んで任意のGit参照を公開できる。
+ブランチへの直接pushは自動公開の契機にしない。
 
 ### 初回の公開準備
 
@@ -202,7 +204,7 @@ APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得�
 2. GitHub Repository secretsへ `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を登録する。トークンには対象アカウントのWorkers ScriptsとD1の編集権限を付ける。
 3. `server-preview`・`server-dev`・`server-prod` の各GitHub environmentに、Unityと同じGoogle OAuthのWebクライアントIDを変数 `GOOGLE_CLIENT_ID` として登録する。全環境で共通ならRepository variablesへ登録してもよい。公開処理はこの値をWorkerのbindingへ渡し、未設定ならDB更新・Worker公開前に停止する。
 4. このサーバー基盤をPRのbaseブランチへ先に反映する。ヘルパーがないbaseを使うPreview jobは理由を表示して失敗する。
-5. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。Dev・ProdはGitHub Actionsの `Server deploy` から環境を選択する。
+5. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。`develop`・`main` へのマージで、それぞれDev・Prodへ自動公開される。任意のGit参照を公開する場合はGitHub Actionsの `Server deploy` から環境を選択する。
 
 Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ごとに固定し、取得したDB IDを使う設定を `.wrangler/deploy/` へ生成する。
 実行時に環境を指定するため、リポジトリへ実アカウントのDB IDを記入する必要はない。

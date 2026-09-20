@@ -19,7 +19,7 @@ namespace Baryonyx.App
             health = new HealthRuntime(Settings);
             Screen.Bind(presenter, preview: health.Preview);
             ApplyForeground();
-            health.Initialize();
+            _ = health.InitializeAsync();
         }
 
         private void OnApplicationPause(bool value)

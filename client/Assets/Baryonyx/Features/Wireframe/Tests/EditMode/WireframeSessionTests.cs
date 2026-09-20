@@ -27,6 +27,15 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ProductionStartCanShowHomeWithoutIntroGoalPrompt()
+        {
+            var startup = new WireframeSession(data, showIntro: false);
+
+            Assert.That(startup.Screen, Is.EqualTo(WireScreen.Home));
+            Assert.That(startup.Popup, Is.EqualTo(WirePopup.None));
+        }
+
+        [Test]
         public void AcquisitionCanEquipImmediatelyAndDoesNotGrantTwice()
         {
             Explore();
@@ -221,6 +230,19 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(session.HasNewCompanion, Is.False);
             Assert.That(session.Runes, Is.EqualTo(860));
             Assert.That(session.Step, Is.Zero);
+        }
+
+        [Test]
+        public void ServerRuneBalanceReplacesThePreviewWalletWithinSafeRange()
+        {
+            session.SetRuneBalance(1234);
+            Assert.That(session.Runes, Is.EqualTo(1234));
+
+            session.SetRuneBalance(-1);
+            Assert.That(session.Runes, Is.Zero);
+
+            session.SetRuneBalance((long)int.MaxValue + 1);
+            Assert.That(session.Runes, Is.EqualTo(int.MaxValue));
         }
     }
 }

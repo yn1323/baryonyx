@@ -27,7 +27,12 @@ namespace Baryonyx.Wireframe
 
         public UnityEngine.UI.Button Button(string name) => buttons[name];
 
+        public bool TryGetButton(string name, out UnityEngine.UI.Button button) =>
+            buttons.TryGetValue(name, out button);
+
         public TMP_Text Text(string name) => labels[name];
+
+        public bool TryText(string name, out TMP_Text text) => labels.TryGetValue(name, out text);
 
         public void Bind(WireframeSession session)
         {
@@ -242,6 +247,9 @@ namespace Baryonyx.Wireframe
                 positions.Clear();
             for (int i = 0; i < Pages.Length; i++)
                 Pages[i].SetActive(i == (int)s.Screen);
+            var layout = GetComponent<WireframeLayout>();
+            if (layout != null && layout.BattlefieldAmbient != null)
+                layout.BattlefieldAmbient.SetActive(s.Screen == WireScreen.Battle);
             string[] titles =
             {
                 "てくてくダンジョン",

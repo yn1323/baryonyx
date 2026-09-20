@@ -15,6 +15,7 @@ namespace Baryonyx.Wireframe.Editor
             {
                 case WireScreen.Home:
                     Label("HomeRunes", page, "", 15, 24).alignment = TextAlignmentOptions.Right;
+                    Label("HomeGoogle", page, "", 12, 22).alignment = TextAlignmentOptions.Right;
                     PartyLandscape(page, "HomeLandscape", 200);
                     page.Find("HomeLandscape")
                         .GetComponent<UnityEngine.UI.LayoutElement>()
@@ -57,17 +58,30 @@ namespace Baryonyx.Wireframe.Editor
                 case WireScreen.Equipment:
                     Label("EquipmentTitle", page, "旅のしたく", 22, 42);
                     PortraitSlots(page, "EquipmentSlot");
-                    CharacterFeature(page, "EquipmentPortrait", "EquipmentCompare", 144);
+                    CharacterFeature(page, "EquipmentPortrait", "EquipmentCompare", 144, true);
                     Eyebrow("WeaponEyebrow", page, "所持している武器");
                     for (int i = 0; i < 3; i++)
                     {
-                        var b = Button("Equipment" + i, page, "武器", 64, 16);
+                        var b = Button(
+                            "Equipment" + i,
+                            page,
+                            "武器",
+                            64,
+                            16,
+                            frameOverride: equipmentFrame
+                        );
                         PixelEmblem(b.transform as RectTransform, "WeaponIcon" + i, i);
                         b.GetComponentInChildren<TMP_Text>().margin = new Vector4(56, 6, 12, 6);
                         b.GetComponentInChildren<TMP_Text>().alignment =
                             TextAlignmentOptions.MidlineLeft;
                     }
-                    Button("EquipmentConfirm", page, "この武器に変更", primary: true);
+                    Button(
+                        "EquipmentConfirm",
+                        page,
+                        "この武器に変更",
+                        primary: true,
+                        frameOverride: equipmentFrame
+                    );
                     Label(
                         "EquipmentHint",
                         page,

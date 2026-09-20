@@ -21,6 +21,9 @@ namespace Baryonyx.Wireframe
         private Vector2 partyOrigin;
         private bool prepared;
         private WireframeBattleFeedback feedback;
+        private Sprite equipmentFrame;
+        private readonly List<UnityEngine.UI.Image> explorationNodes = new();
+        private readonly List<UnityEngine.UI.Image> explorationPaths = new();
 
         public static Rect ActorUv(int index) =>
             new((index % 4) * .25f, index < 4 ? .5f : 0, .25f, .5f);
@@ -37,10 +40,14 @@ namespace Baryonyx.Wireframe
                 input = gameObject.AddComponent<CanvasGroup>();
                 partyOrigin = ExplorationParty.anchoredPosition;
                 prepared = true;
+                equipmentFrame = CreateEquipmentFrame();
+                CreateExplorationRoute();
                 feedback = gameObject.AddComponent<WireframeBattleFeedback>();
                 feedback.Initialize(images, view);
             }
             var s = view.Session;
+            ApplyEquipmentFrame();
+            RenderExplorationRoute(s.Step);
             feedback.Bind(s.Battle);
             if (
                 travel != null
@@ -132,15 +139,137 @@ namespace Baryonyx.Wireframe
             rects["VolumeProgressFill"].anchorMax = new Vector2(s.Volume / 100f, 1);
         }
 
+        private void CreateExplorationRoute()
+        {
+            if (!rects.TryGetValue("ExploreMap", out var map))
+                return;
+            var positions = new[]
+            {
+                new Vector2(.17f, .24f),
+                new Vector2(.39f, .38f),
+                new Vector2(.62f, .31f),
+                new Vector2(.84f, .49f),
+            };
+            for (int i = 0; i < positions.Length; i++)
+            {
+                var node = new GameObject("ExploreRouteNode" + i, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                node.transform.SetParent(map, false);
+                var rect = (RectTransform)node.transform;
+                rect.anchorMin = rect.anchorMax = positions[i];
+                rect.sizeDelta = new Vector2(26, 26);
+                rect.SetSiblingIndex(Mathf.Min(1, map.childCount - 1));
+                var image = node.GetComponent<UnityEngine.UI.Image>();
+                image.raycastTarget = false;
+                explorationNodes.Add(image);
+            }
+            for (int i = 0; i < positions.Length - 1; i++)
+            {
+                var path = new GameObject("ExploreRoutePath" + i, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                path.transform.SetParent(map, false);
+                var rect = (RectTransform)path.transform;
+                float y = (positions[i].y + positions[i + 1].y) * .5f;
+                rect.anchorMin = new Vector2(positions[i].x, y);
+                rect.anchorMax = new Vector2(positions[i + 1].x, y);
+                rect.offsetMin = rect.offsetMax = Vector2.zero;
+                rect.sizeDelta = new Vector2(0, 5);
+                rect.SetSiblingIndex(Mathf.Min(1, map.childCount - 1));
+                var image = path.GetComponent<UnityEngine.UI.Image>();
+                image.raycastTarget = false;
+                explorationPaths.Add(image);
+            }
+        }
+
+        private void RenderExplorationRoute(int step)
+        {
+            if (explorationNodes.Count == 0)
+                return;
+            int current = Mathf.Clamp(step, 0, explorationNodes.Count - 1);
+            var explored = new Color(.70f, .55f, .28f, .92f);
+            var currentColor = new Color(.98f, .88f, .48f, 1f);
+            var hidden = new Color(.12f, .20f, .24f, .94f);
+            for (int i = 0; i < explorationNodes.Count; i++)
+                explorationNodes[i].color = i < current ? explored : i == current ? currentColor : hidden;
+            for (int i = 0; i < explorationPaths.Count; i++)
+                explorationPaths[i].color = i < current ? explored : hidden;
+            if (ExplorationParty != null && explorationNodes.Count > 0)
+            {
+                float progress = current / (float)Mathf.Max(1, explorationNodes.Count - 1);
+                ExplorationParty.anchoredPosition = partyOrigin + new Vector2(progress * 250f, progress * 52f);
+            }
+        }
+
         private void Selected(string name, bool selected)
         {
             var button = view.Button(name);
             button.image.color = selected ? new Color(.77f, .88f, .76f) : Color.white;
             var text = button.GetComponentInChildren<TMP_Text>();
+            bool equipmentOption =
+                name == "Equipment0" || name == "Equipment1" || name == "Equipment2";
             text.color =
                 !button.interactable ? new Color(.50f, .57f, .55f)
                 : name.StartsWith("Skill", StringComparison.Ordinal) ? new Color(.98f, .97f, .91f)
+                : equipmentOption ? new Color(.96f, .94f, .86f)
                 : new Color(.16f, .23f, .20f);
+        }
+
+        private void ApplyEquipmentFrame()
+        {
+            if (equipmentFrame == null)
+                return;
+            ApplyFrame(rects.TryGetValue("EquipmentCompareCard", out var card) ? card : null);
+            foreach (var name in new[] { "Equipment0", "Equipment1", "Equipment2", "EquipmentConfirm" })
+            {
+                if (!view.TryGetButton(name, out var button))
+                    continue;
+                ApplyFrame(button.transform as RectTransform);
+                var label = button.GetComponentInChildren<TMP_Text>(true);
+                if (label != null)
+                    label.color = new Color(.96f, .94f, .86f);
+            }
+        }
+
+        private void ApplyFrame(RectTransform rect)
+        {
+            if (rect == null)
+                return;
+            var image = rect.GetComponent<UnityEngine.UI.Image>();
+            if (image == null)
+                return;
+            image.sprite = equipmentFrame;
+            image.type = UnityEngine.UI.Image.Type.Sliced;
+            image.color = Color.white;
+        }
+
+        private static Sprite CreateEquipmentFrame()
+        {
+            const int size = 24;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "RuntimeEquipmentFrame",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var fill = new Color(.08f, .12f, .17f);
+            var edge = new Color(.65f, .49f, .23f);
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = Mathf.Max(5 - x, x - 18, 0);
+                float dy = Mathf.Max(5 - y, y - 18, 0);
+                bool cut = dx * dx + dy * dy > 25;
+                bool border = x < 2 || x > 21 || y < 2 || y > 21;
+                texture.SetPixel(x, y, cut ? Color.clear : border ? edge : fill);
+            }
+            texture.Apply();
+            return Sprite.Create(
+                texture,
+                new Rect(0, 0, size, size),
+                new Vector2(.5f, .5f),
+                100,
+                0,
+                SpriteMeshType.FullRect,
+                new Vector4(6, 6, 6, 6)
+            );
         }
 
         public void Travel(bool sidePath, Action arrived)

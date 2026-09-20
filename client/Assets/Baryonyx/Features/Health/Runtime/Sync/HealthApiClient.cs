@@ -95,6 +95,36 @@ namespace Baryonyx.Health
             CancellationToken token
         ) => SendAsync<StoredDays>(SourcePath(sourceId), "GET", null, session, token);
 
+        public Task<RewardClaim> ClaimRewardsAsync(
+            HealthSession session,
+            string sourceId,
+            string requestId,
+            CancellationToken token
+        ) => SendAsync<RewardClaim>(
+            "/v1/exercise/rewards/claim",
+            "POST",
+            new ClaimRequest { sourceId = sourceId, requestId = requestId },
+            session,
+            token
+        );
+
+        public Task<RewardDays> ReadRewardDaysAsync(
+            HealthSession session,
+            string sourceId,
+            CancellationToken token
+        ) => SendAsync<RewardDays>(
+            "/v1/exercise/rewards/days?sourceId=" + Uri.EscapeDataString(sourceId),
+            "GET",
+            null,
+            session,
+            token
+        );
+
+        public Task<RuneBalance> ReadRuneBalanceAsync(
+            HealthSession session,
+            CancellationToken token
+        ) => SendAsync<RuneBalance>("/v1/runes/balance", "GET", null, session, token);
+
         private static string SourcePath(string sourceId) =>
             "/v1/health/sources/" + Uri.EscapeDataString(sourceId) + "/days";
 
@@ -176,6 +206,13 @@ namespace Baryonyx.Health
         }
 
         [Serializable]
+        private sealed class ClaimRequest
+        {
+            public string sourceId;
+            public string requestId;
+        }
+
+        [Serializable]
         private sealed class EmptyReply { }
 
         [Serializable]
@@ -199,6 +236,43 @@ namespace Baryonyx.Health
             public string observedAt;
             public string receivedAt;
             public long revision;
+        }
+
+        [Serializable]
+        public sealed class RewardClaim
+        {
+            public long grantedRunes;
+            public long balance;
+            public RewardDay[] days;
+        }
+
+        [Serializable]
+        public sealed class RewardDays
+        {
+            public RewardDay[] days;
+        }
+
+        [Serializable]
+        public sealed class RewardDay
+        {
+            public string day;
+            public string zone;
+            public string activityType;
+            public string metricType;
+            public bool hasValue;
+            public long observedValue;
+            public long creditedThroughValue;
+            public long creditedRunes;
+            public string ruleVersion;
+            public string lastObservedAt;
+            public string updatedAt;
+        }
+
+        [Serializable]
+        public sealed class RuneBalance
+        {
+            public long balance;
+            public string updatedAt;
         }
     }
 }

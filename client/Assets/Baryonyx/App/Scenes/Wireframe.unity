@@ -150,6 +150,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.App.WireframeBootstrap
   Data: {fileID: 11400000, guid: 8e1f3ab0953073b41a1f841c6f0a11ab, type: 2}
   View: {fileID: 2049418781}
+  HealthSettings: {fileID: 11400000, guid: d91dfbfed40c0fc4095e75552b344985, type: 2}
+  ShowIntro: 0
 --- !u!4 &251689229
 Transform:
   m_ObjectHideFlags: 0

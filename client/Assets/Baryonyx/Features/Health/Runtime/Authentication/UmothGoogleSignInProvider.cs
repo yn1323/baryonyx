@@ -8,7 +8,10 @@ using Uralstech.UMoth.GoogleSignIn;
 
 namespace Baryonyx.Health
 {
-    public sealed class UmothGoogleSignInProvider : IGoogleSignInProvider, IDisposable
+    public sealed class UmothGoogleSignInProvider :
+        IGoogleSignInProvider,
+        IGoogleCredentialProvider,
+        IDisposable
     {
         private readonly string clientId;
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -16,6 +19,8 @@ namespace Baryonyx.Health
 #endif
 
         public UmothGoogleSignInProvider(string clientId) => this.clientId = clientId?.Trim();
+
+        public string ServerIdToken { get; private set; }
 
         public async Task<GoogleSignInStatus> SignInAsync(CancellationToken token)
         {
@@ -37,9 +42,11 @@ namespace Baryonyx.Health
                 token: token
             );
             // Credentials never leave this adapter or enter the screen's state.
+            ServerIdToken = credential?.IdToken;
             return credential != null ? GoogleSignInStatus.Success : GoogleSignInStatus.Incomplete;
 #else
             await Task.CompletedTask;
+            ServerIdToken = null;
             return GoogleSignInStatus.Unsupported;
 #endif
         }
@@ -48,9 +55,13 @@ namespace Baryonyx.Health
         {
             token.ThrowIfCancellationRequested();
 #if UNITY_ANDROID && !UNITY_EDITOR
-            return manager == null || await manager.SignOutAsync(token);
+            bool result = manager == null || await manager.SignOutAsync(token);
+            if (result)
+                ServerIdToken = null;
+            return result;
 #else
             await Task.CompletedTask;
+            ServerIdToken = null;
             return true;
 #endif
         }

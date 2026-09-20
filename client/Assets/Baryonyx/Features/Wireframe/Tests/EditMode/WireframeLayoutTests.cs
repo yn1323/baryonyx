@@ -37,7 +37,7 @@ namespace Baryonyx.Tests.EditMode
 
         private void Size(int width, int height, Rect safe)
         {
-            root.sizeDelta = new Vector2(360, height * 360f / width);
+            root.sizeDelta = new Vector2(width, height);
             layout.ApplyViewport(new Vector2(width, height), safe, root.rect.size);
             foreach (var follower in view.GetComponentsInChildren<WireframeSafeAreaFollower>(true))
                 follower.Apply();
@@ -45,11 +45,9 @@ namespace Baryonyx.Tests.EditMode
             UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(root);
         }
 
-        [TestCase(720, 1280)]
-        [TestCase(1080, 2340)]
-        [TestCase(1080, 2400)]
-        [TestCase(1536, 2048)]
-        [TestCase(2048, 1536)]
+        [TestCase(1920, 1080)]
+        [TestCase(2340, 1080)]
+        [TestCase(2400, 1080)]
         public void HeaderAndModalCloseStayInsideAsymmetricSafeArea(int width, int height)
         {
             Size(width, height, new Rect(24, 64, width - 60, height - 152));
@@ -60,6 +58,24 @@ namespace Baryonyx.Tests.EditMode
                 layout.HealthDetailsPanel.rect.width,
                 Is.LessThanOrEqualTo(layout.SafeArea.rect.width)
             );
+            Assert.That(layout.CoreArea.rect.height, Is.EqualTo(1080).Within(.01f));
+            Assert.That(layout.CoreArea.rect.width, Is.EqualTo(1920).Within(.01f));
+            Assert.That(layout.CoreArea.parent, Is.EqualTo(root));
+            Assert.That(layout.Panel.parent, Is.EqualTo(layout.CoreArea));
+            Assert.That(layout.Panel.rect.width, Is.EqualTo(560).Within(.01f));
+            Assert.That(layout.BattlefieldAmbient, Is.Not.Null);
+            Assert.That(layout.BattlefieldAmbient.transform.parent, Is.EqualTo(root));
+            AssertInside(layout.Panel, layout.SafeArea);
+            Assert.That(view.Navigation.transform.parent, Is.EqualTo(layout.SafeArea));
+            AssertInside((RectTransform)view.Button("NavHome").transform, layout.SafeArea);
+            Assert.That(((RectTransform)view.Button("NavHome").transform).rect.width, Is.EqualTo(192));
+            AssertModalFollowsSafeArea(layout.PopupPanel, view.PopupOverlay, "PopupSafe");
+            AssertModalFollowsSafeArea(layout.DebugPanel, view.DebugOverlay, "DebugSafe");
+            AssertModalFollowsSafeArea(
+                layout.HealthDetailsPanel,
+                view.GetComponent<WireframeHealthView>().DetailsOverlay,
+                "HealthDetailsSafe"
+            );
             Assert.That(view.Session.Popup, Is.EqualTo(WirePopup.Intro));
             view.Session.Back();
             view.Session.Open(WireScreen.Destination);
@@ -68,7 +84,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void PortraitBattleKeepsCoreControlsVisibleWhenSelectingASkill()
+        public void LandscapeBattleKeepsCoreControlsVisibleWhenSelectingASkill()
         {
             var s = view.Session;
             s.Back();
@@ -77,7 +93,7 @@ namespace Baryonyx.Tests.EditMode
             s.EnterDoor();
             s.SelectSlot(1);
             s.ChooseSkill(0);
-            Size(720, 1280, new Rect(0, 0, 720, 1280));
+            Size(1920, 1080, new Rect(0, 0, 1920, 1080));
             foreach (
                 string name in new[]
                 {
@@ -104,8 +120,8 @@ namespace Baryonyx.Tests.EditMode
             s.Open(WireScreen.Goals);
             s.ShowGoals(false);
             s.ToggleGoal(1);
-            Size(1080, 2400, new Rect(0, 96, 1080, 2208));
-            Size(2048, 1536, new Rect(24, 64, 1988, 1384));
+            Size(2340, 1080, new Rect(0, 48, 2340, 1032));
+            Size(2400, 1080, new Rect(24, 64, 2316, 952));
             Assert.That(s.Popup, Is.EqualTo(WirePopup.GoalEdit));
             Assert.That(s.GoalDistance, Is.True);
             var scroll = view.Button("PopupPrimary")
@@ -172,6 +188,43 @@ namespace Baryonyx.Tests.EditMode
                     child.name
                 );
             }
+        }
+
+        private void AssertModalFollowsSafeArea(
+            RectTransform panel,
+            GameObject overlay,
+            string expectedSafeName
+        )
+        {
+            Assert.That(overlay.transform.parent, Is.EqualTo(root), overlay.name);
+            AssertRectMatches((RectTransform)overlay.transform, root, overlay.name);
+
+            var follower = panel.GetComponentInParent<WireframeSafeAreaFollower>(true);
+            Assert.That(follower, Is.Not.Null, panel.name);
+            Assert.That(follower.Source, Is.EqualTo(layout.SafeArea), panel.name);
+            Assert.That(follower.name, Is.EqualTo(expectedSafeName));
+            Assert.That(follower.transform.parent, Is.EqualTo(overlay.transform));
+            Assert.That(panel.IsChildOf(follower.transform), Is.True, panel.name);
+            AssertRectMatches((RectTransform)follower.transform, layout.SafeArea, follower.name);
+            AssertInside(panel, layout.SafeArea);
+        }
+
+        private static void AssertRectMatches(
+            RectTransform actual,
+            RectTransform expected,
+            string label
+        )
+        {
+            var actualCorners = new Vector3[4];
+            var expectedCorners = new Vector3[4];
+            actual.GetWorldCorners(actualCorners);
+            expected.GetWorldCorners(expectedCorners);
+            for (int i = 0; i < actualCorners.Length; i++)
+                Assert.That(
+                    Vector3.Distance(actualCorners[i], expectedCorners[i]),
+                    Is.LessThan(.01f),
+                    $"{label} corner {i}"
+                );
         }
     }
 }
