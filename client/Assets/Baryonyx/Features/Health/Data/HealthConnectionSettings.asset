@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: HealthConnectionSettings
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Health.HealthConnectionSettings
   GoogleWebClientId: 557809248205-nr5ojfs7jlr1gcc7ckvc8a3n4po6hv79.apps.googleusercontent.com
-  ServerBaseUrl: http://127.0.0.1:3000
+  ServerBaseUrl: https://baryonyx-server-dev.croissant-lab.workers.dev

@@ -19,7 +19,7 @@ namespace Baryonyx.App
                 settings != null ? settings.GoogleWebClientId : ""
             );
             authentication = google;
-            if (!string.IsNullOrWhiteSpace(settings?.ServerBaseUrl))
+            if (settings != null && !string.IsNullOrWhiteSpace(settings.ServerBaseUrl))
             {
                 try
                 {
