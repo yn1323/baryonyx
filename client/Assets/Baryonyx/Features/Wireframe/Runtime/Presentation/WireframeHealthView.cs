@@ -342,6 +342,12 @@ namespace Baryonyx.Wireframe
                 Vector2.zero,
                 "閉じる"
             );
+            // The health presenter binds these controls after the wireframe is created.
+            // Keep them hidden until then so an unbound health view cannot block the
+            // shared bottom navigation with its runtime-created buttons.
+            rewardSignIn.gameObject.SetActive(false);
+            rewardClaim.gameObject.SetActive(false);
+            rewardHistoryButton.gameObject.SetActive(false);
             rewardOverlay.SetActive(false);
         }
 

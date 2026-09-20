@@ -49,7 +49,13 @@ namespace Baryonyx.Wireframe
                 button.onClick.RemoveAllListeners();
             }
             foreach (var label in GetComponentsInChildren<TMP_Text>(true))
-                labels.Add(label.name, label);
+            {
+                // Decorative labels may intentionally share a generic name such as "Label".
+                // Keep the first named binding so duplicate art children do not prevent the
+                // screen from starting; interactive labels use unique names in the prefab.
+                if (!labels.ContainsKey(label.name))
+                    labels.Add(label.name, label);
+            }
             WireActions();
             Session.Changed += Render;
             rendered = false;
