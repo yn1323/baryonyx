@@ -80,7 +80,9 @@ namespace Baryonyx.Wireframe.Editor
                 texture.SetPixel(
                     x,
                     y,
-                    cut ? Color.clear : border ? edge : color
+                    cut ? Color.clear
+                        : border ? edge
+                        : color
                 );
             }
             texture.Apply();

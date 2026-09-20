@@ -68,7 +68,10 @@ namespace Baryonyx.Tests.EditMode
             AssertInside(layout.Panel, layout.SafeArea);
             Assert.That(view.Navigation.transform.parent, Is.EqualTo(layout.SafeArea));
             AssertInside((RectTransform)view.Button("NavHome").transform, layout.SafeArea);
-            Assert.That(((RectTransform)view.Button("NavHome").transform).rect.width, Is.EqualTo(192));
+            Assert.That(
+                ((RectTransform)view.Button("NavHome").transform).rect.width,
+                Is.EqualTo(192)
+            );
             AssertModalFollowsSafeArea(layout.PopupPanel, view.PopupOverlay, "PopupSafe");
             AssertModalFollowsSafeArea(layout.DebugPanel, view.DebugOverlay, "DebugSafe");
             AssertModalFollowsSafeArea(

@@ -100,25 +100,27 @@ namespace Baryonyx.Health
             string sourceId,
             string requestId,
             CancellationToken token
-        ) => SendAsync<RewardClaim>(
-            "/v1/exercise/rewards/claim",
-            "POST",
-            new ClaimRequest { sourceId = sourceId, requestId = requestId },
-            session,
-            token
-        );
+        ) =>
+            SendAsync<RewardClaim>(
+                "/v1/exercise/rewards/claim",
+                "POST",
+                new ClaimRequest { sourceId = sourceId, requestId = requestId },
+                session,
+                token
+            );
 
         public Task<RewardDays> ReadRewardDaysAsync(
             HealthSession session,
             string sourceId,
             CancellationToken token
-        ) => SendAsync<RewardDays>(
-            "/v1/exercise/rewards/days?sourceId=" + Uri.EscapeDataString(sourceId),
-            "GET",
-            null,
-            session,
-            token
-        );
+        ) =>
+            SendAsync<RewardDays>(
+                "/v1/exercise/rewards/days?sourceId=" + Uri.EscapeDataString(sourceId),
+                "GET",
+                null,
+                session,
+                token
+            );
 
         public Task<RuneBalance> ReadRuneBalanceAsync(
             HealthSession session,

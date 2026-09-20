@@ -121,7 +121,8 @@ namespace Baryonyx.Wireframe
             Refresh.interactable = presenter.CanRefresh;
             Settings.interactable = presenter.CanOpenSettings;
             RenderHomeAccountState();
-            bool showRewardActions = wireframe == null || wireframe.Session.Screen == WireScreen.Health;
+            bool showRewardActions =
+                wireframe == null || wireframe.Session.Screen == WireScreen.Health;
             if (rewardSignIn != null)
             {
                 rewardSignIn.gameObject.SetActive(
@@ -152,9 +153,8 @@ namespace Baryonyx.Wireframe
             )
             {
                 renderedRewardClaimVersion = presenter.RewardClaimVersion;
-                rewardTitle.text = presenter.LastGrantedRunes > 0
-                    ? "ルーンを取得しました"
-                    : "ルーンの確認結果";
+                rewardTitle.text =
+                    presenter.LastGrantedRunes > 0 ? "ルーンを取得しました" : "ルーンの確認結果";
                 rewardBody.text = presenter.RewardMessage;
                 rewardHistory.text = FormatRewardHistory();
                 rewardOverlay.SetActive(true);
@@ -173,7 +173,9 @@ namespace Baryonyx.Wireframe
 
             bool rewardsEnabled = presenter.RewardsEnabled;
             long balance = rewardsEnabled
-                ? presenter.SignedIn ? presenter.RuneBalance : 0
+                ? presenter.SignedIn
+                    ? presenter.RuneBalance
+                    : 0
                 : wireframe.Session.Runes;
             if (rewardsEnabled)
                 wireframe.Session.SetRuneBalance(balance);
@@ -181,8 +183,12 @@ namespace Baryonyx.Wireframe
                 return;
 
             string auth = rewardsEnabled
-                ? presenter.SignedIn ? "Google認証：接続済み" : "Google認証：未接続"
-                : preview ? "Google認証：Editorプレビュー" : "Google認証：未設定";
+                ? presenter.SignedIn
+                    ? "Google認証：接続済み"
+                    : "Google認証：未接続"
+                : preview
+                    ? "Google認証：Editorプレビュー"
+                    : "Google認証：未設定";
             if (wireframe.TryText("HomeGoogle", out var google))
             {
                 if (wireframe.TryText("HomeRunes", out var runes))
@@ -305,11 +311,28 @@ namespace Baryonyx.Wireframe
             panelRect.offsetMax = Vector2.zero;
             panel.GetComponent<Image>().color = new Color(0.07f, 0.09f, 0.14f, 0.98f);
             rewardTitle = CreateText("Title", panel.transform, 28, TextAlignmentOptions.Top);
-            SetFullRect(rewardTitle.rectTransform, new Vector2(0.06f, 0.8f), new Vector2(0.94f, 0.96f));
+            SetFullRect(
+                rewardTitle.rectTransform,
+                new Vector2(0.06f, 0.8f),
+                new Vector2(0.94f, 0.96f)
+            );
             rewardBody = CreateText("Body", panel.transform, 22, TextAlignmentOptions.Top);
-            SetFullRect(rewardBody.rectTransform, new Vector2(0.08f, 0.62f), new Vector2(0.92f, 0.8f));
-            rewardHistory = CreateText("History", panel.transform, 18, TextAlignmentOptions.TopLeft);
-            SetFullRect(rewardHistory.rectTransform, new Vector2(0.1f, 0.2f), new Vector2(0.9f, 0.6f));
+            SetFullRect(
+                rewardBody.rectTransform,
+                new Vector2(0.08f, 0.62f),
+                new Vector2(0.92f, 0.8f)
+            );
+            rewardHistory = CreateText(
+                "History",
+                panel.transform,
+                18,
+                TextAlignmentOptions.TopLeft
+            );
+            SetFullRect(
+                rewardHistory.rectTransform,
+                new Vector2(0.1f, 0.2f),
+                new Vector2(0.9f, 0.6f)
+            );
             rewardClose = CreateButton(
                 "Close",
                 panel.transform,
@@ -329,8 +352,11 @@ namespace Baryonyx.Wireframe
             TextAlignmentOptions alignment
         )
         {
-            var text = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI))
-                .GetComponent<TextMeshProUGUI>();
+            var text = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            ).GetComponent<TextMeshProUGUI>();
             text.transform.SetParent(parent, false);
             text.fontSize = size;
             text.alignment = alignment;
@@ -357,7 +383,12 @@ namespace Baryonyx.Wireframe
             string label
         )
         {
-            var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            var buttonObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
             buttonObject.transform.SetParent(parent, false);
             var rect = (RectTransform)buttonObject.transform;
             rect.anchorMin = anchorMin;

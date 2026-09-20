@@ -194,9 +194,8 @@ namespace Baryonyx.Health
             if (presenter.RewardClaimVersion > renderedRewardClaimVersion)
             {
                 renderedRewardClaimVersion = presenter.RewardClaimVersion;
-                rewardOverlayTitle.text = presenter.LastGrantedRunes > 0
-                    ? "ルーンを取得しました"
-                    : "ルーンの確認結果";
+                rewardOverlayTitle.text =
+                    presenter.LastGrantedRunes > 0 ? "ルーンを取得しました" : "ルーンの確認結果";
                 rewardOverlayBody.text = presenter.RewardMessage;
                 rewardOverlayHistory.text = FormatRewardHistory();
                 rewardOverlay.SetActive(true);
@@ -286,7 +285,12 @@ namespace Baryonyx.Health
             rewardOverlayBody.rectTransform.anchorMax = new Vector2(0.92f, 0.78f);
             rewardOverlayBody.rectTransform.offsetMin = Vector2.zero;
             rewardOverlayBody.rectTransform.offsetMax = Vector2.zero;
-            rewardOverlayHistory = CreateText("History", panel.transform, 20, TextAlignmentOptions.TopLeft);
+            rewardOverlayHistory = CreateText(
+                "History",
+                panel.transform,
+                20,
+                TextAlignmentOptions.TopLeft
+            );
             rewardOverlayHistory.rectTransform.anchorMin = new Vector2(0.1f, 0.18f);
             rewardOverlayHistory.rectTransform.anchorMax = new Vector2(0.9f, 0.6f);
             rewardOverlayHistory.rectTransform.offsetMin = Vector2.zero;
@@ -311,8 +315,11 @@ namespace Baryonyx.Health
             TextAlignmentOptions alignment
         )
         {
-            var text = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI))
-                .GetComponent<TextMeshProUGUI>();
+            var text = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(TextMeshProUGUI)
+            ).GetComponent<TextMeshProUGUI>();
             text.transform.SetParent(parent, false);
             text.fontSize = size;
             text.alignment = alignment;
@@ -331,7 +338,12 @@ namespace Baryonyx.Health
             string label
         )
         {
-            var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            var buttonObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button)
+            );
             buttonObject.transform.SetParent(parent, false);
             var rect = (RectTransform)buttonObject.transform;
             rect.anchorMin = anchorMin;

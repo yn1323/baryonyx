@@ -152,7 +152,11 @@ namespace Baryonyx.Wireframe
             };
             for (int i = 0; i < positions.Length; i++)
             {
-                var node = new GameObject("ExploreRouteNode" + i, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                var node = new GameObject(
+                    "ExploreRouteNode" + i,
+                    typeof(RectTransform),
+                    typeof(UnityEngine.UI.Image)
+                );
                 node.transform.SetParent(map, false);
                 var rect = (RectTransform)node.transform;
                 rect.anchorMin = rect.anchorMax = positions[i];
@@ -164,7 +168,11 @@ namespace Baryonyx.Wireframe
             }
             for (int i = 0; i < positions.Length - 1; i++)
             {
-                var path = new GameObject("ExploreRoutePath" + i, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                var path = new GameObject(
+                    "ExploreRoutePath" + i,
+                    typeof(RectTransform),
+                    typeof(UnityEngine.UI.Image)
+                );
                 path.transform.SetParent(map, false);
                 var rect = (RectTransform)path.transform;
                 float y = (positions[i].y + positions[i + 1].y) * .5f;
@@ -188,13 +196,17 @@ namespace Baryonyx.Wireframe
             var currentColor = new Color(.98f, .88f, .48f, 1f);
             var hidden = new Color(.12f, .20f, .24f, .94f);
             for (int i = 0; i < explorationNodes.Count; i++)
-                explorationNodes[i].color = i < current ? explored : i == current ? currentColor : hidden;
+                explorationNodes[i].color =
+                    i < current ? explored
+                    : i == current ? currentColor
+                    : hidden;
             for (int i = 0; i < explorationPaths.Count; i++)
                 explorationPaths[i].color = i < current ? explored : hidden;
             if (ExplorationParty != null && explorationNodes.Count > 0)
             {
                 float progress = current / (float)Mathf.Max(1, explorationNodes.Count - 1);
-                ExplorationParty.anchoredPosition = partyOrigin + new Vector2(progress * 250f, progress * 52f);
+                ExplorationParty.anchoredPosition =
+                    partyOrigin + new Vector2(progress * 250f, progress * 52f);
             }
         }
 
@@ -217,7 +229,9 @@ namespace Baryonyx.Wireframe
             if (equipmentFrame == null)
                 return;
             ApplyFrame(rects.TryGetValue("EquipmentCompareCard", out var card) ? card : null);
-            foreach (var name in new[] { "Equipment0", "Equipment1", "Equipment2", "EquipmentConfirm" })
+            foreach (
+                var name in new[] { "Equipment0", "Equipment1", "Equipment2", "EquipmentConfirm" }
+            )
             {
                 if (!view.TryGetButton(name, out var button))
                     continue;
@@ -258,7 +272,13 @@ namespace Baryonyx.Wireframe
                 float dy = Mathf.Max(5 - y, y - 18, 0);
                 bool cut = dx * dx + dy * dy > 25;
                 bool border = x < 2 || x > 21 || y < 2 || y > 21;
-                texture.SetPixel(x, y, cut ? Color.clear : border ? edge : fill);
+                texture.SetPixel(
+                    x,
+                    y,
+                    cut ? Color.clear
+                        : border ? edge
+                        : fill
+                );
             }
             texture.Apply();
             return Sprite.Create(

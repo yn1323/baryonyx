@@ -91,7 +91,8 @@ namespace Baryonyx.Wireframe.Editor
                 Image(layout.CoreArea, new Color(1, 1, 1, 0), false);
                 var battlefieldAmbient = Rect("BattlefieldAmbient", root);
                 Stretch(battlefieldAmbient);
-                var ambientImage = battlefieldAmbient.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+                var ambientImage =
+                    battlefieldAmbient.gameObject.AddComponent<UnityEngine.UI.RawImage>();
                 ambientImage.texture = forest;
                 ambientImage.color = new Color(1, 1, 1, .18f);
                 ambientImage.raycastTarget = false;
@@ -141,8 +142,10 @@ namespace Baryonyx.Wireframe.Editor
                 nav.sizeDelta = new Vector2(0, 54);
                 nav.anchoredPosition = new Vector2(0, 24);
                 Horizontal(nav);
-                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth = false;
-                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth =
+                    false;
+                nav.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childAlignment =
+                    TextAnchor.MiddleCenter;
                 Button("NavHome", nav, "ホーム", 54, 14, false, 192);
                 Button("NavParty", nav, "仲間", 54, 14, false, 192);
                 Button("NavGoals", nav, "歩み・目標", 54, 14, false, 192);
@@ -343,7 +346,11 @@ namespace Baryonyx.Wireframe.Editor
         {
             var rect = Rect(name, parent);
             Image(rect, Color.white, true);
-            Frame(rect, frameOverride ?? (primary ? frame : panelFrame));
+            var buttonFrame =
+                frameOverride != null ? frameOverride
+                : primary ? frame
+                : panelFrame;
+            Frame(rect, buttonFrame);
             var button = rect.gameObject.AddComponent<UnityEngine.UI.Button>();
             button.targetGraphic = rect.GetComponent<UnityEngine.UI.Image>();
             var colors = button.colors;
@@ -364,11 +371,10 @@ namespace Baryonyx.Wireframe.Editor
             Stretch((RectTransform)label.transform);
             label.margin = new Vector4(6, 3, 6, 3);
             label.alignment = TextAlignmentOptions.Center;
-            label.color = frameOverride == equipmentFrame
-                ? new Color(.96f, .94f, .86f)
-                : primary
-                    ? new Color(.98f, .97f, .91f)
-                    : Ink;
+            label.color =
+                frameOverride == equipmentFrame ? new Color(.96f, .94f, .86f)
+                : primary ? new Color(.98f, .97f, .91f)
+                : Ink;
             if (primary)
                 label.fontStyle = FontStyles.Bold;
             return button;

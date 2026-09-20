@@ -54,13 +54,11 @@ namespace Baryonyx.Health
         {
             var current = RequireSession();
             if (days == null || days.Length != 7)
-                throw new ArgumentException("Exactly seven health days are required.", nameof(days));
-            var revision = await api.BeginSyncAsync(
-                current,
-                sourceId,
-                "health_connect",
-                token
-            );
+                throw new ArgumentException(
+                    "Exactly seven health days are required.",
+                    nameof(days)
+                );
+            var revision = await api.BeginSyncAsync(current, sourceId, "health_connect", token);
             await api.SaveAsync(current, sourceId, revision, days, token);
             return await ClaimAsync(token);
         }
@@ -83,9 +81,10 @@ namespace Baryonyx.Health
             return api.ReadRuneBalanceAsync(current, token);
         }
 
-        private HealthSession RequireSession() => IsSignedIn
-            ? session
-            : throw new InvalidOperationException("Sign in to the reward service first.");
+        private HealthSession RequireSession() =>
+            IsSignedIn
+                ? session
+                : throw new InvalidOperationException("Sign in to the reward service first.");
 
         public void Dispose()
         {

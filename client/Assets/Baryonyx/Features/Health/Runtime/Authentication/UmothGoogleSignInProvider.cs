@@ -8,10 +8,10 @@ using Uralstech.UMoth.GoogleSignIn;
 
 namespace Baryonyx.Health
 {
-    public sealed class UmothGoogleSignInProvider :
-        IGoogleSignInProvider,
-        IGoogleCredentialProvider,
-        IDisposable
+    public sealed class UmothGoogleSignInProvider
+        : IGoogleSignInProvider,
+            IGoogleCredentialProvider,
+            IDisposable
     {
         private readonly string clientId;
 #if UNITY_ANDROID && !UNITY_EDITOR

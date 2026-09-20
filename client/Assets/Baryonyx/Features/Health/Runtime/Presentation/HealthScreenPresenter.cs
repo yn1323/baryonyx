@@ -283,7 +283,8 @@ namespace Baryonyx.Health
                     || string.IsNullOrWhiteSpace(credentials.ServerIdToken)
                 )
                 {
-                    RewardMessage = "Google接続は完了しましたが、サーバー認証情報を取得できません。";
+                    RewardMessage =
+                        "Google接続は完了しましたが、サーバー認証情報を取得できません。";
                 }
                 else
                 {
@@ -298,7 +299,8 @@ namespace Baryonyx.Health
                     }
                     catch (Exception)
                     {
-                        RewardMessage = "運動報酬を取得できませんでした。あとで再試行してください。";
+                        RewardMessage =
+                            "運動報酬を取得できませんでした。あとで再試行してください。";
                     }
                     Notify();
                 }
@@ -439,15 +441,17 @@ namespace Baryonyx.Health
                 RuneBalance = result.balance;
                 RewardDays = result.days ?? Array.Empty<HealthApiClient.RewardDay>();
                 rewardClaimVersion++;
-                RewardMessage = result.grantedRunes > 0
-                    ? $"{result.grantedRunes:N0}ルーンを取得しました。残高 {result.balance:N0}ルーン"
-                    : $"新しく取得できるルーンはありません。残高 {result.balance:N0}ルーン";
+                RewardMessage =
+                    result.grantedRunes > 0
+                        ? $"{result.grantedRunes:N0}ルーンを取得しました。残高 {result.balance:N0}ルーン"
+                        : $"新しく取得できるルーンはありません。残高 {result.balance:N0}ルーン";
             }
             catch (HealthApiException exception)
             {
-                RewardMessage = exception.StatusCode == 401
-                    ? "運動報酬のセッションが切れています。Googleに再接続してください。"
-                    : "運動報酬を取得できませんでした。あとで再試行してください。";
+                RewardMessage =
+                    exception.StatusCode == 401
+                        ? "運動報酬のセッションが切れています。Googleに再接続してください。"
+                        : "運動報酬を取得できませんでした。あとで再試行してください。";
             }
             catch (Exception)
             {

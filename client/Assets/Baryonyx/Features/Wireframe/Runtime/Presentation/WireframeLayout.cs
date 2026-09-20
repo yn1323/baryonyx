@@ -96,7 +96,10 @@ namespace Baryonyx.Wireframe
             Panel.anchorMin = new Vector2(.5f, 0);
             Panel.anchorMax = new Vector2(.5f, 1);
             Panel.pivot = new Vector2(.5f, .5f);
-            Panel.sizeDelta = new Vector2(Mathf.Max(0, width), -Mathf.Max(0, coreHeight - panelHeight));
+            Panel.sizeDelta = new Vector2(
+                Mathf.Max(0, width),
+                -Mathf.Max(0, coreHeight - panelHeight)
+            );
             Panel.anchoredPosition = new Vector2(
                 (safeMinX + safeMaxX - canvas.x) * .5f,
                 (safeMinY + safeMaxY - coreHeight) * .5f
@@ -129,6 +132,5 @@ namespace Baryonyx.Wireframe
             lastNavigation = navigation;
             applied = true;
         }
-
     }
 }
