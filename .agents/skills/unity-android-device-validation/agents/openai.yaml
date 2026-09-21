@@ -1,0 +1,6 @@
+interface:
+  display_name: "Unity Android Device Validation"
+  short_description: "Unity Android実機・AVDの検証と証跡取得"
+  default_prompt: "Use $unity-android-device-validation to validate this Unity Android build on the authorized device or AVD."
+policy:
+  allow_implicit_invocation: true

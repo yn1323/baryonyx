@@ -141,6 +141,7 @@ CI補助スクリプトのテスト13件の成功は、横画面UIの動作確�
 戦闘の時間・ダウン・回復・防護・勝敗はEditModeで検査する。
 実Prefabの入力、通常戦の自動勝利と報酬、歩数・JSONの表示はPlayModeで検査する。
 1920×1080、2340×1080、2400×1080のGameビューを撮影し、16:9のCore Area、左右の拡張領域、Safe Area内の必須UIを確認する。
+Unity EditorのGameビューでは、Androidグループの `Baryonyx Phone Landscape QA (2340×1080)` と `Baryonyx Wide Landscape QA (2400×1080)` を使う。
 実施結果は[UIの検証記録](../art/game-ui.md)へ記す。
 
 Androidの権限ダイアログ、実際の健康記録との一致、戻る操作、タップ領域、システムバーとの重なりは端末確認が必要である。

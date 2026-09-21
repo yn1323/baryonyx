@@ -1,0 +1,88 @@
+.showcase-preview-window {
+    padding: 6px;
+}
+
+.showcase-toolbar {
+    min-height: 28px;
+    margin-bottom: 6px;
+}
+
+.showcase-category-field {
+    min-width: 170px;
+    margin-left: 8px;
+}
+
+.showcase-search-field {
+    flex-grow: 1;
+    min-width: 180px;
+    margin-left: 8px;
+}
+
+.showcase-content {
+    flex-grow: 1;
+    min-height: 260px;
+}
+
+.showcase-entry-list {
+    min-width: 260px;
+    border-right-width: 1px;
+    border-right-color: rgba(255, 255, 255, 0.18);
+}
+
+.showcase-entry-row {
+    padding-left: 8px;
+    padding-right: 6px;
+    justify-content: center;
+}
+
+.showcase-preview-pane {
+    flex-grow: 1;
+    padding-left: 12px;
+    padding-right: 6px;
+}
+
+.showcase-preview-image {
+    height: 250px;
+    min-height: 120px;
+    margin-bottom: 8px;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.showcase-details {
+    padding-top: 4px;
+}
+
+.showcase-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.showcase-detail {
+    margin-bottom: 3px;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.showcase-description {
+    margin-top: 5px;
+    margin-bottom: 8px;
+    white-space: normal;
+}
+
+.showcase-actions {
+    flex-direction: row;
+    margin-top: 4px;
+}
+
+.showcase-actions Button {
+    margin-right: 6px;
+}
+
+.showcase-empty-label {
+    color: rgba(255, 255, 255, 0.62);
+    margin-top: 10px;
+}
+
+.showcase-hidden {
+    display: none;
+}

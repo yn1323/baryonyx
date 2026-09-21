@@ -1,0 +1,7 @@
+interface:
+  display_name: "スマホゲームUIアドバイザー"
+  short_description: "UnityのモバイルRPG UI設計・実装・保守を支援"
+  default_prompt: "Use $ui-advisor to design or review this mobile game UI flow, Unity implementation, and validation plan."
+
+policy:
+  allow_implicit_invocation: true

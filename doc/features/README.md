@@ -38,6 +38,7 @@
 | アカウントとセーブ | [仕様と未決事項](accounts-save.md) |
 | 画面一覧と操作 | [仕様と未決事項](screens.md) |
 | 主要画面を操作するUnityワイヤー | [起動方法・操作・実装範囲](game-wireframe.md) |
+| クライアントアセットの一覧とプレビュー | [クライアントアセット展示室](showcase.md) |
 | 初回体験とチュートリアル | [仕様と未決事項](onboarding.md) |
 | ユーザー設定とアクセシビリティ | [仕様と未決事項](player-settings.md) |
 | ガチャと課金の検討項目 | [仕様と未決事項](monetization.md) |
@@ -57,6 +58,7 @@
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
 | 画面の操作ワイヤー | [操作と制約](game-wireframe.md) | [起動シーン](../../client/Assets/Baryonyx/App/Scenes/Wireframe.unity) |
 | 戦闘MVP | [試作値と実装範囲](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
+| クライアントアセット展示室 | [展示室仕様](showcase.md) | [展示室シーン](../../client/Assets/Baryonyx/App/Scenes/Showcase.unity)・[カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs) |
 
 現在の起動画面はHealth Connectと任意のGoogle接続を独立して扱い、サーバー同期は呼ばない。
 詳細な制約・検証済み範囲・実環境で残る確認は各機能詳細を参照する。

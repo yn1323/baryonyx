@@ -1,0 +1,6 @@
+interface:
+  display_name: "Unity Android CI Distribution"
+  short_description: "Unity Androidビルド・artifact・Drive配布を検証"
+  default_prompt: "Use $unity-android-ci-distribution to build, verify, and distribute the Unity Android artifact safely."
+policy:
+  allow_implicit_invocation: true

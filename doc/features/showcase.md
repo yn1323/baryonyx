@@ -1,0 +1,85 @@
+---
+id: client-showcase
+type: specification
+status: 一部確定
+updated: 2026-09-21
+---
+
+# クライアントアセット展示室
+
+## 目的
+
+クライアント側で作成したアセットを、ゲームを進行させずに一覧から確認する。
+
+展示室はゲームシーンとして実装し、Unity Editorでシーンを開いてPlay Modeで確認できる。現在はBuild Settingsへ常時追加するため、通常のビルドにも含まれる。
+
+Play Modeを使わずに一覧と基本プレビューを確認するため、Unity Editorの `Baryonyx > Showcase > Open Preview Window` も提供する。このウィンドウはカタログを左側の一覧に表示し、画像、Prefab、マテリアルなどのEditorプレビューと、元アセットの場所を確認できる。音声の再生やシーンの実行時表示など、ゲーム内の挙動が必要な確認は展示室シーンで行う。
+
+UnityのGameタブは、シーンに保存されたカメラやUIであれば停止中にも確認できる。ただし展示室の一覧UIは `Start` でカタログから動的生成するため、現在のGameタブにはPlay Mode前の一覧は表示されない。停止中の一覧確認はPreview Window、ゲーム内とビルドの確認は展示室シーンという役割分担にする。
+
+## 一覧の分類
+
+カタログは次の分類を持つ。
+
+- 画像：背景、キャラクター、武器、アイテム、アイコン、タイル、ポートレート
+- キャラクター
+- 背景・環境
+- 武器
+- アイテム
+- VFX・エフェクト
+- アニメーション
+- 音声・音楽
+- UI
+- シーン
+- マテリアル・シェーダー
+- データ
+- その他
+
+分類はアセットのパスと種類から自動推定する。
+
+## 表示と操作
+
+展示室にはカテゴリ一覧、アセット一覧、プレビュー領域を置く。
+
+画像・Spriteは画像プレビュー、Prefabはプレビュー用カメラ、Canvasを持つUI Prefabはカメラへ接続したCanvas、Materialはサンプル形状への適用結果、音声は再生ボタン、シーンはシーン読み込みボタンを表示する。
+
+キャラクターなどのPrefabにAnimatorがある場合は、カタログ生成時に最初のAnimationClipとステートを候補として登録し、選択時に再生する。手動登録するShowcaseEntryでは、プレビュー用Prefab、PreviewAnimation、AnimationStateNameを指定できる。
+
+## カタログ更新
+
+Assets/Baryonyx/Features/Showcase/Data/ShowcaseCatalog.asset が一覧の実行時データである。
+
+Unity Editor起動時に `Assets/Baryonyx` 以下のアセットを検索し、カタログを更新する。今後のクライアントアセットはこの配下へ配置すると展示室の対象になる。
+
+対象アセットの追加・移動・削除後も、AssetDatabaseの更新に合わせて自動更新する。
+
+手動で更新する場合は、Unity Editorの Baryonyx > Showcase > Refresh Catalog を実行する。
+
+自動推定だけでは表示方法を定義できないアセットは、ShowcaseEntry を手動作成して Entries 配下へ置き、PreviewPrefab、PreviewAnimation、AnimationStateName を設定する。
+
+## 実装入口
+
+- [展示室シーン](../../client/Assets/Baryonyx/App/Scenes/Showcase.unity)
+- [実行時ビュー](../../client/Assets/Baryonyx/Features/Showcase/Runtime/ShowcaseRuntimeView.cs)
+- [カタログ](../../client/Assets/Baryonyx/Features/Showcase/Runtime/ShowcaseCatalog.cs)
+- [エントリ](../../client/Assets/Baryonyx/Features/Showcase/Runtime/ShowcaseEntry.cs)
+- [カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs)
+- [Editorプレビュー](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcasePreviewWindow.cs)
+
+## Unityでの確認手順
+
+1. `Assets/Baryonyx/App/Scenes/Showcase.unity` を開く。
+2. Unity EditorのPlayボタンを押す。
+3. 左のカテゴリとアセットを選び、右側のプレビューを確認する。
+
+Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open Preview Window` を実行する。カテゴリ選択、検索、アセットプレビュー、元アセットの選択、シーンのオープンをこのウィンドウから行える。
+
+新しく追加したアセットが表示されない場合は、Play Modeを停止して `Baryonyx > Showcase > Refresh Catalog` を実行してから、もう一度シーンを再生する。
+
+## 実装状況
+
+展示室シーン、カテゴリ一覧、アセット自動検出、画像・Prefab・音声・シーンの表示、Play不要のEditorプレビューを実装済み。
+
+本番向けビルドから除外する運用は未実装であり、現在はBuild Settingsへ常時追加する。
+
+プレビュー用Prefabの自動生成、UI状態のStory定義、VFXの再生条件、複数AnimationClipの切り替えは今後拡張する。
