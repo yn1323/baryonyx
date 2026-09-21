@@ -1,8 +1,0 @@
-{
-  "name": "Baryonyx.EditModeTests",
-  "rootNamespace": "Baryonyx.Tests.EditMode",
-  "references": ["Baryonyx.Runtime", "Baryonyx.Editor"],
-  "includePlatforms": ["Editor"],
-  "optionalUnityReferences": ["TestAssemblies"],
-  "autoReferenced": false
-}

@@ -1,3 +1,10 @@
+---
+id: rule-backend-design
+type: reference
+status: 運用中
+updated: 2026-09-14
+---
+
 # バックエンドの開発環境
 
 `server/` のHonoアプリをCloudflare Workersで実行し、Drizzle ORM経由でD1へ接続する。
@@ -61,6 +68,31 @@ WorkersのバージョンPreview URLを共有する方式ではなく、各PR用
 通常のPreview更新でDBをリフレッシュする処理はない。
 既存DBを再利用し、未適用のマイグレーションだけを追加する。
 PRを閉じてから再び開いた場合は、新しいDBで開始する。
+
+## Zodによる入力検証
+
+バリデーションライブラリには **Zod** を使用する。
+HTTP要求のスキーマは所有する機能の `schema.ts` に置き、Honoのhandlerで `safeParse()` を使って検証する。
+業務処理とDB操作には検証済みの `data` を渡し、TypeScriptの型は `z.infer` でスキーマから導出する。
+依存バージョンは [package.json](../../server/package.json) に固定する。
+
+健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は、ログイン、同期開始、取得元ID、歩数保存の要求を検証する。
+日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
+単日では欠損と歩数、取得時刻の範囲、指定タイムゾーンの日付境界を検証し、週全体では同一タイムゾーン、区間の連続性、日付の重複を検証する。
+区間の連続性はUTC日時を数値へ変換して比較し、日時文字列の小数秒の表記差や夏時間による1日の長さの変化を受け入れる。
+現在時刻に依存するスキーマはリクエストごとに生成する。
+不正なJSONとスキーマ違反には、既存の `400 {"error":"invalid_request"}` を返す。
+Zodのエラー詳細や入力値はHTTP応答へ含めない。
+
+参考：[Zodの基本的な使い方](https://zod.dev/basics)、[Honoの入力検証](https://hono.dev/docs/guides/validation)。
+
+## 健康データの認証
+
+[routes.ts](../../server/src/features/health/routes.ts) はHTTPのパス、入力検証、認証middlewareの適用順と応答を管理する。
+[auth.ts](../../server/src/features/health/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
+DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ委譲する。
+署名検証テストはルート定義を読み込まずに認証処理を検証し、HTTPの認証失敗・期限切れ・ログアウトはAPIシナリオで確認する。
+認証はHealth機能内に置き、ほかの機能で実際に必要になるまで共通化しない。
 
 ## DrizzleによるDB操作
 
@@ -160,9 +192,11 @@ PRが既に閉じられていれば再公開をスキップし、PR終了イベ�
 APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得できる。
 クライアントのPreviewへこのAPI URLを渡す処理は、クライアントの通信機能を実装するときに追加する。
 
-[Server deploy](../../.github/workflows/server-deploy.yml) は手動実行で `dev` または `prod` を選ぶ。
-指定したGit参照を検査してから公開し、DBがなければ作成し、あれば再利用する。
-`main` へのpushだけではDev・Prodへ公開しない。
+[Server deploy](../../.github/workflows/server-deploy.yml) は、`develop` へマージされたPRをDevへ、`main` へマージされたPRをProdへ自動公開する。
+マージコミットを検査してから公開し、DBがなければ作成し、あれば再利用する。
+PRをマージせずに閉じた場合は公開しない。
+手動実行では `dev` または `prod` を選んで任意のGit参照を公開できる。
+ブランチへの直接pushは自動公開の契機にしない。
 
 ### 初回の公開準備
 
@@ -170,7 +204,7 @@ APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得�
 2. GitHub Repository secretsへ `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を登録する。トークンには対象アカウントのWorkers ScriptsとD1の編集権限を付ける。
 3. `server-preview`・`server-dev`・`server-prod` の各GitHub environmentに、Unityと同じGoogle OAuthのWebクライアントIDを変数 `GOOGLE_CLIENT_ID` として登録する。全環境で共通ならRepository variablesへ登録してもよい。公開処理はこの値をWorkerのbindingへ渡し、未設定ならDB更新・Worker公開前に停止する。
 4. このサーバー基盤をPRのbaseブランチへ先に反映する。ヘルパーがないbaseを使うPreview jobは理由を表示して失敗する。
-5. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。Dev・ProdはGitHub Actionsの `Server deploy` から環境を選択する。
+5. 反映後のbaseを使うPRで、Preview公開とD1疎通を確認する。`develop`・`main` へのマージで、それぞれDev・Prodへ自動公開される。任意のGit参照を公開する場合はGitHub Actionsの `Server deploy` から環境を選択する。
 
 Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ごとに固定し、取得したDB IDを使う設定を `.wrangler/deploy/` へ生成する。
 実行時に環境を指定するため、リポジトリへ実アカウントのDB IDを記入する必要はない。

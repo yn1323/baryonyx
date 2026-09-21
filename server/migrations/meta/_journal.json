@@ -8,6 +8,13 @@
       "when": 1789055159617,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789918735534,
+      "tag": "0001_exercise_rewards",
+      "breakpoints": true
     }
   ]
 }

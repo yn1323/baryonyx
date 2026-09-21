@@ -1,7 +1,0 @@
-{
-  "name": "Baryonyx.Editor",
-  "rootNamespace": "Baryonyx.Editor",
-  "references": ["Baryonyx.Runtime"],
-  "includePlatforms": ["Editor"],
-  "autoReferenced": true
-}

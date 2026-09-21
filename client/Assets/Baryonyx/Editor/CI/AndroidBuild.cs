@@ -9,7 +9,7 @@ namespace Baryonyx.Editor.CI
 {
     public static class AndroidBuild
     {
-        public const string ApplicationId = "dev.baryonyx.ci";
+        public const string ApplicationId = "com.croissantlab.baryonyx";
         public const int MinimumSdk = 26;
         public const int TargetSdk = 36;
         public const string OutputPath = "Builds/Android/baryonyx.apk";

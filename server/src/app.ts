@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
 import { createDatabase } from "./shared/db.js";
 
@@ -28,5 +29,6 @@ app.get("/ready", async (c) => {
 });
 
 app.route("/v1", createHealthApi());
+app.route("/v1", createExerciseRewardsApi());
 
 export default app;

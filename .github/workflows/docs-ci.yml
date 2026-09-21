@@ -1,0 +1,29 @@
+name: Documentation CI
+
+on:
+  push:
+    branches: [main, dev, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Documentation checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test documentation checker
+        run: python3 -B -m unittest discover -s doc/tools -p 'test_check_docs.py'
+      - name: Check documentation and generated indexes
+        run: python3 -B doc/tools/check_docs.py
