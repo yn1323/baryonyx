@@ -11,14 +11,14 @@ APKが作成できたことと、Android端末で機能が動くことを分け�
 ## 絶対条件
 
 - Android Emulatorはユーザーが手動で起動する。AIは起動、再起動、スナップショット復元を行わない。
-- 対象AVDは`Pixel_8a_API_36`（Android 16、Google APIs、x86_64）とする。別のAVDへ黙って切り替えない。
+- 対象端末、AVD、ABI、インストール用ショートカットは[WindowsでのUnityとAndroidエミュレーター](../../../doc/rules/client-android-emulator.md)とルートの`AGENTS.md`に従う。別の端末へ黙って切り替えない。
 - 起動中の端末が0台、対象AVDが0台、対象AVDが複数台、または`sys.boot_completed`が未完了なら、インストールや検証を進めず理由を報告する。
 - `adb install -r`を使い、ユーザーのアプリデータを消去しない。データ消去やアプリ設定の初期化が必要な場合は、実行前に目的と影響を明示する。
 - 健康データ、OAuthトークン、個人情報をログやスクリーンショットへ残さない。必要な場合はマスクする。
 
 ## 発動したら最初に確認すること
 
-1. ルートと`client/`の`AGENTS.md`、APKのパス、`ProjectVersion.txt`、アプリケーションID、対象ビルドのコミットまたは作成時刻を確認する。
+1. ルートと`client/`の`AGENTS.md`、[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)、[エミュレーター手順](../../../doc/rules/client-android-emulator.md)、APKのパス、`ProjectVersion.txt`、アプリケーションID、対象ビルドのコミットまたは作成時刻を確認する。
 2. `ANDROID_HOME`、`ANDROID_SDK_ROOT`、`%LOCALAPPDATA%\Android\Sdk`の順で`platform-tools\adb.exe`を探す。
 3. `adb devices`で接続一覧を取得し、`device`状態のエミュレーターだけを候補にする。
 4. 各候補に次を実行してAVD名を確認する。

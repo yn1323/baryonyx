@@ -443,6 +443,7 @@ namespace Baryonyx.Showcase
             var object_ = new GameObject(name, typeof(RectTransform));
             object_.transform.SetParent(parent, false);
             var text = object_.AddComponent<TextMeshProUGUI>();
+            text.font = TMP_Settings.defaultFontAsset;
             text.text = value;
             text.fontSize = size;
             text.color = color;

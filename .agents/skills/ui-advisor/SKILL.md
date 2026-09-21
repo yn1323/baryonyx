@@ -17,7 +17,11 @@ description: スマホ向けUnityゲームのUI、画面構成、UX、デザイ�
 4. 画面の目的、主要なプレイヤー行動、成功・失敗・キャンセル、通信や保存の失敗、再入場時の状態を短く書き出す。
 5. 実装前に、画面フロー、状態、データの所有者、入力経路、表示可能な報酬、計測イベント、検証端末を明記する。
 
-このリポジトリでは、Unity `6000.6.0f1`、uGUI、TextMeshPro、Input System、横画面、1920×1080基準のCanvas Scaler、Safe Area対応を既定とする。新規画面もuGUIで作り、UI Toolkitへの移行や混在は、必要機能と保守上の理由を確認して明示的に決める。
+プロジェクト固有のUI構成、画面方向、基準解像度、Safe Area、UIシステムの採用方針は、[UI設計ルール](../../../doc/rules/ui-design.md)を正本とする。
+
+ゲーム内のTextMeshProテキストはDotGothic16を使う。
+画面、ボタン、数値、JSONなど表示箇所を同じフォントで統一し、フォント本体とライセンスは[ゲーム画面のフォント](../../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)を参照する。
+新しい画面や実行時生成のTextMeshProにも同じアセットを設定し、画面ごとのフォント差し替えを行わない。
 
 バージョン固有のAPIや推奨は記憶で断定せず、Unity公式マニュアルの対象バージョンを確認する。調査の入口は [references/research-sources.md](references/research-sources.md) にある。
 
@@ -37,20 +41,15 @@ description: スマホ向けUnityゲームのUI、画面構成、UX、デザイ�
 
 ### 2. UIシステムを用途で選ぶ
 
-Unity 6ではUI Toolkitも利用できるが、このリポジトリではuGUIを標準にする。既存資産、設計文書、Canvas・Prefab・Presenter・EventSystem・PlayModeテストがuGUI前提であるため、一般的な「新規ならUI Toolkit」という推奨だけで変更しない。
-
-- **uGUI（既定）**：画面空間のメニュー、HUD、設定、一覧、ワールド空間UI、カスタムシェーダー、Animator・Timeline連携、既存のMonoBehaviour参照、現在の全画面に使う。
-- **UI Toolkit（例外）**：独立した新規画面、大量リスト、UXML/USSによるテーマ管理やランタイムデータバインディングが必要で、uGUIとの境界・入力・テストを設計できる場合だけ採用する。
-- **混在**：同じ画面で使う場合は、採用理由、入力イベント、描画順、フォーカス、ライフサイクル、テスト対象を明示する。EventSystemとInput System UI Input Moduleの重複登録を避ける。
-- **IMGUI**：ゲーム中のUIには使わず、必要ならエディター専用の診断・制作ツールに限定する。
-
-選定理由を画面ごとに残す。既定のuGUIではPrefab、Canvas、Animator、Layout、Presenterの責務を分け、巨大なCanvasに全機能を詰め込まない。例外としてUI Toolkitを選んだ場合だけ、UXMLを構造、USSを共有スタイル、C#を状態・イベント・データ接続に分ける。詳細な判断表は [references/unity-ui.md](references/unity-ui.md) を読む。
+採用方針と既存構成は[UI設計ルール](../../../doc/rules/ui-design.md#現行のui構成)に従う。
+新しい例外を設けるときは、画面ごとに採用理由、入力イベント、描画順、フォーカス、ライフサイクル、テスト対象を設計メモへ残す。
+実装上の責務分担とAPIの判断表は [references/unity-ui.md](references/unity-ui.md) を読む。
 
 ### 3. 状態とデータをUIから分離する
 
 UIは表示と入力の変換を担当し、報酬計算、戦闘解決、運動記録、在庫更新、保存、通信を直接所有しない。
 
-- 画面ごとに `View`（既定はuGUIのPrefab。UI Toolkitを採用した画面だけUXML）、`Presenter`またはViewModel（表示用の状態と入力変換）、`Service`またはドメイン（ルール・副作用）を分ける。
+- 画面ごとに `View`（採用したUIシステムの表示部品）、`Presenter`またはViewModel（表示用の状態と入力変換）、`Service`またはドメイン（ルール・副作用）を分ける。
 - 状態は一方向に流し、イベントを受けて表示を更新する。毎フレーム全ラベルを書き換えず、変更された値だけを更新する。
 - 画面を閉じても残るデータと一時的な表示状態を分離する。報酬の「付与済み」と「表示済み」「受取ボタンを押した」は同じフラグにしない。
 - 画面を再表示しても二重購読、二重付与、二重アニメーションが起きないよう、購読解除・キャンセル・再入場を設計する。

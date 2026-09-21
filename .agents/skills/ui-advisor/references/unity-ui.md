@@ -1,10 +1,13 @@
 # Unity UIの実装判断
 
-この資料は、`ui-advisor` がUnityのバージョンや既存コードを確認したあとに使う実装用メモである。API名やパッケージ版はプロジェクトの `ProjectVersion.txt` と `Packages/manifest.json` を優先する。
+この資料は、`ui-advisor` がUnityのバージョンや既存コードを確認したあとに使う実装用メモである。
+プロジェクト固有のUIシステム、画面方向、基準解像度、安全領域は[UI設計ルール](../../../../doc/rules/ui-design.md)を正本とし、API名やパッケージ版はプロジェクトの `ProjectVersion.txt` と `Packages/manifest.json` を優先する。
 
 ## UI ToolkitとuGUIの選び方
 
-Unity 6の公式比較表は、ランタイムの推奨をUnity UI（uGUI）、代替をUI Toolkitとし、エディターの推奨をUI Toolkitとしている。このリポジトリは既存の画面・Prefab・Presenter・EventSystem・テストがuGUI前提なので、**ゲーム内ランタイムはuGUIを既定**とする。UI Toolkitは、独立した新規画面で明確な利点とuGUIとの境界を設計できる場合だけ候補にする。画面空間のメニュー・HUD・一覧でも、一般的なUnityの推奨だけを理由に既存UIを移行しない。
+Unity 6の公式比較表は、ランタイムの推奨をUnity UI（uGUI）、代替をUI Toolkitとし、エディターの推奨をUI Toolkitとしている。
+このプロジェクトでの採用方針は[UI設計ルール](../../../../doc/rules/ui-design.md#現行のui構成)に従う。
+画面空間のメニュー・HUD・一覧を既存UIから移行する場合は、一般的な推奨だけでなく、移行範囲と入力・テストの境界を記録する。
 
 UI Toolkitを採用する場合は、次の責務を固定する。
 

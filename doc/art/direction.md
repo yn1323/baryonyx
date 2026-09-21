@@ -2,7 +2,7 @@
 id: art-direction
 type: specification
 status: 一部確定
-updated: 2026-09-19
+updated: 2026-09-22
 ---
 
 # アート方針
@@ -43,6 +43,8 @@ updated: 2026-09-19
 | ドット絵とイラストで共通に保つ識別要素 | 各対象で記入。個別内容は未決 |
 
 既存の歩数確認画面の[UIルール](../rules/ui-design.md)は実装上の現行ルールであり、完成版RPGのアート仕様を確定する資料ではない。
+[rpg-character-profile](../../.agents/skills/rpg-character-profile/SKILL.md)、[pixellab-character-prompt](../../.agents/skills/pixellab-character-prompt/SKILL.md)、[pixellab-animation-prompt](../../.agents/skills/pixellab-animation-prompt/SKILL.md)に記載された32×48、4頭身、10種類・50フレームなどの値は、現時点ではスキルの出力上の既定値であり、採用済みの共通アート規格ではない。
+これらをゲーム全体の制作規格へ採用するときは、この文書の未決事項と対象ごとの定義を同時に更新する。
 
 ## 個別対象の制作と比較
 

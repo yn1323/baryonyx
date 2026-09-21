@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 797d9fabf36c5564d836119de2f07895
+  m_Name: 1c28bb9db34f54475893a36522cdcbf0
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 797d9fabf36c5564d836119de2f07895
-  DisplayName: Health Japanese
-  Description: Assets/Baryonyx/Features/Health/UI/Fonts/Health Japanese.asset
+  Id: 1c28bb9db34f54475893a36522cdcbf0
+  DisplayName: DotGothic16-Regular
+  Description: Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16-Regular.ttf
   Category: 9
-  Asset: {fileID: 11400000, guid: 797d9fabf36c5564d836119de2f07895, type: 2}
+  Asset: {fileID: 12800000, guid: 1c28bb9db34f54475893a36522cdcbf0, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

@@ -30,6 +30,12 @@ namespace Baryonyx.Showcase.Editor
                 SceneManager.MoveGameObjectToScene(root, scene);
                 var app = root.AddComponent<ShowcaseBootstrap>();
                 app.Catalog = catalog;
+                var cameraObject = new GameObject("ShowcaseCamera");
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.035f, 0.047f, 0.075f, 1f);
+                camera.tag = "MainCamera";
+                SceneManager.MoveGameObjectToScene(cameraObject, scene);
                 var events = new GameObject("EventSystem", typeof(EventSystem));
                 events.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
                 SceneManager.MoveGameObjectToScene(events, scene);

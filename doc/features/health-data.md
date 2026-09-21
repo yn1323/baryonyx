@@ -253,8 +253,8 @@ PlayModeは実Prefabと仮想入力を使い、外部Providerだけをテスト�
 [プレビューのデータ検査](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Preview/HealthScreenPreviewProviderTests.cs) は日付境界、欠測と0の区別、JSON、更新・再開を確認する。
 [Editor起動の検査](../../client/Assets/Baryonyx/App/Tests/PlayMode/HealthScreenPreviewStartupTests.cs) はOAuth設定なしでPlayするとサンプル一覧が表示されることを確認する。
 
-日本語にはNoto Sans CJK JP、JSONにはNoto Sans Monoを同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/) に置く。
-いずれもSIL Open Font Licenseで再配布できる。[Notoの利用条件](https://notofonts.github.io/noto-docs/website/use/)
+画面とJSONにはDotGothic16を同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/) に置く。
+SIL Open Font Licenseで再配布できる。[DotGothic16の配布元](https://github.com/fontworks-fonts/DotGothic16)
 JSONにはUPMの `com.unity.nuget.newtonsoft-json@3.2.2` を直接依存として使う。
 
 ### 2026-09-13の歩数の元レコード表示の検証

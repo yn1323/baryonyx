@@ -1,19 +1,16 @@
-# Health画面のフォント
+# ゲーム画面のフォント
 
-日本語表示にはNoto Sans CJK JP 2.004、JSONにはNoto Sans Monoを使う。
-フォント本体は変更せずに同梱し、Unity APIでTMPの動的フォントアセットを作成する。
+ゲーム内のTextMeshPro表示にはDotGothic16を使う。画面、ボタン、戦闘中の数値、JSON表示を同じ書体で統一し、Unity APIでTMPの動的フォントアセットを作成する。
 
 | ファイル | 配布元 | ライセンス |
 |---|---|---|
-| `NotoSansCJKjp-Regular.otf` | [Noto CJK Sans 2.004](https://github.com/notofonts/noto-cjk/blob/Sans2.004/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf) | [LICENSE.txt](LICENSE.txt) |
-| `NotoSansMono-Regular.ttf` | [Noto Sans Mono](https://github.com/notofonts/noto-fonts/blob/main/hinted/ttf/NotoSansMono/NotoSansMono-Regular.ttf) | [LICENSE-Mono.txt](LICENSE-Mono.txt) |
+| `DotGothic16-Regular.ttf` | [DotGothic16](https://github.com/fontworks-fonts/DotGothic16) | [DotGothic16-OFL.txt](DotGothic16-OFL.txt) |
 
-取り込み日：2026-09-13。
+取り込み日：2026-09-22。
 取得したファイルのSHA-256は以下のとおり。
 
 ```text
-NotoSansCJKjp-Regular.otf  68a3fc98800b2a27b371f2fb79991daf3633bd89309d4ffaa6946fd587f375b5
-NotoSansMono-Regular.ttf  d9e2b23d19f8230be7146f409a52b1d23117e635e28f2e2892cf91b7382f325b
+DotGothic16-Regular.ttf  155da8f318553c11d9dffc2affbc7c2114c6a46f9740bcf639ed5568af92be71
 ```
 
 再生成には `Baryonyx > Health > Create Screen Assets` を使う。

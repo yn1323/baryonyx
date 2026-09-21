@@ -27,9 +27,13 @@ namespace Baryonyx.Showcase.Editor
         private Label descriptionLabel;
         private Label emptyLabel;
         private VisualElement detailsContainer;
+        private VisualElement previewPane;
         private ShowcaseEntry selectedEntry;
         private Texture2D pendingPreview;
+        private Texture2D displayedPreview;
         private bool previewPolling;
+
+        private const float PreviewMaxHeight = 250f;
 
         private static readonly string[] CategoryNames =
             Enum.GetNames(typeof(ShowcaseCategory));
@@ -109,8 +113,9 @@ namespace Baryonyx.Showcase.Editor
             entryList.selectionChanged += OnSelectionChanged;
             splitView.Add(entryList);
 
-            var previewPane = new VisualElement();
+            previewPane = new VisualElement();
             previewPane.AddToClassList("showcase-preview-pane");
+            previewPane.RegisterCallback<GeometryChangedEvent>(_ => FitPreviewImage());
 
             previewImage = new Image
             {
@@ -240,6 +245,9 @@ namespace Baryonyx.Showcase.Editor
         {
             StopPreviewPolling();
             previewImage.image = null;
+            displayedPreview = null;
+            previewImage.style.width = StyleKeyword.Auto;
+            previewImage.style.height = StyleKeyword.Auto;
             pendingPreview = null;
 
             var hasSelection = selectedEntry != null;
@@ -274,10 +282,10 @@ namespace Baryonyx.Showcase.Editor
             if (asset == null)
                 return;
 
-            pendingPreview = AssetPreview.GetAssetPreview(asset);
+            pendingPreview = RequestPreview(asset);
             if (pendingPreview != null)
             {
-                previewImage.image = pendingPreview;
+                SetPreviewImage(pendingPreview);
                 return;
             }
 
@@ -311,14 +319,64 @@ namespace Baryonyx.Showcase.Editor
             }
 
             var asset = selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
-            pendingPreview = asset == null ? null : AssetPreview.GetAssetPreview(asset);
+            pendingPreview = asset == null ? null : RequestPreview(asset);
             if (pendingPreview != null)
             {
-                previewImage.image = pendingPreview;
+                SetPreviewImage(pendingPreview);
                 StopPreviewPolling();
             }
 
             Repaint();
+        }
+
+        private void SetPreviewImage(Texture2D texture)
+        {
+            displayedPreview = texture;
+            previewImage.image = texture;
+            previewImage.scaleMode = ScaleMode.ScaleToFit;
+            previewImage.style.alignSelf = Align.Center;
+            FitPreviewImage();
+        }
+
+        private void FitPreviewImage()
+        {
+            if (displayedPreview == null || previewPane == null)
+                return;
+
+            var availableWidth = previewPane.contentRect.width;
+            if (availableWidth <= 0 || displayedPreview.height <= 0)
+                return;
+
+            var aspect = displayedPreview.width / (float)displayedPreview.height;
+            var height = Mathf.Min(PreviewMaxHeight, availableWidth / aspect);
+            previewImage.style.width = height * aspect;
+            previewImage.style.height = height;
+        }
+
+        private static Texture2D RequestPreview(UnityEngine.Object asset)
+        {
+            var pointFiltered = false;
+            if (asset is Texture2D texture)
+            {
+                pointFiltered = texture.filterMode == FilterMode.Point;
+                if (pointFiltered)
+                    return texture;
+            }
+
+            if (asset is Sprite sprite
+                && sprite.texture != null
+                && sprite.texture.filterMode == FilterMode.Point)
+            {
+                pointFiltered = true;
+                if (sprite.textureRect.width >= sprite.texture.width
+                    && sprite.textureRect.height >= sprite.texture.height)
+                    return sprite.texture;
+            }
+
+            var preview = AssetPreview.GetAssetPreview(asset);
+            if (preview != null && pointFiltered)
+                preview.filterMode = FilterMode.Point;
+            return preview;
         }
 
         private void SelectCurrentAsset()

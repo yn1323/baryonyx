@@ -10,7 +10,7 @@ Health Connectの仕様、Google認証、OS権限、Unity画面の状態を別�
 
 ## 発動したら最初に確認すること
 
-1. ルートと`client/`の`AGENTS.md`、`client/ProjectSettings/ProjectVersion.txt`、`client/Packages/manifest.json`、`client/Packages/packages-lock.json`を読む。
+1. ルートと`client/`の`AGENTS.md`、[健康データの機能文書](../../../doc/features/health-data.md)、`client/ProjectSettings/ProjectVersion.txt`、`client/Packages/manifest.json`、`client/Packages/packages-lock.json`を読む。
 2. `client/Assets/Plugins/Android`、対象Feature、既存のProvider、Manifest、Gradleテンプレート、関連テストを調べる。
 3. Unityの実バージョン、対象Android API、minSdk・targetSdk、IL2CPP/ARM64、アプリケーションID、現在の権限宣言を実ファイルから確認する。記憶や古いサンプルから版数を推測しない。
 4. 既存の無料Unityパッケージで要件を満たせるか確認する。自作のJava/Kotlinを追加する場合は、既存プラグインで満たせない要件と、その理由を変更説明に残す。
@@ -39,7 +39,7 @@ Health Connectの仕様、Google認証、OS権限、Unity画面の状態を別�
 
 - 読み取り・書き込み権限を最小限にし、許可要求の前に現在の権限を確認する。
 - 歩数集計では、対象期間、タイムゾーン、集計方法、値が存在しない場合の意味を明記する。
-- 既存のbaryonyx実装では、七日分の同一タイムゾーンの日付、`hasValue`、整数値、`StepsRecord.COUNT_TOTAL`の扱いを壊さない。
+- 対象期間、タイムゾーン、集計方法、値が存在しない場合の意味は、[健康データの機能文書](../../../doc/features/health-data.md)の現行仕様に合わせる。
 - OAuthの成功、Health Connect権限の成功、実データ取得の成功を別々に記録する。
 - Android端末で未確認の値を、EditModeテストやAPK生成だけで実証済みと報告しない。
 
