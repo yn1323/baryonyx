@@ -58,6 +58,8 @@ client/
 │   │   │   ├── Data/                    仮のキャラ・武器
 │   │   │   ├── Editor/                  専用アセットの生成
 │   │   │   └── Tests/                   EditModeとPlayMode
+│   │   ├── Shared/
+│   │   │   └── UI/                      複数画面で使う共通UIプレハブ
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
@@ -152,7 +154,7 @@ CIのテスト対象は従来どおり `Baryonyx.EditModeTests` と `Baryonyx.Pl
 ## 配置を増やすときの基準
 
 必要になったフォルダーだけを作る。
-複数機能で共有するコードやUIができた時点で `Baryonyx/Shared/`、アプリ全体の自作設定ができた時点で `Baryonyx/Settings/` を設ける。
+複数機能で共有するコードやUIは `Baryonyx/Shared/`、アプリ全体の自作設定は `Baryonyx/Settings/` に置く。
 機能専用の小さな端末接続処理は機能内に置き、複数機能で共有する場合や対応OSが増える場合に `Baryonyx/Platform/` への分離を判断する。
 Unityが使わない制作元が必要になった場合だけ `client/ArtSource/` を設ける。
 
