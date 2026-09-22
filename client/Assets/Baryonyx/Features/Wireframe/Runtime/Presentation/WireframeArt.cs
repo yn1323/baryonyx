@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 
@@ -115,6 +116,11 @@ namespace Baryonyx.Wireframe
             var environment = s.Area == 1 ? Mine : Forest;
             images["ExploreMapArt"].texture = environment;
             images["BattleBackdrop"].texture = environment;
+            var ambient = images["BattlefieldAmbient"];
+            ambient.texture = environment;
+            var responsiveBackground = ambient.GetComponent<ResponsiveBackground>();
+            if (responsiveBackground != null && environment != null && environment.height > 0)
+                responsiveBackground.AspectRatio = environment.width / (float)environment.height;
             images["RestLandscapeArt"].texture = environment;
             images["ResultLandscapeArt"].texture = environment;
             images["PopupIllustrationArt"].texture =

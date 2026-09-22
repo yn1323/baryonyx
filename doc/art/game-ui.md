@@ -27,7 +27,8 @@ updated: 2026-09-22
 探索・戦闘では背景を主役にし、黒の透過レイヤー、局所的な暗幕、薄い灰色の面、余白と文字の大きさで情報のまとまりを示す。
 編成・装備・報酬・設定は同じ透過基調の全画面スクリーンとし、確認・獲得など一つの作業だけを求める画面は全画面モーダルとして扱う。
 本文は既存の日本語フォントを使い、自動縮小で押し込まない。
-360×640の設計座標、SafeArea、最大幅と縦スクロールは[UI設計ルール](../rules/ui-design.md)に従う。
+1920×1080の横向き設計座標、16:9 Core Area、Safe Area、最大幅と縦スクロールは[UI設計ルール](../rules/ui-design.md)に従う。
+背景は [`ResponsiveBackground`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/ResponsiveBackground.cs) で比率を保って画面全体を覆い、操作UIはSafe Area内のアンカーに配置する。
 スクロール範囲はRectMask2Dで切り抜き、ダイアログの「閉じる」は範囲外の上部に固定する。
 画面全体がOverlay Canvasであるため、Pixel Perfect Cameraは追加しない。
 

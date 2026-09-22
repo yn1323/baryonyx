@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-09-21
+updated: 2026-09-22
 ---
 
 # クライアントアセット展示室
@@ -45,6 +45,8 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 
 キャラクターなどのPrefabにAnimatorがある場合は、カタログ生成時に最初のAnimationClipとステートを候補として登録し、選択時に再生する。手動登録するShowcaseEntryでは、プレビュー用Prefab、PreviewAnimation、AnimationStateNameを指定できる。
 
+共通の `SceneTransition` Prefabを選ぶと、プレビュー下部の再生ボタンで Fade、横ワイプ、上下シャッター、左右シャッターを順に再生できる。各演出は閉じる・開くを続けて再生し、展示室からシーンを進行させずに見た目を確認する。
+
 ## カタログ更新
 
 Assets/Baryonyx/Features/Showcase/Data/ShowcaseCatalog.asset が一覧の実行時データである。
@@ -75,6 +77,13 @@ Unity Editor起動時に `Assets/Baryonyx` 以下のアセットを検索し、�
 Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open Preview Window` を実行する。カテゴリ選択、検索、アセットプレビュー、元アセットの選択、シーンのオープンをこのウィンドウから行える。
 
 新しく追加したアセットが表示されない場合は、Play Modeを停止して `Baryonyx > Showcase > Refresh Catalog` を実行してから、もう一度シーンを再生する。
+
+## 横画面UIの確認
+
+横画面のレスポンシブ対応は、UIカテゴリの `WireframeScreen` を選び、`BattlefieldAmbient` の背景が比率を保って表示されることを確認する。
+タイトル画面はシーンカテゴリの `Top` を開き、`TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
+展示室のカタログには既存の `WireframeScreen` Prefabと `Top` シーンを登録済みで、今回の共通コンポーネント追加後も同じエントリからプレビューできる。
+実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
 
 ## 実装状況
 

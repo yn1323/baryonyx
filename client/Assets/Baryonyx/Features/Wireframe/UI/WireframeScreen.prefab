@@ -52596,6 +52596,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9900000000000023}
   - component: {fileID: 9900000000000021}
+  - component: {fileID: 9900000000000024}
   m_Layer: 0
   m_Name: BattlefieldAmbient
   m_TagString: Untagged
@@ -52649,3 +52650,16 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
+--- !u!114 &9900000000000024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9900000000000022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39ed95f1ff7147d4b6fa90ba4da7f5de, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.ResponsiveBackground
+  AspectRatio: 1

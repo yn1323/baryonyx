@@ -134,16 +134,20 @@ namespace Baryonyx.App.Editor
             var background = new GameObject(
                 "TopBackground",
                 typeof(RectTransform),
-                typeof(UnityEngine.UI.RawImage)
+                typeof(UnityEngine.UI.RawImage),
+                typeof(ResponsiveBackground)
             );
             SceneManager.MoveGameObjectToScene(background, scene);
             background.transform.SetParent(parent, false);
             Stretch(background.GetComponent<RectTransform>());
 
             var rawImage = background.GetComponent<UnityEngine.UI.RawImage>();
-            rawImage.texture = LoadTexture(TopBackgroundTexturePath);
+            var texture = LoadTexture(TopBackgroundTexturePath);
+            rawImage.texture = texture;
             rawImage.color = Color.white;
             rawImage.raycastTarget = false;
+            background.GetComponent<ResponsiveBackground>().AspectRatio =
+                texture.width / (float)texture.height;
         }
 
         private static void CreateTopScreen(
@@ -173,8 +177,22 @@ namespace Baryonyx.App.Editor
                 mode = UnityEngine.UI.Navigation.Mode.None,
             };
 
-            CreateTopTitlePanel(scene, screen.transform);
-            CreateTapToStartPanel(scene, screen.transform);
+            var safeArea = CreateTopSafeArea(scene, screen.transform);
+            CreateTopTitlePanel(scene, safeArea);
+            CreateTapToStartPanel(scene, safeArea);
+        }
+
+        private static RectTransform CreateTopSafeArea(Scene scene, Transform parent)
+        {
+            var safeArea = new GameObject(
+                "TopSafeArea",
+                typeof(RectTransform),
+                typeof(SafeAreaFollower)
+            );
+            SceneManager.MoveGameObjectToScene(safeArea, scene);
+            safeArea.transform.SetParent(parent, false);
+            Stretch(safeArea.GetComponent<RectTransform>());
+            return safeArea.GetComponent<RectTransform>();
         }
 
         private static void CreateTopTitlePanel(Scene scene, Transform parent)
@@ -242,14 +260,36 @@ namespace Baryonyx.App.Editor
             if (screen == null)
                 throw new InvalidOperationException($"TopScreen not found in {scenePath}");
 
-            var current = screen.Find("TopTitlePanel");
+            var current = screen
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopTitlePanel");
             if (current != null)
                 UnityEngine.Object.DestroyImmediate(current.gameObject);
-            var currentTap = screen.Find("TapToStartPanel");
+            var currentTap = screen
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TapToStartPanel");
             if (currentTap != null)
                 UnityEngine.Object.DestroyImmediate(currentTap.gameObject);
-            CreateTopTitlePanel(scene, screen);
-            CreateTapToStartPanel(scene, screen);
+            var background = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(candidate => candidate.name == "TopBackground");
+            if (background != null)
+            {
+                var rawImage = background.GetComponent<UnityEngine.UI.RawImage>();
+                var responsive = background.GetComponent<ResponsiveBackground>();
+                if (responsive == null)
+                    responsive = background.gameObject.AddComponent<ResponsiveBackground>();
+                if (rawImage != null && rawImage.texture != null)
+                    responsive.AspectRatio =
+                        rawImage.texture.width / (float)rawImage.texture.height;
+            }
+            var safeArea = screen.Find("TopSafeArea");
+            if (safeArea == null)
+                safeArea = CreateTopSafeArea(scene, screen);
+            else if (safeArea.GetComponent<SafeAreaFollower>() == null)
+                safeArea.gameObject.AddComponent<SafeAreaFollower>();
+            CreateTopTitlePanel(scene, safeArea);
+            CreateTapToStartPanel(scene, safeArea);
             EditorSceneManager.SaveScene(scene, scenePath);
         }
 

@@ -17,6 +17,14 @@ CanvasScalerの `Scale With Screen Size` を使い、基準解像度を設計上
 基準解像度を端末の物理解像度や対応端末の制限と見なさない。
 アンカーとLayout Groupで利用可能な幅に追従し、本文には最大幅を設けて大きい画面で中央に配置する。[CanvasScalerの仕様](https://docs.unity3d.com/Packages/com.unity.ugui@2.0/manual/script-CanvasScaler.html)
 
+背景画像は元の縦横比を保ったまま表示領域を覆い、親のRectTransformからはみ出す部分を切り取る。
+この処理は共有の [`ResponsiveBackground`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/ResponsiveBackground.cs) が担当し、画像の縦横比に合わせて表示矩形を計算する。
+CoreAreaの外側へ広がった横幅は背景や環境演出へ使い、必須UIやゲーム本体の座標を横幅に合わせて引き伸ばさない。
+
+画面端へ固定するUIはSafe Area配下のアンカーへ置く。
+画面全体を覆う背景と暗幕はSafe Areaの外側に置き、文字、ボタン、閉じる操作は [`SafeAreaFollower`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/SafeAreaFollower.cs) または既存のSafe Areaレイアウト配下に置く。
+ボタンは固定座標ではなく、四隅・辺・中央のアンカーと設計座標のマージンで配置する。
+
 OSから横向きやサイズ変更を適用された場合も、内容をスクロールして操作できるようにする。
 Androidの大画面では向きの指定が上書きされる条件とゲーム区分などの例外があるため、生成APKのManifestと実機で確認する。
 横向きの指定だけを表示崩れへの対策としない。[Androidの画面方向とサイズ変更](https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability)
@@ -105,7 +113,7 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 | 横16:9（1920×1080） | 16:9のCore Areaへ必須UIが収まること |
 | 横19.5:9（2340×1080） | 左右の拡張領域とSafe Area内の必須UI |
 | 横20:9（2400×1080） | 左右の拡張領域とSafe Area内の必須UI |
-| 横4:3 | 高さが変わっても内容と閉じる操作へ到達できること |
+| 横4:3 | Core Areaを保ち、内容と閉じる操作へ到達できること |
 | ノッチあり、非対称のSafeArea | 文字やボタンとOS領域が重ならないこと |
 | 表示中のサイズ・SafeArea変更 | データ、詳細表示、操作、閲覧位置を保てること |
 

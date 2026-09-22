@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Baryonyx.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -47,6 +48,9 @@ namespace Baryonyx.Showcase
         private AudioSource audioSource;
         private Button actionButton;
         private TextMeshProUGUI actionLabel;
+        private SceneTransitionController transitionPreview;
+        private int transitionPreviewGeneration;
+        private int transitionPreviewStep;
 
         public void Build()
         {
@@ -247,6 +251,12 @@ namespace Baryonyx.Showcase
                 ShowEmptyPreview("このアセットは情報表示のみ対応しています。\nプレビューPrefabを登録すると実物を表示できます。");
             }
 
+            var transition = previewInstance != null
+                ? previewInstance.GetComponentInChildren<SceneTransitionController>(true)
+                : null;
+            if (transition != null)
+                ConfigureTransitionAction(transition);
+
             if (entry.PreviewAnimation != null && previewInstance != null)
                 PlayAnimation(entry.PreviewAnimation, entry.AnimationStateName);
         }
@@ -370,6 +380,68 @@ namespace Baryonyx.Showcase
             actionButton.onClick.AddListener(() => SceneManager.LoadSceneAsync(path));
         }
 
+        private void ConfigureTransitionAction(SceneTransitionController controller)
+        {
+            transitionPreview = controller;
+            transitionPreviewStep = 0;
+            var generation = ++transitionPreviewGeneration;
+            actionLabel.text = "Fadeを再生";
+            actionButton.gameObject.SetActive(true);
+            actionButton.interactable = !controller.IsPlaying;
+            actionButton.onClick.AddListener(() => PlayTransitionPreview(controller, generation));
+        }
+
+        private void PlayTransitionPreview(SceneTransitionController controller, int generation)
+        {
+            if (generation != transitionPreviewGeneration
+                || controller != transitionPreview
+                || controller.IsPlaying)
+                return;
+
+            var step = transitionPreviewStep++ % 4;
+            var settings = new SceneTransitionSettings
+            {
+                Type = step switch
+                {
+                    0 => SceneTransitionType.Fade,
+                    1 => SceneTransitionType.Wipe,
+                    _ => SceneTransitionType.Shutter,
+                },
+                WipeDirection = step == 2
+                    ? SceneTransitionWipeDirection.RightToLeft
+                    : SceneTransitionWipeDirection.LeftToRight,
+                ShutterAxis = step == 3
+                    ? SceneTransitionShutterAxis.Horizontal
+                    : SceneTransitionShutterAxis.Vertical,
+                CoverDuration = 0.35f,
+                RevealDuration = 0.35f,
+                Color = Color.black,
+            };
+            var label = step switch
+            {
+                0 => "Fadeを再生中…",
+                1 => "横ワイプを再生中…",
+                2 => "上下シャッターを再生中…",
+                _ => "左右シャッターを再生中…",
+            };
+            actionLabel.text = label;
+            actionButton.interactable = false;
+
+            if (!controller.PlayOut(settings, () =>
+                controller.PlayIn(settings, () =>
+                {
+                    if (generation == transitionPreviewGeneration && controller == transitionPreview)
+                    {
+                        actionButton.interactable = true;
+                        actionLabel.text = "次の演出を再生";
+                    }
+                })))
+            {
+                actionButton.interactable = true;
+                actionLabel.text = "次の演出を再生";
+            }
+        }
+
         private void ShowEmptyPreview(string message)
         {
             imagePreview.gameObject.SetActive(false);
@@ -381,6 +453,9 @@ namespace Baryonyx.Showcase
 
         private void ClearPreview()
         {
+            transitionPreview = null;
+            transitionPreviewStep = 0;
+            transitionPreviewGeneration++;
             if (audioSource != null)
                 audioSource.Stop();
             if (previewInstance != null)

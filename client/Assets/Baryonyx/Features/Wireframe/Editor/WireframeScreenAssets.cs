@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Editor;
+using Baryonyx.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -73,6 +74,9 @@ namespace Baryonyx.Wireframe.Editor
                 ambientImage.texture = forest;
                 ambientImage.color = new Color(1, 1, 1, .18f);
                 ambientImage.raycastTarget = false;
+                var responsiveBackground =
+                    battlefieldAmbient.gameObject.AddComponent<ResponsiveBackground>();
+                responsiveBackground.AspectRatio = forest.width / (float)forest.height;
                 battlefieldAmbient.SetAsFirstSibling();
                 layout.BattlefieldAmbient = battlefieldAmbient.gameObject;
                 layout.BattlefieldAmbient.SetActive(false);
