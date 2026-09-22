@@ -62,6 +62,7 @@ namespace Baryonyx.Showcase
                 return;
 
             var events = new GameObject("EventSystem");
+            SceneManager.MoveGameObjectToScene(events, gameObject.scene);
             events.AddComponent<EventSystem>();
             var inputModule = events.AddComponent<InputSystemUIInputModule>();
             inputModule.AssignDefaultActions();
@@ -70,6 +71,7 @@ namespace Baryonyx.Showcase
         private Canvas CreateCanvas()
         {
             var canvasObject = new GameObject("ShowcaseCanvas");
+            SceneManager.MoveGameObjectToScene(canvasObject, gameObject.scene);
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasObject.AddComponent<CanvasScaler>();
@@ -278,6 +280,31 @@ namespace Baryonyx.Showcase
             camera.transform.position = new Vector3(0, 0.5f, -6f);
             camera.transform.LookAt(Vector3.zero);
             previewInstance = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+            SceneManager.MoveGameObjectToScene(previewInstance, gameObject.scene);
+            if (previewInstance.transform is RectTransform rect
+                && previewInstance.GetComponent<Canvas>() == null)
+            {
+                // Canvasの子に置くUI部品にも、展示中だけ描画用Canvasを用意する。
+                var size = rect.rect.size;
+                var wrapper = new GameObject(
+                    "UiComponentPreviewCanvas",
+                    typeof(RectTransform),
+                    typeof(Canvas),
+                    typeof(UnityEngine.UI.CanvasScaler)
+                );
+                SceneManager.MoveGameObjectToScene(wrapper, gameObject.scene);
+                wrapper.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
+                var scaler = wrapper.GetComponent<UnityEngine.UI.CanvasScaler>();
+                scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = size + new Vector2(128f, 128f);
+                scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.Expand;
+                rect.SetParent(wrapper.transform, false);
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = size;
+                previewInstance = wrapper;
+            }
             previewInstance.name = "PreviewInstance";
             SetPreviewLayer(previewInstance, camera.gameObject.layer);
             ConfigureCanvasPreview(previewInstance, camera);

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -18,16 +18,8 @@ namespace Baryonyx.App.Editor
         public const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const string TopBackgroundTexturePath =
             "Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png";
-        private const string TopTitleGradientTexturePath =
-            "Assets/Baryonyx/App/Art/Top/TopTitlePanelGradient.png";
-        private const string TopTitleBackdropGradientTexturePath =
-            "Assets/Baryonyx/App/Art/Top/TopTitleBackdropGradient.png";
-        private static readonly Color TopTitleBackdropColor = new Color(
-            0.3f,
-            0.3f,
-            0.3f,
-            0.42f
-        );
+        private const string TextPanelPrefabPath =
+            "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.prefab";
 
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
@@ -35,6 +27,7 @@ namespace Baryonyx.App.Editor
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
 
+            TranslucentTextPanelPrefabSetup.EnsurePrefab();
             CreateSceneIfMissing(
                 TopScenePath,
                 "TopCanvas",
@@ -81,7 +74,11 @@ namespace Baryonyx.App.Editor
         )
         {
             if (File.Exists(scenePath))
+            {
+                if (clickable)
+                    UpdateTopScene(scenePath);
                 return;
+            }
 
             var previous = SceneManager.GetActiveScene();
             var scene = EditorSceneManager.NewScene(
@@ -177,43 +174,14 @@ namespace Baryonyx.App.Editor
             };
 
             CreateTopTitlePanel(scene, screen.transform);
-        }
-
-        private static void CreateTopTitleBackdrop(Scene scene, Transform parent)
-        {
-            var backdrop = new GameObject(
-                "TopTitleBackdropCanvas",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(UnityEngine.UI.RawImage)
-            );
-            SceneManager.MoveGameObjectToScene(backdrop, scene);
-            backdrop.transform.SetParent(parent, false);
-
-            var rect = backdrop.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(1320f, 260f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-
-            var canvas = backdrop.GetComponent<Canvas>();
-            canvas.overrideSorting = false;
-
-            var rawImage = backdrop.GetComponent<UnityEngine.UI.RawImage>();
-            rawImage.texture = LoadTexture(TopTitleBackdropGradientTexturePath);
-            rawImage.color = TopTitleBackdropColor;
-            rawImage.raycastTarget = false;
+            CreateTapToStartPanel(scene, screen.transform);
         }
 
         private static void CreateTopTitlePanel(Scene scene, Transform parent)
         {
-            var panel = new GameObject(
-                "TopTitlePanel",
-                typeof(RectTransform),
-                typeof(UnityEngine.UI.RawImage)
-            );
-            SceneManager.MoveGameObjectToScene(panel, scene);
+            var prefab = LoadTextPanelPrefab();
+            var panel = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            panel.name = "TopTitlePanel";
             panel.transform.SetParent(parent, false);
 
             var rect = panel.GetComponent<RectTransform>();
@@ -223,42 +191,66 @@ namespace Baryonyx.App.Editor
             rect.sizeDelta = new Vector2(0f, 300f);
             rect.pivot = new Vector2(0.5f, 0.5f);
 
-            var rawImage = panel.GetComponent<UnityEngine.UI.RawImage>();
-            rawImage.texture = LoadTexture(TopTitleGradientTexturePath);
-            rawImage.color = Color.white;
-            rawImage.raycastTarget = false;
-
-            CreateTopTitleBackdrop(scene, panel.transform);
-            CreateTopTitle(scene, panel.transform);
+            var component = panel.GetComponent<TranslucentTextPanel>();
+            var title = component.Label;
+            title.text = "てくてくダンジョン";
+            component.SetFontSize(128f);
+            component.SetBackdropSize(new Vector2(1320f, 260f));
+            component.SetPulseEnabled(false);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(title);
         }
 
-        private static void CreateTopTitle(Scene scene, Transform parent)
+        private static void CreateTapToStartPanel(Scene scene, Transform parent)
         {
-            var titleObject = new GameObject(
-                "TopTitle",
-                typeof(RectTransform),
-                typeof(TextMeshProUGUI)
-            );
-            SceneManager.MoveGameObjectToScene(titleObject, scene);
-            titleObject.transform.SetParent(parent, false);
+            var panel = (GameObject)PrefabUtility.InstantiatePrefab(LoadTextPanelPrefab(), scene);
+            panel.name = "TapToStartPanel";
+            panel.transform.SetParent(parent, false);
 
-            var rect = titleObject.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.16f);
+            rect.anchorMax = new Vector2(0.5f, 0.16f);
             rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = Vector2.zero;
+            rect.sizeDelta = new Vector2(820f, 112f);
             rect.pivot = new Vector2(0.5f, 0.5f);
 
-            var title = titleObject.GetComponent<TextMeshProUGUI>();
-            title.text = "てくてくダンジョン";
-            title.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
-                "Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16.asset"
-            );
-            title.fontSize = 128f;
-            title.alignment = TextAlignmentOptions.Center;
-            title.color = Color.white;
-            title.raycastTarget = false;
-            title.textWrappingMode = TextWrappingModes.NoWrap;
+            var component = panel.GetComponent<TranslucentTextPanel>();
+            component.SetBackdropSize(new Vector2(760f, 92f));
+            component.SetText("TAP TO START");
+            component.SetFontSize(48f);
+            component.SetPulseEnabled(true);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(component.Label);
+        }
+
+        private static GameObject LoadTextPanelPrefab()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TextPanelPrefabPath);
+            if (prefab == null)
+                throw new InvalidOperationException($"UI prefab not found: {TextPanelPrefabPath}");
+            return prefab;
+        }
+
+        private static void UpdateTopScene(string scenePath)
+        {
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            var screen = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .FirstOrDefault(candidate => candidate.name == "TopScreen");
+            if (screen == null)
+                throw new InvalidOperationException($"TopScreen not found in {scenePath}");
+
+            var current = screen.Find("TopTitlePanel");
+            if (current != null)
+                UnityEngine.Object.DestroyImmediate(current.gameObject);
+            var currentTap = screen.Find("TapToStartPanel");
+            if (currentTap != null)
+                UnityEngine.Object.DestroyImmediate(currentTap.gameObject);
+            CreateTopTitlePanel(scene, screen);
+            CreateTapToStartPanel(scene, screen);
+            EditorSceneManager.SaveScene(scene, scenePath);
         }
 
         private static Texture2D LoadTexture(string assetPath)

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.UI;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -60,10 +61,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panelRect.sizeDelta, Is.EqualTo(new Vector2(0f, 300f)));
             Assert.That(panel.raycastTarget, Is.False);
 
-            var backdropObject = panel.transform.Find("TopTitleBackdropCanvas");
+            var reusablePanel = panel.GetComponent<TranslucentTextPanel>();
+            Assert.That(reusablePanel, Is.Not.Null);
+            Assert.That(reusablePanel.FontSize, Is.EqualTo(128f));
+            Assert.That(reusablePanel.BackdropSize, Is.EqualTo(new Vector2(1320f, 260f)));
+            Assert.That(reusablePanel.BackdropAlpha, Is.EqualTo(0.42f));
+            var backdropObject = panel.transform.Find("BackdropCanvas");
             Assert.That(backdropObject.GetComponent<Canvas>(), Is.Not.Null);
-            var backdrop = backdropObject.GetComponent<RawImage>();
-            var backdropRect = (RectTransform)backdrop.transform;
+            var backdrop = backdropObject.Find("Backdrop").GetComponent<RawImage>();
+            var backdropRect = (RectTransform)backdropObject;
             Assert.That(backdropRect.anchorMin, Is.EqualTo(new Vector2(0.5f, 0.5f)));
             Assert.That(backdropRect.anchorMax, Is.EqualTo(new Vector2(0.5f, 0.5f)));
             Assert.That(backdropRect.anchoredPosition, Is.EqualTo(Vector2.zero));
@@ -74,14 +80,34 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(backdrop.color.a, Is.GreaterThan(0f).And.LessThan(1f));
             Assert.That(backdrop.raycastTarget, Is.False);
 
-            var title = panel.transform.Find("TopTitle").GetComponent<TextMeshProUGUI>();
+            var title = panel.transform.Find("Label").GetComponent<TextMeshProUGUI>();
             var titleRect = (RectTransform)title.transform;
             Assert.That(title.text, Is.EqualTo("てくてくダンジョン"));
             Assert.That(title.fontSize, Is.EqualTo(128f));
             Assert.That(titleRect.anchorMin, Is.EqualTo(Vector2.zero));
             Assert.That(titleRect.anchorMax, Is.EqualTo(Vector2.one));
             Assert.That(title.raycastTarget, Is.False);
+            Assert.That(reusablePanel.PulseEnabled, Is.False);
+            Assert.That(reusablePanel.LabelGroup, Is.Not.Null);
 
+            var tapPanel = canvas.transform.Find("TopScreen/TapToStartPanel")
+                .GetComponent<TranslucentTextPanel>();
+            Assert.That(tapPanel, Is.Not.Null);
+            Assert.That(tapPanel.Label.text, Is.EqualTo("TAP TO START"));
+            Assert.That(tapPanel.Label.fontSize, Is.EqualTo(48f));
+            Assert.That(tapPanel.FontSize, Is.EqualTo(48f));
+            Assert.That(tapPanel.BackdropSize, Is.EqualTo(new Vector2(760f, 92f)));
+            Assert.That(tapPanel.BackdropAlpha, Is.EqualTo(0.42f));
+            Assert.That(((RectTransform)tapPanel.transform).anchorMin, Is.EqualTo(new Vector2(0.5f, 0.16f)));
+            Assert.That(tapPanel.Panel.raycastTarget, Is.False);
+            Assert.That(tapPanel.PulseEnabled, Is.True);
+            Assert.That(tapPanel.LabelGroup, Is.Not.Null);
+            Assert.That(tapPanel.LabelGroup.blocksRaycasts, Is.False);
+            Assert.That(tapPanel.PulseDurationSeconds, Is.EqualTo(2.4f));
+            Assert.That(tapPanel.PulseMinimumAlpha, Is.EqualTo(0.35f));
+
+            Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
+            Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
             button.onClick.Invoke();
             yield return null;
             yield return null;
