@@ -74,6 +74,27 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(left.rectTransform.anchorMax.x, Is.EqualTo(0f).Within(0.001f));
         }
 
+        [UnityTest]
+        public IEnumerator PlayInUsesTheSingleEnterSettingsByDefault()
+        {
+            controller.DefaultSettings.Type = SceneTransitionType.Wipe;
+            controller.DefaultSettings.WipeDirection = SceneTransitionWipeDirection.RightToLeft;
+            controller.EnterSettings.Type = SceneTransitionType.Shutter;
+            controller.EnterSettings.ShutterAxis = SceneTransitionShutterAxis.Horizontal;
+            controller.DefaultSettings.CoverDuration = 0.02f;
+            controller.EnterSettings.RevealDuration = 0.02f;
+
+            Assert.That(controller.PlayOut(), Is.True);
+            yield return WaitUntilStopped();
+            Assert.That(root.transform.Find("WipePanel").gameObject.activeSelf, Is.True);
+
+            Assert.That(controller.PlayIn(), Is.True);
+            yield return WaitUntilStopped();
+            Assert.That(root.transform.Find("WipePanel").gameObject.activeSelf, Is.False);
+            Assert.That(root.transform.Find("ShutterFirst").gameObject.activeSelf, Is.True);
+            Assert.That(root.transform.Find("ShutterSecond").gameObject.activeSelf, Is.True);
+        }
+
         private IEnumerator AssertCoverAndReveal(SceneTransitionSettings settings)
         {
             Assert.That(controller.PlayOut(settings), Is.True);

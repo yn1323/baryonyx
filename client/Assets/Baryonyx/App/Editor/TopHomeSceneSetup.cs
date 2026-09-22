@@ -20,6 +20,10 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png";
         private const string TextPanelPrefabPath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.prefab";
+        private const string Hd2dLightingPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightingVfx.prefab";
+        private const string Hd2dLightShaftPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
 
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
@@ -28,6 +32,7 @@ namespace Baryonyx.App.Editor
                 throw new InvalidOperationException("Stop Play Mode first.");
 
             TranslucentTextPanelPrefabSetup.EnsurePrefab();
+            Hd2dLightingVfxAssetSetup.EnsureAssets();
             CreateSceneIfMissing(
                 TopScenePath,
                 "TopCanvas",
@@ -91,6 +96,8 @@ namespace Baryonyx.App.Editor
                 if (clickable)
                 {
                     CreateTopBackground(scene, canvas.transform);
+                    EnsureTopLightingVfx(scene);
+                    EnsureTopLightShaft(scene);
                     CreateTopScreen(scene, canvas.transform, screenName);
                 }
                 else
@@ -283,6 +290,8 @@ namespace Baryonyx.App.Editor
                     responsive.AspectRatio =
                         rawImage.texture.width / (float)rawImage.texture.height;
             }
+            EnsureTopLightingVfx(scene);
+            EnsureTopLightShaft(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -291,6 +300,106 @@ namespace Baryonyx.App.Editor
             CreateTopTitlePanel(scene, safeArea);
             CreateTapToStartPanel(scene, safeArea);
             EditorSceneManager.SaveScene(scene, scenePath);
+        }
+
+        public static bool EnsureTopLightingVfx(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var canvas = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(root => root.name == "TopCanvas");
+            if (canvas == null)
+                return false;
+
+            var existing = canvas
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopHd2dLightingVfx");
+            if (existing != null)
+                return false;
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dLightingPrefabPath);
+            if (prefab == null)
+                return false;
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    $"HD-2D lighting prefab could not be instantiated: {Hd2dLightingPrefabPath}"
+                );
+
+            instance.name = "TopHd2dLightingVfx";
+            instance.transform.SetParent(canvas.transform, false);
+            var rect = instance.GetComponent<RectTransform>();
+            if (rect != null)
+                Stretch(rect);
+
+            var background = canvas.transform.Find("TopBackground");
+            var screen = canvas.transform.Find("TopScreen");
+            if (background != null && screen != null)
+            {
+                var siblingIndex = Mathf.Min(
+                    background.GetSiblingIndex() + 1,
+                    screen.GetSiblingIndex()
+                );
+                instance.transform.SetSiblingIndex(siblingIndex);
+            }
+            else
+                instance.transform.SetAsLastSibling();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
+        }
+
+        public static bool EnsureTopLightShaft(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var canvas = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(root => root.name == "TopCanvas");
+            if (canvas == null)
+                return false;
+
+            var existing = canvas
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopHd2dLightShaft");
+            if (existing != null)
+                return false;
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dLightShaftPrefabPath);
+            if (prefab == null)
+                return false;
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    $"HD-2D light shaft prefab could not be instantiated: {Hd2dLightShaftPrefabPath}"
+                );
+
+            instance.name = "TopHd2dLightShaft";
+            instance.transform.SetParent(canvas.transform, false);
+            var rect = instance.GetComponent<RectTransform>();
+            if (rect != null)
+                Stretch(rect);
+
+            var background = canvas.transform.Find("TopBackground");
+            var screen = canvas.transform.Find("TopScreen");
+            if (background != null && screen != null)
+            {
+                var siblingIndex = Mathf.Min(
+                    background.GetSiblingIndex() + 1,
+                    screen.GetSiblingIndex()
+                );
+                instance.transform.SetSiblingIndex(siblingIndex);
+            }
+            else
+                instance.transform.SetAsLastSibling();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
         }
 
         private static Texture2D LoadTexture(string assetPath)

@@ -71,10 +71,10 @@ namespace Baryonyx.App.Editor
                 group.blocksRaycasts = false;
 
                 CreateImage(root.transform, "TransitionBlocker", new Color(0f, 0f, 0f, 0f), true);
-                CreateImage(root.transform, "FadePanel", Color.black, false);
-                CreateImage(root.transform, "WipePanel", Color.black, false);
-                CreateImage(root.transform, "ShutterFirst", Color.black, false);
-                CreateImage(root.transform, "ShutterSecond", Color.black, false);
+                CreateImage(root.transform, "FadePanel", SceneTransitionSettings.DefaultColor, false);
+                CreateImage(root.transform, "WipePanel", SceneTransitionSettings.DefaultColor, false);
+                CreateImage(root.transform, "ShutterFirst", SceneTransitionSettings.DefaultColor, false);
+                CreateImage(root.transform, "ShutterSecond", SceneTransitionSettings.DefaultColor, false);
 
                 AssetDatabase.SaveAssets();
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
@@ -148,6 +148,7 @@ namespace Baryonyx.App.Editor
                 SetBool(controller, "startCovered", startCovered);
                 SetBool(controller, "revealOnStart", revealOnStart);
                 SetEnum(controller, "defaultSettings.type", SceneTransitionType.Fade);
+                SetEnum(controller, "enterSettings.type", SceneTransitionType.Fade);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
 
                 if (configureTop)

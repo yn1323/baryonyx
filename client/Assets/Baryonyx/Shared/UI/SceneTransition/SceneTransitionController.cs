@@ -8,7 +8,11 @@ namespace Baryonyx.UI
     [RequireComponent(typeof(Canvas), typeof(CanvasGroup), typeof(UnityEngine.UI.GraphicRaycaster))]
     public sealed class SceneTransitionController : MonoBehaviour
     {
+        [Header("Exit")]
         [SerializeField] private SceneTransitionSettings defaultSettings = new();
+
+        [Header("Enter")]
+        [SerializeField] private SceneTransitionSettings enterSettings = new();
         [SerializeField] private bool startCovered;
         [SerializeField] private bool revealOnStart;
         [SerializeField] private CanvasGroup canvasGroup;
@@ -22,13 +26,13 @@ namespace Baryonyx.UI
         private bool covered;
 
         public SceneTransitionSettings DefaultSettings => defaultSettings;
+        public SceneTransitionSettings EnterSettings => enterSettings;
         public bool IsPlaying => playing;
         public bool IsCovered => covered;
 
         private void Awake()
         {
-            defaultSettings ??= new SceneTransitionSettings();
-            defaultSettings.Normalize();
+            EnsureSettings();
             if (!ResolveReferences())
                 return;
             Configure(defaultSettings);
@@ -40,12 +44,13 @@ namespace Baryonyx.UI
         {
             if (!ResolveReferences())
                 return;
-            Configure(defaultSettings);
+            var initialSettings = startCovered ? enterSettings : defaultSettings;
+            Configure(initialSettings);
             covered = startCovered;
-            ApplyProgress(defaultSettings, 1f, startCovered);
+            ApplyProgress(initialSettings, 1f, startCovered);
             SetInputBlocked(startCovered);
             if (startCovered && revealOnStart)
-                PlayIn();
+                PlayIn(enterSettings);
         }
 
         private void OnDisable()
@@ -60,24 +65,28 @@ namespace Baryonyx.UI
             }
         }
 
-        private void OnValidate() => defaultSettings?.Normalize();
+        private void OnValidate()
+        {
+            defaultSettings?.Normalize();
+            enterSettings?.Normalize();
+        }
 
         public bool PlayOut(Action onCovered = null) => PlayOut(defaultSettings, onCovered);
 
         public bool PlayOut(SceneTransitionSettings settings, Action onCovered = null)
         {
-            if (!TryPrepare(settings, out var prepared))
+            if (!TryPrepare(settings, defaultSettings, out var prepared))
                 return false;
             playing = true;
             StartCoroutine(PlayRoutine(prepared, true, onCovered));
             return true;
         }
 
-        public bool PlayIn(Action onCompleted = null) => PlayIn(defaultSettings, onCompleted);
+        public bool PlayIn(Action onCompleted = null) => PlayIn(enterSettings, onCompleted);
 
         public bool PlayIn(SceneTransitionSettings settings, Action onCompleted = null)
         {
-            if (!TryPrepare(settings, out var prepared))
+            if (!TryPrepare(settings, enterSettings, out var prepared))
                 return false;
             playing = true;
             StartCoroutine(PlayRoutine(prepared, false, onCompleted));
@@ -111,14 +120,26 @@ namespace Baryonyx.UI
             SetInputBlocked(closing);
         }
 
-        private bool TryPrepare(SceneTransitionSettings settings, out SceneTransitionSettings prepared)
+        private bool TryPrepare(
+            SceneTransitionSettings settings,
+            SceneTransitionSettings fallback,
+            out SceneTransitionSettings prepared
+        )
         {
             prepared = null;
             if (playing || !isActiveAndEnabled || !ResolveReferences())
                 return false;
-            prepared = (settings ?? defaultSettings ?? new SceneTransitionSettings()).Clone();
+            prepared = (settings ?? fallback ?? new SceneTransitionSettings()).Clone();
             prepared.Normalize();
             return true;
+        }
+
+        private void EnsureSettings()
+        {
+            defaultSettings ??= new SceneTransitionSettings();
+            enterSettings ??= defaultSettings.Clone();
+            defaultSettings.Normalize();
+            enterSettings.Normalize();
         }
 
         private bool ResolveReferences()

@@ -143,8 +143,8 @@ Canvasは高さを基準に拡縮するため、19.5:9と20:9の横長端末で�
 
 Prefabは `Baryonyx/Wireframe/Create Screen Assets` で再生成する。
 画面遷移の共通PrefabとTop/Mainへの配置は `Baryonyx/App/Create Scene Transition Assets` で生成する。
-Inspectorの `SceneTransitionSettings` で種類、色、閉じる時間、開く時間、Wipeの向き、Shutterの軸を選べる。
-別の画面から呼ぶ場合は、呼び出し元の `SceneTransitionController` に `PlayOut(settings, callback)` を渡し、暗転後のcallbackでシーンを読み込む。遷移先には `startCovered` と `revealOnStart` を設定して `PlayIn` を自動実行させる。
+Inspectorの `Exit` と `Enter` にある `SceneTransitionSettings` で、種類、色、閉じる時間、開く時間、Wipeの向き、Shutterの軸をそれぞれ選べる。
+別の画面から呼ぶ場合は、呼び出し元の `SceneTransitionController` に `PlayOut(settings, callback)` を渡し、暗転後のcallbackでシーンを読み込む。遷移先には `startCovered` と `revealOnStart` を設定し、遷移先ごとに1つの `Enter Settings` を選んで `PlayIn` を自動実行させる。遷移元によるEnter設定の引き継ぎは行わない。
 Androidをビルド対象にし、`Baryonyx/Wireframe/Build Android APK` でWireframeシーンを起動対象にしたAPKを作る。
 共通の `AndroidBuild.Build` を呼び、終了後に通常のビルドシーン設定を戻す。
 生成APKはルートの手順に従い、必ず指定のDriveフォルダーへコピーする。

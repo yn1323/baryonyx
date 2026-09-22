@@ -25,6 +25,8 @@ namespace Baryonyx.UI
     [Serializable]
     public sealed class SceneTransitionSettings
     {
+        public static readonly Color DefaultColor = new Color(0.16f, 0.16f, 0.18f, 1f);
+
         [SerializeField]
         private SceneTransitionType type = SceneTransitionType.Fade;
 
@@ -44,7 +46,7 @@ namespace Baryonyx.UI
 
         [ColorUsage(false)]
         [SerializeField]
-        private Color color = Color.black;
+        private Color color = DefaultColor;
 
         public SceneTransitionType Type
         {

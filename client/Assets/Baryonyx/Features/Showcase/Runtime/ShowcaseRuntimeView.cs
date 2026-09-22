@@ -296,6 +296,10 @@ namespace Baryonyx.Showcase
             {
                 // Canvasの子に置くUI部品にも、展示中だけ描画用Canvasを用意する。
                 var size = rect.rect.size;
+                // 光芒など、親Canvas全面に伸ばすPrefabは単体だとサイズが0になる。
+                if (size.x <= 0f && size.y <= 0f
+                    && rect.anchorMin == Vector2.zero && rect.anchorMax == Vector2.one)
+                    size = new Vector2(1920f, 1080f);
                 var wrapper = new GameObject(
                     "UiComponentPreviewCanvas",
                     typeof(RectTransform),
@@ -415,7 +419,7 @@ namespace Baryonyx.Showcase
                     : SceneTransitionShutterAxis.Vertical,
                 CoverDuration = 0.35f,
                 RevealDuration = 0.35f,
-                Color = Color.black,
+                Color = SceneTransitionSettings.DefaultColor,
             };
             var label = step switch
             {

@@ -139,7 +139,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 loadedScene.GetRootGameObjects()
                     .SelectMany(root => root.GetComponentsInChildren<SceneTransitionController>(true))
-                    .Any(transition => transition.DefaultSettings.Type == SceneTransitionType.Fade),
+                    .Any(transition => transition.EnterSettings.Type == SceneTransitionType.Fade),
                 Is.True
             );
             yield return new WaitForSecondsRealtime(0.35f);
