@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-09-19
+updated: 2026-09-22
 ---
 
 # クライアントの構成と依存関係
@@ -24,7 +24,7 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/                   Main.unityとWireframe.unity
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Main.unity、Wireframe.unity
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンとプレビュー起動の検査
 │   │   ├── Features/Health/

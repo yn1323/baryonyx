@@ -2,7 +2,7 @@
 id: feature-game-wireframe
 type: specification
 status: 一部確定
-updated: 2026-09-21
+updated: 2026-09-22
 ---
 
 # 遊べる試作の画面と操作
@@ -15,7 +15,8 @@ updated: 2026-09-21
 参照会話「遊べる試作へ進む」から、4人を中心にしたホーム、今日の歩数、冒険への主要操作、控えめなルーン表示、余白を取った配置を反映した。
 会話のテキストは取得できたが、最新の生成画像は取得できなかったため、既存素材と新しい出発地点の生成背景で補った。
 
-Androidの通常起動シーンは [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) とし、冒険と運動データの入口を持つホームを最初に表示する。
+Androidの通常起動シーンは [Top](../../client/Assets/Baryonyx/App/Scenes/Top.unity) とし、全面押下で [Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) へ遷移する。
+既存の [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) は、健康データを含むワイヤー画面として個別に確認できる。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
 Unity Editorで画面を確認するときは、保存済みの状態から `Baryonyx/Wireframe/Open Scene` を実行し、PlayModeで起動する。
 通常画面には仮の勝敗を選ぶ確認パネルを表示しない。
