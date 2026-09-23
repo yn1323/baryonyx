@@ -31,12 +31,13 @@ HD-2Dを構成する技法を、必要な前提ごとに分けて一覧にする
 背景をカメラを通すCanvas（`Screen Space - Camera`）へ分け、タイトルと操作は `ScreenSpaceOverlay` に残す構成が前提となる。
 `ScreenSpaceOverlay` のUIにはカメラのポストプロセスがかからないためである。
 Volume Profileは使い回せるが、画面構造の変更は全画面の方針として決める。
+Topでは背景と演出を `TopBackdropCanvas`（Screen Space - Camera）、タイトルと操作を `TopCanvas`（Screen Space - Overlay）に分け、共通の `Hd2dPostProcess` Profileを全体のVolumeで適用した。
 
 | 技法 | 内容 | 難易度 | このプロジェクトでの扱い |
 |---|---|---|---|
-| Bloom | 一定より明るいピクセルを抜き出してぼかし、元画像に足す。元の絵はくっきり残る | 中 | 将来候補。A群の完了後、画面構造と合わせて検討する |
-| Vignette | 画面端を暗くして中央へ視線を集める | 中 | 同上 |
-| Color Adjustments | 色温度、明暗、彩度を揃える | 中 | 同上 |
+| Bloom | 一定より明るいピクセルを抜き出してぼかし、元画像に足す。元の絵はくっきり残る | 中 | 実装済み（`Hd2dPostProcess`）。Thresholdを0.8にして炎と加算の光だけをにじませる |
+| Vignette | 画面端を暗くして中央へ視線を集める | 中 | 実装済み（`Hd2dPostProcess`） |
+| Color Adjustments | 色温度、明暗、彩度を揃える | 中 | 実装済み（`Hd2dPostProcess`） |
 | 疑似ティルトシフト | 奥行き情報を使わず、画面の上下を位置でぼかしてミニチュア感を出す | 中〜高 | 見送り。ドット絵の輪郭がぼけて汚く見えやすく、正面構図のTopではミニチュア感が出にくい。見下ろしの箱庭構図の画面ができたら再検討する |
 
 BloomとティルトシフトはA群の技法と混同しやすいため、区別を明記する。

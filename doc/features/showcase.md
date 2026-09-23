@@ -48,12 +48,13 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 共通の `SceneTransition` Prefabを選ぶと、プレビュー下部の再生ボタンで Fade、横ワイプ、上下シャッター、左右シャッターを順に再生できる。各演出は閉じる・開くを続けて再生し、展示室からシーンを進行させずに見た目を確認する。
 
 VFXカテゴリには `Hd2dLightShaft`、`Hd2dFog`、`Hd2dFlickerLight`、`Hd2dEmberEmitter` の各Prefabと、光芒・霧のノイズ画像を登録する。
-加算合成の `Hd2dUiAdditive` はマテリアル・シェーダーのカテゴリに入る。
+加算合成の `Hd2dUiAdditive` はマテリアル・シェーダーのカテゴリ、ポストプロセスの `Hd2dPostProcess` はデータのカテゴリに入る。
+ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
 
 ### 光芒の調整
 
-Topでは、Hierarchyの `TopCanvas > TopHd2dLightShaft` を選ぶと専用Inspectorで調整できる。
+Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dLightShaft` を選ぶと専用Inspectorで調整できる。
 「Editorで表示」を有効にすると、停止中も光芒を表示し、変更とUndoを反映する。
 
 | Inspectorの項目 | 効果 |
@@ -77,7 +78,7 @@ Play Mode中の変更は停止時に戻る。
 
 ### 霧の調整
 
-Topでは、Hierarchyの `TopCanvas > TopHd2dFog` を選ぶと専用Inspectorで調整できる。
+Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dFog` を選ぶと専用Inspectorで調整できる。
 霧は背景の直上に置き、光芒と塵は霧の手前に描く。
 「霧のレイヤー」の各要素が1つの霧の範囲で、要素を追加・削除すると範囲が増減する。
 
@@ -100,7 +101,7 @@ Prefabの既定の層を変えると、上書きしていないTopの床霧に�
 
 ### 揺らぐ光の調整
 
-Topでは、Hierarchyの `TopCanvas > TopHd2dFlickerLight` を選ぶと専用Inspectorで調整できる。
+Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dFlickerLight` を選ぶと専用Inspectorで調整できる。
 「光源」の各要素が1つの光源で、光源ごとに芯、周りを照らす広い光、床の照り返しの3枚を加算合成で重ねる。
 Topの `TopHd2dFlickerLight` は背景と同じ `ResponsiveBackground` を持ち、背景画像と同じ範囲に広がる。
 このため光源の位置は背景画像上の正規化座標（左下が原点）で指定し、画面比率が変わっても描かれた松明に重なる。
@@ -125,7 +126,7 @@ Topの `TopHd2dFlickerLight` は背景と同じ `ResponsiveBackground` を持ち
 
 ### 火の粉の調整
 
-Topでは、Hierarchyの `TopCanvas > TopHd2dEmberEmitter` を選ぶと専用Inspectorで調整できる。
+Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dEmberEmitter` を選ぶと専用Inspectorで調整できる。
 「発生源」の各要素が1か所の発生位置で、そこから指定した向きへ粒子を出す。
 Topでは4つの松明の炎の上から火の粉を出し、揺らぐ光の手前、光芒の奥に描く。
 揺らぐ光と同じく背景画像と同じ範囲に広がり、位置は背景画像上の正規化座標で指定する。
@@ -149,10 +150,30 @@ Topでは4つの松明の炎の上から火の粉を出し、揺らぐ光の手�
 Editorでは再生開始時と同じ配置を静止表示し、動きはPlay Modeで確認する。
 プレビュー用の子オブジェクトはシーンやPrefabに保存しない。
 
+### ポストプロセスの調整
+
+Topでは、背景とHD-2Dの演出を `TopBackdropCanvas`（Screen Space - Camera）に置き、`TopCamera` のポストプロセスを通す。
+タイトルと開始操作を持つ `TopScreen` は `TopCanvas`（Screen Space - Overlay）に残し、文字をにじませない。
+`ScreenSpaceOverlay` のUIにはカメラのポストプロセスが掛からないため、この2つのCanvasに分けている。
+2つのCanvasは同じCanvasScalerの設定を持ち、座標の単位を揃える。
+
+`TopPostProcessVolume` は全体に効くVolumeで、共通の `Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset` を使う。
+Profileを選ぶとInspectorで各効果を調整できる。
+
+| 効果 | 主な項目 | Topでの役割 |
+| --- | --- | --- |
+| Bloom | Threshold 0.8、Intensity 1.6、Scatter 0.65 | 炎、加算の光、光芒など明るい部分だけをにじませる。Thresholdを下げると石壁までにじむ |
+| Vignette | Intensity 0.28、Smoothness 0.45 | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
+| Color Adjustments | Contrast 8、Saturation 6 | 明暗と彩度を少し強め、松明の暖色と光芒の青白さを引き立てる |
+
+Profileは共通アセットなので、変更すると同じProfileを使う全画面に反映される。
+画面ごとに変える場合は、Profileを複製してその画面のVolumeへ設定する。
+BloomはAndroid端末での負荷が大きい効果である。発熱やフレーム落ちがある場合は、Intensityより先にBloomのDownscaleとMax Iterationsで負荷を下げる。
+
 ### 塵ときらめきの表示
 
 `Hd2dLightingVfx` と `Hd2dParticleField` の塵ときらめきも、「Editorプレビュー」の `PreviewInEditor` を有効にすると停止中に表示する。
-Topでは、Hierarchyの `TopCanvas > TopHd2dLightingVfx` で確認できる。
+Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dLightingVfx` で確認できる。
 停止中は、配置パターン（`RandomSeed`）で決まる再生開始時と同じ配置を静止表示し、Inspectorの変更を反映する。
 粒子の移動、明滅、消えた粒子の再配置はPlay Modeで確認する。
 プレビュー用の粒子はシーンやPrefabに保存しない。
@@ -191,7 +212,7 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 ## 横画面UIの確認
 
 横画面のレスポンシブ対応は、UIカテゴリの `WireframeScreen` を選び、`BattlefieldAmbient` の背景が比率を保って表示されることを確認する。
-タイトル画面はシーンカテゴリの `Top` を開き、`TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
+タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
 展示室のカタログには既存の `WireframeScreen` Prefabと `Top` シーンを登録済みで、今回の共通コンポーネント追加後も同じエントリからプレビューできる。
 実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
 

@@ -4,6 +4,8 @@ using Baryonyx.Vfx.Hd2d;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App.Editor
@@ -27,12 +29,15 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
         public const string EmberEmitterPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
+        public const string PostProcessProfilePath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset";
         public const string AdditiveMaterialPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Materials/Hd2dUiAdditive.mat";
 
         private const string TextureDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Textures";
         private const string PrefabDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs";
         private const string MaterialDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Materials";
+        private const string ProfileDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Profiles";
         private const string AdditiveShaderPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
         private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
@@ -94,6 +99,21 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        [MenuItem("Baryonyx/VFX/Create HD-2D Post Process and Apply to Top")]
+        public static void CreatePostProcessAndIntegrateTop()
+        {
+            EnsureAssets();
+            if (File.Exists(ToAbsolutePath(TopScenePath)))
+            {
+                var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+                if (TopHomeSceneSetup.EnsureTopPostProcess(scene))
+                    EditorSceneManager.SaveScene(scene, TopScenePath);
+            }
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
         [MenuItem("Baryonyx/VFX/Create HD-2D Ember Emitter and Apply to Top")]
         public static void CreateEmberEmitterAndIntegrateTop()
         {
@@ -112,6 +132,7 @@ namespace Baryonyx.App.Editor
             EnsureFolder(TextureDirectory);
             EnsureFolder(PrefabDirectory);
             EnsureFolder(MaterialDirectory);
+            EnsureFolder(ProfileDirectory);
 
             EnsureTexture(GlowTexturePath, 64, 64, CreateGlowPixels, FilterMode.Bilinear);
             EnsureTexture(RayTexturePath, 128, 64, CreateRayPixels, FilterMode.Bilinear);
@@ -142,6 +163,7 @@ namespace Baryonyx.App.Editor
             EnsureAdditiveMaterial();
             EnsureFlickerLightPrefab();
             EnsureEmberEmitterPrefab();
+            EnsurePostProcessProfile();
             EnsurePrefab();
         }
 
@@ -161,6 +183,7 @@ namespace Baryonyx.App.Editor
             changed |= TopHomeSceneSetup.EnsureTopFog(scene);
             changed |= TopHomeSceneSetup.EnsureTopFlickerLight(scene);
             changed |= TopHomeSceneSetup.EnsureTopEmberEmitter(scene);
+            changed |= TopHomeSceneSetup.EnsureTopPostProcess(scene);
             if (changed)
                 EditorSceneManager.SaveScene(scene, TopScenePath);
         }
@@ -255,6 +278,49 @@ namespace Baryonyx.App.Editor
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        private static void EnsurePostProcessProfile()
+        {
+            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath) != null)
+                return;
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, PostProcessProfilePath);
+
+            // Only bright pixels (flames, additive glows, light shafts) bloom; the pixel art
+            // itself stays sharp because the threshold sits above the painted mid-tones.
+            var bloom = profile.Add<Bloom>(true);
+            bloom.threshold.value = 0.8f;
+            bloom.intensity.value = 1.6f;
+            bloom.scatter.value = 0.65f;
+            bloom.tint.value = Color.white;
+            bloom.clamp.value = 65472f;
+            bloom.highQualityFiltering.value = false;
+            bloom.downscale.value = BloomDownscaleMode.Half;
+            bloom.maxIterations.value = 6;
+
+            var vignette = profile.Add<Vignette>(true);
+            vignette.color.value = Color.black;
+            vignette.center.value = new Vector2(0.5f, 0.5f);
+            vignette.intensity.value = 0.28f;
+            vignette.smoothness.value = 0.45f;
+            vignette.rounded.value = false;
+
+            var colorAdjustments = profile.Add<ColorAdjustments>(true);
+            colorAdjustments.postExposure.value = 0f;
+            colorAdjustments.contrast.value = 8f;
+            colorAdjustments.colorFilter.value = Color.white;
+            colorAdjustments.hueShift.value = 0f;
+            colorAdjustments.saturation.value = 6f;
+
+            foreach (var component in profile.components)
+            {
+                component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+                AssetDatabase.AddObjectToAsset(component, profile);
+            }
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
         }
 
         private static void EnsureAdditiveMaterial()

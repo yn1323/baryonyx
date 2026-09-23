@@ -15,7 +15,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var root = new VisualElement();
             root.Add(
                 new HelpBox(
-                    "TopCanvas > TopHd2dLightShaft で調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
+                    "TopBackdropCanvas > TopHd2dLightShaft で調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
                     HelpBoxMessageType.Info
                 )
             );

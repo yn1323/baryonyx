@@ -3,6 +3,8 @@ using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Baryonyx.Tests.EditMode
 {
@@ -20,6 +22,8 @@ namespace Baryonyx.Tests.EditMode
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
         private const string FlickerLightPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
+        private const string PostProcessProfilePath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset";
         private const string EmberEmitterPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
 
@@ -348,6 +352,34 @@ namespace Baryonyx.Tests.EditMode
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        [Test]
+        public void PostProcessProfileBloomsOnlyBrightLightsAndFramesTheCenter()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
+            Assert.That(profile, Is.Not.Null, PostProcessProfilePath);
+
+            Assert.That(profile.TryGet<Bloom>(out var bloom), Is.True);
+            Assert.That(bloom.active, Is.True);
+            Assert.That(bloom.IsActive(), Is.True);
+            // A threshold near 1 keeps the painted mid-tones and the pixel edges out of the bloom.
+            Assert.That(bloom.threshold.value, Is.InRange(0.7f, 1.2f));
+            Assert.That(bloom.intensity.value, Is.InRange(0.1f, 2f));
+
+            Assert.That(profile.TryGet<Vignette>(out var vignette), Is.True);
+            Assert.That(vignette.IsActive(), Is.True);
+            Assert.That(vignette.intensity.value, Is.InRange(0.05f, 0.45f));
+
+            Assert.That(profile.TryGet<ColorAdjustments>(out var colorAdjustments), Is.True);
+            Assert.That(colorAdjustments.IsActive(), Is.True);
+            Assert.That(
+                AssetDatabase
+                    .LoadAllAssetsAtPath(PostProcessProfilePath)
+                    .OfType<VolumeComponent>()
+                    .Count(),
+                Is.EqualTo(profile.components.Count)
+            );
         }
     }
 }

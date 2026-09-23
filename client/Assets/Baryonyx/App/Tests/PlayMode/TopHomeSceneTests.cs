@@ -6,6 +6,8 @@ using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -56,7 +58,33 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(controller.Transition.DefaultSettings.CoverDuration, Is.EqualTo(0.75f));
 
-            var background = canvas.transform.Find("TopBackground").GetComponent<RawImage>();
+            // The background goes through the camera so post-processing reaches it, while the
+            // interactive screen stays on the overlay canvas.
+            Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            var backdropCanvas = roots
+                .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
+                .Single(candidate => candidate.name == "TopBackdropCanvas");
+            Assert.That(backdropCanvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
+            Assert.That(backdropCanvas.worldCamera, Is.Not.Null);
+            Assert.That(
+                backdropCanvas.worldCamera.GetUniversalAdditionalCameraData().renderPostProcessing,
+                Is.True
+            );
+            Assert.That(backdropCanvas.GetComponent<GraphicRaycaster>(), Is.Null);
+            Assert.That(
+                backdropCanvas.GetComponent<CanvasScaler>().referenceResolution,
+                Is.EqualTo(new Vector2(1920, 1080))
+            );
+            Assert.That(canvas.transform.Find("TopBackground"), Is.Null);
+            var volume = roots
+                .SelectMany(root => root.GetComponentsInChildren<Volume>(true))
+                .Single();
+            Assert.That(volume.isGlobal, Is.True);
+            Assert.That(volume.sharedProfile.Has<Bloom>(), Is.True);
+
+            var background = backdropCanvas
+                .transform.Find("TopBackground")
+                .GetComponent<RawImage>();
             Assert.That(background.texture, Is.Not.Null);
             Assert.That(background.raycastTarget, Is.False);
             var responsiveBackground = background.GetComponent<ResponsiveBackground>();

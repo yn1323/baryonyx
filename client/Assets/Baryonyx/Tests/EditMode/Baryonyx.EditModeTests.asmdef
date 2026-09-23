@@ -1,7 +1,7 @@
 {
   "name": "Baryonyx.EditModeTests",
   "rootNamespace": "Baryonyx.Tests.EditMode",
-  "references": ["Baryonyx.Combat", "Baryonyx.Runtime", "Baryonyx.Editor"],
+  "references": ["Baryonyx.Combat", "Baryonyx.Runtime", "Baryonyx.Editor", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "overrideReferences": true,
   "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
   "includePlatforms": ["Editor"],

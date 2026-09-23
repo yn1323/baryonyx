@@ -9,6 +9,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App.Editor
@@ -27,6 +29,10 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
         private const string Hd2dFogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        private const string Hd2dPostProcessProfilePath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset";
+        public const string TopBackdropCanvasName = "TopBackdropCanvas";
+        public const string TopPostProcessVolumeName = "TopPostProcessVolume";
         private const string Hd2dEmberEmitterPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
         private const string Hd2dFlickerLightPrefabPath =
@@ -105,12 +111,17 @@ namespace Baryonyx.App.Editor
                     CreateTopBackground(scene, canvas.transform);
                     EnsureTopLightingVfx(scene);
                     EnsureTopLightShaft(scene);
+                    EnsureTopFog(scene);
+                    EnsureTopFlickerLight(scene);
+                    EnsureTopEmberEmitter(scene);
                     CreateTopScreen(scene, canvas.transform, screenName);
                 }
                 else
                     CreateHomeScreen(scene, canvas.transform, screenName, screenColor);
 
                 CreateCamera(scene, screenName + "Camera", screenColor);
+                if (clickable)
+                    EnsureTopPostProcess(scene);
                 CreateEventSystem(scene);
                 EditorSceneManager.SaveScene(scene, scenePath);
             }
@@ -302,6 +313,7 @@ namespace Baryonyx.App.Editor
             EnsureTopFog(scene);
             EnsureTopFlickerLight(scene);
             EnsureTopEmberEmitter(scene);
+            EnsureTopPostProcess(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -312,14 +324,114 @@ namespace Baryonyx.App.Editor
             EditorSceneManager.SaveScene(scene, scenePath);
         }
 
+        /// <summary>
+        /// Moves the background and HD-2D layers to a camera-rendered canvas so that the camera
+        /// post-processing (Bloom, Vignette, Color Adjustments) reaches them, while the title
+        /// and the tap target stay on the overlay canvas and keep crisp text.
+        /// </summary>
+        public static bool EnsureTopPostProcess(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var roots = scene.GetRootGameObjects();
+            var uiCanvas = roots.FirstOrDefault(root => root.name == "TopCanvas");
+            var camera = roots
+                .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
+                .FirstOrDefault();
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(Hd2dPostProcessProfilePath);
+            if (uiCanvas == null || camera == null || profile == null)
+                return false;
+
+            var changed = false;
+            var backdrop = roots.FirstOrDefault(root => root.name == TopBackdropCanvasName);
+            if (backdrop == null)
+            {
+                backdrop = CreateBackdropCanvas(scene, uiCanvas, camera);
+                changed = true;
+            }
+
+            // Everything except the interactive screen belongs to the lit backdrop.
+            var layers = uiCanvas
+                .transform.Cast<Transform>()
+                .Where(child => child.name == "TopBackground" || child.name.StartsWith("TopHd2d"))
+                .ToList();
+            foreach (var layer in layers)
+            {
+                layer.SetParent(backdrop.transform, false);
+                layer.SetAsLastSibling();
+                changed = true;
+            }
+
+            var cameraData = camera.GetUniversalAdditionalCameraData();
+            if (!cameraData.renderPostProcessing)
+            {
+                cameraData.renderPostProcessing = true;
+                EditorUtility.SetDirty(cameraData);
+                changed = true;
+            }
+
+            if (roots.All(root => root.name != TopPostProcessVolumeName))
+            {
+                var volumeObject = new GameObject(TopPostProcessVolumeName, typeof(Volume));
+                SceneManager.MoveGameObjectToScene(volumeObject, scene);
+                var volume = volumeObject.GetComponent<Volume>();
+                volume.isGlobal = true;
+                volume.priority = 0f;
+                volume.sharedProfile = profile;
+                changed = true;
+            }
+
+            if (changed)
+                EditorSceneManager.MarkSceneDirty(scene);
+            return changed;
+        }
+
+        private static GameObject CreateBackdropCanvas(
+            Scene scene,
+            GameObject uiCanvas,
+            Camera camera
+        )
+        {
+            var backdrop = new GameObject(
+                TopBackdropCanvasName,
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(UnityEngine.UI.CanvasScaler)
+            );
+            SceneManager.MoveGameObjectToScene(backdrop, scene);
+            backdrop.transform.SetSiblingIndex(uiCanvas.transform.GetSiblingIndex());
+
+            var canvas = backdrop.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = camera;
+            canvas.planeDistance = 10f;
+
+            // Match the overlay canvas scale so both canvases share the same layout units.
+            var source = uiCanvas.GetComponent<UnityEngine.UI.CanvasScaler>();
+            var scaler = backdrop.GetComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = source.uiScaleMode;
+            scaler.referenceResolution = source.referenceResolution;
+            scaler.screenMatchMode = source.screenMatchMode;
+            scaler.matchWidthOrHeight = source.matchWidthOrHeight;
+            return backdrop;
+        }
+
+        private static GameObject FindTopBackdrop(Scene scene)
+        {
+            var roots = scene.GetRootGameObjects();
+            var backdrop = roots.FirstOrDefault(root => root.name == TopBackdropCanvasName);
+            if (backdrop != null)
+                return backdrop;
+            return roots.FirstOrDefault(root => root.name == "TopCanvas");
+        }
+
         public static bool EnsureTopLightingVfx(Scene scene)
         {
             if (!scene.IsValid())
                 return false;
 
-            var canvas = scene
-                .GetRootGameObjects()
-                .FirstOrDefault(root => root.name == "TopCanvas");
+            var canvas = FindTopBackdrop(scene);
             if (canvas == null)
                 return false;
 
@@ -367,9 +479,7 @@ namespace Baryonyx.App.Editor
             if (!scene.IsValid())
                 return false;
 
-            var canvas = scene
-                .GetRootGameObjects()
-                .FirstOrDefault(root => root.name == "TopCanvas");
+            var canvas = FindTopBackdrop(scene);
             if (canvas == null)
                 return false;
 
@@ -417,9 +527,7 @@ namespace Baryonyx.App.Editor
             if (!scene.IsValid())
                 return false;
 
-            var canvas = scene
-                .GetRootGameObjects()
-                .FirstOrDefault(root => root.name == "TopCanvas");
+            var canvas = FindTopBackdrop(scene);
             if (canvas == null)
                 return false;
 
@@ -469,9 +577,7 @@ namespace Baryonyx.App.Editor
             if (!scene.IsValid())
                 return false;
 
-            var canvas = scene
-                .GetRootGameObjects()
-                .FirstOrDefault(root => root.name == "TopCanvas");
+            var canvas = FindTopBackdrop(scene);
             if (canvas == null)
                 return false;
 
@@ -522,9 +628,7 @@ namespace Baryonyx.App.Editor
             if (!scene.IsValid())
                 return false;
 
-            var canvas = scene
-                .GetRootGameObjects()
-                .FirstOrDefault(root => root.name == "TopCanvas");
+            var canvas = FindTopBackdrop(scene);
             if (canvas == null)
                 return false;
 

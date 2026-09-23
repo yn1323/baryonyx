@@ -1,7 +1,7 @@
 {
   "name": "Baryonyx.Editor",
   "rootNamespace": "Baryonyx.Editor",
-  "references": ["Baryonyx.Combat", "Baryonyx.Runtime", "Unity.TextMeshPro", "UnityEngine.UI", "Unity.InputSystem"],
+  "references": ["Baryonyx.Combat", "Baryonyx.Runtime", "Unity.TextMeshPro", "UnityEngine.UI", "Unity.InputSystem", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "includePlatforms": ["Editor"],
   "autoReferenced": true
 }
