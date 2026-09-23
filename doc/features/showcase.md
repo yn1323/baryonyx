@@ -45,7 +45,7 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 
 キャラクターなどのPrefabにAnimatorがある場合は、カタログ生成時に最初のAnimationClipとステートを候補として登録し、選択時に再生する。手動登録するShowcaseEntryでは、プレビュー用Prefab、PreviewAnimation、AnimationStateNameを指定できる。
 
-共通の `SceneTransition` Prefabを選ぶと、プレビュー下部の再生ボタンで Fade、横ワイプ、上下シャッター、左右シャッターを順に再生できる。各演出は閉じる・開くを続けて再生し、展示室からシーンを進行させずに見た目を確認する。
+共通の `SceneTransition` Prefabを選ぶと、プレビュー下部の再生ボタンで Fade、横ワイプ、上下シャッター、左右シャッターを順に再生できる。各演出は閉じる・開くを続けて再生し、展示室からシーンを進行させずに見た目を確認する。WipeとShutterは初期値の毎秒25コマのコマ送りで再生する。
 
 VFXカテゴリには `Hd2dLightShaft`、`Hd2dFog`、`Hd2dFlickerLight`、`Hd2dEmberEmitter` の各Prefabと、光芒・霧のノイズ画像を登録する。
 加算合成の `Hd2dUiAdditive` はマテリアル・シェーダーのカテゴリ、ポストプロセスの `Hd2dPostProcess` はデータのカテゴリに入る。

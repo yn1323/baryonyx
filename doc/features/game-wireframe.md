@@ -139,11 +139,12 @@ Canvasは高さを基準に拡縮するため、19.5:9と20:9の横長端末で�
 | [Combat](../../client/Assets/Baryonyx/Features/Combat/Runtime) | Unityの画面に依存しない戦闘計算、状態、試作カタログ |
 | [HealthWeekSummary](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthWeekSummary.cs) | 日付順、合計、最大値、欠損表示、棒の比率 |
 | [画面生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenAssets.cs) | 共通uGUI部品と生成の入口。ページ・戦闘・歩数の組み立ては専用ファイル |
-| [SceneTransitionController](../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransitionController.cs) | Fade、Wipe、上下・左右Shutterの選択、閉じる・開く時間、画面切り替えの入力遮断 |
+| [SceneTransitionController](../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransitionController.cs) | Fade、Wipe、上下・左右Shutterの選択、閉じる・開く時間、Wipe・Shutterのコマ送り、画面切り替えの入力遮断 |
 
 Prefabは `Baryonyx/Wireframe/Create Screen Assets` で再生成する。
 画面遷移の共通PrefabとTop/Mainへの配置は `Baryonyx/App/Create Scene Transition Assets` で生成する。
 Inspectorの `Exit` と `Enter` にある `SceneTransitionSettings` で、種類、色、閉じる時間、開く時間、Wipeの向き、Shutterの軸をそれぞれ選べる。
+WipeとShutterはドット絵に合わせ、`Stepped Frame Rate`（初期値25）の回数だけ1秒間に位置を更新するコマ送りで動く。値を上げるほど滑らかになり、0で毎フレーム動かす。Fadeは常に滑らかに変化する。
 別の画面から呼ぶ場合は、呼び出し元の `SceneTransitionController` に `PlayOut(settings, callback)` を渡し、暗転後のcallbackでシーンを読み込む。遷移先には `startCovered` と `revealOnStart` を設定し、遷移先ごとに1つの `Enter Settings` を選んで `PlayIn` を自動実行させる。遷移元によるEnter設定の引き継ぎは行わない。
 Androidをビルド対象にし、`Baryonyx/Wireframe/Build Android APK` でWireframeシーンを起動対象にしたAPKを作る。
 共通の `AndroidBuild.Build` を呼び、終了後に通常のビルドシーン設定を戻す。
