@@ -3,8 +3,7 @@
 !*/
 !*.cs
 
-# Unity template, third-party code, and generated sources.
-/Assets/TutorialInfo/
+# Third-party code and generated sources.
 /Assets/Plugins/
 /Assets/ThirdParty/
 /Assets/**/Generated/

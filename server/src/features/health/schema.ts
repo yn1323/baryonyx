@@ -2,10 +2,6 @@ import { z } from "zod";
 
 export const sourceIdSchema = z.string().regex(/^[a-f0-9-]{36}$/);
 
-export const googleAuthSchema = z.object({
-  idToken: z.string().max(12_000),
-});
-
 export const beginSyncSchema = z.object({
   sourceId: sourceIdSchema,
   provider: z.enum(["health_connect", "healthkit"]),

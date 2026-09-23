@@ -1,45 +1,13 @@
 import { Hono } from "hono";
-import { bodyLimit } from "hono/body-limit";
-import { authenticateSession } from "../health/auth.js";
+import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createHealthRepository } from "../health/repository.js";
-import type { HealthEnv } from "../health/routes.js";
-import { sourceIdSchema } from "../health/schema.js";
 import { createExerciseRewardsRepository } from "./repository.js";
-import { claimRewardsSchema } from "./schema.js";
+import { claimRewardsSchema, rewardSourceIdSchema } from "./schema.js";
 
 export function createExerciseRewardsApi() {
-  const api = new Hono<HealthEnv>();
-  api.use("*", async (c, next) => {
-    c.header("Cache-Control", "no-store");
-    await next();
-  });
-  api.use(
-    "*",
-    bodyLimit({
-      maxSize: 16_384,
-      onError: (c) => c.json({ error: "request_too_large" }, 413),
-    }),
-  );
-  api.use("*", async (c, next) => {
-    const session = await authenticateSession(
-      createHealthRepository(c.env.DB),
-      c.req.header("Authorization") ?? "",
-    );
-    if (!session) return c.json({ error: "unauthorized" }, 401);
-    c.set("userId", session.userId);
-    c.set("tokenHash", session.tokenHash);
-    await next();
-  });
-  api.onError(
-    () =>
-      new Response(JSON.stringify({ error: "service_unavailable" }), {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
-      }),
-  );
+  const api = new Hono<SessionEnv>();
+  api.use("/exercise/*", requireSession);
+  api.use("/runes/*", requireSession);
 
   api.post("/exercise/rewards/claim", async (c) => {
     const parsed = claimRewardsSchema.safeParse(
@@ -70,7 +38,7 @@ export function createExerciseRewardsApi() {
   });
 
   api.get("/exercise/rewards/days", async (c) => {
-    const sourceId = sourceIdSchema.safeParse(c.req.query("sourceId"));
+    const sourceId = rewardSourceIdSchema.safeParse(c.req.query("sourceId"));
     if (!sourceId.success) return c.json({ error: "invalid_request" }, 400);
     const userId = c.get("userId");
     const source = await createHealthRepository(c.env.DB).findSource(

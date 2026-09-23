@@ -54,7 +54,7 @@
 
 | 機能 | 現行仕様 | 実装の入口 |
 |---|---|---|
-| 健康データの読み取りと保存 | [機能詳細](health-data.md) | [画面起動](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)・[同期クライアント](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthClient.cs)・[API](../../server/src/features/health/routes.ts) |
+| 健康データの読み取りと保存 | [機能詳細](health-data.md) | [画面起動](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)・[サーバー同期](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)・[API](../../server/src/features/health/routes.ts) |
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
 | 画面の操作ワイヤー | [操作と制約](game-wireframe.md) | [起動シーン](../../client/Assets/Baryonyx/App/Scenes/Wireframe.unity) |
 | 戦闘MVP | [試作値と実装範囲](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |

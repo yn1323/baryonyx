@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { hashToken } from "../../src/features/health/auth.js";
+import { hashToken } from "../../src/features/accounts/auth.js";
 import {
   createHealthScenario,
   type HealthScenario,

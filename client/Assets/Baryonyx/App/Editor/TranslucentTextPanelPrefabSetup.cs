@@ -21,8 +21,7 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/App/Art/Top/TopTitlePanelGradient.png";
         private const string OldBackdropTexturePath =
             "Assets/Baryonyx/App/Art/Top/TopTitleBackdropGradient.png";
-        private const string FontPath =
-            "Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16.asset";
+        private const string FontPath = "Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset";
         private static readonly Color BackdropColor = new Color(0.3f, 0.3f, 0.3f, 0.42f);
 
         [MenuItem("Baryonyx/App/Create Translucent Text Panel Prefab")]

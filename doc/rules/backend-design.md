@@ -76,7 +76,7 @@ HTTP要求のスキーマは所有する機能の `schema.ts` に置き、Hono�
 業務処理とDB操作には検証済みの `data` を渡し、TypeScriptの型は `z.infer` でスキーマから導出する。
 依存バージョンは [package.json](../../server/package.json) に固定する。
 
-健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は、ログイン、同期開始、取得元ID、歩数保存の要求を検証する。
+健康データAPIの [入力スキーマ](../../server/src/features/health/schema.ts) は同期開始、取得元ID、歩数保存の要求を、アカウントの [入力スキーマ](../../server/src/features/accounts/schema.ts) はログイン要求を検証する。
 日別データの型・件数・数値範囲に加え、`refine()` で期間の連続性、タイムゾーンと日付境界、欠損と歩数の整合を確認する。
 単日では欠損と歩数、取得時刻の範囲、指定タイムゾーンの日付境界を検証し、週全体では同一タイムゾーン、区間の連続性、日付の重複を検証する。
 区間の連続性はUTC日時を数値へ変換して比較し、日時文字列の小数秒の表記差や夏時間による1日の長さの変化を受け入れる。
@@ -86,19 +86,22 @@ Zodのエラー詳細や入力値はHTTP応答へ含めない。
 
 参考：[Zodの基本的な使い方](https://zod.dev/basics)、[Honoの入力検証](https://hono.dev/docs/guides/validation)。
 
-## 健康データの認証
+## 認証とAPIの組み立て
 
-[routes.ts](../../server/src/features/health/routes.ts) はHTTPのパス、入力検証、認証middlewareの適用順と応答を管理する。
-[auth.ts](../../server/src/features/health/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
+認証とユーザー・セッションは、健康データと運動報酬が共通で使うため `features/accounts/` に置く。
+[routes.ts](../../server/src/features/accounts/routes.ts) はログインとログアウト、[auth.ts](../../server/src/features/accounts/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
 DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ委譲する。
+セッションが必要な機能は [session.ts](../../server/src/features/accounts/session.ts) の `requireSession` を、自分のパス（`/health/*` など）にだけ付ける。
+
+[app.ts](../../server/src/app.ts) の `createApi` は、`Cache-Control: no-store`、16KBの本文上限、503応答の共通設定を [shared/http.ts](../../server/src/shared/http.ts) で一度だけ付け、各機能のHonoアプリを接続する。
+Honoでは同じ接続先へ接続した機能の `use("*")` が他機能のパスにも適用されるため、機能内で `use("*")` を使わない。
 署名検証テストはルート定義を読み込まずに認証処理を検証し、HTTPの認証失敗・期限切れ・ログアウトはAPIシナリオで確認する。
-認証はHealth機能内に置き、ほかの機能で実際に必要になるまで共通化しない。
 
 ## DrizzleによるDB操作
 
 DB操作には `drizzle-orm/d1` を使い、リクエストのD1 bindingから [createDatabase](../../server/src/shared/db.ts) で接続を作る。
 テーブル定義は所有する機能の `db-schema.ts`、DB操作は同じ機能の `repository.ts` に置く。
-健康データでは [DBスキーマ](../../server/src/features/health/db-schema.ts) と [repository](../../server/src/features/health/repository.ts) が対応する。
+健康データでは [DBスキーマ](../../server/src/features/health/db-schema.ts) と [repository](../../server/src/features/health/repository.ts)、ユーザーとセッションでは [DBスキーマ](../../server/src/features/accounts/db-schema.ts) と [repository](../../server/src/features/accounts/repository.ts) が対応する。
 HTTPの入力検証は `schema.ts` に残し、DBスキーマと分ける。
 
 取得・更新にはDrizzleのクエリービルダーを使い、値をSQLへ埋め込む場合はパラメーター化する `sql` タグを使う。
@@ -161,7 +164,8 @@ Drizzle経由の取得・更新と、セッション作成に失敗した場合�
 Miniflareはバンドル済みのWorkerを使うため、ソースだけを変更しても結合テストのWorkerには反映されない。
 健康データAPIの業務シナリオは、[認証・入力エラー](../../server/tests/scenarios/health-auth.test.ts)、[歩数の同期](../../server/tests/scenarios/health-sync.test.ts)、[セッションの失効](../../server/tests/scenarios/health-session.test.ts) に分ける。
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
-入力検証の単体テストは [schema.test.ts](../../server/src/features/health/schema.test.ts) に置き、実装と同じ機能内で管理する。
+入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
+運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
 
 [Vitest設定](../../server/vitest.config.ts) でファイル間の並列実行を有効にし、単体・結合・シナリオテストを合わせて最大3並列に固定する。
 ファイル内のテストは順番に実行する。

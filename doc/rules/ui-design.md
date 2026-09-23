@@ -33,7 +33,7 @@ Androidの大画面では向きの指定が上書きされる条件とゲーム�
 
 Unity `6000.6.0f1` のゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
 画面、ボタン、数値、JSONなどゲーム内のTextMeshProテキストはDotGothic16で統一する。
-フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)に揃える。
+フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)に揃える。
 新規画面もuGUIを既定とし、UI Toolkitは独立した新規画面で明確な利点があり、入力・描画順・フォーカス・ライフサイクル・テストの境界を設計できる場合だけ採用する。
 uGUIとUI Toolkitを同じ画面で使う場合は、採用理由とEventSystem、Input System UI Input Moduleの構成を記録する。
 IMGUIはゲーム中のUIに使わず、エディター専用の診断・制作ツールに限定する。
@@ -123,6 +123,8 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 自動テストは座標計算、実Prefabの配置、仮想入力からの操作を検査し、[Unityのテスト手順](client-testing.md)で実行する。
 GameビューとDevice Simulatorは配置と基本操作の目視確認に使う。
 Simulatorは実機の動作すべてを再現しないため、文字の読みやすさ、タップ、システムバー、OS画面からの復帰は [Androidの実機確認](client-android-testing.md#手動で残す確認) で確かめる。[Device Simulatorの用途と制限](https://docs.unity3d.com/6000.6/Documentation/Manual/device-simulator-introduction.html)
+実機確認に使うmoto edge 50 pro（1220×2712、20:9）は、Unity Editorの起動時に [GameViewDeviceSizes](../../client/Assets/Baryonyx/Editor/GameViewDeviceSizes.cs) がGameビューのAndroidグループへ横向きの `moto edge 50 pro (2712x1220)` として登録する。[端末仕様](https://en-us.support.motorola.com/app/answers/detail/a_id/178982/~/specifications---motorola-edge-50-pro)
+この登録は画面サイズだけを再現し、Safe Areaとパンチホールは含まない。
 
 確認画像は `client/Assets/DevCaptures/` に保存し、機種・解像度・状態・テストデータの使用有無を記録する。
 個人の健康データや認証情報を画像へ含めない。

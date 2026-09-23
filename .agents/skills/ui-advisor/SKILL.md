@@ -20,7 +20,7 @@ description: スマホ向けUnityゲームのUI、画面構成、UX、デザイ�
 プロジェクト固有のUI構成、画面方向、基準解像度、Safe Area、UIシステムの採用方針は、[UI設計ルール](../../../doc/rules/ui-design.md)を正本とする。
 
 ゲーム内のTextMeshProテキストはDotGothic16を使う。
-画面、ボタン、数値、JSONなど表示箇所を同じフォントで統一し、フォント本体とライセンスは[ゲーム画面のフォント](../../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)を参照する。
+画面、ボタン、数値、JSONなど表示箇所を同じフォントで統一し、フォント本体とライセンスは[ゲーム画面のフォント](../../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)を参照する。
 新しい画面や実行時生成のTextMeshProにも同じアセットを設定し、画面ごとのフォント差し替えを行わない。
 
 バージョン固有のAPIや推奨は記憶で断定せず、Unity公式マニュアルの対象バージョンを確認する。調査の入口は [references/research-sources.md](references/research-sources.md) にある。

@@ -18,6 +18,12 @@ describe("HTTPの疎通確認", () => {
     expect(response.status).toBe(404);
   });
 
+  it("/v1の未定義パスは認証を求めず404を返す", async () => {
+    const response = await app.request("/v1/missing");
+
+    expect(response.status).toBe(404);
+  });
+
   it("DBのbindingがない場合もhealthは成功し、readyは503を返す", async () => {
     const response = await app.request("/ready");
     expect(response.status).toBe(503);

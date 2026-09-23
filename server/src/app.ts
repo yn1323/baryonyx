@@ -1,8 +1,26 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import {
+  type VerifyIdentity,
+  verifyGoogleIdentity,
+} from "./features/accounts/auth.js";
+import { createAccountsApi } from "./features/accounts/routes.js";
+import type { SessionEnv } from "./features/accounts/session.js";
 import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
 import { createDatabase } from "./shared/db.js";
+import { applyApiDefaults } from "./shared/http.js";
+
+// 公開APIを組み立てる。テストでは本人確認だけを差し替える。
+export function createApi(
+  verifyIdentity: VerifyIdentity = verifyGoogleIdentity,
+) {
+  const api = applyApiDefaults(new Hono<SessionEnv>());
+  api.route("/", createAccountsApi(verifyIdentity));
+  api.route("/", createHealthApi());
+  api.route("/", createExerciseRewardsApi());
+  return api;
+}
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -28,7 +46,6 @@ app.get("/ready", async (c) => {
   return c.json({ status: "unavailable", database: "unavailable" }, 503);
 });
 
-app.route("/v1", createHealthApi());
-app.route("/v1", createExerciseRewardsApi());
+app.route("/v1", createApi());
 
 export default app;

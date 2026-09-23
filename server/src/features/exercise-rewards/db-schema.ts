@@ -7,7 +7,8 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import { appUsers, healthSources } from "../health/db-schema.js";
+import { appUsers } from "../accounts/db-schema.js";
+import { healthSources } from "../health/db-schema.js";
 
 export const exerciseRewardDays = sqliteTable(
   "exercise_reward_days",
