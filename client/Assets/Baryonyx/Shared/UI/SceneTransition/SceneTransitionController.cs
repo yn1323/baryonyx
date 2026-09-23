@@ -135,11 +135,7 @@ namespace Baryonyx.UI
             {
                 yield return null;
                 elapsed += Time.unscaledDeltaTime;
-                ApplyProgress(
-                    settings,
-                    Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration)),
-                    closing
-                );
+                ApplyProgress(settings, settings.EvaluateProgress(elapsed, duration), closing);
             }
             ApplyProgress(settings, 1f, closing);
             covered = closing;
