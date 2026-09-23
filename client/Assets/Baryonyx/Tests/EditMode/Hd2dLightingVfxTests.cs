@@ -18,6 +18,8 @@ namespace Baryonyx.Tests.EditMode
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
         private const string FogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        private const string FlickerLightPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
 
         [Test]
         public void LightingPrefabContainsEditableParticleLayer()
@@ -208,6 +210,67 @@ namespace Baryonyx.Tests.EditMode
                     banks.All(bank => bank.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void FlickerStaysInRangeAndChangesOverTime()
+        {
+            var samples = Enumerable
+                .Range(0, 200)
+                .Select(step => Hd2dFlickerLight.EvaluateFlicker01(12.3f, step * 0.05f, 2.4f))
+                .ToArray();
+
+            Assert.That(samples.All(value => value >= 0f && value <= 1f), Is.True);
+            Assert.That(samples.Max() - samples.Min(), Is.GreaterThan(0.2f));
+            Assert.That(
+                Hd2dFlickerLight.EvaluateFlicker01(12.3f, 1f, 2.4f),
+                Is.EqualTo(Hd2dFlickerLight.EvaluateFlicker01(12.3f, 1f, 2.4f))
+            );
+        }
+
+        [Test]
+        public void FlickerLightIsAnIndividuallyReusableAdditivePrefab()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FlickerLightPrefabPath);
+            Assert.That(prefab, Is.Not.Null, FlickerLightPrefabPath);
+
+            var light = prefab.GetComponent<Hd2dFlickerLight>();
+            Assert.That(light, Is.Not.Null);
+            Assert.That(light.LightLayer, Is.Not.Null);
+            Assert.That(light.GlowSprite, Is.Not.Null);
+            Assert.That(light.AdditiveMaterial, Is.Not.Null);
+            Assert.That(
+                light.AdditiveMaterial.shader.name,
+                Is.EqualTo("Baryonyx/HD2D/UI Additive")
+            );
+            Assert.That(light.AdditiveMaterial.shader.isSupported, Is.True);
+            Assert.That(light.PreviewInEditor, Is.True);
+            Assert.That(light.Sources, Is.Not.Empty);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var instanceLight = instance.GetComponent<Hd2dFlickerLight>();
+                instanceLight.RebuildLights();
+                var images = instanceLight.LightLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
+                    true
+                );
+                var expected = light.Sources.Sum(source => source.ReflectionAlpha > 0f ? 3 : 2);
+                Assert.That(images, Has.Length.EqualTo(expected));
+                Assert.That(images.All(image => image.material == light.AdditiveMaterial), Is.True);
+                Assert.That(images.All(image => !image.raycastTarget), Is.True);
+                Assert.That(
+                    images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
+                    Is.True
+                );
+                var core = images.Single(image => image.name.EndsWith("_Core"));
+                Assert.That(core.rectTransform.anchorMin, Is.EqualTo(light.Sources[0].Anchor));
+                Assert.That(core.color.a, Is.GreaterThan(0f));
             }
             finally
             {

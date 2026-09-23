@@ -23,9 +23,16 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
         public const string FogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        public const string FlickerLightPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
+        public const string AdditiveMaterialPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Materials/Hd2dUiAdditive.mat";
 
         private const string TextureDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Textures";
         private const string PrefabDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs";
+        private const string MaterialDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Materials";
+        private const string AdditiveShaderPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
         private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
 
         private const string GlowTexturePath = TextureDirectory + "/Hd2dGlowSoft.png";
@@ -75,6 +82,16 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        [MenuItem("Baryonyx/VFX/Create HD-2D Flicker Light and Apply to Top")]
+        public static void CreateFlickerLightAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateFlickerLightOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
         public static void EnsureAssets()
         {
             EnsureFolder("Assets/Baryonyx/Shared");
@@ -82,6 +99,7 @@ namespace Baryonyx.App.Editor
             EnsureFolder("Assets/Baryonyx/Shared/VFX/HD2D");
             EnsureFolder(TextureDirectory);
             EnsureFolder(PrefabDirectory);
+            EnsureFolder(MaterialDirectory);
 
             EnsureTexture(GlowTexturePath, 64, 64, CreateGlowPixels, FilterMode.Bilinear);
             EnsureTexture(RayTexturePath, 128, 64, CreateRayPixels, FilterMode.Bilinear);
@@ -109,6 +127,8 @@ namespace Baryonyx.App.Editor
             EnsureParticleFieldPrefab();
             EnsureLightShaftPrefab();
             EnsureFogPrefab();
+            EnsureAdditiveMaterial();
+            EnsureFlickerLightPrefab();
             EnsurePrefab();
         }
 
@@ -126,6 +146,7 @@ namespace Baryonyx.App.Editor
             var changed = TopHomeSceneSetup.EnsureTopLightingVfx(scene);
             changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
             changed |= TopHomeSceneSetup.EnsureTopFog(scene);
+            changed |= TopHomeSceneSetup.EnsureTopFlickerLight(scene);
             if (changed)
                 EditorSceneManager.SaveScene(scene, TopScenePath);
         }
@@ -158,6 +179,70 @@ namespace Baryonyx.App.Editor
 
             if (TopHomeSceneSetup.EnsureTopFog(scene))
                 EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateFlickerLightOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopFlickerLight(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void EnsureAdditiveMaterial()
+        {
+            if (AssetDatabase.LoadAssetAtPath<Material>(AdditiveMaterialPath) != null)
+                return;
+
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(AdditiveShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException($"Shader not found: {AdditiveShaderPath}");
+            AssetDatabase.CreateAsset(new Material(shader), AdditiveMaterialPath);
+        }
+
+        private static void EnsureFlickerLightPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(FlickerLightPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dFlickerLight", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var light = root.AddComponent<Hd2dFlickerLight>();
+                light.LightLayer = CreateLayer("LightLayer", root.transform);
+                light.GlowSprite = LoadSprite(GlowTexturePath);
+                light.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                    AdditiveMaterialPath
+                );
+                light.PlayOnEnable = true;
+                light.Animate = true;
+                light.UseUnscaledTime = true;
+                light.RandomSeed = 4242;
+                light.Intensity = 1f;
+                // A single torch-like sample; each screen places its own light sources.
+                light.Sources = new System.Collections.Generic.List<Hd2dFlickerLightSource>
+                {
+                    new Hd2dFlickerLightSource
+                    {
+                        Name = "Torch",
+                        Anchor = new Vector2(0.5f, 0.6f),
+                        ReflectionAnchor = new Vector2(0.5f, 0.3f),
+                    },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, FlickerLightPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void EnsureFogPrefab()

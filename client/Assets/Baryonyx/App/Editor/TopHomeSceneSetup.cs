@@ -27,6 +27,8 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
         private const string Hd2dFogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        private const string Hd2dFlickerLightPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
 
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
@@ -296,6 +298,7 @@ namespace Baryonyx.App.Editor
             EnsureTopLightingVfx(scene);
             EnsureTopLightShaft(scene);
             EnsureTopFog(scene);
+            EnsureTopFlickerLight(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -456,6 +459,120 @@ namespace Baryonyx.App.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
+        }
+
+        public static bool EnsureTopFlickerLight(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var canvas = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(root => root.name == "TopCanvas");
+            if (canvas == null)
+                return false;
+
+            var existing = canvas
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopHd2dFlickerLight");
+            if (existing != null)
+                return false;
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dFlickerLightPrefabPath);
+            if (prefab == null)
+                return false;
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    $"HD-2D flicker light prefab could not be instantiated: {Hd2dFlickerLightPrefabPath}"
+                );
+
+            instance.name = "TopHd2dFlickerLight";
+            instance.transform.SetParent(canvas.transform, false);
+
+            // The torches are painted in the background, so the lights follow the covered
+            // background rect instead of the screen and stay on the flames at any aspect ratio.
+            var background = canvas.transform.Find("TopBackground");
+            var backgroundImage =
+                background != null ? background.GetComponent<UnityEngine.UI.RawImage>() : null;
+            var aligned = instance.AddComponent<ResponsiveBackground>();
+            if (backgroundImage != null && backgroundImage.texture != null)
+                aligned.AspectRatio =
+                    backgroundImage.texture.width / (float)backgroundImage.texture.height;
+            aligned.Apply();
+
+            // Lights sit above the fog so the flames are not veiled, and below the shafts.
+            var fog = canvas.transform.Find("TopHd2dFog");
+            if (fog != null)
+                instance.transform.SetSiblingIndex(fog.GetSiblingIndex() + 1);
+            else if (background != null)
+                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
+            else
+                instance.transform.SetAsFirstSibling();
+
+            var light = instance.GetComponent<Hd2dFlickerLight>();
+            if (light != null)
+            {
+                light.Sources = CreateTopTorches();
+                PrefabUtility.RecordPrefabInstancePropertyModifications(light);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
+        }
+
+        private static System.Collections.Generic.List<Hd2dFlickerLightSource> CreateTopTorches()
+        {
+            // Positions are normalized to TopDungeonBackground.png (origin at the bottom left).
+            // The outer torches hang on the near pillars; the inner ones on the far wall.
+            return new System.Collections.Generic.List<Hd2dFlickerLightSource>
+            {
+                CreateTorch("OuterLeft", new Vector2(0.105f, 0.72f), new Vector2(0.17f, 0.27f), 1f),
+                CreateTorch(
+                    "InnerLeft",
+                    new Vector2(0.358f, 0.635f),
+                    new Vector2(0.37f, 0.36f),
+                    0.7f
+                ),
+                CreateTorch(
+                    "InnerRight",
+                    new Vector2(0.642f, 0.635f),
+                    new Vector2(0.63f, 0.36f),
+                    0.7f
+                ),
+                CreateTorch(
+                    "OuterRight",
+                    new Vector2(0.894f, 0.72f),
+                    new Vector2(0.83f, 0.27f),
+                    1f
+                ),
+            };
+        }
+
+        private static Hd2dFlickerLightSource CreateTorch(
+            string name,
+            Vector2 anchor,
+            Vector2 reflectionAnchor,
+            float scale
+        )
+        {
+            return new Hd2dFlickerLightSource
+            {
+                Name = name,
+                Anchor = anchor,
+                Color = new Color(1f, 0.58f, 0.24f, 1f),
+                CoreSize = new Vector2(140f, 150f) * scale,
+                CoreAlpha = 0.55f,
+                HaloSize = new Vector2(460f, 460f) * scale,
+                HaloAlpha = 0.22f,
+                ReflectionAnchor = reflectionAnchor,
+                ReflectionSize = new Vector2(420f, 100f) * scale,
+                ReflectionAlpha = 0.24f,
+                FlickerAmount = 0.22f,
+                FlickerSpeed = 2.4f,
+                SizeJitter = 0.05f,
+            };
         }
 
         private static Hd2dFogLayer CreateTopDeepHaze()
