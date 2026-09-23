@@ -2,6 +2,7 @@
   "name": "Baryonyx.PlayModeTests",
   "rootNamespace": "Baryonyx.Tests.PlayMode",
   "references": [
+    "Baryonyx.Combat",
     "Baryonyx.Runtime",
     "Unity.InputSystem",
     "Unity.InputSystem.TestFramework",
