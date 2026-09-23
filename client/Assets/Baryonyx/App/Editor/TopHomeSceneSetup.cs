@@ -27,6 +27,8 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
         private const string Hd2dFogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        private const string Hd2dEmberEmitterPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
         private const string Hd2dFlickerLightPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
 
@@ -299,6 +301,7 @@ namespace Baryonyx.App.Editor
             EnsureTopLightShaft(scene);
             EnsureTopFog(scene);
             EnsureTopFlickerLight(scene);
+            EnsureTopEmberEmitter(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -491,16 +494,8 @@ namespace Baryonyx.App.Editor
             instance.name = "TopHd2dFlickerLight";
             instance.transform.SetParent(canvas.transform, false);
 
-            // The torches are painted in the background, so the lights follow the covered
-            // background rect instead of the screen and stay on the flames at any aspect ratio.
+            AlignWithBackground(canvas.transform, instance);
             var background = canvas.transform.Find("TopBackground");
-            var backgroundImage =
-                background != null ? background.GetComponent<UnityEngine.UI.RawImage>() : null;
-            var aligned = instance.AddComponent<ResponsiveBackground>();
-            if (backgroundImage != null && backgroundImage.texture != null)
-                aligned.AspectRatio =
-                    backgroundImage.texture.width / (float)backgroundImage.texture.height;
-            aligned.Apply();
 
             // Lights sit above the fog so the flames are not veiled, and below the shafts.
             var fog = canvas.transform.Find("TopHd2dFog");
@@ -520,6 +515,111 @@ namespace Baryonyx.App.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
+        }
+
+        public static bool EnsureTopEmberEmitter(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var canvas = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(root => root.name == "TopCanvas");
+            if (canvas == null)
+                return false;
+
+            var existing = canvas
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopHd2dEmberEmitter");
+            if (existing != null)
+                return false;
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dEmberEmitterPrefabPath);
+            if (prefab == null)
+                return false;
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    $"HD-2D ember emitter prefab could not be instantiated: {Hd2dEmberEmitterPrefabPath}"
+                );
+
+            instance.name = "TopHd2dEmberEmitter";
+            instance.transform.SetParent(canvas.transform, false);
+            AlignWithBackground(canvas.transform, instance);
+
+            // Embers rise in front of the torch glow and behind the light shafts.
+            var light = canvas.transform.Find("TopHd2dFlickerLight");
+            var background = canvas.transform.Find("TopBackground");
+            if (light != null)
+                instance.transform.SetSiblingIndex(light.GetSiblingIndex() + 1);
+            else if (background != null)
+                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
+            else
+                instance.transform.SetAsFirstSibling();
+
+            var emitter = instance.GetComponent<Hd2dEmberEmitter>();
+            if (emitter != null)
+            {
+                emitter.Sources = CreateTopTorchEmbers();
+                PrefabUtility.RecordPrefabInstancePropertyModifications(emitter);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
+        }
+
+        private static void AlignWithBackground(Transform canvas, GameObject instance)
+        {
+            // Painted light sources move with the covered background, not with the screen.
+            var background = canvas.Find("TopBackground");
+            var backgroundImage =
+                background != null ? background.GetComponent<UnityEngine.UI.RawImage>() : null;
+            var aligned = instance.AddComponent<ResponsiveBackground>();
+            if (backgroundImage != null && backgroundImage.texture != null)
+                aligned.AspectRatio =
+                    backgroundImage.texture.width / (float)backgroundImage.texture.height;
+            aligned.Apply();
+        }
+
+        private static System.Collections.Generic.List<Hd2dEmberSource> CreateTopTorchEmbers()
+        {
+            // Same background coordinates as the flicker lights, just above each flame.
+            return new System.Collections.Generic.List<Hd2dEmberSource>
+            {
+                CreateTorchEmbers("OuterLeft", new Vector2(0.105f, 0.745f), 10, 1f),
+                CreateTorchEmbers("InnerLeft", new Vector2(0.358f, 0.652f), 6, 0.7f),
+                CreateTorchEmbers("InnerRight", new Vector2(0.642f, 0.652f), 6, 0.7f),
+                CreateTorchEmbers("OuterRight", new Vector2(0.894f, 0.745f), 10, 1f),
+            };
+        }
+
+        private static Hd2dEmberSource CreateTorchEmbers(
+            string name,
+            Vector2 anchor,
+            int count,
+            float scale
+        )
+        {
+            return new Hd2dEmberSource
+            {
+                Name = name,
+                Anchor = anchor,
+                SpawnArea = new Vector2(28f, 10f) * scale,
+                Count = count,
+                Loop = true,
+                LifetimeRange = new Vector2(1.1f, 2.3f),
+                Direction = 90f,
+                Spread = 34f,
+                SpeedRange = new Vector2(34f, 72f) * scale,
+                Buoyancy = 14f * scale,
+                Sway = 9f * scale,
+                SwaySpeed = 1.7f,
+                SizeRange = scale < 1f ? new Vector2(3f, 5f) : new Vector2(4f, 7f),
+                StartColor = new Color(1f, 0.84f, 0.46f, 1f),
+                EndColor = new Color(1f, 0.32f, 0.08f, 0f),
+                Twinkle = 0.35f,
+            };
         }
 
         private static System.Collections.Generic.List<Hd2dFlickerLightSource> CreateTopTorches()

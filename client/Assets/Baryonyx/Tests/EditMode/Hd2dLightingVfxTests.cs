@@ -20,6 +20,8 @@ namespace Baryonyx.Tests.EditMode
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
         private const string FlickerLightPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
+        private const string EmberEmitterPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
 
         [Test]
         public void LightingPrefabContainsEditableParticleLayer()
@@ -271,6 +273,76 @@ namespace Baryonyx.Tests.EditMode
                 var core = images.Single(image => image.name.EndsWith("_Core"));
                 Assert.That(core.rectTransform.anchorMin, Is.EqualTo(light.Sources[0].Anchor));
                 Assert.That(core.color.a, Is.GreaterThan(0f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void EmbersRiseWithBuoyancyAndFadeOverTheirLife()
+        {
+            var still = Hd2dEmberEmitter.EvaluateOffset(Vector2.zero, 0f, 0f, 0f, 0f, 2f);
+            Assert.That(still, Is.EqualTo(Vector2.zero));
+
+            var rising = Hd2dEmberEmitter.EvaluateOffset(new Vector2(0f, 40f), 10f, 0f, 0f, 0f, 2f);
+            Assert.That(rising.y, Is.EqualTo(40f * 2f + 0.5f * 10f * 4f).Within(1e-4f));
+
+            var swayAtBirth = Hd2dEmberEmitter.EvaluateOffset(Vector2.zero, 0f, 8f, 1.6f, 1.2f, 0f);
+            Assert.That(swayAtBirth.magnitude, Is.LessThan(1e-4f));
+
+            Assert.That(Hd2dEmberEmitter.EvaluateLifeAlpha(0f, 1f, 0f), Is.EqualTo(0f));
+            Assert.That(Hd2dEmberEmitter.EvaluateLifeAlpha(0.2f, 1f, 0f), Is.GreaterThan(0.8f));
+            Assert.That(Hd2dEmberEmitter.EvaluateLifeAlpha(1f, 1f, 0f), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void EmberEmitterIsAnIndividuallyReusablePrefabWithBursts()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath);
+            Assert.That(prefab, Is.Not.Null, EmberEmitterPrefabPath);
+
+            var emitter = prefab.GetComponent<Hd2dEmberEmitter>();
+            Assert.That(emitter, Is.Not.Null);
+            Assert.That(emitter.ParticleLayer, Is.Not.Null);
+            Assert.That(emitter.AdditiveMaterial, Is.Not.Null);
+            Assert.That(emitter.PreviewInEditor, Is.True);
+            Assert.That(emitter.Sources, Is.Not.Empty);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var instanceEmitter = instance.GetComponent<Hd2dEmberEmitter>();
+                instanceEmitter.RebuildParticles();
+                var images =
+                    instanceEmitter.ParticleLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
+                        true
+                    );
+                Assert.That(
+                    images,
+                    Has.Length.EqualTo(emitter.Sources.Sum(source => source.Count))
+                );
+                Assert.That(images.All(image => !image.raycastTarget), Is.True);
+                Assert.That(
+                    images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
+                    Is.True
+                );
+                Assert.That(
+                    images.All(image => image.rectTransform.sizeDelta.x % 1f == 0f),
+                    Is.True
+                );
+
+                // A one-shot source stays hidden until a burst emits it.
+                instanceEmitter.Sources[0].Loop = false;
+                instanceEmitter.RebuildParticles();
+                images =
+                    instanceEmitter.ParticleLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
+                        true
+                    );
+                Assert.That(images.Count(image => image.enabled), Is.EqualTo(0));
+                instanceEmitter.Burst(0, 3);
+                Assert.That(images.Count(image => image.enabled), Is.EqualTo(3));
             }
             finally
             {

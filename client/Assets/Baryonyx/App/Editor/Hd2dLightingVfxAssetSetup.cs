@@ -25,6 +25,8 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
         public const string FlickerLightPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
+        public const string EmberEmitterPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
         public const string AdditiveMaterialPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Materials/Hd2dUiAdditive.mat";
 
@@ -92,6 +94,16 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        [MenuItem("Baryonyx/VFX/Create HD-2D Ember Emitter and Apply to Top")]
+        public static void CreateEmberEmitterAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateEmberEmitterOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
         public static void EnsureAssets()
         {
             EnsureFolder("Assets/Baryonyx/Shared");
@@ -129,6 +141,7 @@ namespace Baryonyx.App.Editor
             EnsureFogPrefab();
             EnsureAdditiveMaterial();
             EnsureFlickerLightPrefab();
+            EnsureEmberEmitterPrefab();
             EnsurePrefab();
         }
 
@@ -147,6 +160,7 @@ namespace Baryonyx.App.Editor
             changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
             changed |= TopHomeSceneSetup.EnsureTopFog(scene);
             changed |= TopHomeSceneSetup.EnsureTopFlickerLight(scene);
+            changed |= TopHomeSceneSetup.EnsureTopEmberEmitter(scene);
             if (changed)
                 EditorSceneManager.SaveScene(scene, TopScenePath);
         }
@@ -194,6 +208,53 @@ namespace Baryonyx.App.Editor
 
             if (TopHomeSceneSetup.EnsureTopFlickerLight(scene))
                 EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateEmberEmitterOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopEmberEmitter(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void EnsureEmberEmitterPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dEmberEmitter", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var emitter = root.AddComponent<Hd2dEmberEmitter>();
+                emitter.ParticleLayer = CreateLayer("ParticleLayer", root.transform);
+                emitter.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                    AdditiveMaterialPath
+                );
+                emitter.PlayOnEnable = true;
+                emitter.Animate = true;
+                emitter.UseUnscaledTime = true;
+                emitter.RandomSeed = 7070;
+                emitter.Intensity = 1f;
+                // A single ember stream as a sample; each screen places its own sources.
+                emitter.Sources = new System.Collections.Generic.List<Hd2dEmberSource>
+                {
+                    new Hd2dEmberSource { Name = "Embers", Anchor = new Vector2(0.5f, 0.4f) },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, EmberEmitterPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void EnsureAdditiveMaterial()
