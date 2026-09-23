@@ -8,10 +8,8 @@ namespace Baryonyx.Editor
 {
     public static class GameFontAssets
     {
-        public const string SourcePath =
-            "Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16-Regular.ttf";
-        public const string FontAssetPath =
-            "Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16.asset";
+        public const string SourcePath = "Assets/Baryonyx/Shared/UI/Fonts/DotGothic16-Regular.ttf";
+        public const string FontAssetPath = "Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset";
 
         public static TMP_FontAsset GetOrCreate()
         {

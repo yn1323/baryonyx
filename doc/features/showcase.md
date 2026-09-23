@@ -11,7 +11,7 @@ updated: 2026-09-23
 
 クライアント側で作成したアセットを、ゲームを進行させずに一覧から確認する。
 
-展示室はゲームシーンとして実装し、Unity Editorでシーンを開いてPlay Modeで確認できる。現在はBuild Settingsへ常時追加するため、通常のビルドにも含まれる。
+展示室はゲームシーンとして実装し、Unity Editorでシーンを開いてPlay Modeで確認できる。実機でも確認できるよう、Build Settingsへ常時追加して通常のビルドにも含める。
 
 Play Modeを使わずに一覧と基本プレビューを確認するため、Unity Editorの `Baryonyx > Showcase > Open Preview Window` も提供する。このウィンドウはカタログを左側の一覧に表示し、画像、Prefab、マテリアルなどのEditorプレビューと、元アセットの場所を確認できる。音声の再生やシーンの実行時表示など、ゲーム内の挙動が必要な確認は展示室シーンで行う。
 
@@ -111,6 +111,6 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 
 展示室シーン、カテゴリ一覧、アセット自動検出、画像・Prefab・音声・シーンの表示、Play不要のEditorプレビューを実装済み。
 
-本番向けビルドから除外する運用は未実装であり、現在はBuild Settingsへ常時追加する。
+実機でもアセットを確認するため、展示室は意図して通常のビルドへ含める。
 
 プレビュー用Prefabの自動生成、UI状態のStory定義、VFXの再生条件、複数AnimationClipの切り替えは今後拡張する。

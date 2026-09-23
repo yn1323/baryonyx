@@ -36,7 +36,7 @@ dotnet csharpier check Assets
 [.gitattributes](../../client/.gitattributes) でC#と関連設定のLFを維持する。
 
 対象は `Assets/` のC#である。
-[.csharpierignore](../../client/.csharpierignore) は、C#以外、テンプレートの `TutorialInfo/`、第三者コード用の `Plugins/`・`ThirdParty/`、生成コードを除外する。
+[.csharpierignore](../../client/.csharpierignore) は、C#以外、第三者コード用の `Plugins/`・`ThirdParty/`、生成コードを除外する。
 自作のC#は除外されたフォルダへ置かない。
 新しい第三者コードを導入するときは、配置先に応じて除外を追加する。
 

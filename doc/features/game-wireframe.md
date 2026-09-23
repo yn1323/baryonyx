@@ -148,7 +148,7 @@ Inspectorの `Exit` と `Enter` にある `SceneTransitionSettings` で、種類
 Androidをビルド対象にし、`Baryonyx/Wireframe/Build Android APK` でWireframeシーンを起動対象にしたAPKを作る。
 共通の `AndroidBuild.Build` を呼び、終了後に通常のビルドシーン設定を戻す。
 生成APKはルートの手順に従い、必ず指定のDriveフォルダーへコピーする。
-ゲーム内のフォントは既存の[フォントとライセンス](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)にあるDotGothic16で統一する。
+ゲーム内のフォントは既存の[フォントとライセンス](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)にあるDotGothic16で統一する。
 
 ## 検証と未確認事項
 

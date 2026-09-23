@@ -27,39 +27,42 @@ client/
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Main.unity、Wireframe.unity
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンとプレビュー起動の検査
+│   │   ├── Features/Account/
+│   │   │   └── Runtime/                Google認証の契約とUMoth接続、サーバーのセッションとログインAPI
+│   │   ├── Features/ExerciseRewards/
+│   │   │   └── Runtime/                ルーン請求・履歴・残高のAPI
 │   │   ├── Features/Health/
 │   │   │   ├── Runtime/
 │   │   │   │   ├── HealthContracts.cs   取得結果とProviderの契約
 │   │   │   │   ├── HealthConnectProvider.cs
 │   │   │   │   ├── HealthConnectionSettings.cs
-│   │   │   │   ├── Authentication/      Google認証の契約とUMoth接続
 │   │   │   │   ├── Presentation/        表示状態、View、配置、日別JSON
 │   │   │   │   ├── Requirements/        利用条件の確認契約、判定、案内文
 │   │   │   │   ├── Preview/             サンプルの認証結果と健康データ
-│   │   │   │   └── Sync/                サーバー同期、API接続、同期用の契約
-│   │   │   ├── UI/                     画面Prefabとフォント
+│   │   │   │   └── Sync/                歩数の保存APIと、ログイン・保存・ルーン請求の実行順
+│   │   │   ├── UI/                     画面Prefab
 │   │   │   ├── Data/                   接続設定アセット
 │   │   │   ├── Editor/                 専用アセット生成とビルド前検査
 │   │   │   └── Tests/
 │   │   │       ├── EditMode/
 │   │   │       │   ├── Presentation/
 │   │   │       │   ├── Requirements/
-│   │   │       │   ├── Preview/
-│   │   │       │   └── Sync/
+│   │   │       │   └── Preview/
 │   │   │       └── PlayMode/Presentation/
 │   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ
-│   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗
+│   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
 │   │   │   └── Tests/EditMode/          計算・時間・再開の検査
 │   │   ├── Features/Wireframe/          冒険・戦闘・歩数の操作試作
 │   │   │   ├── Runtime/
 │   │   │   │   ├── Flow/               画面遷移、所持状態、戦闘結果の反映
 │   │   │   │   └── Presentation/       入力、各画面の表示、演出、SafeArea
-│   │   │   ├── UI/                      専用Prefabとフォント
+│   │   │   ├── UI/                      専用Prefabと画像
 │   │   │   ├── Data/                    仮のキャラ・武器
 │   │   │   ├── Editor/                  専用アセットの生成
 │   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Shared/
-│   │   │   └── UI/                      複数画面で使う共通UIプレハブ
+│   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
+│   │   │   └── UI/                      複数画面で使う共通UIプレハブとフォント
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
@@ -74,7 +77,6 @@ client/
 │   ├── Plugins/Android/                GradleテンプレートとAndroidライブラリ
 │   ├── Settings/                       既存テンプレートのURP設定
 │   ├── TextMesh Pro/                   外部パッケージのアセット
-│   ├── TutorialInfo/                   Unityテンプレートの説明用アセット
 │   └── DevCaptures/                    Git対象外の検証画像
 ├── Packages/                           Unityパッケージの依存管理
 ├── ProjectSettings/                    Unityプロジェクトの設定
@@ -98,8 +100,11 @@ client/
 | [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、Viewの入力と文言、SafeArea、一覧とJSON詳細 |
 | [Health/Runtime/Requirements/](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements) | 利用条件の確認インターフェース、判定結果、表示する案内 |
 | [Health/Runtime/Preview/](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview) | EditorとAndroid以外の環境に返すサンプルデータ |
-| [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | サーバーのセッション、API要求、同期。現在の起動シーンからは呼ばない |
-| [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Health専用のPrefab・フォント・設定アセットを生成する |
+| [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、ログイン・保存・ルーン請求を順に行う `HealthServerSync`。Android実機でサーバーURLが設定されている場合だけ、Presenterから呼ぶ |
+| [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、サーバーのセッション、ログイン・ログアウトAPI |
+| [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・履歴・残高のAPIと応答の型 |
+| [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外。パスと入出力の型は各機能が持つ |
+| [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Health専用のPrefab・設定アセットと、共有フォントを生成する |
 
 HealthのPresenterは、認証・権限・取得結果に応じた画面状態と、次に実行する操作を決める。
 [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) は多重起動の防止、キャンセル、OS画面からの前面復帰待ち、操作世代と寿命を管理する。
@@ -111,6 +116,8 @@ Viewの描画は操作ボタン、状態文言、日別一覧、閲覧位置に�
 これらはHealth専用の通常のC#クラスとし、Prefabの参照はViewから渡す。
 
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
+依存方向はApp → Wireframe → Health → ExerciseRewards → Account → Shared、Wireframe → Combatとし、逆向きに参照しない。
+ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
 AppのEditor処理はAppの起動処理とHealthのアセット定義を参照し、HealthのEditor処理はAppのオブジェクトを生成しない。
 `Baryonyx/App/Attach Health Screen To Current Scene` メニューで、保存済みの現在のシーンへ画面を配置する。
 専用アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
@@ -123,7 +130,7 @@ AppのEditor処理はAppの起動処理とHealthのアセット定義を参照�
 WireframeもAppがSession・View・試作データを組み立てる。
 [HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)はMainとWireframeに共通するProvider選択とPresenterの寿命を管理する。
 [WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs)は健康データのPresenterを歩数画面へ渡し、前面・背面を通知する。
-サーバー同期は呼ばない。
+サーバー同期はHealthRuntimeを通じてMainと同じ条件で行う。
 [WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Flow/WireframeSession.cs)は画面遷移と実行中の所持状態を管理する。
 戦闘計算はCombatへ委譲し、Presentationは入力、通常ページ、戦闘、ダイアログ、歩数、演出と配置を分担する。
 CombatはWireframe・App・Unityの画面へ依存しない。
@@ -138,15 +145,18 @@ Editorの共通uGUI生成部品はWireframeScreenAssetsに置き、ページ・�
 
 | アセンブリ | 定義ファイル | 所属するコード |
 |---|---|---|
-| `Baryonyx.Runtime` | [Baryonyx/Baryonyx.Runtime.asmdef](../../client/Assets/Baryonyx/Baryonyx.Runtime.asmdef) | Appと機能の製品コード |
+| `Baryonyx.Combat` | [Features/Combat/Runtime/Baryonyx.Combat.asmdef](../../client/Assets/Baryonyx/Features/Combat/Runtime/Baryonyx.Combat.asmdef) | Unityに依存しない戦闘計算。`noEngineReferences` でUnityEngineを参照させない |
+| `Baryonyx.Runtime` | [Baryonyx/Baryonyx.Runtime.asmdef](../../client/Assets/Baryonyx/Baryonyx.Runtime.asmdef) | Combat以外のAppと機能の製品コード |
 | `Baryonyx.Editor` | [Baryonyx/Editor/Baryonyx.Editor.asmdef](../../client/Assets/Baryonyx/Editor/Baryonyx.Editor.asmdef) | 共通・App・機能のEditor専用処理 |
 | `Baryonyx.EditModeTests` | [Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef](../../client/Assets/Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef) | ロジックとビルド設定の検査 |
 | `Baryonyx.PlayModeTests` | [Baryonyx/Tests/PlayMode/Baryonyx.PlayModeTests.asmdef](../../client/Assets/Baryonyx/Tests/PlayMode/Baryonyx.PlayModeTests.asmdef) | Appの起動、機能の画面操作、共通入力fixture |
 
-AppとHealthのRuntimeは、上位の `Baryonyx.Runtime.asmdef` に所属する。
-App・HealthのEditorとテストには `.asmref` を置き、対応するアセンブリへ所属させる。
+Combat以外のRuntimeは、上位の `Baryonyx.Runtime.asmdef` に所属する。
+Combatは参照先がUnityを含まない点で他と異なるため、独立したアセンブリにした。
+App・機能のEditorとテストには `.asmref` を置き、対応するアセンブリへ所属させる。
 `App/Editor/` や機能内の `Tests/` にC#を置くときは、上位のRuntimeへ混入しないようアセンブリ境界を確認する。
-AppとHealthの依存方向は設計上の規則であり、現在の単一Runtimeアセンブリではコンパイラーによる分離は行っていない。
+Combat以外の依存方向は設計上の規則であり、単一のRuntimeアセンブリではコンパイラーによる分離は行っていない。
+機能の境界が固まり、参照先の違いが生じた時点で、同じ基準でアセンブリを分ける。
 
 CIのテスト対象は従来どおり `Baryonyx.EditModeTests` と `Baryonyx.PlayModeTests` である。
 実行と0件の検出、入力シナリオ、テスト用Resourcesの後始末は [UnityのテストとCI](client-testing.md) に従う。

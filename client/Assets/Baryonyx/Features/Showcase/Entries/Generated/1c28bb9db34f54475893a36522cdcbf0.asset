@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 1c28bb9db34f54475893a36522cdcbf0
   DisplayName: DotGothic16-Regular
-  Description: Assets/Baryonyx/Features/Health/UI/Fonts/DotGothic16-Regular.ttf
+  Description: Assets/Baryonyx/Shared/UI/Fonts/DotGothic16-Regular.ttf
   Category: 9
   Asset: {fileID: 12800000, guid: 1c28bb9db34f54475893a36522cdcbf0, type: 3}
   PreviewPrefab: {fileID: 0}
