@@ -51,6 +51,19 @@ URLと仕様は更新されるため、UnityのAPIやInspector名を実装へ反
 - [Particles Unlit shader material reference](https://docs.unity.com/en-us/engine/6000.7/manual/materials-and-shaders/built-in/shaders-in-universalrp/reference/particles-unlit-shader)
   - Particle用URPマテリアルのAlpha/AdditiveとColor Modeの設定を確認する入口。
 
+## HD-2Dの構成要素（2026-09-23追加）
+
+- [HD-2D（Wikipedia）](https://en.wikipedia.org/wiki/HD-2D)
+  - 動的ライティング、被写界深度、ティルトシフト、Bloom、ボリュメトリックな光と霧、粒子、パララックスの組み合わせとして説明されている。二次資料のため、構成要素の洗い出しにだけ使う。
+- [Octopath Traveler II builds a bigger, bolder world in its stunning HD-2D style（Unreal Engine）](https://www.unrealengine.com/en-US/developer-interviews/octopath-traveler-ii-builds-a-bigger-bolder-world-in-its-stunning-hd-2d-style)
+  - エフェクトと同時に点光源を置き、キャラクターの影を環境へ落とした事例がある。
+- [Canvas | uGUI 2.6.0](https://docs.unity3d.com/Packages/com.unity.ugui@2.6/manual/class-Canvas.html)
+  - Canvasの各Render Modeの描画のされ方。ポストプロセスの適用範囲を判断する根拠に使う。
+- [Add a normal map or a mask map to a sprite in URP](https://docs.unity3d.com/6000.0/Documentation/Manual/urp/SecondaryTextures.html)
+  - Sprite Editorの `_NormalMap` と `_MaskTex` の設定方法。
+- [Parallax Shaders & Depth Maps（Alan Zucconi）](https://www.alanzucconi.com/2019/01/01/parallax-shader/)
+  - 深度マップで1枚絵をずらす2.5Dパララックスの原理。現時点では採用しない。
+
 ## 読み方
 
 Unity公式資料はAPI、対応条件、性能上の制約の根拠として使う。
