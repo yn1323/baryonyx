@@ -14,6 +14,9 @@ GitHub上の初回実行状況は [導入計画](../plans/2026-09-10-client-code
 | Microsoft.Unity.Analyzers | [provenance.json](../../client/Assets/Analyzers/Microsoft.Unity.Analyzers/provenance.json) |
 
 UnityはHubから、.NET SDKは [Microsoftの配布ページ](https://dotnet.microsoft.com/download/dotnet/10.0) から指定版を導入する。
+macOSでは `brew install --cask dotnet-sdk` でも導入でき、インストール時に管理者パスワードを求められる。
+Homebrewが配布する版は更新されるため、導入後に `dotnet --list-sdks` で `global.json` の指定版が含まれることを確認し、含まれない場合は配布ページから指定版を導入する。
+CSharpier本体は後述の `dotnet tool restore` でプロジェクトごとに復元するため、個別にインストールしない。
 Unity同梱のSDKと、整形に使うSDKは別に管理する。
 CSharpierのmanifestではランタイムのroll forwardを有効にしており、指定した.NET SDKのランタイムで実行できる。
 
