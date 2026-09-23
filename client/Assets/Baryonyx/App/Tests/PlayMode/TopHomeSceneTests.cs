@@ -17,12 +17,12 @@ namespace Baryonyx.Tests.PlayMode
     public sealed class TopHomeSceneTests
     {
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
-        private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
+        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const string TitleText = "てくてくダンジョン（仮）";
         private Scene loadedScene;
 
         [UnityTest]
-        public IEnumerator FullScreenTopTapLoadsMainSceneWithShutterTransition()
+        public IEnumerator FullScreenTopTapLoadsHomeSceneWithShutterTransition()
         {
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
             loadedScene = SceneManager.GetSceneByPath(TopScenePath);
@@ -50,7 +50,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(button.GetComponent<Image>().raycastTarget, Is.True);
             Assert.That(button.GetComponent<Image>().color.a, Is.EqualTo(0f));
             var controller = button.GetComponent<TopSceneController>();
-            Assert.That(controller.NextSceneName, Is.EqualTo("Main"));
+            Assert.That(controller.NextSceneName, Is.EqualTo("Home"));
             Assert.That(controller.Transition, Is.Not.Null);
             Assert.That(
                 controller.Transition.DefaultSettings.Type,
@@ -169,12 +169,12 @@ namespace Baryonyx.Tests.PlayMode
                 + controller.Transition.DefaultSettings.CoverDuration
                 + 2f;
             while (
-                !SceneManager.GetSceneByPath(MainScenePath).isLoaded
+                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
                 && Time.realtimeSinceStartup < deadline
             )
                 yield return null;
 
-            loadedScene = SceneManager.GetSceneByPath(MainScenePath);
+            loadedScene = SceneManager.GetSceneByPath(HomeScenePath);
             Assert.That(loadedScene.isLoaded, Is.True);
             Assert.That(
                 loadedScene
@@ -200,7 +200,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 loadedScene
                     .GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<WireframeBootstrap>(true))
+                    .SelectMany(root => root.GetComponentsInChildren<HomeBootstrap>(true))
                     .Single()
                     .View,
                 Is.Not.Null
@@ -210,10 +210,10 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
-            // TopとMainはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
+            // TopとHomeはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
             // 空のシーンへ切り替えてから閉じ、EventSystemなどを後続のテストへ残さない。
             SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(TopHomeSceneTests)));
-            foreach (var path in new[] { TopScenePath, MainScenePath })
+            foreach (var path in new[] { TopScenePath, HomeScenePath })
             {
                 var scene = SceneManager.GetSceneByPath(path);
                 if (scene.IsValid() && scene.isLoaded)

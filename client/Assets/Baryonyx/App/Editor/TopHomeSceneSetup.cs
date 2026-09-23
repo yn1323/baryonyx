@@ -53,13 +53,8 @@ namespace Baryonyx.App.Editor
                 new Color(0.035f, 0.047f, 0.075f, 1f),
                 clickable: true
             );
-            CreateSceneIfMissing(
-                HomeScenePath,
-                "HomeCanvas",
-                "HomeScreen",
-                new Color(0.94f, 0.96f, 0.94f, 1f),
-                clickable: false
-            );
+            if (!File.Exists(HomeScenePath))
+                HomeSceneSetup.CreateHomeScene();
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             EnsureBuildSettings();
@@ -116,8 +111,6 @@ namespace Baryonyx.App.Editor
                     EnsureTopEmberEmitter(scene);
                     CreateTopScreen(scene, canvas.transform, screenName);
                 }
-                else
-                    CreateHomeScreen(scene, canvas.transform, screenName, screenColor);
 
                 CreateCamera(scene, screenName + "Camera", screenColor);
                 if (clickable)
@@ -803,27 +796,6 @@ namespace Baryonyx.App.Editor
             if (texture == null)
                 throw new InvalidOperationException($"Texture asset not found: {assetPath}");
             return texture;
-        }
-
-        private static void CreateHomeScreen(
-            Scene scene,
-            Transform parent,
-            string screenName,
-            Color color
-        )
-        {
-            var screen = new GameObject(
-                screenName,
-                typeof(RectTransform),
-                typeof(UnityEngine.UI.Image)
-            );
-            SceneManager.MoveGameObjectToScene(screen, scene);
-            screen.transform.SetParent(parent, false);
-            Stretch(screen.GetComponent<RectTransform>());
-
-            var image = screen.GetComponent<UnityEngine.UI.Image>();
-            image.color = color;
-            image.raycastTarget = false;
         }
 
         private static void CreateCamera(Scene scene, string cameraName, Color backgroundColor)
