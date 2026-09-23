@@ -117,7 +117,7 @@ Repository secretsの登録後にClient CIを実行し、環境名付きAPKの�
 ## ローカルビルドと配布処理の検証
 
 Windowsで手動ビルドする場合は [build-apk.bat](../../shortcuts/build-apk.bat) を使える。
-ビルド後に指定のGoogle Driveフォルダーへコピーする場合は [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat) を使う。
+ビルド後に指定のGoogle Driveフォルダーへコピーする場合は [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat)、macOSでは [build-apk-to-drive.command](../../shortcuts/build-apk-to-drive.command) を使う。
 配置先、上書き動作、前提条件は [手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) に従う。
 Androidエミュレーターの準備とAPKインストールは [WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md) に従う。
 

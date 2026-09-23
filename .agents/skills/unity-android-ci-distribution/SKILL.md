@@ -68,5 +68,6 @@ Google Drive for desktopの同期完了は、ローカルコピー成功だけ�
 - [Unity Build Automation](https://docs.unity.com/en-us/build-automation/basic-build-configuration/overview)
 - リポジトリの`shortcuts/build-apk.bat`
 - リポジトリの`shortcuts/build-apk-to-drive.bat`
+- リポジトリの`shortcuts/build-apk-to-drive.command`（macOS）
 - リポジトリの`.github/workflows/client-ci.yml`
 - リポジトリの`.github/workflows/client-distribute.yml`

@@ -45,6 +45,20 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(canvas, Is.Not.Null);
             Assert.That(canvas.GetComponent<GraphicRaycaster>(), Is.Not.Null);
             Assert.That(canvas.GetComponentsInChildren<Button>(true), Is.Not.Empty);
+
+            // Pixel 8a（横2400×1080px、2.625倍密度）で48dpとなる基準単位の高さ。
+            // CanvasScalerは幅と高さを半分ずつ合わせるため、1単位は√(2400/1920)px になる。
+            float minimumTapHeight = 48f * 2.625f / Mathf.Sqrt(2400f / 1920f);
+            var categoryScroll = canvas
+                .GetComponentsInChildren<ScrollRect>(true)
+                .Single(candidate => candidate.name == "CategoryScroll");
+            Canvas.ForceUpdateCanvases();
+            var categoryButtons = categoryScroll.content.GetComponentsInChildren<Button>(true);
+            Assert.That(categoryButtons, Is.Not.Empty);
+            Assert.That(
+                categoryButtons.Select(button => ((RectTransform)button.transform).rect.height),
+                Has.All.GreaterThanOrEqualTo(minimumTapHeight)
+            );
         }
 
         [UnityTearDown]

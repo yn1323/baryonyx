@@ -316,7 +316,16 @@ namespace Baryonyx.Showcase.Editor
             string[] movedFromAssetPaths
         )
         {
-            if (refreshQueued || !TouchesClientAssets(importedAssets, movedAssets, deletedAssets))
+            // 対象外の場所へ移動したアセットも古いエントリを消すため、移動元を判定に含める。
+            if (
+                refreshQueued
+                || !TouchesClientAssets(
+                    importedAssets,
+                    movedAssets,
+                    deletedAssets,
+                    movedFromAssetPaths
+                )
+            )
                 return;
 
             refreshQueued = true;

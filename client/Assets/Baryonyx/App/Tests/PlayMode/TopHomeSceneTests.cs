@@ -182,8 +182,15 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
-            if (loadedScene.IsValid() && loadedScene.isLoaded)
-                yield return SceneManager.UnloadSceneAsync(loadedScene);
+            // TopとMainはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
+            // 空のシーンへ切り替えてから閉じ、EventSystemなどを後続のテストへ残さない。
+            SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(TopHomeSceneTests)));
+            foreach (var path in new[] { TopScenePath, MainScenePath })
+            {
+                var scene = SceneManager.GetSceneByPath(path);
+                if (scene.IsValid() && scene.isLoaded)
+                    yield return SceneManager.UnloadSceneAsync(scene);
+            }
         }
     }
 }

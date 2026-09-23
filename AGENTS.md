@@ -102,7 +102,7 @@ baryonyx/
 
 ## 手動実行用ショートカット
 
-ルートの `shortcuts/` に、1ファイルで処理が完結するWindows用 `.bat` ファイルを置く。
+ルートの `shortcuts/` に、1ファイルで処理が完結するWindows用 `.bat` ファイルと、macOS用 `.command` ファイルを置く。
 共通スクリプトへの依存を作らず、実行時の作業ディレクトリに依存しないパスを使う。
 `shortcuts/` にファイルを追加するときは、同じ変更でこの `AGENTS.md` の一覧にファイルへのリンク・用途・実行方法を記載し、必要な引数や前提条件も追記する。
 エミュレーター起動とAPKインストールでは、`ANDROID_HOME`、`ANDROID_SDK_ROOT`、`%LOCALAPPDATA%\Android\Sdk` の順に必要なAndroid SDKのツールを探す。
@@ -115,13 +115,19 @@ baryonyx/
 |---|---|
 | [build-apk.bat](shortcuts/build-apk.bat) | このプロジェクトをUnityで閉じてからダブルクリックし、`client/Builds/Android/baryonyx.apk` をビルドする。 |
 | [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。APKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーする。 |
+| [build-apk-to-drive.command](shortcuts/build-apk-to-drive.command) | macOS用。このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからFinderでダブルクリックする。APKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx.apk` へ上書きコピーする。 |
 | [start-pixel-8a.bat](shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
 | [install-apk-pixel-8a.bat](shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
 
 APKビルドは [ProjectVersion.txt](client/ProjectSettings/ProjectVersion.txt) のUnityを使い、CIと同じ [AndroidBuild.Build](client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を呼び出す。
-APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーする。
-コピー先は [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) の `$destinationDirectory` と一致させる。
-通常は `build-apk-to-drive.bat` を使い、`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に同じコピーを行う。
+APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ上書きコピーする。
+
+| OS | 配置先 | 一致させる定義 |
+|---|---|---|
+| Windows | `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` | [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) の `$destinationDirectory` |
+| macOS | `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx.apk` | [build-apk-to-drive.command](shortcuts/build-apk-to-drive.command) の `destination_directory` |
+
+通常はWindowsで `build-apk-to-drive.bat`、macOSで `build-apk-to-drive.command` を使い、`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に同じコピーを行う。
 コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
 
 `build-apk.bat` と `build-apk-to-drive.bat` はWindows標準のPowerShellで処理し、それぞれ必要なコードを同じファイル内に持つ。
@@ -130,7 +136,10 @@ Unity Hubの標準配置 `%ProgramFiles%\Unity\Hub\Editor\<バージョン>\Edit
 ログはそれぞれ `client/Logs/build-apk.log`、`client/Logs/build-apk-to-drive.log` に実行ごとに上書きする。
 `build-apk.bat` はAPK生成のみを行い、テスト・配布・エミュレーター起動・インストールは行わない。
 
-`build-apk-to-drive.bat` は配置先フォルダーが存在し、アクセスできることを前提とする。
+`build-apk-to-drive.command` は `build-apk-to-drive.bat` と同じ処理をbashで行い、ログも `client/Logs/build-apk-to-drive.log` に上書きする。
+Unity Hubの標準配置 `/Applications/Unity/Hub/Editor/<バージョン>/Unity.app/Contents/MacOS/Unity` を探し、別の配置では同じバージョンの実行ファイルのパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
+
+`build-apk-to-drive.bat` と `build-apk-to-drive.command` は配置先フォルダーが存在し、アクセスできることを前提とする。
 ビルド失敗時は配置先のAPKを更新せず、コピー失敗時もエラーで終了する。
 コピー後も `client/Builds/Android/baryonyx.apk` を残す。
 Google Driveへの同期はGoogle Drive for desktopが行うため、同期完了は同アプリで確認する。

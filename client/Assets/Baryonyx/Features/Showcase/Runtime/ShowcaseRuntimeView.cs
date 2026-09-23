@@ -12,6 +12,11 @@ namespace Baryonyx.Showcase
 {
     public sealed class ShowcaseRuntimeView : MonoBehaviour
     {
+        // 検証端末Pixel 8a（横2400×1080px、2.625倍密度）では、このCanvasの1単位が約1.12pxになる。
+        // 一覧の行を48dp以上、行の間隔を8dp以上にするための基準単位での値。
+        private const float TapTargetHeight = 116;
+        private const float TapTargetSpacing = 20;
+
         private static readonly ShowcaseCategory[] Categories =
         {
             ShowcaseCategory.All,
@@ -119,12 +124,6 @@ namespace Baryonyx.Showcase
                 new Color(0.055f, 0.07f, 0.11f, 1f)
             );
             SetLeft(categoryPanel.rectTransform, 0, 245);
-            var categoryLayout = categoryPanel.gameObject.AddComponent<VerticalLayoutGroup>();
-            categoryLayout.padding = new RectOffset(16, 16, 16, 16);
-            categoryLayout.spacing = 6;
-            categoryLayout.childControlHeight = true;
-            categoryLayout.childForceExpandHeight = false;
-
             var categoryTitle = CreateText(
                 categoryPanel.transform,
                 "CategoryTitle",
@@ -132,10 +131,18 @@ namespace Baryonyx.Showcase
                 20,
                 Color.white
             );
-            categoryTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+            SetTop(categoryTitle.rectTransform, 16, 34);
+            // 全カテゴリを画面内へ詰めず、タップ領域を保ったままスクロールで選ぶ。
+            var categoryScroll = CreateScrollView(categoryPanel.transform, "CategoryScroll");
+            Stretch(categoryScroll.GetComponent<RectTransform>(), 16, 16, 66, 16);
+            AddListLayout(categoryScroll.content);
             foreach (var category in Categories)
             {
-                var button = CreateButton(categoryPanel.transform, CategoryLabel(category), 34);
+                var button = CreateButton(
+                    categoryScroll.content,
+                    CategoryLabel(category),
+                    TapTargetHeight
+                );
                 button.onClick.AddListener(() => SelectCategory(category));
             }
 
@@ -163,6 +170,7 @@ namespace Baryonyx.Showcase
             SetTop(entryCount.rectTransform, 16, 24);
             var scroll = CreateScrollView(listPanel.transform, "EntryScroll");
             Stretch(scroll.GetComponent<RectTransform>(), 16, 16, 88, 16);
+            AddListLayout(scroll.content);
             entryContent = scroll.content;
 
             var previewPanel = CreatePanel(
@@ -251,21 +259,9 @@ namespace Baryonyx.Showcase
             if (entryContent == null)
                 return;
 
-            var layout = entryContent.GetComponent<VerticalLayoutGroup>();
-            if (layout == null)
-            {
-                layout = entryContent.gameObject.AddComponent<VerticalLayoutGroup>();
-                layout.padding = new RectOffset(8, 8, 8, 8);
-                layout.spacing = 5;
-                layout.childControlHeight = true;
-                layout.childForceExpandHeight = false;
-                var fitter = entryContent.gameObject.AddComponent<ContentSizeFitter>();
-                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            }
-
             foreach (var entry in visibleEntries)
             {
-                var button = CreateButton(entryContent, entry.Label, 48);
+                var button = CreateButton(entryContent, entry.Label, TapTargetHeight);
                 button.onClick.AddListener(() => SelectEntry(entry));
                 entryButtons.Add(button);
             }
@@ -761,6 +757,17 @@ namespace Baryonyx.Showcase
             scroll.horizontal = false;
             scroll.vertical = true;
             return scroll;
+        }
+
+        private static void AddListLayout(RectTransform content)
+        {
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(8, 8, 8, 8);
+            layout.spacing = TapTargetSpacing;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
         private static void Stretch(
