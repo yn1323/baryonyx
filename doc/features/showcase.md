@@ -74,6 +74,14 @@ Play Mode中の変更は停止時に戻る。
 光芒画像は根元が明るく、先へ行くほど広がりながら消える形で、ここでの数値調整は濃さや形状の大きさを変える。
 埃の明るさも同じ明るさの分布に従い、光芒の外では光らない。
 
+### 塵ときらめきの表示
+
+`Hd2dLightingVfx` と `Hd2dParticleField` の塵ときらめきも、「Editorプレビュー」の `PreviewInEditor` を有効にすると停止中に表示する。
+Topでは、Hierarchyの `TopCanvas > TopHd2dLightingVfx` で確認できる。
+停止中は、配置パターン（`RandomSeed`）で決まる再生開始時と同じ配置を静止表示し、Inspectorの変更を反映する。
+粒子の移動、明滅、消えた粒子の再配置はPlay Modeで確認する。
+プレビュー用の粒子はシーンやPrefabに保存しない。
+
 ## カタログ更新
 
 Assets/Baryonyx/Features/Showcase/Data/ShowcaseCatalog.asset が一覧の実行時データである。

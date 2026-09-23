@@ -39,6 +39,42 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ParticlesArePreviewedOutsidePlayModeWithoutBeingSaved()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CompositePrefabPath);
+            Assert.That(prefab, Is.Not.Null, CompositePrefabPath);
+            Assert.That(prefab.GetComponent<Hd2dLightingVfx>().PreviewInEditor, Is.True);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var lighting = instance.GetComponent<Hd2dLightingVfx>();
+                lighting.RebuildParticles();
+                var generated = lighting.ParticleLayer
+                    .GetComponentsInChildren<RectTransform>(true)
+                    .Where(rect => rect != lighting.ParticleLayer)
+                    .ToArray();
+
+                Assert.That(
+                    generated.Count(rect => rect.name.StartsWith("Dust_")),
+                    Is.EqualTo(lighting.DustCount)
+                );
+                Assert.That(
+                    generated.Count(rect => rect.name.StartsWith("Sparkle_")),
+                    Is.EqualTo(lighting.SparkleCount)
+                );
+                Assert.That(
+                    generated.All(rect => rect.gameObject.hideFlags == HideFlags.DontSave),
+                    Is.True
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
         public void LightPointAndParticleFieldAreIndividuallyReusablePrefabs()
         {
             var lightPoint = AssetDatabase.LoadAssetAtPath<GameObject>(LightPointPrefabPath);
