@@ -6,8 +6,11 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { appSessions, appUsers } from "../../src/features/health/db-schema.js";
-import { createHealthRepository } from "../../src/features/health/repository.js";
+import {
+  appSessions,
+  appUsers,
+} from "../../src/features/accounts/db-schema.js";
+import { createAccountsRepository } from "../../src/features/accounts/repository.js";
 import { createDatabase } from "../../src/shared/db.js";
 
 describe("WorkersとD1の結合", () => {
@@ -77,7 +80,7 @@ describe("WorkersとD1の結合", () => {
   it("既存SQLのデータをDrizzleで扱い、セッション作成失敗時は期限切れ削除も戻す", async () => {
     const binding = (await worker.getD1Database("DB")) as unknown as D1Database;
     const db = createDatabase(binding);
-    const repository = createHealthRepository(binding);
+    const repository = createAccountsRepository(binding);
     const userId = "legacy-'quoted";
     await binding
       .prepare("INSERT INTO app_users(id, google_sub) VALUES (?, ?)")

@@ -1,29 +1,12 @@
 import { sql } from "drizzle-orm";
 import {
   check,
-  index,
   integer,
   primaryKey,
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-
-export const appUsers = sqliteTable("app_users", {
-  id: text("id").primaryKey(),
-  googleSub: text("google_sub").notNull().unique(),
-});
-
-export const appSessions = sqliteTable(
-  "app_sessions",
-  {
-    tokenHash: text("token_hash").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => appUsers.id),
-    expiresAt: integer("expires_at").notNull(),
-  },
-  (table) => [index("app_sessions_expiry").on(table.expiresAt)],
-);
+import { appUsers } from "../accounts/db-schema.js";
 
 export const healthSources = sqliteTable(
   "health_sources",

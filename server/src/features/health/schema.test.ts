@@ -4,7 +4,6 @@ import {
   beginSyncSchema,
   createDaysSchema,
   createSaveDaysSchema,
-  googleAuthSchema,
 } from "./schema.js";
 
 describe("日別歩数の検証", () => {
@@ -156,16 +155,7 @@ describe("日別歩数の検証", () => {
   });
 });
 
-describe("認証・同期要求の検証", () => {
-  it("IDトークンの型と長さを検証する", () => {
-    expect(
-      googleAuthSchema.safeParse({ idToken: "a".repeat(12_000) }).success,
-    ).toBe(true);
-    for (const idToken of [undefined, null, 123, "a".repeat(12_001)]) {
-      expect(googleAuthSchema.safeParse({ idToken }).success).toBe(false);
-    }
-  });
-
+describe("同期要求の検証", () => {
   it("取得元IDとProviderを検証し、余分なプロパティを取り除く", () => {
     const sourceId = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
     for (const provider of ["health_connect", "healthkit"]) {

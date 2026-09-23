@@ -342,10 +342,10 @@ Android実機は接続されていないため、端末回転、システムバ�
 | [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | サーバーへの認証・保存・取得要求 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
-| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | HTTP要求の検証、認証middlewareと応答、単日と週全体の制約 |
-| [認証処理](../../server/src/features/health/auth.ts) | Googleの本人確認、セッション発行、トークンのハッシュ化と確認 |
-| [DB操作](../../server/src/features/health/repository.ts) | Drizzleによるセッション管理、取得元の所有者確認、日別歩数の保存・取得 |
-| [DBスキーマ](../../server/src/features/health/db-schema.ts)・[初期マイグレーション](../../server/migrations/0000_initial.sql) | ユーザー、セッション、取得元、日別歩数と過去値の取得日時 |
+| [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | HTTP要求の検証と応答、単日と週全体の制約 |
+| [認証処理](../../server/src/features/accounts/auth.ts)・[ログインAPI](../../server/src/features/accounts/routes.ts)・[セッション確認](../../server/src/features/accounts/session.ts) | Googleの本人確認、セッション発行、トークンのハッシュ化と確認 |
+| [DB操作](../../server/src/features/health/repository.ts) | 取得元の所有者確認、日別歩数の保存・取得 |
+| [DBスキーマ](../../server/src/features/health/db-schema.ts)・[ユーザーとセッション](../../server/src/features/accounts/db-schema.ts)・[初期マイグレーション](../../server/migrations/0000_initial.sql) | ユーザー、セッション、取得元、日別歩数と過去値の取得日時 |
 
 HTTPのパスと入出力はサーバールートと入力検証コードを正とする。
 サーバーの入力検証にはZodを使い、ログイン・同期要求と日別歩数の制約をスキーマで定義する。
@@ -479,7 +479,7 @@ Android CIはビルドの成否確認とAPK保存に絞り、この追加検査�
 
 実機での追加項目の権限許可と、Fit・OMRONなどが書き込んだ実データの読み取りは未確認である。
 
-自動テストは [Unityの同期テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Sync/HealthSyncTests.cs)、[署名検証テスト](../../server/src/features/health/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
+自動テストは [Unityの同期テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Sync/HealthSyncTests.cs)、[署名検証テスト](../../server/src/features/accounts/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
 Unity側は既存の `Baryonyx.EditModeTests` アセンブリへ含め、CIの実行対象を維持する。
 サーバーの健康データ専用 [fixture](../../server/src/features/health/fixtures.ts) は機能内に置き、認証・同期・保存・取得を通すAPIシナリオからも参照する。
 

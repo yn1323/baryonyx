@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, type JWTVerifyGetKey, jwtVerify } from "jose";
-import type { createHealthRepository } from "./repository.js";
+import type { createAccountsRepository } from "./repository.js";
 
 const googleKeys = createRemoteJWKSet(
   new URL("https://www.googleapis.com/oauth2/v3/certs"),
@@ -44,7 +44,7 @@ export async function hashToken(token: string): Promise<string> {
 }
 
 type SessionRepository = Pick<
-  ReturnType<typeof createHealthRepository>,
+  ReturnType<typeof createAccountsRepository>,
   "findOrCreateUser" | "createSession" | "findSessionUser"
 >;
 

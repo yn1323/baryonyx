@@ -1,12 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
-import { Hono } from "hono";
 import { convertV4MiniflareOptions, Miniflare } from "miniflare";
 import { expect } from "vitest";
-import { createExerciseRewardsApi } from "../../src/features/exercise-rewards/routes.js";
-import {
-  createHealthApi,
-  type HealthEnv,
-} from "../../src/features/health/routes.js";
+import { createApi } from "../../src/app.js";
+import type { SessionEnv } from "../../src/features/accounts/session.js";
 
 export type HealthScenario = Awaited<ReturnType<typeof createHealthScenario>>;
 
@@ -39,16 +35,11 @@ export async function createHealthScenario() {
       DB: db,
       BUILD_SHA: "local",
       GOOGLE_CLIENT_ID: "test-audience",
-    } as unknown as HealthEnv["Bindings"];
-    const api = new Hono<HealthEnv>();
-    api.route(
-      "/",
-      createHealthApi(async (token) => {
-        if (token === "invalid") throw new Error();
-        return token;
-      }),
-    );
-    api.route("/", createExerciseRewardsApi());
+    } as unknown as SessionEnv["Bindings"];
+    const api = createApi(async (token) => {
+      if (token === "invalid") throw new Error();
+      return token;
+    });
     const request = (
       path: string,
       method = "GET",
