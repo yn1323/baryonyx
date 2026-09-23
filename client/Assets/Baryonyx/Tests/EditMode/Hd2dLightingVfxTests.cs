@@ -70,24 +70,41 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(shaft.ShaftCount, Is.GreaterThan(0));
             Assert.That(shaft.LengthRange.y, Is.GreaterThan(shaft.LengthRange.x));
             Assert.That(shaft.RotationRange.y, Is.LessThan(0f));
-            Assert.That(shaft.SourceAnchor.x, Is.InRange(0.95f, 1.05f));
+            Assert.That(shaft.SourceAnchor.x, Is.InRange(0f, 1f));
             Assert.That(shaft.SourceAnchor.y, Is.GreaterThan(1f));
+            Assert.That(shaft.SourceSpread, Is.GreaterThan(0f));
             Assert.That(shaft.WidthScaleRange.x, Is.LessThan(1f));
             Assert.That(shaft.WidthScaleRange.y, Is.GreaterThan(1f));
+            Assert.That(shaft.FloorPoolSprite, Is.Not.Null);
+            Assert.That(shaft.FloorPoolAlpha, Is.GreaterThan(0f));
+            Assert.That(shaft.MotesPerShaft, Is.GreaterThan(0));
 
             var instance = Object.Instantiate(prefab);
             try
             {
                 var instanceShaft = instance.GetComponent<Hd2dLightShaft>();
                 instanceShaft.RebuildShafts();
-                var widths = instanceShaft
-                    .ShaftLayer.GetComponentsInChildren<RectTransform>(true)
+                var layer = instanceShaft.ShaftLayer;
+                var generated = layer.GetComponentsInChildren<RectTransform>(true);
+                var shafts = generated
                     .Where(rect => rect.name.StartsWith("Shaft_"))
-                    .Select(rect => rect.sizeDelta.y)
+                    .OrderBy(rect => rect.name)
                     .ToArray();
+                var widths = shafts.Select(rect => rect.sizeDelta.y).ToArray();
 
-                Assert.That(widths, Has.Length.EqualTo(2));
-                Assert.That(widths[0], Is.LessThan(widths[1]));
+                Assert.That(widths, Has.Length.EqualTo(shaft.ShaftCount));
+                Assert.That(widths[0], Is.LessThan(widths[widths.Length - 1]));
+                Assert.That(
+                    shafts.Select(rect => rect.anchorMin.x).Distinct().Count(),
+                    Is.EqualTo(shaft.ShaftCount)
+                );
+                Assert.That(
+                    generated.Count(rect => rect.name.StartsWith("Mote_")),
+                    Is.EqualTo(shaft.ShaftCount * shaft.MotesPerShaft)
+                );
+                Assert.That(generated.Count(rect => rect.name == "FloorPool"), Is.EqualTo(1));
+                var images = layer.GetComponentsInChildren<UnityEngine.UI.Image>(true);
+                Assert.That(images.All(image => !image.raycastTarget), Is.True);
             }
             finally
             {

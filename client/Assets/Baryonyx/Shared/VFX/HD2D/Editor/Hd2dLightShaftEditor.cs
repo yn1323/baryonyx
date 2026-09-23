@@ -21,12 +21,12 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             );
 
             AddField(root, "PreviewInEditor", "Editorで表示");
-            var opacity = new Slider("光の濃さ（0で透明）", 0f, 0.2f)
+            var opacity = new Slider("光の濃さ（0で透明）", 0f, 1f)
             {
                 name = "shaftOpacity",
                 bindingPath = "ShaftColor.a",
                 showInputField = true,
-                tooltip = "小さいほど背景になじみます。現在の目安は0.035です。",
+                tooltip = "小さいほど背景になじみます。現在の目安は0.34です。",
             };
             opacity.AddToClassList(BaseField<float>.alignedFieldUssClassName);
             opacity.RegisterValueChangedCallback(_ => QueuePreviewUpdate());
@@ -38,11 +38,34 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 "開始位置（X: 左右 / Y: 上下）",
                 "Xを小さくすると角度を変えずに左へ移動します。Yを1より大きくすると画面の上側から入ります。"
             );
+            AddField(
+                root,
+                "SourceSpread",
+                "開始位置の広がり",
+                "複数本を左右に並べる幅です。0にすると同じ位置から出ます。"
+            );
             AddField(root, "WidthRange", "太さの範囲");
             AddField(root, "LengthRange", "長さの範囲");
             AddField(root, "RotationRange", "角度の範囲（度）");
             AddField(root, "ShaftCount", "光芒の本数");
             AddField(root, "WidthScaleRange", "細い方 / 太い方の倍率");
+            AddField(root, "OpacityRange", "1本ごとの濃さの倍率");
+
+            var floorPool = new Foldout { text = "床の光だまり", value = false };
+            AddField(floorPool, "FloorPoolAlpha", "濃さ（0で非表示）");
+            AddField(floorPool, "FloorPoolAnchor", "中心位置（X: 左右 / Y: 上下）");
+            AddField(floorPool, "FloorPoolSize", "大きさ");
+            AddField(floorPool, "FloorPoolSprite", "画像");
+            root.Add(floorPool);
+
+            var motes = new Foldout { text = "光の中の埃", value = false };
+            AddField(motes, "MotesPerShaft", "1本あたりの数（0で非表示）");
+            AddField(motes, "MoteColor", "色");
+            AddField(motes, "MoteSizeRange", "大きさの範囲（px）");
+            AddField(motes, "MoteSpeedRange", "流れる速さの範囲（px/秒）");
+            AddField(motes, "MoteSway", "横ゆれの幅");
+            AddField(motes, "MoteSprite", "画像（未指定で四角い点）");
+            root.Add(motes);
 
             var variation = new Foldout { text = "ばらつき・ゆらぎ", value = false };
             AddField(variation, "SourceJitter", "開始位置のばらつき");

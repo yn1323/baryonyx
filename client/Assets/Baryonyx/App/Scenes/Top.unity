@@ -932,52 +932,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: ShaftCount
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: MotionSpeed
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: FlickerSpeed
-      value: 0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: ShaftColor.a
-      value: 0.0423
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: WidthRange.x
-      value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: WidthRange.y
-      value: 3000
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: FlickerAmount
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
       propertyPath: SourceAnchor.x
-      value: 0.6
+      value: 0.64
       objectReference: {fileID: 0}
     - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
       propertyPath: SourceAnchor.y
-      value: 1.2
+      value: 1.18
       objectReference: {fileID: 0}
     - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: MotionAmplitude
-      value: 10
+      propertyPath: FloorPoolAnchor.x
+      value: 0.49
       objectReference: {fileID: 0}
     - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: RotationRange.x
-      value: -112
-      objectReference: {fileID: 0}
-    - target: {fileID: 1700000003, guid: e5a1b2c3d4e567f8899aabbccddeeff0, type: 3}
-      propertyPath: RotationRange.y
-      value: -140
+      propertyPath: FloorPoolAnchor.y
+      value: 0.25
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

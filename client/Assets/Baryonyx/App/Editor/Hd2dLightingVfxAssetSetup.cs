@@ -135,18 +135,29 @@ namespace Baryonyx.App.Editor
                 shaft.Animate = true;
                 shaft.UseUnscaledTime = true;
                 shaft.RandomSeed = 518;
-                shaft.SourceAnchor = new Vector2(0.99f, 1.04f);
-                shaft.SourceJitter = new Vector2(0.015f, 0.015f);
-                shaft.ShaftCount = 2;
-                shaft.ShaftColor = new Color(1f, 0.92f, 0.74f, 0.035f);
-                shaft.LengthRange = new Vector2(2050f, 2450f);
-                shaft.WidthRange = new Vector2(270f, 360f);
-                shaft.RotationRange = new Vector2(-142f, -136f);
-                shaft.WidthScaleRange = new Vector2(0.72f, 1.2f);
-                shaft.FlickerAmount = 0.07f;
-                shaft.FlickerSpeed = 0.45f;
-                shaft.MotionAmplitude = 4f;
-                shaft.MotionSpeed = 0.08f;
+                shaft.SourceAnchor = new Vector2(0.64f, 1.18f);
+                shaft.SourceJitter = new Vector2(0.01f, 0.005f);
+                shaft.SourceSpread = 0.08f;
+                shaft.ShaftCount = 4;
+                shaft.ShaftColor = new Color(0.59f, 0.75f, 1f, 0.34f);
+                shaft.LengthRange = new Vector2(1300f, 1500f);
+                shaft.WidthRange = new Vector2(150f, 250f);
+                shaft.RotationRange = new Vector2(-110f, -106f);
+                shaft.WidthScaleRange = new Vector2(0.55f, 1.35f);
+                shaft.OpacityRange = new Vector2(0.5f, 1f);
+                shaft.FloorPoolSprite = LoadSprite(GlowTexturePath);
+                shaft.FloorPoolAnchor = new Vector2(0.49f, 0.25f);
+                shaft.FloorPoolSize = new Vector2(640f, 170f);
+                shaft.FloorPoolAlpha = 0.4f;
+                shaft.MotesPerShaft = 18;
+                shaft.MoteColor = new Color(0.85f, 0.92f, 1f, 0.95f);
+                shaft.MoteSizeRange = new Vector2(3f, 5f);
+                shaft.MoteSpeedRange = new Vector2(6f, 16f);
+                shaft.MoteSway = 10f;
+                shaft.FlickerAmount = 0.08f;
+                shaft.FlickerSpeed = 0.35f;
+                shaft.MotionAmplitude = 6f;
+                shaft.MotionSpeed = 0.1f;
                 PrefabUtility.SaveAsPrefabAsset(root, LightShaftPrefabPath);
             }
             finally
@@ -399,18 +410,10 @@ namespace Baryonyx.App.Editor
         {
             const int width = 256;
             const int height = 128;
+            // Bright near the source (left), widening and fading toward the far end (right).
             var along = x / (width - 1f);
-            var across = y / (height - 1f);
-            var distance = Mathf.Abs(across - 0.5f) * 2f;
-            const float halfWidth = 0.46f;
-            var edge = 1f - Mathf.SmoothStep(halfWidth * 0.56f, halfWidth, distance);
-            var startFade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(along / 0.24f));
-            var endFade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - along) / 0.24f));
-            var noiseA = Mathf.PerlinNoise(along * 4.2f + 0.7f, across * 3.1f + 1.2f);
-            var noiseB = Mathf.PerlinNoise(along * 11f + 2.4f, across * 8.3f + 0.3f);
-            var lightVariation = Mathf.Lerp(0.86f, 1f, noiseA * 0.72f + noiseB * 0.28f);
-            var alpha = Mathf.Clamp01(edge * startFade * endFade * lightVariation * 0.86f);
-            return new Color(1f, 1f, 1f, alpha);
+            var across = y / (height - 1f) * 2f - 1f;
+            return new Color(1f, 1f, 1f, Hd2dLightShaft.EvaluateBeamAlpha(along, across));
         }
 
         private static void Stretch(RectTransform rect)
