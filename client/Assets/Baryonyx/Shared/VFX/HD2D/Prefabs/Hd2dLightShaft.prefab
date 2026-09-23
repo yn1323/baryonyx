@@ -55,18 +55,30 @@ MonoBehaviour:
   Animate: 1
   UseUnscaledTime: 1
   RandomSeed: 518
-  SourceAnchor: {x: 0.99, y: 1.04}
-  SourceJitter: {x: 0.015, y: 0.015}
-  ShaftCount: 2
-  ShaftColor: {r: 1, g: 0.92, b: 0.74, a: 0.035}
-  LengthRange: {x: 2050, y: 2450}
-  WidthRange: {x: 270, y: 360}
-  RotationRange: {x: -142, y: -136}
-  WidthScaleRange: {x: 0.72, y: 1.2}
-  FlickerAmount: 0.07
-  FlickerSpeed: 0.45
-  MotionAmplitude: 4
-  MotionSpeed: 0.08
+  SourceAnchor: {x: 0.64, y: 1.18}
+  SourceJitter: {x: 0.01, y: 0.005}
+  SourceSpread: 0.08
+  ShaftCount: 4
+  ShaftColor: {r: 0.59, g: 0.75, b: 1, a: 0.34}
+  LengthRange: {x: 1300, y: 1500}
+  WidthRange: {x: 150, y: 250}
+  RotationRange: {x: -110, y: -106}
+  WidthScaleRange: {x: 0.55, y: 1.35}
+  OpacityRange: {x: 0.5, y: 1}
+  FloorPoolSprite: {fileID: 21300000, guid: 91f5ade2f630f48a78063be14e8fd94d, type: 3}
+  FloorPoolAnchor: {x: 0.49, y: 0.25}
+  FloorPoolSize: {x: 640, y: 170}
+  FloorPoolAlpha: 0.4
+  MoteSprite: {fileID: 0}
+  MotesPerShaft: 18
+  MoteColor: {r: 0.85, g: 0.92, b: 1, a: 0.95}
+  MoteSizeRange: {x: 3, y: 5}
+  MoteSpeedRange: {x: 6, y: 16}
+  MoteSway: 10
+  FlickerAmount: 0.08
+  FlickerSpeed: 0.35
+  MotionAmplitude: 6
+  MotionSpeed: 0.1
 --- !u!1 &1700000004
 GameObject:
   m_ObjectHideFlags: 0
