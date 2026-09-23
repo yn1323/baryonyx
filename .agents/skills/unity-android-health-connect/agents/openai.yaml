@@ -1,0 +1,6 @@
+interface:
+  display_name: "Unity Android Health Connect"
+  short_description: "Unity Android bridgeとHealth Connect連携を安全に実装・検証"
+  default_prompt: "Use $unity-android-health-connect to implement or review Unity Android and Health Connect integration."
+policy:
+  allow_implicit_invocation: true

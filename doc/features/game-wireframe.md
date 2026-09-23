@@ -2,7 +2,7 @@
 id: feature-game-wireframe
 type: specification
 status: 一部確定
-updated: 2026-09-21
+updated: 2026-09-23
 ---
 
 # 遊べる試作の画面と操作
@@ -15,7 +15,9 @@ updated: 2026-09-21
 参照会話「遊べる試作へ進む」から、4人を中心にしたホーム、今日の歩数、冒険への主要操作、控えめなルーン表示、余白を取った配置を反映した。
 会話のテキストは取得できたが、最新の生成画像は取得できなかったため、既存素材と新しい出発地点の生成背景で補った。
 
-Androidの通常起動シーンは [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) とし、冒険と運動データの入口を持つホームを最初に表示する。
+Androidの通常起動シーンは [Top](../../client/Assets/Baryonyx/App/Scenes/Top.unity) とする。
+現在の動作確認では、Topの全面押下から [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
+[Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) は既存画面として残し、遷移先は呼び出し元の設定で選ぶ。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
 Unity Editorで画面を確認するときは、保存済みの状態から `Baryonyx/Wireframe/Open Scene` を実行し、PlayModeで起動する。
 通常画面には仮の勝敗を選ぶ確認パネルを表示しない。
@@ -92,11 +94,24 @@ Android APKにはこのサンプルProviderを組み込まず、データ未取�
 ## 配置と保存範囲
 
 生成りの背景、深緑の主要操作、控えめな金色、森とピクセル調のキャラを全画面で揃える。
+
+### 視覚階層と画面の分類
+
+探索・戦闘では背景を画面全体に見せ、UIを背景へ重ねる。
+通常の情報は位置、余白、文字の大きさ、明暗差でまとめ、セクションごとの不透明な枠を標準にしない。
+黒の透過レイヤー、薄い灰色の面、細い線、局所的な暗幕は、読み取りや選択状態の確認に必要なまとまりへ限定する。
+
+確認・獲得など一つの短い判断を求める画面は全画面モーダルとし、背面入力を止める。
+編成・装備・歩数など複数の操作を続ける画面は全画面スクリーンとし、同じ透過基調でも戻る操作と再入場時の状態を分けて扱う。
+文章や比較値が多い画面は、透明度だけで区切らず、暗い操作面やぼかしを加えて可読性を確保する。
+
 設計座標は1920×1080の横向きとし、中央に16:9のCore Areaを置く。
 Canvasは高さを基準に拡縮するため、19.5:9と20:9の横長端末でも文字やボタンの大きさを変えず、左右の余白だけが増える。
-背景は画面全体へ描画し、戦闘時はCore Area外の左右にも戦闘背景を表示する。
+背景は画面全体へ元画像の比率を保って描画し、戦闘時はCore Area外の左右にも戦闘背景を表示する。
+画面全体を覆う背景には [`ResponsiveBackground`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/ResponsiveBackground.cs) を使い、画面比率に合わせて画像を引き伸ばさない。
 ホーム・探索・戦闘のページ本体はCore Area内に置き、Safe Areaの上下差分をCore Area内で調整する。
 ナビゲーションはSafe Area配下の固定幅ボタンとして配置する。
+タイトル画面のタイトルと開始操作も `TopSafeArea` 配下のアンカーを基準にする。
 短い画面では、スクロールで下部の操作へ到達できる。
 モーダルは背面入力を遮り、「閉じる」を上部に固定する。遮蔽レイヤーはroot直下の全画面矩形としてシステムバー領域まで入力を止め、操作本体はSafe Area追従の`PopupSafe`、`DebugSafe`、`HealthDetailsSafe`配下に置く。
 
@@ -124,12 +139,16 @@ Canvasは高さを基準に拡縮するため、19.5:9と20:9の横長端末で�
 | [Combat](../../client/Assets/Baryonyx/Features/Combat/Runtime) | Unityの画面に依存しない戦闘計算、状態、試作カタログ |
 | [HealthWeekSummary](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthWeekSummary.cs) | 日付順、合計、最大値、欠損表示、棒の比率 |
 | [画面生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenAssets.cs) | 共通uGUI部品と生成の入口。ページ・戦闘・歩数の組み立ては専用ファイル |
+| [SceneTransitionController](../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransitionController.cs) | Fade、Wipe、上下・左右Shutterの選択、閉じる・開く時間、画面切り替えの入力遮断 |
 
 Prefabは `Baryonyx/Wireframe/Create Screen Assets` で再生成する。
+画面遷移の共通PrefabとTop/Mainへの配置は `Baryonyx/App/Create Scene Transition Assets` で生成する。
+Inspectorの `Exit` と `Enter` にある `SceneTransitionSettings` で、種類、色、閉じる時間、開く時間、Wipeの向き、Shutterの軸をそれぞれ選べる。
+別の画面から呼ぶ場合は、呼び出し元の `SceneTransitionController` に `PlayOut(settings, callback)` を渡し、暗転後のcallbackでシーンを読み込む。遷移先には `startCovered` と `revealOnStart` を設定し、遷移先ごとに1つの `Enter Settings` を選んで `PlayIn` を自動実行させる。遷移元によるEnter設定の引き継ぎは行わない。
 Androidをビルド対象にし、`Baryonyx/Wireframe/Build Android APK` でWireframeシーンを起動対象にしたAPKを作る。
 共通の `AndroidBuild.Build` を呼び、終了後に通常のビルドシーン設定を戻す。
 生成APKはルートの手順に従い、必ず指定のDriveフォルダーへコピーする。
-日本語フォントは既存の[フォントとライセンス](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)を使う。
+ゲーム内のフォントは既存の[フォントとライセンス](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)にあるDotGothic16で統一する。
 
 ## 検証と未確認事項
 
@@ -141,6 +160,7 @@ CI補助スクリプトのテスト13件の成功は、横画面UIの動作確�
 戦闘の時間・ダウン・回復・防護・勝敗はEditModeで検査する。
 実Prefabの入力、通常戦の自動勝利と報酬、歩数・JSONの表示はPlayModeで検査する。
 1920×1080、2340×1080、2400×1080のGameビューを撮影し、16:9のCore Area、左右の拡張領域、Safe Area内の必須UIを確認する。
+Unity EditorのGameビューでは、Androidグループの `Baryonyx Phone Landscape QA (2340×1080)` と `Baryonyx Wide Landscape QA (2400×1080)` を使う。
 実施結果は[UIの検証記録](../art/game-ui.md)へ記す。
 
 Androidの権限ダイアログ、実際の健康記録との一致、戻る操作、タップ領域、システムバーとの重なりは端末確認が必要である。
@@ -153,3 +173,4 @@ Editorの成功だけで端末連携の成功とは扱わない。
 - 2026-09-19：参照会話の配置方針を反映し、戦闘MVP・Health Connect・7日間の棒グラフを接続した。ゲーム状態は実行中だけ保持する。
 - 2026-09-21：Google認証後の歩数報酬API、ルーン残高のホーム表示、探索中の現在地・通過ノード表示を試作へ接続した。運動報酬の残高だけはサーバーへ保存し、ゲーム内のキャラクター・装備・探索状態は保存対象から外した。
 - 2026-09-20：横画面固定、1920×1080基準、中央16:9 Core Area、Safe Area追従ナビゲーションを共通レイアウトへ追加した。
+- 2026-09-22：背景の比率維持、タイトル画面のTopSafeArea、共通のレスポンシブ背景・Safe Area処理を生成元と生成済みアセットへ反映した。Unity Editorと実機の表示確認は未実施。

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Baryonyx.Editor;
+using Baryonyx.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -30,32 +32,8 @@ namespace Baryonyx.Wireframe.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
             AssetDatabase.Refresh();
             PrepareArt();
-            // Share the licensed source face, while keeping the dynamic glyph atlas feature-local.
-            const string fontPath = "Assets/Baryonyx/Features/Wireframe/UI/WireframeJapanese.asset";
-            font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(fontPath);
-            if (font == null)
-            {
-                var source = AssetDatabase.LoadAssetAtPath<Font>(
-                    "Assets/Baryonyx/Features/Health/UI/Fonts/NotoSansCJKjp-Regular.otf"
-                );
-                if (source == null)
-                    throw new InvalidOperationException("The Japanese source font is required.");
-                font = TMP_FontAsset.CreateFontAsset(
-                    source,
-                    48,
-                    6,
-                    UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
-                    2048,
-                    2048,
-                    AtlasPopulationMode.Dynamic,
-                    true
-                );
-                font.name = "Wireframe Japanese";
-                AssetDatabase.CreateAsset(font, fontPath);
-                AssetDatabase.AddObjectToAsset(font.material, font);
-                foreach (var texture in font.atlasTextures)
-                    AssetDatabase.AddObjectToAsset(texture, font);
-            }
+            font = GameFontAssets.GetOrCreate();
+            GameFontAssets.SetAsDefault(font);
             if (AssetDatabase.LoadAssetAtPath<WireframeData>(DataPath) == null)
                 AssetDatabase.CreateAsset(
                     ScriptableObject.CreateInstance<WireframeData>(),
@@ -96,6 +74,9 @@ namespace Baryonyx.Wireframe.Editor
                 ambientImage.texture = forest;
                 ambientImage.color = new Color(1, 1, 1, .18f);
                 ambientImage.raycastTarget = false;
+                var responsiveBackground =
+                    battlefieldAmbient.gameObject.AddComponent<ResponsiveBackground>();
+                responsiveBackground.AspectRatio = forest.width / (float)forest.height;
                 battlefieldAmbient.SetAsFirstSibling();
                 layout.BattlefieldAmbient = battlefieldAmbient.gameObject;
                 layout.BattlefieldAmbient.SetActive(false);

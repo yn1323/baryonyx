@@ -1,8 +1,8 @@
 using System.IO;
+using Baryonyx.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
 
 namespace Baryonyx.Health.Editor
@@ -12,7 +12,6 @@ namespace Baryonyx.Health.Editor
         public const string PrefabPath = "Assets/Baryonyx/Features/Health/UI/HealthScreen.prefab";
         public const string SettingsPath =
             "Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset";
-        private const string FontsPath = "Assets/Baryonyx/Features/Health/UI/Fonts/";
         private static readonly Color Ink = new(0.10f, 0.19f, 0.22f);
         private static readonly Color Muted = new(0.36f, 0.44f, 0.46f);
         private static readonly Color Green = new(0.13f, 0.42f, 0.35f);
@@ -28,13 +27,8 @@ namespace Baryonyx.Health.Editor
                 throw new System.InvalidOperationException("Import TMP Essential Resources first.");
             Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath));
             AssetDatabase.Refresh();
-            font = Font("NotoSansCJKjp-Regular.otf", "Health Japanese");
-            var mono = Font("NotoSansMono-Regular.ttf", "Health Mono");
-            mono.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset>
-            {
-                font,
-            };
-            EditorUtility.SetDirty(mono);
+            font = GameFontAssets.GetOrCreate();
+            GameFontAssets.SetAsDefault(font);
             if (AssetDatabase.LoadAssetAtPath<HealthConnectionSettings>(SettingsPath) == null)
                 AssetDatabase.CreateAsset(
                     ScriptableObject.CreateInstance<HealthConnectionSettings>(),
@@ -228,7 +222,7 @@ namespace Baryonyx.Health.Editor
                 fitter.horizontalFit = fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                 jsonContent.anchorMax = new Vector2(0, 1);
                 view.JsonText = jsonContent.gameObject.AddComponent<TextMeshProUGUI>();
-                view.JsonText.font = mono;
+                view.JsonText.font = font;
                 view.JsonText.fontSize = 22;
                 view.JsonText.color = new Color(0.79f, 0.93f, 0.84f);
                 view.JsonText.richText = false;
@@ -267,30 +261,6 @@ namespace Baryonyx.Health.Editor
             {
                 Object.DestroyImmediate(root.gameObject);
             }
-        }
-
-        private static TMP_FontAsset Font(string source, string name)
-        {
-            string path = FontsPath + name + ".asset";
-            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
-            if (existing != null)
-                return existing;
-            var result = TMP_FontAsset.CreateFontAsset(
-                AssetDatabase.LoadAssetAtPath<UnityEngine.Font>(FontsPath + source),
-                48,
-                6,
-                GlyphRenderMode.SDFAA,
-                2048,
-                2048,
-                AtlasPopulationMode.Dynamic,
-                true
-            );
-            result.name = name;
-            AssetDatabase.CreateAsset(result, path);
-            AssetDatabase.AddObjectToAsset(result.material, result);
-            foreach (var texture in result.atlasTextures)
-                AssetDatabase.AddObjectToAsset(texture, result);
-            return result;
         }
 
         private static RectTransform Rect(string name, Transform parent)

@@ -17,9 +17,29 @@ CanvasScalerの `Scale With Screen Size` を使い、基準解像度を設計上
 基準解像度を端末の物理解像度や対応端末の制限と見なさない。
 アンカーとLayout Groupで利用可能な幅に追従し、本文には最大幅を設けて大きい画面で中央に配置する。[CanvasScalerの仕様](https://docs.unity3d.com/Packages/com.unity.ugui@2.0/manual/script-CanvasScaler.html)
 
+背景画像は元の縦横比を保ったまま表示領域を覆い、親のRectTransformからはみ出す部分を切り取る。
+この処理は共有の [`ResponsiveBackground`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/ResponsiveBackground.cs) が担当し、画像の縦横比に合わせて表示矩形を計算する。
+CoreAreaの外側へ広がった横幅は背景や環境演出へ使い、必須UIやゲーム本体の座標を横幅に合わせて引き伸ばさない。
+
+画面端へ固定するUIはSafe Area配下のアンカーへ置く。
+画面全体を覆う背景と暗幕はSafe Areaの外側に置き、文字、ボタン、閉じる操作は [`SafeAreaFollower`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/SafeAreaFollower.cs) または既存のSafe Areaレイアウト配下に置く。
+ボタンは固定座標ではなく、四隅・辺・中央のアンカーと設計座標のマージンで配置する。
+
 OSから横向きやサイズ変更を適用された場合も、内容をスクロールして操作できるようにする。
 Androidの大画面では向きの指定が上書きされる条件とゲーム区分などの例外があるため、生成APKのManifestと実機で確認する。
 横向きの指定だけを表示崩れへの対策としない。[Androidの画面方向とサイズ変更](https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability)
+
+## 現行のUI構成
+
+Unity `6000.6.0f1` のゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
+画面、ボタン、数値、JSONなどゲーム内のTextMeshProテキストはDotGothic16で統一する。
+フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/README.md)に揃える。
+新規画面もuGUIを既定とし、UI Toolkitは独立した新規画面で明確な利点があり、入力・描画順・フォーカス・ライフサイクル・テストの境界を設計できる場合だけ採用する。
+uGUIとUI Toolkitを同じ画面で使う場合は、採用理由とEventSystem、Input System UI Input Moduleの構成を記録する。
+IMGUIはゲーム中のUIに使わず、エディター専用の診断・制作ツールに限定する。
+
+uGUIではCanvas、Prefab、Layout、Animator、Presenterの責務を分ける。
+頻繁に変わるHUDと静的な背景を同じCanvasへ詰め込まず、既存の画面・Presenter・EventSystem・PlayModeテストとの境界を保つ。
 
 ## 安全領域とレイアウトの更新
 
@@ -34,6 +54,23 @@ SafeAreaは `Screen.safeArea` と画面サイズから求め、機種名ごと�
 
 画面サイズの変更だけで取得済みデータを再取得・消去せず、詳細表示と閲覧位置を保つ。
 背景へ移ったときのデータ消去など、機能固有のライフサイクルは機能仕様に従う。
+
+## 背景を主役にした視覚階層
+
+ゲーム画面は背景とプレイ中の状態を主役にし、セクションを太い枠や不透明なカードで常時分割しない。
+情報のまとまりは、位置、余白、整列、見出しと本文の大きさ、明暗差の順に組み立てる。
+それだけで読み取りにくい場合だけ、薄い灰色の面、細い区切り線、局所的なグラデーション、透過した暗い操作面を加える。
+選択状態や重要な操作など、誤読を防ぐ必要があるまとまりには枠や不透明な面を使う。
+
+探索・戦闘のHUDは背景へ重ね、文字やアイコンの背後に局所的な暗幕やグラデーションを置く。
+編成・装備・報酬・設定などの全画面操作は、背景を見せる黒の透過レイヤーを基本にする。
+本文や比較値が多い画面は透明度だけで可読性を保たず、ぼかし、暗い操作面、十分なコントラストを組み合わせる。
+
+全画面モーダルは確認や獲得など一つの作業に集中させ、背面のクリックとスクロールを止める。
+編成・装備・歩数のように複数の操作を続ける画面は、見た目が同じ透過基調でも全画面スクリーンとして扱い、戻る操作と再入場時の状態を画面仕様へ記す。
+透明度に依存した表示は背景の明るさで読みにくくなるため、高コントラスト表示や透明度を下げる設定を妨げない。
+
+[Appleのマテリアル指針](https://developer.apple.com/jp/design/human-interface-guidelines/materials)と[Material 3のダイアログ指針](https://m3.material.io/components/dialogs/overview)を、透過レイヤーと全画面モーダルの設計根拠として参照する。
 
 ## スクロールと文章
 
@@ -69,14 +106,14 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 ## 機種差を確認する条件
 
 画面の追加、レイアウト・フォント・長文表示の変更時に、同じ条件で検査する。
-表示幅320dp相当を小さいスマートフォンの検証下限とし、少なくとも次の縦横比を確認する。
+横画面アプリの検証条件として、少なくとも次の表示領域を確認する。
 
 | 条件 | 確認する内容 |
 |---|---|
-| 縦9:16 | 初期表示で状態と主要操作を読めること、末尾まで操作できること |
-| 縦9:19.5、9:20 | 一覧・詳細の配置と上下の安全領域 |
-| 縦3:4 | 本文の最大幅と中央配置 |
-| 横4:3 | 高さが変わっても内容と閉じる操作へ到達できること |
+| 横16:9（1920×1080） | 16:9のCore Areaへ必須UIが収まること |
+| 横19.5:9（2340×1080） | 左右の拡張領域とSafe Area内の必須UI |
+| 横20:9（2400×1080） | 左右の拡張領域とSafe Area内の必須UI |
+| 横4:3 | Core Areaを保ち、内容と閉じる操作へ到達できること |
 | ノッチあり、非対称のSafeArea | 文字やボタンとOS領域が重ならないこと |
 | 表示中のサイズ・SafeArea変更 | データ、詳細表示、操作、閲覧位置を保てること |
 

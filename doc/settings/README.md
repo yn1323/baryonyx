@@ -25,7 +25,7 @@
 | クラウド公開・GOOGLE_CLIENT_ID | [サーバーCI](../../.github/workflows/server-ci.yml)・[公開workflow](../../.github/workflows/server-deploy.yml) | [初回の公開準備](../rules/backend-design.md#初回の公開準備)。実環境の登録値は転記しない |
 | Unity CIのSecrets | [クライアントCI](../../.github/workflows/client-ci.yml) | [Unityライセンス設定](../rules/client-code-quality.md) |
 | APKのCI配布・Drive認証 | [配布workflow](../../.github/workflows/client-distribute.yml) | [配布手順と停止状態](../rules/client-android-testing.md) |
-| ローカルAPKのDrive配置 | [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat) | [手動実行ルール](../../AGENTS.md#手動実行用ショートカット) |
+| ローカルAPKのDrive配置 | [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat)・[build-apk-to-drive.command](../../shortcuts/build-apk-to-drive.command) | [手動実行ルール](../../AGENTS.md#手動実行用ショートカット) |
 | Android SDK・AVD・起動引数 | [エミュレーター手順](../rules/client-android-emulator.md) | 同文書で確認する。AIはエミュレーターを起動しない |
 | 依存更新 | [renovate.json](../../renovate.json) | [更新ルール](../rules/dependency-updates.md) |
 | 文書の索引・リンク・ID検査 | [文書CI](../../.github/workflows/docs-ci.yml) | [検査手順](../tools/README.md) |

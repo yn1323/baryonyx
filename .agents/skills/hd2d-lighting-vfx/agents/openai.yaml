@@ -1,0 +1,7 @@
+interface:
+  display_name: "HD-2DライティングとVFX"
+  short_description: "UnityのHD-2D光とキラキラ演出を設計・実装"
+  default_prompt: "Use $hd2d-lighting-vfx to design or review Unity HD-2D-inspired lighting, depth, particles, and sparkle VFX."
+
+policy:
+  allow_implicit_invocation: false

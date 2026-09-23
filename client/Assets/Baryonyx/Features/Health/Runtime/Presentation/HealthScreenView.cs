@@ -321,6 +321,7 @@ namespace Baryonyx.Health
                 typeof(TextMeshProUGUI)
             ).GetComponent<TextMeshProUGUI>();
             text.transform.SetParent(parent, false);
+            text.font = TMP_Settings.defaultFontAsset;
             text.fontSize = size;
             text.alignment = alignment;
             text.color = Color.white;

@@ -7,7 +7,8 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ## 配置と設計の参照先
 
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
-現在の起動シーンは `Assets/Baryonyx/App/Scenes/Main.unity` である。
+現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、動作確認では全面押下で `Main.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
+既存の `Main.unity` は健康データを含むワイヤー画面として残している。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。
 
 ## サーバーのBaseURL
@@ -76,6 +77,7 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 - WindowsのAndroidエミュレーターでAPKを確認するときは [専用の手順](../doc/rules/client-android-emulator.md) とルートの [手動実行用ショートカット](../AGENTS.md#手動実行用ショートカット) を使う。
 - 起動確認のためにビルド対象をARMv7やx86_64へ変更せず、現行のIL2CPP・ARM64 APKと、手順に記載したAndroid 16のAVDを使う。
 - C#変更後は、再コンパイルの完了とConsoleのエラーを確認する。
+- C#変更後は、CIと同じCSharpierで整形・検査する。実行に必要な.NET SDKの導入と実行手順は [整形と静的解析](../doc/rules/client-code-quality.md) に従う。
 - 変更した動作に対応するテストを実行する。テスト0件は合格として扱わない。
 - PlayModeの開始・停止やシーンの切り替えは、実行中の作業を確認してから行う。
 - アセットの移動・名前変更・削除はUnityの機能を使い、対応する `.meta` とGUIDの整合を保つ。

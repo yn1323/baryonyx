@@ -1,0 +1,7 @@
+interface:
+  display_name: "Unity C#差分ガイド"
+  short_description: "Unity固有のC#規則を確認して実装"
+  default_prompt: "Use $unity-csharp-differences when writing or reviewing Unity C# code so Unity-specific semantics are checked."
+
+policy:
+  allow_implicit_invocation: true
