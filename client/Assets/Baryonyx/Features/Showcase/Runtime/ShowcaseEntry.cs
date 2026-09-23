@@ -7,7 +7,9 @@ namespace Baryonyx.Showcase
     {
         public string Id;
         public string DisplayName;
-        [TextArea(2, 5)] public string Description;
+
+        [TextArea(2, 5)]
+        public string Description;
         public ShowcaseCategory Category = ShowcaseCategory.Other;
         public UnityEngine.Object Asset;
         public GameObject PreviewPrefab;

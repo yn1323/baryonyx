@@ -31,7 +31,8 @@ namespace Baryonyx.UI
         private SceneTransitionType type = SceneTransitionType.Fade;
 
         [SerializeField]
-        private SceneTransitionWipeDirection wipeDirection = SceneTransitionWipeDirection.LeftToRight;
+        private SceneTransitionWipeDirection wipeDirection =
+            SceneTransitionWipeDirection.LeftToRight;
 
         [SerializeField]
         private SceneTransitionShutterAxis shutterAxis = SceneTransitionShutterAxis.Vertical;

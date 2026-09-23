@@ -61,10 +61,12 @@ namespace Baryonyx.UI
                 target == null
                 || maximum.x <= minimum.x
                 || maximum.y <= minimum.y
-                || (target.anchorMin == minimum
+                || (
+                    target.anchorMin == minimum
                     && target.anchorMax == maximum
                     && target.offsetMin == Vector2.zero
-                    && target.offsetMax == Vector2.zero)
+                    && target.offsetMax == Vector2.zero
+                )
             )
                 return false;
 

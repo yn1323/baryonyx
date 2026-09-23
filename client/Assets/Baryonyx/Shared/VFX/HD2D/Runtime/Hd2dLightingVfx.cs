@@ -134,7 +134,13 @@ namespace Baryonyx.Vfx.Hd2d
             for (var index = 0; index < DustCount; index++)
                 AddParticle("Dust_" + index.ToString("00"), DustSprite, DustColor, false, area);
             for (var index = 0; index < SparkleCount; index++)
-                AddParticle("Sparkle_" + index.ToString("00"), SparkleSprite, SparkleColor, true, area);
+                AddParticle(
+                    "Sparkle_" + index.ToString("00"),
+                    SparkleSprite,
+                    SparkleColor,
+                    true,
+                    area
+                );
 
             initialized = true;
         }
@@ -168,7 +174,11 @@ namespace Baryonyx.Vfx.Hd2d
             if (sprite == null)
                 return;
 
-            var particleObject = new GameObject(name, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+            var particleObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(UnityEngine.UI.Image)
+            );
             particleObject.transform.SetParent(ParticleLayer, false);
             var rect = particleObject.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = Vector2.one * 0.5f;
@@ -197,13 +207,17 @@ namespace Baryonyx.Vfx.Hd2d
             var verticalRange = particle.Sparkle
                 ? SparkleVerticalSpeedRange
                 : DustVerticalSpeedRange;
-            var horizontalDrift = particle.Sparkle
-                ? SparkleHorizontalDrift
-                : DustHorizontalDrift;
+            var horizontalDrift = particle.Sparkle ? SparkleHorizontalDrift : DustHorizontalDrift;
 
             particle.Position = new Vector2(
-                RandomRange(-area.x * 0.5f + ParticleAreaPadding.x, area.x * 0.5f - ParticleAreaPadding.x),
-                RandomRange(-area.y * 0.5f + ParticleAreaPadding.y, area.y * 0.5f - ParticleAreaPadding.y)
+                RandomRange(
+                    -area.x * 0.5f + ParticleAreaPadding.x,
+                    area.x * 0.5f - ParticleAreaPadding.x
+                ),
+                RandomRange(
+                    -area.y * 0.5f + ParticleAreaPadding.y,
+                    area.y * 0.5f - ParticleAreaPadding.y
+                )
             );
             particle.Velocity = new Vector2(
                 RandomRange(-horizontalDrift, horizontalDrift),
@@ -234,7 +248,11 @@ namespace Baryonyx.Vfx.Hd2d
 
         private Vector2 GetAreaSize()
         {
-            if (ParticleLayer != null && ParticleLayer.rect.width > 1f && ParticleLayer.rect.height > 1f)
+            if (
+                ParticleLayer != null
+                && ParticleLayer.rect.width > 1f
+                && ParticleLayer.rect.height > 1f
+            )
                 return ParticleLayer.rect.size;
             return ReferenceAreaSize;
         }

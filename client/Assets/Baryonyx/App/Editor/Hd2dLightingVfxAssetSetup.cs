@@ -68,34 +68,10 @@ namespace Baryonyx.App.Editor
             EnsureFolder(TextureDirectory);
             EnsureFolder(PrefabDirectory);
 
-            EnsureTexture(
-                GlowTexturePath,
-                64,
-                64,
-                CreateGlowPixels,
-                FilterMode.Bilinear
-            );
-            EnsureTexture(
-                RayTexturePath,
-                128,
-                64,
-                CreateRayPixels,
-                FilterMode.Bilinear
-            );
-            EnsureTexture(
-                DustTexturePath,
-                16,
-                16,
-                CreateDustPixels,
-                FilterMode.Bilinear
-            );
-            EnsureTexture(
-                SparkleTexturePath,
-                32,
-                32,
-                CreateSparklePixels,
-                FilterMode.Bilinear
-            );
+            EnsureTexture(GlowTexturePath, 64, 64, CreateGlowPixels, FilterMode.Bilinear);
+            EnsureTexture(RayTexturePath, 128, 64, CreateRayPixels, FilterMode.Bilinear);
+            EnsureTexture(DustTexturePath, 16, 16, CreateDustPixels, FilterMode.Bilinear);
+            EnsureTexture(SparkleTexturePath, 32, 32, CreateSparklePixels, FilterMode.Bilinear);
             EnsureTexture(
                 LightShaftTexturePath,
                 256,
@@ -118,7 +94,9 @@ namespace Baryonyx.App.Editor
 
             var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
             if (!scene.IsValid())
-                throw new InvalidOperationException($"Top scene could not be opened: {TopScenePath}");
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
 
             var changed = TopHomeSceneSetup.EnsureTopLightingVfx(scene);
             changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
@@ -133,7 +111,9 @@ namespace Baryonyx.App.Editor
 
             var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
             if (!scene.IsValid())
-                throw new InvalidOperationException($"Top scene could not be opened: {TopScenePath}");
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
 
             if (TopHomeSceneSetup.EnsureTopLightShaft(scene))
                 EditorSceneManager.SaveScene(scene, TopScenePath);
@@ -226,18 +206,8 @@ namespace Baryonyx.App.Editor
                 point.FlickerSpeed = 1.2f;
                 point.FlickerSeed = 0.1f;
 
-                var glow = CreateImage(
-                    "Glow",
-                    root.transform,
-                    LoadSprite(GlowTexturePath),
-                    false
-                );
-                var ray = CreateImage(
-                    "Ray",
-                    root.transform,
-                    LoadSprite(RayTexturePath),
-                    true
-                );
+                var glow = CreateImage("Glow", root.transform, LoadSprite(GlowTexturePath), false);
+                var ray = CreateImage("Ray", root.transform, LoadSprite(RayTexturePath), true);
                 glow.rectTransform.anchorMin = glow.rectTransform.anchorMax = Vector2.one * 0.5f;
                 glow.rectTransform.pivot = Vector2.one * 0.5f;
                 ray.rectTransform.anchorMin = ray.rectTransform.anchorMax = Vector2.one * 0.5f;
@@ -314,7 +284,11 @@ namespace Baryonyx.App.Editor
             bool preserveAspect
         )
         {
-            var imageObject = new GameObject(name, typeof(RectTransform), typeof(UnityEngine.UI.Image));
+            var imageObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(UnityEngine.UI.Image)
+            );
             imageObject.transform.SetParent(parent, false);
             var image = imageObject.GetComponent<UnityEngine.UI.Image>();
             image.sprite = sprite;
@@ -328,7 +302,9 @@ namespace Baryonyx.App.Editor
         {
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             if (sprite == null)
-                throw new InvalidOperationException($"Generated sprite could not be loaded: {path}");
+                throw new InvalidOperationException(
+                    $"Generated sprite could not be loaded: {path}"
+                );
             return sprite;
         }
 
@@ -376,10 +352,9 @@ namespace Baryonyx.App.Editor
         private static Color CreateGlowPixels(int x, int y)
         {
             const int size = 64;
-            var distance = Vector2.Distance(
-                new Vector2(x + 0.5f, y + 0.5f),
-                Vector2.one * (size * 0.5f)
-            ) / (size * 0.5f);
+            var distance =
+                Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), Vector2.one * (size * 0.5f))
+                / (size * 0.5f);
             var alpha = Mathf.Pow(Mathf.Clamp01(1f - distance), 2.2f);
             return new Color(1f, 1f, 1f, alpha);
         }
@@ -388,7 +363,8 @@ namespace Baryonyx.App.Editor
         {
             var length = x / 127f;
             var width = Mathf.Abs(y / 63f - 0.5f) * 2f;
-            var alpha = Mathf.Pow(Mathf.Clamp01(1f - length), 0.7f)
+            var alpha =
+                Mathf.Pow(Mathf.Clamp01(1f - length), 0.7f)
                 * Mathf.Pow(Mathf.Clamp01(1f - width), 2.4f)
                 * 0.95f;
             return new Color(1f, 1f, 1f, alpha);
@@ -397,10 +373,9 @@ namespace Baryonyx.App.Editor
         private static Color CreateDustPixels(int x, int y)
         {
             const int size = 16;
-            var distance = Vector2.Distance(
-                new Vector2(x + 0.5f, y + 0.5f),
-                Vector2.one * (size * 0.5f)
-            ) / (size * 0.5f);
+            var distance =
+                Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), Vector2.one * (size * 0.5f))
+                / (size * 0.5f);
             var alpha = Mathf.Pow(Mathf.Clamp01(1f - distance), 2.5f);
             return new Color(1f, 1f, 1f, alpha);
         }
@@ -464,7 +439,8 @@ namespace Baryonyx.App.Editor
         private static string ToAbsolutePath(string assetPath)
         {
             var projectRoot = Directory.GetParent(Application.dataPath).FullName;
-            return Path.Combine(projectRoot, assetPath).Replace("/", Path.DirectorySeparatorChar.ToString());
+            return Path.Combine(projectRoot, assetPath)
+                .Replace("/", Path.DirectorySeparatorChar.ToString());
         }
     }
 }

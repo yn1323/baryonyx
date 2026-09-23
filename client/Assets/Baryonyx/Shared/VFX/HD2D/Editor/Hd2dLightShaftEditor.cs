@@ -13,10 +13,12 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
-            root.Add(new HelpBox(
-                "TopCanvas > TopHd2dLightShaft で調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
-                HelpBoxMessageType.Info
-            ));
+            root.Add(
+                new HelpBox(
+                    "TopCanvas > TopHd2dLightShaft で調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
+                    HelpBoxMessageType.Info
+                )
+            );
 
             AddField(root, "PreviewInEditor", "Editorで表示");
             var opacity = new Slider("光の濃さ（0で透明）", 0f, 0.2f)
@@ -24,14 +26,18 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 name = "shaftOpacity",
                 bindingPath = "ShaftColor.a",
                 showInputField = true,
-                tooltip = "小さいほど背景になじみます。現在の目安は0.035です。"
+                tooltip = "小さいほど背景になじみます。現在の目安は0.035です。",
             };
             opacity.AddToClassList(BaseField<float>.alignedFieldUssClassName);
             opacity.RegisterValueChangedCallback(_ => QueuePreviewUpdate());
             root.Add(opacity);
             AddField(root, "ShaftColor", "光の色");
-            AddField(root, "SourceAnchor", "開始位置（X: 左右 / Y: 上下）",
-                "Xを小さくすると角度を変えずに左へ移動します。Yを1より大きくすると画面の上側から入ります。");
+            AddField(
+                root,
+                "SourceAnchor",
+                "開始位置（X: 左右 / Y: 上下）",
+                "Xを小さくすると角度を変えずに左へ移動します。Yを1より大きくすると画面の上側から入ります。"
+            );
             AddField(root, "WidthRange", "太さの範囲");
             AddField(root, "LengthRange", "長さの範囲");
             AddField(root, "RotationRange", "角度の範囲（度）");
@@ -54,10 +60,12 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(assets, "PlayOnEnable", "有効時に自動表示");
             AddField(assets, "UseUnscaledTime", "ゲーム速度に影響されない");
             root.Add(assets);
-            root.Add(new HelpBox(
-                "Editorでは静止表示します。ゆらぎの動きはPlay Modeで確認してください。Play Mode中の変更は停止時に戻ります。",
-                HelpBoxMessageType.None
-            ));
+            root.Add(
+                new HelpBox(
+                    "Editorでは静止表示します。ゆらぎの動きはPlay Modeで確認してください。Play Mode中の変更は停止時に戻ります。",
+                    HelpBoxMessageType.None
+                )
+            );
             root.RegisterCallback<SerializedPropertyChangeEvent>(_ => QueuePreviewUpdate());
             return root;
         }
@@ -91,16 +99,31 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             foreach (var editedTarget in targets)
             {
-                if (editedTarget is Hd2dLightShaft shaft && !UnityEngine.Application.IsPlaying(shaft.gameObject))
+                if (
+                    editedTarget is Hd2dLightShaft shaft
+                    && !UnityEngine.Application.IsPlaying(shaft.gameObject)
+                )
                     shaft.RebuildShafts();
             }
             EditorApplication.QueuePlayerLoopUpdate();
             SceneView.RepaintAll();
         }
 
-        private static void AddField(VisualElement parent, string path, string label, string tooltip = null)
+        private static void AddField(
+            VisualElement parent,
+            string path,
+            string label,
+            string tooltip = null
+        )
         {
-            parent.Add(new PropertyField { bindingPath = path, label = label, tooltip = tooltip });
+            parent.Add(
+                new PropertyField
+                {
+                    bindingPath = path,
+                    label = label,
+                    tooltip = tooltip,
+                }
+            );
         }
     }
 }

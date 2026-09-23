@@ -102,8 +102,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(catalog, Is.Not.Null);
 
             var wireframe = catalog.Entries.FirstOrDefault(entry =>
-                entry != null && entry.Description ==
-                    "Assets/Baryonyx/Features/Wireframe/UI/WireframeScreen.prefab"
+                entry != null
+                && entry.Description
+                    == "Assets/Baryonyx/Features/Wireframe/UI/WireframeScreen.prefab"
             );
             Assert.That(wireframe, Is.Not.Null);
             Assert.That(wireframe.PreviewPrefab, Is.Not.Null);

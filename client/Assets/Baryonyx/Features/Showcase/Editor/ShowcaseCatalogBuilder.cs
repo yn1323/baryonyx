@@ -51,9 +51,12 @@ namespace Baryonyx.Showcase.Editor
             AddAssets(generated, seenAssetPaths, "t:ScriptableObject", ShowcaseCategory.Data);
             AddSceneAssets(generated, seenAssetPaths);
 
-            var manual = AssetDatabase.FindAssets("t:ShowcaseEntry", new[] { RootPath })
+            var manual = AssetDatabase
+                .FindAssets("t:ShowcaseEntry", new[] { RootPath })
                 .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => !path.StartsWith(GeneratedEntriesPath + "/", StringComparison.OrdinalIgnoreCase))
+                .Where(path =>
+                    !path.StartsWith(GeneratedEntriesPath + "/", StringComparison.OrdinalIgnoreCase)
+                )
                 .Select(AssetDatabase.LoadAssetAtPath<ShowcaseEntry>)
                 .Where(entry => entry != null);
             generated.AddRange(manual);
@@ -70,9 +73,15 @@ namespace Baryonyx.Showcase.Editor
             var showcasePath = entries
                 .Where(entry => entry.Category == ShowcaseCategory.Scene)
                 .Select(entry => entry.ScenePath)
-                .FirstOrDefault(path => string.Equals(path, ScenePath, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(showcasePath)
-                && !scenes.Any(scene => string.Equals(scene.path, showcasePath, StringComparison.OrdinalIgnoreCase)))
+                .FirstOrDefault(path =>
+                    string.Equals(path, ScenePath, StringComparison.OrdinalIgnoreCase)
+                );
+            if (
+                !string.IsNullOrWhiteSpace(showcasePath)
+                && !scenes.Any(scene =>
+                    string.Equals(scene.path, showcasePath, StringComparison.OrdinalIgnoreCase)
+                )
+            )
                 scenes.Add(new EditorBuildSettingsScene(showcasePath, true));
 
             EditorBuildSettings.scenes = scenes.ToArray();
@@ -94,7 +103,10 @@ namespace Baryonyx.Showcase.Editor
                 var asset = AssetDatabase.LoadMainAssetAtPath(path);
                 if (asset == null)
                     continue;
-                var sprites = AssetDatabase.LoadAllAssetRepresentationsAtPath(path).OfType<Sprite>().ToList();
+                var sprites = AssetDatabase
+                    .LoadAllAssetRepresentationsAtPath(path)
+                    .OfType<Sprite>()
+                    .ToList();
                 if (sprites.Count > 0)
                 {
                     foreach (var sprite in sprites)
@@ -147,15 +159,21 @@ namespace Baryonyx.Showcase.Editor
             if (entry.PreviewPrefab != null)
             {
                 var animator = entry.PreviewPrefab.GetComponentInChildren<Animator>();
-                entry.PreviewAnimation = animator != null && animator.runtimeAnimatorController != null
-                    ? animator.runtimeAnimatorController.animationClips.FirstOrDefault()
-                    : null;
-                if (animator != null && animator.runtimeAnimatorController is AnimatorController controller)
+                entry.PreviewAnimation =
+                    animator != null && animator.runtimeAnimatorController != null
+                        ? animator.runtimeAnimatorController.animationClips.FirstOrDefault()
+                        : null;
+                if (
+                    animator != null
+                    && animator.runtimeAnimatorController is AnimatorController controller
+                )
                 {
-                    entry.AnimationStateName = controller.layers
-                        .SelectMany(layer => layer.stateMachine.states)
-                        .Select(state => state.state.name)
-                        .FirstOrDefault() ?? string.Empty;
+                    entry.AnimationStateName =
+                        controller
+                            .layers.SelectMany(layer => layer.stateMachine.states)
+                            .Select(state => state.state.name)
+                            .FirstOrDefault()
+                        ?? string.Empty;
                 }
 
                 if (entry.PreviewAnimation == null)
@@ -178,10 +196,17 @@ namespace Baryonyx.Showcase.Editor
 
         private static string StableKey(string value)
         {
-            return new string(value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
+            return new string(
+                value
+                    .Select(character => char.IsLetterOrDigit(character) ? character : '_')
+                    .ToArray()
+            );
         }
 
-        private static void AddSceneAssets(List<ShowcaseEntry> entries, HashSet<string> seenAssetPaths)
+        private static void AddSceneAssets(
+            List<ShowcaseEntry> entries,
+            HashSet<string> seenAssetPaths
+        )
         {
             foreach (var guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Baryonyx" }))
             {
@@ -218,7 +243,10 @@ namespace Baryonyx.Showcase.Editor
 
         private static bool ShouldInclude(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) || !path.StartsWith("Assets/Baryonyx/", StringComparison.OrdinalIgnoreCase))
+            if (
+                string.IsNullOrWhiteSpace(path)
+                || !path.StartsWith("Assets/Baryonyx/", StringComparison.OrdinalIgnoreCase)
+            )
                 return false;
             return !path.Contains("/Editor/", StringComparison.OrdinalIgnoreCase)
                 && !path.Contains("/Tests/", StringComparison.OrdinalIgnoreCase)
@@ -229,15 +257,29 @@ namespace Baryonyx.Showcase.Editor
         private static ShowcaseCategory InferCategory(string path, ShowcaseCategory fallback)
         {
             var value = path.ToLowerInvariant();
-            if (value.Contains("character") || value.Contains("adventurer") || value.Contains("player"))
+            if (
+                value.Contains("character")
+                || value.Contains("adventurer")
+                || value.Contains("player")
+            )
                 return ShowcaseCategory.Character;
-            if (value.Contains("background") || value.Contains("environment") || value.Contains("forest") || value.Contains("mine"))
+            if (
+                value.Contains("background")
+                || value.Contains("environment")
+                || value.Contains("forest")
+                || value.Contains("mine")
+            )
                 return ShowcaseCategory.Environment;
             if (value.Contains("weapon") || value.Contains("sword") || value.Contains("bow"))
                 return ShowcaseCategory.Weapon;
             if (value.Contains("item") || value.Contains("potion") || value.Contains("icon"))
                 return ShowcaseCategory.Item;
-            if (value.Contains("/ui/") || value.Contains("button") || value.Contains("panel") || value.Contains("screen"))
+            if (
+                value.Contains("/ui/")
+                || value.Contains("button")
+                || value.Contains("panel")
+                || value.Contains("screen")
+            )
                 return ShowcaseCategory.Ui;
             if (value.Contains("vfx") || value.Contains("effect") || value.Contains("particle"))
                 return ShowcaseCategory.Vfx;
@@ -287,12 +329,14 @@ namespace Baryonyx.Showcase.Editor
 
         private static bool TouchesClientAssets(params string[][] paths)
         {
-            return paths.SelectMany(value => value).Any(path =>
-                path.StartsWith("Assets/Baryonyx/", StringComparison.OrdinalIgnoreCase)
-                && !path.Contains("/Showcase/", StringComparison.OrdinalIgnoreCase)
-                && !path.Contains("/Editor/", StringComparison.OrdinalIgnoreCase)
-                && !path.Contains("/Tests/", StringComparison.OrdinalIgnoreCase)
-            );
+            return paths
+                .SelectMany(value => value)
+                .Any(path =>
+                    path.StartsWith("Assets/Baryonyx/", StringComparison.OrdinalIgnoreCase)
+                    && !path.Contains("/Showcase/", StringComparison.OrdinalIgnoreCase)
+                    && !path.Contains("/Editor/", StringComparison.OrdinalIgnoreCase)
+                    && !path.Contains("/Tests/", StringComparison.OrdinalIgnoreCase)
+                );
         }
     }
 }

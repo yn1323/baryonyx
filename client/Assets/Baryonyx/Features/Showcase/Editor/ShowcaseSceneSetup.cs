@@ -18,12 +18,19 @@ namespace Baryonyx.Showcase.Editor
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
             if (System.IO.File.Exists(ShowcaseCatalogBuilder.ScenePath))
-                throw new InvalidOperationException("Showcase scene already exists. Use Open Scene.");
+                throw new InvalidOperationException(
+                    "Showcase scene already exists. Use Open Scene."
+                );
 
             ShowcaseCatalogBuilder.RefreshCatalog();
-            var catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(ShowcaseCatalogBuilder.CatalogPath);
+            var catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(
+                ShowcaseCatalogBuilder.CatalogPath
+            );
             var previous = SceneManager.GetActiveScene();
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            var scene = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Additive
+            );
             try
             {
                 var root = new GameObject("ShowcaseApp");

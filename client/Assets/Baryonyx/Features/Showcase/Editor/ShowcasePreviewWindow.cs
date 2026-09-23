@@ -12,7 +12,8 @@ namespace Baryonyx.Showcase.Editor
 {
     public sealed class ShowcasePreviewWindow : EditorWindow
     {
-        private const string StylePath = ShowcaseCatalogBuilder.RootPath + "/Editor/ShowcasePreviewWindow.uss";
+        private const string StylePath =
+            ShowcaseCatalogBuilder.RootPath + "/Editor/ShowcasePreviewWindow.uss";
 
         private readonly List<ShowcaseEntry> visibleEntries = new();
         private ShowcaseCatalog catalog;
@@ -35,8 +36,7 @@ namespace Baryonyx.Showcase.Editor
 
         private const float PreviewMaxHeight = 250f;
 
-        private static readonly string[] CategoryNames =
-            Enum.GetNames(typeof(ShowcaseCategory));
+        private static readonly string[] CategoryNames = Enum.GetNames(typeof(ShowcaseCategory));
 
         [MenuItem("Baryonyx/Showcase/Open Preview Window")]
         public static void OpenWindow()
@@ -81,7 +81,7 @@ namespace Baryonyx.Showcase.Editor
             var refreshButton = new ToolbarButton(RefreshCatalog)
             {
                 text = "Refresh Catalog",
-                tooltip = "Assets/Baryonyx のアセット一覧を更新します"
+                tooltip = "Assets/Baryonyx のアセット一覧を更新します",
             };
             toolbar.Add(refreshButton);
 
@@ -106,7 +106,7 @@ namespace Baryonyx.Showcase.Editor
             entryList = new ListView(visibleEntries, 24, MakeEntryItem, BindEntryItem)
             {
                 selectionType = SelectionType.Single,
-                showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly
+                showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
             };
             entryList.name = "showcaseEntryList";
             entryList.AddToClassList("showcase-entry-list");
@@ -117,10 +117,7 @@ namespace Baryonyx.Showcase.Editor
             previewPane.AddToClassList("showcase-preview-pane");
             previewPane.RegisterCallback<GeometryChangedEvent>(_ => FitPreviewImage());
 
-            previewImage = new Image
-            {
-                scaleMode = ScaleMode.ScaleToFit
-            };
+            previewImage = new Image { scaleMode = ScaleMode.ScaleToFit };
             previewImage.AddToClassList("showcase-preview-image");
             previewPane.Add(previewImage);
 
@@ -186,7 +183,9 @@ namespace Baryonyx.Showcase.Editor
 
         private void LoadCatalog()
         {
-            catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(ShowcaseCatalogBuilder.CatalogPath);
+            catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(
+                ShowcaseCatalogBuilder.CatalogPath
+            );
         }
 
         private void RefreshCatalog()
@@ -215,13 +214,23 @@ namespace Baryonyx.Showcase.Editor
             var source = catalog != null ? catalog.Entries : Array.Empty<ShowcaseEntry>();
 
             visibleEntries.Clear();
-            visibleEntries.AddRange(source
-                .Where(entry => entry != null && entry.Enabled)
-                .Where(entry => category == nameof(ShowcaseCategory.All) || entry.Category.ToString() == category)
-                .Where(entry => string.IsNullOrWhiteSpace(search)
-                    || entry.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                    || (entry.Description ?? string.Empty).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
-                .OrderBy(entry => entry.Label));
+            visibleEntries.AddRange(
+                source
+                    .Where(entry => entry != null && entry.Enabled)
+                    .Where(entry =>
+                        category == nameof(ShowcaseCategory.All)
+                        || entry.Category.ToString() == category
+                    )
+                    .Where(entry =>
+                        string.IsNullOrWhiteSpace(search)
+                        || entry.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+                        || (entry.Description ?? string.Empty).IndexOf(
+                            search,
+                            StringComparison.OrdinalIgnoreCase
+                        ) >= 0
+                    )
+                    .OrderBy(entry => entry.Label)
+            );
 
             entryList.Rebuild();
             if (visibleEntries.Count == 0)
@@ -269,10 +278,12 @@ namespace Baryonyx.Showcase.Editor
                 return;
             }
 
-            var asset = selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
-            var path = selectedEntry.Category == ShowcaseCategory.Scene
-                ? selectedEntry.ScenePath
-                : AssetDatabase.GetAssetPath(asset);
+            var asset =
+                selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
+            var path =
+                selectedEntry.Category == ShowcaseCategory.Scene
+                    ? selectedEntry.ScenePath
+                    : AssetDatabase.GetAssetPath(asset);
             titleLabel.text = selectedEntry.Label;
             categoryLabel.text = $"Category: {selectedEntry.Category}";
             typeLabel.text = $"Type: {(asset == null ? "Scene" : asset.GetType().Name)}";
@@ -318,7 +329,8 @@ namespace Baryonyx.Showcase.Editor
                 return;
             }
 
-            var asset = selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
+            var asset =
+                selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
             pendingPreview = asset == null ? null : RequestPreview(asset);
             if (pendingPreview != null)
             {
@@ -363,13 +375,17 @@ namespace Baryonyx.Showcase.Editor
                     return texture;
             }
 
-            if (asset is Sprite sprite
+            if (
+                asset is Sprite sprite
                 && sprite.texture != null
-                && sprite.texture.filterMode == FilterMode.Point)
+                && sprite.texture.filterMode == FilterMode.Point
+            )
             {
                 pointFiltered = true;
-                if (sprite.textureRect.width >= sprite.texture.width
-                    && sprite.textureRect.height >= sprite.texture.height)
+                if (
+                    sprite.textureRect.width >= sprite.texture.width
+                    && sprite.textureRect.height >= sprite.texture.height
+                )
                     return sprite.texture;
             }
 
@@ -384,7 +400,8 @@ namespace Baryonyx.Showcase.Editor
             if (selectedEntry == null)
                 return;
 
-            var asset = selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
+            var asset =
+                selectedEntry.Asset != null ? selectedEntry.Asset : selectedEntry.PreviewPrefab;
             Selection.activeObject = asset;
             if (asset != null)
                 EditorGUIUtility.PingObject(asset);
@@ -392,8 +409,11 @@ namespace Baryonyx.Showcase.Editor
 
         private void OpenCurrentScene()
         {
-            if (selectedEntry == null || selectedEntry.Category != ShowcaseCategory.Scene
-                || string.IsNullOrWhiteSpace(selectedEntry.ScenePath))
+            if (
+                selectedEntry == null
+                || selectedEntry.Category != ShowcaseCategory.Scene
+                || string.IsNullOrWhiteSpace(selectedEntry.ScenePath)
+            )
                 return;
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())

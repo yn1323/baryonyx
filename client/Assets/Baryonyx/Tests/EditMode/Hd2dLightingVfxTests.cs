@@ -80,8 +80,8 @@ namespace Baryonyx.Tests.EditMode
             {
                 var instanceShaft = instance.GetComponent<Hd2dLightShaft>();
                 instanceShaft.RebuildShafts();
-                var widths = instanceShaft.ShaftLayer
-                    .GetComponentsInChildren<RectTransform>(true)
+                var widths = instanceShaft
+                    .ShaftLayer.GetComponentsInChildren<RectTransform>(true)
                     .Where(rect => rect.name.StartsWith("Shaft_"))
                     .Select(rect => rect.sizeDelta.y)
                     .ToArray();

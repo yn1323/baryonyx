@@ -9,11 +9,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void NormalizeKeepsDurationsUsable()
         {
-            var settings = new SceneTransitionSettings
-            {
-                CoverDuration = 0f,
-                RevealDuration = -1f,
-            };
+            var settings = new SceneTransitionSettings { CoverDuration = 0f, RevealDuration = -1f };
 
             settings.Normalize();
 

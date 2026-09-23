@@ -9,18 +9,36 @@ namespace Baryonyx.UI
     public sealed class SceneTransitionController : MonoBehaviour
     {
         [Header("Exit")]
-        [SerializeField] private SceneTransitionSettings defaultSettings = new();
+        [SerializeField]
+        private SceneTransitionSettings defaultSettings = new();
 
         [Header("Enter")]
-        [SerializeField] private SceneTransitionSettings enterSettings = new();
-        [SerializeField] private bool startCovered;
-        [SerializeField] private bool revealOnStart;
-        [SerializeField] private CanvasGroup canvasGroup;
-        [SerializeField] private UnityEngine.UI.Image blocker;
-        [SerializeField] private UnityEngine.UI.Image fadePanel;
-        [SerializeField] private UnityEngine.UI.Image wipePanel;
-        [SerializeField] private UnityEngine.UI.Image shutterFirst;
-        [SerializeField] private UnityEngine.UI.Image shutterSecond;
+        [SerializeField]
+        private SceneTransitionSettings enterSettings = new();
+
+        [SerializeField]
+        private bool startCovered;
+
+        [SerializeField]
+        private bool revealOnStart;
+
+        [SerializeField]
+        private CanvasGroup canvasGroup;
+
+        [SerializeField]
+        private UnityEngine.UI.Image blocker;
+
+        [SerializeField]
+        private UnityEngine.UI.Image fadePanel;
+
+        [SerializeField]
+        private UnityEngine.UI.Image wipePanel;
+
+        [SerializeField]
+        private UnityEngine.UI.Image shutterFirst;
+
+        [SerializeField]
+        private UnityEngine.UI.Image shutterSecond;
 
         private bool playing;
         private bool covered;
@@ -93,7 +111,11 @@ namespace Baryonyx.UI
             return true;
         }
 
-        private IEnumerator PlayRoutine(SceneTransitionSettings settings, bool closing, Action callback)
+        private IEnumerator PlayRoutine(
+            SceneTransitionSettings settings,
+            bool closing,
+            Action callback
+        )
         {
             yield return Animate(settings, closing);
             playing = false;
@@ -113,7 +135,11 @@ namespace Baryonyx.UI
             {
                 yield return null;
                 elapsed += Time.unscaledDeltaTime;
-                ApplyProgress(settings, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration)), closing);
+                ApplyProgress(
+                    settings,
+                    Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration)),
+                    closing
+                );
             }
             ApplyProgress(settings, 1f, closing);
             covered = closing;
@@ -156,10 +182,18 @@ namespace Baryonyx.UI
                 shutterFirst = FindImage("ShutterFirst");
             if (shutterSecond == null)
                 shutterSecond = FindImage("ShutterSecond");
-            bool ready = canvasGroup != null && blocker != null && fadePanel != null
-                && wipePanel != null && shutterFirst != null && shutterSecond != null;
+            bool ready =
+                canvasGroup != null
+                && blocker != null
+                && fadePanel != null
+                && wipePanel != null
+                && shutterFirst != null
+                && shutterSecond != null;
             if (!ready)
-                Debug.LogError("SceneTransitionController requires its complete overlay hierarchy.", this);
+                Debug.LogError(
+                    "SceneTransitionController requires its complete overlay hierarchy.",
+                    this
+                );
             return ready;
         }
 
@@ -196,9 +230,10 @@ namespace Baryonyx.UI
                     canvasGroup.alpha = 1f - openness;
                     break;
                 case SceneTransitionType.Wipe:
-                    float direction = settings.WipeDirection == SceneTransitionWipeDirection.LeftToRight
-                        ? 1f
-                        : -1f;
+                    float direction =
+                        settings.WipeDirection == SceneTransitionWipeDirection.LeftToRight
+                            ? 1f
+                            : -1f;
                     float x = (closing ? -direction : direction) * openness;
                     SetRect(wipePanel.rectTransform, new Vector2(x, 0f), new Vector2(x + 1f, 1f));
                     break;

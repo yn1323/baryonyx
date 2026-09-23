@@ -182,13 +182,14 @@ namespace Baryonyx.Vfx.Hd2d
             image.preserveAspect = false;
             image.raycastTarget = false;
 
-            var widthScale = ShaftCount <= 1
-                ? Mathf.Lerp(WidthScaleRange.x, WidthScaleRange.y, 0.5f)
-                : Mathf.Lerp(
-                    WidthScaleRange.x,
-                    WidthScaleRange.y,
-                    index / (float)(ShaftCount - 1)
-                );
+            var widthScale =
+                ShaftCount <= 1
+                    ? Mathf.Lerp(WidthScaleRange.x, WidthScaleRange.y, 0.5f)
+                    : Mathf.Lerp(
+                        WidthScaleRange.x,
+                        WidthScaleRange.y,
+                        index / (float)(ShaftCount - 1)
+                    );
             var shaft = new ShaftState
             {
                 Rect = rect,
@@ -212,13 +213,15 @@ namespace Baryonyx.Vfx.Hd2d
             if (shaft.Rect == null || shaft.Image == null)
                 return;
 
-            var motion = MotionAmplitude > 0f && MotionSpeed > 0f
-                ? new Vector2(
-                    Mathf.Sin(shaft.Phase + time * MotionSpeed) * MotionAmplitude,
-                    Mathf.Cos(shaft.Phase * 0.71f + time * MotionSpeed * 0.83f)
-                        * MotionAmplitude * 0.45f
-                )
-                : Vector2.zero;
+            var motion =
+                MotionAmplitude > 0f && MotionSpeed > 0f
+                    ? new Vector2(
+                        Mathf.Sin(shaft.Phase + time * MotionSpeed) * MotionAmplitude,
+                        Mathf.Cos(shaft.Phase * 0.71f + time * MotionSpeed * 0.83f)
+                            * MotionAmplitude
+                            * 0.45f
+                    )
+                    : Vector2.zero;
             var flicker = 1f;
             if (FlickerAmount > 0f && FlickerSpeed > 0f)
             {

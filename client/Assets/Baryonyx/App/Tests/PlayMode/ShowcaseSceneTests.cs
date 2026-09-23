@@ -23,11 +23,13 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
 
             var roots = loadedScene.GetRootGameObjects();
-            var bootstrap = roots.SelectMany(root => root.GetComponentsInChildren<ShowcaseBootstrap>())
+            var bootstrap = roots
+                .SelectMany(root => root.GetComponentsInChildren<ShowcaseBootstrap>())
                 .Single();
             Assert.That(bootstrap.Catalog, Is.Not.Null);
             Assert.That(
-                roots.SelectMany(root => root.GetComponentsInChildren<Camera>(true))
+                roots
+                    .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
                     .Any(camera => camera.isActiveAndEnabled),
                 Is.True,
                 "The showcase scene needs an active camera to render the Game view."
@@ -35,10 +37,8 @@ namespace Baryonyx.Tests.PlayMode
 
             yield return null;
 
-            var canvas = Object.FindObjectsByType<Canvas>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None
-                )
+            var canvas = Object
+                .FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .SingleOrDefault(candidate =>
                     candidate.name == "ShowcaseCanvas" && candidate.gameObject.scene == loadedScene
                 );

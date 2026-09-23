@@ -9,8 +9,11 @@ namespace Baryonyx.App
     [RequireComponent(typeof(Button))]
     public sealed class TopSceneController : MonoBehaviour
     {
-        [SerializeField] private string nextSceneName = "Main";
-        [SerializeField] private SceneTransitionController transition;
+        [SerializeField]
+        private string nextSceneName = "Main";
+
+        [SerializeField]
+        private SceneTransitionController transition;
 
         private Button continueButton;
         private bool transitionStarted;
