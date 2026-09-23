@@ -126,6 +126,9 @@ Topの既存`LightLayer`にある複数の局所光が画面上で不自然な�
 
 ## 検証の順序
 
+これまでの実装でつまずいた点（Editorが背面にあると時間が進まない、撮影時の再レイアウトの遅れ、`AddBlitPass` のテクセルサイズなど）と、部品設計・検証の工夫は [references/implementation-notes.md](references/implementation-notes.md) にまとめる。
+実装や検証の前に読み、同じ問題を避ける。
+
 1. **静的確認**：Renderer、Canvas、Material、Sorting Layer、Volume、粒子Prefab、設定の参照切れを確認する。
 2. **Editor確認**：16:9、19.5:9、20:9、4:3とSafe Areaで、背景の歪み、タイトルのコントラスト、粒子のクリップ、UIへの重なりを確認する。
 3. **Play Mode確認**：再入場、TopからHomeへの遷移、開始前後の再生条件、停止・再生、固定シード、Consoleの例外を確認する。
