@@ -468,6 +468,7 @@ MonoBehaviour:
   - {fileID: -6288072647309666549}
   - {fileID: 7518938298396184218}
   - {fileID: -1410297666881709256}
+  - {fileID: 5939707368064680090}
 --- !u!114 &853819529557874667
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -856,6 +857,34 @@ MonoBehaviour:
   intensity:
     m_OverrideState: 1
     m_Value: 0
+--- !u!114 &5939707368064680090
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e5802d6479484a02b29f1d1cdcec050, type: 3}
+  m_Name: Hd2dTiltShift
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dTiltShift
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 0
+  focusCenter:
+    m_OverrideState: 1
+    m_Value: 0.5
+  focusHalfHeight:
+    m_OverrideState: 1
+    m_Value: 0.25
+  falloff:
+    m_OverrideState: 1
+    m_Value: 0.25
+  maxRadius:
+    m_OverrideState: 1
+    m_Value: 8
 --- !u!114 &6940869943325143175
 MonoBehaviour:
   m_ObjectHideFlags: 3
