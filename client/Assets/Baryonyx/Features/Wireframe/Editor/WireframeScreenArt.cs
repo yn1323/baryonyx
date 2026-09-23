@@ -10,6 +10,10 @@ namespace Baryonyx.Wireframe.Editor
     public static partial class WireframeScreenAssets
     {
         private const string ArtPath = "Assets/Baryonyx/Features/Wireframe/UI/Art/";
+
+        // Home also draws the party, so the character sheet lives with the shared art.
+        private const string CharacterArtPath = "Assets/Baryonyx/Shared/Art/Characters/";
+        private const string DungeonArtPath = "Assets/Baryonyx/Shared/Art/Dungeons/";
         private static readonly Color Gold = new(.57f, .40f, .19f);
         private static readonly Color Muted = new(.43f, .49f, .43f);
         private static Texture2D actors;
@@ -22,8 +26,8 @@ namespace Baryonyx.Wireframe.Editor
 
         private static void PrepareArt()
         {
-            actors = ImportArt("Adventurers.png");
-            forest = ImportArt("Forest.png");
+            actors = ImportArt("Adventurers.png", CharacterArtPath);
+            forest = ImportArt("Forest.png", DungeonArtPath);
             mine = ImportArt("Mine.png");
             departure = ImportArt("Departure.png");
             frame = CreateFrame("ButtonFrame", Accent, Accent);
@@ -39,9 +43,9 @@ namespace Baryonyx.Wireframe.Editor
             );
         }
 
-        private static Texture2D ImportArt(string file)
+        private static Texture2D ImportArt(string file, string folder = ArtPath)
         {
-            string path = ArtPath + file;
+            string path = folder + file;
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
                 throw new InvalidOperationException("Required UI artwork is missing: " + path);

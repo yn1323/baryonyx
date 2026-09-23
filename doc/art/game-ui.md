@@ -59,9 +59,9 @@ updated: 2026-09-22
 
 | 素材 | 内容・扱い |
 |---|---|
-| [Adventurers.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
+| [Adventurers.png](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
 | [Departure.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png) | 明るい森の出発地点。ホームで4人の背後へ配置する |
-| [Forest.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘に利用する |
+| [Forest.png](../../client/Assets/Baryonyx/Shared/Art/Dungeons/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘、ホームの再開カードに利用する |
 | [Mine.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png) | 中央と右側に入口がある坑道。冒険先、探索、戦闘に利用する |
 
 PNGはPoint、MipMapなし、非圧縮で読み込む。
