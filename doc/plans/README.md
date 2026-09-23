@@ -19,6 +19,7 @@
 | 2026-09-18 | [主要画面の遷移とUnityワイヤー](2026-09-18-game-wireframe.md) |
 | 2026-09-20 | [運動量とルーン変換のDB計画](2026-09-20-exercise-rune-db.md) |
 | 2026-09-22 | [横画面の可変レイアウト](2026-09-22-responsive-landscape-layout.md) |
+| 2026-09-24 | [ホーム画面「野営地」の見た目モック](2026-09-24-home-camp-mock.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 現在の独立した接続の動作は[健康データ仕様](../features/health-data.md)を参照する。

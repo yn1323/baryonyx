@@ -16,8 +16,9 @@ updated: 2026-09-23
 会話のテキストは取得できたが、最新の生成画像は取得できなかったため、既存素材と新しい出発地点の生成背景で補った。
 
 Androidの通常起動シーンは [Top](../../client/Assets/Baryonyx/App/Scenes/Top.unity) とする。
-現在の動作確認では、Topの全面押下から [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
-[Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) は既存画面として残し、遷移先は呼び出し元の設定で選ぶ。
+Topの全面押下では、ホーム画面のモック [Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
+ホームの行き先カード（再開）を押すと、同じShutter演出でこのワイヤー画面 [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ遷移する。
+ホームの構成は[画面一覧](screens.md#ホーム画面の見た目モック)を参照する。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
 Unity Editorで画面を確認するときは、保存済みの状態から `Baryonyx/Wireframe/Open Scene` を実行し、PlayModeで起動する。
 通常画面には仮の勝敗を選ぶ確認パネルを表示しない。
@@ -174,4 +175,5 @@ Editorの成功だけで端末連携の成功とは扱わない。
 - 2026-09-19：参照会話の配置方針を反映し、戦闘MVP・Health Connect・7日間の棒グラフを接続した。ゲーム状態は実行中だけ保持する。
 - 2026-09-21：Google認証後の歩数報酬API、ルーン残高のホーム表示、探索中の現在地・通過ノード表示を試作へ接続した。運動報酬の残高だけはサーバーへ保存し、ゲーム内のキャラクター・装備・探索状態は保存対象から外した。
 - 2026-09-20：横画面固定、1920×1080基準、中央16:9 Core Area、Safe Area追従ナビゲーションを共通レイアウトへ追加した。
+- 2026-09-24：Topの遷移先をホーム画面のモックへ変え、ワイヤー画面へはホームの行き先カード（再開）から入る経路にした。
 - 2026-09-22：背景の比率維持、タイトル画面のTopSafeArea、共通のレスポンシブ背景・Safe Area処理を生成元と生成済みアセットへ反映した。Unity Editorと実機の表示確認は未実施。

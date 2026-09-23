@@ -49,6 +49,12 @@ client/
 │   │   │       │   ├── Requirements/
 │   │   │       │   └── Preview/
 │   │   │       └── PlayMode/Presentation/
+│   │   ├── Features/Home/               ホーム画面（野営地）のモック
+│   │   │   ├── Runtime/                表示状態の計算、View、Presenter、仮データ
+│   │   │   ├── UI/                      専用Prefabとコードで生成するドット絵
+│   │   │   ├── Data/                    仮データのアセット
+│   │   │   ├── Editor/                  Prefabと画像の生成
+│   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ
 │   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
 │   │   │   └── Tests/EditMode/          計算・時間・再開の検査
@@ -116,7 +122,9 @@ Viewの描画は操作ボタン、状態文言、日別一覧、閲覧位置に�
 これらはHealth専用の通常のC#クラスとし、Prefabの参照はViewから渡す。
 
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
-依存方向はApp → Wireframe → Health → ExerciseRewards → Account → Shared、Wireframe → Combatとし、逆向きに参照しない。
+依存方向はApp → Wireframe → Health → ExerciseRewards → Account → Shared、Wireframe → Combat、App → Home → Sharedとし、逆向きに参照しない。
+HomeはHealth・ExerciseRewards・Wireframeを参照せず、Appの[HomeBootstrap](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が仮データからPresenterを組み立てる。
+HomeとWireframeで共有するキャラクター画像は `Shared/Art/Characters/` に置く。
 ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
 AppのEditor処理はAppの起動処理とHealthのアセット定義を参照し、HealthのEditor処理はAppのオブジェクトを生成しない。
 `Baryonyx/App/Attach Health Screen To Current Scene` メニューで、保存済みの現在のシーンへ画面を配置する。
