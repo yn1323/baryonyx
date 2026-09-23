@@ -16,6 +16,7 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransition.prefab";
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
         private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
+        private const float TransitionDuration = 0.75f;
 
         [MenuItem("Baryonyx/App/Create Scene Transition Assets")]
         public static void CreateAssetsAndIntegrateTopMain()
@@ -59,7 +60,11 @@ namespace Baryonyx.App.Editor
                 var scaler = root.GetComponent<UnityEngine.UI.CanvasScaler>();
                 scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
-                scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.screenMatchMode = UnityEngine
+                    .UI
+                    .CanvasScaler
+                    .ScreenMatchMode
+                    .MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 1f;
 
                 var rootRect = root.GetComponent<RectTransform>();
@@ -71,10 +76,30 @@ namespace Baryonyx.App.Editor
                 group.blocksRaycasts = false;
 
                 CreateImage(root.transform, "TransitionBlocker", new Color(0f, 0f, 0f, 0f), true);
-                CreateImage(root.transform, "FadePanel", SceneTransitionSettings.DefaultColor, false);
-                CreateImage(root.transform, "WipePanel", SceneTransitionSettings.DefaultColor, false);
-                CreateImage(root.transform, "ShutterFirst", SceneTransitionSettings.DefaultColor, false);
-                CreateImage(root.transform, "ShutterSecond", SceneTransitionSettings.DefaultColor, false);
+                CreateImage(
+                    root.transform,
+                    "FadePanel",
+                    SceneTransitionSettings.DefaultColor,
+                    false
+                );
+                CreateImage(
+                    root.transform,
+                    "WipePanel",
+                    SceneTransitionSettings.DefaultColor,
+                    false
+                );
+                CreateImage(
+                    root.transform,
+                    "ShutterFirst",
+                    SceneTransitionSettings.DefaultColor,
+                    false
+                );
+                CreateImage(
+                    root.transform,
+                    "ShutterSecond",
+                    SceneTransitionSettings.DefaultColor,
+                    false
+                );
 
                 AssetDatabase.SaveAssets();
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
@@ -123,7 +148,9 @@ namespace Baryonyx.App.Editor
                     .FirstOrDefault(candidate => candidate.name == "SceneTransition");
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
                 if (prefab == null)
-                    throw new InvalidOperationException($"Transition prefab not found: {PrefabPath}");
+                    throw new InvalidOperationException(
+                        $"Transition prefab not found: {PrefabPath}"
+                    );
                 if (instance != null)
                 {
                     var source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
@@ -144,11 +171,13 @@ namespace Baryonyx.App.Editor
 
                 var controller = instance.GetComponent<SceneTransitionController>();
                 if (controller == null)
-                    throw new InvalidOperationException("SceneTransition prefab has no controller.");
+                    throw new InvalidOperationException(
+                        "SceneTransition prefab has no controller."
+                    );
                 SetBool(controller, "startCovered", startCovered);
                 SetBool(controller, "revealOnStart", revealOnStart);
-                SetEnum(controller, "defaultSettings.type", SceneTransitionType.Fade);
-                SetEnum(controller, "enterSettings.type", SceneTransitionType.Fade);
+                ConfigureShutter(controller, "defaultSettings");
+                ConfigureShutter(controller, "enterSettings");
                 PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
 
                 if (configureTop)
@@ -158,7 +187,9 @@ namespace Baryonyx.App.Editor
                         .SelectMany(root => root.GetComponentsInChildren<TopSceneController>(true))
                         .SingleOrDefault();
                     if (topController == null)
-                        throw new InvalidOperationException("TopSceneController is missing from Top scene.");
+                        throw new InvalidOperationException(
+                            "TopSceneController is missing from Top scene."
+                        );
 
                     var serialized = new SerializedObject(topController);
                     serialized.FindProperty("nextSceneName").stringValue = "Main";
@@ -177,6 +208,24 @@ namespace Baryonyx.App.Editor
                 if (ownsScene)
                     EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        private static void ConfigureShutter(UnityEngine.Object target, string settingsName)
+        {
+            SetEnum(target, $"{settingsName}.type", SceneTransitionType.Shutter);
+            SetEnum(target, $"{settingsName}.shutterAxis", SceneTransitionShutterAxis.Vertical);
+            SetFloat(target, $"{settingsName}.coverDuration", TransitionDuration);
+            SetFloat(target, $"{settingsName}.revealDuration", TransitionDuration);
+        }
+
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(propertyName);
+            if (property == null)
+                throw new InvalidOperationException($"Serialized field not found: {propertyName}");
+            property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void SetBool(UnityEngine.Object target, string propertyName, bool value)

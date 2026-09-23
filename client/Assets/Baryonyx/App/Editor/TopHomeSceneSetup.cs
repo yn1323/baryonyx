@@ -157,11 +157,7 @@ namespace Baryonyx.App.Editor
                 texture.width / (float)texture.height;
         }
 
-        private static void CreateTopScreen(
-            Scene scene,
-            Transform parent,
-            string screenName
-        )
+        private static void CreateTopScreen(Scene scene, Transform parent, string screenName)
         {
             var screen = new GameObject(
                 screenName,
@@ -218,9 +214,10 @@ namespace Baryonyx.App.Editor
 
             var component = panel.GetComponent<TranslucentTextPanel>();
             var title = component.Label;
-            title.text = "てくてくダンジョン";
-            component.SetFontSize(128f);
+            title.text = "てくてくダンジョン（仮）";
+            component.SetFontSize(96f);
             component.SetBackdropSize(new Vector2(1320f, 260f));
+            component.SetBackdropAlpha(0.2f);
             component.SetPulseEnabled(false);
             PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component);
@@ -244,6 +241,7 @@ namespace Baryonyx.App.Editor
             component.SetBackdropSize(new Vector2(760f, 92f));
             component.SetText("TAP TO START");
             component.SetFontSize(48f);
+            component.SetBackdropAlpha(0.2f);
             component.SetPulseEnabled(true);
             PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component);
@@ -261,7 +259,8 @@ namespace Baryonyx.App.Editor
         private static void UpdateTopScene(string scenePath)
         {
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-            var screen = scene.GetRootGameObjects()
+            var screen = scene
+                .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
                 .FirstOrDefault(candidate => candidate.name == "TopScreen");
             if (screen == null)
@@ -277,7 +276,8 @@ namespace Baryonyx.App.Editor
                 .FirstOrDefault(candidate => candidate.name == "TapToStartPanel");
             if (currentTap != null)
                 UnityEngine.Object.DestroyImmediate(currentTap.gameObject);
-            var background = scene.GetRootGameObjects()
+            var background = scene
+                .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
                 .FirstOrDefault(candidate => candidate.name == "TopBackground");
             if (background != null)
@@ -461,8 +461,8 @@ namespace Baryonyx.App.Editor
 
         private static void EnsureBuildSettings()
         {
-            var scenes = EditorBuildSettings.scenes
-                .Where(scene => scene.path != TopScenePath && scene.path != HomeScenePath)
+            var scenes = EditorBuildSettings
+                .scenes.Where(scene => scene.path != TopScenePath && scene.path != HomeScenePath)
                 .ToList();
             scenes.Insert(0, new EditorBuildSettingsScene(HomeScenePath, true));
             scenes.Insert(0, new EditorBuildSettingsScene(TopScenePath, true));

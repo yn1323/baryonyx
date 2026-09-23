@@ -2,7 +2,7 @@
 id: feature-game-wireframe
 type: specification
 status: 一部確定
-updated: 2026-09-22
+updated: 2026-09-23
 ---
 
 # 遊べる試作の画面と操作
@@ -16,7 +16,7 @@ updated: 2026-09-22
 会話のテキストは取得できたが、最新の生成画像は取得できなかったため、既存素材と新しい出発地点の生成背景で補った。
 
 Androidの通常起動シーンは [Top](../../client/Assets/Baryonyx/App/Scenes/Top.unity) とする。
-現在の動作確認では、Topの全面押下から [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ黒フェードで遷移する。
+現在の動作確認では、Topの全面押下から [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 [Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) は既存画面として残し、遷移先は呼び出し元の設定で選ぶ。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
 Unity Editorで画面を確認するときは、保存済みの状態から `Baryonyx/Wireframe/Open Scene` を実行し、PlayModeで起動する。

@@ -16,10 +16,11 @@ namespace Baryonyx.Tests.PlayMode
     {
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
         private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
+        private const string TitleText = "てくてくダンジョン（仮）";
         private Scene loadedScene;
 
         [UnityTest]
-        public IEnumerator FullScreenTopTapLoadsMainSceneWithFadeTransition()
+        public IEnumerator FullScreenTopTapLoadsMainSceneWithShutterTransition()
         {
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
             loadedScene = SceneManager.GetSceneByPath(TopScenePath);
@@ -49,7 +50,11 @@ namespace Baryonyx.Tests.PlayMode
             var controller = button.GetComponent<TopSceneController>();
             Assert.That(controller.NextSceneName, Is.EqualTo("Main"));
             Assert.That(controller.Transition, Is.Not.Null);
-            Assert.That(controller.Transition.DefaultSettings.Type, Is.EqualTo(SceneTransitionType.Fade));
+            Assert.That(
+                controller.Transition.DefaultSettings.Type,
+                Is.EqualTo(SceneTransitionType.Shutter)
+            );
+            Assert.That(controller.Transition.DefaultSettings.CoverDuration, Is.EqualTo(0.75f));
 
             var background = canvas.transform.Find("TopBackground").GetComponent<RawImage>();
             Assert.That(background.texture, Is.Not.Null);
@@ -58,7 +63,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(responsiveBackground, Is.Not.Null);
             Assert.That(
                 responsiveBackground.AspectRatio,
-                Is.EqualTo(background.texture.width / (float)background.texture.height).Within(.001f)
+                Is.EqualTo(background.texture.width / (float)background.texture.height)
+                    .Within(.001f)
             );
 
             var safeArea = button.transform.Find("TopSafeArea");
@@ -67,7 +73,7 @@ namespace Baryonyx.Tests.PlayMode
 
             var panel = button
                 .GetComponentsInChildren<TranslucentTextPanel>(true)
-                .Single(candidate => candidate.Label.text == "てくてくダンジョン")
+                .Single(candidate => candidate.Label.text == TitleText)
                 .Panel;
             var panelRect = (RectTransform)panel.transform;
             Assert.That(panel.texture, Is.Not.Null);
@@ -79,9 +85,9 @@ namespace Baryonyx.Tests.PlayMode
 
             var reusablePanel = panel.GetComponent<TranslucentTextPanel>();
             Assert.That(reusablePanel, Is.Not.Null);
-            Assert.That(reusablePanel.FontSize, Is.EqualTo(128f));
+            Assert.That(reusablePanel.FontSize, Is.EqualTo(96f));
             Assert.That(reusablePanel.BackdropSize, Is.EqualTo(new Vector2(1320f, 260f)));
-            Assert.That(reusablePanel.BackdropAlpha, Is.EqualTo(0.42f));
+            Assert.That(reusablePanel.BackdropAlpha, Is.EqualTo(0.2f));
             var backdropObject = panel.transform.Find("BackdropCanvas");
             Assert.That(backdropObject.GetComponent<Canvas>(), Is.Not.Null);
             var backdrop = backdropObject.Find("Backdrop").GetComponent<RawImage>();
@@ -98,8 +104,8 @@ namespace Baryonyx.Tests.PlayMode
 
             var title = panel.transform.Find("Label").GetComponent<TextMeshProUGUI>();
             var titleRect = (RectTransform)title.transform;
-            Assert.That(title.text, Is.EqualTo("てくてくダンジョン"));
-            Assert.That(title.fontSize, Is.EqualTo(128f));
+            Assert.That(title.text, Is.EqualTo(TitleText));
+            Assert.That(title.fontSize, Is.EqualTo(96f));
             Assert.That(titleRect.anchorMin, Is.EqualTo(Vector2.zero));
             Assert.That(titleRect.anchorMax, Is.EqualTo(Vector2.one));
             Assert.That(title.raycastTarget, Is.False);
@@ -115,8 +121,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(tapPanel.FontSize, Is.GreaterThan(0f));
             Assert.That(tapPanel.BackdropSize.x, Is.GreaterThan(0f));
             Assert.That(tapPanel.BackdropSize.y, Is.GreaterThan(0f));
-            Assert.That(tapPanel.BackdropAlpha, Is.EqualTo(0.42f));
-            Assert.That(((RectTransform)tapPanel.transform).anchorMin, Is.EqualTo(new Vector2(0.5f, 0.16f)));
+            Assert.That(tapPanel.BackdropAlpha, Is.EqualTo(0.2f));
+            Assert.That(
+                ((RectTransform)tapPanel.transform).anchorMin,
+                Is.EqualTo(new Vector2(0.5f, 0.16f))
+            );
             Assert.That(tapPanel.Panel.raycastTarget, Is.False);
             Assert.That(tapPanel.PulseEnabled, Is.True);
             Assert.That(tapPanel.LabelGroup, Is.Not.Null);
@@ -127,7 +136,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
             Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
             button.onClick.Invoke();
-            float deadline = Time.realtimeSinceStartup + 2f;
+            float deadline =
+                Time.realtimeSinceStartup
+                + controller.Transition.DefaultSettings.CoverDuration
+                + 2f;
             while (
                 !SceneManager.GetSceneByPath(MainScenePath).isLoaded
                 && Time.realtimeSinceStartup < deadline
@@ -137,20 +149,29 @@ namespace Baryonyx.Tests.PlayMode
             loadedScene = SceneManager.GetSceneByPath(MainScenePath);
             Assert.That(loadedScene.isLoaded, Is.True);
             Assert.That(
-                loadedScene.GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<SceneTransitionController>(true))
-                    .Any(transition => transition.EnterSettings.Type == SceneTransitionType.Fade),
+                loadedScene
+                    .GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<SceneTransitionController>(true)
+                    )
+                    .Any(transition =>
+                        transition.EnterSettings.Type == SceneTransitionType.Shutter
+                    ),
                 Is.True
             );
-            yield return new WaitForSecondsRealtime(0.35f);
             var transition = loadedScene
                 .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<SceneTransitionController>(true))
                 .Single();
+            // 開く演出の設定時間に余裕を足した期限まで、演出の終了を待つ。
+            deadline = Time.realtimeSinceStartup + transition.EnterSettings.RevealDuration + 1f;
+            while (transition.IsPlaying && Time.realtimeSinceStartup < deadline)
+                yield return null;
             Assert.That(transition.IsPlaying, Is.False);
             Assert.That(transition.IsCovered, Is.False);
             Assert.That(
-                loadedScene.GetRootGameObjects()
+                loadedScene
+                    .GetRootGameObjects()
                     .SelectMany(root => root.GetComponentsInChildren<WireframeBootstrap>(true))
                     .Single()
                     .View,
