@@ -381,5 +381,65 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo(profile.components.Count)
             );
         }
+
+        [Test]
+        public void TiltShiftKeepsTheCenterBandSharpAndBlursTheEdges()
+        {
+            float Amount(float height01) =>
+                Hd2dTiltShift.EvaluateBlurAmount(height01, 0.5f, 0.26f, 0.3f, 1f);
+
+            Assert.That(Amount(0.5f), Is.EqualTo(0f));
+            Assert.That(Amount(0.76f), Is.EqualTo(0f));
+            Assert.That(Amount(0.24f), Is.EqualTo(0f));
+            Assert.That(Amount(0.9f), Is.GreaterThan(0f).And.LessThan(1f));
+            Assert.That(Amount(1f), Is.EqualTo(Amount(0f)).Within(1e-5f));
+            Assert.That(Amount(0.95f), Is.GreaterThan(Amount(0.85f)));
+            Assert.That(
+                Hd2dTiltShift.EvaluateBlurAmount(1f, 0.5f, 0.26f, 0.3f, 0f),
+                Is.EqualTo(0f)
+            );
+        }
+
+        [Test]
+        public void TiltShiftIsOffByDefaultAndEnabledOnlyByTheTopProfile()
+        {
+            var defaults = ScriptableObject.CreateInstance<Hd2dTiltShift>();
+            try
+            {
+                Assert.That(defaults.IsActive(), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(defaults);
+            }
+
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
+            Assert.That(profile.TryGet<Hd2dTiltShift>(out var tiltShift), Is.True);
+            Assert.That(tiltShift.IsActive(), Is.True);
+            Assert.That(tiltShift.maxRadius.value, Is.InRange(2f, 16f));
+        }
+
+        [Test]
+        public void EveryUniversalRendererCarriesTheTiltShiftFeature()
+        {
+            var renderers = AssetDatabase
+                .FindAssets("t:UniversalRendererData", new[] { "Assets/Settings" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<UniversalRendererData>)
+                .ToArray();
+            Assert.That(renderers, Is.Not.Empty);
+
+            foreach (var renderer in renderers)
+            {
+                var feature = renderer
+                    .rendererFeatures.OfType<Hd2dTiltShiftRendererFeature>()
+                    .SingleOrDefault();
+                Assert.That(feature, Is.Not.Null, renderer.name);
+                Assert.That(feature.isActive, Is.True, renderer.name);
+                Assert.That(feature.Shader, Is.Not.Null, renderer.name);
+                Assert.That(feature.Shader.isSupported, Is.True, renderer.name);
+                Assert.That(feature.Shader.passCount, Is.EqualTo(2), renderer.name);
+            }
+        }
     }
 }

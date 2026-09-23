@@ -166,9 +166,21 @@ Profileを選ぶとInspectorで各効果を調整できる。
 | Vignette | Intensity 0.28、Smoothness 0.45 | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
 | Color Adjustments | Contrast 8、Saturation 6 | 明暗と彩度を少し強め、松明の暖色と光芒の青白さを引き立てる |
 
+| HD-2D Tilt Shift | Intensity 1、Focus Center 0.5、Focus Half Height 0.26、Falloff 0.3、Max Radius 8 | 中央の帯をくっきり残し、天井と手前の床をぼかしてジオラマのように見せる |
+
 Profileは共通アセットなので、変更すると同じProfileを使う全画面に反映される。
 画面ごとに変える場合は、Profileを複製してその画面のVolumeへ設定する。
 BloomはAndroid端末での負荷が大きい効果である。発熱やフレーム落ちがある場合は、Intensityより先にBloomのDownscaleとMax Iterationsで負荷を下げる。
+
+### 疑似ティルトシフト
+
+`HD-2D Tilt Shift` は、1枚絵の背景に奥行きの情報がないため、画面の高さでぼかしの強さを決める疑似ティルトシフトである。
+中央の帯（Focus Center ± Focus Half Height）はぼかさず、帯の外はFalloffの高さをかけて最大のぼかし半径へ近づく。
+Max Radiusは画面の高さ1080px基準の半径で、ドット絵の1粒より大きくしないと効果が見えない。Topでは8にしている。
+描画は `Mobile_Renderer` と `PC_Renderer` に登録した `Hd2dTiltShift` Renderer Featureが行い、Intensityが0の画面ではぼかしの処理そのものを行わない。
+Bloomより前に処理するため、ぼけた光もBloomでにじむ。
+タイトルと開始操作はOverlayのCanvasにあるため、ぼけない。
+ぼかしは横と縦の2回の全画面処理で、Android端末では負荷が増える。発熱やフレーム落ちがある場合は、Intensityを0にして止める。
 
 ### 塵ときらめきの表示
 

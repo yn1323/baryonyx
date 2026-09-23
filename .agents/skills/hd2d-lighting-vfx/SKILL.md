@@ -63,6 +63,7 @@ Topのような`ScreenSpaceOverlay`背景で天井や窓から差す光を作る
 松明や魔法の結晶など、背景に描かれた光源を揺らがせる場合は`Hd2dFlickerLight.prefab`を使う。光源ごとに芯・周りの光・床の照り返しを`Hd2dUiAdditive`マテリアルで加算し、`Sources`へ光源を並べる。親に背景と同じ`ResponsiveBackground`（同じ`AspectRatio`）を付けて背景画像と同じ範囲に揃え、光源の位置を背景画像上の正規化座標で指定する。画面座標で置くと、画面比率が変わったときに描かれた光源からずれる。背景に光が描き込まれている場合は、芯を小さく周りの光を弱くして白飛びを避ける。
 火の粉、魔法の粒、報酬のキラキラなど、点から出る粒子は`Hd2dEmberEmitter.prefab`を使う。`Sources`へ発生源を並べ、向き・初速・上向きの加速・横ゆれ・寿命に沿った色で動きを決める。背景に描かれた光源から出す場合は、`Hd2dFlickerLight`と同じく親を背景画像に揃える。報酬や画面遷移の瞬間だけ出す場合は`Loop`をオフにした発生源を用意し、`Burst`で出す。
 BloomなどのポストプロセスをTopのような画面に掛ける場合は、背景とHD-2Dの演出を`Screen Space - Camera`のCanvas（Topでは`TopBackdropCanvas`）へ移し、タイトルや操作は`ScreenSpaceOverlay`のCanvasに残す。両方のCanvasScalerは同じ設定にする。カメラの`renderPostProcessing`を有効にし、全体に効くVolumeへ共通の`Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset`を設定する。BloomのThresholdは描かれた中間調より上に置き、炎・加算の光・光芒だけをにじませる。
+画面の上下をぼかす疑似ティルトシフトは、同じProfileの`HD-2D Tilt Shift`（`Hd2dTiltShift`）で調整する。描画は`Mobile_Renderer`と`PC_Renderer`に登録した`Hd2dTiltShiftRendererFeature`が行い、Intensityが0の画面では処理しない。Max Radiusはドット絵の1粒より大きくしないと見えず、大きくしすぎると輪郭が濁るため、1080px基準で6〜10から始める。
 Topの既存`LightLayer`にある複数の局所光が画面上で不自然なら、その層は削除し、光芒Prefabと粒子Prefabを別々に配置する。
 
 「キラキラ」は同じ粒子を大量に出す表現ではなく、次の役割を混ぜる。

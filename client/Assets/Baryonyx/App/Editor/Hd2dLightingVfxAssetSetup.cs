@@ -38,6 +38,9 @@ namespace Baryonyx.App.Editor
         private const string PrefabDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs";
         private const string MaterialDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Materials";
         private const string ProfileDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Profiles";
+        private const string TiltShiftShaderPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dTiltShift.shader";
+        private const string RendererDataDirectory = "Assets/Settings";
         private const string AdditiveShaderPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
         private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
@@ -97,6 +100,14 @@ namespace Baryonyx.App.Editor
             Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
+        [MenuItem("Baryonyx/VFX/Create HD-2D Tilt Shift and Apply to Top")]
+        public static void CreateTiltShift()
+        {
+            // The tilt shift lives in the shared profile and the renderers, so the Top scene
+            // only needs the post-processing setup that already references the profile.
+            CreatePostProcessAndIntegrateTop();
         }
 
         [MenuItem("Baryonyx/VFX/Create HD-2D Post Process and Apply to Top")]
@@ -164,6 +175,8 @@ namespace Baryonyx.App.Editor
             EnsureFlickerLightPrefab();
             EnsureEmberEmitterPrefab();
             EnsurePostProcessProfile();
+            EnsureTiltShiftInProfile();
+            EnsureTiltShiftRendererFeatures();
             EnsurePrefab();
         }
 
@@ -320,6 +333,69 @@ namespace Baryonyx.App.Editor
                 AssetDatabase.AddObjectToAsset(component, profile);
             }
             EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureTiltShiftInProfile()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
+            if (profile == null || profile.Has<Hd2dTiltShift>())
+                return;
+
+            // Keep the middle band (title and entrance) sharp; soften the ceiling and near floor.
+            var tiltShift = profile.Add<Hd2dTiltShift>(true);
+            tiltShift.intensity.value = 1f;
+            tiltShift.focusCenter.value = 0.5f;
+            tiltShift.focusHalfHeight.value = 0.26f;
+            tiltShift.falloff.value = 0.3f;
+            tiltShift.maxRadius.value = 8f;
+            tiltShift.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            AssetDatabase.AddObjectToAsset(tiltShift, profile);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureTiltShiftRendererFeatures()
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(TiltShiftShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException($"Shader not found: {TiltShiftShaderPath}");
+
+            foreach (
+                var guid in AssetDatabase.FindAssets(
+                    "t:UniversalRendererData",
+                    new[] { RendererDataDirectory }
+                )
+            )
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
+                if (data == null)
+                    continue;
+                if (
+                    data.rendererFeatures.Exists(feature => feature is Hd2dTiltShiftRendererFeature)
+                )
+                    continue;
+
+                // Mirror the renderer Inspector: the feature is a sub-asset listed with its file ID.
+                var feature = ScriptableObject.CreateInstance<Hd2dTiltShiftRendererFeature>();
+                feature.name = "Hd2dTiltShift";
+                feature.Shader = shader;
+                AssetDatabase.AddObjectToAsset(feature, data);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out _, out long localId);
+
+                var serialized = new SerializedObject(data);
+                var features = serialized.FindProperty("m_RendererFeatures");
+                var map = serialized.FindProperty("m_RendererFeatureMap");
+                features.arraySize++;
+                features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue =
+                    feature;
+                map.arraySize++;
+                map.GetArrayElementAtIndex(map.arraySize - 1).longValue = localId;
+                serialized.ApplyModifiedProperties();
+                data.SetDirty();
+                EditorUtility.SetDirty(data);
+            }
             AssetDatabase.SaveAssets();
         }
 
