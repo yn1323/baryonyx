@@ -123,6 +123,8 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 自動テストは座標計算、実Prefabの配置、仮想入力からの操作を検査し、[Unityのテスト手順](client-testing.md)で実行する。
 GameビューとDevice Simulatorは配置と基本操作の目視確認に使う。
 Simulatorは実機の動作すべてを再現しないため、文字の読みやすさ、タップ、システムバー、OS画面からの復帰は [Androidの実機確認](client-android-testing.md#手動で残す確認) で確かめる。[Device Simulatorの用途と制限](https://docs.unity3d.com/6000.6/Documentation/Manual/device-simulator-introduction.html)
+実機確認に使うmoto edge 50 pro（1220×2712、20:9）は、Unity Editorの起動時に [GameViewDeviceSizes](../../client/Assets/Baryonyx/Editor/GameViewDeviceSizes.cs) がGameビューのAndroidグループへ横向きの `moto edge 50 pro (2712x1220)` として登録する。[端末仕様](https://en-us.support.motorola.com/app/answers/detail/a_id/178982/~/specifications---motorola-edge-50-pro)
+この登録は画面サイズだけを再現し、Safe Areaとパンチホールは含まない。
 
 確認画像は `client/Assets/DevCaptures/` に保存し、機種・解像度・状態・テストデータの使用有無を記録する。
 個人の健康データや認証情報を画像へ含めない。
