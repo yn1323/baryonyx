@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.UI;
+using Baryonyx.Vfx.Hd2d;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -24,6 +25,8 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightingVfx.prefab";
         private const string Hd2dLightShaftPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
+        private const string Hd2dFogPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
 
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
@@ -292,6 +295,7 @@ namespace Baryonyx.App.Editor
             }
             EnsureTopLightingVfx(scene);
             EnsureTopLightShaft(scene);
+            EnsureTopFog(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -400,6 +404,76 @@ namespace Baryonyx.App.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
+        }
+
+        public static bool EnsureTopFog(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+
+            var canvas = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(root => root.name == "TopCanvas");
+            if (canvas == null)
+                return false;
+
+            var existing = canvas
+                .GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == "TopHd2dFog");
+            if (existing != null)
+                return false;
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dFogPrefabPath);
+            if (prefab == null)
+                return false;
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    $"HD-2D fog prefab could not be instantiated: {Hd2dFogPrefabPath}"
+                );
+
+            instance.name = "TopHd2dFog";
+            instance.transform.SetParent(canvas.transform, false);
+            var rect = instance.GetComponent<RectTransform>();
+            if (rect != null)
+                Stretch(rect);
+
+            // Fog sits directly on the background so the light shafts and particles shine through it.
+            var background = canvas.transform.Find("TopBackground");
+            if (background != null)
+                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
+            else
+                instance.transform.SetAsFirstSibling();
+
+            var fog = instance.GetComponent<Hd2dFog>();
+            if (fog != null)
+            {
+                // Appending keeps the prefab's floor mist layers un-overridden in the scene.
+                fog.Layers.Add(CreateTopDeepHaze());
+                PrefabUtility.RecordPrefabInstancePropertyModifications(fog);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            return true;
+        }
+
+        private static Hd2dFogLayer CreateTopDeepHaze()
+        {
+            // A pale haze inside the far archway pushes the corridor back (aerial perspective).
+            return new Hd2dFogLayer
+            {
+                Name = "DeepHaze",
+                AnchorMin = new Vector2(0.36f, 0.34f),
+                AnchorMax = new Vector2(0.64f, 0.86f),
+                Color = new Color(0.45f, 0.58f, 0.82f, 0.22f),
+                Softness = new Vector2Int(150, 170),
+                TileSize = new Vector2(420f, 300f),
+                ScrollSpeed = new Vector2(5f, 3f),
+                DetailOpacity = 0.5f,
+                BreathAmount = 0.2f,
+                BreathSpeed = 0.15f,
+            };
         }
 
         private static Texture2D LoadTexture(string assetPath)

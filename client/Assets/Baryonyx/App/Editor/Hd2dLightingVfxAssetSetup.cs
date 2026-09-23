@@ -21,6 +21,8 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dParticleField.prefab";
         public const string LightShaftPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
+        public const string FogPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
 
         private const string TextureDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Textures";
         private const string PrefabDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs";
@@ -31,6 +33,9 @@ namespace Baryonyx.App.Editor
         private const string DustTexturePath = TextureDirectory + "/Hd2dDust.png";
         private const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
         private const string LightShaftTexturePath = TextureDirectory + "/Hd2dLightShaft.png";
+        private const string FogNoiseTexturePath = TextureDirectory + "/Hd2dFogNoise.png";
+        private const int FogNoiseSize = 256;
+        private const int FogNoiseSeed = 1234;
 
         [MenuItem("Baryonyx/VFX/Create HD-2D Lighting VFX Assets")]
         public static void CreateAssets()
@@ -60,6 +65,16 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        [MenuItem("Baryonyx/VFX/Create HD-2D Fog and Apply to Top")]
+        public static void CreateFogAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateFogOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
         public static void EnsureAssets()
         {
             EnsureFolder("Assets/Baryonyx/Shared");
@@ -79,11 +94,21 @@ namespace Baryonyx.App.Editor
                 CreateLightShaftPixels,
                 FilterMode.Bilinear
             );
+            // The fog scrolls its UVs, so the noise must tile instead of clamping at the edges.
+            EnsureTexture(
+                FogNoiseTexturePath,
+                FogNoiseSize,
+                FogNoiseSize,
+                CreateFogNoisePixels,
+                FilterMode.Bilinear,
+                TextureWrapMode.Repeat
+            );
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             EnsureLightPointPrefab();
             EnsureParticleFieldPrefab();
             EnsureLightShaftPrefab();
+            EnsureFogPrefab();
             EnsurePrefab();
         }
 
@@ -100,6 +125,7 @@ namespace Baryonyx.App.Editor
 
             var changed = TopHomeSceneSetup.EnsureTopLightingVfx(scene);
             changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
+            changed |= TopHomeSceneSetup.EnsureTopFog(scene);
             if (changed)
                 EditorSceneManager.SaveScene(scene, TopScenePath);
         }
@@ -117,6 +143,80 @@ namespace Baryonyx.App.Editor
 
             if (TopHomeSceneSetup.EnsureTopLightShaft(scene))
                 EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateFogOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopFog(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void EnsureFogPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(FogPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dFog", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var fog = root.AddComponent<Hd2dFog>();
+                fog.FogLayer = CreateLayer("FogLayer", root.transform);
+                fog.NoiseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FogNoiseTexturePath);
+                if (fog.NoiseTexture == null)
+                    throw new InvalidOperationException(
+                        $"Generated texture could not be loaded: {FogNoiseTexturePath}"
+                    );
+                fog.PlayOnEnable = true;
+                fog.Animate = true;
+                fog.UseUnscaledTime = true;
+                fog.RandomSeed = 1234;
+                fog.Intensity = 1f;
+                // Generic ground fog: a slow far band and a faster near band read as depth.
+                fog.Layers = new System.Collections.Generic.List<Hd2dFogLayer>
+                {
+                    new Hd2dFogLayer
+                    {
+                        Name = "FloorMistFar",
+                        AnchorMin = new Vector2(-0.05f, 0.18f),
+                        AnchorMax = new Vector2(1.05f, 0.4f),
+                        Color = new Color(0.55f, 0.64f, 0.8f, 0.16f),
+                        Softness = new Vector2Int(240, 70),
+                        TileSize = new Vector2(640f, 150f),
+                        ScrollSpeed = new Vector2(8f, 0f),
+                        DetailOpacity = 0.5f,
+                        BreathAmount = 0.15f,
+                        BreathSpeed = 0.18f,
+                    },
+                    new Hd2dFogLayer
+                    {
+                        Name = "FloorMistNear",
+                        AnchorMin = new Vector2(-0.05f, -0.06f),
+                        AnchorMax = new Vector2(1.05f, 0.2f),
+                        Color = new Color(0.6f, 0.68f, 0.82f, 0.2f),
+                        Softness = new Vector2Int(240, 80),
+                        TileSize = new Vector2(900f, 220f),
+                        ScrollSpeed = new Vector2(-16f, 0f),
+                        DetailOpacity = 0.5f,
+                        BreathAmount = 0.15f,
+                        BreathSpeed = 0.22f,
+                    },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, FogPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void EnsureLightShaftPrefab()
@@ -324,7 +424,8 @@ namespace Baryonyx.App.Editor
             int width,
             int height,
             Func<int, int, Color> pixelFactory,
-            FilterMode filterMode
+            FilterMode filterMode,
+            TextureWrapMode wrapMode = TextureWrapMode.Clamp
         )
         {
             var absolutePath = ToAbsolutePath(assetPath);
@@ -353,7 +454,7 @@ namespace Baryonyx.App.Editor
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.filterMode = filterMode;
-            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.wrapMode = wrapMode;
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.alphaIsTransparency = true;
@@ -414,6 +515,13 @@ namespace Baryonyx.App.Editor
             var along = x / (width - 1f);
             var across = y / (height - 1f) * 2f - 1f;
             return new Color(1f, 1f, 1f, Hd2dLightShaft.EvaluateBeamAlpha(along, across));
+        }
+
+        private static Color CreateFogNoisePixels(int x, int y)
+        {
+            var u = x / (float)FogNoiseSize;
+            var v = y / (float)FogNoiseSize;
+            return new Color(1f, 1f, 1f, Hd2dFog.EvaluateNoiseAlpha(u, v, FogNoiseSeed));
         }
 
         private static void Stretch(RectTransform rect)

@@ -16,6 +16,8 @@ namespace Baryonyx.Tests.EditMode
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dParticleField.prefab";
         private const string LightShaftPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
+        private const string FogPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
 
         [Test]
         public void LightingPrefabContainsEditableParticleLayer()
@@ -50,8 +52,8 @@ namespace Baryonyx.Tests.EditMode
             {
                 var lighting = instance.GetComponent<Hd2dLightingVfx>();
                 lighting.RebuildParticles();
-                var generated = lighting.ParticleLayer
-                    .GetComponentsInChildren<RectTransform>(true)
+                var generated = lighting
+                    .ParticleLayer.GetComponentsInChildren<RectTransform>(true)
                     .Where(rect => rect != lighting.ParticleLayer)
                     .ToArray();
 
@@ -141,6 +143,71 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(generated.Count(rect => rect.name == "FloorPool"), Is.EqualTo(1));
                 var images = layer.GetComponentsInChildren<UnityEngine.UI.Image>(true);
                 Assert.That(images.All(image => !image.raycastTarget), Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void FogNoiseTilesSeamlessly()
+        {
+            for (var step = 0; step <= 8; step++)
+            {
+                var t = step / 8f;
+                Assert.That(
+                    Hd2dFog.EvaluateNoiseDensity(0f, t, 1234),
+                    Is.EqualTo(Hd2dFog.EvaluateNoiseDensity(1f, t, 1234)).Within(1e-4f)
+                );
+                Assert.That(
+                    Hd2dFog.EvaluateNoiseDensity(t, 0f, 1234),
+                    Is.EqualTo(Hd2dFog.EvaluateNoiseDensity(t, 1f, 1234)).Within(1e-4f)
+                );
+            }
+        }
+
+        [Test]
+        public void FogIsAnIndividuallyReusableEditablePrefab()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FogPrefabPath);
+            Assert.That(prefab, Is.Not.Null, FogPrefabPath);
+
+            var fog = prefab.GetComponent<Hd2dFog>();
+            Assert.That(fog, Is.Not.Null);
+            Assert.That(fog.FogLayer, Is.Not.Null);
+            Assert.That(fog.NoiseTexture, Is.Not.Null);
+            Assert.That(fog.NoiseTexture.wrapMode, Is.EqualTo(TextureWrapMode.Repeat));
+            Assert.That(fog.PreviewInEditor, Is.True);
+            Assert.That(fog.Layers, Is.Not.Empty);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var instanceFog = instance.GetComponent<Hd2dFog>();
+                instanceFog.RebuildLayers();
+                var banks = instanceFog
+                    .FogLayer.GetComponentsInChildren<UnityEngine.UI.RectMask2D>(true)
+                    .ToArray();
+                Assert.That(banks, Has.Length.EqualTo(fog.Layers.Count));
+                Assert.That(
+                    banks.Select(bank => bank.softness),
+                    Is.EqualTo(fog.Layers.Select(layer => layer.Softness))
+                );
+
+                var sheets = instanceFog.FogLayer.GetComponentsInChildren<UnityEngine.UI.RawImage>(
+                    true
+                );
+                Assert.That(
+                    sheets,
+                    Has.Length.EqualTo(fog.Layers.Sum(layer => layer.DetailOpacity > 0f ? 2 : 1))
+                );
+                Assert.That(sheets.All(sheet => !sheet.raycastTarget), Is.True);
+                Assert.That(sheets.All(sheet => sheet.texture == fog.NoiseTexture), Is.True);
+                Assert.That(
+                    banks.All(bank => bank.gameObject.hideFlags == HideFlags.DontSave),
+                    Is.True
+                );
             }
             finally
             {
