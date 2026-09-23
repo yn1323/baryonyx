@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using Baryonyx.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -90,18 +90,34 @@ namespace Baryonyx.Showcase
             return canvas;
         }
 
-        private void CreateLayout(Transform root)
+        private void CreateLayout(Transform canvasRoot)
         {
+            // 背景は画面全体に残し、文字と操作はノッチやシステムバーを避けて配置する。
+            var root = new GameObject("SafeArea", typeof(RectTransform)).transform;
+            root.SetParent(canvasRoot, false);
+            Stretch((RectTransform)root);
+            root.gameObject.AddComponent<SafeAreaFollower>();
+
             var header = CreatePanel(root, "Header", new Color(0.07f, 0.09f, 0.14f, 1f));
             SetTop(header.rectTransform, 0, 72);
-            var headerTitle = CreateText(header.transform, "Title", "Baryonyx Showcase", 30, Color.white);
+            var headerTitle = CreateText(
+                header.transform,
+                "Title",
+                "Baryonyx Showcase",
+                30,
+                Color.white
+            );
             Stretch(headerTitle.rectTransform, 32, 0, 0, 0, true);
             headerTitle.alignment = TextAlignmentOptions.MidlineLeft;
 
             var body = CreatePanel(root, "Body", Color.clear);
             Stretch(body.rectTransform, 0, 0, 72, 0);
 
-            var categoryPanel = CreatePanel(body.transform, "Categories", new Color(0.055f, 0.07f, 0.11f, 1f));
+            var categoryPanel = CreatePanel(
+                body.transform,
+                "Categories",
+                new Color(0.055f, 0.07f, 0.11f, 1f)
+            );
             SetLeft(categoryPanel.rectTransform, 0, 245);
             var categoryLayout = categoryPanel.gameObject.AddComponent<VerticalLayoutGroup>();
             categoryLayout.padding = new RectOffset(16, 16, 16, 16);
@@ -109,7 +125,13 @@ namespace Baryonyx.Showcase
             categoryLayout.childControlHeight = true;
             categoryLayout.childForceExpandHeight = false;
 
-            var categoryTitle = CreateText(categoryPanel.transform, "CategoryTitle", "カテゴリ", 20, Color.white);
+            var categoryTitle = CreateText(
+                categoryPanel.transform,
+                "CategoryTitle",
+                "カテゴリ",
+                20,
+                Color.white
+            );
             categoryTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
             foreach (var category in Categories)
             {
@@ -117,19 +139,45 @@ namespace Baryonyx.Showcase
                 button.onClick.AddListener(() => SelectCategory(category));
             }
 
-            var listPanel = CreatePanel(body.transform, "Entries", new Color(0.045f, 0.06f, 0.095f, 1f));
+            var listPanel = CreatePanel(
+                body.transform,
+                "Entries",
+                new Color(0.045f, 0.06f, 0.095f, 1f)
+            );
             SetLeft(listPanel.rectTransform, 245, 390);
-            var listHeader = CreateText(listPanel.transform, "ListHeader", "登録アセット", 20, Color.white);
+            var listHeader = CreateText(
+                listPanel.transform,
+                "ListHeader",
+                "登録アセット",
+                20,
+                Color.white
+            );
             SetTop(listHeader.rectTransform, 16, 50);
-            entryCount = CreateText(listPanel.transform, "EntryCount", "", 14, new Color(0.65f, 0.7f, 0.8f));
+            entryCount = CreateText(
+                listPanel.transform,
+                "EntryCount",
+                "",
+                14,
+                new Color(0.65f, 0.7f, 0.8f)
+            );
             SetTop(entryCount.rectTransform, 16, 24);
             var scroll = CreateScrollView(listPanel.transform, "EntryScroll");
             Stretch(scroll.GetComponent<RectTransform>(), 16, 16, 88, 16);
             entryContent = scroll.content;
 
-            var previewPanel = CreatePanel(body.transform, "Preview", new Color(0.075f, 0.09f, 0.135f, 1f));
+            var previewPanel = CreatePanel(
+                body.transform,
+                "Preview",
+                new Color(0.075f, 0.09f, 0.135f, 1f)
+            );
             Stretch(previewPanel.rectTransform, 635, 16, 0, 16);
-            var previewHeader = CreateText(previewPanel.transform, "PreviewHeader", "プレビュー", 20, Color.white);
+            var previewHeader = CreateText(
+                previewPanel.transform,
+                "PreviewHeader",
+                "プレビュー",
+                20,
+                Color.white
+            );
             SetTop(previewHeader.rectTransform, 24, 36);
             previewContent = new GameObject("PreviewContent", typeof(RectTransform)).transform;
             previewContent.SetParent(previewPanel.transform, false);
@@ -141,11 +189,29 @@ namespace Baryonyx.Showcase
             Stretch(rawImagePreview.rectTransform, 0, 0, 0, 0);
             rawImagePreview.gameObject.SetActive(false);
 
-            title = CreateText(previewPanel.transform, "SelectedTitle", "アセットを選択してください", 26, Color.white);
+            title = CreateText(
+                previewPanel.transform,
+                "SelectedTitle",
+                "アセットを選択してください",
+                26,
+                Color.white
+            );
             SetBottom(title.rectTransform, 160, 56);
-            description = CreateText(previewPanel.transform, "SelectedDescription", "", 15, new Color(0.75f, 0.78f, 0.86f));
+            description = CreateText(
+                previewPanel.transform,
+                "SelectedDescription",
+                "",
+                15,
+                new Color(0.75f, 0.78f, 0.86f)
+            );
             SetBottom(description.rectTransform, 104, 48);
-            typeLabel = CreateText(previewPanel.transform, "SelectedType", "", 14, new Color(0.55f, 0.65f, 0.8f));
+            typeLabel = CreateText(
+                previewPanel.transform,
+                "SelectedType",
+                "",
+                14,
+                new Color(0.55f, 0.65f, 0.8f)
+            );
             SetBottom(typeLabel.rectTransform, 72, 24);
             actionButton = CreateButton(previewPanel.transform, "", 40);
             SetBottom(actionButton.GetComponent<RectTransform>(), 24, 40);
@@ -162,8 +228,11 @@ namespace Baryonyx.Showcase
             if (Catalog != null && Catalog.Entries != null)
             {
                 visibleEntries.AddRange(
-                    Catalog.Entries.Where(entry => entry != null && entry.Enabled)
-                        .Where(entry => category == ShowcaseCategory.All || entry.Category == category)
+                    Catalog
+                        .Entries.Where(entry => entry != null && entry.Enabled)
+                        .Where(entry =>
+                            category == ShowcaseCategory.All || entry.Category == category
+                        )
                         .OrderBy(entry => entry.Label)
                 );
             }
@@ -204,7 +273,9 @@ namespace Baryonyx.Showcase
             entryCount.text = $"{visibleEntries.Count}件  /  {CategoryLabel(selectedCategory)}";
             if (visibleEntries.Count == 0)
             {
-                ShowEmptyPreview("このカテゴリには登録されたアセットがありません。\n生成後にカタログが自動更新されます。");
+                ShowEmptyPreview(
+                    "このカテゴリには登録されたアセットがありません。\n生成後にカタログが自動更新されます。"
+                );
             }
         }
 
@@ -229,7 +300,8 @@ namespace Baryonyx.Showcase
             }
             else if (entry.Asset is GameObject || entry.PreviewPrefab != null)
             {
-                var prefab = entry.PreviewPrefab != null ? entry.PreviewPrefab : entry.Asset as GameObject;
+                var prefab =
+                    entry.PreviewPrefab != null ? entry.PreviewPrefab : entry.Asset as GameObject;
                 ShowPrefab(prefab);
             }
             else if (entry.Asset is Material material)
@@ -241,19 +313,27 @@ namespace Baryonyx.Showcase
                 ShowEmptyPreview("音声アセット\n再生ボタンで確認できます。");
                 ConfigureAudioAction(clip);
             }
-            else if (entry.Category == ShowcaseCategory.Scene && !string.IsNullOrWhiteSpace(entry.ScenePath))
+            else if (
+                entry.Category == ShowcaseCategory.Scene
+                && !string.IsNullOrWhiteSpace(entry.ScenePath)
+            )
             {
-                ShowEmptyPreview("シーンを読み込んで確認できます。\n展示室に戻るにはシーンを再度開いてください。");
+                ShowEmptyPreview(
+                    "シーンを読み込んで確認できます。\n展示室に戻るにはシーンを再度開いてください。"
+                );
                 ConfigureSceneAction(entry.ScenePath);
             }
             else
             {
-                ShowEmptyPreview("このアセットは情報表示のみ対応しています。\nプレビューPrefabを登録すると実物を表示できます。");
+                ShowEmptyPreview(
+                    "このアセットは情報表示のみ対応しています。\nプレビューPrefabを登録すると実物を表示できます。"
+                );
             }
 
-            var transition = previewInstance != null
-                ? previewInstance.GetComponentInChildren<SceneTransitionController>(true)
-                : null;
+            var transition =
+                previewInstance != null
+                    ? previewInstance.GetComponentInChildren<SceneTransitionController>(true)
+                    : null;
             if (transition != null)
                 ConfigureTransitionAction(transition);
 
@@ -291,14 +371,20 @@ namespace Baryonyx.Showcase
             camera.transform.LookAt(Vector3.zero);
             previewInstance = Instantiate(prefab, Vector3.zero, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(previewInstance, gameObject.scene);
-            if (previewInstance.transform is RectTransform rect
-                && previewInstance.GetComponent<Canvas>() == null)
+            if (
+                previewInstance.transform is RectTransform rect
+                && previewInstance.GetComponent<Canvas>() == null
+            )
             {
                 // Canvasの子に置くUI部品にも、展示中だけ描画用Canvasを用意する。
                 var size = rect.rect.size;
                 // 光芒など、親Canvas全面に伸ばすPrefabは単体だとサイズが0になる。
-                if (size.x <= 0f && size.y <= 0f
-                    && rect.anchorMin == Vector2.zero && rect.anchorMax == Vector2.one)
+                if (
+                    size.x <= 0f
+                    && size.y <= 0f
+                    && rect.anchorMin == Vector2.zero
+                    && rect.anchorMax == Vector2.one
+                )
                     size = new Vector2(1920f, 1080f);
                 var wrapper = new GameObject(
                     "UiComponentPreviewCanvas",
@@ -323,7 +409,13 @@ namespace Baryonyx.Showcase
             SetPreviewLayer(previewInstance, camera.gameObject.layer);
             ConfigureCanvasPreview(previewInstance, camera);
             var bounds = CalculateBounds(previewInstance);
-            camera.transform.position = bounds.center + new Vector3(0, bounds.extents.y * 0.15f, -Mathf.Max(3f, bounds.extents.magnitude * 2.5f));
+            camera.transform.position =
+                bounds.center
+                + new Vector3(
+                    0,
+                    bounds.extents.y * 0.15f,
+                    -Mathf.Max(3f, bounds.extents.magnitude * 2.5f)
+                );
             camera.transform.LookAt(bounds.center);
             var lightObject = new GameObject("PreviewLight");
             lightObject.transform.SetParent(previewContent, false);
@@ -337,8 +429,10 @@ namespace Baryonyx.Showcase
         {
             foreach (var canvas in target.GetComponentsInChildren<Canvas>(true))
             {
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay
-                    || canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                if (
+                    canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                    || canvas.renderMode == RenderMode.ScreenSpaceCamera
+                )
                 {
                     canvas.renderMode = RenderMode.ScreenSpaceCamera;
                     canvas.worldCamera = camera;
@@ -349,14 +443,18 @@ namespace Baryonyx.Showcase
 
         private void PlayAnimation(AnimationClip clip, string stateName)
         {
-            var animator = previewInstance != null ? previewInstance.GetComponentInChildren<Animator>() : null;
+            var animator =
+                previewInstance != null ? previewInstance.GetComponentInChildren<Animator>() : null;
             if (animator != null && animator.runtimeAnimatorController != null)
             {
                 var state = string.IsNullOrWhiteSpace(stateName) ? clip.name : stateName;
                 if (animator.HasState(0, Animator.StringToHash(state)))
                     animator.Play(state, 0, 0f);
             }
-            var animation = previewInstance != null ? previewInstance.GetComponentInChildren<Animation>() : null;
+            var animation =
+                previewInstance != null
+                    ? previewInstance.GetComponentInChildren<Animation>()
+                    : null;
             if (animation != null)
             {
                 animation.AddClip(clip, clip.name);
@@ -379,8 +477,16 @@ namespace Baryonyx.Showcase
 
         private void ConfigureSceneAction(string path)
         {
-            actionLabel.text = "シーンを開く";
             actionButton.gameObject.SetActive(true);
+            // Build Settingsにないシーンは実行時に読み込めないため、開く操作を止める。
+            if (SceneUtility.GetBuildIndexByScenePath(path) < 0)
+            {
+                actionLabel.text = "Build Settings外のため開けません";
+                actionButton.interactable = false;
+                return;
+            }
+
+            actionLabel.text = "シーンを開く";
             actionButton.onClick.AddListener(() => SceneManager.LoadSceneAsync(path));
         }
 
@@ -397,9 +503,11 @@ namespace Baryonyx.Showcase
 
         private void PlayTransitionPreview(SceneTransitionController controller, int generation)
         {
-            if (generation != transitionPreviewGeneration
+            if (
+                generation != transitionPreviewGeneration
                 || controller != transitionPreview
-                || controller.IsPlaying)
+                || controller.IsPlaying
+            )
                 return;
 
             var step = transitionPreviewStep++ % 4;
@@ -411,12 +519,14 @@ namespace Baryonyx.Showcase
                     1 => SceneTransitionType.Wipe,
                     _ => SceneTransitionType.Shutter,
                 },
-                WipeDirection = step == 2
-                    ? SceneTransitionWipeDirection.RightToLeft
-                    : SceneTransitionWipeDirection.LeftToRight,
-                ShutterAxis = step == 3
-                    ? SceneTransitionShutterAxis.Horizontal
-                    : SceneTransitionShutterAxis.Vertical,
+                WipeDirection =
+                    step == 2
+                        ? SceneTransitionWipeDirection.RightToLeft
+                        : SceneTransitionWipeDirection.LeftToRight,
+                ShutterAxis =
+                    step == 3
+                        ? SceneTransitionShutterAxis.Horizontal
+                        : SceneTransitionShutterAxis.Vertical,
                 CoverDuration = 0.35f,
                 RevealDuration = 0.35f,
                 Color = SceneTransitionSettings.DefaultColor,
@@ -431,15 +541,26 @@ namespace Baryonyx.Showcase
             actionLabel.text = label;
             actionButton.interactable = false;
 
-            if (!controller.PlayOut(settings, () =>
-                controller.PlayIn(settings, () =>
-                {
-                    if (generation == transitionPreviewGeneration && controller == transitionPreview)
-                    {
-                        actionButton.interactable = true;
-                        actionLabel.text = "次の演出を再生";
-                    }
-                })))
+            if (
+                !controller.PlayOut(
+                    settings,
+                    () =>
+                        controller.PlayIn(
+                            settings,
+                            () =>
+                            {
+                                if (
+                                    generation == transitionPreviewGeneration
+                                    && controller == transitionPreview
+                                )
+                                {
+                                    actionButton.interactable = true;
+                                    actionLabel.text = "次の演出を再生";
+                                }
+                            }
+                        )
+                )
+            )
             {
                 actionButton.interactable = true;
                 actionLabel.text = "次の演出を再生";
@@ -450,7 +571,13 @@ namespace Baryonyx.Showcase
         {
             imagePreview.gameObject.SetActive(false);
             rawImagePreview.gameObject.SetActive(false);
-            var label = CreateText(previewContent, "EmptyPreview", message, 18, new Color(0.6f, 0.65f, 0.75f));
+            var label = CreateText(
+                previewContent,
+                "EmptyPreview",
+                message,
+                18,
+                new Color(0.6f, 0.65f, 0.75f)
+            );
             label.alignment = TextAlignmentOptions.Center;
             Stretch(label.rectTransform, 48, 48, 48, 48, true);
         }
@@ -481,6 +608,7 @@ namespace Baryonyx.Showcase
             rawImagePreview.gameObject.SetActive(false);
             actionButton.gameObject.SetActive(false);
             actionButton.onClick.RemoveAllListeners();
+            actionButton.interactable = true;
         }
 
         private void OnDestroy()
@@ -521,30 +649,37 @@ namespace Baryonyx.Showcase
             return entry.Asset.GetType().Name;
         }
 
-        private static string CategoryLabel(ShowcaseCategory category) => category switch
-        {
-            ShowcaseCategory.All => "すべて",
-            ShowcaseCategory.Image => "画像",
-            ShowcaseCategory.Character => "キャラ",
-            ShowcaseCategory.Environment => "背景・環境",
-            ShowcaseCategory.Weapon => "武器",
-            ShowcaseCategory.Item => "アイテム",
-            ShowcaseCategory.Vfx => "VFX・エフェクト",
-            ShowcaseCategory.Animation => "アニメーション",
-            ShowcaseCategory.Audio => "音声・音楽",
-            ShowcaseCategory.Ui => "UI",
-            ShowcaseCategory.Scene => "シーン",
-            ShowcaseCategory.Material => "マテリアル・シェーダー",
-            ShowcaseCategory.Data => "データ",
-            _ => "その他",
-        };
+        private static string CategoryLabel(ShowcaseCategory category) =>
+            category switch
+            {
+                ShowcaseCategory.All => "すべて",
+                ShowcaseCategory.Image => "画像",
+                ShowcaseCategory.Character => "キャラ",
+                ShowcaseCategory.Environment => "背景・環境",
+                ShowcaseCategory.Weapon => "武器",
+                ShowcaseCategory.Item => "アイテム",
+                ShowcaseCategory.Vfx => "VFX・エフェクト",
+                ShowcaseCategory.Animation => "アニメーション",
+                ShowcaseCategory.Audio => "音声・音楽",
+                ShowcaseCategory.Ui => "UI",
+                ShowcaseCategory.Scene => "シーン",
+                ShowcaseCategory.Material => "マテリアル・シェーダー",
+                ShowcaseCategory.Data => "データ",
+                _ => "その他",
+            };
 
         private static Image CreatePanel(Transform parent, string name, Color color)
         {
             return CreateImage(parent, name, color);
         }
 
-        private static TextMeshProUGUI CreateText(Transform parent, string name, string value, float size, Color color)
+        private static TextMeshProUGUI CreateText(
+            Transform parent,
+            string name,
+            string value,
+            float size,
+            Color color
+        )
         {
             var object_ = new GameObject(name, typeof(RectTransform));
             object_.transform.SetParent(parent, false);
@@ -594,10 +729,21 @@ namespace Baryonyx.Showcase
 
         private static ScrollRect CreateScrollView(Transform parent, string name)
         {
-            var object_ = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Mask), typeof(ScrollRect));
+            var object_ = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Mask),
+                typeof(ScrollRect)
+            );
             object_.transform.SetParent(parent, false);
             object_.GetComponent<Image>().color = new Color(0.025f, 0.035f, 0.06f, 1f);
-            var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+            var viewport = new GameObject(
+                "Viewport",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Mask)
+            );
             viewport.transform.SetParent(object_.transform, false);
             Stretch(viewport.GetComponent<RectTransform>(), 0, 0, 0, 0);
             viewport.GetComponent<Image>().color = Color.white;
@@ -617,7 +763,14 @@ namespace Baryonyx.Showcase
             return scroll;
         }
 
-        private static void Stretch(RectTransform rect, float left = 0, float right = 0, float top = 0, float bottom = 0, bool center = false)
+        private static void Stretch(
+            RectTransform rect,
+            float left = 0,
+            float right = 0,
+            float top = 0,
+            float bottom = 0,
+            bool center = false
+        )
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
