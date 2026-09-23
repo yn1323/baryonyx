@@ -83,3 +83,12 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 - アセットの移動・名前変更・削除はUnityの機能を使い、対応する `.meta` とGUIDの整合を保つ。
 - 画面変更後はGameビューを撮影し、保存した画像を開いて確認する。Overlay UIを含める場合はPlayModeで `capture_game_view --source screen` を使う。
 - 検証画像は `Assets/DevCaptures/` に保存する。このフォルダと対応する `.meta` はGit除外済み。
+
+## フォントアセットの差分
+
+[DotGothic16.asset](Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset) はTextMeshProの動的フォントアセットである。
+Editorで新しい文字を表示すると、Unityが文字の一覧とアトラス画像をこのファイルへ書き足すため、作業内容と関係なく差分が出る。
+
+- コミットするときは、この差分もコミットの対象に含める。作業内容とは別の `chore` コミットに分ける。
+- `.gitignore` や `git update-index --skip-worktree` で除外しない。このアセットはTMPの既定フォント設定やシーン・PrefabからGUIDで参照されており、手元にない環境では文字を表示できなくなる。
+- 追加された文字データはビルド時に消える（Clear Dynamic Data On Build）ため、コミットしても実機の表示や容量には影響しない。
