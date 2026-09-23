@@ -1,0 +1,92 @@
+{
+    "friendlyName": "Motorola Edge 50 Pro",
+    "version": 1,
+    "screens": [
+        {
+            "width": 1220,
+            "height": 2712,
+            "navigationBarHeight": 0,
+            "dpi": 446.0,
+            "orientations": [
+                {
+                    "orientation": 1,
+                    "safeArea": {
+                        "serializedVersion": "2",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "width": 1220.0,
+                        "height": 2712.0
+                    },
+                    "cutouts": [
+                        {
+                            "serializedVersion": "2",
+                            "x": 582.0,
+                            "y": 2624.0,
+                            "width": 56.0,
+                            "height": 56.0
+                        }
+                    ]
+                },
+                {
+                    "orientation": 3,
+                    "safeArea": {
+                        "serializedVersion": "2",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "width": 2712.0,
+                        "height": 1220.0
+                    },
+                    "cutouts": [
+                        {
+                            "serializedVersion": "2",
+                            "x": 32.0,
+                            "y": 582.0,
+                            "width": 56.0,
+                            "height": 56.0
+                        }
+                    ]
+                },
+                {
+                    "orientation": 4,
+                    "safeArea": {
+                        "serializedVersion": "2",
+                        "x": 0.0,
+                        "y": 0.0,
+                        "width": 2712.0,
+                        "height": 1220.0
+                    },
+                    "cutouts": [
+                        {
+                            "serializedVersion": "2",
+                            "x": 2624.0,
+                            "y": 582.0,
+                            "width": 56.0,
+                            "height": 56.0
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "systemInfo": {
+        "deviceModel": "motorola motorola edge 50 pro",
+        "deviceType": 1,
+        "operatingSystem": "Android OS 14 / API-34",
+        "operatingSystemFamily": 0,
+        "processorCount": 8,
+        "processorType": "ARM64 FP ASIMD AES",
+        "supportsAccelerometer": true,
+        "supportsAudio": true,
+        "supportsGyroscope": true,
+        "supportsLocationService": true,
+        "supportsVibration": true,
+        "graphicsDependentData": [
+            {
+                "graphicsDeviceType": 21,
+                "graphicsDeviceName": "Adreno (TM) 720",
+                "graphicsDeviceVendor": "Qualcomm",
+                "graphicsDeviceVersion": "Vulkan"
+            }
+        ]
+    }
+}
