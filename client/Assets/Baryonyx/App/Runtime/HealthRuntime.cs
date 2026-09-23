@@ -1,6 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using Baryonyx.Health;
+#if UNITY_ANDROID && !UNITY_EDITOR
+using Baryonyx.Account;
+using Baryonyx.ExerciseRewards;
+using Baryonyx.Networking;
+#endif
 
 namespace Baryonyx.App
 {
@@ -10,7 +15,7 @@ namespace Baryonyx.App
         public HealthScreenPresenter Presenter { get; }
         public bool Preview { get; }
         private readonly IDisposable authentication;
-        private readonly ExerciseRewardService rewards;
+        private readonly HealthServerSync rewards;
 
         public HealthRuntime(HealthConnectionSettings settings)
         {
@@ -23,8 +28,11 @@ namespace Baryonyx.App
             {
                 try
                 {
-                    rewards = new ExerciseRewardService(
-                        new HealthApiClient(settings.ServerBaseUrl)
+                    var server = new ServerApi(settings.ServerBaseUrl);
+                    rewards = new HealthServerSync(
+                        new AccountApiClient(server),
+                        new HealthApiClient(server),
+                        new ExerciseRewardsApiClient(server)
                     );
                 }
                 catch (ArgumentException exception)

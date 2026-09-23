@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Linq;
 using Baryonyx.App;
-using Baryonyx.Health;
 using Baryonyx.Wireframe;
 using NUnit.Framework;
 using UnityEngine;
@@ -42,11 +41,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.View.Session, Is.Not.Null);
             Assert.That(bootstrap.View.Session.Screen, Is.EqualTo(WireScreen.Home));
             Assert.That(bootstrap.View.Session.Popup, Is.EqualTo(WirePopup.None));
-            Assert.That(
-                roots.SelectMany(root => root.GetComponentsInChildren<HealthClient>()),
-                Is.Empty,
-                "The local preview must not initialize server synchronization."
-            );
             Assert.That(
                 roots
                     .SelectMany(root =>

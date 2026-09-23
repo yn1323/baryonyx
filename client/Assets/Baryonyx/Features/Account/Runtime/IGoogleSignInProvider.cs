@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Baryonyx.Health
+namespace Baryonyx.Account
 {
     public enum GoogleSignInStatus
     {

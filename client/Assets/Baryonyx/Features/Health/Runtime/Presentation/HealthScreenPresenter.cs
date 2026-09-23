@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Account;
+using Baryonyx.ExerciseRewards;
+using Baryonyx.Networking;
 
 namespace Baryonyx.Health
 {
@@ -24,7 +27,7 @@ namespace Baryonyx.Health
             "Health Connectに接続し、「歩数」の読み取りを許可してください。";
         private readonly IGoogleSignInProvider authentication;
         private readonly IHealthDataProvider health;
-        private readonly ExerciseRewardService rewards;
+        private readonly HealthServerSync rewards;
         private readonly HealthScreenOperations operations = new();
         private bool authenticating;
         private bool signingOut;
@@ -70,8 +73,8 @@ namespace Baryonyx.Health
         public long RuneBalance { get; private set; }
         public long LastGrantedRunes { get; private set; }
         public int RewardClaimVersion => rewardClaimVersion;
-        public IReadOnlyList<HealthApiClient.RewardDay> RewardDays { get; private set; } =
-            Array.Empty<HealthApiClient.RewardDay>();
+        public IReadOnlyList<ExerciseRewardsApiClient.RewardDay> RewardDays { get; private set; } =
+            Array.Empty<ExerciseRewardsApiClient.RewardDay>();
         public IReadOnlyList<HealthDaySnapshot> Days { get; private set; } =
             Array.Empty<HealthDaySnapshot>();
         public HealthDaySnapshot SelectedDay { get; private set; }
@@ -100,7 +103,7 @@ namespace Baryonyx.Health
         public HealthScreenPresenter(
             IGoogleSignInProvider authentication,
             IHealthDataProvider health,
-            ExerciseRewardService rewards = null
+            HealthServerSync rewards = null
         )
         {
             this.authentication =
@@ -439,14 +442,14 @@ namespace Baryonyx.Health
                 var result = await rewards.SyncAndClaimAsync(latestHealthDays, token);
                 LastGrantedRunes = result.grantedRunes;
                 RuneBalance = result.balance;
-                RewardDays = result.days ?? Array.Empty<HealthApiClient.RewardDay>();
+                RewardDays = result.days ?? Array.Empty<ExerciseRewardsApiClient.RewardDay>();
                 rewardClaimVersion++;
                 RewardMessage =
                     result.grantedRunes > 0
                         ? $"{result.grantedRunes:N0}ルーンを取得しました。残高 {result.balance:N0}ルーン"
                         : $"新しく取得できるルーンはありません。残高 {result.balance:N0}ルーン";
             }
-            catch (HealthApiException exception)
+            catch (ServerApiException exception)
             {
                 RewardMessage =
                     exception.StatusCode == 401
@@ -559,7 +562,7 @@ namespace Baryonyx.Health
                         await rewards.SignOutAsync(operations.LifetimeToken);
                     }
                     catch (Exception) { }
-                    RewardDays = Array.Empty<HealthApiClient.RewardDay>();
+                    RewardDays = Array.Empty<ExerciseRewardsApiClient.RewardDay>();
                     RuneBalance = 0;
                     LastGrantedRunes = 0;
                     RewardMessage = "Google接続を解除しました。";

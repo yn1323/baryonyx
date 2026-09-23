@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Account;
 using Newtonsoft.Json.Linq;
 
 namespace Baryonyx.Health

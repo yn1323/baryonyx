@@ -1,22 +1,32 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Account;
+using Baryonyx.ExerciseRewards;
 using UnityEngine;
 
 namespace Baryonyx.Health
 {
     // Health Connectの読み取り結果を、サーバー保存とルーン請求へ一度だけ渡す。
     // 歩数をゲーム中に監視せず、起動・更新・明示請求の操作境界でだけ実行する。
-    public sealed class ExerciseRewardService : IDisposable
+    public sealed class HealthServerSync : IDisposable
     {
-        private readonly HealthApiClient api;
+        private readonly AccountApiClient accounts;
+        private readonly HealthApiClient health;
+        private readonly ExerciseRewardsApiClient rewards;
         private readonly string sourceKeyPrefix;
-        private HealthSession session;
+        private AccountSession session;
         private string sourceId;
 
-        public ExerciseRewardService(HealthApiClient api)
+        public HealthServerSync(
+            AccountApiClient accounts,
+            HealthApiClient health,
+            ExerciseRewardsApiClient rewards
+        )
         {
-            this.api = api ?? throw new ArgumentNullException(nameof(api));
+            this.accounts = accounts ?? throw new ArgumentNullException(nameof(accounts));
+            this.health = health ?? throw new ArgumentNullException(nameof(health));
+            this.rewards = rewards ?? throw new ArgumentNullException(nameof(rewards));
             sourceKeyPrefix = "Health.RewardSourceId.";
         }
 
@@ -26,7 +36,7 @@ namespace Baryonyx.Health
         {
             if (string.IsNullOrWhiteSpace(idToken))
                 return false;
-            var created = await api.LoginAsync(idToken, token);
+            var created = await accounts.LoginAsync(idToken, token);
             session = created;
             sourceId = PlayerPrefs.GetString(sourceKeyPrefix + created.UserId, "");
             if (!Guid.TryParse(sourceId, out _))
@@ -44,10 +54,10 @@ namespace Baryonyx.Health
             session = null;
             sourceId = null;
             if (current != null)
-                await api.LogoutAsync(current, token);
+                await accounts.LogoutAsync(current, token);
         }
 
-        public async Task<HealthApiClient.RewardClaim> SyncAndClaimAsync(
+        public async Task<ExerciseRewardsApiClient.RewardClaim> SyncAndClaimAsync(
             HealthDay[] days,
             CancellationToken token
         )
@@ -58,30 +68,30 @@ namespace Baryonyx.Health
                     "Exactly seven health days are required.",
                     nameof(days)
                 );
-            var revision = await api.BeginSyncAsync(current, sourceId, "health_connect", token);
-            await api.SaveAsync(current, sourceId, revision, days, token);
+            var revision = await health.BeginSyncAsync(current, sourceId, "health_connect", token);
+            await health.SaveAsync(current, sourceId, revision, days, token);
             return await ClaimAsync(token);
         }
 
-        public Task<HealthApiClient.RewardClaim> ClaimAsync(CancellationToken token)
+        public Task<ExerciseRewardsApiClient.RewardClaim> ClaimAsync(CancellationToken token)
         {
             var current = RequireSession();
-            return api.ClaimRewardsAsync(current, sourceId, Guid.NewGuid().ToString(), token);
+            return rewards.ClaimAsync(current, sourceId, Guid.NewGuid().ToString(), token);
         }
 
-        public Task<HealthApiClient.RewardDays> ReadDaysAsync(CancellationToken token)
+        public Task<ExerciseRewardsApiClient.RewardDays> ReadDaysAsync(CancellationToken token)
         {
             var current = RequireSession();
-            return api.ReadRewardDaysAsync(current, sourceId, token);
+            return rewards.ReadDaysAsync(current, sourceId, token);
         }
 
-        public Task<HealthApiClient.RuneBalance> ReadBalanceAsync(CancellationToken token)
+        public Task<ExerciseRewardsApiClient.RuneBalance> ReadBalanceAsync(CancellationToken token)
         {
             var current = RequireSession();
-            return api.ReadRuneBalanceAsync(current, token);
+            return rewards.ReadBalanceAsync(current, token);
         }
 
-        private HealthSession RequireSession() =>
+        private AccountSession RequireSession() =>
             IsSignedIn
                 ? session
                 : throw new InvalidOperationException("Sign in to the reward service first.");

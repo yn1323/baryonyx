@@ -32,7 +32,7 @@ Providerの選択と寿命はAppのHealthRuntimeで共通化し、集計はHealt
 画面アセットの生成時に、ブランド表記へPlayer Settingsの `productName` を設定する。
 
 ディレクトリと依存方向は [クライアントの構成と依存関係](../rules/frontend-design.md) に従う。
-表示処理はHealthの `Runtime/Presentation/`、利用条件の判定は `Runtime/Requirements/`、サンプルProviderは `Runtime/Preview/`、既存のサーバー同期は `Runtime/Sync/` に分ける。
+表示処理はHealthの `Runtime/Presentation/`、利用条件の判定は `Runtime/Requirements/`、サンプルProviderは `Runtime/Preview/`、サーバー同期は `Runtime/Sync/` に分け、Google認証とサーバーのセッションは `Features/Account/`、ルーンのAPIは `Features/ExerciseRewards/` に置く。
 AppはProviderを選択し、`HealthScreenView.Bind` の `preview` 引数で表示モードを渡す。
 プレビューの文言はViewの描画内で決まり、App側での上書きやイベントの購読順に依存しない。
 
@@ -230,8 +230,8 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 |---|---|
 | [HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | 実行環境に応じたProviderと画面の組み立て、前面・背面・終了通知 |
 | [HealthScreenPreviewProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview/HealthScreenPreviewProvider.cs) | Android以外で使う仮の認証結果と、日本時間の直近7日分のサンプルデータ |
-| [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Authentication/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。サーバー連携用の資格情報は報酬サービスへだけ渡す |
-| [ExerciseRewardService](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/ExerciseRewardService.cs) | Googleセッション、Health Connectの7日分保存、ルーン請求、残高と履歴の取得 |
+| [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Account/Runtime/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。サーバー連携用の資格情報は報酬サービスへだけ渡す |
+| [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | サーバーのセッション、Health Connectの7日分保存、ルーン請求、残高と履歴の取得を順に呼ぶ |
 | [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、報酬請求、画面の状態遷移、設定画面から戻った後の再確認 |
 | [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) | 多重実行防止、中断、OS画面の前面復帰待ち、遅延結果の世代判定 |
 | [HealthDaySnapshot](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthDaySnapshot.cs) | 7日分の検査と、一覧値・元JSONの対応 |
@@ -253,7 +253,7 @@ PlayModeは実Prefabと仮想入力を使い、外部Providerだけをテスト�
 [プレビューのデータ検査](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Preview/HealthScreenPreviewProviderTests.cs) は日付境界、欠測と0の区別、JSON、更新・再開を確認する。
 [Editor起動の検査](../../client/Assets/Baryonyx/App/Tests/PlayMode/HealthScreenPreviewStartupTests.cs) はOAuth設定なしでPlayするとサンプル一覧が表示されることを確認する。
 
-画面とJSONにはDotGothic16を同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Features/Health/UI/Fonts/) に置く。
+画面とJSONにはDotGothic16を同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Shared/UI/Fonts/) に置く。
 SIL Open Font Licenseで再配布できる。[DotGothic16の配布元](https://github.com/fontworks-fonts/DotGothic16)
 JSONにはUPMの `com.unity.nuget.newtonsoft-json@3.2.2` を直接依存として使う。
 
@@ -336,10 +336,11 @@ Android実機は接続されていないため、端末回転、システムバ�
 
 | 場所 | 処理 |
 |---|---|
-| [HealthClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthClient.cs) | 画面から呼ぶ認証・権限・同期の入口とアプリの前面状態 |
-| [HealthContracts.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthContracts.cs) | Provider、権限・取得結果の共通型。同期用のセッションとAPI契約は `Runtime/Sync/HealthSyncContracts.cs` に置く |
-| [HealthSyncService.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthSyncService.cs) | 同期の多重起動防止、中断、ユーザー切り替え時の結果破棄 |
-| [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | サーバーへの認証・保存・取得要求 |
+| [HealthContracts.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthContracts.cs) | Provider、権限・取得結果の共通型 |
+| [HealthServerSync.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | ログイン・保存・ルーン請求の実行順と、ユーザーごとの取得元ID |
+| [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | 歩数の保存要求 |
+| [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs)・[ExerciseRewardsApiClient.cs](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs) | サーバーへのログイン・ログアウト、ルーン請求・履歴・残高の要求 |
+| [ServerApi.cs](../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs) | サーバーURLの検証とHTTP送信 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
 | [サーバールート](../../server/src/features/health/routes.ts)・[入力検証](../../server/src/features/health/schema.ts) | HTTP要求の検証と応答、単日と週全体の制約 |
@@ -372,34 +373,13 @@ Androidのパッケージ名は、ローカル・CIともに `com.croissantlab.b
 Google OAuthのAndroidクライアントには、このパッケージ名と実機へインストールするAPKの署名証明書のSHA-1を登録する。
 ローカルとCIで署名証明書が異なる場合は、それぞれの組み合わせを登録する。
 
-## 既存のサーバー同期APIを直接利用する場合
+## サーバー同期の経路
 
-既存の `HealthClient` は、健康データの保存APIを直接呼ぶ低レベルの入口として残している。
-運動報酬を使う現在の起動経路は `HealthRuntime`、`HealthScreenPresenter`、`ExerciseRewardService` が担当し、Health Connectの7日分を保存してからルーンを請求する。
-`HealthClient` を直接利用する場合は、存続させるGameObjectへ追加して初期化する。
+サーバーとの同期は `HealthRuntime`、`HealthScreenPresenter`、[HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) の1経路に統一している。
+Android実機でサーバーURLが設定されている場合だけ有効になり、Googleのサインイン後にサーバーへログインし、Health Connectの7日分を保存してからルーンを請求する。
+画面の操作と同期は `HealthScreenOperations` の世代管理で多重実行と遅延結果を防ぐ。
+以前の `HealthClient` と `HealthSyncService` は起動シーンから使われていなかったため、2026-09-23に削除した。
 
-```csharp
-var health = gameObject.AddComponent<Baryonyx.Health.HealthClient>();
-health.Initialize(serverUrl, googleWebClientId);
-
-// ユーザーのログイン操作から呼ぶ。
-bool signedIn = await health.SignInAsync();
-if (!signedIn) return;
-
-// ユーザーの健康データ連携操作から呼ぶ。OSの権限画面が表示される。
-var permission = await health.ConnectHealthAsync();
-if (permission == Baryonyx.Health.HealthPermission.NotGranted) return;
-var result = await health.SyncNowAsync();
-
-// 保存済みデータは取得日時と状態を含む。
-var saved = await health.ReadSavedAsync();
-
-// ログアウト操作から呼ぶ。
-await health.SignOutAsync();
-```
-
-接続処理や取得に失敗した場合は、呼び出し側で例外と `Status` を扱う。
-`GetHealthAvailabilityAsync` で未対応・更新が必要な端末を区別し、`OpenHealthSettings` で設定を開ける。
 EditorではOSの認証・健康データ取得を実行しない。
 Editorの自動テストはテスト用Providerを明示的に使う。
 
@@ -479,7 +459,7 @@ Android CIはビルドの成否確認とAPK保存に絞り、この追加検査�
 
 実機での追加項目の権限許可と、Fit・OMRONなどが書き込んだ実データの読み取りは未確認である。
 
-自動テストは [Unityの同期テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Sync/HealthSyncTests.cs)、[署名検証テスト](../../server/src/features/accounts/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
+自動テストは [Unityの画面操作テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Presentation/HealthScreenPresenterTests.cs)、[署名検証テスト](../../server/src/features/accounts/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
 Unity側は既存の `Baryonyx.EditModeTests` アセンブリへ含め、CIの実行対象を維持する。
 サーバーの健康データ専用 [fixture](../../server/src/features/health/fixtures.ts) は機能内に置き、認証・同期・保存・取得を通すAPIシナリオからも参照する。
 

@@ -6,7 +6,7 @@ using UnityEngine;
 using Uralstech.UMoth.GoogleSignIn;
 #endif
 
-namespace Baryonyx.Health
+namespace Baryonyx.Account
 {
     public sealed class UmothGoogleSignInProvider
         : IGoogleSignInProvider,
