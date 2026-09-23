@@ -58,6 +58,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 5. 効果が足りない場合だけ背景を遠景・中景・前景へ分割し、パララックスを小さく加える。
 
 Topのような`ScreenSpaceOverlay`背景で天井や窓から差す光を作る場合は、`Hd2dLightShaft.prefab`を独立した光芒レイヤーとして使う。根元が明るく先へ広がりながら消える光芒を、画面外の上から床へ向けて斜めに通し、太さと濃さの異なる複数本を間隔を空けて並べる。光芒が床に届く位置には光だまり、光芒の中だけには流れる埃を置き、光の出どころと着地点を示す。Topでは松明の暖色と対比させるため青白い光にしている。`ShaftCount`、`ShaftColor`、`LengthRange`、`WidthRange`、`WidthScaleRange`、`OpacityRange`、`RotationRange`、`SourceAnchor`、`SourceSpread`、`FloorPool*`、`Mote*`、`FlickerAmount`、`MotionAmplitude`はPrefabのInspectorから調整し、画面固有の配置（`SourceAnchor`、`FloorPoolAnchor`）はシーンのPrefabインスタンスで上書きする。`SourceAnchor`は1を超える値を指定して画面外から開始できる。
+霧や霞は`Hd2dFog.prefab`を背景の直上（光芒と粒子より下）に置き、`Layers`へ範囲ごとの層を並べる。各層は`RectMask2D`のsoftnessで縁をぼかした矩形に、継ぎ目のないノイズ画像を2枚重ね、互いに逆向きへ流す。奥ほど遅く淡く、手前ほど速く濃くすると距離感が出る。Prefabの既定は床霧の奥・手前の2層で、画面固有の層（Topではアーチ奥の`DeepHaze`）はシーンのPrefabインスタンスでリストの末尾へ追加し、既定の層を上書きしない。
 Topの既存`LightLayer`にある複数の局所光が画面上で不自然なら、その層は削除し、光芒Prefabと粒子Prefabを別々に配置する。
 
 「キラキラ」は同じ粒子を大量に出す表現ではなく、次の役割を混ぜる。
