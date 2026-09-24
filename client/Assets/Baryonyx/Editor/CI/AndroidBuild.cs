@@ -43,7 +43,7 @@ namespace Baryonyx.Editor.CI
             var split = PlayerSettings.Android.buildApkPerCpuArchitecture;
             var versionCode = PlayerSettings.Android.bundleVersionCode;
             Debug.Log($"BARYONYX_ANDROID_SERVER: {server.name} {server.url}");
-            SetBuildServerUrl(settings, server.url);
+            SetBuildServerUrl(server.url);
             try
             {
                 PlayerSettings.SetApplicationIdentifier(target, ApplicationId);
@@ -78,7 +78,7 @@ namespace Baryonyx.Editor.CI
             finally
             {
                 // 選んだ接続先を設定アセットに残さない。
-                SetBuildServerUrl(settings, "");
+                SetBuildServerUrl("");
                 PlayerSettings.SetApplicationIdentifier(target, identifier);
                 PlayerSettings.SetScriptingBackend(target, backend);
                 PlayerSettings.Android.targetArchitectures = architectures;
@@ -92,8 +92,13 @@ namespace Baryonyx.Editor.CI
             }
         }
 
-        private static void SetBuildServerUrl(HealthConnectionSettings settings, string url)
+        // BuildPlayerの途中でアセットが読み込み直されるため、ビルド前のオブジェクトを使い回さず、
+        // 毎回パスから読み込んで保存する。
+        private static void SetBuildServerUrl(string url)
         {
+            var settings = AssetDatabase.LoadAssetAtPath<HealthConnectionSettings>(SettingsPath);
+            if (settings == null)
+                throw new BuildFailedException($"Settings asset not found: {SettingsPath}");
             settings.BuildServerUrl = url;
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssetIfDirty(settings);
