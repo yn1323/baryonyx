@@ -28,6 +28,9 @@ namespace Baryonyx.Home
     {
         public HomeStepLink StepLink = HomeStepLink.Linked;
         public int Steps;
+
+        // 歩数を取得済みか。取得元があるHomeでは、最初の取得に成功するまで偽になる。
+        public bool StepsKnown = true;
         public bool StepSyncing;
         public int DailyGoal;
         public int WeeklyDone;

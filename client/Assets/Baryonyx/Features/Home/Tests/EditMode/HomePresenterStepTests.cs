@@ -64,6 +64,36 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task StepsStayUnknownUntilTheFirstLoadSucceeds()
+        {
+            var snapshot = Snapshot();
+            snapshot.Steps = 3820;
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            Assert.That(snapshot.StepsKnown, Is.False);
+            Assert.That(HomeViewState.From(snapshot).StepsText, Is.EqualTo("--"));
+
+            source.Load.SetException(new InvalidOperationException("offline"));
+            await presenter.StepTask;
+            Assert.That(snapshot.StepsKnown, Is.False, "A failed load must not reveal mock steps.");
+            Assert.That(snapshot.Steps, Is.Zero);
+        }
+
+        [Test]
+        public async Task UpdatedStepsMoveHomeToTheirDay()
+        {
+            var snapshot = Snapshot();
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            var nextDay = snapshot.Today.AddDays(1);
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 300, nextDay)
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.Today, Is.EqualTo(nextDay));
+            Assert.That(snapshot.Steps, Is.EqualTo(300));
+            Assert.That(snapshot.StepsKnown, Is.True);
+        }
+
+        [Test]
         public void EveryStepResultHasAMessage()
         {
             foreach (HomeStepResult result in Enum.GetValues(typeof(HomeStepResult)))

@@ -54,6 +54,19 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void UnknownStepsShowPlaceholderWithoutProgress()
+        {
+            var snapshot = Sample(6240);
+            snapshot.StepsKnown = false;
+            var state = HomeViewState.From(snapshot);
+
+            Assert.That(state.StepsText, Is.EqualTo("--"));
+            Assert.That(state.FilledSegments, Is.Zero);
+            Assert.That(state.DailyAchieved, Is.False);
+            Assert.That(state.RemainingText, Is.Empty);
+        }
+
+        [Test]
         public void UnlinkedHidesStepsAndAsksToLink()
         {
             var state = HomeViewState.From(Sample(6240, HomeStepLink.Unlinked));

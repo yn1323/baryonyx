@@ -34,19 +34,20 @@ namespace Baryonyx.Home
             int steps = Math.Max(0, snapshot.Steps);
             int goal = Math.Max(0, snapshot.DailyGoal);
             bool linked = snapshot.StepLink == HomeStepLink.Linked;
-            bool achieved = linked && goal > 0 && steps >= goal;
+            bool known = snapshot.StepsKnown;
+            bool achieved = linked && known && goal > 0 && steps >= goal;
 
             return new HomeViewState
             {
                 DateText =
                     $"{snapshot.Today.Month}月{snapshot.Today.Day}日（{Weekdays[(int)snapshot.Today.DayOfWeek]}）",
                 ShowSteps = linked,
-                StepsText = Number(steps),
+                StepsText = known ? Number(steps) : "--",
                 GoalText = goal > 0 ? $"今日の目標 {Number(goal)}" : "今日の目標 未設定",
-                FilledSegments = FilledSegmentsFor(steps, goal),
+                FilledSegments = known ? FilledSegmentsFor(steps, goal) : 0,
                 DailyAchieved = achieved,
                 RemainingText =
-                    goal <= 0 ? ""
+                    goal <= 0 || !known ? ""
                     : achieved ? "今日の目標 達成！"
                     : $"あと {Number(goal - steps)} 歩",
                 WeeklyText =

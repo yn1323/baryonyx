@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,16 +16,25 @@ namespace Baryonyx.Home
 
     public readonly struct HomeStepReading
     {
-        public HomeStepReading(HomeStepResult result, HomeStepLink link, int steps)
+        public HomeStepReading(
+            HomeStepResult result,
+            HomeStepLink link,
+            int steps,
+            DateTime? day = null
+        )
         {
             Result = result;
             Link = link;
             Steps = steps;
+            Day = day;
         }
 
         public HomeStepResult Result { get; }
         public HomeStepLink Link { get; }
         public int Steps { get; }
+
+        // 歩数を集計した日。日付をまたいでHomeを開いたままでも、表示の日付を歩数に合わせる。
+        public DateTime? Day { get; }
     }
 
     /// <summary>

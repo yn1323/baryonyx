@@ -185,6 +185,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That((await link.ReadTodayAsync(CancellationToken.None)).HasValue, Is.False);
             await link.SyncAsync(CancellationToken.None);
             var today = await link.ReadTodayAsync(CancellationToken.None);
+            Assert.That(today.Day, Is.EqualTo(Today));
             Assert.That(today.HasValue, Is.True);
             Assert.That(today.Steps, Is.EqualTo(1006));
         }

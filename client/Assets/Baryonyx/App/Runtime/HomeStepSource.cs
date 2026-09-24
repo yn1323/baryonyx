@@ -45,7 +45,12 @@ namespace Baryonyx.App
         {
             var today = await link.ReadTodayAsync(token);
             int steps = today.HasValue ? (int)Math.Min(int.MaxValue, today.Steps) : 0;
-            return new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, steps);
+            return new HomeStepReading(
+                HomeStepResult.Updated,
+                HomeStepLink.Linked,
+                steps,
+                today.Day
+            );
         }
 
         private static HomeStepReading Unlinked(HomeStepResult result) =>

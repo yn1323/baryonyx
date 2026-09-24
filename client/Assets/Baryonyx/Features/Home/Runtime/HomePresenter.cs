@@ -33,6 +33,12 @@ namespace Baryonyx.Home
             this.startAdventure = startAdventure;
             this.steps = steps;
             view.ActionRequested += Handle;
+            if (steps != null)
+            {
+                // 取得前や取得に失敗したときに、モックの歩数を実際の歩数として見せない。
+                snapshot.Steps = 0;
+                snapshot.StepsKnown = false;
+            }
             view.Render(HomeViewState.From(snapshot));
             if (steps != null)
                 StepTask = RefreshStepsAsync(steps.LoadAsync, false);
@@ -94,7 +100,12 @@ namespace Baryonyx.Home
             snapshot.StepSyncing = false;
             snapshot.StepLink = reading.Link;
             if (reading.Result == HomeStepResult.Updated)
+            {
                 snapshot.Steps = reading.Steps;
+                snapshot.StepsKnown = true;
+                if (reading.Day.HasValue)
+                    snapshot.Today = reading.Day.Value;
+            }
             view.Render(HomeViewState.From(snapshot));
             if (announce || reading.Result == HomeStepResult.Failed)
                 view.ShowToast(MessageFor(reading.Result));
