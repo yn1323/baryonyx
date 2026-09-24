@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Baryonyx.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,12 +16,18 @@ namespace Baryonyx.App
         [SerializeField]
         private SceneTransitionController transition;
 
+        [SerializeField]
+        private GameObject tapToStartPrompt;
+
         private Button continueButton;
         private bool transitionStarted;
+        private bool inputReady;
 
         public string NextSceneName => nextSceneName;
         public Button ContinueButton => continueButton;
         public SceneTransitionController Transition => transition;
+        public GameObject TapToStartPrompt => tapToStartPrompt;
+        public bool IsInputReady => inputReady;
 
         private void Awake()
         {
@@ -34,6 +41,28 @@ namespace Baryonyx.App
             continueButton = GetComponent<Button>();
             if (continueButton == null)
                 Debug.LogError("TopSceneController requires a Button component.", this);
+
+            // 起動直後のタップ（スプラッシュ中の押下を含む）を開始操作として扱わない。
+            // 開く演出が終わり、開始の案内を出してから受け付ける。
+            SetInputReady(false);
+        }
+
+        private IEnumerator Start()
+        {
+            // 遷移演出のStartで覆った状態と開く演出が始まるまで1フレーム待つ。
+            yield return null;
+            while (transition != null && (transition.IsPlaying || transition.IsCovered))
+                yield return null;
+            SetInputReady(true);
+        }
+
+        private void SetInputReady(bool ready)
+        {
+            inputReady = ready;
+            if (continueButton != null)
+                continueButton.interactable = ready;
+            if (tapToStartPrompt != null)
+                tapToStartPrompt.SetActive(ready);
         }
 
         private void OnEnable()
@@ -52,7 +81,7 @@ namespace Baryonyx.App
 
         private void LoadNextScene()
         {
-            if (transitionStarted)
+            if (!inputReady || transitionStarted)
                 return;
             if (string.IsNullOrWhiteSpace(nextSceneName))
             {

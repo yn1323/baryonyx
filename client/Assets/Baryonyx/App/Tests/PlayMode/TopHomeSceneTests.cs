@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.UI;
@@ -163,6 +164,8 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
             Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
+            Assert.That(controller.TapToStartPrompt, Is.SameAs(tapPanel.gameObject));
+            yield return WaitForInputReady(controller);
             button.onClick.Invoke();
             float deadline =
                 Time.realtimeSinceStartup
@@ -205,6 +208,69 @@ namespace Baryonyx.Tests.PlayMode
                     .View,
                 Is.Not.Null
             );
+        }
+
+        [UnityTest]
+        public IEnumerator TopIgnoresTapsUntilRevealTransitionCompletes()
+        {
+            yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
+            loadedScene = SceneManager.GetSceneByPath(TopScenePath);
+            var controller = loadedScene
+                .GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<TopSceneController>(true))
+                .Single();
+            var transition = controller.Transition;
+            // 読み込み直後のフレームでStartが走り、覆った状態と開く演出が始まる。
+            yield return null;
+
+            // 起動直後は覆った状態から開き、全面のブロッカーがTopScreenより手前でタップを受ける。
+            Assert.That(transition.IsPlaying || transition.IsCovered, Is.True);
+            Assert.That(controller.IsInputReady, Is.False);
+            Assert.That(controller.ContinueButton.interactable, Is.False);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.False);
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(
+                new PointerEventData(EventSystem.current)
+                {
+                    position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                },
+                results
+            );
+            Assert.That(results, Is.Not.Empty);
+            Assert.That(results[0].gameObject.name, Is.EqualTo("TransitionBlocker"));
+
+            // 受付前に届いたクリックでは遷移を始めない。
+            controller.ContinueButton.onClick.Invoke();
+            yield return WaitForInputReady(controller);
+            Assert.That(transition.IsPlaying, Is.False);
+            Assert.That(transition.IsCovered, Is.False);
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.False);
+
+            // 開き終わったら開始の案内を表示し、TopScreenがタップを受ける。
+            Assert.That(controller.ContinueButton.interactable, Is.True);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.True);
+            results.Clear();
+            EventSystem.current.RaycastAll(
+                new PointerEventData(EventSystem.current)
+                {
+                    position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                },
+                results
+            );
+            Assert.That(
+                results.Select(result => result.gameObject.name),
+                Has.No.Member("TransitionBlocker")
+            );
+        }
+
+        private static IEnumerator WaitForInputReady(TopSceneController controller)
+        {
+            // 開く演出の設定時間に余裕を足した期限まで、入力の受付開始を待つ。
+            float deadline =
+                Time.realtimeSinceStartup + controller.Transition.EnterSettings.RevealDuration + 1f;
+            while (!controller.IsInputReady && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(controller.IsInputReady, Is.True);
         }
 
         [UnityTearDown]

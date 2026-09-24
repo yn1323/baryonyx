@@ -257,6 +257,17 @@ namespace Baryonyx.App.Editor
             PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component);
             PrefabUtility.RecordPrefabInstancePropertyModifications(component.Label);
+
+            // 入力の受付開始に合わせて表示するため、TopSceneControllerへ結び付ける。
+            var controller = parent.GetComponentInParent<TopSceneController>(true);
+            if (controller == null)
+                throw new InvalidOperationException(
+                    "TopSceneController is missing from TopScreen."
+                );
+            var serialized = new SerializedObject(controller);
+            serialized.FindProperty("tapToStartPrompt").objectReferenceValue = panel;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(controller);
         }
 
         private static GameObject LoadTextPanelPrefab()

@@ -29,7 +29,8 @@ namespace Baryonyx.App.Editor
             EnsureFolder("Assets/Baryonyx/Shared/UI/SceneTransition");
             EnsurePrefab();
             AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceSynchronousImport);
-            AddToScene(TopScenePath, startCovered: false, revealOnStart: false, configureTop: true);
+            // Topも覆った状態で開き、開き終わるまで起動直後のタップを遮る。
+            AddToScene(TopScenePath, startCovered: true, revealOnStart: true, configureTop: true);
             AddToScene(HomeScenePath, startCovered: true, revealOnStart: true, configureTop: false);
             AddToScene(MainScenePath, startCovered: true, revealOnStart: true, configureTop: false);
             AssetDatabase.SaveAssets();
