@@ -1,11 +1,12 @@
 import { Hono } from "hono";
 import {
+  issueGuestSession,
   issueSession,
   type VerifyIdentity,
   verifyGoogleIdentity,
 } from "./auth.js";
 import { createAccountsRepository } from "./repository.js";
-import { googleAuthSchema } from "./schema.js";
+import { googleAuthSchema, guestAuthSchema } from "./schema.js";
 import { requireSession, type SessionEnv } from "./session.js";
 
 // テストでは本人確認だけを差し替える。HTTP設定からの認証バイパスは設けない。
@@ -29,6 +30,15 @@ export function createAccountsApi(
     }
     const repository = createAccountsRepository(c.env.DB);
     return c.json(await issueSession(repository, subject));
+  });
+
+  api.post("/auth/guest", async (c) => {
+    const parsed = guestAuthSchema.safeParse(
+      await c.req.json().catch(() => null),
+    );
+    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const repository = createAccountsRepository(c.env.DB);
+    return c.json(await issueGuestSession(repository, parsed.data.secret));
   });
 
   api.post("/auth/logout", requireSession, async (c) => {

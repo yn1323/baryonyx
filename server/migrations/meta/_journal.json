@@ -15,6 +15,13 @@
       "when": 1789918735534,
       "tag": "0001_exercise_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790217797505,
+      "tag": "0002_guest_accounts",
+      "breakpoints": true
     }
   ]
 }

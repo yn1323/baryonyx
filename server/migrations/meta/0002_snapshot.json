@@ -1,0 +1,789 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "03193ce6-5bf5-4c33-801e-d1a321c75431",
+  "prevId": "66b3e4d1-c913-42fb-b07b-c9876fefc99d",
+  "tables": {
+    "app_sessions": {
+      "name": "app_sessions",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "app_sessions_expiry": {
+          "name": "app_sessions_expiry",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "app_sessions_user_id_app_users_id_fk": {
+          "name": "app_sessions_user_id_app_users_id_fk",
+          "tableFrom": "app_sessions",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "app_users": {
+      "name": "app_users",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "google_sub": {
+          "name": "google_sub",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "guest_secret_hash": {
+          "name": "guest_secret_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "app_users_google_sub_unique": {
+          "name": "app_users_google_sub_unique",
+          "columns": [
+            "google_sub"
+          ],
+          "isUnique": true
+        },
+        "app_users_guest_secret_hash_unique": {
+          "name": "app_users_guest_secret_hash_unique",
+          "columns": [
+            "guest_secret_hash"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "exercise_reward_days": {
+      "name": "exercise_reward_days",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "zone": {
+          "name": "zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "activity_type": {
+          "name": "activity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "metric_type": {
+          "name": "metric_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "has_value": {
+          "name": "has_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "observed_value": {
+          "name": "observed_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "credited_through_value": {
+          "name": "credited_through_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "credited_runes": {
+          "name": "credited_runes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rule_version": {
+          "name": "rule_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_observed_at": {
+          "name": "last_observed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "exercise_reward_days_key": {
+          "name": "exercise_reward_days_key",
+          "columns": [
+            "user_id",
+            "source_id",
+            "day",
+            "zone",
+            "activity_type",
+            "metric_type"
+          ],
+          "isUnique": true
+        },
+        "exercise_reward_days_user_day": {
+          "name": "exercise_reward_days_user_day",
+          "columns": [
+            "user_id",
+            "day"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "exercise_reward_days_user_id_app_users_id_fk": {
+          "name": "exercise_reward_days_user_id_app_users_id_fk",
+          "tableFrom": "exercise_reward_days",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "exercise_reward_days_source_id_health_sources_id_fk": {
+          "name": "exercise_reward_days_source_id_health_sources_id_fk",
+          "tableFrom": "exercise_reward_days",
+          "tableTo": "health_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "exercise_reward_days_has_value_check": {
+          "name": "exercise_reward_days_has_value_check",
+          "value": "\"exercise_reward_days\".\"has_value\" IN (0, 1)"
+        },
+        "exercise_reward_days_observed_value_check": {
+          "name": "exercise_reward_days_observed_value_check",
+          "value": "\"exercise_reward_days\".\"observed_value\" >= 0"
+        },
+        "exercise_reward_days_credited_value_check": {
+          "name": "exercise_reward_days_credited_value_check",
+          "value": "\"exercise_reward_days\".\"credited_through_value\" >= 0"
+        },
+        "exercise_reward_days_credited_runes_check": {
+          "name": "exercise_reward_days_credited_runes_check",
+          "value": "\"exercise_reward_days\".\"credited_runes\" >= 0"
+        },
+        "exercise_reward_days_value_consistency_check": {
+          "name": "exercise_reward_days_value_consistency_check",
+          "value": "(\"exercise_reward_days\".\"has_value\" = 1 AND \"exercise_reward_days\".\"observed_value\" IS NOT NULL) OR (\"exercise_reward_days\".\"has_value\" = 0 AND \"exercise_reward_days\".\"observed_value\" IS NULL)"
+        }
+      }
+    },
+    "rune_claims": {
+      "name": "rune_claims",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "granted_runes": {
+          "name": "granted_runes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "balance_after": {
+          "name": "balance_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rune_claims_request_id": {
+          "name": "rune_claims_request_id",
+          "columns": [
+            "request_id"
+          ],
+          "isUnique": true
+        },
+        "rune_claims_user_created": {
+          "name": "rune_claims_user_created",
+          "columns": [
+            "user_id",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "rune_claims_user_id_app_users_id_fk": {
+          "name": "rune_claims_user_id_app_users_id_fk",
+          "tableFrom": "rune_claims",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rune_claims_source_id_health_sources_id_fk": {
+          "name": "rune_claims_source_id_health_sources_id_fk",
+          "tableFrom": "rune_claims",
+          "tableTo": "health_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "rune_claims_granted_runes_check": {
+          "name": "rune_claims_granted_runes_check",
+          "value": "\"rune_claims\".\"granted_runes\" >= 0"
+        },
+        "rune_claims_balance_after_check": {
+          "name": "rune_claims_balance_after_check",
+          "value": "\"rune_claims\".\"balance_after\" >= 0"
+        }
+      }
+    },
+    "rune_ledger": {
+      "name": "rune_ledger",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "claim_id": {
+          "name": "claim_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reward_day_id": {
+          "name": "reward_day_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "delta": {
+          "name": "delta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "from_value": {
+          "name": "from_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "to_value": {
+          "name": "to_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rule_version": {
+          "name": "rule_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rune_ledger_claim_day": {
+          "name": "rune_ledger_claim_day",
+          "columns": [
+            "claim_id",
+            "reward_day_id"
+          ],
+          "isUnique": true
+        },
+        "rune_ledger_user_created": {
+          "name": "rune_ledger_user_created",
+          "columns": [
+            "user_id",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "rune_ledger_user_id_app_users_id_fk": {
+          "name": "rune_ledger_user_id_app_users_id_fk",
+          "tableFrom": "rune_ledger",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rune_ledger_claim_id_rune_claims_id_fk": {
+          "name": "rune_ledger_claim_id_rune_claims_id_fk",
+          "tableFrom": "rune_ledger",
+          "tableTo": "rune_claims",
+          "columnsFrom": [
+            "claim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rune_ledger_reward_day_id_exercise_reward_days_id_fk": {
+          "name": "rune_ledger_reward_day_id_exercise_reward_days_id_fk",
+          "tableFrom": "rune_ledger",
+          "tableTo": "exercise_reward_days",
+          "columnsFrom": [
+            "reward_day_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "rune_ledger_delta_check": {
+          "name": "rune_ledger_delta_check",
+          "value": "\"rune_ledger\".\"delta\" > 0"
+        },
+        "rune_ledger_value_order_check": {
+          "name": "rune_ledger_value_order_check",
+          "value": "\"rune_ledger\".\"to_value\" > \"rune_ledger\".\"from_value\""
+        }
+      }
+    },
+    "rune_wallets": {
+      "name": "rune_wallets",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "balance": {
+          "name": "balance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rune_wallets_user_id_app_users_id_fk": {
+          "name": "rune_wallets_user_id_app_users_id_fk",
+          "tableFrom": "rune_wallets",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "health_days": {
+      "name": "health_days",
+      "columns": {
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "day": {
+          "name": "day",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "zone": {
+          "name": "zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "start_at": {
+          "name": "start_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "end_at": {
+          "name": "end_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "has_value": {
+          "name": "has_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "steps": {
+          "name": "steps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_known_steps": {
+          "name": "last_known_steps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_known_observed_at": {
+          "name": "last_known_observed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "health_days_source_id_health_sources_id_fk": {
+          "name": "health_days_source_id_health_sources_id_fk",
+          "tableFrom": "health_days",
+          "tableTo": "health_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "health_days_source_id_day_zone_pk": {
+          "columns": [
+            "source_id",
+            "day",
+            "zone"
+          ],
+          "name": "health_days_source_id_day_zone_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "health_days_has_value_check": {
+          "name": "health_days_has_value_check",
+          "value": "\"health_days\".\"has_value\" IN (0, 1)"
+        },
+        "health_days_steps_check": {
+          "name": "health_days_steps_check",
+          "value": "\"health_days\".\"steps\" >= 0"
+        },
+        "health_days_last_known_steps_check": {
+          "name": "health_days_last_known_steps_check",
+          "value": "\"health_days\".\"last_known_steps\" >= 0"
+        },
+        "health_days_value_check": {
+          "name": "health_days_value_check",
+          "value": "(\"health_days\".\"has_value\" = 1 AND \"health_days\".\"steps\" IS NOT NULL) OR (\"health_days\".\"has_value\" = 0 AND \"health_days\".\"steps\" IS NULL)"
+        }
+      }
+    },
+    "health_sources": {
+      "name": "health_sources",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "health_sources_user_id_app_users_id_fk": {
+          "name": "health_sources_user_id_app_users_id_fk",
+          "tableFrom": "health_sources",
+          "tableTo": "app_users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "health_sources_provider_check": {
+          "name": "health_sources_provider_check",
+          "value": "\"health_sources\".\"provider\" IN ('health_connect', 'healthkit')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
