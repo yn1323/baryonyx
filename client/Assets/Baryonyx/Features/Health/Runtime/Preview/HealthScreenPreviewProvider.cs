@@ -9,7 +9,10 @@ using Newtonsoft.Json.Linq;
 namespace Baryonyx.Health
 {
     // Used only by the local screen preview, never by the Android player or server sync.
-    public sealed class HealthScreenPreviewProvider : IGoogleSignInProvider, IHealthDataProvider
+    public sealed class HealthScreenPreviewProvider
+        : IGoogleSignInProvider,
+            IHealthDataProvider,
+            IHealthStepProvider
     {
         private readonly Func<DateTimeOffset> clock;
 
@@ -64,6 +67,9 @@ namespace Baryonyx.Health
 
         public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
             RequestPermissionAsync(token);
+
+        public Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token) =>
+            ReadRecentDaysAsync(token);
 
         public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
         {

@@ -14,7 +14,10 @@ class HealthPermissionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {
-            try { launcher.launch(HealthBridge.permissions) }
+            // Startup sync asks for steps only; the health screen asks for every supported record.
+            val requested = if (intent.getBooleanExtra("stepsOnly", false)) setOf(HealthRequirements.stepsPermission)
+                else HealthBridge.permissions
+            try { launcher.launch(requested) }
             catch (_: Exception) { HealthBridge.finish(intent.getStringExtra("requestId") ?: "", "failed"); finish() }
         }
     }

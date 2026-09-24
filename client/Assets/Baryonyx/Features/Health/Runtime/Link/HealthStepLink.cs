@@ -66,13 +66,13 @@ namespace Baryonyx.Health
         // https://developer.android.com/health-and-fitness/health-connect/ui/permissions
         internal const int DenialsBeforeSettings = 2;
 
-        private readonly IHealthDataProvider provider;
+        private readonly IHealthStepProvider provider;
         private readonly IHealthStepServer server;
         private readonly IHealthLinkStore store;
         private readonly Func<DateTime> today;
 
         public HealthStepLink(
-            IHealthDataProvider provider,
+            IHealthStepProvider provider,
             IHealthStepServer server,
             IHealthLinkStore store,
             Func<DateTime> today = null
@@ -125,7 +125,7 @@ namespace Baryonyx.Health
         // Health Connectの直近7日分を読み、サーバーへ保存する。通信の失敗は例外で返す。
         public async Task<HealthSyncStatus> SyncAsync(CancellationToken token)
         {
-            var read = await provider.ReadRecentDaysAsync(token);
+            var read = await provider.ReadRecentStepsAsync(token);
             if (read.Status == HealthReadStatus.PermissionRequired)
                 return HealthSyncStatus.PermissionRequired;
             if (read.Status != HealthReadStatus.Success || read.Days.Length != 7)

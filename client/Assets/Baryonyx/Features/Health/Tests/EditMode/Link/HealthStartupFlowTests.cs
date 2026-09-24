@@ -66,23 +66,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public async Task OtherRecordsWithoutStepsStillAskForSteps()
-        {
-            // 体重などだけを許可した状態は、歩数を同期できないため未連携として扱う。
-            provider.Permission = HealthPermission.NotGranted;
-            provider.OtherRecordsPermission = HealthPermission.Granted;
-            await flow.StartAsync(CancellationToken.None);
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.LinkRequired));
-            Assert.That(flow.LinkStatus, Is.EqualTo(HealthLinkStatus.PermissionRequired));
-            Assert.That(server.Saves, Is.Zero);
-
-            await flow.LinkAsync(CancellationToken.None);
-            Assert.That(provider.Requests, Is.EqualTo(1));
-            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
-            Assert.That(server.Saves, Is.EqualTo(1));
-        }
-
-        [Test]
         public async Task FailedDayIsNotSavedAsMissingSteps()
         {
             provider.TodayStepsStatus = "failed";
@@ -221,13 +204,10 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        private sealed class Provider : IHealthDataProvider
+        private sealed class Provider : IHealthStepProvider
         {
             public HealthAvailability Availability = HealthAvailability.Available;
-
-            // 歩数の読み取り権限。ほかの記録の権限はOtherRecordsPermissionで表す。
             public HealthPermission Permission = HealthPermission.Granted;
-            public HealthPermission OtherRecordsPermission = HealthPermission.NotGranted;
             public string TodayStepsStatus = "success";
             public HealthReadStatus ReadStatus = HealthReadStatus.Success;
             public bool Grants = true;
@@ -235,19 +215,8 @@ namespace Baryonyx.Tests.EditMode
             public int PermissionChecks;
             public int SettingsOpened;
 
-            public string ProviderId => "test";
-
             public Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token) =>
                 Task.FromResult(Availability);
-
-            // Health Connectの「いずれかの記録を許可済み」に当たる。連携の判定には使わない。
-            public Task<HealthPermission> GetPermissionAsync(CancellationToken token) =>
-                Task.FromResult(
-                    Permission == HealthPermission.Granted ? Permission : OtherRecordsPermission
-                );
-
-            public Task<HealthPermission> RequestPermissionAsync(CancellationToken token) =>
-                throw new NotSupportedException();
 
             public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token)
             {
@@ -263,7 +232,7 @@ namespace Baryonyx.Tests.EditMode
                 return Task.FromResult(Permission);
             }
 
-            public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
+            public Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token)
             {
                 if (ReadStatus != HealthReadStatus.Success)
                     return Task.FromResult(new HealthReadResult(ReadStatus));

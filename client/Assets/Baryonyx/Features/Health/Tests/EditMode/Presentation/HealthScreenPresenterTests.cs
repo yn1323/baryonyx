@@ -790,13 +790,6 @@ namespace Baryonyx.Tests.EditMode
                 return PendingPermission?.Task ?? Task.FromResult(Permission);
             }
 
-            // 歩数画面は歩数だけの権限を使わない。
-            public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
-                throw new NotSupportedException();
-
-            public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
-                throw new NotSupportedException();
-
             public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
             {
                 Reads++;

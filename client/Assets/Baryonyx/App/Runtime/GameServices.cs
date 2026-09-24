@@ -35,10 +35,10 @@ namespace Baryonyx.App
         private static GameServices Create(HealthConnectionSettings settings)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            IHealthDataProvider provider = new HealthConnectProvider();
+            IHealthStepProvider provider = new HealthConnectProvider();
             const bool preview = false;
 #else
-            IHealthDataProvider provider = new HealthScreenPreviewProvider(
+            IHealthStepProvider provider = new HealthScreenPreviewProvider(
                 permission: settings != null && settings.PreviewStartsUnlinked
                     ? HealthPermission.NotGranted
                     : HealthPermission.Granted

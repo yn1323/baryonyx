@@ -65,11 +65,18 @@ namespace Baryonyx.Health
         Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token);
         Task<HealthPermission> GetPermissionAsync(CancellationToken token);
         Task<HealthPermission> RequestPermissionAsync(CancellationToken token);
+        Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token);
+        void OpenSettings();
+    }
 
-        // 歩数の読み取り権限だけを確かめる。ほかの記録だけを許可した状態は未許可として返す。
+    // 起動時の同期で使う、歩数だけを扱う取得元。権限の確認・要求と読み取りを歩数に限り、
+    // ほかの記録だけを許可した状態は未許可として返す。
+    public interface IHealthStepProvider
+    {
+        Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token);
         Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token);
         Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token);
-        Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token);
+        Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token);
         void OpenSettings();
     }
 }
