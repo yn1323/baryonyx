@@ -58,6 +58,13 @@ namespace Baryonyx.Health
             return Task.FromResult(Permission);
         }
 
+        // プレビューは歩数とほかの記録の許可を区別しない。
+        public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
+            GetPermissionAsync(token);
+
+        public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
+            RequestPermissionAsync(token);
+
         public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();

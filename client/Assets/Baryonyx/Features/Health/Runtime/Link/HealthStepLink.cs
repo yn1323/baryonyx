@@ -93,7 +93,7 @@ namespace Baryonyx.Health
                 return HealthLinkStatus.InstallRequired;
             if (availability == HealthAvailability.UpdateRequired)
                 return HealthLinkStatus.UpdateRequired;
-            if (await provider.GetPermissionAsync(token) == HealthPermission.Granted)
+            if (await provider.GetStepsPermissionAsync(token) == HealthPermission.Granted)
             {
                 store.PermissionDenials = 0;
                 return HealthLinkStatus.Linked;
@@ -109,7 +109,7 @@ namespace Baryonyx.Health
             var status = await CheckAsync(token);
             if (status != HealthLinkStatus.PermissionRequired)
                 return status;
-            if (await provider.RequestPermissionAsync(token) == HealthPermission.Granted)
+            if (await provider.RequestStepsPermissionAsync(token) == HealthPermission.Granted)
             {
                 store.PermissionDenials = 0;
                 return HealthLinkStatus.Linked;
@@ -129,6 +129,11 @@ namespace Baryonyx.Health
             if (read.Status == HealthReadStatus.PermissionRequired)
                 return HealthSyncStatus.PermissionRequired;
             if (read.Status != HealthReadStatus.Success || read.Days.Length != 7)
+                return HealthSyncStatus.ReadFailed;
+            // 読み取り全体が成功しても、日ごとの歩数が未許可・失敗なら欠測として保存しない。
+            if (read.Days.Any(day => day.stepsStatus == "permission_required"))
+                return HealthSyncStatus.PermissionRequired;
+            if (read.Days.Any(day => day.stepsStatus == "failed"))
                 return HealthSyncStatus.ReadFailed;
             await server.SaveAsync(read.Days, token);
             return HealthSyncStatus.Synced;

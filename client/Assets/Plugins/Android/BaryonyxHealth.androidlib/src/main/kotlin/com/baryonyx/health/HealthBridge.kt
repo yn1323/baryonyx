@@ -56,6 +56,13 @@ object HealthBridge {
                         if (grantedPermissions.containsAll(permissions)) finish(id, "granted")
                         else activity.startActivity(Intent(activity, HealthPermissionActivity::class.java).putExtra("requestId", id))
                     }
+                    // Startup sync is linked only when steps can be read, even if other records are allowed.
+                    "stepsPermission" -> finish(id, if (HealthRequirements.stepsPermission in grantedPermissions) "granted" else "not_granted")
+                    "requestStepsPermission" -> {
+                        if (HealthRequirements.stepsPermission in grantedPermissions) finish(id, "granted")
+                        else activity.startActivity(Intent(activity, HealthPermissionActivity::class.java)
+                            .putExtra("requestId", id).putExtra("stepsOnly", true))
+                    }
                     "read" -> {
                         if (!granted) { finish(id, "permission_required"); return@launch }
                         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)

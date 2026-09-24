@@ -100,6 +100,12 @@ namespace Baryonyx.Health
         public async Task<HealthPermission> RequestPermissionAsync(CancellationToken token) =>
             Permission(await CallAsync("requestPermission", token));
 
+        public async Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
+            Permission(await CallAsync("stepsPermission", token));
+
+        public async Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
+            Permission(await CallAsync("requestStepsPermission", token));
+
         private static HealthPermission Permission(Reply reply) =>
             reply.status == "granted" ? HealthPermission.Granted
             : reply.status == "not_granted" ? HealthPermission.NotGranted

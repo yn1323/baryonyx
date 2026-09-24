@@ -6,7 +6,9 @@ import androidx.health.connect.client.PermissionController
 
 class HealthPermissionActivity : ComponentActivity() {
     private val launcher = registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
-        HealthBridge.finish(intent.getStringExtra("requestId") ?: "", if (HealthRecords.hasPermission(granted)) "granted" else "not_granted")
+        val allowed = if (intent.getBooleanExtra("stepsOnly", false)) HealthRequirements.stepsPermission in granted
+            else HealthRecords.hasPermission(granted)
+        HealthBridge.finish(intent.getStringExtra("requestId") ?: "", if (allowed) "granted" else "not_granted")
         finish()
     }
     override fun onCreate(savedInstanceState: Bundle?) {

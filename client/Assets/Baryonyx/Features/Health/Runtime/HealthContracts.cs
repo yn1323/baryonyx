@@ -36,6 +36,9 @@ namespace Baryonyx.Health
         public bool hasValue;
         public long steps;
         public string observedAt;
+
+        // 取得元での歩数の状態（success・empty・permission_required・failed）。サーバーへは送らない。
+        public string stepsStatus;
     }
 
     public sealed class HealthReadResult
@@ -62,6 +65,10 @@ namespace Baryonyx.Health
         Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token);
         Task<HealthPermission> GetPermissionAsync(CancellationToken token);
         Task<HealthPermission> RequestPermissionAsync(CancellationToken token);
+
+        // 歩数の読み取り権限だけを確かめる。ほかの記録だけを許可した状態は未許可として返す。
+        Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token);
+        Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token);
         Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token);
         void OpenSettings();
     }

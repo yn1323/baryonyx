@@ -66,6 +66,43 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task OtherRecordsWithoutStepsStillAskForSteps()
+        {
+            // 体重などだけを許可した状態は、歩数を同期できないため未連携として扱う。
+            provider.Permission = HealthPermission.NotGranted;
+            provider.OtherRecordsPermission = HealthPermission.Granted;
+            await flow.StartAsync(CancellationToken.None);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.LinkRequired));
+            Assert.That(flow.LinkStatus, Is.EqualTo(HealthLinkStatus.PermissionRequired));
+            Assert.That(server.Saves, Is.Zero);
+
+            await flow.LinkAsync(CancellationToken.None);
+            Assert.That(provider.Requests, Is.EqualTo(1));
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(server.Saves, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task FailedDayIsNotSavedAsMissingSteps()
+        {
+            provider.TodayStepsStatus = "failed";
+            await flow.StartAsync(CancellationToken.None);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
+            Assert.That(flow.FailureMessage, Is.EqualTo("歩数を読み取れませんでした"));
+            Assert.That(server.Saves, Is.Zero);
+        }
+
+        [Test]
+        public async Task DayWithoutStepsPermissionReturnsToTheModal()
+        {
+            provider.TodayStepsStatus = "permission_required";
+            await flow.StartAsync(CancellationToken.None);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.LinkRequired));
+            Assert.That(flow.LinkStatus, Is.EqualTo(HealthLinkStatus.PermissionRequired));
+            Assert.That(server.Saves, Is.Zero);
+        }
+
+        [Test]
         public async Task TwoDeclinedRequestsSwitchToOpeningSettings()
         {
             provider.Permission = HealthPermission.NotGranted;
@@ -187,7 +224,11 @@ namespace Baryonyx.Tests.EditMode
         private sealed class Provider : IHealthDataProvider
         {
             public HealthAvailability Availability = HealthAvailability.Available;
+
+            // 歩数の読み取り権限。ほかの記録の権限はOtherRecordsPermissionで表す。
             public HealthPermission Permission = HealthPermission.Granted;
+            public HealthPermission OtherRecordsPermission = HealthPermission.NotGranted;
+            public string TodayStepsStatus = "success";
             public HealthReadStatus ReadStatus = HealthReadStatus.Success;
             public bool Grants = true;
             public int Requests;
@@ -199,13 +240,22 @@ namespace Baryonyx.Tests.EditMode
             public Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token) =>
                 Task.FromResult(Availability);
 
-            public Task<HealthPermission> GetPermissionAsync(CancellationToken token)
+            // Health Connectの「いずれかの記録を許可済み」に当たる。連携の判定には使わない。
+            public Task<HealthPermission> GetPermissionAsync(CancellationToken token) =>
+                Task.FromResult(
+                    Permission == HealthPermission.Granted ? Permission : OtherRecordsPermission
+                );
+
+            public Task<HealthPermission> RequestPermissionAsync(CancellationToken token) =>
+                throw new NotSupportedException();
+
+            public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token)
             {
                 PermissionChecks++;
                 return Task.FromResult(Permission);
             }
 
-            public Task<HealthPermission> RequestPermissionAsync(CancellationToken token)
+            public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token)
             {
                 Requests++;
                 if (Grants)
@@ -227,6 +277,7 @@ namespace Baryonyx.Tests.EditMode
                         zone = "Asia/Tokyo",
                         hasValue = true,
                         steps = 1000 + offset,
+                        stepsStatus = offset == 6 ? TodayStepsStatus : "success",
                     })
                     .ToArray();
                 return Task.FromResult(new HealthReadResult(HealthReadStatus.Success, days));
