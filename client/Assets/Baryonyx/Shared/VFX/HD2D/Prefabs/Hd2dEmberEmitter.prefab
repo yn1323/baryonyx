@@ -85,7 +85,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dEmberEmitter
   ParticleLayer: {fileID: 6839887756182597750}
-  ParticleSprite: {fileID: 0}
+  CrossSprite: {fileID: 21300000, guid: 2bb51b842a1344f4eb72882869431720, type: 3}
+  StreakSprite: {fileID: 21300000, guid: 4aee0a16a216b40ceac290b608507e6b, type: 3}
   AdditiveMaterial: {fileID: 2100000, guid: 19125986337014913a0805e307f06bdc, type: 2}
   PlayOnEnable: 1
   Animate: 1
@@ -106,7 +107,9 @@ MonoBehaviour:
     Buoyancy: 12
     Sway: 8
     SwaySpeed: 1.6
-    SizeRange: {x: 3, y: 5}
+    DotSize: 2
+    CrossShare: 0.3
+    StreakShare: 0.15
     StartColor: {r: 1, g: 0.82, b: 0.42, a: 1}
     EndColor: {r: 1, g: 0.32, b: 0.08, a: 0}
     Twinkle: 0.35

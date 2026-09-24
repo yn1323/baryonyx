@@ -33,7 +33,8 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             var assets = new Foldout { text = "素材", value = false };
             AddField(assets, "ParticleLayer", "描画レイヤー");
-            AddField(assets, "ParticleSprite", "粒子の画像（未指定で四角い点）");
+            AddField(assets, "CrossSprite", "十字の画像（未指定で点）");
+            AddField(assets, "StreakSprite", "尾を引く粒の画像（未指定で点）");
             AddField(assets, "AdditiveMaterial", "加算合成マテリアル");
             root.Add(assets);
 
@@ -129,7 +130,9 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(foldout, property, "Buoyancy", "上向きの加速（負で落下）");
             AddField(foldout, property, "Sway", "横ゆれの幅（px）");
             AddField(foldout, property, "SwaySpeed", "横ゆれの速さ");
-            AddField(foldout, property, "SizeRange", "大きさの範囲（px）");
+            AddField(foldout, property, "DotSize", "1ドットの大きさ（px）");
+            AddField(foldout, property, "CrossShare", "十字の割合");
+            AddField(foldout, property, "StreakShare", "尾を引く粒の割合（残りは点）");
             AddField(foldout, property, "StartColor", "出たときの色");
             AddField(foldout, property, "EndColor", "消える直前の色");
             AddField(foldout, property, "Twinkle", "ちらつき");

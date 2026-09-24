@@ -5,6 +5,16 @@ using UnityEngine;
 namespace Baryonyx.Vfx.Hd2d
 {
     /// <summary>
+    /// Shape of one ember. Small points are the base; crosses glow and streaks trail a tail.
+    /// </summary>
+    public enum Hd2dEmberShape
+    {
+        Point,
+        Cross,
+        Streak,
+    }
+
+    /// <summary>
     /// One particle source such as torch embers, magic motes or a reward burst.
     /// The anchor is normalized to the parent rect; the other lengths are canvas pixels.
     /// </summary>
@@ -50,8 +60,19 @@ namespace Baryonyx.Vfx.Hd2d
         [Min(0f)]
         public float SwaySpeed = 1.6f;
 
-        [Tooltip("大きさの範囲（px）。ドット絵に合わせて整数に丸めます。")]
-        public Vector2 SizeRange = new Vector2(3f, 5f);
+        [Min(1)]
+        [Tooltip(
+            "粒を描く1ドットの大きさ（px）。点は1〜2ドット、十字と尾を引く粒は画像のドット数で描きます。"
+        )]
+        public int DotSize = 2;
+
+        [Range(0f, 1f)]
+        [Tooltip("十字の粒の割合です。中心だけ明るく、光る粒に見えます。")]
+        public float CrossShare = 0.3f;
+
+        [Range(0f, 1f)]
+        [Tooltip("尾を引く粒の割合です。出る向きの反対へ尾が伸びます。残りは点になります。")]
+        public float StreakShare = 0.15f;
 
         [Tooltip("出たときの色です。")]
         public Color StartColor = new Color(1f, 0.82f, 0.42f, 1f);
@@ -75,8 +96,13 @@ namespace Baryonyx.Vfx.Hd2d
         [Header("レイヤーと素材")]
         public RectTransform ParticleLayer;
 
-        [Tooltip("未指定の場合は、ドット絵に合わせた四角い点で描きます。")]
-        public Sprite ParticleSprite;
+        [Tooltip("十字の粒の画像。未指定の場合は点で描きます。")]
+        public Sprite CrossSprite;
+
+        [Tooltip(
+            "尾を引く粒の画像。尾を下にして描き、出る向きに合わせて回します。未指定の場合は点で描きます。"
+        )]
+        public Sprite StreakSprite;
 
         [Tooltip("加算合成のマテリアル。未指定の場合は通常の半透明で描きます。")]
         public Material AdditiveMaterial;
@@ -153,7 +179,9 @@ namespace Baryonyx.Vfx.Hd2d
                     );
                     source.LifetimeRange = NormalizeRange(source.LifetimeRange, 0.05f);
                     source.SpeedRange = NormalizeRange(source.SpeedRange, 0f);
-                    source.SizeRange = NormalizeRange(source.SizeRange, 1f);
+                    source.DotSize = Mathf.Max(1, source.DotSize);
+                    source.StreakShare = Mathf.Clamp01(source.StreakShare);
+                    source.CrossShare = Mathf.Clamp(source.CrossShare, 0f, 1f - source.StreakShare);
                     source.Spread = Mathf.Clamp(source.Spread, 0f, 360f);
                     source.Sway = Mathf.Max(0f, source.Sway);
                     source.SwaySpeed = Mathf.Max(0f, source.SwaySpeed);
@@ -247,6 +275,30 @@ namespace Baryonyx.Vfx.Hd2d
             return Mathf.Lerp(startAlpha, endAlpha, SmoothUnit(life01)) * fadeIn;
         }
 
+        /// <summary>
+        /// Picks a shape from a roll in [0, 1). Streaks come first, then crosses, and the
+        /// remainder are points. The cross share is limited to what the streaks leave.
+        /// </summary>
+        public static Hd2dEmberShape ChooseShape(float roll, float crossShare, float streakShare)
+        {
+            streakShare = Mathf.Clamp01(streakShare);
+            crossShare = Mathf.Clamp(crossShare, 0f, 1f - streakShare);
+            if (roll < streakShare)
+                return Hd2dEmberShape.Streak;
+            if (roll < streakShare + crossShare)
+                return Hd2dEmberShape.Cross;
+            return Hd2dEmberShape.Point;
+        }
+
+        /// <summary>
+        /// Rotation (degrees) that turns an upward streak toward <paramref name="direction"/>.
+        /// Quarter turns only, so the dots stay on the pixel grid.
+        /// </summary>
+        public static float StreakRotation(float direction)
+        {
+            return Mathf.Repeat(Mathf.Round((direction - 90f) / 90f) * 90f, 360f);
+        }
+
         private void Step(float deltaTime)
         {
             foreach (var state in states)
@@ -304,7 +356,6 @@ namespace Baryonyx.Vfx.Hd2d
                 rect.pivot = new Vector2(0.5f, 0.5f);
 
                 var image = imageObject.GetComponent<UnityEngine.UI.Image>();
-                image.sprite = ParticleSprite;
                 image.material = AdditiveMaterial;
                 image.preserveAspect = true;
                 image.raycastTarget = false;
@@ -336,9 +387,30 @@ namespace Baryonyx.Vfx.Hd2d
             particle.Age = Mathf.Clamp(age, 0f, particle.Lifetime);
             particle.SwayPhase = RandomRange(0f, Mathf.PI * 2f);
             particle.TwinklePhase = RandomRange(0f, 100f);
-            // Whole pixels keep the square embers crisp next to the pixel art.
-            var size = Mathf.Round(RandomRange(source.SizeRange.x, source.SizeRange.y));
-            particle.Rect.sizeDelta = new Vector2(size, size);
+            ApplyShape(source, particle);
+        }
+
+        private void ApplyShape(Hd2dEmberSource source, ParticleState particle)
+        {
+            var shape = ChooseShape(RandomRange(0f, 1f), source.CrossShare, source.StreakShare);
+            var sprite =
+                shape == Hd2dEmberShape.Cross ? CrossSprite
+                : shape == Hd2dEmberShape.Streak ? StreakSprite
+                : null;
+            if (sprite == null)
+                shape = Hd2dEmberShape.Point;
+
+            // Whole dots keep the embers crisp next to the pixel art.
+            var dots =
+                shape == Hd2dEmberShape.Point
+                    ? Vector2.one * (RandomRange(0f, 1f) < 0.5f ? 1f : 2f)
+                    : sprite.rect.size;
+            particle.Image.sprite = sprite;
+            particle.Rect.sizeDelta = dots * Mathf.Max(1, source.DotSize);
+            particle.Rect.localRotation =
+                shape == Hd2dEmberShape.Streak
+                    ? Quaternion.Euler(0f, 0f, StreakRotation(source.Direction))
+                    : Quaternion.identity;
         }
 
         private void ApplyParticle(Hd2dEmberSource source, ParticleState particle)

@@ -51,6 +51,16 @@ namespace Baryonyx.App.Editor
         private const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
         private const string LightShaftTexturePath = TextureDirectory + "/Hd2dLightShaft.png";
         private const string FogNoiseTexturePath = TextureDirectory + "/Hd2dFogNoise.png";
+        private const string EmberCrossTexturePath = TextureDirectory + "/Hd2dEmberCross.png";
+        private const string EmberStreakTexturePath = TextureDirectory + "/Hd2dEmberStreak.png";
+
+        // One character per dot, top row first: '#' is the bright core, digits are tenths
+        // of alpha and '.' is empty. The dimmer edge reads as glow under additive blending.
+        private static readonly string[] EmberCrossPattern = { ".5.", "5#5", ".5." };
+
+        // An upward streak one dot wide: a bright head with a tail that fades behind it.
+        // A wider head reads as a grave cross at this size.
+        private static readonly string[] EmberStreakPattern = { "#", "#", "5", "2" };
         private const int FogNoiseSize = 256;
         private const int FogNoiseSeed = 1234;
 
@@ -166,6 +176,9 @@ namespace Baryonyx.App.Editor
                 TextureWrapMode.Repeat
             );
 
+            EnsurePatternTexture(EmberCrossTexturePath, EmberCrossPattern);
+            EnsurePatternTexture(EmberStreakTexturePath, EmberStreakPattern);
+
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             EnsureLightPointPrefab();
             EnsureParticleFieldPrefab();
@@ -174,6 +187,7 @@ namespace Baryonyx.App.Editor
             EnsureAdditiveMaterial();
             EnsureFlickerLightPrefab();
             EnsureEmberEmitterPrefab();
+            EnsureEmberShapeSprites();
             EnsurePostProcessProfile();
             EnsureTiltShiftInProfile();
             EnsureTiltShiftRendererFeatures();
@@ -290,6 +304,30 @@ namespace Baryonyx.App.Editor
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void EnsureEmberShapeSprites()
+        {
+            var root = PrefabUtility.LoadPrefabContents(EmberEmitterPrefabPath);
+            try
+            {
+                var emitter = root.GetComponent<Hd2dEmberEmitter>();
+                if (
+                    emitter == null
+                    || (emitter.CrossSprite != null && emitter.StreakSprite != null)
+                )
+                    return;
+
+                if (emitter.CrossSprite == null)
+                    emitter.CrossSprite = LoadSprite(EmberCrossTexturePath);
+                if (emitter.StreakSprite == null)
+                    emitter.StreakSprite = LoadSprite(EmberStreakTexturePath);
+                PrefabUtility.SaveAsPrefabAsset(root, EmberEmitterPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
             }
         }
 
@@ -747,6 +785,29 @@ namespace Baryonyx.App.Editor
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.alphaIsTransparency = true;
             importer.SaveAndReimport();
+        }
+
+        private static void EnsurePatternTexture(string assetPath, string[] pattern)
+        {
+            // Point filtering keeps each dot square when the sprite is scaled up.
+            EnsureTexture(
+                assetPath,
+                pattern[0].Length,
+                pattern.Length,
+                (x, y) => PatternPixel(pattern, x, y),
+                FilterMode.Point
+            );
+        }
+
+        private static Color PatternPixel(string[] pattern, int x, int y)
+        {
+            // Texture rows start at the bottom; the pattern starts at the top.
+            var dot = pattern[pattern.Length - 1 - y][x];
+            var alpha =
+                dot == '#' ? 1f
+                : char.IsDigit(dot) ? (dot - '0') / 10f
+                : 0f;
+            return new Color(1f, 1f, 1f, alpha);
         }
 
         private static Color CreateGlowPixels(int x, int y)

@@ -727,7 +727,10 @@ namespace Baryonyx.App.Editor
                 Buoyancy = 14f * scale,
                 Sway = 9f * scale,
                 SwaySpeed = 1.7f,
-                SizeRange = scale < 1f ? new Vector2(3f, 5f) : new Vector2(4f, 7f),
+                DotSize = 2,
+                // The far torches get fewer large embers, so they read as smaller.
+                CrossShare = scale < 1f ? 0.25f : 0.3f,
+                StreakShare = scale < 1f ? 0.1f : 0.15f,
                 StartColor = new Color(1f, 0.84f, 0.46f, 1f),
                 EndColor = new Color(1f, 0.32f, 0.08f, 0f),
                 Twinkle = 0.35f,

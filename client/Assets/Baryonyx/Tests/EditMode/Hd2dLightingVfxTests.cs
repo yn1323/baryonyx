@@ -302,6 +302,54 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void EmbersMixPointsCrossesAndStreaksByShare()
+        {
+            Assert.That(
+                Hd2dEmberEmitter.ChooseShape(0.05f, 0.3f, 0.15f),
+                Is.EqualTo(Hd2dEmberShape.Streak)
+            );
+            Assert.That(
+                Hd2dEmberEmitter.ChooseShape(0.3f, 0.3f, 0.15f),
+                Is.EqualTo(Hd2dEmberShape.Cross)
+            );
+            Assert.That(
+                Hd2dEmberEmitter.ChooseShape(0.5f, 0.3f, 0.15f),
+                Is.EqualTo(Hd2dEmberShape.Point)
+            );
+            // Crosses only get what the streaks leave.
+            Assert.That(
+                Hd2dEmberEmitter.ChooseShape(0.99f, 1f, 0.5f),
+                Is.EqualTo(Hd2dEmberShape.Cross)
+            );
+            Assert.That(
+                Hd2dEmberEmitter.ChooseShape(0.99f, 0f, 0f),
+                Is.EqualTo(Hd2dEmberShape.Point)
+            );
+
+            // Streaks turn in quarter turns so that the tail trails the direction of travel.
+            Assert.That(Hd2dEmberEmitter.StreakRotation(90f), Is.EqualTo(0f));
+            Assert.That(Hd2dEmberEmitter.StreakRotation(100f), Is.EqualTo(0f));
+            Assert.That(Hd2dEmberEmitter.StreakRotation(270f), Is.EqualTo(180f));
+            Assert.That(Hd2dEmberEmitter.StreakRotation(0f), Is.EqualTo(270f));
+        }
+
+        [Test]
+        public void EmberShapesArePointFilteredDots()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath);
+            Assert.That(prefab, Is.Not.Null, EmberEmitterPrefabPath);
+            var emitter = prefab.GetComponent<Hd2dEmberEmitter>();
+
+            foreach (var sprite in new[] { emitter.CrossSprite, emitter.StreakSprite })
+            {
+                Assert.That(sprite, Is.Not.Null);
+                Assert.That(sprite.texture.filterMode, Is.EqualTo(FilterMode.Point));
+            }
+            Assert.That(emitter.CrossSprite.rect.size, Is.EqualTo(new Vector2(3f, 3f)));
+            Assert.That(emitter.StreakSprite.rect.size, Is.EqualTo(new Vector2(1f, 4f)));
+        }
+
+        [Test]
         public void EmberEmitterIsAnIndividuallyReusablePrefabWithBursts()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath);
@@ -332,8 +380,12 @@ namespace Baryonyx.Tests.EditMode
                     images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
+                var dotSize = emitter.Sources[0].DotSize;
                 Assert.That(
-                    images.All(image => image.rectTransform.sizeDelta.x % 1f == 0f),
+                    images.All(image =>
+                        image.rectTransform.sizeDelta.x % dotSize == 0f
+                        && image.rectTransform.sizeDelta.y % dotSize == 0f
+                    ),
                     Is.True
                 );
 
