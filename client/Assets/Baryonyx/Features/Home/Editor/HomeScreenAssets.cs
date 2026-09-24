@@ -461,9 +461,9 @@ namespace Baryonyx.Home.Editor
             var lineSize = divider.gameObject.AddComponent<LayoutElement>();
             lineSize.minHeight = lineSize.preferredHeight = 2;
 
-            // The hint sits on the right and pulses like TAP TO START; the panel takes the tap.
+            // The hint pulses like TAP TO START; the panel itself takes the tap.
             var claim = Row(panel, "ClaimRow", 36, 10);
-            claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleRight;
+            claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleLeft;
             var claimGroup = claim.gameObject.AddComponent<CanvasGroup>();
             claimGroup.interactable = false;
             claimGroup.blocksRaycasts = false;
@@ -475,7 +475,7 @@ namespace Baryonyx.Home.Editor
                 "",
                 24,
                 Teal,
-                TextAlignmentOptions.MidlineRight
+                TextAlignmentOptions.MidlineLeft
             );
         }
 

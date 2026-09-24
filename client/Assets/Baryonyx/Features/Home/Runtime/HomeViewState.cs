@@ -54,7 +54,7 @@ namespace Baryonyx.Home
                     : $"あと {Number(goal - steps)} 歩",
                 ClaimText =
                     snapshot.StepSyncing ? "同期中…"
-                    : linked ? "タップ"
+                    : linked ? "タップでルーン獲得"
                     : "タップして歩数を連携",
                 ClaimPulses = !snapshot.StepSyncing,
                 RunesText = Number(Math.Max(0, snapshot.Runes)),

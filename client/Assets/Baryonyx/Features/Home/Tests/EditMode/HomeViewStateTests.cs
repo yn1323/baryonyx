@@ -36,7 +36,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.FilledSegments, Is.EqualTo(15));
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 歩"));
-            Assert.That(state.ClaimText, Is.EqualTo("タップ"));
+            Assert.That(state.ClaimText, Is.EqualTo("タップでルーン獲得"));
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
             Assert.That(state.DestinationNameText, Is.EqualTo("森の遺跡"));
