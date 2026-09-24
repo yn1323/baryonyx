@@ -11,6 +11,13 @@ on:
   pull_request:
     types: [closed]
     branches: [main, develop]
+  # 未リリースの間は、feat/のブランチへのpushでもDevへ公開する（開発者1人・feat/は常に1本の運用）。
+  # pushにはPRの情報がないため、下の公開先の式はdevになる。
+  push:
+    branches: ['feat/**']
+    paths:
+      - 'server/**'
+      - '.github/workflows/server-deploy.yml'
 
 permissions:
   contents: read
@@ -28,6 +35,7 @@ jobs:
     name: Build and test
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     timeout-minutes: 10
