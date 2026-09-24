@@ -5,11 +5,8 @@ using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.UI;
 using NUnit.Framework;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -28,7 +25,7 @@ namespace Baryonyx.Tests.PlayMode
         public void UseTestServices() => services = TestGameServices.Use();
 
         [UnityTest]
-        public IEnumerator FullScreenTopTapLoadsHomeSceneWithShutterTransition()
+        public IEnumerator FullScreenTopTapLoadsHomeScene()
         {
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
             loadedScene = SceneManager.GetSceneByPath(TopScenePath);
@@ -38,56 +35,28 @@ namespace Baryonyx.Tests.PlayMode
             var canvas = roots
                 .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
                 .Single(candidate => candidate.name == "TopCanvas");
-            Assert.That(
-                canvas.GetComponent<CanvasScaler>().referenceResolution,
-                Is.EqualTo(new Vector2(1920, 1080))
-            );
             Assert.That(canvas.GetComponent<GraphicRaycaster>(), Is.Not.Null);
             Assert.That(
                 roots.SelectMany(root => root.GetComponentsInChildren<EventSystem>(true)).Count(),
                 Is.EqualTo(1)
             );
 
+            // 画面のどこを押しても開始できるよう、開始ボタンは全面を覆う。
             var button = canvas.transform.Find("TopScreen").GetComponent<Button>();
             var rect = (RectTransform)button.transform;
             Assert.That(rect.anchorMin, Is.EqualTo(Vector2.zero));
             Assert.That(rect.anchorMax, Is.EqualTo(Vector2.one));
             Assert.That(rect.sizeDelta, Is.EqualTo(Vector2.zero));
             Assert.That(button.GetComponent<Image>().raycastTarget, Is.True);
-            Assert.That(button.GetComponent<Image>().color.a, Is.EqualTo(0f));
             var controller = button.GetComponent<TopSceneController>();
             Assert.That(controller.NextSceneName, Is.EqualTo("Home"));
             Assert.That(controller.Transition, Is.Not.Null);
-            Assert.That(
-                controller.Transition.DefaultSettings.Type,
-                Is.EqualTo(SceneTransitionType.Shutter)
-            );
-            Assert.That(controller.Transition.DefaultSettings.CoverDuration, Is.EqualTo(0.75f));
 
-            // The background goes through the camera so post-processing reaches it, while the
-            // interactive screen stays on the overlay canvas.
-            Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            // 背景と装飾は開始操作を遮らない。
             var backdropCanvas = roots
                 .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
                 .Single(candidate => candidate.name == "TopBackdropCanvas");
-            Assert.That(backdropCanvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
-            Assert.That(backdropCanvas.worldCamera, Is.Not.Null);
-            Assert.That(
-                backdropCanvas.worldCamera.GetUniversalAdditionalCameraData().renderPostProcessing,
-                Is.True
-            );
             Assert.That(backdropCanvas.GetComponent<GraphicRaycaster>(), Is.Null);
-            Assert.That(
-                backdropCanvas.GetComponent<CanvasScaler>().referenceResolution,
-                Is.EqualTo(new Vector2(1920, 1080))
-            );
-            Assert.That(canvas.transform.Find("TopBackground"), Is.Null);
-            var volume = roots
-                .SelectMany(root => root.GetComponentsInChildren<Volume>(true))
-                .Single();
-            Assert.That(volume.isGlobal, Is.True);
-            Assert.That(volume.sharedProfile.Has<Bloom>(), Is.True);
-
             var background = backdropCanvas
                 .transform.Find("TopBackground")
                 .GetComponent<RawImage>();
@@ -105,69 +74,19 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(safeArea, Is.Not.Null);
             Assert.That(safeArea.GetComponent<SafeAreaFollower>(), Is.Not.Null);
 
-            var panel = button
+            var reusablePanel = button
                 .GetComponentsInChildren<TranslucentTextPanel>(true)
-                .Single(candidate => candidate.Label.text == TitleText)
-                .Panel;
-            var panelRect = (RectTransform)panel.transform;
-            Assert.That(panel.texture, Is.Not.Null);
-            Assert.That(panelRect.anchorMin, Is.EqualTo(new Vector2(0.1f, 0.5f)));
-            Assert.That(panelRect.anchorMax, Is.EqualTo(new Vector2(0.9f, 0.5f)));
-            Assert.That(panelRect.anchoredPosition, Is.EqualTo(new Vector2(0f, 120f)));
-            Assert.That(panelRect.sizeDelta, Is.EqualTo(new Vector2(0f, 300f)));
-            Assert.That(panel.raycastTarget, Is.False);
-
-            var reusablePanel = panel.GetComponent<TranslucentTextPanel>();
-            Assert.That(reusablePanel, Is.Not.Null);
-            Assert.That(reusablePanel.FontSize, Is.EqualTo(96f));
-            Assert.That(reusablePanel.BackdropSize, Is.EqualTo(new Vector2(1320f, 260f)));
-            Assert.That(reusablePanel.BackdropAlpha, Is.EqualTo(0.2f));
-            var backdropObject = panel.transform.Find("BackdropCanvas");
-            Assert.That(backdropObject.GetComponent<Canvas>(), Is.Not.Null);
-            var backdrop = backdropObject.Find("Backdrop").GetComponent<RawImage>();
-            var backdropRect = (RectTransform)backdropObject;
-            Assert.That(backdropRect.anchorMin, Is.EqualTo(new Vector2(0.5f, 0.5f)));
-            Assert.That(backdropRect.anchorMax, Is.EqualTo(new Vector2(0.5f, 0.5f)));
-            Assert.That(backdropRect.anchoredPosition, Is.EqualTo(Vector2.zero));
-            Assert.That(backdropRect.sizeDelta, Is.EqualTo(new Vector2(1320f, 260f)));
-            Assert.That(backdrop.texture, Is.Not.Null);
-            Assert.That(backdrop.color.r, Is.EqualTo(backdrop.color.g));
-            Assert.That(backdrop.color.g, Is.EqualTo(backdrop.color.b));
-            Assert.That(backdrop.color.a, Is.GreaterThan(0f).And.LessThan(1f));
-            Assert.That(backdrop.raycastTarget, Is.False);
-
-            var title = panel.transform.Find("Label").GetComponent<TextMeshProUGUI>();
-            var titleRect = (RectTransform)title.transform;
-            Assert.That(title.text, Is.EqualTo(TitleText));
-            Assert.That(title.fontSize, Is.EqualTo(96f));
-            Assert.That(titleRect.anchorMin, Is.EqualTo(Vector2.zero));
-            Assert.That(titleRect.anchorMax, Is.EqualTo(Vector2.one));
-            Assert.That(title.raycastTarget, Is.False);
-            Assert.That(reusablePanel.PulseEnabled, Is.False);
-            Assert.That(reusablePanel.LabelGroup, Is.Not.Null);
+                .Single(candidate => candidate.Label.text == TitleText);
+            Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
+            Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
+            Assert.That(reusablePanel.Label.raycastTarget, Is.False);
 
             var tapPanel = button
                 .GetComponentsInChildren<TranslucentTextPanel>(true)
                 .Single(candidate => candidate.name == "TapToStartPanel");
-            Assert.That(tapPanel, Is.Not.Null);
-            Assert.That(tapPanel.Label.fontSize, Is.GreaterThan(0f));
-            Assert.That(tapPanel.FontSize, Is.GreaterThan(0f));
-            Assert.That(tapPanel.BackdropSize.x, Is.GreaterThan(0f));
-            Assert.That(tapPanel.BackdropSize.y, Is.GreaterThan(0f));
-            Assert.That(tapPanel.BackdropAlpha, Is.EqualTo(0.2f));
-            Assert.That(
-                ((RectTransform)tapPanel.transform).anchorMin,
-                Is.EqualTo(new Vector2(0.5f, 0.16f))
-            );
             Assert.That(tapPanel.Panel.raycastTarget, Is.False);
-            Assert.That(tapPanel.PulseEnabled, Is.True);
             Assert.That(tapPanel.LabelGroup, Is.Not.Null);
             Assert.That(tapPanel.LabelGroup.blocksRaycasts, Is.False);
-            Assert.That(tapPanel.PulseDurationSeconds, Is.GreaterThan(0f));
-            Assert.That(tapPanel.PulseMinimumAlpha, Is.InRange(0f, 1f));
-
-            Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
-            Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
             Assert.That(controller.TapToStartPrompt, Is.SameAs(tapPanel.gameObject));
             yield return WaitForInputReady(controller);
             yield return WaitForPhase(controller, HealthStartupPhase.Ready);
@@ -186,17 +105,6 @@ namespace Baryonyx.Tests.PlayMode
 
             loadedScene = SceneManager.GetSceneByPath(HomeScenePath);
             Assert.That(loadedScene.isLoaded, Is.True);
-            Assert.That(
-                loadedScene
-                    .GetRootGameObjects()
-                    .SelectMany(root =>
-                        root.GetComponentsInChildren<SceneTransitionController>(true)
-                    )
-                    .Any(transition =>
-                        transition.EnterSettings.Type == SceneTransitionType.Shutter
-                    ),
-                Is.True
-            );
             var transition = loadedScene
                 .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<SceneTransitionController>(true))

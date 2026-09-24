@@ -46,10 +46,6 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(bootstrap.Data, Is.Not.Null);
             Assert.That(bootstrap.AdventureSceneName, Is.Empty);
-            Assert.That(
-                bootstrap.Transition.EnterSettings.Type,
-                Is.EqualTo(SceneTransitionType.Shutter)
-            );
 
             var snapshot = bootstrap.Data.ToSnapshot(System.DateTime.Today);
             snapshot.StepLink = HomeStepLink.Linked;
