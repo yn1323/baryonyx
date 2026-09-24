@@ -97,6 +97,7 @@ describe("WorkersとD1の結合", () => {
       ).toEqual({
         id: userId,
         googleSub: "updated-subject",
+        guestSecretHash: null,
       });
       await db
         .insert(appSessions)

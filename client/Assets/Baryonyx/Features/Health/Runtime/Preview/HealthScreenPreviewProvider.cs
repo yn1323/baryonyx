@@ -9,12 +9,24 @@ using Newtonsoft.Json.Linq;
 namespace Baryonyx.Health
 {
     // Used only by the local screen preview, never by the Android player or server sync.
-    public sealed class HealthScreenPreviewProvider : IGoogleSignInProvider, IHealthDataProvider
+    public sealed class HealthScreenPreviewProvider
+        : IGoogleSignInProvider,
+            IHealthDataProvider,
+            IHealthStepProvider
     {
         private readonly Func<DateTimeOffset> clock;
 
-        public HealthScreenPreviewProvider(Func<DateTimeOffset> clock = null) =>
+        public HealthScreenPreviewProvider(
+            Func<DateTimeOffset> clock = null,
+            HealthPermission permission = HealthPermission.Granted
+        )
+        {
             this.clock = clock ?? (() => DateTimeOffset.UtcNow);
+            Permission = permission;
+        }
+
+        // 未連携の画面をEditorで確認するための状態。許可を要求すると許可済みに変わる。
+        public HealthPermission Permission { get; set; }
 
         public string ProviderId => "preview";
 
@@ -39,15 +51,31 @@ namespace Baryonyx.Health
         public Task<HealthPermission> GetPermissionAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-            return Task.FromResult(HealthPermission.Granted);
+            return Task.FromResult(Permission);
         }
 
-        public Task<HealthPermission> RequestPermissionAsync(CancellationToken token) =>
+        public Task<HealthPermission> RequestPermissionAsync(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            Permission = HealthPermission.Granted;
+            return Task.FromResult(Permission);
+        }
+
+        // プレビューは歩数とほかの記録の許可を区別しない。
+        public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
             GetPermissionAsync(token);
+
+        public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
+            RequestPermissionAsync(token);
+
+        public Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token) =>
+            ReadRecentDaysAsync(token);
 
         public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
+            if (Permission != HealthPermission.Granted)
+                return Task.FromResult(new HealthReadResult(HealthReadStatus.PermissionRequired));
             var now = clock().ToOffset(TimeSpan.FromHours(9));
             var today = new DateTimeOffset(now.Date, now.Offset);
             long[] steps = { 6432, 0, 0, 8214, 10532, 4218, 7500 };
@@ -112,7 +140,8 @@ namespace Baryonyx.Health
             );
         }
 
-        public void OpenSettings() { }
+        // Editorには設定画面がないため、設定で許可した場合と同じ状態にする。
+        public void OpenSettings() => Permission = HealthPermission.Granted;
     }
 }
 #endif

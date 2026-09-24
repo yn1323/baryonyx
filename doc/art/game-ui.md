@@ -2,12 +2,12 @@
 id: art-game-ui
 type: specification
 status: 一部確定
-updated: 2026-09-22
+updated: 2026-09-24
 ---
 
 # 体験版のゲームUIと生成素材
 
-[アート索引](README.md) / [画面の操作仕様](../features/game-wireframe.md)
+[アート索引](README.md) / [操作試作の記録](../features/game-wireframe.md)
 
 ## 対象と確認状況
 
@@ -59,10 +59,10 @@ updated: 2026-09-22
 
 | 素材 | 内容・扱い |
 |---|---|
-| [Adventurers.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
-| [Departure.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png) | 明るい森の出発地点。ホームで4人の背後へ配置する |
-| [Forest.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘に利用する |
-| [Mine.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png) | 中央と右側に入口がある坑道。冒険先、探索、戦闘に利用する |
+| [Adventurers.png](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
+| [Departure.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png) | 明るい森の出発地点。削除した試作のホームで4人の背後へ配置した。現在は未使用 |
+| [Forest.png](../../client/Assets/Baryonyx/Shared/Art/Dungeons/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘、ホームの再開カードに利用する |
+| [Mine.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png) | 中央と右側に入口がある坑道。削除した試作で冒険先、探索、戦闘に利用した。現在は未使用 |
 
 PNGはPoint、MipMapなし、非圧縮で読み込む。
 キャラはRawImageのUVでシートを参照する。
@@ -71,15 +71,10 @@ PNGはPoint、MipMapなし、非圧縮で読み込む。
 
 ## 実装と再生成
 
-- [画面生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenAssets.cs)：Prefab、フォント、SafeArea、操作部品。
-- [画面別の見た目](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenArt.cs)：枠の生成、画像の読み込み、画像を使う部品。
-- [ページ生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframePageAssets.cs)：通常ページの組み立て。戦闘と歩数は専用ファイルへ分離。
-- [状態と画像の対応](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Presentation/WireframeArt.cs)：編成・敵状態・背景・進捗表示と探索移動。
-
-Unityで再生を停止し、`Baryonyx/Wireframe/Create Screen Assets` を実行する。
-生成後は `Baryonyx/Wireframe/Open Scene` から画面を開き、PlayModeで確認する。
-画像の追加生成は再生成処理に含まれず、保存済みPNGを利用する。
-戦闘計算と健康データ取得を接続した。ゲームの永続保存は含まない。
+これらの素材を使っていた操作試作の画面・生成処理・シーンは、2026-09-24に削除した。
+`Departure.png`・`Mine.png` と、生成済みの枠 `ButtonFrame.asset`・`PanelFrame.asset` は [Features/Wireframe/UI/Art](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art) に残し、展示室から確認できる。
+枠を再生成する処理は削除したため、変更する場合は新しい画面の生成処理で作り直す。
+以降の検証記録は、削除前の試作に対するものである。
 
 ## 全面改修前の検証記録
 

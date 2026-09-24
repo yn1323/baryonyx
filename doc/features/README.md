@@ -37,7 +37,7 @@
 | 日付の区切りとデイリー変異 | [仕様と未決事項](daily-rules.md) |
 | アカウントとセーブ | [仕様と未決事項](accounts-save.md) |
 | 画面一覧と操作 | [仕様と未決事項](screens.md) |
-| 主要画面を操作するUnityワイヤー | [起動方法・操作・実装範囲](game-wireframe.md) |
+| 主要画面を操作するUnityワイヤー（実装削除済み） | [試作の記録と評価](game-wireframe.md) |
 | クライアントアセットの一覧とプレビュー | [クライアントアセット展示室](showcase.md) |
 | 初回体験とチュートリアル | [仕様と未決事項](onboarding.md) |
 | ユーザー設定とアクセシビリティ | [仕様と未決事項](player-settings.md) |
@@ -48,15 +48,18 @@
 
 ## 現在の実装
 
-2026-09-19時点で、健康データ機能に加え、冒険・獲得・装備・戦闘を続けて試せる専用シーンがある。
-通常攻撃・スキル・ダウン・勝敗・簡易報酬を実装し、同じシーンからHealth Connectの7日分の歩数を数値と棒グラフで表示する。
-ゲーム状態の永続保存、目標評価、サーバーへの保存はこのシーンから呼ばない。
+2026-09-24時点のシーンは、Top・Home・展示室だけである。
+冒険・獲得・装備・戦闘を試せた操作試作と、健康データを表示した画面は削除した。
+TopとHomeは、Health Connectの歩数をゲストのセッションでサーバーへ同期する。
+画面に依存しない戦闘計算と、Google認証・運動報酬の請求のロジックは残しているが、現在はどの画面からも呼ばない。
 
 | 機能 | 現行仕様 | 実装の入口 |
 |---|---|---|
-| 健康データの読み取りと保存 | [機能詳細](health-data.md) | [画面起動](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)・[サーバー同期](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)・[API](../../server/src/features/health/routes.ts) |
+| 健康データの読み取りと保存 | [機能詳細](health-data.md) | [Providerの組み立て](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)・[サーバー同期](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)・[API](../../server/src/features/health/routes.ts) |
+| 起動時の連携と歩数の同期 | [機能詳細](startup-sync.md) | [Topの起動処理](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStartupFlow.cs)・[共有する接続](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)・[ゲストAPI](../../server/src/features/accounts/routes.ts) |
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
-| 画面の操作ワイヤー | [操作と制約](game-wireframe.md) | [起動シーン](../../client/Assets/Baryonyx/App/Scenes/Wireframe.unity) |
+| 画面の操作ワイヤー | [試作の記録](game-wireframe.md) | 2026-09-24に削除。[戦闘計算](../../client/Assets/Baryonyx/Features/Combat/Runtime)だけを残す |
+| ホーム画面のモック | [画面一覧](screens.md#ホーム画面の見た目モック) | [Homeシーン](../../client/Assets/Baryonyx/App/Scenes/Home.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Home/Editor/HomeScreenAssets.cs) |
 | 戦闘MVP | [試作値と実装範囲](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
 | クライアントアセット展示室 | [展示室仕様](showcase.md) | [展示室シーン](../../client/Assets/Baryonyx/App/Scenes/Showcase.unity)・[カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs) |
 

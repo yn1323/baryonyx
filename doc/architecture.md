@@ -13,12 +13,12 @@ updated: 2026-09-15
 
 | 構成 | 現在の責務・確認元 |
 |---|---|
-| Unity App | [HealthScreenBootstrap](../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)がAndroidの実ProviderとEditor等のプレビューを選ぶ |
-| Unity Health | [健康データ仕様](features/health-data.md)に従い、認証・権限・取得・一覧・JSON詳細を扱う |
+| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[GameServices](../client/Assets/Baryonyx/App/Runtime/GameServices.cs)がAndroidの実ProviderとEditor等のプレビューを選び、TopとHomeで接続を共有する。[HealthRuntime](../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)は削除前の健康データ画面用で、現在はどの画面からも使わない |
+| Unity Health | [健康データ仕様](features/health-data.md)と[起動時の同期](features/startup-sync.md)に従い、認証・権限・取得・サーバー保存を扱う。日別一覧の画面は削除済み |
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |
-| Google認証 | 健康データ読み取りと独立した任意の操作。詳細は健康データ仕様を参照 |
+| アカウント | 端末の秘密値によるゲストで始める。Google認証は健康データ読み取りと独立した任意の操作で、ゲストとの結び付けは未実装 |
 | サーバー | [app.ts](../server/src/app.ts)が疎通確認と健康データAPIを組み立てる。Hono・Workers・D1を使用する |
-| 同期 | 同期クライアントとサーバーAPIは存在するが、現在の起動経路からは呼ばない |
+| 同期 | Topの起動時とHomeの歩数パネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
 
 現在の画面は健康データをメモリで扱う。
 ゲーム進行の保存要件と未決事項は[アカウントとセーブ](features/accounts-save.md)を参照する。

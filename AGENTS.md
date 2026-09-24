@@ -2,6 +2,10 @@
 
 このファイルは、baryonyx全体に適用する作業上の制約と参照先を定める。
 
+## IMPORTANT
+- 必ず日本語で返答してください
+- local開発時の/server の pnpm dev はユーザが手動で起動します。
+
 ## 作業の基本
 
 - ユーザーへの説明、文書、PR本文、レビューは日本語で書く。コードの識別子や既存の技術用語は維持する。
@@ -114,32 +118,41 @@ baryonyx/
 | ファイル | ユーザーの操作と動作 |
 |---|---|
 | [build-apk.bat](shortcuts/build-apk.bat) | このプロジェクトをUnityで閉じてからダブルクリックし、`client/Builds/Android/baryonyx.apk` をビルドする。 |
-| [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。APKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` へ上書きコピーする。 |
-| [build-apk-to-drive.command](shortcuts/build-apk-to-drive.command) | macOS用。このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからFinderでダブルクリックする。APKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx.apk` へ上書きコピーする。 |
+| [build-apk-dev-to-drive.bat](shortcuts/build-apk-dev-to-drive.bat) | このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-dev.apk` へ上書きコピーする。 |
+| [build-apk-prod-to-drive.bat](shortcuts/build-apk-prod-to-drive.bat) | 操作は `build-apk-dev-to-drive.bat` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
+| [build-apk-dev-to-drive.command](shortcuts/build-apk-dev-to-drive.command) | macOS用。このプロジェクトをUnityで閉じ、Google Drive for desktopを起動してからFinderでダブルクリックする。Dev環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-dev.apk` へ上書きコピーする。 |
+| [build-apk-prod-to-drive.command](shortcuts/build-apk-prod-to-drive.command) | macOS用。操作は `build-apk-dev-to-drive.command` と同じ。Prod環境へ接続するAPKをビルドし、成功後に `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx-prod.apk` へ上書きコピーする。ProdのURLが未設定の間はビルドを止める。 |
 | [start-pixel-8a.bat](shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
 | [install-apk-pixel-8a.bat](shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
 
 APKビルドは [ProjectVersion.txt](client/ProjectSettings/ProjectVersion.txt) のUnityを使い、CIと同じ [AndroidBuild.Build](client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を呼び出す。
-APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ上書きコピーする。
+APKの接続先は環境変数 `BARYONYX_ENVIRONMENT` で選び、未指定ならDevになる（[接続先の選び方](client/AGENTS.md#サーバーのbaseurl)）。
+Drive配置用のショートカットは、ファイル名の環境（`dev`・`prod`）をビルド前に設定し、手元の `BARYONYX_SERVER_URL` を無視する。
+ビルドログの `BARYONYX_ANDROID_SERVER:` の行で指定した環境になっていることを確かめ、違えばコピーせずにエラーで終了する。
+APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ、接続先の環境に対応するファイル名で上書きコピーする。
+Dev向けとProd向けは同じフォルダーに並べて置く。
+Dev向けのショートカットは、コピーに成功したあと、環境別のファイル名にする前の `baryonyx.apk` が同じフォルダーに残っていれば削除する。
 
-| OS | 配置先 | 一致させる定義 |
-|---|---|---|
-| Windows | `G:\マイドライブ\71_プロジェクト\baryonyx\baryonyx.apk` | [build-apk-to-drive.bat](shortcuts/build-apk-to-drive.bat) の `$destinationDirectory` |
-| macOS | `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx/baryonyx.apk` | [build-apk-to-drive.command](shortcuts/build-apk-to-drive.command) の `destination_directory` |
+| OS | 配置先フォルダー | ファイル名 | 一致させる定義 |
+|---|---|---|---|
+| Windows | `G:\マイドライブ\71_プロジェクト\baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.bat](shortcuts/build-apk-dev-to-drive.bat)・[build-apk-prod-to-drive.bat](shortcuts/build-apk-prod-to-drive.bat) の `$destinationDirectory`・`$destinationApk` |
+| macOS | `~/Google Drive/マイドライブ/71_プロジェクト/baryonyx` | `baryonyx-dev.apk`・`baryonyx-prod.apk` | [build-apk-dev-to-drive.command](shortcuts/build-apk-dev-to-drive.command)・[build-apk-prod-to-drive.command](shortcuts/build-apk-prod-to-drive.command) の `destination_directory`・`destination_apk` |
 
-通常はWindowsで `build-apk-to-drive.bat`、macOSで `build-apk-to-drive.command` を使い、`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に同じコピーを行う。
+通常はWindowsで `build-apk-dev-to-drive.bat`・`build-apk-prod-to-drive.bat`、macOSで `build-apk-dev-to-drive.command`・`build-apk-prod-to-drive.command` を使う。
+`build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に接続先の環境に対応するファイル名で同じフォルダーへコピーする。
 コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
 
-`build-apk.bat` と `build-apk-to-drive.bat` はWindows標準のPowerShellで処理し、それぞれ必要なコードを同じファイル内に持つ。
+`build-apk.bat`・`build-apk-dev-to-drive.bat`・`build-apk-prod-to-drive.bat` はWindows標準のPowerShellで処理し、それぞれ必要なコードを同じファイル内に持つ。
+Dev向けとProd向けのショートカットは、設定する環境名・配置先のファイル名・ログ名だけが異なる。
 Unity Hubの標準配置 `%ProgramFiles%\Unity\Hub\Editor\<バージョン>\Editor\Unity.exe` を探し、別の配置では同じバージョンの `Unity.exe` のパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
 対象バージョンのAndroid Build Supportと有効なUnityライセンスが必要となる。
-ログはそれぞれ `client/Logs/build-apk.log`、`client/Logs/build-apk-to-drive.log` に実行ごとに上書きする。
+ログはそれぞれ `client/Logs/build-apk.log`、`client/Logs/build-apk-dev-to-drive.log`、`client/Logs/build-apk-prod-to-drive.log` に実行ごとに上書きする。
 `build-apk.bat` はAPK生成のみを行い、テスト・配布・エミュレーター起動・インストールは行わない。
 
-`build-apk-to-drive.command` は `build-apk-to-drive.bat` と同じ処理をbashで行い、ログも `client/Logs/build-apk-to-drive.log` に上書きする。
+`build-apk-dev-to-drive.command`・`build-apk-prod-to-drive.command` は、同じ環境の `.bat` と同じ処理をbashで行い、ログも同じ名前のファイルに上書きする。
 Unity Hubの標準配置 `/Applications/Unity/Hub/Editor/<バージョン>/Unity.app/Contents/MacOS/Unity` を探し、別の配置では同じバージョンの実行ファイルのパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
 
-`build-apk-to-drive.bat` と `build-apk-to-drive.command` は配置先フォルダーが存在し、アクセスできることを前提とする。
+Drive配置用のショートカットは、配置先フォルダーが存在し、アクセスできることを前提とする。
 ビルド失敗時は配置先のAPKを更新せず、コピー失敗時もエラーで終了する。
 コピー後も `client/Builds/Android/baryonyx.apk` を残す。
 Google Driveへの同期はGoogle Drive for desktopが行うため、同期完了は同アプリで確認する。

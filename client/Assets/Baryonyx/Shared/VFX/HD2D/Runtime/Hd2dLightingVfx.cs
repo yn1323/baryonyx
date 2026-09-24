@@ -6,7 +6,9 @@ namespace Baryonyx.Vfx.Hd2d
     /// <summary>
     /// Lightweight UI particles for atmosphere around a 2D scene.
     /// The component owns its small image pool and exposes all tuning values in the Inspector.
+    /// Outside Play Mode it shows a still preview of the same seeded layout.
     /// </summary>
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed class Hd2dLightingVfx : MonoBehaviour
     {
@@ -15,6 +17,10 @@ namespace Baryonyx.Vfx.Hd2d
         public bool AnimateParticles = true;
         public bool UseUnscaledTime = true;
         public int RandomSeed = 2048;
+
+        [Header("Editorプレビュー")]
+        [Tooltip("再生しなくてもScene/Gameビューに現在の設定を表示します。")]
+        public bool PreviewInEditor = true;
 
         [Header("レイヤーと素材")]
         public RectTransform ParticleLayer;
@@ -53,6 +59,8 @@ namespace Baryonyx.Vfx.Hd2d
         private readonly List<ParticleState> particles = new List<ParticleState>();
         private System.Random random;
         private bool initialized;
+        private bool previewRebuildRequested;
+        private bool previewBuilt;
 
         private void Awake()
         {
@@ -62,12 +70,27 @@ namespace Baryonyx.Vfx.Hd2d
         private void OnEnable()
         {
             CacheParticleLayer();
+            if (!Application.IsPlaying(gameObject))
+            {
+                // Creating objects is deferred to Update while the scene is loading or validating.
+                previewRebuildRequested = true;
+                return;
+            }
+
             if (PlayOnEnable)
                 RebuildParticles();
         }
 
         private void OnDisable()
         {
+            if (!Application.IsPlaying(gameObject))
+            {
+                // Preview objects are not saved, so they are removed instead of kept as a pool.
+                ClearParticles();
+                initialized = false;
+                return;
+            }
+
             initialized = false;
             foreach (var particle in particles)
             {
@@ -78,6 +101,21 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void Update()
         {
+            if (!Application.IsPlaying(gameObject))
+            {
+                UpdateEditorPreview();
+                return;
+            }
+
+            if (previewBuilt)
+            {
+                // Without a scene reload the preview can survive into Play Mode; start as before.
+                ClearParticles();
+                initialized = false;
+                if (PlayOnEnable)
+                    RebuildParticles();
+            }
+
             if (!initialized || !AnimateParticles)
                 return;
 
@@ -117,6 +155,13 @@ namespace Baryonyx.Vfx.Hd2d
             SparkleHorizontalDrift = Mathf.Max(0f, SparkleHorizontalDrift);
             ParticleAlphaMultiplier = Mathf.Clamp(ParticleAlphaMultiplier, 0f, 2f);
             CacheParticleLayer();
+            if (!Application.IsPlaying(gameObject))
+            {
+                previewRebuildRequested = true;
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+            }
         }
 
         /// <summary>
@@ -124,11 +169,17 @@ namespace Baryonyx.Vfx.Hd2d
         /// </summary>
         public void RebuildParticles()
         {
+            // Prefab assets must never receive generated children. Prefab Mode has a scene.
+            if (!gameObject.scene.IsValid())
+                return;
+
             CacheParticleLayer();
             if (ParticleLayer == null)
                 return;
 
             ClearParticles();
+            previewRebuildRequested = false;
+            previewBuilt = !Application.IsPlaying(gameObject);
             random = new System.Random(RandomSeed);
             var area = GetAreaSize();
             for (var index = 0; index < DustCount; index++)
@@ -143,6 +194,21 @@ namespace Baryonyx.Vfx.Hd2d
                 );
 
             initialized = true;
+        }
+
+        private void UpdateEditorPreview()
+        {
+            if (!PreviewInEditor)
+            {
+                if (particles.Count > 0)
+                    ClearParticles();
+                initialized = false;
+                return;
+            }
+
+            // The preview stays still; the seeded layout matches the first Play Mode frame.
+            if (previewRebuildRequested && isActiveAndEnabled)
+                RebuildParticles();
         }
 
         private void CacheParticleLayer()
@@ -179,6 +245,8 @@ namespace Baryonyx.Vfx.Hd2d
                 typeof(RectTransform),
                 typeof(UnityEngine.UI.Image)
             );
+            if (!Application.IsPlaying(gameObject))
+                particleObject.hideFlags = HideFlags.DontSave;
             particleObject.transform.SetParent(ParticleLayer, false);
             var rect = particleObject.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = Vector2.one * 0.5f;
@@ -283,12 +351,13 @@ namespace Baryonyx.Vfx.Hd2d
             {
                 if (particle.Rect == null)
                     continue;
-                if (Application.isPlaying)
+                if (Application.IsPlaying(gameObject))
                     Destroy(particle.Rect.gameObject);
                 else
                     DestroyImmediate(particle.Rect.gameObject);
             }
             particles.Clear();
+            previewBuilt = false;
         }
 
         private static Vector2 ClampSize(Vector2 value)

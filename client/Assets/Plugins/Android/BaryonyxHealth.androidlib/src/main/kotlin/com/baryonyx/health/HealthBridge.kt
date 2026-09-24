@@ -56,12 +56,22 @@ object HealthBridge {
                         if (grantedPermissions.containsAll(permissions)) finish(id, "granted")
                         else activity.startActivity(Intent(activity, HealthPermissionActivity::class.java).putExtra("requestId", id))
                     }
-                    "read" -> {
-                        if (!granted) { finish(id, "permission_required"); return@launch }
+                    // Startup sync is linked only when steps can be read, even if other records are allowed.
+                    "stepsPermission" -> finish(id, if (HealthRequirements.stepsPermission in grantedPermissions) "granted" else "not_granted")
+                    "requestStepsPermission" -> {
+                        if (HealthRequirements.stepsPermission in grantedPermissions) finish(id, "granted")
+                        else activity.startActivity(Intent(activity, HealthPermissionActivity::class.java)
+                            .putExtra("requestId", id).putExtra("stepsOnly", true))
+                    }
+                    // readSteps aggregates steps only, so startup sync never reads other health records.
+                    "read", "readSteps" -> {
+                        val stepsOnly = operation == "readSteps"
+                        val readable = if (stepsOnly) HealthRequirements.stepsPermission in grantedPermissions else granted
+                        if (!readable) { finish(id, "permission_required"); return@launch }
                         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
                         val zone = ZoneId.systemDefault()
                         val today = now.atZone(zone).toLocalDate()
-                        val records = HealthRecords.readWeek(client, grantedPermissions,
+                        val records = if (stepsOnly) null else HealthRecords.readWeek(client, grantedPermissions,
                             today.minusDays(6).atStartOfDay(zone).toInstant(), now)
                         val days = JSONArray()
                         for (offset in 6 downTo 0) {
@@ -79,17 +89,21 @@ object HealthBridge {
                                 catch (_: SecurityException) { stepsStatus = "permission_required" }
                                 catch (_: Exception) { stepsStatus = "failed" }
                             }
-                            days.put(JSONObject().put("day", date.toString()).put("zone", zone.id)
+                            val day = JSONObject().put("day", date.toString()).put("zone", zone.id)
                                 .put("startAt", start.toString()).put("endAt", end.toString())
                                 .put("hasValue", value != null).put("steps", value ?: 0L).put("stepsStatus", stepsStatus)
-                                .put("observedAt", now.toString()).put("records", HealthRecords.dayJson(records, start, end))
+                                .put("observedAt", now.toString())
+                            if (records != null) day.put("records", HealthRecords.dayJson(records, start, end))
                                 .put("recordLimitPerTypeForWeek", HealthRecords.RECORD_LIMIT)
-                                .put("sampleLimitPerRecord", HealthRecords.SAMPLE_LIMIT))
+                                .put("sampleLimitPerRecord", HealthRecords.SAMPLE_LIMIT)
+                            days.put(day)
                         }
                         ensureActive()
                         // Do not return a snapshot collected under permissions that were just revoked.
                         val latestPermissions = client.permissionController.getGrantedPermissions()
-                        if (!latestPermissions.containsAll(grantedPermissions.intersect(permissions))) {
+                        val revoked = if (stepsOnly) HealthRequirements.stepsPermission !in latestPermissions
+                            else !latestPermissions.containsAll(grantedPermissions.intersect(permissions))
+                        if (revoked) {
                             finish(id, "permission_required")
                             return@launch
                         }

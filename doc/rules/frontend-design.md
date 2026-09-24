@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-09-22
+updated: 2026-09-24
 ---
 
 # クライアントの構成と依存関係
@@ -24,11 +24,12 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Main.unity、Wireframe.unity
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity
 │   │   │   ├── Editor/                  シーンへの機能の配置
-│   │   │   └── Tests/PlayMode/          起動シーンとプレビュー起動の検査
+│   │   │   └── Tests/PlayMode/          起動シーンと展示室シーンの検査
 │   │   ├── Features/Account/
-│   │   │   └── Runtime/                Google認証の契約とUMoth接続、サーバーのセッションとログインAPI
+│   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、サーバーのセッションとログインAPI
+│   │   │   └── Tests/EditMode/
 │   │   ├── Features/ExerciseRewards/
 │   │   │   └── Runtime/                ルーン請求・履歴・残高のAPI
 │   │   ├── Features/Health/
@@ -36,30 +37,29 @@ client/
 │   │   │   │   ├── HealthContracts.cs   取得結果とProviderの契約
 │   │   │   │   ├── HealthConnectProvider.cs
 │   │   │   │   ├── HealthConnectionSettings.cs
-│   │   │   │   ├── Presentation/        表示状態、View、配置、日別JSON
+│   │   │   │   ├── Link/                連携の確認・許可の要求・同期、Topの起動処理、連携モーダル
+│   │   │   │   ├── Presentation/        接続・取得の状態遷移と操作の管理、日別JSON
 │   │   │   │   ├── Requirements/        利用条件の確認契約、判定、案内文
 │   │   │   │   ├── Preview/             サンプルの認証結果と健康データ
-│   │   │   │   └── Sync/                歩数の保存APIと、ログイン・保存・ルーン請求の実行順
-│   │   │   ├── UI/                     画面Prefab
+│   │   │   │   └── Sync/                歩数の保存・取得APIと、ゲストのセッション・保存・ルーン請求の実行順
+│   │   │   ├── UI/                     連携モーダルのPrefab
 │   │   │   ├── Data/                   接続設定アセット
-│   │   │   ├── Editor/                 専用アセット生成とビルド前検査
-│   │   │   └── Tests/
-│   │   │       ├── EditMode/
-│   │   │       │   ├── Presentation/
-│   │   │       │   ├── Requirements/
-│   │   │       │   └── Preview/
-│   │   │       └── PlayMode/Presentation/
+│   │   │   ├── Editor/                 接続設定アセットの生成
+│   │   │   └── Tests/EditMode/
+│   │   │       ├── Presentation/
+│   │   │       ├── Requirements/
+│   │   │       └── Preview/
+│   │   ├── Features/Home/               ホーム画面（野営地）のモック
+│   │   │   ├── Runtime/                表示状態の計算、View、Presenter、仮データ
+│   │   │   ├── UI/                      専用Prefabとコードで生成するドット絵
+│   │   │   ├── Data/                    仮データのアセット
+│   │   │   ├── Editor/                  Prefabと画像の生成
+│   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ
 │   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
 │   │   │   └── Tests/EditMode/          計算・時間・再開の検査
-│   │   ├── Features/Wireframe/          冒険・戦闘・歩数の操作試作
-│   │   │   ├── Runtime/
-│   │   │   │   ├── Flow/               画面遷移、所持状態、戦闘結果の反映
-│   │   │   │   └── Presentation/       入力、各画面の表示、演出、SafeArea
-│   │   │   ├── UI/                      専用Prefabと画像
-│   │   │   ├── Data/                    仮のキャラ・武器
-│   │   │   ├── Editor/                  専用アセットの生成
-│   │   │   └── Tests/                   EditModeとPlayMode
+│   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
+│   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
 │   │   │   └── UI/                      複数画面で使う共通UIプレハブとフォント
@@ -88,55 +88,48 @@ client/
 ```
 
 `Assets/Scripts/`、`Assets/Editor/`、`Assets/Tests/`、`Assets/Scenes/` にあった自作コード・アセンブリ定義・起動シーンは、上記の配置へ移行した。
-旧 `SampleScene.unity` はGUIDを保って `App/Scenes/Main.unity` へ移し、ビルド対象とテストの参照も更新した。
+旧 `SampleScene.unity` はGUIDを保って `App/Scenes/Main.unity` へ移したが、2026-09-24に操作試作とともに削除した。
 `Assets/Resources/` など外部パッケージが利用する配置や、Unityテンプレートから引き継いだ設定は、参照元と用途を確認して扱う。
 
 ## 起動と機能の責務
 
 | 配置・入口 | 所有する処理 |
 |---|---|
-| [App/Runtime/HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | Providerの選択、PresenterとViewの組み立て、初回処理、前面・背面・終了通知 |
-| [App/Editor/HealthAppSceneSetup](../../client/Assets/Baryonyx/App/Editor/HealthAppSceneSetup.cs) | HealthのPrefab・設定とAppの起動オブジェクト、EventSystemをシーンへ配置する |
-| [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、Viewの入力と文言、SafeArea、一覧とJSON詳細 |
+| [App/Runtime/GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs) | 実行環境に応じたProviderと保存先の選択。アプリの終了までTopとHomeで同じ接続を共有する。テストでは差し替える |
+| [Health/Runtime/Link/](../../client/Assets/Baryonyx/Features/Health/Runtime/Link) | 連携の確認・許可の要求・同期（`HealthStepLink`）、Topの起動処理の状態（`HealthStartupFlow`）、連携モーダルの描画 |
+| [App/Runtime/HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | 実行環境に応じたProviderの選択、Presenterの生成、初回の接続開始、破棄。現在はどのシーンからも使っていない |
+| [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、操作の多重起動防止と前面復帰待ち、日別JSONの解析 |
 | [Health/Runtime/Requirements/](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements) | 利用条件の確認インターフェース、判定結果、表示する案内 |
 | [Health/Runtime/Preview/](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview) | EditorとAndroid以外の環境に返すサンプルデータ |
 | [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、ログイン・保存・ルーン請求を順に行う `HealthServerSync`。Android実機でサーバーURLが設定されている場合だけ、Presenterから呼ぶ |
 | [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、サーバーのセッション、ログイン・ログアウトAPI |
 | [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・履歴・残高のAPIと応答の型 |
 | [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外。パスと入出力の型は各機能が持つ |
-| [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Health専用のPrefab・設定アセットと、共有フォントを生成する |
+| [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成する |
 
 HealthのPresenterは、認証・権限・取得結果に応じた画面状態と、次に実行する操作を決める。
 [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) は多重起動の防止、キャンセル、OS画面からの前面復帰待ち、操作世代と寿命を管理する。
 通常の背面移行では取得を中断し、OSの認証・権限画面は結果と前面復帰を待つ。
 設定画面への移動は、Presenterが未移動・移動待ち・復帰待ちの状態で管理する。
 
-Viewの描画は操作ボタン、状態文言、日別一覧、閲覧位置に分ける。
-[HealthJsonDetails](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthJsonDetails.cs) がJSONモーダルの開閉、コピー、スクロールの初期化、選択の復元を担当する。
-これらはHealth専用の通常のC#クラスとし、Prefabの参照はViewから渡す。
+健康データの画面（View・Prefab）は2026-09-24に削除した。
+新しい画面から使うときは、HealthRuntimeでPresenterを生成し、画面側でPresenterの状態を描画する。
 
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
-依存方向はApp → Wireframe → Health → ExerciseRewards → Account → Shared、Wireframe → Combatとし、逆向きに参照しない。
+依存方向はApp → Health → ExerciseRewards → Account → Shared、App → Home → Sharedとし、逆向きに参照しない。
+HomeはHealth・ExerciseRewardsを参照せず、Appの[HomeBootstrap](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が仮データからPresenterを組み立てる。
+今日の歩数はHomeが定義する `IHomeStepSource` を通して受け取り、Appの [HomeStepSource](../../client/Assets/Baryonyx/App/Runtime/HomeStepSource.cs) がHealthの `HealthStepLink` へつなぐ。
+複数画面で使うキャラクター画像は `Shared/Art/Characters/` に置く。
 ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
-AppのEditor処理はAppの起動処理とHealthのアセット定義を参照し、HealthのEditor処理はAppのオブジェクトを生成しない。
-`Baryonyx/App/Attach Health Screen To Current Scene` メニューで、保存済みの現在のシーンへ画面を配置する。
-専用アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
+HealthのEditor処理はAppのオブジェクトを生成しない。
+接続設定アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
 
-プレビューでは `HealthScreenView.Bind(presenter, preview: true)` を使う。
-通常表示とプレビュー表示の文言はViewの同じ描画処理で決まり、Appからの表示上書きやイベント購読順に依存しない。
+EditorとAndroid以外では、HealthRuntimeがプレビュー用Providerを選び、`Preview` を `true` にする。
 認証・健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
 機能の詳しい動作は [健康データの機能文書](../features/health-data.md) を参照する。
 
-WireframeもAppがSession・View・試作データを組み立てる。
-[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)はMainとWireframeに共通するProvider選択とPresenterの寿命を管理する。
-[WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs)は健康データのPresenterを歩数画面へ渡し、前面・背面を通知する。
-サーバー同期はHealthRuntimeを通じてMainと同じ条件で行う。
-[WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Flow/WireframeSession.cs)は画面遷移と実行中の所持状態を管理する。
-戦闘計算はCombatへ委譲し、Presentationは入力、通常ページ、戦闘、ダイアログ、歩数、演出と配置を分担する。
-CombatはWireframe・App・Unityの画面へ依存しない。
-健康データの並べ替え・集計はHealth内のHealthWeekSummaryへ置き、表示用の仮数値をゲームのSessionへ持ち込まない。
-Editorの共通uGUI生成部品はWireframeScreenAssetsに置き、ページ・戦闘・歩数の組み立ては用途別のファイルへ分ける。
-起動・対象画面・操作方法は[画面ワイヤー](../features/game-wireframe.md)を参照する。
+CombatはApp・Unityの画面へ依存しない。
+冒険・戦闘・歩数の操作試作（Wireframe）は2026-09-24に削除した。経緯と評価は[操作試作の記録](../features/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト
 

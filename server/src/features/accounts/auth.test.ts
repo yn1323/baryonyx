@@ -4,6 +4,7 @@ import {
   authenticateSession,
   createGoogleVerifier,
   hashToken,
+  issueGuestSession,
   issueSession,
   type VerifyIdentity,
 } from "./auth.js";
@@ -12,6 +13,7 @@ describe("セッションの発行と認証", () => {
   function repository() {
     return {
       findOrCreateUser: vi.fn(async () => "user"),
+      findOrCreateGuest: vi.fn(async (_hash: string) => "guest"),
       createSession: vi.fn(async () => {}),
       findSessionUser: vi.fn(
         async (_hash: string): Promise<string | undefined> => "user",
@@ -36,6 +38,20 @@ describe("セッションの発行と認証", () => {
       tokenHash,
     });
     expect(db.findSessionUser).toHaveBeenCalledWith(tokenHash);
+  });
+
+  it("ゲストの秘密値はハッシュで照合し、そのユーザーのセッションを発行する", async () => {
+    const db = repository();
+    const secret = "1".repeat(64);
+    const session = await issueGuestSession(db, secret);
+    expect(db.findOrCreateGuest).toHaveBeenCalledWith(await hashToken(secret));
+    expect(db.findOrCreateGuest.mock.calls[0]?.[0]).not.toBe(secret);
+    expect(session.userId).toBe("guest");
+    expect(db.createSession).toHaveBeenCalledWith(
+      await hashToken(session.token),
+      "guest",
+      Date.parse(session.expiresAt),
+    );
   });
 
   it("不正な認証形式はDBへ問い合わせず、失効済みセッションも拒否する", async () => {

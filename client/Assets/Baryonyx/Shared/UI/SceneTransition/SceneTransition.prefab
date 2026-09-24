@@ -139,6 +139,7 @@ MonoBehaviour:
     shutterAxis: 0
     coverDuration: 0.25
     revealDuration: 0.25
+    steppedFrameRate: 25
     color: {r: 0.16, g: 0.16, b: 0.18, a: 1}
   enterSettings:
     type: 0
@@ -146,6 +147,7 @@ MonoBehaviour:
     shutterAxis: 0
     coverDuration: 0.25
     revealDuration: 0.25
+    steppedFrameRate: 25
     color: {r: 0.16, g: 0.16, b: 0.18, a: 1}
   startCovered: 0
   revealOnStart: 0

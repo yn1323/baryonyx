@@ -57,7 +57,9 @@ CIは共有権限を変更しない。
 | main・dev・developの手動実行で `preview` を選択 | Preview | `baryonyx-preview.apk` |
 
 この区分は配布ファイル名だけに適用する。
-各APKのAPI接続先、Application ID、Developmentビルド設定、デバッグ署名の扱いは共通であり、Prodという名前だけでは本番用ビルドにならない。
+各APKのApplication ID、Developmentビルド設定、デバッグ署名の扱いは共通であり、Prodという名前だけでは本番用ビルドにならない。
+API接続先はビルド時の環境変数で選べる（[接続先の選び方](../../client/AGENTS.md#サーバーのbaseurl)）が、CIは一度だけビルドして配布名を分けるため、現在はどの配布名もDevへ接続する。
+Prod向けに接続先を分けるには、配布名ごとに `BARYONYX_ENVIRONMENT` を渡してビルドする変更が必要になる。
 Unityが出力するローカルのファイル名は従来どおり `baryonyx.apk` とする。
 
 同名ファイルが一つあれば、そのファイルIDと共有設定を保って内容を更新する。
@@ -117,7 +119,7 @@ Repository secretsの登録後にClient CIを実行し、環境名付きAPKの�
 ## ローカルビルドと配布処理の検証
 
 Windowsで手動ビルドする場合は [build-apk.bat](../../shortcuts/build-apk.bat) を使える。
-ビルド後に指定のGoogle Driveフォルダーへコピーする場合は [build-apk-to-drive.bat](../../shortcuts/build-apk-to-drive.bat)、macOSでは [build-apk-to-drive.command](../../shortcuts/build-apk-to-drive.command) を使う。
+ビルド後に指定のGoogle Driveフォルダーへコピーする場合は、接続先の環境に合わせて [build-apk-dev-to-drive.bat](../../shortcuts/build-apk-dev-to-drive.bat)・[build-apk-prod-to-drive.bat](../../shortcuts/build-apk-prod-to-drive.bat)、macOSでは [build-apk-dev-to-drive.command](../../shortcuts/build-apk-dev-to-drive.command)・[build-apk-prod-to-drive.command](../../shortcuts/build-apk-prod-to-drive.command) を使う。
 配置先、上書き動作、前提条件は [手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) に従う。
 Androidエミュレーターの準備とAPKインストールは [WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md) に従う。
 

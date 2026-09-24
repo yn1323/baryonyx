@@ -11,7 +11,7 @@ Android実機で「Googleで認証 → Health Connectに接続 → 直近7日分
 ## 着手時の認証実装と今回の範囲
 
 **着手時は認証の呼び出しコードだけがあり、認証ボタンと画面への組み込みは未実装だった。**
-[HealthClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthClient.cs) はUMothでGoogleサインインを実行し、そのIDトークンをサーバーへ渡してアプリのセッションを作る。
+当時の `HealthClient.cs`（現在は削除済み。対応する処理は [UmothGoogleSignInProvider.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/UmothGoogleSignInProvider.cs) と [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs) にある）はUMothでGoogleサインインを実行し、そのIDトークンをサーバーへ渡してアプリのセッションを作る。
 初期化にはサーバーURLとGoogleクライアントIDが必要で、ログイン後に取得元IDをPlayerPrefsへ保存するため、今回の画面でそのまま利用すると「バックエンド接続・永続化なし」の条件を満たさない。
 [サーバールート](../../server/src/features/health/routes.ts)にもIDトークンの検証・セッション発行コードがあるが、今回このAPIは呼ばない。
 実際のOAuth設定と実機認証の完了は、現在のコードと[機能文書](../features/health-data.md)からは確認できない。

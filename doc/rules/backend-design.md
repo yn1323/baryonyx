@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-09-14
+updated: 2026-09-24
 ---
 
 # バックエンドの開発環境
@@ -33,8 +33,8 @@ lockfileはpnpmで更新し、手で編集しない。
 
 ## ローカル実行
 
-`pnpm dev` はソース変更を反映しながら `127.0.0.1:3000` で待ち受ける。
-[HTTPの疎通確認](http://127.0.0.1:3000/health) と [D1の疎通確認](http://127.0.0.1:3000/ready) を開いて確認する。
+`pnpm dev` はソース変更を反映しながら `127.0.0.1:4000` で待ち受ける。
+[HTTPの疎通確認](http://127.0.0.1:4000/health) と [D1の疎通確認](http://127.0.0.1:4000/ready) を開いて確認する。
 停止は `Ctrl+C` とする。
 
 ```sh
@@ -89,7 +89,7 @@ Zodのエラー詳細や入力値はHTTP応答へ含めない。
 ## 認証とAPIの組み立て
 
 認証とユーザー・セッションは、健康データと運動報酬が共通で使うため `features/accounts/` に置く。
-[routes.ts](../../server/src/features/accounts/routes.ts) はログインとログアウト、[auth.ts](../../server/src/features/accounts/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
+[routes.ts](../../server/src/features/accounts/routes.ts) はGoogleログイン、ゲストの開始（`POST /v1/auth/guest`）、ログアウト、[auth.ts](../../server/src/features/accounts/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
 DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ委譲する。
 セッションが必要な機能は [session.ts](../../server/src/features/accounts/session.ts) の `requireSession` を、自分のパス（`/health/*` など）にだけ付ける。
 
@@ -117,6 +117,8 @@ SQLとスナップショットを一緒にGitへ追加し、生成結果の制�
 
 未デプロイの段階でDrizzleを導入したため、初期状態は [0000_initial.sql](../../server/migrations/0000_initial.sql) に統合した。
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
+[0002_guest_accounts.sql](../../server/migrations/0002_guest_accounts.sql) は、ゲストを識別する秘密値のハッシュ列を追加し、`google_sub` を任意にする。
+SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
 
 ```sh
 pnpm db:generate --name add_example
@@ -162,6 +164,7 @@ Drizzle経由の取得・更新と、セッション作成に失敗した場合�
 
 `test:watch` 中にHonoの実装を変更した場合は、別のターミナルで `pnpm build` を実行してからテストを再実行する。
 Miniflareはバンドル済みのWorkerを使うため、ソースだけを変更しても結合テストのWorkerには反映されない。
+ゲストの開始・保存・取得は[ゲストのシナリオ](../../server/tests/scenarios/guest-auth.test.ts)で確認する。
 健康データAPIの業務シナリオは、[認証・入力エラー](../../server/tests/scenarios/health-auth.test.ts)、[歩数の同期](../../server/tests/scenarios/health-sync.test.ts)、[セッションの失効](../../server/tests/scenarios/health-session.test.ts) に分ける。
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。

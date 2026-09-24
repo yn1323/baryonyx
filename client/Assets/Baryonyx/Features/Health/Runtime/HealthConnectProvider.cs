@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace Baryonyx.Health
 {
-    public sealed class HealthConnectProvider : IHealthDataProvider, IHealthRequirementProvider
+    public sealed class HealthConnectProvider
+        : IHealthDataProvider,
+            IHealthStepProvider,
+            IHealthRequirementProvider
     {
         public string ProviderId => "health_connect";
 
@@ -100,16 +103,26 @@ namespace Baryonyx.Health
         public async Task<HealthPermission> RequestPermissionAsync(CancellationToken token) =>
             Permission(await CallAsync("requestPermission", token));
 
+        public async Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
+            Permission(await CallAsync("stepsPermission", token));
+
+        public async Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
+            Permission(await CallAsync("requestStepsPermission", token));
+
         private static HealthPermission Permission(Reply reply) =>
             reply.status == "granted" ? HealthPermission.Granted
             : reply.status == "not_granted" ? HealthPermission.NotGranted
             : reply.status == "unavailable" ? HealthPermission.Unknown
             : throw new InvalidOperationException("Health Connect permission check failed.");
 
-        public async Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
-        {
-            var reply = await CallAsync("read", token);
-            return new HealthReadResult(
+        public async Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token) =>
+            ReadResult(await CallAsync("read", token));
+
+        public async Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token) =>
+            ReadResult(await CallAsync("readSteps", token));
+
+        private static HealthReadResult ReadResult(Reply reply) =>
+            new(
                 reply.status == "success" ? HealthReadStatus.Success
                     : reply.status == "permission_required" ? HealthReadStatus.PermissionRequired
                     : reply.status == "unavailable" ? HealthReadStatus.Unavailable
@@ -117,7 +130,6 @@ namespace Baryonyx.Health
                 reply.days,
                 reply.rawJson
             );
-        }
 
         public void OpenSettings()
         {

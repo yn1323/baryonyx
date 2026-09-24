@@ -36,6 +36,7 @@ description: >
 ## 表現を分解して選ぶ
 
 HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層を必要な分だけ組み合わせる。
+技法ごとの前提、難易度、このプロジェクトでの採用方針は [references/technique-catalog.md](references/technique-catalog.md) にまとめる。
 
 | 層 | 役割 | 第一候補 | 採用条件・注意点 |
 | --- | --- | --- | --- |
@@ -43,7 +44,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 | 奥行き | 遠景・中景・前景の距離感 | レイヤー分割、控えめなパララックス、前景シルエット | 素材分割がない場合は霧、影、前景粒子で代替する。カメラ移動を大きくしない |
 | 環境光 | 全体の色温度と焦点 | 青い環境光、暖色の局所光、暗幕、色調整 | 2色程度の役割を決め、彩度とコントラストでタイトルの可読性を壊さない |
 | 局所光 | 松明、魔法、窓、宝箱などの視線誘導 | `Light 2D`、発光テクスチャ、Shader Graph、ライト用オーバーレイ | `Light 2D`は対応Rendererと対応マテリアルが必要。UIの`RawImage`には別経路を用いる |
-| 影・遮蔽 | 形状と距離の手掛かり | `Shadow Caster 2D`、焼き込み影、暗いグラデーション、霧 | 動く影は少数に絞り、背景全体を毎フレーム再計算しない |
+| 影・遮蔽 | 形状と距離の手掛かり | 疑似の投影影（キャラ画像を黒く半透明にして足元から傾ける）、焼き込み影、暗いグラデーション、霧 | `Shadow Caster 2D`は真上から見た平面で遮蔽を計算するため、横・正面の構図では使わない。動く影は少数に絞り、背景全体を毎フレーム再計算しない |
 | 空気 | 静止画の平坦さを崩す | 霧、光芒（こうぼう、霧や埃の中で見える光の筋）、埃、灰、火の粉、薄い煙 | 速度、サイズ、透明度を深度別に変える。文字の上へ常時重ねない |
 | 仕上げ | 焦点と発光のまとまり | Bloom、Vignette、Color Adjustments、必要なら軽いDoF | モバイルでは弱く始め、品質設定とモーション低減で切り替えられるようにする |
 
@@ -58,6 +59,11 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 5. 効果が足りない場合だけ背景を遠景・中景・前景へ分割し、パララックスを小さく加える。
 
 Topのような`ScreenSpaceOverlay`背景で天井や窓から差す光を作る場合は、`Hd2dLightShaft.prefab`を独立した光芒レイヤーとして使う。根元が明るく先へ広がりながら消える光芒を、画面外の上から床へ向けて斜めに通し、太さと濃さの異なる複数本を間隔を空けて並べる。光芒が床に届く位置には光だまり、光芒の中だけには流れる埃を置き、光の出どころと着地点を示す。Topでは松明の暖色と対比させるため青白い光にしている。`ShaftCount`、`ShaftColor`、`LengthRange`、`WidthRange`、`WidthScaleRange`、`OpacityRange`、`RotationRange`、`SourceAnchor`、`SourceSpread`、`FloorPool*`、`Mote*`、`FlickerAmount`、`MotionAmplitude`はPrefabのInspectorから調整し、画面固有の配置（`SourceAnchor`、`FloorPoolAnchor`）はシーンのPrefabインスタンスで上書きする。`SourceAnchor`は1を超える値を指定して画面外から開始できる。
+霧や霞は`Hd2dFog.prefab`を背景の直上（光芒と粒子より下）に置き、`Layers`へ範囲ごとの層を並べる。各層は`RectMask2D`のsoftnessで縁をぼかした矩形に、継ぎ目のないノイズ画像を2枚重ね、互いに逆向きへ流す。奥ほど遅く淡く、手前ほど速く濃くすると距離感が出る。Prefabの既定は床霧の奥・手前の2層で、画面固有の層（Topではアーチ奥の`DeepHaze`）はシーンのPrefabインスタンスでリストの末尾へ追加し、既定の層を上書きしない。
+松明や魔法の結晶など、背景に描かれた光源を揺らがせる場合は`Hd2dFlickerLight.prefab`を使う。光源ごとに芯・周りの光・床の照り返しを`Hd2dUiAdditive`マテリアルで加算し、`Sources`へ光源を並べる。親に背景と同じ`ResponsiveBackground`（同じ`AspectRatio`）を付けて背景画像と同じ範囲に揃え、光源の位置を背景画像上の正規化座標で指定する。画面座標で置くと、画面比率が変わったときに描かれた光源からずれる。背景に光が描き込まれている場合は、芯を小さく周りの光を弱くして白飛びを避ける。
+火の粉、魔法の粒、報酬のキラキラなど、点から出る粒子は`Hd2dEmberEmitter.prefab`を使う。`Sources`へ発生源を並べ、向き・初速・上向きの加速・横ゆれ・寿命に沿った色で動きを決める。背景に描かれた光源から出す場合は、`Hd2dFlickerLight`と同じく親を背景画像に揃える。報酬や画面遷移の瞬間だけ出す場合は`Loop`をオフにした発生源を用意し、`Burst`で出す。
+BloomなどのポストプロセスをTopのような画面に掛ける場合は、背景とHD-2Dの演出を`Screen Space - Camera`のCanvas（Topでは`TopBackdropCanvas`）へ移し、タイトルや操作は`ScreenSpaceOverlay`のCanvasに残す。両方のCanvasScalerは同じ設定にする。カメラの`renderPostProcessing`を有効にし、全体に効くVolumeへ共通の`Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset`を設定する。BloomのThresholdは描かれた中間調より上に置き、炎・加算の光・光芒だけをにじませる。
+画面の上下をぼかす疑似ティルトシフトは、同じProfileの`HD-2D Tilt Shift`（`Hd2dTiltShift`）で調整する。描画は`Mobile_Renderer`と`PC_Renderer`に登録した`Hd2dTiltShiftRendererFeature`が行い、Intensityが0の画面では処理しない。Max Radiusはドット絵の1粒より大きくしないと見えず、大きくしすぎると輪郭が濁るため、1080px基準で6〜10から始める。
 Topの既存`LightLayer`にある複数の局所光が画面上で不自然なら、その層は削除し、光芒Prefabと粒子Prefabを別々に配置する。
 
 「キラキラ」は同じ粒子を大量に出す表現ではなく、次の役割を混ぜる。
@@ -119,6 +125,9 @@ Topの既存`LightLayer`にある複数の局所光が画面上で不自然な�
 - 常時の粒子数、透明オーバードロー、ライトブレンドスタイル、Volume解像度を小さく始め、Android端末でProfilerとFrame Debuggerを使って確認する。Editorだけで性能を合格にしない。
 
 ## 検証の順序
+
+これまでの実装でつまずいた点（Editorが背面にあると時間が進まない、撮影時の再レイアウトの遅れ、`AddBlitPass` のテクセルサイズなど）と、部品設計・検証の工夫は [references/implementation-notes.md](references/implementation-notes.md) にまとめる。
+実装や検証の前に読み、同じ問題を避ける。
 
 1. **静的確認**：Renderer、Canvas、Material、Sorting Layer、Volume、粒子Prefab、設定の参照切れを確認する。
 2. **Editor確認**：16:9、19.5:9、20:9、4:3とSafe Areaで、背景の歪み、タイトルのコントラスト、粒子のクリップ、UIへの重なりを確認する。

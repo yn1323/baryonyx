@@ -1,11 +1,15 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.Health;
 using Baryonyx.UI;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -15,12 +19,16 @@ namespace Baryonyx.Tests.PlayMode
     public sealed class TopHomeSceneTests
     {
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
-        private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
+        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const string TitleText = "てくてくダンジョン（仮）";
         private Scene loadedScene;
+        private TestGameServices services;
+
+        [SetUp]
+        public void UseTestServices() => services = TestGameServices.Use();
 
         [UnityTest]
-        public IEnumerator FullScreenTopTapLoadsMainSceneWithShutterTransition()
+        public IEnumerator FullScreenTopTapLoadsHomeSceneWithShutterTransition()
         {
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
             loadedScene = SceneManager.GetSceneByPath(TopScenePath);
@@ -48,7 +56,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(button.GetComponent<Image>().raycastTarget, Is.True);
             Assert.That(button.GetComponent<Image>().color.a, Is.EqualTo(0f));
             var controller = button.GetComponent<TopSceneController>();
-            Assert.That(controller.NextSceneName, Is.EqualTo("Main"));
+            Assert.That(controller.NextSceneName, Is.EqualTo("Home"));
             Assert.That(controller.Transition, Is.Not.Null);
             Assert.That(
                 controller.Transition.DefaultSettings.Type,
@@ -56,7 +64,33 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(controller.Transition.DefaultSettings.CoverDuration, Is.EqualTo(0.75f));
 
-            var background = canvas.transform.Find("TopBackground").GetComponent<RawImage>();
+            // The background goes through the camera so post-processing reaches it, while the
+            // interactive screen stays on the overlay canvas.
+            Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            var backdropCanvas = roots
+                .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
+                .Single(candidate => candidate.name == "TopBackdropCanvas");
+            Assert.That(backdropCanvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
+            Assert.That(backdropCanvas.worldCamera, Is.Not.Null);
+            Assert.That(
+                backdropCanvas.worldCamera.GetUniversalAdditionalCameraData().renderPostProcessing,
+                Is.True
+            );
+            Assert.That(backdropCanvas.GetComponent<GraphicRaycaster>(), Is.Null);
+            Assert.That(
+                backdropCanvas.GetComponent<CanvasScaler>().referenceResolution,
+                Is.EqualTo(new Vector2(1920, 1080))
+            );
+            Assert.That(canvas.transform.Find("TopBackground"), Is.Null);
+            var volume = roots
+                .SelectMany(root => root.GetComponentsInChildren<Volume>(true))
+                .Single();
+            Assert.That(volume.isGlobal, Is.True);
+            Assert.That(volume.sharedProfile.Has<Bloom>(), Is.True);
+
+            var background = backdropCanvas
+                .transform.Find("TopBackground")
+                .GetComponent<RawImage>();
             Assert.That(background.texture, Is.Not.Null);
             Assert.That(background.raycastTarget, Is.False);
             var responsiveBackground = background.GetComponent<ResponsiveBackground>();
@@ -114,9 +148,8 @@ namespace Baryonyx.Tests.PlayMode
 
             var tapPanel = button
                 .GetComponentsInChildren<TranslucentTextPanel>(true)
-                .Single(candidate => candidate.Label.text == "TAP TO START");
+                .Single(candidate => candidate.name == "TapToStartPanel");
             Assert.That(tapPanel, Is.Not.Null);
-            Assert.That(tapPanel.Label.text, Is.EqualTo("TAP TO START"));
             Assert.That(tapPanel.Label.fontSize, Is.GreaterThan(0f));
             Assert.That(tapPanel.FontSize, Is.GreaterThan(0f));
             Assert.That(tapPanel.BackdropSize.x, Is.GreaterThan(0f));
@@ -135,18 +168,23 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(reusablePanel.Panel.raycastTarget, Is.False);
             Assert.That(reusablePanel.Backdrop.raycastTarget, Is.False);
+            Assert.That(controller.TapToStartPrompt, Is.SameAs(tapPanel.gameObject));
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+            Assert.That(tapPanel.Label.text, Is.EqualTo(TopSceneController.StartText));
+            Assert.That(services.Server.Saves, Is.EqualTo(1));
             button.onClick.Invoke();
             float deadline =
                 Time.realtimeSinceStartup
                 + controller.Transition.DefaultSettings.CoverDuration
                 + 2f;
             while (
-                !SceneManager.GetSceneByPath(MainScenePath).isLoaded
+                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
                 && Time.realtimeSinceStartup < deadline
             )
                 yield return null;
 
-            loadedScene = SceneManager.GetSceneByPath(MainScenePath);
+            loadedScene = SceneManager.GetSceneByPath(HomeScenePath);
             Assert.That(loadedScene.isLoaded, Is.True);
             Assert.That(
                 loadedScene
@@ -172,20 +210,250 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 loadedScene
                     .GetRootGameObjects()
-                    .SelectMany(root => root.GetComponentsInChildren<WireframeBootstrap>(true))
+                    .SelectMany(root => root.GetComponentsInChildren<HomeBootstrap>(true))
                     .Single()
                     .View,
                 Is.Not.Null
             );
         }
 
+        [UnityTest]
+        public IEnumerator TopIgnoresTapsUntilRevealTransitionCompletes()
+        {
+            yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
+            loadedScene = SceneManager.GetSceneByPath(TopScenePath);
+            var controller = loadedScene
+                .GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<TopSceneController>(true))
+                .Single();
+            var transition = controller.Transition;
+            // 読み込み直後のフレームでStartが走り、覆った状態と開く演出が始まる。
+            yield return null;
+
+            // 起動直後は覆った状態から開き、全面のブロッカーがTopScreenより手前でタップを受ける。
+            Assert.That(transition.IsPlaying || transition.IsCovered, Is.True);
+            Assert.That(controller.IsInputReady, Is.False);
+            Assert.That(controller.ContinueButton.interactable, Is.False);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.False);
+            var results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(
+                new PointerEventData(EventSystem.current)
+                {
+                    position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                },
+                results
+            );
+            Assert.That(results, Is.Not.Empty);
+            Assert.That(results[0].gameObject.name, Is.EqualTo("TransitionBlocker"));
+
+            // 受付前に届いたクリックでは遷移を始めない。
+            controller.ContinueButton.onClick.Invoke();
+            yield return WaitForInputReady(controller);
+            Assert.That(transition.IsPlaying, Is.False);
+            Assert.That(transition.IsCovered, Is.False);
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.False);
+
+            // 開き終わったら開始の案内を表示し、TopScreenがタップを受ける。
+            Assert.That(controller.ContinueButton.interactable, Is.True);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.True);
+            results.Clear();
+            EventSystem.current.RaycastAll(
+                new PointerEventData(EventSystem.current)
+                {
+                    position = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                },
+                results
+            );
+            Assert.That(
+                results.Select(result => result.gameObject.name),
+                Has.No.Member("TransitionBlocker")
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator TopShowsLoadingUntilSyncedAndRetriesAfterAFailure()
+        {
+            services.Server.Fail = true;
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.Failed);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.True);
+            Assert.That(controller.PromptText, Does.Contain(TopSceneController.RetryText));
+            Assert.That(controller.PromptText, Does.Contain("通信に失敗しました"));
+
+            // 失敗中のタップは遷移せず、再試行する。
+            services.Server.Fail = false;
+            controller.ContinueButton.onClick.Invoke();
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+            Assert.That(controller.PromptText, Is.EqualTo(TopSceneController.StartText));
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.False);
+            Assert.That(services.Server.Saves, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator UnlinkedTopShowsTheLinkModalAndLinksFromIt()
+        {
+            services.Provider.Permission = HealthPermission.NotGranted;
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.LinkRequired);
+
+            var modal = controller.LinkModal;
+            Assert.That(modal, Is.Not.Null);
+            Assert.That(modal.IsShown, Is.True);
+            Assert.That(controller.TapToStartPrompt.activeSelf, Is.False);
+            Assert.That(modal.ActionLabel.text, Is.EqualTo("Health Connectと連携"));
+            Assert.That(modal.LaterLabel.text, Is.EqualTo("あとで"));
+            Assert.That(modal.GetComponent<Image>().raycastTarget, Is.True);
+            Assert.That(
+                modal.transform.parent,
+                Is.SameAs(controller.transform.parent),
+                "The modal sits beside the full-screen start button, not inside it."
+            );
+            Assert.That(
+                modal.transform.GetSiblingIndex(),
+                Is.GreaterThan(controller.transform.GetSiblingIndex())
+            );
+
+            modal.ActionButton.onClick.Invoke();
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+            Assert.That(modal.IsShown, Is.False);
+            Assert.That(services.Server.Saves, Is.EqualTo(1));
+            Assert.That(controller.PromptText, Is.EqualTo(TopSceneController.StartText));
+        }
+
+        [UnityTest]
+        public IEnumerator LaterSkipsLinkingAndStillStartsTheGame()
+        {
+            services.Provider.Permission = HealthPermission.NotGranted;
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.LinkRequired);
+
+            controller.LinkModal.LaterButton.onClick.Invoke();
+            Assert.That(controller.Flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(controller.LinkModal.IsShown, Is.False);
+            Assert.That(services.Server.Saves, Is.Zero);
+
+            // 「あとで」を選んだ起動中は、開始時の再確認でモーダルを出し直さない。
+            controller.ContinueButton.onClick.Invoke();
+            float deadline =
+                Time.realtimeSinceStartup
+                + controller.Transition.DefaultSettings.CoverDuration
+                + 2f;
+            while (
+                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
+                && Time.realtimeSinceStartup < deadline
+            )
+                yield return null;
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator StartChecksPermissionAgainAndShowsTheModalWhenRevoked()
+        {
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+
+            services.Provider.Permission = HealthPermission.NotGranted;
+            controller.ContinueButton.onClick.Invoke();
+            yield return WaitForPhase(controller, HealthStartupPhase.LinkRequired);
+            Assert.That(controller.LinkModal.IsShown, Is.True);
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.False);
+
+            // 連携し直すと、押した開始操作の続きとしてHomeへ進む。
+            controller.LinkModal.ActionButton.onClick.Invoke();
+            float deadline =
+                Time.realtimeSinceStartup
+                + controller.Transition.DefaultSettings.CoverDuration
+                + 2f;
+            while (
+                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
+                && Time.realtimeSinceStartup < deadline
+            )
+                yield return null;
+            Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator SettingsButtonSitsTopRightAndDoesNotStartTheGame()
+        {
+            var controller = default(TopSceneController);
+            yield return LoadTop(value => controller = value);
+            yield return WaitForInputReady(controller);
+            yield return WaitForPhase(controller, HealthStartupPhase.Ready);
+
+            var settings = controller.SettingsButton;
+            Assert.That(settings, Is.Not.Null);
+            var rect = (RectTransform)settings.transform;
+            Assert.That(rect.anchorMin, Is.EqualTo(Vector2.one));
+            Assert.That(rect.anchorMax, Is.EqualTo(Vector2.one));
+            Assert.That(settings.transform.parent.name, Is.EqualTo("TopSafeArea"));
+            var hit = ((RectTransform)settings.transform.Find("HitArea")).rect;
+            Assert.That(hit.width, Is.GreaterThanOrEqualTo(128f));
+            Assert.That(hit.height, Is.GreaterThanOrEqualTo(128f));
+
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Left,
+            };
+            ExecuteEvents.ExecuteHierarchy(
+                settings.gameObject,
+                pointer,
+                ExecuteEvents.pointerClickHandler
+            );
+            yield return null;
+            Assert.That(controller.Transition.IsPlaying, Is.False);
+            Assert.That(controller.ContinueButton.interactable, Is.True);
+        }
+
+        private IEnumerator LoadTop(System.Action<TopSceneController> found)
+        {
+            yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
+            loadedScene = SceneManager.GetSceneByPath(TopScenePath);
+            found(
+                loadedScene
+                    .GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<TopSceneController>(true))
+                    .Single()
+            );
+        }
+
+        private static IEnumerator WaitForPhase(
+            TopSceneController controller,
+            HealthStartupPhase phase
+        )
+        {
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (controller.Flow.Phase != phase && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(controller.Flow.Phase, Is.EqualTo(phase));
+        }
+
+        private static IEnumerator WaitForInputReady(TopSceneController controller)
+        {
+            // 開く演出の設定時間に余裕を足した期限まで、入力の受付開始を待つ。
+            float deadline =
+                Time.realtimeSinceStartup + controller.Transition.EnterSettings.RevealDuration + 1f;
+            while (!controller.IsInputReady && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(controller.IsInputReady, Is.True);
+        }
+
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
-            // TopとMainはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
+            services?.Dispose();
+            services = null;
+            // TopとHomeはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
             // 空のシーンへ切り替えてから閉じ、EventSystemなどを後続のテストへ残さない。
             SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(TopHomeSceneTests)));
-            foreach (var path in new[] { TopScenePath, MainScenePath })
+            foreach (var path in new[] { TopScenePath, HomeScenePath })
             {
                 var scene = SceneManager.GetSceneByPath(path);
                 if (scene.IsValid() && scene.isLoaded)

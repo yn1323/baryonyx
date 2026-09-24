@@ -48,11 +48,36 @@ type SessionRepository = Pick<
   "findOrCreateUser" | "createSession" | "findSessionUser"
 >;
 
+type GuestRepository = Pick<
+  ReturnType<typeof createAccountsRepository>,
+  "findOrCreateGuest" | "createSession"
+>;
+
 export async function issueSession(
   repository: SessionRepository,
   subject: string,
 ) {
-  const userId = await repository.findOrCreateUser(subject);
+  return createUserSession(
+    repository,
+    await repository.findOrCreateUser(subject),
+  );
+}
+
+// 同じ秘密値からは同じユーザーを返し、応答が届かず再送した場合も重複作成しない。
+export async function issueGuestSession(
+  repository: GuestRepository,
+  secret: string,
+) {
+  return createUserSession(
+    repository,
+    await repository.findOrCreateGuest(await hashToken(secret)),
+  );
+}
+
+async function createUserSession(
+  repository: Pick<SessionRepository, "createSession">,
+  userId: string,
+) {
   const token = hex(crypto.getRandomValues(new Uint8Array(32)));
   const expiresAt = Date.now() + 3_600_000;
   await repository.createSession(await hashToken(token), userId, expiresAt);

@@ -15,11 +15,11 @@ namespace Baryonyx.App.Editor
         public const string PrefabPath =
             "Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransition.prefab";
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
-        private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
+        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const float TransitionDuration = 0.75f;
 
         [MenuItem("Baryonyx/App/Create Scene Transition Assets")]
-        public static void CreateAssetsAndIntegrateTopMain()
+        public static void CreateAssetsAndIntegrateTopHome()
         {
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
@@ -28,8 +28,9 @@ namespace Baryonyx.App.Editor
             EnsureFolder("Assets/Baryonyx/Shared/UI/SceneTransition");
             EnsurePrefab();
             AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceSynchronousImport);
-            AddToScene(TopScenePath, startCovered: false, revealOnStart: false, configureTop: true);
-            AddToScene(MainScenePath, startCovered: true, revealOnStart: true, configureTop: false);
+            // Topも覆った状態で開き、開き終わるまで起動直後のタップを遮る。
+            AddToScene(TopScenePath, startCovered: true, revealOnStart: true, configureTop: true);
+            AddToScene(HomeScenePath, startCovered: true, revealOnStart: true, configureTop: false);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ShowcaseCatalogBuilder.RefreshCatalog();
@@ -143,43 +144,7 @@ namespace Baryonyx.App.Editor
             var wasDirty = scene.isDirty;
             try
             {
-                var instance = scene
-                    .GetRootGameObjects()
-                    .FirstOrDefault(candidate => candidate.name == "SceneTransition");
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-                if (prefab == null)
-                    throw new InvalidOperationException(
-                        $"Transition prefab not found: {PrefabPath}"
-                    );
-                if (instance != null)
-                {
-                    var source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
-                    if (source != prefab)
-                        throw new InvalidOperationException(
-                            $"A different root object named SceneTransition already exists in {scenePath}."
-                        );
-                    // 本メニューが生成したインスタンスだけを作り直し、古いoverrideを残さない。
-                    UnityEngine.Object.DestroyImmediate(instance);
-                    instance = null;
-                }
-                instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-                instance.name = "SceneTransition";
-
-                var rootRect = instance.GetComponent<RectTransform>();
-                NormalizeRootRect(rootRect);
-                PrefabUtility.RecordPrefabInstancePropertyModifications(rootRect);
-
-                var controller = instance.GetComponent<SceneTransitionController>();
-                if (controller == null)
-                    throw new InvalidOperationException(
-                        "SceneTransition prefab has no controller."
-                    );
-                SetBool(controller, "startCovered", startCovered);
-                SetBool(controller, "revealOnStart", revealOnStart);
-                ConfigureShutter(controller, "defaultSettings");
-                ConfigureShutter(controller, "enterSettings");
-                PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
-
+                var controller = AddTransition(scene, startCovered, revealOnStart);
                 if (configureTop)
                 {
                     var topController = scene
@@ -192,10 +157,22 @@ namespace Baryonyx.App.Editor
                         );
 
                     var serialized = new SerializedObject(topController);
-                    serialized.FindProperty("nextSceneName").stringValue = "Main";
+                    serialized.FindProperty("nextSceneName").stringValue = "Home";
                     serialized.FindProperty("transition").objectReferenceValue = controller;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     EditorUtility.SetDirty(topController);
+                }
+
+                foreach (
+                    var bootstrap in scene
+                        .GetRootGameObjects()
+                        .SelectMany(root => root.GetComponentsInChildren<HomeBootstrap>(true))
+                )
+                {
+                    var serialized = new SerializedObject(bootstrap);
+                    serialized.FindProperty("transition").objectReferenceValue = controller;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    EditorUtility.SetDirty(bootstrap);
                 }
 
                 // 既に開いていてdirtyなシーンは、ユーザーの未保存調整を上書きしない。
@@ -208,6 +185,50 @@ namespace Baryonyx.App.Editor
                 if (ownsScene)
                     EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        /// <summary>
+        /// Recreates the shared transition in an open scene and returns its controller.
+        /// </summary>
+        public static SceneTransitionController AddTransition(
+            Scene scene,
+            bool startCovered,
+            bool revealOnStart
+        )
+        {
+            var instance = scene
+                .GetRootGameObjects()
+                .FirstOrDefault(candidate => candidate.name == "SceneTransition");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            if (prefab == null)
+                throw new InvalidOperationException($"Transition prefab not found: {PrefabPath}");
+            if (instance != null)
+            {
+                var source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
+                if (source != prefab)
+                    throw new InvalidOperationException(
+                        $"A different root object named SceneTransition already exists in {scene.path}."
+                    );
+                // 本メニューが生成したインスタンスだけを作り直し、古いoverrideを残さない。
+                UnityEngine.Object.DestroyImmediate(instance);
+                instance = null;
+            }
+            instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            instance.name = "SceneTransition";
+
+            var rootRect = instance.GetComponent<RectTransform>();
+            NormalizeRootRect(rootRect);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(rootRect);
+
+            var controller = instance.GetComponent<SceneTransitionController>();
+            if (controller == null)
+                throw new InvalidOperationException("SceneTransition prefab has no controller.");
+            SetBool(controller, "startCovered", startCovered);
+            SetBool(controller, "revealOnStart", revealOnStart);
+            ConfigureShutter(controller, "defaultSettings");
+            ConfigureShutter(controller, "enterSettings");
+            PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
+            return controller;
         }
 
         private static void ConfigureShutter(UnityEngine.Object target, string settingsName)

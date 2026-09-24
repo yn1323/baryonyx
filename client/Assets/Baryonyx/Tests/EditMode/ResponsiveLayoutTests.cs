@@ -80,20 +80,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void WireframeBattlefieldAmbientUsesResponsiveBackground()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/Baryonyx/Features/Wireframe/UI/WireframeScreen.prefab"
-            );
-            Assert.That(prefab, Is.Not.Null);
-            var ambient = prefab.transform.Find("BattlefieldAmbient");
-            Assert.That(ambient, Is.Not.Null);
-            var background = ambient.GetComponent<ResponsiveBackground>();
-            Assert.That(background, Is.Not.Null);
-            Assert.That(background.AspectRatio, Is.EqualTo(1).Within(.001f));
-        }
-
-        [Test]
         public void ShowcaseCatalogKeepsResponsiveScreenPreviewRegistered()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(
@@ -101,15 +87,14 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(catalog, Is.Not.Null);
 
-            var wireframe = catalog.Entries.FirstOrDefault(entry =>
+            var home = catalog.Entries.FirstOrDefault(entry =>
                 entry != null
-                && entry.Description
-                    == "Assets/Baryonyx/Features/Wireframe/UI/WireframeScreen.prefab"
+                && entry.Description == "Assets/Baryonyx/Features/Home/UI/HomeScreen.prefab"
             );
-            Assert.That(wireframe, Is.Not.Null);
-            Assert.That(wireframe.PreviewPrefab, Is.Not.Null);
+            Assert.That(home, Is.Not.Null);
+            Assert.That(home.PreviewPrefab, Is.Not.Null);
             Assert.That(
-                wireframe.PreviewPrefab.GetComponentInChildren<ResponsiveBackground>(true),
+                home.PreviewPrefab.GetComponentInChildren<ResponsiveBackground>(true),
                 Is.Not.Null
             );
 

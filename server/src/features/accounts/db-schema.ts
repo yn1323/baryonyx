@@ -2,7 +2,9 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const appUsers = sqliteTable("app_users", {
   id: text("id").primaryKey(),
-  googleSub: text("google_sub").notNull().unique(),
+  // ゲストはGoogle接続なしで始め、端末が保持する秘密値のハッシュで識別する。
+  googleSub: text("google_sub").unique(),
+  guestSecretHash: text("guest_secret_hash").unique(),
 });
 
 export const appSessions = sqliteTable(

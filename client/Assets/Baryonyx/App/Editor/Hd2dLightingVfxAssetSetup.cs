@@ -4,6 +4,8 @@ using Baryonyx.Vfx.Hd2d;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App.Editor
@@ -21,9 +23,26 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dParticleField.prefab";
         public const string LightShaftPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
+        public const string FogPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
+        public const string FlickerLightPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
+        public const string EmberEmitterPrefabPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
+        public const string PostProcessProfilePath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset";
+        public const string AdditiveMaterialPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Materials/Hd2dUiAdditive.mat";
 
         private const string TextureDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Textures";
         private const string PrefabDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs";
+        private const string MaterialDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Materials";
+        private const string ProfileDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Profiles";
+        private const string TiltShiftShaderPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dTiltShift.shader";
+        private const string RendererDataDirectory = "Assets/Settings";
+        private const string AdditiveShaderPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
         private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
 
         private const string GlowTexturePath = TextureDirectory + "/Hd2dGlowSoft.png";
@@ -31,6 +50,19 @@ namespace Baryonyx.App.Editor
         private const string DustTexturePath = TextureDirectory + "/Hd2dDust.png";
         private const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
         private const string LightShaftTexturePath = TextureDirectory + "/Hd2dLightShaft.png";
+        private const string FogNoiseTexturePath = TextureDirectory + "/Hd2dFogNoise.png";
+        private const string EmberCrossTexturePath = TextureDirectory + "/Hd2dEmberCross.png";
+        private const string EmberStreakTexturePath = TextureDirectory + "/Hd2dEmberStreak.png";
+
+        // One character per dot, top row first: '#' is the bright core, digits are tenths
+        // of alpha and '.' is empty. The dimmer edge reads as glow under additive blending.
+        private static readonly string[] EmberCrossPattern = { ".5.", "5#5", ".5." };
+
+        // An upward streak one dot wide: a bright head with a tail that fades behind it.
+        // A wider head reads as a grave cross at this size.
+        private static readonly string[] EmberStreakPattern = { "#", "#", "5", "2" };
+        private const int FogNoiseSize = 256;
+        private const int FogNoiseSeed = 1234;
 
         [MenuItem("Baryonyx/VFX/Create HD-2D Lighting VFX Assets")]
         public static void CreateAssets()
@@ -60,6 +92,59 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        [MenuItem("Baryonyx/VFX/Create HD-2D Fog and Apply to Top")]
+        public static void CreateFogAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateFogOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
+        [MenuItem("Baryonyx/VFX/Create HD-2D Flicker Light and Apply to Top")]
+        public static void CreateFlickerLightAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateFlickerLightOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
+        [MenuItem("Baryonyx/VFX/Create HD-2D Tilt Shift and Apply to Top")]
+        public static void CreateTiltShift()
+        {
+            // The tilt shift lives in the shared profile and the renderers, so the Top scene
+            // only needs the post-processing setup that already references the profile.
+            CreatePostProcessAndIntegrateTop();
+        }
+
+        [MenuItem("Baryonyx/VFX/Create HD-2D Post Process and Apply to Top")]
+        public static void CreatePostProcessAndIntegrateTop()
+        {
+            EnsureAssets();
+            if (File.Exists(ToAbsolutePath(TopScenePath)))
+            {
+                var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+                if (TopHomeSceneSetup.EnsureTopPostProcess(scene))
+                    EditorSceneManager.SaveScene(scene, TopScenePath);
+            }
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
+        [MenuItem("Baryonyx/VFX/Create HD-2D Ember Emitter and Apply to Top")]
+        public static void CreateEmberEmitterAndIntegrateTop()
+        {
+            EnsureAssets();
+            IntegrateEmberEmitterOnly();
+            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+
         public static void EnsureAssets()
         {
             EnsureFolder("Assets/Baryonyx/Shared");
@@ -67,6 +152,8 @@ namespace Baryonyx.App.Editor
             EnsureFolder("Assets/Baryonyx/Shared/VFX/HD2D");
             EnsureFolder(TextureDirectory);
             EnsureFolder(PrefabDirectory);
+            EnsureFolder(MaterialDirectory);
+            EnsureFolder(ProfileDirectory);
 
             EnsureTexture(GlowTexturePath, 64, 64, CreateGlowPixels, FilterMode.Bilinear);
             EnsureTexture(RayTexturePath, 128, 64, CreateRayPixels, FilterMode.Bilinear);
@@ -79,11 +166,31 @@ namespace Baryonyx.App.Editor
                 CreateLightShaftPixels,
                 FilterMode.Bilinear
             );
+            // The fog scrolls its UVs, so the noise must tile instead of clamping at the edges.
+            EnsureTexture(
+                FogNoiseTexturePath,
+                FogNoiseSize,
+                FogNoiseSize,
+                CreateFogNoisePixels,
+                FilterMode.Bilinear,
+                TextureWrapMode.Repeat
+            );
+
+            EnsurePatternTexture(EmberCrossTexturePath, EmberCrossPattern);
+            EnsurePatternTexture(EmberStreakTexturePath, EmberStreakPattern);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             EnsureLightPointPrefab();
             EnsureParticleFieldPrefab();
             EnsureLightShaftPrefab();
+            EnsureFogPrefab();
+            EnsureAdditiveMaterial();
+            EnsureFlickerLightPrefab();
+            EnsureEmberEmitterPrefab();
+            EnsureEmberShapeSprites();
+            EnsurePostProcessProfile();
+            EnsureTiltShiftInProfile();
+            EnsureTiltShiftRendererFeatures();
             EnsurePrefab();
         }
 
@@ -100,6 +207,10 @@ namespace Baryonyx.App.Editor
 
             var changed = TopHomeSceneSetup.EnsureTopLightingVfx(scene);
             changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
+            changed |= TopHomeSceneSetup.EnsureTopFog(scene);
+            changed |= TopHomeSceneSetup.EnsureTopFlickerLight(scene);
+            changed |= TopHomeSceneSetup.EnsureTopEmberEmitter(scene);
+            changed |= TopHomeSceneSetup.EnsureTopPostProcess(scene);
             if (changed)
                 EditorSceneManager.SaveScene(scene, TopScenePath);
         }
@@ -117,6 +228,321 @@ namespace Baryonyx.App.Editor
 
             if (TopHomeSceneSetup.EnsureTopLightShaft(scene))
                 EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateFogOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopFog(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateFlickerLightOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopFlickerLight(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void IntegrateEmberEmitterOnly()
+        {
+            if (!File.Exists(ToAbsolutePath(TopScenePath)))
+                return;
+
+            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
+            if (!scene.IsValid())
+                throw new InvalidOperationException(
+                    $"Top scene could not be opened: {TopScenePath}"
+                );
+
+            if (TopHomeSceneSetup.EnsureTopEmberEmitter(scene))
+                EditorSceneManager.SaveScene(scene, TopScenePath);
+        }
+
+        private static void EnsureEmberEmitterPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dEmberEmitter", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var emitter = root.AddComponent<Hd2dEmberEmitter>();
+                emitter.ParticleLayer = CreateLayer("ParticleLayer", root.transform);
+                emitter.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                    AdditiveMaterialPath
+                );
+                emitter.PlayOnEnable = true;
+                emitter.Animate = true;
+                emitter.UseUnscaledTime = true;
+                emitter.RandomSeed = 7070;
+                emitter.Intensity = 1f;
+                // A single ember stream as a sample; each screen places its own sources.
+                emitter.Sources = new System.Collections.Generic.List<Hd2dEmberSource>
+                {
+                    new Hd2dEmberSource { Name = "Embers", Anchor = new Vector2(0.5f, 0.4f) },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, EmberEmitterPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void EnsureEmberShapeSprites()
+        {
+            var root = PrefabUtility.LoadPrefabContents(EmberEmitterPrefabPath);
+            try
+            {
+                var emitter = root.GetComponent<Hd2dEmberEmitter>();
+                if (
+                    emitter == null
+                    || (emitter.CrossSprite != null && emitter.StreakSprite != null)
+                )
+                    return;
+
+                if (emitter.CrossSprite == null)
+                    emitter.CrossSprite = LoadSprite(EmberCrossTexturePath);
+                if (emitter.StreakSprite == null)
+                    emitter.StreakSprite = LoadSprite(EmberStreakTexturePath);
+                PrefabUtility.SaveAsPrefabAsset(root, EmberEmitterPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void EnsurePostProcessProfile()
+        {
+            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath) != null)
+                return;
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, PostProcessProfilePath);
+
+            // Only bright pixels (flames, additive glows, light shafts) bloom; the pixel art
+            // itself stays sharp because the threshold sits above the painted mid-tones.
+            var bloom = profile.Add<Bloom>(true);
+            bloom.threshold.value = 0.8f;
+            bloom.intensity.value = 1.6f;
+            bloom.scatter.value = 0.65f;
+            bloom.tint.value = Color.white;
+            bloom.clamp.value = 65472f;
+            bloom.highQualityFiltering.value = false;
+            bloom.downscale.value = BloomDownscaleMode.Half;
+            bloom.maxIterations.value = 6;
+
+            var vignette = profile.Add<Vignette>(true);
+            vignette.color.value = Color.black;
+            vignette.center.value = new Vector2(0.5f, 0.5f);
+            vignette.intensity.value = 0.28f;
+            vignette.smoothness.value = 0.45f;
+            vignette.rounded.value = false;
+
+            var colorAdjustments = profile.Add<ColorAdjustments>(true);
+            colorAdjustments.postExposure.value = 0f;
+            colorAdjustments.contrast.value = 8f;
+            colorAdjustments.colorFilter.value = Color.white;
+            colorAdjustments.hueShift.value = 0f;
+            colorAdjustments.saturation.value = 6f;
+
+            foreach (var component in profile.components)
+            {
+                component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+                AssetDatabase.AddObjectToAsset(component, profile);
+            }
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureTiltShiftInProfile()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
+            if (profile == null || profile.Has<Hd2dTiltShift>())
+                return;
+
+            // Keep the middle band (title and entrance) sharp; soften the ceiling and near floor.
+            var tiltShift = profile.Add<Hd2dTiltShift>(true);
+            tiltShift.intensity.value = 1f;
+            tiltShift.focusCenter.value = 0.5f;
+            tiltShift.focusHalfHeight.value = 0.26f;
+            tiltShift.falloff.value = 0.3f;
+            tiltShift.maxRadius.value = 8f;
+            tiltShift.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            AssetDatabase.AddObjectToAsset(tiltShift, profile);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureTiltShiftRendererFeatures()
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(TiltShiftShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException($"Shader not found: {TiltShiftShaderPath}");
+
+            foreach (
+                var guid in AssetDatabase.FindAssets(
+                    "t:UniversalRendererData",
+                    new[] { RendererDataDirectory }
+                )
+            )
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
+                if (data == null)
+                    continue;
+                if (
+                    data.rendererFeatures.Exists(feature => feature is Hd2dTiltShiftRendererFeature)
+                )
+                    continue;
+
+                // Mirror the renderer Inspector: the feature is a sub-asset listed with its file ID.
+                var feature = ScriptableObject.CreateInstance<Hd2dTiltShiftRendererFeature>();
+                feature.name = "Hd2dTiltShift";
+                feature.Shader = shader;
+                AssetDatabase.AddObjectToAsset(feature, data);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out _, out long localId);
+
+                var serialized = new SerializedObject(data);
+                var features = serialized.FindProperty("m_RendererFeatures");
+                var map = serialized.FindProperty("m_RendererFeatureMap");
+                features.arraySize++;
+                features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue =
+                    feature;
+                map.arraySize++;
+                map.GetArrayElementAtIndex(map.arraySize - 1).longValue = localId;
+                serialized.ApplyModifiedProperties();
+                data.SetDirty();
+                EditorUtility.SetDirty(data);
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureAdditiveMaterial()
+        {
+            if (AssetDatabase.LoadAssetAtPath<Material>(AdditiveMaterialPath) != null)
+                return;
+
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(AdditiveShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException($"Shader not found: {AdditiveShaderPath}");
+            AssetDatabase.CreateAsset(new Material(shader), AdditiveMaterialPath);
+        }
+
+        private static void EnsureFlickerLightPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(FlickerLightPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dFlickerLight", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var light = root.AddComponent<Hd2dFlickerLight>();
+                light.LightLayer = CreateLayer("LightLayer", root.transform);
+                light.GlowSprite = LoadSprite(GlowTexturePath);
+                light.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                    AdditiveMaterialPath
+                );
+                light.PlayOnEnable = true;
+                light.Animate = true;
+                light.UseUnscaledTime = true;
+                light.RandomSeed = 4242;
+                light.Intensity = 1f;
+                // A single torch-like sample; each screen places its own light sources.
+                light.Sources = new System.Collections.Generic.List<Hd2dFlickerLightSource>
+                {
+                    new Hd2dFlickerLightSource
+                    {
+                        Name = "Torch",
+                        Anchor = new Vector2(0.5f, 0.6f),
+                        ReflectionAnchor = new Vector2(0.5f, 0.3f),
+                    },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, FlickerLightPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void EnsureFogPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(FogPrefabPath) != null)
+                return;
+
+            var root = new GameObject("Hd2dFog", typeof(RectTransform));
+            try
+            {
+                Stretch(root.GetComponent<RectTransform>());
+                var fog = root.AddComponent<Hd2dFog>();
+                fog.FogLayer = CreateLayer("FogLayer", root.transform);
+                fog.NoiseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FogNoiseTexturePath);
+                if (fog.NoiseTexture == null)
+                    throw new InvalidOperationException(
+                        $"Generated texture could not be loaded: {FogNoiseTexturePath}"
+                    );
+                fog.PlayOnEnable = true;
+                fog.Animate = true;
+                fog.UseUnscaledTime = true;
+                fog.RandomSeed = 1234;
+                fog.Intensity = 1f;
+                // Generic ground fog: a slow far band and a faster near band read as depth.
+                fog.Layers = new System.Collections.Generic.List<Hd2dFogLayer>
+                {
+                    new Hd2dFogLayer
+                    {
+                        Name = "FloorMistFar",
+                        AnchorMin = new Vector2(-0.05f, 0.18f),
+                        AnchorMax = new Vector2(1.05f, 0.4f),
+                        Color = new Color(0.55f, 0.64f, 0.8f, 0.16f),
+                        Softness = new Vector2Int(240, 70),
+                        TileSize = new Vector2(640f, 150f),
+                        ScrollSpeed = new Vector2(8f, 0f),
+                        DetailOpacity = 0.5f,
+                        BreathAmount = 0.15f,
+                        BreathSpeed = 0.18f,
+                    },
+                    new Hd2dFogLayer
+                    {
+                        Name = "FloorMistNear",
+                        AnchorMin = new Vector2(-0.05f, -0.06f),
+                        AnchorMax = new Vector2(1.05f, 0.2f),
+                        Color = new Color(0.6f, 0.68f, 0.82f, 0.2f),
+                        Softness = new Vector2Int(240, 80),
+                        TileSize = new Vector2(900f, 220f),
+                        ScrollSpeed = new Vector2(-16f, 0f),
+                        DetailOpacity = 0.5f,
+                        BreathAmount = 0.15f,
+                        BreathSpeed = 0.22f,
+                    },
+                };
+                PrefabUtility.SaveAsPrefabAsset(root, FogPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void EnsureLightShaftPrefab()
@@ -324,7 +750,8 @@ namespace Baryonyx.App.Editor
             int width,
             int height,
             Func<int, int, Color> pixelFactory,
-            FilterMode filterMode
+            FilterMode filterMode,
+            TextureWrapMode wrapMode = TextureWrapMode.Clamp
         )
         {
             var absolutePath = ToAbsolutePath(assetPath);
@@ -353,11 +780,34 @@ namespace Baryonyx.App.Editor
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.filterMode = filterMode;
-            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.wrapMode = wrapMode;
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.alphaIsTransparency = true;
             importer.SaveAndReimport();
+        }
+
+        private static void EnsurePatternTexture(string assetPath, string[] pattern)
+        {
+            // Point filtering keeps each dot square when the sprite is scaled up.
+            EnsureTexture(
+                assetPath,
+                pattern[0].Length,
+                pattern.Length,
+                (x, y) => PatternPixel(pattern, x, y),
+                FilterMode.Point
+            );
+        }
+
+        private static Color PatternPixel(string[] pattern, int x, int y)
+        {
+            // Texture rows start at the bottom; the pattern starts at the top.
+            var dot = pattern[pattern.Length - 1 - y][x];
+            var alpha =
+                dot == '#' ? 1f
+                : char.IsDigit(dot) ? (dot - '0') / 10f
+                : 0f;
+            return new Color(1f, 1f, 1f, alpha);
         }
 
         private static Color CreateGlowPixels(int x, int y)
@@ -414,6 +864,13 @@ namespace Baryonyx.App.Editor
             var along = x / (width - 1f);
             var across = y / (height - 1f) * 2f - 1f;
             return new Color(1f, 1f, 1f, Hd2dLightShaft.EvaluateBeamAlpha(along, across));
+        }
+
+        private static Color CreateFogNoisePixels(int x, int y)
+        {
+            var u = x / (float)FogNoiseSize;
+            var v = y / (float)FogNoiseSize;
+            return new Color(1f, 1f, 1f, Hd2dFog.EvaluateNoiseAlpha(u, v, FogNoiseSeed));
         }
 
         private static void Stretch(RectTransform rect)

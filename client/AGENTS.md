@@ -7,20 +7,44 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ## 配置と設計の参照先
 
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
-現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、動作確認では全面押下で `Main.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
-既存の `Main.unity` は健康データを含むワイヤー画面として残している。
+現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
+Topは起動時にゲームサーバーへの接続とHealth Connectの歩数の同期を行い、終わるまで「LOADING...」を表示する（[起動時の連携と歩数の同期](../doc/features/startup-sync.md)）。
+`Home.unity` はホーム画面のモックで、左上の今日の歩数だけサーバーの値を表示する。行き先カード（再開）の遷移先は未設定のため遷移しない。
+シーンはTop・Home・展示室の `Showcase.unity` だけである。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。
 
 ## サーバーのBaseURL
 
-Unityクライアントが利用するBaseURLは、[HealthConnectionSettings.asset](Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) の `ServerBaseUrl` に保持する。
+Unityクライアントの接続先は、[HealthConnectionSettings.asset](Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) に環境ごとに保持する。
 この値は公開される接続先であり、APIキー、CloudflareのAPIトークン、クライアントシークレットなどの秘密情報をこのAssetやUnityプロジェクトへ追加しない。
+接続先を切り替えるためにAssetを書き換えない。
 
-環境ごとの値は次のとおりとする。
+| 項目 | 値 |
+|---|---|
+| `DevServerUrl` | `https://baryonyx-server-dev.croissant-lab.workers.dev` |
+| `ProdServerUrl` | 未設定（Prod環境の公開後に設定する） |
+| `BuildServerUrl` | リポジトリでは常に空。APKのビルド中だけ、選んだ環境のURLが入る |
 
-- Unity EditorでLocalサーバーを使うときは `http://127.0.0.1:3000`。
-- Androidエミュレーターから同じPCのLocalサーバーを使うときは `http://10.0.2.2:3000`。
-- Dev向けAPKを作るときは `https://baryonyx-server-dev.croissant-lab.workers.dev`。
+EditorのPlayで接続する先は、メニューの `Baryonyx > Server` で `Local (127.0.0.1:4000)`・`Dev`・`Prod` から選ぶ。
+選択は開発者ごとの `client/UserSettings/BaryonyxServer.json`（Git対象外）に保存し、未選択ならLocalに接続する。
+この選択はAPKに影響しない。
+
+APKの接続先は、[AndroidBuild.Build](Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を実行するときの環境変数で決める。
+
+| 環境変数 | 接続先 |
+|---|---|
+| どちらも未指定 | Dev |
+| `BARYONYX_ENVIRONMENT=dev` または `preview` | Dev（PreviewのAPKは当面Devへ接続する） |
+| `BARYONYX_ENVIRONMENT=prod` | `ProdServerUrl`。未設定ならビルドを止める |
+| `BARYONYX_SERVER_URL=<URL>` | 指定したURL。環境名より優先する。Androidエミュレーターから同じPCのLocalサーバーを使うときは `http://10.0.2.2:4000`（エミュレーター内の `127.0.0.1` はエミュレーター自身を指すため） |
+
+Google Driveへ配置するときは、環境名をあらかじめ設定した[環境別のショートカット](../AGENTS.md#手動実行用ショートカット)を使う。
+ビルドログの `BARYONYX_ANDROID_SERVER:` の行で、APKに入れた環境名とURLを確認できる。
+ビルド後は `BuildServerUrl` を空へ戻す。ビルドが途中で強制終了した場合は値が残ることがあるため、Assetの差分を確認して空へ戻す。
+[AndroidBuild.Build](Assets/Baryonyx/Editor/CI/AndroidBuild.cs) 以外の方法でビルドしたAPKはDevへ接続する。
+
+HTTPは [ServerApi](Assets/Baryonyx/Shared/Networking/ServerApi.cs) が `127.0.0.1`・`localhost`・`10.0.2.2` だけで受け付け、Player Settingsの「Allow downloads over HTTP」はDevelopment Buildだけで許可している。
+Editorで未連携のモーダルを確認するときは、同じAssetの `PreviewStartsUnlinked` を有効にする。
 
 `HealthConnectionSettings.asset` が存在しない場合は、Unity Editorで `Baryonyx > Health > Create Screen Assets` を実行して生成する。
 Unityを閉じた状態でリポジトリのルートから同じ処理を実行する場合は、次のコマンドを使う。
@@ -44,28 +68,6 @@ if ([string]::IsNullOrWhiteSpace($unityPath)) {
 if ($LASTEXITCODE -ne 0) { throw "UnityでのAsset生成に失敗しました。終了コード: $LASTEXITCODE" }
 ```
 
-`ServerBaseUrl` だけを修正する場合は、リポジトリのルートで次のPowerShellを実行する。
-`$baseUrl` にはLocalまたはDevのURLだけを指定し、実行後に差分を確認する。
-
-```powershell
-$settingsPath = 'client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset'
-$baseUrl = 'https://baryonyx-server-dev.croissant-lab.workers.dev'
-if (-not (Test-Path $settingsPath)) { throw "設定Assetが見つかりません: $settingsPath" }
-$content = [System.IO.File]::ReadAllText((Resolve-Path $settingsPath))
-if ($content -notmatch '(?m)^  ServerBaseUrl:') { throw 'ServerBaseUrlフィールドが見つかりません。' }
-$content = [regex]::Replace($content, '(?m)^  ServerBaseUrl:.*$', "  ServerBaseUrl: $baseUrl", 1)
-[System.IO.File]::WriteAllText(
-    (Resolve-Path $settingsPath),
-    $content,
-    [System.Text.UTF8Encoding]::new($false)
-)
-```
-
-Localで作業するときは `$baseUrl` を `http://127.0.0.1:3000` に変更する。
-Dev向けAPKをビルドするときはDev URLへ変更してから [build-apk.bat](../shortcuts/build-apk.bat) または [build-apk-to-drive.bat](../shortcuts/build-apk-to-drive.bat) を実行する。
-ビルド後にLocalへ戻す場合も同じ修正コマンドを再実行する。
-この手順では設定Assetをビルド中に自動生成・書き換えないため、ビルド後に作業ツリーへ意図しない変更を残さないよう、変更前後の差分を確認する。
-
 ## Unity CLI
 
 Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキルに従う。
@@ -83,3 +85,12 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 - アセットの移動・名前変更・削除はUnityの機能を使い、対応する `.meta` とGUIDの整合を保つ。
 - 画面変更後はGameビューを撮影し、保存した画像を開いて確認する。Overlay UIを含める場合はPlayModeで `capture_game_view --source screen` を使う。
 - 検証画像は `Assets/DevCaptures/` に保存する。このフォルダと対応する `.meta` はGit除外済み。
+
+## フォントアセットの差分
+
+[DotGothic16.asset](Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset) はTextMeshProの動的フォントアセットである。
+Editorで新しい文字を表示すると、Unityが文字の一覧とアトラス画像をこのファイルへ書き足すため、作業内容と関係なく差分が出る。
+
+- コミットするときは、この差分もコミットの対象に含める。作業内容とは別の `chore` コミットに分ける。
+- `.gitignore` や `git update-index --skip-worktree` で除外しない。このアセットはTMPの既定フォント設定やシーン・PrefabからGUIDで参照されており、手元にない環境では文字を表示できなくなる。
+- 追加された文字データはビルド時に消える（Clear Dynamic Data On Build）ため、コミットしても実機の表示や容量には影響しない。

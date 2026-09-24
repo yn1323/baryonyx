@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1952457759082947661
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5889404197329397295}
+  m_Layer: 0
+  m_Name: FogLayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5889404197329397295
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1952457759082947661}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3356454777064990890}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &4287550845413780066
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3356454777064990890}
+  - component: {fileID: 1990980634216503354}
+  m_Layer: 0
+  m_Name: Hd2dFog
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3356454777064990890
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4287550845413780066}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5889404197329397295}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1990980634216503354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4287550845413780066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d48c8c324fc4d47ad7059c6f7588e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dFog
+  FogLayer: {fileID: 5889404197329397295}
+  NoiseTexture: {fileID: 2800000, guid: f79ca2d1acf53409bb3a0923aba23d0a, type: 3}
+  PlayOnEnable: 1
+  Animate: 1
+  UseUnscaledTime: 1
+  RandomSeed: 1234
+  PreviewInEditor: 1
+  Intensity: 1
+  Layers:
+  - Name: FloorMistFar
+    AnchorMin: {x: -0.05, y: 0.18}
+    AnchorMax: {x: 1.05, y: 0.4}
+    Color: {r: 0.55, g: 0.64, b: 0.8, a: 0.16}
+    Softness: {x: 240, y: 70}
+    TileSize: {x: 640, y: 150}
+    ScrollSpeed: {x: 8, y: 0}
+    DetailOpacity: 0.5
+    BreathAmount: 0.15
+    BreathSpeed: 0.18
+    Texture: {fileID: 0}
+  - Name: FloorMistNear
+    AnchorMin: {x: -0.05, y: -0.06}
+    AnchorMax: {x: 1.05, y: 0.2}
+    Color: {r: 0.6, g: 0.68, b: 0.82, a: 0.2}
+    Softness: {x: 240, y: 80}
+    TileSize: {x: 900, y: 220}
+    ScrollSpeed: {x: -16, y: 0}
+    DetailOpacity: 0.5
+    BreathAmount: 0.15
+    BreathSpeed: 0.22
+    Texture: {fileID: 0}
