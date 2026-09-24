@@ -84,6 +84,49 @@ Runtimeスクリプトから`UnityEditor`、`AssetDatabase`、`Selection`、`Men
 
 `OnValidate`、`Reset`、`InitializeOnLoadMethod`、`MenuItem`はEditorで何度も呼ばれ得る。アセットを書き換える、Prefabを生成する、外部サービスを呼ぶ処理は冪等性とUndo・保存状態を設計する。
 
+### OnValidateで行ってよい処理
+
+`OnValidate`は、Inspectorで値を変えたときやアセットの読み込み時に呼ばれる。
+Unityの公式ドキュメントは、変わった値の検証だけに使い、オブジェクトの生成やスレッドセーフでないUnity APIの呼び出しはしないよう求めている。
+メインスレッド以外（読み込み用のスレッド）から呼ばれる場合があるためである。
+
+標準のC#では、値の設定時に関連する表示を更新するのは普通の書き方である。
+しかしUnityでは、`OnValidate`の中で`RectTransform.sizeDelta`などを変えると、`OnRectTransformDimensionsChange`の通知を送れず、次の警告が出る。
+
+```text
+SendMessage cannot be called during Awake, CheckConsistency, or OnValidate (<オブジェクト名>: OnRectTransformDimensionsChange)
+```
+
+`OnValidate`では値の範囲を整えるだけにし、表示への反映は`EditorApplication.delayCall`で`OnValidate`を抜けてから行う。
+Runtimeのスクリプトでは`#if UNITY_EDITOR`で囲み、Playerのビルドに`UnityEditor`の参照を残さない。
+
+```csharp
+private void OnValidate()
+{
+    ClampSettings();
+#if UNITY_EDITOR
+    // 同じフレームで何度呼ばれても一度だけ反映する。
+    UnityEditor.EditorApplication.delayCall -= ApplyAfterValidate;
+    UnityEditor.EditorApplication.delayCall += ApplyAfterValidate;
+#endif
+}
+
+#if UNITY_EDITOR
+private void ApplyAfterValidate()
+{
+    // 反映を待つ間に削除された場合は何もしない。Unityの破棄判定を使うため`this == null`で確かめる。
+    if (this == null)
+        return;
+    ApplyVisualSettings();
+}
+#endif
+```
+
+- 登録の前に`-=`で外し、何度`OnValidate`が呼ばれても反映を1回にする。
+- 呼ばれた時点でオブジェクトが削除されている場合があるため、Unityの`== null`で確かめてから触る。
+- `OnValidate`で`StartCoroutine`しない。Play中の再開も遅延後の処理で行い、`isActiveAndEnabled`を確認する。
+- 実装例：[TranslucentTextPanel](../../../../client/Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.cs)。
+
 ## 6. 生成アセット・シーンの注意
 
 - 新しいシーンやPrefabを追加したら、Build Settings、参照GUID、展示室やカタログなどプロジェクト固有の登録も確認する。
@@ -99,3 +142,5 @@ Runtimeスクリプトから`UnityEditor`、`AssetDatabase`、`Selection`、`Men
 - `CompareTag`：<https://docs.unity3d.com/ja/current/ScriptReference/Component.CompareTag.html>
 - `RuntimeInitializeOnLoadMethod`：<https://docs.unity3d.com/ja/6000.0/ScriptReference/RuntimeInitializeOnLoadMethodAttribute.html>
 - `InitializeOnLoadMethod`：<https://docs.unity3d.com/jp/current/ScriptReference/InitializeOnLoadMethodAttribute.html>
+- `MonoBehaviour.OnValidate`：<https://docs.unity3d.com/6000.0/Documentation/ScriptReference/MonoBehaviour.OnValidate.html>
+- `EditorApplication.delayCall`：<https://docs.unity3d.com/6000.0/Documentation/ScriptReference/EditorApplication-delayCall.html>

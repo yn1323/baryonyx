@@ -15,6 +15,8 @@ Unity APIやC#の挙動を断定する前に、プロジェクトのUnityバー�
 - [`Component.TryGetComponent`](https://docs.unity3d.com/ja/current/ScriptReference/Component.TryGetComponent.html) / [`GetComponent`](https://docs.unity3d.com/ja/current/ScriptReference/GameObject.GetComponent.html)：取得・null・allocation。
 - [`CompareTag`](https://docs.unity3d.com/ja/current/ScriptReference/Component.CompareTag.html)：タグ判定。
 - [`イベント関数の実行順序`](https://docs.unity3d.com/ja/6000.0/Manual/execution-order.html)：Awake、OnEnable、Start、Update、FixedUpdate、OnDestroyなど。
+- [`MonoBehaviour.OnValidate`](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/MonoBehaviour.OnValidate.html)：変わった値の検証だけに使い、生成やスレッドセーフでないAPIを呼ばない。描画などは`EditorApplication.update`・`delayCall`へ回す。
+- [`EditorApplication.delayCall`](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/EditorApplication-delayCall.html)：インスペクターの更新が終わった後に一度だけ呼ばれるデリゲート。
 - [`シリアル化のルール`](https://docs.unity3d.com/ja/6000.0/Manual/script-serialization-rules.html)：フィールド、`SerializeField`、`SerializeReference`、対応型。
 - [`MonoBehaviour`](https://docs.unity3d.com/jp/current/Manual/class-MonoBehaviour.html)：コンストラクターを使わない理由、アタッチ、Start/Update、コルーチン。
 - [`RuntimeInitializeOnLoadMethod`](https://docs.unity3d.com/ja/6000.0/ScriptReference/RuntimeInitializeOnLoadMethodAttribute.html)：Player起動時のstaticコールバックと実行段階。
