@@ -28,8 +28,16 @@ namespace Baryonyx.Home
         public TMP_Text GoalLabel;
         public Image[] Segments = Array.Empty<Image>();
         public TMP_Text RemainingLabel;
-        public TMP_Text WeeklyLabel;
         public TMP_Text ClaimLabel;
+
+        // 案内の行（アイコンと文言）。TopのTAP TO STARTと同じ周期と濃さで点滅させる。
+        public CanvasGroup ClaimGroup;
+
+        [Min(0.1f)]
+        public float ClaimPulseSeconds = 2.4f;
+
+        [Range(0f, 1f)]
+        public float ClaimPulseMinimumAlpha = 0.35f;
 
         [Header("右上")]
         public TMP_Text RunesLabel;
@@ -63,6 +71,7 @@ namespace Baryonyx.Home
         private readonly List<(Button button, UnityEngine.Events.UnityAction listener)> bindings =
             new();
         private Coroutine toastRoutine;
+        private bool claimPulses;
 
         public event Action<HomeAction> ActionRequested;
 
@@ -117,11 +126,31 @@ namespace Baryonyx.Home
             Set(RemainingLabel, state.RemainingText);
             if (RemainingLabel != null)
                 RemainingLabel.color = state.DailyAchieved ? GaugeAchieved : TextSub;
-            Set(WeeklyLabel, state.WeeklyText);
             Set(ClaimLabel, state.ClaimText);
+            claimPulses = state.ClaimPulses;
+            if (!claimPulses && ClaimGroup != null)
+                ClaimGroup.alpha = 1f;
             Set(RunesLabel, state.RunesText);
             Set(DestinationNameLabel, state.DestinationNameText);
             Set(DestinationFloorLabel, state.DestinationFloorText);
+        }
+
+        private void Update()
+        {
+            if (claimPulses && ClaimGroup != null)
+                ClaimGroup.alpha = PulseAlpha(
+                    Time.unscaledTime,
+                    ClaimPulseSeconds,
+                    ClaimPulseMinimumAlpha
+                );
+        }
+
+        // 周期の始めと終わりで1、半周期で最小値になる。
+        public static float PulseAlpha(float time, float periodSeconds, float minimumAlpha)
+        {
+            float period = Mathf.Max(0.1f, periodSeconds);
+            float wave = (Mathf.Cos(time / period * Mathf.PI * 2f) + 1f) * 0.5f;
+            return Mathf.Lerp(Mathf.Clamp01(minimumAlpha), 1f, wave);
         }
 
         public void ShowToast(string message)

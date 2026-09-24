@@ -52,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
             snapshot.Steps = today != null ? (int)today.steps : 0;
             var expected = HomeViewState.From(snapshot);
             Assert.That(view.StepsLabel.text, Is.EqualTo(expected.StepsText));
-            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップ"));
             Assert.That(view.RunesLabel.text, Is.EqualTo(expected.RunesText));
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo(expected.DestinationNameText));
             Assert.That(view.DestinationFloorLabel.text, Is.EqualTo(expected.DestinationFloorText));
@@ -150,7 +150,7 @@ namespace Baryonyx.Tests.PlayMode
             view.StepButton.onClick.Invoke();
             yield return WaitForSteps(bootstrap);
             Assert.That(view.CurrentToast, Is.EqualTo("歩数を取得できませんでした"));
-            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップ"));
         }
 
         [UnityTest]

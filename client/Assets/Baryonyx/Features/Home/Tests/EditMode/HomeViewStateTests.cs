@@ -29,15 +29,15 @@ namespace Baryonyx.Tests.EditMode
         {
             var state = HomeViewState.From(Sample());
 
-            Assert.That(state.DateText, Is.EqualTo("9月24日（木）"));
+            Assert.That(state.DateText, Is.EqualTo("9/24（木）"));
             Assert.That(state.ShowSteps, Is.True);
             Assert.That(state.StepsText, Is.EqualTo("3,820"));
             Assert.That(state.GoalText, Is.EqualTo("今日の目標 5,000"));
             Assert.That(state.FilledSegments, Is.EqualTo(15));
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 歩"));
-            Assert.That(state.WeeklyText, Is.EqualTo("今週の目標 2 / 3 回"));
-            Assert.That(state.ClaimText, Is.EqualTo("タップで歩数を同期"));
+            Assert.That(state.ClaimText, Is.EqualTo("タップ"));
+            Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
             Assert.That(state.DestinationNameText, Is.EqualTo("森の遺跡"));
             Assert.That(state.DestinationFloorText, Is.EqualTo("B3F"));
@@ -64,6 +64,26 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.FilledSegments, Is.Zero);
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.Empty);
+        }
+
+        [Test]
+        public void SyncingShowsProgressWithoutPulsing()
+        {
+            var snapshot = Sample();
+            snapshot.StepSyncing = true;
+            var state = HomeViewState.From(snapshot);
+
+            Assert.That(state.ClaimText, Is.EqualTo("同期中…"));
+            Assert.That(state.ClaimPulses, Is.False);
+        }
+
+        [Test]
+        public void ClaimPulseStartsOpaqueAndDimsHalfwayThroughThePeriod()
+        {
+            Assert.That(HomeView.PulseAlpha(0f, 2.4f, 0.35f), Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(HomeView.PulseAlpha(1.2f, 2.4f, 0.35f), Is.EqualTo(0.35f).Within(1e-5f));
+            Assert.That(HomeView.PulseAlpha(2.4f, 2.4f, 0.35f), Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(HomeView.PulseAlpha(0.6f, 2.4f, 0.35f), Is.InRange(0.35f, 1f));
         }
 
         [Test]

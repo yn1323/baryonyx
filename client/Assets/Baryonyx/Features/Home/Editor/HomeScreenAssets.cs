@@ -273,8 +273,10 @@ namespace Baryonyx.Home.Editor
                     Spread = 30f,
                     SpeedRange = new Vector2(40f, 90f),
                     Buoyancy = 16f,
-                    Sway = 10f,
-                    SwaySpeed = 1.7f,
+                    Sway = 0f,
+                    Curl = 42f,
+                    CurlScale = 64f,
+                    CurlSpeed = 0.5f,
                     DotSize = 2,
                     CrossShare = 0.3f,
                     StreakShare = 0.15f,
@@ -347,26 +349,6 @@ namespace Baryonyx.Home.Editor
                 .FitMode
                 .PreferredSize;
 
-            var header = Row(panel, "StepHeader", 30, 0);
-            Flexible(
-                Label(
-                    header,
-                    "StepTitle",
-                    "今日の歩み",
-                    24,
-                    TextSub,
-                    TextAlignmentOptions.MidlineLeft
-                )
-            );
-            view.DateLabel = Label(
-                header,
-                "DateLabel",
-                "",
-                20,
-                TextFaint,
-                TextAlignmentOptions.MidlineRight
-            );
-
             var details = Rect("StepDetails", panel);
             var detailColumn = details.gameObject.AddComponent<VerticalLayoutGroup>();
             detailColumn.spacing = 12;
@@ -393,16 +375,33 @@ namespace Baryonyx.Home.Editor
                 TextSub,
                 TextAlignmentOptions.BottomLeft
             ).margin = new Vector4(0, 0, 0, 8);
+
+            // The date sits above the goal on the right, so the panel needs no header row.
+            var side = Rect("StepsSide", stepsRow);
+            var sideColumn = side.gameObject.AddComponent<VerticalLayoutGroup>();
+            sideColumn.padding = new RectOffset(0, 0, 0, 8);
+            sideColumn.spacing = 10;
+            sideColumn.childAlignment = TextAnchor.LowerRight;
+            sideColumn.childControlWidth = sideColumn.childControlHeight = true;
+            sideColumn.childForceExpandWidth = true;
+            sideColumn.childForceExpandHeight = false;
+            side.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+            view.DateLabel = Label(
+                side,
+                "DateLabel",
+                "",
+                20,
+                TextFaint,
+                TextAlignmentOptions.BottomRight
+            );
             view.GoalLabel = Label(
-                stepsRow,
+                side,
                 "GoalLabel",
                 "",
                 22,
                 TextFaint,
                 TextAlignmentOptions.BottomRight
             );
-            view.GoalLabel.margin = new Vector4(0, 0, 0, 8);
-            Flexible(view.GoalLabel);
 
             var gauge = Row(details, "Gauge", 18, 4);
             var segments = new Image[HomeViewState.GaugeSegments];
@@ -426,14 +425,6 @@ namespace Baryonyx.Home.Editor
                 TextAlignmentOptions.MidlineLeft
             );
             Flexible(view.RemainingLabel);
-            view.WeeklyLabel = Label(
-                footer,
-                "WeeklyLabel",
-                "",
-                22,
-                TextSub,
-                TextAlignmentOptions.MidlineRight
-            );
 
             var unlinked = Rect("UnlinkedDetails", panel);
             var unlinkedColumn = unlinked.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -470,8 +461,13 @@ namespace Baryonyx.Home.Editor
             var lineSize = divider.gameObject.AddComponent<LayoutElement>();
             lineSize.minHeight = lineSize.preferredHeight = 2;
 
+            // The hint sits on the right and pulses like TAP TO START; the panel takes the tap.
             var claim = Row(panel, "ClaimRow", 36, 10);
-            claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleLeft;
+            claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleRight;
+            var claimGroup = claim.gameObject.AddComponent<CanvasGroup>();
+            claimGroup.interactable = false;
+            claimGroup.blocksRaycasts = false;
+            view.ClaimGroup = claimGroup;
             Icon(claim, "ClaimIcon", HomeScreenArt.IconRunePath, 26, Teal);
             view.ClaimLabel = Label(
                 claim,
@@ -479,7 +475,7 @@ namespace Baryonyx.Home.Editor
                 "",
                 24,
                 Teal,
-                TextAlignmentOptions.MidlineLeft
+                TextAlignmentOptions.MidlineRight
             );
         }
 
@@ -845,8 +841,11 @@ namespace Baryonyx.Home.Editor
                 Spread = 34f,
                 SpeedRange = new Vector2(34f, 72f) * scale,
                 Buoyancy = 14f * scale,
-                Sway = 9f * scale,
-                SwaySpeed = 1.7f,
+                // Curl noise bends the embers instead of a periodic sway.
+                Sway = 0f,
+                Curl = 36f * scale,
+                CurlScale = 56f * scale,
+                CurlSpeed = 0.5f,
                 DotSize = 2,
                 // The far torches get fewer large embers, so they read as smaller.
                 CrossShare = scale < 1f ? 0.25f : 0.3f,

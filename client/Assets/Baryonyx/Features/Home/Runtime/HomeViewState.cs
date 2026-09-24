@@ -20,8 +20,10 @@ namespace Baryonyx.Home
         public int FilledSegments { get; private set; }
         public bool DailyAchieved { get; private set; }
         public string RemainingText { get; private set; }
-        public string WeeklyText { get; private set; }
         public string ClaimText { get; private set; }
+
+        // 同期中以外は、TAP TO STARTと同じように案内を点滅させて押せることを示す。
+        public bool ClaimPulses { get; private set; }
         public string RunesText { get; private set; }
         public string DestinationNameText { get; private set; }
         public string DestinationFloorText { get; private set; }
@@ -40,7 +42,7 @@ namespace Baryonyx.Home
             return new HomeViewState
             {
                 DateText =
-                    $"{snapshot.Today.Month}月{snapshot.Today.Day}日（{Weekdays[(int)snapshot.Today.DayOfWeek]}）",
+                    $"{snapshot.Today.Month}/{snapshot.Today.Day}（{Weekdays[(int)snapshot.Today.DayOfWeek]}）",
                 ShowSteps = linked,
                 StepsText = known ? Number(steps) : "--",
                 GoalText = goal > 0 ? $"今日の目標 {Number(goal)}" : "今日の目標 未設定",
@@ -50,14 +52,11 @@ namespace Baryonyx.Home
                     goal <= 0 || !known ? ""
                     : achieved ? "今日の目標 達成！"
                     : $"あと {Number(goal - steps)} 歩",
-                WeeklyText =
-                    snapshot.WeeklyTarget > 0
-                        ? $"今週の目標 {Math.Max(0, snapshot.WeeklyDone)} / {snapshot.WeeklyTarget} 回"
-                        : "",
                 ClaimText =
                     snapshot.StepSyncing ? "同期中…"
-                    : linked ? "タップで歩数を同期"
+                    : linked ? "タップ"
                     : "タップして歩数を連携",
+                ClaimPulses = !snapshot.StepSyncing,
                 RunesText = Number(Math.Max(0, snapshot.Runes)),
                 DestinationNameText = snapshot.DestinationName ?? "",
                 DestinationFloorText = snapshot.DestinationFloor ?? "",
