@@ -16,11 +16,10 @@ namespace Baryonyx.App.Editor
             "Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransition.prefab";
         private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
         private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
-        private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
         private const float TransitionDuration = 0.75f;
 
         [MenuItem("Baryonyx/App/Create Scene Transition Assets")]
-        public static void CreateAssetsAndIntegrateTopMain()
+        public static void CreateAssetsAndIntegrateTopHome()
         {
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
@@ -32,7 +31,6 @@ namespace Baryonyx.App.Editor
             // Topも覆った状態で開き、開き終わるまで起動直後のタップを遮る。
             AddToScene(TopScenePath, startCovered: true, revealOnStart: true, configureTop: true);
             AddToScene(HomeScenePath, startCovered: true, revealOnStart: true, configureTop: false);
-            AddToScene(MainScenePath, startCovered: true, revealOnStart: true, configureTop: false);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ShowcaseCatalogBuilder.RefreshCatalog();

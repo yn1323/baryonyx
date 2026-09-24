@@ -1334,7 +1334,7 @@ MonoBehaviour:
   view: {fileID: 206276501}
   data: {fileID: 11400000, guid: 2fdbf4441f71949bd9683e06a77e0681, type: 2}
   transition: {fileID: 397873047}
-  adventureSceneName: Main
+  adventureSceneName: 
 --- !u!4 &1837569535
 Transform:
   m_ObjectHideFlags: 0

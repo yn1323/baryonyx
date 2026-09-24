@@ -8,7 +8,8 @@ namespace Baryonyx.App
 {
     /// <summary>
     /// Builds the home screen mock from fixed sample data. It never creates the health
-    /// runtime; only the adventure button leaves for the existing wireframe scene.
+    /// runtime. The adventure button leaves the scene only when a destination is set;
+    /// otherwise it shows the same "coming soon" feedback as the other mock buttons.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -22,7 +23,7 @@ namespace Baryonyx.App
         private SceneTransitionController transition;
 
         [SerializeField]
-        private string adventureSceneName = "Main";
+        private string adventureSceneName = "";
 
         private HomePresenter presenter;
 
@@ -39,7 +40,11 @@ namespace Baryonyx.App
                 Debug.LogError("HomeBootstrap requires a view and mock data.", this);
                 return;
             }
-            presenter = new HomePresenter(view, data.ToSnapshot(DateTime.Today), StartAdventure);
+            presenter = new HomePresenter(
+                view,
+                data.ToSnapshot(DateTime.Today),
+                string.IsNullOrWhiteSpace(adventureSceneName) ? null : StartAdventure
+            );
         }
 
         private void OnDestroy()
@@ -50,10 +55,7 @@ namespace Baryonyx.App
 
         private bool StartAdventure()
         {
-            if (
-                string.IsNullOrWhiteSpace(adventureSceneName)
-                || !Application.CanStreamedLevelBeLoaded(adventureSceneName)
-            )
+            if (!Application.CanStreamedLevelBeLoaded(adventureSceneName))
             {
                 Debug.LogError(
                     $"The adventure scene '{adventureSceneName}' is not enabled in Build Settings.",

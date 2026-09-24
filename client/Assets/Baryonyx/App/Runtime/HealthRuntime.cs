@@ -9,7 +9,8 @@ using Baryonyx.Networking;
 
 namespace Baryonyx.App
 {
-    // The two entry scenes share platform selection and provider lifetime.
+    // Selects the platform providers and owns their lifetime for any scene that shows
+    // health data. No scene uses it while the game screens are being rebuilt.
     public sealed class HealthRuntime : IDisposable
     {
         public HealthScreenPresenter Presenter { get; }
@@ -54,7 +55,7 @@ namespace Baryonyx.App
         public async Task InitializeAsync()
         {
             // Check the platform requirements first, then start the same connection
-            // flow used by the Health Connect button. This keeps the home screen
+            // flow used by the Health Connect button. This keeps the calling screen
             // immediately usable while the permission/read operation runs in the
             // background.
             await Presenter.InitializeAsync();

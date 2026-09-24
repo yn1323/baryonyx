@@ -14,7 +14,6 @@ namespace Baryonyx.Tests.PlayMode
     public sealed class HomeSceneTests
     {
         private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
-        private const string MainScenePath = "Assets/Baryonyx/App/Scenes/Main.unity";
         private const float MinimumTouchSize = 128f;
 
         [UnityTest]
@@ -25,18 +24,10 @@ namespace Baryonyx.Tests.PlayMode
             var view = bootstrap.View;
 
             Assert.That(bootstrap.Data, Is.Not.Null);
-            Assert.That(bootstrap.AdventureSceneName, Is.EqualTo("Main"));
+            Assert.That(bootstrap.AdventureSceneName, Is.Empty);
             Assert.That(
                 bootstrap.Transition.EnterSettings.Type,
                 Is.EqualTo(SceneTransitionType.Shutter)
-            );
-            Assert.That(
-                Object.FindObjectsByType<WireframeBootstrap>(FindObjectsSortMode.None),
-                Is.Empty
-            );
-            Assert.That(
-                Object.FindObjectsByType<HealthScreenBootstrap>(FindObjectsSortMode.None),
-                Is.Empty
             );
 
             var expected = HomeViewState.From(bootstrap.Data.ToSnapshot(System.DateTime.Today));
@@ -123,35 +114,22 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator RepeatedResumeTapsLoadTheWireframeOnce()
+        public IEnumerator ResumeWithoutDestinationStaysOnHome()
         {
             var bootstrap = default(HomeBootstrap);
             yield return LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
-            int mainLoads = 0;
-            void Count(Scene scene, LoadSceneMode _)
-            {
-                if (scene.path == MainScenePath)
-                    mainLoads++;
-            }
+            int loads = 0;
+            void Count(Scene scene, LoadSceneMode _) => loads++;
 
             SceneManager.sceneLoaded += Count;
             try
             {
                 view.ResumeButton.onClick.Invoke();
-                view.ResumeButton.onClick.Invoke();
-                view.WorldMapButton.onClick.Invoke();
-                Assert.That(bootstrap.Presenter.AdventureStarted, Is.True);
-
-                float deadline =
-                    Time.realtimeSinceStartup
-                    + bootstrap.Transition.DefaultSettings.CoverDuration
-                    + 3f;
-                while (
-                    !SceneManager.GetSceneByPath(MainScenePath).isLoaded
-                    && Time.realtimeSinceStartup < deadline
-                )
-                    yield return null;
+                Assert.That(view.CurrentToast, Is.EqualTo("再開（準備中）"));
+                Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
+                Assert.That(bootstrap.Transition.IsPlaying, Is.False);
+                yield return null;
                 yield return null;
             }
             finally
@@ -159,20 +137,17 @@ namespace Baryonyx.Tests.PlayMode
                 SceneManager.sceneLoaded -= Count;
             }
 
-            Assert.That(SceneManager.GetSceneByPath(MainScenePath).isLoaded, Is.True);
-            Assert.That(mainLoads, Is.EqualTo(1));
+            Assert.That(loads, Is.Zero);
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(HomeScenePath));
         }
 
         [UnityTearDown]
         public IEnumerator UnloadScenes()
         {
             SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(HomeSceneTests)));
-            foreach (var path in new[] { HomeScenePath, MainScenePath })
-            {
-                var scene = SceneManager.GetSceneByPath(path);
-                if (scene.IsValid() && scene.isLoaded)
-                    yield return SceneManager.UnloadSceneAsync(scene);
-            }
+            var scene = SceneManager.GetSceneByPath(HomeScenePath);
+            if (scene.IsValid() && scene.isLoaded)
+                yield return SceneManager.UnloadSceneAsync(scene);
         }
 
         private static IEnumerator LoadHome(System.Action<HomeBootstrap> found)

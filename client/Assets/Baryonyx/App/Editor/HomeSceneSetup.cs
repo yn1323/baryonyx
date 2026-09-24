@@ -75,7 +75,7 @@ namespace Baryonyx.App.Editor
                     screen.GetComponent<HomeView>();
                 serialized.FindProperty("data").objectReferenceValue = data;
                 serialized.FindProperty("transition").objectReferenceValue = transition;
-                serialized.FindProperty("adventureSceneName").stringValue = "Main";
+                serialized.FindProperty("adventureSceneName").stringValue = "";
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 EditorSceneManager.SaveScene(scene, HomeScenePath);
