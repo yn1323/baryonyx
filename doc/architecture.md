@@ -13,8 +13,8 @@ updated: 2026-09-15
 
 | 構成 | 現在の責務・確認元 |
 |---|---|
-| Unity App | [HealthScreenBootstrap](../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)がAndroidの実ProviderとEditor等のプレビューを選ぶ |
-| Unity Health | [健康データ仕様](features/health-data.md)に従い、認証・権限・取得・一覧・JSON詳細を扱う |
+| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[HealthRuntime](../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)はAndroidの実ProviderとEditor等のプレビューを選ぶが、現在はどの画面からも使わない |
+| Unity Health | [健康データ仕様](features/health-data.md)に従い、認証・権限・取得・サーバー保存を扱う。表示画面は削除済み |
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |
 | Google認証 | 健康データ読み取りと独立した任意の操作。詳細は健康データ仕様を参照 |
 | サーバー | [app.ts](../server/src/app.ts)が疎通確認と健康データAPIを組み立てる。Hono・Workers・D1を使用する |

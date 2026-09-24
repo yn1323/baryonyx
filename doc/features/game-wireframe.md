@@ -1,13 +1,21 @@
 ---
 id: feature-game-wireframe
 type: specification
-status: 一部確定
-updated: 2026-09-23
+status: 記録
+updated: 2026-09-24
 ---
 
 # 遊べる試作の画面と操作
 
 [機能索引](README.md) / [画面一覧](screens.md) / [戦闘](combat.md) / [見た目と素材](../art/game-ui.md)
+
+## 現在の状態
+
+2026-09-24に、この試作の `Main`・`Wireframe` シーン、Wireframe機能のコード・Prefab・試作データ・テストを削除した。
+背景画像 `Departure.png`・`Mine.png` と枠画像 `ButtonFrame`・`PanelFrame` は [Features/Wireframe/UI/Art](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art) に残している。
+画面に依存しない戦闘計算の [Combat](../../client/Assets/Baryonyx/Features/Combat/Runtime) と、健康データのロジックも残している。
+以降の画面・操作の記述とユーザー評価は、削除した試作の記録として残す。
+TopとHomeの起動・遷移は現行の動作である。
 
 ## 目的と起動
 
@@ -20,10 +28,10 @@ Topの全面押下では、ホーム画面のモック [Home](../../client/Asset
 Topは覆った状態から同じShutter演出で開き、開き終わるまではタップを受け付けない。
 開き終わってから「TAP TO START」を表示し、全面押下の受付を始める。
 起動時のスプラッシュ画面や開く演出の途中で押した操作は、Homeへの遷移に使わない。
-ホームの行き先カード（再開）を押すと、同じShutter演出でこのワイヤー画面 [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) へ遷移する。
+削除前は、ホームの行き先カード（再開）を押すと同じShutter演出でこのワイヤー画面 `Main` へ遷移した。
+現在の行き先カードは遷移せず、ほかの仮ボタンと同じく「再開（準備中）」を表示する。
 ホームの構成は[画面一覧](screens.md#ホーム画面の見た目モック)を参照する。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
-Unity Editorで画面を確認するときは、保存済みの状態から `Baryonyx/Wireframe/Open Scene` を実行し、PlayModeで起動する。
 通常画面には仮の勝敗を選ぶ確認パネルを表示しない。
 Health Connectは起動時に利用条件の確認と接続・歩数取得を開始し、権限が必要な場合だけAndroidの許可画面を表示する。
 
@@ -134,28 +142,24 @@ Canvasは高さを基準に拡縮するため、19.5:9と20:9の横長端末で�
 
 ## 実装と生成元
 
+残っている実装は次のとおりである。
+削除したWireframeBootstrap、WireframeSession、Presentation、画面生成、HealthWeekSummaryはGit履歴で参照する。
+
 | 場所 | 責務 |
 |---|---|
-| [WireframeBootstrap](../../client/Assets/Baryonyx/App/Runtime/WireframeBootstrap.cs) | 冒険画面と健康データの起動、前面・背面通知 |
-| [HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | MainとWireframeで共通のProvider選択、Presenter生成、破棄 |
-| [WireframeSession](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Flow/WireframeSession.cs) | 画面遷移、所持状態、戦闘開始・結果の反映 |
-| [Presentation](../../client/Assets/Baryonyx/Features/Wireframe/Runtime/Presentation) | 入力と描画。通常ページ、戦闘、ダイアログ、歩数、演出、配置を分離 |
+| [HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | 健康データのProvider選択、Presenter生成、破棄。現在はどのシーンからも使っていない |
 | [Combat](../../client/Assets/Baryonyx/Features/Combat/Runtime) | Unityの画面に依存しない戦闘計算、状態、試作カタログ |
-| [HealthWeekSummary](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthWeekSummary.cs) | 日付順、合計、最大値、欠損表示、棒の比率 |
-| [画面生成](../../client/Assets/Baryonyx/Features/Wireframe/Editor/WireframeScreenAssets.cs) | 共通uGUI部品と生成の入口。ページ・戦闘・歩数の組み立ては専用ファイル |
 | [SceneTransitionController](../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransitionController.cs) | Fade、Wipe、上下・左右Shutterの選択、閉じる・開く時間、Wipe・Shutterのコマ送り、画面切り替えの入力遮断 |
 
-Prefabは `Baryonyx/Wireframe/Create Screen Assets` で再生成する。
-画面遷移の共通PrefabとTop/Mainへの配置は `Baryonyx/App/Create Scene Transition Assets` で生成する。
+画面遷移の共通PrefabとTop/Homeへの配置は `Baryonyx/App/Create Scene Transition Assets` で生成する。
 Inspectorの `Exit` と `Enter` にある `SceneTransitionSettings` で、種類、色、閉じる時間、開く時間、Wipeの向き、Shutterの軸をそれぞれ選べる。
 WipeとShutterはドット絵に合わせ、`Stepped Frame Rate`（初期値25）の回数だけ1秒間に位置を更新するコマ送りで動く。値を上げるほど滑らかになり、0で毎フレーム動かす。Fadeは常に滑らかに変化する。
 別の画面から呼ぶ場合は、呼び出し元の `SceneTransitionController` に `PlayOut(settings, callback)` を渡し、暗転後のcallbackでシーンを読み込む。遷移先には `startCovered` と `revealOnStart` を設定し、遷移先ごとに1つの `Enter Settings` を選んで `PlayIn` を自動実行させる。遷移元によるEnter設定の引き継ぎは行わない。
-Androidをビルド対象にし、`Baryonyx/Wireframe/Build Android APK` でWireframeシーンを起動対象にしたAPKを作る。
-共通の `AndroidBuild.Build` を呼び、終了後に通常のビルドシーン設定を戻す。
-生成APKはルートの手順に従い、必ず指定のDriveフォルダーへコピーする。
 ゲーム内のフォントは既存の[フォントとライセンス](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)にあるDotGothic16で統一する。
 
 ## 検証と未確認事項
+
+この節は削除前の試作に対する記録である。
 
 2026-09-20の横画面対応は、生成元とPrefabへ反映した。
 Unityのライセンス初期化に失敗したため、Prefab再生成、C#再コンパイル、EditMode、Gameビューの3解像度確認は未実施である。
@@ -181,3 +185,4 @@ Editorの成功だけで端末連携の成功とは扱わない。
 - 2026-09-24：Topの遷移先をホーム画面のモックへ変え、ワイヤー画面へはホームの行き先カード（再開）から入る経路にした。
 - 2026-09-22：背景の比率維持、タイトル画面のTopSafeArea、共通のレスポンシブ背景・Safe Area処理を生成元と生成済みアセットへ反映した。Unity Editorと実機の表示確認は未実施。
 - 2026-09-24：起動直後のタップでTopからHomeへすぐ進んでしまうため、Topを開く演出の終了まで入力を遮り、終了後に「TAP TO START」を表示して受付を始めるようにした。
+- 2026-09-24：ユーザーの依頼により、Top・Home・展示室以外のシーンとして `Main`・`Wireframe` を削除し、併せてWireframe機能のコード・Prefab・試作データ・テストを削除した。画像、Combat、健康データのロジックは残し、ホームの行き先カードは遷移しない状態にした。

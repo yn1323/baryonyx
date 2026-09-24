@@ -2,7 +2,7 @@
 id: feature-health-data
 type: specification
 status: 運用中
-updated: 2026-09-21
+updated: 2026-09-24
 ---
 
 # 健康データの読み取りと保存
@@ -19,12 +19,20 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 
 利用時に歩数が表示されない場合は、[Health Connectで歩数が「データなし」になるときの対処法](../qa/health-connect-no-steps.md)を参照する。
 
+## 現在の実装状況
+
+2026-09-24に、健康データを表示していた `Main`・`Wireframe` シーン、歩数画面のUI（View・Prefab）、冒険の試作画面を削除した。
+現在の起動経路（Top・Home）は健康データを読み取らず、この機能を呼び出す画面はない。
+Google認証、Health Connectの接続・取得、サーバーへの保存と運動報酬の請求を行うロジックは残している。
+新しい画面から使うときは、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) でProviderの選択とPresenterの生成を行い、画面側でPresenterの状態を描画する。
+以降の画面構成・文言・寸法は削除前の仕様であり、再実装時に見直す。
+
 ## ローカル表示画面
 
 [冒険の試作画面](game-wireframe.md)にも同じHealth Connect接続を組み込んだ。
 ホームに今日の歩数、専用画面に直近7日間の数値と棒グラフを古い日から順に表示する。
 取得済みの0歩と記録なし・権限不足・失敗を区別し、日付列から元のJSONを開く。
-Providerの選択と寿命はAppのHealthRuntimeで共通化し、集計はHealthWeekSummaryが担当する。
+Providerの選択と寿命はAppのHealthRuntimeで共通化した。
 サーバーURLが未設定の起動経路はサーバー・DBへ保存せず、Androidではサンプル値を使わない。
 以下の一覧・認証ボタン・コピー操作の説明は、ホームから開く歩数画面に対応する。
 
@@ -33,13 +41,12 @@ Providerの選択と寿命はAppのHealthRuntimeで共通化し、集計はHealt
 
 ディレクトリと依存方向は [クライアントの構成と依存関係](../rules/frontend-design.md) に従う。
 表示処理はHealthの `Runtime/Presentation/`、利用条件の判定は `Runtime/Requirements/`、サンプルProviderは `Runtime/Preview/`、サーバー同期は `Runtime/Sync/` に分け、Google認証とサーバーのセッションは `Features/Account/`、ルーンのAPIは `Features/ExerciseRewards/` に置く。
-AppはProviderを選択し、`HealthScreenView.Bind` の `preview` 引数で表示モードを渡す。
-プレビューの文言はViewの描画内で決まり、App側での上書きやイベントの購読順に依存しない。
+AppのHealthRuntimeはProviderを選択し、プレビューかどうかを `Preview` で画面へ渡す。
 
 起動時に `Application.targetFrameRate = 60` を設定し、目標フレームレートを60 FPSにする。
 実際のFPSは端末の画面更新頻度と処理負荷によって下がる場合がある。
 
-Android版で [Main](../../client/Assets/Baryonyx/App/Scenes/Main.unity) を起動すると、冒険と運動データの入口を持つホームを表示する。
+削除前のAndroid版では、`Main` シーンを起動すると冒険と運動データの入口を持つホームを表示した。
 起動直後からHealth Connectの利用条件確認と接続・歩数取得を開始し、ホームの今日の歩数と歩数画面へ結果を反映する。
 歩数画面では「運動データに接続」と「Googleに接続」を別のパネルに表示する。
 運動データの取得元はHealth Connectとし、「歩数」の読み取りを許可すると7日分の日別歩数を表示する。
@@ -166,7 +173,7 @@ UnityのPlayでは、OAuth設定やAndroid端末の接続なしで7日分の架�
 Google未接続のサンプル状態で一覧を表示し、「Google接続を試す（サンプル）」と「Google接続を解除（サンプル）」でGoogle側の状態だけを切り替えられる。
 Google認証、Health Connect、バックエンドへの通信や資格情報の生成は行わない。
 
-切り替えはUSB接続の有無ではなく、[HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) の `UNITY_ANDROID && !UNITY_EDITOR` で決める。
+切り替えはUSB接続の有無ではなく、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) の `UNITY_ANDROID && !UNITY_EDITOR` で決める。
 Androidをビルド対象にしたEditorやDevice Simulatorもプレビューになり、Androidプレイヤーだけが実Providerを使う。
 Android以外のビルドもプレビュー対象とし、iOSの実データ取得に対応したものとは扱わない。
 プレビューのProviderと表示用コードはAndroidプレイヤーのコンパイルから除外する。
@@ -184,7 +191,7 @@ Android以外のビルドもプレビュー対象とし、iOSの実データ取�
 詳細の背景は画面全体を覆い、対象日、JSONの表示領域、コピー・閉じるボタンはSafeArea内に配置する。
 詳細表示中はメイン画面のスクロールを止め、閉じた後に閲覧位置を保つ。
 
-[HealthScreenLayout](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenLayout.cs) が画面サイズ・SafeArea・Canvasの論理サイズを比較し、初期表示、再有効化、表示条件の変更時に配置を更新する。
+削除前は `HealthScreenLayout` が画面サイズ・SafeArea・Canvasの論理サイズを比較し、初期表示、再有効化、表示条件の変更時に配置を更新した。
 サイズ変更だけでは認証・取得処理を呼び出さない。
 一般の配置・操作・検証ルールは [UI設計ルール](../rules/ui-design.md) に従う。
 
@@ -228,30 +235,23 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 
 | 実装 | 責務 |
 |---|---|
-| [HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | 実行環境に応じたProviderと画面の組み立て、前面・背面・終了通知 |
+| [HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | 実行環境に応じたProviderの選択、Presenterの生成、初回の接続開始、破棄 |
 | [HealthScreenPreviewProvider](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview/HealthScreenPreviewProvider.cs) | Android以外で使う仮の認証結果と、日本時間の直近7日分のサンプルデータ |
 | [UmothGoogleSignInProvider](../../client/Assets/Baryonyx/Features/Account/Runtime/UmothGoogleSignInProvider.cs) | Googleサインインとサインアウト。サーバー連携用の資格情報は報酬サービスへだけ渡す |
 | [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | サーバーのセッション、Health Connectの7日分保存、ルーン請求、残高と履歴の取得を順に呼ぶ |
 | [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) | 操作順、取得、権限、報酬請求、画面の状態遷移、設定画面から戻った後の再確認 |
 | [HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) | 多重実行防止、中断、OS画面の前面復帰待ち、遅延結果の世代判定 |
 | [HealthDaySnapshot](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthDaySnapshot.cs) | 7日分の検査と、一覧値・元JSONの対応 |
-| [HealthScreenView](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenView.cs) | uGUIの入力、通常・プレビューの文言、状態別の操作、日別一覧、閲覧位置の調整 |
-| [HealthJsonDetails](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthJsonDetails.cs) | JSONモーダルの開閉、コピー、スクロールの初期化、一覧の選択復元 |
-| [HealthScreenLayout](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenLayout.cs) | SafeAreaと表示領域の変更への追従、パネルの最大幅 |
-| [HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | Unity APIで専用Prefabとフォントを生成するEditorコマンド |
-| [HealthAppSceneSetup](../../client/Assets/Baryonyx/App/Editor/HealthAppSceneSetup.cs) | HealthのPrefab・設定とAppの起動処理を現在のシーンへ配置するEditorコマンド |
+| [HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成するEditorコマンド |
 
 読み取りの操作はこの画面だけが所有するため、計画時の `HealthReadService` とPresenterは一つの通常のC#クラスにまとめた。
-外部SDKの境界はインターフェースで保ち、一覧と詳細の小さなViewも一つのMonoBehaviourで管理する。
+外部SDKの境界はインターフェースで保つ。
 アセンブリとCIのテスト対象は既存の境界を維持している。
 
-EditModeの [状態遷移・JSONテスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Presentation/HealthScreenPresenterTests.cs) と、PlayModeの [画面操作テスト](../../client/Assets/Baryonyx/Features/Health/Tests/PlayMode/Presentation/HealthScreenScenarioTests.cs) を追加した。
-PlayModeは実Prefabと仮想入力を使い、外部Providerだけをテスト用に差し替える。
-テストPlayer向けのPrefabはテスト準備時だけResourcesへコピーし、終了時にUnity APIで削除する。
-途中終了で `Tests/PlayMode/Resources/BaryonyxHealthScreenTest.prefab` が残っている場合は、HealthScreenBuildCheckが通常ビルドを停止して混入を防ぐ。テストの後始末を完了してから再ビルドする。
-通常の起動シーンは実行環境に応じて実Providerとプレビューを自動で選び、Android版をサンプル表示へ切り替える操作は設けない。
+EditModeの [状態遷移・JSONテスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Presentation/HealthScreenPresenterTests.cs) で、外部Providerをテスト用に差し替えて操作順と状態遷移を検査する。
+画面操作のPlayModeテストは、画面UIとともに2026-09-24に削除した。
+HealthRuntimeは実行環境に応じて実Providerとプレビューを自動で選び、Android版をサンプル表示へ切り替える操作は設けない。
 [プレビューのデータ検査](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Preview/HealthScreenPreviewProviderTests.cs) は日付境界、欠測と0の区別、JSON、更新・再開を確認する。
-[Editor起動の検査](../../client/Assets/Baryonyx/App/Tests/PlayMode/HealthScreenPreviewStartupTests.cs) はOAuth設定なしでPlayするとサンプル一覧が表示されることを確認する。
 
 画面とJSONにはDotGothic16を同梱し、ライセンスは [Fonts](../../client/Assets/Baryonyx/Shared/UI/Fonts/) に置く。
 SIL Open Font Licenseで再配布できる。[DotGothic16の配布元](https://github.com/fontworks-fonts/DotGothic16)

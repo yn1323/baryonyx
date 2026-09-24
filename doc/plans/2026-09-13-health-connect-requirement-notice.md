@@ -11,7 +11,7 @@
 
 ## 着手時の実装
 
-- [HealthScreenBootstrap.cs](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) はProviderと画面を組み立て、前面・背面への移行をPresenterへ伝えている。Android版には起動時の要件チェックがない。
+- `HealthScreenBootstrap.cs`（削除済み） はProviderと画面を組み立て、前面・背面への移行をPresenterへ伝えている。Android版には起動時の要件チェックがない。
 - [HealthScreenPresenter.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) は接続操作で利用可否と権限を調べ、接続を試した後の復帰では健康データを読み直す。
 - [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) と[既存Androidブリッジ](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) は利用可否、権限、7日分の読み取り、設定画面の起動に対応している。
 - 現在の権限確認は対象項目のいずれかの許可を表す。歩数単独の未許可は、読み取り結果の `stepsStatus` で区別している。

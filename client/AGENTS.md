@@ -8,7 +8,8 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
 現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
-`Home.unity` は実データを使わないホーム画面のモックで、行き先カード（再開）から健康データを含むワイヤー画面 `Main.unity` へ遷移する。
+`Home.unity` は実データを使わないホーム画面のモックで、行き先カード（再開）の遷移先は未設定のため遷移しない。
+シーンはTop・Home・展示室の `Showcase.unity` だけである。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。
 
 ## サーバーのBaseURL

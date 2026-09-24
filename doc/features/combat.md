@@ -346,7 +346,7 @@ HP50％から大技の対象を変える程度の単純な後半変化も、個�
 ## 実装との対応
 
 本ページは企画上の要求・設計方針・仮設定・未確定事項を記す。
-2026-09-19時点で、[操作試作](game-wireframe.md)に戦闘MVPを接続している。
+2026-09-19に[操作試作](game-wireframe.md)へ戦闘MVPを接続した。試作画面は2026-09-24に削除し、戦闘計算だけを残している。
 計算は[CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs)、個別性能は[CombatPrototype](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPrototype.cs)に置く。
 以下は今回の試作用の選択であり、本ページの未確定項目を完成版として確定するものではない。
 

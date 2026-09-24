@@ -224,8 +224,8 @@ PlayMode終了・アプリ再起動・確認用リセットで初期状態へ戻
 ## 現在の実装と配置案
 
 2026-09-18にコードと設定を確認した。
-Unityは[ProjectVersion.txt](../../client/ProjectSettings/ProjectVersion.txt)の6000.6.0f1で、現在は[Main.unity](../../client/Assets/Baryonyx/App/Scenes/Main.unity)から健康データ画面を起動している。
-[HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs)はuGUI・TextMeshPro・日本語フォントでPrefabを生成し、[HealthScreenBootstrap](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs)がPresenterとViewを組み立てている。
+Unityは[ProjectVersion.txt](../../client/ProjectSettings/ProjectVersion.txt)の6000.6.0f1で、現在は`Main.unity`（削除済み）から健康データ画面を起動している。
+[HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs)はuGUI・TextMeshPro・日本語フォントでPrefabを生成し、`HealthScreenBootstrap`（削除済み）がPresenterとViewを組み立てている。
 RPGの画面・戦闘・探索コードはまだない。
 
 ワイヤーもuGUIとTextMeshProを使い、専用シーン1つの中で画面パネルを切り替える。

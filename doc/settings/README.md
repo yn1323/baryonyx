@@ -11,11 +11,11 @@
 | 設定 | 正本・確認先 | 用途・変更手順 |
 |---|---|---|
 | Unityの版 | [ProjectVersion.txt](../../client/ProjectSettings/ProjectVersion.txt) | [ビルド手順](../rules/client-android-testing.md) |
-| アプリ表示名 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) の `productName` | 正式名は[ゲーム概要](../game/overview.md)。Player Settingsの `Product Name` を変更し、[画面Prefab](../../client/Assets/Baryonyx/Features/Health/UI/HealthScreen.prefab)のブランド表記も合わせる。[生成処理](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs)は同じ設定値を使う |
+| アプリ表示名 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) の `productName` | 正式名は[ゲーム概要](../game/overview.md)。Player Settingsの `Product Name` を変更する |
 | Player Settings・描画・画面方向 | [ProjectSettings.asset](../../client/ProjectSettings/ProjectSettings.asset) | [UIルール](../rules/ui-design.md)・[エミュレーター](../rules/client-android-emulator.md) |
 | ビルド対象シーン | [EditorBuildSettings.asset](../../client/ProjectSettings/EditorBuildSettings.asset) | [クライアント構成](../rules/frontend-design.md) |
 | APKのアプリID・SDK・ABI・署名・出力先 | [AndroidBuild.cs](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) | [Androidビルド](../rules/client-android-testing.md)。ビルド時の上書き設定も確認する |
-| 目標FPS | [HealthScreenBootstrap.cs](../../client/Assets/Baryonyx/App/Runtime/HealthScreenBootstrap.cs) | [現行画面の仕様](../features/health-data.md) |
+| 目標FPS | [TopSceneController.cs](../../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs) | 起動時に60 FPSを設定する |
 | ゲーム内Google認証 | [設定型](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectionSettings.cs)・[設定アセット](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset) | [認証設定](../features/health-data.md#google認証の設定)。外部のOAuth登録との整合は別途確認する |
 | UPMとAndroid依存 | [manifest.json](../../client/Packages/manifest.json)・[build.gradle](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/build.gradle) | [プラグイン設定](../features/health-data.md#プラグインとandroidビルド) |
 | .NET・整形・解析 | [global.json](../../client/global.json)・[ツール設定](../../client/.config/dotnet-tools.json)・[.editorconfig](../../client/.editorconfig) | [コード品質](../rules/client-code-quality.md) |

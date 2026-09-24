@@ -19,7 +19,7 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 | `Baryonyx.PlayModeTests` | シーン読み込み、入力、フレームをまたぐ状態遷移 |
 
 [BuildSceneTests](../../client/Assets/Baryonyx/Tests/EditMode/BuildSceneTests.cs) はビルド対象シーンの選択を5件で検査する。
-[StartupSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/StartupSceneTests.cs) はMainシーンの読み込みと有効なカメラを確認する。
+[TopHomeSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/TopHomeSceneTests.cs) はTopの読み込みとHomeへの遷移を、[ShowcaseSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/ShowcaseSceneTests.cs) は展示室シーンの読み込みを確認する。
 
 ## PlayModeのシナリオ
 
@@ -29,7 +29,7 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
-「1週間の歩数」の [画面シナリオ](../../client/Assets/Baryonyx/Features/Health/Tests/PlayMode/Presentation/HealthScreenScenarioTests.cs) は実Prefabを使い、認証・接続・一覧・JSON詳細とスクロールを検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データの表示、タップ領域、ボタンの反応を検査する。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 
 実画面のシナリオでは、ボタンのハンドラーを直接呼ぶ前に仮想入力から操作できるか確認する。
@@ -37,12 +37,11 @@ CIはプロジェクトのテストアセンブリだけを実行する。
 生成したオブジェクト、シーン、購読、保存状態は各テストの終了時に片付ける。
 
 画面のレイアウトやフォントを変更したら、[UI設計ルールの検証条件](ui-design.md#機種差を確認する条件)を適用する。
-[HealthScreenLayoutTests](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Presentation/HealthScreenLayoutTests.cs) は非対称なSafeArea、最大幅、サイズ変更、0サイズからの復帰を検査する。
-PlayModeでは実Prefabへ代表寸法とSafeAreaを適用して配置を確認し、実際の入力からスクロール、詳細の開閉、再有効化を確認する。
+PlayModeでは実Prefabへ代表寸法とSafeAreaを適用して配置を確認し、実際の入力から操作を確認する。
 配置だけの検査では画面寸法を明示し、Unity Editor上の `Screen.SetResolution` だけでGameビューを変更できたとは扱わない。
 自動テスト用のデータはテストアセンブリに置き、Editor向けのサンプルプレビューと区別する。
-画面シナリオでは、Appを生成せずにプレビュー表示を操作し、同じPresenterを通常表示へ再接続しても一覧・詳細・ボタンの文言が更新されることを確認する。
-Appの起動テストは `App/Tests/PlayMode/` に置き、起動時のサンプル表示と前面・背面通知を確認する。
+健康データのPresenterはEditModeで、固定応答を返すProviderを使って状態遷移を検査する。
+Appの起動テストは `App/Tests/PlayMode/` に置き、起動シーンの読み込みと遷移を確認する。
 
 ## 実行と結果確認
 

@@ -223,9 +223,9 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 
 ## 横画面UIの確認
 
-横画面のレスポンシブ対応は、UIカテゴリの `WireframeScreen` を選び、`BattlefieldAmbient` の背景が比率を保って表示されることを確認する。
+横画面のレスポンシブ対応は、UIカテゴリの `HomeScreen` を選び、背景が比率を保って表示されることを確認する。
 タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
-展示室のカタログには既存の `WireframeScreen` Prefabと `Top` シーンを登録済みで、今回の共通コンポーネント追加後も同じエントリからプレビューできる。
+展示室のカタログには `HomeScreen` Prefabと `Top` シーンを登録済みである。
 実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
 
 ## 実装状況
