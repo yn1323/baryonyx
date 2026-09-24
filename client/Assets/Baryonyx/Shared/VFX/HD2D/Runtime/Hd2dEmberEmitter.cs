@@ -54,11 +54,25 @@ namespace Baryonyx.Vfx.Hd2d
         public float Buoyancy = 12f;
 
         [Min(0f)]
-        [Tooltip("左右にゆれる幅（px）。")]
-        public float Sway = 8f;
+        [Tooltip("左右にゆれる幅（px）。カールノイズと併用すると周期的なゆれが目立ちます。")]
+        public float Sway = 0f;
 
         [Min(0f)]
         public float SwaySpeed = 1.6f;
+
+        [Min(0f)]
+        [Tooltip(
+            "カールノイズの流れの強さ（px/秒）。渦を巻く空気に乗って、粒が不規則に曲がりながら昇ります。0で使いません。"
+        )]
+        public float Curl = 36f;
+
+        [Min(1f)]
+        [Tooltip("渦の大きさ（px）。小さいほど細かく曲がります。")]
+        public float CurlScale = 56f;
+
+        [Min(0f)]
+        [Tooltip("流れの形が変わる速さです。0で流れが止まったまま固定されます。")]
+        public float CurlSpeed = 0.5f;
 
         [Min(1)]
         [Tooltip(
@@ -87,7 +101,9 @@ namespace Baryonyx.Vfx.Hd2d
 
     /// <summary>
     /// UI-based particles emitted from points, drawn above a ScreenSpaceOverlay background.
-    /// Positions are evaluated from each particle's age, so an Editor preview matches Play Mode.
+    /// The launch, buoyancy and sway are evaluated from each particle's age; the curl-noise
+    /// drift is integrated in fixed steps and replayed on rebuild, so an Editor preview
+    /// matches the first frame of Play Mode.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -127,8 +143,18 @@ namespace Baryonyx.Vfx.Hd2d
 
         private const float FadeInPortion = 0.12f;
 
+        // Embers leave the flame straight up first, then the eddies take over.
+        private const float CurlRampSeconds = 0.35f;
+
+        // Upper bound of one integration step, so the path stays smooth on slow frames.
+        private const float MaxCurlStep = 1f / 30f;
+
+        // Offset in noise space for the finite differences of the stream function.
+        private const float CurlEpsilon = 0.01f;
+
         private readonly List<SourceState> states = new List<SourceState>();
         private System.Random random;
+        private float fieldTime;
         private bool initialized;
         private bool rebuildRequested;
 
@@ -185,6 +211,9 @@ namespace Baryonyx.Vfx.Hd2d
                     source.Spread = Mathf.Clamp(source.Spread, 0f, 360f);
                     source.Sway = Mathf.Max(0f, source.Sway);
                     source.SwaySpeed = Mathf.Max(0f, source.SwaySpeed);
+                    source.Curl = Mathf.Max(0f, source.Curl);
+                    source.CurlScale = Mathf.Max(1f, source.CurlScale);
+                    source.CurlSpeed = Mathf.Max(0f, source.CurlSpeed);
                     source.Twinkle = Mathf.Clamp01(source.Twinkle);
                 }
             }
@@ -211,6 +240,7 @@ namespace Baryonyx.Vfx.Hd2d
                 return;
 
             random = new System.Random(RandomSeed);
+            fieldTime = 0f;
             for (var index = 0; index < Sources.Count; index++)
             {
                 var source = Sources[index];
@@ -265,6 +295,40 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
+        /// Divergence-free velocity of the curl-noise field at <paramref name="position"/>
+        /// (canvas pixels). In 2D it is the curl of a scalar stream function ψ built from
+        /// Perlin noise: v = (∂ψ/∂y, -∂ψ/∂x) (Bridson et al. 2007). The flow swirls without
+        /// sources or sinks, so nearby embers curl together instead of jittering apart.
+        /// The length is about 1 on average; multiply by the strength in px/s.
+        /// </summary>
+        public static Vector2 CurlVelocity(Vector2 position, float time, float scale, float speed)
+        {
+            var point = position / Mathf.Max(1f, scale);
+            var t = time * speed;
+            var dx =
+                StreamFunction(point + new Vector2(CurlEpsilon, 0f), t)
+                - StreamFunction(point - new Vector2(CurlEpsilon, 0f), t);
+            var dy =
+                StreamFunction(point + new Vector2(0f, CurlEpsilon), t)
+                - StreamFunction(point - new Vector2(0f, CurlEpsilon), t);
+            return new Vector2(dy, -dx) / (2f * CurlEpsilon);
+        }
+
+        /// <summary>
+        /// Stream function ψ: two octaves of Perlin noise drifting in different directions,
+        /// so the eddies change shape over time instead of sliding as one picture.
+        /// </summary>
+        private static float StreamFunction(Vector2 point, float t)
+        {
+            var coarse = Mathf.PerlinNoise(point.x + t * 0.31f + 11.3f, point.y - t * 0.53f + 4.7f);
+            var fine = Mathf.PerlinNoise(
+                point.x * 2.03f - t * 0.47f + 37.1f,
+                point.y * 2.03f + t * 0.29f + 23.9f
+            );
+            return coarse + fine * 0.5f;
+        }
+
+        /// <summary>
         /// Opacity over the particle life: a quick fade-in, then an eased change from the
         /// start alpha to the end alpha. An end alpha of 0 makes the particle fade out.
         /// </summary>
@@ -301,16 +365,76 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void Step(float deltaTime)
         {
+            fieldTime += deltaTime;
             foreach (var state in states)
             {
                 foreach (var particle in state.Particles)
                 {
+                    var previousAge = particle.Age;
                     particle.Age += deltaTime;
                     if (particle.Age >= particle.Lifetime && state.Settings.Loop)
+                    {
                         Respawn(state.Settings, particle, particle.Age - particle.Lifetime);
+                        AdvanceCurl(state.Settings, particle, 0f, particle.Age);
+                    }
+                    else if (previousAge < particle.Lifetime)
+                    {
+                        AdvanceCurl(
+                            state.Settings,
+                            particle,
+                            previousAge,
+                            Mathf.Min(particle.Age, particle.Lifetime)
+                        );
+                    }
                     ApplyParticle(state.Settings, particle);
                 }
             }
+        }
+
+        /// <summary>
+        /// Moves a particle along the curl-noise field from age <paramref name="fromAge"/> to
+        /// <paramref name="toAge"/>. The field is sampled where the particle actually is, so
+        /// it follows the swirl. <see cref="fieldTime"/> is the field clock at the end age.
+        /// </summary>
+        private void AdvanceCurl(
+            Hd2dEmberSource source,
+            ParticleState particle,
+            float fromAge,
+            float toAge
+        )
+        {
+            if (source.Curl <= 0f || toAge <= fromAge)
+                return;
+
+            var age = fromAge;
+            while (age < toAge)
+            {
+                var step = Mathf.Min(MaxCurlStep, toAge - age);
+                var middle = age + step * 0.5f;
+                var position =
+                    particle.Origin + BaseOffset(source, particle, middle) + particle.CurlOffset;
+                var velocity = CurlVelocity(
+                    position + particle.FieldOffset,
+                    fieldTime - (toAge - middle),
+                    source.CurlScale,
+                    source.CurlSpeed
+                );
+                var ramp = SmoothUnit(middle / CurlRampSeconds);
+                particle.CurlOffset += velocity * (source.Curl * ramp * step);
+                age += step;
+            }
+        }
+
+        private static Vector2 BaseOffset(Hd2dEmberSource source, ParticleState particle, float age)
+        {
+            return EvaluateOffset(
+                particle.Velocity,
+                source.Buoyancy,
+                source.Sway,
+                source.SwaySpeed,
+                particle.SwayPhase,
+                age
+            );
         }
 
         private void CacheParticleLayer()
@@ -334,6 +458,8 @@ namespace Baryonyx.Vfx.Hd2d
         private SourceState CreateSource(int index, Hd2dEmberSource source)
         {
             var state = new SourceState { Settings = source };
+            // Each source reads its own part of the field, so torches do not swirl in step.
+            var fieldOffset = new Vector2(index * 997f, index * 613f);
             var name = string.IsNullOrWhiteSpace(source.Name) ? "Embers" : source.Name;
             for (var particleIndex = 0; particleIndex < source.Count; particleIndex++)
             {
@@ -360,11 +486,20 @@ namespace Baryonyx.Vfx.Hd2d
                 image.preserveAspect = true;
                 image.raycastTarget = false;
 
-                var particle = new ParticleState { Rect = rect, Image = image };
+                var particle = new ParticleState
+                {
+                    Rect = rect,
+                    Image = image,
+                    FieldOffset = fieldOffset,
+                };
                 Respawn(source, particle, 0f);
                 // Looping streams start mid-flow; one-shot sources wait for a Burst.
                 if (source.Loop)
+                {
                     particle.Age = RandomRange(0f, particle.Lifetime);
+                    // Replays the path so far, so the first frame already shows the swirl.
+                    AdvanceCurl(source, particle, 0f, particle.Age);
+                }
                 else
                     particle.Age = particle.Lifetime;
                 state.Particles.Add(particle);
@@ -386,6 +521,7 @@ namespace Baryonyx.Vfx.Hd2d
             particle.Lifetime = RandomRange(source.LifetimeRange.x, source.LifetimeRange.y);
             particle.Age = Mathf.Clamp(age, 0f, particle.Lifetime);
             particle.SwayPhase = RandomRange(0f, Mathf.PI * 2f);
+            particle.CurlOffset = Vector2.zero;
             particle.TwinklePhase = RandomRange(0f, 100f);
             ApplyShape(source, particle);
         }
@@ -426,15 +562,7 @@ namespace Baryonyx.Vfx.Hd2d
 
             var life01 = particle.Lifetime > 0f ? particle.Age / particle.Lifetime : 1f;
             particle.Rect.anchoredPosition =
-                particle.Origin
-                + EvaluateOffset(
-                    particle.Velocity,
-                    source.Buoyancy,
-                    source.Sway,
-                    source.SwaySpeed,
-                    particle.SwayPhase,
-                    particle.Age
-                );
+                particle.Origin + BaseOffset(source, particle, particle.Age) + particle.CurlOffset;
 
             var twinkle =
                 source.Twinkle > 0f
@@ -508,6 +636,8 @@ namespace Baryonyx.Vfx.Hd2d
             public UnityEngine.UI.Image Image;
             public Vector2 Origin;
             public Vector2 Velocity;
+            public Vector2 CurlOffset;
+            public Vector2 FieldOffset;
             public float Lifetime;
             public float Age;
             public float SwayPhase;

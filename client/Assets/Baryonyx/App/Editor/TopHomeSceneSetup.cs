@@ -725,8 +725,11 @@ namespace Baryonyx.App.Editor
                 Spread = 34f,
                 SpeedRange = new Vector2(34f, 72f) * scale,
                 Buoyancy = 14f * scale,
-                Sway = 9f * scale,
-                SwaySpeed = 1.7f,
+                // Curl noise bends the embers instead of a periodic sway.
+                Sway = 0f,
+                Curl = 36f * scale,
+                CurlScale = 56f * scale,
+                CurlSpeed = 0.5f,
                 DotSize = 2,
                 // The far torches get fewer large embers, so they read as smaller.
                 CrossShare = scale < 1f ? 0.25f : 0.3f,

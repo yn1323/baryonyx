@@ -130,6 +130,9 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(foldout, property, "Buoyancy", "上向きの加速（負で落下）");
             AddField(foldout, property, "Sway", "横ゆれの幅（px）");
             AddField(foldout, property, "SwaySpeed", "横ゆれの速さ");
+            AddField(foldout, property, "Curl", "カールノイズの強さ（px/秒、0で無効）");
+            AddField(foldout, property, "CurlScale", "渦の大きさ（px）");
+            AddField(foldout, property, "CurlSpeed", "流れが変わる速さ");
             AddField(foldout, property, "DotSize", "1ドットの大きさ（px）");
             AddField(foldout, property, "CrossShare", "十字の割合");
             AddField(foldout, property, "StreakShare", "尾を引く粒の割合（残りは点）");

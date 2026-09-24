@@ -273,6 +273,42 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void EmberCurlNoiseSwirlsWithoutSpreadingOrGathering()
+        {
+            const float scale = 56f;
+            const float speed = 0.5f;
+            // Same spacing as the stream-function stencil, so the mixed differences cancel.
+            const float h = scale * 0.01f;
+            var total = 0f;
+            for (var index = 0; index < 16; index++)
+            {
+                var point = new Vector2(index * 37.3f - 280f, index * 19.1f - 150f);
+                var time = index * 0.7f;
+                var dvx =
+                    Hd2dEmberEmitter.CurlVelocity(point + Vector2.right * h, time, scale, speed).x
+                    - Hd2dEmberEmitter
+                        .CurlVelocity(point - Vector2.right * h, time, scale, speed)
+                        .x;
+                var dvy =
+                    Hd2dEmberEmitter.CurlVelocity(point + Vector2.up * h, time, scale, speed).y
+                    - Hd2dEmberEmitter.CurlVelocity(point - Vector2.up * h, time, scale, speed).y;
+                // Divergence in noise units, where the flow itself is about 1.
+                var divergence = (dvx + dvy) / (2f * h) * scale;
+                Assert.That(Mathf.Abs(divergence), Is.LessThan(0.05f), $"point {index}");
+                total += Hd2dEmberEmitter.CurlVelocity(point, time, scale, speed).magnitude;
+            }
+            Assert.That(total / 16f, Is.GreaterThan(0.2f));
+
+            var before = Hd2dEmberEmitter.CurlVelocity(new Vector2(40f, 90f), 0f, scale, speed);
+            var after = Hd2dEmberEmitter.CurlVelocity(new Vector2(40f, 90f), 3f, scale, speed);
+            Assert.That((after - before).magnitude, Is.GreaterThan(0.05f));
+            Assert.That(
+                Hd2dEmberEmitter.CurlVelocity(new Vector2(40f, 90f), 3f, scale, 0f),
+                Is.EqualTo(before)
+            );
+        }
+
+        [Test]
         public void EmbersMixPointsCrossesAndStreaksByShare()
         {
             Assert.That(
