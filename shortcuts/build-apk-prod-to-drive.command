@@ -1,6 +1,11 @@
 #!/bin/bash
 # macOS用。Finderでダブルクリックするとターミナルで実行される。
+# Prod環境のゲームサーバーへ接続するAPKをビルドする。
 set -u
+
+# 手元の環境変数に関係なく、prodの接続先でビルドする。
+export BARYONYX_ENVIRONMENT=prod
+unset BARYONYX_SERVER_URL
 
 error() {
     printf '\033[31m[エラー] %s\033[0m\n' "$1"
@@ -16,7 +21,7 @@ run() {
         error "配置先フォルダーが見つかりません。Google Drive for desktopの起動とフォルダーを確認してください: $destination_directory"
         return 1
     fi
-    local destination_apk="$destination_directory/baryonyx.apk"
+    local destination_apk="$destination_directory/baryonyx-prod.apk"
     if [ -d "$destination_apk" ]; then
         error "APKの配置先に同名のフォルダーがあります: $destination_apk"
         return 1
@@ -47,12 +52,12 @@ run() {
         return 1
     fi
     local log_directory="$project_directory/Logs"
-    local build_log="$log_directory/build-apk-to-drive.log"
+    local build_log="$log_directory/build-apk-prod-to-drive.log"
     local apk_path="$project_directory/Builds/Android/baryonyx.apk"
     mkdir -p "$log_directory" || return 1
     # 前回の成功ログを今回の成功と誤認しないよう、実行前に初期化する。
     : > "$build_log" || return 1
-    echo "Unity $editor_version でAPKをビルドします。完了までこのウィンドウを開いたままにしてください。"
+    echo "Unity $editor_version でprod環境向けのAPKをビルドします。完了までこのウィンドウを開いたままにしてください。"
     echo "ビルドログ: $build_log"
     echo "ビルド成功後の配置先: $destination_apk（同名ファイルは上書き）"
     (cd "$project_directory" && "$unity_executable" -batchmode -quit -nographics -projectPath "$project_directory" -buildTarget Android -executeMethod Baryonyx.Editor.CI.AndroidBuild.Build -logFile "$build_log")
@@ -63,6 +68,10 @@ run() {
     fi
     if ! grep -qF 'BARYONYX_ANDROID_BUILD_OK: Builds/Android/baryonyx.apk' "$build_log"; then
         error "ビルド完了を確認できませんでした。ビルドログを確認してください: $build_log"
+        return 1
+    fi
+    if ! grep -qF 'BARYONYX_ANDROID_SERVER: prod ' "$build_log"; then
+        error "prod環境の接続先でビルドされたことを確認できませんでした。ビルドログを確認してください: $build_log"
         return 1
     fi
     if [ ! -f "$apk_path" ]; then

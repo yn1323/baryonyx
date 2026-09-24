@@ -1,6 +1,9 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul
+rem Build an APK for the dev game server, ignoring any server settings in the caller environment.
+set "BARYONYX_ENVIRONMENT=dev"
+set "BARYONYX_SERVER_URL="
 set "BARYONYX_BUILD_SCRIPT=%~f0"
 set "BARYONYX_EDITOR_ARGUMENT=%~1"
 set "BARYONYX_EXTRA_ARGUMENT=%~2"
@@ -19,7 +22,7 @@ try {
     if (-not (Test-Path -LiteralPath $destinationDirectory -PathType Container)) {
         throw "配置先フォルダーが見つかりません。Google Drive for desktopの起動とフォルダーを確認してください: $destinationDirectory"
     }
-    $destinationApk = Join-Path $destinationDirectory 'baryonyx.apk'
+    $destinationApk = Join-Path $destinationDirectory 'baryonyx-dev.apk'
     if (Test-Path -LiteralPath $destinationApk -PathType Container) {
         throw "APKの配置先に同名のフォルダーがあります: $destinationApk"
     }
@@ -45,12 +48,12 @@ try {
         throw 'このプロジェクトのUnityロックファイルが存在します。Unityで作業を保存してこのプロジェクトを閉じ、終了完了後にやり直してください。'
     }
     $logDirectory = Join-Path $projectDirectory 'Logs'
-    $buildLog = Join-Path $logDirectory 'build-apk-to-drive.log'
+    $buildLog = Join-Path $logDirectory 'build-apk-dev-to-drive.log'
     $apkPath = Join-Path $projectDirectory 'Builds\Android\baryonyx.apk'
     [IO.Directory]::CreateDirectory($logDirectory) | Out-Null
     # 前回の成功ログを今回の成功と誤認しないよう、実行前に初期化する。
     [IO.File]::WriteAllText($buildLog, '')
-    Write-Host "Unity $editorVersion でAPKをビルドします。完了までこのウィンドウを開いたままにしてください。"
+    Write-Host "Unity $editorVersion でdev環境向けのAPKをビルドします。完了までこのウィンドウを開いたままにしてください。"
     Write-Host "ビルドログ: $buildLog"
     Write-Host "ビルド成功後の配置先: $destinationApk（同名ファイルは上書き）"
     Push-Location -LiteralPath $projectDirectory
@@ -68,6 +71,10 @@ try {
     if (-not $buildCompleted) {
         throw "ビルド完了を確認できませんでした。ビルドログを確認してください: $buildLog"
     }
+    $serverSelected = Select-String -LiteralPath $buildLog -SimpleMatch 'BARYONYX_ANDROID_SERVER: dev ' -Quiet
+    if (-not $serverSelected) {
+        throw "dev環境の接続先でビルドされたことを確認できませんでした。ビルドログを確認してください: $buildLog"
+    }
     if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
         throw "ビルド後のAPKが見つかりません: $apkPath"
     }
@@ -78,6 +85,16 @@ try {
     [IO.File]::Copy($apkPath, $destinationApk, $true)
     $result = 0
     Write-Host "APKを配置しました: $destinationApk"
+    # 環境別のファイル名にする前の baryonyx.apk は、Dev向けのAPKに置き換わったため残さない。
+    $legacyApk = Join-Path $destinationDirectory 'baryonyx.apk'
+    if (Test-Path -LiteralPath $legacyApk -PathType Leaf) {
+        try {
+            Remove-Item -LiteralPath $legacyApk -Force
+            Write-Host "以前のファイル名のAPKを削除しました: $legacyApk"
+        } catch {
+            Write-Host ("[エラー] 以前のファイル名のAPKを削除できませんでした。手で削除してください: " + $legacyApk) -ForegroundColor Red
+        }
+    }
     Write-Host 'Google Driveへの同期状況はGoogle Drive for desktopで確認してください。'
 } catch {
     Write-Host ("[エラー] " + $_.Exception.Message) -ForegroundColor Red
