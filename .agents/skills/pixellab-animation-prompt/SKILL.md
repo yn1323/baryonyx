@@ -1,156 +1,151 @@
 ---
 name: pixellab-animation-prompt
 description: >
-  Manual-invocation-only skill for creating a character animation sprite sheet
-  from an attached reference image, a requested frame count, and an action,
-  together with concise frame-by-frame English prompts for PixelLab.
+  手動呼び出し専用。選んで手直しした立ち絵から、PixelLabのAnimate with Text（PixMiniMax）で
+  戦闘用アニメーション一式（待機、歩行、通常攻撃、スキルの準備と発動、戦闘不能、復帰）を作り、
+  全動作を1ページで確認できるHTMLと、Unity用のスプライトシートを書き出す。
+  PixelLab、ドット絵、アニメーションの話題というだけでは自動で使わない。
 ---
 
-# Pixellab Animation Prompt
+# PixelLabキャラクターアニメーション
 
-## Invocation
+キャラクター制作の最後の工程で使う。
+前の工程では、[rpg-character-profile](../rpg-character-profile/SKILL.md) で設定を作り、[pixellab-character-prompt](../pixellab-character-prompt/SKILL.md) で立ち絵の候補を選び、ユーザーが手作業で修正している。
+このスキルは、その修正済みの立ち絵を受け取ってアニメーションを作る。
 
-Use only when the user explicitly invokes `$pixellab-animation-prompt` or asks
-to use Pixellab Animation Prompt. Do not automatically invoke it for animation,
-PixelLab, or sprite-related requests. Keep `allow_implicit_invocation: false`
-in `agents/openai.yaml`.
+## 呼び出し
 
-## Outcome
+- ユーザーがこのスキルを明示したときだけ使う。
+- `agents/openai.yaml` の `allow_implicit_invocation: false` を保つ。
 
-Create both an actual sprite-sheet image and a copy-ready English animation
-prompt. The sheet and prompt must describe the same animation, with exactly the
-requested number of frames in the same order. A written plan alone does not
-complete the request unless the user explicitly asks for prompts only.
+## 固定の設定
 
-## Inputs and reference inspection
+| 項目 | 値 |
+|---|---|
+| 生成方法 | Animate with Text（PixMiniMax）。API `POST /v2/animate-pixminimax` |
+| キャンバス | 100×100の透明画像。立ち絵を拡大せず、左右中央・下寄せに置く |
+| 向き | 右向き |
+| 背景の除去 | あり（`no_background: true`） |
+| 1回の費用 | 100×100・生成8枚で1回分。4枚でも1回分 |
 
-Require these three inputs, accepting information already supplied in the task:
+PixelLab MCPにも同じ機能のツール（`animate_image_pixminimax`）がある。
+ただし画像をbase64で引数に書き込む必要があり、出力量の上限に何度も達したので使わない。
+[scripts/pixminimax.py](scripts/pixminimax.py) から同じAPIを直接呼ぶ。
+スクリプトは環境変数 `PIXELLAB_API_TOKEN`、なければ `~/.claude.json` の `pixellab` MCPサーバーの `Authorization` ヘッダーからトークンを読む。
+トークンを表示・記録・コミットしない。
 
-- A readable attached character image or an explicitly identified image file.
-- The requested total frame count, as a positive integer.
-- The action to animate, such as walking, attacking, casting, or taking damage.
+PixMiniMaxの仕様のうち、作業の組み立てに関わるものは次のとおり。
 
-Ask only for missing required inputs or a consequential ambiguity. If the image
-is missing or unreadable, ask the user to attach it; do not invent its contents.
-If multiple characters or source poses are present and the target is unclear,
-ask which to use. Inspect a local image with `view_image` before generation.
+- 生成枚数は4〜40の4の倍数に限られる。1枚だけ、6枚だけといった生成はできない。
+- 結果は「First Frame（渡した画像そのもの）＋生成したN枚」のN＋1枚で返る。説明文もこの数え方で、Frame 1を渡した画像として書く。
+- Last Frameを渡すと、最後の生成コマがその姿に寄る。
+- 説明文は1,000文字まで。超えると受け付けられない。
 
-Read the reference's silhouette, proportions, palette, clothing, equipment,
-facing direction, and camera angle. Preserve these across the animation unless
-the requested action explicitly changes them. Preserve weapon handedness and
-distinctive details such as a shield, cape, ears, or tail. Do not invent lore,
-new equipment, ornaments, or unrelated effects.
+## 作る動作と組み立て
 
-Use an explicitly requested per-frame size first, then an established size in
-the active task or project. Otherwise preserve the source's logical sprite size
-when identifiable; do not confuse an enlarged preview with its logical pixels.
-For an illustration without a defined sprite canvas, select a suitable cell size
-and state the assumption, asking only if exact dimensions are essential.
-Do not import a fixed canvas or body proportion from the character-prompt skill.
+被弾は生成しない。
+Unity側で、待機の姿を点滅させながら数px後ろへ動かして表す予定である（ダメージ姿勢は何度作り直しても、猫背、のけぞり、足の開きのいずれかが出て、納得のいく形にならなかった）。
 
-## Plan the motion once
+| 動作 | 生成枚数 | First Frame | Last Frame | 使うコマ | 再生 |
+|---|---:|---|---|---|---|
+| 待機 | 4 | 待機の姿 | なし | 待機の姿＋1px沈んだ1枚の2コマ | ループ。1コマ2秒 |
+| 歩行（その場で足踏み） | 8 | 待機の姿 | 待機の姿 | コマ1〜8（コマ9は待機の姿と重なるので外す） | ループ |
+| 通常攻撃 | 8 | 待機の姿 | 待機の姿 | コマ1〜9 | 1回 |
+| 攻撃スキル・準備 | 4 | 待機の姿 | なし | コマ1〜5。コマ5で止める | 1回 |
+| 攻撃スキル・発動と戻り | 8 | 準備のコマ5 | 待機の姿 | コマ2〜9（コマ1は準備のコマ5と同じ） | 1回 |
+| 補助スキル・準備 | 4 | 待機の姿 | なし | 攻撃スキルと同じ | 1回 |
+| 補助スキル・発動と戻り | 8 | 準備のコマ5 | 待機の姿 | 攻撃スキルと同じ | 1回 |
+| 戦闘不能（前へ倒れ込む） | 4 | 待機の姿 | なし | コマ1〜5。コマ5で止める | 1回 |
+| 復帰 | 4 | 戦闘不能のコマ5 | 待機の姿 | コマ2〜5 | 1回 |
 
-Build one ordered sequence of exactly N poses before generating the image or
-writing the final prompt. Use that sequence as the shared source for both outputs.
-Count the starting pose within N; never silently append a starting or closing
-frame. One requested frame means a single pose, not a moving animation.
+First FrameとLast Frameは、次の2つの決まりで選ぶ。
 
-Choose the action's phases to fit the available frames. For an attack, this may
-be preparation, strike, follow-through, and recovery. For walking, preserve the
-order of foot contact, weight transfer, and passing poses. With very few frames,
-keep the essential readable poses instead of adding frames. With more frames,
-use meaningful in-between poses or deliberate holds instead of arbitrary filler.
+- **First Frame**：動作が始まる姿勢を渡す。前の動作の続きなら、その最後のコマを渡す。
+- **Last Frame**：終わりの姿勢の画像が既にある場合（待機の姿に戻る動作）だけ渡す。倒れた姿や構えた姿のように、まだ画像がない姿勢で終わる動作に待機の姿を渡すと、倒れたあとに起き上がるといった崩れが起きる。
 
-Honor explicit loop and timing instructions. Otherwise use a loop for recurring
-actions such as walking or idle, and a single playback for attacks or reactions.
-Use equal frame durations unless the user specifies otherwise; an intentional
-hold occupies actual frames within N. For a loop, make the last-to-first motion
-continuous without automatically duplicating the first frame. For a single
-playback, end in the action's appropriate result or recovery pose; do not force
-a defeated character back to standing.
+待機の2コマ目は、生成した4枚から「1px沈んだ」コマを選ぶ。
+描いた範囲の端（外側のドット）だけで位置を比べると誤る。
+一度、端のずれを見て左へ1px動かしたところ、実際には体が左へずれた。
+体全体のドットが最もよく重なる位置で比べ、下へ1px・左右0pxで重なるコマを選ぶ。
 
-Keep the camera fixed and the character's scale consistent. Keep the character
-anchored in place for ordinary locomotion sprites unless travel is requested;
-allow intentional vertical motion, recoil, or lunges required by the action.
-Avoid accidental sliding, mirrored equipment, or frame-to-frame changes in
-body size. Follow visible support feet, weapon arcs, and secondary motion so
-adjacent frames connect plausibly. Keep tiny-sprite actions readable rather
-than adding many simultaneous movements.
+## 説明文の書き方
 
-## Write the English animation prompt
+1行目に、動作、コマ数、右向き、ループか1回かを書く。
+そのあとにFrame 1から1コマずつ書く。
+次の共通の指示を、すべての説明文の1行目に入れる。
 
-Start with a compact shared instruction identifying the reference, action,
-frame count, facing direction, and loop or single playback. State any essential
-invariants once. Do not repeat a character sheet, backstory, or long art-style
-instructions in every frame.
+```text
+Keep the character's mouth closed in every frame. Draw any effects as pixel art without outlines. The character's own colors never change. The cutlass keeps the same size as in Frame 1.
+```
 
-Then write exactly N numbered lines, from `Frame 01:` through the last frame.
-Each line should describe one visible pose in concise, concrete English, usually
-12-25 words. Use as many words as needed for an unambiguous movement.
+武器の名前（例のcutlass）はキャラクターに合わせて変える。
+演出のない動作では `No effects.` も加える。
+共通の指示を入れると長くなるので、送る前に1,000文字以内か確かめる（スクリプトも超えたら止まる）。
 
-Describe the torso, weight or support foot, and the relevant arm, leg, or weapon
-position. Include secondary motion only when it helps the action. Describe a
-specific moment rather than several successive actions inside one frame.
-Use character-relative left/right consistently; use screen-left/screen-right
-when describing an image-space direction. Avoid vague phrases such as
-"moves dynamically", "continues the action", or "same as before".
+レビューで分かった、崩れやすい書き方と避け方は次のとおり。
 
-For example, a pose may read:
-`Frame 03: The torso leans forward, the front foot plants, and the sword arm extends through a downward slash.`
+| 崩れ | 原因になった書き方 | 避け方 |
+|---|---|---|
+| 口が開く | 「叫ぶ」「口を開ける」 | 口を開ける指示を書かず、共通の指示で閉じたままにする |
+| キャラクター全体が金色になる | 「体の周りに金色の光が集まる」 | 演出は「キャラクターの周りに出す、体の上には出さない」と書き、キャラクターの色は変わらないと明記する |
+| 準備なのにスキルを発動して見える | 準備の説明文に光や粒子を書いた | 準備は発動の直前の姿勢で止め、演出を書かない。演出は発動と戻りで初めて出す |
+| 掲げた武器が長く伸びる | 大きさの指示なし | 武器や小物は最初のコマと同じ大きさ・長さを保つと書く |
+| 攻撃中に体が後ろを向く | 振りかぶりを大きく書いた | 「最後まで右向き、体の向きを変えない」と書く。それでも振りかぶるコマで背中が見えることがある |
+| 演出が枠いっぱいに広がる | 「大きな軌跡」 | 軌跡は小さく、キャラクターの前だけと書く |
+| エフェクトに縁取りが付く | 指定なし | 共通の指示で「縁取りなし」と書く |
+| 猫背になる | 「縮こまる」「頭を下げる」（hunch、crumple、head ducks） | 「背中はまっすぐ、前かがみにしない」と書く |
+| のけぞる | 「攻撃から体を背ける」「頭を傾ける」 | 「上半身は垂直のまま、頭を後ろへ傾けない」と書く |
+| 足が開く | 「足幅を少し広げる」 | 足を動かさない動作では「足は最初のコマの位置のまま、足幅も同じ」と書く |
 
-Put the shared instruction and all numbered frame lines together in one
-copy-ready text block. Keep Japanese explanation, sheet layout directions,
-citations, and tool details outside that block. These lines are natural-language
-PixelLab prompt guidance, not a claim that PixelLab enforces exact per-frame
-control or accepts an undocumented API field.
+1px単位の動き（待機の沈み）は、説明文で指示しても正確には守られない。
+生成したコマから条件に合うものを選ぶか、ユーザーと相談して手作業で直す。
 
-## Generate and verify the sprite sheet
+## 手順
 
-Use the available `imagegen` skill and built-in `image_gen` tool to generate the
-sheet from the supplied reference and the same ordered pose sequence. Include
-the actual image reference, not just a text description of it. Follow the current
-tool schema for local file paths or recent conversation images.
+作業用の一時フォルダー（セッションのscratchpadなど）で作業し、リポジトリには生成物を置かない。
+以下の `S` は `.agents/skills/pixellab-animation-prompt/scripts` を指す。
 
-Request an evenly spaced grid of identical cells, one complete pose per occupied
-cell, transparent background, consistent pixel treatment and palette, and no
-labels, numbers, borders, scenery, or watermarks. Keep the character and equipment
-inside every cell, with a consistent origin and enough clearance for the action.
-Use the requested layout if supplied. Otherwise choose a compact rectangular
-grid and state its columns and rows. Read frames left-to-right, then top-to-bottom.
-If the grid has unused cells, leave only the trailing cells empty and transparent;
-they do not count as animation frames.
+1. **ベース画像を作る**：`python3 $S/pixminimax.py base <修正済みの立ち絵.png> --out <作業フォルダー>/idle.png`
+2. **説明文を書く**：動作ごとに `<作業フォルダー>/<名前>.txt` を作る。
+3. **1回目をまとめて依頼する**：待機、歩行、通常攻撃、攻撃スキル・準備、補助スキル・準備、戦闘不能は、どれも待機の姿から始まるので同時に依頼する。
 
-Inspect the generated image before presenting it. Check the occupied-frame count,
-order, pose-to-text agreement, source likeness, handedness, clipping, alignment,
-and loop continuity where relevant. Check actual file dimensions and transparency
-with read-only image inspection when a file is available. Do not claim exact
-logical pixel dimensions or successful motion playback based on the prompt alone.
+   ```bash
+   python3 $S/pixminimax.py submit walk --dir <作業フォルダー> --frames 8 --first <作業フォルダー>/idle.png --last <作業フォルダー>/idle.png
+   ```
 
-If a material mismatch is visible, make one focused correction and recheck. If
-the result still has a material limitation, show it as a draft and state the
-specific mismatch briefly; never label an unchecked or incorrect grid as ready
-for import. Do not merely rewrite the text to excuse an incorrect animation.
+4. **完成を待つ**：`fetch` をバックグラウンドで動かし、完成したものから確認ページを作り直す。
 
-This skill creates an image and prompts for the user to use in PixelLab. It does
-not authorize opening or operating PixelLab through Computer Use or Browser Use.
-Use those only when separately instructed. Do not claim the image was generated
-or tested in PixelLab when it was created with another tool. If image generation
-is unavailable, provide the English prompt and clearly state that the sheet
-could not be created; do not substitute a text-only grid for an image.
+   ```bash
+   python3 $S/pixminimax.py fetch idle walk attack attack_prep support_prep down --dir <作業フォルダー> --on-complete "<確認ページを作り直すコマンド>"
+   ```
 
-## Final output
+5. **準備と戦闘不能の最後のコマを確かめる**：色の変化、武器の伸び、枠からのはみ出しがないかを見る。崩れていれば、次の動作を依頼せずにユーザーと相談する。
+6. **2回目を依頼する**：攻撃スキル・発動と戻り、補助スキル・発動と戻り、復帰を、それぞれ前の動作の最後のコマ（`<名前>/f4.png`）をFirst Frameにして依頼する。
+7. **確認ページを見せる**：下の「確認ページとスプライトシート」のとおり作り、ユーザーに見せる。作り直しはユーザーの指摘を受けてから行い、作り直す前の結果は別のフォルダーへ退避しておく。
 
-Keep the final response to these two sections, without a preamble:
+生成には1〜16分かかる。
+PixelLab側の混雑や不調で遅くなることがあり、同じ内容でも1分で終わる場合がある。
+「生成が開始前に停止した。料金はかからない」という失敗が続いた時間帯があった。
+失敗は自動で送り直さずにユーザーへ伝え、送り直すかを確認する。
+同じ内容で送り直すと成功したこともある。
 
-### Sprite Sheet
+## 確認ページとスプライトシート
 
-Show the generated sheet inline, with a usable file link when available. Add one
-short Japanese caption giving N frames, the grid layout, playback order, and loop
-or single playback. State actual cell size only when verified. Mention any material
-limitation here. If prompts only were explicitly requested, omit this section.
+[scripts/preview_animation.py](scripts/preview_animation.py) で、全動作を1ページにまとめる。
 
-### Animation Prompt
+```bash
+python3 $S/preview_animation.py --manifest <作業フォルダー>/actions.json --out <キャラ名>_actions.html --title "<キャラ名> アニメーション"
+```
 
-Provide one copy-ready English text block containing the shared instruction and
-exactly N frame descriptions. Do not split each frame into a separate block or
-put the frame descriptions in a table.
+`actions.json` には、動作ごとに `name`、`frames`（コマのPNGを再生順に）、`play_frames`（再生するコマ数。0なら全部）、`loop`、`note`、`fps`、`sheet_skip` を書く。
+書き方の詳細はスクリプトの説明（`--help`）にある。
+
+- **再生**：動作ごとに6、8、12fpsで再生する。待機は `"fps": [0.5]` にして、1コマ2秒で切り替える。1回再生の動作は、最後のコマで少し止まってから繰り返す。
+- **表示**：コマは2倍で表示し、画像の枠を点線で示す。全コマは各動作の「全コマを見る」を開くと並ぶ。
+- **スプライトシート**：ページの最後に、全動作を1行に1動作ずつ並べたシートを表示する。1マスは100×100、背景は透明、等倍。PNGとJSONを保存するリンクを付け、同じ内容を `<出力名>.sheet.png` と `<出力名>.sheet.json` にも書き出す。JSONには、各動作の行、コマ数、再生速度、ループかどうかを記録する。
+- **重複コマの除外**：発動と戻り、復帰のコマ1は前の動作の最後のコマと同じなので、`"sheet_skip": 1` でシートから外す。
+- **JavaScriptは使わない**：Claudeのデスクトップアプリの表示画面ではJavaScriptが動かないので、再生はCSSだけで行う。ページにスクリプトを足さない。
+
+ページは、ユーザーが画像を見られる方法で表示する（Claudeのデスクトップアプリでは `SendUserFile` の `display: "render"`）。
+コマのPNGとスプライトシートの場所も伝える。
+動作が1つ完成するたびにページを作り直し、途中経過も見せる。

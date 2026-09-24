@@ -1,4 +1,5 @@
 interface:
-  display_name: "Pixellab Animation Prompt"
+  display_name: "PixelLabキャラアニメーション"
+  short_description: "立ち絵からPixMiniMaxで戦闘アニメーション一式を作り、確認ページとスプライトシートを書き出す"
 policy:
   allow_implicit_invocation: false
