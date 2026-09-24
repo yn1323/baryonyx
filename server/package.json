@@ -8,9 +8,9 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "wrangler dev --local --ip 127.0.0.1 --port 3000",
+    "dev": "wrangler dev --local --ip 127.0.0.1 --port 4000",
     "build": "wrangler deploy --dry-run --outdir dist",
-    "start": "wrangler dev --local --no-bundle dist/index.js --ip 127.0.0.1 --port 3000",
+    "start": "wrangler dev --local --no-bundle dist/index.js --ip 127.0.0.1 --port 4000",
     "types": "wrangler types",
     "typecheck": "wrangler types && tsc --noEmit -p tsconfig.json",
     "lint": "biome check --error-on-warnings .",
