@@ -25,11 +25,12 @@ namespace Baryonyx.App
                 settings != null ? settings.GoogleWebClientId : ""
             );
             authentication = google;
-            if (settings != null && !string.IsNullOrWhiteSpace(settings.ServerBaseUrl))
+            var url = ServerEndpoint.Resolve(settings);
+            if (!string.IsNullOrWhiteSpace(url))
             {
                 try
                 {
-                    var server = new ServerApi(settings.ServerBaseUrl);
+                    var server = new ServerApi(url);
                     rewards = new HealthServerSync(
                         new AccountApiClient(server),
                         new HealthApiClient(server),

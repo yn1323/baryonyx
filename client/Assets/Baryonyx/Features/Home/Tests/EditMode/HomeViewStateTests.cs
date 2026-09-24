@@ -37,7 +37,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 歩"));
             Assert.That(state.WeeklyText, Is.EqualTo("今週の目標 2 / 3 回"));
-            Assert.That(state.ClaimText, Is.EqualTo("タップでルーンを取得"));
+            Assert.That(state.ClaimText, Is.EqualTo("タップで歩数を同期"));
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
             Assert.That(state.DestinationNameText, Is.EqualTo("森の遺跡"));
             Assert.That(state.DestinationFloorText, Is.EqualTo("B3F"));
@@ -62,7 +62,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.ClaimText, Is.EqualTo("タップして歩数を連携"));
             Assert.That(
-                HomeViewState.MessageFor(HomeAction.ClaimRunes, HomeStepLink.Unlinked),
+                HomeViewState.MessageFor(HomeAction.SyncSteps, HomeStepLink.Unlinked),
                 Is.EqualTo("歩数の連携（準備中）")
             );
         }

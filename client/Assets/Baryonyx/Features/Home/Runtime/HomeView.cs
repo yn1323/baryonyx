@@ -70,7 +70,7 @@ namespace Baryonyx.Home
 
         private void OnEnable()
         {
-            Bind(StepButton, HomeAction.ClaimRunes);
+            Bind(StepButton, HomeAction.SyncSteps);
             Bind(SettingsButton, HomeAction.Settings);
             Bind(PartyWorldButton, HomeAction.Party);
             Bind(PartyButton, HomeAction.Party);

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Baryonyx.Health;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -13,6 +14,8 @@ namespace Baryonyx.Editor.CI
         public const int MinimumSdk = 26;
         public const int TargetSdk = 36;
         public const string OutputPath = "Builds/Android/baryonyx.apk";
+        public const string SettingsPath =
+            "Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset";
 
         public static void Build()
         {
@@ -26,6 +29,8 @@ namespace Baryonyx.Editor.CI
                 throw new BuildFailedException("Start Unity with -buildTarget Android.");
 
             var scenes = BuildScenes.GetEnabledScenePaths(EditorBuildSettings.scenes);
+            var settings = AssetDatabase.LoadAssetAtPath<HealthConnectionSettings>(SettingsPath);
+            var server = ServerBuildEndpoint.Resolve(settings);
             var target = NamedBuildTarget.Android;
             var identifier = PlayerSettings.GetApplicationIdentifier(target);
             var backend = PlayerSettings.GetScriptingBackend(target);
@@ -37,6 +42,8 @@ namespace Baryonyx.Editor.CI
             var exportProject = EditorUserBuildSettings.exportAsGoogleAndroidProject;
             var split = PlayerSettings.Android.buildApkPerCpuArchitecture;
             var versionCode = PlayerSettings.Android.bundleVersionCode;
+            Debug.Log($"BARYONYX_ANDROID_SERVER: {server.name} {server.url}");
+            SetBuildServerUrl(settings, server.url);
             try
             {
                 PlayerSettings.SetApplicationIdentifier(target, ApplicationId);
@@ -70,6 +77,8 @@ namespace Baryonyx.Editor.CI
             }
             finally
             {
+                // 選んだ接続先を設定アセットに残さない。
+                SetBuildServerUrl(settings, "");
                 PlayerSettings.SetApplicationIdentifier(target, identifier);
                 PlayerSettings.SetScriptingBackend(target, backend);
                 PlayerSettings.Android.targetArchitectures = architectures;
@@ -81,6 +90,13 @@ namespace Baryonyx.Editor.CI
                 EditorUserBuildSettings.buildAppBundle = appBundle;
                 EditorUserBuildSettings.exportAsGoogleAndroidProject = exportProject;
             }
+        }
+
+        private static void SetBuildServerUrl(HealthConnectionSettings settings, string url)
+        {
+            settings.BuildServerUrl = url;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
         }
     }
 }

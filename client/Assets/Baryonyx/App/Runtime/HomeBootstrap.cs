@@ -1,4 +1,5 @@
 using System;
+using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
 using UnityEngine;
@@ -7,9 +8,10 @@ using UnityEngine.SceneManagement;
 namespace Baryonyx.App
 {
     /// <summary>
-    /// Builds the home screen mock from fixed sample data. It never creates the health
-    /// runtime. The adventure button leaves the scene only when a destination is set;
-    /// otherwise it shows the same "coming soon" feedback as the other mock buttons.
+    /// Builds the home screen from fixed sample data, except for today's steps, which come
+    /// from the server through the shared <see cref="GameServices"/>. The adventure button
+    /// leaves the scene only when a destination is set; otherwise it shows the same
+    /// "coming soon" feedback as the other mock buttons.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -24,6 +26,9 @@ namespace Baryonyx.App
 
         [SerializeField]
         private string adventureSceneName = "";
+
+        [SerializeField]
+        private HealthConnectionSettings settings;
 
         private HomePresenter presenter;
 
@@ -43,7 +48,8 @@ namespace Baryonyx.App
             presenter = new HomePresenter(
                 view,
                 data.ToSnapshot(DateTime.Today),
-                string.IsNullOrWhiteSpace(adventureSceneName) ? null : StartAdventure
+                string.IsNullOrWhiteSpace(adventureSceneName) ? null : StartAdventure,
+                new HomeStepSource(GameServices.GetOrCreate(settings).Health)
             );
         }
 

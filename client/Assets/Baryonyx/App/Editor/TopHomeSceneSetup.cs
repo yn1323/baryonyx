@@ -114,7 +114,10 @@ namespace Baryonyx.App.Editor
 
                 CreateCamera(scene, screenName + "Camera", screenColor);
                 if (clickable)
+                {
                     EnsureTopPostProcess(scene);
+                    TopStartupSyncSetup.EnsureTop(scene);
+                }
                 CreateEventSystem(scene);
                 EditorSceneManager.SaveScene(scene, scenePath);
             }
@@ -325,6 +328,7 @@ namespace Baryonyx.App.Editor
                 safeArea.gameObject.AddComponent<SafeAreaFollower>();
             CreateTopTitlePanel(scene, safeArea);
             CreateTapToStartPanel(scene, safeArea);
+            TopStartupSyncSetup.EnsureTop(scene);
             EditorSceneManager.SaveScene(scene, scenePath);
         }
 

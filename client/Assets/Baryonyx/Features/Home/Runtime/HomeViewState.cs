@@ -53,7 +53,10 @@ namespace Baryonyx.Home
                     snapshot.WeeklyTarget > 0
                         ? $"今週の目標 {Math.Max(0, snapshot.WeeklyDone)} / {snapshot.WeeklyTarget} 回"
                         : "",
-                ClaimText = linked ? "タップでルーンを取得" : "タップして歩数を連携",
+                ClaimText =
+                    snapshot.StepSyncing ? "同期中…"
+                    : linked ? "タップで歩数を同期"
+                    : "タップして歩数を連携",
                 RunesText = Number(Math.Max(0, snapshot.Runes)),
                 DestinationNameText = snapshot.DestinationName ?? "",
                 DestinationFloorText = snapshot.DestinationFloor ?? "",
@@ -72,8 +75,8 @@ namespace Baryonyx.Home
         public static string MessageFor(HomeAction action, HomeStepLink link) =>
             action switch
             {
-                HomeAction.ClaimRunes => link == HomeStepLink.Linked
-                    ? "ルーンを取得しました（モック）"
+                HomeAction.SyncSteps => link == HomeStepLink.Linked
+                    ? "歩数を同期しました（モック）"
                     : "歩数の連携（準備中）",
                 HomeAction.Settings => "設定（準備中）",
                 HomeAction.Party => "パーティ（準備中）",

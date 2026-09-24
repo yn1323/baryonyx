@@ -1,6 +1,9 @@
 using System.Collections;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using Baryonyx.App;
+using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
 using NUnit.Framework;
@@ -16,13 +19,30 @@ namespace Baryonyx.Tests.PlayMode
     {
         private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const float MinimumTouchSize = 128f;
+        private TestGameServices services;
+
+        [SetUp]
+        public void UseTestServices() => services = TestGameServices.Use();
 
         [UnityTest]
-        public IEnumerator HomeShowsMockDataWithoutReadingHealthData()
+        public IEnumerator HomeShowsMockDataWithStepsSavedOnTheServer()
         {
+            var days = services
+                .Provider.ReadRecentDaysAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult()
+                .Days;
+            services.Server.SaveAsync(days, CancellationToken.None).GetAwaiter().GetResult();
+            var todayKey = System.DateTime.Today.ToString(
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture
+            );
+            var today = days.FirstOrDefault(day => day.day == todayKey && day.hasValue);
+
             var bootstrap = default(HomeBootstrap);
             yield return LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
+            yield return WaitForSteps(bootstrap);
 
             Assert.That(bootstrap.Data, Is.Not.Null);
             Assert.That(bootstrap.AdventureSceneName, Is.Empty);
@@ -31,8 +51,12 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(SceneTransitionType.Shutter)
             );
 
-            var expected = HomeViewState.From(bootstrap.Data.ToSnapshot(System.DateTime.Today));
+            var snapshot = bootstrap.Data.ToSnapshot(System.DateTime.Today);
+            snapshot.StepLink = HomeStepLink.Linked;
+            snapshot.Steps = today != null ? (int)today.steps : 0;
+            var expected = HomeViewState.From(snapshot);
             Assert.That(view.StepsLabel.text, Is.EqualTo(expected.StepsText));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
             Assert.That(view.RunesLabel.text, Is.EqualTo(expected.RunesText));
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo(expected.DestinationNameText));
             Assert.That(view.DestinationFloorLabel.text, Is.EqualTo(expected.DestinationFloorText));
@@ -105,13 +129,51 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.CurrentToast, Is.EqualTo("召喚（準備中）"));
             view.PartyWorldButton.onClick.Invoke();
             Assert.That(view.CurrentToast, Is.EqualTo("パーティ（準備中）"));
-            view.StepButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("ルーンを取得しました（モック）"));
             view.SettingsButton.onClick.Invoke();
             Assert.That(view.CurrentToast, Is.EqualTo("設定（準備中）"));
             view.WorldMapButton.onClick.Invoke();
             Assert.That(view.CurrentToast, Is.EqualTo("ワールドマップ（準備中）"));
             Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator StepPanelSyncsHealthDataAndShowsTheResult()
+        {
+            var bootstrap = default(HomeBootstrap);
+            yield return LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+            yield return WaitForSteps(bootstrap);
+            Assert.That(services.Server.Saves, Is.Zero);
+
+            view.StepButton.onClick.Invoke();
+            yield return WaitForSteps(bootstrap);
+            Assert.That(services.Server.Saves, Is.EqualTo(1));
+            Assert.That(view.CurrentToast, Is.EqualTo("歩数を同期しました"));
+
+            services.Server.Fail = true;
+            view.StepButton.onClick.Invoke();
+            yield return WaitForSteps(bootstrap);
+            Assert.That(view.CurrentToast, Is.EqualTo("歩数を取得できませんでした"));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
+        }
+
+        [UnityTest]
+        public IEnumerator UnlinkedStepPanelRequestsPermissionBeforeSyncing()
+        {
+            services.Provider.Permission = HealthPermission.NotGranted;
+            var bootstrap = default(HomeBootstrap);
+            yield return LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+            yield return WaitForSteps(bootstrap);
+            Assert.That(view.UnlinkedDetails.activeSelf, Is.True);
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップして歩数を連携"));
+
+            // プレビューでは許可の要求が許可済みとして返る。
+            view.StepButton.onClick.Invoke();
+            yield return WaitForSteps(bootstrap);
+            Assert.That(services.Provider.Permission, Is.EqualTo(HealthPermission.Granted));
+            Assert.That(services.Server.Saves, Is.EqualTo(1));
+            Assert.That(view.StepDetails.activeSelf, Is.True);
         }
 
         [UnityTest]
@@ -202,6 +264,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScenes()
         {
+            services?.Dispose();
+            services = null;
             SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(HomeSceneTests)));
             var scene = SceneManager.GetSceneByPath(HomeScenePath);
             if (scene.IsValid() && scene.isLoaded)
@@ -223,6 +287,17 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.Transition.IsCovered, Is.False);
             Canvas.ForceUpdateCanvases();
             found(bootstrap);
+        }
+
+        private static IEnumerator WaitForSteps(HomeBootstrap bootstrap)
+        {
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (
+                !bootstrap.Presenter.StepTask.IsCompleted && Time.realtimeSinceStartup < deadline
+            )
+                yield return null;
+            Assert.That(bootstrap.Presenter.StepTask.IsCompleted, Is.True);
+            Assert.That(bootstrap.Presenter.StepSyncing, Is.False);
         }
 
         private static void AssertColor(Color actual, Color expected, Graphic graphic)

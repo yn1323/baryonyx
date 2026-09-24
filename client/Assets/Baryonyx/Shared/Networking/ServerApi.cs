@@ -26,8 +26,8 @@ namespace Baryonyx.Networking
         public ServerApi(string baseUrl)
         {
             var uri = new Uri(baseUrl);
-            if (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback))
-                throw new ArgumentException("HTTPS is required except for loopback development.");
+            if (uri.Scheme != "https" && !(uri.Scheme == "http" && IsDevelopmentHost(uri)))
+                throw new ArgumentException("HTTPS is required except for local development.");
             if (
                 !string.IsNullOrEmpty(uri.UserInfo)
                 || !string.IsNullOrEmpty(uri.Query)
@@ -38,6 +38,9 @@ namespace Baryonyx.Networking
                 );
             this.baseUrl = baseUrl.TrimEnd('/');
         }
+
+        // 10.0.2.2はAndroidエミュレーターから開発PCのループバックへ届く固定アドレス。
+        private static bool IsDevelopmentHost(Uri uri) => uri.IsLoopback || uri.Host == "10.0.2.2";
 
         public async Task<T> SendAsync<T>(
             string path,

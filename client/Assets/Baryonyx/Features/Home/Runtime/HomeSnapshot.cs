@@ -10,7 +10,7 @@ namespace Baryonyx.Home
 
     public enum HomeAction
     {
-        ClaimRunes,
+        SyncSteps,
         Settings,
         Party,
         Equipment,
@@ -21,13 +21,14 @@ namespace Baryonyx.Home
     }
 
     /// <summary>
-    /// The values the home screen shows. The mock builds it from a fixed asset; real
-    /// health and reward data will build the same snapshot later.
+    /// The values the home screen shows. The mock builds it from a fixed asset, and the
+    /// step source replaces the step values with the ones saved on the server.
     /// </summary>
     public sealed class HomeSnapshot
     {
         public HomeStepLink StepLink = HomeStepLink.Linked;
         public int Steps;
+        public bool StepSyncing;
         public int DailyGoal;
         public int WeeklyDone;
         public int WeeklyTarget;

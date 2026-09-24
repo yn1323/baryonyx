@@ -28,6 +28,22 @@ namespace Baryonyx.Account
             );
         }
 
+        public async Task<AccountSession> GuestLoginAsync(string secret, CancellationToken token)
+        {
+            var reply = await server.SendAsync<LoginReply>(
+                "/v1/auth/guest",
+                "POST",
+                new GuestLoginRequest { secret = secret },
+                null,
+                token
+            );
+            return new AccountSession(
+                reply.userId,
+                reply.token,
+                DateTimeOffset.Parse(reply.expiresAt)
+            );
+        }
+
         public Task LogoutAsync(AccountSession session, CancellationToken token) =>
             server.SendAsync<EmptyReply>("/v1/auth/logout", "POST", null, session.Token, token);
 
@@ -35,6 +51,12 @@ namespace Baryonyx.Account
         private sealed class LoginRequest
         {
             public string idToken;
+        }
+
+        [Serializable]
+        private sealed class GuestLoginRequest
+        {
+            public string secret;
         }
 
         [Serializable]
