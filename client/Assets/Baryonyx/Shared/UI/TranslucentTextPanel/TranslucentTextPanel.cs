@@ -136,17 +136,29 @@ namespace Baryonyx.UI
 
         private void OnValidate()
         {
-            ApplyVisualSettings();
-            if (!Application.isPlaying)
-                return;
-
-            if (pulseEnabled)
-                StartPulseIfNeeded();
-            else
-                StopPulse();
+            ClampSettings();
+#if UNITY_EDITOR
+            // OnValidateの中でRectTransformの大きさを変えると、UnityがSendMessageの警告を出す。
+            // 検証が終わってから反映する。
+            UnityEditor.EditorApplication.delayCall -= ApplyAfterValidate;
+            UnityEditor.EditorApplication.delayCall += ApplyAfterValidate;
+#endif
         }
 
-        private void ApplyVisualSettings()
+#if UNITY_EDITOR
+        private void ApplyAfterValidate()
+        {
+            // 反映を待つ間に削除された場合は何もしない。
+            if (this == null)
+                return;
+
+            ApplyVisualSettings();
+            if (Application.isPlaying)
+                SetPulseEnabled(pulseEnabled);
+        }
+#endif
+
+        private void ClampSettings()
         {
             fontSize = Mathf.Max(0.1f, fontSize);
             backdropSize = new Vector2(
@@ -156,6 +168,11 @@ namespace Baryonyx.UI
             backdropAlpha = Mathf.Clamp01(backdropAlpha);
             pulseDurationSeconds = Mathf.Max(0.1f, pulseDurationSeconds);
             pulseMinimumAlpha = Mathf.Clamp01(pulseMinimumAlpha);
+        }
+
+        private void ApplyVisualSettings()
+        {
+            ClampSettings();
 
             if (Label != null)
                 Label.fontSize = fontSize;
