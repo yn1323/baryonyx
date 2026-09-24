@@ -19,7 +19,7 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 | `Baryonyx.PlayModeTests` | シーン読み込み、入力、フレームをまたぐ状態遷移 |
 
 [BuildSceneTests](../../client/Assets/Baryonyx/Tests/EditMode/BuildSceneTests.cs) はビルド対象シーンの選択を5件で検査する。
-[TopHomeSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/TopHomeSceneTests.cs) はTopの読み込みとHomeへの遷移を、[ShowcaseSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/ShowcaseSceneTests.cs) は展示室シーンの読み込みを確認する。
+[TopHomeSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/TopHomeSceneTests.cs) はTopの読み込み、LOADINGと再試行、連携モーダル、Homeへの遷移を、[ShowcaseSceneTests](../../client/Assets/Baryonyx/App/Tests/PlayMode/ShowcaseSceneTests.cs) は展示室シーンの読み込みを確認する。
 
 ## PlayModeのシナリオ
 
@@ -29,7 +29,8 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データの表示、タップ領域、ボタンの反応を検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと保存済みの歩数の表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+TopとHomeのシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 
 実画面のシナリオでは、ボタンのハンドラーを直接呼ぶ前に仮想入力から操作できるか確認する。

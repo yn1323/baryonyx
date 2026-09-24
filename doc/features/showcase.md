@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # クライアントアセット展示室
@@ -225,7 +225,8 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 
 横画面のレスポンシブ対応は、UIカテゴリの `HomeScreen` を選び、背景が比率を保って表示されることを確認する。
 タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
-展示室のカタログには `HomeScreen` Prefabと `Top` シーンを登録済みである。
+展示室のカタログには `HomeScreen` Prefab、Health Connectの連携モーダル `HealthLinkModal` Prefab、`Top` シーンを登録済みである。
+連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
 実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
 
 ## 実装状況

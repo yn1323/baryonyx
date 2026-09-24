@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-09-22
+updated: 2026-09-24
 ---
 
 # クライアントの構成と依存関係
@@ -28,7 +28,8 @@ client/
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンと展示室シーンの検査
 │   │   ├── Features/Account/
-│   │   │   └── Runtime/                Google認証の契約とUMoth接続、サーバーのセッションとログインAPI
+│   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、サーバーのセッションとログインAPI
+│   │   │   └── Tests/EditMode/
 │   │   ├── Features/ExerciseRewards/
 │   │   │   └── Runtime/                ルーン請求・履歴・残高のAPI
 │   │   ├── Features/Health/
@@ -36,10 +37,12 @@ client/
 │   │   │   │   ├── HealthContracts.cs   取得結果とProviderの契約
 │   │   │   │   ├── HealthConnectProvider.cs
 │   │   │   │   ├── HealthConnectionSettings.cs
+│   │   │   │   ├── Link/                連携の確認・許可の要求・同期、Topの起動処理、連携モーダル
 │   │   │   │   ├── Presentation/        接続・取得の状態遷移と操作の管理、日別JSON
 │   │   │   │   ├── Requirements/        利用条件の確認契約、判定、案内文
 │   │   │   │   ├── Preview/             サンプルの認証結果と健康データ
-│   │   │   │   └── Sync/                歩数の保存APIと、ログイン・保存・ルーン請求の実行順
+│   │   │   │   └── Sync/                歩数の保存・取得APIと、ゲストのセッション・保存・ルーン請求の実行順
+│   │   │   ├── UI/                     連携モーダルのPrefab
 │   │   │   ├── Data/                   接続設定アセット
 │   │   │   ├── Editor/                 接続設定アセットの生成
 │   │   │   └── Tests/EditMode/
@@ -92,6 +95,8 @@ client/
 
 | 配置・入口 | 所有する処理 |
 |---|---|
+| [App/Runtime/GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs) | 実行環境に応じたProviderと保存先の選択。アプリの終了までTopとHomeで同じ接続を共有する。テストでは差し替える |
+| [Health/Runtime/Link/](../../client/Assets/Baryonyx/Features/Health/Runtime/Link) | 連携の確認・許可の要求・同期（`HealthStepLink`）、Topの起動処理の状態（`HealthStartupFlow`）、連携モーダルの描画 |
 | [App/Runtime/HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | 実行環境に応じたProviderの選択、Presenterの生成、初回の接続開始、破棄。現在はどのシーンからも使っていない |
 | [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、操作の多重起動防止と前面復帰待ち、日別JSONの解析 |
 | [Health/Runtime/Requirements/](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements) | 利用条件の確認インターフェース、判定結果、表示する案内 |
@@ -113,6 +118,7 @@ HealthのPresenterは、認証・権限・取得結果に応じた画面状態�
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
 依存方向はApp → Health → ExerciseRewards → Account → Shared、App → Home → Sharedとし、逆向きに参照しない。
 HomeはHealth・ExerciseRewardsを参照せず、Appの[HomeBootstrap](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が仮データからPresenterを組み立てる。
+今日の歩数はHomeが定義する `IHomeStepSource` を通して受け取り、Appの [HomeStepSource](../../client/Assets/Baryonyx/App/Runtime/HomeStepSource.cs) がHealthの `HealthStepLink` へつなぐ。
 複数画面で使うキャラクター画像は `Shared/Art/Characters/` に置く。
 ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
 HealthのEditor処理はAppのオブジェクトを生成しない。

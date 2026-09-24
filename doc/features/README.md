@@ -50,11 +50,13 @@
 
 2026-09-24時点のシーンは、Top・Home・展示室だけである。
 冒険・獲得・装備・戦闘を試せた操作試作と、健康データを表示した画面は削除した。
-画面に依存しない戦闘計算と、Google認証・Health Connect・サーバー保存のロジックは残しているが、現在はどの画面からも呼ばない。
+TopとHomeは、Health Connectの歩数をゲストのセッションでサーバーへ同期する。
+画面に依存しない戦闘計算と、Google認証・運動報酬の請求のロジックは残しているが、現在はどの画面からも呼ばない。
 
 | 機能 | 現行仕様 | 実装の入口 |
 |---|---|---|
 | 健康データの読み取りと保存 | [機能詳細](health-data.md) | [Providerの組み立て](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)・[サーバー同期](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)・[API](../../server/src/features/health/routes.ts) |
+| 起動時の連携と歩数の同期 | [機能詳細](startup-sync.md) | [Topの起動処理](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStartupFlow.cs)・[共有する接続](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)・[ゲストAPI](../../server/src/features/accounts/routes.ts) |
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
 | 画面の操作ワイヤー | [試作の記録](game-wireframe.md) | 2026-09-24に削除。[戦闘計算](../../client/Assets/Baryonyx/Features/Combat/Runtime)だけを残す |
 | ホーム画面のモック | [画面一覧](screens.md#ホーム画面の見た目モック) | [Homeシーン](../../client/Assets/Baryonyx/App/Scenes/Home.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Home/Editor/HomeScreenAssets.cs) |

@@ -22,9 +22,10 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 ## 現在の実装状況
 
 2026-09-24に、健康データを表示していた `Main`・`Wireframe` シーン、歩数画面のUI（View・Prefab）、冒険の試作画面を削除した。
-現在の起動経路（Top・Home）は健康データを読み取らず、この機能を呼び出す画面はない。
-Google認証、Health Connectの接続・取得、サーバーへの保存と運動報酬の請求を行うロジックは残している。
-新しい画面から使うときは、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) でProviderの選択とPresenterの生成を行い、画面側でPresenterの状態を描画する。
+現在の起動経路では、TopとHomeがゲストのセッションで直近7日分の歩数をサーバーへ同期し、Homeに今日の歩数を表示する。
+流れ、連携モーダル、再試行は[起動時の連携と歩数の同期](startup-sync.md)を正本とする。
+日別一覧・JSON詳細・Google接続の画面はなく、Google認証と運動報酬の請求を行うロジックは呼ばれていない。
+それらを新しい画面から使うときは、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) でProviderの選択とPresenterの生成を行い、画面側でPresenterの状態を描画する。
 以降の画面構成・文言・寸法は削除前の仕様であり、再実装時に見直す。
 
 ## ローカル表示画面
