@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEditor;
@@ -11,6 +10,8 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. Icons are point-filtered pixel art;
     /// shadows, capsules and the resume card are smooth shapes with anti-aliased edges.
+    /// The navigation and world map icons are 32x32 PixelLab drawings kept as files, so
+    /// regeneration only fixes their import settings.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -36,28 +37,20 @@ namespace Baryonyx.Home.Editor
         public const string IconSettingsPath = ArtFolder + "/IconSettings.png";
         public const string IconRunePath = ArtFolder + "/IconRune.png";
 
+        // Drawn in PixelLab (32x32) and shown at an integer 2x, unlike the code-drawn icons.
+        private static readonly string[] DrawnIconPaths =
+        {
+            IconPartyPath,
+            IconEquipmentPath,
+            IconSummonPath,
+            IconGoalPath,
+            IconCompassPath,
+        };
+
         // Rounded corners of the resume card, in texture pixels (1 pixel = 1 canvas unit).
         public const int CardRadius = 18;
 
         public static readonly Color Ink = new(0.106f, 0.071f, 0.024f);
-
-        private static readonly Dictionary<char, Color> IconPalette = new()
-        {
-            ['o'] = new Color(0.106f, 0.071f, 0.024f),
-            ['f'] = new Color(0.953f, 0.914f, 0.824f),
-            ['h'] = Color.white,
-            ['a'] = new Color(0.914f, 0.635f, 0.231f),
-            ['r'] = new Color(0.816f, 0.318f, 0.247f),
-        };
-
-        private static readonly Dictionary<char, Color> CompassPalette = new()
-        {
-            ['o'] = new Color(0.063f, 0.075f, 0.114f),
-            ['a'] = new Color(0.788f, 0.631f, 0.353f),
-            ['f'] = new Color(0.910f, 0.886f, 0.831f),
-            ['r'] = new Color(0.816f, 0.318f, 0.247f),
-            ['s'] = new Color(0.353f, 0.525f, 0.784f),
-        };
 
         // The same 11x14 flame as the design mock: outer red, orange, yellow, white core, logs.
         private static readonly string[] Campfire =
@@ -76,115 +69,6 @@ namespace Baryonyx.Home.Editor
             ".LLmmmmmLL.",
             "LLDLLLLLDLL",
             ".DDDD.DDDD.",
-        };
-
-        private static readonly string[] Party =
-        {
-            "................",
-            "....oooo........",
-            "...offffo.oooo..",
-            "...offhfo.offfo.",
-            "...offffooffhfo.",
-            "....offo.offffo.",
-            "...oooooo.offo..",
-            "..offffffooooooo",
-            ".offfhffffoffffo",
-            ".offffffffoffffo",
-            ".offffffffoffffo",
-            ".oooooooooooooo.",
-            "................",
-            "................",
-            "................",
-            "................",
-        };
-
-        private static readonly string[] Sword =
-        {
-            ".............ooo",
-            "............ofho",
-            "...........ofho.",
-            "..........ofho..",
-            ".........ofho...",
-            "..oo....ofho....",
-            "..oao..ofho.....",
-            "...oaoofho......",
-            "....oaaoo.......",
-            ".....oaao.......",
-            "....oaooao......",
-            "...oao..oao.....",
-            "..ooo....oo.....",
-            ".oao............",
-            "oao.............",
-            "oo..............",
-        };
-
-        private static readonly string[] Flag =
-        {
-            ".oo.............",
-            ".oaooooooooo....",
-            ".oaorrrrrrrro...",
-            ".oaorrhrrrrro...",
-            ".oaorrrrrrro....",
-            ".oaorrrrrro.....",
-            ".oaorrrrrrro....",
-            ".oaorrrrrrrro...",
-            ".oaooooooooo....",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".ooo............",
-        };
-
-        private static readonly string[] Compass =
-        {
-            ".....oooooo.....",
-            "...ooaaaaaaoo...",
-            "..oaaffffffaao..",
-            ".oaffffffffrrao.",
-            ".oafffffffrrfao.",
-            "oafffffffrrfffao",
-            "oaffffffrrffffao",
-            "oafffffoofffffao",
-            "oafffffoofffffao",
-            "oaffffssffffffao",
-            "oafffssfffffffao",
-            ".oafssfffffffao.",
-            ".oasfffffffffao.",
-            "..oaaffffffaao..",
-            "...ooaaaaaaoo...",
-            ".....oooooo.....",
-        };
-
-        private static readonly Dictionary<char, Color> CirclePalette = new()
-        {
-            ['o'] = new Color(0.106f, 0.071f, 0.2f),
-            ['c'] = new Color(0.608f, 0.416f, 0.839f),
-            ['g'] = new Color(0.498f, 0.890f, 0.839f),
-            ['h'] = Color.white,
-        };
-
-        // A summoning circle: a purple ring around a rune-coloured hexagram.
-        private static readonly string[] MagicCircle =
-        {
-            ".....oooooo.....",
-            "...ooccccccoo...",
-            "..occ..gg..cco..",
-            ".occ..g..g..cco.",
-            ".oc...g..g...co.",
-            "oc.gggggggggg.co",
-            "oc..gg....gg..co",
-            "oc..g..hh..g..co",
-            "oc..gg.hh.gg..co",
-            "oc.g.g....g.g.co",
-            "oc.gggggggggg.co",
-            ".oc...g..g...co.",
-            ".occ...gg...cco.",
-            "..occ..gg..cco..",
-            "...ooccccccoo...",
-            ".....oooooo.....",
         };
 
         private static readonly string[] Gear =
@@ -245,11 +129,8 @@ namespace Baryonyx.Home.Editor
                         _ => Color.clear,
                     }
             );
-            WritePattern(IconPartyPath, Party, c => Lookup(IconPalette, c));
-            WritePattern(IconEquipmentPath, Sword, c => Lookup(IconPalette, c));
-            WritePattern(IconGoalPath, Flag, c => Lookup(IconPalette, c));
-            WritePattern(IconCompassPath, Compass, c => Lookup(CompassPalette, c));
-            WritePattern(IconSummonPath, MagicCircle, c => Lookup(CirclePalette, c));
+            foreach (var path in DrawnIconPaths)
+                ImportDrawnIcon(path);
             WritePattern(IconSettingsPath, Gear, c => c == '#' ? Color.white : Color.clear);
             WritePattern(IconRunePath, Rune, c => c == '#' ? Color.white : Color.clear);
 
@@ -386,8 +267,13 @@ namespace Baryonyx.Home.Editor
             return LoadTexture(path);
         }
 
-        private static Color Lookup(Dictionary<char, Color> palette, char c) =>
-            palette.TryGetValue(c, out var color) ? color : Color.clear;
+        private static void ImportDrawnIcon(string path)
+        {
+            if (!File.Exists(path))
+                throw new InvalidOperationException("Home artwork is missing: " + path);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            ApplySpriteSettings(path, Vector4.zero, FilterMode.Point);
+        }
 
         private static void WritePattern(string path, string[] rows, Func<char, Color> palette)
         {
@@ -565,6 +451,16 @@ namespace Baryonyx.Home.Editor
         {
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            ApplySpriteSettings(path, border, filter, sprite);
+        }
+
+        private static void ApplySpriteSettings(
+            string path,
+            Vector4 border,
+            FilterMode filter,
+            bool sprite = true
+        )
+        {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = sprite
                 ? TextureImporterType.Sprite

@@ -726,17 +726,18 @@ namespace Baryonyx.Home.Editor
                 .PreferredSize;
             var badge = Rect("WorldMapIconBack", map);
             var badgeSize = badge.gameObject.AddComponent<LayoutElement>();
-            badgeSize.minWidth = badgeSize.preferredWidth = 56;
-            badgeSize.minHeight = badgeSize.preferredHeight = 56;
+            // The 32x32 compass is shown at an integer 2x so its pixels stay square.
+            badgeSize.minWidth = badgeSize.preferredWidth = 64;
+            badgeSize.minHeight = badgeSize.preferredHeight = 64;
             SpriteImage(badge, HomeScreenArt.CirclePath, new Color(0.471f, 0.549f, 0.686f, 0.22f));
             var compass = Icon(
                 badge,
                 "WorldMapIcon",
                 HomeScreenArt.IconCompassPath,
-                40,
+                64,
                 Color.white
             );
-            Place((RectTransform)compass.transform, Vector2.zero, new Vector2(40, 40));
+            Place((RectTransform)compass.transform, Vector2.zero, new Vector2(64, 64));
             Label(
                 map,
                 "WorldMapLabel",
