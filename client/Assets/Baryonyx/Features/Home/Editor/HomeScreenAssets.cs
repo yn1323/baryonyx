@@ -89,6 +89,7 @@ namespace Baryonyx.Home.Editor
                 BuildNavigation(safe, view);
                 BuildResume(safe, view);
                 BuildToast(root, view);
+                CollectTintGraphics(root);
 
                 // Bake the sample values so prefab and showcase previews match the running screen.
                 var data = AssetDatabase.LoadAssetAtPath<HomeMockData>(DataPath);
@@ -333,7 +334,7 @@ namespace Baryonyx.Home.Editor
                 new Color(0.012f, 0.02f, 0.04f, 0.9f)
             );
             spot.raycastTarget = true;
-            view.StepButton = AddButton(panel, spot);
+            view.StepButton = AddTintButton(panel, spot);
             var column = panel.gameObject.AddComponent<VerticalLayoutGroup>();
             column.padding = new RectOffset(68, 68, 56, 60);
             column.spacing = 12;
@@ -491,7 +492,7 @@ namespace Baryonyx.Home.Editor
                 new Color(0.012f, 0.02f, 0.04f, 0.8f)
             );
             spot.raycastTarget = true;
-            view.SettingsButton = AddButton(settings, spot);
+            view.SettingsButton = AddTintButton(settings, spot);
             var gear = Icon(settings, "SettingsIcon", HomeScreenArt.IconSettingsPath, 40, TextMain);
             Place((RectTransform)gear.transform, Vector2.zero, new Vector2(40, 40));
 
@@ -571,7 +572,7 @@ namespace Baryonyx.Home.Editor
                 new Color(0.012f, 0.02f, 0.04f, 0.78f)
             );
             spot.raycastTarget = true;
-            var button = AddButton(rect, spot);
+            var button = AddTintButton(rect, spot);
             var icon = Icon(rect, name + "Icon", iconPath, 64, Color.white);
             Place((RectTransform)icon.transform, new Vector2(0, 16), new Vector2(64, 64));
             var label = Label(
@@ -715,7 +716,7 @@ namespace Baryonyx.Home.Editor
                 HomeScreenArt.CapsulePath,
                 new Color(0.047f, 0.063f, 0.11f, 0.8f)
             );
-            view.WorldMapButton = AddButton(map, mapImage);
+            view.WorldMapButton = AddTintButton(map, mapImage);
             var mapRow = map.gameObject.AddComponent<HorizontalLayoutGroup>();
             mapRow.padding = new RectOffset(12, 30, 0, 0);
             mapRow.spacing = 14;
@@ -1023,9 +1024,28 @@ namespace Baryonyx.Home.Editor
             return image;
         }
 
-        private static Button AddButton(RectTransform rect, Graphic target)
+        private static Button AddButton(RectTransform rect, Graphic target) =>
+            ConfigureButton(rect.gameObject.AddComponent<Button>(), target);
+
+        // For buttons whose target is a dark backdrop: the icon and labels darken with it.
+        private static Button AddTintButton(RectTransform rect, Graphic target) =>
+            ConfigureButton(rect.gameObject.AddComponent<TintGroupButton>(), target);
+
+        // Runs after every button's children exist, so each one tints all of its own graphics.
+        private static void CollectTintGraphics(RectTransform root)
         {
-            var button = rect.gameObject.AddComponent<Button>();
+            foreach (var button in root.GetComponentsInChildren<TintGroupButton>(true))
+            {
+                var graphics = new List<Graphic>();
+                foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
+                    if (graphic != button.targetGraphic)
+                        graphics.Add(graphic);
+                button.SetTintGraphics(graphics.ToArray());
+            }
+        }
+
+        private static Button ConfigureButton(Button button, Graphic target)
+        {
             button.targetGraphic = target;
             button.navigation = new Navigation { mode = Navigation.Mode.None };
             var colors = button.colors;

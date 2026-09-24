@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8544710133334307438}
   - component: {fileID: 5682180315422381587}
   - component: {fileID: 7202989656135870463}
-  - component: {fileID: 5314573886636599471}
+  - component: {fileID: 5616746627525848966}
   m_Layer: 0
   m_Name: SettingsButton
   m_TagString: Untagged
@@ -78,7 +78,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &5314573886636599471
+--- !u!114 &5616746627525848966
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -87,9 +87,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 43917510540033803}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -122,6 +122,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 5437652425527632467}
+  - {fileID: 9104553298868217498}
 --- !u!1 &106745253119222719
 GameObject:
   m_ObjectHideFlags: 0
@@ -375,7 +378,7 @@ GameObject:
   - component: {fileID: 3570151128290812816}
   - component: {fileID: 5815763051704474994}
   - component: {fileID: 5081325227096941180}
-  - component: {fileID: 4647064680155427204}
+  - component: {fileID: 6153284689710806384}
   - component: {fileID: 8178066059829040209}
   - component: {fileID: 2349802913662294346}
   m_Layer: 0
@@ -447,7 +450,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &4647064680155427204
+--- !u!114 &6153284689710806384
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -456,9 +459,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 233879977965558480}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -491,6 +494,39 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 5000746886654063533}
+  - {fileID: 3063550568801880539}
+  - {fileID: 4683958534583094930}
+  - {fileID: 1723274031420863717}
+  - {fileID: 6656363200166528705}
+  - {fileID: 2561118984580310405}
+  - {fileID: 7631971363615115100}
+  - {fileID: 8992121803818084675}
+  - {fileID: 8601901844737485997}
+  - {fileID: 8037115465743429693}
+  - {fileID: 1759910942919278991}
+  - {fileID: 8417623466429960680}
+  - {fileID: 4874964239172562225}
+  - {fileID: 2012362387152918785}
+  - {fileID: 2629006894148713877}
+  - {fileID: 7433654975268269100}
+  - {fileID: 5740709991376659412}
+  - {fileID: 8553820609175155216}
+  - {fileID: 8176848306794090058}
+  - {fileID: 8984487802841547944}
+  - {fileID: 4487595413909939591}
+  - {fileID: 6734007441142269835}
+  - {fileID: 5664460456193253668}
+  - {fileID: 8300296335853680075}
+  - {fileID: 860140847547631444}
+  - {fileID: 3796179930868931028}
+  - {fileID: 145934512254594881}
+  - {fileID: 1000365140639481698}
+  - {fileID: 5273404339769309748}
+  - {fileID: 1582947004697313235}
+  - {fileID: 3248181609108758106}
+  - {fileID: 187318932259547902}
 --- !u!114 &8178066059829040209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -835,7 +871,7 @@ GameObject:
   - component: {fileID: 3228307721802067840}
   - component: {fileID: 5963682026859040734}
   - component: {fileID: 1935773715140859524}
-  - component: {fileID: 6341208192495003104}
+  - component: {fileID: 6267738224922925660}
   m_Layer: 0
   m_Name: GoalsButton
   m_TagString: Untagged
@@ -924,7 +960,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6341208192495003104
+--- !u!114 &6267738224922925660
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -933,9 +969,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 509535571146876344}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -968,6 +1004,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 151092915583347019}
+  - {fileID: 8727873651805032577}
 --- !u!1 &513923932165302873
 GameObject:
   m_ObjectHideFlags: 0
@@ -3917,6 +3956,104 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!1 &3172761414780546964
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5638600990005067417}
+  - component: {fileID: 6643887796306473826}
+  - component: {fileID: 3947154428473221757}
+  - component: {fileID: 7788163251143020213}
+  m_Layer: 0
+  m_Name: HitArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5638600990005067417
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3172761414780546964}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6556943077131017756}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 48}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &6643887796306473826
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3172761414780546964}
+  m_CullTransparentMesh: 1
+--- !u!114 &3947154428473221757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3172761414780546964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7788163251143020213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3172761414780546964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 1
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
+  m_MaxWidth: -1
+  m_MaxHeight: -1
 --- !u!1 &3184140591101985634
 GameObject:
   m_ObjectHideFlags: 0
@@ -4960,7 +5097,7 @@ GameObject:
   - component: {fileID: 661659210467731507}
   - component: {fileID: 1496006543177480591}
   - component: {fileID: 2841304670082021797}
-  - component: {fileID: 2680976230955889669}
+  - component: {fileID: 8414077596030665059}
   m_Layer: 0
   m_Name: PartyButton
   m_TagString: Untagged
@@ -5049,7 +5186,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2680976230955889669
+--- !u!114 &8414077596030665059
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5058,9 +5195,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3959079357065267325}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -5093,6 +5230,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 339256592691157133}
+  - {fileID: 8015564488341502406}
 --- !u!1 &4105914939250579534
 GameObject:
   m_ObjectHideFlags: 0
@@ -6447,7 +6587,7 @@ GameObject:
   - component: {fileID: 3780096068718756924}
   - component: {fileID: 4146395954810824679}
   - component: {fileID: 1745780327972229674}
-  - component: {fileID: 2192042269180468321}
+  - component: {fileID: 3988963320186330483}
   m_Layer: 0
   m_Name: EquipmentButton
   m_TagString: Untagged
@@ -6536,7 +6676,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2192042269180468321
+--- !u!114 &3988963320186330483
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6545,9 +6685,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5790956564276443061}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -6580,6 +6720,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 4055257209706928028}
+  - {fileID: 7320364842720520544}
 --- !u!1 &6045022047310801778
 GameObject:
   m_ObjectHideFlags: 0
@@ -7680,7 +7823,7 @@ GameObject:
   - component: {fileID: 5634545261548518614}
   - component: {fileID: 3338353962955199689}
   - component: {fileID: 3597960888136572858}
-  - component: {fileID: 7080539308558512225}
+  - component: {fileID: 839177559154533253}
   m_Layer: 0
   m_Name: SummonButton
   m_TagString: Untagged
@@ -7769,7 +7912,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7080539308558512225
+--- !u!114 &839177559154533253
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7778,9 +7921,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7081893159242187708}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -7813,6 +7956,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 8392200062541308654}
+  - {fileID: 8155464163155156598}
 --- !u!1 &7293935630279486340
 GameObject:
   m_ObjectHideFlags: 0
@@ -8165,104 +8311,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!1 &7437203614540992718
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7994345785758911078}
-  - component: {fileID: 3901290825650781372}
-  - component: {fileID: 7389628110919467792}
-  - component: {fileID: 8858980063334021840}
-  m_Layer: 0
-  m_Name: HitArea
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &7994345785758911078
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7437203614540992718}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6556943077131017756}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 48}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &3901290825650781372
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7437203614540992718}
-  m_CullTransparentMesh: 1
---- !u!114 &7389628110919467792
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7437203614540992718}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &8858980063334021840
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7437203614540992718}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
-  m_IgnoreLayout: 1
-  m_MinWidth: -1
-  m_MinHeight: -1
-  m_PreferredWidth: -1
-  m_PreferredHeight: -1
-  m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
-  m_LayoutPriority: 1
-  m_MaxWidth: -1
-  m_MaxHeight: -1
 --- !u!1 &7511108674425868685
 GameObject:
   m_ObjectHideFlags: 0
@@ -9721,7 +9769,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95c4ec453a03649f9ba50ff832f6ed8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.HomeView
-  StepButton: {fileID: 4647064680155427204}
+  StepButton: {fileID: 6153284689710806384}
   DateLabel: {fileID: 3063550568801880539}
   StepDetails: {fileID: 4304566248122248112}
   UnlinkedDetails: {fileID: 5226488149069935458}
@@ -9752,13 +9800,13 @@ MonoBehaviour:
   WeeklyLabel: {fileID: 145934512254594881}
   ClaimLabel: {fileID: 187318932259547902}
   RunesLabel: {fileID: 2138012908724685270}
-  SettingsButton: {fileID: 5314573886636599471}
+  SettingsButton: {fileID: 5616746627525848966}
   PartyWorldButton: {fileID: 2476989249974824054}
-  PartyButton: {fileID: 2680976230955889669}
-  EquipmentButton: {fileID: 2192042269180468321}
-  SummonButton: {fileID: 7080539308558512225}
-  GoalsButton: {fileID: 6341208192495003104}
-  WorldMapButton: {fileID: 2373513939629886796}
+  PartyButton: {fileID: 8414077596030665059}
+  EquipmentButton: {fileID: 3988963320186330483}
+  SummonButton: {fileID: 839177559154533253}
+  GoalsButton: {fileID: 6267738224922925660}
+  WorldMapButton: {fileID: 608942394379076065}
   ResumeButton: {fileID: 8416226167549738843}
   DestinationNameLabel: {fileID: 5172286641260738030}
   DestinationFloorLabel: {fileID: 1343793515273518974}
@@ -9852,7 +9900,7 @@ GameObject:
   - component: {fileID: 6556943077131017756}
   - component: {fileID: 2510668942201532849}
   - component: {fileID: 9030643336942736076}
-  - component: {fileID: 2373513939629886796}
+  - component: {fileID: 608942394379076065}
   - component: {fileID: 3383803388002477664}
   - component: {fileID: 8081609424881937937}
   m_Layer: 0
@@ -9874,7 +9922,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7994345785758911078}
+  - {fileID: 5638600990005067417}
   - {fileID: 2498742149919764783}
   - {fileID: 3747784292005964148}
   m_Father: {fileID: 1899076780430327577}
@@ -9922,7 +9970,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2373513939629886796
+--- !u!114 &608942394379076065
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9931,9 +9979,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 8978567223402078021}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 775a1ea1630bd40ea8a58fa8411f75ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.TintGroupButton
   m_Navigation:
     m_Mode: 0
     m_WrapAround: 0
@@ -9966,6 +10014,11 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+  tintGraphics:
+  - {fileID: 3947154428473221757}
+  - {fileID: 7004297830795513956}
+  - {fileID: 5696809713313355818}
+  - {fileID: 9080928870589739084}
 --- !u!114 &3383803388002477664
 MonoBehaviour:
   m_ObjectHideFlags: 0

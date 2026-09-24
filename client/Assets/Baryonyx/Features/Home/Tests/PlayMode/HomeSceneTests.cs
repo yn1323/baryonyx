@@ -5,6 +5,7 @@ using Baryonyx.Home;
 using Baryonyx.UI;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -114,6 +115,63 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator PressingDarkensIconsAndLabelsOverDarkBackdrops()
+        {
+            var bootstrap = default(HomeBootstrap);
+            yield return LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+            Assert.That(EventSystem.current, Is.Not.Null);
+
+            foreach (
+                var button in new[]
+                {
+                    view.PartyButton,
+                    view.EquipmentButton,
+                    view.SummonButton,
+                    view.GoalsButton,
+                    view.WorldMapButton,
+                    view.SettingsButton,
+                    view.StepButton,
+                }
+            )
+            {
+                var tint = button as TintGroupButton;
+                Assert.That(tint, Is.Not.Null, button.name);
+                Assert.That(
+                    tint.TintGraphics.OfType<UnityEngine.UI.Image>()
+                        .Any(image => image.sprite != null),
+                    Is.True,
+                    button.name + " has no icon to darken"
+                );
+
+                var pointer = new PointerEventData(EventSystem.current)
+                {
+                    button = PointerEventData.InputButton.Left,
+                };
+                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerDownHandler);
+                yield return new WaitForSecondsRealtime(0.2f);
+                foreach (var graphic in tint.TintGraphics)
+                    AssertColor(
+                        graphic.canvasRenderer.GetColor(),
+                        button.colors.pressedColor,
+                        graphic
+                    );
+
+                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerUpHandler);
+                yield return new WaitForSecondsRealtime(0.2f);
+                foreach (var graphic in tint.TintGraphics)
+                    AssertColor(
+                        graphic.canvasRenderer.GetColor(),
+                        button.colors.normalColor,
+                        graphic
+                    );
+            }
+
+            // The resume card already darkens its bright art and keeps that behaviour.
+            Assert.That(view.ResumeButton, Is.Not.InstanceOf<TintGroupButton>());
+        }
+
+        [UnityTest]
         public IEnumerator ResumeWithoutDestinationStaysOnHome()
         {
             var bootstrap = default(HomeBootstrap);
@@ -165,6 +223,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.Transition.IsCovered, Is.False);
             Canvas.ForceUpdateCanvases();
             found(bootstrap);
+        }
+
+        private static void AssertColor(Color actual, Color expected, Graphic graphic)
+        {
+            string name = graphic.transform.parent.name + "/" + graphic.name;
+            Assert.That(actual.r, Is.EqualTo(expected.r).Within(0.01f), name);
+            Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.01f), name);
+            Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.01f), name);
         }
 
         private static void AssertTouchSize(Transform target)
