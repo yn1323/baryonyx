@@ -1,171 +1,121 @@
 ---
 name: pixellab-character-prompt
 description: >
-  Manual-invocation-only skill for turning a character description into a concise
-  PixelLab prompt for small JRPG character sprites. Never invoke automatically.
+  手動呼び出し専用。キャラクター設定からPixelLabのCreate from Style Reference（Pro）用の短い説明文を作り、
+  固定の参照画像とStyle descriptionで立ち絵の候補16体を生成して一覧で見せ、ユーザーに選ばせるところで止める。
+  PixelLab、ドット絵、キャラクターデザインの話題というだけでは自動で使わない。
 ---
 
-# PixelLab Character Prompt
+# PixelLabキャラクター候補の生成
 
-## Invocation policy
+キャラクター制作の2番目の工程で使う。
+1番目の工程（[rpg-character-profile](../rpg-character-profile/SKILL.md) による設定づくり）で決めた見た目を、PixelLabで立ち絵の候補16体にする。
+候補から1体を選ぶのはユーザーであり、このスキルは一覧を見せたところで止める。
+選んだ候補はユーザーが手作業で修正し、修正済みの立ち絵を次の工程へ渡す。
+その立ち絵にアニメーションを付ける3番目の工程は、このスキルの範囲外とする。
 
-- Manual invocation only.
-- Use this skill only when the user explicitly invokes it.
-- Do not automatically apply this skill just because the conversation is about PixelLab, pixel art, or character design.
+## 呼び出し
 
-## Purpose
+- ユーザーがこのスキルを明示したときだけ使う。
+- PixelLab、ドット絵、キャラクターデザインの話題になっただけでは使わない。
+- `agents/openai.yaml` の `allow_implicit_invocation: false` を保つ。
 
-Convert the character description supplied together with the invocation into a short English prompt for PixelLab.
+## 固定の生成設定
 
-PixelLab's Style Reference should do most of the work for overall art direction.
-The prompt should identify the character without over-specifying details.
+次の設定は、Web版とAPIで比較を重ねてユーザーが採用したものである。
+ユーザーの指示がない限り変えない。
 
-If the source description contains too much information, aggressively remove details.
-If it contains too little information, add only the minimum necessary details that are consistent with the character concept.
+| 項目 | 値 |
+|---|---|
+| 生成方法 | Create from Style Reference（Pro）。API `POST /v2/generate-with-style-v2` |
+| 参照画像 | [assets/style-reference.png](assets/style-reference.png)（64×64、青いローブの魔法使い、描画範囲26×47） |
+| Style description | `32x48に収まるように。全身絵。4頭身。右向き。` |
+| Remove background | true |
+| seed | 指定しない |
+| 出力 | 64×64の候補16体。1回につき生成枠20回分を使う |
 
-## Core prompt structure
+PixelLab MCPには、この生成方法のツールがない。
+そのため [scripts/style_reference.py](scripts/style_reference.py) からREST APIを直接呼ぶ。
+スクリプトは環境変数 `PIXELLAB_API_TOKEN`、なければ `~/.claude.json` に登録された `pixellab` MCPサーバーの `Authorization` ヘッダーからトークンを読む。
+トークンを表示・記録・コミットしない。
 
-Build the prompt from these elements:
+参照画像が64×64なのは、アニメーションを付けたときに枠からはみ出さないようにするためである。
+キャラクター自体は32×48に収める想定だが、下の「試して採用しなかった方法」のとおり、文章や枠でサイズを強制するとデザインが劣化する。
+はみ出しは、複数回生成して収まった候補を選ぶことで対応する。
 
-1. Age range + gender
-   - Prefer an age band instead of an exact age.
-   - Example: `adult man in his early 30s`
-   - Other useful forms: `young adult woman`, `middle-aged man`, `older woman`
+## Descriptionの作り方
 
-2. Hair color + hairstyle
-   - Keep this compact.
-   - Example: `gray-brown tied-back hair`
+Descriptionは日本語の短い文にする。
+書きすぎると結果が大きくぶれるので、次の要素だけを句点で区切って並べる。
 
-3. Occupation / class
-   - Example: `scholar mage`
-   - Prefer a short, recognizable RPG role.
+1. 職業や役割（例：`海賊。船長。`、`盗賊。`）
+2. 性別
+3. 髪色（髪型は輪郭を大きく変える場合だけ短く添える）
+4. 見た目の特徴を3つまで
 
-4. 3-4 visible identifying features
-   - Prefer features that affect silhouette, large color blocks, or immediately readable equipment.
-   - Good examples:
-     - `long blue coat`
-     - `large round shield`
-     - `spellbook`
-     - `broken ring-shaped staff`
-     - `red hood`
-     - `heavy shoulder armor`
+例：`盗賊。男性。黒髪。赤いフード、二本の短剣、黒い装束。`
 
-## Color handling
+rpg-character-profile の設定がある場合は、その「ドット絵で必ず残す特徴」の6項目（性別、髪型、髪色、特徴3点）と職業を材料にする。
+性格、経歴、台詞、アニメーション設計はDescriptionに入れない。
 
-Prevent the generated sprite from becoming unnecessarily muddy, gray, or desaturated.
+特徴を3つに絞るときは、小さく表示しても見分けられる順に選ぶ。
 
-- Prefer simple, clear base color names for large clothing areas:
-  - `blue`, `red`, `green`, `cream`, `gold`, `brown`
-- Avoid low-saturation modifiers unless they are essential to the character identity:
-  - `muted`
-  - `dusty`
-  - `smoky`
-  - `grayish`
-  - `desaturated`
-  - `earthy`
-  - `weathered`
-  - `deep`
-  - `dark`
-- Do not turn every color into a subtle or realistic shade.
-- Keep hair colors accurate to the source description even when they are naturally subdued, such as `gray-brown`.
-- Favor clear separation between the character's main color blocks.
-- By default, append a short color-quality instruction to the prompt:
-  - `clear colors, strong color separation, crisp highlights`
-- Do not use words such as `neon`, `extremely vivid`, or `highly saturated` unless the user explicitly wants a flashy palette.
-- The goal is colorful, readable SNES-era sprite colors, not modern neon saturation.
+1. 輪郭を決める形（大きな帽子、マント、鎧の肩）
+2. 服の大きな色面
+3. 主な武器や手に持つ物
+4. 代表的な小物
 
-## Optional element
+瞳の色、刺繍、小さな装飾品、しわ、ポーチのような細部は、64×64の立ち絵では残らないので書かない。
+色は「赤」「青」「緑」「金」「茶」のような分かりやすい名前で書き、「くすんだ」「暗い」「渋い」のような彩度を下げる修飾は、キャラクターの特徴として欠かせない場合だけ使う。
 
-Add body type only when it materially helps distinguish the character.
+設定がなく、職業だけのような短い依頼（例：「海賊の船長を見てみたい」）なら、`海賊。船長。` のように短いまま生成してよい。
+短い説明文では候補のばらつきが大きくなり、色々な案を見比べる用途に向く。
 
-Examples:
-- `tall slim`
-- `broad-shouldered`
-- `petite`
-- `muscular`
+## 手順
 
-Do not add body type mechanically to every prompt.
+1. **材料を確認する**：職業と、設定があれば6項目を確認する。足りない要素は、キャラクターの概念に沿う最小限だけ補う。
+2. **Descriptionを決める**：作ったDescriptionと固定の設定を短く示す。ユーザーが生成まで依頼している場合はそのまま送り、Descriptionの相談だけを求めている場合は送らずに止める。
+3. **残高を確認する**：PixelLab MCPの `get_balance` で残りの生成枠を確認する。20回分に満たなければ送らずにユーザーへ伝える。
+4. **生成を依頼する**：出力先は作業用の一時フォルダー（セッションのscratchpadなど）にし、リポジトリには置かない。
 
-## What to remove
+   ```bash
+   python3 .agents/skills/pixellab-character-prompt/scripts/style_reference.py submit \
+     --description "海賊。船長。" --out <出力先フォルダー>
+   ```
 
-Do not include details that are unlikely to survive at 32x48 logical-pixel scale.
+   表示されたジョブIDを控える。
+5. **完成を待つ**：PixelLab MCPの `wait_for_jobs` で待つ（費用はかからない）。1〜4分ほどかかる。MCPを使えない場合は、次の `fetch` に `--wait 540` を付けて待つ。
+6. **候補を取り出す**：
 
-Normally remove:
-- personality
-- backstory
-- motivations
-- relationships
-- behavioral quirks
-- facial micro-details
-- wrinkles
-- eye color unless absolutely iconic
-- tiny jewelry
-- stitching
-- minor pouches or bottles
-- hidden objects
-- subtle material descriptions
-- exact measurements
-- prose explaining why an item exists
+   ```bash
+   python3 .agents/skills/pixellab-character-prompt/scripts/style_reference.py fetch <ジョブID> --out <出力先フォルダー>
+   ```
 
-Do not try to reproduce every fact from the source text.
+   出力先に `01.png`〜`16.png` と一覧ページ `index.html` ができる。
+   一覧ページは参照画像を先頭に置き、各候補を3倍で表示し、描画範囲の大きさと、幅32・高さ48を超えたかどうかを注記する。
+7. **一覧を見せる**：生成した画像は文章で説明するだけで済ませず、必ず `index.html` で見せる。ユーザーが画像を見られる方法で表示し（Claudeのデスクトップアプリでは `SendUserFile` の `display: "render"`）、PNGの場所も伝える。デスクトップアプリの表示画面ではJavaScriptが動かないので、一覧ページにスクリプトを足さない。
+8. **止める**：候補の傾向、32×48以内の枚数、除去した文字の有無を短く報告し、ユーザーの選択を待つ。ユーザーの指示がない限り、候補を選んだり、ドットを修正したり、Unityへ取り込んだり、アニメーション作業へ進んだりしない。
+9. **選択後**：ユーザーが候補を選んだら、そのPNGの場所を伝える。ドットの修正はユーザーが手作業で行う。アニメーションには、ユーザーが修正して渡した画像を使う。
 
-## Selection rule for character features
+32×48以内の候補が足りない、または気に入る候補がない場合は、同じ設定でもう一度生成するかをユーザーに尋ねる。
 
-When choosing the 3-4 features, use this priority:
+## 生成結果に混入する文字
 
-1. silhouette-defining shape
-2. main clothing color / large color block
-3. primary weapon or held item
-4. iconic secondary item
-5. only then, smaller accessories
+生成された候補の左上に、「C2」「C10」のような候補番号の文字が描き込まれることがある。
+`fetch` は、左上の隅（x<20、y<16）だけにあり、キャラクターから離れている塊を消し、一覧に「左上の文字を除去」と注記する。
+キャラクターが左上の隅まで届いている候補では誤って消していないかを一覧で確認し、疑わしければユーザーに伝える。
 
-If two details compete, keep the one that remains recognizable when the sprite is viewed very small.
+## 試して採用しなかった方法
 
-## Prompt style
+次の方法は比較のうえで採用しなかった。
+ユーザーの指示なしに戻さない。
 
-- Output in English.
-- Use a compact comma-separated phrase.
-- Prefer approximately 18-40 English words, including the short color-quality instruction.
-- Avoid full prose sentences unless necessary.
-- Do not repeat pixel-art style instructions inside the character prompt.
-- Do not include camera/view instructions unless the user explicitly supplies them as character requirements.
-- Do not include explanations before or after the final output.
+| 方法 | 結果 |
+|---|---|
+| Style descriptionに「参照画像のキャラクターと同じ身長と体格」「腕や武器を体の外へ広げない」「帽子や飾りは小さめ」を足す | 幅のはみ出しは減ったが、体が縦に伸びて頭身が上がり、デザインが地味になった。6体は参照の輪郭をそのままなぞった |
+| 参照画像を48×48や32×48に切り抜き、英語の詳しいDescriptionを使う | サイズは収まったが、ばらつきと雰囲気が失われた |
+| MCPの `create_image_pro` で32×48の枠を強制する | 枠いっぱいに描かれ、頭が切れ、5〜6頭身になった |
+| Style descriptionの数値（`32x48に収まるように`）でサイズを守らせる | 数値は守られない。幅30〜41、高さ47〜55程度になる |
 
-Example:
-
-`adult male scholar mage in his early 30s, gray-brown tied-back hair, long blue coat, spellbook, broken ring-shaped staff, clear colors, strong color separation, crisp highlights`
-
-## Handling sparse input
-
-If the user provides only a short concept such as:
-
-`盗賊、20代女性、黒髪`
-
-fill in only enough to make a usable sprite concept, for example:
-
-`young adult female thief, short black hair, red hood, charcoal outfit, twin daggers, clear colors, strong color separation, crisp highlights`
-
-Do not invent elaborate lore or many decorative details.
-
-## Handling verbose input
-
-If the user provides a long character sheet, ignore most narrative information and reduce it to:
-- age range + gender
-- hair color + hairstyle
-- class
-- the strongest 3-4 visible features
-
-The goal is not completeness.
-The goal is a readable character whose design still leaves room for PixelLab and Style Reference to make good visual decisions.
-
-## Required output format
-
-Output exactly these two sections, with no extra commentary:
-
-Prompt
-
-`<concise English PixelLab character prompt>`
-
-Style Description
-
-「32x48に収まるように。全身絵。4頭身。スーファミ後期のドット絵の雰囲気。」
+以前のStyle descriptionには「スーファミ後期のドット絵の雰囲気。」があった。
+外しても画風は参照画像から十分に伝わり、ユーザーの評価も良かったため、現在の設定では外している。

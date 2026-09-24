@@ -1,2 +1,5 @@
+interface:
+  display_name: "PixelLabキャラ候補生成"
+  short_description: "キャラ設定からStyle Referenceで立ち絵候補16体を生成し、選択を待つ"
 policy:
   allow_implicit_invocation: false
