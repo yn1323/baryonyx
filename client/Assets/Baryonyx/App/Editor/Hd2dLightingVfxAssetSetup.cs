@@ -339,10 +339,11 @@ namespace Baryonyx.App.Editor
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             AssetDatabase.CreateAsset(profile, PostProcessProfilePath);
 
-            // Only bright pixels (flames, additive glows, light shafts) bloom; the pixel art
-            // itself stays sharp because the threshold sits above the painted mid-tones.
+            // Flames, additive glows and light shafts bloom, and the low threshold (tuned in
+            // the Editor) lets the lit mid-tones glow with them. Raise it to about 0.8 to
+            // limit the bloom to the brightest pixels.
             var bloom = profile.Add<Bloom>(true);
-            bloom.threshold.value = 0.8f;
+            bloom.threshold.value = 0.4f;
             bloom.intensity.value = 1.6f;
             bloom.scatter.value = 0.65f;
             bloom.tint.value = Color.white;
@@ -384,7 +385,7 @@ namespace Baryonyx.App.Editor
             var tiltShift = profile.Add<Hd2dTiltShift>(true);
             tiltShift.intensity.value = 1f;
             tiltShift.focusCenter.value = 0.5f;
-            tiltShift.focusHalfHeight.value = 0.26f;
+            tiltShift.focusHalfHeight.value = 0.3f;
             tiltShift.falloff.value = 0.3f;
             tiltShift.maxRadius.value = 8f;
             tiltShift.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;

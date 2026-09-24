@@ -407,7 +407,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void PostProcessProfileBloomsOnlyBrightLightsAndFramesTheCenter()
+        public void PostProcessProfileBloomsLitAreasAndFramesTheCenter()
         {
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
             Assert.That(profile, Is.Not.Null, PostProcessProfilePath);
@@ -415,8 +415,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(profile.TryGet<Bloom>(out var bloom), Is.True);
             Assert.That(bloom.active, Is.True);
             Assert.That(bloom.IsActive(), Is.True);
-            // A threshold near 1 keeps the painted mid-tones and the pixel edges out of the bloom.
-            Assert.That(bloom.threshold.value, Is.InRange(0.7f, 1.2f));
+            // The tuned threshold (0.4) lets lit mid-tones glow; far lower values would bloom
+            // the dark stone and the pixel edges as well.
+            Assert.That(bloom.threshold.value, Is.InRange(0.3f, 1.2f));
             Assert.That(bloom.intensity.value, Is.InRange(0.1f, 2f));
 
             Assert.That(profile.TryGet<Vignette>(out var vignette), Is.True);

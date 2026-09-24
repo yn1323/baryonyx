@@ -172,11 +172,11 @@ Profileを選ぶとInspectorで各効果を調整できる。
 
 | 効果 | 主な項目 | Topでの役割 |
 | --- | --- | --- |
-| Bloom | Threshold 0.8、Intensity 1.6、Scatter 0.65 | 炎、加算の光、光芒など明るい部分だけをにじませる。Thresholdを下げると石壁までにじむ |
+| Bloom | Threshold 0.4、Intensity 1.6、Scatter 0.65 | 炎、加算の光、光芒に加え、照らされた中間調もにじませる。Thresholdを0.8程度に上げると明るい部分だけに絞れ、さらに下げると石壁までにじむ |
 | Vignette | Intensity 0.28、Smoothness 0.45 | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
 | Color Adjustments | Contrast 8、Saturation 6 | 明暗と彩度を少し強め、松明の暖色と光芒の青白さを引き立てる |
 
-| HD-2D Tilt Shift | Intensity 1、Focus Center 0.5、Focus Half Height 0.26、Falloff 0.3、Max Radius 8 | 中央の帯をくっきり残し、天井と手前の床をぼかしてジオラマのように見せる |
+| HD-2D Tilt Shift | Intensity 1、Focus Center 0.5、Focus Half Height 0.3、Falloff 0.3、Max Radius 8 | 中央の帯をくっきり残し、天井と手前の床をぼかしてジオラマのように見せる |
 
 Profileは共通アセットなので、変更すると同じProfileを使う全画面に反映される。
 画面ごとに変える場合は、Profileを複製してその画面のVolumeへ設定する。
