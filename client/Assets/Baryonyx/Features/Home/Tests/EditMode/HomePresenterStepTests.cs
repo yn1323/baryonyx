@@ -79,6 +79,53 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task RunesStayUnknownUntilLoadedAndFollowTheServerBalance()
+        {
+            var snapshot = Snapshot();
+            snapshot.Runes = 12480;
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            Assert.That(snapshot.RunesKnown, Is.False);
+            Assert.That(HomeViewState.From(snapshot).RunesText, Is.EqualTo("--"));
+
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 100, runes: 500)
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.RunesKnown, Is.True);
+            Assert.That(snapshot.Runes, Is.EqualTo(500));
+
+            presenter.Handle(HomeAction.SyncSteps);
+            source.Sync.SetResult(
+                new HomeStepReading(
+                    HomeStepResult.Updated,
+                    HomeStepLink.Linked,
+                    400,
+                    runes: 800,
+                    grantedRunes: 300
+                )
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.Runes, Is.EqualTo(800));
+        }
+
+        [Test]
+        public async Task FailedSyncKeepsTheKnownBalance()
+        {
+            var snapshot = Snapshot();
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 100, runes: 500)
+            );
+            await presenter.StepTask;
+
+            presenter.Handle(HomeAction.SyncSteps);
+            source.Sync.SetException(new InvalidOperationException("offline"));
+            await presenter.StepTask;
+            Assert.That(snapshot.RunesKnown, Is.True);
+            Assert.That(snapshot.Runes, Is.EqualTo(500));
+        }
+
+        [Test]
         public async Task UpdatedStepsMoveHomeToTheirDay()
         {
             var snapshot = Snapshot();

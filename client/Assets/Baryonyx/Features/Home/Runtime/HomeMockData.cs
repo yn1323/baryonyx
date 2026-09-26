@@ -5,7 +5,8 @@ namespace Baryonyx.Home
 {
     /// <summary>
     /// Fixed sample values for the home screen mock. Nothing here reads health data,
-    /// rune balances or the server.
+    /// rune balances or the server. With <see cref="MockRuneGain"/> on, the rune balance
+    /// and each tap's gain also come from here instead of the server.
     /// </summary>
     [CreateAssetMenu(menuName = "Baryonyx/Home/Mock Data")]
     public sealed class HomeMockData : ScriptableObject
@@ -28,6 +29,15 @@ namespace Baryonyx.Home
 
         [Min(0)]
         public int Runes = 12480;
+
+        [Tooltip(
+            "有効にすると、所持ルーンに上の値を表示し、歩数パネルを押すたびに下の仮の獲得量を足します。サーバーのルーンは増えません。"
+        )]
+        public bool MockRuneGain = true;
+
+        [Min(0)]
+        [Tooltip("押すたびに獲得する仮のルーン。0にすると「獲得ルーンはありません」を表示します。")]
+        public int MockGrantedRunes = 1340;
 
         public string DestinationName = "森の遺跡";
 

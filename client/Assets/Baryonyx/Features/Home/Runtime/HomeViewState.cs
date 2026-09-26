@@ -57,7 +57,7 @@ namespace Baryonyx.Home
                     : linked ? "タップでルーン獲得"
                     : "タップして歩数を連携",
                 ClaimPulses = !snapshot.StepSyncing,
-                RunesText = Number(Math.Max(0, snapshot.Runes)),
+                RunesText = snapshot.RunesKnown ? Runes(snapshot.Runes) : "--",
                 DestinationNameText = snapshot.DestinationName ?? "",
                 DestinationFloorText = snapshot.DestinationFloor ?? "",
             };
@@ -87,6 +87,10 @@ namespace Baryonyx.Home
                 HomeAction.Resume => "再開（準備中）",
                 _ => "",
             };
+
+        // 所持ルーンと獲得量の表記。演出で数える途中の値にも使う。
+        public static string Runes(long value) =>
+            Math.Max(0, value).ToString("N0", CultureInfo.InvariantCulture);
 
         private static string Number(int value) =>
             value.ToString("N0", CultureInfo.InvariantCulture);

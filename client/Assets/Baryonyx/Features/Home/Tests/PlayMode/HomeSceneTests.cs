@@ -50,6 +50,8 @@ namespace Baryonyx.Tests.PlayMode
             var snapshot = bootstrap.Data.ToSnapshot(System.DateTime.Today);
             snapshot.StepLink = HomeStepLink.Linked;
             snapshot.Steps = today != null ? (int)today.steps : 0;
+            // 所持ルーンは仮データではなくサーバーの残高を表示する。まだ変換していないので0。
+            snapshot.Runes = 0;
             var expected = HomeViewState.From(snapshot);
             Assert.That(view.StepsLabel.text, Is.EqualTo(expected.StepsText));
             Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
@@ -133,7 +135,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator StepPanelSyncsHealthDataAndShowsTheResult()
+        public IEnumerator StepPanelTurnsStepsIntoRunesAndShowsTheResult()
         {
             var bootstrap = default(HomeBootstrap);
             yield return LoadHome(value => bootstrap = value);
@@ -141,16 +143,76 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForSteps(bootstrap);
             Assert.That(services.Server.Saves, Is.Zero);
 
+            Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
+
+            // 1回目は保存した歩数がルーンになり、所持数が0から付与後の残高まで増える。
             view.StepButton.onClick.Invoke();
             yield return WaitForSteps(bootstrap);
             Assert.That(services.Server.Saves, Is.EqualTo(1));
-            Assert.That(view.CurrentToast, Is.EqualTo("歩数を同期しました"));
+            long balance = services
+                .Server.ReadRunesAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            Assert.That(balance, Is.GreaterThan(0));
+            Assert.That(view.RuneGainPlaying, Is.True);
+            Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
+            yield return null;
+            Assert.That(
+                view.RuneEffectLayer.GetComponentsInChildren<Image>().Length,
+                Is.GreaterThan(0),
+                "Runes fly toward the balance."
+            );
+            float deadline = Time.realtimeSinceStartup + 4f;
+            while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(view.RuneGainPlaying, Is.False);
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+            Assert.That(view.RuneEffectLayer.GetComponentsInChildren<Image>(), Is.Empty);
+            Assert.That(view.CurrentToast, Is.Empty);
+
+            // 同じ歩数のままでは付与されず、画面中央で知らせる。
+            view.StepButton.onClick.Invoke();
+            yield return WaitForSteps(bootstrap);
+            Assert.That(view.RuneGainPlaying, Is.False);
+            Assert.That(view.CurrentNotice, Is.EqualTo(HomePresenter.NoRunesMessage));
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
 
             services.Server.Fail = true;
             view.StepButton.onClick.Invoke();
             yield return WaitForSteps(bootstrap);
             Assert.That(view.CurrentToast, Is.EqualTo("歩数を取得できませんでした"));
             Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+        }
+
+        [UnityTest]
+        public IEnumerator MockRuneGainAddsTheSampleAmountOnEveryTap()
+        {
+            HomeBootstrap.MockRuneGainOverride = true;
+            var bootstrap = default(HomeBootstrap);
+            yield return LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+            yield return WaitForSteps(bootstrap);
+            long balance = bootstrap.Data.Runes;
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+
+            for (int tap = 0; tap < 2; tap++)
+            {
+                view.StepButton.onClick.Invoke();
+                yield return WaitForSteps(bootstrap);
+                Assert.That(view.RuneGainPlaying, Is.True);
+                Assert.That(view.GainLabel.text, Is.EqualTo("+1,340"));
+                float deadline = Time.realtimeSinceStartup + 4f;
+                while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+                balance += bootstrap.Data.MockGrantedRunes;
+                Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+            }
+            Assert.That(
+                services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
+                Is.Zero,
+                "Mock runes never reach the server."
+            );
         }
 
         [UnityTest]

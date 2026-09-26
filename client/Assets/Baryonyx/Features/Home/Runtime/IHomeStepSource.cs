@@ -20,13 +20,17 @@ namespace Baryonyx.Home
             HomeStepResult result,
             HomeStepLink link,
             int steps,
-            DateTime? day = null
+            DateTime? day = null,
+            long? runes = null,
+            long grantedRunes = 0
         )
         {
             Result = result;
             Link = link;
             Steps = steps;
             Day = day;
+            Runes = runes;
+            GrantedRunes = grantedRunes;
         }
 
         public HomeStepResult Result { get; }
@@ -35,6 +39,12 @@ namespace Baryonyx.Home
 
         // 歩数を集計した日。日付をまたいでHomeを開いたままでも、表示の日付を歩数に合わせる。
         public DateTime? Day { get; }
+
+        // サーバーの所持ルーン。読めなかったときはnull。
+        public long? Runes { get; }
+
+        // 今回の同期で付与されたルーン。同期しない読み取りでは0。
+        public long GrantedRunes { get; }
     }
 
     /// <summary>
@@ -46,7 +56,7 @@ namespace Baryonyx.Home
         // サーバーに保存済みの今日の歩数を読む。
         Task<HomeStepReading> LoadAsync(CancellationToken token);
 
-        // 端末の歩数をサーバーへ同期してから、保存済みの今日の歩数を読む。
+        // 端末の歩数をサーバーへ同期してルーンへ変換し、保存済みの今日の歩数を読む。
         Task<HomeStepReading> SyncAsync(CancellationToken token);
     }
 }

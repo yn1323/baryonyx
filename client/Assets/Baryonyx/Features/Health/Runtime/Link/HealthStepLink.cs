@@ -141,6 +141,12 @@ namespace Baryonyx.Health
             return HealthSyncStatus.Synced;
         }
 
+        public Task<long> ReadRunesAsync(CancellationToken token) => server.ReadRunesAsync(token);
+
+        // サーバーに保存済みの歩数をルーンへ変換する。付与済みの分は二重に付与しない。
+        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
+            server.ClaimRunesAsync(token);
+
         // サーバーに保存済みの今日の歩数を返す。
         public async Task<HealthStepReading> ReadTodayAsync(CancellationToken token)
         {

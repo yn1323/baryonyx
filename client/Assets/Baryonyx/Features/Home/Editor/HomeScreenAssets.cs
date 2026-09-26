@@ -27,6 +27,9 @@ namespace Baryonyx.Home.Editor
         public const string CharactersPath =
             "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
+        /// <summary>Toma's standing sprite on a 100x100 canvas (centred, feet on the bottom row).</summary>
+        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.png";
+
         private const string FogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
         private const string FlickerPrefabPath =
@@ -63,6 +66,7 @@ namespace Baryonyx.Home.Editor
             destinationArt = HomeScreenArt.ImportPixelTexture(DestinationArtPath);
             var background = HomeScreenArt.ImportPixelTexture(BackgroundPath);
             var characters = HomeScreenArt.ImportPixelTexture(CharactersPath);
+            var toma = HomeScreenArt.ImportPixelTexture(TomaPath);
 
             generationScene = EditorSceneManager.NewPreviewScene();
             RectTransform root = null;
@@ -80,7 +84,7 @@ namespace Baryonyx.Home.Editor
                 var view = root.gameObject.AddComponent<HomeView>();
 
                 BuildBackground(root, background);
-                BuildWorld(root, view, characters);
+                BuildWorld(root, view, characters, toma);
                 var safe = Rect("SafeArea", root);
                 Stretch(safe);
                 safe.gameObject.AddComponent<SafeAreaFollower>();
@@ -88,6 +92,7 @@ namespace Baryonyx.Home.Editor
                 BuildTopRight(safe, view);
                 BuildNavigation(safe, view);
                 BuildResume(safe, view);
+                BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
 
@@ -183,7 +188,12 @@ namespace Baryonyx.Home.Editor
             Shade(root, "ShadeBottom", top: false, 240f, 0.72f);
         }
 
-        private static void BuildWorld(RectTransform root, HomeView view, Texture2D characters)
+        private static void BuildWorld(
+            RectTransform root,
+            HomeView view,
+            Texture2D characters,
+            Texture2D toma
+        )
         {
             var world = Rect("World", root);
             world.anchorMin = world.anchorMax = world.pivot = Vector2.one * 0.5f;
@@ -229,20 +239,12 @@ namespace Baryonyx.Home.Editor
                 new Vector2(150, 24),
                 0.45f
             );
-            Actor(
-                world,
-                "Toma",
-                characters,
-                1,
-                new Vector2(-169.5f, -271),
-                new Vector2(207, 276),
-                false
-            );
+            PixelActor(world, "Toma", toma, new Vector2(-175, -392), 4f);
             Actor(
                 world,
                 "Luka",
                 characters,
-                2,
+                ActorUv(2),
                 new Vector2(158.5f, -271),
                 new Vector2(207, 276),
                 true
@@ -306,7 +308,7 @@ namespace Baryonyx.Home.Editor
                 world,
                 "Aria",
                 characters,
-                0,
+                ActorUv(0),
                 new Vector2(-323.5f, -316),
                 new Vector2(225, 300),
                 false
@@ -315,7 +317,7 @@ namespace Baryonyx.Home.Editor
                 world,
                 "Mina",
                 characters,
-                3,
+                ActorUv(3),
                 new Vector2(314.5f, -316),
                 new Vector2(225, 300),
                 true
@@ -468,7 +470,8 @@ namespace Baryonyx.Home.Editor
             claimGroup.interactable = false;
             claimGroup.blocksRaycasts = false;
             view.ClaimGroup = claimGroup;
-            Icon(claim, "ClaimIcon", HomeScreenArt.IconRunePath, 26, Teal);
+            view.RuneOrigin = (RectTransform)
+                Icon(claim, "ClaimIcon", HomeScreenArt.IconRunePath, 26, Teal).transform;
             view.ClaimLabel = Label(
                 claim,
                 "ClaimLabel",
@@ -510,7 +513,8 @@ namespace Baryonyx.Home.Editor
             pill.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
                 .FitMode
                 .PreferredSize;
-            Icon(pill, "RuneIcon", HomeScreenArt.IconRunePath, 30, Teal);
+            view.RuneTarget = (RectTransform)
+                Icon(pill, "RuneIcon", HomeScreenArt.IconRunePath, 30, Teal).transform;
             Label(pill, "RuneCaption", "ルーン", 20, TextSub, TextAlignmentOptions.Midline);
             view.RunesLabel = Label(
                 pill,
@@ -748,8 +752,67 @@ namespace Baryonyx.Home.Editor
             );
         }
 
+        // Runes fly from the step panel to the balance; the view clones the hidden particle.
+        private static void BuildRuneGain(RectTransform root, RectTransform safe, HomeView view)
+        {
+            var layer = Rect("RuneEffect", root);
+            Stretch(layer);
+            view.RuneEffectLayer = layer;
+            var particle = Rect("RuneParticle", layer);
+            Place(particle, Vector2.zero, new Vector2(40, 40));
+            view.RuneParticle = SpriteImage(particle, HomeScreenArt.IconRunePath, Teal);
+            view.RuneParticle.preserveAspect = true;
+            particle.gameObject.SetActive(false);
+
+            // The gained amount appears under the balance while the counter rises.
+            var gain = Rect("RuneGain", safe);
+            Corner(
+                gain,
+                Vector2.one,
+                new Vector2(-(64 + 88 + 16 + 28), -(40 + 88 + 4)),
+                new Vector2(320, 56)
+            );
+            var group = gain.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            view.GainGroup = group;
+            view.GainLabel = Label(
+                gain,
+                "RuneGainLabel",
+                "",
+                36,
+                Teal,
+                TextAlignmentOptions.MidlineRight
+            );
+            Stretch(view.GainLabel.rectTransform);
+        }
+
         private static void BuildToast(RectTransform root, HomeView view)
         {
+            // The result of a tap that granted nothing sits in the middle of the screen.
+            var notice = Rect("Notice", root);
+            Place(notice, Vector2.zero, new Vector2(640, 96));
+            Sliced(
+                notice,
+                HomeScreenArt.CapsulePath,
+                new Color(0.031f, 0.039f, 0.071f, 0.86f)
+            ).raycastTarget = false;
+            var noticeGroup = notice.gameObject.AddComponent<CanvasGroup>();
+            noticeGroup.alpha = 0;
+            noticeGroup.interactable = false;
+            noticeGroup.blocksRaycasts = false;
+            view.Notice = noticeGroup;
+            view.NoticeLabel = Label(
+                notice,
+                "NoticeLabel",
+                "",
+                32,
+                TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)view.NoticeLabel.transform);
+
             var toast = Rect("Toast", root);
             Place(toast, new Vector2(0, 290), new Vector2(640, 80));
             Sliced(
@@ -880,8 +943,8 @@ namespace Baryonyx.Home.Editor
         private static void Actor(
             RectTransform world,
             string name,
-            Texture2D sheet,
-            int index,
+            Texture2D texture,
+            Rect uv,
             Vector2 center,
             Vector2 size,
             bool mirrored
@@ -892,9 +955,31 @@ namespace Baryonyx.Home.Editor
             if (mirrored)
                 rect.localScale = new Vector3(-1, 1, 1);
             var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = sheet;
-            image.uvRect = ActorUv(index);
+            image.texture = texture;
+            image.uvRect = uv;
             image.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// A standing sprite drawn at <paramref name="dotSize"/> pixels per dot, pivoted on its
+        /// feet (the bottom row of the canvas) so they stand on the shadow at any screen size.
+        /// </summary>
+        private static void PixelActor(
+            RectTransform world,
+            string name,
+            Texture2D texture,
+            Vector2 feet,
+            float dotSize
+        )
+        {
+            var rect = Rect(name, world);
+            Place(rect, feet, new Vector2(texture.width, texture.height) * dotSize);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = feet;
+            var image = rect.gameObject.AddComponent<RawImage>();
+            image.texture = texture;
+            image.raycastTarget = false;
+            rect.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = dotSize;
         }
 
         /// <summary>The 4x2 character sheet: party members on the top row.</summary>

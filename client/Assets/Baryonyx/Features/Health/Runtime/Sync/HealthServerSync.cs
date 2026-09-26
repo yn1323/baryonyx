@@ -103,6 +103,27 @@ namespace Baryonyx.Health
                 token
             );
 
+        public Task<long> ReadRunesAsync(CancellationToken token) =>
+            WithSessionAsync(
+                async current => (await rewards.ReadBalanceAsync(current, token)).balance,
+                token
+            );
+
+        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
+            WithSessionAsync(
+                async current =>
+                {
+                    var claim = await rewards.ClaimAsync(
+                        current,
+                        sourceId,
+                        Guid.NewGuid().ToString(),
+                        token
+                    );
+                    return new HealthRuneClaim(claim.grantedRunes, claim.balance);
+                },
+                token
+            );
+
         private static HealthDay ToServerDay(HealthDay day) =>
             new()
             {

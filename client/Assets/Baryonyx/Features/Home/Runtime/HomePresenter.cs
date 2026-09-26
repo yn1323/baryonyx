@@ -8,8 +8,8 @@ namespace Baryonyx.Home
     /// <summary>
     /// Turns home button presses into feedback. Resuming the adventure is delegated to the
     /// caller and accepted only once, so repeated taps cannot start two scene loads. When a
-    /// step source is given, the step panel shows the steps saved on the server and a tap
-    /// syncs them again.
+    /// step source is given, the step panel shows the steps and runes saved on the server,
+    /// and a tap syncs the steps, turns them into runes and plays the gain.
     /// </summary>
     public sealed class HomePresenter : IDisposable
     {
@@ -35,9 +35,11 @@ namespace Baryonyx.Home
             view.ActionRequested += Handle;
             if (steps != null)
             {
-                // 取得前や取得に失敗したときに、モックの歩数を実際の歩数として見せない。
+                // 取得前や取得に失敗したときに、モックの歩数・ルーンを実際の値として見せない。
                 snapshot.Steps = 0;
                 snapshot.StepsKnown = false;
+                snapshot.Runes = 0;
+                snapshot.RunesKnown = false;
             }
             view.Render(HomeViewState.From(snapshot));
             if (steps != null)
@@ -106,10 +108,23 @@ namespace Baryonyx.Home
                 if (reading.Day.HasValue)
                     snapshot.Today = reading.Day.Value;
             }
+            if (reading.Runes.HasValue)
+            {
+                snapshot.Runes = reading.Runes.Value;
+                snapshot.RunesKnown = true;
+            }
             view.Render(HomeViewState.From(snapshot));
-            if (announce || reading.Result == HomeStepResult.Failed)
+            // 付与前の残高から、サーバーと同じ付与後の残高まで数を増やして見せる。
+            // 仮のルーンは歩数の同期に失敗しても付与されるため、結果より先に扱う。
+            if (announce && reading.GrantedRunes > 0 && reading.Runes.HasValue)
+                view.PlayRuneGain(reading.Runes.Value - reading.GrantedRunes, reading.Runes.Value);
+            else if (announce && reading.Result == HomeStepResult.Updated)
+                view.ShowNotice(NoRunesMessage);
+            else if (announce || reading.Result == HomeStepResult.Failed)
                 view.ShowToast(MessageFor(reading.Result));
         }
+
+        public const string NoRunesMessage = "獲得ルーンはありません";
 
         public static string MessageFor(HomeStepResult result) =>
             result switch

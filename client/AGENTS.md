@@ -9,7 +9,7 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
 現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 Topは起動時にゲームサーバーへの接続とHealth Connectの歩数の同期を行い、終わるまで「LOADING...」を表示する（[起動時の連携と歩数の同期](../doc/features/startup-sync.md)）。
-`Home.unity` はホーム画面のモックで、左上の今日の歩数だけサーバーの値を表示する。行き先カード（再開）の遷移先は未設定のため遷移しない。
+`Home.unity` はホーム画面のモックで、左上の今日の歩数と右上の所持ルーンだけサーバーの値を表示する。歩数パネルを押すと歩数を同期してルーンへ変換する。行き先カード（再開）の遷移先は未設定のため遷移しない。
 シーンはTop・Home・展示室の `Showcase.unity` だけである。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。
 

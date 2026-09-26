@@ -262,6 +262,8 @@ namespace Baryonyx.Home.Editor
             importer.alphaIsTransparency = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;
+            // Keep the source size: rescaling a non-power-of-two image (e.g. 100x100 to 128x128) blurs the dots.
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = 2048;
             importer.SaveAndReimport();
             return LoadTexture(path);

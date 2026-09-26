@@ -18,5 +18,7 @@ MonoBehaviour:
   WeeklyDone: 2
   WeeklyTarget: 3
   Runes: 12480
-  NewEquipment: 3
-  Destination: "\u68EE\u306E\u907A\u8DE1 B3F"
+  MockRuneGain: 1
+  MockGrantedRunes: 1340
+  DestinationName: "\u68EE\u306E\u907A\u8DE1"
+  DestinationFloor: B3F

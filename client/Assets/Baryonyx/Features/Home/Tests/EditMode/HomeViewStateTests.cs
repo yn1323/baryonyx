@@ -54,6 +54,38 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void UnknownRunesShowPlaceholder()
+        {
+            var snapshot = Sample();
+            snapshot.RunesKnown = false;
+            Assert.That(HomeViewState.From(snapshot).RunesText, Is.EqualTo("--"));
+            Assert.That(HomeViewState.Runes(1234567L), Is.EqualTo("1,234,567"));
+        }
+
+        [TestCase(0L, 0)]
+        [TestCase(1L, 1)]
+        [TestCase(9L, 9)]
+        [TestCase(10L, 10)]
+        [TestCase(1340L, 26)]
+        [TestCase(36896L, 34)]
+        [TestCase(10000000L, 40)]
+        public void MoreRunesFlyForLargerGains(long granted, int expected)
+        {
+            Assert.That(HomeView.ParticleCountFor(granted, 40), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void LargerGainsBurstFarther()
+        {
+            float one = HomeView.BurstDistanceFor(1, 140f, 520f);
+            float thousand = HomeView.BurstDistanceFor(1340, 140f, 520f);
+            float huge = HomeView.BurstDistanceFor(10000000, 140f, 520f);
+            Assert.That(one, Is.EqualTo(140f));
+            Assert.That(thousand, Is.GreaterThan(one).And.LessThan(huge));
+            Assert.That(huge, Is.EqualTo(520f));
+        }
+
+        [Test]
         public void UnknownStepsShowPlaceholderWithoutProgress()
         {
             var snapshot = Sample(6240);
@@ -130,6 +162,15 @@ namespace Baryonyx.Tests.EditMode
         public void WorldShrinksOnlyOnNarrowScreens(float width, float expected)
         {
             Assert.That(HomeWorldFit.ScaleFor(width, 1920f), Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        [TestCase(1f, 4)]
+        [TestCase(2f / 3f, 3)]
+        [TestCase(4f / 3f, 5)]
+        [TestCase(0.1f, 1)]
+        public void PixelDotsCoverWholeScreenPixels(float scale, int expected)
+        {
+            Assert.That(PixelPerfectRawImage.DotPixels(4f, scale), Is.EqualTo(expected));
         }
 
         [Test]

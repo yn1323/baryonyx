@@ -2,7 +2,7 @@
 id: feature-exercise-rewards
 type: specification
 status: 一部確定
-updated: 2026-09-21
+updated: 2026-09-26
 ---
 
 # 運動データとルーン換算
@@ -76,6 +76,7 @@ Strava・Fitbit・Samsung Healthは連携経路の例であり、サービスご
 
 本ページは企画上の要求・未決事項を記す。
 サーバーのD1保存、報酬API、冪等請求、歩数減少時の保全、既存Health画面からの起動時請求と明示請求、直近7日履歴表示まで実装した。
+Homeでは、歩数パネルを押す操作を明示請求とし、獲得量を演出で表示する（[Homeの歩数パネル](startup-sync.md#homeの歩数パネル)）。起動時の自動請求と、日ごとの差分のポップアップ表示は未実装である。
 サーバーURLを設定アセットへ登録していない環境では、既存のローカルHealth Connect表示だけを使う。
 Unity実機でのGoogle認証、Health Connect権限、サーバー公開環境への接続は別途確認する。
 現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
