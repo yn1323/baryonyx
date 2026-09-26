@@ -122,11 +122,12 @@ description: >
      --out-dir output/characters/<キャラID> --name sprite-sheet \
      --request output/characters/<キャラID>/sprite-request.md \
      --profile output/characters/<キャラID>/profile.md \
+     --model gpt-6-astra \
      --image witch.png --image-role "ドット絵の画風見本。タッチ（ドットの大きさ、輪郭、塗り、色数）を参考にする。人物、衣装、ポーズは写さない"
    ```
 
    Codexの実行には数分かかるので、Bashのタイムアウトを最大にするか、バックグラウンドで実行する。
-   モデルは `~/.codex/config.toml` の設定を使う。ユーザーがモデルを指定したときだけ `--model` を付ける。
+   モデルは `--model` で必ず明示し、`~/.codex/config.toml` の設定に任せない。ユーザーが別のモデルを指定したときは、`gpt-6-astra` をその値に置き換える。
 4. **見せる**：保存された `sprite-sheet.png` を、ユーザーが画像を見られる方法で表示し（Claudeのデスクトップアプリでは `SendUserFile` の `display: "render"`）、ファイルの場所と画像サイズを伝える。
 5. **止める**：生成物を縮小・減色・切り抜きしない。コマの仕上げやUnityへの取り込みへ進まない。気に入らない場合は、同じ依頼文でもう一度生成するか、依頼文をどう直すかをユーザーに相談する。
 
