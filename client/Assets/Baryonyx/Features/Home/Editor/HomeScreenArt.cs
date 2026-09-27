@@ -10,8 +10,9 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. Icons are point-filtered pixel art;
     /// shadows, capsules and the resume card are smooth shapes with anti-aliased edges.
-    /// The navigation and world map icons are 32x32 PixelLab drawings kept as files, so
-    /// regeneration only fixes their import settings.
+    /// The navigation and world map icons are 48x48 drawings exported from their Aseprite
+    /// sources in client/ArtSource/UI/Home, so regeneration only fixes their import
+    /// settings.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -37,7 +38,7 @@ namespace Baryonyx.Home.Editor
         public const string IconSettingsPath = ArtFolder + "/IconSettings.png";
         public const string IconRunePath = ArtFolder + "/IconRune.png";
 
-        // Drawn in PixelLab (32x32) and shown at an integer 2x, unlike the code-drawn icons.
+        // Exported from client/ArtSource/UI/Home/*.aseprite (48x48) and shown at 1x.
         private static readonly string[] DrawnIconPaths =
         {
             IconPartyPath,

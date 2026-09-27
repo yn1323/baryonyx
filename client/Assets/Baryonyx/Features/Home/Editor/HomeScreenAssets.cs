@@ -45,6 +45,9 @@ namespace Baryonyx.Home.Editor
 
         private const float NavWidth = 128f;
 
+        // The 48x48 button icons are shown at 1x so their pixels stay square.
+        private const float NavIconSize = 48f;
+
         private static Scene generationScene;
         private static TMP_FontAsset font;
         private static Material shadowText;
@@ -575,8 +578,12 @@ namespace Baryonyx.Home.Editor
             );
             spot.raycastTarget = true;
             var button = AddTintButton(rect, spot);
-            var icon = Icon(rect, name + "Icon", iconPath, 64, Color.white);
-            Place((RectTransform)icon.transform, new Vector2(0, 16), new Vector2(64, 64));
+            var icon = Icon(rect, name + "Icon", iconPath, NavIconSize, Color.white);
+            Place(
+                (RectTransform)icon.transform,
+                new Vector2(0, 16),
+                new Vector2(NavIconSize, NavIconSize)
+            );
             var label = Label(
                 rect,
                 name + "Label",
@@ -730,7 +737,6 @@ namespace Baryonyx.Home.Editor
                 .PreferredSize;
             var badge = Rect("WorldMapIconBack", map);
             var badgeSize = badge.gameObject.AddComponent<LayoutElement>();
-            // The 32x32 compass is shown at an integer 2x so its pixels stay square.
             badgeSize.minWidth = badgeSize.preferredWidth = 64;
             badgeSize.minHeight = badgeSize.preferredHeight = 64;
             SpriteImage(badge, HomeScreenArt.CirclePath, new Color(0.471f, 0.549f, 0.686f, 0.22f));
@@ -738,10 +744,14 @@ namespace Baryonyx.Home.Editor
                 badge,
                 "WorldMapIcon",
                 HomeScreenArt.IconCompassPath,
-                64,
+                NavIconSize,
                 Color.white
             );
-            Place((RectTransform)compass.transform, Vector2.zero, new Vector2(64, 64));
+            Place(
+                (RectTransform)compass.transform,
+                Vector2.zero,
+                new Vector2(NavIconSize, NavIconSize)
+            );
             Label(
                 map,
                 "WorldMapLabel",
