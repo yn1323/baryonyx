@@ -38,7 +38,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
 
             var canvas = Object
-                .FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .FindObjectsByType<Canvas>(FindObjectsInactive.Include)
                 .SingleOrDefault(candidate =>
                     candidate.name == "ShowcaseCanvas" && candidate.gameObject.scene == loadedScene
                 );

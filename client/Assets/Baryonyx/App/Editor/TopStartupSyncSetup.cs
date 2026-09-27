@@ -4,6 +4,7 @@ using Baryonyx.Health;
 using Baryonyx.Health.Editor;
 using Baryonyx.Home;
 using Baryonyx.Home.Editor;
+using Baryonyx.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;

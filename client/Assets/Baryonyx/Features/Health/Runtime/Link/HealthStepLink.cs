@@ -27,12 +27,14 @@ namespace Baryonyx.Health
 
     public readonly struct HealthStepReading
     {
-        public HealthStepReading(bool hasValue, long steps)
+        public HealthStepReading(DateTime day, bool hasValue, long steps)
         {
+            Day = day;
             HasValue = hasValue;
             Steps = steps;
         }
 
+        public DateTime Day { get; }
         public bool HasValue { get; }
         public long Steps { get; }
     }
@@ -81,7 +83,7 @@ namespace Baryonyx.Health
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
             this.server = server ?? throw new ArgumentNullException(nameof(server));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
-            this.today = today ?? (() => DateTime.Today);
+            this.today = today ?? HealthDays.Today;
         }
 
         public Task ConnectAsync(CancellationToken token) => server.ConnectAsync(token);
@@ -139,16 +141,23 @@ namespace Baryonyx.Health
             return HealthSyncStatus.Synced;
         }
 
-        // サーバーに保存済みの今日の歩数を返す。
+        public Task<long> ReadRunesAsync(CancellationToken token) => server.ReadRunesAsync(token);
+
+        // サーバーに保存済みの歩数をルーンへ変換する。付与済みの分は二重に付与しない。
+        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
+            server.ClaimRunesAsync(token);
+
+        // サーバーに保存済みの今日（朝4時区切り）の歩数を返す。
         public async Task<HealthStepReading> ReadTodayAsync(CancellationToken token)
         {
-            string day = today().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var date = today().Date;
+            string day = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var match = (await server.ReadAsync(token)).FirstOrDefault(value =>
                 value != null && value.day == day
             );
             return match != null && match.hasValue
-                ? new HealthStepReading(true, match.steps)
-                : new HealthStepReading(false, 0);
+                ? new HealthStepReading(date, true, match.steps)
+                : new HealthStepReading(date, false, 0);
         }
     }
 }

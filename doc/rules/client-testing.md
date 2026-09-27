@@ -4,6 +4,23 @@
 Android APK生成とDrive配布は一時停止中である（[停止範囲と再開方法](client-android-testing.md)）。
 Unity Webビルド、ブラウザでの起動確認、Web成果物のWorkers公開は廃止した。
 
+## テストで検査するもの
+
+テストは、ロジックとその出力結果を検査する。
+入力を与えて、計算結果、生成されたオブジェクト、状態遷移、画面遷移が期待どおりになるかを確かめる。
+
+見た目を調整するための値は検査しない。
+Bloomのしきい値、ティルトシフトのピント幅、色、透明度、大きさ、位置、演出の時間、フォントサイズ、遷移の種類などが該当する。
+「どのアセット・シーン・Rendererに、どの値や機能を設定したか」も同じ扱いにする。
+これらはInspectorや生成スクリプトで調整する値であり、調整のたびにテストの期待値を直すことになるうえ、ロジックの誤りは見つからないためである。
+値を変えたときの見た目は、[展示室](../features/showcase.md)とUnity Editorで確認する。
+
+次のものは検査してよい。
+
+- **ロジックへ明示的に渡す入力**：計算の入力として調整値を渡し、出力を確かめる（例：ティルトシフトのぼかし量の計算にピント幅を渡す）。
+- **要件として決めた条件**：タップ領域の最小サイズ、装飾が入力を遮らないこと、全画面で開始操作を受け付けること、フォントの統一、[UI設計ルール](ui-design.md)の機種差の条件など、仕様書やルールで決めた条件。
+- **ロジックの実行に必要な参照**：テスト対象を動かすために必要なPrefabやコンポーネントの参照がそろっていること。
+
 ## テストの配置
 
 コードとテストは [クライアントの構成と依存関係](frontend-design.md) に従い、`Assets/Baryonyx/` に配置する。
@@ -15,7 +32,7 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 |---|---|
 | `Baryonyx.Runtime` | 製品の実装 |
 | `Baryonyx.Editor` | Editor専用処理、ビルド |
-| `Baryonyx.EditModeTests` | ロジック・設定の検査 |
+| `Baryonyx.EditModeTests` | ロジックとその出力の検査 |
 | `Baryonyx.PlayModeTests` | シーン読み込み、入力、フレームをまたぐ状態遷移 |
 
 [BuildSceneTests](../../client/Assets/Baryonyx/Tests/EditMode/BuildSceneTests.cs) はビルド対象シーンの選択を5件で検査する。
@@ -29,7 +46,8 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと保存済みの歩数の表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeのボタンから各画面へ移って戻ること、メニュー・リスト・決定の通知、地図の印の選択を検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したワットの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
 TopとHomeのシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 

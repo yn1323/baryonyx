@@ -45,6 +45,7 @@ if (component != null)
 - `Update`はフレーム依存、`FixedUpdate`は固定時間間隔である。物理更新は`FixedUpdate`と`Time.fixedDeltaTime`、通常のフレーム処理は`Update`と`Time.deltaTime`を使う。
 - `[RuntimeInitializeOnLoadMethod]`、`[InitializeOnLoad]`、`[InitializeOnLoadMethod]`は通常の呼び出しとは異なる。対象メソッドのstatic要件、Editor/Playerの境界、実行時点を確認する。
 - `[MenuItem]`はEditorメニューから呼ばれるstaticメソッドとして定義する。Editor APIをRuntimeアセンブリへ混ぜない。
+- `OnValidate`は、Inspectorで変わった値の範囲を整えるだけに使う。`RectTransform.sizeDelta`などの変更、オブジェクトの生成、コルーチンの開始は、`#if UNITY_EDITOR`の中で`EditorApplication.delayCall`へ回し、`OnValidate`を抜けてから行う。`OnValidate`の中でレイアウトを変えると「SendMessage cannot be called during Awake, CheckConsistency, or OnValidate」の警告が出る。詳細は[Unity実行規則](references/unity-runtime-rules.md#onvalidateで行ってよい処理)を読む。
 
 ### Inspectorシリアル化
 
@@ -63,6 +64,7 @@ Unityのシリアライザーは通常プロパティではなくフィールド
 - [ ] Unity型のnull判定に`?.`、`??`、`??=`、`is null`、`ReferenceEquals`を使っていない。
 - [ ] 生成・破棄を`new`、`AddComponent`、`CreateInstance`、`Instantiate`、`Destroy`の責務に分けた。
 - [ ] Unityイベントの名前・シグネチャ・実行順を確認した。
+- [ ] `OnValidate`では値の範囲を整えるだけにし、Transformの変更・生成・コルーチンを`EditorApplication.delayCall`へ回した。
 - [ ] Inspectorで保存するフィールド、`SerializeReference`、旧フィールド名の互換性を確認した。
 - [ ] `GetComponent<T>`、`TryGetComponent<T>`、`CompareTag`、適切なdelta timeを選んだ。
 - [ ] Unityコンパイル、アナライザー、必要なEdit/Play Modeテストを実行し、Editor未確認や端末未確認を明記した。

@@ -2044,7 +2044,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[0].Sway
-      value: 9
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[1].Curl
+      value: 25.199999
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[1].Loop
@@ -2056,7 +2060,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[1].Sway
-      value: 6.2999997
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[2].Curl
+      value: 25.199999
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[2].Loop
@@ -2068,7 +2076,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[2].Sway
-      value: 6.2999997
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[3].Curl
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[3].Loop
@@ -2080,7 +2092,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[3].Sway
-      value: 9
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[1].Count
@@ -2187,6 +2199,14 @@ PrefabInstance:
       value: 1.7
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[1].CurlScale
+      value: 39.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[1].CurlSpeed
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[1].Direction
       value: 90
       objectReference: {fileID: 0}
@@ -2195,12 +2215,28 @@ PrefabInstance:
       value: 1.7
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[2].CurlScale
+      value: 39.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[2].CurlSpeed
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[2].Direction
       value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[2].SwaySpeed
       value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[3].CurlScale
+      value: 56
+      objectReference: {fileID: 0}
+    - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
+      propertyPath: Sources.Array.data[3].CurlSpeed
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 5736302469543574563, guid: 528937b52fb8e4b96858becf5062b5a3, type: 3}
       propertyPath: Sources.Array.data[3].Direction

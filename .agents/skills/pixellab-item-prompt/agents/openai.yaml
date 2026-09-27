@@ -1,0 +1,5 @@
+interface:
+  display_name: "PixelLabアイテム候補生成"
+  short_description: "アイテム・武器・防具の32x32アイコン候補64枚を確定タッチで生成し、選択を待つ"
+policy:
+  allow_implicit_invocation: false

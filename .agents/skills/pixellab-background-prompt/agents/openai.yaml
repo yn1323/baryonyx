@@ -1,0 +1,5 @@
+interface:
+  display_name: "PixelLab背景生成"
+  short_description: "場面からHD-2D風の2D背景を、PixFluxの下書き4案とProの仕上げで作る"
+policy:
+  allow_implicit_invocation: false

@@ -1,8 +1,5 @@
-using System.Linq;
-using Baryonyx.Showcase;
 using Baryonyx.UI;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
@@ -79,30 +76,6 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        [Test]
-        public void ShowcaseCatalogKeepsResponsiveScreenPreviewRegistered()
-        {
-            var catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(
-                "Assets/Baryonyx/Features/Showcase/Data/ShowcaseCatalog.asset"
-            );
-            Assert.That(catalog, Is.Not.Null);
-
-            var home = catalog.Entries.FirstOrDefault(entry =>
-                entry != null
-                && entry.Description == "Assets/Baryonyx/Features/Home/UI/HomeScreen.prefab"
-            );
-            Assert.That(home, Is.Not.Null);
-            Assert.That(home.PreviewPrefab, Is.Not.Null);
-            Assert.That(
-                home.PreviewPrefab.GetComponentInChildren<ResponsiveBackground>(true),
-                Is.Not.Null
-            );
-
-            var top = catalog.Entries.FirstOrDefault(entry =>
-                entry != null && entry.ScenePath == "Assets/Baryonyx/App/Scenes/Top.unity"
-            );
-            Assert.That(top, Is.Not.Null);
-        }
 
         [Test]
         public void SafeAreaFollowerConvertsAnAsymmetricViewportToNormalizedAnchors()

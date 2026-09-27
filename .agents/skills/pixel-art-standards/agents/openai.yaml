@@ -1,0 +1,5 @@
+interface:
+  display_name: "ドット絵の制作規格"
+  short_description: "ドット絵の生成・採用・Unityへの取り込みで、制作規格を指示文と出来上がりに当てはめて検査する"
+policy:
+  allow_implicit_invocation: true

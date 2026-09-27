@@ -14,5 +14,20 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Showcase.unity
     guid: 8ea5e68f50054444ac8bd507416be5ec
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/BattleInspect.unity
+    guid: 9ba16e9a3c551458b85ecc053ba0a01f
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Tavern.unity
+    guid: 70841e537bf564729994c553e7e00c13
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Workshop.unity
+    guid: a746b40c5887246b6bc0e87b4481b247
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Temple.unity
+    guid: bf718bdf1d53c4c83ac13bcce472c37c
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/TravelOffice.unity
+    guid: f04dbc412ba5247e3a24f0ed95f1016f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

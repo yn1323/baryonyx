@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74c4db56070fa44b8adcef0e18b95aff, type: 3}
+  m_Name: WorkshopGuideMenu
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
+  Title: "\u5DE5\u623F"
+  GuideArt: {fileID: 2800000, guid: f90010816bc104c04999929c75174e27, type: 3}
+  GuideDotSize: 5
+  Background: {fileID: 2800000, guid: 6552271eccc1740499e13c5d59a46914, type: 3}
+  Layout: 0
+  Items:
+  - Label: "\u4ED8\u3051\u66FF\u3048"
+    Caption: "\u30AD\u30E3\u30E9\u3054\u3068\u306E\u6B66\u5668\u30FB\u9632\u5177\u3092\u5909\u3048\u308B"
+    Icon: {fileID: 21300000, guid: b8f55abbb3c9f4d6bac6d3b77b4e68f9, type: 3}
+    ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
+    Entries:
+    - Name: "\u30C8\u30FC\u30DE"
+      Badge: Lv 12
+      Detail: "\u9244\u306E\u5263\uFF5C\u9769\u306E\u93A7"
+    - Name: "\u30EB\u30AB"
+      Badge: Lv 11
+      Detail: "\u6C37\u6676\u306E\u30EF\u30F3\u30C9\uFF5C\u9B54\u6CD5\u306E\u30ED\u30FC\u30D6"
+    - Name: "\u30A2\u30EA\u30A2"
+      Badge: Lv 10
+      Detail: "\u96F7\u9CF4\u306E\u69CD\uFF5C\u9396\u304B\u305F\u3073\u3089"
+    - Name: "\u30DF\u30CA"
+      Badge: Lv 10
+      Detail: "\u6A2B\u306E\u6756\uFF5C\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
+  - Label: "\u6B66\u5668"
+    Caption: "\u6301\u3063\u3066\u3044\u308B\u6B66\u5668\u3092\u898B\u308B"
+    Icon: {fileID: 21300000, guid: acb3d0aa055e5439089f26fb05d11027, type: 3}
+    ConfirmLabel: "\u88C5\u5099\u3059\u308B"
+    Entries:
+    - Name: "\u708E\u306E\u30C0\u30AC\u30FC"
+      Badge: "\u2605\u2605\u2605\u2605"
+      Detail: "\u3059\u3070\u3084\u3055\u306E 125%\uFF5C\u65AC\u30FB\u708E\uFF5C2\u56DE\u653B\u6483"
+    - Name: "\u96F7\u9CF4\u306E\u69CD"
+      Badge: "\u2605\u2605\u2605"
+      Detail: "\u529B\u306E 140%\uFF5C\u8CAB\u30FB\u96F7"
+    - Name: "\u6C37\u6676\u306E\u30EF\u30F3\u30C9"
+      Badge: "\u2605\u2605\u2605"
+      Detail: "\u9B54\u529B\u306E 135%\uFF5C\u6C37\uFF5C\u4F1A\u5FC3 +5%"
+    - Name: "\u6226\u939A"
+      Badge: "\u2605\u2605"
+      Detail: "\u529B\u306E 150%\uFF5C\u6253"
+    - Name: "\u9244\u306E\u5263"
+      Badge: "\u2605\u2605"
+      Detail: "\u529B\u306E 120%\uFF5C\u65AC"
+    - Name: "\u77ED\u5F13"
+      Badge: "\u2605"
+      Detail: "\u3059\u3070\u3084\u3055\u306E 100%\uFF5C\u8CAB"
+    - Name: "\u6A2B\u306E\u6756"
+      Badge: "\u2605"
+      Detail: "\u9B54\u529B\u306E 110%\uFF5C\u708E"
+    - Name: "\u6728\u306E\u5263"
+      Badge: "\u2605"
+      Detail: "\u529B\u306E 100%\uFF5C\u65AC"
+  - Label: "\u9632\u5177"
+    Caption: "\u6301\u3063\u3066\u3044\u308B\u9632\u5177\u3092\u898B\u308B"
+    Icon: {fileID: 21300000, guid: dd542043dcee54bf7b300059c4f1075e, type: 3}
+    ConfirmLabel: "\u88C5\u5099\u3059\u308B"
+    Entries:
+    - Name: "\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
+      Badge: "\u2605\u2605\u2605"
+      Detail: "\u3059\u3070\u3084\u3055 +8%\uFF5C\u9632\u5FA1\u306E 110%"
+    - Name: "\u9396\u304B\u305F\u3073\u3089"
+      Badge: "\u2605\u2605"
+      Detail: "\u9632\u5FA1\u306E 130%"
+    - Name: "\u9B54\u6CD5\u306E\u30ED\u30FC\u30D6"
+      Badge: "\u2605\u2605"
+      Detail: "\u9B54\u529B\u306E 115%\uFF5C\u9632\u5FA1\u306E 105%"
+    - Name: "\u9244\u306E\u515C"
+      Badge: "\u2605\u2605"
+      Detail: "\u9632\u5FA1\u306E 115%\uFF5CHP +40"
+    - Name: "\u9769\u306E\u93A7"
+      Badge: "\u2605"
+      Detail: "\u9632\u5FA1\u306E 110%"
+    - Name: "\u6728\u306E\u4E38\u76FE"
+      Badge: "\u2605"
+      Detail: "\u9632\u5FA1\u306E 120%"
+  MapArt: {fileID: 0}
+  MapPoints: []
+  DepartLabel: "\u51FA\u767A"

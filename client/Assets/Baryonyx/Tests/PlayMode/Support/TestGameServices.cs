@@ -12,6 +12,8 @@ namespace Baryonyx.Tests.PlayMode
     {
         private TestGameServices(HealthPermission permission)
         {
+            // 既定ではサーバーの代役でルーンを請求する。仮のルーンを試すテストだけ有効にする。
+            HomeBootstrap.MockRuneGainOverride = false;
             Provider = new HealthScreenPreviewProvider(permission: permission);
             Server = new TestStepServer();
             GameServices.Override(
@@ -26,7 +28,11 @@ namespace Baryonyx.Tests.PlayMode
             HealthPermission permission = HealthPermission.Granted
         ) => new(permission);
 
-        public void Dispose() => GameServices.Override(null);
+        public void Dispose()
+        {
+            GameServices.Override(null);
+            HomeBootstrap.MockRuneGainOverride = null;
+        }
 
         public sealed class TestStepServer : IHealthStepServer
         {
@@ -52,6 +58,18 @@ namespace Baryonyx.Tests.PlayMode
             {
                 ThrowIfFailing();
                 return store.ReadAsync(token);
+            }
+
+            public Task<long> ReadRunesAsync(CancellationToken token)
+            {
+                ThrowIfFailing();
+                return store.ReadRunesAsync(token);
+            }
+
+            public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token)
+            {
+                ThrowIfFailing();
+                return store.ClaimRunesAsync(token);
             }
 
             private void ThrowIfFailing()

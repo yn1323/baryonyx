@@ -1,0 +1,5 @@
+interface:
+  display_name: "キャラのイラスト"
+  short_description: "キャラ設定と構図をCodex CLIに渡し、背景付きのキャラクターイラストを生成して見せる"
+policy:
+  allow_implicit_invocation: false

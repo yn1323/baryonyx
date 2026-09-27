@@ -46,12 +46,17 @@ namespace Baryonyx.Tests.EditMode
                 DateTimeOffset.Parse(result.Days[0].endAt, CultureInfo.InvariantCulture),
                 Is.EqualTo(now)
             );
+            Assert.That(
+                DateTimeOffset.Parse(result.Days[0].startAt, CultureInfo.InvariantCulture),
+                Is.EqualTo(new DateTimeOffset(2026, 9, 13, 4, 0, 0, TimeSpan.FromHours(9)))
+            );
         }
 
         [Test]
-        public async Task RefreshUsesTheCurrentJapaneseDateAcrossMidnight()
+        public async Task RefreshSwitchesTheJapaneseDayAt4am()
         {
-            var now = new DateTimeOffset(2026, 9, 13, 14, 59, 0, TimeSpan.Zero);
+            // 日本時間9/14の3:59は、朝4時区切りではまだ9/13。
+            var now = new DateTimeOffset(2026, 9, 13, 18, 59, 0, TimeSpan.Zero);
             var provider = new HealthScreenPreviewProvider(() => now);
             var first = await provider.ReadRecentDaysAsync(CancellationToken.None);
             now = now.AddMinutes(2);

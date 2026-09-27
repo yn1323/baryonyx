@@ -80,12 +80,12 @@ namespace Baryonyx.Health.Editor
                 layout.childForceExpandHeight = false;
 
                 var view = root.GetComponent<HealthLinkModalView>();
-                view.TitleLabel = Label(body, "Title", font, 52, Teal, TextAlignmentOptions.Center);
+                view.TitleLabel = Label(body, "Title", font, 64, Teal, TextAlignmentOptions.Center);
                 view.BodyLabel = Label(
                     body,
                     "Message",
                     font,
-                    34,
+                    48,
                     TextSub,
                     TextAlignmentOptions.TopLeft
                 );
@@ -112,7 +112,7 @@ namespace Baryonyx.Health.Editor
                     buttons,
                     "ActionButton",
                     font,
-                    520,
+                    680,
                     Teal,
                     ActionText
                 );
@@ -151,7 +151,7 @@ namespace Baryonyx.Health.Editor
             colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
             colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
             button.colors = colors;
-            var label = Label(rect, "Label", font, 36, textColor, TextAlignmentOptions.Center);
+            var label = Label(rect, "Label", font, 48, textColor, TextAlignmentOptions.Center);
             Stretch((RectTransform)label.transform);
             label.raycastTarget = false;
             return (button, label);

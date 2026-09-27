@@ -259,6 +259,7 @@ namespace Baryonyx.Showcase.Editor
             var value = path.ToLowerInvariant();
             if (
                 value.Contains("character")
+                || value.Contains("/enemies/")
                 || value.Contains("adventurer")
                 || value.Contains("player")
             )

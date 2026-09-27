@@ -21,6 +21,7 @@
 | 2026-09-22 | [横画面の可変レイアウト](2026-09-22-responsive-landscape-layout.md) |
 | 2026-09-24 | [ホーム画面「野営地」の見た目モック](2026-09-24-home-camp-mock.md) |
 | 2026-09-24 | [起動時の連携と歩数の同期](2026-09-24-startup-health-sync.md) |
+| 2026-09-27 | [酒場・工房・神殿・旅の案内所（案内人がいる画面）](2026-09-27-guide-menu-screens.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 現在の独立した接続の動作は[健康データ仕様](../features/health-data.md)を参照する。

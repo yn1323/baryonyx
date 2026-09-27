@@ -179,12 +179,22 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(server.Saves, Is.Zero);
         }
 
+        [TestCase(3, 59, 26)]
+        [TestCase(4, 0, 27)]
+        [TestCase(23, 59, 27)]
+        public void TheDaySwitchesAt4am(int hour, int minute, int expectedDay)
+        {
+            var day = HealthDays.DayOf(new DateTime(2026, 9, 27, hour, minute, 0));
+            Assert.That(day, Is.EqualTo(new DateTime(2026, 9, expectedDay)));
+        }
+
         [Test]
         public async Task TodayStepsComeFromTheSavedDayOfToday()
         {
             Assert.That((await link.ReadTodayAsync(CancellationToken.None)).HasValue, Is.False);
             await link.SyncAsync(CancellationToken.None);
             var today = await link.ReadTodayAsync(CancellationToken.None);
+            Assert.That(today.Day, Is.EqualTo(Today));
             Assert.That(today.HasValue, Is.True);
             Assert.That(today.Steps, Is.EqualTo(1006));
         }
@@ -280,6 +290,11 @@ namespace Baryonyx.Tests.EditMode
             }
 
             public Task<HealthDay[]> ReadAsync(CancellationToken token) => Task.FromResult(Saved);
+
+            public Task<long> ReadRunesAsync(CancellationToken token) => Task.FromResult(0L);
+
+            public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
+                Task.FromResult(new HealthRuneClaim(0, 0));
         }
 
         private sealed class Store : IHealthLinkStore

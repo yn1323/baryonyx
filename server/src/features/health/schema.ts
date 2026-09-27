@@ -38,10 +38,13 @@ function validDay(day: HealthDay, now: number): boolean {
     end - start > 26 * 3_600_000
   )
     return false;
-  return startsAtLocalMidnight(day, start);
+  return startsAtDayBoundary(day, start);
 }
 
-function startsAtLocalMidnight(day: HealthDay, start: number): boolean {
+// ゲームの1日は朝4時に切り替わるため、日ごとの記録はその日の現地時刻4時ちょうどから始まる。
+export const DAY_START_HOUR = 4;
+
+function startsAtDayBoundary(day: HealthDay, start: number): boolean {
   try {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: day.zone,
@@ -56,7 +59,7 @@ function startsAtLocalMidnight(day: HealthDay, start: number): boolean {
     const part = (key: string) => parts.find((p) => p.type === key)?.value;
     return (
       `${part("year")}-${part("month")}-${part("day")}` === day.day &&
-      part("hour") === "00" &&
+      part("hour") === String(DAY_START_HOUR).padStart(2, "0") &&
       part("minute") === "00" &&
       part("second") === "00"
     );

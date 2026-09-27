@@ -9,8 +9,10 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
 現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 Topは起動時にゲームサーバーへの接続とHealth Connectの歩数の同期を行い、終わるまで「LOADING...」を表示する（[起動時の連携と歩数の同期](../doc/features/startup-sync.md)）。
-`Home.unity` はホーム画面のモックで、左上の今日の歩数だけサーバーの値を表示する。行き先カード（再開）の遷移先は未設定のため遷移しない。
-シーンはTop・Home・展示室の `Showcase.unity` だけである。
+`Home.unity` はホーム画面のモックで、左上の今日のワット（歩数を1歩＝1ワットで換算）と右上の所持ルーンだけサーバーの値を表示する。ワットパネルを押すと歩数を同期してルーンへ変換する。行き先カード（再開）の遷移先は未設定のため遷移しない。
+シーンはTop・Home・展示室の `Showcase.unity` と、戦闘画面の見た目を確かめるモックの `BattleInspect.unity`、Homeの左下のボタンから開く案内人の画面（酒場 `Tavern.unity`・工房 `Workshop.unity`・神殿 `Temple.unity`・旅の案内所 `TravelOffice.unity`）である。
+案内人の画面は `Baryonyx > App > Create Guide Scenes` で生成し、「もどる」でHomeへ戻る（[案内人がいる画面](../doc/features/screens.md#酒場工房神殿旅の案内所の画面)）。
+`BattleInspect.unity` はほかのシーンから遷移せず、単体で開いて確認する（[戦闘画面のモック](../doc/features/screens.md#戦闘画面の見た目モック)）。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。
 
 ## サーバーのBaseURL
@@ -81,7 +83,8 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 - C#変更後は、再コンパイルの完了とConsoleのエラーを確認する。
 - C#変更後は、CIと同じCSharpierで整形・検査する。実行に必要な.NET SDKの導入と実行手順は [整形と静的解析](../doc/rules/client-code-quality.md) に従う。
 - 変更した動作に対応するテストを実行する。テスト0件は合格として扱わない。
-- PlayModeの開始・停止やシーンの切り替えは、実行中の作業を確認してから行う。
+- PlayModeの開始やシーンの切り替えは、実行中の作業を確認してから行う。
+- PlayMode中のEditorは、ユーザーに確認せずに停止してよい。
 - アセットの移動・名前変更・削除はUnityの機能を使い、対応する `.meta` とGUIDの整合を保つ。
 - 画面変更後はGameビューを撮影し、保存した画像を開いて確認する。Overlay UIを含める場合はPlayModeで `capture_game_view --source screen` を使う。
 - 検証画像は `Assets/DevCaptures/` に保存する。このフォルダと対応する `.meta` はGit除外済み。

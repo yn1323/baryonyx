@@ -6,7 +6,7 @@
 |---|---|
 | 共通のビジュアル方針 | [アート方針](direction.md) |
 | 体験版の画面デザインと生成画像 | [ゲームUIと生成素材](game-ui.md) |
-| 外見・性格・モチーフの重複確認 | [比較索引](visual-index.md) |
+| 外見・性格・モチーフの重複確認、画像ファイルの場所 | [比較索引](visual-index.md) |
 | 新しいキャラ・敵・アイテムなどの定義 | [データ索引](../catalog/README.md) |
 | 画像化する対象の記入欄 | [画像対象テンプレート](../catalog/templates/visual-entity.md) |
 | 索引の再生成・検査 | [文書検査](../tools/README.md) |

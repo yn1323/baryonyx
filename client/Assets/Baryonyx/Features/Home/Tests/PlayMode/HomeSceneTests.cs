@@ -33,7 +33,7 @@ namespace Baryonyx.Tests.PlayMode
                 .GetResult()
                 .Days;
             services.Server.SaveAsync(days, CancellationToken.None).GetAwaiter().GetResult();
-            var todayKey = System.DateTime.Today.ToString(
+            var todayKey = Baryonyx.Health.HealthDays.Today().ToString(
                 "yyyy-MM-dd",
                 CultureInfo.InvariantCulture
             );
@@ -46,17 +46,15 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(bootstrap.Data, Is.Not.Null);
             Assert.That(bootstrap.AdventureSceneName, Is.Empty);
-            Assert.That(
-                bootstrap.Transition.EnterSettings.Type,
-                Is.EqualTo(SceneTransitionType.Shutter)
-            );
 
-            var snapshot = bootstrap.Data.ToSnapshot(System.DateTime.Today);
+            var snapshot = bootstrap.Data.ToSnapshot(Baryonyx.Health.HealthDays.Today());
             snapshot.StepLink = HomeStepLink.Linked;
             snapshot.Steps = today != null ? (int)today.steps : 0;
+            // 所持ルーンは仮データではなくサーバーの残高を表示する。まだ変換していないので0。
+            snapshot.Runes = 0;
             var expected = HomeViewState.From(snapshot);
-            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.StepsText));
-            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
+            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.WattsText));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
             Assert.That(view.RunesLabel.text, Is.EqualTo(expected.RunesText));
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo(expected.DestinationNameText));
             Assert.That(view.DestinationFloorLabel.text, Is.EqualTo(expected.DestinationFloorText));
@@ -82,19 +80,15 @@ namespace Baryonyx.Tests.PlayMode
             foreach (
                 var button in new[]
                 {
-                    view.PartyButton,
-                    view.EquipmentButton,
-                    view.SummonButton,
-                    view.GoalsButton,
+                    view.TavernButton,
+                    view.WorkshopButton,
+                    view.TempleButton,
+                    view.TravelOfficeButton,
                 }
             )
                 AssertTouchSize(button.transform);
             AssertTouchSize(view.ResumeButton.transform);
             AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
-            Assert.That(
-                ((RectTransform)view.WorldMapButton.transform.Find("HitArea")).rect.height,
-                Is.GreaterThanOrEqualTo(MinimumTouchSize)
-            );
             Assert.That(
                 ((RectTransform)view.StepButton.transform).rect.height,
                 Is.GreaterThanOrEqualTo(MinimumTouchSize)
@@ -123,21 +117,15 @@ namespace Baryonyx.Tests.PlayMode
             yield return LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
 
-            view.EquipmentButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("装備（準備中）"));
-            view.SummonButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("召喚（準備中）"));
-            view.PartyWorldButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("パーティ（準備中）"));
+            // 酒場・工房・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
             view.SettingsButton.onClick.Invoke();
             Assert.That(view.CurrentToast, Is.EqualTo("設定（準備中）"));
-            view.WorldMapButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("ワールドマップ（準備中）"));
             Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
+            Assert.That(bootstrap.Presenter.ScreenOpened, Is.False);
         }
 
         [UnityTest]
-        public IEnumerator StepPanelSyncsHealthDataAndShowsTheResult()
+        public IEnumerator StepPanelTurnsStepsIntoRunesAndShowsTheResult()
         {
             var bootstrap = default(HomeBootstrap);
             yield return LoadHome(value => bootstrap = value);
@@ -145,16 +133,91 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForSteps(bootstrap);
             Assert.That(services.Server.Saves, Is.Zero);
 
+            Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
+
+            // 1回目は保存した歩数がルーンになり、所持数が0から付与後の残高まで増える。
             view.StepButton.onClick.Invoke();
             yield return WaitForSteps(bootstrap);
             Assert.That(services.Server.Saves, Is.EqualTo(1));
-            Assert.That(view.CurrentToast, Is.EqualTo("歩数を同期しました"));
+            long balance = services
+                .Server.ReadRunesAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            Assert.That(balance, Is.GreaterThan(0));
+            Assert.That(view.RuneGainPlaying, Is.True);
+            Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
+            yield return null;
+            Assert.That(
+                view.RuneEffectLayer.GetComponentsInChildren<Image>().Length,
+                Is.GreaterThan(0),
+                "Runes fly toward the balance."
+            );
+            // 着いたルーンは所持ルーンのアイコンでキラキラを弾く。
+            var sparkles = view.RuneSparkles.transform;
+            bool sparkled = false;
+            float deadline = Time.realtimeSinceStartup + 4f;
+            while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
+            {
+                sparkled |= sparkles.GetComponentsInChildren<Image>().Any(image => image.enabled);
+                yield return null;
+            }
+            Assert.That(view.RuneGainPlaying, Is.False);
+            Assert.That(sparkled, Is.True, "Sparkles pop as runes land.");
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+            // キラキラとモヤは寿命で消えるため、飛ぶルーンと光が片付いたことだけを確かめる。
+            var haze = view.RuneHaze.transform;
+            Assert.That(
+                view.RuneEffectLayer.GetComponentsInChildren<Image>()
+                    .Where(image =>
+                        !image.transform.IsChildOf(sparkles) && !image.transform.IsChildOf(haze)
+                    ),
+                Is.Empty
+            );
+            Assert.That(view.CurrentToast, Is.Empty);
+
+            // 同じ歩数のままでは付与されず、画面中央で知らせる。
+            view.StepButton.onClick.Invoke();
+            yield return WaitForSteps(bootstrap);
+            Assert.That(view.RuneGainPlaying, Is.False);
+            Assert.That(view.CurrentNotice, Is.EqualTo(HomePresenter.NoRunesMessage));
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
 
             services.Server.Fail = true;
             view.StepButton.onClick.Invoke();
             yield return WaitForSteps(bootstrap);
             Assert.That(view.CurrentToast, Is.EqualTo("歩数を取得できませんでした"));
-            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップで歩数を同期"));
+            Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+        }
+
+        [UnityTest]
+        public IEnumerator MockRuneGainAddsTheSampleAmountOnEveryTap()
+        {
+            HomeBootstrap.MockRuneGainOverride = true;
+            var bootstrap = default(HomeBootstrap);
+            yield return LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+            yield return WaitForSteps(bootstrap);
+            long balance = bootstrap.Data.Runes;
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+
+            for (int tap = 0; tap < 2; tap++)
+            {
+                view.StepButton.onClick.Invoke();
+                yield return WaitForSteps(bootstrap);
+                Assert.That(view.RuneGainPlaying, Is.True);
+                Assert.That(view.GainLabel.text, Is.EqualTo("+1,340"));
+                float deadline = Time.realtimeSinceStartup + 4f;
+                while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+                balance += bootstrap.Data.MockGrantedRunes;
+                Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
+            }
+            Assert.That(
+                services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
+                Is.Zero,
+                "Mock runes never reach the server."
+            );
         }
 
         [UnityTest]
@@ -187,11 +250,10 @@ namespace Baryonyx.Tests.PlayMode
             foreach (
                 var button in new[]
                 {
-                    view.PartyButton,
-                    view.EquipmentButton,
-                    view.SummonButton,
-                    view.GoalsButton,
-                    view.WorldMapButton,
+                    view.TavernButton,
+                    view.WorkshopButton,
+                    view.TempleButton,
+                    view.TravelOfficeButton,
                     view.SettingsButton,
                     view.StepButton,
                 }
@@ -199,12 +261,14 @@ namespace Baryonyx.Tests.PlayMode
             {
                 var tint = button as TintGroupButton;
                 Assert.That(tint, Is.Not.Null, button.name);
-                Assert.That(
-                    tint.TintGraphics.OfType<UnityEngine.UI.Image>()
-                        .Any(image => image.sprite != null),
-                    Is.True,
-                    button.name + " has no icon to darken"
-                );
+                // ワットパネルは案内の文字だけで、アイコンを持たない。
+                if (button != view.StepButton)
+                    Assert.That(
+                        tint.TintGraphics.OfType<UnityEngine.UI.Image>()
+                            .Any(image => image.sprite != null),
+                        Is.True,
+                        button.name + " has no icon to darken"
+                    );
 
                 var pointer = new PointerEventData(EventSystem.current)
                 {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEditor;
@@ -11,6 +10,10 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. Icons are point-filtered pixel art;
     /// shadows, capsules and the resume card are smooth shapes with anti-aliased edges.
+    /// The navigation icons are 24x24 drawings exported from their Aseprite sources in
+    /// client/ArtSource/UI/Home, so regeneration only fixes their import settings. The rune icon is shared game art
+    /// exported from its Aseprite source and is treated the same way, with mipmaps because
+    /// the flying runes shrink below their drawn size.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -27,37 +30,31 @@ namespace Baryonyx.Home.Editor
         public const string CapsulePath = ArtFolder + "/Capsule.png";
         public const string RoundedRectPath = ArtFolder + "/RoundedRect.png";
         public const string RoundedRingPath = ArtFolder + "/RoundedRing.png";
-        public const string ArrowsPath = ArtFolder + "/Arrows.png";
         public const string IconPartyPath = ArtFolder + "/IconParty.png";
         public const string IconEquipmentPath = ArtFolder + "/IconEquipment.png";
-        public const string IconGoalPath = ArtFolder + "/IconGoal.png";
         public const string IconCompassPath = ArtFolder + "/IconCompass.png";
         public const string IconSummonPath = ArtFolder + "/IconSummon.png";
         public const string IconSettingsPath = ArtFolder + "/IconSettings.png";
-        public const string IconRunePath = ArtFolder + "/IconRune.png";
+
+        // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
+        public const string RuneTwinklePath = ArtFolder + "/RuneTwinkle.png";
+
+        // Exported from client/ArtSource/GameResources/IconRune.aseprite (24x24, full colour).
+        public const string IconRunePath = "Assets/Baryonyx/Shared/Art/GameResources/IconRune.png";
+
+        // Exported from client/ArtSource/UI/Home/*.aseprite (24x24) and shown at 4x.
+        private static readonly string[] DrawnIconPaths =
+        {
+            IconPartyPath,
+            IconEquipmentPath,
+            IconSummonPath,
+            IconCompassPath,
+        };
 
         // Rounded corners of the resume card, in texture pixels (1 pixel = 1 canvas unit).
         public const int CardRadius = 18;
 
         public static readonly Color Ink = new(0.106f, 0.071f, 0.024f);
-
-        private static readonly Dictionary<char, Color> IconPalette = new()
-        {
-            ['o'] = new Color(0.106f, 0.071f, 0.024f),
-            ['f'] = new Color(0.953f, 0.914f, 0.824f),
-            ['h'] = Color.white,
-            ['a'] = new Color(0.914f, 0.635f, 0.231f),
-            ['r'] = new Color(0.816f, 0.318f, 0.247f),
-        };
-
-        private static readonly Dictionary<char, Color> CompassPalette = new()
-        {
-            ['o'] = new Color(0.063f, 0.075f, 0.114f),
-            ['a'] = new Color(0.788f, 0.631f, 0.353f),
-            ['f'] = new Color(0.910f, 0.886f, 0.831f),
-            ['r'] = new Color(0.816f, 0.318f, 0.247f),
-            ['s'] = new Color(0.353f, 0.525f, 0.784f),
-        };
 
         // The same 11x14 flame as the design mock: outer red, orange, yellow, white core, logs.
         private static readonly string[] Campfire =
@@ -76,115 +73,6 @@ namespace Baryonyx.Home.Editor
             ".LLmmmmmLL.",
             "LLDLLLLLDLL",
             ".DDDD.DDDD.",
-        };
-
-        private static readonly string[] Party =
-        {
-            "................",
-            "....oooo........",
-            "...offffo.oooo..",
-            "...offhfo.offfo.",
-            "...offffooffhfo.",
-            "....offo.offffo.",
-            "...oooooo.offo..",
-            "..offffffooooooo",
-            ".offfhffffoffffo",
-            ".offffffffoffffo",
-            ".offffffffoffffo",
-            ".oooooooooooooo.",
-            "................",
-            "................",
-            "................",
-            "................",
-        };
-
-        private static readonly string[] Sword =
-        {
-            ".............ooo",
-            "............ofho",
-            "...........ofho.",
-            "..........ofho..",
-            ".........ofho...",
-            "..oo....ofho....",
-            "..oao..ofho.....",
-            "...oaoofho......",
-            "....oaaoo.......",
-            ".....oaao.......",
-            "....oaooao......",
-            "...oao..oao.....",
-            "..ooo....oo.....",
-            ".oao............",
-            "oao.............",
-            "oo..............",
-        };
-
-        private static readonly string[] Flag =
-        {
-            ".oo.............",
-            ".oaooooooooo....",
-            ".oaorrrrrrrro...",
-            ".oaorrhrrrrro...",
-            ".oaorrrrrrro....",
-            ".oaorrrrrro.....",
-            ".oaorrrrrrro....",
-            ".oaorrrrrrrro...",
-            ".oaooooooooo....",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".oao............",
-            ".ooo............",
-        };
-
-        private static readonly string[] Compass =
-        {
-            ".....oooooo.....",
-            "...ooaaaaaaoo...",
-            "..oaaffffffaao..",
-            ".oaffffffffrrao.",
-            ".oafffffffrrfao.",
-            "oafffffffrrfffao",
-            "oaffffffrrffffao",
-            "oafffffoofffffao",
-            "oafffffoofffffao",
-            "oaffffssffffffao",
-            "oafffssfffffffao",
-            ".oafssfffffffao.",
-            ".oasfffffffffao.",
-            "..oaaffffffaao..",
-            "...ooaaaaaaoo...",
-            ".....oooooo.....",
-        };
-
-        private static readonly Dictionary<char, Color> CirclePalette = new()
-        {
-            ['o'] = new Color(0.106f, 0.071f, 0.2f),
-            ['c'] = new Color(0.608f, 0.416f, 0.839f),
-            ['g'] = new Color(0.498f, 0.890f, 0.839f),
-            ['h'] = Color.white,
-        };
-
-        // A summoning circle: a purple ring around a rune-coloured hexagram.
-        private static readonly string[] MagicCircle =
-        {
-            ".....oooooo.....",
-            "...ooccccccoo...",
-            "..occ..gg..cco..",
-            ".occ..g..g..cco.",
-            ".oc...g..g...co.",
-            "oc.gggggggggg.co",
-            "oc..gg....gg..co",
-            "oc..g..hh..g..co",
-            "oc..gg.hh.gg..co",
-            "oc.g.g....g.g.co",
-            "oc.gggggggggg.co",
-            ".oc...g..g...co.",
-            ".occ...gg...cco.",
-            "..occ..gg..cco..",
-            "...ooccccccoo...",
-            ".....oooooo.....",
         };
 
         private static readonly string[] Gear =
@@ -207,24 +95,14 @@ namespace Baryonyx.Home.Editor
             "......####......",
         };
 
-        private static readonly string[] Rune =
+        // A bright centre, the arms a little dimmer and faint tips, so it twinkles as a star.
+        private static readonly string[] RuneTwinkle =
         {
-            ".......##.......",
-            "......#..#......",
-            ".....#....#.....",
-            "....#..##..#....",
-            "...#...##...#...",
-            "..#....##....#..",
-            ".#.....##.....#.",
-            "#......##......#",
-            "#......##......#",
-            ".#.....##.....#.",
-            "..#....##....#..",
-            "...#...##...#...",
-            "....#..##..#....",
-            ".....#....#.....",
-            "......#..#......",
-            ".......##.......",
+            "..+..",
+            "..#..",
+            "+#O#+",
+            "..#..",
+            "..+..",
         };
 
         public static void EnsureAll()
@@ -245,13 +123,22 @@ namespace Baryonyx.Home.Editor
                         _ => Color.clear,
                     }
             );
-            WritePattern(IconPartyPath, Party, c => Lookup(IconPalette, c));
-            WritePattern(IconEquipmentPath, Sword, c => Lookup(IconPalette, c));
-            WritePattern(IconGoalPath, Flag, c => Lookup(IconPalette, c));
-            WritePattern(IconCompassPath, Compass, c => Lookup(CompassPalette, c));
-            WritePattern(IconSummonPath, MagicCircle, c => Lookup(CirclePalette, c));
+            foreach (var path in DrawnIconPaths)
+                ImportDrawnIcon(path);
+            ImportDrawnIcon(IconRunePath, mipmaps: true);
             WritePattern(IconSettingsPath, Gear, c => c == '#' ? Color.white : Color.clear);
-            WritePattern(IconRunePath, Rune, c => c == '#' ? Color.white : Color.clear);
+            WritePattern(
+                RuneTwinklePath,
+                RuneTwinkle,
+                c =>
+                    c switch
+                    {
+                        'O' => Color.white,
+                        '#' => new Color(1f, 1f, 1f, 0.8f),
+                        '+' => new Color(1f, 1f, 1f, 0.4f),
+                        _ => Color.clear,
+                    }
+            );
 
             WriteShadow();
             WriteShade();
@@ -327,7 +214,6 @@ namespace Baryonyx.Home.Editor
                 new Vector4(20, 20, 20, 20),
                 _ => Color.white
             );
-            WriteArrows();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
@@ -381,13 +267,21 @@ namespace Baryonyx.Home.Editor
             importer.alphaIsTransparency = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;
+            // Keep the source size: rescaling a non-power-of-two image (e.g. 100x100 to 128x128) blurs the dots.
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = 2048;
             importer.SaveAndReimport();
             return LoadTexture(path);
         }
 
-        private static Color Lookup(Dictionary<char, Color> palette, char c) =>
-            palette.TryGetValue(c, out var color) ? color : Color.clear;
+        // Mipmaps let a shrunken icon use an averaged copy instead of dropping pixels.
+        private static void ImportDrawnIcon(string path, bool mipmaps = false)
+        {
+            if (!File.Exists(path))
+                throw new InvalidOperationException("Home artwork is missing: " + path);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            ApplySpriteSettings(path, Vector4.zero, FilterMode.Point, mipmaps: mipmaps);
+        }
 
         private static void WritePattern(string path, string[] rows, Func<char, Color> palette)
         {
@@ -474,42 +368,6 @@ namespace Baryonyx.Home.Editor
             );
         }
 
-        // Three chevrons (">>>") fading in from the left, used after "再開".
-        private static void WriteArrows()
-        {
-            const int width = 88;
-            const int height = 56;
-            float[] opacity = { 0.4f, 0.7f, 1f };
-            WriteSmooth(
-                ArrowsPath,
-                width,
-                height,
-                Vector4.zero,
-                (u, v) =>
-                {
-                    var p = new Vector2(u * width, v * height);
-                    float alpha = 0f;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        float x0 = 8f + i * 26f;
-                        var top = new Vector2(x0, height - 8f);
-                        var tip = new Vector2(x0 + 20f, height / 2f);
-                        var bottom = new Vector2(x0, 8f);
-                        float d = Mathf.Min(Segment(p, top, tip), Segment(p, tip, bottom));
-                        alpha = Mathf.Max(alpha, Mathf.Clamp01(4.5f - d) * opacity[i]);
-                    }
-                    return new Color(1f, 1f, 1f, alpha);
-                }
-            );
-        }
-
-        private static float Segment(Vector2 p, Vector2 a, Vector2 b)
-        {
-            var ab = b - a;
-            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
-            return Vector2.Distance(p, a + ab * t);
-        }
-
         private static void WriteShadow()
         {
             const int width = 32;
@@ -565,6 +423,17 @@ namespace Baryonyx.Home.Editor
         {
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            ApplySpriteSettings(path, border, filter, sprite);
+        }
+
+        private static void ApplySpriteSettings(
+            string path,
+            Vector4 border,
+            FilterMode filter,
+            bool sprite = true,
+            bool mipmaps = false
+        )
+        {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = sprite
                 ? TextureImporterType.Sprite
@@ -576,7 +445,7 @@ namespace Baryonyx.Home.Editor
                 importer.spriteBorder = border;
             }
             importer.filterMode = filter;
-            importer.mipmapEnabled = false;
+            importer.mipmapEnabled = mipmaps;
             importer.alphaIsTransparency = sprite;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;

@@ -105,8 +105,11 @@ MonoBehaviour:
     Spread: 30
     SpeedRange: {x: 30, y: 70}
     Buoyancy: 12
-    Sway: 8
+    Sway: 0
     SwaySpeed: 1.6
+    Curl: 36
+    CurlScale: 56
+    CurlSpeed: 0.5
     DotSize: 2
     CrossShare: 0.3
     StreakShare: 0.15

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 7a484e445269d4af2a4dcfce56bbb846_IconRune
   DisplayName: IconRune
-  Description: Assets/Baryonyx/Features/Home/UI/Art/IconRune.png#IconRune
+  Description: Assets/Baryonyx/Shared/Art/GameResources/IconRune.png#IconRune
   Category: 5
   Asset: {fileID: 21300000, guid: 7a484e445269d4af2a4dcfce56bbb846, type: 3}
   PreviewPrefab: {fileID: 0}

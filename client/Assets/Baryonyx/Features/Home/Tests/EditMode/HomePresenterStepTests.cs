@@ -64,6 +64,83 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task StepsStayUnknownUntilTheFirstLoadSucceeds()
+        {
+            var snapshot = Snapshot();
+            snapshot.Steps = 3820;
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            Assert.That(snapshot.StepsKnown, Is.False);
+            Assert.That(HomeViewState.From(snapshot).WattsText, Is.EqualTo("--"));
+
+            source.Load.SetException(new InvalidOperationException("offline"));
+            await presenter.StepTask;
+            Assert.That(snapshot.StepsKnown, Is.False, "A failed load must not reveal mock steps.");
+            Assert.That(snapshot.Steps, Is.Zero);
+        }
+
+        [Test]
+        public async Task RunesStayUnknownUntilLoadedAndFollowTheServerBalance()
+        {
+            var snapshot = Snapshot();
+            snapshot.Runes = 12480;
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            Assert.That(snapshot.RunesKnown, Is.False);
+            Assert.That(HomeViewState.From(snapshot).RunesText, Is.EqualTo("--"));
+
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 100, runes: 500)
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.RunesKnown, Is.True);
+            Assert.That(snapshot.Runes, Is.EqualTo(500));
+
+            presenter.Handle(HomeAction.SyncSteps);
+            source.Sync.SetResult(
+                new HomeStepReading(
+                    HomeStepResult.Updated,
+                    HomeStepLink.Linked,
+                    400,
+                    runes: 800,
+                    grantedRunes: 300
+                )
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.Runes, Is.EqualTo(800));
+        }
+
+        [Test]
+        public async Task FailedSyncKeepsTheKnownBalance()
+        {
+            var snapshot = Snapshot();
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 100, runes: 500)
+            );
+            await presenter.StepTask;
+
+            presenter.Handle(HomeAction.SyncSteps);
+            source.Sync.SetException(new InvalidOperationException("offline"));
+            await presenter.StepTask;
+            Assert.That(snapshot.RunesKnown, Is.True);
+            Assert.That(snapshot.Runes, Is.EqualTo(500));
+        }
+
+        [Test]
+        public async Task UpdatedStepsMoveHomeToTheirDay()
+        {
+            var snapshot = Snapshot();
+            using var presenter = new HomePresenter(view, snapshot, null, source);
+            var nextDay = snapshot.Today.AddDays(1);
+            source.Load.SetResult(
+                new HomeStepReading(HomeStepResult.Updated, HomeStepLink.Linked, 300, nextDay)
+            );
+            await presenter.StepTask;
+            Assert.That(snapshot.Today, Is.EqualTo(nextDay));
+            Assert.That(snapshot.Steps, Is.EqualTo(300));
+            Assert.That(snapshot.StepsKnown, Is.True);
+        }
+
+        [Test]
         public void EveryStepResultHasAMessage()
         {
             foreach (HomeStepResult result in Enum.GetValues(typeof(HomeStepResult)))
@@ -71,7 +148,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         private static HomeSnapshot Snapshot() =>
-            new() { DailyGoal = 5000, Today = new DateTime(2026, 9, 24) };
+            new() { Today = new DateTime(2026, 9, 24) };
 
         private sealed class Source : IHomeStepSource
         {
