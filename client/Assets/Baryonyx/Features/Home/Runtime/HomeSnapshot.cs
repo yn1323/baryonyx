@@ -12,11 +12,10 @@ namespace Baryonyx.Home
     {
         SyncSteps,
         Settings,
-        Party,
-        Equipment,
-        Summon,
-        Goals,
-        WorldMap,
+        Tavern,
+        Workshop,
+        Temple,
+        TravelOffice,
         Resume,
     }
 
@@ -32,9 +31,6 @@ namespace Baryonyx.Home
         // 歩数を取得済みか。取得元があるHomeでは、最初の取得に成功するまで偽になる。
         public bool StepsKnown = true;
         public bool StepSyncing;
-        public int DailyGoal;
-        public int WeeklyDone;
-        public int WeeklyTarget;
         public long Runes;
 
         // 所持ルーンを取得済みか。取得元があるHomeでは、最初の取得に成功するまで偽になる。

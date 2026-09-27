@@ -8,22 +8,22 @@
 
 | 分類 | 内容 | 個別IDの接頭辞 |
 |---|---|---|
-| [キャラクター](characters/README.md) | 役割・固定職業ID・加入方法 | `character-` |
+| [キャラクター](characters/README.md) | 役割・固有スキル・パッシブスキル・装備できる属性 | `character-` |
 | [敵](enemies/README.md) | 分類・役割・出現ステージID | `enemy-` |
 | [アイテム](items/README.md) | 分類・用途・使用条件・対象 | `item-` |
-| [武器](weapons/README.md) | 武器種・装備可能職業・装備枠 | `weapon-` |
-| [防具](armor/README.md) | 防具種・装備枠・装備可能職業 | `armor-` |
-| [技・魔法](skills/README.md) | 通常攻撃・アクティブなどの分類・使用者 | `skill-` |
+| [武器](weapons/README.md) | 武器種・装備枠・参照するステータス | `weapon-` |
+| [防具](armor/README.md) | 防具種・装備枠・参照するステータス | `armor-` |
+| [技・カード](skills/README.md) | カードスキル・固有スキルの分類・属性・コスト | `skill-` |
 | [職業](classes/README.md) | 役割・得意不得意・キャラクターID | `class-` |
-| [属性・ダメージ種別](attributes/README.md) | 属性名・物理魔法などとの分類関係 | `attribute-` |
+| [属性](attributes/README.md) | 魔法（炎・氷・雷）・物理（斬・打・貫）の分類 | `attribute-` |
 | [状態異常・強化効果](effects/README.md) | 効果種別・対象・発動条件 | `effect-` |
 | [パッシブ](passives/README.md) | 所持者・装備者・解放条件 | `passive-` |
 | [装備Affix](affixes/README.md) | 付与対象の武器種・防具種・レア度 | `affix-` |
 | [レア度](rarities/README.md) | キャラ・武器・防具等の適用対象 | `rarity-` |
 | [素材・通貨](resources/README.md) | 用途・入手先・消費先 | `resource-` |
 | [強化・合成](upgrades/README.md) | 対象・前提条件・段階・上限 | `upgrade-` |
-| [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・場所・目標ID | `loot-` |
-| [運動目標](goals/README.md) | 対象運動・指標・単位 | `goal-` |
+| [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・場所 | `loot-` |
+| [ワットボーナス](step-bonuses/README.md) | カテゴリ・解放に必要なワット・効果 | `step-bonus-` |
 | [デイリー変異などの条件](stage-modifiers/README.md) | 採用する場合の変異の分類 | `modifier-` |
 | [探索する場所・ステージ](stages/README.md) | 地域・部屋・分岐・解放条件 | `stage-` |
 | [実績・ミッション・称号](achievements/README.md) | 種別・解放条件・達成条件 | `achievement-` |

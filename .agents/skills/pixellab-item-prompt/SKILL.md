@@ -9,7 +9,8 @@ description: >
 # PixelLabでアイテム・武器・防具のアイコンを作る
 
 アイテム、武器、防具のアイコンを、PixelLab Proで32x32の候補64枚として作る。
-タッチは、2026-09-25にユーザーが確定したもので、スーファミ後期のような、描き込みと影が多く、濃い輪郭を持つドット絵である。
+タッチは、2026-09-25にユーザーが確定したもので、スーファミ後期のような、描き込みと影が多いドット絵である。
+輪郭・ディザ・アンチエイリアスは、2026-09-27に決めた[ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格)に合わせ、セルアウト・ディザあり・輪郭の内側だけの手置きとする。
 候補から1つを選ぶのはユーザーであり、このスキルは一覧を見せたところで止める。
 
 ## 呼び出し
@@ -26,7 +27,7 @@ description: >
 | 項目 | 値 |
 |---|---|
 | 生成方法 | Pro。API `POST /v2/generate-image-v2` |
-| サイズ | 32x32。UIでは3倍（96px）で表示する想定 |
+| サイズ | 32x32。UIでは4倍（128px）で表示する想定（[ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格)） |
 | 候補数 | 64枚（Proは42px以下のサイズで64候補を返す） |
 | 画風の見本 | [assets/style-reference.png](assets/style-reference.png)（168x64。キャラクターの立ち絵と、PixFluxで作った鎧・盾・杖を並べたもの） |
 | 見本から写す要素 | 色（color_palette）、輪郭（outline）、描き込み（detail）、影（shading）のすべて |
@@ -55,7 +56,7 @@ Descriptionは英語で、次の順に1〜3文で書く。
 スクリプトは、Descriptionの末尾に次の文を自動で足す。
 
 ```text
-Richly detailed, densely shaded late SNES era JRPG item sprite with a dark outline, filling the whole canvas, clear silhouette.
+Richly detailed, densely shaded late SNES era JRPG item sprite, light from the top-left, selective outline (dark on the shadow side, lighter on the lit side), dithered shading transitions, hand-placed anti-aliasing only inside the outline, filling the whole canvas, clear silhouette.
 ```
 
 | 種類 | 向き |
@@ -64,7 +65,7 @@ Richly detailed, densely shaded late SNES era JRPG item sprite with a dark outli
 | 鎧、盾、兜、服 | `front view` |
 | 指輪、首飾り、薬、素材などの小物 | `front view`。小さい物でも、キャンバスいっぱいに描かせる |
 
-細長い武器を縦に描かせると、32x32では幅が数ドットしか残らず、96pxで見ると細く頼りない。
+細長い武器を縦に描かせると、32x32では幅が数ドットしか残らず、拡大表示すると細く頼りない。
 斜めにすると、対角線の長さを使えるので、装飾を大きく描ける。
 
 細かい装飾は、刃や柄ではなく、鍔、杖の頭、柄頭、胸の中央のような広い場所に集める。
@@ -106,7 +107,7 @@ archmage staff, ultimate late-game magic staff RPG item icon, drawn diagonally f
      --out <出力先フォルダー> --cell <番号> --name <ファイル名>
    ```
 
-   32x32の透明キャンバスの中央に置いた `<ファイル名>.png` と、3倍に拡大した確認用の画像ができる。
+   32x32の透明キャンバスの中央に置いた `<ファイル名>.png` と、4倍に拡大した確認用の画像ができる。
    切り出した画像をユーザーに見せ、PNGの場所を伝える。
 
 ## 割れた候補の扱い

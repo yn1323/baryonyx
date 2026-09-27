@@ -15,9 +15,6 @@ namespace Baryonyx.Tests.EditMode
             {
                 StepLink = link,
                 Steps = steps,
-                DailyGoal = 5000,
-                WeeklyDone = 2,
-                WeeklyTarget = 3,
                 Runes = 12480,
                 DestinationName = "森の遺跡",
                 DestinationFloor = "B3F",
@@ -25,17 +22,16 @@ namespace Baryonyx.Tests.EditMode
             };
 
         [Test]
-        public void InProgressShowsRemainingStepsAndPartialGauge()
+        public void InProgressShowsRemainingWattsAndPartialGauge()
         {
             var state = HomeViewState.From(Sample());
 
             Assert.That(state.DateText, Is.EqualTo("9/24（木）"));
             Assert.That(state.ShowSteps, Is.True);
-            Assert.That(state.StepsText, Is.EqualTo("3,820"));
-            Assert.That(state.GoalText, Is.EqualTo("今日の目標 5,000"));
-            Assert.That(state.FilledSegments, Is.EqualTo(15));
+            Assert.That(state.WattsText, Is.EqualTo("3,820"));
+            Assert.That(state.FilledSegments, Is.EqualTo(9));
             Assert.That(state.DailyAchieved, Is.False);
-            Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 歩"));
+            Assert.That(state.RemainingText, Is.EqualTo("次のボーナスまで 1,180 ワット"));
             Assert.That(state.ClaimText, Is.EqualTo("タップでルーン獲得"));
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
@@ -44,13 +40,36 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void ReachingTheGoalFillsTheGaugeAndMarksAchievement()
+        public void Reaching8000StepsFillsTheGaugeAndUnlocksEveryBonus()
         {
-            var state = HomeViewState.From(Sample(6240));
+            var partial = HomeViewState.From(Sample(6240));
+            Assert.That(partial.FilledSegments, Is.EqualTo(15));
+            Assert.That(partial.DailyAchieved, Is.False);
+            Assert.That(partial.RemainingText, Is.EqualTo("次のボーナスまで 1,760 ワット"));
 
+            var state = HomeViewState.From(Sample(8000));
             Assert.That(state.FilledSegments, Is.EqualTo(HomeViewState.GaugeSegments));
             Assert.That(state.DailyAchieved, Is.True);
-            Assert.That(state.RemainingText, Is.EqualTo("今日の目標 達成！"));
+            Assert.That(state.RemainingText, Is.EqualTo("ボーナスをすべて解放！"));
+        }
+
+        [TestCase(0, 1000)]
+        [TestCase(999, 1000)]
+        [TestCase(1000, 2000)]
+        [TestCase(3820, 5000)]
+        [TestCase(7999, 8000)]
+        [TestCase(8000, 0)]
+        public void NextBonusIsTheFirstLockedStage(int watts, int expected)
+        {
+            Assert.That(HomeViewState.NextBonusFor(watts), Is.EqualTo(expected));
+        }
+
+        [TestCase(-10, 0)]
+        [TestCase(0, 0)]
+        [TestCase(3820, 3820)]
+        public void OneStepIsOneWatt(int steps, int expected)
+        {
+            Assert.That(HomeViewState.WattsFor(steps), Is.EqualTo(expected));
         }
 
         [Test]
@@ -88,11 +107,11 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void UnknownStepsShowPlaceholderWithoutProgress()
         {
-            var snapshot = Sample(6240);
+            var snapshot = Sample(8000);
             snapshot.StepsKnown = false;
             var state = HomeViewState.From(snapshot);
 
-            Assert.That(state.StepsText, Is.EqualTo("--"));
+            Assert.That(state.WattsText, Is.EqualTo("--"));
             Assert.That(state.FilledSegments, Is.Zero);
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.Empty);
@@ -105,7 +124,7 @@ namespace Baryonyx.Tests.EditMode
             snapshot.StepSyncing = true;
             var state = HomeViewState.From(snapshot);
 
-            Assert.That(state.ClaimText, Is.EqualTo("同期中…"));
+            Assert.That(state.ClaimText, Is.EqualTo("Loading..."));
             Assert.That(state.ClaimPulses, Is.False);
         }
 
@@ -121,7 +140,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void UnlinkedHidesStepsAndAsksToLink()
         {
-            var state = HomeViewState.From(Sample(6240, HomeStepLink.Unlinked));
+            var state = HomeViewState.From(Sample(8000, HomeStepLink.Unlinked));
 
             Assert.That(state.ShowSteps, Is.False);
             Assert.That(state.DailyAchieved, Is.False);
@@ -132,16 +151,18 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        [TestCase(0, 5000, 0)]
-        [TestCase(-10, 5000, 0)]
-        [TestCase(249, 5000, 0)]
-        [TestCase(250, 5000, 1)]
-        [TestCase(4999, 5000, 19)]
-        [TestCase(99999, 5000, 20)]
-        [TestCase(3000, 0, 0)]
-        public void GaugeSegmentsFollowTheDailyGoal(int steps, int goal, int expected)
+        [TestCase(0, 0)]
+        [TestCase(-10, 0)]
+        [TestCase(399, 0)]
+        [TestCase(400, 1)]
+        [TestCase(7999, 19)]
+        [TestCase(99999, 20)]
+        public void GaugeFillsUpTo8000Watts(int watts, int expected)
         {
-            Assert.That(HomeViewState.FilledSegmentsFor(steps, goal), Is.EqualTo(expected));
+            Assert.That(
+                HomeViewState.FilledSegmentsFor(watts, HomeViewState.GaugeMaxWatts),
+                Is.EqualTo(expected)
+            );
         }
 
         [Test]
@@ -185,7 +206,7 @@ namespace Baryonyx.Tests.EditMode
 
                 presenter.Handle(HomeAction.Resume);
                 presenter.Handle(HomeAction.Resume);
-                presenter.Handle(HomeAction.Party);
+                presenter.Handle(HomeAction.Tavern);
 
                 Assert.That(starts, Is.EqualTo(1));
                 Assert.That(presenter.AdventureStarted, Is.True);

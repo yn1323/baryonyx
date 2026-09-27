@@ -179,6 +179,15 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(server.Saves, Is.Zero);
         }
 
+        [TestCase(3, 59, 26)]
+        [TestCase(4, 0, 27)]
+        [TestCase(23, 59, 27)]
+        public void TheDaySwitchesAt4am(int hour, int minute, int expectedDay)
+        {
+            var day = HealthDays.DayOf(new DateTime(2026, 9, 27, hour, minute, 0));
+            Assert.That(day, Is.EqualTo(new DateTime(2026, 9, expectedDay)));
+        }
+
         [Test]
         public async Task TodayStepsComeFromTheSavedDayOfToday()
         {

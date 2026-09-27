@@ -28,10 +28,11 @@ SKILL_DIR = Path(__file__).resolve().parent.parent
 STYLE_REFERENCE = SKILL_DIR / "assets" / "style-reference.png"
 SIZE = 32
 GRID = 8  # 32x32のProは、8x8のマス目に64候補を描いてから切り分けて返す
-SCALE = 3
+SCALE = 4  # 画面での表示倍率に合わせる
 STYLE_TAIL = (
-    " Richly detailed, densely shaded late SNES era JRPG item sprite with a dark outline, "
-    "filling the whole canvas, clear silhouette."
+    " Richly detailed, densely shaded late SNES era JRPG item sprite, light from the top-left, "
+    "selective outline (dark on the shadow side, lighter on the lit side), dithered shading transitions, "
+    "hand-placed anti-aliasing only inside the outline, filling the whole canvas, clear silhouette."
 )
 
 
@@ -113,7 +114,7 @@ body{{background:#1b1b1f;color:#ddd;font:14px/1.6 sans-serif;margin:16px}}
 .warn{{border:2px solid #e55}} .note{{color:#f99}}
 pre{{white-space:pre-wrap;background:#26262b;padding:8px;color:#bbb;max-width:{cell * GRID}px}}
 </style>
-<p>64候補を切り分け前の並び（8x8）で3倍表示している。番号はマスの番号。</p>
+<p>64候補を切り分け前の並び（8x8）で{SCALE}倍表示している。番号はマスの番号。</p>
 {warn}
 <div class="sheet">{''.join(labels)}</div>
 <h3>Description</h3><pre>{description}</pre>

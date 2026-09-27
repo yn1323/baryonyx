@@ -1,5 +1,5 @@
 interface:
   display_name: "キャラのドット絵スプライトシート"
-  short_description: "キャラ設定とwitch.pngをCodex CLIに渡し、全動作のドット絵スプライトシートを生成して見せる"
+  short_description: "キャラ設定とwitch.pngをCodex CLIに渡して全動作のドット絵スプライトシートを生成し、再実行用のプロンプトと一緒に見せる"
 policy:
   allow_implicit_invocation: false

@@ -11,12 +11,20 @@ namespace Baryonyx.Home
     {
         public const int GaugeSegments = 20;
 
+        // 歩数をゲーム共通の単位ワットへ換える率。doc/features/exercise-rewards.md の1歩＝1ワット。
+        public const int WattsPerStep = 1;
+
+        // ゲージの最大は、厚生労働省が成人に勧める1日8,000歩を換算した8,000ワットに全員そろえる。
+        public const int GaugeMaxWatts = 8000;
+
+        // 日次のワットボーナスが解放されるワット。doc/game/redesign-2026-09-27.md の候補値で、未確定。
+        public static readonly int[] BonusWatts = { 1000, 2000, 3000, 5000, 8000 };
+
         private static readonly string[] Weekdays = { "日", "月", "火", "水", "木", "金", "土" };
 
         public string DateText { get; private set; }
         public bool ShowSteps { get; private set; }
-        public string StepsText { get; private set; }
-        public string GoalText { get; private set; }
+        public string WattsText { get; private set; }
         public int FilledSegments { get; private set; }
         public bool DailyAchieved { get; private set; }
         public string RemainingText { get; private set; }
@@ -33,27 +41,26 @@ namespace Baryonyx.Home
             if (snapshot == null)
                 throw new ArgumentNullException(nameof(snapshot));
 
-            int steps = Math.Max(0, snapshot.Steps);
-            int goal = Math.Max(0, snapshot.DailyGoal);
+            int watts = WattsFor(snapshot.Steps);
             bool linked = snapshot.StepLink == HomeStepLink.Linked;
             bool known = snapshot.StepsKnown;
-            bool achieved = linked && known && goal > 0 && steps >= goal;
+            int nextBonus = NextBonusFor(watts);
+            bool achieved = linked && known && nextBonus == 0;
 
             return new HomeViewState
             {
                 DateText =
                     $"{snapshot.Today.Month}/{snapshot.Today.Day}（{Weekdays[(int)snapshot.Today.DayOfWeek]}）",
                 ShowSteps = linked,
-                StepsText = known ? Number(steps) : "--",
-                GoalText = goal > 0 ? $"今日の目標 {Number(goal)}" : "今日の目標 未設定",
-                FilledSegments = known ? FilledSegmentsFor(steps, goal) : 0,
+                WattsText = known ? Number(watts) : "--",
+                FilledSegments = known ? FilledSegmentsFor(watts, GaugeMaxWatts) : 0,
                 DailyAchieved = achieved,
                 RemainingText =
-                    goal <= 0 || !known ? ""
-                    : achieved ? "今日の目標 達成！"
-                    : $"あと {Number(goal - steps)} 歩",
+                    !known ? ""
+                    : nextBonus == 0 ? "ボーナスをすべて解放！"
+                    : $"次のボーナスまで {Number(nextBonus - watts)} ワット",
                 ClaimText =
-                    snapshot.StepSyncing ? "同期中…"
+                    snapshot.StepSyncing ? "Loading..."
                     : linked ? "タップでルーン獲得"
                     : "タップして歩数を連携",
                 ClaimPulses = !snapshot.StepSyncing,
@@ -63,13 +70,25 @@ namespace Baryonyx.Home
             };
         }
 
-        public static int FilledSegmentsFor(int steps, int goal)
+        public static int WattsFor(int steps) =>
+            (int)Math.Min(int.MaxValue, (long)Math.Max(0, steps) * WattsPerStep);
+
+        public static int FilledSegmentsFor(int watts, int max)
         {
-            if (goal <= 0 || steps <= 0)
+            if (max <= 0 || watts <= 0)
                 return 0;
-            if (steps >= goal)
+            if (watts >= max)
                 return GaugeSegments;
-            return (int)((long)steps * GaugeSegments / goal);
+            return (int)((long)watts * GaugeSegments / max);
+        }
+
+        // まだ解放していない最初のボーナスのワット。すべて解放済みなら0。
+        public static int NextBonusFor(int watts)
+        {
+            foreach (int bonus in BonusWatts)
+                if (watts < bonus)
+                    return bonus;
+            return 0;
         }
 
         public static string MessageFor(HomeAction action, HomeStepLink link) =>
@@ -79,11 +98,10 @@ namespace Baryonyx.Home
                     ? "歩数を同期しました（モック）"
                     : "歩数の連携（準備中）",
                 HomeAction.Settings => "設定（準備中）",
-                HomeAction.Party => "パーティ（準備中）",
-                HomeAction.Equipment => "装備（準備中）",
-                HomeAction.Summon => "召喚（準備中）",
-                HomeAction.Goals => "目標（準備中）",
-                HomeAction.WorldMap => "ワールドマップ（準備中）",
+                HomeAction.Tavern => "酒場（準備中）",
+                HomeAction.Workshop => "工房（準備中）",
+                HomeAction.Temple => "神殿（準備中）",
+                HomeAction.TravelOffice => "旅の案内所（準備中）",
                 HomeAction.Resume => "再開（準備中）",
                 _ => "",
             };

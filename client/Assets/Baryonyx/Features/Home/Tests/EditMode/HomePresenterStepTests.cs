@@ -70,7 +70,7 @@ namespace Baryonyx.Tests.EditMode
             snapshot.Steps = 3820;
             using var presenter = new HomePresenter(view, snapshot, null, source);
             Assert.That(snapshot.StepsKnown, Is.False);
-            Assert.That(HomeViewState.From(snapshot).StepsText, Is.EqualTo("--"));
+            Assert.That(HomeViewState.From(snapshot).WattsText, Is.EqualTo("--"));
 
             source.Load.SetException(new InvalidOperationException("offline"));
             await presenter.StepTask;
@@ -148,7 +148,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         private static HomeSnapshot Snapshot() =>
-            new() { DailyGoal = 5000, Today = new DateTime(2026, 9, 24) };
+            new() { Today = new DateTime(2026, 9, 24) };
 
         private sealed class Source : IHomeStepSource
         {

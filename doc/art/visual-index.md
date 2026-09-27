@@ -6,8 +6,14 @@
 候補も比較対象に含め、採用状態は個別文書で確認する。
 一致・類似が禁止か、同系列として意図したものかは人が判断する。
 
+画像ファイルの列は、キャラ・敵・アイテムなどの画像がどこにあるかの目次を兼ねる。
+画像を開く前にこの表で対象と場所を探し、外見の詳細は個別文書の文章で確認する。
+背景の影や枠などのUI部品は対象に含めず、各画面の画像を生成するコードと展示室で確認する。
+
 <!-- visual-index:start -->
-登録された画像対象はまだない。
+| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |
+|---|---|---|---|---|---|---|---|
+| [resource-rune](../catalog/resources/resource-rune.md) | ルーン（一部確定） | 横から見たダイヤモンド（平らな上面と下の尖り） | 藍から水色までの青 &#124; 面ごとに暗くした輪郭 | ブリリアントカット風の面 &#124; 宝石の光沢 | 対象外 | 試作をHomeで表示中 | [IconRune.png](../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png)<br>[IconRune.aseprite](../../client/ArtSource/GameResources/IconRune.aseprite) |
 <!-- visual-index:end -->
 
 更新方法は[文書検査](../tools/README.md)を参照する。

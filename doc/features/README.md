@@ -4,11 +4,12 @@
 
 ゲームのルールは各仕様、個別の値・見た目は[データ索引](../catalog/README.md)で管理する。
 企画仕様はユーザーの[初期企画](../game/brief.md)と、その後の仕様決定を各文書へ反映している。
+2026-09-27の[企画見直し](../game/redesign-2026-09-27.md)で、戦闘・運動連動・ダンジョン・課金を大きく変更した。
 候補や未決欄の存在は機能の採用・実装を意味しない。
 
 ## 仕様の確度
 
-探索・進行・戦闘や運動目標などの企画仕様では、次の区分を保つ。
+探索・進行・戦闘やワットボーナスなどの企画仕様では、次の区分を保つ。
 各文書のメタデータは文書全体の状態であり、個々の数値や候補の確定を意味しない。
 
 | 区分 | 意味 |
@@ -20,20 +21,21 @@
 
 「候補」「未決事項」は未確定として読む。
 各機能の決定は対応する正本へ反映する。
-運動目標の条件と継続ルールは[目標仕様](goals.md)、ルーン換算や報酬の具体値は[運動報酬](exercise-rewards.md)・[経済](economy.md)で区別して管理する。
+ワットボーナスの段階と区切りは[ワットボーナス](step-bonus.md)、ワットの定義とルーン換算は[運動報酬](exercise-rewards.md)、ルーンの用途は[経済](economy.md)で区別して管理する。
+既存の仕様と今回の内容のどちらを採るか判断が必要な事項は、各仕様の「確認待ち」に記録する。
 
 ## ゲームの企画仕様
 
 | 仕様 | 読む文書 |
 |---|---|
-| 運動データとルーン換算 | [仕様と未決事項](exercise-rewards.md) |
-| 日次・週次目標の設定・集計・継続倍率・編集・履歴 | [運動目標と達成報酬](goals.md) |
+| 歩数とワットの換算、ルーン換算、Health Connectの権限 | [仕様と未決事項](exercise-rewards.md) |
+| 日次のワットボーナス、朝4時の区切り、週次ボーナスの案 | [ワットボーナス](step-bonus.md) |
 | ルーン経済と資源 | [仕様と未決事項](economy.md) |
-| キャラクターとパーティ編成 | [仕様と未決事項](party.md) |
-| 戦闘操作・ダウン・弱点・UI・再戦・復活・仮の数値 | [戦闘システム](combat.md) |
+| キャラの構成・デッキ・パーティ編成 | [仕様と未決事項](party.md) |
+| ターン制のカードバトル・エネルギー・属性と弱点・ルーン復活 | [戦闘システム](combat.md) |
 | 装備生成と厳選 | [仕様と未決事項](equipment.md) |
-| 育成と強化 | [仕様と未決事項](progression.md) |
-| 部屋単位の探索・進捗・中断・再出発 | [探索とダンジョンの進行](stage-progression.md) |
+| ルーンによるレベルアップと強化 | [仕様と未決事項](progression.md) |
+| 分岐ルートの冒険・冒険終了と獲得物の保持・部屋単位の探索 | [探索とダンジョンの進行](stage-progression.md) |
 | 日付の区切りとデイリー変異 | [仕様と未決事項](daily-rules.md) |
 | アカウントとセーブ | [仕様と未決事項](accounts-save.md) |
 | 画面一覧と操作 | [仕様と未決事項](screens.md) |
@@ -41,17 +43,18 @@
 | クライアントアセットの一覧とプレビュー | [クライアントアセット展示室](showcase.md) |
 | 初回体験とチュートリアル | [仕様と未決事項](onboarding.md) |
 | ユーザー設定とアクセシビリティ | [仕様と未決事項](player-settings.md) |
-| ガチャと課金の検討項目 | [仕様と未決事項](monetization.md) |
+| 召喚と課金、ワットのチケット、法務メモ | [仕様と未決事項](monetization.md) |
 | 実績とミッション | [仕様と未決事項](achievements.md) |
 
 ゲーム全体の体験・コアループは[ゲーム概要](../game/overview.md)、最初の戦闘試作とプレイヤー目線の評価は[MVPと企画の判断基準](../game/mvp.md)を参照する。
 
 ## 現在の実装
 
-2026-09-24時点のシーンは、Top・Home・展示室だけである。
+シーンは、Top・Home・展示室と、2026-09-27に追加した戦闘画面のモック（BattleInspect）、Homeから開く案内人の画面（酒場・工房・神殿・旅の案内所）である。
 冒険・獲得・装備・戦闘を試せた操作試作と、健康データを表示した画面は削除した。
 TopとHomeは、Health Connectの歩数をゲストのセッションでサーバーへ同期する。
 画面に依存しない戦闘計算と、Google認証・運動報酬の請求のロジックは残しているが、現在はどの画面からも呼ばない。
+残っている戦闘計算は旧仕様のリアルタイム戦闘の試作であり、現行のカードバトルとは一致しない。
 
 | 機能 | 現行仕様 | 実装の入口 |
 |---|---|---|
@@ -60,7 +63,9 @@ TopとHomeは、Health Connectの歩数をゲストのセッションでサー�
 | サーバー疎通確認 | [機能詳細](server-health.md) | [app.ts](../../server/src/app.ts) |
 | 画面の操作ワイヤー | [試作の記録](game-wireframe.md) | 2026-09-24に削除。[戦闘計算](../../client/Assets/Baryonyx/Features/Combat/Runtime)だけを残す |
 | ホーム画面のモック | [画面一覧](screens.md#ホーム画面の見た目モック) | [Homeシーン](../../client/Assets/Baryonyx/App/Scenes/Home.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Home/Editor/HomeScreenAssets.cs) |
-| 戦闘MVP | [試作値と実装範囲](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
+| 酒場・工房・神殿・旅の案内所（案内人がいる画面）のモック | [画面一覧](screens.md#酒場工房神殿旅の案内所の画面) | [共通部品](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideMenuView.cs)・[シーン生成](../../client/Assets/Baryonyx/App/Editor/GuideSceneSetup.cs)・[酒場の仮データ](../../client/Assets/Baryonyx/Features/Tavern/Editor/TavernScreenAssets.cs) |
+| 戦闘画面のモック（ロジックなし） | [画面一覧](screens.md#戦闘画面の見た目モック) | [BattleInspectシーン](../../client/Assets/Baryonyx/App/Scenes/BattleInspect.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.cs) |
+| 旧仕様の戦闘計算（現行の企画と不一致） | [残っているコードの動作](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
 | クライアントアセット展示室 | [展示室仕様](showcase.md) | [展示室シーン](../../client/Assets/Baryonyx/App/Scenes/Showcase.unity)・[カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs) |
 
 現在の起動画面はHealth Connectと任意のGoogle接続を独立して扱い、サーバー同期は呼ばない。

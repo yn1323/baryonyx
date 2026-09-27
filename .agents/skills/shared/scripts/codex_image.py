@@ -9,9 +9,10 @@ Codexに保存や縮小をさせると、ドット絵を勝手に縮めて潰す
 
 使い方:
   python3 codex_image.py --out-dir DIR --name NAME --request FILE --profile FILE \
-      [--image FILE --image-role TEXT]... [--model MODEL] [--timeout SEC] [--dry-run]
+      [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
 """
 import argparse
+import filecmp
 import json
 import os
 import shutil
@@ -22,8 +23,6 @@ import time
 from pathlib import Path
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
-# これより小さい添付画像は、ドットの形が伝わるよう整数倍に拡大して渡す
-MIN_ATTACH_SIDE = 256
 
 
 def png_size(path):
@@ -34,18 +33,7 @@ def png_size(path):
     return struct.unpack(">II", head[16:24])
 
 
-def prepare_attachment(src, out_dir, index):
-    """小さなドット絵は最近傍法で拡大した複製を作る。拡大できなければ元の画像を使う。"""
-    size = png_size(src)
-    if not size or max(size) >= MIN_ATTACH_SIDE or not shutil.which("magick"):
-        return src, size, 1
-    scale = -(-MIN_ATTACH_SIDE * 2 // max(size))  # 512px以上になる整数倍
-    dst = out_dir / f"attachment-{index}-{src.stem}-x{scale}.png"
-    subprocess.run(["magick", str(src), "-filter", "point", "-resize", f"{scale * 100}%", str(dst)], check=True)
-    return dst, size, scale
-
-
-def build_instruction(request, profile, attachments):
+def build_instruction(request, profile, image_roles):
     lines = [
         "組み込みの画像生成ツール（image_gen）で、下の「依頼」の画像を1枚だけ生成してください。",
         "",
@@ -54,11 +42,10 @@ def build_instruction(request, profile, attachments):
         "- 「キャラ設定（全文）」は人物を理解するための参考情報です。描く内容・構成・画風は「依頼」に従ってください。",
         "- 最後に、画像生成に使った最終的なプロンプトを報告してください。",
     ]
-    if attachments:
+    if image_roles:
         lines.append("- 添付画像の扱い：")
-        for i, (role, size, scale) in enumerate(attachments, start=1):
-            note = f"（{size[0]}×{size[1]}のドット絵を{scale}倍に拡大したもの）" if size and scale > 1 else ""
-            lines.append(f"  - 画像{i}{note}：{role}")
+        for i, role in enumerate(image_roles, start=1):
+            lines.append(f"  - 画像{i}：{role}")
     lines += ["", "# 依頼", "", request.strip(), "", "# キャラ設定（全文）", "", profile.strip(), ""]
     return "\n".join(lines)
 
@@ -109,6 +96,7 @@ def main():
     ap.add_argument("--image", action="append", default=[], help="添付画像。--image-role と同じ順で指定する")
     ap.add_argument("--image-role", action="append", default=[], help="添付画像の役割の説明")
     ap.add_argument("--model", help="Codexのモデル。省略時は ~/.codex/config.toml の設定")
+    ap.add_argument("--reasoning-effort", help="Codexの推論の強さ（low・medium・high など）。省略時は ~/.codex/config.toml の設定")
     ap.add_argument("--timeout", type=int, default=900, help="Codexの実行を待つ秒数")
     ap.add_argument("--dry-run", action="store_true", help="依頼文とコマンドを書き出すだけで、Codexを呼ばない")
     args = ap.parse_args()
@@ -121,16 +109,12 @@ def main():
     out_dir = Path(args.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    attach_paths, attach_notes = [], []
-    for i, (image, role) in enumerate(zip(args.image, args.image_role), start=1):
-        src = Path(image).resolve()
-        if not src.is_file():
-            sys.exit(f"添付画像がありません: {src}")
-        path, size, scale = prepare_attachment(src, out_dir, i)
-        attach_paths.append(path)
-        attach_notes.append((role, size, scale))
+    attach_paths = [Path(image).resolve() for image in args.image]
+    for path in attach_paths:
+        if not path.is_file():
+            sys.exit(f"添付画像がありません: {path}")
 
-    instruction = build_instruction(Path(args.request).read_text(), Path(args.profile).read_text(), attach_notes)
+    instruction = build_instruction(Path(args.request).read_text(), Path(args.profile).read_text(), args.image_role)
     (out_dir / f"{args.name}.codex-prompt.md").write_text(instruction)
 
     events = out_dir / f"{args.name}.codex-events.jsonl"
@@ -139,6 +123,8 @@ def main():
            "--json", "--output-last-message", str(last_message)]
     if args.model:
         cmd += ["--model", args.model]
+    if args.reasoning_effort:
+        cmd += ["-c", f'model_reasoning_effort="{args.reasoning_effort}"']
     for path in attach_paths:
         cmd += ["--image", str(path)]
     # 依頼文は標準入力から渡す（引数に置くと --image の値と誤認されるおそれがあるため）
@@ -164,8 +150,11 @@ def main():
         sys.exit(f"生成画像が見つかりませんでした（終了コード {result.returncode}）。Codexの返答:\n{reply[-2000:]}")
 
     for image in images:
-        dst = free_path(out_dir, args.name)
-        shutil.copy2(image, dst)
+        # Codexが指示に反して出力先へ保存していることがあるので、同じ画像は二重にコピーしない
+        dst = next((p for p in sorted(out_dir.glob(f"{args.name}*.png")) if filecmp.cmp(p, image, shallow=False)), None)
+        if not dst:
+            dst = free_path(out_dir, args.name)
+            shutil.copy2(image, dst)
         size = png_size(dst)
         print(f"saved {dst}" + (f" ({size[0]}x{size[1]})" if size else "") + f" <- {image}")
 

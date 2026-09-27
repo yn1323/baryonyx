@@ -388,6 +388,26 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(images.Count(image => image.enabled), Is.EqualTo(0));
                 instanceEmitter.Burst(0, 3);
                 Assert.That(images.Count(image => image.enabled), Is.EqualTo(3));
+
+                // BurstAt centres the burst on a world position instead of the anchor.
+                instanceEmitter.RebuildParticles();
+                var source = instanceEmitter.Sources[0];
+                var layer = instanceEmitter.ParticleLayer;
+                var offset = new Vector2(50f, 30f);
+                var anchorPoint = layer.rect.min + Vector2.Scale(layer.rect.size, source.Anchor);
+                instanceEmitter.BurstAt(0, 1, layer.TransformPoint(anchorPoint + offset));
+                var burst = layer
+                    .GetComponentsInChildren<UnityEngine.UI.Image>(true)
+                    .Single(image => image.enabled);
+                var position = burst.rectTransform.anchoredPosition;
+                Assert.That(
+                    Mathf.Abs(position.x - offset.x),
+                    Is.LessThanOrEqualTo(source.SpawnArea.x * 0.5f + 0.01f)
+                );
+                Assert.That(
+                    Mathf.Abs(position.y - offset.y),
+                    Is.LessThanOrEqualTo(source.SpawnArea.y * 0.5f + 0.01f)
+                );
             }
             finally
             {

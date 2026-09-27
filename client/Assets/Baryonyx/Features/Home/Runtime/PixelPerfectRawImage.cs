@@ -41,6 +41,16 @@ namespace Baryonyx.Home
             if (parent == null || texture == null)
                 return;
 
+            // Only an overlay canvas measures world units in screen pixels. On other canvases
+            // (the showcase previews prefabs on a camera canvas) keep the design size.
+            var canvas = image.canvas;
+            if (canvas == null || canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                rect.sizeDelta = TexelSize(texture, image.uvRect) * DotSize;
+                rect.anchoredPosition = designPosition;
+                return;
+            }
+
             // Screen pixels per local unit (on an overlay canvas, world units are screen pixels).
             float scale = Mathf.Abs(parent.lossyScale.y * rect.localScale.y);
             if (scale <= 0f)
@@ -51,11 +61,7 @@ namespace Baryonyx.Home
             lastParentPosition = parent.position;
 
             float unit = DotPixels(DotSize, scale) / scale;
-            var uv = image.uvRect;
-            rect.sizeDelta = new Vector2(
-                Mathf.Round(texture.width * Mathf.Abs(uv.width)) * unit,
-                Mathf.Round(texture.height * Mathf.Abs(uv.height)) * unit
-            );
+            rect.sizeDelta = TexelSize(texture, image.uvRect) * unit;
             rect.anchoredPosition = designPosition;
 
             var corners = new Vector3[4];
@@ -67,6 +73,12 @@ namespace Baryonyx.Home
                 0f
             );
         }
+
+        private static Vector2 TexelSize(Texture texture, Rect uv) =>
+            new(
+                Mathf.Round(texture.width * Mathf.Abs(uv.width)),
+                Mathf.Round(texture.height * Mathf.Abs(uv.height))
+            );
 
         /// <summary>Whole screen pixels per texel for a design dot size at the given scale.</summary>
         public static int DotPixels(float dotSize, float scale) =>

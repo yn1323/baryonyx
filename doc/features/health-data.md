@@ -28,6 +28,10 @@ EditorとAndroid以外の実行環境では、7日分のサンプルデータを
 それらを新しい画面から使うときは、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) でProviderの選択とPresenterの生成を行い、画面側でPresenterの状態を描画する。
 以降の画面構成・文言・寸法は削除前の仕様であり、再実装時に見直す。
 
+2026-09-27の企画見直しで、ゲームが扱う運動データを歩数だけにし、Health Connectの権限も歩数の読み取りだけとした（[運動データとルーン換算](exercise-rewards.md)）。
+起動時の同期は歩数だけを要求して読むが、[Androidライブラリのマニフェスト](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/AndroidManifest.xml)は以下の16種類の読み取り権限を宣言したままである。
+宣言と追加項目の読み取り処理を減らす作業は未着手である。
+
 ## ローカル表示画面
 
 [冒険の試作画面](game-wireframe.md)にも同じHealth Connect接続を組み込んだ。

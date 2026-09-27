@@ -24,7 +24,7 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity、案内人の画面（Tavern・Workshop・Temple・TravelOffice）
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンと展示室シーンの検査
 │   │   ├── Features/Account/
@@ -55,14 +55,25 @@ client/
 │   │   │   ├── Data/                    仮データのアセット
 │   │   │   ├── Editor/                  Prefabと画像の生成
 │   │   │   └── Tests/                   EditModeとPlayMode
-│   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ
+│   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ、戦闘画面のモック
 │   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
-│   │   │   └── Tests/EditMode/          計算・時間・再開の検査
+│   │   │   ├── Presentation/           戦闘画面のモックの表示と操作（Baryonyx.Runtime）
+│   │   │   ├── UI/                      モックのPrefabと、Codexで生成して縮小した画像
+│   │   │   ├── Editor/                  モックのPrefabの生成
+│   │   │   └── Tests/                   EditMode（計算・時間・再開）とPlayMode（モックの操作）
+│   │   ├── Features/Tavern/             酒場（パーティの編成・育成）の画面。工房 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
+│   │   │   ├── UI/                      画面のPrefab、案内人・背景・メニューのアイコンの画像
+│   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
+│   │   │   └── Editor/                  仮データと画面の生成
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/
+│   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
+│   │   │   │   ├── Characters/          キャラクター
+│   │   │   │   ├── Dungeons/            探索先の背景（分類名への整理は未対応）
+│   │   │   │   └── GameResources/       素材・通貨（ルーンのアイコン）
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
-│   │   │   └── UI/                      複数画面で使う共通UIプレハブとフォント
+│   │   │   └── UI/                      複数画面で使う共通UIプレハブとフォント。GuideMenu/に案内人の画面の共通部品、Buttons/に押すとアイコンと文字も暗くなるボタン
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
@@ -78,6 +89,9 @@ client/
 │   ├── Settings/                       既存テンプレートのURP設定
 │   ├── TextMesh Pro/                   外部パッケージのアセット
 │   └── DevCaptures/                    Git対象外の検証画像
+├── ArtSource/                          Unityに読み込ませない制作元。Shared/Art/と同じ分類で分ける
+│   ├── GameResources/                  素材・通貨のAseprite正本（IconRune.aseprite）
+│   └── UI/                             UI試作画像の生成指示の記録、Home/にボタンアイコンのAseprite正本
 ├── Packages/                           Unityパッケージの依存管理
 ├── ProjectSettings/                    Unityプロジェクトの設定
 ├── ci/
@@ -119,7 +133,7 @@ AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存し
 依存方向はApp → Health → ExerciseRewards → Account → Shared、App → Home → Sharedとし、逆向きに参照しない。
 HomeはHealth・ExerciseRewardsを参照せず、Appの[HomeBootstrap](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が仮データからPresenterを組み立てる。
 今日の歩数はHomeが定義する `IHomeStepSource` を通して受け取り、Appの [HomeStepSource](../../client/Assets/Baryonyx/App/Runtime/HomeStepSource.cs) がHealthの `HealthStepLink` へつなぐ。
-複数画面で使うキャラクター画像は `Shared/Art/Characters/` に置く。
+キャラクターや素材など、ゲーム内の対象の画像は[ゲーム内の対象の画像](#ゲーム内の対象の画像)に従って `Shared/Art/<分類>/` に置く。
 ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
 HealthのEditor処理はAppのオブジェクトを生成しない。
 接続設定アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
@@ -128,7 +142,10 @@ EditorとAndroid以外では、HealthRuntimeがプレビュー用Providerを選�
 認証・健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
 機能の詳しい動作は [健康データの機能文書](../features/health-data.md) を参照する。
 
-CombatはApp・Unityの画面へ依存しない。
+Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない。
+戦闘画面のモック（`Presentation/`・`Editor/`・`UI/`）は `Baryonyx.Runtime` に属し、戦闘計算を参照しない。
+モックはHomeの部品（ドット絵を整数倍に保つ `PixelPerfectRawImage`、角丸などの形の画像、文字の影）を借りている。
+正式な戦闘画面を作る時点で、複数の画面が使う部品を `Shared/` へ移す。
 冒険・戦闘・歩数の操作試作（Wireframe）は2026-09-24に削除した。経緯と評価は[操作試作の記録](../features/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト
@@ -170,6 +187,28 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 - OS・端末・外部SDKを呼び出す自作の接続処理は `Platform/` を基本とし、機能専用で小さいものは機能内に置いてよい。外部プラグイン本体はUPMまたは配布元が指定する場所に置く。
 - `Resources`・`StreamingAssets`・`Plugins` などの特殊フォルダーは、Unityやプラグインが要求する用途・位置でのみ使う。
 - Unityに読み込ませる必要のない制作元ファイルは、必要に応じて `ArtSource/` へ置く。生成コードは生成元と手順を明確にし、ビルド・テストの出力やキャッシュは実装と分ける。
+- 採用前の候補、確認用の拡大画像やGIF、下描きに使ったスクリプトは、リポジトリのルートの `output/`（Git対象外）に置く。
+
+### ゲーム内の対象の画像
+
+キャラ・敵・アイテム・武器・素材など、[データ索引](../catalog/README.md)に定義がある対象の画像は、使う画面が1つでも `Baryonyx/Shared/Art/<分類>/` に置く。
+画像の持ち主は表示する画面ではなく対象そのものであり、同じ対象を複数の画面が表示するためである。
+枠・影・ボタンのアイコンなど、画面専用のUI部品は従来どおり機能内の `UI/` に置く。
+
+フォルダー名は、データ索引の分類名をPascalCaseにしたものとする。
+`resources`（素材・通貨）だけは、Unityが特別に扱う `Resources` フォルダーと同名になるため `GameResources` とする。
+
+| データ索引の分類 | 画像のフォルダー |
+|---|---|
+| `characters`・`enemies`・`items`・`weapons`・`armor` | `Characters`・`Enemies`・`Items`・`Weapons`・`Armor` |
+| `skills`・`effects`・`stages` | `Skills`・`Effects`・`Stages` |
+| `resources` | `GameResources` |
+| その他の分類 | 分類名をPascalCaseにする |
+
+- ドット絵の正本は `client/ArtSource/<分類>/` に、書き出すPNGと同じ名前の `.aseprite` として置く（`Shared/Art/GameResources/IconRune.png` の正本は `ArtSource/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。Unityで使うのは書き出したPNGだけとする。
+- 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
+- 画像を置いたら、対象の個別文書の `art_files` にPNGと正本のパスを書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
+- 既存の `Shared/Art/Dungeons/` は分類名（`stages`）と一致していない。移すときは参照するコードと文書も併せて更新する。
 
 ### テストとアセンブリの境界
 

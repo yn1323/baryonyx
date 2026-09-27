@@ -260,7 +260,28 @@ namespace Baryonyx.Vfx.Hd2d
         /// Emits up to <paramref name="count"/> particles from a source at once, reusing the
         /// oldest ones. Use it with a non-looping source for rewards or transitions.
         /// </summary>
-        public void Burst(int sourceIndex, int count)
+        public void Burst(int sourceIndex, int count) =>
+            EmitBurst(sourceIndex, count, Vector2.zero);
+
+        /// <summary>
+        /// Emits like <see cref="Burst(int, int)"/>, centred on a world position instead of
+        /// the source anchor. Use it for targets that move or come from layout, such as the
+        /// icon a reward flies into.
+        /// </summary>
+        public void BurstAt(int sourceIndex, int count, Vector3 worldPosition)
+        {
+            CacheParticleLayer();
+            if (ParticleLayer == null || Sources == null)
+                return;
+            if (sourceIndex < 0 || sourceIndex >= Sources.Count || Sources[sourceIndex] == null)
+                return;
+            var rect = ParticleLayer.rect;
+            var anchor = rect.min + Vector2.Scale(rect.size, Sources[sourceIndex].Anchor);
+            Vector2 point = ParticleLayer.InverseTransformPoint(worldPosition);
+            EmitBurst(sourceIndex, count, point - anchor);
+        }
+
+        private void EmitBurst(int sourceIndex, int count, Vector2 offset)
         {
             if (!initialized || sourceIndex < 0 || sourceIndex >= states.Count || count <= 0)
                 return;
@@ -272,6 +293,7 @@ namespace Baryonyx.Vfx.Hd2d
             for (var index = 0; index < Mathf.Min(count, ordered.Count); index++)
             {
                 Respawn(state.Settings, ordered[index], 0f);
+                ordered[index].Origin += offset;
                 ApplyParticle(state.Settings, ordered[index]);
             }
         }

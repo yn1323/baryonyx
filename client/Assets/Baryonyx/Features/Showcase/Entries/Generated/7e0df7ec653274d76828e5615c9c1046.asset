@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 7e0df7ec653274d76828e5615c9c1046
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 7e0df7ec653274d76828e5615c9c1046
+  DisplayName: BattleInspectScreen
+  Description: Assets/Baryonyx/Features/Combat/UI/BattleInspectScreen.prefab
+  Category: 9
+  Asset: {fileID: 6911892570289795393, guid: 7e0df7ec653274d76828e5615c9c1046, type: 3}
+  PreviewPrefab: {fileID: 6911892570289795393, guid: 7e0df7ec653274d76828e5615c9c1046, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

@@ -6,7 +6,7 @@ using Baryonyx.Home;
 
 namespace Baryonyx.App
 {
-    // Homeの歩数パネルへ、サーバーに保存済みの今日の歩数・所持ルーンと、同期とルーンへの変換をつなぐ。
+    // Homeのワットパネルへ、サーバーに保存済みの今日の歩数・所持ルーンと、同期とルーンへの変換をつなぐ。
     public sealed class HomeStepSource : IHomeStepSource
     {
         private readonly HealthStepLink link;

@@ -10,9 +10,10 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. Icons are point-filtered pixel art;
     /// shadows, capsules and the resume card are smooth shapes with anti-aliased edges.
-    /// The navigation and world map icons are 48x48 drawings exported from their Aseprite
-    /// sources in client/ArtSource/UI/Home, so regeneration only fixes their import
-    /// settings.
+    /// The navigation icons are 24x24 drawings exported from their Aseprite sources in
+    /// client/ArtSource/UI/Home, so regeneration only fixes their import settings. The rune icon is shared game art
+    /// exported from its Aseprite source and is treated the same way, with mipmaps because
+    /// the flying runes shrink below their drawn size.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -29,22 +30,24 @@ namespace Baryonyx.Home.Editor
         public const string CapsulePath = ArtFolder + "/Capsule.png";
         public const string RoundedRectPath = ArtFolder + "/RoundedRect.png";
         public const string RoundedRingPath = ArtFolder + "/RoundedRing.png";
-        public const string ArrowsPath = ArtFolder + "/Arrows.png";
         public const string IconPartyPath = ArtFolder + "/IconParty.png";
         public const string IconEquipmentPath = ArtFolder + "/IconEquipment.png";
-        public const string IconGoalPath = ArtFolder + "/IconGoal.png";
         public const string IconCompassPath = ArtFolder + "/IconCompass.png";
         public const string IconSummonPath = ArtFolder + "/IconSummon.png";
         public const string IconSettingsPath = ArtFolder + "/IconSettings.png";
-        public const string IconRunePath = ArtFolder + "/IconRune.png";
 
-        // Exported from client/ArtSource/UI/Home/*.aseprite (48x48) and shown at 1x.
+        // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
+        public const string RuneTwinklePath = ArtFolder + "/RuneTwinkle.png";
+
+        // Exported from client/ArtSource/GameResources/IconRune.aseprite (24x24, full colour).
+        public const string IconRunePath = "Assets/Baryonyx/Shared/Art/GameResources/IconRune.png";
+
+        // Exported from client/ArtSource/UI/Home/*.aseprite (24x24) and shown at 4x.
         private static readonly string[] DrawnIconPaths =
         {
             IconPartyPath,
             IconEquipmentPath,
             IconSummonPath,
-            IconGoalPath,
             IconCompassPath,
         };
 
@@ -92,24 +95,14 @@ namespace Baryonyx.Home.Editor
             "......####......",
         };
 
-        private static readonly string[] Rune =
+        // A bright centre, the arms a little dimmer and faint tips, so it twinkles as a star.
+        private static readonly string[] RuneTwinkle =
         {
-            ".......##.......",
-            "......#..#......",
-            ".....#....#.....",
-            "....#..##..#....",
-            "...#...##...#...",
-            "..#....##....#..",
-            ".#.....##.....#.",
-            "#......##......#",
-            "#......##......#",
-            ".#.....##.....#.",
-            "..#....##....#..",
-            "...#...##...#...",
-            "....#..##..#....",
-            ".....#....#.....",
-            "......#..#......",
-            ".......##.......",
+            "..+..",
+            "..#..",
+            "+#O#+",
+            "..#..",
+            "..+..",
         };
 
         public static void EnsureAll()
@@ -132,8 +125,20 @@ namespace Baryonyx.Home.Editor
             );
             foreach (var path in DrawnIconPaths)
                 ImportDrawnIcon(path);
+            ImportDrawnIcon(IconRunePath, mipmaps: true);
             WritePattern(IconSettingsPath, Gear, c => c == '#' ? Color.white : Color.clear);
-            WritePattern(IconRunePath, Rune, c => c == '#' ? Color.white : Color.clear);
+            WritePattern(
+                RuneTwinklePath,
+                RuneTwinkle,
+                c =>
+                    c switch
+                    {
+                        'O' => Color.white,
+                        '#' => new Color(1f, 1f, 1f, 0.8f),
+                        '+' => new Color(1f, 1f, 1f, 0.4f),
+                        _ => Color.clear,
+                    }
+            );
 
             WriteShadow();
             WriteShade();
@@ -209,7 +214,6 @@ namespace Baryonyx.Home.Editor
                 new Vector4(20, 20, 20, 20),
                 _ => Color.white
             );
-            WriteArrows();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
@@ -270,12 +274,13 @@ namespace Baryonyx.Home.Editor
             return LoadTexture(path);
         }
 
-        private static void ImportDrawnIcon(string path)
+        // Mipmaps let a shrunken icon use an averaged copy instead of dropping pixels.
+        private static void ImportDrawnIcon(string path, bool mipmaps = false)
         {
             if (!File.Exists(path))
                 throw new InvalidOperationException("Home artwork is missing: " + path);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            ApplySpriteSettings(path, Vector4.zero, FilterMode.Point);
+            ApplySpriteSettings(path, Vector4.zero, FilterMode.Point, mipmaps: mipmaps);
         }
 
         private static void WritePattern(string path, string[] rows, Func<char, Color> palette)
@@ -363,42 +368,6 @@ namespace Baryonyx.Home.Editor
             );
         }
 
-        // Three chevrons (">>>") fading in from the left, used after "再開".
-        private static void WriteArrows()
-        {
-            const int width = 88;
-            const int height = 56;
-            float[] opacity = { 0.4f, 0.7f, 1f };
-            WriteSmooth(
-                ArrowsPath,
-                width,
-                height,
-                Vector4.zero,
-                (u, v) =>
-                {
-                    var p = new Vector2(u * width, v * height);
-                    float alpha = 0f;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        float x0 = 8f + i * 26f;
-                        var top = new Vector2(x0, height - 8f);
-                        var tip = new Vector2(x0 + 20f, height / 2f);
-                        var bottom = new Vector2(x0, 8f);
-                        float d = Mathf.Min(Segment(p, top, tip), Segment(p, tip, bottom));
-                        alpha = Mathf.Max(alpha, Mathf.Clamp01(4.5f - d) * opacity[i]);
-                    }
-                    return new Color(1f, 1f, 1f, alpha);
-                }
-            );
-        }
-
-        private static float Segment(Vector2 p, Vector2 a, Vector2 b)
-        {
-            var ab = b - a;
-            float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
-            return Vector2.Distance(p, a + ab * t);
-        }
-
         private static void WriteShadow()
         {
             const int width = 32;
@@ -461,7 +430,8 @@ namespace Baryonyx.Home.Editor
             string path,
             Vector4 border,
             FilterMode filter,
-            bool sprite = true
+            bool sprite = true,
+            bool mipmaps = false
         )
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -475,7 +445,7 @@ namespace Baryonyx.Home.Editor
                 importer.spriteBorder = border;
             }
             importer.filterMode = filter;
-            importer.mipmapEnabled = false;
+            importer.mipmapEnabled = mipmaps;
             importer.alphaIsTransparency = sprite;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;

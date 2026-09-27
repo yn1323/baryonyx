@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // ルーンが弾ける中心を、歩数パネルを押した位置にする。
+    // ルーンが弾ける中心を、ワットパネルを押した位置にする。
     public sealed class HomeRuneTapTests : ScenarioInputFixture
     {
         private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
@@ -39,17 +39,17 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator RunesBurstFromThePanelIconWhenThePointerIsElsewhere()
+        public IEnumerator RunesBurstFromTheClaimHintWhenThePointerIsElsewhere()
         {
             var view = default(HomeView);
             yield return LoadHome(value => view = value);
             MoveMouse(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
 
             yield return Tap(view);
-            Vector3 icon = view.RuneEffectLayer.InverseTransformPoint(
+            Vector3 hint = view.RuneEffectLayer.InverseTransformPoint(
                 view.RuneOrigin.TransformPoint(view.RuneOrigin.rect.center)
             );
-            Assert.That(Distance(view.BurstOrigin, icon), Is.LessThan(1f));
+            Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
         }
 
         [UnityTearDown]

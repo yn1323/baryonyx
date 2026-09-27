@@ -34,7 +34,7 @@ class DocumentationChecks(unittest.TestCase):
         if visual:
             fields += [
                 "silhouette: 細身", "palette: 青 | 白", "motifs: 月",
-                "personality: 慎重", "art_status: 未着手",
+                "personality: 慎重", "art_status: 未着手", "art_files: 未作成",
             ]
         return "\n".join(fields) + "\n---\n\n# テスト用\n\n[分類](README.md)\n"
 
@@ -80,6 +80,37 @@ class DocumentationChecks(unittest.TestCase):
         errors = check(self.root)
         self.assertTrue(any("比較用項目がない: palette" in e for e in errors))
         self.assertTrue(any("categoryと配置" in e for e in errors))
+
+    def test_art_files_are_linked_from_visual_index(self):
+        self.write("client/Assets/Art/Characters/Test.png", "png")
+        self.write("client/ArtSource/Characters/Test.aseprite", "aseprite")
+        files = "client/Assets/Art/Characters/Test.png | client/ArtSource/Characters/Test.aseprite"
+        self.write("doc/catalog/characters/character-test.md",
+                   self.entity().replace("art_files: 未作成", f"art_files: {files}"))
+        self.assertEqual([], check(self.root, write_index=True))
+        visual = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
+        self.assertIn("[Test.png](../../client/Assets/Art/Characters/Test.png)<br>"
+                      "[Test.aseprite](../../client/ArtSource/Characters/Test.aseprite) |", visual)
+
+    def test_visual_index_shows_entities_without_art(self):
+        self.write("doc/catalog/characters/character-test.md", self.entity())
+        self.assertEqual([], check(self.root, write_index=True))
+        visual = (self.root / "doc/art/visual-index.md").read_text(encoding="utf-8")
+        self.assertIn("| 未着手 | 未作成 |", visual)
+
+    def test_missing_art_file_and_field_fail(self):
+        self.write("doc/catalog/characters/character-test.md",
+                   self.entity().replace("art_files: 未作成", "art_files: client/Assets/Absent.png"))
+        self.write("doc/catalog/characters/character-other.md",
+                   self.entity("character-other").replace("art_files: 未作成\n", ""))
+        errors = check(self.root)
+        self.assertTrue(any("画像ファイルがない: client/Assets/Absent.png" in e for e in errors))
+        self.assertTrue(any("character-other.md: 画像ファイルの項目がない" in e for e in errors))
+
+    def test_art_file_outside_repository_fails(self):
+        self.write("doc/catalog/characters/character-test.md",
+                   self.entity().replace("art_files: 未作成", "art_files: ../outside.png"))
+        self.assertTrue(any("画像ファイルがない: ../outside.png" in e for e in check(self.root)))
 
     def test_invalid_date_status_and_missing_metadata_fail(self):
         self.write("doc/catalog/characters/character-test.md",

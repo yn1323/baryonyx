@@ -9,7 +9,9 @@ namespace Baryonyx.Home
     /// Turns home button presses into feedback. Resuming the adventure is delegated to the
     /// caller and accepted only once, so repeated taps cannot start two scene loads. When a
     /// step source is given, the step panel shows the steps and runes saved on the server,
-    /// and a tap syncs the steps, turns them into runes and plays the gain.
+    /// and a tap syncs the steps, turns them into runes and plays the gain. Screen buttons
+    /// (tavern, workshop, temple, travel office) are handed to <c>openScreen</c> when it is given; once a
+    /// screen opens, further taps are ignored while the scene changes.
     /// </summary>
     public sealed class HomePresenter : IDisposable
     {
@@ -17,21 +19,25 @@ namespace Baryonyx.Home
         private readonly HomeSnapshot snapshot;
         private readonly Func<bool> startAdventure;
         private readonly IHomeStepSource steps;
+        private readonly Func<HomeAction, bool> openScreen;
         private readonly CancellationTokenSource lifetime = new();
         private bool adventureStarted;
+        private bool screenOpened;
         private bool disposed;
 
         public HomePresenter(
             HomeView view,
             HomeSnapshot snapshot,
             Func<bool> startAdventure,
-            IHomeStepSource steps = null
+            IHomeStepSource steps = null,
+            Func<HomeAction, bool> openScreen = null
         )
         {
             this.view = view != null ? view : throw new ArgumentNullException(nameof(view));
             this.snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
             this.startAdventure = startAdventure;
             this.steps = steps;
+            this.openScreen = openScreen;
             view.ActionRequested += Handle;
             if (steps != null)
             {
@@ -47,6 +53,7 @@ namespace Baryonyx.Home
         }
 
         public bool AdventureStarted => adventureStarted;
+        public bool ScreenOpened => screenOpened;
         public bool StepSyncing => snapshot.StepSyncing;
 
         // 実行中または直前の歩数の取得。テストで完了を待つために公開する。
@@ -54,7 +61,7 @@ namespace Baryonyx.Home
 
         public void Handle(HomeAction action)
         {
-            if (disposed || adventureStarted)
+            if (disposed || adventureStarted || screenOpened)
                 return;
 
             if (action == HomeAction.Resume && startAdventure != null)
@@ -69,6 +76,12 @@ namespace Baryonyx.Home
             {
                 if (!snapshot.StepSyncing)
                     StepTask = RefreshStepsAsync(steps.SyncAsync, true);
+                return;
+            }
+
+            if (openScreen != null && openScreen(action))
+            {
+                screenOpened = true;
                 return;
             }
 

@@ -14,6 +14,8 @@ TYPES = {"specification", "reference", "source", "definition", "visual-entity", 
 STATUSES = {"未決", "候補", "一部確定", "確定", "見送り", "記録", "運用中", "テンプレート"}
 ENTITY_TYPES = {"definition", "visual-entity"}
 VISUAL_KEYS = ("silhouette", "palette", "motifs", "personality", "art_status")
+# Repository-relative image paths joined by " | ", or this word before any image exists.
+NO_ART_FILES = "未作成"
 LEGACY_FEATURES = {"health-data.md", "server-health.md"}
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>\n]+>|[^)\n]+)\)")
 ID = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
@@ -90,6 +92,12 @@ def needs_metadata(path: Path, docs: Path) -> bool:
     )
 
 
+def art_files(value: str) -> list[str]:
+    if value == NO_ART_FILES:
+        return []
+    return [part.strip() for part in value.split(" | ")]
+
+
 def cell(value: str) -> str:
     return html.escape(value, quote=False).replace("|", "&#124;").replace(chr(96), "&#96;")
 
@@ -162,6 +170,12 @@ def check(root: Path, write_index: bool = False) -> list[str]:
             for key in VISUAL_KEYS:
                 if not data.get(key):
                     errors.append(f"{label}: 比較用項目がない: {key}")
+            if not data.get("art_files"):
+                errors.append(f"{label}: 画像ファイルの項目がない: art_files")
+            for file in art_files(data.get("art_files", NO_ART_FILES)):
+                target = (root / file).resolve()
+                if not file or file.startswith("/") or not target.is_relative_to(root) or not target.is_file():
+                    errors.append(f"{label}: 画像ファイルがない: {file}")
         entities.append((path, data))
 
     generated = {}
@@ -191,15 +205,18 @@ def check(root: Path, write_index: bool = False) -> list[str]:
         body = "登録された画像対象はまだない。"
         if visual_entities:
             lines = [
-                "| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 |",
-                "|---|---|---|---|---|---|---|",
+                "| ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |",
+                "|---|---|---|---|---|---|---|---|",
             ]
             for path, data in sorted(visual_entities, key=lambda row: row[1].get("id", "")):
                 link = "../" + path.relative_to(docs).as_posix()
                 values = " | ".join(cell(data.get(key, "")) for key in VISUAL_KEYS)
+                files = art_files(data.get("art_files", NO_ART_FILES))
+                located = "<br>".join(f"[{cell(Path(file).name)}](../../{file})" for file in files)
                 lines.append(
                     f"| [{data.get('id', '')}]({link}) | "
-                    f"{cell(data.get('name', ''))}（{cell(data.get('status', ''))}） | {values} |"
+                    f"{cell(data.get('name', ''))}（{cell(data.get('status', ''))}） | {values} | "
+                    f"{located or NO_ART_FILES} |"
                 )
             body = "\n".join(lines)
         expected = replace_region(contents[visual_path], "visual-index", body)

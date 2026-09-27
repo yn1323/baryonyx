@@ -42,15 +42,28 @@ describe("日別歩数の検証", () => {
     expect(createDaysSchema().safeParse(values).success).toBe(false);
   });
 
+  it("日の区切りを朝4時とし、0時始まりの記録を拒否する", () => {
+    const schema = createDaysSchema();
+    expect(schema.safeParse(days()).success).toBe(true);
+    const shift = (value: string) =>
+      new Date(Date.parse(value) - 4 * 3_600_000).toISOString();
+    const midnight = days().map((d) => ({
+      ...d,
+      startAt: shift(d.startAt),
+      endAt: shift(d.endAt),
+    }));
+    expect(schema.safeParse(midnight).success).toBe(false);
+  });
+
   it("夏時間終了による25時間の日とUTC日時の表記差を受け入れる", () => {
     const starts = [
-      "2026-10-29T04:00:00Z",
-      "2026-10-30T04:00:00Z",
-      "2026-10-31T04:00:00Z",
-      "2026-11-01T04:00:00Z",
-      "2026-11-02T05:00:00Z",
-      "2026-11-03T05:00:00Z",
-      "2026-11-04T05:00:00Z",
+      "2026-10-29T08:00:00Z",
+      "2026-10-30T08:00:00Z",
+      "2026-10-31T08:00:00Z",
+      "2026-11-01T09:00:00Z",
+      "2026-11-02T09:00:00Z",
+      "2026-11-03T09:00:00Z",
+      "2026-11-04T09:00:00Z",
     ];
     const observedAt = "2026-11-04T16:00:00Z";
     const values = starts.map((startAt, index) => ({
@@ -69,13 +82,13 @@ describe("日別歩数の検証", () => {
 
   it("夏時間による23時間の日を受け入れ、期間の重なりを拒否する", () => {
     const starts = [
-      "2026-03-05T05:00:00Z",
-      "2026-03-06T05:00:00Z",
-      "2026-03-07T05:00:00Z",
-      "2026-03-08T05:00:00Z",
-      "2026-03-09T04:00:00Z",
-      "2026-03-10T04:00:00Z",
-      "2026-03-11T04:00:00Z",
+      "2026-03-05T09:00:00Z",
+      "2026-03-06T09:00:00Z",
+      "2026-03-07T09:00:00Z",
+      "2026-03-08T08:00:00Z",
+      "2026-03-09T08:00:00Z",
+      "2026-03-10T08:00:00Z",
+      "2026-03-11T08:00:00Z",
     ];
     const observedAt = "2026-03-11T16:00:00Z";
     const values = starts.map((startAt, index) => ({
@@ -89,7 +102,7 @@ describe("日別歩数の検証", () => {
     }));
     const schema = createDaysSchema(Date.parse(observedAt));
     expect(schema.safeParse(values).success).toBe(true);
-    values[3].endAt = "2026-03-09T05:00:00Z";
+    values[3].endAt = "2026-03-09T09:00:00Z";
     expect(schema.safeParse(values).success).toBe(false);
   });
   it("欠損とゼロを区別し、負値・重複・不正な日時とタイムゾーンを拒否する", () => {

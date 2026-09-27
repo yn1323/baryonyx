@@ -46,7 +46,8 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと保存済みの歩数の表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeのボタンから各画面へ移って戻ること、メニュー・リスト・決定の通知、地図の印の選択を検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したワットの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
 TopとHomeのシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 

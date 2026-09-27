@@ -55,6 +55,7 @@ baryonyx/
 │   ├── Assets/            Unityが読み込むコードとアセット
 │   ├── Packages/          Unityパッケージの依存管理
 │   ├── ProjectSettings/   Unityプロジェクトの設定
+│   ├── ArtSource/         Unityに読み込ませない画像の正本（.aseprite）
 │   └── ci/                クライアントのビルド・検証補助
 ├── server/                 Honoバックエンド
 │   ├── src/               実装と近接するテスト

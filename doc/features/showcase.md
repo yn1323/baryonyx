@@ -36,6 +36,7 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 - その他
 
 分類はアセットのパスと種類から自動推定する。
+パスに `character` または `/enemies/` を含む画像はキャラクターに入る（敵の分類はないため、敵もキャラクターに含める）。
 
 ## 表示と操作
 
@@ -244,6 +245,12 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
 展示室のカタログには `HomeScreen` Prefab、Health Connectの連携モーダル `HealthLinkModal` Prefab、`Top` シーンを登録済みである。
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
+戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
+シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。
+案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
+プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
+それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。
+2026-09-27まではプレビューで縮尺を誤り、HomeScreenのトーマや戦闘画面のキャラが画面を覆うほど大きく表示されていた。
 実機のノッチ・非対称Safe AreaはUnity EditorのGameビューだけでは確定できないため、端末確認時に追加で確認する。
 
 ## 実装状況

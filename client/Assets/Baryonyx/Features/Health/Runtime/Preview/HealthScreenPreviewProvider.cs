@@ -77,13 +77,13 @@ namespace Baryonyx.Health
             if (Permission != HealthPermission.Granted)
                 return Task.FromResult(new HealthReadResult(HealthReadStatus.PermissionRequired));
             var now = clock().ToOffset(TimeSpan.FromHours(9));
-            var today = new DateTimeOffset(now.Date, now.Offset);
+            var today = new DateTimeOffset(HealthDays.DayOf(now.DateTime), now.Offset);
             long[] steps = { 6432, 0, 0, 8214, 10532, 4218, 7500 };
             var days = new HealthDay[steps.Length];
             var jsonDays = new JArray();
             for (int i = 0; i < days.Length; i++)
             {
-                var start = today.AddDays(-i);
+                var start = today.AddDays(-i).AddHours(HealthDays.StartHour);
                 days[i] = new HealthDay
                 {
                     day = start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),

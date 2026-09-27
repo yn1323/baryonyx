@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Baryonyx.Vfx.Hd2d;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Baryonyx.Home
@@ -28,7 +30,6 @@ namespace Baryonyx.Home
         public GameObject StepDetails;
         public GameObject UnlinkedDetails;
         public TMP_Text StepsLabel;
-        public TMP_Text GoalLabel;
         public Image[] Segments = Array.Empty<Image>();
         public TMP_Text RemainingLabel;
         public TMP_Text ClaimLabel;
@@ -50,13 +51,19 @@ namespace Baryonyx.Home
         public Button PartyWorldButton;
 
         [Header("左下")]
-        public Button PartyButton;
-        public Button EquipmentButton;
-        public Button SummonButton;
-        public Button GoalsButton;
+        [FormerlySerializedAs("PartyButton")]
+        public Button TavernButton;
+
+        [FormerlySerializedAs("EquipmentButton")]
+        public Button WorkshopButton;
+
+        [FormerlySerializedAs("SummonButton")]
+        public Button TempleButton;
+
+        [FormerlySerializedAs("WorldMapButton")]
+        public Button TravelOfficeButton;
 
         [Header("右下")]
-        public Button WorldMapButton;
         public Button ResumeButton;
         public TMP_Text DestinationNameLabel;
         public TMP_Text DestinationFloorLabel;
@@ -79,7 +86,7 @@ namespace Baryonyx.Home
         public float NoticeSeconds = 1.4f;
 
         [Header("ルーン獲得")]
-        // 粒子は歩数パネルのルーンのアイコンから出て、右上の所持ルーンのアイコンへ飛ぶ。
+        // 粒子はワットパネルを押した位置（分からなければ案内の文字）から出て、右上の所持ルーンのアイコンへ飛ぶ。
         public RectTransform RuneOrigin;
         public RectTransform RuneTarget;
         public RectTransform RuneEffectLayer;
@@ -89,11 +96,53 @@ namespace Baryonyx.Home
         public CanvasGroup GainGroup;
         public TMP_Text GainLabel;
 
+        // ルーン獲得のキラキラ。発生源は、0番が1粒着くごと、1番が最後の1粒、2番が弾けた瞬間、
+        // 3番が飛んでいるルーンの通り道で使う。
+        public Hd2dEmberEmitter RuneSparkles;
+
+        [Min(0)]
+        public int RuneArrivalSparkles = 3;
+
+        [Min(0)]
+        public int RuneFinalSparkles = 16;
+
+        [Min(0)]
+        public int RuneBurstSparkles = 24;
+
+        // 飛んでいる1粒が通り道にキラキラを1つ残す間隔。
+        [Min(0.02f)]
+        public float RuneTrailSeconds = 0.07f;
+
+        // キラキラの後ろに漂う、ぼかした光のモヤ。発生源の順番はキラキラと同じ。
+        public Hd2dEmberEmitter RuneHaze;
+
+        [Min(0)]
+        public int RuneArrivalHaze = 1;
+
+        [Min(0)]
+        public int RuneFinalHaze = 4;
+
+        [Min(0)]
+        public int RuneBurstHaze = 6;
+
+        // 通り道のキラキラをこの数だけ残すごとに、モヤを1つ残す。
+        [Min(1)]
+        public int RuneTrailHazeEvery = 2;
+
+        // 所持ルーンのアイコンに重ねる加算の光。1粒ごとに小さく、最後の1粒で大きく光る。
+        public Image RuneGlow;
+
+        [Range(0f, 1f)]
+        public float RuneGlowArrivalAlpha = 0.3f;
+
+        [Range(0f, 1f)]
+        public float RuneGlowFinalAlpha = 0.75f;
+
         // 粒子の数は獲得量の桁数に応じて増やし、この数を上限にする。
         [Range(1, 64)]
         public int RuneParticleMax = 40;
 
-        // 粒子が歩数パネルから四方へ広がる時間。
+        // 粒子がワットパネルから四方へ広がる時間。
         [Min(0.01f)]
         public float RuneBurstSeconds = 0.25f;
 
@@ -112,8 +161,12 @@ namespace Baryonyx.Home
         [Min(0f)]
         public float RuneArrivalSpreadSeconds = 0.15f;
 
+        // 吸い込まれる時間の平均。粒子ごとに ±RuneFlySecondsJitter の割合でばらつかせる。
         [Min(0.01f)]
-        public float RuneFlySeconds = 0.35f;
+        public float RuneFlySeconds = 0.55f;
+
+        [Range(0f, 0.9f)]
+        public float RuneFlySecondsJitter = 0.4f;
 
         // 所持数の文字は、吸い込んだ量に比例してこの倍率まで大きくなる。
         [Min(1f)]
@@ -131,6 +184,12 @@ namespace Baryonyx.Home
         private const float PeakHoldSeconds = 0.15f;
         private const float ShrinkSeconds = 0.3f;
         private const float DriftSpeed = 40f;
+        private const int ArrivalSource = 0;
+        private const int FinalSource = 1;
+        private const int BurstSource = 2;
+        private const int TrailSource = 3;
+        private const float FinalGlowSeconds = 0.5f;
+        private const float FinalGlowGrowth = 0.5f;
 
         private readonly List<(Button button, UnityEngine.Events.UnityAction listener)> bindings =
             new();
@@ -147,7 +206,7 @@ namespace Baryonyx.Home
         // 最後の波で金色にした所持数を、演出の終わりに戻す色。
         private Color? runesLabelColor;
 
-        // 歩数パネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
+        // ワットパネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
         private Vector2? tapScreenPoint;
 
         public event Action<HomeAction> ActionRequested;
@@ -165,12 +224,12 @@ namespace Baryonyx.Home
         {
             Bind(StepButton, HomeAction.SyncSteps);
             Bind(SettingsButton, HomeAction.Settings);
-            Bind(PartyWorldButton, HomeAction.Party);
-            Bind(PartyButton, HomeAction.Party);
-            Bind(EquipmentButton, HomeAction.Equipment);
-            Bind(SummonButton, HomeAction.Summon);
-            Bind(GoalsButton, HomeAction.Goals);
-            Bind(WorldMapButton, HomeAction.WorldMap);
+            // The party standing in the world opens the tavern, where the party is formed.
+            Bind(PartyWorldButton, HomeAction.Tavern);
+            Bind(TavernButton, HomeAction.Tavern);
+            Bind(WorkshopButton, HomeAction.Workshop);
+            Bind(TempleButton, HomeAction.Temple);
+            Bind(TravelOfficeButton, HomeAction.TravelOffice);
             Bind(ResumeButton, HomeAction.Resume);
             HideToast();
             HideNotice();
@@ -198,10 +257,9 @@ namespace Baryonyx.Home
                 StepDetails.SetActive(state.ShowSteps);
             if (UnlinkedDetails != null)
                 UnlinkedDetails.SetActive(!state.ShowSteps);
-            Set(StepsLabel, state.StepsText);
+            Set(StepsLabel, state.WattsText);
             if (StepsLabel != null)
                 StepsLabel.color = state.DailyAchieved ? GaugeAchieved : TextMain;
-            Set(GoalLabel, state.GoalText);
             for (int i = 0; i < Segments.Length; i++)
             {
                 if (Segments[i] == null)
@@ -348,11 +406,23 @@ namespace Baryonyx.Home
             Vector3 origin = TapPoint() ?? PointOf(RuneOrigin);
             BurstOrigin = origin;
             Vector3 target = PointOf(RuneTarget);
+            Vector3 targetWorld = RuneEffectLayer.TransformPoint(target);
+            if (RuneGlow != null)
+            {
+                RuneGlow.rectTransform.localPosition = target;
+                RuneGlow.rectTransform.localScale = Vector3.one;
+                SetAlpha(RuneGlow, 0f);
+                RuneGlow.gameObject.SetActive(true);
+            }
             float reach = BurstDistanceFor(granted, RuneBurstNearDistance, RuneBurstFarDistance);
             var direction = new Vector3[count];
             var distance = new float[count];
             var size = new float[count];
             var converge = new float[count];
+            var fly = new float[count];
+            var nextTrail = new float[count];
+            var trails = new int[count];
+            float jitter = Mathf.Clamp(RuneFlySecondsJitter, 0f, 0.9f);
             for (int i = 0; i < count; i++)
             {
                 float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
@@ -363,6 +433,8 @@ namespace Baryonyx.Home
                     RuneBurstSeconds
                     + RuneHoverSeconds
                     + UnityEngine.Random.Range(0f, RuneArrivalSpreadSeconds);
+                fly[i] = RuneFlySeconds * UnityEngine.Random.Range(1f - jitter, 1f + jitter);
+                nextTrail[i] = UnityEngine.Random.Range(0f, RuneTrailSeconds);
             }
             while (particles.Count < count)
             {
@@ -370,6 +442,9 @@ namespace Baryonyx.Home
                 copy.name = RuneParticle.name;
                 particles.Add(copy);
             }
+            // キラキラはルーンの手前に描く。後ろでは96pxのルーンに隠れて見えない。
+            if (RuneSparkles != null)
+                RuneSparkles.transform.SetAsLastSibling();
 
             runesLabelColor ??= RunesLabel != null ? RunesLabel.color : Color.white;
             Color labelColor = runesLabelColor.Value;
@@ -379,6 +454,13 @@ namespace Baryonyx.Home
                 GainLabel.text = "+" + HomeViewState.Runes(granted);
                 GainLabel.rectTransform.localScale = Vector3.one;
             }
+
+            Sparkle(
+                BurstSource,
+                RuneBurstSparkles,
+                RuneBurstHaze,
+                RuneEffectLayer.TransformPoint(origin)
+            );
 
             var landed = new bool[count];
             int arrived = 0;
@@ -394,7 +476,7 @@ namespace Baryonyx.Home
                     if (landed[i])
                         continue;
                     var particle = particles[i];
-                    float flight = (elapsed - converge[i]) / RuneFlySeconds;
+                    float flight = (elapsed - converge[i]) / fly[i];
                     if (flight >= 1f)
                     {
                         // フレームが飛んでも、着いた粒子を必ず1回ずつ数える。
@@ -406,6 +488,15 @@ namespace Baryonyx.Home
                         firstArrival = Mathf.Min(firstArrival, elapsed);
                         if (arrived == count)
                             lastArrival = elapsed;
+                        if (arrived == count)
+                            Sparkle(FinalSource, RuneFinalSparkles, RuneFinalHaze, targetWorld);
+                        else
+                            Sparkle(
+                                ArrivalSource,
+                                RuneArrivalSparkles,
+                                RuneArrivalHaze,
+                                targetWorld
+                            );
                         continue;
                     }
                     if (!particle.gameObject.activeSelf)
@@ -441,11 +532,34 @@ namespace Baryonyx.Home
                         rect.localScale = Vector3.one * Mathf.Lerp(size[i], 0.4f, e);
                     }
                     particle.color = RuneParticle.color;
+
+                    // 広がるときも吸い込まれるときも、通り道にキラキラとモヤを残す。
+                    if (elapsed >= nextTrail[i])
+                    {
+                        nextTrail[i] = elapsed + RuneTrailSeconds;
+                        trails[i]++;
+                        int haze = trails[i] % Mathf.Max(1, RuneTrailHazeEvery) == 0 ? 1 : 0;
+                        Sparkle(TrailSource, 1, haze, rect.position);
+                    }
                 }
 
                 bumpElapsed += Time.unscaledDeltaTime;
                 float bump = Mathf.Sin(Mathf.PI * Mathf.Clamp01(bumpElapsed / BumpSeconds));
                 RuneTarget.localScale = Vector3.one * (1f + BumpScale * bump);
+
+                // 1粒ごとの小さな光と、最後の1粒で広がりながら消える大きな光。
+                if (RuneGlow != null)
+                {
+                    float final = Mathf.Clamp01((elapsed - lastArrival) / FinalGlowSeconds);
+                    float flash = elapsed >= lastArrival ? (1f - final) * (1f - final) : 0f;
+                    SetAlpha(
+                        RuneGlow,
+                        Mathf.Max(RuneGlowArrivalAlpha * bump, RuneGlowFinalAlpha * flash)
+                    );
+                    RuneGlow.rectTransform.localScale =
+                        Vector3.one
+                        * (1f + FinalGlowGrowth * (elapsed >= lastArrival ? final : 0f));
+                }
 
                 // 吸い込んだ量に比例して所持数の文字を大きくし、全部が着いたら少し止めて戻す。
                 float peak = Mathf.Max(1f, RunePeakScale);
@@ -496,6 +610,8 @@ namespace Baryonyx.Home
                     particle.gameObject.SetActive(false);
             if (RuneTarget != null)
                 RuneTarget.localScale = Vector3.one;
+            if (RuneGlow != null)
+                RuneGlow.gameObject.SetActive(false);
             if (RunesLabel != null)
             {
                 RunesLabel.rectTransform.localScale = Vector3.one;
@@ -566,10 +682,26 @@ namespace Baryonyx.Home
             return point;
         }
 
+        // キラキラとモヤを、同じ番号の発生源から同じ位置に出す。
+        private void Sparkle(int source, int sparkles, int haze, Vector3 worldPosition)
+        {
+            if (RuneSparkles != null)
+                RuneSparkles.BurstAt(source, sparkles, worldPosition);
+            if (RuneHaze != null)
+                RuneHaze.BurstAt(source, haze, worldPosition);
+        }
+
+        private static void SetAlpha(Graphic graphic, float alpha)
+        {
+            var color = graphic.color;
+            color.a = alpha;
+            graphic.color = color;
+        }
+
         private static Vector3 Bezier(Vector3 start, Vector3 control, Vector3 end, float t) =>
             Vector3.Lerp(Vector3.Lerp(start, control, t), Vector3.Lerp(control, end, t), t);
 
-        // 展示室のプレビューには受け手がいないため、歩数パネルで獲得と獲得なしを交互に見せる。
+        // 展示室のプレビューには受け手がいないため、ワットパネルで獲得と獲得なしを交互に見せる。
         private void PlayPreview(HomeAction action)
         {
             if (action != HomeAction.SyncSteps)

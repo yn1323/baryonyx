@@ -70,15 +70,15 @@ object HealthBridge {
                         if (!readable) { finish(id, "permission_required"); return@launch }
                         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
                         val zone = ZoneId.systemDefault()
-                        val today = now.atZone(zone).toLocalDate()
+                        val today = HealthDays.today(now, zone)
                         val records = if (stepsOnly) null else HealthRecords.readWeek(client, grantedPermissions,
-                            today.minusDays(6).atStartOfDay(zone).toInstant(), now)
+                            HealthDays.start(today.minusDays(6), zone), now)
                         val days = JSONArray()
                         for (offset in 6 downTo 0) {
                             ensureActive()
                             val date = today.minusDays(offset.toLong())
-                            val start = date.atStartOfDay(zone).toInstant()
-                            val end = if (offset == 0) now else date.plusDays(1).atStartOfDay(zone).toInstant()
+                            val start = HealthDays.start(date, zone)
+                            val end = if (offset == 0) now else HealthDays.start(date.plusDays(1), zone)
                             var value: Long? = null
                             var stepsStatus = "permission_required"
                             if (HealthPermission.getReadPermission(StepsRecord::class) in grantedPermissions) {

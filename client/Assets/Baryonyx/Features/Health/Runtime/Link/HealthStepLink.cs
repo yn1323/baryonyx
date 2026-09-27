@@ -83,7 +83,7 @@ namespace Baryonyx.Health
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
             this.server = server ?? throw new ArgumentNullException(nameof(server));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
-            this.today = today ?? (() => DateTime.Today);
+            this.today = today ?? HealthDays.Today;
         }
 
         public Task ConnectAsync(CancellationToken token) => server.ConnectAsync(token);
@@ -147,7 +147,7 @@ namespace Baryonyx.Health
         public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
             server.ClaimRunesAsync(token);
 
-        // サーバーに保存済みの今日の歩数を返す。
+        // サーバーに保存済みの今日（朝4時区切り）の歩数を返す。
         public async Task<HealthStepReading> ReadTodayAsync(CancellationToken token)
         {
             var date = today().Date;

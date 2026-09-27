@@ -1,4 +1,3 @@
-using System;
 using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
@@ -12,7 +11,8 @@ namespace Baryonyx.App
     /// from the server through the shared <see cref="GameServices"/>. Runes come from the
     /// server too unless the sample data turns on mock rune gains. The adventure button
     /// leaves the scene only when a destination is set; otherwise it shows the same
-    /// "coming soon" feedback as the other mock buttons.
+    /// "coming soon" feedback as the other mock buttons. The tavern, workshop, temple and travel office
+    /// buttons open their guide screen scenes behind the shutter.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -58,9 +58,10 @@ namespace Baryonyx.App
                 steps = new HomeMockRuneSource(steps, data.Runes, data.MockGrantedRunes);
             presenter = new HomePresenter(
                 view,
-                data.ToSnapshot(DateTime.Today),
+                data.ToSnapshot(HealthDays.Today()),
                 string.IsNullOrWhiteSpace(adventureSceneName) ? null : StartAdventure,
-                steps
+                steps,
+                OpenScreen
             );
         }
 
@@ -85,6 +86,34 @@ namespace Baryonyx.App
                 return transition.PlayOut(LoadAdventure);
 
             LoadAdventure();
+            return true;
+        }
+
+        /// <summary>The guide screen scene each Home button opens (built by GuideSceneSetup).</summary>
+        public static string ScreenSceneFor(HomeAction action) =>
+            action switch
+            {
+                HomeAction.Tavern => "Tavern",
+                HomeAction.Workshop => "Workshop",
+                HomeAction.Temple => "Temple",
+                HomeAction.TravelOffice => "TravelOffice",
+                _ => null,
+            };
+
+        private bool OpenScreen(HomeAction action)
+        {
+            var scene = ScreenSceneFor(action);
+            if (scene == null)
+                return false;
+            if (!Application.CanStreamedLevelBeLoaded(scene))
+            {
+                Debug.LogError($"The scene '{scene}' is not enabled in Build Settings.", this);
+                return false;
+            }
+            void Load() => SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
+            if (transition != null)
+                return transition.PlayOut(Load);
+            Load();
             return true;
         }
 

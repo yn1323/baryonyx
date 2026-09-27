@@ -15,23 +15,14 @@ namespace Baryonyx.Home
         public HomeStepLink StepLink = HomeStepLink.Linked;
 
         [Min(0)]
-        [Tooltip("今日の目標以上にすると、達成時の表示になります。")]
+        [Tooltip("8,000以上にすると、ボーナスをすべて解放した表示になります。")]
         public int Steps = 3820;
-
-        [Min(0)]
-        public int DailyGoal = 5000;
-
-        [Min(0)]
-        public int WeeklyDone = 2;
-
-        [Min(0)]
-        public int WeeklyTarget = 3;
 
         [Min(0)]
         public int Runes = 12480;
 
         [Tooltip(
-            "有効にすると、所持ルーンに上の値を表示し、歩数パネルを押すたびに下の仮の獲得量を足します。サーバーのルーンは増えません。"
+            "有効にすると、所持ルーンに上の値を表示し、ワットパネルを押すたびに下の仮の獲得量を足します。サーバーのルーンは増えません。"
         )]
         public bool MockRuneGain = true;
 
@@ -48,9 +39,6 @@ namespace Baryonyx.Home
             {
                 StepLink = StepLink,
                 Steps = Steps,
-                DailyGoal = DailyGoal,
-                WeeklyDone = WeeklyDone,
-                WeeklyTarget = WeeklyTarget,
                 Runes = Runes,
                 DestinationName = DestinationName,
                 DestinationFloor = DestinationFloor,

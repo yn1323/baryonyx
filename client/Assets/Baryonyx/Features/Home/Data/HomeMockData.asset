@@ -14,9 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.HomeMockData
   StepLink: 0
   Steps: 3820
-  DailyGoal: 5000
-  WeeklyDone: 2
-  WeeklyTarget: 3
   Runes: 12480
   MockRuneGain: 1
   MockGrantedRunes: 1340
