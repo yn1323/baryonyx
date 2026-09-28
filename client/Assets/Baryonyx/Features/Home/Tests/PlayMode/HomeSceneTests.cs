@@ -33,10 +33,9 @@ namespace Baryonyx.Tests.PlayMode
                 .GetResult()
                 .Days;
             services.Server.SaveAsync(days, CancellationToken.None).GetAwaiter().GetResult();
-            var todayKey = Baryonyx.Health.HealthDays.Today().ToString(
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture
-            );
+            var todayKey = Baryonyx
+                .Health.HealthDays.Today()
+                .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var today = days.FirstOrDefault(day => day.day == todayKey && day.hasValue);
 
             var bootstrap = default(HomeBootstrap);
@@ -53,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
             // 所持ルーンは仮データではなくサーバーの残高を表示する。まだ変換していないので0。
             snapshot.Runes = 0;
             var expected = HomeViewState.From(snapshot);
-            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.WattsText));
+            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.UptText));
             Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
             Assert.That(view.RunesLabel.text, Is.EqualTo(expected.RunesText));
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo(expected.DestinationNameText));
@@ -261,7 +260,7 @@ namespace Baryonyx.Tests.PlayMode
             {
                 var tint = button as TintGroupButton;
                 Assert.That(tint, Is.Not.Null, button.name);
-                // ワットパネルは案内の文字だけで、アイコンを持たない。
+                // UPTパネルは案内の文字だけで、アイコンを持たない。
                 if (button != view.StepButton)
                     Assert.That(
                         tint.TintGraphics.OfType<UnityEngine.UI.Image>()

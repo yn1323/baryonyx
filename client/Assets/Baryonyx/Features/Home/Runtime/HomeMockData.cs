@@ -22,7 +22,7 @@ namespace Baryonyx.Home
         public int Runes = 12480;
 
         [Tooltip(
-            "有効にすると、所持ルーンに上の値を表示し、ワットパネルを押すたびに下の仮の獲得量を足します。サーバーのルーンは増えません。"
+            "有効にすると、所持ルーンに上の値を表示し、UPTパネルを押すたびに下の仮の獲得量を足します。サーバーのルーンは増えません。"
         )]
         public bool MockRuneGain = true;
 

@@ -2,7 +2,7 @@
 id: system-architecture
 type: reference
 status: 一部確定
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # システム全体の構成
@@ -18,7 +18,7 @@ updated: 2026-09-27
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |
 | アカウント | 端末の秘密値によるゲストで始める。Google認証は健康データ読み取りと独立した任意の操作で、ゲストとの結び付けは未実装 |
 | サーバー | [app.ts](../server/src/app.ts)が疎通確認と健康データAPIを組み立てる。Hono・Workers・D1を使用する |
-| 同期 | Topの起動時とHomeのワットパネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
+| 同期 | Topの起動時とHomeのUPTパネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
 
 現在の画面は健康データをメモリで扱う。
 ゲーム進行の保存要件と未決事項は[アカウントとセーブ](features/accounts-save.md)を参照する。
@@ -29,7 +29,7 @@ updated: 2026-09-27
 Androidの運動データはHealth Connectへ集約し、扱うのは歩数だけとする。
 サービス連携の企画は[運動報酬](features/exercise-rewards.md)、iOS対応の範囲も同文書を参照する。
 
-[ワットボーナス](features/step-bonus.md)の判定と、選んだボーナスの保存を端末とサーバーのどちらで行うかは未決とする。
+[UPTボーナス](features/step-bonus.md)の判定と、選んだボーナスの保存を端末とサーバーのどちらで行うかは未決とする。
 
 ## 未決事項
 

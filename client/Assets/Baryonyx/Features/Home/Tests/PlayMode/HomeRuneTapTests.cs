@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // ルーンが弾ける中心を、ワットパネルを押した位置にする。
+    // ルーンが弾ける中心を、UPTパネルを押した位置にする。
     public sealed class HomeRuneTapTests : ScenarioInputFixture
     {
         private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
@@ -50,6 +50,32 @@ namespace Baryonyx.Tests.PlayMode
                 view.RuneOrigin.TransformPoint(view.RuneOrigin.rect.center)
             );
             Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
+        }
+
+        // 所持ルーンのアイコンも所持数の文字と一緒に大きくなり、文字に重ならず、終わると戻る。
+        [UnityTest]
+        public IEnumerator RuneIconGrowsWithTheBalance()
+        {
+            var view = default(HomeView);
+            yield return LoadHome(value => view = value);
+            Vector2 restPivot = view.RuneTarget.pivot;
+
+            yield return Tap(view);
+            var icon = new Vector3[4];
+            var label = new Vector3[4];
+            float largest = 1f;
+            while (view.RuneGainPlaying)
+            {
+                largest = Mathf.Max(largest, view.RuneTarget.localScale.x);
+                view.RuneTarget.GetWorldCorners(icon);
+                view.RunesLabel.rectTransform.GetWorldCorners(label);
+                Assert.That(icon[2].x, Is.LessThanOrEqualTo(label[0].x + 2f));
+                yield return null;
+            }
+
+            Assert.That(largest, Is.GreaterThan(1.35f));
+            Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
         }
 
         [UnityTearDown]

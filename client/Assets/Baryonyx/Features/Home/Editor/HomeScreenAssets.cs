@@ -28,7 +28,7 @@ namespace Baryonyx.Home.Editor
             "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
         /// <summary>Toma's standing sprite on a 100x100 canvas (centred, feet on the bottom row).</summary>
-        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.png";
+        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.aseprite";
 
         private const string FogPrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
@@ -408,7 +408,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 stepsRow,
                 "StepsUnit",
-                "ワット",
+                "UPT",
                 48,
                 TextSub,
                 TextAlignmentOptions.BottomLeft
@@ -473,7 +473,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 unlinked,
                 "UnlinkedBody",
-                "1歩が1ワットになり、仲間の力になります",
+                "1歩が1UPTになり、仲間の力になります",
                 32,
                 TextSub,
                 TextAlignmentOptions.MidlineLeft
@@ -572,18 +572,18 @@ namespace Baryonyx.Home.Editor
         {
             var nav = Rect("Navigation", safe);
             // 128-wide buttons (the touch minimum) keep the row clear of the party.
-            Corner(nav, Vector2.zero, new Vector2(48, 32), new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight));
+            Corner(
+                nav,
+                Vector2.zero,
+                new Vector2(48, 32),
+                new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight)
+            );
             var row = nav.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = NavSpacing;
             row.childControlWidth = row.childControlHeight = true;
             row.childForceExpandWidth = row.childForceExpandHeight = false;
 
-            view.TavernButton = NavButton(
-                nav,
-                "TavernButton",
-                "酒場",
-                HomeScreenArt.IconPartyPath
-            );
+            view.TavernButton = NavButton(nav, "TavernButton", "酒場", HomeScreenArt.IconPartyPath);
             view.WorkshopButton = NavButton(
                 nav,
                 "WorkshopButton",

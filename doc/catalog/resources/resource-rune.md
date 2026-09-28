@@ -2,7 +2,7 @@
 id: resource-rune
 type: visual-entity
 status: 一部確定
-updated: 2026-09-27
+updated: 2026-09-28
 name: ルーン
 category: resources
 silhouette: 横から見たダイヤモンド（平らな上面と下の尖り）
@@ -10,7 +10,7 @@ palette: 藍から水色までの青 | 面ごとに暗くした輪郭
 motifs: ブリリアントカット風の面 | 宝石の光沢
 personality: 対象外
 art_status: 試作をHomeで表示中
-art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png | client/ArtSource/GameResources/IconRune.aseprite
+art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 ---
 
 # ルーン
@@ -24,11 +24,11 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png | client
 | 定義の根拠・決定日・参照元 | [初期企画](../../game/brief.md)、[ルーン経済](../../features/economy.md) |
 | 対象の役割・説明 | 現実活動から得る主軸資源 |
 | 必要な画像用途 | 所持数に添えるアイコン、獲得時に飛ぶ粒 |
-| ゲーム内の実装・アセット | [IconRune.png](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png)。Homeの所持ルーンと獲得演出の粒で使う |
+| ゲーム内の実装・アセット | [IconRune.aseprite](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite)。Homeの所持ルーンと獲得演出の粒で使う |
 
 ## 確定した設定
 
-運動量（ワット）から得る主軸資源として「ルーン」を使う。
+運動量（UPT）から得る主軸資源として「ルーン」を使う。
 ルーンは課金で販売しない（2026-09-27の[企画見直し](../../game/redesign-2026-09-27.md)）。
 用途・経済の方針は[ルーン経済](../../features/economy.md)を正本とする。
 
@@ -63,11 +63,11 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png | client
 | 項目 | 内容 |
 |---|---|
 | 用途・構図・視点・ポーズ・背景 | Homeのアイコン。横から見た向き、透明背景 |
-| 解像度・透過・ファイル形式・差分規格 | 24×24、透明背景。正本はインデックスカラー（0番が透明、1〜9番が暗い順の9色）の `.aseprite`、Unityで使うのは書き出したPNG。Homeでは着色せず、右上の所持ルーンを2倍（48）、獲得演出の粒を4倍（96）で表示する。粒は飛ぶ途中で縮むため、ドットが抜けないようミップマップを有効にしている |
-| 正本 | [IconRune.aseprite](../../../client/ArtSource/GameResources/IconRune.aseprite)。レイヤーは下から Gem（面と輪郭）・Shine（鏡面反射） |
+| 解像度・透過・ファイル形式・差分規格 | 24×24、透明背景。正本はインデックスカラー（0番が透明、1〜9番が暗い順の9色）の `.aseprite`。Unityは `.aseprite` を直接読み込み、キャンバスと同じ24×24のSpriteを使う。Homeでは着色せず、右上の所持ルーンを2倍（48）、獲得演出の粒を4倍（96）で表示する。粒は飛ぶ途中で縮むため、ドットが抜けないようミップマップを有効にしている |
+| 正本 | [IconRune.aseprite](../../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite)。レイヤーは下から Gem（面と輪郭）・Shine（鏡面反射） |
 | 描き方・再現用設定 | AsepriteのLuaスクリプトで下描きし、以後は正本をAsepriteで直す。スクリプトと生成AIへの指示文はリポジトリに残さない |
 | 採用・候補・不採用と理由 | 候補。石の案、刻印ときらめき付きの32×32の宝石の案を経て、刻印なし・きらめきなし・面ごとの輪郭の案を64×64で描き、Homeで大きすぎたため48×48に描き直し、四角い形からダイヤモンドの形へ変え、さらに同じ意匠を24×24に描き直して4倍で試している |
-| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Shared/Art/GameResources/IconRune.png`、GUID `7a484e445269d4af2a4dcfce56bbb846`、Home |
+| Unityアセットのパス・GUID・利用画面 | `Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite`、GUID `9e9fbc260f6a6bb44990225dd3f419dd`、Home |
 
 ## 未決事項
 

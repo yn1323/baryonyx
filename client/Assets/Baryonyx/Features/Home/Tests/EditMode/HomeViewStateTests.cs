@@ -22,16 +22,16 @@ namespace Baryonyx.Tests.EditMode
             };
 
         [Test]
-        public void InProgressShowsRemainingWattsAndPartialGauge()
+        public void InProgressShowsRemainingUptAndPartialGauge()
         {
             var state = HomeViewState.From(Sample());
 
             Assert.That(state.DateText, Is.EqualTo("9/24（木）"));
             Assert.That(state.ShowSteps, Is.True);
-            Assert.That(state.WattsText, Is.EqualTo("3,820"));
+            Assert.That(state.UptText, Is.EqualTo("3,820"));
             Assert.That(state.FilledSegments, Is.EqualTo(9));
             Assert.That(state.DailyAchieved, Is.False);
-            Assert.That(state.RemainingText, Is.EqualTo("次のボーナスまで 1,180 ワット"));
+            Assert.That(state.RemainingText, Is.EqualTo("次のボーナスまで 1,180 UPT"));
             Assert.That(state.ClaimText, Is.EqualTo("タップでルーン獲得"));
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
@@ -45,7 +45,7 @@ namespace Baryonyx.Tests.EditMode
             var partial = HomeViewState.From(Sample(6240));
             Assert.That(partial.FilledSegments, Is.EqualTo(15));
             Assert.That(partial.DailyAchieved, Is.False);
-            Assert.That(partial.RemainingText, Is.EqualTo("次のボーナスまで 1,760 ワット"));
+            Assert.That(partial.RemainingText, Is.EqualTo("次のボーナスまで 1,760 UPT"));
 
             var state = HomeViewState.From(Sample(8000));
             Assert.That(state.FilledSegments, Is.EqualTo(HomeViewState.GaugeSegments));
@@ -59,17 +59,17 @@ namespace Baryonyx.Tests.EditMode
         [TestCase(3820, 5000)]
         [TestCase(7999, 8000)]
         [TestCase(8000, 0)]
-        public void NextBonusIsTheFirstLockedStage(int watts, int expected)
+        public void NextBonusIsTheFirstLockedStage(int upt, int expected)
         {
-            Assert.That(HomeViewState.NextBonusFor(watts), Is.EqualTo(expected));
+            Assert.That(HomeViewState.NextBonusFor(upt), Is.EqualTo(expected));
         }
 
         [TestCase(-10, 0)]
         [TestCase(0, 0)]
         [TestCase(3820, 3820)]
-        public void OneStepIsOneWatt(int steps, int expected)
+        public void OneStepIsOneUpt(int steps, int expected)
         {
-            Assert.That(HomeViewState.WattsFor(steps), Is.EqualTo(expected));
+            Assert.That(HomeViewState.UptFor(steps), Is.EqualTo(expected));
         }
 
         [Test]
@@ -111,7 +111,7 @@ namespace Baryonyx.Tests.EditMode
             snapshot.StepsKnown = false;
             var state = HomeViewState.From(snapshot);
 
-            Assert.That(state.WattsText, Is.EqualTo("--"));
+            Assert.That(state.UptText, Is.EqualTo("--"));
             Assert.That(state.FilledSegments, Is.Zero);
             Assert.That(state.DailyAchieved, Is.False);
             Assert.That(state.RemainingText, Is.Empty);
@@ -157,10 +157,10 @@ namespace Baryonyx.Tests.EditMode
         [TestCase(400, 1)]
         [TestCase(7999, 19)]
         [TestCase(99999, 20)]
-        public void GaugeFillsUpTo8000Watts(int watts, int expected)
+        public void GaugeFillsUpTo8000Upt(int upt, int expected)
         {
             Assert.That(
-                HomeViewState.FilledSegmentsFor(watts, HomeViewState.GaugeMaxWatts),
+                HomeViewState.FilledSegmentsFor(upt, HomeViewState.GaugeMaxUpt),
                 Is.EqualTo(expected)
             );
         }

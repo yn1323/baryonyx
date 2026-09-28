@@ -13,7 +13,7 @@
 <!-- visual-index:start -->
 | ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |
 |---|---|---|---|---|---|---|---|
-| [resource-rune](../catalog/resources/resource-rune.md) | ルーン（一部確定） | 横から見たダイヤモンド（平らな上面と下の尖り） | 藍から水色までの青 &#124; 面ごとに暗くした輪郭 | ブリリアントカット風の面 &#124; 宝石の光沢 | 対象外 | 試作をHomeで表示中 | [IconRune.png](../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.png)<br>[IconRune.aseprite](../../client/ArtSource/GameResources/IconRune.aseprite) |
+| [resource-rune](../catalog/resources/resource-rune.md) | ルーン（一部確定） | 横から見たダイヤモンド（平らな上面と下の尖り） | 藍から水色までの青 &#124; 面ごとに暗くした輪郭 | ブリリアントカット風の面 &#124; 宝石の光沢 | 対象外 | 試作をHomeで表示中 | [IconRune.aseprite](../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite) |
 <!-- visual-index:end -->
 
 更新方法は[文書検査](../tools/README.md)を参照する。
