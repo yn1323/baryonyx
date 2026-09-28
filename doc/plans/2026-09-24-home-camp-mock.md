@@ -98,7 +98,7 @@ TOPの広間と同じ背景を使い、シャッターが開くと同じ場所�
 
 パーティの画像は、ワイヤー画面で使っていた `Adventurers.png` を使う。
 HomeとWireframeの両方で使う素材になるため、Unityの移動機能でGUIDを保ったまま[Shared/Art/Characters/](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png)へ移し、参照している文書のパスも更新する。
-背景は既存の[TopDungeonBackground.png](../../client/Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png)を参照する。
+背景は既存の `TopDungeonBackground.png` を参照する（2026-09-29に [Shared/Art/Stages/DungeonHall.png](../../client/Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png) へ移した）。
 
 演出は既存のHD-2D部品を使う。
 `Hd2dFlickerLight`で焚き火の橙の光と門の青緑の光、`Hd2dEmberEmitter`で焚き火の火の粉を出す。

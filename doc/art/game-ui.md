@@ -60,9 +60,9 @@ updated: 2026-09-24
 | 素材 | 内容・扱い |
 |---|---|
 | [Adventurers.png](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png) | 味方5人、狼、スライム、森の守り手の4×2シート。生成後に背景の透過を指示し、アルファを保持する |
-| [Toma.aseprite](../../client/Assets/Baryonyx/Shared/Art/Characters/Toma.aseprite) | ホームのトーマ（魔法使い）の立ち絵。PixelLabの64×64の立ち絵を、アニメーション生成と同じく100×100の透明画像の左右中央・下寄せに置いた。2026-09-29に、PNGからインデックスカラーの `.aseprite` へ変換した（画素は同じ）。ホームでは1ドット4px（400×400）で表示し、足元を影に合わせる。画面の拡大率が1でない場合は、[PixelPerfectRawImage](../../client/Assets/Baryonyx/Features/Home/Runtime/PixelPerfectRawImage.cs)が1ドットを最も近い整数pxに丸め、足元を基準に大きさを変える |
+| [Toma.aseprite](../../client/Assets/Baryonyx/Shared/Art/Characters/Toma.aseprite) | ホームのトーマ（魔法使い）の立ち絵。PixelLabの64×64の立ち絵を、アニメーション生成と同じく100×100の透明画像の左右中央・下寄せに置いた。2026-09-29に、PNGからインデックスカラーの `.aseprite` へ変換した（画素は同じ）。ホームでは1ドット4px（400×400）で表示し、足元を影に合わせる。画面の拡大率が1でない場合は、[PixelPerfectRawImage](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/PixelPerfectRawImage.cs)が1ドットを最も近い整数pxに丸め、足元を基準に大きさを変える |
 | [Departure.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Departure.png) | 明るい森の出発地点。削除した試作のホームで4人の背後へ配置した。現在は未使用 |
-| [Forest.png](../../client/Assets/Baryonyx/Shared/Art/Dungeons/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘、ホームの再開カードに利用する |
+| [Forest.png](../../client/Assets/Baryonyx/Shared/Art/Stages/Forest.png) | 石のアーチと脇道がある森。冒険先、探索、戦闘、ホームの再開カードに利用する |
 | [Mine.png](../../client/Assets/Baryonyx/Features/Wireframe/UI/Art/Mine.png) | 中央と右側に入口がある坑道。削除した試作で冒険先、探索、戦闘に利用した。現在は未使用 |
 
 PNGはPoint、MipMapなし、非圧縮で、元の大きさのまま読み込む。2の累乗への拡大（Non-Power of 2の既定値）はドットをぼかすため行わない。
