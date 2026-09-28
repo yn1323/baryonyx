@@ -176,24 +176,6 @@ namespace Baryonyx.Tests.EditMode
                 );
         }
 
-        [TestCase(1920f, 1f)]
-        [TestCase(2400f, 1f)]
-        [TestCase(1440f, 0.75f)]
-        [TestCase(0f, 1f)]
-        public void WorldShrinksOnlyOnNarrowScreens(float width, float expected)
-        {
-            Assert.That(HomeWorldFit.ScaleFor(width, 1920f), Is.EqualTo(expected).Within(0.0001f));
-        }
-
-        [TestCase(1f, 4)]
-        [TestCase(2f / 3f, 3)]
-        [TestCase(4f / 3f, 5)]
-        [TestCase(0.1f, 1)]
-        public void PixelDotsCoverWholeScreenPixels(float scale, int expected)
-        {
-            Assert.That(PixelPerfectRawImage.DotPixels(4f, scale), Is.EqualTo(expected));
-        }
-
         [Test]
         public void AdventureStartsOnlyOnceAndBlocksOtherActions()
         {

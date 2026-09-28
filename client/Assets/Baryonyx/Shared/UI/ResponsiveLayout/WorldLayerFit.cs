@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Baryonyx.Home
+namespace Baryonyx.UI
 {
     /// <summary>
     /// Shrinks the centred world layer when the screen is narrower than the 16:9 design
@@ -10,7 +10,7 @@ namespace Baryonyx.Home
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class HomeWorldFit : MonoBehaviour
+    public sealed class WorldLayerFit : MonoBehaviour
     {
         public Vector2 DesignSize = new(1920f, 1080f);
 

@@ -1509,7 +1509,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &634369399475069880
 GameObject:
@@ -5477,7 +5477,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &2390961530834560774
 GameObject:
@@ -11991,7 +11991,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c399fd9eb9a4c435b9574b08158adc1b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.HomeWorldFit
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.WorldLayerFit
   DesignSize: {x: 1920, y: 1080}
 --- !u!1 &5065380744677735699
 GameObject:
@@ -12554,7 +12554,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &5184652455692951965
 GameObject:
@@ -14736,7 +14736,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &5782054079452196915
 GameObject:
@@ -15529,7 +15529,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &6052313997975622413
 GameObject:
@@ -17951,7 +17951,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &6963243983298038226
 GameObject:
@@ -18725,7 +18725,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7e3b6c0aafbd435da2d74bf6a9723ae, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Home.PixelPerfectRawImage
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.PixelPerfectRawImage
   DotSize: 4
 --- !u!1 &7486216436185530030
 GameObject:

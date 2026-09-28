@@ -1,15 +1,17 @@
 using System;
 using System.Linq;
+using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Health;
 using Baryonyx.Health.Editor;
 using Baryonyx.Home;
-using Baryonyx.Home.Editor;
 using Baryonyx.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.App.Editor
 {
@@ -129,7 +131,7 @@ namespace Baryonyx.App.Editor
             hitImage.color = Color.clear;
 
             var spot = rect.gameObject.AddComponent<Image>();
-            spot.sprite = HomeScreenArt.LoadSprite(HomeScreenArt.SoftSpotPath);
+            spot.sprite = ArtAssets.LoadSprite(UiArt.SoftSpotPath);
             spot.color = new Color(0.012f, 0.02f, 0.04f, 0.8f);
             spot.raycastTarget = true;
 
@@ -137,28 +139,13 @@ namespace Baryonyx.App.Editor
             icon.anchorMin = icon.anchorMax = icon.pivot = new Vector2(0.5f, 0.5f);
             icon.sizeDelta = new Vector2(40, 40);
             var iconImage = icon.gameObject.AddComponent<Image>();
-            iconImage.sprite = HomeScreenArt.LoadSprite(HomeScreenArt.IconSettingsPath);
+            iconImage.sprite = ArtAssets.LoadSprite(UiArt.IconSettingsPath);
             iconImage.color = TextMain;
             iconImage.raycastTarget = false;
 
-            var button = rect.gameObject.AddComponent<TintGroupButton>();
-            button.targetGraphic = spot;
-            button.navigation = new Navigation { mode = Navigation.Mode.None };
-            var colors = button.colors;
-            colors.highlightedColor = new Color(1.08f, 1.06f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.70f, 0.66f);
-            colors.selectedColor = Color.white;
-            colors.fadeDuration = 0.06f;
-            button.colors = colors;
+            var button = (TintGroupButton)AddTintButton(rect, spot);
             button.SetTintGraphics(new Graphic[] { iconImage });
             return button;
-        }
-
-        private static RectTransform Rect(string name, Transform parent)
-        {
-            var child = new GameObject(name, typeof(RectTransform));
-            child.transform.SetParent(parent, false);
-            return (RectTransform)child.transform;
         }
     }
 }

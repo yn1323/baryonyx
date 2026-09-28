@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 0bd80825b5921452c8be40a7686e43a7_RoundedRing
   DisplayName: RoundedRing
-  Description: Assets/Baryonyx/Features/Home/UI/Art/RoundedRing.png#RoundedRing
+  Description: Assets/Baryonyx/Shared/UI/Art/RoundedRing.png#RoundedRing
   Category: 9
   Asset: {fileID: 21300000, guid: 0bd80825b5921452c8be40a7686e43a7, type: 3}
   PreviewPrefab: {fileID: 0}

@@ -10,7 +10,7 @@
       "selectedOutput": "exec-5bcbdb31-6668-4463-bfa6-289e6b6fe950.png"
     },
     {
-      "file": "Assets/Baryonyx/Shared/Art/Dungeons/Forest.png",
+      "file": "Assets/Baryonyx/Shared/Art/Stages/Forest.png",
       "generationPrompt": "Use case: stylized-concept. Production environment background for an original 16-bit fantasy RPG in portrait mobile UI. 1024x1024 square image. Refined hand-crafted pixel art with crisp visible square pixel clusters, subdued teal green forest, warm pale gold sunlight, old mossy stone ruins. Camera slightly elevated, 3/4 view into an inviting forest clearing. Two clearly separated exits: a tall weathered stone archway in the upper middle at x45% y27%, and a shadowy path under tangled tree roots at the upper right x83% y40%. Clear empty earthy floor through lower 60% for a party and battles, broad footpath leading towards the arch. Ferns and tiny pale flowers at edges, a small closed wooden chest beside the right path. Layered tree silhouettes behind. Beautiful atmospheric depth but maintain hard pixel edges, gentle light shafts. Palette coordinated for dark spruce and antique gold interface. No people, no creatures, no text, no UI, no frames. Original SNES-inspired fantasy environment, not a screenshot of any existing game.",
       "selectedOutput": "exec-eb980493-dd8e-4d47-8201-9c38d18d2ff3.png"
     },

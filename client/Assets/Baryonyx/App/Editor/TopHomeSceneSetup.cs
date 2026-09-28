@@ -2,16 +2,19 @@ using System;
 using System.IO;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d;
+using Baryonyx.Vfx.Hd2d.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.App.Editor
 {
@@ -20,23 +23,11 @@ namespace Baryonyx.App.Editor
         public const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
         public const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private const string TopBackgroundTexturePath =
-            "Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png";
+            "Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png";
         private const string TextPanelPrefabPath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.prefab";
-        private const string Hd2dLightingPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightingVfx.prefab";
-        private const string Hd2dLightShaftPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightShaft.prefab";
-        private const string Hd2dFogPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
-        private const string Hd2dPostProcessProfilePath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset";
         public const string TopBackdropCanvasName = "TopBackdropCanvas";
         public const string TopPostProcessVolumeName = "TopPostProcessVolume";
-        private const string Hd2dEmberEmitterPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
-        private const string Hd2dFlickerLightPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
 
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
@@ -44,8 +35,8 @@ namespace Baryonyx.App.Editor
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
 
-            TranslucentTextPanelPrefabSetup.EnsurePrefab();
-            Hd2dLightingVfxAssetSetup.EnsureAssets();
+            TranslucentTextPanelAssets.EnsurePrefab();
+            Hd2dAssets.EnsureAssets();
             CreateSceneIfMissing(
                 TopScenePath,
                 "TopCanvas",
@@ -112,13 +103,13 @@ namespace Baryonyx.App.Editor
                     CreateTopScreen(scene, canvas.transform, screenName);
                 }
 
-                CreateCamera(scene, screenName + "Camera", screenColor);
+                ScreenScenes.AddCamera(scene, screenName + "Camera", screenColor);
                 if (clickable)
                 {
                     EnsureTopPostProcess(scene);
                     TopStartupSyncSetup.EnsureTop(scene);
                 }
-                CreateEventSystem(scene);
+                ScreenScenes.AddEventSystem(scene);
                 EditorSceneManager.SaveScene(scene, scenePath);
             }
             finally
@@ -163,7 +154,7 @@ namespace Baryonyx.App.Editor
             Stretch(background.GetComponent<RectTransform>());
 
             var rawImage = background.GetComponent<UnityEngine.UI.RawImage>();
-            var texture = LoadTexture(TopBackgroundTexturePath);
+            var texture = ArtAssets.LoadTexture(TopBackgroundTexturePath);
             rawImage.texture = texture;
             rawImage.color = Color.white;
             rawImage.raycastTarget = false;
@@ -347,7 +338,9 @@ namespace Baryonyx.App.Editor
             var camera = roots
                 .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
                 .FirstOrDefault();
-            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(Hd2dPostProcessProfilePath);
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                Hd2dAssets.PostProcessProfilePath
+            );
             if (uiCanvas == null || camera == null || profile == null)
                 return false;
 
@@ -434,49 +427,68 @@ namespace Baryonyx.App.Editor
             return roots.FirstOrDefault(root => root.name == "TopCanvas");
         }
 
-        public static bool EnsureTopLightingVfx(Scene scene)
+        // Topの背景用Canvasに、まだない演出のPrefabを置く。置かなかったときはnullを返す。
+        private static GameObject AddToBackdrop(
+            Scene scene,
+            string prefabPath,
+            string name,
+            out Transform canvas
+        )
         {
+            canvas = null;
             if (!scene.IsValid())
-                return false;
-
-            var canvas = FindTopBackdrop(scene);
-            if (canvas == null)
-                return false;
-
-            var existing = canvas
-                .GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(candidate => candidate.name == "TopHd2dLightingVfx");
-            if (existing != null)
-                return false;
-
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dLightingPrefabPath);
+                return null;
+            var backdrop = FindTopBackdrop(scene);
+            if (backdrop == null)
+                return null;
+            canvas = backdrop.transform;
+            if (canvas.GetComponentsInChildren<Transform>(true).Any(child => child.name == name))
+                return null;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null)
-                return false;
-
+                return null;
             var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
             if (instance == null)
                 throw new InvalidOperationException(
-                    $"HD-2D lighting prefab could not be instantiated: {Hd2dLightingPrefabPath}"
+                    $"HD-2D prefab could not be instantiated: {prefabPath}"
                 );
+            instance.name = name;
+            instance.transform.SetParent(canvas, false);
+            return instance;
+        }
 
-            instance.name = "TopHd2dLightingVfx";
-            instance.transform.SetParent(canvas.transform, false);
+        private static void StretchIfRect(GameObject instance)
+        {
             var rect = instance.GetComponent<RectTransform>();
             if (rect != null)
                 Stretch(rect);
+        }
 
-            var background = canvas.transform.Find("TopBackground");
-            var screen = canvas.transform.Find("TopScreen");
+        // 背景のすぐ手前、タイトルと開始操作より奥に置く。
+        private static void PlaceBetweenBackgroundAndScreen(Transform canvas, GameObject instance)
+        {
+            var background = canvas.Find("TopBackground");
+            var screen = canvas.Find("TopScreen");
             if (background != null && screen != null)
-            {
-                var siblingIndex = Mathf.Min(
-                    background.GetSiblingIndex() + 1,
-                    screen.GetSiblingIndex()
+                instance.transform.SetSiblingIndex(
+                    Mathf.Min(background.GetSiblingIndex() + 1, screen.GetSiblingIndex())
                 );
-                instance.transform.SetSiblingIndex(siblingIndex);
-            }
             else
                 instance.transform.SetAsLastSibling();
+        }
+
+        public static bool EnsureTopLightingVfx(Scene scene)
+        {
+            var instance = AddToBackdrop(
+                scene,
+                Hd2dAssets.PrefabPath,
+                "TopHd2dLightingVfx",
+                out var canvas
+            );
+            if (instance == null)
+                return false;
+            StretchIfRect(instance);
+            PlaceBetweenBackgroundAndScreen(canvas, instance);
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
@@ -484,47 +496,16 @@ namespace Baryonyx.App.Editor
 
         public static bool EnsureTopLightShaft(Scene scene)
         {
-            if (!scene.IsValid())
-                return false;
-
-            var canvas = FindTopBackdrop(scene);
-            if (canvas == null)
-                return false;
-
-            var existing = canvas
-                .GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(candidate => candidate.name == "TopHd2dLightShaft");
-            if (existing != null)
-                return false;
-
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dLightShaftPrefabPath);
-            if (prefab == null)
-                return false;
-
-            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            var instance = AddToBackdrop(
+                scene,
+                Hd2dAssets.LightShaftPrefabPath,
+                "TopHd2dLightShaft",
+                out var canvas
+            );
             if (instance == null)
-                throw new InvalidOperationException(
-                    $"HD-2D light shaft prefab could not be instantiated: {Hd2dLightShaftPrefabPath}"
-                );
-
-            instance.name = "TopHd2dLightShaft";
-            instance.transform.SetParent(canvas.transform, false);
-            var rect = instance.GetComponent<RectTransform>();
-            if (rect != null)
-                Stretch(rect);
-
-            var background = canvas.transform.Find("TopBackground");
-            var screen = canvas.transform.Find("TopScreen");
-            if (background != null && screen != null)
-            {
-                var siblingIndex = Mathf.Min(
-                    background.GetSiblingIndex() + 1,
-                    screen.GetSiblingIndex()
-                );
-                instance.transform.SetSiblingIndex(siblingIndex);
-            }
-            else
-                instance.transform.SetAsLastSibling();
+                return false;
+            StretchIfRect(instance);
+            PlaceBetweenBackgroundAndScreen(canvas, instance);
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
@@ -532,37 +513,18 @@ namespace Baryonyx.App.Editor
 
         public static bool EnsureTopFog(Scene scene)
         {
-            if (!scene.IsValid())
-                return false;
-
-            var canvas = FindTopBackdrop(scene);
-            if (canvas == null)
-                return false;
-
-            var existing = canvas
-                .GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(candidate => candidate.name == "TopHd2dFog");
-            if (existing != null)
-                return false;
-
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dFogPrefabPath);
-            if (prefab == null)
-                return false;
-
-            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            var instance = AddToBackdrop(
+                scene,
+                Hd2dAssets.FogPrefabPath,
+                "TopHd2dFog",
+                out var canvas
+            );
             if (instance == null)
-                throw new InvalidOperationException(
-                    $"HD-2D fog prefab could not be instantiated: {Hd2dFogPrefabPath}"
-                );
-
-            instance.name = "TopHd2dFog";
-            instance.transform.SetParent(canvas.transform, false);
-            var rect = instance.GetComponent<RectTransform>();
-            if (rect != null)
-                Stretch(rect);
+                return false;
+            StretchIfRect(instance);
 
             // Fog sits directly on the background so the light shafts and particles shine through it.
-            var background = canvas.transform.Find("TopBackground");
+            var background = canvas.Find("TopBackground");
             if (background != null)
                 instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
             else
@@ -582,37 +544,20 @@ namespace Baryonyx.App.Editor
 
         public static bool EnsureTopFlickerLight(Scene scene)
         {
-            if (!scene.IsValid())
-                return false;
-
-            var canvas = FindTopBackdrop(scene);
-            if (canvas == null)
-                return false;
-
-            var existing = canvas
-                .GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(candidate => candidate.name == "TopHd2dFlickerLight");
-            if (existing != null)
-                return false;
-
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dFlickerLightPrefabPath);
-            if (prefab == null)
-                return false;
-
-            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            var instance = AddToBackdrop(
+                scene,
+                Hd2dAssets.FlickerLightPrefabPath,
+                "TopHd2dFlickerLight",
+                out var canvas
+            );
             if (instance == null)
-                throw new InvalidOperationException(
-                    $"HD-2D flicker light prefab could not be instantiated: {Hd2dFlickerLightPrefabPath}"
-                );
+                return false;
 
-            instance.name = "TopHd2dFlickerLight";
-            instance.transform.SetParent(canvas.transform, false);
-
-            AlignWithBackground(canvas.transform, instance);
-            var background = canvas.transform.Find("TopBackground");
+            AlignWithBackground(canvas, instance);
+            var background = canvas.Find("TopBackground");
 
             // Lights sit above the fog so the flames are not veiled, and below the shafts.
-            var fog = canvas.transform.Find("TopHd2dFog");
+            var fog = canvas.Find("TopHd2dFog");
             if (fog != null)
                 instance.transform.SetSiblingIndex(fog.GetSiblingIndex() + 1);
             else if (background != null)
@@ -633,36 +578,19 @@ namespace Baryonyx.App.Editor
 
         public static bool EnsureTopEmberEmitter(Scene scene)
         {
-            if (!scene.IsValid())
-                return false;
-
-            var canvas = FindTopBackdrop(scene);
-            if (canvas == null)
-                return false;
-
-            var existing = canvas
-                .GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(candidate => candidate.name == "TopHd2dEmberEmitter");
-            if (existing != null)
-                return false;
-
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Hd2dEmberEmitterPrefabPath);
-            if (prefab == null)
-                return false;
-
-            var instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            var instance = AddToBackdrop(
+                scene,
+                Hd2dAssets.EmberEmitterPrefabPath,
+                "TopHd2dEmberEmitter",
+                out var canvas
+            );
             if (instance == null)
-                throw new InvalidOperationException(
-                    $"HD-2D ember emitter prefab could not be instantiated: {Hd2dEmberEmitterPrefabPath}"
-                );
-
-            instance.name = "TopHd2dEmberEmitter";
-            instance.transform.SetParent(canvas.transform, false);
-            AlignWithBackground(canvas.transform, instance);
+                return false;
+            AlignWithBackground(canvas, instance);
 
             // Embers rise in front of the torch glow and behind the light shafts.
-            var light = canvas.transform.Find("TopHd2dFlickerLight");
-            var background = canvas.transform.Find("TopBackground");
+            var light = canvas.Find("TopHd2dFlickerLight");
+            var background = canvas.Find("TopBackground");
             if (light != null)
                 instance.transform.SetSiblingIndex(light.GetSiblingIndex() + 1);
             else if (background != null)
@@ -742,7 +670,7 @@ namespace Baryonyx.App.Editor
 
         private static System.Collections.Generic.List<Hd2dFlickerLightSource> CreateTopTorches()
         {
-            // Positions are normalized to TopDungeonBackground.png (origin at the bottom left).
+            // Positions are normalized to DungeonHall.png (origin at the bottom left).
             // The outer torches hang on the near pillars; the inner ones on the far wall.
             return new System.Collections.Generic.List<Hd2dFlickerLightSource>
             {
@@ -809,42 +737,6 @@ namespace Baryonyx.App.Editor
                 BreathAmount = 0.2f,
                 BreathSpeed = 0.15f,
             };
-        }
-
-        private static Texture2D LoadTexture(string assetPath)
-        {
-            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
-            if (texture == null)
-                throw new InvalidOperationException($"Texture asset not found: {assetPath}");
-            return texture;
-        }
-
-        private static void CreateCamera(Scene scene, string cameraName, Color backgroundColor)
-        {
-            var cameraObject = new GameObject(cameraName, typeof(Camera));
-            SceneManager.MoveGameObjectToScene(cameraObject, scene);
-            var camera = cameraObject.GetComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = backgroundColor;
-            camera.orthographic = true;
-            camera.tag = "MainCamera";
-        }
-
-        private static void CreateEventSystem(Scene scene)
-        {
-            var events = new GameObject("EventSystem", typeof(EventSystem));
-            SceneManager.MoveGameObjectToScene(events, scene);
-            events.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = Vector2.zero;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
         }
 
         private static void EnsureBuildSettings()

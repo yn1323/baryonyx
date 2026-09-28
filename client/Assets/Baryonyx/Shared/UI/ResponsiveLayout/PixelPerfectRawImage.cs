@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Baryonyx.Home
+namespace Baryonyx.UI
 {
     /// <summary>
     /// Keeps a pixel-art <see cref="RawImage"/> on a Screen Space - Overlay canvas pixel perfect:

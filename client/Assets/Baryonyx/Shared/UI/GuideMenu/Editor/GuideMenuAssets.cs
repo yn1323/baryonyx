@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.UI.GuideMenu.Editor
 {
@@ -56,7 +56,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static readonly Color Gold = new(1f, 0.843f, 0.4f);
         private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
 
-        private static Scene generationScene;
         private static TMP_FontAsset font;
         private static Material shadowText;
 
@@ -84,7 +83,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 throw new InvalidOperationException("Stop Play Mode first.");
             CreateSharedArt();
             font = GameFontAssets.GetOrCreate();
-            shadowText = EnsureTextShadow(font);
+            shadowText = UiArt.EnsureTextShadow(
+                font,
+                TextShadowPath,
+                new Vector2(0.4f, -0.6f),
+                0.2f
+            );
 
             Directory.CreateDirectory(Path.GetDirectoryName(definitionPath));
             Directory.CreateDirectory(Path.GetDirectoryName(prefabPath));
@@ -97,11 +101,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 AssetDatabase.CreateAsset(definition, definitionPath);
             }
             fill(definition);
-            definition.GuideArt = ImportTexture(guideArtPath, FilterMode.Point);
+            definition.GuideArt = ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
             // The backgrounds and the map are generated illustrations used as they are.
-            definition.Background = ImportTexture(backgroundPath, FilterMode.Bilinear);
+            definition.Background = ArtAssets.ImportTexture(backgroundPath, FilterMode.Bilinear);
             definition.MapArt =
-                mapArtPath != null ? ImportTexture(mapArtPath, FilterMode.Bilinear) : null;
+                mapArtPath != null
+                    ? ArtAssets.ImportTexture(mapArtPath, FilterMode.Bilinear)
+                    : null;
             definition.GuideDotSize = FitDotSize(definition.GuideArt);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
@@ -118,8 +124,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// <summary>A 24x24 pixel-art icon drawn in Aseprite, used as a sprite for a menu row.</summary>
         public static Sprite Icon(string path)
         {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            AsepriteCanvasImport.ApplyTextureSettings(path, FilterMode.Point, mipmaps: false);
+            ArtAssets.ImportDrawn(path);
             return AsepriteCanvasImport.LoadSprite(path);
         }
 
@@ -179,26 +184,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string prefabPath
         )
         {
-            generationScene = EditorSceneManager.NewPreviewScene();
-            RectTransform root = null;
-            try
+            using (UiBuild.Begin(font, shadowText))
             {
-                root = Rect(name, null);
-                var canvas = root.gameObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                var scaler = root.gameObject.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 1;
-                root.gameObject.AddComponent<GraphicRaycaster>();
+                var root = CanvasRoot(name);
                 var view = root.gameObject.AddComponent<GuideMenuView>();
                 view.Definition = definition;
 
                 BuildBackground(root, definition);
-                var safe = Rect("SafeArea", root);
-                Stretch(safe);
-                safe.gameObject.AddComponent<SafeAreaFollower>();
+                var safe = SafeArea(root);
                 BuildGuide(safe, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Map)
@@ -211,12 +204,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
-            }
-            finally
-            {
-                if (root != null)
-                    UnityEngine.Object.DestroyImmediate(root.gameObject);
-                EditorSceneManager.ClosePreviewScene(generationScene);
             }
         }
 
@@ -583,11 +570,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var toast = Rect("Toast", root);
             Place(toast, new Vector2(0, 300), new Vector2(800, 104));
             Frame(toast, FramePath, Color.white).raycastTarget = false;
-            var group = toast.gameObject.AddComponent<CanvasGroup>();
-            group.alpha = 0;
-            group.interactable = false;
-            group.blocksRaycasts = false;
-            view.Toast = group;
+            view.Toast = HiddenGroup(toast);
             view.ToastLabel = Label(toast, "Label", "", 44, TextMain, TextAlignmentOptions.Center);
             Stretch((RectTransform)view.ToastLabel.transform);
         }
@@ -629,19 +612,24 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 13
             );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(FramePath, Vector4.one * FrameCorner, FilterMode.Point, fullRect: true);
-            ImportSprite(
+            ArtAssets.ImportSprite(
+                FramePath,
+                Vector4.one * FrameCorner,
+                FilterMode.Point,
+                fullRect: true
+            );
+            ArtAssets.ImportSprite(
                 FrameSelectedPath,
                 Vector4.one * FrameCorner,
                 FilterMode.Point,
                 fullRect: true
             );
-            ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
+            ArtAssets.ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             Icon(IconBackPath);
-            ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
+            ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
 
         // The top-left corner, rows from the top edge and columns from the left edge, and the
@@ -788,78 +776,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             UnityEngine.Object.DestroyImmediate(texture);
         }
 
-        private static Texture2D ImportTexture(string path, FilterMode filter)
-        {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            if (AsepriteCanvasImport.IsAseprite(path))
-            {
-                AsepriteCanvasImport.ApplyTextureSettings(path, filter, mipmaps: false);
-                return AsepriteCanvasImport.LoadTexture(path);
-            }
-            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null)
-                throw new InvalidOperationException("Required artwork is missing: " + path);
-            importer.textureType = TextureImporterType.Default;
-            importer.filterMode = filter;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.maxTextureSize = 2048;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-        }
-
-        private static void ImportSprite(
-            string path,
-            Vector4 border,
-            FilterMode filter,
-            bool fullRect = false
-        )
-        {
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            if (fullRect)
-            {
-                // Tiled images repeat the sprite's whole rectangle, so the mesh must not trim it.
-                var settings = new TextureImporterSettings();
-                importer.ReadTextureSettings(settings);
-                settings.spriteMeshType = SpriteMeshType.FullRect;
-                importer.SetTextureSettings(settings);
-            }
-            importer.spriteBorder = border;
-            importer.spritePixelsPerUnit = 100;
-            importer.filterMode = filter;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.SaveAndReimport();
-        }
-
-        private static Material EnsureTextShadow(TMP_FontAsset fontAsset)
-        {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(TextShadowPath);
-            if (material == null)
-            {
-                material = new Material(fontAsset.material) { name = "GuideTextShadow" };
-                AssetDatabase.CreateAsset(material, TextShadowPath);
-            }
-            material.shader = fontAsset.material.shader;
-            material.CopyPropertiesFromMaterial(fontAsset.material);
-            material.EnableKeyword("UNDERLAY_ON");
-            material.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.85f));
-            material.SetFloat("_UnderlayOffsetX", 0.4f);
-            material.SetFloat("_UnderlayOffsetY", -0.6f);
-            material.SetFloat("_UnderlayDilate", 0.25f);
-            material.SetFloat("_UnderlaySoftness", 0.2f);
-            EditorUtility.SetDirty(material);
-            AssetDatabase.SaveAssetIfDirty(material);
-            return material;
-        }
-
         // --- Helpers -------------------------------------------------------------------
 
         private static Image Frame(RectTransform rect, string path, Color color)
@@ -874,82 +790,20 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return image;
         }
 
-        private static Image SpriteImage(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = AsepriteCanvasImport.IsAseprite(path)
-                ? AsepriteCanvasImport.LoadSprite(path)
-                : AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        private static Image AddImage(RectTransform rect, Color color, bool raycast)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = raycast;
-            return image;
-        }
-
         private static Button AddButton(RectTransform rect, Graphic target) =>
-            Configure(rect.gameObject.AddComponent<Button>(), target);
+            DimWhenDisabled(UiBuild.AddButton(rect, target));
 
         // For the back button over a dark shadow: the icon and label darken with it.
         private static Button AddTintButton(RectTransform rect, Graphic target) =>
-            Configure(rect.gameObject.AddComponent<TintGroupButton>(), target);
+            DimWhenDisabled(UiBuild.AddTintButton(rect, target));
 
-        private static Button Configure(Button button, Graphic target)
+        // The confirm and depart buttons stay disabled until a row or a pin is chosen.
+        private static Button DimWhenDisabled(Button button)
         {
-            button.targetGraphic = target;
-            button.navigation = new Navigation { mode = Navigation.Mode.None };
             var colors = button.colors;
-            colors.highlightedColor = new Color(1.08f, 1.06f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.70f, 0.66f);
-            colors.selectedColor = Color.white;
             colors.disabledColor = new Color(0.55f, 0.55f, 0.6f, 0.7f);
-            colors.fadeDuration = 0.06f;
             button.colors = colors;
             return button;
-        }
-
-        // Runs after every button's children exist, so each one tints all of its own graphics.
-        private static void CollectTintGraphics(RectTransform root)
-        {
-            foreach (var button in root.GetComponentsInChildren<TintGroupButton>(true))
-            {
-                var graphics = new List<Graphic>();
-                foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
-                    if (graphic != button.targetGraphic)
-                        graphics.Add(graphic);
-                button.SetTintGraphics(graphics.ToArray());
-            }
-        }
-
-        private static TMP_Text Label(
-            RectTransform parent,
-            string name,
-            string text,
-            float fontSize,
-            Color color,
-            TextAlignmentOptions alignment
-        )
-        {
-            var rect = Rect(name, parent);
-            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = font;
-            label.fontSize = fontSize;
-            label.color = color;
-            label.text = text ?? "";
-            label.richText = false;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.overflowMode = TextOverflowModes.Overflow;
-            label.alignment = alignment;
-            label.raycastTarget = false;
-            if (shadowText != null)
-                label.fontSharedMaterial = shadowText;
-            return label;
         }
 
         // On narrow screens the text shrinks to its box instead of running out of the frame.
@@ -958,27 +812,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             label.enableAutoSizing = true;
             label.fontSizeMin = minimum;
             label.fontSizeMax = label.fontSize;
-        }
-
-        private static void Corner(RectTransform rect, Vector2 corner, Vector2 offset, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
-            rect.anchoredPosition = offset;
-            rect.sizeDelta = size;
-        }
-
-        private static void Place(RectTransform rect, Vector2 center, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
-            rect.anchoredPosition = center;
-            rect.sizeDelta = size;
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
         // A full-width strip of the given height, inset from the top or bottom edge.
@@ -1004,20 +837,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(rect);
             rect.offsetMin = offsetMin;
             rect.offsetMax = offsetMax;
-        }
-
-        private static RectTransform Rect(string name, Transform parent)
-        {
-            var obj = EditorUtility.CreateGameObjectWithHideFlags(
-                name,
-                HideFlags.HideAndDontSave,
-                typeof(RectTransform)
-            );
-            SceneManager.MoveGameObjectToScene(obj, generationScene);
-            obj.hideFlags = HideFlags.None;
-            var rect = obj.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
         }
     }
 }

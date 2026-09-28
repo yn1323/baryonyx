@@ -1,5 +1,5 @@
 using System.Collections;
-using Baryonyx.Home;
+using Baryonyx.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;

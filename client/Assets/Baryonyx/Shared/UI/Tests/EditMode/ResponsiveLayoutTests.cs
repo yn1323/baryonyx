@@ -6,6 +6,24 @@ namespace Baryonyx.Tests.EditMode
 {
     public sealed class ResponsiveLayoutTests
     {
+        [TestCase(1920f, 1f)]
+        [TestCase(2400f, 1f)]
+        [TestCase(1440f, 0.75f)]
+        [TestCase(0f, 1f)]
+        public void WorldShrinksOnlyOnNarrowScreens(float width, float expected)
+        {
+            Assert.That(WorldLayerFit.ScaleFor(width, 1920f), Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        [TestCase(1f, 4)]
+        [TestCase(2f / 3f, 3)]
+        [TestCase(4f / 3f, 5)]
+        [TestCase(0.1f, 1)]
+        public void PixelDotsCoverWholeScreenPixels(float scale, int expected)
+        {
+            Assert.That(PixelPerfectRawImage.DotPixels(4f, scale), Is.EqualTo(expected));
+        }
+
         [TestCase(1920, 1080, 16f / 9f, 1920, 1080)]
         [TestCase(2400, 1080, 16f / 9f, 2400, 1350)]
         [TestCase(1024, 768, 16f / 9f, 1365.333f, 768)]
@@ -75,7 +93,6 @@ namespace Baryonyx.Tests.EditMode
                 Object.DestroyImmediate(sourceObject);
             }
         }
-
 
         [Test]
         public void SafeAreaFollowerConvertsAnAsymmetricViewportToNormalizedAnchors()

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: a249c0dc27c74ca2b3f2c024734f672a
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: a249c0dc27c74ca2b3f2c024734f672a
-  DisplayName: TopDungeonBackground
-  Description: Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png
-  Category: 3
+  DisplayName: DungeonHall
+  Description: Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png
+  Category: 1
   Asset: {fileID: 2800000, guid: a249c0dc27c74ca2b3f2c024734f672a, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

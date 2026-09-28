@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Showcase;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -289,20 +290,8 @@ namespace Baryonyx.Showcase.Editor
 
         private static void EnsureFolders()
         {
-            EnsureFolder("Assets/Baryonyx/Features");
-            EnsureFolder(RootPath);
-            EnsureFolder(RootPath + "/Entries");
-            EnsureFolder(GeneratedEntriesPath);
-            EnsureFolder(RootPath + "/Data");
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path))
-                return;
-            var parent = Path.GetDirectoryName(path).Replace("\\", "/");
-            var name = Path.GetFileName(path);
-            AssetDatabase.CreateFolder(parent, name);
+            AssetFolders.Ensure(GeneratedEntriesPath);
+            AssetFolders.Ensure(RootPath + "/Data");
         }
     }
 

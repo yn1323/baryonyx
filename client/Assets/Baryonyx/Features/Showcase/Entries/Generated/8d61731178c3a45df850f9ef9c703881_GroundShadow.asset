@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 8d61731178c3a45df850f9ef9c703881_GroundShadow
   DisplayName: GroundShadow
-  Description: Assets/Baryonyx/Features/Home/UI/Art/GroundShadow.png#GroundShadow
+  Description: Assets/Baryonyx/Shared/UI/Art/GroundShadow.png#GroundShadow
   Category: 9
   Asset: {fileID: 21300000, guid: 8d61731178c3a45df850f9ef9c703881, type: 3}
   PreviewPrefab: {fileID: 0}

@@ -1,19 +1,20 @@
 using System;
 using System.IO;
-using Baryonyx.Vfx.Hd2d;
+using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 
-namespace Baryonyx.App.Editor
+namespace Baryonyx.Vfx.Hd2d.Editor
 {
     /// <summary>
-    /// Creates the small, reusable UI assets used by the HD-2D lighting layer.
+    /// Creates the small, reusable UI assets used by the HD-2D lighting layer. Placing them in
+    /// the Top scene is App's job (<c>Baryonyx.App.Editor.Hd2dTopSetup</c>).
     /// </summary>
-    public static class Hd2dLightingVfxAssetSetup
+    public static class Hd2dAssets
     {
         public const string PrefabPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dLightingVfx.prefab";
@@ -43,9 +44,8 @@ namespace Baryonyx.App.Editor
         private const string RendererDataDirectory = "Assets/Settings";
         private const string AdditiveShaderPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
-        private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
 
-        private const string GlowTexturePath = TextureDirectory + "/Hd2dGlowSoft.png";
+        public const string GlowTexturePath = TextureDirectory + "/Hd2dGlowSoft.png";
         private const string RayTexturePath = TextureDirectory + "/Hd2dLightRay.png";
         private const string DustTexturePath = TextureDirectory + "/Hd2dDust.png";
         private const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
@@ -72,88 +72,12 @@ namespace Baryonyx.App.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
-        [MenuItem("Baryonyx/VFX/Create HD-2D Lighting VFX Assets and Apply to Top")]
-        public static void CreateAssetsAndIntegrateTop()
-        {
-            EnsureAssets();
-            IntegrateTopScene();
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Light Shaft and Apply to Top")]
-        public static void CreateLightShaftAndIntegrateTop()
-        {
-            EnsureAssets();
-            IntegrateLightShaftOnly();
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Fog and Apply to Top")]
-        public static void CreateFogAndIntegrateTop()
-        {
-            EnsureAssets();
-            IntegrateFogOnly();
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Flicker Light and Apply to Top")]
-        public static void CreateFlickerLightAndIntegrateTop()
-        {
-            EnsureAssets();
-            IntegrateFlickerLightOnly();
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Tilt Shift and Apply to Top")]
-        public static void CreateTiltShift()
-        {
-            // The tilt shift lives in the shared profile and the renderers, so the Top scene
-            // only needs the post-processing setup that already references the profile.
-            CreatePostProcessAndIntegrateTop();
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Post Process and Apply to Top")]
-        public static void CreatePostProcessAndIntegrateTop()
-        {
-            EnsureAssets();
-            if (File.Exists(ToAbsolutePath(TopScenePath)))
-            {
-                var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-                if (TopHomeSceneSetup.EnsureTopPostProcess(scene))
-                    EditorSceneManager.SaveScene(scene, TopScenePath);
-            }
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Ember Emitter and Apply to Top")]
-        public static void CreateEmberEmitterAndIntegrateTop()
-        {
-            EnsureAssets();
-            IntegrateEmberEmitterOnly();
-            Baryonyx.Showcase.Editor.ShowcaseCatalogBuilder.RefreshCatalog();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-        }
-
         public static void EnsureAssets()
         {
-            EnsureFolder("Assets/Baryonyx/Shared");
-            EnsureFolder("Assets/Baryonyx/Shared/VFX");
-            EnsureFolder("Assets/Baryonyx/Shared/VFX/HD2D");
-            EnsureFolder(TextureDirectory);
-            EnsureFolder(PrefabDirectory);
-            EnsureFolder(MaterialDirectory);
-            EnsureFolder(ProfileDirectory);
+            AssetFolders.Ensure(TextureDirectory);
+            AssetFolders.Ensure(PrefabDirectory);
+            AssetFolders.Ensure(MaterialDirectory);
+            AssetFolders.Ensure(ProfileDirectory);
 
             EnsureTexture(GlowTexturePath, 64, 64, CreateGlowPixels, FilterMode.Bilinear);
             EnsureTexture(RayTexturePath, 128, 64, CreateRayPixels, FilterMode.Bilinear);
@@ -194,87 +118,6 @@ namespace Baryonyx.App.Editor
             EnsurePrefab();
         }
 
-        private static void IntegrateTopScene()
-        {
-            if (!File.Exists(ToAbsolutePath(TopScenePath)))
-                return;
-
-            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-                throw new InvalidOperationException(
-                    $"Top scene could not be opened: {TopScenePath}"
-                );
-
-            var changed = TopHomeSceneSetup.EnsureTopLightingVfx(scene);
-            changed |= TopHomeSceneSetup.EnsureTopLightShaft(scene);
-            changed |= TopHomeSceneSetup.EnsureTopFog(scene);
-            changed |= TopHomeSceneSetup.EnsureTopFlickerLight(scene);
-            changed |= TopHomeSceneSetup.EnsureTopEmberEmitter(scene);
-            changed |= TopHomeSceneSetup.EnsureTopPostProcess(scene);
-            if (changed)
-                EditorSceneManager.SaveScene(scene, TopScenePath);
-        }
-
-        private static void IntegrateLightShaftOnly()
-        {
-            if (!File.Exists(ToAbsolutePath(TopScenePath)))
-                return;
-
-            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-                throw new InvalidOperationException(
-                    $"Top scene could not be opened: {TopScenePath}"
-                );
-
-            if (TopHomeSceneSetup.EnsureTopLightShaft(scene))
-                EditorSceneManager.SaveScene(scene, TopScenePath);
-        }
-
-        private static void IntegrateFogOnly()
-        {
-            if (!File.Exists(ToAbsolutePath(TopScenePath)))
-                return;
-
-            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-                throw new InvalidOperationException(
-                    $"Top scene could not be opened: {TopScenePath}"
-                );
-
-            if (TopHomeSceneSetup.EnsureTopFog(scene))
-                EditorSceneManager.SaveScene(scene, TopScenePath);
-        }
-
-        private static void IntegrateFlickerLightOnly()
-        {
-            if (!File.Exists(ToAbsolutePath(TopScenePath)))
-                return;
-
-            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-                throw new InvalidOperationException(
-                    $"Top scene could not be opened: {TopScenePath}"
-                );
-
-            if (TopHomeSceneSetup.EnsureTopFlickerLight(scene))
-                EditorSceneManager.SaveScene(scene, TopScenePath);
-        }
-
-        private static void IntegrateEmberEmitterOnly()
-        {
-            if (!File.Exists(ToAbsolutePath(TopScenePath)))
-                return;
-
-            var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-                throw new InvalidOperationException(
-                    $"Top scene could not be opened: {TopScenePath}"
-                );
-
-            if (TopHomeSceneSetup.EnsureTopEmberEmitter(scene))
-                EditorSceneManager.SaveScene(scene, TopScenePath);
-        }
-
         private static void EnsureEmberEmitterPrefab()
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(EmberEmitterPrefabPath) != null)
@@ -283,7 +126,7 @@ namespace Baryonyx.App.Editor
             var root = new GameObject("Hd2dEmberEmitter", typeof(RectTransform));
             try
             {
-                Stretch(root.GetComponent<RectTransform>());
+                UiBuild.Stretch(root.GetComponent<RectTransform>());
                 var emitter = root.AddComponent<Hd2dEmberEmitter>();
                 emitter.ParticleLayer = CreateLayer("ParticleLayer", root.transform);
                 emitter.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
@@ -320,9 +163,9 @@ namespace Baryonyx.App.Editor
                     return;
 
                 if (emitter.CrossSprite == null)
-                    emitter.CrossSprite = LoadSprite(EmberCrossTexturePath);
+                    emitter.CrossSprite = ArtAssets.LoadSprite(EmberCrossTexturePath);
                 if (emitter.StreakSprite == null)
-                    emitter.StreakSprite = LoadSprite(EmberStreakTexturePath);
+                    emitter.StreakSprite = ArtAssets.LoadSprite(EmberStreakTexturePath);
                 PrefabUtility.SaveAsPrefabAsset(root, EmberEmitterPrefabPath);
             }
             finally
@@ -457,10 +300,10 @@ namespace Baryonyx.App.Editor
             var root = new GameObject("Hd2dFlickerLight", typeof(RectTransform));
             try
             {
-                Stretch(root.GetComponent<RectTransform>());
+                UiBuild.Stretch(root.GetComponent<RectTransform>());
                 var light = root.AddComponent<Hd2dFlickerLight>();
                 light.LightLayer = CreateLayer("LightLayer", root.transform);
-                light.GlowSprite = LoadSprite(GlowTexturePath);
+                light.GlowSprite = ArtAssets.LoadSprite(GlowTexturePath);
                 light.AdditiveMaterial = AssetDatabase.LoadAssetAtPath<Material>(
                     AdditiveMaterialPath
                 );
@@ -495,7 +338,7 @@ namespace Baryonyx.App.Editor
             var root = new GameObject("Hd2dFog", typeof(RectTransform));
             try
             {
-                Stretch(root.GetComponent<RectTransform>());
+                UiBuild.Stretch(root.GetComponent<RectTransform>());
                 var fog = root.AddComponent<Hd2dFog>();
                 fog.FogLayer = CreateLayer("FogLayer", root.transform);
                 fog.NoiseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(FogNoiseTexturePath);
@@ -554,10 +397,10 @@ namespace Baryonyx.App.Editor
             var root = new GameObject("Hd2dLightShaft", typeof(RectTransform));
             try
             {
-                Stretch(root.GetComponent<RectTransform>());
+                UiBuild.Stretch(root.GetComponent<RectTransform>());
                 var shaft = root.AddComponent<Hd2dLightShaft>();
                 shaft.ShaftLayer = CreateLayer("ShaftLayer", root.transform);
-                shaft.ShaftSprite = LoadSprite(LightShaftTexturePath);
+                shaft.ShaftSprite = ArtAssets.LoadSprite(LightShaftTexturePath);
                 shaft.PlayOnEnable = true;
                 shaft.Animate = true;
                 shaft.UseUnscaledTime = true;
@@ -572,7 +415,7 @@ namespace Baryonyx.App.Editor
                 shaft.RotationRange = new Vector2(-110f, -106f);
                 shaft.WidthScaleRange = new Vector2(0.55f, 1.35f);
                 shaft.OpacityRange = new Vector2(0.5f, 1f);
-                shaft.FloorPoolSprite = LoadSprite(GlowTexturePath);
+                shaft.FloorPoolSprite = ArtAssets.LoadSprite(GlowTexturePath);
                 shaft.FloorPoolAnchor = new Vector2(0.49f, 0.25f);
                 shaft.FloorPoolSize = new Vector2(640f, 170f);
                 shaft.FloorPoolAlpha = 0.4f;
@@ -599,14 +442,14 @@ namespace Baryonyx.App.Editor
             if (prefab != null)
                 return;
 
-            var dustSprite = LoadSprite(DustTexturePath);
-            var sparkleSprite = LoadSprite(SparkleTexturePath);
+            var dustSprite = ArtAssets.LoadSprite(DustTexturePath);
+            var sparkleSprite = ArtAssets.LoadSprite(SparkleTexturePath);
 
             var root = new GameObject("Hd2dLightingVfx", typeof(RectTransform));
             try
             {
                 var rootRect = root.GetComponent<RectTransform>();
-                Stretch(rootRect);
+                UiBuild.Stretch(rootRect);
                 var lighting = root.AddComponent<Hd2dLightingVfx>();
 
                 var particleLayer = CreateLayer("ParticleLayer", root.transform);
@@ -644,8 +487,18 @@ namespace Baryonyx.App.Editor
                 point.FlickerSpeed = 1.2f;
                 point.FlickerSeed = 0.1f;
 
-                var glow = CreateImage("Glow", root.transform, LoadSprite(GlowTexturePath), false);
-                var ray = CreateImage("Ray", root.transform, LoadSprite(RayTexturePath), true);
+                var glow = CreateImage(
+                    "Glow",
+                    root.transform,
+                    ArtAssets.LoadSprite(GlowTexturePath),
+                    false
+                );
+                var ray = CreateImage(
+                    "Ray",
+                    root.transform,
+                    ArtAssets.LoadSprite(RayTexturePath),
+                    true
+                );
                 glow.rectTransform.anchorMin = glow.rectTransform.anchorMax = Vector2.one * 0.5f;
                 glow.rectTransform.pivot = Vector2.one * 0.5f;
                 ray.rectTransform.anchorMin = ray.rectTransform.anchorMax = Vector2.one * 0.5f;
@@ -669,11 +522,11 @@ namespace Baryonyx.App.Editor
             var root = new GameObject("Hd2dParticleField", typeof(RectTransform));
             try
             {
-                Stretch(root.GetComponent<RectTransform>());
+                UiBuild.Stretch(root.GetComponent<RectTransform>());
                 var lighting = root.AddComponent<Hd2dLightingVfx>();
                 lighting.ParticleLayer = CreateLayer("ParticleLayer", root.transform);
-                lighting.DustSprite = LoadSprite(DustTexturePath);
-                lighting.SparkleSprite = LoadSprite(SparkleTexturePath);
+                lighting.DustSprite = ArtAssets.LoadSprite(DustTexturePath);
+                lighting.SparkleSprite = ArtAssets.LoadSprite(SparkleTexturePath);
                 ConfigureParticleDefaults(lighting);
                 PrefabUtility.SaveAsPrefabAsset(root, ParticleFieldPrefabPath);
             }
@@ -711,7 +564,7 @@ namespace Baryonyx.App.Editor
             var layer = new GameObject(name, typeof(RectTransform));
             layer.transform.SetParent(parent, false);
             var rect = layer.GetComponent<RectTransform>();
-            Stretch(rect);
+            UiBuild.Stretch(rect);
             return rect;
         }
 
@@ -736,16 +589,6 @@ namespace Baryonyx.App.Editor
             return image;
         }
 
-        private static Sprite LoadSprite(string path)
-        {
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (sprite == null)
-                throw new InvalidOperationException(
-                    $"Generated sprite could not be loaded: {path}"
-                );
-            return sprite;
-        }
-
         private static void EnsureTexture(
             string assetPath,
             int width,
@@ -755,8 +598,7 @@ namespace Baryonyx.App.Editor
             TextureWrapMode wrapMode = TextureWrapMode.Clamp
         )
         {
-            var absolutePath = ToAbsolutePath(assetPath);
-            if (!File.Exists(absolutePath))
+            if (!File.Exists(assetPath))
             {
                 var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
                 try
@@ -765,7 +607,7 @@ namespace Baryonyx.App.Editor
                     for (var x = 0; x < width; x++)
                         texture.SetPixel(x, y, pixelFactory(x, y));
                     texture.Apply();
-                    File.WriteAllBytes(absolutePath, texture.EncodeToPNG());
+                    File.WriteAllBytes(assetPath, texture.EncodeToPNG());
                 }
                 finally
                 {
@@ -872,36 +714,6 @@ namespace Baryonyx.App.Editor
             var u = x / (float)FogNoiseSize;
             var v = y / (float)FogNoiseSize;
             return new Color(1f, 1f, 1f, Hd2dFog.EvaluateNoiseAlpha(u, v, FogNoiseSeed));
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = Vector2.zero;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path))
-                return;
-
-            var parent = Path.GetDirectoryName(path)?.Replace("\\", "/");
-            if (string.IsNullOrEmpty(parent))
-                return;
-            var folder = Path.GetFileName(path);
-            EnsureFolder(parent);
-            AssetDatabase.CreateFolder(parent, folder);
-        }
-
-        private static string ToAbsolutePath(string assetPath)
-        {
-            var projectRoot = Directory.GetParent(Application.dataPath).FullName;
-            return Path.Combine(projectRoot, assetPath)
-                .Replace("/", Path.DirectorySeparatorChar.ToString());
         }
     }
 }

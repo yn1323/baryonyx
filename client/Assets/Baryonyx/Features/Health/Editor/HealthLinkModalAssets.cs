@@ -6,6 +6,7 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.Health.Editor
 {
@@ -48,11 +49,11 @@ namespace Baryonyx.Health.Editor
                 scrim.color = Scrim;
                 scrim.raycastTarget = true;
 
-                var safe = Child("SafeArea", rootRect);
+                var safe = Rect("SafeArea", rootRect);
                 Stretch(safe);
                 safe.gameObject.AddComponent<SafeAreaFollower>();
 
-                var panel = Child("Panel", safe);
+                var panel = Rect("Panel", safe);
                 panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
                 panel.pivot = new Vector2(0.5f, 0.5f);
                 panel.sizeDelta = new Vector2(1200f, 0f);
@@ -67,7 +68,7 @@ namespace Baryonyx.Health.Editor
                 borderLayout.childForceExpandWidth = true;
                 borderLayout.childForceExpandHeight = false;
 
-                var body = Child("Body", panel);
+                var body = Rect("Body", panel);
                 var fill = body.gameObject.AddComponent<Image>();
                 fill.color = PanelColor;
                 fill.raycastTarget = false;
@@ -91,7 +92,7 @@ namespace Baryonyx.Health.Editor
                 );
                 view.BodyLabel.lineSpacing = 12f;
 
-                var buttons = Child("Buttons", body);
+                var buttons = Rect("Buttons", body);
                 var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
                 row.spacing = 32;
                 row.padding = new RectOffset(0, 0, 16, 0);
@@ -137,7 +138,7 @@ namespace Baryonyx.Health.Editor
             Color textColor
         )
         {
-            var rect = Child(name, parent);
+            var rect = Rect(name, parent);
             var element = rect.gameObject.AddComponent<LayoutElement>();
             element.preferredWidth = width;
             // Androidのタップ領域の目安（48dp）を十分に上回る高さにする。
@@ -166,7 +167,7 @@ namespace Baryonyx.Health.Editor
             TextAlignmentOptions alignment
         )
         {
-            var rect = Child(name, parent);
+            var rect = Rect(name, parent);
             var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
             label.font = font;
             label.fontSize = size;
@@ -175,20 +176,6 @@ namespace Baryonyx.Health.Editor
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
             return label;
-        }
-
-        private static RectTransform Child(string name, Transform parent)
-        {
-            var child = new GameObject(name, typeof(RectTransform));
-            child.transform.SetParent(parent, false);
-            return (RectTransform)child.transform;
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
     }
 }
