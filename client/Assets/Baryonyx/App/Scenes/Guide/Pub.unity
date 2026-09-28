@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 88898402}
   - component: {fileID: 88898401}
   m_Layer: 0
-  m_Name: TavernCamera
+  m_Name: PubCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -227,7 +227,7 @@ GameObject:
   - component: {fileID: 294369101}
   - component: {fileID: 294369100}
   m_Layer: 0
-  m_Name: TavernBootstrap
+  m_Name: PubBootstrap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1039,6 +1039,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 321398091242874280, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontSize
+      value: 27.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 321398091242874280, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289249225
+      objectReference: {fileID: 0}
+    - target: {fileID: 321398091242874280, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 733799321838343434, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4292012531
@@ -1053,7 +1065,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.x
@@ -1061,27 +1073,63 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 820
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 156
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 410
       objectReference: {fileID: 0}
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -350
+      objectReference: {fileID: 0}
+    - target: {fileID: 1127911045536631095, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1920
       objectReference: {fileID: 0}
     - target: {fileID: 1127911045536631095, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.y
       value: 1280
+      objectReference: {fileID: 0}
+    - target: {fileID: 2258385791193792774, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292012531
+      objectReference: {fileID: 0}
+    - target: {fileID: 2258385791193792774, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3324193602615136252, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292012531
+      objectReference: {fileID: 0}
+    - target: {fileID: 3324193602615136252, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3725094466929299911, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292012531
+      objectReference: {fileID: 0}
+    - target: {fileID: 3725094466929299911, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 4090885682816414200, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292012531
+      objectReference: {fileID: 0}
+    - target: {fileID: 4090885682816414200, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 4092839619484194589, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontSize
@@ -1097,7 +1145,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4598997302575068217, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_Name
-      value: TavernScreen
+      value: PubScreen
+      objectReference: {fileID: 0}
+    - target: {fileID: 4674781671098845186, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontSize
+      value: 27.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4674781671098845186, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289249225
+      objectReference: {fileID: 0}
+    - target: {fileID: 4674781671098845186, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 4696022936853180624, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontColor32.rgba
@@ -1113,7 +1173,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.x
@@ -1121,23 +1181,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 820
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 156
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 410
       objectReference: {fileID: 0}
     - target: {fileID: 4931611119966731697, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -534
       objectReference: {fileID: 0}
     - target: {fileID: 4943752492803089466, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_Pivot.x
@@ -1219,6 +1279,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5903431917228145420, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292012531
+      objectReference: {fileID: 0}
+    - target: {fileID: 5903431917228145420, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 6299433208642377128, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontSize
       value: 27.6
@@ -1241,7 +1309,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.x
@@ -1249,23 +1317,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 820
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 156
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 410
       objectReference: {fileID: 0}
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -166
       objectReference: {fileID: 0}
     - target: {fileID: 7903075115727155454, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontSize
@@ -1279,11 +1347,27 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 8711311640176754734, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontSize
+      value: 27.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8711311640176754734, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4289249225
+      objectReference: {fileID: 0}
+    - target: {fileID: 8711311640176754734, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 9010897348548368143, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4292012531
       objectReference: {fileID: 0}
     - target: {fileID: 9010897348548368143, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 9064281817847266362, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}

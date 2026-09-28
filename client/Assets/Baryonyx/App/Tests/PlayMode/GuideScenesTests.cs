@@ -36,7 +36,7 @@ namespace Baryonyx.Tests.PlayMode
         )
         {
             var sceneName = HomeBootstrap.ScreenSceneFor(action);
-            Assert.That(sceneName, Is.EqualTo(action.ToString()));
+            Assert.That(sceneName, Is.EqualTo(ExpectedScene(action)));
             yield return SceneManager.LoadSceneAsync(HomeScenePath, LoadSceneMode.Single);
             var home = Object.FindAnyObjectByType<HomeBootstrap>();
             yield return WaitUntil(() => home.Presenter != null && !home.Transition.IsPlaying);
@@ -64,7 +64,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator ListScreensOpenAFullListAndConfirmTheChoice()
         {
-            foreach (var sceneName in new[] { "Tavern", "Workshop", "Temple" })
+            foreach (var sceneName in new[] { "Pub", "Shop", "Temple" })
             {
                 var guide = default(GuideSceneBootstrap);
                 yield return LoadGuide(sceneName, value => guide = value);
@@ -142,6 +142,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ToastMessage, Is.EqualTo("出発（準備中）"));
         }
 
+        private static string ExpectedScene(HomeAction action) =>
+            action switch
+            {
+                HomeAction.Tavern => "Pub",
+                HomeAction.Workshop => "Shop",
+                HomeAction.Temple => "Temple",
+                _ => "TravelOffice",
+            };
+
         private static Button ButtonFor(HomeView view, HomeAction action) =>
             action switch
             {
@@ -157,7 +166,7 @@ namespace Baryonyx.Tests.PlayMode
         )
         {
             yield return SceneManager.LoadSceneAsync(
-                $"Assets/Baryonyx/App/Scenes/{sceneName}.unity",
+                $"Assets/Baryonyx/App/Scenes/Guide/{sceneName}.unity",
                 LoadSceneMode.Single
             );
             var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();

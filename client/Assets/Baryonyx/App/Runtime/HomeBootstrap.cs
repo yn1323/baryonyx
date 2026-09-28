@@ -93,8 +93,8 @@ namespace Baryonyx.App
         public static string ScreenSceneFor(HomeAction action) =>
             action switch
             {
-                HomeAction.Tavern => "Tavern",
-                HomeAction.Workshop => "Workshop",
+                HomeAction.Tavern => "Pub",
+                HomeAction.Workshop => "Shop",
                 HomeAction.Temple => "Temple",
                 HomeAction.TravelOffice => "TravelOffice",
                 _ => null,

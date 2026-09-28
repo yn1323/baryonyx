@@ -22,14 +22,14 @@ namespace Baryonyx.App.Editor
     /// </summary>
     public static class GuideSceneSetup
     {
-        public const string ScenesFolder = "Assets/Baryonyx/App/Scenes";
+        public const string ScenesFolder = "Assets/Baryonyx/App/Scenes/Guide";
         private static readonly Color CameraColor = new(0.035f, 0.047f, 0.075f, 1f);
 
         // Scene name → the feature prefab it shows. Home opens these scenes by name.
         private static readonly (string Scene, string Prefab, Action Create)[] Screens =
         {
-            ("Tavern", TavernScreenAssets.PrefabPath, TavernScreenAssets.CreateAssets),
-            ("Workshop", WorkshopScreenAssets.PrefabPath, WorkshopScreenAssets.CreateAssets),
+            ("Pub", TavernScreenAssets.PrefabPath, TavernScreenAssets.CreateAssets),
+            ("Shop", WorkshopScreenAssets.PrefabPath, WorkshopScreenAssets.CreateAssets),
             ("Temple", TempleScreenAssets.PrefabPath, TempleScreenAssets.CreateAssets),
             (
                 "TravelOffice",
