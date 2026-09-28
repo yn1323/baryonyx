@@ -28,8 +28,8 @@ description: >
 4. 表現の目的を「背景の奥行き」「環境の光」「キャラクター紹介の見せ場」「操作中のフィードバック」「画面遷移」のどれかに分け、常時演出と短い演出を区別する。
 5. 公式Unity資料と対象バージョンが一致しない場合は、対象バージョンのマニュアルを再確認してからAPI名や設定値を断定する。調査の入口は [references/research-sources.md](references/research-sources.md) に置く。
 
-このリポジトリでは、Unity `6000.6.0f1`、URP `17.6.0`、uGUIを使う。
-現在のTopは`ScreenSpaceOverlay` Canvas内の`RawImage`で`TopDungeonBackground.png`を表示し、タイトルと操作はSafe Area配下に置いている。
+Unityの版は `client/ProjectSettings/ProjectVersion.txt`、URPの版は `client/Packages/manifest.json` で確かめ、記憶で断定しない。UIの構成は[UI設計ルール](../../../doc/rules/ui-design.md#現行のui構成)に従う。
+背景を`RawImage`で表示し、タイトルと操作をSafe Area配下に置く画面では、次の点に注意する。
 この構造のままでは、ワールド用の`Light 2D`を追加しても`RawImage`が自動で照明を受けるとは限らない。
 まず背景をSprite-Lit対応のワールド描画へ移す価値があるかを判断し、移行しない場合は、光のテクスチャ、透過オーバーレイ、Shader Graph、またはカメラ側のVolumeで表現する。
 
@@ -58,13 +58,19 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 4. BloomとVignetteを弱く加え、中央のタイトルと入口へ視線を集める。
 5. 効果が足りない場合だけ背景を遠景・中景・前景へ分割し、パララックスを小さく加える。
 
-Topのような`ScreenSpaceOverlay`背景で天井や窓から差す光を作る場合は、`Hd2dLightShaft.prefab`を独立した光芒レイヤーとして使う。根元が明るく先へ広がりながら消える光芒を、画面外の上から床へ向けて斜めに通し、太さと濃さの異なる複数本を間隔を空けて並べる。光芒が床に届く位置には光だまり、光芒の中だけには流れる埃を置き、光の出どころと着地点を示す。Topでは松明の暖色と対比させるため青白い光にしている。`ShaftCount`、`ShaftColor`、`LengthRange`、`WidthRange`、`WidthScaleRange`、`OpacityRange`、`RotationRange`、`SourceAnchor`、`SourceSpread`、`FloorPool*`、`Mote*`、`FlickerAmount`、`MotionAmplitude`はPrefabのInspectorから調整し、画面固有の配置（`SourceAnchor`、`FloorPoolAnchor`）はシーンのPrefabインスタンスで上書きする。`SourceAnchor`は1を超える値を指定して画面外から開始できる。
-霧や霞は`Hd2dFog.prefab`を背景の直上（光芒と粒子より下）に置き、`Layers`へ範囲ごとの層を並べる。各層は`RectMask2D`のsoftnessで縁をぼかした矩形に、継ぎ目のないノイズ画像を2枚重ね、互いに逆向きへ流す。奥ほど遅く淡く、手前ほど速く濃くすると距離感が出る。Prefabの既定は床霧の奥・手前の2層で、画面固有の層（Topではアーチ奥の`DeepHaze`）はシーンのPrefabインスタンスでリストの末尾へ追加し、既定の層を上書きしない。
-松明や魔法の結晶など、背景に描かれた光源を揺らがせる場合は`Hd2dFlickerLight.prefab`を使う。光源ごとに芯・周りの光・床の照り返しを`Hd2dUiAdditive`マテリアルで加算し、`Sources`へ光源を並べる。親に背景と同じ`ResponsiveBackground`（同じ`AspectRatio`）を付けて背景画像と同じ範囲に揃え、光源の位置を背景画像上の正規化座標で指定する。画面座標で置くと、画面比率が変わったときに描かれた光源からずれる。背景に光が描き込まれている場合は、芯を小さく周りの光を弱くして白飛びを避ける。
-火の粉、魔法の粒、報酬のキラキラなど、点から出る粒子は`Hd2dEmberEmitter.prefab`を使う。`Sources`へ発生源を並べ、向き・初速・上向きの加速・カールノイズの流れ・寿命に沿った色で動きを決める。背景に描かれた光源から出す場合は、`Hd2dFlickerLight`と同じく親を背景画像に揃える。報酬や画面遷移の瞬間だけ出す場合は`Loop`をオフにした発生源を用意し、`Burst`で出す。
-BloomなどのポストプロセスをTopのような画面に掛ける場合は、背景とHD-2Dの演出を`Screen Space - Camera`のCanvas（Topでは`TopBackdropCanvas`）へ移し、タイトルや操作は`ScreenSpaceOverlay`のCanvasに残す。両方のCanvasScalerは同じ設定にする。カメラの`renderPostProcessing`を有効にし、全体に効くVolumeへ共通の`Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset`を設定する。BloomのThresholdは、描かれた中間調より上に置くと炎・加算の光・光芒だけがにじみ、下げるほど照らされた中間調もにじむ。Topでは0.4にしている。
-画面の上下をぼかす疑似ティルトシフトは、同じProfileの`HD-2D Tilt Shift`（`Hd2dTiltShift`）で調整する。描画は`Mobile_Renderer`と`PC_Renderer`に登録した`Hd2dTiltShiftRendererFeature`が行い、Intensityが0の画面では処理しない。Max Radiusはドット絵の1粒より大きくしないと見えず、大きくしすぎると輪郭が濁るため、1080px基準で6〜10から始める。
-Topの既存`LightLayer`にある複数の局所光が画面上で不自然なら、その層は削除し、光芒Prefabと粒子Prefabを別々に配置する。
+このリポジトリには、次の共通Prefabがある。
+各Prefabの調整項目、Topでの値、置く順番は[展示室の仕様](../../../doc/features/showcase.md#表示と操作)の各節を正本とし、このスキルには値を写さない。
+共通アセットの生成と、Topなど特定のシーンへの配置を書く場所は[配置を増やすときの基準](../../../doc/rules/frontend-design.md#配置を増やすときの基準)に従う。
+
+| 表現 | Prefab | 使うときの要点 | 調整項目の正本 |
+| --- | --- | --- | --- |
+| 天井や窓から差す光 | `Hd2dLightShaft` | 根元が明るく先へ広がる光芒を、画面外から床へ斜めに通す。太さと濃さの違う複数本を間を空けて並べ、床の光だまりと光の中の埃で出どころと着地点を示す。画面固有の開始位置と光だまりはシーンのPrefabインスタンスで上書きする | [光芒の調整](../../../doc/features/showcase.md#光芒の調整) |
+| 霧・霞 | `Hd2dFog` | 背景の直上（光芒と粒子より下）に置く。奥ほど遅く淡く、手前ほど速く濃くする。画面固有の層はPrefabの既定の層を上書きせず、リストの末尾へ足す | [霧の調整](../../../doc/features/showcase.md#霧の調整) |
+| 背景に描かれた光源の揺らぎ | `Hd2dFlickerLight` | 親を背景と同じ `ResponsiveBackground` で背景画像に揃え、光源を背景画像上の正規化座標で置く。画面座標で置くと、画面比率が変わったときに絵の光源からずれる。光が描き込まれた背景では、芯を小さく周りの光を弱くして白飛びを避ける | [揺らぐ光の調整](../../../doc/features/showcase.md#揺らぐ光の調整) |
+| 火の粉・魔法の粒・報酬のキラキラ | `Hd2dEmberEmitter` | 常時出す発生源と、報酬や画面遷移の瞬間だけ `Burst` で出す発生源を分ける。背景の光源から出す場合は親を背景画像に揃える | [火の粉の調整](../../../doc/features/showcase.md#火の粉の調整) |
+| にじみ・周辺減光・色調 | `Hd2dPostProcess`（Volume Profile） | ポストプロセスを掛ける背景と演出を `Screen Space - Camera` のCanvasへ分け、文字と操作は `ScreenSpaceOverlay` のCanvasに残す。両方のCanvasScalerは同じ設定にする | [ポストプロセスの調整](../../../doc/features/showcase.md#ポストプロセスの調整) |
+| 画面の上下のぼかし | `HD-2D Tilt Shift`（同じProfile） | ドット絵の1粒より大きい半径にしないと見えず、大きすぎると輪郭が濁る。Android端末で負荷を確かめる | [疑似ティルトシフト](../../../doc/features/showcase.md#疑似ティルトシフト) |
+| 画面全体の埃ときらめき | `Hd2dLightingVfx`・`Hd2dParticleField` | 数は多めでも一粒を目立たせない | [塵ときらめきの表示](../../../doc/features/showcase.md#塵ときらめきの表示) |
 
 「キラキラ」は同じ粒子を大量に出す表現ではなく、次の役割を混ぜる。
 
@@ -113,7 +119,7 @@ Topの既存`LightLayer`にある複数の局所光が画面上で不自然な�
 - **品質設定**：高・標準・低、モーション低減、粒子停止、Bloomの強度、同時粒子数、更新頻度。
 - **データ**：色、発生範囲、寿命、速度、サイズ、Sorting Layer、再生条件をPrefabまたはProfileへ寄せ、コードへ直接書き込まない。
 
-共有部品が実際に複数機能で使われるまでは、画面固有のPrefabを無理に共通化しない。
+共有するかどうかと置き場所は[配置を増やすときの基準](../../../doc/rules/frontend-design.md#配置を増やすときの基準)に従う。2つ目の画面が使うまでは、画面固有のPrefabを無理に共通化しない。
 クライアントの画像、VFX、Prefab、アニメーション、シーンを追加・変更したら、同じ変更で`client/`の展示室へ登録し、一覧とプレビューで見えることを確認する。
 
 ## 演出の制約

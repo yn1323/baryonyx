@@ -85,6 +85,7 @@ baryonyx/
 ## Skill
 
 - 作業に適用するSkillの発動条件と本文を確認し、その範囲で使う。
+- docとスキルの使い分けは[文書管理方針](doc/rules/documentation-policy.md#docとスキルの使い分け)に従う。規則・数値・配置はdocを正本にし、スキルにはその作業の進め方とdocへのリンクだけを書く。
 - 日本語の技術文書やPR本文を作成・推敲するときは [japanese-tech-writing](.agents/skills/japanese-tech-writing/SKILL.md) を使う。
 - 読み物としての長い文章を扱う場合は、必要に応じて [cognitive-rhythm-writing](.agents/skills/cognitive-rhythm-writing/SKILL.md) を使う。
 - Skillの手順や文章規範を、このファイルへ複製しない。

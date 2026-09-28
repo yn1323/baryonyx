@@ -10,7 +10,8 @@ description: ユーザーが`$babysit-pr`を明示したとき、現在のchecko
 
 ## 検証と進捗
 
-最後の関連変更より後に同じ作業ツリーで成功した検証は再利用し、監視段階へ進んだという理由だけで再実行しない。
+commit前の検証は、ルートの `AGENTS.md` の[commitの手順](../../../AGENTS.md#commitの手順)に従う。
+commitの後は、最後の関連変更より後に成功した検証を再利用し、監視段階へ進んだという理由だけで再実行しない。
 長い処理では、状態変化、失敗原因、次の対応を簡潔に共有する。
 
 ## 最初に読む
@@ -18,7 +19,7 @@ description: ユーザーが`$babysit-pr`を明示したとき、現在のchecko
 1. rootと対象に近い`AGENTS.md`
 2. `client/` のUnity設定とテスト設定、`server/` のパッケージ・テスト・DB設定のうち実在し、変更に関係するもの
 3. `.github/workflows/` と `docs/` の開発・CI手順があれば読む
-4. PR本文を書く場合は [japanese-tech-writing](../japanese-tech-writing/SKILL.md)
+4. PR本文を書く場合は [create-pr](../create-pr/SKILL.md) のPR本文フォーマットと [japanese-tech-writing](../japanese-tech-writing/SKILL.md)
 
 コマンド、test project、workflow、check名の現在値はリポジトリを正本とし、このSkillの例より優先する。
 
@@ -56,7 +57,7 @@ git diff "$base_ref"...HEAD --stat
 ## 2. 変更に必要な確認を選ぶ
 
 変更範囲と現在のリポジトリ設定から必要な検証を選び、対象に近い確認から行う。
-ローカル全体テストを毎回必須にせず、実施済みの有効な検証を再利用する。
+作業中は対象に近い確認を選び、commit前の全件実行は `AGENTS.md` の[commitの手順](../../../AGENTS.md#commitの手順)に従う。
 
 - `client/` の変更は、設定済みのC#整形・解析、Unityコンパイル、EditMode・PlayModeテストから関係する確認を選ぶ。
 - Androidネイティブや歩数取得の変更は、該当プラグインのビルド・テスト、必要に応じて実機で確認する。
@@ -79,10 +80,8 @@ git diff "$base_ref"...HEAD --stat
 初回push前、またはGHA失敗への修正後に差分を読み直し、不要な複雑さ、重複、弱めた検証、依頼外変更がないことを確認する。
 
 1. `git status`、unstaged diff、staged diffを確認する。
-2. 今回の依頼に属するファイルだけを個別に`git add <path>`する。`git add .`と`git add -A`は使わない。
-3. 意味のあるrevert単位へ分け、日本語のConventional Commitでcommitする。
-4. `--amend`、`--no-verify`、対話的Git commandを使わない。
-5. hookがファイルを変更した場合は差分を確認し、修正に対応する対象限定のローカル確認を再実行してから新しいcommitを作る。
+2. 対象ファイルの選び方、除外するファイル、論理単位への分割、`git add` の仕方、メッセージの形式、禁止事項は[commit](../commit/SKILL.md)のワークフローに従う。
+3. hookがファイルを変更した場合は差分を確認し、修正に対応する対象限定のローカル確認を再実行してから新しいcommitを作る。
 
 ## 5. pushしてPull Requestを作成する
 
@@ -91,7 +90,7 @@ push直前に上記のfetchとremote base refの解決をもう一度行い、`o
 依頼外の履歴がなく、対象変更がすべてcommit済みの場合だけ現在branchをpushする。
 
 同じhead branchのopen Pull Requestがあれば重複作成せず再利用する。
-なければ、変更の目的、利用者に見える差分、実施した確認を日本語で記載し、ユーザー指定がなければ非draftのPull Requestを作成する。
+なければ、ユーザー指定がなければ非draftのPull Requestを作成する。タイトルと本文は[create-pr](../create-pr/SKILL.md)のPR本文フォーマットと書き方に従う。
 PR URL、number、base、head branch、head SHAを記録する。
 
 自動レビューの起動条件は現在のGitHub連携設定と実際の応答で確認する。新規PRで自動レビューが開始済みなら、直後に重複依頼しない。自動開始が確認できない場合は、そのSHAへ一度だけ明示的に依頼する。
