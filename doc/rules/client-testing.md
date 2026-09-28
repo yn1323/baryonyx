@@ -47,7 +47,7 @@ CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
 案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeのボタンから各画面へ移って戻ること、メニュー・リスト・決定の通知、地図の印の選択を検査する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したワットの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したUPTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
 TopとHomeのシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 
@@ -61,6 +61,29 @@ PlayModeでは実Prefabへ代表寸法とSafeAreaを適用して配置を確認�
 自動テスト用のデータはテストアセンブリに置き、Editor向けのサンプルプレビューと区別する。
 健康データのPresenterはEditModeで、固定応答を返すProviderを使って状態遷移を検査する。
 Appの起動テストは `App/Tests/PlayMode/` に置き、起動シーンの読み込みと遷移を確認する。
+
+## 作業中に実行するPlayModeテスト
+
+PlayModeテストはシーンの読み込みとフレームの経過を待つため、1件あたりの時間がEditModeより長い。
+2026-09-23のCIでは、テスト本体の実行時間がEditMode 122件で約1.5秒、PlayMode 29件で約49秒だった。
+作業中は関連するPlayModeテストだけを実行し、全件はcommit前に実行する（[commitの手順](../../AGENTS.md#commitの手順)）。
+EditModeは全件でも数秒で終わるため、作業中も `Baryonyx.EditModeTests` を全件実行する。
+
+関連するPlayModeテストは、次の順に選ぶ。
+
+1. 変更したファイルと同じ機能の `Tests/PlayMode/` にあるテスト。
+2. 変更した型・シーン・Prefabを参照する、他の場所のPlayModeテスト。テストコードを型名・シーン名・Prefab名で検索して探す。
+3. 次の変更では全件を実行する。
+   - `Tests/PlayMode/Support/` の変更
+   - 入力、シーン遷移、画面の寸法など、複数の画面が使う基盤の変更
+   - `Packages/`、`ProjectSettings/`、ビルド対象シーンの変更
+   - 関連するテストを判断できない場合
+
+PlayModeテストはすべて名前空間 `Baryonyx.Tests.PlayMode` に属するため、クラス名で絞る。
+接続中のEditorでは `run_tests --mode playmode --filter <テストクラス名> --async_tests true` をクラスごとに実行する。
+`filter_type` の既定値 `testName` は、テスト名の部分一致で絞り込む。
+Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;` 区切りで渡す（[Unity Test Frameworkのコマンドライン引数](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html)）。
+絞り込んだ実行で0件になった場合は、指定を誤っているため成功に含めない。
 
 ## 実行と結果確認
 
