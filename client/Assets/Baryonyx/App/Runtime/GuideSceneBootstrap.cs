@@ -1,7 +1,6 @@
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App
 {
@@ -19,7 +18,7 @@ namespace Baryonyx.App
         private SceneTransitionController transition;
 
         [SerializeField]
-        private string homeSceneName = "Home";
+        private string homeSceneName = SceneNames.Home;
 
         private GuideMenuPresenter presenter;
 
@@ -51,22 +50,6 @@ namespace Baryonyx.App
             presenter = null;
         }
 
-        private bool ReturnHome()
-        {
-            if (!Application.CanStreamedLevelBeLoaded(homeSceneName))
-            {
-                Debug.LogError(
-                    $"The scene '{homeSceneName}' is not enabled in Build Settings.",
-                    this
-                );
-                return false;
-            }
-            if (transition != null)
-                return transition.PlayOut(LoadHome);
-            LoadHome();
-            return true;
-        }
-
-        private void LoadHome() => SceneManager.LoadSceneAsync(homeSceneName, LoadSceneMode.Single);
+        private bool ReturnHome() => SceneLoader.Load(homeSceneName, transition, this);
     }
 }

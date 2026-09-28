@@ -3,8 +3,6 @@ using System.Threading.Tasks;
 using Baryonyx.Health;
 #if UNITY_ANDROID && !UNITY_EDITOR
 using Baryonyx.Account;
-using Baryonyx.ExerciseRewards;
-using Baryonyx.Networking;
 #endif
 
 namespace Baryonyx.App
@@ -25,26 +23,7 @@ namespace Baryonyx.App
                 settings != null ? settings.GoogleWebClientId : ""
             );
             authentication = google;
-            var url = ServerEndpoint.Resolve(settings);
-            if (!string.IsNullOrWhiteSpace(url))
-            {
-                try
-                {
-                    var server = new ServerApi(url);
-                    rewards = new HealthServerSync(
-                        new AccountApiClient(server),
-                        new HealthApiClient(server),
-                        new ExerciseRewardsApiClient(server)
-                    );
-                }
-                catch (ArgumentException exception)
-                {
-                    UnityEngine.Debug.LogWarning(
-                        "運動報酬APIのURLが無効なため、サーバー連携を無効にします。"
-                            + exception.Message
-                    );
-                }
-            }
+            rewards = GameServices.CreateServerSync(settings);
             Presenter = new HealthScreenPresenter(google, new HealthConnectProvider(), rewards);
 #else
             var preview = new HealthScreenPreviewProvider();

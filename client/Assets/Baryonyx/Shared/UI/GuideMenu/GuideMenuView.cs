@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -42,7 +41,7 @@ namespace Baryonyx.UI.GuideMenu
 
         private readonly List<Button[]> entries = new();
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
-        private Coroutine toastRoutine;
+        private FadingMessage toastFade;
         private GuideMenuPresenter ownPresenter;
         private bool bound;
 
@@ -164,29 +163,8 @@ namespace Baryonyx.UI.GuideMenu
                 Depart.interactable = state.CanConfirm;
         }
 
-        public void ShowToast(string message)
-        {
-            if (Toast == null)
-                return;
-            SetText(ToastLabel, message);
-            if (toastRoutine != null)
-                StopCoroutine(toastRoutine);
-            if (isActiveAndEnabled)
-                toastRoutine = StartCoroutine(ToastRoutine());
-        }
-
-        private IEnumerator ToastRoutine()
-        {
-            Toast.alpha = 1f;
-            yield return new WaitForSecondsRealtime(1.4f);
-            for (float t = 0f; t < 0.3f; t += Time.unscaledDeltaTime)
-            {
-                Toast.alpha = 1f - t / 0.3f;
-                yield return null;
-            }
-            Toast.alpha = 0f;
-            toastRoutine = null;
-        }
+        public void ShowToast(string message) =>
+            (toastFade ??= new FadingMessage(this)).Show(Toast, ToastLabel, message, 1.4f, 0.3f);
 
         private static void SetSelected(Button button, bool selected)
         {

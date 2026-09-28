@@ -2,7 +2,6 @@ using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App
 {
@@ -71,53 +70,12 @@ namespace Baryonyx.App
             presenter = null;
         }
 
-        private bool StartAdventure()
-        {
-            if (!Application.CanStreamedLevelBeLoaded(adventureSceneName))
-            {
-                Debug.LogError(
-                    $"The adventure scene '{adventureSceneName}' is not enabled in Build Settings.",
-                    this
-                );
-                return false;
-            }
-
-            if (transition != null)
-                return transition.PlayOut(LoadAdventure);
-
-            LoadAdventure();
-            return true;
-        }
-
-        /// <summary>The guide screen scene each Home button opens (built by GuideSceneSetup).</summary>
-        public static string ScreenSceneFor(HomeAction action) =>
-            action switch
-            {
-                HomeAction.Tavern => "Pub",
-                HomeAction.Workshop => "Shop",
-                HomeAction.Temple => "Temple",
-                HomeAction.TravelOffice => "TravelOffice",
-                _ => null,
-            };
+        private bool StartAdventure() => SceneLoader.Load(adventureSceneName, transition, this);
 
         private bool OpenScreen(HomeAction action)
         {
-            var scene = ScreenSceneFor(action);
-            if (scene == null)
-                return false;
-            if (!Application.CanStreamedLevelBeLoaded(scene))
-            {
-                Debug.LogError($"The scene '{scene}' is not enabled in Build Settings.", this);
-                return false;
-            }
-            void Load() => SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
-            if (transition != null)
-                return transition.PlayOut(Load);
-            Load();
-            return true;
+            var scene = SceneNames.GuideFor(action);
+            return scene != null && SceneLoader.Load(scene, transition, this);
         }
-
-        private void LoadAdventure() =>
-            SceneManager.LoadSceneAsync(adventureSceneName, LoadSceneMode.Single);
     }
 }

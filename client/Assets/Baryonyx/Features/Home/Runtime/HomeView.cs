@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Baryonyx.UI;
 using Baryonyx.Vfx.Hd2d;
 using TMPro;
 using UnityEngine;
@@ -194,8 +195,8 @@ namespace Baryonyx.Home
         private readonly List<(Button button, UnityEngine.Events.UnityAction listener)> bindings =
             new();
         private readonly List<Image> particles = new();
-        private Coroutine toastRoutine;
-        private Coroutine noticeRoutine;
+        private FadingMessage toastFade;
+        private FadingMessage noticeFade;
         private Coroutine runeRoutine;
         private bool claimPulses;
 
@@ -245,8 +246,6 @@ namespace Baryonyx.Home
                 if (button != null)
                     button.onClick.RemoveListener(listener);
             bindings.Clear();
-            toastRoutine = null;
-            noticeRoutine = null;
             FinishRuneGain();
         }
 
@@ -306,69 +305,22 @@ namespace Baryonyx.Home
 
         public void ShowToast(string message)
         {
-            if (Toast == null || ToastLabel == null || string.IsNullOrEmpty(message))
-                return;
-            ToastLabel.text = message;
-            Toast.alpha = 1f;
-            if (toastRoutine != null)
-                StopCoroutine(toastRoutine);
-            toastRoutine = isActiveAndEnabled ? StartCoroutine(FadeToast()) : null;
+            if (!string.IsNullOrEmpty(message))
+                ToastFade.Show(Toast, ToastLabel, message, ToastSeconds, ToastFadeSeconds);
         }
 
-        public void HideToast()
-        {
-            if (toastRoutine != null)
-                StopCoroutine(toastRoutine);
-            toastRoutine = null;
-            if (Toast != null)
-                Toast.alpha = 0f;
-        }
-
-        private IEnumerator FadeToast()
-        {
-            yield return new WaitForSecondsRealtime(ToastSeconds);
-            yield return FadeOut(Toast);
-            toastRoutine = null;
-        }
+        public void HideToast() => ToastFade.Hide(Toast);
 
         public void ShowNotice(string message)
         {
-            if (Notice == null || NoticeLabel == null || string.IsNullOrEmpty(message))
-                return;
-            NoticeLabel.text = message;
-            Notice.alpha = 1f;
-            if (noticeRoutine != null)
-                StopCoroutine(noticeRoutine);
-            noticeRoutine = isActiveAndEnabled ? StartCoroutine(FadeNotice()) : null;
+            if (!string.IsNullOrEmpty(message))
+                NoticeFade.Show(Notice, NoticeLabel, message, NoticeSeconds, ToastFadeSeconds);
         }
 
-        public void HideNotice()
-        {
-            if (noticeRoutine != null)
-                StopCoroutine(noticeRoutine);
-            noticeRoutine = null;
-            if (Notice != null)
-                Notice.alpha = 0f;
-        }
+        public void HideNotice() => NoticeFade.Hide(Notice);
 
-        private IEnumerator FadeNotice()
-        {
-            yield return new WaitForSecondsRealtime(NoticeSeconds);
-            yield return FadeOut(Notice);
-            noticeRoutine = null;
-        }
-
-        private IEnumerator FadeOut(CanvasGroup group)
-        {
-            float elapsed = 0f;
-            while (elapsed < ToastFadeSeconds)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                group.alpha = 1f - Mathf.Clamp01(elapsed / ToastFadeSeconds);
-                yield return null;
-            }
-            group.alpha = 0f;
-        }
+        private FadingMessage ToastFade => toastFade ??= new FadingMessage(this);
+        private FadingMessage NoticeFade => noticeFade ??= new FadingMessage(this);
 
         // 所持ルーンを from から to まで、粒子が着くたびに増やして見せる。
         public void PlayRuneGain(long from, long to)
