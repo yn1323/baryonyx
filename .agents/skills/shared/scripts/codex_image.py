@@ -7,9 +7,11 @@ Codexは読み取り専用のサンドボックスで動かし、画像の生成
 Codexに保存や縮小をさせると、ドット絵を勝手に縮めて潰すことがあるため、
 生成物は `$CODEX_HOME/generated_images/<セッションID>/` からこのスクリプトが回収する。
 
-使い方:
-  python3 codex_image.py --out-dir DIR --name NAME --request FILE --profile FILE \
-      [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
+WindowsとmacOSの両方で動く。ファイルと標準入出力はOSの既定の文字コードによらずUTF-8で扱い、
+Windowsでnpmが入れる `codex.cmd` も解決して起動する。
+
+使い方（リポジトリ直下で、PowerShell・bash・zshのどれでも1行で実行する）:
+  uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir DIR --name NAME --request FILE --profile FILE [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
 """
 import argparse
 import filecmp
@@ -51,7 +53,7 @@ def build_instruction(request, profile, image_roles):
 
 
 def find_thread_id(events_path):
-    for line in events_path.read_text(errors="replace").splitlines():
+    for line in events_path.read_text(encoding="utf-8", errors="replace").splitlines():
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
@@ -88,6 +90,10 @@ def free_path(out_dir, name):
 
 
 def main():
+    # Windowsでパイプへ出力するとcp932になり、Codexの返答に含まれる文字で止まることがあるため
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out-dir", required=True, help="生成物を置くフォルダー")
     ap.add_argument("--name", required=True, help="出力ファイル名（拡張子なし）。既存なら -v2 などを付ける")
@@ -103,8 +109,10 @@ def main():
 
     if len(args.image_role) != len(args.image):
         sys.exit("--image と --image-role は同じ数だけ指定してください")
-    if not shutil.which("codex"):
-        sys.exit("codex コマンドが見つかりません。Codex CLIをインストールしてください")
+    # Windowsのnpmは codex.cmd を置く。subprocessは拡張子を補わないので、見つけたパスで起動する
+    codex = shutil.which("codex")
+    if not codex:
+        sys.exit("codex コマンドが見つかりません。`npm install -g @openai/codex` でCodex CLIを入れ、`codex login` でログインしてください")
 
     out_dir = Path(args.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -114,12 +122,13 @@ def main():
         if not path.is_file():
             sys.exit(f"添付画像がありません: {path}")
 
-    instruction = build_instruction(Path(args.request).read_text(), Path(args.profile).read_text(), args.image_role)
-    (out_dir / f"{args.name}.codex-prompt.md").write_text(instruction)
+    instruction = build_instruction(Path(args.request).read_text(encoding="utf-8"),
+                                    Path(args.profile).read_text(encoding="utf-8"), args.image_role)
+    (out_dir / f"{args.name}.codex-prompt.md").write_text(instruction, encoding="utf-8")
 
     events = out_dir / f"{args.name}.codex-events.jsonl"
     last_message = out_dir / f"{args.name}.codex-reply.md"
-    cmd = ["codex", "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--cd", str(out_dir),
+    cmd = [codex, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--cd", str(out_dir),
            "--json", "--output-last-message", str(last_message)]
     if args.model:
         cmd += ["--model", args.model]
@@ -135,10 +144,10 @@ def main():
 
     print(f"Codexに依頼しています（数分かかります）: {args.name}", file=sys.stderr)
     started = time.time() - 1
-    with open(events, "w") as out:
+    with open(events, "w", encoding="utf-8") as out:
         try:
-            result = subprocess.run(cmd, input=instruction, text=True, stdout=out, stderr=subprocess.PIPE,
-                                    timeout=args.timeout)
+            result = subprocess.run(cmd, input=instruction, encoding="utf-8", errors="replace",
+                                    stdout=out, stderr=subprocess.PIPE, timeout=args.timeout)
         except subprocess.TimeoutExpired:
             sys.exit(f"{args.timeout}秒待っても終わりませんでした。{CODEX_HOME / 'generated_images'} を確認してください")
     if result.returncode != 0:
@@ -146,7 +155,7 @@ def main():
 
     images = collect_images(find_thread_id(events), started)
     if not images:
-        reply = last_message.read_text() if last_message.exists() else ""
+        reply = last_message.read_text(encoding="utf-8", errors="replace") if last_message.exists() else ""
         sys.exit(f"生成画像が見つかりませんでした（終了コード {result.returncode}）。Codexの返答:\n{reply[-2000:]}")
 
     for image in images:
