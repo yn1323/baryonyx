@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
   Title: "\u9152\u5834"
   GuideArt: {fileID: 2800000, guid: 89f7da2be725a44459e1505fc56e3c79, type: 3}
-  GuideDotSize: 3.5
+  GuideDotSize: 4
   Background: {fileID: 2800000, guid: d6e453492f005435ca349cf50e5ac468, type: 3}
   Layout: 0
   Items:

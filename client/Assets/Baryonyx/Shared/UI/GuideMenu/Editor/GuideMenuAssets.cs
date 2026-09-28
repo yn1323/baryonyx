@@ -64,9 +64,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         /// <summary>
         /// Writes a feature's definition and builds its screen prefab from it. The guide is
-        /// scaled to the largest size that fits the guide box. A pixel-art guide keeps whole
-        /// quarter steps with point filtering; a high-resolution guide (<paramref name="smoothGuide"/>)
-        /// is shrunk to fit exactly with bilinear filtering and mipmaps.
+        /// scaled to the largest size that fits the guide box.
         /// </summary>
         public static GameObject CreateScreen(
             string definitionPath,
@@ -74,8 +72,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string guideArtPath,
             string backgroundPath,
             Action<GuideMenuDefinition> fill,
-            string mapArtPath = null,
-            bool smoothGuide = false
+            string mapArtPath = null
         )
         {
             if (EditorApplication.isPlaying)
@@ -95,16 +92,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 AssetDatabase.CreateAsset(definition, definitionPath);
             }
             fill(definition);
-            definition.GuideArt = ImportTexture(
-                guideArtPath,
-                smoothGuide ? FilterMode.Bilinear : FilterMode.Point,
-                mipmaps: smoothGuide
-            );
+            definition.GuideArt = ImportTexture(guideArtPath, FilterMode.Point);
             // The backgrounds and the map are generated illustrations used as they are.
             definition.Background = ImportTexture(backgroundPath, FilterMode.Bilinear);
             definition.MapArt =
                 mapArtPath != null ? ImportTexture(mapArtPath, FilterMode.Bilinear) : null;
-            definition.GuideDotSize = FitDotSize(definition.GuideArt, smoothGuide);
+            definition.GuideDotSize = FitDotSize(definition.GuideArt);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
 
@@ -128,12 +121,11 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return sprite;
         }
 
-        // The largest scale that keeps the whole guide inside the guide box: quarter steps for
-        // pixel art, exact for a high-resolution guide.
-        private static float FitDotSize(Texture2D art, bool smooth)
+        // The largest quarter-pixel dot size that keeps the whole guide inside the guide box.
+        private static float FitDotSize(Texture2D art)
         {
             float fit = Mathf.Min(GuideMaxWidth / art.width, GuideMaxHeight / art.height);
-            return smooth ? fit : Mathf.Floor(fit * 4f) / 4f;
+            return Mathf.Floor(fit * 4f) / 4f;
         }
 
         // --- Mock content ------------------------------------------------------------------
@@ -745,7 +737,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             UnityEngine.Object.DestroyImmediate(texture);
         }
 
-        private static Texture2D ImportTexture(string path, FilterMode filter, bool mipmaps = false)
+        private static Texture2D ImportTexture(string path, FilterMode filter)
         {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -753,13 +745,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 throw new InvalidOperationException("Required artwork is missing: " + path);
             importer.textureType = TextureImporterType.Default;
             importer.filterMode = filter;
-            // A shrunken high-resolution guide samples averaged mip levels instead of dropping pixels.
-            importer.mipmapEnabled = mipmaps;
+            importer.mipmapEnabled = false;
             importer.alphaIsTransparency = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.npotScale = TextureImporterNPOTScale.None;
-            importer.maxTextureSize = 4096;
+            importer.maxTextureSize = 2048;
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
