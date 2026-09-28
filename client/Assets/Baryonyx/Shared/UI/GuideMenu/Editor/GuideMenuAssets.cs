@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -28,13 +29,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string MarkerPath = ArtFolder + "/GuideMapMarker.png";
         public const string MarkerSelectedPath = ArtFolder + "/GuideMapMarkerSelected.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
-        public const string IconBackPath = ArtFolder + "/IconBack.png";
+        public const string IconBackPath = ArtFolder + "/IconBack.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
 
-        // The 12x12 window frames and the 24x24 icons are drawn at 4 design pixels per dot,
-        // like the game's sprites.
+        // The window frames and the 24x24 icons are drawn at 4 design pixels per dot, like the
+        // game's sprites.
         private const float DotScale = 4f;
         private const float IconSize = 24f * DotScale;
+
+        // A frame keeps its 4-dot corners; the 16-dot edges and fill repeat (Image.Type.Tiled).
+        private const int FrameCorner = 4;
+        private const int FrameTile = 16;
 
         // The guide stands in this box at the bottom left; the list and map start right of it.
         private const float GuideLeft = 24f;
@@ -110,15 +115,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return prefab;
         }
 
-        /// <summary>A 24x24 pixel-art icon imported as a sprite for a menu row.</summary>
+        /// <summary>A 24x24 pixel-art icon drawn in Aseprite, used as a sprite for a menu row.</summary>
         public static Sprite Icon(string path)
         {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(path, Vector4.zero, FilterMode.Point);
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (sprite == null)
-                throw new InvalidOperationException("Icon is missing: " + path);
-            return sprite;
+            AsepriteCanvasImport.ApplyTextureSettings(path, FilterMode.Point, mipmaps: false);
+            return AsepriteCanvasImport.LoadSprite(path);
         }
 
         // The largest quarter-pixel dot size that keeps the whole guide inside the guide box.
@@ -594,21 +596,22 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         private static void WriteArt()
         {
-            // A JRPG message window: dark rim, a light line, a shadow line and a translucent fill.
-            var rim = new Color32(12, 14, 26, 245);
+            // A silver line with rounded corners on a navy fill; the selected one is gold on purple.
             WriteFrame(
                 FramePath,
-                rim,
-                new Color32(222, 208, 170, 255),
-                new Color32(84, 78, 108, 255),
-                new Color32(16, 20, 42, 214)
+                outline: (Hex(0x465c85), Hex(0x0c1b36)),
+                line: (Hex(0xdcdfe1), Hex(0x8496ae)),
+                glint: (Hex(0xf4f4f1), Hex(0xa8b4c5)),
+                fill: Hex(0x141f3f),
+                shade: Hex(0x0a1229)
             );
             WriteFrame(
                 FrameSelectedPath,
-                rim,
-                new Color32(255, 215, 102, 255),
-                new Color32(160, 118, 40, 255),
-                new Color32(46, 36, 72, 232)
+                outline: (Hex(0xa6500d), Hex(0x3c1903)),
+                line: (Hex(0xfde45a), Hex(0xde8613)),
+                glint: (Hex(0xfef6cb), Hex(0xf4b118)),
+                fill: Hex(0x2a2350),
+                shade: Hex(0x181432)
             );
             WriteArrow(ArrowPath);
             WriteGradient(ShadeHorizontalPath);
@@ -626,8 +629,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 13
             );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(FramePath, new Vector4(4, 4, 4, 4), FilterMode.Point);
-            ImportSprite(FrameSelectedPath, new Vector4(4, 4, 4, 4), FilterMode.Point);
+            ImportSprite(FramePath, Vector4.one * FrameCorner, FilterMode.Point, fullRect: true);
+            ImportSprite(
+                FrameSelectedPath,
+                Vector4.one * FrameCorner,
+                FilterMode.Point,
+                fullRect: true
+            );
             ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
             ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
             ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
@@ -636,32 +644,75 @@ namespace Baryonyx.UI.GuideMenu.Editor
             ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
 
+        // The top-left corner, rows from the top edge and columns from the left edge, and the
+        // strip across an edge from the outside in: '.' clear, 'o' outline, 'L' line, 'G' glint,
+        // 's' the shadow the frame casts on the fill, 'f' fill. The other corners mirror it.
+        private static readonly string[] FrameCornerDots = { "..oo", ".oGL", "oGss", "oLsf" };
+        private const string FrameEdgeDots = "oLsf";
+
+        // Lit from the top left: each colour pair is (top and left, bottom and right).
         private static void WriteFrame(
             string path,
-            Color32 rim,
-            Color32 light,
-            Color32 shadow,
-            Color32 fill
+            (Color32 Lit, Color32 Dark) outline,
+            (Color32 Lit, Color32 Dark) line,
+            (Color32 Lit, Color32 Dark) glint,
+            Color32 fill,
+            Color32 shade
         )
         {
-            const int size = 12;
+            const int size = FrameCorner * 2 + FrameTile;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
             {
-                int edge = Mathf.Min(Mathf.Min(x, y), Mathf.Min(size - 1 - x, size - 1 - y));
-                bool corner = (x == 0 || x == size - 1) && (y == 0 || y == size - 1);
-                Color32 color = edge switch
+                // Texture rows run from the bottom.
+                int row = size - 1 - y;
+                int fromSide = Mathf.Min(x, size - 1 - x);
+                int fromTop = Mathf.Min(row, size - 1 - row);
+                bool litTop = row < FrameCorner;
+                bool litLeft = x < FrameCorner;
+                char dot;
+                bool lit;
+                if (fromSide < FrameCorner && fromTop < FrameCorner)
                 {
-                    0 => corner ? new Color32(0, 0, 0, 0) : rim,
-                    1 => light,
-                    2 => shadow,
+                    dot = FrameCornerDots[fromTop][fromSide];
+                    // A corner dot belongs to the nearer edge; the diagonal takes the lit one.
+                    lit =
+                        fromTop < fromSide ? litTop
+                        : fromSide < fromTop ? litLeft
+                        : litTop || litLeft;
+                }
+                else if (fromTop < FrameCorner)
+                {
+                    dot = FrameEdgeDots[fromTop];
+                    lit = litTop;
+                }
+                else if (fromSide < FrameCorner)
+                {
+                    dot = FrameEdgeDots[fromSide];
+                    lit = litLeft;
+                }
+                else
+                {
+                    dot = 'f';
+                    lit = true;
+                }
+                Color32 color = dot switch
+                {
+                    '.' => new Color32(0, 0, 0, 0),
+                    'o' => lit ? outline.Lit : outline.Dark,
+                    'L' => lit ? line.Lit : line.Dark,
+                    'G' => lit ? glint.Lit : glint.Dark,
+                    's' => lit ? shade : fill,
                     _ => fill,
                 };
                 texture.SetPixel(x, y, color);
             }
             Save(texture, path);
         }
+
+        private static Color32 Hex(int rgb) =>
+            new((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb, 255);
 
         // Clear on the left, dark on the right.
         private static void WriteGradient(string path)
@@ -740,6 +791,11 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static Texture2D ImportTexture(string path, FilterMode filter)
         {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            if (AsepriteCanvasImport.IsAseprite(path))
+            {
+                AsepriteCanvasImport.ApplyTextureSettings(path, filter, mipmaps: false);
+                return AsepriteCanvasImport.LoadTexture(path);
+            }
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
                 throw new InvalidOperationException("Required artwork is missing: " + path);
@@ -755,11 +811,24 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
-        private static void ImportSprite(string path, Vector4 border, FilterMode filter)
+        private static void ImportSprite(
+            string path,
+            Vector4 border,
+            FilterMode filter,
+            bool fullRect = false
+        )
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
+            if (fullRect)
+            {
+                // Tiled images repeat the sprite's whole rectangle, so the mesh must not trim it.
+                var settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                settings.spriteMeshType = SpriteMeshType.FullRect;
+                importer.SetTextureSettings(settings);
+            }
             importer.spriteBorder = border;
             importer.spritePixelsPerUnit = 100;
             importer.filterMode = filter;
@@ -797,7 +866,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
         {
             var image = rect.gameObject.AddComponent<Image>();
             image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            image.type = Image.Type.Sliced;
+            // Tiled keeps the dots of the edges instead of stretching them into a flat line.
+            image.type = Image.Type.Tiled;
             image.pixelsPerUnitMultiplier = 1f / DotScale;
             image.color = color;
             image.raycastTarget = true;
@@ -807,7 +877,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static Image SpriteImage(RectTransform rect, string path, Color color)
         {
             var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            image.sprite = AsepriteCanvasImport.IsAseprite(path)
+                ? AsepriteCanvasImport.LoadSprite(path)
+                : AssetDatabase.LoadAssetAtPath<Sprite>(path);
             image.color = color;
             image.raycastTarget = false;
             return image;
