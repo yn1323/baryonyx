@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
 using Baryonyx.Home;
 using Baryonyx.Home.Editor;
 using Baryonyx.UI;
@@ -1012,7 +1013,9 @@ namespace Baryonyx.Combat.Editor
         private static UnityEngine.Rect OpaqueBounds(Texture2D texture)
         {
             var pixels = AssetDatabase.GetAssetPath(texture) is { } path
-                ? LoadReadable(path)
+                ? AsepriteCanvasImport.IsAseprite(path)
+                    ? AsepriteCanvasImport.ReadFramePixels(path)
+                    : LoadReadable(path)
                 : null;
             if (pixels == null)
                 return new UnityEngine.Rect(0, 0, texture.width, texture.height);

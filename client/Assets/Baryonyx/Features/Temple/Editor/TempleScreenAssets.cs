@@ -14,7 +14,7 @@ namespace Baryonyx.Temple.Editor
         public const string Folder = "Assets/Baryonyx/Features/Temple";
         public const string DefinitionPath = Folder + "/Data/TempleGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/TempleScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/TempleGuide.png";
+        public const string GuideArtPath = Folder + "/UI/Art/TempleGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TempleBackground.png";
 
         [MenuItem("Baryonyx/Temple/Create Screen Assets")]

@@ -55,7 +55,7 @@ baryonyx/
 │   ├── Assets/            Unityが読み込むコードとアセット
 │   ├── Packages/          Unityパッケージの依存管理
 │   ├── ProjectSettings/   Unityプロジェクトの設定
-│   ├── ArtSource/         Unityに読み込ませない画像の正本（.aseprite）
+│   ├── ArtSource/         Unityに読み込ませない制作元（画像の生成指示の記録）
 │   └── ci/                クライアントのビルド・検証補助
 ├── server/                 Honoバックエンド
 │   ├── src/               実装と近接するテスト
@@ -92,7 +92,7 @@ baryonyx/
 ## Gitと環境
 
 - 現在のブランチと作業ディレクトリで作業する。ユーザーの明示指示がなければ、ブランチの作成・切り替えやworktreeの作成を行わない。
-- commit、push、PR作成は、ユーザーが依頼した場合に行う。必要な操作が既に許可されていれば、同じ確認を繰り返さない。
+- commit、push、PR作成は、ユーザーが依頼した場合に行う。必要な操作が既に許可されていれば、同じ確認を繰り返さない。commitは[commitの手順](#commitの手順)に従う。
 - 環境へ接続するときは対象を確認する。参照元の別プロジェクトのURLや権限設定を流用しない。
 - 自動生成ファイルは生成元または生成手順を更新する。依存関係のロックファイルは対応する管理ツールで更新する。
 
@@ -162,10 +162,31 @@ APKのインストール先は、起動中のエミュレーターに `adb shell
 既存アプリのデータを保持して更新する `adb install -r` を使う（[Android公式ドキュメント](https://developer.android.com/tools/adb?hl=ja#move)）。
 結果を確認できるよう、各ファイルは終了時にキー入力を待つ。
 
+## Asepriteの正本とタブレットの受け渡し
+
+- ドット絵の正本は、`client/Assets/Baryonyx/` の中の使う場所に `.aseprite` のまま置き、Gitで管理する。Unityが直接読み込むため、PNGへは書き出さない（[読み込みの仕組み](doc/rules/frontend-design.md#ゲーム内の対象の画像)）。タブレットで編集するときは、Unityのメニュー `Baryonyx > Art > Copy Aseprite Sources to Drive`・`Copy Aseprite Sources from Drive` でGoogle Driveのフォルダーとコピーし合う（[受け渡しの仕組み](doc/rules/frontend-design.md#タブレットとの受け渡し)）。
+- Driveのフォルダーは、PCごとに `Baryonyx > Art > Choose Aseprite Drive Folder...` で選んで保存する。
+- これらのメニューはユーザーが手動で実行する。AIは、検証時も含めて実行しない。
+
 ## 検証と報告
 
 - 変更した動作を直接確認できるテストや検査を選ぶ。実行方法はリポジトリ内の設定から確認する。
 - 文書だけの変更では、リンク、参照パス、記述の整合を確認する。
-- 同じ変更後に成功した検証は再利用し、追加変更や未解決の懸念がある場合に再実行する。
+- 作業中は、変更した動作に関連するテストだけを実行する。Unity PlayModeは関連するテストクラスに絞る（[選び方](doc/rules/client-testing.md#作業中に実行するplaymodeテスト)）。
+- 作業中は、同じ変更後に成功した検証を再利用し、追加変更や未解決の懸念がある場合に再実行する。commit前の全件実行には、それまでの結果を再利用しない。
 - 実装の失敗と、権限・接続・ツール不足による検証不能を区別する。
 - 完了時に差分を見直し、変更内容、検証結果、残っている未確認事項を報告する。
+
+### commitの手順
+
+ユーザーからcommitを指示されたら、次の順に進める。
+
+1. commit対象の変更を含む領域のテストを全件実行する。
+   - clientの変更：`Baryonyx.EditModeTests` と `Baryonyx.PlayModeTests` の全件（[実行方法](doc/rules/client-testing.md#実行と結果確認)）
+   - serverの変更：`server/` で `pnpm test`
+   - 文書だけの変更：リンク、参照パス、記述の整合の確認
+2. 1件でも失敗したら、原因を直してから手順1に戻る。失敗したテストだけでなく、全件を実行し直す。
+3. すべて成功したら、変更を意味のまとまりごとに分け、まとまりごとにcommitする。
+
+テスト0件と全件Skipは成功に含めない。
+権限・接続・ツール不足で全件を実行できない場合や、変更と無関係な失敗で修正が依頼の範囲を超える場合は、commitせずに状況を報告し、ユーザーの判断を待つ。

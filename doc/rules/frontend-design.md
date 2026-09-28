@@ -24,7 +24,8 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity、案内人の画面（Tavern・Workshop・Temple・TravelOffice）
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity
+│   │   │   │   └── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
 │   │   │   ├── Editor/                  シーンへの機能の配置
 │   │   │   └── Tests/PlayMode/          起動シーンと展示室シーンの検査
 │   │   ├── Features/Account/
@@ -77,6 +78,7 @@ client/
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
+│   │   │   ├── Art/                    .asepriteの読み込みの補正（キャンバスの大きさの画像を追加）、Driveとの受け渡し
 │   │   │   └── CI/                     コンパイル検査、シーン選択、APKビルド
 │   │   └── Tests/
 │   │       ├── EditMode/               アセンブリ定義と共通ビルド処理の検査
@@ -90,8 +92,7 @@ client/
 │   ├── TextMesh Pro/                   外部パッケージのアセット
 │   └── DevCaptures/                    Git対象外の検証画像
 ├── ArtSource/                          Unityに読み込ませない制作元。Shared/Art/と同じ分類で分ける
-│   ├── GameResources/                  素材・通貨のAseprite正本（IconRune.aseprite）
-│   └── UI/                             UI試作画像の生成指示の記録、Home/にボタンアイコンのAseprite正本
+│   └── UI/                             UI試作画像の生成指示の記録
 ├── Packages/                           Unityパッケージの依存管理
 ├── ProjectSettings/                    Unityプロジェクトの設定
 ├── ci/
@@ -205,10 +206,44 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 | `resources` | `GameResources` |
 | その他の分類 | 分類名をPascalCaseにする |
 
-- ドット絵の正本は `client/ArtSource/<分類>/` に、書き出すPNGと同じ名前の `.aseprite` として置く（`Shared/Art/GameResources/IconRune.png` の正本は `ArtSource/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。Unityで使うのは書き出したPNGだけとする。
+- ドット絵の正本は、Unityで使う場所に `.aseprite` のまま置き、Gitで管理する（ルーンのアイコンは `Shared/Art/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。PNGへは書き出さない。
+- `.aseprite` は、Unity公式のAseprite Importer（`com.unity.2d.aseprite`）が読み込む。Asepriteで保存してUnity Editorへ戻ると読み込み直され、Aseprite本体がない環境（CIなど）でも同じ画像になる。
+  - Importerは絵の周りの透明な部分を切り取り、余白をつけて1枚のテクスチャへ詰める。そのままでは大きさと位置がキャンバスと変わるため、[AsepriteCanvasImport](../../client/Assets/Baryonyx/Editor/Art/AsepriteCanvasImport.cs) が読み込みの最後に、切り取られた絵をキャンバスの位置へ戻したテクスチャと、フレームごとのSpriteを追加する。Importerが作るSpriteは、一覧に出ないよう非表示にする。
+  - 複数フレームのファイルは、フレームを左上から右へ並べた1枚のテクスチャになる。Spriteの名前は、1フレームならファイル名、複数ならファイル名に `_` とフレーム番号（0から）を付けたものになる。
+  - `Assets/Baryonyx/` の `.aseprite` は、読み込むたびに、Read/Writeを有効にし、SpriteRenderer向けのPrefabとAnimation Clipを作らない設定に揃える。フィルターとミップマップはInspectorまたは生成スクリプトで指定し、追加するテクスチャにも同じ設定を使う。
+  - Prefab・データ・展示室は、追加したSpriteとテクスチャを参照する。生成スクリプトからは `AsepriteCanvasImport.LoadSprite`・`LoadTexture` で読み込む。`AssetDatabase.LoadAssetAtPath` では、Importerが作った余白つきのテクスチャや、切り取った絵のSpriteが返ることがある。
+  - Importerが作るAnimation ClipはSpriteRendererの絵を切り替えるもので、uGUIのImageには使えない。UIでアニメーションを再生する方法は、最初のアニメーション素材を作るときに決める。
+  - [AsepriteCanvasImportTests](../../client/Assets/Baryonyx/Tests/EditMode/AsepriteCanvasImportTests.cs) は、全ての `.aseprite` に、キャンバスと同じ大きさのSpriteがフレームの数だけあることを検査する。
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
-- 画像を置いたら、対象の個別文書の `art_files` にPNGと正本のパスを書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
+- 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
 - 既存の `Shared/Art/Dungeons/` は分類名（`stages`）と一致していない。移すときは参照するコードと文書も併せて更新する。
+
+#### タブレットとの受け渡し
+
+正本はGitで管理し、タブレットではGoogle Driveに置いた写しを編集する。
+Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Features/Home/UI/Art/IconCompass.aseprite` など）。
+受け渡しは、Unityのメニューからユーザーが手動で行う（[AsepriteDriveSync](../../client/Assets/Baryonyx/Editor/Art/AsepriteDriveSync.cs)）。
+AIは、検証時も含めてこのメニューを実行しない。
+
+| メニュー | 動作 |
+|---|---|
+| `Baryonyx > Art > Choose Aseprite Drive Folder...` | Driveの中で `.aseprite` を置くフォルダーを選び、このPCの設定として保存する |
+| `Baryonyx > Art > Copy Aseprite Sources to Drive` | `client/Assets/Baryonyx/` の `.aseprite` をDriveのフォルダーへコピーする |
+| `Baryonyx > Art > Copy Aseprite Sources from Drive` | Driveのフォルダーの `.aseprite` を `client/Assets/Baryonyx/` へコピーし、Unityに読み込み直させる |
+
+Driveのフォルダーのパスは、WindowsとmacOSで異なるため、PCごとに `client/UserSettings/BaryonyxAsepriteDrive.json`（Gitの対象外）へ保存する。
+未設定のままコピーを実行すると、先にフォルダーを選ぶ画面を出す。
+どのPCでも、Drive上の同じフォルダーを選ぶ。
+受け渡しの記録と退避先は選んだフォルダーの隣に作るため、Driveの中に `.aseprite` 専用のフォルダー（例：`71_プロジェクト/baryonyx/Aseprite`）を作って選ぶ。
+
+2026-09-29に、正本の置き場所を `client/ArtSource/` から `client/Assets/Baryonyx/` へ移した。
+それより前にDriveへコピーした `.aseprite` は古い構成のままのため、Driveのフォルダーの中身と `<フォルダー名>-sync.tsv` を消してから、PCからコピーし直す。
+
+- 実行すると、コピーの向きとフォルダーを示す確認のダイアログを出す。
+- `.aseprite` 以外のファイルはコピーしない。片側にしかないファイルは、消したのか追加したのかを判断できないため削除せず、結果に示す。
+- 受け渡したときの各ファイルのSHA-256を、Driveのフォルダーの隣の `<フォルダー名>-sync.tsv` に記録する。WindowsとmacOSで同じ記録を使う。コピー先がこの記録から変わっていないときだけ上書きする。
+- コピー先も記録から変わっている、または記録がない状態で内容が異なるファイルは、両方で編集された可能性がある。上書きするかをダイアログで確認し、上書きする場合はコピー先の今のファイルを、Driveのフォルダーの隣の `<フォルダー名>-backup/<日時>/<PCまたはDrive>/` へ退避する。
+- Driveからの取り込みのあとは、`git status` で差分を確認してコミットする。新しいファイルは、Unityが作る `.meta` も同じコミットに含める。
 
 ### テストとアセンブリの境界
 

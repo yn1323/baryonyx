@@ -13,11 +13,11 @@ namespace Baryonyx.Tavern.Editor
         public const string Folder = "Assets/Baryonyx/Features/Tavern";
         public const string DefinitionPath = Folder + "/Data/TavernGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/TavernScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/TavernGuide.png";
+        public const string GuideArtPath = Folder + "/UI/Art/TavernGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TavernBackground.png";
-        public const string IconFormationPath = Folder + "/UI/Art/IconFormation.png";
-        public const string IconTrainingPath = Folder + "/UI/Art/IconTraining.png";
-        public const string IconCardSkillPath = Folder + "/UI/Art/IconCardSkill.png";
+        public const string IconFormationPath = Folder + "/UI/Art/IconFormation.aseprite";
+        public const string IconTrainingPath = Folder + "/UI/Art/IconTraining.aseprite";
+        public const string IconCardSkillPath = Folder + "/UI/Art/IconCardSkill.aseprite";
 
         [MenuItem("Baryonyx/Tavern/Create Screen Assets")]
         public static void CreateAssets() =>

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: WorkshopGuideMenu
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
   Title: "\u5DE5\u623F"
-  GuideArt: {fileID: 2800000, guid: f90010816bc104c04999929c75174e27, type: 3}
+  GuideArt: {fileID: -6622703189942226176, guid: 5e4a815d81918c941b8d5b40df2d3322, type: 3}
   GuideDotSize: 4
   Background: {fileID: 2800000, guid: 6552271eccc1740499e13c5d59a46914, type: 3}
   Layout: 0
   Items:
   - Label: "\u4ED8\u3051\u66FF\u3048"
     Caption: "\u30AD\u30E3\u30E9\u3054\u3068\u306E\u6B66\u5668\u30FB\u9632\u5177\u3092\u5909\u3048\u308B"
-    Icon: {fileID: 21300000, guid: b8f55abbb3c9f4d6bac6d3b77b4e68f9, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: 3a77e877c4e3cca4e97205c41dc20809, type: 3}
     ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
     Entries:
     - Name: "\u30C8\u30FC\u30DE"
@@ -37,7 +37,7 @@ MonoBehaviour:
       Detail: "\u6A2B\u306E\u6756\uFF5C\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
   - Label: "\u6B66\u5668"
     Caption: "\u6301\u3063\u3066\u3044\u308B\u6B66\u5668\u3092\u898B\u308B"
-    Icon: {fileID: 21300000, guid: acb3d0aa055e5439089f26fb05d11027, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
     ConfirmLabel: "\u88C5\u5099\u3059\u308B"
     Entries:
     - Name: "\u708E\u306E\u30C0\u30AC\u30FC"
@@ -66,7 +66,7 @@ MonoBehaviour:
       Detail: "\u529B\u306E 100%\uFF5C\u65AC"
   - Label: "\u9632\u5177"
     Caption: "\u6301\u3063\u3066\u3044\u308B\u9632\u5177\u3092\u898B\u308B"
-    Icon: {fileID: 21300000, guid: dd542043dcee54bf7b300059c4f1075e, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
     ConfirmLabel: "\u88C5\u5099\u3059\u308B"
     Entries:
     - Name: "\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"

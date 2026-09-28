@@ -13,7 +13,7 @@ namespace Baryonyx.TravelOffice.Editor
         public const string Folder = "Assets/Baryonyx/Features/TravelOffice";
         public const string DefinitionPath = Folder + "/Data/TravelOfficeGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/TravelOfficeScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/TravelOfficeGuide.png";
+        public const string GuideArtPath = Folder + "/UI/Art/TravelOfficeGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TravelOfficeBackground.png";
         public const string MapArtPath = Folder + "/UI/Art/WorldMap.png";
 

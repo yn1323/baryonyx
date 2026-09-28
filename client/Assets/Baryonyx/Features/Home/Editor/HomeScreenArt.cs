@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Baryonyx.Editor.Art;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -10,10 +11,10 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. Icons are point-filtered pixel art;
     /// shadows, capsules and the resume card are smooth shapes with anti-aliased edges.
-    /// The navigation icons are 24x24 drawings exported from their Aseprite sources in
-    /// client/ArtSource/UI/Home, so regeneration only fixes their import settings. The rune icon is shared game art
-    /// exported from its Aseprite source and is treated the same way, with mipmaps because
-    /// the flying runes shrink below their drawn size.
+    /// The navigation icons are 24x24 drawings saved as Aseprite files next to the other art,
+    /// so regeneration only fixes their import settings. The rune icon is shared game art
+    /// drawn in Aseprite and is treated the same way, with mipmaps because the flying runes
+    /// shrink below their drawn size.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -30,19 +31,20 @@ namespace Baryonyx.Home.Editor
         public const string CapsulePath = ArtFolder + "/Capsule.png";
         public const string RoundedRectPath = ArtFolder + "/RoundedRect.png";
         public const string RoundedRingPath = ArtFolder + "/RoundedRing.png";
-        public const string IconPartyPath = ArtFolder + "/IconParty.png";
-        public const string IconEquipmentPath = ArtFolder + "/IconEquipment.png";
-        public const string IconCompassPath = ArtFolder + "/IconCompass.png";
-        public const string IconSummonPath = ArtFolder + "/IconSummon.png";
+        public const string IconPartyPath = ArtFolder + "/IconParty.aseprite";
+        public const string IconEquipmentPath = ArtFolder + "/IconEquipment.aseprite";
+        public const string IconCompassPath = ArtFolder + "/IconCompass.aseprite";
+        public const string IconSummonPath = ArtFolder + "/IconSummon.aseprite";
         public const string IconSettingsPath = ArtFolder + "/IconSettings.png";
 
         // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
         public const string RuneTwinklePath = ArtFolder + "/RuneTwinkle.png";
 
-        // Exported from client/ArtSource/GameResources/IconRune.aseprite (24x24, full colour).
-        public const string IconRunePath = "Assets/Baryonyx/Shared/Art/GameResources/IconRune.png";
+        // Drawn in Aseprite (24x24, full colour).
+        public const string IconRunePath =
+            "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
 
-        // Exported from client/ArtSource/UI/Home/*.aseprite (24x24) and shown at 4x.
+        // Drawn in Aseprite (24x24) and shown at 4x.
         private static readonly string[] DrawnIconPaths =
         {
             IconPartyPath,
@@ -241,6 +243,8 @@ namespace Baryonyx.Home.Editor
 
         public static Sprite LoadSprite(string path)
         {
+            if (AsepriteCanvasImport.IsAseprite(path))
+                return AsepriteCanvasImport.LoadSprite(path);
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             if (sprite == null)
                 throw new InvalidOperationException("Home artwork is missing: " + path);
@@ -249,6 +253,8 @@ namespace Baryonyx.Home.Editor
 
         public static Texture2D LoadTexture(string path)
         {
+            if (AsepriteCanvasImport.IsAseprite(path))
+                return AsepriteCanvasImport.LoadTexture(path);
             var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             if (texture == null)
                 throw new InvalidOperationException("Home artwork is missing: " + path);
@@ -258,6 +264,11 @@ namespace Baryonyx.Home.Editor
         /// <summary>Imports shared pixel art with the same point-filtered settings the wireframe uses.</summary>
         public static Texture2D ImportPixelTexture(string path)
         {
+            if (AsepriteCanvasImport.IsAseprite(path))
+            {
+                AsepriteCanvasImport.ApplyTextureSettings(path, FilterMode.Point, mipmaps: false);
+                return AsepriteCanvasImport.LoadTexture(path);
+            }
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
                 throw new InvalidOperationException("Required artwork is missing: " + path);
@@ -280,7 +291,7 @@ namespace Baryonyx.Home.Editor
             if (!File.Exists(path))
                 throw new InvalidOperationException("Home artwork is missing: " + path);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            ApplySpriteSettings(path, Vector4.zero, FilterMode.Point, mipmaps: mipmaps);
+            AsepriteCanvasImport.ApplyTextureSettings(path, FilterMode.Point, mipmaps);
         }
 
         private static void WritePattern(string path, string[] rows, Func<char, Color> palette)

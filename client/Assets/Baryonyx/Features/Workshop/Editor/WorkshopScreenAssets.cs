@@ -14,11 +14,11 @@ namespace Baryonyx.Workshop.Editor
         public const string Folder = "Assets/Baryonyx/Features/Workshop";
         public const string DefinitionPath = Folder + "/Data/WorkshopGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/WorkshopScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/WorkshopGuide.png";
+        public const string GuideArtPath = Folder + "/UI/Art/WorkshopGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/WorkshopBackground.png";
-        public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.png";
-        public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.png";
-        public const string IconArmorPath = Folder + "/UI/Art/IconArmor.png";
+        public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.aseprite";
+        public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
+        public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
         [MenuItem("Baryonyx/Workshop/Create Screen Assets")]
         public static void CreateAssets() =>
