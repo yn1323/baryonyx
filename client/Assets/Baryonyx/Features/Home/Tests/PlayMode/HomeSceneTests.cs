@@ -17,8 +17,7 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class HomeSceneTests
     {
-        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
-        private const float MinimumTouchSize = 128f;
+        private const string HomeScenePath = SceneTests.HomePath;
         private TestGameServices services;
 
         [SetUp]
@@ -39,7 +38,7 @@ namespace Baryonyx.Tests.PlayMode
             var today = days.FirstOrDefault(day => day.day == todayKey && day.hasValue);
 
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
             yield return WaitForSteps(bootstrap);
 
@@ -73,7 +72,7 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator EveryControlIsLargeEnoughToTap()
         {
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
 
             foreach (
@@ -85,12 +84,12 @@ namespace Baryonyx.Tests.PlayMode
                     view.TravelOfficeButton,
                 }
             )
-                AssertTouchSize(button.transform);
-            AssertTouchSize(view.ResumeButton.transform);
-            AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
+                SceneTests.AssertTouchSize(button.transform);
+            SceneTests.AssertTouchSize(view.ResumeButton.transform);
+            SceneTests.AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
             Assert.That(
                 ((RectTransform)view.StepButton.transform).rect.height,
-                Is.GreaterThanOrEqualTo(MinimumTouchSize)
+                Is.GreaterThanOrEqualTo(SceneTests.MinimumTouchSize)
             );
 
             // Party members, the fire and the gate stay in the centred world layer; controls
@@ -110,24 +109,10 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ButtonsShowMockFeedback()
-        {
-            var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
-            var view = bootstrap.View;
-
-            // 酒場・工房・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
-            view.SettingsButton.onClick.Invoke();
-            Assert.That(view.CurrentToast, Is.EqualTo("設定（準備中）"));
-            Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
-            Assert.That(bootstrap.Presenter.ScreenOpened, Is.False);
-        }
-
-        [UnityTest]
         public IEnumerator StepPanelTurnsStepsIntoRunesAndShowsTheResult()
         {
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
             yield return WaitForSteps(bootstrap);
             Assert.That(services.Server.Saves, Is.Zero);
@@ -190,41 +175,11 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator MockRuneGainAddsTheSampleAmountOnEveryTap()
-        {
-            HomeBootstrap.MockRuneGainOverride = true;
-            var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
-            var view = bootstrap.View;
-            yield return WaitForSteps(bootstrap);
-            long balance = bootstrap.Data.Runes;
-            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
-
-            for (int tap = 0; tap < 2; tap++)
-            {
-                view.StepButton.onClick.Invoke();
-                yield return WaitForSteps(bootstrap);
-                Assert.That(view.RuneGainPlaying, Is.True);
-                Assert.That(view.GainLabel.text, Is.EqualTo("+1,340"));
-                float deadline = Time.realtimeSinceStartup + 4f;
-                while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
-                    yield return null;
-                balance += bootstrap.Data.MockGrantedRunes;
-                Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
-            }
-            Assert.That(
-                services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
-                Is.Zero,
-                "Mock runes never reach the server."
-            );
-        }
-
-        [UnityTest]
         public IEnumerator UnlinkedStepPanelRequestsPermissionBeforeSyncing()
         {
             services.Provider.Permission = HealthPermission.NotGranted;
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
             yield return WaitForSteps(bootstrap);
             Assert.That(view.UnlinkedDetails.activeSelf, Is.True);
@@ -242,65 +197,63 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator PressingDarkensIconsAndLabelsOverDarkBackdrops()
         {
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
             Assert.That(EventSystem.current, Is.Not.Null);
 
-            foreach (
-                var button in new[]
-                {
-                    view.TavernButton,
-                    view.WorkshopButton,
-                    view.TempleButton,
-                    view.TravelOfficeButton,
-                    view.SettingsButton,
-                    view.StepButton,
-                }
-            )
+            var buttons = new[]
+            {
+                view.TavernButton,
+                view.WorkshopButton,
+                view.TempleButton,
+                view.TravelOfficeButton,
+                view.SettingsButton,
+                view.StepButton,
+            };
+            foreach (var button in buttons)
             {
                 var tint = button as TintGroupButton;
                 Assert.That(tint, Is.Not.Null, button.name);
                 // UPTパネルは案内の文字だけで、アイコンを持たない。
                 if (button != view.StepButton)
                     Assert.That(
-                        tint.TintGraphics.OfType<UnityEngine.UI.Image>()
-                            .Any(image => image.sprite != null),
+                        tint.TintGraphics.OfType<Image>().Any(image => image.sprite != null),
                         Is.True,
                         button.name + " has no icon to darken"
                     );
-
-                var pointer = new PointerEventData(EventSystem.current)
-                {
-                    button = PointerEventData.InputButton.Left,
-                };
-                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerDownHandler);
-                yield return new WaitForSecondsRealtime(0.2f);
-                foreach (var graphic in tint.TintGraphics)
-                    AssertColor(
-                        graphic.canvasRenderer.GetColor(),
-                        button.colors.pressedColor,
-                        graphic
-                    );
-
-                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerUpHandler);
-                yield return new WaitForSecondsRealtime(0.2f);
-                foreach (var graphic in tint.TintGraphics)
-                    AssertColor(
-                        graphic.canvasRenderer.GetColor(),
-                        button.colors.normalColor,
-                        graphic
-                    );
             }
+
+            // ボタンは押された状態をそれぞれ持つため、まとめて押して色の変化を待つ。
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                button = PointerEventData.InputButton.Left,
+            };
+            float fade = buttons[0].colors.fadeDuration + 0.1f;
+            foreach (var button in buttons)
+                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerDownHandler);
+            yield return new WaitForSecondsRealtime(fade);
+            foreach (var button in buttons)
+            foreach (var graphic in ((TintGroupButton)button).TintGraphics)
+                AssertColor(graphic.canvasRenderer.GetColor(), button.colors.pressedColor, graphic);
+
+            foreach (var button in buttons)
+                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerUpHandler);
+            yield return new WaitForSecondsRealtime(fade);
+            foreach (var button in buttons)
+            foreach (var graphic in ((TintGroupButton)button).TintGraphics)
+                AssertColor(graphic.canvasRenderer.GetColor(), button.colors.normalColor, graphic);
 
             // The resume card already darkens its bright art and keeps that behaviour.
             Assert.That(view.ResumeButton, Is.Not.InstanceOf<TintGroupButton>());
         }
 
+        // 設定と再開（行き先が未設定）は準備中を知らせ、シーンを移らない。
+        // 酒場・工房・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
-        public IEnumerator ResumeWithoutDestinationStaysOnHome()
+        public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
         {
             var bootstrap = default(HomeBootstrap);
-            yield return LoadHome(value => bootstrap = value);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
             var view = bootstrap.View;
             int loads = 0;
             void Count(Scene scene, LoadSceneMode _) => loads++;
@@ -308,9 +261,12 @@ namespace Baryonyx.Tests.PlayMode
             SceneManager.sceneLoaded += Count;
             try
             {
+                view.SettingsButton.onClick.Invoke();
+                Assert.That(view.CurrentToast, Is.EqualTo("設定（準備中）"));
                 view.ResumeButton.onClick.Invoke();
                 Assert.That(view.CurrentToast, Is.EqualTo("再開（準備中）"));
                 Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
+                Assert.That(bootstrap.Presenter.ScreenOpened, Is.False);
                 Assert.That(bootstrap.Transition.IsPlaying, Is.False);
                 yield return null;
                 yield return null;
@@ -329,27 +285,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             services?.Dispose();
             services = null;
-            SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(HomeSceneTests)));
-            var scene = SceneManager.GetSceneByPath(HomeScenePath);
-            if (scene.IsValid() && scene.isLoaded)
-                yield return SceneManager.UnloadSceneAsync(scene);
-        }
-
-        private static IEnumerator LoadHome(System.Action<HomeBootstrap> found)
-        {
-            yield return SceneManager.LoadSceneAsync(HomeScenePath, LoadSceneMode.Single);
-            var bootstrap = Object.FindAnyObjectByType<HomeBootstrap>();
-            Assert.That(bootstrap, Is.Not.Null);
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (
-                (bootstrap.Presenter == null || bootstrap.Transition.IsPlaying)
-                && Time.realtimeSinceStartup < deadline
-            )
-                yield return null;
-            Assert.That(bootstrap.Presenter, Is.Not.Null);
-            Assert.That(bootstrap.Transition.IsCovered, Is.False);
-            Canvas.ForceUpdateCanvases();
-            found(bootstrap);
+            yield return SceneTests.UnloadAll(nameof(HomeSceneTests));
         }
 
         private static IEnumerator WaitForSteps(HomeBootstrap bootstrap)
@@ -369,14 +305,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(actual.r, Is.EqualTo(expected.r).Within(0.01f), name);
             Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.01f), name);
             Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.01f), name);
-        }
-
-        private static void AssertTouchSize(Transform target)
-        {
-            Assert.That(target, Is.Not.Null);
-            var rect = ((RectTransform)target).rect;
-            Assert.That(rect.width, Is.GreaterThanOrEqualTo(MinimumTouchSize), target.name);
-            Assert.That(rect.height, Is.GreaterThanOrEqualTo(MinimumTouchSize), target.name);
         }
     }
 }

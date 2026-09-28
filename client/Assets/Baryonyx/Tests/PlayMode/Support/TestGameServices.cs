@@ -3,15 +3,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.App;
 using Baryonyx.Health;
+using Baryonyx.UI;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // TopとHomeのシーンテストで、Health Connectとゲームサーバーを端末内の代役へ差し替える。
+    // Top・Home・案内人の画面のシーンテストで、Health Connectとゲームサーバーを端末内の代役へ差し替える。
     // 設定アセットのサーバーURLへは接続しない。
+    // 画面の切り替えを待つ時間を縮めるため、遷移演出も短くする。演出の動きを確かめるテストは
+    // SceneTransitionController.DurationScale を1に戻す。
     public sealed class TestGameServices : IDisposable
     {
+        private const float FastTransitions = 0.05f;
+
         private TestGameServices(HealthPermission permission)
         {
+            SceneTransitionController.DurationScale = FastTransitions;
             // 既定ではサーバーの代役でルーンを請求する。仮のルーンを試すテストだけ有効にする。
             HomeBootstrap.MockRuneGainOverride = false;
             Provider = new HealthScreenPreviewProvider(permission: permission);
@@ -32,6 +38,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             GameServices.Override(null);
             HomeBootstrap.MockRuneGainOverride = null;
+            SceneTransitionController.DurationScale = 1f;
         }
 
         public sealed class TestStepServer : IHealthStepServer

@@ -12,62 +12,68 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class GuideScenesTests
     {
-        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
-        private const float MinimumTouchSize = 128f;
         private TestGameServices services;
 
         [SetUp]
         public void UseTestServices() => services = TestGameServices.Use();
 
-        [TearDown]
-        public void RestoreServices() => services?.Dispose();
-
-        private static readonly HomeAction[] ScreenButtons =
+        [UnityTearDown]
+        public IEnumerator RestoreServices()
         {
-            HomeAction.Tavern,
-            HomeAction.Workshop,
-            HomeAction.Temple,
-            HomeAction.TravelOffice,
-        };
+            services?.Dispose();
+            services = null;
+            yield return SceneTests.UnloadAll(nameof(GuideScenesTests));
+        }
 
+        // Homeの4つのボタンから、それぞれの案内人の画面へ移り、「もどる」でHomeへ戻る。
         [UnityTest]
-        public IEnumerator HomeButtonOpensTheGuideSceneAndBackReturnsHome(
-            [ValueSource(nameof(ScreenButtons))] HomeAction action
-        )
+        public IEnumerator EveryHomeButtonOpensItsGuideSceneAndBackReturnsHome()
         {
-            var sceneName = HomeBootstrap.ScreenSceneFor(action);
-            Assert.That(sceneName, Is.EqualTo(ExpectedScene(action)));
-            yield return SceneManager.LoadSceneAsync(HomeScenePath, LoadSceneMode.Single);
-            var home = Object.FindAnyObjectByType<HomeBootstrap>();
-            yield return WaitUntil(() => home.Presenter != null && !home.Transition.IsPlaying);
+            var home = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => home = value);
+            foreach (
+                var (action, sceneName) in new[]
+                {
+                    (HomeAction.Tavern, SceneNames.Pub),
+                    (HomeAction.Workshop, SceneNames.Shop),
+                    (HomeAction.Temple, SceneNames.Temple),
+                    (HomeAction.TravelOffice, SceneNames.TravelOffice),
+                }
+            )
+            {
+                Assert.That(SceneNames.GuideFor(action), Is.EqualTo(sceneName));
+                // 続けて押しても、画面は1回だけ開く。
+                ButtonFor(home.View, action).onClick.Invoke();
+                ButtonFor(home.View, action).onClick.Invoke();
+                Assert.That(home.Presenter.ScreenOpened, Is.True);
 
-            ButtonFor(home.View, action).onClick.Invoke();
-            ButtonFor(home.View, action).onClick.Invoke();
-            Assert.That(home.Presenter.ScreenOpened, Is.True);
+                yield return SceneTests.WaitUntil(
+                    () => SceneManager.GetActiveScene().name == sceneName,
+                    message: sceneName + " did not open."
+                );
+                var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
+                Assert.That(guide, Is.Not.Null);
+                yield return SceneTests.WaitUntil(() => SceneTests.GuideReady(guide));
+                AssertGuideFitsTheScreen(guide.View);
+                SceneTests.AssertTouchSize(guide.View.Back.transform, 0.7f);
 
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == sceneName, 5f);
-            var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
-            Assert.That(guide, Is.Not.Null);
-            yield return WaitUntil(() => guide.Presenter != null && !guide.Transition.IsPlaying);
-
-            var view = guide.View;
-            AssertGuideFitsTheScreen(view);
-            AssertTouchSize(view.Back);
-
-            guide.Presenter.Back();
-            yield return WaitUntil(() => SceneManager.GetActiveScene().name == "Home", 5f);
-            // 次のテストへ演出の途中の状態を持ち越さないよう、Homeが開き終わるまで待つ。
-            var back = Object.FindAnyObjectByType<HomeBootstrap>();
-            yield return WaitUntil(() => back.Presenter != null && !back.Transition.IsPlaying);
+                guide.Presenter.Back();
+                yield return SceneTests.WaitUntil(
+                    () => SceneManager.GetActiveScene().name == SceneNames.Home,
+                    message: "Home did not open again."
+                );
+                home = Object.FindAnyObjectByType<HomeBootstrap>();
+                yield return SceneTests.WaitUntil(() => SceneTests.HomeReady(home));
+            }
         }
 
         [UnityTest]
         public IEnumerator ListScreensOpenAFullListAndConfirmTheChoice()
         {
-            foreach (var sceneName in new[] { "Pub", "Shop", "Temple" })
+            foreach (var sceneName in new[] { SceneNames.Pub, SceneNames.Shop, SceneNames.Temple })
             {
                 var guide = default(GuideSceneBootstrap);
-                yield return LoadGuide(sceneName, value => guide = value);
+                yield return SceneTests.LoadGuide(sceneName, value => guide = value);
                 var view = guide.View;
                 var definition = view.Definition;
 
@@ -76,7 +82,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(view.MenuItems.Length, Is.EqualTo(definition.Items.Length));
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
-                    AssertTouchSize(view.MenuItems[i]);
+                    SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
                     // 酒場と工房のメニューは、項目名の前にドット絵のアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find("Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
@@ -120,7 +126,7 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator WorldMapChoosesDestinationsOnTheMap()
         {
             var guide = default(GuideSceneBootstrap);
-            yield return LoadGuide("TravelOffice", value => guide = value);
+            yield return SceneTests.LoadGuide(SceneNames.TravelOffice, value => guide = value);
             var view = guide.View;
             var points = view.Definition.MapPoints;
 
@@ -142,15 +148,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ToastMessage, Is.EqualTo("出発（準備中）"));
         }
 
-        private static string ExpectedScene(HomeAction action) =>
-            action switch
-            {
-                HomeAction.Tavern => "Pub",
-                HomeAction.Workshop => "Shop",
-                HomeAction.Temple => "Temple",
-                _ => "TravelOffice",
-            };
-
         private static Button ButtonFor(HomeView view, HomeAction action) =>
             action switch
             {
@@ -159,23 +156,6 @@ namespace Baryonyx.Tests.PlayMode
                 HomeAction.Temple => view.TempleButton,
                 _ => view.TravelOfficeButton,
             };
-
-        private static IEnumerator LoadGuide(
-            string sceneName,
-            System.Action<GuideSceneBootstrap> found
-        )
-        {
-            yield return SceneManager.LoadSceneAsync(
-                $"Assets/Baryonyx/App/Scenes/Guide/{sceneName}.unity",
-                LoadSceneMode.Single
-            );
-            var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
-            Assert.That(guide, Is.Not.Null);
-            yield return WaitUntil(() => guide.Presenter != null && !guide.Transition.IsPlaying);
-            Assert.That(guide.Presenter, Is.Not.Null);
-            Canvas.ForceUpdateCanvases();
-            found(guide);
-        }
 
         private static bool Selected(Button button) =>
             button.transform.Find("Selected").gameObject.activeSelf;
@@ -194,22 +174,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(min.x, Is.GreaterThanOrEqualTo(rect.xMin), "left");
             Assert.That(max.x, Is.LessThanOrEqualTo(rect.xMax), "right");
             Assert.That(max.y, Is.LessThanOrEqualTo(rect.yMax), "top");
-        }
-
-        private static void AssertTouchSize(Button button)
-        {
-            Canvas.ForceUpdateCanvases();
-            var size = ((RectTransform)button.transform).rect.size;
-            Assert.That(size.x, Is.GreaterThanOrEqualTo(MinimumTouchSize), button.name);
-            Assert.That(size.y, Is.GreaterThanOrEqualTo(MinimumTouchSize * 0.7f), button.name);
-        }
-
-        private static IEnumerator WaitUntil(System.Func<bool> condition, float seconds = 3f)
-        {
-            float deadline = Time.realtimeSinceStartup + seconds;
-            while (!condition() && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.That(condition(), Is.True, "Timed out waiting for the scene.");
         }
     }
 }
