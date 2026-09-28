@@ -209,7 +209,7 @@ namespace Baryonyx.Vfx.Hd2d
         public static float EvaluateNoiseAlpha(float u, float v, int seed)
         {
             var density = EvaluateNoiseDensity(u, v, seed);
-            return Mathf.Clamp01(0.2f + 0.8f * SmoothUnit((density - 0.3f) / 0.45f));
+            return Mathf.Clamp01(0.2f + 0.8f * Hd2dMath.SmoothUnit((density - 0.3f) / 0.45f));
         }
 
         private void CacheFogLayer()
@@ -387,8 +387,8 @@ namespace Baryonyx.Vfx.Hd2d
         {
             var x0 = Mathf.FloorToInt(x);
             var y0 = Mathf.FloorToInt(y);
-            var fx = SmoothUnit(x - x0);
-            var fy = SmoothUnit(y - y0);
+            var fx = Hd2dMath.SmoothUnit(x - x0);
+            var fy = Hd2dMath.SmoothUnit(y - y0);
             var a = Hash(x0, y0, period, seed);
             var b = Hash(x0 + 1, y0, period, seed);
             var c = Hash(x0, y0 + 1, period, seed);
@@ -418,12 +418,6 @@ namespace Baryonyx.Vfx.Hd2d
         private static float RandomRange(System.Random random)
         {
             return (float)random.NextDouble();
-        }
-
-        private static float SmoothUnit(float value)
-        {
-            value = Mathf.Clamp01(value);
-            return value * value * (3f - 2f * value);
         }
 
         private sealed class LayerState

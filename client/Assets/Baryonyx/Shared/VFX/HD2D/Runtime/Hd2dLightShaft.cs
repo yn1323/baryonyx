@@ -218,7 +218,7 @@ namespace Baryonyx.Vfx.Hd2d
             var distance = Mathf.Abs(across);
             var ratio = distance / EvaluateBeamHalfWidth(along);
             var core = Mathf.Exp(-ratio * ratio * 2.2f);
-            var edge = 1f - SmoothUnit((distance - 0.9f) / 0.1f);
+            var edge = 1f - Hd2dMath.SmoothUnit((distance - 0.9f) / 0.1f);
             return Mathf.Clamp01(core * edge * EvaluateBeamIntensity(along));
         }
 
@@ -428,7 +428,7 @@ namespace Baryonyx.Vfx.Hd2d
                 1f,
                 Mathf.PerlinNoise(mote.TwinklePhase + time * 0.8f, mote.TwinklePhase * 0.53f)
             );
-            var fadeAtEnds = SmoothUnit((along - MoteAlongStart) / 0.08f);
+            var fadeAtEnds = Hd2dMath.SmoothUnit((along - MoteAlongStart) / 0.08f);
             var color = MoteColor;
             // The square root keeps motes visible in the dimmer lower part of the shaft.
             var brightness = Mathf.Sqrt(EvaluateBeamIntensity(along));
@@ -477,12 +477,6 @@ namespace Baryonyx.Vfx.Hd2d
         private static float RandomRange(System.Random source, float min, float max)
         {
             return Mathf.Lerp(min, max, (float)source.NextDouble());
-        }
-
-        private static float SmoothUnit(float value)
-        {
-            value = Mathf.Clamp01(value);
-            return value * value * (3f - 2f * value);
         }
 
         private static Vector2 ClampSize(Vector2 value)

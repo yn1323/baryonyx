@@ -358,7 +358,7 @@ namespace Baryonyx.Vfx.Hd2d
         {
             life01 = Mathf.Clamp01(life01);
             var fadeIn = Mathf.Clamp01(life01 / FadeInPortion);
-            return Mathf.Lerp(startAlpha, endAlpha, SmoothUnit(life01)) * fadeIn;
+            return Mathf.Lerp(startAlpha, endAlpha, Hd2dMath.SmoothUnit(life01)) * fadeIn;
         }
 
         /// <summary>
@@ -441,7 +441,7 @@ namespace Baryonyx.Vfx.Hd2d
                     source.CurlScale,
                     source.CurlSpeed
                 );
-                var ramp = SmoothUnit(middle / CurlRampSeconds);
+                var ramp = Hd2dMath.SmoothUnit(middle / CurlRampSeconds);
                 particle.CurlOffset += velocity * (source.Curl * ramp * step);
                 age += step;
             }
@@ -631,12 +631,6 @@ namespace Baryonyx.Vfx.Hd2d
         {
             random ??= new System.Random(RandomSeed);
             return Mathf.Lerp(min, max, (float)random.NextDouble());
-        }
-
-        private static float SmoothUnit(float value)
-        {
-            value = Mathf.Clamp01(value);
-            return value * value * (3f - 2f * value);
         }
 
         private static Vector2 NormalizeRange(Vector2 value, float minimum)
