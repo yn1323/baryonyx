@@ -1,6 +1,6 @@
 ---
 name: unity-csharp-differences
-description: Unity 6のC#コードを実装・レビューするとき、標準C#とUnityEngine.Object、Unityのライフサイクル、シリアル化、Editor API、アナライザー規則の違いを確認し、安全な書き方と検証方法を選ぶ。
+description: Unity 6のC#コードを実装・リファクタ・レビューするとき、標準C#とUnityEngine.Object、Unityのライフサイクル、シリアル化、Editor API、アナライザー規則の違いを確認し、安全な書き方と検証方法を選ぶ。重複したロジック・ファイルの共通化や、生成スクリプトとアセットの移動で動作を変えていないことの確かめ方も扱う。
 ---
 
 # Unity C#差分ガイド
@@ -11,7 +11,7 @@ Unityのコードは通常のC#としてコンパイルされるが、`UnityEngi
 
 1. `ProjectSettings/ProjectVersion.txt`、対象の`.asmdef`、`AGENTS.md`、既存のコーディング規約を確認する。`Assets/Analyzers/Microsoft.Unity.Analyzers/Microsoft.Unity.Analyzers.dll`と生成された`.csproj`のAnalyzer参照も確認し、実際に有効な診断を特定する。Unityのバージョンが変わっている場合は、記憶でAPIを断定せず、対象バージョンのUnity公式ドキュメントをWeb検索する。
 2. 変数の型を分類する。`UnityEngine.Object`（`GameObject`、`Component`、`MonoBehaviour`、`ScriptableObject`、アセットなど）か、純粋なC#クラス・構造体かを分ける。null、生成、保存、破棄の規則はこの分類で変わる。
-3. 必要な詳細だけを参照する。null・生成・破棄は[Unityオブジェクトの意味](references/unity-object-semantics.md)、アナライザーは[Unityアナライザー規則](references/unity-analyzers.md)、Inspector・ライフサイクル・Editor APIは[Unity実行規則](references/unity-runtime-rules.md)を読む。公式URLとバージョンの確認には[調査ソース](references/research-sources.md)を使う。
+3. 必要な詳細だけを参照する。null・生成・破棄は[Unityオブジェクトの意味](references/unity-object-semantics.md)、アナライザーは[Unityアナライザー規則](references/unity-analyzers.md)、Inspector・ライフサイクル・Editor APIは[Unity実行規則](references/unity-runtime-rules.md)、重複の共通化・ファイルの移動・生成スクリプトの検証は[Unityコードのリファクタ](references/refactoring.md)を読む。公式URLとバージョンの確認には[調査ソース](references/research-sources.md)を使う。
 4. 変更後は、コンパイルまたはプロジェクトのアナライザー検査、対象のEdit Mode/Play Modeテスト、必要ならUnity Editorでのシーン動作を分けて確認する。コードがコンパイルできたことだけで、Inspector保存・ライフサイクル・シーン遷移が正しいとは判断しない。
 
 ## 実装時の必須判断
@@ -67,6 +67,7 @@ Unityのシリアライザーは通常プロパティではなくフィールド
 - [ ] `OnValidate`では値の範囲を整えるだけにし、Transformの変更・生成・コルーチンを`EditorApplication.delayCall`へ回した。
 - [ ] Inspectorで保存するフィールド、`SerializeReference`、旧フィールド名の互換性を確認した。
 - [ ] `GetComponent<T>`、`TryGetComponent<T>`、`CompareTag`、適切なdelta timeを選んだ。
+- [ ] 同じ処理をほかの画面・機能から探し、共有部品があれば使った。別の機能の部品を借りる場合は共有部品へ移した（[配置を増やすときの基準](../../../doc/rules/frontend-design.md#配置を増やすときの基準)）。
 - [ ] Unityコンパイル、アナライザー、必要なEdit/Play Modeテストを実行し、Editor未確認や端末未確認を明記した。
 
 ## 参照資料
@@ -74,4 +75,5 @@ Unityのシリアライザーは通常プロパティではなくフィールド
 - null、破棄済みオブジェクト、`==`/`!=`/`bool`、`?.`/`??`の違い：[references/unity-object-semantics.md](references/unity-object-semantics.md)
 - Microsoft.Unity.Analyzersの診断IDと修正方針：[references/unity-analyzers.md](references/unity-analyzers.md)
 - シリアル化、ライフサイクル、Editor/Runtime境界、APIパターン：[references/unity-runtime-rules.md](references/unity-runtime-rules.md)
+- 重複の共通化、アセットとクラスの移動、生成スクリプトの結果の比べ方：[references/refactoring.md](references/refactoring.md)、書き出し用の [scripts/dump_generated.cs](scripts/dump_generated.cs)
 - Unity 6とC#の公式一次資料：[references/research-sources.md](references/research-sources.md)
