@@ -49,7 +49,8 @@ namespace Baryonyx.App.Editor
                         screen.GetComponent<HomeView>();
                     serialized.FindProperty("data").objectReferenceValue = data;
                     serialized.FindProperty("transition").objectReferenceValue = transition;
-                    serialized.FindProperty("adventureSceneName").stringValue = "";
+                    serialized.FindProperty("adventureSceneName").stringValue =
+                        SceneNames.BattleInspect;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     TopStartupSyncSetup.SetHomeSettings(bootstrap);
                 }

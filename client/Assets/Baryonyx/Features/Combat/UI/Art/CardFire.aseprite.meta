@@ -138,7 +138,7 @@ ScriptedImporter:
       x: 4
       y: 4
       width: 32
-      height: 32
+      height: 20
     spriteID: cd25d759face33d46bc329b43712b977
     spriteBone: []
     spriteOutline: []
@@ -170,7 +170,7 @@ ScriptedImporter:
         x: 0
         y: 0
         width: 32
-        height: 32
+        height: 20
       spriteId: cd25d759face33d46bc329b43712b977
     linkedCells: []
     tileCells: []
@@ -180,5 +180,5 @@ ScriptedImporter:
   platformSettings: []
   generatePhysicsShape: 0
   secondarySpriteTextures: []
-  previousTextureSize: {x: 64, y: 64}
-  canvasSize: {x: 32, y: 32}
+  previousTextureSize: {x: 64, y: 32}
+  canvasSize: {x: 32, y: 20}

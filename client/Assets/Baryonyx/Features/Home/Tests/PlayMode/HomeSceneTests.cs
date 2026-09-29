@@ -43,7 +43,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForSteps(bootstrap);
 
             Assert.That(bootstrap.Data, Is.Not.Null);
-            Assert.That(bootstrap.AdventureSceneName, Is.Empty);
+            Assert.That(bootstrap.AdventureSceneName, Is.EqualTo(SceneNames.BattleInspect));
 
             var snapshot = bootstrap.Data.ToSnapshot(Baryonyx.Health.HealthDays.Today());
             snapshot.StepLink = HomeStepLink.Linked;
@@ -247,7 +247,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ResumeButton, Is.Not.InstanceOf<TintGroupButton>());
         }
 
-        // 設定と再開（行き先が未設定）は準備中を知らせ、シーンを移らない。
+        // 設定は準備中を知らせ、シーンを移らない。
         // 酒場・工房・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
         public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
@@ -263,8 +263,6 @@ namespace Baryonyx.Tests.PlayMode
             {
                 view.SettingsButton.onClick.Invoke();
                 Assert.That(view.CurrentToast, Is.EqualTo("設定（準備中）"));
-                view.ResumeButton.onClick.Invoke();
-                Assert.That(view.CurrentToast, Is.EqualTo("再開（準備中）"));
                 Assert.That(bootstrap.Presenter.AdventureStarted, Is.False);
                 Assert.That(bootstrap.Presenter.ScreenOpened, Is.False);
                 Assert.That(bootstrap.Transition.IsPlaying, Is.False);
@@ -278,6 +276,32 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(loads, Is.Zero);
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(HomeScenePath));
+        }
+
+        // 右下の行き先カード（再開）は、Shutterで閉じてから戦闘画面のモックを開く。
+        [UnityTest]
+        public IEnumerator ResumeOpensBattleInspect()
+        {
+            var bootstrap = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
+            var view = bootstrap.View;
+
+            // 続けて押しても、シーンの読み込みは1回だけ始める。
+            view.ResumeButton.onClick.Invoke();
+            view.ResumeButton.onClick.Invoke();
+            Assert.That(bootstrap.Presenter.AdventureStarted, Is.True);
+            Assert.That(bootstrap.Transition.IsPlaying, Is.True);
+
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.BattleInspect,
+                message: "BattleInspect did not open."
+            );
+            yield return null;
+            Assert.That(
+                Object.FindAnyObjectByType<Baryonyx.Combat.Presentation.BattleInspectView>(),
+                Is.Not.Null
+            );
+            Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
         }
 
         [UnityTearDown]

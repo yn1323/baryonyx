@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08e8961595f344197841d6f6bccca9f5, type: 3}
+  m_Name: BattleInspectHandSettings
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleInspectHandSettings
+  CardScale: 1
+  RaisedScale: 1.5
+  RaisedBottom: 16
+  FanStep: 7
+  FanRadius: 1300
+  FanDrop: 0.5
+  RestBottom: -62
+  ArmDistance: 100
+  TargetMargin: 72
+  Stiffness: 320
+  Damping: 17
