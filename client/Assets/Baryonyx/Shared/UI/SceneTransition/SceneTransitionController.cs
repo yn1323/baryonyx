@@ -43,6 +43,9 @@ namespace Baryonyx.UI
         private bool playing;
         private bool covered;
 
+        // テストで演出の時間に掛ける倍率。画面の動きを確かめないテストが待ち時間を縮める。
+        internal static float DurationScale = 1f;
+
         public SceneTransitionSettings DefaultSettings => defaultSettings;
         public SceneTransitionSettings EnterSettings => enterSettings;
         public bool IsPlaying => playing;
@@ -82,6 +85,10 @@ namespace Baryonyx.UI
                 SetInputBlocked(false);
             }
         }
+
+        // Domain Reloadを省略したPlay開始でも、前回のテストの倍率を持ち越さない。
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDurationScale() => DurationScale = 1f;
 
         private void OnValidate()
         {
@@ -128,7 +135,8 @@ namespace Baryonyx.UI
             SetInputBlocked(true);
             covered = !closing;
             ApplyProgress(settings, 0f, closing);
-            float duration = closing ? settings.CoverDuration : settings.RevealDuration;
+            float duration =
+                (closing ? settings.CoverDuration : settings.RevealDuration) * DurationScale;
             float elapsed = 0f;
             // 初期状態も1フレーム描画し、短いdurationでも開始位置が飛ばないようにする。
             while (elapsed < duration)

@@ -15,8 +15,8 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class TopHomeSceneTests
     {
-        private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
-        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
+        private const string TopScenePath = SceneTests.TopPath;
+        private const string HomeScenePath = SceneTests.HomePath;
         private const string TitleText = "てくてくダンジョン（仮）";
         private Scene loadedScene;
         private TestGameServices services;
@@ -93,15 +93,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(tapPanel.Label.text, Is.EqualTo(TopSceneController.StartText));
             Assert.That(services.Server.Saves, Is.EqualTo(1));
             button.onClick.Invoke();
-            float deadline =
-                Time.realtimeSinceStartup
-                + controller.Transition.DefaultSettings.CoverDuration
-                + 2f;
-            while (
-                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
-                && Time.realtimeSinceStartup < deadline
-            )
-                yield return null;
+            yield return WaitForHome();
 
             loadedScene = SceneManager.GetSceneByPath(HomeScenePath);
             Assert.That(loadedScene.isLoaded, Is.True);
@@ -109,10 +101,7 @@ namespace Baryonyx.Tests.PlayMode
                 .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<SceneTransitionController>(true))
                 .Single();
-            // 開く演出の設定時間に余裕を足した期限まで、演出の終了を待つ。
-            deadline = Time.realtimeSinceStartup + transition.EnterSettings.RevealDuration + 1f;
-            while (transition.IsPlaying && Time.realtimeSinceStartup < deadline)
-                yield return null;
+            yield return SceneTests.WaitUntil(() => !transition.IsPlaying);
             Assert.That(transition.IsPlaying, Is.False);
             Assert.That(transition.IsCovered, Is.False);
             Assert.That(
@@ -128,6 +117,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator TopIgnoresTapsUntilRevealTransitionCompletes()
         {
+            // 開く演出の途中のタップを確かめるため、演出を設定どおりの長さで再生する。
+            SceneTransitionController.DurationScale = 1f;
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
             loadedScene = SceneManager.GetSceneByPath(TopScenePath);
             var controller = loadedScene
@@ -248,15 +239,7 @@ namespace Baryonyx.Tests.PlayMode
 
             // 「あとで」を選んだ起動中は、開始時の再確認でモーダルを出し直さない。
             controller.ContinueButton.onClick.Invoke();
-            float deadline =
-                Time.realtimeSinceStartup
-                + controller.Transition.DefaultSettings.CoverDuration
-                + 2f;
-            while (
-                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
-                && Time.realtimeSinceStartup < deadline
-            )
-                yield return null;
+            yield return WaitForHome();
             Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.True);
         }
 
@@ -276,15 +259,7 @@ namespace Baryonyx.Tests.PlayMode
 
             // 連携し直すと、押した開始操作の続きとしてHomeへ進む。
             controller.LinkModal.ActionButton.onClick.Invoke();
-            float deadline =
-                Time.realtimeSinceStartup
-                + controller.Transition.DefaultSettings.CoverDuration
-                + 2f;
-            while (
-                !SceneManager.GetSceneByPath(HomeScenePath).isLoaded
-                && Time.realtimeSinceStartup < deadline
-            )
-                yield return null;
+            yield return WaitForHome();
             Assert.That(SceneManager.GetSceneByPath(HomeScenePath).isLoaded, Is.True);
         }
 
@@ -320,6 +295,22 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(controller.ContinueButton.interactable, Is.True);
         }
 
+        private static IEnumerator WaitForPhase(
+            TopSceneController controller,
+            HealthStartupPhase phase
+        )
+        {
+            yield return SceneTests.WaitUntil(() => controller.Flow.Phase == phase);
+            Assert.That(controller.Flow.Phase, Is.EqualTo(phase));
+        }
+
+        // 開く演出が終わり、開始操作を受け付けるまで待つ。
+        private static IEnumerator WaitForInputReady(TopSceneController controller) =>
+            SceneTests.WaitUntil(() => controller.IsInputReady);
+
+        private static IEnumerator WaitForHome() =>
+            SceneTests.WaitUntil(() => SceneManager.GetSceneByPath(HomeScenePath).isLoaded);
+
         private IEnumerator LoadTop(System.Action<TopSceneController> found)
         {
             yield return SceneManager.LoadSceneAsync(TopScenePath, LoadSceneMode.Single);
@@ -332,41 +323,12 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        private static IEnumerator WaitForPhase(
-            TopSceneController controller,
-            HealthStartupPhase phase
-        )
-        {
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (controller.Flow.Phase != phase && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.That(controller.Flow.Phase, Is.EqualTo(phase));
-        }
-
-        private static IEnumerator WaitForInputReady(TopSceneController controller)
-        {
-            // 開く演出の設定時間に余裕を足した期限まで、入力の受付開始を待つ。
-            float deadline =
-                Time.realtimeSinceStartup + controller.Transition.EnterSettings.RevealDuration + 1f;
-            while (!controller.IsInputReady && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.That(controller.IsInputReady, Is.True);
-        }
-
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
             services?.Dispose();
             services = null;
-            // TopとHomeはSingleで読み込まれ、最後の1シーンは直接アンロードできない。
-            // 空のシーンへ切り替えてから閉じ、EventSystemなどを後続のテストへ残さない。
-            SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(TopHomeSceneTests)));
-            foreach (var path in new[] { TopScenePath, HomeScenePath })
-            {
-                var scene = SceneManager.GetSceneByPath(path);
-                if (scene.IsValid() && scene.isLoaded)
-                    yield return SceneManager.UnloadSceneAsync(scene);
-            }
+            yield return SceneTests.UnloadAll(nameof(TopHomeSceneTests));
         }
     }
 }

@@ -7,11 +7,11 @@
 |---|---|
 | ゲームの核・コアループ | [ゲーム概要](game/overview.md) |
 | 2026-09-27の企画見直しで変わったこと | [企画見直しの記録](game/redesign-2026-09-27.md) |
-| ワットボーナス・朝4時の区切り | [ワットボーナス](features/step-bonus.md) |
+| UPTボーナス・朝4時の区切り | [UPTボーナス](features/step-bonus.md) |
 | 分岐ルートの冒険・冒険終了・中断 | [探索とダンジョンの進行](features/stage-progression.md) |
 | カードバトル・エネルギー・弱点・復活 | [戦闘システム](features/combat.md) |
 | 世界・用語・MVP・初期企画 | [企画索引](game/README.md) |
-| 運動報酬・ワットボーナス・戦闘・育成などのルール | [機能索引](features/README.md) |
+| 運動報酬・UPTボーナス・戦闘・育成などのルール | [機能索引](features/README.md) |
 | キャラ・敵・技・装備・ステージなどの個別定義 | [データ索引](catalog/README.md) |
 | 既存案と外見・性格が重ならないか | [画像対象の比較索引](art/visual-index.md) |
 | 画風・画像化の記録方法 | [アート索引](art/README.md) |

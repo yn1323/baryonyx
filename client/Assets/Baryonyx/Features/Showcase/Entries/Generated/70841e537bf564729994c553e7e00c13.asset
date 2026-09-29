@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: 70841e537bf564729994c553e7e00c13
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 70841e537bf564729994c553e7e00c13
-  DisplayName: Tavern
-  Description: Assets/Baryonyx/App/Scenes/Tavern.unity
+  DisplayName: Pub
+  Description: Assets/Baryonyx/App/Scenes/Guide/Pub.unity
   Category: 10
   Asset: {fileID: 0}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 
-  ScenePath: Assets/Baryonyx/App/Scenes/Tavern.unity
+  ScenePath: Assets/Baryonyx/App/Scenes/Guide/Pub.unity
   Enabled: 1

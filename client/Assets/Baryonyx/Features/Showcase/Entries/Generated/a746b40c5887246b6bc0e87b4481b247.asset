@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: a746b40c5887246b6bc0e87b4481b247
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: a746b40c5887246b6bc0e87b4481b247
-  DisplayName: Workshop
-  Description: Assets/Baryonyx/App/Scenes/Workshop.unity
+  DisplayName: Shop
+  Description: Assets/Baryonyx/App/Scenes/Guide/Shop.unity
   Category: 10
   Asset: {fileID: 0}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 
-  ScenePath: Assets/Baryonyx/App/Scenes/Workshop.unity
+  ScenePath: Assets/Baryonyx/App/Scenes/Guide/Shop.unity
   Enabled: 1

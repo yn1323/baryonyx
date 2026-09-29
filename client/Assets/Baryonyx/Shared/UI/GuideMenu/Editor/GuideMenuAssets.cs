@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.UI.GuideMenu.Editor
 {
@@ -28,13 +29,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string MarkerPath = ArtFolder + "/GuideMapMarker.png";
         public const string MarkerSelectedPath = ArtFolder + "/GuideMapMarkerSelected.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
-        public const string IconBackPath = ArtFolder + "/IconBack.png";
+        public const string IconBackPath = ArtFolder + "/IconBack.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
 
-        // The 12x12 window frames and the 24x24 icons are drawn at 4 design pixels per dot,
-        // like the game's sprites.
+        // The window frames and the 24x24 icons are drawn at 4 design pixels per dot, like the
+        // game's sprites.
         private const float DotScale = 4f;
         private const float IconSize = 24f * DotScale;
+
+        // A frame keeps its 4-dot corners; the 16-dot edges and fill repeat (Image.Type.Tiled).
+        private const int FrameCorner = 4;
+        private const int FrameTile = 16;
 
         // The guide stands in this box at the bottom left; the list and map start right of it.
         private const float GuideLeft = 24f;
@@ -51,7 +56,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static readonly Color Gold = new(1f, 0.843f, 0.4f);
         private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
 
-        private static Scene generationScene;
         private static TMP_FontAsset font;
         private static Material shadowText;
 
@@ -64,9 +68,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         /// <summary>
         /// Writes a feature's definition and builds its screen prefab from it. The guide is
-        /// scaled to the largest size that fits the guide box. A pixel-art guide keeps whole
-        /// quarter steps with point filtering; a high-resolution guide (<paramref name="smoothGuide"/>)
-        /// is shrunk to fit exactly with bilinear filtering and mipmaps.
+        /// scaled to the largest size that fits the guide box.
         /// </summary>
         public static GameObject CreateScreen(
             string definitionPath,
@@ -74,15 +76,19 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string guideArtPath,
             string backgroundPath,
             Action<GuideMenuDefinition> fill,
-            string mapArtPath = null,
-            bool smoothGuide = false
+            string mapArtPath = null
         )
         {
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
             CreateSharedArt();
             font = GameFontAssets.GetOrCreate();
-            shadowText = EnsureTextShadow(font);
+            shadowText = UiArt.EnsureTextShadow(
+                font,
+                TextShadowPath,
+                new Vector2(0.4f, -0.6f),
+                0.2f
+            );
 
             Directory.CreateDirectory(Path.GetDirectoryName(definitionPath));
             Directory.CreateDirectory(Path.GetDirectoryName(prefabPath));
@@ -95,16 +101,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 AssetDatabase.CreateAsset(definition, definitionPath);
             }
             fill(definition);
-            definition.GuideArt = ImportTexture(
-                guideArtPath,
-                smoothGuide ? FilterMode.Bilinear : FilterMode.Point,
-                mipmaps: smoothGuide
-            );
+            definition.GuideArt = ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
             // The backgrounds and the map are generated illustrations used as they are.
-            definition.Background = ImportTexture(backgroundPath, FilterMode.Bilinear);
+            definition.Background = ArtAssets.ImportTexture(backgroundPath, FilterMode.Bilinear);
             definition.MapArt =
-                mapArtPath != null ? ImportTexture(mapArtPath, FilterMode.Bilinear) : null;
-            definition.GuideDotSize = FitDotSize(definition.GuideArt, smoothGuide);
+                mapArtPath != null
+                    ? ArtAssets.ImportTexture(mapArtPath, FilterMode.Bilinear)
+                    : null;
+            definition.GuideDotSize = FitDotSize(definition.GuideArt);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
 
@@ -117,23 +121,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return prefab;
         }
 
-        /// <summary>A 24x24 pixel-art icon imported as a sprite for a menu row.</summary>
+        /// <summary>A 24x24 pixel-art icon drawn in Aseprite, used as a sprite for a menu row.</summary>
         public static Sprite Icon(string path)
         {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(path, Vector4.zero, FilterMode.Point);
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (sprite == null)
-                throw new InvalidOperationException("Icon is missing: " + path);
-            return sprite;
+            ArtAssets.ImportDrawn(path);
+            return AsepriteCanvasImport.LoadSprite(path);
         }
 
-        // The largest scale that keeps the whole guide inside the guide box: quarter steps for
-        // pixel art, exact for a high-resolution guide.
-        private static float FitDotSize(Texture2D art, bool smooth)
+        // The largest quarter-pixel dot size that keeps the whole guide inside the guide box.
+        private static float FitDotSize(Texture2D art)
         {
             float fit = Mathf.Min(GuideMaxWidth / art.width, GuideMaxHeight / art.height);
-            return smooth ? fit : Mathf.Floor(fit * 4f) / 4f;
+            return Mathf.Floor(fit * 4f) / 4f;
         }
 
         // --- Mock content ------------------------------------------------------------------
@@ -185,26 +184,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string prefabPath
         )
         {
-            generationScene = EditorSceneManager.NewPreviewScene();
-            RectTransform root = null;
-            try
+            using (UiBuild.Begin(font, shadowText))
             {
-                root = Rect(name, null);
-                var canvas = root.gameObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                var scaler = root.gameObject.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 1;
-                root.gameObject.AddComponent<GraphicRaycaster>();
+                var root = CanvasRoot(name);
                 var view = root.gameObject.AddComponent<GuideMenuView>();
                 view.Definition = definition;
 
                 BuildBackground(root, definition);
-                var safe = Rect("SafeArea", root);
-                Stretch(safe);
-                safe.gameObject.AddComponent<SafeAreaFollower>();
+                var safe = SafeArea(root);
                 BuildGuide(safe, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Map)
@@ -217,12 +204,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
-            }
-            finally
-            {
-                if (root != null)
-                    UnityEngine.Object.DestroyImmediate(root.gameObject);
-                EditorSceneManager.ClosePreviewScene(generationScene);
             }
         }
 
@@ -589,11 +570,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var toast = Rect("Toast", root);
             Place(toast, new Vector2(0, 300), new Vector2(800, 104));
             Frame(toast, FramePath, Color.white).raycastTarget = false;
-            var group = toast.gameObject.AddComponent<CanvasGroup>();
-            group.alpha = 0;
-            group.interactable = false;
-            group.blocksRaycasts = false;
-            view.Toast = group;
+            view.Toast = HiddenGroup(toast);
             view.ToastLabel = Label(toast, "Label", "", 44, TextMain, TextAlignmentOptions.Center);
             Stretch((RectTransform)view.ToastLabel.transform);
         }
@@ -602,21 +579,22 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         private static void WriteArt()
         {
-            // A JRPG message window: dark rim, a light line, a shadow line and a translucent fill.
-            var rim = new Color32(12, 14, 26, 245);
+            // A silver line with rounded corners on a navy fill; the selected one is gold on purple.
             WriteFrame(
                 FramePath,
-                rim,
-                new Color32(222, 208, 170, 255),
-                new Color32(84, 78, 108, 255),
-                new Color32(16, 20, 42, 214)
+                outline: (Hex(0x465c85), Hex(0x0c1b36)),
+                line: (Hex(0xdcdfe1), Hex(0x8496ae)),
+                glint: (Hex(0xf4f4f1), Hex(0xa8b4c5)),
+                fill: Hex(0x141f3f),
+                shade: Hex(0x0a1229)
             );
             WriteFrame(
                 FrameSelectedPath,
-                rim,
-                new Color32(255, 215, 102, 255),
-                new Color32(160, 118, 40, 255),
-                new Color32(46, 36, 72, 232)
+                outline: (Hex(0xa6500d), Hex(0x3c1903)),
+                line: (Hex(0xfde45a), Hex(0xde8613)),
+                glint: (Hex(0xfef6cb), Hex(0xf4b118)),
+                fill: Hex(0x2a2350),
+                shade: Hex(0x181432)
             );
             WriteArrow(ArrowPath);
             WriteGradient(ShadeHorizontalPath);
@@ -634,42 +612,95 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 13
             );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(FramePath, new Vector4(4, 4, 4, 4), FilterMode.Point);
-            ImportSprite(FrameSelectedPath, new Vector4(4, 4, 4, 4), FilterMode.Point);
-            ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
-            ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
+            ArtAssets.ImportSprite(
+                FramePath,
+                Vector4.one * FrameCorner,
+                FilterMode.Point,
+                fullRect: true
+            );
+            ArtAssets.ImportSprite(
+                FrameSelectedPath,
+                Vector4.one * FrameCorner,
+                FilterMode.Point,
+                fullRect: true
+            );
+            ArtAssets.ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
+            ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             Icon(IconBackPath);
-            ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
+            ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
 
+        // The top-left corner, rows from the top edge and columns from the left edge, and the
+        // strip across an edge from the outside in: '.' clear, 'o' outline, 'L' line, 'G' glint,
+        // 's' the shadow the frame casts on the fill, 'f' fill. The other corners mirror it.
+        private static readonly string[] FrameCornerDots = { "..oo", ".oGL", "oGss", "oLsf" };
+        private const string FrameEdgeDots = "oLsf";
+
+        // Lit from the top left: each colour pair is (top and left, bottom and right).
         private static void WriteFrame(
             string path,
-            Color32 rim,
-            Color32 light,
-            Color32 shadow,
-            Color32 fill
+            (Color32 Lit, Color32 Dark) outline,
+            (Color32 Lit, Color32 Dark) line,
+            (Color32 Lit, Color32 Dark) glint,
+            Color32 fill,
+            Color32 shade
         )
         {
-            const int size = 12;
+            const int size = FrameCorner * 2 + FrameTile;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
             {
-                int edge = Mathf.Min(Mathf.Min(x, y), Mathf.Min(size - 1 - x, size - 1 - y));
-                bool corner = (x == 0 || x == size - 1) && (y == 0 || y == size - 1);
-                Color32 color = edge switch
+                // Texture rows run from the bottom.
+                int row = size - 1 - y;
+                int fromSide = Mathf.Min(x, size - 1 - x);
+                int fromTop = Mathf.Min(row, size - 1 - row);
+                bool litTop = row < FrameCorner;
+                bool litLeft = x < FrameCorner;
+                char dot;
+                bool lit;
+                if (fromSide < FrameCorner && fromTop < FrameCorner)
                 {
-                    0 => corner ? new Color32(0, 0, 0, 0) : rim,
-                    1 => light,
-                    2 => shadow,
+                    dot = FrameCornerDots[fromTop][fromSide];
+                    // A corner dot belongs to the nearer edge; the diagonal takes the lit one.
+                    lit =
+                        fromTop < fromSide ? litTop
+                        : fromSide < fromTop ? litLeft
+                        : litTop || litLeft;
+                }
+                else if (fromTop < FrameCorner)
+                {
+                    dot = FrameEdgeDots[fromTop];
+                    lit = litTop;
+                }
+                else if (fromSide < FrameCorner)
+                {
+                    dot = FrameEdgeDots[fromSide];
+                    lit = litLeft;
+                }
+                else
+                {
+                    dot = 'f';
+                    lit = true;
+                }
+                Color32 color = dot switch
+                {
+                    '.' => new Color32(0, 0, 0, 0),
+                    'o' => lit ? outline.Lit : outline.Dark,
+                    'L' => lit ? line.Lit : line.Dark,
+                    'G' => lit ? glint.Lit : glint.Dark,
+                    's' => lit ? shade : fill,
                     _ => fill,
                 };
                 texture.SetPixel(x, y, color);
             }
             Save(texture, path);
         }
+
+        private static Color32 Hex(int rgb) =>
+            new((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb, 255);
 
         // Clear on the left, dark on the right.
         private static void WriteGradient(string path)
@@ -745,148 +776,34 @@ namespace Baryonyx.UI.GuideMenu.Editor
             UnityEngine.Object.DestroyImmediate(texture);
         }
 
-        private static Texture2D ImportTexture(string path, FilterMode filter, bool mipmaps = false)
-        {
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null)
-                throw new InvalidOperationException("Required artwork is missing: " + path);
-            importer.textureType = TextureImporterType.Default;
-            importer.filterMode = filter;
-            // A shrunken high-resolution guide samples averaged mip levels instead of dropping pixels.
-            importer.mipmapEnabled = mipmaps;
-            importer.alphaIsTransparency = true;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.maxTextureSize = 4096;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-        }
-
-        private static void ImportSprite(string path, Vector4 border, FilterMode filter)
-        {
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spriteBorder = border;
-            importer.spritePixelsPerUnit = 100;
-            importer.filterMode = filter;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.SaveAndReimport();
-        }
-
-        private static Material EnsureTextShadow(TMP_FontAsset fontAsset)
-        {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(TextShadowPath);
-            if (material == null)
-            {
-                material = new Material(fontAsset.material) { name = "GuideTextShadow" };
-                AssetDatabase.CreateAsset(material, TextShadowPath);
-            }
-            material.shader = fontAsset.material.shader;
-            material.CopyPropertiesFromMaterial(fontAsset.material);
-            material.EnableKeyword("UNDERLAY_ON");
-            material.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.85f));
-            material.SetFloat("_UnderlayOffsetX", 0.4f);
-            material.SetFloat("_UnderlayOffsetY", -0.6f);
-            material.SetFloat("_UnderlayDilate", 0.25f);
-            material.SetFloat("_UnderlaySoftness", 0.2f);
-            EditorUtility.SetDirty(material);
-            AssetDatabase.SaveAssetIfDirty(material);
-            return material;
-        }
-
         // --- Helpers -------------------------------------------------------------------
 
         private static Image Frame(RectTransform rect, string path, Color color)
         {
             var image = rect.gameObject.AddComponent<Image>();
             image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            image.type = Image.Type.Sliced;
+            // Tiled keeps the dots of the edges instead of stretching them into a flat line.
+            image.type = Image.Type.Tiled;
             image.pixelsPerUnitMultiplier = 1f / DotScale;
             image.color = color;
             image.raycastTarget = true;
             return image;
         }
 
-        private static Image SpriteImage(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        private static Image AddImage(RectTransform rect, Color color, bool raycast)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = raycast;
-            return image;
-        }
-
         private static Button AddButton(RectTransform rect, Graphic target) =>
-            Configure(rect.gameObject.AddComponent<Button>(), target);
+            DimWhenDisabled(UiBuild.AddButton(rect, target));
 
         // For the back button over a dark shadow: the icon and label darken with it.
         private static Button AddTintButton(RectTransform rect, Graphic target) =>
-            Configure(rect.gameObject.AddComponent<TintGroupButton>(), target);
+            DimWhenDisabled(UiBuild.AddTintButton(rect, target));
 
-        private static Button Configure(Button button, Graphic target)
+        // The confirm and depart buttons stay disabled until a row or a pin is chosen.
+        private static Button DimWhenDisabled(Button button)
         {
-            button.targetGraphic = target;
-            button.navigation = new Navigation { mode = Navigation.Mode.None };
             var colors = button.colors;
-            colors.highlightedColor = new Color(1.08f, 1.06f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.70f, 0.66f);
-            colors.selectedColor = Color.white;
             colors.disabledColor = new Color(0.55f, 0.55f, 0.6f, 0.7f);
-            colors.fadeDuration = 0.06f;
             button.colors = colors;
             return button;
-        }
-
-        // Runs after every button's children exist, so each one tints all of its own graphics.
-        private static void CollectTintGraphics(RectTransform root)
-        {
-            foreach (var button in root.GetComponentsInChildren<TintGroupButton>(true))
-            {
-                var graphics = new List<Graphic>();
-                foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
-                    if (graphic != button.targetGraphic)
-                        graphics.Add(graphic);
-                button.SetTintGraphics(graphics.ToArray());
-            }
-        }
-
-        private static TMP_Text Label(
-            RectTransform parent,
-            string name,
-            string text,
-            float fontSize,
-            Color color,
-            TextAlignmentOptions alignment
-        )
-        {
-            var rect = Rect(name, parent);
-            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = font;
-            label.fontSize = fontSize;
-            label.color = color;
-            label.text = text ?? "";
-            label.richText = false;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.overflowMode = TextOverflowModes.Overflow;
-            label.alignment = alignment;
-            label.raycastTarget = false;
-            if (shadowText != null)
-                label.fontSharedMaterial = shadowText;
-            return label;
         }
 
         // On narrow screens the text shrinks to its box instead of running out of the frame.
@@ -895,27 +812,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             label.enableAutoSizing = true;
             label.fontSizeMin = minimum;
             label.fontSizeMax = label.fontSize;
-        }
-
-        private static void Corner(RectTransform rect, Vector2 corner, Vector2 offset, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
-            rect.anchoredPosition = offset;
-            rect.sizeDelta = size;
-        }
-
-        private static void Place(RectTransform rect, Vector2 center, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
-            rect.anchoredPosition = center;
-            rect.sizeDelta = size;
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
         // A full-width strip of the given height, inset from the top or bottom edge.
@@ -941,20 +837,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(rect);
             rect.offsetMin = offsetMin;
             rect.offsetMax = offsetMax;
-        }
-
-        private static RectTransform Rect(string name, Transform parent)
-        {
-            var obj = EditorUtility.CreateGameObjectWithHideFlags(
-                name,
-                HideFlags.HideAndDontSave,
-                typeof(RectTransform)
-            );
-            SceneManager.MoveGameObjectToScene(obj, generationScene);
-            obj.hideFlags = HideFlags.None;
-            var rect = obj.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
         }
     }
 }

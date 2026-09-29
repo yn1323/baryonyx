@@ -104,20 +104,16 @@ JRPGのキャラクターイラストを1枚作ってください。背景付き
 
 1. **材料をそろえる**：キャラ設定を上の順に探し、キャラIDを決めて `profile.md` を用意する。
 2. **依頼文を作る**：型を埋めて `illustration-request.md` に保存し、ユーザーに見せる。ユーザーが生成まで依頼している場合はそのまま次へ進み、依頼文の相談だけを求めている場合は送らずに止める。
-3. **Codexに依頼する**：
+3. **Codexに依頼する**：リポジトリ直下で次の1行を実行する。WindowsのPowerShellとmacOSのターミナルのどちらでも同じコマンドで動く（行末の `\` での改行や `&&` はPowerShellで使えないため、1行のまま使う）。
 
    ```bash
-   python3 .agents/skills/shared/scripts/codex_image.py \
-     --out-dir output/characters/<キャラID> --name illustration \
-     --request output/characters/<キャラID>/illustration-request.md \
-     --profile output/characters/<キャラID>/profile.md \
-     --model gpt-6-astra
+   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name illustration --request output/characters/<キャラID>/illustration-request.md --profile output/characters/<キャラID>/profile.md --model gpt-6-astra
    ```
 
-   ユーザーがスプライトシートの添付を求めたときだけ、次の2つを足す。
+   ユーザーがスプライトシートの添付を求めたときだけ、同じ行の末尾に次の2つを足す。
 
-   ```bash
-     --image <スプライトシートのPNG> --image-role "キャラクターの服・色・装備の見本。ドット絵の画風やポーズは写さない"
+   ```text
+   --image <スプライトシートのPNG> --image-role "キャラクターの服・色・装備の見本。ドット絵の画風やポーズは写さない"
    ```
 
    Codexの実行には数分かかるので、Bashのタイムアウトを最大にするか、バックグラウンドで実行する。

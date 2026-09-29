@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: TavernGuideMenu
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
   Title: "\u9152\u5834"
-  GuideArt: {fileID: 2800000, guid: 89f7da2be725a44459e1505fc56e3c79, type: 3}
-  GuideDotSize: 3.5
+  GuideArt: {fileID: -6622703189942226176, guid: 77e0d8a5af683d34095d17c4871a6084, type: 3}
+  GuideDotSize: 4
   Background: {fileID: 2800000, guid: d6e453492f005435ca349cf50e5ac468, type: 3}
   Layout: 0
   Items:
   - Label: "\u7DE8\u6210"
     Caption: "\u5192\u967A\u306B\u9023\u308C\u3066\u884C\u304F4\u4EBA\u3092\u9078\u3076"
-    Icon: {fileID: 21300000, guid: 72ac42273cacd448ba3749a7b9356695, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: 2b1f0117b99113d45bec2ab66390127a, type: 3}
     ConfirmLabel: "\u7DE8\u6210\u3059\u308B"
     Entries:
     - Name: "\u30C8\u30FC\u30DE"
@@ -52,7 +52,7 @@ MonoBehaviour:
       Detail: "\u63A7\u3048\uFF5C\u6C37\u30FB\u96F7\u306E\u30AB\u30FC\u30C9\u3092\u4F7F\u3048\u308B"
   - Label: "\u80B2\u6210"
     Caption: "\u30EB\u30FC\u30F3\u3092\u4F7F\u3063\u3066\u30EC\u30D9\u30EB\u3092\u4E0A\u3052\u308B"
-    Icon: {fileID: 21300000, guid: 1913f9a6a5185428d81d0aa164936292, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: fb8d59a5fa7178f4784c88d49a2ff70b, type: 3}
     ConfirmLabel: "\u30EC\u30D9\u30EB\u30A2\u30C3\u30D7"
     Entries:
     - Name: "\u30C8\u30FC\u30DE"
@@ -84,7 +84,7 @@ MonoBehaviour:
       Detail: "\u5FC5\u8981\u30EB\u30FC\u30F3 100"
   - Label: "\u30AB\u30FC\u30C9\u30B9\u30AD\u30EB"
     Caption: "\u30AD\u30E3\u30E9\u3054\u3068\u306B3\u679A\u306E\u30AB\u30FC\u30C9\u3092\u4ED8\u3051\u66FF\u3048\u308B"
-    Icon: {fileID: 21300000, guid: 6580fea37a2d8461caaf2da446a2e23e, type: 3}
+    Icon: {fileID: 5349011544834349465, guid: 301db959025c7f546a5ee0556d35bafd, type: 3}
     ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
     Entries:
     - Name: "\u65AC\u6483"

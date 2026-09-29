@@ -70,7 +70,7 @@ TOPの広間と同じ背景を使い、シャッターが開くと同じ場所�
 | 再開先 | 森の遺跡 B3F |
 
 実データの接続先は既存の仕様に合わせる。
-歩数は1歩1ルーンで換算し、起動時の自動取得と画面上の「ルーンを取得」の両方に対応する（[運動報酬](../features/exercise-rewards.md#ワットのルーン変換)）。
+歩数は1歩1ルーンで換算し、起動時の自動取得と画面上の「ルーンを取得」の両方に対応する（[運動報酬](../features/exercise-rewards.md#uptのルーン変換)）。
 今回のモックでは、歩数の枠を押すと「ルーンを取得（モック）」の短い通知を表示するだけにする。
 
 ボタンの押下は、画面ごとに1つのイベントとしてPresenterへ渡す。
@@ -98,7 +98,7 @@ TOPの広間と同じ背景を使い、シャッターが開くと同じ場所�
 
 パーティの画像は、ワイヤー画面で使っていた `Adventurers.png` を使う。
 HomeとWireframeの両方で使う素材になるため、Unityの移動機能でGUIDを保ったまま[Shared/Art/Characters/](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png)へ移し、参照している文書のパスも更新する。
-背景は既存の[TopDungeonBackground.png](../../client/Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png)を参照する。
+背景は既存の `TopDungeonBackground.png` を参照する（2026-09-29に [Shared/Art/Stages/DungeonHall.png](../../client/Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png) へ移した）。
 
 演出は既存のHD-2D部品を使う。
 `Hd2dFlickerLight`で焚き火の橙の光と門の青緑の光、`Hd2dEmberEmitter`で焚き火の火の粉を出す。

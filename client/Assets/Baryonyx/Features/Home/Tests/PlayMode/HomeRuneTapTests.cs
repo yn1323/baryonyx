@@ -1,17 +1,17 @@
 using System.Collections;
+using System.Threading;
 using Baryonyx.App;
 using Baryonyx.Home;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // ルーンが弾ける中心を、ワットパネルを押した位置にする。
+    // UPTパネルを押してルーンを獲得する演出を、仮のルーンと仮想の入力で確かめる。
+    // ルーンは押した位置から弾け、所持ルーンのアイコンへ吸い込まれる。
     public sealed class HomeRuneTapTests : ScenarioInputFixture
     {
-        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
         private TestGameServices services;
 
         [UnityTest]
@@ -52,15 +52,51 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
         }
 
+        // 仮のルーンは押すたびに決まった量だけ増え、サーバーへは送らない。
+        // 所持ルーンのアイコンも所持数の文字と一緒に大きくなり、文字に重ならず、終わると戻る。
+        [UnityTest]
+        public IEnumerator MockRunesGrowTheIconAndAddTheSampleAmount()
+        {
+            var view = default(HomeView);
+            yield return LoadHome(value => view = value);
+            var data = Object.FindAnyObjectByType<HomeBootstrap>().Data;
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(data.Runes)));
+            Vector2 restPivot = view.RuneTarget.pivot;
+
+            yield return Tap(view);
+            Assert.That(view.GainLabel.text, Is.EqualTo("+1,340"));
+            var icon = new Vector3[4];
+            var label = new Vector3[4];
+            float largest = 1f;
+            while (view.RuneGainPlaying)
+            {
+                largest = Mathf.Max(largest, view.RuneTarget.localScale.x);
+                view.RuneTarget.GetWorldCorners(icon);
+                view.RunesLabel.rectTransform.GetWorldCorners(label);
+                Assert.That(icon[2].x, Is.LessThanOrEqualTo(label[0].x + 2f));
+                yield return null;
+            }
+
+            Assert.That(largest, Is.GreaterThan(1.35f));
+            Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
+            Assert.That(
+                view.RunesLabel.text,
+                Is.EqualTo(HomeViewState.Runes(data.Runes + data.MockGrantedRunes))
+            );
+            Assert.That(
+                services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
+                Is.Zero,
+                "Mock runes never reach the server."
+            );
+        }
+
         [UnityTearDown]
         public IEnumerator UnloadScenes()
         {
             services?.Dispose();
             services = null;
-            SceneManager.SetActiveScene(SceneManager.CreateScene(nameof(HomeRuneTapTests)));
-            var scene = SceneManager.GetSceneByPath(HomeScenePath);
-            if (scene.IsValid() && scene.isLoaded)
-                yield return SceneManager.UnloadSceneAsync(scene);
+            yield return SceneTests.UnloadAll(nameof(HomeRuneTapTests));
         }
 
         private IEnumerator LoadHome(System.Action<HomeView> found)
@@ -68,31 +104,17 @@ namespace Baryonyx.Tests.PlayMode
             services = TestGameServices.Use();
             // 仮のルーンなら、歩数に関係なく押すたびに獲得できる。
             HomeBootstrap.MockRuneGainOverride = true;
-            yield return SceneManager.LoadSceneAsync(HomeScenePath, LoadSceneMode.Single);
-            var bootstrap = Object.FindAnyObjectByType<HomeBootstrap>();
-            Assert.That(bootstrap, Is.Not.Null);
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (
-                (
-                    bootstrap.Presenter == null
-                    || bootstrap.Transition.IsPlaying
-                    || !bootstrap.Presenter.StepTask.IsCompleted
-                )
-                && Time.realtimeSinceStartup < deadline
-            )
-                yield return null;
-            Assert.That(bootstrap.Presenter.StepTask.IsCompleted, Is.True);
-            Canvas.ForceUpdateCanvases();
-            found(bootstrap.View);
+            yield return SceneTests.Load<HomeBootstrap>(
+                SceneTests.HomePath,
+                home => SceneTests.HomeReady(home) && home.Presenter.StepTask.IsCompleted,
+                home => found(home.View)
+            );
         }
 
         private static IEnumerator Tap(HomeView view)
         {
             view.StepButton.onClick.Invoke();
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (!view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.That(view.RuneGainPlaying, Is.True);
+            yield return SceneTests.WaitUntil(() => view.RuneGainPlaying);
         }
 
         // Game viewにフォーカスがないと入力イベントは捨てられるため、状態を直接書き換える。

@@ -55,11 +55,16 @@ namespace Baryonyx.App
             );
         }
 
-        private static IHealthStepServer CreateServer(HealthConnectionSettings settings)
+        private static IHealthStepServer CreateServer(HealthConnectionSettings settings) =>
+            (IHealthStepServer)CreateServerSync(settings) ?? new LocalHealthStepServer();
+
+        // 接続先のゲームサーバーへ、ログイン・歩数の保存・ルーンの請求を順に行う同期。
+        // 接続先がない、またはURLが無効なときはnullを返し、歩数を端末内だけに保持させる。
+        internal static HealthServerSync CreateServerSync(HealthConnectionSettings settings)
         {
             var url = ServerEndpoint.Resolve(settings);
             if (string.IsNullOrWhiteSpace(url))
-                return new LocalHealthStepServer();
+                return null;
             try
             {
                 var server = new ServerApi(url);
@@ -74,7 +79,7 @@ namespace Baryonyx.App
                 Debug.LogWarning(
                     "サーバーURLが無効なため、歩数を端末内だけに保持します。" + exception.Message
                 );
-                return new LocalHealthStepServer();
+                return null;
             }
         }
     }

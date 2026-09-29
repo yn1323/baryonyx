@@ -24,6 +24,9 @@ CoreAreaの外側へ広がった横幅は背景や環境演出へ使い、必須
 画面端へ固定するUIはSafe Area配下のアンカーへ置く。
 画面全体を覆う背景と暗幕はSafe Areaの外側に置き、文字、ボタン、閉じる操作は [`SafeAreaFollower`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/SafeAreaFollower.cs) または既存のSafe Areaレイアウト配下に置く。
 ボタンは固定座標ではなく、四隅・辺・中央のアンカーと設計座標のマージンで配置する。
+CoreArea内のゲーム本体とSafe Area配下の操作UIは、同じ親で伸縮させない。
+画面が16:9より狭いときは、中央の層を [`WorldLayerFit`](../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/WorldLayerFit.cs) で縮め、隅のボタンの下へキャラを潜らせない。
+Layout Groupが子のサイズを決める範囲では、子のアンカーと `sizeDelta` を手動で設定しない。
 
 OSから横向きやサイズ変更を適用された場合も、内容をスクロールして操作できるようにする。
 Androidの大画面では向きの指定が上書きされる条件とゲーム区分などの例外があるため、生成APKのManifestと実機で確認する。

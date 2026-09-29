@@ -7,27 +7,19 @@ namespace Baryonyx.Temple.Editor
     /// <summary>
     /// The temple (神殿): the thousand-year-old fox spirit guides summoning companions and gear.
     /// The summon method, rates and pools are undecided, so the lists are mock data and no
-    /// rates are shown. The guide is a high-resolution fine-dot illustration shrunk to fit,
-    /// because redrawing it on a coarse dot grid left its white hair noisy.
+    /// rates are shown.
     /// </summary>
     public static class TempleScreenAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Temple";
         public const string DefinitionPath = Folder + "/Data/TempleGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/TempleScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/TempleGuide.png";
+        public const string GuideArtPath = Folder + "/UI/Art/TempleGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TempleBackground.png";
 
         [MenuItem("Baryonyx/Temple/Create Screen Assets")]
         public static void CreateAssets() =>
-            CreateScreen(
-                DefinitionPath,
-                PrefabPath,
-                GuideArtPath,
-                BackgroundPath,
-                Fill,
-                smoothGuide: true
-            );
+            CreateScreen(DefinitionPath, PrefabPath, GuideArtPath, BackgroundPath, Fill);
 
         private static void Fill(GuideMenuDefinition d)
         {

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
-using Baryonyx.Home;
-using Baryonyx.Home.Editor;
+using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.UI;
+using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.Combat.Editor
 {
@@ -19,16 +19,13 @@ namespace Baryonyx.Combat.Editor
     /// Generates the mock card battle screen (BattleInspectScreen.prefab): the party on the left,
     /// enemies on the right, the hand along the bottom, and the energy and end-turn controls.
     /// Coordinates follow the 1920x1080 design; pixel art is drawn at 4 px per dot.
-    /// The shapes, the text shadow and <see cref="PixelPerfectRawImage"/> are borrowed from Home.
+    /// The shapes, the text shadow and the screen-building helpers are shared with the other screens.
     /// </summary>
     public static class BattleInspectAssets
     {
         public const string PrefabPath =
             "Assets/Baryonyx/Features/Combat/UI/BattleInspectScreen.prefab";
         public const string ArtFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
-
-        private const string FogPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
 
         private const float DotSize = 4f;
         private const float CardWidth = 180f;
@@ -261,10 +258,6 @@ namespace Baryonyx.Combat.Editor
             },
         };
 
-        private static Scene generationScene;
-        private static TMP_FontAsset font;
-        private static Material shadowText;
-
         [MenuItem("Baryonyx/Combat/Create Battle Inspect Assets")]
         public static void CreateAssets()
         {
@@ -273,25 +266,15 @@ namespace Baryonyx.Combat.Editor
 
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             AssetDatabase.Refresh();
-            HomeScreenArt.EnsureAll();
-            font = GameFontAssets.GetOrCreate();
-            shadowText = HomeScreenArt.EnsureTextShadow(font);
+            UiArt.EnsureAll();
+            var font = GameFontAssets.GetOrCreate();
+            var shadowText = UiArt.EnsureTextShadow(font);
             foreach (var path in AssetDatabase.FindAssets("t:Texture2D", new[] { ArtFolder }))
-                HomeScreenArt.ImportPixelTexture(AssetDatabase.GUIDToAssetPath(path));
+                ArtAssets.ImportTexture(AssetDatabase.GUIDToAssetPath(path), FilterMode.Point);
 
-            generationScene = EditorSceneManager.NewPreviewScene();
-            RectTransform root = null;
-            try
+            using (UiBuild.Begin(font, shadowText))
             {
-                root = Rect("BattleInspectScreen", null);
-                var canvas = root.gameObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                var scaler = root.gameObject.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 1;
-                root.gameObject.AddComponent<GraphicRaycaster>();
+                var root = CanvasRoot("BattleInspectScreen");
                 var view = root.gameObject.AddComponent<BattleInspectView>();
 
                 BuildBackground(root);
@@ -299,14 +282,12 @@ namespace Baryonyx.Combat.Editor
                 var world = Rect("World", root);
                 world.anchorMin = world.anchorMax = world.pivot = Vector2.one * 0.5f;
                 world.sizeDelta = new Vector2(1920, 1080);
-                world.gameObject.AddComponent<HomeWorldFit>();
+                world.gameObject.AddComponent<WorldLayerFit>();
                 BuildParty(world, view, idle);
                 BuildEnemies(world, view, idle);
                 view.IdleActors = idle.ToArray();
 
-                var safe = Rect("SafeArea", root);
-                Stretch(safe);
-                safe.gameObject.AddComponent<SafeAreaFollower>();
+                var safe = SafeArea(root);
                 BuildPartyPanel(safe, view);
                 BuildTurnOrder(safe, view);
                 BuildEnergy(safe, view);
@@ -316,13 +297,6 @@ namespace Baryonyx.Combat.Editor
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
-            }
-            finally
-            {
-                if (root != null)
-                    UnityEngine.Object.DestroyImmediate(root.gameObject);
-                EditorSceneManager.ClosePreviewScene(generationScene);
-                generationScene = default;
             }
             AssetDatabase.SaveAssets();
         }
@@ -336,7 +310,7 @@ namespace Baryonyx.Combat.Editor
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (Path.GetFileNameWithoutExtension(path) == name)
-                    return HomeScreenArt.LoadTexture(path);
+                    return ArtAssets.LoadTexture(path);
             }
             throw new InvalidOperationException($"Missing battle art: {name}");
         }
@@ -350,12 +324,7 @@ namespace Baryonyx.Combat.Editor
             image.raycastTarget = false;
             image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
 
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FogPrefabPath);
-            if (prefab == null)
-                throw new InvalidOperationException("HD-2D prefab not found: " + FogPrefabPath);
-            var fog = (GameObject)PrefabUtility.InstantiatePrefab(prefab, generationScene);
-            fog.name = "FloorMist";
-            fog.transform.SetParent(root, false);
+            var fog = InstantiatePrefab(Hd2dAssets.FogPrefabPath, "FloorMist", root);
             Stretch((RectTransform)fog.transform);
             fog.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
 
@@ -369,7 +338,7 @@ namespace Baryonyx.Combat.Editor
             List<RectTransform> idle
         )
         {
-            var shadow = HomeScreenArt.LoadSprite(HomeScreenArt.ShadowPath);
+            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             foreach (var ally in Allies)
             {
                 var unit = Rect("Ally" + ally.Name, world);
@@ -377,7 +346,7 @@ namespace Baryonyx.Combat.Editor
                 Picture(unit, "Shadow", shadow, new Vector2(0, 2), new Vector2(150, 24), 0.5f);
                 var pose = Rect("Pose", unit);
                 Place(pose, Vector2.zero, Vector2.zero);
-                PixelActor(pose, "Sprite", Art("Battle" + ally.Name));
+                PixelActor(pose, "Sprite", Art("Battle" + ally.Name), Vector2.zero, DotSize);
                 idle.Add(pose);
             }
 
@@ -393,7 +362,7 @@ namespace Baryonyx.Combat.Editor
             List<RectTransform> idle
         )
         {
-            var shadow = HomeScreenArt.LoadSprite(HomeScreenArt.ShadowPath);
+            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             var enemies = new List<BattleInspectEnemy>();
             foreach (var spec in Enemies)
             {
@@ -413,7 +382,7 @@ namespace Baryonyx.Combat.Editor
                 );
                 var pose = Rect("Pose", body);
                 Place(pose, Vector2.zero, Vector2.zero);
-                var sprite = PixelActor(pose, "Sprite", texture);
+                var sprite = PixelActor(pose, "Sprite", texture, Vector2.zero, DotSize);
                 idle.Add(pose);
 
                 // The visible body (the drawn part of the square canvas) is the tap target.
@@ -519,7 +488,7 @@ namespace Baryonyx.Combat.Editor
         {
             var panel = Rect("PartyPanel", safe);
             Corner(panel, new Vector2(0, 1), new Vector2(8, -8), new Vector2(560, 400));
-            var plate = Sliced(panel, HomeScreenArt.FeatherPath, Plate);
+            var plate = Sliced(panel, UiArt.FeatherPath, Plate);
             plate.raycastTarget = false;
 
             var stage = Label(
@@ -557,13 +526,13 @@ namespace Baryonyx.Combat.Editor
 
                 var skill = Rect("Skill", line);
                 Corner(skill, new Vector2(0, 0.5f), new Vector2(0, 0), new Vector2(60, 60));
-                var ring = SpriteImage(skill, HomeScreenArt.CirclePath, ally.Color);
+                var ring = SpriteImage(skill, UiArt.CirclePath, ally.Color);
                 ring.raycastTarget = true;
                 var inner = Rect("Inner", skill);
                 Stretch(inner);
                 inner.offsetMin = new Vector2(5, 5);
                 inner.offsetMax = new Vector2(-5, -5);
-                SpriteImage(inner, HomeScreenArt.CirclePath, new Color(0.06f, 0.06f, 0.09f, 1f));
+                SpriteImage(inner, UiArt.CirclePath, new Color(0.06f, 0.06f, 0.09f, 1f));
                 bool ready = ally.Cooldown == 0;
                 var skillLabel = Label(
                     inner,
@@ -633,14 +602,14 @@ namespace Baryonyx.Combat.Editor
                 layout.preferredHeight = TurnSlotHeight;
                 Sliced(
                     slot,
-                    HomeScreenArt.RoundedRectPath,
+                    UiArt.RoundedRectPath,
                     new Color(0.03f, 0.04f, 0.07f, 0.88f)
                 ).raycastTarget = false;
                 var ring = Rect("Ring", slot);
                 Stretch(ring);
                 Sliced(
                     ring,
-                    HomeScreenArt.RoundedRingPath,
+                    UiArt.RoundedRingPath,
                     i == 0 ? Gold : new Color(0.55f, 0.55f, 0.6f, 0.7f)
                 ).raycastTarget = false;
 
@@ -722,12 +691,12 @@ namespace Baryonyx.Combat.Editor
         {
             var orb = Rect("Energy", safe);
             Corner(orb, Vector2.zero, new Vector2(40, 64), new Vector2(168, 168));
-            SpriteImage(orb, HomeScreenArt.CirclePath, new Color(0.35f, 0.2f, 0.05f, 1f));
+            SpriteImage(orb, UiArt.CirclePath, new Color(0.35f, 0.2f, 0.05f, 1f));
             var core = Rect("Core", orb);
             Stretch(core);
             core.offsetMin = new Vector2(10, 10);
             core.offsetMax = new Vector2(-10, -10);
-            SpriteImage(core, HomeScreenArt.CirclePath, new Color(0.95f, 0.7f, 0.24f, 1f));
+            SpriteImage(core, UiArt.CirclePath, new Color(0.95f, 0.7f, 0.24f, 1f));
             view.EnergyLabel = Label(
                 orb,
                 "Value",
@@ -779,15 +748,15 @@ namespace Baryonyx.Combat.Editor
                 Stretch(highlight);
                 highlight.offsetMin = new Vector2(-8, -8);
                 highlight.offsetMax = new Vector2(8, 8);
-                Sliced(highlight, HomeScreenArt.RoundedRectPath, Gold).raycastTarget = false;
+                Sliced(highlight, UiArt.RoundedRectPath, Gold).raycastTarget = false;
 
                 // The face is a child so the highlight, created first, glows behind it.
                 var faceRect = Rect("Face", card);
                 Stretch(faceRect);
-                var face = Sliced(faceRect, HomeScreenArt.RoundedRectPath, CardFace);
+                var face = Sliced(faceRect, UiArt.RoundedRectPath, CardFace);
                 var border = Rect("Border", card);
                 Stretch(border);
-                Sliced(border, HomeScreenArt.RoundedRingPath, owner.Color).raycastTarget = false;
+                Sliced(border, UiArt.RoundedRingPath, owner.Color).raycastTarget = false;
 
                 var art = Rect("Art", card);
                 art.anchorMin = art.anchorMax = art.pivot = new Vector2(0.5f, 1);
@@ -799,12 +768,12 @@ namespace Baryonyx.Combat.Editor
 
                 var cost = Rect("Cost", card);
                 Corner(cost, new Vector2(0, 1), new Vector2(-12, 12), new Vector2(56, 56));
-                SpriteImage(cost, HomeScreenArt.CirclePath, new Color(0.35f, 0.2f, 0.05f, 1f));
+                SpriteImage(cost, UiArt.CirclePath, new Color(0.35f, 0.2f, 0.05f, 1f));
                 var costCore = Rect("Core", cost);
                 Stretch(costCore);
                 costCore.offsetMin = new Vector2(4, 4);
                 costCore.offsetMax = new Vector2(-4, -4);
-                SpriteImage(costCore, HomeScreenArt.CirclePath, new Color(0.95f, 0.7f, 0.24f, 1f));
+                SpriteImage(costCore, UiArt.CirclePath, new Color(0.95f, 0.7f, 0.24f, 1f));
                 var costLabel = Label(
                     cost,
                     "Value",
@@ -880,14 +849,10 @@ namespace Baryonyx.Combat.Editor
         {
             var button = Rect("EndTurn", safe);
             Corner(button, new Vector2(1, 0), new Vector2(-40, 72), new Vector2(260, 96));
-            var face = Sliced(
-                button,
-                HomeScreenArt.RoundedRectPath,
-                new Color(0.42f, 0.24f, 0.08f, 1f)
-            );
+            var face = Sliced(button, UiArt.RoundedRectPath, new Color(0.42f, 0.24f, 0.08f, 1f));
             var ring = Rect("Ring", button);
             Stretch(ring);
-            Sliced(ring, HomeScreenArt.RoundedRingPath, Gold).raycastTarget = false;
+            Sliced(ring, UiArt.RoundedRingPath, Gold).raycastTarget = false;
             var label = Label(
                 button,
                 "Label",
@@ -957,7 +922,7 @@ namespace Baryonyx.Combat.Editor
         )
         {
             var chip = Rect(name, parent);
-            Sliced(chip, HomeScreenArt.CapsulePath, color).raycastTarget = false;
+            Sliced(chip, UiArt.CapsulePath, color).raycastTarget = false;
             var row = chip.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.padding = new RectOffset(16, 16, 0, 0);
             row.childAlignment = TextAnchor.MiddleCenter;
@@ -1012,7 +977,9 @@ namespace Baryonyx.Combat.Editor
         private static UnityEngine.Rect OpaqueBounds(Texture2D texture)
         {
             var pixels = AssetDatabase.GetAssetPath(texture) is { } path
-                ? LoadReadable(path)
+                ? AsepriteCanvasImport.IsAseprite(path)
+                    ? AsepriteCanvasImport.ReadFramePixels(path)
+                    : LoadReadable(path)
                 : null;
             if (pixels == null)
                 return new UnityEngine.Rect(0, 0, texture.width, texture.height);
@@ -1046,163 +1013,6 @@ namespace Baryonyx.Combat.Editor
             {
                 UnityEngine.Object.DestroyImmediate(copy);
             }
-        }
-
-        private static void Shade(
-            RectTransform root,
-            string name,
-            bool top,
-            float height,
-            float alpha
-        )
-        {
-            var rect = Rect(name, root);
-            rect.anchorMin = new Vector2(0, top ? 1 : 0);
-            rect.anchorMax = new Vector2(1, top ? 1 : 0);
-            rect.pivot = new Vector2(0.5f, top ? 1 : 0);
-            rect.sizeDelta = new Vector2(0, height);
-            rect.anchoredPosition = Vector2.zero;
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = HomeScreenArt.LoadTexture(HomeScreenArt.ShadePath);
-            image.color = new Color(0.024f, 0.031f, 0.055f, alpha);
-            image.uvRect = top ? new Rect(0, 0, 1, 1) : new Rect(0, 1, 1, -1);
-            image.raycastTarget = false;
-        }
-
-        /// <summary>
-        /// A sprite drawn at 4 px per dot, pivoted on the bottom row of its canvas (the feet).
-        /// </summary>
-        private static RawImage PixelActor(RectTransform parent, string name, Texture2D texture)
-        {
-            var rect = Rect(name, parent);
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.sizeDelta = new Vector2(texture.width, texture.height) * DotSize;
-            rect.anchoredPosition = Vector2.zero;
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = texture;
-            image.raycastTarget = false;
-            rect.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = DotSize;
-            return image;
-        }
-
-        private static void Picture(
-            RectTransform parent,
-            string name,
-            Sprite sprite,
-            Vector2 center,
-            Vector2 size,
-            float alpha
-        )
-        {
-            var rect = Rect(name, parent);
-            Place(rect, center, size);
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = sprite;
-            image.color = new Color(0, 0, 0, alpha);
-            image.raycastTarget = false;
-        }
-
-        private static TMP_Text Label(
-            RectTransform parent,
-            string name,
-            string text,
-            float fontSize,
-            Color color,
-            TextAlignmentOptions alignment,
-            bool shadow = true
-        )
-        {
-            var rect = Rect(name, parent);
-            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = font;
-            label.fontSize = fontSize;
-            label.color = color;
-            label.text = text;
-            label.richText = false;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.overflowMode = TextOverflowModes.Overflow;
-            label.alignment = alignment;
-            label.raycastTarget = false;
-            if (shadow && shadowText != null)
-                label.fontSharedMaterial = shadowText;
-            return label;
-        }
-
-        private static Image Sliced(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = HomeScreenArt.LoadSprite(path);
-            image.type = Image.Type.Sliced;
-            image.color = color;
-            image.raycastTarget = true;
-            return image;
-        }
-
-        private static Image SpriteImage(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = HomeScreenArt.LoadSprite(path);
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        private static Image AddImage(RectTransform rect, Color color, bool raycast)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = raycast;
-            return image;
-        }
-
-        private static Button AddButton(RectTransform rect, Graphic target)
-        {
-            var button = rect.gameObject.AddComponent<Button>();
-            button.targetGraphic = target;
-            button.navigation = new Navigation { mode = Navigation.Mode.None };
-            var colors = button.colors;
-            colors.highlightedColor = new Color(1.08f, 1.06f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.70f, 0.66f);
-            colors.selectedColor = Color.white;
-            colors.fadeDuration = 0.06f;
-            button.colors = colors;
-            return button;
-        }
-
-        private static void Corner(RectTransform rect, Vector2 corner, Vector2 offset, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
-            rect.anchoredPosition = offset;
-            rect.sizeDelta = size;
-        }
-
-        private static void Place(RectTransform rect, Vector2 center, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
-            rect.anchoredPosition = center;
-            rect.sizeDelta = size;
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-        }
-
-        private static RectTransform Rect(string name, Transform parent)
-        {
-            var obj = EditorUtility.CreateGameObjectWithHideFlags(
-                name,
-                HideFlags.HideAndDontSave,
-                typeof(RectTransform)
-            );
-            SceneManager.MoveGameObjectToScene(obj, generationScene);
-            obj.hideFlags = HideFlags.None;
-            var rect = obj.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
         }
     }
 }

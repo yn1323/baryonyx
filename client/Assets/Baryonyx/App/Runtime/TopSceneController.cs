@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Baryonyx.Health;
 using Baryonyx.UI;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Baryonyx.App
@@ -18,7 +17,7 @@ namespace Baryonyx.App
         public const string RetryText = "TAP TO RETRY";
 
         [SerializeField]
-        private string nextSceneName = "Main";
+        private string nextSceneName = SceneNames.Home;
 
         [SerializeField]
         private SceneTransitionController transition;
@@ -219,67 +218,17 @@ namespace Baryonyx.App
         {
             if (!inputReady || transitionStarted)
                 return;
-            if (string.IsNullOrWhiteSpace(nextSceneName))
-            {
-                Debug.LogError("TopSceneController has no destination scene.", this);
-                return;
-            }
-            if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
-            {
-                Debug.LogError(
-                    $"The destination scene '{nextSceneName}' is not enabled in Build Settings.",
-                    this
-                );
-                return;
-            }
-
             transitionStarted = true;
             continueButton.interactable = false;
-            if (transition != null)
-            {
-                if (!transition.PlayOut(LoadNextSceneAfterCovered))
-                {
-                    transitionStarted = false;
-                    continueButton.interactable = true;
-                }
-                return;
-            }
-
-            LoadNextSceneAfterCovered();
+            if (!SceneLoader.Load(nextSceneName, transition, this, OnLoadFailed))
+                OnLoadFailed();
         }
 
-        private void LoadNextSceneAfterCovered()
-        {
-            AsyncOperation operation = null;
-            try
-            {
-                operation = SceneManager.LoadSceneAsync(nextSceneName, LoadSceneMode.Single);
-            }
-            catch (Exception exception)
-            {
-                HandleSceneLoadFailure(exception);
-                return;
-            }
-
-            if (operation != null)
-                return;
-
-            HandleSceneLoadFailure(null);
-        }
-
-        private void HandleSceneLoadFailure(Exception exception)
+        private void OnLoadFailed()
         {
             transitionStarted = false;
             if (continueButton != null)
                 continueButton.interactable = true;
-            if (transition != null)
-                transition.PlayIn();
-
-            var message = $"The destination scene '{nextSceneName}' could not be loaded.";
-            if (exception == null)
-                Debug.LogError(message, this);
-            else
-                Debug.LogError(message + " " + exception.Message, this);
         }
 
         private async void Forget(Task task)

@@ -1,14 +1,15 @@
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using static Baryonyx.Vfx.Hd2d.Editor.Hd2dInspectorFields;
 
 namespace Baryonyx.Vfx.Hd2d.Editor
 {
     [CustomEditor(typeof(Hd2dLightShaft))]
     [CanEditMultipleObjects]
-    public sealed class Hd2dLightShaftEditor : UnityEditor.Editor
+    public sealed class Hd2dLightShaftEditor : Hd2dPreviewEditor<Hd2dLightShaft>
     {
-        private bool previewUpdateQueued;
+        protected override void Rebuild(Hd2dLightShaft shaft) => shaft.RebuildShafts();
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -91,62 +92,6 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             );
             root.RegisterCallback<SerializedPropertyChangeEvent>(_ => QueuePreviewUpdate());
             return root;
-        }
-
-        private void OnEnable()
-        {
-            Undo.undoRedoPerformed += QueuePreviewUpdate;
-            QueuePreviewUpdate();
-        }
-
-        private void OnDisable()
-        {
-            Undo.undoRedoPerformed -= QueuePreviewUpdate;
-            EditorApplication.delayCall -= RefreshPreview;
-        }
-
-        private void QueuePreviewUpdate()
-        {
-            if (previewUpdateQueued)
-                return;
-
-            previewUpdateQueued = true;
-            EditorApplication.delayCall += RefreshPreview;
-        }
-
-        private void RefreshPreview()
-        {
-            previewUpdateQueued = false;
-            if (this == null)
-                return;
-
-            foreach (var editedTarget in targets)
-            {
-                if (
-                    editedTarget is Hd2dLightShaft shaft
-                    && !UnityEngine.Application.IsPlaying(shaft.gameObject)
-                )
-                    shaft.RebuildShafts();
-            }
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
-
-        private static void AddField(
-            VisualElement parent,
-            string path,
-            string label,
-            string tooltip = null
-        )
-        {
-            parent.Add(
-                new PropertyField
-                {
-                    bindingPath = path,
-                    label = label,
-                    tooltip = tooltip,
-                }
-            );
         }
     }
 }

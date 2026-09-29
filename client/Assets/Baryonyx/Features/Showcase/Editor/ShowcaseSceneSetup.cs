@@ -1,12 +1,8 @@
 using System;
-using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Showcase;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.SceneManagement;
 
 namespace Baryonyx.Showcase.Editor
 {
@@ -26,35 +22,22 @@ namespace Baryonyx.Showcase.Editor
             var catalog = AssetDatabase.LoadAssetAtPath<ShowcaseCatalog>(
                 ShowcaseCatalogBuilder.CatalogPath
             );
-            var previous = SceneManager.GetActiveScene();
-            var scene = EditorSceneManager.NewScene(
-                NewSceneSetup.EmptyScene,
-                NewSceneMode.Additive
+            ScreenScenes.Rebuild(
+                ShowcaseCatalogBuilder.ScenePath,
+                scene =>
+                {
+                    ScreenScenes.AddObject<ShowcaseBootstrap>(scene, "ShowcaseApp").Catalog =
+                        catalog;
+                    ScreenScenes.AddCamera(
+                        scene,
+                        "ShowcaseCamera",
+                        ScreenScenes.CameraColor,
+                        orthographic: false
+                    );
+                    ScreenScenes.AddEventSystem(scene);
+                }
             );
-            try
-            {
-                var root = new GameObject("ShowcaseApp");
-                SceneManager.MoveGameObjectToScene(root, scene);
-                var app = root.AddComponent<ShowcaseBootstrap>();
-                app.Catalog = catalog;
-                var cameraObject = new GameObject("ShowcaseCamera");
-                var camera = cameraObject.AddComponent<Camera>();
-                camera.clearFlags = CameraClearFlags.SolidColor;
-                camera.backgroundColor = new Color(0.035f, 0.047f, 0.075f, 1f);
-                camera.tag = "MainCamera";
-                SceneManager.MoveGameObjectToScene(cameraObject, scene);
-                var events = new GameObject("EventSystem", typeof(EventSystem));
-                events.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
-                SceneManager.MoveGameObjectToScene(events, scene);
-                EditorSceneManager.SaveScene(scene, ShowcaseCatalogBuilder.ScenePath);
-                AddToBuildSettings(ShowcaseCatalogBuilder.ScenePath);
-            }
-            finally
-            {
-                if (previous.IsValid())
-                    SceneManager.SetActiveScene(previous);
-                EditorSceneManager.CloseScene(scene, true);
-            }
+            ScreenScenes.AddToBuildSettings(ShowcaseCatalogBuilder.ScenePath);
         }
 
         [MenuItem("Baryonyx/Showcase/Open Scene")]
@@ -69,18 +52,8 @@ namespace Baryonyx.Showcase.Editor
         public static void RefreshAll()
         {
             ShowcaseCatalogBuilder.RefreshCatalog();
-            AddToBuildSettings(ShowcaseCatalogBuilder.ScenePath);
-        }
-
-        private static void AddToBuildSettings(string scenePath)
-        {
-            if (!System.IO.File.Exists(scenePath))
-                return;
-            var scenes = EditorBuildSettings.scenes.ToList();
-            if (scenes.Any(scene => scene.path == scenePath))
-                return;
-            scenes.Add(new EditorBuildSettingsScene(scenePath, true));
-            EditorBuildSettings.scenes = scenes.ToArray();
+            if (System.IO.File.Exists(ShowcaseCatalogBuilder.ScenePath))
+                ScreenScenes.AddToBuildSettings(ShowcaseCatalogBuilder.ScenePath);
         }
     }
 }

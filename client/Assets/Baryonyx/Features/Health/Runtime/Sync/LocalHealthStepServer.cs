@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Baryonyx.Health
 {
     // サーバーURLを設定しない実行環境で、最後に保存した7日分をメモリだけに保持する。
-    // ルーンはサーバーと同じく、日ごとに変換済みの歩数との差分を、1歩＝1ワット・1ワット＝1ルーンで付与する。
+    // ルーンはサーバーと同じく、日ごとに変換済みの歩数との差分を、1歩＝1UPT・1UPT＝1ルーンで付与する。
     public sealed class LocalHealthStepServer : IHealthStepServer
     {
         private readonly Dictionary<string, long> creditedSteps = new();

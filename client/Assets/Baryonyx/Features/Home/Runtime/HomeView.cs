@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Baryonyx.UI;
 using Baryonyx.Vfx.Hd2d;
 using TMPro;
 using UnityEngine;
@@ -86,7 +87,7 @@ namespace Baryonyx.Home
         public float NoticeSeconds = 1.4f;
 
         [Header("ルーン獲得")]
-        // 粒子はワットパネルを押した位置（分からなければ案内の文字）から出て、右上の所持ルーンのアイコンへ飛ぶ。
+        // 粒子はUPTパネルを押した位置（分からなければ案内の文字）から出て、右上の所持ルーンのアイコンへ飛ぶ。
         public RectTransform RuneOrigin;
         public RectTransform RuneTarget;
         public RectTransform RuneEffectLayer;
@@ -142,7 +143,7 @@ namespace Baryonyx.Home
         [Range(1, 64)]
         public int RuneParticleMax = 40;
 
-        // 粒子がワットパネルから四方へ広がる時間。
+        // 粒子がUPTパネルから四方へ広がる時間。
         [Min(0.01f)]
         public float RuneBurstSeconds = 0.25f;
 
@@ -194,8 +195,8 @@ namespace Baryonyx.Home
         private readonly List<(Button button, UnityEngine.Events.UnityAction listener)> bindings =
             new();
         private readonly List<Image> particles = new();
-        private Coroutine toastRoutine;
-        private Coroutine noticeRoutine;
+        private FadingMessage toastFade;
+        private FadingMessage noticeFade;
         private Coroutine runeRoutine;
         private bool claimPulses;
 
@@ -206,7 +207,10 @@ namespace Baryonyx.Home
         // 最後の波で金色にした所持数を、演出の終わりに戻す色。
         private Color? runesLabelColor;
 
-        // ワットパネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
+        // 演出で動かした所持ルーンのアイコンの拡大の軸（横）を、演出の終わりに戻す値。
+        private float? runeIconPivot;
+
+        // UPTパネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
         private Vector2? tapScreenPoint;
 
         public event Action<HomeAction> ActionRequested;
@@ -242,8 +246,6 @@ namespace Baryonyx.Home
                 if (button != null)
                     button.onClick.RemoveListener(listener);
             bindings.Clear();
-            toastRoutine = null;
-            noticeRoutine = null;
             FinishRuneGain();
         }
 
@@ -257,7 +259,7 @@ namespace Baryonyx.Home
                 StepDetails.SetActive(state.ShowSteps);
             if (UnlinkedDetails != null)
                 UnlinkedDetails.SetActive(!state.ShowSteps);
-            Set(StepsLabel, state.WattsText);
+            Set(StepsLabel, state.UptText);
             if (StepsLabel != null)
                 StepsLabel.color = state.DailyAchieved ? GaugeAchieved : TextMain;
             for (int i = 0; i < Segments.Length; i++)
@@ -303,69 +305,22 @@ namespace Baryonyx.Home
 
         public void ShowToast(string message)
         {
-            if (Toast == null || ToastLabel == null || string.IsNullOrEmpty(message))
-                return;
-            ToastLabel.text = message;
-            Toast.alpha = 1f;
-            if (toastRoutine != null)
-                StopCoroutine(toastRoutine);
-            toastRoutine = isActiveAndEnabled ? StartCoroutine(FadeToast()) : null;
+            if (!string.IsNullOrEmpty(message))
+                ToastFade.Show(Toast, ToastLabel, message, ToastSeconds, ToastFadeSeconds);
         }
 
-        public void HideToast()
-        {
-            if (toastRoutine != null)
-                StopCoroutine(toastRoutine);
-            toastRoutine = null;
-            if (Toast != null)
-                Toast.alpha = 0f;
-        }
-
-        private IEnumerator FadeToast()
-        {
-            yield return new WaitForSecondsRealtime(ToastSeconds);
-            yield return FadeOut(Toast);
-            toastRoutine = null;
-        }
+        public void HideToast() => ToastFade.Hide(Toast);
 
         public void ShowNotice(string message)
         {
-            if (Notice == null || NoticeLabel == null || string.IsNullOrEmpty(message))
-                return;
-            NoticeLabel.text = message;
-            Notice.alpha = 1f;
-            if (noticeRoutine != null)
-                StopCoroutine(noticeRoutine);
-            noticeRoutine = isActiveAndEnabled ? StartCoroutine(FadeNotice()) : null;
+            if (!string.IsNullOrEmpty(message))
+                NoticeFade.Show(Notice, NoticeLabel, message, NoticeSeconds, ToastFadeSeconds);
         }
 
-        public void HideNotice()
-        {
-            if (noticeRoutine != null)
-                StopCoroutine(noticeRoutine);
-            noticeRoutine = null;
-            if (Notice != null)
-                Notice.alpha = 0f;
-        }
+        public void HideNotice() => NoticeFade.Hide(Notice);
 
-        private IEnumerator FadeNotice()
-        {
-            yield return new WaitForSecondsRealtime(NoticeSeconds);
-            yield return FadeOut(Notice);
-            noticeRoutine = null;
-        }
-
-        private IEnumerator FadeOut(CanvasGroup group)
-        {
-            float elapsed = 0f;
-            while (elapsed < ToastFadeSeconds)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                group.alpha = 1f - Mathf.Clamp01(elapsed / ToastFadeSeconds);
-                yield return null;
-            }
-            group.alpha = 0f;
-        }
+        private FadingMessage ToastFade => toastFade ??= new FadingMessage(this);
+        private FadingMessage NoticeFade => noticeFade ??= new FadingMessage(this);
 
         // 所持ルーンを from から to まで、粒子が着くたびに増やして見せる。
         public void PlayRuneGain(long from, long to)
@@ -405,6 +360,7 @@ namespace Baryonyx.Home
             int count = ParticleCountFor(granted, RuneParticleMax);
             Vector3 origin = TapPoint() ?? PointOf(RuneOrigin);
             BurstOrigin = origin;
+            runeIconPivot ??= RuneTarget.pivot.x;
             Vector3 target = PointOf(RuneTarget);
             Vector3 targetWorld = RuneEffectLayer.TransformPoint(target);
             if (RuneGlow != null)
@@ -545,23 +501,8 @@ namespace Baryonyx.Home
 
                 bumpElapsed += Time.unscaledDeltaTime;
                 float bump = Mathf.Sin(Mathf.PI * Mathf.Clamp01(bumpElapsed / BumpSeconds));
-                RuneTarget.localScale = Vector3.one * (1f + BumpScale * bump);
 
-                // 1粒ごとの小さな光と、最後の1粒で広がりながら消える大きな光。
-                if (RuneGlow != null)
-                {
-                    float final = Mathf.Clamp01((elapsed - lastArrival) / FinalGlowSeconds);
-                    float flash = elapsed >= lastArrival ? (1f - final) * (1f - final) : 0f;
-                    SetAlpha(
-                        RuneGlow,
-                        Mathf.Max(RuneGlowArrivalAlpha * bump, RuneGlowFinalAlpha * flash)
-                    );
-                    RuneGlow.rectTransform.localScale =
-                        Vector3.one
-                        * (1f + FinalGlowGrowth * (elapsed >= lastArrival ? final : 0f));
-                }
-
-                // 吸い込んだ量に比例して所持数の文字を大きくし、全部が着いたら少し止めて戻す。
+                // 吸い込んだ量に比例して所持数の文字とアイコンを大きくし、全部が着いたら少し止めて戻す。
                 float peak = Mathf.Max(1f, RunePeakScale);
                 float grow = Mathf.Lerp(1f, peak, (float)arrived / count);
                 grown = Mathf.Lerp(grown, grow, 1f - Mathf.Exp(-GrowRate * Time.unscaledDeltaTime));
@@ -573,6 +514,27 @@ namespace Baryonyx.Home
                 {
                     RunesLabel.rectTransform.localScale = Vector3.one * scale;
                     RunesLabel.color = Color.Lerp(labelColor, GaugeAchieved, glow);
+                }
+                ScaleRuneIcon(scale, 1f + BumpScale * bump);
+
+                // 大きくなって動いたアイコンへ、粒子・光・キラキラを向け直す。
+                target = CenterOf(RuneTarget);
+                targetWorld = RuneEffectLayer.TransformPoint(target);
+
+                // 1粒ごとの小さな光と、最後の1粒で広がりながら消える大きな光。
+                if (RuneGlow != null)
+                {
+                    float final = Mathf.Clamp01((elapsed - lastArrival) / FinalGlowSeconds);
+                    float flash = elapsed >= lastArrival ? (1f - final) * (1f - final) : 0f;
+                    SetAlpha(
+                        RuneGlow,
+                        Mathf.Max(RuneGlowArrivalAlpha * bump, RuneGlowFinalAlpha * flash)
+                    );
+                    RuneGlow.rectTransform.localPosition = target;
+                    RuneGlow.rectTransform.localScale =
+                        Vector3.one
+                        * scale
+                        * (1f + FinalGlowGrowth * (elapsed >= lastArrival ? final : 0f));
                 }
 
                 bool shrinking = arrived < count || settled < ShrinkSeconds;
@@ -609,7 +571,11 @@ namespace Baryonyx.Home
                 if (particle != null)
                     particle.gameObject.SetActive(false);
             if (RuneTarget != null)
+            {
                 RuneTarget.localScale = Vector3.one;
+                if (runeIconPivot.HasValue)
+                    SetPivotX(RuneTarget, runeIconPivot.Value);
+            }
             if (RuneGlow != null)
                 RuneGlow.gameObject.SetActive(false);
             if (RunesLabel != null)
@@ -675,11 +641,64 @@ namespace Baryonyx.Home
         private Vector3 PointOf(RectTransform rect)
         {
             Canvas.ForceUpdateCanvases();
+            return CenterOf(rect);
+        }
+
+        // 演出の層の座標で、拡大を含めた対象の今の中心を返す。
+        private Vector3 CenterOf(RectTransform rect)
+        {
             var point = RuneEffectLayer.InverseTransformPoint(
                 rect.TransformPoint(rect.rect.center)
             );
             point.z = 0f;
             return point;
+        }
+
+        // 所持ルーンのアイコンを、所持数の文字の中心から文字と同じ grow 倍に広げた位置へ置き、
+        // 粒が着いた跳ね bump を重ねて大きくする。文字と並んだまま重ならない。
+        private void ScaleRuneIcon(float grow, float bump)
+        {
+            float pivot = runeIconPivot ?? 0.5f;
+            if (RunesLabel != null && RunesLabel.rectTransform.parent == RuneTarget.parent)
+            {
+                var label = RunesLabel.rectTransform;
+                float width = RuneTarget.rect.width;
+                pivot = IconPivotFor(
+                    RuneTarget.localPosition.x - RuneTarget.pivot.x * width,
+                    width,
+                    label.localPosition.x + (0.5f - label.pivot.x) * label.rect.width,
+                    grow,
+                    grow * bump
+                );
+            }
+            SetPivotX(RuneTarget, pivot);
+            RuneTarget.localScale = Vector3.one * (grow * bump);
+        }
+
+        // 左端 left・幅 width（親の座標）の対象を、中心が anchor から grow 倍の位置へ移るように
+        // scale 倍へ広げる拡大の軸を、幅に対する割合で返す。
+        private static float IconPivotFor(
+            float left,
+            float width,
+            float anchor,
+            float grow,
+            float scale
+        )
+        {
+            if (width <= 0f || Mathf.Abs(scale - 1f) < 1e-4f)
+                return 0.5f;
+            float center = left + width * 0.5f;
+            float moved = anchor + grow * (center - anchor);
+            return ((moved - scale * center) / (1f - scale) - left) / width;
+        }
+
+        // 拡大の軸（横）だけを変え、並べた位置（拡大前の矩形）は動かさない。
+        // 横並びのレイアウトも軸に合わせて同じ位置へ置くため、組み直されても跳ばない。
+        private static void SetPivotX(RectTransform rect, float x)
+        {
+            var pivot = rect.pivot;
+            rect.anchoredPosition += new Vector2((x - pivot.x) * rect.rect.width, 0f);
+            rect.pivot = new Vector2(x, pivot.y);
         }
 
         // キラキラとモヤを、同じ番号の発生源から同じ位置に出す。
@@ -701,7 +720,7 @@ namespace Baryonyx.Home
         private static Vector3 Bezier(Vector3 start, Vector3 control, Vector3 end, float t) =>
             Vector3.Lerp(Vector3.Lerp(start, control, t), Vector3.Lerp(control, end, t), t);
 
-        // 展示室のプレビューには受け手がいないため、ワットパネルで獲得と獲得なしを交互に見せる。
+        // 展示室のプレビューには受け手がいないため、UPTパネルで獲得と獲得なしを交互に見せる。
         private void PlayPreview(HomeAction action)
         {
             if (action != HomeAction.SyncSteps)

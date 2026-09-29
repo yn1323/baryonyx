@@ -4,7 +4,8 @@ description: >
   このゲームのドット絵を生成・描画・修正・採用するとき、またドット絵をUnityへ取り込んで画面に置くときに必ず使う。
   PixelLab、Codex・ChatGPTの画像生成、Asepriteスクリプト、手作業のどれで作る場合も、
   ドット絵の制作規格（480×270・4倍表示、種類ごとの寸法、32色、左上の光源、セルアウト、ディザ、輪郭の内側だけの手置きアンチエイリアス）を
-  指示文と出来上がりに当てはめ、規格との差を検査して報告する。ドット絵ではないイラストや、画像を扱わないUIレイアウトだけの作業には使わない。
+  指示文と出来上がりに当てはめ、規格との差を検査して報告する。リポジトリに置くドット絵はPNGではなく `.aseprite` で管理させる。
+  ドット絵ではないイラストや、画像を扱わないUIレイアウトだけの作業には使わない。
 ---
 
 # ドット絵の制作規格を当てはめる
@@ -26,32 +27,53 @@ description: >
 固定文があるスキルでは固定文を使い、このスキルの指示文を重ねて足さない。
 固定文と規格の食い違いに気づいたら、生成する前にユーザーへ伝える。
 
+## 保存形式
+
+このリポジトリで使うドット絵は、すべて `.aseprite` で管理する。PNGでは管理しない。
+
+- リポジトリに置くドット絵は `.aseprite` だけにする。同じ絵のPNGを書き出して並べて置かない。
+- 生成ツールが出力したPNGは、採用前の候補として `output/`（Git対象外）に置く。採用が決まったら `.aseprite` へ変換し、変換後のファイルだけをリポジトリに置く。
+- 既存のドット絵がPNGのまま置かれていたら、変更するときに `.aseprite` へ置き換え、参照するコード・データ・文書・展示室の登録を同じ変更で直す。
+- PNGで置く必要があると考えたら、置く前に理由を添えてユーザーに確認する。
+
+### PNGから変換する
+
+[scripts/png_to_aseprite.lua](scripts/png_to_aseprite.lua) で、1ドット1ピクセルのPNGを、インデックスカラーの `.aseprite` に変換する。
+パレットは0番を透明にし、1番以降に不透明な色を暗い順に並べる。画素は変えない。
+Aseprite本体のCLIで、リポジトリ直下から次のように実行する。
+
+```bash
+Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.aseprite> --script .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua
+```
+
+変換する前に、下の検査スクリプトで規格との差を確かめておく。
+拡大済みのPNGや、格子を復元していない下書きは変換しない。
+
 ## 手順
 
 1. **規格を読む**：正本の「ドット絵の制作規格」と「例外」「既存素材との差」を読む。未決の項目（アニメーション規格、背景・タイルの寸法と表示倍率、アイテム・UIアイコンの色味）は推測で決めず、必要ならユーザーに確認する。
-2. **種類と寸法を決める**：作る素材を下の表の種類に当てはめ、画像の大きさを決める。
+2. **種類と寸法を決める**：作る素材を正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)の種類に当てはめ、画像の大きさを決める。
 3. **指示文に規格を入れる**：固定文を持つスキルを使わない場合は、下の「指示文に入れる規格」を指示文に入れる。
 4. **出来上がりを検査する**：採用前の候補は `output/`（Git対象外）に置き、検査スクリプトと目視で確かめる。
 5. **差を報告する**：規格との差を、ファイルごとに具体的に報告する。正本の「例外」に記録済みの差は、例外の内容と一致していれば問題として扱わない。規格どおりにしないほうが見栄えや役割に合うと考えたら、理由を添えて例外を提案してよい。例外にするかどうかはユーザーが決め、決まったら正本の「例外」に記録する。例外にせず差を残したまま使う場合は「既存素材との差」に記録する。
-6. **Unityで使う**：採用した素材を、下の「Unityで使うとき」に従って取り込む。
+6. **`.aseprite` にする**：採用した素材がPNGなら、上の「PNGから変換する」に従って `.aseprite` へ変換する。
+7. **Unityで使う**：変換した `.aseprite` を、下の「Unityで使うとき」に従って取り込む。
 
-## 種類と寸法
+## 種類と検査の指定
 
-値は正本から写したものである。正本を変えたら、同じ変更でこの表と検査スクリプトの `KINDS` を直す。
+素材の種類ごとの寸法・配置・表示倍率は、正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)を読んで当てはめる。
+このスキルには寸法を写さない。
+検査スクリプトは寸法を `KINDS` に持つため、正本を変えたら同じ変更で `KINDS` を直す。
 
-| 種類 | 画像の大きさ | 条件 | 検査の `--kind` |
-|---|---|---|---|
-| 味方キャラ | 64×64 | 立ち姿は48×48の範囲に収め、4〜4.5頭身。左右中央に置き、足元の高さを全キャラ・全フレームで揃える。余白は攻撃モーションではみ出す部分に使う | `character`（立ち姿は `--standing` も付ける） |
-| 敵・小 | 64×64 | 攻撃モーションのない1枚絵。余白を設けず、画像の大きさを本体の大きさにする | `enemy-small` |
-| 敵・中 | 96×96 | 同上 | `enemy-medium` |
-| 敵・大 | 128×128 | 同上 | `enemy-large` |
-| アイテム | 32×32 | | `item` |
-| UIアイコン | 24×24 | | `ui-icon` |
-| 背景・タイル | 未決 | キャラより細かいドットで描いてよい。寸法は検査しない | `background` |
+| 正本の対象 | 検査の `--kind` |
+|---|---|
+| 味方キャラ | `character`（立ち姿は `--standing` も付ける） |
+| 敵の小・中・大 | `enemy-small`・`enemy-medium`・`enemy-large` |
+| アイテム | `item` |
+| UIアイコン | `ui-icon` |
+| 背景・タイル | `background`（寸法は検査しない） |
 
 どの素材も、1ドットを1ピクセルとして書き出す。
-背景以外は画面で4倍に表示する（基準解像度480×270を1920×1080で表示）。
-背景だけは、キャラより細かいドット（4倍未満の表示）でよい。
 
 ## 指示文に入れる規格
 
@@ -99,6 +121,7 @@ uv run --no-project --with pillow python .agents/skills/pixel-art-standards/scri
 ```
 
 同じ種類のPNGは、まとめて渡せる。
+検査スクリプトはPNGだけを読む。リポジトリの `.aseprite` を検査するときは、`Aseprite.exe -b <.aseprite> --save-as output/<名前>.png` で `output/` へ書き出して渡し、書き出したPNGはリポジトリに置かない。
 味方キャラの複数フレームをまとめて渡すと、足元の高さが揃っているかも確かめる。
 
 | 検査項目 | 差として扱う条件 |
@@ -128,9 +151,9 @@ Codex CLIやChatGPTが描いた画像は、高解像度の「ドット絵風の�
 
 ## Unityで使うとき
 
-- 配置と正本は [ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像) に従う。書き出したPNGを `Shared/Art/<分類>/` または機能内の `UI/` に置き、正本の `.aseprite` を `client/ArtSource/<分類>/` に置く。
-- テクスチャの取り込み設定は、既存のドット絵と同じく、Filter ModeをPoint、圧縮をNone、ミップマップをオフにする。いまの画面はOverlay CanvasでPixel Perfect Cameraを使っていない（[ゲームUIと生成素材](../../../doc/art/game-ui.md)）。導入するときは、画面全体を基準解像度に描いてから拡大する設定（Upscale Render Texture）にすると背景の細かいドットも粗くなるため、背景の見え方を確かめる（[Unity公式](https://docs.unity3d.com/6000.1/Documentation/Manual/urp/2d-pixelperfect-ref.html)）。
-- 背景以外は、画面に1ドット4pxで表示する。画面の拡大率が1でない場合は、1ドットを整数pxに丸める（UIでは [PixelPerfectRawImage](../../../client/Assets/Baryonyx/Features/Home/Runtime/PixelPerfectRawImage.cs) を使う）。回転や半端な倍率の拡縮をしない。
+- 置き場所、`.aseprite` の読み込み、生成スクリプトからの読み込み方は[ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像)、取り込み設定は[ゲームUIと生成素材](../../../doc/art/game-ui.md)に従う。PNGへ書き出して並べて置かない。
+- 表示倍率は正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)に従い、画面の拡大率が1でない場合は1ドットを整数pxに丸める（UIでは [PixelPerfectRawImage](../../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/PixelPerfectRawImage.cs) を使う）。回転や半端な倍率の拡縮をしない。
+- Pixel Perfect Cameraを導入する場合、画面全体を基準解像度に描いてから拡大する設定（Upscale Render Texture）にすると背景の細かいドットも粗くなるため、背景の見え方を確かめる（[Unity公式](https://docs.unity3d.com/6000.1/Documentation/Manual/urp/2d-pixelperfect-ref.html)）。
 - 画像を追加・変更したら、[クライアントアセット展示室](../../../doc/features/showcase.md) の登録とプレビューを同じ変更で更新し、一覧に出て変更後の内容が見えることを確かめる。
 
 ## 規格を変えるとき
@@ -138,5 +161,5 @@ Codex CLIやChatGPTが描いた画像は、高解像度の「ドット絵風の�
 ユーザーが規格を変えたら、同じ変更で次を直す。
 
 1. 正本の [ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格) と「変更と判断の記録」
-2. このスキルの「種類と寸法」「指示文に入れる規格」と、検査スクリプトの値
+2. このスキルの「種類と検査の指定」「指示文に入れる規格」と、検査スクリプトの `KINDS`
 3. 生成スキルの固定文：[character-sprite-sheet](../character-sprite-sheet/SKILL.md) の「■画風」、[pixellab-item-prompt](../pixellab-item-prompt/SKILL.md) の `STYLE_TAIL`（[item_icon.py](../pixellab-item-prompt/scripts/item_icon.py) とSKILL.mdの両方）、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md) の「描き方（Rendering）」

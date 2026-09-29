@@ -216,6 +216,9 @@ Unity Editor起動時に `Assets/Baryonyx` 以下のアセットを検索し、�
 
 対象アセットの追加・移動・削除後も、AssetDatabaseの更新に合わせて自動更新する。
 
+`.aseprite` は、読み込み時に追加したキャンバスと同じ大きさのSpriteが、フレームごとに画像として並ぶ（[読み込みの仕組み](../rules/frontend-design.md#ゲーム内の対象の画像)）。
+Importerが作る切り取り済みのSpriteは非表示にしているため、一覧に出ない。
+
 手動で更新する場合は、Unity Editorの Baryonyx > Showcase > Refresh Catalog を実行する。
 
 自動推定だけでは表示方法を定義できないアセットは、ShowcaseEntry を手動作成して Entries 配下へ置き、PreviewPrefab、PreviewAnimation、AnimationStateName を設定する。

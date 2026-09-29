@@ -23,10 +23,11 @@ client/
 │   │   ├── Baryonyx.Runtime.asmdef
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
-│   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity、案内人の画面（Tavern・Workshop・Temple・TravelOffice）
-│   │   │   ├── Editor/                  シーンへの機能の配置
-│   │   │   └── Tests/PlayMode/          起動シーンと展示室シーンの検査
+│   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity
+│   │   │   │   └── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
+│   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出のTopへの配置
+│   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
 │   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、サーバーのセッションとログインAPI
 │   │   │   └── Tests/EditMode/
@@ -70,28 +71,31 @@ client/
 │   │   ├── Shared/
 │   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
 │   │   │   │   ├── Characters/          キャラクター
-│   │   │   │   ├── Dungeons/            探索先の背景（分類名への整理は未対応）
+│   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）
 │   │   │   │   └── GameResources/       素材・通貨（ルーンのアイコン）
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
-│   │   │   └── UI/                      複数画面で使う共通UIプレハブとフォント。GuideMenu/に案内人の画面の共通部品、Buttons/に押すとアイコンと文字も暗くなるボタン
+│   │   │   ├── UI/                      複数画面で使う共通UI（下の表）
+│   │   │   └── VFX/HD2D/                HD-2Dの演出。Editor/に共通アセットの生成とInspector、Tests/EditMode/
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
+│   │   │   ├── ScreenScenes.cs         画面のシーンの作り直し（カメラ・入力・Build Settings）
+│   │   │   ├── Art/                    .asepriteの読み込みの補正（キャンバスの大きさの画像を追加）、Driveとの受け渡し、画像の読み込みと保存（ArtAssets）
+│   │   │   ├── UI/                     画面のPrefabをコードで組み立てる部品（UiBuild）と、共通の形・影・アイコンの画像の生成（UiArt）
 │   │   │   └── CI/                     コンパイル検査、シーン選択、APKビルド
 │   │   └── Tests/
 │   │       ├── EditMode/               アセンブリ定義と共通ビルド処理の検査
 │   │       └── PlayMode/
 │   │           ├── Baryonyx.PlayModeTests.asmdef
 │   │           ├── Scenarios/          共通入力fixtureの検査、横断シナリオ
-│   │           └── Support/            PlayModeの共通入力fixture
+│   │           └── Support/            共通入力fixture、シーンテストの読み込み・待機・後片付け、端末とサーバーの代役
 │   ├── Analyzers/                      固定版の解析ツール
 │   ├── Plugins/Android/                GradleテンプレートとAndroidライブラリ
 │   ├── Settings/                       既存テンプレートのURP設定
 │   ├── TextMesh Pro/                   外部パッケージのアセット
 │   └── DevCaptures/                    Git対象外の検証画像
 ├── ArtSource/                          Unityに読み込ませない制作元。Shared/Art/と同じ分類で分ける
-│   ├── GameResources/                  素材・通貨のAseprite正本（IconRune.aseprite）
-│   └── UI/                             UI試作画像の生成指示の記録、Home/にボタンアイコンのAseprite正本
+│   └── UI/                             UI試作画像の生成指示の記録
 ├── Packages/                           Unityパッケージの依存管理
 ├── ProjectSettings/                    Unityプロジェクトの設定
 ├── ci/
@@ -100,6 +104,20 @@ client/
 ├── Logs/                               Git対象外のログ
 └── TestResults/                        Git対象外のテスト結果
 ```
+
+`Shared/UI/` には、複数の画面が使うUIを部品ごとのフォルダーで置く。
+
+| フォルダー | 所有するもの |
+|---|---|
+| `Art/` | 角丸・円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコン。白で描き、使う側で色を付ける |
+| `Fonts/` | DotGothic16と、影つきの文字のマテリアル `TextShadow.mat` |
+| `Buttons/` | 押すとアイコンと文字も暗くなるボタン |
+| `ResponsiveLayout/` | 背景の比率の維持、Safe Areaへの追従、狭い画面での中央の層の縮小（`WorldLayerFit`）、ドット絵を整数倍に保つ `PixelPerfectRawImage` |
+| `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader` |
+| `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
+| `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
+| `GuideMenu/` | 案内人がいる画面の共通部品 |
+| `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
 
 `Assets/Scripts/`、`Assets/Editor/`、`Assets/Tests/`、`Assets/Scenes/` にあった自作コード・アセンブリ定義・起動シーンは、上記の配置へ移行した。
 旧 `SampleScene.unity` はGUIDを保って `App/Scenes/Main.unity` へ移したが、2026-09-24に操作試作とともに削除した。
@@ -144,8 +162,7 @@ EditorとAndroid以外では、HealthRuntimeがプレビュー用Providerを選�
 
 Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない。
 戦闘画面のモック（`Presentation/`・`Editor/`・`UI/`）は `Baryonyx.Runtime` に属し、戦闘計算を参照しない。
-モックはHomeの部品（ドット絵を整数倍に保つ `PixelPerfectRawImage`、角丸などの形の画像、文字の影）を借りている。
-正式な戦闘画面を作る時点で、複数の画面が使う部品を `Shared/` へ移す。
+モックは、ドット絵を整数倍に保つ `PixelPerfectRawImage`、形の画像、文字の影、画面の組み立て部品をHome・案内人の画面と共有する（[配置を増やすときの基準](#配置を増やすときの基準)）。
 冒険・戦闘・歩数の操作試作（Wireframe）は2026-09-24に削除した。経緯と評価は[操作試作の記録](../features/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト
@@ -181,6 +198,10 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 ### コードとアセットの配置
 
 - `Runtime/` と `Editor/` は、それぞれ製品の実装とEditor専用処理を所有する。機能専用のEditor拡張はその機能内、共通のビルド処理は `Baryonyx/Editor/` に置く。
+- 2つ以上の画面・機能が使うコードや画像は、2つ目が使い始める時点で `Shared/` へ移す。ほかの機能のフォルダーにある部品を借りたままにしない。移すときはUnityの移動機能でGUIDを保ち、名前空間とクラス名から元の機能名を外す。
+- 共有部品のPrefab・画像を生成するEditor処理は、その部品のフォルダーの `Editor/` に置く（例：`Shared/VFX/HD2D/Editor/`）。部品を特定のシーンへ置く処理は、そのシーンを持つ側（Topなら `App/Editor/`）に置く。
+- 画面のPrefabとシーンをコードで生成するときは、`Baryonyx/Editor/UI/` の組み立て部品（`UiBuild`・`UiArt`）、`Baryonyx/Editor/Art/ArtAssets`、`Baryonyx/Editor/ScreenScenes` を使い、同じ補助メソッドを機能ごとに書かない。
+- シーンの名前は [SceneNames](../../client/Assets/Baryonyx/App/Runtime/SceneNames.cs)、遷移演出を挟むシーンの切り替えは [SceneLoader](../../client/Assets/Baryonyx/Shared/UI/SceneTransition/SceneLoader.cs) を使う。
 - 画面専用のPrefab・画像・アニメーションは機能内の `UI/` に置く。少数なら同階層に並べ、増えた場合だけ種類や画面部品で分ける。
 - モデル・音声・マテリアル・機能専用シーンも所有する機能内に置く。キャラクターなど、一緒に編集する対象単位でまとめてよい。
 - ScriptableObjectのクラスは `Runtime/`、そのインスタンスは `Data/` に置く。アプリ全体の設定アセットは `Baryonyx/Settings/`、Unity自身の設定は `ProjectSettings/` で管理する。
@@ -205,10 +226,44 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 | `resources` | `GameResources` |
 | その他の分類 | 分類名をPascalCaseにする |
 
-- ドット絵の正本は `client/ArtSource/<分類>/` に、書き出すPNGと同じ名前の `.aseprite` として置く（`Shared/Art/GameResources/IconRune.png` の正本は `ArtSource/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。Unityで使うのは書き出したPNGだけとする。
+- ドット絵の正本は、Unityで使う場所に `.aseprite` のまま置き、Gitで管理する（ルーンのアイコンは `Shared/Art/GameResources/IconRune.aseprite`）。インデックスカラーで保存し、色違いはパレットの差し替えで作る。PNGへは書き出さない。
+- `.aseprite` は、Unity公式のAseprite Importer（`com.unity.2d.aseprite`）が読み込む。Asepriteで保存してUnity Editorへ戻ると読み込み直され、Aseprite本体がない環境（CIなど）でも同じ画像になる。
+  - Importerは絵の周りの透明な部分を切り取り、余白をつけて1枚のテクスチャへ詰める。そのままでは大きさと位置がキャンバスと変わるため、[AsepriteCanvasImport](../../client/Assets/Baryonyx/Editor/Art/AsepriteCanvasImport.cs) が読み込みの最後に、切り取られた絵をキャンバスの位置へ戻したテクスチャと、フレームごとのSpriteを追加する。Importerが作るSpriteは、一覧に出ないよう非表示にする。
+  - 複数フレームのファイルは、フレームを左上から右へ並べた1枚のテクスチャになる。Spriteの名前は、1フレームならファイル名、複数ならファイル名に `_` とフレーム番号（0から）を付けたものになる。
+  - `Assets/Baryonyx/` の `.aseprite` は、読み込むたびに、Read/Writeを有効にし、SpriteRenderer向けのPrefabとAnimation Clipを作らない設定に揃える。フィルターとミップマップはInspectorまたは生成スクリプトで指定し、追加するテクスチャにも同じ設定を使う。
+  - Prefab・データ・展示室は、追加したSpriteとテクスチャを参照する。生成スクリプトからは `AsepriteCanvasImport.LoadSprite`・`LoadTexture` で読み込む。`AssetDatabase.LoadAssetAtPath` では、Importerが作った余白つきのテクスチャや、切り取った絵のSpriteが返ることがある。
+  - Importerが作るAnimation ClipはSpriteRendererの絵を切り替えるもので、uGUIのImageには使えない。UIでアニメーションを再生する方法は、最初のアニメーション素材を作るときに決める。
+  - [AsepriteCanvasImportTests](../../client/Assets/Baryonyx/Tests/EditMode/AsepriteCanvasImportTests.cs) は、全ての `.aseprite` に、キャンバスと同じ大きさのSpriteがフレームの数だけあることを検査する。
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
-- 画像を置いたら、対象の個別文書の `art_files` にPNGと正本のパスを書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
-- 既存の `Shared/Art/Dungeons/` は分類名（`stages`）と一致していない。移すときは参照するコードと文書も併せて更新する。
+- 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
+- 探索する場所の背景は `Shared/Art/Stages/` に置く。2026-09-29に `Shared/Art/Dungeons/` から移し、TopとHomeが使うダンジョンの広間（旧 `App/Art/Top/TopDungeonBackground.png`）も `DungeonHall.png` として同じ場所へ移した。
+
+#### タブレットとの受け渡し
+
+正本はGitで管理し、タブレットではGoogle Driveに置いた写しを編集する。
+Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Features/Home/UI/Art/IconCompass.aseprite` など）。
+受け渡しは、Unityのメニューからユーザーが手動で行う（[AsepriteDriveSync](../../client/Assets/Baryonyx/Editor/Art/AsepriteDriveSync.cs)）。
+AIは、検証時も含めてこのメニューを実行しない。
+
+| メニュー | 動作 |
+|---|---|
+| `Baryonyx > Art > Choose Aseprite Drive Folder...` | Driveの中で `.aseprite` を置くフォルダーを選び、このPCの設定として保存する |
+| `Baryonyx > Art > Copy Aseprite Sources to Drive` | `client/Assets/Baryonyx/` の `.aseprite` をDriveのフォルダーへコピーする |
+| `Baryonyx > Art > Copy Aseprite Sources from Drive` | Driveのフォルダーの `.aseprite` を `client/Assets/Baryonyx/` へコピーし、Unityに読み込み直させる |
+
+Driveのフォルダーのパスは、WindowsとmacOSで異なるため、PCごとに `client/UserSettings/BaryonyxAsepriteDrive.json`（Gitの対象外）へ保存する。
+未設定のままコピーを実行すると、先にフォルダーを選ぶ画面を出す。
+どのPCでも、Drive上の同じフォルダーを選ぶ。
+受け渡しの記録と退避先は選んだフォルダーの隣に作るため、Driveの中に `.aseprite` 専用のフォルダー（例：`71_プロジェクト/baryonyx/Aseprite`）を作って選ぶ。
+
+2026-09-29に、正本の置き場所を `client/ArtSource/` から `client/Assets/Baryonyx/` へ移した。
+それより前にDriveへコピーした `.aseprite` は古い構成のままのため、Driveのフォルダーの中身と `<フォルダー名>-sync.tsv` を消してから、PCからコピーし直す。
+
+- 実行すると、コピーの向きとフォルダーを示す確認のダイアログを出す。
+- `.aseprite` 以外のファイルはコピーしない。片側にしかないファイルは、消したのか追加したのかを判断できないため削除せず、結果に示す。
+- 受け渡したときの各ファイルのSHA-256を、Driveのフォルダーの隣の `<フォルダー名>-sync.tsv` に記録する。WindowsとmacOSで同じ記録を使う。コピー先がこの記録から変わっていないときだけ上書きする。
+- コピー先も記録から変わっている、または記録がない状態で内容が異なるファイルは、両方で編集された可能性がある。上書きするかをダイアログで確認し、上書きする場合はコピー先の今のファイルを、Driveのフォルダーの隣の `<フォルダー名>-backup/<日時>/<PCまたはDrive>/` へ退避する。
+- Driveからの取り込みのあとは、`git status` で差分を確認してコミットする。新しいファイルは、Unityが作る `.meta` も同じコミットに含める。
 
 ### テストとアセンブリの境界
 

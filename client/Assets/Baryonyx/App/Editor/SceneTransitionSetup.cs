@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.UI;
 using UnityEditor;
@@ -14,8 +15,8 @@ namespace Baryonyx.App.Editor
     {
         public const string PrefabPath =
             "Assets/Baryonyx/Shared/UI/SceneTransition/SceneTransition.prefab";
-        private const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
-        private const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
+        private const string TopScenePath = TopHomeSceneSetup.TopScenePath;
+        private const string HomeScenePath = TopHomeSceneSetup.HomeScenePath;
         private const float TransitionDuration = 0.75f;
 
         [MenuItem("Baryonyx/App/Create Scene Transition Assets")]
@@ -24,8 +25,7 @@ namespace Baryonyx.App.Editor
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
 
-            EnsureFolder("Assets/Baryonyx/Shared/UI");
-            EnsureFolder("Assets/Baryonyx/Shared/UI/SceneTransition");
+            AssetFolders.Ensure("Assets/Baryonyx/Shared/UI/SceneTransition");
             EnsurePrefab();
             AssetDatabase.ImportAsset(PrefabPath, ImportAssetOptions.ForceSynchronousImport);
             // Topも覆った状態で開き、開き終わるまで起動直後のタップを遮る。
@@ -157,7 +157,7 @@ namespace Baryonyx.App.Editor
                         );
 
                     var serialized = new SerializedObject(topController);
-                    serialized.FindProperty("nextSceneName").stringValue = "Home";
+                    serialized.FindProperty("nextSceneName").stringValue = SceneNames.Home;
                     serialized.FindProperty("transition").objectReferenceValue = controller;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     EditorUtility.SetDirty(topController);
@@ -321,19 +321,6 @@ namespace Baryonyx.App.Editor
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.overrideSorting = true;
             canvas.sortingOrder = 1000;
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path))
-                return;
-
-            string parent = Path.GetDirectoryName(path)?.Replace('\\', '/');
-            string folder = Path.GetFileName(path);
-            if (string.IsNullOrWhiteSpace(parent) || string.IsNullOrWhiteSpace(folder))
-                throw new InvalidOperationException($"Invalid asset folder path: {path}");
-            EnsureFolder(parent);
-            AssetDatabase.CreateFolder(parent, folder);
         }
     }
 }

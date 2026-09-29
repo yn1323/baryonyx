@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: f04dbc412ba5247e3a24f0ed95f1016f
   DisplayName: TravelOffice
-  Description: Assets/Baryonyx/App/Scenes/TravelOffice.unity
+  Description: Assets/Baryonyx/App/Scenes/Guide/TravelOffice.unity
   Category: 10
   Asset: {fileID: 0}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 
-  ScenePath: Assets/Baryonyx/App/Scenes/TravelOffice.unity
+  ScenePath: Assets/Baryonyx/App/Scenes/Guide/TravelOffice.unity
   Enabled: 1

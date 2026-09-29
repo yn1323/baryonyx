@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Tavern.Editor;
 using Baryonyx.Temple.Editor;
@@ -8,11 +9,6 @@ using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using Baryonyx.Workshop.Editor;
 using UnityEditor;
-using UnityEditor.SceneManagement;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.SceneManagement;
 
 namespace Baryonyx.App.Editor
 {
@@ -22,17 +18,16 @@ namespace Baryonyx.App.Editor
     /// </summary>
     public static class GuideSceneSetup
     {
-        public const string ScenesFolder = "Assets/Baryonyx/App/Scenes";
-        private static readonly Color CameraColor = new(0.035f, 0.047f, 0.075f, 1f);
+        public const string ScenesFolder = "Assets/Baryonyx/App/Scenes/Guide";
 
         // Scene name → the feature prefab it shows. Home opens these scenes by name.
         private static readonly (string Scene, string Prefab, Action Create)[] Screens =
         {
-            ("Tavern", TavernScreenAssets.PrefabPath, TavernScreenAssets.CreateAssets),
-            ("Workshop", WorkshopScreenAssets.PrefabPath, WorkshopScreenAssets.CreateAssets),
-            ("Temple", TempleScreenAssets.PrefabPath, TempleScreenAssets.CreateAssets),
+            (SceneNames.Pub, TavernScreenAssets.PrefabPath, TavernScreenAssets.CreateAssets),
+            (SceneNames.Shop, WorkshopScreenAssets.PrefabPath, WorkshopScreenAssets.CreateAssets),
+            (SceneNames.Temple, TempleScreenAssets.PrefabPath, TempleScreenAssets.CreateAssets),
             (
-                "TravelOffice",
+                SceneNames.TravelOffice,
                 TravelOfficeScreenAssets.PrefabPath,
                 TravelOfficeScreenAssets.CreateAssets
             ),
@@ -45,96 +40,44 @@ namespace Baryonyx.App.Editor
         {
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
-
             GuideMenuAssets.CreateSharedArt();
             foreach (var screen in Screens)
             {
                 screen.Create();
                 CreateScene(screen.Scene, screen.Prefab);
             }
-            AddToBuildSettings();
+            ScreenScenes.AddToBuildSettings(
+                Screens.Select(screen => ScenePath(screen.Scene)).ToArray()
+            );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ShowcaseCatalogBuilder.RefreshCatalog();
         }
 
-        private static void CreateScene(string sceneName, string prefabPath)
-        {
-            var path = ScenePath(sceneName);
-            var loaded = SceneManager.GetSceneByPath(path);
-            if (loaded.IsValid() && loaded.isLoaded)
-                throw new InvalidOperationException(
-                    $"Close {sceneName}.unity before rebuilding it, so open edits are not overwritten."
-                );
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
-                throw new InvalidOperationException(
-                    "Screen prefab was not generated: " + prefabPath
-                );
+        private static void CreateScene(string sceneName, string prefabPath) =>
+            ScreenScenes.Rebuild(
+                ScenePath(sceneName),
+                scene =>
+                {
+                    ScreenScenes.AddCamera(scene, sceneName + "Camera", ScreenScenes.CameraColor);
+                    var screen = ScreenScenes.AddScreen(scene, prefabPath, sceneName + "Screen");
+                    var bootstrap = ScreenScenes.AddObject<GuideSceneBootstrap>(
+                        scene,
+                        sceneName + "Bootstrap"
+                    );
+                    ScreenScenes.AddEventSystem(scene);
+                    var transition = SceneTransitionSetup.AddTransition(
+                        scene,
+                        startCovered: true,
+                        revealOnStart: true
+                    );
 
-            var previous = SceneManager.GetActiveScene();
-            var scene = EditorSceneManager.NewScene(
-                NewSceneSetup.EmptyScene,
-                NewSceneMode.Additive
+                    var serialized = new SerializedObject(bootstrap);
+                    serialized.FindProperty("view").objectReferenceValue =
+                        screen.GetComponent<GuideMenuView>();
+                    serialized.FindProperty("transition").objectReferenceValue = transition;
+                    serialized.FindProperty("homeSceneName").stringValue = SceneNames.Home;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
             );
-            try
-            {
-                var cameraObject = new GameObject(sceneName + "Camera", typeof(Camera));
-                SceneManager.MoveGameObjectToScene(cameraObject, scene);
-                var camera = cameraObject.GetComponent<Camera>();
-                camera.clearFlags = CameraClearFlags.SolidColor;
-                camera.backgroundColor = CameraColor;
-                camera.orthographic = true;
-                camera.tag = "MainCamera";
-
-                var screen = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-                screen.name = sceneName + "Screen";
-
-                var bootstrapObject = new GameObject(
-                    sceneName + "Bootstrap",
-                    typeof(GuideSceneBootstrap)
-                );
-                SceneManager.MoveGameObjectToScene(bootstrapObject, scene);
-
-                var events = new GameObject("EventSystem", typeof(EventSystem));
-                SceneManager.MoveGameObjectToScene(events, scene);
-                events.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
-
-                var transition = SceneTransitionSetup.AddTransition(
-                    scene,
-                    startCovered: true,
-                    revealOnStart: true
-                );
-
-                var serialized = new SerializedObject(
-                    bootstrapObject.GetComponent<GuideSceneBootstrap>()
-                );
-                serialized.FindProperty("view").objectReferenceValue =
-                    screen.GetComponent<GuideMenuView>();
-                serialized.FindProperty("transition").objectReferenceValue = transition;
-                serialized.FindProperty("homeSceneName").stringValue = "Home";
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-
-                EditorSceneManager.SaveScene(scene, path);
-            }
-            finally
-            {
-                if (previous.IsValid())
-                    SceneManager.SetActiveScene(previous);
-                EditorSceneManager.CloseScene(scene, true);
-            }
-        }
-
-        // Appends missing scenes after the existing ones, keeping their order and flags.
-        private static void AddToBuildSettings()
-        {
-            var scenes = EditorBuildSettings.scenes.ToList();
-            foreach (var screen in Screens)
-            {
-                var path = ScenePath(screen.Scene);
-                if (scenes.All(scene => scene.path != path))
-                    scenes.Add(new EditorBuildSettingsScene(path, true));
-            }
-            EditorBuildSettings.scenes = scenes.ToArray();
-        }
     }
 }

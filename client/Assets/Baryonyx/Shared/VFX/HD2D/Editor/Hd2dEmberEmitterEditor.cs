@@ -1,14 +1,15 @@
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using static Baryonyx.Vfx.Hd2d.Editor.Hd2dInspectorFields;
 
 namespace Baryonyx.Vfx.Hd2d.Editor
 {
     [CustomEditor(typeof(Hd2dEmberEmitter))]
     [CanEditMultipleObjects]
-    public sealed class Hd2dEmberEmitterEditor : UnityEditor.Editor
+    public sealed class Hd2dEmberEmitterEditor : Hd2dPreviewEditor<Hd2dEmberEmitter>
     {
-        private bool previewUpdateQueued;
+        protected override void Rebuild(Hd2dEmberEmitter emitter) => emitter.RebuildParticles();
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -48,62 +49,6 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             root.TrackSerializedObjectValue(serializedObject, _ => QueuePreviewUpdate());
             return root;
         }
-
-        private void OnEnable()
-        {
-            Undo.undoRedoPerformed += QueuePreviewUpdate;
-            QueuePreviewUpdate();
-        }
-
-        private void OnDisable()
-        {
-            Undo.undoRedoPerformed -= QueuePreviewUpdate;
-            EditorApplication.delayCall -= RefreshPreview;
-        }
-
-        private void QueuePreviewUpdate()
-        {
-            if (previewUpdateQueued)
-                return;
-
-            previewUpdateQueued = true;
-            EditorApplication.delayCall += RefreshPreview;
-        }
-
-        private void RefreshPreview()
-        {
-            previewUpdateQueued = false;
-            if (this == null)
-                return;
-
-            foreach (var editedTarget in targets)
-            {
-                if (
-                    editedTarget is Hd2dEmberEmitter emitter
-                    && !UnityEngine.Application.IsPlaying(emitter.gameObject)
-                )
-                    emitter.RebuildParticles();
-            }
-            EditorApplication.QueuePlayerLoopUpdate();
-            SceneView.RepaintAll();
-        }
-
-        private static void AddField(
-            VisualElement parent,
-            string path,
-            string label,
-            string tooltip = null
-        )
-        {
-            parent.Add(
-                new PropertyField
-                {
-                    bindingPath = path,
-                    label = label,
-                    tooltip = tooltip,
-                }
-            );
-        }
     }
 
     [CustomPropertyDrawer(typeof(Hd2dEmberSource))]
@@ -112,10 +57,10 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             var name = property.FindPropertyRelative("Name");
-            var foldout = new Foldout { text = LabelOf(name.stringValue), value = false };
+            var foldout = new Foldout { text = LabelOf(name.stringValue, "発生源"), value = false };
             foldout.TrackPropertyValue(
                 name,
-                changed => foldout.text = LabelOf(changed.stringValue)
+                changed => foldout.text = LabelOf(changed.stringValue, "発生源")
             );
 
             AddField(foldout, property, "Name", "名前");
@@ -140,21 +85,6 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(foldout, property, "EndColor", "消える直前の色");
             AddField(foldout, property, "Twinkle", "ちらつき");
             return foldout;
-        }
-
-        private static string LabelOf(string name)
-        {
-            return string.IsNullOrWhiteSpace(name) ? "発生源" : name;
-        }
-
-        private static void AddField(
-            VisualElement parent,
-            SerializedProperty property,
-            string relativePath,
-            string label
-        )
-        {
-            parent.Add(new PropertyField(property.FindPropertyRelative(relativePath), label));
         }
     }
 }

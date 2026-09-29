@@ -46,10 +46,22 @@ Runtimeはルートの `Baryonyx.Runtime.asmdef` に所属する。
 CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
-案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeのボタンから各画面へ移って戻ること、メニュー・リスト・決定の通知、地図の印の選択を検査する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したワットの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
-TopとHomeのシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
+案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeの4つのボタンから各画面へ移って戻る流れを1件で通し、メニュー・リスト・決定の通知、地図の印の選択を検査する。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したUPTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+仮のルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押して確かめる。押すたびに増える計算はEditModeで検査する。
+Top・Home・案内人の画面のシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
+
+### シーンテストを軽く保つ
+
+PlayModeの時間の大半は、シーンの読み込みと遷移演出（閉じる・開くとも0.75秒）の待ち時間である。
+全体の流れを1回は通しつつ、同じ待ち時間を繰り返さないよう、次のように書く。
+
+- `TestGameServices` は遷移演出の時間を0.05倍にする。演出の途中の入力を確かめるテストだけ、`SceneTransitionController.DurationScale` を1に戻す。
+- シーンの読み込み・条件の待機・後片付け・タップ領域の検査は [SceneTests](../../client/Assets/Baryonyx/Tests/PlayMode/Support/SceneTests.cs) を使う。固定秒数の `WaitForSeconds` で待たず、条件がそろうまでフレームを進める。
+- 同じ画面を往復する流れは、ボタンごとにテストを分けず、1件で順に通す。
+- ロジックの組み合わせ（計算・状態遷移）はEditModeで検査し、PlayModeでは画面とのつなぎ込みを1回確かめる。
+- 1画面の静的な確認（表示・タップ領域）で、演出の完了を待たない。演出を確かめるテストは、演出を待つ1件にまとめる。
 
 実画面のシナリオでは、ボタンのハンドラーを直接呼ぶ前に仮想入力から操作できるか確認する。
 端末機能はEditorで固定応答を返す境界へ差し替える。
@@ -61,6 +73,29 @@ PlayModeでは実Prefabへ代表寸法とSafeAreaを適用して配置を確認�
 自動テスト用のデータはテストアセンブリに置き、Editor向けのサンプルプレビューと区別する。
 健康データのPresenterはEditModeで、固定応答を返すProviderを使って状態遷移を検査する。
 Appの起動テストは `App/Tests/PlayMode/` に置き、起動シーンの読み込みと遷移を確認する。
+
+## 作業中に実行するPlayModeテスト
+
+PlayModeテストはシーンの読み込みとフレームの経過を待つため、1件あたりの時間がEditModeより長い。
+2026-09-29にmacOSのEditorで全件を実行したときのテスト本体の実行時間は、EditMode 223件の合計が約23秒、PlayMode 29件が約12秒だった（遷移演出を短くする前は34件で約50秒）。
+作業中は関連するPlayModeテストだけを実行し、全件はcommit前に実行する（[commitの手順](../../AGENTS.md#commitの手順)）。
+EditModeは全件でも30秒ほどで終わるため、作業中も `Baryonyx.EditModeTests` を全件実行する。
+
+関連するPlayModeテストは、次の順に選ぶ。
+
+1. 変更したファイルと同じ機能の `Tests/PlayMode/` にあるテスト。
+2. 変更した型・シーン・Prefabを参照する、他の場所のPlayModeテスト。テストコードを型名・シーン名・Prefab名で検索して探す。
+3. 次の変更では全件を実行する。
+   - `Tests/PlayMode/Support/` の変更
+   - 入力、シーン遷移、画面の寸法など、複数の画面が使う基盤の変更
+   - `Packages/`、`ProjectSettings/`、ビルド対象シーンの変更
+   - 関連するテストを判断できない場合
+
+PlayModeテストはすべて名前空間 `Baryonyx.Tests.PlayMode` に属するため、クラス名で絞る。
+接続中のEditorでは `run_tests --mode playmode --filter <テストクラス名> --async_tests true` をクラスごとに実行する。
+`filter_type` の既定値 `testName` は、テスト名の部分一致で絞り込む。
+Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;` 区切りで渡す（[Unity Test Frameworkのコマンドライン引数](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html)）。
+絞り込んだ実行で0件になった場合は、指定を誤っているため成功に含めない。
 
 ## 実行と結果確認
 

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: TempleGuideMenu
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
   Title: "\u795E\u6BBF"
-  GuideArt: {fileID: 2800000, guid: 09228883894004a6dafb407e94b7f8fb, type: 3}
-  GuideDotSize: 0.7057239
+  GuideArt: {fileID: -6622703189942226176, guid: 74a27aabbc60c9244aae7b5911e06534, type: 3}
+  GuideDotSize: 4
   Background: {fileID: 2800000, guid: c0e09425ca91242e28599f5e0b1ce30b, type: 3}
   Layout: 0
   Items:

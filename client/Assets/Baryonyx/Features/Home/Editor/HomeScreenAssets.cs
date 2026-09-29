@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Baryonyx.Editor;
+using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.UI;
 using Baryonyx.Vfx.Hd2d;
+using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Baryonyx.Editor.UI.UiBuild;
 
 namespace Baryonyx.Home.Editor
 {
@@ -22,30 +24,18 @@ namespace Baryonyx.Home.Editor
     {
         public const string PrefabPath = "Assets/Baryonyx/Features/Home/UI/HomeScreen.prefab";
         public const string DataPath = "Assets/Baryonyx/Features/Home/Data/HomeMockData.asset";
-        public const string BackgroundPath = "Assets/Baryonyx/App/Art/Top/TopDungeonBackground.png";
-        public const string DestinationArtPath = "Assets/Baryonyx/Shared/Art/Dungeons/Forest.png";
+        public const string BackgroundPath = "Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png";
+        public const string DestinationArtPath = "Assets/Baryonyx/Shared/Art/Stages/Forest.png";
         public const string CharactersPath =
             "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
         /// <summary>Toma's standing sprite on a 100x100 canvas (centred, feet on the bottom row).</summary>
-        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.png";
-
-        private const string FogPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFog.prefab";
-        private const string FlickerPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dFlickerLight.prefab";
-        private const string GlowSoftPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Textures/Hd2dGlowSoft.png";
-        private const string AdditiveMaterialPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Materials/Hd2dUiAdditive.mat";
+        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.aseprite";
 
         // Light colours taken from the rune palette (highlight and the brightest facets).
         private static readonly Color RuneSpark = new(0.933f, 0.988f, 1f, 1f);
         private static readonly Color RuneSparkFade = new(0.32f, 0.706f, 0.933f, 0f);
         private static readonly Color RuneGlowColor = new(0.588f, 0.878f, 0.98f, 0f);
-
-        private const string EmberPrefabPath =
-            "Assets/Baryonyx/Shared/VFX/HD2D/Prefabs/Hd2dEmberEmitter.prefab";
 
         private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
         private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
@@ -74,9 +64,6 @@ namespace Baryonyx.Home.Editor
         // The balance icon beside the digits is the same rune at 2x.
         private const float BalanceRuneSize = 24f * 2f;
 
-        private static Scene generationScene;
-        private static TMP_FontAsset font;
-        private static Material shadowText;
         private static Texture2D destinationArt;
 
         [MenuItem("Baryonyx/Home/Create Screen Assets")]
@@ -90,33 +77,21 @@ namespace Baryonyx.Home.Editor
             AssetDatabase.Refresh();
             HomeScreenArt.EnsureAll();
             EnsureMockData();
-            font = GameFontAssets.GetOrCreate();
-            shadowText = HomeScreenArt.EnsureTextShadow(font);
-            destinationArt = HomeScreenArt.ImportPixelTexture(DestinationArtPath);
-            var background = HomeScreenArt.ImportPixelTexture(BackgroundPath);
-            var characters = HomeScreenArt.ImportPixelTexture(CharactersPath);
-            var toma = HomeScreenArt.ImportPixelTexture(TomaPath);
+            var font = GameFontAssets.GetOrCreate();
+            var shadowText = UiArt.EnsureTextShadow(font);
+            destinationArt = ArtAssets.ImportTexture(DestinationArtPath, FilterMode.Point);
+            var background = ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
+            var characters = ArtAssets.ImportTexture(CharactersPath, FilterMode.Point);
+            var toma = ArtAssets.ImportTexture(TomaPath, FilterMode.Point);
 
-            generationScene = EditorSceneManager.NewPreviewScene();
-            RectTransform root = null;
-            try
+            using (UiBuild.Begin(font, shadowText))
             {
-                root = Rect("HomeScreen", null);
-                var canvas = root.gameObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                var scaler = root.gameObject.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 1;
-                root.gameObject.AddComponent<GraphicRaycaster>();
+                var root = CanvasRoot("HomeScreen");
                 var view = root.gameObject.AddComponent<HomeView>();
 
                 BuildBackground(root, background);
                 BuildWorld(root, view, characters, toma);
-                var safe = Rect("SafeArea", root);
-                Stretch(safe);
-                safe.gameObject.AddComponent<SafeAreaFollower>();
+                var safe = SafeArea(root);
                 BuildStepPanel(safe, view);
                 BuildTopRight(safe, view);
                 BuildNavigation(safe, view);
@@ -134,13 +109,6 @@ namespace Baryonyx.Home.Editor
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
-            }
-            finally
-            {
-                if (root != null)
-                    UnityEngine.Object.DestroyImmediate(root.gameObject);
-                EditorSceneManager.ClosePreviewScene(generationScene);
-                generationScene = default;
             }
             AssetDatabase.SaveAssets();
         }
@@ -160,7 +128,7 @@ namespace Baryonyx.Home.Editor
             image.raycastTarget = false;
             image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
 
-            var fog = Vfx<Hd2dFog>(FogPrefabPath, "BackgroundFog", root, aspect);
+            var fog = Vfx<Hd2dFog>(Hd2dAssets.FogPrefabPath, "BackgroundFog", root, aspect);
             fog.Layers.Add(
                 new Hd2dFogLayer
                 {
@@ -178,7 +146,12 @@ namespace Baryonyx.Home.Editor
             );
 
             // Painted torches and the far gate: positions are normalized to the background image.
-            var lights = Vfx<Hd2dFlickerLight>(FlickerPrefabPath, "BackgroundLights", root, aspect);
+            var lights = Vfx<Hd2dFlickerLight>(
+                Hd2dAssets.FlickerLightPrefabPath,
+                "BackgroundLights",
+                root,
+                aspect
+            );
             lights.Sources = new List<Hd2dFlickerLightSource>
             {
                 Torch("OuterLeft", new Vector2(0.105f, 0.72f), new Vector2(0.17f, 0.27f), 1f),
@@ -201,7 +174,12 @@ namespace Baryonyx.Home.Editor
                 },
             };
 
-            var embers = Vfx<Hd2dEmberEmitter>(EmberPrefabPath, "BackgroundEmbers", root, aspect);
+            var embers = Vfx<Hd2dEmberEmitter>(
+                Hd2dAssets.EmberEmitterPrefabPath,
+                "BackgroundEmbers",
+                root,
+                aspect
+            );
             embers.Sources = new List<Hd2dEmberSource>
             {
                 Embers("OuterLeft", new Vector2(0.105f, 0.745f), 10, 1f),
@@ -227,10 +205,15 @@ namespace Baryonyx.Home.Editor
             var world = Rect("World", root);
             world.anchorMin = world.anchorMax = world.pivot = Vector2.one * 0.5f;
             world.sizeDelta = new Vector2(1920, 1080);
-            world.gameObject.AddComponent<HomeWorldFit>();
+            world.gameObject.AddComponent<WorldLayerFit>();
 
             // The campfire light is normalized to this 1920x1080 layer, so it stays on the fire.
-            var campLight = Vfx<Hd2dFlickerLight>(FlickerPrefabPath, "CampLight", world, 0f);
+            var campLight = Vfx<Hd2dFlickerLight>(
+                Hd2dAssets.FlickerLightPrefabPath,
+                "CampLight",
+                world,
+                0f
+            );
             campLight.Sources = new List<Hd2dFlickerLightSource>
             {
                 new Hd2dFlickerLightSource
@@ -251,7 +234,7 @@ namespace Baryonyx.Home.Editor
                 },
             };
 
-            var shadow = HomeScreenArt.LoadSprite(HomeScreenArt.ShadowPath);
+            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             Picture(
                 world,
                 "ShadowToma",
@@ -289,14 +272,19 @@ namespace Baryonyx.Home.Editor
             var fire = Picture(
                 world,
                 "Campfire",
-                HomeScreenArt.LoadSprite(HomeScreenArt.CampfirePath),
+                ArtAssets.LoadSprite(HomeScreenArt.CampfirePath),
                 new Vector2(0, -348 + CampLift),
                 new Vector2(88, 112),
                 1f
             );
             fire.color = Color.white;
 
-            var campEmbers = Vfx<Hd2dEmberEmitter>(EmberPrefabPath, "CampEmbers", world, 0f);
+            var campEmbers = Vfx<Hd2dEmberEmitter>(
+                Hd2dAssets.EmberEmitterPrefabPath,
+                "CampEmbers",
+                world,
+                0f
+            );
             campEmbers.Sources = new List<Hd2dEmberSource>
             {
                 new Hd2dEmberSource
@@ -370,11 +358,7 @@ namespace Baryonyx.Home.Editor
             // No frame: a soft dark spot behind the text keeps it readable over the background.
             var panel = Rect("StepPanel", safe);
             Corner(panel, new Vector2(0, 1), new Vector2(24, -8), new Vector2(800, 0));
-            var spot = Sliced(
-                panel,
-                HomeScreenArt.FeatherPath,
-                new Color(0.012f, 0.02f, 0.04f, 0.9f)
-            );
+            var spot = Sliced(panel, UiArt.FeatherPath, new Color(0.012f, 0.02f, 0.04f, 0.9f));
             spot.raycastTarget = true;
             view.StepButton = AddTintButton(panel, spot);
             var column = panel.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -408,7 +392,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 stepsRow,
                 "StepsUnit",
-                "ワット",
+                "UPT",
                 48,
                 TextSub,
                 TextAlignmentOptions.BottomLeft
@@ -473,7 +457,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 unlinked,
                 "UnlinkedBody",
-                "1歩が1ワットになり、仲間の力になります",
+                "1歩が1UPTになり、仲間の力になります",
                 32,
                 TextSub,
                 TextAlignmentOptions.MidlineLeft
@@ -484,7 +468,7 @@ namespace Baryonyx.Home.Editor
             // A gold hairline that fades to the right separates the claim hint.
             var divider = Rect("ClaimDivider", panel);
             var line = divider.gameObject.AddComponent<RawImage>();
-            line.texture = HomeScreenArt.LoadTexture(HomeScreenArt.ShadeHorizontalPath);
+            line.texture = ArtAssets.LoadTexture(HomeScreenArt.ShadeHorizontalPath);
             line.uvRect = new Rect(1, 0, -1, 1);
             line.color = new Color(0.914f, 0.769f, 0.471f, 0.7f);
             line.raycastTarget = false;
@@ -517,12 +501,12 @@ namespace Baryonyx.Home.Editor
             HitArea(settings, 20, 20);
             var spot = SpriteImage(
                 settings,
-                HomeScreenArt.SoftSpotPath,
+                UiArt.SoftSpotPath,
                 new Color(0.012f, 0.02f, 0.04f, 0.8f)
             );
             spot.raycastTarget = true;
             view.SettingsButton = AddTintButton(settings, spot);
-            var gear = Icon(settings, "SettingsIcon", HomeScreenArt.IconSettingsPath, 40, TextMain);
+            var gear = Icon(settings, "SettingsIcon", UiArt.IconSettingsPath, 40, TextMain);
             Place((RectTransform)gear.transform, Vector2.zero, new Vector2(40, 40));
 
             var pill = Rect("RunePill", safe);
@@ -534,11 +518,7 @@ namespace Baryonyx.Home.Editor
             plate.offsetMin = new Vector2(-24, -24);
             plate.offsetMax = new Vector2(24, 24);
             plate.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            var shade = Sliced(
-                plate,
-                HomeScreenArt.FeatherPath,
-                new Color(0.012f, 0.02f, 0.04f, 0.9f)
-            );
+            var shade = Sliced(plate, UiArt.FeatherPath, new Color(0.012f, 0.02f, 0.04f, 0.9f));
             shade.pixelsPerUnitMultiplier = 0.5f;
             shade.raycastTarget = false;
             var row = pill.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -572,18 +552,18 @@ namespace Baryonyx.Home.Editor
         {
             var nav = Rect("Navigation", safe);
             // 128-wide buttons (the touch minimum) keep the row clear of the party.
-            Corner(nav, Vector2.zero, new Vector2(48, 32), new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight));
+            Corner(
+                nav,
+                Vector2.zero,
+                new Vector2(48, 32),
+                new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight)
+            );
             var row = nav.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = NavSpacing;
             row.childControlWidth = row.childControlHeight = true;
             row.childForceExpandWidth = row.childForceExpandHeight = false;
 
-            view.TavernButton = NavButton(
-                nav,
-                "TavernButton",
-                "酒場",
-                HomeScreenArt.IconPartyPath
-            );
+            view.TavernButton = NavButton(nav, "TavernButton", "酒場", HomeScreenArt.IconPartyPath);
             view.WorkshopButton = NavButton(
                 nav,
                 "WorkshopButton",
@@ -617,7 +597,7 @@ namespace Baryonyx.Home.Editor
             size.minHeight = size.preferredHeight = NavHeight;
             var spot = SpriteImage(
                 rect,
-                HomeScreenArt.SoftSpotPath,
+                UiArt.SoftSpotPath,
                 new Color(0.012f, 0.02f, 0.04f, 0.78f)
             );
             spot.raycastTarget = true;
@@ -654,7 +634,7 @@ namespace Baryonyx.Home.Editor
                 cardOffset + new Vector2(70, -70),
                 new Vector2(cardWidth + 140, cardHeight + 140)
             );
-            SpriteImage(glow, HomeScreenArt.SoftSpotPath, new Color(0.949f, 0.675f, 0.263f, 0.45f));
+            SpriteImage(glow, UiArt.SoftSpotPath, new Color(0.949f, 0.675f, 0.263f, 0.45f));
             var dropShadow = Rect("ResumeShadow", safe);
             Corner(
                 dropShadow,
@@ -662,15 +642,11 @@ namespace Baryonyx.Home.Editor
                 cardOffset + new Vector2(30, -50),
                 new Vector2(cardWidth + 60, cardHeight + 60)
             );
-            SpriteImage(dropShadow, HomeScreenArt.SoftSpotPath, new Color(0f, 0f, 0f, 0.6f));
+            SpriteImage(dropShadow, UiArt.SoftSpotPath, new Color(0f, 0f, 0f, 0.6f));
 
             var card = Rect("ResumeCard", safe);
             Corner(card, new Vector2(1, 0), cardOffset, new Vector2(cardWidth, cardHeight));
-            var cardImage = Sliced(
-                card,
-                HomeScreenArt.RoundedRectPath,
-                new Color(0.039f, 0.047f, 0.086f)
-            );
+            var cardImage = Sliced(card, UiArt.RoundedRectPath, new Color(0.039f, 0.047f, 0.086f));
             card.gameObject.AddComponent<Mask>().showMaskGraphic = true;
 
             // The destination art covers the card like CSS object-fit: cover at 30% from the top.
@@ -684,16 +660,13 @@ namespace Baryonyx.Home.Editor
             var shade = Rect("DestinationShade", card);
             Stretch(shade);
             var shadeImage = shade.gameObject.AddComponent<RawImage>();
-            shadeImage.texture = HomeScreenArt.LoadTexture(HomeScreenArt.CardShadePath);
+            shadeImage.texture = ArtAssets.LoadTexture(HomeScreenArt.CardShadePath);
             shadeImage.color = new Color(0.024f, 0.031f, 0.055f);
             shadeImage.raycastTarget = false;
             var rim = Rect("ResumeRim", card);
             Stretch(rim);
-            Sliced(
-                rim,
-                HomeScreenArt.RoundedRingPath,
-                new Color(1f, 0.824f, 0.478f, 0.55f)
-            ).raycastTarget = false;
+            Sliced(rim, UiArt.RoundedRingPath, new Color(1f, 0.824f, 0.478f, 0.55f)).raycastTarget =
+                false;
 
             view.DestinationNameLabel = Label(
                 card,
@@ -756,15 +729,22 @@ namespace Baryonyx.Home.Editor
             // A soft additive light over the balance icon, under the runes and the sparkles.
             var glow = Rect("RuneGlow", layer);
             Place(glow, Vector2.zero, new Vector2(BalanceRuneSize, BalanceRuneSize) * 2.2f);
-            view.RuneGlow = SpriteImage(glow, GlowSoftPath, RuneGlowColor);
-            view.RuneGlow.material = AssetDatabase.LoadAssetAtPath<Material>(AdditiveMaterialPath);
+            view.RuneGlow = SpriteImage(glow, Hd2dAssets.GlowTexturePath, RuneGlowColor);
+            view.RuneGlow.material = AssetDatabase.LoadAssetAtPath<Material>(
+                Hd2dAssets.AdditiveMaterialPath
+            );
             glow.gameObject.SetActive(false);
 
             // A haze of soft light drifts behind the sparkles and the runes: a puff where the
             // runes burst out, a mist along their paths and a bloom where they land. It uses
             // the same sources as the sparkles, with the soft glow as its only shape.
-            var haze = Vfx<Hd2dEmberEmitter>(EmberPrefabPath, "RuneHaze", layer, 0f);
-            haze.CrossSprite = HomeScreenArt.LoadSprite(GlowSoftPath);
+            var haze = Vfx<Hd2dEmberEmitter>(
+                Hd2dAssets.EmberEmitterPrefabPath,
+                "RuneHaze",
+                layer,
+                0f
+            );
+            haze.CrossSprite = ArtAssets.LoadSprite(Hd2dAssets.GlowTexturePath);
             haze.Sources = new List<Hd2dEmberSource>
             {
                 RuneHazeSource(
@@ -815,8 +795,13 @@ namespace Baryonyx.Home.Editor
             // out with a spray of sparkles and leave a short sparkling trail as they fly. All
             // are drawn in 4 px dots like the 4x rune, the stars from a 5x5 twinkle. The order
             // matches HomeView's sources.
-            var sparkles = Vfx<Hd2dEmberEmitter>(EmberPrefabPath, "RuneSparkles", layer, 0f);
-            sparkles.CrossSprite = HomeScreenArt.LoadSprite(HomeScreenArt.RuneTwinklePath);
+            var sparkles = Vfx<Hd2dEmberEmitter>(
+                Hd2dAssets.EmberEmitterPrefabPath,
+                "RuneSparkles",
+                layer,
+                0f
+            );
+            sparkles.CrossSprite = ArtAssets.LoadSprite(HomeScreenArt.RuneTwinklePath);
             sparkles.Sources = new List<Hd2dEmberSource>
             {
                 RuneSparkSource(
@@ -895,7 +880,7 @@ namespace Baryonyx.Home.Editor
             Place(notice, Vector2.zero, new Vector2(800, 96));
             Sliced(
                 notice,
-                HomeScreenArt.CapsulePath,
+                UiArt.CapsulePath,
                 new Color(0.031f, 0.039f, 0.071f, 0.86f)
             ).raycastTarget = false;
             var noticeGroup = notice.gameObject.AddComponent<CanvasGroup>();
@@ -917,7 +902,7 @@ namespace Baryonyx.Home.Editor
             Place(toast, new Vector2(0, 290), new Vector2(800, 96));
             Sliced(
                 toast,
-                HomeScreenArt.CapsulePath,
+                UiArt.CapsulePath,
                 new Color(0.031f, 0.039f, 0.071f, 0.86f)
             ).raycastTarget = false;
             var group = toast.gameObject.AddComponent<CanvasGroup>();
@@ -944,12 +929,7 @@ namespace Baryonyx.Home.Editor
         )
             where T : Component
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
-                throw new InvalidOperationException("HD-2D prefab not found: " + prefabPath);
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, generationScene);
-            instance.name = name;
-            instance.transform.SetParent(parent, false);
+            var instance = InstantiatePrefab(prefabPath, name, parent);
             var rect = (RectTransform)instance.transform;
             Stretch(rect);
             // Background-aligned effects follow the covered artwork, not the screen edges.
@@ -1081,27 +1061,6 @@ namespace Baryonyx.Home.Editor
                 Twinkle = 0.35f,
             };
 
-        private static void Shade(
-            RectTransform root,
-            string name,
-            bool top,
-            float height,
-            float alpha
-        )
-        {
-            var rect = Rect(name, root);
-            rect.anchorMin = new Vector2(0, top ? 1 : 0);
-            rect.anchorMax = new Vector2(1, top ? 1 : 0);
-            rect.pivot = new Vector2(0.5f, top ? 1 : 0);
-            rect.sizeDelta = new Vector2(0, height);
-            rect.anchoredPosition = Vector2.zero;
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = HomeScreenArt.LoadTexture(HomeScreenArt.ShadePath);
-            image.color = new Color(0.024f, 0.031f, 0.055f, alpha);
-            image.uvRect = top ? new Rect(0, 0, 1, 1) : new Rect(0, 1, 1, -1);
-            image.raycastTarget = false;
-        }
-
         private static void Actor(
             RectTransform world,
             string name,
@@ -1122,49 +1081,9 @@ namespace Baryonyx.Home.Editor
             image.raycastTarget = false;
         }
 
-        /// <summary>
-        /// A standing sprite drawn at <paramref name="dotSize"/> pixels per dot, pivoted on its
-        /// feet (the bottom row of the canvas) so they stand on the shadow at any screen size.
-        /// </summary>
-        private static void PixelActor(
-            RectTransform world,
-            string name,
-            Texture2D texture,
-            Vector2 feet,
-            float dotSize
-        )
-        {
-            var rect = Rect(name, world);
-            Place(rect, feet, new Vector2(texture.width, texture.height) * dotSize);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = feet;
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = texture;
-            image.raycastTarget = false;
-            rect.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = dotSize;
-        }
-
         /// <summary>The 4x2 character sheet: party members on the top row.</summary>
         public static Rect ActorUv(int index) =>
             new((index % 4) * 0.25f, index < 4 ? 0.5f : 0f, 0.25f, 0.5f);
-
-        private static Image Picture(
-            RectTransform parent,
-            string name,
-            Sprite sprite,
-            Vector2 center,
-            Vector2 size,
-            float alpha
-        )
-        {
-            var rect = Rect(name, parent);
-            Place(rect, center, size);
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = sprite;
-            image.color = new Color(0, 0, 0, alpha);
-            image.raycastTarget = false;
-            return image;
-        }
 
         private static Image Icon(
             RectTransform parent,
@@ -1177,7 +1096,7 @@ namespace Baryonyx.Home.Editor
             var rect = Rect(name, parent);
             rect.sizeDelta = new Vector2(size, size);
             var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = HomeScreenArt.LoadSprite(path);
+            image.sprite = ArtAssets.LoadSprite(path);
             image.color = color;
             image.preserveAspect = true;
             image.raycastTarget = false;
@@ -1221,127 +1140,6 @@ namespace Baryonyx.Home.Editor
             if (size == null)
                 size = label.gameObject.AddComponent<LayoutElement>();
             size.flexibleWidth = 1;
-        }
-
-        private static TMP_Text Label(
-            RectTransform parent,
-            string name,
-            string text,
-            float fontSize,
-            Color color,
-            TextAlignmentOptions alignment,
-            bool shadow = true
-        )
-        {
-            var rect = Rect(name, parent);
-            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = font;
-            label.fontSize = fontSize;
-            label.color = color;
-            label.text = text;
-            label.richText = false;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.overflowMode = TextOverflowModes.Overflow;
-            label.alignment = alignment;
-            label.raycastTarget = false;
-            if (shadow && shadowText != null)
-                label.fontSharedMaterial = shadowText;
-            return label;
-        }
-
-        private static Image Sliced(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = HomeScreenArt.LoadSprite(path);
-            image.type = Image.Type.Sliced;
-            image.color = color;
-            image.raycastTarget = true;
-            return image;
-        }
-
-        private static Image SpriteImage(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = HomeScreenArt.LoadSprite(path);
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        private static Image AddImage(RectTransform rect, Color color, bool raycast)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = raycast;
-            return image;
-        }
-
-        private static Button AddButton(RectTransform rect, Graphic target) =>
-            ConfigureButton(rect.gameObject.AddComponent<Button>(), target);
-
-        // For buttons whose target is a dark backdrop: the icon and labels darken with it.
-        private static Button AddTintButton(RectTransform rect, Graphic target) =>
-            ConfigureButton(rect.gameObject.AddComponent<TintGroupButton>(), target);
-
-        // Runs after every button's children exist, so each one tints all of its own graphics.
-        private static void CollectTintGraphics(RectTransform root)
-        {
-            foreach (var button in root.GetComponentsInChildren<TintGroupButton>(true))
-            {
-                var graphics = new List<Graphic>();
-                foreach (var graphic in button.GetComponentsInChildren<Graphic>(true))
-                    if (graphic != button.targetGraphic)
-                        graphics.Add(graphic);
-                button.SetTintGraphics(graphics.ToArray());
-            }
-        }
-
-        private static Button ConfigureButton(Button button, Graphic target)
-        {
-            button.targetGraphic = target;
-            button.navigation = new Navigation { mode = Navigation.Mode.None };
-            var colors = button.colors;
-            colors.highlightedColor = new Color(1.08f, 1.06f, 1f);
-            colors.pressedColor = new Color(0.72f, 0.70f, 0.66f);
-            colors.selectedColor = Color.white;
-            colors.fadeDuration = 0.06f;
-            button.colors = colors;
-            return button;
-        }
-
-        private static void Corner(RectTransform rect, Vector2 corner, Vector2 offset, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
-            rect.anchoredPosition = offset;
-            rect.sizeDelta = size;
-        }
-
-        private static void Place(RectTransform rect, Vector2 center, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
-            rect.anchoredPosition = center;
-            rect.sizeDelta = size;
-        }
-
-        private static void Stretch(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-        }
-
-        private static RectTransform Rect(string name, Transform parent)
-        {
-            var obj = EditorUtility.CreateGameObjectWithHideFlags(
-                name,
-                HideFlags.HideAndDontSave,
-                typeof(RectTransform)
-            );
-            SceneManager.MoveGameObjectToScene(obj, generationScene);
-            obj.hideFlags = HideFlags.None;
-            var rect = obj.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
         }
     }
 }
