@@ -36,6 +36,7 @@ Androidの大画面では向きの指定が上書きされる条件とゲーム�
 
 Unity `6000.6.0f1` のゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
 画面、ボタン、数値、JSONなどゲーム内のTextMeshProテキストはDotGothic16で統一する。
+例外として、戦闘中に浮かぶダメージと回復の数字にはDela Gothic Oneを使う（[戦闘の数字のフォント](../../client/Assets/Baryonyx/Features/Combat/UI/Fonts/README.md)）。
 フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)に揃える。
 新規画面もuGUIを既定とし、UI Toolkitは独立した新規画面で明確な利点があり、入力・描画順・フォーカス・ライフサイクル・テストの境界を設計できる場合だけ採用する。
 uGUIとUI Toolkitを同じ画面で使う場合は、採用理由とEventSystem、Input System UI Input Moduleの構成を記録する。

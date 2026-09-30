@@ -1,8 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat.Presentation;
 using NUnit.Framework;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -22,12 +25,43 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.IdleActors, Has.Length.EqualTo(7), "4 allies and 3 enemies");
             Assert.That(view.Allies, Has.Length.EqualTo(4));
             Assert.That(view.Enemies, Has.Length.EqualTo(3));
-            Assert.That(view.Cards, Has.Length.EqualTo(6));
+            Assert.That(view.Cards, Has.Length.EqualTo(16), "The deck is 16 cards.");
+            Assert.That(view.HandCards, Has.Count.EqualTo(6), "The opening hand is 6 cards.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo("10"));
             Assert.That(view.Enemies.Select(enemy => enemy.Sprite.texture), Has.None.Null);
             Assert.That(view.MaxEnergy, Is.EqualTo(5), "Energy grows from 3 by one each turn.");
             Assert.That(view.EnergyLabel.text, Is.EqualTo("5/5"));
             Assert.That(view.HeldCard, Is.EqualTo(-1));
+
+            foreach (var card in view.Cards)
+            {
+                var face = card.Body.GetComponent<BattleInspectCardView>();
+                Assert.That(face.Owner.text, Is.Not.Empty);
+                Assert.That(face.Kind.text, Does.Match("攻撃|回復|防御"));
+                Assert.That(face.Description.text, Does.Contain(card.Power.ToString()));
+                Assert.That(
+                    face.Element.enabled,
+                    Is.EqualTo(card.Element != BattleInspectElement.None),
+                    "Cards without an element show no element icon."
+                );
+                foreach (var band in face.Bands)
+                {
+                    Assert.That(band.LineEnds, Has.Length.EqualTo(3), "owner, name and kind");
+                    Assert.That(band.LineEnds, Has.All.GreaterThan(0f));
+                    Assert.That(band.LineEnds, Has.All.LessThan(band.rectTransform.rect.width));
+                }
+            }
+            var ice = view.Cards.First(card => card.Element == BattleInspectElement.Ice);
+            var heal = view.Cards.First(card => card.Effect == BattleInspectCardEffect.Heal);
+            Assert.That(
+                NameBandEnd(ice),
+                Is.GreaterThan(NameBandEnd(heal)),
+                "The band under アイスランス runs further than under ヒール."
+            );
         }
+
+        private static float NameBandEnd(BattleInspectCard card) =>
+            card.Body.GetComponent<BattleInspectCardView>().Bands[0].LineEnds[1];
 
         [UnityTest]
         public IEnumerator DroppingACardOnAnEnemyAfterASwipePlaysItThere()
@@ -39,19 +73,31 @@ namespace Baryonyx.Tests.PlayMode
 
             view.PressCard(0, CardPoint(slash));
             Assert.That(view.HeldCard, Is.EqualTo(0));
+            Assert.That(view.Enemies.All(enemy => enemy.Marker.gameObject.activeSelf), Is.True);
+            Assert.That(view.Allies.Any(ally => ally.Marker.gameObject.activeSelf), Is.False);
             view.DragCard(Center(wolf.TargetArea));
             Assert.That(view.Armed, Is.True, "Moving up to the wolf is a swipe up.");
             Assert.That(view.Targets, Is.EqualTo(new[] { 1 }));
             Assert.That(view.IsGlowing(wolf.Sprite), Is.True);
             Assert.That(view.IsGlowing(view.Enemies[0].Sprite), Is.False);
+            yield return null;
+            Assert.That(view.Aim.gameObject.activeSelf, Is.True, "Dots run to the finger.");
+            Assert.That(view.AimDots[0].gameObject.activeSelf, Is.True);
+            Assert.That(view.AimDots[0].color, Is.EqualTo(Color.white));
 
             view.ReleaseCard(Center(wolf.TargetArea));
             Assert.That(view.HeldCard, Is.EqualTo(-1));
             Assert.That(view.IsGlowing(wolf.Sprite), Is.False);
-            Assert.That(slash.Used, Is.True);
+            Assert.That(view.Enemies.Any(enemy => enemy.Marker.gameObject.activeSelf), Is.False);
+            yield return null;
+            Assert.That(view.Aim.gameObject.activeSelf, Is.False);
+            Assert.That(slash.Place, Is.EqualTo(BattleInspectCardPlace.Discard));
             Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost));
+            yield return WaitActions(view);
             Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - slash.Power));
             Assert.That(wolf.HpFill.anchorMax.x, Is.EqualTo(wolf.Hp / (float)wolf.MaxHp));
+            Assert.That(Rising(view.DamageNumber), Is.EqualTo(new[] { slash.Power.ToString() }));
+            Assert.That(Rising(view.WeakNumber), Is.Empty);
         }
 
         [UnityTest]
@@ -77,14 +123,27 @@ namespace Baryonyx.Tests.PlayMode
                 Is.GreaterThan(0.9f * view.Settings.CardScale),
                 "The card stays full size while aiming."
             );
-            // After the spring settles, the pressed card is enlarged.
+            // After the spring settles, the pressed card is enlarged, in the middle from left to
+            // right and standing near the bottom of the screen.
             for (float t = 0f; t < 0.8f; t += Time.deltaTime)
                 yield return null;
             Assert.That(
                 card.localScale.x,
                 Is.EqualTo(view.Settings.RaisedScale * view.Settings.CardScale).Within(0.02f)
             );
+            var foot = RectTransformUtility.WorldToScreenPoint(
+                null,
+                card.TransformPoint(new Vector2(card.rect.center.x, card.rect.yMin))
+            );
+            float scaleFactor = view.Hand.GetComponentInParent<Canvas>().rootCanvas.scaleFactor;
+            Assert.That(foot.x, Is.EqualTo(Screen.width * 0.5f).Within(4f));
+            Assert.That(
+                foot.y,
+                Is.EqualTo(view.Settings.RaisedBottom * scaleFactor).Within(4f),
+                "A little room under the card."
+            );
             view.ReleaseCard(outside);
+            yield return WaitActions(view);
 
             Assert.That(guardian.Hp, Is.LessThan(guardian.MaxHp));
         }
@@ -98,23 +157,28 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, 0, view.Enemies[1].TargetArea);
 
             // The five left take the five places of a five-card fan, in their order.
-            int count = view.Cards.Length - 1;
+            int count = view.HandCards.Count;
+            Assert.That(count, Is.EqualTo(5));
             for (int slot = 0; slot < count; slot++)
             {
                 var (expected, _) = BattleInspectView.FanPose(
                     slot,
                     count,
-                    view.Settings.FanStep,
+                    BattleInspectView.FanStepFor(
+                        count,
+                        view.Settings.FanStep,
+                        view.Settings.FanMaxSpread
+                    ),
                     view.Settings.FanRadius,
                     view.Settings.FanDrop,
                     view.Settings.RestBottom
                 );
                 Assert.That(
-                    Vector2.Distance(view.RestPosition(slot + 1), expected),
+                    Vector2.Distance(view.RestPosition(view.HandCards[slot]), expected),
                     Is.LessThan(0.01f)
                 );
             }
-            float sum = Enumerable.Range(1, count).Sum(i => view.RestPosition(i).x);
+            float sum = view.HandCards.Sum(i => view.RestPosition(i).x);
             Assert.That(sum, Is.EqualTo(0f).Within(0.5f), "The fan is centred.");
         }
 
@@ -126,13 +190,145 @@ namespace Baryonyx.Tests.PlayMode
             var slash = view.Cards[0];
             var point = CardPoint(slash);
 
+            // Moved further than a tap, but not far enough up to aim.
             view.PressCard(0, point);
-            view.ReleaseCard(point + Vector2.up * 40f);
+            view.ReleaseCard(point + Vector2.up * 70f);
 
-            Assert.That(slash.Used, Is.False);
+            Assert.That(slash.InHand, Is.True);
             Assert.That(view.HeldCard, Is.EqualTo(-1));
             Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy));
             Assert.That(view.Enemies.All(enemy => enemy.Hp == enemy.MaxHp), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ATappedCardStaysUpUntilItsTargetIsTapped()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            var slash = view.Cards[0];
+            var point = CardPoint(slash);
+
+            view.PressCard(0, point);
+            view.ReleaseCard(point);
+            Assert.That(view.Selected, Is.True, "A tap leaves the card up.");
+            Assert.That(view.HeldCard, Is.EqualTo(0));
+            Assert.That(view.Targets, Is.Empty, "Nothing glows until a target is tapped.");
+            Assert.That(view.Enemies.All(enemy => enemy.Marker.gameObject.activeSelf), Is.True);
+            yield return null;
+            Assert.That(view.TapArea.activeSelf, Is.True);
+            Assert.That(view.Aim.gameObject.activeSelf, Is.False);
+
+            view.TapScreen(Center(wolf.TargetArea));
+            Assert.That(view.HeldCard, Is.EqualTo(-1));
+            Assert.That(slash.InHand, Is.False);
+            Assert.That(view.Enemies.Any(enemy => enemy.Marker.gameObject.activeSelf), Is.False);
+            yield return null;
+            Assert.That(view.TapArea.activeSelf, Is.False);
+            yield return WaitActions(view);
+            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - slash.Power));
+        }
+
+        [UnityTest]
+        public IEnumerator ATappedCardGoesBackOnATapOnNoTarget()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var point = CardPoint(view.Cards[0]);
+
+            view.PressCard(0, point);
+            view.ReleaseCard(point);
+            // Top middle of the screen, far from every character.
+            view.TapScreen(new Vector2(Screen.width * 0.5f, Screen.height - 4f));
+            Assert.That(view.HeldCard, Is.EqualTo(-1));
+
+            // Tapping another card while one waits swaps them.
+            var second = CardPoint(view.Cards[1]);
+            view.PressCard(0, point);
+            view.ReleaseCard(point);
+            view.PressCard(1, second);
+            view.ReleaseCard(second);
+            Assert.That(view.HeldCard, Is.EqualTo(1));
+
+            Assert.That(view.HandCards, Has.Count.EqualTo(6), "Nothing was played.");
+            Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy));
+            Assert.That(view.Enemies.All(enemy => enemy.Hp == enemy.MaxHp), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ASecondTapOnAOneTargetCardPlaysItOnOneTargetAtRandom()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var slash = view.Cards[0];
+            var point = CardPoint(slash);
+
+            view.PressCard(0, point);
+            view.ReleaseCard(point);
+            yield return TapRaisedCard(view, slash);
+            Assert.That(view.HeldCard, Is.EqualTo(-1));
+            Assert.That(slash.InHand, Is.False, "A second tap plays the card.");
+            Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost));
+            yield return WaitActions(view);
+            Assert.That(view.Enemies.Count(enemy => enemy.Hp < enemy.MaxHp), Is.EqualTo(1));
+
+            int healIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.Effect == BattleInspectCardEffect.Heal
+            );
+            Assert.That(healIndex, Is.GreaterThanOrEqualTo(0), "A heal is in the hand.");
+            var heal = view.Cards[healIndex];
+            point = CardPoint(heal);
+            view.PressCard(healIndex, point);
+            view.ReleaseCard(point);
+            yield return TapRaisedCard(view, heal);
+            yield return WaitActions(view);
+            Assert.That(heal.InHand, Is.False);
+            Assert.That(
+                Rising(view.HealNumber),
+                Is.EqualTo(new[] { heal.Power.ToString() }),
+                "One ally is healed."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator ASecondTapOnAWholeSideCardPlaysItOnTheWholeSide()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int thunderIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.Effect == BattleInspectCardEffect.DamageAll
+            );
+            var point = CardPoint(view.Cards[thunderIndex]);
+
+            view.PressCard(thunderIndex, point);
+            view.ReleaseCard(point);
+            yield return TapRaisedCard(view, view.Cards[thunderIndex]);
+            yield return WaitActions(view);
+            Assert.That(view.Cards[thunderIndex].InHand, Is.False);
+            Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ATappedWholeSideCardIsPlayedByTappingAnyOfItsSide()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int thunderIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.Effect == BattleInspectCardEffect.DamageAll
+            );
+            var point = CardPoint(view.Cards[thunderIndex]);
+
+            view.PressCard(thunderIndex, point);
+            view.ReleaseCard(point);
+            Assert.That(view.Selected, Is.True);
+            Assert.That(view.Enemies.All(enemy => view.IsGlowing(enemy.Sprite)), Is.True);
+
+            view.TapScreen(Center(view.Enemies[0].TargetArea));
+            yield return WaitActions(view);
+            Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
         }
 
         [UnityTest]
@@ -146,14 +342,42 @@ namespace Baryonyx.Tests.PlayMode
             );
             var point = CardPoint(view.Cards[thunderIndex]);
 
-            // Straight up, not onto any enemy.
+            // Its targets glow from the press, before any swipe.
             view.PressCard(thunderIndex, point);
+            Assert.That(view.Armed, Is.False);
+            Assert.That(view.Enemies.All(enemy => view.IsGlowing(enemy.Sprite)), Is.True);
+
+            // Straight up, not onto any enemy.
             view.DragCard(point + Vector2.up * 400f);
             Assert.That(view.Targets, Is.EqualTo(new[] { 0, 1, 2 }));
             Assert.That(view.Enemies.All(enemy => view.IsGlowing(enemy.Sprite)), Is.True);
             view.ReleaseCard(point + Vector2.up * 400f);
+            yield return WaitActions(view);
 
             Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator AWholeSideCardMovedWithoutASwipeStopsGlowingAndIsNotPlayed()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int guardIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.Effect == BattleInspectCardEffect.Guard
+            );
+            var point = CardPoint(view.Cards[guardIndex]);
+            int energy = view.Energy;
+
+            view.PressCard(guardIndex, point);
+            Assert.That(view.TargetsEnemies, Is.False);
+            Assert.That(view.Allies.All(ally => view.IsGlowing(ally.Sprite)), Is.True);
+            // Moved sideways: more than a tap, but not a swipe up.
+            view.ReleaseCard(point + Vector2.right * 70f);
+
+            Assert.That(view.Allies.Any(ally => view.IsGlowing(ally.Sprite)), Is.False);
+            Assert.That(view.Energy, Is.EqualTo(energy));
+            Assert.That(view.Cards[guardIndex].InHand, Is.True);
         }
 
         [UnityTest]
@@ -175,8 +399,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Targets, Is.EqualTo(new[] { 0 }));
             Assert.That(view.IsGlowing(ally.Sprite), Is.True);
             view.ReleaseCard(Center(ally.TargetArea));
+            yield return WaitActions(view);
 
             Assert.That(ally.Hp, Is.EqualTo(Mathf.Min(ally.MaxHp, before + heal.Power)));
+            Assert.That(Rising(view.HealNumber), Is.EqualTo(new[] { heal.Power.ToString() }));
             Assert.That(view.Allies.Skip(1).All(other => other.Hp == other.StartHp), Is.True);
         }
 
@@ -198,8 +424,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(hidden.Known.activeSelf, Is.False);
 
             Play(view, fireIndex, wolf.TargetArea);
+            yield return WaitActions(view);
 
             Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - Mathf.RoundToInt(fire.Power * 1.5f)));
+            Assert.That(
+                Rising(view.WeakNumber),
+                Is.EqualTo(new[] { Mathf.RoundToInt(fire.Power * 1.5f).ToString() }),
+                "A weakness shows only in the number's look, without words."
+            );
+            Assert.That(Rising(view.DamageNumber), Is.Empty);
             Assert.That(hidden.Known.activeSelf, Is.True);
             Assert.That(hidden.Unknown.activeSelf, Is.False);
         }
@@ -222,22 +455,209 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Energy, Is.EqualTo(1));
             Play(view, thunderIndex, guardian.TargetArea);
 
-            Assert.That(view.Cards[thunderIndex].Used, Is.False);
+            Assert.That(view.Cards[thunderIndex].InHand, Is.True);
             Assert.That(view.Energy, Is.EqualTo(1));
+            // The warning takes the place of the skill name, in the red of an unpayable cost.
+            Assert.That(view.SkillBanner.gameObject.activeSelf, Is.True);
+            Assert.That(view.SkillBanner.Label.text, Is.EqualTo("エネルギー不足"));
+            Assert.That(view.SkillBanner.Label.color, Is.EqualTo(BattleInspectCardView.ShortCost));
+
+            // A card the energy cannot pay for is see-through and darkened, with a reddish cost.
+            yield return null;
+            var thunder = view.Cards[thunderIndex];
+            Assert.That(thunder.Group.alpha, Is.EqualTo(view.Settings.UnplayableAlpha));
+            Assert.That(view.Settings.UnplayableAlpha, Is.LessThan(1f));
+            // The see-through card does not thin its black: it is as dark as the settings say.
+            Assert.That(
+                thunder.Face.Shade.color.a * thunder.Group.alpha,
+                Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
+            );
+            Assert.That(thunder.Face.Shade.enabled, Is.True);
+            Assert.That(thunder.Face.CostDigit.color, Is.EqualTo(BattleInspectCardView.ShortCost));
+            var slash = view.Cards[0];
+            Assert.That(slash.Face.Shade.enabled, Is.False, "Cost 1 is paid for.");
+            Assert.That(slash.Face.CostDigit.color, Is.EqualTo(Color.white));
+            Assert.That(slash.Group.alpha, Is.EqualTo(1f));
+
+            // Raised, it is opaque again so its details can be read.
+            view.PressCard(thunderIndex, CardPoint(thunder));
+            yield return null;
+            Assert.That(thunder.Group.alpha, Is.EqualTo(1f));
+            Assert.That(thunder.Face.Shade.enabled, Is.True);
+            Assert.That(
+                thunder.Face.Shade.color.a,
+                Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
+            );
         }
 
         [UnityTest]
-        public IEnumerator EndTurnRefillsTheEnergyAndTheHand()
+        public IEnumerator EndTurnRefillsTheEnergyAndDrawsThreeCards()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             Play(view, 0, view.Enemies[1].TargetArea);
+            var kept = view.HandCards.ToArray();
+            var before = kept.Select(i => view.RestPosition(i).x).ToArray();
 
             view.EndTurnButton.onClick.Invoke();
+            Assert.That(view.EnemyTurn, Is.True);
+            Assert.That(view.EndTurnButton.interactable, Is.False);
+            yield return WaitEnemyTurn(view);
             Assert.That(view.Turn, Is.EqualTo(4));
             Assert.That(view.Energy, Is.EqualTo(6));
-            Assert.That(view.Cards.Any(card => card.Used), Is.False);
+            // The cards in hand make room by moving right only, before any card flies.
+            for (int i = 0; i < kept.Length; i++)
+                Assert.That(view.RestPosition(kept[i]).x, Is.GreaterThan(before[i]));
+            yield return WaitDealt(view);
+            // New cards come in at the left end, the side of the deck.
+            Assert.That(DeckCards(view), Is.EqualTo(new[] { 8, 7, 6, 5, 4, 3, 2, 1 }));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
+            // The played card's place on screen shows a newly drawn card of the deck.
+            Assert.That(view.Cards[0].InHand, Is.True);
+            Assert.That(view.Cards[0].DeckIndex, Is.Not.EqualTo(0));
         }
+
+        [UnityTest]
+        public IEnumerator PlayModeStartsWithNoCardsAndDealsTheOpeningHandOneByOne()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value, dealt: false);
+            Assert.That(view.Dealing, Is.True);
+            Assert.That(view.HandCards, Is.Empty, "No cards before the deal.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo("16"));
+            Assert.That(view.Cards.All(card => card.Group.alpha == 0f), Is.True);
+
+            // Ending the turn waits for the deal.
+            view.EndTurnButton.onClick.Invoke();
+            Assert.That(view.EnemyTurn, Is.False);
+            Assert.That(view.Turn, Is.EqualTo(view.StartTurn));
+
+            // One card leaves the deck at a time, face down, and the count drops with it. Each
+            // flies right only, and cards already dealt stay where they landed.
+            int seen = 0;
+            bool sawFaceDown = false;
+            var lastX = Enumerable.Repeat(float.MinValue, view.Cards.Length).ToArray();
+            // The right edge of the deck's counter (its picture and the number).
+            var deck = view.DeckAnchor;
+            float deckRight = view
+                .Hand.InverseTransformPoint(
+                    deck.TransformPoint(new Vector2(deck.rect.xMax, deck.rect.center.y))
+                )
+                .x;
+            var corners = new Vector3[4];
+            var landed = new System.Collections.Generic.Dictionary<int, Vector2>();
+            for (float t = 0f; view.Dealing && t < 5f; t += Time.deltaTime)
+            {
+                int count = view.HandCards.Count;
+                Assert.That(count, Is.LessThanOrEqualTo(seen + 1), "One card at a time.");
+                Assert.That(view.DeckLabel.text, Is.EqualTo((16 - count).ToString()));
+                if (count > seen)
+                {
+                    // First seen on its back just right of the deck's counter, clear of its
+                    // number, and never for a frame in the fan.
+                    var dealt = view.Cards[view.HandCards[0]];
+                    Assert.That(dealt.Back.activeSelf, Is.True);
+                    dealt.Body.GetWorldCorners(corners);
+                    float cardLeft = corners.Min(c => view.Hand.InverseTransformPoint(c).x);
+                    Assert.That(cardLeft, Is.GreaterThanOrEqualTo(deckRight));
+                    Assert.That(cardLeft, Is.LessThan(deckRight + 200f));
+                }
+                foreach (int index in view.HandCards)
+                {
+                    float x = view.Cards[index].Body.anchoredPosition.x;
+                    if (view.IsFlying(index))
+                    {
+                        Assert.That(
+                            x,
+                            Is.GreaterThanOrEqualTo(lastX[index] - 0.01f),
+                            "Right only."
+                        );
+                        lastX[index] = x;
+                        if (view.IsFaceDown(index))
+                        {
+                            sawFaceDown = true;
+                            Assert.That(view.Cards[index].Back.activeSelf, Is.True);
+                        }
+                    }
+                    else if (landed.TryGetValue(index, out var at))
+                        Assert.That(
+                            Vector2.Distance(view.RestPosition(index), at),
+                            Is.LessThan(0.01f),
+                            "A dealt card stays put."
+                        );
+                    else
+                        landed[index] = view.RestPosition(index);
+                }
+                seen = count;
+                yield return null;
+            }
+            Assert.That(view.Dealing, Is.False);
+            Assert.That(sawFaceDown, Is.True, "Cards fly in on their backs.");
+            Assert.That(view.HandCards, Has.Count.EqualTo(6));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("10"));
+            yield return null;
+            foreach (int index in view.HandCards)
+            {
+                Assert.That(view.IsFaceDown(index), Is.False);
+                Assert.That(view.Cards[index].Back.activeSelf, Is.False);
+                Assert.That(view.Cards[index].Group.alpha, Is.GreaterThan(0f));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator DrawingStopsAtTheHandLimitAndLeavesTheRestInTheDeck()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            yield return WaitDealt(view);
+            Assert.That(view.HandCards, Has.Count.EqualTo(9));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
+
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            yield return WaitDealt(view);
+            Assert.That(view.HandCards, Has.Count.EqualTo(9), "A full hand draws nothing.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
+        }
+
+        [UnityTest]
+        public IEnumerator AnEmptyDeckIsDealtAnewWithTheWholeDeck()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value, dealt: false);
+            // A deck left with one card after the opening hand.
+            view.RestartDeal(new[] { 0, 1, 2, 3, 4, 5, 6 }, instant: true);
+            Play(view, 0, view.Enemies[1].TargetArea);
+
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            yield return WaitDealt(view);
+            // The last card, then two from the whole 16 shuffled anew, even the cards in hand.
+            var hand = DeckCards(view);
+            Assert.That(hand, Has.Length.EqualTo(8));
+            Assert.That(hand.Skip(2), Is.EqualTo(new[] { 6, 5, 4, 3, 2, 1 }));
+            Assert.That(view.DrawPile, Has.Count.EqualTo(14));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("14"));
+            Assert.That(
+                hand.Take(2).Concat(view.DrawPile).OrderBy(i => i),
+                Is.EqualTo(Enumerable.Range(0, 16)),
+                "The new deck is all 16, so cards in hand come again."
+            );
+        }
+
+        private static Rect WorldRect(RectTransform rect)
+        {
+            var corners = new Vector3[4];
+            rect.GetWorldCorners(corners);
+            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+        }
+
+        /// <summary>The cards of the deck in hand, left to right.</summary>
+        private static int[] DeckCards(BattleInspectView view) =>
+            view.HandCards.Select(i => view.Cards[i].DeckIndex).ToArray();
 
         [UnityTest]
         public IEnumerator TurnOrderStartsWithThePartyAndAdvancesToTheNextPartyTurn()
@@ -255,17 +675,175 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.TurnSlots[0].Party.activeSelf, Is.True);
             Assert.That(view.TurnSlots[1].Enemy.texture, Is.SameAs(view.Enemies[1].Sprite.texture));
 
-            // Ending the turn passes the enemy turns (they do not act in the mock).
+            // Gold for the current turn, then red for an enemy and blue for the party.
+            Assert.That(view.TurnSlots[0].Frame.color, Is.EqualTo(view.CurrentTurnFrame));
+            Assert.That(view.TurnSlots[1].Frame.color, Is.EqualTo(view.EnemyTurnFrame));
+            Assert.That(view.TurnSlots[1].Fill.color, Is.EqualTo(view.EnemyTurnFill));
+            Assert.That(view.TurnSlots[3].Frame.color, Is.EqualTo(view.PartyTurnFrame));
+            Assert.That(view.TurnSlots[3].Fill.color, Is.EqualTo(view.PartyTurnFill));
+
+            // It starts at the top left, clear of the skill name in the top middle.
+            var bar = (RectTransform)view.TurnSlots[0].Layout.transform.parent;
+            Assert.That(bar.anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
+            Assert.That(
+                WorldRect(bar).Overlaps(WorldRect(view.SkillBanner.BackdropCanvas)),
+                Is.False
+            );
+
+            // Ending the turn goes through the enemies' turns to the next party turn.
             view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
             Assert.That(view.UpcomingTurns(6), Is.EqualTo(new[] { party, party, 2, party, 1, 0 }));
             Assert.That(view.TurnSlots[1].Party.activeSelf, Is.True);
+            Assert.That(view.TurnSlots[1].Frame.color, Is.EqualTo(view.PartyTurnFrame));
+            Assert.That(view.TurnSlots[2].Frame.color, Is.EqualTo(view.EnemyTurnFrame));
+            yield return WaitDealt(view);
 
             // A defeated enemy leaves the order.
             var slime = view.Enemies[0];
             slime.Hp = 1;
             Play(view, 0, slime.TargetArea);
+            yield return WaitActions(view);
             Assert.That(slime.Alive, Is.False);
             Assert.That(view.UpcomingTurns(6), Has.No.Member(0));
+        }
+
+        [UnityTest]
+        public IEnumerator ThePlayedCardsUserStepsForwardWithItsNameShownAndComesBack()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var slash = view.Cards[0];
+            var user = view.Allies[slash.Caster];
+            var home = user.Body.anchoredPosition;
+            var barHome = user.HpBar.anchoredPosition;
+            Assert.That(view.SkillBanner.gameObject.activeSelf, Is.False);
+
+            Play(view, 0, view.Enemies[1].TargetArea);
+            Assert.That(view.Acting, Is.True);
+            Assert.That(view.SkillBanner.gameObject.activeSelf, Is.True);
+            Assert.That(view.SkillBanner.Label.text, Is.EqualTo("斬り払い"));
+
+            // One step toward the enemies, the HP bar with it.
+            float step = view.Settings.StepDistance;
+            for (float t = 0f; t < view.Settings.StepTime + 0.1f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(user.Body.anchoredPosition.x - home.x, Is.EqualTo(step).Within(0.01f));
+            Assert.That(user.HpBar.anchoredPosition.x - barHome.x, Is.EqualTo(step).Within(0.01f));
+            Assert.That(view.Enemies[1].Hp, Is.LessThan(view.Enemies[1].MaxHp));
+
+            yield return WaitActions(view);
+            Assert.That(user.Body.anchoredPosition, Is.EqualTo(home));
+            Assert.That(user.HpBar.anchoredPosition, Is.EqualTo(barHome));
+            for (
+                float t = 0f;
+                view.SkillBanner.gameObject.activeSelf && t < 1f;
+                t += Time.deltaTime
+            )
+                yield return null;
+            Assert.That(view.SkillBanner.gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator CardsPlayedInARowActOneAfterAnother()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            var slash = view.Cards[0];
+            var ice = view.Cards[2];
+
+            Play(view, 0, wolf.TargetArea);
+            Play(view, 2, wolf.TargetArea);
+            // Both are paid for at once; their effects land in turn.
+            Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost - ice.Cost));
+            Assert.That(view.HandCards, Has.Count.EqualTo(4));
+            yield return WaitActions(view);
+            // Ice is the wolf's weakness.
+            Assert.That(
+                wolf.Hp,
+                Is.EqualTo(wolf.MaxHp - slash.Power - Mathf.RoundToInt(ice.Power * 1.5f))
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator OnTheEnemyTurnEachEnemyUpToThePartyAttacksAnAlly()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            var slime = view.Enemies[0];
+            var wolfHome = wolf.Body.anchoredPosition;
+            int partyHp = view.Allies.Sum(ally => ally.Hp);
+            Assert.That(wolf.SkillName, Is.Not.Empty);
+            Assert.That(wolf.Power, Is.GreaterThan(0));
+
+            view.EndTurnButton.onClick.Invoke();
+            // Cards cannot be pressed while the enemies act.
+            view.PressCard(view.HandCards[0], CardPoint(view.Cards[view.HandCards[0]]));
+            Assert.That(view.HeldCard, Is.EqualTo(-1));
+
+            // The wolf acts first: its turn is at the head of the order, and it steps toward the
+            // party with its skill's name up.
+            bool wolfStepped = false;
+            for (float t = 0f; view.EnemyTurn && t < 10f; t += Time.deltaTime)
+            {
+                if (wolf.Body.anchoredPosition.x < wolfHome.x - 1f)
+                {
+                    wolfStepped = true;
+                    Assert.That(view.UpcomingTurns(1)[0], Is.EqualTo(1));
+                    Assert.That(view.SkillBanner.Label.text, Is.EqualTo(wolf.SkillName));
+                }
+                yield return null;
+            }
+            Assert.That(view.EnemyTurn, Is.False);
+            Assert.That(wolfStepped, Is.True);
+            Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));
+            // The wolf and the slime come before the next party turn; the guardian waits.
+            Assert.That(
+                view.Allies.Sum(ally => ally.Hp),
+                Is.EqualTo(partyHp - wolf.Power - slime.Power)
+            );
+            Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
+        }
+
+        [UnityTest]
+        public IEnumerator DefeatedEnemiesDoNotAttack()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            view.Enemies[0].Hp = 0;
+            view.Enemies[1].Hp = 0;
+            int partyHp = view.Allies.Sum(ally => ally.Hp);
+
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            Assert.That(view.Allies.Sum(ally => ally.Hp), Is.EqualTo(partyHp));
+            Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
+        }
+
+        /// <summary>
+        /// Taps the middle of the raised card the way a finger does: the tap goes to whatever the
+        /// event system hits first there, which must be the card itself, not the cards of the
+        /// hand under it nor the battlefield.
+        /// </summary>
+        private static IEnumerator TapRaisedCard(BattleInspectView view, BattleInspectCard card)
+        {
+            // The card's raycast setting follows in the frame after it is selected.
+            yield return null;
+            var point = RectTransformUtility.WorldToScreenPoint(
+                null,
+                card.Body.TransformPoint(card.Body.rect.center)
+            );
+            var tap = new PointerEventData(EventSystem.current) { position = point };
+            var hits = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(tap, hits);
+            Assert.That(hits, Is.Not.Empty);
+            var input = hits[0].gameObject.GetComponentInParent<BattleInspectCardInput>();
+            Assert.That(input, Is.Not.Null, "The tap lands on a card.");
+            Assert.That(view.Cards[input.Index], Is.SameAs(card), "The raised card takes the tap.");
+            input.OnPointerDown(tap);
+            input.OnPointerUp(tap);
         }
 
         /// <summary>Presses a card, swipes it onto the target and lets go.</summary>
@@ -286,10 +864,47 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        /// <summary>The texts of the numbers now rising from a template.</summary>
+        private static string[] Rising(TMP_Text template) =>
+            template
+                .transform.parent.GetComponentsInChildren<TMP_Text>()
+                .Where(text => text != template && text.name == template.name + "(Clone)")
+                .Select(text => text.text)
+                .ToArray();
+
         private static Vector2 Center(RectTransform rect) =>
             RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(rect.rect.center));
 
-        private IEnumerator Load(System.Action<BattleInspectView> found)
+        /// <summary>Waits for the played cards to finish acting.</summary>
+        private static IEnumerator WaitActions(BattleInspectView view)
+        {
+            for (float t = 0f; view.Acting && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.Acting, Is.False, "The actions end.");
+        }
+
+        /// <summary>Waits for the enemies to act and the party's next turn to begin.</summary>
+        private static IEnumerator WaitEnemyTurn(BattleInspectView view)
+        {
+            for (float t = 0f; view.EnemyTurn && t < 10f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn, Is.False, "The enemy turn ends.");
+        }
+
+        /// <summary>Waits for the cards being dealt to land.</summary>
+        private static IEnumerator WaitDealt(BattleInspectView view)
+        {
+            for (float t = 0f; view.Dealing && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.Dealing, Is.False, "The deal ends.");
+        }
+
+        /// <summary>
+        /// Loads the scene. When <paramref name="dealt"/>, the deck is put in card order and the
+        /// opening hand (one of each of the six cards, 0 to 5) laid down at once, so the tests
+        /// know the hand; otherwise the shuffled deal runs as in play.
+        /// </summary>
+        private IEnumerator Load(System.Action<BattleInspectView> found, bool dealt = true)
         {
             yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Additive);
             loadedScene = SceneManager.GetSceneByPath(ScenePath);
@@ -299,6 +914,8 @@ namespace Baryonyx.Tests.PlayMode
                 .GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<BattleInspectView>(true))
                 .Single();
+            if (dealt)
+                view.RestartDeal(Enumerable.Range(0, view.Cards.Length).ToArray(), instant: true);
             found(view);
         }
 

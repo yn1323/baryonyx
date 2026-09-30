@@ -13,13 +13,29 @@ MonoBehaviour:
   m_Name: BattleInspectHandSettings
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleInspectHandSettings
   CardScale: 1
-  RaisedScale: 1.5
-  RaisedBottom: 16
+  RaisedScale: 1.6
+  RaisedBottom: 24
+  UnplayableAlpha: 0.7
+  UnplayableDarkness: 0.7
   FanStep: 7
+  FanMaxSpread: 42
   FanRadius: 1300
   FanDrop: 0.5
   RestBottom: -62
+  OpeningDraw: 6
+  TurnDraw: 3
+  HandLimit: 9
+  DealDelay: 0.3
+  DealInterval: 0.12
+  DealFlight: 0.35
+  DealStartScale: 0.2
+  DealStartAngle: 24
   ArmDistance: 100
+  TapSlop: 24
   TargetMargin: 72
+  StepDistance: 64
+  StepTime: 0.12
+  ActionHold: 0.45
+  EnemyGap: 0.25
   Stiffness: 320
   Damping: 17

@@ -15,12 +15,12 @@ namespace Baryonyx.UI.Editor
         public const string PrefabPath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.prefab";
 
-        private const string PanelTexturePath =
+        public const string PanelTexturePath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TopTitlePanelGradient.png";
-        private const string BackdropTexturePath =
+        public const string BackdropTexturePath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TopTitleBackdropGradient.png";
         private const string FontPath = "Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset";
-        private static readonly Color BackdropColor = new Color(0.3f, 0.3f, 0.3f, 0.42f);
+        public static readonly Color BackdropColor = new Color(0.3f, 0.3f, 0.3f, 0.42f);
 
         [MenuItem("Baryonyx/UI/Create Translucent Text Panel Prefab")]
         public static void CreatePrefab()

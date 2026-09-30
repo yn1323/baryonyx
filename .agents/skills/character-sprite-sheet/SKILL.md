@@ -130,11 +130,11 @@ ChatGPTのデスクトップアプリで元の画像を添付したときのほ�
 3. **Codexに依頼する**：リポジトリ直下で次の1行を実行する。WindowsのPowerShellとmacOSのターミナルのどちらでも同じコマンドで動く（行末の `\` での改行や `&&` はPowerShellで使えないため、1行のまま使う）。
 
    ```bash
-   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name sprite-sheet --request output/characters/<キャラID>/sprite-request.md --profile output/characters/<キャラID>/profile.md --model gpt-5.6-sol --reasoning-effort high --image witch.png --image-role "ドット絵の画風見本。タッチ（ドットの大きさ、塗り、描き込み）を参考にする。輪郭・陰影・色数は依頼文の規則を優先する。人物、衣装、ポーズは写さない"
+   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name sprite-sheet --request output/characters/<キャラID>/sprite-request.md --profile output/characters/<キャラID>/profile.md --model gpt-6.1-sol --reasoning-effort high --image witch.png --image-role "ドット絵の画風見本。タッチ（ドットの大きさ、塗り、描き込み）を参考にする。輪郭・陰影・色数は依頼文の規則を優先する。人物、衣装、ポーズは写さない"
    ```
 
    Codexの実行には数分かかるので、Bashのタイムアウトを最大にするか、バックグラウンドで実行する。
-   モデルと推論の強さは `--model` と `--reasoning-effort` で必ず明示し、`~/.codex/config.toml` の設定に任せない。ユーザーが別の値を指定したときは、`gpt-5.6-sol`・`high` をその値に置き換える。
+   モデルと推論の強さは `--model` と `--reasoning-effort` で必ず明示し、`~/.codex/config.toml` の設定に任せない。ユーザーが別の値を指定したときは、`gpt-6.1-sol`・`high` をその値に置き換える。
 4. **見せる**：保存された画像を、ユーザーが画像を見られる方法で表示し（Claudeのデスクトップアプリでは `SendUserFile` の `display: "render"`）、ファイルの場所と画像サイズを伝える。依頼文と比べて、必ず残す特徴、武器を描くコマ、コマ数、ラベル、背景の違いを報告する。
 5. **プロンプトを渡す**：再実行に使えるよう、次の2つをユーザーに渡す。
    - Codexに送ったプロンプト：`<name>.codex-prompt.md` をファイルとして渡す（Claudeのデスクトップアプリでは `SendUserFile` の `display: "attach"`）。

@@ -92,10 +92,17 @@ EditModeは全件でも30秒ほどで終わるため、作業中も `Baryonyx.Ed
    - 関連するテストを判断できない場合
 
 PlayModeテストはすべて名前空間 `Baryonyx.Tests.PlayMode` に属するため、クラス名で絞る。
-接続中のEditorでは `run_tests --mode playmode --filter <テストクラス名> --async_tests true` をクラスごとに実行する。
-`filter_type` の既定値 `testName` は、テスト名の部分一致で絞り込む。
+接続中のEditorでは `run_tests --mode playmode --filter PlayMode.<テストクラス名>. --async_tests true` をクラスごとに実行する（例：`--filter PlayMode.HomeSceneTests.`）。
+`filter_type` の既定値 `testName` は、テストの完全名（`Baryonyx.Tests.PlayMode.<クラス名>.<メソッド名>`）を大文字小文字を区別せず部分一致で絞り込む。
+クラス名だけを渡すと、名前にそのクラス名を含む別のクラスも実行される（例：`HomeSceneTests` は `TopHomeSceneTests` にも一致する）。
+そのため、前に `PlayMode.`、後ろに `.` を付けてクラスの境界を示す。
 Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;` 区切りで渡す（[Unity Test Frameworkのコマンドライン引数](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html)）。
 絞り込んだ実行で0件になった場合は、指定を誤っているため成功に含めない。
+
+1件だけの実行でも、PlayModeテストはEditorを再生状態にして実行し、終了後に停止する。
+再生が始まったことは、全件を実行した証拠にならない。
+実行した件数は、`test_status` の件数、またはEditorログの `[TestResultCollector] Run finished: <件数> total` で確かめる。
+同じログの `Run started: <件数> test(s)` は、絞り込む前のPlayModeテスト全体の件数を表示するため、実行件数の確認に使わない。
 
 ## 実行と結果確認
 

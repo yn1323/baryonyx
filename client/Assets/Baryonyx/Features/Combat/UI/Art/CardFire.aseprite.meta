@@ -129,7 +129,7 @@ ScriptedImporter:
   animatedSpriteImportData:
   - name: CardFire
     originalName: 
-    pivot: {x: 0, y: 0}
+    pivot: {x: 0, y: -0.01754386}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
@@ -137,8 +137,8 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 32
-      height: 20
+      width: 64
+      height: 57
     spriteID: cd25d759face33d46bc329b43712b977
     spriteBone: []
     spriteOutline: []
@@ -147,7 +147,7 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 4, y: 4}
+    uvTransform: {x: 4, y: 3}
   spriteSheetImportData: []
   tileSetImportData: []
   asepriteLayers:
@@ -169,8 +169,8 @@ ScriptedImporter:
       cellRect:
         x: 0
         y: 0
-        width: 32
-        height: 20
+        width: 64
+        height: 58
       spriteId: cd25d759face33d46bc329b43712b977
     linkedCells: []
     tileCells: []
@@ -180,5 +180,5 @@ ScriptedImporter:
   platformSettings: []
   generatePhysicsShape: 0
   secondarySpriteTextures: []
-  previousTextureSize: {x: 64, y: 32}
-  canvasSize: {x: 32, y: 20}
+  previousTextureSize: {x: 128, y: 128}
+  canvasSize: {x: 64, y: 58}
