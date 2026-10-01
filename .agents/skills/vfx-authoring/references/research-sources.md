@@ -37,6 +37,17 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [Free VFX image sequences and flipbooks（Unity公式ブログ）](https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks) | 一次 | Unity Labsが公開した連番素材 | 要約 |
 | [How to fix screen space heat haze distortion not visible（bugnet）](https://bugnet.io/blog/how-to-fix-screen-space-heat-haze-distortion-not-visible) | 二次 | URPのOpaque Textureを使う歪みの手順 | 要約 |
 
+## 計算で描く形
+
+| 資料 | 種類 | 使った内容 | 取得 |
+|---|---|---|---|
+| [2D distance functions（Inigo Quilez）](https://iquilezles.org/articles/distfunctions2d/)、[distance functions](https://iquilezles.org/articles/distfunctions) | 二次（技法の定番の解説） | 基本の形の距離関数、和集合・共通部分・滑らかな最小値での組み合わせ | 要約 |
+| [Fractal Brownian Motion（The Book of Shaders）](https://thebookofshaders.com/13/) | 二次 | 細かさを2倍ずつ上げたノイズを強さを下げて足すfBM | 要約 |
+| [Procedural Nodes（Shader Graph）](https://docs.unity3d.com/Packages/com.unity.shadergraph@17.1/manual/Procedural-Nodes.html) | 一次 | 円・多角形・角丸の四角をUVから描くノード | 要約 |
+| [Canvas.additionalShaderChannels](https://docs.unity3d.com/ScriptReference/Canvas-additionalShaderChannels.html) | 一次 | uGUIの頂点にUV1以降を含める設定 | 要約 |
+| [Shock Wave Shader（Godot Shaders）](https://godotshaders.com/shader/shock-wave-shader/) | 二次（制作者の投稿） | 極座標とノイズで衝撃波を描く例 | 要約 |
+| [Arm Mali Best Practices（Arm）](https://developer.arm.com/community/arm-community-blogs/b/mobile-graphics-and-gaming-blog/posts/arm-mali-best-practices) | 一次 | GPUごとに計算と画像の読み込みの性能比が違う | 要約 |
+
 ## HD-2Dとの組み合わせ
 
 | 資料 | 種類 | 使った内容 | 取得 |

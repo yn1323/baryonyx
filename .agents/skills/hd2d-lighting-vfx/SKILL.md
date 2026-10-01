@@ -36,6 +36,8 @@ Unityの版は `client/ProjectSettings/ProjectVersion.txt`、URPの版は `clien
 ## 表現を分解して選ぶ
 
 HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層を必要な分だけ組み合わせる。
+光・霧・粒の形を新しく作る・作り直すときは、[エフェクトの描き方](../../../doc/art/direction.md#エフェクトの描き方)に従い、画像を貼らずに計算で描く。式の組み立ては [vfx-authoringの計算で形を描く](../vfx-authoring/references/procedural-shapes.md) を使う。
+画像で作った既存の部品は、作り直すまで現行のまま扱う。
 技法ごとの前提、難易度、このプロジェクトでの採用方針は [references/technique-catalog.md](references/technique-catalog.md) にまとめる。
 
 | 層 | 役割 | 第一候補 | 採用条件・注意点 |
@@ -104,7 +106,7 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 
 - 通常の環境粒子と数千程度までのキラキラは、組み込みのParticle Systemを第一候補にする。Emission、Shape、Velocity/Force over Lifetime、Noise、Color/Size over Lifetime、Rendererを役割ごとに設定する。
 - 透明な埃や霧はAlphaまたはPremultiply、星やグローはAdditiveを候補にする。Additiveは暗い背景では映えるが、重ねすぎると白飛びするため上限を決める。
-- 四芒星は単一の巨大画像で描かず、中心点、縦横の短い光、ぼかした円を別スプライトまたはアトラスから組み合わせる。少数をランダムに大きくし、全粒子の周期を揃えない。
+- 四芒星は単一の巨大な形で描かず、中心点、縦横の短い光、ぼかした円を組み合わせる。新しく作る場合は、それぞれを計算で描く。少数をランダムに大きくし、全粒子の周期を揃えない。
 - `Simulation Space`は、背景の埃や霧はWorld、キャラクター紹介に追従する粒子はLocal、画面に固定する光点はUIまたはCustomを選ぶ。粒子の目的と追従対象を一致させる。
 - `randomSeed`を固定できる構成にし、スクリーンショット比較と再現性を確保する。ランタイムの見た目を毎回変える場合も、テスト用の固定シードを用意する。
 - VFX GraphはCompute Shaderに対応する環境で、大量かつ複雑な粒子が必要な場合だけ候補にする。現在のモバイル向け常時演出ではParticle Systemを優先し、VFX Graphへ移す理由と対象端末を記録する。
