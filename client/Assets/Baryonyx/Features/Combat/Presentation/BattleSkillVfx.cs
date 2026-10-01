@@ -26,61 +26,87 @@ namespace Baryonyx.Combat.Presentation
         Defeat,
     }
 
-    /// <summary>The pictures the skill effects are made of (bright light on transparency).</summary>
-    [Serializable]
-    public sealed class BattleSkillVfxTextures
+    /// <summary>
+    /// The shapes the skill effects are worked out from, with no picture (the Battle Vfx Shape
+    /// shader, one material each, in this order). The solid ones (smoke, scorch, frost, ice
+    /// spikes and chips) are blended normally; the rest are added as light.
+    /// </summary>
+    public enum BattleVfxShape
     {
-        public Texture SlashArc;
-        public Texture SlashCross;
-        public Texture Fireball;
-        public Texture IceSpear;
-        public Texture Lightning;
-        public Texture HealPillar;
-        public Texture ShieldDome;
-        public Texture MagicCircle;
-        public Texture ImpactStar;
-        public Texture Shockwave;
-        public Texture Streak;
-        public Texture Smoke;
-        public Texture Shard;
-        public Texture CutInStreaks;
-        public Texture Glow;
-        public Texture Sparkle;
+        /// <summary>A soft round light (glows, pools of light, the hot flash of a blow).</summary>
+        Glow,
 
-        /// <summary>Shapes of a burst of flame, <see cref="FlameCells"/> columns and rows of them.</summary>
-        public Texture Flames;
-        public Vector2Int FlameCells = new(1, 1);
+        /// <summary>A ring of shock spreading out.</summary>
+        Ring,
 
-        /// <summary>A tongue of flame rising (root at the bottom).</summary>
-        public Texture FlameTongue;
+        /// <summary>The flash of a blow: rays around a hot centre.</summary>
+        Star,
 
-        /// <summary>Shapes of billowing smoke, <see cref="SmokeCells"/> columns and rows of them.</summary>
-        public Texture Smokes;
-        public Vector2Int SmokeCells = new(1, 1);
+        /// <summary>A sweeping sword arc.</summary>
+        SlashArc,
 
-        /// <summary>A low cloud of dust spreading along the ground.</summary>
-        public Texture Dust;
+        /// <summary>The finishing cross cut.</summary>
+        SlashCross,
 
-        /// <summary>A burnt patch left on the floor (white, tinted dark).</summary>
-        public Texture Scorch;
+        /// <summary>A fireball flying along +x (its head at 85% of the width).</summary>
+        Fireball,
 
-        /// <summary>Spikes of ice standing on their root (at the bottom), <see cref="IceSpikeCells"/> of them.</summary>
-        public Texture IceSpikes;
-        public Vector2Int IceSpikeCells = new(1, 1);
+        /// <summary>An ice lance flying along +x (its tip at 93% of the width).</summary>
+        IceSpear,
 
-        /// <summary>Broken pieces of ice.</summary>
-        public Texture IceShards;
+        /// <summary>A bolt of lightning down to its foot (at 9% of the height).</summary>
+        Lightning,
 
-        /// <summary>A low cold mist.</summary>
-        public Texture FrostMist;
+        /// <summary>A pillar of light rising from its foot (at 10% of the height).</summary>
+        Pillar,
 
-        /// <summary>Frost spread on the floor, seen low from the side.</summary>
-        public Texture Frost;
+        /// <summary>A dome of light, its base at 16% of the height.</summary>
+        Dome,
+
+        /// <summary>A magic circle seen from above.</summary>
+        MagicCircle,
+
+        /// <summary>A streak of a spark flying along +y.</summary>
+        Streak,
+
+        /// <summary>A round spark.</summary>
+        Spark,
+
+        /// <summary>A twinkle of four rays.</summary>
+        Sparkle,
+
+        /// <summary>A thin shard of light.</summary>
+        Shard,
+
+        /// <summary>A torn lump of flame.</summary>
+        Flame,
+
+        /// <summary>A tongue of flame rising from its root at the bottom.</summary>
+        FlameTongue,
+
+        /// <summary>A billow of smoke, mist or dust.</summary>
+        Smoke,
+
+        /// <summary>A burnt patch on the floor.</summary>
+        Scorch,
+
+        /// <summary>Frost on the floor, seen low from the side.</summary>
+        Frost,
+
+        /// <summary>A spike of clear ice standing on its root (at 3% of the height).</summary>
+        IceSpike,
+
+        /// <summary>A broken chip of ice or dark debris.</summary>
+        Chip,
+
+        /// <summary>The cut-in's streaks, read from the UV so the image's uvRect scrolls them.</summary>
+        CutInStreaks,
     }
 
     /// <summary>
     /// The skill effects of the mock battle, drawn with uGUI among the actors of the battlefield,
-    /// which a camera draws with Bloom. Each effect is timed in three beats: a wind-up (the stage
+    /// which a camera draws with Bloom. Every shape is worked out by a shader with no picture
+    /// (<see cref="BattleVfxShape"/>). Each effect is timed in three beats: a wind-up (the stage
     /// darkens to a night blue, a magic circle turns under the user, light gathers on it and lights
     /// it from below for big skills), the climax (the blow lands with a hit stop, a shake, a burst
     /// split behind and in front of the target, sparks, and a light that falls on the characters,
@@ -96,7 +122,7 @@ namespace Baryonyx.Combat.Presentation
     /// </summary>
     public sealed class BattleSkillVfx : MonoBehaviour
     {
-        // One dot of the 4x pixel art: the stage shakes and square motes sit in whole dots.
+        // One dot of the 4x pixel art: the stage shakes in whole dots, so the pixel art never blurs.
         private const float Dot = 4f;
 
         // The most the stage moves at full trauma (px).
@@ -144,21 +170,14 @@ namespace Baryonyx.Combat.Presentation
         public RawImage CutInActor;
         public TMP_Text CutInName;
 
-        [Header("素材")]
-        [Tooltip("一様に薄くなる加算の光（グロー、輪、光だまり、キャラへの照り返し）。")]
+        [Header("マテリアル")]
+        [Tooltip("キャラの絵の形をした加算の光（キャラへの照り返し）と、画面全体の閃光。")]
         public Material GlowMaterial;
 
-        [Tooltip("薄い部分から削れて消える加算の光（炸裂、結晶、光の柱）。")]
-        public Material ErodeMaterial;
-
         [Tooltip(
-            "削れて消える加算の光で、1を超える明るさでBloomを起こす芯（火球、閃光、稲妻、斬撃）。"
+            "形ごとのマテリアル（BattleVfxShapeの順）。形は画像を使わずにシェーダーで計算する。"
         )]
-        public Material CoreMaterial;
-
-        [Tooltip("削れて消える通常合成の煙と霧。光る層より奥に描く。")]
-        public Material SmokeMaterial;
-        public BattleSkillVfxTextures Textures = new();
+        public Material[] Shapes = Array.Empty<Material>();
 
         [Header("強さ（画面の揺れと閃光を抑えるときに下げる）")]
         [Range(0f, 1f)]
@@ -313,6 +332,9 @@ namespace Baryonyx.Combat.Presentation
             }
             if (CutIn != null)
                 CutIn.gameObject.SetActive(false);
+            // The shapes take their seed and moment from the boards' second UV.
+            BattleVfxImage.EnableShapeChannel(BackLayer);
+            BattleVfxImage.EnableShapeChannel(FrontLayer);
             // Smoke is drawn behind the light on each side of the actors, so it never greys a
             // bright centre.
             backSmoke = SubLayer(BackLayer, "Smoke");
@@ -593,11 +615,10 @@ namespace Baryonyx.Combat.Presentation
             // The background around the light comes back out of the dark.
             var glow = Spawn(
                 backLight,
-                Textures.Glow,
+                BattleVfxShape.Glow,
                 at,
                 Vector2.one * radius * 1.6f,
-                color,
-                Look.Glow
+                color
             );
             float peak = 0.38f * Mathf.Clamp01(strength);
             Animate(
@@ -607,7 +628,7 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float t = k * (hold + fade);
                     float alpha = t < hold ? peak : peak * (1f - EaseIn((t - hold) / fade));
-                    s.Image.color = new Color(color.r, color.g, color.b, alpha);
+                    Show(s, new Color(color.r, color.g, color.b, alpha), k, 0f);
                 }
             );
         }
@@ -617,14 +638,7 @@ namespace Baryonyx.Combat.Presentation
         {
             if (backLight == null)
                 return;
-            var pool = Spawn(
-                backLight,
-                Textures.Glow,
-                feet,
-                new Vector2(size, size),
-                color,
-                Look.Glow
-            );
+            var pool = Spawn(backLight, BattleVfxShape.Glow, feet, new Vector2(size, size), color);
             pool.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
             Animate(
                 pool,
@@ -633,7 +647,7 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float t = k * (hold + fade);
                     float alpha = t < hold ? 0.85f : 0.85f * (1f - EaseIn((t - hold) / fade));
-                    s.Image.color = new Color(color.r, color.g, color.b, alpha);
+                    Show(s, new Color(color.r, color.g, color.b, alpha), k, 0f);
                 }
             );
         }
@@ -784,8 +798,8 @@ namespace Baryonyx.Combat.Presentation
                     Vector2.Lerp(from, at, 0.55f),
                     new Burst
                     {
-                        Texture = Textures.Streak,
-                        Look = Look.Core,
+                        Shape = BattleVfxShape.Streak,
+                        Bright = CoreBright,
                         From = Color.white,
                         To = color,
                         Speed = new Vector2(1800f, 2600f),
@@ -834,11 +848,11 @@ namespace Baryonyx.Combat.Presentation
             {
                 var at = Center(FrontLayer, targets[i]);
                 yield return Missile(
-                    Textures.Fireball,
+                    BattleVfxShape.Fireball,
                     from,
                     at,
                     new Vector2(280f, 280f),
-                    new Vector2(0.86f, 0.5f),
+                    new Vector2(0.85f, 0.5f),
                     0.26f,
                     90f,
                     color
@@ -878,7 +892,7 @@ namespace Baryonyx.Combat.Presentation
             {
                 var at = Center(FrontLayer, targets[i]);
                 yield return Missile(
-                    Textures.IceSpear,
+                    BattleVfxShape.IceSpear,
                     from,
                     at,
                     new Vector2(320f, 320f),
@@ -984,8 +998,7 @@ namespace Baryonyx.Combat.Presentation
                     feet + new Vector2(0f, 40f),
                     new Burst
                     {
-                        Texture = Textures.Sparkle,
-                        Look = Look.Glow,
+                        Shape = BattleVfxShape.Sparkle,
                         From = Color.white,
                         To = new Color(gold.r, gold.g, gold.b, 0f),
                         Speed = new Vector2(50f, 200f),
@@ -1033,8 +1046,8 @@ namespace Baryonyx.Combat.Presentation
             float width = Mathf.Max(max.x - min.x, max.y - min.y) + 240f;
             var basePoint = new Vector2((min.x + max.x) * 0.5f, min.y - 30f);
             var middle = basePoint + new Vector2(0f, width * 0.32f);
-            Dome(backLight, basePoint, width, 1f, Look.Erode);
-            Dome(frontLight, basePoint, width, 0.3f, Look.Glow);
+            Dome(backLight, basePoint, width, 1f, breaks: true);
+            Dome(frontLight, basePoint, width, 0.3f, breaks: false);
             for (int i = 0; i < targets.Count; i++)
             {
                 Ring(backLight, Feet(FrontLayer, targets[i]), color, 300f, 0.45f, floor: true);
@@ -1051,8 +1064,8 @@ namespace Baryonyx.Combat.Presentation
                 middle,
                 new Burst
                 {
-                    Texture = Textures.Shard,
-                    Look = Look.Erode,
+                    Shape = BattleVfxShape.Shard,
+                    Bright = ErodeBright,
                     From = Color.white,
                     To = new Color(color.r, color.g, color.b, 0f),
                     Speed = new Vector2(60f, 260f),
@@ -1113,8 +1126,7 @@ namespace Baryonyx.Combat.Presentation
                     new Vector2(center.x, min.y + 10f),
                     new Burst
                     {
-                        Texture = Textures.Dust != null ? Textures.Dust : Textures.Smoke,
-                        Look = Look.Smoke,
+                        Shape = BattleVfxShape.Smoke,
                         From = new Color(0.5f, 0.48f, 0.44f, 0.7f),
                         To = new Color(0.38f, 0.37f, 0.36f, 0.7f),
                         Speed = new Vector2(240f, 520f),
@@ -1141,7 +1153,7 @@ namespace Baryonyx.Combat.Presentation
             {
                 for (int x = 0; x < pieces; x++)
                 {
-                    var particle = Take(frontLight, sprite.texture, Look.Plain);
+                    var particle = TakePicture(frontLight, sprite.texture);
                     var position = min + Vector2.Scale(cell, new Vector2(x + 0.5f, y + 0.5f));
                     var away =
                         (position - center).normalized + direction * 0.6f + Vector2.up * 0.5f;
@@ -1162,7 +1174,6 @@ namespace Baryonyx.Combat.Presentation
                     particle.Gravity = 1300f;
                     particle.Drag = 0.6f;
                     particle.Stretch = 0f;
-                    particle.Snap = false;
                     particle.Apply();
                 }
             }
@@ -1205,12 +1216,17 @@ namespace Baryonyx.Combat.Presentation
                 float radius = UnityEngine.Random.Range(140f, 220f);
                 var start = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
                 bool sparkle = i % 3 == 0;
-                var particle = Take(frontLight, sparkle ? Textures.Sparkle : null, Look.Glow);
+                var particle = Take(
+                    frontLight,
+                    sparkle ? BattleVfxShape.Sparkle : BattleVfxShape.Spark
+                );
                 float life = seconds * UnityEngine.Random.Range(0.6f, 1f);
                 particle.Position = start;
                 particle.Velocity = (center - start) / life;
                 particle.Life = life;
-                float size = sparkle ? UnityEngine.Random.Range(22f, 34f) : Dot * 2f;
+                float size = sparkle
+                    ? UnityEngine.Random.Range(22f, 34f)
+                    : UnityEngine.Random.Range(10f, 16f);
                 particle.Size = new Vector2(size, size);
                 particle.EndScale = 0.3f;
                 particle.From = new Color(color.r, color.g, color.b, 0.2f);
@@ -1219,7 +1235,6 @@ namespace Baryonyx.Combat.Presentation
                 particle.Gravity = 0f;
                 particle.Drag = 0f;
                 particle.Stretch = 0f;
-                particle.Snap = !sparkle;
                 particle.Apply();
             }
             yield return Wait(seconds);
@@ -1227,12 +1242,12 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Flies a missile picture (its head at <paramref name="head"/> in the picture) from one point
-        /// to another on an ease-in arc of <paramref name="lift"/> px, turning along its path,
+        /// Flies a missile (its head at <paramref name="head"/> in the board) from one point to
+        /// another on an ease-in arc of <paramref name="lift"/> px, turning along its path,
         /// leaving a trail of sparks.
         /// </summary>
         private IEnumerator Missile(
-            Texture texture,
+            BattleVfxShape shape,
             Vector2 from,
             Vector2 to,
             Vector2 size,
@@ -1242,7 +1257,7 @@ namespace Baryonyx.Combat.Presentation
             Color color
         )
         {
-            var shot = Spawn(frontLight, texture, from, size, Color.white, Look.Core, head);
+            var shot = Spawn(frontLight, shape, from, size, color, head);
             float trail = 0f;
             var last = from;
             for (float t = 0f; t < seconds; t += Time.deltaTime)
@@ -1257,6 +1272,7 @@ namespace Baryonyx.Combat.Presentation
                 shot.Holder.anchoredPosition = position;
                 float flicker = 1f + 0.06f * Mathf.Sin(t * 70f);
                 shot.Holder.localScale = new Vector3(flicker, flicker, 1f);
+                Show(shot, color, k, 0f, CoreBright);
                 trail += Time.deltaTime;
                 while (trail > 0.016f)
                 {
@@ -1266,18 +1282,16 @@ namespace Baryonyx.Combat.Presentation
                         position,
                         new Burst
                         {
-                            Texture = null,
-                            Look = Look.Glow,
+                            Shape = BattleVfxShape.Spark,
                             From = Color.white,
                             To = color,
                             Speed = new Vector2(40f, 160f),
                             Direction = Angle(-heading),
                             Spread = 70f,
                             Life = new Vector2(0.2f, 0.5f),
-                            Size = new Vector2(Dot, Dot * 2f),
+                            Size = new Vector2(8f, 14f),
                             Gravity = -120f,
                             Drag = 2f,
-                            Snap = true,
                             Area = 18f,
                         },
                         2
@@ -1305,11 +1319,10 @@ namespace Baryonyx.Combat.Presentation
         {
             var shot = Spawn(
                 layer,
-                Textures.SlashArc,
+                BattleVfxShape.SlashArc,
                 at,
                 new Vector2(420f, 420f) * scale,
-                Color.white,
-                Look.Core
+                Color.white
             );
             shot.Image.rectTransform.localScale = new Vector3(mirror ? -1f : 1f, 1f, 1f);
             float sweep = mirror ? -24f : 24f;
@@ -1325,9 +1338,7 @@ namespace Baryonyx.Combat.Presentation
                         0f,
                         angle + sweep * EaseOut(Mathf.Min(1f, k * 2f))
                     );
-                    var tint = Color.Lerp(Color.white, color, k);
-                    tint.a = Remaining(k, 0.25f);
-                    s.Image.color = tint;
+                    Show(s, Color.Lerp(Color.white, color, k), k, Eaten(k, 0.25f), CoreBright);
                 }
             );
         }
@@ -1338,11 +1349,10 @@ namespace Baryonyx.Combat.Presentation
             float size = weight == BattleHitWeight.Normal ? 420f : 520f;
             var shot = Spawn(
                 frontLight,
-                Textures.SlashCross,
+                BattleVfxShape.SlashCross,
                 at,
                 new Vector2(size, size),
-                Color.white,
-                Look.Core
+                Color.white
             );
             Animate(
                 shot,
@@ -1351,9 +1361,7 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float grow = 0.55f + 0.6f * EaseOut(Mathf.Min(1f, k * 3f));
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    var tint = Color.Lerp(Color.white, color, k);
-                    tint.a = Remaining(k, 0.2f);
-                    s.Image.color = tint;
+                    Show(s, Color.Lerp(Color.white, color, k), k, Eaten(k, 0.2f), CoreBright);
                 }
             );
         }
@@ -1366,7 +1374,7 @@ namespace Baryonyx.Combat.Presentation
         /// keeps rising after the fire is gone. Embers and dark debris are thrown out, dust rolls
         /// along the ground both ways, and a scorch mark is left on the floor. Most of the fire is
         /// behind the target and only a little is in front, so the target is seen in the blaze.
-        /// Nothing is a round picture: every part is many irregular pieces at different times.
+        /// Nothing is one round shape: every part is many irregular pieces at different times.
         /// </summary>
         private void Explosion(RectTransform target, Vector2 at, BattleHitWeight weight)
         {
@@ -1374,12 +1382,10 @@ namespace Baryonyx.Combat.Presentation
             float scale = weight == BattleHitWeight.Normal ? 1f : 1.2f;
             var feet = Feet(FrontLayer, target);
             at = Inside(at, 420f * scale);
-            var flames = Textures.Flames != null ? Textures.Flames : Textures.Smoke;
-            var smokes = Textures.Smokes != null ? Textures.Smokes : Textures.Smoke;
 
             // The floor: a scorch mark that stays a while, and dust rolling out both ways.
             FloorMark(
-                Textures.Scorch,
+                BattleVfxShape.Scorch,
                 feet,
                 Vector2.one * 300f * scale,
                 new Color(0.06f, 0.045f, 0.04f),
@@ -1393,9 +1399,7 @@ namespace Baryonyx.Combat.Presentation
                     feet + Vector2.up * 10f,
                     new Burst
                     {
-                        Texture = Textures.Dust != null ? Textures.Dust : smokes,
-                        Cells = Textures.Dust != null ? Vector2Int.one : Textures.SmokeCells,
-                        Look = Look.Smoke,
+                        Shape = BattleVfxShape.Smoke,
                         From = new Color(0.45f, 0.38f, 0.32f, 0.7f),
                         To = new Color(0.32f, 0.3f, 0.3f, 0.7f),
                         Speed = new Vector2(220f, 520f) * scale,
@@ -1421,9 +1425,7 @@ namespace Baryonyx.Combat.Presentation
                 at + Vector2.up * 20f,
                 new Burst
                 {
-                    Texture = smokes,
-                    Cells = Textures.SmokeCells,
-                    Look = Look.Smoke,
+                    Shape = BattleVfxShape.Smoke,
                     From = new Color(0.42f, 0.27f, 0.17f, 0.92f),
                     To = new Color(0.13f, 0.13f, 0.14f, 0.92f),
                     Speed = new Vector2(60f, 200f),
@@ -1446,9 +1448,8 @@ namespace Baryonyx.Combat.Presentation
             // The fireball: torn lumps thrown out fast, braked hard by the air, rolling upward.
             var fireball = new Burst
             {
-                Texture = flames,
-                Cells = Textures.FlameCells,
-                Look = Look.Erode,
+                Shape = BattleVfxShape.Flame,
+                Bright = ErodeBright,
                 Fire = true,
                 Speed = new Vector2(220f, 620f) * scale,
                 Spread = 360f,
@@ -1475,9 +1476,8 @@ namespace Baryonyx.Combat.Presentation
                 at + Vector2.up * 20f,
                 new Burst
                 {
-                    Texture = Textures.FlameTongue != null ? Textures.FlameTongue : flames,
-                    Cells = Textures.FlameTongue != null ? Vector2Int.one : Textures.FlameCells,
-                    Look = Look.Erode,
+                    Shape = BattleVfxShape.FlameTongue,
+                    Bright = ErodeBright,
                     Fire = true,
                     Speed = new Vector2(150f, 380f),
                     Direction = 90f,
@@ -1502,17 +1502,16 @@ namespace Baryonyx.Combat.Presentation
                 at,
                 new Burst
                 {
-                    Texture = null,
-                    Look = Look.Core,
+                    Shape = BattleVfxShape.Spark,
+                    Bright = CoreBright,
                     From = new Color(1f, 0.92f, 0.6f),
                     To = new Color(1f, 0.3f, 0.06f, 0f),
                     Speed = new Vector2(250f, 1000f),
                     Spread = 360f,
                     Life = new Vector2(0.4f, 1.2f),
-                    Size = new Vector2(Dot, Dot * 2f),
+                    Size = new Vector2(8f, 16f),
                     Gravity = -200f,
                     Drag = 3.5f,
-                    Snap = true,
                     Area = 40f,
                 },
                 Mathf.RoundToInt(36 * scale)
@@ -1523,18 +1522,17 @@ namespace Baryonyx.Combat.Presentation
                 at,
                 new Burst
                 {
-                    Texture = null,
-                    Look = Look.Plain,
+                    Shape = BattleVfxShape.Chip,
                     From = new Color(0.14f, 0.11f, 0.09f),
                     To = new Color(0.1f, 0.08f, 0.07f, 0f),
                     Speed = new Vector2(320f, 820f),
                     Direction = 90f,
                     Spread = 150f,
                     Life = new Vector2(0.5f, 0.9f),
-                    Size = new Vector2(Dot, Dot * 2f),
+                    Size = new Vector2(8f, 16f),
                     Gravity = 1600f,
                     Drag = 0.8f,
-                    Snap = true,
+                    Spin = 720f,
                     Area = 30f,
                 },
                 12
@@ -1560,7 +1558,7 @@ namespace Baryonyx.Combat.Presentation
             float width = Mathf.Max(160f, high.x - low.x);
 
             FloorMark(
-                Textures.Frost,
+                BattleVfxShape.Frost,
                 feet,
                 new Vector2(width * 1.5f, width * 0.5f) * scale,
                 new Color(0.85f, 0.95f, 1f),
@@ -1574,8 +1572,7 @@ namespace Baryonyx.Combat.Presentation
                 feet + Vector2.up * 20f,
                 new Burst
                 {
-                    Texture = Textures.FrostMist != null ? Textures.FrostMist : Textures.Smoke,
-                    Look = Look.Smoke,
+                    Shape = BattleVfxShape.Smoke,
                     From = new Color(0.86f, 0.95f, 1f, 0.75f),
                     To = new Color(0.7f, 0.85f, 1f, 0.75f),
                     Speed = new Vector2(40f, 180f),
@@ -1627,15 +1624,14 @@ namespace Baryonyx.Combat.Presentation
                 at,
                 new Burst
                 {
-                    Texture = Textures.IceShards != null ? Textures.IceShards : Textures.Shard,
-                    Look = Look.Smoke,
+                    Shape = BattleVfxShape.Chip,
                     From = Color.white,
                     To = new Color(0.8f, 0.92f, 1f),
                     Speed = new Vector2(160f, 560f),
                     Direction = 90f,
                     Spread = 200f,
                     Life = new Vector2(0.55f, 0.95f),
-                    Size = new Vector2(50f, 110f),
+                    Size = new Vector2(16f, 40f),
                     Gravity = 1400f,
                     Drag = 1f,
                     Spin = 360f,
@@ -1643,7 +1639,7 @@ namespace Baryonyx.Combat.Presentation
                     Delay = new Vector2(0.48f, 0.6f),
                     Area = 70f * scale,
                 },
-                Mathf.RoundToInt(12 * scale)
+                Mathf.RoundToInt(22 * scale)
             );
             Pool(feet, color, 460f * scale, 0.5f, 0.8f);
             Illuminate(at, color, 0.8f, 480f * scale, 0.5f, 0.6f);
@@ -1663,25 +1659,15 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var tint = front ? Color.white : new Color(0.8f, 0.9f, 1f);
-            bool real = Textures.IceSpikes != null;
+            // Each spike takes its own width, tip and facets from its seed.
             var shot = Spawn(
                 layer,
-                real ? Textures.IceSpikes : Textures.Shard,
+                BattleVfxShape.IceSpike,
                 foot,
-                real ? new Vector2(height, height) : new Vector2(height * 0.36f, height),
+                new Vector2(height * 0.5f, height),
                 new Color(tint.r, tint.g, tint.b, 0f),
-                real ? Look.Smoke : Look.Erode,
                 new Vector2(0.5f, 0.03f)
             );
-            if (real)
-            {
-                // One of the spikes in the picture, at random.
-                int columns = Mathf.Max(1, Textures.IceSpikeCells.x);
-                int cell = UnityEngine.Random.Range(0, columns);
-                shot.Image.uvRect = new Rect((float)cell / columns, 0f, 1f / columns, 1f);
-                if (UnityEngine.Random.value < 0.5f)
-                    shot.Image.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
-            }
             shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, lean);
             const float life = 1f;
             Animate(
@@ -1692,12 +1678,12 @@ namespace Baryonyx.Combat.Presentation
                     float t = k * (life + delay) - delay;
                     if (t < 0f)
                     {
-                        s.Image.color = new Color(tint.r, tint.g, tint.b, 0f);
+                        Show(s, new Color(tint.r, tint.g, tint.b, 0f), 0f, 0f);
                         return;
                     }
                     float grow = EaseOut(Mathf.Min(1f, t / 0.07f));
                     s.Holder.localScale = new Vector3(0.7f + 0.3f * grow, grow, 1f);
-                    s.Image.color = new Color(tint.r, tint.g, tint.b, Remaining(t / life, 0.5f));
+                    Show(s, tint, t / life, Eaten(t / life, 0.5f));
                 }
             );
         }
@@ -1705,11 +1691,11 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// A mark left on the floor at <paramref name="feet"/> (a scorch, frost): it comes in fast,
         /// stays for <paramref name="seconds"/> and wears away from its faint edges. A
-        /// <paramref name="flat"/> picture is laid down onto the floor; one already drawn at a low
-        /// angle is used as it is.
+        /// <paramref name="flat"/> shape is laid down onto the floor; one already worked out at a
+        /// low angle is used as it is.
         /// </summary>
         private void FloorMark(
-            Texture texture,
+            BattleVfxShape shape,
             Vector2 feet,
             Vector2 size,
             Color color,
@@ -1718,15 +1704,14 @@ namespace Baryonyx.Combat.Presentation
             bool flat
         )
         {
-            if (backSmoke == null || texture == null)
+            if (backSmoke == null)
                 return;
             var mark = Spawn(
                 backSmoke,
-                texture,
+                shape,
                 feet,
                 size,
-                new Color(color.r, color.g, color.b, 0f),
-                Look.Smoke
+                new Color(color.r, color.g, color.b, 0f)
             );
             if (flat)
             {
@@ -1742,62 +1727,56 @@ namespace Baryonyx.Combat.Presentation
                 seconds,
                 (s, k) =>
                 {
-                    float left = k < 0.06f ? k / 0.06f : Remaining((k - 0.06f) / 0.94f, 0.5f);
-                    s.Image.color = new Color(color.r, color.g, color.b, strength * left);
+                    float into = k < 0.06f ? k / 0.06f : 1f;
+                    float eaten = k < 0.06f ? 0f : Eaten((k - 0.06f) / 0.94f, 0.5f);
+                    Show(s, new Color(color.r, color.g, color.b, strength * into), k, eaten);
                 }
             );
         }
 
         /// <summary>
         /// A lightning bolt from above the screen down to <paramref name="feet"/>. It strikes
-        /// three times in new shapes (turned over, narrowed or widened, nudged sideways), with a
-        /// thinner bolt beside it on the second, and is eaten away at the end.
+        /// three times in new shapes (a new seed, narrowed or widened, nudged sideways), with a
+        /// thinner bolt beside it on the second, and breaks up at the end.
         /// </summary>
         private void Bolt(Vector2 feet)
         {
-            // The bolt's foot is at 9% of the picture's height.
+            // The bolt's foot is at 9% of its board's height.
             float top = FrontLayer.rect.yMax + 60f;
             float height = Mathf.Max(600f, (top - feet.y) / 0.88f);
             var size = new Vector2(height * 0.62f, height);
             var pivot = new Vector2(0.5f, 0.09f);
-            var main = Spawn(
-                frontLight,
-                Textures.Lightning,
-                feet,
-                size,
-                Color.white,
-                Look.Core,
-                pivot
-            );
+            var main = Spawn(frontLight, BattleVfxShape.Lightning, feet, size, Color.white, pivot);
             var widths = new[] { 1f, 0.8f, 1.2f };
             var shifts = new[] { 0f, -22f, 18f };
+            float seed = main.Seed;
             Animate(
                 main,
                 0.36f,
                 (s, k) =>
                 {
                     int strike = Mathf.Min(2, Mathf.FloorToInt(k * 3.2f));
-                    float flip = strike == 1 ? -1f : 1f;
-                    s.Image.rectTransform.localScale = new Vector3(flip * widths[strike], 1f, 1f);
+                    // Each strike is a new bolt: a new seed draws a new path.
+                    s.Seed = Mathf.Repeat(seed + strike * 0.318f, 1f);
+                    s.Image.rectTransform.localScale = new Vector3(widths[strike], 1f, 1f);
                     s.Image.rectTransform.anchoredPosition = new Vector2(shifts[strike], 0f);
                     s.Image.rectTransform.localEulerAngles = new Vector3(
                         0f,
                         0f,
                         strike == 2 ? -3f : 0f
                     );
-                    s.Image.color = new Color(1f, 1f, 1f, Remaining(k, 0.6f));
+                    Show(s, Color.white, k, Eaten(k, 0.6f), CoreBright);
                 }
             );
             var branch = Spawn(
                 frontLight,
-                Textures.Lightning,
+                BattleVfxShape.Lightning,
                 feet + new Vector2(40f, 0f),
                 size * 0.75f,
                 new Color(0.8f, 0.7f, 1f, 0f),
-                Look.Erode,
                 pivot
             );
-            branch.Image.rectTransform.localScale = new Vector3(-0.7f, 1f, 1f);
+            branch.Image.rectTransform.localScale = new Vector3(0.7f, 1f, 1f);
             branch.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, 7f);
             Animate(
                 branch,
@@ -1805,8 +1784,9 @@ namespace Baryonyx.Combat.Presentation
                 (s, k) =>
                 {
                     // Only from the second strike, then gone with the first.
-                    float left = k < 0.3f ? 0f : Remaining((k - 0.3f) / 0.7f, 0.3f);
-                    s.Image.color = new Color(0.8f, 0.7f, 1f, left);
+                    var tint = new Color(0.8f, 0.7f, 1f, k < 0.3f ? 0f : 1f);
+                    float eaten = k < 0.3f ? 0f : Eaten((k - 0.3f) / 0.7f, 0.3f);
+                    Show(s, tint, k, eaten, ErodeBright);
                 }
             );
         }
@@ -1826,8 +1806,8 @@ namespace Baryonyx.Combat.Presentation
                     at,
                     new Burst
                     {
-                        Texture = Textures.Streak,
-                        Look = Look.Core,
+                        Shape = BattleVfxShape.Streak,
+                        Bright = CoreBright,
                         From = Color.white,
                         To = new Color(color.r, color.g, color.b, 0f),
                         Speed = new Vector2(300f, 700f),
@@ -1849,13 +1829,13 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         private void Pillar(Vector2 feet)
         {
+            var color = ColorOf(BattleSkillVfxKind.Heal);
             var shot = Spawn(
                 backLight,
-                Textures.HealPillar,
+                BattleVfxShape.Pillar,
                 feet,
                 new Vector2(400f, 400f),
-                Color.white,
-                Look.Erode,
+                color,
                 new Vector2(0.5f, 0.1f)
             );
             Animate(
@@ -1865,27 +1845,30 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float rise = EaseOut(Mathf.Min(1f, k * 4f));
                     s.Holder.localScale = new Vector3(0.7f + 0.3f * rise, 0.2f + 1.05f * rise, 1f);
-                    s.Image.color = new Color(1f, 1f, 1f, Remaining(k, 0.55f));
+                    Show(s, color, k, Eaten(k, 0.55f), ErodeBright);
                 }
             );
         }
 
-        /// <summary>The guard's dome over the party: it springs up, shimmers and is eaten away.</summary>
+        /// <summary>
+        /// The guard's dome over the party: it springs up and shimmers, then either drops its
+        /// hexagons (<paramref name="breaks"/>) or fades evenly (the faint rim in front).
+        /// </summary>
         private void Dome(
             RectTransform layer,
             Vector2 basePoint,
             float width,
             float strength,
-            Look look
+            bool breaks
         )
         {
+            var color = Color.Lerp(ColorOf(BattleSkillVfxKind.Guard), Color.white, 0.25f);
             var shot = Spawn(
                 layer,
-                Textures.ShieldDome,
+                BattleVfxShape.Dome,
                 basePoint,
                 new Vector2(width, width),
-                Color.white,
-                look,
+                color,
                 new Vector2(0.5f, 0.16f)
             );
             Animate(
@@ -1896,13 +1879,12 @@ namespace Baryonyx.Combat.Presentation
                     float grow = BackOut(Mathf.Min(1f, k * 4f));
                     s.Holder.localScale = new Vector3(0.6f + 0.4f * grow, 0.3f + 0.7f * grow, 1f);
                     float shimmer = 0.88f + 0.12f * Mathf.Sin(k * 40f);
-                    float alpha =
-                        look == Look.Glow
-                            ? strength
-                                * shimmer
-                                * (k < 0.7f ? Mathf.Min(1f, k * 8f) : 1f - (k - 0.7f) / 0.3f)
-                            : Remaining(k, 0.65f) * Mathf.Min(1f, k * 8f);
-                    s.Image.color = new Color(1f, 1f, 1f, alpha);
+                    float come = Mathf.Min(1f, k * 8f);
+                    float alpha = breaks
+                        ? come
+                        : strength * shimmer * (k < 0.7f ? come : 1f - (k - 0.7f) / 0.3f);
+                    var tint = new Color(color.r, color.g, color.b, alpha);
+                    Show(s, tint, k, breaks ? Eaten(k, 0.65f) : 0f, ErodeBright);
                 }
             );
         }
@@ -1914,11 +1896,10 @@ namespace Baryonyx.Combat.Presentation
                 return;
             var shot = Spawn(
                 backLight,
-                Textures.MagicCircle,
+                BattleVfxShape.MagicCircle,
                 feet,
                 new Vector2(330f, 330f),
-                color,
-                Look.Erode
+                color
             );
             Animate(
                 shot,
@@ -1932,9 +1913,8 @@ namespace Baryonyx.Combat.Presentation
                         (0.4f + 0.6f * grow) * FloorTilt,
                         1f
                     );
-                    var tint = color * 1.2f;
-                    tint.a = Remaining(k, 0.75f);
-                    s.Image.color = tint;
+                    // Drawn in around the circle at first, eaten away along it at the end.
+                    Show(s, color, k, Eaten(k, 0.75f), ErodeBright * 1.2f);
                 }
             );
         }
@@ -1951,21 +1931,15 @@ namespace Baryonyx.Combat.Presentation
         {
             if (layer == null)
                 return;
-            var shot = Spawn(
-                layer,
-                Textures.Shockwave,
-                at,
-                new Vector2(size, size),
-                color,
-                Look.Glow
-            );
+            var shot = Spawn(layer, BattleVfxShape.Ring, at, new Vector2(size, size), color);
             Animate(
                 shot,
                 seconds,
                 (s, k) =>
                 {
                     s.Holder.localScale = RingScale(k, floor);
-                    s.Image.color = new Color(color.r, color.g, color.b, 1f - k);
+                    // The ring thins, breaks into arcs and dims on its own as it is used up.
+                    Show(s, color, k, k);
                 }
             );
         }
@@ -1983,14 +1957,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>A burst of light: a star of rays that flares and is eaten away to its centre.</summary>
         private void Star(Vector2 at, Color color, float size, float seconds)
         {
-            var shot = Spawn(
-                frontLight,
-                Textures.ImpactStar,
-                at,
-                new Vector2(size, size),
-                color,
-                Look.Core
-            );
+            var shot = Spawn(frontLight, BattleVfxShape.Star, at, new Vector2(size, size), color);
             shot.Image.rectTransform.localEulerAngles = new Vector3(
                 0f,
                 0f,
@@ -2003,9 +1970,7 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float grow = k < 0.2f ? 0.4f + 0.8f * (k / 0.2f) : 1.2f - 0.4f * (k - 0.2f);
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    var tint = Color.Lerp(Color.white, color, k);
-                    tint.a = Remaining(k, 0.1f);
-                    s.Image.color = tint;
+                    Show(s, Color.Lerp(Color.white, color, k), k, Eaten(k, 0.1f), CoreBright);
                 }
             );
         }
@@ -2022,7 +1987,7 @@ namespace Baryonyx.Combat.Presentation
         {
             if (layer == null)
                 return;
-            var shot = Spawn(layer, Textures.Glow, at, new Vector2(size, size), color, Look.Glow);
+            var shot = Spawn(layer, BattleVfxShape.Glow, at, new Vector2(size, size), color);
             Animate(
                 shot,
                 seconds,
@@ -2030,12 +1995,8 @@ namespace Baryonyx.Combat.Presentation
                 {
                     float grow = 0.5f + 0.7f * EaseOut(k);
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    s.Image.color = new Color(
-                        color.r,
-                        color.g,
-                        color.b,
-                        peak * Mathf.Sin(k * Mathf.PI)
-                    );
+                    var tint = new Color(color.r, color.g, color.b, peak * Mathf.Sin(k * Mathf.PI));
+                    Show(s, tint, k, 0f);
                 }
             );
         }
@@ -2099,11 +2060,10 @@ namespace Baryonyx.Combat.Presentation
         {
             var shot = Spawn(
                 frontLight,
-                Textures.Glow,
+                BattleVfxShape.Glow,
                 at,
                 new Vector2(size, size),
-                Color.white,
-                Look.Core
+                Color.white
             );
             Animate(
                 shot,
@@ -2114,7 +2074,7 @@ namespace Baryonyx.Combat.Presentation
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
                     var tint = Color.Lerp(new Color(1f, 0.97f, 0.9f), color, k);
                     tint.a = Remaining(k, 0.1f);
-                    s.Image.color = tint;
+                    Show(s, tint, k, 0f, CoreBright);
                 }
             );
         }
@@ -2127,8 +2087,8 @@ namespace Baryonyx.Combat.Presentation
                 at,
                 new Burst
                 {
-                    Texture = Textures.Streak,
-                    Look = Look.Core,
+                    Shape = BattleVfxShape.Streak,
+                    Bright = CoreBright,
                     From = Color.white,
                     To = new Color(color.r, color.g, color.b, 0f),
                     Speed = new Vector2(500f, 1300f) * force,
@@ -2164,9 +2124,7 @@ namespace Baryonyx.Combat.Presentation
                 at,
                 new Burst
                 {
-                    Texture = Textures.Smokes != null ? Textures.Smokes : Textures.Smoke,
-                    Cells = Textures.Smokes != null ? Textures.SmokeCells : Vector2Int.one,
-                    Look = Look.Smoke,
+                    Shape = BattleVfxShape.Smoke,
                     From = color,
                     To = color,
                     Speed = new Vector2(20f, 80f),
@@ -2255,50 +2213,56 @@ namespace Baryonyx.Combat.Presentation
 
         // --- Shots and particles ---------------------------------------------------------------
 
-        /// <summary>How a picture is blended, and so which material draws it.</summary>
-        private enum Look
+        // How much brighter than white the light of a shape is drawn: eroding light a little, and
+        // the cores (blades, bolts, fireballs, sparks) enough that the camera's Bloom spreads them.
+        private const float ErodeBright = 1.2f;
+        private const float CoreBright = 1.8f;
+
+        /// <summary>The material a shape is worked out with, or null when it is missing.</summary>
+        public Material MaterialOf(BattleVfxShape shape)
         {
-            /// <summary>Additive light that fades evenly (glows, rings, pools).</summary>
-            Glow,
-
-            /// <summary>Additive light eaten away from its faint parts.</summary>
-            Erode,
-
-            /// <summary>Like <see cref="Erode"/>, brighter than white so Bloom spreads it.</summary>
-            Core,
-
-            /// <summary>Smoke and mist, blended normally and eaten away.</summary>
-            Smoke,
-
-            /// <summary>The default UI material (pieces of a beaten enemy).</summary>
-            Plain,
+            int index = (int)shape;
+            return Shapes != null && index < Shapes.Length ? Shapes[index] : null;
         }
 
-        private Material MaterialOf(Look look) =>
-            look switch
-            {
-                Look.Glow => GlowMaterial,
-                Look.Erode => ErodeMaterial,
-                Look.Core => CoreMaterial,
-                Look.Smoke => SmokeMaterial,
-                _ => null,
-            };
+        /// <summary>
+        /// How much of a shape is eaten away at <paramref name="k"/> (0 to 1 of its life): none
+        /// until <paramref name="hold"/>, then all of it by the end.
+        /// </summary>
+        public static float Eaten(float k, float hold) => 1f - Remaining(k, hold);
 
-        /// <summary>One animated picture: a holder that moves and scales, and the image in it that turns.</summary>
+        /// <summary>One animated shape: a holder that moves and scales, and the board in it that turns.</summary>
         private sealed class Shot
         {
             public RectTransform Holder;
-            public RawImage Image;
+            public BattleVfxImage Image;
             public bool Live;
             public float Age;
             public float Duration;
+            public float Seed;
             public Action<Shot, float> Animate;
+        }
+
+        /// <summary>
+        /// Shows a shot at a moment: <paramref name="tint"/> colours it (its alpha thins the whole),
+        /// <paramref name="progress"/> moves its shape and <paramref name="eaten"/> wears it away.
+        /// </summary>
+        private static void Show(
+            Shot shot,
+            Color tint,
+            float progress,
+            float eaten,
+            float bright = 1f
+        )
+        {
+            shot.Image.color = tint;
+            shot.Image.SetShape(shot.Seed, progress, eaten, bright);
         }
 
         private sealed class Particle
         {
             public RectTransform Rect;
-            public RawImage Image;
+            public BattleVfxImage Image;
             public bool Live;
             public Vector2 Position;
             public Vector2 Velocity;
@@ -2314,7 +2278,6 @@ namespace Baryonyx.Combat.Presentation
             public float Gravity;
             public float Drag;
             public float Stretch;
-            public bool Snap;
 
             /// <summary>Seconds before it shows (it waits, unseen, where it starts).</summary>
             public float Delay;
@@ -2324,9 +2287,15 @@ namespace Baryonyx.Combat.Presentation
 
             /// <summary>
             /// When at least 0, it is eaten away after this part of its life instead of fading in
-            /// and out (for the eroding materials).
+            /// and out.
             /// </summary>
             public float Hold = -1f;
+
+            /// <summary>The seed of its shape, so no two look alike.</summary>
+            public float Seed;
+
+            /// <summary>How much brighter than white its light is drawn.</summary>
+            public float Bright = 1f;
 
             public void Apply()
             {
@@ -2344,6 +2313,7 @@ namespace Baryonyx.Combat.Presentation
                     // Waiting to show: nothing drawn, nothing moved.
                     if (Image.color.a != 0f)
                         Image.color = Color.clear;
+                    Image.SetShape(Seed, 0f, 0f, Bright);
                     return;
                 }
                 if (Age >= Life)
@@ -2357,7 +2327,7 @@ namespace Baryonyx.Combat.Presentation
                 Position += Velocity * dt;
                 Angle += Spin * dt;
                 float k = Age / Life;
-                Rect.anchoredPosition = Snap ? ToDots(Position) : Position;
+                Rect.anchoredPosition = Position;
                 // Swells fast at first and slows, as a billow of flame or smoke does.
                 float scale = Mathf.Lerp(StartScale, EndScale, EaseOut(k));
                 var size = Size * scale;
@@ -2381,13 +2351,19 @@ namespace Baryonyx.Combat.Presentation
                     color = Color.Lerp(Color.white, FireColor(k), 0.35f + 0.65f * k);
                 else
                     color = Color.Lerp(From, To, k);
+                float eaten = 0f;
                 if (Hold >= 0f)
+                {
                     // A flame's strength is all in its heat colour; smoke keeps its own density.
-                    color.a = (Fire ? 1f : From.a) * Remaining(k, Hold);
+                    // The shape itself is worn away.
+                    color.a = Fire ? 1f : From.a;
+                    eaten = Eaten(k, Hold);
+                }
                 else
                     // Comes in over the first tenth of its life, so a burst never pops in hard.
                     color.a *= Mathf.Min(1f, k * 10f + 0.4f);
                 Image.color = color;
+                Image.SetShape(Seed, k, eaten, Bright);
             }
         }
 
@@ -2416,8 +2392,10 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>How a spray of particles is thrown.</summary>
         private struct Burst
         {
-            public Texture Texture;
-            public Look Look;
+            public BattleVfxShape Shape;
+
+            /// <summary>How much brighter than white its light is drawn (0 is taken as 1).</summary>
+            public float Bright;
             public Color From;
             public Color To;
             public Vector2 Speed;
@@ -2431,7 +2409,6 @@ namespace Baryonyx.Combat.Presentation
             public float Drag;
             public float Stretch;
             public float Spin;
-            public bool Snap;
             public float Area;
 
             /// <summary>Each particle waits a random time in this range (s) before it shows.</summary>
@@ -2443,9 +2420,6 @@ namespace Baryonyx.Combat.Presentation
 
             /// <summary>0 for the default fade; otherwise eaten away after this part of its life.</summary>
             public float Hold;
-
-            /// <summary>The picture holds this many columns and rows of shapes; each particle takes one at random.</summary>
-            public Vector2Int Cells;
         }
 
         private void Spray(RectTransform layer, Vector2 at, Burst spray, int count)
@@ -2454,7 +2428,8 @@ namespace Baryonyx.Combat.Presentation
                 return;
             for (int i = 0; i < count; i++)
             {
-                var particle = Take(layer, spray.Texture, spray.Look);
+                var particle = Take(layer, spray.Shape);
+                particle.Bright = spray.Bright > 0f ? spray.Bright : 1f;
                 float angle =
                     (spray.Direction + UnityEngine.Random.Range(-0.5f, 0.5f) * spray.Spread)
                     * Mathf.Deg2Rad;
@@ -2464,8 +2439,6 @@ namespace Baryonyx.Combat.Presentation
                     direction * UnityEngine.Random.Range(spray.Speed.x, spray.Speed.y);
                 particle.Life = UnityEngine.Random.Range(spray.Life.x, spray.Life.y);
                 float size = UnityEngine.Random.Range(spray.Size.x, spray.Size.y);
-                if (spray.Snap)
-                    size = Mathf.Max(Dot, Mathf.Round(size / Dot) * Dot);
                 particle.Size = new Vector2(size, size * (spray.Aspect > 0f ? spray.Aspect : 1f));
                 particle.StartScale = spray.Grow > 0f ? spray.Grow : 1f;
                 particle.EndScale = spray.Shrink > 0f ? spray.Shrink : 0.4f;
@@ -2474,30 +2447,36 @@ namespace Baryonyx.Combat.Presentation
                 particle.Delay = UnityEngine.Random.Range(spray.Delay.x, spray.Delay.y);
                 particle.Fire = spray.Fire;
                 particle.Hold = spray.Hold > 0f ? spray.Hold : -1f;
-                if (spray.Cells.x > 1 || spray.Cells.y > 1)
-                {
-                    int columns = Mathf.Max(1, spray.Cells.x);
-                    int rows = Mathf.Max(1, spray.Cells.y);
-                    int cell = UnityEngine.Random.Range(0, columns * rows);
-                    particle.Image.uvRect = new Rect(
-                        (float)(cell % columns) / columns,
-                        (float)(cell / columns) / rows,
-                        1f / columns,
-                        1f / rows
-                    );
-                }
                 particle.Angle = UnityEngine.Random.Range(0f, 360f);
                 particle.Spin = UnityEngine.Random.Range(-spray.Spin, spray.Spin);
                 particle.Gravity = spray.Gravity;
                 particle.Drag = spray.Drag;
                 particle.Stretch = spray.Stretch;
-                particle.Snap = spray.Snap;
                 particle.Apply();
             }
         }
 
+        /// <summary>A free particle on the layer drawing <paramref name="shape"/>.</summary>
+        private Particle Take(RectTransform layer, BattleVfxShape shape)
+        {
+            var found = Free(layer);
+            found.Image.texture = null;
+            found.Image.material = MaterialOf(shape);
+            found.Seed = UnityEngine.Random.value;
+            return found;
+        }
+
+        /// <summary>A free particle on the layer showing a piece of a picture (a beaten enemy's).</summary>
+        private Particle TakePicture(RectTransform layer, Texture texture)
+        {
+            var found = Free(layer);
+            found.Image.texture = texture;
+            found.Image.material = null;
+            return found;
+        }
+
         /// <summary>A free particle on the layer, made when none is left; the oldest is reused past the cap.</summary>
-        private Particle Take(RectTransform layer, Texture texture, Look look)
+        private Particle Free(RectTransform layer)
         {
             Particle found = null;
             foreach (var particle in particles)
@@ -2530,14 +2509,13 @@ namespace Baryonyx.Combat.Presentation
                 ).GetComponent<RectTransform>();
                 rect.SetParent(layer, false);
                 rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
-                var image = rect.gameObject.AddComponent<RawImage>();
+                var image = rect.gameObject.AddComponent<BattleVfxImage>();
                 image.raycastTarget = false;
                 found = new Particle { Rect = rect, Image = image };
                 particles.Add(found);
             }
-            found.Image.texture = texture;
-            found.Image.material = MaterialOf(look);
             found.Image.uvRect = new Rect(0f, 0f, 1f, 1f);
+            found.Image.SetShape(0f, 0f, 0f);
             found.Rect.SetAsLastSibling();
             // A reused particle forgets how it was last thrown.
             found.StartScale = 1f;
@@ -2545,6 +2523,8 @@ namespace Baryonyx.Combat.Presentation
             found.Fire = false;
             found.Hold = -1f;
             found.Stretch = 0f;
+            found.Seed = 0f;
+            found.Bright = 1f;
             return found;
         }
 
@@ -2558,16 +2538,15 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Puts a picture on a layer at <paramref name="at"/>, its <paramref name="pivot"/> there.
-        /// It stays until <see cref="Animate"/> ends it (or the caller does).
+        /// Puts a shape on a layer at <paramref name="at"/>, its <paramref name="pivot"/> there, with
+        /// a seed of its own. It stays until <see cref="Animate"/> ends it (or the caller does).
         /// </summary>
         private Shot Spawn(
             RectTransform layer,
-            Texture texture,
+            BattleVfxShape shape,
             Vector2 at,
             Vector2 size,
             Color color,
-            Look look,
             Vector2? pivot = null
         )
         {
@@ -2589,7 +2568,10 @@ namespace Baryonyx.Combat.Presentation
                 holder.SetParent(layer, false);
                 holder.anchorMin = holder.anchorMax = holder.pivot = Vector2.one * 0.5f;
                 holder.sizeDelta = Vector2.zero;
-                var image = new GameObject("Image", typeof(RectTransform)).AddComponent<RawImage>();
+                var image = new GameObject(
+                    "Image",
+                    typeof(RectTransform)
+                ).AddComponent<BattleVfxImage>();
                 image.rectTransform.SetParent(holder, false);
                 image.raycastTarget = false;
                 shot = new Shot { Holder = holder, Image = image };
@@ -2612,11 +2594,11 @@ namespace Baryonyx.Combat.Presentation
             rect.sizeDelta = size;
             rect.localScale = Vector3.one;
             rect.localEulerAngles = Vector3.zero;
-            shot.Image.texture = texture;
-            shot.Image.material = MaterialOf(look);
-            shot.Image.color = color;
-            // A reused picture may still show part of its last texture (an ice spike's cell).
+            shot.Image.texture = null;
+            shot.Image.material = MaterialOf(shape);
             shot.Image.uvRect = new Rect(0f, 0f, 1f, 1f);
+            shot.Seed = UnityEngine.Random.value;
+            Show(shot, color, 0f, 0f);
             return shot;
         }
 
@@ -2710,7 +2692,7 @@ namespace Baryonyx.Combat.Presentation
             };
 
         /// <summary>
-        /// How much of an eroding picture is left at <paramref name="k"/> (0 to 1 of its life): all
+        /// How much of an eroding shape is left at <paramref name="k"/> (0 to 1 of its life): all
         /// of it until <paramref name="hold"/>, then eaten away to nothing by the end.
         /// </summary>
         public static float Remaining(float k, float hold)

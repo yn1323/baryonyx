@@ -1,7 +1,11 @@
+using System;
+using System.Linq;
+using Baryonyx.Combat.Editor;
 using Baryonyx.Combat.Presentation;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Rendering;
 
 namespace Baryonyx.Tests.EditMode
 {
@@ -151,44 +155,47 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void TheComparedRingsSpreadAndFadeTogether()
+        public void AShapeIsWholeUntilItsHoldThenEatenAwayByTheEnd()
         {
-            var root = new GameObject("Comparison");
-            try
-            {
-                var picture = new GameObject(
-                    "Picture",
-                    typeof(RectTransform)
-                ).AddComponent<RawImage>();
-                var shader = new GameObject(
-                    "Shader",
-                    typeof(RectTransform)
-                ).AddComponent<RawImage>();
-                picture.transform.SetParent(root.transform);
-                shader.transform.SetParent(root.transform);
-                var comparison = root.AddComponent<BattleRingComparison>();
-                comparison.Rings = new[]
-                {
-                    new BattleRingComparison.Ring { Image = picture, Floor = false },
-                    new BattleRingComparison.Ring { Image = shader, Floor = true },
-                };
+            Assert.That(BattleSkillVfx.Eaten(0.2f, 0.4f), Is.EqualTo(0f));
+            float mid = BattleSkillVfx.Eaten(0.7f, 0.4f);
+            Assert.That(mid, Is.GreaterThan(0f).And.LessThan(1f));
+            Assert.That(BattleSkillVfx.Eaten(1f, 0.4f), Is.GreaterThan(0.99f));
+        }
 
-                comparison.Show(0.4f);
+        [Test]
+        public void EveryShapeIsWorkedOutByItsOwnMaterialWithNoPicture()
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                BattleSkillVfxAssets.ShapeShaderPath
+            );
+            Assert.That(shader, Is.Not.Null);
+            Assert.That(ShaderUtil.ShaderHasError(shader), Is.False, "The shape shader compiles.");
 
-                Assert.That(
-                    picture.rectTransform.localScale,
-                    Is.EqualTo(BattleSkillVfx.RingScale(0.4f, false))
-                );
-                Assert.That(
-                    shader.rectTransform.localScale,
-                    Is.EqualTo(BattleSkillVfx.RingScale(0.4f, true))
-                );
-                Assert.That(picture.color.a, Is.EqualTo(0.6f).Within(0.001f));
-                Assert.That(shader.color.a, Is.EqualTo(picture.color.a));
-            }
-            finally
+            var shapes = (BattleVfxShape[])Enum.GetValues(typeof(BattleVfxShape));
+            foreach (var shape in shapes)
             {
-                Object.DestroyImmediate(root);
+                var material = AssetDatabase.LoadAssetAtPath<Material>(
+                    $"{BattleSkillVfxAssets.MaterialFolder}/VfxShape{shape}.mat"
+                );
+                Assert.That(material, Is.Not.Null, shape.ToString());
+                Assert.That(material.shader, Is.SameAs(shader), shape.ToString());
+                Assert.That(
+                    shapes.Where(other =>
+                        material.IsKeywordEnabled(BattleSkillVfxAssets.KeywordOf(other))
+                    ),
+                    Is.EqualTo(new[] { shape }),
+                    "Only its own shape is switched on."
+                );
+                var blend = BattleSkillVfxAssets.Solid(shape)
+                    ? BlendMode.OneMinusSrcAlpha
+                    : BlendMode.One;
+                Assert.That(
+                    material.GetFloat("_DstBlend"),
+                    Is.EqualTo((float)blend),
+                    shape.ToString()
+                );
+                Assert.That(material.GetTexture("_MainTex"), Is.Null, "No picture.");
             }
         }
     }

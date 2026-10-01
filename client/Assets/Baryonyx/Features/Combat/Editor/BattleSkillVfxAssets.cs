@@ -1,11 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
-using Baryonyx.Editor.Art;
 using Baryonyx.UI;
-using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -18,29 +15,24 @@ namespace Baryonyx.Combat.Editor
 {
     /// <summary>
     /// The skill effects' parts on a battle screen: the darkening veil and the effect layers on
-    /// the stage, the full-screen flash and the cut-in over it, and their pictures. Also makes
-    /// the showcase's preview (BattleSkillVfxPreview.prefab), which plays every skill in turn.
-    /// The pictures are made outside Unity (doc/features/screens.md, the skill effects).
+    /// the stage, the full-screen flash and the cut-in over it, and the materials their shapes are
+    /// worked out with (no pictures: doc/art/direction.md, how effects are drawn). Also makes the
+    /// showcase's preview (BattleSkillVfxPreview.prefab), which plays every skill in turn.
     /// </summary>
     public static class BattleSkillVfxAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Combat/Vfx";
-        public const string TextureFolder = Folder + "/Textures";
         public const string PreviewPrefabPath = Folder + "/BattleSkillVfxPreview.prefab";
         public const string MaterialFolder = Folder + "/Materials";
+
+        /// <summary>A character's picture drawn as additive light (the light on the actors, the flash).</summary>
         public const string ShaderPath = Folder + "/Shaders/BattleVfx.shader";
 
-        /// <summary>The shock ring worked out by its shader with no picture, on trial against VfxShockwave.png.</summary>
-        public const string RingShaderPath = Folder + "/Shaders/BattleVfxRing.shader";
-
-        /// <summary>The showcase's side-by-side of the picture's ring and the shader's ring.</summary>
-        public const string RingComparisonPrefabPath = Folder + "/BattleRingComparison.prefab";
+        /// <summary>Every effect's shape, worked out with no picture.</summary>
+        public const string ShapeShaderPath = Folder + "/Shaders/BattleVfxShape.shader";
 
         /// <summary>The battlefield's post-processing: Bloom on the effects' light, and a vignette.</summary>
         public const string PostProcessProfilePath = Folder + "/BattlePostProcess.asset";
-
-        // The streaks of the cut-in scroll, so their picture repeats.
-        private const string CutInStreaksName = "VfxCutInStreaks";
 
         // The cut-in's band across the middle of the screen, a little above the centre.
         private const float CutInHeight = 280f;
@@ -49,185 +41,81 @@ namespace Baryonyx.Combat.Editor
         // The user is drawn at 8 px per dot in the cut-in, its head and chest inside the band.
         private const float CutInDot = 8f;
 
-        /// <summary>Imports the effect pictures (smooth light, not pixel art) and loads them.</summary>
-        public static BattleSkillVfxTextures EnsureTextures()
-        {
-            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { TextureFolder }))
-                Import(AssetDatabase.GUIDToAssetPath(guid));
-            return new BattleSkillVfxTextures
-            {
-                SlashArc = Load("VfxSlashArc"),
-                SlashCross = Load("VfxSlashCross"),
-                Fireball = Load("VfxFireball"),
-                IceSpear = Load("VfxIceSpear"),
-                Lightning = Load("VfxLightning"),
-                HealPillar = Load("VfxHealPillar"),
-                ShieldDome = Load("VfxShieldDome"),
-                MagicCircle = Load("VfxMagicCircle"),
-                ImpactStar = Load("VfxImpactStar"),
-                Shockwave = Load("VfxShockwave"),
-                Streak = Load("VfxStreak"),
-                Smoke = Load("VfxSmoke"),
-                Shard = Load("VfxShard"),
-                CutInStreaks = Load(CutInStreaksName),
-                Glow = ArtAssets.LoadTexture(Hd2dAssets.GlowTexturePath),
-                Sparkle = ArtAssets.LoadTexture(Hd2dAssets.SparkleTexturePath),
-                // Realistic flame and smoke, two shapes side by side in each.
-                Flames = Load("VfxFlames"),
-                FlameCells = new Vector2Int(2, 1),
-                FlameTongue = Load("VfxFlameTongue"),
-                Smokes = Load("VfxSmokes"),
-                SmokeCells = new Vector2Int(2, 1),
-                Dust = Load("VfxDust"),
-                Scorch = Load("VfxScorch"),
-                // Realistic ice: three spikes side by side, broken pieces, cold mist, frost.
-                IceSpikes = Load("VfxIceSpikes"),
-                IceSpikeCells = new Vector2Int(3, 1),
-                IceShards = Load("VfxIceShards"),
-                FrostMist = Load("VfxFrostMist"),
-                Frost = Load("VfxFrost"),
-            };
-        }
-
         /// <summary>
-        /// Smooth light: bilinear and compressed, no mipmaps (they are shown near their size).
-        /// Set only on a change, so a rebuild does not reimport every picture.
+        /// The additive light drawn in the shape of a character's picture (the light the effects
+        /// throw on the actors) and over the whole screen (the flash).
         /// </summary>
-        private static void Import(string path)
-        {
-            if (AssetImporter.GetAtPath(path) is not TextureImporter importer)
-                return;
-            var wrap = path.Contains(CutInStreaksName)
-                ? TextureWrapMode.Repeat
-                : TextureWrapMode.Clamp;
-            if (
-                importer.textureType == TextureImporterType.Default
-                && importer.filterMode == FilterMode.Bilinear
-                && !importer.mipmapEnabled
-                && importer.alphaIsTransparency
-                && importer.wrapMode == wrap
-                && importer.maxTextureSize == 512
-                && importer.textureCompression == TextureImporterCompression.Compressed
-            )
-                return;
-            importer.textureType = TextureImporterType.Default;
-            importer.filterMode = FilterMode.Bilinear;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.wrapMode = wrap;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.maxTextureSize = 512;
-            importer.textureCompression = TextureImporterCompression.Compressed;
-            importer.SaveAndReimport();
-        }
-
-        /// <summary>The effects' materials, made from the battle effect shader when missing.</summary>
-        public static (
-            Material glow,
-            Material erode,
-            Material core,
-            Material smoke
-        ) EnsureMaterials()
+        public static Material EnsureGlowMaterial()
         {
             AssetFolders.Ensure(MaterialFolder);
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
             if (shader == null)
                 throw new InvalidOperationException("Missing shader: " + ShaderPath);
-            var noise = AssetDatabase.LoadAssetAtPath<Texture2D>(Hd2dAssets.FogNoiseTexturePath);
-            return (
-                EnsureMaterial(
-                    "VfxGlow",
-                    shader,
-                    noise,
-                    erode: false,
-                    intensity: 1f,
-                    additive: true
-                ),
-                EnsureMaterial(
-                    "VfxErode",
-                    shader,
-                    noise,
-                    erode: true,
-                    intensity: 1.2f,
-                    additive: true
-                ),
-                // Brighter than white, so the camera's Bloom spreads only these cores.
-                EnsureMaterial(
-                    "VfxCore",
-                    shader,
-                    noise,
-                    erode: true,
-                    intensity: 1.8f,
-                    additive: true
-                ),
-                EnsureMaterial(
-                    "VfxSmoke",
-                    shader,
-                    noise,
-                    erode: true,
-                    intensity: 1f,
-                    additive: false
-                )
-            );
-        }
-
-        private static Material EnsureMaterial(
-            string name,
-            Shader shader,
-            Texture2D noise,
-            bool erode,
-            float intensity,
-            bool additive
-        )
-        {
-            var path = $"{MaterialFolder}/{name}.mat";
+            const string path = MaterialFolder + "/VfxGlow.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                material = new Material(shader) { name = name };
+                material = new Material(shader) { name = "VfxGlow" };
                 AssetDatabase.CreateAsset(material, path);
             }
             material.shader = shader;
-            material.SetFloat("_Erode", erode ? 1f : 0f);
-            material.SetFloat("_Intensity", intensity);
-            material.SetFloat("_Softness", additive ? 0.12f : 0.2f);
-            material.SetFloat("_EdgeGlow", additive ? 0.6f : 0f);
-            material.SetTexture("_NoiseTex", noise);
-            material.SetFloat("_NoiseScale", 2f);
-            material.SetFloat("_NoiseAmount", additive ? 0.3f : 0.45f);
-            material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            material.SetFloat(
-                "_DstBlend",
-                (float)(additive ? BlendMode.One : BlendMode.OneMinusSrcAlpha)
-            );
+            material.SetFloat("_Intensity", 1f);
             EditorUtility.SetDirty(material);
             return material;
         }
 
         /// <summary>
-        /// The material of the shader's shock ring, with the shader's own defaults: they are the
-        /// ring's settings, so a rebuild brings the material back to them.
+        /// One material per shape (in <see cref="BattleVfxShape"/>'s order), made from the shape
+        /// shader when missing: the shape's keyword on, solid shapes blended normally and the rest
+        /// added as light. The ring is drawn a little brighter, as it was tuned.
         /// </summary>
-        public static Material EnsureRingMaterial()
+        public static Material[] EnsureShapeMaterials()
         {
             AssetFolders.Ensure(MaterialFolder);
-            var shader = AssetDatabase.LoadAssetAtPath<Shader>(RingShaderPath);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShapeShaderPath);
             if (shader == null)
-                throw new InvalidOperationException("Missing shader: " + RingShaderPath);
-            const string path = MaterialFolder + "/VfxRingProcedural.mat";
-            var defaults = new Material(shader) { name = "VfxRingProcedural" };
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
+                throw new InvalidOperationException("Missing shader: " + ShapeShaderPath);
+            var shapes = (BattleVfxShape[])Enum.GetValues(typeof(BattleVfxShape));
+            var materials = new Material[shapes.Length];
+            foreach (var shape in shapes)
             {
-                AssetDatabase.CreateAsset(defaults, path);
-                return defaults;
+                var name = "VfxShape" + shape;
+                var path = $"{MaterialFolder}/{name}.mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null)
+                {
+                    material = new Material(shader) { name = name };
+                    AssetDatabase.CreateAsset(material, path);
+                }
+                material.shader = shader;
+                foreach (var other in shapes)
+                    material.DisableKeyword(KeywordOf(other));
+                material.EnableKeyword(KeywordOf(shape));
+                material.SetFloat("_Shape", (int)shape);
+                material.SetFloat("_Intensity", shape == BattleVfxShape.Ring ? 1.3f : 1f);
+                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+                material.SetFloat(
+                    "_DstBlend",
+                    (float)(Solid(shape) ? BlendMode.OneMinusSrcAlpha : BlendMode.One)
+                );
+                EditorUtility.SetDirty(material);
+                materials[(int)shape] = material;
             }
-            material.shader = shader;
-            material.CopyPropertiesFromMaterial(defaults);
-            UnityEngine.Object.DestroyImmediate(defaults);
-            EditorUtility.SetDirty(material);
-            return material;
+            return materials;
         }
+
+        /// <summary>The shader keyword that picks a shape (the shader's _Shape keyword enum).</summary>
+        public static string KeywordOf(BattleVfxShape shape) =>
+            "_SHAPE_" + shape.ToString().ToUpperInvariant();
+
+        /// <summary>Smoke, scorch, frost, ice and chips cover what is behind them; the rest is light.</summary>
+        public static bool Solid(BattleVfxShape shape) =>
+            shape
+                is BattleVfxShape.Smoke
+                    or BattleVfxShape.Scorch
+                    or BattleVfxShape.Frost
+                    or BattleVfxShape.IceSpike
+                    or BattleVfxShape.Chip;
 
         /// <summary>
         /// The battlefield's post-processing, made with the defaults when missing and then left to
@@ -279,19 +167,13 @@ namespace Baryonyx.Combat.Editor
             var raycaster = canvasRect.GetComponent<GraphicRaycaster>();
             if (raycaster != null)
                 UnityEngine.Object.DestroyImmediate(raycaster);
+            // The effects' shapes take their seed and moment from the second UV.
+            canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1;
             canvasRect.gameObject.AddComponent<BattleStageCamera>();
             var volume = Rect("PostProcess", canvasRect).gameObject.AddComponent<Volume>();
             volume.isGlobal = true;
             volume.priority = 0f;
             volume.sharedProfile = EnsurePostProcessProfile();
-        }
-
-        private static Texture2D Load(string name)
-        {
-            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{TextureFolder}/{name}.png");
-            if (texture == null)
-                throw new InvalidOperationException($"Missing effect picture: {name}");
-            return texture;
         }
 
         /// <summary>
@@ -342,8 +224,8 @@ namespace Baryonyx.Combat.Editor
             RectTransform front
         )
         {
-            var (glow, erode, core, smoke) = EnsureMaterials();
-            var textures = EnsureTextures();
+            var glow = EnsureGlowMaterial();
+            var shapes = EnsureShapeMaterials();
 
             var flash = Rect("Flash", root);
             Stretch(flash);
@@ -360,11 +242,8 @@ namespace Baryonyx.Combat.Editor
             vfx.FrontLayer = front;
             vfx.Flash = flashImage;
             vfx.GlowMaterial = glow;
-            vfx.ErodeMaterial = erode;
-            vfx.CoreMaterial = core;
-            vfx.SmokeMaterial = smoke;
-            vfx.Textures = textures;
-            BuildCutIn(root, vfx, textures, glow);
+            vfx.Shapes = shapes;
+            BuildCutIn(root, vfx, shapes[(int)BattleVfxShape.CutInStreaks]);
             return vfx;
         }
 
@@ -373,12 +252,7 @@ namespace Baryonyx.Combat.Editor
         /// large on the left (cut off by the band) and the skill's name on the right, between
         /// thin gold edges.
         /// </summary>
-        private static void BuildCutIn(
-            RectTransform root,
-            BattleSkillVfx vfx,
-            BattleSkillVfxTextures textures,
-            Material additive
-        )
+        private static void BuildCutIn(RectTransform root, BattleSkillVfx vfx, Material streakShape)
         {
             var cutIn = Rect("CutIn", root);
             Place(cutIn, new Vector2(0, CutInY), new Vector2(2600, CutInHeight));
@@ -393,9 +267,9 @@ namespace Baryonyx.Combat.Editor
 
             var streaks = Rect("Streaks", band);
             Stretch(streaks);
+            // The streaks are worked out from the UV, so scrolling the uvRect moves them on.
             var streakImage = streaks.gameObject.AddComponent<RawImage>();
-            streakImage.texture = textures.CutInStreaks;
-            streakImage.material = additive;
+            streakImage.material = streakShape;
             streakImage.uvRect = new UnityEngine.Rect(0, 0, 5f, 1f);
             streakImage.raycastTarget = false;
 
@@ -447,6 +321,8 @@ namespace Baryonyx.Combat.Editor
         public static void BuildPreview(Texture2D background, Func<string, Texture2D> art)
         {
             var root = CanvasRoot("BattleSkillVfxPreview");
+            root.GetComponent<Canvas>().additionalShaderChannels |=
+                AdditionalCanvasShaderChannels.TexCoord1;
             var stage = Rect("Stage", root);
             Stretch(stage);
             var backdrop = Overscan("Backdrop", stage);
@@ -510,94 +386,6 @@ namespace Baryonyx.Combat.Editor
                 ),
             };
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, PreviewPrefabPath);
-        }
-
-        /// <summary>
-        /// The showcase's comparison of the shock ring: the picture's ring on the left and the
-        /// shader's ring on the right, on the battle background, each standing up (to see its
-        /// shape) and lying on the floor under an enemy (as a blow on a weakness shows it).
-        /// <see cref="BattleRingComparison"/> plays them all together.
-        /// </summary>
-        public static void BuildRingComparison(Texture2D background, Func<string, Texture2D> art)
-        {
-            var (glow, _, _, _) = EnsureMaterials();
-            var textures = EnsureTextures();
-            var procedural = EnsureRingMaterial();
-
-            var root = CanvasRoot("BattleRingComparison");
-            var backdrop = Rect("Backdrop", root);
-            Stretch(backdrop);
-            var image = Rect("Background", backdrop).gameObject.AddComponent<RawImage>();
-            image.texture = background;
-            image.raycastTarget = false;
-            image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio =
-                background.width / (float)background.height;
-            var world = Layer("World", root);
-
-            var divider = Rect("Divider", world);
-            Place(divider, Vector2.zero, new Vector2(4, 1000));
-            AddImage(divider, new Color(1f, 1f, 1f, 0.3f), false);
-
-            RawImage RingImage(
-                string name,
-                Vector2 at,
-                float size,
-                Texture texture,
-                Material material
-            )
-            {
-                var rect = Rect(name, world);
-                Place(rect, at, new Vector2(size, size));
-                var ring = rect.gameObject.AddComponent<RawImage>();
-                ring.texture = texture;
-                ring.material = material;
-                ring.raycastTarget = false;
-                return ring;
-            }
-
-            var rings = new List<BattleRingComparison.Ring>();
-            void Side(float x, string title, Texture texture, Material material)
-            {
-                var label = Label(
-                    world,
-                    "Title",
-                    title,
-                    44,
-                    Color.white,
-                    TextAlignmentOptions.Center
-                );
-                Place(label.rectTransform, new Vector2(x, 470), new Vector2(900, 70));
-                rings.Add(
-                    new BattleRingComparison.Ring
-                    {
-                        Image = RingImage(
-                            "StandingRing",
-                            new Vector2(x, 170),
-                            460f,
-                            texture,
-                            material
-                        ),
-                        Floor = false,
-                    }
-                );
-                // The floor ring goes behind the enemy standing on it, as on the battlefield.
-                var feet = new Vector2(x, -300);
-                rings.Add(
-                    new BattleRingComparison.Ring
-                    {
-                        Image = RingImage("FloorRing", feet, 640f, texture, material),
-                        Floor = true,
-                    }
-                );
-                PixelActor(world, "MossWolf", art("MossWolf"), feet, 3f);
-            }
-            Side(-480f, "画像（VfxShockwave.png）", textures.Shockwave, glow);
-            Side(480f, "計算（シェーダー・画像なし）", null, procedural);
-
-            var comparison = root.gameObject.AddComponent<BattleRingComparison>();
-            comparison.Rings = rings.ToArray();
-            comparison.Show(0f);
-            PrefabUtility.SaveAsPrefabAsset(root.gameObject, RingComparisonPrefabPath);
         }
 
         private static BattleSkillVfxDemo.Cast Cast(

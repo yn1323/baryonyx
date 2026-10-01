@@ -578,7 +578,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
-  m_Material: {fileID: 2100000, guid: 89857471dc3d045f798288a160fd52c1, type: 2}
+  m_Material: {fileID: 2100000, guid: 8d859b85d4b34440699c6240edffcb3f, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -586,7 +586,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 93f8315bcc2dd46f693fe47c56bba976, type: 3}
+  m_Texture: {fileID: 0}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -1264,7 +1264,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 1
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -1332,38 +1332,30 @@ MonoBehaviour:
   CutInActor: {fileID: 2151716742882597012}
   CutInName: {fileID: 7521245706138058088}
   GlowMaterial: {fileID: 2100000, guid: 89857471dc3d045f798288a160fd52c1, type: 2}
-  ErodeMaterial: {fileID: 2100000, guid: f85213a3850df4d23b5030e235b63edc, type: 2}
-  CoreMaterial: {fileID: 2100000, guid: 86076bba21ea14537b5462c49df95894, type: 2}
-  SmokeMaterial: {fileID: 2100000, guid: 58712b541dc794c629135f14dbd27b21, type: 2}
-  Textures:
-    SlashArc: {fileID: 2800000, guid: 9bf1d0562170d47689ab3251a3a630f0, type: 3}
-    SlashCross: {fileID: 2800000, guid: ed2a0ab750bdb4fe38cd88c74eddf411, type: 3}
-    Fireball: {fileID: 2800000, guid: e80ed51e0513f4c8e83469098099ee4f, type: 3}
-    IceSpear: {fileID: 2800000, guid: 4252c663804c44708b217d4f14969675, type: 3}
-    Lightning: {fileID: 2800000, guid: 03a1a75e7733d47799699b965218309a, type: 3}
-    HealPillar: {fileID: 2800000, guid: f07ed6eddc555437893f3a8162d69347, type: 3}
-    ShieldDome: {fileID: 2800000, guid: b35ad1e92205f49caa8773adaac74e30, type: 3}
-    MagicCircle: {fileID: 2800000, guid: cc2e25f9324964d37a0fda9e6f351ce0, type: 3}
-    ImpactStar: {fileID: 2800000, guid: 97e06a339fbe24abfa5b84b8c56efa3c, type: 3}
-    Shockwave: {fileID: 2800000, guid: f36dbdbb4220c4b51bc8c8f2d8a664c7, type: 3}
-    Streak: {fileID: 2800000, guid: edf14edd6dbf9443eb66e45cc8ec8147, type: 3}
-    Smoke: {fileID: 2800000, guid: 727208784058542d2b4c3a3c8e79d0b8, type: 3}
-    Shard: {fileID: 2800000, guid: 0607acd8275bd45a49a07141fda5d8c8, type: 3}
-    CutInStreaks: {fileID: 2800000, guid: 93f8315bcc2dd46f693fe47c56bba976, type: 3}
-    Glow: {fileID: 2800000, guid: 91f5ade2f630f48a78063be14e8fd94d, type: 3}
-    Sparkle: {fileID: 2800000, guid: 1df18d16804284e9ca080bc71d995c7b, type: 3}
-    Flames: {fileID: 2800000, guid: 3f49cd43eccea45a8856d5795d1cf5d3, type: 3}
-    FlameCells: {x: 2, y: 1}
-    FlameTongue: {fileID: 2800000, guid: a3fc5964a80fa46239e1e881e00f8778, type: 3}
-    Smokes: {fileID: 2800000, guid: 9735bd75742a04848b13bb031effaa5f, type: 3}
-    SmokeCells: {x: 2, y: 1}
-    Dust: {fileID: 2800000, guid: cf88b588753c64b0b9d146513e9bc166, type: 3}
-    Scorch: {fileID: 2800000, guid: c339abe2fa6e6406394dd4421e9c794f, type: 3}
-    IceSpikes: {fileID: 2800000, guid: 34feebb1b525947578d6cc3abc731cfa, type: 3}
-    IceSpikeCells: {x: 3, y: 1}
-    IceShards: {fileID: 2800000, guid: 4facd835a9d7b4546822a6621b810e40, type: 3}
-    FrostMist: {fileID: 2800000, guid: e1f89bed5f80745eabadde54059b3829, type: 3}
-    Frost: {fileID: 2800000, guid: 3e6646bf3276b43c3b95bf31e82cc56f, type: 3}
+  Shapes:
+  - {fileID: 2100000, guid: 5f4e5db1053d64cdaa3377306b91dae1, type: 2}
+  - {fileID: 2100000, guid: 7badff4b327d8467fa5ca1d53d481132, type: 2}
+  - {fileID: 2100000, guid: d9f31550ec8224af3a64d94ded217531, type: 2}
+  - {fileID: 2100000, guid: 24cad8613b5694e2d9d7ce6a4c1ab1d2, type: 2}
+  - {fileID: 2100000, guid: af84b53da58324eeeb0b9c895d4e0649, type: 2}
+  - {fileID: 2100000, guid: bbf035214f7b64ee79ca385f61be6841, type: 2}
+  - {fileID: 2100000, guid: 9c2818441be4047379ae52f8f22e93d6, type: 2}
+  - {fileID: 2100000, guid: 8a043d98a44c842f0b9f0403b5f2ceba, type: 2}
+  - {fileID: 2100000, guid: 5f9f31a4fc0294b9681f5a971ec0b1a1, type: 2}
+  - {fileID: 2100000, guid: 1230dc6e1d58a4871af3387748a08f16, type: 2}
+  - {fileID: 2100000, guid: 4b6a6e77e47464c1f97d4229c026d4b1, type: 2}
+  - {fileID: 2100000, guid: 4c271a50dfc8544cb9a741e68e2cfb9d, type: 2}
+  - {fileID: 2100000, guid: 9e24d8dc662ae4e6ba57a1a58b7d70f5, type: 2}
+  - {fileID: 2100000, guid: ff3305d9ae2be4aa3b5f287b95bd3a82, type: 2}
+  - {fileID: 2100000, guid: 45dab98db09de4f1a876fdae81487244, type: 2}
+  - {fileID: 2100000, guid: 3d16dbe881bc943ec9ac1798444cb751, type: 2}
+  - {fileID: 2100000, guid: 8f56333a2a5fa4e85a8ffacbae8cdaff, type: 2}
+  - {fileID: 2100000, guid: 19cac193b40084941b4fe3658749bbe3, type: 2}
+  - {fileID: 2100000, guid: dd0aadb3ba6e9431eaf5ba7365352620, type: 2}
+  - {fileID: 2100000, guid: 6d8f6341806734cdd8c86e5a47b0929b, type: 2}
+  - {fileID: 2100000, guid: cb6e248ffffbd47c0bc54a88300a7bd7, type: 2}
+  - {fileID: 2100000, guid: ef604e4a56c5643dfb1268496e4ca50e, type: 2}
+  - {fileID: 2100000, guid: 8d859b85d4b34440699c6240edffcb3f, type: 2}
   ShakeStrength: 1
   FlashStrength: 1
   UseHitStop: 1

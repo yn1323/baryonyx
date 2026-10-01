@@ -368,7 +368,6 @@ namespace Baryonyx.Combat.Editor
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 BuildNumberSamples();
                 BattleSkillVfxAssets.BuildPreview(Art("BattleBackground"), Art);
-                BattleSkillVfxAssets.BuildRingComparison(Art("BattleBackground"), Art);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
             AssetDatabase.SaveAssets();

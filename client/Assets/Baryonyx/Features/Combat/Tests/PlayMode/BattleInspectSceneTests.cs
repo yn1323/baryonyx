@@ -1115,7 +1115,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator EffectsAfterAnIceLanceShowTheirWholePictures()
+        public IEnumerator EffectsAreWorkedOutWithNoPicture()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1130,21 +1130,31 @@ namespace Baryonyx.Tests.PlayMode
             );
             typeof(BattleInspectView).GetProperty("Energy").SetValue(view, 9);
 
-            // The ice spikes show one cell of their picture; the heal that reuses them must not.
+            // The heal reuses the boards the ice lance left; each shows its own shape whole.
             Play(view, ice, view.Enemies[1].TargetArea);
             yield return WaitActions(view);
             for (float t = 0f; vfx.LiveCount > 0 && t < 3f; t += Time.unscaledDeltaTime)
                 yield return null;
             Play(view, heal, view.Allies[0].TargetArea);
             yield return WaitActions(view);
-            var pillars = vfx
-                .BackLayer.GetComponentsInChildren<RawImage>(true)
-                .Where(image => image.texture == vfx.Textures.HealPillar)
+            var shapes = vfx
+                .BackLayer.GetComponentsInChildren<BattleVfxImage>(false)
+                .Concat(vfx.FrontLayer.GetComponentsInChildren<BattleVfxImage>(false))
                 .ToArray();
-            Assert.That(pillars, Is.Not.Empty);
+            Assert.That(shapes, Is.Not.Empty);
+            Assert.That(shapes.Select(image => image.texture), Has.All.Null, "No picture.");
             Assert.That(
-                pillars.Select(image => image.uvRect),
+                shapes.Select(image => image.material),
+                Has.All.Matches<Material>(material => vfx.Shapes.Contains(material))
+            );
+            Assert.That(
+                shapes.Select(image => image.uvRect),
                 Has.All.EqualTo(new Rect(0f, 0f, 1f, 1f))
+            );
+            Assert.That(
+                shapes.Any(image => image.material == vfx.MaterialOf(BattleVfxShape.Pillar)),
+                Is.True,
+                "The heal raises its pillar of light."
             );
         }
 
