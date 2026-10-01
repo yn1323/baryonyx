@@ -249,6 +249,7 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 展示室のカタログには `HomeScreen` Prefab、Health Connectの連携モーダル `HealthLinkModal` Prefab、`Top` シーンを登録済みである。
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
 戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
+カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。
 案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。

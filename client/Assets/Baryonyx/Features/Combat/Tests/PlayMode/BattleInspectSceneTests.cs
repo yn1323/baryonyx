@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.UI;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -308,6 +309,11 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitActions(view);
             Assert.That(view.Cards[thunderIndex].InHand, Is.False);
             Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
+            Assert.That(
+                Rising(view.DamageNumber).Length + Rising(view.WeakNumber).Length,
+                Is.EqualTo(view.Enemies.Length),
+                "Each enemy is hit once."
+            );
         }
 
         [UnityTest]
@@ -745,6 +751,84 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ARaisedCardsUserStepsForwardWithARingAndItsName()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var slash = view.Cards[0];
+            var user = view.Allies[slash.Caster];
+            var homes = view.Allies.Select(ally => ally.Body.anchoredPosition).ToArray();
+            var barHome = user.HpBar.anchoredPosition;
+            Assert.That(
+                view.Allies.Any(ally => ally.CasterRing.activeSelf || ally.NameTag.activeSelf),
+                Is.False
+            );
+
+            var point = CardPoint(slash);
+            view.PressCard(0, point);
+            view.ReleaseCard(point);
+            yield return WaitStep(view);
+            float step = view.Settings.StepDistance;
+            for (int i = 0; i < view.Allies.Length; i++)
+            {
+                var ally = view.Allies[i];
+                bool isUser = i == slash.Caster;
+                Assert.That(ally.CasterRing.activeSelf, Is.EqualTo(isUser));
+                Assert.That(ally.NameTag.activeSelf, Is.EqualTo(isUser));
+                Assert.That(
+                    ally.Body.anchoredPosition.x - homes[i].x,
+                    Is.EqualTo(isUser ? step : 0f).Within(0.01f),
+                    "Only the user steps forward; the others stay put."
+                );
+            }
+            Assert.That(user.HpBar.anchoredPosition.x - barHome.x, Is.EqualTo(step).Within(0.01f));
+            Assert.That(
+                user.NameTag.GetComponent<TranslucentTextPanel>().Label.text,
+                Is.EqualTo(slash.Body.GetComponent<BattleInspectCardView>().Owner.text),
+                "The tag shows the owner named on the card."
+            );
+
+            // Played, the user goes on from its step instead of going home first.
+            view.TapScreen(Center(view.Enemies[1].TargetArea));
+            yield return null;
+            Assert.That(user.CasterRing.activeSelf, Is.False);
+            Assert.That(user.NameTag.activeSelf, Is.False);
+            Assert.That(
+                user.Body.anchoredPosition.x - homes[slash.Caster].x,
+                Is.EqualTo(step).Within(0.01f)
+            );
+            yield return WaitActions(view);
+            Assert.That(user.Body.anchoredPosition, Is.EqualTo(homes[slash.Caster]));
+            Assert.That(user.HpBar.anchoredPosition, Is.EqualTo(barHome));
+        }
+
+        [UnityTest]
+        public IEnumerator PuttingTheCardBackSendsItsUserHome()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var heal = view.Cards.First(card => card.Effect == BattleInspectCardEffect.Heal);
+            int index = System.Array.IndexOf(view.Cards, heal);
+            var user = view.Allies[heal.Caster];
+            var home = user.Body.anchoredPosition;
+
+            var point = CardPoint(heal);
+            view.PressCard(index, point);
+            view.ReleaseCard(point);
+            yield return WaitStep(view);
+            Assert.That(user.CasterRing.activeSelf, Is.True);
+            Assert.That(user.Marker.gameObject.activeSelf, Is.True, "The user may heal itself.");
+
+            // Top middle of the screen, far from every character.
+            view.TapScreen(new Vector2(Screen.width * 0.5f, Screen.height - 4f));
+            yield return WaitStep(view);
+            Assert.That(view.HeldCard, Is.EqualTo(-1));
+            Assert.That(user.CasterRing.activeSelf, Is.False);
+            Assert.That(user.NameTag.activeSelf, Is.False);
+            Assert.That(user.Body.anchoredPosition, Is.EqualTo(home));
+        }
+
+        [UnityTest]
         public IEnumerator CardsPlayedInARowActOneAfterAnother()
         {
             var view = default(BattleInspectView);
@@ -881,6 +965,13 @@ namespace Baryonyx.Tests.PlayMode
             for (float t = 0f; view.Acting && t < 5f; t += Time.deltaTime)
                 yield return null;
             Assert.That(view.Acting, Is.False, "The actions end.");
+        }
+
+        /// <summary>Waits for an ally's step for a raised or put back card to end.</summary>
+        private static IEnumerator WaitStep(BattleInspectView view)
+        {
+            for (float t = 0f; t < view.Settings.StepTime + 0.1f; t += Time.deltaTime)
+                yield return null;
         }
 
         /// <summary>Waits for the enemies to act and the party's next turn to begin.</summary>

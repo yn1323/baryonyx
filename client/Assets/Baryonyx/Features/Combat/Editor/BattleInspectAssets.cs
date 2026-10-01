@@ -647,9 +647,11 @@ namespace Baryonyx.Combat.Editor
         {
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             var cursor = Art("TargetCursor");
+            var ringArt = Art("CasterRing");
             var units = new List<RectTransform>();
             var sprites = new List<RawImage>();
             var areas = new List<RectTransform>();
+            var rings = new List<GameObject>();
             foreach (var ally in Allies)
             {
                 var texture = Art("Battle" + ally.Name);
@@ -657,6 +659,12 @@ namespace Baryonyx.Combat.Editor
                 units.Add(unit);
                 Place(unit, ally.Feet, Vector2.zero);
                 Picture(unit, "Shadow", shadow, new Vector2(0, 2), new Vector2(150, 24), 0.5f);
+                // On the floor over the shadow and behind the sprite; shown while a card this ally
+                // uses is up.
+                var ring = PixelIcon(unit, "CasterRing", ringArt);
+                ((RectTransform)ring.transform).anchoredPosition = new Vector2(0, 2);
+                ring.SetActive(false);
+                rings.Add(ring);
                 var pose = Rect("Pose", unit);
                 Place(pose, Vector2.zero, Vector2.zero);
                 sprites.Add(PixelActor(pose, "Sprite", texture, Vector2.zero, DotSize));
@@ -673,6 +681,7 @@ namespace Baryonyx.Combat.Editor
                 var fill = HpBar(world, ally.Feet + new Vector2(0, -24), 120, 20, HpAlly);
                 fill.parent.name = "Hp" + ally.Name;
                 fill.anchorMax = new Vector2(ally.Hp / (float)ally.MaxHp, 1);
+                var tag = NameTag((RectTransform)fill.parent, ally.Label);
                 allies.Add(
                     new BattleInspectAlly
                     {
@@ -681,6 +690,8 @@ namespace Baryonyx.Combat.Editor
                         TargetArea = areas[i],
                         HpFill = fill,
                         Marker = TargetMarker(areas[i], cursor),
+                        CasterRing = rings[i],
+                        NameTag = tag,
                         StartHp = ally.Hp,
                         MaxHp = ally.MaxHp,
                     }
@@ -837,6 +848,32 @@ namespace Baryonyx.Combat.Editor
             PixelIcon(marker, "Cursor", cursor);
             marker.gameObject.SetActive(false);
             return marker;
+        }
+
+        /// <summary>
+        /// The ally's name just under its HP bar, on the dark translucent band and in the colour of
+        /// the owner line on the cards, so the name on a raised card points at the ally. It moves
+        /// with the bar and is shown with the caster ring.
+        /// </summary>
+        private static GameObject NameTag(RectTransform bar, string label)
+        {
+            var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, "NameTag", bar);
+            var rect = (RectTransform)instance.transform;
+            Place(rect, new Vector2(0, -28), new Vector2(112, 30));
+            var panel = instance.GetComponent<TranslucentTextPanel>();
+            panel.Backdrop.color = new Color(0.02f, 0.025f, 0.04f);
+            panel.SetBackdropSize(new Vector2(160, 44));
+            panel.SetBackdropAlpha(0.8f);
+            panel.SetFontSize(26);
+            panel.SetText(label);
+            panel.Label.color = CardOwner;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Backdrop);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.BackdropCanvas);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Label);
+            instance.SetActive(false);
+            return instance;
         }
 
         /// <summary>
@@ -1097,6 +1134,8 @@ namespace Baryonyx.Combat.Editor
             // Baked with the opening hand fanned out, so the prefab preview shows it; the rest of
             // the deck is hidden until dealt.
             int opening = Mathf.Min(settings.OpeningDraw, settings.HandLimit, DeckSize);
+            // Cards the opening energy cannot pay for are greyed out as in Play Mode.
+            int energy = BattleInspectView.MaxEnergyAt(view.StartTurn);
             float step = BattleInspectView.FanStepFor(
                 opening,
                 settings.FanStep,
@@ -1147,8 +1186,12 @@ namespace Baryonyx.Combat.Editor
                 card.anchoredPosition = position;
                 card.localRotation = Quaternion.Euler(0, 0, angle);
                 card.localScale = Vector3.one * settings.CardScale;
+                bool playable = spec.Cost <= energy;
                 var group = instance.GetComponent<CanvasGroup>();
-                group.alpha = i < opening ? 1f : 0f;
+                group.alpha =
+                    i >= opening ? 0f
+                    : playable ? 1f
+                    : BattleInspectView.UnplayableAlpha(settings, raised: false);
                 group.blocksRaycasts = i < opening;
 
                 var cardView = instance.GetComponent<BattleInspectCardView>();
@@ -1161,6 +1204,10 @@ namespace Baryonyx.Combat.Editor
                     data.Frame,
                     data.ElementIcon,
                     data.Cost
+                );
+                cardView.SetPlayable(
+                    playable,
+                    BattleInspectView.VeilDarkness(settings, group.alpha)
                 );
                 var input = instance.GetComponent<BattleInspectCardInput>();
                 input.View = view;
@@ -1180,6 +1227,7 @@ namespace Baryonyx.Combat.Editor
                         cardView.Frame,
                         cardView.Element,
                         cardView.CostDigit,
+                        cardView.Shade,
                         cardView.Bands[0],
                         cardView.Bands[1],
                     }

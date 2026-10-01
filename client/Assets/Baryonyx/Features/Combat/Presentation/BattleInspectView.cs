@@ -117,6 +117,12 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The cursor over the head, shown while a card that can target this ally is up.</summary>
         public RectTransform Marker;
+
+        /// <summary>The gold ring of light at the feet, shown while a card this ally uses is up.</summary>
+        public GameObject CasterRing;
+
+        /// <summary>The ally's name under the HP bar, shown with the ring.</summary>
+        public GameObject NameTag;
         public int StartHp;
         public int MaxHp;
 
@@ -355,6 +361,12 @@ namespace Baryonyx.Combat.Presentation
         private Vector2[] enemyBase = Array.Empty<Vector2>();
         private Vector2[] allyBase = Array.Empty<Vector2>();
         private Vector2[] allyBarBase = Array.Empty<Vector2>();
+
+        // How far each ally has stepped forward for the raised card, from 0 (home) to 1 (one step).
+        private float[] allyStance = Array.Empty<float>();
+
+        // Actions and hits under way on each ally; while any is, they move the ally, not the stance.
+        private int[] allyBusy = Array.Empty<int>();
         private CardMotion[] motion = Array.Empty<CardMotion>();
         private Material flash;
         private int held = -1;
@@ -467,6 +479,19 @@ namespace Baryonyx.Combat.Presentation
                 body.anchoredPosition = position;
                 body.localRotation = Quaternion.Euler(0, 0, angle);
                 body.localScale = Vector3.one * Settings.CardScale;
+
+                // Greyed out as in Play Mode when the opening energy cannot pay for it.
+                var card = Cards[i];
+                bool playable = card.Cost <= MaxEnergyAt(StartTurn);
+                float alpha = playable ? 1f : UnplayableAlpha(Settings, raised: false);
+                UnityEditor.Undo.RecordObject(card.Group, "Apply hand layout");
+                card.Group.alpha = alpha;
+                if (card.Face != null)
+                {
+                    UnityEditor.Undo.RecordObject(card.Face.Shade, "Apply hand layout");
+                    UnityEditor.Undo.RecordObject(card.Face.CostDigit, "Apply hand layout");
+                    card.Face.SetPlayable(playable, VeilDarkness(Settings, alpha));
+                }
             }
         }
 #endif
@@ -478,6 +503,20 @@ namespace Baryonyx.Combat.Presentation
         public static int MaxEnergyAt(int turn) => Mathf.Min(MaxEnergyCap, 3 + turn - 1);
 
         public static string EnergyText(int energy, int max) => $"{energy}/{max}";
+
+        /// <summary>
+        /// How see-through a card the energy cannot pay for is: the settings' opacity in the hand,
+        /// none once raised so its details can be read.
+        /// </summary>
+        public static float UnplayableAlpha(BattleInspectHandSettings settings, bool raised) =>
+            raised ? 1f : settings.UnplayableAlpha;
+
+        /// <summary>
+        /// The veil's own darkness on a card of <paramref name="alpha"/>: the card's alpha thins
+        /// the veil too, so it is made thicker by as much to keep the settings' darkness.
+        /// </summary>
+        public static float VeilDarkness(BattleInspectHandSettings settings, float alpha) =>
+            alpha > 0f ? Mathf.Min(1f, settings.UnplayableDarkness / alpha) : 0f;
 
         private void Awake()
         {
@@ -506,6 +545,8 @@ namespace Baryonyx.Combat.Presentation
             allyMarkerBase = new Vector2[Allies.Length];
             allyBase = new Vector2[Allies.Length];
             allyBarBase = new Vector2[Allies.Length];
+            allyStance = new float[Allies.Length];
+            allyBusy = new int[Allies.Length];
             for (int i = 0; i < Allies.Length; i++)
             {
                 allyMarkerBase[i] = Allies[i].Marker.anchoredPosition;
@@ -581,6 +622,7 @@ namespace Baryonyx.Combat.Presentation
                 motion[i].Step(dt, Settings.Stiffness, Settings.Damping);
                 ApplyMotion(i);
             }
+            RefreshCaster(dt);
 
             if (flash != null)
                 flash.SetFloat("_FlashAmount", 0.5f + 0.2f * Mathf.Sin(time * 9f));
@@ -611,6 +653,51 @@ namespace Baryonyx.Combat.Presentation
             if (back != null && back.activeSelf != IsFaceDown(index))
                 back.SetActive(IsFaceDown(index));
             RefreshCard(index);
+        }
+
+        /// <summary>
+        /// While a card is up, its user steps one step toward the enemies with a gold ring at its
+        /// feet and its name under the HP bar, so the screen tells who will use the card. The
+        /// others go back home. An ally in the middle of an action or a hit is left to it.
+        /// </summary>
+        private void RefreshCaster(float dt)
+        {
+            int caster = held >= 0 ? Cards[held].Caster : -1;
+            float speed = Settings.StepTime > 0f ? dt / Settings.StepTime : 1f;
+            for (int i = 0; i < Allies.Length; i++)
+            {
+                var ally = Allies[i];
+                bool up = i == caster;
+                SetShown(ally.CasterRing, up);
+                SetShown(ally.NameTag, up);
+                if (allyBusy[i] > 0)
+                    continue;
+                float stance = Mathf.MoveTowards(allyStance[i], up ? 1f : 0f, speed);
+                // Set only on a change, as this runs every frame and a set dirties the canvas.
+                if (stance == allyStance[i])
+                    continue;
+                allyStance[i] = stance;
+                var offset = StanceOffset(i);
+                ally.Body.anchoredPosition = allyBase[i] + offset;
+                ally.HpBar.anchoredPosition = allyBarBase[i] + offset;
+            }
+        }
+
+        /// <summary>Where the ally's stance puts it from home, eased and in whole dots.</summary>
+        private Vector2 StanceOffset(int ally) =>
+            ToDots(StepOffset(Vector2.right) * Mathf.SmoothStep(0f, 1f, allyStance[ally]));
+
+        /// <summary>One step toward <paramref name="forward"/>, in whole dots.</summary>
+        private Vector2 StepOffset(Vector2 forward) =>
+            forward * (Mathf.Round(Settings.StepDistance / Dot) * Dot);
+
+        private static Vector2 ToDots(Vector2 offset) =>
+            new Vector2(Mathf.Round(offset.x / Dot), Mathf.Round(offset.y / Dot)) * Dot;
+
+        private static void SetShown(GameObject target, bool shown)
+        {
+            if (target != null && target.activeSelf != shown)
+                target.SetActive(shown);
         }
 
         // --- Card input -----------------------------------------------------------------
@@ -681,6 +768,9 @@ namespace Baryonyx.Combat.Presentation
         private void PlayWithoutTarget()
         {
             var card = Cards[held];
+            // A whole-side card already holds its targets from the press; start afresh so none
+            // is counted twice.
+            targets.Clear();
             AddEveryTarget(card);
             if (!card.TargetsWholeSide && targets.Count > 0)
             {
@@ -1253,7 +1343,8 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// Pays for the card and takes it out of the hand at once, then queues its action: the
-        /// user steps forward, the effect lands, and the user steps back.
+        /// user steps forward (on from where it stepped while the card was up), the effect lands,
+        /// and the user steps back.
         /// </summary>
         private void Play(int index, List<int> chosen, bool onEnemies)
         {
@@ -1274,13 +1365,16 @@ namespace Baryonyx.Combat.Presentation
                 parts = new[] { Allies[caster].Body, Allies[caster].HpBar };
                 bases = new[] { allyBase[caster], allyBarBase[caster] };
             }
+            else
+                caster = -1;
             Enqueue(
                 Perform(
                     data.Name,
                     parts,
                     bases,
                     Vector2.right,
-                    () => ApplyCard(data, chosen, onEnemies)
+                    () => ApplyCard(data, chosen, onEnemies),
+                    caster
                 )
             );
         }
@@ -1330,22 +1424,37 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// One action: the skill's name shows at the top, the character (<paramref name="parts"/>,
         /// resting at <paramref name="bases"/>) steps one step toward <paramref name="forward"/>,
-        /// the effect lands, and after a moment the character steps back.
+        /// the effect lands, and after a moment the character steps back. An
+        /// <paramref name="ally"/> (an index of <see cref="Allies"/>) sets out from where it stands
+        /// for the raised card, and is home with no stance when done.
         /// </summary>
         private IEnumerator Perform(
             string skill,
             RectTransform[] parts,
             Vector2[] bases,
             Vector2 forward,
-            Action effect
+            Action effect,
+            int ally = -1
         )
         {
+            var from = Vector2.zero;
+            if (ally >= 0)
+            {
+                allyBusy[ally]++;
+                from = StanceOffset(ally);
+            }
             ShowSkillName(skill);
-            var front = forward * (Mathf.Round(Settings.StepDistance / Dot) * Dot);
-            yield return Slide(parts, bases, Vector2.zero, front);
+            var front = StepOffset(forward);
+            if (from != front)
+                yield return Slide(parts, bases, from, front);
             effect();
             yield return Wait(Settings.ActionHold);
             yield return Slide(parts, bases, front, Vector2.zero);
+            if (ally >= 0)
+            {
+                allyStance[ally] = 0f;
+                allyBusy[ally]--;
+            }
             HideSkillName();
         }
 
@@ -1356,9 +1465,7 @@ namespace Baryonyx.Combat.Presentation
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
                 float k = 1f - (1f - t / duration) * (1f - t / duration);
-                var offset = Vector2.Lerp(from, to, k);
-                offset =
-                    new Vector2(Mathf.Round(offset.x / Dot), Mathf.Round(offset.y / Dot)) * Dot;
+                var offset = ToDots(Vector2.Lerp(from, to, k));
                 for (int i = 0; i < parts.Length; i++)
                     parts[i].anchoredPosition = bases[i] + offset;
                 yield return null;
@@ -1500,8 +1607,13 @@ namespace Baryonyx.Combat.Presentation
         private IEnumerator AllyHitReaction(int index)
         {
             var ally = Allies[index];
+            // The shake starts from home, so any stance is dropped.
+            allyBusy[index]++;
+            allyStance[index] = 0f;
+            ally.HpBar.anchoredPosition = allyBarBase[index];
             ally.Sprite.color = HitTint;
             yield return Shake(ally.Body, allyBase[index], 10f, 0.24f);
+            allyBusy[index]--;
             RefreshAlly(ally);
         }
 
@@ -1547,8 +1659,8 @@ namespace Baryonyx.Combat.Presentation
             // so its details can still be read.
             float alpha =
                 !card.InHand ? 0f
-                : playable || index == held ? 1f
-                : Settings.UnplayableAlpha;
+                : playable ? 1f
+                : UnplayableAlpha(Settings, index == held);
             // The raised card takes taps too: a second tap on it plays it without a target.
             bool blocks = card.InHand;
             // Set only on a change, as this runs every frame and a set dirties the canvas.
@@ -1557,13 +1669,7 @@ namespace Baryonyx.Combat.Presentation
             if (card.Group.blocksRaycasts != blocks)
                 card.Group.blocksRaycasts = blocks;
             if (card.Face != null)
-            {
-                // The group's alpha thins the veil too, so it is made thicker by as much to keep
-                // the settings' darkness.
-                float darkness =
-                    alpha > 0f ? Mathf.Min(1f, Settings.UnplayableDarkness / alpha) : 0f;
-                card.Face.SetPlayable(playable, darkness);
-            }
+                card.Face.SetPlayable(playable, VeilDarkness(Settings, alpha));
         }
 
         private static void RefreshEnemy(BattleInspectEnemy enemy)
