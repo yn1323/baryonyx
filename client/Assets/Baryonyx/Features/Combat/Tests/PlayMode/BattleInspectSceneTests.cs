@@ -7,8 +7,11 @@ using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Baryonyx.Tests.PlayMode
 {
@@ -109,9 +112,9 @@ namespace Baryonyx.Tests.PlayMode
             var guardian = view.Enemies[2];
             var area = guardian.TargetArea;
             // Just past the right edge of the guardian's drawn body, where no other enemy is.
-            var outside = RectTransformUtility.WorldToScreenPoint(
-                null,
-                area.TransformPoint(new Vector2(area.rect.xMax + 40f, area.rect.center.y))
+            var outside = BattleInspectView.ScreenPointOf(
+                area,
+                new Vector2(area.rect.xMax + 40f, area.rect.center.y)
             );
 
             view.PressCard(0, CardPoint(view.Cards[0]));
@@ -306,14 +309,18 @@ namespace Baryonyx.Tests.PlayMode
             view.PressCard(thunderIndex, point);
             view.ReleaseCard(point);
             yield return TapRaisedCard(view, view.Cards[thunderIndex]);
-            yield return WaitActions(view);
+            // The bolts strike one enemy after another, so the numbers are counted as they rise.
+            var numbers = new HashSet<TMP_Text>();
+            for (float t = 0f; view.Acting && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                numbers.UnionWith(RisingLabels(view.DamageNumber));
+                numbers.UnionWith(RisingLabels(view.WeakNumber));
+                yield return null;
+            }
+            Assert.That(view.Acting, Is.False, "The actions end.");
             Assert.That(view.Cards[thunderIndex].InHand, Is.False);
             Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
-            Assert.That(
-                Rising(view.DamageNumber).Length + Rising(view.WeakNumber).Length,
-                Is.EqualTo(view.Enemies.Length),
-                "Each enemy is hit once."
-            );
+            Assert.That(numbers, Has.Count.EqualTo(view.Enemies.Length), "Each enemy is hit once.");
         }
 
         [UnityTest]
@@ -736,7 +743,13 @@ namespace Baryonyx.Tests.PlayMode
                 yield return null;
             Assert.That(user.Body.anchoredPosition.x - home.x, Is.EqualTo(step).Within(0.01f));
             Assert.That(user.HpBar.anchoredPosition.x - barHome.x, Is.EqualTo(step).Within(0.01f));
-            Assert.That(view.Enemies[1].Hp, Is.LessThan(view.Enemies[1].MaxHp));
+
+            // The blow lands as the skill's effect strikes, while the user still stands forward.
+            var wolf = view.Enemies[1];
+            for (float t = 0f; wolf.Hp == wolf.MaxHp && t < 2f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
+            Assert.That(user.Body.anchoredPosition.x - home.x, Is.EqualTo(step).Within(0.01f));
 
             yield return WaitActions(view);
             Assert.That(user.Body.anchoredPosition, Is.EqualTo(home));
@@ -906,6 +919,353 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
         }
 
+        [UnityTest]
+        public IEnumerator APlayedSkillDarkensTheStagePlaysItsEffectAndSettles()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            Assert.That(vfx, Is.Not.Null);
+            var wolf = view.Enemies[1];
+            int fire = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Fire
+            );
+
+            Play(view, fire, wolf.TargetArea);
+            float darkest = 0f;
+            int most = 0;
+            for (float t = 0f; view.Acting && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                darkest = Mathf.Max(darkest, vfx.DimAlpha);
+                most = Mathf.Max(most, vfx.LiveCount);
+                yield return null;
+            }
+            Assert.That(view.Acting, Is.False, "The action ends.");
+            Assert.That(darkest, Is.GreaterThan(0.3f), "The stage darkens behind the actors.");
+            Assert.That(most, Is.GreaterThan(20), "The fireball bursts into light and embers.");
+            Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
+
+            // The embers and smoke drift away and the stage lights up and comes to rest.
+            for (float t = 0f; vfx.LiveCount > 0 && t < 3f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(vfx.LiveCount, Is.EqualTo(0));
+            Assert.That(vfx.DimAlpha, Is.EqualTo(0f));
+            Assert.That(vfx.Stage.anchoredPosition, Is.EqualTo(Vector2.zero));
+            Assert.That(vfx.Flash.enabled, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+        }
+
+        [UnityTest]
+        public IEnumerator TheBattlefieldIsDrawnByTheCameraThroughBloom()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var stage = view.Enemies[0].TargetArea.GetComponentInParent<Canvas>().rootCanvas;
+            Assert.That(stage.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
+            Assert.That(
+                stage.worldCamera,
+                Is.Not.Null,
+                "The scene's camera draws the battlefield."
+            );
+            Assert.That(
+                stage.worldCamera.GetUniversalAdditionalCameraData().renderPostProcessing,
+                Is.True
+            );
+            var volume = stage.GetComponentInChildren<Volume>();
+            Assert.That(volume, Is.Not.Null);
+            Assert.That(volume.sharedProfile.TryGet<Bloom>(out var bloom), Is.True);
+            Assert.That(bloom.active, Is.True);
+            Assert.That(
+                bloom.threshold.value,
+                Is.GreaterThanOrEqualTo(1f),
+                "Only light past white spreads, so the pixel art stays crisp."
+            );
+            var controls = view.Hand.GetComponentInParent<Canvas>().rootCanvas;
+            Assert.That(controls.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            Assert.That(
+                view.Vfx.Flash.canvas.rootCanvas,
+                Is.SameAs(controls),
+                "The flash is not bloomed."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator TheCameraSlowlyCirclesTheBattlefieldButNotTheControls()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var stage = view.Vfx.Stage;
+            var drift = stage.parent.GetComponent<BattleStageDrift>();
+            Assert.That(drift, Is.Not.Null, "The stage moves inside the camera's circle.");
+            Assert.That(view.Enemies[0].TargetArea.IsChildOf(stage), Is.True);
+            Assert.That(view.Hand.IsChildOf(drift.transform), Is.False);
+            var pixelArt = view.ActorMaterial;
+            Assert.That(pixelArt, Is.Not.Null);
+            Assert.That(pixelArt.shader.name, Is.EqualTo("Baryonyx/UI Pixel Art"));
+            Assert.That(
+                ActorMaterials(view),
+                Has.All.SameAs(pixelArt),
+                "The characters stay sharp between screen pixels."
+            );
+            var background = stage.Find("Backdrop/Background").GetComponent<RawImage>();
+            Assert.That(background.material, Is.SameAs(pixelArt));
+
+            // Sped up from its default (once round in tens of seconds) to see it go round.
+            drift.Period = 1f;
+            var hand = view.Hand.position;
+            var drawn = new List<Vector2>();
+            for (float t = 0f; t < 1.1f; t += Time.unscaledDeltaTime)
+            {
+                yield return null;
+                drawn.Add(((RectTransform)drift.transform).anchoredPosition);
+            }
+            Assert.That(
+                drawn.Select(offset => offset.magnitude),
+                Has.All.EqualTo(drift.Radius).Within(0.01f),
+                "The view's centre keeps on the circle."
+            );
+            Assert.That(drawn.Max(offset => offset.x), Is.GreaterThan(drift.Radius * 0.7f));
+            Assert.That(drawn.Min(offset => offset.x), Is.LessThan(-drift.Radius * 0.7f));
+            Assert.That(drawn.Max(offset => offset.y), Is.GreaterThan(drift.Radius * 0.7f));
+            Assert.That(drawn.Min(offset => offset.y), Is.LessThan(-drift.Radius * 0.7f));
+            Assert.That(view.Hand.position, Is.EqualTo(hand), "The controls stay still.");
+        }
+
+        [UnityTest]
+        public IEnumerator TheCameraKeepsCirclingThroughASkillAndItsHitStop()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            var drift = (RectTransform)vfx.Stage.parent;
+
+            Play(view, 0, view.Enemies[1].TargetArea);
+            var last = drift.anchoredPosition;
+            int frames = 0;
+            int still = 0;
+            int stopped = 0;
+            for (float t = 0f; (view.Acting || t < 0.2f) && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                yield return null;
+                frames++;
+                if (vfx.HitStopping)
+                    stopped++;
+                if (drift.anchoredPosition == last)
+                    still++;
+                last = drift.anchoredPosition;
+            }
+            Assert.That(view.Acting, Is.False, "The action ends.");
+            Assert.That(stopped, Is.GreaterThan(0), "The cut lands with a hit stop.");
+            Assert.That(
+                still,
+                Is.EqualTo(0),
+                $"The camera moves on in every one of {frames} frames."
+            );
+            Assert.That(
+                ActorMaterials(view),
+                Has.All.SameAs(view.ActorMaterial),
+                "The flashes give the sprites their own material back."
+            );
+        }
+
+        private static IEnumerable<Material> ActorMaterials(BattleInspectView view) =>
+            view
+                .Allies.Select(ally => ally.Sprite.material)
+                .Concat(view.Enemies.Select(enemy => enemy.Sprite.material));
+
+        [UnityTest]
+        public IEnumerator ABlowLightsTheCharactersNearItAndLeavesTheFarOnesDark()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            var wolf = view.Enemies[1];
+            var slime = view.Enemies[0];
+            var farAlly = view.Allies[1];
+            int fire = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Fire
+            );
+
+            Play(view, fire, wolf.TargetArea);
+            for (float t = 0f; wolf.Hp == wolf.MaxHp && t < 3f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
+            yield return null;
+            Assert.That(vfx.LightOf(wolf.Sprite).Lit, Is.True, "The blast lights its target.");
+            Assert.That(vfx.LightOf(slime.Sprite).Lit, Is.True, "...and the enemy beside it.");
+            Assert.That(vfx.LightOf(farAlly.Sprite).Lit, Is.False, "The far side stays dark.");
+
+            yield return WaitActions(view);
+            for (float t = 0f; vfx.LightOf(wolf.Sprite).Lit && t < 2f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(view.Enemies.Any(enemy => vfx.LightOf(enemy.Sprite).Lit), Is.False);
+            Assert.That(
+                view.Allies.Any(ally => vfx.LightOf(ally.Sprite).Lit),
+                Is.False,
+                "The light fades away."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator EffectsAfterAnIceLanceShowTheirWholePictures()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            int ice = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Ice
+            );
+            int heal = System.Array.FindIndex(
+                view.Cards,
+                card => card.Effect == BattleInspectCardEffect.Heal
+            );
+            typeof(BattleInspectView).GetProperty("Energy").SetValue(view, 9);
+
+            // The ice spikes show one cell of their picture; the heal that reuses them must not.
+            Play(view, ice, view.Enemies[1].TargetArea);
+            yield return WaitActions(view);
+            for (float t = 0f; vfx.LiveCount > 0 && t < 3f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Play(view, heal, view.Allies[0].TargetArea);
+            yield return WaitActions(view);
+            var pillars = vfx
+                .BackLayer.GetComponentsInChildren<RawImage>(true)
+                .Where(image => image.texture == vfx.Textures.HealPillar)
+                .ToArray();
+            Assert.That(pillars, Is.Not.Empty);
+            Assert.That(
+                pillars.Select(image => image.uvRect),
+                Has.All.EqualTo(new Rect(0f, 0f, 1f, 1f))
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator TheBlowHoldsTheBattleStillForAMomentThenTimeGoesOn()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            var wolf = view.Enemies[1];
+
+            Play(view, 0, wolf.TargetArea);
+            float shook = 0f;
+            for (float t = 0f; !vfx.HitStopping && t < 2f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(vfx.HitStopping, Is.True, "The cut lands with a hit stop.");
+            Assert.That(Time.timeScale, Is.EqualTo(0f));
+            Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp), "The stop comes with the blow.");
+
+            float stopped = Time.realtimeSinceStartup;
+            while (vfx.HitStopping && Time.realtimeSinceStartup - stopped < 1f)
+            {
+                shook = Mathf.Max(shook, vfx.Stage.anchoredPosition.magnitude);
+                yield return null;
+            }
+            Assert.That(vfx.HitStopping, Is.False);
+            Assert.That(Time.realtimeSinceStartup - stopped, Is.LessThan(0.25f), "Only a moment.");
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            Assert.That(shook, Is.GreaterThan(0f), "The stage shakes even while the battle stops.");
+            yield return WaitActions(view);
+        }
+
+        [UnityTest]
+        public IEnumerator LeavingTheBattleDuringAHitStopGivesTimeBack()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            view.Vfx.HitStop(0.2f);
+            Assert.That(Time.timeScale, Is.EqualTo(0f));
+            view.Vfx.enabled = false;
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+        }
+
+        [UnityTest]
+        public IEnumerator ACostlySkillOpensWithACutInOfItsUser()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var vfx = view.Vfx;
+            int thunder = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Thunder
+            );
+            var card = view.Cards[thunder];
+            Assert.That(card.Cost, Is.GreaterThanOrEqualTo(vfx.CutInCost));
+
+            Play(view, thunder, view.Enemies[1].TargetArea);
+            // The user steps forward first, then the cut-in sweeps in.
+            for (
+                float t = 0f;
+                !vfx.CutIn.gameObject.activeSelf && t < 1f;
+                t += Time.unscaledDeltaTime
+            )
+                yield return null;
+            Assert.That(vfx.CutIn.gameObject.activeSelf, Is.True);
+            Assert.That(vfx.CutInName.text, Is.EqualTo("サンダー"));
+            Assert.That(vfx.CutInActor.texture, Is.SameAs(view.Allies[card.Caster].Sprite.texture));
+            yield return WaitActions(view);
+            Assert.That(vfx.CutIn.gameObject.activeSelf, Is.False);
+            Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ACheapSkillGoesStraightToItsEffect()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            Play(view, 0, view.Enemies[1].TargetArea);
+            for (float t = 0f; view.Acting && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                Assert.That(view.Vfx.CutIn.gameObject.activeSelf, Is.False);
+                yield return null;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ABeatenEnemyBreaksIntoPieces()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            wolf.Hp = 1;
+
+            Play(view, 0, wolf.TargetArea);
+            for (float t = 0f; wolf.Alive && t < 3f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(wolf.Alive, Is.False);
+            for (float t = 0f; wolf.Group.alpha > 0f && t < 1f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(wolf.Group.alpha, Is.EqualTo(0f), "The wolf is gone at once.");
+            var pieces = view
+                .Vfx.FrontLayer.GetComponentsInChildren<RawImage>()
+                .Count(image => image.texture == wolf.Sprite.texture);
+            Assert.That(pieces, Is.GreaterThanOrEqualTo(30), "Its picture flies apart.");
+            Assert.That(wolf.Sprite.color, Is.EqualTo(Color.white), "It comes back untinted.");
+            yield return WaitActions(view);
+        }
+
+        [UnityTest]
+        public IEnumerator AnEnemysBlowLandsWithABurstOnTheAlly()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int partyHp = view.Allies.Sum(ally => ally.Hp);
+            view.EndTurnButton.onClick.Invoke();
+            int most = 0;
+            for (float t = 0f; view.EnemyTurn && t < 10f; t += Time.unscaledDeltaTime)
+            {
+                if (view.Allies.Sum(ally => ally.Hp) < partyHp)
+                    most = Mathf.Max(most, view.Vfx.LiveCount);
+                yield return null;
+            }
+            Assert.That(view.EnemyTurn, Is.False);
+            Assert.That(most, Is.GreaterThan(5), "Claw marks and sparks burst on the ally.");
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+        }
+
         /// <summary>
         /// Taps the middle of the raised card the way a finger does: the tap goes to whatever the
         /// event system hits first there, which must be the card itself, not the cards of the
@@ -950,14 +1310,16 @@ namespace Baryonyx.Tests.PlayMode
 
         /// <summary>The texts of the numbers now rising from a template.</summary>
         private static string[] Rising(TMP_Text template) =>
+            RisingLabels(template).Select(text => text.text).ToArray();
+
+        /// <summary>The numbers now rising from a template.</summary>
+        private static IEnumerable<TMP_Text> RisingLabels(TMP_Text template) =>
             template
                 .transform.parent.GetComponentsInChildren<TMP_Text>()
-                .Where(text => text != template && text.name == template.name + "(Clone)")
-                .Select(text => text.text)
-                .ToArray();
+                .Where(text => text != template && text.name == template.name + "(Clone)");
 
         private static Vector2 Center(RectTransform rect) =>
-            RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(rect.rect.center));
+            BattleInspectView.ScreenPointOf(rect, rect.rect.center);
 
         /// <summary>Waits for the played cards to finish acting.</summary>
         private static IEnumerator WaitActions(BattleInspectView view)

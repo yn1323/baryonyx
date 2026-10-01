@@ -1,0 +1,7 @@
+interface:
+  display_name: "VFXの作り方"
+  short_description: "エフェクトを体験・時間・層・光と奥行きから設計し、コマを並べて検証して、のっぺりした演出を避ける"
+  default_prompt: "Use $vfx-authoring to design, build, or review game VFX so they read clearly and do not look flat."
+
+policy:
+  allow_implicit_invocation: true

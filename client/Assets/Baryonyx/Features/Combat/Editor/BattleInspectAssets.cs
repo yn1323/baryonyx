@@ -47,6 +47,8 @@ namespace Baryonyx.Combat.Editor
         private const float CardDot = 3f;
         public const string FlashMaterialPath =
             "Assets/Baryonyx/Features/Combat/UI/TargetFlash.mat";
+        public const string PixelArtMaterialPath =
+            "Assets/Baryonyx/Features/Combat/UI/StagePixelArt.mat";
 
         // The card is 70x98 dots, the 5:7 of trading cards (63x88 mm, as Pokemon and Magic), with a
         // rim in the element's colour. The art (64x58) fills the top and dithers away into the
@@ -314,25 +316,46 @@ namespace Baryonyx.Combat.Editor
             using (UiBuild.Begin(font, shadowText))
             {
                 EnsureCardPrefab(rebuild: false);
-                var root = CanvasRoot("BattleInspectScreen");
+                // Two canvases: the battlefield, drawn by the scene's camera so the effects' light
+                // goes through Bloom, and the controls on an overlay canvas over it, kept sharp.
+                var root = Rect("BattleInspectScreen", null);
+                Stretch(root);
                 var view = root.gameObject.AddComponent<BattleInspectView>();
                 view.TargetFlash = EnsureFlashMaterial();
+                view.ActorMaterial = EnsurePixelArtMaterial();
                 view.Settings = EnsureHandSettings();
+                var stageCanvas = CanvasRoot("StageCanvas");
+                stageCanvas.SetParent(root, false);
+                BattleSkillVfxAssets.MakeStageCanvas(stageCanvas);
+                var screen = CanvasRoot("ScreenCanvas");
+                screen.SetParent(root, false);
+                // Over the battlefield also where the showcase draws both canvases with one camera.
+                screen.GetComponent<Canvas>().sortingOrder = 1;
 
-                BuildBackground(root);
+                // The stage holds what a blow shakes: the background, the actors and the
+                // effects among them. The flash and the cut-in go over it, the controls on top.
+                // Around it, the camera's slow circle carries the whole stage.
+                var drift = Rect("StageDrift", stageCanvas);
+                Stretch(drift);
+                drift.gameObject.AddComponent<BattleStageDrift>();
+                var stage = Rect("Stage", drift);
+                Stretch(stage);
+                BuildBackground(stage);
+                var dim = BattleSkillVfxAssets.Dim(stage);
+                ReachPastDrift(dim.rectTransform);
+                var back = BattleSkillVfxAssets.Layer("VfxBack", stage);
                 var idle = new List<RectTransform>();
                 var idleSteps = new List<float>();
-                var world = Rect("World", root);
-                world.anchorMin = world.anchorMax = world.pivot = Vector2.one * 0.5f;
-                world.sizeDelta = new Vector2(1920, 1080);
-                world.gameObject.AddComponent<WorldLayerFit>();
+                var world = BattleSkillVfxAssets.Layer("World", stage);
                 BuildParty(world, view, idle, idleSteps);
                 BuildEnemies(world, view, idle, idleSteps);
                 view.IdleActors = idle.ToArray();
                 view.IdleSteps = idleSteps.ToArray();
-                BuildTapArea(root, view);
+                var front = BattleSkillVfxAssets.Layer("VfxFront", stage);
+                view.Vfx = BattleSkillVfxAssets.Attach(screen, stage, dim, back, front);
+                BuildTapArea(screen, view);
 
-                var safe = SafeArea(root);
+                var safe = SafeArea(screen);
                 BuildTurnOrder(safe, view);
                 BuildSkillBanner(safe, view);
                 BuildEnergy(safe, view);
@@ -340,10 +363,12 @@ namespace Baryonyx.Combat.Editor
                 BuildHand(safe, view);
                 BuildEndTurn(safe, view);
                 BuildAim(safe, view);
-                BuildPopup(root, view);
+                BuildPopup(screen, view);
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 BuildNumberSamples();
+                BattleSkillVfxAssets.BuildPreview(Art("BattleBackground"), Art);
+                BattleSkillVfxAssets.BuildRingComparison(Art("BattleBackground"), Art);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
             AssetDatabase.SaveAssets();
@@ -607,6 +632,33 @@ namespace Baryonyx.Combat.Editor
             return material;
         }
 
+        /// <summary>
+        /// The material of the pixel art on the stage (the background, the characters and their
+        /// icons): sharp, yet it glides between screen pixels as the camera circles.
+        /// </summary>
+        private static Material EnsurePixelArtMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(PixelArtMaterialPath);
+            if (material != null)
+                return material;
+            var shader = Shader.Find("Baryonyx/UI Pixel Art");
+            if (shader == null)
+                throw new InvalidOperationException("Missing shader: Baryonyx/UI Pixel Art");
+            material = new Material(shader);
+            AssetDatabase.CreateAsset(material, PixelArtMaterialPath);
+            return material;
+        }
+
+        /// <summary>
+        /// Lays a layer of the stage further past the screen by the camera's widest circle, on top
+        /// of the room the shake needs, so its edge never comes into view.
+        /// </summary>
+        private static void ReachPastDrift(RectTransform rect)
+        {
+            rect.offsetMin -= Vector2.one * BattleStageDrift.MaxRadius;
+            rect.offsetMax += Vector2.one * BattleStageDrift.MaxRadius;
+        }
+
         /// <summary>Finds a battle image by file name anywhere under the art folder.</summary>
         private static Texture2D Art(string name)
         {
@@ -621,21 +673,37 @@ namespace Baryonyx.Combat.Editor
             throw new InvalidOperationException($"Missing battle art: {name}");
         }
 
-        private static void BuildBackground(RectTransform root)
+        /// <summary>
+        /// The background and its floor mist, a little larger than the screen so they still cover
+        /// it while the stage shakes and circles, and the shades that keep the top and bottom
+        /// controls legible.
+        /// </summary>
+        private static void BuildBackground(RectTransform parent)
         {
             var background = Art("BattleBackground");
             float aspect = background.width / (float)background.height;
-            var image = Rect("Background", root).gameObject.AddComponent<RawImage>();
+            var backdrop = BattleSkillVfxAssets.Overscan("Backdrop", parent);
+            ReachPastDrift(backdrop);
+            var image = Rect("Background", backdrop).gameObject.AddComponent<RawImage>();
             image.texture = background;
+            image.material = EnsurePixelArtMaterial();
             image.raycastTarget = false;
             image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
 
-            var fog = InstantiatePrefab(Hd2dAssets.FogPrefabPath, "FloorMist", root);
+            var fog = InstantiatePrefab(Hd2dAssets.FogPrefabPath, "FloorMist", backdrop);
             Stretch((RectTransform)fog.transform);
             fog.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
 
-            Shade(root, "ShadeTop", top: true, 260f, 0.7f);
-            Shade(root, "ShadeBottom", top: false, 360f, 0.85f);
+            Shade(parent, "ShadeTop", top: true, 260f, 0.7f);
+            Shade(parent, "ShadeBottom", top: false, 360f, 0.85f);
+            // Their dark ends reach past the screen's edges as far as the camera circles.
+            foreach (var name in new[] { "ShadeTop", "ShadeBottom" })
+            {
+                var shade = (RectTransform)parent.Find(name);
+                float outward = shade.pivot.y > 0.5f ? 1f : -1f;
+                shade.anchoredPosition = new Vector2(0, outward * BattleStageDrift.MaxRadius);
+                shade.sizeDelta += new Vector2(2f, 1f) * BattleStageDrift.MaxRadius;
+            }
         }
 
         private static void BuildParty(
@@ -667,7 +735,9 @@ namespace Baryonyx.Combat.Editor
                 rings.Add(ring);
                 var pose = Rect("Pose", unit);
                 Place(pose, Vector2.zero, Vector2.zero);
-                sprites.Add(PixelActor(pose, "Sprite", texture, Vector2.zero, DotSize));
+                var sprite = PixelActor(pose, "Sprite", texture, Vector2.zero, DotSize);
+                sprite.material = view.ActorMaterial;
+                sprites.Add(sprite);
                 idle.Add(pose);
                 idleSteps.Add(DotSize);
                 areas.Add(TargetArea(unit, texture, DotSize));
@@ -734,6 +804,7 @@ namespace Baryonyx.Combat.Editor
                 var pose = Rect("Pose", body);
                 Place(pose, Vector2.zero, Vector2.zero);
                 var sprite = PixelActor(pose, "Sprite", texture, Vector2.zero, EnemyDotSize);
+                sprite.material = view.ActorMaterial;
                 idle.Add(pose);
                 idleSteps.Add(EnemyDotSize);
 
@@ -798,12 +869,12 @@ namespace Baryonyx.Combat.Editor
             return weaknesses.ToArray();
         }
 
-        /// <summary>A pixel-art image at 4 px per dot, centered in its parent.</summary>
+        /// <summary>A pixel-art image on the stage at 4 px per dot, centered in its parent.</summary>
         private static GameObject PixelIcon(RectTransform parent, string name, Texture2D texture)
         {
             var icon = Rect(name, parent);
             Place(icon, Vector2.zero, new Vector2(texture.width, texture.height) * DotSize);
-            AddRaw(icon, texture);
+            AddRaw(icon, texture).material = EnsurePixelArtMaterial();
             icon.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = DotSize;
             return icon.gameObject;
         }

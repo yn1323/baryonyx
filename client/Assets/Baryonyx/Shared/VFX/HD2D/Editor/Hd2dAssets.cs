@@ -48,9 +48,9 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         public const string GlowTexturePath = TextureDirectory + "/Hd2dGlowSoft.png";
         private const string RayTexturePath = TextureDirectory + "/Hd2dLightRay.png";
         private const string DustTexturePath = TextureDirectory + "/Hd2dDust.png";
-        private const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
+        public const string SparkleTexturePath = TextureDirectory + "/Hd2dSparkle.png";
         private const string LightShaftTexturePath = TextureDirectory + "/Hd2dLightShaft.png";
-        private const string FogNoiseTexturePath = TextureDirectory + "/Hd2dFogNoise.png";
+        public const string FogNoiseTexturePath = TextureDirectory + "/Hd2dFogNoise.png";
         private const string EmberCrossTexturePath = TextureDirectory + "/Hd2dEmberCross.png";
         private const string EmberStreakTexturePath = TextureDirectory + "/Hd2dEmberStreak.png";
 

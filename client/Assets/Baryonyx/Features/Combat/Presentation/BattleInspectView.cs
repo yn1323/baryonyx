@@ -241,6 +241,9 @@ namespace Baryonyx.Combat.Presentation
 
         private static readonly Color GuardColor = new(0.55f, 0.75f, 1f);
         private static readonly Color HitTint = new(1f, 0.45f, 0.4f);
+
+        // An enemy caught in ice goes pale and cold instead of red.
+        private static readonly Color FrozenTint = new(0.62f, 0.82f, 1f);
         private static readonly Color AimIdle = new(0.6f, 0.6f, 0.6f);
         private static readonly Color DownTint = new(0.35f, 0.35f, 0.4f);
 
@@ -319,6 +322,12 @@ namespace Baryonyx.Combat.Presentation
         public Material TargetFlash;
 
         /// <summary>
+        /// The material of the party and enemy sprites when they are not flashing: pixel art that
+        /// keeps sharp while the camera's slow circle carries it between screen pixels.
+        /// </summary>
+        public Material ActorMaterial;
+
+        /// <summary>
         /// Full-screen catcher under the hand, active while a tapped card waits for its target:
         /// a tap on a target plays the card there, a tap anywhere else puts it back.
         /// </summary>
@@ -336,6 +345,12 @@ namespace Baryonyx.Combat.Presentation
         public TranslucentTextPanel SkillBanner;
 
         public CanvasGroup SkillBannerGroup;
+
+        /// <summary>
+        /// The skill effects: a played card's effect lands when its blow does, and enemy attacks
+        /// and defeats get their bursts. Without it the effects land at once, with no show.
+        /// </summary>
+        public BattleSkillVfx Vfx;
 
         [Min(1)]
         public int StartTurn = 3;
@@ -369,6 +384,9 @@ namespace Baryonyx.Combat.Presentation
         private int[] allyBusy = Array.Empty<int>();
         private CardMotion[] motion = Array.Empty<CardMotion>();
         private Material flash;
+
+        // The blink of white on a character the moment a blow lands.
+        private Material hitFlash;
         private int held = -1;
         private bool pressing;
         private bool armed;
@@ -569,10 +587,23 @@ namespace Baryonyx.Combat.Presentation
                 RefreshAlly(ally);
             }
 
+            if (Vfx != null)
+            {
+                // The effects light the characters near them.
+                foreach (var ally in Allies)
+                    Vfx.RegisterActor(ally.Sprite);
+                foreach (var enemy in Enemies)
+                    Vfx.RegisterActor(enemy.Sprite);
+            }
+
             if (Settings == null)
                 Settings = ScriptableObject.CreateInstance<BattleInspectHandSettings>();
             if (TargetFlash != null)
+            {
                 flash = new Material(TargetFlash);
+                hitFlash = new Material(TargetFlash);
+                hitFlash.SetFloat("_FlashAmount", 1f);
+            }
             if (EndTurnButton != null)
                 EndTurnButton.onClick.AddListener(EndTurn);
             foreach (var template in new[] { PopupTemplate, DamageNumber, WeakNumber, HealNumber })
@@ -598,6 +629,8 @@ namespace Baryonyx.Combat.Presentation
         {
             if (flash != null)
                 Destroy(flash);
+            if (hitFlash != null)
+                Destroy(hitFlash);
         }
 
         private void Update()
@@ -892,14 +925,25 @@ namespace Baryonyx.Combat.Presentation
             return local;
         }
 
-        private Camera EventCamera()
+        private Camera EventCamera() => CameraOf(Hand);
+
+        /// <summary>
+        /// The camera that draws <paramref name="rect"/>'s canvas, for turning screen points into
+        /// its space: none for the controls on the overlay canvas, the battlefield camera for the
+        /// characters on the stage canvas.
+        /// </summary>
+        public static Camera CameraOf(RectTransform rect)
         {
-            var canvas = Hand.GetComponentInParent<Canvas>();
+            var canvas = rect != null ? rect.GetComponentInParent<Canvas>() : null;
             if (canvas == null)
                 return null;
             canvas = canvas.rootCanvas;
             return canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
         }
+
+        /// <summary>Where a point of a character (in its local space) is on the screen.</summary>
+        public static Vector2 ScreenPointOf(RectTransform rect, Vector2 local) =>
+            RectTransformUtility.WorldToScreenPoint(CameraOf(rect), rect.TransformPoint(local));
 
         private void FindTargets(BattleInspectCard card, Vector2 screenPoint)
         {
@@ -930,7 +974,6 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The character of the card's side under or near a screen point, or -1.</summary>
         private int NearestTarget(BattleInspectCard card, Vector2 screenPoint)
         {
-            var camera = EventCamera();
             int count = card.TargetsEnemies ? Enemies.Length : Allies.Length;
             int nearest = -1;
             float best = float.MaxValue;
@@ -939,7 +982,7 @@ namespace Baryonyx.Combat.Presentation
                 if (!CanTarget(card, i))
                     continue;
                 var area = card.TargetsEnemies ? Enemies[i].TargetArea : Allies[i].TargetArea;
-                float distance = DropDistance(area, screenPoint, camera);
+                float distance = DropDistance(area, screenPoint, CameraOf(area));
                 if (distance < best)
                 {
                     best = distance;
@@ -984,7 +1027,8 @@ namespace Baryonyx.Combat.Presentation
             var card = held >= 0 ? Cards[held] : null;
             for (int i = 0; i < Enemies.Length; i++)
             {
-                Enemies[i].Sprite.material = onEnemies && targets.Contains(i) ? flash : null;
+                Enemies[i].Sprite.material =
+                    onEnemies && targets.Contains(i) ? flash : ActorMaterial;
                 Enemies[i]
                     .Marker.gameObject.SetActive(
                         card != null && card.TargetsEnemies && CanTarget(card, i)
@@ -992,7 +1036,8 @@ namespace Baryonyx.Combat.Presentation
             }
             for (int i = 0; i < Allies.Length; i++)
             {
-                Allies[i].Sprite.material = !onEnemies && targets.Contains(i) ? flash : null;
+                Allies[i].Sprite.material =
+                    !onEnemies && targets.Contains(i) ? flash : ActorMaterial;
                 Allies[i].Marker.gameObject.SetActive(card != null && !card.TargetsEnemies);
             }
         }
@@ -1101,8 +1146,17 @@ namespace Baryonyx.Combat.Presentation
                 new[] { enemy.Body },
                 new[] { enemyBase[index] },
                 Vector2.left,
-                () => HitAlly(target, enemy.Power)
+                Strike(target, enemy.Power)
             );
+        }
+
+        /// <summary>An enemy's blow landing on an ally, with its burst when there are effects.</summary>
+        private IEnumerator Strike(int target, int power)
+        {
+            HitAlly(target, power);
+            if (Vfx != null)
+                Vfx.Strike(Allies[target].TargetArea);
+            yield break;
         }
 
         // --- Deck ----------------------------------------------------------------------------
@@ -1373,34 +1427,71 @@ namespace Baryonyx.Combat.Presentation
                     parts,
                     bases,
                     Vector2.right,
-                    () => ApplyCard(data, chosen, onEnemies),
+                    UseCard(data, chosen, onEnemies, caster),
                     caster
                 )
             );
         }
 
-        private void ApplyCard(BattleInspectCardData card, List<int> chosen, bool onEnemies)
+        /// <summary>
+        /// The card's effect: its skill effect plays from the user to the targets, and each
+        /// target takes the effect as the blow lands there. Without effects, all land at once.
+        /// </summary>
+        private IEnumerator UseCard(
+            BattleInspectCardData card,
+            List<int> chosen,
+            bool onEnemies,
+            int caster
+        )
         {
-            if (onEnemies)
+            if (Vfx == null)
             {
-                foreach (int target in chosen)
-                    Hit(target, card.Power, card.Element);
+                for (int i = 0; i < chosen.Count; i++)
+                    Land(card, chosen[i], onEnemies, i == 0);
+                Refresh();
+                yield break;
             }
+            var areas = new List<RectTransform>();
+            foreach (int target in chosen)
+                areas.Add(onEnemies ? Enemies[target].TargetArea : Allies[target].TargetArea);
+            var user = caster >= 0 ? Allies[caster] : null;
+            yield return Vfx.Play(
+                BattleSkillVfx.KindFor(card.Element, card.Effect),
+                card.Name,
+                user != null ? user.TargetArea : PartyAnchor,
+                user != null ? user.Sprite.texture : null,
+                card.Cost >= Vfx.CutInCost,
+                areas,
+                i => Land(card, chosen[i], onEnemies, i == 0)
+            );
+            Refresh();
+        }
+
+        /// <summary>
+        /// The card's effect on one target: damage, healing, or (once for the party) the block.
+        /// Tells how hard it hit, so the effect can hit as hard.
+        /// </summary>
+        private BattleHitWeight Land(
+            BattleInspectCardData card,
+            int target,
+            bool onEnemies,
+            bool first
+        )
+        {
+            BattleHitWeight weight = BattleHitWeight.Normal;
+            if (onEnemies)
+                weight = Hit(target, card.Power, card.Element);
             else if (card.Effect == BattleInspectCardEffect.Heal)
             {
-                foreach (int target in chosen)
-                {
-                    var ally = Allies[target];
-                    ally.Hp = Mathf.Min(ally.MaxHp, ally.Hp + card.Power);
-                    RefreshAlly(ally);
-                    ShowNumber(HealNumber, ally.TargetArea, card.Power.ToString());
-                }
+                var ally = Allies[target];
+                ally.Hp = Mathf.Min(ally.MaxHp, ally.Hp + card.Power);
+                RefreshAlly(ally);
+                ShowNumber(HealNumber, ally.TargetArea, card.Power.ToString());
             }
-            else
-            {
+            else if (first)
                 ShowPopup(PartyAnchor, $"ブロック +{card.Power}", GuardColor, 48f);
-            }
             Refresh();
+            return weight;
         }
 
         /// <summary>Runs actions one after another, so each character's step ends before the next.</summary>
@@ -1424,7 +1515,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// One action: the skill's name shows at the top, the character (<paramref name="parts"/>,
         /// resting at <paramref name="bases"/>) steps one step toward <paramref name="forward"/>,
-        /// the effect lands, and after a moment the character steps back. An
+        /// the effect plays and lands, and after a moment the character steps back. An
         /// <paramref name="ally"/> (an index of <see cref="Allies"/>) sets out from where it stands
         /// for the raised card, and is home with no stance when done.
         /// </summary>
@@ -1433,7 +1524,7 @@ namespace Baryonyx.Combat.Presentation
             RectTransform[] parts,
             Vector2[] bases,
             Vector2 forward,
-            Action effect,
+            IEnumerator effect,
             int ally = -1
         )
         {
@@ -1447,7 +1538,7 @@ namespace Baryonyx.Combat.Presentation
             var front = StepOffset(forward);
             if (from != front)
                 yield return Slide(parts, bases, from, front);
-            effect();
+            yield return effect;
             yield return Wait(Settings.ActionHold);
             yield return Slide(parts, bases, front, Vector2.zero);
             if (ally >= 0)
@@ -1555,12 +1646,13 @@ namespace Baryonyx.Combat.Presentation
             bannerFade = null;
         }
 
-        private void Hit(int index, int power, BattleInspectElement element)
+        /// <summary>Damages an enemy and tells how hard the blow hit it.</summary>
+        private BattleHitWeight Hit(int index, int power, BattleInspectElement element)
         {
             var enemy = Enemies[index];
             // An earlier card of the queue may have beaten it already.
             if (!enemy.Alive)
-                return;
+                return BattleHitWeight.Normal;
 
             var weakness =
                 element == BattleInspectElement.None
@@ -1574,14 +1666,33 @@ namespace Baryonyx.Combat.Presentation
 
             // A weakness shows in the number's colour and size, without words.
             ShowNumber(weak ? WeakNumber : DamageNumber, enemy.TargetArea, damage.ToString());
-            StartCoroutine(HitReaction(index));
+            StartCoroutine(
+                HitReaction(index, element == BattleInspectElement.Ice ? FrozenTint : HitTint)
+            );
+            return !enemy.Alive ? BattleHitWeight.Defeat
+                : weak ? BattleHitWeight.Weak
+                : BattleHitWeight.Normal;
         }
 
-        private IEnumerator HitReaction(int index)
+        /// <summary>
+        /// The enemy blinks white as the blow lands, then reels back in <paramref name="tint"/> (red,
+        /// or a cold blue for ice) and trembles, through the hit stop too. A beaten enemy bursts
+        /// into pieces (or, with no effects, fades away).
+        /// </summary>
+        private IEnumerator HitReaction(int index, Color tint)
         {
             var enemy = Enemies[index];
-            enemy.Sprite.color = HitTint;
-            yield return Shake(enemy.Body, enemyBase[index], 10f, 0.24f);
+            yield return Blink(enemy.Sprite);
+            if (!enemy.Alive && Vfx != null)
+            {
+                enemy.Sprite.color = Color.white;
+                Vfx.Shatter(enemy.Sprite, Vector2.right);
+                enemy.Group.alpha = 0f;
+                RefreshTurnOrder();
+                yield break;
+            }
+            enemy.Sprite.color = tint;
+            yield return Shake(enemy.Body, enemyBase[index], 10f, 0.3f, Vector2.right * 24f);
             enemy.Sprite.color = Color.white;
 
             if (enemy.Alive)
@@ -1593,6 +1704,18 @@ namespace Baryonyx.Combat.Presentation
             }
             enemy.Group.alpha = 0f;
             RefreshTurnOrder();
+        }
+
+        /// <summary>Turns the sprite white for a few frames of real time, so it shows in a hit stop.</summary>
+        private IEnumerator Blink(RawImage sprite)
+        {
+            if (hitFlash == null)
+                yield break;
+            sprite.material = hitFlash;
+            for (float t = 0f; t < 0.06f; t += Time.unscaledDeltaTime)
+                yield return null;
+            if (sprite.material == hitFlash)
+                sprite.material = ActorMaterial;
         }
 
         private void HitAlly(int index, int damage)
@@ -1611,8 +1734,9 @@ namespace Baryonyx.Combat.Presentation
             allyBusy[index]++;
             allyStance[index] = 0f;
             ally.HpBar.anchoredPosition = allyBarBase[index];
+            yield return Blink(ally.Sprite);
             ally.Sprite.color = HitTint;
-            yield return Shake(ally.Body, allyBase[index], 10f, 0.24f);
+            yield return Shake(ally.Body, allyBase[index], 10f, 0.3f, Vector2.left * 24f);
             allyBusy[index]--;
             RefreshAlly(ally);
         }
@@ -1692,7 +1816,7 @@ namespace Baryonyx.Combat.Presentation
                 return;
             var popup = Spawn(
                 PopupTemplate,
-                anchor.TransformPoint(anchor.rect.center),
+                ScreenPointOf(anchor, anchor.rect.center),
                 text,
                 MessageRise
             );
@@ -1706,49 +1830,85 @@ namespace Baryonyx.Combat.Presentation
                 return;
             var rect = anchor.rect;
             var start = new Vector2(rect.center.x, rect.yMax - NumberBelowTop);
-            Spawn(template, anchor.TransformPoint(start), text, NumberRise);
+            Spawn(template, ScreenPointOf(anchor, start), text, NumberRise);
         }
 
-        private TMP_Text Spawn(TMP_Text template, Vector3 position, string text, float rise)
+        /// <summary>
+        /// Puts a copy of a popup template at a screen point. The characters are on the stage
+        /// canvas and the popups on the overlay canvas over it, so the point is carried across in
+        /// screen space.
+        /// </summary>
+        private TMP_Text Spawn(TMP_Text template, Vector2 screenPoint, string text, float rise)
         {
             var popup = Instantiate(template, template.transform.parent);
             popup.gameObject.SetActive(true);
             popup.text = text;
-            popup.transform.position = position;
+            var parent = (RectTransform)popup.transform.parent;
+            RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                parent,
+                screenPoint,
+                CameraOf(parent),
+                out var world
+            );
+            popup.transform.position = world;
             StartCoroutine(Rise(popup, rise));
             return popup;
         }
 
+        /// <summary>
+        /// A popup bursts out large and snaps to its size, jumps up, hangs and fades. It runs on
+        /// real time, so it pops even while a hit stop holds the battle.
+        /// </summary>
         private static IEnumerator Rise(TMP_Text popup, float distance)
         {
             var rect = (RectTransform)popup.transform;
             var start = rect.anchoredPosition;
-            const float duration = 0.9f;
-            for (float t = 0f; t < duration; t += Time.deltaTime)
+            const float duration = 1.3f;
+            const float pop = 0.16f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
             {
                 float k = t / duration;
-                // Jump up quickly, then hang and fade.
+                float rise = Mathf.Min(1f, t / 0.5f);
                 rect.anchoredPosition =
-                    start + Vector2.up * (distance * (1f - (1f - k) * (1f - k)));
-                popup.alpha = k < 0.6f ? 1f : 1f - (k - 0.6f) / 0.4f;
+                    start + Vector2.up * (distance * (1f - (1f - rise) * (1f - rise)));
+                rect.localScale = Vector3.one * PopScale(t / pop);
+                popup.alpha = k < 0.7f ? 1f : 1f - (k - 0.7f) / 0.3f;
                 yield return null;
             }
             Destroy(popup.gameObject);
         }
 
+        /// <summary>
+        /// A number's size as it pops: from 1.8 times down past its size and back to it, over
+        /// <paramref name="k"/> from 0 to 1, then its size.
+        /// </summary>
+        public static float PopScale(float k)
+        {
+            if (k >= 1f)
+                return 1f;
+            if (k < 0.6f)
+                return Mathf.Lerp(1.8f, 0.9f, k / 0.6f);
+            return Mathf.Lerp(0.9f, 1f, (k - 0.6f) / 0.4f);
+        }
+
+        /// <summary>
+        /// Shakes a character side to side, fading out, after a knock back of <paramref name="kick"/>
+        /// that eases home. It runs on real time so the character trembles through a hit stop.
+        /// </summary>
         private static IEnumerator Shake(
             RectTransform rect,
             Vector2 basePosition,
             float distance,
-            float duration
+            float duration,
+            Vector2 kick
         )
         {
-            for (float t = 0f; t < duration; t += Time.deltaTime)
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
             {
                 float side = Mathf.Repeat(t * 30f, 2f) < 1f ? 1f : -1f;
                 float fade = 1f - t / duration;
-                rect.anchoredPosition =
-                    basePosition + Vector2.right * Mathf.Round(side * distance * fade / Dot) * Dot;
+                var offset = Vector2.right * (side * distance * fade) + kick * (fade * fade);
+                rect.anchoredPosition = basePosition + ToDots(offset);
                 yield return null;
             }
             rect.anchoredPosition = basePosition;

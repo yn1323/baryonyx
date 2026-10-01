@@ -80,7 +80,7 @@ updated: 2026-09-27
 |---|---|
 | ホームのUIアイコン | 設定のアイコンは16×16を2.5倍で表示しており、24×24を4倍で表示していない。パーティ・装備・召喚・マップのアイコンは2026-09-27に24×24・4倍へ描き直した |
 | ホームのルカ | 画像生成の高解像度シート（[Adventurers.png](../../client/Assets/Baryonyx/Shared/Art/Characters/Adventurers.png)）を縮小表示しており、ドットの格子がない |
-| 戦闘画面のモックの背景（[BattleBackground.png](../../client/Assets/Baryonyx/Features/Combat/UI/Art/BattleBackground.png)） | Codexの生成画像を16:9に切り抜いただけで、色数は32色を超える（背景の寸法と表示倍率は未決） |
+| 戦闘画面のモックの背景（[BattleBackground.png](../../client/Assets/Baryonyx/Features/Combat/UI/Art/BattleBackground.png)） | Codexの生成画像を16:9に切り抜いただけで、色数は32色を超える（背景の寸法と表示倍率は未決）。2026-10-01に月明かりの石舞台の絵へ差し替えた（[スキルの演出と背景](../features/screens.md#スキルの演出と背景)） |
 | ホームのトーマの立ち絵 | 64×64の立ち絵を100×100の透明画像に置いている（[ゲームUIと生成素材](game-ui.md)）。色数は48色で、32色を超える |
 
 ## 探索と戦闘の設計方針

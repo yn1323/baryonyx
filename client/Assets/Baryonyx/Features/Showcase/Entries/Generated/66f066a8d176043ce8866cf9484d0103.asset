@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 66f066a8d176043ce8866cf9484d0103
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 66f066a8d176043ce8866cf9484d0103
+  DisplayName: BattleSkillVfxPreview
+  Description: Assets/Baryonyx/Features/Combat/Vfx/BattleSkillVfxPreview.prefab
+  Category: 6
+  Asset: {fileID: 6705502075182137747, guid: 66f066a8d176043ce8866cf9484d0103, type: 3}
+  PreviewPrefab: {fileID: 6705502075182137747, guid: 66f066a8d176043ce8866cf9484d0103, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

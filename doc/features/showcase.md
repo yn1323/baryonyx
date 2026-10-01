@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-09-24
+updated: 2026-10-01
 ---
 
 # クライアントアセット展示室
@@ -251,6 +251,12 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
+カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、斬り払い・ファイア・アイスランス・サンダー・ヒール・ガードの演出を順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。素材の画像（`Features/Combat/Vfx/Textures/`）も同じカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
+衝撃波の輪は、画像（`VfxShockwave.png`）で描く今の輪と、画像を使わずにシェーダーで描く試作の輪を、VFXカテゴリの `BattleRingComparison` Prefabで比べる。
+戦闘の背景の左に画像の輪、右にシェーダーの輪を置き、それぞれ立てた輪と、敵の足元の床に寝かせた輪を同じ速さで繰り返し広げる。
+シェーダー（`BattleVfxRing`）とマテリアル（`VfxRingProcedural`）も同じカテゴリに入る。
+展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。
+カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。
 案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。

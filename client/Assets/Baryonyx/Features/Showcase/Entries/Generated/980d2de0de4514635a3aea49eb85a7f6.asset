@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 980d2de0de4514635a3aea49eb85a7f6
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 980d2de0de4514635a3aea49eb85a7f6
+  DisplayName: BattleVfx
+  Description: Assets/Baryonyx/Features/Combat/Vfx/Shaders/BattleVfx.shader
+  Category: 6
+  Asset: {fileID: 4800000, guid: 980d2de0de4514635a3aea49eb85a7f6, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

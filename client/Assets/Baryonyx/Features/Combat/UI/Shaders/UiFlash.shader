@@ -1,5 +1,6 @@
 // uGUI用の発光シェーダー。UI/Defaultと同じ頂点色・RectMask2D・Maskの扱いで、絵の色を_FlashColorへ近づける。
-// 戦闘画面のモックで、カードの対象になるキャラを白く光らせるのに使う。
+// 戦闘画面のモックで、カードの対象になるキャラを白く光らせるのに使う。絵は UiPixelArt と同じく
+// PixelArtSampling.cginc の標本化で描き、光っている間も戦場と一緒に滑らかに動く。
 Shader "Baryonyx/UI Flash"
 {
     Properties
@@ -53,10 +54,11 @@ Shader "Baryonyx/UI Flash"
         CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 2.0
+            #pragma target 3.0
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
+            #include "PixelArtSampling.cginc"
 
             #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
@@ -79,6 +81,7 @@ Shader "Baryonyx/UI Flash"
             };
 
             sampler2D _MainTex;
+            float4 _MainTex_TexelSize;
             fixed4 _Color;
             fixed4 _FlashColor;
             float _FlashAmount;
@@ -118,7 +121,8 @@ Shader "Baryonyx/UI Flash"
                 const half invAlphaPrecision = half(1.0 / alphaPrecision);
                 IN.color.a = round(IN.color.a * alphaPrecision) * invAlphaPrecision;
 
-                half4 color = IN.color * (tex2D(_MainTex, IN.texcoord) + _TextureSampleAdd);
+                half4 color = IN.color
+                    * (SamplePixelArt(_MainTex, IN.texcoord, _MainTex_TexelSize) + _TextureSampleAdd);
                 color.rgb = lerp(color.rgb, _FlashColor.rgb, _FlashAmount);
 
                 #ifdef UNITY_UI_CLIP_RECT
