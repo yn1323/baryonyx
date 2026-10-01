@@ -110,9 +110,18 @@ Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実
 対象プロジェクトをEditorで開いている場合、CLIの別起動には検証コピーを使う。
 
 接続中のEditorでは `run_tests --mode editor` または `run_tests --mode playmode` に `--filter <アセンブリ名> --filter_type assembly --async_tests true` を付け、`test_status` で完了と件数を確認する。
-Unity 6000.6.0f1でDomain ReloadとScene Reloadを両方省略した状態では、検出済みのPlayModeテストが0件で終了することがあった。
-この場合は再生を停止し、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行する。
-検証後は元のEditor設定へ戻し、0件の結果は成功に含めない。
+接続中のEditorでテストを実行するときは、毎回次の順に進める。
+
+1. 開いているシーンに未保存の変更があれば保存する（[client/AGENTS.md](../../client/AGENTS.md#unityの操作と検証)）。
+2. `run_tests` で実行を始める。
+3. 開始から数秒のうちに、Editorログの今回の `[TestResultCollector] Run started: <件数> test(s)` を確認する。この件数は絞り込む前の全体の件数で、PlayModeでは0にならない。0なら、テストを見つけられていない。
+4. 0のときは、完了を待たずにすぐ `cancel_tests` と `editor_stop` で止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
+5. やり直しても0なら、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行し、検証後に元へ戻す。
+6. 完了を待つ時間には上限を設ける（EditModeは2分、PlayModeは5分を目安）。上限を超えたら待つのをやめ、Editorの状態（保存の確認ダイアログ、再生中か、コンパイル中か）を確かめてユーザーに報告する。
+7. 完了は、`test_status` が completed になり、かつ今回の開始以降のログに `Run finished: <件数> total` が出たことで判断する。前回の実行の結果と取り違えない。実行件数が0の結果は成功に含めない。
+
+Unity 6000.6.0f1でDomain ReloadとScene Reloadを両方省略した状態では、PlayModeテストを再読み込みなしで続けて実行すると、2回目は見つかるテストが0件になることが多い。
+毎回あらかじめ再読み込みするより、手順3で0件を見つけたときだけ再読み込みするほうが、普段の実行は軽く済む。
 
 ```text
 unity test <clientの絶対パス> --mode EditMode --output <結果XMLの絶対パス> --timeout 600 -- -nographics -assemblyNames Baryonyx.EditModeTests

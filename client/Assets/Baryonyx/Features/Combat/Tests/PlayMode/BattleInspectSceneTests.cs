@@ -1159,6 +1159,37 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator UnderAnotherCanvasTheBattlefieldFillsIt()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var stage = view.Enemies[0].TargetArea.GetComponentInParent<BattleStageCamera>();
+            var stageRect = (RectTransform)stage.transform;
+            Assert.That(
+                stageRect.localScale.x,
+                Is.LessThan(0.5f),
+                "As a root drawn by the camera, Unity scales it down to world units."
+            );
+
+            // The showcase previews the screen under its own camera canvas.
+            var holder = new GameObject("PreviewCanvas", typeof(RectTransform), typeof(Canvas));
+            SceneManager.MoveGameObjectToScene(holder, loadedScene);
+            var holderCanvas = holder.GetComponent<Canvas>();
+            holderCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            holderCanvas.worldCamera = stage.GetComponent<Canvas>().worldCamera;
+            stageRect.SetParent(holder.transform, false);
+            yield return null;
+
+            Assert.That(stageRect.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(stageRect.anchorMin, Is.EqualTo(Vector2.zero));
+            Assert.That(stageRect.anchorMax, Is.EqualTo(Vector2.one));
+            Assert.That(
+                stageRect.rect.size,
+                Is.EqualTo(((RectTransform)holder.transform).rect.size)
+            );
+        }
+
+        [UnityTest]
         public IEnumerator TheBlowHoldsTheBattleStillForAMomentThenTimeGoesOn()
         {
             var view = default(BattleInspectView);
