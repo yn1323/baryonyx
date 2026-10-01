@@ -456,20 +456,22 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var guardian = view.Enemies[2];
-            int thunderIndex = System.Array.FindIndex(
+            // The ice lance costs more than the first turn's energy, to show how such a card looks.
+            int iceIndex = System.Array.FindIndex(view.Cards, card => card.Cost > view.MaxEnergy);
+            int fireIndex = System.Array.FindIndex(
                 view.Cards,
-                card => card.Effect == BattleInspectCardEffect.DamageAll
+                card => card.Element == BattleInspectElement.Fire
             );
 
-            // Spend down to 1 energy with the two cost-2 cards, then try the cost-3 card.
-            for (int i = 0; i < view.Cards.Length; i++)
-                if (view.Cards[i].Cost == 2)
-                    Play(view, i, guardian.TargetArea);
-            Assert.That(view.Energy, Is.EqualTo(1));
-            Play(view, thunderIndex, guardian.TargetArea);
+            // Spend some energy with the fire, then try the card the energy cannot pay for.
+            Play(view, fireIndex, guardian.TargetArea);
+            int left = view.MaxEnergy - view.Cards[fireIndex].Cost;
+            Assert.That(view.Energy, Is.EqualTo(left));
+            Assert.That(view.Cards[iceIndex].Cost, Is.GreaterThan(left));
+            Play(view, iceIndex, guardian.TargetArea);
 
-            Assert.That(view.Cards[thunderIndex].InHand, Is.True);
-            Assert.That(view.Energy, Is.EqualTo(1));
+            Assert.That(view.Cards[iceIndex].InHand, Is.True);
+            Assert.That(view.Energy, Is.EqualTo(left));
             // The warning takes the place of the skill name, in the red of an unpayable cost.
             Assert.That(view.SkillBanner.gameObject.activeSelf, Is.True);
             Assert.That(view.SkillBanner.Label.text, Is.EqualTo("エネルギー不足"));
@@ -477,28 +479,28 @@ namespace Baryonyx.Tests.PlayMode
 
             // A card the energy cannot pay for is see-through and darkened, with a reddish cost.
             yield return null;
-            var thunder = view.Cards[thunderIndex];
-            Assert.That(thunder.Group.alpha, Is.EqualTo(view.Settings.UnplayableAlpha));
+            var ice = view.Cards[iceIndex];
+            Assert.That(ice.Group.alpha, Is.EqualTo(view.Settings.UnplayableAlpha));
             Assert.That(view.Settings.UnplayableAlpha, Is.LessThan(1f));
             // The see-through card does not thin its black: it is as dark as the settings say.
             Assert.That(
-                thunder.Face.Shade.color.a * thunder.Group.alpha,
+                ice.Face.Shade.color.a * ice.Group.alpha,
                 Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
             );
-            Assert.That(thunder.Face.Shade.enabled, Is.True);
-            Assert.That(thunder.Face.CostDigit.color, Is.EqualTo(BattleInspectCardView.ShortCost));
+            Assert.That(ice.Face.Shade.enabled, Is.True);
+            Assert.That(ice.Face.CostDigit.color, Is.EqualTo(BattleInspectCardView.ShortCost));
             var slash = view.Cards[0];
             Assert.That(slash.Face.Shade.enabled, Is.False, "Cost 1 is paid for.");
             Assert.That(slash.Face.CostDigit.color, Is.EqualTo(Color.white));
             Assert.That(slash.Group.alpha, Is.EqualTo(1f));
 
             // Raised, it is opaque again so its details can be read.
-            view.PressCard(thunderIndex, CardPoint(thunder));
+            view.PressCard(iceIndex, CardPoint(ice));
             yield return null;
-            Assert.That(thunder.Group.alpha, Is.EqualTo(1f));
-            Assert.That(thunder.Face.Shade.enabled, Is.True);
+            Assert.That(ice.Group.alpha, Is.EqualTo(1f));
+            Assert.That(ice.Face.Shade.enabled, Is.True);
             Assert.That(
-                thunder.Face.Shade.color.a,
+                ice.Face.Shade.color.a,
                 Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
             );
         }
@@ -848,18 +850,22 @@ namespace Baryonyx.Tests.PlayMode
             yield return Load(value => view = value);
             var wolf = view.Enemies[1];
             var slash = view.Cards[0];
-            var ice = view.Cards[2];
+            int fireIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Fire
+            );
+            var fire = view.Cards[fireIndex];
 
             Play(view, 0, wolf.TargetArea);
-            Play(view, 2, wolf.TargetArea);
+            Play(view, fireIndex, wolf.TargetArea);
             // Both are paid for at once; their effects land in turn.
-            Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost - ice.Cost));
+            Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost - fire.Cost));
             Assert.That(view.HandCards, Has.Count.EqualTo(4));
             yield return WaitActions(view);
-            // Ice is the wolf's weakness.
+            // Fire is one of the wolf's weaknesses.
             Assert.That(
                 wolf.Hp,
-                Is.EqualTo(wolf.MaxHp - slash.Power - Mathf.RoundToInt(ice.Power * 1.5f))
+                Is.EqualTo(wolf.MaxHp - slash.Power - Mathf.RoundToInt(fire.Power * 1.5f))
             );
         }
 
