@@ -48,7 +48,7 @@ CIはプロジェクトのテストアセンブリだけを実行する。
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
 案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeの4つのボタンから各画面へ移って戻る流れを1件で通し、メニュー・リスト・決定の通知、地図の印の選択を検査する。
 ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したUPTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
-仮のルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押して確かめる。押すたびに増える計算はEditModeで検査する。
+ルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押し、同期したUPTと同じ量が付与されて代役のサーバーに残ることを確かめる。
 Top・Home・案内人の画面のシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 
@@ -104,6 +104,44 @@ Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;`
 実行した件数は、`test_status` の件数、またはEditorログの `[TestResultCollector] Run finished: <件数> total` で確かめる。
 同じログの `Run started: <件数> test(s)` は、絞り込む前のPlayModeテスト全体の件数を表示するため、実行件数の確認に使わない。
 
+## 複数のチャットで1台のEditorを使うとき
+
+複数のチャットで並行して作業すると、`client/` を開いた1台のEditorを全員で使うことになる。
+Editorは、再コンパイルとテストを一度に1つずつしか処理できない。
+あるチャットのテスト中に別のチャットが再コンパイルやテストを始めると、テストが途中で止まったり0件になったりして、やり直しが増える。
+これを防ぐため、Editorの状態を変える操作は、[editor-lock.py](../../client/ci/editor-lock.py) で**札**を取ったチャットだけが行う。
+札を待つ間も、ファイルの編集など札の要らない作業は進めてよい。
+
+| 札 | 操作 |
+|---|---|
+| 必要 | `recompile`、`run_tests`、`editor_play`、シーンを開く・保存する、Prefabやアセットの生成し直し、Gameビューの撮影、`eval`・`run_script` での変更 |
+| 不要 | `unity status`・`editor_status`・`console`・`get_*`・`find_*` などの読み取り、ファイルの編集、CSharpierでの整形と検査 |
+
+札は次の順に使う。
+
+1. `python3 client/ci/editor-lock.py acquire --owner "<作業の名前>"` で札を取り、表示された `token=` の値を控える。
+2. 札を取れずに `busy` で終わったら（終了コード3）、同じコマンドをもう一度実行して待ち続ける。
+3. 再コンパイルの完了とConsoleの確認、テストの実行と結果確認のように、ひと続きの操作を終えたら `python3 client/ci/editor-lock.py release <token>` で返す。操作が失敗したときも返す。
+
+`acquire` は既定で90秒まで待つ。
+コマンドの実行時間に上限があるツールでは、`--wait` にその上限より短い秒数を渡す。
+札を持っているチャットは `status` で確かめる。
+
+札には期限があり、既定では取ってから10分で切れる。
+期限が切れた札は次に待っているチャットへ移るため、途中で止まったチャットが他のチャットを止め続けることはない。
+commit前の全件実行のように10分を超えそうな操作では、EditModeとPlayModeの間などの区切りで `renew <token>` を実行して期限を延ばす。
+`renew` や `release` が `not held`（終了コード4）で終わったら、札は期限切れで他のチャットへ移っている。
+その間の結果は他のチャットの操作の影響を受けた可能性があるため、札を取り直して確かめ直す。
+
+札で順番にできるのはEditorの操作だけで、作業フォルダーは全チャットで共有したままである。
+再コンパイルは保存済みのC#をすべて対象にするため、他のチャットが書きかけのC#もコンパイルされる。
+自分が変更していないファイルでコンパイルエラーが出たら、他のチャットの作業途中とみなし、直さずに札を返して少し待ってからやり直す。
+エラーが続く場合はユーザーに報告する。
+
+札は `client/Temp/editor-lock.json` に置く。
+Unityは終了時に `Temp/` を消すため、Editorを開き直すと札も消える。
+ユーザーが手でEditorを操作するときは札を使わない。
+
 ## 実行と結果確認
 
 Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実行する。
@@ -112,16 +150,18 @@ Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実
 接続中のEditorでは `run_tests --mode editor` または `run_tests --mode playmode` に `--filter <アセンブリ名> --filter_type assembly --async_tests true` を付け、`test_status` で完了と件数を確認する。
 接続中のEditorでテストを実行するときは、毎回次の順に進める。
 
-1. 開いているシーンに未保存の変更があれば保存する（[client/AGENTS.md](../../client/AGENTS.md#unityの操作と検証)）。
-2. `run_tests` で実行を始める。
-3. 開始から数秒のうちに、Editorログの今回の `[TestResultCollector] Run started: <件数> test(s)` を確認する。この件数は絞り込む前の全体の件数で、PlayModeでは0にならない。0なら、テストを見つけられていない。
-4. 0のときは、完了を待たずにすぐ `cancel_tests` と `editor_stop` で止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
-5. やり直しても0なら、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行し、検証後に元へ戻す。
-6. 完了を待つ時間には上限を設ける（EditModeは2分、PlayModeは5分を目安）。上限を超えたら待つのをやめ、Editorの状態（保存の確認ダイアログ、再生中か、コンパイル中か）を確かめてユーザーに報告する。
-7. 完了は、`test_status` が completed になり、かつ今回の開始以降のログに `Run finished: <件数> total` が出たことで判断する。前回の実行の結果と取り違えない。実行件数が0の結果は成功に含めない。
+1. Editorの札を取る（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）。
+2. 開いているシーンに未保存の変更があれば保存する（[client/AGENTS.md](../../client/AGENTS.md#unityの操作と検証)）。
+3. `run_tests` で実行を始める。
+4. 開始から数秒のうちに、Editorログの今回の `[TestResultCollector] Run started: <件数> test(s)` を確認する。この件数は絞り込む前の全体の件数で、PlayModeでは0にならない。0なら、テストを見つけられていない。
+5. 0のときは、完了を待たずにすぐ `cancel_tests` と `editor_stop` で止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
+6. やり直しても0なら、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行し、検証後に元へ戻す。
+7. 完了を待つ時間には上限を設ける（EditModeは2分、PlayModeは5分を目安）。上限を超えたら待つのをやめ、Editorの状態（保存の確認ダイアログ、再生中か、コンパイル中か）を確かめてユーザーに報告する。
+8. 完了は、`test_status` が completed になり、かつ今回の開始以降のログに `Run finished: <件数> total` が出たことで判断する。前回の実行の結果と取り違えない。実行件数が0の結果は成功に含めない。
+9. 結果を確かめたら札を返す。続けて別のテストを実行する場合は、返さずに手順2へ戻ってよい。
 
 Unity 6000.6.0f1でDomain ReloadとScene Reloadを両方省略した状態では、PlayModeテストを再読み込みなしで続けて実行すると、2回目は見つかるテストが0件になることが多い。
-毎回あらかじめ再読み込みするより、手順3で0件を見つけたときだけ再読み込みするほうが、普段の実行は軽く済む。
+毎回あらかじめ再読み込みするより、手順4で0件を見つけたときだけ再読み込みするほうが、普段の実行は軽く済む。
 
 ```text
 unity test <clientの絶対パス> --mode EditMode --output <結果XMLの絶対パス> --timeout 600 -- -nographics -assemblyNames Baryonyx.EditModeTests
@@ -150,6 +190,7 @@ AnalyzerとAndroidのLibraryは、従来どおり別のキーで管理する。
 
 `Client CI scripts` はUnityを起動せず、実行補助の後始末と結果検証の異常系を検査する。
 ローカルでは `python -B -m unittest discover -s client/ci -p 'test_unity_ci.py'` で実行する。
+Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同じjobで `python -B -m unittest discover -s client/ci -p 'test_editor_lock.py'` が検査する。
 実行補助の検査にはBashが必要で、WindowsではGit for WindowsのBashを使う。
 ライセンス設定は [コード品質の手順](client-code-quality.md) を参照する。
 

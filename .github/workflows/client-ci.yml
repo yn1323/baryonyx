@@ -51,6 +51,8 @@ jobs:
         run: node --test client/ci/resolve-drive-distribution.test.cjs
       - name: Test Unity CI helpers
         run: python3 -B -m unittest discover -s client/ci -p 'test_unity_ci.py'
+      - name: Test shared Editor lock
+        run: python3 -B -m unittest discover -s client/ci -p 'test_editor_lock.py'
 
   format:
     name: Client format (${{ matrix.os }})
