@@ -99,14 +99,14 @@ namespace Baryonyx.Tests.PlayMode
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
                     SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
-                    // 酒場と装備のメニューは、項目名の前にドット絵のアイコンを置く。
+                    // 編成と商会のメニューは、項目名の前にドット絵のアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find("Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
                 }
 
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
-                    // 酒場のボーナスは一覧の代わりに専用のパネルを開く（下の別のテストで確かめる）。
+                    // 編成の各項目は一覧の代わりに専用のパネルを開く（ボーナスは下の別のテストで確かめる）。
                     if (view.PanelFor(i) != null)
                         continue;
                     view.MenuItems[i].onClick.Invoke();
@@ -179,7 +179,7 @@ namespace Baryonyx.Tests.PlayMode
                     Is.EqualTo(loadout.SlotOf(row.Id) >= 0),
                     row.Id
                 );
-            // 単体で開くと仮データの今日のUPT（3,240）を使い、届いていない枠は暗い。
+            // 単体で開くと仮データの今日のACT（3,240）を使い、届いていない枠は暗い。
             Assert.That(settings.Slots[2].Icon.color, Is.EqualTo(Color.white));
             Assert.That(settings.Slots[3].Icon.color, Is.EqualTo(StepBonusSettingsView.Closed));
 
@@ -304,18 +304,26 @@ namespace Baryonyx.Tests.PlayMode
             var destinations = view.Definition.Destinations;
 
             Assert.That(view.DestinationPanel.activeSelf, Is.True);
+            // 見ればわかるため、リストに題名を付けない。
+            Assert.That(view.DestinationPanel.transform.Find("ListTitle"), Is.Null);
             // 行き先の画面には、メニューと項目のリストを作らない。
             Assert.That(view.MenuPanel, Is.Null);
             Assert.That(view.ListPanel, Is.Null);
             Assert.That(view.DestinationRows.Length, Is.EqualTo(destinations.Length));
             Assert.That(view.Depart.interactable, Is.False);
 
+            // どの行き先にも推奨Lvを書く。
+            for (int i = 0; i < destinations.Length; i++)
+                Assert.That(
+                    RowText(view.DestinationRows[i], "Badge"),
+                    Is.EqualTo($"推奨Lv{destinations[i].RecommendedLevel}")
+                );
+
+            // 未踏の地は地名を伏せ、説明を出さない。
             int locked = System.Array.FindIndex(destinations, destination => destination.Locked);
             Assert.That(view.DestinationRows[locked].interactable, Is.False);
-            Assert.That(
-                view.DestinationRows[locked].transform.Find("Name").GetComponent<TMP_Text>().text,
-                Is.EqualTo("？？？")
-            );
+            Assert.That(RowText(view.DestinationRows[locked], "Name"), Is.EqualTo("？？？"));
+            Assert.That(RowText(view.DestinationRows[locked], "Detail"), Is.Empty);
 
             int open = System.Array.FindIndex(
                 destinations,
@@ -330,6 +338,9 @@ namespace Baryonyx.Tests.PlayMode
             view.Depart.onClick.Invoke();
             Assert.That(view.ToastMessage, Is.EqualTo("出発（準備中）"));
         }
+
+        private static string RowText(Button row, string label) =>
+            row.transform.Find(label).GetComponent<TMP_Text>().text;
 
         private static Button ButtonFor(HomeView view, HomeAction action) =>
             action switch

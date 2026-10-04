@@ -10,15 +10,17 @@ import {
 import { stepBonusHoldings } from "../step-bonus/db-schema.js";
 import { createStepBonusRepository } from "../step-bonus/repository.js";
 import {
+  bossFloor,
   type Destination,
+  ENTRANCE_ROOM_ID,
+  type EventKind,
   findDestination,
-  findRoom,
   hasEvent,
   isBattle,
+  newSeed,
   REWARD_RANK_WEIGHTS,
-  type Room,
+  type RoomKind,
   reviveCost,
-  startRoom,
 } from "./catalog.js";
 import {
   adventureRecords,
@@ -26,7 +28,7 @@ import {
   adventureRewards,
   adventureRuns,
 } from "./db-schema.js";
-import type { EndReason, Revive } from "./schema.js";
+import type { EndReason, Move, Revive } from "./schema.js";
 
 type RunRow = typeof adventureRuns.$inferSelect;
 type RewardRow = typeof adventureRewards.$inferSelect;
@@ -63,6 +65,7 @@ export function createAdventureRepository(
   }
 
   const route = (run: RunRow) => JSON.parse(run.route) as string[];
+  const kindOf = (run: RunRow) => run.roomKind as RoomKind;
 
   const reward = (row: RewardRow) => ({
     roomId: row.roomId,
@@ -71,7 +74,7 @@ export function createAdventureRepository(
     outcome: row.outcome,
   });
 
-  // 進行中の冒険（行き先の部屋の構成と、この冒険で手に入れた物を含む）、行き先ごとの記録、所持ルーン。
+  // 進行中の冒険（道を作る種と部屋の数、今いる部屋、この冒険で手に入れた物を含む）、行き先ごとの記録、所持ルーン。
   async function readState(userId: string) {
     const [runs, records, wallets] = await db.batch([
       db
@@ -105,15 +108,15 @@ export function createAdventureRepository(
           ? {
               id: run.id,
               destinationId: run.destinationId,
+              seed: run.seed,
+              roomCount: destination.roomCount,
               roomId: run.roomId,
+              floor: run.floor,
+              roomKind: run.roomKind,
               roomCleared: run.roomCleared,
               route: route(run),
               revives: run.revives,
               reviveCost: reviveCost(run.revives),
-              rooms: destination.rooms.map((room) => ({
-                ...room,
-                next: [...room.next],
-              })),
               rewards: (await rewardsOf(run.id)).map(reward),
             }
           : null,
@@ -141,16 +144,18 @@ export function createAdventureRepository(
       }
       return { error: "adventure_in_progress" as const };
     }
-    const entrance = startRoom(destination);
     await db
       .insert(adventureRuns)
       .values({
         id: crypto.randomUUID(),
         userId,
         destinationId,
-        roomId: entrance.id,
-        roomCleared: !hasEvent(entrance),
-        route: JSON.stringify([entrance.id]),
+        seed: newSeed(random),
+        roomId: ENTRANCE_ROOM_ID,
+        floor: 1,
+        roomKind: "start",
+        roomCleared: true,
+        route: JSON.stringify([ENTRANCE_ROOM_ID]),
         revives: 0,
         status: "active",
         startedAt: now,
@@ -164,25 +169,32 @@ export function createAdventureRepository(
     return readState(userId);
   }
 
-  // 今いる部屋の入口から、次の部屋へ進む。選んだ時点で保存する。
-  async function move(userId: string, roomId: string, now: string) {
+  // 今いる部屋から、次の階の部屋へ進む。選んだ時点で保存する。
+  // 部屋のつながりはクライアントが種から作った道で決まるため、サーバーは1階ずつ進むこと、
+  // 最奥の間の階にだけボスがいること、出来事を終えてから進むことを確かめる。
+  async function move(userId: string, target: Move, now: string) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
     // 届かなかった応答の再送は、進んだあとの状態を返す。
-    if (run.roomId === roomId) return readState(userId);
+    if (run.roomId === target.roomId) return readState(userId);
     const destination = findDestination(run.destinationId) as Destination;
-    const current = findRoom(destination, run.roomId);
-    const target = findRoom(destination, roomId);
-    if (!current || !target || !current.next.includes(roomId)) {
+    const boss = bossFloor(destination);
+    if (
+      target.floor !== run.floor + 1 ||
+      target.floor > boss ||
+      (target.floor === boss) !== (target.kind === "boss")
+    ) {
       return { error: "room_not_reachable" as const };
     }
     if (!run.roomCleared) return { error: "room_not_cleared" as const };
     const moved = await db
       .update(adventureRuns)
       .set({
-        roomId,
-        roomCleared: !hasEvent(target),
-        route: JSON.stringify([...route(run), roomId]),
+        roomId: target.roomId,
+        floor: target.floor,
+        roomKind: target.kind,
+        roomCleared: !hasEvent(target.kind),
+        route: JSON.stringify([...route(run), target.roomId]),
         updatedAt: now,
       })
       .where(
@@ -198,10 +210,11 @@ export function createAdventureRepository(
     return readState(userId);
   }
 
-  function pickRank(room: Room): StepBonusRank {
-    const weights = Object.entries(
-      REWARD_RANK_WEIGHTS[room.kind as keyof typeof REWARD_RANK_WEIGHTS],
-    ) as [StepBonusRank, number][];
+  function pickRank(kind: EventKind): StepBonusRank {
+    const weights = Object.entries(REWARD_RANK_WEIGHTS[kind]) as [
+      StepBonusRank,
+      number,
+    ][];
     const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
     let roll = random() * total;
     for (const [rank, weight] of weights) {
@@ -219,12 +232,8 @@ export function createAdventureRepository(
     return STEP_BONUS_IDS[index];
   }
 
-  function floorOf(run: RunRow) {
-    const destination = findDestination(run.destinationId) as Destination;
-    return Math.max(
-      ...route(run).map((id) => findRoom(destination, id)?.floor ?? 1),
-    );
-  }
+  // 1階ずつしか進まないため、今いる階がこの冒険で着いた最も深い階になる。
+  const floorOf = (run: RunRow) => run.floor;
 
   // 冒険を終えた結果。最深到達の階と記録の更新、この冒険で手に入れた物。
   async function result(run: RunRow, previousBest: number) {
@@ -301,14 +310,13 @@ export function createAdventureRepository(
       });
   }
 
-  // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、UPTボーナスを1つ手に入れる。
+  // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、ACTボーナスを1つ手に入れる。
   // 最奥のボスを倒したら冒険を終える。部屋の終了・報酬の記録・持ち物・記録を1回のbatchで行う。
   async function clear(userId: string, roomId: string, now: string) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
-    const destination = findDestination(run.destinationId) as Destination;
-    const room = findRoom(destination, run.roomId);
-    if (run.roomId !== roomId || !room || !hasEvent(room)) {
+    const kind = kindOf(run);
+    if (run.roomId !== roomId || !hasEvent(kind)) {
       return { error: "room_mismatch" as const };
     }
     if (run.roomCleared) {
@@ -325,7 +333,7 @@ export function createAdventureRepository(
     // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
     await createStepBonusRepository(binding).getState(userId, now);
     const bonusId = pickBonus();
-    const rank = pickRank(room);
+    const rank = pickRank(kind as EventKind);
     const held = await db
       .select({ rank: stepBonusHoldings.rank })
       .from(stepBonusHoldings)
@@ -341,7 +349,7 @@ export function createAdventureRepository(
       : rankOrder(rank) > rankOrder(held.rank as StepBonusRank)
         ? "updated"
         : "discarded";
-    const boss = room.kind === "boss";
+    const boss = kind === "boss";
     const previousBest = boss ? await bestFloor(userId, run.destinationId) : 0;
     const written = sql`EXISTS (SELECT 1 FROM ${adventureRewards} WHERE ${adventureRewards.runId} = ${run.id} AND ${adventureRewards.roomId} = ${roomId} AND ${adventureRewards.createdAt} = ${now} AND ${adventureRewards.bonusId} = ${bonusId} AND ${adventureRewards.rank} = ${rank})`;
 
@@ -466,12 +474,9 @@ export function createAdventureRepository(
     if (replay) return recordedRevive(userId, request, replay);
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
-    const destination = findDestination(run.destinationId) as Destination;
-    const room = findRoom(destination, run.roomId);
     if (
       run.roomId !== request.roomId ||
-      !room ||
-      !isBattle(room) ||
+      !isBattle(kindOf(run)) ||
       run.roomCleared
     ) {
       return { error: "room_mismatch" as const };
@@ -547,12 +552,8 @@ export function createAdventureRepository(
   async function end(userId: string, reason: EndReason, now: string) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
-    if (reason === "defeat") {
-      const destination = findDestination(run.destinationId) as Destination;
-      const room = findRoom(destination, run.roomId);
-      if (!room || !isBattle(room) || run.roomCleared) {
-        return { error: "room_mismatch" as const };
-      }
+    if (reason === "defeat" && (!isBattle(kindOf(run)) || run.roomCleared)) {
+      return { error: "room_mismatch" as const };
     }
     const status: EndStatus = reason === "defeat" ? "defeated" : "retreated";
     const previousBest = await bestFloor(userId, run.destinationId);
@@ -580,7 +581,7 @@ export function createAdventureRepository(
     };
   }
 
-  // 冒険の途中かどうか。冒険中はUPTボーナスの枠を付け替えられない。
+  // 冒険の途中かどうか。冒険中はACTボーナスの枠を付け替えられない。
   async function inProgress(userId: string) {
     return (await activeRun(userId)) !== undefined;
   }

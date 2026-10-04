@@ -1,5 +1,4 @@
 using Baryonyx.Adventure;
-using Baryonyx.Combat.Presentation;
 using Baryonyx.Health;
 using Baryonyx.UI;
 using UnityEngine;
@@ -7,17 +6,14 @@ using UnityEngine;
 namespace Baryonyx.App
 {
     /// <summary>
-    /// Runs the exploration scene: the adventure in progress on the destination's stage. The
-    /// next room is shown behind the shared shutter; a room with a battle opens the battle
-    /// scene, and suspending or ending the adventure returns to Home.
+    /// Runs the exploration scene: the map of the adventure in progress. The next room is shown
+    /// while the map fades; a room with a battle opens the battle scene, and suspending or ending
+    /// the adventure returns to Home.
     /// </summary>
     public sealed class ExplorationBootstrap : MonoBehaviour
     {
         [SerializeField]
         private ExplorationView view;
-
-        [SerializeField]
-        private BattleStageSelector stages;
 
         [SerializeField]
         private SceneTransitionController transition;
@@ -30,6 +26,13 @@ namespace Baryonyx.App
         public ExplorationView View => view;
         public ExplorationFlow Flow => flow;
         public SceneTransitionController Transition => transition;
+
+        // 冒険の流れが地図を描くため、見本の道は描かせない。
+        private void Awake()
+        {
+            if (view != null)
+                view.SampleSeed = 0;
+        }
 
         private void Start()
         {
@@ -45,11 +48,8 @@ namespace Baryonyx.App
                 AdventureSession.SourceOrLocal,
                 () => SceneLoader.Load(SceneNames.Home, transition, this),
                 () => SceneLoader.Load(SceneNames.Battle, transition, this),
-                ChangeRoom,
-                UseStage
+                view.Crossfade
             );
-            if (AdventureSession.Current?.Run != null)
-                UseStage(AdventureSession.Current.Run);
             flow.Start();
         }
 
@@ -57,31 +57,6 @@ namespace Baryonyx.App
         {
             flow?.Dispose();
             flow = null;
-        }
-
-        // シャッターで覆ってから次の部屋を見せ、開く。
-        private void ChangeRoom(System.Action show)
-        {
-            if (
-                transition == null
-                || !transition.PlayOut(() =>
-                {
-                    show();
-                    transition.PlayIn();
-                })
-            )
-                show();
-        }
-
-        private void UseStage(AdventureRun run)
-        {
-            if (stages == null || run == null)
-                return;
-            var stage = AdventureCatalog.StageOf(run.DestinationId);
-            if (stages.Stage == stage && stages.Shown != null)
-                return;
-            stages.Stage = stage;
-            stages.Apply();
         }
     }
 }

@@ -24,8 +24,8 @@ namespace Baryonyx.Adventure
 
     /// <summary>
     /// What the client shows of the server's adventure: the destinations' names and places, the
-    /// floor names, the hints at the rooms' doors and the enemies of each encounter. The route
-    /// itself (rooms, kinds, encounters) comes from the server (server/src/features/adventure/catalog.ts).
+    /// floor names, the hints at the rooms and the enemies of each encounter, and the route made
+    /// from the seed and the room count the server keeps (server/src/features/adventure/catalog.ts).
     /// </summary>
     public static class AdventureCatalog
     {
@@ -47,7 +47,7 @@ namespace Baryonyx.Adventure
         public static string DestinationName(string destinationId) =>
             destinationId switch
             {
-                ForestRuins => "森の遺跡",
+                ForestRuins => "ミストラ遺跡",
                 _ => "冒険先",
             };
 
@@ -61,10 +61,31 @@ namespace Baryonyx.Adventure
 
         public static string FloorText(int floor) => $"B{Math.Max(1, floor)}F";
 
+        // 入口と最奥の間のあいだに通る部屋の数。サーバーの設定値と同じ（アプリの中だけの冒険で使う）。
+        public static int RoomCount(string destinationId) => 8;
+
+        // 部屋の種類ごとに戦う敵の組み合わせ（仮）。行き先ごとに変える。
+        public static string EncounterOf(string destinationId, AdventureRoomKind kind) =>
+            kind switch
+            {
+                AdventureRoomKind.Battle => "forest-pack",
+                AdventureRoomKind.Elite => "forest-elite",
+                AdventureRoomKind.Boss => "forest-boss",
+                _ => "",
+            };
+
+        /// <summary>The adventure's route, made from the seed the server chose.</summary>
+        public static AdventureRouteMap Route(string destinationId, int seed, int roomCount) =>
+            AdventureRouteMap.Generate(
+                seed,
+                roomCount > 0 ? roomCount : RoomCount(destinationId),
+                kind => EncounterOf(destinationId, kind)
+            );
+
         public static string Location(AdventureRun run) =>
             run == null ? "" : $"{DestinationName(run.DestinationId)} {FloorText(run.Floor)}";
 
-        // 入口の近くに出す短い手掛かり。
+        // 地図の部屋の横に出す短い手掛かり。
         public static string Hint(AdventureRoomKind kind) =>
             kind switch
             {

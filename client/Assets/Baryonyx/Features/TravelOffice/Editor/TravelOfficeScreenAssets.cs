@@ -1,3 +1,4 @@
+using Baryonyx.Adventure;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -24,22 +25,35 @@ namespace Baryonyx.TravelOffice.Editor
         {
             d.Title = "旅の案内所";
             d.Layout = GuideMenuLayout.Destinations;
-            d.DestinationsLabel = "行き先";
             d.DepartLabel = "出発";
+            // 地名・説明・推奨Lvは仮の値。推奨Lvは、パーティの仮データ（Lv8〜12）と育成の上限
+            // （Lv30）に合わせた。
             d.Destinations = new[]
             {
-                // 冒険に出られるのは、今は森の遺跡だけ（server/src/features/adventure/catalog.ts）。
-                // 出発できる行き先を先頭に置く。
+                // 冒険に出られるのは、今はミストラ遺跡だけ（server/src/features/adventure/catalog.ts）。
+                // 名前は探索・ホームと同じ冒険の定義から取る。出発できる行き先を先頭に置き、
+                // ほかは推奨Lvの順に並べる。
                 Destination(
-                    "森の遺跡",
-                    "苔むした古代の遺跡。最奥に守り手が眠る",
-                    id: "forest-ruins"
+                    AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins),
+                    "苔の下で、千年前の門番がいまも見張りを続けている",
+                    10,
+                    id: AdventureCatalog.ForestRuins
                 ),
-                Destination("雪山の洞窟", "凍てつく洞窟。腕に覚えのある者向け", "おすすめ Lv 15"),
-                Destination("港町", "船で島々へ渡れる"),
-                // 未踏の地の名前は、行では「？？？」に伏せる。
-                Destination("火山", "まだ道が見つかっていない", "未踏", locked: true),
-                Destination("砂漠の王墓", "まだ道が見つかっていない", "未踏", locked: true),
+                Destination("港町ポルトリア", "潮と魚と酒の匂い。船乗りの噂話は半分ほど本当", 12),
+                Destination("グラシエラ氷窟", "吐く息まで凍る洞窟。奥で何かが寝返りを打つ", 15),
+                // 未踏の地は、行では地名を「？？？」に伏せ、説明を出さない。
+                Destination(
+                    "アルマジャ王墓",
+                    "砂に沈んだ王が、いまも財宝の数を数えている",
+                    22,
+                    locked: true
+                ),
+                Destination(
+                    "ヴォルガン火山",
+                    "山が怒るたびに、ふもとの鍛冶屋が忙しくなる",
+                    28,
+                    locked: true
+                ),
             };
         }
     }

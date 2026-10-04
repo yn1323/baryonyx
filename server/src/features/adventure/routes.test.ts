@@ -32,23 +32,30 @@ type State = {
   run: {
     id: string;
     destinationId: string;
+    seed: number;
+    roomCount: number;
     roomId: string;
+    floor: number;
+    roomKind: string;
     roomCleared: boolean;
     route: string[];
     revives: number;
     reviveCost: number;
-    rooms: {
-      id: string;
-      floor: number;
-      kind: string;
-      encounter: string;
-      next: string[];
-    }[];
     rewards: Reward[];
   } | null;
   records: { destinationId: string; bestFloor: number; clears: number }[];
   runes: number;
 };
+
+type Room = { roomId: string; floor: number; kind: string };
+
+// クライアントが種から作る道の部屋（IDは「f階-道」）。サーバーは階と種類だけを確かめる。
+const rooms = {
+  battle: { roomId: "f2-0", floor: 2, kind: "battle" },
+  treasure: { roomId: "f2-1", floor: 2, kind: "treasure" },
+  elite: { roomId: "f3-0", floor: 3, kind: "elite" },
+  boss: { roomId: "boss", floor: 10, kind: "boss" },
+} satisfies Record<string, Room>;
 
 const requestIds = {
   first: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
@@ -84,8 +91,8 @@ describe("冒険API", () => {
 
   const start = (token: string) =>
     call(token, "/adventure", { destinationId: "forest-ruins" });
-  const move = (token: string, roomId: string, expected = 200) =>
-    call(token, "/adventure/move", { roomId }, expected);
+  const move = (token: string, room: Room, expected = 200) =>
+    call(token, "/adventure/move", room, expected);
   const clear = (token: string, roomId: string, expected = 200) =>
     call(token, "/adventure/clear", { roomId }, expected);
 
@@ -101,11 +108,11 @@ describe("冒険API", () => {
     const responses = await Promise.all([
       scenario.request("/adventure"),
       scenario.request("/adventure", "POST", { destinationId: "forest-ruins" }),
-      scenario.request("/adventure/move", "POST", { roomId: "moss-hall" }),
-      scenario.request("/adventure/clear", "POST", { roomId: "moss-hall" }),
+      scenario.request("/adventure/move", "POST", rooms.battle),
+      scenario.request("/adventure/clear", "POST", { roomId: "f2-0" }),
       scenario.request("/adventure/revive", "POST", {
         requestId: requestIds.first,
-        roomId: "moss-hall",
+        roomId: "f2-0",
       }),
       scenario.request("/adventure/end", "POST", { reason: "retreat" }),
     ]);
@@ -117,12 +124,15 @@ describe("冒険API", () => {
   it("不正な入力を400で拒否する", async () => {
     const user = await scenario.login("adventure-invalid");
     await call(user.token, "/adventure", { destinationId: "nowhere" }, 400);
-    await call(user.token, "/adventure/move", { roomId: "BAD ID" }, 400);
+    await move(user.token, { ...rooms.battle, roomId: "BAD ID" }, 400);
+    await move(user.token, { ...rooms.battle, kind: "start" }, 400);
+    await move(user.token, { ...rooms.battle, floor: 1 }, 400);
+    await call(user.token, "/adventure/move", { roomId: "f2-0" }, 400);
     await call(user.token, "/adventure/end", { reason: "give-up" }, 400);
     await call(
       user.token,
       "/adventure/revive",
-      { requestId: "short", roomId: "moss-hall" },
+      { requestId: "short", roomId: "f2-0" },
       400,
     );
   });
@@ -132,50 +142,87 @@ describe("冒険API", () => {
     const state = await call(user.token, "/adventure");
     expect(state.run).toBeNull();
     expect(state.records).toEqual([]);
-    await move(user.token, "moss-hall", 404);
-    await clear(user.token, "moss-hall", 404);
+    await move(user.token, rooms.battle, 404);
+    await clear(user.token, "f2-0", 404);
     await call(user.token, "/adventure/end", { reason: "retreat" }, 404);
   });
 
-  it("入口の部屋から始め、選んだ部屋を保存して、出来事を終えるまで先へ進ませない", async () => {
+  it("入口の部屋から道の種と部屋の数を決めて始め、選んだ部屋を保存して、出来事を終えるまで先へ進ませない", async () => {
     const user = await scenario.login("adventure-route");
     const started = await start(user.token);
-    expect(started.run?.roomId).toBe("entrance");
-    expect(started.run?.roomCleared).toBe(true);
-    expect(started.run?.route).toEqual(["entrance"]);
-    expect(started.run?.rooms.map((room) => room.id)).toContain("sanctum");
+    expect(started.run).toMatchObject({
+      roomId: "entrance",
+      floor: 1,
+      roomKind: "start",
+      roomCleared: true,
+      route: ["entrance"],
+      roomCount: 8,
+    });
+    expect(started.run?.seed).toBeGreaterThan(0);
 
-    // 届かなかった応答の再送は、始めたばかりの冒険を返す。
-    expect((await start(user.token)).run?.id).toBe(started.run?.id);
+    // 届かなかった応答の再送は、始めたばかりの同じ冒険（同じ道）を返す。
+    const replay = await start(user.token);
+    expect(replay.run?.id).toBe(started.run?.id);
+    expect(replay.run?.seed).toBe(started.run?.seed);
 
-    await move(user.token, "sanctum", 409);
-    const moved = await move(user.token, "moss-hall");
-    expect(moved.run?.roomId).toBe("moss-hall");
-    expect(moved.run?.roomCleared).toBe(false);
-    expect(moved.run?.route).toEqual(["entrance", "moss-hall"]);
+    // 1階ずつしか進めず、最奥のボスは最奥の階にだけいる。
+    await move(user.token, rooms.elite, 409);
+    await move(user.token, rooms.boss, 409);
+    await move(user.token, { ...rooms.battle, kind: "boss" }, 409);
+    const moved = await move(user.token, rooms.battle);
+    expect(moved.run).toMatchObject({
+      roomId: "f2-0",
+      floor: 2,
+      roomKind: "battle",
+      roomCleared: false,
+      route: ["entrance", "f2-0"],
+    });
 
     // 選んだ部屋は読み直しても残る（戦闘中にアプリが終わっても、ここから再開する）。
     const reread = await call(user.token, "/adventure");
-    expect(reread.run?.roomId).toBe("moss-hall");
-    expect(reread.run?.roomCleared).toBe(false);
+    expect(reread.run).toMatchObject({
+      roomId: "f2-0",
+      floor: 2,
+      roomKind: "battle",
+      roomCleared: false,
+      seed: started.run?.seed,
+    });
 
     // 戦闘に勝つまで次の部屋へは進めない。同じ部屋の再送はそのまま返す。
-    await move(user.token, "root-gallery", 409);
-    expect((await move(user.token, "moss-hall")).run?.roomId).toBe("moss-hall");
+    await move(user.token, rooms.elite, 409);
+    expect((await move(user.token, rooms.battle)).run?.roomId).toBe("f2-0");
   });
 
-  it("出来事を終えると報酬のUPTボーナスを1回だけ手に入れ、持ち物に入れる", async () => {
+  it("冒険ごとに道の種が変わる", async () => {
+    const user = await scenario.login("adventure-seed");
+    const values = [0.25, 0.75];
+    const repository = createAdventureRepository(
+      scenario.env.DB,
+      () => values.shift() ?? 0.5,
+    );
+    const now = new Date().toISOString();
+    const first = await repository.start(user.userId, "forest-ruins", now);
+    await repository.end(user.userId, "retreat", now);
+    const second = await repository.start(user.userId, "forest-ruins", now);
+    const seedOf = (state: typeof first) =>
+      "run" in state ? state.run?.seed : undefined;
+    expect(seedOf(first)).toBeGreaterThan(0);
+    expect(seedOf(second)).toBeGreaterThan(0);
+    expect(seedOf(second)).not.toBe(seedOf(first));
+  });
+
+  it("出来事を終えると報酬のACTボーナスを1回だけ手に入れ、持ち物に入れる", async () => {
     const user = await scenario.login("adventure-reward");
     await start(user.token);
-    await move(user.token, "hidden-store");
-    const cleared = await clear(user.token, "hidden-store");
+    await move(user.token, rooms.treasure);
+    const cleared = await clear(user.token, "f2-1");
     expect(cleared.run?.roomCleared).toBe(true);
-    expect(cleared.reward?.roomId).toBe("hidden-store");
+    expect(cleared.reward?.roomId).toBe("f2-1");
     expect(["D", "C", "B", "A"]).toContain(cleared.reward?.rank);
     expect(cleared.run?.rewards).toEqual([cleared.reward]);
 
     // 再送は、記録した報酬を返し、もう一度は手に入らない。
-    const again = await clear(user.token, "hidden-store");
+    const again = await clear(user.token, "f2-1");
     expect(again.reward).toEqual(cleared.reward);
     expect(again.run?.rewards).toHaveLength(1);
 
@@ -203,8 +250,12 @@ describe("冒険API", () => {
     // guard は初期のボーナスでSランク。最小の乱数で guard と最低ランクを引かせる。
     const low = createAdventureRepository(scenario.env.DB, () => 0);
     await low.start(user.userId, "forest-ruins", now);
-    await low.move(user.userId, "moss-hall", now);
-    const result = await low.clear(user.userId, "moss-hall", now);
+    await low.move(
+      user.userId,
+      { roomId: "f2-0", floor: 2, kind: "battle" },
+      now,
+    );
+    const result = await low.clear(user.userId, "f2-0", now);
     expect("reward" in result && result.reward).toMatchObject({
       bonusId: "guard",
       rank: "E",
@@ -228,17 +279,17 @@ describe("冒険API", () => {
     const user = await scenario.login("adventure-revive");
     await setRunes(user.userId, 250);
     await start(user.token);
-    await move(user.token, "moss-hall");
+    await move(user.token, rooms.battle);
     expect((await call(user.token, "/adventure")).run?.reviveCost).toBe(
       REVIVE_COST_BASE,
     );
 
     const first = await call(user.token, "/adventure/revive", {
       requestId: requestIds.first,
-      roomId: "moss-hall",
+      roomId: "f2-0",
     });
     expect(first.revive).toEqual({
-      roomId: "moss-hall",
+      roomId: "f2-0",
       runes: reviveCost(0),
       balanceAfter: 150,
     });
@@ -248,7 +299,7 @@ describe("冒険API", () => {
 
     const replay = await call(user.token, "/adventure/revive", {
       requestId: requestIds.first,
-      roomId: "moss-hall",
+      roomId: "f2-0",
     });
     expect(replay.runes).toBe(150);
     expect(replay.run?.revives).toBe(1);
@@ -257,7 +308,7 @@ describe("冒険API", () => {
     const short = await scenario.request(
       "/adventure/revive",
       "POST",
-      { requestId: requestIds.second, roomId: "moss-hall" },
+      { requestId: requestIds.second, roomId: "f2-0" },
       user.token,
     );
     expect(short.status).toBe(409);
@@ -274,11 +325,11 @@ describe("冒険API", () => {
       { requestId: requestIds.first, roomId: "entrance" },
       409,
     );
-    await move(user.token, "hidden-store");
+    await move(user.token, rooms.treasure);
     await call(
       user.token,
       "/adventure/revive",
-      { requestId: requestIds.second, roomId: "hidden-store" },
+      { requestId: requestIds.second, roomId: "f2-1" },
       409,
     );
   });
@@ -286,9 +337,9 @@ describe("冒険API", () => {
   it("負けて帰還すると冒険を終え、最深到達を記録し、手に入れた物は残る", async () => {
     const user = await scenario.login("adventure-defeat");
     await start(user.token);
-    await move(user.token, "moss-hall");
-    const won = await clear(user.token, "moss-hall");
-    await move(user.token, "guardian-gate");
+    await move(user.token, rooms.battle);
+    const won = await clear(user.token, "f2-0");
+    await move(user.token, rooms.elite);
     const ended = await call(user.token, "/adventure/end", {
       reason: "defeat",
     });
@@ -323,7 +374,7 @@ describe("冒険API", () => {
     const user = await scenario.login("adventure-retreat");
     await start(user.token);
     await call(user.token, "/adventure/end", { reason: "defeat" }, 409);
-    await move(user.token, "moss-hall");
+    await move(user.token, rooms.battle);
     // 戦闘の途中でもやめられる。
     const ended = await call(user.token, "/adventure/end", {
       reason: "retreat",
@@ -334,32 +385,36 @@ describe("冒険API", () => {
   it("最奥のボスを倒すと冒険を終え、踏破の回数を数える", async () => {
     const user = await scenario.login("adventure-clear");
     await start(user.token);
-    for (const room of ["moss-hall", "root-gallery", "sanctum"]) {
+    for (let floor = 2; floor <= 9; floor++) {
+      const room = { roomId: `f${floor}-1`, floor, kind: "battle" };
       await move(user.token, room);
-      const cleared = await clear(user.token, room);
-      expect(cleared.reward?.roomId).toBe(room);
-      if (room === "sanctum") {
-        expect(cleared.run).toBeNull();
-        expect(cleared.result).toMatchObject({
-          status: "cleared",
-          floor: 4,
-          bestFloor: 4,
-          newRecord: true,
-          clears: 1,
-        });
-        expect(cleared.result?.rewards).toHaveLength(3);
-        expect(["B", "A", "S"]).toContain(cleared.reward?.rank);
-      }
+      expect((await clear(user.token, room.roomId)).reward?.roomId).toBe(
+        room.roomId,
+      );
     }
+    // 最奥の階には、ボスの部屋だけがある。
+    await move(user.token, { ...rooms.boss, kind: "battle" }, 409);
+    await move(user.token, rooms.boss);
+    const cleared = await clear(user.token, "boss");
+    expect(cleared.run).toBeNull();
+    expect(cleared.result).toMatchObject({
+      status: "cleared",
+      floor: 10,
+      bestFloor: 10,
+      newRecord: true,
+      clears: 1,
+    });
+    expect(cleared.result?.rewards).toHaveLength(9);
+    expect(["B", "A", "S"]).toContain(cleared.reward?.rank);
     expect((await call(user.token, "/adventure")).records).toEqual([
-      { destinationId: "forest-ruins", bestFloor: 4, clears: 1 },
+      { destinationId: "forest-ruins", bestFloor: 10, clears: 1 },
     ]);
   });
 
   it("進行中の冒険があるあいだは、別の冒険を始められずボーナスの枠も付け替えられない", async () => {
     const user = await scenario.login("adventure-lock");
     await start(user.token);
-    await move(user.token, "moss-hall");
+    await move(user.token, rooms.battle);
     await call(
       user.token,
       "/adventure",
@@ -397,7 +452,7 @@ describe("冒険API", () => {
     const first = await scenario.login("adventure-user-a");
     const second = await scenario.login("adventure-user-b");
     await start(first.token);
-    await move(first.token, "moss-hall");
+    await move(first.token, rooms.battle);
     expect((await call(second.token, "/adventure")).run).toBeNull();
     expect((await start(second.token)).run?.roomId).toBe("entrance");
   });

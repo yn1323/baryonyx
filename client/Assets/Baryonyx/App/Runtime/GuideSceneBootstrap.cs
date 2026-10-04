@@ -49,10 +49,9 @@ namespace Baryonyx.App
                 Debug.LogError("GuideSceneBootstrap requires a view with a definition.", this);
                 return;
             }
-            if (departs && view.Dialog != null)
+            if (departs)
             {
                 departure = new TravelDeparture(
-                    view.Dialog,
                     view.ShowToast,
                     AdventureSession.SourceOrLocal,
                     () => SceneLoader.Load(SceneNames.Exploration, transition, this)
@@ -79,7 +78,7 @@ namespace Baryonyx.App
             var destinations = view.Definition.Destinations;
             if (index < 0 || index >= destinations.Length)
                 return false;
-            return departure.Depart(destinations[index].Id, destinations[index].Name);
+            return departure.Depart(destinations[index].Id);
         }
 
         private bool ReturnHome() => SceneLoader.Load(homeSceneName, transition, this);

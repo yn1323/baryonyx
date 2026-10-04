@@ -48,7 +48,7 @@ export function createAdventureApi() {
     if (!body.success) return c.json({ error: "invalid_request" }, 400);
     const result = await createAdventureRepository(c.env.DB).move(
       c.get("userId"),
-      body.data.roomId,
+      body.data,
       new Date().toISOString(),
     );
     if ("error" in result && result.error) {

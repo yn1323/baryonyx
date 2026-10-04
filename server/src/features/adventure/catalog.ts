@@ -1,8 +1,10 @@
 import type { StepBonusRank } from "../step-bonus/catalog.js";
 
-// 冒険先と、分岐ルートの部屋。最初の1周を試すための仮の構成で、行き先の数・階の数・
-// 敵の組み合わせ・報酬は決まっていない（doc/features/stage-progression.md）。
-// 表示用の名前・背景・敵の絵はクライアントの定義が持ち、サーバーは進み方と報酬だけを判定する。
+// 冒険先と、入口から最奥の間までに通る部屋の数。行き先の数・敵の組み合わせ・報酬は決まっていない
+// （doc/features/stage-progression.md）。
+// 分岐ルートの道は、冒険を始めたときにサーバーが決めた乱数の種から、クライアントが毎回同じ形に作る
+// （doc/plans/2026-10-04-exploration-route-map.md）。サーバーは道そのものを持たず、
+// 今いる部屋の階と種類を受け取って、進み方と報酬だけを判定する。
 
 export const ROOM_KINDS = [
   "start",
@@ -14,98 +16,48 @@ export const ROOM_KINDS = [
 
 export type RoomKind = (typeof ROOM_KINDS)[number];
 
-export type Room = {
-  id: string;
-  floor: number;
-  kind: RoomKind;
-  // 戦う敵の組み合わせ。戦わない部屋は空。
-  encounter: string;
-  // 次に進める部屋。最奥のボスの部屋は空。
-  next: readonly string[];
-};
+// 入口の次から選んで進む部屋の種類。
+export const EVENT_KINDS = ["battle", "elite", "treasure", "boss"] as const;
+
+export type EventKind = (typeof EVENT_KINDS)[number];
 
 export type Destination = {
   id: string;
-  rooms: readonly Room[];
+  // 入口（B1F）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
+  roomCount: number;
 };
 
 export const DESTINATIONS: readonly Destination[] = [
-  {
-    id: "forest-ruins",
-    rooms: [
-      {
-        id: "entrance",
-        floor: 1,
-        kind: "start",
-        encounter: "",
-        next: ["moss-hall", "hidden-store"],
-      },
-      {
-        id: "moss-hall",
-        floor: 2,
-        kind: "battle",
-        encounter: "forest-pack",
-        next: ["root-gallery", "guardian-gate"],
-      },
-      {
-        id: "hidden-store",
-        floor: 2,
-        kind: "treasure",
-        encounter: "",
-        next: ["root-gallery", "guardian-gate"],
-      },
-      {
-        id: "root-gallery",
-        floor: 3,
-        kind: "battle",
-        encounter: "forest-pack",
-        next: ["sanctum"],
-      },
-      {
-        id: "guardian-gate",
-        floor: 3,
-        kind: "elite",
-        encounter: "forest-elite",
-        next: ["sanctum"],
-      },
-      {
-        id: "sanctum",
-        floor: 4,
-        kind: "boss",
-        encounter: "forest-boss",
-        next: [],
-      },
-    ],
-  },
+  { id: "forest-ruins", roomCount: 8 },
 ];
 
 export const DESTINATION_IDS = DESTINATIONS.map(
   (destination) => destination.id,
 ) as [string, ...string[]];
 
+export const ENTRANCE_ROOM_ID = "entrance";
+
 export function findDestination(id: string) {
   return DESTINATIONS.find((destination) => destination.id === id);
 }
 
-export function findRoom(destination: Destination, roomId: string) {
-  return destination.rooms.find((room) => room.id === roomId);
+// 最奥の間の階。入口がB1F、道中の部屋がB2Fから続く。
+export function bossFloor(destination: Destination) {
+  return destination.roomCount + 2;
 }
 
-export function startRoom(destination: Destination) {
-  const room = destination.rooms.find((entry) => entry.kind === "start");
-  if (!room) throw new Error(`${destination.id} has no start room`);
-  return room;
+// 道を作る乱数の種（1以上2^31未満）。
+export function newSeed(random: () => number) {
+  return 1 + Math.floor(random() * 0x7ffffffe);
 }
 
 // 出来事（戦闘・宝箱）のある部屋。着いた時点では終わっておらず、終えるまで先へ進めない。
-export function hasEvent(room: Room) {
-  return room.kind !== "start";
+export function hasEvent(kind: RoomKind) {
+  return kind !== "start";
 }
 
-export function isBattle(room: Room) {
-  return (
-    room.kind === "battle" || room.kind === "elite" || room.kind === "boss"
-  );
+export function isBattle(kind: RoomKind) {
+  return kind === "battle" || kind === "elite" || kind === "boss";
 }
 
 // 復活に使うルーン。2回目以降は上がる（仮設定。doc/features/combat.md の未決事項）。
@@ -115,10 +67,10 @@ export function reviveCost(revivesSoFar: number) {
   return REVIVE_COST_BASE * (revivesSoFar + 1);
 }
 
-// 出来事を終えた部屋で手に入れるUPTボーナスのランクの重み（仮設定）。
+// 出来事を終えた部屋で手に入れるACTボーナスのランクの重み（仮設定）。
 // ボーナスの種類は均等に選ぶ。冒険で手に入る場所と確率は doc/features/step-bonus.md の未決事項。
 export const REWARD_RANK_WEIGHTS: Record<
-  Exclude<RoomKind, "start">,
+  EventKind,
   Partial<Record<StepBonusRank, number>>
 > = {
   battle: { E: 40, D: 35, C: 20, B: 5 },

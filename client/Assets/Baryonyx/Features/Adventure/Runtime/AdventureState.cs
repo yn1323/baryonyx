@@ -44,7 +44,7 @@ namespace Baryonyx.Adventure
         Retreat,
     }
 
-    /// <summary>One room of an adventure's branching route, as the server defines it.</summary>
+    /// <summary>One room of an adventure's branching route, made from the adventure's seed (<see cref="AdventureRouteMap"/>).</summary>
     public sealed class AdventureRoom
     {
         public AdventureRoom(
@@ -78,7 +78,7 @@ namespace Baryonyx.Adventure
             || Kind == AdventureRoomKind.Boss;
     }
 
-    /// <summary>A UPT bonus found in a room whose event was done.</summary>
+    /// <summary>A ACT bonus found in a room whose event was done.</summary>
     public sealed class AdventureReward
     {
         public AdventureReward(
@@ -100,7 +100,10 @@ namespace Baryonyx.Adventure
         public AdventureRewardOutcome Outcome { get; }
     }
 
-    /// <summary>The adventure in progress: where the party is and the route behind it.</summary>
+    /// <summary>
+    /// The adventure in progress: the route made from its seed, where the party is and the
+    /// rooms behind it.
+    /// </summary>
     public sealed class AdventureRun
     {
         public AdventureRun(
@@ -111,8 +114,9 @@ namespace Baryonyx.Adventure
             IReadOnlyList<string> route,
             int revives,
             int reviveCost,
-            IReadOnlyList<AdventureRoom> rooms,
-            IReadOnlyList<AdventureReward> rewards
+            AdventureRouteMap map,
+            IReadOnlyList<AdventureReward> rewards,
+            int floor = 1
         )
         {
             Id = id ?? "";
@@ -122,9 +126,12 @@ namespace Baryonyx.Adventure
             Route = route ?? Array.Empty<string>();
             Revives = revives;
             ReviveCost = reviveCost;
-            Rooms = rooms ?? Array.Empty<AdventureRoom>();
+            Map = map;
             Rewards = rewards ?? Array.Empty<AdventureReward>();
+            savedFloor = Math.Max(1, floor);
         }
+
+        private readonly int savedFloor;
 
         public string Id { get; }
         public string DestinationId { get; }
@@ -137,11 +144,16 @@ namespace Baryonyx.Adventure
 
         // 次に復活するときに要るルーン。
         public int ReviveCost { get; }
-        public IReadOnlyList<AdventureRoom> Rooms { get; }
+
+        // 冒険の種から作った道。
+        public AdventureRouteMap Map { get; }
+        public IReadOnlyList<AdventureRoom> Rooms => Map?.Rooms ?? Array.Empty<AdventureRoom>();
         public IReadOnlyList<AdventureReward> Rewards { get; }
 
         public AdventureRoom Room => Find(RoomId);
-        public int Floor => Room?.Floor ?? 1;
+
+        // 今いる階。道にない部屋（以前の冒険の部屋など）でも、サーバーが保存した階を返す。
+        public int Floor => Room?.Floor ?? savedFloor;
 
         // 今いる部屋の入口から進める部屋。出来事を終えるまでは空。
         public IReadOnlyList<AdventureRoom> Exits =>
@@ -152,9 +164,9 @@ namespace Baryonyx.Adventure
         // 今いる部屋の戦闘がまだ終わっていない。
         public bool InBattle => !RoomCleared && Room != null && Room.IsBattle;
 
-        public int DeepestFloor => Rooms.Count == 0 ? 1 : Rooms.Max(room => room.Floor);
+        public int DeepestFloor => Map?.BossFloor ?? 1;
 
-        public AdventureRoom Find(string id) => Rooms.FirstOrDefault(room => room.Id == id);
+        public AdventureRoom Find(string id) => Map?.Find(id);
     }
 
     /// <summary>How an adventure ended, and what it brought back.</summary>

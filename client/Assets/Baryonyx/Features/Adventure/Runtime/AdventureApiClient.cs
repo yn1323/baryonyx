@@ -34,18 +34,34 @@ namespace Baryonyx.Adventure
                 token
             );
 
+        // 部屋のIDと階と種類は、冒険の種から作った道のもの。サーバーは1階ずつ進むことを確かめる。
         public Task<State> MoveAsync(
             AccountSession session,
-            string roomId,
+            AdventureRoom room,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
                 "/v1/adventure/move",
                 "POST",
-                new RoomRequest { roomId = roomId },
+                new MoveRequest
+                {
+                    roomId = room.Id,
+                    floor = room.Floor,
+                    kind = KindName(room.Kind),
+                },
                 session.Token,
                 token
             );
+
+        public static string KindName(AdventureRoomKind kind) =>
+            kind switch
+            {
+                AdventureRoomKind.Battle => "battle",
+                AdventureRoomKind.Elite => "elite",
+                AdventureRoomKind.Treasure => "treasure",
+                AdventureRoomKind.Boss => "boss",
+                _ => "start",
+            };
 
         public Task<State> ClearAsync(
             AccountSession session,
@@ -100,6 +116,14 @@ namespace Baryonyx.Adventure
         }
 
         [Serializable]
+        private sealed class MoveRequest
+        {
+            public string roomId;
+            public int floor;
+            public string kind;
+        }
+
+        [Serializable]
         private sealed class ReviveRequest
         {
             public string requestId;
@@ -130,23 +154,18 @@ namespace Baryonyx.Adventure
         {
             public string id;
             public string destinationId;
+
+            // 道を作る乱数の種と、入口と最奥の間のあいだに通る部屋の数。
+            public int seed;
+            public int roomCount;
             public string roomId;
+            public int floor;
+            public string roomKind;
             public bool roomCleared;
             public string[] route;
             public int revives;
             public int reviveCost;
-            public Room[] rooms;
             public Reward[] rewards;
-        }
-
-        [Serializable]
-        public sealed class Room
-        {
-            public string id;
-            public int floor;
-            public string kind;
-            public string encounter;
-            public string[] next;
         }
 
         [Serializable]

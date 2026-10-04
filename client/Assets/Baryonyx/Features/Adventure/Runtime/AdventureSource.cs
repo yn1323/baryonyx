@@ -18,8 +18,8 @@ namespace Baryonyx.Adventure
 
         Task<AdventureState> StartAsync(string destinationId, CancellationToken token);
 
-        // 入口を選んで次の部屋へ進む。選んだ時点で保存する。
-        Task<AdventureState> MoveAsync(string roomId, CancellationToken token);
+        // 道で次の階の部屋を選んで進む。選んだ時点で保存する。
+        Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token);
 
         // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、報酬を手に入れる。
         Task<AdventureState> ClearAsync(string roomId, CancellationToken token);
@@ -51,8 +51,8 @@ namespace Baryonyx.Adventure
         public Task<AdventureState> StartAsync(string destinationId, CancellationToken token) =>
             Run(session => api.StartAsync(session, destinationId, token), token);
 
-        public Task<AdventureState> MoveAsync(string roomId, CancellationToken token) =>
-            Run(session => api.MoveAsync(session, roomId, token), token);
+        public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token) =>
+            Run(session => api.MoveAsync(session, room, token), token);
 
         public Task<AdventureState> ClearAsync(string roomId, CancellationToken token) =>
             Run(session => api.ClearAsync(session, roomId, token), token);
@@ -106,6 +106,7 @@ namespace Baryonyx.Adventure
             );
         }
 
+        // 道は、サーバーが冒険を始めたときに決めた種と部屋の数から、毎回同じ形に作る。
         private static AdventureRun ToRun(AdventureApiClient.Run run) =>
             new(
                 run.id,
@@ -115,17 +116,9 @@ namespace Baryonyx.Adventure
                 run.route ?? Array.Empty<string>(),
                 run.revives,
                 run.reviveCost,
-                (run.rooms ?? Array.Empty<AdventureApiClient.Room>())
-                    .Where(room => room != null && !string.IsNullOrEmpty(room.id))
-                    .Select(room => new AdventureRoom(
-                        room.id,
-                        room.floor,
-                        ParseKind(room.kind),
-                        room.encounter,
-                        room.next ?? Array.Empty<string>()
-                    ))
-                    .ToArray(),
-                ToRewards(run.rewards)
+                AdventureCatalog.Route(run.destinationId, run.seed, run.roomCount),
+                ToRewards(run.rewards),
+                run.floor
             );
 
         private static AdventureReward[] ToRewards(AdventureApiClient.Reward[] rewards) =>

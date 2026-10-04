@@ -10,9 +10,9 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// The adventure kept only while the app runs, for the editor without a server and the
-    /// showcase. It follows the server's rules (server/src/features/adventure) on the same
-    /// provisional route of 森の遺跡, so the loop can be played through without a server.
-    /// Rewards are told but not added to the bonuses, and the runes are a fixed mock balance.
+    /// showcase. It follows the server's rules (server/src/features/adventure) on a route made
+    /// from a seed of its own, like the server's, so the loop can be played through without a
+    /// server. Rewards are told but not added to the bonuses, and the runes are a fixed mock balance.
     /// </summary>
     public sealed class AdventureLocalSource : IAdventureSource
     {
@@ -30,39 +30,20 @@ namespace Baryonyx.Adventure
             "fighting",
         };
 
-        // サーバーの catalog.ts と同じ仮の部屋の構成。
-        public static readonly AdventureRoom[] ForestRuinsRooms =
-        {
-            new("entrance", 1, AdventureRoomKind.Start, "", new[] { "moss-hall", "hidden-store" }),
-            new(
-                "moss-hall",
-                2,
-                AdventureRoomKind.Battle,
-                "forest-pack",
-                new[] { "root-gallery", "guardian-gate" }
-            ),
-            new(
-                "hidden-store",
-                2,
-                AdventureRoomKind.Treasure,
-                "",
-                new[] { "root-gallery", "guardian-gate" }
-            ),
-            new("root-gallery", 3, AdventureRoomKind.Battle, "forest-pack", new[] { "sanctum" }),
-            new("guardian-gate", 3, AdventureRoomKind.Elite, "forest-elite", new[] { "sanctum" }),
-            new("sanctum", 4, AdventureRoomKind.Boss, "forest-boss", Array.Empty<string>()),
-        };
-
         private readonly Random random;
         private readonly Dictionary<string, AdventureRecord> records = new();
         private Run run;
         private long runes;
 
-        public AdventureLocalSource(long runes = 1000, int seed = 0)
+        // seed を決めると、報酬と道の種も毎回同じになる（テスト用）。
+        public AdventureLocalSource(long runes = 1000, int seed = 0, int roomCount = 0)
         {
             this.runes = runes;
+            this.roomCount = roomCount;
             random = seed == 0 ? new Random() : new Random(seed);
         }
+
+        private readonly int roomCount;
 
         public long Runes => runes;
 
@@ -76,23 +57,32 @@ namespace Baryonyx.Adventure
                 return run.DestinationId == destinationId && run.Route.Count == 1
                     ? Answer(token, State())
                     : Fail(token, 409);
-            run = new Run(destinationId, ForestRuinsRooms);
+            run = new Run(
+                destinationId,
+                AdventureCatalog.Route(
+                    destinationId,
+                    random.Next(1, int.MaxValue),
+                    roomCount > 0 ? roomCount : AdventureCatalog.RoomCount(destinationId)
+                )
+            );
             return Answer(token, State());
         }
 
-        public Task<AdventureState> MoveAsync(string roomId, CancellationToken token)
+        public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token)
         {
             if (run == null)
                 return Fail(token, 404);
-            if (run.RoomId == roomId)
+            if (room == null)
+                return Fail(token, 409);
+            if (run.RoomId == room.Id)
                 return Answer(token, State());
             var current = run.Find(run.RoomId);
-            var target = run.Find(roomId);
-            if (target == null || !current.Next.Contains(roomId) || !run.RoomCleared)
+            var target = run.Find(room.Id);
+            if (target == null || !current.Next.Contains(room.Id) || !run.RoomCleared)
                 return Fail(token, 409);
-            run.RoomId = roomId;
+            run.RoomId = room.Id;
             run.RoomCleared = target.Kind == AdventureRoomKind.Start;
-            run.Route.Add(roomId);
+            run.Route.Add(room.Id);
             return Answer(token, State());
         }
 
@@ -228,8 +218,9 @@ namespace Baryonyx.Adventure
                         run.Route.ToArray(),
                         run.Revives,
                         ReviveCostBase * (run.Revives + 1),
-                        run.Rooms,
-                        run.Rewards.ToArray()
+                        run.Map,
+                        run.Rewards.ToArray(),
+                        run.Find(run.RoomId).Floor
                     ),
                 records.Values.ToArray(),
                 runes,
@@ -251,24 +242,24 @@ namespace Baryonyx.Adventure
 
         private sealed class Run
         {
-            public Run(string destinationId, IReadOnlyList<AdventureRoom> rooms)
+            public Run(string destinationId, AdventureRouteMap map)
             {
                 DestinationId = destinationId;
-                Rooms = rooms;
-                RoomId = rooms.First(room => room.Kind == AdventureRoomKind.Start).Id;
+                Map = map;
+                RoomId = AdventureRouteMap.EntranceId;
                 RoomCleared = true;
                 Route = new List<string> { RoomId };
             }
 
             public string DestinationId { get; }
-            public IReadOnlyList<AdventureRoom> Rooms { get; }
+            public AdventureRouteMap Map { get; }
             public string RoomId;
             public bool RoomCleared;
             public List<string> Route { get; }
             public int Revives;
             public List<AdventureReward> Rewards { get; } = new();
 
-            public AdventureRoom Find(string id) => Rooms.FirstOrDefault(room => room.Id == id);
+            public AdventureRoom Find(string id) => Map.Find(id);
         }
     }
 }

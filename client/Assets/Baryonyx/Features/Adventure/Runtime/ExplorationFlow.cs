@@ -8,12 +8,12 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// Runs the exploration of the adventure in progress (doc/features/stage-progression.md):
-    /// reads where the party is, shows the room, walks to the door tapped and saves the room
-    /// chosen before showing it, opens a treasure room's chest for its reward, and hands a room
-    /// with a battle to the battle scene. The menu shows the route, suspends the adventure to
-    /// Home (it goes on from the room the party is in), or ends it and shows what it brought
-    /// back. Scene changes are the caller's (<c>toHome</c>, <c>toBattle</c>); a room change
-    /// inside the scene goes through <c>changeRoom</c>, which covers the screen while the next
+    /// reads where the party is, shows the map from its room, walks the road to the room tapped
+    /// and saves the room chosen before showing the map from it, opens a treasure room's chest
+    /// for its reward, and hands a room with a battle to the battle scene. The menu suspends the
+    /// adventure to Home (it goes on from the room the party is in), or ends it and shows what it
+    /// brought back. Scene changes are the caller's (<c>toHome</c>, <c>toBattle</c>); a room
+    /// change inside the scene goes through <c>changeRoom</c>, which hides the map while the next
     /// room is shown.
     /// </summary>
     public sealed class ExplorationFlow : IDisposable
@@ -48,7 +48,7 @@ namespace Baryonyx.Adventure
             this.toBattle = toBattle ?? throw new ArgumentNullException(nameof(toBattle));
             this.changeRoom = changeRoom ?? (show => show());
             this.entered = entered;
-            view.DoorPressed += OnDoor;
+            view.RoomPressed += OnRoom;
             view.ChestPressed += OnChest;
             view.MenuPressed += OpenMenu;
             view.BackPressed += OpenMenu;
@@ -143,23 +143,28 @@ namespace Baryonyx.Adventure
             }
         }
 
-        private void OnDoor(int index)
+        private void OnRoom(string roomId)
         {
-            if (busy || Leaving || room == null || index >= room.Exits.Count)
+            if (busy || Leaving || room == null)
                 return;
-            Work = MoveAsync(index, room.Exits[index]);
+            foreach (var exit in room.Exits)
+                if (exit.Id == roomId)
+                {
+                    Work = MoveAsync(exit);
+                    return;
+                }
         }
 
-        // 歩きながら選んだ部屋を保存し、両方が済んでから次の部屋を見せる。
-        private async Task MoveAsync(int door, ExplorationExit exit)
+        // 道を歩きながら選んだ部屋を保存し、両方が済んでから、その部屋から見た地図を見せる。
+        private async Task MoveAsync(ExplorationExit exit)
         {
             busy = true;
             var walked = new TaskCompletionSource<bool>();
-            view.WalkTo(door, () => walked.TrySetResult(true));
+            view.WalkTo(exit.Id, () => walked.TrySetResult(true));
             AdventureState state;
             try
             {
-                state = await source.MoveAsync(exit.Id, lifetime.Token);
+                state = await source.MoveAsync(exit.Room, lifetime.Token);
             }
             catch (OperationCanceledException)
             {
@@ -239,18 +244,10 @@ namespace Baryonyx.Adventure
                 AdventureCatalog.Location(State.Run) + "\n" + MenuBody,
                 null,
                 view.Dialog.Hide,
-                new DialogChoice(AdventureTexts.RouteChoice, ShowRoute),
                 new DialogChoice(AdventureTexts.SuspendChoice, GoHome),
                 new DialogChoice(AdventureTexts.QuitChoice, ConfirmQuit),
                 new DialogChoice(AdventureTexts.CloseChoice, view.Dialog.Hide)
             );
-        }
-
-        private void ShowRoute()
-        {
-            view.Dialog.Hide();
-            if (view.Route != null)
-                view.Route.Show(State.Run);
         }
 
         private void ConfirmQuit() =>
@@ -332,7 +329,7 @@ namespace Baryonyx.Adventure
             disposed = true;
             // 待っている処理が後からトークンを読んでも例外にならないよう、取り消すだけにする。
             lifetime.Cancel();
-            view.DoorPressed -= OnDoor;
+            view.RoomPressed -= OnRoom;
             view.ChestPressed -= OnChest;
             view.MenuPressed -= OpenMenu;
             view.BackPressed -= OpenMenu;

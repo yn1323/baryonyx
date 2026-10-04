@@ -11,7 +11,7 @@ namespace Baryonyx.Adventure
         Open,
     }
 
-    /// <summary>One way on out of the room: the room it leads to and the hint at it.</summary>
+    /// <summary>One way on from the room: the room on the next floor the road leads to, and its hint.</summary>
     public sealed class ExplorationExit
     {
         public ExplorationExit(AdventureRoom room)
@@ -26,18 +26,20 @@ namespace Baryonyx.Adventure
     }
 
     /// <summary>
-    /// What the exploration screen shows of the room the party is in
-    /// (doc/features/stage-progression.md): where it is, the doors on to the next rooms once
-    /// the room's event is done, the chest of a treasure room, and whether a battle waits.
+    /// What the exploration map shows of the room the party is in
+    /// (doc/features/stage-progression.md): where it is, the rooms on the next floor the roads
+    /// lead to once the room's event is done, the chest of a treasure room, and whether a battle
+    /// waits.
     /// </summary>
     public sealed class ExplorationRoom
     {
-        public const string ChoosePrompt = "進む入口を選んでください";
+        public const string ChoosePrompt = "進む道を選んでください";
         public const string ChestPrompt = "宝箱がある。タップして開けよう";
         public const string BattlePrompt = "魔物が現れた！";
 
         private ExplorationRoom() { }
 
+        public AdventureRun Run { get; private set; }
         public string Location { get; private set; } = "";
         public IReadOnlyList<ExplorationExit> Exits { get; private set; } =
             Array.Empty<ExplorationExit>();
@@ -56,6 +58,7 @@ namespace Baryonyx.Adventure
             var exits = run.Exits.Select(next => new ExplorationExit(next)).ToArray();
             return new ExplorationRoom
             {
+                Run = run,
                 Location = AdventureCatalog.Location(run),
                 Exits = exits,
                 Chest =

@@ -9,20 +9,23 @@ namespace Baryonyx.Tests.EditMode
 {
     public sealed class AdventureStateTests
     {
+        private static readonly string Forest = AdventureCatalog.DestinationName(
+            AdventureCatalog.ForestRuins
+        );
+
         // アプリの中だけの冒険はすぐに答えるため、完了をそのまま受け取る。
         private static T Run<T>(System.Threading.Tasks.Task<T> task) =>
             task.GetAwaiter().GetResult();
 
         // サーバーの応答（server/src/features/adventure/routes.ts）を、JsonUtilityで読んだ形から変える。
+        // 道は、応答の種と部屋の数から作る。
         [Test]
-        public void TheServersAnswerBecomesTheRunAndItsRewards()
+        public void TheServersAnswerBecomesTheRunOnTheRouteOfItsSeed()
         {
             const string json =
-                "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"roomId\":\"moss-hall\","
-                + "\"roomCleared\":false,\"route\":[\"entrance\",\"moss-hall\"],\"revives\":1,\"reviveCost\":200,"
-                + "\"rooms\":[{\"id\":\"entrance\",\"floor\":1,\"kind\":\"start\",\"encounter\":\"\",\"next\":[\"moss-hall\"]},"
-                + "{\"id\":\"moss-hall\",\"floor\":2,\"kind\":\"battle\",\"encounter\":\"forest-pack\",\"next\":[\"sanctum\"]},"
-                + "{\"id\":\"sanctum\",\"floor\":3,\"kind\":\"boss\",\"encounter\":\"forest-boss\",\"next\":[]}],"
+                "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"seed\":12345,\"roomCount\":8,"
+                + "\"roomId\":\"f2-0\",\"floor\":2,\"roomKind\":\"battle\","
+                + "\"roomCleared\":false,\"route\":[\"entrance\",\"f2-0\"],\"revives\":1,\"reviveCost\":200,"
                 + "\"rewards\":[{\"roomId\":\"entrance\",\"bonusId\":\"luck\",\"rank\":\"A\",\"outcome\":\"updated\"},"
                 + "{\"roomId\":\"x\",\"bonusId\":\"luck\",\"rank\":\"Z\",\"outcome\":\"added\"}]},"
                 + "\"records\":[{\"destinationId\":\"forest-ruins\",\"bestFloor\":3,\"clears\":0}],"
@@ -33,12 +36,21 @@ namespace Baryonyx.Tests.EditMode
 
             Assert.That(state.InProgress, Is.True);
             var run = state.Run;
+            Assert.That(
+                AdventureServerSource
+                    .ToState(JsonUtility.FromJson<AdventureApiClient.State>(json))
+                    .Run.Rooms.Select(room => room.Id),
+                Is.EqualTo(run.Rooms.Select(room => room.Id))
+            );
+            Assert.That(run.Map.Seed, Is.EqualTo(12345));
+            Assert.That(run.Map.RoomCount, Is.EqualTo(8));
             Assert.That(run.Room.Kind, Is.EqualTo(AdventureRoomKind.Battle));
+            Assert.That(run.Room.Encounter, Is.EqualTo("forest-pack"));
             Assert.That(run.Floor, Is.EqualTo(2));
             Assert.That(run.InBattle, Is.True);
             Assert.That(run.Exits, Is.Empty);
             Assert.That(run.ReviveCost, Is.EqualTo(200));
-            Assert.That(run.DeepestFloor, Is.EqualTo(3));
+            Assert.That(run.DeepestFloor, Is.EqualTo(10));
             // 知らないランクの報酬は外す。
             Assert.That(
                 run.Rewards.Select(reward => (reward.BonusId, reward.Rank, reward.Outcome)),
@@ -50,6 +62,22 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Reward, Is.Null);
             Assert.That(state.Result, Is.Null);
             Assert.That(state.RevivedFor, Is.Null);
+        }
+
+        // 道にない部屋（以前の冒険の部屋など）でも、サーバーが保存した階を出す。
+        [Test]
+        public void ARoomOffTheRouteKeepsTheSavedFloor()
+        {
+            var state = AdventureServerSource.ToState(
+                JsonUtility.FromJson<AdventureApiClient.State>(
+                    "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"seed\":7,\"roomCount\":8,"
+                        + "\"roomId\":\"moss-hall\",\"floor\":3,\"roomKind\":\"battle\",\"roomCleared\":true,"
+                        + "\"route\":[],\"revives\":0,\"reviveCost\":100,\"rewards\":[]},\"records\":[],\"runes\":0}"
+                )
+            );
+            Assert.That(state.Run.Room, Is.Null);
+            Assert.That(state.Run.Floor, Is.EqualTo(3));
+            Assert.That(state.Run.Exits, Is.Empty);
         }
 
         [Test]
@@ -79,99 +107,103 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Result.BestFloor, Is.EqualTo(4));
         }
 
-        // 部屋の出来事（宝箱・戦闘）を終えるまで入口は出さず、終えると次の部屋の入口と手掛かりを出す。
+        // 次の階の部屋へ進み、最後の部屋以外の出来事を終える。
+        private static AdventureState Walk(AdventureLocalSource source, int moves)
+        {
+            var state = Run(source.StartAsync(AdventureCatalog.ForestRuins, default));
+            for (int i = 0; i < moves; i++)
+            {
+                var room = state.Run.Exits[0];
+                state = Run(source.MoveAsync(room, default));
+                if (i < moves - 1)
+                    state = Run(source.ClearAsync(room.Id, default));
+            }
+            return state;
+        }
+
+        // 部屋の出来事（宝箱・戦闘）を終えるまで次の部屋は選べず、終えると次の階の部屋と手掛かりを出す。
         [Test]
-        public void TheRoomShowsItsDoorsOnlyOnceItsEventIsDone()
+        public void TheRoomOffersTheNextFloorOnlyOnceItsEventIsDone()
         {
             var source = new AdventureLocalSource(seed: 7);
-            var start = Run(source.StartAsync(AdventureLocalSource.ForestRuins, default));
+            var start = Run(source.StartAsync(AdventureCatalog.ForestRuins, default));
             var entrance = ExplorationRoom.From(start.Run);
-            Assert.That(entrance.Location, Is.EqualTo("森の遺跡 B1F"));
+            Assert.That(entrance.Location, Is.EqualTo(Forest + " B1F"));
             Assert.That(
                 entrance.Exits.Select(exit => exit.Id),
-                Is.EqualTo(new[] { "moss-hall", "hidden-store" })
+                Is.EqualTo(start.Run.Map.Find(AdventureRouteMap.EntranceId).Next)
             );
-            Assert.That(
-                entrance.Exits.Select(exit => exit.Hint),
-                Is.EqualTo(new[] { "魔物の気配", "宝箱がありそう" })
-            );
+            Assert.That(entrance.Exits.Select(exit => exit.Hint), Is.All.EqualTo("魔物の気配"));
             Assert.That(entrance.Prompt, Is.EqualTo(ExplorationRoom.ChoosePrompt));
             Assert.That(entrance.StartsBattle, Is.False);
 
-            var treasure = ExplorationRoom.From(Run(source.MoveAsync("hidden-store", default)).Run);
+            var first = entrance.Exits[0].Room;
+            var battle = ExplorationRoom.From(Run(source.MoveAsync(first, default)).Run);
+            Assert.That(battle.StartsBattle, Is.True);
+            Assert.That(battle.Prompt, Is.EqualTo(ExplorationRoom.BattlePrompt));
+            Assert.That(battle.Exits, Is.Empty);
+            var won = ExplorationRoom.From(Run(source.ClearAsync(first.Id, default)).Run);
+            Assert.That(won.Exits.Select(exit => exit.Id), Is.EqualTo(first.Next));
+            Assert.That(won.Location, Is.EqualTo(Forest + " B2F"));
+
+            // 道中の中ほどの階（B6F）は宝箱。開けるまで次へは進めない。
+            var state = Walk(new AdventureLocalSource(seed: 7), 5);
+            var treasure = ExplorationRoom.From(state.Run);
+            Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Treasure));
             Assert.That(treasure.Chest, Is.EqualTo(ExplorationChest.Closed));
             Assert.That(treasure.Exits, Is.Empty);
             Assert.That(treasure.Prompt, Is.EqualTo(ExplorationRoom.ChestPrompt));
-
-            var opened = Run(source.ClearAsync("hidden-store", default));
-            Assert.That(opened.Reward, Is.Not.Null);
-            var after = ExplorationRoom.From(opened.Run);
-            Assert.That(after.Chest, Is.EqualTo(ExplorationChest.Open));
-            Assert.That(
-                after.Exits.Select(exit => exit.Kind),
-                Is.EqualTo(new[] { AdventureRoomKind.Battle, AdventureRoomKind.Elite })
-            );
-
-            var battle = ExplorationRoom.From(Run(source.MoveAsync("guardian-gate", default)).Run);
-            Assert.That(battle.StartsBattle, Is.True);
-            Assert.That(battle.Prompt, Is.EqualTo(ExplorationRoom.BattlePrompt));
         }
 
-        // サーバーと同じ決まり：出来事を終えるまで進めない・つながっていない部屋へは進めない。
+        // サーバーと同じ決まり：出来事を終えるまで進めない・道でつながっていない部屋へは進めない。
         [Test]
         public void TheLocalAdventureKeepsTheServersRules()
         {
             var source = new AdventureLocalSource(runes: 250, seed: 3);
-            Assert.That(Fails(() => Run(source.MoveAsync("moss-hall", default))), Is.EqualTo(404));
-            Run(source.StartAsync(AdventureLocalSource.ForestRuins, default));
+            var stray = new AdventureRoom("f2-0", 2, AdventureRoomKind.Battle, "", new string[0]);
+            Assert.That(Fails(() => Run(source.MoveAsync(stray, default))), Is.EqualTo(404));
+            var start = Run(source.StartAsync(AdventureCatalog.ForestRuins, default));
             Assert.That(
-                Fails(() => Run(source.StartAsync(AdventureLocalSource.ForestRuins, default))),
+                Fails(() => Run(source.StartAsync(AdventureCatalog.ForestRuins, default))),
                 Is.Zero
             );
-            Assert.That(Fails(() => Run(source.MoveAsync("sanctum", default))), Is.EqualTo(409));
-            Run(source.MoveAsync("moss-hall", default));
+            var map = start.Run.Map;
+            var far = map.Rooms.First(room => room.Floor == 3);
+            Assert.That(Fails(() => Run(source.MoveAsync(far, default))), Is.EqualTo(409));
+            var first = start.Run.Exits[0];
+            Run(source.MoveAsync(first, default));
             Assert.That(
-                Fails(() => Run(source.MoveAsync("root-gallery", default))),
+                Fails(() => Run(source.MoveAsync(map.Find(first.Next[0]), default))),
                 Is.EqualTo(409)
             );
 
             // 復活は100、2回目は200。足りなければ断る。
-            var first = Run(source.ReviveAsync("moss-hall", default));
-            Assert.That(first.RevivedFor, Is.EqualTo(100));
-            Assert.That(first.Runes, Is.EqualTo(150));
-            Assert.That(first.Run.ReviveCost, Is.EqualTo(200));
-            Assert.That(
-                Fails(() => Run(source.ReviveAsync("moss-hall", default))),
-                Is.EqualTo(409)
-            );
+            var revived = Run(source.ReviveAsync(first.Id, default));
+            Assert.That(revived.RevivedFor, Is.EqualTo(100));
+            Assert.That(revived.Runes, Is.EqualTo(150));
+            Assert.That(revived.Run.ReviveCost, Is.EqualTo(200));
+            Assert.That(Fails(() => Run(source.ReviveAsync(first.Id, default))), Is.EqualTo(409));
 
             var defeated = Run(source.EndAsync(AdventureEndReason.Defeat, default));
             Assert.That(defeated.InProgress, Is.False);
             Assert.That(defeated.Result.Status, Is.EqualTo(AdventureEndStatus.Defeated));
             Assert.That(defeated.Result.Floor, Is.EqualTo(2));
             Assert.That(defeated.Result.NewRecord, Is.True);
-            Assert.That(
-                defeated.RecordOf(AdventureLocalSource.ForestRuins).BestFloor,
-                Is.EqualTo(2)
-            );
+            Assert.That(defeated.RecordOf(AdventureCatalog.ForestRuins).BestFloor, Is.EqualTo(2));
         }
 
         [Test]
         public void BeatingTheBossEndsTheAdventureAsCleared()
         {
             var source = new AdventureLocalSource(seed: 5);
-            Run(source.StartAsync(AdventureLocalSource.ForestRuins, default));
-            AdventureState state = null;
-            foreach (var room in new[] { "moss-hall", "root-gallery", "sanctum" })
-            {
-                Run(source.MoveAsync(room, default));
-                state = Run(source.ClearAsync(room, default));
-            }
+            var state = Walk(source, 9);
+            Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Boss));
+            state = Run(source.ClearAsync(state.Run.RoomId, default));
             Assert.That(state.InProgress, Is.False);
             Assert.That(state.Result.Status, Is.EqualTo(AdventureEndStatus.Cleared));
-            Assert.That(state.Result.Floor, Is.EqualTo(4));
+            Assert.That(state.Result.Floor, Is.EqualTo(10));
             Assert.That(state.Result.Clears, Is.EqualTo(1));
-            Assert.That(state.Result.Rewards.Count, Is.EqualTo(3));
+            Assert.That(state.Result.Rewards.Count, Is.EqualTo(9));
             Assert.That(state.Reward.Rank, Is.GreaterThanOrEqualTo(StepBonusRank.B));
         }
 
@@ -200,7 +232,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(
                 AdventureTexts.ResultBody(null, result),
-                Is.EqualTo("森の遺跡　B3Fまで到達\n最深記録 B4F\n持ち帰ったボーナス：luck A")
+                Is.EqualTo(Forest + "　B3Fまで到達\n最深記録 B4F\n持ち帰ったボーナス：luck A")
             );
             Assert.That(
                 AdventureTexts.ReviveBody(200, 150),

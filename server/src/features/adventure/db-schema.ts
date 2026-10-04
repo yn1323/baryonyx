@@ -12,6 +12,7 @@ import { appUsers } from "../accounts/db-schema.js";
 
 // 冒険1回ごとの状態。進行中（active）の冒険はユーザーごとに1つだけ。
 // 部屋を選んだ時点で保存するため、戦闘中にアプリが終わっても、選んだ部屋から再開できる。
+// 分岐ルートの道は保存せず、乱数の種（seed）からクライアントが毎回同じ形に作る。
 export const adventureRuns = sqliteTable(
   "adventure_runs",
   {
@@ -20,7 +21,11 @@ export const adventureRuns = sqliteTable(
       .notNull()
       .references(() => appUsers.id),
     destinationId: text("destination_id").notNull(),
+    seed: integer("seed").notNull().default(0),
     roomId: text("room_id").notNull(),
+    // 今いる部屋の階と種類。クライアントが道から送った値で、進み方と報酬の判定に使う。
+    floor: integer("floor").notNull().default(1),
+    roomKind: text("room_kind").notNull().default("start"),
     // 今いる部屋の出来事（戦闘・宝箱）を終えたか。終えるまで次の部屋へ進めない。
     roomCleared: integer("room_cleared", { mode: "boolean" }).notNull(),
     // 通った部屋のID（JSONの配列）。最初は出発の部屋だけ。
@@ -44,7 +49,7 @@ export const adventureRuns = sqliteTable(
   ],
 );
 
-// 出来事を終えた部屋で手に入れたUPTボーナス。1つの部屋で1回だけ手に入る。
+// 出来事を終えた部屋で手に入れたACTボーナス。1つの部屋で1回だけ手に入る。
 // 持ち物（step_bonus_holdings）には、ランクの高いほうだけが残る（outcome）。
 export const adventureRewards = sqliteTable(
   "adventure_rewards",

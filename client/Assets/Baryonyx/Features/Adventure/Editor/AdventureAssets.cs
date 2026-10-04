@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Baryonyx.Combat.Editor;
-using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
@@ -12,7 +10,6 @@ using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu.Editor;
-using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -22,17 +19,18 @@ using static Baryonyx.Editor.UI.UiBuild;
 namespace Baryonyx.Adventure.Editor
 {
     /// <summary>
-    /// Builds the adventure's screens: the exploration screen (the party and the doors on the
-    /// battle's stage, the chest, the place, the prompt, the menu, the route and the dialog) and
-    /// the overlay laid over the battle screen (the menu, the dialog and the notice band).
-    /// Coordinates follow the 1920x1080 design; the party stands where it stands in battle and
-    /// the doors where the enemies stand.
+    /// Builds the adventure's screens: the exploration screen (the map painted on the device with
+    /// its room markers, the party and the chest, the floors, the place, the prompt, the menu and
+    /// the dialog), the pictures the map is painted with, and the overlay laid over the battle
+    /// screen (the menu, the dialog and the notice band). Coordinates follow the 1920x1080 design;
+    /// the map is 2400x1080, three pixels a dot, centred so a wider screen shows more of it.
     /// </summary>
     public static class AdventureAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Adventure";
         public const string ExplorationPrefabPath = Folder + "/UI/ExplorationScreen.prefab";
         public const string OverlayPrefabPath = Folder + "/UI/AdventureOverlay.prefab";
+        public const string MapArtPath = Folder + "/Data/ExplorationMapArt.asset";
         public const string ArtFolder = Folder + "/UI/Art";
         public const string IconBattlePath = ArtFolder + "/IconRoomBattle.aseprite";
         public const string IconElitePath = ArtFolder + "/IconRoomElite.aseprite";
@@ -40,34 +38,34 @@ namespace Baryonyx.Adventure.Editor
         public const string IconBossPath = ArtFolder + "/IconRoomBoss.aseprite";
 
         public const string StageArtFolder = "Assets/Baryonyx/Shared/Art/Stages/Exploration";
-        public const string DoorPath = StageArtFolder + "/RuinDoor.aseprite";
         public const string ChestClosedPath = StageArtFolder + "/ChestClosed.aseprite";
         public const string ChestOpenPath = StageArtFolder + "/ChestOpen.aseprite";
 
-        // 3Dの舞台がない場所（展示室のPrefabの単体表示）で見せる、森の遺跡の描いた背景。
-        public const string FlatBackgroundPath = "Assets/Baryonyx/Shared/Art/Stages/Forest.png";
+        // 地図に立てる絵。木と下草は、近い行に使う原寸と、遠い行に使う半分の大きさがある。
+        public const string MapTreesPath = StageArtFolder + "/MapTrees.aseprite";
+        public const string MapUndergrowthPath = StageArtFolder + "/MapUndergrowth.aseprite";
+        public const string MapTreesFarPath = StageArtFolder + "/MapTreesFar.aseprite";
+        public const string MapUndergrowthFarPath = StageArtFolder + "/MapUndergrowthFar.aseprite";
+        public const string MapRuinPath = StageArtFolder + "/MapRuin.aseprite";
+
         private const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
 
-        // 味方は戦闘と同じ1ドット4px、扉は敵と同じ3px、宝箱は4px。
-        private const float PartyDot = 4f;
-        private const float DoorDot = 3f;
-        private const float ChestDot = 4f;
+        // 地図は1ドット3px。戦闘のキャラは地図の上では1ドット1pxの小さい姿にする。
+        private const float MapDot = ExplorationMapProjection.Dot;
+        private const float PartyDot = 1f;
 
-        // 後ろの者から描く。戦闘画面（BattleInspectAssets.Allies）と同じ足元。
-        private static readonly (string Name, Vector2 Feet)[] Party =
+        // 部屋の中心からの隊列（設計座標）。後ろの者から描く。
+        private static readonly (string Name, Vector2 Offset)[] Party =
         {
-            ("Mina", new Vector2(-690, 170)),
-            ("Toma", new Vector2(-420, 40)),
-            ("Luka", new Vector2(-690, -100)),
-            ("Aria", new Vector2(-420, -220)),
+            ("Mina", new Vector2(-12, 12)),
+            ("Luka", new Vector2(24, 9)),
+            ("Toma", new Vector2(-30, -6)),
+            ("Aria", new Vector2(9, -12)),
         };
-
-        // 扉は戦闘で敵が立つ側に、奥と手前の2つ。入口が1つの部屋は奥の扉だけを使う。
-        internal static readonly Vector2[] DoorFeet = { new(330, 150), new(720, -130) };
-        internal static readonly Vector2 ChestFeet = new(120, -170);
 
         private static readonly Color TextMain = GuideMenuAssets.TextMain;
         private static readonly Color Plate = new(0.02f, 0.024f, 0.047f, 0.82f);
+        private static readonly Color MarkerPlate = new(0.11f, 0.165f, 0.19f, 0.96f);
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
 
         private const float MenuWidth = 128f;
@@ -79,6 +77,7 @@ namespace Baryonyx.Adventure.Editor
             if (EditorApplication.isPlaying)
                 throw new InvalidOperationException("Stop Play Mode first.");
             Directory.CreateDirectory(Path.GetDirectoryName(ExplorationPrefabPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(MapArtPath));
             AssetDatabase.Refresh();
             UiArt.EnsureAll();
             GuideMenuAssets.CreateSharedArt();
@@ -86,16 +85,16 @@ namespace Baryonyx.Adventure.Editor
                 var path in new[] { IconBattlePath, IconElitePath, IconTreasurePath, IconBossPath }
             )
                 ArtAssets.ImportDrawn(path);
-            foreach (var path in new[] { DoorPath, ChestClosedPath, ChestOpenPath })
+            foreach (var path in new[] { ChestClosedPath, ChestOpenPath })
                 ArtAssets.ImportTexture(path, FilterMode.Point);
             ArtAssets.ImportDrawn(HomeScreenArt.IconCompassPath);
-            ArtAssets.ImportTexture(FlatBackgroundPath, FilterMode.Point);
             foreach (var member in Party)
                 ArtAssets.ImportTexture(
                     $"{CharacterArtFolder}/Battle{member.Name}.aseprite",
                     FilterMode.Point
                 );
 
+            var art = CreateMapArt();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
             var bonuses = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(
@@ -103,7 +102,7 @@ namespace Baryonyx.Adventure.Editor
             );
             using (Begin(font, shadowText))
             {
-                BuildExploration(bonuses);
+                BuildExploration(bonuses, art);
                 BuildOverlay(bonuses);
             }
             AssetDatabase.SaveAssetIfDirty(font);
@@ -120,46 +119,118 @@ namespace Baryonyx.Adventure.Editor
                 ArtAssets.LoadSprite(IconBossPath),
             };
 
+        // --- Map art -------------------------------------------------------------------------
+
+        // .aseprite の絵は実行中に画素を読めないため、地図に立てる絵の画素を Data に写しておく。
+        public static ExplorationMapArt CreateMapArt()
+        {
+            var art = AssetDatabase.LoadAssetAtPath<ExplorationMapArt>(MapArtPath);
+            bool created = art == null;
+            if (created)
+                art = ScriptableObject.CreateInstance<ExplorationMapArt>();
+            art.Trees = Stamps(MapTreesPath);
+            art.Undergrowth = Stamps(MapUndergrowthPath);
+            art.TreesFar = Stamps(MapTreesFarPath);
+            art.UndergrowthFar = Stamps(MapUndergrowthFarPath);
+            var ruin = Stamps(MapRuinPath);
+            art.Ruin = ruin.Length > 0 ? ruin[0] : new PixelStamp();
+            if (created)
+                AssetDatabase.CreateAsset(art, MapArtPath);
+            EditorUtility.SetDirty(art);
+            AssetDatabase.SaveAssetIfDirty(art);
+            return art;
+        }
+
+        // 1フレームを1枚の絵とし、絵のある範囲だけに切り詰める。下辺が根元になる。
+        private static PixelStamp[] Stamps(string path)
+        {
+            ArtAssets.ImportDrawn(path);
+            var frames = AsepriteCanvasImport.LoadFrames(path);
+            var stamps = new List<PixelStamp>();
+            for (int frame = 0; frame < frames.Count; frame++)
+            {
+                var size = Vector2Int.RoundToInt(frames[frame].rect.size);
+                var pixels = AsepriteCanvasImport.ReadFramePixels(path, frame);
+                int minX = size.x,
+                    minY = size.y,
+                    maxX = -1,
+                    maxY = -1;
+                for (int y = 0; y < size.y; y++)
+                for (int x = 0; x < size.x; x++)
+                {
+                    if (pixels[y * size.x + x].a == 0)
+                        continue;
+                    minX = Math.Min(minX, x);
+                    maxX = Math.Max(maxX, x);
+                    minY = Math.Min(minY, y);
+                    maxY = Math.Max(maxY, y);
+                }
+                if (maxX < 0)
+                    continue;
+                int width = maxX - minX + 1;
+                int height = maxY - minY + 1;
+                var cropped = new Color32[width * height];
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    cropped[y * width + x] = pixels[(minY + y) * size.x + minX + x];
+                stamps.Add(
+                    PixelStamp.From(
+                        $"{Path.GetFileNameWithoutExtension(path)}{frame}",
+                        width,
+                        height,
+                        cropped
+                    )
+                );
+            }
+            return stamps.ToArray();
+        }
+
         // --- Exploration ---------------------------------------------------------------------
 
-        private static void BuildExploration(StepBonusMockData bonuses)
+        private static void BuildExploration(StepBonusMockData bonuses, ExplorationMapArt art)
         {
-            var root = Rect("ExplorationScreen", null);
-            Stretch(root);
+            var root = CanvasRoot("ExplorationScreen");
             var view = root.gameObject.AddComponent<ExplorationView>();
             view.KindIcons = KindIcons();
             view.Bonuses = bonuses;
+            view.Art = art;
+            // 展示室でPrefabだけを開いたときに描く見本の道。冒険の場面では使わない。
+            view.SampleSeed = 20261004;
 
-            // The stage canvas is drawn by the scene's camera over the 3D stage, like the battle's.
-            var stageCanvas = CanvasRoot("StageCanvas");
-            stageCanvas.SetParent(root, false);
-            BattleSkillVfxAssets.MakeStageCanvas(stageCanvas);
-            var screen = CanvasRoot("ScreenCanvas");
-            screen.SetParent(root, false);
-            screen.GetComponent<Canvas>().sortingOrder = 1;
+            var backdrop = Rect("Backdrop", root);
+            Stretch(backdrop);
+            AddImage(backdrop, ScreenScenes.CameraColor, false);
 
-            var drift = Rect("StageDrift", stageCanvas);
-            Stretch(drift);
-            drift.gameObject.AddComponent<BattleStageDrift>();
-            var stage = Rect("Stage", drift);
-            Stretch(stage);
-            BuildFlatBackground(stage);
-            var world = BattleSkillVfxAssets.Layer("World", stage);
-            Hd2dStageKit.SortLayer(world, Hd2dStageKit.BoardOrder + 10);
-            BuildParty(world, view);
-            BuildDoors(world, view);
-            BuildChest(world, view);
+            var map = Rect("Map", root);
+            Place(
+                map,
+                Vector2.zero,
+                new Vector2(ExplorationMapProjection.Width, ExplorationMapProjection.Height)
+                    * MapDot
+            );
+            view.Map = map;
+            view.MapGroup = map.gameObject.AddComponent<CanvasGroup>();
+            var picture = Rect("Picture", map);
+            Stretch(picture);
+            view.MapImage = picture.gameObject.AddComponent<RawImage>();
+            view.MapImage.raycastTarget = false;
+            // 地図の絵が届くまでは、背景と同じ暗い色にしておく。
+            view.MapImage.color = ScreenScenes.CameraColor;
 
-            // Taps land on the screen canvas, laid out like the world (the stage canvas takes none).
-            var taps = BattleSkillVfxAssets.Layer("Taps", screen);
-            BuildTaps(taps, view);
+            var markers = Rect("Markers", map);
+            Stretch(markers);
+            view.Markers = markers;
+            view.MarkerTemplate = BuildMarker(markers);
+            BuildParty(map, view);
+            BuildChest(map, view);
 
-            var safe = SafeArea(screen);
+            var safe = SafeArea(root);
+            BuildFloors(safe, view);
             view.MenuButton = BuildMenuButton(safe);
             view.Location = Label(
                 safe,
                 "Location",
-                "森の遺跡 B1F",
+                AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins) + " B1F",
                 64,
                 TextMain,
                 TextAlignmentOptions.Right
@@ -172,132 +243,105 @@ namespace Baryonyx.Adventure.Editor
             );
             view.Prompt = BuildPrompt(safe);
 
-            view.Route = BuildRoute(screen);
-            view.Notice = NoticeBandAssets.Build(screen);
-            view.Dialog = GameDialogAssets.Build(screen);
+            view.Notice = NoticeBandAssets.Build(root);
+            view.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, ExplorationPrefabPath);
         }
 
-        private static void BuildFlatBackground(RectTransform stage)
+        // 部屋の印の型：光、丸い札、部屋の種類のアイコン、押せる範囲、横の手掛かり。
+        private static ExplorationMapMarker BuildMarker(RectTransform markers)
         {
-            var art = ArtAssets.LoadTexture(FlatBackgroundPath);
-            var backdrop = BattleSkillVfxAssets.Overscan("Backdrop", stage);
-            var image = Rect("Background", backdrop).gameObject.AddComponent<RawImage>();
-            image.texture = art;
-            image.raycastTarget = false;
-            image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio =
-                art.width / (float)art.height;
-            // The 3D stage takes the painted background's place when the scene has one.
-            Hd2dStageKit.FlatOnly(image.gameObject);
-            Shade(stage, "ShadeTop", top: true, 240f, 0.6f);
-            Shade(stage, "ShadeBottom", top: false, 300f, 0.75f);
+            var body = Rect("RoomTemplate", markers);
+            Place(body, Vector2.zero, new Vector2(150, 150));
+            var marker = body.gameObject.AddComponent<ExplorationMapMarker>();
+            marker.Body = body;
+
+            var glow = Rect("Glow", body);
+            Place(glow, Vector2.zero, new Vector2(120, 120));
+            marker.Glow = SpriteImage(glow, UiArt.SoftSpotPath, Color.white);
+            marker.Glow.raycastTarget = false;
+
+            var ring = Rect("Ring", body);
+            Place(ring, Vector2.zero, new Vector2(96, 96));
+            marker.Ring = SpriteImage(ring, UiArt.CirclePath, Color.white);
+            marker.Ring.raycastTarget = false;
+            var plate = Rect("Plate", body);
+            Place(plate, Vector2.zero, new Vector2(84, 84));
+            marker.Plate = SpriteImage(plate, UiArt.CirclePath, MarkerPlate);
+            marker.Plate.raycastTarget = false;
+
+            var icon = Rect("Icon", body);
+            // 24x24のアイコンを3倍にして、1ドットを整数のピクセルにする。
+            Place(icon, Vector2.zero, new Vector2(72, 72));
+            marker.Icon = icon.gameObject.AddComponent<Image>();
+            marker.Icon.sprite = ArtAssets.LoadSprite(IconBattlePath);
+            marker.Icon.raycastTarget = false;
+
+            // 押せる範囲は、指で押しやすい150px四方にする。
+            var hit = AddImage(body, new Color(0, 0, 0, 0), true);
+            marker.Button = UiBuild.AddButton(body, hit);
+
+            var hintBox = Rect("Hint", body);
+            Place(hintBox, new Vector2(66, 0), new Vector2(300, 64));
+            hintBox.pivot = new Vector2(0, 0.5f);
+            var hintPlate = AddImage(hintBox, Plate, false);
+            hintPlate.sprite = ArtAssets.LoadSprite(UiArt.RoundedRectPath);
+            hintPlate.type = Image.Type.Sliced;
+            var fitter = hintBox.gameObject.AddComponent<HorizontalLayoutGroup>();
+            fitter.padding = new RectOffset(20, 20, 6, 6);
+            fitter.childControlWidth = true;
+            fitter.childControlHeight = true;
+            fitter.childForceExpandWidth = false;
+            hintBox.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
+                .FitMode
+                .PreferredSize;
+            marker.HintBox = hintBox;
+            marker.Hint = Label(
+                hintBox,
+                "Text",
+                "魔物の気配",
+                32,
+                TextMain,
+                TextAlignmentOptions.Center
+            );
+            return marker;
         }
 
-        private static void BuildParty(RectTransform world, ExplorationView view)
+        // 地図の上のパーティ。戦闘の姿を1ドット1pxで、部屋の中心のまわりに並べる。
+        private static void BuildParty(RectTransform map, ExplorationView view)
         {
+            var party = Rect("Party", map);
+            Stretch(party);
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            var material = AssetDatabase.LoadAssetAtPath<Material>(
-                BattleInspectAssets.PixelArtMaterialPath
-            );
             var bodies = new List<RectTransform>();
             foreach (var member in Party)
             {
                 var texture = ArtAssets.LoadTexture(
                     $"{CharacterArtFolder}/Battle{member.Name}.aseprite"
                 );
-                var body = Rect("Ally" + member.Name, world);
-                Place(body, member.Feet, Vector2.zero);
-                var footShadow = Picture(
-                    body,
-                    "Shadow",
-                    shadow,
-                    new Vector2(0, 2),
-                    new Vector2(150, 24),
-                    0.5f
-                );
-                var sprite = PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot);
-                if (material != null)
-                    sprite.material = material;
-                Hd2dStageKit.Stand(body.gameObject, sprite, footShadow);
+                var body = Rect("Ally" + member.Name, party);
+                Place(body, member.Offset, Vector2.zero);
+                Picture(body, "Shadow", shadow, new Vector2(0, 1), new Vector2(40, 8), 0.5f);
+                PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot);
                 bodies.Add(body);
             }
             view.Party = bodies.ToArray();
         }
 
-        private static void BuildDoors(RectTransform world, ExplorationView view)
+        private static void BuildChest(RectTransform map, ExplorationView view)
         {
-            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            var art = ArtAssets.LoadTexture(DoorPath);
-            var doors = new List<ExplorationDoorWidget>();
-            for (int i = 0; i < DoorFeet.Length; i++)
-            {
-                var body = Rect("Door" + i, world);
-                Place(body, DoorFeet[i], Vector2.zero);
-                var group = body.gameObject.AddComponent<CanvasGroup>();
-                var footShadow = Picture(
-                    body,
-                    "Shadow",
-                    shadow,
-                    new Vector2(0, 2),
-                    new Vector2(200, 30),
-                    0.45f
-                );
-                var sprite = PixelActor(body, "Sprite", art, Vector2.zero, DoorDot);
-                Hd2dStageKit.Stand(body.gameObject, sprite, footShadow);
-
-                // The plate on the ground in front of the door: the room's kind and a short hint.
-                // Over the door it stood apart from it, as the board stands shorter than its picture.
-                var plate = Rect("Plate", body);
-                Place(plate, new Vector2(0, -68), new Vector2(340, 88));
-                AddImage(plate, Plate, false).sprite = ArtAssets.LoadSprite(UiArt.RoundedRectPath);
-                plate.GetComponent<Image>().type = Image.Type.Sliced;
-                var icon = Rect("Icon", plate);
-                // The 24x24 icon at 3x, so each dot keeps a whole number of pixels.
-                Place(icon, new Vector2(-124, 0), new Vector2(72, 72));
-                var iconImage = icon.gameObject.AddComponent<Image>();
-                iconImage.sprite = ArtAssets.LoadSprite(IconBattlePath);
-                iconImage.raycastTarget = false;
-                var hint = Label(
-                    plate,
-                    "Hint",
-                    "魔物の気配",
-                    36,
-                    TextMain,
-                    TextAlignmentOptions.Left
-                );
-                Place((RectTransform)hint.transform, new Vector2(40, 0), new Vector2(220, 64));
-                GuideMenuAssets.Shrink(hint, 24);
-                doors.Add(
-                    new ExplorationDoorWidget
-                    {
-                        Body = body,
-                        Group = group,
-                        Icon = iconImage,
-                        Hint = hint,
-                    }
-                );
-            }
-            view.Doors = doors.ToArray();
-        }
-
-        private static void BuildChest(RectTransform world, ExplorationView view)
-        {
-            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             var closed = ArtAssets.LoadTexture(ChestClosedPath);
-            var body = Rect("Chest", world);
-            Place(body, ChestFeet, Vector2.zero);
+            var body = Rect("Chest", map);
+            Place(body, Vector2.zero, Vector2.zero);
             view.ChestGroup = body.gameObject.AddComponent<CanvasGroup>();
-            var footShadow = Picture(
-                body,
-                "Shadow",
-                shadow,
-                new Vector2(0, 2),
-                new Vector2(150, 26),
-                0.5f
-            );
-            var sprite = PixelActor(body, "Sprite", closed, Vector2.zero, ChestDot);
-            Hd2dStageKit.Stand(body.gameObject, sprite, footShadow);
+            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
+            Picture(body, "Shadow", shadow, new Vector2(0, 2), new Vector2(96, 18), 0.5f);
+            // 宝箱は地図と同じ1ドット3pxで置く。
+            var sprite = PixelActor(body, "Sprite", closed, Vector2.zero, MapDot);
+            var tap = Rect("Tap", body);
+            Place(tap, new Vector2(0, 48), new Vector2(150, 150));
+            view.ChestButton = UiBuild.AddButton(tap, AddImage(tap, new Color(0, 0, 0, 0), true));
             view.Chest = body;
             view.ChestSprite = sprite;
             view.ChestClosed = closed;
@@ -306,28 +350,30 @@ namespace Baryonyx.Adventure.Editor
             view.ChestGroup.blocksRaycasts = false;
         }
 
-        // 扉と宝箱を押せる範囲。舞台の絵と同じ位置に、手前の画面で受け取る。
-        private static void BuildTaps(RectTransform taps, ExplorationView view)
+        // 左端の階の目安。地図の各階の高さに置く。
+        private static void BuildFloors(RectTransform safe, ExplorationView view)
         {
-            float doorHeight = 96 * DoorDot;
-            for (int i = 0; i < view.Doors.Length; i++)
-            {
-                var tap = Rect("DoorTap" + i, taps);
-                // From the plate in front of the door (110 under the feet) to the door's top.
-                Place(
-                    tap,
-                    DoorFeet[i] + new Vector2(0, (doorHeight - 110) / 2f),
-                    new Vector2(340, doorHeight + 110)
-                );
-                var hit = AddImage(tap, new Color(0, 0, 0, 0), true);
-                view.Doors[i].Button = UiBuild.AddButton(tap, hit);
-            }
-            var chest = Rect("ChestTap", taps);
-            Place(chest, ChestFeet + new Vector2(0, 64), new Vector2(200, 200));
-            view.ChestButton = UiBuild.AddButton(
-                chest,
-                AddImage(chest, new Color(0, 0, 0, 0), true)
+            var floors = Rect("Floors", safe);
+            floors.anchorMin = new Vector2(0, 0.5f);
+            floors.anchorMax = new Vector2(0, 0.5f);
+            floors.pivot = new Vector2(0, 0.5f);
+            floors.sizeDelta = new Vector2(140, 1080);
+            floors.anchoredPosition = new Vector2(24, 0);
+            view.Floors = floors;
+            var label = Label(
+                floors,
+                "FloorTemplate",
+                "B1F",
+                26,
+                GuideMenuAssets.TextSub,
+                TextAlignmentOptions.Left
             );
+            var rect = (RectTransform)label.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 0.5f);
+            rect.pivot = new Vector2(0, 0.5f);
+            rect.sizeDelta = new Vector2(140, 40);
+            rect.anchoredPosition = Vector2.zero;
+            view.FloorTemplate = label;
         }
 
         // The menu at the top left like the guide screens' back button, or at the top right over
@@ -376,89 +422,6 @@ namespace Baryonyx.Adventure.Editor
             var prompt = Label(band, "Prompt", "", 44, TextMain, TextAlignmentOptions.Center);
             Stretch((RectTransform)prompt.transform);
             return prompt;
-        }
-
-        private static AdventureRouteView BuildRoute(RectTransform screen)
-        {
-            var root = Rect("Route", screen);
-            Stretch(root);
-            AddImage(root, new Color(0.012f, 0.02f, 0.04f, 0.82f), true);
-            var group = root.gameObject.AddComponent<CanvasGroup>();
-            var route = root.gameObject.AddComponent<AdventureRouteView>();
-            route.Group = group;
-            route.KindIcons = KindIcons();
-            route.Frame = ArtAssets.LoadSprite(GuideMenuAssets.FramePath);
-            route.FrameHere = ArtAssets.LoadSprite(GuideMenuAssets.FrameSelectedPath);
-
-            var safe = SafeArea(root);
-            var window = Rect("Window", safe);
-            Place(window, new Vector2(0, 0), new Vector2(1640, 960));
-            GuideMenuAssets.Frame(window, GuideMenuAssets.FramePath, Color.white);
-            var title = Label(
-                window,
-                "Title",
-                "ルート",
-                52,
-                GuideMenuAssets.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            GuideMenuAssets.Fill(
-                (RectTransform)title.transform,
-                new Vector2(48, 0),
-                new Vector2(-48, -28)
-            );
-
-            var area = Rect("Area", window);
-            Stretch(area);
-            area.offsetMin = new Vector2(48, 48);
-            area.offsetMax = new Vector2(-260, -108);
-            route.Area = area;
-
-            var node = Rect("RoomTemplate", area);
-            Place(node, Vector2.zero, new Vector2(200, 112));
-            GuideMenuAssets.Frame(node, GuideMenuAssets.FramePath, Color.white).raycastTarget =
-                false;
-            var icon = Rect("Icon", node);
-            Place(icon, new Vector2(0, 12), new Vector2(72, 72));
-            icon.gameObject.AddComponent<Image>().raycastTarget = false;
-            var name = Label(node, "Name", "", 26, TextMain, TextAlignmentOptions.Center);
-            Place((RectTransform)name.transform, new Vector2(0, -36), new Vector2(190, 32));
-            GuideMenuAssets.Shrink(name, 18);
-            route.RoomTemplate = node;
-
-            var line = Rect("LineTemplate", area);
-            Place(line, Vector2.zero, new Vector2(100, 8));
-            route.LineTemplate = AddImage(line, Color.white, false);
-
-            var floor = Label(
-                area,
-                "FloorTemplate",
-                "B1F",
-                36,
-                GuideMenuAssets.TextSub,
-                TextAlignmentOptions.Center
-            );
-            Place((RectTransform)floor.transform, Vector2.zero, new Vector2(140, 48));
-            route.FloorTemplate = floor;
-
-            var close = Rect("Close", window);
-            Corner(close, new Vector2(1, 0), new Vector2(-40, 40), new Vector2(200, 112));
-            var frame = GuideMenuAssets.Frame(close, GuideMenuAssets.FramePath, Color.white);
-            route.CloseButton = GuideMenuAssets.AddButton(close, frame);
-            var closeLabel = Label(
-                close,
-                "Label",
-                AdventureTexts.CloseChoice,
-                44,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)closeLabel.transform);
-
-            group.alpha = 0f;
-            group.blocksRaycasts = false;
-            group.interactable = false;
-            return route;
         }
 
         // --- Battle overlay ------------------------------------------------------------------

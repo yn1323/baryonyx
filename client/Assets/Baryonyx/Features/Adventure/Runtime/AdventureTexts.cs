@@ -9,7 +9,6 @@ namespace Baryonyx.Adventure
     public static class AdventureTexts
     {
         public const string MenuTitle = "冒険のメニュー";
-        public const string RouteChoice = "ルートを見る";
         public const string SuspendChoice = "中断してホームへ";
         public const string QuitChoice = "冒険をやめる";
         public const string CloseChoice = "閉じる";
@@ -48,7 +47,7 @@ namespace Baryonyx.Adventure
         public static string RewardBody(StepBonusMockData bonuses, AdventureReward reward) =>
             reward == null
                 ? "何も見つからなかった"
-                : $"UPTボーナス「{BonusName(bonuses, reward.BonusId)}」（{reward.Rank}）を手に入れた\n"
+                : $"ACTボーナス「{BonusName(bonuses, reward.BonusId)}」（{reward.Rank}）を手に入れた\n"
                     + AdventureCatalog.Outcome(reward.Outcome);
 
         public static string ResultBody(StepBonusMockData bonuses, AdventureResult result)

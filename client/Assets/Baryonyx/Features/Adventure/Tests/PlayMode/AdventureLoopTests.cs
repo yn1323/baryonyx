@@ -31,21 +31,32 @@ namespace Baryonyx.Tests.PlayMode
         private AdventureState Do(System.Threading.Tasks.Task<AdventureState> task) =>
             AdventureSession.Use(task.GetAwaiter().GetResult());
 
-        // 冒険を始め、通る部屋を順に選び、最後の部屋以外の出来事を終えた状態にする。
-        private void StartAt(params string[] rooms)
+        private static readonly string Forest = AdventureCatalog.DestinationName(
+            AdventureCatalog.ForestRuins
+        );
+
+        // 冒険を始め、次の階の最初の部屋へ moves 回進み、最後の部屋以外の出来事を終えた状態にする。
+        private AdventureRoom StartAt(int moves)
         {
             var source = services.Adventure;
-            Do(source.StartAsync(AdventureLocalSource.ForestRuins, CancellationToken.None));
-            for (int i = 0; i < rooms.Length; i++)
+            var state = Do(source.StartAsync(AdventureCatalog.ForestRuins, CancellationToken.None));
+            AdventureRoom room = null;
+            for (int i = 0; i < moves; i++)
             {
-                Do(source.MoveAsync(rooms[i], CancellationToken.None));
-                if (i < rooms.Length - 1)
-                    Do(source.ClearAsync(rooms[i], CancellationToken.None));
+                room = state.Run.Exits[0];
+                state = Do(source.MoveAsync(room, CancellationToken.None));
+                if (i < moves - 1)
+                    state = Do(source.ClearAsync(room.Id, CancellationToken.None));
             }
+            return room;
         }
 
         private static bool ExplorationReady(ExplorationBootstrap bootstrap) =>
-            bootstrap.Flow != null && !bootstrap.Flow.Busy && !bootstrap.Transition.IsPlaying;
+            bootstrap.Flow != null
+            && !bootstrap.Flow.Busy
+            && !bootstrap.Transition.IsPlaying
+            && !bootstrap.View.Fading
+            && !bootstrap.View.Walking;
 
         // 開く演出（シャッター）が開き切り、最初の手札を配り終えてから操作する。
         // 配っている間は、ターン終了を受け付けない。
@@ -69,10 +80,13 @@ namespace Baryonyx.Tests.PlayMode
                 $"The dialog \"{title}\" did not show (it shows \"{dialog.TitleText}\")."
             );
 
+        // 地図：今いる部屋から次の階の部屋と手掛かりを出し、押した部屋へ道を歩いて進み、宝箱を開ける。
         [UnityTest]
-        public IEnumerator TheExplorationWalksIntoTheRoomChosenAndOpensItsChest()
+        public IEnumerator TheMapWalksTheRoadToTheRoomChosenAndOpensItsChest()
         {
-            StartAt();
+            // B5Fの戦闘を終えた所から。次のB6Fは、どの道も宝箱の部屋。
+            var here = StartAt(4);
+            Do(services.Adventure.ClearAsync(here.Id, CancellationToken.None));
             var bootstrap = default(ExplorationBootstrap);
             yield return SceneTests.Load<ExplorationBootstrap>(
                 SceneTests.ExplorationPath,
@@ -80,54 +94,66 @@ namespace Baryonyx.Tests.PlayMode
                 value => bootstrap = value
             );
             var view = bootstrap.View;
-            Assert.That(view.LocationText, Is.EqualTo("森の遺跡 B1F"));
+            var run = AdventureSession.Current.Run;
+            Assert.That(view.LocationText, Is.EqualTo(Forest + " B5F"));
             Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
-            Assert.That(
-                view.Doors.Select(door => door.Button.gameObject.activeSelf),
-                Is.EqualTo(new[] { true, true })
-            );
-            Assert.That(view.Doors[1].Hint.text, Is.EqualTo("宝箱がありそう"));
-            foreach (var door in view.Doors)
-                SceneTests.AssertTouchSize(door.Button.transform);
+            Assert.That(view.FloorTexts[0], Is.EqualTo("B5F"));
+            Assert.That(view.MapImage.texture, Is.Not.Null);
+            foreach (var next in here.Next)
+            {
+                var marker = view.MarkerOf(next);
+                Assert.That(marker, Is.Not.Null, next);
+                Assert.That(marker.IsExit, Is.True);
+                Assert.That(marker.HintText, Is.EqualTo("宝箱がありそう"));
+                SceneTests.AssertTouchSize(marker.Button.transform);
+            }
+            // 最奥の間はいつも見え、押しても進まない。通った部屋は出さない。
+            var boss = view.MarkerOf(AdventureRouteMap.BossId);
+            Assert.That(boss, Is.Not.Null);
+            Assert.That(boss.IsExit, Is.False);
+            Assert.That(boss.Button.interactable, Is.False);
+            Assert.That(view.MarkerOf(AdventureRouteMap.EntranceId), Is.Null);
+            Assert.That(view.MarkerOf(here.Id), Is.Null);
             SceneTests.AssertTouchSize(view.MenuButton.transform, 0.7f);
 
             // 続けて押しても、1つの部屋だけを選ぶ。
-            view.Doors[1].Button.onClick.Invoke();
-            view.Doors[0].Button.onClick.Invoke();
+            var chosen = here.Next[0];
+            view.MarkerOf(chosen).Button.onClick.Invoke();
+            if (here.Next.Count > 1)
+                view.MarkerOf(here.Next[1]).Button.onClick.Invoke();
+            Assert.That(view.Walking, Is.True);
             yield return SceneTests.WaitUntil(
-                () => view.LocationText == "森の遺跡 B2F" && ExplorationReady(bootstrap),
-                5f,
+                () => view.LocationText == Forest + " B6F" && ExplorationReady(bootstrap),
+                6f,
                 "The next room did not show."
             );
             var saved = services
                 .Adventure.LoadAsync(CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
-            Assert.That(saved.Run.Route, Is.EqualTo(new[] { "entrance", "hidden-store" }));
+            Assert.That(saved.Run.Route[^1], Is.EqualTo(chosen));
+            Assert.That(saved.Run.Route.Count, Is.EqualTo(run.Route.Count + 1));
             Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChestPrompt));
-            Assert.That(
-                view.Doors.Select(door => door.Button.gameObject.activeSelf),
-                Is.EqualTo(new[] { false, false })
-            );
+            Assert.That(view.ShownMarkers.Where(marker => marker.IsExit), Is.Empty);
             Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
 
             view.ChestButton.onClick.Invoke();
             yield return WaitForDialog(view.Dialog, "宝箱を開けた！");
-            Assert.That(view.Dialog.BodyText, Does.StartWith("UPTボーナス「"));
+            Assert.That(view.Dialog.BodyText, Does.StartWith("ACTボーナス「"));
             Assert.That(view.Dialog.Choose(AdventureTexts.NextChoice), Is.True);
             Assert.That(view.Dialog.IsShown, Is.False);
             Assert.That(view.ChestSprite.texture, Is.SameAs(view.ChestOpen));
             Assert.That(
-                view.Doors.Select(door => door.Button.gameObject.activeSelf),
-                Is.EqualTo(new[] { true, true })
+                view.ShownMarkers.Where(marker => marker.IsExit).Select(marker => marker.RoomId),
+                Is.EquivalentTo(AdventureSession.Current.Run.Room.Next)
             );
         }
 
         [UnityTest]
-        public IEnumerator TheMenuShowsTheRouteAndEndsTheAdventureWithItsResult()
+        public IEnumerator TheMenuEndsTheAdventureWithItsResult()
         {
-            StartAt("hidden-store");
-            Do(services.Adventure.ClearAsync("hidden-store", CancellationToken.None));
+            var here = StartAt(1);
+            Do(services.Adventure.ClearAsync(here.Id, CancellationToken.None));
             var bootstrap = default(ExplorationBootstrap);
             yield return SceneTests.Load<ExplorationBootstrap>(
                 SceneTests.ExplorationPath,
@@ -136,7 +162,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
 
-            // 端末の戻るキーでもメニューを開く。
+            // 端末の戻るキーでもメニューを開く。ルートは地図そのものに出ているため、メニューにない。
             view.PressBack();
             Assert.That(view.Dialog.TitleText, Is.EqualTo(AdventureTexts.MenuTitle));
             Assert.That(
@@ -144,22 +170,14 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(
                     new[]
                     {
-                        AdventureTexts.RouteChoice,
                         AdventureTexts.SuspendChoice,
                         AdventureTexts.QuitChoice,
                         AdventureTexts.CloseChoice,
                     }
                 )
             );
-            view.Dialog.Choose(AdventureTexts.RouteChoice);
-            Assert.That(view.Route.IsShown, Is.True);
-            Assert.That(
-                view.Route.RoomCount,
-                Is.EqualTo(AdventureLocalSource.ForestRuinsRooms.Length)
-            );
-            Assert.That(view.Route.HereRoom, Is.EqualTo("hidden-store"));
             view.PressBack();
-            Assert.That(view.Route.IsShown, Is.False);
+            Assert.That(view.Dialog.IsShown, Is.False);
 
             view.MenuButton.onClick.Invoke();
             view.Dialog.Choose(AdventureTexts.QuitChoice);
@@ -168,7 +186,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(view.Dialog, "帰還");
             Assert.That(
                 view.Dialog.BodyText,
-                Does.StartWith("森の遺跡　B2Fまで到達\n最深記録を更新！")
+                Does.StartWith(Forest + "　B2Fまで到達\n最深記録を更新！")
             );
             Assert.That(AdventureSession.Current.InProgress, Is.False);
 
@@ -179,7 +197,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator ARoomWithABattleOpensTheBattleWithItsEncounter()
         {
-            StartAt("moss-hall");
+            StartAt(1);
             var bootstrap = default(ExplorationBootstrap);
             yield return SceneTests.Load<ExplorationBootstrap>(
                 SceneTests.ExplorationPath,
@@ -218,7 +236,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator AVictoryGivesTheRoomsRewardAndGoesOnToTheNextRoom()
         {
-            StartAt("moss-hall");
+            StartAt(1);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
@@ -235,14 +253,17 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForScene(SceneNames.Exploration);
             var exploration = Object.FindAnyObjectByType<ExplorationBootstrap>();
             yield return SceneTests.WaitUntil(() => ExplorationReady(exploration));
-            Assert.That(exploration.View.LocationText, Is.EqualTo("森の遺跡 B2F"));
-            Assert.That(exploration.Flow.Room.Exits.Count, Is.EqualTo(2));
+            Assert.That(exploration.View.LocationText, Is.EqualTo(Forest + " B2F"));
+            Assert.That(
+                exploration.Flow.Room.Exits.Select(exit => exit.Id),
+                Is.EqualTo(AdventureSession.Current.Run.Room.Next)
+            );
         }
 
         [UnityTest]
         public IEnumerator ADefeatOffersTheReviveAndTheReturnAlike()
         {
-            StartAt("moss-hall");
+            StartAt(1);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
@@ -277,7 +298,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(dialog, BattleAdventureFlow.DefeatTitle);
             dialog.Choose(AdventureTexts.ReturnChoice);
             yield return WaitForDialog(dialog, "冒険の終わり");
-            Assert.That(dialog.BodyText, Does.StartWith("森の遺跡　B2Fまで到達"));
+            Assert.That(dialog.BodyText, Does.StartWith(Forest + "　B2Fまで到達"));
             dialog.Choose(AdventureTexts.HomeChoice);
             yield return WaitForScene(SceneNames.Home);
             Assert.That(AdventureSession.Current.InProgress, Is.False);
@@ -286,7 +307,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator BeatingTheBossEndsTheAdventureWithItsResult()
         {
-            StartAt("moss-hall", "root-gallery", "sanctum");
+            StartAt(9);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
@@ -298,10 +319,13 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle);
             dialog.Choose(dialog.ChoiceLabels[0]);
             yield return WaitForDialog(dialog, "踏破！");
-            Assert.That(dialog.BodyText, Does.StartWith("森の遺跡　B4Fまで到達\n最深記録を更新！"));
+            Assert.That(
+                dialog.BodyText,
+                Does.StartWith(Forest + "　B10Fまで到達\n最深記録を更新！")
+            );
             dialog.Choose(AdventureTexts.HomeChoice);
             yield return WaitForScene(SceneNames.Home);
-            var record = AdventureSession.Current.RecordOf(AdventureLocalSource.ForestRuins);
+            var record = AdventureSession.Current.RecordOf(AdventureCatalog.ForestRuins);
             Assert.That(record.Clears, Is.EqualTo(1));
         }
 
@@ -309,7 +333,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator SuspendingTheBattleResumesFromTheRoomChosen()
         {
-            StartAt("moss-hall");
+            var room = StartAt(1);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             bootstrap.Overlay.PressBack();
@@ -326,12 +350,12 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForScene(SceneNames.Battle);
             yield return null;
             var resumed = Object.FindAnyObjectByType<BattleBootstrap>();
-            Assert.That(resumed.Flow.RoomId, Is.EqualTo("moss-hall"));
+            Assert.That(resumed.Flow.RoomId, Is.EqualTo(room.Id));
             Assert.That(resumed.Battle.Enemies[1].Hp, Is.EqualTo(resumed.Battle.Enemies[1].MaxHp));
         }
 
         [UnityTest]
-        public IEnumerator TheTravelOfficeAsksAndSetsOut()
+        public IEnumerator TheTravelOfficeSetsOutAtOnce()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.TravelOffice, value => guide = value);
@@ -339,19 +363,13 @@ namespace Baryonyx.Tests.PlayMode
             var view = guide.View;
             int index = System.Array.FindIndex(
                 view.Definition.Destinations,
-                destination => destination.Id == AdventureLocalSource.ForestRuins
+                destination => destination.Id == AdventureCatalog.ForestRuins
             );
             view.DestinationRows[index].onClick.Invoke();
+            // 確認を挟まず、「出発」で冒険を始めて探索へ移る。連打しても始めるのは1回だけ。
             view.Depart.onClick.Invoke();
-            Assert.That(view.Dialog.TitleText, Is.EqualTo("森の遺跡へ出発しますか？"));
-            Assert.That(view.Dialog.BodyText, Does.Contain("はじめて訪れる場所です。"));
-            // 戻るキーはダイアログを閉じ、旅の案内所に残る。
-            view.PressBack();
-            Assert.That(view.Dialog.IsShown, Is.False);
-            Assert.That(guide.Presenter.Left, Is.False);
-
             view.Depart.onClick.Invoke();
-            view.Dialog.Choose(TravelDeparture.GoChoice);
+            Assert.That(view.ToastMessage, Is.Empty);
             yield return WaitForScene(SceneNames.Exploration);
             Assert.That(AdventureSession.Current.Run.RoomId, Is.EqualTo("entrance"));
         }
