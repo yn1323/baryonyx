@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 032dea18cca6c1044b0c19bb7ae340cc_BattleLuka
   DisplayName: BattleLuka
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Characters/BattleLuka.aseprite#BattleLuka
+  Description: Assets/Baryonyx/Shared/Art/Characters/BattleLuka.aseprite#BattleLuka
   Category: 2
   Asset: {fileID: 5349011544834349465, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
   PreviewPrefab: {fileID: 0}

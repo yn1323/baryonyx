@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: c48ff8983364a4ca28e3cb8722fdd9f4_ElementSlash
   DisplayName: ElementSlash
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Elements/ElementSlash.aseprite#ElementSlash
-  Category: 9
+  Description: Assets/Baryonyx/Shared/Art/Attributes/ElementSlash.aseprite#ElementSlash
+  Category: 1
   Asset: {fileID: 5349011544834349465, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

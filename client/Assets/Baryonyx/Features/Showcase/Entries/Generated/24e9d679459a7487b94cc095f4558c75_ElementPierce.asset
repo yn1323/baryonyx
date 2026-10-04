@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 24e9d679459a7487b94cc095f4558c75_ElementPierce
   DisplayName: ElementPierce
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Elements/ElementPierce.aseprite#ElementPierce
-  Category: 9
+  Description: Assets/Baryonyx/Shared/Art/Attributes/ElementPierce.aseprite#ElementPierce
+  Category: 1
   Asset: {fileID: 5349011544834349465, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

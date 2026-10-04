@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: cbf8cd65f9dcb064295074a6550d972a_BattleToma
   DisplayName: BattleToma
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Characters/BattleToma.aseprite#BattleToma
+  Description: Assets/Baryonyx/Shared/Art/Characters/BattleToma.aseprite#BattleToma
   Category: 2
   Asset: {fileID: 5349011544834349465, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
   PreviewPrefab: {fileID: 0}

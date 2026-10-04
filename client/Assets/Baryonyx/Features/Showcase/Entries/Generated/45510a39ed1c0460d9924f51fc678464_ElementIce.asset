@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 45510a39ed1c0460d9924f51fc678464_ElementIce
   DisplayName: ElementIce
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Elements/ElementIce.aseprite#ElementIce
-  Category: 9
+  Description: Assets/Baryonyx/Shared/Art/Attributes/ElementIce.aseprite#ElementIce
+  Category: 1
   Asset: {fileID: 5349011544834349465, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

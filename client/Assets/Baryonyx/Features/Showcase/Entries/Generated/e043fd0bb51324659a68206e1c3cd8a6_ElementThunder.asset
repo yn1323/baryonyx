@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: e043fd0bb51324659a68206e1c3cd8a6_ElementThunder
   DisplayName: ElementThunder
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Elements/ElementThunder.aseprite#ElementThunder
-  Category: 9
+  Description: Assets/Baryonyx/Shared/Art/Attributes/ElementThunder.aseprite#ElementThunder
+  Category: 1
   Asset: {fileID: 5349011544834349465, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

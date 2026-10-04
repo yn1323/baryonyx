@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 161224bf714b5774ca690106c5027023_BattleAria
   DisplayName: BattleAria
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Characters/BattleAria.aseprite#BattleAria
+  Description: Assets/Baryonyx/Shared/Art/Characters/BattleAria.aseprite#BattleAria
   Category: 2
   Asset: {fileID: 5349011544834349465, guid: 161224bf714b5774ca690106c5027023, type: 3}
   PreviewPrefab: {fileID: 0}

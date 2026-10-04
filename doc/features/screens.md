@@ -298,7 +298,7 @@ Codex CLIの画像生成に、6枚を3列×2行に並べたシートを8枚描�
 マゼンタの区切りから挿絵の範囲を自動で見つけて切り出し、64×58へ縮小・32色へ減色・下端のディザを行い（`output/card-skills/process.py`）、[ドット絵の制作規格](../art/direction.md#ドット絵の制作規格)の検査スクリプトで44枚とも差がないことを確かめてから、インデックスカラーの `.aseprite` へ変換した。
 依頼文・生成画像・加工スクリプトは `output/card-skills/`（Git対象外）に置いた。
 カードの枠（`CardFrame<属性>`、70×98）、コストの札（`CardCostFrame`、11×11）と数字（`CardCostDigits`、5×7を10個）も同日にPythonのスクリプトで描き直した（`output/card-redesign/final_art.py`、Git対象外）。
-弱点のアイコン（`Art/Elements/`）、カードの部品（属性ごとの枠 `CardFrame<属性>`・`CardCostFrame`・`CardCostDigits`）、エネルギーの宝石（`EnergyGem`）、ターン終了の枠（`EndTurnFrame`）は、2026-09-29にPythonのスクリプトで1ドットずつ描き、インデックスカラーの `.aseprite` へ変換した。
+弱点のアイコン（属性の6つは `Shared/Art/Attributes/`、未開示の「？」は `Art/Elements/`）、カードの部品（属性ごとの枠 `CardFrame<属性>`・`CardCostFrame`・`CardCostDigits`）、エネルギーの宝石（`EnergyGem`）、ターン終了の枠（`EndTurnFrame`）は、2026-09-29にPythonのスクリプトで1ドットずつ描き、インデックスカラーの `.aseprite` へ変換した。
 描画スクリプトは `output/battle-inspect/ui/`（Git対象外）に置いた。
 対象を選ぶときのカーソル（`TargetCursor`、11×7ドット）と、引っぱるときに並べる点（`AimDot`、5×5ドット）は、2026-09-30に同じ方法で描いて `.aseprite` へ変換し、1ドット4pxで表示する。書き出したPNGは `output/battle-target/`（Git対象外）に置いた。
 使い手の足元の輪（`CasterRing`、38×10ドット、4色）は、2026-10-01に同じ方法で描いて `.aseprite` へ変換し、1ドット4pxで表示する。左上からの光に合わせて奥の左側を明るく、手前の右側を暗くし、内側はディザで薄くしている。描画スクリプトは `output/caster-ring/`（Git対象外）に置いた。

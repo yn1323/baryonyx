@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 01996a57fd5fa4c4aad13dd9932e35f9_ElementFire
   DisplayName: ElementFire
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Elements/ElementFire.aseprite#ElementFire
-  Category: 9
+  Description: Assets/Baryonyx/Shared/Art/Attributes/ElementFire.aseprite#ElementFire
+  Category: 1
   Asset: {fileID: 5349011544834349465, guid: 01996a57fd5fa4c4aad13dd9932e35f9, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

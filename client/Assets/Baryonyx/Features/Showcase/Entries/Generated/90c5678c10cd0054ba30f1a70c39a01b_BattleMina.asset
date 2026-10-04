@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 90c5678c10cd0054ba30f1a70c39a01b_BattleMina
   DisplayName: BattleMina
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/Characters/BattleMina.aseprite#BattleMina
+  Description: Assets/Baryonyx/Shared/Art/Characters/BattleMina.aseprite#BattleMina
   Category: 2
   Asset: {fileID: 5349011544834349465, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
   PreviewPrefab: {fileID: 0}

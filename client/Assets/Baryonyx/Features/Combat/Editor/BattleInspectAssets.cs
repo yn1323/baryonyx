@@ -43,6 +43,17 @@ namespace Baryonyx.Combat.Editor
             "Assets/Baryonyx/Features/Combat/UI/BattleInspectHandSettings.asset";
         public const string ArtFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
 
+        // The party's sprites and the attribute icons belong to the characters and attributes,
+        // not to the battle (doc/rules/frontend-design.md), so they live under Shared/Art.
+        public const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
+        public const string AttributeArtFolder = "Assets/Baryonyx/Shared/Art/Attributes";
+        private static readonly string[] ArtFolders =
+        {
+            ArtFolder,
+            CharacterArtFolder,
+            AttributeArtFolder,
+        };
+
         internal const float DotSize = 4f;
 
         // Enemies are drawn at 3 px per dot so they do not crowd the screen, and the cards on a
@@ -279,8 +290,19 @@ namespace Baryonyx.Combat.Editor
             UiArt.EnsureAll();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
-            foreach (var path in AssetDatabase.FindAssets("t:Texture2D", new[] { ArtFolder }))
+            foreach (
+                var path in AssetDatabase.FindAssets(
+                    "t:Texture2D",
+                    new[] { ArtFolder, AttributeArtFolder }
+                )
+            )
                 ArtAssets.ImportTexture(AssetDatabase.GUIDToAssetPath(path), FilterMode.Point);
+            // Only the party's sprites: the character folder also holds Home's art.
+            foreach (var ally in Allies)
+                ArtAssets.ImportTexture(
+                    $"{CharacterArtFolder}/Battle{ally.Name}.aseprite",
+                    FilterMode.Point
+                );
 
             using (UiBuild.Begin(font, shadowText))
             {
@@ -632,12 +654,10 @@ namespace Baryonyx.Combat.Editor
             rect.offsetMax += Vector2.one * BattleStageDrift.MaxRadius;
         }
 
-        /// <summary>Finds a battle image by file name anywhere under the art folder.</summary>
+        /// <summary>Finds a battle image by file name anywhere under the art folders.</summary>
         internal static Texture2D Art(string name)
         {
-            foreach (
-                var guid in AssetDatabase.FindAssets($"{name} t:Texture2D", new[] { ArtFolder })
-            )
+            foreach (var guid in AssetDatabase.FindAssets($"{name} t:Texture2D", ArtFolders))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (Path.GetFileNameWithoutExtension(path) == name)
