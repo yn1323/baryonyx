@@ -2,6 +2,8 @@ using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.StepBonus;
 using Baryonyx.StepBonus.Editor;
+using Baryonyx.Training;
+using Baryonyx.Training.Editor;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -11,7 +13,7 @@ namespace Baryonyx.Tavern.Editor
     /// <summary>
     /// The tavern (酒場): the tavern girl guides party formation, training, card skills and the
     /// UPT bonus slots. The characters, levels and cards are mock values until the party has
-    /// data; the formation and bonus items show their own panels instead of a list.
+    /// data; the formation, training and bonus items show their own panels instead of a list.
     /// </summary>
     public static class TavernScreenAssets
     {
@@ -36,6 +38,10 @@ namespace Baryonyx.Tavern.Editor
                     item.Key switch
                     {
                         PartySession.GuideItemKey => PartyAssets.BuildFormationPanel(safe, view),
+                        TrainingSession.GuideItemKey => TrainingAssets.BuildTrainingPanel(
+                            safe,
+                            view
+                        ),
                         StepBonusSession.GuideItemKey => StepBonusAssets.BuildSettingsPanel(
                             safe,
                             view
@@ -51,25 +57,7 @@ namespace Baryonyx.Tavern.Editor
             d.Items = new[]
             {
                 Formation(),
-                Item(
-                    "育成",
-                    "ルーンを使ってレベルを上げる",
-                    "レベルアップ",
-                    Icon(IconTrainingPath),
-                    Entry(
-                        "トーマ",
-                        "Lv 12 → 13",
-                        "必要ルーン 1,200｜固有スキルの解放まであと3レベル"
-                    ),
-                    Entry("ルカ", "Lv 11 → 12", "必要ルーン 1,100"),
-                    Entry("アリア", "Lv 10 → 11", "必要ルーン 1,000｜Lv 11でパッシブスキルを解放"),
-                    Entry("ミナ", "Lv 10 → 11", "必要ルーン 1,000"),
-                    Entry("アンセルム", "Lv 8 → 9", "必要ルーン 800"),
-                    Entry("グレタ", "Lv 7 → 8", "必要ルーン 700"),
-                    Entry("ルッツ", "Lv 5 → 6", "必要ルーン 500"),
-                    Entry("リタ", "Lv 3 → 4", "必要ルーン 300"),
-                    Entry("リツ", "Lv 1 → 2", "必要ルーン 100")
-                ),
+                Training(),
                 Item(
                     "カードスキル",
                     "キャラごとに3枚のカードを付け替える",
@@ -99,6 +87,20 @@ namespace Baryonyx.Tavern.Editor
                 Icon(IconFormationPath)
             );
             item.Key = PartySession.GuideItemKey;
+            return item;
+        }
+
+        // The training item opens one character's detail, with the level-up over it, instead of
+        // a list.
+        private static GuideMenuItem Training()
+        {
+            var item = Item(
+                "育成",
+                "ルーンを使ってレベルを上げる",
+                "レベルアップ",
+                Icon(IconTrainingPath)
+            );
+            item.Key = TrainingSession.GuideItemKey;
             return item;
         }
 

@@ -1,0 +1,333 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1568327d8e4994fcda8b1160d0e13a35, type: 3}
+  m_Name: TrainingMockData
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Training.TrainingMockData
+  Characters:
+  - Id: toma
+    Base:
+      Hp: 102
+      Strength: 57
+      Magic: 120
+      Defense: 55
+      Speed: 50
+    Growth:
+      Hp: 18
+      Strength: 3
+      Magic: 18
+      Defense: 5
+      Speed: 2
+    Passives:
+    - Name: "\u9B54\u529B\u306E\u6CC9"
+      Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+    - Name: "\u708E\u306E\u5FC3\u5F97"
+      Description: "\u708E\u306E\u30AB\u30FC\u30C9\u306E\u5A01\u529B +10%"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+    Uniques:
+    - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
+      Description: "\u6575\u5168\u4F53\u306B \u307E\u308A\u3087\u304F\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    - Name: "\u661F\u964D\u308A"
+      Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B5\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+  - Id: luka
+    Base:
+      Hp: 160
+      Strength: 110
+      Magic: 140
+      Defense: 70
+      Speed: 54
+    Growth:
+      Hp: 20
+      Strength: 12
+      Magic: 12
+      Defense: 5
+      Speed: 3
+    Passives:
+    - Name: "\u72E9\u4EBA\u306E\u76EE"
+      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+    - Name: "\u75BE\u98A8"
+      Description: "\u3059\u3070\u3084\u3055 +10%"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+    Uniques:
+    - Name: "\u96F7\u6483\u306E\u77E2"
+      Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+    - Name: "\u77E2\u306E\u96E8"
+      Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Id: aria
+    Base:
+      Hp: 210
+      Strength: 117
+      Magic: 75
+      Defense: 92
+      Speed: 42
+    Growth:
+      Hp: 30
+      Strength: 14
+      Magic: 5
+      Defense: 12
+      Speed: 2
+    Passives:
+    - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
+      Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+    - Name: "\u4E0D\u5C48"
+      Description: "\u5012\u308C\u308B\u30C0\u30E1\u30FC\u30B8\u30921\u5EA6\u3060\u3051\u8010\u3048\u308B"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+    Uniques:
+    - Name: "\u76FE\u306E\u69CB\u3048"
+      Description: "\u6B21\u306E\u30BF\u30FC\u30F3\u307E\u3067\u30D6\u30ED\u30C3\u30AF +80"
+      UnlockLevel: 5
+      Energy: 2
+      Icon: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+    - Name: "\u4E00\u9583"
+      Description: "\u65751\u4F53\u306B \u3061\u304B\u3089\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+  - Id: mina
+    Base:
+      Hp: 148
+      Strength: 64
+      Magic: 92
+      Defense: 68
+      Speed: 48
+    Growth:
+      Hp: 18
+      Strength: 4
+      Magic: 12
+      Defense: 8
+      Speed: 2
+    Passives:
+    - Name: "\u7948\u308A"
+      Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+    - Name: "\u6D44\u5316\u306E\u5149"
+      Description: "\u72B6\u614B\u7570\u5E38\u306B1\u56DE\u304B\u304B\u3089\u306A\u3044"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+    Uniques:
+    - Name: "\u7652\u3057\u306E\u98A8"
+      Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+    - Name: "\u8607\u751F"
+      Description: "\u5012\u308C\u305F\u5473\u65B91\u4EBA\u3092\u5FA9\u6D3B\u3055\u305B\u308B"
+      UnlockLevel: 20
+      Energy: 6
+      Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+  - Id: anselm
+    Base:
+      Hp: 210
+      Strength: 117
+      Magic: 75
+      Defense: 92
+      Speed: 42
+    Growth:
+      Hp: 30
+      Strength: 14
+      Magic: 5
+      Defense: 12
+      Speed: 2
+    Passives:
+    - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
+      Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+    - Name: "\u4E0D\u5C48"
+      Description: "\u5012\u308C\u308B\u30C0\u30E1\u30FC\u30B8\u30921\u5EA6\u3060\u3051\u8010\u3048\u308B"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+    Uniques:
+    - Name: "\u76FE\u306E\u69CB\u3048"
+      Description: "\u6B21\u306E\u30BF\u30FC\u30F3\u307E\u3067\u30D6\u30ED\u30C3\u30AF +80"
+      UnlockLevel: 5
+      Energy: 2
+      Icon: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+    - Name: "\u4E00\u9583"
+      Description: "\u65751\u4F53\u306B \u3061\u304B\u3089\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+  - Id: greta
+    Base:
+      Hp: 160
+      Strength: 110
+      Magic: 140
+      Defense: 70
+      Speed: 54
+    Growth:
+      Hp: 20
+      Strength: 12
+      Magic: 12
+      Defense: 5
+      Speed: 3
+    Passives:
+    - Name: "\u72E9\u4EBA\u306E\u76EE"
+      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+    - Name: "\u75BE\u98A8"
+      Description: "\u3059\u3070\u3084\u3055 +10%"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+    Uniques:
+    - Name: "\u96F7\u6483\u306E\u77E2"
+      Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+    - Name: "\u77E2\u306E\u96E8"
+      Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Id: lutz
+    Base:
+      Hp: 102
+      Strength: 57
+      Magic: 120
+      Defense: 55
+      Speed: 50
+    Growth:
+      Hp: 18
+      Strength: 3
+      Magic: 18
+      Defense: 5
+      Speed: 2
+    Passives:
+    - Name: "\u9B54\u529B\u306E\u6CC9"
+      Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+    - Name: "\u708E\u306E\u5FC3\u5F97"
+      Description: "\u708E\u306E\u30AB\u30FC\u30C9\u306E\u5A01\u529B +10%"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+    Uniques:
+    - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
+      Description: "\u6575\u5168\u4F53\u306B \u307E\u308A\u3087\u304F\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    - Name: "\u661F\u964D\u308A"
+      Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B5\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+  - Id: rita
+    Base:
+      Hp: 148
+      Strength: 64
+      Magic: 92
+      Defense: 68
+      Speed: 48
+    Growth:
+      Hp: 18
+      Strength: 4
+      Magic: 12
+      Defense: 8
+      Speed: 2
+    Passives:
+    - Name: "\u7948\u308A"
+      Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+    - Name: "\u6D44\u5316\u306E\u5149"
+      Description: "\u72B6\u614B\u7570\u5E38\u306B1\u56DE\u304B\u304B\u3089\u306A\u3044"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+    Uniques:
+    - Name: "\u7652\u3057\u306E\u98A8"
+      Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+    - Name: "\u8607\u751F"
+      Description: "\u5012\u308C\u305F\u5473\u65B91\u4EBA\u3092\u5FA9\u6D3B\u3055\u305B\u308B"
+      UnlockLevel: 20
+      Energy: 6
+      Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+  - Id: ritsu
+    Base:
+      Hp: 160
+      Strength: 110
+      Magic: 140
+      Defense: 70
+      Speed: 54
+    Growth:
+      Hp: 20
+      Strength: 12
+      Magic: 12
+      Defense: 5
+      Speed: 3
+    Passives:
+    - Name: "\u72E9\u4EBA\u306E\u76EE"
+      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+      UnlockLevel: 1
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+    - Name: "\u75BE\u98A8"
+      Description: "\u3059\u3070\u3084\u3055 +10%"
+      UnlockLevel: 15
+      Energy: 0
+      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+    Uniques:
+    - Name: "\u96F7\u6483\u306E\u77E2"
+      Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
+      UnlockLevel: 5
+      Energy: 3
+      Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+    - Name: "\u77E2\u306E\u96E8"
+      Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 20
+      Energy: 5
+      Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  CostPerLevel: 100
+  MaxLevel: 30
+  MockRunes: 8450
