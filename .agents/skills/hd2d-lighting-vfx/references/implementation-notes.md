@@ -152,3 +152,58 @@ Bloomより前にぼかすため、ぼけた光もBloomでにじむ。
 変更前後の撮影から、同じ範囲（松明の周り、床の下端など）を切り出して並べて比べる。
 Topは16:9、20:9、4:3で撮影し、背景に揃えた部品が描かれた光源に重なることを確かめた。
 展示室では、プレビュー用の関数を呼んで対象のPrefabを選び、フレームを進めて撮影した。
+
+## 3Dの舞台の作業で得たEditorと道具の知見
+
+2026-10-02に、Top・Home・戦闘画面を3Dの舞台へ移し、昼の森・星空の夜・夕暮れの舞台を作ったときに得た知見である。
+舞台そのものの作り方とつまずきは [hd2d-3d-stage.md](hd2d-3d-stage.md) に記す。
+
+### Unity CLIのコマンド
+
+**Editorが忙しいとコマンドが時間切れになるが、処理は続くことがある。**
+コンパイルや読み込みの直後、または時間がかかる処理（舞台の作り直しとシーンへの配置）を `eval` で送ると、「Main thread operation timed out after 5000ms」の応答が返った。
+応答が時間切れでも、処理はEditorの中で続いて完了していた。
+`eval` で短い値を返すコマンドが応答するまで待ち、生成物の更新時刻や中身（Prefabに部品の名前があるかなど）で、実行されたかを確かめる。
+
+**`AssetDatabase.Refresh` の直後の `editor_status` は、コンパイル前の「ready」を返す。**
+スクリプトを変えて読み込み直した直後に状態を見ると、まだコンパイルが始まっておらず「ready」だった。
+十数秒待ってから状態を見直し、`typeof(新しい型)` を返す `eval` で、新しいコードが読み込まれたことを確かめる。
+
+**コンソールの記録には古いエラーも残る。**
+`console` は過去のエントリーも返すため、作業の前に最後の番号（seq）を控え、それより後のエントリーだけを見る。
+コマンドの時間切れの記録と、カメラの撮影時に1度だけ出たGPU Resident Drawerのエラー（「A BatchDrawCommand was submitted with an invalid Batch」）は、ゲームのコードとは関係がなかった。
+
+**Editorが背面にあると、後回しの処理と停止中の更新が進まない。**
+`EditorApplication.delayCall` に積んだ処理は、Editorが背面にある間たまり続けた（コマンドから数えて77件）。
+`EditorApplication.QueuePlayerLoopUpdate` を呼んでも、`[ExecuteAlways]` の `Update` が呼ばれず、2Dの霧・光・火の粉の停止中の絵が作られなかった。
+シーンを開いたときの処理はイベントの中ですぐ行い、確かめるときは各部品の `Update`（または再構築のメソッド）を直接呼ぶ。
+
+**利用者がEditorをPlay Modeにしていることがある。**
+作業の途中でEditorがPlay Modeになっており、シーンを作り直せなかった。
+止めてから作業し、止めたことを利用者に伝える。
+
+**作り直すシーンを開いたままでは、シーンの作り直しが止まる。**
+`ScreenScenes.Rebuild` は、対象のシーンが開いていると「Close Home.unity before rebuilding it」で止まる。
+開いているシーンに変更があれば保存し、別の保存済みのシーンを開いてから作り直す。
+
+### 撮影
+
+| 撮り方 | 写るもの | 使いどころ |
+|---|---|---|
+| `capture_game_view`（カメラ） | 指定したカメラと、そのカメラで描くCanvas。手前のUI（Overlay）は写らない | 停止中の3Dの舞台とキャラ、ぼけ、色を確かめる |
+| `capture_game_view --source screen` | 手前のUIを含む画面全体 | Play Mode中だけ使える。`--width`・`--height` を付けるとGameビューの解像度が変わるため、同じ指定で2回撮り、2回目を使う |
+| 手前のCanvasを一時的にカメラで描かせて撮る | 停止中の画面全体（手前のUIにもポストプロセスが掛かる） | 停止中とPlay Mode中の見た目を比べる。撮ったらすぐ戻し、シーンが変更扱いになっていないことを確かめる |
+| `capture_scene_view` | Sceneタブのカメラの絵と、カメラで描くCanvas | Sceneタブの見た目を確かめる。視点を合わせたあと、描き直しを待ってから撮る |
+
+GameビューのRender Texture（`PlayModeView.m_TargetTexture`）をリフレクションで描かせて読む方法も試したが、Gameビュー自身の描画の外では黒い画像になった。
+
+### テストの実行
+
+- `run_tests` の `--filter` に「A|B」のような正規表現を渡すと、0件になった。アセンブリ全体（`--filter_type assembly`）か、1つのクラス（PlayModeは `PlayMode.<クラス名>.`）で絞る。
+- PlayModeテストを続けて実行すると、2回目は0件になることがある。`EditorUtility.RequestScriptReload` で読み込み直してからやり直す（[テストの選び方と実行](../../../../doc/rules/client-testing.md#実行と結果確認)）。
+- 結果は `Temp/pipeline_test_status.json` から読む。コマンドの出力に含まれるJSONは、件数が多いと途中で切れて読めなかった。
+
+### ファイルの扱い
+
+- `client/AGENTS.md`・`doc/rules/frontend-design.md`・`.agents/skills/shared/scripts/codex_image.py` などは改行がCRLFである。スクリプトで書き換えるときはバイト列で読み、改行をCRLFのまま書き戻す。
+

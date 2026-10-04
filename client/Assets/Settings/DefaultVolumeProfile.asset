@@ -146,6 +146,40 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+--- !u!114 &-6724066560430201690
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4da33b09c410b4de2bb4addc40b32593, type: 3}
+  m_Name: Hd2dStageFocus
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dStageFocus
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 0
+  focusDistance:
+    m_OverrideState: 1
+    m_Value: 10
+  focusRange:
+    m_OverrideState: 1
+    m_Value: 2
+  nearFalloff:
+    m_OverrideState: 1
+    m_Value: 3
+  farFalloff:
+    m_OverrideState: 1
+    m_Value: 12
+  maxRadius:
+    m_OverrideState: 1
+    m_Value: 6
+  nearMaxRadius:
+    m_OverrideState: 1
+    m_Value: 12
 --- !u!114 &-6335409530604852063
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -469,6 +503,7 @@ MonoBehaviour:
   - {fileID: 7518938298396184218}
   - {fileID: -1410297666881709256}
   - {fileID: 5939707368064680090}
+  - {fileID: -6724066560430201690}
 --- !u!114 &853819529557874667
 MonoBehaviour:
   m_ObjectHideFlags: 3

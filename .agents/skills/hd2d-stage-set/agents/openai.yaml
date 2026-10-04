@@ -1,0 +1,7 @@
+interface:
+  display_name: "3Dの舞台の背景と小物"
+  short_description: "HD-2Dの3Dの舞台の地面・遠景・小物・草・汚しとマテリアルを、密度とリアルさを考えて作る"
+  default_prompt: "Use $hd2d-stage-set to build or review the ground, backdrops, props, foliage, litter and materials of a 3D HD-2D stage."
+
+policy:
+  allow_implicit_invocation: true

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Editor;
-using Baryonyx.Editor.Art;
+using Baryonyx.Stages.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d;
@@ -22,8 +22,6 @@ namespace Baryonyx.App.Editor
     {
         public const string TopScenePath = "Assets/Baryonyx/App/Scenes/Top.unity";
         public const string HomeScenePath = "Assets/Baryonyx/App/Scenes/Home.unity";
-        private const string TopBackgroundTexturePath =
-            "Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png";
         private const string TextPanelPrefabPath =
             "Assets/Baryonyx/Shared/UI/TranslucentTextPanel/TranslucentTextPanel.prefab";
         public const string TopBackdropCanvasName = "TopBackdropCanvas";
@@ -37,6 +35,7 @@ namespace Baryonyx.App.Editor
 
             TranslucentTextPanelAssets.EnsurePrefab();
             Hd2dAssets.EnsureAssets();
+            StageSetAssets.EnsureAssets();
             CreateSceneIfMissing(
                 TopScenePath,
                 "TopCanvas",
@@ -94,12 +93,7 @@ namespace Baryonyx.App.Editor
                 var canvas = CreateCanvas(scene, canvasName);
                 if (clickable)
                 {
-                    CreateTopBackground(scene, canvas.transform);
                     EnsureTopLightingVfx(scene);
-                    EnsureTopLightShaft(scene);
-                    EnsureTopFog(scene);
-                    EnsureTopFlickerLight(scene);
-                    EnsureTopEmberEmitter(scene);
                     CreateTopScreen(scene, canvas.transform, screenName);
                 }
 
@@ -107,6 +101,7 @@ namespace Baryonyx.App.Editor
                 if (clickable)
                 {
                     EnsureTopPostProcess(scene);
+                    EnsureTopStage(scene);
                     TopStartupSyncSetup.EnsureTop(scene);
                 }
                 ScreenScenes.AddEventSystem(scene);
@@ -139,27 +134,6 @@ namespace Baryonyx.App.Editor
             scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 1f;
             return canvas;
-        }
-
-        private static void CreateTopBackground(Scene scene, Transform parent)
-        {
-            var background = new GameObject(
-                "TopBackground",
-                typeof(RectTransform),
-                typeof(UnityEngine.UI.RawImage),
-                typeof(ResponsiveBackground)
-            );
-            SceneManager.MoveGameObjectToScene(background, scene);
-            background.transform.SetParent(parent, false);
-            Stretch(background.GetComponent<RectTransform>());
-
-            var rawImage = background.GetComponent<UnityEngine.UI.RawImage>();
-            var texture = ArtAssets.LoadTexture(TopBackgroundTexturePath);
-            rawImage.texture = texture;
-            rawImage.color = Color.white;
-            rawImage.raycastTarget = false;
-            background.GetComponent<ResponsiveBackground>().AspectRatio =
-                texture.width / (float)texture.height;
         }
 
         private static void CreateTopScreen(Scene scene, Transform parent, string screenName)
@@ -292,26 +266,9 @@ namespace Baryonyx.App.Editor
                 .FirstOrDefault(candidate => candidate.name == "TapToStartPanel");
             if (currentTap != null)
                 UnityEngine.Object.DestroyImmediate(currentTap.gameObject);
-            var background = scene
-                .GetRootGameObjects()
-                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
-                .FirstOrDefault(candidate => candidate.name == "TopBackground");
-            if (background != null)
-            {
-                var rawImage = background.GetComponent<UnityEngine.UI.RawImage>();
-                var responsive = background.GetComponent<ResponsiveBackground>();
-                if (responsive == null)
-                    responsive = background.gameObject.AddComponent<ResponsiveBackground>();
-                if (rawImage != null && rawImage.texture != null)
-                    responsive.AspectRatio =
-                        rawImage.texture.width / (float)rawImage.texture.height;
-            }
             EnsureTopLightingVfx(scene);
-            EnsureTopLightShaft(scene);
-            EnsureTopFog(scene);
-            EnsureTopFlickerLight(scene);
-            EnsureTopEmberEmitter(scene);
             EnsureTopPostProcess(scene);
+            EnsureTopStage(scene);
             var safeArea = screen.Find("TopSafeArea");
             if (safeArea == null)
                 safeArea = CreateTopSafeArea(scene, screen);
@@ -338,8 +295,9 @@ namespace Baryonyx.App.Editor
             var camera = roots
                 .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
                 .FirstOrDefault();
+            // The stage's own look: its lens, bloom, vignette and grade.
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(
-                Hd2dAssets.PostProcessProfilePath
+                StageSetAssets.StarlitGateLookPath
             );
             if (uiCanvas == null || camera == null || profile == null)
                 return false;
@@ -355,7 +313,7 @@ namespace Baryonyx.App.Editor
             // Everything except the interactive screen belongs to the lit backdrop.
             var layers = uiCanvas
                 .transform.Cast<Transform>()
-                .Where(child => child.name == "TopBackground" || child.name.StartsWith("TopHd2d"))
+                .Where(child => child.name.StartsWith("TopHd2d"))
                 .ToList();
             foreach (var layer in layers)
             {
@@ -372,7 +330,8 @@ namespace Baryonyx.App.Editor
                 changed = true;
             }
 
-            if (roots.All(root => root.name != TopPostProcessVolumeName))
+            var existing = roots.FirstOrDefault(root => root.name == TopPostProcessVolumeName);
+            if (existing == null)
             {
                 var volumeObject = new GameObject(TopPostProcessVolumeName, typeof(Volume));
                 SceneManager.MoveGameObjectToScene(volumeObject, scene);
@@ -380,6 +339,99 @@ namespace Baryonyx.App.Editor
                 volume.isGlobal = true;
                 volume.priority = 0f;
                 volume.sharedProfile = profile;
+                changed = true;
+            }
+            else if (existing.GetComponent<Volume>().sharedProfile != profile)
+            {
+                existing.GetComponent<Volume>().sharedProfile = profile;
+                changed = true;
+            }
+
+            if (changed)
+                EditorSceneManager.MarkSceneDirty(scene);
+            return changed;
+        }
+
+        /// <summary>
+        /// Puts Top on the 3D mountain at night (HD-2D) in place of the painted background: the
+        /// camera looks along the torch-lit path to the glowing gate under the starry sky, sways
+        /// slowly so near and far part, and glides in when the title opens. The painted
+        /// background, the torch glows and embers pinned to it, and the light shaft from the
+        /// dungeon's ceiling are removed; a stage put in earlier (the dungeon hall) is replaced.
+        /// </summary>
+        public static bool EnsureTopStage(Scene scene)
+        {
+            if (!scene.IsValid())
+                return false;
+            var roots = scene.GetRootGameObjects();
+            bool changed = false;
+            foreach (
+                var name in new[]
+                {
+                    "TopBackground",
+                    "TopHd2dFlickerLight",
+                    "TopHd2dEmberEmitter",
+                    "TopHd2dLightShaft",
+                }
+            )
+            {
+                var painted = roots
+                    .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                    .FirstOrDefault(candidate => candidate.name == name);
+                if (painted == null)
+                    continue;
+                UnityEngine.Object.DestroyImmediate(painted.gameObject);
+                changed = true;
+            }
+
+            var backdrop = roots.FirstOrDefault(root => root.name == TopBackdropCanvasName);
+            if (backdrop != null)
+            {
+                var canvas = backdrop.GetComponent<Canvas>();
+                if (!Mathf.Approximately(canvas.planeDistance, 1f))
+                {
+                    canvas.planeDistance = 1f;
+                    changed = true;
+                }
+            }
+
+            var stage = roots.FirstOrDefault(root => root.name == Hd2dStageSceneSetup.StageName);
+            if (
+                stage != null
+                && AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(stage))
+                    != StageSetAssets.StarlitGatePrefabPath
+            )
+            {
+                UnityEngine.Object.DestroyImmediate(stage);
+                stage = null;
+                changed = true;
+            }
+            if (stage == null)
+            {
+                var camera = roots
+                    .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
+                    .First();
+                var stageCamera = Hd2dStageSceneSetup.Apply(
+                    scene,
+                    camera,
+                    StageSetAssets.StarlitGatePrefabPath,
+                    StageSetAssets.TopView,
+                    StageSetAssets.StarlitEnvironment
+                );
+                stageCamera.SwayRadius = 10f;
+                stageCamera.SwayPeriod = 30f;
+                changed = true;
+            }
+
+            // The title opens with the camera gliding along the path towards the gate.
+            var titleCamera = roots
+                .SelectMany(root => root.GetComponentsInChildren<Hd2dStageCamera>(true))
+                .FirstOrDefault();
+            var intro = new Vector3(0f, 0.4f, -2.2f);
+            if (titleCamera != null && titleCamera.IntroOffset != intro)
+            {
+                titleCamera.IntroOffset = intro;
+                titleCamera.IntroSeconds = 4f;
                 changed = true;
             }
 
@@ -406,7 +458,8 @@ namespace Baryonyx.App.Editor
             var canvas = backdrop.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = camera;
-            canvas.planeDistance = 10f;
+            // Close to the camera, so the 3D hall behind it never hides the effects.
+            canvas.planeDistance = 1f;
 
             // Match the overlay canvas scale so both canvases share the same layout units.
             var source = uiCanvas.GetComponent<UnityEngine.UI.CanvasScaler>();
@@ -428,20 +481,14 @@ namespace Baryonyx.App.Editor
         }
 
         // Topの背景用Canvasに、まだない演出のPrefabを置く。置かなかったときはnullを返す。
-        private static GameObject AddToBackdrop(
-            Scene scene,
-            string prefabPath,
-            string name,
-            out Transform canvas
-        )
+        private static GameObject AddToBackdrop(Scene scene, string prefabPath, string name)
         {
-            canvas = null;
             if (!scene.IsValid())
                 return null;
             var backdrop = FindTopBackdrop(scene);
             if (backdrop == null)
                 return null;
-            canvas = backdrop.transform;
+            var canvas = backdrop.transform;
             if (canvas.GetComponentsInChildren<Transform>(true).Any(child => child.name == name))
                 return null;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -464,279 +511,17 @@ namespace Baryonyx.App.Editor
                 Stretch(rect);
         }
 
-        // 背景のすぐ手前、タイトルと開始操作より奥に置く。
-        private static void PlaceBetweenBackgroundAndScreen(Transform canvas, GameObject instance)
-        {
-            var background = canvas.Find("TopBackground");
-            var screen = canvas.Find("TopScreen");
-            if (background != null && screen != null)
-                instance.transform.SetSiblingIndex(
-                    Mathf.Min(background.GetSiblingIndex() + 1, screen.GetSiblingIndex())
-                );
-            else
-                instance.transform.SetAsLastSibling();
-        }
-
         public static bool EnsureTopLightingVfx(Scene scene)
         {
-            var instance = AddToBackdrop(
-                scene,
-                Hd2dAssets.PrefabPath,
-                "TopHd2dLightingVfx",
-                out var canvas
-            );
+            var instance = AddToBackdrop(scene, Hd2dAssets.PrefabPath, "TopHd2dLightingVfx");
             if (instance == null)
                 return false;
             StretchIfRect(instance);
-            PlaceBetweenBackgroundAndScreen(canvas, instance);
+            // 3Dの舞台の手前、タイトルと開始操作（別のCanvas）より奥に重ねる。
+            instance.transform.SetAsLastSibling();
 
             EditorSceneManager.MarkSceneDirty(scene);
             return true;
-        }
-
-        public static bool EnsureTopLightShaft(Scene scene)
-        {
-            var instance = AddToBackdrop(
-                scene,
-                Hd2dAssets.LightShaftPrefabPath,
-                "TopHd2dLightShaft",
-                out var canvas
-            );
-            if (instance == null)
-                return false;
-            StretchIfRect(instance);
-            PlaceBetweenBackgroundAndScreen(canvas, instance);
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            return true;
-        }
-
-        public static bool EnsureTopFog(Scene scene)
-        {
-            var instance = AddToBackdrop(
-                scene,
-                Hd2dAssets.FogPrefabPath,
-                "TopHd2dFog",
-                out var canvas
-            );
-            if (instance == null)
-                return false;
-            StretchIfRect(instance);
-
-            // Fog sits directly on the background so the light shafts and particles shine through it.
-            var background = canvas.Find("TopBackground");
-            if (background != null)
-                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
-            else
-                instance.transform.SetAsFirstSibling();
-
-            var fog = instance.GetComponent<Hd2dFog>();
-            if (fog != null)
-            {
-                // Appending keeps the prefab's floor mist layers un-overridden in the scene.
-                fog.Layers.Add(CreateTopDeepHaze());
-                PrefabUtility.RecordPrefabInstancePropertyModifications(fog);
-            }
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            return true;
-        }
-
-        public static bool EnsureTopFlickerLight(Scene scene)
-        {
-            var instance = AddToBackdrop(
-                scene,
-                Hd2dAssets.FlickerLightPrefabPath,
-                "TopHd2dFlickerLight",
-                out var canvas
-            );
-            if (instance == null)
-                return false;
-
-            AlignWithBackground(canvas, instance);
-            var background = canvas.Find("TopBackground");
-
-            // Lights sit above the fog so the flames are not veiled, and below the shafts.
-            var fog = canvas.Find("TopHd2dFog");
-            if (fog != null)
-                instance.transform.SetSiblingIndex(fog.GetSiblingIndex() + 1);
-            else if (background != null)
-                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
-            else
-                instance.transform.SetAsFirstSibling();
-
-            var light = instance.GetComponent<Hd2dFlickerLight>();
-            if (light != null)
-            {
-                light.Sources = CreateTopTorches();
-                PrefabUtility.RecordPrefabInstancePropertyModifications(light);
-            }
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            return true;
-        }
-
-        public static bool EnsureTopEmberEmitter(Scene scene)
-        {
-            var instance = AddToBackdrop(
-                scene,
-                Hd2dAssets.EmberEmitterPrefabPath,
-                "TopHd2dEmberEmitter",
-                out var canvas
-            );
-            if (instance == null)
-                return false;
-            AlignWithBackground(canvas, instance);
-
-            // Embers rise in front of the torch glow and behind the light shafts.
-            var light = canvas.Find("TopHd2dFlickerLight");
-            var background = canvas.Find("TopBackground");
-            if (light != null)
-                instance.transform.SetSiblingIndex(light.GetSiblingIndex() + 1);
-            else if (background != null)
-                instance.transform.SetSiblingIndex(background.GetSiblingIndex() + 1);
-            else
-                instance.transform.SetAsFirstSibling();
-
-            var emitter = instance.GetComponent<Hd2dEmberEmitter>();
-            if (emitter != null)
-            {
-                emitter.Sources = CreateTopTorchEmbers();
-                PrefabUtility.RecordPrefabInstancePropertyModifications(emitter);
-            }
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            return true;
-        }
-
-        private static void AlignWithBackground(Transform canvas, GameObject instance)
-        {
-            // Painted light sources move with the covered background, not with the screen.
-            var background = canvas.Find("TopBackground");
-            var backgroundImage =
-                background != null ? background.GetComponent<UnityEngine.UI.RawImage>() : null;
-            var aligned = instance.AddComponent<ResponsiveBackground>();
-            if (backgroundImage != null && backgroundImage.texture != null)
-                aligned.AspectRatio =
-                    backgroundImage.texture.width / (float)backgroundImage.texture.height;
-            aligned.Apply();
-        }
-
-        private static System.Collections.Generic.List<Hd2dEmberSource> CreateTopTorchEmbers()
-        {
-            // Same background coordinates as the flicker lights, just above each flame.
-            return new System.Collections.Generic.List<Hd2dEmberSource>
-            {
-                CreateTorchEmbers("OuterLeft", new Vector2(0.105f, 0.745f), 10, 1f),
-                CreateTorchEmbers("InnerLeft", new Vector2(0.358f, 0.652f), 6, 0.7f),
-                CreateTorchEmbers("InnerRight", new Vector2(0.642f, 0.652f), 6, 0.7f),
-                CreateTorchEmbers("OuterRight", new Vector2(0.894f, 0.745f), 10, 1f),
-            };
-        }
-
-        private static Hd2dEmberSource CreateTorchEmbers(
-            string name,
-            Vector2 anchor,
-            int count,
-            float scale
-        )
-        {
-            return new Hd2dEmberSource
-            {
-                Name = name,
-                Anchor = anchor,
-                SpawnArea = new Vector2(28f, 10f) * scale,
-                Count = count,
-                Loop = true,
-                LifetimeRange = new Vector2(1.1f, 2.3f),
-                Direction = 90f,
-                Spread = 34f,
-                SpeedRange = new Vector2(34f, 72f) * scale,
-                Buoyancy = 14f * scale,
-                // Curl noise bends the embers instead of a periodic sway.
-                Sway = 0f,
-                Curl = 36f * scale,
-                CurlScale = 56f * scale,
-                CurlSpeed = 0.5f,
-                DotSize = 2,
-                // The far torches get fewer large embers, so they read as smaller.
-                CrossShare = scale < 1f ? 0.25f : 0.3f,
-                StreakShare = scale < 1f ? 0.1f : 0.15f,
-                StartColor = new Color(1f, 0.84f, 0.46f, 1f),
-                EndColor = new Color(1f, 0.32f, 0.08f, 0f),
-                Twinkle = 0.35f,
-            };
-        }
-
-        private static System.Collections.Generic.List<Hd2dFlickerLightSource> CreateTopTorches()
-        {
-            // Positions are normalized to DungeonHall.png (origin at the bottom left).
-            // The outer torches hang on the near pillars; the inner ones on the far wall.
-            return new System.Collections.Generic.List<Hd2dFlickerLightSource>
-            {
-                CreateTorch("OuterLeft", new Vector2(0.105f, 0.72f), new Vector2(0.17f, 0.27f), 1f),
-                CreateTorch(
-                    "InnerLeft",
-                    new Vector2(0.358f, 0.635f),
-                    new Vector2(0.37f, 0.36f),
-                    0.7f
-                ),
-                CreateTorch(
-                    "InnerRight",
-                    new Vector2(0.642f, 0.635f),
-                    new Vector2(0.63f, 0.36f),
-                    0.7f
-                ),
-                CreateTorch(
-                    "OuterRight",
-                    new Vector2(0.894f, 0.72f),
-                    new Vector2(0.83f, 0.27f),
-                    1f
-                ),
-            };
-        }
-
-        private static Hd2dFlickerLightSource CreateTorch(
-            string name,
-            Vector2 anchor,
-            Vector2 reflectionAnchor,
-            float scale
-        )
-        {
-            return new Hd2dFlickerLightSource
-            {
-                Name = name,
-                Anchor = anchor,
-                Color = new Color(1f, 0.58f, 0.24f, 1f),
-                CoreSize = new Vector2(140f, 150f) * scale,
-                CoreAlpha = 0.55f,
-                HaloSize = new Vector2(460f, 460f) * scale,
-                HaloAlpha = 0.22f,
-                ReflectionAnchor = reflectionAnchor,
-                ReflectionSize = new Vector2(420f, 100f) * scale,
-                ReflectionAlpha = 0.24f,
-                FlickerAmount = 0.22f,
-                FlickerSpeed = 2.4f,
-                SizeJitter = 0.05f,
-            };
-        }
-
-        private static Hd2dFogLayer CreateTopDeepHaze()
-        {
-            // A pale haze inside the far archway pushes the corridor back (aerial perspective).
-            return new Hd2dFogLayer
-            {
-                Name = "DeepHaze",
-                AnchorMin = new Vector2(0.36f, 0.34f),
-                AnchorMax = new Vector2(0.64f, 0.86f),
-                Color = new Color(0.45f, 0.58f, 0.82f, 0.22f),
-                Softness = new Vector2Int(150, 170),
-                TileSize = new Vector2(420f, 300f),
-                ScrollSpeed = new Vector2(5f, 3f),
-                DetailOpacity = 0.5f,
-                BreathAmount = 0.2f,
-                BreathSpeed = 0.15f,
-            };
         }
 
         private static void EnsureBuildSettings()

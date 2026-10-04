@@ -22,6 +22,10 @@
 | 2026-09-24 | [ホーム画面「野営地」の見た目モック](2026-09-24-home-camp-mock.md) |
 | 2026-09-24 | [起動時の連携と歩数の同期](2026-09-24-startup-health-sync.md) |
 | 2026-09-27 | [酒場・工房・神殿・旅の案内所（案内人がいる画面）](2026-09-27-guide-menu-screens.md) |
+| 2026-10-02 | [Top・Home・戦闘画面の3Dの舞台（HD-2D）](2026-10-02-hd2d-3d-stage.md) |
+| 2026-10-02 | [Homeの昼の森と、HD-2Dのレンズ・色調・カメラ](2026-10-02-hd2d-glade-look.md) |
+| 2026-10-02 | [Topと戦闘画面の屋外の舞台](2026-10-02-hd2d-outdoor-stages.md) |
+| 2026-10-02 | [停止中とSceneタブの見た目をPlay Mode中とそろえる](2026-10-02-hd2d-edit-view.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 現在の独立した接続の動作は[健康データ仕様](../features/health-data.md)を参照する。

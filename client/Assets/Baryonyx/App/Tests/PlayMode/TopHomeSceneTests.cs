@@ -4,6 +4,7 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.UI;
+using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -52,23 +53,30 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(controller.NextSceneName, Is.EqualTo("Home"));
             Assert.That(controller.Transition, Is.Not.Null);
 
-            // 背景と装飾は開始操作を遮らない。
+            // 装飾は開始操作を遮らない。
             var backdropCanvas = roots
                 .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
                 .Single(candidate => candidate.name == "TopBackdropCanvas");
             Assert.That(backdropCanvas.GetComponent<GraphicRaycaster>(), Is.Null);
-            var background = backdropCanvas
-                .transform.Find("TopBackground")
-                .GetComponent<RawImage>();
-            Assert.That(background.texture, Is.Not.Null);
-            Assert.That(background.raycastTarget, Is.False);
-            var responsiveBackground = background.GetComponent<ResponsiveBackground>();
-            Assert.That(responsiveBackground, Is.Not.Null);
+            // 背景は星空の下の3Dの舞台（HD-2D）で、描いた背景の画像と、広間の天井から差す光芒は置かない。
+            // 遠くのかすみは3Dの舞台の距離の霧が担うため、画面に平らに貼る2Dの霧も置かない。
+            // 装飾のCanvasは3Dの床に隠れないようカメラの近くに置く。
+            Assert.That(backdropCanvas.transform.Find("TopBackground"), Is.Null);
+            Assert.That(backdropCanvas.transform.Find("TopHd2dLightShaft"), Is.Null);
+            Assert.That(backdropCanvas.transform.Find("TopHd2dFog"), Is.Null);
+            Assert.That(backdropCanvas.planeDistance, Is.LessThanOrEqualTo(1f));
+            Assert.That(roots.Any(root => root.name == "Stage3D"), Is.True);
+            var stageCamera = roots
+                .SelectMany(root => root.GetComponentsInChildren<Hd2dStageCamera>(true))
+                .Single();
+            Assert.That(stageCamera.Camera.orthographic, Is.False);
+            Assert.That(stageCamera.KeyLight, Is.Not.Null);
             Assert.That(
-                responsiveBackground.AspectRatio,
-                Is.EqualTo(background.texture.width / (float)background.texture.height)
-                    .Within(.001f)
+                stageCamera.KeyLight.type,
+                Is.EqualTo(LightType.Directional),
+                "The moon lights the title from behind the gate."
             );
+            Assert.That(stageCamera.IntroOffset, Is.Not.EqualTo(Vector3.zero), "Glides in.");
 
             var safeArea = button.transform.Find("TopSafeArea");
             Assert.That(safeArea, Is.Not.Null);

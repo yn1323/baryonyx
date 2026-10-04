@@ -41,6 +41,8 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         private const string ProfileDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Profiles";
         private const string TiltShiftShaderPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dTiltShift.shader";
+        private const string StageFocusShaderPath =
+            "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dStageFocus.shader";
         private const string RendererDataDirectory = "Assets/Settings";
         private const string AdditiveShaderPath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Shaders/Hd2dUiAdditive.shader";
@@ -114,7 +116,18 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             EnsureEmberShapeSprites();
             EnsurePostProcessProfile();
             EnsureTiltShiftInProfile();
-            EnsureTiltShiftRendererFeatures();
+            EnsureRendererFeature<Hd2dTiltShiftRendererFeature>(
+                "Hd2dTiltShift",
+                TiltShiftShaderPath,
+                (feature, shader) => feature.Shader = shader,
+                feature => feature.Shader
+            );
+            EnsureRendererFeature<Hd2dStageFocusRendererFeature>(
+                "Hd2dStageFocus",
+                StageFocusShaderPath,
+                (feature, shader) => feature.Shader = shader,
+                feature => feature.Shader
+            );
             EnsurePrefab();
         }
 
@@ -184,7 +197,8 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             // Flames, additive glows and light shafts bloom, and the low threshold (tuned in
             // the Editor) lets the lit mid-tones glow with them. Raise it to about 0.8 to
-            // limit the bloom to the brightest pixels.
+            // limit the bloom to the brightest pixels. The 3D stages have looks of their own
+            // (Baryonyx.Stages.Editor.StageSetAssets.BuildLooks).
             var bloom = profile.Add<Bloom>(true);
             bloom.threshold.value = 0.4f;
             bloom.intensity.value = 1.6f;
@@ -237,11 +251,19 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AssetDatabase.SaveAssets();
         }
 
-        private static void EnsureTiltShiftRendererFeatures()
+        // Adds a renderer feature to every URP renderer of the project, as the renderer's Inspector
+        // does, and gives it its shader so the shader is built into the player.
+        private static void EnsureRendererFeature<T>(
+            string name,
+            string shaderPath,
+            Action<T, Shader> assign,
+            Func<T, Shader> assigned
+        )
+            where T : ScriptableRendererFeature
         {
-            var shader = AssetDatabase.LoadAssetAtPath<Shader>(TiltShiftShaderPath);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
             if (shader == null)
-                throw new InvalidOperationException($"Shader not found: {TiltShiftShaderPath}");
+                throw new InvalidOperationException($"Shader not found: {shaderPath}");
 
             foreach (
                 var guid in AssetDatabase.FindAssets(
@@ -254,15 +276,21 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
                 if (data == null)
                     continue;
-                if (
-                    data.rendererFeatures.Exists(feature => feature is Hd2dTiltShiftRendererFeature)
-                )
+                var existing = data.rendererFeatures.Find(feature => feature is T) as T;
+                if (existing != null)
+                {
+                    if (assigned(existing) != shader)
+                    {
+                        assign(existing, shader);
+                        EditorUtility.SetDirty(existing);
+                    }
                     continue;
+                }
 
                 // Mirror the renderer Inspector: the feature is a sub-asset listed with its file ID.
-                var feature = ScriptableObject.CreateInstance<Hd2dTiltShiftRendererFeature>();
-                feature.name = "Hd2dTiltShift";
-                feature.Shader = shader;
+                var feature = ScriptableObject.CreateInstance<T>();
+                feature.name = name;
+                assign(feature, shader);
                 AssetDatabase.AddObjectToAsset(feature, data);
                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out _, out long localId);
 

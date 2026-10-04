@@ -2,6 +2,7 @@
 """Codex CLIの組み込み画像生成（image_gen）で画像を1枚作り、生成されたPNGを加工せずに出力先へコピーする。
 
 character-sprite-sheet と character-illustration の両スキルが使う。
+3Dステージのテクスチャのように人物を描かない依頼では、--profile を省略する（hd2d-lighting-vfx が使う）。
 
 Codexは読み取り専用のサンドボックスで動かし、画像の生成だけを頼む。
 Codexに保存や縮小をさせると、ドット絵を勝手に縮めて潰すことがあるため、
@@ -11,7 +12,7 @@ WindowsとmacOSの両方で動く。ファイルと標準入出力はOSの既定
 Windowsでnpmが入れる `codex.cmd` も解決して起動する。
 
 使い方（リポジトリ直下で、PowerShell・bash・zshのどれでも1行で実行する）:
-  uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir DIR --name NAME --request FILE --profile FILE [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
+  uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir DIR --name NAME --request FILE [--profile FILE] [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
 """
 import argparse
 import filecmp
@@ -41,14 +42,17 @@ def build_instruction(request, profile, image_roles):
         "",
         "- 生成したら作業は終わりです。ファイルの作成・コピー・縮小・減色・切り抜きなどの後処理はしないでください。生成された画像はこちらで回収します。",
         "- 画像生成のCLIのフォールバック（scripts/image_gen.py）は使わないでください。",
-        "- 「キャラ設定（全文）」は人物を理解するための参考情報です。描く内容・構成・画風は「依頼」に従ってください。",
-        "- 最後に、画像生成に使った最終的なプロンプトを報告してください。",
     ]
+    if profile is not None:
+        lines.append("- 「キャラ設定（全文）」は人物を理解するための参考情報です。描く内容・構成・画風は「依頼」に従ってください。")
+    lines.append("- 最後に、画像生成に使った最終的なプロンプトを報告してください。")
     if image_roles:
         lines.append("- 添付画像の扱い：")
         for i, role in enumerate(image_roles, start=1):
             lines.append(f"  - 画像{i}：{role}")
-    lines += ["", "# 依頼", "", request.strip(), "", "# キャラ設定（全文）", "", profile.strip(), ""]
+    lines += ["", "# 依頼", "", request.strip(), ""]
+    if profile is not None:
+        lines += ["# キャラ設定（全文）", "", profile.strip(), ""]
     return "\n".join(lines)
 
 
@@ -98,7 +102,7 @@ def main():
     ap.add_argument("--out-dir", required=True, help="生成物を置くフォルダー")
     ap.add_argument("--name", required=True, help="出力ファイル名（拡張子なし）。既存なら -v2 などを付ける")
     ap.add_argument("--request", required=True, help="画像の依頼文のファイル")
-    ap.add_argument("--profile", required=True, help="キャラ設定の全文のファイル")
+    ap.add_argument("--profile", help="キャラ設定の全文のファイル。人物を描かない依頼では省略する")
     ap.add_argument("--image", action="append", default=[], help="添付画像。--image-role と同じ順で指定する")
     ap.add_argument("--image-role", action="append", default=[], help="添付画像の役割の説明")
     ap.add_argument("--model", help="Codexのモデル。省略時は ~/.codex/config.toml の設定")
@@ -122,8 +126,8 @@ def main():
         if not path.is_file():
             sys.exit(f"添付画像がありません: {path}")
 
-    instruction = build_instruction(Path(args.request).read_text(encoding="utf-8"),
-                                    Path(args.profile).read_text(encoding="utf-8"), args.image_role)
+    profile = Path(args.profile).read_text(encoding="utf-8") if args.profile else None
+    instruction = build_instruction(Path(args.request).read_text(encoding="utf-8"), profile, args.image_role)
     (out_dir / f"{args.name}.codex-prompt.md").write_text(instruction, encoding="utf-8")
 
     events = out_dir / f"{args.name}.codex-events.jsonl"

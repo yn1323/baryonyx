@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Baryonyx.Showcase.Editor;
+using Baryonyx.Stages.Editor;
 using Baryonyx.Vfx.Hd2d.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,23 +18,17 @@ namespace Baryonyx.App.Editor
         public static void CreateAssetsAndIntegrateTop() =>
             ApplyToTop(
                 TopHomeSceneSetup.EnsureTopLightingVfx,
-                TopHomeSceneSetup.EnsureTopLightShaft,
-                TopHomeSceneSetup.EnsureTopFog,
-                TopHomeSceneSetup.EnsureTopFlickerLight,
-                TopHomeSceneSetup.EnsureTopEmberEmitter,
-                TopHomeSceneSetup.EnsureTopPostProcess
+                TopHomeSceneSetup.EnsureTopPostProcess,
+                TopHomeSceneSetup.EnsureTopStage
             );
 
-        [MenuItem("Baryonyx/VFX/Create HD-2D Light Shaft and Apply to Top")]
-        public static void CreateLightShaftAndIntegrateTop() =>
-            ApplyToTop(TopHomeSceneSetup.EnsureTopLightShaft);
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Fog and Apply to Top")]
-        public static void CreateFogAndIntegrateTop() => ApplyToTop(TopHomeSceneSetup.EnsureTopFog);
-
-        [MenuItem("Baryonyx/VFX/Create HD-2D Flicker Light and Apply to Top")]
-        public static void CreateFlickerLightAndIntegrateTop() =>
-            ApplyToTop(TopHomeSceneSetup.EnsureTopFlickerLight);
+        // The torches' light and embers on Top come from the 3D stage (its point lights, flames
+        // and particles), so the 2D flicker light and ember emitter are no longer put on Top,
+        // nor the light shaft from the dungeon's ceiling now that Top is outdoors. The 2D fog is
+        // not put on Top either: the 3D stage's distance fog already hazes the far side.
+        [MenuItem("Baryonyx/VFX/Create HD-2D Stage and Apply to Top")]
+        public static void CreateStageAndIntegrateTop() =>
+            ApplyToTop(TopHomeSceneSetup.EnsureTopPostProcess, TopHomeSceneSetup.EnsureTopStage);
 
         // ティルトシフトは共通のProfileとRendererにあるため、Topにはポストプロセスの設定だけを置く。
         [MenuItem("Baryonyx/VFX/Create HD-2D Tilt Shift and Apply to Top")]
@@ -43,14 +38,11 @@ namespace Baryonyx.App.Editor
         public static void CreatePostProcessAndIntegrateTop() =>
             ApplyToTop(TopHomeSceneSetup.EnsureTopPostProcess);
 
-        [MenuItem("Baryonyx/VFX/Create HD-2D Ember Emitter and Apply to Top")]
-        public static void CreateEmberEmitterAndIntegrateTop() =>
-            ApplyToTop(TopHomeSceneSetup.EnsureTopEmberEmitter);
-
         // 共通アセットを作り、Topがあれば各演出を置いて、変わったときだけ保存する。
         private static void ApplyToTop(params Func<Scene, bool>[] steps)
         {
             Hd2dAssets.EnsureAssets();
+            StageSetAssets.EnsureAssets();
             if (File.Exists(TopScenePath))
             {
                 var scene = EditorSceneManager.OpenScene(TopScenePath, OpenSceneMode.Single);

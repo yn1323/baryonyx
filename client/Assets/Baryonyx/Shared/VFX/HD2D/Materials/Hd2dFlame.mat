@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Hd2dFlame
+  m_Shader: {fileID: 4800000, guid: 4be5c4b05d9c742c7a3449a6f27b2535, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Base: 0.1
+    - _FlameHeight: 0.5
+    - _FlameWidth: 0.5
+    - _Halo: 0.3
+    - _Intensity: 1.6
+    - _Puff: 1.6
+    - _Seed: 0
+    - _Speed: 2.2
+    - _Turbulence: 1
+    m_Colors:
+    - _CoreColor: {r: 1, g: 0.92, b: 0.62, a: 1}
+    - _EdgeColor: {r: 0.85, g: 0.15999997, b: 0.049999982, a: 1}
+    - _HaloColor: {r: 1, g: 0.45, b: 0.14999998, a: 1}
+    - _MidColor: {r: 1, g: 0.52, b: 0.15999997, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
