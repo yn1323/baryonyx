@@ -8,7 +8,8 @@ namespace Baryonyx.Account
     // Google接続による引き継ぎを行うまでは、アプリのデータを消すとゲストのデータへ戻れない。
     public static class GuestCredential
     {
-        private const string Key = "Account.GuestSecret";
+        // Editorのメニューでseedのプレイヤーへ切り替えるときも、このキーを書き換える（SeedPlayerMenu）。
+        public const string Key = "Account.GuestSecret";
 
         public static string GetOrCreate()
         {
