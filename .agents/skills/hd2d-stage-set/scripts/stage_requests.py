@@ -7,6 +7,8 @@ hd2d-stage-set の「テクスチャを作る」で使う。依頼文は1枚ご�
 
 固定の段落は、doc/art/hd2d-stage.md の「テクスチャ」と doc/art/direction.md の
 「ドット絵の制作規格」「例外（3Dの舞台のテクスチャ）」を正本とする。正本を変えたら、同じ変更でこの段落も直す。
+「■ドット絵の規格」のうち、タッチと背景の色味の行は shared/prompts/pixel-style.ja.txt の touch・background を読み込む。
+色数の行は、pixel-style.ja.txt の colors からアンチエイリアスの文を除いた形でここに持つ。
 
 使い方（リポジトリ直下で）:
   python3 .agents/skills/hd2d-stage-set/scripts/stage_requests.py SPEC.json output/<作業名>
@@ -31,11 +33,16 @@ import stat
 import sys
 from pathlib import Path
 
-SPEC = """■ドット絵の規格
-スーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。
-色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。背景側へのぼかしや滑らかなグラデーションは使わない。
-中間色の多い落ち着いた色。輪郭は弱めにし、キャラより目立たせない。
-細部まで多めに描き込む。実物を観察して描いたような自然な形と質感（風化、汚れ、欠け、木目、錆、苔）にし、記号的・おもちゃのような形にしない。"""
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "shared" / "scripts"))
+import pixel_style  # noqa: E402
+
+SPEC = "\n".join([
+    "■ドット絵の規格",
+    pixel_style.compose("ja", "touch"),
+    "色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。背景側へのぼかしや滑らかなグラデーションは使わない。",
+    pixel_style.compose("ja", "background"),
+    "細部まで多めに描き込む。実物を観察して描いたような自然な形と質感（風化、汚れ、欠け、木目、錆、苔）にし、記号的・おもちゃのような形にしない。",
+])
 
 LIGHT = {
     "day": """■3Dのテクスチャとしての条件

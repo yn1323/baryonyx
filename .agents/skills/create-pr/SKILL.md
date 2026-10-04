@@ -1,17 +1,18 @@
 ---
 name: create-pr
-description: ユーザーが`$create-pr`を明示したとき、コミット済みの現在ブランチを必要に応じてpushし、日本語のPull Requestを作成する。通常のPR相談、本文案だけの依頼、未コミット変更の処理では自動的に使わない。
+description: ユーザーが明示したとき（Claude Code では /create-pr、Codex では $create-pr）、コミット済みの現在ブランチを必要に応じてpushし、日本語のPull Requestを作成する。通常のPR相談、本文案だけの依頼、未コミット変更の処理では自動的に使わない。
+disable-model-invocation: true
 ---
 
 # Pull Requestを作成する
 
-このスキルは、ユーザーが `$create-pr` を明示した場合だけ使う。
+ベースブランチの取得、差分の確かめ方、既存PRの再利用、PR本文の形式は、このスキルを正本とする。[babysit-pr](../babysit-pr/SKILL.md) もこの手順に従う。
 
 ## 前提条件とpush権限
 
 - 対象変更がコミット済みである。
 - GitHubリポジトリと連携済みである。
-- `$create-pr`の明示実行は、Pull Request作成に必要な現在ブランチの通常pushを許可したものとして扱う。
+- このスキルの明示的な呼び出しは、Pull Request作成に必要な現在ブランチの通常pushを許可したものとして扱う。
 
 未コミット変更は勝手にコミットせず、Pull Requestへ含まれないことを報告する。
 force push、rebase、mergeは行わない。

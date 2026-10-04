@@ -1,0 +1,21 @@
+# ドット絵の画風の固定文（英語）。PixelLabのDescriptionに入れる。
+# 正本：doc/art/direction.md の「ドット絵の制作規格」。正本を変えたら、同じ変更でこのファイルを直す。
+# 「#」で始まる行は説明であり、指示文には入れない。「[名前]」の行は部品の区切りで、次の区切りまでの1行がその部品である。
+# 部品は「, 」でつなぐ。組み合わせ方は .agents/skills/pixel-art-standards/SKILL.md の「指示文に入れる規格」にある。
+# 組み合わせた文は `python3 .agents/skills/shared/scripts/pixel_style.py en <部品名>...` で出力できる。
+# core は pixellab-item-prompt の item_icon.py も読み込み、前後にアイテム用の語を付けて使う。
+
+[touch]
+late SNES / GBA era JRPG pixel art
+
+[core]
+light from the top-left, selective outline (dark on the shadow side, lighter on the lit side), dithered shading transitions, hand-placed anti-aliasing only inside the outline
+
+[limits]
+max 32 colors, crisp pixels
+
+[character]
+vivid saturated colors, detailed clothing folds, dot or short-line eyes
+
+[background]
+muted mid-tone palette, subtle selective outlines

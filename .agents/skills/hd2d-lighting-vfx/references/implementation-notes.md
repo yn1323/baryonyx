@@ -1,32 +1,9 @@
 # HD-2D演出の実装で得た知見
 
-2026-09-23に、Topへ霞と霧、揺らぐ光、火の粉、ポストプロセス、疑似ティルトシフトを実装した。
+2026-09-23に、Top（当時は描いた2D背景）へ霞と霧、揺らぐ光、火の粉、ポストプロセス、疑似ティルトシフトを実装した。
 その過程でつまずいた点と、次の実装でも使える工夫を記録する。
-対象はUnity `6000.6.0f1`、URP `17.6.0`、uGUI、Unity CLIで接続したEditorである。
-
-## Editorでの検証のつまずき
-
-**Editorが最前面にないと時間が進まない。**
-CLIからPlay Modeに入っても、Editorが背面にあるとフレームが進まず、2回撮影しても粒子の位置まで同じ画像になった。
-停止中の `[ExecuteAlways]` の `Update` も呼ばれず、停止中のプレビュー用の子オブジェクトが作られていないように見えた。
-Play Modeでは `editor_pause` で一時停止し、`EditorApplication.Step()` で1フレームずつ進めてから撮影する。
-動きの確認は、フレームを進めながらUVのずれや透明度を読み出し、値が設定どおりに変わることで確かめる。
-停止中のプレビューは、Inspectorの変更時と同じ再構築メソッド（`RebuildLayers` など）を直接呼んで確かめる。
-
-**解像度を指定した撮影では、カメラ側のCanvasの再レイアウトが1フレーム遅れる。**
-`capture_game_view` に幅と高さを指定すると、`Screen Space - Camera` のCanvasだけが直前の解像度のまま描かれ、背景が拡大されて端が切れた画像になった。
-同じ解像度で一度撮影し、数フレーム進めてから撮り直すと正しく写る。
-実機では画面の大きさが変わらないため、この現象は撮影時だけのものである。
-
-**CLIの操作が重なると、PlayModeテストが打ち切られる。**
-テストの実行中にPlay Modeの開始・停止やシーンの切り替えが重なると、「Playmode tests were aborted because the player was stopped.」で中断し、状態は「running」のまま残った。
-PlayModeテストはEditorへほかの操作をしない状態で単独で実行する。
-また、Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Play Mode中として拒否されることがある。
-`editor_status` の `playMode` が `stopped` になってから操作する。
-
-**PlayModeテストは一時的なテスト用アセットを作る。**
-実行中は `Features/*/Tests/PlayMode/Resources` がGitの未追跡ファイルとして現れ、テスト終了時に片付けられる。
-コミットの対象に含めない。
+対象はUnity `6000.6.0f1`、URP `17.6.0`、uGUIである。
+Editorの状態・CLI・撮影・テストのつまずきは [Unity EditorとCLIの知見](../../shared/unity-editor-notes.md)、3Dの舞台のつまずきは hd2d-stage-set の [camera-light.md](../../hd2d-stage-set/references/camera-light.md) にある。
 
 ## 描画のつまずき
 
@@ -61,7 +38,7 @@ Render Graphの `AddBlitPass` が設定するのは `_BlitTexture` と `_BlitSca
 マテリアルは `AddRenderPasses` でも、なければ作るようにする。
 
 **`ScreenSpaceOverlay` のUIには、カメラのポストプロセスが掛からない。**
-Topは背景もUIもOverlayのCanvasに置いていたため、そのままではBloomが効かない。
+Topは背景もUIもOverlayのCanvasに置いていたため、そのままではBloomが効かなかった（仕組みは[vfx-authoringの明るさと光のにじみ](../../vfx-authoring/references/techniques.md#明るさと光のにじみ)）。
 背景と演出を `Screen Space - Camera` のCanvasへ移し、タイトルと操作はOverlayに残した。
 両方のCanvasScalerを同じ設定にすると、座標の単位がそろう。
 
@@ -94,8 +71,7 @@ URPのInspectorと同じく、サブアセットとして追加したFeatureを 
 ## C#とアセンブリのつまずき
 
 **Unityオブジェクトに `??` を使うと、アナライザーのエラーになる。**
-このプロジェクトでは `UNT0007`（Unityオブジェクトへのnull合体演算子）がエラー扱いで、Editorアセンブリのコンパイルが止まった。
-`if (obj != null) return obj;` のように明示的に比較する。
+`UNT0007` がエラー扱いで、Editorアセンブリのコンパイルが止まった。書き方は [unity-csharp-differences](../../unity-csharp-differences/SKILL.md) に従う。
 
 **asmdefをJSONとして書き出し直すと、既存の整形が崩れる。**
 参照の追加で `json.dumps` を使うと、1行の配列がすべて複数行に展開された。
@@ -148,62 +124,6 @@ Bloomより前にぼかすため、ぼけた光もBloomでにじむ。
 
 ## 検証の工夫
 
-見た目の変化が小さい効果は、画面全体の比較では判断できないことが多い。
-変更前後の撮影から、同じ範囲（松明の周り、床の下端など）を切り出して並べて比べる。
-Topは16:9、20:9、4:3で撮影し、背景に揃えた部品が描かれた光源に重なることを確かめた。
+見た目の変化が小さい効果は、同じ範囲を切り出して並べて比べる（[Unity EditorとCLIの知見の撮影](../../shared/unity-editor-notes.md#撮影)）。
+背景に揃えた部品は、画面比率を変えて撮影し、描かれた光源に重なることを確かめる。
 展示室では、プレビュー用の関数を呼んで対象のPrefabを選び、フレームを進めて撮影した。
-
-## 3Dの舞台の作業で得たEditorと道具の知見
-
-2026-10-02に、Top・Home・戦闘画面を3Dの舞台へ移し、昼の森・星空の夜・夕暮れの舞台を作ったときに得た知見である。
-舞台そのものの作り方とつまずきは [hd2d-3d-stage.md](hd2d-3d-stage.md) に記す。
-
-### Unity CLIのコマンド
-
-**Editorが忙しいとコマンドが時間切れになるが、処理は続くことがある。**
-コンパイルや読み込みの直後、または時間がかかる処理（舞台の作り直しとシーンへの配置）を `eval` で送ると、「Main thread operation timed out after 5000ms」の応答が返った。
-応答が時間切れでも、処理はEditorの中で続いて完了していた。
-`eval` で短い値を返すコマンドが応答するまで待ち、生成物の更新時刻や中身（Prefabに部品の名前があるかなど）で、実行されたかを確かめる。
-
-**`AssetDatabase.Refresh` の直後の `editor_status` は、コンパイル前の「ready」を返す。**
-スクリプトを変えて読み込み直した直後に状態を見ると、まだコンパイルが始まっておらず「ready」だった。
-十数秒待ってから状態を見直し、`typeof(新しい型)` を返す `eval` で、新しいコードが読み込まれたことを確かめる。
-
-**コンソールの記録には古いエラーも残る。**
-`console` は過去のエントリーも返すため、作業の前に最後の番号（seq）を控え、それより後のエントリーだけを見る。
-コマンドの時間切れの記録と、カメラの撮影時に1度だけ出たGPU Resident Drawerのエラー（「A BatchDrawCommand was submitted with an invalid Batch」）は、ゲームのコードとは関係がなかった。
-
-**Editorが背面にあると、後回しの処理と停止中の更新が進まない。**
-`EditorApplication.delayCall` に積んだ処理は、Editorが背面にある間たまり続けた（コマンドから数えて77件）。
-`EditorApplication.QueuePlayerLoopUpdate` を呼んでも、`[ExecuteAlways]` の `Update` が呼ばれず、2Dの霧・光・火の粉の停止中の絵が作られなかった。
-シーンを開いたときの処理はイベントの中ですぐ行い、確かめるときは各部品の `Update`（または再構築のメソッド）を直接呼ぶ。
-
-**利用者がEditorをPlay Modeにしていることがある。**
-作業の途中でEditorがPlay Modeになっており、シーンを作り直せなかった。
-止めてから作業し、止めたことを利用者に伝える。
-
-**作り直すシーンを開いたままでは、シーンの作り直しが止まる。**
-`ScreenScenes.Rebuild` は、対象のシーンが開いていると「Close Home.unity before rebuilding it」で止まる。
-開いているシーンに変更があれば保存し、別の保存済みのシーンを開いてから作り直す。
-
-### 撮影
-
-| 撮り方 | 写るもの | 使いどころ |
-|---|---|---|
-| `capture_game_view`（カメラ） | 指定したカメラと、そのカメラで描くCanvas。手前のUI（Overlay）は写らない | 停止中の3Dの舞台とキャラ、ぼけ、色を確かめる |
-| `capture_game_view --source screen` | 手前のUIを含む画面全体 | Play Mode中だけ使える。`--width`・`--height` を付けるとGameビューの解像度が変わるため、同じ指定で2回撮り、2回目を使う |
-| 手前のCanvasを一時的にカメラで描かせて撮る | 停止中の画面全体（手前のUIにもポストプロセスが掛かる） | 停止中とPlay Mode中の見た目を比べる。撮ったらすぐ戻し、シーンが変更扱いになっていないことを確かめる |
-| `capture_scene_view` | Sceneタブのカメラの絵と、カメラで描くCanvas | Sceneタブの見た目を確かめる。視点を合わせたあと、描き直しを待ってから撮る |
-
-GameビューのRender Texture（`PlayModeView.m_TargetTexture`）をリフレクションで描かせて読む方法も試したが、Gameビュー自身の描画の外では黒い画像になった。
-
-### テストの実行
-
-- `run_tests` の `--filter` に「A|B」のような正規表現を渡すと、0件になった。アセンブリ全体（`--filter_type assembly`）か、1つのクラス（PlayModeは `PlayMode.<クラス名>.`）で絞る。
-- PlayModeテストを続けて実行すると、2回目は0件になることがある。`EditorUtility.RequestScriptReload` で読み込み直してからやり直す（[テストの選び方と実行](../../../../doc/rules/client-testing.md#実行と結果確認)）。
-- 結果は `Temp/pipeline_test_status.json` から読む。コマンドの出力に含まれるJSONは、件数が多いと途中で切れて読めなかった。
-
-### ファイルの扱い
-
-- `client/AGENTS.md`・`doc/rules/frontend-design.md`・`.agents/skills/shared/scripts/codex_image.py` などは改行がCRLFである。スクリプトで書き換えるときはバイト列で読み、改行をCRLFのまま書き戻す。
-

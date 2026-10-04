@@ -1,6 +1,7 @@
 ---
 name: babysit-pr
-description: ユーザーが`$babysit-pr`を明示したとき、現在のcheckoutの依頼範囲にある未push変更をcommit・pushしてPull Requestを作成し、GHAと自動レビューを最新headまで監視する。自動レビューの全指摘を優先度にかかわらず検証し、有効なら修正・対象確認・再commit・pushして監視をやり直す。通常の実装、テスト実行、commit、PR相談では自動的に使わない。
+description: ユーザーが明示したとき（Claude Code では /babysit-pr、Codex では $babysit-pr）、現在のcheckoutの依頼範囲にある未push変更をcommit・pushしてPull Requestを作成し、GHAと自動レビューを最新headまで監視する。自動レビューの全指摘を優先度にかかわらず検証し、有効なら修正・対象確認・再commit・pushして監視をやり直す。通常の実装、テスト実行、commit、PR相談では自動的に使わない。
+disable-model-invocation: true
 ---
 
 # PRチェックと自動レビューを最新headで完遂する
@@ -18,33 +19,18 @@ commitの後は、最後の関連変更より後に成功した検証を再利�
 
 1. rootと対象に近い`AGENTS.md`
 2. `client/` のUnity設定とテスト設定、`server/` のパッケージ・テスト・DB設定のうち実在し、変更に関係するもの
-3. `.github/workflows/` と `docs/` の開発・CI手順があれば読む
-4. PR本文を書く場合は [create-pr](../create-pr/SKILL.md) のPR本文フォーマットと [japanese-tech-writing](../japanese-tech-writing/SKILL.md)
+3. `.github/workflows/` と `doc/` の開発・CI手順があれば読む
+4. [create-pr](../create-pr/SKILL.md)（ベースブランチの取得、差分の確かめ方、既存PRの再利用、PR本文の形式）と [japanese-tech-writing](../japanese-tech-writing/SKILL.md)
 
 コマンド、test project、workflow、check名の現在値はリポジトリを正本とし、このSkillの例より優先する。
 
 ## 1. 変更範囲とpushの安全性を確認する
 
-ユーザー指定のbase branch、指定がなければdefault branchの最新remote-tracking refを取得してから、会話上の依頼に属する変更だけを特定する。
-bareなlocal branchは更新が遅れている可能性があるため、比較元に使わない。
-
-以下はBashの例であり、変数や引用は実行中のシェルに合わせる。
-`git remote -v` でリモート名と接続先を確認し、`origin` は対象リモートに読み替える。base指定があればその値を使う。
-
-```bash
-git status --short
-git branch --show-current
-base_branch="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')"
-git fetch --no-tags origin "refs/heads/${base_branch}:refs/remotes/origin/${base_branch}"
-base_ref="origin/${base_branch}"
-git rev-parse --verify "$base_ref"
-git merge-base "$base_ref" HEAD
-git log "$base_ref"..HEAD --oneline
-git diff "$base_ref"...HEAD --stat
-```
+[create-pr](../create-pr/SKILL.md) のワークフローの1〜3（対象の確定、ベースブランチの確認とremote base refの取得、差分の確認）で、最新のremote base refとの差分を取り、会話上の依頼に属する変更だけを特定する。
+bareなlocal branchは更新が遅れている可能性があるため、比較元に使わない。fetchまたはremote base refの検証に失敗した場合は、古いlocal refへfallbackせず停止する。
+そのうえで、次を守る。
 
 - 現在のcheckoutから移動せず、新しいbranchやworktreeを作らない。
-- fetchまたはremote base refの検証に失敗した場合は、古いlocal refへfallbackせず停止する。
 - 現在branchが空、base branchそのもの、またはPRに不要なcommitを含む場合はpushしない。
 - 既存の未commit変更はユーザーの変更として扱う。依頼範囲だと確認できないファイルを編集、復元、stageしない。
 - 依頼範囲に属する既存の未push commitは、現在branchからまとめてpushする。依頼外のcommitが混在する場合は安全に分離できるまでpushしない。
@@ -72,8 +58,8 @@ git diff "$base_ref"...HEAD --stat
 - コードやテストの問題は、失敗したテストまたは対象に近い最小の確認で再現させて修正する。Unityの起動・ビルド条件や実機依存も確認する。
 - 修正後は失敗した境界と変更に直接関係する確認を行い、成功した修正をcommit、pushして新しいhead SHAを監視する。
 - ローカルで再現しない場合は、実行履歴とlogから時刻、共有状態、待機、fixture、runnerなどの差を調べる。
-- 一時的なrunnerや外部service障害だと確認できた場合だけ、該当jobを再実行する。同じSHA・同じ失敗のrerunは最大2回までとし、繰り返す場合は根拠と必要な対応を報告する。
-- 再実行で成功しただけでは、コード修正済みとも原因解消とも扱わない。
+- 一時的なrunnerや外部service障害だとlogで確認できた場合だけ、該当jobを再実行する。コード失敗をrerunで通そうとしない。同じSHA・同じ失敗のrerunは最大2回までとし、繰り返す場合は根拠と必要な対応を報告する。
+- flaky testは成功するまで無制限に再実行せず、共有状態、時刻、待機、selector、fixture、runnerの原因を切り分ける。再実行で成功しただけでは、コード修正済みとも原因解消とも扱わない。
 
 ## 4. 自己レビューしてcommitする
 
@@ -85,12 +71,10 @@ git diff "$base_ref"...HEAD --stat
 
 ## 5. pushしてPull Requestを作成する
 
-push直前に上記のfetchとremote base refの解決をもう一度行い、`origin/<base>..HEAD`のcommit、
-`origin/<base>...HEAD`のdiff、merge-baseを再確認する。
-依頼外の履歴がなく、対象変更がすべてcommit済みの場合だけ現在branchをpushする。
+push直前に、create-pr の手順2〜3（remote base refの取得と、commit・diff・merge-baseの確認）をもう一度行う。
+依頼外の履歴がなく、対象変更がすべてcommit済みの場合だけ、create-pr の手順5で現在branchをpushする。
 
-同じhead branchのopen Pull Requestがあれば重複作成せず再利用する。
-なければ、ユーザー指定がなければ非draftのPull Requestを作成する。タイトルと本文は[create-pr](../create-pr/SKILL.md)のPR本文フォーマットと書き方に従う。
+Pull Requestは create-pr の手順6で作成する（同じbase・headのopen Pull Requestがあれば重複作成せず再利用する）。ユーザー指定がなければ非draftにする。
 PR URL、number、base、head branch、head SHAを記録する。
 
 自動レビューの起動条件は現在のGitHub連携設定と実際の応答で確認する。新規PRで自動レビューが開始済みなら、直後に重複依頼しない。自動開始が確認できない場合は、そのSHAへ一度だけ明示的に依頼する。
@@ -117,10 +101,7 @@ gh api --paginate repos/<owner>/<repo>/issues/comments/<review-request-comment-i
 
 - PRの`headRefOid`がpushしたcommit SHAと一致することを確認する。
 - 期待するworkflow・checkを現在の設定から特定する。checkが0件なら未起動かCI未導入かを確認する。未起動・pendingは成功扱いせず待ち、CI未導入や実行権限不足なら未完了条件として報告する。
-- 失敗時はcheckのlinkから該当runを特定し、最初に失敗したstepとlogを確認する。
-- コードまたはテストの失敗は、まず対象をローカルで確認する。修正した場合は対象限定のローカル確認を通し、新しいcommitをpushする。結合・実機テストは失敗したケースと必要な環境を特定し、Flakyや環境要因の可能性を評価してから修正要否を決める。
-- 一時的なrunnerまたは外部service障害だとlogで確認できた場合だけfailed jobを再実行する。コード失敗をrerunで通そうとしない。
-- flaky testは成功するまで無制限に再実行せず、共有状態、時刻、待機、selector、fixture、runnerの原因を切り分ける。再実行で成功しただけの場合は、修正済みとも失敗原因解消とも扱わない。
+- 失敗時はcheckのlinkから該当runを特定し、[3. GHA失敗を調べる](#3-gha失敗を調べる)に従って原因を分類し、修正または再実行を判断する。結合・実機テストは失敗したケースと必要な環境を特定し、Flakyや環境要因の可能性を評価してから修正要否を決める。
 - workflowやテストを無効化し、必須checkを減らして成功させない。
 - 新しいpush後は古いrunと古い自動レビュー完了を捨て、最新head SHAのcheckと自動レビューを最初から確認する。
 

@@ -13,18 +13,18 @@ Unityのビルド成功、artifactの保存、Google Driveへの配置、Google 
 1. ルートと`client/`の`AGENTS.md`、[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)、`ProjectSettings/ProjectVersion.txt`、`Packages/manifest.json`、`client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs`を読む。
 2. `.github/workflows/client-ci.yml`、`.github/workflows/client-distribute.yml`、`client/ci/`、`shortcuts/`の現在の起動条件とコメントアウト状態を確認する。
 3. Androidの出力形式、アプリケーションID、署名方式、IL2CPP、ARM64、環境名（`dev`、`prod`、`preview`）を実設定から確認する。版数や環境を推測しない。
-4. 既存の未コミット変更を保護する。ユーザーが求めない限り、ブランチ作成、commit、push、PR作成、秘密値の変更を行わない。
+4. 未コミット変更の保護とGit操作はルートの [AGENTS.md](../../../AGENTS.md) に従う。ユーザーが求めない限り、秘密値を変更しない。
 
 ## ローカルビルド
 
-- `ProjectVersion.txt`のUnity EditorとAndroid Build Supportを使う。
-- Unityが開いている場合は、作業を保存してプロジェクトを閉じ、`Temp/UnityLockfile`がないことを確認する。
-- [Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)に記載されたショートカットまたは同じ`AndroidBuild.Build`を使う。
-- 同文書に記載されたAPKとログの実在、成功マーカー、配置先を確認する。
-- ビルド失敗時は、古いAPKを新しい成果物として配布しない。既存の配置先を更新しない。
-- APK生成後の配置先、コピー条件、CI配布の扱いは[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)とルートの`AGENTS.md`に従う。配置先へアクセスできない、コピーに失敗する、対象フォルダーがない場合は作業を未完了として報告する。
+ショートカットの一覧とビルド後にAPKをコピーする配置先はルートの [AGENTS.md](../../../AGENTS.md#手動実行用ショートカット)、各ショートカットの動作・前提・ログ・接続先の環境・失敗時の扱いは[手動実行用ショートカットの動作](../../../doc/rules/local-shortcuts.md)、CIの成果物は[Androidビルドと実機確認](../../../doc/rules/client-android-testing.md)を正本とする。
+作業では次を確かめる。
 
-Google Drive for desktopの同期完了は、ローカルコピー成功だけでは証明しない。同期状態は同アプリで確認する必要がある。
+- Unityが開いている場合は、作業を保存してプロジェクトを閉じ、`Temp/UnityLockfile`がないことを確認する。
+- ショートカットまたは同じ`AndroidBuild.Build`を使い、APKとログの実在、成功マーカー、ビルドログの接続先の環境（`BARYONYX_ANDROID_SERVER:`）を確認する。
+- 古いAPKを新しい成果物として扱わない。ビルドに失敗したときは配置先を更新しない。
+- 配置先へのコピーまでをビルド作業に含める。配置先へアクセスできない、コピーに失敗する、対象フォルダーがない場合は作業を未完了として報告する。
+- ローカルへのコピーの成功は、Google Drive for desktopの同期の完了を証明しない。同期状態は同アプリで確認する必要がある。
 
 ## artifactと環境名
 
@@ -56,18 +56,17 @@ Google Drive for desktopの同期完了は、ローカルコピー成功だけ�
 次を分けて報告する。
 
 1. Unityビルドの成功または失敗とログ。
-2. APK/AABの存在、サイズ、署名、SHA-256、artifact ID。
+2. APK/AABの存在、サイズ、署名、SHA-256、artifact ID、接続先の環境。
 3. 個人DriveまたはCI配布先へのコピー・アップロード結果。
-4. Google Drive for desktopの同期、端末インストール、OAuth、実機動作の未確認事項。
+4. Google Drive for desktopの同期、端末インストール、実機動作の未確認事項。
 
 ビルド成功だけで端末動作やDrive同期を成功扱いにしない。
+端末へ入れて確かめた場合は、その結果を [unity-android-device-validation](../unity-android-device-validation/SKILL.md) の「完了報告」の4区分で添える。
 
 ## 参照
 
 - [Unityのビルド概要](https://docs.unity.com/en-us/engine/6000.6/manual/building-and-publishing/building-introduction)
 - [Unity Build Automation](https://docs.unity.com/en-us/build-automation/basic-build-configuration/overview)
-- リポジトリの`shortcuts/build-apk.bat`
-- リポジトリの`shortcuts/build-apk-dev-to-drive.bat`・`shortcuts/build-apk-prod-to-drive.bat`
-- リポジトリの`shortcuts/build-apk-dev-to-drive.command`・`shortcuts/build-apk-prod-to-drive.command`（macOS）
+- リポジトリの`shortcuts/`（一覧はルートの [AGENTS.md](../../../AGENTS.md#手動実行用ショートカット)）
 - リポジトリの`.github/workflows/client-ci.yml`
 - リポジトリの`.github/workflows/client-distribute.yml`

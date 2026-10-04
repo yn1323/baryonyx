@@ -23,16 +23,21 @@ from pathlib import Path
 
 from PIL import Image
 
-API = "https://api.pixellab.ai/v2"
 SKILL_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SKILL_DIR.parent / "shared" / "scripts"))
+import pixel_style  # noqa: E402
+
+API = "https://api.pixellab.ai/v2"
 STYLE_REFERENCE = SKILL_DIR / "assets" / "style-reference.png"
-SIZE = 32
+SIZE = 32  # アイテムの寸法。正本は doc/art/direction.md の「画面と寸法」
 GRID = 8  # 32x32のProは、8x8のマス目に64候補を描いてから切り分けて返す
-SCALE = 4  # 画面での表示倍率に合わせる
+SCALE = 4  # 確認用の拡大率。同じ正本の表示倍率に合わせる
+# 画風の固定文。ドット絵の規格の部分（pixel-style.en.txt の core）は shared/prompts/ の1か所にだけ置き、
+# 前後にアイテム用の語を付ける。規格の正本は doc/art/direction.md の「ドット絵の制作規格」。
 STYLE_TAIL = (
-    " Richly detailed, densely shaded late SNES era JRPG item sprite, light from the top-left, "
-    "selective outline (dark on the shadow side, lighter on the lit side), dithered shading transitions, "
-    "hand-placed anti-aliasing only inside the outline, filling the whole canvas, clear silhouette."
+    " Richly detailed, densely shaded late SNES era JRPG item sprite, "
+    + pixel_style.compose("en", "core")
+    + ", filling the whole canvas, clear silhouette."
 )
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Codex CLIが描いた3Dステージ用の画像を、1ドット1ピクセル・32色以内のドット絵テクスチャ（PNG）にする。
 
-hd2d-lighting-vfx の「3Dステージにドット絵を立たせる」手順で使う。
+hd2d-stage-set の「テクスチャを作る」で使う（ふつうは fit_textures.py が寸法を決めて呼ぶ）。
 生成画像は高解像度の「ドット絵風のイラスト」で格子も色数も規格に合わないため、
 面積平均で目的の大きさへ縮めて格子を作り直し、色を減らす（格子を1画素ずつ拾うと塗りのノイズが点で残る）。
 
@@ -13,7 +13,7 @@ hd2d-lighting-vfx の「3Dステージにドット絵を立たせる」手順で
 - 出力したPNGは採用前の候補として output/ に置き、採用したら pixel-art-standards の png_to_aseprite.lua で .aseprite にする。
 
 使い方（リポジトリ直下で）:
-  uv run --no-project --with numpy --with pillow python .agents/skills/hd2d-lighting-vfx/scripts/stage_texture.py SRC OUT --size 128x128 [--key] [--crop] [--tile] [--colors 32] [--bright-colors N --bright-threshold 170] [--preview N]
+  uv run --no-project --with numpy --with pillow python .agents/skills/hd2d-stage-set/scripts/stage_texture.py SRC OUT --size 128x128 [--key] [--crop] [--tile] [--colors 32] [--bright-colors N --bright-threshold 170] [--preview N]
 """
 import argparse
 from pathlib import Path

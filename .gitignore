@@ -4,3 +4,6 @@
 /Build/
 /.codex-remote-attachments/
 /output/
+
+# Python bytecode caches (for example, from scripts under .agents/skills/).
+__pycache__/

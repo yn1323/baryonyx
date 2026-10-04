@@ -2,7 +2,7 @@
 """Codex CLIの組み込み画像生成（image_gen）で画像を1枚作り、生成されたPNGを加工せずに出力先へコピーする。
 
 character-sprite-sheet と character-illustration の両スキルが使う。
-3Dステージのテクスチャのように人物を描かない依頼では、--profile を省略する（hd2d-lighting-vfx が使う）。
+3Dの舞台のテクスチャのように人物を描かない依頼では、--profile を省略する（hd2d-stage-set の stage_requests.py が使う）。
 
 Codexは読み取り専用のサンドボックスで動かし、画像の生成だけを頼む。
 Codexに保存や縮小をさせると、ドット絵を勝手に縮めて潰すことがあるため、

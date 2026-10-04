@@ -2,12 +2,10 @@
 name: vfx-authoring
 description: >
   このゲームのVFX（エフェクト）を作る・直す・レビューするときに必ず使う。
-  スキルの攻撃・魔法・回復・防御、被弾・撃破、カットイン、報酬やUIの演出などを、
-  画像を貼らずにシェーダーの計算で形を描くことを基本に、uGUI・Particle System・ポストプロセスと組み合わせて、
-  体験から形・色・タイミングを決める設計、層の構成、形の式の組み立て、光と奥行きのなじませ方、
-  HD-2Dの画面効果（光と影、Bloom、ボケ、霧、カメラ）との組み合わせ方、
-  コマを並べた検証を当てはめ、「のっぺり」「安っぽい」「貼り付けたよう」な見た目を避ける。
-  背景に常に出しておく光・霧・環境の粒だけを扱う作業は hd2d-lighting-vfx の担当とする。
+  スキルの攻撃・魔法・回復・防御、被弾・撃破、カットイン、報酬やUIの演出などを、画像を貼らずにシェーダーの計算で形を描き、
+  体験・時間（3拍）・層・光と奥行き・HD-2Dの画面効果との組み合わせから設計し、コマを並べて検証して、
+  「のっぺり」「安っぽい」「貼り付けたよう」な見た目を避ける。
+  背景に常に出しておく光・霧・粒は、3Dの舞台なら hd2d-stage-set、描いた2D背景なら hd2d-lighting-vfx の担当とする。
   VFXを含まないUIレイアウトだけの作業には使わない。
 ---
 
@@ -54,8 +52,8 @@ description: >
 - 計算で描きにくい物を、ユーザーと相談した例外としてドット絵で描くときは [pixel-art-standards](../pixel-art-standards/SKILL.md) を使う。
 - C#やシェーダーのコードを書くときは [unity-csharp-differences](../unity-csharp-differences/SKILL.md) を使う。
 - 報酬表示などUIの一部として演出を作るときは [ui-advisor](../ui-advisor/SKILL.md) も確認する。
-- 背景の常設の光・霧や、共通のポストプロセスの設定を変えるときは、明示呼び出し専用の [hd2d-lighting-vfx](../hd2d-lighting-vfx/SKILL.md) を使うかユーザーに確認する。
-- Editorでの撮影と描画のつまずき（Editorが背面だと時間が進まない、弱い効果の確かめ方など）は、[HD-2D演出の実装で得た知見](../hd2d-lighting-vfx/references/implementation-notes.md) を読んで避ける。
+- 3Dの舞台の常設の光・霧や、舞台ごとのレンズと色調を変えるときは [hd2d-stage-set](../hd2d-stage-set/SKILL.md) を使う。描いた2D背景の常設の光・霧や、共通の2D向けポストプロセスを変えるときは、明示呼び出し専用の [hd2d-lighting-vfx](../hd2d-lighting-vfx/SKILL.md) を使うかユーザーに確認する。
+- Editorでの撮影のつまずき（Editorが背面だと時間が進まない、解像度を指定した撮影の遅れなど）は [Unity EditorとCLIの知見](../shared/unity-editor-notes.md)、描画のつまずき（弱い効果の確かめ方など）は [HD-2D演出の実装で得た知見](../hd2d-lighting-vfx/references/implementation-notes.md) を読んで避ける。
 
 ## 最初に確認すること
 
@@ -96,7 +94,7 @@ description: >
 1つの形を拡大・回転・一様にフェードさせるだけの層は、主役に使わない。
 補助の光（グロー、光だまり）に限って使う。
 Unityでの実装経路（uGUI、uGUI用の粒子プラグイン、Particle System、Shader Graph、VFX Graph）は、今の画面構成とモバイル性能に合わせて選ぶ（[実装経路の比較](references/techniques.md#unityでの実装経路)）。
-外部プラグインは無料の既存プラグインを基本とし、採用前に対応バージョン・保守状況・ライセンスを確かめる。
+外部プラグインを使うときは、上の表の「外部プラグインの採用条件」に従う。
 
 ### 5. HD-2Dの画面と組み合わせる
 
@@ -131,14 +129,14 @@ Unityでの実装経路（uGUI、uGUI用の粒子プラグイン、Particle Syst
 - 明滅の頻度と面積が、[安全と読みやすさ](#安全と読みやすさ)の基準を超えていないか。
 - 端末で重くならないか（透明な板の重なりと面積、1ピクセルあたりのノイズの回数、粒の数）。Android端末での確認はユーザーに依頼する。
 
-撮影画像の保存先は、[hd2d-lighting-vfxの検証の順序](../hd2d-lighting-vfx/SKILL.md#検証の順序)と同じにする。
+撮影画像の保存先は、[client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」に従う。
 スキルの演出は、[スキルのデバッグルーム](../../../doc/features/screens.md#スキルのデバッグルーム)で1枚ずつ選んで再生し、戦闘と同じ画面で撮る。
 進み具合を指定して止めたコマを撮る方法は、[止めたコマを撮る](references/procedural-shapes.md#止めたコマを撮る)に従う。
-Editorが背面にあるとフレームが進まないなど、撮影のつまずきは [HD-2D演出の実装で得た知見](../hd2d-lighting-vfx/references/implementation-notes.md#editorでの検証のつまずき) で避ける。
+Editorが背面にあるとフレームが進まないなど、撮影のつまずきは [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) で避ける。
 
 ### 8. 展示室へ反映して報告する
 
-追加・変更したエフェクトは、同じ変更で展示室の登録とプレビューを更新し、一覧に出ることと、プレビューで再生できることを確かめる。
+追加・変更したエフェクトは、ルートの AGENTS.md の[クライアントアセット展示室](../../../AGENTS.md#クライアントアセット展示室)に従って同じ変更で展示室を更新し、一覧に出ることと、プレビューで再生できることを確かめる。
 確かめられなかった段階（Editorだけで確認、端末は未確認など）は、未確認として報告に残す。
 
 ## のっぺり診断の要点
@@ -163,7 +161,7 @@ Editorが背面にあるとフレームが進まないなど、撮影のつま�
 
 ## 安全と読みやすさ
 
-- 画面全体の閃光や大きな面積の明滅は、1秒間に3回を超えないようにする（WCAG 2.3.1、Xbox Accessibility Guideline 118）。画面の約20%以上を占める明滅と、彩度の高い赤の明滅は特に避け、高コントラストの縞模様を広く出さない。
+- 画面全体の閃光や大きな面積の明滅は、[WCAG 2.3.1](https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html)と[Xbox Accessibility Guideline 118](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/118)の基準内に収める。大きな面積の明滅と、彩度の高い赤の明滅は特に避け、高コントラストの縞模様を広く出さない。戦闘の演出で決めた閃光の間隔と濃さは、[画面一覧と操作](../../../doc/features/screens.md)のスキルの演出と背景の節に従う。
 - 画面揺れ、閃光、ヒットストップは、強さを下げる・止める設定で弱められるようにする。
 - 長く感じるエフェクトは長すぎる。連続して使う技ほど短くする。
 - 戦闘中に隠してはいけない情報は、[戦闘中の情報の優先順位](../../../doc/features/combat.md#戦闘中の情報の優先順位)に従う。

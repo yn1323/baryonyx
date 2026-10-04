@@ -3,7 +3,7 @@
 
 hd2d-stage-set の「テクスチャを作る」で使う。切り抜く物は、マゼンタ以外の範囲（物の外接矩形）の縦横比を測ってから
 寸法を決める。Codex の出力は依頼した縦横比どおりにならず、物の周りの余白も絵ごとに違うため、
-決め打ちの寸法で --crop すると絵がゆがむ。変換そのものは hd2d-lighting-vfx の stage_texture.py が行う。
+決め打ちの寸法で --crop すると絵がゆがむ。変換そのものは同じフォルダーの stage_texture.py が行う。
 
 使い方（リポジトリ直下で）:
   uv run --no-project --with numpy --with pillow python .agents/skills/hd2d-stage-set/scripts/fit_textures.py SIZES.json output/<作業名>
@@ -29,7 +29,7 @@ import numpy as np
 from PIL import Image
 
 REPO = Path(__file__).resolve().parents[4]
-STAGE_TEXTURE = REPO / ".agents/skills/hd2d-lighting-vfx/scripts/stage_texture.py"
+STAGE_TEXTURE = Path(__file__).resolve().parent / "stage_texture.py"
 sys.path.insert(0, str(STAGE_TEXTURE.parent))
 from stage_texture import erode, magenta_mask  # noqa: E402
 
@@ -71,7 +71,7 @@ def fit(item, work):
     print(f"{item['name']}: 物の範囲 {w}x{h}（縦横比 {aspect:.2f}）-> {size[0]}x{size[1]}  {result.stdout.strip()}")
     return {
         "size": list(size),
-        "conversion": ".agents/skills/hd2d-lighting-vfx/scripts/stage_texture.py " + " ".join(args),
+        "conversion": STAGE_TEXTURE.relative_to(REPO).as_posix() + " " + " ".join(args),
     }
 
 

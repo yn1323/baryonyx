@@ -3,18 +3,17 @@ name: pixel-art-standards
 description: >
   このゲームのドット絵を生成・描画・修正・採用するとき、またドット絵をUnityへ取り込んで画面に置くときに必ず使う。
   PixelLab、Codex・ChatGPTの画像生成、Asepriteスクリプト、手作業のどれで作る場合も、
-  ドット絵の制作規格（480×270・4倍表示、種類ごとの寸法、32色、左上の光源、セルアウト、ディザ、輪郭の内側だけの手置きアンチエイリアス）を
-  指示文と出来上がりに当てはめ、規格との差を検査して報告する。リポジトリに置くドット絵はPNGではなく `.aseprite` で管理させる。
+  アート方針のドット絵の制作規格（素材ごとの寸法、色数、光源、セルアウト、ディザ、輪郭の内側だけのアンチエイリアス）を
+  指示文と出来上がりに当てはめ、規格との差を検査して報告し、採用した絵を `.aseprite` にする。
   ドット絵ではないイラストや、画像を扱わないUIレイアウトだけの作業には使わない。
 ---
 
 # ドット絵の制作規格を当てはめる
 
 このゲームのドット絵を、どの方法で作っても同じ規格にそろえるためのスキルである。
-規格の正本は [アート方針のドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格) とし、このスキルは、規格を指示文に入れる方法、出来上がりの検査、Unityでの使い方を扱う。
+規格の正本は [アート方針のドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格) とし、このスキルは、規格を指示文に入れる方法、出来上がりの検査、`.aseprite` への変換、Unityでの使い方を扱う。
 ドット絵は1枚ずつの出来より、全素材が同じ規則で描かれていることで見栄えが決まる。
-規格は全素材の基本であり、見栄えや役割に合わせて素材ごとに例外を認める。
-規格から外れた素材を、例外として決めないまま黙って採用しない。
+規格からの例外は素材ごとにユーザーが決め、正本の「例外」に記録する。決めないまま、規格から外れた素材を黙って採用しない。
 
 ## 使う場面
 
@@ -22,16 +21,15 @@ description: >
 - 生成した候補や手描きの画像を、採用するか判断するとき・仕上げるとき
 - ドット絵をUnityへ取り込み、画面や展示室に置くとき
 
-ほかの生成スキル（[character-sprite-sheet](../character-sprite-sheet/SKILL.md)、[pixellab-item-prompt](../pixellab-item-prompt/SKILL.md)、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md)）と一緒に使う。
-それらのスキルの固定文には、光源・セルアウト・ディザ・アンチエイリアスの規則を反映済みである。
+ほかの生成スキル（[character-sprite-sheet](../character-sprite-sheet/SKILL.md)、[pixellab-item-prompt](../pixellab-item-prompt/SKILL.md)、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md)、[hd2d-stage-set](../hd2d-stage-set/SKILL.md) のテクスチャ）と一緒に使う。
+それらのスキルの固定文は、下の「指示文に入れる規格」と同じ共通の文（[shared/prompts/](../shared/prompts/)）を使っている。
 固定文があるスキルでは固定文を使い、このスキルの指示文を重ねて足さない。
 固定文と規格の食い違いに気づいたら、生成する前にユーザーへ伝える。
 
 ## 保存形式
 
-このリポジトリで使うドット絵は、すべて `.aseprite` で管理する。PNGでは管理しない。
+リポジトリに置くドット絵は `.aseprite` だけにする。置き場所と読み込みの規則は[ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像)とルートの [AGENTS.md](../../../AGENTS.md) の「Asepriteの正本とタブレットの受け渡し」に従う。
 
-- リポジトリに置くドット絵は `.aseprite` だけにする。同じ絵のPNGを書き出して並べて置かない。
 - 生成ツールが出力したPNGは、採用前の候補として `output/`（Git対象外）に置く。採用が決まったら `.aseprite` へ変換し、変換後のファイルだけをリポジトリに置く。
 - 既存のドット絵がPNGのまま置かれていたら、変更するときに `.aseprite` へ置き換え、参照するコード・データ・文書・展示室の登録を同じ変更で直す。
 - PNGで置く必要があると考えたら、置く前に理由を添えてユーザーに確認する。
@@ -40,7 +38,7 @@ description: >
 
 [scripts/png_to_aseprite.lua](scripts/png_to_aseprite.lua) で、1ドット1ピクセルのPNGを、インデックスカラーの `.aseprite` に変換する。
 パレットは0番を透明にし、1番以降に不透明な色を暗い順に並べる。画素は変えない。
-Aseprite本体のCLIで、リポジトリ直下から次のように実行する。
+Aseprite本体のCLIで、リポジトリ直下から次のように実行する。macOSの本体は `/Applications/Aseprite.app/Contents/MacOS/aseprite` にある。拡張機能（pixellab）の読み込みエラーが毎回表示されるが、変換には影響しない。
 
 ```bash
 Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.aseprite> --script .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua
@@ -51,7 +49,7 @@ Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.asepri
 
 ## 手順
 
-1. **規格を読む**：正本の「ドット絵の制作規格」と「例外」「既存素材との差」を読む。未決の項目（アニメーション規格、背景・タイルの寸法と表示倍率、アイテム・UIアイコンの色味）は推測で決めず、必要ならユーザーに確認する。
+1. **規格を読む**：正本の「ドット絵の制作規格」と「例外」「既存素材との差」を読む。正本の未決事項（アニメーション規格、背景・タイルの寸法と表示倍率、アイテム・UIアイコンの色味など）は推測で決めず、必要ならユーザーに確認する。
 2. **種類と寸法を決める**：作る素材を正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)の種類に当てはめ、画像の大きさを決める。
 3. **指示文に規格を入れる**：固定文を持つスキルを使わない場合は、下の「指示文に入れる規格」を指示文に入れる。
 4. **出来上がりを検査する**：採用前の候補は `output/`（Git対象外）に置き、検査スクリプトと目視で確かめる。
@@ -77,37 +75,34 @@ Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.asepri
 
 ## 指示文に入れる規格
 
+規格を指示文にした固定文は、[shared/prompts/](../shared/prompts/) の `pixel-style.ja.txt`（日本語）と `pixel-style.en.txt`（英語）の1か所にだけ置く。
+ファイルは「[部品名]」の行で区切った部品の集まりで、素材に合わせて部品を選んで並べる。
+並べた文は [pixel_style.py](../shared/scripts/pixel_style.py) で出力できる。
+
 ### 日本語（Codex CLI・ChatGPTの画像生成）
 
-```text
-■ドット絵の規格
-スーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。
-光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。腕と胴の境目などの内側の線は、外周より明るく、その場所の色より2段暗い色で描く。
-色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。
-しわや細部まで多めに描き込む。
-```
+依頼文に「■ドット絵の規格」の見出しを置き、その下に次の部品を1行ずつ入れる。
 
-キャラ・敵には次の1行を足す。
+| 素材 | 部品（この順） |
+|---|---|
+| キャラ・敵 | `touch`・`light`・`colors`・`detail`・`character` |
+| 背景 | `touch`・`light`・`colors`・`detail`・`background` |
+| そのほか（アイテム、UIアイコンなど） | `touch`・`light`・`colors`・`detail` |
 
-```text
-彩度と明るさを高めにした鮮やかな色。目は点や短い線で描く。
-```
-
-背景には次の1行を足す。
-
-```text
-中間色の多い落ち着いた色。輪郭は弱めにし、キャラより目立たせない。
+```bash
+python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detail character
 ```
 
 ### 英語（PixelLabのDescription）
 
-```text
-late SNES / GBA era JRPG pixel art, light from the top-left, selective outline (dark on the shadow side, lighter on the lit side), dithered shading transitions, hand-placed anti-aliasing only inside the outline, max 32 colors, crisp pixels
+`touch`・`core`・`limits` を「, 」でつなぎ、キャラ・敵には `character`、背景には `background` を足す。
+
+```bash
+python3 .agents/skills/shared/scripts/pixel_style.py en touch core limits character
 ```
 
-キャラ・敵には `vivid saturated colors, detailed clothing folds, dot or short-line eyes`、背景には `muted mid-tone palette, subtle selective outlines` を足す。
 PixelLabの `outline` 設定を選べる場合は `selective outline` にする。
-PixFluxでは、`highly detailed` のような描き込みを増やす語を足すと画風が崩れやすいため、上の文も短く縮めて使う。
+PixFluxでは、`highly detailed` のような描き込みを増やす語を足すと画風が崩れやすいため、この文も短く縮めて使う。
 
 ## 出来上がりの検査
 
@@ -128,9 +123,9 @@ uv run --no-project --with pillow python .agents/skills/pixel-art-standards/scri
 |---|---|
 | 大きさ | 種類ごとの規格と異なる（背景・タイルは表示だけ） |
 | 半透明 | 透明度が0と255以外のピクセルがある。背景側へのアンチエイリアスやぼかしの跡である |
-| 色数 | 不透明な色が32色を超える |
+| 色数 | 不透明な色が規格の色数を超える |
 | 拡大済み | 同じ色の並びがすべてk倍の長さになっている。k倍に拡大して書き出した画像と考えられる |
-| 立ち姿 | 48×48の範囲からはみ出す、または左右中央から1ドットを超えてずれる |
+| 立ち姿 | 規格の立ち姿の範囲からはみ出す、または左右中央から1ドットを超えてずれる |
 | 足元 | 複数フレームで足元の行が異なる（注意として表示） |
 | 敵の余白 | 本体が画像より2ドット以上小さい（注意として表示） |
 
@@ -151,15 +146,16 @@ Codex CLIやChatGPTが描いた画像は、高解像度の「ドット絵風の�
 
 ## Unityで使うとき
 
-- 置き場所、`.aseprite` の読み込み、生成スクリプトからの読み込み方は[ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像)、取り込み設定は[ゲームUIと生成素材](../../../doc/art/game-ui.md)に従う。PNGへ書き出して並べて置かない。
-- 表示倍率は正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)に従い、画面の拡大率が1でない場合は1ドットを整数pxに丸める（UIでは [PixelPerfectRawImage](../../../client/Assets/Baryonyx/Shared/UI/ResponsiveLayout/PixelPerfectRawImage.cs) を使う）。回転や半端な倍率の拡縮をしない。
+- 置き場所、`.aseprite` の読み込み、生成スクリプトからの読み込み方、取り込み設定は[ゲーム内の対象の画像](../../../doc/rules/frontend-design.md#ゲーム内の対象の画像)に従う。PNGへ書き出して並べて置かない。
+- 表示倍率は正本の[画面と寸法](../../../doc/art/direction.md#画面と寸法)に従う。UIでドット絵を整数倍に保つ部品（`PixelPerfectRawImage`）は[クライアントの構成と依存関係](../../../doc/rules/frontend-design.md)にある。正本の「例外」にない回転や半端な倍率の拡縮をしない。
 - Pixel Perfect Cameraを導入する場合、画面全体を基準解像度に描いてから拡大する設定（Upscale Render Texture）にすると背景の細かいドットも粗くなるため、背景の見え方を確かめる（[Unity公式](https://docs.unity3d.com/6000.1/Documentation/Manual/urp/2d-pixelperfect-ref.html)）。
-- 画像を追加・変更したら、[クライアントアセット展示室](../../../doc/features/showcase.md) の登録とプレビューを同じ変更で更新し、一覧に出て変更後の内容が見えることを確かめる。
+- 画像を追加・変更したら、ルートの AGENTS.md の[クライアントアセット展示室](../../../AGENTS.md#クライアントアセット展示室)に従って展示室の登録とプレビューを更新する。
 
 ## 規格を変えるとき
 
 ユーザーが規格を変えたら、同じ変更で次を直す。
 
 1. 正本の [ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格) と「変更と判断の記録」
-2. このスキルの「種類と検査の指定」「指示文に入れる規格」と、検査スクリプトの `KINDS`
-3. 生成スキルの固定文：[character-sprite-sheet](../character-sprite-sheet/SKILL.md) の「■画風」、[pixellab-item-prompt](../pixellab-item-prompt/SKILL.md) の `STYLE_TAIL`（[item_icon.py](../pixellab-item-prompt/scripts/item_icon.py) とSKILL.mdの両方）、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md) の「描き方（Rendering）」
+2. このスキルの「種類と検査の指定」と、検査スクリプトの `KINDS`・`MAX_COLORS`・`STANDING_BODY`
+3. 共通の固定文：[pixel-style.ja.txt](../shared/prompts/pixel-style.ja.txt)・[pixel-style.en.txt](../shared/prompts/pixel-style.en.txt)
+4. 共通の固定文とは別に、規格の値や言い換えを持つ所：[character-sprite-sheet](../character-sprite-sheet/SKILL.md) の「■画風」の1〜2行目と「■大きさ」、[item_icon.py](../pixellab-item-prompt/scripts/item_icon.py) の `SIZE` と `STYLE_TAIL` の前後の語、[stage_requests.py](../hd2d-stage-set/scripts/stage_requests.py) の色数の行、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md) の「描き方（Rendering）」
