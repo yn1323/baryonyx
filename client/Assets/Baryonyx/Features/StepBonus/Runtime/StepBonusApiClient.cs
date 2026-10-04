@@ -7,7 +7,7 @@ using Baryonyx.Networking;
 namespace Baryonyx.StepBonus
 {
     /// <summary>
-    /// The server's UPT bonus API: the bonuses a player owns and the five slots
+    /// The server's ACT bonus API: the bonuses a player owns and the five slots
     /// (server/src/features/step-bonus/routes.ts).
     /// </summary>
     public sealed class StepBonusApiClient

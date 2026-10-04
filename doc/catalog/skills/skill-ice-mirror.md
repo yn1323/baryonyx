@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIceMirror.aseprite
 | 属性 | 氷 |
 | 種類・対象 | 防御・味方単体 |
 | コスト | 3 |
-| 説明文（モックの能力値、UPT0での数値） | 味方1体が次に受ける単体攻撃を、1回はね返す。 |
+| 説明文（モックの能力値、ACT0での数値） | 味方1体が次に受ける単体攻撃を、1回はね返す。 |
 | 効果（行う順） | 味方単体：反射1ターン |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIceMirror.aseprite
 | コスト | 3 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | 反射1ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 澄んだ反射 | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 氷の破片が味方の前へ集まって雪の結晶の鏡になり、透明な泡が味方を包む。光の帯が鏡を横切って反射する | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

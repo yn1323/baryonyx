@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84c5c8278896a4a958e7776b8834d850, type: 3}
   m_Name: StepBonusMockData
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.StepBonus.StepBonusMockData
-  TodayUpt: 3240
+  TodayAct: 3240
   Tiers: e8030000d0070000b80b000088130000401f0000i
   Multipliers:
   - 1

@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardProtect.aseprite
 | 属性 | なし |
 | 種類・対象 | 防御・味方全体 |
 | コスト | 2 |
-| 説明文（モックの能力値、UPT0での数値） | 味方全体の受けるダメージを、2ターン25%減らす。 |
+| 説明文（モックの能力値、ACT0での数値） | 味方全体の受けるダメージを、2ターン25%減らす。 |
 | 効果（行う順） | 味方全体：プロテクト2ターン（25%） |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardProtect.aseprite
 | コスト | 2 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | プロテクト2ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | やわらかく包む | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 小さな盾の紋が味方の周りを回りながら近づき、淡い光の泡になって包む | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

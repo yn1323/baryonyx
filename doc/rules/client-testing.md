@@ -47,8 +47,8 @@ CIはプロジェクトのテストアセンブリだけを実行する。
 
 現在の [入力基盤テスト](../../client/Assets/Baryonyx/Tests/PlayMode/Scenarios/ScenarioInputFixtureTests.cs) は押下・解放に伴うInputActionの変化を確認する。
 案内人がいる画面の [シーンテスト](../../client/Assets/Baryonyx/App/Tests/PlayMode/GuideScenesTests.cs) は、Homeの4つのボタンから各画面へ移って戻る流れを1件で通し、メニュー・リスト・決定の通知、地図の印の選択を検査する。
-ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したUPTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
-ルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押し、同期したUPTと同じ量が付与されて代役のサーバーに残ることを確かめる。
+ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したACTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
+ルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押し、同期したACTと同じ量が付与されて代役のサーバーに残ることを確かめる。
 Top・Home・案内人の画面のシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 

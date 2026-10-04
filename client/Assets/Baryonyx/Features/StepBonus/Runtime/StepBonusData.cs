@@ -21,7 +21,7 @@ namespace Baryonyx.StepBonus
         S,
     }
 
-    /// <summary>One kind of UPT bonus and its fixed value for each rank.</summary>
+    /// <summary>One kind of ACT bonus and its fixed value for each rank.</summary>
     [Serializable]
     public sealed class StepBonusDefinition
     {

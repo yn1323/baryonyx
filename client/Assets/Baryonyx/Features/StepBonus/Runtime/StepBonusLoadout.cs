@@ -27,8 +27,8 @@ namespace Baryonyx.StepBonus
     }
 
     /// <summary>
-    /// The UPT bonus slots and the bonuses the player owns, kept free of Unity objects so the
-    /// rules can be tested directly. A slot opens when today's UPT reaches its tier, and the
+    /// The ACT bonus slots and the bonuses the player owns, kept free of Unity objects so the
+    /// rules can be tested directly. A slot opens when today's ACT reaches its tier, and the
     /// bonus in it works at its rank's fixed value times the slot's multiplier. A bonus fits in
     /// one slot only, so choosing one already set swaps the two slots. Owning the same bonus
     /// again keeps the higher rank. See doc/features/step-bonus.md.
@@ -128,9 +128,9 @@ namespace Baryonyx.StepBonus
         // ボーナスを入れている枠。どこにも入れていなければ-1。
         public int SlotOf(string id) => id == null ? -1 : Array.IndexOf(slots, id);
 
-        public bool IsOpen(int slot, int upt) => upt >= tiers[slot];
+        public bool IsOpen(int slot, int act) => act >= tiers[slot];
 
-        public int OpenCount(int upt) => tiers.Count(tier => upt >= tier);
+        public int OpenCount(int act) => tiers.Count(tier => act >= tier);
 
         public StepBonusChange Preview(int slot, string id)
         {
@@ -193,8 +193,8 @@ namespace Baryonyx.StepBonus
                 CultureInfo.InvariantCulture
             );
 
-        // 「5,000」のような段階のUPT。
-        public static string Upt(int value) => value.ToString("N0", CultureInfo.InvariantCulture);
+        // 「5,000」のような段階のACT。
+        public static string Act(int value) => value.ToString("N0", CultureInfo.InvariantCulture);
 
         // 「×1.7」のような枠の倍率。
         public static string Times(float multiplier) =>

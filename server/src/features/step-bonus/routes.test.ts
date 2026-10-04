@@ -13,7 +13,7 @@ type State = {
   locked: boolean;
 };
 
-describe("UPTボーナスAPI", () => {
+describe("ACTボーナスAPI", () => {
   let scenario: HealthScenario;
 
   beforeAll(async () => {

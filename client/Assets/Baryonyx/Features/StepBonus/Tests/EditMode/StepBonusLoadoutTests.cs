@@ -135,7 +135,7 @@ namespace Baryonyx.Tests.EditMode
             );
 
         [Test]
-        public void SlotsOpenWhenTodaysUptReachesTheirTier()
+        public void SlotsOpenWhenTodaysActReachesTheirTier()
         {
             var loadout = Create();
 
@@ -317,7 +317,7 @@ namespace Baryonyx.Tests.EditMode
                 view.Last.Slots.Select(slot => slot.Open),
                 Is.EqualTo(new[] { true, true, true, false, false })
             );
-            Assert.That(view.Last.Slots[1].Tier, Is.EqualTo("2,000 UPT ×1.2"));
+            Assert.That(view.Last.Slots[1].Tier, Is.EqualTo("2,000 ACT ×1.2"));
             Assert.That(view.Last.Slots[1].Name, Is.EqualTo("幸運"));
             Assert.That(view.Last.Slots[1].Effect, Is.EqualTo("ドロップ率 +14.4%"));
             Assert.That(view.Last.SelectedSlot, Is.Zero);

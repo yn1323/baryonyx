@@ -13,7 +13,7 @@ using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.StepBonus.Editor
 {
     /// <summary>
-    /// The UPT bonus mock data, its icons, and the tavern's bonus settings. The tavern's
+    /// The ACT bonus mock data, its icons, and the tavern's bonus settings. The tavern's
     /// generator calls <see cref="BuildSettingsPanel"/> for its bonus item, so the slots and the
     /// owned bonuses are baked into the tavern prefab and read in the editor without Play Mode.
     /// The bonuses and values are mock data until the bonus is saved (doc/features/step-bonus.md).
@@ -56,7 +56,7 @@ namespace Baryonyx.StepBonus.Editor
                 data = ScriptableObject.CreateInstance<StepBonusMockData>();
                 AssetDatabase.CreateAsset(data, DataPath);
             }
-            data.TodayUpt = 3240;
+            data.TodayAct = 3240;
             data.Tiers = new[] { 1000, 2000, 3000, 5000, 8000 };
             data.Multipliers = new[] { 1f, 1.2f, 1.4f, 1.7f, 2f };
             data.TotalKinds = 20;
@@ -297,7 +297,7 @@ namespace Baryonyx.StepBonus.Editor
             widget.Tier = Label(
                 row,
                 "Tier",
-                $"{StepBonusLoadout.Upt(loadout.Tier(index))} UPT {StepBonusLoadout.Times(loadout.Multiplier(index))}",
+                $"{StepBonusLoadout.Act(loadout.Tier(index))} ACT {StepBonusLoadout.Times(loadout.Multiplier(index))}",
                 24,
                 StepBonusArt.TextFaint,
                 TextAlignmentOptions.Left

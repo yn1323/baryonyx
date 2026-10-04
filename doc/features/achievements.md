@@ -17,7 +17,7 @@ updated: 2026-09-28
 
 | 決める項目 | 状態 |
 |---|---|
-| 採用の有無と[UPTボーナス](step-bonus.md)との役割分担 | 未決 |
+| 採用の有無と[ACTボーナス](step-bonus.md)との役割分担 | 未決 |
 | 達成条件・進捗単位・解放条件 | 未決 |
 | 単発・繰り返し・期限・更新 | 未決 |
 | 報酬・受け取り・重複防止 | 未決 |
@@ -26,7 +26,7 @@ updated: 2026-09-28
 
 ## 関連する仕様とデータ
 
-[実績定義](../catalog/achievements/README.md)・[UPTボーナス](step-bonus.md)・[日付](daily-rules.md)
+[実績定義](../catalog/achievements/README.md)・[ACTボーナス](step-bonus.md)・[日付](daily-rules.md)
 
 ## 実装との対応
 

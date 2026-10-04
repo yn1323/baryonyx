@@ -138,7 +138,7 @@ namespace Baryonyx.StepBonus
             {
                 if (token.IsCancellationRequested)
                     return;
-                Debug.LogWarning("UPTボーナスを取得できませんでした。" + exception.Message, this);
+                Debug.LogWarning("ACTボーナスを取得できませんでした。" + exception.Message, this);
                 Set(Owned, LoadFailedText);
                 ShowNotice(LoadFailedMessage);
             }
@@ -164,7 +164,7 @@ namespace Baryonyx.StepBonus
             presenter = new StepBonusSettingsPresenter(
                 this,
                 loadout,
-                StepBonusSession.UptOr(Data),
+                StepBonusSession.ActOr(Data),
                 save,
                 locked
             );

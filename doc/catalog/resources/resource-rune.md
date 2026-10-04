@@ -28,7 +28,7 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 
 ## 確定した設定
 
-運動量（UPT）から得る主軸資源として「ルーン」を使う。
+運動量（ACT）から得る主軸資源として「ルーン」を使う。
 ルーンは課金で販売しない（2026-09-27の[企画見直し](../../game/redesign-2026-09-27.md)）。
 用途・経済の方針は[ルーン経済](../../features/economy.md)を正本とする。
 

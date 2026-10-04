@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRevelation.aseprite
 | 属性 | なし |
 | 種類・対象 | 支援・次のカード |
 | コスト | 2 |
-| 説明文（モックの能力値、UPT0での数値） | 次に使うカードのコストを0にする。 |
+| 説明文（モックの能力値、ACT0での数値） | 次に使うカードのコストを0にする。 |
 | 効果（行う順） | 全体：次に使うカードのコストを0にする |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRevelation.aseprite
 | コスト | 2 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | ひらめく | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 細い金の光が使い手に降り、頭上で大きなきらめきが光り、足元に金の輪 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

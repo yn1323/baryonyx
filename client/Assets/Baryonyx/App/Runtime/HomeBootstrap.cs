@@ -13,11 +13,11 @@ namespace Baryonyx.App
     /// <summary>
     /// Builds the home screen from fixed sample data, except for today's steps, the rune
     /// balance and the adventure in progress, which come from the server through the shared
-    /// <see cref="GameServices"/>. Tapping the UPT panel turns the UPT gained since the last
+    /// <see cref="GameServices"/>. Tapping the ACT panel turns the ACT gained since the last
     /// claim into runes on the server, which keeps the balance. The destination card at the
     /// bottom right resumes the adventure in progress in the exploration scene, or, with none,
     /// opens the travel office to set out from. The tavern, workshop and temple buttons open
-    /// their guide screen scenes behind the shutter, with today's UPT handed over for the
+    /// their guide screen scenes behind the shutter, with today's ACT handed over for the
     /// tavern's bonus settings.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
@@ -120,7 +120,7 @@ namespace Baryonyx.App
             }
             bool inProgress = AdventureSession.Current?.InProgress ?? false;
             if (!inProgress)
-                StepBonusSession.TodayUpt = presenter?.TodayUpt;
+                StepBonusSession.TodayAct = presenter?.TodayAct;
             return SceneLoader.Load(
                 inProgress ? adventureSceneName : SceneNames.TravelOffice,
                 transition,
@@ -133,7 +133,7 @@ namespace Baryonyx.App
             var scene = SceneNames.GuideFor(action);
             if (scene == null)
                 return false;
-            StepBonusSession.TodayUpt = presenter?.TodayUpt;
+            StepBonusSession.TodayAct = presenter?.TodayAct;
             return SceneLoader.Load(scene, transition, this);
         }
     }

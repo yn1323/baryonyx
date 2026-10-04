@@ -19,11 +19,11 @@ namespace Baryonyx.UI.Cards
             + $"<color=#{SeparatorHex}>・</color>{CardRules.ScopeName(skill)}";
 
         /// <summary>The description with the powers from <paramref name="stat"/> put in, coloured (rich text).</summary>
-        public static string Description(CardSkill skill, Func<CardStat, int> stat, int upt) =>
+        public static string Description(CardSkill skill, Func<CardStat, int> stat, int act) =>
             CardRules.Describe(
                 skill,
                 stat,
-                upt,
+                act,
                 (action, power) => $"<color=#{PowerHex(action)}>{power}</color>"
             );
 

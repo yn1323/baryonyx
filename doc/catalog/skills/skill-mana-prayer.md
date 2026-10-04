@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardManaPrayer.aseprite
 | 属性 | なし |
 | 種類・対象 | 支援・エネルギー |
 | コスト | 1 |
-| 説明文（モックの能力値、UPT0での数値） | エネルギーを2回復する。 |
+| 説明文（モックの能力値、ACT0での数値） | エネルギーを2回復する。 |
 | 効果（行う順） | 全体：エネルギー+2 |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardManaPrayer.aseprite
 | コスト | 1 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 満ちる | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 青い粒が使い手へ吸い込まれ、青い光の柱が立ち、2つの光の玉が上へ浮かんで去る（エネルギー） | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

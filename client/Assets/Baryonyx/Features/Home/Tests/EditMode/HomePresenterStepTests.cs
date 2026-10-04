@@ -70,7 +70,7 @@ namespace Baryonyx.Tests.EditMode
             snapshot.Steps = 3820;
             using var presenter = new HomePresenter(view, snapshot, null, source);
             Assert.That(snapshot.StepsKnown, Is.False);
-            Assert.That(HomeViewState.From(snapshot).UptText, Is.EqualTo("--"));
+            Assert.That(HomeViewState.From(snapshot).ActText, Is.EqualTo("--"));
 
             source.Load.SetException(new InvalidOperationException("offline"));
             await presenter.StepTask;

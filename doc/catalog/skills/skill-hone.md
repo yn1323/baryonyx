@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHone.aseprite
 | 属性 | 斬 |
 | 種類・対象 | 支援・手札 |
 | コスト | 1 |
-| 説明文（モックの能力値、UPT0での数値） | 手札の斬属性カードのコストをすべて1下げる。 |
+| 説明文（モックの能力値、ACT0での数値） | 手札の斬属性カードのコストをすべて1下げる。 |
 | 効果（行う順） | 全体：手札の斬属性カードのコスト-1 |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHone.aseprite
 | コスト | 1 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | キンと冴える | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 刃元から砥石の火花が下へ散り、刃に沿って光の線が走る。剣先にきらめき、使い手の上に下向きの銀の矢印（コストが下がる）が沈む | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

@@ -18,7 +18,7 @@ updated: 2026-10-04
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |
 | アカウント | 端末の秘密値によるゲストで始める。Google認証は健康データ読み取りと独立した任意の操作で、ゲストとの結び付けは未実装 |
 | サーバー | [app.ts](../server/src/app.ts)が疎通確認と健康データAPIを組み立てる。Hono・Workers・D1を使用する |
-| 同期 | Topの起動時とHomeのUPTパネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
+| 同期 | Topの起動時とHomeのACTパネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
 
 現在の画面は健康データをメモリで扱う。
 ゲーム進行の保存要件と未決事項は[アカウントとセーブ](features/accounts-save.md)を参照する。
@@ -29,7 +29,7 @@ updated: 2026-10-04
 Androidの運動データはHealth Connectへ集約し、扱うのは歩数だけとする。
 サービス連携の企画は[運動報酬](features/exercise-rewards.md)、iOS対応の範囲も同文書を参照する。
 
-[UPTボーナス](features/step-bonus.md)の持ち物と枠の設定は、ユーザーごとにサーバーのDBで管理する。有効になった枠の効果を端末とサーバーのどちらで判定するかは未決とする。
+[ACTボーナス](features/step-bonus.md)の持ち物と枠の設定は、ユーザーごとにサーバーのDBで管理する。有効になった枠の効果を端末とサーバーのどちらで判定するかは未決とする。
 
 データを端末とサーバーのDBのどちらに保存するかは、[保存先の決め方](rules/data-storage.md)の基準で決める。
 ルーンの増減と報酬は、[アカウントとセーブ](features/accounts-save.md)で決めたとおりサーバーで確定する。

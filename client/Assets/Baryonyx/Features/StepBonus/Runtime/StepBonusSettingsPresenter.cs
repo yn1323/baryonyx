@@ -29,11 +29,11 @@ namespace Baryonyx.StepBonus
         // 入れているボーナスのID。空いていればnull。
         public string Bonus { get; }
 
-        // 今日のUPTが段階に届いて、ボーナスが効いている。
+        // 今日のACTが段階に届いて、ボーナスが効いている。
         public bool Open { get; }
         public bool Selected { get; }
 
-        // 「1,000 UPT ×1.0」
+        // 「1,000 ACT ×1.0」
         public string Tier { get; }
         public string Name { get; }
 
@@ -99,7 +99,7 @@ namespace Baryonyx.StepBonus
         public const string LockedMessage = "冒険の途中は、ボーナスを付け替えられません";
 
         private readonly IStepBonusSettingsView view;
-        private readonly int upt;
+        private readonly int act;
         private readonly Func<int, string, CancellationToken, Task<StepBonusLoadout>> save;
         private readonly CancellationTokenSource lifetime = new();
         private StepBonusLoadout loadout;
@@ -112,14 +112,14 @@ namespace Baryonyx.StepBonus
         public StepBonusSettingsPresenter(
             IStepBonusSettingsView view,
             StepBonusLoadout loadout,
-            int upt,
+            int act,
             Func<int, string, CancellationToken, Task<StepBonusLoadout>> save = null,
             bool locked = false
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.loadout = loadout ?? throw new ArgumentNullException(nameof(loadout));
-            this.upt = Math.Max(0, upt);
+            this.act = Math.Max(0, act);
             this.save = save;
             this.locked = locked;
             view.SlotPressed += SelectSlot;
@@ -179,7 +179,7 @@ namespace Baryonyx.StepBonus
             string message =
                 change == StepBonusChange.Swap
                     ? $"「{Name(id)}」と「{Name(before)}」を入れ替えました"
-                    : $"{StepBonusLoadout.Upt(loadout.Tier(target))}の枠に「{Name(id)}」をセットしました";
+                    : $"{StepBonusLoadout.Act(loadout.Tier(target))}の枠に「{Name(id)}」をセットしました";
             if (save == null)
             {
                 loadout.Apply(target, id);
@@ -242,9 +242,9 @@ namespace Baryonyx.StepBonus
                 string id = loadout.Bonus(i);
                 slots[i] = new StepBonusSlotState(
                     id,
-                    loadout.IsOpen(i, upt),
+                    loadout.IsOpen(i, act),
                     i == slot,
-                    $"{StepBonusLoadout.Upt(loadout.Tier(i))} UPT {StepBonusLoadout.Times(loadout.Multiplier(i))}",
+                    $"{StepBonusLoadout.Act(loadout.Tier(i))} ACT {StepBonusLoadout.Times(loadout.Multiplier(i))}",
                     id != null ? Name(id) : "空き",
                     id != null
                         ? StepBonusLoadout.Effect(loadout.Definition(id), loadout.Effective(id, i))

@@ -9,9 +9,9 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // UPTパネルを押してルーンを獲得する演出を、サーバーの代役と仮想の入力で確かめる。
+    // ACTパネルを押してルーンを獲得する演出を、サーバーの代役と仮想の入力で確かめる。
     // ルーンは押した位置から弾け、所持ルーンのアイコンへ吸い込まれる。
-    // 各テストは新しい代役で始まるため、1回目の押下で保存した7日分のUPTがルーンになる。
+    // 各テストは新しい代役で始まるため、1回目の押下で保存した7日分のACTがルーンになる。
     public sealed class HomeRuneTapTests : ScenarioInputFixture
     {
         private TestGameServices services;
@@ -54,10 +54,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
         }
 
-        // 同期したUPTが1UPT＝1ルーンで付与され、サーバーの残高に保存される。
+        // 同期したACTが1ACT＝1ルーンで付与され、サーバーの残高に保存される。
         // 所持ルーンのアイコンも所持数の文字と一緒に大きくなり、文字に重ならず、終わると戻る。
         [UnityTest]
-        public IEnumerator SyncedUptBecomesRunesAndGrowsTheIcon()
+        public IEnumerator SyncedActBecomesRunesAndGrowsTheIcon()
         {
             var view = default(HomeView);
             yield return LoadHome(value => view = value);
@@ -65,14 +65,14 @@ namespace Baryonyx.Tests.PlayMode
             Vector2 restPivot = view.RuneTarget.pivot;
 
             yield return Tap(view);
-            long upt = services
+            long act = services
                 .Server.ReadAsync(CancellationToken.None)
                 .GetAwaiter()
                 .GetResult()
                 .Where(day => day.hasValue)
                 .Sum(day => day.steps);
-            Assert.That(upt, Is.GreaterThan(0));
-            Assert.That(view.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(upt)));
+            Assert.That(act, Is.GreaterThan(0));
+            Assert.That(view.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(act)));
             var icon = new Vector3[4];
             var label = new Vector3[4];
             float largest = 1f;
@@ -88,10 +88,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(largest, Is.GreaterThan(1.35f));
             Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
             Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
-            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(upt)));
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(act)));
             Assert.That(
                 services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
-                Is.EqualTo(upt),
+                Is.EqualTo(act),
                 "The server keeps the granted runes."
             );
         }

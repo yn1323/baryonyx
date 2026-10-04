@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFlameEnchant.asepri
 | 属性 | 炎 |
 | 種類・対象 | 強化・味方単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、UPT0での数値） | 味方1体の攻撃に、3ターン炎属性を加える。 |
+| 説明文（モックの能力値、ACT0での数値） | 味方1体の攻撃に、3ターン炎属性を加える。 |
 | 効果（行う順） | 味方単体：炎の加護3ターン |
 
 ## 分類固有のデータ
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFlameEnchant.asepri
 | コスト | 2 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | 炎の加護3ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 炎が宿る | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 味方の足元を炎の輪が回り、炎の舌が味方を這い上がる。武器の高さで熱いきらめきが光り、炎が落ち着く | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

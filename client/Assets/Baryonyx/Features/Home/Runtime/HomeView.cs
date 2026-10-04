@@ -90,7 +90,7 @@ namespace Baryonyx.Home
         public float NoticeSeconds = 1.4f;
 
         [Header("ルーン獲得")]
-        // 粒子はUPTパネルを押した位置（分からなければ案内の文字）から出て、右上の所持ルーンのアイコンへ飛ぶ。
+        // 粒子はACTパネルを押した位置（分からなければ案内の文字）から出て、右上の所持ルーンのアイコンへ飛ぶ。
         public RectTransform RuneOrigin;
         public RectTransform RuneTarget;
         public RectTransform RuneEffectLayer;
@@ -146,7 +146,7 @@ namespace Baryonyx.Home
         [Range(1, 64)]
         public int RuneParticleMax = 40;
 
-        // 粒子がUPTパネルから四方へ広がる時間。
+        // 粒子がACTパネルから四方へ広がる時間。
         [Min(0.01f)]
         public float RuneBurstSeconds = 0.25f;
 
@@ -213,7 +213,7 @@ namespace Baryonyx.Home
         // 演出で動かした所持ルーンのアイコンの拡大の軸（横）を、演出の終わりに戻す値。
         private float? runeIconPivot;
 
-        // UPTパネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
+        // ACTパネルを押した画面上の位置。ルーンはここから弾ける。取れなければパネルのアイコンから出す。
         private Vector2? tapScreenPoint;
 
         public event Action<HomeAction> ActionRequested;
@@ -261,7 +261,7 @@ namespace Baryonyx.Home
                 StepDetails.SetActive(state.ShowSteps);
             if (UnlinkedDetails != null)
                 UnlinkedDetails.SetActive(!state.ShowSteps);
-            Set(StepsLabel, state.UptText);
+            Set(StepsLabel, state.ActText);
             if (StepsLabel != null)
                 StepsLabel.color = state.DailyAchieved ? GaugeAchieved : TextMain;
             for (int i = 0; i < Segments.Length; i++)
@@ -742,7 +742,7 @@ namespace Baryonyx.Home
         private static Vector3 Bezier(Vector3 start, Vector3 control, Vector3 end, float t) =>
             Vector3.Lerp(Vector3.Lerp(start, control, t), Vector3.Lerp(control, end, t), t);
 
-        // 展示室のプレビューには受け手がいないため、UPTパネルで獲得と獲得なしを交互に見せる。
+        // 展示室のプレビューには受け手がいないため、ACTパネルで獲得と獲得なしを交互に見せる。
         private void PlayPreview(HomeAction action)
         {
             if (action != HomeAction.SyncSteps)

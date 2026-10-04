@@ -6,7 +6,7 @@ using Baryonyx.Home;
 
 namespace Baryonyx.App
 {
-    // HomeのUPTパネルへ、サーバーに保存済みの今日の歩数・所持ルーンと、同期とルーンへの変換をつなぐ。
+    // HomeのACTパネルへ、サーバーに保存済みの今日の歩数・所持ルーンと、同期とルーンへの変換をつなぐ。
     public sealed class HomeStepSource : IHomeStepSource
     {
         private readonly HealthStepLink link;
@@ -39,7 +39,7 @@ namespace Baryonyx.App
                 return Unlinked(HomeStepResult.Unlinked);
             if (result == HealthSyncStatus.ReadFailed)
                 return new HomeStepReading(HomeStepResult.Failed, HomeStepLink.Linked, 0);
-            // サーバーは日ごとに変換済みの歩数を保存しており、前回の請求から増えたUPTだけをルーンにする。
+            // サーバーは日ごとに変換済みの歩数を保存しており、前回の請求から増えたACTだけをルーンにする。
             var claim = await link.ClaimRunesAsync(token);
             return await ReadAsync(claim.Balance, claim.Granted, token);
         }
