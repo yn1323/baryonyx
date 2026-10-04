@@ -13,6 +13,9 @@
 <!-- visual-index:start -->
 | ID・詳細 | 名称・状態 | 輪郭 | 配色 | モチーフ | 性格・行動 | 画像の状態 | 画像ファイル |
 |---|---|---|---|---|---|---|---|
+| [enemy-forest-guardian](../catalog/enemies/enemy-forest-guardian.md) | 森の守り手（候補） | 前かがみの岩の巨体。頭から枝の角が広がり、岩を積んだ太い腕が床近くまで垂れる | 灰の岩 &#124; 苔の黄緑 &#124; 根の茶 &#124; 刻印の淡い金 | 岩 &#124; 木の根 &#124; 枝の角 &#124; 輪の刻印 | 寡黙で忠実な番人。怒りではなく役目で戦い、森の生き物には優しい | 戦闘画面のモックで表示中 | [ForestGuardian.aseprite](../../client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/ForestGuardian.aseprite) |
+| [enemy-moss-slime](../catalog/enemies/enemy-moss-slime.md) | 苔スライム（候補） | 横に広い低い山形。背中の右側に苔のかたまりが乗り、若芽が上へ突き出る | 青緑 &#124; 苔の黄緑 &#124; 淡い黄緑の光 | 苔 &#124; 若芽 &#124; 朝露 | のんびりしていて、背中の苔を育てることにだけ熱心 | 戦闘画面のモックで表示中 | [MossSlime.aseprite](../../client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossSlime.aseprite) |
+| [enemy-moss-wolf](../catalog/enemies/enemy-moss-wolf.md) | 苔むした狼（候補） | 頭を低く下げて身構えた、横に長い四つ足。背中が苔で盛り上がり、尾は下へ垂れる | 灰 &#124; 苔の黄緑 &#124; 淡いクリーム | 苔 &#124; 蔦 &#124; 牙 | 用心深い群れの狩人。弱った獲物から確実に仕留める | 戦闘画面のモックで表示中 | [MossWolf.aseprite](../../client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MossWolf.aseprite) |
 | [resource-rune](../catalog/resources/resource-rune.md) | ルーン（一部確定） | 横から見たダイヤモンド（平らな上面と下の尖り） | 藍から水色までの青 &#124; 面ごとに暗くした輪郭 | ブリリアントカット風の面 &#124; 宝石の光沢 | 対象外 | 試作をHomeで表示中 | [IconRune.aseprite](../../client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite) |
 | [skill-absolute-zero](../catalog/skills/skill-absolute-zero.md) | 絶対零度（候補） | 中央の巨大な雪の結晶 | 白 &#124; 淡い青 | 雪の結晶 &#124; 凍結 | 対象外 | 戦闘画面のモックで表示中 | [CardAbsoluteZero.aseprite](../../client/Assets/Baryonyx/Features/Combat/UI/Art/CardAbsoluteZero.aseprite) |
 | [skill-armor-break](../catalog/skills/skill-armor-break.md) | 鎧砕き（候補） | 砕ける胸当て | 鋼 &#124; 赤 &#124; 灰 | 胸当て &#124; 破片 | 対象外 | 戦闘画面のモックで表示中 | [CardArmorBreak.aseprite](../../client/Assets/Baryonyx/Features/Combat/UI/Art/CardArmorBreak.aseprite) |

@@ -10,6 +10,7 @@
 |---|---|---|
 | [キャラクター](characters/README.md) | 役割・固有スキル・パッシブスキル・装備できる属性 | `character-` |
 | [敵](enemies/README.md) | 分類・役割・出現ステージID | `enemy-` |
+| [敵の技](enemy-skills/README.md) | 共通技と固有技・種類と対象・使う敵 | `enemy-skill-` |
 | [アイテム](items/README.md) | 分類・用途・使用条件・対象 | `item-` |
 | [武器](weapons/README.md) | 武器種・装備枠・参照するステータス | `weapon-` |
 | [防具](armor/README.md) | 防具種・装備枠・参照するステータス | `armor-` |
@@ -23,7 +24,7 @@
 | [素材・通貨](resources/README.md) | 用途・入手先・消費先 | `resource-` |
 | [強化・合成](upgrades/README.md) | 対象・前提条件・段階・上限 | `upgrade-` |
 | [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・場所 | `loot-` |
-| [UPTボーナス](step-bonuses/README.md) | カテゴリ・効果・枠ごとの効果量 | `step-bonus-` |
+| [ACTボーナス](step-bonuses/README.md) | カテゴリ・効果・枠ごとの効果量 | `step-bonus-` |
 | [デイリー変異などの条件](stage-modifiers/README.md) | 採用する場合の変異の分類 | `modifier-` |
 | [探索する場所・ステージ](stages/README.md) | 地域・部屋・分岐・解放条件 | `stage-` |
 | [実績・ミッション・称号](achievements/README.md) | 種別・解放条件・達成条件 | `achievement-` |
