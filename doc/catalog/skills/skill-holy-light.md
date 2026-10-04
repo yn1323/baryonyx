@@ -15,9 +15,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyLight.aseprite
 
 # ホーリーライト
 
-[技・カードの定義](README.md) / [関連仕様](../../features/combat.md#カードスキルの仮設定)
+[技・カードの定義](README.md) / [関連仕様](../../features/combat.md#スキルの仮設定)
 
-カードスキル49枚目の仮設定である。
+スキル49枚目の仮設定である。
 数値と効果の正本は [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（ID `HolyLight`）とし、この文書は企画上の意図、演出、挿絵の記録を持つ。
 
 ## 識別情報と根拠
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyLight.aseprite
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
 | 対象の役割・説明 | 攻撃のカード。敵全体に〇ダメージ。味方全体のHPを〇回復。 |
 | 元となる対象・亜種・衣装差分のID | なし |
-| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[カードスキルの仮設定](../../features/combat.md#カードスキルの仮設定) |
+| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
 | ゲーム内の実装・アセット | 定義 `CardSkills.cs`、効果 `BattleInspectView.Cards.cs`、演出 `BattleSkillVfx` の `HolyLight`、挿絵 `CardHolyLight.aseprite` |
 
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyLight.aseprite
 | コスト | 4 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | まりょくの50%、まりょくの30% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [カードスキルの仮設定](../../features/combat.md#カードスキルの仮設定) | 仮 |
+| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 光の奔流 | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 魔法陣で溜め、画面の上の中央に白金の星が咲く。星から光線が各敵へ走って打ち、続いて味方全員に柔らかな光が降りて回復する | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

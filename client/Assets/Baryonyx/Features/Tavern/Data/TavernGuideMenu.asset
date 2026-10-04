@@ -31,8 +31,8 @@ MonoBehaviour:
     ConfirmLabel: "\u30EC\u30D9\u30EB\u30A2\u30C3\u30D7"
     Entries: []
   - Key: card-skill
-    Label: "\u30AB\u30FC\u30C9\u30B9\u30AD\u30EB"
-    Caption: "\u4EF2\u9593\u3054\u3068\u306B4\u679A\u306E\u30AB\u30FC\u30C9\u3092\u4ED8\u3051\u66FF\u3048\u308B"
+    Label: "\u30B9\u30AD\u30EB"
+    Caption: "\u4EF2\u9593\u3054\u3068\u306B4\u679A\u306E\u30B9\u30AD\u30EB\u3092\u4ED8\u3051\u66FF\u3048\u308B"
     Icon: {fileID: 5349011544834349465, guid: 301db959025c7f546a5ee0556d35bafd, type: 3}
     ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
     Entries: []

@@ -5,12 +5,12 @@ namespace Baryonyx.CardLoadout
 {
     /// <summary>
     /// Keeps who the tavern's card skills show while the app runs, and how another screen opens
-    /// them for one character (the training's "カードを付け替える"). The cards themselves are
+    /// them for one character (the training's "スキルを付け替える"). The cards themselves are
     /// the party's (<see cref="Baryonyx.Party.PartySession"/>).
     /// </summary>
     public static class CardLoadoutSession
     {
-        // 酒場のメニューの「カードスキル」の項目のキー。この項目はリストの代わりにカードスキルを開く。
+        // 酒場のメニューの「スキル」の項目のキー。この項目はリストの代わりにスキルの画面を開く。
         public const string GuideItemKey = "card-skill";
 
         // 最後に見ていたキャラのID。開き直すとそのキャラから見せる。

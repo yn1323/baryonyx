@@ -13,7 +13,7 @@
 | [アイテム](items/README.md) | 分類・用途・使用条件・対象 | `item-` |
 | [武器](weapons/README.md) | 武器種・装備枠・参照するステータス | `weapon-` |
 | [防具](armor/README.md) | 防具種・装備枠・参照するステータス | `armor-` |
-| [技・カード](skills/README.md) | カードスキル・固有スキルの分類・属性・コスト | `skill-` |
+| [技・カード](skills/README.md) | スキル・固有スキルの分類・属性・コスト | `skill-` |
 | [職業](classes/README.md) | 役割・得意不得意・キャラクターID | `class-` |
 | [属性](attributes/README.md) | 魔法（炎・氷・雷）・物理（斬・打・貫）の分類 | `attribute-` |
 | [状態異常・強化効果](effects/README.md) | 効果種別・対象・発動条件 | `effect-` |

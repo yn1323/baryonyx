@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // カードスキルのデバッグルーム。一覧から選んだスキルは、再生中のスキルを打ち切ってすぐに再生され、
+    // スキルのデバッグルーム。一覧から選んだスキルは、再生中のスキルを打ち切ってすぐに再生され、
     // 選んだスキルと再生のしかたは次のPlayのために残る。
     public sealed class CardSkillLabSceneTests
     {

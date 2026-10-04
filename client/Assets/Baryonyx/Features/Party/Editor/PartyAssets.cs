@@ -64,7 +64,7 @@ namespace Baryonyx.Party.Editor
                 data = ScriptableObject.CreateInstance<PartyMockData>();
                 AssetDatabase.CreateAsset(data, DataPath);
             }
-            // カードは戦闘画面のモックと同じカードスキル。
+            // カードは戦闘画面のモックと同じスキル。
             data.Members = new[]
             {
                 Member("toma", "トーマ", 12, "Toma", "Fire", "Meteor", "Ice", "Blizzard"),

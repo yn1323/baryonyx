@@ -5,9 +5,9 @@ using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.Workshop.Editor
 {
     /// <summary>
-    /// The workshop (工房): the young noble heir of an old arms workshop guides changing gear
-    /// and browsing weapons and armour. The items and values are mock data until equipment
-    /// has data.
+    /// The equipment screen (装備; the code keeps the Workshop name): the young noble heir of an
+    /// old arms workshop guides changing gear and browsing weapons and armour. The items and
+    /// values are mock data until equipment has data.
     /// </summary>
     public static class WorkshopScreenAssets
     {
@@ -26,7 +26,7 @@ namespace Baryonyx.Workshop.Editor
 
         private static void Fill(GuideMenuDefinition d)
         {
-            d.Title = "工房";
+            d.Title = "装備";
             d.Layout = GuideMenuLayout.List;
             d.Items = new[]
             {

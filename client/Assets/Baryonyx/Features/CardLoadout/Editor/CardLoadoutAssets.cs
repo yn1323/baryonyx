@@ -276,7 +276,7 @@ namespace Baryonyx.CardLoadout.Editor
             var title = Label(
                 panel,
                 "Title",
-                "カード",
+                "スキル",
                 44,
                 Guide.Gold,
                 TextAlignmentOptions.TopLeft

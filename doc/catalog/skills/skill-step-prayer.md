@@ -15,9 +15,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 
 # 万歩の祈り
 
-[技・カードの定義](README.md) / [関連仕様](../../features/combat.md#カードスキルの仮設定)
+[技・カードの定義](README.md) / [関連仕様](../../features/combat.md#スキルの仮設定)
 
-カードスキル41枚目の仮設定である。
+スキル41枚目の仮設定である。
 数値と効果の正本は [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（ID `StepPrayer`）とし、この文書は企画上の意図、演出、挿絵の記録を持つ。
 
 ## 識別情報と根拠
@@ -27,7 +27,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
 | 対象の役割・説明 | 回復のカード。味方全体のHPを〇回復。今日のUPTが多いほど回復。 |
 | 元となる対象・亜種・衣装差分のID | なし |
-| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[カードスキルの仮設定](../../features/combat.md#カードスキルの仮設定) |
+| 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
 | ゲーム内の実装・アセット | 定義 `CardSkills.cs`、効果 `BattleInspectView.Cards.cs`、演出 `BattleSkillVfx` の `StepPrayer`、挿絵 `CardStepPrayer.aseprite` |
 
@@ -56,7 +56,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 | コスト | 3 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 威力・回復量 | まりょくの50% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | 今日のUPT1,000ごとに威力+10%、上限+100% | [カードスキルの仮設定](../../features/combat.md#カードスキルの仮設定) | 仮 |
+| UPTによる威力の変化 | 今日のUPT1,000ごとに威力+10%、上限+100% | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 一歩一歩が力になる | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | パーティの床に金の足跡が順に灯り、味方ごとに緑の光が立ち、葉ときらめきが昇る | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 

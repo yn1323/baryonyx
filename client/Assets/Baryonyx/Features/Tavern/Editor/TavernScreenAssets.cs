@@ -93,8 +93,8 @@ namespace Baryonyx.Tavern.Editor
         private static GuideMenuItem CardSkill()
         {
             var item = Item(
-                "カードスキル",
-                "仲間ごとに4枚のカードを付け替える",
+                "スキル",
+                "仲間ごとに4枚のスキルを付け替える",
                 "付け替える",
                 Icon(IconCardSkillPath)
             );

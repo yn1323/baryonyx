@@ -132,7 +132,7 @@ Unityでの実装経路（uGUI、uGUI用の粒子プラグイン、Particle Syst
 - 端末で重くならないか（透明な板の重なりと面積、1ピクセルあたりのノイズの回数、粒の数）。Android端末での確認はユーザーに依頼する。
 
 撮影画像の保存先は、[hd2d-lighting-vfxの検証の順序](../hd2d-lighting-vfx/SKILL.md#検証の順序)と同じにする。
-カードスキルの演出は、[カードスキルのデバッグルーム](../../../doc/features/screens.md#カードスキルのデバッグルーム)で1枚ずつ選んで再生し、戦闘と同じ画面で撮る。
+スキルの演出は、[スキルのデバッグルーム](../../../doc/features/screens.md#スキルのデバッグルーム)で1枚ずつ選んで再生し、戦闘と同じ画面で撮る。
 進み具合を指定して止めたコマを撮る方法は、[止めたコマを撮る](references/procedural-shapes.md#止めたコマを撮る)に従う。
 Editorが背面にあるとフレームが進まないなど、撮影のつまずきは [HD-2D演出の実装で得た知見](../hd2d-lighting-vfx/references/implementation-notes.md#editorでの検証のつまずき) で避ける。
 

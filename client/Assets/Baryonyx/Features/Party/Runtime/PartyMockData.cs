@@ -53,14 +53,14 @@ namespace Baryonyx.Party
         public Color Tint = Color.white;
         public bool Flip;
 
-        // 装備しているカードスキル（4枚）。
+        // 装備しているスキル（4枚）。
         public PartyCard[] Cards = Array.Empty<PartyCard>();
     }
 
     [Serializable]
     public sealed class PartyCard
     {
-        // カードスキルのID（CardSkills）。属性のアイコンは PartyMockData.IconOf で引く。
+        // スキルのID（CardSkills）。属性のアイコンは PartyMockData.IconOf で引く。
         public string Skill = "";
     }
 }

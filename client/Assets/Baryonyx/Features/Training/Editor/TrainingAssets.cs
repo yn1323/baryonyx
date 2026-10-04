@@ -173,7 +173,7 @@ namespace Baryonyx.Training.Editor
                 Uniques = new[] { unique1, unique2 },
             };
 
-        // スキルの絵はまだないため、カードスキルの挿絵を仮のアイコンにする。
+        // 固有スキル・パッシブの絵はまだないため、スキルの挿絵を仮のアイコンにする。
         private static TrainingSkill Skill(
             string name,
             string description,
@@ -344,7 +344,7 @@ namespace Baryonyx.Training.Editor
             var cardsLabel = Text(
                 cards,
                 "Label",
-                "カードを付け替える",
+                "スキルを付け替える",
                 44,
                 Guide.TextMain,
                 TextAlignmentOptions.MidlineLeft
@@ -418,7 +418,7 @@ namespace Baryonyx.Training.Editor
                 })
                 .ToArray();
 
-            Heading(panel, "SkillsTitle", "スキル", null, 270, width);
+            Heading(panel, "SkillsTitle", "固有スキル・パッシブ", null, 270, width);
             view.Skills = Enumerable
                 .Range(0, 4)
                 .Select(i =>
@@ -432,7 +432,7 @@ namespace Baryonyx.Training.Editor
                 )
                 .ToArray();
 
-            Heading(panel, "CardsTitle", "カードスキル", "4枚", 608, width);
+            Heading(panel, "CardsTitle", "スキル", "4枚", 608, width);
             view.CardSlots = Enumerable
                 .Range(0, PartyFormation.Size)
                 .Select(i =>
