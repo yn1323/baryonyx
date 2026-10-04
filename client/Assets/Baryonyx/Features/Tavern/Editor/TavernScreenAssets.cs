@@ -1,3 +1,5 @@
+using Baryonyx.StepBonus;
+using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -5,8 +7,9 @@ using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
-    /// The tavern (酒場): the tavern girl guides party formation, training and card skills.
-    /// The characters, levels and cards are mock values until the party has data.
+    /// The tavern (酒場): the tavern girl guides party formation, training, card skills and the
+    /// UPT bonus slots. The characters, levels and cards are mock values until the party has
+    /// data; the bonus item shows the bonus settings panel instead of a list.
     /// </summary>
     public static class TavernScreenAssets
     {
@@ -21,7 +24,17 @@ namespace Baryonyx.Tavern.Editor
 
         [MenuItem("Baryonyx/Tavern/Create Screen Assets")]
         public static void CreateAssets() =>
-            CreateScreen(DefinitionPath, PrefabPath, GuideArtPath, BackgroundPath, Fill);
+            CreateScreen(
+                DefinitionPath,
+                PrefabPath,
+                GuideArtPath,
+                BackgroundPath,
+                Fill,
+                itemPanel: (item, safe, view) =>
+                    item.Key == StepBonusSession.GuideItemKey
+                        ? StepBonusAssets.BuildSettingsPanel(safe, view)
+                        : null
+            );
 
         private static void Fill(GuideMenuDefinition d)
         {
@@ -77,7 +90,21 @@ namespace Baryonyx.Tavern.Editor
                     Entry("ヒール", "コスト 1", "回復｜味方1人のHPを 220 回復"),
                     Entry("ガード", "コスト 1", "防御｜このターンに受けるダメージを減らす")
                 ),
+                Bonus(),
             };
+        }
+
+        // The bonus item opens the bonus settings panel; Home's bonus button opens it directly.
+        private static GuideMenuItem Bonus()
+        {
+            var item = Item(
+                "ボーナス",
+                "枠にセットして、歩いた日に効かせる",
+                "セットする",
+                Icon(StepBonusAssets.IconBonusPath)
+            );
+            item.Key = StepBonusSession.GuideItemKey;
+            return item;
         }
     }
 }

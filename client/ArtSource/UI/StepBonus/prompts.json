@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-04",
+  "tool": "Codex CLI 0.159.2 built-in image_gen (.agents/skills/shared/scripts/codex_image.py)",
+  "scope": "UPT bonus icons (24x24, shown at 4x). Mock bonuses; names and effects are not final.",
+  "process": "Each sheet was generated as one transparent image with the icons in a row. The style references were the existing 24x24 UI icons at 16x, the tavern screen and the Home screen. Each icon was cut out, fitted to a 24x24 grid by its outline, coloured with the median of the centre of each cell, reduced to 32 colours (median cut) and converted to an indexed .aseprite with .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua. All nine passed check_pixel_art.py --kind ui-icon.",
+  "commonPrompt": "■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。腕と胴の境目などの内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n\n■このゲームのタッチに合わせる\n- 添付の画像1は、このゲームの既存のUIアイコン8個（どれも24×24ドットを16倍に拡大したもの）です。ドットの大きさ、セルアウトの輪郭、段を分けた塗り、彩度の高さ、ハイライトの置き方、ディザの入れ方をこれにそろえてください。精密さもこれと同じ水準で、1ドットずつ意味を持たせて描き込んでください。\n- 添付の画像2は、アイコンを並べる酒場の画面です（右側の紺色の枠の一覧にアイコンが入ります）。添付の画像3はホーム画面で、左上の暗いパネルの右下にもアイコンが入ります。暗い紺や暗い緑の上でもはっきり見えるよう、明るい面と彩度を十分に持たせます。\n- 彩度と明るさを高めにしたGBA寄りの色にする。影は青・紫寄りに、光は黄・白寄りに色相をずらす。\n\n■大きさとそろえ方\n- 各アイコンは、ちょうど24×24ドットの格子に収まる大きさで描く。24ドットの幅いっぱいを使い、画面では1ドットを4×4pxに拡大して表示する。\n- すべてのアイコンを、同じドットの細かさ（1ドットが同じ大きさの正方形）、同じ輪郭の太さ（1ドット）、同じ光の向き、同じくらいの見た目の大きさにそろえる。\n- 24×24ドットと少ないので、シルエットだけで何かわかる太くて単純な形にする。1ドット幅の細い線を並べた細かい模様は避ける。\n- 正面から見た図案として描き、横一列に並べ、アイコンどうしの間はアイコン1個分以上空ける。\n- 背景は透明にする。枠、ボタンの台座、地面、落ち影、文字、ラベル、番号は描かない。",
+  "sheets": [
+    {
+      "name": "bonus-icons-a",
+      "used": [
+        "IconGuard",
+        "IconLuck",
+        "IconTreasureSight",
+        "IconForesight"
+      ],
+      "icons": "1. ボーナス：金色の丸いメダルと、その上に青いリボン2本（V字に開いて垂れる）。メダルは厚みのある金の縁と、一段暗い金の面。面の中央に白っぽい足あと（靴底の形）を1つ置き、歩いて得るボーナスだとわかるようにする。左上の縁に白いハイライトを置く。\n2. 守り：上が平らで下が尖った青い盾（カイトシールド）。太い銀色の縁取り、青い面の中央に銀の十字の紋章。左上の面を明るい水色、右下を濃い紺にする。\n3. 幸運：四つ葉のクローバー。ハート形の葉4枚が中央でつながり、右下へ短い茎が伸びる。明るい黄緑から深い緑まで段を分け、葉ごとに中央の葉脈を内側の線で入れる。中央に小さな白い光の点。\n4. 宝箱透視：正面から見た木の宝箱。赤茶色の板、金色の帯と角の金具、ふたは丸い。正面の金の錠前の鍵穴が明るい水色に光り、ふたのすき間から水色の光が少し漏れている。\n5. 先読み：横向きのアーモンド形の目。紫のふち取り、白い白目、大きな水色の瞳と黒い瞳孔、瞳の左上に白いハイライト。目の上に小さな金色のまつ毛を3本。"
+    },
+    {
+      "name": "bonus-icons-b",
+      "used": [
+        "IconOmen",
+        "IconHealing"
+      ],
+      "icons": "1. 兆し：砂時計。上下に濃い茶色の木の板、左右に細い木の柱。ガラスは淡い水色で、上半分に橙色の砂が残り、細い流れが下へ落ちて、下半分に砂の山ができている。\n2. 目利き：金の縁の虫眼鏡。丸いレンズは淡い水色で左上に白いハイライト、柄は右下へ伸びる焦げ茶。レンズの奥に赤い宝石（多面カット）が拡大されて見える。\n3. 闘志：切っ先を上に向けた銀の剣1本。金の鍔、赤い柄、丸い柄頭。刃のまわりを橙と黄色の炎がまとわりつくように立ちのぼる。炎も段を分けたドットで描き、ぼかさない。\n4. 癒し：丸いガラスの薬瓶。赤い液体が8割入り、コルクの栓、細い首、ガラスの左上に白いハイライト。液体の中に小さな泡を2つ。"
+    },
+    {
+      "name": "bonus-icons-c",
+      "note": "Redraw of the medal, the sword and the magnifier from sheets a and b, which read poorly at 24x24.",
+      "used": [
+        "IconBonus",
+        "IconFighting",
+        "IconAppraisal"
+      ],
+      "icons": "1. ボーナス：金色の丸いメダルと、その下に青いリボン2本（V字に開いて垂れる）。メダルは厚みのある金の縁と、一段暗い金の面。面の中央に、白い足あとを2つ、左下と右上に少しずらして並べ、歩いた跡に見せる。足あとは靴底の形（つま先側が大きい楕円、かかと側が小さい楕円で、すき間なくつなげた1つの形）にし、感嘆符（！）に見えないようにする。左上の縁に白いハイライト。\n2. 闘志：切っ先を真上に向けた銀の剣1本を、アイコンの高さいっぱいに大きく描く。刃は幅3ドット以上で、中央に明るい筋、右側は暗い銀。金の鍔は横に広く、赤い柄、金の丸い柄頭。刃の左右に、刃に沿って燃え上がる橙と黄色の炎を2〜3枚の大きな舌の形で添える。炎は剣の輪郭から離れた火の粉や点を散らさず、ひとかたまりの形にする。剣の形が炎に埋もれず、はっきり読めること。\n3. 目利き：金の縁の虫眼鏡。丸いレンズを大きく描き、レンズの中に赤い宝石をはっきり大きく描く。宝石は上面が台形、下が逆三角形の多面カットで、面ごとに明るい赤・赤・暗い赤に塗り分け、左上の面に白いハイライト。レンズの左上に白い光の反射。柄は右下へ斜めに伸びる焦げ茶で、先に金の輪。"
+    }
+  ],
+  "assets": [
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconBonus.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconGuard.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconLuck.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconTreasureSight.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconForesight.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconOmen.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconAppraisal.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconFighting.aseprite",
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconHealing.aseprite"
+  ]
+}

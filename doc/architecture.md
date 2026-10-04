@@ -2,7 +2,7 @@
 id: system-architecture
 type: reference
 status: 一部確定
-updated: 2026-09-28
+updated: 2026-10-04
 ---
 
 # システム全体の構成
@@ -29,7 +29,7 @@ updated: 2026-09-28
 Androidの運動データはHealth Connectへ集約し、扱うのは歩数だけとする。
 サービス連携の企画は[運動報酬](features/exercise-rewards.md)、iOS対応の範囲も同文書を参照する。
 
-[UPTボーナス](features/step-bonus.md)の判定と、選んだボーナスの保存を端末とサーバーのどちらで行うかは未決とする。
+[UPTボーナス](features/step-bonus.md)の判定と、枠の設定の保存を端末とサーバーのどちらで行うかは未決とする。
 
 ## 未決事項
 

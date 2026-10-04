@@ -34,8 +34,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // The window frames and the 24x24 icons are drawn at 4 design pixels per dot, like the
         // game's sprites.
-        private const float DotScale = 4f;
-        private const float IconSize = 24f * DotScale;
+        public const float DotScale = 4f;
+        public const float IconSize = 24f * DotScale;
 
         // A frame keeps its 4-dot corners; the 16-dot edges and fill repeat (Image.Type.Tiled).
         private const int FrameCorner = 4;
@@ -45,7 +45,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const float GuideLeft = 24f;
         private const float GuideMaxWidth = 800f;
         private const float GuideMaxHeight = 1048f;
-        private const float RightLeft = 848f;
+        public const float RightLeft = 848f;
 
         // The back button matches the Home buttons: an icon and a label over a soft shadow.
         private const float BackWidth = 128f;
@@ -76,7 +76,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string guideArtPath,
             string backgroundPath,
             Action<GuideMenuDefinition> fill,
-            string mapArtPath = null
+            string mapArtPath = null,
+            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel = null
         )
         {
             if (EditorApplication.isPlaying)
@@ -115,7 +116,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var prefab = BuildPrefab(
                 definition,
                 Path.GetFileNameWithoutExtension(prefabPath),
-                prefabPath
+                prefabPath,
+                itemPanel
             );
             AssetDatabase.SaveAssetIfDirty(font);
             return prefab;
@@ -181,7 +183,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static GameObject BuildPrefab(
             GuideMenuDefinition definition,
             string name,
-            string prefabPath
+            string prefabPath,
+            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel
         )
         {
             using (UiBuild.Begin(font, shadowText))
@@ -200,6 +203,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 {
                     BuildMenu(safe, view, definition);
                     BuildList(safe, view, definition);
+                    BuildItemPanels(safe, view, definition, itemPanel);
                 }
                 BuildToast(root, view);
                 CollectTintGraphics(root);
@@ -295,7 +299,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var panel = Rect("Menu", safe);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
             panel.anchoredPosition = new Vector2(-56, -16);
-            panel.sizeDelta = new Vector2(820, 700);
+            // Four rows still fit between the title and the bottom edge.
+            int rows = definition.Items.Length;
+            panel.sizeDelta = new Vector2(820, Mathf.Max(700, rows * 156 + (rows - 1) * 28));
             var group = panel.gameObject.AddComponent<VerticalLayoutGroup>();
             group.spacing = 28;
             group.childAlignment = TextAnchor.MiddleCenter;
@@ -444,6 +450,34 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
             // The menu shows first; turn the list on in the editor to read its rows.
             panel.gameObject.SetActive(false);
+        }
+
+        // A feature's own panel in the list's place, for the items that have one.
+        private static void BuildItemPanels(
+            RectTransform safe,
+            GuideMenuView view,
+            GuideMenuDefinition definition,
+            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel
+        )
+        {
+            var panels = new GameObject[definition.Items.Length];
+            for (int i = 0; i < panels.Length && itemPanel != null; i++)
+            {
+                panels[i] = itemPanel(definition.Items[i], safe, view);
+                if (panels[i] != null)
+                    panels[i].SetActive(false);
+            }
+            view.ItemPanels = panels;
+        }
+
+        /// <summary>The rect of the right side where a list or a feature panel sits.</summary>
+        public static RectTransform RightPanel(RectTransform safe, string name)
+        {
+            var panel = Rect(name, safe);
+            Stretch(panel);
+            panel.offsetMin = new Vector2(RightLeft, 24);
+            panel.offsetMax = new Vector2(-32, -148);
+            return panel;
         }
 
         private static void BuildEntry(RectTransform content, string name, GuideListEntry entry)
@@ -778,7 +812,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // --- Helpers -------------------------------------------------------------------
 
-        private static Image Frame(RectTransform rect, string path, Color color)
+        public static Image Frame(RectTransform rect, string path, Color color)
         {
             var image = rect.gameObject.AddComponent<Image>();
             image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
@@ -790,7 +824,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return image;
         }
 
-        private static Button AddButton(RectTransform rect, Graphic target) =>
+        public static Button AddButton(RectTransform rect, Graphic target) =>
             DimWhenDisabled(UiBuild.AddButton(rect, target));
 
         // For the back button over a dark shadow: the icon and label darken with it.
@@ -807,7 +841,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // On narrow screens the text shrinks to its box instead of running out of the frame.
-        private static void Shrink(TMP_Text label, float minimum)
+        public static void Shrink(TMP_Text label, float minimum)
         {
             label.enableAutoSizing = true;
             label.fontSizeMin = minimum;
@@ -815,7 +849,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // A full-width strip of the given height, inset from the top or bottom edge.
-        private static void Band(
+        public static void Band(
             RectTransform rect,
             bool top,
             float inset,
@@ -832,7 +866,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             rect.offsetMax = new Vector2(-right, top ? -inset : inset + height);
         }
 
-        private static void Fill(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax)
+        public static void Fill(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax)
         {
             Stretch(rect);
             rect.offsetMin = offsetMin;

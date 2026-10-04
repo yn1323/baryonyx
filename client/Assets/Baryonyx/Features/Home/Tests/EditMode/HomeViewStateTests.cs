@@ -31,7 +31,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.UptText, Is.EqualTo("3,820"));
             Assert.That(state.FilledSegments, Is.EqualTo(9));
             Assert.That(state.DailyAchieved, Is.False);
-            Assert.That(state.RemainingText, Is.EqualTo("次のボーナスまで 1,180 UPT"));
+            Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 UPTで次のボーナス獲得"));
             Assert.That(state.ClaimText, Is.EqualTo("タップでルーン獲得"));
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
@@ -45,12 +45,12 @@ namespace Baryonyx.Tests.EditMode
             var partial = HomeViewState.From(Sample(6240));
             Assert.That(partial.FilledSegments, Is.EqualTo(15));
             Assert.That(partial.DailyAchieved, Is.False);
-            Assert.That(partial.RemainingText, Is.EqualTo("次のボーナスまで 1,760 UPT"));
+            Assert.That(partial.RemainingText, Is.EqualTo("あと 1,760 UPTで次のボーナス獲得"));
 
             var state = HomeViewState.From(Sample(8000));
             Assert.That(state.FilledSegments, Is.EqualTo(HomeViewState.GaugeSegments));
             Assert.That(state.DailyAchieved, Is.True);
-            Assert.That(state.RemainingText, Is.EqualTo("ボーナスをすべて解放！"));
+            Assert.That(state.RemainingText, Is.EqualTo("ボーナスをすべて獲得！"));
         }
 
         [TestCase(0, 1000)]

@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Home;
+using Baryonyx.StepBonus;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine;
@@ -15,7 +17,11 @@ namespace Baryonyx.Tests.PlayMode
         private TestGameServices services;
 
         [SetUp]
-        public void UseTestServices() => services = TestGameServices.Use();
+        public void UseTestServices()
+        {
+            services = TestGameServices.Use();
+            StepBonusSession.Reset();
+        }
 
         [UnityTearDown]
         public IEnumerator RestoreServices()
@@ -90,6 +96,9 @@ namespace Baryonyx.Tests.PlayMode
 
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
+                    // 酒場のボーナスは一覧の代わりに専用のパネルを開く（下の別のテストで確かめる）。
+                    if (view.PanelFor(i) != null)
+                        continue;
                     view.MenuItems[i].onClick.Invoke();
                     Assert.That(view.MenuPanel.activeSelf, Is.False);
                     Assert.That(view.ListPanel.activeSelf, Is.True);
@@ -120,6 +129,98 @@ namespace Baryonyx.Tests.PlayMode
                     Assert.That(guide.Presenter.Left, Is.False);
                 }
             }
+        }
+
+        // UPTパネルの右下のボタンは、酒場をボーナス設定のまま開き、「もどる」でHomeへ直接戻る。
+        [UnityTest]
+        public IEnumerator HomeBonusButtonOpensTheTavernOnTheBonusSettings()
+        {
+            var home = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => home = value);
+            SceneTests.AssertTouchSize(home.View.BonusButton.transform);
+            Assert.That(SceneNames.GuideFor(HomeAction.Bonus), Is.EqualTo(SceneNames.Pub));
+
+            home.View.BonusButton.onClick.Invoke();
+            // ボーナスのボタンは歩数の同期をしない。
+            Assert.That(home.Presenter.StepSyncing, Is.False);
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Pub,
+                message: "The tavern did not open."
+            );
+            var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
+            yield return SceneTests.WaitUntil(() => SceneTests.GuideReady(guide));
+            var settings = BonusSettings(guide.View);
+            Assert.That(settings.gameObject.activeInHierarchy, Is.True);
+            Assert.That(guide.View.MenuPanel.activeSelf, Is.False);
+            Assert.That(guide.View.ListPanel.activeSelf, Is.False);
+
+            guide.Presenter.Back();
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Home,
+                message: "Back did not return to Home."
+            );
+        }
+
+        // 枠を選んでからボーナスを選び、空いているものはセットし、ほかの枠のものは入れ替える。
+        [UnityTest]
+        public IEnumerator TavernBonusSettingsSetAndSwapBonuses()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var view = guide.View;
+            int item = System.Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == StepBonusSession.GuideItemKey
+            );
+            Assert.That(item, Is.GreaterThanOrEqualTo(0));
+            Assert.That(view.MenuItems[item].transform.Find("Icon"), Is.Not.Null);
+            view.MenuItems[item].onClick.Invoke();
+            var settings = BonusSettings(view);
+            Assert.That(settings.gameObject.activeInHierarchy, Is.True);
+            Assert.That(view.ListPanel.activeSelf, Is.False);
+
+            var loadout = StepBonusSession.Loadout(settings.Data);
+            Assert.That(settings.Slots.Length, Is.EqualTo(loadout.SlotCount));
+            Assert.That(settings.Rows.Length, Is.EqualTo(loadout.Owned.Count));
+            foreach (var slot in settings.Slots)
+                SceneTests.AssertTouchSize(slot.Button.transform);
+            SceneTests.AssertTouchSize(settings.Confirm.transform, 0.7f);
+            Assert.That(settings.Confirm.interactable, Is.False);
+
+            // 空いている「守り」を5,000の枠へ。
+            string free = loadout.Owned.First(roll => loadout.SlotOf(roll.Id) < 0).Id;
+            settings.Slots[3].Button.onClick.Invoke();
+            Row(settings, free).Button.onClick.Invoke();
+            Assert.That(settings.ConfirmLabel.text, Is.EqualTo("セットする"));
+            settings.Confirm.onClick.Invoke();
+            Assert.That(loadout.Bonus(3), Is.EqualTo(free));
+            Assert.That(settings.LastToast, Does.EndWith("をセットしました"));
+            Assert.That(view.ToastMessage, Is.EqualTo(settings.LastToast));
+            Assert.That(settings.Slots[3].Icon.sprite, Is.EqualTo(loadout.Definition(free).Icon));
+
+            // 2,000の枠の「幸運」を3,000の枠へ選ぶと、2つの枠を入れ替える。
+            string second = loadout.Bonus(1);
+            string third = loadout.Bonus(2);
+            settings.Slots[2].Button.onClick.Invoke();
+            Row(settings, second).Button.onClick.Invoke();
+            Assert.That(settings.ConfirmLabel.text, Is.EqualTo("入れ替える"));
+            Assert.That(settings.Slots[1].Partner.activeSelf, Is.True);
+            settings.Confirm.onClick.Invoke();
+            Assert.That(loadout.Bonus(2), Is.EqualTo(second));
+            Assert.That(loadout.Bonus(1), Is.EqualTo(third));
+
+            // タブで1つのカテゴリだけを並べる。
+            settings.Tabs[2].onClick.Invoke();
+            foreach (var row in settings.Rows)
+                Assert.That(
+                    row.Button.gameObject.activeSelf,
+                    Is.EqualTo(loadout.Definition(row.Id).Category == StepBonusCategory.Drop),
+                    row.Id
+                );
+
+            view.Back.onClick.Invoke();
+            Assert.That(view.MenuPanel.activeSelf, Is.True);
+            Assert.That(settings.gameObject.activeSelf, Is.False);
         }
 
         [UnityTest]
@@ -156,6 +257,15 @@ namespace Baryonyx.Tests.PlayMode
                 HomeAction.Temple => view.TempleButton,
                 _ => view.TravelOfficeButton,
             };
+
+        private static StepBonusSettingsView BonusSettings(GuideMenuView view) =>
+            view
+                .ItemPanels.Where(panel => panel != null)
+                .Select(panel => panel.GetComponent<StepBonusSettingsView>())
+                .Single(settings => settings != null);
+
+        private static StepBonusRowWidget Row(StepBonusSettingsView settings, string id) =>
+            settings.Rows.Single(row => row.Id == id);
 
         private static bool Selected(Button button) =>
             button.transform.Find("Selected").gameObject.activeSelf;

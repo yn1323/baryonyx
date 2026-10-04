@@ -1,5 +1,6 @@
 using Baryonyx.Health;
 using Baryonyx.Home;
+using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -12,7 +13,8 @@ namespace Baryonyx.App
     /// server, which keeps the balance. The adventure button
     /// leaves the scene only when a destination is set; otherwise it shows the same
     /// "coming soon" feedback as the other mock buttons. The tavern, workshop, temple and travel office
-    /// buttons open their guide screen scenes behind the shutter.
+    /// buttons open their guide screen scenes behind the shutter; the bonus button opens the
+    /// tavern straight on its bonus settings, with today's UPT handed over.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -66,7 +68,14 @@ namespace Baryonyx.App
         private bool OpenScreen(HomeAction action)
         {
             var scene = SceneNames.GuideFor(action);
-            return scene != null && SceneLoader.Load(scene, transition, this);
+            if (scene == null)
+                return false;
+            StepBonusSession.TodayUpt = presenter?.TodayUpt;
+            GuideSceneLaunch.Item = SceneNames.GuideItemFor(action);
+            if (SceneLoader.Load(scene, transition, this))
+                return true;
+            GuideSceneLaunch.Item = null;
+            return false;
         }
     }
 }

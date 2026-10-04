@@ -34,7 +34,8 @@ namespace Baryonyx.UI.GuideMenu
     /// <summary>
     /// Walks a guide screen: menu → full list → entry, or map → destination. The confirm
     /// button shows a "coming soon" toast until the features exist. Back closes the list
-    /// first and leaves the screen from the menu, once.
+    /// first and leaves the screen from the menu, once. A list opened directly from another
+    /// screen (<see cref="OpenDirect"/>) leaves the screen on back, back to where it came from.
     /// </summary>
     public sealed class GuideMenuPresenter : IDisposable
     {
@@ -42,6 +43,7 @@ namespace Baryonyx.UI.GuideMenu
         private readonly GuideMenuDefinition definition;
         private readonly Func<bool> leave;
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
+        private bool direct;
         private bool left;
         private bool disposed;
 
@@ -73,7 +75,21 @@ namespace Baryonyx.UI.GuideMenu
                 return;
             if (index < 0 || index >= definition.Items.Length)
                 return;
+            direct = false;
             Show(new GuideMenuState(GuideMenuPage.List, index, -1));
+        }
+
+        /// <summary>Opens the item with the given key straight away; back then leaves the screen.</summary>
+        public bool OpenDirect(string key)
+        {
+            if (disposed || left || string.IsNullOrEmpty(key))
+                return false;
+            int index = Array.FindIndex(definition.Items, item => item.Key == key);
+            if (index < 0)
+                return false;
+            SelectItem(index);
+            direct = true;
+            return true;
         }
 
         public void SelectEntry(int index)
@@ -113,7 +129,7 @@ namespace Baryonyx.UI.GuideMenu
         {
             if (disposed || left)
                 return;
-            if (state.Page == GuideMenuPage.List)
+            if (state.Page == GuideMenuPage.List && !direct)
             {
                 Show(new GuideMenuState(GuideMenuPage.Menu, -1, -1));
                 return;

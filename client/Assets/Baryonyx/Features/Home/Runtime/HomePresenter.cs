@@ -56,6 +56,12 @@ namespace Baryonyx.Home
         public bool ScreenOpened => screenOpened;
         public bool StepSyncing => snapshot.StepSyncing;
 
+        // 取得済みの今日のUPT。未連携・未取得ならnull。ボーナス設定へ渡す。
+        public int? TodayUpt =>
+            snapshot.StepLink == HomeStepLink.Linked && snapshot.StepsKnown
+                ? HomeViewState.UptFor(snapshot.Steps)
+                : null;
+
         // 実行中または直前の歩数の取得。テストで完了を待つために公開する。
         public Task StepTask { get; private set; } = Task.CompletedTask;
 

@@ -6,6 +6,7 @@ using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
+using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -69,6 +70,53 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ThePartyAndTheCampfireStandInTheSunlitGlade()
+        {
+            var bootstrap = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
+            yield return null;
+            yield return null;
+            var view = bootstrap.View;
+
+            var stageCamera = Hd2dStageCamera.Active;
+            Assert.That(stageCamera, Is.Not.Null, "Home stands in the 3D forest glade.");
+            Assert.That(stageCamera.Camera.orthographic, Is.False);
+            Assert.That(stageCamera.KeyLight, Is.Not.Null);
+            Assert.That(
+                stageCamera.KeyLight.type,
+                Is.EqualTo(LightType.Directional),
+                "The sun casts the members' shadows."
+            );
+            Assert.That(
+                stageCamera.KeyLight.cookie,
+                Is.Not.Null,
+                "The leaves dapple the sunlight."
+            );
+            Assert.That(stageCamera.SwayRadius, Is.GreaterThan(0f), "The camera drifts idly.");
+            Assert.That(
+                view.transform.Find("Background").gameObject.activeInHierarchy,
+                Is.False,
+                "The 3D glade takes the painted background's place."
+            );
+
+            var boards = view.GetComponentsInChildren<Hd2dUiBillboard>(true);
+            Assert.That(
+                boards.Select(board => board.name),
+                Is.EquivalentTo(new[] { "Toma", "Luka", "Aria", "Mina", "Campfire" })
+            );
+            foreach (var board in boards)
+            {
+                Assert.That(board.Staged, Is.True, board.name);
+                Assert.That(board.Picture.canvasRenderer.cull, Is.True, board.name);
+                Assert.That(board.VisualRenderer.enabled, Is.True, board.name);
+                Assert.That(board.FootShadow.canvasRenderer.cull, Is.True, board.name);
+            }
+            var fire = boards.Single(board => board.name == "Campfire");
+            Assert.That(fire.Lit, Is.False, "The fire gives light rather than taking it.");
+            Assert.That(fire.CastShadow, Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator EveryControlIsLargeEnoughToTap()
         {
             var bootstrap = default(HomeBootstrap);
@@ -87,6 +135,9 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(button.transform);
             SceneTests.AssertTouchSize(view.ResumeButton.transform);
             SceneTests.AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
+            // UPTパネルの右下のボーナスのボタンは、パネルの中で独立した押せる範囲を持つ。
+            SceneTests.AssertTouchSize(view.BonusButton.transform);
+            Assert.That(view.BonusButton.transform.IsChildOf(view.StepButton.transform), Is.True);
             Assert.That(
                 ((RectTransform)view.StepButton.transform).rect.height,
                 Is.GreaterThanOrEqualTo(SceneTests.MinimumTouchSize)
@@ -208,6 +259,7 @@ namespace Baryonyx.Tests.PlayMode
                 view.TempleButton,
                 view.TravelOfficeButton,
                 view.SettingsButton,
+                view.BonusButton,
                 view.StepButton,
             };
             foreach (var button in buttons)

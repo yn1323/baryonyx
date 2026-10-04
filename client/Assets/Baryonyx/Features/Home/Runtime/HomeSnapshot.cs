@@ -17,6 +17,9 @@ namespace Baryonyx.Home
         Temple,
         TravelOffice,
         Resume,
+
+        // UPTパネルの右下のボタン。酒場のボーナス設定を直接開く。
+        Bonus,
     }
 
     /// <summary>

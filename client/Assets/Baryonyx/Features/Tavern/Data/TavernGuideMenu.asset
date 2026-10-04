@@ -18,7 +18,8 @@ MonoBehaviour:
   Background: {fileID: 2800000, guid: d6e453492f005435ca349cf50e5ac468, type: 3}
   Layout: 0
   Items:
-  - Label: "\u7DE8\u6210"
+  - Key: 
+    Label: "\u7DE8\u6210"
     Caption: "\u5192\u967A\u306B\u9023\u308C\u3066\u884C\u304F4\u4EBA\u3092\u9078\u3076"
     Icon: {fileID: 5349011544834349465, guid: 2b1f0117b99113d45bec2ab66390127a, type: 3}
     ConfirmLabel: "\u7DE8\u6210\u3059\u308B"
@@ -50,7 +51,8 @@ MonoBehaviour:
     - Name: "\u30EA\u30C4"
       Badge: Lv 1
       Detail: "\u63A7\u3048\uFF5C\u6C37\u30FB\u96F7\u306E\u30AB\u30FC\u30C9\u3092\u4F7F\u3048\u308B"
-  - Label: "\u80B2\u6210"
+  - Key: 
+    Label: "\u80B2\u6210"
     Caption: "\u30EB\u30FC\u30F3\u3092\u4F7F\u3063\u3066\u30EC\u30D9\u30EB\u3092\u4E0A\u3052\u308B"
     Icon: {fileID: 5349011544834349465, guid: fb8d59a5fa7178f4784c88d49a2ff70b, type: 3}
     ConfirmLabel: "\u30EC\u30D9\u30EB\u30A2\u30C3\u30D7"
@@ -82,7 +84,8 @@ MonoBehaviour:
     - Name: "\u30EA\u30C4"
       Badge: "Lv 1 \u2192 2"
       Detail: "\u5FC5\u8981\u30EB\u30FC\u30F3 100"
-  - Label: "\u30AB\u30FC\u30C9\u30B9\u30AD\u30EB"
+  - Key: 
+    Label: "\u30AB\u30FC\u30C9\u30B9\u30AD\u30EB"
     Caption: "\u30AD\u30E3\u30E9\u3054\u3068\u306B3\u679A\u306E\u30AB\u30FC\u30C9\u3092\u4ED8\u3051\u66FF\u3048\u308B"
     Icon: {fileID: 5349011544834349465, guid: 301db959025c7f546a5ee0556d35bafd, type: 3}
     ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
@@ -111,6 +114,12 @@ MonoBehaviour:
     - Name: "\u30AC\u30FC\u30C9"
       Badge: "\u30B3\u30B9\u30C8 1"
       Detail: "\u9632\u5FA1\uFF5C\u3053\u306E\u30BF\u30FC\u30F3\u306B\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u3092\u6E1B\u3089\u3059"
+  - Key: bonus
+    Label: "\u30DC\u30FC\u30CA\u30B9"
+    Caption: "\u67A0\u306B\u30BB\u30C3\u30C8\u3057\u3066\u3001\u6B69\u3044\u305F\u65E5\u306B\u52B9\u304B\u305B\u308B"
+    Icon: {fileID: 5349011544834349465, guid: 0fdc09f32186b4d07b5afb4292d70615, type: 3}
+    ConfirmLabel: "\u30BB\u30C3\u30C8\u3059\u308B"
+    Entries: []
   MapArt: {fileID: 0}
   MapPoints: []
   DepartLabel: "\u51FA\u767A"

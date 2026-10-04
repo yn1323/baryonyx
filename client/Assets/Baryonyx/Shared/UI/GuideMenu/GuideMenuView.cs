@@ -28,6 +28,10 @@ namespace Baryonyx.UI.GuideMenu
 
         // One baked list per menu item; only the open one is active.
         public RectTransform[] Lists = Array.Empty<RectTransform>();
+
+        // A feature's own panel that replaces the list for an item (null for a plain list),
+        // e.g. the tavern's bonus settings. The panel handles its own input.
+        public GameObject[] ItemPanels = Array.Empty<GameObject>();
         public Button Confirm;
         public TMP_Text ConfirmLabel;
 
@@ -113,9 +117,16 @@ namespace Baryonyx.UI.GuideMenu
         {
             state = next;
             bool map = Definition != null && Definition.Layout == GuideMenuLayout.Map;
-            bool list = !map && state.Page == GuideMenuPage.List;
+            bool open = !map && state.Page == GuideMenuPage.List;
+            var custom = open ? PanelFor(state.Item) : null;
+            bool list = open && custom == null;
+            for (int i = 0; i < ItemPanels.Length; i++)
+                if (ItemPanels[i] != null && ItemPanels[i] != custom)
+                    ItemPanels[i].SetActive(false);
+            if (custom != null)
+                custom.SetActive(true);
             if (MenuPanel != null)
-                MenuPanel.SetActive(!map && !list);
+                MenuPanel.SetActive(!map && !open);
             if (ListPanel != null)
                 ListPanel.SetActive(list);
             if (MapPanel != null)
@@ -125,6 +136,10 @@ namespace Baryonyx.UI.GuideMenu
             if (map)
                 RenderMap();
         }
+
+        /// <summary>The feature panel shown for an item instead of the list, if it has one.</summary>
+        public GameObject PanelFor(int item) =>
+            item >= 0 && item < ItemPanels.Length ? ItemPanels[item] : null;
 
         private void RenderList()
         {

@@ -23,7 +23,7 @@
 | [素材・通貨](resources/README.md) | 用途・入手先・消費先 | `resource-` |
 | [強化・合成](upgrades/README.md) | 対象・前提条件・段階・上限 | `upgrade-` |
 | [報酬・ドロップテーブル](loot-tables/README.md) | 適用する敵・場所 | `loot-` |
-| [UPTボーナス](step-bonuses/README.md) | カテゴリ・解放に必要なUPT・効果 | `step-bonus-` |
+| [UPTボーナス](step-bonuses/README.md) | カテゴリ・効果・枠ごとの効果量 | `step-bonus-` |
 | [デイリー変異などの条件](stage-modifiers/README.md) | 採用する場合の変異の分類 | `modifier-` |
 | [探索する場所・ステージ](stages/README.md) | 地域・部屋・分岐・解放条件 | `stage-` |
 | [実績・ミッション・称号](achievements/README.md) | 種別・解放条件・達成条件 | `achievement-` |

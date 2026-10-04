@@ -4,6 +4,7 @@ using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI;
 using Baryonyx.Vfx.Hd2d;
 using Baryonyx.Vfx.Hd2d.Editor;
@@ -58,6 +59,9 @@ namespace Baryonyx.Home.Editor
         // Raises the party, the campfire and their shadows and lights together (design px,
         // a multiple of the 4 px dot).
         private const float CampLift = 160f;
+
+        /// <summary>How far below the screen's middle the campfire stands (design px).</summary>
+        public const float CampfireFeetBelowCenter = 405f - CampLift;
 
         private const float RuneIconSize = 24f * 4f;
 
@@ -127,8 +131,12 @@ namespace Baryonyx.Home.Editor
             image.texture = background;
             image.raycastTarget = false;
             image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
+            // The painting and what is laid over it give way to the 3D hall when the scene has
+            // one (HD-2D); the prefab previewed on its own keeps them.
+            Hd2dStageKit.FlatOnly(image.gameObject);
 
             var fog = Vfx<Hd2dFog>(Hd2dAssets.FogPrefabPath, "BackgroundFog", root, aspect);
+            Hd2dStageKit.FlatOnly(fog.gameObject);
             fog.Layers.Add(
                 new Hd2dFogLayer
                 {
@@ -187,10 +195,13 @@ namespace Baryonyx.Home.Editor
                 Embers("InnerRight", new Vector2(0.642f, 0.652f), 6, 0.7f),
                 Embers("OuterRight", new Vector2(0.894f, 0.745f), 10, 1f),
             };
+            Hd2dStageKit.FlatOnly(lights.gameObject);
+            Hd2dStageKit.FlatOnly(embers.gameObject);
 
             var dim = Rect("Dim", root);
             Stretch(dim);
             AddImage(dim, new Color(0.031f, 0.039f, 0.071f, 0.22f), false);
+            Hd2dStageKit.FlatOnly(dim.gameObject);
             Shade(root, "ShadeTop", top: true, 300f, 0.78f);
             Shade(root, "ShadeBottom", top: false, 240f, 0.72f);
         }
@@ -233,9 +244,11 @@ namespace Baryonyx.Home.Editor
                     SizeJitter = 0.05f,
                 },
             };
+            // On the 3D hall the campfire's real light takes over.
+            Hd2dStageKit.FlatOnly(campLight.gameObject);
 
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            Picture(
+            var shadowToma = Picture(
                 world,
                 "ShadowToma",
                 shadow,
@@ -243,7 +256,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(150, 24),
                 0.45f
             );
-            Picture(
+            var shadowLuka = Picture(
                 world,
                 "ShadowLuka",
                 shadow,
@@ -251,8 +264,14 @@ namespace Baryonyx.Home.Editor
                 new Vector2(150, 24),
                 0.45f
             );
-            PixelActor(world, "Toma", toma, new Vector2(-175, -392 + CampLift), 4f);
-            Actor(
+            var tomaPicture = PixelActor(
+                world,
+                "Toma",
+                toma,
+                new Vector2(-175, -392 + CampLift),
+                4f
+            );
+            var lukaPicture = Actor(
                 world,
                 "Luka",
                 characters,
@@ -261,7 +280,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(207, 276),
                 true
             );
-            Picture(
+            var shadowFire = Picture(
                 world,
                 "ShadowFire",
                 shadow,
@@ -278,6 +297,13 @@ namespace Baryonyx.Home.Editor
                 1f
             );
             fire.color = Color.white;
+            // On a 3D stage the members and the fire stand on the floor as boards.
+            Hd2dStageKit.Stand(tomaPicture.gameObject, tomaPicture, shadowToma);
+            Hd2dStageKit.Stand(lukaPicture.gameObject, lukaPicture, shadowLuka);
+            var fireBoard = Hd2dStageKit.Stand(fire.gameObject, fire, shadowFire);
+            // The fire gives the light (the scene's campfire light) rather than taking it.
+            fireBoard.CastShadow = false;
+            fireBoard.Lit = false;
 
             var campEmbers = Vfx<Hd2dEmberEmitter>(
                 Hd2dAssets.EmberEmitterPrefabPath,
@@ -312,7 +338,7 @@ namespace Baryonyx.Home.Editor
                 },
             };
 
-            Picture(
+            var shadowAria = Picture(
                 world,
                 "ShadowAria",
                 shadow,
@@ -320,7 +346,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(164, 26),
                 0.5f
             );
-            Picture(
+            var shadowMina = Picture(
                 world,
                 "ShadowMina",
                 shadow,
@@ -328,7 +354,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(164, 26),
                 0.5f
             );
-            Actor(
+            var ariaPicture = Actor(
                 world,
                 "Aria",
                 characters,
@@ -337,7 +363,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(225, 300),
                 false
             );
-            Actor(
+            var minaPicture = Actor(
                 world,
                 "Mina",
                 characters,
@@ -346,6 +372,8 @@ namespace Baryonyx.Home.Editor
                 new Vector2(225, 300),
                 true
             );
+            Hd2dStageKit.Stand(ariaPicture.gameObject, ariaPicture, shadowAria);
+            Hd2dStageKit.Stand(minaPicture.gameObject, minaPicture, shadowMina);
 
             // One invisible target over the four members opens the party screen.
             var party = Rect("PartyTapArea", world);
@@ -429,6 +457,21 @@ namespace Baryonyx.Home.Editor
             }
             view.Segments = segments;
 
+            // Gold notches under the gauge mark where each bonus tier opens.
+            var ticks = Rect("GaugeTicks", details);
+            var tickSize = ticks.gameObject.AddComponent<LayoutElement>();
+            tickSize.minHeight = tickSize.preferredHeight = 8;
+            foreach (int tier in HomeViewState.BonusUpt)
+            {
+                float x = Mathf.Clamp01(tier / (float)HomeViewState.GaugeMaxUpt);
+                var tick = Rect($"Tick{tier}", ticks);
+                tick.anchorMin = tick.anchorMax = new Vector2(x, 1);
+                tick.pivot = new Vector2(x >= 1f ? 1f : 0.5f, 1f);
+                tick.anchoredPosition = Vector2.zero;
+                tick.sizeDelta = new Vector2(4, 8);
+                AddImage(tick, HomeView.GaugeAchieved, false);
+            }
+
             var footer = Row(details, "StepsFooter", 40, 12);
             view.RemainingLabel = Label(
                 footer,
@@ -476,7 +519,8 @@ namespace Baryonyx.Home.Editor
             lineSize.minHeight = lineSize.preferredHeight = 2;
 
             // The hint pulses like TAP TO START; the panel itself takes the tap.
-            var claim = Row(panel, "ClaimRow", 40, 10);
+            // Tall enough for the bonus button at its right end.
+            var claim = Row(panel, "ClaimRow", BonusButtonSize, 10);
             claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleLeft;
             var claimGroup = claim.gameObject.AddComponent<CanvasGroup>();
             claimGroup.interactable = false;
@@ -492,6 +536,35 @@ namespace Baryonyx.Home.Editor
             );
             // Without a pointer position the runes burst from the hint text.
             view.RuneOrigin = view.ClaimLabel.rectTransform;
+
+            BuildBonusButton(panel, view);
+        }
+
+        // The 24x24 bonus icon at 4x, at the right end of the claim row. It sits outside the
+        // claim row, whose pulsing group lets taps through to the panel, so it takes its own
+        // taps and opens the tavern's bonus settings instead of syncing the steps.
+        private const float BonusButtonSize = 96f;
+
+        private static void BuildBonusButton(RectTransform panel, HomeView view)
+        {
+            var button = Rect("BonusButton", panel);
+            button.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            // A 128px square around the icon keeps the tap target at the Home minimum.
+            const float hit = 128f;
+            Corner(
+                button,
+                new Vector2(1, 0),
+                new Vector2(-68 + (hit - BonusButtonSize) / 2f, 60 - (hit - BonusButtonSize) / 2f),
+                new Vector2(hit, hit)
+            );
+            var target = AddImage(button, Color.clear, true);
+            view.BonusButton = AddTintButton(button, target);
+            ArtAssets.ImportDrawn(StepBonusAssets.IconBonusPath);
+            var icon = Rect("Icon", button);
+            Place(icon, Vector2.zero, new Vector2(BonusButtonSize, BonusButtonSize));
+            var image = icon.gameObject.AddComponent<Image>();
+            image.sprite = ArtAssets.LoadSprite(StepBonusAssets.IconBonusPath);
+            image.raycastTarget = false;
         }
 
         private static void BuildTopRight(RectTransform safe, HomeView view)
@@ -1061,7 +1134,7 @@ namespace Baryonyx.Home.Editor
                 Twinkle = 0.35f,
             };
 
-        private static void Actor(
+        private static RawImage Actor(
             RectTransform world,
             string name,
             Texture2D texture,
@@ -1079,6 +1152,7 @@ namespace Baryonyx.Home.Editor
             image.texture = texture;
             image.uvRect = uv;
             image.raycastTarget = false;
+            return image;
         }
 
         /// <summary>The 4x2 character sheet: party members on the top row.</summary>
