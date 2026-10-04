@@ -2,10 +2,12 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-10-04
+updated: 2026-10-05
 ---
 
 # クライアントの構成と依存関係
+
+[設計・開発ルールの索引](README.md)
 
 Unityクライアントの自作コードと専用アセットは `client/Assets/Baryonyx/` にまとめる。
 機能の変更に必要な実装・画面・設定・テストを、その機能からたどれるように配置する。
@@ -30,7 +32,7 @@ client/
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
-│   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、サーバーのセッションとログインAPI
+│   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、全機能で共有するセッション（AccountSessionRunner）とログインAPI
 │   │   │   └── Tests/EditMode/
 │   │   ├── Features/ExerciseRewards/
 │   │   │   └── Runtime/                ルーン請求・履歴・残高のAPI
@@ -43,7 +45,7 @@ client/
 │   │   │   │   ├── Presentation/        接続・取得の状態遷移と操作の管理、日別JSON
 │   │   │   │   ├── Requirements/        利用条件の確認契約、判定、案内文
 │   │   │   │   ├── Preview/             サンプルの認証結果と健康データ
-│   │   │   │   └── Sync/                歩数の保存・取得APIと、ゲストのセッション・保存・ルーン請求の実行順
+│   │   │   │   └── Sync/                歩数の保存・取得APIと、保存・ルーン請求の実行順
 │   │   │   ├── UI/                     連携モーダルのPrefab
 │   │   │   ├── Data/                   接続設定アセット
 │   │   │   ├── Editor/                 接続設定アセットの生成
@@ -51,38 +53,46 @@ client/
 │   │   │       ├── Presentation/
 │   │   │       ├── Requirements/
 │   │   │       └── Preview/
-│   │   ├── Features/Home/               ホーム画面（野営地）のモック
+│   │   ├── Features/Home/               ホーム画面（野営地）
 │   │   │   ├── Runtime/                表示状態の計算、View、Presenter、仮データ
 │   │   │   ├── UI/                      専用Prefabとコードで生成するドット絵
 │   │   │   ├── Data/                    仮データのアセット
+│   │   │   ├── Vfx/                     焚き火の炎のマテリアル
 │   │   │   ├── Editor/                  Prefabと画像の生成
 │   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ、戦闘画面のモック
 │   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
-│   │   │   ├── Presentation/           戦闘画面のモックの表示と操作（Baryonyx.Runtime）
+│   │   │   ├── Presentation/           戦闘画面のモックの表示と操作、戦闘の背景、デバッグルーム（Baryonyx.Runtime）
 │   │   │   ├── UI/                      モックのPrefabと、Codexで生成して縮小した画像
-│   │   │   ├── Editor/                  モックのPrefabの生成
+│   │   │   ├── Vfx/                     スキルの演出のシェーダー・マテリアルと、戦闘のポストプロセス
+│   │   │   ├── Editor/                  モックとデバッグルームのPrefabの生成
 │   │   │   └── Tests/                   EditMode（計算・時間・再開）とPlayMode（モックの操作）
 │   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル・ボーナス）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
 │   │   │   ├── UI/                      画面のPrefab、案内人・背景・メニューのアイコンの画像
 │   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
 │   │   │   └── Editor/                  仮データと画面の生成
+│   │   ├── Features/Party/              編成のパーティ（入れ替え）と、キャラ・Lv・スキル・編成のサーバーとの読み書き。Runtime・Editor・Data・Tests
 │   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
-│   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・UI・Tests
+│   │   ├── Features/StepBonus/          ACTボーナスの枠の設定（編成のボーナス）と、サーバーとの読み書き。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/
 │   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
+│   │   │   │   ├── Attributes/          属性のアイコン
 │   │   │   │   ├── Characters/          キャラクター
-│   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）と3Dの舞台
+│   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）、3Dの舞台、探索の地図の素材
 │   │   │   │   │   ├── DungeonHall/     3Dのダンジョンの広間（今は画面で使わない）
 │   │   │   │   │   ├── DuskHighland/    戦闘の3Dの夕暮れの高原のテクスチャ・マテリアル・Prefab
 │   │   │   │   │   ├── ForestGlade/     Homeの3Dの昼の森の野営地のテクスチャ・マテリアル・Prefab
 │   │   │   │   │   ├── ForestRuins/     3Dの森の遺跡の石舞台（今は画面で使わない）
 │   │   │   │   │   ├── StarlitGate/     Topの3Dの星空の夜の山の門のテクスチャ・マテリアル・Prefab
-│   │   │   │   │   └── Editor/          3Dの舞台の組み立て（StageSetAssets）
+│   │   │   │   │   ├── CastleHallほか    戦闘の背景の3Dの舞台（10種類）
+│   │   │   │   │   ├── Exploration/     探索の地図の木・遺跡・宝箱の絵
+│   │   │   │   │   └── Editor/          3Dの舞台の組み立て（StageSetAssets・BattleStageSets）
 │   │   │   │   └── GameResources/       素材・通貨（ルーンのアイコン）
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
 │   │   │   ├── UI/                      複数画面で使う共通UI（下の表）
@@ -91,6 +101,8 @@ client/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
 │   │   │   ├── ScreenScenes.cs         画面のシーンの作り直し（カメラ・入力・Build Settings）
+│   │   │   ├── EditorGuard.cs          Play中は生成メニューを止める
+│   │   │   ├── AssetFolders.cs         フォルダーの作成と、ScriptableObjectの読み込み・作成（LoadOrCreate）
 │   │   │   ├── Art/                    .asepriteの読み込みの補正（キャンバスの大きさの画像を追加）、Driveとの受け渡し、画像の読み込みと保存（ArtAssets）
 │   │   │   ├── UI/                     画面のPrefabをコードで組み立てる部品（UiBuild）と、共通の形・影・アイコンの画像の生成（UiArt）
 │   │   │   └── CI/                     コンパイル検査、シーン選択、APKビルド
@@ -120,21 +132,59 @@ client/
 
 | フォルダー | 所有するもの |
 |---|---|
-| `Art/` | 角丸・円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコン。白で描き、使う側で色を付ける |
+| 直下 | 画面が共有する文字色・青緑・金の定数 `UiPalette` と、文字の設定の補助 `UiText` |
+| `Art/` | 角丸・円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコンは、白で描き、使う側で色を付ける。ホームと冒険が使うコンパスのアイコン `IconCompass.aseprite` も置く |
 | `Fonts/` | DotGothic16と、影つきの文字のマテリアル `TextShadow.mat` |
-| `Buttons/` | 押すとアイコンと文字も暗くなるボタン |
+| `Buttons/` | 押すとアイコンと文字も暗くなるボタンと、画面を開いている間だけ押したときの処理をつなぐ `ButtonBindings` |
 | `ResponsiveLayout/` | 背景の比率の維持、Safe Areaへの追従、狭い画面での中央の層の縮小（`WorldLayerFit`）、ドット絵を整数倍に保つ `PixelPerfectRawImage` |
-| `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader` |
+| `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader`。`Editor/` に遷移演出のPrefabの生成 |
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
 | `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う |
-| `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは `IGuideBackHandler` を付けると、戻る操作を先に受け取れる |
+| `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは `IGuideBackHandler` を付けると、戻る操作を先に受け取れる。編成の各パネルが開くたびの読み込みは `GuidePanelLoad` が受け持つ |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
 
 `Assets/Scripts/`、`Assets/Editor/`、`Assets/Tests/`、`Assets/Scenes/` にあった自作コード・アセンブリ定義・起動シーンは、上記の配置へ移行した。
 旧 `SampleScene.unity` はGUIDを保って `App/Scenes/Main.unity` へ移したが、2026-09-24に操作試作とともに削除した。
 `Assets/Resources/` など外部パッケージが利用する配置や、Unityテンプレートから引き継いだ設定は、参照元と用途を確認して扱う。
+
+## シーンと生成メニュー
+
+シーンは `App/Scenes/` に置き、コードからは [SceneNames](../../client/Assets/Baryonyx/App/Runtime/SceneNames.cs) の名前で参照する。
+起動シーンは `Top.unity` である。
+各画面の表示と操作は[画面一覧と操作](../features/screens.md)を正本とし、ここにはシーンの置き場所と、作り直すEditorのメニューを記す。
+
+| シーン | 役割 | シーンを作り直すメニュー | 仕様 |
+|---|---|---|---|
+| `Top.unity` | 起動画面。サーバーへの接続と歩数の同期を行い、全面押下でHomeへ移る | `Baryonyx > App > Create Top and Home Scenes` | [Top](../features/screens.md#top)・[起動時の連携と歩数の同期](../features/startup-sync.md) |
+| `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens.md#ホーム画面の見た目モック) |
+| `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
+| `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
+| `Battle.unity` | 冒険の戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
+| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面) |
+| `Debug/BattleInspect.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Inspect Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
+| `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
+| `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
+
+Top・Home・BattleInspect・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
+3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。
+Top・Home・BattleInspectを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../art/hd2d-stage.md#sceneタブでの表示)）。
+
+画面のPrefab・データ・画像は、次のメニューで作り直す。
+
+| 対象 | メニュー |
+|---|---|
+| Topの起動処理（開始の案内と連携モーダル）のシーンへの配置 | `Baryonyx > App > Connect Startup Sync` |
+| 画面遷移の演出の共通Prefabと、Top・Homeへの配置 | `Baryonyx > App > Create Scene Transition Assets` |
+| ホーム画面 | `Baryonyx > Home > Create Screen Assets` |
+| 編成の画面と、パーティ・装備・育成・スキル・ボーナスのパネル | `Baryonyx > Tavern > Create Screen Assets` |
+| 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
+| 探索と冒険用の重ね画面のPrefab、探索の地図に立てる絵の画素の写し（`Features/Adventure/Data/ExplorationMapArt.asset`） | `Baryonyx > Adventure > Create Screen Assets` |
+| 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets` |
+| 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |
+| 接続設定アセット（`HealthConnectionSettings.asset`）と共有フォント | `Baryonyx > Health > Create Screen Assets`（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)） |
+| 展示室の登録 | `Baryonyx > Showcase > Refresh Catalog`（[展示室](../features/showcase.md)） |
 
 ## 起動と機能の責務
 
@@ -146,8 +196,8 @@ client/
 | [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、操作の多重起動防止と前面復帰待ち、日別JSONの解析 |
 | [Health/Runtime/Requirements/](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements) | 利用条件の確認インターフェース、判定結果、表示する案内 |
 | [Health/Runtime/Preview/](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview) | EditorとAndroid以外の環境に返すサンプルデータ |
-| [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、ログイン・保存・ルーン請求を順に行う `HealthServerSync`。Android実機でサーバーURLが設定されている場合だけ、Presenterから呼ぶ |
-| [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、サーバーのセッション、ログイン・ログアウトAPI |
+| [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、歩数の保存・ルーン請求を順に行う `HealthServerSync`。[GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)が作り、TopとHomeが使う |
+| [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、ログイン・ログアウトAPI、ゲストの秘密値、全機能で共有するゲストのセッション（`AccountSessionRunner`。ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し） |
 | [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・履歴・残高のAPIと応答の型 |
 | [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外。パスと入出力の型は各機能が持つ |
 | [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成する |
@@ -176,7 +226,7 @@ EditorとAndroid以外では、HealthRuntimeがプレビュー用Providerを選�
 Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない。
 戦闘画面のモック（`Presentation/`・`Editor/`・`UI/`）は `Baryonyx.Runtime` に属し、戦闘計算を参照しない。
 モックは、ドット絵を整数倍に保つ `PixelPerfectRawImage`、形の画像、文字の影、画面の組み立て部品をHome・案内人の画面と共有する（[配置を増やすときの基準](#配置を増やすときの基準)）。
-冒険・戦闘・歩数の操作試作（Wireframe）は2026-09-24に削除した。経緯と評価は[操作試作の記録](../features/game-wireframe.md)を参照する。
+冒険・戦闘・歩数の操作試作（Wireframe）は2026-09-24に削除した。経緯と評価は[操作試作の記録](../archive/game-wireframe.md)を参照する。
 
 ## アセンブリとテスト
 
@@ -247,6 +297,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
   - Prefab・データ・展示室は、追加したSpriteとテクスチャを参照する。生成スクリプトからは `AsepriteCanvasImport.LoadSprite`・`LoadTexture` で読み込む。`AssetDatabase.LoadAssetAtPath` では、Importerが作った余白つきのテクスチャや、切り取った絵のSpriteが返ることがある。
   - Importerが作るAnimation ClipはSpriteRendererの絵を切り替えるもので、uGUIのImageには使えない。UIでアニメーションを再生する方法は、最初のアニメーション素材を作るときに決める。
   - [AsepriteCanvasImportTests](../../client/Assets/Baryonyx/Tests/EditMode/AsepriteCanvasImportTests.cs) は、全ての `.aseprite` に、キャンバスと同じ大きさのSpriteがフレームの数だけあることを検査する。
+- PNGの画像（生成画像など）は、フィルターをPoint、ミップマップなし、非圧縮にし、元の大きさのまま読み込む。2の累乗への拡大（Non-Power of 2の既定値）はドットをぼかすため行わない。画像に文字を焼き込まず、ゲームの状態に応じた文字はTextMeshProで表示する。
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
 - 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
 - 探索する場所の背景は `Shared/Art/Stages/` に置く。2026-09-29に `Shared/Art/Dungeons/` から移し、TopとHomeが使うダンジョンの広間（旧 `App/Art/Top/TopDungeonBackground.png`）も `DungeonHall.png` として同じ場所へ移した。
@@ -255,7 +306,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 #### タブレットとの受け渡し
 
 正本はGitで管理し、タブレットではGoogle Driveに置いた写しを編集する。
-Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Features/Home/UI/Art/IconCompass.aseprite` など）。
+Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Features/Home/UI/Art/IconParty.aseprite` など）。
 受け渡しは、Unityのメニューからユーザーが手動で行う（[AsepriteDriveSync](../../client/Assets/Baryonyx/Editor/Art/AsepriteDriveSync.cs)）。
 AIは、検証時も含めてこのメニューを実行しない。
 
@@ -301,4 +352,4 @@ Androidの [HealthRecordCatalog](../../client/Assets/Plugins/Android/BaryonyxHea
 型を追加するときは、その値・単位・日付境界と権限のテストも追加する。
 
 Unity内のビルド処理は `Baryonyx/Editor/CI/`、Unityの実行・結果検査・公開を補助する処理は `client/ci/` に置く。
-Windows用の手動実行ショートカットは、[ルートの作業ルール](../../AGENTS.md#手動実行用ショートカット) に従って `shortcuts/` で管理する。
+手動実行用のショートカットは `shortcuts/` で管理する（[一覧](../../AGENTS.md#手動実行用ショートカット)・[動作](local-shortcuts.md)）。

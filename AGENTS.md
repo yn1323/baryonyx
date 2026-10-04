@@ -38,11 +38,10 @@
 | [server/AGENTS.md](server/AGENTS.md) | Honoバックエンドの配置と作業ルール |
 | [doc/README.md](doc/README.md) | 機能、設計ルール、計画、QAの入口 |
 | [novel/README.md](novel/README.md) | 世界観の小説と設定（ゲームの確定設定ではない試案） |
-| [文書管理方針](doc/rules/documentation-policy.md) | 文書の配置と更新方法 |
-| `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド |
-| `.agents/skills/` | 特定作業の手順 |
+| [文書管理方針](doc/rules/documentation-policy.md) | `doc/` の配置と役割、文書の形式と更新方法 |
+| `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド（[一覧](#手動実行用ショートカット)） |
+| [.agents/skills/README.md](.agents/skills/README.md) | スキル（特定作業の進め方）の索引と呼び出し方 |
 
-設計ルールは `doc/rules/`、機能仕様は `doc/features/`、変更計画は `doc/plans/`、ユーザーから想定される質問と回答は `doc/qa/` に置く。
 技術固有の指示と実行コマンドは、採用技術や実際の設定を確認してから追加する。
 
 ## ディレクトリ構成と狙い
@@ -63,11 +62,7 @@ baryonyx/
 │   ├── tests/             結合・横断シナリオのテスト
 │   ├── migrations/        DB全体の変更履歴
 │   └── scripts/           開発・公開処理とそのテスト
-├── doc/
-│   ├── features/          client・serverを横断する機能仕様
-│   ├── rules/             継続的な設計・開発ルール
-│   ├── plans/             個別の変更計画
-│   └── qa/                ユーザーから想定される質問と回答
+├── doc/                   仕様・設計ルール・計画・QAなどの文書（配置は文書管理方針）
 ├── novel/                 世界観の小説と、その設定（試案）
 ├── shortcuts/            手動実行用の単体スクリプト
 ├── .github/workflows/     CIの起動条件と実行順序
@@ -86,7 +81,7 @@ baryonyx/
 
 ## Skill
 
-- 作業に適用するSkillの発動条件と本文を確認し、その範囲で使う。
+- 作業に適用するSkillの発動条件と本文を確認し、その範囲で使う。スキルの一覧と呼び出し方は[スキル索引](.agents/skills/README.md)にある。
 - docとスキルの使い分けは[文書管理方針](doc/rules/documentation-policy.md#docとスキルの使い分け)に従う。規則・数値・配置はdocを正本にし、スキルにはその作業の進め方とdocへのリンクだけを書く。
 - 日本語の技術文書やPR本文を作成・推敲するときは [japanese-tech-writing](.agents/skills/japanese-tech-writing/SKILL.md) を使う。
 - 読み物としての長い文章を扱う場合は、必要に応じて [cognitive-rhythm-writing](.agents/skills/cognitive-rhythm-writing/SKILL.md) を使う。
@@ -112,11 +107,7 @@ baryonyx/
 ルートの `shortcuts/` に、1ファイルで処理が完結するWindows用 `.bat` ファイルと、macOS用 `.command` ファイルを置く。
 共通スクリプトへの依存を作らず、実行時の作業ディレクトリに依存しないパスを使う。
 `shortcuts/` にファイルを追加するときは、同じ変更でこの `AGENTS.md` の一覧にファイルへのリンク・用途・実行方法を記載し、必要な引数や前提条件も追記する。
-エミュレーター起動とAPKインストールでは、`ANDROID_HOME`、`ANDROID_SDK_ROOT`、`%LOCALAPPDATA%\Android\Sdk` の順に必要なAndroid SDKのツールを探す。
-対象の仮想端末（AVD）は、Android 16（API 36）・Google APIs・x86_64のGoogle Pixel 8a `Pixel_8a_API_36` とする。
-初回準備、Unity側の設定、起動できない場合の確認は [WindowsでのUnityとAndroidエミュレーター](doc/rules/client-android-emulator.md) に従う。
-起動確認済みのAndroid Emulatorは37.1.11で、起動引数は `-gpu host -feature -Vulkan -no-snapshot` とする。
-エミュレーター本体の更新とAndroidシステムイメージの追加は別の操作であり、API 34の既存AVDを標準の確認先として使わない。
+各ファイルの動作・前提・ログは[手動実行用ショートカットの動作](doc/rules/local-shortcuts.md)、エミュレーターの構成・初回準備・起動できない場合の確認は[WindowsでのUnityとAndroidエミュレーター](doc/rules/client-android-emulator.md)に従う。
 
 | ファイル | ユーザーの操作と動作 |
 |---|---|
@@ -128,13 +119,8 @@ baryonyx/
 | [start-pixel-8a.bat](shortcuts/start-pixel-8a.bat) | 初回準備後にダブルクリックして `Pixel_8a_API_36` をPCのGPU・Vulkan無効・スナップショット無効で起動する。AIによる実行は禁止する。 |
 | [install-apk-pixel-8a.bat](shortcuts/install-apk-pixel-8a.bat) | `Pixel_8a_API_36` の起動完了後にダブルクリックし、`client/Builds/Android/baryonyx.apk` を送信・インストールする。別のAPKは、このファイルへ1つドラッグ＆ドロップするか、第1引数にパスを指定する。 |
 
-APKビルドは [ProjectVersion.txt](client/ProjectSettings/ProjectVersion.txt) のUnityを使い、CIと同じ [AndroidBuild.Build](client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を呼び出す。
-APKの接続先は環境変数 `BARYONYX_ENVIRONMENT` で選び、未指定ならDevになる（[接続先の選び方](client/AGENTS.md#サーバーのbaseurl)）。
-Drive配置用のショートカットは、ファイル名の環境（`dev`・`prod`）をビルド前に設定し、手元の `BARYONYX_SERVER_URL` を無視する。
-ビルドログの `BARYONYX_ANDROID_SERVER:` の行で指定した環境になっていることを確かめ、違えばコピーせずにエラーで終了する。
 APKビルドが成功したら、実行方法にかかわらず、生成したAPKを必ず次の配置先へ、接続先の環境に対応するファイル名で上書きコピーする。
 Dev向けとProd向けは同じフォルダーに並べて置く。
-Dev向けのショートカットは、コピーに成功したあと、環境別のファイル名にする前の `baryonyx.apk` が同じフォルダーに残っていれば削除する。
 
 | OS | 配置先フォルダー | ファイル名 | 一致させる定義 |
 |---|---|---|---|
@@ -145,31 +131,10 @@ Dev向けのショートカットは、コピーに成功したあと、環境�
 `build-apk.bat` やUnity CLI・Editorでビルドした場合も、成功後に接続先の環境に対応するファイル名で同じフォルダーへコピーする。
 コピー完了までをビルド作業に含め、配置先へアクセスできない場合やコピーに失敗した場合は未完了として報告する。
 
-`build-apk.bat`・`build-apk-dev-to-drive.bat`・`build-apk-prod-to-drive.bat` はWindows標準のPowerShellで処理し、それぞれ必要なコードを同じファイル内に持つ。
-Dev向けとProd向けのショートカットは、設定する環境名・配置先のファイル名・ログ名だけが異なる。
-Unity Hubの標準配置 `%ProgramFiles%\Unity\Hub\Editor\<バージョン>\Editor\Unity.exe` を探し、別の配置では同じバージョンの `Unity.exe` のパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
-対象バージョンのAndroid Build Supportと有効なUnityライセンスが必要となる。
-ログはそれぞれ `client/Logs/build-apk.log`、`client/Logs/build-apk-dev-to-drive.log`、`client/Logs/build-apk-prod-to-drive.log` に実行ごとに上書きする。
-`build-apk.bat` はAPK生成のみを行い、テスト・配布・エミュレーター起動・インストールは行わない。
-
-`build-apk-dev-to-drive.command`・`build-apk-prod-to-drive.command` は、同じ環境の `.bat` と同じ処理をbashで行い、ログも同じ名前のファイルに上書きする。
-Unity Hubの標準配置 `/Applications/Unity/Hub/Editor/<バージョン>/Unity.app/Contents/MacOS/Unity` を探し、別の配置では同じバージョンの実行ファイルのパスを第1引数または環境変数 `UNITY_EDITOR_PATH` で指定する（第1引数を優先する）。
-
-Drive配置用のショートカットは、配置先フォルダーが存在し、アクセスできることを前提とする。
-ビルド失敗時は配置先のAPKを更新せず、コピー失敗時もエラーで終了する。
-コピー後も `client/Builds/Android/baryonyx.apk` を残す。
-Google Driveへの同期はGoogle Drive for desktopが行うため、同期完了は同アプリで確認する。
-
-APKのインストール先は、起動中のエミュレーターに `adb shell getprop ro.boot.qemu.avd_name` を実行してAVD名で特定する。
-対象AVDが未起動・起動途中・同名で複数起動の場合はエラーで終了し、自動起動しない。
-既存アプリのデータを保持して更新する `adb install -r` を使う（[Android公式ドキュメント](https://developer.android.com/tools/adb?hl=ja#move)）。
-結果を確認できるよう、各ファイルは終了時にキー入力を待つ。
-
 ## Asepriteの正本とタブレットの受け渡し
 
-- ドット絵の正本は、`client/Assets/Baryonyx/` の中の使う場所に `.aseprite` のまま置き、Gitで管理する。Unityが直接読み込むため、PNGへは書き出さない（[読み込みの仕組み](doc/rules/frontend-design.md#ゲーム内の対象の画像)）。タブレットで編集するときは、Unityのメニュー `Baryonyx > Art > Copy Aseprite Sources to Drive`・`Copy Aseprite Sources from Drive` でGoogle Driveのフォルダーとコピーし合う（[受け渡しの仕組み](doc/rules/frontend-design.md#タブレットとの受け渡し)）。
-- Driveのフォルダーは、PCごとに `Baryonyx > Art > Choose Aseprite Drive Folder...` で選んで保存する。
-- これらのメニューはユーザーが手動で実行する。AIは、検証時も含めて実行しない。
+- ドット絵の正本は `.aseprite` のまま `client/Assets/Baryonyx/` の中の使う場所に置き、PNGへ書き出さない（[ゲーム内の対象の画像](doc/rules/frontend-design.md#ゲーム内の対象の画像)）。
+- タブレットとの受け渡しに使うUnityのメニュー `Baryonyx > Art > Choose Aseprite Drive Folder...`・`Copy Aseprite Sources to Drive`・`Copy Aseprite Sources from Drive` は、ユーザーが手動で実行する。AIは、検証時も含めて実行しない（[タブレットとの受け渡し](doc/rules/frontend-design.md#タブレットとの受け渡し)）。
 
 ## 検証と報告
 

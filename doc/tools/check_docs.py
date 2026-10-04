@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import os
 import re
 from collections import Counter
 from datetime import date
@@ -17,6 +18,13 @@ VISUAL_KEYS = ("silhouette", "palette", "motifs", "personality", "art_status")
 # Repository-relative image paths joined by " | ", or this word before any image exists.
 NO_ART_FILES = "未作成"
 LEGACY_FEATURES = {"health-data.md", "server-health.md"}
+ARCHIVE_STATUSES = {"記録", "見送り"}
+# Directories skipped while looking for AGENTS.md outside doc/: generated, external or too large.
+# doc/ itself is skipped at the repository root because its files are checked in full.
+SKIPPED_DIRS = {
+    ".git", ".wrangler", "Builds", "Library", "Logs", "Temp", "TestResults", "UserSettings",
+    "__pycache__", "dist", "node_modules", "obj", "output",
+}
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>\n]+>|[^)\n]+)\)")
 ID = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
@@ -86,7 +94,7 @@ def needs_metadata(path: Path, docs: Path) -> bool:
     if path.name in {"README.md", "AGENTS.md"} or relative.as_posix() == "art/visual-index.md":
         return False
     return (
-        relative.parts[0] in {"game", "art", "catalog"}
+        relative.parts[0] in {"game", "art", "catalog", "archive"}
         or (relative.parts[0] == "features" and path.name not in LEGACY_FEATURES)
         or relative.as_posix() == "architecture.md"
     )
@@ -100,6 +108,56 @@ def art_files(value: str) -> list[str]:
 
 def cell(value: str) -> str:
     return html.escape(value, quote=False).replace("|", "&#124;").replace(chr(96), "&#96;")
+
+
+def outside_docs(root: Path) -> list[Path]:
+    """AGENTS.md outside doc/ and the skills' Markdown: only their links are checked."""
+    found = set()
+    for directory, names, files in os.walk(root):
+        top = Path(directory) == root
+        names[:] = [name for name in names if name not in SKIPPED_DIRS and not (top and name == "doc")]
+        if "AGENTS.md" in files:
+            found.add(Path(directory) / "AGENTS.md")
+    skills = root / ".agents" / "skills"
+    if skills.is_dir():
+        found.update(path for path in skills.rglob("*.md") if "__pycache__" not in path.parts)
+    return sorted(found)
+
+
+def check_links(path: Path, content: str, root: Path, contents: dict[Path, str], errors: list[str]) -> set[Path]:
+    """Report missing local targets and headings; return linked documents under doc/."""
+    linked = set()
+    label = path.relative_to(root).as_posix()
+    for match in LINK.finditer(prose(content)):
+        target = match.group(1).strip()
+        if target.startswith("<") and target.endswith(">"):
+            target = target[1:-1]
+        else:
+            target = re.sub(r'\s+"[^"]*"$', "", target)
+        parsed = urlsplit(target)
+        if parsed.scheme or parsed.netloc:
+            continue
+        raw_path = unquote(parsed.path)
+        if raw_path.startswith("/"):
+            destination = root / raw_path.lstrip("/")
+        else:
+            destination = path.parent / raw_path if raw_path else path
+        destination = destination.resolve()
+        if not destination.is_relative_to(root):
+            errors.append(f"{label}: ローカルリンクがリポジトリ外を指す: {target}")
+            continue
+        if not destination.exists():
+            errors.append(f"{label}: リンク先がない: {target}")
+            continue
+        if destination in contents:
+            linked.add(destination)
+        if parsed.fragment and destination.suffix.lower() == ".md" and destination.is_file():
+            text = contents.get(destination)
+            if text is None:
+                text = destination.read_text(encoding="utf-8-sig")
+            if unquote(parsed.fragment) not in anchors(text):
+                errors.append(f"{label}: 見出しがない: {target}")
+    return linked
 
 
 def replace_region(text: str, marker: str, body: str) -> str | None:
@@ -140,6 +198,8 @@ def check(root: Path, write_index: bool = False) -> list[str]:
             errors.append(f"{label}: typeが不正")
         if data.get("status") not in STATUSES:
             errors.append(f"{label}: statusが不正")
+        elif path.relative_to(docs).parts[0] == "archive" and data.get("status") not in ARCHIVE_STATUSES:
+            errors.append(f"{label}: 保管庫の文書のstatusは記録か見送りにする")
         try:
             value = data.get("updated", "")
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
@@ -238,38 +298,10 @@ def check(root: Path, write_index: bool = False) -> list[str]:
         else:
             errors.append(f"{path.relative_to(root)}: 生成索引が古い。--write-indexを実行する")
 
-    edges = {path: set() for path in contents}
-    for path, content in contents.items():
-        for match in LINK.finditer(prose(content)):
-            target = match.group(1).strip()
-            if target.startswith("<") and target.endswith(">"):
-                target = target[1:-1]
-            else:
-                target = re.sub(r'\s+"[^"]*"$', "", target)
-            parsed = urlsplit(target)
-            if parsed.scheme or parsed.netloc:
-                continue
-            raw_path = unquote(parsed.path)
-            if raw_path.startswith("/"):
-                destination = root / raw_path.lstrip("/")
-            else:
-                destination = path.parent / raw_path if raw_path else path
-            destination = destination.resolve()
-            label = path.relative_to(root).as_posix()
-            if not destination.is_relative_to(root):
-                errors.append(f"{label}: ローカルリンクがリポジトリ外を指す: {target}")
-                continue
-            if not destination.exists():
-                errors.append(f"{label}: リンク先がない: {target}")
-                continue
-            if destination in contents:
-                edges[path].add(destination)
-            if parsed.fragment and destination.suffix.lower() == ".md" and destination.is_file():
-                text = contents.get(destination)
-                if text is None:
-                    text = destination.read_text(encoding="utf-8-sig")
-                if unquote(parsed.fragment) not in anchors(text):
-                    errors.append(f"{label}: 見出しがない: {target}")
+    edges = {path: check_links(path, content, root, contents, errors) for path, content in contents.items()}
+    # Outside doc/, check only that links resolve; these files need no metadata and no index entry.
+    for path in outside_docs(root):
+        check_links(path, path.read_text(encoding="utf-8-sig"), root, contents, errors)
 
     entry = docs / "README.md"
     if entry not in contents:

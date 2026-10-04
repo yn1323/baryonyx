@@ -2,34 +2,34 @@
 id: system-architecture
 type: reference
 status: 一部確定
-updated: 2026-10-04
+updated: 2026-10-05
 ---
 
 # システム全体の構成
 
-[全体索引](README.md)
+[全体索引](README.md) → 全体構成
 
 ## 現在の実装
 
 | 構成 | 現在の責務・確認元 |
 |---|---|
-| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[GameServices](../client/Assets/Baryonyx/App/Runtime/GameServices.cs)がAndroidの実ProviderとEditor等のプレビューを選び、TopとHomeで接続を共有する。[HealthRuntime](../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)は削除前の健康データ画面用で、現在はどの画面からも使わない |
-| Unity Health | [健康データ仕様](features/health-data.md)と[起動時の同期](features/startup-sync.md)に従い、認証・権限・取得・サーバー保存を扱う。日別一覧の画面は削除済み |
+| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[GameServices](../client/Assets/Baryonyx/App/Runtime/GameServices.cs)がAndroidの実ProviderとEditor等のプレビューを選び、サーバーとの接続とゲストのセッションをアプリの終了まで全画面で共有する。[HealthRuntime](../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)は削除前の健康データ画面用で、現在はどの画面からも使わない |
+| Unity Health | [健康データ仕様](features/health-data.md)と[起動時の同期](features/startup-sync.md)に従い、権限・取得・サーバー保存を扱う。日別一覧の画面は削除済み |
+| Unityの各機能 | 編成（パーティ・装備・育成・スキル・ボーナス）と冒険は、画面を開くたびにサーバーから読み、操作ごとに保存する（[保存先の決め方](rules/data-storage.md#サーバーに置くときの作り方)） |
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |
 | アカウント | 端末の秘密値によるゲストで始める。Google認証は健康データ読み取りと独立した任意の操作で、ゲストとの結び付けは未実装 |
-| サーバー | [app.ts](../server/src/app.ts)が疎通確認と健康データAPIを組み立てる。Hono・Workers・D1を使用する |
-| 同期 | Topの起動時とHomeのACTパネルで、直近7日分をサーバーへ保存する。ルーンの請求は呼ばない |
+| サーバー | [app.ts](../server/src/app.ts)が疎通確認と、アカウント・健康データ・運動報酬・ACTボーナス・パーティ・装備・冒険のAPIを組み立てる。Hono・Workers・D1を使用する |
+| 同期 | Topの起動時とHomeのACTパネルで、直近7日分の歩数をサーバーへ保存する。ルーンの請求はHomeのACTパネルを押したときだけ行う |
 
-現在の画面は健康データをメモリで扱う。
-ゲーム進行の保存要件と未決事項は[アカウントとセーブ](features/accounts-save.md)を参照する。
-現在の実装入口と機能フォルダーを2026-09-13に確認したもので、実環境への公開・認証成功を確認した記録ではない。
+保存する項目と置き場所は[保存先の決め方の置き場所の一覧](rules/data-storage.md#置き場所の一覧)、ゲーム進行の保存要件と未決事項は[アカウントとセーブ](features/accounts-save.md)を参照する。
+この表は2026-10-05に実装の入口と機能フォルダーを確かめたもので、実環境への公開・認証成功を確認した記録ではない。
 
 ## 企画で決まっている境界
 
 Androidの運動データはHealth Connectへ集約し、扱うのは歩数だけとする。
 サービス連携の企画は[運動報酬](features/exercise-rewards.md)、iOS対応の範囲も同文書を参照する。
 
-[ACTボーナス](features/step-bonus.md)の持ち物と枠の設定は、ユーザーごとにサーバーのDBで管理する。有効になった枠の効果を端末とサーバーのどちらで判定するかは未決とする。
+[ACTボーナス](features/step-bonus.md)の有効になった枠の効果を、端末とサーバーのどちらで判定するかは未決とする。
 
 データを端末とサーバーのDBのどちらに保存するかは、[保存先の決め方](rules/data-storage.md)の基準で決める。
 ルーンの増減と報酬は、[アカウントとセーブ](features/accounts-save.md)で決めたとおりサーバーで確定する。
@@ -46,3 +46,4 @@ Androidの運動データはHealth Connectへ集約し、扱うのは歩数だ�
 - 2026-09-15：ユーザー提示の運動目標設定仕様に基づき、実績・履歴のサーバー保存を企画上の境界へ反映した。現行の健康データ表示・保存と区別し、目標固有の保存と計算処理の実装は未完了として記す。
 - 2026-09-27：[企画見直し](game/redesign-2026-09-27.md)で運動目標を廃止したため、目標の実績・履歴のサーバー保存を境界から外した。扱う運動データを歩数だけとし、歩数ボーナスの判定と保存の分担を未決とした。
 - 2026-10-04：ユーザーの依頼で[保存先の決め方](rules/data-storage.md)を定め、境界から参照した。酒場の保存と冒険の1周の実装でルーンの増減と報酬をサーバーで確定するようにしたため、未決事項を戦闘の勝敗の検証に絞った。
+- 2026-10-05：文書の整理で、現在の実装の表を今のコードに合わせて直した（サーバーのAPIに運動報酬・ACTボーナス・パーティ・装備・冒険を加え、HomeのACTパネルでルーンを請求することを記した）。ACTボーナスの保存先の記述は[保存先の決め方の置き場所の一覧](rules/data-storage.md#置き場所の一覧)へまとめた。

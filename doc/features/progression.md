@@ -102,7 +102,12 @@ Lv100は値を定める基準のLvであり、レベルの上限（[未決](#未
 ## 実装との対応
 
 本ページは企画上の要求・未決事項を記す。
-現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
+ルーンによるレベルアップは、編成の[育成](screens.md#育成)で実装し、費用の計算とルーンの減算はサーバーで行う（[キャラと編成の保存](party.md#キャラと編成の保存)）。
+強化・合成は未実装である。
+
+| 対象 | 入口 |
+|---|---|
+| 編成の育成（1人のレベルアップ） | [レベルアップの流れ](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[画面と仮データの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
 
 ## 変更と判断の記録
 

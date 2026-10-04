@@ -2,7 +2,7 @@
 id: art-hd2d-stage
 type: specification
 status: 一部確定
-updated: 2026-10-04
+updated: 2026-10-05
 ---
 
 # 3Dの舞台（HD-2D）
@@ -15,8 +15,7 @@ updated: 2026-10-04
 2026-10-03には、3つの舞台に小物・草の房・地面の汚しを足して密度を上げ、光を受ける面に法線マップを付けた。
 同日、続く依頼で、戦闘の背景を10種類足し、`Battle.unity` で選べるようにした（[戦闘の背景](#戦闘の背景)）。
 この文書は、その構成・カメラ・光・ポストプロセス・テクスチャ・描く順番の値の正本である。
-作業の進め方とつまずいた点は、[hd2d-lighting-vfx](../../.agents/skills/hd2d-lighting-vfx/SKILL.md)スキルの[3Dの舞台にドット絵を立たせる](../../.agents/skills/hd2d-lighting-vfx/references/hd2d-3d-stage.md)に記す。
-地面・遠景・小物・草・汚しとそのマテリアル・テクスチャの作り方、密度の決め方は、[hd2d-stage-set](../../.agents/skills/hd2d-stage-set/SKILL.md)スキルに記す。
+作業の進め方とつまずいた点は、[hd2d-stage-set](../../.agents/skills/hd2d-stage-set/SKILL.md)スキル（カメラ・光・レンズ・停止中の表示は[camera-light.md](../../.agents/skills/hd2d-stage-set/references/camera-light.md)、地面・遠景・小物・草・汚しは[stage-building.md](../../.agents/skills/hd2d-stage-set/references/stage-building.md)・[set-dressing.md](../../.agents/skills/hd2d-stage-set/references/set-dressing.md)）に記す。
 
 ## 確定している方針
 
@@ -50,7 +49,8 @@ updated: 2026-10-04
 | Home | 昼の森の野営地（[ForestGladeStage](../../client/Assets/Baryonyx/Shared/Art/Stages/ForestGlade/ForestGladeStage.prefab)） | 高さ4.4mから見下ろし18度、縦の画角32度の望遠寄り。半径6px・26秒で1周する揺れ。開いたときに0.9m後ろ・0.35m上から2.6秒ですべり込む | 左上の背後からの太陽（暖色・影あり・木漏れ日）、光の筋5本と漂う塵、焚き火の小さな光（影なし） | `ForestGladeLook` |
 | BattleInspect | 夕暮れの高原の環状列石（[DuskHighlandStage](../../client/Assets/Baryonyx/Shared/Art/Stages/DuskHighland/DuskHighlandStage.prefab)） | 縦の画角30度、見下ろし20度の望遠寄り。戦場の円運動と被弾の揺れに合わせてカメラが動く | 左からの低い夕日（暖色・影あり。影は右へ長く落ちる）、奥の2つのかがり火、漂う砂ぼこり | 戦場の `BattlePostProcess`（Bloomのしきい値1）に、優先度1の `DuskHighlandLook` を重ねる |
 | Battle | 夕暮れの高原と10種類の[戦闘の背景](#戦闘の背景)から、Inspectorで1つを選ぶ。冒険から開いたときは行き先の背景（森の遺跡は朝霧の森） | BattleInspectと同じ | 背景ごと（[戦闘の背景](#戦闘の背景)） | `BattlePostProcess` に、優先度1の背景ごとの `<舞台>Look` を重ねる |
-| Exploration | Battleと同じ舞台の一式から、冒険の行き先の背景を選ぶ（[冒険の画面](../features/screens.md#冒険の画面)） | BattleInspectと同じ | 背景ごと | Battleと同じ。味方の位置に4人、敵の位置に遺跡の門を立てる |
+
+冒険の探索（Exploration）は3Dの舞台を使わず、森を見下ろす地図を端末で描く（[冒険の画面](../features/screens.md#冒険の画面)）。
 
 カメラの位置・角度・画角、環境光と霧の色・距離は、[StageSetAssets](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/StageSetAssets.cs) の `TopView`・`HomeView`・`BattleView`・`StarlitEnvironment`・`GladeEnvironment`・`DuskEnvironment` が持つ。
 最初に使った広間（`DungeonHallStage`）と森の遺跡（`ForestRuinsStage`）は、舞台として残している（今はどの画面でも使わない）。
@@ -407,7 +407,7 @@ HD-2Dの開発者は、点光源でキャラと物に影を落とし、光と影
 | 光の筋・塵・木漏れ日 | `Hd2dStageKit` の `LightBeam`・`Motes`・`LeafCookie` |
 | 停止中とSceneタブの表示 | [Hd2dParticlePreview](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dParticlePreview.cs)、[Hd2dSceneViewSync](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dSceneViewSync.cs) |
 | 描いた遠景 | シェーダー `Baryonyx/HD2D/Painted Distance`、`Hd2dStageKit.PaintedMaterial` |
-| テクスチャの変換 | [stage_texture.py](../../.agents/skills/hd2d-lighting-vfx/scripts/stage_texture.py) |
+| テクスチャの変換 | [stage_texture.py](../../.agents/skills/hd2d-stage-set/scripts/stage_texture.py) |
 | 小物と汚し | [StageDressing](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/StageDressing.cs)。部品は `Hd2dStageKit` の `Boards`・`Decals`・`Shades`・`Scatter` |
 | 法線マップ | `Hd2dStageKit.ReliefMap`、計算は [Hd2dRelief](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dRelief.cs) |
 | 草と葉 | シェーダー `Baryonyx/HD2D/Stage Foliage`、`Hd2dStageKit.FoliageMaterial` |
@@ -432,6 +432,7 @@ HD-2Dの開発者は、点光源でキャラと物に影を落とし、光と影
 
 ## 変更と判断の記録
 
+- 2026-10-05：画面ごとの構成の表にあった「Exploration（Battleと同じ舞台から行き先の背景を選ぶ）」を外した。探索は2026-10-04に、3Dの舞台を使わない森を見下ろす地図へ作り替えている（[冒険の画面](../features/screens.md#冒険の画面)）。作業の進め方を記したスキルへのリンクを、3Dの舞台をまとめた hd2d-stage-set に替えた。
 - 2026-10-03：ユーザーの「ライティングが足りない」との指摘を受け、10種類の戦闘の背景に、光芒と光だまり、草原と浜の雲の影を足した（[光芒と光だまり](#光芒と光だまり)）。HD-2Dの照明の資料をWebで調べ直し、画面空間のボリュームライトはスマートフォンの負荷から採らず、板の光芒と地面の光だまりで光の当たる場所を見せることにした。撮影で見つけた次の問題を直した。窓と月の光芒の上端が描いた遠景の奥に出て隠れた（落ちる位置と向きを計算して手前へ収めた）。手前へ差す光芒が縦の柱に見えた（左右にも傾けた）。昼の草原と浜で光芒が地面の明るさに埋もれた（強くした）。
 - 2026-10-03：ユーザーの依頼で、戦闘の背景を10種類（草原の街道、朝霧の森、坑道、水晶の洞窟、海辺の岩場、霧の沼地、雪原、火山、夜の墓地、古城の大広間）作り、`Battle.unity` でInspectorから選べるようにした（[戦闘の背景](#戦闘の背景)）。テクスチャ89枚はCodex CLIで生成した。舞台ごとに作り方を変えず、夕暮れの高原で確かめた配置（床・遠景・額縁・奥の物・小物）を共通の決まりにした。撮影で見つけた次の問題を直した。奥の額縁の大物を描いた遠景より奥に置いて写っていなかった（遠景の手前へ移した）。古城の絨毯の上の割れた床石がしみに見えた（絨毯の外だけに置いた）。坑道と古城の床が暗く、キャラより先に暗さが目に付いた（床の色を明るくし、画面外の左右に暖色の点光源を置いた）。火山の赤い光で緑の敵が茶色に見えた（主光源と環境光を中立に近づけた）。
 - 2026-10-03：ユーザーの依頼で、Top・Home・BattleInspectの舞台に、HD-2Dらしい密度とリアルな見え方を求めて、小物・草の房・地面の汚し・足元の陰を足した（[小物と汚し](#小物と汚し)）。テクスチャ23枚はCodex CLIで生成した。光を受ける面には絵から計算した法線マップを付け、草と葉は裏からの光を透かして風で揺れるシェーダーにした。細い葉や刃は、地面と同じドットの細かさでは縮小でつぶれたため、細かくした。撮影で見つけた次の問題を直した。遠くの木の足元の陰がぼけた地面の上に細い線として残った（距離で絞った）。Homeの奥の木箱が大木の葉の影で黒い箱に見えた（日なたへ移し、暗く描かれた色を明るくした）。Topの旗が暗い崖に溶けた（手前の松明の外側へ移した）。戦闘の手前の小物が手札とボタンに隠れ、石舞台の中央の砂が橙のしみに見えた（空いた縁へ移した）。

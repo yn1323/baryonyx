@@ -1,5 +1,7 @@
 # サーバーの疎通確認
 
+[機能索引](README.md)
+
 HonoがHTTPに応答し、接続先のD1へクエリーを実行できることを確認する。
 Workers対応とMiniflareでのローカル検証は実装済みで、Cloudflareへの実公開は未確認である。
 

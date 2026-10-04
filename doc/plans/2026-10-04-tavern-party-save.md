@@ -7,7 +7,7 @@ updated: 2026-10-04
 
 # 酒場の編成・カードスキル・レベルのサーバー保存
 
-計画の状態：完了（実装と自動テストは完了。Unity EditorでローカルのサーバーにつないだPlayでの確認と、Androidエミュレーターでの確認は未実施。[検証結果](#検証結果)）
+状態：完了（実装と自動テストは完了。Unity EditorでローカルのサーバーにつないだPlayでの確認と、Androidエミュレーターでの確認は未実施。[検証結果](#検証結果)）
 
 [計画索引](README.md) / [パーティ](../features/party.md) / [育成と強化](../features/progression.md) / [ACTボーナスの保存](../features/step-bonus.md#持ち物と枠の保存)
 
@@ -147,7 +147,7 @@ updated: 2026-10-04
 
 - [パーティ](../features/party.md)・[育成と強化](../features/progression.md)・[ルーン経済](../features/economy.md)（レベルアップでの消費の実装）・[アカウントとセーブ](../features/accounts-save.md)（保存項目）
 - [画面一覧](../features/screens.md)の編成・育成・カードスキル（「アプリを動かしている間だけ残る」の記述）
-- [機能索引の現在の実装](../features/README.md#現在の実装)、[バックエンドの開発環境](../rules/backend-design.md)のマイグレーションとテストの一覧
+- [キャラと編成の保存の実装との対応](../features/party.md#実装との対応)、[バックエンドの開発環境](../rules/backend-design.md)のマイグレーションとテストの一覧
 
 ### 今回変えないもの
 

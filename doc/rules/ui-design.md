@@ -1,9 +1,11 @@
 # UnityのUI設計ルール
 
-スマートフォンの健康データ画面も含め、アプリは横画面に固定し、表示領域の大きさが変わっても文章を読めて必要な操作へ到達できるようにする。
-ゲーム画面のワイヤーは中央の16:9 Core Areaへ必須UIを収める。
-現在はuGUIを使うTop・Homeに適用している。
-削除した「1週間の歩数」と[画面ワイヤー](../features/game-wireframe.md)の構成と寸法は、[健康データの仕様](../features/health-data.md#スマートフォン向けの画面構成)と試作の記録に残す。
+[設計・開発ルールの索引](README.md)
+
+アプリは横画面に固定し、表示領域の大きさが変わっても文章を読めて必要な操作へ到達できるようにする。
+ゲーム画面は中央の16:9 Core Areaへ必須UIを収める。
+uGUIで作るゲームの画面（Top・Home・案内人の画面・冒険・戦闘）に適用する。
+削除した「1週間の歩数」と[操作試作](../archive/game-wireframe.md)の構成と寸法は、[削除した歩数画面の記録](../archive/health-data-local-screen.md#スマートフォン向けの画面構成)と試作の記録に残す。
 
 ## 画面方向と拡縮
 
@@ -35,7 +37,7 @@ Androidの大画面では向きの指定が上書きされる条件とゲーム�
 ## 現行のUI構成
 
 Unity `6000.6.0f1` のゲーム内UIは、uGUI、TextMeshPro、Input Systemを使う。
-画面、ボタン、数値、JSONなどゲーム内のTextMeshProテキストはDotGothic16で統一する。
+画面、ボタン、数値などゲーム内のTextMeshProテキストはDotGothic16で統一する。
 例外として、戦闘中に浮かぶダメージと回復の数字にはDela Gothic Oneを使う（[戦闘の数字のフォント](../../client/Assets/Baryonyx/Features/Combat/UI/Fonts/README.md)）。
 フォント本体、TMPアセット、ライセンスの参照先は[ゲーム画面のフォント](../../client/Assets/Baryonyx/Shared/UI/Fonts/README.md)に揃える。
 新規画面もuGUIを既定とし、UI Toolkitは独立した新規画面で明確な利点があり、入力・描画順・フォーカス・ライフサイクル・テストの境界を設計できる場合だけ採用する。
@@ -71,7 +73,7 @@ SafeAreaは `Screen.safeArea` と画面サイズから求め、機種名ごと�
 本文や比較値が多い画面は透明度だけで可読性を保たず、ぼかし、暗い操作面、十分なコントラストを組み合わせる。
 
 全画面モーダルは確認や獲得など一つの作業に集中させ、背面のクリックとスクロールを止める。
-編成・装備・歩数のように複数の操作を続ける画面は、見た目が同じ透過基調でも全画面スクリーンとして扱い、戻る操作と再入場時の状態を画面仕様へ記す。
+編成のパーティ・装備・育成のように複数の操作を続ける画面は、見た目が同じ透過基調でも全画面スクリーンとして扱い、戻る操作と再入場時の状態を画面仕様へ記す。
 透明度に依存した表示は背景の明るさで読みにくくなるため、高コントラスト表示や透明度を下げる設定を妨げない。
 
 [Appleのマテリアル指針](https://developer.apple.com/jp/design/human-interface-guidelines/materials)と[Material 3のダイアログ指針](https://m3.material.io/components/dialogs/overview)を、透過レイヤーと全画面モーダルの設計根拠として参照する。
@@ -146,9 +148,9 @@ Simulatorは実機の動作すべてを再現しないため、文字の読み�
 実機確認に使うmoto edge 50 pro（1220×2712、20:9）は、Unity Editorの起動時に [GameViewDeviceSizes](../../client/Assets/Baryonyx/Editor/GameViewDeviceSizes.cs) がGameビューのAndroidグループへ横向きの `moto edge 50 pro (2712x1220)` として登録する。[端末仕様](https://en-us.support.motorola.com/app/answers/detail/a_id/178982/~/specifications---motorola-edge-50-pro)
 この登録は画面サイズだけを再現し、Safe Areaとパンチホールは含まない。
 
-確認画像は `client/Assets/DevCaptures/` に保存し、機種・解像度・状態・テストデータの使用有無を記録する。
+確認画像は `client/Assets/DevCaptures/`（Git対象外）に保存し、機種・解像度・状態・テストデータの使用有無を記録する。
 個人の健康データや認証情報を画像へ含めない。
 実機を利用できない項目と未検証のOSは、Editorの成功とは分けて報告する。
 
 入力欄を追加するときはキーボードによる遮蔽、システム文字拡大へ対応するときはOS設定への追従を、対応する機能の受入条件に含める。
-現在の歩数画面に入力欄やシステム文字拡大の連携は実装していない。
+現在の画面に入力欄やシステム文字拡大の連携は実装していない。

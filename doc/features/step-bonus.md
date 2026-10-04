@@ -12,7 +12,7 @@ updated: 2026-10-04
 段階ごとの枠にプレイヤーがボーナスを入れておき、その日のACTが段階に届くと、その枠のボーナスが翌朝4時まで効く仕組みである。
 2026-09-27の企画見直しで、日次・週次の運動目標を廃止し、このACTボーナスが目標の役割を担うことにした。
 ACTからのルーン変換とは別の処理であり、ルーン変換は[運動データとルーン換算](exercise-rewards.md#actのルーン変換)を正本とする。
-確定・設計方針・仮設定・未決は[仕様の確度](README.md#仕様の確度)に従って区別する。
+確定・設計方針・仮設定・未決は[節の区分](../rules/documentation-policy.md#mdの形式と状態)に従って区別する。
 
 ## 確定している方針
 
@@ -131,7 +131,7 @@ ACTは、ホームで歩数を同期したときに反映する（[HomeのACTパ
 ボーナスの効果を冒険・戦闘に効かせることは未実装である。
 冒険での入手は、2026-10-04の[冒険の1周](../plans/2026-10-04-adventure-loop.md)で仮に実装した。出来事（戦闘・宝箱）を終えた部屋ごとに、種類を均等に、ランクを部屋の種類ごとの重み（仮。[サーバーの定義](../../server/src/features/adventure/catalog.ts)）で選んで1つ手に入れ、持ち物には高いランクだけを残す。
 冒険中は、サーバーが付け替えを409（`adventure_in_progress`）で断り、`GET` の応答の `locked` で知らせる。編成のボーナス設定は「冒険の途中は、ボーナスを付け替えられません」と知らせて付け替えを送らない。
-枠の設定は、仮データで画面だけを作った（[ボーナス設定](screens.md#ボーナス設定)）。
+枠を設定する画面は、編成の[ボーナス設定](screens.md#ボーナス設定)である。
 HomeのACTパネルは、まだ獲得していない最初の段階までのACTを「あと 〇 ACTで次のボーナス獲得」と表示し、ゲージの下に段階の目盛りを置く（[ホーム画面](screens.md#ホーム画面の見た目モック)）。
 段階は仮に上の候補値を使い、ゲージの最大は8,000ACTとする。ACTは、ルーン変換と同じ朝4時区切りの今日の歩数から換算した値である。
 
@@ -162,7 +162,13 @@ HomeのACTパネルは、まだ獲得していない最初の段階までのACT�
 |---|---|
 | 初期ボーナス | 7種（守りS・幸運A・宝箱透視B・目利きB・先読みC・闘志D・兆しE）。枠は先読み・幸運・宝箱透視・闘志・目利きの順 |
 | 今日のACT | ホームで取得した値を編成へ渡す。取得していないときや編成を単体で開いたときは、仮データの3,240ACTを使う |
-現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
+
+クライアントとサーバーの実装の入口は次のとおりである。
+
+| 対象 | 入口 |
+|---|---|
+| 枠の計算と設定の画面 | [枠の計算](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusLoadout.cs)・[設定の表示と操作](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSettingsView.cs)・[パネルと仮データの生成](../../client/Assets/Baryonyx/Features/StepBonus/Editor/StepBonusAssets.cs) |
+| サーバーとの読み書き | [StepBonusSource](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSource.cs)・[API](../../server/src/features/step-bonus/routes.ts) |
 
 ## 変更と判断の記録
 

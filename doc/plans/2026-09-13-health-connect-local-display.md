@@ -1,6 +1,6 @@
 # Google認証からHealth Connectの一覧・JSON詳細を表示する計画
 
-状態：進行中（実装・自動検証完了。OAuth設定・実機確認待ち）
+状態：完了（実装・自動検証まで。画面を2026-09-24に削除したため、OAuth設定と実機確認は未実施のまま終えた。画面の記録は[削除した歩数画面の記録](../archive/health-data-local-screen.md)、後継は[起動時の連携と歩数の同期](2026-09-24-startup-health-sync.md)）
 作成日：2026-09-13
 更新日：2026-09-13
 
@@ -133,7 +133,7 @@ DTOの `HealthDay` は既存サーバー同期にも使うため、画面用JSON
 ## モジュールの責務と配置
 
 以下は着手時の分割案である。
-実装で確定した構成と統合の理由は [機能文書](../features/health-data.md#画面の構成とテスト) に記載する。
+実装で確定した構成と統合の理由は [機能文書](../archive/health-data-local-screen.md#画面の構成とテスト) に記載する。
 
 **画面は表示と入力通知を担当し、操作順・状態遷移は通常のC#クラスへ置く。**
 ここでは、その画面の判断を受け持つクラスを `HealthFlowPresenter` と呼ぶ。
@@ -252,7 +252,7 @@ GoogleやOS自身によるアカウント・許可状態の保持は、アプリ
 完了記録には端末・OS・ビルド・検証した操作と合否を残し、個人の歩数、資格情報、トークンをログ・文書・コミットへ残さない。
 実機確認できなかったAndroid系統やOAuth設定は、ビルド成功で代替せず未確認と記載する。
 実装後に [健康データの機能文書](../features/health-data.md) と実機手順を更新する。
-実装の現在の動作、確定したモジュール構成、設定手順は [機能文書](../features/health-data.md#ローカル表示画面) に反映した。`HealthReadService` は `HealthScreenPresenter` にまとめ、一覧と詳細は一つの `HealthScreenView` で管理している。
+実装の現在の動作、確定したモジュール構成、設定手順は [機能文書](../archive/health-data-local-screen.md#ローカル表示画面) に反映した。`HealthReadService` は `HealthScreenPresenter` にまとめ、一覧と詳細は一つの `HealthScreenView` で管理している。
 
 ## 2026-09-13の実施結果
 
@@ -260,7 +260,7 @@ GoogleやOS自身によるアカウント・許可状態の保持は、アプリ
 既存分を含むEditMode 40件・PlayMode 7件、C#整形検査、Android APKビルド、APK署名と組み込み検査が成功した。
 Gameビューで初期画面、テストデータによる7日一覧、JSONモーダルを確認した。
 ビルドはエラー0件、Unity Pipeline・TextMesh Proなどに関する警告8件で完了した。
-検証対象と制約の詳細は [機能文書の検証記録](../features/health-data.md#2026-09-13のローカル表示画面の検証) に記載する。
+検証対象と制約の詳細は [機能文書の検証記録](../archive/health-data-local-screen.md#2026-09-13のローカル表示画面の検証) に記載する。
 
 手順6は未完了である。
 現在はOAuthのWebクライアントIDが設定されているが、接続されたAndroid実機がないため、Google認証・OS権限画面・Health Connectの実値との照合は確認していない。

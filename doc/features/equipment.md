@@ -70,7 +70,13 @@ APIは `GET /v1/equipment`、`PUT /v1/equipment/characters/:characterId/:slot`�
 ## 実装との対応
 
 本ページは企画上の要求・未決事項を記す。
-現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
+編成の[装備](screens.md#装備)で武器と防具を付け替え、サーバーに保存する（[持っている装備と付け替えの保存](#持っている装備と付け替えの保存)）。
+装備の生成・厳選・売買・合成は未実装である。
+
+| 対象 | 入口 |
+|---|---|
+| 表示と付け替え | [EquipmentPresenter](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentPresenter.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Equipment/Editor/EquipmentAssets.cs) |
+| サーバーとの読み書き | [EquipmentSource](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentSource.cs)・[API](../../server/src/features/equipment/routes.ts)・[DB操作](../../server/src/features/equipment/repository.ts) |
 
 ## 変更と判断の記録
 

@@ -1,8 +1,9 @@
 # UnityのテストとCI
 
+[設計・開発ルールの索引](README.md)
+
 [Client CI](../../.github/workflows/client-ci.yml) は整形、Analyzer、EditMode、PlayMode、CI補助スクリプトのテストを実行する。
 Android APK生成とDrive配布は一時停止中である（[停止範囲と再開方法](client-android-testing.md)）。
-Unity Webビルド、ブラウザでの起動確認、Web成果物のWorkers公開は廃止した。
 
 ## テストで検査するもの
 
@@ -194,7 +195,6 @@ Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同�
 実行補助の検査にはBashが必要で、WindowsではGit for WindowsのBashを使う。
 ライセンス設定は [コード品質の手順](client-code-quality.md) を参照する。
 
-必須チェックで旧 `Client tests (editmode)`、`Client tests (playmode)` を指定している場合は、統合後の `Client tests` へ切り替える。
 実環境ではキャッシュ有無を分けて所要時間を比較し、2回目のイメージ取得と初期インポートが再利用されることを確認する。
 
 ## 関連手順

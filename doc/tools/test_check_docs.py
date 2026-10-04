@@ -154,6 +154,37 @@ class DocumentationChecks(unittest.TestCase):
                    self.entity().replace("palette: 青 | 白", "palette: [青, 白]"))
         self.assertTrue(any("引用符・構造・コメント" in e for e in check(self.root)))
 
+    def test_links_outside_doc_are_checked_without_index_or_metadata(self):
+        self.write("AGENTS.md", "# Root\n\n[index](doc/README.md)\n[gone](doc/absent.md)\n")
+        self.write("client/AGENTS.md", "# Client\n\n[root](../AGENTS.md#root)\n[heading](../AGENTS.md#absent)\n")
+        self.write(".agents/skills/example/SKILL.md", "# Skill\n\n[doc](../../../doc/README.md#index)\n")
+        self.write(".agents/skills/example/references/notes.md", "# Notes\n\n[skill](../SKILL.md#missing)\n")
+        errors = check(self.root)
+        self.assertIn("AGENTS.md: リンク先がない: doc/absent.md", errors)
+        self.assertIn("client/AGENTS.md: 見出しがない: ../AGENTS.md#absent", errors)
+        self.assertIn(".agents/skills/example/references/notes.md: 見出しがない: ../SKILL.md#missing", errors)
+        self.assertEqual(3, len(errors))
+
+    def test_generated_directories_are_not_searched_for_agents(self):
+        self.write("server/node_modules/package/AGENTS.md", "[gone](absent.md)\n")
+        self.write("client/Library/AGENTS.md", "[gone](absent.md)\n")
+        self.assertEqual([], check(self.root))
+
+    def test_archive_requires_metadata_with_record_status(self):
+        self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n"
+                   "[art](art/visual-index.md)\n[archive](archive/README.md)\n")
+        self.write("doc/archive/README.md", "# Archive\n\n[old](old.md)\n[kept](kept.md)\n")
+        self.write("doc/archive/old.md", "# Old\n")
+        self.write("doc/archive/kept.md",
+                   "---\nid: archive-kept\ntype: reference\nstatus: 確定\nupdated: 2026-10-05\n---\n\n# Kept\n")
+        errors = check(self.root)
+        self.assertTrue(any("doc/archive/old.md: 必須メタデータがない" in e for e in errors))
+        self.assertIn("doc/archive/kept.md: 保管庫の文書のstatusは記録か見送りにする", errors)
+        self.write("doc/archive/old.md",
+                   "---\nid: archive-old\ntype: reference\nstatus: 記録\nupdated: 2026-10-05\n---\n\n# Old\n")
+        self.write("doc/archive/kept.md",
+                   "---\nid: archive-kept\ntype: reference\nstatus: 見送り\nupdated: 2026-10-05\n---\n\n# Kept\n")
+        self.assertEqual([], check(self.root))
 
 if __name__ == "__main__":
     unittest.main()

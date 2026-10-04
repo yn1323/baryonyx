@@ -7,7 +7,7 @@ updated: 2026-09-19
 
 # 主要画面の遷移とUnityワイヤーの実装計画
 
-状態：完了。ワイヤーの実装、Editorでの検証、Android APKのビルド・配置を完了した。端末での起動・操作評価は未確認。
+状態：完了（ワイヤーの実装、Editorでの検証、Android APKのビルド・配置。端末での起動・操作評価は未確認。試作は2026-09-24に削除し、記録は[操作試作の記録](../archive/game-wireframe.md)）
 
 [計画索引](README.md) / [画面仕様](../features/screens.md) / [UI設計ルール](../rules/ui-design.md)
 

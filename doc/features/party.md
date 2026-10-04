@@ -71,9 +71,9 @@ updated: 2026-10-05
 |---|---|
 | ステータスの使い道と数値 | 項目は[8つ](#ステータスの項目)に決まった。物防・属防・会心・幸運の使い道と、防御と幸運の計算式は決まった。物攻・属攻の使い道（候補の確定）、属性のない技・回復・ブロックの量に使う項目、会心の一撃の倍率と確率への換算は未決。値はLv100の値と成長率で出す[仮設定](progression.md#レベルとステータス)がある |
 | レベルの上限、必要ルーン、パッシブ・固有スキルを解放するレベル | 未決 |
-| キャラごとに装備できるカードの属性の組み合わせ | 未決。酒場の[スキル](screens.md#スキル)のモックでは、仮データで最初に付けているカードの属性を仮に使う |
+| キャラごとに装備できるカードの属性の組み合わせ | 未決。編成の[スキル](screens.md#スキル)のモックでは、仮データで最初に付けているカードの属性を仮に使う |
 | 装備を「基本的に」どのキャラでも付けられるとした例外の有無 | 未決 |
-| スキルの入手方法 | 冒険でスキルを獲得できる（[探索と進行](stage-progression.md#分岐ルートを選んで進む冒険)）。ほかの入手方法、持っている枚数の数え方、同じカードを複数のキャラが付けられるかは未決。酒場の[スキル](screens.md#スキル)のモックでは、50枚すべてを持ち、同じカードを複数のキャラが付けられるものとして仮に扱う |
+| スキルの入手方法 | 冒険でスキルを獲得できる（[探索と進行](stage-progression.md#分岐ルートを選んで進む冒険)）。ほかの入手方法、持っている枚数の数え方、同じカードを複数のキャラが付けられるかは未決。編成の[スキル](screens.md#スキル)のモックでは、50枚すべてを持ち、同じカードを複数のキャラが付けられるものとして仮に扱う |
 | キャラの具体的な構成と加入方法 | 未決。召喚からキャラが出る可能性がある（[召喚](monetization.md)） |
 | 初期メンバー、未所持枠の扱い | 未決。サーバーは仮に、初めて読むユーザーへ仮データの9人（Lv・カード・4人の編成を含む）を付与する（[実装との対応](#実装との対応)） |
 | 同じキャラを複数編成できるか | 未決 |
@@ -97,7 +97,13 @@ updated: 2026-10-05
 ## 実装との対応
 
 本ページは企画上の要求・未決事項を記す。
-現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
+クライアントの実装の入口は次のとおりである。
+
+| 対象 | 入口 |
+|---|---|
+| 編成のパーティ（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormationView.cs)・[パネルと仮データの生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
+| 編成のスキル（仲間ごとの4枚の付け替え） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
+| キャラ・Lv・カード・編成のサーバーとの読み書き | [サーバーとの読み書き](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySource.cs)・[アプリ内での保持](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs)・[DB操作](../../server/src/features/party/repository.ts) |
 
 キャラ・Lv・カード・編成は、サーバーの次のAPIとテーブルで、ユーザーごとに保存する（[実装](../../server/src/features/party/routes.ts)）。
 どれもログイン中のセッション（ゲストを含む）が必要で、ないときは401を返す。

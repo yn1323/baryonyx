@@ -2,7 +2,7 @@
 id: feature-startup-sync
 type: specification
 status: 運用中
-updated: 2026-10-03
+updated: 2026-10-05
 ---
 
 # 起動時の連携と歩数の同期
@@ -79,7 +79,7 @@ Homeの表示時に、サーバーに保存した今日の歩数と所持ルー�
 パネルを押すと「Loading...」を表示し、Health Connectの直近7日分をサーバーへ保存する。
 続けて未変換の分をACTへ換算してルーンへ変換（`POST /v1/exercise/rewards/claim`）し、今日の歩数を取得し直す。
 変換は1ACT＝1ルーンで、付与済みの分は二重に付与しない（[運動報酬](exercise-rewards.md#actのルーン変換)）。
-請求の応答に含まれる付与量と付与後の残高を使い、所持数を付与前の値から付与後の値まで増やす[獲得の演出](screens.md#ルーン獲得の演出)を出す。付与量が0なら画面中央に「獲得ルーンはありません」と表示する。
+請求の応答に含まれる付与量と付与後の残高を使い、所持数を付与前の値から付与後の値まで増やす[獲得の演出](screens.md#ルーン獲得の演出)を出す。付与量が0なら「獲得ルーンはありません」と[通知の帯](../rules/ui-design.md#操作を求めない通知)で知らせる。
 未許可なら先に許可画面を開き、許可画面を出せない状態なら設定を開く。
 失敗や未連携はトーストで「歩数を取得できませんでした」などと知らせ、直前のACTと所持ルーンを残す。
 同期中の連打は1回の同期として扱う。
@@ -93,12 +93,63 @@ EditorなどAndroid以外では、健康データのサンプルを返すプレ�
 [接続設定](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset)の `PreviewStartsUnlinked` を有効にすると、プレビューを未連携の状態から始め、モーダルを確認できる。
 プレビューでは許可の要求と設定を開く操作が、どちらも許可済みとして返る。
 
-接続先は環境（Local・Dev・Prod）の名前で選ぶ。
-EditorのPlayはメニュー `Baryonyx > Server` の選択（既定はLocal）、APKはビルド時の環境変数（既定はDev、PreviewもDev）で決まり、設定アセットは書き換えない。
-選び方の詳細は[クライアントの作業ルール](../../client/AGENTS.md#サーバーのbaseurl)を正本とする。
+接続先は環境（Local・Dev・Prod）の名前で選び、接続先を切り替えるために設定アセットを書き換えない。
+環境ごとのURLは[接続設定](../../client/Assets/Baryonyx/Features/Health/Data/HealthConnectionSettings.asset)に持つ。
+この値は公開される接続先であり、秘密値を入れない。
+
+| 項目 | 値 |
+|---|---|
+| `DevServerUrl` | `https://baryonyx-server-dev.croissant-lab.workers.dev` |
+| `ProdServerUrl` | 未設定（Prod環境の公開後に設定する） |
+| `BuildServerUrl` | リポジトリでは常に空。APKのビルド中だけ、選んだ環境のURLが入る |
+
+EditorのPlayで接続する先は、メニューの `Baryonyx > Server` で `Local (127.0.0.1:4000)`・`Dev`・`Prod` から選ぶ。
+選択は開発者ごとの `client/UserSettings/BaryonyxServer.json`（Git対象外）に保存し、未選択ならLocalに接続する。
+この選択はAPKに影響しない。
+開発用のプレイヤー（seed）としてLocalに接続する方法は、[開発用データ（seed）](../rules/backend-design.md#開発用データseed)に記す。
+
+APKの接続先は、[AndroidBuild.Build](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) を実行するときの環境変数で決める。
+
+| 環境変数 | 接続先 |
+|---|---|
+| どちらも未指定 | Dev |
+| `BARYONYX_ENVIRONMENT=dev` または `preview` | Dev（PreviewのAPKは当面Devへ接続する） |
+| `BARYONYX_ENVIRONMENT=prod` | `ProdServerUrl`。未設定ならビルドを止める |
+| `BARYONYX_SERVER_URL=<URL>` | 指定したURL。環境名より優先する。Androidエミュレーターから同じPCのLocalサーバーを使うときは `http://10.0.2.2:4000`（エミュレーター内の `127.0.0.1` はエミュレーター自身を指すため） |
+
+ビルドログの `BARYONYX_ANDROID_SERVER:` の行で、APKに入れた環境名とURLを確認できる。
+Google Driveへ置くときは、環境名をあらかじめ設定した[手動実行用ショートカット](../rules/local-shortcuts.md#接続先の環境)を使う。
+ビルドの最後に `BuildServerUrl` を空へ戻す。
+ビルドが途中で強制終了した場合は値が残ることがあるため、Assetの差分を確認して空へ戻す。
+[AndroidBuild.Build](../../client/Assets/Baryonyx/Editor/CI/AndroidBuild.cs) 以外の方法でビルドしたAPKはDevへ接続する。
+
 選んだ環境のURLが空なら、歩数を端末のメモリだけに保持する。
-URLはHTTPSを基本とし、HTTPは開発PC（`127.0.0.1`・`localhost`）とAndroidエミュレーターから開発PCへ届く `10.0.2.2` だけで受け付ける。
+URLはHTTPSを基本とし、HTTPは開発PC（`127.0.0.1`・`localhost`）とAndroidエミュレーターから開発PCへ届く `10.0.2.2` だけで受け付ける（[ServerApi](../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs)）。
 APKはDevelopment Buildのため、Player Settingsの「Allow downloads over HTTP」を「Development builds only」にしている。
+
+### 接続設定アセットがないとき
+
+`HealthConnectionSettings.asset` が存在しない場合は、Unity Editorで `Baryonyx > Health > Create Screen Assets` を実行して生成する。
+Unityを閉じた状態でリポジトリのルートから同じ処理を実行する場合は、次のPowerShellのコマンドを使う。
+
+```powershell
+$projectPath = (Resolve-Path 'client').Path
+$unityPath = $env:UNITY_EDITOR_PATH
+if ([string]::IsNullOrWhiteSpace($unityPath)) {
+    $unityPath = (Get-ChildItem "$env:ProgramFiles\Unity\Hub\Editor" -Directory |
+        Sort-Object Name -Descending |
+        ForEach-Object { Join-Path $_.FullName 'Editor\Unity.exe' } |
+        Where-Object { Test-Path $_ } |
+        Select-Object -First 1)
+}
+if ([string]::IsNullOrWhiteSpace($unityPath)) {
+    throw 'Unity.exeが見つかりません。UNITY_EDITOR_PATHに指定してください。'
+}
+& $unityPath -batchmode -quit -projectPath $projectPath `
+    -executeMethod Baryonyx.Health.Editor.HealthScreenAssets.CreateAssets `
+    -logFile (Join-Path $projectPath 'Logs/create-health-assets.log')
+if ($LASTEXITCODE -ne 0) { throw "UnityでのAsset生成に失敗しました。終了コード: $LASTEXITCODE" }
+```
 
 サーバーは日付の古い順に連続した7日分と、UTC（末尾 `Z`）の時刻を要求する。
 クライアントは取得元の並び順や時差の表記に依存しないよう、送信前に並べ替えてUTCへそろえる。
@@ -108,7 +159,8 @@ APKはDevelopment Buildのため、Player Settingsの「Allow downloads over HTT
 | 対象 | 入口 |
 |---|---|
 | ゲストの秘密値 | [GuestCredential](../../client/Assets/Baryonyx/Features/Account/Runtime/GuestCredential.cs) |
-| ゲストのセッション、保存、取得 | [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) |
+| ゲストのセッション（全機能で共有） | [AccountSessionRunner](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) |
+| 歩数の保存・取得、ルーンの請求 | [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) |
 | 連携の確認、許可の要求、同期 | [HealthStepLink](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStepLink.cs) |
 | Topの起動処理の状態 | [HealthStartupFlow](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStartupFlow.cs) |
 | 連携モーダル | [HealthLinkModalView](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthLinkModalView.cs)・[Prefab生成](../../client/Assets/Baryonyx/Features/Health/Editor/HealthLinkModalAssets.cs) |
@@ -126,6 +178,8 @@ EditorからローカルのHonoへ接続し、ゲストログイン、7日分の
 AndroidエミュレーターでのHealth Connect許可画面、設定からの復帰、Dev環境への公開後の動作は未確認である。
 
 ## 変更と判断の記録
+
+- 2026-10-05：文書の整理で、`client/AGENTS.md` にあった接続先のURL・選び方の表と、接続設定アセットの生成手順を[実行環境と接続先](#実行環境と接続先)へ移し、この文書を正本にした。付与量が0のときの知らせを、2026-10-04に共通の通知の帯へそろえた画面の動作に合わせて直した。
 
 - 2026-10-04：ユーザーの指示により、運動量の単位の名前を「UPT」から「ACT」（読みはアクト、画面の表記はACT）へ改めた（[ゲーム共通の単位](exercise-rewards.md#ゲーム共通の単位act)）。換算は1歩＝1ACT、1ACT＝1ルーンで変えない。Homeの左上の単位をACTへ改め、UPTパネルをACTパネルへ改名した。
 

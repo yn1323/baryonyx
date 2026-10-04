@@ -72,13 +72,13 @@ Strava・Fitbit・Samsung Healthは連携経路の例であり、サービスご
 
 本ページは企画上の要求・未決事項を記す。
 1歩＝1ACT＝1ルーンのため、サーバーはACTを保存せず、歩数の差分をそのままルーンの付与量にしている。換算率を1以外にする場合や、歩数以外の指標を加える場合は、付与済みACTの保存を追加する。
-サーバーのD1保存、報酬API、冪等請求、歩数減少時の保全、既存Health画面からの起動時請求と明示請求、直近7日履歴表示まで実装した。
+サーバーのD1保存、報酬API、冪等請求、歩数減少時の保全を実装した（[API](../../server/src/features/exercise-rewards/routes.ts)・[クライアントの要求](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs)）。
+2026-09-24に削除した歩数画面は、起動時の請求と明示の請求、直近7日の履歴表示も行っていた（[削除した歩数画面の記録](../archive/health-data-local-screen.md)）。
 Homeでは、ACTパネルを押す操作を明示請求とし、獲得量を演出で表示する（[HomeのACTパネル](startup-sync.md#homeのactパネル)）。起動時の自動請求と、日ごとの差分のポップアップ表示は未実装である。
-サーバーURLを設定アセットへ登録していない環境では、既存のローカルHealth Connect表示だけを使う。
+選んだ環境のURLが空のときは、歩数を端末のメモリだけに保持する（[実行環境と接続先](startup-sync.md#実行環境と接続先)）。
 Unity実機でのGoogle認証、Health Connect権限、サーバー公開環境への接続は別途確認する。
 
 起動時の同期は歩数の権限だけを要求して読むが、Androidライブラリのマニフェストは歩数を含む16種類の読み取り権限を宣言しており、歩数だけとする企画と一致しない（[健康データの実装状況](health-data.md#現在の実装状況)）。
-現在の実装範囲は[機能索引の実装欄](README.md#現在の実装)で確認する。
 
 ## 変更と判断の記録
 

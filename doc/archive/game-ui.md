@@ -1,13 +1,17 @@
 ---
 id: art-game-ui
-type: specification
-status: 一部確定
-updated: 2026-09-24
+type: reference
+status: 記録
+updated: 2026-10-05
 ---
 
 # 体験版のゲームUIと生成素材
 
-[アート索引](README.md) / [操作試作の記録](../features/game-wireframe.md)
+[資料の保管庫](README.md) / [操作試作の記録](game-wireframe.md)
+
+2026-09-24に削除した操作試作の11画面の見た目、生成素材、検証の記録である。
+2026-10-05に `doc/art/` から移した。
+今も使う決まりのうち、PNGの読み込み設定は[ゲーム内の対象の画像](../rules/frontend-design.md#ゲーム内の対象の画像)、ホームのトーマの立ち絵と規格との差は[アート方針の既存素材との差](../art/direction.md#既存素材との差)を正本とする。
 
 ## 対象と確認状況
 

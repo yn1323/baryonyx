@@ -1,5 +1,7 @@
 # Renovateによる依存関係の更新
 
+[設計・開発ルールの索引](README.md)
+
 依存関係の更新PRはRenovateで作成する。
 設定はリポジトリ直下の [renovate.json](../../renovate.json) に集約し、Mendが提供するRenovate GitHub Appで実行する。
 更新先は `main` とし、PRの確認とマージは手動で行う。

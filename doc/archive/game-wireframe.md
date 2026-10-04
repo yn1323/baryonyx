@@ -1,13 +1,17 @@
 ---
 id: feature-game-wireframe
-type: specification
+type: reference
 status: 記録
-updated: 2026-09-24
+updated: 2026-10-05
 ---
 
 # 遊べる試作の画面と操作
 
-[機能索引](README.md) / [画面一覧](screens.md) / [戦闘](combat.md) / [見た目と素材](../art/game-ui.md)
+[資料の保管庫](README.md) / 後継：[画面一覧と操作](../features/screens.md) / [戦闘](../features/combat.md) / [見た目と素材](game-ui.md)
+
+2026-09-19に作り、2026-09-24に削除した操作試作（Wireframe）の記録である。
+2026-10-05に `doc/features/` から移した。
+ここにだけ書かれていたTopの動作と画面遷移の演出は、[画面一覧のTop](../features/screens.md#top)へ移して正本にした。
 
 ## 現在の状態
 
@@ -27,11 +31,11 @@ Androidの通常起動シーンは [Top](../../client/Assets/Baryonyx/App/Scenes
 Topの全面押下では、ホーム画面のモック [Home](../../client/Assets/Baryonyx/App/Scenes/Home.unity) へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 Topは覆った状態から同じShutter演出で開き、開き終わるまではタップを受け付けない。
 開き終わってから開始の案内を表示し、全面押下の受付を始める。
-2026-09-24から、案内は起動時の同期が終わるまで「LOADING...」、終わると「TAP TO START」になる（[起動時の連携と歩数の同期](startup-sync.md)）。
+2026-09-24から、案内は起動時の同期が終わるまで「LOADING...」、終わると「TAP TO START」になる（[起動時の連携と歩数の同期](../features/startup-sync.md)）。
 起動時のスプラッシュ画面や開く演出の途中で押した操作は、Homeへの遷移に使わない。
 削除前は、ホームの行き先カード（再開）を押すと同じShutter演出でこのワイヤー画面 `Main` へ遷移した。
-2026-09-29からは、行き先カードは[戦闘画面の見た目モック](screens.md#戦闘画面の見た目モック)（`BattleInspect`）へ遷移する。
-ホームの構成は[画面一覧](screens.md#ホーム画面の見た目モック)を参照する。
+2026-09-29からは、行き先カードは[戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック)（`BattleInspect`）へ遷移する。
+ホームの構成は[画面一覧](../features/screens.md#ホーム画面の見た目モック)を参照する。
 初回の目標設定ポップアップは表示せず、ホームから冒険と歩数・運動データへ進める。
 通常画面には仮の勝敗を選ぶ確認パネルを表示しない。
 Health Connectは起動時に利用条件の確認と接続・歩数取得を開始し、権限が必要な場合だけAndroidの許可画面を表示する。
@@ -68,7 +72,7 @@ Health Connectは起動時に利用条件の確認と接続・歩数取得を開
 戦闘の計算は画面から分離した[CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs)が担当する。
 4人の自動攻撃、スキルの詠唱と個別クールダウン、敵の通常攻撃・大技予告、弱点、ダウン、回復・防護、勝敗を実装した。
 選択中は共通の時計を0.12倍にし、攻撃・詠唱・予告・クールダウン・ダウンの時間を同じ割合で遅くする。
-試作用の数値と未実装事項は[戦闘の実装との対応](combat.md#実装との対応)を参照する。
+試作用の数値と未実装事項は[戦闘の実装との対応](../features/combat.md#実装との対応)を参照する。
 
 ダウンの残量数字・リング・追加バーは表示しない。
 敵の濃淡、よろけ、ダウン表示と傾きで状態を表す。
@@ -87,7 +91,7 @@ Health Connectは起動時に利用条件の確認と接続・歩数取得を開
 
 Androidでは既存のHealth Connect Providerから端末のデータを読み取る。
 Googleログインは歩数取得の前提にしない。
-接続、利用条件の確認、権限の拒否・取消、更新、前面復帰時の再確認は既存の[健康データ機能](health-data.md)に従う。
+接続、利用条件の確認、権限の拒否・取消、更新、前面復帰時の再確認は既存の[健康データ機能](../features/health-data.md)に従う。
 ホームを表示したまま起動時の接続処理を進め、取得済みの歩数はホームと歩数画面へ反映する。
 歩数の画面表示だけならGoogleログインは不要で、Health Connectから端末内へ表示する。
 Google認証を完了した場合は、認証ユーザー、Health Connectの直近7日分、歩数から換算したルーン残高・日別履歴を運動報酬APIへ保存する。
@@ -171,7 +175,7 @@ CI補助スクリプトのテスト13件の成功は、横画面UIの動作確�
 実Prefabの入力、通常戦の自動勝利と報酬、歩数・JSONの表示はPlayModeで検査する。
 1920×1080、2340×1080、2400×1080のGameビューを撮影し、16:9のCore Area、左右の拡張領域、Safe Area内の必須UIを確認する。
 Unity EditorのGameビューでは、Androidグループの `Baryonyx Phone Landscape QA (2340×1080)` と `Baryonyx Wide Landscape QA (2400×1080)` を使う。
-実施結果は[UIの検証記録](../art/game-ui.md)へ記す。
+実施結果は[UIの検証記録](game-ui.md)へ記す。
 
 Androidの権限ダイアログ、実際の健康記録との一致、戻る操作、タップ領域、システムバーとの重なりは端末確認が必要である。
 ユーザーが手動起動したAndroidエミュレーターを使い、確認結果と必要なログの提供をユーザーへ依頼する。

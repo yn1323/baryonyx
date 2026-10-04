@@ -11,7 +11,7 @@ updated: 2026-10-04
 
 2026-09-15にユーザーが提示した「てくてくダンジョン｜探索・進行・戦闘仕様」の探索と進行を基に、2026-09-27の企画見直しでSlay the Spireのような分岐ルートの冒険へ変更した。
 負けたら1階からやり直す構成になり、進捗を持ち越す旧方針は[変更と判断の記録](#変更と判断の記録)へ移した。
-[仕様の確度](README.md#仕様の確度)を区別し、[初期企画](../game/brief.md)にあった危険度選択中心の進行は現行ルールへ混ぜない。
+[節の区分](../rules/documentation-policy.md#mdの形式と状態)を区別し、[初期企画](../game/brief.md)にあった危険度選択中心の進行は現行ルールへ混ぜない。
 
 ## 確定している方針
 
@@ -198,8 +198,12 @@ updated: 2026-10-04
 同じ日に、探索を森を見下ろす地図にし、道を冒険ごとに作るようにした（[計画](../plans/2026-10-04-exploration-route-map.md)、[画面](screens.md#冒険の画面)）。
 道を作る処理は [AdventureRouteMap](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureRouteMap.cs)、地図の絵は [ExplorationMapPainter](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapPainter.cs)、見える距離は [ExplorationMapSight](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapProjection.cs) にある。
 見える距離をACTボーナスで延ばす効果は、まだない。
-2026-09-19時点の[操作ワイヤー](game-wireframe.md)は文字のボタンで戦闘・獲得へ進む試作で、2026-09-24に削除した。
-現在の実装入口は[機能索引の実装欄](README.md#現在の実装)で確認する。
+2026-09-19時点の[操作ワイヤー](../archive/game-wireframe.md)は文字のボタンで戦闘・獲得へ進む試作で、2026-09-24に削除した。
+| 対象 | 入口 |
+|---|---|
+| 冒険の状態の読み書き | [AdventureSource](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureSource.cs)・[API](../../server/src/features/adventure/routes.ts)・[DB操作](../../server/src/features/adventure/repository.ts) |
+| 探索と戦闘の流れ | [探索の流れ](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationFlow.cs)・[戦闘との受け渡し](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs)・[旅の案内所の出発](../../client/Assets/Baryonyx/Features/Adventure/Runtime/TravelDeparture.cs) |
+| 画面とシーンの生成 | [画面の生成](../../client/Assets/Baryonyx/Features/Adventure/Editor/AdventureAssets.cs)・[探索シーンの生成](../../client/Assets/Baryonyx/App/Editor/ExplorationSceneSetup.cs) |
 
 ## 変更と判断の記録
 

@@ -7,6 +7,8 @@ updated: 2026-09-21
 
 # 運動量とルーン変換のDB計画
 
+状態：完了（サーバーのDB・報酬API・冪等請求。起動時の自動請求と差分のポップアップは、2026-09-26にHomeのACTパネルを押したときだけ請求する形へ置き換えた（[HomeのACTパネル](../features/startup-sync.md#homeのactパネル)））
+
 [計画索引](README.md) / [運動データとルーン換算](../features/exercise-rewards.md) / [ルーン経済](../features/economy.md)
 
 ## 目的

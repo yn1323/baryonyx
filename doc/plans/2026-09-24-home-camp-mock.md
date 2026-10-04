@@ -7,7 +7,7 @@ updated: 2026-09-24
 
 # ホーム画面「野営地」の見た目モック
 
-計画の状態：完了（Unity Editorで実装・検証済み。Androidエミュレーターでの確認は未実施）
+状態：完了（Unity Editorで実装・検証済み。Androidエミュレーターでの確認は未実施）
 
 TOPから遷移するホーム画面を、ダンジョンの広間で焚き火を囲む「野営地」の構成へ作り替える。
 今回は見た目と操作の手触りを確かめるモックとし、健康データ・ルーン残高・サーバーなどの実データには接続しない。
@@ -129,7 +129,7 @@ TOPの遷移先を変えると、ワイヤー画面（`Main`）へ実機で入�
 - 展示室：追加・変更したアセットが一覧に出て、プレビューで変更後の内容を確認できること。
 - C#はCSharpierで整形し、再コンパイルでエラーがないこと。
 
-完了時は、[操作ワイヤー](../features/game-wireframe.md)のTOPの遷移先、[クライアントの構成](../rules/frontend-design.md)の配置図、[clientのAGENTS.md](../../client/AGENTS.md)の起動シーンの説明、[画面一覧](../features/screens.md)のホームの記録を更新する。
+完了時は、[操作ワイヤー](../archive/game-wireframe.md)のTOPの遷移先、[クライアントの構成](../rules/frontend-design.md)の配置図、[clientのAGENTS.md](../../client/AGENTS.md)の起動シーンの説明、[画面一覧](../features/screens.md)のホームの記録を更新する。
 Androidエミュレーターでのタップ位置とシステムバーの確認は、ユーザーに起動を依頼して行う。
 
 ## 決定した事項

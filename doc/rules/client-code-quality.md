@@ -1,5 +1,7 @@
 # Unityクライアントの整形と静的解析
 
+[設計・開発ルールの索引](README.md)
+
 `client/` のC#はCSharpierで整形し、Unityのコンパイル時にMicrosoft.Unity.Analyzersで検査する。
 GitHub Actionsの設定は [.github/workflows/client-ci.yml](../../.github/workflows/client-ci.yml) に置く。
 GitHub上の初回実行状況は [導入計画](../plans/2026-09-10-client-code-quality.md) に記録する。
@@ -99,7 +101,6 @@ Libraryを復元した場合もコンパイラのキャッシュをクリアし�
 このjobはLinux Editorターゲットで有効なC#を検査する。
 Android専用の条件付きコードは、このAnalyzer jobの対象に含まない。
 EditMode・PlayMode、Androidビルドの構成は [UnityのテストとCI](client-testing.md) を参照する。
-Unity WebビルドとWorkersのPR Preview公開は廃止した。
 
 パス指定で起動を絞っているため、これらのjobをそのままブランチ保護の必須チェックに指定しない。
 必須化するときは、clientに変更のないPRでも結果を返すjobを設ける。

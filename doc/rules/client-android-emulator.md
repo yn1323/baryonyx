@@ -1,5 +1,7 @@
 # WindowsでのUnityとAndroidエミュレーター
 
+[設計・開発ルールの索引](README.md)
+
 このプロジェクトでは、IL2CPP・ARM64のAPKをAndroid 16のPixel 8a仮想端末で確認する。
 2026年9月13日に、以下の構成でユーザーがAPKのインストールとアプリ起動を確認した。
 
@@ -90,16 +92,12 @@ SDKの追加ではライセンス確認が表示される場合があるため�
 
 [手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) を使う。
 各ファイルはダブルクリックでき、実行時の作業ディレクトリに依存しない。
+SDKの探し方、インストール先の選び方、エラーになる条件は[ショートカットの動作](local-shortcuts.md#エミュレーターの起動とapkのインストール)に従う。
 
 1. APKを更新する場合は、このプロジェクトをUnityで閉じてから [build-apk.bat](../../shortcuts/build-apk.bat) を実行する。出力先は `client/Builds/Android/baryonyx.apk`。
 2. ユーザーが [start-pixel-8a.bat](../../shortcuts/start-pixel-8a.bat) を実行し、Androidのホーム画面が表示されるまで待つ。起動用のウィンドウは開いたままにする。
 3. 別途 [install-apk-pixel-8a.bat](../../shortcuts/install-apk-pixel-8a.bat) を実行する。別のAPKを使う場合は、ファイルを1つドラッグ＆ドロップする。
 4. `Success` とインストール完了の表示を確認し、仮想端末内のアプリアイコンを押す。
-
-ショートカットは `ANDROID_HOME`、`ANDROID_SDK_ROOT`、`%LOCALAPPDATA%\Android\Sdk` の順に必要なツールを探す。
-インストール先はAVD名 `Pixel_8a_API_36` で選び、実機や別名のAVDにはインストールしない。
-対象が未起動、起動途中、同名で複数起動の場合はエラーで終了する。
-既存アプリは `adb install -r` でデータを保持して更新する。
 
 ### PowerShellで直接実行する場合
 

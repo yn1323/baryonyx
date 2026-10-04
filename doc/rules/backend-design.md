@@ -2,15 +2,69 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-10-04
+updated: 2026-10-05
 ---
 
 # バックエンドの開発環境
 
+[設計・開発ルールの索引](README.md)
+
 `server/` のHonoアプリをCloudflare Workersで実行し、Drizzle ORM経由でD1へ接続する。
 Node.jsは開発ツールとCIで使い、ローカルのWorkerもWranglerとMiniflareで動かす。
 Google認証・健康データの業務APIは、この基盤と別の機能として実装・検証する。
-実装とテストの配置は [server/AGENTS.md](../../server/AGENTS.md) のコロケーション方針に従う。
+作業時には [ルートのAGENTS.md](../../AGENTS.md) と [serverのAGENTS.md](../../server/AGENTS.md) を適用する。
+
+## ディレクトリ構成と配置
+
+機能ごとにHTTPの入口・入力検証・業務処理・DB操作・テストをまとめ、変更対象を同じ機能内からたどれるようにする。
+DB全体の履歴や複数機能をまたぐ検証は、機能の外で管理する。
+以下は新規配置・移行時の基準であり、未作成の配置先を含む。
+機能内のファイル名は例であり、処理の分割が必要になった時点で追加する。
+
+```text
+server/
+├── src/
+│   ├── index.ts                   Workerの入口
+│   ├── app.ts                     共通middlewareと機能ルートの組み立て
+│   ├── app.test.ts
+│   ├── features/
+│   │   └── <feature>/
+│   │       ├── routes.ts          HTTPの入口
+│   │       ├── routes.test.ts
+│   │       ├── schema.ts          入出力のスキーマ
+│   │       ├── sync.ts            業務処理の例
+│   │       ├── sync.test.ts
+│   │       └── repository.ts      機能専用のDB操作
+│   └── shared/                    複数機能で使う処理
+├── tests/
+│   ├── integration/               Worker・D1などの結合確認
+│   ├── scenarios/                 複数APIを通す業務シナリオ
+│   └── support/                   共通のテスト補助・固定データ
+├── migrations/                    DB全体で順序を管理するSQL
+├── scripts/                       開発・公開処理とそのテスト、開発用データ（seed）
+├── package.json                   コマンドと依存管理
+├── wrangler.json                  Workerの設定とBindings
+├── vitest.config.ts               テストの検出・実行設定
+└── tsconfig.json                  TypeScriptの検査設定
+```
+
+### 実装と依存の配置
+
+- `index.ts` はWorkerの入口、`app.ts` は共通middlewareと機能ルートの組み立てを担当する。機能ごとのHonoアプリを `app.route()` で接続する。
+- HTTPのパスとhandlerは `routes.ts` にまとめ、複雑になった業務処理・DB操作を同じ機能内のファイルへ分ける。全機能共通の `controllers/`・`services/`・`repositories/` へ種類別に分散させない。
+- `shared/` には複数機能で実際に使う共通の認証・通信などを置く。個別機能の業務判断やテスト専用の補助は含めない。
+- 入出力のスキーマは所有する機能に置く。API資料やクライアントコードを生成する場合は生成元を一つにし、生成結果を手編集しない。
+- マイグレーションは `migrations/` に集約する。機能をまたぐ適用順序と履歴を維持するため、機能別には分散させない。適用済みSQLへの変更は新しいマイグレーションで行う。
+- 開発・公開処理は `scripts/`、CIの起動条件と実行順序はルートの `.github/workflows/` で管理する。設定は対応するツールの読み込み位置に置く。
+- `dist/`、`.wrangler/`、依存パッケージ、生成型、テスト結果はソースと分け、生成手順とGit除外設定に従う。
+
+### テストの配置
+
+- 単体テストと機能内で完結するAPIテストは、対象の実装と同じ階層に `<名前>.test.ts` として置く。機能専用のfixtureもその近くに置く。
+- WorkersランタイムやD1との結合確認は `tests/integration/`、複数APIを通す業務シナリオは `tests/scenarios/` に置く。共通の起動・初期化処理や固定データだけを `tests/support/` へ置く。
+- `scripts/` のテストは対象スクリプトの隣に置き、アプリのテストと実行環境を分ける。
+- 並列実行とDBの独立性は [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) に従う。
+- ファイルを移動したら、import、[Vitest設定](../../server/vitest.config.ts)、[TypeScript設定](../../server/tsconfig.json)、実行コマンド、関連文書の参照を併せて確認する。
 
 ## 初回の準備
 
@@ -25,6 +79,8 @@ pnpm install --frozen-lockfile
 pnpm db:migrate:local
 pnpm dev
 ```
+
+`pnpm db:migrate:local` の代わりに `pnpm db:reset` を実行すると、開発用のプレイヤーも入る（[開発用データ（seed）](#開発用データseed)）。
 
 CIの指定版はNode.js `24.21.0`、pnpm `12.3.4` である。
 インストールにはnpmレジストリへの接続が必要だが、ローカル開発と結合テストにCloudflareのアカウントやSecretsは不要である。
@@ -50,6 +106,28 @@ pnpm start
 `--local` を明示してリモートDBへの接続を防ぎ、データは `.wrangler/` 以下に保持する。
 この設定で直接リモート公開せず、クラウド側は後述の公開workflowを使う。
 Android実機から同じPCへの接続設定は含めていない。
+
+## 開発用データ（seed）
+
+`server/` で `pnpm db:reset` を実行すると、ローカルD1の全テーブルを消し、マイグレーションを当て直し、開発用のプレイヤー（seed）を入れる。
+`pnpm dev` を起動したままでも実行でき、次の要求から反映される。
+Local以外のDBには接続しない。
+
+| ID | プレイヤー | 入っているデータ |
+|---|---|---|
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個、ボーナス7種が高ランクで5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録 |
+| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない |
+| `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ボーナス1つ、ルーン150（Lv2までしか上げられない） |
+
+プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
+いまのマイグレーションとAPIでseedを読み書きできることは、[seed.test.ts](../../server/tests/integration/seed.test.ts)（`pnpm test` に含まれる）が確かめる。
+
+Unity Editorでは `Baryonyx > Server > Seed Player` からプレイヤーを選ぶと、ゲストの秘密値がそのプレイヤーのものに替わり、次のPlayからそのプレイヤーとしてLocal（`Baryonyx > Server > Local`）に接続する。
+「自分のゲストに戻す」を選ぶと、元の秘密値に戻る。
+seedのプレイヤーの秘密値は `baryonyx-seed:<id>` のSHA-256で、[seed.ts](../../server/scripts/seed.ts) と [SeedPlayerMenu.cs](../../client/Assets/Baryonyx/App/Editor/SeedPlayerMenu.cs) が同じ規則を持つ。
+プレイヤーを足すときは両方を直す。
+
+テーブルや初期付与（各repositoryの `ensureStarter`）を足したら、`seed.ts` にもデータを足し、`seed.test.ts` で読めることを確かめる。
 
 ## 環境とDBの保持
 
@@ -114,7 +192,10 @@ D1は1つの文に渡せる値を100個までに制限しているため、多�
 
 テーブル定義を変更したら、Drizzle Kitで差分SQLを生成する。
 [drizzle.config.ts](../../server/drizzle.config.ts) は各機能の `db-schema.ts` を読み、[migrations/](../../server/migrations/) に4桁の連番付きSQLと `meta/` のスナップショットを出力する。
-SQLとスナップショットを一緒にGitへ追加し、生成結果の制約、データ移行、既存Workerとの互換性を確認する。
+SQLとスナップショットを一緒にGitへ追加し、生成結果の制約を確認する。
+未リリースの間は、既存データの移行と旧Workerとの互換性を考慮しない（[ルートのAGENTS.md](../../AGENTS.md#作業の基本)）。
+DBとコードが食い違ったら、DBを作り直す（Localは[`pnpm db:reset`](#開発用データseed)）。
+この扱いはリリース前に見直す。
 
 未デプロイの段階でDrizzleを導入したため、初期状態は [0000_initial.sql](../../server/migrations/0000_initial.sql) に統合した。
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
@@ -142,8 +223,9 @@ DBへの適用はWranglerに統一し、`drizzle-kit migrate` や `push` は使�
 Preview・Dev・Prodの公開処理も同じSQLを使い、適用履歴は `d1_migrations` に記録する。
 Drizzleの `meta/` は差分生成に使い、公開artifactにはSQLだけを含める。
 公開時はマイグレーションが成功してからWorkerを更新し、失敗時は公開を止める。
-DBの変更後にWorkerの公開が失敗した場合、DBの変更は残るため、旧Workerと互換性を保つSQLを用意する。
+DBの変更後にWorkerの公開が失敗した場合、DBの変更は残る。
 コードを古いコミットへ戻しても、DBの適用履歴やデータは巻き戻らない。
+未リリースの間は、旧Workerと互換性を保つSQLを用意せず、DBを作り直して合わせる。リリース後は、旧Workerと互換性を保つSQLを用意する。
 
 参考：[DrizzleとD1の接続](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1)、[Drizzle KitのSQL生成](https://orm.drizzle.team/docs/drizzle-kit-generate)、[D1のマイグレーション](https://developers.cloudflare.com/d1/reference/migrations/)。
 
@@ -157,6 +239,8 @@ DBの変更後にWorkerの公開が失敗した場合、DBの変更は残るた�
 | `pnpm typecheck` | 型生成後、ソース・テスト・Vitest設定・Drizzle設定を検査する |
 | `pnpm db:generate --name <名前>` | DBスキーマから差分SQLとスナップショットを生成する |
 | `pnpm db:check` | Drizzleのマイグレーション履歴の整合を検査する |
+| `pnpm db:migrate:local` | ローカルD1へ未適用のマイグレーションを当てる |
+| `pnpm db:reset` | ローカルD1を作り直し、開発用のプレイヤーを入れる（[開発用データ（seed）](#開発用データseed)） |
 | `pnpm test` | Workerをビルドし、APIテストとMiniflare結合テストを実行する |
 | `pnpm test:watch` | 最初にWorkerをビルドし、Vitestを監視実行する |
 | `pnpm test:ci` | 公開スクリプト、SQLだけのartifact生成、DBスキーマの未生成差分を検査する |
@@ -181,9 +265,7 @@ ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・�
 冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることとランクの比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
 
-[Vitest設定](../../server/vitest.config.ts) でファイル間の並列実行を有効にし、単体・結合・シナリオテストを合わせて最大3並列に固定する。
-ファイル内のテストは順番に実行する。
-DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) に従う。
+テストの並列数、ファイル内の実行順、DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) を正本とする。
 
 Wrangler `4.130.0` と、その依存に合わせたMiniflare `5.20260908.0-alpha` を固定する。
 Miniflareの設定は同パッケージが提供する `convertV4MiniflareOptions` を通している。
@@ -232,3 +314,7 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 環境別の承認や公開元ブランチを制限する場合は、GitHubの `server-dev`・`server-prod` environmentで設定する。
 
 参考：[GitHub Actionsの認証設定](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)、[D1の環境分離](https://developers.cloudflare.com/d1/configuration/environments/)。
+
+## 変更と判断の記録
+
+- 2026-10-05：ルートの [AGENTS.md](../../AGENTS.md#作業の基本) の「未リリースのため、Migration、既存データとの互換性、旧バージョンとの互換性は考慮しない」に合わせ、[マイグレーション](#マイグレーション)の「既存Workerとの互換性を確認」「旧Workerと互換性を保つSQLを用意する」を、未リリースの間は考慮せずDBを作り直す扱いに改めた。リリース前に見直す。あわせて、[開発用データ（seed）](#開発用データseed)を加え、serverのAGENTS.mdにあったディレクトリ構成と配置をこの文書へ移した。

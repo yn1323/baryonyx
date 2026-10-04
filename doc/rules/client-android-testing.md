@@ -1,5 +1,7 @@
 # Androidビルドと実機確認
 
+[設計・開発ルールの索引](README.md)
+
 [Client CI](../../.github/workflows/client-ci.yml) の `android-build` と `distribute` はコメントアウトし、CIでのAPK生成・Drive配布・APKリンクのPRコメントを一時停止している。
 再開時は同ファイルの2つのジョブのコメントを解除する。
 以下のCIビルド・配布の説明は再開後に適用する。
@@ -58,7 +60,7 @@ CIは共有権限を変更しない。
 
 この区分は配布ファイル名だけに適用する。
 各APKのApplication ID、Developmentビルド設定、デバッグ署名の扱いは共通であり、Prodという名前だけでは本番用ビルドにならない。
-API接続先はビルド時の環境変数で選べる（[接続先の選び方](../../client/AGENTS.md#サーバーのbaseurl)）が、CIは一度だけビルドして配布名を分けるため、現在はどの配布名もDevへ接続する。
+API接続先はビルド時の環境変数で選べる（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)）が、CIは一度だけビルドして配布名を分けるため、現在はどの配布名もDevへ接続する。
 Prod向けに接続先を分けるには、配布名ごとに `BARYONYX_ENVIRONMENT` を渡してビルドする変更が必要になる。
 Unityが出力するローカルのファイル名は従来どおり `baryonyx.apk` とする。
 
@@ -118,9 +120,8 @@ Repository secretsの登録後にClient CIを実行し、環境名付きAPKの�
 
 ## ローカルビルドと配布処理の検証
 
-Windowsで手動ビルドする場合は [build-apk.bat](../../shortcuts/build-apk.bat) を使える。
-ビルド後に指定のGoogle Driveフォルダーへコピーする場合は、接続先の環境に合わせて [build-apk-dev-to-drive.bat](../../shortcuts/build-apk-dev-to-drive.bat)・[build-apk-prod-to-drive.bat](../../shortcuts/build-apk-prod-to-drive.bat)、macOSでは [build-apk-dev-to-drive.command](../../shortcuts/build-apk-dev-to-drive.command)・[build-apk-prod-to-drive.command](../../shortcuts/build-apk-prod-to-drive.command) を使う。
-配置先、上書き動作、前提条件は [手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット) に従う。
+手元でビルドしてGoogle Driveへ置くときは、[手動実行用ショートカット](../../AGENTS.md#手動実行用ショートカット)の環境別のファイルを使う。
+動作・前提・ログは[ショートカットの動作](local-shortcuts.md)に従う。
 Androidエミュレーターの準備とAPKインストールは [WindowsでのUnityとAndroidエミュレーター](client-android-emulator.md) に従う。
 
 ローカルではAndroid Build Support、SDK・NDK・OpenJDKを同じUnity版へ導入する。
@@ -135,8 +136,8 @@ node --test client/ci/resolve-drive-distribution.test.cjs
 
 ## 手動で残す確認
 
-画面の変更時は [UI設計ルール](ui-design.md#機種差を確認する条件) に従い、縦画面、SafeArea、文字の読みやすさ、タップ領域、OS画面からの復帰を実機で確認する。
-「1週間の歩数」は、認証、接続、更新、一覧末尾の選択、JSON詳細、閉じる操作、サインアウトまでを確認する。
+画面の変更時は [UI設計ルール](ui-design.md#機種差を確認する条件) に従い、横画面の表示領域、SafeArea、文字の読みやすさ、タップ領域、OS画面からの復帰を実機で確認する。
+歩数の連携は、[起動時の連携と歩数の同期](../features/startup-sync.md)の許可画面、設定からの復帰、同期、HomeのACTパネルでのルーン獲得までを確認する。
 実機がない場合は、GameビューやSimulatorでの確認結果と実機の未確認項目を分けて記録する。
 
 Androidスモーク・Android E2EをCIへ導入しない。
@@ -144,7 +145,6 @@ debug鍵は実行環境ごとに変わり得るため、署名不一致時は検
 アンインストールで保存データが消える点を確認してから行う。
 
 - 実機へのインストール、起動、バックグラウンド移行からの復帰。
-- 分割画面で別アプリへ操作を移したときの一覧・JSON詳細の消去と、一時停止が解除されてフォーカスが戻った後の再読み取り。
 - 権限の許可・拒否・取り消しと、その後の画面表示。
 - 主要操作、保存状態、再起動後の復元。
 - 歩数取得と実際に歩いた場合の反映。
