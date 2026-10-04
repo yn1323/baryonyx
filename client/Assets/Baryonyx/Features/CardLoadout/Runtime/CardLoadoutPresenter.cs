@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.UI.Cards;
@@ -80,29 +82,40 @@ namespace Baryonyx.CardLoadout
     /// The tavern's card skills: choose a person on the tabs (the party first, then the other
     /// companions), a slot on the left, then tap a card on the right to set it there at once.
     /// A card the person holds in another slot swaps with the chosen slot. Each change shows a
-    /// notice that asks nothing of the player.
+    /// notice that asks nothing of the player. With a <c>save</c> function the change is saved on
+    /// the server first, and the store then reads the saved cards; otherwise (the showcase) the
+    /// store keeps the cards in memory.
     /// </summary>
     public sealed class CardLoadoutPresenter : IDisposable
     {
+        public const string SaveFailedMessage = "スキルを保存できませんでした";
+
         private readonly ICardLoadoutView view;
         private readonly IReadOnlyList<PartyMember> people;
         private readonly int partyCount;
         private readonly ICardLoadoutStore store;
+
+        // その人・枠・カードのIDを保存する。保存したカードは store から読み直す。
+        private readonly Func<string, int, string, CancellationToken, Task> save;
+        private readonly CancellationTokenSource lifetime = new();
         private int person;
         private int slot;
+        private bool saving;
         private bool disposed;
 
         public CardLoadoutPresenter(
             ICardLoadoutView view,
             IReadOnlyList<PartyMember> people,
             int partyCount,
-            ICardLoadoutStore store
+            ICardLoadoutStore store,
+            Func<string, int, string, CancellationToken, Task> save = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.people = people ?? Array.Empty<PartyMember>();
             this.partyCount = Math.Clamp(partyCount, 0, this.people.Count);
             this.store = store ?? throw new ArgumentNullException(nameof(store));
+            this.save = save;
             person = Math.Max(0, IndexOf(store.Selected));
             view.PersonPressed += SelectPerson;
             view.SlotPressed += SelectSlot;
@@ -111,6 +124,12 @@ namespace Baryonyx.CardLoadout
         }
 
         public CardLoadoutState State { get; private set; }
+
+        // 保存を待っている間。重ねて押されても受け付けない。
+        public bool Saving => saving;
+
+        // 実行中または直前の付け替え。テストで完了を待つために公開する。
+        public Task ChooseTask { get; private set; } = Task.CompletedTask;
 
         private PartyMember Current => people.Count > 0 ? people[person] : null;
 
@@ -151,27 +170,58 @@ namespace Baryonyx.CardLoadout
         }
 
         // 選んでいる枠に、押したカードを入れる。
-        public void Choose(string skill)
+        public void Choose(string skill) => ChooseTask = ChooseAsync(skill);
+
+        // サーバーがあれば保存してから表示を変える。
+        private async Task ChooseAsync(string skill)
         {
             var member = Current;
             var card = CardSkills.Find(skill);
-            if (disposed || member == null || card == null)
+            if (disposed || saving || member == null || card == null)
                 return;
             if (!CardLoadoutRules.CanUse(CardLoadoutRules.Usable(member), card))
                 return;
+            int target = slot;
             var cards = Cards(member.Id);
-            string before = cards[slot];
-            var change = CardLoadoutRules.Apply(cards, slot, skill, out _);
+            string before = cards[target];
+            var change = CardLoadoutRules.Apply(cards, target, skill, out _);
             if (change == CardLoadoutChange.None)
                 return;
-            store.SetCards(member.Id, cards);
             string name = CardSkills.Find(before)?.Name;
-            view.ShowNotice(
+            string message =
                 change == CardLoadoutChange.Swap
                     ? $"{member.Name}の「{card.Name}」と「{name}」を入れ替えました"
                 : name == null ? $"{member.Name}に「{card.Name}」をセットしました"
-                : $"{member.Name}の「{name}」を「{card.Name}」に替えました"
-            );
+                : $"{member.Name}の「{name}」を「{card.Name}」に替えました";
+            if (save == null)
+            {
+                store.SetCards(member.Id, cards);
+                view.ShowNotice(message);
+                Refresh();
+                return;
+            }
+
+            saving = true;
+            try
+            {
+                await save(member.Id, target, skill, lifetime.Token);
+                if (disposed)
+                    return;
+                view.ShowNotice(message);
+            }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (!disposed)
+                    view.ShowNotice(SaveFailedMessage);
+            }
+            finally
+            {
+                saving = false;
+            }
             Refresh();
         }
 
@@ -258,6 +308,8 @@ namespace Baryonyx.CardLoadout
             if (disposed)
                 return;
             disposed = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
             view.PersonPressed -= SelectPerson;
             view.SlotPressed -= SelectSlot;
             view.CardPressed -= Choose;

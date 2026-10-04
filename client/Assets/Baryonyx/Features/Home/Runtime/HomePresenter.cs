@@ -62,9 +62,6 @@ namespace Baryonyx.Home
                 ? HomeViewState.UptFor(snapshot.Steps)
                 : null;
 
-        // サーバーから取得した所持ルーン。未取得ならnull。酒場の育成へ渡す。
-        public long? Runes => snapshot.RunesKnown ? snapshot.Runes : null;
-
         // 実行中または直前の歩数の取得。テストで完了を待つために公開する。
         public Task StepTask { get; private set; } = Task.CompletedTask;
 

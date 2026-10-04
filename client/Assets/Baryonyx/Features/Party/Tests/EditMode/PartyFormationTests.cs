@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Baryonyx.Party;
 using NUnit.Framework;
 
@@ -140,6 +141,169 @@ namespace Baryonyx.Tests.EditMode
             view.PressLeave();
             Assert.That(view.State.Slots[0].Member, Is.EqualTo("toma"));
             Assert.That(view.Notices.Last(), Is.EqualTo(PartyFormationPresenter.KeepOneMessage));
+        }
+
+        [Test]
+        public void AChangeIsShownAfterTheServerSavesIt()
+        {
+            var view = new FakeView();
+            var saved = new PartyFormation(Roster(), new[] { "toma", "anselm", "aria", "mina" });
+            var calls = new List<(int, string)>();
+            var pending = new TaskCompletionSource<PartyFormation>();
+            using var presenter = new PartyFormationPresenter(
+                view,
+                Full(),
+                (slot, id, _) =>
+                {
+                    calls.Add((slot, id));
+                    return pending.Task;
+                }
+            );
+
+            view.PressSlot(1);
+            view.PressMember("anselm");
+            Assert.That(presenter.Saving, Is.True);
+            // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
+            Assert.That(view.State.Slots[1].Member, Is.EqualTo("luka"));
+            view.PressMember("greta");
+            view.PressLeave();
+            Assert.That(calls, Is.EqualTo(new[] { (1, "anselm") }));
+
+            pending.SetResult(saved);
+            Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(presenter.Formation, Is.SameAs(saved));
+            Assert.That(view.State.Slots[1].Member, Is.EqualTo("anselm"));
+            Assert.That(view.Notices, Is.EqualTo(new[] { "ルカとアンセルムを入れ替えました" }));
+
+            // 外す操作は、キャラのIDの代わりにnullを渡す。
+            presenter.Leave();
+            Assert.That(calls.Last(), Is.EqualTo((1, (string)null)));
+        }
+
+        [Test]
+        public void AFailedSaveKeepsTheFormationAndSaysSo()
+        {
+            var view = new FakeView();
+            using var presenter = new PartyFormationPresenter(
+                view,
+                Full(),
+                (_, _, _) => Task.FromException<PartyFormation>(new InvalidOperationException())
+            );
+
+            view.PressSlot(1);
+            view.PressMember("anselm");
+            Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(view.State.Slots[1].Member, Is.EqualTo("luka"));
+            Assert.That(
+                view.Notices,
+                Is.EqualTo(new[] { PartyFormationPresenter.SaveFailedMessage })
+            );
+        }
+
+        [Test]
+        public void TheLastMemberStaysWithoutAskingTheServer()
+        {
+            var view = new FakeView();
+            int calls = 0;
+            using var presenter = new PartyFormationPresenter(
+                view,
+                new PartyFormation(Roster(), new[] { "toma" }),
+                (_, _, _) =>
+                {
+                    calls++;
+                    return Task.FromResult<PartyFormation>(null);
+                }
+            );
+
+            view.PressLeave();
+            Assert.That(calls, Is.EqualTo(0));
+            Assert.That(view.Notices.Last(), Is.EqualTo(PartyFormationPresenter.KeepOneMessage));
+        }
+
+        [Test]
+        public void TheServersPartyUsesTheMockDataForNamesAndArt()
+        {
+            var data = UnityEngine.ScriptableObject.CreateInstance<PartyMockData>();
+            try
+            {
+                data.Members = Roster();
+                var state = new PartyState(
+                    new[]
+                    {
+                        new PartyCharacterState("greta", 7, new[] { "Ice" }),
+                        new PartyCharacterState("nobody", 3, Array.Empty<string>()),
+                        new PartyCharacterState("toma", 12, new[] { "Fire" }),
+                    },
+                    new[] { null, "toma", null, null },
+                    500,
+                    30,
+                    100
+                );
+                var formation = PartyFormation.From(data, state);
+
+                // サーバーの持っている順に並べ、仮データにないキャラは外す。
+                Assert.That(
+                    formation.Roster.Select(member => member.Id),
+                    Is.EqualTo(new[] { "greta", "toma" })
+                );
+                Assert.That(formation.Member(1), Is.EqualTo("toma"));
+                Assert.That(formation.Name("toma"), Is.EqualTo("トーマ"));
+                Assert.That(
+                    formation.Bench.Select(member => member.Id),
+                    Is.EqualTo(new[] { "greta" })
+                );
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void TheSessionReadsTheServersLevelsAndCardsOnceUsed()
+        {
+            var data = UnityEngine.ScriptableObject.CreateInstance<PartyMockData>();
+            try
+            {
+                data.Members = new[]
+                {
+                    new PartyMember
+                    {
+                        Id = "toma",
+                        Level = 12,
+                        Cards = new[] { new PartyCard { Skill = "Fire" } },
+                    },
+                };
+                PartySession.Reset();
+                PartySession.SetLevel("toma", 20);
+                Assert.That(PartySession.LevelOf(data, "toma"), Is.EqualTo(20));
+
+                PartySession.Use(
+                    data,
+                    new PartyState(
+                        new[] { new PartyCharacterState("toma", 14, new[] { "Ice", null }) },
+                        new[] { "toma", null, null, null },
+                        0,
+                        30,
+                        100
+                    )
+                );
+                Assert.That(PartySession.LevelOf(data, "toma"), Is.EqualTo(14));
+                Assert.That(PartySession.CardsOf(data, "toma"), Is.EqualTo(new[] { "Ice", null }));
+                Assert.That(PartySession.LevelOf(data, "nobody"), Is.EqualTo(1));
+                Assert.That(PartySession.Formation(data).Member(0), Is.EqualTo("toma"));
+
+                PartySession.Reset();
+                Assert.That(PartySession.State, Is.Null);
+                Assert.That(PartySession.LevelOf(data, "toma"), Is.EqualTo(12));
+            }
+            finally
+            {
+                PartySession.Reset();
+                UnityEngine.Object.DestroyImmediate(data);
+            }
         }
 
         [Test]

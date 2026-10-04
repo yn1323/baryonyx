@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Party;
@@ -218,6 +219,58 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ACardIsShownAfterTheServerSavesIt()
+        {
+            var calls = new List<(string, int, string)>();
+            var pending = new TaskCompletionSource<bool>();
+            presenter.Dispose();
+            presenter = Open(
+                async (id, slot, skill, _) =>
+                {
+                    calls.Add((id, slot, skill));
+                    await pending.Task;
+                    // サーバーが保存したカードを、store が読み直す。
+                    store.Cards[id] = new[] { "Fire", "Embers", "Ice", "Blizzard" };
+                }
+            );
+            view.Person("toma");
+            view.Slot(1);
+            view.Card("Embers");
+
+            // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
+            Assert.That(presenter.Saving, Is.True);
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Meteor"));
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Meteor"));
+            view.Card("FlamePillar");
+            Assert.That(calls, Is.EqualTo(new[] { ("toma", 1, "Embers") }));
+
+            pending.SetResult(true);
+            Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
+            Assert.That(
+                view.Notices,
+                Is.EqualTo(new[] { "トーマの「メテオ」を「火の粉」に替えました" })
+            );
+        }
+
+        [Test]
+        public void AFailedSaveKeepsTheCardsAndSaysSo()
+        {
+            presenter.Dispose();
+            presenter = Open((_, _, _, _) => Task.FromException(new InvalidOperationException()));
+            view.Person("toma");
+            view.Slot(1);
+            view.Card("Embers");
+
+            Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Meteor"));
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Meteor"));
+            Assert.That(view.Notices, Is.EqualTo(new[] { CardLoadoutPresenter.SaveFailedMessage }));
+        }
+
+        [Test]
         public void AnotherScreenOpensOnePersonAndTakesBackOnce()
         {
             int back = 0;
@@ -267,10 +320,12 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        private CardLoadoutPresenter Open()
+        private CardLoadoutPresenter Open(
+            Func<string, int, string, System.Threading.CancellationToken, Task> save = null
+        )
         {
             var (people, partyCount) = CardLoadoutPresenter.People(formation);
-            return new CardLoadoutPresenter(view, people, partyCount, store);
+            return new CardLoadoutPresenter(view, people, partyCount, store, save);
         }
 
         private static PartyMember Member(string id, string name, params string[] cards) =>

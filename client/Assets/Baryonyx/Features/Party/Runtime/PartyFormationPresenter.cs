@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Baryonyx.Party
 {
@@ -35,21 +37,34 @@ namespace Baryonyx.Party
     /// <summary>
     /// The tavern's formation: choose a slot on the left, then tap a character on the right to
     /// put them in, or "外す" to take the slot's member out. Each change shows a notice that
-    /// asks nothing of the player. The formation lives only while the app runs.
+    /// asks nothing of the player. With a <c>save</c> function the change is saved on the server
+    /// first and the server's formation is shown; otherwise (the showcase) it changes only the
+    /// formation in memory.
     /// </summary>
     public sealed class PartyFormationPresenter : IDisposable
     {
         public const string KeepOneMessage = "パーティには1人以上必要です";
+        public const string SaveFailedMessage = "編成を保存できませんでした";
 
         private readonly IPartyFormationView view;
-        private readonly PartyFormation formation;
+
+        // 枠と、入れるキャラのID（nullなら外す）を保存し、保存したあとの編成を返す。
+        private readonly Func<int, string, CancellationToken, Task<PartyFormation>> save;
+        private readonly CancellationTokenSource lifetime = new();
+        private PartyFormation formation;
         private int slot;
+        private bool saving;
         private bool disposed;
 
-        public PartyFormationPresenter(IPartyFormationView view, PartyFormation formation)
+        public PartyFormationPresenter(
+            IPartyFormationView view,
+            PartyFormation formation,
+            Func<int, string, CancellationToken, Task<PartyFormation>> save = null
+        )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.formation = formation ?? throw new ArgumentNullException(nameof(formation));
+            this.save = save;
             view.SlotPressed += SelectSlot;
             view.MemberPressed += Choose;
             view.LeavePressed += Leave;
@@ -58,6 +73,12 @@ namespace Baryonyx.Party
 
         public PartyFormationState State { get; private set; }
         public PartyFormation Formation => formation;
+
+        // 保存を待っている間。重ねて押されても受け付けない。
+        public bool Saving => saving;
+
+        // 実行中または直前の変更。テストで完了を待つために公開する。
+        public Task ChangeTask { get; private set; } = Task.CompletedTask;
 
         public void SelectSlot(int index)
         {
@@ -72,20 +93,24 @@ namespace Baryonyx.Party
         {
             if (disposed || id == null)
                 return;
-            Change(id);
+            ChangeTask = ChangeAsync(id);
         }
 
         // 選んでいる枠のキャラを外す。
         public void Leave()
         {
             if (!disposed)
-                Change(null);
+                ChangeTask = ChangeAsync(null);
         }
 
-        private void Change(string id)
+        // 選んでいる枠を変える。サーバーがあれば保存してから表示を変える。
+        private async Task ChangeAsync(string id)
         {
-            string before = formation.Member(slot);
-            var change = formation.Apply(slot, id);
+            if (saving)
+                return;
+            int target = slot;
+            string before = formation.Member(target);
+            var change = formation.Preview(target, id);
             string message = change switch
             {
                 PartyChange.Join => $"{formation.Name(id)}を編成しました",
@@ -97,7 +122,36 @@ namespace Baryonyx.Party
             };
             if (message == null)
                 return;
-            view.ShowNotice(message);
+            if (change == PartyChange.KeepOne || save == null)
+            {
+                formation.Apply(target, id);
+                view.ShowNotice(message);
+                Refresh();
+                return;
+            }
+
+            saving = true;
+            try
+            {
+                var saved = await save(target, id, lifetime.Token);
+                if (disposed)
+                    return;
+                formation = saved ?? formation;
+                view.ShowNotice(message);
+            }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (!disposed)
+                    view.ShowNotice(SaveFailedMessage);
+            }
+            finally
+            {
+                saving = false;
+            }
             Refresh();
         }
 
@@ -124,6 +178,8 @@ namespace Baryonyx.Party
             if (disposed)
                 return;
             disposed = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
             view.SlotPressed -= SelectSlot;
             view.MemberPressed -= Choose;
             view.LeavePressed -= Leave;

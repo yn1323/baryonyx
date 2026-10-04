@@ -3,6 +3,7 @@ using Baryonyx.Account;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
 using Baryonyx.Networking;
+using Baryonyx.Party;
 using Baryonyx.StepBonus;
 using UnityEngine;
 
@@ -17,12 +18,14 @@ namespace Baryonyx.App
         internal GameServices(
             HealthStepLink health,
             bool preview,
-            IStepBonusSource stepBonus = null
+            IStepBonusSource stepBonus = null,
+            IPartySource party = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
             Preview = preview;
             StepBonus = stepBonus;
+            Party = party;
         }
 
         public HealthStepLink Health { get; }
@@ -30,6 +33,9 @@ namespace Baryonyx.App
 
         // UPTボーナスの持ち物と枠を読み書きするサーバー。接続先がなければnull。
         public IStepBonusSource StepBonus { get; }
+
+        // 酒場の編成・カード・レベルを読み書きするサーバー。接続先がなければnull。
+        public IPartySource Party { get; }
 
         public static GameServices GetOrCreate(HealthConnectionSettings settings)
         {
@@ -41,11 +47,12 @@ namespace Baryonyx.App
         // テストで端末とサーバーを差し替える。nullで次回の取得時に作り直す。
         internal static void Override(GameServices services) => Use(services);
 
-        // 酒場のボーナス設定は機能の外からこの接続を知らないため、共有のセッションへ渡す。
+        // 酒場の画面は機能の外からこの接続を知らないため、共有のセッションへ渡す。
         private static void Use(GameServices services)
         {
             current = services;
             StepBonusSession.Source = services?.StepBonus;
+            PartySession.Source = services?.Party;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -75,7 +82,8 @@ namespace Baryonyx.App
                 preview,
                 sync != null
                     ? new StepBonusServerSource(sync, new StepBonusApiClient(server))
-                    : null
+                    : null,
+                sync != null ? new PartyServerSource(sync, new PartyApiClient(server)) : null
             );
         }
 

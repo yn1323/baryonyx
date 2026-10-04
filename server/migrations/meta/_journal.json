@@ -29,6 +29,13 @@
       "when": 1791078486831,
       "tag": "0003_step_bonus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791096532539,
+      "tag": "0004_party",
+      "breakpoints": true
     }
   ]
 }

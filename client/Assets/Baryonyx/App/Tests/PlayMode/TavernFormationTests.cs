@@ -146,7 +146,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(Tile(formation, bench).Button.gameObject.activeSelf, Is.False);
         }
 
-        // 育成で上げたLvと、酒場のカードスキルで付け替えたカードを、編成を開くたびに出す。
+        // 育成で上げたLvと、酒場のスキルの画面で付け替えたカードを、編成を開くたびに出す。
         [UnityTest]
         public IEnumerator FormationShowsRaisedLevelsAndChangedCards()
         {
@@ -194,6 +194,78 @@ namespace Baryonyx.Tests.PlayMode
             Tile(formation, bench).Button.onClick.Invoke();
             Assert.That(formation.Slots[1].Level.text, Is.EqualTo("Lv 9"));
             Assert.That(Tile(formation, member).Level.text, Is.EqualTo("Lv 25"));
+        }
+
+        // サーバーがあるときは、開くたびにサーバーの編成を読み、入れ替えを保存してから表示を変える。
+        // 読み込むまでは仮データの編成を見せず、保存・読み込みに失敗したら通知の帯で知らせる。
+        [UnityTest]
+        public IEnumerator FormationReadsAndSavesThePartyOnTheServer()
+        {
+            var server = new FakePartySource(0, "anselm", "toma")
+                .With("toma", 20, "Fire", "Meteor", "Ice", "Blizzard")
+                .With("luka", 11, "VitalThrust", "ArrowRain", "Thunder", "LightningBolt")
+                .With("anselm", 8, "EarthSplitter", "HolyHammer", "Fire", "Embers")
+                .With("greta", 7, "VitalThrust", "PoisonNeedle", "Ice", "Icicles");
+            PartySession.Source = server;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var view = guide.View;
+            int item = System.Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == PartySession.GuideItemKey
+            );
+            view.MenuItems[item].onClick.Invoke();
+            var formation = view.PanelFor(item).GetComponent<PartyFormationView>();
+            Assert.That(formation.Owned.text, Is.EqualTo(PartyFormationView.LoadingText));
+            Assert.That(Shown(formation), Is.Empty);
+            Assert.That(formation.Slots[0].Name.text, Is.Empty);
+            yield return SceneTests.WaitUntil(
+                () => formation.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+
+            // サーバーの持っているキャラ・編成・Lvを出す。
+            var data = formation.Data;
+            Assert.That(formation.Owned.text, Is.EqualTo("所持 4人"));
+            Assert.That(formation.Slots[0].Name.text, Is.EqualTo(data.Find("anselm").Name));
+            Assert.That(formation.Slots[1].Level.text, Is.EqualTo("Lv 20"));
+            Assert.That(formation.Slots[2].Empty.gameObject.activeSelf, Is.True);
+            Assert.That(Shown(formation), Is.EqualTo(new[] { "luka", "greta" }));
+
+            // 空いた枠にルカを入れると、サーバーに保存してから枠に出す。
+            formation.Slots[2].Button.onClick.Invoke();
+            Tile(formation, "luka").Button.onClick.Invoke();
+            Assert.That(formation.Presenter.Saving, Is.True);
+            Assert.That(formation.Slots[2].Empty.gameObject.activeSelf, Is.True);
+            yield return SceneTests.WaitUntil(() => formation.Presenter.ChangeTask.IsCompleted);
+            Assert.That(server.Calls, Is.EqualTo(new[] { "slot 2 luka" }));
+            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            Assert.That(formation.LastNotice, Does.EndWith("を編成しました"));
+
+            // 保存できなかったときは枠を変えずに知らせる。
+            server.Fail = true;
+            formation.Leave.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => formation.Presenter.ChangeTask.IsCompleted);
+            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            Assert.That(
+                formation.LastNotice,
+                Is.EqualTo(PartyFormationPresenter.SaveFailedMessage)
+            );
+
+            // 開き直すと読み直す。読めなかったときは仮データを見せずに知らせる。
+            view.Back.onClick.Invoke();
+            view.MenuItems[item].onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => formation.LoadTask.IsCompleted);
+            Assert.That(formation.Owned.text, Is.EqualTo(PartyFormationView.LoadFailedText));
+            Assert.That(formation.LastNotice, Is.EqualTo(PartyFormationView.LoadFailedMessage));
+            Assert.That(Shown(formation), Is.Empty);
+
+            server.Fail = false;
+            view.Back.onClick.Invoke();
+            view.MenuItems[item].onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => formation.LoadTask.IsCompleted);
+            Assert.That(server.Loads, Is.EqualTo(2));
+            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
         }
 
         private static string[] Shown(PartyFormationView formation) =>

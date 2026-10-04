@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
+using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -51,11 +54,17 @@ namespace Baryonyx.Training
     /// The tavern's training over the guide screen: the character on the left with the level-up
     /// and card buttons, their stats, skills and cards on the right, and the level-up dialog
     /// over them. TrainingAssets bakes every widget into the tavern prefab, so the text reads
-    /// in the editor; this view wires them up and drives its own presenter. Back (the button and
-    /// the device key) closes the dialog before the guide screen goes back.
+    /// in the editor; this view wires them up and drives its own presenter. When the app has a
+    /// server (<see cref="PartySession.Source"/>), it reads the party and runes on opening and
+    /// raises levels there; otherwise it uses the mock data. Back (the button and the device
+    /// key) closes the dialog before the guide screen goes back.
     /// </summary>
     public sealed class TrainingView : MonoBehaviour, ITrainingView, IGuideBackHandler
     {
+        public const string LoadingText = "読み込み中…";
+        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadFailedMessage = "キャラを取得できませんでした";
+
         // 案内人の画面の文字の色（GuideMenuAssets と同じ）と、足りないルーン・未解放のスキルの色。
         private static readonly Color Main = new(0.953f, 0.914f, 0.824f);
         private static readonly Color Sub = new(0.788f, 0.749f, 0.659f);
@@ -109,6 +118,7 @@ namespace Baryonyx.Training
         public TMP_Text Balance;
 
         private TrainingPresenter presenter;
+        private CancellationTokenSource loading;
         private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
             new();
 
@@ -125,6 +135,9 @@ namespace Baryonyx.Training
         public TrainingPresenter Presenter => presenter;
         public string LastNotice { get; private set; } = "";
 
+        // 実行中または直前の読み込み。テストで完了を待つために公開する。
+        public Task LoadTask { get; private set; } = Task.CompletedTask;
+
         private void OnEnable()
         {
             Bind(Prev, () => PrevPressed?.Invoke());
@@ -137,15 +150,106 @@ namespace Baryonyx.Training
             Bind(Confirm, () => ConfirmPressed?.Invoke());
             Bind(Cards, () => CardsPressed?.Invoke());
 
-            // 開くたびに、アプリを動かしている間のレベル・所持ルーン・編成で描き直す。
+            // 開くたびに、サーバーのレベル・所持ルーン・編成（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
             presenter = null;
-            if (Party != null && Data != null)
+            if (Party == null || Data == null)
+                return;
+            var source = PartySession.Source;
+            if (source == null)
+            {
                 presenter = Build(this, Party, Data);
+                return;
+            }
+            ShowLoading();
+            loading = new CancellationTokenSource();
+            LoadTask = LoadAsync(source, loading.Token);
+        }
+
+        private async Task LoadAsync(IPartySource source, CancellationToken token)
+        {
+            try
+            {
+                var state = await source.LoadAsync(token);
+                if (token.IsCancellationRequested)
+                    return;
+                PartySession.Use(Party, state);
+                presenter = Build(
+                    this,
+                    Party,
+                    Data,
+                    (id, from, to, cancel) => LevelUpAsync(source, id, from, to, cancel)
+                );
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception exception)
+            {
+                if (token.IsCancellationRequested)
+                    return;
+                Debug.LogWarning("育成のキャラを取得できませんでした。" + exception.Message, this);
+                Set(Name, LoadFailedText);
+                ShowNotice(LoadFailedMessage);
+            }
+        }
+
+        // サーバーでレベルを上げる。断られたときは手元の表示がずれているので、読み直してから失敗を伝える。
+        private async Task LevelUpAsync(
+            IPartySource source,
+            string id,
+            int from,
+            int to,
+            CancellationToken token
+        )
+        {
+            try
+            {
+                PartySession.Use(Party, await source.LevelUpAsync(id, from, to, token));
+            }
+            catch (ServerApiException exception) when (exception.StatusCode == 409)
+            {
+                try
+                {
+                    PartySession.Use(Party, await source.LoadAsync(token));
+                }
+                catch (Exception reload) when (reload is not OperationCanceledException)
+                {
+                    Debug.LogWarning("育成のキャラを読み直せませんでした。" + reload.Message, this);
+                }
+                throw;
+            }
+        }
+
+        // 読み込むまで、仮データのキャラを本当のキャラとして見せない。
+        private void ShowLoading()
+        {
+            Set(Name, LoadingText);
+            Set(Level, "");
+            Set(Runes, "--");
+            foreach (var icon in Elements)
+                if (icon != null)
+                    icon.gameObject.SetActive(false);
+            if (Figure != null)
+                Figure.enabled = false;
+            foreach (var button in new[] { Prev, Next, LevelUp, Cards })
+                if (button != null)
+                    button.interactable = false;
+            if (LevelUpCost != null)
+                LevelUpCost.SetActive(false);
+            foreach (var stat in Stats)
+                Set(stat, "");
+            foreach (var skill in Skills)
+                ShowSkill(skill, null);
+            foreach (var card in CardSlots)
+                ShowCard(card, null);
+            if (Dialog != null)
+                Dialog.SetActive(false);
         }
 
         private void OnDisable()
         {
+            loading?.Cancel();
+            loading?.Dispose();
+            loading = null;
             foreach (var (button, action) in bindings)
                 if (button != null)
                     button.onClick.RemoveListener(action);
@@ -155,20 +259,22 @@ namespace Baryonyx.Training
         }
 
         /// <summary>
-        /// A presenter over the running app's party and runes. The generator uses it too, so the
-        /// prefab shows the first character in the editor.
+        /// A presenter over the running app's party and runes, raising levels with
+        /// <paramref name="levelUp"/> when the app has a server. The generator uses it too, so
+        /// the prefab shows the first character in the editor.
         /// </summary>
         public static TrainingPresenter Build(
             ITrainingView view,
             PartyMockData party,
-            TrainingMockData data
+            TrainingMockData data,
+            Func<string, int, int, CancellationToken, Task> levelUp = null
         ) =>
             new(
                 view,
                 TrainingRoster.From(PartySession.Formation(party), data),
-                data,
                 new TrainingSessionStore(party, data),
-                party.IconOf
+                party.IconOf,
+                levelUp
             );
 
         public bool HandleBack() => presenter != null && presenter.Back();
@@ -189,8 +295,12 @@ namespace Baryonyx.Training
                 Elements[i].sprite = icon;
                 Elements[i].gameObject.SetActive(icon != null);
             }
-            if (Figure != null && state.Member != null)
-                PartyFormationView.Paint(Figure, state.Member, trim: false);
+            if (Figure != null)
+            {
+                Figure.enabled = state.Member != null;
+                if (state.Member != null)
+                    PartyFormationView.Paint(Figure, state.Member, trim: false);
+            }
             Set(Runes, Number(state.Runes));
             if (Prev != null)
                 Prev.interactable = state.CanSwitch;
@@ -199,6 +309,8 @@ namespace Baryonyx.Training
 
             if (LevelUp != null)
                 LevelUp.interactable = !state.Maxed;
+            if (Cards != null)
+                Cards.interactable = state.Member != null;
             Set(LevelUpLabel, state.Maxed ? "レベル上限" : "レベルアップ");
             if (LevelUpCost != null)
                 LevelUpCost.SetActive(!state.Maxed);

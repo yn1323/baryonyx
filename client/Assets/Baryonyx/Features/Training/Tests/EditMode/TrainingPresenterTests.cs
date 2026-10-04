@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -73,6 +74,9 @@ namespace Baryonyx.Tests.EditMode
 
             public void Spend(long runes) => Runes -= runes;
 
+            public int MaxLevel { get; set; } = 30;
+            public int CostPerLevel { get; set; } = 100;
+
             public string Selected { get; set; }
         }
 
@@ -139,7 +143,7 @@ namespace Baryonyx.Tests.EditMode
             };
 
         private TrainingPresenter Open() =>
-            presenter = new TrainingPresenter(view, Roster(), data, store);
+            presenter = new TrainingPresenter(view, Roster(), store);
 
         [Test]
         public void CostsGrowWithTheLevel()
@@ -199,7 +203,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(state.Skills[2].Type, Is.EqualTo("固有スキル"));
             Assert.That(state.Skills[2].Energy, Is.EqualTo(3));
-            // 付けているカードの名前とコストは、カードスキルの定義から引く。
+            // 付けているカードの名前とコストは、スキルの定義から引く。
             Assert.That(
                 state.Cards.Select(card => card.Name),
                 Is.EqualTo(new[] { "ファイア", "メテオ", "アイスランス", "ブリザード" })
@@ -303,6 +307,85 @@ namespace Baryonyx.Tests.EditMode
             view.LevelUp();
             view.Confirm();
             Assert.That(view.Notices.Last(), Is.EqualTo("トーマが Lv 16 になりました"));
+        }
+
+        [Test]
+        public void TheServerRaisesTheLevelBeforeTheDetailShowsIt()
+        {
+            var calls = new List<(string, int, int)>();
+            var pending = new TaskCompletionSource<bool>();
+            presenter = new TrainingPresenter(
+                view,
+                Roster(),
+                store,
+                levelUp: async (id, from, to, _) =>
+                {
+                    calls.Add((id, from, to));
+                    await pending.Task;
+                    // サーバーが上げたレベルと残高を、store が読み直す。
+                    store.Levels[id] = to;
+                    store.Runes = 8450 - 3900;
+                }
+            );
+            view.LevelUp();
+            view.More();
+            view.More();
+            view.Confirm();
+
+            // サーバーが答えるまでは、重ねた画面を開いたまま、押し直しや数の変更を受け付けない。
+            Assert.That(presenter.Saving, Is.True);
+            Assert.That(view.Last.DialogOpen, Is.True);
+            Assert.That(view.Last.CanConfirm, Is.False);
+            Assert.That(view.Last.CanLess, Is.False);
+            view.Confirm();
+            view.Less();
+            Assert.That(calls, Is.EqualTo(new[] { ("toma", 12, 15) }));
+            Assert.That(view.Last.Count, Is.EqualTo(3));
+
+            pending.SetResult(true);
+            Assert.That(presenter.ConfirmTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(view.Last.DialogOpen, Is.False);
+            Assert.That(view.Last.Level, Is.EqualTo(15));
+            Assert.That(view.Last.Runes, Is.EqualTo(8450 - 3900));
+            Assert.That(
+                view.Notices,
+                Is.EqualTo(new[] { "トーマが Lv 15 になり、「炎の心得」を覚えました" })
+            );
+        }
+
+        [Test]
+        public void AFailedLevelUpKeepsTheDialogAndSaysSo()
+        {
+            presenter = new TrainingPresenter(
+                view,
+                Roster(),
+                store,
+                levelUp: (_, _, _, _) => Task.FromException(new InvalidOperationException())
+            );
+            view.LevelUp();
+            view.Confirm();
+
+            Assert.That(presenter.ConfirmTask.IsCompleted, Is.True);
+            Assert.That(presenter.Saving, Is.False);
+            Assert.That(store.Levels["toma"], Is.EqualTo(12));
+            Assert.That(store.Runes, Is.EqualTo(8450));
+            Assert.That(view.Last.DialogOpen, Is.True);
+            Assert.That(view.Last.CanConfirm, Is.True);
+            Assert.That(view.Notices, Is.EqualTo(new[] { TrainingPresenter.LevelUpFailedMessage }));
+        }
+
+        [Test]
+        public void TheStoresRulesSetTheCapAndTheCost()
+        {
+            store.MaxLevel = 14;
+            store.CostPerLevel = 10;
+            Open();
+            Assert.That(view.Last.NextCost, Is.EqualTo(120));
+            view.LevelUp();
+            view.Max();
+            Assert.That(view.Last.Target, Is.EqualTo(14));
+            Assert.That(view.Last.Cost, Is.EqualTo(120 + 130));
         }
 
         [Test]

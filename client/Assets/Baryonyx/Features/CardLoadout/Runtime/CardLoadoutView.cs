@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
@@ -54,11 +56,17 @@ namespace Baryonyx.CardLoadout
     /// The tavern's card skills over the whole guide screen: the people's tabs and the chosen
     /// person's four cards on the left, the cards they can set on the right. CardLoadoutAssets
     /// bakes the tabs, slots and rows into the tavern prefab, so they read in the editor; this
-    /// view wires them up and drives its own presenter. Back returns to the screen that opened
-    /// the card skills for one person, if any. Changes are told on the guide screen's notice band.
+    /// view wires them up and drives its own presenter. When the app has a server
+    /// (<see cref="PartySession.Source"/>), it reads the party on opening and saves every change
+    /// there; otherwise it uses the mock data. Back returns to the screen that opened the card
+    /// skills for one person, if any. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class CardLoadoutView : MonoBehaviour, ICardLoadoutView, IGuideBackHandler
     {
+        public const string LoadingText = "読み込み中…";
+        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadFailedMessage = "スキルを取得できませんでした";
+
         public PartyMockData Party;
         public TrainingMockData Training;
 
@@ -82,6 +90,7 @@ namespace Baryonyx.CardLoadout
         public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
         private CardLoadoutPresenter presenter;
+        private CancellationTokenSource loading;
         private string shownPerson;
         private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
             new();
@@ -92,6 +101,9 @@ namespace Baryonyx.CardLoadout
 
         public CardLoadoutPresenter Presenter => presenter;
         public string LastNotice { get; private set; } = "";
+
+        // 実行中または直前の読み込み。テストで完了を待つために公開する。
+        public Task LoadTask { get; private set; } = Task.CompletedTask;
 
         private void OnEnable()
         {
@@ -111,28 +123,97 @@ namespace Baryonyx.CardLoadout
                 Bind(row.Button, () => CardPressed?.Invoke(id));
             }
 
-            // 開くたびに、アプリを動かしている間の編成とカードで描き直す。
+            // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
             presenter = null;
             shownPerson = null;
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
-            if (Party != null)
+            if (Party == null)
+                return;
+            var source = PartySession.Source;
+            if (source == null)
             {
-                var (people, partyCount) = CardLoadoutPresenter.People(
-                    PartySession.Formation(Party)
-                );
-                presenter = new CardLoadoutPresenter(
-                    this,
-                    people,
-                    partyCount,
-                    new CardLoadoutSessionStore(Party, Training)
+                Present(PartySession.Formation(Party), null);
+                return;
+            }
+            ShowLoading();
+            loading = new CancellationTokenSource();
+            LoadTask = LoadAsync(source, loading.Token);
+        }
+
+        private async Task LoadAsync(IPartySource source, CancellationToken token)
+        {
+            try
+            {
+                var state = await source.LoadAsync(token);
+                if (token.IsCancellationRequested)
+                    return;
+                Present(
+                    PartySession.Use(Party, state),
+                    (id, slot, skill, cancel) => SaveAsync(source, id, slot, skill, cancel)
                 );
             }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception exception)
+            {
+                if (token.IsCancellationRequested)
+                    return;
+                Debug.LogWarning("スキルを取得できませんでした。" + exception.Message, this);
+                Set(Count, LoadFailedText);
+                ShowNotice(LoadFailedMessage);
+            }
+        }
+
+        // 保存した結果に置き換える。カードは store が PartySession から読み直す。
+        private async Task SaveAsync(
+            IPartySource source,
+            string id,
+            int slot,
+            string skill,
+            CancellationToken token
+        ) => PartySession.Use(Party, await source.SetCardAsync(id, slot, skill, token));
+
+        private void Present(
+            PartyFormation formation,
+            Func<string, int, string, CancellationToken, Task> save
+        )
+        {
+            var (people, partyCount) = CardLoadoutPresenter.People(formation);
+            presenter = new CardLoadoutPresenter(
+                this,
+                people,
+                partyCount,
+                new CardLoadoutSessionStore(Party, Training),
+                save
+            );
+        }
+
+        // 読み込むまで、仮データのカードを本当のカードとして見せない。
+        private void ShowLoading()
+        {
+            Set(Count, LoadingText);
+            foreach (var person in People)
+                if (person.Button != null)
+                    person.Button.gameObject.SetActive(false);
+            if (PeopleDivider != null)
+                PeopleDivider.SetActive(false);
+            foreach (var widget in Slots)
+            {
+                ShowSlot(widget, null, null, null, false);
+                Set(widget.Name, "");
+            }
+            ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
+            foreach (var row in Rows)
+                if (row.Button != null)
+                    row.Button.gameObject.SetActive(false);
         }
 
         private void OnDisable()
         {
+            loading?.Cancel();
+            loading?.Dispose();
+            loading = null;
             foreach (var (button, action) in bindings)
                 if (button != null)
                     button.onClick.RemoveListener(action);

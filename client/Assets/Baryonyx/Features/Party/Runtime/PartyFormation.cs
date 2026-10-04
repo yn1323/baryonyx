@@ -53,6 +53,20 @@ namespace Baryonyx.Party
                 ? new PartyFormation(data.Members, data.Formation)
                 : new PartyFormation(null, null);
 
+        /// <summary>
+        /// The server's party: the characters the player owns, in the server's order, and the
+        /// slots. Names and art come from the mock data, which leaves out characters it lacks.
+        /// </summary>
+        public static PartyFormation From(PartyMockData data, PartyState state)
+        {
+            if (data == null || state == null)
+                return From(data);
+            return new PartyFormation(
+                state.Owned.Select(character => data.Find(character.Id)),
+                state.Slots
+            );
+        }
+
         public IReadOnlyList<PartyMember> Roster => roster;
         public int SlotCount => slots.Length;
         public int Count => slots.Count(id => id != null);

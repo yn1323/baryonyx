@@ -144,7 +144,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(view.ToastMessage, Does.StartWith($"{first.Name}が Lv {target} になり"));
 
-            // 「カードを付け替える」は、そのキャラを選んだ酒場のカードスキルへ移り、戻ると育成に帰る。
+            // 「スキルを付け替える」は、そのキャラを選んだ酒場のスキルの画面へ移り、戻ると育成に帰る。
             training.Next.onClick.Invoke();
             string second = party.Member(1);
             training.Cards.onClick.Invoke();
@@ -166,6 +166,59 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
             Assert.That(training.Level.text, Is.EqualTo(target.ToString()));
             yield return null;
+        }
+
+        // サーバーがあるときは、サーバーのLvと所持ルーンを読み、サーバーでレベルを上げてルーンを使う。
+        // 別の端末で上げていて断られたときは、読み直してから失敗を知らせる。
+        [UnityTest]
+        public IEnumerator TrainingRaisesTheLevelOnTheServer()
+        {
+            var server = new FakePartySource(5000, "toma", "luka")
+                .With("toma", 12, "Fire", "Meteor", "Ice", "Blizzard")
+                .With("luka", 11, "VitalThrust", "ArrowRain", "Thunder", "LightningBolt");
+            PartySession.Source = server;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var view = guide.View;
+            int item = ItemOf(view, TrainingSession.GuideItemKey);
+            view.MenuItems[item].onClick.Invoke();
+            var training = view.PanelFor(item).GetComponent<TrainingView>();
+            Assert.That(training.Name.text, Is.EqualTo(TrainingView.LoadingText));
+            Assert.That(training.Runes.text, Is.EqualTo("--"));
+            Assert.That(training.LevelUp.interactable, Is.False);
+            yield return SceneTests.WaitUntil(
+                () => training.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+
+            var data = training.Party;
+            Assert.That(training.Name.text, Is.EqualTo(data.Find("toma").Name));
+            Assert.That(training.Level.text, Is.EqualTo("12"));
+            Assert.That(training.Runes.text, Is.EqualTo("5,000"));
+
+            // Lv 12 → 14 は 1,200 + 1,300 = 2,500ルーン。サーバーが上げるまで重ねた画面を開いたまま待つ。
+            training.LevelUp.onClick.Invoke();
+            training.More.onClick.Invoke();
+            training.Confirm.onClick.Invoke();
+            Assert.That(training.Presenter.Saving, Is.True);
+            Assert.That(training.Confirm.interactable, Is.False);
+            yield return SceneTests.WaitUntil(() => training.Presenter.ConfirmTask.IsCompleted);
+            Assert.That(server.Calls, Is.EqualTo(new[] { "level toma 12 14" }));
+            Assert.That(server.LevelOf("toma"), Is.EqualTo(14));
+            Assert.That(training.Dialog.activeSelf, Is.False);
+            Assert.That(training.Level.text, Is.EqualTo("14"));
+            Assert.That(training.Runes.text, Is.EqualTo("2,500"));
+            Assert.That(view.ToastMessage, Does.StartWith($"{data.Find("toma").Name}が Lv 14"));
+
+            // 別の端末でLv 16まで上げていると断られ、読み直したLvを出す。
+            server.SetLevel("toma", 16);
+            training.LevelUp.onClick.Invoke();
+            training.Confirm.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => training.Presenter.ConfirmTask.IsCompleted);
+            Assert.That(server.LevelOf("toma"), Is.EqualTo(16));
+            Assert.That(server.Runes, Is.EqualTo(2500));
+            Assert.That(training.Level.text, Is.EqualTo("16"));
+            Assert.That(training.LastNotice, Is.EqualTo(TrainingPresenter.LevelUpFailedMessage));
         }
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>

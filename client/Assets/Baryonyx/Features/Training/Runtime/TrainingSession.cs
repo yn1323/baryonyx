@@ -6,27 +6,25 @@ using UnityEngine;
 namespace Baryonyx.Training
 {
     /// <summary>
-    /// Keeps the training's runes and the character on screen while the app runs. Levels are
-    /// the party's (<see cref="PartySession"/>). There is no server for levels yet, so the
-    /// runes a level-up spends are only taken off the balance Home read from the server, and
-    /// both reset when the app starts (doc/features/progression.md).
+    /// Keeps the character on screen while the app runs, and the runes a level-up spends when
+    /// the app has no server. Levels are the party's (<see cref="PartySession"/>): with a server,
+    /// the server raises them and spends its runes (doc/features/progression.md); without it,
+    /// the runes are taken off the mock data's and reset when the app starts.
     /// </summary>
     public static class TrainingSession
     {
         // 酒場のメニューの「育成」の項目のキー。この項目はリストの代わりに育成を開く。
         public const string GuideItemKey = "training";
 
-        // ホームで取得した所持ルーン。取得していなければnull。
-        public static long? HomeRunes { get; set; }
-
-        // 育成で使ったルーンの合計。サーバーには保存しない。
+        // サーバーがないときに育成で使ったルーンの合計。
         public static long Spent { get; private set; }
 
         // 最後に見ていたキャラのID。開き直すとそのキャラから見せる。
         public static string Selected { get; set; }
 
+        // サーバーがないときの所持ルーン。仮データの所持ルーンから使った分を引く。
         public static long RunesOr(TrainingMockData data) =>
-            Math.Max(0L, (HomeRunes ?? (data != null ? data.MockRunes : 0)) - Spent);
+            Math.Max(0L, (data != null ? data.MockRunes : 0) - Spent);
 
         public static void Spend(long runes) => Spent += Math.Max(0L, runes);
 
@@ -34,7 +32,6 @@ namespace Baryonyx.Training
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset()
         {
-            HomeRunes = null;
             Spent = 0;
             Selected = null;
         }
@@ -44,16 +41,25 @@ namespace Baryonyx.Training
     public interface ITrainingStore
     {
         int LevelOf(string id);
+
+        // サーバーがないときだけ呼ぶ。サーバーがあれば、レベルとルーンはサーバーで変える。
         void SetLevel(string id, int level);
 
-        // 付けているカードスキルのID（枠の順）。
+        // 付けているスキルのID（枠の順）。
         IReadOnlyList<string> CardsOf(string id);
         long Runes { get; }
         void Spend(long runes);
+
+        // レベルの上限と、Lv n から n+1 へ上げるのに要るルーンの n あたり。
+        int MaxLevel { get; }
+        int CostPerLevel { get; }
         string Selected { get; set; }
     }
 
-    /// <summary>The store of the running app: the party's levels and cards, and the training's runes.</summary>
+    /// <summary>
+    /// The store of the running app: the party's levels and cards, and the runes and level rules
+    /// of the server, or of the mock data when the app has no server.
+    /// </summary>
     public sealed class TrainingSessionStore : ITrainingStore
     {
         private readonly PartyMockData party;
@@ -71,9 +77,17 @@ namespace Baryonyx.Training
 
         public IReadOnlyList<string> CardsOf(string id) => PartySession.CardsOf(party, id);
 
-        public long Runes => TrainingSession.RunesOr(data);
+        public long Runes => PartySession.State?.Runes ?? TrainingSession.RunesOr(data);
 
         public void Spend(long runes) => TrainingSession.Spend(runes);
+
+        public int MaxLevel =>
+            PartySession.State is { MaxLevel: > 1 } state ? state.MaxLevel : data.MaxLevel;
+
+        public int CostPerLevel =>
+            PartySession.State is { CostPerLevel: > 0 } state
+                ? state.CostPerLevel
+                : data.CostPerLevel;
 
         public string Selected
         {

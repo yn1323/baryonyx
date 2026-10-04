@@ -8,6 +8,7 @@ import { createAccountsApi } from "./features/accounts/routes.js";
 import type { SessionEnv } from "./features/accounts/session.js";
 import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
+import { createPartyApi } from "./features/party/routes.js";
 import { createStepBonusApi } from "./features/step-bonus/routes.js";
 import { createDatabase } from "./shared/db.js";
 import { applyApiDefaults } from "./shared/http.js";
@@ -21,6 +22,7 @@ export function createApi(
   api.route("/", createHealthApi());
   api.route("/", createExerciseRewardsApi());
   api.route("/", createStepBonusApi());
+  api.route("/", createPartyApi());
   return api;
 }
 

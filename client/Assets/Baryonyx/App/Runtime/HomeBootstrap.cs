@@ -1,7 +1,6 @@
 using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.StepBonus;
-using Baryonyx.Training;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -72,7 +71,6 @@ namespace Baryonyx.App
             if (scene == null)
                 return false;
             StepBonusSession.TodayUpt = presenter?.TodayUpt;
-            TrainingSession.HomeRunes = presenter?.Runes;
             return SceneLoader.Load(scene, transition, this);
         }
     }

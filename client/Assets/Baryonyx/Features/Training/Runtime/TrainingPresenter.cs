@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
 using UnityEngine;
@@ -76,37 +78,44 @@ namespace Baryonyx.Training
     /// The tavern's training: one character at a time (◀ ▶ walks the party, then the others),
     /// with their stats, passive and unique skills and card skills. "レベルアップ" opens a
     /// dialog over the detail that shows what the chosen levels change before any rune is
-    /// spent; back closes the dialog first. A level-up shows a notice that asks nothing.
+    /// spent; back closes the dialog first. A level-up shows a notice that asks nothing. With a
+    /// <c>levelUp</c> function the server raises the level and spends its runes first, and the
+    /// store then reads them; otherwise (the showcase) the store keeps them in memory.
     /// </summary>
     public sealed class TrainingPresenter : IDisposable
     {
-        public const string CardsComingSoon = "カードスキルの付け替え（準備中）";
+        public const string CardsComingSoon = "スキルの付け替え（準備中）";
+        public const string LevelUpFailedMessage = "レベルアップできませんでした";
 
         private readonly ITrainingView view;
         private readonly IReadOnlyList<TrainingMember> roster;
-        private readonly TrainingMockData data;
         private readonly ITrainingStore store;
 
-        // カードスキルのIDから属性のアイコンを引く。属性のないカードはnull。
+        // スキルのIDから属性のアイコンを引く。属性のないカードはnull。
         private readonly Func<string, Sprite> iconOf;
+
+        // キャラのID・今のLv・上げたあとのLvでレベルアップを保存する。保存した結果は store から読み直す。
+        private readonly Func<string, int, int, CancellationToken, Task> levelUp;
+        private readonly CancellationTokenSource lifetime = new();
         private int index;
         private bool dialog;
         private int count = 1;
+        private bool saving;
         private bool disposed;
 
         public TrainingPresenter(
             ITrainingView view,
             IReadOnlyList<TrainingMember> roster,
-            TrainingMockData data,
             ITrainingStore store,
-            Func<string, Sprite> iconOf = null
+            Func<string, Sprite> iconOf = null,
+            Func<string, int, int, CancellationToken, Task> levelUp = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.roster = roster ?? Array.Empty<TrainingMember>();
-            this.data = data != null ? data : throw new ArgumentNullException(nameof(data));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.iconOf = iconOf ?? (_ => null);
+            this.levelUp = levelUp;
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -121,6 +130,12 @@ namespace Baryonyx.Training
         }
 
         public TrainingState State { get; private set; }
+
+        // レベルアップの保存を待っている間。重ねて押されても受け付けない。
+        public bool Saving => saving;
+
+        // 実行中または直前のレベルアップ。テストで完了を待つために公開する。
+        public Task ConfirmTask { get; private set; } = Task.CompletedTask;
 
         private TrainingMember Current => roster.Count > 0 ? roster[index] : null;
 
@@ -165,7 +180,7 @@ namespace Baryonyx.Training
 
         public void Less()
         {
-            if (disposed || !dialog || count <= 1)
+            if (disposed || saving || !dialog || count <= 1)
                 return;
             count--;
             Refresh();
@@ -173,7 +188,7 @@ namespace Baryonyx.Training
 
         public void More()
         {
-            if (disposed || !dialog || count >= LevelsLeft)
+            if (disposed || saving || !dialog || count >= LevelsLeft)
                 return;
             count++;
             Refresh();
@@ -182,30 +197,64 @@ namespace Baryonyx.Training
         // 所持ルーンで上げられるだけ上げる数にする。1つも上げられなければ1のまま（足りない量を見せる）。
         public void Max()
         {
-            if (disposed || !dialog)
+            if (disposed || saving || !dialog)
                 return;
             int level = store.LevelOf(Current.Id);
             int affordable = TrainingRules.Affordable(
                 level,
                 store.Runes,
-                data.MaxLevel,
-                data.CostPerLevel
+                store.MaxLevel,
+                store.CostPerLevel
             );
             count = Mathf.Clamp(affordable, 1, Math.Max(1, LevelsLeft));
             Refresh();
         }
 
-        public void Confirm()
+        public void Confirm() => ConfirmTask = ConfirmAsync();
+
+        // サーバーがあれば、サーバーでレベルを上げてルーンを使ってから表示を変える。
+        private async Task ConfirmAsync()
         {
-            if (disposed || !dialog || !State.CanConfirm)
+            if (disposed || saving || !dialog || !State.CanConfirm)
                 return;
             var member = Current;
+            int level = State.Level;
             int target = State.Target;
             var learned = State.Learned;
-            store.Spend(State.Cost);
-            store.SetLevel(member.Id, target);
-            dialog = false;
-            view.ShowNotice(LevelUpMessage(member.Member.Name, target, learned));
+            string message = LevelUpMessage(member.Member.Name, target, learned);
+            if (levelUp == null)
+            {
+                store.Spend(State.Cost);
+                store.SetLevel(member.Id, target);
+                dialog = false;
+                view.ShowNotice(message);
+                Refresh();
+                return;
+            }
+
+            saving = true;
+            Refresh();
+            try
+            {
+                await levelUp(member.Id, level, target, lifetime.Token);
+                if (disposed)
+                    return;
+                dialog = false;
+                view.ShowNotice(message);
+            }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (!disposed)
+                    view.ShowNotice(LevelUpFailedMessage);
+            }
+            finally
+            {
+                saving = false;
+            }
             Refresh();
         }
 
@@ -229,7 +278,7 @@ namespace Baryonyx.Training
                     + "を覚えました";
 
         private int LevelsLeft =>
-            Current != null ? Math.Max(0, data.MaxLevel - store.LevelOf(Current.Id)) : 0;
+            Current != null ? Math.Max(0, store.MaxLevel - store.LevelOf(Current.Id)) : 0;
 
         private int IndexOf(string id)
         {
@@ -261,13 +310,15 @@ namespace Baryonyx.Training
                     Maxed = true,
                 };
 
-            int level = Mathf.Clamp(store.LevelOf(current.Id), 1, data.MaxLevel);
-            bool maxed = level >= data.MaxLevel;
-            int levelsLeft = data.MaxLevel - level;
+            int maxLevel = store.MaxLevel;
+            int costPerLevel = store.CostPerLevel;
+            int level = Mathf.Clamp(store.LevelOf(current.Id), 1, maxLevel);
+            bool maxed = level >= maxLevel;
+            int levelsLeft = maxLevel - level;
             count = Mathf.Clamp(count, 1, Math.Max(1, levelsLeft));
             int target = maxed ? level : level + count;
             long runes = store.Runes;
-            long cost = maxed ? 0 : TrainingRules.CostBetween(level, target, data.CostPerLevel);
+            long cost = maxed ? 0 : TrainingRules.CostBetween(level, target, costPerLevel);
             var cards = store.CardsOf(current.Id);
             var skills = Skills(current.Growth, level);
             var targetSkills = Skills(current.Growth, target);
@@ -284,16 +335,16 @@ namespace Baryonyx.Training
                 Skills = skills,
                 Cards = cards.Select(Card).ToArray(),
                 Runes = runes,
-                NextCost = maxed ? 0 : TrainingRules.CostToNext(level, data.CostPerLevel),
+                NextCost = maxed ? 0 : TrainingRules.CostToNext(level, costPerLevel),
                 DialogOpen = open,
                 Count = count,
                 Target = target,
                 TargetStats = current.Growth.StatsAt(target),
                 Cost = cost,
                 CanAfford = cost <= runes,
-                CanLess = open && count > 1,
-                CanMore = open && count < levelsLeft,
-                CanConfirm = open && cost <= runes,
+                CanLess = open && count > 1 && !saving,
+                CanMore = open && count < levelsLeft && !saving,
+                CanConfirm = open && cost <= runes && !saving,
                 Learned = targetSkills
                     .Where(skill => skill.UnlockLevel > level && skill.UnlockLevel <= target)
                     .OrderBy(skill => skill.UnlockLevel)
@@ -339,6 +390,8 @@ namespace Baryonyx.Training
             if (disposed)
                 return;
             disposed = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
             view.PrevPressed -= Previous;
             view.NextPressed -= Next;
             view.LevelUpPressed -= OpenDialog;
@@ -368,7 +421,7 @@ namespace Baryonyx.Training
         // 操作を求めない通知（共通の通知の帯）を出す。
         void ShowNotice(string message);
 
-        // キャラのカードスキルの付け替え画面を開く。まだ開けなければfalse。
+        // キャラのスキルの付け替え画面を開く。まだ開けなければfalse。
         bool OpenCards(string id);
     }
 }

@@ -33,7 +33,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernCardLoadoutTests));
         }
 
-        // 酒場の「カードスキル」は一覧の代わりにカードスキルを開く。上のタブで人を選び（パーティのあとに
+        // 酒場の「スキル」は一覧の代わりにスキルの画面を開く。上のタブで人を選び（パーティのあとに
         // ほかの仲間も並ぶ）、左で枠を押してから右のカードを押すとその場で入れ替え、共通の通知の帯で知らせる。
         [UnityTest]
         public IEnumerator CardsChangeForThePartyAndTheOtherCompanions()
@@ -169,6 +169,53 @@ namespace Baryonyx.Tests.PlayMode
                 Is.LessThanOrEqualTo(((RectTransform)text.transform).rect.height + 1f),
                 name.text
             );
+        }
+
+        // サーバーがあるときは、開くたびにサーバーのカードを読み、付け替えを保存してから表示を変える。
+        [UnityTest]
+        public IEnumerator CardsAreReadAndSavedOnTheServer()
+        {
+            var server = new FakePartySource(0, "toma")
+                .With("toma", 12, "Fire", "Meteor", "Ice", "Blizzard")
+                .With("luka", 11, "VitalThrust", "ArrowRain", "Thunder", "LightningBolt");
+            PartySession.Source = server;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var view = guide.View;
+            int item = System.Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == CardLoadoutSession.GuideItemKey
+            );
+            view.MenuItems[item].onClick.Invoke();
+            var panel = view.PanelFor(item).GetComponent<CardLoadoutView>();
+            Assert.That(panel.Count.text, Is.EqualTo(CardLoadoutView.LoadingText));
+            Assert.That(Tabs(panel), Is.Empty);
+            Assert.That(Rows(panel), Is.Empty);
+            yield return SceneTests.WaitUntil(
+                () => panel.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+
+            // サーバーのパーティと仲間だけをタブに並べる。
+            Assert.That(Tabs(panel), Is.EqualTo(new[] { "toma", "luka" }));
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
+
+            panel.Slots[1].Button.onClick.Invoke();
+            Row(panel, "Embers").Button.onClick.Invoke();
+            Assert.That(panel.Presenter.Saving, Is.True);
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
+            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
+            Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
+            Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
+            Assert.That(panel.LastNotice, Does.EndWith("に替えました"));
+
+            // 保存できなかったときはカードを変えずに知らせる。
+            server.Fail = true;
+            Row(panel, "Meteor").Button.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
+            Assert.That(panel.LastNotice, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
         }
 
         private static string[] Tabs(CardLoadoutView panel) =>

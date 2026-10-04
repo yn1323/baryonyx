@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
@@ -50,7 +52,9 @@ namespace Baryonyx.Party
     /// The tavern's formation over the whole guide screen: the four slots on the left and the
     /// owned characters not in the party on the right, ending with "外す". PartyAssets bakes
     /// the slots and tiles into the tavern prefab, so they read in the editor; this view wires
-    /// them up and drives its own presenter. Changes are told on the guide screen's notice band.
+    /// them up and drives its own presenter. When the app has a server
+    /// (<see cref="PartySession.Source"/>), it reads the party on opening and saves every change
+    /// there; otherwise it uses the mock data. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class PartyFormationView : MonoBehaviour, IPartyFormationView
     {
@@ -61,6 +65,10 @@ namespace Baryonyx.Party
 
         // 押せないときの「外す」の文字の濃さ。
         private const float LeaveDisabledAlpha = 0.45f;
+
+        public const string LoadingText = "読み込み中…";
+        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadFailedMessage = "編成を取得できませんでした";
 
         public PartyMockData Data;
 
@@ -75,6 +83,7 @@ namespace Baryonyx.Party
         public ScrollRect List;
 
         private PartyFormationPresenter presenter;
+        private CancellationTokenSource loading;
         private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
             new();
 
@@ -84,6 +93,9 @@ namespace Baryonyx.Party
 
         public PartyFormationPresenter Presenter => presenter;
         public string LastNotice { get; private set; } = "";
+
+        // 実行中または直前の読み込み。テストで完了を待つために公開する。
+        public Task LoadTask { get; private set; } = Task.CompletedTask;
 
         private void OnEnable()
         {
@@ -99,17 +111,77 @@ namespace Baryonyx.Party
             }
             Bind(Leave, () => LeavePressed?.Invoke());
 
-            // 開くたびに、アプリを動かしている間の編成で描き直す。
+            // 開くたびに、サーバーの編成（なければアプリを動かしている間の編成）で描き直す。
             presenter?.Dispose();
             presenter = null;
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
-            if (Data != null)
+            if (Data == null)
+                return;
+            var source = PartySession.Source;
+            if (source == null)
+            {
                 presenter = new PartyFormationPresenter(this, PartySession.Formation(Data));
+                return;
+            }
+            ShowLoading();
+            loading = new CancellationTokenSource();
+            LoadTask = LoadAsync(source, loading.Token);
+        }
+
+        private async Task LoadAsync(IPartySource source, CancellationToken token)
+        {
+            try
+            {
+                var state = await source.LoadAsync(token);
+                if (token.IsCancellationRequested)
+                    return;
+                presenter = new PartyFormationPresenter(
+                    this,
+                    PartySession.Use(Data, state),
+                    (slot, id, cancel) => SaveAsync(source, slot, id, cancel)
+                );
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception exception)
+            {
+                if (token.IsCancellationRequested)
+                    return;
+                Debug.LogWarning("編成を取得できませんでした。" + exception.Message, this);
+                Set(Owned, LoadFailedText);
+                ShowNotice(LoadFailedMessage);
+            }
+        }
+
+        private async Task<PartyFormation> SaveAsync(
+            IPartySource source,
+            int slot,
+            string id,
+            CancellationToken token
+        ) => PartySession.Use(Data, await source.SetSlotAsync(slot, id, token));
+
+        // 読み込むまで、仮データの編成を本当の編成として見せない。
+        private void ShowLoading()
+        {
+            Set(Owned, LoadingText);
+            foreach (var widget in Slots)
+            {
+                ShowSlot(widget, Data, null, 1, null, false);
+                if (widget.Empty != null)
+                    widget.Empty.gameObject.SetActive(false);
+            }
+            foreach (var member in Members)
+                if (member.Button != null)
+                    member.Button.gameObject.SetActive(false);
+            if (Leave != null)
+                Leave.gameObject.SetActive(false);
         }
 
         private void OnDisable()
         {
+            loading?.Cancel();
+            loading?.Dispose();
+            loading = null;
             foreach (var (button, action) in bindings)
                 if (button != null)
                     button.onClick.RemoveListener(action);
@@ -122,7 +194,7 @@ namespace Baryonyx.Party
         {
             if (Owned != null)
                 Owned.text = state.OwnedText;
-            // Lvは育成で上げたもの、カードは酒場のカードスキルで付け替えたもの（アプリを動かしている間）。
+            // Lvは育成で上げたもの、カードは酒場のスキルの画面で付け替えたもの（アプリを動かしている間）。
             for (int i = 0; i < Slots.Length && i < state.Slots.Count; i++)
             {
                 string id = state.Slots[i].Member;
@@ -145,7 +217,10 @@ namespace Baryonyx.Party
                 Set(member.Level, LevelText(PartySession.LevelOf(Data, member.Id)));
             }
             if (Leave != null)
+            {
+                Leave.gameObject.SetActive(true);
                 Leave.interactable = state.CanLeave;
+            }
             if (LeaveLabel != null)
                 LeaveLabel.alpha = state.CanLeave ? 1f : LeaveDisabledAlpha;
         }
