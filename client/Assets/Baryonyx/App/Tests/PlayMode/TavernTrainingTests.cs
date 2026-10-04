@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.CardLoadout;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -22,6 +23,7 @@ namespace Baryonyx.Tests.PlayMode
             services = TestGameServices.Use();
             PartySession.Reset();
             TrainingSession.Reset();
+            CardLoadoutSession.Reset();
         }
 
         [UnityTearDown]
@@ -31,6 +33,7 @@ namespace Baryonyx.Tests.PlayMode
             services = null;
             PartySession.Reset();
             TrainingSession.Reset();
+            CardLoadoutSession.Reset();
             yield return SceneTests.UnloadAll(nameof(TavernTrainingTests));
         }
 
@@ -141,9 +144,19 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(view.ToastMessage, Does.StartWith($"{first.Name}が Lv {target} になり"));
 
-            // カードの付け替え画面は、カードスキルの画面ができるまで「準備中」と知らせる。
+            // 「カードを付け替える」は、そのキャラを選んだ酒場のカードスキルへ移り、戻ると育成に帰る。
+            training.Next.onClick.Invoke();
+            string second = party.Member(1);
             training.Cards.onClick.Invoke();
-            Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.CardsComingSoon));
+            var cards = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey));
+            Assert.That(cards.activeInHierarchy, Is.True);
+            Assert.That(training.gameObject.activeSelf, Is.False);
+            Assert.That(CardLoadoutSession.Selected, Is.EqualTo(second));
+            view.Back.onClick.Invoke();
+            Assert.That(cards.activeSelf, Is.False);
+            Assert.That(training.gameObject.activeSelf, Is.True);
+            Assert.That(training.Name.text, Is.EqualTo(party.Name(second)));
+            training.Prev.onClick.Invoke();
 
             // 「もどる」でメニューへ。開き直しても、アプリを動かしている間はレベルが残る。
             view.Back.onClick.Invoke();

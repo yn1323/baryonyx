@@ -1,3 +1,5 @@
+using Baryonyx.CardLoadout;
+using Baryonyx.CardLoadout.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.StepBonus;
@@ -13,7 +15,7 @@ namespace Baryonyx.Tavern.Editor
     /// <summary>
     /// The tavern (酒場): the tavern girl guides party formation, training, card skills and the
     /// UPT bonus slots. The characters, levels and cards are mock values until the party has
-    /// data; the formation, training and bonus items show their own panels instead of a list.
+    /// data; every item shows its own panel instead of a list.
     /// </summary>
     public static class TavernScreenAssets
     {
@@ -42,6 +44,7 @@ namespace Baryonyx.Tavern.Editor
                             safe,
                             view
                         ),
+                        CardLoadoutSession.GuideItemKey => CardLoadoutAssets.BuildPanel(safe, view),
                         StepBonusSession.GuideItemKey => StepBonusAssets.BuildSettingsPanel(
                             safe,
                             view
@@ -54,26 +57,7 @@ namespace Baryonyx.Tavern.Editor
         {
             d.Title = "酒場";
             d.Layout = GuideMenuLayout.List;
-            d.Items = new[]
-            {
-                Formation(),
-                Training(),
-                Item(
-                    "カードスキル",
-                    "キャラごとに3枚のカードを付け替える",
-                    "付け替える",
-                    Icon(IconCardSkillPath),
-                    Entry("斬撃", "コスト 1", "斬｜敵1体に 243 ダメージ"),
-                    Entry("ファイア", "コスト 2", "炎｜敵1体に 312 ダメージ"),
-                    Entry("アイスランス", "コスト 2", "氷｜敵1体に 280 ダメージ、すばやさを下げる"),
-                    Entry("サンダー", "コスト 3", "雷｜敵全体に 190 ダメージ"),
-                    Entry("重撃", "コスト 2", "打｜敵1体に 360 ダメージ"),
-                    Entry("連突き", "コスト 2", "貫｜敵1体に 120 ダメージを3回"),
-                    Entry("ヒール", "コスト 1", "回復｜味方1人のHPを 220 回復"),
-                    Entry("ガード", "コスト 1", "防御｜このターンに受けるダメージを減らす")
-                ),
-                Bonus(),
-            };
+            d.Items = new[] { Formation(), Training(), CardSkill(), Bonus() };
         }
 
         // The formation item opens the party's formation panel (the four slots and the owned
@@ -101,6 +85,20 @@ namespace Baryonyx.Tavern.Editor
                 Icon(IconTrainingPath)
             );
             item.Key = TrainingSession.GuideItemKey;
+            return item;
+        }
+
+        // The card skills item opens each companion's four cards and the cards they can set
+        // instead of a list.
+        private static GuideMenuItem CardSkill()
+        {
+            var item = Item(
+                "カードスキル",
+                "仲間ごとに4枚のカードを付け替える",
+                "付け替える",
+                Icon(IconCardSkillPath)
+            );
+            item.Key = CardLoadoutSession.GuideItemKey;
             return item;
         }
 

@@ -68,6 +68,7 @@ client/
 │   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
 │   │   │   └── Editor/                  仮データと画面の生成
 │   │   ├── Features/Training/           酒場の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/CardLoadout/        酒場のカードスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/

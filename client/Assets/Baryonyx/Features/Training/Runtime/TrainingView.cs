@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Baryonyx.CardLoadout;
 using Baryonyx.Party;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -312,8 +313,18 @@ namespace Baryonyx.Training
                 Guide.ShowToast(message);
         }
 
-        // カードスキルの付け替え画面は、酒場の「カードスキル」の画面ができてからつなぐ。
-        public bool OpenCards(string id) => false;
+        /// <summary>
+        /// Moves to the tavern's card skills with this character chosen. Their back comes back
+        /// here, where the same character is still on screen.
+        /// </summary>
+        public bool OpenCards(string id)
+        {
+            if (Guide == null || !Guide.HasItem(CardLoadoutSession.GuideItemKey))
+                return false;
+            var guide = Guide;
+            CardLoadoutSession.Open(id, () => guide.OpenItem(TrainingSession.GuideItemKey));
+            return guide.OpenItem(CardLoadoutSession.GuideItemKey);
+        }
 
         private static string Number(long value) =>
             value.ToString("#,0", CultureInfo.InvariantCulture);
