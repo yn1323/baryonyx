@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: a1a6e2a3582ebd245abb676c59c1ed69_IconCompass
   DisplayName: IconCompass
-  Description: Assets/Baryonyx/Features/Home/UI/Art/IconCompass.aseprite#IconCompass
+  Description: Assets/Baryonyx/Shared/UI/Art/IconCompass.aseprite#IconCompass
   Category: 5
   Asset: {fileID: 5349011544834349465, guid: a1a6e2a3582ebd245abb676c59c1ed69, type: 3}
   PreviewPrefab: {fileID: 0}

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.Health;
@@ -23,13 +24,11 @@ namespace Baryonyx.App.Editor
     {
         public const string SettingsButtonName = "TopSettingsButton";
         public const string LinkModalName = "HealthLinkModal";
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
 
         [MenuItem("Baryonyx/App/Connect Startup Sync")]
         public static void ConnectScenes()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             var top = EditorSceneManager.OpenScene(
                 TopHomeSceneSetup.TopScenePath,
                 OpenSceneMode.Single
@@ -140,7 +139,7 @@ namespace Baryonyx.App.Editor
             icon.sizeDelta = new Vector2(40, 40);
             var iconImage = icon.gameObject.AddComponent<Image>();
             iconImage.sprite = ArtAssets.LoadSprite(UiArt.IconSettingsPath);
-            iconImage.color = TextMain;
+            iconImage.color = UiPalette.TextMain;
             iconImage.raycastTarget = false;
 
             var button = (TintGroupButton)AddTintButton(rect, spot);

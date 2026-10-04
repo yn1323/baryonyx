@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
+using Baryonyx.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -22,7 +23,6 @@ namespace Baryonyx.Combat.Editor
     {
         public const string PrefabPath = "Assets/Baryonyx/Features/Combat/UI/EnemyLabPanel.prefab";
 
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
         private static readonly Color ButtonColor = new(0.06f, 0.07f, 0.12f, 0.88f);
         private static readonly Color StripColor = new(0.02f, 0.03f, 0.06f, 0.72f);
@@ -68,8 +68,7 @@ namespace Baryonyx.Combat.Editor
         [MenuItem("Baryonyx/Combat/Create Enemy Lab Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             if (ActionLabels.Length != Enum.GetValues(typeof(EnemyLabAction)).Length)
                 throw new InvalidOperationException("Every enemy lab action needs a label.");
 
@@ -131,7 +130,14 @@ namespace Baryonyx.Combat.Editor
             var row = Row(safe, "Chooser", ChooserBottom);
             // DotGothic16 has no arrows (◀▶), so the neighbours are named in words.
             lab.PreviousButton = ControlButton(row, "Previous", "前の敵", 170f).button;
-            var label = Label(row, "Enemy", "", 34, TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                row,
+                "Enemy",
+                "",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             label.enableAutoSizing = true;
             label.fontSizeMin = 22f;
             label.fontSizeMax = 34f;
@@ -197,7 +203,14 @@ namespace Baryonyx.Combat.Editor
             rect.gameObject.AddComponent<LayoutElement>().preferredWidth = width;
             var image = Sliced(rect, UiArt.RoundedRectPath, ButtonColor);
             var button = AddButton(rect, image);
-            var label = Label(rect, "Label", text, 34, TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                rect,
+                "Label",
+                text,
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Stretch(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(8f, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);

@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Party;
+using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Equipment
 {
@@ -34,8 +36,8 @@ namespace Baryonyx.Equipment
     /// </summary>
     public sealed class EquipmentView : MonoBehaviour, IEquipmentView
     {
-        public const string LoadingText = "読み込み中…";
-        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadingText = GuidePanelLoad.LoadingText;
+        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "装備を取得できませんでした";
 
         public PartyMockData Party;
@@ -65,9 +67,8 @@ namespace Baryonyx.Equipment
         public Sprite ArmorIcon;
 
         private EquipmentPresenter presenter;
-        private CancellationTokenSource loading;
-        private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
-            new();
+        private readonly GuidePanelLoad load = new();
+        private readonly ButtonBindings bindings = new();
 
         public event Action<string> PersonPressed;
         public event Action<int> SlotPressed;
@@ -78,23 +79,23 @@ namespace Baryonyx.Equipment
         public string LastNotice { get; private set; } = "";
 
         // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask { get; private set; } = Task.CompletedTask;
+        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
             foreach (var person in People.Tabs)
             {
                 string id = person.Id;
-                Bind(person.Button, () => PersonPressed?.Invoke(id));
+                bindings.Bind(person.Button, () => PersonPressed?.Invoke(id));
             }
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
-                Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+                bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
             }
             foreach (var row in Rows)
                 BindRow(row);
-            Bind(Remove, () => RemovePressed?.Invoke());
+            bindings.Bind(Remove, () => RemovePressed?.Invoke());
 
             // 開くたびに、サーバー（なければアプリを動かしている間）の編成と装備で描き直す。
             presenter?.Dispose();
@@ -108,8 +109,7 @@ namespace Baryonyx.Equipment
             var equipment = EquipmentSession.SourceOrLocal;
             if (party != null || EquipmentSession.Source != null)
                 ShowLoading();
-            loading = new CancellationTokenSource();
-            LoadTask = LoadAsync(party, equipment, loading.Token);
+            load.Start(token => LoadAsync(party, equipment, token), LoadFailed);
         }
 
         private async Task LoadAsync(
@@ -118,36 +118,31 @@ namespace Baryonyx.Equipment
             CancellationToken token
         )
         {
-            try
-            {
-                // 同じセッションを順に使う（ログインのやり直しを重ねない）。
-                var formation =
-                    party != null
-                        ? PartySession.Use(Party, await party.LoadAsync(token))
-                        : PartySession.Formation(Party);
-                var state = await equipment.LoadAsync(token);
-                if (token.IsCancellationRequested)
-                    return;
-                var (people, partyCount) = formation.TabOrder();
-                presenter = new EquipmentPresenter(
-                    this,
-                    people,
-                    partyCount,
-                    state,
-                    equipment,
-                    EquipmentSession.Selected,
-                    id => EquipmentSession.Selected = id
-                );
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception exception)
-            {
-                if (token.IsCancellationRequested)
-                    return;
-                Debug.LogWarning("装備を取得できませんでした。" + exception.Message, this);
-                Set(Count, LoadFailedText);
-                ShowNotice(LoadFailedMessage);
-            }
+            // 同じセッションを順に使う（ログインのやり直しを重ねない）。
+            var formation =
+                party != null
+                    ? PartySession.Use(Party, await party.LoadAsync(token))
+                    : PartySession.Formation(Party);
+            var state = await equipment.LoadAsync(token);
+            if (token.IsCancellationRequested)
+                return;
+            var (people, partyCount) = formation.TabOrder();
+            presenter = new EquipmentPresenter(
+                this,
+                people,
+                partyCount,
+                state,
+                equipment,
+                EquipmentSession.Selected,
+                id => EquipmentSession.Selected = id
+            );
+        }
+
+        private void LoadFailed(Exception exception)
+        {
+            Debug.LogWarning("装備を取得できませんでした。" + exception.Message, this);
+            Set(Count, LoadFailedText);
+            ShowNotice(LoadFailedMessage);
         }
 
         // 読み込むまで、仮データの装備を本当の装備として見せない。
@@ -167,12 +162,7 @@ namespace Baryonyx.Equipment
 
         private void OnDisable()
         {
-            loading?.Cancel();
-            loading?.Dispose();
-            loading = null;
-            foreach (var (button, action) in bindings)
-                if (button != null)
-                    button.onClick.RemoveListener(action);
+            load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -306,21 +296,7 @@ namespace Baryonyx.Equipment
         {
             if (row == null)
                 return;
-            Bind(row.Button, () => ItemPressed?.Invoke(row.ItemId));
-        }
-
-        private void Bind(Button button, UnityEngine.Events.UnityAction action)
-        {
-            if (button == null)
-                return;
-            button.onClick.AddListener(action);
-            bindings.Add((button, action));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
+            bindings.Bind(row.Button, () => ItemPressed?.Invoke(row.ItemId));
         }
     }
 }

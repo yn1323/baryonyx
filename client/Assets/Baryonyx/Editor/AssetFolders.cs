@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEngine;
 
 namespace Baryonyx.Editor
 {
@@ -17,6 +18,18 @@ namespace Baryonyx.Editor
                 throw new InvalidOperationException($"Invalid asset folder path: {path}");
             Ensure(parent);
             AssetDatabase.CreateFolder(parent, name);
+        }
+
+        // パスのScriptableObjectを読み、なければ作る。値の設定は呼び出し側が行う。
+        public static T LoadOrCreate<T>(string path)
+            where T : ScriptableObject
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset != null)
+                return asset;
+            asset = ScriptableObject.CreateInstance<T>();
+            AssetDatabase.CreateAsset(asset, path);
+            return asset;
         }
     }
 }

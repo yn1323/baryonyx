@@ -150,7 +150,7 @@ namespace Baryonyx.CardLoadout.Editor
                 "Title",
                 "スキル",
                 44,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
@@ -181,7 +181,7 @@ namespace Baryonyx.CardLoadout.Editor
                 "None",
                 "＋属性なし",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft
             );
 
@@ -190,7 +190,7 @@ namespace Baryonyx.CardLoadout.Editor
                 "Count",
                 "",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopRight
             );
             Guide.Fill(
@@ -263,7 +263,7 @@ namespace Baryonyx.CardLoadout.Editor
             name.text = card.Name;
             kind.text = CardText.KindLine(card);
             widget.Description = BuildDescription(row, 64, 64, RowTextLeft, 24);
-            widget.Mark = Label(row, "Mark", "", 24, Guide.Gold, TextAlignmentOptions.TopRight);
+            widget.Mark = Label(row, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)widget.Mark.transform, top: true, 20, 32, RowTextLeft, 28);
             widget.Mark.gameObject.SetActive(false);
             return widget;
@@ -286,7 +286,7 @@ namespace Baryonyx.CardLoadout.Editor
             var badge = Rect("Cost", thumb);
             Corner(badge, new Vector2(0, 1), new Vector2(2, -2), new Vector2(34, 34));
             AddImage(badge, BadgeColor, false);
-            var cost = Label(badge, "Value", "", 28, Guide.Gold, TextAlignmentOptions.Center);
+            var cost = Label(badge, "Value", "", 28, UiPalette.Gold, TextAlignmentOptions.Center);
             Stretch((RectTransform)cost.transform);
 
             var icon = Rect("Element", thumb);
@@ -312,8 +312,22 @@ namespace Baryonyx.CardLoadout.Editor
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = false;
             group.childForceExpandHeight = true;
-            var name = Label(line, "Name", "", 34, Guide.TextMain, TextAlignmentOptions.BottomLeft);
-            var kind = Label(line, "Kind", "", 22, Guide.TextMain, TextAlignmentOptions.BottomLeft);
+            var name = Label(
+                line,
+                "Name",
+                "",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.BottomLeft
+            );
+            var kind = Label(
+                line,
+                "Kind",
+                "",
+                22,
+                UiPalette.TextMain,
+                TextAlignmentOptions.BottomLeft
+            );
             kind.richText = true;
             return (name, kind);
         }
@@ -332,7 +346,7 @@ namespace Baryonyx.CardLoadout.Editor
                 "Description",
                 "",
                 24,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             description.richText = true;

@@ -27,7 +27,6 @@ namespace Baryonyx.Home.Editor
         public const string CardShadePath = ArtFolder + "/CardShade.png";
         public const string IconPartyPath = ArtFolder + "/IconParty.aseprite";
         public const string IconShopPath = ArtFolder + "/IconShop.aseprite";
-        public const string IconCompassPath = ArtFolder + "/IconCompass.aseprite";
         public const string IconSummonPath = ArtFolder + "/IconSummon.aseprite";
 
         // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
@@ -43,7 +42,7 @@ namespace Baryonyx.Home.Editor
             IconPartyPath,
             IconShopPath,
             IconSummonPath,
-            IconCompassPath,
+            UiArt.IconCompassPath,
         };
 
         // The same 11x14 campfire as the design mock, split where the flame meets the logs: the

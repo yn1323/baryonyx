@@ -4,6 +4,7 @@ using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
@@ -51,9 +52,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const float BackHeight = 168f;
 
         // Feature panels on a guide screen (e.g. the tavern's formation) use the same colours.
-        public static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        public static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
-        public static readonly Color Gold = new(1f, 0.843f, 0.4f);
         private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
 
         // A locked row (an unexplored destination) is drawn at this opacity, with its name hidden.
@@ -83,8 +81,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel = null
         )
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             CreateSharedArt();
             font = GameFontAssets.GetOrCreate();
             shadowText = UiArt.EnsureTextShadow(
@@ -98,12 +95,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(prefabPath));
             AssetDatabase.Refresh();
 
-            var definition = AssetDatabase.LoadAssetAtPath<GuideMenuDefinition>(definitionPath);
-            if (definition == null)
-            {
-                definition = ScriptableObject.CreateInstance<GuideMenuDefinition>();
-                AssetDatabase.CreateAsset(definition, definitionPath);
-            }
+            var definition = AssetFolders.LoadOrCreate<GuideMenuDefinition>(definitionPath);
             fill(definition);
             definition.GuideArt = ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
             // The backgrounds are generated illustrations used as they are.
@@ -272,7 +264,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var icon = Rect("Icon", back);
             Place(icon, new Vector2(0, 24), new Vector2(IconSize, IconSize));
             SpriteImage(icon, IconBackPath, Color.white);
-            var label = Label(back, "Label", "もどる", 32, TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                back,
+                "Label",
+                "もどる",
+                32,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Place((RectTransform)label.transform, new Vector2(0, -60), new Vector2(BackWidth, 40));
 
             var title = Label(
@@ -280,7 +279,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 "Title",
                 definition.Title,
                 72,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Right
             );
             Corner(
@@ -347,7 +346,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     "Label",
                     item.Label,
                     52,
-                    TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.Left
                 );
                 Band((RectTransform)label.transform, top: true, 20, 68, textLeft, 96);
@@ -356,7 +355,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     "Caption",
                     item.Caption,
                     30,
-                    TextSub,
+                    UiPalette.TextSub,
                     TextAlignmentOptions.Left
                 );
                 Band((RectTransform)caption.transform, top: false, 22, 40, textLeft + 2, 96);
@@ -368,7 +367,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     new Vector2(-44, 0),
                     new Vector2(5, 9) * DotScale
                 );
-                SpriteImage(arrow, ArrowPath, Gold);
+                SpriteImage(arrow, ArrowPath, UiPalette.Gold);
             }
             view.MenuItems = buttons.ToArray();
         }
@@ -454,7 +453,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
         // The gold title at the top left of a full list.
         private static TMP_Text ListTitle(RectTransform panel, string text)
         {
-            var title = Label(panel, "ListTitle", text, 48, Gold, TextAlignmentOptions.TopLeft);
+            var title = Label(
+                panel,
+                "ListTitle",
+                text,
+                48,
+                UiPalette.Gold,
+                TextAlignmentOptions.TopLeft
+            );
             Fill((RectTransform)title.transform, new Vector2(48, 0), new Vector2(-48, -32));
             return title;
         }
@@ -515,7 +521,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var confirm = Rect("Confirm", panel);
             Corner(confirm, new Vector2(1, 0), new Vector2(-32, 28), new Vector2(360, 104));
             var button = AddButton(confirm, Frame(confirm, FrameSelectedPath, Color.white));
-            var label = Label(confirm, "Label", text, 44, TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                confirm,
+                "Label",
+                text,
+                44,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Stretch((RectTransform)label.transform);
             button.interactable = false;
             return (button, label);
@@ -565,12 +578,33 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(selected);
             Frame(selected, FrameSelectedPath, Color.white).raycastTarget = false;
             selected.gameObject.SetActive(false);
-            var label = Label(row, "Name", title, 42, TextMain, TextAlignmentOptions.Left);
+            var label = Label(
+                row,
+                "Name",
+                title,
+                42,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Left
+            );
             Band((RectTransform)label.transform, top: true, 18, 54, 40, 260);
-            var detailLabel = Label(row, "Detail", detail, 28, TextSub, TextAlignmentOptions.Left);
+            var detailLabel = Label(
+                row,
+                "Detail",
+                detail,
+                28,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Left
+            );
             Band((RectTransform)detailLabel.transform, top: false, 14, 48, 42, 40);
             Shrink(detailLabel, 18);
-            var badgeLabel = Label(row, "Badge", badge, 34, Gold, TextAlignmentOptions.Right);
+            var badgeLabel = Label(
+                row,
+                "Badge",
+                badge,
+                34,
+                UiPalette.Gold,
+                TextAlignmentOptions.Right
+            );
             var badgeRect = (RectTransform)badgeLabel.transform;
             Band(badgeRect, top: true, 20, 50, 40, 40);
             badgeRect.anchorMin = new Vector2(0.5f, 1);

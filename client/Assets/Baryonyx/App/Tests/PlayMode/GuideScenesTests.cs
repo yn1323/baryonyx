@@ -161,7 +161,7 @@ namespace Baryonyx.Tests.PlayMode
             // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(settings.transform.Find("Panel/Effects"), Is.Not.Null);
             Assert.That(settings.transform.Find("Panel/Bonuses"), Is.Not.Null);
-            AssertBelow(settings.transform.Find("Panel"), view.Back.transform);
+            SceneTests.AssertBelow(settings.transform.Find("Panel"), view.Back.transform);
             Assert.That(view.GuideArt.activeSelf, Is.False);
 
             var loadout = StepBonusSession.Loadout(settings.Data);
@@ -404,25 +404,11 @@ namespace Baryonyx.Tests.PlayMode
         private static StepBonusRowWidget Row(StepBonusSettingsView settings, string id) =>
             settings.Rows.Single(row => row.Id == id);
 
-        private static Rect ScreenRect(Transform target)
-        {
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            ((RectTransform)target).GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
-        private static void AssertBelow(Transform lower, Transform upper) =>
-            Assert.That(
-                ScreenRect(lower).yMax,
-                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f)
-            );
-
         // inner が outer の内側に、縁の幅（設計座標）だけ空けて収まる。
         private static void AssertInside(Transform inner, Transform outer, float border)
         {
-            var a = ScreenRect(inner);
-            var b = ScreenRect(outer);
+            var a = SceneTests.ScreenRect(inner);
+            var b = SceneTests.ScreenRect(outer);
             float scale = b.width / ((RectTransform)outer).rect.width;
             float edge = border * scale - 0.5f;
             Assert.That(a.xMin - b.xMin, Is.GreaterThanOrEqualTo(edge), inner.name);

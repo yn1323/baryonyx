@@ -33,8 +33,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Enemy Lab Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             // The battle screen and the dusk highland are BattleInspect's; they are made here
             // only if they are missing, so building the lab leaves them as they are.

@@ -13,49 +13,44 @@ namespace Baryonyx.Health
     // Health Connectの読み取り結果を、サーバー保存とルーン請求へ一度だけ渡す。
     // 歩数をゲーム中に監視せず、起動・更新・明示請求の操作境界でだけ実行する。
     // Google未接続でも、端末の秘密値によるゲストのセッションで保存と取得を行う。
-    public sealed class HealthServerSync : IHealthStepServer, IAccountSessionRunner, IDisposable
+    // セッションはほかの機能と共有する AccountSessionRunner が持ち、ここは歩数の取得元（端末）のIDを持つ。
+    public sealed class HealthServerSync : IHealthStepServer, IDisposable
     {
-        // 期限の直前に送った要求が途中で失効しないよう、早めにセッションを取り直す。
-        private static readonly TimeSpan RenewBefore = TimeSpan.FromMinutes(5);
+        private const string SourceKeyPrefix = "Health.RewardSourceId.";
 
         private readonly AccountApiClient accounts;
         private readonly HealthApiClient health;
         private readonly ExerciseRewardsApiClient rewards;
-        private readonly Func<string> guestSecret;
-        private readonly string sourceKeyPrefix;
-        private AccountSession session;
         private string sourceId;
 
         public HealthServerSync(
+            AccountSessionRunner sessions,
             AccountApiClient accounts,
             HealthApiClient health,
-            ExerciseRewardsApiClient rewards,
-            Func<string> guestSecret = null
+            ExerciseRewardsApiClient rewards
         )
         {
+            Sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
             this.accounts = accounts ?? throw new ArgumentNullException(nameof(accounts));
             this.health = health ?? throw new ArgumentNullException(nameof(health));
             this.rewards = rewards ?? throw new ArgumentNullException(nameof(rewards));
-            this.guestSecret = guestSecret ?? GuestCredential.GetOrCreate;
-            sourceKeyPrefix = "Health.RewardSourceId.";
+            Sessions.Started += OnSessionStarted;
         }
 
-        public bool IsSignedIn => session != null && session.ExpiresAt > DateTimeOffset.UtcNow;
+        /// <summary>The session shared with the other features' server sources.</summary>
+        public AccountSessionRunner Sessions { get; }
+
+        public bool IsSignedIn => Sessions.IsSignedIn;
 
         public async Task<bool> SignInAsync(string idToken, CancellationToken token)
         {
             if (string.IsNullOrWhiteSpace(idToken))
                 return false;
-            StartSession(await accounts.LoginAsync(idToken, token));
+            Sessions.Start(await accounts.LoginAsync(idToken, token));
             return true;
         }
 
-        public async Task ConnectAsync(CancellationToken token)
-        {
-            if (session != null && session.ExpiresAt - RenewBefore > DateTimeOffset.UtcNow)
-                return;
-            StartSession(await accounts.GuestLoginAsync(guestSecret(), token));
-        }
+        public Task ConnectAsync(CancellationToken token) => Sessions.ConnectAsync(token);
 
         public Task SaveAsync(HealthDay[] days, CancellationToken token)
         {
@@ -71,7 +66,7 @@ namespace Baryonyx.Health
                 )
                 .Select(ToServerDay)
                 .ToArray();
-            return WithSessionAsync(
+            return Sessions.WithSessionAsync(
                 async current =>
                 {
                     var revision = await health.BeginSyncAsync(
@@ -88,7 +83,7 @@ namespace Baryonyx.Health
         }
 
         public Task<HealthDay[]> ReadAsync(CancellationToken token) =>
-            WithSessionAsync(
+            Sessions.WithSessionAsync(
                 async current =>
                 {
                     try
@@ -104,13 +99,13 @@ namespace Baryonyx.Health
             );
 
         public Task<long> ReadRunesAsync(CancellationToken token) =>
-            WithSessionAsync(
+            Sessions.WithSessionAsync(
                 async current => (await rewards.ReadBalanceAsync(current, token)).balance,
                 token
             );
 
         public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
-            WithSessionAsync(
+            Sessions.WithSessionAsync(
                 async current =>
                 {
                     var claim = await rewards.ClaimAsync(
@@ -141,41 +136,21 @@ namespace Baryonyx.Health
                 .Parse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
                 .UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
 
-        // 失効・取り消し済みのセッションは一度だけゲストで取り直して再実行する。
-        public async Task<T> WithSessionAsync<T>(
-            Func<AccountSession, Task<T>> operation,
-            CancellationToken token
-        )
+        // 歩数の取得元（端末）のIDは、ユーザーごとに端末へ保存したものを使う。
+        private void OnSessionStarted(AccountSession created)
         {
-            await ConnectAsync(token);
-            try
-            {
-                return await operation(session);
-            }
-            catch (ServerApiException exception) when (exception.StatusCode == 401)
-            {
-                session = null;
-                await ConnectAsync(token);
-                return await operation(session);
-            }
-        }
-
-        private void StartSession(AccountSession created)
-        {
-            session = created;
-            sourceId = PlayerPrefs.GetString(sourceKeyPrefix + created.UserId, "");
+            sourceId = PlayerPrefs.GetString(SourceKeyPrefix + created.UserId, "");
             if (!Guid.TryParse(sourceId, out _))
             {
                 sourceId = Guid.NewGuid().ToString();
-                PlayerPrefs.SetString(sourceKeyPrefix + created.UserId, sourceId);
+                PlayerPrefs.SetString(SourceKeyPrefix + created.UserId, sourceId);
                 PlayerPrefs.Save();
             }
         }
 
         public async Task SignOutAsync(CancellationToken token)
         {
-            var current = session;
-            session = null;
+            var current = Sessions.End();
             sourceId = null;
             if (current != null)
                 await accounts.LogoutAsync(current, token);
@@ -217,12 +192,13 @@ namespace Baryonyx.Health
 
         private AccountSession RequireSession() =>
             IsSignedIn
-                ? session
+                ? Sessions.Current
                 : throw new InvalidOperationException("Sign in to the reward service first.");
 
         public void Dispose()
         {
-            session = null;
+            Sessions.Started -= OnSessionStarted;
+            Sessions.End();
             sourceId = null;
         }
     }

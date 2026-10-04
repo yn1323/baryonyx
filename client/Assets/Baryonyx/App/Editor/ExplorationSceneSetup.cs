@@ -3,6 +3,7 @@ using Baryonyx.Adventure;
 using Baryonyx.Adventure.Editor;
 using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
+using Baryonyx.UI.Editor;
 using UnityEditor;
 
 namespace Baryonyx.App.Editor
@@ -18,8 +19,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Exploration Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             AdventureAssets.CreateAssets();
             ScreenScenes.Rebuild(
                 ScenePath,
@@ -32,7 +32,7 @@ namespace Baryonyx.App.Editor
                         "ExplorationScreen"
                     );
                     ScreenScenes.AddEventSystem(scene);
-                    var transition = SceneTransitionSetup.AddTransition(
+                    var transition = SceneTransitionAssets.AddTransition(
                         scene,
                         startCovered: true,
                         revealOnStart: true

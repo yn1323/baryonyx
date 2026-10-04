@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Party
 {
@@ -66,8 +68,8 @@ namespace Baryonyx.Party
         // 押せないときの「外す」の文字の濃さ。
         private const float LeaveDisabledAlpha = 0.45f;
 
-        public const string LoadingText = "読み込み中…";
-        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadingText = GuidePanelLoad.LoadingText;
+        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "編成を取得できませんでした";
 
         public PartyMockData Data;
@@ -83,9 +85,8 @@ namespace Baryonyx.Party
         public ScrollRect List;
 
         private PartyFormationPresenter presenter;
-        private CancellationTokenSource loading;
-        private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
-            new();
+        private readonly GuidePanelLoad load = new();
+        private readonly ButtonBindings bindings = new();
 
         public event Action<int> SlotPressed;
         public event Action<string> MemberPressed;
@@ -95,21 +96,21 @@ namespace Baryonyx.Party
         public string LastNotice { get; private set; } = "";
 
         // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask { get; private set; } = Task.CompletedTask;
+        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
-                Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+                bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
             }
             foreach (var member in Members)
             {
                 string id = member.Id;
-                Bind(member.Button, () => MemberPressed?.Invoke(id));
+                bindings.Bind(member.Button, () => MemberPressed?.Invoke(id));
             }
-            Bind(Leave, () => LeavePressed?.Invoke());
+            bindings.Bind(Leave, () => LeavePressed?.Invoke());
 
             // 開くたびに、サーバーの編成（なければアプリを動かしている間の編成）で描き直す。
             presenter?.Dispose();
@@ -125,32 +126,26 @@ namespace Baryonyx.Party
                 return;
             }
             ShowLoading();
-            loading = new CancellationTokenSource();
-            LoadTask = LoadAsync(source, loading.Token);
+            load.Start(token => LoadAsync(source, token), LoadFailed);
         }
 
         private async Task LoadAsync(IPartySource source, CancellationToken token)
         {
-            try
-            {
-                var state = await source.LoadAsync(token);
-                if (token.IsCancellationRequested)
-                    return;
-                presenter = new PartyFormationPresenter(
-                    this,
-                    PartySession.Use(Data, state),
-                    (slot, id, cancel) => SaveAsync(source, slot, id, cancel)
-                );
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception exception)
-            {
-                if (token.IsCancellationRequested)
-                    return;
-                Debug.LogWarning("編成を取得できませんでした。" + exception.Message, this);
-                Set(Owned, LoadFailedText);
-                ShowNotice(LoadFailedMessage);
-            }
+            var state = await source.LoadAsync(token);
+            if (token.IsCancellationRequested)
+                return;
+            presenter = new PartyFormationPresenter(
+                this,
+                PartySession.Use(Data, state),
+                (slot, id, cancel) => SaveAsync(source, slot, id, cancel)
+            );
+        }
+
+        private void LoadFailed(Exception exception)
+        {
+            Debug.LogWarning("編成を取得できませんでした。" + exception.Message, this);
+            Set(Owned, LoadFailedText);
+            ShowNotice(LoadFailedMessage);
         }
 
         private async Task<PartyFormation> SaveAsync(
@@ -179,12 +174,7 @@ namespace Baryonyx.Party
 
         private void OnDisable()
         {
-            loading?.Cancel();
-            loading?.Dispose();
-            loading = null;
-            foreach (var (button, action) in bindings)
-                if (button != null)
-                    button.onClick.RemoveListener(action);
+            load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -303,20 +293,6 @@ namespace Baryonyx.Party
             if (member.Flip)
                 uv = new Rect(uv.xMax, uv.y, -uv.width, uv.height);
             image.uvRect = uv;
-        }
-
-        private void Bind(Button button, UnityEngine.Events.UnityAction action)
-        {
-            if (button == null)
-                return;
-            button.onClick.AddListener(action);
-            bindings.Add((button, action));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
         }
     }
 }

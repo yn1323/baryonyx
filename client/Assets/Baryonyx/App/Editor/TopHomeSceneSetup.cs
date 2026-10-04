@@ -30,8 +30,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Top and Home Scenes")]
         public static void CreateScenes()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             TranslucentTextPanelAssets.EnsurePrefab();
             Hd2dAssets.EnsureAssets();
@@ -55,16 +54,14 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Open Top Scene")]
         public static void OpenTopScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             EditorSceneManager.OpenScene(TopScenePath);
         }
 
         [MenuItem("Baryonyx/App/Open Home Scene")]
         public static void OpenHomeScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             EditorSceneManager.OpenScene(HomeScenePath);
         }
 

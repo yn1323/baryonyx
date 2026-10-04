@@ -97,5 +97,22 @@ namespace Baryonyx.Tests.PlayMode
                 target.name
             );
         }
+
+        /// <summary>The screen rectangle of a UI element, after the canvases are laid out.</summary>
+        public static Rect ScreenRect(Transform target)
+        {
+            Canvas.ForceUpdateCanvases();
+            var corners = new Vector3[4];
+            ((RectTransform)target).GetWorldCorners(corners);
+            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+        }
+
+        // lower が upper より下にあり、重ならない（0.5pxまでの誤差は許す）。
+        public static void AssertBelow(Transform lower, Transform upper) =>
+            Assert.That(
+                ScreenRect(lower).yMax,
+                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f),
+                lower.name
+            );
     }
 }

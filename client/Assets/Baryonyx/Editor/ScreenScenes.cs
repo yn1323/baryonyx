@@ -20,8 +20,7 @@ namespace Baryonyx.Editor
         // 開いているシーンは、編集中の変更を消さないよう作り直さない。
         public static void Rebuild(string path, Action<Scene> populate)
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             var loaded = SceneManager.GetSceneByPath(path);
             if (loaded.IsValid() && loaded.isLoaded)
                 throw new InvalidOperationException(

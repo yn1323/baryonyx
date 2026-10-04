@@ -52,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ListPanel.activeSelf, Is.False);
             // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
             yield return SceneTests.WaitForTask(panel.LoadTask);
             yield return null;
 
@@ -145,24 +145,10 @@ namespace Baryonyx.Tests.PlayMode
         private static EquipmentRow Row(EquipmentView panel, string name) =>
             Rows(panel).Single(row => row.Name.text == name);
 
-        private static Rect ScreenRect(Transform target)
-        {
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            ((RectTransform)target).GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
-        private static void AssertBelow(Transform lower, Transform upper) =>
-            Assert.That(
-                ScreenRect(lower).yMax,
-                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f)
-            );
-
         private static void AssertInside(Transform inner, Transform outer)
         {
-            var box = ScreenRect(outer);
-            var rect = ScreenRect(inner);
+            var box = SceneTests.ScreenRect(outer);
+            var rect = SceneTests.ScreenRect(inner);
             Assert.That(rect.xMin, Is.GreaterThanOrEqualTo(box.xMin - 0.5f), inner.name);
             Assert.That(rect.xMax, Is.LessThanOrEqualTo(box.xMax + 0.5f), inner.name);
         }

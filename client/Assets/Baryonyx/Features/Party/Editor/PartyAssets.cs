@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.UI;
@@ -58,12 +59,7 @@ namespace Baryonyx.Party.Editor
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
             AssetDatabase.Refresh();
-            var data = AssetDatabase.LoadAssetAtPath<PartyMockData>(DataPath);
-            if (data == null)
-            {
-                data = ScriptableObject.CreateInstance<PartyMockData>();
-                AssetDatabase.CreateAsset(data, DataPath);
-            }
+            var data = AssetFolders.LoadOrCreate<PartyMockData>(DataPath);
             // カードは戦闘画面のモックと同じスキル。
             data.Members = new[]
             {
@@ -226,7 +222,7 @@ namespace Baryonyx.Party.Editor
                 "Title",
                 "編成中",
                 44,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
@@ -287,8 +283,22 @@ namespace Baryonyx.Party.Editor
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = false;
             group.childForceExpandHeight = true;
-            widget.Name = Label(line, "Name", "", 34, Guide.TextMain, TextAlignmentOptions.Bottom);
-            widget.Level = Label(line, "Level", "", 26, Guide.Gold, TextAlignmentOptions.Bottom);
+            widget.Name = Label(
+                line,
+                "Name",
+                "",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Bottom
+            );
+            widget.Level = Label(
+                line,
+                "Level",
+                "",
+                26,
+                UiPalette.Gold,
+                TextAlignmentOptions.Bottom
+            );
 
             var cards = Rect("Cards", cell);
             float width = PartyFormation.Size * CardIconSize + (PartyFormation.Size - 1) * CardGap;
@@ -305,7 +315,7 @@ namespace Baryonyx.Party.Editor
                 "Empty",
                 "空き",
                 40,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)widget.Empty.transform);
@@ -337,7 +347,14 @@ namespace Baryonyx.Party.Editor
             var none = Rect("None", card);
             Stretch(none);
             Guide.Frame(none, Guide.FramePath, Faint).raycastTarget = false;
-            var label = Label(none, "Label", "無", 26, Guide.TextSub, TextAlignmentOptions.Center);
+            var label = Label(
+                none,
+                "Label",
+                "無",
+                26,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
             Stretch((RectTransform)label.transform);
             return new PartyCardWidget { Icon = icon, None = none.gameObject };
         }
@@ -352,14 +369,21 @@ namespace Baryonyx.Party.Editor
             Sprite shadow
         )
         {
-            var title = Label(panel, "Title", "仲間", 44, Guide.Gold, TextAlignmentOptions.TopLeft);
+            var title = Label(
+                panel,
+                "Title",
+                "仲間",
+                44,
+                UiPalette.Gold,
+                TextAlignmentOptions.TopLeft
+            );
             Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
             view.Owned = Label(
                 panel,
                 "Owned",
                 $"所持 {formation.Roster.Count}人",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopRight
             );
             Guide.Fill(
@@ -440,7 +464,7 @@ namespace Baryonyx.Party.Editor
                 "Name",
                 member.Name,
                 28,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Guide.Band((RectTransform)name.transform, top: true, TileNameTop, 36, 8, 8);
@@ -450,7 +474,7 @@ namespace Baryonyx.Party.Editor
                 "Level",
                 PartyFormationView.LevelText(member.Level),
                 22,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
             Guide.Band((RectTransform)widget.Level.transform, top: true, TileLevelTop, 28, 8, 8);
@@ -472,7 +496,7 @@ namespace Baryonyx.Party.Editor
                 "Label",
                 "外す",
                 40,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)view.LeaveLabel.transform);

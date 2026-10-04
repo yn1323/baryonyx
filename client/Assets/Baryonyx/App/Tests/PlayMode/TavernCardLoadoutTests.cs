@@ -52,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ListPanel.activeSelf, Is.False);
             // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
             yield return null;
 
             // タブはパーティの枠の順、続けてほかの仲間を持っている順。開いたときは先頭の人。
@@ -80,8 +80,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             Assert.That(Tab(panel, other.Id).Selected.activeSelf, Is.True);
             Assert.That(Tab(panel, people[0].Id).Selected.activeSelf, Is.False);
-            var strip = ScreenRect(panel.People.Scroll.viewport);
-            var shown = ScreenRect(Tab(panel, other.Id).Button.transform);
+            var strip = SceneTests.ScreenRect(panel.People.Scroll.viewport);
+            var shown = SceneTests.ScreenRect(Tab(panel, other.Id).Button.transform);
             Assert.That(shown.xMin, Is.GreaterThanOrEqualTo(strip.xMin - 0.5f));
             Assert.That(shown.xMax, Is.LessThanOrEqualTo(strip.xMax + 0.5f));
             AssertShows(panel, data, other);
@@ -157,9 +157,9 @@ namespace Baryonyx.Tests.PlayMode
 
         private static void AssertFits(Transform box, TMP_Text name, TMP_Text kind, TMP_Text text)
         {
-            var frame = ScreenRect(box);
+            var frame = SceneTests.ScreenRect(box);
             Assert.That(
-                ScreenRect(kind.transform).xMax,
+                SceneTests.ScreenRect(kind.transform).xMax,
                 Is.LessThanOrEqualTo(frame.xMax),
                 name.text
             );
@@ -236,19 +236,5 @@ namespace Baryonyx.Tests.PlayMode
 
         private static CardLoadoutRowWidget Row(CardLoadoutView panel, string id) =>
             panel.Rows.Single(row => row.Id == id);
-
-        private static Rect ScreenRect(Transform target)
-        {
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            ((RectTransform)target).GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
-        private static void AssertBelow(Transform lower, Transform upper) =>
-            Assert.That(
-                ScreenRect(lower).yMax,
-                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f)
-            );
     }
 }

@@ -33,8 +33,7 @@ namespace Baryonyx.Home.Editor
         public const string DestinationArtPath = "Assets/Baryonyx/Shared/Art/Stages/Forest.png";
 
         /// <summary>The travel office's world map, on the card while no adventure is in progress.</summary>
-        public const string TravelArtPath =
-            "Assets/Baryonyx/Features/TravelOffice/UI/Art/WorldMap.png";
+        public const string TravelArtPath = HomeScreenArt.ArtFolder + "/WorldMap.png";
         public const string CharactersPath =
             "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
@@ -46,10 +45,6 @@ namespace Baryonyx.Home.Editor
         private static readonly Color RuneSparkFade = new(0.32f, 0.706f, 0.933f, 0f);
         private static readonly Color RuneGlowColor = new(0.588f, 0.878f, 0.98f, 0f);
 
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
-        private static readonly Color TextFaint = new(0.604f, 0.580f, 0.514f);
-        private static readonly Color Teal = new(0.498f, 0.890f, 0.839f);
         private static readonly Color Flame = new(1f, 0.58f, 0.24f, 1f);
 
         private const float NavWidth = 128f;
@@ -82,8 +77,7 @@ namespace Baryonyx.Home.Editor
         [MenuItem("Baryonyx/Home/Create Screen Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
@@ -160,12 +154,7 @@ namespace Baryonyx.Home.Editor
             EditorUtility.SetDirty(material);
         }
 
-        private static void EnsureMockData()
-        {
-            if (AssetDatabase.LoadAssetAtPath<HomeMockData>(DataPath) != null)
-                return;
-            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<HomeMockData>(), DataPath);
-        }
+        private static void EnsureMockData() => AssetFolders.LoadOrCreate<HomeMockData>(DataPath);
 
         private static void BuildBackground(RectTransform root, Texture2D background)
         {
@@ -472,7 +461,7 @@ namespace Baryonyx.Home.Editor
                 "StepsLabel",
                 "",
                 96,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft
             );
             Label(
@@ -480,7 +469,7 @@ namespace Baryonyx.Home.Editor
                 "StepsUnit",
                 "ACT",
                 48,
-                TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.BottomLeft
             ).margin = new Vector4(0, 0, 0, 8);
 
@@ -499,7 +488,7 @@ namespace Baryonyx.Home.Editor
                 "DateLabel",
                 "",
                 32,
-                TextFaint,
+                UiPalette.TextFaint,
                 TextAlignmentOptions.BottomRight
             );
 
@@ -536,7 +525,7 @@ namespace Baryonyx.Home.Editor
                 "RemainingLabel",
                 "",
                 32,
-                TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft
             );
             Flexible(view.RemainingLabel);
@@ -552,7 +541,7 @@ namespace Baryonyx.Home.Editor
                 "UnlinkedTitle",
                 "歩数がまだ届いていません",
                 48,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
             Label(
@@ -560,7 +549,7 @@ namespace Baryonyx.Home.Editor
                 "UnlinkedBody",
                 "1歩が1ACTになり、仲間の力になります",
                 32,
-                TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft
             );
             view.UnlinkedDetails = unlinked.gameObject;
@@ -588,7 +577,7 @@ namespace Baryonyx.Home.Editor
                 "ClaimLabel",
                 "",
                 32,
-                Teal,
+                UiPalette.Teal,
                 TextAlignmentOptions.MidlineLeft
             );
             // Without a pointer position the runes burst from the hint text.
@@ -607,7 +596,13 @@ namespace Baryonyx.Home.Editor
             );
             spot.raycastTarget = true;
             view.SettingsButton = AddTintButton(settings, spot);
-            var gear = Icon(settings, "SettingsIcon", UiArt.IconSettingsPath, 40, TextMain);
+            var gear = Icon(
+                settings,
+                "SettingsIcon",
+                UiArt.IconSettingsPath,
+                40,
+                UiPalette.TextMain
+            );
             Place((RectTransform)gear.transform, Vector2.zero, new Vector2(40, 40));
 
             var pill = Rect("RunePill", safe);
@@ -644,7 +639,7 @@ namespace Baryonyx.Home.Editor
                 "RunesLabel",
                 "",
                 48,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Midline
             );
         }
@@ -709,7 +704,7 @@ namespace Baryonyx.Home.Editor
                 name + "Label",
                 text,
                 32,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Place((RectTransform)label.transform, new Vector2(0, -60), new Vector2(NavWidth, 40));
@@ -791,7 +786,7 @@ namespace Baryonyx.Home.Editor
                 "DestinationFloorLabel",
                 "",
                 64,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft
             );
             Corner(
@@ -811,7 +806,7 @@ namespace Baryonyx.Home.Editor
                 "ResumeLabel",
                 "出発",
                 64,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.BottomRight
             );
             resume.characterSpacing = 12;
@@ -976,7 +971,7 @@ namespace Baryonyx.Home.Editor
                 "RuneGainLabel",
                 "",
                 48,
-                Teal,
+                UiPalette.Teal,
                 TextAlignmentOptions.MidlineRight
             );
             Stretch(view.GainLabel.rectTransform);

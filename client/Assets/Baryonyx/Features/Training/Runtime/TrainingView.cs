@@ -8,10 +8,13 @@ using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Networking;
 using Baryonyx.Party;
+using Baryonyx.UI;
+using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Training
 {
@@ -62,13 +65,11 @@ namespace Baryonyx.Training
     /// </summary>
     public sealed class TrainingView : MonoBehaviour, ITrainingView, IGuideBackHandler
     {
-        public const string LoadingText = "読み込み中…";
-        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadingText = GuidePanelLoad.LoadingText;
+        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "キャラを取得できませんでした";
 
-        // 案内人の画面の文字の色（GuideMenuAssets と同じ）と、足りないルーン・未解放のスキルの色。
-        private static readonly Color Main = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color Sub = new(0.788f, 0.749f, 0.659f);
+        // 足りないルーン・未解放のスキルの色。ほかの文字の色は UiPalette を使う。
         private static readonly Color Short = new(1f, 0.45f, 0.4f);
         private static readonly Color LockedIcon = new(0.25f, 0.25f, 0.3f, 1f);
         private static readonly Color LockedFrame = new(0.62f, 0.62f, 0.68f, 1f);
@@ -119,9 +120,8 @@ namespace Baryonyx.Training
         public TMP_Text Balance;
 
         private TrainingPresenter presenter;
-        private CancellationTokenSource loading;
-        private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
-            new();
+        private readonly GuidePanelLoad load = new();
+        private readonly ButtonBindings bindings = new();
 
         public event Action PrevPressed;
         public event Action NextPressed;
@@ -137,19 +137,19 @@ namespace Baryonyx.Training
         public string LastNotice { get; private set; } = "";
 
         // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask { get; private set; } = Task.CompletedTask;
+        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
-            Bind(Prev, () => PrevPressed?.Invoke());
-            Bind(Next, () => NextPressed?.Invoke());
-            Bind(LevelUp, () => LevelUpPressed?.Invoke());
-            Bind(Less, () => LessPressed?.Invoke());
-            Bind(More, () => MorePressed?.Invoke());
-            Bind(Max, () => MaxPressed?.Invoke());
-            Bind(Cancel, () => CancelPressed?.Invoke());
-            Bind(Confirm, () => ConfirmPressed?.Invoke());
-            Bind(Cards, () => CardsPressed?.Invoke());
+            bindings.Bind(Prev, () => PrevPressed?.Invoke());
+            bindings.Bind(Next, () => NextPressed?.Invoke());
+            bindings.Bind(LevelUp, () => LevelUpPressed?.Invoke());
+            bindings.Bind(Less, () => LessPressed?.Invoke());
+            bindings.Bind(More, () => MorePressed?.Invoke());
+            bindings.Bind(Max, () => MaxPressed?.Invoke());
+            bindings.Bind(Cancel, () => CancelPressed?.Invoke());
+            bindings.Bind(Confirm, () => ConfirmPressed?.Invoke());
+            bindings.Bind(Cards, () => CardsPressed?.Invoke());
 
             // 開くたびに、サーバーのレベル・所持ルーン・編成（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
@@ -163,34 +163,28 @@ namespace Baryonyx.Training
                 return;
             }
             ShowLoading();
-            loading = new CancellationTokenSource();
-            LoadTask = LoadAsync(source, loading.Token);
+            load.Start(token => LoadAsync(source, token), LoadFailed);
         }
 
         private async Task LoadAsync(IPartySource source, CancellationToken token)
         {
-            try
-            {
-                var state = await source.LoadAsync(token);
-                if (token.IsCancellationRequested)
-                    return;
-                PartySession.Use(Party, state);
-                presenter = Build(
-                    this,
-                    Party,
-                    Data,
-                    (id, from, to, cancel) => LevelUpAsync(source, id, from, to, cancel)
-                );
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception exception)
-            {
-                if (token.IsCancellationRequested)
-                    return;
-                Debug.LogWarning("育成のキャラを取得できませんでした。" + exception.Message, this);
-                Set(Name, LoadFailedText);
-                ShowNotice(LoadFailedMessage);
-            }
+            var state = await source.LoadAsync(token);
+            if (token.IsCancellationRequested)
+                return;
+            PartySession.Use(Party, state);
+            presenter = Build(
+                this,
+                Party,
+                Data,
+                (id, from, to, cancel) => LevelUpAsync(source, id, from, to, cancel)
+            );
+        }
+
+        private void LoadFailed(Exception exception)
+        {
+            Debug.LogWarning("育成のキャラを取得できませんでした。" + exception.Message, this);
+            Set(Name, LoadFailedText);
+            ShowNotice(LoadFailedMessage);
         }
 
         // サーバーでレベルを上げる。断られたときは手元の表示がずれているので、読み直してから失敗を伝える。
@@ -248,12 +242,7 @@ namespace Baryonyx.Training
 
         private void OnDisable()
         {
-            loading?.Cancel();
-            loading?.Dispose();
-            loading = null;
-            foreach (var (button, action) in bindings)
-                if (button != null)
-                    button.onClick.RemoveListener(action);
+            load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -369,7 +358,7 @@ namespace Baryonyx.Training
             }
             Set(Cost, Number(state.Cost));
             if (Cost != null)
-                Cost.color = state.CanAfford ? Main : Short;
+                Cost.color = state.CanAfford ? UiPalette.TextMain : Short;
             Set(
                 Balance,
                 state.CanAfford
@@ -377,7 +366,7 @@ namespace Baryonyx.Training
                     : $"ルーンが {Number(-state.Remaining)} 足りません"
             );
             if (Balance != null)
-                Balance.color = state.CanAfford ? Sub : Short;
+                Balance.color = state.CanAfford ? UiPalette.TextSub : Short;
         }
 
         private static void ShowSkill(TrainingSkillWidget widget, TrainingSkillState skill)
@@ -403,7 +392,7 @@ namespace Baryonyx.Training
             Set(widget.Description, skill?.Description);
             Set(widget.When, open ? "" : $"Lv {skill.UnlockLevel}");
             if (widget.Name != null)
-                widget.Name.color = open ? Main : LockedText;
+                widget.Name.color = open ? UiPalette.TextMain : LockedText;
         }
 
         private static void ShowCard(TrainingCardWidget widget, TrainingCardState card)
@@ -441,19 +430,5 @@ namespace Baryonyx.Training
 
         private static string Number(long value) =>
             value.ToString("#,0", CultureInfo.InvariantCulture);
-
-        private void Bind(Button button, UnityEngine.Events.UnityAction action)
-        {
-            if (button == null)
-                return;
-            button.onClick.AddListener(action);
-            bindings.Add((button, action));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
-        }
     }
 }

@@ -84,8 +84,7 @@ namespace Baryonyx.Stages.Editor
         [MenuItem("Baryonyx/Stages/Create Battle Stage Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             EnsureSharedMaterials();
             foreach (var set in Sets)
                 BuildSet(set);

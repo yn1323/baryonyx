@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
+using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.CardLoadout
 {
@@ -54,8 +56,8 @@ namespace Baryonyx.CardLoadout
     /// </summary>
     public sealed class CardLoadoutView : MonoBehaviour, ICardLoadoutView, IGuideBackHandler
     {
-        public const string LoadingText = "読み込み中…";
-        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadingText = GuidePanelLoad.LoadingText;
+        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "スキルを取得できませんでした";
 
         public PartyMockData Party;
@@ -78,9 +80,8 @@ namespace Baryonyx.CardLoadout
         public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
         private CardLoadoutPresenter presenter;
-        private CancellationTokenSource loading;
-        private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
-            new();
+        private readonly GuidePanelLoad load = new();
+        private readonly ButtonBindings bindings = new();
 
         public event Action<string> PersonPressed;
         public event Action<int> SlotPressed;
@@ -90,24 +91,24 @@ namespace Baryonyx.CardLoadout
         public string LastNotice { get; private set; } = "";
 
         // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask { get; private set; } = Task.CompletedTask;
+        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
             foreach (var person in People.Tabs)
             {
                 string id = person.Id;
-                Bind(person.Button, () => PersonPressed?.Invoke(id));
+                bindings.Bind(person.Button, () => PersonPressed?.Invoke(id));
             }
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
-                Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+                bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
             }
             foreach (var row in Rows)
             {
                 string id = row.Id;
-                Bind(row.Button, () => CardPressed?.Invoke(id));
+                bindings.Bind(row.Button, () => CardPressed?.Invoke(id));
             }
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
@@ -125,31 +126,25 @@ namespace Baryonyx.CardLoadout
                 return;
             }
             ShowLoading();
-            loading = new CancellationTokenSource();
-            LoadTask = LoadAsync(source, loading.Token);
+            load.Start(token => LoadAsync(source, token), LoadFailed);
         }
 
         private async Task LoadAsync(IPartySource source, CancellationToken token)
         {
-            try
-            {
-                var state = await source.LoadAsync(token);
-                if (token.IsCancellationRequested)
-                    return;
-                Present(
-                    PartySession.Use(Party, state),
-                    (id, slot, skill, cancel) => SaveAsync(source, id, slot, skill, cancel)
-                );
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception exception)
-            {
-                if (token.IsCancellationRequested)
-                    return;
-                Debug.LogWarning("スキルを取得できませんでした。" + exception.Message, this);
-                Set(Count, LoadFailedText);
-                ShowNotice(LoadFailedMessage);
-            }
+            var state = await source.LoadAsync(token);
+            if (token.IsCancellationRequested)
+                return;
+            Present(
+                PartySession.Use(Party, state),
+                (id, slot, skill, cancel) => SaveAsync(source, id, slot, skill, cancel)
+            );
+        }
+
+        private void LoadFailed(Exception exception)
+        {
+            Debug.LogWarning("スキルを取得できませんでした。" + exception.Message, this);
+            Set(Count, LoadFailedText);
+            ShowNotice(LoadFailedMessage);
         }
 
         // 保存した結果に置き換える。カードは store が PartySession から読み直す。
@@ -194,12 +189,7 @@ namespace Baryonyx.CardLoadout
 
         private void OnDisable()
         {
-            loading?.Cancel();
-            loading?.Dispose();
-            loading = null;
-            foreach (var (button, action) in bindings)
-                if (button != null)
-                    button.onClick.RemoveListener(action);
+            load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -336,20 +326,6 @@ namespace Baryonyx.CardLoadout
                 if (row.Id == id && row.Art != null)
                     return row.Art.texture;
             return null;
-        }
-
-        private void Bind(Button button, UnityEngine.Events.UnityAction action)
-        {
-            if (button == null)
-                return;
-            button.onClick.AddListener(action);
-            bindings.Add((button, action));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
         }
     }
 }

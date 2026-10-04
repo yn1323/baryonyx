@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEngine;
@@ -63,7 +64,7 @@ namespace Baryonyx.UI.Editor
                 "Title",
                 "",
                 56,
-                GuideMenuAssets.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
 
@@ -80,7 +81,7 @@ namespace Baryonyx.UI.Editor
                 "Body",
                 "",
                 40,
-                GuideMenuAssets.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             dialog.Body.textWrappingMode = TextWrappingModes.Normal;
@@ -100,7 +101,7 @@ namespace Baryonyx.UI.Editor
                     "Label",
                     "",
                     44,
-                    GuideMenuAssets.TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.Center
                 );
                 Stretch((RectTransform)label.transform);

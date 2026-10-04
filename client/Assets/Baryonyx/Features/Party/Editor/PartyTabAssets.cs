@@ -126,7 +126,7 @@ namespace Baryonyx.Party.Editor
                 "Name",
                 member.Name,
                 26,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Guide.Band((RectTransform)name.transform, top: false, 12, 34, 8, 8);

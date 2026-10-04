@@ -95,14 +95,16 @@ namespace Baryonyx.App
                 ),
                 preview,
                 sync != null
-                    ? new StepBonusServerSource(sync, new StepBonusApiClient(server))
-                    : null,
-                sync != null ? new PartyServerSource(sync, new PartyApiClient(server)) : null,
-                sync != null
-                    ? new AdventureServerSource(sync, new AdventureApiClient(server))
+                    ? new StepBonusServerSource(sync.Sessions, new StepBonusApiClient(server))
                     : null,
                 sync != null
-                    ? new EquipmentServerSource(sync, new EquipmentApiClient(server))
+                    ? new PartyServerSource(sync.Sessions, new PartyApiClient(server))
+                    : null,
+                sync != null
+                    ? new AdventureServerSource(sync.Sessions, new AdventureApiClient(server))
+                    : null,
+                sync != null
+                    ? new EquipmentServerSource(sync.Sessions, new EquipmentApiClient(server))
                     : null
             );
         }
@@ -124,8 +126,10 @@ namespace Baryonyx.App
             try
             {
                 server = new ServerApi(url);
+                var accounts = new AccountApiClient(server);
                 return new HealthServerSync(
-                    new AccountApiClient(server),
+                    new AccountSessionRunner(accounts),
+                    accounts,
                     new HealthApiClient(server),
                     new ExerciseRewardsApiClient(server)
                 );

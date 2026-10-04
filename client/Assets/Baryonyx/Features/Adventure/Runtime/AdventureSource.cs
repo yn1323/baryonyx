@@ -171,15 +171,5 @@ namespace Baryonyx.Adventure
                 ToRewards(result.rewards)
             );
         }
-
-        public static AdventureRoomKind ParseKind(string kind) =>
-            kind switch
-            {
-                "battle" => AdventureRoomKind.Battle,
-                "elite" => AdventureRoomKind.Elite,
-                "treasure" => AdventureRoomKind.Treasure,
-                "boss" => AdventureRoomKind.Boss,
-                _ => AdventureRoomKind.Start,
-            };
     }
 }

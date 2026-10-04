@@ -21,8 +21,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Card Skill Lab Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             // The characters' art and materials and the dusk highland are the battle's; they are
             // made here only if they are missing, so building the lab leaves them as they are.

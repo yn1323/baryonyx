@@ -172,8 +172,7 @@ namespace Baryonyx.Stages.Editor
         [MenuItem("Baryonyx/Stages/Create 3D Stage Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             EnsureSharedMaterials();
             BuildDungeonHall();
             BuildForestRuins();

@@ -58,23 +58,28 @@ namespace Baryonyx.Tests.PlayMode
 
             // 左のキャラの列は「もどる」より下、右の枠は画面の題名より下に置き、どれも重ならない。
             var detail = training.transform.Find("Layout/Detail");
-            AssertBelow(training.Prev.transform, view.Back.transform);
-            AssertBelow(training.transform.Find("Layout/Backdrop"), view.Back.transform);
-            AssertBelow(detail, view.transform.Find("SafeArea/Title"));
-            Assert.That(ScreenRect(detail).Overlaps(ScreenRect(view.Back.transform)), Is.False);
+            SceneTests.AssertBelow(training.Prev.transform, view.Back.transform);
+            SceneTests.AssertBelow(training.transform.Find("Layout/Backdrop"), view.Back.transform);
+            SceneTests.AssertBelow(detail, view.transform.Find("SafeArea/Title"));
             Assert.That(
-                ScreenRect(training.LevelUp.transform).xMax,
-                Is.LessThanOrEqualTo(ScreenRect(detail).xMin)
+                SceneTests.ScreenRect(detail).Overlaps(SceneTests.ScreenRect(view.Back.transform)),
+                Is.False
             );
-            AssertBelow(training.Figure.transform, training.Level.transform);
-            AssertBelow(training.Runes.transform, training.Figure.transform);
+            Assert.That(
+                SceneTests.ScreenRect(training.LevelUp.transform).xMax,
+                Is.LessThanOrEqualTo(SceneTests.ScreenRect(detail).xMin)
+            );
+            SceneTests.AssertBelow(training.Figure.transform, training.Level.transform);
+            SceneTests.AssertBelow(training.Runes.transform, training.Figure.transform);
             // ◀▶は128四方。横に長いボタンは、メニューの行と同じく高さを7割まで許す。
             SceneTests.AssertTouchSize(training.Prev.transform);
             SceneTests.AssertTouchSize(training.Next.transform);
             SceneTests.AssertTouchSize(training.LevelUp.transform, 0.7f);
             SceneTests.AssertTouchSize(training.Cards.transform, 0.7f);
             Assert.That(
-                ScreenRect(training.Prev.transform).Overlaps(ScreenRect(training.Figure.transform)),
+                SceneTests
+                    .ScreenRect(training.Prev.transform)
+                    .Overlaps(SceneTests.ScreenRect(training.Figure.transform)),
                 Is.False
             );
 
@@ -234,26 +239,11 @@ namespace Baryonyx.Tests.PlayMode
             var hits = new List<RaycastResult>();
             var pointer = new PointerEventData(EventSystem.current)
             {
-                position = ScreenRect(target).center,
+                position = SceneTests.ScreenRect(target).center,
             };
             EventSystem.current.RaycastAll(pointer, hits);
             Assert.That(hits, Is.Not.Empty);
             return hits[0].gameObject;
         }
-
-        private static Rect ScreenRect(Transform target)
-        {
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            ((RectTransform)target).GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
-        private static void AssertBelow(Transform lower, Transform upper) =>
-            Assert.That(
-                ScreenRect(lower).yMax,
-                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f),
-                lower.name
-            );
     }
 }

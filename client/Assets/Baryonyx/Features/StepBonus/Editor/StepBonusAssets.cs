@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEditor;
@@ -50,12 +52,7 @@ namespace Baryonyx.StepBonus.Editor
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
             AssetDatabase.Refresh();
-            var data = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(DataPath);
-            if (data == null)
-            {
-                data = ScriptableObject.CreateInstance<StepBonusMockData>();
-                AssetDatabase.CreateAsset(data, DataPath);
-            }
+            var data = AssetFolders.LoadOrCreate<StepBonusMockData>(DataPath);
             data.TodayAct = 3240;
             data.Tiers = new[] { 1000, 2000, 3000, 5000, 8000 };
             data.Multipliers = new[] { 1f, 1.2f, 1.4f, 1.7f, 2f };
@@ -245,7 +242,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Title",
                 "今日の効果",
                 44,
-                StepBonusArt.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
@@ -299,7 +296,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Tier",
                 $"{StepBonusLoadout.Act(loadout.Tier(index))} ACT {StepBonusLoadout.Times(loadout.Multiplier(index))}",
                 24,
-                StepBonusArt.TextFaint,
+                UiPalette.TextFaint,
                 TextAlignmentOptions.Left
             );
             Guide.Band((RectTransform)widget.Tier.transform, top: true, 12, 30, textLeft, 24);
@@ -308,7 +305,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Name",
                 bonus?.Name ?? "空き",
                 38,
-                StepBonusArt.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Left
             );
             Guide.Band((RectTransform)widget.Name.transform, top: true, 42, 48, textLeft, 24);
@@ -319,7 +316,7 @@ namespace Baryonyx.StepBonus.Editor
                     ? StepBonusLoadout.Effect(bonus, loadout.Effective(bonus.Id, index))
                     : "",
                 28,
-                StepBonusArt.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Left
             );
             Guide.Band(
@@ -347,7 +344,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Title",
                 "ボーナス",
                 44,
-                StepBonusArt.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
@@ -356,7 +353,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Owned",
                 "",
                 26,
-                StepBonusArt.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopRight
             );
             Guide.Fill(
@@ -433,7 +430,7 @@ namespace Baryonyx.StepBonus.Editor
                     "Label",
                     StepBonusSettingsPresenter.TabLabels[i],
                     30,
-                    StepBonusArt.TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.Center
                 );
                 Stretch((RectTransform)label.transform);
@@ -488,7 +485,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Name",
                 bonus.Name,
                 38,
-                StepBonusArt.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Left
             );
             Guide.Band((RectTransform)name.transform, top: true, 12, 48, textLeft, 96);
@@ -497,7 +494,7 @@ namespace Baryonyx.StepBonus.Editor
                 "Effect",
                 StepBonusLoadout.Effect(bonus, value),
                 28,
-                StepBonusArt.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Left
             );
             Guide.Band(

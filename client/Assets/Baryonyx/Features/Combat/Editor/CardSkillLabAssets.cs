@@ -27,8 +27,6 @@ namespace Baryonyx.Combat.Editor
         public const string PrefabPath =
             "Assets/Baryonyx/Features/Combat/UI/CardSkillLabScreen.prefab";
 
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
         private static readonly Color ButtonColor = new(0.06f, 0.07f, 0.12f, 0.88f);
         private static readonly Color SkillColor = new(0.12f, 0.13f, 0.2f, 0.95f);
@@ -49,8 +47,7 @@ namespace Baryonyx.Combat.Editor
         [MenuItem("Baryonyx/Combat/Create Card Skill Lab Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             UiArt.EnsureAll();
             var font = GameFontAssets.GetOrCreate();
@@ -210,7 +207,14 @@ namespace Baryonyx.Combat.Editor
             caption.outlineWidth = 0.2f;
             caption.outlineColor = new Color(0.05f, 0.04f, 0.1f);
             lab.Caption = caption;
-            var detail = Label(safe, "Detail", "", 32, TextSub, TextAlignmentOptions.Center);
+            var detail = Label(
+                safe,
+                "Detail",
+                "",
+                32,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
             Top(detail.rectTransform, -92f, new Vector2(1400f, 44f));
             lab.Detail = detail;
         }
@@ -278,7 +282,14 @@ namespace Baryonyx.Combat.Editor
             rect.sizeDelta = new Vector2(width, ControlHeight);
             var image = Sliced(rect, UiArt.RoundedRectPath, ButtonColor);
             var button = AddButton(rect, image);
-            var label = Label(rect, "Label", text, 34, TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                rect,
+                "Label",
+                text,
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Stretch(label.rectTransform);
             return (button, label);
         }
@@ -312,7 +323,7 @@ namespace Baryonyx.Combat.Editor
                     "Label",
                     "とじる",
                     34,
-                    TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.Center
                 ).rectTransform
             );
@@ -351,7 +362,7 @@ namespace Baryonyx.Combat.Editor
                     "User",
                     labels.TryGetValue(user, out var name) ? name : user.ToString(),
                     36,
-                    colors.TryGetValue(user, out var color) ? color : TextMain,
+                    colors.TryGetValue(user, out var color) ? color : UiPalette.TextMain,
                     TextAlignmentOptions.Left
                 );
                 header.rectTransform.sizeDelta = new Vector2(0f, 52f);
@@ -370,7 +381,14 @@ namespace Baryonyx.Combat.Editor
             var image = Sliced(rect, UiArt.RoundedRectPath, SkillColor);
             var button = AddButton(rect, image);
             // Small enough that the longest name (チェインライトニング) stays clear of the cost.
-            var name = Label(rect, "Name", "1　斬り払い", 28, TextMain, TextAlignmentOptions.Left);
+            var name = Label(
+                rect,
+                "Name",
+                "1　斬り払い",
+                28,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Left
+            );
             Stretch(name.rectTransform);
             name.rectTransform.offsetMin = new Vector2(18f, 0f);
             name.rectTransform.offsetMax = new Vector2(-64f, 0f);

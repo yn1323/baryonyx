@@ -22,8 +22,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Battle Inspect Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             BattleInspectAssets.CreateAssets();
             StageSetAssets.EnsureAssets();

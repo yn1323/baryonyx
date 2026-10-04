@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Editor;
+using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.Party;
@@ -87,12 +88,7 @@ namespace Baryonyx.Training.Editor
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
             AssetDatabase.Refresh();
-            var data = AssetDatabase.LoadAssetAtPath<TrainingMockData>(DataPath);
-            if (data == null)
-            {
-                data = ScriptableObject.CreateInstance<TrainingMockData>();
-                AssetDatabase.CreateAsset(data, DataPath);
-            }
+            var data = AssetFolders.LoadOrCreate<TrainingMockData>(DataPath);
             data.CostPerLevel = 100;
             data.MaxLevel = 30;
             data.MockRunes = 8450;
@@ -246,18 +242,32 @@ namespace Baryonyx.Training.Editor
                 1044 - ColumnTop
             );
             Sliced(plate, UiArt.RoundedRectPath, Backdrop).raycastTarget = false;
-            view.Name = Text(layer, "Name", "", 60, Guide.TextMain, TextAlignmentOptions.Center);
+            view.Name = Text(
+                layer,
+                "Name",
+                "",
+                60,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             At(view.Name, LeftX + 40, ColumnTop + 4, LeftWidth - 80, 88);
             Guide.Shrink(view.Name, 36);
 
             var level = Row(layer, "LevelLine", LeftX, 296, LeftWidth, 96, 14);
-            var tag = Text(level, "Tag", "Lv", 32, Guide.TextSub, TextAlignmentOptions.Baseline);
+            var tag = Text(
+                level,
+                "Tag",
+                "Lv",
+                32,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Baseline
+            );
             view.Level = Text(
                 level,
                 "Level",
                 "",
                 80,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Baseline
             );
             Fit(tag, 0);
@@ -301,12 +311,19 @@ namespace Baryonyx.Training.Editor
                 "Tag",
                 "所持ルーン",
                 28,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Midline
             );
             Fit(runesTag, 0);
             Fit(Icon(runes, "Icon", IconRunePath), Guide.IconSize);
-            view.Runes = Text(runes, "Value", "", 44, Guide.TextMain, TextAlignmentOptions.Midline);
+            view.Runes = Text(
+                runes,
+                "Value",
+                "",
+                44,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Midline
+            );
             Fit(view.Runes, 0);
 
             var levelUp = Box(layer, "LevelUp", LeftX, 776, LeftWidth, 120);
@@ -319,7 +336,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 "レベルアップ",
                 44,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
             At(view.LevelUpLabel, 36, 0, 360, 120);
@@ -332,7 +349,7 @@ namespace Baryonyx.Training.Editor
                 "Value",
                 "",
                 36,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight
             );
             At(view.LevelUpCostLabel, 96, 0, 170, 96);
@@ -345,7 +362,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 "スキルを付け替える",
                 44,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
             At(cardsLabel, 36, 0, 560, 120);
@@ -372,7 +389,7 @@ namespace Baryonyx.Training.Editor
             Place(arrow, Vector2.zero, new Vector2(5, 9) * 6f);
             if (flip)
                 arrow.localScale = new Vector3(-1, 1, 1);
-            SpriteImage(arrow, Guide.ArrowPath, Guide.Gold);
+            SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
             return button;
         }
 
@@ -401,7 +418,7 @@ namespace Baryonyx.Training.Editor
                         "Label",
                         CharacterStats.Labels[i],
                         30,
-                        Guide.TextSub,
+                        UiPalette.TextSub,
                         TextAlignmentOptions.BottomLeft
                     );
                     At(label, 0, 0, 90, 50);
@@ -410,7 +427,7 @@ namespace Baryonyx.Training.Editor
                         "Value",
                         "",
                         40,
-                        Guide.TextMain,
+                        UiPalette.TextMain,
                         TextAlignmentOptions.BottomRight
                     );
                     At(value, 90, 0, statWidth - 90, 50);
@@ -456,7 +473,14 @@ namespace Baryonyx.Training.Editor
             float width
         )
         {
-            var label = Text(panel, name, title, 36, Guide.Gold, TextAlignmentOptions.BottomLeft);
+            var label = Text(
+                panel,
+                name,
+                title,
+                36,
+                UiPalette.Gold,
+                TextAlignmentOptions.BottomLeft
+            );
             At(label, PanelPad, y, width, 48);
             if (note == null)
                 return;
@@ -465,7 +489,7 @@ namespace Baryonyx.Training.Editor
                 name + "Note",
                 note,
                 24,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.BottomRight
             );
             At(sub, PanelPad, y, width, 44);
@@ -495,15 +519,29 @@ namespace Baryonyx.Training.Editor
             var lockImage = Rect("Image", locked);
             Place(lockImage, new Vector2(0, 12), new Vector2(9, 10) * Dot);
             SpriteImage(lockImage, LockPath, Color.white);
-            widget.When = Text(locked, "When", "", 22, Guide.Gold, TextAlignmentOptions.Center);
+            widget.When = Text(locked, "When", "", 22, UiPalette.Gold, TextAlignmentOptions.Center);
             Place((RectTransform)widget.When.transform, new Vector2(0, -30), new Vector2(96, 28));
             widget.Lock = locked.gameObject;
 
             float textX = 14 + Guide.IconSize + 16;
             float textWidth = width - textX - 16;
-            widget.Type = Text(cell, "Type", "", 22, Guide.TextSub, TextAlignmentOptions.TopLeft);
+            widget.Type = Text(
+                cell,
+                "Type",
+                "",
+                22,
+                UiPalette.TextSub,
+                TextAlignmentOptions.TopLeft
+            );
             At(widget.Type, textX, 12, textWidth, 28);
-            widget.Name = Text(cell, "Name", "", 32, Guide.TextMain, TextAlignmentOptions.TopLeft);
+            widget.Name = Text(
+                cell,
+                "Name",
+                "",
+                32,
+                UiPalette.TextMain,
+                TextAlignmentOptions.TopLeft
+            );
             At(widget.Name, textX, 40, textWidth, 42);
             Guide.Shrink(widget.Name, 24);
             widget.Description = Text(
@@ -511,7 +549,7 @@ namespace Baryonyx.Training.Editor
                 "Description",
                 "",
                 22,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             At(widget.Description, textX, 84, textWidth, 30);
@@ -533,7 +571,7 @@ namespace Baryonyx.Training.Editor
             Guide.Frame(badge, Guide.FrameSelectedPath, Color.white).raycastTarget = false;
             var widget = new TrainingCardWidget
             {
-                Cost = Text(badge, "Cost", "", 30, Guide.Gold, TextAlignmentOptions.Center),
+                Cost = Text(badge, "Cost", "", 30, UiPalette.Gold, TextAlignmentOptions.Center),
             };
             Stretch((RectTransform)widget.Cost.transform);
             widget.Name = Text(
@@ -541,7 +579,7 @@ namespace Baryonyx.Training.Editor
                 "Name",
                 "",
                 30,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
             At(widget.Name, 80, 0, width - 80 - 76, 76);
@@ -549,7 +587,7 @@ namespace Baryonyx.Training.Editor
             var element = Box(cell, "Element", width - 16 - 12 * Dot, 14, 12 * Dot, 12 * Dot);
             widget.Element = element.gameObject.AddComponent<Image>();
             widget.Element.raycastTarget = false;
-            var none = Text(cell, "None", "無", 30, Guide.TextSub, TextAlignmentOptions.Center);
+            var none = Text(cell, "None", "無", 30, UiPalette.TextSub, TextAlignmentOptions.Center);
             At(none, width - 16 - 12 * Dot, 14, 12 * Dot, 12 * Dot);
             widget.None = none.gameObject;
             return widget;
@@ -580,7 +618,7 @@ namespace Baryonyx.Training.Editor
                 "Title",
                 "レベルアップ",
                 48,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.MidlineLeft
             );
             At(title, ModalPad, 30, 500, 64);
@@ -589,22 +627,28 @@ namespace Baryonyx.Training.Editor
                 "Name",
                 "",
                 44,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight
             );
             At(view.DialogName, width - ModalPad - 500, 30, 500, 64);
 
             var levels = Row(modal, "Levels", 0, 104, width, 124, 22);
-            Fit(Text(levels, "FromTag", "Lv", 36, Guide.TextSub, TextAlignmentOptions.Baseline), 0);
+            Fit(
+                Text(levels, "FromTag", "Lv", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
+                0
+            );
             view.From = Text(levels, "From", "", 64, Before, TextAlignmentOptions.Baseline);
             Fit(view.From, 0);
             var arrowCell = Rect("Arrow", levels);
             Fit(arrowCell, 5 * 8);
             var arrow = Rect("Image", arrowCell);
             Place(arrow, new Vector2(0, 8), new Vector2(5, 9) * 8f);
-            SpriteImage(arrow, Guide.ArrowPath, Guide.Gold);
-            Fit(Text(levels, "ToTag", "Lv", 36, Guide.TextSub, TextAlignmentOptions.Baseline), 0);
-            view.To = Text(levels, "To", "", 104, Guide.Gold, TextAlignmentOptions.Baseline);
+            SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
+            Fit(
+                Text(levels, "ToTag", "Lv", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
+                0
+            );
+            view.To = Text(levels, "To", "", 104, UiPalette.Gold, TextAlignmentOptions.Baseline);
             Fit(view.To, 0);
 
             var step = Row(modal, "Step", 0, 238, width, 92, 16);
@@ -617,11 +661,11 @@ namespace Baryonyx.Training.Editor
                 "Tag",
                 "上げる数",
                 22,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Top
             );
             At(countTag, 0, 8, 200, 28);
-            view.Count = Text(count, "Value", "", 44, Guide.Gold, TextAlignmentOptions.Top);
+            view.Count = Text(count, "Value", "", 44, UiPalette.Gold, TextAlignmentOptions.Top);
             At(view.Count, 0, 34, 200, 54);
             view.More = Square(step, "More", "＋", HitSize);
             view.Max = Square(step, "Max", "最大", 140);
@@ -640,7 +684,7 @@ namespace Baryonyx.Training.Editor
                 "Tag",
                 "このレベルアップで覚えるスキル",
                 24,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             At(learnedTag, 24, 16, sideWidth - 48, 32);
@@ -649,7 +693,7 @@ namespace Baryonyx.Training.Editor
                 "Value",
                 "",
                 32,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.TopLeft
             );
             At(view.Learned, 24, 56, sideWidth - 48, 56);
@@ -665,7 +709,7 @@ namespace Baryonyx.Training.Editor
                 "Tag",
                 "次の解放",
                 24,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
             At(nextTag, 24, 14, 300, 32);
@@ -680,7 +724,7 @@ namespace Baryonyx.Training.Editor
                 "Level",
                 "",
                 24,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             At(view.NextLevel, nextX, 48, sideWidth - nextX - 20, 30);
@@ -689,7 +733,7 @@ namespace Baryonyx.Training.Editor
                 "Name",
                 "",
                 36,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.TopLeft
             );
             At(view.NextName, nextX, 78, sideWidth - nextX - 20, 44);
@@ -699,7 +743,7 @@ namespace Baryonyx.Training.Editor
                 "Remain",
                 "",
                 24,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             At(view.NextRemain, nextX, 122, sideWidth - nextX - 20, 30);
@@ -712,7 +756,7 @@ namespace Baryonyx.Training.Editor
                 "Cost",
                 "",
                 56,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
             At(view.Cost, ModalPad + Guide.IconSize + 12, footY - 22, 420, Guide.IconSize);
@@ -721,7 +765,7 @@ namespace Baryonyx.Training.Editor
                 "Balance",
                 "",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             At(view.Balance, ModalPad, footY + 78, 600, 36);
@@ -736,7 +780,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 "レベルアップ",
                 46,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)confirmLabel.transform);
@@ -750,7 +794,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 "やめる",
                 40,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)cancelLabel.transform);
@@ -774,7 +818,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 CharacterStats.Labels[index],
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.BottomLeft
             );
             At(label, 0, 0, 170, text);
@@ -786,7 +830,7 @@ namespace Baryonyx.Training.Editor
                     "After",
                     "",
                     34,
-                    Guide.TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.BottomRight
                 ),
                 Gain = Text(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
@@ -808,7 +852,7 @@ namespace Baryonyx.Training.Editor
                 "Label",
                 label,
                 label.Length > 1 ? 34 : 48,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)text.transform);
@@ -892,7 +936,7 @@ namespace Baryonyx.Training.Editor
         private static void Arrow(RectTransform parent, string name, float x, float y, float scale)
         {
             var arrow = Box(parent, name, x, y, 5 * scale, 9 * scale);
-            SpriteImage(arrow, Guide.ArrowPath, Guide.Gold);
+            SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
         }
 
         // 未解放のスキルのアイコンに重ねる、9×10ドットの錠前（4倍で表示する）。

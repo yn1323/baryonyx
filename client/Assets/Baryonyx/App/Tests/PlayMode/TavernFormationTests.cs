@@ -48,20 +48,20 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ListPanel.activeSelf, Is.False);
             // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            AssertBelow(formation.transform.Find("Panel"), view.Back.transform);
+            SceneTests.AssertBelow(formation.transform.Find("Panel"), view.Back.transform);
 
             var party = PartySession.Formation(formation.Data);
             Assert.That(formation.Slots.Length, Is.EqualTo(PartyFormation.Size));
             foreach (var slot in formation.Slots)
                 SceneTests.AssertTouchSize(slot.Button.transform);
             // 左は2行2列。開いたときは1つ目の枠を選んでいる。
-            var first = ScreenRect(formation.Slots[0].Button.transform);
+            var first = SceneTests.ScreenRect(formation.Slots[0].Button.transform);
             Assert.That(
-                ScreenRect(formation.Slots[1].Button.transform).xMin,
+                SceneTests.ScreenRect(formation.Slots[1].Button.transform).xMin,
                 Is.GreaterThanOrEqualTo(first.xMax)
             );
             Assert.That(
-                ScreenRect(formation.Slots[2].Button.transform).yMax,
+                SceneTests.ScreenRect(formation.Slots[2].Button.transform).yMax,
                 Is.LessThanOrEqualTo(first.yMin)
             );
             Assert.That(formation.Slots[0].Selected.activeSelf, Is.True);
@@ -89,14 +89,14 @@ namespace Baryonyx.Tests.PlayMode
                 var tile = Tile(formation, id).Button.transform;
                 SceneTests.AssertTouchSize(tile);
                 // 仲間は全身の立ち姿で、タイルからはみ出さず、名前と重ならない。
-                var box = ScreenRect(tile);
-                var figure = ScreenRect(tile.Find("Figure"));
+                var box = SceneTests.ScreenRect(tile);
+                var figure = SceneTests.ScreenRect(tile.Find("Figure"));
                 Assert.That(figure.xMin, Is.GreaterThanOrEqualTo(box.xMin - 0.5f), id);
                 Assert.That(figure.xMax, Is.LessThanOrEqualTo(box.xMax + 0.5f), id);
                 Assert.That(figure.yMax, Is.LessThanOrEqualTo(box.yMax + 0.5f), id);
                 Assert.That(
                     figure.yMin,
-                    Is.GreaterThanOrEqualTo(ScreenRect(tile.Find("Name")).yMax - 0.5f),
+                    Is.GreaterThanOrEqualTo(SceneTests.ScreenRect(tile.Find("Name")).yMax - 0.5f),
                     id
                 );
                 Assert.That(
@@ -277,19 +277,5 @@ namespace Baryonyx.Tests.PlayMode
 
         private static PartyMemberWidget Tile(PartyFormationView formation, string id) =>
             formation.Members.Single(tile => tile.Id == id);
-
-        private static Rect ScreenRect(Transform target)
-        {
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            ((RectTransform)target).GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
-        private static void AssertBelow(Transform lower, Transform upper) =>
-            Assert.That(
-                ScreenRect(lower).yMax,
-                Is.LessThanOrEqualTo(ScreenRect(upper).yMin + 0.5f)
-            );
     }
 }

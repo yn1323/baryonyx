@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.StepBonus
 {
@@ -49,8 +51,8 @@ namespace Baryonyx.StepBonus
         // 段階に届いていない枠は、アイコン・枠・文字を暗くする。
         public static readonly Color Closed = new(0.42f, 0.42f, 0.48f, 1f);
 
-        public const string LoadingText = "読み込み中…";
-        public const string LoadFailedText = "取得できませんでした";
+        public const string LoadingText = GuidePanelLoad.LoadingText;
+        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "ボーナスを取得できませんでした";
 
         public StepBonusMockData Data;
@@ -66,9 +68,8 @@ namespace Baryonyx.StepBonus
         public StepBonusRowWidget[] Rows = Array.Empty<StepBonusRowWidget>();
 
         private StepBonusSettingsPresenter presenter;
-        private CancellationTokenSource loading;
-        private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
-            new();
+        private readonly GuidePanelLoad load = new();
+        private readonly ButtonBindings bindings = new();
 
         public event Action<int> SlotPressed;
         public event Action<string> BonusPressed;
@@ -78,24 +79,24 @@ namespace Baryonyx.StepBonus
         public string LastNotice { get; private set; } = "";
 
         // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask { get; private set; } = Task.CompletedTask;
+        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
-                Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+                bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
             }
             for (int i = 0; i < Tabs.Length; i++)
             {
                 int index = i;
-                Bind(Tabs[i], () => TabPressed?.Invoke(index));
+                bindings.Bind(Tabs[i], () => TabPressed?.Invoke(index));
             }
             foreach (var row in Rows)
             {
                 string id = row.Id;
-                Bind(row.Button, () => BonusPressed?.Invoke(id));
+                bindings.Bind(row.Button, () => BonusPressed?.Invoke(id));
             }
 
             // 開くたびに、サーバーの持ち物と枠（なければ仮データ）で描き直す。
@@ -112,36 +113,30 @@ namespace Baryonyx.StepBonus
                 return;
             }
             ShowLoading();
-            loading = new CancellationTokenSource();
-            LoadTask = LoadAsync(source, loading.Token);
+            load.Start(token => LoadAsync(source, token), LoadFailed);
         }
 
         private async Task LoadAsync(IStepBonusSource source, CancellationToken token)
         {
-            try
-            {
-                var state = await source.LoadAsync(token);
-                var loadout = StepBonusLoadout.From(Data, state);
-                if (token.IsCancellationRequested)
-                    return;
-                StepBonusSession.Use(loadout);
-                Present(
-                    loadout,
-                    (slot, id, cancel) => SaveAsync(source, slot, id, cancel),
-                    state.Locked
-                );
-                if (state.Locked)
-                    ShowNotice(StepBonusSettingsPresenter.LockedMessage);
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-            catch (Exception exception)
-            {
-                if (token.IsCancellationRequested)
-                    return;
-                Debug.LogWarning("ACTボーナスを取得できませんでした。" + exception.Message, this);
-                Set(Owned, LoadFailedText);
-                ShowNotice(LoadFailedMessage);
-            }
+            var state = await source.LoadAsync(token);
+            var loadout = StepBonusLoadout.From(Data, state);
+            if (token.IsCancellationRequested)
+                return;
+            StepBonusSession.Use(loadout);
+            Present(
+                loadout,
+                (slot, id, cancel) => SaveAsync(source, slot, id, cancel),
+                state.Locked
+            );
+            if (state.Locked)
+                ShowNotice(StepBonusSettingsPresenter.LockedMessage);
+        }
+
+        private void LoadFailed(Exception exception)
+        {
+            Debug.LogWarning("ACTボーナスを取得できませんでした。" + exception.Message, this);
+            Set(Owned, LoadFailedText);
+            ShowNotice(LoadFailedMessage);
         }
 
         private async Task<StepBonusLoadout> SaveAsync(
@@ -188,12 +183,7 @@ namespace Baryonyx.StepBonus
 
         private void OnDisable()
         {
-            loading?.Cancel();
-            loading?.Dispose();
-            loading = null;
-            foreach (var (button, action) in bindings)
-                if (button != null)
-                    button.onClick.RemoveListener(action);
+            load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -273,20 +263,6 @@ namespace Baryonyx.StepBonus
             foreach (var label in new[] { widget.Name, widget.Effect })
                 if (label != null)
                     label.alpha = faint;
-        }
-
-        private void Bind(Button button, UnityEngine.Events.UnityAction action)
-        {
-            if (button == null)
-                return;
-            button.onClick.AddListener(action);
-            bindings.Add((button, action));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
         }
     }
 }

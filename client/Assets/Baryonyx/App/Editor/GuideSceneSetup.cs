@@ -5,6 +5,7 @@ using Baryonyx.Showcase.Editor;
 using Baryonyx.Tavern.Editor;
 using Baryonyx.Temple.Editor;
 using Baryonyx.TravelOffice.Editor;
+using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using Baryonyx.Workshop.Editor;
@@ -39,8 +40,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Guide Scenes")]
         public static void CreateGuideScenes()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             GuideMenuAssets.CreateSharedArt();
             foreach (var screen in Screens)
             {
@@ -66,7 +66,7 @@ namespace Baryonyx.App.Editor
                         sceneName + "Bootstrap"
                     );
                     ScreenScenes.AddEventSystem(scene);
-                    var transition = SceneTransitionSetup.AddTransition(
+                    var transition = SceneTransitionAssets.AddTransition(
                         scene,
                         startCovered: true,
                         revealOnStart: true

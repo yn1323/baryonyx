@@ -4,6 +4,7 @@ using Baryonyx.Home;
 using Baryonyx.Home.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Stages.Editor;
+using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d;
 using Baryonyx.Vfx.Hd2d.Editor;
 using UnityEditor;
@@ -25,8 +26,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Home Scene")]
         public static void CreateHomeScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             HomeScreenAssets.CreateAssets();
             StageSetAssets.EnsureAssets();
@@ -69,7 +69,7 @@ namespace Baryonyx.App.Editor
                     );
                     var bootstrap = ScreenScenes.AddObject<HomeBootstrap>(scene, "HomeBootstrap");
                     ScreenScenes.AddEventSystem(scene);
-                    var transition = SceneTransitionSetup.AddTransition(
+                    var transition = SceneTransitionAssets.AddTransition(
                         scene,
                         startCovered: true,
                         revealOnStart: true

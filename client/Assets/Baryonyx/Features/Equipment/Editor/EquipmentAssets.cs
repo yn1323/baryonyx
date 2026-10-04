@@ -142,7 +142,7 @@ namespace Baryonyx.Equipment.Editor
                 "Label",
                 EquipmentCatalog.NameOf(slot),
                 24,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)label.transform);
@@ -152,7 +152,7 @@ namespace Baryonyx.Equipment.Editor
                 "Name",
                 "",
                 34,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft
             );
             Guide.Band((RectTransform)widget.Name.transform, top: true, 16, 46, SlotTextLeft, 140);
@@ -162,7 +162,7 @@ namespace Baryonyx.Equipment.Editor
                 "Stars",
                 "",
                 28,
-                Guide.Gold,
+                UiPalette.Gold,
                 TextAlignmentOptions.BottomRight
             );
             Guide.Band((RectTransform)widget.Stars.transform, top: true, 16, 46, SlotTextLeft, 24);
@@ -171,7 +171,7 @@ namespace Baryonyx.Equipment.Editor
                 "Detail",
                 "",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
             widget.Detail.textWrappingMode = TextWrappingModes.Normal;
@@ -208,7 +208,14 @@ namespace Baryonyx.Equipment.Editor
 
         private static void BuildItems(RectTransform panel, EquipmentView view)
         {
-            view.Title = Label(panel, "Title", "", 44, Guide.Gold, TextAlignmentOptions.TopLeft);
+            view.Title = Label(
+                panel,
+                "Title",
+                "",
+                44,
+                UiPalette.Gold,
+                TextAlignmentOptions.TopLeft
+            );
             Guide.Fill(
                 (RectTransform)view.Title.transform,
                 new Vector2(40, 0),
@@ -219,7 +226,7 @@ namespace Baryonyx.Equipment.Editor
                 "Count",
                 "",
                 26,
-                Guide.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopRight
             );
             Guide.Fill(
@@ -277,10 +284,24 @@ namespace Baryonyx.Equipment.Editor
             row.Icon = icon.gameObject.AddComponent<Image>();
             row.Icon.raycastTarget = false;
 
-            row.Name = Label(rect, "Name", "", 32, Guide.TextMain, TextAlignmentOptions.BottomLeft);
+            row.Name = Label(
+                rect,
+                "Name",
+                "",
+                32,
+                UiPalette.TextMain,
+                TextAlignmentOptions.BottomLeft
+            );
             Guide.Band((RectTransform)row.Name.transform, top: true, 12, 44, RowTextLeft, 300);
             Guide.Shrink(row.Name, 22);
-            row.Stars = Label(rect, "Stars", "", 26, Guide.Gold, TextAlignmentOptions.BottomLeft);
+            row.Stars = Label(
+                rect,
+                "Stars",
+                "",
+                26,
+                UiPalette.Gold,
+                TextAlignmentOptions.BottomLeft
+            );
             Guide.Band(
                 (RectTransform)row.Stars.transform,
                 top: true,
@@ -289,10 +310,17 @@ namespace Baryonyx.Equipment.Editor
                 RowTextLeft + 290,
                 140
             );
-            row.Detail = Label(rect, "Detail", "", 24, Guide.TextSub, TextAlignmentOptions.TopLeft);
+            row.Detail = Label(
+                rect,
+                "Detail",
+                "",
+                24,
+                UiPalette.TextSub,
+                TextAlignmentOptions.TopLeft
+            );
             Guide.Band((RectTransform)row.Detail.transform, top: true, 64, 40, RowTextLeft, 24);
             Guide.Shrink(row.Detail, 18);
-            row.Mark = Label(rect, "Mark", "", 24, Guide.Gold, TextAlignmentOptions.TopRight);
+            row.Mark = Label(rect, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)row.Mark.transform, top: true, 20, 32, RowTextLeft, 24);
             row.Mark.gameObject.SetActive(false);
             return row;
@@ -313,7 +341,7 @@ namespace Baryonyx.Equipment.Editor
                 "Label",
                 EquipmentPresenter.RemoveLabel,
                 32,
-                Guide.TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)label.transform);

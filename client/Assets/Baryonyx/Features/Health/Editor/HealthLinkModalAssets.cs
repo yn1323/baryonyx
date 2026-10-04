@@ -20,17 +20,13 @@ namespace Baryonyx.Health.Editor
         private static readonly Color Scrim = new(0.012f, 0.02f, 0.04f, 0.72f);
         private static readonly Color PanelColor = new(0.055f, 0.071f, 0.106f, 0.96f);
         private static readonly Color PanelBorder = new(0.498f, 0.890f, 0.839f, 0.55f);
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
-        private static readonly Color Teal = new(0.498f, 0.890f, 0.839f);
         private static readonly Color ActionText = new(0.035f, 0.047f, 0.075f);
         private static readonly Color LaterColor = new(0.953f, 0.914f, 0.824f, 0.1f);
 
         [MenuItem("Baryonyx/Health/Create Link Modal Prefab")]
         public static GameObject CreatePrefab()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             var font = GameFontAssets.GetOrCreate();
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
 
@@ -81,13 +77,20 @@ namespace Baryonyx.Health.Editor
                 layout.childForceExpandHeight = false;
 
                 var view = root.GetComponent<HealthLinkModalView>();
-                view.TitleLabel = Label(body, "Title", font, 64, Teal, TextAlignmentOptions.Center);
+                view.TitleLabel = Label(
+                    body,
+                    "Title",
+                    font,
+                    64,
+                    UiPalette.Teal,
+                    TextAlignmentOptions.Center
+                );
                 view.BodyLabel = Label(
                     body,
                     "Message",
                     font,
                     48,
-                    TextSub,
+                    UiPalette.TextSub,
                     TextAlignmentOptions.TopLeft
                 );
                 view.BodyLabel.lineSpacing = 12f;
@@ -107,14 +110,14 @@ namespace Baryonyx.Health.Editor
                     font,
                     320,
                     LaterColor,
-                    TextMain
+                    UiPalette.TextMain
                 );
                 (view.ActionButton, view.ActionLabel) = Button(
                     buttons,
                     "ActionButton",
                     font,
                     680,
-                    Teal,
+                    UiPalette.Teal,
                     ActionText
                 );
 

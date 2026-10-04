@@ -104,8 +104,6 @@ namespace Baryonyx.Combat.Editor
         private const float WeakIconSize = 48f;
         private const int AimDotCount = 16;
 
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
         private static readonly Color HpBack = new(0.08f, 0.06f, 0.06f, 0.9f);
         private static readonly Color HpEnemy = new(0.66f, 0.16f, 0.14f);
         private static readonly Color HpAlly = new(0.2f, 0.52f, 0.26f);
@@ -296,8 +294,7 @@ namespace Baryonyx.Combat.Editor
         [MenuItem("Baryonyx/Combat/Create Battle Inspect Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             AssetDatabase.Refresh();
@@ -392,8 +389,7 @@ namespace Baryonyx.Combat.Editor
         [MenuItem("Baryonyx/Combat/Reset Battle Card Prefab")]
         public static void ResetCardPrefab()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             var font = GameFontAssets.GetOrCreate();
             using (UiBuild.Begin(font, UiArt.EnsureTextShadow(font)))
                 EnsureCardPrefab(rebuild: true);
@@ -401,17 +397,8 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>The hand's sizes and motion; made with the defaults when missing, never overwritten.</summary>
-        private static BattleInspectHandSettings EnsureHandSettings()
-        {
-            var settings = AssetDatabase.LoadAssetAtPath<BattleInspectHandSettings>(
-                HandSettingsPath
-            );
-            if (settings != null)
-                return settings;
-            settings = ScriptableObject.CreateInstance<BattleInspectHandSettings>();
-            AssetDatabase.CreateAsset(settings, HandSettingsPath);
-            return settings;
-        }
+        private static BattleInspectHandSettings EnsureHandSettings() =>
+            AssetFolders.LoadOrCreate<BattleInspectHandSettings>(HandSettingsPath);
 
         /// <summary>
         /// The card (70x98 dots at 3 px): the art fading into the body, the owner, the name and the
@@ -489,11 +476,18 @@ namespace Baryonyx.Combat.Editor
                 "Name",
                 "ファイア",
                 22,
-                TextMain,
+                UiPalette.TextMain,
                 TextAlignmentOptions.Left
             );
             CardText(cardView.Name, 6, 49.4f, 58, 7.6f);
-            cardView.Kind = Label(card, "Kind", "", 15, TextMain, TextAlignmentOptions.Left);
+            cardView.Kind = Label(
+                card,
+                "Kind",
+                "",
+                15,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Left
+            );
             CardText(cardView.Kind, 7, 56.8f, 56, 5.6f);
             cardView.Kind.richText = true;
             cardView.Description = Label(
@@ -501,7 +495,7 @@ namespace Baryonyx.Combat.Editor
                 "Description",
                 "",
                 15,
-                TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft,
                 shadow: false
             );
@@ -1456,7 +1450,14 @@ namespace Baryonyx.Combat.Editor
 
         private static void BuildPopup(RectTransform root, BattleInspectView view)
         {
-            var popup = Label(root, "Popup", "0", 60, TextMain, TextAlignmentOptions.Center);
+            var popup = Label(
+                root,
+                "Popup",
+                "0",
+                60,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Place(popup.rectTransform, Vector2.zero, new Vector2(480, 90));
             popup.outlineWidth = 0f;
             view.PopupTemplate = popup;
@@ -1508,7 +1509,7 @@ namespace Baryonyx.Combat.Editor
                     caption + "Caption",
                     caption,
                     32,
-                    TextMain,
+                    UiPalette.TextMain,
                     TextAlignmentOptions.Center
                 );
                 Place(label.rectTransform, new Vector2(x, -120f), new Vector2(320, 48));

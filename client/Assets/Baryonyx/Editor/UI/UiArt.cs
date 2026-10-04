@@ -20,6 +20,9 @@ namespace Baryonyx.Editor.UI
         public const string ShadowPath = Folder + "/GroundShadow.png";
         public const string FeatherPath = Folder + "/FeatherPlate.png";
         public const string SoftSpotPath = Folder + "/SoftSpot.png";
+
+        // 冒険の行き先を表す羅針盤（24×24を4倍。ホームの行き先カードと冒険の画面で使う）。
+        public const string IconCompassPath = Folder + "/IconCompass.aseprite";
         public const string IconSettingsPath = Folder + "/IconSettings.png";
 
         // 角丸の半径（テクスチャのピクセル。1ピクセル = Canvasの1単位）。

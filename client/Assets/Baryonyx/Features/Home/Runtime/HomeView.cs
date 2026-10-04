@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Home
 {
@@ -779,12 +780,6 @@ namespace Baryonyx.Home
             };
             button.onClick.AddListener(listener);
             bindings.Add((button, listener));
-        }
-
-        private static void Set(TMP_Text label, string text)
-        {
-            if (label != null)
-                label.text = text ?? "";
         }
     }
 }

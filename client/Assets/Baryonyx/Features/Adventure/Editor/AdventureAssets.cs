@@ -63,7 +63,7 @@ namespace Baryonyx.Adventure.Editor
             ("Aria", new Vector2(9, -12)),
         };
 
-        private static readonly Color TextMain = GuideMenuAssets.TextMain;
+        private static readonly Color TextMain = UiPalette.TextMain;
         private static readonly Color Plate = new(0.02f, 0.024f, 0.047f, 0.82f);
         private static readonly Color MarkerPlate = new(0.11f, 0.165f, 0.19f, 0.96f);
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
@@ -74,8 +74,7 @@ namespace Baryonyx.Adventure.Editor
         [MenuItem("Baryonyx/Adventure/Create Screen Assets")]
         public static void CreateAssets()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             Directory.CreateDirectory(Path.GetDirectoryName(ExplorationPrefabPath));
             Directory.CreateDirectory(Path.GetDirectoryName(MapArtPath));
             AssetDatabase.Refresh();
@@ -87,7 +86,7 @@ namespace Baryonyx.Adventure.Editor
                 ArtAssets.ImportDrawn(path);
             foreach (var path in new[] { ChestClosedPath, ChestOpenPath })
                 ArtAssets.ImportTexture(path, FilterMode.Point);
-            ArtAssets.ImportDrawn(HomeScreenArt.IconCompassPath);
+            ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             foreach (var member in Party)
                 ArtAssets.ImportTexture(
                     $"{CharacterArtFolder}/Battle{member.Name}.aseprite",
@@ -365,7 +364,7 @@ namespace Baryonyx.Adventure.Editor
                 "FloorTemplate",
                 "B1F",
                 26,
-                GuideMenuAssets.TextSub,
+                UiPalette.TextSub,
                 TextAlignmentOptions.Left
             );
             var rect = (RectTransform)label.transform;
@@ -400,7 +399,7 @@ namespace Baryonyx.Adventure.Editor
                 new Vector2(0, 24),
                 new Vector2(GuideMenuAssets.IconSize, GuideMenuAssets.IconSize)
             );
-            SpriteImage(icon, HomeScreenArt.IconCompassPath, Color.white);
+            SpriteImage(icon, UiArt.IconCompassPath, Color.white);
             var label = Label(menu, "Label", "メニュー", 32, TextMain, TextAlignmentOptions.Center);
             Place(
                 (RectTransform)label.transform,

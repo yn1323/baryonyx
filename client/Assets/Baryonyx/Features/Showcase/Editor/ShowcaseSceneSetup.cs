@@ -11,8 +11,7 @@ namespace Baryonyx.Showcase.Editor
         [MenuItem("Baryonyx/Showcase/Create Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             if (System.IO.File.Exists(ShowcaseCatalogBuilder.ScenePath))
                 throw new InvalidOperationException(
                     "Showcase scene already exists. Use Open Scene."
@@ -43,8 +42,7 @@ namespace Baryonyx.Showcase.Editor
         [MenuItem("Baryonyx/Showcase/Open Scene")]
         public static void OpenScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
             EditorSceneManager.OpenScene(ShowcaseCatalogBuilder.ScenePath);
         }
 

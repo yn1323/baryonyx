@@ -6,6 +6,7 @@ using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Stages.Editor;
+using Baryonyx.UI.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -31,8 +32,7 @@ namespace Baryonyx.App.Editor
         [MenuItem("Baryonyx/App/Create Battle Scene")]
         public static void CreateScene()
         {
-            if (EditorApplication.isPlaying)
-                throw new InvalidOperationException("Stop Play Mode first.");
+            EditorGuard.RequireEditMode();
 
             // The screen and the dusk highland are BattleInspect's; they are made here only if
             // they are missing, so building this scene leaves them as they are.
@@ -75,7 +75,7 @@ namespace Baryonyx.App.Editor
                         AdventureAssets.OverlayPrefabPath,
                         "AdventureOverlay"
                     );
-                    var transition = SceneTransitionSetup.AddTransition(
+                    var transition = SceneTransitionAssets.AddTransition(
                         scene,
                         startCovered: true,
                         revealOnStart: true
