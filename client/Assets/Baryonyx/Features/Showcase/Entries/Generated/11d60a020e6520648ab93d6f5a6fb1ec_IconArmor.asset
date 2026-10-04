@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 11d60a020e6520648ab93d6f5a6fb1ec_IconArmor
   DisplayName: IconArmor
-  Description: Assets/Baryonyx/Features/Workshop/UI/Art/IconArmor.aseprite#IconArmor
+  Description: Assets/Baryonyx/Features/Equipment/UI/Art/IconArmor.aseprite#IconArmor
   Category: 5
   Asset: {fileID: 5349011544834349465, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
   PreviewPrefab: {fileID: 0}

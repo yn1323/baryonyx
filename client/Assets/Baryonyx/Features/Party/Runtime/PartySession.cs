@@ -14,7 +14,7 @@ namespace Baryonyx.Party
     /// </summary>
     public static class PartySession
     {
-        // 酒場のメニューの「編成」の項目のキー。この項目はリストの代わりに編成を開く。
+        // 編成（コードではTavern）のメニューの「パーティ」の項目のキー。この項目はリストの代わりに編成を開く。
         public const string GuideItemKey = "formation";
 
         private static PartyFormation formation;

@@ -12,17 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74c4db56070fa44b8adcef0e18b95aff, type: 3}
   m_Name: TavernGuideMenu
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
-  Title: "\u9152\u5834"
+  Title: "\u7DE8\u6210"
   GuideArt: {fileID: -6622703189942226176, guid: 77e0d8a5af683d34095d17c4871a6084, type: 3}
   GuideDotSize: 4
   Background: {fileID: 2800000, guid: d6e453492f005435ca349cf50e5ac468, type: 3}
   Layout: 0
   Items:
   - Key: formation
-    Label: "\u7DE8\u6210"
+    Label: "\u30D1\u30FC\u30C6\u30A3"
     Caption: "\u5192\u967A\u306B\u9023\u308C\u3066\u884C\u304F4\u4EBA\u3092\u9078\u3076"
     Icon: {fileID: 5349011544834349465, guid: 2b1f0117b99113d45bec2ab66390127a, type: 3}
     ConfirmLabel: "\u7DE8\u6210\u3059\u308B"
+    Entries: []
+  - Key: equipment
+    Label: "\u88C5\u5099"
+    Caption: "\u4EF2\u9593\u3054\u3068\u306B\u6B66\u5668\u3068\u9632\u5177\u3092\u4ED8\u3051\u66FF\u3048\u308B"
+    Icon: {fileID: 5349011544834349465, guid: 3a77e877c4e3cca4e97205c41dc20809, type: 3}
+    ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
     Entries: []
   - Key: training
     Label: "\u80B2\u6210"
@@ -42,6 +48,5 @@ MonoBehaviour:
     Icon: {fileID: 5349011544834349465, guid: 0fdc09f32186b4d07b5afb4292d70615, type: 3}
     ConfirmLabel: "\u30BB\u30C3\u30C8\u3059\u308B"
     Entries: []
-  MapArt: {fileID: 0}
-  MapPoints: []
+  Destinations: []
   DepartLabel: "\u51FA\u767A"

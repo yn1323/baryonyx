@@ -60,13 +60,13 @@ namespace Baryonyx.Tests.PlayMode
             var (people, partyCount) = CardLoadoutPresenter.People(PartySession.Formation(data));
             Assert.That(Tabs(panel), Is.EqualTo(people.Select(member => member.Id)));
             Assert.That(partyCount, Is.LessThan(people.Count));
-            Assert.That(panel.PeopleDivider.activeSelf, Is.True);
+            Assert.That(panel.People.Divider.activeSelf, Is.True);
             Assert.That(
-                panel.PeopleDivider.transform.GetSiblingIndex(),
+                panel.People.Divider.transform.GetSiblingIndex(),
                 Is.EqualTo(Tab(panel, people[partyCount].Id).Button.transform.GetSiblingIndex() - 1)
             );
             Assert.That(Tab(panel, people[0].Id).Selected.activeSelf, Is.True);
-            foreach (var tab in panel.People)
+            foreach (var tab in panel.People.Tabs)
                 SceneTests.AssertTouchSize(tab.Button.transform);
             foreach (var slot in panel.Slots)
                 SceneTests.AssertTouchSize(slot.Button.transform);
@@ -80,7 +80,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             Assert.That(Tab(panel, other.Id).Selected.activeSelf, Is.True);
             Assert.That(Tab(panel, people[0].Id).Selected.activeSelf, Is.False);
-            var strip = ScreenRect(panel.PeopleScroll.viewport);
+            var strip = ScreenRect(panel.People.Scroll.viewport);
             var shown = ScreenRect(Tab(panel, other.Id).Button.transform);
             Assert.That(shown.xMin, Is.GreaterThanOrEqualTo(strip.xMin - 0.5f));
             Assert.That(shown.xMax, Is.LessThanOrEqualTo(strip.xMax + 0.5f));
@@ -220,13 +220,13 @@ namespace Baryonyx.Tests.PlayMode
 
         private static string[] Tabs(CardLoadoutView panel) =>
             panel
-                .People.Where(tab => tab.Button.gameObject.activeSelf)
+                .People.Tabs.Where(tab => tab.Button.gameObject.activeSelf)
                 .OrderBy(tab => tab.Button.transform.GetSiblingIndex())
                 .Select(tab => tab.Id)
                 .ToArray();
 
-        private static CardLoadoutPersonWidget Tab(CardLoadoutView panel, string id) =>
-            panel.People.Single(tab => tab.Id == id);
+        private static PartyTab Tab(CardLoadoutView panel, string id) =>
+            panel.People.Tabs.Single(tab => tab.Id == id);
 
         private static CardLoadoutRowWidget[] Rows(CardLoadoutView panel) =>
             panel

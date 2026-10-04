@@ -35,8 +35,6 @@ namespace Baryonyx.UI.GuideMenu
 
         public GuideMenuItem[] Items = Array.Empty<GuideMenuItem>();
 
-        // The title over the destinations, e.g. "行き先".
-        public string DestinationsLabel = "行き先";
         public GuideDestination[] Destinations = Array.Empty<GuideDestination>();
 
         // The button under the destinations that sets off for the chosen one.
@@ -77,11 +75,13 @@ namespace Baryonyx.UI.GuideMenu
         public string Id = "";
         public string Name = "";
 
-        // A short value shown at the right end of the row, e.g. "未踏".
-        public string Badge = "";
         public string Detail = "";
 
-        // 未踏の地。行は暗く表示し、選べない。
+        // 推奨Lv。行の右端に「推奨Lv15」のように書く。
+        [Min(1)]
+        public int RecommendedLevel = 1;
+
+        // 未踏の地。地名を「？？？」に伏せ、説明を出さず、行を暗くして選べなくする。
         public bool Locked;
     }
 }

@@ -9,11 +9,11 @@ updated: 2026-10-04
 
 計画の状態：完了（実装と自動テストは完了。Unity EditorでローカルのサーバーにつないだPlayでの確認と、Androidエミュレーターでの確認は未実施。[検証結果](#検証結果)）
 
-[計画索引](README.md) / [パーティ](../features/party.md) / [育成と強化](../features/progression.md) / [UPTボーナスの保存](../features/step-bonus.md#持ち物と枠の保存)
+[計画索引](README.md) / [パーティ](../features/party.md) / [育成と強化](../features/progression.md) / [ACTボーナスの保存](../features/step-bonus.md#持ち物と枠の保存)
 
 ## 目的
 
-酒場の[編成](../features/screens.md#編成)・[カードスキル](../features/screens.md#スキル)・[育成](../features/screens.md#育成)で変えた内容を、ゲストを含むユーザーごとにサーバーのDBへ保存し、アプリを起動し直しても残るようにする。
+酒場の[編成](../features/screens.md#パーティ)・[カードスキル](../features/screens.md#スキル)・[育成](../features/screens.md#育成)で変えた内容を、ゲストを含むユーザーごとにサーバーのDBへ保存し、アプリを起動し直しても残るようにする。
 レベルアップに使うルーンもサーバーの残高から引き、Homeの所持ルーンと酒場の所持ルーンを一致させる。
 
 ## 現状と今取り組む理由
@@ -22,7 +22,7 @@ updated: 2026-10-04
 起動し直すと仮データ（`PartyMockData`）に戻る。
 使ったルーンはHomeで取得した残高から引いて見せるだけなので、Homeへ戻るとサーバーの残高に戻り、表示が食い違う。
 
-直前の作業で、UPTボーナスの持ち物と枠をサーバーに保存した（`server/src/features/step-bonus/`）。
+直前の作業で、ACTボーナスの持ち物と枠をサーバーに保存した（`server/src/features/step-bonus/`）。
 酒場の画面を開くたびにサーバーから読み、1操作ごとに保存してから画面に反映し、接続先がないときだけ仮データを使う形である。
 同じ形を3つの画面へ広げられるため、いま保存の仕組みを作る。
 
@@ -42,10 +42,10 @@ updated: 2026-10-04
 このプロジェクトの状況から判断した方針である。
 
 1. サーバーの機能は `server/src/features/party/` の1つにまとめる。キャラ・編成・カード・Lvはどれもクライアントの `PartySession` が持つデータで、テーブルが外部キーでつながるためである。
-2. UPTボーナスと同じく、画面を開くたびに `GET` で読み、1操作ごとに保存してから表示を変える。保存に失敗したら画面を変えずに通知の帯で知らせる。
+2. ACTボーナスと同じく、画面を開くたびに `GET` で読み、1操作ごとに保存してから表示を変える。保存に失敗したら画面を変えずに通知の帯で知らせる。
 3. レベルアップの費用はサーバーで計算する。端末は「今のLv」「上げたあとのLv」「要求ID」だけを送り、サーバーが残高の確認・ルーンの減算・Lvの更新を1回の `batch()` で行う。
 4. Lvの上限と1レベルあたりの費用はサーバーを正本にし、`GET` の応答で返す。クライアントは接続先がないときだけ仮データ（`TrainingMockData`）の値を使う。費用の式（Lv n から n+1 へ n × 1レベルあたりの費用）は両方に置く。
-5. 初めて読むユーザーには、仮データの9人・Lv・カード・4人の編成を1回だけ付与する（UPTボーナスの初期付与と同じ扱い。[決めた事項](#決めた事項)の1）。
+5. 初めて読むユーザーには、仮データの9人・Lv・カード・4人の編成を1回だけ付与する（ACTボーナスの初期付与と同じ扱い。[決めた事項](#決めた事項)の1）。
 6. カードは、知っているカードIDか、持っているキャラか、そのキャラの4枠で重複しないかをサーバーで判定する。属性の決まりはクライアントだけで判定する（[決めた事項](#決めた事項)の2）。
 7. 接続先がないとき（展示室のプレビューなど）は、今と同じく仮データを使い、変更はアプリを動かしている間だけ残す。
 
@@ -127,7 +127,7 @@ updated: 2026-10-04
 | 場所 | 変更 |
 |---|---|
 | `Features/Party/Runtime/PartyApiClient.cs`（新規） | APIの呼び出しとJSONの型 |
-| `Features/Party/Runtime/PartySource.cs`（新規） | `IPartySource`・`PartyServerSource`・`PartyState`。UPTボーナスの [StepBonusSource](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSource.cs) と同じ形にする |
+| `Features/Party/Runtime/PartySource.cs`（新規） | `IPartySource`・`PartyServerSource`・`PartyState`。ACTボーナスの [StepBonusSource](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSource.cs) と同じ形にする |
 | [PartySession](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs) | `Source` を持ち、サーバーから読んだ状態（編成・Lv・カード・所持ルーン・Lvの規則）に置き換える。接続先がないときは今の辞書のまま |
 | [PartyFormation](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs) | 持っているキャラをサーバーの状態から決める。名前と絵は仮データから引く |
 | 編成の [Presenter](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormationPresenter.cs)・[View](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormationView.cs) | 開くたびに読み込み（読み込むまで「読み込み中…」）、入れ替えを保存してから表示、失敗の通知 |
@@ -207,7 +207,7 @@ Androidエミュレーターでの確認は任意とし、行う場合は起動�
 
 2026-10-04、提案した2つの案をユーザーが採った。
 
-1. **初期データ**：初めて読むユーザーに、仮データの9人（Lv 12〜1）・各4枚のカード・4人の編成を付与する。UPTボーナスの初期付与と同じ扱いで、今の画面の見た目がそのまま残る。
+1. **初期データ**：初めて読むユーザーに、仮データの9人（Lv 12〜1）・各4枚のカード・4人の編成を付与する。ACTボーナスの初期付与と同じ扱いで、今の画面の見た目がそのまま残る。
 2. **カードの属性の判定**：サーバーでは属性の決まりを判定しない。属性の割り当ても所持の仕組みも仮で、50枚の属性とキャラごとの属性をサーバーにも置くと、仮の決まりを変えるたびに2か所を直す必要があるためである。
 
 ## 変更と判断の記録

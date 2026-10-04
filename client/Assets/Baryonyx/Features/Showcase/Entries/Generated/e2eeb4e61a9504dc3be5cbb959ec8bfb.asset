@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 81234ea4c97ff3d4a995d687c5d4b36c_IconEquipment
+  m_Name: e2eeb4e61a9504dc3be5cbb959ec8bfb
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 81234ea4c97ff3d4a995d687c5d4b36c_IconEquipment
-  DisplayName: IconEquipment
-  Description: Assets/Baryonyx/Features/Home/UI/Art/IconEquipment.aseprite#IconEquipment
-  Category: 5
-  Asset: {fileID: 5349011544834349465, guid: 81234ea4c97ff3d4a995d687c5d4b36c, type: 3}
+  Id: e2eeb4e61a9504dc3be5cbb959ec8bfb
+  DisplayName: ExplorationMapArt
+  Description: Assets/Baryonyx/Features/Adventure/Data/ExplorationMapArt.asset
+  Category: 12
+  Asset: {fileID: 11400000, guid: e2eeb4e61a9504dc3be5cbb959ec8bfb, type: 2}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

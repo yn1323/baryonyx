@@ -1,5 +1,7 @@
 using Baryonyx.CardLoadout;
 using Baryonyx.CardLoadout.Editor;
+using Baryonyx.Equipment;
+using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.StepBonus;
@@ -13,9 +15,10 @@ using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
-    /// The tavern (酒場): the tavern girl guides party formation, training, card skills and the
-    /// UPT bonus slots. The characters, levels and cards are mock values until the party has
-    /// data; every item shows its own panel instead of a list.
+    /// The formation screen (編成; the code keeps the Tavern name): the tavern girl guides the
+    /// party, equipment, training, card skills and the ACT bonus slots. The characters, levels
+    /// and cards are mock values until the party has data; every item shows its own panel
+    /// instead of a list.
     /// </summary>
     public static class TavernScreenAssets
     {
@@ -40,6 +43,7 @@ namespace Baryonyx.Tavern.Editor
                     item.Key switch
                     {
                         PartySession.GuideItemKey => PartyAssets.BuildFormationPanel(safe, view),
+                        EquipmentSession.GuideItemKey => EquipmentAssets.BuildPanel(safe, view),
                         TrainingSession.GuideItemKey => TrainingAssets.BuildTrainingPanel(
                             safe,
                             view
@@ -55,22 +59,36 @@ namespace Baryonyx.Tavern.Editor
 
         private static void Fill(GuideMenuDefinition d)
         {
-            d.Title = "酒場";
+            d.Title = "編成";
             d.Layout = GuideMenuLayout.List;
-            d.Items = new[] { Formation(), Training(), CardSkill(), Bonus() };
+            d.Items = new[] { Formation(), Equipment(), Training(), CardSkill(), Bonus() };
         }
 
-        // The formation item opens the party's formation panel (the four slots and the owned
-        // characters) instead of a list.
+        // The party item opens the party's formation panel (the four slots and the owned
+        // characters) instead of a list. The screen itself is called 編成, so the item is パーティ.
         private static GuideMenuItem Formation()
         {
             var item = Item(
-                "編成",
+                "パーティ",
                 "冒険に連れて行く4人を選ぶ",
                 "編成する",
                 Icon(IconFormationPath)
             );
             item.Key = PartySession.GuideItemKey;
+            return item;
+        }
+
+        // The equipment item opens each companion's weapon and armour and the owned items
+        // instead of a list.
+        private static GuideMenuItem Equipment()
+        {
+            var item = Item(
+                "装備",
+                "仲間ごとに武器と防具を付け替える",
+                "付け替える",
+                Icon(EquipmentAssets.IconChangeGearPath)
+            );
+            item.Key = EquipmentSession.GuideItemKey;
             return item;
         }
 

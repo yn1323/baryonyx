@@ -63,6 +63,7 @@ Prefabのプレビューは舞台全体を遠くから写すだけで、画面�
 戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
+探索の地図に立てる木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で描く（[冒険の画面](screens.md#冒険の画面)）。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
 
 ### 光芒の調整
 
@@ -274,8 +275,10 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleInspect` シーンを開いてカードを使う。
 カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab` も同じく生成時に追加する。
-案内人がいる画面（酒場・装備・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
-酒場の[編成](screens.md#編成)は `TavernScreen` のメニューの「編成」から開く。停止中も、Prefabの `Formation` を表示すれば、仮データの4人と仲間のタイルを確認できる。仮データの `PartyMockData` はデータのカテゴリに入る。
+案内人がいる画面（編成・商会・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
+編成の[パーティ](screens.md#パーティ)は `TavernScreen` のメニューの「パーティ」から開く。停止中も、Prefabの `Formation` を表示すれば、仮データの4人と仲間のタイルを確認できる。
+編成の[装備](screens.md#装備)は、Prefabの `Equipment` を表示すれば、停止中も先頭の仲間の武器・防具と持っている武器の行を確認でき、Play Modeではサーバーの接続先がなくても付け替えを操作できる。付け替え・武器・防具のアイコン（`IconChangeGear`・`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）は画像のカテゴリに入る。
+[商会](screens.md#商会)は `WorkshopScreen` のメニューの買う・売る・合成から仮の一覧を開く。メニューのアイコン（`IconBuy`・`IconSell`・`IconCraft`）とホームの商会のボタンのアイコン（`IconShop`）は画像のカテゴリに入る。仮データの `PartyMockData` はデータのカテゴリに入る。
 編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
 [冒険の画面](screens.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上に4人と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、部屋の種類のアイコン（`IconRoomBattle` など）はアイテムのカテゴリに入る。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。

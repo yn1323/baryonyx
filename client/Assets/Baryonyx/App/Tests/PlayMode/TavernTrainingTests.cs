@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.CardLoadout;
+using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -224,8 +225,8 @@ namespace Baryonyx.Tests.PlayMode
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
             System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
-        private static IEnumerable<string> Values(TrainingStats stats) =>
-            Enumerable.Range(0, TrainingStats.Count).Select(i => stats[i].ToString());
+        private static IEnumerable<string> Values(CharacterStats stats) =>
+            Enumerable.Range(0, CharacterStats.Count).Select(i => stats[i].ToString());
 
         // 画面のその位置を押したとき、いちばん手前で受け取るもの。
         private static GameObject TopHit(Transform target)

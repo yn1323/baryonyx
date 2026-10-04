@@ -26,7 +26,7 @@ namespace Baryonyx.Home.Editor
         public const string ShadeHorizontalPath = ArtFolder + "/ShadeHorizontal.png";
         public const string CardShadePath = ArtFolder + "/CardShade.png";
         public const string IconPartyPath = ArtFolder + "/IconParty.aseprite";
-        public const string IconEquipmentPath = ArtFolder + "/IconEquipment.aseprite";
+        public const string IconShopPath = ArtFolder + "/IconShop.aseprite";
         public const string IconCompassPath = ArtFolder + "/IconCompass.aseprite";
         public const string IconSummonPath = ArtFolder + "/IconSummon.aseprite";
 
@@ -41,7 +41,7 @@ namespace Baryonyx.Home.Editor
         private static readonly string[] DrawnIconPaths =
         {
             IconPartyPath,
-            IconEquipmentPath,
+            IconShopPath,
             IconSummonPath,
             IconCompassPath,
         };

@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-05",
+  "tool": "Codex CLI 0.159.2 built-in image_gen (.agents/skills/shared/scripts/codex_image.py)",
+  "scope": "Shop (商会) icons (24x24, shown at 4x): the shop menu's buy, sell and craft, and the Home button that opens the shop.",
+  "process": "Each request was the intro line, the common prompt and the icon list under '■アイコン（左から順に）', generated as one transparent image with the four icons in a row. Sheets a and b tried two sets of designs; sheet a's designs were chosen and redrawn bolder in sheet c (generated twice as c1 and c2 with the same request). Each icon of c1 was cut out, fitted to a 24x24 grid by its outline, coloured per cell with the most frequent colour of the cell's centre (the whole sheet first reduced to 64 colours), with the grid origin shifted within one cell (5x5 offsets) to the position where each cell is most uniform, then reduced to 32 colours (median cut). The sell (scale) icon came out with broken thin lines, so it was redrawn dot by dot on the 24x24 grid after c1's design and colours (beam 2 dots thick, left pan up with a blue gem, right pan down with a pile of gold, wooden base). The buy icon got a 1-dot dark outline under the coins. All four were converted to indexed .aseprite with .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua and passed check_pixel_art.py --kind ui-icon.",
+  "commonPrompt": "スマホ向けファンタジーRPGで使う、UIアイコン4個をドット絵で描き、1枚の画像に横一列に並べてください。\nこれらは、少年の武具商が営む店「商会」で使うアイコンです。商会では装備・スキル・素材を買ったり売ったりし、素材を合成して装備やスキルを作ります。1〜3は商会の画面のメニュー、4はホーム画面の商会へのボタンに使います。\n\n■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。腕と胴の境目などの内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n\n■このゲームのタッチに合わせる\n- 添付の画像1は、このゲームの既存のUIアイコン8個（どれも24×24ドットを16倍に拡大したもの）です。ドットの大きさ、セルアウトの輪郭、段を分けた塗り、彩度の高さ、ハイライトの置き方、ディザの入れ方をこれにそろえてください。精密さもこれと同じ水準で、1ドットずつ意味を持たせて描き込んでください。\n- 添付の画像2はホーム画面です。左下に並ぶボタンのうち、左から2番目（木の丸盾と木の剣）を、この店「商会」のアイコンに差し替えます。左右の酒場・神殿・旅の案内所のアイコンと並べて違和感のない見た目と大きさにします。\n- 添付の画像3は、この店（少年の武具商が営む商会）の画面の背景です。この上に暗いパネルのメニューを置き、「買う」「売る」「合成」のアイコンを並べます。暗い背景の上でもはっきり見えるよう、明るい面と彩度を十分に持たせます。\n- 彩度と明るさを高めにしたGBA寄りの色にする。影は青・紫寄りに、光は黄・白寄りに色相をずらす。\n\n■大きさとそろえ方\n- 各アイコンは、ちょうど24×24ドットの格子に収まる大きさで描く。24ドットの幅いっぱいを使い、画面では1ドットを4×4pxに拡大して表示する。\n- すべてのアイコンを、同じドットの細かさ（1ドットが同じ大きさの正方形）、同じ輪郭の太さ（1ドット）、同じ光の向き、同じくらいの見た目の大きさにそろえる。\n- 24×24ドットと少ないので、シルエットだけで何かわかる太くて単純な形にする。1ドット幅の細い線を並べた細かい模様は避ける。\n- 正面から見た図案として描き、横一列に並べ、アイコンどうしの間はアイコン1個分以上空ける。\n- 背景は透明にする。枠、ボタンの台座、地面、落ち影、文字、ラベル、番号、記号の「$」や「G」は描かない。",
+  "sheets": [
+    {
+      "name": "shop-icons-a",
+      "images": [
+        "existing UI icons at 16x (IconEquipment, IconParty, IconSummon, IconWeapon, IconArmor, IconChangeGear, IconBonus, IconTreasureSight)",
+        "the Home screen (the icon replaces the second button from the left)",
+        "the shop screen's background (WorkshopBackground.png)"
+      ],
+      "used": [],
+      "note": "The designs used for sheet c.",
+      "icons": "1. 買う：口が開いた茶色の革の袋を正面から描く。袋はふっくらした丸い形で、口の縁を折り返し、ほどけた赤い紐が垂れる。袋の口から、品物（赤い薬瓶と、青い宝石）が頭をのぞかせ、品物を買って袋へ入れたところに見せる。袋の手前の左下に金貨を2枚、斜めに重ねて置く。金貨は丸く厚みがあり、明るい黄色と橙で段を分け、左上に白いハイライト。\n2. 売る：金色の天秤。中央の柱は太く、上に横棒、左右の皿は鎖でなく太い三角の吊り紐で下げる。右の皿は下がって金貨が3枚積み重なり、左の皿は上がって小さな青い宝石が1つ乗る。品物を金貨に換えることが一目でわかるよう、金貨の側を重く下げる。柱の台座は濃い茶色の木。\n3. 合成：黒鉄色の金床を横長に大きく描き、その上に、素材の結晶（明るい水色と紫の、縦長の多面体の結晶）を1つ置く。金床の右上から、焦げ茶の柄に銀の頭のハンマーが斜めに振り下ろされ、結晶のまわりに白と黄色の大きめの光の粒（十字の星形）を2〜3個散らす。光の粒は1ドットの点ではなく、十字形の3〜5ドットの形にする。\n4. 商会（ホームのボタン）：ふくらんだ茶色の革の金貨袋を手前に大きく置き、その後ろに、銀の刃と金の鍔の剣を1本、左下から右上へ斜めに差し込む（剣先は右上、柄は左下に出る）。袋の口は赤い紐で縛り、口から金貨が2〜3枚のぞく。武具を扱う店の財布、という図案にする。剣の刃は幅2〜3ドットで太く、袋に隠れても剣だと読めること。"
+    },
+    {
+      "name": "shop-icons-b",
+      "images": [
+        "existing UI icons at 16x (IconEquipment, IconParty, IconSummon, IconWeapon, IconArmor, IconChangeGear, IconBonus, IconTreasureSight)",
+        "the Home screen (the icon replaces the second button from the left)",
+        "the shop screen's background (WorkshopBackground.png)"
+      ],
+      "used": [],
+      "note": "Alternative designs (basket, hand with coins, anvil with crystals and a gear, hanging signboard). Not used: the basket and the signboard were muddy at 24x24.",
+      "icons": "1. 買う：持ち手の付いた籐（とう）の買い物かごを正面から描く。かごは明るい黄土色と茶色の編み目（太い横縞2〜3段で表し、細かい模様にしない）で、上に弧を描く太い持ち手。かごから、赤い薬瓶、銀の短剣の柄、緑の薬草の葉が頭をのぞかせる。かごの右下に、小さな緑の下向き矢印（かごへ入る向き）を添える。矢印は既存の装備替えのアイコンの緑の矢印と同じ塗り方にする。\n2. 売る：右から差し出した、手のひらを上に向けた手（肌色、手首に青い袖口）の上に、金貨が3枚積み重なっている。金貨は丸く厚みがあり、明るい黄色と橙で段を分け、左上に白いハイライト。金貨の上に白い小さな光の粒（十字形）を1つ。手は大きく太く描き、指は4本をそろえて1かたまりにし、親指だけ分ける。\n3. 合成：黒鉄色の金床を横長に大きく描き、その上で、明るい水色に光る素材の結晶（縦長の多面体）が2つと、金色の小さな歯車が1つ、ひとつに合わさろうとしている。金床の右上から、焦げ茶の柄に銀の頭のハンマーが斜めに振り下ろされる。合わさる中央に白と黄色の十字の光（5ドットほどの十字）を1つ。光の粒は1ドットの点を散らさない。\n4. 商会（ホームのボタン）：店の軒先に下げる、木の吊り看板。上に黒鉄の腕木（L字の金具）があり、そこから2本の短い鎖で四角い木の板を吊るす。板は明るい茶色で左上が明るく、板の面に、金色の金貨1枚と、銀の剣1本を交差させた紋章を大きく描く（剣は斜め、金貨は剣の中央の手前）。紋章は板の面いっぱいに大きく描き、板の縁は1段暗い茶色。文字は描かない。"
+    },
+    {
+      "name": "shop-icons-c1",
+      "images": [
+        "existing UI icons at 16x (same as sheets a and b)",
+        "sheet a fitted to 24x24 at 16x (the design to keep, drawn bolder)"
+      ],
+      "used": [
+        "IconBuy",
+        "IconSell",
+        "IconCraft",
+        "IconShop"
+      ],
+      "note": "Redraw of sheet a with bolder parts. This sheet used its own common prompt (commonPrompt below) instead of the top-level one. IconSell was redrawn by hand after this sheet's design.",
+      "commonPrompt": "スマホ向けファンタジーRPGで使う、UIアイコン4個をドット絵で描き、1枚の画像に横一列に並べてください。\nこれらは、少年の武具商が営む店「商会」で使うアイコンです。商会では装備・スキル・素材を買ったり売ったりし、素材を合成して装備やスキルを作ります。1〜3は商会の画面のメニュー（暗いパネルの上）、4はホーム画面の商会へのボタン（暗い森の背景の上）に使います。\n\n■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。腕と胴の境目などの内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n\n\n■このゲームのタッチに合わせる\n- 添付の画像1は、このゲームの既存のUIアイコン8個（どれも24×24ドットを16倍に拡大したもの）です。ドットの大きさ、セルアウトの輪郭、段を分けた塗り、彩度の高さ、ハイライトの置き方、ディザの入れ方をこれにそろえてください。精密さもこれと同じ水準で、1ドットずつ意味を持たせて描き込んでください。\n- 添付の画像2は、同じ4個を前回描いてもらった絵を、24×24ドットへ縮めたもの（16倍に拡大）です。図案はこれで決まりですが、縮めると細い線が途切れ、形がにごりました。図案はそのままに、各部品を太く大きく、色の面を広くして描き直してください。\n- 彩度と明るさを高めにしたGBA寄りの色にする。影は青・紫寄りに、光は黄・白寄りに色相をずらす。暗い紺や暗い緑の背景の上でもはっきり見えるよう、明るい面を十分に持たせる。\n\n■大きさとそろえ方\n- 各アイコンは、ちょうど24×24ドットの格子に収まる大きさで描く。24ドットの幅いっぱいを使い、画面では1ドットを4×4pxに拡大して表示する。\n- 1ドットは画像の上で同じ大きさの正方形にし、各アイコンの幅を24ドットより細かく分けない。描いた絵をそのまま24×24ドットへ縮めても形が崩れないよう、最も細い部分でも2ドット幅にする（輪郭の1ドットは除く）。\n- すべてのアイコンを、同じドットの細かさ、同じ輪郭の太さ（1ドット）、同じ光の向き、同じくらいの見た目の大きさにそろえる。\n- 正面から見た図案として描き、横一列に並べ、アイコンどうしの間はアイコン1個分以上空ける。\n- 背景は透明にする。枠、ボタンの台座、地面、落ち影、文字、ラベル、番号、記号の「$」や「G」は描かない。",
+      "icons": "1. 買う：口が開いてふくらんだ茶色の革の袋。口の縁を折り返し、右側にほどけた赤い紐が垂れる。袋の口から、品物として丸い赤い薬瓶（コルク栓）と、大きな青い宝石が頭をのぞかせる。袋の手前の左下に、厚みのある金貨を2枚重ねて置く。袋の形は丸く大きく、袋の面は明るい黄土色から焦げ茶まで3段で塗る。\n2. 売る：金色の天秤。中央の柱は3ドット幅、上の横棒は2ドット幅で左右に長く、両端から太い三角形の吊り紐で皿を下げる。皿は横に広い浅い鉢（幅7〜8ドット）。右の皿は下がって金貨が3枚積み重なり、左の皿は上がって青い宝石が1つ乗る。柱の根元に、焦げ茶の木の台座（高さ3ドット、幅10ドット以上）。金は明るい黄色・橙・焦げ茶の3段で塗り、左上に白いハイライト。\n3. 合成：横長の大きな金床。金床は明るい鋼の色（上の面は白に近い明るい灰青、側面は中くらいの灰青、影は紺）にし、暗い背景に沈まないようにする。金床の上に、明るい水色と白の縦長の結晶を1つ立てる（幅6ドット、高さ9ドットほど、面ごとに3段で塗り分ける）。右上に、焦げ茶の柄と銀の頭の小さなハンマーを斜めに。結晶の左に、黄色と白の十字の光（5ドットの十字）を2つ。\n4. 商会（ホームのボタン）：ふくらんだ茶色の革の金貨袋を右下に大きく置き、口を赤い紐で縛り、口から金貨が2〜3枚のぞく。袋の後ろに、銀の刃（幅3ドット）と金の鍔の剣を1本、左下から右上へ斜めに差し込む。剣先は右上の角まで、金の鍔と焦げ茶の柄と金の柄頭は袋の左下に出す。剣と袋の両方がはっきり読めること。"
+    },
+    {
+      "name": "shop-icons-c2",
+      "images": [
+        "existing UI icons at 16x (same as sheets a and b)",
+        "sheet a fitted to 24x24 at 16x (the design to keep, drawn bolder)"
+      ],
+      "used": [],
+      "note": "Same request as shop-icons-c1. Not used: the crystal was darker and the scale's beam broke up the same way.",
+      "icons": "Same as shop-icons-c1."
+    }
+  ],
+  "assets": [
+    "Assets/Baryonyx/Features/Workshop/UI/Art/IconBuy.aseprite",
+    "Assets/Baryonyx/Features/Workshop/UI/Art/IconSell.aseprite",
+    "Assets/Baryonyx/Features/Workshop/UI/Art/IconCraft.aseprite",
+    "Assets/Baryonyx/Features/Home/UI/Art/IconShop.aseprite"
+  ]
+}

@@ -165,7 +165,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public static GuideDestination Destination(
             string name,
             string detail,
-            string badge = "",
+            int recommendedLevel,
             bool locked = false,
             string id = ""
         ) =>
@@ -173,8 +173,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             {
                 Id = id,
                 Name = name,
-                Badge = badge,
                 Detail = detail,
+                RecommendedLevel = recommendedLevel,
                 Locked = locked,
             };
 
@@ -206,9 +206,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     BuildItemPanels(safe, view, definition, itemPanel);
                 }
                 BuildToast(root, view);
-                // The departure asks before setting out (the travel office).
-                if (definition.Layout == GuideMenuLayout.Destinations)
-                    view.Dialog = Baryonyx.UI.Editor.GameDialogAssets.Build(root);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
             }
@@ -303,11 +300,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var panel = Rect("Menu", safe);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
             panel.anchoredPosition = new Vector2(-56, -16);
-            // Four rows still fit between the title and the bottom edge.
+            // Four rows still fit between the title and the bottom edge; five rows (the formation)
+            // are a little lower and closer together.
             int rows = definition.Items.Length;
-            panel.sizeDelta = new Vector2(820, Mathf.Max(700, rows * 156 + (rows - 1) * 28));
+            float rowHeight = rows > 4 ? 140 : 156;
+            float spacing = rows > 4 ? 20 : 28;
+            panel.sizeDelta = new Vector2(
+                820,
+                Mathf.Max(700, rows * rowHeight + (rows - 1) * spacing)
+            );
             var group = panel.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.spacing = 28;
+            group.spacing = spacing;
             group.childAlignment = TextAnchor.MiddleCenter;
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = true;
@@ -320,7 +323,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 var item = definition.Items[i];
                 var row = Rect("MenuItem" + i, panel);
                 var size = row.gameObject.AddComponent<LayoutElement>();
-                size.minHeight = size.preferredHeight = 156;
+                size.minHeight = size.preferredHeight = rowHeight;
                 buttons.Add(AddButton(row, Frame(row, FramePath, Color.white)));
 
                 // The 24x24 icon at 4x sits in a 96px column before the label.
@@ -382,7 +385,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
             var first = definition.Items.Length > 0 ? definition.Items[0] : new GuideMenuItem();
             view.ListTitle = ListTitle(panel, first.Label);
-            var viewport = ListViewport(panel);
+            var viewport = ListViewport(panel, top: 104);
 
             var lists = new List<RectTransform>();
             for (int i = 0; i < definition.Items.Length; i++)
@@ -409,8 +412,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             panel.gameObject.SetActive(false);
         }
 
-        // The travel office: the destinations fill the right side from the start, without a
-        // menu. A row turns gold when chosen, and the depart button below sets off for it.
+        // The travel office: the destinations fill the right side from the start, without a menu
+        // or a title. A row turns gold when chosen, and the depart button below sets off for it.
         private static void BuildDestinations(
             RectTransform safe,
             GuideMenuView view,
@@ -421,23 +424,24 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Frame(panel, FramePath, Color.white);
             view.DestinationPanel = panel.gameObject;
 
-            ListTitle(panel, definition.DestinationsLabel);
-            var viewport = ListViewport(panel);
+            var viewport = ListViewport(panel, top: 28);
             var content = ListContent(viewport, "List");
             var rows = new Button[definition.Destinations.Length];
             for (int i = 0; i < rows.Length; i++)
             {
                 var destination = definition.Destinations[i];
+                bool locked = destination.Locked;
                 rows[i] = BuildEntry(
                     content,
                     "Destination" + i,
-                    destination.Locked ? HiddenName : destination.Name,
-                    destination.Badge,
-                    destination.Detail
+                    locked ? HiddenName : destination.Name,
+                    $"推奨Lv{destination.RecommendedLevel}",
+                    locked ? "" : destination.Detail
                 );
-                // 未踏の地は名前を伏せ、行ごと暗くして押せなくする。右端の札にも「未踏」と書く。
-                if (destination.Locked)
+                // 未踏の地は地名と説明を伏せ、1行で縦の中央に置き、行ごと暗くして押せなくする。
+                if (locked)
                 {
+                    CenterVertically(rows[i].transform, "Name", "Badge");
                     rows[i].interactable = false;
                     rows[i].gameObject.AddComponent<CanvasGroup>().alpha = LockedAlpha;
                 }
@@ -455,13 +459,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return title;
         }
 
-        // The clipped area between the title and the confirm button where the rows scroll.
-        private static RectTransform ListViewport(RectTransform panel)
+        // The clipped area above the confirm button where the rows scroll; top leaves room for a
+        // title.
+        private static RectTransform ListViewport(RectTransform panel, float top)
         {
             var viewport = Rect("Viewport", panel);
             Stretch(viewport);
             viewport.offsetMin = new Vector2(28, 148);
-            viewport.offsetMax = new Vector2(-28, -104);
+            viewport.offsetMax = new Vector2(-28, -top);
             viewport.gameObject.AddComponent<RectMask2D>();
             AddImage(viewport, Color.clear, true);
             return viewport;
@@ -796,6 +801,19 @@ namespace Baryonyx.UI.GuideMenu.Editor
             rect.pivot = new Vector2(0.5f, y);
             rect.offsetMin = new Vector2(left, top ? -inset - height : inset);
             rect.offsetMax = new Vector2(-right, top ? -inset : inset + height);
+        }
+
+        // Moves strips made by Band to the vertical middle of their parent, keeping their height.
+        private static void CenterVertically(Transform parent, params string[] children)
+        {
+            foreach (var child in children)
+            {
+                var rect = (RectTransform)parent.Find(child);
+                rect.anchorMin = new Vector2(rect.anchorMin.x, 0.5f);
+                rect.anchorMax = new Vector2(rect.anchorMax.x, 0.5f);
+                rect.pivot = new Vector2(rect.pivot.x, 0.5f);
+                rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, 0f);
+            }
         }
 
         public static void Fill(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax)

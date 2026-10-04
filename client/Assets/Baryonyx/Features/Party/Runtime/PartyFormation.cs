@@ -84,6 +84,20 @@ namespace Baryonyx.Party
         // パーティにいない、持っているキャラ（持っている順）。
         public IEnumerable<PartyMember> Bench => roster.Where(member => SlotOf(member.Id) < 0);
 
+        /// <summary>
+        /// The people in the order of the per-person screens' tabs (skills, equipment): the
+        /// party's slots first, then the others as owned, with how many are in the party.
+        /// </summary>
+        public (IReadOnlyList<PartyMember> People, int PartyCount) TabOrder()
+        {
+            var party = slots
+                .Where(id => id != null)
+                .Select(Find)
+                .Where(member => member != null)
+                .ToArray();
+            return (party.Concat(Bench).ToArray(), party.Length);
+        }
+
         /// <summary>What <see cref="Apply"/> would do. A null id takes the member out.</summary>
         public PartyChange Preview(int slot, string id)
         {

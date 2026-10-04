@@ -63,12 +63,13 @@ client/
 │   │   │   ├── UI/                      モックのPrefabと、Codexで生成して縮小した画像
 │   │   │   ├── Editor/                  モックのPrefabの生成
 │   │   │   └── Tests/                   EditMode（計算・時間・再開）とPlayMode（モックの操作）
-│   │   ├── Features/Tavern/             酒場（パーティの編成・育成）の画面。装備 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
+│   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル・ボーナス）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
 │   │   │   ├── UI/                      画面のPrefab、案内人・背景・メニューのアイコンの画像
 │   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
 │   │   │   └── Editor/                  仮データと画面の生成
-│   │   ├── Features/Training/           酒場の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
-│   │   ├── Features/CardLoadout/        酒場のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
+│   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
+│   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・UI・Tests
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
@@ -126,7 +127,7 @@ client/
 | `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader` |
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
-| `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと酒場のスキルが使う |
+| `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う |
 | `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは `IGuideBackHandler` を付けると、戻る操作を先に受け取れる |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |

@@ -46,9 +46,6 @@ namespace Baryonyx.UI.GuideMenu
         // 操作を求めない通知（共通の通知の帯）。
         public NoticeBand Notice;
 
-        // 行き先のリストに重ねる確認のダイアログ（旅の案内所の出発）。開いている間は戻るキーを先に受け取る。
-        public GameDialog Dialog;
-
         private readonly List<Button[]> entries = new();
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
         private GuideMenuPresenter ownPresenter;
@@ -119,11 +116,9 @@ namespace Baryonyx.UI.GuideMenu
                 PressBack();
         }
 
-        // 重ねたダイアログ、または開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
+        // 開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
         public void PressBack()
         {
-            if (Dialog != null && Dialog.HandleBack())
-                return;
             if (
                 openPanel != null
                 && openPanel.TryGetComponent(out IGuideBackHandler panel)

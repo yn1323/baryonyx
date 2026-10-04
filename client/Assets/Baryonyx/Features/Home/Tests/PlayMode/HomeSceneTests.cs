@@ -54,7 +54,7 @@ namespace Baryonyx.Tests.PlayMode
             // 所持ルーンは仮データではなくサーバーの残高を表示する。まだ変換していないので0。
             snapshot.Runes = 0;
             var expected = HomeViewState.From(snapshot);
-            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.UptText));
+            Assert.That(view.StepsLabel.text, Is.EqualTo(expected.ActText));
             Assert.That(view.ClaimLabel.text, Is.EqualTo("タップでルーン獲得"));
             Assert.That(view.RunesLabel.text, Is.EqualTo(expected.RunesText));
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo(expected.DestinationNameText));
@@ -294,7 +294,7 @@ namespace Baryonyx.Tests.PlayMode
             {
                 var tint = button as TintGroupButton;
                 Assert.That(tint, Is.Not.Null, button.name);
-                // UPTパネルは案内の文字だけで、アイコンを持たない。
+                // ACTパネルは案内の文字だけで、アイコンを持たない。
                 if (button != view.StepButton)
                     Assert.That(
                         tint.TintGraphics.OfType<Image>().Any(image => image.sprite != null),
@@ -328,7 +328,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 設定は準備中を知らせ、シーンを移らない。
-        // 酒場・装備・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
+        // 編成・商会・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
         public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
         {
@@ -388,12 +388,12 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator CardResumesTheAdventureInProgress()
         {
-            services
+            var started = services
                 .Adventure.StartAsync(AdventureLocalSource.ForestRuins, CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
             services
-                .Adventure.MoveAsync("moss-hall", CancellationToken.None)
+                .Adventure.MoveAsync(started.Run.Exits[0], CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
 
@@ -401,7 +401,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.LoadHome(value => bootstrap = value);
             yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
             var view = bootstrap.View;
-            Assert.That(view.DestinationNameLabel.text, Is.EqualTo("森の遺跡"));
+            Assert.That(view.DestinationNameLabel.text, Is.EqualTo("ミストラ遺跡"));
             Assert.That(view.DestinationFloorLabel.text, Is.EqualTo("B2F"));
             Assert.That(view.ResumeLabel.text, Is.EqualTo("再開"));
             Assert.That(view.DestinationArt.texture, Is.SameAs(view.ResumeArt));

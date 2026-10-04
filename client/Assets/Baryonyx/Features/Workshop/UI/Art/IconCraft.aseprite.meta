@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 81234ea4c97ff3d4a995d687c5d4b36c
+guid: 79be8b50fca264504893f010cfa6fc41
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -127,9 +127,9 @@ ScriptedImporter:
     tessellationDetail: 0
     uvTransform: {x: 0, y: 0}
   animatedSpriteImportData:
-  - name: IconEquipment
+  - name: IconCraft
     originalName: 
-    pivot: {x: 0, y: 0}
+    pivot: {x: 0, y: -0.04347826}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
@@ -138,8 +138,8 @@ ScriptedImporter:
       x: 4
       y: 4
       width: 24
-      height: 24
-    spriteID: a81707d4d1de59148ad6ea0da36d2287
+      height: 23
+    spriteID: f9ad8b9f40a114f19989d65526cddf58
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -147,23 +147,23 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 4, y: 4}
+    uvTransform: {x: 4, y: 3}
   spriteSheetImportData: []
   tileSetImportData: []
   asepriteLayers:
   - layerIndex: 0
     uuid:
-      value0: 693747537
+      value0: 963932993
       value1: 0
       value2: 0
       value3: 0
     guid: 0
-    name: IconEquipment
+    name: IconCraft
     layerFlags: 0
     layerType: 0
     blendMode: 0
     cells:
-    - name: IconEquipment
+    - name: IconCraft
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
@@ -171,7 +171,7 @@ ScriptedImporter:
         y: 0
         width: 24
         height: 24
-      spriteId: a81707d4d1de59148ad6ea0da36d2287
+      spriteId: f9ad8b9f40a114f19989d65526cddf58
     linkedCells: []
     tileCells: []
     tileSetIndex: 0

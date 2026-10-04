@@ -5,9 +5,10 @@ using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.Workshop.Editor
 {
     /// <summary>
-    /// The equipment screen (装備; the code keeps the Workshop name): the young noble heir of an
-    /// old arms workshop guides changing gear and browsing weapons and armour. The items and
-    /// values are mock data until equipment has data.
+    /// The trading house (商会; the code keeps the Workshop name): the young noble heir of an old
+    /// arms shop buys and sells equipment, skills and materials for runes, and makes equipment
+    /// and skills from materials. The lists and prices are mock data until trading has data
+    /// (doc/features/equipment.md); choosing a row only tells it is not ready.
     /// </summary>
     public static class WorkshopScreenAssets
     {
@@ -16,9 +17,9 @@ namespace Baryonyx.Workshop.Editor
         public const string PrefabPath = Folder + "/UI/WorkshopScreen.prefab";
         public const string GuideArtPath = Folder + "/UI/Art/WorkshopGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/WorkshopBackground.png";
-        public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.aseprite";
-        public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
-        public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
+        public const string IconBuyPath = Folder + "/UI/Art/IconBuy.aseprite";
+        public const string IconSellPath = Folder + "/UI/Art/IconSell.aseprite";
+        public const string IconCraftPath = Folder + "/UI/Art/IconCraft.aseprite";
 
         [MenuItem("Baryonyx/Workshop/Create Screen Assets")]
         public static void CreateAssets() =>
@@ -26,45 +27,44 @@ namespace Baryonyx.Workshop.Editor
 
         private static void Fill(GuideMenuDefinition d)
         {
-            d.Title = "装備";
+            d.Title = "商会";
             d.Layout = GuideMenuLayout.List;
             d.Items = new[]
             {
                 Item(
-                    "付け替え",
-                    "キャラごとの武器・防具を変える",
-                    "付け替える",
-                    Icon(IconChangeGearPath),
-                    Entry("トーマ", "Lv 12", "鉄の剣｜革の鎧"),
-                    Entry("ルカ", "Lv 11", "氷晶のワンド｜魔法のローブ"),
-                    Entry("アリア", "Lv 10", "雷鳴の槍｜鎖かたびら"),
-                    Entry("ミナ", "Lv 10", "樫の杖｜旅人のマント")
+                    "買う",
+                    "装備・スキル・素材をルーンで買う",
+                    "買う",
+                    Icon(IconBuyPath),
+                    Entry("鉄の剣", "400 ルーン", "武器｜物攻の 120%｜斬"),
+                    Entry("鎖かたびら", "450 ルーン", "防具｜物防の 130%"),
+                    Entry("ファイア", "300 ルーン", "スキル｜炎の魔法で敵単体を攻撃"),
+                    Entry("ヒール", "300 ルーン", "スキル｜味方単体のHPを回復"),
+                    Entry("鉄くず", "30 ルーン", "素材｜武器と防具の合成に使う"),
+                    Entry("火の魔石", "80 ルーン", "素材｜炎の装備とスキルの合成に使う"),
+                    Entry("氷の結晶", "80 ルーン", "素材｜氷の装備とスキルの合成に使う")
                 ),
                 Item(
-                    "武器",
-                    "持っている武器を見る",
-                    "装備する",
-                    Icon(IconWeaponPath),
-                    Entry("炎のダガー", "★★★★", "すばやさの 125%｜斬・炎｜2回攻撃"),
-                    Entry("雷鳴の槍", "★★★", "力の 140%｜貫・雷"),
-                    Entry("氷晶のワンド", "★★★", "魔力の 135%｜氷｜会心 +5%"),
-                    Entry("戦鎚", "★★", "力の 150%｜打"),
-                    Entry("鉄の剣", "★★", "力の 120%｜斬"),
-                    Entry("短弓", "★", "すばやさの 100%｜貫"),
-                    Entry("樫の杖", "★", "魔力の 110%｜炎"),
-                    Entry("木の剣", "★", "力の 100%｜斬")
+                    "売る",
+                    "持っている装備・スキル・素材を売る",
+                    "売る",
+                    Icon(IconSellPath),
+                    Entry("木の剣", "50 ルーン", "武器｜物攻の 100%｜斬"),
+                    Entry("木の丸盾", "60 ルーン", "防具｜物防の 120%"),
+                    Entry("斬り払い", "40 ルーン", "スキル｜所持 2"),
+                    Entry("獣の牙", "10 ルーン", "素材｜所持 12"),
+                    Entry("鉄くず", "15 ルーン", "素材｜所持 8")
                 ),
                 Item(
-                    "防具",
-                    "持っている防具を見る",
-                    "装備する",
-                    Icon(IconArmorPath),
-                    Entry("旅人のマント", "★★★", "すばやさ +8%｜防御の 110%"),
-                    Entry("鎖かたびら", "★★", "防御の 130%"),
-                    Entry("魔法のローブ", "★★", "魔力の 115%｜防御の 105%"),
-                    Entry("鉄の兜", "★★", "防御の 115%｜HP +40"),
-                    Entry("革の鎧", "★", "防御の 110%"),
-                    Entry("木の丸盾", "★", "防御の 120%")
+                    "合成",
+                    "素材を合わせて装備やスキルを作る",
+                    "合成する",
+                    Icon(IconCraftPath),
+                    Entry("炎のダガー", "★★★★", "火の魔石×3・鉄くず×2・獣の牙×4"),
+                    Entry("氷晶のワンド", "★★★", "氷の結晶×3・鉄くず×1"),
+                    Entry("雷鳴の槍", "★★★", "雷の羽根×3・鉄くず×3"),
+                    Entry("ブリザード", "スキル", "氷の結晶×5・魔石のかけら×2"),
+                    Entry("ライトニングボルト", "スキル", "雷の羽根×4・魔石のかけら×2")
                 ),
             };
         }

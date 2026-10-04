@@ -478,7 +478,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 stepsRow,
                 "StepsUnit",
-                "UPT",
+                "ACT",
                 48,
                 TextSub,
                 TextAlignmentOptions.BottomLeft
@@ -519,9 +519,9 @@ namespace Baryonyx.Home.Editor
             var ticks = Rect("GaugeTicks", details);
             var tickSize = ticks.gameObject.AddComponent<LayoutElement>();
             tickSize.minHeight = tickSize.preferredHeight = 8;
-            foreach (int tier in HomeViewState.BonusUpt)
+            foreach (int tier in HomeViewState.BonusAct)
             {
-                float x = Mathf.Clamp01(tier / (float)HomeViewState.GaugeMaxUpt);
+                float x = Mathf.Clamp01(tier / (float)HomeViewState.GaugeMaxAct);
                 var tick = Rect($"Tick{tier}", ticks);
                 tick.anchorMin = tick.anchorMax = new Vector2(x, 1);
                 tick.pivot = new Vector2(x >= 1f ? 1f : 0.5f, 1f);
@@ -558,7 +558,7 @@ namespace Baryonyx.Home.Editor
             Label(
                 unlinked,
                 "UnlinkedBody",
-                "1歩が1UPTになり、仲間の力になります",
+                "1歩が1ACTになり、仲間の力になります",
                 32,
                 TextSub,
                 TextAlignmentOptions.MidlineLeft
@@ -664,12 +664,12 @@ namespace Baryonyx.Home.Editor
             row.childControlWidth = row.childControlHeight = true;
             row.childForceExpandWidth = row.childForceExpandHeight = false;
 
-            view.TavernButton = NavButton(nav, "TavernButton", "酒場", HomeScreenArt.IconPartyPath);
+            view.TavernButton = NavButton(nav, "TavernButton", "編成", HomeScreenArt.IconPartyPath);
             view.WorkshopButton = NavButton(
                 nav,
                 "WorkshopButton",
-                "装備",
-                HomeScreenArt.IconEquipmentPath
+                "商会",
+                HomeScreenArt.IconShopPath
             );
             view.TempleButton = NavButton(
                 nav,

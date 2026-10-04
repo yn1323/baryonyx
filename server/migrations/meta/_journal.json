@@ -43,6 +43,27 @@
       "when": 1791099917480,
       "tag": "0005_adventure",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791121137271,
+      "tag": "0006_adventure_route",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791121140640,
+      "tag": "0007_end_fixed_route_adventures",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791125417803,
+      "tag": "0008_equipment",
+      "breakpoints": true
     }
   ]
 }

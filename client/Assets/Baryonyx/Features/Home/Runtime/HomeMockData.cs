@@ -24,7 +24,7 @@ namespace Baryonyx.Home
         [Tooltip("冒険の途中にすると、右下のカードが行き先の再開になります。")]
         public bool AdventureInProgress;
 
-        public string DestinationName = "森の遺跡";
+        public string DestinationName = "ミストラ遺跡";
 
         public string DestinationFloor = "B3F";
 

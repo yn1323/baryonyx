@@ -1,6 +1,7 @@
 using System;
 using Baryonyx.Account;
 using Baryonyx.Adventure;
+using Baryonyx.Equipment;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
 using Baryonyx.Networking;
@@ -21,7 +22,8 @@ namespace Baryonyx.App
             bool preview,
             IStepBonusSource stepBonus = null,
             IPartySource party = null,
-            IAdventureSource adventure = null
+            IAdventureSource adventure = null,
+            IEquipmentSource equipment = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
@@ -29,12 +31,13 @@ namespace Baryonyx.App
             StepBonus = stepBonus;
             Party = party;
             Adventure = adventure;
+            Equipment = equipment;
         }
 
         public HealthStepLink Health { get; }
         public bool Preview { get; }
 
-        // UPTボーナスの持ち物と枠を読み書きするサーバー。接続先がなければnull。
+        // ACTボーナスの持ち物と枠を読み書きするサーバー。接続先がなければnull。
         public IStepBonusSource StepBonus { get; }
 
         // 酒場の編成・カード・レベルを読み書きするサーバー。接続先がなければnull。
@@ -42,6 +45,9 @@ namespace Baryonyx.App
 
         // 冒険の状態を読み書きするサーバー。接続先がなければnull。
         public IAdventureSource Adventure { get; }
+
+        // 編成の装備（持っている装備と付け替え）を読み書きするサーバー。接続先がなければnull。
+        public IEquipmentSource Equipment { get; }
 
         public static GameServices GetOrCreate(HealthConnectionSettings settings)
         {
@@ -60,6 +66,7 @@ namespace Baryonyx.App
             StepBonusSession.Source = services?.StepBonus;
             PartySession.Source = services?.Party;
             AdventureSession.Source = services?.Adventure;
+            EquipmentSession.Source = services?.Equipment;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -93,6 +100,9 @@ namespace Baryonyx.App
                 sync != null ? new PartyServerSource(sync, new PartyApiClient(server)) : null,
                 sync != null
                     ? new AdventureServerSource(sync, new AdventureApiClient(server))
+                    : null,
+                sync != null
+                    ? new EquipmentServerSource(sync, new EquipmentApiClient(server))
                     : null
             );
         }

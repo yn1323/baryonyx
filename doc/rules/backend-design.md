@@ -120,9 +120,12 @@ SQLとスナップショットを一緒にGitへ追加し、生成結果の制�
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
 [0002_guest_accounts.sql](../../server/migrations/0002_guest_accounts.sql) は、ゲストを識別する秘密値のハッシュ列を追加し、`google_sub` を任意にする。
 SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
-[0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[UPTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
+[0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[ACTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
 [0004_party.sql](../../server/migrations/0004_party.sql) は、[キャラと編成の保存](../features/party.md#実装との対応)のキャラ・枠・カード・レベルアップの記録・初期付与の5テーブルを作る。
 [0005_adventure.sql](../../server/migrations/0005_adventure.sql) は、[冒険の1周](../plans/2026-10-04-adventure-loop.md#サーバー)の冒険・部屋ごとの報酬・復活の記録・行き先ごとの記録の4テーブルを作る。進行中の冒険をユーザーごとに1つにする部分一意インデックスを持つ。
+[0006_adventure_route.sql](../../server/migrations/0006_adventure_route.sql) は、冒険に道を作る乱数の種と、今いる部屋の階と種類の列を加える（[探索の地図](../plans/2026-10-04-exploration-route-map.md#実装したこと)）。
+[0007_end_fixed_route_adventures.sql](../../server/migrations/0007_end_fixed_route_adventures.sql) は、決まった6部屋の道で進行中だった冒険を、続きから再開できないため、自分からやめた扱いで終える手書きのSQLである。
+[0008_equipment.sql](../../server/migrations/0008_equipment.sql) は、[持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存)の装備・キャラごとの武器と防具・初期付与の3テーブルを作る。
 
 ```sh
 pnpm db:generate --name add_example
@@ -173,7 +176,7 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
-UPTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時のランクの比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
+ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時のランクの比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
 パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
 冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることとランクの比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
