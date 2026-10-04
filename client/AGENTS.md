@@ -9,12 +9,13 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
 現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 Topは起動時にゲームサーバーへの接続とHealth Connectの歩数の同期を行い、終わるまで「LOADING...」を表示する（[起動時の連携と歩数の同期](../doc/features/startup-sync.md)）。
-`Home.unity` はホーム画面のモックで、左上の今日のUPT（歩数を1歩＝1UPTで換算）と右上の所持ルーンだけサーバーの値を表示する。UPTパネルを押すと歩数を同期してルーンへ変換する。右下の行き先カード（再開）を押すと、Shutter演出で `BattleInspect.unity` へ遷移する。
-シーンはTop・Home・展示室の `Showcase.unity` と、戦闘画面の見た目を確かめるモックの `BattleInspect.unity`、戦闘の背景をInspectorで選べる `Battle.unity`、カードスキルの演出を1枚ずつ選んで再生するデバッグ用の `CardSkillLab.unity`、敵を選んで攻撃・被弾・撃破などをすぐ再生するデバッグ用の `EnemyLab.unity`、Homeの左下のボタンから開く案内人の画面（酒場 `Pub.unity`・工房 `Shop.unity`・神殿 `Temple.unity`・旅の案内所 `TravelOffice.unity`）である。
-案内人の画面は `Baryonyx > App > Create Guide Scenes` で `Assets/Baryonyx/App/Scenes/Guide/` に生成し、「もどる」でHomeへ戻る（[案内人がいる画面](../doc/features/screens.md#酒場工房神殿旅の案内所の画面)）。
-`BattleInspect.unity` はHomeの行き先カードから開くか、単体で開いて確認する。まだHomeへ戻る操作はない（[戦闘画面のモック](../doc/features/screens.md#戦闘画面の見た目モック)）。
-`Battle.unity` は `Baryonyx > App > Create Battle Scene` で生成し、`BattleStages` の `Stage` で背景を選ぶ（[戦闘の背景](../doc/art/hd2d-stage.md#戦闘の背景)）。
-`CardSkillLab.unity` は `Baryonyx > App > Create Card Skill Lab Scene` で生成し、Play中に下の「スキル一覧」から選んだカードスキルの演出をすぐ再生する（[カードスキルのデバッグルーム](../doc/features/screens.md#カードスキルのデバッグルーム)）。
+`Home.unity` はホーム画面のモックで、左上の今日のUPT（歩数を1歩＝1UPTで換算）と右上の所持ルーンだけサーバーの値を表示する。UPTパネルを押すと歩数を同期してルーンへ変換する。右下の行き先カードは、冒険の途中なら探索の `Exploration.unity` を、そうでなければ旅の案内所を、Shutter演出で開く（[冒険の画面](../doc/features/screens.md#冒険の画面)）。
+シーンはTop・Home・展示室の `Showcase.unity` と、戦闘画面の見た目を確かめるモックの `BattleInspect.unity`、冒険の探索の `Exploration.unity`、冒険の戦闘を兼ね、単体で開けば背景をInspectorで選べる `Battle.unity`、スキルの演出を1枚ずつ選んで再生するデバッグ用の `CardSkillLab.unity`、敵を選んで攻撃・被弾・撃破などをすぐ再生するデバッグ用の `EnemyLab.unity`、Homeから開く案内人の画面（酒場 `Pub.unity`・装備 `Shop.unity`・神殿 `Temple.unity`・旅の案内所 `TravelOffice.unity`）である。
+案内人の画面は `Baryonyx > App > Create Guide Scenes` で `Assets/Baryonyx/App/Scenes/Guide/` に生成し、「もどる」でHomeへ戻る（[案内人がいる画面](../doc/features/screens.md#酒場装備神殿旅の案内所の画面)）。
+`BattleInspect.unity` は単体で開いて確認する（[戦闘画面のモック](../doc/features/screens.md#戦闘画面の見た目モック)）。
+`Battle.unity` は `Baryonyx > App > Create Battle Scene` で生成し、`BattleStages` の `Stage` で背景を選ぶ（[戦闘の背景](../doc/art/hd2d-stage.md#戦闘の背景)）。冒険から開いたときは、行き先の背景と部屋の敵で戦い、勝敗で終わる。
+`Exploration.unity` は `Baryonyx > App > Create Exploration Scene` で生成する。探索と冒険用の重ね画面のPrefabは `Baryonyx > Adventure > Create Screen Assets` で作り直す。
+`CardSkillLab.unity` は `Baryonyx > App > Create Card Skill Lab Scene` で生成し、Play中に下の「スキル一覧」から選んだスキルの演出をすぐ再生する（[スキルのデバッグルーム](../doc/features/screens.md#スキルのデバッグルーム)）。
 `EnemyLab.unity` は `Baryonyx > App > Create Enemy Lab Scene` で生成し、Play中に下の操作盤で選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせる（[敵の挙動デバッグルーム](../doc/features/screens.md#敵の挙動デバッグルーム)）。
 Top・Home・BattleInspectは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../doc/art/hd2d-stage.md)）。3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。これらのシーンを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../doc/art/hd2d-stage.md#sceneタブでの表示)）。
 実行方法は [UnityのテストとCI](../doc/rules/client-testing.md)、画面設計は [UI設計ルール](../doc/rules/ui-design.md) を参照する。

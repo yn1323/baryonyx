@@ -61,13 +61,16 @@ namespace Baryonyx.Home
         [FormerlySerializedAs("SummonButton")]
         public Button TempleButton;
 
-        [FormerlySerializedAs("WorldMapButton")]
-        public Button TravelOfficeButton;
-
         [Header("右下")]
         public Button ResumeButton;
         public TMP_Text DestinationNameLabel;
         public TMP_Text DestinationFloorLabel;
+        public TMP_Text ResumeLabel;
+
+        // カードの絵。冒険の途中は行き先の絵、そうでなければ旅の案内所の世界地図。
+        public RawImage DestinationArt;
+        public Texture ResumeArt;
+        public Texture TravelArt;
 
         [Header("通知")]
         public CanvasGroup Toast;
@@ -233,7 +236,6 @@ namespace Baryonyx.Home
             Bind(TavernButton, HomeAction.Tavern);
             Bind(WorkshopButton, HomeAction.Workshop);
             Bind(TempleButton, HomeAction.Temple);
-            Bind(TravelOfficeButton, HomeAction.TravelOffice);
             Bind(ResumeButton, HomeAction.Resume);
             HideToast();
             HideNotice();
@@ -283,6 +285,26 @@ namespace Baryonyx.Home
                 Set(RunesLabel, runesText);
             Set(DestinationNameLabel, state.DestinationNameText);
             Set(DestinationFloorLabel, state.DestinationFloorText);
+            Set(ResumeLabel, state.ResumeText);
+            ShowCardArt(state.AdventureInProgress ? ResumeArt : TravelArt);
+        }
+
+        // 絵をカードいっぱいに切り抜く（上から30%の位置を中心に寄せる）。
+        private void ShowCardArt(Texture art)
+        {
+            if (DestinationArt == null || art == null || DestinationArt.texture == art)
+                return;
+            DestinationArt.texture = art;
+            var size = DestinationArt.rectTransform.rect.size;
+            if (size.x <= 0f || size.y <= 0f)
+                return;
+            DestinationArt.uvRect = CoverUv(size, art.width, art.height);
+        }
+
+        public static Rect CoverUv(Vector2 card, float width, float height)
+        {
+            float visible = Mathf.Min(1f, (card.y / card.x) * width / height);
+            return new Rect(0, 1 - visible - (1 - visible) * 0.3f, 1, visible);
         }
 
         private void Update()

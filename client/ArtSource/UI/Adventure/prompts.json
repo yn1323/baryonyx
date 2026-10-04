@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-04",
+  "tool": "Codex CLI 0.159.2 built-in image_gen (.agents/skills/shared/scripts/codex_image.py)",
+  "scope": "The adventure's exploration: the room kind icons on the door plates and the route map, the ruin door and the chest of the exploration's stage. Provisional art for the first playable adventure.",
+  "process": "Each request was generated as one transparent image. The icons' style reference was the existing 24x24 UI icons at 16x; the door and the chest's was a capture of the misty woods battle stage they stand on. Each picture was cut out, fitted to its grid by its outline (bottom aligned for the door and the chests), coloured with the median of the centre of each cell, reduced to 32 colours (median cut) and converted to an indexed .aseprite with .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua (each PNG under its own name, since Aseprite opens numbered PNGs as one animation). All passed check_pixel_art.py (ui-icon, item, background).",
+  "requests": [
+    {
+      "name": "room-icons",
+      "grid": "24x24 x4",
+      "used": [
+        "Assets/Baryonyx/Features/Adventure/UI/Art/IconRoomBattle.aseprite",
+        "Assets/Baryonyx/Features/Adventure/UI/Art/IconRoomElite.aseprite",
+        "Assets/Baryonyx/Features/Adventure/UI/Art/IconRoomTreasure.aseprite",
+        "Assets/Baryonyx/Features/Adventure/UI/Art/IconRoomBoss.aseprite"
+      ],
+      "images": [
+        "existing UI icons at 16x",
+        "the misty woods battle stage"
+      ],
+      "request": "スマホ向けファンタジーRPGで使う、UIアイコン4個をドット絵で描き、1枚の画像に横一列に並べてください。\nこれらは、ダンジョンの部屋の入口に出す「その先に何があるか」の手掛かりのアイコンです。入口の上の暗い札に、短い文字と並べて表示します。\n\n■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n\n■このゲームのタッチに合わせる\n- 添付の画像1は、このゲームの既存のUIアイコン（どれも24×24ドットを16倍に拡大したもの）です。ドットの大きさ、セルアウトの輪郭、段を分けた塗り、彩度の高さ、ハイライトの置き方、ディザの入れ方をこれにそろえてください。精密さもこれと同じ水準で、1ドットずつ意味を持たせて描き込んでください。\n- 添付の画像2は、アイコンを出す森の遺跡の場面です。暗い札の上でもはっきり見えるよう、明るい面と彩度を十分に持たせます。\n- 彩度と明るさを高めにしたGBA寄りの色にする。影は青・紫寄りに、光は黄・白寄りに色相をずらす。\n\n■大きさとそろえ方\n- 各アイコンは、ちょうど24×24ドットの格子に収まる大きさで描く。24ドットの幅いっぱいを使い、画面では1ドットを4×4pxに拡大して表示する。\n- すべてのアイコンを、同じドットの細かさ（1ドットが同じ大きさの正方形）、同じ輪郭の太さ（1ドット）、同じ光の向き、同じくらいの見た目の大きさにそろえる。\n- 24×24ドットと少ないので、シルエットだけで何かわかる太くて単純な形にする。1ドット幅の細い線を並べた細かい模様は避ける。\n- 正面から見た図案として描き、横一列に並べ、アイコンどうしの間はアイコン1個分以上空ける。\n- 背景は透明にする。枠、ボタンの台座、地面、落ち影、文字、ラベル、番号は描かない。\n\n■描くアイコン（左から順に）\n1. 魔物の気配：2本の剣を交差させた形（×の字）。刃は銀で中央に明るい筋、鍔は金、柄は赤茶。刃は幅2〜3ドットで太く、交差した中央がはっきり読めること。\n2. 強い魔物の気配：正面を向いた角の生えた魔物の頭骨。骨は象牙色で、2本の太い角が上へ反り返る。目の穴は暗く、その奥に赤く光る瞳。頭骨の下に、牙を2本。1の剣より危険そうに見えること。\n3. 宝箱がありそう：正面から見た宝箱。ふたは丸く、緑がかった青の板に金色の帯と角の金具、正面に金の錠前。ふたのすき間から金色の光がこぼれる。\n4. 最奥の間：黒に近い紫の王冠。冠の3本の尖りの先に赤い宝石、帯の中央に大きな赤い宝石。冠のまわりに紫の小さな炎のような揺らぎを左右に1つずつ添え、最後の強敵が待つことを表す。"
+    },
+    {
+      "name": "ruin-door",
+      "grid": "64x96",
+      "used": [
+        "Assets/Baryonyx/Shared/Art/Stages/Exploration/RuinDoor.aseprite"
+      ],
+      "images": [
+        "the misty woods battle stage"
+      ],
+      "request": "スマホ向けファンタジーRPGの、ダンジョンの部屋の「入口」をドット絵で1つ描いてください。\n森の中に埋もれた古い石の遺跡の、通り抜けられるアーチ状の門です。プレイヤーはこの門をタップして、その先の部屋へ進みます。\n\n■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n中間色の多い落ち着いた色にする。ただしキャラと並べても入口だと一目でわかる明暗差を持たせる。\n\n■このゲームのタッチに合わせる\n- 添付の画像は、この門を置く場面（朝霧の森の遺跡）です。左に冒険者4人、右に魔物が立っています。門は右側の魔物が立つあたりの地面に、正面を向けて立てます。地面・苔・石の色味と光の雰囲気をこの場面にそろえてください。\n\n■描く物\n- 苔むした灰色の石を積んだアーチの門を、正面から見た図。左右の柱と、上の半円のアーチ。アーチの頂上に要石。\n- 門の内側（くぐる部分）は、奥が見えない暗い通路で、深い紺〜黒の闇にする。闇の奥にかすかに青緑の光。\n- 石のすき間に苔とつる草。柱の根元に崩れた石のかけらを少し。\n- 大きさは横64ドット×縦96ドットの格子に収まるように描き、格子いっぱいを使う。門の下端は地面に接する一直線にする。\n- 1枚の画像に門を1つだけ。背景は透明にする。地面・落ち影・文字・枠は描かない。"
+    },
+    {
+      "name": "chest",
+      "grid": "32x32 x2",
+      "used": [
+        "Assets/Baryonyx/Shared/Art/Stages/Exploration/ChestClosed.aseprite",
+        "Assets/Baryonyx/Shared/Art/Stages/Exploration/ChestOpen.aseprite"
+      ],
+      "images": [
+        "the misty woods battle stage"
+      ],
+      "request": "スマホ向けファンタジーRPGの、ダンジョンの部屋に置く宝箱をドット絵で2つ描き、1枚の画像に横一列に並べてください。左が閉じた宝箱、右が開いた宝箱です。\n\n■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n彩度と明るさを高めにした鮮やかな色。\n\n■このゲームのタッチに合わせる\n- 添付の画像は、宝箱を置く場面（朝霧の森の遺跡）です。冒険者や魔物と同じドットの粗さ・輪郭・塗り方にそろえ、森の地面の上でも目立つ色にしてください。\n\n■描く物\n1. 閉じた宝箱：少し斜め上（正面寄り）から見た木の宝箱。ふたは丸く、深い赤の板に金色の帯と角の金具、正面に金の錠前。\n2. 開いた宝箱：1と同じ宝箱のふたが後ろへ開き、中から金色の光があふれ、金貨と青い宝石がのぞく。光は段を分けたドットで描き、ぼかさない。\n- それぞれ32×32ドットの格子に収まる大きさで描き、格子いっぱいを使う。2つは同じ大きさ・同じ位置関係にそろえる。\n- 2つの間は宝箱1個分以上空ける。背景は透明にする。地面・落ち影・文字・枠は描かない。"
+    }
+  ]
+}

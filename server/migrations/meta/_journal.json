@@ -36,6 +36,13 @@
       "when": 1791096532539,
       "tag": "0004_party",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791099917480,
+      "tag": "0005_adventure",
+      "breakpoints": true
     }
   ]
 }

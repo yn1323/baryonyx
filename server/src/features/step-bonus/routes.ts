@@ -29,7 +29,11 @@ export function createStepBonusApi() {
       body.data.bonusId,
       new Date().toISOString(),
     );
-    if ("error" in result) return c.json({ error: result.error }, 404);
+    if ("error" in result) {
+      // 持っていないボーナスは404、冒険の途中の付け替えは409で返す。
+      const status = result.error === "bonus_not_owned" ? 404 : 409;
+      return c.json({ error: result.error }, status);
+    }
     return c.json(result);
   });
 

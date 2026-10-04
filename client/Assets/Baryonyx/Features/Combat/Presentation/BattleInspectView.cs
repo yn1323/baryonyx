@@ -1288,11 +1288,17 @@ namespace Baryonyx.Combat.Presentation
             // Burns, poison, regen, sigils and clouds work as the party's turn comes round.
             yield return PartyTurnStatuses();
 
-            // The mock goes on for ever: a beaten side comes back for the next turn.
-            if (Array.TrueForAll(Enemies, enemy => !enemy.Alive))
-                ReviveEnemies();
-            if (Array.TrueForAll(Allies, ally => ally.Down))
-                ReviveAllies();
+            // The adventure's battle ends here when a side is beaten (see Outcome).
+            if (Settle())
+                yield break;
+            if (!EndsWithOutcome)
+            {
+                // The mock goes on for ever: a beaten side comes back for the next turn.
+                if (Array.TrueForAll(Enemies, enemy => !enemy.Alive))
+                    ReviveEnemies();
+                if (Array.TrueForAll(Allies, ally => ally.Down))
+                    ReviveAllies();
+            }
             EnemyTurn = false;
             StartOfTurn(Turn + 1);
             dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
@@ -1715,6 +1721,9 @@ namespace Baryonyx.Combat.Presentation
                 yield return actions.Dequeue();
             acting = false;
             Refresh();
+            // A card that beat the last enemy ends the adventure's battle.
+            if (!EnemyTurn)
+                Settle();
         }
 
         /// <summary>

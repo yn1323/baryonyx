@@ -5,7 +5,7 @@ using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 namespace Baryonyx.TravelOffice.Editor
 {
     /// <summary>
-    /// The travel office (旅の案内所): the old owl cartographer's world map of destinations.
+    /// The travel office (旅の案内所): the old owl cartographer's list of destinations.
     /// Place names are provisional mock values, not settled world settings.
     /// </summary>
     public static class TravelOfficeScreenAssets
@@ -15,33 +15,31 @@ namespace Baryonyx.TravelOffice.Editor
         public const string PrefabPath = Folder + "/UI/TravelOfficeScreen.prefab";
         public const string GuideArtPath = Folder + "/UI/Art/TravelOfficeGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TravelOfficeBackground.png";
-        public const string MapArtPath = Folder + "/UI/Art/WorldMap.png";
 
         [MenuItem("Baryonyx/Travel Office/Create Screen Assets")]
         public static void CreateAssets() =>
-            CreateScreen(
-                DefinitionPath,
-                PrefabPath,
-                GuideArtPath,
-                BackgroundPath,
-                Fill,
-                MapArtPath
-            );
+            CreateScreen(DefinitionPath, PrefabPath, GuideArtPath, BackgroundPath, Fill);
 
         private static void Fill(GuideMenuDefinition d)
         {
             d.Title = "旅の案内所";
-            d.Layout = GuideMenuLayout.Map;
+            d.Layout = GuideMenuLayout.Destinations;
+            d.DestinationsLabel = "行き先";
             d.DepartLabel = "出発";
-            // Positions are measured on WorldMap.png (0-1 from the bottom left).
-            d.MapPoints = new[]
+            d.Destinations = new[]
             {
-                Point("城下町", 0.495f, 0.59f, "冒険の拠点。宿と店がそろう"),
-                Point("森の遺跡", 0.19f, 0.375f, "探索中｜B3Fまで到達"),
-                Point("雪山の洞窟", 0.505f, 0.79f, "おすすめ Lv 15"),
-                Point("港町", 0.495f, 0.277f, "船で島々へ渡れる"),
-                Point("火山", 0.853f, 0.775f, "未踏の地", locked: true),
-                Point("砂漠の王墓", 0.8f, 0.385f, "未踏の地", locked: true),
+                // 冒険に出られるのは、今は森の遺跡だけ（server/src/features/adventure/catalog.ts）。
+                // 出発できる行き先を先頭に置く。
+                Destination(
+                    "森の遺跡",
+                    "苔むした古代の遺跡。最奥に守り手が眠る",
+                    id: "forest-ruins"
+                ),
+                Destination("雪山の洞窟", "凍てつく洞窟。腕に覚えのある者向け", "おすすめ Lv 15"),
+                Destination("港町", "船で島々へ渡れる"),
+                // 未踏の地の名前は、行では「？？？」に伏せる。
+                Destination("火山", "まだ道が見つかっていない", "未踏", locked: true),
+                Destination("砂漠の王墓", "まだ道が見つかっていない", "未踏", locked: true),
             };
         }
     }

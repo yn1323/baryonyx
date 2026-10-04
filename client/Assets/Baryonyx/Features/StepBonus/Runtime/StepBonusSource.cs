@@ -10,16 +10,24 @@ namespace Baryonyx.StepBonus
     /// <summary>A player's bonuses and slots as the server keeps them.</summary>
     public sealed class StepBonusState
     {
-        public StepBonusState(IReadOnlyList<StepBonusRoll> owned, IReadOnlyList<string> slots)
+        public StepBonusState(
+            IReadOnlyList<StepBonusRoll> owned,
+            IReadOnlyList<string> slots,
+            bool locked = false
+        )
         {
             Owned = owned ?? Array.Empty<StepBonusRoll>();
             Slots = slots ?? Array.Empty<string>();
+            Locked = locked;
         }
 
         public IReadOnlyList<StepBonusRoll> Owned { get; }
 
         // 枠ごとのボーナスのID。空いている枠はnull。
         public IReadOnlyList<string> Slots { get; }
+
+        // 冒険の途中で、枠を付け替えられない（doc/features/step-bonus.md の枠の付け替え）。
+        public bool Locked { get; }
     }
 
     /// <summary>Where the bonus settings read and save a player's bonuses.</summary>
@@ -84,7 +92,7 @@ namespace Baryonyx.StepBonus
             foreach (var slot in slots)
                 if (slot != null && slot.slot >= 0 && slot.slot < ids.Length)
                     ids[slot.slot] = string.IsNullOrEmpty(slot.bonusId) ? null : slot.bonusId;
-            return new StepBonusState(owned, ids);
+            return new StepBonusState(owned, ids, state?.locked ?? false);
         }
     }
 }

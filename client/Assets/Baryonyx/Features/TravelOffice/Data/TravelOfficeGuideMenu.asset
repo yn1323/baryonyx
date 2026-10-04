@@ -18,30 +18,31 @@ MonoBehaviour:
   Background: {fileID: 2800000, guid: a156ca65006224d35961b14a3faf08e3, type: 3}
   Layout: 1
   Items: []
-  MapArt: {fileID: 2800000, guid: f8102125e59ca43c8bac4fd54488aa4f, type: 3}
-  MapPoints:
-  - Name: "\u57CE\u4E0B\u753A"
-    Position: {x: 0.495, y: 0.59}
-    Detail: "\u5192\u967A\u306E\u62E0\u70B9\u3002\u5BBF\u3068\u5E97\u304C\u305D\u308D\u3046"
+  DestinationsLabel: "\u884C\u304D\u5148"
+  Destinations:
+  - Id: forest-ruins
+    Name: "\u68EE\u306E\u907A\u8DE1"
+    Badge: 
+    Detail: "\u82D4\u3080\u3057\u305F\u53E4\u4EE3\u306E\u907A\u8DE1\u3002\u6700\u5965\u306B\u5B88\u308A\u624B\u304C\u7720\u308B"
     Locked: 0
-  - Name: "\u68EE\u306E\u907A\u8DE1"
-    Position: {x: 0.19, y: 0.375}
-    Detail: "\u63A2\u7D22\u4E2D\uFF5CB3F\u307E\u3067\u5230\u9054"
+  - Id: 
+    Name: "\u96EA\u5C71\u306E\u6D1E\u7A9F"
+    Badge: "\u304A\u3059\u3059\u3081 Lv 15"
+    Detail: "\u51CD\u3066\u3064\u304F\u6D1E\u7A9F\u3002\u8155\u306B\u899A\u3048\u306E\u3042\u308B\u8005\u5411\u3051"
     Locked: 0
-  - Name: "\u96EA\u5C71\u306E\u6D1E\u7A9F"
-    Position: {x: 0.505, y: 0.79}
-    Detail: "\u304A\u3059\u3059\u3081 Lv 15"
-    Locked: 0
-  - Name: "\u6E2F\u753A"
-    Position: {x: 0.495, y: 0.277}
+  - Id: 
+    Name: "\u6E2F\u753A"
+    Badge: 
     Detail: "\u8239\u3067\u5CF6\u3005\u3078\u6E21\u308C\u308B"
     Locked: 0
-  - Name: "\u706B\u5C71"
-    Position: {x: 0.853, y: 0.775}
-    Detail: "\u672A\u8E0F\u306E\u5730"
+  - Id: 
+    Name: "\u706B\u5C71"
+    Badge: "\u672A\u8E0F"
+    Detail: "\u307E\u3060\u9053\u304C\u898B\u3064\u304B\u3063\u3066\u3044\u306A\u3044"
     Locked: 1
-  - Name: "\u7802\u6F20\u306E\u738B\u5893"
-    Position: {x: 0.8, y: 0.385}
-    Detail: "\u672A\u8E0F\u306E\u5730"
+  - Id: 
+    Name: "\u7802\u6F20\u306E\u738B\u5893"
+    Badge: "\u672A\u8E0F"
+    Detail: "\u307E\u3060\u9053\u304C\u898B\u3064\u304B\u3063\u3066\u3044\u306A\u3044"
     Locked: 1
   DepartLabel: "\u51FA\u767A"

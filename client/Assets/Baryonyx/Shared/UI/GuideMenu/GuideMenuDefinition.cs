@@ -9,15 +9,15 @@ namespace Baryonyx.UI.GuideMenu
         // Menu buttons; each one opens a full list to choose from.
         List,
 
-        // A world map with destinations to choose from.
-        Map,
+        // A list of destinations to set out for, shown without a menu (the travel office).
+        Destinations,
     }
 
     /// <summary>
     /// The content of one guide screen (tavern, workshop, temple, travel office): the guide on the
-    /// left and the menu or map on the right. The generator bakes it into the screen prefab, so
-    /// the rows can be read without entering Play Mode. The values are mock data until each
-    /// feature has real data.
+    /// left and the menu or the destinations on the right. The generator bakes it into the screen
+    /// prefab, so the rows can be read without entering Play Mode. The values are mock data until
+    /// each feature has real data.
     /// </summary>
     [CreateAssetMenu(menuName = "Baryonyx/Guide Menu Definition")]
     public sealed class GuideMenuDefinition : ScriptableObject
@@ -35,10 +35,11 @@ namespace Baryonyx.UI.GuideMenu
 
         public GuideMenuItem[] Items = Array.Empty<GuideMenuItem>();
 
-        public Texture2D MapArt;
-        public GuideMapPoint[] MapPoints = Array.Empty<GuideMapPoint>();
+        // The title over the destinations, e.g. "行き先".
+        public string DestinationsLabel = "行き先";
+        public GuideDestination[] Destinations = Array.Empty<GuideDestination>();
 
-        // The button under the map that sets off for the chosen destination.
+        // The button under the destinations that sets off for the chosen one.
         public string DepartLabel = "出発";
     }
 
@@ -69,13 +70,18 @@ namespace Baryonyx.UI.GuideMenu
     }
 
     [Serializable]
-    public sealed class GuideMapPoint
+    public sealed class GuideDestination
     {
+        // The destination of the adventure it sets out for (server/src/features/adventure);
+        // empty for a place the adventure cannot go to yet.
+        public string Id = "";
         public string Name = "";
 
-        // Position on the map image (0-1, bottom left is the origin).
-        public Vector2 Position = new(0.5f, 0.5f);
+        // A short value shown at the right end of the row, e.g. "未踏".
+        public string Badge = "";
         public string Detail = "";
+
+        // 未踏の地。行は暗く表示し、選べない。
         public bool Locked;
     }
 }

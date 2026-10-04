@@ -506,5 +506,71 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(presenter.Saving, Is.False);
         }
+
+        // 冒険の途中は付け替えを送らず、理由を知らせる。
+        [Test]
+        public void DuringAnAdventureTheSlotsDoNotChange()
+        {
+            var view = new FakeView();
+            int saves = 0;
+            using var presenter = new StepBonusSettingsPresenter(
+                view,
+                StepBonusLoadoutTests.Create(),
+                3240,
+                (_, _, _) =>
+                {
+                    saves++;
+                    return Task.FromResult(StepBonusLoadoutTests.Create());
+                },
+                locked: true
+            );
+
+            view.PressSlot(3);
+            view.PressBonus("guard");
+            Assert.That(saves, Is.Zero);
+            Assert.That(presenter.Loadout.Bonus(3), Is.EqualTo("fighting"));
+            Assert.That(
+                view.Notices,
+                Is.EqualTo(new[] { StepBonusSettingsPresenter.LockedMessage })
+            );
+        }
+
+        // 開いたあとに冒険が始まっていれば、サーバーが断り（409）、同じ理由を知らせる。
+        [Test]
+        public void AServerRefusalDuringAnAdventureSaysWhy()
+        {
+            var view = new FakeView();
+            using var presenter = new StepBonusSettingsPresenter(
+                view,
+                StepBonusLoadoutTests.Create(),
+                3240,
+                (_, _, _) =>
+                    Task.FromException<StepBonusLoadout>(
+                        new Baryonyx.Networking.ServerApiException(409)
+                    )
+            );
+
+            view.PressSlot(3);
+            view.PressBonus("guard");
+            Assert.That(
+                view.Notices,
+                Is.EqualTo(new[] { StepBonusSettingsPresenter.LockedMessage })
+            );
+        }
+
+        [Test]
+        public void TheServerTellsWhenTheSlotsAreLocked()
+        {
+            var state = StepBonusServerSource.ToState(
+                new StepBonusApiClient.State
+                {
+                    holdings = Array.Empty<StepBonusApiClient.Holding>(),
+                    slots = Array.Empty<StepBonusApiClient.Slot>(),
+                    locked = true,
+                }
+            );
+            Assert.That(state.Locked, Is.True);
+            Assert.That(StepBonusServerSource.ToState(null).Locked, Is.False);
+        }
     }
 }

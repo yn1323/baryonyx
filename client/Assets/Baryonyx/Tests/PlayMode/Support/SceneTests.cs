@@ -14,6 +14,8 @@ namespace Baryonyx.Tests.PlayMode
         public const string ScenesFolder = "Assets/Baryonyx/App/Scenes";
         public const string TopPath = ScenesFolder + "/Top.unity";
         public const string HomePath = ScenesFolder + "/Home.unity";
+        public const string ExplorationPath = ScenesFolder + "/Exploration.unity";
+        public const string BattlePath = ScenesFolder + "/Battle.unity";
 
         // UI設計ルールで決めた、指で押せる大きさの下限（1920x1080の設計の単位）。
         public const float MinimumTouchSize = 128f;
@@ -31,6 +33,18 @@ namespace Baryonyx.Tests.PlayMode
             while (!condition() && Time.realtimeSinceStartup < deadline)
                 yield return null;
             Assert.That(condition(), Is.True, message);
+        }
+
+        // 非同期の処理（読み込み・保存）が終わるまでフレームを進める。失敗したら例外を出す。
+        public static IEnumerator WaitForTask(
+            System.Threading.Tasks.Task task,
+            float seconds = 5f,
+            string message = "The task did not finish."
+        )
+        {
+            yield return WaitUntil(() => task == null || task.IsCompleted, seconds, message);
+            if (task != null && task.IsFaulted)
+                throw task.Exception.InnerException ?? task.Exception;
         }
 
         // シーンをSingleで読み込み、起動処理と開く演出が終わるまで待つ。

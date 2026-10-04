@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Baryonyx.Adventure;
 using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.Home;
@@ -44,7 +45,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForSteps(bootstrap);
 
             Assert.That(bootstrap.Data, Is.Not.Null);
-            Assert.That(bootstrap.AdventureSceneName, Is.EqualTo(SceneNames.BattleInspect));
+            Assert.That(bootstrap.AdventureSceneName, Is.EqualTo(SceneNames.Exploration));
+            yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
 
             var snapshot = bootstrap.Data.ToSnapshot(Baryonyx.Health.HealthDays.Today());
             snapshot.StepLink = HomeStepLink.Linked;
@@ -161,13 +163,7 @@ namespace Baryonyx.Tests.PlayMode
             var view = bootstrap.View;
 
             foreach (
-                var button in new[]
-                {
-                    view.TavernButton,
-                    view.WorkshopButton,
-                    view.TempleButton,
-                    view.TravelOfficeButton,
-                }
+                var button in new[] { view.TavernButton, view.WorkshopButton, view.TempleButton }
             )
                 SceneTests.AssertTouchSize(button.transform);
             SceneTests.AssertTouchSize(view.ResumeButton.transform);
@@ -291,7 +287,6 @@ namespace Baryonyx.Tests.PlayMode
                 view.TavernButton,
                 view.WorkshopButton,
                 view.TempleButton,
-                view.TravelOfficeButton,
                 view.SettingsButton,
                 view.StepButton,
             };
@@ -333,7 +328,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 設定は準備中を知らせ、シーンを移らない。
-        // 酒場・工房・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
+        // 酒場・装備・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
         public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
         {
@@ -363,13 +358,18 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(HomeScenePath));
         }
 
-        // 右下の行き先カード（再開）は、Shutterで閉じてから戦闘画面のモックを開く。
+        // 冒険していないとき、右下のカードは旅の案内所を開く。
         [UnityTest]
-        public IEnumerator ResumeOpensBattleInspect()
+        public IEnumerator CardOpensTheTravelOfficeWithNoAdventure()
         {
             var bootstrap = default(HomeBootstrap);
             yield return SceneTests.LoadHome(value => bootstrap = value);
+            yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
             var view = bootstrap.View;
+            Assert.That(view.DestinationNameLabel.text, Is.EqualTo(HomeViewState.TravelTitle));
+            Assert.That(view.DestinationFloorLabel.text, Is.EqualTo(HomeViewState.TravelName));
+            Assert.That(view.ResumeLabel.text, Is.EqualTo("出発"));
+            Assert.That(view.DestinationArt.texture, Is.SameAs(view.TravelArt));
 
             // 続けて押しても、シーンの読み込みは1回だけ始める。
             view.ResumeButton.onClick.Invoke();
@@ -378,13 +378,39 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.Transition.IsPlaying, Is.True);
 
             yield return SceneTests.WaitUntil(
-                () => SceneManager.GetActiveScene().name == SceneNames.BattleInspect,
-                message: "BattleInspect did not open."
+                () => SceneManager.GetActiveScene().name == SceneNames.TravelOffice,
+                message: "The travel office did not open."
             );
-            yield return null;
-            Assert.That(
-                Object.FindAnyObjectByType<Baryonyx.Combat.Presentation.BattleInspectView>(),
-                Is.Not.Null
+            Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
+        }
+
+        // 冒険の途中は、右下のカードに行き先と階を出し、探索を再開する。
+        [UnityTest]
+        public IEnumerator CardResumesTheAdventureInProgress()
+        {
+            services
+                .Adventure.StartAsync(AdventureLocalSource.ForestRuins, CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            services
+                .Adventure.MoveAsync("moss-hall", CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+
+            var bootstrap = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => bootstrap = value);
+            yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
+            var view = bootstrap.View;
+            Assert.That(view.DestinationNameLabel.text, Is.EqualTo("森の遺跡"));
+            Assert.That(view.DestinationFloorLabel.text, Is.EqualTo("B2F"));
+            Assert.That(view.ResumeLabel.text, Is.EqualTo("再開"));
+            Assert.That(view.DestinationArt.texture, Is.SameAs(view.ResumeArt));
+
+            view.ResumeButton.onClick.Invoke();
+            Assert.That(bootstrap.Presenter.AdventureStarted, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Exploration,
+                message: "The exploration did not open."
             );
             Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
         }

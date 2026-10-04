@@ -6,6 +6,7 @@ using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -32,7 +33,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(GuideScenesTests));
         }
 
-        // Homeの4つのボタンから、それぞれの案内人の画面へ移り、「もどる」でHomeへ戻る。
+        // Homeの左下の3つのボタンと、冒険していないときの右下のカードから、それぞれの案内人の画面へ移り、
+        // 「もどる」でHomeへ戻る。
         [UnityTest]
         public IEnumerator EveryHomeButtonOpensItsGuideSceneAndBackReturnsHome()
         {
@@ -49,10 +51,17 @@ namespace Baryonyx.Tests.PlayMode
             )
             {
                 Assert.That(SceneNames.GuideFor(action), Is.EqualTo(sceneName));
+                // 右下のカードは、冒険の状態を読んでから旅の案内所を開く。
+                yield return SceneTests.WaitForTask(home.AdventureTask);
                 // 続けて押しても、画面は1回だけ開く。
                 ButtonFor(home.View, action).onClick.Invoke();
                 ButtonFor(home.View, action).onClick.Invoke();
-                Assert.That(home.Presenter.ScreenOpened, Is.True);
+                Assert.That(
+                    action == HomeAction.TravelOffice
+                        ? home.Presenter.AdventureStarted
+                        : home.Presenter.ScreenOpened,
+                    Is.True
+                );
 
                 yield return SceneTests.WaitUntil(
                     () => SceneManager.GetActiveScene().name == sceneName,
@@ -90,7 +99,7 @@ namespace Baryonyx.Tests.PlayMode
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
                     SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
-                    // 酒場と工房のメニューは、項目名の前にドット絵のアイコンを置く。
+                    // 酒場と装備のメニューは、項目名の前にドット絵のアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find("Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
                 }
@@ -285,28 +294,39 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        // 旅の案内所は、メニューを通さずに行き先のリストを出す。未踏の地は名前を伏せ、選べない。
         [UnityTest]
-        public IEnumerator WorldMapChoosesDestinationsOnTheMap()
+        public IEnumerator TravelOfficeChoosesDestinationsFromTheList()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.TravelOffice, value => guide = value);
             var view = guide.View;
-            var points = view.Definition.MapPoints;
+            var destinations = view.Definition.Destinations;
 
-            Assert.That(view.MapPanel.activeSelf, Is.True);
-            // マップの画面には、メニューとリストを作らない。
+            Assert.That(view.DestinationPanel.activeSelf, Is.True);
+            // 行き先の画面には、メニューと項目のリストを作らない。
             Assert.That(view.MenuPanel, Is.Null);
-            Assert.That(view.Pins.Length, Is.EqualTo(points.Length));
+            Assert.That(view.ListPanel, Is.Null);
+            Assert.That(view.DestinationRows.Length, Is.EqualTo(destinations.Length));
             Assert.That(view.Depart.interactable, Is.False);
 
-            int locked = System.Array.FindIndex(points, point => point.Locked);
-            view.Pins[locked].onClick.Invoke();
-            Assert.That(view.Depart.interactable, Is.False);
+            int locked = System.Array.FindIndex(destinations, destination => destination.Locked);
+            Assert.That(view.DestinationRows[locked].interactable, Is.False);
+            Assert.That(
+                view.DestinationRows[locked].transform.Find("Name").GetComponent<TMP_Text>().text,
+                Is.EqualTo("？？？")
+            );
 
-            int open = System.Array.FindIndex(points, point => !point.Locked);
-            view.Pins[open].onClick.Invoke();
+            int open = System.Array.FindIndex(
+                destinations,
+                destination => !destination.Locked && destination.Id == ""
+            );
+            view.DestinationRows[open].onClick.Invoke();
             Assert.That(view.Depart.interactable, Is.True);
-            Assert.That(view.MapDetail.text, Does.StartWith(points[open].Name));
+            Assert.That(
+                view.DestinationRows[open].transform.Find("Selected").gameObject.activeSelf,
+                Is.True
+            );
             view.Depart.onClick.Invoke();
             Assert.That(view.ToastMessage, Is.EqualTo("出発（準備中）"));
         }
@@ -317,7 +337,8 @@ namespace Baryonyx.Tests.PlayMode
                 HomeAction.Tavern => view.TavernButton,
                 HomeAction.Workshop => view.WorkshopButton,
                 HomeAction.Temple => view.TempleButton,
-                _ => view.TravelOfficeButton,
+                // 旅の案内所は、冒険していないときの右下のカードから開く。
+                _ => view.ResumeButton,
             };
 
         private static StepBonusSettingsView BonusSettings(GuideMenuView view) =>

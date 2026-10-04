@@ -38,5 +38,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Debug/EnemyLab.unity
     guid: 6cf2aeebb3fc64ec2b01986d7b2d467f
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Exploration.unity
+    guid: 41fe1237284ea435faf3439ba2d8a4f7
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

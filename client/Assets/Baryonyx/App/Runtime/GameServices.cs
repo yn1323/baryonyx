@@ -1,5 +1,6 @@
 using System;
 using Baryonyx.Account;
+using Baryonyx.Adventure;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
 using Baryonyx.Networking;
@@ -19,13 +20,15 @@ namespace Baryonyx.App
             HealthStepLink health,
             bool preview,
             IStepBonusSource stepBonus = null,
-            IPartySource party = null
+            IPartySource party = null,
+            IAdventureSource adventure = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
             Preview = preview;
             StepBonus = stepBonus;
             Party = party;
+            Adventure = adventure;
         }
 
         public HealthStepLink Health { get; }
@@ -36,6 +39,9 @@ namespace Baryonyx.App
 
         // 酒場の編成・カード・レベルを読み書きするサーバー。接続先がなければnull。
         public IPartySource Party { get; }
+
+        // 冒険の状態を読み書きするサーバー。接続先がなければnull。
+        public IAdventureSource Adventure { get; }
 
         public static GameServices GetOrCreate(HealthConnectionSettings settings)
         {
@@ -53,6 +59,7 @@ namespace Baryonyx.App
             current = services;
             StepBonusSession.Source = services?.StepBonus;
             PartySession.Source = services?.Party;
+            AdventureSession.Source = services?.Adventure;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -83,7 +90,10 @@ namespace Baryonyx.App
                 sync != null
                     ? new StepBonusServerSource(sync, new StepBonusApiClient(server))
                     : null,
-                sync != null ? new PartyServerSource(sync, new PartyApiClient(server)) : null
+                sync != null ? new PartyServerSource(sync, new PartyApiClient(server)) : null,
+                sync != null
+                    ? new AdventureServerSource(sync, new AdventureApiClient(server))
+                    : null
             );
         }
 

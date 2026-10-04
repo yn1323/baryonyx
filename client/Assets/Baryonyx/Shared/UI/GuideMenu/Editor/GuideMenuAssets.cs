@@ -15,7 +15,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 {
     /// <summary>
     /// Generates each feature's guide screen prefab from its definition. Every menu row, list
-    /// row and map pin is baked into the prefab, so the text can be read in the editor without
+    /// row and destination is baked into the prefab, so the text can be read in the editor without
     /// Play Mode. Coordinates follow the 1920x1080 design: the art fills the screen and the
     /// controls sit in the Safe Area.
     /// </summary>
@@ -27,8 +27,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string FrameSelectedPath = ArtFolder + "/GuideFrameSelected.png";
         public const string ShadeHorizontalPath = ArtFolder + "/GuideShadeHorizontal.png";
         public const string SoftSpotPath = ArtFolder + "/GuideSoftSpot.png";
-        public const string MarkerPath = ArtFolder + "/GuideMapMarker.png";
-        public const string MarkerSelectedPath = ArtFolder + "/GuideMapMarkerSelected.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
         public const string IconBackPath = ArtFolder + "/IconBack.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
@@ -42,7 +40,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const int FrameCorner = 4;
         private const int FrameTile = 16;
 
-        // The guide stands in this box at the bottom left; the list and map start right of it.
+        // The guide stands in this box at the bottom left; the lists start right of it.
         private const float GuideLeft = 24f;
         private const float GuideMaxWidth = 800f;
         private const float GuideMaxHeight = 1048f;
@@ -57,6 +55,10 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
         public static readonly Color Gold = new(1f, 0.843f, 0.4f);
         private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
+
+        // A locked row (an unexplored destination) is drawn at this opacity, with its name hidden.
+        private const float LockedAlpha = 0.5f;
+        private const string HiddenName = "？？？";
 
         private static TMP_FontAsset font;
         private static Material shadowText;
@@ -78,7 +80,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string guideArtPath,
             string backgroundPath,
             Action<GuideMenuDefinition> fill,
-            string mapArtPath = null,
             Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel = null
         )
         {
@@ -105,12 +106,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             }
             fill(definition);
             definition.GuideArt = ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
-            // The backgrounds and the map are generated illustrations used as they are.
+            // The backgrounds are generated illustrations used as they are.
             definition.Background = ArtAssets.ImportTexture(backgroundPath, FilterMode.Bilinear);
-            definition.MapArt =
-                mapArtPath != null
-                    ? ArtAssets.ImportTexture(mapArtPath, FilterMode.Bilinear)
-                    : null;
             definition.GuideDotSize = FitDotSize(definition.GuideArt);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
@@ -165,17 +162,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 Detail = detail,
             };
 
-        public static GuideMapPoint Point(
+        public static GuideDestination Destination(
             string name,
-            float x,
-            float y,
             string detail,
-            bool locked = false
+            string badge = "",
+            bool locked = false,
+            string id = ""
         ) =>
             new()
             {
+                Id = id,
                 Name = name,
-                Position = new Vector2(x, y),
+                Badge = badge,
                 Detail = detail,
                 Locked = locked,
             };
@@ -199,8 +197,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 var safe = SafeArea(root);
                 view.GuideArt = BuildGuide(safe, definition);
                 BuildHeader(safe, view, definition);
-                if (definition.Layout == GuideMenuLayout.Map)
-                    BuildMap(safe, view, definition);
+                if (definition.Layout == GuideMenuLayout.Destinations)
+                    BuildDestinations(safe, view, definition);
                 else
                 {
                     BuildMenu(safe, view, definition);
@@ -208,6 +206,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     BuildItemPanels(safe, view, definition, itemPanel);
                 }
                 BuildToast(root, view);
+                // The departure asks before setting out (the travel office).
+                if (definition.Layout == GuideMenuLayout.Destinations)
+                    view.Dialog = Baryonyx.UI.Editor.GameDialogAssets.Build(root);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
             }
@@ -222,7 +223,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             background.gameObject.AddComponent<ResponsiveBackground>().AspectRatio =
                 definition.Background.width / (float)definition.Background.height;
 
-            // Darkens the right side behind the menu, list and map.
+            // Darkens the right side behind the menu and the lists.
             var shade = Rect("ShadeRight", root);
             shade.anchorMin = new Vector2(1, 0);
             shade.anchorMax = Vector2.one;
@@ -375,84 +376,144 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition
         )
         {
-            var panel = Rect("List", safe);
-            Stretch(panel);
-            panel.offsetMin = new Vector2(RightLeft, 24);
-            panel.offsetMax = new Vector2(-32, -148);
+            var panel = RightPanel(safe, "List");
             Frame(panel, FramePath, Color.white);
             view.ListPanel = panel.gameObject;
 
             var first = definition.Items.Length > 0 ? definition.Items[0] : new GuideMenuItem();
-            view.ListTitle = Label(
-                panel,
-                "ListTitle",
-                first.Label,
-                48,
-                Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            Fill(
-                (RectTransform)view.ListTitle.transform,
-                new Vector2(48, 0),
-                new Vector2(-48, -32)
-            );
+            view.ListTitle = ListTitle(panel, first.Label);
+            var viewport = ListViewport(panel);
 
+            var lists = new List<RectTransform>();
+            for (int i = 0; i < definition.Items.Length; i++)
+            {
+                var content = ListContent(viewport, "List" + i);
+                var entries = definition.Items[i].Entries;
+                for (int j = 0; j < entries.Length; j++)
+                    BuildEntry(
+                        content,
+                        "Entry" + j,
+                        entries[j].Name,
+                        entries[j].Badge,
+                        entries[j].Detail
+                    );
+                // Only the first list shows in the editor; the view switches them at runtime.
+                content.gameObject.SetActive(i == 0);
+                lists.Add(content);
+            }
+            view.Lists = lists.ToArray();
+            view.ListScroll = ListScroll(panel, viewport, lists.Count > 0 ? lists[0] : null);
+            (view.Confirm, view.ConfirmLabel) = ConfirmButton(panel, first.ConfirmLabel);
+
+            // The menu shows first; turn the list on in the editor to read its rows.
+            panel.gameObject.SetActive(false);
+        }
+
+        // The travel office: the destinations fill the right side from the start, without a
+        // menu. A row turns gold when chosen, and the depart button below sets off for it.
+        private static void BuildDestinations(
+            RectTransform safe,
+            GuideMenuView view,
+            GuideMenuDefinition definition
+        )
+        {
+            var panel = RightPanel(safe, "Destinations");
+            Frame(panel, FramePath, Color.white);
+            view.DestinationPanel = panel.gameObject;
+
+            ListTitle(panel, definition.DestinationsLabel);
+            var viewport = ListViewport(panel);
+            var content = ListContent(viewport, "List");
+            var rows = new Button[definition.Destinations.Length];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                var destination = definition.Destinations[i];
+                rows[i] = BuildEntry(
+                    content,
+                    "Destination" + i,
+                    destination.Locked ? HiddenName : destination.Name,
+                    destination.Badge,
+                    destination.Detail
+                );
+                // 未踏の地は名前を伏せ、行ごと暗くして押せなくする。右端の札にも「未踏」と書く。
+                if (destination.Locked)
+                {
+                    rows[i].interactable = false;
+                    rows[i].gameObject.AddComponent<CanvasGroup>().alpha = LockedAlpha;
+                }
+            }
+            view.DestinationRows = rows;
+            ListScroll(panel, viewport, content);
+            (view.Depart, _) = ConfirmButton(panel, definition.DepartLabel);
+        }
+
+        // The gold title at the top left of a full list.
+        private static TMP_Text ListTitle(RectTransform panel, string text)
+        {
+            var title = Label(panel, "ListTitle", text, 48, Gold, TextAlignmentOptions.TopLeft);
+            Fill((RectTransform)title.transform, new Vector2(48, 0), new Vector2(-48, -32));
+            return title;
+        }
+
+        // The clipped area between the title and the confirm button where the rows scroll.
+        private static RectTransform ListViewport(RectTransform panel)
+        {
             var viewport = Rect("Viewport", panel);
             Stretch(viewport);
             viewport.offsetMin = new Vector2(28, 148);
             viewport.offsetMax = new Vector2(-28, -104);
             viewport.gameObject.AddComponent<RectMask2D>();
             AddImage(viewport, Color.clear, true);
+            return viewport;
+        }
 
-            var lists = new List<RectTransform>();
-            for (int i = 0; i < definition.Items.Length; i++)
-            {
-                var content = Rect("List" + i, viewport);
-                content.anchorMin = new Vector2(0, 1);
-                content.anchorMax = Vector2.one;
-                content.pivot = new Vector2(0.5f, 1);
-                content.sizeDelta = Vector2.zero;
-                var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
-                group.spacing = 12;
-                group.childControlWidth = group.childControlHeight = true;
-                group.childForceExpandWidth = true;
-                group.childForceExpandHeight = false;
-                content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-                    .FitMode
-                    .PreferredSize;
-                var entries = definition.Items[i].Entries;
-                for (int j = 0; j < entries.Length; j++)
-                    BuildEntry(content, "Entry" + j, entries[j]);
-                // Only the first list shows in the editor; the view switches them at runtime.
-                content.gameObject.SetActive(i == 0);
-                lists.Add(content);
-            }
-            view.Lists = lists.ToArray();
+        // A column of rows that grows downward from the top of the viewport.
+        private static RectTransform ListContent(RectTransform viewport, string name)
+        {
+            var content = Rect(name, viewport);
+            content.anchorMin = new Vector2(0, 1);
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1);
+            content.sizeDelta = Vector2.zero;
+            var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            group.spacing = 12;
+            group.childControlWidth = group.childControlHeight = true;
+            group.childForceExpandWidth = true;
+            group.childForceExpandHeight = false;
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
+                .FitMode
+                .PreferredSize;
+            return content;
+        }
 
+        private static ScrollRect ListScroll(
+            RectTransform panel,
+            RectTransform viewport,
+            RectTransform content
+        )
+        {
             var scroll = panel.gameObject.AddComponent<ScrollRect>();
             scroll.viewport = viewport;
-            scroll.content = lists.Count > 0 ? lists[0] : null;
+            scroll.content = content;
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40;
-            view.ListScroll = scroll;
+            return scroll;
+        }
 
+        // The gold button at the bottom right that applies the chosen row; off until one is chosen.
+        private static (Button Button, TMP_Text Label) ConfirmButton(
+            RectTransform panel,
+            string text
+        )
+        {
             var confirm = Rect("Confirm", panel);
             Corner(confirm, new Vector2(1, 0), new Vector2(-32, 28), new Vector2(360, 104));
-            view.Confirm = AddButton(confirm, Frame(confirm, FrameSelectedPath, Color.white));
-            view.ConfirmLabel = Label(
-                confirm,
-                "Label",
-                first.ConfirmLabel,
-                44,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)view.ConfirmLabel.transform);
-            view.Confirm.interactable = false;
-
-            // The menu shows first; turn the list on in the editor to read its rows.
-            panel.gameObject.SetActive(false);
+            var button = AddButton(confirm, Frame(confirm, FrameSelectedPath, Color.white));
+            var label = Label(confirm, "Label", text, 44, TextMain, TextAlignmentOptions.Center);
+            Stretch((RectTransform)label.transform);
+            button.interactable = false;
+            return (button, label);
         }
 
         // A feature's own panel in the list's place, for the items that have one.
@@ -483,122 +544,31 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return panel;
         }
 
-        private static void BuildEntry(RectTransform content, string name, GuideListEntry entry)
+        private static Button BuildEntry(
+            RectTransform content,
+            string name,
+            string title,
+            string badge,
+            string detail
+        )
         {
             var row = Rect(name, content);
             var size = row.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = 128;
-            AddButton(row, Frame(row, FramePath, new Color(1f, 1f, 1f, 0.9f)));
+            var button = AddButton(row, Frame(row, FramePath, new Color(1f, 1f, 1f, 0.9f)));
             var selected = Rect("Selected", row);
             Stretch(selected);
             Frame(selected, FrameSelectedPath, Color.white).raycastTarget = false;
             selected.gameObject.SetActive(false);
-            var label = Label(row, "Name", entry.Name, 42, TextMain, TextAlignmentOptions.Left);
+            var label = Label(row, "Name", title, 42, TextMain, TextAlignmentOptions.Left);
             Band((RectTransform)label.transform, top: true, 18, 54, 40, 260);
-            var detail = Label(row, "Detail", entry.Detail, 28, TextSub, TextAlignmentOptions.Left);
-            Band((RectTransform)detail.transform, top: false, 14, 48, 42, 40);
-            Shrink(detail, 18);
-            var badge = Label(row, "Badge", entry.Badge, 34, Gold, TextAlignmentOptions.Right);
-            var badgeRect = (RectTransform)badge.transform;
+            var detailLabel = Label(row, "Detail", detail, 28, TextSub, TextAlignmentOptions.Left);
+            Band((RectTransform)detailLabel.transform, top: false, 14, 48, 42, 40);
+            Shrink(detailLabel, 18);
+            var badgeLabel = Label(row, "Badge", badge, 34, Gold, TextAlignmentOptions.Right);
+            var badgeRect = (RectTransform)badgeLabel.transform;
             Band(badgeRect, top: true, 20, 50, 40, 40);
             badgeRect.anchorMin = new Vector2(0.5f, 1);
-        }
-
-        private static void BuildMap(
-            RectTransform safe,
-            GuideMenuView view,
-            GuideMenuDefinition definition
-        )
-        {
-            var panel = Rect("MapPanel", safe);
-            Stretch(panel);
-            panel.offsetMin = new Vector2(RightLeft, 24);
-            panel.offsetMax = new Vector2(-32, -148);
-            view.MapPanel = panel.gameObject;
-
-            var holder = Rect("MapHolder", panel);
-            Stretch(holder);
-            holder.offsetMin = new Vector2(0, 148);
-            Frame(holder, FramePath, Color.white).raycastTarget = false;
-
-            // The fitter overrides the map's own offsets, so the frame padding is a parent rect.
-            var area = Rect("MapArea", holder);
-            Stretch(area);
-            area.offsetMin = new Vector2(20, 20);
-            area.offsetMax = new Vector2(-20, -20);
-            var map = Rect("Map", area);
-            Stretch(map);
-            var mapImage = map.gameObject.AddComponent<RawImage>();
-            mapImage.texture = definition.MapArt;
-            mapImage.raycastTarget = false;
-            var fitter = map.gameObject.AddComponent<AspectRatioFitter>();
-            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-            fitter.aspectRatio = definition.MapArt.width / (float)definition.MapArt.height;
-
-            var pins = new List<Button>();
-            for (int i = 0; i < definition.MapPoints.Length; i++)
-                pins.Add(BuildPin(map, "Pin" + i, definition.MapPoints[i]));
-            view.Pins = pins.ToArray();
-
-            var footer = Rect("Footer", panel);
-            footer.anchorMin = Vector2.zero;
-            footer.anchorMax = new Vector2(1, 0);
-            footer.pivot = new Vector2(0.5f, 0);
-            footer.sizeDelta = new Vector2(0, 124);
-            Frame(footer, FramePath, Color.white).raycastTarget = false;
-            view.MapDetail = Label(
-                footer,
-                "Detail",
-                "行き先を選んでください",
-                36,
-                TextMain,
-                TextAlignmentOptions.Left
-            );
-            view.MapDetail.textWrappingMode = TextWrappingModes.Normal;
-            Shrink(view.MapDetail, 22);
-            Fill(
-                (RectTransform)view.MapDetail.transform,
-                new Vector2(40, 16),
-                new Vector2(-340, -16)
-            );
-
-            var depart = Rect("Depart", footer);
-            Corner(depart, new Vector2(1, 0.5f), new Vector2(-16, 0), new Vector2(300, 100));
-            view.Depart = AddButton(depart, Frame(depart, FrameSelectedPath, Color.white));
-            var departLabel = Label(
-                depart,
-                "Label",
-                definition.DepartLabel,
-                44,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)departLabel.transform);
-            view.Depart.interactable = false;
-        }
-
-        private static Button BuildPin(RectTransform map, string name, GuideMapPoint point)
-        {
-            var pin = Rect(name, map);
-            pin.anchorMin = pin.anchorMax = point.Position;
-            pin.pivot = new Vector2(0.5f, 0.5f);
-            pin.anchoredPosition = Vector2.zero;
-            pin.sizeDelta = new Vector2(120, 120);
-            var button = AddButton(pin, AddImage(pin, Color.clear, true));
-            var ring = Rect("Selected", pin);
-            Place(ring, Vector2.zero, new Vector2(13, 13) * DotScale);
-            SpriteImage(ring, MarkerSelectedPath, Color.white);
-            ring.gameObject.SetActive(false);
-            var marker = Rect("Marker", pin);
-            Place(marker, Vector2.zero, new Vector2(9, 9) * DotScale);
-            // Locked destinations are greyed out.
-            SpriteImage(
-                marker,
-                MarkerPath,
-                point.Locked ? new Color(0.45f, 0.45f, 0.5f, 1f) : Color.white
-            );
-            var label = Label(pin, "Name", point.Name, 30, TextMain, TextAlignmentOptions.Center);
-            Place((RectTransform)label.transform, new Vector2(0, -52), new Vector2(320, 44));
             return button;
         }
 
@@ -629,18 +599,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             WriteArrow(ArrowPath);
             WriteGradient(ShadeHorizontalPath);
             WriteSoftSpot(SoftSpotPath);
-            WriteMarker(
-                MarkerPath,
-                new Color32(226, 66, 58, 255),
-                new Color32(255, 170, 140, 255),
-                9
-            );
-            WriteMarker(
-                MarkerSelectedPath,
-                new Color32(255, 215, 102, 255),
-                new Color32(255, 250, 210, 255),
-                13
-            );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ArtAssets.ImportSprite(
                 FramePath,
@@ -654,8 +612,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 FilterMode.Point,
                 fullRect: true
             );
-            ArtAssets.ImportSprite(MarkerPath, Vector4.zero, FilterMode.Point);
-            ArtAssets.ImportSprite(MarkerSelectedPath, Vector4.zero, FilterMode.Point);
             ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
             ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             Icon(IconBackPath);
@@ -780,26 +736,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Save(texture, path);
         }
 
-        // A diamond with a dark rim and a highlight on the upper left.
-        private static void WriteMarker(string path, Color32 body, Color32 light, int size)
-        {
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            int c = size / 2;
-            var rim = new Color32(20, 16, 28, 255);
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                int d = Mathf.Abs(x - c) + Mathf.Abs(y - c);
-                Color32 color =
-                    d > c ? new Color32(0, 0, 0, 0)
-                    : d == c ? rim
-                    : x < c && y > c && d >= c - 2 ? light
-                    : body;
-                texture.SetPixel(x, y, color);
-            }
-            Save(texture, path);
-        }
-
         private static void Save(Texture2D texture, string path)
         {
             File.WriteAllBytes(path, texture.EncodeToPNG());
@@ -827,7 +763,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static Button AddTintButton(RectTransform rect, Graphic target) =>
             DimWhenDisabled(UiBuild.AddTintButton(rect, target));
 
-        // The confirm and depart buttons stay disabled until a row or a pin is chosen.
+        // The confirm and depart buttons stay disabled until a row is chosen; locked rows stay off.
         private static Button DimWhenDisabled(Button button)
         {
             var colors = button.colors;

@@ -65,6 +65,20 @@ namespace Baryonyx.Home
         // 実行中または直前の歩数の取得。テストで完了を待つために公開する。
         public Task StepTask { get; private set; } = Task.CompletedTask;
 
+        /// <summary>
+        /// Shows whether an adventure is in progress on the destination card: its place and floor
+        /// to resume, or the travel office to set out from.
+        /// </summary>
+        public void ShowAdventure(bool inProgress, string destination, string floor)
+        {
+            if (disposed)
+                return;
+            snapshot.AdventureInProgress = inProgress;
+            snapshot.DestinationName = destination ?? "";
+            snapshot.DestinationFloor = floor ?? "";
+            view.Render(HomeViewState.From(snapshot));
+        }
+
         public void Handle(HomeAction action)
         {
             if (disposed || adventureStarted || screenOpened)
@@ -73,7 +87,8 @@ namespace Baryonyx.Home
             if (action == HomeAction.Resume && startAdventure != null)
             {
                 adventureStarted = startAdventure();
-                if (!adventureStarted)
+                // 開けなかった理由を呼び出し元が知らせていれば、それを残す。
+                if (!adventureStarted && string.IsNullOrEmpty(view.CurrentToast))
                     view.ShowToast("再開できませんでした");
                 return;
             }

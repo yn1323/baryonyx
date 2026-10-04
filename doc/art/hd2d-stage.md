@@ -49,7 +49,8 @@ updated: 2026-10-04
 | Top | 星空の夜の山の門（[StarlitGateStage](../../client/Assets/Baryonyx/Shared/Art/Stages/StarlitGate/StarlitGateStage.prefab)） | 目の高さに近い位置から、松明の並ぶ石の道と段の先の門を見る。縦の画角42度、見下ろし5度。半径10px・30秒で1周する揺れ。開いたときに2.2m後ろ・0.4m上から4秒ですべり込む | 門の背後からの月明かり（冷色・影あり）、手前からの弱い冷色の補助光（影なし）、松明6本、門の中の青い光、蛍 | `StarlitGateLook`。従来の2Dの塵は3Dの舞台の上に重ねる（広間の天井から差す光芒と、2Dの霧は外した） |
 | Home | 昼の森の野営地（[ForestGladeStage](../../client/Assets/Baryonyx/Shared/Art/Stages/ForestGlade/ForestGladeStage.prefab)） | 高さ4.4mから見下ろし18度、縦の画角32度の望遠寄り。半径6px・26秒で1周する揺れ。開いたときに0.9m後ろ・0.35m上から2.6秒ですべり込む | 左上の背後からの太陽（暖色・影あり・木漏れ日）、光の筋5本と漂う塵、焚き火の小さな光（影なし） | `ForestGladeLook` |
 | BattleInspect | 夕暮れの高原の環状列石（[DuskHighlandStage](../../client/Assets/Baryonyx/Shared/Art/Stages/DuskHighland/DuskHighlandStage.prefab)） | 縦の画角30度、見下ろし20度の望遠寄り。戦場の円運動と被弾の揺れに合わせてカメラが動く | 左からの低い夕日（暖色・影あり。影は右へ長く落ちる）、奥の2つのかがり火、漂う砂ぼこり | 戦場の `BattlePostProcess`（Bloomのしきい値1）に、優先度1の `DuskHighlandLook` を重ねる |
-| Battle | 夕暮れの高原と10種類の[戦闘の背景](#戦闘の背景)から、Inspectorで1つを選ぶ | BattleInspectと同じ | 背景ごと（[戦闘の背景](#戦闘の背景)） | `BattlePostProcess` に、優先度1の背景ごとの `<舞台>Look` を重ねる |
+| Battle | 夕暮れの高原と10種類の[戦闘の背景](#戦闘の背景)から、Inspectorで1つを選ぶ。冒険から開いたときは行き先の背景（森の遺跡は朝霧の森） | BattleInspectと同じ | 背景ごと（[戦闘の背景](#戦闘の背景)） | `BattlePostProcess` に、優先度1の背景ごとの `<舞台>Look` を重ねる |
+| Exploration | Battleと同じ舞台の一式から、冒険の行き先の背景を選ぶ（[冒険の画面](../features/screens.md#冒険の画面)） | BattleInspectと同じ | 背景ごと | Battleと同じ。味方の位置に4人、敵の位置に遺跡の門を立てる |
 
 カメラの位置・角度・画角、環境光と霧の色・距離は、[StageSetAssets](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/StageSetAssets.cs) の `TopView`・`HomeView`・`BattleView`・`StarlitEnvironment`・`GladeEnvironment`・`DuskEnvironment` が持つ。
 最初に使った広間（`DungeonHallStage`）と森の遺跡（`ForestRuinsStage`）は、舞台として残している（今はどの画面でも使わない）。
@@ -423,7 +424,7 @@ HD-2Dの開発者は、点光源でキャラと物に影を落とし、光と影
 | Android端末での負荷（影・Bloom・舞台のレンズ・点光源の数） | 未確認。発熱やフレーム落ちがあれば、舞台のレンズの半径、Bloom、影の解像度の順に下げる |
 | 行き先カードの場所の名前 | Homeの行き先カードは「森の遺跡」の絵と名前のまま。戦闘の舞台（夕暮れの高原）と合わせるかは未定 |
 | 使っていない舞台 | 広間と森の遺跡は、ダンジョンの中や森の遺跡の場面に使えるよう残している。使わないと決めたら削除する |
-| 案内人の画面（酒場・工房・神殿・旅の案内所）の3D化 | 今回の対象外。2Dのまま |
+| 案内人の画面（酒場・装備・神殿・旅の案内所）の3D化 | 今回の対象外。2Dのまま |
 | 探索・マップ移動の舞台 | 移動しない前提で作った。移動を加えるときは、床の分割や光の数を見直す |
 | 戦闘の背景とゲームの行き先の対応 | 場所の名前・行き先・敵の構成が未決のため、背景はInspectorで選ぶだけで、どの戦闘でどれを使うかは決めていない |
 | Battleシーンの読み込みの重さ | 11種類の舞台を1つのシーンに置き、選んでいない舞台は無効にしている。無効でもテクスチャとメッシュは読み込まれる。Android端末でのメモリと読み込み時間は未確認。実際の戦闘で使うときは、選んだ舞台だけを読み込む作りに改める |

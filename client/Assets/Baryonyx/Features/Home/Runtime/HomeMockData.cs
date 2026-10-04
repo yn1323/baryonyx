@@ -21,6 +21,9 @@ namespace Baryonyx.Home
         [Min(0)]
         public int Runes = 12480;
 
+        [Tooltip("冒険の途中にすると、右下のカードが行き先の再開になります。")]
+        public bool AdventureInProgress;
+
         public string DestinationName = "森の遺跡";
 
         public string DestinationFloor = "B3F";
@@ -31,6 +34,7 @@ namespace Baryonyx.Home
                 StepLink = StepLink,
                 Steps = Steps,
                 Runes = Runes,
+                AdventureInProgress = AdventureInProgress,
                 DestinationName = DestinationName,
                 DestinationFloor = DestinationFloor,
                 Today = today,

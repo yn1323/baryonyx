@@ -16,6 +16,7 @@ namespace Baryonyx.Tests.EditMode
                 StepLink = link,
                 Steps = steps,
                 Runes = 12480,
+                AdventureInProgress = true,
                 DestinationName = "森の遺跡",
                 DestinationFloor = "B3F",
                 Today = new DateTime(2026, 9, 24),
@@ -37,6 +38,21 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
             Assert.That(state.DestinationNameText, Is.EqualTo("森の遺跡"));
             Assert.That(state.DestinationFloorText, Is.EqualTo("B3F"));
+            Assert.That(state.ResumeText, Is.EqualTo("再開"));
+        }
+
+        // 冒険していないとき、右下のカードは行き先の代わりに旅の案内所を出す。
+        [Test]
+        public void WithNoAdventureTheCardOpensTheTravelOffice()
+        {
+            var snapshot = Sample();
+            snapshot.AdventureInProgress = false;
+            var state = HomeViewState.From(snapshot);
+
+            Assert.That(state.AdventureInProgress, Is.False);
+            Assert.That(state.DestinationNameText, Is.EqualTo(HomeViewState.TravelTitle));
+            Assert.That(state.DestinationFloorText, Is.EqualTo(HomeViewState.TravelName));
+            Assert.That(state.ResumeText, Is.EqualTo("出発"));
         }
 
         [Test]

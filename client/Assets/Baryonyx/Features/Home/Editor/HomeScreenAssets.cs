@@ -31,6 +31,10 @@ namespace Baryonyx.Home.Editor
             "Assets/Baryonyx/Features/Home/Vfx/CampfireFlame.mat";
         public const string BackgroundPath = "Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png";
         public const string DestinationArtPath = "Assets/Baryonyx/Shared/Art/Stages/Forest.png";
+
+        /// <summary>The travel office's world map, on the card while no adventure is in progress.</summary>
+        public const string TravelArtPath =
+            "Assets/Baryonyx/Features/TravelOffice/UI/Art/WorldMap.png";
         public const string CharactersPath =
             "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
@@ -73,6 +77,7 @@ namespace Baryonyx.Home.Editor
         private const float BalanceRuneSize = 24f * 2f;
 
         private static Texture2D destinationArt;
+        private static Texture2D travelArt;
 
         [MenuItem("Baryonyx/Home/Create Screen Assets")]
         public static void CreateAssets()
@@ -89,6 +94,8 @@ namespace Baryonyx.Home.Editor
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
             destinationArt = ArtAssets.ImportTexture(DestinationArtPath, FilterMode.Point);
+            // The map is a generated illustration used as it is, like on the travel office.
+            travelArt = ArtAssets.ImportTexture(TravelArtPath, FilterMode.Bilinear);
             var background = ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
             var characters = ArtAssets.ImportTexture(CharactersPath, FilterMode.Point);
             var toma = ArtAssets.ImportTexture(TomaPath, FilterMode.Point);
@@ -650,7 +657,7 @@ namespace Baryonyx.Home.Editor
                 nav,
                 Vector2.zero,
                 new Vector2(48, 32),
-                new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight)
+                new Vector2(NavWidth * 3 + NavSpacing * 2, NavHeight)
             );
             var row = nav.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = NavSpacing;
@@ -661,7 +668,7 @@ namespace Baryonyx.Home.Editor
             view.WorkshopButton = NavButton(
                 nav,
                 "WorkshopButton",
-                "工房",
+                "装備",
                 HomeScreenArt.IconEquipmentPath
             );
             view.TempleButton = NavButton(
@@ -670,12 +677,7 @@ namespace Baryonyx.Home.Editor
                 "神殿",
                 HomeScreenArt.IconSummonPath
             );
-            view.TravelOfficeButton = NavButton(
-                nav,
-                "TravelOfficeButton",
-                "旅の案内所",
-                HomeScreenArt.IconCompassPath
-            );
+            // The travel office opens from the card at the bottom right (BuildResume).
         }
 
         private static Button NavButton(
@@ -714,9 +716,11 @@ namespace Baryonyx.Home.Editor
             return button;
         }
 
+        // The destination card: resumes the adventure in progress, or, with none, opens the
+        // travel office to set out from (HomeViewState).
         private static void BuildResume(RectTransform safe, HomeView view)
         {
-            const float cardWidth = 500f;
+            const float cardWidth = 560f;
             const float cardHeight = 200f;
             var cardOffset = new Vector2(-48, 44);
 
@@ -747,10 +751,16 @@ namespace Baryonyx.Home.Editor
             var art = Rect("DestinationArt", card);
             Stretch(art);
             var artImage = art.gameObject.AddComponent<RawImage>();
-            artImage.texture = destinationArt;
-            float visible = (cardHeight / cardWidth) * destinationArt.width / destinationArt.height;
-            artImage.uvRect = new Rect(0, 1 - visible - (1 - visible) * 0.3f, 1, visible);
+            artImage.texture = travelArt;
+            artImage.uvRect = HomeView.CoverUv(
+                new Vector2(cardWidth, cardHeight),
+                travelArt.width,
+                travelArt.height
+            );
             artImage.raycastTarget = false;
+            view.DestinationArt = artImage;
+            view.ResumeArt = destinationArt;
+            view.TravelArt = travelArt;
             var shade = Rect("DestinationShade", card);
             Stretch(shade);
             var shadeImage = shade.gameObject.AddComponent<RawImage>();
@@ -788,14 +798,18 @@ namespace Baryonyx.Home.Editor
                 (RectTransform)view.DestinationFloorLabel.transform,
                 Vector2.zero,
                 new Vector2(28, 24),
-                new Vector2(220, 72)
+                new Vector2(340, 72)
             );
+            // "旅の案内所" fits the box at 64; anything longer shrinks instead of reaching "出発".
+            view.DestinationFloorLabel.enableAutoSizing = true;
+            view.DestinationFloorLabel.fontSizeMin = 40;
+            view.DestinationFloorLabel.fontSizeMax = 64;
 
-            // "再開" is written straight on the card, in the same white as the floor number.
+            // "再開" (or "出発") is written straight on the card, in the same white as the floor number.
             var resume = Label(
                 card,
                 "ResumeLabel",
-                "再開",
+                "出発",
                 64,
                 TextMain,
                 TextAlignmentOptions.BottomRight
@@ -805,8 +819,9 @@ namespace Baryonyx.Home.Editor
                 (RectTransform)resume.transform,
                 new Vector2(1, 0),
                 new Vector2(-28, 24),
-                new Vector2(180, 72)
+                new Vector2(160, 72)
             );
+            view.ResumeLabel = resume;
 
             // The whole card is the button; pressing darkens the destination art.
             cardImage.raycastTarget = true;

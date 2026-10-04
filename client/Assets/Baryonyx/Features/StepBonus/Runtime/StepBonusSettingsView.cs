@@ -120,11 +120,18 @@ namespace Baryonyx.StepBonus
         {
             try
             {
-                var loadout = StepBonusLoadout.From(Data, await source.LoadAsync(token));
+                var state = await source.LoadAsync(token);
+                var loadout = StepBonusLoadout.From(Data, state);
                 if (token.IsCancellationRequested)
                     return;
                 StepBonusSession.Use(loadout);
-                Present(loadout, (slot, id, cancel) => SaveAsync(source, slot, id, cancel));
+                Present(
+                    loadout,
+                    (slot, id, cancel) => SaveAsync(source, slot, id, cancel),
+                    state.Locked
+                );
+                if (state.Locked)
+                    ShowNotice(StepBonusSettingsPresenter.LockedMessage);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             catch (Exception exception)
@@ -151,13 +158,15 @@ namespace Baryonyx.StepBonus
 
         private void Present(
             StepBonusLoadout loadout,
-            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save
+            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save,
+            bool locked = false
         ) =>
             presenter = new StepBonusSettingsPresenter(
                 this,
                 loadout,
                 StepBonusSession.UptOr(Data),
-                save
+                save,
+                locked
             );
 
         // 読み込むまで、仮データの中身を本当の持ち物として見せない。

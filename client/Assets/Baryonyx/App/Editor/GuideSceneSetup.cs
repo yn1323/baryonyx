@@ -13,8 +13,9 @@ using UnityEditor;
 namespace Baryonyx.App.Editor
 {
     /// <summary>
-    /// Rebuilds the guide screen scenes opened from the Home buttons: each has the feature's
-    /// screen prefab, a bootstrap that returns to Home, the shared shutter and input.
+    /// Rebuilds the guide screen scenes opened from Home: each has the feature's screen prefab,
+    /// a bootstrap that returns to Home (and, on the travel office, sets out on the adventure),
+    /// the shared shutter and input.
     /// </summary>
     public static class GuideSceneSetup
     {
@@ -76,6 +77,9 @@ namespace Baryonyx.App.Editor
                         screen.GetComponent<GuideMenuView>();
                     serialized.FindProperty("transition").objectReferenceValue = transition;
                     serialized.FindProperty("homeSceneName").stringValue = SceneNames.Home;
+                    // The travel office's departure sets out on the adventure.
+                    serialized.FindProperty("departs").boolValue =
+                        sceneName == SceneNames.TravelOffice;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                 }
             );

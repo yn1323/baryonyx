@@ -12,10 +12,16 @@ namespace Baryonyx.App
         public const string Temple = "Temple";
         public const string TravelOffice = "TravelOffice";
 
-        // Homeの右下の行き先カード（再開）が開く戦闘画面のモック。まだHomeへ戻る操作はない。
+        // 冒険の探索。Homeの右下の行き先カード（再開）と、旅の案内所の出発が開く。
+        public const string Exploration = "Exploration";
+
+        // 冒険の戦闘。探索で戦闘の部屋に入ると開き、終わると探索かHomeへ戻る。
+        public const string Battle = "Battle";
+
+        // 戦闘画面のモック。展示室とテストから開く。
         public const string BattleInspect = "BattleInspect";
 
-        // Homeの左下のボタンが開く案内人の画面。ほかの操作はシーンを開かない。
+        // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。
         public static string GuideFor(HomeAction action) =>
             action switch
             {

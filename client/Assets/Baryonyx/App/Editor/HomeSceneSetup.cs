@@ -81,7 +81,7 @@ namespace Baryonyx.App.Editor
                     serialized.FindProperty("data").objectReferenceValue = data;
                     serialized.FindProperty("transition").objectReferenceValue = transition;
                     serialized.FindProperty("adventureSceneName").stringValue =
-                        SceneNames.BattleInspect;
+                        SceneNames.Exploration;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     TopStartupSyncSetup.SetHomeSettings(bootstrap);
                 }

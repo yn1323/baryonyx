@@ -1,4 +1,6 @@
 using System;
+using Baryonyx.Adventure;
+using Baryonyx.Adventure.Editor;
 using Baryonyx.Combat.Editor;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
@@ -11,10 +13,12 @@ using UnityEngine.SceneManagement;
 namespace Baryonyx.App.Editor
 {
     /// <summary>
-    /// Rebuilds Battle.unity: the battle screen on its own like BattleInspect, with every battle
-    /// background (<see cref="BattleStage"/>) in the scene and a <see cref="BattleStageSelector"/>
-    /// to choose which one the battle is fought on, in the Inspector. The stages share the
-    /// battle's camera, so the characters stand where they do on the dusk highland.
+    /// Rebuilds Battle.unity, the adventure's battle: the battle screen like BattleInspect, with
+    /// every battle background (<see cref="BattleStage"/>) in the scene under a
+    /// <see cref="BattleStageSelector"/>, the adventure's overlay and the shutter. The adventure
+    /// chooses the background of its destination (BattleBootstrap); opened on its own, the
+    /// background is chosen in the Inspector. The stages share the battle's camera, so the
+    /// characters stand where they do on the dusk highland.
     /// </summary>
     public static class BattleSceneSetup
     {
@@ -43,6 +47,10 @@ namespace Baryonyx.App.Editor
             )
                 StageSetAssets.EnsureAssets();
             BattleStageSets.EnsureAssets();
+            if (
+                AssetDatabase.LoadAssetAtPath<GameObject>(AdventureAssets.OverlayPrefabPath) == null
+            )
+                AdventureAssets.CreateAssets();
             ScreenScenes.Rebuild(
                 ScenePath,
                 scene =>
@@ -57,46 +65,35 @@ namespace Baryonyx.App.Editor
                         BattleInspectAssets.PrefabPath,
                         "BattleInspectScreen"
                     );
-                    // The camera and the dusk highland as on BattleInspect; the other stages
-                    // join it under the selector.
-                    var stageCamera = Hd2dStageSceneSetup.Apply(
-                        scene,
-                        camera,
-                        StageSetAssets.DuskHighlandPrefabPath,
-                        StageSetAssets.BattleView,
-                        StageSetAssets.DuskEnvironment
-                    );
-                    var stageCanvas = screen.transform.Find("StageCanvas").GetComponent<Canvas>();
-                    stageCanvas.worldCamera = camera;
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(stageCanvas);
-                    var drift = (RectTransform)screen.transform.Find("StageCanvas/StageDrift");
-                    stageCamera.UiOffsetSources = new[]
-                    {
-                        drift,
-                        (RectTransform)drift.Find("Stage"),
-                    };
-                    var lookVolume = Hd2dStageSceneSetup.AddVolume(
-                        scene,
-                        "StageLookVolume",
-                        StageSetAssets.DuskHighlandLookPath
-                    );
-                    lookVolume.priority = 1f;
-
-                    var selector = ScreenScenes.AddObject<BattleStageSelector>(scene, StagesName);
-                    selector.StageCamera = stageCamera;
-                    selector.LookVolume = lookVolume;
-                    var stages = (BattleStage[])Enum.GetValues(typeof(BattleStage));
-                    var options = new BattleStageOption[stages.Length];
-                    for (int i = 0; i < stages.Length; i++)
-                        options[i] = AddStage(scene, selector.transform, stages[i]);
-                    selector.Options = options;
-                    selector.Stage = FirstStage;
-
-                    var previous = SceneManager.GetActiveScene();
-                    SceneManager.SetActiveScene(scene);
-                    selector.Apply();
-                    SceneManager.SetActiveScene(previous);
+                    var selector = AddStages(scene, camera, screen);
                     ScreenScenes.AddEventSystem(scene);
+
+                    // The adventure's battle: its menu and dialogs over the battle screen, and
+                    // the shutter to and from the exploration (BattleBootstrap).
+                    var overlay = ScreenScenes.AddScreen(
+                        scene,
+                        AdventureAssets.OverlayPrefabPath,
+                        "AdventureOverlay"
+                    );
+                    var transition = SceneTransitionSetup.AddTransition(
+                        scene,
+                        startCovered: true,
+                        revealOnStart: true
+                    );
+                    var bootstrap = ScreenScenes.AddObject<BattleBootstrap>(
+                        scene,
+                        "BattleBootstrap"
+                    );
+                    var serialized = new SerializedObject(bootstrap);
+                    serialized.FindProperty("battle").objectReferenceValue =
+                        screen.GetComponent<BattleInspectView>();
+                    serialized.FindProperty("overlay").objectReferenceValue =
+                        overlay.GetComponent<AdventureOverlay>();
+                    serialized.FindProperty("stages").objectReferenceValue = selector;
+                    serialized.FindProperty("transition").objectReferenceValue = transition;
+                    serialized.FindProperty("settings").objectReferenceValue =
+                        TopStartupSyncSetup.LoadSettings();
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
                 }
             );
 
@@ -104,6 +101,51 @@ namespace Baryonyx.App.Editor
             // The showcase loads scenes through SceneManager, which only finds scenes in the build.
             ScreenScenes.AddToBuildSettings(ScenePath);
             ShowcaseCatalogBuilder.RefreshCatalog();
+        }
+
+        /// <summary>
+        /// Puts the battle's camera and every battle background into <paramref name="scene"/>
+        /// under a <see cref="BattleStageSelector"/>, for a screen whose stage canvas stands its
+        /// characters on them (the battle and the exploration), and shows the first background.
+        /// </summary>
+        public static BattleStageSelector AddStages(Scene scene, Camera camera, GameObject screen)
+        {
+            // The camera and the dusk highland as on BattleInspect; the other stages join it
+            // under the selector.
+            var stageCamera = Hd2dStageSceneSetup.Apply(
+                scene,
+                camera,
+                StageSetAssets.DuskHighlandPrefabPath,
+                StageSetAssets.BattleView,
+                StageSetAssets.DuskEnvironment
+            );
+            var stageCanvas = screen.transform.Find("StageCanvas").GetComponent<Canvas>();
+            stageCanvas.worldCamera = camera;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(stageCanvas);
+            var drift = (RectTransform)screen.transform.Find("StageCanvas/StageDrift");
+            stageCamera.UiOffsetSources = new[] { drift, (RectTransform)drift.Find("Stage") };
+            var lookVolume = Hd2dStageSceneSetup.AddVolume(
+                scene,
+                "StageLookVolume",
+                StageSetAssets.DuskHighlandLookPath
+            );
+            lookVolume.priority = 1f;
+
+            var selector = ScreenScenes.AddObject<BattleStageSelector>(scene, StagesName);
+            selector.StageCamera = stageCamera;
+            selector.LookVolume = lookVolume;
+            var stages = (BattleStage[])Enum.GetValues(typeof(BattleStage));
+            var options = new BattleStageOption[stages.Length];
+            for (int i = 0; i < stages.Length; i++)
+                options[i] = AddStage(scene, selector.transform, stages[i]);
+            selector.Options = options;
+            selector.Stage = FirstStage;
+
+            var previous = SceneManager.GetActiveScene();
+            SceneManager.SetActiveScene(scene);
+            selector.Apply();
+            SceneManager.SetActiveScene(previous);
+            return selector;
         }
 
         /// <summary>The prefab, look and air of a background.</summary>

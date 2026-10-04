@@ -47,6 +47,9 @@ namespace Baryonyx.StepBonus
             public string change;
             public Slot[] slots;
             public Holding[] holdings;
+
+            // 冒険の途中で、枠を付け替えられない。
+            public bool locked;
         }
 
         [Serializable]

@@ -4,7 +4,7 @@ namespace Baryonyx.UI.GuideMenu
 {
     public enum GuideMenuPage
     {
-        // The guide with the menu buttons (or the map) beside them.
+        // The guide with the menu buttons (or the destinations) beside them.
         Menu,
 
         // The full list of one menu item.
@@ -26,13 +26,13 @@ namespace Baryonyx.UI.GuideMenu
         // The open menu item on the list page; -1 on the menu page.
         public int Item { get; }
 
-        // The chosen list entry or map point; -1 when nothing is chosen.
+        // The chosen list entry or destination; -1 when nothing is chosen.
         public int Selected { get; }
         public bool CanConfirm => Selected >= 0;
     }
 
     /// <summary>
-    /// Walks a guide screen: menu → full list → entry, or map → destination. The confirm
+    /// Walks a guide screen: menu → full list → entry, or destinations → destination. The confirm
     /// button shows a "coming soon" toast until the features exist. Back closes the list
     /// first and leaves the screen from the menu, once.
     /// </summary>
@@ -41,6 +41,7 @@ namespace Baryonyx.UI.GuideMenu
         private readonly IGuideMenuView view;
         private readonly GuideMenuDefinition definition;
         private readonly Func<bool> leave;
+        private readonly Func<int, bool> depart;
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
         private bool left;
         private bool disposed;
@@ -48,7 +49,8 @@ namespace Baryonyx.UI.GuideMenu
         public GuideMenuPresenter(
             IGuideMenuView view,
             GuideMenuDefinition definition,
-            Func<bool> leave
+            Func<bool> leave,
+            Func<int, bool> depart = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -57,6 +59,7 @@ namespace Baryonyx.UI.GuideMenu
                     ? definition
                     : throw new ArgumentNullException(nameof(definition));
             this.leave = leave;
+            this.depart = depart;
             view.ItemPressed += SelectItem;
             view.EntryPressed += SelectEntry;
             view.ConfirmPressed += Confirm;
@@ -80,16 +83,16 @@ namespace Baryonyx.UI.GuideMenu
         {
             if (disposed || left)
                 return;
-            if (definition.Layout == GuideMenuLayout.Map)
+            if (definition.Layout == GuideMenuLayout.Destinations)
             {
-                if (index < 0 || index >= definition.MapPoints.Length)
+                if (index < 0 || index >= definition.Destinations.Length)
                     return;
-                // Locked destinations can be inspected but not chosen.
+                // Locked destinations cannot be chosen.
                 Show(
                     new GuideMenuState(
                         GuideMenuPage.Menu,
                         -1,
-                        definition.MapPoints[index].Locked ? -1 : index
+                        definition.Destinations[index].Locked ? -1 : index
                     )
                 );
                 return;
@@ -105,6 +108,13 @@ namespace Baryonyx.UI.GuideMenu
         public void Confirm()
         {
             if (disposed || left || !state.CanConfirm)
+                return;
+            // 行き先の出発は、出発できる行き先なら呼び出し元が引き受ける（旅の案内所）。
+            if (
+                definition.Layout == GuideMenuLayout.Destinations
+                && depart != null
+                && depart(state.Selected)
+            )
                 return;
             view.ShowToast(ComingSoon(ConfirmLabel()));
         }
@@ -126,7 +136,7 @@ namespace Baryonyx.UI.GuideMenu
         }
 
         public string ConfirmLabel() =>
-            definition.Layout == GuideMenuLayout.Map ? definition.DepartLabel
+            definition.Layout == GuideMenuLayout.Destinations ? definition.DepartLabel
             : state.Page == GuideMenuPage.List ? definition.Items[state.Item].ConfirmLabel
             : "";
 

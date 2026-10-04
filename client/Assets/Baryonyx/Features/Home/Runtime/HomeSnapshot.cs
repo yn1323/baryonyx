@@ -35,6 +35,9 @@ namespace Baryonyx.Home
 
         // 所持ルーンを取得済みか。取得元があるHomeでは、最初の取得に成功するまで偽になる。
         public bool RunesKnown = true;
+
+        // 冒険の途中か。途中なら右下のカードは行き先の再開、そうでなければ旅の案内所を開く。
+        public bool AdventureInProgress;
         public string DestinationName = "";
         public string DestinationFloor = "";
         public DateTime Today = DateTime.Today;

@@ -137,14 +137,14 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void MapChoosesDestinationsButNotLockedOnes()
+        public void DestinationsChooseOnesThatAreNotLocked()
         {
-            definition.Layout = GuideMenuLayout.Map;
+            definition.Layout = GuideMenuLayout.Destinations;
             definition.DepartLabel = "出発";
-            definition.MapPoints = new[]
+            definition.Destinations = new[]
             {
-                new GuideMapPoint { Name = "森の遺跡" },
-                new GuideMapPoint { Name = "火山", Locked = true },
+                new GuideDestination { Name = "森の遺跡" },
+                new GuideDestination { Name = "火山", Locked = true },
             };
             var view = new FakeView();
             using var presenter = new GuideMenuPresenter(view, definition, () => true);
@@ -160,6 +160,41 @@ namespace Baryonyx.Tests.EditMode
             view.PressEntry(0);
             Assert.That(view.Last.Selected, Is.EqualTo(0));
             view.PressConfirm();
+            Assert.That(view.Toasts, Is.EqualTo(new[] { "出発（準備中）" }));
+        }
+
+        // 旅の案内所：出発できる行き先は呼び出し元が引き受け、引き受けない行き先は準備中と知らせる。
+        [Test]
+        public void DepartureGoesToTheCallerForDestinationsItTakes()
+        {
+            definition.Layout = GuideMenuLayout.Destinations;
+            definition.DepartLabel = "出発";
+            definition.Destinations = new[]
+            {
+                new GuideDestination { Name = "城下町" },
+                new GuideDestination { Name = "森の遺跡", Id = "forest-ruins" },
+            };
+            var view = new FakeView();
+            var departed = new System.Collections.Generic.List<int>();
+            using var presenter = new GuideMenuPresenter(
+                view,
+                definition,
+                () => true,
+                index =>
+                {
+                    departed.Add(index);
+                    return definition.Destinations[index].Id != "";
+                }
+            );
+
+            view.PressEntry(1);
+            view.PressConfirm();
+            Assert.That(departed, Is.EqualTo(new[] { 1 }));
+            Assert.That(view.Toasts, Is.Empty);
+
+            view.PressEntry(0);
+            view.PressConfirm();
+            Assert.That(departed, Is.EqualTo(new[] { 1, 0 }));
             Assert.That(view.Toasts, Is.EqualTo(new[] { "出発（準備中）" }));
         }
 

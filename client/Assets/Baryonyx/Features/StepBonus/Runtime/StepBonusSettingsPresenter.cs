@@ -96,6 +96,7 @@ namespace Baryonyx.StepBonus
         public static readonly string[] TabLabels = { "すべて", "探索", "ドロップ", "戦闘" };
 
         public const string SaveFailedMessage = "ボーナスを保存できませんでした";
+        public const string LockedMessage = "冒険の途中は、ボーナスを付け替えられません";
 
         private readonly IStepBonusSettingsView view;
         private readonly int upt;
@@ -106,18 +107,21 @@ namespace Baryonyx.StepBonus
         private int tab;
         private bool saving;
         private bool disposed;
+        private readonly bool locked;
 
         public StepBonusSettingsPresenter(
             IStepBonusSettingsView view,
             StepBonusLoadout loadout,
             int upt,
-            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save = null
+            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save = null,
+            bool locked = false
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.loadout = loadout ?? throw new ArgumentNullException(nameof(loadout));
             this.upt = Math.Max(0, upt);
             this.save = save;
+            this.locked = locked;
             view.SlotPressed += SelectSlot;
             view.BonusPressed += OnBonusPressed;
             view.TabPressed += SelectTab;
@@ -126,6 +130,9 @@ namespace Baryonyx.StepBonus
 
         public StepBonusSettingsState State { get; private set; }
         public StepBonusLoadout Loadout => loadout;
+
+        // 冒険の途中で、枠を付け替えられない。
+        public bool Locked => locked;
 
         // 保存を待っている間。重ねて押されても受け付けない。
         public bool Saving => saving;
@@ -159,6 +166,11 @@ namespace Baryonyx.StepBonus
         {
             if (disposed || saving)
                 return;
+            if (locked)
+            {
+                view.ShowNotice(LockedMessage);
+                return;
+            }
             int target = slot;
             string before = loadout.Bonus(target);
             var change = loadout.Preview(target, id);
@@ -189,10 +201,15 @@ namespace Baryonyx.StepBonus
             {
                 return;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                // 409は、冒険を始めたあとに付け替えようとしたとき（別の端末で出発したなど）。
                 if (!disposed)
-                    view.ShowNotice(SaveFailedMessage);
+                    view.ShowNotice(
+                        exception is Networking.ServerApiException { StatusCode: 409 }
+                            ? LockedMessage
+                            : SaveFailedMessage
+                    );
             }
             finally
             {

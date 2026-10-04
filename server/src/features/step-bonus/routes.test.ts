@@ -10,6 +10,7 @@ type State = {
   change?: string;
   slots: { slot: number; bonusId: string | null }[];
   holdings: { bonusId: string; rank: string }[];
+  locked: boolean;
 };
 
 describe("UPTボーナスAPI", () => {
@@ -88,6 +89,7 @@ describe("UPTボーナスAPI", () => {
     expect(await read(user.token)).toEqual({
       slots: afterSwap.slots,
       holdings: afterSwap.holdings,
+      locked: false,
     });
   });
 

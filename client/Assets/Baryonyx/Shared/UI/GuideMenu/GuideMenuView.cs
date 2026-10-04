@@ -8,11 +8,11 @@ using UnityEngine.UI;
 namespace Baryonyx.UI.GuideMenu
 {
     /// <summary>
-    /// A guide screen: the guide's upper body on the left, and the menu, a full list or a world
-    /// map on the right. GuideMenuAssets bakes every menu row, list and map pin into the prefab
-    /// from the definition, so the text can be read in the editor without Play Mode; this view
-    /// only wires them up and switches which one is visible. Without a presenter from the scene
-    /// (the showcase preview), the view makes its own so the menus still open.
+    /// A guide screen: the guide's upper body on the left, and the menu, a full list or the
+    /// destinations on the right. GuideMenuAssets bakes every menu row, list row and destination
+    /// into the prefab from the definition, so the text can be read in the editor without Play
+    /// Mode; this view only wires them up and switches which one is visible. Without a presenter
+    /// from the scene (the showcase preview), the view makes its own so the menus still open.
     /// </summary>
     public sealed class GuideMenuView : MonoBehaviour, IGuideMenuView
     {
@@ -38,13 +38,16 @@ namespace Baryonyx.UI.GuideMenu
         public Button Confirm;
         public TMP_Text ConfirmLabel;
 
-        public GameObject MapPanel;
-        public Button[] Pins = Array.Empty<Button>();
-        public TMP_Text MapDetail;
+        // 旅の案内所の行き先のリスト。メニューを通さず、開いたときから表示する。
+        public GameObject DestinationPanel;
+        public Button[] DestinationRows = Array.Empty<Button>();
         public Button Depart;
 
         // 操作を求めない通知（共通の通知の帯）。
         public NoticeBand Notice;
+
+        // 行き先のリストに重ねる確認のダイアログ（旅の案内所の出発）。開いている間は戻るキーを先に受け取る。
+        public GameDialog Dialog;
 
         private readonly List<Button[]> entries = new();
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
@@ -88,10 +91,10 @@ namespace Baryonyx.UI.GuideMenu
                 }
                 entries.Add(rows);
             }
-            for (int i = 0; i < Pins.Length; i++)
+            for (int i = 0; i < DestinationRows.Length; i++)
             {
                 int index = i;
-                Pins[i].onClick.AddListener(() => EntryPressed?.Invoke(index));
+                DestinationRows[i].onClick.AddListener(() => EntryPressed?.Invoke(index));
             }
             if (Notice != null)
                 Notice.Hide();
@@ -116,9 +119,11 @@ namespace Baryonyx.UI.GuideMenu
                 PressBack();
         }
 
-        // 開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
-        private void PressBack()
+        // 重ねたダイアログ、または開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
+        public void PressBack()
         {
+            if (Dialog != null && Dialog.HandleBack())
+                return;
             if (
                 openPanel != null
                 && openPanel.TryGetComponent(out IGuideBackHandler panel)
@@ -131,8 +136,9 @@ namespace Baryonyx.UI.GuideMenu
         public void Render(GuideMenuState next)
         {
             state = next;
-            bool map = Definition != null && Definition.Layout == GuideMenuLayout.Map;
-            bool open = !map && state.Page == GuideMenuPage.List;
+            bool destinations =
+                Definition != null && Definition.Layout == GuideMenuLayout.Destinations;
+            bool open = !destinations && state.Page == GuideMenuPage.List;
             var custom = open ? PanelFor(state.Item) : null;
             openPanel = custom;
             bool list = open && custom == null;
@@ -144,15 +150,15 @@ namespace Baryonyx.UI.GuideMenu
             if (GuideArt != null)
                 GuideArt.SetActive(custom == null);
             if (MenuPanel != null)
-                MenuPanel.SetActive(!map && !open);
+                MenuPanel.SetActive(!destinations && !open);
             if (ListPanel != null)
                 ListPanel.SetActive(list);
-            if (MapPanel != null)
-                MapPanel.SetActive(map);
+            if (DestinationPanel != null)
+                DestinationPanel.SetActive(destinations);
             if (list)
                 RenderList();
-            if (map)
-                RenderMap();
+            if (destinations)
+                RenderDestinations();
         }
 
         public bool HasItem(string key) => IndexOf(key) >= 0;
@@ -200,18 +206,10 @@ namespace Baryonyx.UI.GuideMenu
                 Confirm.interactable = state.CanConfirm;
         }
 
-        private void RenderMap()
+        private void RenderDestinations()
         {
-            for (int i = 0; i < Pins.Length; i++)
-                SetSelected(Pins[i], i == state.Selected);
-            var point =
-                state.Selected >= 0 && state.Selected < Definition.MapPoints.Length
-                    ? Definition.MapPoints[state.Selected]
-                    : null;
-            SetText(
-                MapDetail,
-                point != null ? point.Name + "　" + point.Detail : "行き先を選んでください"
-            );
+            for (int i = 0; i < DestinationRows.Length; i++)
+                SetSelected(DestinationRows[i], i == state.Selected);
             if (Depart != null)
                 Depart.interactable = state.CanConfirm;
         }

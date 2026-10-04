@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import { adventureRuns } from "../adventure/db-schema.js";
 import {
   rankOrder,
   STARTER_HOLDINGS,
@@ -44,7 +45,18 @@ export function createStepBonusRepository(binding: D1Database) {
       slot,
       bonusId: rows.find((row) => row.slot === slot)?.bonusId ?? null,
     }));
-    return { slots, holdings };
+    // 冒険の途中は枠を付け替えられない（doc/features/step-bonus.md の枠の付け替え）。
+    const adventure = await db
+      .select({ id: adventureRuns.id })
+      .from(adventureRuns)
+      .where(
+        and(
+          eq(adventureRuns.userId, userId),
+          eq(adventureRuns.status, "active"),
+        ),
+      )
+      .get();
+    return { slots, holdings, locked: adventure !== undefined };
   }
 
   // 初めて読むユーザーにだけ、仮の初期ボーナスと枠の設定を1回だけ付与する。
@@ -103,6 +115,7 @@ export function createStepBonusRepository(binding: D1Database) {
     if (!state.holdings.some((holding) => holding.bonusId === bonusId)) {
       return { error: "bonus_not_owned" as const };
     }
+    if (state.locked) return { error: "adventure_in_progress" as const };
     const current = state.slots[slot].bonusId;
     if (current === bonusId) return { change: "none" as const, ...state };
 

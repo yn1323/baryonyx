@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-09-24
+updated: 2026-10-04
 ---
 
 # バックエンドの開発環境
@@ -106,6 +106,7 @@ HTTPの入力検証は `schema.ts` に残し、DBスキーマと分ける。
 
 取得・更新にはDrizzleのクエリービルダーを使い、値をSQLへ埋め込む場合はパラメーター化する `sql` タグを使う。
 複数の書き込みを一括で確定する処理はD1対応の `db.batch()` を使う。
+D1は1つの文に渡せる値を100個までに制限しているため、多くの行を入れるときは文を分けて `db.batch()` に並べる（[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)）。
 健康データの保存では、所有者と同期の版を確認する条件をINSERT SELECTに含め、確認と書き込みの間に別の同期が割り込むことを防ぐ。
 `has_value` はSQLiteの整数とTypeScriptのbooleanをDrizzleで相互変換する。
 
@@ -120,6 +121,8 @@ SQLとスナップショットを一緒にGitへ追加し、生成結果の制�
 [0002_guest_accounts.sql](../../server/migrations/0002_guest_accounts.sql) は、ゲストを識別する秘密値のハッシュ列を追加し、`google_sub` を任意にする。
 SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
 [0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[UPTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
+[0004_party.sql](../../server/migrations/0004_party.sql) は、[キャラと編成の保存](../features/party.md#実装との対応)のキャラ・枠・カード・レベルアップの記録・初期付与の5テーブルを作る。
+[0005_adventure.sql](../../server/migrations/0005_adventure.sql) は、[冒険の1周](../plans/2026-10-04-adventure-loop.md#サーバー)の冒険・部屋ごとの報酬・復活の記録・行き先ごとの記録の4テーブルを作る。進行中の冒険をユーザーごとに1つにする部分一意インデックスを持つ。
 
 ```sh
 pnpm db:generate --name add_example
@@ -171,6 +174,9 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
 UPTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時のランクの比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
+パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
+冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることとランクの比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
+歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
 
 [Vitest設定](../../server/vitest.config.ts) でファイル間の並列実行を有効にし、単体・結合・シナリオテストを合わせて最大3並列に固定する。
 ファイル内のテストは順番に実行する。

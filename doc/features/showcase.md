@@ -265,8 +265,8 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。
 ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
-カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[カードスキルの仮設定](combat.md#カードスキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
-好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[カードスキルのデバッグルーム](screens.md#カードスキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。
+カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[スキルの仮設定](combat.md#スキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
+好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](screens.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。
 敵の攻撃・被弾・撃破・状態が付いたときの行動・敵のターンは、シーンのカテゴリから `EnemyLab` を開き、敵と行動を選んで確かめる（[敵の挙動デバッグルーム](screens.md#敵の挙動デバッグルーム)）。操作盤のPrefab `EnemyLabPanel` はUIカテゴリに入るが、操作する戦闘画面がないため、単体のプレビューでは押しても敵は動かない。
 撃破で敵の絵をドットごとに削るシェーダー（`BattleDefeat`）とマテリアル（`VfxDefeat`）はVFXカテゴリに入る。マテリアルは敵の絵と削る順番を持たないため、プレビューでは崩れる様子が見えない。崩れる動きは `EnemyLab` の「撃破」で確かめる。
 50枚のカードの見た目（挿絵・枠・属性のアイコン・使い手・名前・種類と対象・説明文・コスト）は、UIカテゴリの `BattleCardGallery` Prefabで、10枚×5段に並べて確認する。戦闘画面のモックの山札に入るのは、このうち16枚だけである。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`。撃破で舞う粒の `VfxShapeMote` を含む）はVFXカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
@@ -274,9 +274,10 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleInspect` シーンを開いてカードを使う。
 カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab` も同じく生成時に追加する。
-案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
+案内人がいる画面（酒場・装備・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
 酒場の[編成](screens.md#編成)は `TavernScreen` のメニューの「編成」から開く。停止中も、Prefabの `Formation` を表示すれば、仮データの4人と仲間のタイルを確認できる。仮データの `PartyMockData` はデータのカテゴリに入る。
 編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
+[冒険の画面](screens.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上に4人と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、部屋の種類のアイコン（`IconRoomBattle` など）はアイテムのカテゴリに入る。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
 それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。
 2026-09-27まではプレビューで縮尺を誤り、HomeScreenのトーマや戦闘画面のキャラが画面を覆うほど大きく表示されていた。

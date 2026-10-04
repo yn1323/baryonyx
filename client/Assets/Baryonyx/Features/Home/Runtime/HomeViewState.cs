@@ -33,8 +33,15 @@ namespace Baryonyx.Home
         // 同期中以外は、TAP TO STARTと同じように案内を点滅させて押せることを示す。
         public bool ClaimPulses { get; private set; }
         public string RunesText { get; private set; }
+
+        // 右下のカード。冒険の途中なら行き先と階と「再開」、そうでなければ旅の案内所と「出発」。
+        public bool AdventureInProgress { get; private set; }
         public string DestinationNameText { get; private set; }
         public string DestinationFloorText { get; private set; }
+        public string ResumeText { get; private set; }
+
+        public const string TravelTitle = "冒険に出る";
+        public const string TravelName = "旅の案内所";
 
         public static HomeViewState From(HomeSnapshot snapshot)
         {
@@ -65,8 +72,14 @@ namespace Baryonyx.Home
                     : "タップして歩数を連携",
                 ClaimPulses = !snapshot.StepSyncing,
                 RunesText = snapshot.RunesKnown ? Runes(snapshot.Runes) : "--",
-                DestinationNameText = snapshot.DestinationName ?? "",
-                DestinationFloorText = snapshot.DestinationFloor ?? "",
+                AdventureInProgress = snapshot.AdventureInProgress,
+                DestinationNameText = snapshot.AdventureInProgress
+                    ? snapshot.DestinationName ?? ""
+                    : TravelTitle,
+                DestinationFloorText = snapshot.AdventureInProgress
+                    ? snapshot.DestinationFloor ?? ""
+                    : TravelName,
+                ResumeText = snapshot.AdventureInProgress ? "再開" : "出発",
             };
         }
 
@@ -99,7 +112,7 @@ namespace Baryonyx.Home
                     : "歩数の連携（準備中）",
                 HomeAction.Settings => "設定（準備中）",
                 HomeAction.Tavern => "酒場（準備中）",
-                HomeAction.Workshop => "工房（準備中）",
+                HomeAction.Workshop => "装備（準備中）",
                 HomeAction.Temple => "神殿（準備中）",
                 HomeAction.TravelOffice => "旅の案内所（準備中）",
                 HomeAction.Resume => "再開（準備中）",
