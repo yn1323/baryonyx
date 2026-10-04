@@ -1,52 +1,12 @@
-using System;
-
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// How a card skill is written on a card of the battle mock: the kind line with the kind in
-    /// its colour, and the description with each number in the colour of what it does (damage
-    /// yellow, healing green, block blue). Used by the screen generator and the screen alike.
+    /// How a card skill maps onto the battle mock: its element as the mock's element, and how it
+    /// is played. How a card is written (the kind line, the coloured description) is shared with
+    /// the tavern's card skills in <see cref="Baryonyx.UI.Cards.CardText"/>.
     /// </summary>
     public static class BattleCardText
     {
-        /// <summary>The colour of the separator dot between the kind and the scope.</summary>
-        public const string SeparatorHex = "9a9483";
-
-        /// <summary>"攻撃・敵単体": the kind in its colour, then who it reaches (rich text).</summary>
-        public static string KindLine(CardSkill skill) =>
-            $"<color=#{KindHex(skill.Kind)}>{CardRules.KindName(skill.Kind)}</color>"
-            + $"<color=#{SeparatorHex}>・</color>{CardRules.ScopeName(skill)}";
-
-        /// <summary>The description with the powers from <paramref name="stat"/> put in, coloured (rich text).</summary>
-        public static string Description(CardSkill skill, Func<CardStat, int> stat, int upt) =>
-            CardRules.Describe(
-                skill,
-                stat,
-                upt,
-                (action, power) => $"<color=#{PowerHex(action)}>{power}</color>"
-            );
-
-        public static string KindHex(CardKind kind) =>
-            kind switch
-            {
-                CardKind.Heal => "96e678",
-                CardKind.Guard => "96c8ff",
-                CardKind.Buff => "ffcc66",
-                CardKind.Debuff => "d2a0ff",
-                CardKind.Support => "c8d2dc",
-                _ => "ff966e",
-            };
-
-        /// <summary>The colour of an action's number: healing green, block blue, damage yellow.</summary>
-        public static string PowerHex(CardAction action) =>
-            action.Kind switch
-            {
-                CardActionKind.Heal => "8ce878",
-                CardActionKind.Status when action.Status == CardStatus.Regen => "8ce878",
-                CardActionKind.Block => "96c8ff",
-                _ => "ffce60",
-            };
-
         /// <summary>The mock's element of a card's element.</summary>
         public static BattleInspectElement ElementOf(CardElement element) =>
             element switch

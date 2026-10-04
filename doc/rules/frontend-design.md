@@ -123,6 +123,7 @@ client/
 | `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader` |
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
+| `Cards/` | カードスキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと酒場のカードスキルが使う |
 | `GuideMenu/` | 案内人がいる画面の共通部品 |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
 

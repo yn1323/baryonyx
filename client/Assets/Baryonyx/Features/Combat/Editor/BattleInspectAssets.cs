@@ -528,8 +528,8 @@ namespace Baryonyx.Combat.Editor
             cardView.Show(
                 fire.Name,
                 toma.Label,
-                BattleCardText.KindLine(fire),
-                BattleCardText.Description(fire, stat => StatOf(toma, stat), 0),
+                Baryonyx.UI.Cards.CardText.KindLine(fire),
+                Baryonyx.UI.Cards.CardText.Description(fire, stat => StatOf(toma, stat), 0),
                 fireArt,
                 Art("CardFrameFire"),
                 fireIcon,
@@ -1655,8 +1655,12 @@ namespace Baryonyx.Combat.Editor
                 Name = skill.Name,
                 Owner = ally.Label,
                 Skill = skill.Id,
-                Kind = BattleCardText.KindLine(skill),
-                Description = BattleCardText.Description(skill, stat => StatOf(ally, stat), upt),
+                Kind = Baryonyx.UI.Cards.CardText.KindLine(skill),
+                Description = Baryonyx.UI.Cards.CardText.Description(
+                    skill,
+                    stat => StatOf(ally, stat),
+                    upt
+                ),
                 Art = Art(skill.Art),
                 Frame = Art("CardFrame" + skill.Element),
                 ElementIcon =
