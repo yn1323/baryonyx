@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-09-24
+updated: 2026-10-04
 ---
 
 # クライアントの構成と依存関係
@@ -24,9 +24,10 @@ client/
 │   │   ├── AssemblyInfo.cs
 │   │   ├── App/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
-│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、BattleInspect.unity
-│   │   │   │   └── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出のTopへの配置
+│   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Battle.unity
+│   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleInspect・CardSkillLab・EnemyLab）
+│   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
 │   │   │   ├── Runtime/                Google認証の契約とUMoth接続、ゲストの秘密値、サーバーのセッションとログインAPI
@@ -71,11 +72,17 @@ client/
 │   │   ├── Shared/
 │   │   │   ├── Art/                     ゲーム内の対象の画像。カタログの分類ごとに分ける
 │   │   │   │   ├── Characters/          キャラクター
-│   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）
+│   │   │   │   ├── Stages/              探索する場所の背景（森、TopとHomeのダンジョンの広間）と3Dの舞台
+│   │   │   │   │   ├── DungeonHall/     3Dのダンジョンの広間（今は画面で使わない）
+│   │   │   │   │   ├── DuskHighland/    戦闘の3Dの夕暮れの高原のテクスチャ・マテリアル・Prefab
+│   │   │   │   │   ├── ForestGlade/     Homeの3Dの昼の森の野営地のテクスチャ・マテリアル・Prefab
+│   │   │   │   │   ├── ForestRuins/     3Dの森の遺跡の石舞台（今は画面で使わない）
+│   │   │   │   │   ├── StarlitGate/     Topの3Dの星空の夜の山の門のテクスチャ・マテリアル・Prefab
+│   │   │   │   │   └── Editor/          3Dの舞台の組み立て（StageSetAssets）
 │   │   │   │   └── GameResources/       素材・通貨（ルーンのアイコン）
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
 │   │   │   ├── UI/                      複数画面で使う共通UI（下の表）
-│   │   │   └── VFX/HD2D/                HD-2Dの演出。Editor/に共通アセットの生成とInspector、Tests/EditMode/
+│   │   │   └── VFX/HD2D/                HD-2Dの演出と3Dの舞台の共通部品（カメラ、キャラの板、2Dのときだけの部品、舞台のレンズ、光の筋）。Editor/に共通アセットと舞台の部品の生成とInspector、Tests/EditMode/
 │   │   ├── Editor/
 │   │   │   ├── Baryonyx.Editor.asmdef
 │   │   │   ├── AnalyzerProjectSettings.cs
@@ -237,6 +244,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
 - 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
 - 探索する場所の背景は `Shared/Art/Stages/` に置く。2026-09-29に `Shared/Art/Dungeons/` から移し、TopとHomeが使うダンジョンの広間（旧 `App/Art/Top/TopDungeonBackground.png`）も `DungeonHall.png` として同じ場所へ移した。
+- 3Dの舞台（[3Dの舞台](../art/hd2d-stage.md)）は、舞台ごとのフォルダー（`Stages/StarlitGate/`・`Stages/ForestGlade/`・`Stages/DuskHighland/` など）に、テクスチャの `.aseprite`、マテリアル、メッシュをまとめたアセット、Prefab、舞台のポストプロセス（`<舞台>Look.asset`）を置く。組み立てるEditor処理は `Stages/Editor/`、複数の舞台が使う部品（カメラ、キャラの板、舞台の部品の生成）は `Shared/VFX/HD2D/` に置き、舞台をシーンへ置く処理は `App/Editor/Hd2dStageSceneSetup` が持つ。
 
 #### タブレットとの受け渡し
 

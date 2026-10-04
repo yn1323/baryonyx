@@ -50,7 +50,7 @@ UPTボーナスの段階と区切りは[UPTボーナス](step-bonus.md)、UPTの
 
 ## 現在の実装
 
-シーンは、Top・Home・展示室と、2026-09-27に追加した戦闘画面のモック（BattleInspect）、Homeから開く案内人の画面（酒場・工房・神殿・旅の案内所）である。
+シーンは、Top・Home・展示室と、2026-09-27に追加した戦闘画面のモック（BattleInspect）、2026-10-03に追加した戦闘の背景を選べる戦闘シーン（Battle）、2026-10-04に追加した敵の挙動デバッグルーム（EnemyLab）、Homeから開く案内人の画面（酒場・工房・神殿・旅の案内所）である。
 冒険・獲得・装備・戦闘を試せた操作試作と、健康データを表示した画面は削除した。
 TopとHomeは、Health Connectの歩数をゲストのセッションでサーバーへ同期する。
 画面に依存しない戦闘計算と、Google認証・運動報酬の請求のロジックは残しているが、現在はどの画面からも呼ばない。
@@ -64,7 +64,11 @@ TopとHomeは、Health Connectの歩数をゲストのセッションでサー�
 | 画面の操作ワイヤー | [試作の記録](game-wireframe.md) | 2026-09-24に削除。[戦闘計算](../../client/Assets/Baryonyx/Features/Combat/Runtime)だけを残す |
 | ホーム画面のモック | [画面一覧](screens.md#ホーム画面の見た目モック) | [Homeシーン](../../client/Assets/Baryonyx/App/Scenes/Home.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Home/Editor/HomeScreenAssets.cs) |
 | 酒場・工房・神殿・旅の案内所（案内人がいる画面）のモック | [画面一覧](screens.md#酒場工房神殿旅の案内所の画面) | [共通部品](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideMenuView.cs)・[シーン生成](../../client/Assets/Baryonyx/App/Editor/GuideSceneSetup.cs)・[酒場の仮データ](../../client/Assets/Baryonyx/Features/Tavern/Editor/TavernScreenAssets.cs) |
-| 戦闘画面のモック（ロジックなし） | [画面一覧](screens.md#戦闘画面の見た目モック) | [BattleInspectシーン](../../client/Assets/Baryonyx/App/Scenes/BattleInspect.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.cs) |
+| UPTボーナスの枠の設定（仮データ） | [UPTボーナス](step-bonus.md#実装との対応)・[ボーナス設定](screens.md#ボーナス設定) | [枠の計算](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusLoadout.cs)・[設定の表示と操作](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSettingsView.cs)・[パネルと仮データの生成](../../client/Assets/Baryonyx/Features/StepBonus/Editor/StepBonusAssets.cs) |
+| 戦闘画面のモック（ロジックなし） | [画面一覧](screens.md#戦闘画面の見た目モック) | [BattleInspectシーン](../../client/Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity)・[Prefab生成](../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.cs) |
+| 戦闘の背景の選択 | [画面一覧](screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) | [Battleシーン](../../client/Assets/Baryonyx/App/Scenes/Battle.unity)・[シーン生成](../../client/Assets/Baryonyx/App/Editor/BattleSceneSetup.cs)・[背景の生成](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/BattleStageSets.cs)・[背景の選択](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleStageSelector.cs) |
+| カードスキルのデバッグルーム | [画面一覧](screens.md#カードスキルのデバッグルーム) | [CardSkillLabシーン](../../client/Assets/Baryonyx/App/Scenes/Debug/CardSkillLab.unity)・[シーン生成](../../client/Assets/Baryonyx/App/Editor/CardSkillLabSceneSetup.cs)・[Prefab生成](../../client/Assets/Baryonyx/Features/Combat/Editor/CardSkillLabAssets.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs) |
+| 敵の挙動デバッグルーム | [画面一覧](screens.md#敵の挙動デバッグルーム) | [EnemyLabシーン](../../client/Assets/Baryonyx/App/Scenes/Debug/EnemyLab.unity)・[シーン生成](../../client/Assets/Baryonyx/App/Editor/EnemyLabSceneSetup.cs)・[Prefab生成](../../client/Assets/Baryonyx/Features/Combat/Editor/EnemyLabAssets.cs)・[操作盤](../../client/Assets/Baryonyx/Features/Combat/Presentation/EnemyLab.cs)・[敵の行動の呼び出し](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.EnemyLab.cs) |
 | 旧仕様の戦闘計算（現行の企画と不一致） | [残っているコードの動作](combat.md#実装との対応) | [CombatEncounter](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEncounter.cs) |
 | クライアントアセット展示室 | [展示室仕様](showcase.md) | [展示室シーン](../../client/Assets/Baryonyx/App/Scenes/Showcase.unity)・[カタログ生成](../../client/Assets/Baryonyx/Features/Showcase/Editor/ShowcaseCatalogBuilder.cs) |
 
