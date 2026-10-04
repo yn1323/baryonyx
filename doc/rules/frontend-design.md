@@ -124,7 +124,7 @@ client/
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
 | `Cards/` | カードスキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと酒場のカードスキルが使う |
-| `GuideMenu/` | 案内人がいる画面の共通部品 |
+| `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは `IGuideBackHandler` を付けると、戻る操作を先に受け取れる |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
 
 `Assets/Scripts/`、`Assets/Editor/`、`Assets/Tests/`、`Assets/Scenes/` にあった自作コード・アセンブリ定義・起動シーンは、上記の配置へ移行した。

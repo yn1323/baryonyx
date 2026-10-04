@@ -49,6 +49,7 @@ namespace Baryonyx.UI.GuideMenu
         private readonly List<Button[]> entries = new();
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
         private GuideMenuPresenter ownPresenter;
+        private GameObject openPanel;
         private bool bound;
 
         public event Action<int> ItemPressed;
@@ -67,7 +68,7 @@ namespace Baryonyx.UI.GuideMenu
         private void Awake()
         {
             if (Back != null)
-                Back.onClick.AddListener(() => BackPressed?.Invoke());
+                Back.onClick.AddListener(PressBack);
             if (Confirm != null)
                 Confirm.onClick.AddListener(() => ConfirmPressed?.Invoke());
             if (Depart != null)
@@ -112,7 +113,19 @@ namespace Baryonyx.UI.GuideMenu
         {
             // The Android back key arrives as Escape.
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-                BackPressed?.Invoke();
+                PressBack();
+        }
+
+        // 開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
+        private void PressBack()
+        {
+            if (
+                openPanel != null
+                && openPanel.TryGetComponent(out IGuideBackHandler panel)
+                && panel.HandleBack()
+            )
+                return;
+            BackPressed?.Invoke();
         }
 
         public void Render(GuideMenuState next)
@@ -121,6 +134,7 @@ namespace Baryonyx.UI.GuideMenu
             bool map = Definition != null && Definition.Layout == GuideMenuLayout.Map;
             bool open = !map && state.Page == GuideMenuPage.List;
             var custom = open ? PanelFor(state.Item) : null;
+            openPanel = custom;
             bool list = open && custom == null;
             for (int i = 0; i < ItemPanels.Length; i++)
                 if (ItemPanels[i] != null && ItemPanels[i] != custom)
@@ -140,6 +154,26 @@ namespace Baryonyx.UI.GuideMenu
             if (map)
                 RenderMap();
         }
+
+        public bool HasItem(string key) => IndexOf(key) >= 0;
+
+        /// <summary>
+        /// Opens the item with <paramref name="key"/> as if its menu row were pressed, so one
+        /// feature panel can move to another (e.g. the training to the card skills).
+        /// </summary>
+        public bool OpenItem(string key)
+        {
+            int index = IndexOf(key);
+            if (index < 0)
+                return false;
+            ItemPressed?.Invoke(index);
+            return true;
+        }
+
+        private int IndexOf(string key) =>
+            Definition == null || string.IsNullOrEmpty(key)
+                ? -1
+                : Array.FindIndex(Definition.Items, item => item.Key == key);
 
         /// <summary>The feature panel shown for an item instead of the list, if it has one.</summary>
         public GameObject PanelFor(int item) =>
