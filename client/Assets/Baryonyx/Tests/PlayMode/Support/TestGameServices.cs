@@ -18,8 +18,6 @@ namespace Baryonyx.Tests.PlayMode
         private TestGameServices(HealthPermission permission)
         {
             SceneTransitionController.DurationScale = FastTransitions;
-            // 既定ではサーバーの代役でルーンを請求する。仮のルーンを試すテストだけ有効にする。
-            HomeBootstrap.MockRuneGainOverride = false;
             Provider = new HealthScreenPreviewProvider(permission: permission);
             Server = new TestStepServer();
             GameServices.Override(
@@ -37,7 +35,6 @@ namespace Baryonyx.Tests.PlayMode
         public void Dispose()
         {
             GameServices.Override(null);
-            HomeBootstrap.MockRuneGainOverride = null;
             SceneTransitionController.DurationScale = 1f;
         }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Threading;
 using Baryonyx.App;
 using Baryonyx.Home;
@@ -8,8 +9,9 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // UPTパネルを押してルーンを獲得する演出を、仮のルーンと仮想の入力で確かめる。
+    // UPTパネルを押してルーンを獲得する演出を、サーバーの代役と仮想の入力で確かめる。
     // ルーンは押した位置から弾け、所持ルーンのアイコンへ吸い込まれる。
+    // 各テストは新しい代役で始まるため、1回目の押下で保存した7日分のUPTがルーンになる。
     public sealed class HomeRuneTapTests : ScenarioInputFixture
     {
         private TestGameServices services;
@@ -52,19 +54,25 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(Distance(view.BurstOrigin, hint), Is.LessThan(1f));
         }
 
-        // 仮のルーンは押すたびに決まった量だけ増え、サーバーへは送らない。
+        // 同期したUPTが1UPT＝1ルーンで付与され、サーバーの残高に保存される。
         // 所持ルーンのアイコンも所持数の文字と一緒に大きくなり、文字に重ならず、終わると戻る。
         [UnityTest]
-        public IEnumerator MockRunesGrowTheIconAndAddTheSampleAmount()
+        public IEnumerator SyncedUptBecomesRunesAndGrowsTheIcon()
         {
             var view = default(HomeView);
             yield return LoadHome(value => view = value);
-            var data = Object.FindAnyObjectByType<HomeBootstrap>().Data;
-            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(data.Runes)));
+            Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
             Vector2 restPivot = view.RuneTarget.pivot;
 
             yield return Tap(view);
-            Assert.That(view.GainLabel.text, Is.EqualTo("+1,340"));
+            long upt = services
+                .Server.ReadAsync(CancellationToken.None)
+                .GetAwaiter()
+                .GetResult()
+                .Where(day => day.hasValue)
+                .Sum(day => day.steps);
+            Assert.That(upt, Is.GreaterThan(0));
+            Assert.That(view.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(upt)));
             var icon = new Vector3[4];
             var label = new Vector3[4];
             float largest = 1f;
@@ -80,14 +88,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(largest, Is.GreaterThan(1.35f));
             Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
             Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
-            Assert.That(
-                view.RunesLabel.text,
-                Is.EqualTo(HomeViewState.Runes(data.Runes + data.MockGrantedRunes))
-            );
+            Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(upt)));
             Assert.That(
                 services.Server.ReadRunesAsync(CancellationToken.None).GetAwaiter().GetResult(),
-                Is.Zero,
-                "Mock runes never reach the server."
+                Is.EqualTo(upt),
+                "The server keeps the granted runes."
             );
         }
 
@@ -102,8 +107,6 @@ namespace Baryonyx.Tests.PlayMode
         private IEnumerator LoadHome(System.Action<HomeView> found)
         {
             services = TestGameServices.Use();
-            // 仮のルーンなら、歩数に関係なく押すたびに獲得できる。
-            HomeBootstrap.MockRuneGainOverride = true;
             yield return SceneTests.Load<HomeBootstrap>(
                 SceneTests.HomePath,
                 home => SceneTests.HomeReady(home) && home.Presenter.StepTask.IsCompleted,

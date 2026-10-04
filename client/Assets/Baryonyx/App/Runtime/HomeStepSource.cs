@@ -11,18 +11,12 @@ namespace Baryonyx.App
     {
         private readonly HealthStepLink link;
 
-        // 偽なら歩数の同期だけを行い、所持ルーンの読み取りとルーンへの変換をしない（仮データのルーンを使う場合）。
-        private readonly bool runes;
-
-        public HomeStepSource(HealthStepLink link, bool runes = true)
-        {
+        public HomeStepSource(HealthStepLink link) =>
             this.link = link ?? throw new ArgumentNullException(nameof(link));
-            this.runes = runes;
-        }
 
         public async Task<HomeStepReading> LoadAsync(CancellationToken token)
         {
-            long? balance = runes ? await link.ReadRunesAsync(token) : null;
+            long balance = await link.ReadRunesAsync(token);
             if (await link.CheckAsync(token) != HealthLinkStatus.Linked)
                 return Unlinked(HomeStepResult.Unlinked, balance);
             return await ReadAsync(balance, 0, token);
@@ -45,14 +39,13 @@ namespace Baryonyx.App
                 return Unlinked(HomeStepResult.Unlinked);
             if (result == HealthSyncStatus.ReadFailed)
                 return new HomeStepReading(HomeStepResult.Failed, HomeStepLink.Linked, 0);
-            if (!runes)
-                return await ReadAsync(null, 0, token);
+            // サーバーは日ごとに変換済みの歩数を保存しており、前回の請求から増えたUPTだけをルーンにする。
             var claim = await link.ClaimRunesAsync(token);
             return await ReadAsync(claim.Balance, claim.Granted, token);
         }
 
         private async Task<HomeStepReading> ReadAsync(
-            long? balance,
+            long balance,
             long grantedRunes,
             CancellationToken token
         )

@@ -15,7 +15,5 @@ MonoBehaviour:
   StepLink: 0
   Steps: 3820
   Runes: 12480
-  MockRuneGain: 1
-  MockGrantedRunes: 1340
   DestinationName: "\u68EE\u306E\u907A\u8DE1"
   DestinationFloor: B3F
