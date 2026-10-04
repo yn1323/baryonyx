@@ -117,12 +117,20 @@ namespace Baryonyx.Combat.Editor
             public Vector2 Feet;
             public Color Color;
             public int Hp;
-            public int MaxHp;
 
-            /// <summary>The stats the cards' powers are parts of (provisional, for the mock).</summary>
-            public int Strength;
-            public int Magic;
-            public int Defense;
+            /// <summary>The level, whose growth sets the defense constant of the ally's blows.</summary>
+            public int Level;
+
+            /// <summary>
+            /// The stats at level 100, the same as the tavern's mock data
+            /// (doc/features/progression.md, the party's level-100 stats).
+            /// </summary>
+            public CharacterStats Level100;
+
+            /// <summary>The stats at <see cref="Level"/>, which the cards' powers are parts of.</summary>
+            public CharacterStats Stats => Level100.At(Level);
+
+            public int MaxHp => Stats.Hp;
 
             /// <summary>Who the ally is among the cards' users.</summary>
             public CardUser User;
@@ -135,9 +143,14 @@ namespace Baryonyx.Combat.Editor
             public int Size;
             public int MaxHp;
 
-            /// <summary>The name of its attack and its damage to one ally.</summary>
+            /// <summary>The name of its attack and its power (物攻) before the ally's defense.</summary>
             public string Skill;
             public int Power;
+
+            /// <summary>The level it shows up at, and its defenses against blows (物防) and spells (属防).</summary>
+            public int Level;
+            public int PhysicalDefense;
+            public int MagicDefense;
 
             /// <summary>Weaknesses in icon order; those not in <see cref="Revealed"/> show "?".</summary>
             public BattleInspectElement[] Weaknesses;
@@ -163,10 +176,8 @@ namespace Baryonyx.Combat.Editor
                 Feet = new Vector2(-420, 40),
                 Color = new Color(0.66f, 0.45f, 0.9f),
                 Hp = 262,
-                MaxHp = 300,
-                Strength = 90,
-                Magic = 318,
-                Defense = 110,
+                Level = 12,
+                Level100 = new(2300, 700, 850, 2450, 1700, 560, 300, 500),
                 User = CardUser.Toma,
             },
             new()
@@ -176,10 +187,8 @@ namespace Baryonyx.Combat.Editor
                 Feet = new Vector2(-690, 170),
                 Color = new Color(0.33f, 0.8f, 0.76f),
                 Hp = 284,
-                MaxHp = 310,
-                Strength = 100,
-                Magic = 200,
-                Defense = 140,
+                Level = 10,
+                Level100 = new(2500, 800, 1150, 1600, 1800, 540, 200, 900),
                 User = CardUser.Mina,
             },
             new()
@@ -189,10 +198,8 @@ namespace Baryonyx.Combat.Editor
                 Feet = new Vector2(-420, -220),
                 Color = new Color(0.9f, 0.32f, 0.3f),
                 Hp = 418,
-                MaxHp = 480,
-                Strength = 243,
-                Magic = 120,
-                Defense = 200,
+                Level = 10,
+                Level100 = new(3900, 1950, 1600, 950, 1200, 490, 500, 300),
                 User = CardUser.Aria,
             },
             new()
@@ -202,10 +209,8 @@ namespace Baryonyx.Combat.Editor
                 Feet = new Vector2(-690, -100),
                 Color = new Color(0.5f, 0.78f, 0.32f),
                 Hp = 331,
-                MaxHp = 360,
-                Strength = 230,
-                Magic = 260,
-                Defense = 120,
+                Level = 11,
+                Level100 = new(2850, 1800, 950, 2050, 1100, 670, 900, 600),
                 User = CardUser.Luka,
             },
         };
@@ -220,9 +225,12 @@ namespace Baryonyx.Combat.Editor
                 Name = "ForestGuardian",
                 Feet = new Vector2(790, -40),
                 Size = 128,
-                MaxHp = 3200,
+                MaxHp = 2133,
                 Skill = "大地の拳",
-                Power = 140,
+                Power = 239,
+                Level = 10,
+                PhysicalDefense = 160,
+                MagicDefense = 80,
                 Weaknesses = new[] { BattleInspectElement.Fire, BattleInspectElement.Slash },
                 Revealed = new[] { BattleInspectElement.Fire },
                 Face = new Vector2Int(12, 28),
@@ -233,9 +241,12 @@ namespace Baryonyx.Combat.Editor
                 Name = "MossWolf",
                 Feet = new Vector2(400, 100),
                 Size = 96,
-                MaxHp = 980,
+                MaxHp = 801,
                 Skill = "かみつき",
-                Power = 90,
+                Power = 154,
+                Level = 10,
+                PhysicalDefense = 60,
+                MagicDefense = 39,
                 Weaknesses = new[] { BattleInspectElement.Ice, BattleInspectElement.Fire },
                 Revealed = new[] { BattleInspectElement.Ice },
                 Face = new Vector2Int(0, 49),
@@ -245,9 +256,12 @@ namespace Baryonyx.Combat.Editor
                 Name = "MossSlime",
                 Feet = new Vector2(400, -170),
                 Size = 64,
-                MaxHp = 420,
+                MaxHp = 370,
                 Skill = "たいあたり",
-                Power = 55,
+                Power = 94,
+                Level = 10,
+                PhysicalDefense = 41,
+                MagicDefense = 20,
                 Weaknesses = new[] { BattleInspectElement.Thunder, BattleInspectElement.Fire },
                 Revealed = Array.Empty<BattleInspectElement>(),
                 Face = new Vector2Int(2, 36),
@@ -363,7 +377,7 @@ namespace Baryonyx.Combat.Editor
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 BuildNumberSamples();
-                BuildCardGallery(view.TodayUpt);
+                BuildCardGallery(view.TodayAct);
                 BuildWeaknessRevealPreview();
                 BattleSkillVfxAssets.BuildPreview(Art("BattleBackground"), Art);
                 AssetDatabase.SaveAssetIfDirty(font);
@@ -769,9 +783,8 @@ namespace Baryonyx.Combat.Editor
                         NameTag = tag,
                         StartHp = ally.Hp,
                         MaxHp = ally.MaxHp,
-                        Strength = ally.Strength,
-                        Magic = ally.Magic,
-                        Defense = ally.Defense,
+                        Level = ally.Level,
+                        Stats = ally.Stats,
                     }
                 );
             }
@@ -837,6 +850,9 @@ namespace Baryonyx.Combat.Editor
                         MaxHp = spec.MaxHp,
                         SkillName = spec.Skill,
                         Power = spec.Power,
+                        Level = spec.Level,
+                        PhysicalDefense = spec.PhysicalDefense,
+                        MagicDefense = spec.MagicDefense,
                         Weaknesses = weaknesses,
                         IconUv = FaceUv(texture, spec.Face, TurnIconDots),
                         Boss = spec.Boss,
@@ -1307,7 +1323,7 @@ namespace Baryonyx.Combat.Editor
                 var spec =
                     CardSkills.Find(DeckIds[i])
                     ?? throw new InvalidOperationException("Missing card skill: " + DeckIds[i]);
-                var data = CardData(spec, view.TodayUpt);
+                var data = CardData(spec, view.TodayAct);
                 deck.Add(data);
                 var instance = InstantiatePrefab(CardPrefabPath, "Card" + spec.Id, hand);
                 var card = (RectTransform)instance.transform;
@@ -1502,7 +1518,7 @@ namespace Baryonyx.Combat.Editor
 
         // Only 16 of the cards are in the mock's deck, so the showcase gets every card skill laid
         // out face up in their order, ten to a row, over a dark backdrop.
-        private static void BuildCardGallery(int upt)
+        private static void BuildCardGallery(int act)
         {
             const int columns = 10;
             const float scale = 0.72f;
@@ -1515,7 +1531,7 @@ namespace Baryonyx.Combat.Editor
             var pitch = new Vector2(CardWidth + 7f, CardHeight + 6f) * scale;
             for (int i = 0; i < all.Count; i++)
             {
-                var data = CardData(all[i], upt);
+                var data = CardData(all[i], act);
                 var instance = InstantiatePrefab(CardPrefabPath, $"{i + 1:00}_{all[i].Id}", root);
                 var card = (RectTransform)instance.transform;
                 card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
@@ -1641,10 +1657,10 @@ namespace Baryonyx.Combat.Editor
 
         /// <summary>
         /// One card of the deck from a card skill: its texts worked out from its user's stats (and
-        /// today's <paramref name="upt"/>), its art, the frame and icon of its element, and how it
+        /// today's <paramref name="act"/>), its art, the frame and icon of its element, and how it
         /// is played.
         /// </summary>
-        private static BattleInspectCardData CardData(CardSkill skill, int upt)
+        private static BattleInspectCardData CardData(CardSkill skill, int act)
         {
             int user = Array.FindIndex(Allies, ally => ally.User == skill.User);
             var ally = Allies[user];
@@ -1659,14 +1675,14 @@ namespace Baryonyx.Combat.Editor
                 Description = Baryonyx.UI.Cards.CardText.Description(
                     skill,
                     stat => StatOf(ally, stat),
-                    upt
+                    act
                 ),
                 Art = Art(skill.Art),
                 Frame = Art("CardFrame" + skill.Element),
                 ElementIcon =
                     skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
                 Cost = skill.Cost,
-                Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), upt),
+                Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), act),
                 Element = element,
                 Effect = BattleCardText.EffectOf(skill),
                 Caster = user,
@@ -1676,9 +1692,9 @@ namespace Baryonyx.Combat.Editor
         private static int StatOf(AllySpec ally, CardStat stat) =>
             stat switch
             {
-                CardStat.Strength => ally.Strength,
-                CardStat.Magic => ally.Magic,
-                CardStat.Defense => ally.Defense,
+                CardStat.PhysicalAttack => ally.Stats.PhysicalAttack,
+                CardStat.MagicAttack => ally.Stats.MagicAttack,
+                CardStat.PhysicalDefense => ally.Stats.PhysicalDefense,
                 _ => 0,
             };
 

@@ -12,15 +12,6 @@ using UnityEngine.UI;
 
 namespace Baryonyx.CardLoadout
 {
-    /// <summary>One person's tab at the top of the left, baked by the generator.</summary>
-    [Serializable]
-    public sealed class CardLoadoutPersonWidget
-    {
-        public string Id = "";
-        public Button Button;
-        public GameObject Selected;
-    }
-
     /// <summary>One of the person's four slots on the left, baked by the generator.</summary>
     [Serializable]
     public sealed class CardLoadoutSlotWidget
@@ -73,11 +64,8 @@ namespace Baryonyx.CardLoadout
         // 通知は案内人の画面の通知の帯に出す。
         public GuideMenuView Guide;
 
-        public ScrollRect PeopleScroll;
-        public CardLoadoutPersonWidget[] People = Array.Empty<CardLoadoutPersonWidget>();
-
-        // パーティとほかの仲間の間の区切り。
-        public GameObject PeopleDivider;
+        // 左上の仲間のタブ。
+        public PartyTabStrip People = new();
         public CardLoadoutSlotWidget[] Slots = Array.Empty<CardLoadoutSlotWidget>();
 
         // 右の見出しの横の、その人が付けられる属性のアイコン（2つまで）。
@@ -91,7 +79,6 @@ namespace Baryonyx.CardLoadout
 
         private CardLoadoutPresenter presenter;
         private CancellationTokenSource loading;
-        private string shownPerson;
         private readonly List<(Button Button, UnityEngine.Events.UnityAction Action)> bindings =
             new();
 
@@ -107,7 +94,7 @@ namespace Baryonyx.CardLoadout
 
         private void OnEnable()
         {
-            foreach (var person in People)
+            foreach (var person in People.Tabs)
             {
                 string id = person.Id;
                 Bind(person.Button, () => PersonPressed?.Invoke(id));
@@ -126,7 +113,7 @@ namespace Baryonyx.CardLoadout
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
             presenter = null;
-            shownPerson = null;
+            People.Forget();
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             if (Party == null)
@@ -193,11 +180,7 @@ namespace Baryonyx.CardLoadout
         private void ShowLoading()
         {
             Set(Count, LoadingText);
-            foreach (var person in People)
-                if (person.Button != null)
-                    person.Button.gameObject.SetActive(false);
-            if (PeopleDivider != null)
-                PeopleDivider.SetActive(false);
+            People.Hide();
             foreach (var widget in Slots)
             {
                 ShowSlot(widget, null, null, null, false);
@@ -228,7 +211,7 @@ namespace Baryonyx.CardLoadout
 
         public void Render(CardLoadoutState state)
         {
-            ShowPeople(state);
+            People.Show(state.People, state.PartyCount, state.Person);
             for (int i = 0; i < Slots.Length; i++)
                 ShowSlot(
                     Slots[i],
@@ -256,44 +239,6 @@ namespace Baryonyx.CardLoadout
             return element != CardElement.None && index < ElementIcons.Length
                 ? ElementIcons[index]
                 : null;
-        }
-
-        // パーティの枠の順、区切り、続けてほかの仲間の順にタブを並べ、選んでいる人を金の枠にする。
-        private void ShowPeople(CardLoadoutState state)
-        {
-            var order = new Dictionary<string, int>();
-            for (int i = 0; i < state.People.Count; i++)
-                order[state.People[i]] = i;
-            var tabs = new SortedList<int, Transform>();
-            foreach (var person in People)
-            {
-                if (person.Button == null)
-                    continue;
-                bool shown = order.TryGetValue(person.Id, out int index);
-                person.Button.gameObject.SetActive(shown);
-                if (person.Selected != null)
-                    person.Selected.SetActive(shown && index == state.Person);
-                if (shown)
-                    tabs[index] = person.Button.transform;
-            }
-            bool divided = state.PartyCount > 0 && state.PartyCount < state.People.Count;
-            if (PeopleDivider != null)
-                PeopleDivider.SetActive(divided);
-            int sibling = 0;
-            foreach (var (index, tab) in tabs)
-            {
-                if (divided && index == state.PartyCount)
-                    PeopleDivider.transform.SetSiblingIndex(sibling++);
-                tab.SetSiblingIndex(sibling++);
-            }
-
-            // 人が替わったときだけ、選んだタブが見えるように横へ送る。
-            if (state.PersonId != shownPerson)
-            {
-                shownPerson = state.PersonId;
-                if (state.Person >= 0 && tabs.TryGetValue(state.Person, out var selected))
-                    Reveal((RectTransform)selected);
-            }
         }
 
         private void ShowRows(CardLoadoutState state)
@@ -391,32 +336,6 @@ namespace Baryonyx.CardLoadout
                 if (row.Id == id && row.Art != null)
                     return row.Art.texture;
             return null;
-        }
-
-        // 横に並んだタブのうち、選んだタブが見える位置まで中身を送る。
-        private void Reveal(RectTransform tab)
-        {
-            // 停止中（Prefabの生成）は、並べたままにする。
-            if (!Application.isPlaying)
-                return;
-            if (PeopleScroll == null || PeopleScroll.content == null || tab == null)
-                return;
-            var viewport =
-                PeopleScroll.viewport != null
-                    ? PeopleScroll.viewport
-                    : (RectTransform)PeopleScroll.transform;
-            Canvas.ForceUpdateCanvases();
-            var corners = new Vector3[4];
-            tab.GetWorldCorners(corners);
-            float left = viewport.InverseTransformPoint(corners[0]).x;
-            float right = viewport.InverseTransformPoint(corners[2]).x;
-            var bounds = viewport.rect;
-            float shift =
-                left < bounds.xMin ? bounds.xMin - left
-                : right > bounds.xMax ? bounds.xMax - right
-                : 0f;
-            if (shift != 0f)
-                PeopleScroll.content.anchoredPosition += new Vector2(shift, 0f);
         }
 
         private void Bind(Button button, UnityEngine.Events.UnityAction action)

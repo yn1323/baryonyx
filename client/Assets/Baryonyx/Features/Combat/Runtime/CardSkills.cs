@@ -19,9 +19,9 @@ namespace Baryonyx.Combat
         private const CardTarget Allies = CardTarget.AllAllies;
         private const CardTarget Self = CardTarget.Self;
         private const CardTarget Nobody = CardTarget.None;
-        private const CardStat Str = CardStat.Strength;
-        private const CardStat Mag = CardStat.Magic;
-        private const CardStat Def = CardStat.Defense;
+        private const CardStat Phy = CardStat.PhysicalAttack;
+        private const CardStat Mag = CardStat.MagicAttack;
+        private const CardStat Def = CardStat.PhysicalDefense;
 
         private static readonly CardElement[] Magic =
         {
@@ -42,7 +42,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 1,
                 "剣で敵1体を斬りつけ、{0}ダメージ。",
-                Damage(Enemy, Str, 100)
+                Damage(Enemy, Phy, 100)
             ),
             Card(
                 "Fire",
@@ -110,7 +110,7 @@ namespace Baryonyx.Combat
                 Enemies,
                 3,
                 "回転斬りで敵全体に{0}ダメージ。出血2ターン。",
-                Damage(Enemies, Str, 60),
+                Damage(Enemies, Phy, 60),
                 Apply(Enemies, CardStatus.Bleed, 2)
             ),
             Card(
@@ -122,7 +122,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 5,
                 "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。",
-                Damage(Enemy, Str, 200).Bonus(CardCondition.OnWounded, 50)
+                Damage(Enemy, Phy, 200).Bonus(CardCondition.OnWounded, 50)
             ),
             Card(
                 "BladeDance",
@@ -133,7 +133,7 @@ namespace Baryonyx.Combat
                 Random,
                 8,
                 "光の刃が舞い、ランダムな敵に{0}ダメージを7回。",
-                Damage(Random, Str, 45, hits: 7)
+                Damage(Random, Phy, 45, hits: 7)
             ),
             Card(
                 "Hone",
@@ -167,7 +167,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 2,
                 "敵1体に{0}ダメージ。防御ダウン2ターン。",
-                Damage(Enemy, Str, 80),
+                Damage(Enemy, Phy, 80),
                 Apply(Enemy, CardStatus.Vulnerable, 2)
             ),
             Card(
@@ -179,7 +179,7 @@ namespace Baryonyx.Combat
                 Enemies,
                 4,
                 "大地を叩き割り、敵全体に{0}ダメージ。",
-                Damage(Enemies, Str, 85)
+                Damage(Enemies, Phy, 85)
             ),
             Card(
                 "GiantImpact",
@@ -190,7 +190,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 7,
                 "光の巨拳を打ち下ろし、敵1体に{0}ダメージ。",
-                Damage(Enemy, Str, 320)
+                Damage(Enemy, Phy, 320)
             ),
             Card(
                 "StrideStrike",
@@ -200,8 +200,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
-                "敵1体に{0}ダメージ。今日のUPTが多いほど強い。",
-                Damage(Enemy, Str, 110).WithUpt(10, 100)
+                "敵1体に{0}ダメージ。今日のACTが多いほど強い。",
+                Damage(Enemy, Phy, 110).WithAct(10, 100)
             ),
             Card(
                 "GuardianOath",
@@ -362,7 +362,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 1,
                 "敵1体に{0}ダメージ。弱点を突くとエネルギー+1。",
-                Damage(Enemy, Str, 90),
+                Damage(Enemy, Phy, 90),
                 Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
             ),
             Card(
@@ -374,7 +374,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 1,
                 "敵1体に{0}ダメージ。毒を2つ重ねる。",
-                Damage(Enemy, Str, 35),
+                Damage(Enemy, Phy, 35),
                 Apply(Enemy, CardStatus.Poison, 0, 2)
             ),
             Card(
@@ -386,7 +386,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 2,
                 "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせる。",
-                Damage(Enemy, Str, 60),
+                Damage(Enemy, Phy, 60),
                 Simple(CardActionKind.Delay, Enemy, 1)
             ),
             Card(
@@ -398,7 +398,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 2,
                 "敵1体に{0}ダメージ。その敵の弱点をすべて見抜く。",
-                Damage(Enemy, Str, 70),
+                Damage(Enemy, Phy, 70),
                 Simple(CardActionKind.RevealWeakness, Enemy)
             ),
             Card(
@@ -410,7 +410,7 @@ namespace Baryonyx.Combat
                 Enemies,
                 4,
                 "矢の雨で、敵全体に{0}ダメージを2回。",
-                Damage(Enemies, Str, 45, hits: 2)
+                Damage(Enemies, Phy, 45, hits: 2)
             ),
             Card(
                 "ShadowSnipe",
@@ -421,7 +421,7 @@ namespace Baryonyx.Combat
                 Enemy,
                 6,
                 "敵1体に{0}ダメージ。弱点を突くと威力+50%。",
-                Damage(Enemy, Str, 220).Bonus(CardCondition.OnWeakness, 50)
+                Damage(Enemy, Phy, 220).Bonus(CardCondition.OnWeakness, 50)
             ),
             Card(
                 "LightningBolt",
@@ -477,7 +477,7 @@ namespace Baryonyx.Combat
                 CardKind.Buff,
                 Allies,
                 2,
-                "味方全体のすばやさを2ターン上げる。",
+                "味方全体の速度を2ターン上げる。",
                 Apply(Allies, CardStatus.SpeedUp, 2, 30)
             ),
             Card(
@@ -500,8 +500,8 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Allies,
                 3,
-                "味方全体のHPを{0}回復。今日のUPTが多いほど回復。",
-                Heal(Allies, Mag, 50).WithUpt(10, 100)
+                "味方全体のHPを{0}回復。今日のACTが多いほど回復。",
+                Heal(Allies, Mag, 50).WithAct(10, 100)
             ),
             Card(
                 "Regen",

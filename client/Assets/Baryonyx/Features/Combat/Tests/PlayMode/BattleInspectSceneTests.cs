@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.UI;
 using Baryonyx.Vfx.Hd2d;
@@ -101,9 +102,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(slash.Place, Is.EqualTo(BattleInspectCardPlace.Discard));
             Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost));
             yield return WaitActions(view);
-            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - slash.Power));
+            int dealt = Dealt(view, slash, wolf);
+            Assert.That(dealt, Is.LessThan(slash.Power), "The wolf's defense softens the blow.");
+            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - dealt));
             Assert.That(wolf.HpFill.anchorMax.x, Is.EqualTo(wolf.Hp / (float)wolf.MaxHp));
-            Assert.That(Rising(view.DamageNumber), Is.EqualTo(new[] { slash.Power.ToString() }));
+            Assert.That(Rising(view.DamageNumber), Is.EqualTo(new[] { dealt.ToString() }));
             Assert.That(Rising(view.WeakNumber), Is.Empty);
         }
 
@@ -233,7 +236,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             Assert.That(view.TapArea.activeSelf, Is.False);
             yield return WaitActions(view);
-            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - slash.Power));
+            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - Dealt(view, slash, wolf)));
         }
 
         [UnityTest]
@@ -452,10 +455,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(slot.localScale, Is.EqualTo(Vector3.one), "The icon settles to its size.");
             yield return WaitActions(view);
 
-            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - Mathf.RoundToInt(fire.Power * 1.5f)));
+            int weak = Mathf.RoundToInt(Dealt(view, fire, wolf) * 1.5f);
+            Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - weak));
             Assert.That(
                 Rising(view.WeakNumber),
-                Is.EqualTo(new[] { Mathf.RoundToInt(fire.Power * 1.5f).ToString() }),
+                Is.EqualTo(new[] { weak.ToString() }),
                 "A weakness shows only in the number's look, without words."
             );
             Assert.That(Rising(view.DamageNumber), Is.Empty);
@@ -927,7 +931,11 @@ namespace Baryonyx.Tests.PlayMode
             // Fire is one of the wolf's weaknesses.
             Assert.That(
                 wolf.Hp,
-                Is.EqualTo(wolf.MaxHp - slash.Power - Mathf.RoundToInt(fire.Power * 1.5f))
+                Is.EqualTo(
+                    wolf.MaxHp
+                        - Dealt(view, slash, wolf)
+                        - Mathf.RoundToInt(Dealt(view, fire, wolf) * 1.5f)
+                )
             );
         }
 
@@ -964,11 +972,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.EnemyTurn, Is.False);
             Assert.That(wolfStepped, Is.True);
             Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));
-            // The wolf and the slime come before the next party turn; the guardian waits.
-            Assert.That(
-                view.Allies.Sum(ally => ally.Hp),
-                Is.EqualTo(partyHp - wolf.Power - slime.Power)
-            );
+            // The wolf and the slime come before the next party turn; the guardian waits. Each
+            // hits an ally at random, softened by that ally's defense.
+            var both = Blows(view, wolf).SelectMany(_ => Blows(view, slime), (w, s) => w + s);
+            Assert.That(both, Has.Member(partyHp - view.Allies.Sum(ally => ally.Hp)));
             Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
         }
 
@@ -1498,7 +1505,7 @@ namespace Baryonyx.Tests.PlayMode
             int blow = Baryonyx.Combat.CardRules.Power(
                 skill.Actions[0],
                 view.StatOf(caster, skill.Actions[0].Stat),
-                view.TodayUpt
+                view.TodayAct
             );
             var (stat, percent) = Baryonyx.Combat.CardRules.TickOf(Baryonyx.Combat.CardStatus.Burn);
             int burn = Mathf.RoundToInt(view.StatOf(caster, stat) * percent / 100f);
@@ -1506,8 +1513,14 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, embers, wolf.TargetArea);
             yield return WaitActions(view);
             Assert.That(view.HasStatus(false, 1, Baryonyx.Combat.CardStatus.Burn), Is.True);
-            // Fire is one of the wolf's weaknesses.
-            int afterBlow = wolf.MaxHp - Mathf.RoundToInt(blow * 1.5f);
+            // The wolf's 属防 softens the blow, and fire is one of its weaknesses. The burn
+            // goes through no defense.
+            int softened = Baryonyx.Combat.CombatFormula.Defend(
+                blow,
+                wolf.MagicDefense,
+                view.Allies[caster].Level
+            );
+            int afterBlow = wolf.MaxHp - Mathf.RoundToInt(softened * 1.5f);
             Assert.That(wolf.Hp, Is.EqualTo(afterBlow));
 
             view.EndTurnButton.onClick.Invoke();
@@ -1690,6 +1703,30 @@ namespace Baryonyx.Tests.PlayMode
                 card.Body.TransformPoint(new Vector2(rect.center.x, rect.yMax - 40f))
             );
         }
+
+        /// <summary>
+        /// A card's blow on <paramref name="enemy"/> after its defense: 属防 for a spell (worked
+        /// out from 属攻), 物防 for the others, at the level of the card's user.
+        /// </summary>
+        private static int Dealt(
+            BattleInspectView view,
+            BattleInspectCard card,
+            BattleInspectEnemy enemy
+        )
+        {
+            var damage = CardSkills
+                .Find(view.Deck[card.DeckIndex].Skill)
+                .Actions.First(action => action.Kind == CardActionKind.Damage);
+            int defense =
+                damage.Stat == CardStat.MagicAttack ? enemy.MagicDefense : enemy.PhysicalDefense;
+            return CombatFormula.Defend(card.Power, defense, view.Allies[card.Caster].Level);
+        }
+
+        /// <summary>The enemy's blow as each ally would take it, after that ally's defense.</summary>
+        private static IEnumerable<int> Blows(BattleInspectView view, BattleInspectEnemy enemy) =>
+            view.Allies.Select(ally =>
+                CombatFormula.Defend(enemy.Power, ally.Stats.PhysicalDefense, enemy.Level)
+            );
 
         /// <summary>The texts of the numbers now rising from a template.</summary>
         private static string[] Rising(TMP_Text template) =>

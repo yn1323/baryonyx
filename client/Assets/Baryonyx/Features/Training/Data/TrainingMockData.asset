@@ -14,18 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Training.TrainingMockData
   Characters:
   - Id: toma
-    Base:
-      Hp: 102
-      Strength: 57
-      Magic: 120
-      Defense: 55
-      Speed: 50
-    Growth:
-      Hp: 18
-      Strength: 3
-      Magic: 18
-      Defense: 5
-      Speed: 2
+    Level100:
+      Hp: 2300
+      PhysicalAttack: 700
+      PhysicalDefense: 850
+      MagicAttack: 2450
+      MagicDefense: 1700
+      Speed: 560
+      Critical: 300
+      Luck: 500
     Passives:
     - Name: "\u9B54\u529B\u306E\u6CC9"
       Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
@@ -39,7 +36,7 @@ MonoBehaviour:
       Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
     Uniques:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
-      Description: "\u6575\u5168\u4F53\u306B \u307E\u308A\u3087\u304F\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
+      Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 5
       Energy: 3
       Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
@@ -49,18 +46,15 @@ MonoBehaviour:
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
   - Id: luka
-    Base:
-      Hp: 160
-      Strength: 110
-      Magic: 140
-      Defense: 70
-      Speed: 54
-    Growth:
-      Hp: 20
-      Strength: 12
-      Magic: 12
-      Defense: 5
-      Speed: 3
+    Level100:
+      Hp: 2850
+      PhysicalAttack: 1800
+      PhysicalDefense: 950
+      MagicAttack: 2050
+      MagicDefense: 1100
+      Speed: 670
+      Critical: 900
+      Luck: 600
     Passives:
     - Name: "\u72E9\u4EBA\u306E\u76EE"
       Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
@@ -68,7 +62,7 @@ MonoBehaviour:
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     - Name: "\u75BE\u98A8"
-      Description: "\u3059\u3070\u3084\u3055 +10%"
+      Description: "\u901F\u5EA6 +10%"
       UnlockLevel: 15
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
@@ -84,18 +78,15 @@ MonoBehaviour:
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
   - Id: aria
-    Base:
-      Hp: 210
-      Strength: 117
-      Magic: 75
-      Defense: 92
-      Speed: 42
-    Growth:
-      Hp: 30
-      Strength: 14
-      Magic: 5
-      Defense: 12
-      Speed: 2
+    Level100:
+      Hp: 3900
+      PhysicalAttack: 1950
+      PhysicalDefense: 1600
+      MagicAttack: 950
+      MagicDefense: 1200
+      Speed: 490
+      Critical: 500
+      Luck: 300
     Passives:
     - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
       Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
@@ -114,23 +105,20 @@ MonoBehaviour:
       Energy: 2
       Icon: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
     - Name: "\u4E00\u9583"
-      Description: "\u65751\u4F53\u306B \u3061\u304B\u3089\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
+      Description: "\u65751\u4F53\u306B \u7269\u653B\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 20
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
   - Id: mina
-    Base:
-      Hp: 148
-      Strength: 64
-      Magic: 92
-      Defense: 68
-      Speed: 48
-    Growth:
-      Hp: 18
-      Strength: 4
-      Magic: 12
-      Defense: 8
-      Speed: 2
+    Level100:
+      Hp: 2500
+      PhysicalAttack: 800
+      PhysicalDefense: 1150
+      MagicAttack: 1600
+      MagicDefense: 1800
+      Speed: 540
+      Critical: 200
+      Luck: 900
     Passives:
     - Name: "\u7948\u308A"
       Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
@@ -154,18 +142,15 @@ MonoBehaviour:
       Energy: 6
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
   - Id: anselm
-    Base:
-      Hp: 210
-      Strength: 117
-      Magic: 75
-      Defense: 92
-      Speed: 42
-    Growth:
-      Hp: 30
-      Strength: 14
-      Magic: 5
-      Defense: 12
-      Speed: 2
+    Level100:
+      Hp: 3600
+      PhysicalAttack: 1700
+      PhysicalDefense: 1500
+      MagicAttack: 1400
+      MagicDefense: 1300
+      Speed: 430
+      Critical: 300
+      Luck: 500
     Passives:
     - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
       Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
@@ -184,23 +169,20 @@ MonoBehaviour:
       Energy: 2
       Icon: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
     - Name: "\u4E00\u9583"
-      Description: "\u65751\u4F53\u306B \u3061\u304B\u3089\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
+      Description: "\u65751\u4F53\u306B \u7269\u653B\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 20
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
   - Id: greta
-    Base:
-      Hp: 160
-      Strength: 110
-      Magic: 140
-      Defense: 70
-      Speed: 54
-    Growth:
-      Hp: 20
-      Strength: 12
-      Magic: 12
-      Defense: 5
-      Speed: 3
+    Level100:
+      Hp: 2400
+      PhysicalAttack: 1700
+      PhysicalDefense: 800
+      MagicAttack: 1500
+      MagicDefense: 900
+      Speed: 700
+      Critical: 1000
+      Luck: 800
     Passives:
     - Name: "\u72E9\u4EBA\u306E\u76EE"
       Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
@@ -208,7 +190,7 @@ MonoBehaviour:
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     - Name: "\u75BE\u98A8"
-      Description: "\u3059\u3070\u3084\u3055 +10%"
+      Description: "\u901F\u5EA6 +10%"
       UnlockLevel: 15
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
@@ -224,18 +206,15 @@ MonoBehaviour:
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
   - Id: lutz
-    Base:
-      Hp: 102
-      Strength: 57
-      Magic: 120
-      Defense: 55
-      Speed: 50
-    Growth:
-      Hp: 18
-      Strength: 3
-      Magic: 18
-      Defense: 5
-      Speed: 2
+    Level100:
+      Hp: 3200
+      PhysicalAttack: 1300
+      PhysicalDefense: 1400
+      MagicAttack: 1900
+      MagicDefense: 1300
+      Speed: 450
+      Critical: 300
+      Luck: 400
     Passives:
     - Name: "\u9B54\u529B\u306E\u6CC9"
       Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
@@ -249,7 +228,7 @@ MonoBehaviour:
       Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
     Uniques:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
-      Description: "\u6575\u5168\u4F53\u306B \u307E\u308A\u3087\u304F\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
+      Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 5
       Energy: 3
       Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
@@ -259,18 +238,15 @@ MonoBehaviour:
       Energy: 5
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
   - Id: rita
-    Base:
-      Hp: 148
-      Strength: 64
-      Magic: 92
-      Defense: 68
-      Speed: 48
-    Growth:
-      Hp: 18
-      Strength: 4
-      Magic: 12
-      Defense: 8
-      Speed: 2
+    Level100:
+      Hp: 3000
+      PhysicalAttack: 2100
+      PhysicalDefense: 1000
+      MagicAttack: 600
+      MagicDefense: 800
+      Speed: 650
+      Critical: 800
+      Luck: 500
     Passives:
     - Name: "\u7948\u308A"
       Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
@@ -294,18 +270,15 @@ MonoBehaviour:
       Energy: 6
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
   - Id: ritsu
-    Base:
-      Hp: 160
-      Strength: 110
-      Magic: 140
-      Defense: 70
-      Speed: 54
-    Growth:
-      Hp: 20
-      Strength: 12
-      Magic: 12
-      Defense: 5
-      Speed: 3
+    Level100:
+      Hp: 2100
+      PhysicalAttack: 500
+      PhysicalDefense: 700
+      MagicAttack: 2400
+      MagicDefense: 1500
+      Speed: 600
+      Critical: 400
+      Luck: 600
     Passives:
     - Name: "\u72E9\u4EBA\u306E\u76EE"
       Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
@@ -313,7 +286,7 @@ MonoBehaviour:
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     - Name: "\u75BE\u98A8"
-      Description: "\u3059\u3070\u3084\u3055 +10%"
+      Description: "\u901F\u5EA6 +10%"
       UnlockLevel: 15
       Energy: 0
       Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}

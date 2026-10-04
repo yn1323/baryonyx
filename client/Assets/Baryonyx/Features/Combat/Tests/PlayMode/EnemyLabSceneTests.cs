@@ -96,7 +96,11 @@ namespace Baryonyx.Tests.PlayMode
             int party = PartyHp(view);
             yield return Press(lab, EnemyLabAction.Attack);
             Assert.That(slime.Hp, Is.EqualTo(slime.MaxHp), "A beaten enemy stands to act again.");
-            Assert.That(PartyHp(view), Is.EqualTo(party - slime.Power), "It hits one ally.");
+            Assert.That(
+                Blows(view, slime, slime.Power),
+                Has.Member(party - PartyHp(view)),
+                "It hits one ally, softened by that ally's defense."
+            );
 
             party = PartyHp(view);
             yield return Press(lab, EnemyLabAction.Freeze);
@@ -109,14 +113,21 @@ namespace Baryonyx.Tests.PlayMode
 
             yield return Press(lab, EnemyLabAction.Reflect);
             Assert.That(PartyHp(view), Is.EqualTo(party), "The mirror takes the blow.");
-            Assert.That(slime.Hp, Is.EqualTo(slime.MaxHp - slime.Power), "It hits itself.");
+            Assert.That(
+                slime.Hp,
+                Is.EqualTo(
+                    slime.MaxHp
+                        - CombatFormula.Defend(slime.Power, slime.PhysicalDefense, slime.Level)
+                ),
+                "It hits itself, through its own defense."
+            );
             for (int i = 0; i < view.Allies.Length; i++)
                 Assert.That(view.HasStatus(true, i, CardStatus.Reflect), Is.False);
 
             yield return Press(lab, EnemyLabAction.Paralysis);
             Assert.That(
-                PartyHp(view),
-                Is.EqualTo(party - Mathf.RoundToInt(slime.Power * 0.75f)),
+                Blows(view, slime, Mathf.RoundToInt(slime.Power * 0.75f)),
+                Has.Member(party - PartyHp(view)),
                 "A paralysed enemy hits a quarter weaker."
             );
             Assert.That(lab.EnemyLabel.text, Does.Contain("麻痺"));
@@ -196,6 +207,16 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         private static int PartyHp(BattleInspectView view) => view.Allies.Sum(ally => ally.Hp);
+
+        /// <summary>A blow of <paramref name="power"/> as each ally would take it, after that ally's defense.</summary>
+        private static IEnumerable<int> Blows(
+            BattleInspectView view,
+            BattleInspectEnemy enemy,
+            int power
+        ) =>
+            view.Allies.Select(ally =>
+                CombatFormula.Defend(power, ally.Stats.PhysicalDefense, enemy.Level)
+            );
 
         private IEnumerator Load(Action<EnemyLab, BattleInspectView> found)
         {

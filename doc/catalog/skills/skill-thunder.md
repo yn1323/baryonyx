@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunder.aseprite
 | 属性 | 雷 |
 | 種類・対象 | 攻撃・敵全体 |
 | コスト | 3 |
-| 説明文（モックの能力値、UPT0での数値） | 雷を落とし、敵全体に182ダメージ。 |
-| 効果（行う順） | 敵全体：ダメージ（まりょくの70%） |
+| 説明文（モックの能力値、ACT0での数値） | 雷を落とし、敵全体に181ダメージ。 |
+| 効果（行う順） | 敵全体：ダメージ（属攻の70%） |
 
 ## 分類固有のデータ
 
@@ -54,9 +54,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunder.aseprite
 | 対象 | 敵全体 | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
 | 属性 | 雷 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 3 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
-| 威力・回復量 | まりょくの70% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
+| 威力・回復量 | 属攻の70% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 激しい | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 空が暗くなり、敵ごとに稲妻が形を変えて落ちる。床の輪、敵の周りを走る放電、最初の一撃だけ閃光 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
@@ -115,3 +115,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunder.aseprite
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
+| 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |

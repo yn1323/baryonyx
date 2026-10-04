@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -117,8 +118,7 @@ namespace Baryonyx.Tests.EditMode
             new()
             {
                 Id = id,
-                Base = new TrainingStats(102, 57, 120, 55, 50),
-                Growth = new TrainingStats(18, 3, 18, 5, 2),
+                Level100 = new CharacterStats(2300, 700, 850, 2450, 1700, 560, 300, 500),
                 Passives = new[] { Skill("魔力の泉", 1, 0), Skill("炎の心得", 15, 0) },
                 Uniques = new[] { Skill("マナバースト", 5, 3), Skill("星降り", 20, 5) },
             };
@@ -188,7 +188,11 @@ namespace Baryonyx.Tests.EditMode
 
             Assert.That(state.Name, Is.EqualTo("トーマ"));
             Assert.That(state.Level, Is.EqualTo(12));
-            Assert.That(state.Stats, Is.EqualTo(new TrainingStats(300, 90, 318, 110, 72)));
+            // Lv 100 の値に、Lv 12 の成長率（約12.9%）を掛けて四捨五入した値。
+            Assert.That(
+                state.Stats,
+                Is.EqualTo(new CharacterStats(297, 90, 110, 316, 220, 72, 39, 65))
+            );
             Assert.That(state.Runes, Is.EqualTo(8450));
             Assert.That(state.NextCost, Is.EqualTo(1200));
             Assert.That(state.DialogOpen, Is.False);
@@ -244,7 +248,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Remaining, Is.EqualTo(7250));
             Assert.That(
                 state.TargetStats - state.Stats,
-                Is.EqualTo(new TrainingStats(18, 3, 18, 5, 2))
+                Is.EqualTo(new CharacterStats(7, 3, 2, 8, 5, 2, 1, 1))
             );
             Assert.That(state.Learned, Is.Empty);
             Assert.That(state.NextUnlock.Name, Is.EqualTo("炎の心得"));

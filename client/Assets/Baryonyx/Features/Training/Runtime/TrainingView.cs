@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
+using Baryonyx.Combat;
 using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.UI.GuideMenu;
@@ -316,7 +317,7 @@ namespace Baryonyx.Training
                 LevelUpCost.SetActive(!state.Maxed);
             Set(LevelUpCostLabel, Number(state.NextCost));
 
-            for (int i = 0; i < Stats.Length && i < TrainingStats.Count; i++)
+            for (int i = 0; i < Stats.Length && i < CharacterStats.Count; i++)
                 Set(Stats[i], state.Stats[i].ToString(CultureInfo.InvariantCulture));
             for (int i = 0; i < Skills.Length; i++)
                 ShowSkill(Skills[i], i < state.Skills.Count ? state.Skills[i] : null);
@@ -338,7 +339,7 @@ namespace Baryonyx.Training
                 More.interactable = state.CanMore;
             if (Confirm != null)
                 Confirm.interactable = state.CanConfirm;
-            for (int i = 0; i < Diffs.Length && i < TrainingStats.Count; i++)
+            for (int i = 0; i < Diffs.Length && i < CharacterStats.Count; i++)
             {
                 int before = state.Stats[i];
                 int after = state.TargetStats[i];

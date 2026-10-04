@@ -22,9 +22,9 @@ namespace Baryonyx.Combat.Presentation
         private const float ParalysisCut = 0.25f;
         private const float ProtectCut = 0.25f;
 
-        /// <summary>Today's UPT, for the cards that grow with it (a mock value; the battle has no step data yet).</summary>
+        /// <summary>Today's ACT, for the cards that grow with it (a mock value; the battle has no step data yet).</summary>
         [Min(0)]
-        public int TodayUpt = 6000;
+        public int TodayAct = 6000;
 
         private readonly Dictionary<int, List<ActiveStatus>> statuses = new();
         private int[] allyBlock = Array.Empty<int>();
@@ -50,9 +50,9 @@ namespace Baryonyx.Combat.Presentation
                 return 0;
             return stat switch
             {
-                CardStat.Strength => Allies[ally].Strength,
-                CardStat.Magic => Allies[ally].Magic,
-                CardStat.Defense => Allies[ally].Defense,
+                CardStat.PhysicalAttack => Allies[ally].Stats.PhysicalAttack,
+                CardStat.MagicAttack => Allies[ally].Stats.MagicAttack,
+                CardStat.PhysicalDefense => Allies[ally].Stats.PhysicalDefense,
                 _ => 0,
             };
         }
@@ -274,6 +274,11 @@ namespace Baryonyx.Combat.Presentation
                 power = Mathf.RoundToInt(power * (1f + up.Amount / 100f));
             if (HasStatus(false, enemy, CardStatus.Vulnerable))
                 power = Mathf.RoundToInt(power * (1f + VulnerableBonus));
+            power = CombatFormula.Defend(
+                power,
+                DefenseOf(target, action.Stat),
+                Allies[caster].Level
+            );
             var element = BattleCardText.ElementOf(skill.Element);
             var extra = HasStatus(true, caster, CardStatus.FireBlade)
                 ? BattleInspectElement.Fire
@@ -282,7 +287,14 @@ namespace Baryonyx.Combat.Presentation
         }
 
         private int Power(CardAction action, int caster) =>
-            CardRules.Power(action, StatOf(caster, action.Stat), TodayUpt);
+            CardRules.Power(action, StatOf(caster, action.Stat), TodayAct);
+
+        /// <summary>
+        /// The enemy's defense against a power worked out from <paramref name="stat"/>: 属防 for
+        /// a spell (from 属攻), 物防 for a blow (from 物攻 or 物防).
+        /// </summary>
+        private static int DefenseOf(BattleInspectEnemy enemy, CardStat stat) =>
+            stat == CardStat.MagicAttack ? enemy.MagicDefense : enemy.PhysicalDefense;
 
         /// <summary>True when the blow of the card's element (or the user's fire blade) hits a weakness.</summary>
         private bool IsWeak(int enemy, CardElement element, int caster)
@@ -430,7 +442,7 @@ namespace Baryonyx.Combat.Presentation
                 if (sigil == null)
                     continue;
                 StatusesOf(false, i).Remove(sigil);
-                yield return Detonate(i, sigil.Power);
+                yield return Detonate(i, sigil.Power, sigil.Source);
             }
             for (int i = 0; i < Allies.Length; i++)
             {
@@ -449,7 +461,7 @@ namespace Baryonyx.Combat.Presentation
                 var cloud = Find(true, i, CardStatus.Thundercloud);
                 if (cloud == null)
                     continue;
-                yield return CloudStrike(cloud.Power);
+                yield return CloudStrike(cloud.Power, cloud.Source);
             }
 
             // Every lasting status counts down; poison wanes by its stacks, and freezing and
@@ -483,8 +495,11 @@ namespace Baryonyx.Combat.Presentation
             yield return Vfx.StatusTick(status, target, land);
         }
 
-        private IEnumerator Detonate(int marked, int power)
+        /// <summary>The sigil's blast on every enemy, a spell each enemy's 属防 softens.</summary>
+        private IEnumerator Detonate(int marked, int power, int caster)
         {
+            int Blast(int enemy) =>
+                CombatFormula.Defend(power, Enemies[enemy].MagicDefense, Allies[caster].Level);
             var alive = new List<int>();
             for (int i = 0; i < Enemies.Length; i++)
                 if (Enemies[i].Alive)
@@ -492,18 +507,19 @@ namespace Baryonyx.Combat.Presentation
             if (Vfx == null)
             {
                 foreach (int enemy in alive)
-                    Hit(enemy, power, BattleInspectElement.Fire);
+                    Hit(enemy, Blast(enemy), BattleInspectElement.Fire);
                 yield break;
             }
             var areas = alive.ConvertAll(enemy => Enemies[enemy].TargetArea);
             yield return Vfx.Detonate(
                 Enemies[marked].TargetArea,
                 areas,
-                i => Hit(alive[i], power, BattleInspectElement.Fire)
+                i => Hit(alive[i], Blast(alive[i]), BattleInspectElement.Fire)
             );
         }
 
-        private IEnumerator CloudStrike(int power)
+        /// <summary>The cloud's bolt on an enemy at random, a spell its 属防 softens.</summary>
+        private IEnumerator CloudStrike(int power, int caster)
         {
             var alive = new List<int>();
             for (int i = 0; i < Enemies.Length; i++)
@@ -512,6 +528,7 @@ namespace Baryonyx.Combat.Presentation
             if (alive.Count == 0)
                 yield break;
             int enemy = alive[UnityEngine.Random.Range(0, alive.Count)];
+            power = CombatFormula.Defend(power, Enemies[enemy].MagicDefense, Allies[caster].Level);
             if (Vfx == null)
             {
                 Hit(enemy, power, BattleInspectElement.Thunder);
@@ -561,7 +578,12 @@ namespace Baryonyx.Combat.Presentation
             if (attacker >= 0 && TakeStatus(true, ally, CardStatus.Reflect))
             {
                 ShowPopup(area, "反射", StatusColor(CardStatus.Reflect), 44f);
-                Hit(attacker, power, BattleInspectElement.None);
+                var self = Enemies[attacker];
+                Hit(
+                    attacker,
+                    CombatFormula.Defend(power, self.PhysicalDefense, self.Level),
+                    BattleInspectElement.None
+                );
                 return true;
             }
             if (HasStatus(true, ally, CardStatus.Protect))

@@ -144,10 +144,14 @@ namespace Baryonyx.Combat.Presentation
         public int StartHp;
         public int MaxHp;
 
-        /// <summary>The stats the powers of the ally's cards are parts of (provisional).</summary>
-        public int Strength;
-        public int Magic;
-        public int Defense;
+        /// <summary>The level, whose growth sets the defense constant of the ally's blows.</summary>
+        public int Level;
+
+        /// <summary>
+        /// The ally's stats at its level (doc/features/party.md, the stats): the powers of its
+        /// cards are parts of them, and enemies' blows are softened by its 物防.
+        /// </summary>
+        public CharacterStats Stats;
 
         [NonSerialized]
         public int Hp;
@@ -171,9 +175,14 @@ namespace Baryonyx.Combat.Presentation
         public RectTransform Marker;
         public int MaxHp;
 
-        /// <summary>The name of its attack, shown while it attacks, and its damage to one ally.</summary>
+        /// <summary>The name of its attack, shown while it attacks, and its power before the ally's defense.</summary>
         public string SkillName;
         public int Power;
+
+        /// <summary>The level it shows up at, and its defenses against blows (物防) and spells (属防).</summary>
+        public int Level;
+        public int PhysicalDefense;
+        public int MagicDefense;
         public BattleInspectWeakness[] Weaknesses = Array.Empty<BattleInspectWeakness>();
 
         /// <summary>The face crop of <see cref="Sprite"/> shown in the turn order.</summary>
@@ -1356,6 +1365,13 @@ namespace Baryonyx.Combat.Presentation
         {
             if (Guarded(target, ref power, attacker))
                 yield break;
+            // The ally's defense softens the blow (enemy attacks are physical blows).
+            if (attacker >= 0)
+                power = CombatFormula.Defend(
+                    power,
+                    Allies[target].Stats.PhysicalDefense,
+                    Enemies[attacker].Level
+                );
             HitAlly(target, power);
             if (Vfx != null)
                 Vfx.Strike(Allies[target].TargetArea);

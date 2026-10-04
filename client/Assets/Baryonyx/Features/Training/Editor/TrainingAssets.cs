@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Baryonyx.Combat;
 using Baryonyx.Combat.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
@@ -47,9 +48,27 @@ namespace Baryonyx.Training.Editor
         private const float PanelPad = 36f;
         private const float CellGap = 12f;
 
+        // ステータスの8項目を置く枠（列, 行）。4列2行で、物攻・属攻の下に物防・属防を置く。
+        private static readonly Vector2Int[] StatCells =
+        {
+            new(0, 0), // HP
+            new(1, 0), // 物攻
+            new(1, 1), // 物防
+            new(2, 0), // 属攻
+            new(2, 1), // 属防
+            new(0, 1), // 速度
+            new(3, 0), // 会心
+            new(3, 1), // 幸運
+        };
+        private const float StatGap = 24f;
+
         // 重ねて開くレベルアップ。
         private static readonly Rect Modal = new(280, 150, 1360, 890);
         private const float ModalPad = 48f;
+
+        // レベルアップの、ステータス8行の上端と1行の高さ。
+        private const float DiffTop = 350f;
+        private const float DiffHeight = 42f;
 
         // カードの挿絵（64×58）の中央24×24ドット。スキルの仮のアイコンに使う。
         private static readonly Rect IconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
@@ -77,101 +96,81 @@ namespace Baryonyx.Training.Editor
             data.CostPerLevel = 100;
             data.MaxLevel = 30;
             data.MockRunes = 8450;
-            // 4人のステータスは、戦闘画面のモックの値を今のレベルでの値にした。絵のないキャラは、
-            // 絵を借りたキャラと同じ伸び方にする。
-            var toma = Mage();
-            var luka = Archer();
-            var aria = Knight();
-            var mina = Healer();
+            // ステータスは Lv 100 の値（doc/features/progression.md の自キャラのLv100の
+            // ステータス）。絵のないキャラは、絵を借りたキャラと同じスキルにする。
+            var mage = Mage();
+            var archer = Archer();
+            var knight = Knight();
+            var healer = Healer();
             data.Characters = new[]
             {
-                Character("toma", toma),
-                Character("luka", luka),
-                Character("aria", aria),
-                Character("mina", mina),
-                Character("anselm", aria),
-                Character("greta", luka),
-                Character("lutz", toma),
-                Character("rita", mina),
-                Character("ritsu", luka),
+                Character("toma", new(2300, 700, 850, 2450, 1700, 560, 300, 500), mage),
+                Character("luka", new(2850, 1800, 950, 2050, 1100, 670, 900, 600), archer),
+                Character("aria", new(3900, 1950, 1600, 950, 1200, 490, 500, 300), knight),
+                Character("mina", new(2500, 800, 1150, 1600, 1800, 540, 200, 900), healer),
+                Character("anselm", new(3600, 1700, 1500, 1400, 1300, 430, 300, 500), knight),
+                Character("greta", new(2400, 1700, 800, 1500, 900, 700, 1000, 800), archer),
+                Character("lutz", new(3200, 1300, 1400, 1900, 1300, 450, 300, 400), mage),
+                Character("rita", new(3000, 2100, 1000, 600, 800, 650, 800, 500), healer),
+                Character("ritsu", new(2100, 500, 700, 2400, 1500, 600, 400, 600), archer),
             };
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssetIfDirty(data);
             return data;
         }
 
-        private static TrainingCharacter Character(string id, TrainingCharacter growth) =>
+        private static TrainingCharacter Character(
+            string id,
+            CharacterStats level100,
+            TrainingCharacter skills
+        ) =>
             new()
             {
                 Id = id,
-                Base = growth.Base,
-                Growth = growth.Growth,
-                Passives = growth.Passives,
-                Uniques = growth.Uniques,
+                Level100 = level100,
+                Passives = skills.Passives,
+                Uniques = skills.Uniques,
             };
 
-        // トーマ（Lv 12で HP 300・まりょく 318）。
         private static TrainingCharacter Mage() =>
-            Growth(
-                at: 12,
-                new TrainingStats(300, 90, 318, 110, 72),
-                new TrainingStats(18, 3, 18, 5, 2),
+            Skills(
                 Skill("魔力の泉", "戦闘の始めにエネルギー +1", 1, 0, "CardManaPrayer"),
                 Skill("炎の心得", "炎のカードの威力 +10%", 15, 0, "CardFlameEnchant"),
-                Skill("マナバースト", "敵全体に まりょくの80% のダメージ", 5, 3, "CardRevelation"),
+                Skill("マナバースト", "敵全体に 属攻の80% のダメージ", 5, 3, "CardRevelation"),
                 Skill("星降り", "ランダムな敵に5回ダメージ", 20, 5, "CardMeteor")
             );
 
         private static TrainingCharacter Archer() =>
-            Growth(
-                at: 11,
-                new TrainingStats(360, 230, 260, 120, 84),
-                new TrainingStats(20, 12, 12, 5, 3),
+            Skills(
                 Skill("狩人の目", "敵の弱点を見つけやすくなる", 1, 0, "CardInsightArrow"),
-                Skill("疾風", "すばやさ +10%", 15, 0, "CardGale"),
+                Skill("疾風", "速度 +10%", 15, 0, "CardGale"),
                 Skill("雷撃の矢", "敵1体に雷のダメージ。まひさせる", 5, 3, "CardThunderSpear"),
                 Skill("矢の雨", "敵全体に3回ダメージ", 20, 5, "CardArrowRain")
             );
 
         private static TrainingCharacter Knight() =>
-            Growth(
-                at: 10,
-                new TrainingStats(480, 243, 120, 200, 60),
-                new TrainingStats(30, 14, 5, 12, 2),
+            Skills(
                 Skill("守護の誓い", "味方が受けるダメージ -5%", 1, 0, "CardGuardianOath"),
                 Skill("不屈", "倒れるダメージを1度だけ耐える", 15, 0, "CardDivineShield"),
                 Skill("盾の構え", "次のターンまでブロック +80", 5, 2, "CardProtect"),
-                Skill("一閃", "敵1体に ちからの200% のダメージ", 20, 5, "CardIai")
+                Skill("一閃", "敵1体に 物攻の200% のダメージ", 20, 5, "CardIai")
             );
 
         private static TrainingCharacter Healer() =>
-            Growth(
-                at: 10,
-                new TrainingStats(310, 100, 200, 140, 66),
-                new TrainingStats(18, 4, 12, 8, 2),
+            Skills(
                 Skill("祈り", "ターンの終わりに味方のHPを少し回復", 1, 0, "CardRegen"),
                 Skill("浄化の光", "状態異常に1回かからない", 15, 0, "CardPurify"),
                 Skill("癒しの風", "味方全体のHPを回復", 5, 3, "CardHeal"),
                 Skill("蘇生", "倒れた味方1人を復活させる", 20, 6, "CardResurrection")
             );
 
-        // 今のレベルでのステータスと伸びから、Lv 1 のステータスを求める。
-        private static TrainingCharacter Growth(
-            int at,
-            TrainingStats now,
-            TrainingStats growth,
+        private static TrainingCharacter Skills(
             TrainingSkill passive1,
             TrainingSkill passive2,
             TrainingSkill unique1,
             TrainingSkill unique2
         ) =>
-            new()
-            {
-                Base = now - growth * (at - 1),
-                Growth = growth,
-                Passives = new[] { passive1, passive2 },
-                Uniques = new[] { unique1, unique2 },
-            };
+            new() { Passives = new[] { passive1, passive2 }, Uniques = new[] { unique1, unique2 } };
 
         // 固有スキル・パッシブの絵はまだないため、スキルの挿絵を仮のアイコンにする。
         private static TrainingSkill Skill(
@@ -387,24 +386,25 @@ namespace Baryonyx.Training.Editor
             float cell = (width - 40) / 2f;
 
             Heading(panel, "StatsTitle", "ステータス", null, 28, width);
+            float statWidth = (width - StatGap * 3) / 4f;
             view.Stats = Enumerable
-                .Range(0, TrainingStats.Count)
+                .Range(0, CharacterStats.Count)
                 .Select(i =>
                 {
-                    float x = PanelPad + (i % 2) * (cell + 40);
-                    float y = 84 + (i / 2) * 54;
-                    var row = Box(panel, "Stat" + i, x, y, cell, 54);
-                    var line = Box(row, "Line", 0, 52, cell, 2);
+                    float x = PanelPad + StatCells[i].x * (statWidth + StatGap);
+                    float y = 84 + StatCells[i].y * 54;
+                    var row = Box(panel, "Stat" + i, x, y, statWidth, 54);
+                    var line = Box(row, "Line", 0, 52, statWidth, 2);
                     AddImage(line, Line, false);
                     var label = Text(
                         row,
                         "Label",
-                        TrainingStats.Labels[i],
+                        CharacterStats.Labels[i],
                         30,
                         Guide.TextSub,
                         TextAlignmentOptions.BottomLeft
                     );
-                    At(label, 0, 0, cell / 2, 50);
+                    At(label, 0, 0, 90, 50);
                     var value = Text(
                         row,
                         "Value",
@@ -413,7 +413,7 @@ namespace Baryonyx.Training.Editor
                         Guide.TextMain,
                         TextAlignmentOptions.BottomRight
                     );
-                    At(value, cell / 2, 0, cell / 2, 50);
+                    At(value, 90, 0, statWidth - 90, 50);
                     return value;
                 })
                 .ToArray();
@@ -627,8 +627,8 @@ namespace Baryonyx.Training.Editor
             view.Max = Square(step, "Max", "最大", 140);
 
             view.Diffs = Enumerable
-                .Range(0, TrainingStats.Count)
-                .Select(i => BuildDiff(modal, i, ModalPad, 372 + i * 60))
+                .Range(0, CharacterStats.Count)
+                .Select(i => BuildDiff(modal, i, ModalPad, DiffTop + i * DiffHeight))
                 .ToArray();
 
             float side = ModalPad + 640 + 48;
@@ -765,35 +765,36 @@ namespace Baryonyx.Training.Editor
             float y
         )
         {
-            var row = Box(modal, "Diff" + index, x, y, 640, 60);
-            var line = Box(row, "Line", 0, 58, 640, 2);
+            const float text = DiffHeight - 4;
+            var row = Box(modal, "Diff" + index, x, y, 640, DiffHeight);
+            var line = Box(row, "Line", 0, DiffHeight - 2, 640, 2);
             AddImage(line, Line, false);
             var label = Text(
                 row,
                 "Label",
-                TrainingStats.Labels[index],
-                30,
+                CharacterStats.Labels[index],
+                26,
                 Guide.TextSub,
                 TextAlignmentOptions.BottomLeft
             );
-            At(label, 0, 0, 170, 54);
+            At(label, 0, 0, 170, text);
             var widget = new TrainingDiffWidget
             {
-                Before = Text(row, "Before", "", 36, Before, TextAlignmentOptions.BottomRight),
+                Before = Text(row, "Before", "", 30, Before, TextAlignmentOptions.BottomRight),
                 After = Text(
                     row,
                     "After",
                     "",
-                    42,
+                    34,
                     Guide.TextMain,
                     TextAlignmentOptions.BottomRight
                 ),
-                Gain = Text(row, "Gain", "", 34, Green, TextAlignmentOptions.BottomRight),
+                Gain = Text(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
             };
-            At(widget.Before, 170, 0, 110, 54);
-            Arrow(row, "Arrow", 300, 18, 3);
-            At(widget.After, 330, 0, 110, 54);
-            At(widget.Gain, 450, 0, 190, 54);
+            At(widget.Before, 170, 0, 110, text);
+            Arrow(row, "Arrow", 300, 9, 3);
+            At(widget.After, 330, 0, 110, text);
+            At(widget.Gain, 450, 0, 190, text);
             return widget;
         }
 

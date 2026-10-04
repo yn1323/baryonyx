@@ -27,7 +27,7 @@ namespace Baryonyx.Tests.EditMode
                     ";",
                     card.Actions.Select(action =>
                         $"{action.Kind},{action.Target},{action.Status},{action.Hits},"
-                        + $"{action.When},{action.BonusWhen},{action.UptStepPercent > 0},"
+                        + $"{action.When},{action.BonusWhen},{action.ActStepPercent > 0},"
                         + string.Join("+", action.Elements)
                     )
                 );
@@ -89,7 +89,7 @@ namespace Baryonyx.Tests.EditMode
         [TestCase(260, 45, 117)]
         public void PowerIsAPartOfTheStat(int stat, int percent, int expected)
         {
-            var action = CardAction.Damage(CardTarget.OneEnemy, CardStat.Strength, percent);
+            var action = CardAction.Damage(CardTarget.OneEnemy, CardStat.PhysicalAttack, percent);
             Assert.That(CardRules.Power(action, stat), Is.EqualTo(expected));
         }
 
@@ -98,19 +98,19 @@ namespace Baryonyx.Tests.EditMode
         [TestCase(3500, 30)]
         [TestCase(10000, 100)]
         [TestCase(25000, 100)]
-        public void TodaysUptGrowsThePowerUpToItsCap(int upt, int expectedPercent)
+        public void TodaysActGrowsThePowerUpToItsCap(int act, int expectedPercent)
         {
             var action = CardAction
-                .Damage(CardTarget.OneEnemy, CardStat.Strength, 100)
-                .WithUpt(10, 100);
-            Assert.That(CardRules.UptBonusPercent(action, upt), Is.EqualTo(expectedPercent));
-            Assert.That(CardRules.Power(action, 200, upt), Is.EqualTo(200 + 2 * expectedPercent));
+                .Damage(CardTarget.OneEnemy, CardStat.PhysicalAttack, 100)
+                .WithAct(10, 100);
+            Assert.That(CardRules.ActBonusPercent(action, act), Is.EqualTo(expectedPercent));
+            Assert.That(CardRules.Power(action, 200, act), Is.EqualTo(200 + 2 * expectedPercent));
         }
 
         [Test]
-        public void UptDoesNotGrowACardThatDoesNotWalkWithIt()
+        public void ActDoesNotGrowACardThatDoesNotWalkWithIt()
         {
-            var action = CardAction.Damage(CardTarget.OneEnemy, CardStat.Strength, 100);
+            var action = CardAction.Damage(CardTarget.OneEnemy, CardStat.PhysicalAttack, 100);
             Assert.That(CardRules.Power(action, 200, 9000), Is.EqualTo(200));
         }
 
@@ -118,7 +118,7 @@ namespace Baryonyx.Tests.EditMode
         public void ABonusGrowsThePowerByItsPart()
         {
             var action = CardAction
-                .Damage(CardTarget.OneEnemy, CardStat.Magic, 120)
+                .Damage(CardTarget.OneEnemy, CardStat.MagicAttack, 120)
                 .Bonus(CardCondition.OnBurning, 50);
             Assert.That(CardRules.WithBonus(action, 382), Is.EqualTo(573));
         }
@@ -129,7 +129,7 @@ namespace Baryonyx.Tests.EditMode
             var card = CardSkills.Find("HolyLight");
             var text = CardRules.Describe(
                 card,
-                stat => stat == CardStat.Magic ? 200 : 0,
+                stat => stat == CardStat.MagicAttack ? 200 : 0,
                 0,
                 (action, power) => $"[{power}]"
             );

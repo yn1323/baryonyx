@@ -61,8 +61,8 @@ namespace Baryonyx.CardLoadout
         // カードの威力のもとになる、いまのレベルのステータス。
         int StatOf(string id, CardStat stat);
 
-        // UPTで威力が変わるカードに使う、今日のUPT。
-        int Upt { get; }
+        // ACTで威力が変わるカードに使う、今日のACT。
+        int Act { get; }
         string Selected { get; set; }
     }
 
@@ -136,19 +136,7 @@ namespace Baryonyx.CardLoadout
         /// <summary>The people in tab order: the party's slots first, then the others as owned.</summary>
         public static (IReadOnlyList<PartyMember> People, int PartyCount) People(
             PartyFormation formation
-        )
-        {
-            if (formation == null)
-                return (Array.Empty<PartyMember>(), 0);
-            var party = Enumerable
-                .Range(0, formation.SlotCount)
-                .Select(formation.Member)
-                .Where(id => id != null)
-                .Select(formation.Find)
-                .Where(member => member != null)
-                .ToArray();
-            return (party.Concat(formation.Bench).ToArray(), party.Length);
-        }
+        ) => formation != null ? formation.TabOrder() : (Array.Empty<PartyMember>(), 0);
 
         public void SelectPerson(string id)
         {
@@ -287,7 +275,7 @@ namespace Baryonyx.CardLoadout
                 Description = CardText.Description(
                     card,
                     stat => store.StatOf(person, stat),
-                    store.Upt
+                    store.Act
                 ),
                 Cost = card.Cost,
                 Element = card.Element,

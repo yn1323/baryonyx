@@ -47,16 +47,16 @@ MonoBehaviour:
     Entries:
     - Name: "\u661F\u8A60\u307F\u306E\u6756"
       Badge: "\u2605\u2605\u2605\u2605"
-      Detail: "\u9B54\u529B\u306E 150%\uFF5C\u96F7"
+      Detail: "\u5C5E\u653B\u306E 150%\uFF5C\u96F7"
     - Name: "\u7ADC\u9C57\u306E\u76FE"
       Badge: "\u2605\u2605\u2605"
-      Detail: "\u9632\u5FA1\u306E 145%"
+      Detail: "\u7269\u9632\u306E 145%"
     - Name: "\u6708\u5F71\u306E\u77ED\u5263"
       Badge: "\u2605\u2605\u2605"
-      Detail: "\u3059\u3070\u3084\u3055\u306E 130%\uFF5C\u65AC\u30FB\u6C37"
+      Detail: "\u901F\u5EA6\u306E 130%\uFF5C\u65AC\u30FB\u6C37"
     - Name: "\u5DE1\u793C\u8005\u306E\u5916\u5957"
       Badge: "\u2605\u2605"
-      Detail: "\u3059\u3070\u3084\u3055 +6%\uFF5C\u9632\u5FA1\u306E 110%"
+      Detail: "\u901F\u5EA6 +6%\uFF5C\u7269\u9632\u306E 110%"
   - Key: 
     Label: "\u53EC\u559A\u306E\u8A18\u9332"
     Caption: "\u3053\u308C\u307E\u3067\u306B\u559A\u3073\u51FA\u3057\u305F\u3082\u306E"
@@ -72,6 +72,5 @@ MonoBehaviour:
     - Name: "9/24 \u4EF2\u9593\u3092\u53EC\u559A"
       Badge: "\u2605\u2605"
       Detail: "\u30DF\u30CA\u304C\u4EF2\u9593\u306B\u306A\u3063\u305F"
-  MapArt: {fileID: 0}
-  MapPoints: []
+  Destinations: []
   DepartLabel: "\u51FA\u767A"

@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEarthSplitter.asepr
 | 属性 | 打 |
 | 種類・対象 | 攻撃・敵全体 |
 | コスト | 4 |
-| 説明文（モックの能力値、UPT0での数値） | 大地を叩き割り、敵全体に207ダメージ。 |
-| 効果（行う順） | 敵全体：ダメージ（ちからの85%） |
+| 説明文（モックの能力値、ACT0での数値） | 大地を叩き割り、敵全体に204ダメージ。 |
+| 効果（行う順） | 敵全体：ダメージ（物攻の85%） |
 
 ## 分類固有のデータ
 
@@ -54,9 +54,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEarthSplitter.asepr
 | 対象 | 敵全体 | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
 | 属性 | 打 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 4 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
-| 威力・回復量 | ちからの85% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
+| 威力・回復量 | 物攻の85% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 地響き | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 使い手の上に力がたまり、床を打つ衝撃の輪。光る亀裂が床を敵へ走り、各敵の足元から岩と土煙が噴き上がる。画面が大きく揺れる | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
@@ -115,3 +115,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEarthSplitter.asepr
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
+| 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |

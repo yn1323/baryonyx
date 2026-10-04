@@ -28,17 +28,12 @@ namespace Baryonyx.CardLoadout.Editor
     /// </summary>
     public static class CardLoadoutAssets
     {
-        // 64×64の戦闘のドット絵のうち、タブに出す顔のあたり（ドット、絵の左上が原点）。2倍で出す。
-        public static readonly RectInt Face = new(18, 14, 28, 28);
-
         // カードの挿絵（64×58）は2倍で出す。
         private const float ArtDot = 2f;
-        private const float FaceDot = 2f;
 
         private const float LeftWidth = 780f;
         private const float DividerWidth = 4f;
         private const float TabTop = 24f;
-        private const float TabSize = 128f;
         private const float SlotTop = 168f;
         private const float SlotHeight = 152f;
         private const float SlotGap = 12f;
@@ -94,7 +89,7 @@ namespace Baryonyx.CardLoadout.Editor
             Stretch(right);
             right.offsetMin = new Vector2(LeftWidth + DividerWidth, 0);
 
-            BuildPeople(left, view, people, partyCount);
+            view.People = PartyTabAssets.Build(left, people, partyCount, TabTop);
             BuildSlots(left, view);
             BuildCards(right, view);
 
@@ -106,129 +101,6 @@ namespace Baryonyx.CardLoadout.Editor
                 new MockStore(party, training)
             ).Dispose();
             return root.gameObject;
-        }
-
-        // --- Left, top: the people's tabs, the party first ---------------------------------
-
-        private static void BuildPeople(
-            RectTransform panel,
-            CardLoadoutView view,
-            IReadOnlyList<PartyMember> people,
-            int partyCount
-        )
-        {
-            var viewport = Rect("People", panel);
-            viewport.anchorMin = new Vector2(0, 1);
-            viewport.anchorMax = Vector2.one;
-            viewport.pivot = new Vector2(0.5f, 1);
-            viewport.offsetMin = new Vector2(24, -(TabTop + TabSize));
-            viewport.offsetMax = new Vector2(-24, -TabTop);
-            viewport.gameObject.AddComponent<RectMask2D>();
-            AddImage(viewport, Color.clear, true);
-
-            var content = Rect("Tabs", viewport);
-            content.anchorMin = Vector2.zero;
-            content.anchorMax = new Vector2(0, 1);
-            content.pivot = new Vector2(0, 0.5f);
-            content.offsetMin = content.offsetMax = Vector2.zero;
-            var group = content.gameObject.AddComponent<HorizontalLayoutGroup>();
-            group.spacing = 10;
-            group.childAlignment = TextAnchor.MiddleLeft;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = false;
-            group.childForceExpandHeight = true;
-            content.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
-
-            view.People = people.Select(member => BuildTab(content, member)).ToArray();
-
-            // パーティとほかの仲間の間の区切り。
-            var line = Rect("Divider", content);
-            var size = line.gameObject.AddComponent<LayoutElement>();
-            size.minWidth = size.preferredWidth = DividerWidth;
-            var stroke = Rect("Line", line);
-            Stretch(stroke);
-            stroke.offsetMin = new Vector2(0, 24);
-            stroke.offsetMax = new Vector2(0, -24);
-            AddImage(stroke, DividerColor, false);
-            line.SetSiblingIndex(partyCount);
-            view.PeopleDivider = line.gameObject;
-
-            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.vertical = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40;
-            view.PeopleScroll = scroll;
-        }
-
-        // A square tab, as large as a touch needs: the face above, the name below.
-        private static CardLoadoutPersonWidget BuildTab(RectTransform content, PartyMember member)
-        {
-            var tab = Rect("Person_" + member.Id, content);
-            var width = tab.gameObject.AddComponent<LayoutElement>();
-            width.minWidth = width.preferredWidth = TabSize;
-            var widget = new CardLoadoutPersonWidget
-            {
-                Id = member.Id,
-                Button = Guide.AddButton(tab, Guide.Frame(tab, Guide.FramePath, Color.white)),
-            };
-
-            // Under the face and the name, so the gold frame's fill does not cover them.
-            var selected = Rect("Selected", tab);
-            Stretch(selected);
-            Guide.Frame(selected, Guide.FrameSelectedPath, Color.white).raycastTarget = false;
-            selected.gameObject.SetActive(false);
-            widget.Selected = selected.gameObject;
-
-            var face = Rect("Face", tab);
-            Corner(
-                face,
-                new Vector2(0.5f, 1),
-                new Vector2(0, -14),
-                new Vector2(Face.width, Face.height) * FaceDot + Vector2.one * 4
-            );
-            AddImage(face, BadgeColor, false);
-            var picture = Rect("Picture", face);
-            Place(picture, Vector2.zero, new Vector2(Face.width, Face.height) * FaceDot);
-            var image = picture.gameObject.AddComponent<RawImage>();
-            image.raycastTarget = false;
-            PaintFace(image, member);
-            picture.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = FaceDot;
-
-            var name = Label(
-                tab,
-                "Name",
-                member.Name,
-                26,
-                Guide.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Guide.Band((RectTransform)name.transform, top: false, 12, 34, 8, 8);
-            Guide.Shrink(name, 18);
-            return widget;
-        }
-
-        // The face part of the 64x64 sprite, with the member's tint and facing.
-        private static void PaintFace(RawImage image, PartyMember member)
-        {
-            image.texture = member.Art;
-            image.color = member.Tint;
-            if (member.Art == null)
-                return;
-            float width = member.Art.width;
-            float height = member.Art.height;
-            var uv = new Rect(
-                Face.x / width,
-                1f - Face.yMax / height,
-                Face.width / width,
-                Face.height / height
-            );
-            if (member.Flip)
-                uv = new Rect(uv.xMax, uv.y, -uv.width, uv.height);
-            image.uvRect = uv;
         }
 
         // --- Left: the chosen person's four slots ------------------------------------------
@@ -476,7 +348,7 @@ namespace Baryonyx.CardLoadout.Editor
 
         /// <summary>
         /// The mock data only, so the prefab never bakes what Play Mode or a test left in the
-        /// sessions: the mock cards, the stats at the mock level, no UPT, the first person.
+        /// sessions: the mock cards, the stats at the mock level, no ACT, the first person.
         /// </summary>
         private sealed class MockStore : ICardLoadoutStore
         {
@@ -503,14 +375,14 @@ namespace Baryonyx.CardLoadout.Editor
                 var stats = growth.StatsAt(member.Level);
                 return stat switch
                 {
-                    CardStat.Strength => stats.Strength,
-                    CardStat.Magic => stats.Magic,
-                    CardStat.Defense => stats.Defense,
+                    CardStat.PhysicalAttack => stats.PhysicalAttack,
+                    CardStat.MagicAttack => stats.MagicAttack,
+                    CardStat.PhysicalDefense => stats.PhysicalDefense,
                     _ => 0,
                 };
             }
 
-            public int Upt => 0;
+            public int Act => 0;
 
             public string Selected
             {

@@ -5,33 +5,33 @@ namespace Baryonyx.Combat
 {
     /// <summary>
     /// How a card's numbers and words are worked out (provisional: doc/features/combat.md). A
-    /// power is a part of the user's stat, grown by today's UPT for the cards that walk with it.
+    /// power is a part of the user's stat, grown by today's ACT for the cards that walk with it.
     /// </summary>
     public static class CardRules
     {
-        /// <summary>UPT counted per step of a card's UPT bonus.</summary>
-        public const int UptPerStep = 1000;
+        /// <summary>ACT counted per step of a card's ACT bonus.</summary>
+        public const int ActPerStep = 1000;
 
         /// <summary>
         /// The power of an action from its user's <paramref name="stat"/>, with today's
-        /// <paramref name="upt"/> for the cards that grow with it. Rounded half away from zero.
+        /// <paramref name="act"/> for the cards that grow with it. Rounded half away from zero.
         /// </summary>
-        public static int Power(CardAction action, int stat, int upt = 0)
+        public static int Power(CardAction action, int stat, int act = 0)
         {
             if (action == null || !action.HasPower)
                 return 0;
             double power = stat * action.Percent / 100.0;
-            power *= 1 + UptBonusPercent(action, upt) / 100.0;
+            power *= 1 + ActBonusPercent(action, act) / 100.0;
             return (int)Math.Round(power, MidpointRounding.AwayFromZero);
         }
 
-        /// <summary>How much today's <paramref name="upt"/> grows the action, in percent (0 to its cap).</summary>
-        public static int UptBonusPercent(CardAction action, int upt)
+        /// <summary>How much today's <paramref name="act"/> grows the action, in percent (0 to its cap).</summary>
+        public static int ActBonusPercent(CardAction action, int act)
         {
-            if (action == null || action.UptStepPercent <= 0 || upt <= 0)
+            if (action == null || action.ActStepPercent <= 0 || act <= 0)
                 return 0;
-            int bonus = upt / UptPerStep * action.UptStepPercent;
-            return action.UptCapPercent > 0 ? Math.Min(bonus, action.UptCapPercent) : bonus;
+            int bonus = act / ActPerStep * action.ActStepPercent;
+            return action.ActCapPercent > 0 ? Math.Min(bonus, action.ActCapPercent) : bonus;
         }
 
         /// <summary>The power when its bonus holds (a weakness hit, a burning target).</summary>
@@ -51,14 +51,14 @@ namespace Baryonyx.Combat
         public static string Describe(
             CardSkill card,
             Func<CardStat, int> stat,
-            int upt,
+            int act,
             Func<CardAction, int, string> paint = null
         )
         {
             var numbers = new List<object>();
             foreach (var action in card.Powered())
             {
-                int power = Power(action, stat(action.Stat), upt);
+                int power = Power(action, stat(action.Stat), act);
                 numbers.Add(paint != null ? paint(action, power) : power.ToString());
             }
             return string.Format(card.Text, numbers.ToArray());
@@ -122,7 +122,7 @@ namespace Baryonyx.Combat
                 CardStatus.BlastSigil => "爆炎の刻印",
                 CardStatus.Thundercloud => "雷雲",
                 CardStatus.AttackUp => "攻撃力アップ",
-                CardStatus.SpeedUp => "すばやさアップ",
+                CardStatus.SpeedUp => "速度アップ",
                 CardStatus.Regen => "リジェネ",
                 CardStatus.Taunt => "挑発",
                 CardStatus.Reflect => "反射",
@@ -151,9 +151,9 @@ namespace Baryonyx.Combat
         public static (CardStat stat, int percent) TickOf(CardStatus status) =>
             status switch
             {
-                CardStatus.Burn => (CardStat.Magic, 20),
-                CardStatus.Poison => (CardStat.Strength, 10),
-                CardStatus.Bleed => (CardStat.Strength, 20),
+                CardStatus.Burn => (CardStat.MagicAttack, 20),
+                CardStatus.Poison => (CardStat.PhysicalAttack, 10),
+                CardStatus.Bleed => (CardStat.PhysicalAttack, 20),
                 _ => (CardStat.None, 0),
             };
 

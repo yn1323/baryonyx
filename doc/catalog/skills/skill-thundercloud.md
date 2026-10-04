@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThundercloud.asepri
 | 属性 | 雷 |
 | 種類・対象 | 攻撃・敵ランダム |
 | コスト | 5 |
-| 説明文（モックの能力値、UPT0での数値） | 3ターンの間、毎ターン敵1体に落雷208ダメージ。 |
-| 効果（行う順） | 全体：雷雲3ターン（まりょくの80%） |
+| 説明文（モックの能力値、ACT0での数値） | 3ターンの間、毎ターン敵1体に落雷207ダメージ。 |
+| 効果（行う順） | 全体：雷雲3ターン（属攻の80%） |
 
 ## 分類固有のデータ
 
@@ -54,9 +54,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThundercloud.asepri
 | 対象 | 敵ランダム | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
 | 属性 | 雷 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 5 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
-| 威力・回復量 | まりょくの80% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
+| 威力・回復量 | 属攻の80% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | 雷雲3ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
-| UPTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
+| ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 立ち込める | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 画面の上の敵側に黒い雷雲が転がり込み、中で稲光がちらついて地鳴り。雲は残り、味方ターンの開始ごとに敵1体へ雷を落とす | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
@@ -115,3 +115,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThundercloud.asepri
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
+| 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |

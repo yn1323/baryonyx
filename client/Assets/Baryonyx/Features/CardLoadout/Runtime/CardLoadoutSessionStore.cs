@@ -8,7 +8,7 @@ namespace Baryonyx.CardLoadout
 {
     /// <summary>
     /// The store of the running app: the party's cards and levels, the training's mock growth
-    /// for the stats, and the UPT Home read today (none when the screen opens on its own).
+    /// for the stats, and the ACT Home read today (none when the screen opens on its own).
     /// </summary>
     public sealed class CardLoadoutSessionStore : ICardLoadoutStore
     {
@@ -34,14 +34,14 @@ namespace Baryonyx.CardLoadout
             var stats = growth.StatsAt(PartySession.LevelOf(party, id));
             return stat switch
             {
-                CardStat.Strength => stats.Strength,
-                CardStat.Magic => stats.Magic,
-                CardStat.Defense => stats.Defense,
+                CardStat.PhysicalAttack => stats.PhysicalAttack,
+                CardStat.MagicAttack => stats.MagicAttack,
+                CardStat.PhysicalDefense => stats.PhysicalDefense,
                 _ => 0,
             };
         }
 
-        public int Upt => StepBonusSession.TodayUpt ?? 0;
+        public int Act => StepBonusSession.TodayAct ?? 0;
 
         public string Selected
         {

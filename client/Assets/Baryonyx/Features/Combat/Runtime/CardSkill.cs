@@ -56,19 +56,19 @@ namespace Baryonyx.Combat
         None,
     }
 
-    /// <summary>The stat a power is worked out from (provisional: the stats are not decided).</summary>
+    /// <summary>The stat a power is worked out from (doc/features/party.md, the stats).</summary>
     public enum CardStat
     {
         None,
 
-        /// <summary>ちから: physical blows.</summary>
-        Strength,
+        /// <summary>物攻: physical blows.</summary>
+        PhysicalAttack,
 
-        /// <summary>まりょく: spells and healing.</summary>
-        Magic,
+        /// <summary>属攻: spells and healing.</summary>
+        MagicAttack,
 
-        /// <summary>まもり: block, and blows with the shield.</summary>
-        Defense,
+        /// <summary>物防: block, and blows with the shield.</summary>
+        PhysicalDefense,
     }
 
     /// <summary>The battle mock's party member who uses a card (provisional, not a decided character).</summary>
@@ -190,9 +190,9 @@ namespace Baryonyx.Combat
         public CardCondition BonusWhen;
         public int BonusPercent;
 
-        /// <summary>The power grows by this percent for every 1,000 UPT walked today, up to <see cref="UptCapPercent"/>.</summary>
-        public int UptStepPercent;
-        public int UptCapPercent;
+        /// <summary>The power grows by this percent for every 1,000 ACT walked today, up to <see cref="ActCapPercent"/>.</summary>
+        public int ActStepPercent;
+        public int ActCapPercent;
 
         /// <summary>True when the action has a power worked out from a stat (shown as a number).</summary>
         public bool HasPower => Stat != CardStat.None && Percent > 0;
@@ -299,11 +299,11 @@ namespace Baryonyx.Combat
             return this;
         }
 
-        /// <summary>The same action, growing with today's UPT.</summary>
-        public CardAction WithUpt(int stepPercent, int capPercent)
+        /// <summary>The same action, growing with today's ACT.</summary>
+        public CardAction WithAct(int stepPercent, int capPercent)
         {
-            UptStepPercent = stepPercent;
-            UptCapPercent = capPercent;
+            ActStepPercent = stepPercent;
+            ActCapPercent = capPercent;
             return this;
         }
     }

@@ -36,7 +36,7 @@ namespace Baryonyx.Tests.EditMode
         {
             public readonly Dictionary<string, string[]> Cards = new();
 
-            // 人ごとの まりょく。ちから・まもりは固定。
+            // 人ごとの 属攻。物攻・物防は固定。
             public readonly Dictionary<string, int> Magic = new();
 
             public IReadOnlyList<string> CardsOf(string id) =>
@@ -48,13 +48,13 @@ namespace Baryonyx.Tests.EditMode
             public int StatOf(string id, CardStat stat) =>
                 stat switch
                 {
-                    CardStat.Magic => Magic.TryGetValue(id, out int magic) ? magic : 100,
-                    CardStat.Strength => 150,
-                    CardStat.Defense => 50,
+                    CardStat.MagicAttack => Magic.TryGetValue(id, out int magic) ? magic : 100,
+                    CardStat.PhysicalAttack => 150,
+                    CardStat.PhysicalDefense => 50,
                     _ => 0,
                 };
 
-            public int Upt => 0;
+            public int Act => 0;
 
             public string Selected { get; set; }
         }
@@ -209,7 +209,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void NumbersComeFromThePersonsStats()
         {
-            // ファイアは まりょくの100%。
+            // ファイアは 属攻の100%。
             store.Magic["toma"] = 318;
             store.Magic["anselm"] = 120;
             view.Person("toma");
@@ -350,7 +350,7 @@ namespace Baryonyx.Tests.EditMode
 
             public int StatOf(string id, CardStat stat) => store.StatOf(id, stat);
 
-            public int Upt => store.Upt;
+            public int Act => store.Act;
 
             public string Selected
             {

@@ -46,7 +46,7 @@ namespace Baryonyx.Training
 
         // 使えるカードの属性のアイコン（重ねずに、カードの順）。
         public IReadOnlyList<Sprite> Elements { get; internal set; }
-        public TrainingStats Stats { get; internal set; }
+        public CharacterStats Stats { get; internal set; }
 
         // パッシブ2つ、続けて固有スキル2つ。
         public IReadOnlyList<TrainingSkillState> Skills { get; internal set; }
@@ -60,7 +60,7 @@ namespace Baryonyx.Training
         public bool DialogOpen { get; internal set; }
         public int Count { get; internal set; }
         public int Target { get; internal set; }
-        public TrainingStats TargetStats { get; internal set; }
+        public CharacterStats TargetStats { get; internal set; }
         public long Cost { get; internal set; }
         public bool CanAfford { get; internal set; }
         public bool CanLess { get; internal set; }
