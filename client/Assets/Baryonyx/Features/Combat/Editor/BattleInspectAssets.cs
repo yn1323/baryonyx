@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
@@ -34,16 +35,20 @@ namespace Baryonyx.Combat.Editor
 
         public const string CardPrefabPath =
             "Assets/Baryonyx/Features/Combat/UI/BattleInspectCard.prefab";
+
+        /// <summary>Every card skill laid out face up, for the showcase.</summary>
+        public const string CardGalleryPath =
+            "Assets/Baryonyx/Features/Combat/UI/BattleCardGallery.prefab";
         public const string HandSettingsPath =
             "Assets/Baryonyx/Features/Combat/UI/BattleInspectHandSettings.asset";
         public const string ArtFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
 
-        private const float DotSize = 4f;
+        internal const float DotSize = 4f;
 
         // Enemies are drawn at 3 px per dot so they do not crowd the screen, and the cards on a
         // finer grid of 3 px per dot so they hold more detail; both are agreed exceptions
         // (doc/art/direction.md).
-        private const float EnemyDotSize = 3f;
+        internal const float EnemyDotSize = 3f;
         private const float CardDot = 3f;
         public const string FlashMaterialPath =
             "Assets/Baryonyx/Features/Combat/UI/TargetFlash.mat";
@@ -61,7 +66,6 @@ namespace Baryonyx.Combat.Editor
         private const float BandBottom = 65;
 
         private static readonly Color CardOwner = new(1f, 0.93f, 0.76f);
-        private const string SeparatorHex = "9a9483";
         private const int CostDigits = BattleInspectCardView.CostDigits;
 
         // Party turn, then enemies by index (slime 0, wolf 1, guardian 2). The two party turns in
@@ -76,8 +80,6 @@ namespace Baryonyx.Combat.Editor
             2,
         };
 
-        // The deck: the six cards repeated in order up to 16 (doc/features/combat.md), so the
-        // first six are one of each.
         private const int DeckSize = 16;
 
         // The deck in the bottom-left corner and the energy just above it.
@@ -97,7 +99,7 @@ namespace Baryonyx.Combat.Editor
         private static readonly Color HpEnemy = new(0.66f, 0.16f, 0.14f);
         private static readonly Color HpAlly = new(0.2f, 0.52f, 0.26f);
 
-        private sealed class AllySpec
+        internal sealed class AllySpec
         {
             public string Name;
             public string Label;
@@ -105,9 +107,17 @@ namespace Baryonyx.Combat.Editor
             public Color Color;
             public int Hp;
             public int MaxHp;
+
+            /// <summary>The stats the cards' powers are parts of (provisional, for the mock).</summary>
+            public int Strength;
+            public int Magic;
+            public int Defense;
+
+            /// <summary>Who the ally is among the cards' users.</summary>
+            public CardUser User;
         }
 
-        private sealed class EnemySpec
+        internal sealed class EnemySpec
         {
             public string Name;
             public Vector2 Feet;
@@ -124,27 +134,16 @@ namespace Baryonyx.Combat.Editor
 
             /// <summary>Top-left of the 24x24-dot face in the sprite (image rows from the top).</summary>
             public Vector2Int Face;
-        }
 
-        private sealed class CardSpec
-        {
-            public string Name;
-            public string Art;
-            public int Cost;
-            public int Power;
-            public BattleInspectElement Element;
-            public BattleInspectCardEffect Effect;
-            public int Owner;
-
-            /// <summary>The description; {0} is where the power goes, drawn in the kind's colour.</summary>
-            public string Text;
+            /// <summary>A boss, whose defeat is longer and heavier.</summary>
+            public bool Boss;
         }
 
         // Back first so those in front draw over them. The party stands in two columns of two,
         // the left column half a step higher, so from the top they zigzag Mina, Toma, Luka, Aria
         // instead of lining up in a grid. The lowest HP bar stays above the fanned hand. The party
         // and the enemies keep to the sides, clear of a pressed card standing in the bottom middle.
-        private static readonly AllySpec[] Allies =
+        internal static readonly AllySpec[] Allies =
         {
             new()
             {
@@ -154,6 +153,10 @@ namespace Baryonyx.Combat.Editor
                 Color = new Color(0.66f, 0.45f, 0.9f),
                 Hp = 262,
                 MaxHp = 300,
+                Strength = 90,
+                Magic = 318,
+                Defense = 110,
+                User = CardUser.Toma,
             },
             new()
             {
@@ -163,6 +166,10 @@ namespace Baryonyx.Combat.Editor
                 Color = new Color(0.33f, 0.8f, 0.76f),
                 Hp = 284,
                 MaxHp = 310,
+                Strength = 100,
+                Magic = 200,
+                Defense = 140,
+                User = CardUser.Mina,
             },
             new()
             {
@@ -172,6 +179,10 @@ namespace Baryonyx.Combat.Editor
                 Color = new Color(0.9f, 0.32f, 0.3f),
                 Hp = 418,
                 MaxHp = 480,
+                Strength = 243,
+                Magic = 120,
+                Defense = 200,
+                User = CardUser.Aria,
             },
             new()
             {
@@ -181,13 +192,17 @@ namespace Baryonyx.Combat.Editor
                 Color = new Color(0.5f, 0.78f, 0.32f),
                 Hp = 331,
                 MaxHp = 360,
+                Strength = 230,
+                Magic = 260,
+                Defense = 120,
+                User = CardUser.Luka,
             },
         };
 
         // The wolf (back) and the slime (front) stand in one column, one above the other, with the
         // guardian behind them, level with the gap between the two, mirroring the party's two rows
         // and keeping clear of the middle.
-        private static readonly EnemySpec[] Enemies =
+        internal static readonly EnemySpec[] Enemies =
         {
             new()
             {
@@ -200,6 +215,7 @@ namespace Baryonyx.Combat.Editor
                 Weaknesses = new[] { BattleInspectElement.Fire, BattleInspectElement.Slash },
                 Revealed = new[] { BattleInspectElement.Fire },
                 Face = new Vector2Int(12, 28),
+                Boss = true,
             },
             new()
             {
@@ -227,76 +243,29 @@ namespace Baryonyx.Combat.Editor
             },
         };
 
-        private static readonly CardSpec[] Cards =
+        // The mock's deck (doc/features/combat.md: 16 cards, four for each of the party) from the
+        // card skills (CardSkills). The first six are the mock's first cards, one of each, so the
+        // opening hand dealt in order shows them; the rest are four for each user in all. 居合一閃
+        // (cost 5) is the cut-in the first turn's energy can pay for, and メテオ (cost 9) a card
+        // it cannot.
+        private static readonly string[] DeckIds =
         {
-            new()
-            {
-                Name = "斬り払い",
-                Art = "CardSlash",
-                Cost = 1,
-                Power = 243,
-                Element = BattleInspectElement.Slash,
-                Effect = BattleInspectCardEffect.DamageOne,
-                Owner = 2,
-                Text = "剣で敵1体を斬りつけ、{0}ダメージ。",
-            },
-            new()
-            {
-                Name = "ファイア",
-                Art = "CardFire",
-                Cost = 2,
-                Power = 318,
-                Element = BattleInspectElement.Fire,
-                Effect = BattleInspectCardEffect.DamageOne,
-                Owner = 0,
-                Text = "炎の玉で敵1体を焼き、{0}ダメージ。",
-            },
-            new()
-            {
-                Name = "アイスランス",
-                Art = "CardIce",
-                // Out of reach of the energy (5 at most on the first turn), to check how a card
-                // the energy cannot pay for looks.
-                Cost = 7,
-                Power = 276,
-                Element = BattleInspectElement.Ice,
-                Effect = BattleInspectCardEffect.DamageOne,
-                Owner = 0,
-                Text = "氷の槍で敵1体を貫き、{0}ダメージ。",
-            },
-            new()
-            {
-                Name = "サンダー",
-                Art = "CardThunder",
-                Cost = 3,
-                Power = 182,
-                Element = BattleInspectElement.Thunder,
-                Effect = BattleInspectCardEffect.DamageAll,
-                Owner = 3,
-                Text = "雷を落とし、敵全体に{0}ダメージ。",
-            },
-            new()
-            {
-                Name = "ヒール",
-                Art = "CardHeal",
-                Cost = 1,
-                Power = 180,
-                Element = BattleInspectElement.None,
-                Effect = BattleInspectCardEffect.Heal,
-                Owner = 1,
-                Text = "味方1体のHPを{0}回復する。",
-            },
-            new()
-            {
-                Name = "ガード",
-                Art = "CardGuard",
-                Cost = 1,
-                Power = 120,
-                Element = BattleInspectElement.None,
-                Effect = BattleInspectCardEffect.Guard,
-                Owner = 2,
-                Text = "守りの光で、味方全体にブロック{0}。",
-            },
+            "Slash",
+            "Fire",
+            "Ice",
+            "Thunder",
+            "Heal",
+            "Guard",
+            "ShieldBash",
+            "Iai",
+            "Embers",
+            "Meteor",
+            "VitalThrust",
+            "ChainLightning",
+            "Scout",
+            "Regen",
+            "HolyLight",
+            "Protect",
         };
 
         [MenuItem("Baryonyx/Combat/Create Battle Inspect Assets")]
@@ -352,12 +321,17 @@ namespace Baryonyx.Combat.Editor
                 view.IdleActors = idle.ToArray();
                 view.IdleSteps = idleSteps.ToArray();
                 var front = BattleSkillVfxAssets.Layer("VfxFront", stage);
+                // On a 3D stage the actors are drawn as boards between the effects behind them
+                // and the bars, tags and effects in front.
+                Hd2dStageKit.SortLayer(world, Hd2dStageKit.BoardOrder + 10);
+                Hd2dStageKit.SortLayer(front, Hd2dStageKit.BoardOrder + 11);
                 view.Vfx = BattleSkillVfxAssets.Attach(screen, stage, dim, back, front);
                 BuildTapArea(screen, view);
 
                 var safe = SafeArea(screen);
                 BuildTurnOrder(safe, view);
                 BuildSkillBanner(safe, view);
+                BuildTurnBanner(safe, view);
                 BuildEnergy(safe, view);
                 BuildDeck(safe, view);
                 BuildHand(safe, view);
@@ -367,6 +341,8 @@ namespace Baryonyx.Combat.Editor
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 BuildNumberSamples();
+                BuildCardGallery(view.TodayUpt);
+                BuildWeaknessRevealPreview();
                 BattleSkillVfxAssets.BuildPreview(Art("BattleBackground"), Art);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
@@ -525,19 +501,17 @@ namespace Baryonyx.Combat.Editor
             );
             cardView.Element = AddRaw(element, fireIcon);
 
+            var fire = CardSkills.Find("Fire");
+            var toma = Array.Find(Allies, ally => ally.User == fire.User);
             cardView.Show(
-                "ファイア",
-                "トーマ",
-                KindLine(BattleInspectCardEffect.DamageOne),
-                Description(
-                    "炎の玉で敵1体を焼き、{0}ダメージ。",
-                    BattleInspectCardEffect.DamageOne,
-                    318
-                ),
+                fire.Name,
+                toma.Label,
+                BattleCardText.KindLine(fire),
+                BattleCardText.Description(fire, stat => StatOf(toma, stat), 0),
                 fireArt,
                 Art("CardFrameFire"),
                 fireIcon,
-                2
+                fire.Cost
             );
             AddCardParts(card, cardView);
             PrefabUtility.SaveAsPrefabAsset(card.gameObject, CardPrefabPath);
@@ -635,7 +609,7 @@ namespace Baryonyx.Combat.Editor
         /// The material of the pixel art on the stage (the background, the characters and their
         /// icons): sharp, yet it glides between screen pixels as the camera circles.
         /// </summary>
-        private static Material EnsurePixelArtMaterial()
+        internal static Material EnsurePixelArtMaterial()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(PixelArtMaterialPath);
             if (material != null)
@@ -659,7 +633,7 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>Finds a battle image by file name anywhere under the art folder.</summary>
-        private static Texture2D Art(string name)
+        internal static Texture2D Art(string name)
         {
             foreach (
                 var guid in AssetDatabase.FindAssets($"{name} t:Texture2D", new[] { ArtFolder })
@@ -688,10 +662,13 @@ namespace Baryonyx.Combat.Editor
             image.material = EnsurePixelArtMaterial();
             image.raycastTarget = false;
             image.gameObject.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
+            // The 3D stage takes the painted background's place when the scene has one.
+            Hd2dStageKit.FlatOnly(image.gameObject);
 
             var fog = InstantiatePrefab(Hd2dAssets.FogPrefabPath, "FloorMist", backdrop);
             Stretch((RectTransform)fog.transform);
             fog.AddComponent<ResponsiveBackground>().AspectRatio = aspect;
+            Hd2dStageKit.FlatOnly(fog);
 
             Shade(parent, "ShadeTop", top: true, 260f, 0.7f);
             Shade(parent, "ShadeBottom", top: false, 360f, 0.85f);
@@ -725,17 +702,26 @@ namespace Baryonyx.Combat.Editor
                 var unit = Rect("Ally" + ally.Name, world);
                 units.Add(unit);
                 Place(unit, ally.Feet, Vector2.zero);
-                Picture(unit, "Shadow", shadow, new Vector2(0, 2), new Vector2(150, 24), 0.5f);
-                // On the floor over the shadow and behind the sprite; shown while a card this ally
-                // uses is up.
+                var footShadow = Picture(
+                    unit,
+                    "Shadow",
+                    shadow,
+                    new Vector2(0, 2),
+                    new Vector2(150, 24),
+                    0.5f
+                );
+                // On the floor over the shadow and behind the sprite (behind its board on a 3D
+                // stage); shown while a card this ally uses is up.
                 var ring = PixelIcon(unit, "CasterRing", ringArt);
                 ((RectTransform)ring.transform).anchoredPosition = new Vector2(0, 2);
+                Hd2dStageKit.SortLayer((RectTransform)ring.transform, Hd2dStageKit.BoardOrder - 5);
                 ring.SetActive(false);
                 rings.Add(ring);
                 var pose = Rect("Pose", unit);
                 Place(pose, Vector2.zero, Vector2.zero);
                 var sprite = PixelActor(pose, "Sprite", texture, Vector2.zero, DotSize);
                 sprite.material = view.ActorMaterial;
+                Hd2dStageKit.Stand(unit.gameObject, sprite, footShadow);
                 sprites.Add(sprite);
                 idle.Add(pose);
                 idleSteps.Add(DotSize);
@@ -763,6 +749,9 @@ namespace Baryonyx.Combat.Editor
                         NameTag = tag,
                         StartHp = ally.Hp,
                         MaxHp = ally.MaxHp,
+                        Strength = ally.Strength,
+                        Magic = ally.Magic,
+                        Defense = ally.Defense,
                     }
                 );
             }
@@ -792,7 +781,7 @@ namespace Baryonyx.Combat.Editor
                 var group = body.gameObject.AddComponent<CanvasGroup>();
 
                 float width = spec.Size * EnemyDotSize;
-                Picture(
+                var footShadow = Picture(
                     body,
                     "Shadow",
                     shadow,
@@ -804,6 +793,7 @@ namespace Baryonyx.Combat.Editor
                 Place(pose, Vector2.zero, Vector2.zero);
                 var sprite = PixelActor(pose, "Sprite", texture, Vector2.zero, EnemyDotSize);
                 sprite.material = view.ActorMaterial;
+                Hd2dStageKit.Stand(body.gameObject, sprite, footShadow);
                 idle.Add(pose);
                 idleSteps.Add(EnemyDotSize);
 
@@ -829,6 +819,7 @@ namespace Baryonyx.Combat.Editor
                         Power = spec.Power,
                         Weaknesses = weaknesses,
                         IconUv = FaceUv(texture, spec.Face, TurnIconDots),
+                        Boss = spec.Boss,
                     }
                 );
             }
@@ -851,21 +842,47 @@ namespace Baryonyx.Combat.Editor
             var weaknesses = new List<BattleInspectWeakness>();
             foreach (var element in spec.Weaknesses)
             {
-                var slot = Rect("Weakness" + element, row);
-                var size = slot.gameObject.AddComponent<LayoutElement>();
-                size.preferredWidth = size.preferredHeight = WeakIconSize;
                 bool revealed = Array.IndexOf(spec.Revealed, element) >= 0;
-                var weakness = new BattleInspectWeakness
-                {
-                    Element = element,
-                    StartsRevealed = revealed,
-                    Known = PixelIcon(slot, "Known", Art("Element" + element)),
-                    Unknown = PixelIcon(slot, "Unknown", Art("ElementUnknown")),
-                };
-                weakness.Show(revealed);
-                weaknesses.Add(weakness);
+                weaknesses.Add(WeaknessIcon(row, element, revealed));
             }
             return weaknesses.ToArray();
+        }
+
+        /// <summary>
+        /// One weakness in a row of them: the element's icon and "?" on one place, and the light
+        /// over them (in the icon's own shape) that glints as the weakness is revealed.
+        /// </summary>
+        private static BattleInspectWeakness WeaknessIcon(
+            RectTransform row,
+            BattleInspectElement element,
+            bool revealed
+        )
+        {
+            var slot = Rect("Weakness" + element, row);
+            var size = slot.gameObject.AddComponent<LayoutElement>();
+            size.preferredWidth = size.preferredHeight = WeakIconSize;
+            var known = PixelIcon(slot, "Known", Art("Element" + element));
+            var unknown = Art("ElementUnknown");
+            var unknownIcon = PixelIcon(slot, "Unknown", unknown);
+            // Drawn over the icons; it takes on the shown icon's picture as it glints.
+            var glint = Rect("Glint", slot);
+            Place(glint, Vector2.zero, new Vector2(unknown.width, unknown.height) * DotSize);
+            var light = glint.gameObject.AddComponent<BattleVfxImage>();
+            light.texture = unknown;
+            light.material = BattleSkillVfxAssets.EnsureGlintMaterial();
+            light.raycastTarget = false;
+            glint.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = DotSize;
+            glint.gameObject.SetActive(false);
+            var weakness = new BattleInspectWeakness
+            {
+                Element = element,
+                StartsRevealed = revealed,
+                Known = known,
+                Unknown = unknownIcon,
+                Glint = light,
+            };
+            weakness.Show(revealed);
+            return weakness;
         }
 
         /// <summary>A pixel-art image on the stage at 4 px per dot, centered in its parent.</summary>
@@ -889,7 +906,7 @@ namespace Baryonyx.Combat.Editor
         /// <summary>
         /// The drawn part of a character's square canvas, where a card is dropped to target it.
         /// </summary>
-        private static RectTransform TargetArea(RectTransform unit, Texture2D texture, float dot)
+        internal static RectTransform TargetArea(RectTransform unit, Texture2D texture, float dot)
         {
             var bounds = OpaqueBounds(texture);
             var target = Rect("TargetArea", unit);
@@ -1099,7 +1116,7 @@ namespace Baryonyx.Combat.Editor
             panel.SetBackdropSize(new Vector2(720, 112));
             panel.SetBackdropAlpha(0.8f);
             panel.SetFontSize(48);
-            panel.SetText(Cards[0].Name);
+            panel.SetText(CardSkills.All[0].Name);
             PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
             PrefabUtility.RecordPrefabInstancePropertyModifications(panel);
             PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Backdrop);
@@ -1108,6 +1125,55 @@ namespace Baryonyx.Combat.Editor
             view.SkillBanner = panel;
             view.SkillBannerGroup = instance.AddComponent<CanvasGroup>();
             view.SkillBannerGroup.blocksRaycasts = false;
+            instance.SetActive(false);
+        }
+
+        /// <summary>
+        /// The band that tells whose turn begins: across the middle of the screen on the skill
+        /// name's dark band, between two lines one dot thick that take the side's colour. Hidden
+        /// until a turn begins, it is baked with the words of the first party turn.
+        /// </summary>
+        private static void BuildTurnBanner(RectTransform safe, BattleInspectView view)
+        {
+            var instance = InstantiatePrefab(
+                TranslucentTextPanelAssets.PrefabPath,
+                "TurnBanner",
+                safe
+            );
+            var rect = (RectTransform)instance.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            // A little above the middle, over the ground between the party and the enemies.
+            rect.anchoredPosition = new Vector2(0, 70);
+            rect.sizeDelta = new Vector2(1400, 120);
+            var panel = instance.GetComponent<TranslucentTextPanel>();
+            panel.Backdrop.color = new Color(0.02f, 0.025f, 0.04f);
+            panel.SetBackdropSize(new Vector2(2600, 190));
+            panel.SetBackdropAlpha(0.85f);
+            panel.SetFontSize(72);
+            panel.SetText(BattleInspectView.PartyTurnText(view.StartTurn, again: false));
+            panel.Label.color = view.PartyBannerText;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Backdrop);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.BackdropCanvas);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Label);
+
+            var lines = new List<Graphic>();
+            foreach (float y in new[] { 68f, -68f })
+            {
+                var line = Rect("Line", rect);
+                line.anchorMin = line.anchorMax = new Vector2(0.5f, 0.5f);
+                line.sizeDelta = new Vector2(1100, DotSize);
+                line.anchoredPosition = new Vector2(0, y);
+                var image = AddRaw(line, null);
+                image.color = view.PartyBannerLine;
+                lines.Add(image);
+            }
+            view.TurnBanner = panel;
+            view.TurnBannerLines = lines.ToArray();
+            view.TurnBannerGroup = instance.AddComponent<CanvasGroup>();
+            view.TurnBannerGroup.blocksRaycasts = false;
+            view.TurnBannerGroup.interactable = false;
             instance.SetActive(false);
         }
 
@@ -1218,32 +1284,12 @@ namespace Baryonyx.Combat.Editor
             var cards = new List<BattleInspectCard>();
             for (int i = 0; i < DeckSize; i++)
             {
-                var spec = Cards[i % Cards.Length];
-                int copy = i / Cards.Length;
-                var data = new BattleInspectCardData
-                {
-                    Name = spec.Name,
-                    Owner = Allies[spec.Owner].Label,
-                    Kind = KindLine(spec.Effect),
-                    Description = Description(spec.Text, spec.Effect, spec.Power),
-                    Art = Art(spec.Art),
-                    Frame = Art("CardFrame" + spec.Element),
-                    ElementIcon =
-                        spec.Element == BattleInspectElement.None
-                            ? null
-                            : Art("Element" + spec.Element),
-                    Cost = spec.Cost,
-                    Power = spec.Power,
-                    Element = spec.Element,
-                    Effect = spec.Effect,
-                    Caster = spec.Owner,
-                };
+                var spec =
+                    CardSkills.Find(DeckIds[i])
+                    ?? throw new InvalidOperationException("Missing card skill: " + DeckIds[i]);
+                var data = CardData(spec, view.TodayUpt);
                 deck.Add(data);
-                var instance = InstantiatePrefab(
-                    CardPrefabPath,
-                    "Card" + spec.Art.Replace("Card", "") + (copy > 0 ? (copy + 1).ToString() : ""),
-                    hand
-                );
+                var instance = InstantiatePrefab(CardPrefabPath, "Card" + spec.Id, hand);
                 var card = (RectTransform)instance.transform;
                 var (position, angle) = BattleInspectView.FanPose(
                     Mathf.Min(i, opening - 1),
@@ -1256,7 +1302,7 @@ namespace Baryonyx.Combat.Editor
                 card.anchoredPosition = position;
                 card.localRotation = Quaternion.Euler(0, 0, angle);
                 card.localScale = Vector3.one * settings.CardScale;
-                bool playable = spec.Cost <= energy;
+                bool playable = data.Cost <= energy;
                 var group = instance.GetComponent<CanvasGroup>();
                 group.alpha =
                     i >= opening ? 0f
@@ -1311,11 +1357,11 @@ namespace Baryonyx.Combat.Editor
                         Group = group,
                         Face = cardView,
                         Back = cardView.Back.gameObject,
-                        Cost = spec.Cost,
-                        Power = spec.Power,
-                        Element = spec.Element,
-                        Effect = spec.Effect,
-                        Caster = spec.Owner,
+                        Cost = data.Cost,
+                        Power = data.Power,
+                        Element = data.Element,
+                        Effect = data.Effect,
+                        Caster = data.Caster,
                         DeckIndex = i,
                     }
                 );
@@ -1434,6 +1480,125 @@ namespace Baryonyx.Combat.Editor
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, NumberSamplesPath);
         }
 
+        // Only 16 of the cards are in the mock's deck, so the showcase gets every card skill laid
+        // out face up in their order, ten to a row, over a dark backdrop.
+        private static void BuildCardGallery(int upt)
+        {
+            const int columns = 10;
+            const float scale = 0.72f;
+            var root = CanvasRoot("BattleCardGallery");
+            var backdrop = Rect("Backdrop", root);
+            Stretch(backdrop);
+            AddImage(backdrop, new Color(0.05f, 0.06f, 0.09f), false);
+            var all = CardSkills.All;
+            int rows = Mathf.CeilToInt(all.Count / (float)columns);
+            var pitch = new Vector2(CardWidth + 7f, CardHeight + 6f) * scale;
+            for (int i = 0; i < all.Count; i++)
+            {
+                var data = CardData(all[i], upt);
+                var instance = InstantiatePrefab(CardPrefabPath, $"{i + 1:00}_{all[i].Id}", root);
+                var card = (RectTransform)instance.transform;
+                card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
+                card.pivot = new Vector2(0.5f, 0.5f);
+                int column = i % columns;
+                int row = i / columns;
+                card.anchoredPosition = new Vector2(
+                    (column - (columns - 1) * 0.5f) * pitch.x,
+                    ((rows - 1) * 0.5f - row) * pitch.y
+                );
+                card.localScale = Vector3.one * scale;
+                var view = instance.GetComponent<BattleInspectCardView>();
+                view.Show(
+                    data.Name,
+                    data.Owner,
+                    data.Kind,
+                    data.Description,
+                    data.Art,
+                    data.Frame,
+                    data.ElementIcon,
+                    data.Cost
+                );
+                view.SetPlayable(true, 0f);
+                if (view.Back != null)
+                    view.Back.gameObject.SetActive(false);
+                foreach (
+                    var component in new Component[]
+                    {
+                        card,
+                        view.Owner,
+                        view.Name,
+                        view.Kind,
+                        view.Description,
+                        view.Art,
+                        view.Frame,
+                        view.Element,
+                        view.CostDigit,
+                        view.Shade,
+                        view.Bands[0],
+                        view.Bands[1],
+                    }
+                )
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            }
+            PrefabUtility.SaveAsPrefabAsset(root.gameObject, CardGalleryPath);
+        }
+
+        // The glint only plays the first time a card hits a hidden weakness, so the showcase gets
+        // one weakness of each element revealed in turn, over and over, on the battle background.
+        // They are drawn close up, so the band of light can be seen stepping over the dots.
+        private static void BuildWeaknessRevealPreview()
+        {
+            const float zoom = 2.5f;
+            var root = CanvasRoot("BattleWeaknessRevealPreview");
+            root.GetComponent<Canvas>().additionalShaderChannels |=
+                AdditionalCanvasShaderChannels.TexCoord1;
+            var stage = Rect("Stage", root);
+            Stretch(stage);
+            BuildBackground(stage);
+            var dim = BattleSkillVfxAssets.Dim(stage);
+            // The icons and the effects over them are enlarged together, so they keep their sizes.
+            var closeUp = Rect("CloseUp", stage);
+            Stretch(closeUp);
+            closeUp.localScale = new Vector3(zoom, zoom, 1f);
+            var back = BattleSkillVfxAssets.Layer("VfxBack", closeUp);
+            var world = BattleSkillVfxAssets.Layer("World", closeUp);
+            var front = BattleSkillVfxAssets.Layer("VfxFront", closeUp);
+
+            var elements = new[]
+            {
+                BattleInspectElement.Fire,
+                BattleInspectElement.Ice,
+                BattleInspectElement.Thunder,
+                BattleInspectElement.Slash,
+            };
+            const float spacing = 32f;
+            var row = Rect("Weaknesses", world);
+            Place(
+                row,
+                Vector2.zero,
+                new Vector2(
+                    elements.Length * WeakIconSize + (elements.Length - 1) * spacing,
+                    WeakIconSize
+                )
+            );
+            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+            var weaknesses = new List<BattleInspectWeakness>();
+            foreach (var element in elements)
+                weaknesses.Add(WeaknessIcon(row, element, revealed: false));
+
+            var demo = root.gameObject.AddComponent<BattleWeaknessRevealDemo>();
+            demo.Vfx = BattleSkillVfxAssets.Attach(root, stage, dim, back, front);
+            demo.Weaknesses = weaknesses.ToArray();
+            PrefabUtility.SaveAsPrefabAsset(
+                root.gameObject,
+                BattleSkillVfxAssets.WeaknessRevealPreviewPath
+            );
+        }
+
         private static RectTransform HpBar(
             RectTransform parent,
             Vector2 center,
@@ -1454,37 +1619,43 @@ namespace Baryonyx.Combat.Editor
             return fill;
         }
 
-        /// <summary>"攻撃・敵単体": the kind in its colour, then who it reaches (rich text).</summary>
-        private static string KindLine(BattleInspectCardEffect effect)
+        /// <summary>
+        /// One card of the deck from a card skill: its texts worked out from its user's stats (and
+        /// today's <paramref name="upt"/>), its art, the frame and icon of its element, and how it
+        /// is played.
+        /// </summary>
+        private static BattleInspectCardData CardData(CardSkill skill, int upt)
         {
-            var (kind, scope) = effect switch
+            int user = Array.FindIndex(Allies, ally => ally.User == skill.User);
+            var ally = Allies[user];
+            var element = BattleCardText.ElementOf(skill.Element);
+            var first = skill.Powered().FirstOrDefault();
+            return new BattleInspectCardData
             {
-                BattleInspectCardEffect.DamageOne => ("攻撃", "敵単体"),
-                BattleInspectCardEffect.DamageAll => ("攻撃", "敵全体"),
-                BattleInspectCardEffect.Heal => ("回復", "味方単体"),
-                _ => ("防御", "味方全体"),
+                Name = skill.Name,
+                Owner = ally.Label,
+                Skill = skill.Id,
+                Kind = BattleCardText.KindLine(skill),
+                Description = BattleCardText.Description(skill, stat => StatOf(ally, stat), upt),
+                Art = Art(skill.Art),
+                Frame = Art("CardFrame" + skill.Element),
+                ElementIcon =
+                    skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
+                Cost = skill.Cost,
+                Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), upt),
+                Element = element,
+                Effect = BattleCardText.EffectOf(skill),
+                Caster = user,
             };
-            return $"<color=#{KindHex(effect)}>{kind}</color><color=#{SeparatorHex}>・</color>{scope}";
         }
 
-        /// <summary>The description with the power in the kind's colour (rich text).</summary>
-        private static string Description(string text, BattleInspectCardEffect effect, int power) =>
-            string.Format(text, $"<color=#{PowerHex(effect)}>{power}</color>");
-
-        private static string KindHex(BattleInspectCardEffect effect) =>
-            effect switch
+        private static int StatOf(AllySpec ally, CardStat stat) =>
+            stat switch
             {
-                BattleInspectCardEffect.Heal => "96e678",
-                BattleInspectCardEffect.Guard => "96c8ff",
-                _ => "ff966e",
-            };
-
-        private static string PowerHex(BattleInspectCardEffect effect) =>
-            effect switch
-            {
-                BattleInspectCardEffect.Heal => "8ce878",
-                BattleInspectCardEffect.Guard => "96c8ff",
-                _ => "ffce60",
+                CardStat.Strength => ally.Strength,
+                CardStat.Magic => ally.Magic,
+                CardStat.Defense => ally.Defense,
+                _ => 0,
             };
 
         /// <summary>The drawn part of a sprite in dots, with y measured up from the bottom.</summary>

@@ -31,6 +31,16 @@ namespace Baryonyx.Combat.Editor
         /// <summary>Every effect's shape, worked out with no picture.</summary>
         public const string ShapeShaderPath = Folder + "/Shaders/BattleVfxShape.shader";
 
+        /// <summary>The light over a weakness icon as it is revealed, in the icon's own shape.</summary>
+        public const string GlintShaderPath = Folder + "/Shaders/BattleWeaknessGlint.shader";
+
+        /// <summary>A beaten enemy's picture, eaten away dot by dot.</summary>
+        public const string DefeatShaderPath = Folder + "/Shaders/BattleDefeat.shader";
+
+        /// <summary>The showcase's preview of the weaknesses' glint as they are revealed.</summary>
+        public const string WeaknessRevealPreviewPath =
+            Folder + "/BattleWeaknessRevealPreview.prefab";
+
         /// <summary>The battlefield's post-processing: Bloom on the effects' light, and a vignette.</summary>
         public const string PostProcessProfilePath = Folder + "/BattlePostProcess.asset";
 
@@ -104,6 +114,44 @@ namespace Baryonyx.Combat.Editor
             return materials;
         }
 
+        /// <summary>The light that glints over a weakness icon as it is revealed, added to it.</summary>
+        public static Material EnsureGlintMaterial()
+        {
+            AssetFolders.Ensure(MaterialFolder);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(GlintShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException("Missing shader: " + GlintShaderPath);
+            const string path = MaterialFolder + "/VfxWeaknessGlint.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "VfxWeaknessGlint" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>The picture of a beaten enemy as it crumbles away, dot by dot.</summary>
+        public static Material EnsureDefeatMaterial()
+        {
+            AssetFolders.Ensure(MaterialFolder);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(DefeatShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException("Missing shader: " + DefeatShaderPath);
+            const string path = MaterialFolder + "/VfxDefeat.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "VfxDefeat" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         /// <summary>The shader keyword that picks a shape (the shader's _Shape keyword enum).</summary>
         public static string KeywordOf(BattleVfxShape shape) =>
             "_SHAPE_" + shape.ToString().ToUpperInvariant();
@@ -163,7 +211,8 @@ namespace Baryonyx.Combat.Editor
         {
             var canvas = canvasRect.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.planeDistance = 10f;
+            // Close to the camera, so a 3D stage behind it never hides the UI (UI tests depth).
+            canvas.planeDistance = 1f;
             var raycaster = canvasRect.GetComponent<GraphicRaycaster>();
             if (raycaster != null)
                 UnityEngine.Object.DestroyImmediate(raycaster);
@@ -243,6 +292,7 @@ namespace Baryonyx.Combat.Editor
             vfx.Flash = flashImage;
             vfx.GlowMaterial = glow;
             vfx.Shapes = shapes;
+            vfx.DefeatMaterial = EnsureDefeatMaterial();
             BuildCutIn(root, vfx, shapes[(int)BattleVfxShape.CutInStreaks]);
             return vfx;
         }
@@ -315,8 +365,8 @@ namespace Baryonyx.Combat.Editor
 
         /// <summary>
         /// The showcase's preview: the battle background with the party on the left and the
-        /// enemies on the right, and <see cref="BattleSkillVfxDemo"/> playing every skill in turn
-        /// with the card's user and targets.
+        /// enemies on the right, and <see cref="BattleSkillVfxDemo"/> playing every card skill's
+        /// effect in turn with its user and targets, its name at the top.
         /// </summary>
         public static void BuildPreview(Texture2D background, Func<string, Texture2D> art)
         {
@@ -353,57 +403,25 @@ namespace Baryonyx.Combat.Editor
             var vfx = Attach(root, stage, dim, back, front);
             var demo = root.gameObject.AddComponent<BattleSkillVfxDemo>();
             demo.Vfx = vfx;
+            // The party in the cards' users' order: Aria, Toma, Luka, Mina.
+            demo.Party = new[] { aria, toma, luka, mina };
+            demo.Enemies = new[] { slime, wolf, guardian };
             demo.Actors = new[] { aria, toma, luka, mina, slime, wolf, guardian }
                 .Select(actor => actor.GetComponent<RawImage>())
                 .ToArray();
-            Texture Art(RectTransform actor) => actor.GetComponent<RawImage>().texture;
-            demo.Casts = new[]
-            {
-                Cast(BattleSkillVfxKind.Slash, "斬り払い", aria, Art(aria), false, wolf),
-                Cast(BattleSkillVfxKind.Fire, "ファイア", toma, Art(toma), false, guardian),
-                Cast(BattleSkillVfxKind.Ice, "アイスランス", toma, Art(toma), true, wolf),
-                Cast(
-                    BattleSkillVfxKind.Thunder,
-                    "サンダー",
-                    luka,
-                    Art(luka),
-                    true,
-                    slime,
-                    wolf,
-                    guardian
-                ),
-                Cast(BattleSkillVfxKind.Heal, "ヒール", mina, Art(mina), false, aria),
-                Cast(
-                    BattleSkillVfxKind.Guard,
-                    "ガード",
-                    aria,
-                    Art(aria),
-                    false,
-                    toma,
-                    mina,
-                    aria,
-                    luka
-                ),
-            };
+            // Which card plays now, at the top, over the effects.
+            var caption = Label(root, "Caption", "", 44, Color.white, TextAlignmentOptions.Center);
+            caption.rectTransform.anchorMin = caption.rectTransform.anchorMax = new Vector2(
+                0.5f,
+                1f
+            );
+            caption.rectTransform.pivot = new Vector2(0.5f, 1f);
+            caption.rectTransform.anchoredPosition = new Vector2(0f, -24f);
+            caption.rectTransform.sizeDelta = new Vector2(1200f, 70f);
+            caption.outlineWidth = 0.2f;
+            caption.outlineColor = new Color(0.05f, 0.04f, 0.1f);
+            demo.Caption = caption;
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, PreviewPrefabPath);
         }
-
-        private static BattleSkillVfxDemo.Cast Cast(
-            BattleSkillVfxKind kind,
-            string name,
-            RectTransform caster,
-            Texture art,
-            bool cutIn,
-            params RectTransform[] targets
-        ) =>
-            new()
-            {
-                Kind = kind,
-                Name = name,
-                Caster = caster,
-                CasterArt = art,
-                CutIn = cutIn,
-                Targets = targets,
-            };
     }
 }

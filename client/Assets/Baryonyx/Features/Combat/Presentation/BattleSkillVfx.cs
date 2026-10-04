@@ -101,6 +101,39 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The cut-in's streaks, read from the UV so the image's uvRect scrolls them.</summary>
         CutInStreaks,
+
+        /// <summary>A beam along +x across the board, drawn in from its left end.</summary>
+        Beam,
+
+        /// <summary>An arrow or a needle of light flying along +x (its head at 82% of the width).</summary>
+        Arrow,
+
+        /// <summary>Glowing cracks spreading from the middle (laid on the floor, or upright on a body).</summary>
+        Crack,
+
+        /// <summary>A whirlwind seen from the side, its foot at the bottom.</summary>
+        Tornado,
+
+        /// <summary>A bubble: a barrier, or a bubble of poison.</summary>
+        Bubble,
+
+        /// <summary>A leaf, or (white and long) a feather of light, along +y.</summary>
+        Leaf,
+
+        /// <summary>Two chevrons sliding up: a power rising (turned over, falling).</summary>
+        Chevron,
+
+        /// <summary>A snowflake crystal of six arms.</summary>
+        Snowflake,
+
+        /// <summary>An upright crest shaped like a shield.</summary>
+        Crest,
+
+        /// <summary>A sight of rings and ticks closing in on its middle.</summary>
+        Reticle,
+
+        /// <summary>A square mote of a crumbling body, a third of the board, never turned.</summary>
+        Mote,
     }
 
     /// <summary>
@@ -120,7 +153,7 @@ namespace Baryonyx.Combat.Presentation
     /// <see cref="ShakeStrength"/>, <see cref="FlashStrength"/> and <see cref="UseHitStop"/> tone
     /// the screen effects down.
     /// </summary>
-    public sealed class BattleSkillVfx : MonoBehaviour
+    public sealed partial class BattleSkillVfx : MonoBehaviour
     {
         // One dot of the 4x pixel art: the stage shakes in whole dots, so the pixel art never blurs.
         private const float Dot = 4f;
@@ -193,7 +226,7 @@ namespace Baryonyx.Combat.Presentation
 
         [Tooltip("このコスト以上のカードは、使う前にカットインを出す。")]
         [Min(0)]
-        public int CutInCost = 3;
+        public int CutInCost = 5;
 
         private readonly List<Particle> particles = new();
         private readonly List<Shot> shots = new();
@@ -220,6 +253,10 @@ namespace Baryonyx.Combat.Presentation
         private float slowUntil;
         private float slowScale = 1f;
         private float savedTimeScale = 1f;
+
+        // Where the cut-in's user and name rest; a cut-in cut short is put back here.
+        private Vector2 cutInActorHome;
+        private Vector2 cutInNameHome;
 
         /// <summary>Effects and particles now on screen.</summary>
         public int LiveCount
@@ -332,6 +369,10 @@ namespace Baryonyx.Combat.Presentation
             }
             if (CutIn != null)
                 CutIn.gameObject.SetActive(false);
+            if (CutInActor != null)
+                cutInActorHome = CutInActor.rectTransform.anchoredPosition;
+            if (CutInName != null)
+                cutInNameHome = CutInName.rectTransform.anchoredPosition;
             // The shapes take their seed and moment from the boards' second UV.
             BattleVfxImage.EnableShapeChannel(BackLayer);
             BattleVfxImage.EnableShapeChannel(FrontLayer);
@@ -358,7 +399,10 @@ namespace Baryonyx.Combat.Presentation
             return rect;
         }
 
-        private void OnDisable()
+        private void OnDisable() => Steady();
+
+        /// <summary>Runs time again and puts the stage back still where it rests.</summary>
+        private void Steady()
         {
             RestoreTime();
             trauma = 0f;
@@ -369,6 +413,49 @@ namespace Baryonyx.Combat.Presentation
                 Stage.anchoredPosition = Vector2.zero;
                 Stage.localScale = Vector3.one;
             }
+        }
+
+        /// <summary>
+        /// Ends every effect at once, as if none had played: the shapes, particles and lights are
+        /// gone, the stage is still and lit again, the flash and the cut-in are hidden and time
+        /// runs again. For cutting a skill short to play another (the card skill lab); whoever
+        /// plays the skill stops its own coroutine first.
+        /// </summary>
+        public void Clear()
+        {
+            // The effects' own side work (a crackle of lightning that outlives a blow).
+            StopAllCoroutines();
+            foreach (var particle in particles)
+            {
+                particle.Live = false;
+                particle.Rect.gameObject.SetActive(false);
+            }
+            foreach (var shot in shots)
+            {
+                shot.Live = false;
+                shot.Animate = null;
+                shot.Holder.gameObject.SetActive(false);
+            }
+            lights.Clear();
+            foreach (var light in actorLights)
+                if (light != null && light.Lit)
+                    light.SetCorners(Color.clear, Color.clear, Color.clear, Color.clear);
+            Steady();
+            flashAlpha = 0f;
+            if (Flash != null)
+                Flash.enabled = false;
+            dimAlpha = dimTarget = 0f;
+            if (Dim != null)
+            {
+                Dim.color = new Color(Dim.color.r, Dim.color.g, Dim.color.b, 0f);
+                Dim.enabled = false;
+            }
+            if (CutIn != null)
+                CutIn.gameObject.SetActive(false);
+            if (CutInActor != null)
+                CutInActor.rectTransform.anchoredPosition = cutInActorHome;
+            if (CutInName != null)
+                CutInName.rectTransform.anchoredPosition = cutInNameHome;
         }
 
         private void Update()
@@ -1102,86 +1189,91 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// A beaten enemy bursts apart: its picture breaks into a 6x6 grid of pieces that fly out
-        /// from the blow, spin and fall, over a white burst and dust thrown along the floor, while time slows for a
-        /// moment and the stage closes in.
+        /// The glint of a weakness found on <paramref name="icon"/>: a twinkle of four long rays
+        /// flares at its top right corner and turns as it dies away, a smaller one answers at the
+        /// opposite corner, a soft glow in the element's <paramref name="color"/> swells around the
+        /// first and a few small twinkles drift up from the icon. No stop, shake or flash: it is a sign,
+        /// not a blow, and it stays small so it never hides the target.
         /// </summary>
-        public void Shatter(RawImage sprite, Vector2 direction)
+        public void Glint(RectTransform icon, Color color)
         {
-            if (FrontLayer == null || sprite == null || sprite.texture == null)
+            if (FrontLayer == null || icon == null)
                 return;
-            var rect = sprite.rectTransform;
-            var worldCorners = new Vector3[4];
-            rect.GetWorldCorners(worldCorners);
-            Vector2 min = FrontLayer.InverseTransformPoint(worldCorners[0]);
-            Vector2 max = FrontLayer.InverseTransformPoint(worldCorners[2]);
-            var center = (min + max) * 0.5f;
-            // The burst first, so the pieces fly over it; the soot behind everything.
-            Puffs(backSmoke, center, new Color(0.3f, 0.34f, 0.3f, 0.6f), 6, 160f, 1.2f);
-            Star(center, Color.white, 360f, 0.3f);
-            // Dust thrown out along the floor both ways as it falls apart.
-            foreach (float side in new[] { 0f, 180f })
-                Spray(
-                    backSmoke,
-                    new Vector2(center.x, min.y + 10f),
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Smoke,
-                        From = new Color(0.5f, 0.48f, 0.44f, 0.7f),
-                        To = new Color(0.38f, 0.37f, 0.36f, 0.7f),
-                        Speed = new Vector2(240f, 520f),
-                        Direction = side,
-                        Spread = 20f,
-                        Life = new Vector2(0.7f, 1.2f),
-                        Size = new Vector2(110f, 170f),
-                        Aspect = 0.45f,
-                        Grow = 0.4f,
-                        Shrink = 1.9f,
-                        Drag = 3.2f,
-                        Gravity = -15f,
-                        Spin = 10f,
-                        Hold = 0.25f,
-                        Area = 30f,
-                    },
-                    4
-                );
-            Illuminate(center, Color.white, 0.9f, 520f, 0.08f, 0.4f);
-            const int pieces = 6;
-            var cell = (max - min) / pieces;
-            var uv = sprite.uvRect;
-            for (int y = 0; y < pieces; y++)
-            {
-                for (int x = 0; x < pieces; x++)
+            var (low, high) = Bounds(FrontLayer, icon);
+            var center = (low + high) * 0.5f;
+            float size = high.x - low.x;
+            // The twinkle sits on the corner, so its hot middle leaves the new icon readable.
+            Glow(frontLight, Vector2.Lerp(center, high, 0.5f), color, size * 2.2f, 0.36f, 0.35f);
+            Twinkle(high, color, size * 2.6f, 0.5f, 0f, 1f);
+            Twinkle(low, color, size, 0.28f, 0.12f, -1f);
+            Spray(
+                frontLight,
+                center,
+                new Burst
                 {
-                    var particle = TakePicture(frontLight, sprite.texture);
-                    var position = min + Vector2.Scale(cell, new Vector2(x + 0.5f, y + 0.5f));
-                    var away =
-                        (position - center).normalized + direction * 0.6f + Vector2.up * 0.5f;
-                    particle.Image.uvRect = new Rect(
-                        uv.x + uv.width * x / pieces,
-                        uv.y + uv.height * y / pieces,
-                        uv.width / pieces,
-                        uv.height / pieces
-                    );
-                    particle.Position = position;
-                    particle.Velocity = away.normalized * UnityEngine.Random.Range(220f, 620f);
-                    particle.Life = UnityEngine.Random.Range(0.75f, 1.15f);
-                    particle.Size = cell;
-                    particle.EndScale = 0.7f;
-                    particle.From = Color.white;
-                    particle.To = new Color(1f, 1f, 1f, 0f);
-                    particle.Spin = UnityEngine.Random.Range(-540f, 540f);
-                    particle.Gravity = 1300f;
-                    particle.Drag = 0.6f;
-                    particle.Stretch = 0f;
-                    particle.Apply();
+                    Shape = BattleVfxShape.Sparkle,
+                    Bright = CoreBright,
+                    From = Color.white,
+                    To = new Color(color.r, color.g, color.b, 0f),
+                    Speed = new Vector2(50f, 130f),
+                    Direction = 90f,
+                    Spread = 150f,
+                    Life = new Vector2(0.35f, 0.6f),
+                    Size = new Vector2(size * 0.35f, size * 0.55f),
+                    Grow = 1f,
+                    Shrink = 0.2f,
+                    Gravity = -60f,
+                    Drag = 2.5f,
+                    Spin = 120f,
+                    Area = size * 0.4f,
+                    Delay = new Vector2(0.02f, 0.14f),
+                },
+                4
+            );
+        }
+
+        /// <summary>
+        /// A twinkle of four rays that flares fast after <paramref name="delay"/>, then shrinks
+        /// as it turns toward <paramref name="turn"/> (1 one way, -1 the other) and takes on the
+        /// element's colour.
+        /// </summary>
+        private void Twinkle(
+            Vector2 at,
+            Color color,
+            float size,
+            float seconds,
+            float delay,
+            float turn
+        )
+        {
+            var shot = Spawn(
+                frontLight,
+                BattleVfxShape.Sparkle,
+                at,
+                new Vector2(size, size),
+                Color.clear
+            );
+            float total = seconds + delay;
+            float start = delay / total;
+            Animate(
+                shot,
+                total,
+                (s, t) =>
+                {
+                    float k = t <= start ? -1f : (t - start) / (1f - start);
+                    if (k < 0f)
+                    {
+                        Show(s, Color.clear, 0f, 0f);
+                        return;
+                    }
+                    // Out at once with a little overshoot, then drawn back in to a point.
+                    float grow = k < 0.14f ? BackOut(k / 0.14f) : 1f - EaseIn((k - 0.14f) / 0.86f);
+                    s.Holder.localScale = new Vector3(grow, grow, 1f);
+                    s.Holder.localEulerAngles = new Vector3(0f, 0f, -40f * turn * EaseOut(k));
+                    var tint = Color.Lerp(Color.white, color, 0.25f + 0.5f * k);
+                    Show(s, tint, k, 0f, CoreBright);
                 }
-            }
-            HitStop(0.12f);
-            SlowMotion(0.35f, 0.3f);
-            Shake(0.7f, direction);
-            Punch(center, 0.035f);
-            ScreenFlash(Color.white, MaxFlash);
+            );
         }
 
         // --- Beats -----------------------------------------------------------------------------
@@ -2463,15 +2555,6 @@ namespace Baryonyx.Combat.Presentation
             found.Image.texture = null;
             found.Image.material = MaterialOf(shape);
             found.Seed = UnityEngine.Random.value;
-            return found;
-        }
-
-        /// <summary>A free particle on the layer showing a piece of a picture (a beaten enemy's).</summary>
-        private Particle TakePicture(RectTransform layer, Texture texture)
-        {
-            var found = Free(layer);
-            found.Image.texture = texture;
-            found.Image.material = null;
             return found;
         }
 

@@ -521,6 +521,17 @@ half4 ShapeSpark(ShapeIn s)
     return half4(s.tint * (light + core) + core * 0.6, 1);
 }
 
+// A mote of a crumbling body: a square dot a third of the board across, upright like the pixel
+// art it came off, lit through and in a soft glow of its own colour.
+half4 ShapeMote(ShapeIn s)
+{
+    float box = max(abs(s.p.x), abs(s.p.y));
+    float aa = max(s.aa, 0.02);
+    float mote = 1 - smoothstep(0.34 - aa, 0.34 + aa, box);
+    float glow = Gauss(max(box - 0.34, 0), 0.24) * (1 - mote) * BoardFade(s.p);
+    return half4(s.tint * (mote + glow * 0.4), 1);
+}
+
 // A twinkle: four long rays, four short ones between and a soft middle.
 half4 ShapeSparkle(ShapeIn s)
 {
@@ -665,6 +676,223 @@ half4 ShapeChip(ShapeIn s)
     float rim = Gauss(d - 0.92, 0.08) * inside;
     float keep = Keep(1 - d * 0.7, s.rem, 0.08);
     return half4(s.tint * (lit + rim * 0.6), inside * keep);
+}
+
+// --- Shapes of the card skills (additive) ----------------------------------------------------
+
+// A beam along +x across the board: a hot core and a soft sheath that ripple as the energy flows
+// down it, rings of light racing along, drawn in from the left end and eaten away from it.
+half4 ShapeBeam(ShapeIn s)
+{
+    float x01 = s.p.x * 0.5 + 0.5;
+    float flow = Noise(float3(s.p.x * 6.0 - s.k * 14.0, s.seed * 7.0, 0.3));
+    float w = 0.16 * (0.75 + 0.5 * flow) * smoothstep(0.0, 0.08, x01) * (1 - smoothstep(0.92, 1.0, x01));
+    float y = abs(s.p.y);
+    float sheath = Gauss(y, max(w, 1e-3)) * (0.5 + 0.5 * flow);
+    float core = Gauss(y, max(w * 0.22, s.aa));
+    float rings = Gauss(frac(s.p.x * 4.0 - s.k * 6.0) - 0.5, 0.06) * Gauss(y, w * 1.3 + 1e-3) * 0.4;
+    float drawn = 1 - smoothstep(s.k * 4.0 - 0.1, s.k * 4.0, x01);
+    float keep = Keep(x01 * 0.7 + flow * 0.3, s.rem, 0.08);
+    float light = (sheath * 0.9 + core * 1.6 + rings) * drawn * keep;
+    half3 col = s.tint * light + saturate(core * drawn * keep) * 0.7;
+    return half4(col * BoardFade(float2(s.p.x * 0.98, s.p.y)), 1);
+}
+
+// An arrow (or a needle) of light flying along +x: a sharp head at 82% of the width, a thin shaft
+// back to swept vanes at the tail, and a glow streaming behind it.
+half4 ShapeArrow(ShapeIn s)
+{
+    float x = s.p.x;
+    float y = s.p.y;
+    float aa = max(s.aa, 0.004);
+    float inHead = step(0.5, x) * step(x, 0.82);
+    float headW = 0.12 * saturate((0.82 - x) / 0.32);
+    float head = (1 - smoothstep(headW - aa, headW + aa, abs(y))) * inHead;
+    float shaft = Gauss(y, max(0.013, aa)) * step(-0.62, x) * step(x, 0.55);
+    float fx = x + 0.62;
+    float vane = (0.2 - fx) * 0.5;
+    float fletch = step(0, fx) * step(fx, 0.2) * (1 - smoothstep(vane - aa, vane + aa, abs(y)));
+    float trail = Gauss(y, 0.04 + 0.08 * saturate(-x)) * smoothstep(0.5, -1.0, x) * step(-1.0, x) * 0.5;
+    float ridge = Gauss(y - 0.012, max(0.006, aa)) * inHead;
+    float light = head * 0.9 + shaft + fletch * 0.55 + trail + ridge;
+    light += Gauss(length(s.p - float2(0.7, 0)), 0.16) * 0.4;
+    float keep = Keep(saturate(x * 0.5 + 0.5) * 0.7 + 0.3, s.rem, 0.1);
+    half3 col = lerp(s.tint, 1, saturate(head * 0.5 + shaft * 0.6 + ridge)) * light * keep;
+    return half4(col * BoardFade(s.p), 1);
+}
+
+// Cracks spreading out from the middle (laid onto the floor by the caller, or upright on a
+// body): jagged lines glowing hot inside, longer as it goes on, and closing from their tips.
+half4 ShapeCrack(ShapeIn s)
+{
+    float light = 0;
+    [unroll]
+    for (int i = 0; i < 9; i++)
+    {
+        float a0 = (i + Hash1(i, s.seed) * 0.6) / 9.0 * Tau;
+        float len = (0.45 + 0.5 * Hash1(i + 10, s.seed)) * saturate(s.k * 3.0 + 0.2);
+        // Jagged: the line's heading wobbles with the distance from the middle.
+        float a = a0 + (Noise(float3(s.r * 7.0, i * 3.1, s.seed * 11.0)) - 0.5) * 0.5;
+        float2 u = float2(cos(a), sin(a));
+        float along = dot(s.p, u);
+        float perp = abs(s.p.x * u.y - s.p.y * u.x);
+        float t = saturate(along / max(len, 1e-3));
+        float on = step(0, along) * (1 - smoothstep(0.85, 1.0, t));
+        float w = max(0.018 * (1 - t) + 0.004, s.aa);
+        light += on * (Gauss(perp, w) * 1.4 + Gauss(perp, w * 4.0) * 0.3) * (1 - t * 0.6);
+    }
+    light += Gauss(s.r, 0.12) * 0.8;
+    float keep = Keep(1 - s.r * 0.9, s.rem, 0.1);
+    half3 col = HeatColor(saturate(light * 0.6), s.tint) * light * keep;
+    return half4(col * BoardFade(s.p), 1);
+}
+
+// A whirlwind seen from the side, its foot at the bottom: a funnel widening upward, made of bands
+// that swirl round it (brighter on the near side), swaying as it goes.
+half4 ShapeTornado(ShapeIn s)
+{
+    float h = saturate((s.p.y + 0.9) / 1.8);
+    float sway = (Noise(float3(h * 2.0, s.seed * 5.0, s.k * 2.0)) - 0.5) * 0.25 * h;
+    float x = s.p.x - sway;
+    float w = lerp(0.12, 0.8, pow(h, 0.8));
+    float u = x / max(w, 1e-3);
+    float inside = 1 - smoothstep(0.85, 1.05, abs(u));
+    float phase = asin(clamp(u, -1, 1));
+    float bands = Noise(float3(phase * 2.0 + h * 9.0 - s.k * 18.0, h * 6.0, s.seed * 3.0));
+    float streak = smoothstep(0.5, 0.85, bands);
+    float near = 0.55 + 0.45 * cos(phase);
+    float edge = Gauss(abs(u) - 0.92, 0.12) * 0.5 * inside;
+    float vertical = smoothstep(-0.95, -0.8, s.p.y) * (1 - smoothstep(0.75, 0.98, s.p.y));
+    float light = (inside * (streak * near * 1.2 + 0.15) + edge) * vertical;
+    float keep = Keep(bands * 0.6 + (1 - h) * 0.4, s.rem, 0.1);
+    half3 col = s.tint * light * keep + saturate(streak * inside * near * vertical - 0.6) * keep * 0.6;
+    return half4(col * BoardFade(s.p), 1);
+}
+
+// A bubble (a barrier, or a bubble of poison): a thin bright rim, a faint body brighter toward
+// its edge, a highlight at the top left and a swirl of colour over it; it bursts into arcs.
+half4 ShapeBubble(ShapeIn s)
+{
+    float swirl = Noise(float3(s.dir * 2.0 + s.seed * 7.0, s.k * 2.0 + s.r * 3.0));
+    float rim = Gauss(s.r - 0.82, max(0.035, s.aa * 2.0));
+    float body = (1 - smoothstep(0.7, 0.86, s.r)) * (0.12 + 0.25 * pow(saturate(s.r / 0.82), 3.0));
+    float spot = Gauss(length(s.p - float2(-0.35, 0.38)), 0.1) * 1.2
+        + Gauss(length(s.p - float2(0.3, -0.42)), 0.06) * 0.3;
+    float keep = Keep(swirl * 0.8 + 0.2, s.rem, 0.06);
+    float light = (rim * (0.8 + 0.5 * swirl) + body * (0.6 + 0.8 * swirl)) * keep + spot * s.rem;
+    half3 col = s.tint * light + spot * s.rem * 0.6;
+    return half4(col * BoardFade(s.p), 1);
+}
+
+// A leaf (or, white and long, a feather of light): a pointed blade along y with a midrib and
+// veins, a lit half and a bright rim, curling a little by its seed; eaten from its edges.
+half4 ShapeLeaf(ShapeIn s)
+{
+    float2 p = s.p;
+    float y01 = p.y * 0.5 + 0.5;
+    float w = 0.42 * pow(saturate(sin(Pi * saturate(y01 * 1.05))), 0.8);
+    float bend = (y01 - 0.5) * (y01 - 0.5) * 0.8 * (Hash1(1.0, s.seed) - 0.5);
+    float x = p.x - bend;
+    float aa = max(s.aa * 1.5, 0.02);
+    float inside = (1 - smoothstep(w - aa, w + aa, abs(x))) * step(-0.95, p.y) * step(p.y, 0.95);
+    float rib = Gauss(x, max(0.02, s.aa)) * inside;
+    float veins = Gauss(frac(y01 * 6.0 - abs(x) * 3.0) - 0.5, 0.08) * inside * 0.3;
+    float lit = x < 0 ? 1.0 : 0.6;
+    float rim = Gauss(abs(x) - w, 0.03) * inside;
+    float keep = Keep(1 - abs(x) / max(w, 1e-3) * 0.7, s.rem, 0.1);
+    float light = (inside * lit * 0.6 + rib * 0.7 + veins + rim * 0.5) * keep;
+    return half4(s.tint * light + rib * keep * 0.3, 1);
+}
+
+// Arrows pointing up (a power rising; turned over, a power falling): two chevrons sliding up the
+// board as it goes on, each fading in at the bottom and out at the top.
+half4 ShapeChevron(ShapeIn s)
+{
+    float light = 0;
+    [unroll]
+    for (int i = 0; i < 2; i++)
+    {
+        float y0 = frac(s.k * 1.2 + i * 0.5) * 1.4 - 0.7;
+        float2 q = float2(abs(s.p.x), s.p.y - y0);
+        float d = abs(q.y + q.x * 0.75) * 0.8;
+        float on = 1 - smoothstep(0.5, 0.58, q.x);
+        float fade = sin(saturate((y0 + 0.7) / 1.4) * Pi);
+        light += on * (Gauss(d, max(0.05, s.aa)) * 1.2 + Gauss(d, 0.14) * 0.3) * fade
+            * (1 - q.x * 1.2);
+    }
+    light *= s.rem;
+    return half4(s.tint * light + saturate(light - 1.0) * 0.4, 1);
+}
+
+// A snowflake crystal: six arms with side branches and a hexagonal heart. It grows out from the
+// middle and breaks off from the arms' tips.
+half4 ShapeSnowflake(ShapeIn s)
+{
+    float a = atan2(s.p.y, s.p.x) + s.seed * Tau;
+    const float sector = Tau / 6.0;
+    float local = (frac(a / sector + 0.5) - 0.5) * sector;
+    float2 q = float2(cos(local), abs(sin(local))) * s.r;
+    float grow = saturate(s.k * 3.0 + 0.25);
+    float len = 0.88 * grow;
+    float w = max(0.022, s.aa);
+    float arm = Gauss(q.y, w) * (1 - smoothstep(len - 0.02, len, q.x));
+    float branches = 0;
+    [unroll]
+    for (int i = 1; i <= 3; i++)
+    {
+        float bx = len * (0.28 + 0.2 * i);
+        float bl = 0.22 * (1.2 - 0.3 * i) * grow;
+        float2 b = q - float2(bx, 0);
+        float along = b.x * 0.5 + b.y * 0.8660254;
+        float perp = abs(b.x * 0.8660254 - b.y * 0.5);
+        branches += Gauss(perp, w * 0.8) * step(0, along) * (1 - smoothstep(bl - 0.02, bl, along));
+    }
+    float heart = Gauss(abs(s.r - 0.16 * grow), w) + Gauss(s.r, 0.08) * 0.8;
+    float lines = arm + branches + heart;
+    float keep = Keep(1 - s.r, s.rem, 0.08);
+    float light = (lines * 1.2 + Gauss(s.r, 0.5) * 0.15) * keep;
+    half3 col = s.tint * light + saturate(lines - 0.7) * 0.5 * keep;
+    return half4(col * BoardFade(s.p), 1);
+}
+
+// A crest shaped like a shield, standing upright: a bright rim, a faint face brighter toward its
+// edges, a cross on it, and a band of light sweeping over it.
+half4 ShapeCrest(ShapeIn s)
+{
+    float2 p = s.p;
+    float t = saturate((0.75 - p.y) / 1.6);
+    float w = 0.7 * sqrt(saturate(1 - t * t));
+    float edge = max(abs(p.x) - w, p.y - 0.75);
+    edge = p.y < -0.85 ? max(edge, -0.85 - p.y) : edge;
+    float aa = max(s.aa * 1.5, 0.015);
+    float face = 1 - smoothstep(-aa, aa, edge);
+    float rim = Gauss(edge, max(0.03, s.aa * 2.0));
+    float crossLine = (Gauss(p.x, 0.035) * step(-0.6, p.y) * step(p.y, 0.55)
+        + Gauss(p.y - 0.2, 0.035) * step(abs(p.x), 0.38)) * face;
+    float sweep = Gauss(p.x * 0.8 + p.y * 0.6 - (s.k * 3.0 - 1.2), 0.15) * face;
+    float fres = pow(saturate((edge + 0.4) / 0.4), 2.0) * face * 0.4;
+    float keep = Keep(Noise(float3(p * 5.0, s.seed * 9.0)) * 0.6 + 0.4 * (1 - abs(p.y)), s.rem, 0.08);
+    float light = (rim * 1.3 + face * 0.12 + fres + crossLine * 0.9 + sweep * 0.5) * keep;
+    half3 col = s.tint * light + rim * keep * 0.4;
+    return half4(col * BoardFade(p), 1);
+}
+
+// A sight locking on: two rings broken at the four ticks pointing in, closing in on the middle
+// as it goes on, with a hot dot at the centre.
+half4 ShapeReticle(ShapeIn s)
+{
+    float close = lerp(1.0, 0.72, saturate(s.k * 2.5));
+    float w = max(0.014, s.aa * 1.2);
+    float around = atan2(s.p.y, s.p.x);
+    float gaps = step(0.12, abs(frac(around / (Pi * 0.5) + 0.5) - 0.5));
+    float outer = Gauss(s.r - 0.8 * close, w) * gaps;
+    float inner = Gauss(s.r - 0.42 * close, w * 0.8);
+    float2 a = abs(s.p);
+    float far = max(a.x, a.y);
+    float ticks = Gauss(min(a.x, a.y), w) * step(0.5 * close, far) * step(far, 0.98 * close);
+    float centre = Gauss(s.r, 0.05) * 1.5;
+    float light = (outer * 1.1 + inner * 0.7 + ticks + centre) * s.rem;
+    return half4(s.tint * light + saturate(light - 1.0) * 0.4, 1);
 }
 
 // --- Screen -----------------------------------------------------------------------------------

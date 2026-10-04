@@ -69,6 +69,13 @@ namespace Baryonyx.Combat.Presentation
             FitBands();
         }
 
+        /// <summary>Shows a new cost (one lowered while the card is in hand).</summary>
+        public void SetCost(int cost)
+        {
+            cost = Mathf.Clamp(cost, 0, CostDigits - 1);
+            CostDigit.uvRect = new Rect(cost / (float)CostDigits, 0f, 1f / CostDigits, 1f);
+        }
+
         /// <summary>
         /// Shows whether the energy can pay for the card: a card it cannot pay for is darkened
         /// by black of <paramref name="darkness"/> (0 to 1) and its cost turns reddish. The screen

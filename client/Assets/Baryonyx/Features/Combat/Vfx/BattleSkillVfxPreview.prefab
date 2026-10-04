@@ -122,7 +122,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 2090.6667, y: 1176}
+  m_SizeDelta: {x: 170.66667, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4661020226298219193
 CanvasRenderer:
@@ -681,6 +681,143 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!1 &3576092509189886525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6853473013286093923}
+  - component: {fileID: 5015468826020612070}
+  - component: {fileID: 4740639420407443945}
+  m_Layer: 0
+  m_Name: Caption
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6853473013286093923
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3576092509189886525}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7864762626882806123}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -24}
+  m_SizeDelta: {x: 1200, y: 70}
+  m_Pivot: {x: 0.5, y: 1}
+--- !u!222 &5015468826020612070
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3576092509189886525}
+  m_CullTransparentMesh: 1
+--- !u!114 &4740639420407443945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3576092509189886525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: 
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 4a47d3cbed1cd4c43b1115423e52db6b, type: 2}
+  m_sharedMaterial: {fileID: 2211783335638712115, guid: 4a47d3cbed1cd4c43b1115423e52db6b, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: 0
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 44
+  m_fontSizeBase: 44
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_characterHorizontalScale: 1
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_TextWrappingMode: 0
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_ActiveFontFeatures: 6e72656bu
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 0
+  m_EmojiFallbackSupport: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &4298050589622266628
 GameObject:
   m_ObjectHideFlags: 0
@@ -1238,6 +1375,7 @@ RectTransform:
   - {fileID: 4531970062214801232}
   - {fileID: 2586970542021869339}
   - {fileID: 8762061223280804654}
+  - {fileID: 6853473013286093923}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1321,6 +1459,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c509734b1607a42389f991fa60926d3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleSkillVfx
+  DefeatMaterial: {fileID: 2100000, guid: 75b2790054d494e0eb5a8fae40dda039, type: 2}
   Stage: {fileID: 4531970062214801232}
   Dim: {fileID: 736209392129139937}
   BackLayer: {fileID: 4666223425862380398}
@@ -1356,10 +1495,21 @@ MonoBehaviour:
   - {fileID: 2100000, guid: cb6e248ffffbd47c0bc54a88300a7bd7, type: 2}
   - {fileID: 2100000, guid: ef604e4a56c5643dfb1268496e4ca50e, type: 2}
   - {fileID: 2100000, guid: 8d859b85d4b34440699c6240edffcb3f, type: 2}
+  - {fileID: 2100000, guid: a7fdf7993658c4dbb845b6d53252daaf, type: 2}
+  - {fileID: 2100000, guid: 4384cc4a584894f008c814002e74c6eb, type: 2}
+  - {fileID: 2100000, guid: 6b004122235ea4b0487b73d73d8416ca, type: 2}
+  - {fileID: 2100000, guid: 50cc881749dd24c819d61b8a2beb01f9, type: 2}
+  - {fileID: 2100000, guid: 8f677abe7549c479eb37f9e62091b4e2, type: 2}
+  - {fileID: 2100000, guid: ed4495808f514402cb0fdd193896f0ab, type: 2}
+  - {fileID: 2100000, guid: 1d03d3668f9c54b5da45dab2a8ed2c10, type: 2}
+  - {fileID: 2100000, guid: 77b67504d20ba4d2483226bb46cc4189, type: 2}
+  - {fileID: 2100000, guid: bfede4bbc4c44435598dae20707b8187, type: 2}
+  - {fileID: 2100000, guid: f3cc52b0a3a1141cf8dff3a1571e6222, type: 2}
+  - {fileID: 2100000, guid: 289aea98aa62944c5bea849dd520fb29, type: 2}
   ShakeStrength: 1
   FlashStrength: 1
   UseHitStop: 1
-  CutInCost: 3
+  CutInCost: 5
 --- !u!114 &7394459053742241777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1373,54 +1523,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleSkillVfxDemo
   Vfx: {fileID: 5799840772067775076}
-  Casts:
-  - Kind: 0
-    Name: "\u65AC\u308A\u6255\u3044"
-    Caster: {fileID: 5112880423695469002}
-    CasterArt: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
-    CutIn: 0
-    Targets:
-    - {fileID: 5315665675328594999}
-  - Kind: 1
-    Name: "\u30D5\u30A1\u30A4\u30A2"
-    Caster: {fileID: 8207217936878933000}
-    CasterArt: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
-    CutIn: 0
-    Targets:
-    - {fileID: 651172032851109949}
-  - Kind: 2
-    Name: "\u30A2\u30A4\u30B9\u30E9\u30F3\u30B9"
-    Caster: {fileID: 8207217936878933000}
-    CasterArt: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
-    CutIn: 1
-    Targets:
-    - {fileID: 5315665675328594999}
-  - Kind: 3
-    Name: "\u30B5\u30F3\u30C0\u30FC"
-    Caster: {fileID: 6508962806008218118}
-    CasterArt: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
-    CutIn: 1
-    Targets:
-    - {fileID: 2209166405635713729}
-    - {fileID: 5315665675328594999}
-    - {fileID: 651172032851109949}
-  - Kind: 4
-    Name: "\u30D2\u30FC\u30EB"
-    Caster: {fileID: 2394673672473781804}
-    CasterArt: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
-    CutIn: 0
-    Targets:
-    - {fileID: 5112880423695469002}
-  - Kind: 5
-    Name: "\u30AC\u30FC\u30C9"
-    Caster: {fileID: 5112880423695469002}
-    CasterArt: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
-    CutIn: 0
-    Targets:
-    - {fileID: 8207217936878933000}
-    - {fileID: 2394673672473781804}
-    - {fileID: 5112880423695469002}
-    - {fileID: 6508962806008218118}
+  Party:
+  - {fileID: 5112880423695469002}
+  - {fileID: 8207217936878933000}
+  - {fileID: 6508962806008218118}
+  - {fileID: 2394673672473781804}
+  Enemies:
+  - {fileID: 2209166405635713729}
+  - {fileID: 5315665675328594999}
+  - {fileID: 651172032851109949}
   Actors:
   - {fileID: 8601819485257887367}
   - {fileID: 2546094245217736975}
@@ -1429,7 +1540,10 @@ MonoBehaviour:
   - {fileID: 4713804661102253075}
   - {fileID: 4847225935321123085}
   - {fileID: 5303989448923583683}
+  Caption: {fileID: 4740639420407443945}
   Gap: 0.9
+  First: 1
+  Only: 
 --- !u!1 &7737824585042416182
 GameObject:
   m_ObjectHideFlags: 0

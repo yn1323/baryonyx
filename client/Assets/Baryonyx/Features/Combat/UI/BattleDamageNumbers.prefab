@@ -671,6 +671,7 @@ GameObject:
   - component: {fileID: 6982975444721357261}
   - component: {fileID: 7554293809824183696}
   - component: {fileID: 3699035912776501262}
+  - component: {fileID: 7688562549399875459}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
@@ -745,6 +746,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.ResponsiveBackground
   AspectRatio: 1.7777778
+--- !u!114 &7688562549399875459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5183102876831767328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54a0c321500e245c6b2ba48fd33fa400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dFlatOnly
 --- !u!1 &7282147911480313115
 GameObject:
   m_ObjectHideFlags: 0
@@ -1299,6 +1312,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4287550845413780066, guid: 5d4cd174095a14a5db01243f7a5d5fba, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3129561507317257318}
+    - targetCorrespondingSourceObject: {fileID: 4287550845413780066, guid: 5d4cd174095a14a5db01243f7a5d5fba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5341414873836836871}
   m_SourcePrefab: {fileID: 100100000, guid: 5d4cd174095a14a5db01243f7a5d5fba, type: 3}
 --- !u!224 &7095668348515877348 stripped
 RectTransform:
@@ -1323,3 +1339,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.ResponsiveBackground
   AspectRatio: 1.7777778
+--- !u!114 &5341414873836836871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8605276995112846124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54a0c321500e245c6b2ba48fd33fa400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dFlatOnly

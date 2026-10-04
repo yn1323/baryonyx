@@ -198,5 +198,84 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(material.GetTexture("_MainTex"), Is.Null, "No picture.");
             }
         }
+
+        [Test]
+        public void ABeatenEnemyCrumblesFromTheSideTheBlowCameFromAtASteadyRate()
+        {
+            // An 8x8 picture: a solid 6x4 block with an empty border, and a stray clear dot.
+            const int size = 8;
+            var pixels = new Color32[size * size];
+            for (int y = 2; y < 6; y++)
+            for (int x = 1; x < 7; x++)
+                pixels[y * size + x] = new Color32(40, 160, 120, 255);
+            pixels[3 * size + 4] = new Color32(255, 255, 255, 0);
+
+            var art = BattleSkillVfx.CrumbleArt.Make(
+                pixels,
+                size,
+                size,
+                new Rect(0f, 0f, 1f, 1f),
+                Vector2.right,
+                3f
+            );
+            try
+            {
+                Assert.That(
+                    art.Dots.Length,
+                    Is.EqualTo(6 * 4 - 1),
+                    "Every solid dot, and only those."
+                );
+                Assert.That(art.Dots[0].Order, Is.EqualTo(0f));
+                Assert.That(art.Dots[art.Dots.Length - 1].Order, Is.EqualTo(1f));
+                Assert.That(
+                    art.Dots.Select(dot => dot.Order),
+                    Is.Ordered,
+                    "Kept in the order they go."
+                );
+                float left = art.Dots.Where(dot => dot.Local.x < 0.5f).Average(dot => dot.Order);
+                float right = art.Dots.Where(dot => dot.Local.x > 0.5f).Average(dot => dot.Order);
+                Assert.That(left, Is.LessThan(right), "The side the blow came from goes first.");
+                Assert.That(art.Dots[0].Color, Is.EqualTo((Color)new Color32(40, 160, 120, 255)));
+
+                Assert.That(art.Order.width, Is.EqualTo(size), "The map lies over the picture.");
+                Assert.That(art.Order.filterMode, Is.EqualTo(FilterMode.Point));
+            }
+            finally
+            {
+                art.Release();
+            }
+        }
+
+        [Test]
+        public void AMoteFliesOffJustAsTheCrumbleReachesItsDot()
+        {
+            const float band = 0.12f;
+            foreach (float order in new[] { 0f, 0.25f, 0.5f, 0.9f, 1f })
+            {
+                float moment = BattleSkillVfx.CrumbleMoment(order);
+                Assert.That(moment, Is.InRange(0f, 1f));
+                // The shader's front is the share eaten, run a band past the last dot.
+                float front = BattleSkillVfx.Crumbled(moment) * (1f + band);
+                Assert.That(front, Is.EqualTo(order).Within(1e-4f), order.ToString());
+            }
+            Assert.That(BattleSkillVfx.Crumbled(0.5f), Is.LessThan(0.5f), "It starts slow.");
+            Assert.That(BattleSkillVfx.Crumbled(1f), Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void TheDefeatMaterialEatsTheEnemysPictureAway()
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                BattleSkillVfxAssets.DefeatShaderPath
+            );
+            Assert.That(shader, Is.Not.Null);
+            Assert.That(ShaderUtil.ShaderHasError(shader), Is.False, "The defeat shader compiles.");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(
+                $"{BattleSkillVfxAssets.MaterialFolder}/VfxDefeat.mat"
+            );
+            Assert.That(material, Is.Not.Null);
+            Assert.That(material.shader, Is.SameAs(shader));
+            Assert.That(material.HasProperty("_OrderTex"), Is.True);
+        }
     }
 }

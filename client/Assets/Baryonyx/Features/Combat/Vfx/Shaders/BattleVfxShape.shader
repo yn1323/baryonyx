@@ -13,7 +13,7 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _Intensity ("Intensity", Float) = 1
-        [KeywordEnum(Glow, Ring, Star, SlashArc, SlashCross, Fireball, IceSpear, Lightning, Pillar, Dome, MagicCircle, Streak, Spark, Sparkle, Shard, Flame, FlameTongue, Smoke, Scorch, Frost, IceSpike, Chip, CutInStreaks)] _Shape ("Shape", Float) = 0
+        [KeywordEnum(Glow, Ring, Star, SlashArc, SlashCross, Fireball, IceSpear, Lightning, Pillar, Dome, MagicCircle, Streak, Spark, Sparkle, Shard, Flame, FlameTongue, Smoke, Scorch, Frost, IceSpike, Chip, CutInStreaks, Beam, Arrow, Crack, Tornado, Bubble, Leaf, Chevron, Snowflake, Crest, Reticle, Mote)] _Shape ("Shape", Float) = 0
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 1
 
@@ -71,7 +71,7 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
 
             #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
             #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
-            #pragma shader_feature_local _SHAPE_GLOW _SHAPE_RING _SHAPE_STAR _SHAPE_SLASHARC _SHAPE_SLASHCROSS _SHAPE_FIREBALL _SHAPE_ICESPEAR _SHAPE_LIGHTNING _SHAPE_PILLAR _SHAPE_DOME _SHAPE_MAGICCIRCLE _SHAPE_STREAK _SHAPE_SPARK _SHAPE_SPARKLE _SHAPE_SHARD _SHAPE_FLAME _SHAPE_FLAMETONGUE _SHAPE_SMOKE _SHAPE_SCORCH _SHAPE_FROST _SHAPE_ICESPIKE _SHAPE_CHIP _SHAPE_CUTINSTREAKS
+            #pragma shader_feature_local _SHAPE_GLOW _SHAPE_RING _SHAPE_STAR _SHAPE_SLASHARC _SHAPE_SLASHCROSS _SHAPE_FIREBALL _SHAPE_ICESPEAR _SHAPE_LIGHTNING _SHAPE_PILLAR _SHAPE_DOME _SHAPE_MAGICCIRCLE _SHAPE_STREAK _SHAPE_SPARK _SHAPE_SPARKLE _SHAPE_SHARD _SHAPE_FLAME _SHAPE_FLAMETONGUE _SHAPE_SMOKE _SHAPE_SCORCH _SHAPE_FROST _SHAPE_ICESPIKE _SHAPE_CHIP _SHAPE_CUTINSTREAKS _SHAPE_BEAM _SHAPE_ARROW _SHAPE_CRACK _SHAPE_TORNADO _SHAPE_BUBBLE _SHAPE_LEAF _SHAPE_CHEVRON _SHAPE_SNOWFLAKE _SHAPE_CREST _SHAPE_RETICLE _SHAPE_MOTE
 
             struct appdata_t
             {
@@ -181,6 +181,28 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 shape = ShapeChip(s);
                 #elif defined(_SHAPE_CUTINSTREAKS)
                 shape = ShapeCutInStreaks(s);
+                #elif defined(_SHAPE_BEAM)
+                shape = ShapeBeam(s);
+                #elif defined(_SHAPE_ARROW)
+                shape = ShapeArrow(s);
+                #elif defined(_SHAPE_CRACK)
+                shape = ShapeCrack(s);
+                #elif defined(_SHAPE_TORNADO)
+                shape = ShapeTornado(s);
+                #elif defined(_SHAPE_BUBBLE)
+                shape = ShapeBubble(s);
+                #elif defined(_SHAPE_LEAF)
+                shape = ShapeLeaf(s);
+                #elif defined(_SHAPE_CHEVRON)
+                shape = ShapeChevron(s);
+                #elif defined(_SHAPE_SNOWFLAKE)
+                shape = ShapeSnowflake(s);
+                #elif defined(_SHAPE_CREST)
+                shape = ShapeCrest(s);
+                #elif defined(_SHAPE_RETICLE)
+                shape = ShapeReticle(s);
+                #elif defined(_SHAPE_MOTE)
+                shape = ShapeMote(s);
                 #else
                 shape = ShapeGlow(s);
                 #endif

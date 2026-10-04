@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.UI;
+using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class BattleInspectSceneTests
     {
-        private const string ScenePath = "Assets/Baryonyx/App/Scenes/BattleInspect.unity";
+        private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity";
         private Scene loadedScene;
 
         [UnityTest]
@@ -41,8 +42,10 @@ namespace Baryonyx.Tests.PlayMode
             {
                 var face = card.Body.GetComponent<BattleInspectCardView>();
                 Assert.That(face.Owner.text, Is.Not.Empty);
-                Assert.That(face.Kind.text, Does.Match("攻撃|回復|防御"));
-                Assert.That(face.Description.text, Does.Contain(card.Power.ToString()));
+                Assert.That(face.Kind.text, Does.Match("攻撃|回復|防御|強化|弱体|支援"));
+                // A card with a number shows it; a card such as 偵察 has none.
+                if (card.Power > 0)
+                    Assert.That(face.Description.text, Does.Contain(card.Power.ToString()));
                 Assert.That(
                     face.Element.enabled,
                     Is.EqualTo(card.Element != BattleInspectElement.None),
@@ -435,8 +438,18 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(hidden.Unknown.activeSelf, Is.True, "A hidden weakness shows ?.");
             Assert.That(hidden.Known.activeSelf, Is.False);
+            Assert.That(hidden.Glinting, Is.False);
 
             Play(view, fireIndex, wolf.TargetArea);
+            for (float t = 0f; !hidden.Revealed && t < 5f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(hidden.Revealed, Is.True, "The blow reveals the weakness.");
+            Assert.That(hidden.Glinting, Is.True, "The icon glints as it is revealed.");
+            var slot = hidden.Known.transform.parent;
+            for (float t = 0f; hidden.Glinting && t < 2f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(hidden.Glinting, Is.False, "The glint ends.");
+            Assert.That(slot.localScale, Is.EqualTo(Vector3.one), "The icon settles to its size.");
             yield return WaitActions(view);
 
             Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - Mathf.RoundToInt(fire.Power * 1.5f)));
@@ -451,13 +464,62 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ARevealedWeaknessTurnsIntoItsIconAtThePeakOfTheGlint()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var hidden = view.Enemies[0].Weaknesses.First(weakness => !weakness.StartsRevealed);
+            var slot = hidden.Known.transform.parent;
+            const float swell = BattleInspectWeakness.Swell;
+
+            hidden.Pose(swell * 0.5f);
+            Assert.That(hidden.Unknown.activeSelf, Is.True, "The ? swells first.");
+            Assert.That(hidden.Glinting, Is.True);
+            Assert.That(hidden.Glint.texture, Is.EqualTo(Picture(hidden.Unknown)));
+            Assert.That(slot.localScale.x, Is.GreaterThan(1f));
+            Assert.That(hidden.Glint.Shape.x, Is.GreaterThan(0f), "It whitens as it swells.");
+
+            hidden.Pose(swell);
+            Assert.That(hidden.Known.activeSelf, Is.True, "At the peak it is the element's icon.");
+            Assert.That(hidden.Unknown.activeSelf, Is.False);
+            Assert.That(hidden.Glint.texture, Is.EqualTo(Picture(hidden.Known)));
+            Assert.That(hidden.Glint.Shape.x, Is.EqualTo(1f), "The new icon starts white.");
+
+            hidden.Pose(swell + BattleInspectWeakness.Settle * 0.5f);
+            Assert.That(hidden.Glint.Shape.x, Is.Zero, "The white has cleared.");
+            Assert.That(
+                hidden.Glint.Shape.y,
+                Is.GreaterThan(0f).And.LessThan(1f),
+                "The band of light is crossing the icon."
+            );
+
+            hidden.Pose(swell + BattleInspectWeakness.Settle);
+            Assert.That(hidden.Glinting, Is.False);
+            Assert.That(hidden.Known.activeSelf, Is.True);
+            Assert.That(slot.localScale, Is.EqualTo(Vector3.one));
+        }
+
+        private static Texture Picture(GameObject icon) => icon.GetComponent<RawImage>().texture;
+
+        [UnityTest]
         public IEnumerator ACardCostingMoreThanTheEnergyIsNotPlayed()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var guardian = view.Enemies[2];
-            // The ice lance costs more than the first turn's energy, to show how such a card looks.
-            int iceIndex = System.Array.FindIndex(view.Cards, card => card.Cost > view.MaxEnergy);
+            // The meteor costs more than the first turn's energy, to show how such a card looks:
+            // it is dealt into the opening hand in place of the guard.
+            int meteor = DeckIndexOf(view, "Meteor");
+            view.RestartDeal(
+                new[] { 0, 1, 2, 3, 4, meteor }
+                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != meteor))
+                    .ToArray(),
+                instant: true
+            );
+            int iceIndex = System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.Cost > view.MaxEnergy
+            );
             int fireIndex = System.Array.FindIndex(
                 view.Cards,
                 card => card.Element == BattleInspectElement.Fire
@@ -926,6 +988,71 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ABandTellsWhoseTurnBeginsAndTheEnemiesWaitForIt()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var banner = view.TurnBanner;
+            var wolf = view.Enemies[1];
+            var wolfHome = wolf.Body.anchoredPosition;
+            Assert.That(view.TurnBannerGroup.blocksRaycasts, Is.False, "Taps go through the band.");
+
+            // The enemies' band comes up in red, and the wolf waits for it before stepping out.
+            view.EndTurnButton.onClick.Invoke();
+            yield return null;
+            Assert.That(banner.gameObject.activeSelf, Is.True);
+            Assert.That(banner.Label.text, Is.EqualTo(BattleInspectView.EnemyTurnText));
+            Assert.That(banner.Label.color, Is.EqualTo(view.EnemyBannerText));
+            Assert.That(
+                view.TurnBannerLines.All(line => line.color == view.EnemyBannerLine),
+                Is.True
+            );
+            for (float t = 0f; t < view.Settings.TurnBannerHold * 0.8f; t += Time.deltaTime)
+            {
+                Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));
+                yield return null;
+            }
+
+            // The party's band comes up in blue with the turn's number, over the deal.
+            yield return WaitEnemyTurn(view);
+            Assert.That(view.Dealing, Is.True);
+            Assert.That(banner.gameObject.activeSelf, Is.True);
+            Assert.That(
+                banner.Label.text,
+                Is.EqualTo(BattleInspectView.PartyTurnText(view.StartTurn + 1, again: false))
+            );
+            Assert.That(banner.Label.color, Is.EqualTo(view.PartyBannerText));
+            Assert.That(
+                view.TurnBannerLines.All(line => line.color == view.PartyBannerLine),
+                Is.True
+            );
+            yield return WaitDealt(view);
+
+            // The next turn is the party's again: no enemy acts, so no enemies' band, and the
+            // party's band says the party acts again.
+            view.EndTurnButton.onClick.Invoke();
+            bool enemiesBand = false;
+            for (float t = 0f; view.EnemyTurn && t < 5f; t += Time.deltaTime)
+            {
+                enemiesBand |= banner.Label.text == BattleInspectView.EnemyTurnText;
+                yield return null;
+            }
+            Assert.That(view.EnemyTurn, Is.False);
+            Assert.That(enemiesBand, Is.False);
+            Assert.That(banner.gameObject.activeSelf, Is.True);
+            Assert.That(
+                banner.Label.text,
+                Is.EqualTo(BattleInspectView.PartyTurnText(view.StartTurn + 2, again: true))
+            );
+
+            // The band goes away by itself.
+            float shown = view.Settings.TurnBannerHold + view.Settings.TurnBannerFade;
+            for (float t = 0f; banner.gameObject.activeSelf && t < shown + 1f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(banner.gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator APlayedSkillDarkensTheStagePlaysItsEffectAndSettles()
         {
             var view = default(BattleInspectView);
@@ -993,6 +1120,82 @@ namespace Baryonyx.Tests.PlayMode
                 view.Vfx.Flash.canvas.rootCanvas,
                 Is.SameAs(controls),
                 "The flash is not bloomed."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator OnTheThreeDStageTheActorsStandAsBoardsWhereTheUiPutsThem()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            yield return null;
+            yield return null;
+
+            var stageCamera = Hd2dStageCamera.Active;
+            Assert.That(stageCamera, Is.Not.Null, "The battle has a 3D stage.");
+            Assert.That(stageCamera.gameObject.scene, Is.EqualTo(loadedScene));
+            Assert.That(stageCamera.Camera.orthographic, Is.False);
+            var stage = view.Vfx.Stage;
+            Assert.That(
+                stage.Find("Backdrop/Background").gameObject.activeInHierarchy,
+                Is.False,
+                "The 3D stage takes the painted background's place."
+            );
+
+            var bodies = view
+                .Allies.Select(ally => (ally.Body, Sprite: ally.Sprite))
+                .Concat(view.Enemies.Select(enemy => (enemy.Body, Sprite: enemy.Sprite)));
+            float tolerance = Screen.height * 0.02f;
+            foreach (var (body, sprite) in bodies)
+            {
+                var board = body.GetComponent<Hd2dUiBillboard>();
+                Assert.That(board, Is.Not.Null, body.name);
+                Assert.That(board.Staged, Is.True, body.name);
+                Assert.That(sprite.canvasRenderer.cull, Is.True, "The UI picture is not drawn.");
+                Assert.That(board.VisualRenderer.enabled, Is.True);
+                Assert.That(
+                    board.ShadowRenderer.shadowCastingMode,
+                    Is.EqualTo(ShadowCastingMode.ShadowsOnly),
+                    "An upright board casts the shadow."
+                );
+                Assert.That(
+                    board.ContactRenderer.enabled,
+                    Is.True,
+                    "A contact shadow ties it down."
+                );
+
+                // The board covers on screen where the UI picture is.
+                var mesh = board.VisualRenderer.GetComponent<MeshFilter>().sharedMesh;
+                var drawn = mesh
+                    .vertices.Select(v => (Vector2)stageCamera.Camera.WorldToScreenPoint(v))
+                    .Aggregate(Vector2.zero, (sum, v) => sum + v / 4f);
+                var corners = new Vector3[4];
+                sprite.rectTransform.GetWorldCorners(corners);
+                var ui = RectTransformUtility.WorldToScreenPoint(
+                    sprite.canvas.rootCanvas.worldCamera,
+                    (corners[0] + corners[2]) * 0.5f
+                );
+                Assert.That(Vector2.Distance(drawn, ui), Is.LessThan(tolerance), body.name);
+            }
+
+            // Bars, tags and the front effects over the boards; the back effects under them.
+            int boardOrder = view.Allies[0].Body.GetComponent<Hd2dUiBillboard>().SortingOrder;
+            Assert.That(
+                view.Allies[0].HpBar.GetComponentInParent<Canvas>().sortingOrder,
+                Is.GreaterThan(boardOrder)
+            );
+            Assert.That(
+                view.Allies[0].CasterRing.GetComponent<Canvas>().sortingOrder,
+                Is.LessThan(boardOrder),
+                "The ring lies on the floor behind its ally."
+            );
+            Assert.That(
+                view.Vfx.BackLayer.GetComponentInParent<Canvas>().sortingOrder,
+                Is.LessThan(boardOrder)
+            );
+            Assert.That(
+                view.Vfx.FrontLayer.GetComponentInParent<Canvas>().sortingOrder,
+                Is.GreaterThan(boardOrder)
             );
         }
 
@@ -1235,14 +1438,23 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var vfx = view.Vfx;
-            int thunder = System.Array.FindIndex(
-                view.Cards,
-                card => card.Element == BattleInspectElement.Thunder
+            // 居合一閃 (cost 5) is dealt into the opening hand in place of the guard.
+            int iai = DeckIndexOf(view, "Iai");
+            view.RestartDeal(
+                new[] { 0, 1, 2, 3, 4, iai }
+                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != iai))
+                    .ToArray(),
+                instant: true
             );
-            var card = view.Cards[thunder];
+            int index = System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.DeckIndex == iai
+            );
+            var card = view.Cards[index];
             Assert.That(card.Cost, Is.GreaterThanOrEqualTo(vfx.CutInCost));
+            Assert.That(card.Cost, Is.LessThanOrEqualTo(view.Energy));
 
-            Play(view, thunder, view.Enemies[1].TargetArea);
+            Play(view, index, view.Enemies[1].TargetArea);
             // The user steps forward first, then the cut-in sweeps in.
             for (
                 float t = 0f;
@@ -1251,11 +1463,114 @@ namespace Baryonyx.Tests.PlayMode
             )
                 yield return null;
             Assert.That(vfx.CutIn.gameObject.activeSelf, Is.True);
-            Assert.That(vfx.CutInName.text, Is.EqualTo("サンダー"));
+            Assert.That(vfx.CutInName.text, Is.EqualTo("居合一閃"));
             Assert.That(vfx.CutInActor.texture, Is.SameAs(view.Allies[card.Caster].Sprite.texture));
             yield return WaitActions(view);
             Assert.That(vfx.CutIn.gameObject.activeSelf, Is.False);
-            Assert.That(view.Enemies.All(enemy => enemy.Hp < enemy.MaxHp), Is.True);
+            Assert.That(view.Enemies[1].Hp, Is.LessThan(view.Enemies[1].MaxHp));
+        }
+
+        /// <summary>Deals the card skill <paramref name="skill"/> into the opening hand in place of the guard, and returns its card.</summary>
+        private static int DealInto(BattleInspectView view, string skill)
+        {
+            int deck = DeckIndexOf(view, skill);
+            view.RestartDeal(
+                new[] { 0, 1, 2, 3, 4, deck }
+                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != deck))
+                    .ToArray(),
+                instant: true
+            );
+            return System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.DeckIndex == deck
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator ABurnLeftByACardHurtsAtThePartysNextTurn()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            int embers = DealInto(view, "Embers");
+            var skill = Baryonyx.Combat.CardSkills.Find("Embers");
+            int caster = view.Cards[embers].Caster;
+            int blow = Baryonyx.Combat.CardRules.Power(
+                skill.Actions[0],
+                view.StatOf(caster, skill.Actions[0].Stat),
+                view.TodayUpt
+            );
+            var (stat, percent) = Baryonyx.Combat.CardRules.TickOf(Baryonyx.Combat.CardStatus.Burn);
+            int burn = Mathf.RoundToInt(view.StatOf(caster, stat) * percent / 100f);
+
+            Play(view, embers, wolf.TargetArea);
+            yield return WaitActions(view);
+            Assert.That(view.HasStatus(false, 1, Baryonyx.Combat.CardStatus.Burn), Is.True);
+            // Fire is one of the wolf's weaknesses.
+            int afterBlow = wolf.MaxHp - Mathf.RoundToInt(blow * 1.5f);
+            Assert.That(wolf.Hp, Is.EqualTo(afterBlow));
+
+            view.EndTurnButton.onClick.Invoke();
+            for (float t = 0f; view.EnemyTurn && t < 15f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn, Is.False);
+            Assert.That(
+                wolf.Hp,
+                Is.EqualTo(afterBlow - burn),
+                "The burn works as the party's turn comes."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator BlockFromACardSoftensTheEnemiesBlows()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var slime = view.Enemies[0];
+            var wolf = view.Enemies[1];
+            int bash = DealInto(view, "ShieldBash");
+            Play(view, bash, slime.TargetArea);
+            yield return WaitActions(view);
+            Assert.That(slime.Hp, Is.LessThan(slime.MaxHp));
+            Assert.That(view.BlockOf(0), Is.GreaterThan(0), "Every ally takes the block.");
+            Assert.That(view.BlockOf(3), Is.EqualTo(view.BlockOf(0)));
+            int partyHp = view.Allies.Sum(ally => ally.Hp);
+
+            view.EndTurnButton.onClick.Invoke();
+            for (float t = 0f; view.EnemyTurn && t < 15f; t += Time.deltaTime)
+                yield return null;
+            int lost = partyHp - view.Allies.Sum(ally => ally.Hp);
+            Assert.That(lost, Is.LessThan(wolf.Power + slime.Power));
+            // The block lasts until the party's next turn.
+            Assert.That(view.BlockOf(0), Is.EqualTo(0));
+        }
+
+        [UnityTest]
+        public IEnumerator ACardThatDrawsAddsCardsToTheHand()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int scout = DealInto(view, "Scout");
+            Assert.That(
+                view.Cards[scout].TargetsWholeSide,
+                Is.True,
+                "A card for no one needs no target."
+            );
+            int before = view.HandCards.Count;
+
+            Play(view, scout, view.Allies[0].TargetArea);
+            yield return WaitActions(view);
+            for (float t = 0f; view.Dealing && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.HandCards, Has.Count.EqualTo(before - 1 + 2));
+        }
+
+        /// <summary>The index in the deck of the card skill <paramref name="skill"/>.</summary>
+        private static int DeckIndexOf(BattleInspectView view, string skill)
+        {
+            int index = System.Array.FindIndex(view.Deck, data => data.Skill == skill);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), skill + " is in the deck.");
+            return index;
         }
 
         [UnityTest]
@@ -1272,7 +1587,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ABeatenEnemyBreaksIntoPieces()
+        public IEnumerator ABeatenEnemyCrumblesAwayDotByDot()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1286,10 +1601,31 @@ namespace Baryonyx.Tests.PlayMode
             for (float t = 0f; wolf.Group.alpha > 0f && t < 1f; t += Time.unscaledDeltaTime)
                 yield return null;
             Assert.That(wolf.Group.alpha, Is.EqualTo(0f), "The wolf is gone at once.");
-            var pieces = view
+
+            // Its picture is drawn again where it stood, to be eaten away.
+            var body = view
                 .Vfx.FrontLayer.GetComponentsInChildren<RawImage>()
-                .Count(image => image.texture == wolf.Sprite.texture);
-            Assert.That(pieces, Is.GreaterThanOrEqualTo(30), "Its picture flies apart.");
+                .Single(image => image.texture == wolf.Sprite.texture);
+            Assert.That(body.material.shader, Is.SameAs(view.Vfx.DefeatMaterial.shader));
+            Assert.That(body.material.GetTexture("_OrderTex"), Is.Not.Null);
+
+            // Its dots fly off as square motes, never turned.
+            var mote = view.Vfx.MaterialOf(BattleVfxShape.Mote);
+            int most = 0;
+            // The board is used again by later effects once the crumble is over.
+            bool Crumbling() => body.isActiveAndEnabled && body.texture == wolf.Sprite.texture;
+            for (float t = 0f; Crumbling() && t < 3f; t += Time.unscaledDeltaTime)
+            {
+                var motes = view
+                    .Vfx.FrontLayer.GetComponentsInChildren<RawImage>()
+                    .Where(image => image.material == mote && image.color.a > 0f)
+                    .ToList();
+                most = Mathf.Max(most, motes.Count);
+                Assert.That(motes.All(image => image.rectTransform.localEulerAngles.z == 0f));
+                yield return null;
+            }
+            Assert.That(Crumbling(), Is.False, "It is eaten away to nothing.");
+            Assert.That(most, Is.GreaterThanOrEqualTo(20), "Its dots fly off.");
             Assert.That(wolf.Sprite.color, Is.EqualTo(Color.white), "It comes back untinted.");
             yield return WaitActions(view);
         }

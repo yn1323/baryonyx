@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 namespace Baryonyx.Combat.Presentation
 {
+    /// <summary>A card's or a weakness's element; the same order as <see cref="CardElement"/>.</summary>
     public enum BattleInspectElement
     {
         None,
@@ -15,6 +16,8 @@ namespace Baryonyx.Combat.Presentation
         Fire,
         Ice,
         Thunder,
+        Blunt,
+        Pierce,
     }
 
     public enum BattleInspectCardEffect
@@ -30,6 +33,12 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>Block for the whole party.</summary>
         Guard,
+
+        /// <summary>Played on the one ally it is dropped on, without healing it (a buff, a guard).</summary>
+        OneAlly,
+
+        /// <summary>Played for the whole party: on itself, on every ally, or on no one (the hand, the energy).</summary>
+        Party,
     }
 
     /// <summary>
@@ -49,6 +58,12 @@ namespace Baryonyx.Combat.Presentation
     {
         public string Name;
         public string Owner;
+
+        /// <summary>
+        /// The card skill's id (<see cref="CardSkills"/>): what it does and how its effect plays.
+        /// Empty for a card of the mock's own (its damage, heal or block of <see cref="Power"/>).
+        /// </summary>
+        public string Skill;
 
         /// <summary>The kind and the scope, e.g. "攻撃・敵単体" (rich text).</summary>
         public string Kind;
@@ -103,7 +118,10 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>Cards for a whole side need only a swipe, not an exact target.</summary>
         public bool TargetsWholeSide =>
-            Effect is BattleInspectCardEffect.DamageAll or BattleInspectCardEffect.Guard;
+            Effect
+                is BattleInspectCardEffect.DamageAll
+                    or BattleInspectCardEffect.Guard
+                    or BattleInspectCardEffect.Party;
     }
 
     [Serializable]
@@ -125,6 +143,11 @@ namespace Baryonyx.Combat.Presentation
         public GameObject NameTag;
         public int StartHp;
         public int MaxHp;
+
+        /// <summary>The stats the powers of the ally's cards are parts of (provisional).</summary>
+        public int Strength;
+        public int Magic;
+        public int Defense;
 
         [NonSerialized]
         public int Hp;
@@ -156,6 +179,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The face crop of <see cref="Sprite"/> shown in the turn order.</summary>
         public Rect IconUv;
 
+        /// <summary>A boss: its defeat holds longer, flashes the screen and crumbles slower.</summary>
+        public bool Boss;
+
         [NonSerialized]
         public int Hp;
 
@@ -164,24 +190,116 @@ namespace Baryonyx.Combat.Presentation
 
     /// <summary>
     /// One weakness of an enemy, shown as an icon over its HP bar. A weakness not yet revealed
-    /// shows "?" until a card hits it.
+    /// shows "?" until a card hits it, and then glints as it turns into the element's icon
+    /// (<see cref="Reveal"/>).
     /// </summary>
     [Serializable]
     public sealed class BattleInspectWeakness
     {
+        // The glint: the ? swells and whitens, turns into the element's icon at the peak of the
+        // light, then the icon settles back with a little bounce as a band of light runs over it.
+        public const float Swell = 0.1f;
+        public const float Settle = 0.45f;
+        private const float SwellScale = 0.15f;
+
+        // How bright the light on the icon is drawn: past white, so Bloom spreads it.
+        private const float GlintBright = 1.6f;
+
         public BattleInspectElement Element;
         public bool StartsRevealed;
         public GameObject Known;
         public GameObject Unknown;
 
+        /// <summary>
+        /// The light drawn over the icon in its own shape while it glints (Battle Weakness
+        /// Glint shader); hidden otherwise.
+        /// </summary>
+        public BattleVfxImage Glint;
+
         [NonSerialized]
         public bool Revealed;
+
+        /// <summary>True while the icon glints.</summary>
+        public bool Glinting => Glint != null && Glint.gameObject.activeSelf;
 
         public void Show(bool revealed)
         {
             Revealed = revealed;
             Known.SetActive(revealed);
             Unknown.SetActive(!revealed);
+        }
+
+        /// <summary>
+        /// Reveals the weakness with a glint, in real time so it plays through a hit stop. It
+        /// counts as revealed at once; the icon turns at the peak of the light, when the twinkle
+        /// of <paramref name="vfx"/> flares at its corner, unless <paramref name="shown"/> says
+        /// the enemy is gone by then. Without <see cref="Glint"/> it turns at once.
+        /// </summary>
+        public IEnumerator Reveal(BattleSkillVfx vfx, Func<bool> shown = null)
+        {
+            Revealed = true;
+            if (Glint == null)
+            {
+                Show(true);
+                yield break;
+            }
+            BattleVfxImage.EnableShapeChannel(Glint.transform);
+            bool turned = false;
+            for (float t = 0f; t < Swell + Settle; t += Time.unscaledDeltaTime)
+            {
+                if (!turned && t >= Swell)
+                {
+                    turned = true;
+                    if (vfx != null && (shown == null || shown()))
+                        vfx.Glint(
+                            (RectTransform)Known.transform.parent,
+                            BattleSkillVfx.ColorOf(
+                                BattleSkillVfx.KindFor(Element, BattleInspectCardEffect.DamageOne)
+                            )
+                        );
+                }
+                Pose(t);
+                yield return null;
+            }
+            Pose(Swell + Settle);
+        }
+
+        /// <summary>
+        /// Draws the icon <paramref name="t"/> seconds into its glint: the ? swelling and
+        /// whitening until <see cref="Swell"/>, then the element's icon, white at first, settling
+        /// back with a little bounce while the band of light crosses it; at rest after
+        /// <see cref="Settle"/>. Only the icon: the twinkle is <see cref="BattleSkillVfx.Glint"/>.
+        /// </summary>
+        public void Pose(float t)
+        {
+            var slot = (RectTransform)Known.transform.parent;
+            bool turned = t >= Swell;
+            Known.SetActive(turned);
+            Unknown.SetActive(!turned);
+            if (t >= Swell + Settle)
+            {
+                slot.localScale = Vector3.one;
+                Glint.gameObject.SetActive(false);
+                return;
+            }
+            Glint.gameObject.SetActive(true);
+            Glint.color = Color.white;
+            Glint.texture = (turned ? Known : Unknown).GetComponent<RawImage>().texture;
+            if (!turned)
+            {
+                float k = t / Swell;
+                slot.localScale = Vector3.one * (1f + SwellScale * k * k);
+                Glint.Shape = new Vector4(k * k, 0f, 0f, GlintBright);
+                return;
+            }
+            float after = t - Swell;
+            // The white clears off the new icon fast, and the band crosses it after.
+            float fill = Mathf.Clamp01(1f - after / 0.12f);
+            float band = Mathf.Clamp01((after - 0.08f) / 0.24f);
+            Glint.Shape = new Vector4(fill * fill, band, 0f, GlintBright);
+            // A spring back to its size, overshooting a little below it once.
+            float spring = Mathf.Exp(-after * 9f) * Mathf.Cos(after * 22f);
+            slot.localScale = Vector3.one * (1f + SwellScale * spring);
         }
     }
 
@@ -216,13 +334,15 @@ namespace Baryonyx.Combat.Presentation
     /// stopping at the hand limit (the rest stay in the deck). Played cards are gone; when a draw
     /// finds the deck empty, the whole deck is shuffled in anew, so a card in hand may come again.
     /// A card the energy cannot pay for is darkened with a reddish cost. A pressed card grows and
-    /// stands in the middle of the bottom of the screen. Hitting a hidden weakness reveals it.
+    /// stands in the middle of the bottom of the screen. Hitting a hidden weakness reveals it: the
+    /// ? glints and turns into the element's icon.
     /// A played card is paid for and leaves the hand at once, and its action is queued: the user
     /// steps one step forward, its name shows at the top middle of the screen, the effect lands,
     /// and the user steps back. "End turn" hands the turn to the enemies before the party's next
-    /// turn in the order: each attacks one ally at random the same way.
+    /// turn in the order: each attacks one ally at random the same way. A band across the middle
+    /// of the screen tells whose turn begins.
     /// </summary>
-    public sealed class BattleInspectView : MonoBehaviour
+    public sealed partial class BattleInspectView : MonoBehaviour
     {
         // One dot of the 4x pixel art; idle motion moves in whole dots.
         private const float Dot = 4f;
@@ -347,6 +467,24 @@ namespace Baryonyx.Combat.Presentation
         public CanvasGroup SkillBannerGroup;
 
         /// <summary>
+        /// The band across the middle of the screen that tells whose turn begins ("敵のターン",
+        /// "味方のターン"); <see cref="TurnBannerGroup"/> fades it.
+        /// </summary>
+        public TranslucentTextPanel TurnBanner;
+
+        public CanvasGroup TurnBannerGroup;
+
+        /// <summary>The lines over and under the turn band, in the colour of the side whose turn it is.</summary>
+        public Graphic[] TurnBannerLines = Array.Empty<Graphic>();
+
+        // The turn band's lines and words: red for the enemies and blue for the party, like the
+        // frames of the turn order, but brighter to read over the battlefield.
+        public Color EnemyBannerLine = new(0.86f, 0.36f, 0.31f);
+        public Color EnemyBannerText = new(1f, 0.66f, 0.6f);
+        public Color PartyBannerLine = new(0.4f, 0.62f, 0.92f);
+        public Color PartyBannerText = new(0.7f, 0.84f, 1f);
+
+        /// <summary>
         /// The skill effects: a played card's effect lands when its blow does, and enemy attacks
         /// and defeats get their bursts. Without it the effects land at once, with no show.
         /// </summary>
@@ -361,6 +499,7 @@ namespace Baryonyx.Combat.Presentation
         private readonly Queue<IEnumerator> actions = new();
         private Coroutine dealing;
         private Coroutine bannerFade;
+        private Coroutine turnBannerShow;
         private Color skillNameColor = Color.white;
 
         // The skill being used, shown again when a notice over it ends; null between actions.
@@ -522,6 +661,18 @@ namespace Baryonyx.Combat.Presentation
 
         public static string EnergyText(int energy, int max) => $"{energy}/{max}";
 
+        /// <summary>The words of the turn band when the enemies' turn begins.</summary>
+        public const string EnemyTurnText = "敵のターン";
+
+        /// <summary>
+        /// The words of the turn band when a party turn begins: the turn's number after them, or,
+        /// when the party acts <paramref name="again"/> with no enemy in between, that it does.
+        /// </summary>
+        public static string PartyTurnText(int turn, bool again) =>
+            again
+                ? "<size=62%>連続！</size> もう一度 味方のターン"
+                : $"味方のターン<size=62%>　ターン{turn}</size>";
+
         /// <summary>
         /// How see-through a card the energy cannot pay for is: the settings' opacity in the hand,
         /// none once raised so its details can be read.
@@ -617,13 +768,19 @@ namespace Baryonyx.Combat.Presentation
                     skillNameColor = SkillBanner.Label.color;
                 SkillBanner.gameObject.SetActive(false);
             }
+            if (TurnBanner != null)
+                TurnBanner.gameObject.SetActive(false);
 
             StartOfTurn(StartTurn);
             // The hand baked into the prefab is only for the look outside Play Mode.
             ClearTable();
         }
 
-        private void Start() => RestartDeal();
+        private void Start()
+        {
+            RestartDeal();
+            ShowTurnBanner(PartyTurnText(Turn, again: false), enemies: false);
+        }
 
         private void OnDestroy()
         {
@@ -843,7 +1000,7 @@ namespace Baryonyx.Combat.Presentation
             int index = held;
             var card = Cards[index];
             bool play = targets.Count > 0;
-            if (play && card.Cost > Energy)
+            if (play && CostOf(card) > Energy)
             {
                 ShowNotice("エネルギー不足");
                 play = false;
@@ -1107,6 +1264,14 @@ namespace Baryonyx.Combat.Presentation
 
         private IEnumerator EnemyPhase()
         {
+            // The band tells that the enemies' turn has come, and they wait for it, unless none
+            // of them acts before the party's next turn.
+            bool enemiesAct = EnemiesActBeforeParty();
+            if (enemiesAct)
+            {
+                ShowTurnBanner(EnemyTurnText, enemies: true);
+                yield return Wait(Settings.TurnBannerHold);
+            }
             for (int step = 0; step < TurnCycle.Length; step++)
             {
                 cycleIndex = (cycleIndex + 1) % TurnCycle.Length;
@@ -1120,6 +1285,9 @@ namespace Baryonyx.Combat.Presentation
                 yield return EnemyAttack(entry);
             }
 
+            // Burns, poison, regen, sigils and clouds work as the party's turn comes round.
+            yield return PartyTurnStatuses();
+
             // The mock goes on for ever: a beaten side comes back for the next turn.
             if (Array.TrueForAll(Enemies, enemy => !enemy.Alive))
                 ReviveEnemies();
@@ -1128,6 +1296,22 @@ namespace Baryonyx.Combat.Presentation
             EnemyTurn = false;
             StartOfTurn(Turn + 1);
             dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
+            // Over the deal, so the party's turn begins with no wait.
+            ShowTurnBanner(PartyTurnText(Turn, again: !enemiesAct), enemies: false);
+        }
+
+        /// <summary>True when an enemy still standing comes before the party's next turn.</summary>
+        private bool EnemiesActBeforeParty()
+        {
+            for (int step = 1; step <= TurnCycle.Length; step++)
+            {
+                int entry = TurnCycle[(cycleIndex + step) % TurnCycle.Length];
+                if (entry == PartyTurn)
+                    return false;
+                if (Enemies[entry].Alive)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>The enemy steps forward, hits one ally still standing at random, and steps back.</summary>
@@ -1140,19 +1324,32 @@ namespace Baryonyx.Combat.Presentation
             if (standing.Count == 0)
                 yield break;
             var enemy = Enemies[index];
+            if (TakeStatus(false, index, CardStatus.Freeze))
+            {
+                ShowPopup(enemy.TargetArea, "凍結で動けない", StatusColor(CardStatus.Freeze), 40f);
+                yield return Wait(Settings.EnemyGap);
+                yield break;
+            }
             int target = standing[UnityEngine.Random.Range(0, standing.Count)];
+            int taunting = standing.Find(ally => HasStatus(true, ally, CardStatus.Taunt));
+            if (HasStatus(true, taunting, CardStatus.Taunt))
+                target = taunting;
             yield return Perform(
                 enemy.SkillName,
                 new[] { enemy.Body },
                 new[] { enemyBase[index] },
                 Vector2.left,
-                Strike(target, enemy.Power)
+                Strike(target, EnemyPower(index), index)
             );
+            // A bleeding enemy loses blood as it moves.
+            yield return Bleed(index);
         }
 
         /// <summary>An enemy's blow landing on an ally, with its burst when there are effects.</summary>
-        private IEnumerator Strike(int target, int power)
+        private IEnumerator Strike(int target, int power, int attacker = -1)
         {
+            if (Guarded(target, ref power, attacker))
+                yield break;
             HitAlly(target, power);
             if (Vfx != null)
                 Vfx.Strike(Allies[target].TargetArea);
@@ -1403,7 +1600,9 @@ namespace Baryonyx.Combat.Presentation
         private void Play(int index, List<int> chosen, bool onEnemies)
         {
             var card = Cards[index];
-            Energy -= card.Cost;
+            Energy -= CostOf(card);
+            // The free card is used up by the card that took it.
+            nextCardFree = false;
             card.Place = BattleInspectCardPlace.Discard;
             hand.Remove(index);
             LayoutHand();
@@ -1444,6 +1643,12 @@ namespace Baryonyx.Combat.Presentation
             int caster
         )
         {
+            var skill = string.IsNullOrEmpty(card.Skill) ? null : CardSkills.Find(card.Skill);
+            if (skill != null)
+            {
+                yield return UseSkill(skill, card, chosen, onEnemies, caster);
+                yield break;
+            }
             if (Vfx == null)
             {
                 for (int i = 0; i < chosen.Count; i++)
@@ -1646,8 +1851,62 @@ namespace Baryonyx.Combat.Presentation
             bannerFade = null;
         }
 
+        /// <summary>
+        /// Shows the turn band with <paramref name="text"/> in the colours of the enemies or the
+        /// party, then fades it.
+        /// </summary>
+        private void ShowTurnBanner(string text, bool enemies)
+        {
+            if (TurnBanner == null)
+                return;
+            if (turnBannerShow != null)
+                StopCoroutine(turnBannerShow);
+            TurnBanner.SetText(text);
+            if (TurnBanner.Label != null)
+                TurnBanner.Label.color = enemies ? EnemyBannerText : PartyBannerText;
+            foreach (var line in TurnBannerLines)
+                line.color = enemies ? EnemyBannerLine : PartyBannerLine;
+            TurnBanner.gameObject.SetActive(true);
+            SetTurnBanner(0f, 0f);
+            turnBannerShow = StartCoroutine(PlayTurnBanner());
+        }
+
+        /// <summary>The band fades in as its lines open from the middle, holds, and fades out.</summary>
+        private IEnumerator PlayTurnBanner()
+        {
+            float fade = Settings.TurnBannerFade;
+            float hold = Mathf.Max(fade, Settings.TurnBannerHold);
+            for (float t = 0f; t < hold + fade; t += Time.deltaTime)
+            {
+                float alpha =
+                    t < fade ? t / fade
+                    : t < hold ? 1f
+                    : 1f - (t - hold) / fade;
+                SetTurnBanner(alpha, t / fade);
+                yield return null;
+            }
+            TurnBanner.gameObject.SetActive(false);
+            turnBannerShow = null;
+        }
+
+        /// <summary>Sets the band's alpha, and how far its lines have opened (0 to 1, eased out).</summary>
+        private void SetTurnBanner(float alpha, float open)
+        {
+            if (TurnBannerGroup != null)
+                TurnBannerGroup.alpha = alpha;
+            float k = Mathf.Clamp01(open);
+            float width = Mathf.Lerp(0.6f, 1f, 1f - (1f - k) * (1f - k));
+            foreach (var line in TurnBannerLines)
+                line.rectTransform.localScale = new Vector3(width, 1f, 1f);
+        }
+
         /// <summary>Damages an enemy and tells how hard the blow hit it.</summary>
-        private BattleHitWeight Hit(int index, int power, BattleInspectElement element)
+        private BattleHitWeight Hit(
+            int index,
+            int power,
+            BattleInspectElement element,
+            BattleInspectElement extra = BattleInspectElement.None
+        )
         {
             var enemy = Enemies[index];
             // An earlier card of the queue may have beaten it already.
@@ -1658,8 +1917,12 @@ namespace Baryonyx.Combat.Presentation
                 element == BattleInspectElement.None
                     ? null
                     : Array.Find(enemy.Weaknesses, entry => entry.Element == element);
+            if (weakness == null && extra != BattleInspectElement.None)
+                weakness = Array.Find(enemy.Weaknesses, entry => entry.Element == extra);
             bool weak = weakness != null;
-            weakness?.Show(true);
+            // A weakness found by this blow glints as it turns from ? into its icon.
+            if (weak && !weakness.Revealed)
+                StartCoroutine(weakness.Reveal(Vfx, () => enemy.Alive));
             int damage = weak ? Mathf.RoundToInt(power * WeakMultiplier) : power;
             enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
             RefreshEnemy(enemy);
@@ -1676,8 +1939,8 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The enemy blinks white as the blow lands, then reels back in <paramref name="tint"/> (red,
-        /// or a cold blue for ice) and trembles, through the hit stop too. A beaten enemy bursts
-        /// into pieces (or, with no effects, fades away).
+        /// or a cold blue for ice) and trembles, through the hit stop too. A beaten enemy crumbles
+        /// away dot by dot (or, with no effects, fades away).
         /// </summary>
         private IEnumerator HitReaction(int index, Color tint)
         {
@@ -1686,7 +1949,7 @@ namespace Baryonyx.Combat.Presentation
             if (!enemy.Alive && Vfx != null)
             {
                 enemy.Sprite.color = Color.white;
-                Vfx.Shatter(enemy.Sprite, Vector2.right);
+                Vfx.Crumble(enemy.Sprite, Vector2.right, enemy.Boss);
                 enemy.Group.alpha = 0f;
                 RefreshTurnOrder();
                 yield break;
@@ -1721,6 +1984,7 @@ namespace Baryonyx.Combat.Presentation
         private void HitAlly(int index, int damage)
         {
             var ally = Allies[index];
+            damage = Absorb(index, damage);
             ally.Hp = Mathf.Max(0, ally.Hp - damage);
             RefreshAlly(ally);
             ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
@@ -1752,6 +2016,7 @@ namespace Baryonyx.Combat.Presentation
 
         private void ReviveEnemies()
         {
+            ClearStatuses(false);
             foreach (var enemy in Enemies)
             {
                 enemy.Hp = enemy.MaxHp;
@@ -1778,7 +2043,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var card = Cards[index];
             // A card darkens only once it has landed, so the backs fly in at full brightness.
-            bool playable = card.Cost <= Energy || motion[index].Flying;
+            bool playable = CostOf(card) <= Energy || motion[index].Flying;
             // A card the energy cannot pay for is see-through in the hand, but not once raised,
             // so its details can still be read.
             float alpha =

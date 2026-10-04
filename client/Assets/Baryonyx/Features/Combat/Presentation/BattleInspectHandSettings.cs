@@ -124,6 +124,17 @@ namespace Baryonyx.Combat.Presentation
         [Min(0f)]
         public float EnemyGap = 0.25f;
 
+        [Header("ターンの切り替え")]
+        [Tooltip(
+            "ターンの始まりに画面の中央へ出す帯（「敵のターン」「味方のターン」）を、消え始めるまで出しておく時間（秒）。敵のターンは、この間だけ敵が動き出すのを待つ。"
+        )]
+        [Min(0f)]
+        public float TurnBannerHold = 0.5f;
+
+        [Tooltip("帯が現れる時間と、消える時間（秒）。")]
+        [Min(0.01f)]
+        public float TurnBannerFade = 0.12f;
+
         [Header("ばね")]
         [Tooltip("カードが目標へ向かう強さ。大きいほど速い。")]
         [Min(1f)]
