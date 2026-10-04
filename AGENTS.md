@@ -37,6 +37,7 @@
 | [client/AGENTS.md](client/AGENTS.md) | Unityクライアントの配置と作業ルール |
 | [server/AGENTS.md](server/AGENTS.md) | Honoバックエンドの配置と作業ルール |
 | [doc/README.md](doc/README.md) | 機能、設計ルール、計画、QAの入口 |
+| [novel/README.md](novel/README.md) | 世界観の小説と設定（ゲームの確定設定ではない試案） |
 | [文書管理方針](doc/rules/documentation-policy.md) | 文書の配置と更新方法 |
 | `shortcuts/` | ユーザーが手動実行する、1ファイルで完結するコマンド |
 | `.agents/skills/` | 特定作業の手順 |
@@ -67,6 +68,7 @@ baryonyx/
 │   ├── rules/             継続的な設計・開発ルール
 │   ├── plans/             個別の変更計画
 │   └── qa/                ユーザーから想定される質問と回答
+├── novel/                 世界観の小説と、その設定（試案）
 ├── shortcuts/            手動実行用の単体スクリプト
 ├── .github/workflows/     CIの起動条件と実行順序
 └── .agents/skills/        特定作業の手順
