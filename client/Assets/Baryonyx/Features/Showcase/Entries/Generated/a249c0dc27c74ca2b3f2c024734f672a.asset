@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: a249c0dc27c74ca2b3f2c024734f672a
   DisplayName: DungeonHall
   Description: Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png
-  Category: 1
+  Category: 3
   Asset: {fileID: 2800000, guid: a249c0dc27c74ca2b3f2c024734f672a, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}

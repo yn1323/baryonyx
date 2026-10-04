@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: e0e35b45f92a24257b8fb260810ae6db
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: e0e35b45f92a24257b8fb260810ae6db
+  DisplayName: DuskHighlandStage
+  Description: Assets/Baryonyx/Shared/Art/Stages/DuskHighland/DuskHighlandStage.prefab
+  Category: 3
+  Asset: {fileID: 3201299316437168463, guid: e0e35b45f92a24257b8fb260810ae6db, type: 3}
+  PreviewPrefab: {fileID: 3201299316437168463, guid: e0e35b45f92a24257b8fb260810ae6db, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

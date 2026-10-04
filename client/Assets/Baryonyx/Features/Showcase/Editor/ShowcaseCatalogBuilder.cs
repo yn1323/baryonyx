@@ -268,6 +268,7 @@ namespace Baryonyx.Showcase.Editor
             if (
                 value.Contains("background")
                 || value.Contains("environment")
+                || value.Contains("/stages/")
                 || value.Contains("forest")
                 || value.Contains("mine")
             )

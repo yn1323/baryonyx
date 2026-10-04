@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-10-01
+updated: 2026-10-04
 ---
 
 # クライアントアセット展示室
@@ -37,12 +37,14 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 
 分類はアセットのパスと種類から自動推定する。
 パスに `character` または `/enemies/` を含む画像はキャラクターに入る（敵の分類はないため、敵もキャラクターに含める）。
+`Shared/Art/Stages/` の下（探索する場所の背景と、[3Dの舞台](../art/hd2d-stage.md)のPrefab・テクスチャ・マテリアル）は背景・環境に入る。
 
 ## 表示と操作
 
 展示室にはカテゴリ一覧、アセット一覧、プレビュー領域を置く。
 
 画像・Spriteは画像プレビュー、Prefabはプレビュー用カメラ、Canvasを持つUI Prefabはカメラへ接続したCanvas、Materialはサンプル形状への適用結果、音声は再生ボタン、シーンはシーン読み込みボタンを表示する。
+Materialのサンプル形状は球とし、シェーダーの `PreviewType` タグが `Plane` のもの（板に描くエフェクトやUIのシェーダー）だけ、Inspectorのプレビューと同じく四角い板にする。
 
 キャラクターなどのPrefabにAnimatorがある場合は、カタログ生成時に最初のAnimationClipとステートを候補として登録し、選択時に再生する。手動登録するShowcaseEntryでは、プレビュー用Prefab、PreviewAnimation、AnimationStateNameを指定できる。
 
@@ -50,17 +52,25 @@ UnityのGameタブは、シーンに保存されたカメラやUIであれば停
 
 VFXカテゴリには `Hd2dLightShaft`、`Hd2dFog`、`Hd2dFlickerLight`、`Hd2dEmberEmitter` の各Prefabと、光芒・霧のノイズ画像、火の粉の形の画像（十字の `Hd2dEmberCross`、尾を引く粒の `Hd2dEmberStreak`）を登録する。
 加算合成の `Hd2dUiAdditive` はマテリアル・シェーダーのカテゴリ、ポストプロセスの `Hd2dPostProcess` はデータのカテゴリに入る。
+
+[3Dの舞台](../art/hd2d-stage.md)は、背景・環境のカテゴリの `StarlitGateStage`（Topの星空の夜の山の門）・`ForestGladeStage`（Homeの昼の森の野営地）・`DuskHighlandStage`（戦闘の夕暮れの高原の環状列石）のPrefabと、それぞれのテクスチャ（`Starlit〈名前〉`・`Glade〈名前〉`・`Dusk〈名前〉` の `.aseprite`）とマテリアルで確認する。舞台ごとのポストプロセス（`StarlitGateLook`・`ForestGladeLook`・`DuskHighlandLook`）も背景・環境のカテゴリに入る。舞台の小物・草の房・地面の汚し（`GladeCrate`・`StarlitStatue`・`DuskBones` など）のテクスチャとマテリアル、光を受ける面の法線マップ（`〈名前〉Normal.png`）も同じカテゴリに入る。草と葉のシェーダー `Baryonyx/HD2D/Stage Foliage` と、小物の足元の陰のマテリアル `Hd2dPropShade` はVFX・エフェクトのカテゴリに入る。草の揺れはPlay Modeで確認する。今は画面で使っていない `DungeonHallStage`（広間）・`ForestRuinsStage`（森の遺跡）と、そのテクスチャ・Profileも同じカテゴリに残る。空と遠景のシェーダー `Hd2dPaintedDistance` はVFX・エフェクトのカテゴリに入る。舞台のPrefabのプレビューは舞台全体を収めるため、夜空の2枚目の月も見える（画面では1つだけ写る）。光の筋のシェーダーとマテリアル `Hd2dLightBeam`、木漏れ日のマスク `Hd2dLeafCookie`、舞台のレンズのシェーダー `Hd2dStageFocus` はVFX・エフェクトのカテゴリに入る。舞台のレンズ・木漏れ日・光の筋は、HomeやTopのシーンを開くと停止中のGameビューでも確認でき、光の筋の揺らぎと塵の動きはPlay Modeで確認する。
+キャラの板・接地影・炎・火の粉のシェーダーとマテリアル（`Hd2dStageSprite`・`Hd2dContactShadow`・`Hd2dFlame`・`Hd2dGlowParticle`・`Hd2dEmberGlow`）はVFXのカテゴリに入る。
+Prefabのプレビューは舞台全体を遠くから写すだけで、画面ごとのカメラ・霧・キャラは映らない。
+[戦闘の背景](../art/hd2d-stage.md#戦闘の背景)の10種類（`MeadowRoadStage`・`MistyWoodsStage`・`MineTunnelStage`・`CrystalCavernStage`・`RockyShoreStage`・`MistySwampStage`・`SnowFieldStage`・`VolcanoCraterStage`・`MoonlitGraveyardStage`・`CastleHallStage`）も、Prefab・テクスチャ（`Meadow〈名前〉` など舞台ごとの接頭辞の `.aseprite`）・マテリアル・法線マップ・ポストプロセス（`〈舞台〉Look`）が背景・環境のカテゴリに入る。
+キャラが立った見た目、光と影、カメラの動きは、シーンのカテゴリから `Top`・`Home`・`BattleInspect` を開いて確認する。
+戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
 
 ### 光芒の調整
 
-Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dLightShaft` を選ぶと専用Inspectorで調整できる。
+`Hd2dLightShaft` Prefabを開くと、専用Inspectorで調整できる。
+2026-10-02にTopを屋外の夜にしたため、広間の天井から差していたTopの `TopHd2dLightShaft` は外した。
 「Editorで表示」を有効にすると、停止中も光芒を表示し、変更とUndoを反映する。
 
 | Inspectorの項目 | 効果 |
 | --- | --- |
-| 光の濃さ（0で透明）・光の色 | 濃さと色。濃さを小さくするほど背景が透ける。Topは松明の暖色と対比させる青白い光 |
+| 光の濃さ（0で透明）・光の色 | 濃さと色。濃さを小さくするほど背景が透ける。既定は松明の暖色と対比させる青白い光 |
 | 太さの範囲・長さの範囲 | Xが最小、Yが最大。個々の光芒には「細い方 / 太い方の倍率」も掛かる |
 | 開始位置（X: 左右 / Y: 上下） | Xを小さくすると左へ移る。Yを1より大きくすると画面の上から入る |
 | 開始位置の広がり | 複数本の開始位置を左右に並べる幅。0にすると同じ位置から出る |
@@ -79,14 +89,15 @@ Play Mode中の変更は停止時に戻る。
 
 ### 霧の調整
 
-Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dFog` を選ぶと専用Inspectorで調整できる。
+`Hd2dFog` を持つ霧（Homeと戦闘画面の描いた背景の上の霧）を選ぶと専用Inspectorで調整できる。
 霧は背景の直上に置き、光芒と塵は霧の手前に描く。
+2026-10-03にTopからは外した。3Dの舞台の距離の霧が遠くをかすませており、画面に平らに貼った霧は奥行きに沿わないためである。
 「霧のレイヤー」の各要素が1つの霧の範囲で、要素を追加・削除すると範囲が増減する。
 
 | Inspectorの項目 | 効果 |
 | --- | --- |
 | 全体の濃さ | 全レイヤーの濃さに掛ける倍率。0で霧を消す |
-| 色（Aが濃さ） | 層ごとの色と濃さ。Topは松明の暖色と対比させる青灰色 |
+| 色（Aが濃さ） | 層ごとの色と濃さ。松明の暖色と対比させる青灰色にする |
 | 範囲の左下・右上 | 親の正規化座標で範囲を決める。0未満や1超えで画面の外まで広げ、縁を画面に見せない |
 | 縁のぼかし（px） | 範囲の縁を内側へぼかす幅。Xが左右、Yが上下 |
 | 模様の大きさ（px） | ノイズ模様1枚分の大きさ。横長にすると流れる霧、縦横を近づけると漂う霞に見える |
@@ -95,16 +106,16 @@ Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dFog` を選ぶと専用Insp
 | 濃さの増減・増減の速さ | 濃さがゆっくり変わる量と速さ |
 
 Prefabの既定は床霧の奥（`FloorMistFar`）と手前（`FloorMistNear`）の2層である。
-Topではシーンのインスタンスで、アーチ奥の霞（`DeepHaze`）を末尾に追加している。
-Prefabの既定の層を変えると、上書きしていないTopの床霧にも反映される。
+Prefabの既定の層を変えると、層を上書きしていない画面の霧にも反映される。
 霧はEditorでは静止表示し、流れと濃さの変化はPlay Modeで確認する。
 プレビュー用の子オブジェクトはシーンやPrefabに保存しない。
 
 ### 揺らぐ光の調整
 
-Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dFlickerLight` を選ぶと専用Inspectorで調整できる。
+`HomeScreen` Prefabの `BackgroundLights` を選ぶと専用Inspectorで調整できる。
+2026-10-02にTopとHomeを[3Dの舞台](../art/hd2d-stage.md)にしてからは、描いた背景の松明の光で、3Dの舞台がない場所（Prefabの単体表示）でだけ表示する。Topからは外した。
 「光源」の各要素が1つの光源で、光源ごとに芯、周りを照らす広い光、床の照り返しの3枚を加算合成で重ねる。
-Topの `TopHd2dFlickerLight` は背景と同じ `ResponsiveBackground` を持ち、背景画像と同じ範囲に広がる。
+`BackgroundLights` は背景と同じ `ResponsiveBackground` を持ち、背景画像と同じ範囲に広がる。
 このため光源の位置は背景画像上の正規化座標（左下が原点）で指定し、画面比率が変わっても描かれた松明に重なる。
 霧の手前、光芒の奥に描く。
 
@@ -127,9 +138,10 @@ Topの `TopHd2dFlickerLight` は背景と同じ `ResponsiveBackground` を持ち
 
 ### 火の粉の調整
 
-Topでは、Hierarchyの `TopBackdropCanvas > TopHd2dEmberEmitter` を選ぶと専用Inspectorで調整できる。
+`HomeScreen` Prefabの `BackgroundEmbers`（描いた背景の松明。3Dの舞台がないときだけ表示）と `CampEmbers`（焚き火）を選ぶと専用Inspectorで調整できる。
+3Dの舞台の松明とかがり火の火の粉は、舞台のPrefabのParticle Systemで出す。
 「発生源」の各要素が1か所の発生位置で、そこから指定した向きへ粒子を出す。
-Topでは4つの松明の炎の上から火の粉を出し、揺らぐ光の手前、光芒の奥に描く。
+`BackgroundEmbers` は4つの松明の炎の上から火の粉を出し、揺らぐ光の手前、光芒の奥に描く。
 揺らぐ光と同じく背景画像と同じ範囲に広がり、位置は背景画像上の正規化座標で指定する。
 
 | Inspectorの項目 | 効果 |
@@ -152,7 +164,7 @@ Topでは4つの松明の炎の上から火の粉を出し、揺らぐ光の手�
 カールノイズは、ノイズから作った流れ関数の回転（curl）を速度にする方法で、湧き出しや吸い込みのない渦の流れになる（[Bridson et al. 2007](https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph2007-curlnoise.pdf)）。
 近くの粒が同じ渦に乗って一緒に曲がるため、ばらばらに揺れる動きより空気の流れに見える。
 生まれた直後の約0.35秒は流れの影響を弱め、炎から真上へ出てから渦に乗るようにしている。
-TopとHomeの松明は強さ36・渦の大きさ56px（奥の松明は0.7倍）、Homeの焚き火は強さ42・渦の大きさ64pxで、流れが変わる速さはいずれも0.5である。
+Homeの描いた背景の松明は強さ36・渦の大きさ56px（奥の松明は0.7倍）、Homeの焚き火は強さ42・渦の大きさ64pxで、流れが変わる速さはいずれも0.5である。
 
 報酬や画面遷移の瞬間だけ出す場合は、「出し続ける」をオフにした発生源を用意し、スクリプトから `Burst(発生源の番号, 数)` を呼ぶ。
 発生源の番号は、空の要素を除いたリストの順番である。
@@ -160,7 +172,7 @@ TopとHomeの松明は強さ36・渦の大きさ56px（奥の松明は0.7倍）�
 火の粉の形は、大きさで役割を分ける。
 小さな点を多くし、十字と尾を引く粒は少数に絞る。
 十字は光る粒、尾を引く粒は昇る速さを表す。
-Topでは手前の松明を十字3割・尾を引く粒1.5割、奥の松明を2.5割・1割にして、奥の火の粉を控えめにしている。
+Homeの描いた背景の松明は、手前を十字3割・尾を引く粒1.5割、奥を2.5割・1割にして、奥の火の粉を控えめにしている。
 尾を引く粒は、出る向きに合わせて90度単位で回す。
 任意の角度で回すとドットが斜めに崩れるためである。
 形の画像はPointで読み込み、拡大してもドットの角を保つ。
@@ -170,31 +182,29 @@ Editorでは再生開始時と同じ配置を静止表示し、動きはPlay Mod
 
 ### ポストプロセスの調整
 
-Topでは、背景とHD-2Dの演出を `TopBackdropCanvas`（Screen Space - Camera）に置き、`TopCamera` のポストプロセスを通す。
+Topでは、3Dの舞台とHD-2Dの演出（`TopBackdropCanvas`、Screen Space - Camera）を `TopCamera` で描き、ポストプロセスを通す。
 タイトルと開始操作を持つ `TopScreen` は `TopCanvas`（Screen Space - Overlay）に残し、文字をにじませない。
+Homeは昼の森の舞台のProfile（`ForestGladeLook`）を `HomePostProcessVolume` で使う。HomeのUIはScreen Space - Overlayのため、にじまない。
 `ScreenSpaceOverlay` のUIにはカメラのポストプロセスが掛からないため、この2つのCanvasに分けている。
 2つのCanvasは同じCanvasScalerの設定を持ち、座標の単位を揃える。
 
-`TopPostProcessVolume` は全体に効くVolumeで、共通の `Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset` を使う。
-Profileを選ぶとInspectorで各効果を調整できる。
+`TopPostProcessVolume` は全体に効くVolumeで、星空の門の舞台のポストプロセス `Shared/Art/Stages/StarlitGate/StarlitGateLook.asset` を使う。共通の `Shared/VFX/HD2D/Profiles/Hd2dPostProcess.asset` は、2Dの背景向けのProfileとして残す。
+Profileを選ぶとInspectorで各効果を見られる。
+値は生成処理（`StageSetAssets.BuildLooks`）が作り直すたびに上書きするため、調整はコードで行う（値の正本は[3Dの舞台](../art/hd2d-stage.md#レンズと色ポストプロセス)）。
 
-| 効果 | 主な項目 | Topでの役割 |
-| --- | --- | --- |
-| Bloom | Threshold 0.4、Intensity 1.6、Scatter 0.65 | 炎、加算の光、光芒に加え、照らされた中間調もにじませる。Thresholdを0.8程度に上げると明るい部分だけに絞れ、さらに下げると石壁までにじむ |
-| Vignette | Intensity 0.28、Smoothness 0.45 | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
-| Color Adjustments | Contrast 8、Saturation 6 | 明暗と彩度を少し強め、松明の暖色と光芒の青白さを引き立てる |
-
-| HD-2D Tilt Shift | Intensity 1、Focus Center 0.5、Focus Half Height 0.3、Falloff 0.3、Max Radius 8 | 中央の帯をくっきり残し、天井と手前の床をぼかしてジオラマのように見せる |
-
-Profileは共通アセットなので、変更すると同じProfileを使う全画面に反映される。
-画面ごとに変える場合は、Profileを複製してその画面のVolumeへ設定する。
+| 効果 | Topでの役割 |
+| --- | --- |
+| HD-2D Stage Focus | 不透明の舞台だけを奥行きでぼかす。手前の岩と奥の山並みをぼかし、中ほどの道と段をくっきり残してジオラマのように見せる。星空は星が読めるよう、ぼかしを弱くする。タイトルや演出はぼけない |
+| Bloom | 3Dの舞台の炎・点光源（明るさが1を超える）と、加算の光、光芒をにじませる |
+| Vignette | 画面の端を暗くし、中央のタイトルと入口へ視線を集める |
+| Color Adjustments・Split Toning | 明暗と彩度を少し強め、影を青、光を暖色に寄せて、松明の暖色と月明かりの青白さを引き立てる |
 BloomはAndroid端末での負荷が大きい効果である。発熱やフレーム落ちがある場合は、Intensityより先にBloomのDownscaleとMax Iterationsで負荷を下げる。
 
 ### 疑似ティルトシフト
 
 `HD-2D Tilt Shift` は、1枚絵の背景に奥行きの情報がないため、画面の高さでぼかしの強さを決める疑似ティルトシフトである。
 中央の帯（Focus Center ± Focus Half Height）はぼかさず、帯の外はFalloffの高さをかけて最大のぼかし半径へ近づく。
-Max Radiusは画面の高さ1080px基準の半径で、ドット絵の1粒より大きくしないと効果が見えない。Topでは8にしている。
+Max Radiusは画面の高さ1080px基準の半径で、ドット絵の1粒より大きくしないと効果が見えない。2Dの背景向けの `Hd2dPostProcess` では8にしている。3Dの舞台は、奥行きでぼかす `HD-2D Stage Focus` を使う。
 描画は `Mobile_Renderer` と `PC_Renderer` に登録した `Hd2dTiltShift` Renderer Featureが行い、Intensityが0の画面ではぼかしの処理そのものを行わない。
 Bloomより前に処理するため、ぼけた光もBloomでにじむ。
 タイトルと開始操作はOverlayのCanvasにあるため、ぼけない。
@@ -250,11 +260,17 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
 戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。
+ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
-カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、斬り払い・ファイア・アイスランス・サンダー・ヒール・ガードの演出を順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`）も同じカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
+カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[カードスキルの仮設定](combat.md#カードスキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
+好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[カードスキルのデバッグルーム](screens.md#カードスキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。
+敵の攻撃・被弾・撃破・状態が付いたときの行動・敵のターンは、シーンのカテゴリから `EnemyLab` を開き、敵と行動を選んで確かめる（[敵の挙動デバッグルーム](screens.md#敵の挙動デバッグルーム)）。操作盤のPrefab `EnemyLabPanel` はUIカテゴリに入るが、操作する戦闘画面がないため、単体のプレビューでは押しても敵は動かない。
+撃破で敵の絵をドットごとに削るシェーダー（`BattleDefeat`）とマテリアル（`VfxDefeat`）はVFXカテゴリに入る。マテリアルは敵の絵と削る順番を持たないため、プレビューでは崩れる様子が見えない。崩れる動きは `EnemyLab` の「撃破」で確かめる。
+50枚のカードの見た目（挿絵・枠・属性のアイコン・使い手・名前・種類と対象・説明文・コスト）は、UIカテゴリの `BattleCardGallery` Prefabで、10枚×5段に並べて確認する。戦闘画面のモックの山札に入るのは、このうち16枚だけである。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`。撃破で舞う粒の `VfxShapeMote` を含む）はVFXカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
+弱点を開示するときの光（[戦闘画面の見た目モック](screens.md#戦闘画面の見た目モック)）は、初めて弱点を突いたときにしか出ないため、VFXカテゴリの `BattleWeaknessRevealPreview` Prefabで確認する。炎・氷・雷・斬の「？」を拡大して並べ、1つずつ開示してから全部を「？」へ戻す動きを繰り返す。アイコンの上の光のシェーダー（`BattleWeaknessGlint`）とマテリアル（`VfxWeaknessGlint`）も同じカテゴリに入る。
 展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleInspect` シーンを開いてカードを使う。
 カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
-シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。
+シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab` も同じく生成時に追加する。
 案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
 それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。

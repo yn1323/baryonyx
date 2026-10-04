@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
   Id: 9ba16e9a3c551458b85ecc053ba0a01f
   DisplayName: BattleInspect
-  Description: Assets/Baryonyx/App/Scenes/BattleInspect.unity
+  Description: Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity
   Category: 10
   Asset: {fileID: 0}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 
-  ScenePath: Assets/Baryonyx/App/Scenes/BattleInspect.unity
+  ScenePath: Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity
   Enabled: 1

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: d175e3233aeed4bf887a04892e8948ea_DungeonWall
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: d175e3233aeed4bf887a04892e8948ea_DungeonWall
+  DisplayName: DungeonWall
+  Description: Assets/Baryonyx/Shared/Art/Stages/DungeonHall/DungeonWall.aseprite#DungeonWall
+  Category: 3
+  Asset: {fileID: 5349011544834349465, guid: d175e3233aeed4bf887a04892e8948ea, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

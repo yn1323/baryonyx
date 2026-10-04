@@ -339,7 +339,12 @@ namespace Baryonyx.Showcase
 
         private void ShowMaterial(Material material)
         {
-            var sample = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // 板に描く前提のシェーダー（エフェクト・UI）は、InspectorのプレビューにならってPreviewTypeタグで板に貼る。
+            var shape =
+                material.GetTag("PreviewType", false) == "Plane"
+                    ? PrimitiveType.Quad
+                    : PrimitiveType.Sphere;
+            var sample = GameObject.CreatePrimitive(shape);
             sample.name = "MaterialSample";
             sample.GetComponent<Renderer>().sharedMaterial = material;
             ShowPrefab(sample);

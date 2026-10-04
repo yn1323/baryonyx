@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: 938ffc5c1dedd4f6bb98a0d9bc7bf011_SnowFloor
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: 938ffc5c1dedd4f6bb98a0d9bc7bf011_SnowFloor
+  DisplayName: SnowFloor
+  Description: Assets/Baryonyx/Shared/Art/Stages/SnowField/SnowFloor.aseprite#SnowFloor
+  Category: 3
+  Asset: {fileID: 5349011544834349465, guid: 938ffc5c1dedd4f6bb98a0d9bc7bf011, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

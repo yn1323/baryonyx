@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: e8e40e26dac624f6d8f8c01e07c85c7d_IconTreasureSight
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: e8e40e26dac624f6d8f8c01e07c85c7d_IconTreasureSight
+  DisplayName: IconTreasureSight
+  Description: Assets/Baryonyx/Features/StepBonus/UI/Art/IconTreasureSight.aseprite#IconTreasureSight
+  Category: 5
+  Asset: {fileID: 5349011544834349465, guid: e8e40e26dac624f6d8f8c01e07c85c7d, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1
