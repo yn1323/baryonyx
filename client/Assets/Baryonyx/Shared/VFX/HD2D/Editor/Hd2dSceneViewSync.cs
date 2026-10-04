@@ -9,15 +9,18 @@ namespace Baryonyx.Vfx.Hd2d.Editor
     /// <summary>
     /// Shows a scene with a 3D stage (HD-2D) in the Scene view as the game shows it: when such a
     /// scene is opened (or from the menu), the Scene view looks through the stage camera (its
-    /// position, angle, lens and clipping), draws fog, post-processing and particles, redraws
-    /// continuously so flames and stars move, and hides its grid. The UI drawn over the screen
-    /// (Screen Space - Overlay) is hidden in the Scene view only: Unity draws it there as a
-    /// rectangle 1920 units wide at the origin, which would cover the 56 m stage; it still shows
-    /// in the Game view, and the eye icon in the Hierarchy shows it again.
+    /// position, angle, lens and clipping), draws fog, post-processing and particles, and hides
+    /// its grid. It redraws continuously so flames, stars and particles move only when
+    /// "Animate Stage While Stopped" is on, since that keeps the editor busy. The UI drawn over
+    /// the screen (Screen Space - Overlay) is hidden in the Scene view only: Unity draws it there
+    /// as a rectangle 1920 units wide at the origin, which would cover the 56 m stage; it still
+    /// shows in the Game view, and the eye icon in the Hierarchy shows it again.
     /// </summary>
     [InitializeOnLoad]
     public static class Hd2dSceneViewSync
     {
+        private const string AnimatePath = "Baryonyx/HD-2D/Animate Stage While Stopped";
+
         static Hd2dSceneViewSync()
         {
             // Only a scene opened on its own (not one added beside others, as tests do).
@@ -33,6 +36,27 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         {
             if (!LookThroughStage(SceneManager.GetActiveScene()))
                 Debug.LogWarning("No 3D stage camera (Hd2dStageCamera) in the active scene.");
+        }
+
+        // Moves the stage outside Play Mode or stops it: the Scene views' "Always Refresh" and
+        // the particles of Hd2dParticlePreview follow the choice, which is kept per user.
+        [MenuItem(AnimatePath)]
+        private static void ToggleAnimate()
+        {
+            var animate = !Hd2dParticlePreview.AnimateWhileStopped;
+            Hd2dParticlePreview.AnimateWhileStopped = animate;
+            foreach (SceneView view in SceneView.sceneViews)
+            {
+                view.sceneViewState.alwaysRefresh = animate;
+                view.Repaint();
+            }
+        }
+
+        [MenuItem(AnimatePath, true)]
+        private static bool ValidateAnimate()
+        {
+            Menu.SetChecked(AnimatePath, Hd2dParticlePreview.AnimateWhileStopped);
+            return true;
         }
 
         /// <summary>
@@ -74,7 +98,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             state.showImageEffects = true;
             state.showParticleSystems = true;
             state.showFlares = true;
-            state.alwaysRefresh = true;
+            state.alwaysRefresh = Hd2dParticlePreview.AnimateWhileStopped;
             view.showGrid = false;
 
             // The canvases drawn by the camera (the battlefield's bars and marks, the title's

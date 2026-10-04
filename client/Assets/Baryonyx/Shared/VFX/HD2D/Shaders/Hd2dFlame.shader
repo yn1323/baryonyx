@@ -8,6 +8,8 @@
 // 四角形はオブジェクトの原点を中心にカメラへ向け直す。炎の根元は板の下から _Base の高さにあり、
 // 炎は板の中央の幅 _FlameWidth・高さ _FlameHeight（板に対する割合）に収まる。上の残りには、ちぎれた舌の先と周りの光を描く（置き方は Hd2dStageKit.Flame）。
 // 揺れ方は置いた位置から決まるため、同じマテリアルの炎どうしも揃って揺れない。
+// 昼の明るい地面の上では、足した炎が地面の色と一緒に白く飛び、形が読めなくなる。
+// _Cover を上げると、炎の面の分だけ奥を隠してから足す（0なら加算だけ）。
 Shader "Baryonyx/HD2D/Flame"
 {
     Properties
@@ -25,6 +27,7 @@ Shader "Baryonyx/HD2D/Flame"
         _Base ("Root Height", Range(0, 0.5)) = 0.1
         _FlameHeight ("Flame Height", Range(0.1, 1)) = 0.5
         _FlameWidth ("Flame Width", Range(0.1, 1)) = 0.5
+        _Cover ("Cover", Range(0, 1)) = 0
     }
 
     SubShader
@@ -44,7 +47,8 @@ Shader "Baryonyx/HD2D/Flame"
             Name "Flame"
             Tags { "LightMode"="UniversalForward" }
 
-            Blend One One
+            // 透明度は奥を隠す量。0なら加算と同じになる。
+            Blend One OneMinusSrcAlpha
             ZWrite Off
             ZTest LEqual
             Cull Off
@@ -70,6 +74,7 @@ Shader "Baryonyx/HD2D/Flame"
                 half _Base;
                 half _FlameHeight;
                 half _FlameWidth;
+                half _Cover;
             CBUFFER_END
 
             struct Attributes
@@ -204,7 +209,9 @@ Shader "Baryonyx/HD2D/Flame"
                 float halo = exp(-(g.x * g.x * 14.0 + g.y * g.y * 9.0)) * fade;
                 halo *= 0.85 + 0.15 * sin(6.2831853 * (0.9 - t * puffRate));
 
-                return half4(fire + _HaloColor.rgb * halo * _Halo, 1);
+                // 奥を隠すのは明るく光る熱い所だけにする。冷えた縁や舌の先まで隠すと、くすんだ膜に見える。
+                float cover = flame * fade * _Cover * smoothstep(0.05, 0.45, temperature);
+                return half4(fire + _HaloColor.rgb * halo * _Halo, cover);
             }
             ENDHLSL
         }

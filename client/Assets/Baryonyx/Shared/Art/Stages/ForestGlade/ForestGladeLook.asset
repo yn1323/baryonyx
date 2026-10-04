@@ -1,6 +1,40 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-892137911883528040
+--- !u!114 &-2626616269039596222
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4da33b09c410b4de2bb4addc40b32593, type: 3}
+  m_Name: Hd2dStageFocus
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dStageFocus
+  active: 1
+  intensity:
+    m_OverrideState: 1
+    m_Value: 1
+  focusDistance:
+    m_OverrideState: 1
+    m_Value: 10.6
+  focusRange:
+    m_OverrideState: 1
+    m_Value: 0.9
+  nearFalloff:
+    m_OverrideState: 1
+    m_Value: 4.2
+  farFalloff:
+    m_OverrideState: 1
+    m_Value: 11
+  maxRadius:
+    m_OverrideState: 1
+    m_Value: 7
+  nearMaxRadius:
+    m_OverrideState: 1
+    m_Value: 20
+--- !u!114 &-430192750990738151
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,54 +97,13 @@ MonoBehaviour:
   m_Name: ForestGladeLook
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.VolumeProfile
   components:
-  - {fileID: 6874133953977503472}
-  - {fileID: -892137911883528040}
-  - {fileID: 6893022628633219177}
-  - {fileID: 2791921851078180088}
-  - {fileID: 988179701811202618}
-  - {fileID: 4549258498507198651}
---- !u!114 &988179701811202618
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70afe9e12c7a7ed47911bb608a23a8ff, type: 3}
-  m_Name: SplitToning
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.SplitToning
-  active: 1
-  shadows:
-    m_OverrideState: 1
-    m_Value: {r: 0.4, g: 0.48, b: 0.58, a: 1}
-  highlights:
-    m_OverrideState: 1
-    m_Value: {r: 0.62, g: 0.55, b: 0.44, a: 1}
-  balance:
-    m_OverrideState: 1
-    m_Value: 0
---- !u!114 &2791921851078180088
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 221518ef91623a7438a71fef23660601, type: 3}
-  m_Name: WhiteBalance
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.WhiteBalance
-  active: 1
-  temperature:
-    m_OverrideState: 1
-    m_Value: 6
-  tint:
-    m_OverrideState: 1
-    m_Value: 0
---- !u!114 &4549258498507198651
+  - {fileID: -2626616269039596222}
+  - {fileID: -430192750990738151}
+  - {fileID: 4737796554015387744}
+  - {fileID: 7510233980200385964}
+  - {fileID: 4572429625611175843}
+  - {fileID: 3877087886305779216}
+--- !u!114 &3877087886305779216
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -138,7 +131,7 @@ MonoBehaviour:
   rounded:
     m_OverrideState: 1
     m_Value: 0
---- !u!114 &6874133953977503472
+--- !u!114 &4572429625611175843
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -147,32 +140,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4da33b09c410b4de2bb4addc40b32593, type: 3}
-  m_Name: Hd2dStageFocus
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dStageFocus
+  m_Script: {fileID: 11500000, guid: 70afe9e12c7a7ed47911bb608a23a8ff, type: 3}
+  m_Name: SplitToning
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.SplitToning
   active: 1
-  intensity:
+  shadows:
     m_OverrideState: 1
-    m_Value: 1
-  focusDistance:
+    m_Value: {r: 0.4, g: 0.48, b: 0.58, a: 1}
+  highlights:
     m_OverrideState: 1
-    m_Value: 10.6
-  focusRange:
+    m_Value: {r: 0.62, g: 0.55, b: 0.44, a: 1}
+  balance:
     m_OverrideState: 1
-    m_Value: 0.9
-  nearFalloff:
-    m_OverrideState: 1
-    m_Value: 4.2
-  farFalloff:
-    m_OverrideState: 1
-    m_Value: 11
-  maxRadius:
-    m_OverrideState: 1
-    m_Value: 7
-  nearMaxRadius:
-    m_OverrideState: 1
-    m_Value: 20
---- !u!114 &6893022628633219177
+    m_Value: 0
+--- !u!114 &4737796554015387744
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -200,3 +181,22 @@ MonoBehaviour:
   saturation:
     m_OverrideState: 1
     m_Value: 14
+--- !u!114 &7510233980200385964
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221518ef91623a7438a71fef23660601, type: 3}
+  m_Name: WhiteBalance
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.WhiteBalance
+  active: 1
+  temperature:
+    m_OverrideState: 1
+    m_Value: 6
+  tint:
+    m_OverrideState: 1
+    m_Value: 0

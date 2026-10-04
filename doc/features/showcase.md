@@ -54,7 +54,9 @@ VFXカテゴリには `Hd2dLightShaft`、`Hd2dFog`、`Hd2dFlickerLight`、`Hd2dE
 加算合成の `Hd2dUiAdditive` はマテリアル・シェーダーのカテゴリ、ポストプロセスの `Hd2dPostProcess` はデータのカテゴリに入る。
 
 [3Dの舞台](../art/hd2d-stage.md)は、背景・環境のカテゴリの `StarlitGateStage`（Topの星空の夜の山の門）・`ForestGladeStage`（Homeの昼の森の野営地）・`DuskHighlandStage`（戦闘の夕暮れの高原の環状列石）のPrefabと、それぞれのテクスチャ（`Starlit〈名前〉`・`Glade〈名前〉`・`Dusk〈名前〉` の `.aseprite`）とマテリアルで確認する。舞台ごとのポストプロセス（`StarlitGateLook`・`ForestGladeLook`・`DuskHighlandLook`）も背景・環境のカテゴリに入る。舞台の小物・草の房・地面の汚し（`GladeCrate`・`StarlitStatue`・`DuskBones` など）のテクスチャとマテリアル、光を受ける面の法線マップ（`〈名前〉Normal.png`）も同じカテゴリに入る。草と葉のシェーダー `Baryonyx/HD2D/Stage Foliage` と、小物の足元の陰のマテリアル `Hd2dPropShade` はVFX・エフェクトのカテゴリに入る。草の揺れはPlay Modeで確認する。今は画面で使っていない `DungeonHallStage`（広間）・`ForestRuinsStage`（森の遺跡）と、そのテクスチャ・Profileも同じカテゴリに残る。空と遠景のシェーダー `Hd2dPaintedDistance` はVFX・エフェクトのカテゴリに入る。舞台のPrefabのプレビューは舞台全体を収めるため、夜空の2枚目の月も見える（画面では1つだけ写る）。光の筋のシェーダーとマテリアル `Hd2dLightBeam`、木漏れ日のマスク `Hd2dLeafCookie`、舞台のレンズのシェーダー `Hd2dStageFocus` はVFX・エフェクトのカテゴリに入る。舞台のレンズ・木漏れ日・光の筋は、HomeやTopのシーンを開くと停止中のGameビューでも確認でき、光の筋の揺らぎと塵の動きはPlay Modeで確認する。
-キャラの板・接地影・炎・火の粉のシェーダーとマテリアル（`Hd2dStageSprite`・`Hd2dContactShadow`・`Hd2dFlame`・`Hd2dGlowParticle`・`Hd2dEmberGlow`）はVFXのカテゴリに入る。
+キャラの板・接地影・炎・火の粉のシェーダーとマテリアル（`Hd2dStageSprite`・`Hd2dContactShadow`・`Hd2dFlame`・`Hd2dGlowParticle`・`Hd2dEmberGlow`）と、Homeの焚き火の炎のマテリアル `CampfireFlame` はVFXのカテゴリに入る。
+Homeの焚き火の画像は、3Dの舞台に立てる薪の `CampfireLogs` と、3Dの舞台がないときだけその上に重ねる炎の `CampfireFlame` に分かれ、UIのカテゴリに入る。
+焚き火の炎の揺らぎと火の粉は、シーンのカテゴリから `Home` を開いて確認する。
 Prefabのプレビューは舞台全体を遠くから写すだけで、画面ごとのカメラ・霧・キャラは映らない。
 [戦闘の背景](../art/hd2d-stage.md#戦闘の背景)の10種類（`MeadowRoadStage`・`MistyWoodsStage`・`MineTunnelStage`・`CrystalCavernStage`・`RockyShoreStage`・`MistySwampStage`・`SnowFieldStage`・`VolcanoCraterStage`・`MoonlitGraveyardStage`・`CastleHallStage`）も、Prefab・テクスチャ（`Meadow〈名前〉` など舞台ごとの接頭辞の `.aseprite`）・マテリアル・法線マップ・ポストプロセス（`〈舞台〉Look`）が背景・環境のカテゴリに入る。
 キャラが立った見た目、光と影、カメラの動きは、シーンのカテゴリから `Top`・`Home`・`BattleInspect` を開いて確認する。
@@ -138,7 +140,8 @@ Prefabの既定の層を変えると、層を上書きしていない画面の�
 
 ### 火の粉の調整
 
-`HomeScreen` Prefabの `BackgroundEmbers`（描いた背景の松明。3Dの舞台がないときだけ表示）と `CampEmbers`（焚き火）を選ぶと専用Inspectorで調整できる。
+`HomeScreen` Prefabの `BackgroundEmbers`（描いた背景の松明）と `CampEmbers`（焚き火）を選ぶと専用Inspectorで調整できる。
+どちらも3Dの舞台がないときだけ表示する。3DのHomeでは、焚き火の計算の炎と一緒に置いた3Dの火の粉（`Campfire/CampfireEmbers`）が昇る。
 3Dの舞台の松明とかがり火の火の粉は、舞台のPrefabのParticle Systemで出す。
 「発生源」の各要素が1か所の発生位置で、そこから指定した向きへ粒子を出す。
 `BackgroundEmbers` は4つの松明の炎の上から火の粉を出し、揺らぐ光の手前、光芒の奥に描く。

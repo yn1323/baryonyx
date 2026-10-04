@@ -25,6 +25,10 @@ namespace Baryonyx.Home.Editor
     {
         public const string PrefabPath = "Assets/Baryonyx/Features/Home/UI/HomeScreen.prefab";
         public const string DataPath = "Assets/Baryonyx/Features/Home/Data/HomeMockData.asset";
+
+        /// <summary>The computed flame of the campfire burning on the 3D glade (HomeSceneSetup).</summary>
+        public const string CampfireFlameMaterialPath =
+            "Assets/Baryonyx/Features/Home/Vfx/CampfireFlame.mat";
         public const string BackgroundPath = "Assets/Baryonyx/Shared/Art/Stages/DungeonHall.png";
         public const string DestinationArtPath = "Assets/Baryonyx/Shared/Art/Stages/Forest.png";
         public const string CharactersPath =
@@ -80,6 +84,7 @@ namespace Baryonyx.Home.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
             AssetDatabase.Refresh();
             HomeScreenArt.EnsureAll();
+            EnsureCampfireFlame();
             EnsureMockData();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
@@ -115,6 +120,37 @@ namespace Baryonyx.Home.Editor
                 AssetDatabase.SaveAssetIfDirty(font);
             }
             AssetDatabase.SaveAssets();
+        }
+
+        // The campfire burns in the daylight. Only added, the stage's night flame whitens with the
+        // sunlit ground under it and loses its shape, so this one hides the ground behind its hot
+        // parts, burns redder, and keeps little of the glow round it.
+        private static void EnsureCampfireFlame()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(CampfireFlameMaterialPath);
+            if (material == null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(CampfireFlameMaterialPath));
+                material = new Material(Shader.Find("Baryonyx/HD2D/Flame"))
+                {
+                    name = Path.GetFileNameWithoutExtension(CampfireFlameMaterialPath),
+                };
+                AssetDatabase.CreateAsset(material, CampfireFlameMaterialPath);
+            }
+            material.SetColor("_CoreColor", new Color(1f, 0.84f, 0.46f));
+            material.SetColor("_MidColor", new Color(1f, 0.44f, 0.08f));
+            material.SetColor("_EdgeColor", new Color(0.8f, 0.12f, 0.02f));
+            material.SetColor("_HaloColor", new Color(1f, 0.45f, 0.15f));
+            material.SetFloat("_Intensity", 1.4f);
+            material.SetFloat("_Halo", 0.06f);
+            material.SetFloat("_Turbulence", 1.3f);
+            material.SetFloat("_Speed", 2.2f);
+            material.SetFloat("_Puff", 1.6f);
+            material.SetFloat("_Base", 0.1f);
+            material.SetFloat("_FlameWidth", 0.5f);
+            material.SetFloat("_FlameHeight", 0.5f);
+            material.SetFloat("_Cover", 0.75f);
+            EditorUtility.SetDirty(material);
         }
 
         private static void EnsureMockData()
@@ -288,20 +324,33 @@ namespace Baryonyx.Home.Editor
                 new Vector2(180, 30),
                 0.5f
             );
+            // The 11x14 campfire at 8x: the logs (its bottom 3 rows) and the flame over them.
             var fire = Picture(
                 world,
                 "Campfire",
-                ArtAssets.LoadSprite(HomeScreenArt.CampfirePath),
-                new Vector2(0, -348 + CampLift),
-                new Vector2(88, 112),
+                ArtAssets.LoadSprite(HomeScreenArt.CampfireLogsPath),
+                new Vector2(0, -392 + CampLift),
+                new Vector2(88, 24),
                 1f
             );
             fire.color = Color.white;
-            // On a 3D stage the members and the fire stand on the floor as boards.
+            var flame = Picture(
+                world,
+                "CampfireFlame",
+                ArtAssets.LoadSprite(HomeScreenArt.CampfireFlamePath),
+                new Vector2(0, -340 + CampLift),
+                new Vector2(88, 96),
+                1f
+            );
+            flame.color = Color.white;
+            // On a 3D stage the members and the logs stand on the floor as boards, and the
+            // scene burns a computed flame in the logs (HomeSceneSetup) in place of the drawn one.
             Hd2dStageKit.Stand(tomaPicture.gameObject, tomaPicture, shadowToma);
             Hd2dStageKit.Stand(lukaPicture.gameObject, lukaPicture, shadowLuka);
             var fireBoard = Hd2dStageKit.Stand(fire.gameObject, fire, shadowFire);
-            // The fire gives the light (the scene's campfire light) rather than taking it.
+            fireBoard.HideWhenStaged = new Graphic[] { flame };
+            // The logs keep their drawn colours: lit, the fire's light beside them turned them
+            // into bright orange bars.
             fireBoard.CastShadow = false;
             fireBoard.Lit = false;
 
@@ -337,6 +386,8 @@ namespace Baryonyx.Home.Editor
                     Twinkle = 0.35f,
                 },
             };
+            // On the 3D stage the computed flame's own embers rise instead.
+            Hd2dStageKit.FlatOnly(campEmbers.gameObject);
 
             var shadowAria = Picture(
                 world,

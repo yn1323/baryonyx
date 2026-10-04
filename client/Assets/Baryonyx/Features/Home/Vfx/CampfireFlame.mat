@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Hd2dFlame
+  m_Name: CampfireFlame
   m_Shader: {fileID: 4800000, guid: 4be5c4b05d9c742c7a3449a6f27b2535, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -26,19 +26,19 @@ Material:
     m_Ints: []
     m_Floats:
     - _Base: 0.1
-    - _Cover: 0
+    - _Cover: 0.75
     - _FlameHeight: 0.5
     - _FlameWidth: 0.5
-    - _Halo: 0.3
-    - _Intensity: 1.6
+    - _Halo: 0.06
+    - _Intensity: 1.4
     - _Puff: 1.6
     - _Seed: 0
     - _Speed: 2.2
-    - _Turbulence: 1
+    - _Turbulence: 1.3
     m_Colors:
-    - _CoreColor: {r: 1, g: 0.92, b: 0.62, a: 1}
-    - _EdgeColor: {r: 0.85, g: 0.15999997, b: 0.049999982, a: 1}
-    - _HaloColor: {r: 1, g: 0.45, b: 0.14999998, a: 1}
-    - _MidColor: {r: 1, g: 0.52, b: 0.15999997, a: 1}
+    - _CoreColor: {r: 1, g: 0.84, b: 0.46, a: 1}
+    - _EdgeColor: {r: 0.8, g: 0.12, b: 0.02, a: 1}
+    - _HaloColor: {r: 1, g: 0.45, b: 0.15, a: 1}
+    - _MidColor: {r: 1, g: 0.44, b: 0.08, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

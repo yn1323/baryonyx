@@ -18,7 +18,11 @@ namespace Baryonyx.Home.Editor
     public static class HomeScreenArt
     {
         public const string ArtFolder = "Assets/Baryonyx/Features/Home/UI/Art";
-        public const string CampfirePath = ArtFolder + "/Campfire.png";
+
+        // The campfire is drawn in two parts: the logs, which stand on the 3D stage, and the
+        // flame over them, which only the 2D look shows (the stage burns a computed flame).
+        public const string CampfireLogsPath = ArtFolder + "/CampfireLogs.png";
+        public const string CampfireFlamePath = ArtFolder + "/CampfireFlame.png";
         public const string ShadeHorizontalPath = ArtFolder + "/ShadeHorizontal.png";
         public const string CardShadePath = ArtFolder + "/CardShade.png";
         public const string IconPartyPath = ArtFolder + "/IconParty.aseprite";
@@ -42,8 +46,10 @@ namespace Baryonyx.Home.Editor
             IconCompassPath,
         };
 
-        // The same 11x14 flame as the design mock: outer red, orange, yellow, white core, logs.
-        private static readonly string[] Campfire =
+        // The same 11x14 campfire as the design mock, split where the flame meets the logs: the
+        // flame's bottom row and the logs' top row share a row of the picture without overlapping.
+        // Flame: outer red, orange, yellow, white core (11x12, the top of the campfire).
+        private static readonly string[] CampfireFlame =
         {
             ".....o.....",
             "....oo.....",
@@ -56,7 +62,13 @@ namespace Baryonyx.Home.Editor
             ".omywwwymo.",
             ".omyywyymo.",
             "..omyyymo..",
-            ".LLmmmmmLL.",
+            "...mmmmm...",
+        };
+
+        // Logs: light and dark wood (11x3, the bottom of the campfire).
+        private static readonly string[] CampfireLogs =
+        {
+            ".LL.....LL.",
             "LLDLLLLLDLL",
             ".DDDD.DDDD.",
         };
@@ -75,21 +87,8 @@ namespace Baryonyx.Home.Editor
         {
             UiArt.EnsureAll();
             Directory.CreateDirectory(ArtFolder);
-            ArtAssets.WritePattern(
-                CampfirePath,
-                Campfire,
-                c =>
-                    c switch
-                    {
-                        'o' => new Color(0.851f, 0.282f, 0.110f),
-                        'm' => new Color(0.949f, 0.549f, 0.157f),
-                        'y' => new Color(1f, 0.784f, 0.290f),
-                        'w' => new Color(1f, 0.945f, 0.722f),
-                        'L' => new Color(0.420f, 0.267f, 0.149f),
-                        'D' => new Color(0.239f, 0.149f, 0.086f),
-                        _ => Color.clear,
-                    }
-            );
+            ArtAssets.WritePattern(CampfireFlamePath, CampfireFlame, CampfireColor);
+            ArtAssets.WritePattern(CampfireLogsPath, CampfireLogs, CampfireColor);
             foreach (var path in DrawnIconPaths)
                 ArtAssets.ImportDrawn(path);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
@@ -132,5 +131,17 @@ namespace Baryonyx.Home.Editor
             );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
+
+        private static Color CampfireColor(char c) =>
+            c switch
+            {
+                'o' => new Color(0.851f, 0.282f, 0.110f),
+                'm' => new Color(0.949f, 0.549f, 0.157f),
+                'y' => new Color(1f, 0.784f, 0.290f),
+                'w' => new Color(1f, 0.945f, 0.722f),
+                'L' => new Color(0.420f, 0.267f, 0.149f),
+                'D' => new Color(0.239f, 0.149f, 0.086f),
+                _ => Color.clear,
+            };
     }
 }

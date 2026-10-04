@@ -111,9 +111,46 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(board.VisualRenderer.enabled, Is.True, board.name);
                 Assert.That(board.FootShadow.canvasRenderer.cull, Is.True, board.name);
             }
+            // The logs stand in their drawn colours; the drawn flame gives way to a computed one
+            // burning in them, with its own embers.
             var fire = boards.Single(board => board.name == "Campfire");
-            Assert.That(fire.Lit, Is.False, "The fire gives light rather than taking it.");
+            Assert.That(fire.Lit, Is.False, "The logs keep their drawn colours.");
             Assert.That(fire.CastShadow, Is.False);
+            var drawnFlame = view.transform.Find("World/CampfireFlame").GetComponent<Graphic>();
+            Assert.That(fire.HideWhenStaged, Does.Contain(drawnFlame));
+            Assert.That(drawnFlame.canvasRenderer.cull, Is.True);
+            Assert.That(
+                view.transform.Find("World/CampEmbers").gameObject.activeInHierarchy,
+                Is.False,
+                "The 2D embers belong to the drawn flame."
+            );
+
+            var campfire = bootstrap
+                .gameObject.scene.GetRootGameObjects()
+                .Single(root => root.name == "Campfire")
+                .transform;
+            var flame = campfire.Find("CampfireFlame").GetComponent<MeshRenderer>();
+            Assert.That(flame.sharedMaterial.shader.name, Is.EqualTo("Baryonyx/HD2D/Flame"));
+            var logs = fire.ContactRenderer.bounds.center;
+            var flameRoot = flame.transform.position;
+            Assert.That(
+                Vector2.Distance(
+                    new Vector2(flameRoot.x, flameRoot.z),
+                    new Vector2(logs.x, logs.z)
+                ),
+                Is.LessThan(0.2f),
+                "The flame burns in the logs."
+            );
+            Assert.That(
+                flame.sortingOrder,
+                Is.LessThan(fire.VisualRenderer.sortingOrder),
+                "The logs hide the base of the flame."
+            );
+            Assert.That(
+                campfire.Find("CampfireEmbers").GetComponent<ParticleSystem>().isPlaying,
+                Is.True
+            );
+            Assert.That(campfire.Find("CampfireLight").GetComponent<Light>(), Is.Not.Null);
         }
 
         [UnityTest]
