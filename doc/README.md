@@ -16,6 +16,7 @@
 | 既存案と外見・性格が重ならないか | [画像対象の比較索引](art/visual-index.md) |
 | 画風・画像化の記録方法 | [アート索引](art/README.md) |
 | client・server・保存先の境界 | [全体構成](architecture.md) |
+| データを端末とサーバーのDBのどちらに保存するか | [保存先の決め方](rules/data-storage.md) |
 | 設定をどこで変更するか | [設定索引](settings/README.md) |
 | 設計・テスト・ビルド・配布の手順 | [開発ルール索引](rules/README.md) |
 | ユーザーが困ったときの案内 | [QA索引](qa/README.md) |

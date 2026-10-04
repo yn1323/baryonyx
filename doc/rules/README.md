@@ -7,6 +7,7 @@
 | 文書の形式・更新・正本・未決・仕様追加時の矛盾確認・docとスキルの使い分け | [文書管理方針](documentation-policy.md) |
 | Unityの配置・依存方向 | [クライアント構成](frontend-design.md) |
 | Workers・D1・Zod・Drizzle・公開 | [バックエンド構成](backend-design.md) |
+| データを端末とサーバーのDBのどちらに保存するか | [保存先の決め方](data-storage.md) |
 | UIの配置・文字・操作・機種差 | [UI設計](ui-design.md) |
 | CSharpier・Analyzer・Unityライセンス | [整形と静的解析](client-code-quality.md) |
 | EditMode・PlayMode・CI | [Unityのテスト](client-testing.md) |

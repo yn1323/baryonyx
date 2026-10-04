@@ -1,0 +1,7 @@
+interface:
+  display_name: "保存先の決め方"
+  short_description: "保存するデータを端末とサーバーのDBのどちらに置くかを基準で決め、作り方と仕様の記録まで進める"
+  default_prompt: "Use $data-storage when adding, changing or reviewing code that persists data, so the storage location follows the project's rule."
+
+policy:
+  allow_implicit_invocation: true
