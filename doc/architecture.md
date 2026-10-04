@@ -29,7 +29,7 @@ updated: 2026-10-04
 Androidの運動データはHealth Connectへ集約し、扱うのは歩数だけとする。
 サービス連携の企画は[運動報酬](features/exercise-rewards.md)、iOS対応の範囲も同文書を参照する。
 
-[UPTボーナス](features/step-bonus.md)の判定と、枠の設定の保存を端末とサーバーのどちらで行うかは未決とする。
+[UPTボーナス](features/step-bonus.md)の持ち物と枠の設定は、ユーザーごとにサーバーのDBで管理する。有効になった枠の効果を端末とサーバーのどちらで判定するかは未決とする。
 
 ## 未決事項
 

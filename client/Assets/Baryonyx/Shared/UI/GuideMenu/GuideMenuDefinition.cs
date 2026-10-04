@@ -45,7 +45,7 @@ namespace Baryonyx.UI.GuideMenu
     [Serializable]
     public sealed class GuideMenuItem
     {
-        // Lets another screen open this item directly, e.g. Home's bonus button → "bonus".
+        // Names the item for code, e.g. the tavern's "bonus" opens the bonus settings, not a list.
         public string Key = "";
         public string Label = "";
         public string Caption = "";

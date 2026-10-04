@@ -1,5 +1,4 @@
 using Baryonyx.Home;
-using Baryonyx.StepBonus;
 
 namespace Baryonyx.App
 {
@@ -24,12 +23,7 @@ namespace Baryonyx.App
                 HomeAction.Workshop => Shop,
                 HomeAction.Temple => Temple,
                 HomeAction.TravelOffice => TravelOffice,
-                HomeAction.Bonus => Pub,
                 _ => null,
             };
-
-        // 案内人の画面で、メニューを経ずに直接開く項目（GuideMenuItem.Key）。ほかの操作はメニューから始める。
-        public static string GuideItemFor(HomeAction action) =>
-            action == HomeAction.Bonus ? StepBonusSession.GuideItemKey : null;
     }
 }

@@ -10,16 +10,18 @@ namespace Baryonyx.StepBonus
         Battle,
     }
 
-    // 効果量が幅の中のどこに当たったか。ハクスラのように、入手ごとにばらつく値の良さを示す。
+    // ボーナスのランク。ハクスラのように入手ごとに決まり、ランクごとに効果量は固定する。
     public enum StepBonusRank
     {
+        E,
+        D,
         C,
         B,
         A,
         S,
     }
 
-    /// <summary>One kind of UPT bonus and the range its value rolls in.</summary>
+    /// <summary>One kind of UPT bonus and its fixed value for each rank.</summary>
     [Serializable]
     public sealed class StepBonusDefinition
     {
@@ -30,9 +32,8 @@ namespace Baryonyx.StepBonus
         // 効果の文。{0} に効果量が入る（例：「ドロップ率 +{0}%」）。
         public string Effect = "{0}";
 
-        // 効果量の幅。入手するたびに、この幅の中で値が決まる。
-        public float Min;
-        public float Max = 1f;
+        // ランクごとの効果量。E・D・C・B・A・Sの順。
+        public float[] Values = new float[6];
 
         // 効果量の小数の桁数。
         [Range(0, 2)]
@@ -44,16 +45,16 @@ namespace Baryonyx.StepBonus
 
         // 24×24のドット絵のアイコン。4倍で表示する。
         public Sprite Icon;
+
+        public float Value(StepBonusRank rank) =>
+            Values != null && (int)rank < Values.Length ? Values[(int)rank] : 0f;
     }
 
-    /// <summary>A bonus the player owns, with the value it rolled.</summary>
+    /// <summary>A bonus the player owns, with the rank it came with.</summary>
     [Serializable]
     public sealed class StepBonusRoll
     {
         public string Id = "";
-        public float Value;
-
-        // 前回の冒険で、効果量の高いものに置き換わった。
-        public bool Updated;
+        public StepBonusRank Rank;
     }
 }

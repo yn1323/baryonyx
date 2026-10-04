@@ -1,25 +1,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Baryonyx.StepBonus
 {
-    /// <summary>What one slot shows on the bonus settings.</summary>
+    /// <summary>What one slot shows in the left column, which doubles as today's effects.</summary>
     public readonly struct StepBonusSlotState
     {
         public StepBonusSlotState(
             string bonus,
             bool open,
             bool selected,
-            bool partner,
-            string label
+            string tier,
+            string name,
+            string effect
         )
         {
             Bonus = bonus;
             Open = open;
             Selected = selected;
-            Partner = partner;
-            Label = label;
+            Tier = tier;
+            Name = name;
+            Effect = effect;
         }
 
         // 入れているボーナスのID。空いていればnull。
@@ -29,96 +33,111 @@ namespace Baryonyx.StepBonus
         public bool Open { get; }
         public bool Selected { get; }
 
-        // 選んだボーナスを入れると、中身を入れ替える相手の枠。
-        public bool Partner { get; }
+        // 「1,000 UPT ×1.0」
+        public string Tier { get; }
+        public string Name { get; }
 
-        // 「1,000 ×1.0」
-        public string Label { get; }
+        // 枠の倍率を掛けた効果（例：「ドロップ率 +8.4%」）。
+        public string Effect { get; }
     }
 
     /// <summary>What one owned bonus row shows.</summary>
     public readonly struct StepBonusRowState
     {
-        public StepBonusRowState(string id, bool visible, bool selected, string note, bool updated)
+        public StepBonusRowState(
+            string id,
+            bool visible,
+            bool set,
+            StepBonusRank rank,
+            string effect
+        )
         {
             Id = id;
             Visible = visible;
-            Selected = selected;
-            Note = note;
-            Updated = updated;
+            Set = set;
+            Rank = rank;
+            Effect = effect;
         }
 
         public string Id { get; }
+        public StepBonusRank Rank { get; }
+
+        // ランクの効果量（枠に入れる前）。
+        public string Effect { get; }
 
         // 選んだタブのカテゴリに入っている。
         public bool Visible { get; }
-        public bool Selected { get; }
 
-        // 「2,000でセット中」または「UP　前回の冒険で更新」。
-        public string Note { get; }
-        public bool Updated { get; }
+        // どこかの枠に入れている。
+        public bool Set { get; }
     }
 
     /// <summary>Everything the bonus settings show, recomputed after every input.</summary>
     public sealed class StepBonusSettingsState
     {
         public int SelectedSlot { get; internal set; }
-        public string SelectedBonus { get; internal set; }
 
         // 0は「すべて」、1からはカテゴリ（探索・ドロップ・戦闘）。
         public int Tab { get; internal set; }
-        public string HeaderText { get; internal set; }
         public string OwnedText { get; internal set; }
         public IReadOnlyList<StepBonusSlotState> Slots { get; internal set; }
         public IReadOnlyList<StepBonusRowState> Rows { get; internal set; }
-        public string FooterTitle { get; internal set; }
-        public string FooterDetail { get; internal set; }
-        public string ConfirmLabel { get; internal set; }
-        public bool CanConfirm { get; internal set; }
     }
 
     /// <summary>
-    /// The tavern's bonus settings: choose a slot, then an owned bonus, then set it. Choosing a
-    /// bonus that sits in another slot swaps the two. The loadout is shared through
-    /// <see cref="StepBonusSession"/>, so Home and later visits see the change.
+    /// The tavern's bonus settings: choose a slot on the left, then tap an owned bonus on the
+    /// right to put it in. Choosing a bonus that sits in another slot swaps the two. Each change
+    /// shows a notice that asks nothing of the player. With a <c>save</c> function the change is
+    /// saved on the server first and the server's result is shown; otherwise (the showcase) it
+    /// changes only the loadout in memory.
     /// </summary>
     public sealed class StepBonusSettingsPresenter : IDisposable
     {
         public static readonly string[] TabLabels = { "すべて", "探索", "ドロップ", "戦闘" };
 
+        public const string SaveFailedMessage = "ボーナスを保存できませんでした";
+
         private readonly IStepBonusSettingsView view;
-        private readonly StepBonusLoadout loadout;
         private readonly int upt;
+        private readonly Func<int, string, CancellationToken, Task<StepBonusLoadout>> save;
+        private readonly CancellationTokenSource lifetime = new();
+        private StepBonusLoadout loadout;
         private int slot;
-        private string bonus;
         private int tab;
+        private bool saving;
         private bool disposed;
 
         public StepBonusSettingsPresenter(
             IStepBonusSettingsView view,
             StepBonusLoadout loadout,
-            int upt
+            int upt,
+            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.loadout = loadout ?? throw new ArgumentNullException(nameof(loadout));
             this.upt = Math.Max(0, upt);
+            this.save = save;
             view.SlotPressed += SelectSlot;
-            view.BonusPressed += SelectBonus;
+            view.BonusPressed += OnBonusPressed;
             view.TabPressed += SelectTab;
-            view.ConfirmPressed += Confirm;
             Refresh();
         }
 
         public StepBonusSettingsState State { get; private set; }
+        public StepBonusLoadout Loadout => loadout;
+
+        // 保存を待っている間。重ねて押されても受け付けない。
+        public bool Saving => saving;
+
+        // 実行中または直前の保存。テストで完了を待つために公開する。
+        public Task ChooseTask { get; private set; } = Task.CompletedTask;
 
         // 一覧に並べる順。ランクの高い順で、同じランクはボーナスの定義順。
         public static IEnumerable<StepBonusRoll> Order(StepBonusLoadout loadout) =>
             loadout
                 .Owned.Select((roll, index) => (roll, index))
-                .OrderByDescending(item =>
-                    StepBonusLoadout.RankOf(loadout.Definition(item.roll.Id), item.roll.Value)
-                )
+                .OrderByDescending(item => item.roll.Rank)
                 .ThenBy(item => item.index)
                 .Select(item => item.roll);
 
@@ -130,15 +149,55 @@ namespace Baryonyx.StepBonus
             if (disposed || index < 0 || index >= loadout.SlotCount)
                 return;
             slot = index;
-            bonus = null;
             Refresh();
         }
 
-        public void SelectBonus(string id)
+        private void OnBonusPressed(string id) => ChooseTask = ChooseAsync(id);
+
+        // 選んでいる枠に、押したボーナスを入れる。サーバーがあれば保存してから表示を変える。
+        public async Task ChooseAsync(string id)
         {
-            if (disposed || !loadout.Owns(id))
+            if (disposed || saving)
                 return;
-            bonus = id;
+            int target = slot;
+            string before = loadout.Bonus(target);
+            var change = loadout.Preview(target, id);
+            if (change == StepBonusChange.None)
+                return;
+            string message =
+                change == StepBonusChange.Swap
+                    ? $"「{Name(id)}」と「{Name(before)}」を入れ替えました"
+                    : $"{StepBonusLoadout.Upt(loadout.Tier(target))}の枠に「{Name(id)}」をセットしました";
+            if (save == null)
+            {
+                loadout.Apply(target, id);
+                view.ShowNotice(message);
+                Refresh();
+                return;
+            }
+
+            saving = true;
+            try
+            {
+                var saved = await save(target, id, lifetime.Token);
+                if (disposed)
+                    return;
+                loadout = saved ?? loadout;
+                view.ShowNotice(message);
+            }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception)
+            {
+                if (!disposed)
+                    view.ShowNotice(SaveFailedMessage);
+            }
+            finally
+            {
+                saving = false;
+            }
             Refresh();
         }
 
@@ -147,24 +206,6 @@ namespace Baryonyx.StepBonus
             if (disposed || index < 0 || index >= TabLabels.Length)
                 return;
             tab = index;
-            if (!InTab(loadout.Definition(bonus), tab))
-                bonus = null;
-            Refresh();
-        }
-
-        public void Confirm()
-        {
-            if (disposed || bonus == null)
-                return;
-            string before = loadout.Bonus(slot);
-            var change = loadout.Apply(slot, bonus);
-            if (change == StepBonusChange.None)
-                return;
-            view.ShowToast(
-                change == StepBonusChange.Swap
-                    ? $"「{Name(bonus)}」と「{Name(before)}」を入れ替えました"
-                    : $"{StepBonusLoadout.Upt(loadout.Tier(slot))}の枠に「{Name(bonus)}」をセットしました"
-            );
             Refresh();
         }
 
@@ -178,91 +219,39 @@ namespace Baryonyx.StepBonus
 
         private StepBonusSettingsState Build()
         {
-            var change = loadout.Preview(slot, bonus);
-            int partner = change == StepBonusChange.Swap ? loadout.SlotOf(bonus) : -1;
             var slots = new StepBonusSlotState[loadout.SlotCount];
             for (int i = 0; i < slots.Length; i++)
+            {
+                string id = loadout.Bonus(i);
                 slots[i] = new StepBonusSlotState(
-                    loadout.Bonus(i),
+                    id,
                     loadout.IsOpen(i, upt),
                     i == slot,
-                    i == partner,
-                    $"{StepBonusLoadout.Upt(loadout.Tier(i))} {StepBonusLoadout.Times(loadout.Multiplier(i))}"
+                    $"{StepBonusLoadout.Upt(loadout.Tier(i))} UPT {StepBonusLoadout.Times(loadout.Multiplier(i))}",
+                    id != null ? Name(id) : "空き",
+                    id != null
+                        ? StepBonusLoadout.Effect(loadout.Definition(id), loadout.Effective(id, i))
+                        : ""
                 );
-
-            var rows = Order(loadout)
-                .Select(roll =>
-                {
-                    int setIn = loadout.SlotOf(roll.Id);
-                    string note =
-                        setIn >= 0 ? $"{StepBonusLoadout.Upt(loadout.Tier(setIn))}でセット中"
-                        : roll.Updated ? "UP　前回の冒険で更新"
-                        : "";
-                    return new StepBonusRowState(
-                        roll.Id,
-                        InTab(loadout.Definition(roll.Id), tab),
-                        roll.Id == bonus,
-                        note,
-                        setIn < 0 && roll.Updated
-                    );
-                })
-                .ToArray();
-
-            var state = new StepBonusSettingsState
-            {
-                SelectedSlot = slot,
-                SelectedBonus = bonus,
-                Tab = tab,
-                HeaderText = $"今日 {StepBonusLoadout.Upt(upt)} UPT・翌朝4:00まで有効",
-                OwnedText = $"所持 {loadout.Owned.Count} / {loadout.TotalKinds}",
-                Slots = slots,
-                Rows = rows,
-            };
-            Footer(state, change);
-            return state;
-        }
-
-        private void Footer(StepBonusSettingsState state, StepBonusChange change)
-        {
-            string tier = $"{StepBonusLoadout.Upt(loadout.Tier(slot))}の枠";
-            string current = loadout.Bonus(slot);
-            if (bonus == null)
-            {
-                state.FooterTitle = $"{tier}（{StepBonusLoadout.Times(loadout.Multiplier(slot))}）";
-                state.FooterDetail =
-                    current != null
-                        ? $"いま：{Name(current)}　{EffectIn(current, slot)}"
-                        : "空いています。入れるボーナスを選んでください";
-                state.ConfirmLabel = "セットする";
-                state.CanConfirm = false;
-                return;
             }
 
-            state.FooterTitle = change switch
+            return new StepBonusSettingsState
             {
-                StepBonusChange.Swap =>
-                    $"{tier}：{Name(current)} ⇔ {Name(bonus)}（{StepBonusLoadout.Upt(loadout.Tier(loadout.SlotOf(bonus)))}の枠）",
-                StepBonusChange.Set when current != null =>
-                    $"{tier}：{Name(current)} → {Name(bonus)}",
-                StepBonusChange.Set => $"{tier}：{Name(bonus)}をセット",
-                _ => $"{tier}：{Name(bonus)}",
+                SelectedSlot = slot,
+                Tab = tab,
+                OwnedText = $"所持 {loadout.Owned.Count} / {loadout.TotalKinds}",
+                Slots = slots,
+                Rows = Order(loadout)
+                    .Select(roll => new StepBonusRowState(
+                        roll.Id,
+                        InTab(loadout.Definition(roll.Id), tab),
+                        loadout.SlotOf(roll.Id) >= 0,
+                        roll.Rank,
+                        StepBonusLoadout.Effect(loadout.Definition(roll.Id), loadout.Value(roll.Id))
+                    ))
+                    .ToArray(),
             };
-            var roll = loadout.Roll(bonus);
-            var definition = loadout.Definition(bonus);
-            state.FooterDetail =
-                $"{EffectIn(bonus, slot)}（{StepBonusLoadout.Number(definition, roll.Value)}{StepBonusLoadout.Times(loadout.Multiplier(slot))}）";
-            state.ConfirmLabel = change switch
-            {
-                StepBonusChange.Swap => "入れ替える",
-                StepBonusChange.Set => "セットする",
-                _ => "セット中",
-            };
-            state.CanConfirm = change != StepBonusChange.None;
         }
-
-        // 枠の倍率を掛けた効果の文。
-        private string EffectIn(string id, int index) =>
-            StepBonusLoadout.Effect(loadout.Definition(id), loadout.Effective(id, index));
 
         private string Name(string id) => loadout.Definition(id)?.Name ?? "";
 
@@ -271,10 +260,11 @@ namespace Baryonyx.StepBonus
             if (disposed)
                 return;
             disposed = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
             view.SlotPressed -= SelectSlot;
-            view.BonusPressed -= SelectBonus;
+            view.BonusPressed -= OnBonusPressed;
             view.TabPressed -= SelectTab;
-            view.ConfirmPressed -= Confirm;
         }
     }
 
@@ -283,9 +273,10 @@ namespace Baryonyx.StepBonus
         event Action<int> SlotPressed;
         event Action<string> BonusPressed;
         event Action<int> TabPressed;
-        event Action ConfirmPressed;
 
         void Render(StepBonusSettingsState state);
-        void ShowToast(string message);
+
+        // 操作を求めない通知（共通の通知の帯）を出す。
+        void ShowNotice(string message);
     }
 }

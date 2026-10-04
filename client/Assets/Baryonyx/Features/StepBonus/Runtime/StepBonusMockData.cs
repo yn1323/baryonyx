@@ -18,7 +18,7 @@ namespace Baryonyx.StepBonus
         public int[] Tiers = { 1000, 2000, 3000, 5000, 8000 };
         public float[] Multipliers = { 1f, 1.2f, 1.4f, 1.7f, 2f };
 
-        // 用意したボーナスの全種類の数。「所持 8 / 20」の分母。
+        // 用意したボーナスの全種類の数。「所持 7 / 20」の分母。
         [Min(0)]
         public int TotalKinds = 20;
 

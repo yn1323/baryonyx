@@ -135,9 +135,6 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(button.transform);
             SceneTests.AssertTouchSize(view.ResumeButton.transform);
             SceneTests.AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
-            // UPTパネルの右下のボーナスのボタンは、パネルの中で独立した押せる範囲を持つ。
-            SceneTests.AssertTouchSize(view.BonusButton.transform);
-            Assert.That(view.BonusButton.transform.IsChildOf(view.StepButton.transform), Is.True);
             Assert.That(
                 ((RectTransform)view.StepButton.transform).rect.height,
                 Is.GreaterThanOrEqualTo(SceneTests.MinimumTouchSize)
@@ -259,7 +256,6 @@ namespace Baryonyx.Tests.PlayMode
                 view.TempleButton,
                 view.TravelOfficeButton,
                 view.SettingsButton,
-                view.BonusButton,
                 view.StepButton,
             };
             foreach (var button in buttons)

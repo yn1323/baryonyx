@@ -18,7 +18,8 @@ MonoBehaviour:
   Background: {fileID: 2800000, guid: 6552271eccc1740499e13c5d59a46914, type: 3}
   Layout: 0
   Items:
-  - Label: "\u4ED8\u3051\u66FF\u3048"
+  - Key: 
+    Label: "\u4ED8\u3051\u66FF\u3048"
     Caption: "\u30AD\u30E3\u30E9\u3054\u3068\u306E\u6B66\u5668\u30FB\u9632\u5177\u3092\u5909\u3048\u308B"
     Icon: {fileID: 5349011544834349465, guid: 3a77e877c4e3cca4e97205c41dc20809, type: 3}
     ConfirmLabel: "\u4ED8\u3051\u66FF\u3048\u308B"
@@ -35,7 +36,8 @@ MonoBehaviour:
     - Name: "\u30DF\u30CA"
       Badge: Lv 10
       Detail: "\u6A2B\u306E\u6756\uFF5C\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
-  - Label: "\u6B66\u5668"
+  - Key: 
+    Label: "\u6B66\u5668"
     Caption: "\u6301\u3063\u3066\u3044\u308B\u6B66\u5668\u3092\u898B\u308B"
     Icon: {fileID: 5349011544834349465, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
     ConfirmLabel: "\u88C5\u5099\u3059\u308B"
@@ -64,7 +66,8 @@ MonoBehaviour:
     - Name: "\u6728\u306E\u5263"
       Badge: "\u2605"
       Detail: "\u529B\u306E 100%\uFF5C\u65AC"
-  - Label: "\u9632\u5177"
+  - Key: 
+    Label: "\u9632\u5177"
     Caption: "\u6301\u3063\u3066\u3044\u308B\u9632\u5177\u3092\u898B\u308B"
     Icon: {fileID: 5349011544834349465, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
     ConfirmLabel: "\u88C5\u5099\u3059\u308B"

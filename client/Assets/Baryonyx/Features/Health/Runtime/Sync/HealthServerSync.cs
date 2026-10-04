@@ -13,7 +13,7 @@ namespace Baryonyx.Health
     // Health Connectの読み取り結果を、サーバー保存とルーン請求へ一度だけ渡す。
     // 歩数をゲーム中に監視せず、起動・更新・明示請求の操作境界でだけ実行する。
     // Google未接続でも、端末の秘密値によるゲストのセッションで保存と取得を行う。
-    public sealed class HealthServerSync : IHealthStepServer, IDisposable
+    public sealed class HealthServerSync : IHealthStepServer, IAccountSessionRunner, IDisposable
     {
         // 期限の直前に送った要求が途中で失効しないよう、早めにセッションを取り直す。
         private static readonly TimeSpan RenewBefore = TimeSpan.FromMinutes(5);
@@ -142,7 +142,7 @@ namespace Baryonyx.Health
                 .UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
 
         // 失効・取り消し済みのセッションは一度だけゲストで取り直して再実行する。
-        private async Task<T> WithSessionAsync<T>(
+        public async Task<T> WithSessionAsync<T>(
             Func<AccountSession, Task<T>> operation,
             CancellationToken token
         )

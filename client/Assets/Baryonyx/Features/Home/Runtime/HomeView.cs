@@ -44,9 +44,6 @@ namespace Baryonyx.Home
         [Range(0f, 1f)]
         public float ClaimPulseMinimumAlpha = 0.35f;
 
-        // UPTパネルの右下。酒場のボーナス設定を直接開く。
-        public Button BonusButton;
-
         [Header("右上")]
         public TMP_Text RunesLabel;
         public Button SettingsButton;
@@ -238,7 +235,6 @@ namespace Baryonyx.Home
             Bind(TempleButton, HomeAction.Temple);
             Bind(TravelOfficeButton, HomeAction.TravelOffice);
             Bind(ResumeButton, HomeAction.Resume);
-            Bind(BonusButton, HomeAction.Bonus);
             HideToast();
             HideNotice();
             FinishRuneGain();

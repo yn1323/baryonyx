@@ -13,8 +13,8 @@ namespace Baryonyx.App
     /// server, which keeps the balance. The adventure button
     /// leaves the scene only when a destination is set; otherwise it shows the same
     /// "coming soon" feedback as the other mock buttons. The tavern, workshop, temple and travel office
-    /// buttons open their guide screen scenes behind the shutter; the bonus button opens the
-    /// tavern straight on its bonus settings, with today's UPT handed over.
+    /// buttons open their guide screen scenes behind the shutter, with today's UPT handed over
+    /// for the tavern's bonus settings.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -71,11 +71,7 @@ namespace Baryonyx.App
             if (scene == null)
                 return false;
             StepBonusSession.TodayUpt = presenter?.TodayUpt;
-            GuideSceneLaunch.Item = SceneNames.GuideItemFor(action);
-            if (SceneLoader.Load(scene, transition, this))
-                return true;
-            GuideSceneLaunch.Item = null;
-            return false;
+            return SceneLoader.Load(scene, transition, this);
         }
     }
 }

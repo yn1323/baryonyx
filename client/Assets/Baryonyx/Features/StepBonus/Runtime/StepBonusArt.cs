@@ -27,7 +27,9 @@ namespace Baryonyx.StepBonus
                 StepBonusRank.S => new Color(1f, 0.8f, 0.3f),
                 StepBonusRank.A => new Color(0.8f, 0.62f, 1f),
                 StepBonusRank.B => new Color(0.5f, 0.76f, 1f),
-                _ => new Color(0.7f, 0.68f, 0.64f),
+                StepBonusRank.C => new Color(0.52f, 0.86f, 0.55f),
+                StepBonusRank.D => new Color(0.78f, 0.75f, 0.68f),
+                _ => new Color(0.55f, 0.53f, 0.5f),
             };
     }
 }

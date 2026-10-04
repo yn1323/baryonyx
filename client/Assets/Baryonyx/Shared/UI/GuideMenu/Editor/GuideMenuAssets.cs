@@ -4,6 +4,7 @@ using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -195,7 +196,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
                 BuildBackground(root, definition);
                 var safe = SafeArea(root);
-                BuildGuide(safe, definition);
+                view.GuideArt = BuildGuide(safe, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Map)
                     BuildMap(safe, view, definition);
@@ -232,7 +233,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             shadeImage.raycastTarget = false;
         }
 
-        private static void BuildGuide(RectTransform safe, GuideMenuDefinition definition)
+        private static GameObject BuildGuide(RectTransform safe, GuideMenuDefinition definition)
         {
             var guide = Rect("Guide", safe);
             guide.anchorMin = guide.anchorMax = Vector2.zero;
@@ -245,6 +246,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var image = guide.gameObject.AddComponent<RawImage>();
             image.texture = definition.GuideArt;
             image.raycastTarget = false;
+            return guide.gameObject;
         }
 
         private static void BuildHeader(
@@ -599,15 +601,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return button;
         }
 
-        private static void BuildToast(RectTransform root, GuideMenuView view)
-        {
-            var toast = Rect("Toast", root);
-            Place(toast, new Vector2(0, 300), new Vector2(800, 104));
-            Frame(toast, FramePath, Color.white).raycastTarget = false;
-            view.Toast = HiddenGroup(toast);
-            view.ToastLabel = Label(toast, "Label", "", 44, TextMain, TextAlignmentOptions.Center);
-            Stretch((RectTransform)view.ToastLabel.transform);
-        }
+        private static void BuildToast(RectTransform root, GuideMenuView view) =>
+            view.Notice = NoticeBandAssets.Build(root);
 
         // --- Art -----------------------------------------------------------------------
 

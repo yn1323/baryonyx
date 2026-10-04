@@ -103,7 +103,6 @@ namespace Baryonyx.Home
                 HomeAction.Temple => "神殿（準備中）",
                 HomeAction.TravelOffice => "旅の案内所（準備中）",
                 HomeAction.Resume => "再開（準備中）",
-                HomeAction.Bonus => "ボーナス（準備中）",
                 _ => "",
             };
 

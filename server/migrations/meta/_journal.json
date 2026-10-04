@@ -22,6 +22,13 @@
       "when": 1790217797505,
       "tag": "0002_guest_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791078486831,
+      "tag": "0003_step_bonus",
+      "breakpoints": true
     }
   ]
 }

@@ -4,8 +4,8 @@ using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
-using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d;
 using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
@@ -519,8 +519,7 @@ namespace Baryonyx.Home.Editor
             lineSize.minHeight = lineSize.preferredHeight = 2;
 
             // The hint pulses like TAP TO START; the panel itself takes the tap.
-            // Tall enough for the bonus button at its right end.
-            var claim = Row(panel, "ClaimRow", BonusButtonSize, 10);
+            var claim = Row(panel, "ClaimRow", 40, 10);
             claim.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleLeft;
             var claimGroup = claim.gameObject.AddComponent<CanvasGroup>();
             claimGroup.interactable = false;
@@ -536,35 +535,6 @@ namespace Baryonyx.Home.Editor
             );
             // Without a pointer position the runes burst from the hint text.
             view.RuneOrigin = view.ClaimLabel.rectTransform;
-
-            BuildBonusButton(panel, view);
-        }
-
-        // The 24x24 bonus icon at 4x, at the right end of the claim row. It sits outside the
-        // claim row, whose pulsing group lets taps through to the panel, so it takes its own
-        // taps and opens the tavern's bonus settings instead of syncing the steps.
-        private const float BonusButtonSize = 96f;
-
-        private static void BuildBonusButton(RectTransform panel, HomeView view)
-        {
-            var button = Rect("BonusButton", panel);
-            button.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            // A 128px square around the icon keeps the tap target at the Home minimum.
-            const float hit = 128f;
-            Corner(
-                button,
-                new Vector2(1, 0),
-                new Vector2(-68 + (hit - BonusButtonSize) / 2f, 60 - (hit - BonusButtonSize) / 2f),
-                new Vector2(hit, hit)
-            );
-            var target = AddImage(button, Color.clear, true);
-            view.BonusButton = AddTintButton(button, target);
-            ArtAssets.ImportDrawn(StepBonusAssets.IconBonusPath);
-            var icon = Rect("Icon", button);
-            Place(icon, Vector2.zero, new Vector2(BonusButtonSize, BonusButtonSize));
-            var image = icon.gameObject.AddComponent<Image>();
-            image.sprite = ArtAssets.LoadSprite(StepBonusAssets.IconBonusPath);
-            image.raycastTarget = false;
         }
 
         private static void BuildTopRight(RectTransform safe, HomeView view)
@@ -946,52 +916,16 @@ namespace Baryonyx.Home.Editor
             Stretch(view.GainLabel.rectTransform);
         }
 
+        // Both use the shared notice band at the top middle (doc/rules/ui-design.md): the
+        // result of a tap that granted nothing, and the mock buttons' "coming soon".
         private static void BuildToast(RectTransform root, HomeView view)
         {
-            // The result of a tap that granted nothing sits in the middle of the screen.
-            var notice = Rect("Notice", root);
-            Place(notice, Vector2.zero, new Vector2(800, 96));
-            Sliced(
-                notice,
-                UiArt.CapsulePath,
-                new Color(0.031f, 0.039f, 0.071f, 0.86f)
-            ).raycastTarget = false;
-            var noticeGroup = notice.gameObject.AddComponent<CanvasGroup>();
-            noticeGroup.alpha = 0;
-            noticeGroup.interactable = false;
-            noticeGroup.blocksRaycasts = false;
-            view.Notice = noticeGroup;
-            view.NoticeLabel = Label(
-                notice,
-                "NoticeLabel",
-                "",
-                48,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)view.NoticeLabel.transform);
-
-            var toast = Rect("Toast", root);
-            Place(toast, new Vector2(0, 290), new Vector2(800, 96));
-            Sliced(
-                toast,
-                UiArt.CapsulePath,
-                new Color(0.031f, 0.039f, 0.071f, 0.86f)
-            ).raycastTarget = false;
-            var group = toast.gameObject.AddComponent<CanvasGroup>();
-            group.alpha = 0;
-            group.interactable = false;
-            group.blocksRaycasts = false;
-            view.Toast = group;
-            view.ToastLabel = Label(
-                toast,
-                "ToastLabel",
-                "",
-                48,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)view.ToastLabel.transform);
+            var notice = NoticeBandAssets.Build(root, "Notice");
+            view.Notice = notice.Group;
+            view.NoticeLabel = notice.Label;
+            var toast = NoticeBandAssets.Build(root, "Toast");
+            view.Toast = toast.Group;
+            view.ToastLabel = toast.Label;
         }
 
         private static T Vfx<T>(

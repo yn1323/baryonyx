@@ -26,8 +26,13 @@ MonoBehaviour:
     Name: "\u5B88\u308A"
     Category: 2
     Effect: "\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -{0}%"
-    Min: 3
-    Max: 8
+    Values:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 8
     Decimals: 1
     Cap: 0
     Icon: {fileID: 5349011544834349465, guid: bc253b54aafc74c4383713ba781b3ec6, type: 3}
@@ -35,8 +40,13 @@ MonoBehaviour:
     Name: "\u5E78\u904B"
     Category: 1
     Effect: "\u30C9\u30ED\u30C3\u30D7\u7387 +{0}%"
-    Min: 5
-    Max: 15
+    Values:
+    - 3
+    - 5
+    - 7
+    - 9
+    - 12
+    - 15
     Decimals: 1
     Cap: 0
     Icon: {fileID: 5349011544834349465, guid: a1c293f2afa00413bae8b075c95733cc, type: 3}
@@ -44,8 +54,13 @@ MonoBehaviour:
     Name: "\u5B9D\u7BB1\u900F\u8996"
     Category: 0
     Effect: "\u5B9D\u7BB1\u306E\u4E2D\u8EAB\u304C\u898B\u3048\u308B\u78BA\u7387 {0}%"
-    Min: 20
-    Max: 60
+    Values:
+    - 15
+    - 20
+    - 25
+    - 30
+    - 40
+    - 50
     Decimals: 0
     Cap: 100
     Icon: {fileID: 5349011544834349465, guid: e8e40e26dac624f6d8f8c01e07c85c7d, type: 3}
@@ -53,8 +68,13 @@ MonoBehaviour:
     Name: "\u5148\u8AAD\u307F"
     Category: 0
     Effect: "\u6B21\u306E\u90E8\u5C4B\u306E\u6575\u304C\u898B\u3048\u308B\u78BA\u7387 {0}%"
-    Min: 20
-    Max: 50
+    Values:
+    - 15
+    - 20
+    - 25
+    - 30
+    - 40
+    - 50
     Decimals: 0
     Cap: 100
     Icon: {fileID: 5349011544834349465, guid: c3a104fb92af948bc9cdf26cdd2464ac, type: 3}
@@ -62,8 +82,13 @@ MonoBehaviour:
     Name: "\u5146\u3057"
     Category: 0
     Effect: "\u6FC0\u5316\u3059\u308B\u30BF\u30FC\u30F3\u304C\u898B\u3048\u308B\u78BA\u7387 {0}%"
-    Min: 30
-    Max: 80
+    Values:
+    - 15
+    - 20
+    - 25
+    - 30
+    - 40
+    - 50
     Decimals: 0
     Cap: 100
     Icon: {fileID: 5349011544834349465, guid: 337e8628d1b5a462088147a7c2f46feb, type: 3}
@@ -71,8 +96,13 @@ MonoBehaviour:
     Name: "\u76EE\u5229\u304D"
     Category: 1
     Effect: "\u30EC\u30A2\u5EA6\u30A2\u30C3\u30D7 +{0}%"
-    Min: 2
-    Max: 5
+    Values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
     Decimals: 1
     Cap: 0
     Icon: {fileID: 5349011544834349465, guid: 4f0fd83afb69b46328535bfdf04790a4, type: 3}
@@ -80,45 +110,31 @@ MonoBehaviour:
     Name: "\u95D8\u5FD7"
     Category: 2
     Effect: "\u653B\u6483\u529B +{0}%"
-    Min: 3
-    Max: 8
+    Values:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 8
     Decimals: 1
     Cap: 0
     Icon: {fileID: 5349011544834349465, guid: d87f962fbce7c4cacaca45860d10b62c, type: 3}
-  - Id: healing
-    Name: "\u7652\u3057"
-    Category: 2
-    Effect: "\u6226\u95D8\u5F8C\u306BHP\u3092 {0}% \u56DE\u5FA9"
-    Min: 3
-    Max: 10
-    Decimals: 1
-    Cap: 0
-    Icon: {fileID: 5349011544834349465, guid: 3de3a54bd112a4776a67cbc7a2c28eda, type: 3}
   Owned:
   - Id: guard
-    Value: 7.6
-    Updated: 1
+    Rank: 5
   - Id: luck
-    Value: 11.6
-    Updated: 0
+    Rank: 4
   - Id: treasure-sight
-    Value: 46
-    Updated: 0
-  - Id: foresight
-    Value: 36
-    Updated: 0
-  - Id: omen
-    Value: 55
-    Updated: 0
+    Rank: 3
   - Id: appraisal
-    Value: 3.4
-    Updated: 0
+    Rank: 3
+  - Id: foresight
+    Rank: 2
   - Id: fighting
-    Value: 4.1
-    Updated: 0
-  - Id: healing
-    Value: 5
-    Updated: 0
+    Rank: 1
+  - Id: omen
+    Rank: 0
   Loadout:
   - foresight
   - luck

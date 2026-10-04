@@ -119,6 +119,7 @@ SQLとスナップショットを一緒にGitへ追加し、生成結果の制�
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
 [0002_guest_accounts.sql](../../server/migrations/0002_guest_accounts.sql) は、ゲストを識別する秘密値のハッシュ列を追加し、`google_sub` を任意にする。
 SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
+[0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[UPTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
 
 ```sh
 pnpm db:generate --name add_example
@@ -169,6 +170,7 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
+UPTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時のランクの比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
 
 [Vitest設定](../../server/vitest.config.ts) でファイル間の並列実行を有効にし、単体・結合・シナリオテストを合わせて最大3並列に固定する。
 ファイル内のテストは順番に実行する。

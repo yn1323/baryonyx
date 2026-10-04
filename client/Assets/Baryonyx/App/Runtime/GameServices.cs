@@ -3,6 +3,7 @@ using Baryonyx.Account;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
 using Baryonyx.Networking;
+using Baryonyx.StepBonus;
 using UnityEngine;
 
 namespace Baryonyx.App
@@ -13,20 +14,39 @@ namespace Baryonyx.App
     {
         private static GameServices current;
 
-        internal GameServices(HealthStepLink health, bool preview)
+        internal GameServices(
+            HealthStepLink health,
+            bool preview,
+            IStepBonusSource stepBonus = null
+        )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
             Preview = preview;
+            StepBonus = stepBonus;
         }
 
         public HealthStepLink Health { get; }
         public bool Preview { get; }
 
-        public static GameServices GetOrCreate(HealthConnectionSettings settings) =>
-            current ??= Create(settings);
+        // UPTボーナスの持ち物と枠を読み書きするサーバー。接続先がなければnull。
+        public IStepBonusSource StepBonus { get; }
+
+        public static GameServices GetOrCreate(HealthConnectionSettings settings)
+        {
+            if (current == null)
+                Use(Create(settings));
+            return current;
+        }
 
         // テストで端末とサーバーを差し替える。nullで次回の取得時に作り直す。
-        internal static void Override(GameServices services) => current = services;
+        internal static void Override(GameServices services) => Use(services);
+
+        // 酒場のボーナス設定は機能の外からこの接続を知らないため、共有のセッションへ渡す。
+        private static void Use(GameServices services)
+        {
+            current = services;
+            StepBonusSession.Source = services?.StepBonus;
+        }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -45,29 +65,37 @@ namespace Baryonyx.App
             );
             const bool preview = true;
 #endif
+            var sync = CreateServerSync(settings, out var server);
             return new GameServices(
                 new HealthStepLink(
                     provider,
-                    CreateServer(settings),
+                    (IHealthStepServer)sync ?? new LocalHealthStepServer(),
                     new PlayerPrefsHealthLinkStore()
                 ),
-                preview
+                preview,
+                sync != null
+                    ? new StepBonusServerSource(sync, new StepBonusApiClient(server))
+                    : null
             );
         }
 
-        private static IHealthStepServer CreateServer(HealthConnectionSettings settings) =>
-            (IHealthStepServer)CreateServerSync(settings) ?? new LocalHealthStepServer();
-
         // 接続先のゲームサーバーへ、ログイン・歩数の保存・ルーンの請求を順に行う同期。
         // 接続先がない、またはURLが無効なときはnullを返し、歩数を端末内だけに保持させる。
-        internal static HealthServerSync CreateServerSync(HealthConnectionSettings settings)
+        internal static HealthServerSync CreateServerSync(HealthConnectionSettings settings) =>
+            CreateServerSync(settings, out _);
+
+        private static HealthServerSync CreateServerSync(
+            HealthConnectionSettings settings,
+            out ServerApi server
+        )
         {
+            server = null;
             var url = ServerEndpoint.Resolve(settings);
             if (string.IsNullOrWhiteSpace(url))
                 return null;
             try
             {
-                var server = new ServerApi(url);
+                server = new ServerApi(url);
                 return new HealthServerSync(
                     new AccountApiClient(server),
                     new HealthApiClient(server),

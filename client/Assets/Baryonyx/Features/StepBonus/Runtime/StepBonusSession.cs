@@ -3,23 +3,30 @@ using UnityEngine;
 namespace Baryonyx.StepBonus
 {
     /// <summary>
-    /// Keeps the bonus slots while the app runs, so a change made in the tavern is still there
-    /// when the player comes back. Where the slots are saved is not decided yet
-    /// (doc/features/step-bonus.md), so they start again from the mock data on every launch.
-    /// Home hands over today's UPT so the tavern shows the same open slots.
+    /// Keeps the bonus slots while the app runs and where they are saved. The app sets
+    /// <see cref="Source"/> to the game server, which keeps each player's bonuses and slots;
+    /// without it (the showcase, or no server URL) the slots start from the mock data and stay
+    /// only while the app runs. Home hands over today's UPT so the tavern shows the same open
+    /// slots.
     /// </summary>
     public static class StepBonusSession
     {
-        // 酒場のメニューの「ボーナス」の項目のキー。ホームのボタンはこの項目を直接開く。
+        // 酒場のメニューの「ボーナス」の項目のキー。この項目はリストの代わりにボーナス設定を開く。
         public const string GuideItemKey = "bonus";
 
         private static StepBonusLoadout loadout;
+
+        // 持ち物と枠を読み書きするサーバー。なければ仮データを使う。
+        public static IStepBonusSource Source { get; set; }
 
         // ホームで取得した今日のUPT。取得していなければnull。
         public static int? TodayUpt { get; set; }
 
         public static StepBonusLoadout Loadout(StepBonusMockData data) =>
             loadout ??= StepBonusLoadout.From(data);
+
+        // サーバーから読んだ、または保存した結果に置き換える。
+        public static void Use(StepBonusLoadout value) => loadout = value;
 
         public static int UptOr(StepBonusMockData data) =>
             TodayUpt ?? (data != null ? data.TodayUpt : 0);
@@ -30,6 +37,7 @@ namespace Baryonyx.StepBonus
         {
             loadout = null;
             TodayUpt = null;
+            Source = null;
         }
     }
 }

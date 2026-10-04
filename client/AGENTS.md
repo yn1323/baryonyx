@@ -9,7 +9,7 @@ Unityのバージョンは [ProjectSettings/ProjectVersion.txt](ProjectSettings/
 ディレクトリ構成、コード・アセット・テストの配置、責務と依存方向は [クライアントの構成と依存関係](../doc/rules/frontend-design.md) に従う。
 現在の起動シーンは `Assets/Baryonyx/App/Scenes/Top.unity` であり、全面押下で `Home.unity` へ上下から閉じるShutter演出（閉じる・開くとも0.75秒）で遷移する。
 Topは起動時にゲームサーバーへの接続とHealth Connectの歩数の同期を行い、終わるまで「LOADING...」を表示する（[起動時の連携と歩数の同期](../doc/features/startup-sync.md)）。
-`Home.unity` はホーム画面のモックで、左上の今日のUPT（歩数を1歩＝1UPTで換算）と右上の所持ルーンだけサーバーの値を表示する。UPTパネルを押すと歩数を同期してルーンへ変換する。右下の行き先カード（再開）を押すと、Shutter演出で `BattleInspect.unity` へ遷移する。UPTパネルの右下のボーナスのボタンは、酒場（`Pub.unity`）をボーナス設定のまま開き、「もどる」でHomeへ直接戻る（[ボーナス設定](../doc/features/screens.md#ボーナス設定)）。
+`Home.unity` はホーム画面のモックで、左上の今日のUPT（歩数を1歩＝1UPTで換算）と右上の所持ルーンだけサーバーの値を表示する。UPTパネルを押すと歩数を同期してルーンへ変換する。右下の行き先カード（再開）を押すと、Shutter演出で `BattleInspect.unity` へ遷移する。
 シーンはTop・Home・展示室の `Showcase.unity` と、戦闘画面の見た目を確かめるモックの `BattleInspect.unity`、戦闘の背景をInspectorで選べる `Battle.unity`、カードスキルの演出を1枚ずつ選んで再生するデバッグ用の `CardSkillLab.unity`、敵を選んで攻撃・被弾・撃破などをすぐ再生するデバッグ用の `EnemyLab.unity`、Homeの左下のボタンから開く案内人の画面（酒場 `Pub.unity`・工房 `Shop.unity`・神殿 `Temple.unity`・旅の案内所 `TravelOffice.unity`）である。
 案内人の画面は `Baryonyx > App > Create Guide Scenes` で `Assets/Baryonyx/App/Scenes/Guide/` に生成し、「もどる」でHomeへ戻る（[案内人がいる画面](../doc/features/screens.md#酒場工房神殿旅の案内所の画面)）。
 `BattleInspect.unity` はHomeの行き先カードから開くか、単体で開いて確認する。まだHomeへ戻る操作はない（[戦闘画面のモック](../doc/features/screens.md#戦闘画面の見た目モック)）。

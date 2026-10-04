@@ -52,62 +52,7 @@ namespace Baryonyx.Tests.EditMode
                     },
                 },
                 new GuideMenuItem { Label = "育成", ConfirmLabel = "レベルアップ" },
-                new GuideMenuItem
-                {
-                    Key = "bonus",
-                    Label = "ボーナス",
-                    ConfirmLabel = "セットする",
-                },
             };
-        }
-
-        [Test]
-        public void ADirectlyOpenedItemLeavesTheScreenOnBack()
-        {
-            var view = new FakeView();
-            int leaves = 0;
-            using var presenter = new GuideMenuPresenter(
-                view,
-                definition,
-                () =>
-                {
-                    leaves++;
-                    return true;
-                }
-            );
-
-            Assert.That(presenter.OpenDirect("bonus"), Is.True);
-            Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.List));
-            Assert.That(view.Last.Item, Is.EqualTo(2));
-
-            // Back returns to where the item was opened from, not to the menu.
-            view.PressBack();
-            Assert.That(leaves, Is.EqualTo(1));
-            Assert.That(presenter.Left, Is.True);
-        }
-
-        [Test]
-        public void AnItemOpenedFromTheMenuStillBacksToTheMenu()
-        {
-            var view = new FakeView();
-            int leaves = 0;
-            using var presenter = new GuideMenuPresenter(
-                view,
-                definition,
-                () =>
-                {
-                    leaves++;
-                    return true;
-                }
-            );
-            Assert.That(presenter.OpenDirect("missing"), Is.False);
-            Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.Menu));
-
-            presenter.OpenDirect("bonus");
-            view.PressItem(0);
-            view.PressBack();
-            Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.Menu));
-            Assert.That(leaves, Is.Zero);
         }
 
         [TearDown]

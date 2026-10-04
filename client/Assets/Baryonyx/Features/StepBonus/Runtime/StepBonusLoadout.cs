@@ -29,17 +29,12 @@ namespace Baryonyx.StepBonus
     /// <summary>
     /// The UPT bonus slots and the bonuses the player owns, kept free of Unity objects so the
     /// rules can be tested directly. A slot opens when today's UPT reaches its tier, and the
-    /// bonus in it works at its rolled value times the slot's multiplier. A bonus fits in one
-    /// slot only, so choosing one already set swaps the two slots. Owning the same bonus again
-    /// keeps the higher value. See doc/features/step-bonus.md.
+    /// bonus in it works at its rank's fixed value times the slot's multiplier. A bonus fits in
+    /// one slot only, so choosing one already set swaps the two slots. Owning the same bonus
+    /// again keeps the higher rank. See doc/features/step-bonus.md.
     /// </summary>
     public sealed class StepBonusLoadout
     {
-        // 効果量が幅のどこに当たったかで、ランクを分ける境目。
-        public const float RankS = 0.85f;
-        public const float RankA = 0.6f;
-        public const float RankB = 0.3f;
-
         private readonly int[] tiers;
         private readonly float[] multipliers;
         private readonly string[] slots;
@@ -73,7 +68,7 @@ namespace Baryonyx.StepBonus
                 var kept = Roll(roll.Id);
                 if (kept == null)
                     this.owned.Add(roll);
-                else if (roll.Value > kept.Value)
+                else if (roll.Rank > kept.Rank)
                     this.owned[this.owned.IndexOf(kept)] = roll;
             }
             slots = new string[this.tiers.Length];
@@ -90,13 +85,25 @@ namespace Baryonyx.StepBonus
                     data.Tiers,
                     data.Multipliers,
                     data.Bonuses,
-                    data.Owned.Select(roll => new StepBonusRoll
+                    data.Owned.Select(roll => new StepBonusRoll { Id = roll.Id, Rank = roll.Rank }),
+                    data.Loadout,
+                    data.TotalKinds
+                );
+
+        // サーバーが持つ持ち物と枠を、仮データのボーナスの定義・段階・倍率と組み合わせる。
+        public static StepBonusLoadout From(StepBonusMockData data, StepBonusState state) =>
+            data == null
+                ? throw new ArgumentNullException(nameof(data))
+                : new StepBonusLoadout(
+                    data.Tiers,
+                    data.Multipliers,
+                    data.Bonuses,
+                    (state?.Owned ?? Array.Empty<StepBonusRoll>()).Select(roll => new StepBonusRoll
                     {
                         Id = roll.Id,
-                        Value = roll.Value,
-                        Updated = roll.Updated,
+                        Rank = roll.Rank,
                     }),
-                    data.Loadout,
+                    state?.Slots ?? Array.Empty<string>(),
                     data.TotalKinds
                 );
 
@@ -142,63 +149,49 @@ namespace Baryonyx.StepBonus
             return change;
         }
 
-        // 同じボーナスをもう一度手に入れたら、効果量の高いほうだけを残す。
-        public StepBonusAcquired Acquire(string id, float value)
+        // 同じボーナスをもう一度手に入れたら、ランクの高いほうだけを残す。
+        public StepBonusAcquired Acquire(string id, StepBonusRank rank)
         {
             if (Definition(id) == null)
                 throw new ArgumentException($"Unknown bonus: {id}", nameof(id));
             var roll = Roll(id);
             if (roll == null)
             {
-                owned.Add(new StepBonusRoll { Id = id, Value = value });
+                owned.Add(new StepBonusRoll { Id = id, Rank = rank });
                 return StepBonusAcquired.Added;
             }
-            if (value <= roll.Value)
+            if (rank <= roll.Rank)
                 return StepBonusAcquired.Discarded;
-            roll.Value = value;
-            roll.Updated = true;
+            roll.Rank = rank;
             return StepBonusAcquired.Updated;
+        }
+
+        // 持っているボーナスの、枠に入れる前の効果量（ランクの効果量）。
+        public float Value(string id)
+        {
+            var roll = Roll(id);
+            return roll != null ? Definition(id).Value(roll.Rank) : 0f;
         }
 
         // 枠の倍率を掛けた効果量。確率の効果は上限で止める。
         public float Effective(string id, int slot)
         {
             var bonus = Definition(id);
-            var roll = Roll(id);
-            if (bonus == null || roll == null)
+            if (bonus == null || !Owns(id))
                 return 0f;
-            float value = roll.Value * multipliers[slot];
+            float value = Value(id) * multipliers[slot];
             return bonus.Cap > 0f ? Math.Min(value, bonus.Cap) : value;
-        }
-
-        public static StepBonusRank RankOf(StepBonusDefinition bonus, float value)
-        {
-            float position = Position(bonus, value);
-            return position >= RankS ? StepBonusRank.S
-                : position >= RankA ? StepBonusRank.A
-                : position >= RankB ? StepBonusRank.B
-                : StepBonusRank.C;
-        }
-
-        // 効果量が幅のどこにあるか（0〜1）。
-        public static float Position(StepBonusDefinition bonus, float value)
-        {
-            if (bonus == null || bonus.Max <= bonus.Min)
-                return 1f;
-            return Math.Clamp((value - bonus.Min) / (bonus.Max - bonus.Min), 0f, 1f);
         }
 
         public static string Effect(StepBonusDefinition bonus, float value) =>
             bonus == null ? "" : string.Format(bonus.Effect, Number(bonus, value));
 
-        // 「3〜8%」のような効果量の幅。
-        public static string Range(StepBonusDefinition bonus) =>
-            bonus == null
-                ? ""
-                : $"{bonus.Min.ToString("0.#", CultureInfo.InvariantCulture)}〜{bonus.Max.ToString("0.#", CultureInfo.InvariantCulture)}%";
-
+        // 小数は必要な桁だけ出す（12 → 「12」、14.4 → 「14.4」）。
         public static string Number(StepBonusDefinition bonus, float value) =>
-            value.ToString("F" + bonus.Decimals, CultureInfo.InvariantCulture);
+            value.ToString(
+                bonus.Decimals > 0 ? "0." + new string('#', bonus.Decimals) : "0",
+                CultureInfo.InvariantCulture
+            );
 
         // 「5,000」のような段階のUPT。
         public static string Upt(int value) => value.ToString("N0", CultureInfo.InvariantCulture);

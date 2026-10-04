@@ -19,6 +19,9 @@ namespace Baryonyx.UI.GuideMenu
         public GuideMenuDefinition Definition;
 
         public Button Back;
+
+        // 左の案内人。項目の専用のパネルが画面を広く使うときは隠す。
+        public GameObject GuideArt;
         public GameObject MenuPanel;
         public Button[] MenuItems = Array.Empty<Button>();
 
@@ -40,12 +43,11 @@ namespace Baryonyx.UI.GuideMenu
         public TMP_Text MapDetail;
         public Button Depart;
 
-        public CanvasGroup Toast;
-        public TMP_Text ToastLabel;
+        // 操作を求めない通知（共通の通知の帯）。
+        public NoticeBand Notice;
 
         private readonly List<Button[]> entries = new();
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
-        private FadingMessage toastFade;
         private GuideMenuPresenter ownPresenter;
         private bool bound;
 
@@ -60,7 +62,7 @@ namespace Baryonyx.UI.GuideMenu
                 ? entries[state.Item]
                 : Array.Empty<Button>();
 
-        public string ToastMessage => ToastLabel != null ? ToastLabel.text : "";
+        public string ToastMessage => Notice != null ? Notice.LastMessage : "";
 
         private void Awake()
         {
@@ -90,8 +92,8 @@ namespace Baryonyx.UI.GuideMenu
                 int index = i;
                 Pins[i].onClick.AddListener(() => EntryPressed?.Invoke(index));
             }
-            if (Toast != null)
-                Toast.alpha = 0f;
+            if (Notice != null)
+                Notice.Hide();
         }
 
         private void Start()
@@ -125,6 +127,8 @@ namespace Baryonyx.UI.GuideMenu
                     ItemPanels[i].SetActive(false);
             if (custom != null)
                 custom.SetActive(true);
+            if (GuideArt != null)
+                GuideArt.SetActive(custom == null);
             if (MenuPanel != null)
                 MenuPanel.SetActive(!map && !open);
             if (ListPanel != null)
@@ -178,8 +182,11 @@ namespace Baryonyx.UI.GuideMenu
                 Depart.interactable = state.CanConfirm;
         }
 
-        public void ShowToast(string message) =>
-            (toastFade ??= new FadingMessage(this)).Show(Toast, ToastLabel, message, 1.4f, 0.3f);
+        public void ShowToast(string message)
+        {
+            if (Notice != null)
+                Notice.Show(message);
+        }
 
         private static void SetSelected(Button button, bool selected)
         {

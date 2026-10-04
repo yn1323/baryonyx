@@ -18,8 +18,7 @@
     {
       "name": "bonus-icons-b",
       "used": [
-        "IconOmen",
-        "IconHealing"
+        "IconOmen"
       ],
       "icons": "1. 兆し：砂時計。上下に濃い茶色の木の板、左右に細い木の柱。ガラスは淡い水色で、上半分に橙色の砂が残り、細い流れが下へ落ちて、下半分に砂の山ができている。\n2. 目利き：金の縁の虫眼鏡。丸いレンズは淡い水色で左上に白いハイライト、柄は右下へ伸びる焦げ茶。レンズの奥に赤い宝石（多面カット）が拡大されて見える。\n3. 闘志：切っ先を上に向けた銀の剣1本。金の鍔、赤い柄、丸い柄頭。刃のまわりを橙と黄色の炎がまとわりつくように立ちのぼる。炎も段を分けたドットで描き、ぼかさない。\n4. 癒し：丸いガラスの薬瓶。赤い液体が8割入り、コルクの栓、細い首、ガラスの左上に白いハイライト。液体の中に小さな泡を2つ。"
     },
@@ -42,7 +41,7 @@
     "Assets/Baryonyx/Features/StepBonus/UI/Art/IconForesight.aseprite",
     "Assets/Baryonyx/Features/StepBonus/UI/Art/IconOmen.aseprite",
     "Assets/Baryonyx/Features/StepBonus/UI/Art/IconAppraisal.aseprite",
-    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconFighting.aseprite",
-    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconHealing.aseprite"
-  ]
+    "Assets/Baryonyx/Features/StepBonus/UI/Art/IconFighting.aseprite"
+  ],
+  "removed": "2026-10-04: IconHealing (癒し) was removed with the bonus, because HP is fully restored after each battle."
 }

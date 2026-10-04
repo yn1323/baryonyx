@@ -7,8 +7,7 @@ namespace Baryonyx.App
     /// <summary>
     /// Runs a guide screen scene (tavern, workshop, temple, travel office). The screen's own back
     /// button, or the device back key, closes an open list first and then returns to Home
-    /// behind the shared shutter. When Home asks for an item (<see cref="GuideSceneLaunch"/>),
-    /// the screen opens on it and back returns straight to Home.
+    /// behind the shared shutter.
     /// </summary>
     public sealed class GuideSceneBootstrap : MonoBehaviour
     {
@@ -43,9 +42,6 @@ namespace Baryonyx.App
                 return;
             }
             presenter = new GuideMenuPresenter(view, view.Definition, ReturnHome);
-            string item = GuideSceneLaunch.Take();
-            if (item != null)
-                presenter.OpenDirect(item);
         }
 
         private void OnDestroy()
