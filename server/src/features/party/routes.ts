@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createPartyRepository } from "./repository.js";
 import {
@@ -31,44 +32,34 @@ export function createPartyApi() {
 
   api.put("/party/slots/:slot", async (c) => {
     const slot = partySlotSchema.safeParse(c.req.param("slot"));
-    const body = setPartySlotSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!slot.success || !body.success) {
-      return c.json({ error: "invalid_request" }, 400);
-    }
+    const body = await parseJson(c, setPartySlotSchema);
+    if (!slot.success || !body.success) return invalidRequest(c);
     const result = await createPartyRepository(c.env.DB).setSlot(
       c.get("userId"),
       slot.data,
       body.data.characterId,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   api.delete("/party/slots/:slot", async (c) => {
     const slot = partySlotSchema.safeParse(c.req.param("slot"));
-    if (!slot.success) return c.json({ error: "invalid_request" }, 400);
+    if (!slot.success) return invalidRequest(c);
     const result = await createPartyRepository(c.env.DB).clearSlot(
       c.get("userId"),
       slot.data,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   api.put("/party/characters/:characterId/cards/:slot", async (c) => {
     const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
     const slot = cardSlotSchema.safeParse(c.req.param("slot"));
-    const body = setCardSchema.safeParse(await c.req.json().catch(() => null));
+    const body = await parseJson(c, setCardSchema);
     if (!characterId.success || !slot.success || !body.success) {
-      return c.json({ error: "invalid_request" }, 400);
+      return invalidRequest(c);
     }
     const result = await createPartyRepository(c.env.DB).setCard(
       c.get("userId"),
@@ -77,28 +68,20 @@ export function createPartyApi() {
       body.data.skillId,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   api.post("/party/characters/:characterId/level-up", async (c) => {
     const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
-    const body = levelUpSchema.safeParse(await c.req.json().catch(() => null));
-    if (!characterId.success || !body.success) {
-      return c.json({ error: "invalid_request" }, 400);
-    }
+    const body = await parseJson(c, levelUpSchema);
+    if (!characterId.success || !body.success) return invalidRequest(c);
     const result = await createPartyRepository(c.env.DB).levelUp(
       c.get("userId"),
       characterId.data,
       body.data,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   return api;

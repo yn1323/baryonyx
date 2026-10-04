@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createHealthRepository } from "../health/repository.js";
 import { createExerciseRewardsRepository } from "./repository.js";
@@ -10,10 +11,8 @@ export function createExerciseRewardsApi() {
   api.use("/runes/*", requireSession);
 
   api.post("/exercise/rewards/claim", async (c) => {
-    const parsed = claimRewardsSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const parsed = await parseJson(c, claimRewardsSchema);
+    if (!parsed.success) return invalidRequest(c);
     const { sourceId, requestId } = parsed.data;
     const userId = c.get("userId");
     const healthRepository = createHealthRepository(c.env.DB);
@@ -39,7 +38,7 @@ export function createExerciseRewardsApi() {
 
   api.get("/exercise/rewards/days", async (c) => {
     const sourceId = rewardSourceIdSchema.safeParse(c.req.query("sourceId"));
-    if (!sourceId.success) return c.json({ error: "invalid_request" }, 400);
+    if (!sourceId.success) return invalidRequest(c);
     const userId = c.get("userId");
     const source = await createHealthRepository(c.env.DB).findSource(
       sourceId.data,

@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { days } from "../../src/features/health/fixtures.js";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../support/api-scenario.js";
 
 const sourceId = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
 
 describe("認証と入力エラー", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
   afterAll(async () => {
     await scenario?.dispose();

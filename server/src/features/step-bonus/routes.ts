@@ -1,7 +1,13 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createStepBonusRepository } from "./repository.js";
 import { setSlotSchema, slotSchema } from "./schema.js";
+
+// 持っていないボーナスは404、冒険の途中の付け替えは409で返す。
+function errorStatus(error: string) {
+  return error === "bonus_not_owned" ? 404 : 409;
+}
 
 export function createStepBonusApi() {
   const api = new Hono<SessionEnv>();
@@ -19,22 +25,15 @@ export function createStepBonusApi() {
 
   api.put("/step-bonus/slots/:slot", async (c) => {
     const slot = slotSchema.safeParse(c.req.param("slot"));
-    const body = setSlotSchema.safeParse(await c.req.json().catch(() => null));
-    if (!slot.success || !body.success) {
-      return c.json({ error: "invalid_request" }, 400);
-    }
+    const body = await parseJson(c, setSlotSchema);
+    if (!slot.success || !body.success) return invalidRequest(c);
     const result = await createStepBonusRepository(c.env.DB).setSlot(
       c.get("userId"),
       slot.data,
       body.data.bonusId,
       new Date().toISOString(),
     );
-    if ("error" in result) {
-      // 持っていないボーナスは404、冒険の途中の付け替えは409で返す。
-      const status = result.error === "bonus_not_owned" ? 404 : 409;
-      return c.json({ error: result.error }, status);
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   return api;

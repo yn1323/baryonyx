@@ -1,6 +1,10 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
-import { runeWallets } from "../exercise-rewards/db-schema.js";
+import {
+  debitRunes,
+  runeBalance,
+  selectRuneBalance,
+} from "../exercise-rewards/wallet.js";
 import {
   CARD_SLOT_COUNT,
   type CardSkillId,
@@ -51,10 +55,7 @@ export function createPartyRepository(binding: D1Database) {
         .select({ slot: partySlots.slot, characterId: partySlots.characterId })
         .from(partySlots)
         .where(eq(partySlots.userId, userId)),
-      db
-        .select({ balance: runeWallets.balance })
-        .from(runeWallets)
-        .where(eq(runeWallets.userId, userId)),
+      selectRuneBalance(db, userId),
     ]);
     const order = (id: string) => CHARACTER_IDS.indexOf(id as CharacterId);
     return {
@@ -301,7 +302,7 @@ export function createPartyRepository(binding: D1Database) {
 
     const id = crypto.randomUUID();
     const runes = levelUpCost(request.fromLevel, request.toLevel);
-    const balance = sql`(SELECT ${runeWallets.balance} FROM ${runeWallets} WHERE ${runeWallets.userId} = ${userId})`;
+    const balance = runeBalance(userId);
     const written = sql`EXISTS (SELECT 1 FROM ${partyLevelUps} WHERE ${partyLevelUps.id} = ${id})`;
     await db.batch([
       db
@@ -332,13 +333,7 @@ export function createPartyRepository(binding: D1Database) {
         .onConflictDoNothing({
           target: [partyLevelUps.userId, partyLevelUps.requestId],
         }),
-      db
-        .update(runeWallets)
-        .set({
-          balance: sql`${runeWallets.balance} - ${runes}`,
-          updatedAt: now,
-        })
-        .where(and(eq(runeWallets.userId, userId), written)),
+      debitRunes(db, userId, runes, written, now),
       db
         .update(partyCharacters)
         .set({ level: request.toLevel, updatedAt: now })

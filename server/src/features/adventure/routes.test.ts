@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../../../tests/support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../../../tests/support/api-scenario.js";
 import { REVIVE_COST_BASE, reviveCost } from "./catalog.js";
 import { createAdventureRepository } from "./repository.js";
 
@@ -63,10 +63,10 @@ const requestIds = {
 };
 
 describe("冒険API", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {
@@ -95,14 +95,6 @@ describe("冒険API", () => {
     call(token, "/adventure/move", room, expected);
   const clear = (token: string, roomId: string, expected = 200) =>
     call(token, "/adventure/clear", { roomId }, expected);
-
-  async function setRunes(userId: string, balance: number) {
-    await scenario.env.DB.prepare(
-      "INSERT INTO rune_wallets (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = excluded.balance",
-    )
-      .bind(userId, balance, new Date().toISOString())
-      .run();
-  }
 
   it("セッションのない要求を401で拒否する", async () => {
     const responses = await Promise.all([
@@ -277,7 +269,7 @@ describe("冒険API", () => {
 
   it("負けた戦闘からルーンで復活し、2回目は費用が上がり、再送では二重に引かない", async () => {
     const user = await scenario.login("adventure-revive");
-    await setRunes(user.userId, 250);
+    await scenario.setRunes(user.userId, 250);
     await start(user.token);
     await move(user.token, rooms.battle);
     expect((await call(user.token, "/adventure")).run?.reviveCost).toBe(
@@ -317,7 +309,7 @@ describe("冒険API", () => {
 
   it("戦闘のない部屋や終えた部屋からは復活できない", async () => {
     const user = await scenario.login("adventure-revive-room");
-    await setRunes(user.userId, 1000);
+    await scenario.setRunes(user.userId, 1000);
     await start(user.token);
     await call(
       user.token,

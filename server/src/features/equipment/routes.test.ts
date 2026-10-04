@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../../../tests/support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../../../tests/support/api-scenario.js";
 import { CHARACTER_IDS } from "../party/catalog.js";
 import { STARTER_EQUIPPED, STARTER_ITEMS } from "./catalog.js";
 
@@ -16,26 +16,17 @@ type State = {
 const missingItem = "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb";
 
 describe("装備API", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {
     await scenario?.dispose();
   });
 
-  async function read(token: string) {
-    const response = await scenario.request(
-      "/equipment",
-      "GET",
-      undefined,
-      token,
-    );
-    expect(response.status).toBe(200);
-    return (await response.json()) as State;
-  }
+  const read = (token: string) => scenario.read<State>("/equipment", token);
 
   const put = (token: string, id: string, slot: string, itemId: string) =>
     scenario.request(

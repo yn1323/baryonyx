@@ -1,6 +1,10 @@
 import { and, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
-import { runeWallets } from "../exercise-rewards/db-schema.js";
+import {
+  debitRunes,
+  runeBalance,
+  selectRuneBalance,
+} from "../exercise-rewards/wallet.js";
 import {
   rankOrder,
   STEP_BONUS_IDS,
@@ -95,10 +99,7 @@ export function createAdventureRepository(
         .from(adventureRecords)
         .where(eq(adventureRecords.userId, userId))
         .orderBy(adventureRecords.destinationId),
-      db
-        .select({ balance: runeWallets.balance })
-        .from(runeWallets)
-        .where(eq(runeWallets.userId, userId)),
+      selectRuneBalance(db, userId),
     ]);
     const run = runs[0];
     const destination = run ? findDestination(run.destinationId) : undefined;
@@ -484,7 +485,7 @@ export function createAdventureRepository(
 
     const id = crypto.randomUUID();
     const runes = reviveCost(run.revives);
-    const balance = sql`(SELECT ${runeWallets.balance} FROM ${runeWallets} WHERE ${runeWallets.userId} = ${userId})`;
+    const balance = runeBalance(userId);
     const written = sql`EXISTS (SELECT 1 FROM ${adventureRevives} WHERE ${adventureRevives.id} = ${id})`;
     await db.batch([
       db
@@ -516,13 +517,7 @@ export function createAdventureRepository(
         .onConflictDoNothing({
           target: [adventureRevives.userId, adventureRevives.requestId],
         }),
-      db
-        .update(runeWallets)
-        .set({
-          balance: sql`${runeWallets.balance} - ${runes}`,
-          updatedAt: now,
-        })
-        .where(and(eq(runeWallets.userId, userId), written)),
+      debitRunes(db, userId, runes, written, now),
       db
         .update(adventureRuns)
         .set({ revives: sql`${adventureRuns.revives} + 1`, updatedAt: now })

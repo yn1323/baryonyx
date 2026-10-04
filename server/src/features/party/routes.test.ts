@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../../../tests/support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../../../tests/support/api-scenario.js";
 import {
   COST_PER_LEVEL,
   levelUpCost,
@@ -33,33 +33,21 @@ const requestIds = {
 };
 
 describe("パーティAPI", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {
     await scenario?.dispose();
   });
 
-  async function read(token: string) {
-    const response = await scenario.request("/party", "GET", undefined, token);
-    expect(response.status).toBe(200);
-    return (await response.json()) as State;
-  }
+  const read = (token: string) => scenario.read<State>("/party", token);
 
   const slots = (state: State) => state.slots.map((slot) => slot.characterId);
   const character = (state: State, id: string) =>
     state.characters.find((entry) => entry.id === id);
-
-  async function setRunes(userId: string, balance: number) {
-    await scenario.env.DB.prepare(
-      "INSERT INTO rune_wallets (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = excluded.balance",
-    )
-      .bind(userId, balance, new Date().toISOString())
-      .run();
-  }
 
   function levelUp(
     token: string,
@@ -308,7 +296,7 @@ describe("パーティAPI", () => {
   it("ルーンを使ってレベルを上げ、同じ要求の再送では二重に引かない", async () => {
     const user = await scenario.login("party-level-up");
     await read(user.token);
-    await setRunes(user.userId, 3000);
+    await scenario.setRunes(user.userId, 3000);
     const body = { requestId: requestIds.first, fromLevel: 12, toLevel: 14 };
     const cost = levelUpCost(12, 14);
     expect(cost).toBe(2500);
@@ -354,7 +342,7 @@ describe("パーティAPI", () => {
     expect(empty.status).toBe(409);
     expect(await empty.json()).toEqual({ error: "insufficient_runes" });
 
-    await setRunes(user.userId, 1000);
+    await scenario.setRunes(user.userId, 1000);
     const changed = await levelUp(user.token, "toma", {
       requestId: requestIds.second,
       fromLevel: 11,
@@ -392,7 +380,7 @@ describe("パーティAPI", () => {
       { skillId: "Heal" },
       owner.token,
     );
-    await setRunes(owner.userId, 5000);
+    await scenario.setRunes(owner.userId, 5000);
     await levelUp(owner.token, "luka", {
       requestId: requestIds.first,
       fromLevel: 11,

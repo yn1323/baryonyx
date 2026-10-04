@@ -1,17 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../../../tests/support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../../../tests/support/api-scenario.js";
 
 const sourceId = "abababab-abab-4bab-8bab-abababababab";
 const requestId = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd";
 
 describe("運動報酬API", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {

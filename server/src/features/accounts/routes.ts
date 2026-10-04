@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson } from "../../shared/http.js";
 import {
   issueGuestSession,
   issueSession,
@@ -18,10 +19,8 @@ export function createAccountsApi(
   api.post("/auth/google", async (c) => {
     const audience = c.env.GOOGLE_CLIENT_ID;
     if (!audience) return c.json({ error: "auth_not_configured" }, 503);
-    const parsed = googleAuthSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const parsed = await parseJson(c, googleAuthSchema);
+    if (!parsed.success) return invalidRequest(c);
     let subject: string;
     try {
       subject = await verifyIdentity(parsed.data.idToken, audience);
@@ -33,10 +32,8 @@ export function createAccountsApi(
   });
 
   api.post("/auth/guest", async (c) => {
-    const parsed = guestAuthSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const parsed = await parseJson(c, guestAuthSchema);
+    if (!parsed.success) return invalidRequest(c);
     const repository = createAccountsRepository(c.env.DB);
     return c.json(await issueGuestSession(repository, parsed.data.secret));
   });

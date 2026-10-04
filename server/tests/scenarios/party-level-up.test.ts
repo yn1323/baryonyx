@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { days } from "../../src/features/health/fixtures.js";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../support/api-scenario.js";
 
 const sourceId = "f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0";
 
@@ -13,10 +13,10 @@ type PartyResponse = {
 };
 
 describe("歩数から得たルーンでのレベルアップ", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {

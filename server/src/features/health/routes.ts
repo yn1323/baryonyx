@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createHealthRepository } from "./repository.js";
 import {
@@ -11,10 +12,8 @@ export function createHealthApi() {
   const api = new Hono<SessionEnv>();
   api.use("/health/*", requireSession);
   api.post("/health/syncs", async (c) => {
-    const parsed = beginSyncSchema.safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!parsed.success) return c.json({ error: "invalid_request" }, 400);
+    const parsed = await parseJson(c, beginSyncSchema);
+    if (!parsed.success) return invalidRequest(c);
     const body = parsed.data;
     // サーバー発行の版で、再起動・時計ずれ・遅延送信による上書きを防ぐ。
     const result = await createHealthRepository(c.env.DB).beginSync(
@@ -27,11 +26,8 @@ export function createHealthApi() {
   });
   api.put("/health/sources/:sourceId/days", async (c) => {
     const source = sourceIdSchema.safeParse(c.req.param("sourceId"));
-    const parsed = createSaveDaysSchema().safeParse(
-      await c.req.json().catch(() => null),
-    );
-    if (!source.success || !parsed.success)
-      return c.json({ error: "invalid_request" }, 400);
+    const parsed = await parseJson(c, createSaveDaysSchema());
+    if (!source.success || !parsed.success) return invalidRequest(c);
     const body = parsed.data;
     const now = new Date().toISOString();
     const saved = await createHealthRepository(c.env.DB).saveDays(
@@ -46,7 +42,7 @@ export function createHealthApi() {
   });
   api.get("/health/sources/:sourceId/days", async (c) => {
     const sourceId = sourceIdSchema.safeParse(c.req.param("sourceId"));
-    if (!sourceId.success) return c.json({ error: "invalid_request" }, 400);
+    if (!sourceId.success) return invalidRequest(c);
     const repository = createHealthRepository(c.env.DB);
     const source = await repository.findSource(sourceId.data, c.get("userId"));
     if (!source) return c.json({ error: "source_unavailable" }, 404);

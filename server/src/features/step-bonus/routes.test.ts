@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../../../tests/support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../../../tests/support/api-scenario.js";
 import { STARTER_HOLDINGS, STARTER_SLOTS } from "./catalog.js";
 import { createStepBonusRepository } from "./repository.js";
 
@@ -14,26 +14,17 @@ type State = {
 };
 
 describe("ACTボーナスAPI", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
 
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
 
   afterAll(async () => {
     await scenario?.dispose();
   });
 
-  async function read(token: string) {
-    const response = await scenario.request(
-      "/step-bonus",
-      "GET",
-      undefined,
-      token,
-    );
-    expect(response.status).toBe(200);
-    return (await response.json()) as State;
-  }
+  const read = (token: string) => scenario.read<State>("/step-bonus", token);
 
   async function put(token: string, slot: number | string, body: unknown) {
     return scenario.request(`/step-bonus/slots/${slot}`, "PUT", body, token);

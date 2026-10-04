@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createEquipmentRepository } from "./repository.js";
 import {
@@ -29,9 +30,9 @@ export function createEquipmentApi() {
   api.put("/equipment/characters/:characterId/:slot", async (c) => {
     const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
     const slot = equipmentSlotSchema.safeParse(c.req.param("slot"));
-    const body = equipSchema.safeParse(await c.req.json().catch(() => null));
+    const body = await parseJson(c, equipSchema);
     if (!characterId.success || !slot.success || !body.success) {
-      return c.json({ error: "invalid_request" }, 400);
+      return invalidRequest(c);
     }
     const result = await createEquipmentRepository(c.env.DB).equip(
       c.get("userId"),
@@ -40,28 +41,20 @@ export function createEquipmentApi() {
       body.data.itemId,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   api.delete("/equipment/characters/:characterId/:slot", async (c) => {
     const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
     const slot = equipmentSlotSchema.safeParse(c.req.param("slot"));
-    if (!characterId.success || !slot.success) {
-      return c.json({ error: "invalid_request" }, 400);
-    }
+    if (!characterId.success || !slot.success) return invalidRequest(c);
     const result = await createEquipmentRepository(c.env.DB).unequip(
       c.get("userId"),
       characterId.data,
       slot.data,
       new Date().toISOString(),
     );
-    if ("error" in result && result.error) {
-      return c.json({ error: result.error }, errorStatus(result.error));
-    }
-    return c.json(result);
+    return respond(c, result, errorStatus);
   });
 
   return api;

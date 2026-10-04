@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hashToken } from "../../src/features/accounts/auth.js";
 import {
-  createHealthScenario,
-  type HealthScenario,
-} from "../support/health-scenario.js";
+  type ApiScenario,
+  createApiScenario,
+} from "../support/api-scenario.js";
 
 const sourceId = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
 
 describe("セッションの失効", () => {
-  let scenario: HealthScenario;
+  let scenario: ApiScenario;
   beforeAll(async () => {
-    scenario = await createHealthScenario();
+    scenario = await createApiScenario();
   });
   afterAll(async () => {
     await scenario?.dispose();
