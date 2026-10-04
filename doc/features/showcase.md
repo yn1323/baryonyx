@@ -275,6 +275,8 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab` も同じく生成時に追加する。
 案内人がいる画面（酒場・工房・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
+酒場の[編成](screens.md#編成)は `TavernScreen` のメニューの「編成」から開く。停止中も、Prefabの `Formation` を表示すれば、仮データの4人と仲間のタイルを確認できる。仮データの `PartyMockData` はデータのカテゴリに入る。
+編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
 それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。
 2026-09-27まではプレビューで縮尺を誤り、HomeScreenのトーマや戦闘画面のキャラが画面を覆うほど大きく表示されていた。

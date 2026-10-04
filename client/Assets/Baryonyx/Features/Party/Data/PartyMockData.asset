@@ -1,0 +1,127 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b455d3c3ff1ef4c578901e4fbcfdacca, type: 3}
+  m_Name: PartyMockData
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Party.PartyMockData
+  Members:
+  - Id: toma
+    Name: "\u30C8\u30FC\u30DE"
+    Level: 12
+    Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    Flip: 0
+    Cards:
+    - Skill: Fire
+    - Skill: Meteor
+    - Skill: Ice
+    - Skill: Blizzard
+  - Id: luka
+    Name: "\u30EB\u30AB"
+    Level: 11
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    Flip: 0
+    Cards:
+    - Skill: VitalThrust
+    - Skill: ArrowRain
+    - Skill: Thunder
+    - Skill: LightningBolt
+  - Id: aria
+    Name: "\u30A2\u30EA\u30A2"
+    Level: 10
+    Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    Flip: 0
+    Cards:
+    - Skill: Slash
+    - Skill: Iai
+    - Skill: ShieldBash
+    - Skill: EarthSplitter
+  - Id: mina
+    Name: "\u30DF\u30CA"
+    Level: 10
+    Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    Flip: 0
+    Cards:
+    - Skill: Heal
+    - Skill: Protect
+    - Skill: HolyHammer
+    - Skill: HolyLight
+  - Id: anselm
+    Name: "\u30A2\u30F3\u30BB\u30EB\u30E0"
+    Level: 8
+    Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    Tint: {r: 0.8, g: 0.9, b: 1, a: 1}
+    Flip: 1
+    Cards:
+    - Skill: EarthSplitter
+    - Skill: HolyHammer
+    - Skill: Fire
+    - Skill: Embers
+  - Id: greta
+    Name: "\u30B0\u30EC\u30BF"
+    Level: 7
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Tint: {r: 1, g: 0.82, b: 0.9, a: 1}
+    Flip: 0
+    Cards:
+    - Skill: VitalThrust
+    - Skill: PoisonNeedle
+    - Skill: Ice
+    - Skill: Icicles
+  - Id: lutz
+    Name: "\u30EB\u30C3\u30C4"
+    Level: 5
+    Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    Tint: {r: 0.86, g: 1, b: 0.8, a: 1}
+    Flip: 1
+    Cards:
+    - Skill: Thunder
+    - Skill: Thundercloud
+    - Skill: ShieldBash
+    - Skill: EarthSplitter
+  - Id: rita
+    Name: "\u30EA\u30BF"
+    Level: 3
+    Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    Tint: {r: 1, g: 0.88, b: 0.76, a: 1}
+    Flip: 1
+    Cards:
+    - Skill: Slash
+    - Skill: Whirlwind
+    - Skill: VitalThrust
+    - Skill: ShadowStitch
+  - Id: ritsu
+    Name: "\u30EA\u30C4"
+    Level: 1
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Tint: {r: 0.86, g: 0.84, b: 1, a: 1}
+    Flip: 1
+    Cards:
+    - Skill: Ice
+    - Skill: Blizzard
+    - Skill: Thunder
+    - Skill: Thundercloud
+  Formation:
+  - toma
+  - luka
+  - aria
+  - mina
+  ElementIcons:
+  - {fileID: 0}
+  - {fileID: 5349011544834349465, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
+  - {fileID: 5349011544834349465, guid: 01996a57fd5fa4c4aad13dd9932e35f9, type: 3}
+  - {fileID: 5349011544834349465, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
+  - {fileID: 5349011544834349465, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
+  - {fileID: 5349011544834349465, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
+  - {fileID: 5349011544834349465, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}

@@ -52,9 +52,10 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const float BackWidth = 128f;
         private const float BackHeight = 168f;
 
-        private static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
-        private static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
-        private static readonly Color Gold = new(1f, 0.843f, 0.4f);
+        // Feature panels on a guide screen (e.g. the tavern's formation) use the same colours.
+        public static readonly Color TextMain = new(0.953f, 0.914f, 0.824f);
+        public static readonly Color TextSub = new(0.788f, 0.749f, 0.659f);
+        public static readonly Color Gold = new(1f, 0.843f, 0.4f);
         private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
 
         private static TMP_FontAsset font;

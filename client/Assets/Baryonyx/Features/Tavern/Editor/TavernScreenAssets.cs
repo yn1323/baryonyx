@@ -1,3 +1,5 @@
+using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.StepBonus;
 using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI.GuideMenu;
@@ -9,7 +11,7 @@ namespace Baryonyx.Tavern.Editor
     /// <summary>
     /// The tavern (酒場): the tavern girl guides party formation, training, card skills and the
     /// UPT bonus slots. The characters, levels and cards are mock values until the party has
-    /// data; the bonus item shows the bonus settings panel instead of a list.
+    /// data; the formation and bonus items show their own panels instead of a list.
     /// </summary>
     public static class TavernScreenAssets
     {
@@ -31,9 +33,15 @@ namespace Baryonyx.Tavern.Editor
                 BackgroundPath,
                 Fill,
                 itemPanel: (item, safe, view) =>
-                    item.Key == StepBonusSession.GuideItemKey
-                        ? StepBonusAssets.BuildSettingsPanel(safe, view)
-                        : null
+                    item.Key switch
+                    {
+                        PartySession.GuideItemKey => PartyAssets.BuildFormationPanel(safe, view),
+                        StepBonusSession.GuideItemKey => StepBonusAssets.BuildSettingsPanel(
+                            safe,
+                            view
+                        ),
+                        _ => null,
+                    }
             );
 
         private static void Fill(GuideMenuDefinition d)
@@ -42,21 +50,7 @@ namespace Baryonyx.Tavern.Editor
             d.Layout = GuideMenuLayout.List;
             d.Items = new[]
             {
-                Item(
-                    "編成",
-                    "冒険に連れて行く4人を選ぶ",
-                    "編成する",
-                    Icon(IconFormationPath),
-                    Entry("トーマ", "Lv 12", "パーティ｜斬・炎のカードを使える"),
-                    Entry("ルカ", "Lv 11", "パーティ｜氷・貫のカードを使える"),
-                    Entry("アリア", "Lv 10", "パーティ｜雷・斬のカードを使える"),
-                    Entry("ミナ", "Lv 10", "パーティ｜回復と打のカードを使える"),
-                    Entry("アンセルム", "Lv 8", "控え｜打・炎のカードを使える"),
-                    Entry("グレタ", "Lv 7", "控え｜貫・氷のカードを使える"),
-                    Entry("ルッツ", "Lv 5", "控え｜雷・打のカードを使える"),
-                    Entry("リタ", "Lv 3", "控え｜斬・貫のカードを使える"),
-                    Entry("リツ", "Lv 1", "控え｜氷・雷のカードを使える")
-                ),
+                Formation(),
                 Item(
                     "育成",
                     "ルーンを使ってレベルを上げる",
@@ -94,7 +88,21 @@ namespace Baryonyx.Tavern.Editor
             };
         }
 
-        // The bonus item opens the bonus settings panel; Home's bonus button opens it directly.
+        // The formation item opens the party's formation panel (the four slots and the owned
+        // characters) instead of a list.
+        private static GuideMenuItem Formation()
+        {
+            var item = Item(
+                "編成",
+                "冒険に連れて行く4人を選ぶ",
+                "編成する",
+                Icon(IconFormationPath)
+            );
+            item.Key = PartySession.GuideItemKey;
+            return item;
+        }
+
+        // The bonus item opens the bonus settings panel instead of a list.
         private static GuideMenuItem Bonus()
         {
             var item = Item(
