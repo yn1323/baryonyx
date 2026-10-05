@@ -599,6 +599,76 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator SpendingTheLastEnergyEndsTheTurnOnceTheCardsHaveActed()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var slime = view.Enemies[0];
+            var wolf = view.Enemies[1];
+            int fire = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Fire
+            );
+            int thunder = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Thunder
+            );
+            Assert.That(view.Cards[fire].Cost + view.Cards[thunder].Cost, Is.EqualTo(view.Energy));
+
+            // With energy left, the turn goes on.
+            Play(view, fire, wolf.TargetArea);
+            yield return WaitActions(view);
+            Assert.That(view.Energy, Is.GreaterThan(0));
+            Assert.That(view.EnemyTurn, Is.False);
+
+            // The last of it is spent, but the card acts before the turn ends.
+            Play(view, thunder, wolf.TargetArea);
+            Assert.That(view.Energy, Is.EqualTo(0));
+            Assert.That(view.EnemyTurn, Is.False);
+            for (float t = 0f; !view.EnemyTurn && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn, Is.True, "The spent energy ends the turn.");
+            Assert.That(slime.Hp, Is.LessThan(slime.MaxHp), "The thunder landed first.");
+            Assert.That(view.EndTurnButton.interactable, Is.False);
+
+            yield return WaitEnemyTurn(view);
+            Assert.That(view.Turn, Is.EqualTo(4));
+            Assert.That(view.Energy, Is.EqualTo(6));
+        }
+
+        [UnityTest]
+        public IEnumerator ACardThatCostsNothingKeepsTheTurnWithNoEnergy()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            var slash = view.Cards[0];
+            // As if its cost had been lowered to nothing.
+            slash.Cost = 0;
+            int fire = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Fire
+            );
+            int thunder = System.Array.FindIndex(
+                view.Cards,
+                card => card.Element == BattleInspectElement.Thunder
+            );
+
+            Play(view, fire, wolf.TargetArea);
+            Play(view, thunder, wolf.TargetArea);
+            Assert.That(view.Energy, Is.EqualTo(0));
+            yield return WaitActions(view);
+            Assert.That(view.EnemyTurn, Is.False, "The free card can still be played.");
+
+            Play(view, 0, wolf.TargetArea);
+            Assert.That(slash.InHand, Is.False);
+            for (float t = 0f; !view.EnemyTurn && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn, Is.True, "With no card left to pay for, the turn ends.");
+            yield return WaitEnemyTurn(view);
+        }
+
+        [UnityTest]
         public IEnumerator PlayModeStartsWithNoCardsAndDealsTheOpeningHandOneByOne()
         {
             var view = default(BattleInspectView);
@@ -1460,6 +1530,8 @@ namespace Baryonyx.Tests.PlayMode
             var card = view.Cards[index];
             Assert.That(card.Cost, Is.GreaterThanOrEqualTo(vfx.CutInCost));
             Assert.That(card.Cost, Is.LessThanOrEqualTo(view.Energy));
+            // Energy left over keeps the turn from ending by itself after the card.
+            typeof(BattleInspectView).GetProperty("Energy").SetValue(view, card.Cost + 1);
 
             Play(view, index, view.Enemies[1].TargetArea);
             // The user steps forward first, then the cut-in sweeps in.

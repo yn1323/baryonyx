@@ -348,7 +348,8 @@ namespace Baryonyx.Combat.Presentation
     /// A played card is paid for and leaves the hand at once, and its action is queued: the user
     /// steps one step forward, its name shows at the top middle of the screen, the effect lands,
     /// and the user steps back. "End turn" hands the turn to the enemies before the party's next
-    /// turn in the order: each attacks one ally at random the same way. A band across the middle
+    /// turn in the order: each attacks one ally at random the same way. Spending the last of the
+    /// energy ends the turn by itself, once the played cards have acted. A band across the middle
     /// of the screen tells whose turn begins.
     /// </summary>
     public sealed partial class BattleInspectView : MonoBehaviour
@@ -1271,6 +1272,21 @@ namespace Baryonyx.Combat.Presentation
             Enqueue(EnemyPhase());
         }
 
+        /// <summary>
+        /// Ends the party's turn by itself when the energy is spent: once the played cards have
+        /// acted (one may give energy back) and the cards they drew have landed, and only when
+        /// no card in hand costs nothing (a lowered cost, or a free next card).
+        /// </summary>
+        private void EndTurnIfSpent()
+        {
+            if (acting || Dealing || EnemyTurn || Energy > 0)
+                return;
+            foreach (int index in hand)
+                if (CostOf(Cards[index]) <= Energy)
+                    return;
+            EndTurn();
+        }
+
         private IEnumerator EnemyPhase()
         {
             // The band tells that the enemies' turn has come, and they wait for it, unless none
@@ -1454,6 +1470,8 @@ namespace Baryonyx.Combat.Presentation
                 yield return null;
             dealing = null;
             Refresh();
+            // The cards a played card drew may cost nothing; with none, the spent energy ends the turn.
+            EndTurnIfSpent();
         }
 
         /// <summary>
@@ -1737,9 +1755,10 @@ namespace Baryonyx.Combat.Presentation
                 yield return actions.Dequeue();
             acting = false;
             Refresh();
-            // A card that beat the last enemy ends the adventure's battle.
-            if (!EnemyTurn)
-                Settle();
+            // A card that beat the last enemy ends the adventure's battle; otherwise the spent
+            // energy may end the turn.
+            if (!EnemyTurn && !Settle())
+                EndTurnIfSpent();
         }
 
         /// <summary>
