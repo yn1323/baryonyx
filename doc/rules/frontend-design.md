@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-10-05
+updated: 2026-10-06
 ---
 
 # クライアントの構成と依存関係
@@ -93,7 +93,7 @@ client/
 │   │   │   │   │   ├── CastleHallほか    戦闘の背景の3Dの舞台（10種類）
 │   │   │   │   │   ├── Exploration/     探索の地図の木・遺跡・宝箱の絵
 │   │   │   │   │   └── Editor/          3Dの舞台の組み立て（StageSetAssets・BattleStageSets）
-│   │   │   │   └── GameResources/       素材・通貨（ルーンのアイコン）
+│   │   │   │   └── GameResources/       通貨（ルーンのアイコン）
 │   │   │   ├── Networking/              ゲームサーバーへのHTTP送信
 │   │   │   ├── UI/                      複数画面で使う共通UI（下の表）
 │   │   │   └── VFX/HD2D/                HD-2Dの演出と3Dの舞台の共通部品（カメラ、キャラの板、2Dのときだけの部品、舞台のレンズ、光の筋）。Editor/に共通アセットと舞台の部品の生成とInspector、Tests/EditMode/
@@ -280,7 +280,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 枠・影・ボタンのアイコンなど、画面専用のUI部品は従来どおり機能内の `UI/` に置く。
 
 フォルダー名は、データ索引の分類名をPascalCaseにしたものとする。
-`resources`（素材・通貨）だけは、Unityが特別に扱う `Resources` フォルダーと同名になるため `GameResources` とする。
+`resources`（通貨）だけは、Unityが特別に扱う `Resources` フォルダーと同名になるため `GameResources` とする。
 
 | データ索引の分類 | 画像のフォルダー |
 |---|---|

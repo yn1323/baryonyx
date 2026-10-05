@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite
 
 # ルーン
 
-[素材・通貨の索引](README.md) / 根拠：[初期企画](../../game/brief.md)
+[通貨の索引](README.md) / 根拠：[初期企画](../../game/brief.md)
 
 ## 識別情報と根拠
 
