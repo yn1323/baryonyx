@@ -18,7 +18,7 @@ namespace Baryonyx.Tests.EditMode
                 Runes = 12480,
                 AdventureInProgress = true,
                 DestinationName = "森の遺跡",
-                DestinationFloor = "B3F",
+                DestinationFloor = "第3層",
                 Today = new DateTime(2026, 9, 24),
             };
 
@@ -37,7 +37,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
             Assert.That(state.DestinationNameText, Is.EqualTo("森の遺跡"));
-            Assert.That(state.DestinationFloorText, Is.EqualTo("B3F"));
+            Assert.That(state.DestinationFloorText, Is.EqualTo("第3層"));
             Assert.That(state.ResumeText, Is.EqualTo("再開"));
         }
 

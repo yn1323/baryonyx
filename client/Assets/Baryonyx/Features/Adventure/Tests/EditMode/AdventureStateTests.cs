@@ -128,7 +128,7 @@ namespace Baryonyx.Tests.EditMode
             var source = new AdventureLocalSource(seed: 7);
             var start = Run(source.StartAsync(AdventureCatalog.ForestRuins, default));
             var entrance = ExplorationRoom.From(start.Run);
-            Assert.That(entrance.Location, Is.EqualTo(Forest + " B1F"));
+            Assert.That(entrance.Location, Is.EqualTo(Forest + " 第1層"));
             Assert.That(
                 entrance.Exits.Select(exit => exit.Id),
                 Is.EqualTo(start.Run.Map.Find(AdventureRouteMap.EntranceId).Next)
@@ -144,9 +144,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(battle.Exits, Is.Empty);
             var won = ExplorationRoom.From(Run(source.ClearAsync(first.Id, default)).Run);
             Assert.That(won.Exits.Select(exit => exit.Id), Is.EqualTo(first.Next));
-            Assert.That(won.Location, Is.EqualTo(Forest + " B2F"));
+            Assert.That(won.Location, Is.EqualTo(Forest + " 第2層"));
 
-            // 道中の中ほどの階（B6F）は宝箱。開けるまで次へは進めない。
+            // 道中の中ほどの階（第6層）は宝箱。開けるまで次へは進めない。
             var state = Walk(new AdventureLocalSource(seed: 7), 5);
             var treasure = ExplorationRoom.From(state.Run);
             Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Treasure));
@@ -232,7 +232,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(
                 AdventureTexts.ResultBody(null, result),
-                Is.EqualTo(Forest + "　B3Fまで到達\n最深記録 B4F\n持ち帰ったボーナス：luck A")
+                Is.EqualTo(Forest + "　第3層まで到達\n最深記録 第4層\n持ち帰ったボーナス：luck A")
             );
             Assert.That(
                 AdventureTexts.ReviveBody(200, 150),

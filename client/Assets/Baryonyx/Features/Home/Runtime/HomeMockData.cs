@@ -26,7 +26,7 @@ namespace Baryonyx.Home
 
         public string DestinationName = "ミストラ遺跡";
 
-        public string DestinationFloor = "B3F";
+        public string DestinationFloor = "第3層";
 
         public HomeSnapshot ToSnapshot(DateTime today) =>
             new()

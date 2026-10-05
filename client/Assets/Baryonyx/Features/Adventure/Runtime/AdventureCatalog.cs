@@ -59,7 +59,7 @@ namespace Baryonyx.Adventure
                 _ => BattleStage.MeadowRoad,
             };
 
-        public static string FloorText(int floor) => $"B{Math.Max(1, floor)}F";
+        public static string FloorText(int floor) => $"第{Math.Max(1, floor)}層";
 
         // 入口と最奥の間のあいだに通る部屋の数。サーバーの設定値と同じ（アプリの中だけの冒険で使う）。
         public static int RoomCount(string destinationId) => 8;

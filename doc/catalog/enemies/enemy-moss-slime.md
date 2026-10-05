@@ -42,9 +42,9 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 
 | 行き先 | 部屋 | 敵の組み合わせ | Lv |
 |---|---|---|---|
-| 森の遺跡（`forest-ruins`） | B2Fの戦闘の部屋（`moss-hall`）、B3Fの戦闘の部屋（`root-gallery`） | `forest-pack`：苔スライムと苔むした狼 | 10（仮） |
-| 森の遺跡（`forest-ruins`） | B3Fの強敵の部屋（`guardian-gate`） | `forest-elite`：同じ2体のHPを1.6倍にした仮の強敵 | 10（仮） |
-| 森の遺跡（`forest-ruins`） | B4Fの最奥の間（`sanctum`） | `forest-boss`：森の守り手の取り巻き。守り手の[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)でも現れる | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第2層の戦闘の部屋（`moss-hall`）、第3層の戦闘の部屋（`root-gallery`） | `forest-pack`：苔スライムと苔むした狼 | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第3層の強敵の部屋（`guardian-gate`） | `forest-elite`：同じ2体のHPを1.6倍にした仮の強敵 | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第4層の最奥の間（`sanctum`） | `forest-boss`：森の守り手の取り巻き。守り手の[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)でも現れる | 10（仮） |
 
 戦闘の背景は朝霧の森（`MistyWoods`）である。
 部屋の構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。

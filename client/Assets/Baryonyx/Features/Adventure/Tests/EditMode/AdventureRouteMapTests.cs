@@ -95,7 +95,7 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 最初の階は弱い魔物、強い魔物はB4Fから、中ほどの階は宝箱、最奥の直前に強い魔物を置かない。
+        // 最初の階は弱い魔物、強い魔物は第4層から、中ほどの階は宝箱、最奥の直前に強い魔物を置かない。
         [Test]
         public void TheFloorsFollowTheRouteRules()
         {

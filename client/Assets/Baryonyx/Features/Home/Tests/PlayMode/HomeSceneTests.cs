@@ -402,7 +402,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
             var view = bootstrap.View;
             Assert.That(view.DestinationNameLabel.text, Is.EqualTo("ミストラ遺跡"));
-            Assert.That(view.DestinationFloorLabel.text, Is.EqualTo("B2F"));
+            Assert.That(view.DestinationFloorLabel.text, Is.EqualTo("第2層"));
             Assert.That(view.ResumeLabel.text, Is.EqualTo("再開"));
             Assert.That(view.DestinationArt.texture, Is.SameAs(view.ResumeArt));
 

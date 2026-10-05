@@ -229,7 +229,7 @@ namespace Baryonyx.Adventure.Editor
             view.Location = Label(
                 safe,
                 "Location",
-                AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins) + " B1F",
+                AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins) + " 第1層",
                 64,
                 TextMain,
                 TextAlignmentOptions.Right
@@ -362,7 +362,7 @@ namespace Baryonyx.Adventure.Editor
             var label = Label(
                 floors,
                 "FloorTemplate",
-                "B1F",
+                "第1層",
                 26,
                 UiPalette.TextSub,
                 TextAlignmentOptions.Left

@@ -254,7 +254,7 @@ namespace Baryonyx.Adventure
             points[room.Id] = point;
         }
 
-        // 部屋の種類。最初の階は弱い魔物、強い魔物は3つ目の階（B4F）から、道中の中ほどの階は宝箱、
+        // 部屋の種類。最初の階は弱い魔物、強い魔物は3つ目の階（第4層）から、道中の中ほどの階は宝箱、
         // 最奥の直前は強い魔物を置かない。同じ道で強い魔物や宝箱を続けない。
         private static AdventureRoomKind[,] Kinds(RouteRandom random, int roomCount, int laneCount)
         {

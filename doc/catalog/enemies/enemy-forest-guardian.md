@@ -42,7 +42,7 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 
 | 行き先 | 部屋 | 敵の組み合わせ | Lv |
 |---|---|---|---|
-| 森の遺跡（`forest-ruins`） | B4Fの最奥の間（`sanctum`） | `forest-boss`：森の守り手に、苔スライムと苔むした狼が付き従う | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第4層の最奥の間（`sanctum`） | `forest-boss`：森の守り手に、苔スライムと苔むした狼が付き従う | 10（仮） |
 
 戦闘の背景は朝霧の森（`MistyWoods`）である。
 部屋の構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。

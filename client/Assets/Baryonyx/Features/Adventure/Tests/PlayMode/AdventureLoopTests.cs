@@ -84,7 +84,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheMapWalksTheRoadToTheRoomChosenAndOpensItsChest()
         {
-            // B5Fの戦闘を終えた所から。次のB6Fは、どの道も宝箱の部屋。
+            // 第5層の戦闘を終えた所から。次の第6層は、どの道も宝箱の部屋。
             var here = StartAt(4);
             Do(services.Adventure.ClearAsync(here.Id, CancellationToken.None));
             var bootstrap = default(ExplorationBootstrap);
@@ -95,9 +95,9 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             var run = AdventureSession.Current.Run;
-            Assert.That(view.LocationText, Is.EqualTo(Forest + " B5F"));
+            Assert.That(view.LocationText, Is.EqualTo(Forest + " 第5層"));
             Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
-            Assert.That(view.FloorTexts[0], Is.EqualTo("B5F"));
+            Assert.That(view.FloorTexts[0], Is.EqualTo("第5層"));
             Assert.That(view.MapImage.texture, Is.Not.Null);
             foreach (var next in here.Next)
             {
@@ -123,7 +123,7 @@ namespace Baryonyx.Tests.PlayMode
                 view.MarkerOf(here.Next[1]).Button.onClick.Invoke();
             Assert.That(view.Walking, Is.True);
             yield return SceneTests.WaitUntil(
-                () => view.LocationText == Forest + " B6F" && ExplorationReady(bootstrap),
+                () => view.LocationText == Forest + " 第6層" && ExplorationReady(bootstrap),
                 6f,
                 "The next room did not show."
             );
@@ -186,7 +186,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(view.Dialog, "帰還");
             Assert.That(
                 view.Dialog.BodyText,
-                Does.StartWith(Forest + "　B2Fまで到達\n最深記録を更新！")
+                Does.StartWith(Forest + "　第2層まで到達\n最深記録を更新！")
             );
             Assert.That(AdventureSession.Current.InProgress, Is.False);
 
@@ -253,7 +253,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForScene(SceneNames.Exploration);
             var exploration = Object.FindAnyObjectByType<ExplorationBootstrap>();
             yield return SceneTests.WaitUntil(() => ExplorationReady(exploration));
-            Assert.That(exploration.View.LocationText, Is.EqualTo(Forest + " B2F"));
+            Assert.That(exploration.View.LocationText, Is.EqualTo(Forest + " 第2層"));
             Assert.That(
                 exploration.Flow.Room.Exits.Select(exit => exit.Id),
                 Is.EqualTo(AdventureSession.Current.Run.Room.Next)
@@ -298,7 +298,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(dialog, BattleAdventureFlow.DefeatTitle);
             dialog.Choose(AdventureTexts.ReturnChoice);
             yield return WaitForDialog(dialog, "冒険の終わり");
-            Assert.That(dialog.BodyText, Does.StartWith(Forest + "　B2Fまで到達"));
+            Assert.That(dialog.BodyText, Does.StartWith(Forest + "　第2層まで到達"));
             dialog.Choose(AdventureTexts.HomeChoice);
             yield return WaitForScene(SceneNames.Home);
             Assert.That(AdventureSession.Current.InProgress, Is.False);
@@ -321,7 +321,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForDialog(dialog, "踏破！");
             Assert.That(
                 dialog.BodyText,
-                Does.StartWith(Forest + "　B10Fまで到達\n最深記録を更新！")
+                Does.StartWith(Forest + "　第10層まで到達\n最深記録を更新！")
             );
             dialog.Choose(AdventureTexts.HomeChoice);
             yield return WaitForScene(SceneNames.Home);
@@ -344,7 +344,7 @@ namespace Baryonyx.Tests.PlayMode
             var home = Object.FindAnyObjectByType<HomeBootstrap>();
             yield return SceneTests.WaitUntil(() => SceneTests.HomeReady(home));
             yield return SceneTests.WaitForTask(home.AdventureTask);
-            Assert.That(home.View.DestinationFloorLabel.text, Is.EqualTo("B2F"));
+            Assert.That(home.View.DestinationFloorLabel.text, Is.EqualTo("第2層"));
             home.View.ResumeButton.onClick.Invoke();
             yield return WaitForScene(SceneNames.Exploration);
             yield return WaitForScene(SceneNames.Battle);

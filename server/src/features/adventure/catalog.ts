@@ -23,7 +23,7 @@ export type EventKind = (typeof EVENT_KINDS)[number];
 
 export type Destination = {
   id: string;
-  // 入口（B1F）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
+  // 入口（第1層）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
   roomCount: number;
 };
 
@@ -41,7 +41,7 @@ export function findDestination(id: string) {
   return DESTINATIONS.find((destination) => destination.id === id);
 }
 
-// 最奥の間の階。入口がB1F、道中の部屋がB2Fから続く。
+// 最奥の間の階。入口が第1層、道中の部屋が第2層から続く。
 export function bossFloor(destination: Destination) {
   return destination.roomCount + 2;
 }

@@ -19,7 +19,7 @@ namespace Baryonyx.Adventure
 
         public const string QuitTitle = "冒険をやめますか？";
         public const string QuitBody =
-            "ここまでに手に入れた物は持ち帰れます。\n次の冒険は入口（B1F）から始まります。";
+            "ここまでに手に入れた物は持ち帰れます。\n次の冒険は入口（第1層）から始まります。";
 
         public const string SuspendBody =
             "今いる部屋から、ホームの行き先カードで再開できます。\n戦闘の途中なら、その戦闘の始めからになります。";
