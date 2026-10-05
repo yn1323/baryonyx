@@ -7,8 +7,8 @@ namespace Baryonyx.App
 {
     /// <summary>
     /// Runs the exploration scene: the map of the adventure in progress. The next room is shown
-    /// while the map fades; a room with a battle opens the battle scene, and suspending or ending
-    /// the adventure returns to Home.
+    /// on the same map as the camera follows the party there; a room with a battle opens the
+    /// battle scene, and suspending or ending the adventure returns to Home.
     /// </summary>
     public sealed class ExplorationBootstrap : MonoBehaviour
     {
@@ -47,8 +47,7 @@ namespace Baryonyx.App
                 view,
                 AdventureSession.SourceOrLocal,
                 () => SceneLoader.Load(SceneNames.Home, transition, this),
-                () => SceneLoader.Load(SceneNames.Battle, transition, this),
-                view.Crossfade
+                () => SceneLoader.Load(SceneNames.Battle, transition, this)
             );
             flow.Start();
         }

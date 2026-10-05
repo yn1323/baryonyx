@@ -6,6 +6,7 @@ using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -55,8 +56,8 @@ namespace Baryonyx.Tests.PlayMode
             bootstrap.Flow != null
             && !bootstrap.Flow.Busy
             && !bootstrap.Transition.IsPlaying
-            && !bootstrap.View.Fading
-            && !bootstrap.View.Walking;
+            && !bootstrap.View.Walking
+            && !bootstrap.View.Clearing;
 
         // 開く演出（シャッター）が開き切り、最初の手札を配り終えてから操作する。
         // 配っている間は、ターン終了を受け付けない。
@@ -99,6 +100,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
             Assert.That(view.FloorTexts[0], Is.EqualTo("第5層"));
             Assert.That(view.MapImage.texture, Is.Not.Null);
+            // 停止中に見せる見本の地図の絵と印は、冒険の地図の上に残さない。
+            Assert.That(view.MapPreview.gameObject.activeSelf, Is.False);
+            Assert.That(
+                view.Markers.GetComponentsInChildren<ExplorationMapMarker>(),
+                Has.Length.EqualTo(view.ShownMarkers.Count)
+            );
             foreach (var next in here.Next)
             {
                 var marker = view.MarkerOf(next);
@@ -122,11 +129,25 @@ namespace Baryonyx.Tests.PlayMode
             if (here.Next.Count > 1)
                 view.MarkerOf(here.Next[1]).Button.onClick.Invoke();
             Assert.That(view.Walking, Is.True);
+
+            // 地図を消さずに、カメラが道に沿って選んだ部屋へ追いかける。
+            var from = view.CameraPoint;
+            var to = run.Map.PointOf(chosen);
+            yield return SceneTests.WaitUntil(
+                () => view.CameraPoint.x > (from.x + to.T) / 2f,
+                4f,
+                "The camera did not follow the party."
+            );
+            Assert.That(view.Walking, Is.True);
+            Assert.That(view.MapImage.color.a, Is.EqualTo(1f));
             yield return SceneTests.WaitUntil(
                 () => view.LocationText == Forest + " 第6層" && ExplorationReady(bootstrap),
                 6f,
                 "The next room did not show."
             );
+            // 着いた部屋の上で止まり、霧から現れた印は見え切っている。
+            Assert.That(view.CameraPoint, Is.EqualTo(new Vector2(to.T, to.S)));
+            Assert.That(view.ShownMarkers.All(marker => marker.Group.alpha == 1f), Is.True);
             var saved = services
                 .Adventure.LoadAsync(CancellationToken.None)
                 .GetAwaiter()
@@ -147,6 +168,90 @@ namespace Baryonyx.Tests.PlayMode
                 view.ShownMarkers.Where(marker => marker.IsExit).Select(marker => marker.RoomId),
                 Is.EquivalentTo(AdventureSession.Current.Run.Room.Next)
             );
+        }
+
+        // 1本指で地図を引くと道の先を見られ、先の部屋はどれも種類が分かる。カメラに近づいた部屋は
+        // 大きくなる。部屋を押すと、カメラは先を見ていた所からパーティへ戻って追いかける。
+        [UnityTest]
+        public IEnumerator OneFingerLooksAheadAndTheWalkBringsTheCameraBack()
+        {
+            StartAt(0);
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                ExplorationReady,
+                value => bootstrap = value
+            );
+            var view = bootstrap.View;
+            var run = AdventureSession.Current.Run;
+            var ahead = run.Map.Rooms.Where(room => room.Floor > run.Floor).ToArray();
+            Assert.That(
+                view.ShownMarkers.Select(marker => marker.RoomId),
+                Is.EquivalentTo(ahead.Select(room => room.Id))
+            );
+            foreach (var room in ahead)
+                Assert.That(
+                    view.MarkerOf(room.Id).Icon.sprite,
+                    Is.SameAs(view.KindIcon(room.Kind)),
+                    room.Id
+                );
+            var last = ahead.First(room => room.Floor == run.Map.BossFloor - 1);
+            Assert.That(view.MarkerOf(last.Id).Sight, Is.EqualTo(ExplorationRoomSight.Far));
+            Assert.That(
+                view.MarkerOf(AdventureRouteMap.BossId).Sight,
+                Is.EqualTo(ExplorationRoomSight.Detail)
+            );
+
+            // 下へ引くと先へ進み、最奥の3階手前で止まる。最後の階の部屋も大きく見える。
+            var start = view.CameraPoint;
+            yield return Pull(view, -160f);
+            Assert.That(view.CameraPoint.x, Is.GreaterThan(start.x));
+            Assert.That(view.MarkerOf(last.Id).Sight, Is.EqualTo(ExplorationRoomSight.Detail));
+            Assert.That(view.FloorTexts, Does.Contain(AdventureCatalog.FloorText(last.Floor)));
+            // 上へ引くと、パーティの所で止まる。
+            yield return Pull(view, 160f);
+            Assert.That(view.CameraPoint, Is.EqualTo(start));
+
+            // 少し先を見たまま部屋を押すと、カメラはパーティへ戻り、着いた部屋の上で止まる。
+            yield return Drag(view, -160f);
+            Assert.That(view.CameraPoint.x, Is.GreaterThan(start.x));
+            yield return SceneTests.WaitUntil(() => ExplorationReady(bootstrap));
+            var chosen = run.Room.Next[0];
+            var to = run.Map.PointOf(chosen);
+            view.MarkerOf(chosen).Button.onClick.Invoke();
+            Assert.That(view.Walking, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => view.LocationText == Forest + " 第2層",
+                6f,
+                "The next room did not show."
+            );
+            Assert.That(view.CameraPoint, Is.EqualTo(new Vector2(to.T, to.S)));
+        }
+
+        // 地図を1本指で上下に動かす（dy は画面のピクセル、負で下へ引く）。
+        private static IEnumerator Drag(ExplorationView view, float dy)
+        {
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            var data = new PointerEventData(EventSystem.current)
+            {
+                position = center + new Vector2(0f, dy),
+                delta = new Vector2(0f, dy),
+            };
+            ExecuteEvents.Execute(view.Drag.gameObject, data, ExecuteEvents.dragHandler);
+            yield return null;
+        }
+
+        // カメラが止まるまで、同じ向きに引き続ける。
+        private static IEnumerator Pull(ExplorationView view, float dy)
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                var before = view.CameraPoint;
+                yield return Drag(view, dy);
+                if (view.CameraPoint == before)
+                    yield break;
+            }
+            Assert.Fail("The camera did not stop.");
         }
 
         [UnityTest]

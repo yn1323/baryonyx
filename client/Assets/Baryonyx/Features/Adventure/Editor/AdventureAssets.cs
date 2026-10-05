@@ -37,6 +37,9 @@ namespace Baryonyx.Adventure.Editor
         public const string IconTreasurePath = ArtFolder + "/IconRoomTreasure.aseprite";
         public const string IconBossPath = ArtFolder + "/IconRoomBoss.aseprite";
 
+        // 停止中の探索画面に見せる、見本の道の地図の絵。生成のたびに描き直す。
+        public const string MapPreviewPath = ArtFolder + "/ExplorationMapPreview.png";
+
         public const string StageArtFolder = "Assets/Baryonyx/Shared/Art/Stages/Exploration";
         public const string ChestClosedPath = StageArtFolder + "/ChestClosed.aseprite";
         public const string ChestOpenPath = StageArtFolder + "/ChestOpen.aseprite";
@@ -208,13 +211,19 @@ namespace Baryonyx.Adventure.Editor
                     * MapDot
             );
             view.Map = map;
-            view.MapGroup = map.gameObject.AddComponent<CanvasGroup>();
             var picture = Rect("Picture", map);
             Stretch(picture);
             view.MapImage = picture.gameObject.AddComponent<RawImage>();
-            view.MapImage.raycastTarget = false;
+            // 地図の絵は指を受け、地図の上のどこを1本指で動かしても道の先を見られる。
+            view.MapImage.raycastTarget = true;
+            view.Drag = map.gameObject.AddComponent<ExplorationMapDrag>();
             // 地図の絵が届くまでは、背景と同じ暗い色にしておく。
             view.MapImage.color = ScreenScenes.CameraColor;
+            var preview = Rect("Preview", map);
+            Stretch(preview);
+            preview.gameObject.tag = "EditorOnly";
+            view.MapPreview = preview.gameObject.AddComponent<RawImage>();
+            view.MapPreview.raycastTarget = false;
 
             var markers = Rect("Markers", map);
             Stretch(markers);
@@ -245,7 +254,23 @@ namespace Baryonyx.Adventure.Editor
             view.Notice = NoticeBandAssets.Build(root);
             view.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);
+            DrawSample(view);
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, ExplorationPrefabPath);
+        }
+
+        // 見本の道を入口から見た形で一度描き、印・パーティ・階・文字をPrefabに作り込む。
+        // 地図の絵はPNGにして停止中だけ見せ、実行中はビューが隠して冒険の地図を描く。
+        private static void DrawSample(ExplorationView view)
+        {
+            view.MarkerTemplate.gameObject.SetActive(false);
+            view.FloorTemplate.gameObject.SetActive(false);
+            view.RenderSample(view.SampleSeed);
+            var painted = (Texture2D)view.MapImage.texture;
+            File.WriteAllBytes(MapPreviewPath, painted.EncodeToPNG());
+            view.MapPreview.texture = ArtAssets.ImportTexture(MapPreviewPath, FilterMode.Point);
+            view.MapImage.texture = null;
+            view.MapImage.color = ScreenScenes.CameraColor;
+            UnityEngine.Object.DestroyImmediate(painted);
         }
 
         // 部屋の印の型：光、丸い札、部屋の種類のアイコン、押せる範囲、横の手掛かり。
@@ -255,6 +280,8 @@ namespace Baryonyx.Adventure.Editor
             Place(body, Vector2.zero, new Vector2(150, 150));
             var marker = body.gameObject.AddComponent<ExplorationMapMarker>();
             marker.Body = body;
+            // 霧が晴れて現れる・見えなくなって消えるときに、印をまとめて薄くする。
+            marker.Group = body.gameObject.AddComponent<CanvasGroup>();
 
             var glow = Rect("Glow", body);
             Place(glow, Vector2.zero, new Vector2(120, 120));
@@ -326,6 +353,7 @@ namespace Baryonyx.Adventure.Editor
                 bodies.Add(body);
             }
             view.Party = bodies.ToArray();
+            view.Formation = Array.ConvertAll(Party, member => member.Offset);
         }
 
         private static void BuildChest(RectTransform map, ExplorationView view)

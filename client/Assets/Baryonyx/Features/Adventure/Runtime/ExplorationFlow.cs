@@ -9,12 +9,11 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// Runs the exploration of the adventure in progress (doc/features/stage-progression.md):
     /// reads where the party is, shows the map from its room, walks the road to the room tapped
-    /// and saves the room chosen before showing the map from it, opens a treasure room's chest
-    /// for its reward, and hands a room with a battle to the battle scene. The menu suspends the
-    /// adventure to Home (it goes on from the room the party is in), or ends it and shows what it
-    /// brought back. Scene changes are the caller's (<c>toHome</c>, <c>toBattle</c>); a room
-    /// change inside the scene goes through <c>changeRoom</c>, which hides the map while the next
-    /// room is shown.
+    /// with the camera following and saves the room chosen before showing the map from it, opens
+    /// a treasure room's chest for its reward, and hands a room with a battle to the battle scene.
+    /// The menu suspends the adventure to Home (it goes on from the room the party is in), or ends
+    /// it and shows what it brought back. Scene changes are the caller's (<c>toHome</c>,
+    /// <c>toBattle</c>); the next room inside the scene is shown without leaving the map.
     /// </summary>
     public sealed class ExplorationFlow : IDisposable
     {
@@ -26,7 +25,6 @@ namespace Baryonyx.Adventure
         private readonly IAdventureSource source;
         private readonly Func<bool> toHome;
         private readonly Func<bool> toBattle;
-        private readonly Action<Action> changeRoom;
         private readonly Action<AdventureRun> entered;
         private readonly CancellationTokenSource lifetime = new();
         private ExplorationRoom room;
@@ -38,7 +36,6 @@ namespace Baryonyx.Adventure
             IAdventureSource source,
             Func<bool> toHome,
             Func<bool> toBattle,
-            Action<Action> changeRoom = null,
             Action<AdventureRun> entered = null
         )
         {
@@ -46,7 +43,6 @@ namespace Baryonyx.Adventure
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.toHome = toHome ?? throw new ArgumentNullException(nameof(toHome));
             this.toBattle = toBattle ?? throw new ArgumentNullException(nameof(toBattle));
-            this.changeRoom = changeRoom ?? (show => show());
             this.entered = entered;
             view.RoomPressed += OnRoom;
             view.ChestPressed += OnChest;
@@ -155,7 +151,7 @@ namespace Baryonyx.Adventure
                 }
         }
 
-        // 道を歩きながら選んだ部屋を保存し、両方が済んでから、その部屋から見た地図を見せる。
+        // 道を歩きながら選んだ部屋を保存し、両方が済んでから、着いた部屋から見た地図を見せる。
         private async Task MoveAsync(ExplorationExit exit)
         {
             busy = true;
@@ -182,7 +178,7 @@ namespace Baryonyx.Adventure
             await walked.Task;
             if (disposed)
                 return;
-            changeRoom(() => Enter(state));
+            Enter(state);
         }
 
         private void OnChest()

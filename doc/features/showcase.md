@@ -65,7 +65,7 @@ Prefabのプレビューは舞台全体を遠くから写すだけで、画面�
 戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
-探索の地図に立てる木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で描く（[冒険の画面](screens.md#冒険の画面)）。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
+探索の地図に立てる木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で描く（[冒険の画面](screens.md#冒険の画面)）。Play Modeで明るい縁の部屋の札を押すと、4人がその部屋まで歩いてカメラが追い、霧が晴れて先の部屋の印が現れる様子を確かめられる（見本の部屋は出来事を終えた扱いで、着くと次の札が出る）。停止中に見せる見本の地図の絵 `ExplorationMapPreview`（Prefabの生成で描き直す）はUIのカテゴリに入る。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
 
 ### 光芒の調整
 

@@ -152,8 +152,9 @@ namespace Baryonyx.Tests.EditMode
         }
 
         // 2階先までは詳しく、4階先までは行ける部屋の印だけ、その先は強い魔物の光と最奥の間だけを見せる。
+        // 道の先の部屋は全部、種類が分かる形で見せる。カメラの立つ階に近いほど大きく、遠いほど小さい。
         [Test]
-        public void ThePartySeesNearRoomsInDetailAndFarRoomsThroughTheFog()
+        public void EveryRoomAheadIsShownSmallerFurtherFromTheCamera()
         {
             var map = AdventureRouteMap.Generate(4242, RoomCount);
             var run = new AdventureRun(
@@ -168,28 +169,21 @@ namespace Baryonyx.Tests.EditMode
                 null
             );
             var sight = new ExplorationMapSight(run);
+            foreach (var view in new[] { 1, 4 })
             foreach (var room in map.Rooms)
             {
-                var seen = sight.Of(room);
-                int ahead = room.Floor - 1;
-                if (room.Kind == AdventureRoomKind.Boss)
-                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Detail));
-                else if (ahead == 0)
+                var seen = sight.Of(room, view);
+                int ahead = room.Floor - view;
+                if (room.Floor == 1)
                     Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Hidden));
-                else if (ahead <= 2)
+                else if (room.Kind == AdventureRoomKind.Boss || ahead <= 2)
                     Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Detail), room.Id);
                 else if (ahead <= 4)
                     Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Mark), room.Id);
                 else
-                    Assert.That(
-                        seen,
-                        Is.EqualTo(
-                            room.Kind == AdventureRoomKind.Elite
-                                ? ExplorationRoomSight.Glow
-                                : ExplorationRoomSight.Hidden
-                        ),
-                        room.Id
-                    );
+                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Far), room.Id);
+                if (view == 1)
+                    Assert.That(sight.Of(room), Is.EqualTo(seen), room.Id);
             }
         }
 
@@ -235,17 +229,100 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        private static Color32[] Paint(AdventureRun run, ExplorationMapArt art)
+        // カメラは道の上のどこにでも立てる。部屋の位置に立てば、その部屋から見た地図と同じになる。
+        [Test]
+        public void TheCameraCanStandAnywhereOnTheRoute()
+        {
+            var map = AdventureRouteMap.Generate(4242, RoomCount);
+            foreach (var id in new[] { AdventureRouteMap.EntranceId, "f3-1", "f7-2" })
+            {
+                var point = map.PointOf(id);
+                var room = new ExplorationMapProjection(map, id);
+                var camera = new ExplorationMapProjection(map, point.T, point.S);
+                foreach (var other in map.Rooms)
+                    Assert.That(
+                        camera.ToDots(map.PointOf(other.Id)),
+                        Is.EqualTo(room.ToDots(map.PointOf(other.Id))),
+                        id + " " + other.Id
+                    );
+                // 行と道の t は互いに戻せる。地平線より上には地面がない。
+                for (float y = 20f; y < ExplorationMapProjection.Height; y += 17f)
+                    Assert.That(camera.RowOf(camera.TAtRow(y)), Is.EqualTo(y).Within(0.01f));
+                Assert.That(float.IsInfinity(camera.TAtRow(0f)), Is.True);
+            }
+        }
+
+        // カメラが道に沿って着いた絵は、着いた部屋で描いた絵と同じになり、着いたときに絵が飛ばない。
+        // 動いている間は、木が一度に入れ替わらず、少しずつ現れ・消える。
+        [Test]
+        public void TheCameraFollowingARoadArrivesAtThePictureOfTheRoom()
+        {
+            var art = ScriptableObject.CreateInstance<ExplorationMapArt>();
+            try
+            {
+                art.Trees = new[] { Stamp("tree", 9, 11, new Color32(10, 200, 30, 255)) };
+                art.TreesFar = new[] { Stamp("far", 5, 6, new Color32(10, 200, 30, 255)) };
+                var map = AdventureRouteMap.Generate(99, RoomCount);
+                var entrance = map.Find(AdventureRouteMap.EntranceId);
+                var next = entrance.Next[1];
+                var start = new AdventureRun(
+                    "r",
+                    AdventureCatalog.ForestRuins,
+                    entrance.Id,
+                    true,
+                    new[] { entrance.Id },
+                    0,
+                    100,
+                    map,
+                    null
+                );
+                var arrived = new AdventureRun(
+                    "r",
+                    AdventureCatalog.ForestRuins,
+                    next,
+                    false,
+                    new[] { entrance.Id, next },
+                    0,
+                    100,
+                    map,
+                    null
+                );
+                var painter = new ExplorationMapPainter(map, art);
+                var pixels = Paint(painter, start);
+                var sight = new ExplorationMapSight(arrived);
+                bool fading = false;
+                foreach (var (t, s) in map.Path(entrance.Id, next, 12))
+                {
+                    var camera = new ExplorationMapProjection(map, t, s);
+                    painter.Paint(pixels, arrived, camera, sight, null, 1f / 30f);
+                    fading |= !painter.Settled;
+                }
+                Assert.That(fading, Is.True);
+                var room = new ExplorationMapProjection(map, next);
+                for (int frame = 0; frame < 30 && !painter.Settled; frame++)
+                    painter.Paint(pixels, arrived, room, sight, null, 1f / 30f);
+                Assert.That(painter.Settled, Is.True);
+                Assert.That(pixels, Is.EqualTo(Paint(arrived, art)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(art);
+            }
+        }
+
+        private static Color32[] Paint(AdventureRun run, ExplorationMapArt art) =>
+            Paint(new ExplorationMapPainter(run.Map, art), run);
+
+        private static Color32[] Paint(ExplorationMapPainter painter, AdventureRun run)
         {
             var pixels = new Color32[
                 ExplorationMapProjection.Width * ExplorationMapProjection.Height
             ];
-            ExplorationMapPainter.Paint(
+            painter.Paint(
                 pixels,
                 run,
                 new ExplorationMapProjection(run.Map, run.RoomId),
-                new ExplorationMapSight(run),
-                art
+                new ExplorationMapSight(run)
             );
             return pixels;
         }

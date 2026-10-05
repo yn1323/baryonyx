@@ -9,13 +9,42 @@ namespace Baryonyx.Adventure
     /// from the bottom like a texture): the grass, the dirt roads between the rooms and their
     /// clearings, the forest of stamped trees, the ruin at the deepest room, and the fog, light
     /// and shade over it. The rooms' icons, the party and the words are laid over it by
-    /// <see cref="ExplorationView"/>. The forest stands at the same places of the route every time
-    /// the same route is painted, so it only turns as the party goes deeper.
+    /// <see cref="ExplorationView"/>.
+    /// The grass, the roads and the forest stand at fixed places of the route, so the camera can
+    /// follow the party along a road and the picture moves with it; one painter keeps a route's
+    /// forest between pictures. A tree stands where it hides no road and the forest around it is
+    /// not yet as thick as its size and distance allow; a tree that starts or stops standing as
+    /// the camera moves fades in or out through a dither instead of popping. The fog lies on the
+    /// rows a fog camera sees far away, so it can lag behind the camera and then clear.
     /// </summary>
-    public static class ExplorationMapPainter
+    public sealed class ExplorationMapPainter
     {
+        // 木が現れ切る・消え切るまでの時間。
+        public const float TreeFadeSeconds = 0.25f;
+
         private const int W = ExplorationMapProjection.Width;
         private const int H = ExplorationMapProjection.Height;
+
+        // 霧の帯の高さ（ドット）。この行より上を霧で覆う。
+        private const int FogRows = 200;
+
+        // 木を立てる候補の格子（道の長さ・横幅の割合）。
+        private const float StepT = 0.009f;
+        private const float StepS = 0.022f;
+
+        // 森の茂り具合：木の幅の2乗のこの倍の広さに1本。小さいほど茂る。
+        private const float Spacing = 0.24f;
+
+        // 遠くの小さい木に替える行の縮尺。木ごとに少しずらし、一列にそろって替わらないようにする。
+        private const float FarScale = 0.62f;
+        private const float FarScaleSpread = 0.04f;
+
+        // 草の模様の大きさ：手前の行で、横1ドット・縦1行がこの値の1/1.5になる。
+        private const float GrassAcross = ExplorationMapProjection.NearWidth / 1.5f;
+        private const float GrassAlong = 842f / 1.5f;
+
+        // 最奥の間より奥の草の模様の大きさ（1ドットが模様の1/0.82）。
+        private const float FarGrass = 0.82f;
 
         private static readonly Color32[] Grass =
         {
@@ -39,6 +68,9 @@ namespace Baryonyx.Adventure
         private static readonly Color32 OldClearing = new(0x3a, 0x4a, 0x2c, 255);
         private static readonly Color32 TreeShadow = new(0x14, 0x28, 0x18, 255);
         private static readonly Color32 BossGlow = new(0x7a, 0x3a, 0xc0, 255);
+        private static readonly Color32 Fog = new(176, 196, 196, 255);
+        private static readonly Color32 Light = new(255, 240, 190, 255);
+        private static readonly Color32 Shade = new(4, 8, 10, 255);
         private static readonly int[,] Bayer =
         {
             { 0, 8, 2, 10 },
@@ -46,6 +78,10 @@ namespace Baryonyx.Adventure
             { 3, 11, 1, 9 },
             { 15, 7, 13, 5 },
         };
+
+        // 画面に対して動かない光の筋と周りの影の濃さ（1/256単位、上から数えた行）。
+        private static readonly byte[] LightAlpha = MakeLight();
+        private static readonly byte[] ShadeAlpha = MakeShade();
 
         private enum RoadState
         {
@@ -55,78 +91,143 @@ namespace Baryonyx.Adventure
             Next,
         }
 
-        /// <summary>Paints the map of the run, seen from the room the party is in.</summary>
-        public static void Paint(
+        private sealed class RoadLine
+        {
+            public string From;
+            public string To;
+            public (float T, float S)[] Route;
+            public RoadState State;
+            public readonly List<Vector2> Dots = new();
+        }
+
+        private struct TreeSpot
+        {
+            public float T;
+            public float S;
+            public int Pick;
+            public bool Low;
+            public bool Flip;
+
+            // 茂り具合で間引くときの順番（0〜1、小さいほど先に立つ）。
+            public float Priority;
+
+            // 遠くの小さい木に替える縮尺。
+            public float FarBelow;
+        }
+
+        private sealed class Picture
+        {
+            public int Width;
+            public int Height;
+
+            // 下の行から数えた画素。
+            public Color32[] Pixels;
+
+            public static Picture[] From(PixelStamp[] stamps)
+            {
+                var pictures = new List<Picture>();
+                foreach (var stamp in stamps ?? Array.Empty<PixelStamp>())
+                    if (stamp != null && !stamp.IsEmpty)
+                        pictures.Add(From(stamp));
+                return pictures.ToArray();
+            }
+
+            public static Picture From(PixelStamp stamp)
+            {
+                var pixels = new Color32[stamp.Width * stamp.Height];
+                for (int y = 0; y < stamp.Height; y++)
+                for (int x = 0; x < stamp.Width; x++)
+                    pixels[y * stamp.Width + x] = stamp.Pixel(x, y);
+                return new Picture
+                {
+                    Width = stamp.Width,
+                    Height = stamp.Height,
+                    Pixels = pixels,
+                };
+            }
+        }
+
+        private readonly RoadLine[] roads;
+        private readonly TreeSpot[] spots;
+        private readonly float[] shown;
+        private readonly float[] nearness;
+        private readonly Vector2[] at;
+        private readonly int[] order;
+        private readonly float[] orderY;
+        private readonly Picture[] trees;
+        private readonly Picture[] treesFar;
+        private readonly Picture[] undergrowth;
+        private readonly Picture[] undergrowthFar;
+        private readonly Picture ruin;
+        private readonly float treeSize;
+
+        // 木を立てない所（道・空き地・最奥の間の近く）。2ドット四方を1マスにする。
+        private readonly bool[] mask = new bool[(W / 2) * (H / 2)];
+
+        public ExplorationMapPainter(AdventureRouteMap map, ExplorationMapArt art)
+        {
+            Map = map ?? throw new ArgumentNullException(nameof(map));
+            roads = MakeRoads(map);
+            trees = Picture.From(art != null ? art.Trees : null);
+            treesFar = Picture.From(art != null ? art.TreesFar : null);
+            undergrowth = Picture.From(art != null ? art.Undergrowth : null);
+            undergrowthFar = Picture.From(art != null ? art.UndergrowthFar : null);
+            ruin =
+                art != null && art.Ruin != null && !art.Ruin.IsEmpty
+                    ? Picture.From(art.Ruin)
+                    : null;
+            treeSize = 0f;
+            foreach (var tree in trees)
+                treeSize += tree.Width / (float)trees.Length;
+            spots = trees.Length > 0 ? MakeSpots(map.Seed) : Array.Empty<TreeSpot>();
+            shown = new float[spots.Length];
+            nearness = new float[spots.Length];
+            at = new Vector2[spots.Length];
+            order = new int[spots.Length];
+            orderY = new float[spots.Length];
+        }
+
+        public AdventureRouteMap Map { get; }
+
+        // 木が現れ切り、消え切っている。false のあいだは、描き直すと木の見え方が進む。
+        public bool Settled { get; private set; } = true;
+
+        /// <summary>
+        /// Paints the map of the run from the camera <paramref name="projection"/>, with the fog
+        /// lying where the <paramref name="fog"/> camera (the same camera when null) sees it,
+        /// thinned by <paramref name="thinning"/> (0 to 1) while it clears.
+        /// <paramref name="seconds"/> is the time since the last picture: the trees fade that far
+        /// toward standing or not; 0 shows them at once.
+        /// </summary>
+        public void Paint(
             Color32[] pixels,
             AdventureRun run,
             ExplorationMapProjection projection,
             ExplorationMapSight sight,
-            ExplorationMapArt art
+            ExplorationMapProjection fog = null,
+            float seconds = 0f,
+            float thinning = 0f
         )
         {
             if (pixels == null || pixels.Length != W * H)
                 throw new ArgumentException("The map needs 800x360 pixels.", nameof(pixels));
-            var map = projection.Map;
+            if (run == null)
+                throw new ArgumentNullException(nameof(run));
+            if (projection == null)
+                throw new ArgumentNullException(nameof(projection));
+            if (sight == null)
+                throw new ArgumentNullException(nameof(sight));
+            // 透明な画素は、まだ何も描いていない所。最後に草で埋める。
+            Array.Clear(pixels, 0, pixels.Length);
+            Array.Clear(mask, 0, mask.Length);
             var canvas = new Canvas(pixels);
-            PaintGrass(canvas, map.Seed);
 
-            var mask = new bool[W * H];
-            var roads = Roads(run, projection, sight);
-            foreach (var road in roads)
-            foreach (var dot in road.Dots)
-                canvas.Mark(mask, dot, Width(road.State, dot.y) / 2 + 3);
-            foreach (RoadState state in Enum.GetValues(typeof(RoadState)))
-            foreach (var road in roads)
-                if (road.State == state)
-                    canvas.Line(
-                        road.Dots,
-                        y => Width(state, y) + 2,
-                        state == RoadState.Old ? OldRoadEdge : RoadEdge
-                    );
-            foreach (RoadState state in Enum.GetValues(typeof(RoadState)))
-            foreach (var road in roads)
-                if (road.State == state)
-                    canvas.Line(
-                        road.Dots,
-                        y => Width(state, y),
-                        state == RoadState.Old ? OldRoad
-                            : state == RoadState.Passed ? PassedRoad
-                            : Road
-                    );
-            foreach (var road in roads)
-                if (road.State != RoadState.Old)
-                    canvas.Line(
-                        road.Dots,
-                        y => Math.Max(1, Width(road.State, y) - 3),
-                        road.State == RoadState.Passed ? PassedLight : RoadLight
-                    );
-            foreach (var road in roads)
-                if (road.State == RoadState.Next || road.State == RoadState.Passed)
-                    canvas.Line(
-                        road.Dots,
-                        _ => 1,
-                        road.State == RoadState.Next ? GuideDot : PassedDot,
-                        dash: 2
-                    );
-
-            // 部屋の空き地。
-            foreach (var room in map.Rooms)
-            {
-                var dots = projection.ToDots(map.PointOf(room.Id));
-                if (!OnMap(dots, 24))
-                    continue;
-                float scale = ExplorationMapProjection.ScaleAt(dots.y);
-                bool open = room.Id == run.RoomId || sight.Reachable.Contains(room.Id);
-                int rx = Mathf.RoundToInt(16 * scale);
-                int ry = Mathf.Max(1, Mathf.RoundToInt(7 * scale));
-                canvas.Ellipse(dots.x, dots.y + 1, rx + 1, ry + 1, RoadEdge);
-                canvas.Ellipse(dots.x, dots.y, rx, ry, open ? Clearing : OldClearing);
-                canvas.Mark(mask, dots + new Vector2(0, -6 * scale), Mathf.RoundToInt(18 * scale));
-            }
-
-            var boss = projection.ToDots(map.PointOf(AdventureRouteMap.BossId));
-            canvas.Mark(mask, boss + new Vector2(0, -14), 30);
-            PaintForest(canvas, mask, projection, art);
+            PaintRoads(canvas, run, projection, sight);
+            PaintClearings(canvas, run, projection, sight);
+            var boss = projection.ToDots(Map.PointOf(AdventureRouteMap.BossId));
+            MarkMask(boss + new Vector2(0, -14), 30);
+            PaintForest(canvas, projection, seconds);
+            PaintGrass(pixels, projection);
 
             // 最奥の間：紫の気配と、霧の上に立つ遺跡。
             canvas.Dither(
@@ -144,10 +245,17 @@ namespace Baryonyx.Adventure
                                 * 0.7f
                     )
             );
-            PaintFog(canvas);
-            if (art != null && art.Ruin != null && !art.Ruin.IsEmpty)
-                canvas.Stamp(art.Ruin, Mathf.RoundToInt(boss.x), Mathf.RoundToInt(boss.y), false);
-            PaintShade(canvas);
+            PaintFog(pixels, projection, fog ?? projection, Mathf.Clamp01(thinning));
+            if (ruin != null)
+                canvas.Stamp(
+                    ruin,
+                    Mathf.RoundToInt(boss.x),
+                    Mathf.RoundToInt(boss.y),
+                    false,
+                    0f,
+                    1f
+                );
+            PaintShade(pixels);
         }
 
         private static int Width(RoadState state, float y)
@@ -159,193 +267,462 @@ namespace Baryonyx.Adventure
         private static bool OnMap(Vector2 dots, float margin) =>
             dots.x > -margin && dots.x < W + margin && dots.y > -margin && dots.y < H + margin;
 
-        private sealed class RoadLine
+        private static RoadLine[] MakeRoads(AdventureRouteMap map)
         {
-            public RoadState State;
-            public List<Vector2> Dots;
+            var roads = new List<RoadLine>();
+            foreach (var room in map.Rooms)
+            foreach (var next in room.Next)
+            {
+                var path = map.Path(room.Id, next, 64);
+                var route = new (float T, float S)[path.Count];
+                for (int i = 0; i < route.Length; i++)
+                    route[i] = path[i];
+                roads.Add(
+                    new RoadLine
+                    {
+                        From = room.Id,
+                        To = next,
+                        Route = route,
+                    }
+                );
+            }
+            return roads.ToArray();
         }
 
         // 部屋をつなぐ道。通った道、今いる部屋から出る道、行ける先の道、行けなくなった道に分ける。
-        private static List<RoadLine> Roads(
+        private void PaintRoads(
+            Canvas canvas,
             AdventureRun run,
             ExplorationMapProjection projection,
             ExplorationMapSight sight
         )
         {
-            var map = projection.Map;
             var passedPairs = new HashSet<(string, string)>();
             for (int i = 1; i < run.Route.Count; i++)
                 passedPairs.Add((run.Route[i - 1], run.Route[i]));
-            var roads = new List<RoadLine>();
-            foreach (var room in map.Rooms)
-            foreach (var next in room.Next)
+            foreach (var road in roads)
             {
-                RoadState state =
-                    passedPairs.Contains((room.Id, next)) ? RoadState.Passed
-                    : room.Id == run.RoomId ? (run.RoomCleared ? RoadState.Next : RoadState.Ahead)
-                    : sight.Reachable.Contains(room.Id) ? RoadState.Ahead
+                road.State =
+                    passedPairs.Contains((road.From, road.To)) ? RoadState.Passed
+                    : road.From == run.RoomId ? (run.RoomCleared ? RoadState.Next : RoadState.Ahead)
+                    : sight.Reachable.Contains(road.From) ? RoadState.Ahead
                     : RoadState.Old;
-                var dots = new List<Vector2>();
-                foreach (var (t, s) in map.Path(room.Id, next, 64))
+                road.Dots.Clear();
+                foreach (var (t, s) in road.Route)
                 {
                     var dot = projection.ToDots(t, s);
                     if (OnMap(dot, 40))
-                        dots.Add(dot);
+                        road.Dots.Add(dot);
                 }
-                if (dots.Count > 1)
-                    roads.Add(new RoadLine { State = state, Dots = dots });
+                if (road.Dots.Count < 2)
+                    road.Dots.Clear();
+                foreach (var dot in road.Dots)
+                    MarkMask(dot, Width(road.State, dot.y) / 2 + 3);
             }
-            return roads;
-        }
-
-        private static void PaintGrass(Canvas canvas, int seed)
-        {
-            for (int y = 0; y < H; y++)
-            {
-                float scale = ExplorationMapProjection.ScaleAt(
-                    Mathf.Max(y, ExplorationMapProjection.FarY)
-                );
-                float stretch = 0.5f + scale;
-                for (int x = 0; x < W; x++)
+            // 縁、道、明るい中央、点線の順に、行けなくなった道から重ねる。
+            for (int pass = 0; pass < 4; pass++)
+            for (var state = RoadState.Old; state <= RoadState.Next; state++)
+                foreach (var road in roads)
                 {
-                    float n =
-                        Fbm(x / stretch, y / stretch, seed)
-                        + (Bayer[y & 3, x & 3] / 16f - 0.5f) * 0.12f;
-                    int k = Mathf.Clamp(Mathf.FloorToInt(n * 6f - 0.6f), 0, Grass.Length - 1);
-                    canvas.Set(x, y, Grass[k]);
+                    if (road.State != state || road.Dots.Count == 0)
+                        continue;
+                    if (pass == 0)
+                        canvas.Line(
+                            road.Dots,
+                            state,
+                            2,
+                            state == RoadState.Old ? OldRoadEdge : RoadEdge
+                        );
+                    else if (pass == 1)
+                        canvas.Line(
+                            road.Dots,
+                            state,
+                            0,
+                            state == RoadState.Old ? OldRoad
+                                : state == RoadState.Passed ? PassedRoad
+                                : Road
+                        );
+                    else if (pass == 2 && state != RoadState.Old)
+                        canvas.Line(
+                            road.Dots,
+                            state,
+                            -3,
+                            state == RoadState.Passed ? PassedLight : RoadLight
+                        );
+                    else if (pass == 3 && (state == RoadState.Next || state == RoadState.Passed))
+                        canvas.Line(
+                            road.Dots,
+                            state,
+                            int.MinValue,
+                            state == RoadState.Next ? GuideDot : PassedDot,
+                            dash: 2
+                        );
                 }
-            }
         }
 
-        // 木と下草：道の上の決まった場所に立て、近い物から順に、重なりすぎない物だけを残す。
-        private static void PaintForest(
+        // 部屋の空き地。通った部屋と、これから行ける部屋は明るい土にする。
+        private void PaintClearings(
             Canvas canvas,
-            bool[] mask,
+            AdventureRun run,
             ExplorationMapProjection projection,
-            ExplorationMapArt art
+            ExplorationMapSight sight
         )
         {
-            if (art == null || art.Trees.Length == 0)
-                return;
-            var map = projection.Map;
-            var candidates = new List<(Vector2 Dots, PixelStamp Stamp, bool Flip)>();
-            const float stepT = 0.009f;
-            const float stepS = 0.022f;
-            int rows = Mathf.CeilToInt(1.2f / stepT);
-            int columns = Mathf.CeilToInt(4.4f / stepS);
+            foreach (var room in Map.Rooms)
+            {
+                var dots = projection.ToDots(Map.PointOf(room.Id));
+                if (!OnMap(dots, 24))
+                    continue;
+                float scale = ExplorationMapProjection.ScaleAt(dots.y);
+                bool open =
+                    room.Id == run.RoomId
+                    || sight.Reachable.Contains(room.Id)
+                    || sight.Passed.Contains(room.Id);
+                int rx = Mathf.RoundToInt(16 * scale);
+                int ry = Mathf.Max(1, Mathf.RoundToInt(7 * scale));
+                canvas.Ellipse(dots.x, dots.y + 1, rx + 1, ry + 1, RoadEdge, 0f, 1f);
+                canvas.Ellipse(dots.x, dots.y, rx, ry, open ? Clearing : OldClearing, 0f, 1f);
+                MarkMask(dots + new Vector2(0, -6 * scale), Mathf.RoundToInt(18 * scale));
+            }
+        }
+
+        // 木と下草を立てる場所の候補。道の上の決まった場所に、種から毎回同じに置く。
+        private static TreeSpot[] MakeSpots(int seed)
+        {
+            var spots = new List<TreeSpot>();
+            int rows = Mathf.CeilToInt(1.2f / StepT);
+            int columns = Mathf.CeilToInt(4.4f / StepS);
             for (int row = 0; row < rows; row++)
             for (int column = 0; column < columns; column++)
             {
-                uint hash = Hash(row, column, map.Seed);
+                uint hash = Hash(row, column, seed);
                 if ((hash & 0xff) < 64)
                     continue;
-                float t = -0.15f + (row + Unit(hash >> 8)) * stepT;
-                float s = -1.7f + (column + Unit(hash >> 16)) * stepS;
-                var dots = projection.ToDots(t, s);
-                if (!OnMap(dots, 24) || dots.y < ExplorationMapProjection.FarY - 30)
-                    continue;
-                float scale = ExplorationMapProjection.ScaleAt(dots.y);
-                bool far = scale < 0.62f;
-                bool low = (hash >> 24) % 100 < 18;
-                var set =
-                    low ? (far ? art.UndergrowthFar : art.Undergrowth)
-                    : far ? art.TreesFar
-                    : art.Trees;
-                if (set.Length == 0)
-                    continue;
-                var stamp = set[(int)((hash >> 4) % (uint)set.Length)];
-                if (stamp.IsEmpty)
-                    continue;
-                candidates.Add((dots, stamp, (hash & 0x100) != 0));
+                uint more = Hash(column, row, seed + 7);
+                spots.Add(
+                    new TreeSpot
+                    {
+                        T = -0.15f + (row + Unit(hash >> 8)) * StepT,
+                        S = -1.7f + (column + Unit(hash >> 16)) * StepS,
+                        Pick = (int)((hash >> 4) & 0xfff),
+                        Low = (hash >> 24) % 100 < 18,
+                        Flip = (hash & 0x100) != 0,
+                        Priority = (more & 0xffff) / 65536f,
+                        FarBelow = FarScale + (Unit(more >> 16) - 0.5f) * 2f * FarScaleSpread,
+                    }
+                );
             }
-            candidates.Sort((a, b) => b.Dots.y.CompareTo(a.Dots.y));
+            return spots.ToArray();
+        }
 
-            const int cell = 4;
-            var taken = new bool[(W / cell + 1) * (H / cell + 1)];
-            var kept = new List<(Vector2 Dots, PixelStamp Stamp, bool Flip)>();
-            foreach (var candidate in candidates)
+        // 木と下草：近い物ほど上に重ね、光は左上から当たるため影は右下へ落とす。
+        private void PaintForest(Canvas canvas, ExplorationMapProjection projection, float seconds)
+        {
+            bool settled = true;
+            float step = seconds > 0f ? seconds / TreeFadeSeconds : 1f;
+            // 候補の格子の、画面1平方ドットあたりの数は、道の t ごとに決まる。
+            const float spotsPerArea = 0.75f / (StepT * StepS);
+            int count = 0;
+            for (int i = 0; i < spots.Length; i++)
             {
-                int bx = Mathf.RoundToInt(candidate.Dots.x);
-                int by = Mathf.RoundToInt(candidate.Dots.y);
-                int radius = Mathf.Max(2, Mathf.RoundToInt(candidate.Stamp.Width * 0.36f));
-                if (Masked(mask, bx, by - radius / 2, radius))
-                    continue;
-                int cx = Mathf.Clamp(bx / cell, 0, W / cell);
-                int cy = Mathf.Clamp(by / cell, 0, H / cell);
-                if (taken[cy * (W / cell + 1) + cx])
-                    continue;
-                int reach = Mathf.Max(1, radius / cell);
-                for (int dy = -reach / 2; dy <= reach / 2; dy++)
-                for (int dx = -reach; dx <= reach; dx++)
+                var spot = spots[i];
+                var dots = projection.ToDots(spot.T, spot.S);
+                if (!OnMap(dots, 24) || dots.y < ExplorationMapProjection.FarY - 30)
                 {
-                    int x = cx + dx;
-                    int y = cy + dy;
-                    if (x >= 0 && y >= 0 && x <= W / cell && y <= H / cell)
-                        taken[y * (W / cell + 1) + x] = true;
+                    shown[i] = 0f;
+                    continue;
                 }
-                kept.Add(candidate);
+                float scale = ExplorationMapProjection.ScaleAt(dots.y);
+                bool far = scale < spot.FarBelow;
+                var picture = PictureOf(spot, far);
+                bool stand = false;
+                if (picture != null)
+                {
+                    float size = treeSize * Mathf.Clamp(scale, 0.45f, 1f);
+                    float wanted = 1f / (Spacing * size * size);
+                    float candidates = spotsPerArea / projection.DotsPerArea(spot.T);
+                    int radius = Mathf.Max(2, Mathf.RoundToInt(picture.Width * 0.36f));
+                    stand =
+                        spot.Priority * candidates < wanted
+                        && !Masked(
+                            Mathf.RoundToInt(dots.x),
+                            Mathf.RoundToInt(dots.y) - radius / 2,
+                            radius
+                        );
+                }
+                float target = stand ? 1f : 0f;
+                float near = far ? 0f : 1f;
+                shown[i] = Mathf.MoveTowards(shown[i], target, step);
+                nearness[i] = seconds > 0f ? Mathf.MoveTowards(nearness[i], near, step) : near;
+                if (shown[i] != target || nearness[i] != near)
+                    settled = false;
+                if (shown[i] <= 0f)
+                    continue;
+                at[i] = dots;
+                order[count] = i;
+                orderY[count] = dots.y;
+                count++;
             }
-            kept.Sort((a, b) => a.Dots.y.CompareTo(b.Dots.y));
-            foreach (var (dots, stamp, flip) in kept)
+            Settled = settled;
+            Array.Sort(orderY, order, 0, count);
+            for (int k = 0; k < count; k++)
             {
-                int bx = Mathf.RoundToInt(dots.x);
-                int by = Mathf.RoundToInt(dots.y);
-                int rx = Mathf.Max(1, Mathf.RoundToInt(stamp.Width * 0.38f));
-                // 光は左上から当たるため、影は右下へ落とす。
-                canvas.Ellipse(bx + rx / 3, by, rx, Mathf.Max(1, rx / 3), TreeShadow);
-                canvas.Stamp(stamp, bx, by, flip);
+                int i = order[k];
+                var spot = spots[i];
+                // 近い木と遠い木を入れ替えている間は、2つの絵を市松模様で分け合う。
+                float split = nearness[i] * shown[i];
+                if (split > 0f)
+                    DrawTree(canvas, PictureOf(spot, false), spot.Flip, at[i], 0f, split);
+                if (split < shown[i])
+                    DrawTree(canvas, PictureOf(spot, true), spot.Flip, at[i], split, shown[i]);
             }
         }
 
-        private static bool Masked(bool[] mask, int x, int y, int radius)
+        private Picture PictureOf(TreeSpot spot, bool far)
         {
-            for (int dy = -radius; dy <= radius / 2; dy += 2)
-            for (int dx = -radius; dx <= radius; dx += 2)
+            var set =
+                spot.Low ? (far ? undergrowthFar : undergrowth)
+                : far ? treesFar
+                : trees;
+            return set.Length > 0 ? set[spot.Pick % set.Length] : null;
+        }
+
+        private static void DrawTree(
+            Canvas canvas,
+            Picture picture,
+            bool flip,
+            Vector2 dots,
+            float from,
+            float to
+        )
+        {
+            if (picture == null)
+                return;
+            int bx = Mathf.RoundToInt(dots.x);
+            int by = Mathf.RoundToInt(dots.y);
+            int rx = Mathf.Max(1, Mathf.RoundToInt(picture.Width * 0.38f));
+            canvas.Ellipse(bx + rx / 3, by, rx, Mathf.Max(1, rx / 3), TreeShadow, from, to);
+            canvas.Stamp(picture, bx, by, flip, from, to);
+        }
+
+        private void MarkMask(Vector2 center, int radius)
+        {
+            int cx = Mathf.RoundToInt(center.x);
+            int cy = Mathf.RoundToInt(center.y);
+            int r2 = radius * radius;
+            int top = Mathf.Max(0, (cy - radius) >> 1);
+            int bottom = Mathf.Min(H / 2 - 1, (cy + radius) >> 1);
+            int left = Mathf.Max(0, (cx - radius) >> 1);
+            int right = Mathf.Min(W / 2 - 1, (cx + radius) >> 1);
+            for (int my = top; my <= bottom; my++)
             {
-                int px = x + dx;
-                int py = y + dy;
-                if (px >= 0 && py >= 0 && px < W && py < H && mask[py * W + px])
-                    return true;
+                int dy = my * 2 + 1 - cy;
+                for (int mx = left; mx <= right; mx++)
+                {
+                    int dx = mx * 2 + 1 - cx;
+                    if (dx * dx + dy * dy <= r2)
+                        mask[my * (W / 2) + mx] = true;
+                }
             }
+        }
+
+        // 木の根元から奥へ、木の幅ほどの所に道や空き地があるか。
+        private bool Masked(int x, int y, int radius)
+        {
+            int top = Mathf.Max(0, (y - radius) >> 1);
+            int bottom = Mathf.Min(H / 2 - 1, (y + radius / 2) >> 1);
+            int left = Mathf.Max(0, (x - radius) >> 1);
+            int right = Mathf.Min(W / 2 - 1, (x + radius) >> 1);
+            for (int my = top; my <= bottom; my++)
+            for (int mx = left; mx <= right; mx++)
+                if (mask[my * (W / 2) + mx])
+                    return true;
             return false;
         }
 
-        // 奥の霧と、左上から差す光の筋（舞台のポストプロセスの代わり）。
-        private static void PaintFog(Canvas canvas)
+        // 草地：道の上の場所ごとに決まった模様（ノイズで5段の緑）で、何も描いていない所を埋める。
+        // 縦の模様は、どの深さでも手前の行で同じ大きさに見えるよう、最奥へ向かって細かくする。
+        private void PaintGrass(Color32[] pixels, ExplorationMapProjection projection)
         {
-            var fog = new Color(176 / 255f, 196 / 255f, 196 / 255f);
-            for (int y = 0; y < 200; y++)
+            int seed = Map.Seed;
+            for (int y = 0; y < H; y++)
             {
-                float k = y / 200f;
-                float alpha =
-                    k < 0.45f ? Mathf.Lerp(0.92f, 0.78f, k / 0.45f)
-                    : k < 0.72f ? Mathf.Lerp(0.78f, 0.4f, (k - 0.45f) / 0.27f)
-                    : Mathf.Lerp(0.4f, 0f, (k - 0.72f) / 0.28f);
+                float along;
+                float x0;
+                float dx;
+                if (y < ExplorationMapProjection.FarY)
+                {
+                    // 最奥の間より奥はカメラが動いても動かないため、画面に合わせた模様にする。
+                    along = y / FarGrass;
+                    x0 = 0f;
+                    dx = 1f / FarGrass;
+                }
+                else
+                {
+                    float z = projection.DepthAtRow(y);
+                    float t = Mathf.Min(projection.TAtRow(y), 1f);
+                    along = -Mathf.Log(1.08f - t) * GrassAlong;
+                    x0 =
+                        (
+                            projection.AcrossAtRow(y)
+                            - W / 2f * z / ExplorationMapProjection.NearWidth
+                        ) * GrassAcross;
+                    dx = z / ExplorationMapProjection.NearWidth * GrassAcross;
+                }
+                var large = new NoiseRow(along / 12f, seed);
+                var middle = new NoiseRow(along / 5f, seed + 1);
+                var small = new NoiseRow(along / 2f, seed + 2);
+                int row = (H - 1 - y) * W;
                 for (int x = 0; x < W; x++)
-                    canvas.Blend(x, y, fog, alpha);
+                {
+                    if (pixels[row + x].a != 0)
+                        continue;
+                    float across = x0 + dx * x;
+                    float n =
+                        0.55f * large.At(across / 18f)
+                        + 0.3f * middle.At(across / 7f)
+                        + 0.15f * small.At(across / 3f)
+                        + (Bayer[y & 3, x & 3] / 16f - 0.5f) * 0.12f;
+                    int k = Mathf.Clamp(Mathf.FloorToInt(n * 6f - 0.6f), 0, Grass.Length - 1);
+                    pixels[row + x] = Grass[k];
+                }
             }
-            var light = new Color(1f, 240 / 255f, 190 / 255f);
+        }
+
+        /// <summary>Value noise along one row: the lattice of the row is read once per cell.</summary>
+        private struct NoiseRow
+        {
+            private readonly int yi;
+            private readonly float v;
+            private readonly int seed;
+            private int cell;
+            private float left;
+            private float right;
+
+            public NoiseRow(float y, int seed)
+            {
+                yi = Mathf.FloorToInt(y);
+                float yf = y - yi;
+                v = yf * yf * (3f - 2f * yf);
+                this.seed = seed;
+                cell = int.MinValue;
+                left = 0f;
+                right = 0f;
+            }
+
+            public float At(float x)
+            {
+                int xi = Mathf.FloorToInt(x);
+                if (xi != cell)
+                {
+                    left = xi == cell + 1 ? right : Lattice(xi);
+                    right = Lattice(xi + 1);
+                    cell = xi;
+                }
+                float u = x - xi;
+                u = u * u * (3f - 2f * u);
+                return left + (right - left) * u;
+            }
+
+            private float Lattice(int x)
+            {
+                float a = (Hash(x, yi, seed) & 0xffff) / 65536f;
+                float b = (Hash(x, yi + 1, seed) & 0xffff) / 65536f;
+                return a + (b - a) * v;
+            }
+        }
+
+        // 霧の帯の濃さ。カメラが止まっているときの行で決める。
+        private static float FogAt(float y)
+        {
+            if (y >= FogRows)
+                return 0f;
+            float k = Mathf.Max(0f, y) / FogRows;
+            return k < 0.45f ? Mathf.Lerp(0.92f, 0.78f, k / 0.45f)
+                : k < 0.72f ? Mathf.Lerp(0.78f, 0.4f, (k - 0.45f) / 0.27f)
+                : Mathf.Lerp(0.4f, 0f, (k - 0.72f) / 0.28f);
+        }
+
+        // 奥の霧と、左上から差す光の筋（舞台のポストプロセスの代わり）。
+        // 霧は、霧のカメラから見た行の濃さにする。カメラより遅れると、霧が近づいてから晴れる。
+        private static void PaintFog(
+            Color32[] pixels,
+            ExplorationMapProjection projection,
+            ExplorationMapProjection fog,
+            float thinning
+        )
+        {
+            for (int y = 0; y < H; y++)
+            {
+                float row = y;
+                if (fog != projection)
+                {
+                    float t = projection.TAtRow(y);
+                    if (!float.IsInfinity(t))
+                        row = fog.RowOf(t);
+                }
+                int alpha = Mathf.RoundToInt(FogAt(row) * (1f - thinning) * 256f);
+                int index = (H - 1 - y) * W;
+                int light = y * W;
+                for (int x = 0; x < W; x++)
+                {
+                    if (alpha > 0)
+                        pixels[index + x] = Blend(pixels[index + x], Fog, alpha);
+                    int shaft = LightAlpha[light + x];
+                    if (shaft > 0)
+                        pixels[index + x] = Blend(pixels[index + x], Light, shaft);
+                }
+            }
+        }
+
+        private static void PaintShade(Color32[] pixels)
+        {
+            for (int y = 0; y < H; y++)
+            {
+                int index = (H - 1 - y) * W;
+                int shade = y * W;
+                for (int x = 0; x < W; x++)
+                {
+                    int alpha = ShadeAlpha[shade + x];
+                    if (alpha > 0)
+                        pixels[index + x] = Blend(pixels[index + x], Shade, alpha);
+                }
+            }
+        }
+
+        private static Color32 Blend(Color32 under, Color32 over, int alpha) =>
+            new(
+                (byte)(under.r + (((over.r - under.r) * alpha) >> 8)),
+                (byte)(under.g + (((over.g - under.g) * alpha) >> 8)),
+                (byte)(under.b + (((over.b - under.b) * alpha) >> 8)),
+                255
+            );
+
+        private static byte[] MakeLight()
+        {
+            var alpha = new byte[W * H];
             foreach (int start in new[] { 210, 380, 550 })
                 for (int y = 0; y < H; y++)
                 {
-                    float alpha = 0.16f * (1f - y / (float)H);
+                    int value = Mathf.RoundToInt(0.16f * (1f - y / (float)H) * 256f);
                     int left = start - Mathf.RoundToInt(y * 0.55f);
-                    for (int x = left; x < left + 26; x++)
-                        canvas.Blend(x, y, light, alpha);
+                    for (int x = Mathf.Max(0, left); x < Mathf.Min(W, left + 26); x++)
+                        alpha[y * W + x] = (byte)value;
                 }
+            return alpha;
         }
 
-        private static void PaintShade(Canvas canvas)
+        private static byte[] MakeShade()
         {
-            var shade = new Color(4 / 255f, 8 / 255f, 10 / 255f);
+            var alpha = new byte[W * H];
             for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
                 float d = new Vector2((x - W / 2f) * 0.85f, y - 210f).magnitude;
-                float alpha = Mathf.Clamp01((d - 150f) / 230f) * 0.7f;
-                if (alpha > 0f)
-                    canvas.Blend(x, y, shade, alpha);
+                alpha[y * W + x] = (byte)
+                    Mathf.RoundToInt(Mathf.Clamp01((d - 150f) / 230f) * 0.7f * 256f);
             }
+            return alpha;
         }
 
         private static uint Hash(int x, int y, int seed)
@@ -360,26 +737,6 @@ namespace Baryonyx.Adventure
 
         private static float Unit(uint bits) => (bits & 0xff) / 256f;
 
-        private static float ValueNoise(float x, float y, int seed)
-        {
-            int xi = Mathf.FloorToInt(x);
-            int yi = Mathf.FloorToInt(y);
-            float xf = x - xi;
-            float yf = y - yi;
-            float u = xf * xf * (3f - 2f * xf);
-            float v = yf * yf * (3f - 2f * yf);
-            float a = (Hash(xi, yi, seed) & 0xffff) / 65536f;
-            float b = (Hash(xi + 1, yi, seed) & 0xffff) / 65536f;
-            float c = (Hash(xi, yi + 1, seed) & 0xffff) / 65536f;
-            float d = (Hash(xi + 1, yi + 1, seed) & 0xffff) / 65536f;
-            return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
-        }
-
-        private static float Fbm(float x, float y, int seed) =>
-            0.55f * ValueNoise(x / 18f, y / 12f, seed)
-            + 0.3f * ValueNoise(x / 7f, y / 5f, seed + 1)
-            + 0.15f * ValueNoise(x / 3f, y / 2f, seed + 2);
-
         /// <summary>Drawing on the map's pixels in dots (y down).</summary>
         private readonly struct Canvas
         {
@@ -387,33 +744,40 @@ namespace Baryonyx.Adventure
 
             public Canvas(Color32[] pixels) => this.pixels = pixels;
 
-            private static int Index(int x, int y) => (H - 1 - y) * W + x;
+            // 市松模様で、from から to までの割合の画素だけを描く（ドット絵の半透明）。
+            private static bool Covers(int x, int y, float from, float to)
+            {
+                if (from <= 0f && to >= 1f)
+                    return true;
+                float threshold = (Bayer[y & 3, x & 3] + 0.5f) / 16f;
+                return threshold >= from && threshold < to;
+            }
 
             public void Set(int x, int y, Color32 color)
             {
                 if (x >= 0 && y >= 0 && x < W && y < H)
-                    pixels[Index(x, y)] = color;
-            }
-
-            public void Blend(int x, int y, Color color, float alpha)
-            {
-                if (x < 0 || y < 0 || x >= W || y >= H || alpha <= 0f)
-                    return;
-                int i = Index(x, y);
-                Color under = pixels[i];
-                pixels[i] = Color.Lerp(under, color, Mathf.Clamp01(alpha));
+                    pixels[(H - 1 - y) * W + x] = color;
             }
 
             public void Fill(int x, int y, int width, int height, Color32 color)
             {
-                for (int py = y; py < y + height; py++)
-                for (int px = x; px < x + width; px++)
-                    Set(px, py, color);
+                int left = Math.Max(0, x);
+                int right = Math.Min(W, x + width);
+                int top = Math.Max(0, y);
+                int bottom = Math.Min(H, y + height);
+                for (int py = top; py < bottom; py++)
+                {
+                    int row = (H - 1 - py) * W;
+                    for (int px = left; px < right; px++)
+                        pixels[row + px] = color;
+                }
             }
 
+            // 道の線。grow は道幅に足すドット数で、int.MinValue なら1ドットの点線にする。
             public void Line(
                 List<Vector2> dots,
-                Func<float, int> width,
+                RoadState state,
+                int grow,
                 Color32 color,
                 int dash = 0
             )
@@ -424,14 +788,17 @@ namespace Baryonyx.Adventure
                     var from = dots[k - 1];
                     var to = dots[k];
                     float length = Vector2.Distance(from, to);
-                    int steps = Mathf.Max(1, Mathf.CeilToInt(length * 2f));
+                    int w = grow == int.MinValue ? 1 : Math.Max(1, Width(state, from.y) + grow);
+                    // 2ドット以上の太さなら1ドットごと、細い線は隙間ができないよう半ドットごとに置く。
+                    int steps = Mathf.Max(1, Mathf.CeilToInt(length * (w > 2 ? 1f : 2f)));
                     for (int j = 0; j <= steps; j++)
                     {
                         var p = Vector2.Lerp(from, to, j / (float)steps);
                         travelled += length / steps;
                         if (dash > 0 && Mathf.FloorToInt(travelled / dash) % 2 == 1)
                             continue;
-                        int w = width(p.y);
+                        if (grow != int.MinValue)
+                            w = Math.Max(1, Width(state, p.y) + grow);
                         Fill(
                             Mathf.RoundToInt(p.x - w / 2f),
                             Mathf.RoundToInt(p.y - w / 2f),
@@ -443,34 +810,32 @@ namespace Baryonyx.Adventure
                 }
             }
 
-            public void Mark(bool[] mask, Vector2 center, int radius)
+            public void Ellipse(
+                float cx,
+                float cy,
+                int rx,
+                int ry,
+                Color32 color,
+                float from,
+                float to
+            )
             {
-                int cx = Mathf.RoundToInt(center.x);
-                int cy = Mathf.RoundToInt(center.y);
-                for (int y = -radius; y <= radius; y++)
-                for (int x = -radius; x <= radius; x++)
-                {
-                    int px = cx + x;
-                    int py = cy + y;
-                    if (x * x + y * y <= radius * radius && px >= 0 && py >= 0 && px < W && py < H)
-                        mask[py * W + px] = true;
-                }
-            }
-
-            public void Ellipse(float cx, float cy, int rx, int ry, Color32 color)
-            {
+                bool all = from <= 0f && to >= 1f;
                 for (int y = -ry; y <= ry; y++)
                 {
                     int half = Mathf.FloorToInt(
                         rx * Mathf.Sqrt(Mathf.Max(0f, 1f - y * y / (float)(ry * ry))) + 0.35f
                     );
-                    Fill(
-                        Mathf.RoundToInt(cx) - half,
-                        Mathf.RoundToInt(cy) + y,
-                        half * 2 + 1,
-                        1,
-                        color
-                    );
+                    int py = Mathf.RoundToInt(cy) + y;
+                    int left = Mathf.RoundToInt(cx) - half;
+                    if (all)
+                    {
+                        Fill(left, py, half * 2 + 1, 1, color);
+                        continue;
+                    }
+                    for (int px = left; px <= left + half * 2; px++)
+                        if (Covers(px, py, from, to))
+                            Set(px, py, color);
                 }
             }
 
@@ -494,16 +859,29 @@ namespace Baryonyx.Adventure
             }
 
             // 絵の下辺の中央を (x, y) に合わせて置く。
-            public void Stamp(PixelStamp stamp, int x, int y, bool flip)
+            public void Stamp(Picture picture, int x, int y, bool flip, float from, float to)
             {
-                int left = x - stamp.Width / 2;
-                for (int sy = 0; sy < stamp.Height; sy++)
-                for (int sx = 0; sx < stamp.Width; sx++)
+                bool all = from <= 0f && to >= 1f;
+                int left = x - picture.Width / 2;
+                int width = picture.Width;
+                for (int sy = 0; sy < picture.Height; sy++)
                 {
-                    var color = stamp.Pixel(flip ? stamp.Width - 1 - sx : sx, sy);
-                    if (color.a == 0)
+                    int py = y - sy;
+                    if (py < 0 || py >= H)
                         continue;
-                    Set(left + sx, y - sy, color);
+                    int row = (H - 1 - py) * W;
+                    int source = sy * width;
+                    for (int sx = 0; sx < width; sx++)
+                    {
+                        int px = left + sx;
+                        if (px < 0 || px >= W)
+                            continue;
+                        var color = picture.Pixels[source + (flip ? width - 1 - sx : sx)];
+                        if (color.a == 0 || !(all || Covers(px, py, from, to)))
+                            continue;
+                        color.a = 255;
+                        pixels[row + px] = color;
+                    }
                 }
             }
         }
