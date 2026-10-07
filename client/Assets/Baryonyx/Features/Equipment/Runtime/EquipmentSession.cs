@@ -1,3 +1,4 @@
+using Baryonyx.Party;
 using UnityEngine;
 
 namespace Baryonyx.Equipment
@@ -10,7 +11,7 @@ namespace Baryonyx.Equipment
     /// </summary>
     public static class EquipmentSession
     {
-        // 編成のメニューの「装備」の項目のキー。この項目はリストの代わりに装備の画面を開く。
+        // 編成の「装備」の項目のキー。メニューには出さず、冒険者の個別の画面から付け替えの画面として開く。
         public const string GuideItemKey = "equipment";
 
         private static EquipmentLocalSource local;
@@ -21,8 +22,15 @@ namespace Baryonyx.Equipment
         public static IEquipmentSource SourceOrLocal =>
             Source ?? (local ??= new EquipmentLocalSource());
 
-        // 最後に見ていたキャラのID。開き直すとそのキャラから見せる。
-        public static string Selected { get; set; }
+        // 最後に見ていたキャラのID。冒険者の一覧・個別・スキルの画面と共有する。
+        public static string Selected
+        {
+            get => PartySession.Selected;
+            set => PartySession.Selected = value;
+        }
+
+        // 次に開いたときに選んでおく枠。個別の画面で押した枠を渡す。
+        public static EquipmentSlot OpenSlot { get; set; } = EquipmentSlot.Weapon;
 
         // Play Modeに入るたびに初期化する（ドメインの再読み込みを省く設定でも残さない）。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -30,7 +38,7 @@ namespace Baryonyx.Equipment
         {
             Source = null;
             local = null;
-            Selected = null;
+            OpenSlot = EquipmentSlot.Weapon;
         }
     }
 }

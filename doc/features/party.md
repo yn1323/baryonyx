@@ -27,9 +27,9 @@ updated: 2026-10-06
 | パッシブスキル | 2つ |
 | 固有スキル | 2つ。そのキャラ専用のカードで、外せない。戦闘ではデッキのカードになる（[戦闘仕様](combat.md#固有スキル)） |
 | 装備 | 武器・防具・アクセサリー。基本的にどのキャラでも装備できる。アクセサリーは最大3つで、初めは0枠からレベルアップで枠が開く（[装備](equipment.md)） |
-| スキル・アイテムの枠 | 2つ。それぞれにスキルかアイテムを1つ入れ、戦闘ではデッキのカードになる。スキルはカード型の技で、キャラごとに装備できる属性が異なる。アイテムは道具や素材である（[アイテム](items.md)） |
+| カスタムスキル | 2つの枠。それぞれにスキルかアイテムを1つ入れ、戦闘ではデッキのカードになる。スキルはカード型の技で、キャラごとに装備できる属性が異なる。アイテムは道具や素材である（[アイテム](items.md)） |
 
-1人の4枚（固有スキル2枚と、スキル・アイテムの枠の2枚）を4人分合わせた16枚が、戦闘のデッキになる（2026-10-06）。
+1人の4枚（固有スキル2枚と、カスタムスキル2枚）を4人分合わせた16枚が、戦闘のデッキになる（2026-10-06）。
 属性の種類とカードの使い方は[戦闘仕様](combat.md#属性と弱点)を正本とする。
 
 ### 持っているスキル
@@ -110,8 +110,10 @@ updated: 2026-10-06
 
 | 対象 | 入口 |
 |---|---|
-| 編成のパーティ（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormationView.cs)・[パネルと仮データの生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
-| 編成のスキル（仲間ごとの4枚の付け替え） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
+| 編成の冒険者の一覧（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[一覧の操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyRosterPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerRosterView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Tavern/Editor/AdventurerRosterAssets.cs)・[仮データ（絵・イラスト）の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
+| 冒険者の個別の画面（デッキの4枚・装備・左右のフリック） | [表示](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[フリック](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingSwipe.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
+| 付け替えの画面の上の人（◀▶・立ち姿・名前・Lv） | [表示](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyPersonHeader.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyHeaderAssets.cs) |
+| 編成のスキルの付け替え（仲間ごとのカスタムスキル2枚） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
 | キャラ・Lv・カード・編成のサーバーとの読み書き | [サーバーとの読み書き](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySource.cs)・[アプリ内での保持](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs)・[DB操作](../../server/src/features/party/repository.ts) |
 
 キャラ・Lv・カード・編成は、サーバーの次のAPIとテーブルで、ユーザーごとに保存する（[実装](../../server/src/features/party/routes.ts)）。
@@ -120,10 +122,10 @@ updated: 2026-10-06
 
 | API | 内容 |
 |---|---|
-| `GET /v1/party` | 持っているキャラ（ID・Lv・4枠のカード）、4つの枠のキャラ（空きはnull）、所持ルーン、Lvの決まり（上限・1レベルあたりの費用）を返す。初めて読むユーザーには、仮の初期データを1回だけ付与する |
+| `GET /v1/party` | 持っているキャラ（ID・Lv・カスタムスキル2枠のカード）、4つの枠のキャラ（空きはnull）、所持ルーン、Lvの決まり（上限・1レベルあたりの費用）を返す。初めて読むユーザーには、仮の初期データを1回だけ付与する |
 | `PUT /v1/party/slots/{0〜3}` | 本文 `{"characterId": "..."}` で、パーティにいないキャラを枠に入れる。パーティにいるキャラは409（`already_in_party`） |
 | `DELETE /v1/party/slots/{0〜3}` | 枠のキャラを外す。最後の1人は409（`keep_one`） |
-| `PUT /v1/party/characters/{id}/cards/{0〜3}` | 本文 `{"skillId": "..."}` でカードを入れ、そのキャラのほかの枠にあれば入れ替える |
+| `PUT /v1/party/characters/{id}/cards/{0〜1}` | 本文 `{"skillId": "..."}` でカードを入れ、そのキャラのほかの枠にあれば入れ替える |
 | `POST /v1/party/characters/{id}/level-up` | 本文 `{"requestId": "...", "fromLevel": 12, "toLevel": 15}` でレベルを上げる。費用はサーバーで計算し、ルーンの減算・Lvの更新・記録を1回の書き込みにまとめる。今のLvが違えば409（`level_changed`）、ルーンが足りなければ409（`insufficient_runes`）で、何も変えない。同じ `requestId` の再送には記録済みの結果を返す |
 
 知らないIDや範囲外の枠・Lvは400、持っていないキャラは404（`character_not_owned`）を返す。
@@ -133,23 +135,28 @@ updated: 2026-10-06
 |---|---|
 | `party_characters` | ユーザーとキャラごとに1行。Lvと入手・更新日時 |
 | `party_slots` | ユーザーと枠ごとに1行（空きは行なし）。同じキャラを2つの枠に入れられない一意制約と、持っているキャラだけを入れられる外部キーを持つ |
-| `party_character_cards` | ユーザー・キャラ・枠ごとに1行。1人のキャラの4枠で同じカードを持てない一意制約を持つ |
+| `party_character_cards` | ユーザー・キャラ・カスタムスキルの枠ごとに1行。1人のキャラの2枠で同じカードを持てない一意制約を持つ |
 | `party_level_ups` | レベルアップ1回ごとの記録。要求ID・上げる前と後のLv・使ったルーン・使ったあとの残高。ルーンの消費の記録を兼ねる |
 | `party_profiles` | 初期データを付与済みのユーザー |
 
-サーバーはキャラとカードのIDだけを持ち、名前・絵・ステータス・スキル・カードの属性はクライアントの仮データが持つ。
+サーバーはキャラとカスタムスキルのカードのIDだけを持ち、名前・絵・ステータス・固有スキル・パッシブ・カードの属性はクライアントの仮データが持つ。
 クライアントの仮データ（[育成](screens.md#育成)・[スキル](screens.md#スキル)・[戦闘画面](screens.md#戦闘画面の見た目モック)のモック）は、[ステータスの項目](#ステータスの項目)の8つをLv100の値で持ち、各キャラのLvでの値を成長率から出す（[自キャラのLv100のステータス](progression.md#自キャラのlv100のステータス)）。
 キャラごとに付けられる属性の判定は、決まりが仮のため、クライアントだけで行う（2026-10-04、ユーザー決定）。
-初期データ（9人のLv 12〜1、各4枚のカード、トーマ・ルカ・アリア・ミナの編成）とLvの決まり（上限Lv 30、Lv n から n+1 へ n×100ルーン）は、クライアントの仮データと同じ値をサーバーの[定義](../../server/src/features/party/catalog.ts)にも置いた仮設定である。
+初期データ（9人のLv 12〜1、各2枚のカスタムスキル、トーマ・ルカ・アリア・ミナの編成）とLvの決まり（上限Lv 30、Lv n から n+1 へ n×100ルーン）は、クライアントの仮データと同じ値をサーバーの[定義](../../server/src/features/party/catalog.ts)にも置いた仮設定である。
 サーバーの接続先がないとき（展示室のプレビューなど）だけ、クライアントは仮データを使い、変更はアプリを動かしている間だけ残す。
 
-2026-10-06に決めた、スキルを1枚ずつ持つ形と倍率、アクセサリー、アイテムの枠は未実装である。
+1人の4枚は、2026-10-07から固有スキル2枚とカスタムスキル2枚に分けて実装した。
+サーバーが保存するのはカスタムスキルの2枠で、固有スキルは育成の仮データ（`TrainingMockData`）が持つ。
+戦闘画面のモックは、この4枚をまだデッキに使わない。
+
+2026-10-06に決めた、スキルを1枚ずつ持つ形と倍率、アクセサリー、カスタムスキルにアイテムを入れることは未実装である。
 今のサーバーはスキルの種類のIDを枠ごとに保存するため、同じ種類の2枚を見分けられない。
-1人の4枠で同じIDを持てない一意制約も、同じ種類を2枚入れられる決まりと違う。
-編成のスキルとサーバーは1人4枠すべてに自由にスキルを入れる形で、固有スキル2枚とスキル・アイテムの2枠に分ける決まりとも違う。
+1人の2枠で同じIDを持てない一意制約も、同じ種類を2枚入れられる決まりと違う。
 
 ## 変更と判断の記録
 
+- 2026-10-07：ユーザーの指示により、スキルかアイテムを入れる2枠を「カスタムスキル」と呼ぶことにした（[キャラクターの構成](#キャラクターの構成)）。同日、ユーザーの選択で、編成とサーバーのスキルの枠を、自由に入れる4枠からカスタムスキルの2枠に作り替えた。初期データは、各キャラの4枚から属性の違う2枚を残した。固有スキル2枚はクライアントの仮データから出し、冒険者の個別の画面とスキルの付け替えの画面に表示する（[育成](screens.md#育成)・[スキル](screens.md#スキル)）。未リリースのため、DBにある3・4枚目は移行せずに消す（マイグレーション `0009_custom_skill_slots`）。
+- 2026-10-06：ユーザーの依頼で、編成のパーティ・装備・育成・スキルを「冒険者」にまとめた（[画面一覧](screens.md#パーティ)）。パーティの入れ替えは冒険者の一覧で、選んだ人の「パーティから外す」「パーティに入れる」と、空きがないときにパーティの4枠から入れ替える相手を選ぶ操作で行う。サーバーの読み書きと入れ替えの決まり（1人以上を残すなど）は変えていない。9人に縦長のイラストを加え、仮データ（`PartyMockData`）にイラストとスキルの挿絵を持たせた。
 - 2026-10-06：デッキの枚数の確認待ちに対し、ユーザーは「アイテム or スキルで合計2枚」「固有のスキルも2つあるので、一人4枚x4人で16枚のまま」とした。これにより、1人の4枚を、固有スキル2枚と、スキルかアイテムを入れる2枠に分けた（[キャラクターの構成](#キャラクターの構成)）。固有スキルを手札の外から使う決まりと、スキルを1人4枚とした2026-09-30の決まりを改めた。デッキは16枚のままである。
 - 2026-10-06：ユーザーの指示により、スキルを武器・防具と同じく1枚ずつ持ち、1枚ごとに倍率を持つことにした（[持っているスキル](#持っているスキル)）。キャラの構成にアクセサリー（最大3つ、初めは0枠）とアイテムの2枠を加え、アイテムもデッキのカードになることにした。アイテムを加えるとデッキが16枚を超えるため、枚数を[確認待ち](combat.md#確認待ち)に置いた。未決事項の「持っている枚数の数え方」は1枚ずつと決まったため外した。同日、付け方として3案を示したところ、ユーザーは、1枚は1人の1つの枠にだけ付けられ、同じ種類を2枚持てば1人に2枚とも入れられる形を選んだ。
 - 2026-10-05：ユーザーの依頼で、酒場と装備の画面をまとめて「編成」にした（[画面一覧](screens.md#編成商会神殿旅の案内所の画面)）。パーティの入れ替えはメニューの「パーティ」、武器・防具の付け替えは「装備」から開く。

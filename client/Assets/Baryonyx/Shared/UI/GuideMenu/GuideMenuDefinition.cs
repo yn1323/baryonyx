@@ -52,6 +52,9 @@ namespace Baryonyx.UI.GuideMenu
         // A 24x24 pixel-art icon before the label, drawn at 4x. Optional.
         public Sprite Icon;
 
+        // メニューに行を出さない項目。ほかの項目のパネルから開く（編成の冒険者から開く育成など）。
+        public bool Hidden;
+
         // The button that applies the chosen entry, e.g. "編成する".
         public string ConfirmLabel = "決定";
         public GuideListEntry[] Entries = Array.Empty<GuideListEntry>();

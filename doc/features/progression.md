@@ -108,10 +108,11 @@ Lv100は値を定める基準のLvであり、レベルの上限（[未決](#未
 
 | 対象 | 入口 |
 |---|---|
-| 編成の育成（1人のレベルアップ） | [レベルアップの流れ](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[画面と仮データの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
+| 編成の冒険者の個別の画面（1人の詳細とレベルアップ） | [レベルアップの流れ](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[画面と仮データの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
 
 ## 変更と判断の記録
 
+- 2026-10-06：ユーザーの依頼で、編成の育成を、冒険者の一覧から開く1人の個別の画面にした（[育成](screens.md#育成)）。イラストとドット絵、ステータス、固有スキル・パッシブ、装備、スキル、レベルアップを1画面に置き、装備とスキルの枠からそれぞれの付け替えの画面を開く。レベルアップの決まりと重ねて開く画面は変えていない。
 - 2026-10-06：ユーザーの指示により、[アクセサリー](equipment.md#アクセサリー)の枠がレベルアップで開くことを加えた。2026-10-05に装備の仕様で採用した合成を、未決事項に反映した（[合成](synthesis.md)）。
 - 2026-10-04：ユーザーの決定で、ステータスがLvごとに同じ割合で伸びる形を[確定](#ステータスの伸び方)した。同じ量ずつ伸ばす形と比べ、Lvの差の効き方がどのLvでも同じになる点を選んだ。あわせて、育成とスキルの画面のモックを、8つの項目とLv100の値・成長率で値を出す形に改めた。
 - 2026-10-04：ユーザーの依頼で、味方と敵のステータスをLv100の値で定め、Lvに応じた成長率を掛けて各Lvの値を出す仮設定を置いた（[レベルとステータス](#レベルとステータス)）。難しさを敵のLvで調整できるよう、Lvの差による強さの差がLvの高さによらず同じになる成長率にした。仮データの9人のLv100の値も定めた。

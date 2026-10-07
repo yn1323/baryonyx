@@ -14,7 +14,7 @@ namespace Baryonyx.Party
     /// </summary>
     public static class PartySession
     {
-        // 編成（コードではTavern）のメニューの「パーティ」の項目のキー。この項目はリストの代わりに編成を開く。
+        // 編成（コードではTavern）のメニューの「冒険者」の項目のキー。この項目はリストの代わりに冒険者の一覧を開く。
         public const string GuideItemKey = "formation";
 
         private static PartyFormation formation;
@@ -30,6 +30,9 @@ namespace Baryonyx.Party
 
         // 編成・レベル・カードを読み書きするサーバー。なければ仮データを使う。
         public static IPartySource Source { get; set; }
+
+        // 最後に選んでいた冒険者のID。一覧・個別・付け替えの画面が共有し、開き直すとその人から見せる。
+        public static string Selected { get; set; }
 
         public static PartyState State => state;
 
@@ -101,6 +104,7 @@ namespace Baryonyx.Party
             levels.Clear();
             cards.Clear();
             Source = null;
+            Selected = null;
         }
     }
 }

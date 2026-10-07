@@ -1,8 +1,8 @@
 using System.Linq;
-using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -10,15 +10,16 @@ using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
+using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.Equipment.Editor
 {
     /// <summary>
-    /// The formation's equipment. The formation's generator calls <see cref="BuildPanel"/> for
-    /// its equipment item, so the people's tabs, the weapon and armour slots, the figure and the
-    /// item rows are baked into the formation prefab and read in the editor without Play Mode.
-    /// The items are the mock catalog's (doc/features/equipment.md); the people are the party's
-    /// mock data.
+    /// The formation's equipment change screen. The formation's generator calls
+    /// <see cref="BuildPanel"/> for its equipment item, so the person, the weapon, armour and
+    /// accessory slots, the stats and the item rows are baked into the formation prefab and
+    /// read in the editor without Play Mode. The items are the mock catalog's
+    /// (doc/features/equipment.md); the people are the party's mock data.
     /// </summary>
     public static class EquipmentAssets
     {
@@ -27,181 +28,183 @@ namespace Baryonyx.Equipment.Editor
         public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
         public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
-        private const float DotScale = 4f;
-        private const float LeftWidth = 780f;
-        private const float DividerWidth = 4f;
-        private const float TabTop = 24f;
-        private const float SlotTop = 168f;
-        private const float SlotHeight = 152f;
-        private const float SlotGap = 12f;
-        private const float SlotTextLeft = 160f;
-        private const float FeetY = 56f;
+        // 左の枠（人・枠・ステータス）と右の枠（持っている装備）。設計座標、左上から。
+        private static readonly Rect Left = new(40, 200, 740, 850);
+        private static readonly Rect Right = new(800, 200, 1080, 850);
+        private const float SlotTop = 154f;
+        private const float SlotHeight = 100f;
+        private const float SlotStep = 110f;
+        private const float SlotTextLeft = 112f;
+        private const int AccessorySlots = 3;
         private const float RowHeight = 128f;
         private const float RowTextLeft = 132f;
 
         // 持っている装備の行を、この数だけ作り込む。足りなければ、ビューが実行中に写して増やす。
         private const int BakedRows = 8;
-        private static readonly Color DividerColor = new(0.52f, 0.59f, 0.68f, 0.7f);
-        private static readonly Color TagColor = new(0.02f, 0.03f, 0.06f, 0.85f);
+        private static readonly Color Locked = new(0.62f, 0.62f, 0.68f, 0.85f);
 
         /// <summary>
-        /// Builds the equipment over the guide screen's safe area: one large frame below the back
-        /// button, split into the people and their equipment on the left and the owned items on
-        /// the right. Called while the guide screen's prefab is being built, so the shared frames
-        /// and font are ready.
+        /// Builds the equipment over the guide screen's safe area: the person, their slots and
+        /// stats in the left frame, the owned items for the chosen slot in the right frame.
+        /// Called while the guide screen's prefab is being built, so the shared frames and font
+        /// are ready.
         /// </summary>
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView guide)
         {
             var party = PartyAssets.CreateData();
-            var (people, partyCount) = PartyFormation.From(party).TabOrder();
+            var training = TrainingAssets.CreateData();
+            var (people, _) = PartyFormation.From(party).TabOrder();
 
             var root = Rect("Equipment", safe);
             Stretch(root);
             var view = root.gameObject.AddComponent<EquipmentView>();
             view.Party = party;
+            view.Training = training;
             view.Guide = guide;
             view.WeaponIcon = Guide.Icon(IconWeaponPath);
             view.ArmorIcon = Guide.Icon(IconArmorPath);
 
-            var panel = Rect("Panel", root);
-            Stretch(panel);
-            panel.offsetMin = new Vector2(32, 24);
-            panel.offsetMax = new Vector2(-32, -208);
-            Guide.Frame(panel, Guide.FramePath, Color.white).raycastTarget = true;
+            var layer = Layout.Layer(root, "Layout");
+            var left = Layout.FrameBox(layer, "Person", Left.x, Left.y, Left.width, Left.height);
+            var right = Layout.FrameBox(
+                layer,
+                "Items",
+                Right.x,
+                Right.y,
+                Right.width,
+                Right.height
+            );
 
-            var left = Rect("Person", panel);
-            left.anchorMin = Vector2.zero;
-            left.anchorMax = new Vector2(0, 1);
-            left.pivot = new Vector2(0, 0.5f);
-            left.offsetMin = Vector2.zero;
-            left.offsetMax = new Vector2(LeftWidth, 0);
-            var divider = Rect("Divider", panel);
-            divider.anchorMin = Vector2.zero;
-            divider.anchorMax = new Vector2(0, 1);
-            divider.pivot = new Vector2(0, 0.5f);
-            divider.offsetMin = new Vector2(LeftWidth, 28);
-            divider.offsetMax = new Vector2(LeftWidth + DividerWidth, -28);
-            AddImage(divider, DividerColor, false);
-            var right = Rect("Items", panel);
-            Stretch(right);
-            right.offsetMin = new Vector2(LeftWidth + DividerWidth, 0);
-
-            view.People = PartyTabAssets.Build(left, people, partyCount, TabTop);
+            view.Person = PartyHeaderAssets.Build(left, 10, Left.width, people.FirstOrDefault());
+            Layout.Line(left, "HeaderLine", 24, 142, Left.width - 48, 2);
             view.Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                 .Select(slot => BuildSlot(left, slot))
                 .ToArray();
-            view.Figure = BuildFigure(left, party);
+            view.Accessories = Enumerable
+                .Range(0, AccessorySlots)
+                .Select(i => BuildAccessory(left, i))
+                .ToArray();
+            float statsTop = SlotTop + (2 + AccessorySlots) * SlotStep + 6;
+            Layout.Line(left, "StatsLine", 24, statsTop, Left.width - 48, 2);
+            view.Stats = TrainingAssets.BuildStats(left, 30, statsTop + 14, Left.width - 60, 4);
             BuildItems(right, view);
 
             // 仮データの最初の人と仮の装備で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
             new EquipmentPresenter(
                 view,
                 people,
-                partyCount,
                 EquipmentLocalSource.Starter(),
                 new EquipmentLocalSource()
             ).Dispose();
             return root.gameObject;
         }
 
-        // --- Left: the chosen person's weapon and armour, and their figure ------------------
+        // --- Left: the chosen person's weapon, armour and the accessory slots ---------------
 
         private static EquipmentSlotWidget BuildSlot(RectTransform panel, EquipmentSlot slot)
         {
             int index = (int)slot;
-            var row = Rect("Slot_" + slot, panel);
-            row.anchorMin = new Vector2(0, 1);
-            row.anchorMax = Vector2.one;
-            row.pivot = new Vector2(0.5f, 1);
-            float top = SlotTop + index * (SlotHeight + SlotGap);
-            row.offsetMin = new Vector2(24, -(top + SlotHeight));
-            row.offsetMax = new Vector2(-24, -top);
-            var widget = new EquipmentSlotWidget
-            {
-                Button = Guide.AddButton(
-                    row,
-                    Guide.Frame(row, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
-                ),
-            };
-            var selected = Rect("Selected", row);
-            Stretch(selected);
-            Guide.Frame(selected, Guide.FrameSelectedPath, Color.white).raycastTarget = false;
-            selected.gameObject.SetActive(false);
-            widget.Selected = selected.gameObject;
+            var (button, selected) = Layout.Choice(
+                panel,
+                "Slot_" + slot,
+                24,
+                SlotTop + index * SlotStep,
+                Left.width - 48,
+                SlotHeight
+            );
+            var row = (RectTransform)button.transform;
+            var widget = new EquipmentSlotWidget { Button = button, Selected = selected };
 
-            // 枠の名前（武器・防具）の札の上に、24×24のアイコンを4倍で置く。
-            var icon = Rect("Icon", row);
-            Corner(icon, new Vector2(0, 1), new Vector2(28, -12), Vector2.one * Guide.IconSize);
+            // 24×24のアイコンを3倍で置き、右に枠の名前（武器・防具）と装備の名前・★。
+            var icon = Layout.Box(row, "Icon", 18, (SlotHeight - 72) / 2f, 72, 72);
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
-            var tag = Rect("Tag", row);
-            Corner(tag, new Vector2(0, 0), new Vector2(28, 10), new Vector2(Guide.IconSize, 34));
-            AddImage(tag, TagColor, false);
-            var label = Label(
-                tag,
-                "Label",
+            Layout.Text(
+                row,
+                "Tag",
                 EquipmentCatalog.NameOf(slot),
-                24,
+                20,
                 UiPalette.Gold,
-                TextAlignmentOptions.Center
+                TextAlignmentOptions.TopLeft,
+                SlotTextLeft,
+                10,
+                200,
+                26
             );
-            Stretch((RectTransform)label.transform);
-
-            widget.Name = Label(
+            widget.Name = Layout.Text(
                 row,
                 "Name",
                 "",
-                34,
+                32,
                 UiPalette.TextMain,
-                TextAlignmentOptions.BottomLeft
+                TextAlignmentOptions.BottomLeft,
+                SlotTextLeft,
+                38,
+                Left.width - 48 - SlotTextLeft - 150,
+                46
             );
-            Guide.Band((RectTransform)widget.Name.transform, top: true, 16, 46, SlotTextLeft, 140);
-            Guide.Shrink(widget.Name, 24);
-            widget.Stars = Label(
+            Guide.Shrink(widget.Name, 22);
+            widget.Stars = Layout.Text(
                 row,
                 "Stars",
                 "",
-                28,
-                UiPalette.Gold,
-                TextAlignmentOptions.BottomRight
-            );
-            Guide.Band((RectTransform)widget.Stars.transform, top: true, 16, 46, SlotTextLeft, 24);
-            widget.Detail = Label(
-                row,
-                "Detail",
-                "",
                 26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
+                UiPalette.Gold,
+                TextAlignmentOptions.BottomRight,
+                Left.width - 48 - 170,
+                38,
+                150,
+                46
             );
-            widget.Detail.textWrappingMode = TextWrappingModes.Normal;
-            Guide.Band((RectTransform)widget.Detail.transform, top: true, 76, 64, SlotTextLeft, 24);
             return widget;
         }
 
-        // The chosen person's 64x64 figure at 4x, standing on a soft shadow below the slots.
-        private static RawImage BuildFigure(RectTransform panel, PartyMockData party)
+        // まだ付けられないアクセサリーの枠。押せず、錠前と「準備中」だけを出す。
+        private static GameObject BuildAccessory(RectTransform panel, int index)
         {
-            var shadow = Picture(
+            var row = Layout.Box(
                 panel,
-                "Shadow",
-                ArtAssets.LoadSprite(UiArt.ShadowPath),
-                Vector2.zero,
-                new Vector2(180, 28),
-                0.5f
+                "Accessory" + index,
+                24,
+                SlotTop + (2 + index) * SlotStep,
+                Left.width - 48,
+                SlotHeight
             );
-            var foot = (RectTransform)shadow.transform;
-            foot.anchorMin = foot.anchorMax = new Vector2(0.5f, 0f);
-            foot.anchoredPosition = new Vector2(0, FeetY + 2);
-
-            var art = party
-                .Members.Select(member => member.Art)
-                .FirstOrDefault(texture => texture != null);
-            var figure = PixelActor(panel, "Figure", art, Vector2.zero, DotScale);
-            var rect = figure.rectTransform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0, FeetY);
-            return figure;
+            Guide.Frame(row, Guide.FramePath, Locked).raycastTarget = false;
+            var lockImage = Layout.Box(
+                row,
+                "Lock",
+                18 + (72 - 36) / 2f,
+                (SlotHeight - 40) / 2f,
+                36,
+                40
+            );
+            SpriteImage(lockImage, TrainingAssets.LockPath, Color.white);
+            Layout.Text(
+                row,
+                "Tag",
+                "アクセサリー",
+                20,
+                UiPalette.TextSub,
+                TextAlignmentOptions.TopLeft,
+                SlotTextLeft,
+                10,
+                300,
+                26
+            );
+            Layout.Text(
+                row,
+                "Soon",
+                "準備中",
+                28,
+                UiPalette.TextSub,
+                TextAlignmentOptions.BottomLeft,
+                SlotTextLeft,
+                38,
+                300,
+                46
+            );
+            return row.gameObject;
         }
 
         // --- Right: the owned items for the chosen slot, then "外す" -------------------------

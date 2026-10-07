@@ -22,22 +22,20 @@ namespace Baryonyx.Tests.EditMode
             public event Action MaxPressed;
             public event Action CancelPressed;
             public event Action ConfirmPressed;
-            public event Action CardsPressed;
+            public event Action<int> GearPressed;
+            public event Action<int> CardPressed;
 
             public TrainingState Last;
             public readonly List<string> Notices = new();
-            public readonly List<string> CardsOpened = new();
-            public bool CardsReady;
+            public readonly List<string> Opened = new();
 
             public void Render(TrainingState state) => Last = state;
 
             public void ShowNotice(string message) => Notices.Add(message);
 
-            public bool OpenCards(string id)
-            {
-                CardsOpened.Add(id);
-                return CardsReady;
-            }
+            public void OpenGear(string id, int slot) => Opened.Add($"gear {id} {slot}");
+
+            public void OpenCards(string id, int slot) => Opened.Add($"cards {id} {slot}");
 
             public void Prev() => PrevPressed?.Invoke();
 
@@ -55,7 +53,9 @@ namespace Baryonyx.Tests.EditMode
 
             public void Confirm() => ConfirmPressed?.Invoke();
 
-            public void Cards() => CardsPressed?.Invoke();
+            public void Gear(int slot) => GearPressed?.Invoke(slot);
+
+            public void Card(int slot) => CardPressed?.Invoke(slot);
         }
 
         private sealed class FakeStore : ITrainingStore
@@ -103,7 +103,7 @@ namespace Baryonyx.Tests.EditMode
                     ["luka"] = 11,
                     ["aria"] = 10,
                 },
-                Cards = { ["toma"] = new[] { "Fire", "Meteor", "Ice", "Blizzard" } },
+                Cards = { ["toma"] = new[] { "Fire", "Ice" } },
             };
         }
 
@@ -142,8 +142,14 @@ namespace Baryonyx.Tests.EditMode
                 new TrainingMember(Member("aria", "アリア"), data.Find("aria")),
             };
 
+        // スキルの説明は、キャラのIDとスキルのIDを並べた文にして、どのキャラの数字で作ったかを確かめる。
         private TrainingPresenter Open() =>
-            presenter = new TrainingPresenter(view, Roster(), store);
+            presenter = new TrainingPresenter(
+                view,
+                Roster(),
+                store,
+                describe: (id, card) => $"{id}:{card.Id}"
+            );
 
         [Test]
         public void CostsGrowWithTheLevel()
@@ -207,16 +213,63 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(state.Skills[2].Type, Is.EqualTo("固有スキル"));
             Assert.That(state.Skills[2].Energy, Is.EqualTo(3));
-            // 付けているカードの名前とコストは、スキルの定義から引く。
+            Assert.That(
+                state.Passives.Select(skill => skill.Name),
+                Is.EqualTo(new[] { "魔力の泉", "炎の心得" })
+            );
+
+            // デッキの4枚：固有スキル2枚（エネルギーをコストに、未解放は解放するLv）と、カスタムスキル2枚。
+            Assert.That(
+                state.Uniques.Select(card => card.Name),
+                Is.EqualTo(new[] { "マナバースト", "星降り" })
+            );
+            Assert.That(state.Uniques.Select(card => card.Cost), Is.EqualTo(new[] { 3, 5 }));
+            Assert.That(
+                state.Uniques.Select(card => card.Locked),
+                Is.EqualTo(new[] { false, true })
+            );
+            Assert.That(state.Uniques[1].UnlockLevel, Is.EqualTo(20));
+            Assert.That(state.Uniques[0].Type, Is.EqualTo(TrainingCardState.UniqueType));
+            Assert.That(state.Uniques[0].Element, Is.EqualTo(CardElement.None));
+            // カスタムスキルの名前・コスト・属性は、スキルの定義から引き、説明はそのキャラで作る。
             Assert.That(
                 state.Cards.Select(card => card.Name),
-                Is.EqualTo(new[] { "ファイア", "メテオ", "アイスランス", "ブリザード" })
+                Is.EqualTo(new[] { "ファイア", "アイスランス" })
             );
-            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 2, 9, 2, 5 }));
+            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 2, 2 }));
+            Assert.That(
+                state.Cards.Select(card => card.Element),
+                Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice })
+            );
+            Assert.That(state.Cards[0].Type, Is.EqualTo(TrainingCardState.SkillType));
+            Assert.That(state.Cards[0].Description, Is.EqualTo("toma:Fire"));
+            Assert.That(state.Cards[0].Kind, Is.Not.Empty);
         }
 
         [Test]
-        public void ArrowsWalkTheRosterAndRememberTheCharacter()
+        public void AnEmptyCustomSlotShowsAsEmpty()
+        {
+            store.Cards["toma"] = new[] { "Fire" };
+            Open();
+
+            // カスタムスキルはいつも2枠。足りない枠は「空き」。
+            Assert.That(view.Last.Cards.Count, Is.EqualTo(TrainingPresenter.CustomSlots));
+            Assert.That(view.Last.Cards[1].Filled, Is.False);
+            Assert.That(view.Last.Cards[1].Name, Is.EqualTo(TrainingPresenter.EmptyName));
+        }
+
+        [Test]
+        public void AFlickToTheLeftShowsTheNextPerson()
+        {
+            // 左へ120（設計座標）以上動かすと次の人、右へで前の人。短い動きや縦の動きでは替えない。
+            Assert.That(TrainingSwipe.StepOf(new Vector2(-140, 20)), Is.EqualTo(1));
+            Assert.That(TrainingSwipe.StepOf(new Vector2(160, -30)), Is.EqualTo(-1));
+            Assert.That(TrainingSwipe.StepOf(new Vector2(-80, 0)), Is.EqualTo(0));
+            Assert.That(TrainingSwipe.StepOf(new Vector2(-150, 200)), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void FlicksWalkTheRosterAndRememberTheCharacter()
         {
             store.Selected = "luka";
             Open();
@@ -445,16 +498,65 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void CardsOpenTheCardScreenOrSayItIsComing()
+        public void SlotsOpenTheirChangeScreensForTheCharacterOnScreen()
         {
             Open();
-            view.Cards();
-            Assert.That(view.CardsOpened, Is.EqualTo(new[] { "toma" }));
-            Assert.That(view.Notices, Is.EqualTo(new[] { TrainingPresenter.CardsComingSoon }));
+            view.Gear(1);
+            view.Card(1);
+            view.Next();
+            view.Gear(0);
+            Assert.That(
+                view.Opened,
+                Is.EqualTo(new[] { "gear toma 1", "cards toma 1", "gear luka 0" })
+            );
 
-            view.CardsReady = true;
-            view.Cards();
-            Assert.That(view.Notices.Count, Is.EqualTo(1));
+            // アクセサリーの枠はまだ付けられず、押しても開かない。重ねた画面を開いている間も開かない。
+            view.Gear(2);
+            view.Gear(4);
+            view.LevelUp();
+            view.Gear(0);
+            view.Card(0);
+            Assert.That(view.Opened.Count, Is.EqualTo(3));
+            Assert.That(view.Notices, Is.Empty);
+        }
+
+        [Test]
+        public void ShowsTheEquipmentAndTheAccessorySlotsThatAreNotReady()
+        {
+            presenter = new TrainingPresenter(
+                view,
+                Roster(),
+                store,
+                gearOf: id =>
+                    id == "toma"
+                        ? new[]
+                        {
+                            TrainingGearState.Worn("武器", "樫の杖", "★"),
+                            TrainingGearState.Worn("防具", null, null),
+                        }
+                        : Array.Empty<TrainingGearState>()
+            );
+
+            var gear = view.Last.Gear;
+            Assert.That(gear.Count, Is.EqualTo(TrainingPresenter.GearSlots));
+            Assert.That(
+                gear.Select(slot => slot.Slot),
+                Is.EqualTo(new[] { "武器", "防具", "アクセサリー", "アクセサリー", "アクセサリー" })
+            );
+            Assert.That(gear[0].Filled, Is.True);
+            Assert.That(gear[0].Name, Is.EqualTo("樫の杖"));
+            Assert.That(gear[1].Filled, Is.False);
+            Assert.That(
+                gear.Select(slot => slot.Locked),
+                Is.EqualTo(new[] { false, false, true, true, true })
+            );
+
+            // 装備がわからない人は、武器と防具を空きとして出す。
+            view.Next();
+            Assert.That(
+                view.Last.Gear.Take(2).Select(slot => slot.Filled),
+                Is.EqualTo(new[] { false, false })
+            );
         }
 
         [Test]

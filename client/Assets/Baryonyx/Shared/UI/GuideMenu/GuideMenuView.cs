@@ -23,6 +23,8 @@ namespace Baryonyx.UI.GuideMenu
         // 左の案内人。項目の専用のパネルが画面を広く使うときは隠す。
         public GameObject GuideArt;
         public GameObject MenuPanel;
+
+        // 定義の項目と同じ順。メニューに出さない項目はnull。
         public Button[] MenuItems = Array.Empty<Button>();
 
         public GameObject ListPanel;
@@ -73,8 +75,11 @@ namespace Baryonyx.UI.GuideMenu
                 Confirm.onClick.AddListener(() => ConfirmPressed?.Invoke());
             if (Depart != null)
                 Depart.onClick.AddListener(() => ConfirmPressed?.Invoke());
+            // メニューに出さない項目（Hidden）の位置はnull。
             for (int i = 0; i < MenuItems.Length; i++)
             {
+                if (MenuItems[i] == null)
+                    continue;
                 int index = i;
                 MenuItems[i].onClick.AddListener(() => ItemPressed?.Invoke(index));
             }

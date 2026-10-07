@@ -13,7 +13,8 @@ namespace Baryonyx.Tests.EditMode
     {
         private sealed class FakeView : IEquipmentView
         {
-            public event Action<string> PersonPressed;
+            public event Action PrevPressed;
+            public event Action NextPressed;
             public event Action<int> SlotPressed;
             public event Action<string> ItemPressed;
             public event Action RemovePressed;
@@ -25,7 +26,16 @@ namespace Baryonyx.Tests.EditMode
 
             public void ShowNotice(string message) => Notices.Add(message);
 
-            public void Person(string id) => PersonPressed?.Invoke(id);
+            public void Prev() => PrevPressed?.Invoke();
+
+            public void Next() => NextPressed?.Invoke();
+
+            // ▶を押して、その人まで進む。
+            public void Person(string id)
+            {
+                for (int i = 0; i < 10 && Last.PersonId != id; i++)
+                    Next();
+            }
 
             public void Slot(EquipmentSlot slot) => SlotPressed?.Invoke((int)slot);
 
@@ -95,13 +105,12 @@ namespace Baryonyx.Tests.EditMode
             };
             // ルカをパーティから外し、空きの枠も残す。
             var formation = new PartyFormation(roster, new[] { "toma", null, "aria", "mina" });
-            var (people, partyCount) = formation.TabOrder();
+            var (people, _) = formation.TabOrder();
             view = new FakeView();
             source = new GatedSource();
             presenter = new EquipmentPresenter(
                 view,
                 people,
-                partyCount,
                 EquipmentLocalSource.Starter(),
                 source,
                 remember: id => remembered = id
@@ -115,12 +124,8 @@ namespace Baryonyx.Tests.EditMode
         public void OpensOnTheFirstPersonsWeaponWithTheOwnedWeaponsByRarity()
         {
             var state = view.Last;
-            Assert.That(
-                state.People,
-                Is.EqualTo(new[] { "toma", "aria", "mina", "luka", "anselm" })
-            );
-            Assert.That(state.PartyCount, Is.EqualTo(3));
             Assert.That(state.PersonId, Is.EqualTo("toma"));
+            Assert.That(state.CanSwitch, Is.True);
             Assert.That(state.Slot, Is.EqualTo(EquipmentSlot.Weapon));
             Assert.That(state.Title, Is.EqualTo("武器"));
             Assert.That(
@@ -263,20 +268,42 @@ namespace Baryonyx.Tests.EditMode
                 new[] { Member("toma", "トーマ"), Member("mina", "ミナ") },
                 new[] { "toma", "mina" }
             );
-            var (people, partyCount) = formation.TabOrder();
+            var (people, _) = formation.TabOrder();
             presenter = new EquipmentPresenter(
                 view,
                 people,
-                partyCount,
                 EquipmentLocalSource.Starter(),
                 source,
-                "mina"
+                "mina",
+                slot: EquipmentSlot.Armor
             );
             Assert.That(view.Last.PersonId, Is.EqualTo("mina"));
             Assert.That(
                 view.Last.Slots.Select(slot => slot.Name),
                 Is.EqualTo(new[] { "戦鎚", "革の鎧" })
             );
+            // 個別の画面で押した枠（防具）を選んで開く。
+            Assert.That(view.Last.Slot, Is.EqualTo(EquipmentSlot.Armor));
+        }
+
+        [Test]
+        public void ArrowsWalkThePartyThenTheOthersKeepingTheSlot()
+        {
+            view.Slot(EquipmentSlot.Armor);
+            var order = new List<string> { view.Last.PersonId };
+            for (int i = 0; i < 4; i++)
+            {
+                view.Next();
+                order.Add(view.Last.PersonId);
+                Assert.That(view.Last.Slot, Is.EqualTo(EquipmentSlot.Armor));
+            }
+            Assert.That(order, Is.EqualTo(new[] { "toma", "aria", "mina", "luka", "anselm" }));
+            Assert.That(remembered, Is.EqualTo("anselm"));
+            // 端から反対の端へ回る。
+            view.Next();
+            Assert.That(view.Last.PersonId, Is.EqualTo("toma"));
+            view.Prev();
+            Assert.That(view.Last.PersonId, Is.EqualTo("anselm"));
         }
 
         private EquipmentItemState Choice(string equipmentId)

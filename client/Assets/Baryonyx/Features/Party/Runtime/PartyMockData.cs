@@ -20,8 +20,17 @@ namespace Baryonyx.Party
         // 属性ごとのアイコン（CardElementの値の順。Noneはnull）。カードは属性から絵を引く。
         public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
+        // スキルの挿絵（64×58のドット絵）。冒険者の一覧と個別の画面で、スキルの枠に出す。
+        public PartySkillArt[] SkillArts = Array.Empty<PartySkillArt>();
+
         public PartyMember Find(string id) =>
             string.IsNullOrEmpty(id) ? null : Array.Find(Members, member => member.Id == id);
+
+        /// <summary>The illustration of a card skill, or null for an unknown skill.</summary>
+        public Texture2D ArtOf(string skill) =>
+            string.IsNullOrEmpty(skill)
+                ? null
+                : Array.Find(SkillArts, entry => entry.Skill == skill)?.Art;
 
         /// <summary>
         /// The attribute icon of a card skill, or null for a card without an attribute (shown as
@@ -49,11 +58,14 @@ namespace Baryonyx.Party
         // 64×64の戦闘のドット絵。4倍で表示する。
         public Texture2D Art;
 
+        // 縦長（2:3）の背景付きのイラスト。冒険者の個別の画面の左に出す。ない人は空。
+        public Texture2D Illustration;
+
         // 絵のないキャラは、既存の絵に色を掛け、左右を反転して仮に見分ける。
         public Color Tint = Color.white;
         public bool Flip;
 
-        // 装備しているスキル（4枚）。
+        // カスタムスキルに入れているスキル（2枚）。固有スキル2枚は育成の仮データが持つ。
         public PartyCard[] Cards = Array.Empty<PartyCard>();
     }
 
@@ -62,5 +74,13 @@ namespace Baryonyx.Party
     {
         // スキルのID（CardSkills）。属性のアイコンは PartyMockData.IconOf で引く。
         public string Skill = "";
+    }
+
+    [Serializable]
+    public sealed class PartySkillArt
+    {
+        // スキルのID（CardSkills）。
+        public string Skill = "";
+        public Texture2D Art;
     }
 }

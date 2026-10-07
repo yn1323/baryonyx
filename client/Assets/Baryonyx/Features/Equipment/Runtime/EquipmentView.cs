@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Party;
+using Baryonyx.Training;
 using Baryonyx.UI.Buttons;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -25,16 +27,16 @@ namespace Baryonyx.Equipment
     }
 
     /// <summary>
-    /// The formation's equipment over the whole guide screen: the people's tabs, the chosen
-    /// person's weapon and armour and their figure on the left, the owned items for the chosen
-    /// slot and "外す" on the right. EquipmentAssets bakes the parts into the formation prefab
-    /// with the mock data, so they read in the editor; this view wires them up and drives its
-    /// own presenter. It reads the party and the equipment on opening (the server's, or the
-    /// app's memory without one) and saves every change through
-    /// <see cref="EquipmentSession.SourceOrLocal"/>. Changes are told on the guide screen's
-    /// notice band.
+    /// The formation's equipment change screen over the guide screen: the person (◀ ▶, figure,
+    /// name and level), their weapon, armour and the accessory slots that are not ready yet,
+    /// and their stats on the left; the owned items for the chosen slot and "外す" on the
+    /// right. EquipmentAssets bakes the parts into the formation prefab with the mock data, so
+    /// they read in the editor; this view wires them up and drives its own presenter. It reads
+    /// the party and the equipment on opening (the server's, or the app's memory without one)
+    /// and saves every change through <see cref="EquipmentSession.SourceOrLocal"/>. Back
+    /// returns to the adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class EquipmentView : MonoBehaviour, IEquipmentView
+    public sealed class EquipmentView : MonoBehaviour, IEquipmentView, IGuideBackHandler
     {
         public const string LoadingText = GuidePanelLoad.LoadingText;
         public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
@@ -42,17 +44,23 @@ namespace Baryonyx.Equipment
 
         public PartyMockData Party;
 
+        // ステータスは育成の仮データの成長から、今のレベルの値を出す。
+        public TrainingMockData Training;
+
         // 通知は案内人の画面の通知の帯に出す。
         public GuideMenuView Guide;
 
-        // 左上の仲間のタブ。
-        public PartyTabStrip People = new();
+        // 左上の人（◀▶・立ち姿・名前・Lv）。
+        public PartyPersonHeader Person = new();
 
         // 武器・防具の順の2つの枠。
         public EquipmentSlotWidget[] Slots = Array.Empty<EquipmentSlotWidget>();
 
-        // 選んでいる人の立ち姿（64×64を4倍）。
-        public RawImage Figure;
+        // まだ付けられないアクセサリーの3つの枠（押せない）。
+        public GameObject[] Accessories = Array.Empty<GameObject>();
+
+        // 選んでいる人のステータス（CharacterStats の順）。
+        public TMP_Text[] Stats = Array.Empty<TMP_Text>();
 
         public TMP_Text Title;
         public TMP_Text Count;
@@ -70,7 +78,8 @@ namespace Baryonyx.Equipment
         private readonly GuidePanelLoad load = new();
         private readonly ButtonBindings bindings = new();
 
-        public event Action<string> PersonPressed;
+        public event Action PrevPressed;
+        public event Action NextPressed;
         public event Action<int> SlotPressed;
         public event Action<string> ItemPressed;
         public event Action RemovePressed;
@@ -83,11 +92,8 @@ namespace Baryonyx.Equipment
 
         private void OnEnable()
         {
-            foreach (var person in People.Tabs)
-            {
-                string id = person.Id;
-                bindings.Bind(person.Button, () => PersonPressed?.Invoke(id));
-            }
+            bindings.Bind(Person.Prev, () => PrevPressed?.Invoke());
+            bindings.Bind(Person.Next, () => NextPressed?.Invoke());
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
@@ -100,7 +106,6 @@ namespace Baryonyx.Equipment
             // 開くたびに、サーバー（なければアプリを動かしている間）の編成と装備で描き直す。
             presenter?.Dispose();
             presenter = null;
-            People.Forget();
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             if (Party == null)
@@ -126,15 +131,15 @@ namespace Baryonyx.Equipment
             var state = await equipment.LoadAsync(token);
             if (token.IsCancellationRequested)
                 return;
-            var (people, partyCount) = formation.TabOrder();
+            var (people, _) = formation.TabOrder();
             presenter = new EquipmentPresenter(
                 this,
                 people,
-                partyCount,
                 state,
                 equipment,
                 EquipmentSession.Selected,
-                id => EquipmentSession.Selected = id
+                id => EquipmentSession.Selected = id,
+                EquipmentSession.OpenSlot
             );
         }
 
@@ -149,11 +154,10 @@ namespace Baryonyx.Equipment
         private void ShowLoading()
         {
             Set(Count, LoadingText);
-            People.Hide();
+            Person.ShowLoading(LoadingText);
             foreach (var widget in Slots)
                 ShowSlot(widget, null, null, false);
-            if (Figure != null)
-                Figure.enabled = false;
+            TrainingView.ShowStats(Stats, null);
             foreach (var row in Rows)
                 row.gameObject.SetActive(false);
             if (Remove != null)
@@ -168,9 +172,17 @@ namespace Baryonyx.Equipment
             presenter = null;
         }
 
+        // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
+        public bool HandleBack() =>
+            Guide != null
+            && Guide.HasItem(TrainingSession.GuideItemKey)
+            && Guide.OpenItem(TrainingSession.GuideItemKey);
+
         public void Render(EquipmentViewState state)
         {
-            People.Show(state.People, state.PartyCount, state.Person);
+            var member = Party != null ? Party.Find(state.PersonId) : null;
+            int level = PartySession.LevelOf(Party, state.PersonId);
+            Person.Show(member, level, Elements(state.PersonId), state.CanSwitch);
             for (int i = 0; i < Slots.Length; i++)
                 ShowSlot(
                     Slots[i],
@@ -178,7 +190,8 @@ namespace Baryonyx.Equipment
                     IconOf((EquipmentSlot)i),
                     i == (int)state.Slot
                 );
-            ShowFigure(Figure, Party != null ? Party.Find(state.PersonId) : null);
+            var growth = Training != null ? Training.Find(state.PersonId) : null;
+            TrainingView.ShowStats(Stats, growth?.StatsAt(level));
             Set(Title, state.Title);
             Set(Count, state.CountText);
             ShowRows(state);
@@ -193,6 +206,17 @@ namespace Baryonyx.Equipment
 
         public Sprite IconOf(EquipmentSlot slot) =>
             slot == EquipmentSlot.Weapon ? WeaponIcon : ArmorIcon;
+
+        // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
+        private IReadOnlyList<Sprite> Elements(string id) =>
+            Party == null
+                ? Array.Empty<Sprite>()
+                : PartySession
+                    .CardsOf(Party, id)
+                    .Select(Party.IconOf)
+                    .Where(icon => icon != null)
+                    .Distinct()
+                    .ToArray();
 
         // 持っている装備の行を並べ、足りなければ行を写して増やす。最後に「外す」。
         private void ShowRows(EquipmentViewState state)
@@ -277,19 +301,6 @@ namespace Baryonyx.Equipment
                 row.Mark.text = item.Mark;
                 row.Mark.alpha = item.Worn ? 1f : 0.75f;
             }
-        }
-
-        /// <summary>The person's standing figure, with their tint and facing.</summary>
-        public static void ShowFigure(RawImage figure, PartyMember member)
-        {
-            if (figure == null)
-                return;
-            figure.enabled = member != null && member.Art != null;
-            if (!figure.enabled)
-                return;
-            figure.texture = member.Art;
-            figure.color = member.Tint;
-            figure.uvRect = member.Flip ? new Rect(1, 0, -1, 1) : new Rect(0, 0, 1, 1);
         }
 
         private void BindRow(EquipmentRow row)

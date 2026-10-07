@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
@@ -14,7 +15,7 @@ using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.CardLoadout
 {
-    /// <summary>One of the person's four slots on the left, baked by the generator.</summary>
+    /// <summary>One of the person's two custom skill slots on the left, baked by the generator.</summary>
     [Serializable]
     public sealed class CardLoadoutSlotWidget
     {
@@ -27,6 +28,23 @@ namespace Baryonyx.CardLoadout
         public Image Element;
         public TMP_Text Name;
         public TMP_Text Kind;
+        public TMP_Text Description;
+    }
+
+    /// <summary>
+    /// One of the person's two unique skills under the custom skills, for reading only: they
+    /// are the deck's other two cards and cannot be changed.
+    /// </summary>
+    [Serializable]
+    public sealed class CardLoadoutUniqueWidget
+    {
+        // 挿絵の中央24×24ドット。未解放のときは暗くして錠前を重ねる。
+        public RawImage Icon;
+        public GameObject Lock;
+        public TMP_Text Name;
+
+        // 「エネルギー 3」、未解放なら「Lv 20で解放」。
+        public TMP_Text Meta;
         public TMP_Text Description;
     }
 
@@ -46,13 +64,13 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// The tavern's card skills over the whole guide screen: the people's tabs and the chosen
-    /// person's four cards on the left, the cards they can set on the right. CardLoadoutAssets
-    /// bakes the tabs, slots and rows into the tavern prefab, so they read in the editor; this
-    /// view wires them up and drives its own presenter. When the app has a server
-    /// (<see cref="PartySession.Source"/>), it reads the party on opening and saves every change
-    /// there; otherwise it uses the mock data. Back returns to the screen that opened the card
-    /// skills for one person, if any. Changes are told on the guide screen's notice band.
+    /// The formation's card skills change screen over the guide screen: the person (◀ ▶,
+    /// figure, name and level), their two custom skills, their two unique skills (read only) and
+    /// their stats on the left, the cards they can set on the right. CardLoadoutAssets bakes the parts and rows into the formation prefab,
+    /// so they read in the editor; this view wires them up and drives its own presenter. When
+    /// the app has a server (<see cref="PartySession.Source"/>), it reads the party on opening
+    /// and saves every change there; otherwise it uses the mock data. Back returns to the
+    /// adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class CardLoadoutView : MonoBehaviour, ICardLoadoutView, IGuideBackHandler
     {
@@ -60,15 +78,24 @@ namespace Baryonyx.CardLoadout
         public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "スキルを取得できませんでした";
 
+        // まだ解放していない固有スキルの挿絵の色。
+        private static readonly Color LockedArt = new(0.25f, 0.25f, 0.3f, 1f);
+
         public PartyMockData Party;
         public TrainingMockData Training;
 
         // 通知は案内人の画面の通知の帯に出す。
         public GuideMenuView Guide;
 
-        // 左上の仲間のタブ。
-        public PartyTabStrip People = new();
+        // 左上の人（◀▶・立ち姿・名前・Lv）。
+        public PartyPersonHeader Person = new();
         public CardLoadoutSlotWidget[] Slots = Array.Empty<CardLoadoutSlotWidget>();
+
+        // デッキのほかの2枚（固有スキル）。外せないので押せない。
+        public CardLoadoutUniqueWidget[] Uniques = Array.Empty<CardLoadoutUniqueWidget>();
+
+        // 選んでいる人のステータス（CharacterStats の順）。
+        public TMP_Text[] Stats = Array.Empty<TMP_Text>();
 
         // 右の見出しの横の、その人が付けられる属性のアイコン（2つまで）。
         public Image[] Usable = Array.Empty<Image>();
@@ -83,7 +110,8 @@ namespace Baryonyx.CardLoadout
         private readonly GuidePanelLoad load = new();
         private readonly ButtonBindings bindings = new();
 
-        public event Action<string> PersonPressed;
+        public event Action PrevPressed;
+        public event Action NextPressed;
         public event Action<int> SlotPressed;
         public event Action<string> CardPressed;
 
@@ -95,11 +123,8 @@ namespace Baryonyx.CardLoadout
 
         private void OnEnable()
         {
-            foreach (var person in People.Tabs)
-            {
-                string id = person.Id;
-                bindings.Bind(person.Button, () => PersonPressed?.Invoke(id));
-            }
+            bindings.Bind(Person.Prev, () => PrevPressed?.Invoke());
+            bindings.Bind(Person.Next, () => NextPressed?.Invoke());
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
@@ -114,7 +139,6 @@ namespace Baryonyx.CardLoadout
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
             presenter = null;
-            People.Forget();
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             if (Party == null)
@@ -161,13 +185,12 @@ namespace Baryonyx.CardLoadout
             Func<string, int, string, CancellationToken, Task> save
         )
         {
-            var (people, partyCount) = CardLoadoutPresenter.People(formation);
             presenter = new CardLoadoutPresenter(
                 this,
-                people,
-                partyCount,
+                CardLoadoutPresenter.People(formation),
                 new CardLoadoutSessionStore(Party, Training),
-                save
+                save,
+                CardLoadoutSession.OpenSlot
             );
         }
 
@@ -175,12 +198,15 @@ namespace Baryonyx.CardLoadout
         private void ShowLoading()
         {
             Set(Count, LoadingText);
-            People.Hide();
+            Person.ShowLoading(LoadingText);
+            TrainingView.ShowStats(Stats, null);
             foreach (var widget in Slots)
             {
                 ShowSlot(widget, null, null, null, false);
                 Set(widget.Name, "");
             }
+            foreach (var widget in Uniques)
+                ShowUnique(widget, null, 0);
             ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
             foreach (var row in Rows)
                 if (row.Button != null)
@@ -193,15 +219,36 @@ namespace Baryonyx.CardLoadout
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
-            CardLoadoutSession.ForgetBack();
         }
 
-        // ほかの画面（育成）から開いたときは、「もどる」でその画面へ戻る。
-        public bool HandleBack() => CardLoadoutSession.TakeBack();
+        // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
+        public bool HandleBack() =>
+            Guide != null
+            && Guide.HasItem(TrainingSession.GuideItemKey)
+            && Guide.OpenItem(TrainingSession.GuideItemKey);
 
         public void Render(CardLoadoutState state)
         {
-            People.Show(state.People, state.PartyCount, state.Person);
+            var member = Party != null ? Party.Find(state.PersonId) : null;
+            int level = PartySession.LevelOf(Party, state.PersonId);
+            Person.Show(
+                member,
+                level,
+                state
+                    .Slots.Select(card => IconOf(card.Element))
+                    .Where(icon => icon != null)
+                    .Distinct()
+                    .ToArray(),
+                state.CanSwitch
+            );
+            var growth = Training != null ? Training.Find(state.PersonId) : null;
+            TrainingView.ShowStats(Stats, growth?.StatsAt(level));
+            for (int i = 0; i < Uniques.Length; i++)
+                ShowUnique(
+                    Uniques[i],
+                    growth != null && i < growth.Uniques.Length ? growth.Uniques[i] : null,
+                    level
+                );
             for (int i = 0; i < Slots.Length; i++)
                 ShowSlot(
                     Slots[i],
@@ -214,6 +261,32 @@ namespace Baryonyx.CardLoadout
             if (Count != null)
                 Count.text = state.CountText;
             ShowRows(state);
+        }
+
+        // 固有スキル1つ。未解放なら挿絵を暗くして錠前を重ね、エネルギーの代わりに解放するLvを出す。
+        private static void ShowUnique(
+            CardLoadoutUniqueWidget widget,
+            TrainingSkill skill,
+            int level
+        )
+        {
+            bool locked = skill != null && skill.UnlockLevel > level;
+            if (widget.Icon != null)
+            {
+                widget.Icon.texture = skill?.Icon;
+                widget.Icon.enabled = skill?.Icon != null;
+                widget.Icon.color = locked ? LockedArt : Color.white;
+            }
+            if (widget.Lock != null)
+                widget.Lock.SetActive(locked);
+            Set(widget.Name, skill?.Name);
+            Set(
+                widget.Meta,
+                skill == null ? ""
+                    : locked ? $"Lv {skill.UnlockLevel}で解放"
+                    : $"エネルギー {skill.Energy}"
+            );
+            Set(widget.Description, skill?.Description);
         }
 
         public void ShowNotice(string message)

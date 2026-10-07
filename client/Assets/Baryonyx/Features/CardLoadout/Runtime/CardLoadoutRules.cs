@@ -20,14 +20,14 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// The rules of a character's four card skills (provisional, doc/features/party.md): a card
+    /// The rules of a character's two custom skills (provisional, doc/features/party.md): a card
     /// fits a character whose elements include its element, and a card without an element fits
     /// everyone. Every card is owned and any number of characters may set the same card, but one
     /// character holds a card in one slot only.
     /// </summary>
     public static class CardLoadoutRules
     {
-        public const int Size = 4;
+        public const int Size = 2;
 
         /// <summary>
         /// Puts <paramref name="skill"/> into <paramref name="slot"/>. When the character holds it

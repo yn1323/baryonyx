@@ -14,7 +14,8 @@ namespace Baryonyx.Tests.EditMode
     {
         private sealed class FakeView : ICardLoadoutView
         {
-            public event Action<string> PersonPressed;
+            public event Action PrevPressed;
+            public event Action NextPressed;
             public event Action<int> SlotPressed;
             public event Action<string> CardPressed;
 
@@ -25,7 +26,16 @@ namespace Baryonyx.Tests.EditMode
 
             public void ShowNotice(string message) => Notices.Add(message);
 
-            public void Person(string id) => PersonPressed?.Invoke(id);
+            public void Prev() => PrevPressed?.Invoke();
+
+            public void Next() => NextPressed?.Invoke();
+
+            // ▶を押して、その人まで進む。
+            public void Person(string id)
+            {
+                for (int i = 0; i < 10 && Last.PersonId != id; i++)
+                    Next();
+            }
 
             public void Slot(int index) => SlotPressed?.Invoke(index);
 
@@ -69,10 +79,10 @@ namespace Baryonyx.Tests.EditMode
         {
             var roster = new[]
             {
-                Member("toma", "トーマ", "Fire", "Meteor", "Ice", "Blizzard"),
-                Member("luka", "ルカ", "VitalThrust", "ArrowRain", "Thunder", "LightningBolt"),
-                Member("mina", "ミナ", "Heal", "Protect", "HolyHammer", "HolyLight"),
-                Member("anselm", "アンセルム", "EarthSplitter", "HolyHammer", "Fire", "Embers"),
+                Member("toma", "トーマ", "Fire", "Ice"),
+                Member("luka", "ルカ", "VitalThrust", "Thunder"),
+                Member("mina", "ミナ", "Heal", "HolyHammer"),
+                Member("anselm", "アンセルム", "EarthSplitter", "Fire"),
             };
             // ルカをパーティから外し、空きの枠も残す。
             formation = new PartyFormation(roster, new[] { "mina", null, "toma" });
@@ -92,17 +102,32 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void TabsListThePartyFirstThenTheOthers()
+        public void ArrowsWalkThePartyFirstThenTheOthers()
+        {
+            var order = new List<string> { view.Last.PersonId };
+            for (int i = 0; i < 3; i++)
+            {
+                view.Next();
+                order.Add(view.Last.PersonId);
+            }
+            Assert.That(order, Is.EqualTo(new[] { "mina", "toma", "luka", "anselm" }));
+            view.Next();
+            Assert.That(view.Last.PersonId, Is.EqualTo("mina"));
+            view.Prev();
+            Assert.That(view.Last.PersonId, Is.EqualTo("anselm"));
+            Assert.That(view.Last.CanSwitch, Is.True);
+        }
+
+        [Test]
+        public void OpensOnThePartysFirstPersonAndTheirFirstCard()
         {
             var state = view.Last;
-            Assert.That(state.People, Is.EqualTo(new[] { "mina", "toma", "luka", "anselm" }));
-            Assert.That(state.PartyCount, Is.EqualTo(2));
-            // 開いたときは、パーティの先頭の人の1枚目を選んでいる。
+            // 開いたときは、パーティの先頭の人のカスタムスキルの1枚目を選んでいる。
             Assert.That(state.PersonId, Is.EqualTo("mina"));
             Assert.That(state.Slot, Is.EqualTo(0));
             Assert.That(
                 state.Slots.Select(card => card.Id),
-                Is.EqualTo(new[] { "Heal", "Protect", "HolyHammer", "HolyLight" })
+                Is.EqualTo(new[] { "Heal", "HolyHammer" })
             );
         }
 
@@ -122,7 +147,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Choices.Select(card => card.Cost), Is.Ordered);
             Assert.That(state.CountText, Is.EqualTo($"{state.Choices.Count}枚"));
             // 付けているカードには、何枚目に入っているかを出す。
-            Assert.That(state.Choices.Single(card => card.Id == "Meteor").Slot, Is.EqualTo(1));
+            Assert.That(state.Choices.Single(card => card.Id == "Ice").Slot, Is.EqualTo(1));
             Assert.That(state.Choices.Single(card => card.Id == "Embers").Slot, Is.EqualTo(-1));
         }
 
@@ -133,13 +158,10 @@ namespace Baryonyx.Tests.EditMode
             view.Slot(1);
             view.Card("Embers");
 
-            Assert.That(
-                store.Cards["toma"],
-                Is.EqualTo(new[] { "Fire", "Embers", "Ice", "Blizzard" })
-            );
+            Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Embers" }));
             Assert.That(
                 view.Notices,
-                Is.EqualTo(new[] { "トーマの「メテオ」を「火の粉」に替えました" })
+                Is.EqualTo(new[] { "トーマの「アイスランス」を「火の粉」に替えました" })
             );
             Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
             Assert.That(view.Last.Slot, Is.EqualTo(1));
@@ -151,10 +173,7 @@ namespace Baryonyx.Tests.EditMode
             view.Person("toma");
             view.Card("Ice");
 
-            Assert.That(
-                store.Cards["toma"],
-                Is.EqualTo(new[] { "Ice", "Meteor", "Fire", "Blizzard" })
-            );
+            Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Ice", "Fire" }));
             Assert.That(
                 view.Notices,
                 Is.EqualTo(new[] { "トーマの「アイスランス」と「ファイア」を入れ替えました" })
@@ -169,10 +188,7 @@ namespace Baryonyx.Tests.EditMode
             view.Card("Slash");
             view.Card("NoSuchCard");
 
-            Assert.That(
-                store.Cards["toma"],
-                Is.EqualTo(new[] { "Fire", "Meteor", "Ice", "Blizzard" })
-            );
+            Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Ice" }));
             Assert.That(view.Notices, Is.Empty);
         }
 
@@ -180,24 +196,24 @@ namespace Baryonyx.Tests.EditMode
         public void ACompanionOutsideThePartyCanSetCardsToo()
         {
             view.Person("luka");
-            view.Slot(3);
+            view.Slot(1);
             view.Card("PoisonNeedle");
 
-            Assert.That(store.Cards["luka"][3], Is.EqualTo("PoisonNeedle"));
+            Assert.That(store.Cards["luka"][1], Is.EqualTo("PoisonNeedle"));
             Assert.That(
                 view.Notices.Single(),
-                Is.EqualTo("ルカの「ライトニングボルト」を「毒針」に替えました")
+                Is.EqualTo("ルカの「サンダー」を「毒針」に替えました")
             );
         }
 
         [Test]
-        public void SwitchingPeopleStartsAtTheFirstSlotAndIsRemembered()
+        public void SwitchingPeopleKeepsTheSlotAndIsRemembered()
         {
-            view.Slot(2);
+            view.Slot(1);
             view.Person("anselm");
 
             Assert.That(view.Last.PersonId, Is.EqualTo("anselm"));
-            Assert.That(view.Last.Slot, Is.EqualTo(0));
+            Assert.That(view.Last.Slot, Is.EqualTo(1));
             Assert.That(store.Selected, Is.EqualTo("anselm"));
 
             // 開き直すと、最後に見ていた人から見せる。
@@ -215,7 +231,7 @@ namespace Baryonyx.Tests.EditMode
             view.Person("toma");
             Assert.That(view.Last.Slots[0].Description, Does.Contain(">318<"));
             view.Person("anselm");
-            Assert.That(view.Last.Slots[2].Description, Does.Contain(">120<"));
+            Assert.That(view.Last.Slots[1].Description, Does.Contain(">120<"));
         }
 
         [Test]
@@ -230,7 +246,7 @@ namespace Baryonyx.Tests.EditMode
                     calls.Add((id, slot, skill));
                     await pending.Task;
                     // サーバーが保存したカードを、store が読み直す。
-                    store.Cards[id] = new[] { "Fire", "Embers", "Ice", "Blizzard" };
+                    store.Cards[id] = new[] { "Fire", "Embers" };
                 }
             );
             view.Person("toma");
@@ -239,8 +255,8 @@ namespace Baryonyx.Tests.EditMode
 
             // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
             Assert.That(presenter.Saving, Is.True);
-            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Meteor"));
-            Assert.That(store.Cards["toma"][1], Is.EqualTo("Meteor"));
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Ice"));
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Ice"));
             view.Card("FlamePillar");
             Assert.That(calls, Is.EqualTo(new[] { ("toma", 1, "Embers") }));
 
@@ -250,7 +266,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
             Assert.That(
                 view.Notices,
-                Is.EqualTo(new[] { "トーマの「メテオ」を「火の粉」に替えました" })
+                Is.EqualTo(new[] { "トーマの「アイスランス」を「火の粉」に替えました" })
             );
         }
 
@@ -265,48 +281,40 @@ namespace Baryonyx.Tests.EditMode
 
             Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
             Assert.That(presenter.Saving, Is.False);
-            Assert.That(store.Cards["toma"][1], Is.EqualTo("Meteor"));
-            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Meteor"));
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Ice"));
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Ice"));
             Assert.That(view.Notices, Is.EqualTo(new[] { CardLoadoutPresenter.SaveFailedMessage }));
         }
 
         [Test]
-        public void AnotherScreenOpensOnePersonAndTakesBackOnce()
+        public void TheAdventurersPageOpensOnePersonAndSlot()
         {
-            int back = 0;
-            CardLoadoutSession.Open("luka", () => back++);
+            CardLoadoutSession.Selected = "luka";
             presenter.Dispose();
             presenter = new CardLoadoutPresenter(
                 view,
-                CardLoadoutPresenter.People(formation).People,
-                CardLoadoutPresenter.People(formation).PartyCount,
-                new SessionSelected(store)
+                CardLoadoutPresenter.People(formation),
+                new SessionSelected(store),
+                slot: 1
             );
             Assert.That(view.Last.PersonId, Is.EqualTo("luka"));
-
-            Assert.That(CardLoadoutSession.TakeBack(), Is.True);
-            Assert.That(back, Is.EqualTo(1));
-            // 2回目以降は、酒場のメニューへ戻る（呼び出し元へは戻らない）。
-            Assert.That(CardLoadoutSession.TakeBack(), Is.False);
-            Assert.That(back, Is.EqualTo(1));
-
-            CardLoadoutSession.Open("luka", () => back++);
-            CardLoadoutSession.ForgetBack();
-            Assert.That(CardLoadoutSession.TakeBack(), Is.False);
+            Assert.That(view.Last.Slot, Is.EqualTo(1));
+            // 一覧・個別・装備と同じ人を共有する。
+            Assert.That(PartySession.Selected, Is.EqualTo("luka"));
         }
 
         [Test]
         public void ThePartyKeepsTheCardsSetWhileTheAppRuns()
         {
             var data = ScriptableObject.CreateInstance<PartyMockData>();
-            data.Members = new[] { Member("toma", "トーマ", "Fire", "Meteor", "Ice", "Blizzard") };
+            data.Members = new[] { Member("toma", "トーマ", "Fire", "Ice") };
             try
             {
                 Assert.That(
                     PartySession.CardsOf(data, "toma"),
-                    Is.EqualTo(new[] { "Fire", "Meteor", "Ice", "Blizzard" })
+                    Is.EqualTo(new[] { "Fire", "Ice" })
                 );
-                PartySession.SetCards("toma", new[] { "Embers", "Meteor", "Ice", "Blizzard" });
+                PartySession.SetCards("toma", new[] { "Embers", "Ice" });
                 Assert.That(PartySession.CardsOf(data, "toma")[0], Is.EqualTo("Embers"));
                 // 仮データそのものは書き換えない。
                 Assert.That(data.Members[0].Cards[0].Skill, Is.EqualTo("Fire"));
@@ -324,8 +332,12 @@ namespace Baryonyx.Tests.EditMode
             Func<string, int, string, System.Threading.CancellationToken, Task> save = null
         )
         {
-            var (people, partyCount) = CardLoadoutPresenter.People(formation);
-            return new CardLoadoutPresenter(view, people, partyCount, store, save);
+            return new CardLoadoutPresenter(
+                view,
+                CardLoadoutPresenter.People(formation),
+                store,
+                save
+            );
         }
 
         private static PartyMember Member(string id, string name, params string[] cards) =>

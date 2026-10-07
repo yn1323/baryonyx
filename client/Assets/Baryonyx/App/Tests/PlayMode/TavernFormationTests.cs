@@ -2,6 +2,9 @@ using System.Collections;
 using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Party;
+using Baryonyx.Tavern;
+using Baryonyx.Training;
+using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -28,254 +31,185 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernFormationTests));
         }
 
-        // 酒場の「編成」は一覧の代わりに編成を開く。左で枠を選んで右の仲間を押すとその場で入れ替え、
-        // 「外す」で空きにする。変えたことは共通の通知の帯で知らせる。
+        // 編成の「冒険者」は一覧の代わりに冒険者の一覧を開く。右はパーティの4枠、その下に控え。押した人の
+        // 見本を左に出し、「装備・スキル・育成」でその人の個別の画面へ移る。下のボタンで外す・入れる・入れ替える。
         [UnityTest]
-        public IEnumerator FormationSwapsAndTakesOutMembers()
+        public IEnumerator AdventurersShowTheChosenAndChangeTheParty()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == PartySession.GuideItemKey
-            );
+            Assert.That(view.Definition.Title, Is.EqualTo("編成"));
+            int item = ItemOf(view, PartySession.GuideItemKey);
             Assert.That(item, Is.GreaterThanOrEqualTo(0));
             Assert.That(view.MenuItems[item].transform.Find("Icon"), Is.Not.Null);
             view.MenuItems[item].onClick.Invoke();
-            var formation = view.PanelFor(item).GetComponent<PartyFormationView>();
-            Assert.That(formation.gameObject.activeInHierarchy, Is.True);
+            var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
+            Assert.That(roster.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
-            // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            SceneTests.AssertBelow(formation.transform.Find("Panel"), view.Back.transform);
+            yield return null;
 
-            var party = PartySession.Formation(formation.Data);
-            Assert.That(formation.Slots.Length, Is.EqualTo(PartyFormation.Size));
-            foreach (var slot in formation.Slots)
+            // 左の見本と右の一覧は「もどる」と重ならない。ボタンとタイルは指で押せる大きさ。
+            var chosen = roster.transform.Find("Layout/Chosen");
+            var list = roster.transform.Find("Layout/Roster");
+            SceneTests.AssertBelow(chosen, view.Back.transform);
+            SceneTests.AssertBelow(list, view.Back.transform);
+            Assert.That(
+                SceneTests.ScreenRect(chosen).xMax,
+                Is.LessThanOrEqualTo(SceneTests.ScreenRect(list).xMin)
+            );
+            SceneTests.AssertTouchSize(roster.Open.transform, 0.7f);
+            SceneTests.AssertTouchSize(roster.Action.transform, 0.7f);
+            foreach (var slot in roster.Slots)
                 SceneTests.AssertTouchSize(slot.Button.transform);
-            // 左は2行2列。開いたときは1つ目の枠を選んでいる。
-            var first = SceneTests.ScreenRect(formation.Slots[0].Button.transform);
-            Assert.That(
-                SceneTests.ScreenRect(formation.Slots[1].Button.transform).xMin,
-                Is.GreaterThanOrEqualTo(first.xMax)
-            );
-            Assert.That(
-                SceneTests.ScreenRect(formation.Slots[2].Button.transform).yMax,
-                Is.LessThanOrEqualTo(first.yMin)
-            );
-            Assert.That(formation.Slots[0].Selected.activeSelf, Is.True);
-            Assert.That(formation.Slots[1].Selected.activeSelf, Is.False);
-            Assert.That(formation.Slots[0].Name.text, Is.EqualTo(party.Name(party.Member(0))));
-            // カード4枚の属性。属性のないカードは「無」と書く。
-            for (int i = 0; i < formation.Slots.Length; i++)
-            {
-                var member = party.Find(party.Member(i));
-                for (int j = 0; j < member.Cards.Length; j++)
-                {
-                    bool none = formation.Data.IconOf(member.Cards[j].Skill) == null;
-                    Assert.That(formation.Slots[i].Cards[j].Icon.enabled, Is.EqualTo(!none));
-                    Assert.That(formation.Slots[i].Cards[j].None.activeSelf, Is.EqualTo(none));
-                }
-            }
 
-            // 右はパーティにいない仲間だけを持っている順に並べ、最後に「外す」を置く。
-            Assert.That(Shown(formation), Is.EqualTo(party.Bench.Select(member => member.Id)));
-            var leave = formation.Leave.transform;
-            Assert.That(leave.GetSiblingIndex(), Is.EqualTo(leave.parent.childCount - 1));
-            SceneTests.AssertTouchSize(leave);
-            foreach (var id in Shown(formation))
-            {
-                var tile = Tile(formation, id).Button.transform;
-                SceneTests.AssertTouchSize(tile);
-                // 仲間は全身の立ち姿で、タイルからはみ出さず、名前と重ならない。
-                var box = SceneTests.ScreenRect(tile);
-                var figure = SceneTests.ScreenRect(tile.Find("Figure"));
-                Assert.That(figure.xMin, Is.GreaterThanOrEqualTo(box.xMin - 0.5f), id);
-                Assert.That(figure.xMax, Is.LessThanOrEqualTo(box.xMax + 0.5f), id);
-                Assert.That(figure.yMax, Is.LessThanOrEqualTo(box.yMax + 0.5f), id);
-                Assert.That(
-                    figure.yMin,
-                    Is.GreaterThanOrEqualTo(SceneTests.ScreenRect(tile.Find("Name")).yMax - 0.5f),
-                    id
-                );
-                Assert.That(
-                    figure.height / figure.width,
-                    Is.EqualTo(
-                            PartyFormationView.Figure.height
-                                / (float)PartyFormationView.Figure.width
-                        )
-                        .Within(0.02f),
-                    id
-                );
-            }
+            // 最初はパーティの先頭を選び、見本にその人を出す。
+            var data = roster.Party;
+            var party = PartySession.Formation(data);
+            var first = party.Find(party.Member(0));
+            Assert.That(roster.Slots[0].Selected.activeSelf, Is.True);
+            Assert.That(roster.Name.text, Is.EqualTo(first.Name));
+            Assert.That(roster.Level.text, Is.EqualTo(first.Level.ToString()));
+            Assert.That(roster.Figure.enabled, Is.True);
+            Assert.That(roster.Stats.All(stat => stat.text != ""), Is.True);
+            Assert.That(roster.Cards.All(card => card.enabled), Is.True);
+            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.LeaveLabel));
+            // 控えは持っている順に、パーティにいない人だけを並べる。
+            Assert.That(Shown(roster), Is.EqualTo(party.Bench.Select(member => member.Id)));
+            foreach (var id in Shown(roster))
+                SceneTests.AssertTouchSize(Tile(roster, id).Button.transform);
 
-            // 2つ目の枠のキャラを、右の仲間と入れ替える。
+            // 控えの人を選ぶと見本が替わり、ボタンは「パーティに入れる」。
+            string bench = Shown(roster).First();
+            Tile(roster, bench).Button.onClick.Invoke();
+            Assert.That(roster.Name.text, Is.EqualTo(party.Name(bench)));
+            Assert.That(Tile(roster, bench).Selected.activeSelf, Is.True);
+            Assert.That(roster.Slots[0].Selected.activeSelf, Is.False);
+            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.JoinLabel));
+
+            // パーティに空きがないので、押すとパーティの4枠が入れ替える相手になる。
+            roster.Action.onClick.Invoke();
+            Assert.That(roster.Slots.All(slot => slot.Swap.activeSelf), Is.True);
+            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.CancelLabel));
+            Assert.That(roster.Open.interactable, Is.False);
             string before = party.Member(1);
-            string bench = Shown(formation).First();
-            formation.Slots[1].Button.onClick.Invoke();
-            Tile(formation, bench).Button.onClick.Invoke();
+            roster.Slots[1].Button.onClick.Invoke();
             Assert.That(party.Member(1), Is.EqualTo(bench));
-            Assert.That(formation.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
-            Assert.That(Tile(formation, bench).Button.gameObject.activeSelf, Is.False);
-            Assert.That(Tile(formation, before).Button.gameObject.activeSelf, Is.True);
-            Assert.That(formation.LastNotice, Does.EndWith("を入れ替えました"));
-            Assert.That(view.ToastMessage, Is.EqualTo(formation.LastNotice));
+            Assert.That(roster.Slots.Any(slot => slot.Swap.activeSelf), Is.False);
+            Assert.That(roster.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
+            Assert.That(Shown(roster), Does.Contain(before));
+            Assert.That(
+                roster.LastNotice,
+                Is.EqualTo($"{party.Name(before)}と{party.Name(bench)}を入れ替えました")
+            );
+            Assert.That(view.ToastMessage, Is.EqualTo(roster.LastNotice));
 
-            // 外すと空きになり、「外す」は押せなくなる。空いた枠には右の仲間を入れられる。
-            formation.Leave.onClick.Invoke();
+            // パーティの人を外すと空きになり、空いた枠を押すと選んだ控えを入れる。
+            roster.Action.onClick.Invoke();
             Assert.That(party.Member(1), Is.Null);
-            Assert.That(formation.Slots[1].Empty.gameObject.activeSelf, Is.True);
-            Assert.That(formation.Slots[1].Sprite.gameObject.activeSelf, Is.False);
-            Assert.That(formation.Leave.interactable, Is.False);
-            Assert.That(formation.LastNotice, Does.EndWith("を外しました"));
-            Tile(formation, before).Button.onClick.Invoke();
+            Assert.That(roster.Slots[1].Empty.gameObject.activeSelf, Is.True);
+            Assert.That(roster.Slots[1].Figure.gameObject.activeSelf, Is.False);
+            Assert.That(roster.LastNotice, Does.EndWith("を外しました"));
+            Tile(roster, before).Button.onClick.Invoke();
+            roster.Slots[1].Button.onClick.Invoke();
             Assert.That(party.Member(1), Is.EqualTo(before));
-            Assert.That(formation.Slots[1].Sprite.gameObject.activeSelf, Is.True);
-            Assert.That(formation.LastNotice, Does.EndWith("を編成しました"));
+            Assert.That(roster.LastNotice, Does.EndWith("を編成しました"));
 
-            // 「もどる」でメニューへ戻る。開き直しても、アプリを動かしている間は編成が残る。
-            formation.Slots[1].Button.onClick.Invoke();
-            Tile(formation, bench).Button.onClick.Invoke();
+            // 「装備・スキル・育成」は、選んだ人の個別の画面を開く。「もどる」で一覧へ、もう一度でメニューへ。
+            roster.Open.onClick.Invoke();
+            var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+            Assert.That(training.gameObject.activeInHierarchy, Is.True);
+            Assert.That(roster.gameObject.activeSelf, Is.False);
+            Assert.That(training.Name.text, Is.EqualTo(party.Name(before)));
+            view.Back.onClick.Invoke();
+            Assert.That(roster.gameObject.activeSelf, Is.True);
+            Assert.That(roster.Name.text, Is.EqualTo(party.Name(before)));
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
-            Assert.That(formation.gameObject.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.True);
-            view.MenuItems[item].onClick.Invoke();
-            Assert.That(formation.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
-            Assert.That(Tile(formation, bench).Button.gameObject.activeSelf, Is.False);
-        }
-
-        // 育成で上げたLvと、酒場のスキルの画面で付け替えたカードを、編成を開くたびに出す。
-        [UnityTest]
-        public IEnumerator FormationShowsRaisedLevelsAndChangedCards()
-        {
-            var guide = default(GuideSceneBootstrap);
-            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
-            var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == PartySession.GuideItemKey
-            );
-            view.MenuItems[item].onClick.Invoke();
-            var formation = view.PanelFor(item).GetComponent<PartyFormationView>();
-            var data = formation.Data;
-            var party = PartySession.Formation(data);
-            string member = party.Member(1);
-            string bench = Shown(formation).First();
-            Assert.That(
-                formation.Slots[1].Level.text,
-                Is.EqualTo(PartyFormationView.LevelText(data.Find(member).Level))
-            );
-
-            // 編成を閉じている間に、ほかの画面でLvを上げ、カードを付け替える。
-            view.Back.onClick.Invoke();
-            PartySession.SetLevel(member, 25);
-            PartySession.SetLevel(bench, 9);
-            var cards = new[] { "Slash", "Heal", "Fire", "Thunder" };
-            PartySession.SetCards(member, cards);
-            view.MenuItems[item].onClick.Invoke();
-
-            Assert.That(formation.Slots[1].Level.text, Is.EqualTo("Lv 25"));
-            Assert.That(Tile(formation, bench).Level.text, Is.EqualTo("Lv 9"));
-            for (int j = 0; j < cards.Length; j++)
-            {
-                var widget = formation.Slots[1].Cards[j];
-                var icon = data.IconOf(cards[j]);
-                Assert.That(widget.Icon.sprite, Is.EqualTo(icon), cards[j]);
-                Assert.That(widget.None.activeSelf, Is.EqualTo(icon == null), cards[j]);
-            }
-            // 回復は属性がなく「無」、ほかは属性のアイコンを出す。
-            Assert.That(formation.Slots[1].Cards[1].None.activeSelf, Is.True);
-            Assert.That(formation.Slots[1].Cards[0].Icon.sprite, Is.Not.Null);
-
-            // 枠に入れた仲間も、上げたLvで出す。
-            formation.Slots[1].Button.onClick.Invoke();
-            Tile(formation, bench).Button.onClick.Invoke();
-            Assert.That(formation.Slots[1].Level.text, Is.EqualTo("Lv 9"));
-            Assert.That(Tile(formation, member).Level.text, Is.EqualTo("Lv 25"));
         }
 
         // サーバーがあるときは、開くたびにサーバーの編成を読み、入れ替えを保存してから表示を変える。
         // 読み込むまでは仮データの編成を見せず、保存・読み込みに失敗したら通知の帯で知らせる。
         [UnityTest]
-        public IEnumerator FormationReadsAndSavesThePartyOnTheServer()
+        public IEnumerator AdventurersReadAndSaveThePartyOnTheServer()
         {
             var server = new FakePartySource(0, "anselm", "toma")
-                .With("toma", 20, "Fire", "Meteor", "Ice", "Blizzard")
-                .With("luka", 11, "VitalThrust", "ArrowRain", "Thunder", "LightningBolt")
-                .With("anselm", 8, "EarthSplitter", "HolyHammer", "Fire", "Embers")
-                .With("greta", 7, "VitalThrust", "PoisonNeedle", "Ice", "Icicles");
+                .With("toma", 20, "Fire", "Ice")
+                .With("luka", 11, "VitalThrust", "Thunder")
+                .With("anselm", 8, "EarthSplitter", "Fire")
+                .With("greta", 7, "VitalThrust", "Ice");
             PartySession.Source = server;
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == PartySession.GuideItemKey
-            );
+            int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            var formation = view.PanelFor(item).GetComponent<PartyFormationView>();
-            Assert.That(formation.Owned.text, Is.EqualTo(PartyFormationView.LoadingText));
-            Assert.That(Shown(formation), Is.Empty);
-            Assert.That(formation.Slots[0].Name.text, Is.Empty);
+            var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
+            Assert.That(roster.Owned.text, Is.EqualTo(AdventurerRosterView.LoadingText));
+            Assert.That(Shown(roster), Is.Empty);
+            Assert.That(roster.Slots[0].Name.text, Is.Empty);
             yield return SceneTests.WaitUntil(
-                () => formation.LoadTask.IsCompleted,
+                () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
 
             // サーバーの持っているキャラ・編成・Lvを出す。
-            var data = formation.Data;
-            Assert.That(formation.Owned.text, Is.EqualTo("所持 4人"));
-            Assert.That(formation.Slots[0].Name.text, Is.EqualTo(data.Find("anselm").Name));
-            Assert.That(formation.Slots[1].Level.text, Is.EqualTo("Lv 20"));
-            Assert.That(formation.Slots[2].Empty.gameObject.activeSelf, Is.True);
-            Assert.That(Shown(formation), Is.EqualTo(new[] { "luka", "greta" }));
+            var data = roster.Party;
+            Assert.That(roster.Owned.text, Is.EqualTo("所持 4人"));
+            Assert.That(roster.Slots[0].Name.text, Is.EqualTo(data.Find("anselm").Name));
+            Assert.That(roster.Slots[1].Level.text, Is.EqualTo("Lv 20"));
+            Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
+            Assert.That(Shown(roster), Is.EqualTo(new[] { "luka", "greta" }));
 
-            // 空いた枠にルカを入れると、サーバーに保存してから枠に出す。
-            formation.Slots[2].Button.onClick.Invoke();
-            Tile(formation, "luka").Button.onClick.Invoke();
-            Assert.That(formation.Presenter.Saving, Is.True);
-            Assert.That(formation.Slots[2].Empty.gameObject.activeSelf, Is.True);
-            yield return SceneTests.WaitUntil(() => formation.Presenter.ChangeTask.IsCompleted);
+            // 空きがあるので、ルカを選んで「パーティに入れる」と空いた枠へ入れる。保存してから枠に出す。
+            Tile(roster, "luka").Button.onClick.Invoke();
+            roster.Action.onClick.Invoke();
+            Assert.That(roster.Presenter.Saving, Is.True);
+            Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
+            yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "slot 2 luka" }));
-            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
-            Assert.That(formation.LastNotice, Does.EndWith("を編成しました"));
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            Assert.That(roster.LastNotice, Does.EndWith("を編成しました"));
 
             // 保存できなかったときは枠を変えずに知らせる。
             server.Fail = true;
-            formation.Leave.onClick.Invoke();
-            yield return SceneTests.WaitUntil(() => formation.Presenter.ChangeTask.IsCompleted);
-            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
-            Assert.That(
-                formation.LastNotice,
-                Is.EqualTo(PartyFormationPresenter.SaveFailedMessage)
-            );
+            roster.Action.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            Assert.That(roster.LastNotice, Is.EqualTo(PartyRosterPresenter.SaveFailedMessage));
 
             // 開き直すと読み直す。読めなかったときは仮データを見せずに知らせる。
             view.Back.onClick.Invoke();
             view.MenuItems[item].onClick.Invoke();
-            yield return SceneTests.WaitUntil(() => formation.LoadTask.IsCompleted);
-            Assert.That(formation.Owned.text, Is.EqualTo(PartyFormationView.LoadFailedText));
-            Assert.That(formation.LastNotice, Is.EqualTo(PartyFormationView.LoadFailedMessage));
-            Assert.That(Shown(formation), Is.Empty);
+            yield return SceneTests.WaitUntil(() => roster.LoadTask.IsCompleted);
+            Assert.That(roster.Owned.text, Is.EqualTo(AdventurerRosterView.LoadFailedText));
+            Assert.That(roster.LastNotice, Is.EqualTo(AdventurerRosterView.LoadFailedMessage));
+            Assert.That(Shown(roster), Is.Empty);
 
             server.Fail = false;
             view.Back.onClick.Invoke();
             view.MenuItems[item].onClick.Invoke();
-            yield return SceneTests.WaitUntil(() => formation.LoadTask.IsCompleted);
+            yield return SceneTests.WaitUntil(() => roster.LoadTask.IsCompleted);
             Assert.That(server.Loads, Is.EqualTo(2));
-            Assert.That(formation.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
+            // 最後に選んでいたルカを選んだまま開く。
+            Assert.That(roster.Name.text, Is.EqualTo(data.Find("luka").Name));
         }
 
-        private static string[] Shown(PartyFormationView formation) =>
-            formation
-                .Members.Where(tile => tile.Button.gameObject.activeSelf)
+        private static int ItemOf(GuideMenuView view, string key) =>
+            System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
+
+        private static string[] Shown(AdventurerRosterView roster) =>
+            roster
+                .Tiles.Where(tile => tile.Button.gameObject.activeSelf)
                 .OrderBy(tile => tile.Button.transform.GetSiblingIndex())
                 .Select(tile => tile.Id)
                 .ToArray();
 
-        private static PartyMemberWidget Tile(PartyFormationView formation, string id) =>
-            formation.Members.Single(tile => tile.Id == id);
+        private static AdventurerTileWidget Tile(AdventurerRosterView roster, string id) =>
+            roster.Tiles.Single(tile => tile.Id == id);
     }
 }

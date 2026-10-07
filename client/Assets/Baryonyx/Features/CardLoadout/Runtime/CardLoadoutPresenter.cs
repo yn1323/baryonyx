@@ -31,19 +31,15 @@ namespace Baryonyx.CardLoadout
     /// <summary>Everything the card skills show, recomputed after every input.</summary>
     public sealed class CardLoadoutState
     {
-        // 上のタブに並べる人のID。パーティの枠の順、続けてパーティにいない仲間を持っている順。
-        public IReadOnlyList<string> People { get; internal set; }
-        public int PartyCount { get; internal set; }
-
-        // 選んでいる人（People の位置）とその人。
-        public int Person { get; internal set; }
+        // 選んでいる人とその人。◀▶はパーティの枠の順、続けてパーティにいない仲間を持っている順に替える。
         public string PersonId { get; internal set; }
         public string Name { get; internal set; }
+        public bool CanSwitch { get; internal set; }
 
         // その人が付けられる属性（属性のないカードは誰でも付けられる）。
         public IReadOnlyList<CardElement> Usable { get; internal set; }
 
-        // 選んでいる枠と、4つの枠のカード。
+        // 選んでいる枠と、カスタムスキルの2つの枠のカード。
         public int Slot { get; internal set; }
         public IReadOnlyList<CardLoadoutCardState> Slots { get; internal set; }
 
@@ -68,7 +64,8 @@ namespace Baryonyx.CardLoadout
 
     public interface ICardLoadoutView
     {
-        event Action<string> PersonPressed;
+        event Action PrevPressed;
+        event Action NextPressed;
         event Action<int> SlotPressed;
         event Action<string> CardPressed;
 
@@ -79,8 +76,9 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// The tavern's card skills: choose a person on the tabs (the party first, then the other
-    /// companions), a slot on the left, then tap a card on the right to set it there at once.
+    /// The formation's card skills change screen: ◀ ▶ walks the people (the party first, then
+    /// the other companions) keeping the chosen slot, choose a slot on the left, then tap a card
+    /// on the right to set it there at once.
     /// A card the person holds in another slot swaps with the chosen slot. Each change shows a
     /// notice that asks nothing of the player. With a <c>save</c> function the change is saved on
     /// the server first, and the store then reads the saved cards; otherwise (the showcase) the
@@ -92,7 +90,6 @@ namespace Baryonyx.CardLoadout
 
         private readonly ICardLoadoutView view;
         private readonly IReadOnlyList<PartyMember> people;
-        private readonly int partyCount;
         private readonly ICardLoadoutStore store;
 
         // その人・枠・カードのIDを保存する。保存したカードは store から読み直す。
@@ -106,18 +103,19 @@ namespace Baryonyx.CardLoadout
         public CardLoadoutPresenter(
             ICardLoadoutView view,
             IReadOnlyList<PartyMember> people,
-            int partyCount,
             ICardLoadoutStore store,
-            Func<string, int, string, CancellationToken, Task> save = null
+            Func<string, int, string, CancellationToken, Task> save = null,
+            int slot = 0
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.people = people ?? Array.Empty<PartyMember>();
-            this.partyCount = Math.Clamp(partyCount, 0, this.people.Count);
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.save = save;
             person = Math.Max(0, IndexOf(store.Selected));
-            view.PersonPressed += SelectPerson;
+            this.slot = slot >= 0 && slot < CardLoadoutRules.Size ? slot : 0;
+            view.PrevPressed += Previous;
+            view.NextPressed += Next;
             view.SlotPressed += SelectSlot;
             view.CardPressed += Choose;
             Refresh();
@@ -133,19 +131,21 @@ namespace Baryonyx.CardLoadout
 
         private PartyMember Current => people.Count > 0 ? people[person] : null;
 
-        /// <summary>The people in tab order: the party's slots first, then the others as owned.</summary>
-        public static (IReadOnlyList<PartyMember> People, int PartyCount) People(
-            PartyFormation formation
-        ) => formation != null ? formation.TabOrder() : (Array.Empty<PartyMember>(), 0);
+        /// <summary>The people in ◀ ▶ order: the party's slots first, then the others as owned.</summary>
+        public static IReadOnlyList<PartyMember> People(PartyFormation formation) =>
+            formation != null ? formation.TabOrder().People : Array.Empty<PartyMember>();
 
-        public void SelectPerson(string id)
+        public void Previous() => Step(-1);
+
+        public void Next() => Step(1);
+
+        // 人を替える。選んでいる枠はそのままにし、同じ枠のスキルを人ごとに見比べられるようにする。
+        private void Step(int delta)
         {
-            int index = IndexOf(id);
-            if (disposed || index < 0 || index == person)
+            if (disposed || saving || people.Count < 2)
                 return;
-            person = index;
-            slot = 0;
-            store.Selected = id;
+            person = (person + delta + people.Count) % people.Count;
+            store.Selected = people[person].Id;
             Refresh();
         }
 
@@ -222,7 +222,6 @@ namespace Baryonyx.CardLoadout
             {
                 State = new CardLoadoutState
                 {
-                    People = Array.Empty<string>(),
                     Usable = Array.Empty<CardElement>(),
                     Slots = Array.Empty<CardLoadoutCardState>(),
                     Choices = Array.Empty<CardLoadoutCardState>(),
@@ -236,11 +235,9 @@ namespace Baryonyx.CardLoadout
             var choices = CardLoadoutRules.Choices(usable);
             State = new CardLoadoutState
             {
-                People = people.Select(entry => entry.Id).ToArray(),
-                PartyCount = partyCount,
-                Person = person,
                 PersonId = member.Id,
                 Name = member.Name,
+                CanSwitch = people.Count > 1,
                 Usable = usable,
                 Slot = slot,
                 Slots = cards.Select((id, i) => Card(member.Id, id, i)).ToArray(),
@@ -252,7 +249,7 @@ namespace Baryonyx.CardLoadout
             view.Render(State);
         }
 
-        // その人の4枚。足りない枠はnull（空き）にする。
+        // その人のカスタムスキル2枚。足りない枠はnull（空き）にする。
         private string[] Cards(string id)
         {
             var cards = store.CardsOf(id) ?? Array.Empty<string>();
@@ -298,7 +295,8 @@ namespace Baryonyx.CardLoadout
             disposed = true;
             lifetime.Cancel();
             lifetime.Dispose();
-            view.PersonPressed -= SelectPerson;
+            view.PrevPressed -= Previous;
+            view.NextPressed -= Next;
             view.SlotPressed -= SelectSlot;
             view.CardPressed -= Choose;
         }

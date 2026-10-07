@@ -98,6 +98,10 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(view.MenuItems.Length, Is.EqualTo(definition.Items.Length));
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
+                    // ほかのパネルから開く項目（編成の個別・付け替えの画面）は、メニューに行を出さない。
+                    Assert.That(view.MenuItems[i] == null, Is.EqualTo(definition.Items[i].Hidden));
+                    if (definition.Items[i].Hidden)
+                        continue;
                     SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
                     // 編成と商会のメニューは、項目名の前にドット絵のアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find("Icon");
@@ -107,7 +111,7 @@ namespace Baryonyx.Tests.PlayMode
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
                     // 編成の各項目は一覧の代わりに専用のパネルを開く（ボーナスは下の別のテストで確かめる）。
-                    if (view.PanelFor(i) != null)
+                    if (view.PanelFor(i) != null || definition.Items[i].Hidden)
                         continue;
                     view.MenuItems[i].onClick.Invoke();
                     Assert.That(view.MenuPanel.activeSelf, Is.False);

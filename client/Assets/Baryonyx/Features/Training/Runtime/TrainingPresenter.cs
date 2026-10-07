@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Party;
+using Baryonyx.UI.Cards;
 using UnityEngine;
 
 namespace Baryonyx.Training
@@ -24,14 +26,72 @@ namespace Baryonyx.Training
         public Texture2D Icon { get; internal set; }
     }
 
-    /// <summary>One of the character's card skills: its cost, name and element icon.</summary>
+    /// <summary>
+    /// One of the four cards the character brings to the deck, as the battle draws it: a unique
+    /// skill (fixed, unlocked by level) or a custom skill (a skill the player sets).
+    /// </summary>
     public sealed class TrainingCardState
     {
-        public string Name { get; internal set; }
+        // スキルのID。固有スキルと、空いているカスタムスキルの枠ではnull。
+        public string Id { get; internal set; }
+
+        // カードの上の行。「固有スキル」または「スキル」。
+        public string Type { get; internal set; } = "";
+        public string Name { get; internal set; } = "";
+
+        // 種類と対象の行（「攻撃・敵単体」、色付き）と、数字に色を付けた説明。
+        public string Kind { get; internal set; } = "";
+        public string Description { get; internal set; } = "";
+
+        // コスト（固有スキルはエネルギー）。
         public int Cost { get; internal set; }
 
-        // 属性のアイコン。属性のないカードはnull。
+        // カードの枠の色を決める属性と、属性のアイコン。属性のないカードはアイコンがnull。
+        public CardElement Element { get; internal set; }
         public Sprite Icon { get; internal set; }
+
+        // 挿絵（64×58のドット絵）。
+        public Texture2D Art { get; internal set; }
+
+        // まだ解放していない固有スキル。
+        public bool Locked { get; internal set; }
+        public int UnlockLevel { get; internal set; }
+
+        public bool Filled => Id != null || Type == UniqueType;
+
+        public const string UniqueType = "固有スキル";
+        public const string SkillType = "スキル";
+    }
+
+    /// <summary>One equipment slot on the adventurer's page.</summary>
+    public sealed class TrainingGearState
+    {
+        // 「武器」「防具」「アクセサリー」。
+        public string Slot { get; internal set; }
+
+        // 付けている装備の名前と「★★」と効果。空いていれば名前は「なし」。
+        public string Name { get; internal set; } = "";
+        public string Stars { get; internal set; } = "";
+        public string Detail { get; internal set; } = "";
+        public bool Filled { get; internal set; }
+
+        // まだ付けられない枠（アクセサリーは準備中）。押しても開かない。
+        public bool Locked { get; internal set; }
+
+        public static TrainingGearState Worn(
+            string slot,
+            string name,
+            string stars,
+            string detail = null
+        ) =>
+            new()
+            {
+                Slot = slot,
+                Name = name ?? "",
+                Stars = stars ?? "",
+                Detail = detail ?? "",
+                Filled = !string.IsNullOrEmpty(name),
+            };
     }
 
     /// <summary>Everything the training shows, recomputed after every input.</summary>
@@ -50,7 +110,14 @@ namespace Baryonyx.Training
 
         // パッシブ2つ、続けて固有スキル2つ。
         public IReadOnlyList<TrainingSkillState> Skills { get; internal set; }
+        public IReadOnlyList<TrainingSkillState> Passives { get; internal set; }
+
+        // デッキに入る4枚：固有スキル2枚と、カスタムスキル2枚。
+        public IReadOnlyList<TrainingCardState> Uniques { get; internal set; }
         public IReadOnlyList<TrainingCardState> Cards { get; internal set; }
+
+        // 武器・防具、続けてアクセサリー3つ。
+        public IReadOnlyList<TrainingGearState> Gear { get; internal set; }
         public long Runes { get; internal set; }
 
         // 1レベル上げるのに要るルーン。上限なら0。
@@ -75,17 +142,28 @@ namespace Baryonyx.Training
     }
 
     /// <summary>
-    /// The tavern's training: one character at a time (◀ ▶ walks the party, then the others),
-    /// with their stats, passive and unique skills and card skills. "レベルアップ" opens a
-    /// dialog over the detail that shows what the chosen levels change before any rune is
-    /// spent; back closes the dialog first. A level-up shows a notice that asks nothing. With a
+    /// The adventurer's page of the formation: one character at a time (a flick walks the party,
+    /// then the others), with their stats and passives, the four cards they bring to the deck
+    /// (two unique skills and two custom skills) and their equipment. A custom skill or a weapon
+    /// or armour slot opens its change screen for the character. "レベルアップ" opens a dialog
+    /// over the page that shows what the chosen levels change before any rune is spent; back
+    /// closes the dialog first. A level-up shows a notice that asks nothing. With a
     /// <c>levelUp</c> function the server raises the level and spends its runes first, and the
     /// store then reads them; otherwise (the showcase) the store keeps them in memory.
     /// </summary>
     public sealed class TrainingPresenter : IDisposable
     {
-        public const string CardsComingSoon = "スキルの付け替え（準備中）";
         public const string LevelUpFailedMessage = "レベルアップできませんでした";
+        public const string PassiveType = "パッシブ";
+        public const string EmptyName = "空き";
+
+        // カスタムスキルの枠。固有スキル2枚と合わせて、1人4枚がデッキに入る（doc/features/party.md）。
+        public const int CustomSlots = CardLoadoutRules.Size;
+
+        // 武器・防具と、まだ付けられないアクセサリー3つ。
+        public const int GearSlots = 5;
+        public const int OpenGearSlots = 2;
+        public static readonly string[] GearLabels = { "武器", "防具", "アクセサリー" };
 
         private readonly ITrainingView view;
         private readonly IReadOnlyList<TrainingMember> roster;
@@ -96,6 +174,15 @@ namespace Baryonyx.Training
 
         // キャラのID・今のLv・上げたあとのLvでレベルアップを保存する。保存した結果は store から読み直す。
         private readonly Func<string, int, int, CancellationToken, Task> levelUp;
+
+        // キャラが付けている武器と防具（枠の順）。なければ空き。
+        private readonly Func<string, IReadOnlyList<TrainingGearState>> gearOf;
+
+        // スキルのIDから挿絵を引く。
+        private readonly Func<string, Texture2D> artOf;
+
+        // キャラのIDとスキルから、そのキャラのステータスで数字を入れた説明を作る。
+        private readonly Func<string, CardSkill, string> describe;
         private readonly CancellationTokenSource lifetime = new();
         private int index;
         private bool dialog;
@@ -108,7 +195,10 @@ namespace Baryonyx.Training
             IReadOnlyList<TrainingMember> roster,
             ITrainingStore store,
             Func<string, Sprite> iconOf = null,
-            Func<string, int, int, CancellationToken, Task> levelUp = null
+            Func<string, int, int, CancellationToken, Task> levelUp = null,
+            Func<string, IReadOnlyList<TrainingGearState>> gearOf = null,
+            Func<string, Texture2D> artOf = null,
+            Func<string, CardSkill, string> describe = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -116,6 +206,9 @@ namespace Baryonyx.Training
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.iconOf = iconOf ?? (_ => null);
             this.levelUp = levelUp;
+            this.gearOf = gearOf ?? (_ => Array.Empty<TrainingGearState>());
+            this.artOf = artOf ?? (_ => null);
+            this.describe = describe ?? ((_, card) => card.Text);
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -125,7 +218,8 @@ namespace Baryonyx.Training
             view.MaxPressed += Max;
             view.CancelPressed += CloseDialog;
             view.ConfirmPressed += Confirm;
-            view.CardsPressed += OpenCards;
+            view.GearPressed += OpenGear;
+            view.CardPressed += OpenCard;
             Refresh();
         }
 
@@ -258,12 +352,20 @@ namespace Baryonyx.Training
             Refresh();
         }
 
-        public void OpenCards()
+        // 装備の枠を押す。武器・防具はその枠を選んだ装備の付け替えの画面を開く。
+        public void OpenGear(int slot)
         {
-            if (disposed || dialog || Current == null)
+            if (disposed || dialog || Current == null || slot < 0 || slot >= OpenGearSlots)
                 return;
-            if (!view.OpenCards(Current.Id))
-                view.ShowNotice(CardsComingSoon);
+            view.OpenGear(Current.Id, slot);
+        }
+
+        // カスタムスキルの枠を押す。その枠を選んだスキルの付け替えの画面を開く。
+        public void OpenCard(int slot)
+        {
+            if (disposed || dialog || Current == null || slot < 0 || slot >= State.Cards.Count)
+                return;
+            view.OpenCards(Current.Id, slot);
         }
 
         public static string LevelUpMessage(
@@ -305,7 +407,10 @@ namespace Baryonyx.Training
                     Name = "",
                     Elements = Array.Empty<Sprite>(),
                     Skills = Array.Empty<TrainingSkillState>(),
+                    Passives = Array.Empty<TrainingSkillState>(),
+                    Uniques = Array.Empty<TrainingCardState>(),
                     Cards = Array.Empty<TrainingCardState>(),
+                    Gear = Array.Empty<TrainingGearState>(),
                     Learned = Array.Empty<TrainingSkillState>(),
                     Maxed = true,
                 };
@@ -333,7 +438,16 @@ namespace Baryonyx.Training
                 Elements = cards.Select(iconOf).Where(icon => icon != null).Distinct().ToArray(),
                 Stats = current.Growth.StatsAt(level),
                 Skills = skills,
-                Cards = cards.Select(Card).ToArray(),
+                Passives = skills.Where(skill => skill.Type == PassiveType).ToArray(),
+                Uniques = skills
+                    .Where(skill => skill.Type == TrainingCardState.UniqueType)
+                    .Select(Unique)
+                    .ToArray(),
+                Cards = Enumerable
+                    .Range(0, CustomSlots)
+                    .Select(i => Card(current.Id, i < cards.Count ? cards[i] : null))
+                    .ToArray(),
+                Gear = Gear(current.Id),
                 Runes = runes,
                 NextCost = maxed ? 0 : TrainingRules.CostToNext(level, costPerLevel),
                 DialogOpen = open,
@@ -358,8 +472,12 @@ namespace Baryonyx.Training
 
         private static TrainingSkillState[] Skills(TrainingCharacter growth, int level) =>
             growth
-                .Passives.Select(skill => Skill(skill, "パッシブ", level))
-                .Concat(growth.Uniques.Select(skill => Skill(skill, "固有スキル", level)))
+                .Passives.Select(skill => Skill(skill, PassiveType, level))
+                .Concat(
+                    growth.Uniques.Select(skill =>
+                        Skill(skill, TrainingCardState.UniqueType, level)
+                    )
+                )
                 .ToArray();
 
         private static TrainingSkillState Skill(TrainingSkill skill, string type, int level) =>
@@ -374,15 +492,52 @@ namespace Baryonyx.Training
                 Icon = skill.Icon,
             };
 
-        private TrainingCardState Card(string id)
+        // 固有スキルを、カードの見た目で出すための形にする（属性はまだないので枠は属性なし）。
+        private static TrainingCardState Unique(TrainingSkillState skill) =>
+            new()
+            {
+                Type = TrainingCardState.UniqueType,
+                Name = skill.Name,
+                Description = skill.Description,
+                Cost = skill.Energy,
+                Art = skill.Icon,
+                Locked = !skill.Unlocked,
+                UnlockLevel = skill.UnlockLevel,
+            };
+
+        private TrainingCardState Card(string person, string id)
         {
             var card = CardSkills.Find(id);
+            if (card == null)
+                return new TrainingCardState { Name = EmptyName };
             return new TrainingCardState
             {
-                Name = card?.Name ?? "",
-                Cost = card?.Cost ?? 0,
+                Id = card.Id,
+                Type = TrainingCardState.SkillType,
+                Name = card.Name,
+                Kind = CardText.KindLine(card),
+                Description = describe(person, card),
+                Cost = card.Cost,
+                Element = card.Element,
                 Icon = iconOf(id),
+                Art = artOf(id),
             };
+        }
+
+        // 武器・防具は付けているもの、続けてまだ付けられないアクセサリー3つ。
+        private TrainingGearState[] Gear(string id)
+        {
+            var worn = gearOf(id) ?? Array.Empty<TrainingGearState>();
+            return Enumerable
+                .Range(0, GearSlots)
+                .Select(i =>
+                    i < OpenGearSlots
+                        ? i < worn.Count && worn[i] != null
+                            ? worn[i]
+                            : TrainingGearState.Worn(GearLabels[i], null, null)
+                        : new TrainingGearState { Slot = GearLabels[2], Locked = true }
+                )
+                .ToArray();
         }
 
         public void Dispose()
@@ -400,7 +555,8 @@ namespace Baryonyx.Training
             view.MaxPressed -= Max;
             view.CancelPressed -= CloseDialog;
             view.ConfirmPressed -= Confirm;
-            view.CardsPressed -= OpenCards;
+            view.GearPressed -= OpenGear;
+            view.CardPressed -= OpenCard;
         }
     }
 
@@ -414,14 +570,18 @@ namespace Baryonyx.Training
         event Action MaxPressed;
         event Action CancelPressed;
         event Action ConfirmPressed;
-        event Action CardsPressed;
+        event Action<int> GearPressed;
+        event Action<int> CardPressed;
 
         void Render(TrainingState state);
 
         // 操作を求めない通知（共通の通知の帯）を出す。
         void ShowNotice(string message);
 
-        // キャラのスキルの付け替え画面を開く。まだ開けなければfalse。
-        bool OpenCards(string id);
+        // キャラの装備の付け替えの画面を、押した枠（0が武器、1が防具）を選んで開く。
+        void OpenGear(string id, int slot);
+
+        // キャラのスキルの付け替えの画面を、押した枠を選んで開く。
+        void OpenCards(string id, int slot);
     }
 }

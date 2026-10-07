@@ -17,101 +17,92 @@ MonoBehaviour:
     Name: "\u30C8\u30FC\u30DE"
     Level: 12
     Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    Illustration: {fileID: 2800000, guid: 60fe5aa2568f64a13b697342294acba6, type: 3}
     Tint: {r: 1, g: 1, b: 1, a: 1}
     Flip: 0
     Cards:
     - Skill: Fire
-    - Skill: Meteor
     - Skill: Ice
-    - Skill: Blizzard
   - Id: luka
     Name: "\u30EB\u30AB"
     Level: 11
     Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Illustration: {fileID: 2800000, guid: debe85af43ab84fe594a4f16c1abd492, type: 3}
     Tint: {r: 1, g: 1, b: 1, a: 1}
     Flip: 0
     Cards:
     - Skill: VitalThrust
-    - Skill: ArrowRain
     - Skill: Thunder
-    - Skill: LightningBolt
   - Id: aria
     Name: "\u30A2\u30EA\u30A2"
     Level: 10
     Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    Illustration: {fileID: 2800000, guid: f173cb3215f064ad0a781cb5ca4323f7, type: 3}
     Tint: {r: 1, g: 1, b: 1, a: 1}
     Flip: 0
     Cards:
     - Skill: Slash
-    - Skill: Iai
     - Skill: ShieldBash
-    - Skill: EarthSplitter
   - Id: mina
     Name: "\u30DF\u30CA"
     Level: 10
     Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    Illustration: {fileID: 2800000, guid: 4c5393e95f2e046caa9f8dd57a7670f3, type: 3}
     Tint: {r: 1, g: 1, b: 1, a: 1}
     Flip: 0
     Cards:
     - Skill: Heal
-    - Skill: Protect
     - Skill: HolyHammer
-    - Skill: HolyLight
   - Id: anselm
     Name: "\u30A2\u30F3\u30BB\u30EB\u30E0"
     Level: 8
     Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    Illustration: {fileID: 2800000, guid: ac58778f4f1284074a9b5e4842f91ff3, type: 3}
     Tint: {r: 0.8, g: 0.9, b: 1, a: 1}
     Flip: 1
     Cards:
     - Skill: EarthSplitter
-    - Skill: HolyHammer
     - Skill: Fire
-    - Skill: Embers
   - Id: greta
     Name: "\u30B0\u30EC\u30BF"
     Level: 7
     Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Illustration: {fileID: 2800000, guid: dae2d35c0d2cd4fabb74e9e3fe30743d, type: 3}
     Tint: {r: 1, g: 0.82, b: 0.9, a: 1}
     Flip: 0
     Cards:
     - Skill: VitalThrust
-    - Skill: PoisonNeedle
     - Skill: Ice
-    - Skill: Icicles
   - Id: lutz
     Name: "\u30EB\u30C3\u30C4"
     Level: 5
     Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    Illustration: {fileID: 2800000, guid: 62a934ff1074b46d3bda447028308c16, type: 3}
     Tint: {r: 0.86, g: 1, b: 0.8, a: 1}
     Flip: 1
     Cards:
     - Skill: Thunder
-    - Skill: Thundercloud
     - Skill: ShieldBash
-    - Skill: EarthSplitter
   - Id: rita
     Name: "\u30EA\u30BF"
     Level: 3
     Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    Illustration: {fileID: 2800000, guid: 2afea8da03b2e4e64b95d155833dd492, type: 3}
     Tint: {r: 1, g: 0.88, b: 0.76, a: 1}
     Flip: 1
     Cards:
     - Skill: Slash
-    - Skill: Whirlwind
     - Skill: VitalThrust
-    - Skill: ShadowStitch
   - Id: ritsu
     Name: "\u30EA\u30C4"
     Level: 1
     Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    Illustration: {fileID: 2800000, guid: 84192d036230644ddb74ee12146519cc, type: 3}
     Tint: {r: 0.86, g: 0.84, b: 1, a: 1}
     Flip: 1
     Cards:
     - Skill: Ice
-    - Skill: Blizzard
     - Skill: Thunder
-    - Skill: Thundercloud
   Formation:
   - toma
   - luka
@@ -125,3 +116,104 @@ MonoBehaviour:
   - {fileID: 5349011544834349465, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
   - {fileID: 5349011544834349465, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
   - {fileID: 5349011544834349465, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
+  SkillArts:
+  - Skill: Slash
+    Art: {fileID: -6622703189942226176, guid: 4f1bf86aa23663f458bd6832aef91787, type: 3}
+  - Skill: Fire
+    Art: {fileID: -6622703189942226176, guid: 1c71f99b82009e14e8c763b470641745, type: 3}
+  - Skill: Ice
+    Art: {fileID: -6622703189942226176, guid: 44db660941fa6c44ba973b85ae4e830b, type: 3}
+  - Skill: Thunder
+    Art: {fileID: -6622703189942226176, guid: 35db9db0e6c090a4ca6429d6e89ca9f5, type: 3}
+  - Skill: Heal
+    Art: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+  - Skill: Guard
+    Art: {fileID: -6622703189942226176, guid: d9ca4308889d5a4429d718733246fe04, type: 3}
+  - Skill: Whirlwind
+    Art: {fileID: -6622703189942226176, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
+  - Skill: Iai
+    Art: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+  - Skill: BladeDance
+    Art: {fileID: -6622703189942226176, guid: fdd08f55ab2bc479ab0943f2cedfa709, type: 3}
+  - Skill: Hone
+    Art: {fileID: -6622703189942226176, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
+  - Skill: ShieldBash
+    Art: {fileID: -6622703189942226176, guid: 2ef37e46ed43848b69edaa7bcc9e911b, type: 3}
+  - Skill: ArmorBreak
+    Art: {fileID: -6622703189942226176, guid: b31a536d5d0b44472b162e5fcd4a2044, type: 3}
+  - Skill: EarthSplitter
+    Art: {fileID: -6622703189942226176, guid: 2a350d98fefb94f3dbbac8525a21e04b, type: 3}
+  - Skill: GiantImpact
+    Art: {fileID: -6622703189942226176, guid: 4e6b03f8387bf426d906447a5cf562ea, type: 3}
+  - Skill: StrideStrike
+    Art: {fileID: -6622703189942226176, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
+  - Skill: GuardianOath
+    Art: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+  - Skill: WarCry
+    Art: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
+  - Skill: Embers
+    Art: {fileID: -6622703189942226176, guid: f5136e1860d674e74867dc0ae29f0855, type: 3}
+  - Skill: FlamePillar
+    Art: {fileID: -6622703189942226176, guid: 49e974873b5314cd6a48c7532947120b, type: 3}
+  - Skill: FireStorm
+    Art: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
+  - Skill: BlastSigil
+    Art: {fileID: -6622703189942226176, guid: d9177c5b8cd564c12826a94ce7778644, type: 3}
+  - Skill: Meteor
+    Art: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+  - Skill: FlameEnchant
+    Art: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+  - Skill: Icicles
+    Art: {fileID: -6622703189942226176, guid: 94465e77857754831a8dfaba63190b27, type: 3}
+  - Skill: Blizzard
+    Art: {fileID: -6622703189942226176, guid: 9c1db89367064424c98cf7b1a349d325, type: 3}
+  - Skill: IceMirror
+    Art: {fileID: -6622703189942226176, guid: e70b8aee1804e4502ad9857c09270c70, type: 3}
+  - Skill: AbsoluteZero
+    Art: {fileID: -6622703189942226176, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
+  - Skill: QuickCast
+    Art: {fileID: -6622703189942226176, guid: 5a16a3638866f4d98a1861918714e0d1, type: 3}
+  - Skill: VitalThrust
+    Art: {fileID: -6622703189942226176, guid: cccfe4b3cd70d4aa1a1b6bcf7503f6bb, type: 3}
+  - Skill: PoisonNeedle
+    Art: {fileID: -6622703189942226176, guid: b04d6fc883add4b90a3e4a79fe170710, type: 3}
+  - Skill: ShadowStitch
+    Art: {fileID: -6622703189942226176, guid: 82da91fd08c5c496d81937b0f169240b, type: 3}
+  - Skill: InsightArrow
+    Art: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+  - Skill: ArrowRain
+    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Skill: ShadowSnipe
+    Art: {fileID: -6622703189942226176, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
+  - Skill: LightningBolt
+    Art: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
+  - Skill: ChainLightning
+    Art: {fileID: -6622703189942226176, guid: 7c77087a8245640a2bf06c529d82e64d, type: 3}
+  - Skill: Thundercloud
+    Art: {fileID: -6622703189942226176, guid: cf1e22047dbc8414ebe8b2307d2ebc75, type: 3}
+  - Skill: ThunderSpear
+    Art: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+  - Skill: Gale
+    Art: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+  - Skill: Scout
+    Art: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
+  - Skill: StepPrayer
+    Art: {fileID: -6622703189942226176, guid: 30b4a8d82cd2b4ad4a64b79788797191, type: 3}
+  - Skill: Regen
+    Art: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+  - Skill: Resurrection
+    Art: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+  - Skill: HolyHammer
+    Art: {fileID: -6622703189942226176, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
+  - Skill: Protect
+    Art: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+  - Skill: Purify
+    Art: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+  - Skill: ManaPrayer
+    Art: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+  - Skill: Revelation
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Skill: HolyLight
+    Art: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
+  - Skill: DivineShield
+    Art: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}

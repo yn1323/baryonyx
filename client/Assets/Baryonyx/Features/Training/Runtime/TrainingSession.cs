@@ -13,14 +13,18 @@ namespace Baryonyx.Training
     /// </summary>
     public static class TrainingSession
     {
-        // 酒場のメニューの「育成」の項目のキー。この項目はリストの代わりに育成を開く。
+        // 編成の「育成」の項目のキー。メニューには出さず、冒険者の一覧から1人の個別の画面として開く。
         public const string GuideItemKey = "training";
 
         // サーバーがないときに育成で使ったルーンの合計。
         public static long Spent { get; private set; }
 
-        // 最後に見ていたキャラのID。開き直すとそのキャラから見せる。
-        public static string Selected { get; set; }
+        // 最後に見ていたキャラのID。冒険者の一覧・装備・スキルの画面と共有する。
+        public static string Selected
+        {
+            get => PartySession.Selected;
+            set => PartySession.Selected = value;
+        }
 
         // サーバーがないときの所持ルーン。仮データの所持ルーンから使った分を引く。
         public static long RunesOr(TrainingMockData data) =>
@@ -33,7 +37,6 @@ namespace Baryonyx.Training
         public static void Reset()
         {
             Spent = 0;
-            Selected = null;
         }
     }
 

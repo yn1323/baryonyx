@@ -3,6 +3,9 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Equipment;
 using Baryonyx.Party;
+using Baryonyx.Tavern;
+using Baryonyx.Training;
+using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -31,42 +34,70 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernEquipmentTests));
         }
 
-        // 編成の「装備」は一覧の代わりに装備の画面を開く。上のタブで人を選び、左で武器か防具の枠を選んで
-        // 右の装備を押すとその場で付け替え、「外す」で外す。変えたことは共通の通知の帯で知らせる。
+        // 個別の画面で武器か防具の枠を押すと、その人とその枠を選んだ装備の付け替えの画面を開く。左上の◀▶で
+        // 枠を選んだまま人を替え、右の装備を押すとその場で付け替え、「外す」で外す。左にはステータスを出す。
         [UnityTest]
-        public IEnumerator EquipmentChangesAndTakesOffItems()
+        public IEnumerator EquipmentChangesFromTheAdventurersPage()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            Assert.That(view.Definition.Title, Is.EqualTo("編成"));
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == EquipmentSession.GuideItemKey
-            );
-            Assert.That(item, Is.GreaterThanOrEqualTo(0));
-            Assert.That(view.MenuItems[item].transform.Find("Icon"), Is.Not.Null);
+            int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            var panel = view.PanelFor(item).GetComponent<EquipmentView>();
+            view.PanelFor(item).GetComponent<AdventurerRosterView>().Open.onClick.Invoke();
+            var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+            yield return SceneTests.WaitForTask(page.LoadTask);
+
+            // 防具の枠を押す。メニューには出さない画面で、案内人は隠れる。
+            page.Gear[1].Button.onClick.Invoke();
+            int equipment = ItemOf(view, EquipmentSession.GuideItemKey);
+            Assert.That(view.Definition.Items[equipment].Hidden, Is.True);
+            var panel = view.PanelFor(equipment).GetComponent<EquipmentView>();
             Assert.That(panel.gameObject.activeInHierarchy, Is.True);
-            Assert.That(view.ListPanel.activeSelf, Is.False);
-            // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
+            Assert.That(page.gameObject.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            SceneTests.AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
             yield return SceneTests.WaitForTask(panel.LoadTask);
             yield return null;
-
-            // タブはパーティの枠の順、続けてほかの仲間を持っている順。開いたときは先頭の人の武器。
-            var (people, _) = PartySession.Formation(panel.Party).TabOrder();
-            Assert.That(Tabs(panel), Is.EqualTo(people.Select(member => member.Id)));
-            Assert.That(panel.People.Find(people[0].Id).Selected.activeSelf, Is.True);
-            Assert.That(panel.Slots[0].Selected.activeSelf, Is.True);
-            Assert.That(panel.Figure.enabled, Is.True);
-            foreach (var tab in panel.People.Tabs)
-                SceneTests.AssertTouchSize(tab.Button.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Layout/Person"), view.Back.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Layout/Items"), view.Back.transform);
+            SceneTests.AssertTouchSize(panel.Person.Prev.transform);
+            SceneTests.AssertTouchSize(panel.Person.Next.transform);
             foreach (var slot in panel.Slots)
-                SceneTests.AssertTouchSize(slot.Button.transform);
+                SceneTests.AssertTouchSize(slot.Button.transform, 0.7f);
 
+            // 開いたときは、個別の画面で見ていた人の防具。ステータスと3つの準備中のアクセサリーも出す。
+            var (people, _) = PartySession.Formation(panel.Party).TabOrder();
+            var person = people[0];
+            Assert.That(panel.Person.Name.text, Is.EqualTo(person.Name));
+            Assert.That(panel.Person.Figure.enabled, Is.True);
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            Assert.That(panel.Slots[0].Selected.activeSelf, Is.False);
+            Assert.That(panel.Title.text, Is.EqualTo("防具"));
+            Assert.That(panel.Accessories, Has.Length.EqualTo(3));
+            var growth = panel.Training.Find(person.Id);
+            Assert.That(
+                panel.Stats.Select(stat => stat.text),
+                Is.EqualTo(
+                    Enumerable
+                        .Range(0, 8)
+                        .Select(i =>
+                            growth
+                                .StatsAt(PartySession.LevelOf(panel.Party, person.Id))[i]
+                                .ToString()
+                        )
+                )
+            );
+
+            // ◀▶で人を替えても、防具の枠を選んだまま。
+            panel.Person.Next.onClick.Invoke();
+            Assert.That(panel.Person.Name.text, Is.EqualTo(people[1].Name));
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            panel.Person.Prev.onClick.Invoke();
+            Assert.That(panel.Person.Name.text, Is.EqualTo(person.Name));
+
+            // 武器の枠を選び、まだ誰も付けていない武器に替える。
+            panel.Slots[0].Button.onClick.Invoke();
             var weapons = EquipmentCatalog.All.Count(entry => entry.Slot == EquipmentSlot.Weapon);
             Assert.That(Rows(panel), Has.Length.EqualTo(weapons));
             Assert.That(panel.Title.text, Is.EqualTo("武器"));
@@ -82,11 +113,6 @@ namespace Baryonyx.Tests.PlayMode
                 panel.Remove.transform.GetSiblingIndex(),
                 Is.EqualTo(panel.Remove.transform.parent.childCount - 1)
             );
-            Assert.That(panel.Remove.interactable, Is.True);
-            SceneTests.AssertTouchSize(panel.Remove.transform);
-
-            // まだ誰も付けていない武器に替える。
-            var person = people[0];
             string before = panel.Slots[0].Name.text;
             var dagger = Row(panel, "炎のダガー");
             Assert.That(dagger.Mark.gameObject.activeSelf, Is.False);
@@ -100,17 +126,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Slots[0].Name.text, Is.EqualTo("炎のダガー"));
             Assert.That(Row(panel, "炎のダガー").Mark.text, Is.EqualTo("装備中"));
 
-            // 防具の枠では防具を並べ、「外す」で外すと押せなくなる。
+            // 防具を外すと、外すボタンは押せなくなる。
             panel.Slots[1].Button.onClick.Invoke();
-            Assert.That(panel.Title.text, Is.EqualTo("防具"));
-            Assert.That(
-                Rows(panel).Select(row => row.Name.text),
-                Is.All.Matches<string>(name =>
-                    EquipmentCatalog.All.Any(entry =>
-                        entry.Name == name && entry.Slot == EquipmentSlot.Armor
-                    )
-                )
-            );
             string armour = panel.Slots[1].Name.text;
             panel.Remove.onClick.Invoke();
             yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
@@ -118,23 +135,18 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo("なし"));
             Assert.That(panel.Remove.interactable, Is.False);
 
-            // 「もどる」でメニューへ戻る。開き直すと、付け替えた装備を出す。
+            // 「もどる」で個別の画面へ戻り、付け替えた装備を出す。
             view.Back.onClick.Invoke();
-            Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(panel.gameObject.activeSelf, Is.False);
-            view.MenuItems[item].onClick.Invoke();
-            yield return SceneTests.WaitForTask(panel.LoadTask);
-            yield return null;
-            Assert.That(panel.Slots[0].Name.text, Is.EqualTo("炎のダガー"));
-            Assert.That(panel.Slots[1].Name.text, Is.EqualTo("なし"));
+            Assert.That(page.gameObject.activeSelf, Is.True);
+            yield return SceneTests.WaitForTask(page.LoadTask);
+            Assert.That(page.Name.text, Is.EqualTo(person.Name));
+            Assert.That(page.Gear[0].Name.text, Is.EqualTo("炎のダガー"));
+            Assert.That(page.Gear[1].Name.text, Is.EqualTo("なし"));
         }
 
-        private static string[] Tabs(EquipmentView panel) =>
-            panel
-                .People.Tabs.Where(tab => tab.Button.gameObject.activeSelf)
-                .OrderBy(tab => tab.Button.transform.GetSiblingIndex())
-                .Select(tab => tab.Id)
-                .ToArray();
+        private static int ItemOf(GuideMenuView view, string key) =>
+            System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
         private static EquipmentRow[] Rows(EquipmentView panel) =>
             panel

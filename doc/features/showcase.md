@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # クライアントアセット展示室
@@ -278,8 +278,8 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
 シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab` も同じく生成時に追加する。
 案内人がいる画面（編成・商会・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
-編成の[パーティ](screens.md#パーティ)は `TavernScreen` のメニューの「パーティ」から開く。停止中も、Prefabの `Formation` を表示すれば、仮データの4人と仲間のタイルを確認できる。
-編成の[装備](screens.md#装備)は、Prefabの `Equipment` を表示すれば、停止中も先頭の仲間の武器・防具と持っている武器の行を確認でき、Play Modeではサーバーの接続先がなくても付け替えを操作できる。付け替え・武器・防具のアイコン（`IconChangeGear`・`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）は画像のカテゴリに入る。
+編成の[冒険者の一覧](screens.md#パーティ)は `TavernScreen` のメニューの「冒険者」から開き、「装備・スキル・育成 ▶」で[個別の画面](screens.md#育成)、そこから装備とスキルの付け替えへ進む。停止中も、Prefabの `Adventurers`・`Training`・`Equipment`・`CardLoadout` を表示すれば、仮データの先頭の人で、一覧・個別の画面・付け替えの画面を確認できる。Play Modeではサーバーの接続先がなくても、入れ替え・レベルアップ・付け替えを操作でき、個別の画面では左右のフリックで人を替えられる。
+9人の縦長のイラスト（`toma` など、`Shared/Art/Characters/Illustrations/`）はキャラクターのカテゴリに入る。展示室の画像のプレビューは枠いっぱいに伸ばして描くため、縦横の比は個別の画面で確かめる。付け替え・武器・防具のアイコン（`IconChangeGear`・`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）は画像のカテゴリに入る。
 [商会](screens.md#商会)は `WorkshopScreen` のメニューの買う・売る・合成から仮の一覧を開く。メニューのアイコン（`IconBuy`・`IconSell`・`IconCraft`）とホームの商会のボタンのアイコン（`IconShop`）は画像のカテゴリに入る。仮データの `PartyMockData` はデータのカテゴリに入る。
 編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
 [冒険の画面](screens.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上に4人と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、部屋の種類のアイコン（`IconRoomBattle` など）はアイテムのカテゴリに入る。

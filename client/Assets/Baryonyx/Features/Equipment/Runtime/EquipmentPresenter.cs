@@ -29,14 +29,10 @@ namespace Baryonyx.Equipment
     /// <summary>Everything the equipment shows, recomputed after every input.</summary>
     public sealed class EquipmentViewState
     {
-        // 上のタブに並べる人のID。パーティの枠の順、続けてパーティにいない仲間を持っている順。
-        public IReadOnlyList<string> People { get; internal set; }
-        public int PartyCount { get; internal set; }
-
-        // 選んでいる人（People の位置）とその人。
-        public int Person { get; internal set; }
+        // 選んでいる人とその人。◀▶はパーティの枠の順、続けてパーティにいない仲間を持っている順に替える。
         public string PersonId { get; internal set; }
         public string Name { get; internal set; }
+        public bool CanSwitch { get; internal set; }
 
         // 選んでいる枠と、武器・防具の2つの枠の装備。
         public EquipmentSlot Slot { get; internal set; }
@@ -53,7 +49,8 @@ namespace Baryonyx.Equipment
 
     public interface IEquipmentView
     {
-        event Action<string> PersonPressed;
+        event Action PrevPressed;
+        event Action NextPressed;
         event Action<int> SlotPressed;
         event Action<string> ItemPressed;
         event Action RemovePressed;
@@ -65,9 +62,9 @@ namespace Baryonyx.Equipment
     }
 
     /// <summary>
-    /// The formation's equipment: choose a person on the tabs (the party first, then the other
-    /// companions), the weapon or armour slot on the left, then tap an owned item on the right to
-    /// wear it at once. An item another person wears moves to the chosen person; "外す" takes the
+    /// The formation's equipment change screen: ◀ ▶ walks the people (the party first, then
+    /// the other companions) keeping the chosen slot, choose the weapon or armour slot on the
+    /// left, then tap an owned item on the right to wear it at once. An item another person wears moves to the chosen person; "外す" takes the
     /// chosen slot's item off. Every change is saved through the source first (the server, or
     /// the app's memory without one) and then shown, with a notice that asks nothing of the
     /// player. A change that cannot be saved leaves the screen as it was.
@@ -79,7 +76,6 @@ namespace Baryonyx.Equipment
 
         private readonly IEquipmentView view;
         private readonly IReadOnlyList<PartyMember> people;
-        private readonly int partyCount;
         private readonly IEquipmentSource source;
         private readonly Action<string> remember;
         private readonly CancellationTokenSource lifetime = new();
@@ -92,21 +88,22 @@ namespace Baryonyx.Equipment
         public EquipmentPresenter(
             IEquipmentView view,
             IReadOnlyList<PartyMember> people,
-            int partyCount,
             EquipmentState state,
             IEquipmentSource source,
             string selected = null,
-            Action<string> remember = null
+            Action<string> remember = null,
+            EquipmentSlot slot = EquipmentSlot.Weapon
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.people = people ?? Array.Empty<PartyMember>();
-            this.partyCount = Math.Clamp(partyCount, 0, this.people.Count);
             this.state = state ?? new EquipmentState(null, null);
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.remember = remember;
             person = Math.Max(0, IndexOf(selected));
-            view.PersonPressed += SelectPerson;
+            this.slot = Enum.IsDefined(typeof(EquipmentSlot), slot) ? slot : EquipmentSlot.Weapon;
+            view.PrevPressed += Previous;
+            view.NextPressed += Next;
             view.SlotPressed += SelectSlot;
             view.ItemPressed += Choose;
             view.RemovePressed += Remove;
@@ -123,14 +120,17 @@ namespace Baryonyx.Equipment
 
         private PartyMember Current => people.Count > 0 ? people[person] : null;
 
-        public void SelectPerson(string id)
+        public void Previous() => Step(-1);
+
+        public void Next() => Step(1);
+
+        // 人を替える。選んでいる枠はそのままにし、同じ枠の装備を人ごとに見比べられるようにする。
+        private void Step(int delta)
         {
-            int index = IndexOf(id);
-            if (disposed || index < 0 || index == person)
+            if (disposed || saving || people.Count < 2)
                 return;
-            person = index;
-            slot = EquipmentSlot.Weapon;
-            remember?.Invoke(id);
+            person = (person + delta + people.Count) % people.Count;
+            remember?.Invoke(people[person].Id);
             Refresh();
         }
 
@@ -241,7 +241,6 @@ namespace Baryonyx.Equipment
             {
                 State = new EquipmentViewState
                 {
-                    People = Array.Empty<string>(),
                     Slot = slot,
                     Slots = Array.Empty<EquipmentItemState>(),
                     Title = EquipmentCatalog.NameOf(slot),
@@ -255,11 +254,9 @@ namespace Baryonyx.Equipment
             string current = state.ItemIn(member.Id, slot);
             State = new EquipmentViewState
             {
-                People = people.Select(entry => entry.Id).ToArray(),
-                PartyCount = partyCount,
-                Person = person,
                 PersonId = member.Id,
                 Name = member.Name,
+                CanSwitch = people.Count > 1,
                 Slot = slot,
                 Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                     .Select(entry =>
@@ -339,7 +336,8 @@ namespace Baryonyx.Equipment
             disposed = true;
             lifetime.Cancel();
             lifetime.Dispose();
-            view.PersonPressed -= SelectPerson;
+            view.PrevPressed -= Previous;
+            view.NextPressed -= Next;
             view.SlotPressed -= SelectSlot;
             view.ItemPressed -= Choose;
             view.RemovePressed -= Remove;

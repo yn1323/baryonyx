@@ -4,6 +4,8 @@ using Baryonyx.App;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Party;
+using Baryonyx.Tavern;
+using Baryonyx.Training;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -33,95 +35,79 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernCardLoadoutTests));
         }
 
-        // 酒場の「スキル」は一覧の代わりにスキルの画面を開く。上のタブで人を選び（パーティのあとに
-        // ほかの仲間も並ぶ）、左で枠を押してから右のカードを押すとその場で入れ替え、共通の通知の帯で知らせる。
+        // 個別の画面でカスタムスキルの枠を押すと、その人とその枠を選んだスキルの付け替えの画面を開く。◀▶で枠を
+        // 選んだまま人を替え（パーティのあとにほかの仲間も回る）、右のカードを押すとその場で入れ替え、
+        // 共通の通知の帯で知らせる。左にはステータスを出す。
         [UnityTest]
-        public IEnumerator CardsChangeForThePartyAndTheOtherCompanions()
+        public IEnumerator CardsChangeFromTheAdventurersPage()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == CardLoadoutSession.GuideItemKey
-            );
-            Assert.That(item, Is.GreaterThanOrEqualTo(0));
-            view.MenuItems[item].onClick.Invoke();
+            var page = OpenPage(view);
+            page.CardSlots[1].Button.onClick.Invoke();
+            int item = ItemOf(view, CardLoadoutSession.GuideItemKey);
+            Assert.That(view.Definition.Items[item].Hidden, Is.True);
             var panel = view.PanelFor(item).GetComponent<CardLoadoutView>();
             Assert.That(panel.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
-            // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
             Assert.That(view.GuideArt.activeSelf, Is.False);
-            SceneTests.AssertBelow(panel.transform.Find("Panel"), view.Back.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Layout/Person"), view.Back.transform);
+            SceneTests.AssertBelow(panel.transform.Find("Layout/Cards"), view.Back.transform);
             yield return null;
-
-            // タブはパーティの枠の順、続けてほかの仲間を持っている順。開いたときは先頭の人。
-            var data = panel.Party;
-            var (people, partyCount) = CardLoadoutPresenter.People(PartySession.Formation(data));
-            Assert.That(Tabs(panel), Is.EqualTo(people.Select(member => member.Id)));
-            Assert.That(partyCount, Is.LessThan(people.Count));
-            Assert.That(panel.People.Divider.activeSelf, Is.True);
-            Assert.That(
-                panel.People.Divider.transform.GetSiblingIndex(),
-                Is.EqualTo(Tab(panel, people[partyCount].Id).Button.transform.GetSiblingIndex() - 1)
-            );
-            Assert.That(Tab(panel, people[0].Id).Selected.activeSelf, Is.True);
-            foreach (var tab in panel.People.Tabs)
-                SceneTests.AssertTouchSize(tab.Button.transform);
+            SceneTests.AssertTouchSize(panel.Person.Prev.transform);
+            SceneTests.AssertTouchSize(panel.Person.Next.transform);
             foreach (var slot in panel.Slots)
-                SceneTests.AssertTouchSize(slot.Button.transform);
+                SceneTests.AssertTouchSize(slot.Button.transform, 0.7f);
 
-            // 左はその人の4枚、右はその人が付けられるカードをコストの低い順に。
+            // 開いたときは、個別の画面で見ていた人の、押した2つ目の枠。左はカスタムスキルの2枚。
+            var data = panel.Party;
+            var people = CardLoadoutPresenter.People(PartySession.Formation(data));
+            Assert.That(panel.Person.Name.text, Is.EqualTo(people[0].Name));
+            Assert.That(panel.Slots.Length, Is.EqualTo(CardLoadoutRules.Size));
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            Assert.That(panel.Stats.All(stat => stat.text != ""), Is.True);
             AssertShows(panel, data, people[0]);
 
-            // パーティにいない仲間を選ぶと、そのタブが見える位置まで横に送り、その人のカードを出す。
+            // ◀でパーティにいない最後の仲間へ回る。枠は2つ目のまま。
             var other = people[people.Count - 1];
-            Tab(panel, other.Id).Button.onClick.Invoke();
-            yield return null;
-            Assert.That(Tab(panel, other.Id).Selected.activeSelf, Is.True);
-            Assert.That(Tab(panel, people[0].Id).Selected.activeSelf, Is.False);
-            var strip = SceneTests.ScreenRect(panel.People.Scroll.viewport);
-            var shown = SceneTests.ScreenRect(Tab(panel, other.Id).Button.transform);
-            Assert.That(shown.xMin, Is.GreaterThanOrEqualTo(strip.xMin - 0.5f));
-            Assert.That(shown.xMax, Is.LessThanOrEqualTo(strip.xMax + 0.5f));
+            panel.Person.Prev.onClick.Invoke();
+            Assert.That(panel.Person.Name.text, Is.EqualTo(other.Name));
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
             AssertShows(panel, data, other);
 
-            // 3つ目の枠に、まだ付けていないカードを入れる。
-            panel.Slots[2].Button.onClick.Invoke();
-            Assert.That(panel.Slots[2].Selected.activeSelf, Is.True);
+            // 2つ目の枠に、まだ付けていないカードを入れる。
             var before = PartySession.CardsOf(data, other.Id).ToArray();
             var row = Rows(panel).First(entry => !before.Contains(entry.Id));
             row.Button.onClick.Invoke();
             var after = PartySession.CardsOf(data, other.Id);
-            Assert.That(after[2], Is.EqualTo(row.Id));
+            Assert.That(after[1], Is.EqualTo(row.Id));
             Assert.That(
                 panel.LastNotice,
                 Is.EqualTo(
-                    $"{other.Name}の「{CardSkills.Find(before[2]).Name}」を「{CardSkills.Find(row.Id).Name}」に替えました"
+                    $"{other.Name}の「{CardSkills.Find(before[1]).Name}」を「{CardSkills.Find(row.Id).Name}」に替えました"
                 )
             );
             Assert.That(view.ToastMessage, Is.EqualTo(panel.LastNotice));
-            Assert.That(panel.Slots[2].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
             Assert.That(row.Mark.gameObject.activeSelf, Is.True);
-            Assert.That(row.Mark.text, Is.EqualTo("3枚目"));
+            Assert.That(row.Mark.text, Is.EqualTo("2枚目"));
 
             // その人のほかの枠にあるカードを押すと、2つの枠の中身を入れ替える。
             Row(panel, after[0]).Button.onClick.Invoke();
-            Assert.That(PartySession.CardsOf(data, other.Id)[2], Is.EqualTo(after[0]));
+            Assert.That(PartySession.CardsOf(data, other.Id)[1], Is.EqualTo(after[0]));
             Assert.That(PartySession.CardsOf(data, other.Id)[0], Is.EqualTo(row.Id));
             Assert.That(panel.LastNotice, Does.EndWith("を入れ替えました"));
 
-            // 「もどる」でメニューへ戻る。開き直すと、最後に見ていた人と付け替えたカードを出す。
+            // 「もどる」で個別の画面へ、付け替えの画面で最後に見ていた人のまま戻り、付け替えたカードを出す。
             view.Back.onClick.Invoke();
-            Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(panel.gameObject.activeSelf, Is.False);
-            view.MenuItems[item].onClick.Invoke();
-            yield return null;
-            Assert.That(Tab(panel, other.Id).Selected.activeSelf, Is.True);
-            Assert.That(panel.Slots[0].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
+            Assert.That(page.gameObject.activeSelf, Is.True);
+            Assert.That(page.Name.text, Is.EqualTo(other.Name));
+            Assert.That(page.CardSlots[0].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
         }
 
-        // 左の4枚と右の行を、その人のカードと付けられるカードで出し、文字は枠からはみ出さない。
+        // 左の2枚と右の行を、その人のカードと付けられるカードで出し、文字は枠からはみ出さない。
         private static void AssertShows(
             CardLoadoutView panel,
             PartyMockData data,
@@ -176,34 +162,51 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator CardsAreReadAndSavedOnTheServer()
         {
             var server = new FakePartySource(0, "toma")
-                .With("toma", 12, "Fire", "Meteor", "Ice", "Blizzard")
-                .With("luka", 11, "VitalThrust", "ArrowRain", "Thunder", "LightningBolt");
+                .With("toma", 12, "Fire", "Ice")
+                .With("luka", 11, "VitalThrust", "Thunder");
             PartySession.Source = server;
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == CardLoadoutSession.GuideItemKey
-            );
+            // 一覧がサーバーの編成を読んでから、選んでいる人の個別の画面を開く。
+            int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            var panel = view.PanelFor(item).GetComponent<CardLoadoutView>();
+            var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
+            yield return SceneTests.WaitUntil(
+                () => roster.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+            roster.Open.onClick.Invoke();
+            var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+            Assert.That(page.gameObject.activeInHierarchy, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => page.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+            page.CardSlots[1].Button.onClick.Invoke();
+            var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
+                .GetComponent<CardLoadoutView>();
             Assert.That(panel.Count.text, Is.EqualTo(CardLoadoutView.LoadingText));
-            Assert.That(Tabs(panel), Is.Empty);
+            Assert.That(panel.Person.Name.text, Is.EqualTo(CardLoadoutView.LoadingText));
             Assert.That(Rows(panel), Is.Empty);
             yield return SceneTests.WaitUntil(
                 () => panel.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
 
-            // サーバーのパーティと仲間だけをタブに並べる。
-            Assert.That(Tabs(panel), Is.EqualTo(new[] { "toma", "luka" }));
-            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
+            // サーバーのパーティと仲間だけを◀▶で回る。
+            Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            panel.Person.Next.onClick.Invoke();
+            Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("luka").Name));
+            panel.Person.Next.onClick.Invoke();
+            Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
 
-            panel.Slots[1].Button.onClick.Invoke();
             Row(panel, "Embers").Button.onClick.Invoke();
             Assert.That(panel.Presenter.Saving, Is.True);
-            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
             yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
             Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
@@ -218,15 +221,18 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.LastNotice, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
         }
 
-        private static string[] Tabs(CardLoadoutView panel) =>
-            panel
-                .People.Tabs.Where(tab => tab.Button.gameObject.activeSelf)
-                .OrderBy(tab => tab.Button.transform.GetSiblingIndex())
-                .Select(tab => tab.Id)
-                .ToArray();
+        private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
+            System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
-        private static PartyTab Tab(CardLoadoutView panel, string id) =>
-            panel.People.Tabs.Single(tab => tab.Id == id);
+        // メニューの「冒険者」から一覧を開き、選んでいる人の個別の画面を開く。
+        private static TrainingView OpenPage(Baryonyx.UI.GuideMenu.GuideMenuView view)
+        {
+            int item = ItemOf(view, PartySession.GuideItemKey);
+            view.MenuItems[item].onClick.Invoke();
+            view.PanelFor(item).GetComponent<AdventurerRosterView>().Open.onClick.Invoke();
+            return view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+        }
 
         private static CardLoadoutRowWidget[] Rows(CardLoadoutView panel) =>
             panel

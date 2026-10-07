@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
@@ -299,9 +300,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var panel = Rect("Menu", safe);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
             panel.anchoredPosition = new Vector2(-56, -16);
-            // Four rows still fit between the title and the bottom edge; five rows (the formation)
-            // are a little lower and closer together.
-            int rows = definition.Items.Length;
+            // Four rows still fit between the title and the bottom edge; five rows are a little
+            // lower and closer together. Hidden items have no row.
+            int rows = definition.Items.Count(item => !item.Hidden);
             float rowHeight = rows > 4 ? 140 : 156;
             float spacing = rows > 4 ? 20 : 28;
             panel.sizeDelta = new Vector2(
@@ -316,10 +317,16 @@ namespace Baryonyx.UI.GuideMenu.Editor
             group.childForceExpandHeight = false;
             view.MenuPanel = panel.gameObject;
 
+            // Hidden items keep their place in the array as null, so indices match the items.
             var buttons = new List<Button>();
             for (int i = 0; i < definition.Items.Length; i++)
             {
                 var item = definition.Items[i];
+                if (item.Hidden)
+                {
+                    buttons.Add(null);
+                    continue;
+                }
                 var row = Rect("MenuItem" + i, panel);
                 var size = row.gameObject.AddComponent<LayoutElement>();
                 size.minHeight = size.preferredHeight = rowHeight;
