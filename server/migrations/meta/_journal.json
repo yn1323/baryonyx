@@ -64,6 +64,13 @@
       "when": 1791125417803,
       "tag": "0008_equipment",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791301559005,
+      "tag": "0009_custom_skill_slots",
+      "breakpoints": true
     }
   ]
 }

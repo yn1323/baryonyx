@@ -9,8 +9,8 @@ type Rank = "E" | "D" | "C" | "B" | "A" | "S";
 type SeedCharacter = {
   id: string;
   level: number;
-  // スキルの4枠。属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
-  cards: readonly [string, string, string, string];
+  // カスタムスキルの2枠。属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
+  cards: readonly [string, string];
   weapon?: string;
   armor?: string;
 };
@@ -46,58 +46,58 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       {
         id: "toma",
         level: 30,
-        cards: ["FireStorm", "AbsoluteZero", "Meteor", "QuickCast"],
+        cards: ["FireStorm", "AbsoluteZero"],
         weapon: "frost-wand",
         armor: "magic-robe",
       },
       {
         id: "luka",
         level: 28,
-        cards: ["ShadowSnipe", "ChainLightning", "ArrowRain", "InsightArrow"],
+        cards: ["ShadowSnipe", "ChainLightning"],
         weapon: "thunder-spear",
         armor: "traveler-cloak",
       },
       {
         id: "aria",
         level: 27,
-        cards: ["BladeDance", "Iai", "GiantImpact", "GuardianOath"],
+        cards: ["BladeDance", "GiantImpact"],
         weapon: "flame-dagger",
         armor: "chainmail",
       },
       {
         id: "mina",
         level: 26,
-        cards: ["HolyLight", "Resurrection", "DivineShield", "Regen"],
+        cards: ["HolyLight", "Resurrection"],
         weapon: "war-hammer",
         armor: "iron-helm",
       },
       {
         id: "anselm",
         level: 22,
-        cards: ["StrideStrike", "FlamePillar", "ArmorBreak", "WarCry"],
+        cards: ["StrideStrike", "FlamePillar"],
         weapon: "iron-sword",
         armor: "chainmail",
       },
       {
         id: "greta",
         level: 20,
-        cards: ["ShadowStitch", "IceMirror", "PoisonNeedle", "Blizzard"],
+        cards: ["ShadowStitch", "IceMirror"],
         weapon: "short-bow",
       },
       {
         id: "lutz",
         level: 18,
-        cards: ["ThunderSpear", "Gale", "ShieldBash", "Guard"],
+        cards: ["ThunderSpear", "ShieldBash"],
       },
       {
         id: "rita",
         level: 15,
-        cards: ["Whirlwind", "Hone", "ShadowSnipe", "Scout"],
+        cards: ["Whirlwind", "ShadowSnipe"],
       },
       {
         id: "ritsu",
         level: 12,
-        cards: ["Icicles", "Thundercloud", "LightningBolt", "StepPrayer"],
+        cards: ["Icicles", "LightningBolt"],
       },
     ],
     party: ["aria", "toma", "mina", "luka"],
@@ -139,28 +139,28 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       {
         id: "toma",
         level: 12,
-        cards: ["Fire", "Meteor", "Ice", "Blizzard"],
+        cards: ["Fire", "Ice"],
         weapon: "oak-staff",
         armor: "magic-robe",
       },
       {
         id: "luka",
         level: 11,
-        cards: ["VitalThrust", "ArrowRain", "Thunder", "LightningBolt"],
+        cards: ["VitalThrust", "Thunder"],
         weapon: "short-bow",
         armor: "traveler-cloak",
       },
       {
         id: "aria",
         level: 10,
-        cards: ["Slash", "Iai", "ShieldBash", "EarthSplitter"],
+        cards: ["Slash", "ShieldBash"],
         weapon: "iron-sword",
         armor: "chainmail",
       },
       {
         id: "mina",
         level: 10,
-        cards: ["Heal", "Protect", "HolyHammer", "HolyLight"],
+        cards: ["Heal", "HolyHammer"],
         weapon: "war-hammer",
         armor: "leather-armor",
       },
@@ -195,7 +195,7 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       {
         id: "toma",
         level: 1,
-        cards: ["Fire", "Ice", "Heal", "Guard"],
+        cards: ["Fire", "Ice"],
         weapon: "wooden-sword",
       },
     ],

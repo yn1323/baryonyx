@@ -73,9 +73,9 @@ export const CARD_SKILL_IDS = [
 
 export type CardSkillId = (typeof CARD_SKILL_IDS)[number];
 
-// パーティの枠と、キャラごとのスキルの枠の数。
+// パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル2枚はクライアントの仮データが持つ。
 export const PARTY_SLOT_COUNT = 4;
-export const CARD_SLOT_COUNT = 4;
+export const CARD_SLOT_COUNT = 2;
 
 // レベルの上限と、Lv n から n+1 へ上げるのに要るルーン（n × COST_PER_LEVEL）。仮の値。
 export const MAX_LEVEL = 30;
@@ -98,47 +98,47 @@ export const STARTER_CHARACTERS: readonly {
   {
     characterId: "toma",
     level: 12,
-    cards: ["Fire", "Meteor", "Ice", "Blizzard"],
+    cards: ["Fire", "Ice"],
   },
   {
     characterId: "luka",
     level: 11,
-    cards: ["VitalThrust", "ArrowRain", "Thunder", "LightningBolt"],
+    cards: ["VitalThrust", "Thunder"],
   },
   {
     characterId: "aria",
     level: 10,
-    cards: ["Slash", "Iai", "ShieldBash", "EarthSplitter"],
+    cards: ["Slash", "ShieldBash"],
   },
   {
     characterId: "mina",
     level: 10,
-    cards: ["Heal", "Protect", "HolyHammer", "HolyLight"],
+    cards: ["Heal", "HolyHammer"],
   },
   {
     characterId: "anselm",
     level: 8,
-    cards: ["EarthSplitter", "HolyHammer", "Fire", "Embers"],
+    cards: ["EarthSplitter", "Fire"],
   },
   {
     characterId: "greta",
     level: 7,
-    cards: ["VitalThrust", "PoisonNeedle", "Ice", "Icicles"],
+    cards: ["VitalThrust", "Ice"],
   },
   {
     characterId: "lutz",
     level: 5,
-    cards: ["Thunder", "Thundercloud", "ShieldBash", "EarthSplitter"],
+    cards: ["Thunder", "ShieldBash"],
   },
   {
     characterId: "rita",
     level: 3,
-    cards: ["Slash", "Whirlwind", "VitalThrust", "ShadowStitch"],
+    cards: ["Slash", "VitalThrust"],
   },
   {
     characterId: "ritsu",
     level: 1,
-    cards: ["Ice", "Blizzard", "Thunder", "Thundercloud"],
+    cards: ["Ice", "Thunder"],
   },
 ];
 

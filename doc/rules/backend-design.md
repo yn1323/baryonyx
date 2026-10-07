@@ -207,6 +207,7 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0006_adventure_route.sql](../../server/migrations/0006_adventure_route.sql) は、冒険に道を作る乱数の種と、今いる部屋の階と種類の列を加える（[探索の地図](../plans/2026-10-04-exploration-route-map.md#実装したこと)）。
 [0007_end_fixed_route_adventures.sql](../../server/migrations/0007_end_fixed_route_adventures.sql) は、決まった6部屋の道で進行中だった冒険を、続きから再開できないため、自分からやめた扱いで終える手書きのSQLである。
 [0008_equipment.sql](../../server/migrations/0008_equipment.sql) は、[持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存)の装備・キャラごとの武器と防具・初期付与の3テーブルを作る。
+[0009_custom_skill_slots.sql](../../server/migrations/0009_custom_skill_slots.sql) は、キャラごとのスキルの枠を4つから[カスタムスキル](../features/party.md#キャラクターの構成)の2つに減らす。枠の範囲の制約を変えるため表を作り直し、3・4枠目の行は移さずに消す。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 
 ```sh
 pnpm db:generate --name add_example

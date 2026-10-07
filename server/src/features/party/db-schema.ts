@@ -65,7 +65,7 @@ export const partySlots = sqliteTable(
   ],
 );
 
-// キャラごとの4枚のスキル。1人のキャラは同じカードを1つの枠にだけ付けられる。
+// キャラごとの2枚のカスタムスキル。1人のキャラは同じカードを1つの枠にだけ付けられる。
 export const partyCharacterCards = sqliteTable(
   "party_character_cards",
   {
@@ -90,7 +90,7 @@ export const partyCharacterCards = sqliteTable(
     }),
     check(
       "party_character_cards_slot_check",
-      sql`${table.slot} >= 0 AND ${table.slot} < 4`,
+      sql`${table.slot} >= 0 AND ${table.slot} < 2`,
     ),
   ],
 );

@@ -158,22 +158,12 @@ describe("パーティAPI", () => {
 
     const replaced = (await (await put("toma", 0, "Embers")).json()) as State;
     expect(replaced.change).toBe("replace");
-    expect(character(replaced, "toma")?.cards).toEqual([
-      "Embers",
-      "Meteor",
-      "Ice",
-      "Blizzard",
-    ]);
+    expect(character(replaced, "toma")?.cards).toEqual(["Embers", "Ice"]);
 
-    const swapped = (await (await put("toma", 1, "Ice")).json()) as State;
+    const swapped = (await (await put("toma", 0, "Ice")).json()) as State;
     expect(swapped.change).toBe("swap");
-    expect(character(swapped, "toma")?.cards).toEqual([
-      "Embers",
-      "Ice",
-      "Meteor",
-      "Blizzard",
-    ]);
-    expect(((await (await put("toma", 1, "Ice")).json()) as State).change).toBe(
+    expect(character(swapped, "toma")?.cards).toEqual(["Ice", "Embers"]);
+    expect(((await (await put("toma", 0, "Ice")).json()) as State).change).toBe(
       "none",
     );
 
@@ -217,7 +207,7 @@ describe("パーティAPI", () => {
       ),
       scenario.request("/party/slots/0", "PUT", null, user.token),
       scenario.request(
-        "/party/characters/toma/cards/4",
+        "/party/characters/toma/cards/2",
         "PUT",
         { skillId: "Fire" },
         user.token,
