@@ -6,12 +6,16 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// How the exploration map looks down on the route (doc/features/stage-progression.md): the
-    /// room the party is in near the bottom, the deepest room far away at the top, the rows
-    /// narrowing with distance. The camera follows the party across near the bottom and keeps the
-    /// deepest room in the middle far away. Positions are in map dots (800x360, y down), drawn
+    /// room the party is in near the bottom and the road ahead running up the screen, the rows
+    /// narrowing with distance. The screen shows a fixed length of the road, about five floors
+    /// ahead of the party, so the deepest room comes into sight as the party nears it or the map
+    /// is dragged. The camera follows the party across near the bottom and keeps the middle of
+    /// the route in the middle far away. Positions are in map dots (800x360, y down), drawn
     /// three pixels a dot: 2400x1080, wide enough for a 20:9 screen; a 16:9 screen shows the
     /// middle 640 dots, and the map is never scaled, so every dot stays three pixels.
     /// The camera can stand anywhere on the route, so it can follow the party along a road.
+    /// It looks down like a camera tilted about 41 degrees at the middle of the screen: about
+    /// 52 degrees at the party and 25 at the top of the screen, the horizon well above it.
     /// </summary>
     public sealed class ExplorationMapProjection
     {
@@ -19,14 +23,29 @@ namespace Baryonyx.Adventure
         public const int Height = 360;
         public const int Dot = 3;
 
-        // 遠近の強さと、手前と奥の行の高さ（ドット）。
-        private const float Depth = 2.6f;
-        private const float NearY = 330f;
+        // 遠近の強さ（奥の行がカメラの手前の端の何倍遠いかから1を引いた値）と、手前と奥の行の
+        // 高さ（ドット）。遠近を弱めるほど、上から見下ろす角度になる。
+        public const float Depth = 0.5f;
+        public const float NearY = 330f;
         public const float FarY = 96f;
         public const float NearWidth = 640f;
 
+        // カメラの手前の端から奥の行までの道の長さ（入口から最奥の間までを1とする割合）。
+        // 小さいほど道が縦に長く伸び、画面に入る階が減る。
+        public const float Span = 0.5f;
+
+        // 地平線の行（ドット）。画面より上にあり、画面の中はどの行も地面になる。
+        public const float HorizonY = FarY - (NearY - FarY) / Depth;
+
+        // 地面の上の丸い物（部屋の空き地、木の影）を縦に縮める割合。見下ろす角度に合わせる。
+        public const float Squash = 0.8f;
+
+        // 奥の行で、物を描く大きさ（カメラの手前の端を1とする）。
+        private const float FarScale = 1f / (1f + Depth);
+
         // カメラの手前の端を、パーティの立つ所からどれだけ後ろに置くか（道の長さの割合）。
-        private const float Behind = 0.05f;
+        // パーティの足元が、下の案内に掛からない行（300ドット）になる。
+        private const float Behind = 0.045f;
 
         private readonly float near;
         private readonly float acrossNear;
@@ -64,8 +83,8 @@ namespace Baryonyx.Adventure
 
         public Vector2 ToDots(AdventureRoutePoint point) => ToDots(point.T, point.S);
 
-        // 道の t の所の奥行き（パーティの少し後ろが1、最奥の間が 1+Depth）。
-        public float DepthOf(float t) => Mathf.Max(0.55f, 1f + (t - near) / (1f - near) * Depth);
+        // 道の t の所の奥行き（パーティの少し後ろが1、そこから Span 先が 1+Depth）。
+        public float DepthOf(float t) => Mathf.Max(0.55f, 1f + (t - near) / Span * Depth);
 
         /// <summary>The row (dots, y down) the route's <paramref name="t"/> lies on.</summary>
         public float RowOf(float t) =>
@@ -85,7 +104,7 @@ namespace Baryonyx.Adventure
         public float TAtRow(float y)
         {
             float z = DepthAtRow(y);
-            return float.IsInfinity(z) ? z : near + (z - 1f) / Depth * (1f - near);
+            return float.IsInfinity(z) ? z : near + (z - 1f) / Depth * Span;
         }
 
         /// <summary>The route's s seen at the middle of the map on a row.</summary>
@@ -99,12 +118,13 @@ namespace Baryonyx.Adventure
         public float DotsPerArea(float t)
         {
             float z = DepthOf(t);
-            float rowsPerT = (NearY - FarY) * Depth / ((1f - near) * (1f - farInverse)) / (z * z);
+            float rowsPerT = (NearY - FarY) * Depth / (Span * (1f - farInverse)) / (z * z);
             return NearWidth / z * rowsPerT;
         }
 
         /// <summary>How big things are drawn at a row: 1 at the party's row, smaller far away.</summary>
-        public static float ScaleAt(float y) => 0.32f + 0.68f * (y - FarY) / (NearY - FarY);
+        public static float ScaleAt(float y) =>
+            FarScale + (1f - FarScale) * (y - FarY) / (NearY - FarY);
 
         /// <summary>The design position (centred, y up) of a map dot.</summary>
         public static Vector2 ToDesign(Vector2 dots) =>

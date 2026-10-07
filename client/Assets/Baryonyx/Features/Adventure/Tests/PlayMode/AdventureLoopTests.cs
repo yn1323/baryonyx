@@ -114,7 +114,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(marker.HintText, Is.EqualTo("宝箱がありそう"));
                 SceneTests.AssertTouchSize(marker.Button.transform);
             }
-            // 最奥の間はいつも見え、押しても進まない。通った部屋は出さない。
+            // 最奥の間の印はいつも出し、押しても進まない。通った部屋は出さない。
             var boss = view.MarkerOf(AdventureRouteMap.BossId);
             Assert.That(boss, Is.Not.Null);
             Assert.That(boss.IsExit, Is.False);
@@ -185,24 +185,31 @@ namespace Baryonyx.Tests.PlayMode
             var view = bootstrap.View;
             var run = AdventureSession.Current.Run;
             var ahead = run.Map.Rooms.Where(room => room.Floor > run.Floor).ToArray();
+            // 道は縦に長く、入口からは先の数階の印が見える。画面の上の帯より先の部屋の印は出さない。
             Assert.That(
                 view.ShownMarkers.Select(marker => marker.RoomId),
-                Is.EquivalentTo(ahead.Select(room => room.Id))
+                Is.SubsetOf(ahead.Select(room => room.Id))
             );
-            foreach (var room in ahead)
+            Assert.That(
+                view.ShownMarkers.Select(marker => marker.RoomId),
+                Is.SupersetOf(
+                    ahead.Where(room => room.Floor <= run.Floor + 2).Select(room => room.Id)
+                )
+            );
+            foreach (var room in ahead.Where(room => view.MarkerOf(room.Id) != null))
                 Assert.That(
                     view.MarkerOf(room.Id).Icon.sprite,
                     Is.SameAs(view.KindIcon(room.Kind)),
                     room.Id
                 );
             var last = ahead.First(room => room.Floor == run.Map.BossFloor - 1);
-            Assert.That(view.MarkerOf(last.Id).Sight, Is.EqualTo(ExplorationRoomSight.Far));
+            Assert.That(view.MarkerOf(last.Id), Is.Null);
             Assert.That(
                 view.MarkerOf(AdventureRouteMap.BossId).Sight,
                 Is.EqualTo(ExplorationRoomSight.Detail)
             );
 
-            // 下へ引くと先へ進み、最奥の3階手前で止まる。最後の階の部屋も大きく見える。
+            // 下へ引くと先へ進み、最奥の3階手前で止まる。最後の階の部屋の印も現れ、大きく見える。
             var start = view.CameraPoint;
             yield return Pull(view, -160f);
             Assert.That(view.CameraPoint.x, Is.GreaterThan(start.x));

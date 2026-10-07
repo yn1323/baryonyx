@@ -25,12 +25,16 @@ namespace Baryonyx.Adventure
         private const int W = ExplorationMapProjection.Width;
         private const int H = ExplorationMapProjection.Height;
 
-        // 霧の帯の高さ（ドット）。この行より上を霧で覆う。
-        private const int FogRows = 200;
+        // 霧の帯の高さ（ドット）。この行より上を霧で覆う。手前の3階ほどには掛けない。
+        private const int FogRows = 150;
 
         // 木を立てる候補の格子（道の長さ・横幅の割合）。
         private const float StepT = 0.009f;
         private const float StepS = 0.022f;
+
+        // 候補を置く道の範囲（t）。カメラが最奥の間に立っても、画面の上端まで森で埋まる長さにする。
+        private const float SpotsFrom = -0.15f;
+        private const float SpotsTo = 2f;
 
         // 森の茂り具合：木の幅の2乗のこの倍の広さに1本。小さいほど茂る。
         private const float Spacing = 0.24f;
@@ -41,10 +45,14 @@ namespace Baryonyx.Adventure
 
         // 草の模様の大きさ：手前の行で、横1ドット・縦1行がこの値の1/1.5になる。
         private const float GrassAcross = ExplorationMapProjection.NearWidth / 1.5f;
-        private const float GrassAlong = 842f / 1.5f;
+        private const float GrassAlong =
+            (ExplorationMapProjection.NearY - ExplorationMapProjection.FarY)
+            * (1f + ExplorationMapProjection.Depth)
+            / ExplorationMapProjection.Span
+            / 1.5f;
 
-        // 最奥の間より奥の草の模様の大きさ（1ドットが模様の1/0.82）。
-        private const float FarGrass = 0.82f;
+        // 木の影の縦の幅（横の幅に対する割合）。横に長い影を、地面と同じだけ縦に縮める。
+        private const float ShadowSquash = 0.75f * ExplorationMapProjection.Squash;
 
         private static readonly Color32[] Grass =
         {
@@ -379,7 +387,10 @@ namespace Baryonyx.Adventure
                     || sight.Reachable.Contains(room.Id)
                     || sight.Passed.Contains(room.Id);
                 int rx = Mathf.RoundToInt(16 * scale);
-                int ry = Mathf.Max(1, Mathf.RoundToInt(7 * scale));
+                int ry = Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(16 * ExplorationMapProjection.Squash * scale)
+                );
                 canvas.Ellipse(dots.x, dots.y + 1, rx + 1, ry + 1, RoadEdge, 0f, 1f);
                 canvas.Ellipse(dots.x, dots.y, rx, ry, open ? Clearing : OldClearing, 0f, 1f);
                 MarkMask(dots + new Vector2(0, -6 * scale), Mathf.RoundToInt(18 * scale));
@@ -390,7 +401,7 @@ namespace Baryonyx.Adventure
         private static TreeSpot[] MakeSpots(int seed)
         {
             var spots = new List<TreeSpot>();
-            int rows = Mathf.CeilToInt(1.2f / StepT);
+            int rows = Mathf.CeilToInt((SpotsTo - SpotsFrom) / StepT);
             int columns = Mathf.CeilToInt(4.4f / StepS);
             for (int row = 0; row < rows; row++)
             for (int column = 0; column < columns; column++)
@@ -402,7 +413,7 @@ namespace Baryonyx.Adventure
                 spots.Add(
                     new TreeSpot
                     {
-                        T = -0.15f + (row + Unit(hash >> 8)) * StepT,
+                        T = SpotsFrom + (row + Unit(hash >> 8)) * StepT,
                         S = -1.7f + (column + Unit(hash >> 16)) * StepS,
                         Pick = (int)((hash >> 4) & 0xfff),
                         Low = (hash >> 24) % 100 < 18,
@@ -422,12 +433,16 @@ namespace Baryonyx.Adventure
             float step = seconds > 0f ? seconds / TreeFadeSeconds : 1f;
             // 候補の格子の、画面1平方ドットあたりの数は、道の t ごとに決まる。
             const float spotsPerArea = 0.75f / (StepT * StepS);
+            // 画面に入る行の道の範囲（t）。この外の候補は、位置を求めずに飛ばす。
+            float from = projection.TAtRow(H + 24);
+            float to = projection.TAtRow(-24);
             int count = 0;
             for (int i = 0; i < spots.Length; i++)
             {
                 var spot = spots[i];
-                var dots = projection.ToDots(spot.T, spot.S);
-                if (!OnMap(dots, 24) || dots.y < ExplorationMapProjection.FarY - 30)
+                bool inView = spot.T >= from && spot.T <= to;
+                var dots = inView ? projection.ToDots(spot.T, spot.S) : default;
+                if (!inView || !OnMap(dots, 24))
                 {
                     shown[i] = 0f;
                     continue;
@@ -501,7 +516,8 @@ namespace Baryonyx.Adventure
             int bx = Mathf.RoundToInt(dots.x);
             int by = Mathf.RoundToInt(dots.y);
             int rx = Mathf.Max(1, Mathf.RoundToInt(picture.Width * 0.38f));
-            canvas.Ellipse(bx + rx / 3, by, rx, Mathf.Max(1, rx / 3), TreeShadow, from, to);
+            int ry = Mathf.Max(1, Mathf.RoundToInt(rx * ShadowSquash));
+            canvas.Ellipse(bx + rx / 3, by, rx, ry, TreeShadow, from, to);
             canvas.Stamp(picture, bx, by, flip, from, to);
         }
 
@@ -541,34 +557,17 @@ namespace Baryonyx.Adventure
         }
 
         // 草地：道の上の場所ごとに決まった模様（ノイズで5段の緑）で、何も描いていない所を埋める。
-        // 縦の模様は、どの深さでも手前の行で同じ大きさに見えるよう、最奥へ向かって細かくする。
         private void PaintGrass(Color32[] pixels, ExplorationMapProjection projection)
         {
             int seed = Map.Seed;
             for (int y = 0; y < H; y++)
             {
-                float along;
-                float x0;
-                float dx;
-                if (y < ExplorationMapProjection.FarY)
-                {
-                    // 最奥の間より奥はカメラが動いても動かないため、画面に合わせた模様にする。
-                    along = y / FarGrass;
-                    x0 = 0f;
-                    dx = 1f / FarGrass;
-                }
-                else
-                {
-                    float z = projection.DepthAtRow(y);
-                    float t = Mathf.Min(projection.TAtRow(y), 1f);
-                    along = -Mathf.Log(1.08f - t) * GrassAlong;
-                    x0 =
-                        (
-                            projection.AcrossAtRow(y)
-                            - W / 2f * z / ExplorationMapProjection.NearWidth
-                        ) * GrassAcross;
-                    dx = z / ExplorationMapProjection.NearWidth * GrassAcross;
-                }
+                float z = projection.DepthAtRow(y);
+                float along = projection.TAtRow(y) * GrassAlong;
+                float x0 =
+                    (projection.AcrossAtRow(y) - W / 2f * z / ExplorationMapProjection.NearWidth)
+                    * GrassAcross;
+                float dx = z / ExplorationMapProjection.NearWidth * GrassAcross;
                 var large = new NoiseRow(along / 12f, seed);
                 var middle = new NoiseRow(along / 5f, seed + 1);
                 var small = new NoiseRow(along / 2f, seed + 2);

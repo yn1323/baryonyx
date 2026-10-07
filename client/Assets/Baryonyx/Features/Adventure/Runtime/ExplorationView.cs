@@ -50,6 +50,10 @@ namespace Baryonyx.Adventure
 
         // 部屋の印を、空き地から浮かせる高さ（ドット）。
         private const float Lift = 15f;
+
+        // 部屋の印を出す高さの上限（地図の中央からの設計座標）。これより上は行き先と階の文字と
+        // メニューを置く帯で、最奥の間のほかは印を出さない。先を見るか進むと、帯の下に来て現れる。
+        private const float MarkersTop = 390f;
         private const int Dot = ExplorationMapProjection.Dot;
 
         private static readonly Color RingExit = new(1f, 0.953f, 0.812f);
@@ -527,6 +531,11 @@ namespace Baryonyx.Adventure
                 var level = exit ? ExplorationRoomSight.Detail : sight.Of(mapRoom, view);
                 if (level == ExplorationRoomSight.Hidden)
                     continue;
+                if (
+                    mapRoom.Kind != AdventureRoomKind.Boss
+                    && PointOf(mapRoom.Id, LiftOf(level)).y > MarkersTop
+                )
+                    continue;
                 bool seen = before.Remove(mapRoom.Id, out var marker) && marker.TargetAlpha > 0f;
                 if (marker == null || !seen)
                 {
@@ -653,11 +662,38 @@ namespace Baryonyx.Adventure
             marker.Hint.text = AdventureCatalog.Hint(room.Kind);
             marker.Hint.color = exit ? RingExit : Color.white;
             // 次の階の部屋の手掛かりは、横に並ぶ部屋と重ならないよう札の下に、最奥の間は横に置く。
+            // 札の下ではパーティに重なる部屋（入口のすぐ先の真ん中の道など）は、パーティから離れる側の横に置く。
             float below = ring / 2f + 6f;
-            marker.HintBox.pivot = boss ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 1f);
-            marker.HintBox.anchoredPosition = boss
-                ? new Vector2(ring / 2f + 12f, 0f)
-                : new Vector2(0f, -below);
+            var at = marker.Body.anchoredPosition;
+            float side =
+                boss ? 1f
+                : CoversParty(marker, at, below) ? (at.x >= partyAt.x ? 1f : -1f)
+                : 0f;
+            marker.HintBox.pivot =
+                side == 0f ? new Vector2(0.5f, 1f) : new Vector2(side > 0f ? 0f : 1f, 0.5f);
+            marker.HintBox.anchoredPosition =
+                side == 0f ? new Vector2(0f, -below) : new Vector2(side * (ring / 2f + 12f), 0f);
+        }
+
+        // 部屋の札（at）の下に置いた手掛かりが、地図の上の4人の絵に重なるか。
+        private bool CoversParty(ExplorationMapMarker marker, Vector2 at, float below)
+        {
+            // 札の幅は文字に合わせて決まるため、レイアウトを待たずに文字の幅から求める。
+            var layout = marker.HintBox.GetComponent<HorizontalLayoutGroup>();
+            float width =
+                marker.Hint.GetPreferredValues(marker.Hint.text).x
+                + (layout != null ? layout.padding.horizontal : 0);
+            float height = marker.HintBox.rect.height;
+            var box = new Rect(at.x - width / 2f, at.y - below - height, width, height);
+            foreach (var body in Party)
+            foreach (RectTransform part in body)
+            {
+                var rect = part.rect;
+                rect.position += body.anchoredPosition + part.anchoredPosition;
+                if (box.Overlaps(rect))
+                    return true;
+            }
+            return false;
         }
 
         private void PlaceParty()

@@ -187,7 +187,8 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 地図の絵：同じ道と部屋なら同じ絵になり、木と最奥の遺跡が立ち、透明な画素を残さない。
+        // 地図の絵：同じ道と部屋なら同じ絵になり、木が立ち、透明な画素を残さない。最奥の遺跡は、
+        // 入口からは画面より先にあって見えず、最奥の3階手前まで来ると立って見える。
         [Test]
         public void TheMapIsPaintedTheSameEveryTime()
         {
@@ -199,27 +200,20 @@ namespace Baryonyx.Tests.EditMode
                 art.TreesFar = new[] { Stamp("far", 5, 6, new Color32(10, 200, 30, 255)) };
                 art.Ruin = Stamp("ruin", 12, 20, new Color32(250, 10, 250, 255));
                 var map = AdventureRouteMap.Generate(99, RoomCount);
-                var run = new AdventureRun(
-                    "r",
-                    AdventureCatalog.ForestRuins,
-                    AdventureRouteMap.EntranceId,
-                    true,
-                    new[] { AdventureRouteMap.EntranceId },
-                    0,
-                    100,
-                    map,
-                    null
-                );
-                var first = Paint(run, art);
-                var again = Paint(run, art);
+                var first = Paint(RunAt(map, 1), art);
+                var again = Paint(RunAt(map, 1), art);
                 Assert.That(again, Is.EqualTo(first));
                 Assert.That(first.All(pixel => pixel.a == 255), Is.True);
                 Assert.That(
                     first.Count(pixel => pixel.r == 10 && pixel.b == 30),
                     Is.GreaterThan(500)
                 );
+                Assert.That(first.Count(pixel => pixel.r == 250 && pixel.g == 10), Is.Zero);
+
+                var near = Paint(RunAt(map, map.BossFloor - 3), art);
+                Assert.That(near.All(pixel => pixel.a == 255), Is.True);
                 Assert.That(
-                    first.Count(pixel => pixel.r == 250 && pixel.g == 10),
+                    near.Count(pixel => pixel.r == 250 && pixel.g == 10),
                     Is.GreaterThan(100)
                 );
             }
@@ -245,10 +239,15 @@ namespace Baryonyx.Tests.EditMode
                         Is.EqualTo(room.ToDots(map.PointOf(other.Id))),
                         id + " " + other.Id
                     );
-                // 行と道の t は互いに戻せる。地平線より上には地面がない。
-                for (float y = 20f; y < ExplorationMapProjection.Height; y += 17f)
+                // 行と道の t は互いに戻せる。上から見下ろすため地平線は画面より上にあり、
+                // 画面の中はどの行も地面になる。地平線より上には地面がない。
+                for (float y = 0f; y < ExplorationMapProjection.Height; y += 17f)
                     Assert.That(camera.RowOf(camera.TAtRow(y)), Is.EqualTo(y).Within(0.01f));
-                Assert.That(float.IsInfinity(camera.TAtRow(0f)), Is.True);
+                Assert.That(ExplorationMapProjection.HorizonY, Is.LessThan(0f));
+                Assert.That(
+                    float.IsInfinity(camera.TAtRow(ExplorationMapProjection.HorizonY - 1f)),
+                    Is.True
+                );
             }
         }
 
@@ -308,6 +307,25 @@ namespace Baryonyx.Tests.EditMode
             {
                 Object.DestroyImmediate(art);
             }
+        }
+
+        // 1本目の道を floor の階の部屋まで進んだ冒険。
+        private static AdventureRun RunAt(AdventureRouteMap map, int floor)
+        {
+            var route = new List<string> { AdventureRouteMap.EntranceId };
+            for (int f = 2; f <= floor; f++)
+                route.Add(AdventureRouteMap.RoomId(f, 0));
+            return new AdventureRun(
+                "r",
+                AdventureCatalog.ForestRuins,
+                route[^1],
+                true,
+                route.ToArray(),
+                0,
+                100,
+                map,
+                null
+            );
         }
 
         private static Color32[] Paint(AdventureRun run, ExplorationMapArt art) =>
