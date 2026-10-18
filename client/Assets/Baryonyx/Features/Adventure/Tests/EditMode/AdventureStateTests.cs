@@ -133,7 +133,10 @@ namespace Baryonyx.Tests.EditMode
                 entrance.Exits.Select(exit => exit.Id),
                 Is.EqualTo(start.Run.Map.Find(AdventureRouteMap.EntranceId).Next)
             );
-            Assert.That(entrance.Exits.Select(exit => exit.Hint), Is.All.EqualTo("魔物の気配"));
+            Assert.That(
+                entrance.Exits.Select(exit => exit.Kind),
+                Is.All.EqualTo(AdventureRoomKind.Battle)
+            );
             Assert.That(entrance.Prompt, Is.EqualTo(ExplorationRoom.ChoosePrompt));
             Assert.That(entrance.StartsBattle, Is.False);
 

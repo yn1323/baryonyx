@@ -293,13 +293,13 @@ namespace Baryonyx.Tests.EditMode
                 foreach (var (t, s) in map.Path(entrance.Id, next, 12))
                 {
                     var camera = new ExplorationMapProjection(map, t, s);
-                    painter.Paint(pixels, arrived, camera, sight, null, 1f / 30f);
+                    painter.Paint(pixels, arrived, camera, sight, 1f / 30f);
                     fading |= !painter.Settled;
                 }
                 Assert.That(fading, Is.True);
                 var room = new ExplorationMapProjection(map, next);
                 for (int frame = 0; frame < 30 && !painter.Settled; frame++)
-                    painter.Paint(pixels, arrived, room, sight, null, 1f / 30f);
+                    painter.Paint(pixels, arrived, room, sight, 1f / 30f);
                 Assert.That(painter.Settled, Is.True);
                 Assert.That(pixels, Is.EqualTo(Paint(arrived, art)));
             }

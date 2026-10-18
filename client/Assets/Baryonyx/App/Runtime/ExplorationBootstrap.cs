@@ -1,3 +1,4 @@
+using System.Collections;
 using Baryonyx.Adventure;
 using Baryonyx.Health;
 using Baryonyx.UI;
@@ -46,10 +47,27 @@ namespace Baryonyx.App
             flow = new ExplorationFlow(
                 view,
                 AdventureSession.SourceOrLocal,
-                () => SceneLoader.Load(SceneNames.Home, transition, this),
-                () => SceneLoader.Load(SceneNames.Battle, transition, this)
+                () => Leave(SceneNames.Home),
+                () => Leave(SceneNames.Battle)
             );
             flow.Start();
+        }
+
+        // 開く演出の途中では次の演出を始められない。サーバーの返事が演出より早く届き、冒険がなくて
+        // ホームへ戻るときなどは、開き終えてから移る。断ると「読み込み中…」のまま止まるため。
+        private bool Leave(string scene)
+        {
+            if (transition == null || !transition.IsPlaying)
+                return SceneLoader.Load(scene, transition, this);
+            StartCoroutine(LeaveAfterOpening(scene));
+            return true;
+        }
+
+        private IEnumerator LeaveAfterOpening(string scene)
+        {
+            while (transition != null && transition.IsPlaying)
+                yield return null;
+            SceneLoader.Load(scene, transition, this);
         }
 
         private void OnDestroy()

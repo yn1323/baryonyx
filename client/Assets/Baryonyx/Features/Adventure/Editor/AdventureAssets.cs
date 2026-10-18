@@ -51,6 +51,9 @@ namespace Baryonyx.Adventure.Editor
         public const string MapUndergrowthFarPath = StageArtFolder + "/MapUndergrowthFar.aseprite";
         public const string MapRuinPath = StageArtFolder + "/MapRuin.aseprite";
 
+        // 下草の絵のうち、岩の2枚（4・5フレーム目）。明るい灰色が部屋の札と紛れるため、地図には立てない。
+        private static readonly int[] RockFrames = { 3, 4 };
+
         private const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
 
         // 地図は1ドット3px。戦闘のキャラは地図の上では1ドット1pxの小さい姿にする。
@@ -67,7 +70,15 @@ namespace Baryonyx.Adventure.Editor
         };
 
         private static readonly Color TextMain = UiPalette.TextMain;
-        private static readonly Color MarkerPlate = new(0.11f, 0.165f, 0.19f, 0.96f);
+
+        // 凡例に並べる部屋の種類と名前。
+        private static readonly (AdventureRoomKind Kind, string Name)[] LegendKinds =
+        {
+            (AdventureRoomKind.Battle, "魔物"),
+            (AdventureRoomKind.Elite, "強い魔物"),
+            (AdventureRoomKind.Treasure, "宝箱"),
+            (AdventureRoomKind.Boss, "最奥の間"),
+        };
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
 
         private const float MenuWidth = 128f;
@@ -130,9 +141,9 @@ namespace Baryonyx.Adventure.Editor
             if (created)
                 art = ScriptableObject.CreateInstance<ExplorationMapArt>();
             art.Trees = Stamps(MapTreesPath);
-            art.Undergrowth = Stamps(MapUndergrowthPath);
+            art.Undergrowth = Stamps(MapUndergrowthPath, RockFrames);
             art.TreesFar = Stamps(MapTreesFarPath);
-            art.UndergrowthFar = Stamps(MapUndergrowthFarPath);
+            art.UndergrowthFar = Stamps(MapUndergrowthFarPath, RockFrames);
             var ruin = Stamps(MapRuinPath);
             art.Ruin = ruin.Length > 0 ? ruin[0] : new PixelStamp();
             if (created)
@@ -142,14 +153,16 @@ namespace Baryonyx.Adventure.Editor
             return art;
         }
 
-        // 1フレームを1枚の絵とし、絵のある範囲だけに切り詰める。下辺が根元になる。
-        private static PixelStamp[] Stamps(string path)
+        // 1フレームを1枚の絵とし、絵のある範囲だけに切り詰める。下辺が根元になる。skip のフレームは使わない。
+        private static PixelStamp[] Stamps(string path, int[] skip = null)
         {
             ArtAssets.ImportDrawn(path);
             var frames = AsepriteCanvasImport.LoadFrames(path);
             var stamps = new List<PixelStamp>();
             for (int frame = 0; frame < frames.Count; frame++)
             {
+                if (skip != null && Array.IndexOf(skip, frame) >= 0)
+                    continue;
                 var size = Vector2Int.RoundToInt(frames[frame].rect.size);
                 var pixels = AsepriteCanvasImport.ReadFramePixels(path, frame);
                 int minX = size.x,
@@ -233,6 +246,7 @@ namespace Baryonyx.Adventure.Editor
 
             var safe = SafeArea(root);
             BuildFloors(safe, view);
+            view.Legend = BuildLegend(safe);
             view.MenuButton = BuildMenuButton(safe);
             view.Location = Label(
                 safe,
@@ -272,7 +286,7 @@ namespace Baryonyx.Adventure.Editor
             UnityEngine.Object.DestroyImmediate(painted);
         }
 
-        // 部屋の印の型：光、丸い札、部屋の種類のアイコン、押せる範囲、横の手掛かり。
+        // 部屋の印の型：光、丸い札、部屋の種類のアイコン、押せる範囲。札の色はビューが部屋の種類で決める。
         private static ExplorationMapMarker BuildMarker(RectTransform markers)
         {
             var body = Rect("RoomTemplate", markers);
@@ -293,7 +307,11 @@ namespace Baryonyx.Adventure.Editor
             marker.Ring.raycastTarget = false;
             var plate = Rect("Plate", body);
             Place(plate, Vector2.zero, new Vector2(84, 84));
-            marker.Plate = SpriteImage(plate, UiArt.CirclePath, MarkerPlate);
+            marker.Plate = SpriteImage(
+                plate,
+                UiArt.CirclePath,
+                ExplorationView.PlateOf(AdventureRoomKind.Battle)
+            );
             marker.Plate.raycastTarget = false;
 
             var icon = Rect("Icon", body);
@@ -306,29 +324,53 @@ namespace Baryonyx.Adventure.Editor
             // 押せる範囲は、指で押しやすい150px四方にする。
             var hit = AddImage(body, new Color(0, 0, 0, 0), true);
             marker.Button = UiBuild.AddButton(body, hit);
-
-            var hintBox = Rect("Hint", body);
-            Place(hintBox, new Vector2(66, 0), new Vector2(300, 64));
-            hintBox.pivot = new Vector2(0, 0.5f);
-            ScenePlaque(hintBox);
-            var fitter = hintBox.gameObject.AddComponent<HorizontalLayoutGroup>();
-            fitter.padding = new RectOffset(20, 20, 6, 6);
-            fitter.childControlWidth = true;
-            fitter.childControlHeight = true;
-            fitter.childForceExpandWidth = false;
-            hintBox.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
-            marker.HintBox = hintBox;
-            marker.Hint = Label(
-                hintBox,
-                "Text",
-                "魔物の気配",
-                32,
-                TextMain,
-                TextAlignmentOptions.Center
-            );
             return marker;
+        }
+
+        // 右下の凡例：部屋の札と同じ色の小さい札とアイコンに、部屋の種類の名前を添えて2列に並べる。
+        private static RectTransform BuildLegend(RectTransform safe)
+        {
+            const float Cell = 168f;
+            const float Row = 60f;
+            const float Padding = 16f;
+            var legend = Rect("Legend", safe);
+            Corner(
+                legend,
+                Vector2.right,
+                new Vector2(-40, 40),
+                new Vector2(Cell * 2 + Padding * 2, Row * 2 + Padding * 2)
+            );
+            ScenePlaque(legend);
+            for (int i = 0; i < LegendKinds.Length; i++)
+            {
+                var (kind, name) = LegendKinds[i];
+                var entry = Rect(kind.ToString(), legend);
+                entry.anchorMin = entry.anchorMax = entry.pivot = new Vector2(0, 1);
+                entry.anchoredPosition = new Vector2(
+                    Padding + (i % 2) * Cell,
+                    -Padding - (i / 2) * Row
+                );
+                entry.sizeDelta = new Vector2(Cell, Row);
+                var ring = Rect("Ring", entry);
+                Place(ring, new Vector2(-Cell / 2 + 28, 0), new Vector2(52, 52));
+                SpriteImage(ring, UiArt.CirclePath, ExplorationView.AccentOf(kind));
+                var plate = Rect("Plate", ring);
+                Place(plate, Vector2.zero, new Vector2(46, 46));
+                SpriteImage(plate, UiArt.CirclePath, ExplorationView.PlateOf(kind));
+                var icon = Rect("Icon", ring);
+                // 24x24のアイコンを2倍にする（地図の小さい札と同じ）。
+                Place(icon, Vector2.zero, new Vector2(48, 48));
+                var image = icon.gameObject.AddComponent<Image>();
+                image.sprite = KindIcons()[(int)kind];
+                image.raycastTarget = false;
+                var label = Label(entry, "Name", name, 26, TextMain, TextAlignmentOptions.Left);
+                var rect = (RectTransform)label.transform;
+                rect.anchorMin = new Vector2(0, 0);
+                rect.anchorMax = new Vector2(1, 1);
+                rect.offsetMin = new Vector2(64, 0);
+                rect.offsetMax = Vector2.zero;
+            }
+            return legend;
         }
 
         // 地図の上のパーティ。戦闘の姿を1ドット1pxで、部屋の中心のまわりに並べる。
@@ -449,7 +491,8 @@ namespace Baryonyx.Adventure.Editor
             var band = Rect("PromptBand", safe);
             band.anchorMin = band.anchorMax = band.pivot = new Vector2(0.5f, 0f);
             band.anchoredPosition = new Vector2(0, 40);
-            band.sizeDelta = new Vector2(1100, 96);
+            // 右下の凡例と重ならない幅にする。
+            band.sizeDelta = new Vector2(1000, 96);
             ScenePlaque(band);
             var prompt = Label(band, "Prompt", "", 44, TextMain, TextAlignmentOptions.Center);
             Stretch((RectTransform)prompt.transform);

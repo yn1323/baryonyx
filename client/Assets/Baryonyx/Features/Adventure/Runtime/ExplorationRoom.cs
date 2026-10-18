@@ -11,7 +11,7 @@ namespace Baryonyx.Adventure
         Open,
     }
 
-    /// <summary>One way on from the room: the room on the next floor the road leads to, and its hint.</summary>
+    /// <summary>One way on from the room: the room on the next floor the road leads to.</summary>
     public sealed class ExplorationExit
     {
         public ExplorationExit(AdventureRoom room)
@@ -22,7 +22,6 @@ namespace Baryonyx.Adventure
         public AdventureRoom Room { get; }
         public string Id => Room.Id;
         public AdventureRoomKind Kind => Room.Kind;
-        public string Hint => AdventureCatalog.Hint(Room.Kind);
     }
 
     /// <summary>

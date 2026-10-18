@@ -1,13 +1,12 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// One room on the exploration map (doc/features/screens.md): its round plate and kind icon,
-    /// the glow of a strong monster or of the deepest room seen through the fog, the hint beside a
-    /// room the party can go to next, and where it is tapped. <see cref="ExplorationView"/> makes
+    /// One room on the exploration map (doc/features/screens.md): its round plate coloured by the
+    /// room's kind and its kind icon, the glow of a strong monster far away or of the deepest
+    /// room, and where it is tapped. <see cref="ExplorationView"/> makes
     /// one from the template for each room it shows, and fades it in as the fog clears and out
     /// as the room drops out of sight.
     /// </summary>
@@ -20,8 +19,6 @@ namespace Baryonyx.Adventure
         public Image Plate;
         public Image Icon;
         public Button Button;
-        public RectTransform HintBox;
-        public TMP_Text Hint;
 
         public string RoomId { get; set; } = "";
 
@@ -33,6 +30,5 @@ namespace Baryonyx.Adventure
         public float Alpha { get; set; } = 1f;
         public float TargetAlpha { get; set; } = 1f;
         public float Wait { get; set; }
-        public string HintText => Hint != null && HintBox.gameObject.activeSelf ? Hint.text : "";
     }
 }

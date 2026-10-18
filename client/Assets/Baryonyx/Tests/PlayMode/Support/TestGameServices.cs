@@ -27,7 +27,7 @@ namespace Baryonyx.Tests.PlayMode
                 new GameServices(
                     new HealthStepLink(Provider, Server, new MemoryLinkStore()),
                     true,
-                    adventure: Adventure
+                    adventure: new DelayedAdventure(this)
                 )
             );
         }
@@ -38,6 +38,9 @@ namespace Baryonyx.Tests.PlayMode
         // 冒険の代役。テストで冒険を始めた状態や、ルーンの残高を作るときに直接呼ぶ。
         public AdventureLocalSource Adventure { get; }
 
+        // 画面が冒険を読むときの返事の遅れ（秒）。サーバーのように、開く演出の途中で読み終える場合を作る。
+        public float AdventureLoadSeconds { get; set; }
+
         public static TestGameServices Use(
             HealthPermission permission = HealthPermission.Granted
         ) => new(permission);
@@ -47,6 +50,41 @@ namespace Baryonyx.Tests.PlayMode
             GameServices.Override(null);
             AdventureSession.Reset();
             SceneTransitionController.DurationScale = 1f;
+        }
+
+        // 画面からの冒険の読み込みだけを AdventureLoadSeconds 遅らせ、ほかは代役へそのまま渡す。
+        private sealed class DelayedAdventure : IAdventureSource
+        {
+            private readonly TestGameServices owner;
+
+            public DelayedAdventure(TestGameServices owner) => this.owner = owner;
+
+            public async Task<AdventureState> LoadAsync(CancellationToken token)
+            {
+                if (owner.AdventureLoadSeconds > 0f)
+                    await UnityEngine.Awaitable.WaitForSecondsAsync(
+                        owner.AdventureLoadSeconds,
+                        token
+                    );
+                return await owner.Adventure.LoadAsync(token);
+            }
+
+            public Task<AdventureState> StartAsync(string destinationId, CancellationToken token) =>
+                owner.Adventure.StartAsync(destinationId, token);
+
+            public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token) =>
+                owner.Adventure.MoveAsync(room, token);
+
+            public Task<AdventureState> ClearAsync(string roomId, CancellationToken token) =>
+                owner.Adventure.ClearAsync(roomId, token);
+
+            public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token) =>
+                owner.Adventure.ReviveAsync(roomId, token);
+
+            public Task<AdventureState> EndAsync(
+                AdventureEndReason reason,
+                CancellationToken token
+            ) => owner.Adventure.EndAsync(reason, token);
         }
 
         public sealed class TestStepServer : IHealthStepServer

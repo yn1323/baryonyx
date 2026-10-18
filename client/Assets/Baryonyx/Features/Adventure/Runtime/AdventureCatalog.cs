@@ -85,17 +85,6 @@ namespace Baryonyx.Adventure
         public static string Location(AdventureRun run) =>
             run == null ? "" : $"{DestinationName(run.DestinationId)} {FloorText(run.Floor)}";
 
-        // 地図の部屋の横に出す短い手掛かり。
-        public static string Hint(AdventureRoomKind kind) =>
-            kind switch
-            {
-                AdventureRoomKind.Battle => "魔物の気配",
-                AdventureRoomKind.Elite => "強い魔物の気配",
-                AdventureRoomKind.Treasure => "宝箱がありそう",
-                AdventureRoomKind.Boss => "最奥の間",
-                _ => "入口",
-            };
-
         public static AdventureEncounter Encounter(string id) =>
             Array.Find(Encounters, encounter => encounter.Id == id) ?? Encounters[0];
 

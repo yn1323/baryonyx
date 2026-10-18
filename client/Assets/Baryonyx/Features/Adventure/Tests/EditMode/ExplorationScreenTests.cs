@@ -43,14 +43,19 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
 
-            // 型は隠し、入口から行ける部屋の札と手掛かりを並べておく。
+            // 型は隠し、入口から行ける部屋の大きい札を並べておく。右下の凡例は部屋の種類を4つ示す。
             Assert.That(view.MarkerTemplate.gameObject.activeSelf, Is.False);
             var exits = view
                 .Markers.GetComponentsInChildren<ExplorationMapMarker>()
-                .Where(marker => marker.HintBox.gameObject.activeSelf && marker.Button.interactable)
+                .Where(marker => marker.Button.interactable)
                 .ToArray();
             Assert.That(exits, Is.Not.Empty);
-            Assert.That(exits.Select(marker => marker.HintText), Has.All.Not.Empty);
+            Assert.That(
+                exits.Select(marker => marker.Ring.rectTransform.sizeDelta.x),
+                Has.All.EqualTo(ExplorationView.LargeRing)
+            );
+            Assert.That(view.Legend, Is.Not.Null);
+            Assert.That(view.Legend.childCount, Is.EqualTo(5));
             Assert.That(view.Floors.Find("FloorTemplate").gameObject.activeSelf, Is.False);
             Assert.That(
                 view.Floors.Cast<Transform>()

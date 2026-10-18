@@ -111,7 +111,15 @@ namespace Baryonyx.Tests.PlayMode
                 var marker = view.MarkerOf(next);
                 Assert.That(marker, Is.Not.Null, next);
                 Assert.That(marker.IsExit, Is.True);
-                Assert.That(marker.HintText, Is.EqualTo("宝箱がありそう"));
+                // 次に選べる部屋は大きい札で、地の色が部屋の種類（宝箱）を示す。
+                Assert.That(
+                    marker.Ring.rectTransform.sizeDelta.x,
+                    Is.EqualTo(ExplorationView.LargeRing)
+                );
+                Assert.That(
+                    marker.Plate.color,
+                    Is.EqualTo(ExplorationView.PlateOf(AdventureRoomKind.Treasure))
+                );
                 SceneTests.AssertTouchSize(marker.Button.transform);
             }
             // 最奥の間の印はいつも出し、押しても進まない。通った部屋は出さない。
@@ -484,6 +492,22 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ToastMessage, Is.Empty);
             yield return WaitForScene(SceneNames.Exploration);
             Assert.That(AdventureSession.Current.Run.RoomId, Is.EqualTo("entrance"));
+        }
+
+        // 冒険がないときに単体で開いた探索は、開く演出の途中で読み終えても、ホームへ戻る。
+        // 「読み込み中…」のまま止まらない。
+        [UnityTest]
+        public IEnumerator TheExplorationOpenedWithoutAnAdventureGoesHome()
+        {
+            // サーバーのように、開く演出（元の長さ）の途中で冒険を読み終える。
+            UI.SceneTransitionController.DurationScale = 1f;
+            services.AdventureLoadSeconds = 0.3f;
+            yield return SceneManager.LoadSceneAsync(
+                SceneTests.ExplorationPath,
+                LoadSceneMode.Single
+            );
+            yield return WaitForScene(SceneNames.Home);
+            Assert.That(AdventureSession.Current.InProgress, Is.False);
         }
 
         // 冒険の外で開いた戦闘はモックのまま：勝敗で終わらず、冒険のメニューも出さない。

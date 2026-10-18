@@ -7,15 +7,17 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// Paints the exploration map's picture on the device (800x360 dots, one pixel a dot, rows
     /// from the bottom like a texture): the grass, the dirt roads between the rooms and their
-    /// clearings, the forest of stamped trees, the ruin at the deepest room, and the fog, light
-    /// and shade over it. The rooms' icons, the party and the words are laid over it by
+    /// clearings, the forest of stamped trees, the ruin at the deepest room, and the fog and
+    /// shade over it. The rooms' icons, the party and the words are laid over it by
     /// <see cref="ExplorationView"/>.
+    /// The roads the party can still take are wide and bright, and the forest away from them is
+    /// darkened and greyed so the roads and the rooms stand out of it; the roads it can no longer
+    /// take are narrow and sink into the forest.
     /// The grass, the roads and the forest stand at fixed places of the route, so the camera can
     /// follow the party along a road and the picture moves with it; one painter keeps a route's
     /// forest between pictures. A tree stands where it hides no road and the forest around it is
     /// not yet as thick as its size and distance allow; a tree that starts or stops standing as
-    /// the camera moves fades in or out through a dither instead of popping. The fog lies on the
-    /// rows a fog camera sees far away, so it can lag behind the camera and then clear.
+    /// the camera moves fades in or out through a dither instead of popping.
     /// </summary>
     public sealed class ExplorationMapPainter
     {
@@ -35,6 +37,15 @@ namespace Baryonyx.Adventure
         // 候補を置く道の範囲（t）。カメラが最奥の間に立っても、画面の上端まで森で埋まる長さにする。
         private const float SpotsFrom = -0.15f;
         private const float SpotsTo = 2f;
+
+        // 明るく残す範囲：行ける道の縁から、このドット数までは森を暗くしない。その先は、このドット数を
+        // かけて暗くし切る。
+        private const int LitMargin = 6;
+        private const int DimFade = 28;
+
+        // 暗くし切った森：灰色へ寄せる割合と、明るさの割合（1/256単位）。
+        private const int DimGrey = 150;
+        private const int DimValue = 120;
 
         // 森の茂り具合：木の幅の2乗のこの倍の広さに1本。小さいほど茂る。
         private const float Spacing = 0.24f;
@@ -64,8 +75,10 @@ namespace Baryonyx.Adventure
         };
 
         private static readonly Color32 RoadEdge = new(0x4a, 0x3a, 0x24, 255);
-        private static readonly Color32 Road = new(0x95, 0x7a, 0x4e, 255);
-        private static readonly Color32 RoadLight = new(0xa8, 0x8c, 0x5c, 255);
+        private static readonly Color32 Road = new(0xa8, 0x8c, 0x5c, 255);
+        private static readonly Color32 RoadLight = new(0xc4, 0xa8, 0x74, 255);
+        private static readonly Color32 AheadRoad = new(0x7e, 0x67, 0x42, 255);
+        private static readonly Color32 AheadLight = new(0x8e, 0x76, 0x4e, 255);
         private static readonly Color32 PassedRoad = new(0xb8, 0x9a, 0x66, 255);
         private static readonly Color32 PassedLight = new(0xd0, 0xb4, 0x7a, 255);
         private static readonly Color32 OldRoadEdge = new(0x1e, 0x32, 0x20, 255);
@@ -77,7 +90,6 @@ namespace Baryonyx.Adventure
         private static readonly Color32 TreeShadow = new(0x14, 0x28, 0x18, 255);
         private static readonly Color32 BossGlow = new(0x7a, 0x3a, 0xc0, 255);
         private static readonly Color32 Fog = new(176, 196, 196, 255);
-        private static readonly Color32 Light = new(255, 240, 190, 255);
         private static readonly Color32 Shade = new(4, 8, 10, 255);
         private static readonly int[,] Bayer =
         {
@@ -87,8 +99,7 @@ namespace Baryonyx.Adventure
             { 15, 7, 13, 5 },
         };
 
-        // 画面に対して動かない光の筋と周りの影の濃さ（1/256単位、上から数えた行）。
-        private static readonly byte[] LightAlpha = MakeLight();
+        // 画面に対して動かない周りの影の濃さ（1/256単位、上から数えた行）。
         private static readonly byte[] ShadeAlpha = MakeShade();
 
         private enum RoadState
@@ -172,6 +183,12 @@ namespace Baryonyx.Adventure
         // 木を立てない所（道・空き地・最奥の間の近く）。2ドット四方を1マスにする。
         private readonly bool[] mask = new bool[(W / 2) * (H / 2)];
 
+        // 森を暗くしない所（行ける道・通った道・開いた空き地・最奥の間の近く）と、そこからの距離
+        // （1マスを3とする近似）、マスごとの暗くする濃さ（1/256単位）。マスは mask と同じ。
+        private readonly bool[] lit = new bool[(W / 2) * (H / 2)];
+        private readonly int[] litDistance = new int[(W / 2) * (H / 2)];
+        private readonly byte[] dim = new byte[(W / 2) * (H / 2)];
+
         public ExplorationMapPainter(AdventureRouteMap map, ExplorationMapArt art)
         {
             Map = map ?? throw new ArgumentNullException(nameof(map));
@@ -201,9 +218,7 @@ namespace Baryonyx.Adventure
         public bool Settled { get; private set; } = true;
 
         /// <summary>
-        /// Paints the map of the run from the camera <paramref name="projection"/>, with the fog
-        /// lying where the <paramref name="fog"/> camera (the same camera when null) sees it,
-        /// thinned by <paramref name="thinning"/> (0 to 1) while it clears.
+        /// Paints the map of the run from the camera <paramref name="projection"/>.
         /// <paramref name="seconds"/> is the time since the last picture: the trees fade that far
         /// toward standing or not; 0 shows them at once.
         /// </summary>
@@ -212,9 +227,7 @@ namespace Baryonyx.Adventure
             AdventureRun run,
             ExplorationMapProjection projection,
             ExplorationMapSight sight,
-            ExplorationMapProjection fog = null,
-            float seconds = 0f,
-            float thinning = 0f
+            float seconds = 0f
         )
         {
             if (pixels == null || pixels.Length != W * H)
@@ -228,14 +241,17 @@ namespace Baryonyx.Adventure
             // 透明な画素は、まだ何も描いていない所。最後に草で埋める。
             Array.Clear(pixels, 0, pixels.Length);
             Array.Clear(mask, 0, mask.Length);
+            Array.Clear(lit, 0, lit.Length);
             var canvas = new Canvas(pixels);
 
             PaintRoads(canvas, run, projection, sight);
             PaintClearings(canvas, run, projection, sight);
             var boss = projection.ToDots(Map.PointOf(AdventureRouteMap.BossId));
             MarkMask(boss + new Vector2(0, -14), 30);
+            Mark(lit, boss + new Vector2(0, -14), 44);
             PaintForest(canvas, projection, seconds);
             PaintGrass(pixels, projection);
+            PaintDim(pixels);
 
             // 最奥の間：紫の気配と、霧の上に立つ遺跡。
             canvas.Dither(
@@ -253,7 +269,7 @@ namespace Baryonyx.Adventure
                                 * 0.7f
                     )
             );
-            PaintFog(pixels, projection, fog ?? projection, Mathf.Clamp01(thinning));
+            PaintFog(pixels);
             if (ruin != null)
                 canvas.Stamp(
                     ruin,
@@ -266,10 +282,18 @@ namespace Baryonyx.Adventure
             PaintShade(pixels);
         }
 
+        // 道幅（ドット）。今選べる道をいちばん太く、行けなくなった道を細くする。
         private static int Width(RoadState state, float y)
         {
             float scale = ExplorationMapProjection.ScaleAt(y);
-            return Mathf.Max(1, Mathf.RoundToInt((state == RoadState.Old ? 3f : 6f) * scale));
+            float width = state switch
+            {
+                RoadState.Old => 2f,
+                RoadState.Ahead => 6f,
+                RoadState.Passed => 7f,
+                _ => 9f,
+            };
+            return Mathf.Max(1, Mathf.RoundToInt(width * scale));
         }
 
         private static bool OnMap(Vector2 dots, float margin) =>
@@ -324,8 +348,15 @@ namespace Baryonyx.Adventure
                 }
                 if (road.Dots.Count < 2)
                     road.Dots.Clear();
+                // 行ける道と通った道は、木を道から離して立て、まわりの森を暗くしない。
+                bool open = road.State != RoadState.Old;
                 foreach (var dot in road.Dots)
-                    MarkMask(dot, Width(road.State, dot.y) / 2 + 3);
+                {
+                    int half = Width(road.State, dot.y) / 2;
+                    MarkMask(dot, half + (open ? 6 : 2));
+                    if (open)
+                        Mark(lit, dot, half + LitMargin);
+                }
             }
             // 縁、道、明るい中央、点線の順に、行けなくなった道から重ねる。
             for (int pass = 0; pass < 4; pass++)
@@ -348,6 +379,7 @@ namespace Baryonyx.Adventure
                             0,
                             state == RoadState.Old ? OldRoad
                                 : state == RoadState.Passed ? PassedRoad
+                                : state == RoadState.Ahead ? AheadRoad
                                 : Road
                         );
                     else if (pass == 2 && state != RoadState.Old)
@@ -355,7 +387,9 @@ namespace Baryonyx.Adventure
                             road.Dots,
                             state,
                             -3,
-                            state == RoadState.Passed ? PassedLight : RoadLight
+                            state == RoadState.Passed ? PassedLight
+                                : state == RoadState.Ahead ? AheadLight
+                                : RoadLight
                         );
                     else if (pass == 3 && (state == RoadState.Next || state == RoadState.Passed))
                         canvas.Line(
@@ -394,6 +428,8 @@ namespace Baryonyx.Adventure
                 canvas.Ellipse(dots.x, dots.y + 1, rx + 1, ry + 1, RoadEdge, 0f, 1f);
                 canvas.Ellipse(dots.x, dots.y, rx, ry, open ? Clearing : OldClearing, 0f, 1f);
                 MarkMask(dots + new Vector2(0, -6 * scale), Mathf.RoundToInt(18 * scale));
+                if (open)
+                    Mark(lit, dots + new Vector2(0, -6 * scale), Mathf.RoundToInt(26 * scale));
             }
         }
 
@@ -521,7 +557,10 @@ namespace Baryonyx.Adventure
             canvas.Stamp(picture, bx, by, flip, from, to);
         }
 
-        private void MarkMask(Vector2 center, int radius)
+        private void MarkMask(Vector2 center, int radius) => Mark(mask, center, radius);
+
+        // 2ドット四方のマスの格子に、center のまわり radius ドットの円を付ける。
+        private static void Mark(bool[] cells, Vector2 center, int radius)
         {
             int cx = Mathf.RoundToInt(center.x);
             int cy = Mathf.RoundToInt(center.y);
@@ -537,7 +576,7 @@ namespace Baryonyx.Adventure
                 {
                     int dx = mx * 2 + 1 - cx;
                     if (dx * dx + dy * dy <= r2)
-                        mask[my * (W / 2) + mx] = true;
+                        cells[my * (W / 2) + mx] = true;
                 }
             }
         }
@@ -631,6 +670,74 @@ namespace Baryonyx.Adventure
             }
         }
 
+        // 行ける道から離れた森を暗く、灰色にする。道のまわりだけを明るく残し、道と部屋の印を森から浮かせる。
+        // 道からの距離はマスの格子の上で求める（縦横を3、斜めを4とする近似）。
+        private void PaintDim(Color32[] pixels)
+        {
+            const int Columns = W / 2;
+            const int Rows = H / 2;
+            const int Far = int.MaxValue / 2;
+            for (int i = 0; i < lit.Length; i++)
+                litDistance[i] = lit[i] ? 0 : Far;
+            for (int y = 0; y < Rows; y++)
+            for (int x = 0; x < Columns; x++)
+            {
+                int i = y * Columns + x;
+                int d = litDistance[i];
+                if (x > 0)
+                    d = Math.Min(d, litDistance[i - 1] + 3);
+                if (y > 0)
+                {
+                    d = Math.Min(d, litDistance[i - Columns] + 3);
+                    if (x > 0)
+                        d = Math.Min(d, litDistance[i - Columns - 1] + 4);
+                    if (x < Columns - 1)
+                        d = Math.Min(d, litDistance[i - Columns + 1] + 4);
+                }
+                litDistance[i] = d;
+            }
+            for (int y = Rows - 1; y >= 0; y--)
+            for (int x = Columns - 1; x >= 0; x--)
+            {
+                int i = y * Columns + x;
+                int d = litDistance[i];
+                if (x < Columns - 1)
+                    d = Math.Min(d, litDistance[i + 1] + 3);
+                if (y < Rows - 1)
+                {
+                    d = Math.Min(d, litDistance[i + Columns] + 3);
+                    if (x < Columns - 1)
+                        d = Math.Min(d, litDistance[i + Columns + 1] + 4);
+                    if (x > 0)
+                        d = Math.Min(d, litDistance[i + Columns - 1] + 4);
+                }
+                litDistance[i] = d;
+                // 1マスは2ドット、距離の3が1マス。
+                float dots = d * 2f / 3f;
+                dim[i] = (byte)Mathf.RoundToInt(Mathf.Clamp01(dots / DimFade) * 255f);
+            }
+            for (int y = 0; y < H; y++)
+            {
+                int row = (H - 1 - y) * W;
+                int cells = (y >> 1) * Columns;
+                for (int x = 0; x < W; x++)
+                {
+                    int alpha = dim[cells + (x >> 1)];
+                    if (alpha == 0)
+                        continue;
+                    var color = pixels[row + x];
+                    int grey = (color.r * 77 + color.g * 150 + color.b * 29) >> 8;
+                    var dark = new Color32(
+                        (byte)(((color.r + (((grey - color.r) * DimGrey) >> 8)) * DimValue) >> 8),
+                        (byte)(((color.g + (((grey - color.g) * DimGrey) >> 8)) * DimValue) >> 8),
+                        (byte)(((color.b + (((grey - color.b) * DimGrey) >> 8)) * DimValue) >> 8),
+                        255
+                    );
+                    pixels[row + x] = Blend(color, dark, alpha);
+                }
+            }
+        }
+
         // 霧の帯の濃さ。カメラが止まっているときの行で決める。
         private static float FogAt(float y)
         {
@@ -642,35 +749,17 @@ namespace Baryonyx.Adventure
                 : Mathf.Lerp(0.4f, 0f, (k - 0.72f) / 0.28f);
         }
 
-        // 奥の霧と、左上から差す光の筋（舞台のポストプロセスの代わり）。
-        // 霧は、霧のカメラから見た行の濃さにする。カメラより遅れると、霧が近づいてから晴れる。
-        private static void PaintFog(
-            Color32[] pixels,
-            ExplorationMapProjection projection,
-            ExplorationMapProjection fog,
-            float thinning
-        )
+        // 奥の霧（舞台のポストプロセスの代わり）。画面の上の行ほど濃い。
+        private static void PaintFog(Color32[] pixels)
         {
-            for (int y = 0; y < H; y++)
+            for (int y = 0; y < FogRows; y++)
             {
-                float row = y;
-                if (fog != projection)
-                {
-                    float t = projection.TAtRow(y);
-                    if (!float.IsInfinity(t))
-                        row = fog.RowOf(t);
-                }
-                int alpha = Mathf.RoundToInt(FogAt(row) * (1f - thinning) * 256f);
+                int alpha = Mathf.RoundToInt(FogAt(y) * 256f);
+                if (alpha <= 0)
+                    continue;
                 int index = (H - 1 - y) * W;
-                int light = y * W;
                 for (int x = 0; x < W; x++)
-                {
-                    if (alpha > 0)
-                        pixels[index + x] = Blend(pixels[index + x], Fog, alpha);
-                    int shaft = LightAlpha[light + x];
-                    if (shaft > 0)
-                        pixels[index + x] = Blend(pixels[index + x], Light, shaft);
-                }
+                    pixels[index + x] = Blend(pixels[index + x], Fog, alpha);
             }
         }
 
@@ -696,20 +785,6 @@ namespace Baryonyx.Adventure
                 (byte)(under.b + (((over.b - under.b) * alpha) >> 8)),
                 255
             );
-
-        private static byte[] MakeLight()
-        {
-            var alpha = new byte[W * H];
-            foreach (int start in new[] { 210, 380, 550 })
-                for (int y = 0; y < H; y++)
-                {
-                    int value = Mathf.RoundToInt(0.16f * (1f - y / (float)H) * 256f);
-                    int left = start - Mathf.RoundToInt(y * 0.55f);
-                    for (int x = Mathf.Max(0, left); x < Mathf.Min(W, left + 26); x++)
-                        alpha[y * W + x] = (byte)value;
-                }
-            return alpha;
-        }
 
         private static byte[] MakeShade()
         {

@@ -15,11 +15,12 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// The exploration screen (doc/features/screens.md): the forest seen from above with the
     /// adventure's branching route on it, the party standing in the room it is in, the rooms of
-    /// the next floor it can go to with their hints, the rooms further on as icons and marks
-    /// fading into the fog, the deepest room's ruin far away, the chest of a treasure room, the
-    /// place and floor at the top, a prompt at the bottom and the menu at the top left. A room
-    /// tapped sends the party walking along its road with the camera following it, and once it
-    /// arrives the fog ahead clears and the rooms newly in sight appear. One finger dragged on
+    /// the next floor it can go to as large plates, the rooms further on as small plates and,
+    /// far away, coloured dots (the colour tells the room's kind, as the legend at the bottom
+    /// right says), the deepest room's ruin far away, the chest of a treasure room, the place and
+    /// floor at the top, a prompt at the bottom and the menu at the top left. A room tapped sends
+    /// the party walking along its road with the camera following it, and once it arrives the
+    /// rooms newly in sight appear, nearer floors first. One finger dragged on
     /// the map looks along the route ahead (<see cref="Look"/>). AdventureAssets builds
     /// it; the adventure's flow (<see cref="ExplorationFlow"/>) drives it. AdventureAssets also
     /// draws the sample route into it once, so the prefab and the scene show the map outside
@@ -28,18 +29,12 @@ namespace Baryonyx.Adventure
     /// </summary>
     public sealed class ExplorationView : MonoBehaviour, IEditModePreview
     {
-        // 移動の時間：4人が道を歩く時間、カメラが追い始めるまでと追いつくまで、
-        // 霧が晴れ始めるまでと晴れ切るまで（どれも部屋を押してからの秒数）。
+        // 移動の時間：4人が道を歩く時間、カメラが追い始めるまでと追いつくまで（どれも部屋を押してからの秒数）。
         public const float WalkSeconds = 1.2f;
         public const float CameraDelaySeconds = 0.2f;
         public const float CameraSeconds = 1.3f;
-        public const float FogDelaySeconds = 1.0f;
-        public const float FogSeconds = 1.2f;
 
-        // 霧が晴れる途中で、霧をいちばん薄くする割合。晴れ終わると元の濃さに戻る。
-        public const float FogThinning = 0.12f;
-
-        // 部屋の印・宝箱が現れる・消える時間と、霧が晴れて現れる印を奥の階ほど遅らせる時間。
+        // 部屋の印・宝箱が現れる・消える時間と、着いて新しく見えた印を奥の階ほど遅らせる時間。
         public const float MarkerFadeSeconds = 0.4f;
         public const float RevealStepSeconds = 0.12f;
 
@@ -57,14 +52,42 @@ namespace Baryonyx.Adventure
         private const float MarkersTop = 390f;
         private const int Dot = ExplorationMapProjection.Dot;
 
+        // 札の大きさ（px）：次に選べる部屋と最奥の間は大きい札、その先は小さい札、遠くは色の点。
+        public const float LargeRing = 108f;
+        public const float SmallRing = 60f;
+        public const float DotRing = 28f;
+
         private static readonly Color RingExit = new(1f, 0.953f, 0.812f);
-        private static readonly Color RingAhead = new(0.416f, 0.478f, 0.471f);
         private static readonly Color RingFaint = new(0.17f, 0.21f, 0.19f);
-        private static readonly Color RingBoss = new(0.627f, 0.376f, 0.878f);
+        private static readonly Color PlateFaint = new(0.12f, 0.14f, 0.14f, 0.96f);
+        private static readonly Color DotEdge = new(0.04f, 0.05f, 0.05f);
         private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.85f);
         private static readonly Color BossGlow = new(0.55f, 0.25f, 0.9f, 0.6f);
         private static readonly Color Faded = new(0.5f, 0.5f, 0.5f, 1f);
         private static readonly Color FloorHere = new(0.949f, 0.761f, 0.31f);
+
+        // 部屋の種類ごとの札の地の色と、縁・遠くの点の明るい色（AdventureRoomKind の順）。
+        // いちばん多い魔物は目立たない青灰色にし、強い魔物は赤、宝箱は金、最奥の間は紫で目を引く。
+        private static readonly Color[] KindPlates =
+        {
+            new(0.11f, 0.165f, 0.19f, 0.96f),
+            new(0.15f, 0.19f, 0.23f, 0.96f),
+            new(0.46f, 0.08f, 0.08f, 0.96f),
+            new(0.42f, 0.30f, 0.05f, 0.96f),
+            new(0.26f, 0.11f, 0.42f, 0.96f),
+        };
+        private static readonly Color[] KindAccents =
+        {
+            new(0.42f, 0.48f, 0.47f),
+            new(0.60f, 0.67f, 0.75f),
+            new(1f, 0.34f, 0.26f),
+            new(1f, 0.80f, 0.30f),
+            new(0.70f, 0.45f, 0.98f),
+        };
+
+        public static Color PlateOf(AdventureRoomKind kind) => KindPlates[(int)kind];
+
+        public static Color AccentOf(AdventureRoomKind kind) => KindAccents[(int)kind];
 
         [Header("地図")]
         public RectTransform Map;
@@ -98,6 +121,9 @@ namespace Baryonyx.Adventure
         public RectTransform Floors;
         public TMP_Text FloorTemplate;
 
+        // 右下の凡例：札の色とアイコンが、どの部屋の種類かを示す。
+        public RectTransform Legend;
+
         // 部屋の種類ごとのアイコン（AdventureRoomKind の順）。
         public Sprite[] KindIcons = Array.Empty<Sprite>();
 
@@ -120,9 +146,8 @@ namespace Baryonyx.Adventure
         private ExplorationMapSight paintedSight;
         private ExplorationMapProjection projection;
 
-        // 道の上の位置（x が t、y が s）：カメラ、霧のカメラ、パーティ。
+        // 道の上の位置（x が t、y が s）：カメラ、パーティ。
         private Vector2 cameraAt;
-        private Vector2 fogAt;
         private Vector2 partyRoute;
         private Vector2 partyAt;
         private Move move;
@@ -138,15 +163,14 @@ namespace Baryonyx.Adventure
         private bool repaint;
         private bool wired;
 
-        /// <summary>A walk along a road, with the camera and the fog following the party.</summary>
+        /// <summary>A walk along a road, with the camera following the party.</summary>
         private sealed class Move
         {
             public Vector2[] Road;
             public float Elapsed;
 
-            // 歩き出したときのカメラと霧の、道の始めからのずれ（先を見ていた分）。追いつくまでに縮める。
+            // 歩き出したときのカメラの、道の始めからのずれ（先を見ていた分）。追いつくまでに縮める。
             public Vector2 CameraOffset;
-            public Vector2 FogOffset;
 
             // 4人とカメラが着いたときに呼ぶ。呼んだあとは null。
             public Action Arrived;
@@ -172,7 +196,7 @@ namespace Baryonyx.Adventure
         // 4人が道を歩き、カメラが追いかけている。
         public bool Walking => walking;
 
-        // 着いたあと、霧が晴れて印や木が現れ切るまで。
+        // 着いたあと、新しく見えた印や木が現れ切るまで。
         public bool Clearing => animating != null && !walking;
 
         // カメラが見下ろしている道の上の位置（x が t、y が s）。
@@ -311,8 +335,8 @@ namespace Baryonyx.Adventure
         /// <summary>
         /// Shows the room: the map seen from it, the rooms ahead as far as the party can see,
         /// the next floor's rooms to choose once the room is done, and its chest. The room the
-        /// party just walked to keeps the camera where it arrived: the fog goes on clearing and
-        /// the rooms newly in sight appear, nearer floors first. Any other room is shown at once.
+        /// party just walked to keeps the camera where it arrived, and the rooms newly in sight
+        /// appear, nearer floors first. Any other room is shown at once.
         /// </summary>
         public void Render(ExplorationRoom room)
         {
@@ -348,14 +372,13 @@ namespace Baryonyx.Adventure
             {
                 var here = RoutePoint(run.RoomId);
                 cameraAt = here;
-                fogAt = here;
                 partyRoute = here;
             }
             projection = ViewFrom(cameraAt);
             if (reveal)
                 repaint = true;
             else
-                Paint(0f, projection);
+                Paint(0f);
             PlaceParty();
             PlaceMarkers(run, room, paintedSight, reveal);
             PlaceChest(room, reveal);
@@ -401,14 +424,13 @@ namespace Baryonyx.Adventure
             );
             if (to == cameraAt)
                 return;
-            // 霧が晴れている途中なら、晴れ切った所から動かす。
+            // 印が現れている途中なら、現れ切った所から動かす。
             if (animating != null)
             {
                 StopAnimation();
                 chestAlpha = chestTarget;
             }
             cameraAt = to;
-            fogAt = to;
             projection = ViewFrom(cameraAt);
             PlaceParty();
             PlaceMarkers(ShownRun, shownRoom, paintedSight, false);
@@ -454,7 +476,7 @@ namespace Baryonyx.Adventure
         }
 
         // 地図の絵を描き直す。seconds は前の絵からの時間で、0なら木をすぐに立て終える。
-        private void Paint(float seconds, ExplorationMapProjection fog, float thinning = 0f)
+        private void Paint(float seconds)
         {
             if (texture == null)
             {
@@ -471,7 +493,7 @@ namespace Baryonyx.Adventure
                 };
                 pixels = new Color32[texture.width * texture.height];
             }
-            painter.Paint(pixels, paintedRun, projection, paintedSight, fog, seconds, thinning);
+            painter.Paint(pixels, paintedRun, projection, paintedSight, seconds);
             repaint = false;
             texture.SetPixelData(pixels, 0);
             texture.Apply(false);
@@ -506,7 +528,7 @@ namespace Baryonyx.Adventure
             leaving.Clear();
         }
 
-        // 部屋の印を置く。reveal では、前から見えていた印はそのまま、霧が晴れて見えた印は奥の階ほど
+        // 部屋の印を置く。reveal では、前から見えていた印はそのまま、新しく見えた印は奥の階ほど
         // 遅れて現れ、見えなくなった印は薄れて消える。
         private void PlaceMarkers(
             AdventureRun run,
@@ -534,7 +556,7 @@ namespace Baryonyx.Adventure
                     continue;
                 if (
                     mapRoom.Kind != AdventureRoomKind.Boss
-                    && PointOf(mapRoom.Id, LiftOf(level)).y > MarkersTop
+                    && PointOf(mapRoom.Id, LiftOf(level, exit)).y > MarkersTop
                 )
                     continue;
                 bool seen = before.Remove(mapRoom.Id, out var marker) && marker.TargetAlpha > 0f;
@@ -587,12 +609,14 @@ namespace Baryonyx.Adventure
         {
             if (marker.Group != null)
                 marker.Group.alpha = marker.Alpha;
-            // 霧から現れる印は、少し小さい所から大きくなる。
-            marker.Body.localScale = Vector3.one * Mathf.Lerp(0.8f, 1f, marker.Alpha);
         }
 
-        private static float LiftOf(ExplorationRoomSight level) =>
-            level == ExplorationRoomSight.Detail ? Lift : Lift * 0.6f;
+        // 大きい札は高く、小さい札と点は低く浮かせる。
+        private static float LiftOf(ExplorationRoomSight level, bool exit) =>
+            exit || level == ExplorationRoomSight.Detail ? Lift : Lift * 0.6f;
+
+        private static float LiftOf(ExplorationMapMarker marker) =>
+            LiftOf(marker.Sight, marker.IsExit);
 
         private void Keep(ExplorationMapMarker marker)
         {
@@ -612,89 +636,43 @@ namespace Baryonyx.Adventure
             marker.IsExit = exit;
             marker.Sight = level;
             bool boss = room.Kind == AdventureRoomKind.Boss;
-            bool detail = level == ExplorationRoomSight.Detail;
-            bool far = level == ExplorationRoomSight.Far;
-            marker.Body.anchoredPosition = PointOf(room.Id, LiftOf(level));
+            bool large = exit || boss;
+            bool dot = !large && level == ExplorationRoomSight.Far;
+            bool lit = reachable || boss;
+            marker.Body.anchoredPosition = PointOf(room.Id, LiftOf(level, exit));
 
-            // カメラに近い部屋は24ドットのアイコンを3倍、少し先は2倍、遠くは1倍で出す。
-            float icon =
-                detail ? 24 * Dot
-                : far ? 24
-                : 24 * 2;
+            // 大きい札は24ドットのアイコンを3倍、小さい札は2倍で出す。遠くの点はアイコンを出さず、
+            // 札の色で部屋の種類を見せる。
             float ring =
-                detail ? (exit ? 108 : 96)
-                : far ? 34
-                : 60;
+                large ? LargeRing
+                : dot ? DotRing
+                : SmallRing;
             marker.Ring.rectTransform.sizeDelta = Vector2.one * ring;
-            marker.Plate.rectTransform.sizeDelta =
-                Vector2.one
-                * (
-                    ring
-                    - (
-                        detail ? 12
-                        : far ? 4
-                        : 8
-                    )
-                );
-            marker.Icon.rectTransform.sizeDelta = Vector2.one * icon;
+            marker.Plate.rectTransform.sizeDelta = Vector2.one * (ring - (large ? 12 : 8));
+            marker.Icon.rectTransform.sizeDelta = Vector2.one * (large ? 24 * Dot : 24 * 2);
+            // 遠くの点は、森に紛れないよう暗い縁で囲む。
             marker.Ring.color =
-                boss ? RingBoss
-                : exit ? RingExit
-                : reachable ? RingAhead
+                exit ? RingExit
+                : dot ? DotEdge
+                : lit ? AccentOf(room.Kind)
                 : RingFaint;
+            marker.Plate.color =
+                !lit ? PlateFaint
+                : dot ? AccentOf(room.Kind)
+                : PlateOf(room.Kind);
             marker.Icon.sprite = KindIcon(room.Kind);
-            marker.Icon.enabled = marker.Icon.sprite != null;
-            marker.Icon.color = reachable || boss ? Color.white : Faded;
+            marker.Icon.enabled = marker.Icon.sprite != null && !dot;
+            marker.Icon.color = lit ? Color.white : Faded;
 
-            // 遠くの強い魔物は、小さい札の後ろの赤い光でも分かるようにする。
-            bool glow = far && reachable && room.Kind == AdventureRoomKind.Elite;
+            // 遠くの強い魔物は、点の後ろの赤い光でも分かるようにする。
+            bool glow = dot && reachable && room.Kind == AdventureRoomKind.Elite;
             marker.Glow.gameObject.SetActive(glow || boss);
             marker.Glow.color = boss ? BossGlow : EliteGlow;
-            marker.Glow.rectTransform.sizeDelta = Vector2.one * (boss ? 260 : 120);
+            marker.Glow.rectTransform.sizeDelta = Vector2.one * (boss ? 260 : 100);
 
             marker.Button.interactable = exit;
             if (marker.Button.targetGraphic != null)
                 marker.Button.targetGraphic.raycastTarget = exit;
-
-            bool hint = exit || boss;
-            marker.HintBox.gameObject.SetActive(hint);
-            if (!hint)
-                return;
-            marker.Hint.text = AdventureCatalog.Hint(room.Kind);
-            marker.Hint.color = exit ? RingExit : Color.white;
-            // 次の階の部屋の手掛かりは、横に並ぶ部屋と重ならないよう札の下に、最奥の間は横に置く。
-            // 札の下ではパーティに重なる部屋（入口のすぐ先の真ん中の道など）は、パーティから離れる側の横に置く。
-            float below = ring / 2f + 6f;
-            var at = marker.Body.anchoredPosition;
-            float side =
-                boss ? 1f
-                : CoversParty(marker, at, below) ? (at.x >= partyAt.x ? 1f : -1f)
-                : 0f;
-            marker.HintBox.pivot =
-                side == 0f ? new Vector2(0.5f, 1f) : new Vector2(side > 0f ? 0f : 1f, 0.5f);
-            marker.HintBox.anchoredPosition =
-                side == 0f ? new Vector2(0f, -below) : new Vector2(side * (ring / 2f + 12f), 0f);
-        }
-
-        // 部屋の札（at）の下に置いた手掛かりが、地図の上の4人の絵に重なるか。
-        private bool CoversParty(ExplorationMapMarker marker, Vector2 at, float below)
-        {
-            // 札の幅は文字に合わせて決まるため、レイアウトを待たずに文字の幅から求める。
-            var layout = marker.HintBox.GetComponent<HorizontalLayoutGroup>();
-            float width =
-                marker.Hint.GetPreferredValues(marker.Hint.text).x
-                + (layout != null ? layout.padding.horizontal : 0);
-            float height = marker.HintBox.rect.height;
-            var box = new Rect(at.x - width / 2f, at.y - below - height, width, height);
-            foreach (var body in Party)
-            foreach (RectTransform part in body)
-            {
-                var rect = part.rect;
-                rect.position += body.anchoredPosition + part.anchoredPosition;
-                if (box.Overlaps(rect))
-                    return true;
-            }
-            return false;
         }
 
         private void PlaceParty()
@@ -742,7 +720,7 @@ namespace Baryonyx.Adventure
                 Chest.anchoredPosition = Snap(PointOf(chestRoom, 0f) + new Vector2(126f, -18f));
         }
 
-        // 左端の階の目安：画面に入る今いる階から、カメラの立つ階の4階先まで。
+        // 左端の階の目安：画面に入る今いる階から、カメラの立つ階の2階先まで。
         private void PlaceFloors(AdventureRun run)
         {
             foreach (var label in floorLabels)
@@ -757,7 +735,7 @@ namespace Baryonyx.Adventure
                 if (rooms.Length == 0)
                     continue;
                 float y = rooms.Average(room => PointOf(room.Id, 0f).y);
-                if (y > 330f || floor - view > ExplorationMapSight.DefaultMarkFloors)
+                if (y > 330f || floor - view > ExplorationMapSight.DefaultDetailFloors)
                     continue;
                 if (index >= floorLabels.Count)
                 {
@@ -769,7 +747,6 @@ namespace Baryonyx.Adventure
                 label.gameObject.SetActive(true);
                 label.text = AdventureCatalog.FloorText(floor);
                 label.color = floor == run.Floor ? FloorHere : FloorTemplate.color;
-                label.fontSize = floor - view > ExplorationMapSight.DefaultDetailFloors ? 20 : 26;
                 var rect = (RectTransform)label.transform;
                 rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, y);
             }
@@ -777,7 +754,7 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The party walks the road to the room with the camera following it, then
-        /// <paramref name="arrived"/> runs; the fog keeps clearing until the room is shown.
+        /// <paramref name="arrived"/> runs.
         /// The road chosen is painted as walked at once, and the other roads as closed.
         /// </summary>
         public void WalkTo(string roomId, Action arrived)
@@ -799,7 +776,6 @@ namespace Baryonyx.Adventure
                 Arrived = arrived,
             };
             move.CameraOffset = cameraAt - move.Road[0];
-            move.FogOffset = fogAt - move.Road[0];
             walking = true;
             revealFor = roomId;
             paintedRun = new AdventureRun(
@@ -864,24 +840,20 @@ namespace Baryonyx.Adventure
             return x * x * (3f - 2f * x);
         }
 
-        // 1コマ進める：4人とカメラと霧を道に沿って動かし、地図を描き直し、印と宝箱を薄れさせる。
+        // 1コマ進める：4人とカメラを道に沿って動かし、地図を描き直し、印と宝箱を薄れさせる。
         // まだ動いている物があれば true。
         private bool Step(float seconds)
         {
             bool moving = false;
-            var fog = projection;
             if (move != null)
             {
                 move.Elapsed += seconds;
                 float walked = Ease(move.Elapsed / WalkSeconds);
                 float followed = Ease((move.Elapsed - CameraDelaySeconds) / CameraSeconds);
-                float cleared = Ease((move.Elapsed - FogDelaySeconds) / FogSeconds);
                 partyRoute = move.At(walked);
                 cameraAt = move.At(followed) + move.CameraOffset * (1f - followed);
-                fogAt = move.At(cleared) + move.FogOffset * (1f - cleared);
                 projection = ViewFrom(cameraAt);
-                fog = fogAt == cameraAt ? projection : ViewFrom(fogAt);
-                Paint(seconds, fog, FogThinning * Mathf.Sin(Mathf.PI * cleared));
+                Paint(seconds);
                 PlaceOnMap();
                 if (move.Arrived != null && walked >= 1f && followed >= 1f)
                 {
@@ -893,14 +865,14 @@ namespace Baryonyx.Adventure
                     if (move == null)
                         return false;
                 }
-                if (cleared >= 1f && move.Arrived == null)
+                if (move.Arrived == null)
                     move = null;
                 else
                     moving = true;
             }
             else if (repaint || (painter != null && !painter.Settled))
             {
-                Paint(seconds, fog);
+                Paint(seconds);
                 PlaceOnMap();
             }
             moving |= painter != null && !painter.Settled;
@@ -914,7 +886,7 @@ namespace Baryonyx.Adventure
             PlaceParty();
             foreach (var marker in pool)
                 if (marker.gameObject.activeSelf)
-                    marker.Body.anchoredPosition = PointOf(marker.RoomId, LiftOf(marker.Sight));
+                    marker.Body.anchoredPosition = PointOf(marker.RoomId, LiftOf(marker));
             PlaceChestOnMap();
             if (ShownRun != null)
                 PlaceFloors(ShownRun);
