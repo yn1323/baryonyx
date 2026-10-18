@@ -97,6 +97,12 @@ PlayModeテストはすべて名前空間 `Baryonyx.Tests.PlayMode` に属する
 `filter_type` の既定値 `testName` は、テストの完全名（`Baryonyx.Tests.PlayMode.<クラス名>.<メソッド名>`）を大文字小文字を区別せず部分一致で絞り込む。
 クラス名だけを渡すと、名前にそのクラス名を含む別のクラスも実行される（例：`HomeSceneTests` は `TopHomeSceneTests` にも一致する）。
 そのため、前に `PlayMode.`、後ろに `.` を付けてクラスの境界を示す。
+複数のクラスは、接続中のEditorで [run-playmode-classes.py](../../client/ci/run-playmode-classes.py) にクラス名を並べて続けて実行する（例：`python3 client/ci/run-playmode-classes.py HomeSceneTests TavernTrainingTests --owner "<作業の名前>"`）。
+スクリプトは、[実行と結果確認](#実行と結果確認)の手順6を除く手順をクラスごとに行い、クラスごとの成否と件数を1行ずつ出す。
+札を自分で取らずにスクリプトに取らせる。すでに札を持っているときは `--token <token>` を渡すと、札を延長し、返さずに終わる。
+クラス名の誤りは、札を取る前に `list_tests` の一覧と照らして止める。
+数分かかるため、バックグラウンドで1回だけ実行し、終了の通知を待つ。終了コードは、すべて成功で0、失敗ありで1、クラス名の誤りで2、札が取れないと3、Editorの異常や時間切れで5である。
+`run_tests` の `--filter` に `;` 区切りや「A|B」で複数のクラスを渡すと0件になるため、接続中のEditorでは使わない。
 Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;` 区切りで渡す（[Unity Test Frameworkのコマンドライン引数](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html)）。
 絞り込んだ実行で0件になった場合は、指定を誤っているため成功に含めない。
 
@@ -161,6 +167,8 @@ Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実
 8. 完了は、`test_status` が completed になり、かつ今回の開始以降のログに `Run finished: <件数> total` が出たことで判断する。前回の実行の結果と取り違えない。実行件数が0の結果は成功に含めない。
 9. 結果を確かめたら札を返す。続けて別のテストを実行する場合は、返さずに手順2へ戻ってよい。
 
+1回の実行の完了は、1つの待ち方で待つ。同じ完了を複数の監視やコマンドで待っても早くは終わらず、同じ通知が重なって確認の手間が増える。
+
 Unity 6000.6.0f1でDomain ReloadとScene Reloadを両方省略した状態では、PlayModeテストを再読み込みなしで続けて実行すると、2回目は見つかるテストが0件になることが多い。
 毎回あらかじめ再読み込みするより、手順4で0件を見つけたときだけ再読み込みするほうが、普段の実行は軽く済む。
 
@@ -192,6 +200,7 @@ AnalyzerとAndroidのLibraryは、従来どおり別のキーで管理する。
 `Client CI scripts` はUnityを起動せず、実行補助の後始末と結果検証の異常系を検査する。
 ローカルでは `python -B -m unittest discover -s client/ci -p 'test_unity_ci.py'` で実行する。
 Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同じjobで `python -B -m unittest discover -s client/ci -p 'test_editor_lock.py'` が検査する。
+PlayModeのクラスを続けて実行するスクリプトは、偽のEditorを相手に `python -B -m unittest discover -s client/ci -p 'test_run_playmode_classes.py'` が検査する。
 実行補助の検査にはBashが必要で、WindowsではGit for WindowsのBashを使う。
 ライセンス設定は [コード品質の手順](client-code-quality.md) を参照する。
 
