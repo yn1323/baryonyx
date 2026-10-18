@@ -1,16 +1,18 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Health;
 using Baryonyx.UI;
+using Baryonyx.UI.EditModePreview;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Baryonyx.App
 {
     [RequireComponent(typeof(Button))]
-    public sealed class TopSceneController : MonoBehaviour
+    public sealed class TopSceneController : MonoBehaviour, IEditModePreview
     {
         public const string LoadingText = "LOADING...";
         public const string StartText = "TAP TO START";
@@ -127,6 +129,48 @@ namespace Baryonyx.App
             Render();
         }
 
+        /// <summary>The prompt under the title: loading, start, or the failure and retry.</summary>
+        public static string PromptFor(HealthStartupPhase phase, string failureMessage) =>
+            phase switch
+            {
+                HealthStartupPhase.Ready => StartText,
+                HealthStartupPhase.Failed => $"{failureMessage}  {RetryText}",
+                _ => LoadingText,
+            };
+
+        // 停止中の表示の切り替え：タイトルの下の案内。連携のモーダルは HealthLinkModalView が受け持つ。
+        public IReadOnlyList<string> PreviewStates =>
+            new[]
+            {
+                "読み込み中",
+                "TAP TO START",
+                "通信の失敗",
+                "歩数の読み取りの失敗",
+                "案内なし（連携待ち）",
+            };
+
+        public void ShowPreviewState(int index)
+        {
+            if (tapToStartPrompt == null)
+                return;
+            tapToStartPrompt.SetActive(index != 4);
+            var panel = tapToStartPrompt.GetComponent<TranslucentTextPanel>();
+            if (panel == null)
+                return;
+            panel.SetText(
+                index switch
+                {
+                    1 => PromptFor(HealthStartupPhase.Ready, ""),
+                    2 => PromptFor(
+                        HealthStartupPhase.Failed,
+                        HealthStartupFlow.NetworkFailedMessage
+                    ),
+                    3 => PromptFor(HealthStartupPhase.Failed, HealthStartupFlow.StepsFailedMessage),
+                    _ => PromptFor(HealthStartupPhase.Loading, ""),
+                }
+            );
+        }
+
         private void Render()
         {
             if (flow == null)
@@ -139,14 +183,7 @@ namespace Baryonyx.App
                 tapToStartPrompt.SetActive(inputReady && phase != HealthStartupPhase.LinkRequired);
                 var panel = tapToStartPrompt.GetComponent<TranslucentTextPanel>();
                 if (panel != null)
-                    panel.SetText(
-                        phase switch
-                        {
-                            HealthStartupPhase.Ready => StartText,
-                            HealthStartupPhase.Failed => $"{flow.FailureMessage}  {RetryText}",
-                            _ => LoadingText,
-                        }
-                    );
+                    panel.SetText(PromptFor(phase, flow.FailureMessage));
             }
             if (linkModal != null)
             {

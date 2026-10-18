@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +8,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Health
 {
     // Health Connect連携モーダルの描画とボタン通知だけを担う。表示する条件は呼び出し側が決める。
-    public sealed class HealthLinkModalView : MonoBehaviour
+    public sealed class HealthLinkModalView : MonoBehaviour, IEditModePreview
     {
         public TMP_Text TitleLabel;
         public TMP_Text BodyLabel;
@@ -51,6 +53,22 @@ namespace Baryonyx.Health
         }
 
         public void Hide() => gameObject.SetActive(false);
+
+        // 停止中の表示の切り替え：連携の状態ごとの本文と主ボタン。最後はボタンを押せない間（確認中）。
+        private static readonly HealthLinkStatus[] PreviewStatuses =
+        {
+            HealthLinkStatus.PermissionRequired,
+            HealthLinkStatus.SettingsRequired,
+            HealthLinkStatus.InstallRequired,
+            HealthLinkStatus.UpdateRequired,
+            HealthLinkStatus.PermissionRequired,
+        };
+
+        public IReadOnlyList<string> PreviewStates =>
+            new[] { "連携の許可", "設定を開く", "入手が必要", "更新が必要", "確認中（押せない）" };
+
+        public void ShowPreviewState(int index) =>
+            Show(PreviewStatuses[index], index != PreviewStatuses.Length - 1);
 
         private void OnAction() => ActionPressed?.Invoke();
 

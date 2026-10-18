@@ -83,14 +83,7 @@ namespace Baryonyx.Adventure
                 Debug.LogWarning("冒険を取得できませんでした。" + exception.Message);
                 if (disposed)
                     return;
-                view.Dialog.Show(
-                    AdventureTexts.LoadFailed,
-                    "通信を確かめて、もう一度お試しください。",
-                    null,
-                    null,
-                    new DialogChoice("もう一度", () => Work = LoadAsync()),
-                    new DialogChoice(AdventureTexts.HomeChoice, GoHome)
-                );
+                AdventureDialogs.LoadFailed(view.Dialog, () => Work = LoadAsync(), GoHome);
                 return;
             }
             if (disposed)
@@ -214,15 +207,7 @@ namespace Baryonyx.Adventure
                 return;
             Enter(state);
             busy = true;
-            view.Dialog.Show(
-                "宝箱を開けた！",
-                AdventureTexts.RewardBody(view.Bonuses, state.Reward),
-                state.Reward != null
-                    ? AdventureTexts.BonusIcon(view.Bonuses, state.Reward.BonusId)
-                    : null,
-                CloseReward,
-                new DialogChoice(AdventureTexts.NextChoice, CloseReward)
-            );
+            AdventureDialogs.Treasure(view.Dialog, view.Bonuses, state.Reward, CloseReward);
         }
 
         private void CloseReward()
@@ -235,25 +220,23 @@ namespace Baryonyx.Adventure
         {
             if (busy || Leaving || State?.Run == null)
                 return;
-            view.Dialog.Show(
-                AdventureTexts.MenuTitle,
-                AdventureCatalog.Location(State.Run) + "\n" + MenuBody,
-                null,
+            AdventureDialogs.Menu(
+                view.Dialog,
+                State.Run,
+                MenuBody,
+                AdventureTexts.CloseChoice,
                 view.Dialog.Hide,
-                new DialogChoice(AdventureTexts.SuspendChoice, GoHome),
-                new DialogChoice(AdventureTexts.QuitChoice, ConfirmQuit),
-                new DialogChoice(AdventureTexts.CloseChoice, view.Dialog.Hide)
+                GoHome,
+                ConfirmQuit
             );
         }
 
         private void ConfirmQuit() =>
-            view.Dialog.Show(
-                AdventureTexts.QuitTitle,
-                AdventureTexts.QuitBody,
-                null,
+            AdventureDialogs.ConfirmQuit(
+                view.Dialog,
                 OpenMenu,
-                new DialogChoice(AdventureTexts.QuitChoice, () => Work = QuitAsync()),
-                new DialogChoice(AdventureTexts.GoOnChoice, view.Dialog.Hide)
+                () => Work = QuitAsync(),
+                view.Dialog.Hide
             );
 
         private async Task QuitAsync()
@@ -297,13 +280,7 @@ namespace Baryonyx.Adventure
                 home();
                 return;
             }
-            dialog.Show(
-                AdventureCatalog.StatusTitle(result.Status),
-                AdventureTexts.ResultBody(bonuses, result),
-                null,
-                null,
-                new DialogChoice(AdventureTexts.HomeChoice, home)
-            );
+            AdventureDialogs.Result(dialog, bonuses, result, home);
         }
 
         private void GoHome()

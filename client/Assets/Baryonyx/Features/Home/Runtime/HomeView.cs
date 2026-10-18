@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Baryonyx.UI;
+using Baryonyx.UI.EditModePreview;
 using Baryonyx.Vfx.Hd2d;
 using TMPro;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace Baryonyx.Home
     /// presses as <see cref="HomeAction"/> values. It owns no game rules. Without a
     /// listener (the showcase preview), tapping the step panel plays sample feedback.
     /// </summary>
-    public sealed class HomeView : MonoBehaviour
+    public sealed class HomeView : MonoBehaviour, IEditModePreview
     {
         public static readonly Color GaugeFilled = new(0.37f, 0.83f, 0.78f);
         public static readonly Color GaugeAchieved = new(0.95f, 0.76f, 0.31f);
@@ -341,6 +342,58 @@ namespace Baryonyx.Home
         }
 
         public void HideNotice() => NoticeFade.Hide(Notice);
+
+        // 停止中の表示の切り替え：仮データ（HomeMockData の既定値）を変えて、Play中と同じ Render で描く。
+        // 通知と中央の表示は、消えずに止まった形で出す。
+        public IReadOnlyList<string> PreviewStates =>
+            new[]
+            {
+                "歩数の連携なし",
+                "同期中",
+                "歩数の取得前",
+                "ボーナスをすべて獲得",
+                "冒険の途中",
+                "獲得ルーンなし",
+                "通知",
+            };
+
+        public void ShowPreviewState(int index)
+        {
+            var mock = ScriptableObject.CreateInstance<HomeMockData>();
+            try
+            {
+                if (index == 0)
+                    mock.StepLink = HomeStepLink.Unlinked;
+                if (index == 3)
+                    mock.Steps = HomeViewState.GaugeMaxAct;
+                mock.AdventureInProgress = index == 4;
+                var snapshot = mock.ToSnapshot(DateTime.Today);
+                snapshot.StepSyncing = index == 1;
+                snapshot.StepsKnown = index != 2;
+                snapshot.RunesKnown = index != 2;
+                Render(HomeViewState.From(snapshot));
+            }
+            finally
+            {
+                DestroyImmediate(mock);
+            }
+            if (index == 5)
+                ShowStill(Notice, NoticeLabel, HomePresenter.NoRunesMessage);
+            if (index == 6)
+                ShowStill(
+                    Toast,
+                    ToastLabel,
+                    HomeViewState.MessageFor(HomeAction.Settings, HomeStepLink.Linked)
+                );
+        }
+
+        private static void ShowStill(CanvasGroup group, TMP_Text label, string message)
+        {
+            if (group == null || label == null)
+                return;
+            label.text = message;
+            group.alpha = 1f;
+        }
 
         private FadingMessage ToastFade => toastFade ??= new FadingMessage(this);
         private FadingMessage NoticeFade => noticeFade ??= new FadingMessage(this);

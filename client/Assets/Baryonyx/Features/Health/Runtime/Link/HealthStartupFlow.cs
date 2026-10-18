@@ -27,6 +27,9 @@ namespace Baryonyx.Health
         public HealthStartupPhase Phase { get; private set; } = HealthStartupPhase.Loading;
         public HealthLinkStatus LinkStatus { get; private set; } = HealthLinkStatus.Linked;
         public bool Dismissed { get; private set; }
+        public const string StepsFailedMessage = "歩数を読み取れませんでした";
+        public const string NetworkFailedMessage = "通信に失敗しました";
+
         public string FailureMessage { get; private set; } = "";
 
         public event Action Changed;
@@ -144,7 +147,7 @@ namespace Baryonyx.Health
             }
             if (result == HealthSyncStatus.ReadFailed)
             {
-                Fail("歩数を読み取れませんでした");
+                Fail(StepsFailedMessage);
                 return;
             }
             synced = true;
@@ -169,7 +172,7 @@ namespace Baryonyx.Health
             catch (Exception)
             {
                 // 通信・端末のエラー内容は画面へ出さず、再試行できる状態にする。
-                Fail("通信に失敗しました");
+                Fail(NetworkFailedMessage);
             }
             finally
             {

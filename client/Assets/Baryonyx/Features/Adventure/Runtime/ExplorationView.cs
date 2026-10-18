@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
+using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -25,7 +26,7 @@ namespace Baryonyx.Adventure
     /// Play Mode; on <see cref="Awake"/> the sample's picture is hidden and its markers and
     /// floors are reused.
     /// </summary>
-    public sealed class ExplorationView : MonoBehaviour
+    public sealed class ExplorationView : MonoBehaviour, IEditModePreview
     {
         // 移動の時間：4人が道を歩く時間、カメラが追い始めるまでと追いつくまで、
         // 霧が晴れ始めるまでと晴れ切るまで（どれも部屋を押してからの秒数）。
@@ -950,6 +951,65 @@ namespace Baryonyx.Adventure
         {
             if (Notice != null)
                 Notice.Show(message);
+        }
+
+        // 停止中の表示の切り替え：探索のダイアログを、ExplorationFlow と同じ AdventureDialogs で出す。
+        public IReadOnlyList<string> PreviewStates =>
+            new[]
+            {
+                "メニュー",
+                "やめる確認",
+                "宝箱",
+                "結果（踏破）",
+                "結果（帰還）",
+                "取得できない",
+            };
+
+        public void ShowPreviewState(int index)
+        {
+            if (Dialog == null)
+                return;
+            Action none = () => { };
+            switch (index)
+            {
+                case 0:
+                    AdventureDialogs.Menu(
+                        Dialog,
+                        AdventureDialogSamples.Run,
+                        ExplorationFlow.MenuBody,
+                        AdventureTexts.CloseChoice,
+                        none,
+                        none,
+                        none
+                    );
+                    break;
+                case 1:
+                    AdventureDialogs.ConfirmQuit(Dialog, none, none, none);
+                    break;
+                case 2:
+                    AdventureDialogs.Treasure(
+                        Dialog,
+                        Bonuses,
+                        AdventureDialogSamples.Reward(Bonuses),
+                        none
+                    );
+                    break;
+                case 3:
+                case 4:
+                    AdventureDialogs.Result(
+                        Dialog,
+                        Bonuses,
+                        AdventureDialogSamples.Result(
+                            Bonuses,
+                            index == 3 ? AdventureEndStatus.Cleared : AdventureEndStatus.Retreated
+                        ),
+                        none
+                    );
+                    break;
+                default:
+                    AdventureDialogs.LoadFailed(Dialog, none, none);
+                    break;
+            }
         }
 
         public Sprite KindIcon(AdventureRoomKind kind) =>

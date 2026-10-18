@@ -20,8 +20,8 @@ namespace Baryonyx.Adventure
     {
         public const float VictoryDelaySeconds = 1.4f;
         public const float DefeatDelaySeconds = 1.0f;
-        public const string VictoryTitle = "勝利！";
-        public const string DefeatTitle = "全滅してしまった…";
+        public const string VictoryTitle = AdventureDialogs.VictoryTitle;
+        public const string DefeatTitle = AdventureDialogs.DefeatTitle;
 
         private readonly BattleInspectView battle;
         private readonly AdventureOverlay overlay;
@@ -111,13 +111,7 @@ namespace Baryonyx.Adventure
                 Debug.LogWarning("勝利を保存できませんでした。" + exception.Message);
                 if (disposed)
                     return;
-                Dialog.Show(
-                    AdventureTexts.SaveFailed,
-                    "通信を確かめて、もう一度お試しください。",
-                    null,
-                    null,
-                    new DialogChoice("もう一度", () => Work = VictoryAsync())
-                );
+                AdventureDialogs.SaveFailed(Dialog, () => Work = VictoryAsync());
                 return;
             }
             if (disposed)
@@ -125,17 +119,14 @@ namespace Baryonyx.Adventure
             state = AdventureSession.Use(cleared);
             var reward = cleared.Reward;
             var result = cleared.Result;
-            Dialog.Show(
-                VictoryTitle,
-                AdventureTexts.RewardBody(overlay.Bonuses, reward),
-                reward != null ? AdventureTexts.BonusIcon(overlay.Bonuses, reward.BonusId) : null,
-                null,
+            AdventureDialogs.Victory(
+                Dialog,
+                overlay.Bonuses,
+                reward,
+                result != null,
                 result != null
-                    ? new DialogChoice(
-                        "つぎへ",
-                        () => ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, result, GoHome)
-                    )
-                    : new DialogChoice(AdventureTexts.NextChoice, GoExplore)
+                    ? () => ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, result, GoHome)
+                    : GoExplore
             );
         }
 
@@ -167,20 +158,13 @@ namespace Baryonyx.Adventure
             var run = state.Run;
             int cost = run?.ReviveCost ?? 0;
             bool canRevive = run != null && run.InBattle && state.Runes >= cost;
-            Dialog.Show(
-                DefeatTitle,
-                AdventureTexts.ReviveBody(cost, state.Runes),
-                null,
-                null,
-                new DialogChoice(
-                    AdventureTexts.ReviveChoice(cost),
-                    () => Work = ReviveAsync(),
-                    canRevive
-                ),
-                new DialogChoice(
-                    AdventureTexts.ReturnChoice,
-                    () => Work = EndAsync(AdventureEndReason.Defeat)
-                )
+            AdventureDialogs.Revive(
+                Dialog,
+                cost,
+                state.Runes,
+                canRevive,
+                () => Work = ReviveAsync(),
+                () => Work = EndAsync(AdventureEndReason.Defeat)
             );
         }
 
@@ -222,28 +206,23 @@ namespace Baryonyx.Adventure
         {
             if (busy || Leaving || Dialog.IsShown)
                 return;
-            Dialog.Show(
-                AdventureTexts.MenuTitle,
-                AdventureCatalog.Location(state.Run) + "\n" + AdventureTexts.SuspendBody,
-                null,
+            AdventureDialogs.Menu(
+                Dialog,
+                state.Run,
+                AdventureTexts.SuspendBody,
+                AdventureTexts.GoOnChoice,
                 Dialog.Hide,
-                new DialogChoice(AdventureTexts.SuspendChoice, GoHome),
-                new DialogChoice(AdventureTexts.QuitChoice, ConfirmQuit),
-                new DialogChoice(AdventureTexts.GoOnChoice, Dialog.Hide)
+                GoHome,
+                ConfirmQuit
             );
         }
 
         private void ConfirmQuit() =>
-            Dialog.Show(
-                AdventureTexts.QuitTitle,
-                AdventureTexts.QuitBody,
-                null,
+            AdventureDialogs.ConfirmQuit(
+                Dialog,
                 OpenMenu,
-                new DialogChoice(
-                    AdventureTexts.QuitChoice,
-                    () => Work = EndAsync(AdventureEndReason.Retreat)
-                ),
-                new DialogChoice(AdventureTexts.GoOnChoice, Dialog.Hide)
+                () => Work = EndAsync(AdventureEndReason.Retreat),
+                Dialog.Hide
             );
 
         private async Task EndAsync(AdventureEndReason reason)
