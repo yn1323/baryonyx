@@ -1,0 +1,1163 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33301d487a8da4543b220a3f1b0f8b2e, type: 3}
+  m_Name: LibraryData
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Library.LibraryData
+  Entries:
+  - Kind: 0
+    Id: toma
+    Number: 1
+    Name: "\u30C8\u30FC\u30DE"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u9B54\u529B\u306E\u6CC9\u30FB\u708E\u306E\u5FC3\u5F97"
+    Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.125
+      y: 0
+      width: 0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 0
+    Id: luka
+    Number: 2
+    Name: "\u30EB\u30AB"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u72E9\u4EBA\u306E\u76EE\u30FB\u75BE\u98A8"
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.125
+      y: 0
+      width: 0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 0
+    Id: aria
+    Number: 3
+    Name: "\u30A2\u30EA\u30A2"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u5B88\u8B77\u306E\u8A93\u3044\u30FB\u4E0D\u5C48"
+    Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.125
+      y: 0
+      width: 0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 0
+    Id: mina
+    Number: 4
+    Name: "\u30DF\u30CA"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u7948\u308A\u30FB\u6D44\u5316\u306E\u5149"
+    Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.125
+      y: 0
+      width: 0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 0
+    Id: anselm
+    Number: 5
+    Name: "\u30A2\u30F3\u30BB\u30EB\u30E0"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u5B88\u8B77\u306E\u8A93\u3044\u30FB\u4E0D\u5C48"
+    Art: {fileID: -6622703189942226176, guid: 161224bf714b5774ca690106c5027023, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.875
+      y: 0
+      width: -0.75
+      height: 0.8125
+    ArtTint: {r: 0.8, g: 0.9, b: 1, a: 1}
+  - Kind: 0
+    Id: greta
+    Number: 6
+    Name: "\u30B0\u30EC\u30BF"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u72E9\u4EBA\u306E\u76EE\u30FB\u75BE\u98A8"
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.125
+      y: 0
+      width: 0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 0.82, b: 0.9, a: 1}
+  - Kind: 0
+    Id: lutz
+    Number: 7
+    Name: "\u30EB\u30C3\u30C4"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u9B54\u529B\u306E\u6CC9\u30FB\u708E\u306E\u5FC3\u5F97"
+    Art: {fileID: -6622703189942226176, guid: cbf8cd65f9dcb064295074a6550d972a, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.875
+      y: 0
+      width: -0.75
+      height: 0.8125
+    ArtTint: {r: 0.86, g: 1, b: 0.8, a: 1}
+  - Kind: 0
+    Id: rita
+    Number: 8
+    Name: "\u30EA\u30BF"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u7948\u308A\u30FB\u6D44\u5316\u306E\u5149"
+    Art: {fileID: -6622703189942226176, guid: 90c5678c10cd0054ba30f1a70c39a01b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.875
+      y: 0
+      width: -0.75
+      height: 0.8125
+    ArtTint: {r: 1, g: 0.88, b: 0.76, a: 1}
+  - Kind: 0
+    Id: ritsu
+    Number: 9
+    Name: "\u30EA\u30C4"
+    Rarity: 0
+    KindLine: "\u5192\u967A\u8005"
+    Description: "\u30D1\u30C3\u30B7\u30D6\u3000\u72E9\u4EBA\u306E\u76EE\u30FB\u75BE\u98A8"
+    Art: {fileID: -6622703189942226176, guid: 032dea18cca6c1044b0c19bb7ae340cc, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0.875
+      y: 0
+      width: -0.75
+      height: 0.8125
+    ArtTint: {r: 0.86, g: 0.84, b: 1, a: 1}
+  - Kind: 1
+    Id: flame-dagger
+    Number: 1
+    Name: "\u708E\u306E\u30C0\u30AC\u30FC"
+    Rarity: 4
+    KindLine: "\u6B66\u5668"
+    Description: "\u901F\u5EA6\u306E 125%\uFF5C\u65AC\u30FB\u708E\uFF5C2\u56DE\u653B\u6483"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: thunder-spear
+    Number: 2
+    Name: "\u96F7\u9CF4\u306E\u69CD"
+    Rarity: 3
+    KindLine: "\u6B66\u5668"
+    Description: "\u7269\u653B\u306E 140%\uFF5C\u8CAB\u30FB\u96F7"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: frost-wand
+    Number: 3
+    Name: "\u6C37\u6676\u306E\u30EF\u30F3\u30C9"
+    Rarity: 3
+    KindLine: "\u6B66\u5668"
+    Description: "\u5C5E\u653B\u306E 135%\uFF5C\u6C37\uFF5C\u4F1A\u5FC3 +5%"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: war-hammer
+    Number: 4
+    Name: "\u6226\u939A"
+    Rarity: 2
+    KindLine: "\u6B66\u5668"
+    Description: "\u7269\u653B\u306E 150%\uFF5C\u6253"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: iron-sword
+    Number: 5
+    Name: "\u9244\u306E\u5263"
+    Rarity: 2
+    KindLine: "\u6B66\u5668"
+    Description: "\u7269\u653B\u306E 120%\uFF5C\u65AC"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: short-bow
+    Number: 6
+    Name: "\u77ED\u5F13"
+    Rarity: 1
+    KindLine: "\u6B66\u5668"
+    Description: "\u901F\u5EA6\u306E 100%\uFF5C\u8CAB"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: oak-staff
+    Number: 7
+    Name: "\u6A2B\u306E\u6756"
+    Rarity: 1
+    KindLine: "\u6B66\u5668"
+    Description: "\u5C5E\u653B\u306E 110%\uFF5C\u708E"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 1
+    Id: wooden-sword
+    Number: 8
+    Name: "\u6728\u306E\u5263"
+    Rarity: 1
+    KindLine: "\u6B66\u5668"
+    Description: "\u7269\u653B\u306E 100%\uFF5C\u65AC"
+    Art: {fileID: -6622703189942226176, guid: 07b6f7458ca856146b1553b7112e25bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: traveler-cloak
+    Number: 1
+    Name: "\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
+    Rarity: 3
+    KindLine: "\u9632\u5177"
+    Description: "\u901F\u5EA6 +8%\uFF5C\u7269\u9632\u306E 110%"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: chainmail
+    Number: 2
+    Name: "\u9396\u304B\u305F\u3073\u3089"
+    Rarity: 2
+    KindLine: "\u9632\u5177"
+    Description: "\u7269\u9632\u306E 130%"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: magic-robe
+    Number: 3
+    Name: "\u9B54\u6CD5\u306E\u30ED\u30FC\u30D6"
+    Rarity: 2
+    KindLine: "\u9632\u5177"
+    Description: "\u5C5E\u653B\u306E 115%\uFF5C\u7269\u9632\u306E 105%"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: iron-helm
+    Number: 4
+    Name: "\u9244\u306E\u515C"
+    Rarity: 2
+    KindLine: "\u9632\u5177"
+    Description: "\u7269\u9632\u306E 115%\uFF5CHP +40"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: leather-armor
+    Number: 5
+    Name: "\u9769\u306E\u93A7"
+    Rarity: 1
+    KindLine: "\u9632\u5177"
+    Description: "\u7269\u9632\u306E 110%"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 2
+    Id: wooden-shield
+    Number: 6
+    Name: "\u6728\u306E\u4E38\u76FE"
+    Rarity: 1
+    KindLine: "\u9632\u5177"
+    Description: "\u7269\u9632\u306E 120%"
+    Art: {fileID: -6622703189942226176, guid: 11d60a020e6520648ab93d6f5a6fb1ec, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Slash
+    Number: 1
+    Name: "\u65AC\u308A\u6255\u3044"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E100%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: 4f1bf86aa23663f458bd6832aef91787, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Fire
+    Number: 2
+    Name: "\u30D5\u30A1\u30A4\u30A2"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E100%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: 1c71f99b82009e14e8c763b470641745, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Ice
+    Number: 3
+    Name: "\u30A2\u30A4\u30B9\u30E9\u30F3\u30B9"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E85%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: 44db660941fa6c44ba973b85ae4e830b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Thunder
+    Number: 4
+    Name: "\u30B5\u30F3\u30C0\u30FC"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: 35db9db0e6c090a4ca6429d6e89ca9f5, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Heal
+    Number: 5
+    Name: "\u30D2\u30FC\u30EB"
+    Rarity: 0
+    KindLine: "<color=#96e678>\u56DE\u5FA9</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u5473\u65B91\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E90%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Guard
+    Number: 6
+    Name: "\u30AC\u30FC\u30C9"
+    Rarity: 0
+    KindLine: "<color=#96c8ff>\u9632\u5FA1</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E60%</color></nobr>\u3002"
+    Art: {fileID: -6622703189942226176, guid: d9ca4308889d5a4429d718733246fe04, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Whirlwind
+    Number: 7
+    Name: "\u65CB\u98A8\u65AC"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E60%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Iai
+    Number: 8
+    Name: "\u5C45\u5408\u4E00\u9583"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 5"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E200%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002HP\u304C\u534A\u5206\u4EE5\u4E0B\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+    Art: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: BladeDance
+    Number: 9
+    Name: "\u5343\u5203\u4E71\u821E"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u30E9\u30F3\u30C0\u30E0\u3000\u30B3\u30B9\u30C8 8"
+    Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u7269\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD77\u3002"
+    Art: {fileID: -6622703189942226176, guid: fdd08f55ab2bc479ab0943f2cedfa709, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Hone
+    Number: 10
+    Name: "\u7814\u304E\u6F84\u307E\u3059"
+    Rarity: 0
+    KindLine: "<color=#c8d2dc>\u652F\u63F4</color><color=#9a9483>\u30FB</color>\u624B\u672D\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u624B\u672D\u306E\u65AC\u5C5E\u6027\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8\u3092\u3059\u3079\u30661\u4E0B\u3052\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ShieldBash
+    Number: 11
+    Name: "\u30B7\u30FC\u30EB\u30C9\u30D0\u30C3\u30B7\u30E5"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u9632\u306E90%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E30%</color></nobr>\u3002"
+    Art: {fileID: -6622703189942226176, guid: 2ef37e46ed43848b69edaa7bcc9e911b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ArmorBreak
+    Number: 12
+    Name: "\u93A7\u7815\u304D"
+    Rarity: 0
+    KindLine: "<color=#d2a0ff>\u5F31\u4F53</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E80%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: b31a536d5d0b44472b162e5fcd4a2044, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: EarthSplitter
+    Number: 13
+    Name: "\u5927\u5730\u5272\u308A"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E85%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: 2a350d98fefb94f3dbbac8525a21e04b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: GiantImpact
+    Number: 14
+    Name: "\u30AE\u30AC\u30F3\u30C8\u30A4\u30F3\u30D1\u30AF\u30C8"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 7"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E320%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: 4e6b03f8387bf426d906447a5cf562ea, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: StrideStrike
+    Number: 15
+    Name: "\u5065\u811A\u306E\u4E00\u6483"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E110%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u5F37\u3044\u3002"
+    Art: {fileID: -6622703189942226176, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: GuardianOath
+    Number: 16
+    Name: "\u5B88\u8B77\u306E\u8A93\u3044"
+    Rarity: 0
+    KindLine: "<color=#96c8ff>\u9632\u5FA1</color><color=#9a9483>\u30FB</color>\u81EA\u5206\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u81EA\u5206\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E150%</color></nobr>\u30022\u30BF\u30FC\u30F3\u3001\u6575\u306E\u653B\u6483\u3092\u5F15\u304D\u3064\u3051\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: WarCry
+    Number: 17
+    Name: "\u9B28\u306E\u58F0"
+    Rarity: 0
+    KindLine: "<color=#ffcc66>\u5F37\u5316</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u5473\u65B9\u5168\u4F53\u306E\u653B\u6483\u529B\u30922\u30BF\u30FC\u30F325%\u4E0A\u3052\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Embers
+    Number: 18
+    Name: "\u706B\u306E\u7C89"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: f5136e1860d674e74867dc0ae29f0855, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: FlamePillar
+    Number: 19
+    Name: "\u30D5\u30EC\u30A4\u30E0\u30D4\u30E9\u30FC"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E120%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+    Art: {fileID: -6622703189942226176, guid: 49e974873b5314cd6a48c7532947120b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: FireStorm
+    Number: 20
+    Name: "\u30D5\u30A1\u30A4\u30A2\u30B9\u30C8\u30FC\u30E0"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: BlastSigil
+    Number: 21
+    Name: "\u7206\u708E\u306E\u523B\u5370"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u65751\u4F53\u306B<nobr><color=#96d6ff><u>\u523B\u5370</u></color></nobr>\u3002\u6B21\u306E\u30BF\u30FC\u30F3\u3001\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E150%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: d9177c5b8cd564c12826a94ce7778644, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Meteor
+    Number: 22
+    Name: "\u30E1\u30C6\u30AA"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 9"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E260%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: FlameEnchant
+    Number: 23
+    Name: "\u30D5\u30EC\u30A4\u30E0\u30A8\u30F3\u30C1\u30E3\u30F3\u30C8"
+    Rarity: 0
+    KindLine: "<color=#ffcc66>\u5F37\u5316</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u5473\u65B91\u4F53\u306E\u653B\u6483\u306B\u30013\u30BF\u30FC\u30F3\u708E\u5C5E\u6027\u3092\u52A0\u3048\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Icicles
+    Number: 24
+    Name: "\u3064\u3089\u3089\u843D\u3068\u3057"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u30E9\u30F3\u30C0\u30E0\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E35%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD74\u3002"
+    Art: {fileID: -6622703189942226176, guid: 94465e77857754831a8dfaba63190b27, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Blizzard
+    Number: 25
+    Name: "\u30D6\u30EA\u30B6\u30FC\u30C9"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 5"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E90%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: 9c1db89367064424c98cf7b1a349d325, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: IceMirror
+    Number: 26
+    Name: "\u30A2\u30A4\u30B9\u30DF\u30E9\u30FC"
+    Rarity: 0
+    KindLine: "<color=#96c8ff>\u9632\u5FA1</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u5473\u65B91\u4F53\u304C\u6B21\u306B\u53D7\u3051\u308B\u5358\u4F53\u653B\u6483\u3092\u30011\u56DE\u306F\u306D\u8FD4\u3059\u3002"
+    Art: {fileID: -6622703189942226176, guid: e70b8aee1804e4502ad9857c09270c70, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: AbsoluteZero
+    Number: 27
+    Name: "\u7D76\u5BFE\u96F6\u5EA6"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 8"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E230%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u3001\u6B21\u306E\u884C\u52D5\u3092\u5C01\u3058\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: QuickCast
+    Number: 28
+    Name: "\u8A60\u5531\u77ED\u7E2E"
+    Rarity: 0
+    KindLine: "<color=#c8d2dc>\u652F\u63F4</color><color=#9a9483>\u30FB</color>\u624B\u672D\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u624B\u672D\u306E\u708E\u30FB\u6C37\u30FB\u96F7\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8\u3092\u3059\u3079\u30661\u4E0B\u3052\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 5a16a3638866f4d98a1861918714e0d1, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: VitalThrust
+    Number: 29
+    Name: "\u6025\u6240\u7A81\u304D"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E90%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u30A8\u30CD\u30EB\u30AE\u30FC+1\u3002"
+    Art: {fileID: -6622703189942226176, guid: cccfe4b3cd70d4aa1a1b6bcf7503f6bb, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: PoisonNeedle
+    Number: 30
+    Name: "\u6BD2\u91DD"
+    Rarity: 0
+    KindLine: "<color=#d2a0ff>\u5F31\u4F53</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E35%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u30922\u3064\u91CD\u306D\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: b04d6fc883add4b90a3e4a79fe170710, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ShadowStitch
+    Number: 31
+    Name: "\u5F71\u7E2B\u3044"
+    Rarity: 0
+    KindLine: "<color=#d2a0ff>\u5F31\u4F53</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E60%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u305D\u306E\u6575\u306E\u884C\u52D5\u9806\u30921\u3064\u9045\u3089\u305B\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 82da91fd08c5c496d81937b0f169240b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: InsightArrow
+    Number: 32
+    Name: "\u770B\u7834\u306E\u77E2"
+    Rarity: 0
+    KindLine: "<color=#d2a0ff>\u5F31\u4F53</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u305D\u306E\u6575\u306E<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u3059\u3079\u3066\u898B\u629C\u304F\u3002"
+    Art: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ArrowRain
+    Number: 33
+    Name: "\u30A2\u30ED\u30FC\u30EC\u30A4\u30F3"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002"
+    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ShadowSnipe
+    Number: 34
+    Name: "\u30B7\u30E3\u30C9\u30A6\u30B9\u30CA\u30A4\u30D7"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 6"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E220%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u5A01\u529B+50%\u3002"
+    Art: {fileID: -6622703189942226176, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: LightningBolt
+    Number: 35
+    Name: "\u30E9\u30A4\u30C8\u30CB\u30F3\u30B0\u30DC\u30EB\u30C8"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>1\u30BF\u30FC\u30F3\u3002"
+    Art: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ChainLightning
+    Number: 36
+    Name: "\u30C1\u30A7\u30A4\u30F3\u30E9\u30A4\u30C8\u30CB\u30F3\u30B0"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u30E9\u30F3\u30C0\u30E0\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E65%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD73\u30021\u56DE\u3054\u3068\u306B\u5225\u306E\u6575\u3078\u79FB\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 7c77087a8245640a2bf06c529d82e64d, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Thundercloud
+    Number: 37
+    Name: "\u96F7\u96F2"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u30E9\u30F3\u30C0\u30E0\u3000\u30B3\u30B9\u30C8 5"
+    Description: "3\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3\u30E9\u30F3\u30C0\u30E0\u306A\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E80%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: cf1e22047dbc8414ebe8b2307d2ebc75, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ThunderSpear
+    Number: 38
+    Name: "\u96F7\u795E\u306E\u69CD"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 7"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E240%</color></nobr>\u3001\u3055\u3089\u306B\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E40%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+    Art: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Gale
+    Number: 39
+    Name: "\u75BE\u98A8\u8FC5\u96F7"
+    Rarity: 0
+    KindLine: "<color=#ffcc66>\u5F37\u5316</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u5473\u65B9\u5168\u4F53\u306E\u901F\u5EA6\u30922\u30BF\u30FC\u30F3\u4E0A\u3052\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Scout
+    Number: 40
+    Name: "\u5075\u5BDF"
+    Rarity: 0
+    KindLine: "<color=#c8d2dc>\u652F\u63F4</color><color=#9a9483>\u30FB</color>\u5C71\u672D\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u30AB\u30FC\u30C9\u30922\u679A\u5F15\u304F\u3002"
+    Art: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: StepPrayer
+    Number: 41
+    Name: "\u4E07\u6B69\u306E\u7948\u308A"
+    Rarity: 0
+    KindLine: "<color=#96e678>\u56DE\u5FA9</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E50%</color></nobr>\u56DE\u5FA9\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u56DE\u5FA9\u3002"
+    Art: {fileID: -6622703189942226176, guid: 30b4a8d82cd2b4ad4a64b79788797191, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Regen
+    Number: 42
+    Name: "\u30EA\u30B8\u30A7\u30CD"
+    Rarity: 0
+    KindLine: "<color=#96e678>\u56DE\u5FA9</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u5473\u65B91\u4F53\u3092\u30013\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3<nobr><color=#8ce878>\u5C5E\u653B\u306E40%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Resurrection
+    Number: 43
+    Name: "\u30EA\u30B6\u30EC\u30AF\u30B7\u30E7\u30F3"
+    Rarity: 0
+    KindLine: "<color=#96e678>\u56DE\u5FA9</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 6"
+    Description: "\u5473\u65B91\u4F53\u306EHP\u3092\u6700\u5927\u306E\u534A\u5206\u56DE\u5FA9\u3002\u5012\u308C\u3066\u3044\u308C\u3070\u5FA9\u6D3B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: HolyHammer
+    Number: 44
+    Name: "\u8056\u306A\u308B\u9244\u69CC"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 3"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E140%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F37\u5316</u></color></nobr>\u30921\u3064\u6D88\u3059\u3002"
+    Art: {fileID: -6622703189942226176, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Protect
+    Number: 45
+    Name: "\u30D7\u30ED\u30C6\u30AF\u30C8"
+    Rarity: 0
+    KindLine: "<color=#96c8ff>\u9632\u5FA1</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u5473\u65B9\u5168\u4F53\u306E\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u3092\u30012\u30BF\u30FC\u30F325%\u6E1B\u3089\u3059\u3002"
+    Art: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Purify
+    Number: 46
+    Name: "\u6D44\u5316\u306E\u5149"
+    Rarity: 0
+    KindLine: "<color=#96e678>\u56DE\u5FA9</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5168\u4F53\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u5473\u65B9\u5168\u4F53\u306E<nobr><color=#96d6ff><u>\u72B6\u614B\u7570\u5E38</u></color></nobr>\u3092\u6D88\u3057\u3001HP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E25%</color></nobr>\u56DE\u5FA9\u3002"
+    Art: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: ManaPrayer
+    Number: 47
+    Name: "\u30DE\u30CA\u306E\u7948\u308A"
+    Rarity: 0
+    KindLine: "<color=#c8d2dc>\u652F\u63F4</color><color=#9a9483>\u30FB</color>\u30A8\u30CD\u30EB\u30AE\u30FC\u3000\u30B3\u30B9\u30C8 1"
+    Description: "\u30A8\u30CD\u30EB\u30AE\u30FC\u30922\u56DE\u5FA9\u3059\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: Revelation
+    Number: 48
+    Name: "\u5929\u5553"
+    Rarity: 0
+    KindLine: "<color=#c8d2dc>\u652F\u63F4</color><color=#9a9483>\u30FB</color>\u6B21\u306E\u30AB\u30FC\u30C9\u3000\u30B3\u30B9\u30C8 2"
+    Description: "\u6B21\u306B\u4F7F\u3046\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8\u30920\u306B\u3059\u308B\u3002"
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: HolyLight
+    Number: 49
+    Name: "\u30DB\u30FC\u30EA\u30FC\u30E9\u30A4\u30C8"
+    Rarity: 0
+    KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E50%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E30%</color></nobr>\u56DE\u5FA9\u3002"
+    Art: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 4
+    Id: DivineShield
+    Number: 50
+    Name: "\u30C7\u30A3\u30D0\u30A4\u30F3\u30B7\u30FC\u30EB\u30C9"
+    Rarity: 0
+    KindLine: "<color=#96c8ff>\u9632\u5FA1</color><color=#9a9483>\u30FB</color>\u5473\u65B9\u5358\u4F53\u3000\u30B3\u30B9\u30C8 4"
+    Description: "\u5473\u65B91\u4F53\u306F\u3001\u6B21\u306E\u30BF\u30FC\u30F3\u307E\u3067\u30C0\u30E1\u30FC\u30B8\u3092\u53D7\u3051\u306A\u3044\u3002"
+    Art: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 6
+    Id: moss-slime
+    Number: 1
+    Name: "\u82D4\u30B9\u30E9\u30A4\u30E0"
+    Rarity: 0
+    KindLine: "\u6575"
+    Description: 
+    Art: {fileID: -6622703189942226176, guid: 0aef226f68170c4419e3055b3e6679c5, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 6
+    Id: moss-wolf
+    Number: 2
+    Name: "\u82D4\u3080\u3057\u305F\u72FC"
+    Rarity: 0
+    KindLine: "\u6575"
+    Description: 
+    Art: {fileID: -6622703189942226176, guid: 9fb3b0bb67dbf1c44a74e30b23d1c95e, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  - Kind: 6
+    Id: forest-guardian
+    Number: 3
+    Name: "\u68EE\u306E\u5B88\u308A\u624B"
+    Rarity: 0
+    KindLine: "\u6575"
+    Description: 
+    Art: {fileID: -6622703189942226176, guid: 6a5af1e64d4ab8246888b2b593bb1a6b, type: 3}
+    ArtUv:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    ArtTint: {r: 1, g: 1, b: 1, a: 1}
+  ElementIcons:
+  - {fileID: 0}
+  - {fileID: 5349011544834349465, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
+  - {fileID: 5349011544834349465, guid: 01996a57fd5fa4c4aad13dd9932e35f9, type: 3}
+  - {fileID: 5349011544834349465, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
+  - {fileID: 5349011544834349465, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
+  - {fileID: 5349011544834349465, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
+  - {fileID: 5349011544834349465, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}

@@ -5,6 +5,7 @@ import {
   runeBalance,
   selectRuneBalance,
 } from "../exercise-rewards/wallet.js";
+import { enemyStatements } from "../library/discoveries.js";
 import {
   rankOrder,
   STEP_BONUS_IDS,
@@ -32,7 +33,7 @@ import {
   adventureRewards,
   adventureRuns,
 } from "./db-schema.js";
-import type { EndReason, Move, Revive } from "./schema.js";
+import type { EndReason, Enemies, Move, Revive } from "./schema.js";
 
 type RunRow = typeof adventureRuns.$inferSelect;
 type RewardRow = typeof adventureRewards.$inferSelect;
@@ -313,7 +314,12 @@ export function createAdventureRepository(
 
   // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、ACTボーナスを1つ手に入れる。
   // 最奥のボスを倒したら冒険を終える。部屋の終了・報酬の記録・持ち物・記録を1回のbatchで行う。
-  async function clear(userId: string, roomId: string, now: string) {
+  async function clear(
+    userId: string,
+    roomId: string,
+    now: string,
+    enemies: Enemies = [],
+  ) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
     const kind = kindOf(run);
@@ -416,6 +422,9 @@ export function createAdventureRepository(
         }),
       ...(boss
         ? [recordStatement({ ...run, roomId }, "cleared", now, written)]
+        : []),
+      ...(isBattle(kind)
+        ? enemyStatements(db, userId, enemies, now, written)
         : []),
     ]);
 
@@ -544,7 +553,12 @@ export function createAdventureRepository(
   }
 
   // 冒険を終える。負けて帰還する（defeat）か、自分からやめる（retreat）。手に入れた物は残る。
-  async function end(userId: string, reason: EndReason, now: string) {
+  async function end(
+    userId: string,
+    reason: EndReason,
+    now: string,
+    enemies: Enemies = [],
+  ) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
     if (reason === "defeat" && (!isBattle(kindOf(run)) || run.roomCleared)) {
@@ -561,6 +575,9 @@ export function createAdventureRepository(
           and(eq(adventureRuns.id, run.id), eq(adventureRuns.status, "active")),
         ),
       recordStatement(run, status, now, written),
+      ...(reason === "defeat"
+        ? enemyStatements(db, userId, enemies, now, written)
+        : []),
     ]);
     const ended = await db
       .select()

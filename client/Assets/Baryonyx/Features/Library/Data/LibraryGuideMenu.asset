@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74c4db56070fa44b8adcef0e18b95aff, type: 3}
+  m_Name: LibraryGuideMenu
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideMenuDefinition
+  Title: "\u30E9\u30A4\u30D6\u30E9\u30EA"
+  GuideArt: {fileID: -6622703189942226176, guid: fda063e1915b347eca2efd9378e73be9, type: 3}
+  GuideDotSize: 4
+  Background: {fileID: 2800000, guid: 9d5067a0f1fe9413aab7cf1e48401f22, type: 3}
+  Layout: 0
+  Items:
+  - Key: library-character
+    Label: "\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC"
+    Caption: "\u4EF2\u9593\u306B\u3057\u305F\u5192\u967A\u8005\u3068\u3001\u305D\u306E\u56FA\u6709\u30B9\u30AD\u30EB"
+    Icon: {fileID: 21300000, guid: 62738821b497b4bc38634fef9d5e02d9, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-weapon
+    Label: "\u88C5\u5099"
+    Caption: "\u624B\u306B\u5165\u308C\u305F\u6B66\u5668\u30FB\u9632\u5177\u30FB\u30A2\u30AF\u30BB\u30B5\u30EA\u30FC"
+    Icon: {fileID: 21300000, guid: 03699d17218784eeb9d2a4331a6cd52b, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-skill
+    Label: "\u30B9\u30AD\u30EB"
+    Caption: "\u624B\u306B\u5165\u308C\u305F\u30B9\u30AD\u30EB"
+    Icon: {fileID: 21300000, guid: f6c9aa0c23d1a4d6c91603fd69a34042, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-item
+    Label: "\u30A2\u30A4\u30C6\u30E0"
+    Caption: "\u624B\u306B\u5165\u308C\u305F\u9053\u5177\u3068\u7D20\u6750"
+    Icon: {fileID: 21300000, guid: 85fcfc10dbe06472c99caa1cb6b8879d, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-enemy
+    Label: "\u6575"
+    Caption: "\u6226\u3063\u305F\u6575\u3068\u3001\u958B\u793A\u3057\u305F\u5F31\u70B9"
+    Icon: {fileID: 21300000, guid: a65d23b8eaa2a4caf959d3df216ae68a, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-steps
+    Label: "\u65E5\u3005\u306E\u6B69\u6570"
+    Caption: "\u65E5\u3054\u3068\u306B\u6B69\u3044\u305F\u8A18\u9332"
+    Icon: {fileID: 21300000, guid: d86035ac248a14861bcd84e564435688, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  - Key: library-armor
+    Label: "\u9632\u5177"
+    Caption: 
+    Icon: {fileID: 0}
+    Hidden: 1
+    ConfirmLabel: "\u898B\u308B"
+    Entries: []
+  Destinations: []
+  DepartLabel: "\u51FA\u767A"

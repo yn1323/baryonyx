@@ -652,7 +652,7 @@ namespace Baryonyx.Home.Editor
                 nav,
                 Vector2.zero,
                 new Vector2(48, 32),
-                new Vector2(NavWidth * 3 + NavSpacing * 2, NavHeight)
+                new Vector2(NavWidth * 4 + NavSpacing * 3, NavHeight)
             );
             var row = nav.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.spacing = NavSpacing;
@@ -671,6 +671,12 @@ namespace Baryonyx.Home.Editor
                 "TempleButton",
                 "神殿",
                 HomeScreenArt.IconSummonPath
+            );
+            view.LibraryButton = NavButton(
+                nav,
+                "LibraryButton",
+                "ライブラリ",
+                HomeScreenArt.IconLibraryPath
             );
             // The travel office opens from the card at the bottom right (BuildResume).
         }

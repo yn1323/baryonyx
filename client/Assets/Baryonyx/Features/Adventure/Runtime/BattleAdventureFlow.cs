@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.Combat.Records;
 using Baryonyx.Networking;
 using Baryonyx.UI;
 using UnityEngine;
@@ -29,6 +32,9 @@ namespace Baryonyx.Adventure
         private readonly Func<bool> toExploration;
         private readonly Func<bool> toHome;
         private readonly CancellationTokenSource lifetime = new();
+
+        // この戦闘に出た敵（Enemies の番号）。終えたときに、種類ごとの倒した数をライブラリへ送る。
+        private readonly IReadOnlyCollection<int> standing;
         private AdventureState state;
         private bool busy;
         private bool disposed;
@@ -56,6 +62,12 @@ namespace Baryonyx.Adventure
             var encounter = AdventureCatalog.Encounter(state.Run.Room.Encounter);
             battle.EndsWithOutcome = true;
             battle.UseEncounter(encounter.Enemies, encounter.HpScale);
+            standing = encounter.Enemies;
+            // 前の戦闘までに開示した弱点を最初から見せ、この戦闘で開示した弱点を記録する。
+            battle.UseRevealedWeaknesses(IsRevealed);
+            battle.WeaknessRevealed += OnWeaknessRevealed;
+            RevealedWeaknessSession.Changed += battle.RefreshRevealedWeaknesses;
+            _ = RevealedWeaknessSession.LoadAsync(CancellationToken.None);
             battle.Finished += OnFinished;
             overlay.MenuPressed += OpenMenu;
             overlay.BackPressed += OpenMenu;
@@ -70,6 +82,12 @@ namespace Baryonyx.Adventure
         public Task Work { get; private set; } = Task.CompletedTask;
 
         private GameDialog Dialog => overlay.Dialog;
+
+        private static bool IsRevealed(string enemyId, BattleInspectElement element) =>
+            RevealedWeaknessSession.IsRevealed(enemyId, BattleCardText.ElementOf(element));
+
+        private static void OnWeaknessRevealed(string enemyId, BattleInspectElement element) =>
+            RevealedWeaknessSession.Record(enemyId, BattleCardText.ElementOf(element));
 
         private void OnFinished(BattleOutcome outcome)
         {
@@ -100,7 +118,7 @@ namespace Baryonyx.Adventure
             AdventureState cleared;
             try
             {
-                cleared = await source.ClearAsync(RoomId, lifetime.Token);
+                cleared = await source.ClearAsync(RoomId, lifetime.Token, Tally());
             }
             catch (OperationCanceledException)
             {
@@ -231,7 +249,11 @@ namespace Baryonyx.Adventure
             AdventureState ended;
             try
             {
-                ended = await source.EndAsync(reason, lifetime.Token);
+                ended = await source.EndAsync(
+                    reason,
+                    lifetime.Token,
+                    reason == AdventureEndReason.Defeat ? Tally() : null
+                );
             }
             catch (OperationCanceledException)
             {
@@ -251,6 +273,14 @@ namespace Baryonyx.Adventure
             state = AdventureSession.Use(ended);
             ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, ended.Result, GoHome);
         }
+
+        /// <summary>The enemies of this battle by kind, with how many the party has beaten.</summary>
+        public IReadOnlyList<AdventureEnemyTally> Tally() =>
+            AdventureEnemyTally.Count(
+                standing
+                    .Where(index => index >= 0 && index < battle.Enemies.Length)
+                    .Select(index => (battle.Enemies[index].Id, !battle.Enemies[index].Alive))
+            );
 
         private void GoExplore()
         {
@@ -277,6 +307,8 @@ namespace Baryonyx.Adventure
             disposed = true;
             lifetime.Cancel();
             battle.Finished -= OnFinished;
+            battle.WeaknessRevealed -= OnWeaknessRevealed;
+            RevealedWeaknessSession.Changed -= battle.RefreshRevealedWeaknesses;
             overlay.MenuPressed -= OpenMenu;
             overlay.BackPressed -= OpenMenu;
         }

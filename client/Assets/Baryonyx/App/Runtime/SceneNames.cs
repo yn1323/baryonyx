@@ -12,6 +12,9 @@ namespace Baryonyx.App
         public const string Temple = "Temple";
         public const string TravelOffice = "TravelOffice";
 
+        // 手に入れた物・遭遇した敵・日々の歩数を見返すライブラリ。Homeの左下のボタンが開く。
+        public const string Library = "Library";
+
         // 冒険の探索。Homeの右下の行き先カード（再開）と、旅の案内所の出発が開く。
         public const string Exploration = "Exploration";
 
@@ -29,6 +32,7 @@ namespace Baryonyx.App
                 HomeAction.Workshop => Shop,
                 HomeAction.Temple => Temple,
                 HomeAction.TravelOffice => TravelOffice,
+                HomeAction.Library => Library,
                 _ => null,
             };
     }

@@ -59,6 +59,7 @@ export function createAdventureApi() {
       c.get("userId"),
       body.data.roomId,
       new Date().toISOString(),
+      body.data.enemies,
     );
     return respond(c, result, errorStatus);
   });
@@ -81,6 +82,7 @@ export function createAdventureApi() {
       c.get("userId"),
       body.data.reason,
       new Date().toISOString(),
+      body.data.enemies,
     );
     return respond(c, result, errorStatus);
   });

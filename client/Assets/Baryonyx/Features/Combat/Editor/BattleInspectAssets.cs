@@ -137,7 +137,13 @@ namespace Baryonyx.Combat.Editor
             public readonly Color TrailLight;
             public readonly Color TrailBody;
 
-            public GaugeColors(Color light, Color mid, Color shade, Color trailLight, Color trailBody)
+            public GaugeColors(
+                Color light,
+                Color mid,
+                Color shade,
+                Color trailLight,
+                Color trailBody
+            )
             {
                 Light = light;
                 Mid = mid;
@@ -175,6 +181,8 @@ namespace Baryonyx.Combat.Editor
 
         internal sealed class EnemySpec
         {
+            /// <summary>Its kind: the id its revealed weaknesses are kept under, and its weaknesses.</summary>
+            public EnemyDefinition Definition;
             public string Name;
             public Vector2 Feet;
             public int Size;
@@ -189,8 +197,10 @@ namespace Baryonyx.Combat.Editor
             public int PhysicalDefense;
             public int MagicDefense;
 
-            /// <summary>Weaknesses in icon order; those not in <see cref="Revealed"/> show "?".</summary>
-            public BattleInspectElement[] Weaknesses;
+            /// <summary>
+            /// The weaknesses the mock starts with shown; the others show "?". In an adventure
+            /// the weaknesses revealed in earlier battles are shown instead.
+            /// </summary>
             public BattleInspectElement[] Revealed;
 
             /// <summary>Top-left of the 24x24-dot face in the sprite (image rows from the top).</summary>
@@ -259,6 +269,7 @@ namespace Baryonyx.Combat.Editor
         {
             new()
             {
+                Definition = CombatEnemies.ForestGuardian,
                 Name = "ForestGuardian",
                 Feet = new Vector2(790, -40),
                 Size = 128,
@@ -268,13 +279,13 @@ namespace Baryonyx.Combat.Editor
                 Level = 10,
                 PhysicalDefense = 160,
                 MagicDefense = 80,
-                Weaknesses = new[] { BattleInspectElement.Fire, BattleInspectElement.Slash },
                 Revealed = new[] { BattleInspectElement.Fire },
                 Face = new Vector2Int(12, 28),
                 Boss = true,
             },
             new()
             {
+                Definition = CombatEnemies.MossWolf,
                 Name = "MossWolf",
                 Feet = new Vector2(400, 100),
                 Size = 96,
@@ -284,12 +295,12 @@ namespace Baryonyx.Combat.Editor
                 Level = 10,
                 PhysicalDefense = 60,
                 MagicDefense = 39,
-                Weaknesses = new[] { BattleInspectElement.Ice, BattleInspectElement.Fire },
                 Revealed = new[] { BattleInspectElement.Ice },
                 Face = new Vector2Int(0, 49),
             },
             new()
             {
+                Definition = CombatEnemies.MossSlime,
                 Name = "MossSlime",
                 Feet = new Vector2(400, -170),
                 Size = 64,
@@ -299,7 +310,6 @@ namespace Baryonyx.Combat.Editor
                 Level = 10,
                 PhysicalDefense = 41,
                 MagicDefense = 20,
-                Weaknesses = new[] { BattleInspectElement.Thunder, BattleInspectElement.Fire },
                 Revealed = Array.Empty<BattleInspectElement>(),
                 Face = new Vector2Int(2, 36),
             },
@@ -877,6 +887,7 @@ namespace Baryonyx.Combat.Editor
                 enemies.Add(
                     new BattleInspectEnemy
                     {
+                        Id = spec.Definition.Id,
                         Body = body,
                         TargetArea = target,
                         Sprite = sprite,
@@ -912,8 +923,9 @@ namespace Baryonyx.Combat.Editor
             layout.childForceExpandWidth = layout.childForceExpandHeight = false;
 
             var weaknesses = new List<BattleInspectWeakness>();
-            foreach (var element in spec.Weaknesses)
+            foreach (var weak in spec.Definition.Weaknesses)
             {
+                var element = BattleCardText.ElementOf(weak);
                 bool revealed = Array.IndexOf(spec.Revealed, element) >= 0;
                 weaknesses.Add(WeaknessIcon(row, element, revealed));
             }

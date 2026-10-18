@@ -86,7 +86,12 @@ namespace Baryonyx.Adventure
             return Answer(token, State());
         }
 
-        public Task<AdventureState> ClearAsync(string roomId, CancellationToken token)
+        // 遭遇した敵はサーバーのライブラリにだけ記録するため、ここでは使わない。
+        public Task<AdventureState> ClearAsync(
+            string roomId,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        )
         {
             if (run == null)
                 return Fail(token, 404);
@@ -127,7 +132,11 @@ namespace Baryonyx.Adventure
             return Answer(token, State(revived: cost));
         }
 
-        public Task<AdventureState> EndAsync(AdventureEndReason reason, CancellationToken token)
+        public Task<AdventureState> EndAsync(
+            AdventureEndReason reason,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        )
         {
             if (run == null)
                 return Fail(token, 404);

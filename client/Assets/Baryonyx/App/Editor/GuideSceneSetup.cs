@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baryonyx.Editor;
+using Baryonyx.Library.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Tavern.Editor;
 using Baryonyx.Temple.Editor;
@@ -33,6 +34,7 @@ namespace Baryonyx.App.Editor
                 TravelOfficeScreenAssets.PrefabPath,
                 TravelOfficeScreenAssets.CreateAssets
             ),
+            (SceneNames.Library, LibraryScreenAssets.PrefabPath, LibraryScreenAssets.CreateAssets),
         };
 
         public static string ScenePath(string scene) => $"{ScenesFolder}/{scene}.unity";

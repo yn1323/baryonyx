@@ -35,7 +35,22 @@ export type SeedPlayer = {
   }[];
   // 進行中の冒険。入口の部屋に着いたところから始める（道の部屋はクライアントが種から作るため）。
   adventure?: { destinationId: string; seed: number };
+  // 戦闘で開示した敵の弱点。
+  weaknesses: readonly { enemyId: string; element: string }[];
+  // 戦闘で遭遇した敵と倒した数（ライブラリ）。キャラ・カード・装備の見つけた記録は、持ち物から作る。
+  enemies: readonly { enemyId: string; defeated: number }[];
 };
+
+// 防具の種類。Nodeで直接読むこのファイルは src のTypeScriptを読み込めないため、equipment/catalog.ts の
+// EQUIPMENT から防具だけを写す。食い違えば tests/integration/seed.test.ts のライブラリの確認が失敗する。
+const ARMOR_IDS: readonly string[] = [
+  "traveler-cloak",
+  "chainmail",
+  "magic-robe",
+  "iron-helm",
+  "leather-armor",
+  "wooden-shield",
+];
 
 export const SEED_PLAYERS: readonly SeedPlayer[] = [
   {
@@ -130,6 +145,19 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     ],
     bonusSlots: ["fighting", "luck", "guard", "treasure-sight", "appraisal"],
     records: [{ destinationId: "forest-ruins", bestFloor: 10, clears: 3 }],
+    weaknesses: [
+      { enemyId: "moss-slime", element: "thunder" },
+      { enemyId: "moss-slime", element: "fire" },
+      { enemyId: "moss-wolf", element: "ice" },
+      { enemyId: "moss-wolf", element: "fire" },
+      { enemyId: "forest-guardian", element: "fire" },
+      { enemyId: "forest-guardian", element: "slash" },
+    ],
+    enemies: [
+      { enemyId: "moss-slime", defeated: 84 },
+      { enemyId: "moss-wolf", defeated: 52 },
+      { enemyId: "forest-guardian", defeated: 3 },
+    ],
   },
   {
     id: "adventurer",
@@ -185,6 +213,11 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     bonusSlots: ["foresight", "luck", "fighting", null, null],
     records: [{ destinationId: "forest-ruins", bestFloor: 6, clears: 0 }],
     adventure: { destinationId: "forest-ruins", seed: 20_261_005 },
+    weaknesses: [{ enemyId: "moss-slime", element: "thunder" }],
+    enemies: [
+      { enemyId: "moss-slime", defeated: 9 },
+      { enemyId: "moss-wolf", defeated: 0 },
+    ],
   },
   {
     id: "newcomer",
@@ -204,6 +237,8 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     bonuses: [{ id: "luck", rank: "E" }],
     bonusSlots: ["luck", null, null, null, null],
     records: [],
+    weaknesses: [],
+    enemies: [],
   },
 ];
 
@@ -255,6 +290,14 @@ function playerStatements(player: SeedPlayer, now: string) {
     used.add(index);
     return itemIds[index];
   };
+  const discoveries = (kind: string, entryIds: readonly string[]) =>
+    [...new Set(entryIds)].map((entryId) => ({
+      user_id: userId,
+      kind,
+      entry_id: entryId,
+      discovered_at: now,
+      defeated: 0,
+    }));
   const worn = player.characters.flatMap((character) =>
     (["weapon", "armor"] as const).flatMap((slot) => {
       const equipmentId = character[slot];
@@ -390,6 +433,41 @@ function playerStatements(player: SeedPlayer, now: string) {
             },
           ]
         : [],
+    ),
+    ...insert("library_discoveries", [
+      ...discoveries(
+        "character",
+        player.characters.map((c) => c.id),
+      ),
+      ...discoveries(
+        "skill",
+        player.characters.flatMap((character) => character.cards),
+      ),
+      ...(["weapon", "armor"] as const).flatMap((slot) =>
+        discoveries(
+          slot,
+          player.items.filter(
+            (equipmentId) =>
+              ARMOR_IDS.includes(equipmentId) === (slot === "armor"),
+          ),
+        ),
+      ),
+      ...player.enemies.map((enemy) => ({
+        user_id: userId,
+        kind: "enemy",
+        entry_id: enemy.enemyId,
+        discovered_at: now,
+        defeated: enemy.defeated,
+      })),
+    ]),
+    ...insert(
+      "combat_revealed_weaknesses",
+      player.weaknesses.map((weakness) => ({
+        user_id: userId,
+        enemy_id: weakness.enemyId,
+        element: weakness.element,
+        revealed_at: now,
+      })),
     ),
   ];
 }

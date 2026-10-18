@@ -64,6 +64,8 @@ namespace Baryonyx.Home
         [FormerlySerializedAs("SummonButton")]
         public Button TempleButton;
 
+        public Button LibraryButton;
+
         [Header("右下")]
         public Button ResumeButton;
         public TMP_Text DestinationNameLabel;
@@ -239,6 +241,7 @@ namespace Baryonyx.Home
             Bind(TavernButton, HomeAction.Tavern);
             Bind(WorkshopButton, HomeAction.Workshop);
             Bind(TempleButton, HomeAction.Temple);
+            Bind(LibraryButton, HomeAction.Library);
             Bind(ResumeButton, HomeAction.Resume);
             HideToast();
             HideNotice();

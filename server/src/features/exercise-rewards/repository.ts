@@ -7,8 +7,8 @@ import {
   runeWallets,
 } from "./db-schema.js";
 
-const ACTIVITY_TYPE = "all";
-const METRIC_TYPE = "steps";
+export const ACTIVITY_TYPE = "all";
+export const METRIC_TYPE = "steps";
 const RULE_VERSION = "steps_v1";
 
 type RewardSourceDay = {

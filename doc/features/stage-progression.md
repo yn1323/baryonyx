@@ -203,6 +203,7 @@ updated: 2026-10-06
 同じ日に、探索を森を見下ろす地図にし、道を冒険ごとに作るようにした（[計画](../plans/2026-10-04-exploration-route-map.md)、[画面](screens.md#冒険の画面)）。
 道を作る処理は [AdventureRouteMap](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureRouteMap.cs)、地図の絵は [ExplorationMapPainter](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapPainter.cs)、見える距離は [ExplorationMapSight](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapProjection.cs) にある。
 見える距離をACTボーナスで延ばす効果は、まだない。
+2026-10-19から、戦闘の部屋を終える知らせ（`POST /v1/adventure/clear`）と、負けて冒険を終える知らせ（`POST /v1/adventure/end`）に、その戦闘で遭遇した敵の種類と倒した体数を添えて送る。サーバーは[ライブラリ](library.md#敵の記録)の記録にだけ使い、報酬や進み具合の判定には使わない。
 2026-09-19時点の[操作ワイヤー](../archive/game-wireframe.md)は文字のボタンで戦闘・獲得へ進む試作で、2026-09-24に削除した。
 | 対象 | 入口 |
 |---|---|

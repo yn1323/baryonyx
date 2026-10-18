@@ -34,7 +34,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(GuideScenesTests));
         }
 
-        // Homeの左下の3つのボタンと、冒険していないときの右下のカードから、それぞれの案内人の画面へ移り、
+        // Homeの左下の4つのボタンと、冒険していないときの右下のカードから、それぞれの案内人の画面へ移り、
         // 「もどる」でHomeへ戻る。
         [UnityTest]
         public IEnumerator EveryHomeButtonOpensItsGuideSceneAndBackReturnsHome()
@@ -47,6 +47,7 @@ namespace Baryonyx.Tests.PlayMode
                     (HomeAction.Tavern, SceneNames.Pub),
                     (HomeAction.Workshop, SceneNames.Shop),
                     (HomeAction.Temple, SceneNames.Temple),
+                    (HomeAction.Library, SceneNames.Library),
                     (HomeAction.TravelOffice, SceneNames.TravelOffice),
                 }
             )
@@ -414,6 +415,7 @@ namespace Baryonyx.Tests.PlayMode
                 HomeAction.Tavern => view.TavernButton,
                 HomeAction.Workshop => view.WorkshopButton,
                 HomeAction.Temple => view.TempleButton,
+                HomeAction.Library => view.LibraryButton,
                 // 旅の案内所は、冒険していないときの右下のカードから開く。
                 _ => view.ResumeButton,
             };

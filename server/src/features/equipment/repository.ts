@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import { discoveryStatements } from "../library/discoveries.js";
 import { createPartyRepository } from "../party/repository.js";
 import {
   EQUIPMENT_IDS,
@@ -96,6 +97,16 @@ export function createEquipmentRepository(binding: D1Database) {
             })
             .from(equipmentProfiles)
             .where(granted),
+        ),
+      ),
+      // ライブラリの見つけた記録。二重に届いても初めの日時のまま残るため、付与の印を条件にしない。
+      ...(["weapon", "armor"] as const).flatMap((slot) =>
+        discoveryStatements(
+          db,
+          userId,
+          slot,
+          STARTER_ITEMS.filter((equipmentId) => slotOf(equipmentId) === slot),
+          now,
         ),
       ),
       ...STARTER_EQUIPPED.flatMap((entry) =>

@@ -61,8 +61,9 @@ client/
 │   │   │   ├── Editor/                  Prefabと画像の生成
 │   │   │   └── Tests/                   EditModeとPlayMode
 │   │   ├── Features/Combat/             画面に依存しない戦闘計算と試作カタログ、戦闘画面のモック
-│   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗。Baryonyx.Combat.asmdef
+│   │   │   ├── Runtime/                共通時計、行動、HP、ダウン、勝敗、敵の種類の定義。Baryonyx.Combat.asmdef
 │   │   │   ├── Presentation/           戦闘画面のモックの表示と操作、戦闘の背景、デバッグルーム（Baryonyx.Runtime）
+│   │   │   ├── Records/                開示した敵の弱点の記録と、サーバーとの読み書き（Baryonyx.Runtime）
 │   │   │   ├── UI/                      モックのPrefabと、Codexで生成して縮小した画像
 │   │   │   ├── Vfx/                     スキルの演出のシェーダー・マテリアルと、戦闘のポストプロセス
 │   │   │   ├── Editor/                  モックとデバッグルームのPrefabの生成
@@ -77,6 +78,7 @@ client/
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
 │   │   ├── Features/StepBonus/          ACTボーナスの枠の設定（編成のボーナス）と、サーバーとの読み書き。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
+│   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
@@ -165,7 +167,7 @@ client/
 | `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
 | `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
 | `Battle.unity` | 冒険の戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
-| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面) |
+| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所・ライブラリ）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleInspect.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Inspect Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |

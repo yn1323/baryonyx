@@ -401,14 +401,19 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition
         )
         {
-            var panel = Rect("Menu", safe);
-            panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
-            panel.anchoredPosition = new Vector2(-56, -16);
             // Four rows still fit between the title and the bottom edge; five rows are a little
-            // lower and closer together. Hidden items have no row.
+            // lower and closer together. Six or more (the library) sit closer still and lower, so
+            // the first row keeps clear of the close tab and the rune balance. Hidden items have
+            // no row.
             int rows = definition.Items.Count(item => !item.Hidden);
             float rowHeight = rows > 4 ? 140 : 156;
-            float spacing = rows > 4 ? 20 : 28;
+            float spacing =
+                rows > 5 ? 12
+                : rows > 4 ? 20
+                : 28;
+            var panel = Rect("Menu", safe);
+            panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
+            panel.anchoredPosition = new Vector2(-56, rows > 5 ? -44 : -16);
             panel.sizeDelta = new Vector2(
                 820,
                 Mathf.Max(700, rows * rowHeight + (rows - 1) * spacing)

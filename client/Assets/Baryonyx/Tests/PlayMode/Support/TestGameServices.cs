@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.App;
+using Baryonyx.Combat.Records;
 using Baryonyx.Health;
 using Baryonyx.UI;
 
@@ -23,6 +25,8 @@ namespace Baryonyx.Tests.PlayMode
             Server = new TestStepServer();
             Adventure = new AdventureLocalSource();
             AdventureSession.Reset();
+            // 開示した弱点は、テストごとに空のアプリ内の記録から始める。
+            RevealedWeaknessSession.Reset();
             GameServices.Override(
                 new GameServices(
                     new HealthStepLink(Provider, Server, new MemoryLinkStore()),
@@ -49,6 +53,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             GameServices.Override(null);
             AdventureSession.Reset();
+            RevealedWeaknessSession.Reset();
             SceneTransitionController.DurationScale = 1f;
         }
 
@@ -75,16 +80,20 @@ namespace Baryonyx.Tests.PlayMode
             public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token) =>
                 owner.Adventure.MoveAsync(room, token);
 
-            public Task<AdventureState> ClearAsync(string roomId, CancellationToken token) =>
-                owner.Adventure.ClearAsync(roomId, token);
+            public Task<AdventureState> ClearAsync(
+                string roomId,
+                CancellationToken token,
+                IReadOnlyList<AdventureEnemyTally> enemies = null
+            ) => owner.Adventure.ClearAsync(roomId, token, enemies);
 
             public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token) =>
                 owner.Adventure.ReviveAsync(roomId, token);
 
             public Task<AdventureState> EndAsync(
                 AdventureEndReason reason,
-                CancellationToken token
-            ) => owner.Adventure.EndAsync(reason, token);
+                CancellationToken token,
+                IReadOnlyList<AdventureEnemyTally> enemies = null
+            ) => owner.Adventure.EndAsync(reason, token, enemies);
         }
 
         public sealed class TestStepServer : IHealthStepServer

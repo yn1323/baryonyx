@@ -17,6 +17,7 @@ namespace Baryonyx.Home
         Temple,
         TravelOffice,
         Resume,
+        Library,
     }
 
     /// <summary>

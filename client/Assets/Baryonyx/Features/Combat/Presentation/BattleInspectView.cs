@@ -167,6 +167,8 @@ namespace Baryonyx.Combat.Presentation
     [Serializable]
     public sealed class BattleInspectEnemy
     {
+        /// <summary>Its kind (<see cref="Baryonyx.Combat.CombatEnemies"/>), which its revealed weaknesses are kept under.</summary>
+        public string Id;
         public RectTransform Body;
         public RectTransform TargetArea;
         public RawImage Sprite;
@@ -366,6 +368,10 @@ namespace Baryonyx.Combat.Presentation
         // How far a rising popup travels: the numbers only lift a little, messages further.
         private const float NumberRise = 36f;
         private const float MessageRise = 90f;
+
+        // How long a popup shows, and the line it takes in a stack of popups, by its font size.
+        private const float PopupDuration = 1.3f;
+        private const float PopupLineHeight = 1.15f;
         private const int MaxEnergyCap = 9;
 
         // How long a notice such as "エネルギー不足" stays in place of the skill name.
@@ -509,6 +515,7 @@ namespace Baryonyx.Combat.Presentation
         private readonly List<int> hand = new();
         private readonly List<int> drawPile = new();
         private readonly Queue<IEnumerator> actions = new();
+        private readonly BattlePopupStack popupStack = new();
         private Coroutine dealing;
         private Coroutine bannerFade;
         private Coroutine turnBannerShow;
@@ -2003,7 +2010,10 @@ namespace Baryonyx.Combat.Presentation
             bool weak = weakness != null;
             // A weakness found by this blow glints as it turns from ? into its icon.
             if (weak && !weakness.Revealed)
+            {
                 StartCoroutine(weakness.Reveal(Vfx, () => enemy.Alive));
+                OnWeaknessRevealed(enemy, weakness);
+            }
             int damage = weak ? Mathf.RoundToInt(power * WeakMultiplier) : power;
             enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
             RefreshEnemy(enemy);
@@ -2163,11 +2173,19 @@ namespace Baryonyx.Combat.Presentation
         {
             if (PopupTemplate == null || anchor == null)
                 return;
+            // Popups over the same character at once line up under one another.
+            float drop = popupStack.Place(
+                anchor,
+                size * PopupLineHeight,
+                Time.unscaledTime,
+                PopupDuration
+            );
             var popup = Spawn(
                 PopupTemplate,
                 ScreenPointOf(anchor, anchor.rect.center),
                 text,
-                MessageRise
+                MessageRise,
+                drop
             );
             popup.color = color;
             popup.fontSize = size;
@@ -2185,9 +2203,15 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// Puts a copy of a popup template at a screen point. The characters are on the stage
         /// canvas and the popups on the overlay canvas over it, so the point is carried across in
-        /// screen space.
+        /// screen space, then lowered by <paramref name="drop"/>.
         /// </summary>
-        private TMP_Text Spawn(TMP_Text template, Vector2 screenPoint, string text, float rise)
+        private TMP_Text Spawn(
+            TMP_Text template,
+            Vector2 screenPoint,
+            string text,
+            float rise,
+            float drop = 0f
+        )
         {
             var popup = Instantiate(template, template.transform.parent);
             popup.gameObject.SetActive(true);
@@ -2200,6 +2224,7 @@ namespace Baryonyx.Combat.Presentation
                 out var world
             );
             popup.transform.position = world;
+            ((RectTransform)popup.transform).anchoredPosition += Vector2.down * drop;
             StartCoroutine(Rise(popup, rise));
             return popup;
         }
@@ -2212,7 +2237,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var rect = (RectTransform)popup.transform;
             var start = rect.anchoredPosition;
-            const float duration = 1.3f;
+            const float duration = PopupDuration;
             const float pop = 0.16f;
             for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
             {

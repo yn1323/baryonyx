@@ -7,9 +7,11 @@ import {
 import { createAccountsApi } from "./features/accounts/routes.js";
 import type { SessionEnv } from "./features/accounts/session.js";
 import { createAdventureApi } from "./features/adventure/routes.js";
+import { createCombatApi } from "./features/combat/routes.js";
 import { createEquipmentApi } from "./features/equipment/routes.js";
 import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
+import { createLibraryApi } from "./features/library/routes.js";
 import { createPartyApi } from "./features/party/routes.js";
 import { createStepBonusApi } from "./features/step-bonus/routes.js";
 import { createDatabase } from "./shared/db.js";
@@ -27,6 +29,8 @@ export function createApi(
   api.route("/", createPartyApi());
   api.route("/", createEquipmentApi());
   api.route("/", createAdventureApi());
+  api.route("/", createCombatApi());
+  api.route("/", createLibraryApi());
   return api;
 }
 

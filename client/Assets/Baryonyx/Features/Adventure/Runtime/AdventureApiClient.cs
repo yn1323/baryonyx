@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
@@ -66,12 +68,13 @@ namespace Baryonyx.Adventure
         public Task<State> ClearAsync(
             AccountSession session,
             string roomId,
+            IReadOnlyList<AdventureEnemyTally> enemies,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
                 "/v1/adventure/clear",
                 "POST",
-                new RoomRequest { roomId = roomId },
+                new ClearRequest { roomId = roomId, enemies = Enemies(enemies) },
                 session.Token,
                 token
             );
@@ -93,15 +96,25 @@ namespace Baryonyx.Adventure
         public Task<State> EndAsync(
             AccountSession session,
             string reason,
+            IReadOnlyList<AdventureEnemyTally> enemies,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
                 "/v1/adventure/end",
                 "POST",
-                new EndRequest { reason = reason },
+                new EndRequest { reason = reason, enemies = Enemies(enemies) },
                 session.Token,
                 token
             );
+
+        private static EnemyEntry[] Enemies(IReadOnlyList<AdventureEnemyTally> enemies) =>
+            (enemies ?? Array.Empty<AdventureEnemyTally>())
+                .Select(enemy => new EnemyEntry
+                {
+                    enemyId = enemy.EnemyId,
+                    defeated = enemy.Defeated,
+                })
+                .ToArray();
 
         [Serializable]
         private sealed class StartRequest
@@ -110,9 +123,19 @@ namespace Baryonyx.Adventure
         }
 
         [Serializable]
-        private sealed class RoomRequest
+        private sealed class ClearRequest
         {
             public string roomId;
+
+            // 戦闘で遭遇した敵の種類と倒した体数（ライブラリの記録）。戦闘のない部屋は空。
+            public EnemyEntry[] enemies;
+        }
+
+        [Serializable]
+        private sealed class EnemyEntry
+        {
+            public string enemyId;
+            public int defeated;
         }
 
         [Serializable]
@@ -134,6 +157,7 @@ namespace Baryonyx.Adventure
         private sealed class EndRequest
         {
             public string reason;
+            public EnemyEntry[] enemies;
         }
 
         // 冒険がないときの run と、出来事のない応答の reward・revive・result はJSONではnullになる。

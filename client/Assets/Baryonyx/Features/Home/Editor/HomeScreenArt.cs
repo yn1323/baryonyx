@@ -30,6 +30,7 @@ namespace Baryonyx.Home.Editor
         public const string IconPartyPath = ArtFolder + "/IconParty.png";
         public const string IconShopPath = ArtFolder + "/IconShop.png";
         public const string IconSummonPath = ArtFolder + "/IconSummon.png";
+        public const string IconLibraryPath = ArtFolder + "/IconLibrary.png";
 
         // Drawn at twice the 96 px the buttons show them at, so they stay sharp on larger
         // screens and shrink smoothly with mipmaps.
@@ -82,6 +83,18 @@ namespace Baryonyx.Home.Editor
                     )
                 );
 
+        // The library, where what was found is looked up: an open book with lines on both pages.
+        private static VectorIcon OpenBook() =>
+            new VectorIcon()
+                .Fill(IconShape.Path("M4 14 Q18 10 30 16 L30 56 Q18 50 4 54Z"))
+                .Fill(IconShape.Path("M60 14 Q46 10 34 16 L34 56 Q46 50 60 54Z"))
+                .CutStroke(
+                    IconShape.Path(
+                        "M10 24 Q17 22 24 25 M10 32 Q17 30 24 33 M10 40 Q17 38 24 41 M40 25 Q47 22 54 24 M40 33 Q47 30 54 32 M40 41 Q47 38 54 40"
+                    ),
+                    2.4f
+                );
+
         // The same 11x14 campfire as the design mock, split where the flame meets the logs: the
         // flame's bottom row and the logs' top row share a row of the picture without overlapping.
         // Flame: outer red, orange, yellow, white core (11x12, the top of the campfire).
@@ -128,6 +141,7 @@ namespace Baryonyx.Home.Editor
             SwordAndShield().Save(IconPartyPath, NavIconTextureSize);
             Scales().Save(IconShopPath, NavIconTextureSize);
             SummoningCircle().Save(IconSummonPath, NavIconTextureSize);
+            OpenBook().Save(IconLibraryPath, NavIconTextureSize);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
             ArtAssets.WritePattern(

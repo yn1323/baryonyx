@@ -5,6 +5,7 @@ import {
   runeBalance,
   selectRuneBalance,
 } from "../exercise-rewards/wallet.js";
+import { discoveryStatements } from "../library/discoveries.js";
 import {
   CARD_SLOT_COUNT,
   type CardSkillId,
@@ -129,6 +130,21 @@ export function createPartyRepository(binding: D1Database) {
           )
           .onConflictDoNothing(),
       ),
+      // ライブラリの見つけた記録。カードはスキルを1枚ずつ持つ仕組みができるまで、枠に付けたものを記録する。
+      ...discoveryStatements(
+        db,
+        userId,
+        "character",
+        STARTER_CHARACTERS.map((character) => character.characterId),
+        now,
+      ),
+      ...discoveryStatements(
+        db,
+        userId,
+        "skill",
+        STARTER_CHARACTERS.flatMap((character) => character.cards),
+        now,
+      ),
       db
         .insert(partySlots)
         .values(
@@ -243,6 +259,7 @@ export function createPartyRepository(binding: D1Database) {
           ),
         ),
       db.insert(partyCharacterCards).values(inserts),
+      ...discoveryStatements(db, userId, "skill", [skillId], now),
     ]);
     const change: PartyCardChange = from >= 0 ? "swap" : "replace";
     return { change, ...(await readState(userId)) };

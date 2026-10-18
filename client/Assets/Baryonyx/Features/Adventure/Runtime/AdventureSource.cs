@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,13 +22,22 @@ namespace Baryonyx.Adventure
         // 道で次の階の部屋を選んで進む。選んだ時点で保存する。
         Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token);
 
-        // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、報酬を手に入れる。
-        Task<AdventureState> ClearAsync(string roomId, CancellationToken token);
+        // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、報酬を手に入れる。戦闘なら遭遇した敵を添える。
+        Task<AdventureState> ClearAsync(
+            string roomId,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        );
 
         // 負けた戦闘からルーンで復活する。
         Task<AdventureState> ReviveAsync(string roomId, CancellationToken token);
 
-        Task<AdventureState> EndAsync(AdventureEndReason reason, CancellationToken token);
+        // 負けて終えるときは、負けた戦闘で遭遇した敵を添える。
+        Task<AdventureState> EndAsync(
+            AdventureEndReason reason,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        );
     }
 
     /// <summary>
@@ -54,8 +64,11 @@ namespace Baryonyx.Adventure
         public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token) =>
             Run(session => api.MoveAsync(session, room, token), token);
 
-        public Task<AdventureState> ClearAsync(string roomId, CancellationToken token) =>
-            Run(session => api.ClearAsync(session, roomId, token), token);
+        public Task<AdventureState> ClearAsync(
+            string roomId,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        ) => Run(session => api.ClearAsync(session, roomId, enemies, token), token);
 
         public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token)
         {
@@ -64,12 +77,17 @@ namespace Baryonyx.Adventure
             return Run(session => api.ReviveAsync(session, requestId, roomId, token), token);
         }
 
-        public Task<AdventureState> EndAsync(AdventureEndReason reason, CancellationToken token) =>
+        public Task<AdventureState> EndAsync(
+            AdventureEndReason reason,
+            CancellationToken token,
+            IReadOnlyList<AdventureEnemyTally> enemies = null
+        ) =>
             Run(
                 session =>
                     api.EndAsync(
                         session,
                         reason == AdventureEndReason.Defeat ? "defeat" : "retreat",
+                        enemies,
                         token
                     ),
                 token

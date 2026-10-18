@@ -4,6 +4,7 @@ import {
   SEED_PLAYERS,
   seedGuestSecret,
 } from "../../scripts/seed.js";
+import { slotOf } from "../../src/features/equipment/catalog.js";
 import { levelUpCost } from "../../src/features/party/catalog.js";
 import {
   type ApiScenario,
@@ -23,6 +24,12 @@ type StepBonus = {
   holdings: { bonusId: string; rank: string }[];
   slots: { slot: number; bonusId: string | null }[];
   locked: boolean;
+};
+type Weaknesses = {
+  weaknesses: { enemyId: string; element: string }[];
+};
+type Library = {
+  discoveries: { kind: string; entryId: string; defeated: number }[];
 };
 type Adventure = {
   run: { destinationId: string; seed: number; roomId: string } | null;
@@ -112,6 +119,43 @@ describe("開発用のプレイヤー（seed）", () => {
       expect(adventure.records).toEqual(seed.records);
       expect(adventure.run?.destinationId).toBe(seed.adventure?.destinationId);
       expect(adventure.run?.seed).toBe(seed.adventure?.seed);
+
+      const revealed = await scenario.read<Weaknesses>(
+        "/combat/weaknesses",
+        token,
+      );
+      expect(
+        revealed.weaknesses.map(({ enemyId, element }) => ({
+          enemyId,
+          element,
+        })),
+      ).toEqual(expect.arrayContaining([...seed.weaknesses]));
+      expect(revealed.weaknesses).toHaveLength(seed.weaknesses.length);
+
+      const library = await scenario.read<Library>("/library", token);
+      const entries = (kind: string) =>
+        library.discoveries
+          .filter((entry) => entry.kind === kind)
+          .map((entry) => entry.entryId)
+          .sort();
+      const unique = (ids: readonly string[]) => [...new Set(ids)].sort();
+      expect(entries("character")).toEqual(
+        unique(seed.characters.map((character) => character.id)),
+      );
+      expect(entries("skill")).toEqual(
+        unique(seed.characters.flatMap((character) => character.cards)),
+      );
+      for (const slot of ["weapon", "armor"] as const) {
+        expect(entries(slot)).toEqual(
+          unique(seed.items.filter((id) => slotOf(id) === slot)),
+        );
+      }
+      expect(
+        library.discoveries
+          .filter((entry) => entry.kind === "enemy")
+          .map(({ entryId, defeated }) => ({ enemyId: entryId, defeated })),
+      ).toEqual(expect.arrayContaining([...seed.enemies]));
+      expect(entries("enemy")).toHaveLength(seed.enemies.length);
     }
   });
 
