@@ -133,7 +133,7 @@ client/
 | フォルダー | 所有するもの |
 |---|---|
 | 直下 | 画面が共有する文字色・青緑・金の定数 `UiPalette` と、文字の設定の補助 `UiText` |
-| `Art/` | 角丸・円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコンは、白で描き、使う側で色を付ける。ホームと冒険が使うコンパスのアイコン `IconCompass.aseprite` も置く |
+| `Art/` | 円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコンは、白で描き、使う側で色を付ける。ホームと冒険が使うコンパスのアイコン `IconCompass.aseprite` も置く |
 | `Fonts/` | Kiwi Maruと、影つきの文字のマテリアル `TextShadow.mat` |
 | `Buttons/` | 押すとアイコンと文字も暗くなるボタンと、画面を開いている間だけ押したときの処理をつなぐ `ButtonBindings` |
 | `ResponsiveLayout/` | 背景の比率の維持、Safe Areaへの追従、狭い画面での中央の層の縮小（`WorldLayerFit`）、ドット絵を整数倍に保つ `PixelPerfectRawImage` |
@@ -142,6 +142,7 @@ client/
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
 | `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う |
 | `EditModePreview/` | 停止中のEditorで、Play中に切り替わるUIを見るための仕組み。画面の部品に付ける `IEditModePreview` と、`Editor/` に切り替え・自動の戻し・Inspectorの基底クラス（[停止中の表示の切り替え](ui-design.md#停止中の表示の切り替え)） |
+| `GlassCard/` | 押す・選ぶものの共通のカード（すりガラスのカード）。`Editor/` に画像とカードの生成。枠・板の形は、これと `GuideMenu/` の枠つきの表示だけを使う（[UI設計ルール](ui-design.md#背景を主役にした視覚階層)） |
 | `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは基底クラス `GuidePanel` を継ぎ、通知の帯への通知と、開くたびの読み込み（`GuidePanelLoad`）・読めなかったときの表示を共有する。`IGuideBackHandler` を付けると、戻る操作を先に受け取れる。1人ずつ見せるパネルの左右のフリックは `GuideSwipe`。`Editor/` に、枠つきの表示（`GuideFrameAssets`：面・2本線・見出し・タブ・錠前の画像）と、設計座標での配置とスクロールする一覧（`GuidePanelLayout`） |
 | `StatGrid/` | キャラの8つのステータスの表示 `StatGrid`。`Editor/` に4列・2列の生成。冒険者の個別の画面と、装備・スキルの付け替えが使う |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
