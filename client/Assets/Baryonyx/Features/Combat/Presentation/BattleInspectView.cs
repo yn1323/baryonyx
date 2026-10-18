@@ -1088,7 +1088,9 @@ namespace Baryonyx.Combat.Presentation
                     Settings.FanDrop,
                     Settings.RestBottom
                 );
-                position.y -= RestDrop(Settings, Playable(i));
+                // A card the energy cannot pay for flies straight to its lowered place, so it does not
+                // sink after it lands.
+                position.y -= RestDrop(Settings, Affordable(i));
                 motion[i].Rest = new Pose(position, angle, 1f);
                 if (i != held)
                     motion[i].Target = motion[i].Rest;
@@ -2133,7 +2135,9 @@ namespace Baryonyx.Combat.Presentation
         /// Whether the energy can pay for the card. A card darkens and sinks only once it has
         /// landed, so the backs fly in at full brightness straight to their place in the fan.
         /// </summary>
-        private bool Playable(int index) => CostOf(Cards[index]) <= Energy || motion[index].Flying;
+        private bool Affordable(int index) => CostOf(Cards[index]) <= Energy;
+
+        private bool Playable(int index) => Affordable(index) || motion[index].Flying;
 
         /// <summary>Hides cards off the hand and darkens those the energy cannot pay for.</summary>
         private void RefreshCard(int index)
