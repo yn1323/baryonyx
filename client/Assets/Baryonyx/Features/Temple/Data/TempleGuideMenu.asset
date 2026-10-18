@@ -21,7 +21,7 @@ MonoBehaviour:
   - Key: 
     Label: "\u4EF2\u9593\u3092\u53EC\u559A"
     Caption: "\u65B0\u3057\u3044\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u3092\u559A\u3073\u51FA\u3059"
-    Icon: {fileID: 0}
+    Icon: {fileID: 21300000, guid: e2e9bb67c12d34f28bf14bb8850f042b, type: 3}
     Hidden: 0
     ConfirmLabel: "\u53EC\u559A\u3059\u308B"
     Entries:
@@ -41,39 +41,26 @@ MonoBehaviour:
       Badge: "\u2605\u2605"
       Detail: "\u65C5\u306E\u541F\u904A\u8A69\u4EBA\uFF5C\u56DE\u5FA9\u30FB\u6253"
   - Key: 
-    Label: "\u88C5\u5099\u3092\u53EC\u559A"
-    Caption: "\u6B66\u5668\u30FB\u9632\u5177\u3092\u559A\u3073\u51FA\u3059"
-    Icon: {fileID: 0}
+    Label: "\u30A2\u30A4\u30C6\u30E0\u3092\u53EC\u559A"
+    Caption: "\u9053\u5177\u3084\u7D20\u6750\u3092\u559A\u3073\u51FA\u3059"
+    Icon: {fileID: 21300000, guid: dbe5568efdd9946f39ac124e062f7624, type: 3}
     Hidden: 0
     ConfirmLabel: "\u53EC\u559A\u3059\u308B"
     Entries:
-    - Name: "\u661F\u8A60\u307F\u306E\u6756"
+    - Name: "\u661F\u5C51\u306E\u5C0F\u74F6"
       Badge: "\u2605\u2605\u2605\u2605"
-      Detail: "\u5C5E\u653B\u306E 150%\uFF5C\u96F7"
-    - Name: "\u7ADC\u9C57\u306E\u76FE"
+      Detail: "\u9053\u5177\uFF5C\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
+    - Name: "\u96F7\u306E\u7FBD\u6839"
       Badge: "\u2605\u2605\u2605"
-      Detail: "\u7269\u9632\u306E 145%"
-    - Name: "\u6708\u5F71\u306E\u77ED\u5263"
-      Badge: "\u2605\u2605\u2605"
-      Detail: "\u901F\u5EA6\u306E 130%\uFF5C\u65AC\u30FB\u6C37"
-    - Name: "\u5DE1\u793C\u8005\u306E\u5916\u5957"
+      Detail: "\u7D20\u6750\uFF5C\u96F7\u306E\u88C5\u5099\u3068\u30B9\u30AD\u30EB\u306E\u5408\u6210\u306B\u4F7F\u3046"
+    - Name: "\u706B\u306E\u9B54\u77F3"
       Badge: "\u2605\u2605"
-      Detail: "\u901F\u5EA6 +6%\uFF5C\u7269\u9632\u306E 110%"
-  - Key: 
-    Label: "\u53EC\u559A\u306E\u8A18\u9332"
-    Caption: "\u3053\u308C\u307E\u3067\u306B\u559A\u3073\u51FA\u3057\u305F\u3082\u306E"
-    Icon: {fileID: 0}
-    Hidden: 0
-    ConfirmLabel: "\u8A73\u3057\u304F\u898B\u308B"
-    Entries:
-    - Name: "9/26 \u4EF2\u9593\u3092\u53EC\u559A"
-      Badge: "\u2605\u2605\u2605"
-      Detail: "\u30A2\u30EA\u30A2\u304C\u4EF2\u9593\u306B\u306A\u3063\u305F"
-    - Name: "9/25 \u88C5\u5099\u3092\u53EC\u559A"
+      Detail: "\u7D20\u6750\uFF5C\u708E\u306E\u88C5\u5099\u3068\u30B9\u30AD\u30EB\u306E\u5408\u6210\u306B\u4F7F\u3046"
+    - Name: "\u56DE\u5FA9\u306E\u85AC"
       Badge: "\u2605\u2605"
-      Detail: "\u9396\u304B\u305F\u3073\u3089\u3092\u624B\u306B\u5165\u308C\u305F"
-    - Name: "9/24 \u4EF2\u9593\u3092\u53EC\u559A"
-      Badge: "\u2605\u2605"
-      Detail: "\u30DF\u30CA\u304C\u4EF2\u9593\u306B\u306A\u3063\u305F"
+      Detail: "\u9053\u5177\uFF5C\u5473\u65B9\u5358\u4F53\u306EHP\u3092\u56DE\u5FA9"
+    - Name: "\u72FC\u306E\u7259"
+      Badge: "\u2605"
+      Detail: "\u7D20\u6750\uFF5C\u6B66\u5668\u3068\u9632\u5177\u306E\u5408\u6210\u306B\u4F7F\u3046"
   Destinations: []
   DepartLabel: "\u51FA\u767A"

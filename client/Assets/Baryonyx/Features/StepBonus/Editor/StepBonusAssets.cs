@@ -28,9 +28,6 @@ namespace Baryonyx.StepBonus.Editor
         public const string DataPath = Folder + "/Data/StepBonusMockData.asset";
         public const string ArtFolder = Folder + "/UI/Art";
 
-        // 24×24のドット絵。ホームのボタンと酒場のメニューに置くボーナスのアイコン。
-        public const string IconBonusPath = ArtFolder + "/IconBonus.aseprite";
-
         // 一覧で、枠に入れているボーナスに付ける印（コードで描く11×11のドット絵）。
         public const string SetMarkPath = ArtFolder + "/SetMark.png";
 
@@ -41,8 +38,8 @@ namespace Baryonyx.StepBonus.Editor
         private const float SlotSize = 32f * DotScale;
         private const float BonusRowHeight = 112f;
 
-        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に今日の効果（5つの枠）、金の2本線の右の
-        // 透ける面に持っているボーナスを置く。設計座標、左上から。編成の冒険者の一覧と同じ間隔。
+        // 枠つきの表示（GuideFramedPanel）で、左の面に今日の効果（5つの枠）、金の2本線の右の
+        // 面に持っているボーナスを置く。設計座標、左上から。編成の冒険者の一覧と同じ間隔。
         private const float Split = 800f;
         private const float Gap = 24f;
         private const float HeadingHeight = 76f;
@@ -197,8 +194,8 @@ namespace Baryonyx.StepBonus.Editor
         /// <summary>
         /// Builds the bonus settings over the guide screen's safe area in the guide frame
         /// (<see cref="GuideFramedPanel"/>), like the formation's other screens: the slots
-        /// (today's effects) on the dark pane on the left, the owned bonuses on the pane the
-        /// scene shows through on the right. Called while the guide screen's prefab is being
+        /// (today's effects) on the left pane, the owned bonuses on the right one, both panes
+        /// the scene shows through. Called while the guide screen's prefab is being
         /// built, so the shared frames and font are ready.
         /// </summary>
         public static GameObject BuildSettingsPanel(RectTransform safe, GuideMenuView guide)

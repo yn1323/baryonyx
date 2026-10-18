@@ -29,16 +29,19 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string ShadeHorizontalPath = ArtFolder + "/GuideShadeHorizontal.png";
         public const string SoftSpotPath = ArtFolder + "/GuideSoftSpot.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
-        public const string IconBackPath = ArtFolder + "/IconBack.aseprite";
-        public const string IconClosePath = ArtFolder + "/IconClose.aseprite";
+        public const string IconBackPath = ArtFolder + "/IconBack.png";
+        public const string IconClosePath = ArtFolder + "/IconClose.png";
         public const string IconRunePath =
             "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
 
-        // The 24x24 icons and the frame's pixel art are drawn at 4 design pixels per dot, like the
-        // game's sprites.
+        // The 24x24 pixel-art icons and the frame's pixel art are drawn at 4 design pixels per dot,
+        // like the game's sprites. The smooth icons (back, close) fill the same 96px box.
         public const float DotScale = 4f;
         public const float IconSize = 24f * DotScale;
+
+        // Smooth icons are drawn at twice IconSize and shrink with mipmaps.
+        public const int SmoothIconTextureSize = 192;
 
         // The guide stands in this box at the bottom left; the lists start right of it.
         private const float GuideLeft = 24f;
@@ -47,12 +50,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const float RightLeft = 848f;
 
         // The back button: a tab of the frames' navy against the safe area's top-left corner,
-        // with the arrow and the label side by side. The 24x24 icon keeps its 4x scale; the
-        // arrow fills its middle, so the label starts where the arrow ends rather than where the
-        // icon's clear margin does.
-        private const float BackWidth = 220f;
+        // with the arrow alone in the middle (no label), as wide as the close tab.
+        private const float BackWidth = CloseWidth;
         private const float BackHeight = IconSize;
-        private const float BackLabelLeft = 88f;
 
         // How far the tab reaches past the safe area's top and left edges, so only its right and
         // bottom edges show even where a notch insets the safe area.
@@ -81,7 +81,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const float EntryGap = 16f;
         private const float ConfirmWidth = 360f;
         private const float ConfirmHeight = 104f;
-        private const float ConfirmBottom = 32f;
+        private const float ConfirmBottom = 16f;
 
         // A locked row (an unexplored destination) is drawn at this opacity, with its name hidden.
         private const float LockedAlpha = 0.5f;
@@ -148,9 +148,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return prefab;
         }
 
-        /// <summary>A 24x24 pixel-art icon drawn in Aseprite, used as a sprite for a menu row.</summary>
+        /// <summary>
+        /// A menu row's icon: a 24x24 pixel-art icon drawn in Aseprite, or a smooth icon without
+        /// outlines the feature has already drawn as PNG (<see cref="VectorIcon"/>).
+        /// </summary>
         public static Sprite Icon(string path)
         {
+            if (!AsepriteCanvasImport.IsAseprite(path))
+                return ArtAssets.LoadSprite(path);
             ArtAssets.ImportDrawn(path);
             return AsepriteCanvasImport.LoadSprite(path);
         }
@@ -302,22 +307,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             // 枠つきの画面では、タブの代わりに「もどる」とパンくずの間に細い線を引く。
             frameParts.Add(GuideFrameAssets.Separator(back, 1f, HeaderGap / 2f));
             var icon = Rect("Icon", back);
-            Corner(icon, new Vector2(0, 0.5f), Vector2.zero, new Vector2(IconSize, IconSize));
+            Place(icon, Vector2.zero, new Vector2(IconSize, IconSize));
             SpriteImage(icon, IconBackPath, Color.white);
-            var label = Label(
-                back,
-                "Label",
-                "もどる",
-                32,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Left
-            );
-            Corner(
-                (RectTransform)label.transform,
-                new Vector2(0, 0.5f),
-                new Vector2(BackLabelLeft, 0),
-                new Vector2(BackWidth - BackLabelLeft - 16f, 40)
-            );
 
             BuildClose(safe, view);
             BuildRunes(safe, view);
@@ -585,7 +576,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         {
             var panel = Rect(name, safe);
             Stretch(panel);
-            var layer = Layout.Layer(panel, "Layout");
+            var layer = Layout.LayerBelow(panel, "Layout", GuideFrameAssets.HeaderHeight);
             GuideFrameAssets.Pane(
                 layer,
                 "Pane",
@@ -734,10 +725,22 @@ namespace Baryonyx.UI.GuideMenu.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
             ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
-            Icon(IconBackPath);
-            Icon(IconClosePath);
+            WriteBackIcon(IconBackPath);
+            WriteCloseIcon(IconClosePath);
             ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
+
+        // A left arrow and a cross, drawn as plain shapes without outlines like the home icons.
+        // The colour of the text is baked in, since the header places them with a white tint.
+        private static void WriteBackIcon(string path) =>
+            new VectorIcon()
+                .Stroke(IconShape.Path("M54 32 L13 32 M29 15 L12 32 L29 49"), 7f)
+                .Save(path, SmoothIconTextureSize, UiPalette.TextMain);
+
+        private static void WriteCloseIcon(string path) =>
+            new VectorIcon()
+                .Stroke(IconShape.Path("M15 15 L49 49 M49 15 L15 49"), 7f)
+                .Save(path, SmoothIconTextureSize, UiPalette.TextMain);
 
         // Clear on the left, dark on the right.
         private static void WriteGradient(string path)

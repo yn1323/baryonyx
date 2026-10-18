@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-10-06
+updated: 2026-10-18
 ---
 
 # クライアントの構成と依存関係
@@ -301,6 +301,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
   - Importerが作るAnimation ClipはSpriteRendererの絵を切り替えるもので、uGUIのImageには使えない。UIでアニメーションを再生する方法は、最初のアニメーション素材を作るときに決める。
   - [AsepriteCanvasImportTests](../../client/Assets/Baryonyx/Tests/EditMode/AsepriteCanvasImportTests.cs) は、全ての `.aseprite` に、キャンバスと同じ大きさのSpriteがフレームの数だけあることを検査する。
 - PNGの画像（生成画像など）は、フィルターをPoint、ミップマップなし、非圧縮にし、元の大きさのまま読み込む。2の累乗への拡大（Non-Power of 2の既定値）はドットをぼかすため行わない。画像に文字を焼き込まず、ゲームの状態に応じた文字はTextMeshProで表示する。
+- ドット絵にしないUIアイコン（ホームの左下のボタンと設定の歯車、編成と商会のメニュー、案内人の画面の「もどる」と×。[アート方針の例外](../art/direction.md#例外)）は、64×64の設計座標に置いた形を [VectorIcon](../../client/Assets/Baryonyx/Editor/Art/VectorIcon.cs) で描いてPNGに保存し、Bilinear・ミップマップありで読み込む。表示より大きく描いて縮めるため、ドット絵のように元の大きさで表示しない。白で描いて使う側で色を付けるが、色付きのドット絵と同じ白で置く場所（案内人の画面のメニューと帯）では、保存するときに文字の色を焼き込む。
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
 - 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
 - 探索する場所の背景は `Shared/Art/Stages/` に置く。2026-09-29に `Shared/Art/Dungeons/` から移し、TopとHomeが使うダンジョンの広間（旧 `App/Art/Top/TopDungeonBackground.png`）も `DungeonHall.png` として同じ場所へ移した。
@@ -309,7 +310,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
 #### タブレットとの受け渡し
 
 正本はGitで管理し、タブレットではGoogle Driveに置いた写しを編集する。
-Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Features/Home/UI/Art/IconParty.aseprite` など）。
+Driveには、`client/Assets/Baryonyx/` からの相対パスで置く（`Shared/Art/GameResources/IconRune.aseprite` など）。
 受け渡しは、Unityのメニューからユーザーが手動で行う（[AsepriteDriveSync](../../client/Assets/Baryonyx/Editor/Art/AsepriteDriveSync.cs)）。
 AIは、検証時も含めてこのメニューを実行しない。
 

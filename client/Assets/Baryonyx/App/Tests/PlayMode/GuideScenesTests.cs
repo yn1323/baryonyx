@@ -151,7 +151,7 @@ namespace Baryonyx.Tests.PlayMode
                     if (definition.Items[i].Hidden)
                         continue;
                     SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
-                    // 編成と商会のメニューは、項目名の前にドット絵のアイコンを置く。
+                    // 編成・商会・神殿のメニューは、項目名の前にアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find(CardContent + "Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
                 }

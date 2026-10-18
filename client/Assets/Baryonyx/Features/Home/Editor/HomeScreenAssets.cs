@@ -52,10 +52,10 @@ namespace Baryonyx.Home.Editor
         // Gap between the bottom-left buttons.
         private const float NavSpacing = 32f;
 
-        // The 24x24 button icons are drawn at 4x so each dot covers 4x4 pixels.
-        private const float NavIconSize = 24f * 4f;
+        // The button icons are smooth shapes drawn at twice this size (HomeScreenArt).
+        private const float NavIconSize = 96f;
 
-        // Room for the 4x icon above the label.
+        // Room for the icon above the label.
         private const float NavHeight = 168f;
 
         // The 24x24 rune is drawn at 4x so each dot covers 4x4 pixels.
@@ -693,7 +693,8 @@ namespace Baryonyx.Home.Editor
             );
             spot.raycastTarget = true;
             var button = AddTintButton(rect, spot);
-            var icon = Icon(rect, name + "Icon", iconPath, NavIconSize, Color.white);
+            // Tinted like the label, so the white shape and the text read as one button.
+            var icon = Icon(rect, name + "Icon", iconPath, NavIconSize, UiPalette.TextMain);
             Place(
                 (RectTransform)icon.transform,
                 new Vector2(0, 24),

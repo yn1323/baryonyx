@@ -9,11 +9,13 @@ namespace Baryonyx.Home.Editor
     /// <summary>
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. The campfire and the rune sparkle are
-    /// point-filtered pixel art; the shades are smooth. The navigation icons are 24x24
-    /// drawings saved as Aseprite files next to the other art, so regeneration only fixes
-    /// their import settings. The rune icon is shared game art drawn in Aseprite and is
-    /// treated the same way, with mipmaps because the flying runes shrink below their drawn
-    /// size. Shapes, shades and icons that other screens use too come from <see cref="UiArt"/>.
+    /// point-filtered pixel art; the shades are smooth. The navigation icons are plain white
+    /// shapes without outlines, drawn as tools (sword and shield, scales, a summoning circle)
+    /// on a 64-unit design square and tinted by the screen. The rune icon is shared game art
+    /// and the compass is shared pixel art, both drawn in Aseprite, so regeneration only fixes
+    /// their import settings; the rune uses mipmaps because the flying runes shrink below its
+    /// drawn size. Shapes, shades and icons that other screens use too come from
+    /// <see cref="UiArt"/>.
     /// </summary>
     public static class HomeScreenArt
     {
@@ -25,9 +27,16 @@ namespace Baryonyx.Home.Editor
         public const string CampfireFlamePath = ArtFolder + "/CampfireFlame.png";
         public const string ShadeHorizontalPath = ArtFolder + "/ShadeHorizontal.png";
         public const string CardShadePath = ArtFolder + "/CardShade.png";
-        public const string IconPartyPath = ArtFolder + "/IconParty.aseprite";
-        public const string IconShopPath = ArtFolder + "/IconShop.aseprite";
-        public const string IconSummonPath = ArtFolder + "/IconSummon.aseprite";
+        public const string IconPartyPath = ArtFolder + "/IconParty.png";
+        public const string IconShopPath = ArtFolder + "/IconShop.png";
+        public const string IconSummonPath = ArtFolder + "/IconSummon.png";
+
+        // Drawn at twice the 96 px the buttons show them at, so they stay sharp on larger
+        // screens and shrink smoothly with mipmaps.
+        private const int NavIconTextureSize = 192;
+
+        // The clear margin that separates a front part from the part behind it (design units).
+        private const float PartGap = 2.6f;
 
         // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
         public const string RuneTwinklePath = ArtFolder + "/RuneTwinkle.png";
@@ -36,14 +45,42 @@ namespace Baryonyx.Home.Editor
         public const string IconRunePath =
             "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
 
-        // Drawn in Aseprite (24x24) and shown at 4x.
-        private static readonly string[] DrawnIconPaths =
+        // The party: a sword standing behind a heater shield.
+        private static VectorIcon SwordAndShield()
         {
-            IconPartyPath,
-            IconShopPath,
-            IconSummonPath,
-            UiArt.IconCompassPath,
-        };
+            IconShape Sword(IconShape part) => part.Rotated(14f, 32f, 32f).Translated(9f, 0f);
+            return new VectorIcon()
+                .Fill(Sword(IconShape.Circle(32f, 4.5f, 3.5f)))
+                .Fill(Sword(IconShape.Rect(30f, 7f, 4f, 8f)))
+                .Fill(Sword(IconShape.Rect(21f, 15f, 22f, 4.5f)))
+                .Fill(Sword(IconShape.Path("M28.3 19.5 L35.7 19.5 L35.7 52 L32 59 L28.3 52Z")))
+                .Fill(IconShape.Path("M3 23 L33 23 L33 37 Q33 52 18 60 Q3 52 3 37Z"), PartGap)
+                .CutStroke(IconShape.Path("M18 27 L18 54"), 2.4f);
+        }
+
+        // The shop: a pair of scales for buying and selling.
+        private static VectorIcon Scales() =>
+            new VectorIcon()
+                .Fill(IconShape.Rect(29.5f, 12f, 5f, 40f))
+                .Fill(IconShape.Path("M17 59 L47 59 L43 51 L21 51Z"))
+                .Stroke(IconShape.Path("M8 16 L56 16"), 4.6f)
+                .Fill(IconShape.Circle(32f, 8f, 4.2f))
+                .Stroke(
+                    IconShape.Path("M9 17 L3.5 35 M9 17 L14.5 35 M55 17 L49.5 35 M55 17 L60.5 35"),
+                    2.8f
+                )
+                .Fill(IconShape.Path("M1 34 L17 34 Q17 45 9 45 Q1 45 1 34Z"))
+                .Fill(IconShape.Path("M47 34 L63 34 Q63 45 55 45 Q47 45 47 34Z"));
+
+        // The temple, where companions are summoned: a ring around a four-pointed star.
+        private static VectorIcon SummoningCircle() =>
+            new VectorIcon()
+                .Stroke(IconShape.Circle(32f, 32f, 26.5f), 5f)
+                .Fill(
+                    IconShape.Path(
+                        "M32 12 Q33.6 30.4 52 32 Q33.6 33.6 32 52 Q30.4 33.6 12 32 Q30.4 30.4 32 12Z"
+                    )
+                );
 
         // The same 11x14 campfire as the design mock, split where the flame meets the logs: the
         // flame's bottom row and the logs' top row share a row of the picture without overlapping.
@@ -88,8 +125,10 @@ namespace Baryonyx.Home.Editor
             Directory.CreateDirectory(ArtFolder);
             ArtAssets.WritePattern(CampfireFlamePath, CampfireFlame, CampfireColor);
             ArtAssets.WritePattern(CampfireLogsPath, CampfireLogs, CampfireColor);
-            foreach (var path in DrawnIconPaths)
-                ArtAssets.ImportDrawn(path);
+            SwordAndShield().Save(IconPartyPath, NavIconTextureSize);
+            Scales().Save(IconShopPath, NavIconTextureSize);
+            SummoningCircle().Save(IconSummonPath, NavIconTextureSize);
+            ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
             ArtAssets.WritePattern(
                 RuneTwinklePath,

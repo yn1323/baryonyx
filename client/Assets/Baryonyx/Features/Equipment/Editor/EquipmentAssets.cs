@@ -27,11 +27,10 @@ namespace Baryonyx.Equipment.Editor
     public static class EquipmentAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Equipment";
-        public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.aseprite";
         public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
         public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
-        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に人・枠・ステータス、金の2本線の右の透ける面に
+        // 枠つきの表示（GuideFramedPanel）で、左の面に人・枠・ステータス、金の2本線の右の面に
         // 持っている装備を置く（PartyChangeScreenAssets）。設計座標、左上から。
         private static readonly Rect Left = ChangeScreen.Left;
         private static readonly Rect Right = ChangeScreen.Right;

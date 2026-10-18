@@ -76,7 +76,7 @@ SafeAreaは `Screen.safeArea` と画面サイズから求め、機種名ごと�
 
 | 部品 | 使う場所 | 生成 |
 |---|---|---|
-| [枠つきの表示](../features/screens.md#枠つきの表示) | 画面いっぱいの面（濃い面・透ける面・金の2本線・見出し・タブ）と、その上に重ねる窓（レベルアップ・確認のダイアログ） | [GuideFrameAssets](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/Editor/GuideFrameAssets.cs) |
+| [枠つきの表示](../features/screens.md#枠つきの表示) | 画面いっぱいの面（左右とも透ける面・金の2本線・見出し・タブ）と、その上に重ねる窓（レベルアップ・確認のダイアログ） | [GuideFrameAssets](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/Editor/GuideFrameAssets.cs) |
 | [すりガラスのカード](../features/screens.md#すりガラスのカード) | 押す・選ぶもの、押せない箱、景色の上の札・帯・ボタン | [GlassCardAssets](../../client/Assets/Baryonyx/Shared/UI/GlassCard/Editor/GlassCardAssets.cs) |
 
 景色の上に直に置くカードは、板を濃い紺（`GlassCardAssets.SceneFillColor`）にして読みやすくする。文字の背後の、四方へ薄くなる暗い下地（`FeatherPlate`）や暗幕は枠ではないため、この2つに含めない。

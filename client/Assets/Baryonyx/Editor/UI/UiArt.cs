@@ -7,7 +7,8 @@ namespace Baryonyx.Editor.UI
 {
     // 複数の画面で使うUIの画像（形・影・アイコン）と、影つきの文字のマテリアル。
     // コードで描いてPNGで保存し、展示室に一覧でき、生成し直しても同じ画像になるようにする。
-    // 形と影は縁をなめらかにし、アイコンはドット絵にする。色は白で描き、使う側で色を付ける。
+    // 形と影は縁をなめらかにする。羅針盤はドット絵、設定の歯車は縁取りのない白一色の形にする。
+    // 色は白で描き、使う側で色を付ける。
     public static class UiArt
     {
         public const string Folder = "Assets/Baryonyx/Shared/UI/Art";
@@ -23,34 +24,23 @@ namespace Baryonyx.Editor.UI
         public const string IconCompassPath = Folder + "/IconCompass.aseprite";
         public const string IconSettingsPath = Folder + "/IconSettings.png";
 
-        private static readonly string[] Gear =
+        // 歯車は128×128で描き、ホームとTopでは40pxに縮めて表示する。
+        private const int IconSettingsSize = 128;
+
+        // 8本の歯（角を丸めた四角形）と胴の円、中心の穴（ホームのボタンのアイコンと同じ描き方）。
+        private static VectorIcon Gear()
         {
-            "......####......",
-            "......####......",
-            "..##.######.##..",
-            "..############..",
-            "...##########...",
-            ".#####....#####.",
-            ".####......####.",
-            "#####......#####",
-            "#####......#####",
-            ".####......####.",
-            ".#####....#####.",
-            "...##########...",
-            "..############..",
-            "..##.######.##..",
-            "......####......",
-            "......####......",
-        };
+            var icon = new VectorIcon();
+            for (int i = 0; i < 8; i++)
+                icon.Fill(IconShape.Rect(28f, 5.5f, 8f, 12f).Rotated(i * 45f, 32f, 32f));
+            return icon.Fill(IconShape.Circle(32f, 32f, 18.5f))
+                .Cut(IconShape.Circle(32f, 32f, 7.5f));
+        }
 
         public static void EnsureAll()
         {
             AssetFolders.Ensure(Folder);
-            ArtAssets.WritePattern(
-                IconSettingsPath,
-                Gear,
-                c => c == '#' ? Color.white : Color.clear
-            );
+            Gear().Save(IconSettingsPath, IconSettingsSize);
             WriteShadow();
             WriteShade();
             ArtAssets.WriteSmooth(

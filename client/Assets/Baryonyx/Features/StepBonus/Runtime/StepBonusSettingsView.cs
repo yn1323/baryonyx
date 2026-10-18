@@ -42,7 +42,7 @@ namespace Baryonyx.StepBonus
 
     /// <summary>
     /// The tavern's bonus settings over the whole guide screen, in the guide frame: the slots and
-    /// today's effects on the dark pane on the left, the owned bonuses on the right. StepBonusAssets bakes the rows into the tavern
+    /// today's effects on the left pane, the owned bonuses on the right. StepBonusAssets bakes the rows into the tavern
     /// prefab, so they read in the editor; this view wires them up and drives its own presenter.
     /// When the app has a server (<see cref="StepBonusSession.Source"/>), it reads the player's
     /// bonuses on opening and saves every change there; otherwise it uses the mock data.

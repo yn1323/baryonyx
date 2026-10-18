@@ -27,6 +27,20 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return layer;
         }
 
+        /// <summary>
+        /// A 1920x1080 layer under a header <paramref name="top"/> high, which shrinks toward the
+        /// header's bottom instead of the middle, so its panes start right under the header on
+        /// screens narrower than 16:9 too.
+        /// </summary>
+        public static RectTransform LayerBelow(RectTransform parent, string name, float top)
+        {
+            var layer = Layer(parent, name);
+            layer.anchorMin = layer.anchorMax = new Vector2(0.5f, 1f);
+            layer.pivot = new Vector2(0.5f, 1f - top / Design.y);
+            layer.anchoredPosition = new Vector2(0, -top);
+            return layer;
+        }
+
         /// <summary>A rect at (x, y) from the top left of its parent.</summary>
         public static RectTransform Box(
             RectTransform parent,

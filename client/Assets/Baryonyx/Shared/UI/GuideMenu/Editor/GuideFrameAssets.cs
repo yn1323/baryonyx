@@ -37,7 +37,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         // 板や帯は、Safe Areaや設計座標の外（切り欠きの裏、画面の端）までこれだけ伸ばす。
         public const float Bleed = 400f;
 
-        // ヘッダーの帯。濃い板（パーティなど主な面）と、景色が透ける薄い板（一覧など）。
+        // ヘッダーの帯と、景色が透ける面（左右とも同じ色）。濃い色は、面の上に重ねる窓に使う。
         public static readonly Color HeaderColor = new(0.024f, 0.035f, 0.094f, 0.84f);
         public static readonly Color PaneDark = new(0.024f, 0.035f, 0.094f, 0.965f);
         public static readonly Color PaneLight = new(0.063f, 0.086f, 0.196f, 0.55f);
@@ -198,13 +198,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(root);
             var view = root.gameObject.AddComponent<T>();
             root.gameObject.AddComponent<GuideFramedPanel>();
-            return (view, Layout.Layer(root, "Layout"));
+            return (view, Layout.LayerBelow(root, "Layout", HeaderHeight));
         }
 
         /// <summary>
-        /// The two panes of a framed panel split at <paramref name="split"/>: the dark one on the
-        /// left (the person, the party), the one the scene shows through on the right (a list),
-        /// from the header's line down. The gold double line goes between them unless
+        /// The two panes of a framed panel split at <paramref name="split"/>, the person or the
+        /// party on the left and a list on the right, from the header's line down. Both are the
+        /// pane the scene shows through, so the two sides read as one surface. The gold double
+        /// line goes between them unless
         /// <paramref name="divider"/> is false, for a panel that draws it over its own contents.
         /// </summary>
         public static void SplitPanes(
@@ -215,7 +216,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             bool divider = true
         )
         {
-            Pane(layer, leftName, 0f, split, HeaderHeight, PaneDark, true, false);
+            Pane(layer, leftName, 0f, split, HeaderHeight, PaneLight, true, false);
             Pane(layer, rightName, split, Layout.Design.x, HeaderHeight, PaneLight, false, true);
             if (divider)
                 Divider(layer, split, HeaderHeight);
@@ -297,7 +298,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// </summary>
         public static void WindowFrame(RectTransform window)
         {
-            // 後ろの画面の文字が透けないよう、濃い面の色で不透明に塗る（リニア色空間では少しの透けも目立つ）。
+            // 後ろの画面の文字が透けないよう、濃い紺（PaneDark）で不透明に塗る（リニア色空間では少しの透けも目立つ）。
             AddImage(window, new Color(PaneDark.r, PaneDark.g, PaneDark.b, 1f), true);
             // 上・下・左・右の辺に、2px の線を辺に沿わせて伸ばす。
             foreach (

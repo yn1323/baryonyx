@@ -64,11 +64,13 @@ namespace Baryonyx.Editor.Art
         }
 
         // コードで描いた画像のSprite設定。fullRect は Image.Type.Tiled で並べる画像に使う。
+        // mipmaps は、描いた大きさより縮めて表示する画像に使う。
         public static void ImportSprite(
             string path,
             Vector4 border,
             FilterMode filter,
-            bool fullRect = false
+            bool fullRect = false,
+            bool mipmaps = false
         )
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -85,7 +87,7 @@ namespace Baryonyx.Editor.Art
             importer.spriteBorder = border;
             importer.spritePixelsPerUnit = 100;
             importer.filterMode = filter;
-            importer.mipmapEnabled = false;
+            importer.mipmapEnabled = mipmaps;
             importer.alphaIsTransparency = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.wrapMode = TextureWrapMode.Clamp;
@@ -181,12 +183,13 @@ namespace Baryonyx.Editor.Art
             string path,
             Texture2D texture,
             Vector4 border,
-            FilterMode filter
+            FilterMode filter,
+            bool mipmaps = false
         )
         {
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-            ImportSprite(path, border, filter);
+            ImportSprite(path, border, filter, mipmaps: mipmaps);
         }
     }
 }

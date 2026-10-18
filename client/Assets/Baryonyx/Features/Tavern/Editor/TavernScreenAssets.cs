@@ -1,5 +1,6 @@
 using Baryonyx.CardLoadout;
 using Baryonyx.CardLoadout.Editor;
+using Baryonyx.Editor.Art;
 using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
@@ -8,6 +9,7 @@ using Baryonyx.StepBonus;
 using Baryonyx.StepBonus.Editor;
 using Baryonyx.Training;
 using Baryonyx.Training.Editor;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -30,7 +32,17 @@ namespace Baryonyx.Tavern.Editor
         public const string PrefabPath = Folder + "/UI/TavernScreen.prefab";
         public const string GuideArtPath = Folder + "/UI/Art/TavernGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TavernBackground.png";
-        public const string IconFormationPath = Folder + "/UI/Art/IconFormation.aseprite";
+
+        // The menu's icons are plain shapes without outlines, like the home buttons: a roster for
+        // the adventurers, a breastplate between two turning arrows for changing equipment, and a
+        // medal for the bonuses. The other guide screens list coloured pixel art with the same
+        // white tint, so the text colour is baked in.
+        public const string IconFormationPath = Folder + "/UI/Art/IconFormation.png";
+        public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.png";
+        public const string IconBonusPath = Folder + "/UI/Art/IconBonus.png";
+
+        // The clear margin that separates a front part from the part behind it (design units).
+        private const float PartGap = 2.6f;
 
         [MenuItem("Baryonyx/Tavern/Create Screen Assets")]
         public static void CreateAssets()
@@ -40,6 +52,7 @@ namespace Baryonyx.Tavern.Editor
             TrainingSession.Reset();
             EquipmentSession.Reset();
             CardLoadoutSession.Reset();
+            WriteMenuIcons();
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,
@@ -106,7 +119,7 @@ namespace Baryonyx.Tavern.Editor
                 "装備",
                 "冒険者を選んで、武器・防具を付け替える",
                 "選ぶ",
-                Icon(EquipmentAssets.IconChangeGearPath)
+                Icon(IconChangeGearPath)
             );
             item.Key = AdventurerPickerView.GuideItemKey;
             return item;
@@ -119,11 +132,54 @@ namespace Baryonyx.Tavern.Editor
                 "ボーナス",
                 "枠にセットして、歩いた日に効かせる",
                 "セットする",
-                Icon(StepBonusAssets.IconBonusPath)
+                Icon(IconBonusPath)
             );
             item.Key = StepBonusSession.GuideItemKey;
             return item;
         }
+
+        private static void WriteMenuIcons()
+        {
+            Roster().Save(IconFormationPath, SmoothIconTextureSize, UiPalette.TextMain);
+            ChangeGear().Save(IconChangeGearPath, SmoothIconTextureSize, UiPalette.TextMain);
+            Medal().Save(IconBonusPath, SmoothIconTextureSize, UiPalette.TextMain);
+        }
+
+        // A sheet with a folded corner, a person at the top left and the lines of the list.
+        private static VectorIcon Roster() =>
+            new VectorIcon()
+                .Fill(IconShape.Path("M12 6 L46 6 L52 12 L52 58 L12 58Z"))
+                .Cut(IconShape.Circle(25f, 20f, 5f))
+                .Cut(IconShape.Path("M17 34 Q17 27 25 27 Q33 27 33 34Z"))
+                .CutStroke(
+                    IconShape.Path("M38 18 L45 18 M38 26 L45 26 M18 42 L45 42 M18 50 L40 50"),
+                    3f
+                );
+
+        // Two arrows turning around a small breastplate.
+        private static VectorIcon ChangeGear() =>
+            new VectorIcon()
+                .Stroke(IconShape.Path("M10 28 Q12 8 32 7 Q45 7 52 16"), 4.5f)
+                .Fill(IconShape.Path("M58 8 L58 24 L43 20Z"))
+                .Stroke(IconShape.Path("M54 36 Q52 56 32 57 Q19 57 12 48"), 4.5f)
+                .Fill(IconShape.Path("M6 56 L6 40 L21 44Z"))
+                .Fill(
+                    IconShape.Path(
+                        "M22 21 L27 21 Q32 25 37 21 L42 21 L46 27 L43 31 L42 44 Q32 50 22 44 L21 31 L18 27Z"
+                    )
+                );
+
+        // A medal hanging from two crossed ribbons, with a star cut out of it.
+        private static VectorIcon Medal() =>
+            new VectorIcon()
+                .Fill(IconShape.Path("M18 4 L29 4 L37 27 L27 31Z"))
+                .Fill(IconShape.Path("M46 4 L35 4 L27 27 L37 31Z"), 2f)
+                .Fill(IconShape.Circle(32f, 43f, 17f), PartGap)
+                .Cut(
+                    IconShape.Path(
+                        "M32 34 L34.2 39.9 L40.6 40.2 L35.6 44.2 L37.3 50.3 L32 46.8 L26.7 50.3 L28.4 44.2 L23.4 40.2 L29.8 39.9Z"
+                    )
+                );
 
         // A panel opened from another panel (the adventurer's page and the change screens),
         // without a menu row.
