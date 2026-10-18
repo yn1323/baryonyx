@@ -2,7 +2,7 @@
 id: skill-divine-shield
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: ディバインシールド
 category: skills
 silhouette: 光の泡の中の羽根
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardDivineShield.asepri
 | 属性 | なし |
 | 種類・対象 | 防御・味方単体 |
 | コスト | 4 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体は、次のターンまでダメージを受けない。 |
+| 説明文 | 味方1体は、次のターンまでダメージを受けない。 |
 | 効果（行う順） | 味方単体：無敵1ターン |
 
 ## 分類固有のデータ

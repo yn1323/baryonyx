@@ -58,13 +58,13 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void EachDescriptionHasANumberForEveryPoweredAction()
         {
-            foreach (var card in CardSkills.All)
+            foreach (var card in CardSkills.All.Concat(CardSkills.Prototypes))
             {
                 int powered = card.Powered().Count();
                 for (int i = 0; i < powered; i++)
                     StringAssert.Contains("{" + i + "}", card.Text, card.Name);
                 StringAssert.DoesNotContain("{" + powered + "}", card.Text, card.Name);
-                Assert.DoesNotThrow(() => CardRules.Describe(card, _ => 100, 0), card.Name);
+                Assert.DoesNotThrow(() => CardRules.Describe(card), card.Name);
             }
         }
 
@@ -124,16 +124,83 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void ADescriptionShowsThePowersInOrder()
+        public void ADescriptionShowsThePartsOfTheStatsInOrder()
         {
             var card = CardSkills.Find("HolyLight");
-            var text = CardRules.Describe(
-                card,
-                stat => stat == CardStat.MagicAttack ? 200 : 0,
-                0,
-                (action, power) => $"[{power}]"
+            var text = CardRules.Describe(card, (action, part) => $"[{part}]");
+            Assert.That(
+                text,
+                Is.EqualTo("敵全体に[属攻の50%]ダメージ。味方全体のHPを[属攻の30%]回復。")
             );
-            Assert.That(text, Is.EqualTo("敵全体に[100]ダメージ。味方全体のHPを[60]回復。"));
+        }
+
+        [Test]
+        public void ADescriptionLeavesOutTodaysAct()
+        {
+            // 健脚の一撃はACTで威力が上がるが、説明文は割合だけを書き、ACTの増分は足さない。
+            var card = CardSkills.Find("StrideStrike");
+            var action = card.Powered().Single();
+            Assert.That(action.ActStepPercent, Is.GreaterThan(0));
+            StringAssert.Contains(CardRules.PartName(action), CardRules.Describe(card));
+        }
+
+        [Test]
+        public void EveryKeywordInATextIsExplained()
+        {
+            foreach (var card in CardSkills.All.Concat(CardSkills.Prototypes))
+            foreach (var name in CardKeywords.Names(card.Text))
+                Assert.That(CardKeywords.Find(name), Is.Not.Null, $"{card.Name}: [{name}]");
+        }
+
+        [Test]
+        public void ADescriptionPaintsItsKeywordsOrShowsThemPlain()
+        {
+            var card = CardSkills.Find("Ice");
+            Assert.That(
+                CardRules.Describe(card),
+                Is.EqualTo("敵1体に属攻の85%ダメージ。凍え2ターン。")
+            );
+            Assert.That(
+                CardRules.Describe(card, keyword: name => $"<{name}>"),
+                Is.EqualTo("敵1体に属攻の85%ダメージ。<凍え>2ターン。")
+            );
+            Assert.That(
+                CardKeywords.In(card.Text).Select(k => k.Name),
+                Is.EqualTo(new[] { "凍え" })
+            );
+        }
+
+        [Test]
+        public void APrototypeIsFoundButNotAmongTheCardSkills()
+        {
+            foreach (var prototype in CardSkills.Prototypes)
+            {
+                Assert.That(CardSkills.Find(prototype.Id), Is.SameAs(prototype));
+                Assert.That(CardSkills.All.Select(card => card.Id), Has.No.Member(prototype.Id));
+                Assert.That(
+                    CardSkills.All.Select(card => card.Name),
+                    Has.No.Member(prototype.Name)
+                );
+            }
+            var fang = CardSkills.Find("SerpentFang");
+            Assert.That(fang.Art, Is.EqualTo("CardVitalThrust"));
+            Assert.That(
+                CardKeywords.In(fang.Text).Select(keyword => keyword.Name),
+                Is.EqualTo(new[] { "出血", "毒", "防御ダウン", "弱点" })
+            );
+        }
+
+        [Test]
+        public void KeywordsAreListedOnceInTheirOrderAndAnOpenBracketIsLeft()
+        {
+            Assert.That(
+                CardKeywords.Names("[毒]と[やけど]、また[毒]。"),
+                Is.EqualTo(new[] { "毒", "やけど" })
+            );
+            Assert.That(
+                CardKeywords.Plain("[凍え]2ターン。[未完"),
+                Is.EqualTo("凍え2ターン。[未完")
+            );
         }
 
         [Test]

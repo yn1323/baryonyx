@@ -104,9 +104,48 @@ namespace Baryonyx.Combat.Editor
         private const float WeakIconSize = 48f;
         private const int AimDotCount = 16;
 
-        private static readonly Color HpBack = new(0.08f, 0.06f, 0.06f, 0.9f);
-        private static readonly Color HpEnemy = new(0.66f, 0.16f, 0.14f);
-        private static readonly Color HpAlly = new(0.2f, 0.52f, 0.26f);
+        // The HP gauges, drawn as pixel art on the allies' 4px dots.
+        private static readonly Color HpOutline = new(0.11f, 0.063f, 0.047f);
+        private static readonly Color HpEmpty = new(0.23f, 0.15f, 0.13f);
+        private static readonly Color HpEmptyTop = new(0.118f, 0.075f, 0.063f);
+        private static readonly Color BlockEdge = new(0.36f, 0.25f, 0.02f);
+        private static readonly Color BlockYellow = new(0.96f, 0.81f, 0.33f);
+
+        private static readonly GaugeColors HpAlly = new(
+            new Color(0.61f, 0.88f, 0.48f),
+            new Color(0.26f, 0.63f, 0.31f),
+            new Color(0.16f, 0.43f, 0.22f),
+            new Color(1f, 0.7f, 0.64f),
+            new Color(0.88f, 0.38f, 0.31f)
+        );
+
+        // The enemies' fill is red, so their trail is pale to stand out from it.
+        private static readonly GaugeColors HpEnemy = new(
+            new Color(0.93f, 0.45f, 0.38f),
+            new Color(0.7f, 0.19f, 0.16f),
+            new Color(0.47f, 0.11f, 0.09f),
+            new Color(1f, 0.95f, 0.86f),
+            new Color(0.95f, 0.86f, 0.71f)
+        );
+
+        /// <summary>A gauge's fill in three steps (top light, body, bottom shade) and its trail.</summary>
+        private sealed class GaugeColors
+        {
+            public readonly Color Light;
+            public readonly Color Mid;
+            public readonly Color Shade;
+            public readonly Color TrailLight;
+            public readonly Color TrailBody;
+
+            public GaugeColors(Color light, Color mid, Color shade, Color trailLight, Color trailBody)
+            {
+                Light = light;
+                Mid = mid;
+                Shade = shade;
+                TrailLight = trailLight;
+                TrailBody = trailBody;
+            }
+        }
 
         internal sealed class AllySpec
         {
@@ -270,7 +309,8 @@ namespace Baryonyx.Combat.Editor
         // card skills (CardSkills). The first six are the mock's first cards, one of each, so the
         // opening hand dealt in order shows them; the rest are four for each user in all. 居合一閃
         // (cost 5) is the cut-in the first turn's energy can pay for, and メテオ (cost 9) a card
-        // it cannot.
+        // it cannot. 蛇牙の連撃 is a prototype (CardSkills.Prototypes) whose many keywords stack
+        // their notes beside the raised card.
         private static readonly string[] DeckIds =
         {
             "Slash",
@@ -285,7 +325,7 @@ namespace Baryonyx.Combat.Editor
             "Meteor",
             "VitalThrust",
             "ChainLightning",
-            "Scout",
+            "SerpentFang",
             "Regen",
             "HolyLight",
             "Protect",
@@ -368,6 +408,7 @@ namespace Baryonyx.Combat.Editor
                 BuildEnergy(safe, view);
                 BuildDeck(safe, view);
                 BuildHand(safe, view);
+                BuildKeywordTips(safe, view);
                 BuildEndTurn(safe, view);
                 BuildAim(safe, view);
                 BuildPopup(screen, view);
@@ -537,7 +578,7 @@ namespace Baryonyx.Combat.Editor
                 fire.Name,
                 toma.Label,
                 Baryonyx.UI.Cards.CardText.KindLine(fire),
-                Baryonyx.UI.Cards.CardText.Description(fire, stat => StatOf(toma, stat), 0),
+                Baryonyx.UI.Cards.CardText.Description(fire),
                 fireArt,
                 Art("CardFrameFire"),
                 fireIcon,
@@ -761,17 +802,18 @@ namespace Baryonyx.Combat.Editor
             for (int i = 0; i < Allies.Length; i++)
             {
                 var ally = Allies[i];
-                var fill = HpBar(world, ally.Feet + new Vector2(0, -24), 120, 20, HpAlly);
-                fill.parent.name = "Hp" + ally.Name;
-                fill.anchorMax = new Vector2(ally.Hp / (float)ally.MaxHp, 1);
-                var tag = NameTag((RectTransform)fill.parent, ally.Label);
+                var gauge = HpGauge(world, ally.Feet + new Vector2(0, -24), 30, 5, HpAlly);
+                gauge.name = "Hp" + ally.Name;
+                gauge.Fill.anchorMax = new Vector2(ally.Hp / (float)ally.MaxHp, 1);
+                gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
+                var tag = NameTag((RectTransform)gauge.transform, ally.Label);
                 allies.Add(
                     new BattleInspectAlly
                     {
                         Body = units[i],
                         Sprite = sprites[i],
                         TargetArea = areas[i],
-                        HpFill = fill,
+                        Gauge = gauge,
                         Marker = TargetMarker(areas[i], cursor),
                         CasterRing = rings[i],
                         NameTag = tag,
@@ -830,7 +872,7 @@ namespace Baryonyx.Combat.Editor
                 var info = Rect("Info", body);
                 Place(info, new Vector2(0, -44), new Vector2(260, 64));
                 var weaknesses = WeaknessIcons(info, spec);
-                var fill = HpBar(info, new Vector2(0, -16), 260, 24, HpEnemy);
+                var gauge = HpGauge(info, new Vector2(0, -16), 65, 6, HpEnemy);
 
                 enemies.Add(
                     new BattleInspectEnemy
@@ -838,7 +880,7 @@ namespace Baryonyx.Combat.Editor
                         Body = body,
                         TargetArea = target,
                         Sprite = sprite,
-                        HpFill = fill,
+                        Gauge = gauge,
                         Group = group,
                         Marker = TargetMarker(target, cursor),
                         MaxHp = spec.MaxHp,
@@ -1402,6 +1444,75 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
+        /// The notes beside the raised card: frosted-glass plaques over the scene, each a keyword
+        /// in its colour and what it means, stacked down from the top of the card's right edge.
+        /// Placed and filled in Play.
+        /// </summary>
+        private static void BuildKeywordTips(RectTransform safe, BattleInspectView view)
+        {
+            const int slots = 4;
+            const float width = 340f;
+            const float inset = 22f;
+            var tips = Rect("KeywordTips", safe);
+            Corner(tips, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(width, 0f));
+            tips.pivot = new Vector2(0f, 1f);
+            var component = tips.gameObject.AddComponent<BattleInspectKeywordTips>();
+            component.Slots = new RectTransform[slots];
+            component.Titles = new TMP_Text[slots];
+            component.Bodies = new TMP_Text[slots];
+            var keyword = Baryonyx.UI.Cards.CardText.KeywordHex;
+            ColorUtility.TryParseHtmlString("#" + keyword, out var keywordColor);
+            for (int i = 0; i < slots; i++)
+            {
+                var slot = Rect("Tip" + (i + 1), tips);
+                Corner(slot, new Vector2(0f, 1f), Vector2.zero, new Vector2(width, 120f));
+                var content = GlassCardAssets.Plaque(
+                    slot,
+                    pattern: false,
+                    fill: GlassCardAssets.SceneFillColor
+                );
+                var title = Label(
+                    content,
+                    "Title",
+                    "",
+                    26,
+                    keywordColor,
+                    TextAlignmentOptions.Left
+                );
+                Corner(
+                    title.rectTransform,
+                    new Vector2(0f, 1f),
+                    new Vector2(inset, -14f),
+                    new Vector2(width - inset * 2f, 34f)
+                );
+                var body = Label(
+                    content,
+                    "Body",
+                    "",
+                    22,
+                    UiPalette.TextSub,
+                    TextAlignmentOptions.TopLeft,
+                    shadow: false
+                );
+                Corner(
+                    body.rectTransform,
+                    new Vector2(0f, 1f),
+                    new Vector2(inset, -component.Head),
+                    new Vector2(width - inset * 2f, 60f)
+                );
+                body.textWrappingMode = TextWrappingModes.Normal;
+                body.enableAutoSizing = false;
+                title.raycastTarget = body.raycastTarget = false;
+                component.Slots[i] = slot;
+                component.Titles[i] = title;
+                component.Bodies[i] = body;
+            }
+            // Shown only while a card with keywords is up.
+            tips.gameObject.SetActive(false);
+            view.KeywordTips = component;
+        }
+
+        /// <summary>
         /// Places a card label in a box given in dots from the card's top-left. The text shrinks to
         /// fit a long name or effect instead of running out of the box.
         /// </summary>
@@ -1637,24 +1748,112 @@ namespace Baryonyx.Combat.Editor
             );
         }
 
-        private static RectTransform HpBar(
+        /// <summary>
+        /// A unit's HP bar as pixel art on 4px dots (doc/features/screens.md, the battle mock):
+        /// a dark outline with its corners cut, the empty part dark with a darker top row, the
+        /// fill and its trail shaded in steps, and a tick in the bottom row every quarter.
+        /// <paramref name="width"/> and <paramref name="height"/> count dots with the outline.
+        /// </summary>
+        private static BattleHpGauge HpGauge(
             RectTransform parent,
             Vector2 center,
-            float width,
-            float height,
-            Color color
+            int width,
+            int height,
+            GaugeColors colors
         )
         {
+            const float dot = DotSize;
             var bar = Rect("HpBar", parent);
-            Place(bar, center, new Vector2(width, height));
-            AddImage(bar, HpBack, false);
-            var fill = Rect("Fill", bar);
-            fill.anchorMin = Vector2.zero;
-            fill.anchorMax = Vector2.one;
-            fill.offsetMin = new Vector2(2, 2);
-            fill.offsetMax = new Vector2(-2, -2);
-            AddImage(fill, color, false);
-            return fill;
+            Place(bar, center, new Vector2(width * dot, height * dot));
+            Inset(Strip("EdgeH", bar, HpOutline), dot, 0);
+            Inset(Strip("EdgeV", bar, HpOutline), 0, dot);
+
+            var inner = Strip("Inner", bar, HpEmpty);
+            Inset(inner, dot, dot);
+            Row(Strip("Top", inner, HpEmptyTop), top: true, dot);
+
+            var trail = Strip("Trail", inner, colors.TrailBody);
+            Row(Strip("Light", trail, colors.TrailLight), top: true, dot);
+            trail.gameObject.SetActive(false);
+
+            var fill = Strip("Fill", inner, colors.Mid);
+            Row(Strip("Light", fill, colors.Light), top: true, dot);
+            Row(Strip("Shade", fill, colors.Shade), top: false, dot);
+
+            int dots = width - 2;
+            for (int k = 1; k < 4; k++)
+            {
+                var tick = Strip("Tick" + k, inner, HpOutline);
+                Row(tick, top: false, dot);
+                tick.anchorMax = new Vector2(0, 0);
+                tick.offsetMin = new Vector2(Mathf.RoundToInt(dots * k / 4f) * dot, 0);
+                tick.offsetMax = new Vector2(tick.offsetMin.x + dot, dot);
+            }
+
+            var gauge = bar.gameObject.AddComponent<BattleHpGauge>();
+            gauge.Fill = fill;
+            gauge.Trail = trail;
+            gauge.TrailBody = trail.GetComponent<Image>();
+            gauge.InnerDots = dots;
+            gauge.DotSize = dot;
+            return gauge;
+        }
+
+        /// <summary>
+        /// The block over an ally's HP bar: a thin yellow strip from the left, one dot tall in a
+        /// dark edge, over the bar's top outline and highlight. It sticks out a dot above the bar,
+        /// and the green under it still shows. The gauge sets its width and turns it on with
+        /// block.
+        /// </summary>
+        private static RectTransform BlockStrip(RectTransform bar, int dots)
+        {
+            const float dot = DotSize;
+            var block = Rect("Block", bar);
+            block.anchorMin = new Vector2(0, 1);
+            block.anchorMax = new Vector2(0, 1);
+            block.pivot = new Vector2(0, 1);
+            block.anchoredPosition = new Vector2(0, dot);
+            block.sizeDelta = new Vector2((dots + 2) * dot, 3 * dot);
+            var top = Strip("Top", block, BlockEdge);
+            Row(top, top: true, dot);
+            top.offsetMin = new Vector2(dot, -dot);
+            top.offsetMax = new Vector2(-dot, 0);
+            var body = Strip("Edge", block, BlockEdge);
+            body.anchorMax = new Vector2(1, 0);
+            body.offsetMax = new Vector2(0, 2 * dot);
+            var yellow = Strip("Fill", block, BlockYellow);
+            yellow.anchorMax = new Vector2(1, 0);
+            yellow.offsetMin = new Vector2(dot, dot);
+            yellow.offsetMax = new Vector2(-dot, 2 * dot);
+            block.gameObject.SetActive(false);
+            return block;
+        }
+
+        /// <summary>A plain coloured rect filling its parent.</summary>
+        private static RectTransform Strip(string name, RectTransform parent, Color color)
+        {
+            var rect = Rect(name, parent);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            AddImage(rect, color, false);
+            return rect;
+        }
+
+        private static void Inset(RectTransform rect, float x, float y)
+        {
+            rect.offsetMin = new Vector2(x, y);
+            rect.offsetMax = new Vector2(-x, -y);
+        }
+
+        /// <summary>Makes a rect the top or bottom row of dots of its parent.</summary>
+        private static void Row(RectTransform rect, bool top, float dot)
+        {
+            rect.anchorMin = new Vector2(0, top ? 1 : 0);
+            rect.anchorMax = new Vector2(1, top ? 1 : 0);
+            rect.offsetMin = new Vector2(0, top ? -dot : 0);
+            rect.offsetMax = new Vector2(0, top ? 0 : dot);
         }
 
         /// <summary>
@@ -1674,11 +1873,7 @@ namespace Baryonyx.Combat.Editor
                 Owner = ally.Label,
                 Skill = skill.Id,
                 Kind = Baryonyx.UI.Cards.CardText.KindLine(skill),
-                Description = Baryonyx.UI.Cards.CardText.Description(
-                    skill,
-                    stat => StatOf(ally, stat),
-                    act
-                ),
+                Description = Baryonyx.UI.Cards.CardText.Description(skill),
                 Art = Art(skill.Art),
                 Frame = Art("CardFrame" + skill.Element),
                 ElementIcon =

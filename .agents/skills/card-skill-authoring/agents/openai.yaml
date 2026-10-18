@@ -1,0 +1,7 @@
+interface:
+  display_name: "カードスキルの書き方"
+  short_description: "戦闘のカードの効果と説明文を、戦闘に関わる情報だけ・ステータスの割合で書き、定義・記録・画面までそろえる"
+  default_prompt: "Use $card-skill-authoring when adding or changing a battle card skill or its description text."
+
+policy:
+  allow_implicit_invocation: true

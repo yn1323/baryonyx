@@ -2,7 +2,7 @@
 id: skill-guardian-oath
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 守護の誓い
 category: skills
 silhouette: 地面に立てた剣と盾
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardGuardianOath.asepri
 | 属性 | なし |
 | 種類・対象 | 防御・自分 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 自分にブロック296。2ターン、敵の攻撃を引きつける。 |
+| 説明文 | 自分にブロック物防の150%。2ターン、敵の攻撃を引きつける。 |
 | 効果（行う順） | 自分：ブロック（物防の150%）<br>自分：挑発2ターン |
 
 ## 分類固有のデータ

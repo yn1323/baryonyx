@@ -2,7 +2,7 @@
 id: skill-resurrection
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: リザレクション
 category: skills
 silhouette: 翼と光の輪と柱
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardResurrection.asepri
 | 属性 | なし |
 | 種類・対象 | 回復・味方単体 |
 | コスト | 6 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体のHPを最大の半分回復。倒れていれば復活。 |
+| 説明文 | 味方1体のHPを最大の半分回復。倒れていれば復活。 |
 | 効果（行う順） | 味方単体：最大HPの50%回復し、倒れていれば復活 |
 
 ## 分類固有のデータ

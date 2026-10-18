@@ -2,7 +2,7 @@
 id: skill-shadow-snipe
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: シャドウスナイプ
 category: skills
 silhouette: 照準を貫く一本の矢
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardShadowSnipe.aseprit
 | 属性 | 貫 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 6 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に499ダメージ。弱点を突くと威力+50%。 |
+| 説明文 | 敵1体に物攻の220%ダメージ。弱点を突くと威力+50%。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の220%）。弱点を突いたとき威力+50% |
 
 ## 分類固有のデータ

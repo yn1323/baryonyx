@@ -182,6 +182,7 @@ namespace Baryonyx.Combat.Presentation
                         int block = Power(action, caster);
                         EnsureBlock();
                         allyBlock[hit.Index] += block;
+                        RefreshBlock(hit.Index);
                         // A block for the party shows once, over the party.
                         if (action.Target == CardTarget.AllAllies)
                         {
@@ -414,8 +415,7 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         private IEnumerator PartyTurnStatuses()
         {
-            EnsureBlock();
-            Array.Clear(allyBlock, 0, allyBlock.Length);
+            ClearBlock();
 
             for (int i = 0; i < Enemies.Length; i++)
             {
@@ -597,6 +597,19 @@ namespace Baryonyx.Combat.Presentation
                 allyBlock = new int[Allies.Length];
         }
 
+        /// <summary>Takes every ally's block away.</summary>
+        private void ClearBlock()
+        {
+            EnsureBlock();
+            Array.Clear(allyBlock, 0, allyBlock.Length);
+            for (int i = 0; i < Allies.Length; i++)
+                RefreshBlock(i);
+        }
+
+        /// <summary>Shows an ally's block as the yellow strip over the HP bar.</summary>
+        private void RefreshBlock(int ally) =>
+            Allies[ally].Gauge.SetBlock(BlockOf(ally), Allies[ally].MaxHp);
+
         /// <summary>The damage left after an ally's block takes what it can.</summary>
         private int Absorb(int ally, int damage)
         {
@@ -605,6 +618,7 @@ namespace Baryonyx.Combat.Presentation
                 return damage;
             int absorbed = Mathf.Min(allyBlock[ally], damage);
             allyBlock[ally] -= absorbed;
+            RefreshBlock(ally);
             ShowPopup(Allies[ally].TargetArea, $"ブロック -{absorbed}", GuardColor, 36f);
             return damage - absorbed;
         }

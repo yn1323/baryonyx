@@ -2,7 +2,7 @@
 id: skill-hone
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 研ぎ澄ます
 category: skills
 silhouette: 砥石と刃先
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHone.aseprite
 | 属性 | 斬 |
 | 種類・対象 | 支援・手札 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 手札の斬属性カードのコストをすべて1下げる。 |
+| 説明文 | 手札の斬属性カードのコストをすべて1下げる。 |
 | 効果（行う順） | 全体：手札の斬属性カードのコスト-1 |
 
 ## 分類固有のデータ

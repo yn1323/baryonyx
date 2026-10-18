@@ -131,7 +131,9 @@ namespace Baryonyx.Combat.Presentation
         public RectTransform Body;
         public RawImage Sprite;
         public RectTransform TargetArea;
-        public RectTransform HpFill;
+
+        /// <summary>The HP bar under the feet, with the ally's block over it.</summary>
+        public BattleHpGauge Gauge;
 
         /// <summary>The cursor over the head, shown while a card that can target this ally is up.</summary>
         public RectTransform Marker;
@@ -157,7 +159,7 @@ namespace Baryonyx.Combat.Presentation
         public int Hp;
 
         /// <summary>The HP bar under the feet; it steps forward with the ally.</summary>
-        public RectTransform HpBar => (RectTransform)HpFill.parent;
+        public RectTransform HpBar => (RectTransform)Gauge.transform;
 
         public bool Down => Hp <= 0;
     }
@@ -168,7 +170,7 @@ namespace Baryonyx.Combat.Presentation
         public RectTransform Body;
         public RectTransform TargetArea;
         public RawImage Sprite;
-        public RectTransform HpFill;
+        public BattleHpGauge Gauge;
         public CanvasGroup Group;
 
         /// <summary>The cursor over the head, shown while a card that can target this enemy is up.</summary>
@@ -834,6 +836,7 @@ namespace Baryonyx.Combat.Presentation
                 ApplyMotion(i);
             }
             RefreshCaster(dt);
+            RefreshKeywordTips();
 
             if (flash != null)
                 flash.SetFloat("_FlashAmount", 0.5f + 0.2f * Mathf.Sin(time * 9f));
@@ -2146,14 +2149,12 @@ namespace Baryonyx.Combat.Presentation
 
         private static void RefreshEnemy(BattleInspectEnemy enemy)
         {
-            float ratio = enemy.MaxHp > 0 ? enemy.Hp / (float)enemy.MaxHp : 0f;
-            enemy.HpFill.anchorMax = new Vector2(ratio, 1f);
+            enemy.Gauge.SetHp(enemy.Hp, enemy.MaxHp);
         }
 
         private static void RefreshAlly(BattleInspectAlly ally)
         {
-            float ratio = ally.MaxHp > 0 ? ally.Hp / (float)ally.MaxHp : 0f;
-            ally.HpFill.anchorMax = new Vector2(ratio, 1f);
+            ally.Gauge.SetHp(ally.Hp, ally.MaxHp);
             // A downed ally is greyed out until healed.
             ally.Sprite.color = ally.Down ? DownTint : Color.white;
         }

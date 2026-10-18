@@ -2,7 +2,7 @@
 id: skill-armor-break
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 鎧砕き
 category: skills
 silhouette: 砕ける胸当て
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardArmorBreak.aseprite
 | 属性 | 打 |
 | 種類・対象 | 弱体・敵単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に192ダメージ。防御ダウン2ターン。 |
+| 説明文 | 敵1体に物攻の80%ダメージ。防御ダウン2ターン。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の80%）<br>敵単体：防御ダウン2ターン |
 
 ## 分類固有のデータ

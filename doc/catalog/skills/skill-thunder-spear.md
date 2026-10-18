@@ -2,7 +2,7 @@
 id: skill-thunder-spear
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 雷神の槍
 category: skills
 silhouette: 天から刺さる雷の槍
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunderSpear.asepri
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。雷の槍で敵1体に〇、さらに敵全体に〇ダメージ。 |
+| 対象の役割・説明 | 攻撃のカード。敵1体に〇、さらに敵全体に〇ダメージ。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunderSpear.asepri
 | 属性 | 雷 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 7 |
-| 説明文（モックの能力値、ACT0での数値） | 雷の槍で敵1体に622、さらに敵全体に104ダメージ。 |
+| 説明文 | 敵1体に属攻の240%、さらに敵全体に属攻の40%ダメージ。 |
 | 効果（行う順） | 敵単体：ダメージ（属攻の240%）<br>敵全体：ダメージ（属攻の40%） |
 
 ## 分類固有のデータ

@@ -2,7 +2,7 @@
 id: skill-blade-dance
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 千刃乱舞
 category: skills
 silhouette: 四方から交差する光の刃
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardBladeDance.aseprite
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。光の刃が舞い、ランダムな敵に〇ダメージを7回。 |
+| 対象の役割・説明 | 攻撃のカード。ランダムな敵に〇ダメージ×7。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardBladeDance.aseprite
 | 属性 | 斬 |
 | 種類・対象 | 攻撃・敵ランダム |
 | コスト | 8 |
-| 説明文（モックの能力値、ACT0での数値） | 光の刃が舞い、ランダムな敵に108ダメージを7回。 |
+| 説明文 | ランダムな敵に物攻の45%ダメージ×7。 |
 | 効果（行う順） | ランダムな敵：ダメージ（物攻の45%）×7回 |
 
 ## 分類固有のデータ

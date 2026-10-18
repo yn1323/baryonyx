@@ -2,7 +2,7 @@
 id: skill-earth-splitter
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 大地割り
 category: skills
 silhouette: 叩きつけられる槌と割れる地面
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEarthSplitter.asepr
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。大地を叩き割り、敵全体に〇ダメージ。 |
+| 対象の役割・説明 | 攻撃のカード。敵全体に〇ダメージ。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEarthSplitter.asepr
 | 属性 | 打 |
 | 種類・対象 | 攻撃・敵全体 |
 | コスト | 4 |
-| 説明文（モックの能力値、ACT0での数値） | 大地を叩き割り、敵全体に204ダメージ。 |
+| 説明文 | 敵全体に物攻の85%ダメージ。 |
 | 効果（行う順） | 敵全体：ダメージ（物攻の85%） |
 
 ## 分類固有のデータ

@@ -1,11 +1,10 @@
-using System;
 using Baryonyx.Combat;
 
 namespace Baryonyx.UI.Cards
 {
     /// <summary>
     /// How a card skill is written wherever it is shown (the battle's cards, the tavern's card
-    /// skills): the kind line with the kind in its colour, and the description with each number in
+    /// skills): the kind line with the kind in its colour, and the description with each power in
     /// the colour of what it does (damage yellow, healing green, block blue). Rich text.
     /// </summary>
     public static class CardText
@@ -18,13 +17,18 @@ namespace Baryonyx.UI.Cards
             $"<color=#{KindHex(skill.Kind)}>{CardRules.KindName(skill.Kind)}</color>"
             + $"<color=#{SeparatorHex}>・</color>{CardRules.ScopeName(skill)}";
 
-        /// <summary>The description with the powers from <paramref name="stat"/> put in, coloured (rich text).</summary>
-        public static string Description(CardSkill skill, Func<CardStat, int> stat, int act) =>
+        /// <summary>The colour of a keyword, underlined, whose meaning the battle shows beside the raised card.</summary>
+        public const string KeywordHex = "96d6ff";
+
+        /// <summary>
+        /// The description with each power's part of its stat ("属攻の100%") put in, coloured, and
+        /// its keywords coloured and underlined, each kept on one line (rich text).
+        /// </summary>
+        public static string Description(CardSkill skill) =>
             CardRules.Describe(
                 skill,
-                stat,
-                act,
-                (action, power) => $"<color=#{PowerHex(action)}>{power}</color>"
+                (action, part) => $"<nobr><color=#{PowerHex(action)}>{part}</color></nobr>",
+                name => $"<nobr><color=#{KeywordHex}><u>{name}</u></color></nobr>"
             );
 
         public static string KindHex(CardKind kind) =>

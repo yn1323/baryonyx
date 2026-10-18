@@ -2,7 +2,7 @@
 id: skill-iai
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 居合一閃
 category: skills
 silhouette: 横一文字の閃光と刀
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIai.aseprite
 | 属性 | 斬 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 5 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に480ダメージ。HPが半分以下の敵には1.5倍。 |
+| 説明文 | 敵1体に物攻の200%ダメージ。HPが半分以下の敵には1.5倍。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の200%）。HPが半分以下の敵に威力+50% |
 
 ## 分類固有のデータ

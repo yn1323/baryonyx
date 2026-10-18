@@ -2,7 +2,7 @@
 id: skill-revelation
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 天啓
 category: skills
 silhouette: 光の中の開いた本
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRevelation.aseprite
 | 属性 | なし |
 | 種類・対象 | 支援・次のカード |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 次に使うカードのコストを0にする。 |
+| 説明文 | 次に使うカードのコストを0にする。 |
 | 効果（行う順） | 全体：次に使うカードのコストを0にする |
 
 ## 分類固有のデータ

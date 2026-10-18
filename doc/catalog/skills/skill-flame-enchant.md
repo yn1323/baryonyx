@@ -2,7 +2,7 @@
 id: skill-flame-enchant
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: フレイムエンチャント
 category: skills
 silhouette: 炎をまとう剣
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFlameEnchant.asepri
 | 属性 | 炎 |
 | 種類・対象 | 強化・味方単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体の攻撃に、3ターン炎属性を加える。 |
+| 説明文 | 味方1体の攻撃に、3ターン炎属性を加える。 |
 | 効果（行う順） | 味方単体：炎の加護3ターン |
 
 ## 分類固有のデータ

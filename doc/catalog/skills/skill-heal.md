@@ -2,7 +2,7 @@
 id: skill-heal
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: ヒール
 category: skills
 silhouette: 中央の光と舞う葉
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHeal.aseprite
 | 属性 | なし |
 | 種類・対象 | 回復・味方単体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体のHPを177回復する。 |
+| 説明文 | 味方1体のHPを属攻の90%回復する。 |
 | 効果（行う順） | 味方単体：回復（属攻の90%） |
 
 ## 分類固有のデータ

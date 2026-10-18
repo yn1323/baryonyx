@@ -2,7 +2,7 @@
 id: skill-embers
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 火の粉
 category: skills
 silhouette: 舞う火の粉と小さな炎
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardEmbers.aseprite
 | 属性 | 炎 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に142ダメージ。やけど3ターン。 |
+| 説明文 | 敵1体に属攻の45%ダメージ。やけど3ターン。 |
 | 効果（行う順） | 敵単体：ダメージ（属攻の45%）<br>敵単体：やけど3ターン |
 
 ## 分類固有のデータ

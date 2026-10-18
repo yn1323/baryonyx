@@ -2,7 +2,7 @@
 id: skill-step-prayer
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 万歩の祈り
 category: skills
 silhouette: 光る足跡の小道
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 | 属性 | なし |
 | 種類・対象 | 回復・味方全体 |
 | コスト | 3 |
-| 説明文（モックの能力値、ACT0での数値） | 味方全体のHPを99回復。今日のACTが多いほど回復。 |
+| 説明文 | 味方全体のHPを属攻の50%回復。今日のACTが多いほど回復。 |
 | 効果（行う順） | 味方全体：回復（属攻の50%）。今日のACT1,000ごとに+10%（上限100%） |
 
 ## 分類固有のデータ

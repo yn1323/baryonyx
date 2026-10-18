@@ -2,7 +2,7 @@
 id: skill-holy-hammer
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 聖なる鉄槌
 category: skills
 silhouette: 天から降りる光の槌
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyHammer.aseprite
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。光の槌で敵1体に〇ダメージ。強化を1つ消す。 |
+| 対象の役割・説明 | 攻撃のカード。敵1体に〇ダメージ。強化を1つ消す。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyHammer.aseprite
 | 属性 | 打 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 3 |
-| 説明文（モックの能力値、ACT0での数値） | 光の槌で敵1体に276ダメージ。強化を1つ消す。 |
+| 説明文 | 敵1体に属攻の140%ダメージ。強化を1つ消す。 |
 | 効果（行う順） | 敵単体：ダメージ（属攻の140%）<br>敵単体：強化を1つ消す |
 
 ## 分類固有のデータ

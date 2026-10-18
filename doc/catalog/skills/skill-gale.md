@@ -2,7 +2,7 @@
 id: skill-gale
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 疾風迅雷
 category: skills
 silhouette: 風の流線と羽根
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardGale.aseprite
 | 属性 | 雷 |
 | 種類・対象 | 強化・味方全体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 味方全体の速度を2ターン上げる。 |
+| 説明文 | 味方全体の速度を2ターン上げる。 |
 | 効果（行う順） | 味方全体：速度アップ2ターン（30%） |
 
 ## 分類固有のデータ

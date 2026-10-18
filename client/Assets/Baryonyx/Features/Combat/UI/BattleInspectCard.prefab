@@ -987,7 +987,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u708E\u306E\u7389\u3067\u65751\u4F53\u3092\u713C\u304D\u3001<color=#ffce60>318</color>\u30C0\u30E1\u30FC\u30B8\u3002"
+  m_text: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E100%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 610198641dd04458eb542909596fea1e, type: 2}
   m_sharedMaterial: {fileID: -2557733962885195199, guid: 610198641dd04458eb542909596fea1e, type: 2}

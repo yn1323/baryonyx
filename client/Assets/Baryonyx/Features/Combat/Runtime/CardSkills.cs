@@ -41,7 +41,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "剣で敵1体を斬りつけ、{0}ダメージ。",
+                "敵1体に{0}ダメージ。",
                 Damage(Enemy, Phy, 100)
             ),
             Card(
@@ -52,7 +52,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 2,
-                "炎の玉で敵1体を焼き、{0}ダメージ。",
+                "敵1体に{0}ダメージ。",
                 Damage(Enemy, Mag, 100)
             ),
             Card(
@@ -63,7 +63,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 2,
-                "氷の槍で敵1体を貫き、{0}ダメージ。凍え2ターン。",
+                "敵1体に{0}ダメージ。[凍え]2ターン。",
                 Damage(Enemy, Mag, 85),
                 Apply(Enemy, CardStatus.Chill, 2)
             ),
@@ -75,7 +75,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 3,
-                "雷を落とし、敵全体に{0}ダメージ。",
+                "敵全体に{0}ダメージ。",
                 Damage(Enemies, Mag, 70)
             ),
             Card(
@@ -97,7 +97,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Allies,
                 1,
-                "守りの光で、味方全体にブロック{0}。",
+                "味方全体に[ブロック]{0}。",
                 Block(Allies, Def, 60)
             ),
             // --- Aria: slash, blunt, guarding the party -------------------------------------
@@ -109,7 +109,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 3,
-                "回転斬りで敵全体に{0}ダメージ。出血2ターン。",
+                "敵全体に{0}ダメージ。[出血]2ターン。",
                 Damage(Enemies, Phy, 60),
                 Apply(Enemies, CardStatus.Bleed, 2)
             ),
@@ -132,7 +132,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Random,
                 8,
-                "光の刃が舞い、ランダムな敵に{0}ダメージを7回。",
+                "ランダムな敵に{0}ダメージ×7。",
                 Damage(Random, Phy, 45, hits: 7)
             ),
             Card(
@@ -154,7 +154,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "盾で殴り{0}ダメージ。味方全体にブロック{1}。",
+                "敵1体に{0}ダメージ。味方全体に[ブロック]{1}。",
                 Damage(Enemy, Def, 90),
                 Block(Allies, Def, 30)
             ),
@@ -166,7 +166,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 2,
-                "敵1体に{0}ダメージ。防御ダウン2ターン。",
+                "敵1体に{0}ダメージ。[防御ダウン]2ターン。",
                 Damage(Enemy, Phy, 80),
                 Apply(Enemy, CardStatus.Vulnerable, 2)
             ),
@@ -178,7 +178,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
-                "大地を叩き割り、敵全体に{0}ダメージ。",
+                "敵全体に{0}ダメージ。",
                 Damage(Enemies, Phy, 85)
             ),
             Card(
@@ -189,7 +189,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 7,
-                "光の巨拳を打ち下ろし、敵1体に{0}ダメージ。",
+                "敵1体に{0}ダメージ。",
                 Damage(Enemy, Phy, 320)
             ),
             Card(
@@ -211,7 +211,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Self,
                 2,
-                "自分にブロック{0}。2ターン、敵の攻撃を引きつける。",
+                "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。",
                 Block(Self, Def, 150),
                 Apply(Self, CardStatus.Taunt, 2)
             ),
@@ -235,7 +235,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "敵1体に{0}ダメージ。やけど3ターン。",
+                "敵1体に{0}ダメージ。[やけど]3ターン。",
                 Damage(Enemy, Mag, 45),
                 Apply(Enemy, CardStatus.Burn, 3)
             ),
@@ -247,7 +247,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
-                "火柱で敵1体に{0}ダメージ。やけど中の敵には1.5倍。",
+                "敵1体に{0}ダメージ。[やけど]中の敵には1.5倍。",
                 Damage(Enemy, Mag, 120).Bonus(CardCondition.OnBurning, 50)
             ),
             Card(
@@ -258,7 +258,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
-                "炎の渦で敵全体に{0}ダメージ。やけど2ターン。",
+                "敵全体に{0}ダメージ。[やけど]2ターン。",
                 Damage(Enemies, Mag, 70),
                 Apply(Enemies, CardStatus.Burn, 2)
             ),
@@ -270,7 +270,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
-                "敵1体に刻印。次のターン、爆発して敵全体に{0}ダメージ。",
+                "敵1体に[刻印]。次のターン、敵全体に{0}ダメージ。",
                 Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150)
             ),
             Card(
@@ -281,7 +281,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 9,
-                "隕石を落とし、敵全体に{0}ダメージ。",
+                "敵全体に{0}ダメージ。",
                 Damage(Enemies, Mag, 260)
             ),
             Card(
@@ -303,7 +303,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Random,
                 2,
-                "つららを降らせ、ランダムな敵に{0}ダメージを4回。",
+                "ランダムな敵に{0}ダメージ×4。",
                 Damage(Random, Mag, 35, hits: 4)
             ),
             Card(
@@ -314,7 +314,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 5,
-                "吹雪で敵全体に{0}ダメージ。凍え2ターン。",
+                "敵全体に{0}ダメージ。[凍え]2ターン。",
                 Damage(Enemies, Mag, 90),
                 Apply(Enemies, CardStatus.Chill, 2)
             ),
@@ -337,7 +337,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 8,
-                "敵1体に{0}ダメージ。凍結させ、次の行動を封じる。",
+                "敵1体に{0}ダメージ。[凍結]させ、次の行動を封じる。",
                 Damage(Enemy, Mag, 230),
                 Apply(Enemy, CardStatus.Freeze, 1)
             ),
@@ -361,7 +361,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "敵1体に{0}ダメージ。弱点を突くとエネルギー+1。",
+                "敵1体に{0}ダメージ。[弱点]を突くとエネルギー+1。",
                 Damage(Enemy, Phy, 90),
                 Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
             ),
@@ -373,7 +373,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 1,
-                "敵1体に{0}ダメージ。毒を2つ重ねる。",
+                "敵1体に{0}ダメージ。[毒]を2つ重ねる。",
                 Damage(Enemy, Phy, 35),
                 Apply(Enemy, CardStatus.Poison, 0, 2)
             ),
@@ -397,7 +397,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 2,
-                "敵1体に{0}ダメージ。その敵の弱点をすべて見抜く。",
+                "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜く。",
                 Damage(Enemy, Phy, 70),
                 Simple(CardActionKind.RevealWeakness, Enemy)
             ),
@@ -409,7 +409,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
-                "矢の雨で、敵全体に{0}ダメージを2回。",
+                "敵全体に{0}ダメージ×2。",
                 Damage(Enemies, Phy, 45, hits: 2)
             ),
             Card(
@@ -420,7 +420,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 6,
-                "敵1体に{0}ダメージ。弱点を突くと威力+50%。",
+                "敵1体に{0}ダメージ。[弱点]を突くと威力+50%。",
                 Damage(Enemy, Phy, 220).Bonus(CardCondition.OnWeakness, 50)
             ),
             Card(
@@ -431,7 +431,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "稲妻で敵1体に{0}ダメージ。麻痺1ターン。",
+                "敵1体に{0}ダメージ。[麻痺]1ターン。",
                 Damage(Enemy, Mag, 70),
                 Apply(Enemy, CardStatus.Paralysis, 1)
             ),
@@ -443,7 +443,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Chain,
                 3,
-                "敵に{0}ダメージ。別の敵へ跳ねて計3回。",
+                "敵1体に{0}ダメージ×3。1回ごとに別の敵へ移る。",
                 Damage(Chain, Mag, 65, hits: 3)
             ),
             Card(
@@ -454,7 +454,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Nobody,
                 5,
-                "3ターンの間、毎ターン敵1体に落雷{0}ダメージ。",
+                "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。",
                 Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 80)
             ),
             Card(
@@ -465,7 +465,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 7,
-                "雷の槍で敵1体に{0}、さらに敵全体に{1}ダメージ。",
+                "敵1体に{0}、さらに敵全体に{1}ダメージ。",
                 Damage(Enemy, Mag, 240),
                 Damage(Enemies, Mag, 40)
             ),
@@ -533,7 +533,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
-                "光の槌で敵1体に{0}ダメージ。強化を1つ消す。",
+                "敵1体に{0}ダメージ。[強化]を1つ消す。",
                 Damage(Enemy, Mag, 140),
                 Simple(CardActionKind.Dispel, Enemy, 1)
             ),
@@ -556,7 +556,7 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Allies,
                 1,
-                "味方全体の状態異常を消し、HPを{0}回復。",
+                "味方全体の[状態異常]を消し、HPを{0}回復。",
                 Simple(CardActionKind.Cleanse, Allies),
                 Heal(Allies, Mag, 25)
             ),
@@ -607,13 +607,50 @@ namespace Baryonyx.Combat
             ),
         };
 
-        /// <summary>The card with <paramref name="id"/>, or null.</summary>
+        /// <summary>
+        /// Cards tried only in the battle mock, not among the card skills (<see cref="All"/>): not
+        /// counted with them, not offered in the loadout, and without art of their own.
+        /// 蛇牙の連撃 has many effects, to try the keyword notes stacked beside the raised card
+        /// (doc/features/combat.md, card keywords).
+        /// </summary>
+        public static readonly IReadOnlyList<CardSkill> Prototypes = new[]
+        {
+            Borrow(
+                "VitalThrust",
+                Card(
+                    "SerpentFang",
+                    "蛇牙の連撃",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    2,
+                    "敵1体に{0}ダメージ×2。[出血]・[毒]・[防御ダウン]。[弱点]でエネルギー+1。",
+                    Damage(Enemy, Phy, 45, hits: 2),
+                    Apply(Enemy, CardStatus.Bleed, 2),
+                    Apply(Enemy, CardStatus.Poison, 0, 2),
+                    Apply(Enemy, CardStatus.Vulnerable, 2),
+                    Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
+                )
+            ),
+        };
+
+        /// <summary>The card (or prototype) with <paramref name="id"/>, or null.</summary>
         public static CardSkill Find(string id)
         {
             foreach (var card in All)
                 if (card.Id == id)
                     return card;
+            foreach (var card in Prototypes)
+                if (card.Id == id)
+                    return card;
             return null;
+        }
+
+        private static CardSkill Borrow(string art, CardSkill card)
+        {
+            card.BorrowedArt = art;
+            return card;
         }
 
         private static CardSkill Card(

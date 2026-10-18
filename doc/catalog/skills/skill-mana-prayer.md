@@ -2,7 +2,7 @@
 id: skill-mana-prayer
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: マナの祈り
 category: skills
 silhouette: 水晶と金の杯
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardManaPrayer.aseprite
 | 属性 | なし |
 | 種類・対象 | 支援・エネルギー |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | エネルギーを2回復する。 |
+| 説明文 | エネルギーを2回復する。 |
 | 効果（行う順） | 全体：エネルギー+2 |
 
 ## 分類固有のデータ

@@ -2,7 +2,7 @@
 id: skill-insight-arrow
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 看破の矢
 category: skills
 silhouette: 光の矢と目の紋章
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardInsightArrow.asepri
 | 属性 | 貫 |
 | 種類・対象 | 弱体・敵単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に159ダメージ。その敵の弱点をすべて見抜く。 |
+| 説明文 | 敵1体に物攻の70%ダメージ。その敵の弱点をすべて見抜く。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の70%）<br>敵単体：弱点をすべて開示する |
 
 ## 分類固有のデータ

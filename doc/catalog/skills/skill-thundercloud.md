@@ -2,7 +2,7 @@
 id: skill-thundercloud
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 雷雲
 category: skills
 silhouette: 稲光をはらむ雷雲
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThundercloud.asepri
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。3ターンの間、毎ターン敵1体に落雷〇ダメージ。 |
+| 対象の役割・説明 | 攻撃のカード。3ターンの間、毎ターンランダムな敵1体に〇ダメージ。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThundercloud.asepri
 | 属性 | 雷 |
 | 種類・対象 | 攻撃・敵ランダム |
 | コスト | 5 |
-| 説明文（モックの能力値、ACT0での数値） | 3ターンの間、毎ターン敵1体に落雷207ダメージ。 |
+| 説明文 | 3ターンの間、毎ターンランダムな敵1体に属攻の80%ダメージ。 |
 | 効果（行う順） | 全体：雷雲3ターン（属攻の80%） |
 
 ## 分類固有のデータ

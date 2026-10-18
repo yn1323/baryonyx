@@ -44,9 +44,17 @@ namespace Baryonyx.Tests.PlayMode
                 var face = card.Body.GetComponent<BattleInspectCardView>();
                 Assert.That(face.Owner.text, Is.Not.Empty);
                 Assert.That(face.Kind.text, Does.Match("攻撃|回復|防御|強化|弱体|支援"));
-                // A card with a number shows it; a card such as 偵察 has none.
-                if (card.Power > 0)
-                    Assert.That(face.Description.text, Does.Contain(card.Power.ToString()));
+                // A card with a power shows it as a part of a stat ("属攻の100%"), not the
+                // ally's power; a card such as 偵察 has none.
+                var first = CardSkills
+                    .Find(view.Deck[card.DeckIndex].Skill)
+                    ?.Powered()
+                    .FirstOrDefault();
+                if (first != null)
+                {
+                    Assert.That(face.Description.text, Does.Contain(CardRules.PartName(first)));
+                    Assert.That(face.Description.text, Does.Not.Contain(">" + card.Power + "<"));
+                }
                 Assert.That(
                     face.Element.enabled,
                     Is.EqualTo(card.Element != BattleInspectElement.None),
@@ -105,7 +113,10 @@ namespace Baryonyx.Tests.PlayMode
             int dealt = Dealt(view, slash, wolf);
             Assert.That(dealt, Is.LessThan(slash.Power), "The wolf's defense softens the blow.");
             Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - dealt));
-            Assert.That(wolf.HpFill.anchorMax.x, Is.EqualTo(wolf.Hp / (float)wolf.MaxHp));
+            Assert.That(
+                wolf.Gauge.Ratio,
+                Is.EqualTo(wolf.Hp / (float)wolf.MaxHp).Within(1f / wolf.Gauge.InnerDots)
+            );
             Assert.That(Rising(view.DamageNumber), Is.EqualTo(new[] { dealt.ToString() }));
             Assert.That(Rising(view.WeakNumber), Is.Empty);
         }
@@ -1629,6 +1640,20 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(slime.Hp, Is.LessThan(slime.MaxHp));
             Assert.That(view.BlockOf(0), Is.GreaterThan(0), "Every ally takes the block.");
             Assert.That(view.BlockOf(3), Is.EqualTo(view.BlockOf(0)));
+            // The block shows as a yellow strip over the HP bar, on the scale of the max HP.
+            for (int i = 0; i < view.Allies.Length; i++)
+            {
+                var gauge = view.Allies[i].Gauge;
+                Assert.That(gauge.Block.gameObject.activeSelf, Is.True);
+                int dots = Mathf.RoundToInt(
+                    Mathf.Min(1f, view.BlockOf(i) / (float)view.Allies[i].MaxHp) * gauge.InnerDots
+                );
+                // The strip's edge takes a dot on each side.
+                Assert.That(
+                    gauge.Block.sizeDelta.x,
+                    Is.EqualTo((Mathf.Max(1, dots) + 2) * gauge.DotSize).Within(0.01f)
+                );
+            }
             int partyHp = view.Allies.Sum(ally => ally.Hp);
 
             view.EndTurnButton.onClick.Invoke();
@@ -1638,6 +1663,33 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lost, Is.LessThan(wolf.Power + slime.Power));
             // The block lasts until the party's next turn.
             Assert.That(view.BlockOf(0), Is.EqualTo(0));
+            Assert.That(view.Allies.All(ally => !ally.Gauge.Block.gameObject.activeSelf), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator LostHpTrailsBehindTheBarAndThenDrains()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var gauge = view.Enemies[0].Gauge;
+            int max = view.Enemies[0].MaxHp;
+            Assert.That(gauge.Ratio, Is.EqualTo(1f));
+
+            gauge.SetHp(max / 2, max);
+            Assert.That(gauge.Ratio, Is.EqualTo(0.5f).Within(1f / gauge.InnerDots));
+            Assert.That(gauge.TrailRatio, Is.EqualTo(1f), "The lost HP stays as a trail.");
+            Assert.That(gauge.Trail.gameObject.activeSelf, Is.True);
+
+            yield return new WaitForSeconds(gauge.TrailHold * 0.5f);
+            Assert.That(gauge.TrailRatio, Is.EqualTo(1f), "The trail holds a moment first.");
+
+            yield return new WaitForSeconds(gauge.TrailHold + gauge.TrailDrain + 0.2f);
+            Assert.That(gauge.TrailRatio, Is.EqualTo(gauge.Ratio), "Then it drains to the fill.");
+            Assert.That(gauge.Trail.gameObject.activeSelf, Is.False);
+
+            gauge.SetHp(max, max);
+            Assert.That(gauge.Ratio, Is.EqualTo(1f), "Healing fills the bar at once.");
+            Assert.That(gauge.Trail.gameObject.activeSelf, Is.False);
         }
 
         [UnityTest]
@@ -1645,6 +1697,24 @@ namespace Baryonyx.Tests.PlayMode
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
+            // 見本のデッキには引くカードがないため、同じルカの「蛇牙の連撃」を「偵察」に替えてから配る。
+            var skill = CardSkills.Find("Scout");
+            int slot = DeckIndexOf(view, "SerpentFang");
+            var serpent = view.Deck[slot];
+            view.Deck[slot] = new BattleInspectCardData
+            {
+                Name = skill.Name,
+                Owner = serpent.Owner,
+                Skill = skill.Id,
+                Kind = Baryonyx.UI.Cards.CardText.KindLine(skill),
+                Description = Baryonyx.UI.Cards.CardText.Description(skill),
+                Art = serpent.Art,
+                Frame = serpent.Frame,
+                Cost = skill.Cost,
+                Element = serpent.Element,
+                Effect = BattleCardText.EffectOf(skill),
+                Caster = serpent.Caster,
+            };
             int scout = DealInto(view, "Scout");
             Assert.That(
                 view.Cards[scout].TargetsWholeSide,

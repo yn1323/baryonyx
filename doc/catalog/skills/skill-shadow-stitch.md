@@ -2,7 +2,7 @@
 id: skill-shadow-stitch
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 影縫い
 category: skills
 silhouette: 影に突き立つ短剣と鎖
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardShadowStitch.asepri
 | 属性 | 貫 |
 | 種類・対象 | 弱体・敵単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に136ダメージ。その敵の行動順を1つ遅らせる。 |
+| 説明文 | 敵1体に物攻の60%ダメージ。その敵の行動順を1つ遅らせる。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の60%）<br>敵単体：行動順を1つ遅らせる |
 
 ## 分類固有のデータ

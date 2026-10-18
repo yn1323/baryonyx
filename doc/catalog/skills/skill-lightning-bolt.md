@@ -2,7 +2,7 @@
 id: skill-lightning-bolt
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: ライトニングボルト
 category: skills
 silhouette: 横に走るジグザグの稲妻
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardLightningBolt.asepr
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。稲妻で敵1体に〇ダメージ。麻痺1ターン。 |
+| 対象の役割・説明 | 攻撃のカード。敵1体に〇ダメージ。麻痺1ターン。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardLightningBolt.asepr
 | 属性 | 雷 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 稲妻で敵1体に181ダメージ。麻痺1ターン。 |
+| 説明文 | 敵1体に属攻の70%ダメージ。麻痺1ターン。 |
 | 効果（行う順） | 敵単体：ダメージ（属攻の70%）<br>敵単体：麻痺1ターン |
 
 ## 分類固有のデータ

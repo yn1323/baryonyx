@@ -2,7 +2,7 @@
 id: skill-ice-mirror
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: アイスミラー
 category: skills
 silhouette: 六角形の氷の鏡
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIceMirror.aseprite
 | 属性 | 氷 |
 | 種類・対象 | 防御・味方単体 |
 | コスト | 3 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体が次に受ける単体攻撃を、1回はね返す。 |
+| 説明文 | 味方1体が次に受ける単体攻撃を、1回はね返す。 |
 | 効果（行う順） | 味方単体：反射1ターン |
 
 ## 分類固有のデータ

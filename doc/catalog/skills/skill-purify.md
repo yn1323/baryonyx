@@ -2,7 +2,7 @@
 id: skill-purify
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 浄化の光
 category: skills
 silhouette: 湧き上がる光の泉
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardPurify.aseprite
 | 属性 | なし |
 | 種類・対象 | 回復・味方全体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 味方全体の状態異常を消し、HPを49回復。 |
+| 説明文 | 味方全体の状態異常を消し、HPを属攻の25%回復。 |
 | 効果（行う順） | 味方全体：状態異常を消す<br>味方全体：回復（属攻の25%） |
 
 ## 分類固有のデータ

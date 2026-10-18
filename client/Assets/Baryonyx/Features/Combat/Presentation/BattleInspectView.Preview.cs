@@ -21,6 +21,7 @@ namespace Baryonyx.Combat.Presentation
                 "エネルギー不足",
                 "カードを選んだ（タップ）",
                 "カードを敵へ向けた（スワイプ）",
+                "キーワードの説明札",
             };
 
         public void ShowPreviewState(int index)
@@ -50,6 +51,9 @@ namespace Baryonyx.Combat.Presentation
                 case 6:
                     RaisePreviewCard(swiped: true);
                     break;
+                case 7:
+                    RaisePreviewCard(swiped: false, withKeywords: true);
+                    break;
             }
         }
 
@@ -63,7 +67,8 @@ namespace Baryonyx.Combat.Presentation
         }
 
         // 初めの手札のうち、初めのエネルギーで出せる、敵1体に使うカード（なければ出せるカード）。
-        private int PreviewCard()
+        // withKeywords のときは、文にキーワードがあるカードに限る。
+        private int PreviewCard(bool withKeywords = false)
         {
             if (Settings == null)
                 return -1;
@@ -73,6 +78,8 @@ namespace Baryonyx.Combat.Presentation
             {
                 var card = Cards[i];
                 if (card.Cost > MaxEnergyAt(StartTurn) || card.DeckIndex >= Deck.Length)
+                    continue;
+                if (withKeywords && KeywordsOf(card.DeckIndex).Count == 0)
                     continue;
                 if (card.Effect == BattleInspectCardEffect.DamageOne)
                     return i;
@@ -85,11 +92,12 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// Raises a card as a press does: up in the middle with its user stepped forward, its
         /// ring and name, and the cursors over its targets; tapped, the tap area waits for the
-        /// target; swiped, the aim runs from the card to the first enemy it can hit.
+        /// target; swiped, the aim runs from the card to the first enemy it can hit. With
+        /// <paramref name="withKeywords"/>, a card whose text names keywords, with their notes.
         /// </summary>
-        private void RaisePreviewCard(bool swiped)
+        private void RaisePreviewCard(bool swiped, bool withKeywords = false)
         {
-            int index = PreviewCard();
+            int index = PreviewCard(withKeywords);
             if (index < 0)
                 return;
             // 停止中は Awake が動かず、敵のHPが入っていない（倒れた扱いになる）。
@@ -111,6 +119,8 @@ namespace Baryonyx.Combat.Presentation
             ShowMarkers(card);
             if (TapArea != null)
                 TapArea.SetActive(!swiped);
+            if (withKeywords && KeywordTips != null)
+                ShowKeywordTips(index);
 
             if (Aim == null)
                 return;

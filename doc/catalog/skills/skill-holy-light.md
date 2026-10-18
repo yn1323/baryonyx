@@ -2,7 +2,7 @@
 id: skill-holy-light
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: ホーリーライト
 category: skills
 silhouette: 放射する十字の光
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHolyLight.aseprite
 | 属性 | なし |
 | 種類・対象 | 攻撃・敵全体 |
 | コスト | 4 |
-| 説明文（モックの能力値、ACT0での数値） | 敵全体に99ダメージ。味方全体のHPを59回復。 |
+| 説明文 | 敵全体に属攻の50%ダメージ。味方全体のHPを属攻の30%回復。 |
 | 効果（行う順） | 敵全体：ダメージ（属攻の50%）<br>味方全体：回復（属攻の30%） |
 
 ## 分類固有のデータ

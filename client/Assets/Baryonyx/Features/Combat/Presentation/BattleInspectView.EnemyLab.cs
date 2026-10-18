@@ -63,8 +63,7 @@ namespace Baryonyx.Combat.Presentation
                     weakness.Show(weakness.StartsRevealed);
             }
             ReviveAllies();
-            EnsureBlock();
-            Array.Clear(allyBlock, 0, allyBlock.Length);
+            ClearBlock();
             Refresh();
         }
 

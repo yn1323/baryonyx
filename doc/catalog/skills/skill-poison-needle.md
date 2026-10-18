@@ -2,7 +2,7 @@
 id: skill-poison-needle
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 毒針
 category: skills
 silhouette: 斜めに飛ぶ投げ針
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardPoisonNeedle.asepri
 | 属性 | 貫 |
 | 種類・対象 | 弱体・敵単体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に79ダメージ。毒を2つ重ねる。 |
+| 説明文 | 敵1体に物攻の35%ダメージ。毒を2つ重ねる。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の35%）<br>敵単体：毒×2 |
 
 ## 分類固有のデータ

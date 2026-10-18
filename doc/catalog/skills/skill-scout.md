@@ -2,7 +2,7 @@
 id: skill-scout
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 偵察
 category: skills
 silhouette: 地図と望遠鏡
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardScout.aseprite
 | 属性 | なし |
 | 種類・対象 | 支援・山札 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | カードを2枚引く。 |
+| 説明文 | カードを2枚引く。 |
 | 効果（行う順） | 全体：カードを2枚引く |
 
 ## 分類固有のデータ

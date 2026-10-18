@@ -2,7 +2,7 @@
 id: skill-vital-thrust
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 急所突き
 category: skills
 silhouette: 照準を突く短剣
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardVitalThrust.aseprit
 | 属性 | 貫 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 1 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に204ダメージ。弱点を突くとエネルギー+1。 |
+| 説明文 | 敵1体に物攻の90%ダメージ。弱点を突くとエネルギー+1。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の90%）<br>弱点を突いたとき、全体：エネルギー+1 |
 
 ## 分類固有のデータ

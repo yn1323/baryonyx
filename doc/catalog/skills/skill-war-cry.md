@@ -2,7 +2,7 @@
 id: skill-war-cry
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 鬨の声
 category: skills
 silhouette: 軍旗と角笛
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardWarCry.aseprite
 | 属性 | なし |
 | 種類・対象 | 強化・味方全体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 味方全体の攻撃力を2ターン25%上げる。 |
+| 説明文 | 味方全体の攻撃力を2ターン25%上げる。 |
 | 効果（行う順） | 味方全体：攻撃力アップ2ターン（25%） |
 
 ## 分類固有のデータ

@@ -46,7 +46,7 @@ updated: 2026-10-05
 | Unityでの戦闘Vertical Slice | カードバトルの試作範囲を決めてから、実際の戦闘の手応えを確かめる |
 | SE・VFX・画面揺れなどの戦闘演出 | [爽快感と入力の手応え](../features/combat.md#爽快感と入力の手応え)に従い、具体的な制作範囲を決める |
 | 探索の分岐UI | [部屋・通路を見て選ぶ仕様](../features/stage-progression.md#ダンジョン内の見た目による行き先選択)と、分岐ルートのマップとの関係を決めて反映する |
-| 装備・育成UI | [装備](../features/equipment.md)・[育成](../features/progression.md)に従う。カードの威力の実数値と差分を表示する |
+| 装備・育成UI | [装備](../features/equipment.md)・[育成](../features/progression.md)に従う。カードの威力はステータスの割合で書く（[カードの数値の見せ方](../features/combat.md#カードの数値の見せ方)） |
 | BGMの方向性 | [アート方針](../art/direction.md)で未決の音の方針を具体化する |
 | 最終UIデザイン | [画面仕様](../features/screens.md)と試用時の評価を基に決める |
 | キャラ量産 | [個別対象の制作と比較](../art/direction.md#個別対象の制作と比較)に従う。制作数・時期は未決 |

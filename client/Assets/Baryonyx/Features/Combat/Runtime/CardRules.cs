@@ -45,24 +45,43 @@ namespace Baryonyx.Combat
                     );
 
         /// <summary>
-        /// The description with each powered action's number put in by <paramref name="paint"/>
-        /// (given the action and its power), e.g. to colour it.
+        /// The description with each powered action's part of its stat ("属攻の100%") put in by
+        /// <paramref name="paint"/> (given the action and that text), e.g. to colour it, and each
+        /// keyword in brackets by <paramref name="keyword"/> (given its name; the name alone when null).
+        /// The user's stats and today's ACT are left out, so a card reads the same for everyone.
         /// </summary>
         public static string Describe(
             CardSkill card,
-            Func<CardStat, int> stat,
-            int act,
-            Func<CardAction, int, string> paint = null
+            Func<CardAction, string, string> paint = null,
+            Func<string, string> keyword = null
         )
         {
             var numbers = new List<object>();
             foreach (var action in card.Powered())
             {
-                int power = Power(action, stat(action.Stat), act);
-                numbers.Add(paint != null ? paint(action, power) : power.ToString());
+                string part = PartName(action);
+                numbers.Add(paint != null ? paint(action, part) : part);
             }
-            return string.Format(card.Text, numbers.ToArray());
+            // Keywords first, so a painted part in brackets is not taken for one.
+            return string.Format(
+                CardKeywords.Paint(card.Text, keyword ?? (name => name)),
+                numbers.ToArray()
+            );
         }
+
+        /// <summary>The part of its stat an action's power is, as shown on the card ("属攻の100%").</summary>
+        public static string PartName(CardAction action) =>
+            $"{StatName(action.Stat)}の{action.Percent}%";
+
+        /// <summary>The name of a stat a power is a part of ("物攻").</summary>
+        public static string StatName(CardStat stat) =>
+            stat switch
+            {
+                CardStat.PhysicalAttack => "物攻",
+                CardStat.MagicAttack => "属攻",
+                CardStat.PhysicalDefense => "物防",
+                _ => "",
+            };
 
         /// <summary>The kind as shown on the card ("攻撃").</summary>
         public static string KindName(CardKind kind) =>

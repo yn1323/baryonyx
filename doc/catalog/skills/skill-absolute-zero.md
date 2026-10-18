@@ -2,7 +2,7 @@
 id: skill-absolute-zero
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 絶対零度
 category: skills
 silhouette: 中央の巨大な雪の結晶
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardAbsoluteZero.asepri
 | 属性 | 氷 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 8 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に727ダメージ。凍結させ、次の行動を封じる。 |
+| 説明文 | 敵1体に属攻の230%ダメージ。凍結させ、次の行動を封じる。 |
 | 効果（行う順） | 敵単体：ダメージ（属攻の230%）<br>敵単体：凍結1ターン |
 
 ## 分類固有のデータ

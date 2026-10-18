@@ -2,7 +2,7 @@
 id: skill-protect
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: プロテクト
 category: skills
 silhouette: 周りを回る4枚の盾
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardProtect.aseprite
 | 属性 | なし |
 | 種類・対象 | 防御・味方全体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 味方全体の受けるダメージを、2ターン25%減らす。 |
+| 説明文 | 味方全体の受けるダメージを、2ターン25%減らす。 |
 | 効果（行う順） | 味方全体：プロテクト2ターン（25%） |
 
 ## 分類固有のデータ

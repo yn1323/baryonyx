@@ -2,7 +2,7 @@
 id: skill-regen
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: リジェネ
 category: skills
 silhouette: 芽吹く若葉
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRegen.aseprite
 | 属性 | なし |
 | 種類・対象 | 回復・味方単体 |
 | コスト | 2 |
-| 説明文（モックの能力値、ACT0での数値） | 味方1体を、3ターンの間、毎ターン79回復する。 |
+| 説明文 | 味方1体を、3ターンの間、毎ターン属攻の40%回復する。 |
 | 効果（行う順） | 味方単体：リジェネ3ターン（属攻の40%） |
 
 ## 分類固有のデータ

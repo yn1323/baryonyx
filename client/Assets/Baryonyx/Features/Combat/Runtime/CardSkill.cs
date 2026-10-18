@@ -328,8 +328,14 @@ namespace Baryonyx.Combat
         public string Text;
         public IReadOnlyList<CardAction> Actions = Array.Empty<CardAction>();
 
+        /// <summary>
+        /// The art of another card this one borrows (a prototype without art of its own), by
+        /// that card's id; null for its own.
+        /// </summary>
+        public string BorrowedArt;
+
         /// <summary>The art's name in the card art folder.</summary>
-        public string Art => "Card" + Id;
+        public string Art => "Card" + (BorrowedArt ?? Id);
 
         /// <summary>The actions that show a number in the description, in order.</summary>
         public IEnumerable<CardAction> Powered()

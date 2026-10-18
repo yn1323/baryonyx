@@ -2,7 +2,7 @@
 id: skill-stride-strike
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-18
 name: 健脚の一撃
 category: skills
 silhouette: 蹴り出される金のブーツ
@@ -43,7 +43,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStrideStrike.asepri
 | 属性 | 打 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 3 |
-| 説明文（モックの能力値、ACT0での数値） | 敵1体に264ダメージ。今日のACTが多いほど強い。 |
+| 説明文 | 敵1体に物攻の110%ダメージ。今日のACTが多いほど強い。 |
 | 効果（行う順） | 敵単体：ダメージ（物攻の110%）。今日のACT1,000ごとに+10%（上限100%） |
 
 ## 分類固有のデータ
