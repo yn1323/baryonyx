@@ -25,6 +25,7 @@ namespace Baryonyx.Tests.EditMode
             public event Action ConfirmPressed;
             public event Action<int> GearPressed;
             public event Action<int> CardPressed;
+            public event Action<int> UniquePressed;
 
             public TrainingState Last;
             public readonly List<string> Notices = new();
@@ -37,6 +38,8 @@ namespace Baryonyx.Tests.EditMode
             public void OpenGear(string id, int slot) => Opened.Add($"gear {id} {slot}");
 
             public void OpenCards(string id, int slot) => Opened.Add($"cards {id} {slot}");
+
+            public void OpenUnique(string id, int index) => Opened.Add($"unique {id} {index}");
 
             public void Prev() => PrevPressed?.Invoke();
 
@@ -57,6 +60,8 @@ namespace Baryonyx.Tests.EditMode
             public void Gear(int slot) => GearPressed?.Invoke(slot);
 
             public void Card(int slot) => CardPressed?.Invoke(slot);
+
+            public void Unique(int index) => UniquePressed?.Invoke(index);
         }
 
         private sealed class FakeStore : ITrainingStore
@@ -289,13 +294,11 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Count, Is.EqualTo(1));
             Assert.That(state.Target, Is.EqualTo(13));
             Assert.That(state.Cost, Is.EqualTo(1200));
-            Assert.That(state.Remaining, Is.EqualTo(7250));
             Assert.That(
                 state.TargetStats - state.Stats,
                 Is.EqualTo(new CharacterStats(7, 3, 2, 8, 5, 2, 1, 1))
             );
             Assert.That(state.Learned, Is.Empty);
-            Assert.That(state.NextUnlock.Name, Is.EqualTo("炎の心得"));
             Assert.That(state.CanLess, Is.False);
             Assert.That(state.CanConfirm, Is.True);
             Assert.That(store.Runes, Is.EqualTo(8450), "Opening the dialog spends nothing.");
@@ -309,7 +312,6 @@ namespace Baryonyx.Tests.EditMode
                 state.Learned.Select(skill => skill.Name),
                 Is.EqualTo(new[] { "炎の心得" })
             );
-            Assert.That(state.NextUnlock.Name, Is.EqualTo("星降り"));
             view.Less();
             Assert.That(view.Last.Target, Is.EqualTo(14));
         }
@@ -330,7 +332,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.Count, Is.EqualTo(6));
             Assert.That(view.Last.CanAfford, Is.False);
             Assert.That(view.Last.CanConfirm, Is.False);
-            Assert.That(view.Last.Remaining, Is.EqualTo(8450 - 8700));
+            Assert.That(view.Last.Cost, Is.EqualTo(8700));
         }
 
         [Test]
@@ -498,18 +500,31 @@ namespace Baryonyx.Tests.EditMode
             view.Gear(0);
             // 開いていないアクセサリーの枠も、付け替えの画面を開く。
             view.Gear(3);
+            // 固有スキルは、未解放のものも、進化ツリーを出した付け替えの画面を開く。
+            view.Unique(1);
             Assert.That(
                 view.Opened,
-                Is.EqualTo(new[] { "gear toma 1", "cards toma 1", "gear luka 0", "gear luka 3" })
+                Is.EqualTo(
+                    new[]
+                    {
+                        "gear toma 1",
+                        "cards toma 1",
+                        "gear luka 0",
+                        "gear luka 3",
+                        "unique luka 1",
+                    }
+                )
             );
 
             // 枠の外は開かない。重ねた画面を開いている間も開かない。
             view.Gear(5);
             view.Gear(-1);
+            view.Unique(2);
             view.LevelUp();
             view.Gear(0);
             view.Card(0);
-            Assert.That(view.Opened.Count, Is.EqualTo(4));
+            view.Unique(0);
+            Assert.That(view.Opened.Count, Is.EqualTo(5));
             Assert.That(view.Notices, Is.Empty);
         }
 

@@ -6,12 +6,14 @@ using Baryonyx.Combat.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.SkillEvolution;
 using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Cards;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
@@ -36,19 +38,19 @@ namespace Baryonyx.CardLoadout.Editor
         // カードの挿絵（64×58）は2倍で出す。
         private const float ArtDot = 2f;
 
-        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に人・ステータス・枠、金の2本線の右の透ける面に
+        // 枠つきの表示（GuideFramedPanel）で、左の面に人・ステータス・枠、金の2本線の右の面に
         // タブとカードの一覧を置く。装備と同じ配置（PartyChangeScreenAssets）。設計座標、左上から。
         private static readonly Rect Left = ChangeScreen.Left;
         private static readonly Rect Right = ChangeScreen.Right;
 
-        // 左は上から人・ステータス・カスタムスキル・固有スキル。ステータスと線の位置は装備と同じ。
+        // 左は上から人・ステータス・固有スキル・カスタムスキル。ステータスと線の位置は装備と同じ。
+        // 固有スキルもカスタムスキルと同じ形のカードにする。
         private const float SlotTop = 318f;
         private const float SlotHeight = 136f;
         private const float SlotStep = 144f;
 
-        // カスタムスキルの下に、固有スキル2つを読むだけの行で出す。
-        private const float UniqueHeight = 92f;
-        private const float UniqueStep = 100f;
+        // 固有スキル2つの下で、見出しの前に空ける間。
+        private const float GroupGap = 40f;
         private const float SlotTextLeft = 156f;
         private const float RowHeight = 140f;
         private const float RowTextLeft = 160f;
@@ -56,6 +58,21 @@ namespace Baryonyx.CardLoadout.Editor
         // 右の上のタブの下の、付けられる属性の行。
         private const float UsableTop = 92f;
         private const float ListTop = 152f;
+
+        // 右の進化ツリー：上に見出し、その下に7つの段階を1行ずつ縦に並べ、はみ出す分はスクロールする。
+        // 最初の段階、続けて枝ごとに1段目（1段字下げ）、2段目（2段字下げ）の順。
+        // 字下げの手前に縦の線を引き、その段階のカードへ横に線を出す。
+        private const float TreeTitleTop = 24f;
+        private const float TreeListTop = 84f;
+        private const float StageIndent = 48f;
+        private const float RowSpacing = 10f;
+        private const float LineWidth = 4f;
+        private static readonly Color LineColor = new(0.86f, 0.71f, 0.38f, 0.7f);
+
+        // 未取得の段階の封印と鎖の絵。ドット絵ではない生成画像で、滑らかに縮めて出す。
+        private const string ArtFolder = "Assets/Baryonyx/Features/CardLoadout/UI/Art";
+        private const float SealSize = 112f;
+        private const float ChainWidth = 420f;
         private static readonly Color BadgeColor = new(0.02f, 0.03f, 0.06f, 0.85f);
 
         /// <summary>
@@ -89,97 +106,259 @@ namespace Baryonyx.CardLoadout.Editor
             );
             // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける（装備と同じ）。
             view.Stats = ChangeScreen.Stats(left);
-            Title(left, "CustomTitle", "カスタムスキル", "スキルかアイテム", SlotTop - 34);
+            Title(left, "UniqueTitle", "固有スキル", SlotTop - 34);
+            view.Uniques = Enumerable
+                .Range(0, CardLoadoutPresenter.UniqueCount)
+                .Select(i => BuildUnique(left, i, SlotTop + i * SlotStep))
+                .ToArray();
+            float customTop = SlotTop + CardLoadoutPresenter.UniqueCount * SlotStep + GroupGap;
+            Title(left, "CustomTitle", "カスタムスキル", customTop - 34);
             view.Slots = Enumerable
                 .Range(0, CardLoadoutRules.Size)
-                .Select(i => BuildSlot(left, i))
-                .ToArray();
-            float uniqueTop = SlotTop + CardLoadoutRules.Size * SlotStep + 40;
-            Title(left, "UniqueTitle", "固有スキル", "外せない", uniqueTop - 34);
-            view.Uniques = Enumerable
-                .Range(0, 2)
-                .Select(i => BuildUnique(left, i, uniqueTop + i * UniqueStep))
+                .Select(i => BuildSlot(left, "Slot" + i, customTop + i * SlotStep))
                 .ToArray();
             BuildCards(right, view);
+            view.Tree = BuildTree(right);
 
             // 仮データの最初の人で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
-            new CardLoadoutPresenter(view, people, new MockStore(party, training)).Dispose();
+            // 先に1つ目の固有スキルの進化ツリーを作り込み（停止中の表示の切り替えで見せる）、
+            // そのあと開いたときの表示（1枚目のカスタムスキルを選んだ状態）に戻す。
+            var store = new MockStore(party, training);
+            new CardLoadoutPresenter(view, people, store, unique: 0).Dispose();
+            new CardLoadoutPresenter(view, people, store).Dispose();
             return view.gameObject;
         }
 
         // --- Left: the chosen person's two custom skill slots -------------------------------
 
-        private static CardLoadoutSlotWidget BuildSlot(RectTransform panel, int index)
+        // カスタムスキルの枠1つ（固有スキルも同じ形）。挿絵・コスト・属性、名前と「攻撃・敵単体」、説明。
+        private static CardLoadoutSlotWidget BuildSlot(RectTransform panel, string name, float y) =>
+            BuildCard(Layout.Box(panel, name, 24, y, Left.width - 48, SlotHeight)).Widget;
+
+        private static (CardLoadoutSlotWidget Widget, RectTransform Content) BuildCard(
+            RectTransform rect
+        )
         {
-            var (button, selected, row) = GlassCardAssets.Choice(
-                Layout.Box(
-                    panel,
-                    "Slot" + index,
-                    24,
-                    SlotTop + index * SlotStep,
-                    Left.width - 48,
-                    SlotHeight
-                ),
-                pattern: false
-            );
+            var (button, selected, row) = GlassCardAssets.Choice(rect, pattern: false);
             var widget = new CardLoadoutSlotWidget { Button = button, Selected = selected };
             (widget.Art, widget.Cost, widget.Element) = BuildThumb(row, 12);
             (widget.Name, widget.Kind) = BuildNameLine(row, 8, SlotTextLeft, 24);
             widget.Description = BuildDescription(row, 56, 72, SlotTextLeft, 24);
-            return widget;
+            return (widget, row);
         }
 
-        // 左の見出し（金）と、その横の小さな注記。
-        private static void Title(
-            RectTransform panel,
-            string name,
-            string text,
-            string note,
-            float y
-        )
+        // 左の見出し（金のひし形と明るい金の文字）。
+        private static void Title(RectTransform panel, string name, string text, float y)
         {
             var row = Layout.Row(panel, name, 30, y, Left.width - 60, 30, 14, TextAnchor.LowerLeft);
             Label(row, "Title", text, 24, UiPalette.Gold, TextAlignmentOptions.BottomLeft);
-            Label(row, "Note", note, 18, UiPalette.TextSub, TextAlignmentOptions.BottomLeft);
             Frame.HeadingRow(row, 24);
         }
 
-        // 固有スキル1つ。挿絵の中央を3倍で出し、名前とエネルギー（未解放なら解放するLv）、効果を並べる。押せない。
+        // 固有スキル1つ。カスタムスキルと同じ形のカードに、未解放のときの錠前と「Lv 20で解放」を足す。
         private static CardLoadoutUniqueWidget BuildUnique(RectTransform panel, int index, float y)
         {
-            float width = Left.width - 48;
-            // 外せないので押せない板にする。
-            var row = GlassCardAssets.Plaque(
-                Layout.Box(panel, "Unique" + index, 24, y, width, UniqueHeight),
-                pattern: false
+            var (card, row) = BuildCard(
+                Layout.Box(panel, "Unique" + index, 24, y, Left.width - 48, SlotHeight)
             );
-            var widget = new CardLoadoutUniqueWidget();
-            (widget.Icon, widget.Lock) = TrainingAssets.SkillIcon(
-                Layout.Box(row, "Icon", 14, (UniqueHeight - 72) / 2f, 72, 72)
-            );
-            widget.Name = Label(
-                row,
-                "Name",
-                "",
-                28,
-                UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(widget.Name, 104, 10, width - 330, 34);
-            Guide.Shrink(widget.Name, 20);
-            widget.Meta = Label(row, "Meta", "", 20, UiPalette.Gold, TextAlignmentOptions.TopRight);
-            Layout.At(widget.Meta, width - 224, 16, 200, 26);
-            widget.Description = Label(
-                row,
-                "Description",
-                "",
-                22,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(widget.Description, 104, 50, width - 128, 30);
-            Guide.Shrink(widget.Description, 16);
+            var widget = new CardLoadoutUniqueWidget { Card = card };
+            widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
+            widget.Lock.SetActive(false);
+            widget.Mark = BuildMark(row);
             return widget;
+        }
+
+        // カードの右上の金の小さな文字（「Lv 20で解放」「セット中」）。
+        private static TMP_Text BuildMark(RectTransform row)
+        {
+            var mark = Label(row, "Mark", "", 22, UiPalette.Gold, TextAlignmentOptions.TopRight);
+            Guide.Band((RectTransform)mark.transform, true, 12, 30, SlotTextLeft, 20);
+            return mark;
+        }
+
+        // --- Right: the evolution tree of the unique skill chosen on the left ---------------
+
+        /// <summary>
+        /// The tree in the right frame, hidden until a unique skill is chosen: the heading, then
+        /// the seven stages one to a row in a list that scrolls — the first stage, then for each
+        /// branch its first step indented once and its second step indented twice. A line runs
+        /// down before each indent and turns into the stage's card.
+        /// </summary>
+        private static CardLoadoutTreeWidget BuildTree(RectTransform panel)
+        {
+            var root = Layout.Box(panel, "Tree", 0, 0, Right.width, Right.height);
+            var tree = new CardLoadoutTreeWidget { Root = root.gameObject };
+            tree.Title = Frame.Heading(
+                root,
+                "TreeTitle",
+                "",
+                24,
+                TreeTitleTop,
+                Right.width - 48,
+                44,
+                30
+            );
+
+            // 右の面のスクロールは一覧が使うので、ツリーは自分の面でスクロールする。
+            var (viewport, content) = ChangeScreen.List(root, TreeListTop);
+            content.GetComponent<VerticalLayoutGroup>().spacing = RowSpacing;
+            tree.Scroll = Layout.Scroll(root, viewport, content);
+
+            tree.Stages = Enumerable
+                .Range(0, UniqueSkillTreeShape.Count)
+                .Select(stage => BuildStageRow(content, stage))
+                .ToArray();
+            root.gameObject.SetActive(false);
+            return tree;
+        }
+
+        // 段階1行。線を先に作り、カードの下に描く。
+        private static CardLoadoutStageWidget BuildStageRow(RectTransform content, int stage)
+        {
+            var row = Layout.ListItem(content, "Stage" + stage, SlotHeight);
+            int step = UniqueSkillTreeShape.Step(stage);
+            float middle = (SlotHeight - LineWidth) / 2f;
+            bool lastBranch =
+                UniqueSkillTreeShape.Branch(stage) == UniqueSkillTreeShape.Branches - 1;
+            if (step == 1)
+            {
+                // 最初の段階から下ろす幹。最後の枝ならここで止める。
+                Bar(
+                    row,
+                    "Trunk",
+                    Line(0),
+                    -RowSpacing,
+                    lastBranch ? middle + RowSpacing : SlotHeight + RowSpacing
+                );
+                Bar(
+                    row,
+                    "Branch",
+                    Line(0),
+                    middle,
+                    StageIndent - Line(0),
+                    LineWidth,
+                    horizontal: true
+                );
+            }
+            else if (step == 2)
+            {
+                // 最後でない枝の2段目の横も、幹を次の枝まで通す。
+                if (!lastBranch)
+                    Bar(row, "Trunk", Line(0), -RowSpacing, SlotHeight + RowSpacing);
+                Bar(row, "Step", Line(1), -RowSpacing, middle + RowSpacing);
+                Bar(
+                    row,
+                    "Branch",
+                    Line(1),
+                    middle,
+                    StageIndent * 2 - Line(1),
+                    LineWidth,
+                    horizontal: true
+                );
+            }
+            float x = step * StageIndent;
+            var rect = Layout.Box(row, "Card", x, 0, Right.width - 48 - x, SlotHeight);
+            return BuildStage(rect);
+        }
+
+        // 字下げ depth 段目の手前の、縦の線の左端。
+        private static float Line(int depth) =>
+            depth * StageIndent + (StageIndent - LineWidth) / 2f;
+
+        // 縦の線（x, y から高さ length）。horizontal なら横の線（x, y から幅 length、太さ height）。
+        private static void Bar(
+            RectTransform parent,
+            string name,
+            float x,
+            float y,
+            float length,
+            float height = LineWidth,
+            bool horizontal = false
+        ) =>
+            AddImage(
+                horizontal
+                    ? Layout.Box(parent, name, x, y, length, height)
+                    : Layout.Box(parent, name, x, y, LineWidth, length),
+                LineColor,
+                false
+            );
+
+        /// <summary>
+        /// One stage: a card like a slot's, its shadow when not acquired, a lock for a locked
+        /// unique skill, and 「セット中」 at the top right.
+        /// </summary>
+        private static CardLoadoutStageWidget BuildStage(RectTransform rect)
+        {
+            var (button, selected, row) = GlassCardAssets.Choice(rect, pattern: false);
+            var widget = new CardLoadoutStageWidget();
+            var card = widget.Card;
+            card.Button = button;
+            card.Selected = selected;
+
+            var content = Rect("Content", row);
+            Stretch(content);
+            widget.Content = content.gameObject;
+            (card.Art, card.Cost, card.Element) = BuildThumb(content, 12);
+            (card.Name, card.Kind) = BuildNameLine(content, 8, SlotTextLeft, 24);
+            card.Description = BuildDescription(content, 56, 72, SlotTextLeft, 24);
+            widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
+            widget.Lock.SetActive(false);
+            widget.Mark = BuildMark(content);
+
+            // 取得していない段階は、カードの中央に「？」の封印を置き、左右へ鎖を渡した封じた札にする。
+            var shadow = Rect("Shadow", row);
+            Stretch(shadow);
+            widget.Shadow = shadow.gameObject;
+            var chain = SmoothTexture($"{ArtFolder}/StageSealChain.png");
+            var chainSize = new Vector2(ChainWidth, ChainWidth * chain.height / chain.width);
+            // 鎖の内側の端を封印の縁の下へ少し差し込む。右の鎖は左右を反転して、外側の端を薄くする。
+            float chainX = (SealSize - 16) / 2f + chainSize.x / 2f;
+            Seal(shadow, "ChainLeft", chain, new Vector2(-chainX, 0), chainSize, 1);
+            Seal(shadow, "ChainRight", chain, new Vector2(chainX, 0), chainSize, -1);
+            Seal(
+                shadow,
+                "Seal",
+                SmoothTexture($"{ArtFolder}/StageSeal.png"),
+                Vector2.zero,
+                Vector2.one * SealSize,
+                1
+            );
+            shadow.gameObject.SetActive(false);
+            return widget;
+        }
+
+        // 封印の絵1枚。カードの中央から offset の位置に置く。
+        private static void Seal(
+            RectTransform parent,
+            string name,
+            Texture texture,
+            Vector2 offset,
+            Vector2 size,
+            float flip
+        )
+        {
+            var rect = Rect(name, parent);
+            Place(rect, offset, size);
+            rect.localScale = new Vector3(flip, 1, 1);
+            var image = rect.gameObject.AddComponent<RawImage>();
+            image.texture = texture;
+            image.raycastTarget = false;
+        }
+
+        // ドット絵ではない生成画像を、透明を保って滑らかに縮める設定で読み込む。
+        private static Texture2D SmoothTexture(string path)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaIsTransparency = true;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
         // --- Right: the skill and item tabs, then every card the person can set -------------
@@ -380,29 +559,22 @@ namespace Baryonyx.CardLoadout.Editor
 
             public void SetCards(string id, IReadOnlyList<string> skills) { }
 
-            public int StatOf(string id, CardStat stat)
-            {
-                var member = party.Find(id);
-                var growth = training.Find(id);
-                if (member == null || growth == null)
-                    return 0;
-                var stats = growth.StatsAt(member.Level);
-                return stat switch
-                {
-                    CardStat.PhysicalAttack => stats.PhysicalAttack,
-                    CardStat.MagicAttack => stats.MagicAttack,
-                    CardStat.PhysicalDefense => stats.PhysicalDefense,
-                    _ => 0,
-                };
-            }
-
-            public int Act => 0;
-
             public string Selected
             {
                 get => null;
                 set { }
             }
+
+            // 仮データの進み具合だけを使い、アプリを動かしている間の進み具合は読まない。
+            public IReadOnlyList<CardLoadoutUnique> UniquesOf(string id) =>
+                CardLoadoutSessionStore.Uniques(
+                    training,
+                    id,
+                    party.Find(id)?.Level ?? 1,
+                    (_, _, mock) => mock ?? new UniqueSkillProgress()
+                );
+
+            public bool SetUniqueStage(string id, int index, int stage) => false;
         }
     }
 }

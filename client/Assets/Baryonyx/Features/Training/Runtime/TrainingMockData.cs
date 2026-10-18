@@ -1,5 +1,6 @@
 using System;
 using Baryonyx.Combat;
+using Baryonyx.SkillEvolution;
 using UnityEngine;
 
 namespace Baryonyx.Training
@@ -42,7 +43,15 @@ namespace Baryonyx.Training
         public TrainingSkill[] Passives = Array.Empty<TrainingSkill>();
         public TrainingSkill[] Uniques = Array.Empty<TrainingSkill>();
 
+        // 固有スキル（Uniques と同じ順）の進化の進み具合の仮データ。ないものは最初の段階だけ。
+        public UniqueSkillProgress[] UniqueProgress = Array.Empty<UniqueSkillProgress>();
+
         public CharacterStats StatsAt(int level) => Level100.At(level);
+
+        public UniqueSkillProgress MockProgressOf(int index) =>
+            UniqueProgress != null && index >= 0 && index < UniqueProgress.Length
+                ? UniqueProgress[index]
+                : null;
     }
 
     [Serializable]
@@ -57,6 +66,9 @@ namespace Baryonyx.Training
         // 固有スキルを使うときに払うエネルギー。パッシブは0。
         [Min(0)]
         public int Energy;
+
+        // 固有スキルの進化ツリーのID（UniqueSkillTrees）。パッシブは空。
+        public string Tree = "";
 
         // 仮のアイコン。カードの挿絵（64×58）の中央24×24ドットを4倍で出す。
         public Texture2D Icon;

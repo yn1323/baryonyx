@@ -3,6 +3,7 @@ using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
@@ -12,8 +13,8 @@ namespace Baryonyx.Party.Editor
     /// <summary>
     /// The layout the formation's change screens share (the equipment and the card skills, opened
     /// from the adventurer's page): in the guide frame, the person, their stats and slots on the
-    /// dark pane on the left, which takes the flick that changes the person, and the tabs and the
-    /// list on the pane the scene shows through on the right. Design pixels from the top left of
+    /// left pane, which takes the flick that changes the person, and the tabs and the list on
+    /// the right pane; the scene shows through both. Design pixels from the top left of
     /// the 1920x1080 layer (<see cref="Layout"/>).
     /// </summary>
     public static class PartyChangeScreenAssets
@@ -79,17 +80,33 @@ namespace Baryonyx.Party.Editor
                 Right.width - 48
             );
 
+        // 一覧の上下の縁で行を薄く消す幅。途中で切れた行が、縁でぱっつり切れて見えないようにする。
+        public const int ListFade = 24;
+
+        // 一覧の上の縁を、渡された位置より少し上（タブの下の行のすぐ下）から始める。
+        private const float ListRaise = 12f;
+
         /// <summary>
         /// The list's visible area in the right frame from <paramref name="top"/> down, and the
-        /// column its rows go in.
+        /// column its rows go in. The area reaches the frame's bottom and the rows fade out over
+        /// <see cref="ListFade"/> at the top and bottom edges; the column is padded as much, so the
+        /// first and last rows rest clear of the fade.
         /// </summary>
         public static (RectTransform Viewport, RectTransform Rows) List(
             RectTransform right,
             float top
         )
         {
-            var viewport = Layout.Viewport(right, new Vector2(24, 24), new Vector2(-24, -top));
-            return (viewport, Layout.Column(viewport, "Rows", 10));
+            var viewport = Layout.Viewport(
+                right,
+                new Vector2(24, 0),
+                new Vector2(-24, -(top - ListRaise))
+            );
+            viewport.GetComponent<RectMask2D>().softness = new Vector2Int(0, ListFade);
+            return (
+                viewport,
+                Layout.Column(viewport, "Rows", 10, new RectOffset(0, 0, ListFade, ListFade))
+            );
         }
 
         /// <summary>The text the right frame shows while reading, when the read failed, or when the list is empty.</summary>

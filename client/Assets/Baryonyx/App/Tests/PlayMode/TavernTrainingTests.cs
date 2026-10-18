@@ -7,6 +7,7 @@ using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Equipment;
 using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -27,6 +28,7 @@ namespace Baryonyx.Tests.PlayMode
             PartySession.Reset();
             TrainingSession.Reset();
             CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
         }
 
         [UnityTearDown]
@@ -37,6 +39,7 @@ namespace Baryonyx.Tests.PlayMode
             PartySession.Reset();
             TrainingSession.Reset();
             CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
             yield return SceneTests.UnloadAll(nameof(TavernTrainingTests));
         }
 
@@ -107,8 +110,16 @@ namespace Baryonyx.Tests.PlayMode
                 training.Passives[1].When.text,
                 Is.EqualTo($"Lv {growth.Passives[1].UnlockLevel}で解放")
             );
-            // 固有スキルは押せないカードで、未解放のものは暗くして解放するレベルを重ねる。
-            Assert.That(training.Uniques[0].Name.text, Is.EqualTo(growth.Uniques[0].Name));
+            // 固有スキルは押せるカードで、セットしている進化の段階を出す。未解放のものは暗くして
+            // 解放するレベルを重ねる。
+            Assert.That(
+                training.Uniques[0].Name.text,
+                Is.EqualTo(
+                    new CardLoadoutSessionStore(training.Party, training.Data)
+                        .UniqueCardOf(first.Id, 0)
+                        .Name
+                )
+            );
             Assert.That(training.Uniques[0].Description.text, Is.Not.Empty);
             Assert.That(training.Uniques[0].Lock.activeSelf, Is.False);
             Assert.That(training.Uniques[1].Lock.activeSelf, Is.True);
@@ -116,13 +127,17 @@ namespace Baryonyx.Tests.PlayMode
                 training.Uniques[1].When.text,
                 Is.EqualTo($"Lv {growth.Uniques[1].UnlockLevel}で解放")
             );
-            Assert.That(training.Uniques.All(card => card.Button == null), Is.True);
-            // カスタムスキルは2枚で、枠は属性の枠、説明には数字が入る。
+            foreach (var card in training.Uniques)
+                SceneTests.AssertTouchSize(card.Button.transform);
+            // カスタムスキルは2枚で、枠は属性の枠、説明にはステータスの割合（例：属攻の100%）が入る。
             Assert.That(training.CardSlots.Length, Is.EqualTo(TrainingPresenter.CustomSlots));
             Assert.That(training.CardSlots.All(card => card.Name.text != ""), Is.True);
             Assert.That(training.CardSlots.All(card => card.Art.enabled), Is.True);
             Assert.That(training.CardSlots.All(card => card.Frame.texture != null), Is.True);
-            Assert.That(training.CardSlots[0].Description.text, Does.Match(@"\d"));
+            Assert.That(
+                training.CardSlots[0].Description.text,
+                Does.Match(@"(物攻|属攻|物防)の\d+%")
+            );
             Assert.That(training.Gear[0].Slot.text, Is.EqualTo("武器"));
             Assert.That(training.Gear[0].Name.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Detail.text, Is.Not.Empty);
@@ -187,10 +202,8 @@ namespace Baryonyx.Tests.PlayMode
             );
             long cost = TrainingRules.CostBetween(first.Level, target, training.Data.CostPerLevel);
             Assert.That(
-                training.Balance.text,
-                Is.EqualTo(
-                    $"所持 8,450 → のこり {(8450 - cost).ToString("#,0", CultureInfo.InvariantCulture)}"
-                )
+                training.Cost.text,
+                Is.EqualTo(cost.ToString("#,0", CultureInfo.InvariantCulture))
             );
             training.Confirm.onClick.Invoke();
             Assert.That(training.Dialog.activeSelf, Is.False);
@@ -214,6 +227,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(cards.activeSelf, Is.False);
             Assert.That(training.gameObject.activeSelf, Is.True);
             Assert.That(training.Name.text, Is.EqualTo(party.Name(second)));
+
+            // 固有スキルは、その固有スキルの進化ツリーを出したスキルの付け替えの画面へ移る。
+            training.Uniques[1].Button.onClick.Invoke();
+            var loadout = cards.GetComponent<CardLoadoutView>();
+            Assert.That(cards.activeInHierarchy, Is.True);
+            Assert.That(loadout.Uniques[1].Card.Selected.activeSelf, Is.True);
+            Assert.That(loadout.Slots.All(slot => !slot.Selected.activeSelf), Is.True);
+            Assert.That(loadout.Tree.Root.activeSelf, Is.True);
+            view.Back.onClick.Invoke();
+            Assert.That(training.gameObject.activeSelf, Is.True);
 
             // 「もどる」で冒険者の一覧へ戻る。パーティの先頭を長押しして開き直すと、アプリを動かしている間はレベルが残る。
             view.Back.onClick.Invoke();
@@ -273,7 +296,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Dialog.activeSelf, Is.False);
             Assert.That(training.Level.text, Is.EqualTo("14"));
             training.LevelUp.onClick.Invoke();
-            Assert.That(training.Balance.text, Does.StartWith("所持 2,500"));
+            Assert.That(training.Presenter.State.Runes, Is.EqualTo(2500));
             training.Cancel.onClick.Invoke();
             Assert.That(view.ToastMessage, Does.StartWith($"{data.Find("toma").Name}が Lv 14"));
 

@@ -22,8 +22,8 @@ namespace Baryonyx.Tavern.Editor
     /// for its adventurers item, so the party's four cards on the left and a card for every mock
     /// character on the right are baked into the formation prefab and read in the editor without
     /// Play Mode. The panel fills the screen inside the guide screen's frame
-    /// (<see cref="GuideFramedPanel"/>): a dark pane for the party, a pane the scene shows through
-    /// for the list, and the gold double line between them. Positions are design pixels from the
+    /// (<see cref="GuideFramedPanel"/>): a pane for the party and one for the list, both
+    /// the scene shows through, and the gold double line between them. Positions are design pixels from the
     /// top left of a 1920x1080 layer (<see cref="GuidePanelLayout"/>), matching the mockup the
     /// player chose.
     /// </summary>

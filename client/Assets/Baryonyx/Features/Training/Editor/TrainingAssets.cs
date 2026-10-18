@@ -10,6 +10,7 @@ using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
@@ -41,7 +42,7 @@ namespace Baryonyx.Training.Editor
         private const float Dot = Guide.DotScale;
         private static readonly Vector2 Design = Layout.Design;
 
-        // 枠つきの表示（GuideFramedPanel）で、左の濃い面いっぱいにイラスト、その右下にドット絵、
+        // 枠つきの表示（GuideFramedPanel）で、左の面いっぱいにイラスト、その右下にドット絵、
         // 金の2本線の右の透ける面に詳細を置く（設計座標、左上から）。
         private const float Split = 640f;
         private static readonly Rect Portrait = new(
@@ -81,13 +82,14 @@ namespace Baryonyx.Training.Editor
         // －＋の押せる範囲。
         private const float HitSize = Layout.HitSize;
 
-        // 重ねて開くレベルアップ。
-        private static readonly Rect Modal = new(280, 150, 1360, 890);
+        // 重ねて開くレベルアップ。上下左右の中央に置く1列の窓。
+        private static readonly Rect Modal = new(460, 131, 1000, 818);
         private const float ModalPad = 48f;
 
-        // レベルアップの、ステータス8行の上端と1行の高さ。
-        private const float DiffTop = 350f;
+        // レベルアップの、ステータス8行の上端・1行の高さ・幅。
+        private const float DiffTop = 290f;
         private const float DiffHeight = 42f;
+        private static float DiffWidth => Modal.width - ModalPad * 2;
 
         // カードの挿絵（64×58）の中央24×24ドット。スキルの仮のアイコンに使う（スキルの付け替えと共有）。
         public static readonly Rect SkillIconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
@@ -118,7 +120,14 @@ namespace Baryonyx.Training.Editor
             var healer = Healer();
             data.Characters = new[]
             {
-                Character("toma", new(2300, 700, 850, 2450, 1700, 560, 300, 500), mage),
+                // トーマのマナバーストは、1本目の枝の2段目までと2本目の枝の1段目を取得し、
+                // 1本目の枝の1段目をセットしている（固有スキルの進化の仮データ）。
+                Character(
+                    "toma",
+                    new(2300, 700, 850, 2450, 1700, 560, 300, 500),
+                    mage,
+                    new UniqueSkillProgress { Set = 1, Acquired = new[] { 1, 2, 3 } }
+                ),
                 Character("luka", new(2850, 1800, 950, 2050, 1100, 670, 900, 600), archer),
                 Character("aria", new(3900, 1950, 1600, 950, 1200, 490, 500, 300), knight),
                 Character("mina", new(2500, 800, 1150, 1600, 1800, 540, 200, 900), healer),
@@ -136,7 +145,8 @@ namespace Baryonyx.Training.Editor
         private static TrainingCharacter Character(
             string id,
             CharacterStats level100,
-            TrainingCharacter skills
+            TrainingCharacter skills,
+            params UniqueSkillProgress[] progress
         ) =>
             new()
             {
@@ -144,38 +154,60 @@ namespace Baryonyx.Training.Editor
                 Level100 = level100,
                 Passives = skills.Passives,
                 Uniques = skills.Uniques,
+                UniqueProgress = progress,
             };
 
         private static TrainingCharacter Mage() =>
             Skills(
                 Skill("魔力の泉", "戦闘の始めにエネルギー +1", 1, 0, "CardManaPrayer"),
                 Skill("炎の心得", "炎のカードの威力 +10%", 15, 0, "CardFlameEnchant"),
-                Skill("マナバースト", "敵全体に 属攻の80% のダメージ", 5, 3, "CardRevelation"),
-                Skill("星降り", "ランダムな敵に5回ダメージ", 20, 5, "CardMeteor")
+                Unique(
+                    "マナバースト",
+                    "敵全体に 属攻の80% のダメージ",
+                    5,
+                    3,
+                    "CardRevelation",
+                    "ManaBurst"
+                ),
+                Unique("星降り", "ランダムな敵に5回ダメージ", 20, 5, "CardMeteor", "StarFall")
             );
 
         private static TrainingCharacter Archer() =>
             Skills(
                 Skill("狩人の目", "敵の弱点を見つけやすくなる", 1, 0, "CardInsightArrow"),
                 Skill("疾風", "速度 +10%", 15, 0, "CardGale"),
-                Skill("雷撃の矢", "敵1体に雷のダメージ。まひさせる", 5, 3, "CardThunderSpear"),
-                Skill("矢の雨", "敵全体に3回ダメージ", 20, 5, "CardArrowRain")
+                Unique(
+                    "雷撃の矢",
+                    "敵1体に雷のダメージ。まひさせる",
+                    5,
+                    3,
+                    "CardThunderSpear",
+                    "ThunderArrow"
+                ),
+                Unique("矢の雨", "敵全体に3回ダメージ", 20, 5, "CardArrowRain", "ArrowStorm")
             );
 
         private static TrainingCharacter Knight() =>
             Skills(
                 Skill("守護の誓い", "味方が受けるダメージ -5%", 1, 0, "CardGuardianOath"),
                 Skill("不屈", "倒れるダメージを1度だけ耐える", 15, 0, "CardDivineShield"),
-                Skill("盾の構え", "次のターンまでブロック +80", 5, 2, "CardProtect"),
-                Skill("一閃", "敵1体に 物攻の200% のダメージ", 20, 5, "CardIai")
+                Unique(
+                    "盾の構え",
+                    "次のターンまでブロック +80",
+                    5,
+                    2,
+                    "CardProtect",
+                    "ShieldStance"
+                ),
+                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, 5, "CardIai", "Issen")
             );
 
         private static TrainingCharacter Healer() =>
             Skills(
                 Skill("祈り", "ターンの終わりに味方のHPを少し回復", 1, 0, "CardRegen"),
                 Skill("浄化の光", "状態異常に1回かからない", 15, 0, "CardPurify"),
-                Skill("癒しの風", "味方全体のHPを回復", 5, 3, "CardHeal"),
-                Skill("蘇生", "倒れた味方1人を復活させる", 20, 6, "CardResurrection")
+                Unique("癒しの風", "味方全体のHPを回復", 5, 3, "CardHeal", "HealingWind"),
+                Unique("蘇生", "倒れた味方1人を復活させる", 20, 6, "CardResurrection", "Revive")
             );
 
         private static TrainingCharacter Skills(
@@ -185,6 +217,21 @@ namespace Baryonyx.Training.Editor
             TrainingSkill unique2
         ) =>
             new() { Passives = new[] { passive1, passive2 }, Uniques = new[] { unique1, unique2 } };
+
+        // 固有スキル。名前・エネルギーは進化ツリーの最初の段階と同じにする。
+        private static TrainingSkill Unique(
+            string name,
+            string description,
+            int level,
+            int energy,
+            string art,
+            string tree
+        )
+        {
+            var skill = Skill(name, description, level, energy, art);
+            skill.Tree = tree;
+            return skill;
+        }
 
         // 固有スキル・パッシブの絵はまだないため、スキルの挿絵を仮のアイコンにする。
         private static TrainingSkill Skill(
@@ -268,7 +315,7 @@ namespace Baryonyx.Training.Editor
             );
             var fadeImage = fade.gameObject.AddComponent<RawImage>();
             fadeImage.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(Guide.ShadeHorizontalPath);
-            var paneColor = GuideFrameAssets.PaneDark;
+            var paneColor = GuideFrameAssets.PaneLight;
             fadeImage.color = new Color(paneColor.r, paneColor.g, paneColor.b, 0.9f);
             fadeImage.raycastTarget = false;
 
@@ -403,7 +450,7 @@ namespace Baryonyx.Training.Editor
                 .ToArray();
             view.Uniques = Enumerable
                 .Range(0, 2)
-                .Select(i => BuildCard(panel, "Unique" + i, cardX[i], DeckTop, button: false))
+                .Select(i => BuildCard(panel, "Unique" + i, cardX[i], DeckTop, button: true))
                 .ToArray();
             view.CardSlots = Enumerable
                 .Range(0, TrainingPresenter.CustomSlots)
@@ -432,9 +479,10 @@ namespace Baryonyx.Training.Editor
         // 右上の「レベルアップ」（金の縁のすりガラスのカード）。1レベル上げるのに要るルーンを添え、押すと重ねた画面を開く。
         private static void BuildLevelUp(RectTransform panel, TrainingView view)
         {
-            // 選んだカードと同じ金の縁と光で、押せることを目立たせる。
+            // 選んだカードと同じ金の縁と光で、押せることを目立たせる。背景の模様は付けない。
             var (button, selected, levelUp) = GlassCardAssets.Choice(
-                Layout.Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96)
+                Layout.Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96),
+                pattern: false
             );
             selected.SetActive(true);
             view.LevelUp = button;
@@ -796,7 +844,7 @@ namespace Baryonyx.Training.Editor
             AddImage(dim, Dim, true);
 
             var layer = Layout.Layer(dialog, "Layout");
-            // 枠つきの画面と同じ、濃い面に金の細い線の窓。見出しは金のひし形と淡い金の文字。
+            // 枠つきの画面と同じ、濃い紺に金の細い線の窓。見出しや名前は出さず、Lvから始める。
             var modal = GuideFrameAssets.Window(
                 layer,
                 "Modal",
@@ -807,22 +855,11 @@ namespace Baryonyx.Training.Editor
             );
             float width = Modal.width;
 
-            GuideFrameAssets.Heading(modal, "Title", "レベルアップ", ModalPad, 30, 500, 64, 44);
-            view.DialogName = Label(
-                modal,
-                "Name",
-                "",
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineRight
-            );
-            Layout.At(view.DialogName, width - ModalPad - 500, 30, 500, 64);
-
             var levels = Layout.Row(
                 modal,
                 "Levels",
                 0,
-                104,
+                32,
                 width,
                 124,
                 22,
@@ -853,7 +890,7 @@ namespace Baryonyx.Training.Editor
             view.To = Label(levels, "To", "", 104, UiPalette.Gold, TextAlignmentOptions.Baseline);
             Layout.Fit(view.To, 0);
 
-            var step = Layout.Row(modal, "Step", 0, 238, width, 92, 16, TextAnchor.MiddleCenter);
+            var step = Layout.Row(modal, "Step", 0, 168, width, 92, 16, TextAnchor.MiddleCenter);
             view.Less = Square(step, "Less", "－", HitSize);
             var count = Rect("Count", step);
             Layout.Fit(count, 200);
@@ -877,105 +914,29 @@ namespace Baryonyx.Training.Editor
                 .Select(i => BuildDiff(modal, i, ModalPad, DiffTop + i * DiffHeight))
                 .ToArray();
 
-            float side = ModalPad + 640 + 48;
-            float sideWidth = width - side - ModalPad;
-            var learned = GlassCardAssets.Plaque(
-                Layout.Box(modal, "Learned", side, 372, sideWidth, 124),
-                pattern: false
-            );
-            var learnedTag = Label(
-                learned,
-                "Tag",
-                "このレベルアップで覚えるスキル",
-                24,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(learnedTag, 24, 16, sideWidth - 48, 32);
-            view.Learned = Label(
-                learned,
-                "Value",
-                "",
-                32,
-                UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(view.Learned, 24, 56, sideWidth - 48, 56);
-            view.Learned.textWrappingMode = TextWrappingModes.Normal;
-            Guide.Shrink(view.Learned, 24);
-
-            var nextBox = Layout.Box(modal, "NextUnlock", side, 512, sideWidth, 160);
-            var next = GlassCardAssets.Plaque(nextBox, pattern: false);
-            view.NextBox = nextBox.gameObject;
-            var nextTag = Label(
-                next,
-                "Tag",
-                "次の解放",
-                24,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(nextTag, 24, 14, 300, 32);
-            var nextIcon = Layout.Box(next, "Icon", 24, 50, Guide.IconSize, Guide.IconSize);
-            view.NextIcon = nextIcon.gameObject.AddComponent<RawImage>();
-            view.NextIcon.uvRect = SkillIconCrop;
-            view.NextIcon.color = new Color(0.55f, 0.55f, 0.6f, 1f);
-            view.NextIcon.raycastTarget = false;
-            float nextX = 24 + Guide.IconSize + 18;
-            view.NextLevel = Label(
-                next,
-                "Level",
-                "",
-                24,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(view.NextLevel, nextX, 48, sideWidth - nextX - 20, 30);
-            view.NextName = Label(
-                next,
-                "Name",
-                "",
-                36,
-                UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(view.NextName, nextX, 78, sideWidth - nextX - 20, 44);
-            Guide.Shrink(view.NextName, 24);
-            view.NextRemain = Label(
-                next,
-                "Remain",
-                "",
-                24,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(view.NextRemain, nextX, 122, sideWidth - nextX - 20, 30);
-
+            // 下の段は、左に使うルーン、右に「やめる」と「レベルアップ」。
             float footY = Modal.height - ModalPad - 110;
+            float confirmX = width - ModalPad - 340;
+            float cancelX = confirmX - 24 - 220;
+            // 使うルーンは控えめに、右上の所持ルーンと同じ大きさのアイコン（2倍）とステータスの数字の大きさにする。
+            const float runeSize = 24f * 2f;
             var runeIcon = Icon(modal, "RuneIcon", Guide.IconRunePath);
-            Layout.At(runeIcon, ModalPad, footY - 22, Guide.IconSize, Guide.IconSize);
+            Layout.At(runeIcon, ModalPad, footY + (110 - runeSize) / 2f, runeSize, runeSize);
+            float costX = ModalPad + runeSize + 10;
             view.Cost = Label(
                 modal,
                 "Cost",
                 "",
-                56,
+                34,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            Layout.At(view.Cost, ModalPad + Guide.IconSize + 12, footY - 22, 420, Guide.IconSize);
-            view.Balance = Label(
-                modal,
-                "Balance",
-                "",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(view.Balance, ModalPad, footY + 78, 600, 36);
+            Layout.At(view.Cost, costX, footY, cancelX - costX - 16, 110);
+            Guide.Shrink(view.Cost, 24);
 
             // 決める方は、育成の画面の「レベルアップ」と同じ金の縁と光のカードにする。
             var (confirmButton, confirmRim, confirm) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Confirm", width - ModalPad - 380, footY, 380, 110),
+                Layout.Box(modal, "Confirm", confirmX, footY, 340, 110),
                 pattern: false
             );
             confirmRim.SetActive(true);
@@ -990,7 +951,7 @@ namespace Baryonyx.Training.Editor
             );
             Stretch((RectTransform)confirmLabel.transform);
             var (cancelButton, _, cancel) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Cancel", width - ModalPad - 380 - 24 - 240, footY, 240, 110),
+                Layout.Box(modal, "Cancel", cancelX, footY, 220, 110),
                 pattern: false
             );
             view.Cancel = cancelButton;
@@ -1015,8 +976,9 @@ namespace Baryonyx.Training.Editor
         )
         {
             const float text = DiffHeight - 4;
-            var row = Layout.Box(modal, "Diff" + index, x, y, 640, DiffHeight);
-            Layout.Line(row, "Line", 0, DiffHeight - 2, 640, 2);
+            float w = DiffWidth;
+            var row = Layout.Box(modal, "Diff" + index, x, y, w, DiffHeight);
+            Layout.Line(row, "Line", 0, DiffHeight - 2, w, 2);
             var label = Label(
                 row,
                 "Label",
@@ -1025,7 +987,7 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.BottomLeft
             );
-            Layout.At(label, 0, 0, 170, text);
+            Layout.At(label, 0, 0, 220, text);
             var widget = new TrainingDiffWidget
             {
                 Before = Label(row, "Before", "", 30, Before, TextAlignmentOptions.BottomRight),
@@ -1039,10 +1001,10 @@ namespace Baryonyx.Training.Editor
                 ),
                 Gain = Label(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
             };
-            Layout.At(widget.Before, 170, 0, 110, text);
-            Arrow(row, "Arrow", 300, 9, 3);
-            Layout.At(widget.After, 330, 0, 110, text);
-            Layout.At(widget.Gain, 450, 0, 190, text);
+            Layout.At(widget.Before, 220, 0, 180, text);
+            Arrow(row, "Arrow", 432, 9, 3);
+            Layout.At(widget.After, 470, 0, 180, text);
+            Layout.At(widget.Gain, 650, 0, w - 650, text);
             return widget;
         }
 

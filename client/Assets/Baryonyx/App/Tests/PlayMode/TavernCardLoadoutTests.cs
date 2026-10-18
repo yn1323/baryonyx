@@ -4,6 +4,7 @@ using Baryonyx.App;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -23,6 +24,7 @@ namespace Baryonyx.Tests.PlayMode
             services = TestGameServices.Use();
             PartySession.Reset();
             CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
         }
 
         [UnityTearDown]
@@ -32,6 +34,7 @@ namespace Baryonyx.Tests.PlayMode
             services = null;
             PartySession.Reset();
             CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
             yield return SceneTests.UnloadAll(nameof(TavernCardLoadoutTests));
         }
 
@@ -83,6 +86,56 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Stats.All(stat => stat.text != ""), Is.True);
             AssertShows(panel, data, people[0]);
 
+            // 左は上から固有スキル2つ、カスタムスキル2枚。固有スキルもカスタムスキルと同じ形のカード。
+            SceneTests.AssertBelow(
+                panel.Slots[0].Button.transform,
+                panel.Uniques[1].Card.Button.transform
+            );
+            SceneTests.AssertBelow(
+                panel.Uniques[0].Card.Button.transform,
+                panel.Stats[0].transform
+            );
+            foreach (var unique in panel.Uniques)
+                SceneTests.AssertTouchSize(unique.Card.Button.transform, 0.7f);
+            var store = new CardLoadoutSessionStore(data, panel.Training);
+            Assert.That(
+                panel.Uniques[0].Card.Name.text,
+                Is.EqualTo(store.UniqueCardOf(people[0].Id, 0).Name)
+            );
+            Assert.That(panel.Uniques[0].Card.Kind.text, Is.Not.Empty);
+            Assert.That(panel.Uniques[0].Card.Cost.text, Is.Not.Empty);
+
+            // 固有スキルを押すと、右はタブと一覧の代わりに進化ツリーになる。取得した段階を押すと、
+            // その場でセットし、左の固有スキルも変わる。取得していない段階は影だけで押せない。
+            panel.Uniques[0].Card.Button.onClick.Invoke();
+            Assert.That(panel.Tree.Root.activeSelf, Is.True);
+            Assert.That(panel.List.viewport.gameObject.activeSelf, Is.False);
+            Assert.That(panel.Tabs.All(tab => !tab.gameObject.activeSelf), Is.True);
+            Assert.That(panel.Uniques[0].Card.Selected.activeSelf, Is.True);
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.False);
+            var stages = store.UniquesOf(people[0].Id)[0];
+            var unset = Enumerable
+                .Range(0, UniqueSkillTreeShape.Count)
+                .First(stage => stages.Progress.Has(stage) && stage != stages.Progress.SetStage);
+            var shadow = Enumerable
+                .Range(0, UniqueSkillTreeShape.Count)
+                .First(stage => !stages.Progress.Has(stage));
+            Assert.That(panel.Tree.Stages[shadow].Shadow.activeSelf, Is.True);
+            Assert.That(panel.Tree.Stages[shadow].Card.Button.interactable, Is.False);
+            foreach (var stage in panel.Tree.Stages)
+                SceneTests.AssertTouchSize(stage.Card.Button.transform, 0.7f);
+            panel.Tree.Stages[unset].Card.Button.onClick.Invoke();
+            var card = stages.Tree.StageAt(unset).Card;
+            Assert.That(panel.Uniques[0].Card.Name.text, Is.EqualTo(card.Name));
+            Assert.That(panel.Tree.Stages[unset].Mark.text, Is.EqualTo(CardLoadoutView.SetMark));
+            Assert.That(panel.LastNotice, Is.Empty);
+
+            // カスタムスキルの枠を押すと、右はタブと一覧に戻る。
+            panel.Slots[1].Button.onClick.Invoke();
+            Assert.That(panel.Tree.Root.activeSelf, Is.False);
+            Assert.That(panel.List.viewport.gameObject.activeSelf, Is.True);
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+
             // 右へのフリックで、パーティにいない最後の仲間へ回る。枠は2つ目のまま。
             var other = people[people.Count - 1];
             panel.Swipe.Flick(-1);
@@ -126,6 +179,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(page.gameObject.activeSelf, Is.True);
             Assert.That(page.Name.text, Is.EqualTo(other.Name));
             Assert.That(page.CardSlots[0].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
+
+            // 個別の画面の固有スキルも、付け替えの画面でセットした段階を出す。
+            page.Swipe.Flick(1);
+            Assert.That(page.Name.text, Is.EqualTo(people[0].Name));
+            Assert.That(page.Uniques[0].Name.text, Is.EqualTo(card.Name));
         }
 
         // 左の2枚と右の行を、その人のカードと付けられるカードで出し、文字は枠からはみ出さない。

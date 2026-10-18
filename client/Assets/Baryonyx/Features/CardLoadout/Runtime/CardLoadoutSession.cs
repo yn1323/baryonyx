@@ -23,8 +23,15 @@ namespace Baryonyx.CardLoadout
         // 次に開いたときに選んでおく枠（0から）。個別の画面で押した枠を渡す。
         public static int OpenSlot { get; set; }
 
+        // 次に開いたときに選んでおく固有スキル（0から）。個別の画面で固有スキルを押したときだけ渡し、ほかは-1。
+        public static int OpenUnique { get; set; } = -1;
+
         // Play Modeに入るたびに初期化する（ドメインの再読み込みを省く設定でも残さない）。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void Reset() => OpenSlot = 0;
+        public static void Reset()
+        {
+            OpenSlot = 0;
+            OpenUnique = -1;
+        }
     }
 }

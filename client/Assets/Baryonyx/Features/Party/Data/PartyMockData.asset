@@ -217,3 +217,25 @@ MonoBehaviour:
     Art: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
   - Skill: DivineShield
     Art: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+  - Skill: ManaBurst
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Skill: ManaBurst.1
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Skill: ManaBurst.2
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Skill: ManaBurst.3
+    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Skill: StarFall
+    Art: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+  - Skill: ThunderArrow
+    Art: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+  - Skill: ArrowStorm
+    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Skill: ShieldStance
+    Art: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+  - Skill: Issen
+    Art: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+  - Skill: HealingWind
+    Art: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+  - Skill: Revive
+    Art: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}

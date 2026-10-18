@@ -153,7 +153,6 @@ namespace Baryonyx.Training
 
         [Header("Level-up dialog")]
         public GameObject Dialog;
-        public TMP_Text DialogName;
         public TMP_Text From;
         public TMP_Text To;
         public TMP_Text Count;
@@ -163,14 +162,9 @@ namespace Baryonyx.Training
         public Button Cancel;
         public Button Confirm;
         public TrainingDiffWidget[] Diffs = Array.Empty<TrainingDiffWidget>();
-        public TMP_Text Learned;
-        public GameObject NextBox;
-        public RawImage NextIcon;
-        public TMP_Text NextLevel;
-        public TMP_Text NextName;
-        public TMP_Text NextRemain;
+
+        // 使うルーン。足りないときは赤くする。
         public TMP_Text Cost;
-        public TMP_Text Balance;
 
         private TrainingPresenter presenter;
 
@@ -188,6 +182,7 @@ namespace Baryonyx.Training
         public event Action ConfirmPressed;
         public event Action<int> GearPressed;
         public event Action<int> CardPressed;
+        public event Action<int> UniquePressed;
 
         public TrainingPresenter Presenter => presenter;
 
@@ -212,6 +207,12 @@ namespace Baryonyx.Training
                 int index = i;
                 if (CardSlots[i].Button != null)
                     bindings.Bind(CardSlots[i].Button, () => CardPressed?.Invoke(index));
+            }
+            for (int i = 0; i < Uniques.Length; i++)
+            {
+                int index = i;
+                if (Uniques[i].Button != null)
+                    bindings.Bind(Uniques[i].Button, () => UniquePressed?.Invoke(index));
             }
 
             // 開くたびに、サーバーのレベル・所持ルーン・編成・装備（なければアプリを動かしている間のもの）で描き直す。
@@ -349,12 +350,9 @@ namespace Baryonyx.Training
                 levelUp,
                 id => GearOf(equipment, id),
                 party.ArtOf,
-                Describe(new CardLoadoutSessionStore(party, data))
+                (_, card) => CardText.Description(card),
+                new CardLoadoutSessionStore(party, data).UniqueCardOf
             );
-
-        // スキルの説明の数字は、その人の今のLvのステータスと今日のACTから出す（スキルの付け替えと同じ）。
-        private static Func<string, CardSkill, string> Describe(ICardLoadoutStore cards) =>
-            (id, card) => CardText.Description(card, stat => cards.StatOf(id, stat), cards.Act);
 
         // 武器と防具に付けている装備。
         public static IReadOnlyList<TrainingGearState> GearOf(
@@ -480,7 +478,6 @@ namespace Baryonyx.Training
         {
             if (Dialog != null)
                 Dialog.SetActive(state.DialogOpen);
-            Set(DialogName, state.Name);
             Set(From, state.Level.ToString(CultureInfo.InvariantCulture));
             Set(To, state.Target.ToString(CultureInfo.InvariantCulture));
             Set(Count, state.Count.ToString(CultureInfo.InvariantCulture));
@@ -498,37 +495,9 @@ namespace Baryonyx.Training
                 Set(Diffs[i].After, after.ToString(CultureInfo.InvariantCulture));
                 Set(Diffs[i].Gain, $"+{after - before}");
             }
-            Set(
-                Learned,
-                state.Learned.Count == 0
-                    ? "なし"
-                    : string.Join("　", state.Learned.Select(skill => $"「{skill.Name}」"))
-            );
-            var next = state.NextUnlock;
-            if (NextBox != null)
-                NextBox.SetActive(next != null);
-            if (next != null)
-            {
-                if (NextIcon != null)
-                {
-                    NextIcon.texture = next.Icon;
-                    NextIcon.enabled = next.Icon != null;
-                }
-                Set(NextLevel, $"Lv {next.UnlockLevel}・{next.Type}");
-                Set(NextName, next.Name);
-                Set(NextRemain, $"あと{next.UnlockLevel - state.Target}レベル");
-            }
             Set(Cost, Number(state.Cost));
             if (Cost != null)
                 Cost.color = state.CanAfford ? UiPalette.TextMain : Short;
-            Set(
-                Balance,
-                state.CanAfford
-                    ? $"所持 {Number(state.Runes)} → のこり {Number(state.Remaining)}"
-                    : $"ルーンが {Number(-state.Remaining)} 足りません"
-            );
-            if (Balance != null)
-                Balance.color = state.CanAfford ? UiPalette.TextSub : Short;
         }
 
         private static void ShowSkill(TrainingSkillWidget widget, TrainingSkillState skill)
@@ -653,6 +622,18 @@ namespace Baryonyx.Training
                 return;
             CardLoadoutSession.Selected = id;
             CardLoadoutSession.OpenSlot = slot;
+            CardLoadoutSession.OpenUnique = -1;
+            Guide.OpenItem(CardLoadoutSession.GuideItemKey);
+        }
+
+        /// <summary>Moves to the card skills' change screen with this character's unique skill and its tree shown.</summary>
+        public void OpenUnique(string id, int index)
+        {
+            if (Guide == null || !Guide.HasItem(CardLoadoutSession.GuideItemKey))
+                return;
+            CardLoadoutSession.Selected = id;
+            CardLoadoutSession.OpenSlot = 0;
+            CardLoadoutSession.OpenUnique = index;
             Guide.OpenItem(CardLoadoutSession.GuideItemKey);
         }
 

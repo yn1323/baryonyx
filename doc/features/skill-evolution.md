@@ -129,14 +129,28 @@ updated: 2026-10-18
 
 ## 実装との対応
 
-進化は未実装である。
-今の固有スキルは、育成の仮データ（[TrainingMockData](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingMockData.cs)）がキャラごとに2つずつ持ち、段階もサーバーへの保存もない（[パーティの実装との対応](party.md#実装との対応)）。
-戦闘画面のモックは、固有スキルをまだデッキに使っていない。
+冒険中の進化（戦闘と宝箱）、確率、サーバーへの保存は未実装である。
+実装したのは、編成の[スキルの付け替え](screens.md#スキル)での、進化ツリーの表示と、取得した段階のセットである（2026-10-18）。
 
-実装するときは、各段階のカードとツリーの表示を[展示室](showcase.md)に登録し、プレビューで確かめられるようにする。
+| 対象 | 入口 |
+|---|---|
+| ツリーの形（7つの段階、進化する前の段階と次の段階）と進み具合 | [UniqueSkillTree](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTree.cs) |
+| 固有スキルごとのツリーの仮データ（各段階のカード） | [UniqueSkillTrees](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTrees.cs) |
+| アプリを動かしている間の進み具合とセット | [UniqueSkillSession](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillSession.cs) |
+| 付け替えの画面での表示と操作 | [プレゼンター](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
+
+仮データと実装の差は次のとおりである。
+
+- ツリーの中身は1体ずつ作る方針のため、8つの固有スキルとも最初の段階だけを作り、トーマのマナバーストだけ、1本目の枝の2段と2本目の枝の1段目を仮に作った。取得していない段階は影で出すため、中身がなくても画面は成り立つ。
+- 進み具合の仮データは、トーマのマナバーストだけ3つの段階を取得し、1本目の枝の1段目をセットしている。ほかは最初の段階だけである。
+- 進み具合とセットはサーバーに保存せず、アプリを動かしている間だけ残す。仮データ（[TrainingMockData](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingMockData.cs)）が固有スキルのツリーのIDと、進み具合の初めの値を持つ。
+- 固有スキルの絵はまだないため、各段階はスキルの挿絵を借りている。
+- [育成](screens.md#育成)の個別の画面の固有スキルも、セットしている段階のカードを出す。戦闘画面のモックは、固有スキルをまだデッキに使っていない。
+- [展示室](showcase.md)では、編成の画面のPrefabの `CardLoadout` を開き、停止中の表示の切り替えの「固有スキルの進化ツリー」で、先頭の人（トーマ）の1つ目の固有スキルのツリーを確かめられる。
 
 ## 変更と判断の記録
 
+- 2026-10-18：ユーザーの依頼で、[スキルの付け替え](screens.md#スキル)の画面で固有スキルを押すと右に進化ツリーを出し、取得した段階を押してセットできるようにした。取得していない段階は形だけの影にした。サーバーへの保存はまだで、アプリを動かしている間だけ残す。
 - 2026-10-18：ユーザーの相談を受けて、この文書を作った。ユーザーはカオスゼロナイトメアの「カードのひらめき」を参考に挙げ、カードが増える「戦闘員のひらめき」は採らなかった。
   - 進化の結果を残す範囲として、冒険の間だけ、ずっと残す、冒険の終わりに1つだけ持ち帰る、の3案を示したところ、ユーザーはずっと残す案を選んだ。
   - 進化の型をキャラ共通にする案ではなく、キャラごとに作る案を選んだ。ツリーは当初の「A→A2→A3、A→B1→B2、B1→C1」から、制作量を抑えるため、3つの枝がそれぞれもう1段進む7段階に改めた。

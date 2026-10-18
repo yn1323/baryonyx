@@ -4,6 +4,7 @@ using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.SkillEvolution;
 using UnityEditor;
 using UnityEngine;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -82,6 +83,16 @@ namespace Baryonyx.Party.Editor
                     Skill = card.Id,
                     Art = ArtAssets.LoadTexture($"{SkillArtFolder}/Card{card.Id}.aseprite"),
                 })
+                // 固有スキルの進化の各段階。絵はまだないため、スキルの挿絵を借りる。
+                .Concat(
+                    UniqueSkillTrees
+                        .Stages()
+                        .Select(stage => new PartySkillArt
+                        {
+                            Skill = stage.Card.Id,
+                            Art = ArtAssets.LoadTexture($"{SkillArtFolder}/{stage.Art}.aseprite"),
+                        })
+                )
                 .ToArray();
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssetIfDirty(data);

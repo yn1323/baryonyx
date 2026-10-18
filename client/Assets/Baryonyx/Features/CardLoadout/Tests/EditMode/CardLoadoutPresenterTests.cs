@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -19,6 +20,8 @@ namespace Baryonyx.Tests.EditMode
             public event Action<int> SlotPressed;
             public event Action<int> TabPressed;
             public event Action<string> CardPressed;
+            public event Action<int> UniquePressed;
+            public event Action<int> StagePressed;
 
             public CardLoadoutState Last;
             public readonly List<string> Notices = new();
@@ -43,14 +46,15 @@ namespace Baryonyx.Tests.EditMode
             public void Tab(int index) => TabPressed?.Invoke(index);
 
             public void Card(string id) => CardPressed?.Invoke(id);
+
+            public void Unique(int index) => UniquePressed?.Invoke(index);
+
+            public void Stage(int stage) => StagePressed?.Invoke(stage);
         }
 
         private sealed class FakeStore : ICardLoadoutStore
         {
             public readonly Dictionary<string, string[]> Cards = new();
-
-            // 人ごとの 属攻。物攻・物防は固定。
-            public readonly Dictionary<string, int> Magic = new();
 
             public IReadOnlyList<string> CardsOf(string id) =>
                 Cards.TryGetValue(id, out var cards) ? cards : Array.Empty<string>();
@@ -58,18 +62,24 @@ namespace Baryonyx.Tests.EditMode
             public void SetCards(string id, IReadOnlyList<string> skills) =>
                 Cards[id] = skills.ToArray();
 
-            public int StatOf(string id, CardStat stat) =>
-                stat switch
-                {
-                    CardStat.MagicAttack => Magic.TryGetValue(id, out int magic) ? magic : 100,
-                    CardStat.PhysicalAttack => 150,
-                    CardStat.PhysicalDefense => 50,
-                    _ => 0,
-                };
-
-            public int Act => 0;
-
             public string Selected { get; set; }
+
+            // 人ごとの固有スキル。なければ空。
+            public readonly Dictionary<string, CardLoadoutUnique[]> Uniques = new();
+
+            public IReadOnlyList<CardLoadoutUnique> UniquesOf(string id) =>
+                Uniques.TryGetValue(id, out var uniques)
+                    ? uniques
+                    : Array.Empty<CardLoadoutUnique>();
+
+            public bool SetUniqueStage(string id, int index, int stage)
+            {
+                var progress = Uniques[id][index].Progress;
+                if (progress.SetStage == stage)
+                    return false;
+                progress.Set = stage;
+                return true;
+            }
         }
 
         private PartyFormation formation;
@@ -93,6 +103,17 @@ namespace Baryonyx.Tests.EditMode
             store = new FakeStore();
             foreach (var member in roster)
                 store.Cards[member.Id] = member.Cards.Select(card => card.Skill).ToArray();
+            // トーマのマナバーストは1本目の枝の2段目までと2本目の枝の1段目を取得し、1本目の枝の1段目をセット。
+            // 星降りはまだ解放していない。
+            store.Uniques["toma"] = new[]
+            {
+                Unique(
+                    "ManaBurst",
+                    true,
+                    new UniqueSkillProgress { Set = 1, Acquired = new[] { 1, 2, 3 } }
+                ),
+                Unique("StarFall", false, new UniqueSkillProgress()),
+            };
             presenter = Open();
         }
 
@@ -132,6 +153,141 @@ namespace Baryonyx.Tests.EditMode
                 state.Slots.Select(card => card.Id),
                 Is.EqualTo(new[] { "Heal", "HolyHammer" })
             );
+        }
+
+        [Test]
+        public void TheLeftShowsTheUniqueSkillsAtTheStageSet()
+        {
+            view.Person("toma");
+            var state = view.Last;
+            Assert.That(state.Uniques.Count, Is.EqualTo(CardLoadoutPresenter.UniqueCount));
+            // セットしている段階のカードを、カスタムスキルと同じく種類・説明・コスト付きで出す。
+            Assert.That(state.Uniques[0].Card.Name, Is.EqualTo("マナバースト・烈"));
+            Assert.That(state.Uniques[0].Card.KindLine, Does.Contain("攻撃").And.Contain("敵全体"));
+            Assert.That(state.Uniques[0].Card.Description, Does.Contain(">"));
+            Assert.That(state.Uniques[0].Card.Cost, Is.EqualTo(3));
+            Assert.That(state.Uniques[0].Locked, Is.False);
+            Assert.That(state.Uniques[1].Card.Name, Is.EqualTo("星降り"));
+            Assert.That(state.Uniques[1].Locked, Is.True);
+            Assert.That(state.Uniques[1].UnlockLevel, Is.EqualTo(20));
+            // 固有スキルを選ぶまでは、右はタブと一覧のまま。
+            Assert.That(state.Unique, Is.EqualTo(-1));
+            Assert.That(state.Tree, Is.Null);
+        }
+
+        [Test]
+        public void ChoosingAUniqueSkillShowsItsTreeWithShadowsForStagesNotAcquired()
+        {
+            view.Person("toma");
+            view.Unique(0);
+            var state = view.Last;
+            Assert.That(state.Unique, Is.EqualTo(0));
+            Assert.That(state.Slot, Is.EqualTo(-1));
+            var tree = state.Tree;
+            Assert.That(tree.Name, Is.EqualTo("マナバースト"));
+            Assert.That(tree.Stages.Count, Is.EqualTo(UniqueSkillTreeShape.Count));
+            Assert.That(
+                tree.Stages.Select(stage => stage.Acquired),
+                Is.EqualTo(new[] { true, true, true, true, false, false, false })
+            );
+            Assert.That(tree.Stages.Single(stage => stage.Set).Stage, Is.EqualTo(1));
+            // 取得していない段階は形だけで、名前も効果も出さない。
+            Assert.That(tree.Stages[4].Card, Is.Null);
+            Assert.That(tree.Stages[2].Card.Name, Is.EqualTo("マナバースト・極"));
+            Assert.That(tree.Stages[2].Parent, Is.EqualTo(1));
+            Assert.That(tree.Stages[3].Parent, Is.EqualTo(0));
+
+            // 人を替えても、選んでいる固有スキルのまま。カスタムスキルの枠を押すと一覧に戻る。
+            view.Person("anselm");
+            Assert.That(view.Last.Unique, Is.EqualTo(0));
+            view.Slot(0);
+            Assert.That(view.Last.Tree, Is.Null);
+            Assert.That(view.Last.Slot, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TappingAStageAcquiredSetsItAtOnce()
+        {
+            view.Person("toma");
+            view.Unique(0);
+            view.Stage(2);
+            Assert.That(store.Uniques["toma"][0].Progress.Set, Is.EqualTo(2));
+            Assert.That(view.Last.Uniques[0].Card.Name, Is.EqualTo("マナバースト・極"));
+            Assert.That(view.Last.Tree.Stages[2].Set, Is.True);
+            // 手前の段階（最初の段階）にも戻せる。変わったことは見ればわかるので知らせない。
+            view.Stage(0);
+            Assert.That(view.Last.Uniques[0].Card.Name, Is.EqualTo("マナバースト"));
+            Assert.That(view.Notices, Is.Empty);
+        }
+
+        [Test]
+        public void StagesNotAcquiredOrOfALockedSkillCannotBeSet()
+        {
+            view.Person("toma");
+            view.Unique(0);
+            view.Stage(4);
+            view.Stage(UniqueSkillTreeShape.Count);
+            Assert.That(store.Uniques["toma"][0].Progress.Set, Is.EqualTo(1));
+
+            // 未解放の星降りは、ツリーを見られるが付け替えられない。
+            view.Unique(1);
+            Assert.That(view.Last.Tree.Locked, Is.True);
+            view.Stage(0);
+            Assert.That(store.Uniques["toma"][1].Progress.Set, Is.EqualTo(0));
+
+            // 固有スキルを選んでいる間は、右のカードを押してもカスタムスキルは変わらない。
+            var before = store.Cards["toma"].ToArray();
+            view.Card("Embers");
+            Assert.That(store.Cards["toma"], Is.EqualTo(before));
+        }
+
+        [Test]
+        public void TheTreeShapeBranchesThreeWaysAndGoesOneStepFurther()
+        {
+            Assert.That(UniqueSkillTreeShape.Children(0), Is.EqualTo(new[] { 1, 3, 5 }));
+            Assert.That(UniqueSkillTreeShape.Children(3), Is.EqualTo(new[] { 4 }));
+            Assert.That(UniqueSkillTreeShape.Children(4), Is.Empty);
+            Assert.That(
+                Enumerable.Range(0, UniqueSkillTreeShape.Count).Select(UniqueSkillTreeShape.Parent),
+                Is.EqualTo(new[] { -1, 0, 1, 0, 3, 0, 5 })
+            );
+            Assert.That(UniqueSkillTreeShape.StageAt(2, 2), Is.EqualTo(6));
+            Assert.That(UniqueSkillTreeShape.Branch(4), Is.EqualTo(1));
+            // どのツリーにも最初の段階があり、作った段階は進化する前の段階もある。
+            foreach (var tree in UniqueSkillTrees.All)
+            {
+                Assert.That(tree.Root, Is.Not.Null, tree.Id);
+                for (int stage = 1; stage < UniqueSkillTreeShape.Count; stage++)
+                    if (tree.StageAt(stage) != null)
+                        Assert.That(
+                            tree.StageAt(UniqueSkillTreeShape.Parent(stage)),
+                            Is.Not.Null,
+                            $"{tree.Id} {stage}"
+                        );
+            }
+        }
+
+        [Test]
+        public void TheSessionKeepsTheStageSetAndLeavesTheMockAlone()
+        {
+            var mock = new UniqueSkillProgress { Set = 1, Acquired = new[] { 1, 2 } };
+            // 画面の生成などで、すでに読まれた進み具合を残さない。
+            UniqueSkillSession.Reset();
+            try
+            {
+                Assert.That(UniqueSkillSession.ProgressOf("toma", 0, mock).SetStage, Is.EqualTo(1));
+                Assert.That(UniqueSkillSession.SetStage("toma", 0, 2, mock), Is.True);
+                Assert.That(UniqueSkillSession.SetStage("toma", 0, 2, mock), Is.False);
+                Assert.That(UniqueSkillSession.SetStage("toma", 0, 3, mock), Is.False);
+                Assert.That(UniqueSkillSession.ProgressOf("toma", 0, mock).SetStage, Is.EqualTo(2));
+                Assert.That(mock.Set, Is.EqualTo(1));
+                UniqueSkillSession.Reset();
+                Assert.That(UniqueSkillSession.ProgressOf("toma", 0, mock).SetStage, Is.EqualTo(1));
+            }
+            finally
+            {
+                UniqueSkillSession.Reset();
+            }
         }
 
         [Test]
@@ -241,15 +397,13 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void NumbersComeFromThePersonsStats()
+        public void NumbersAreThePartOfTheStatNotThePersonsPower()
         {
-            // ファイアは 属攻の100%。
-            store.Magic["toma"] = 318;
-            store.Magic["anselm"] = 120;
+            // ファイアは 属攻の100%。誰が付けても、ステータスによらず割合で書く。
             view.Person("toma");
-            Assert.That(view.Last.Slots[0].Description, Does.Contain(">318<"));
+            Assert.That(view.Last.Slots[0].Description, Does.Contain(">属攻の100%<"));
             view.Person("anselm");
-            Assert.That(view.Last.Slots[1].Description, Does.Contain(">120<"));
+            Assert.That(view.Last.Slots[1].Description, Does.Contain(">属攻の100%<"));
         }
 
         [Test]
@@ -355,6 +509,19 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
+        private static CardLoadoutUnique Unique(
+            string tree,
+            bool unlocked,
+            UniqueSkillProgress progress
+        ) =>
+            new()
+            {
+                Tree = UniqueSkillTrees.Find(tree),
+                UnlockLevel = unlocked ? 5 : 20,
+                Unlocked = unlocked,
+                Progress = progress,
+            };
+
         private static PartyMember Member(string id, string name, params string[] cards) =>
             new()
             {
@@ -375,15 +542,16 @@ namespace Baryonyx.Tests.EditMode
             public void SetCards(string id, IReadOnlyList<string> skills) =>
                 store.SetCards(id, skills);
 
-            public int StatOf(string id, CardStat stat) => store.StatOf(id, stat);
-
-            public int Act => store.Act;
-
             public string Selected
             {
                 get => CardLoadoutSession.Selected;
                 set => CardLoadoutSession.Selected = value;
             }
+
+            public IReadOnlyList<CardLoadoutUnique> UniquesOf(string id) => store.UniquesOf(id);
+
+            public bool SetUniqueStage(string id, int index, int stage) =>
+                store.SetUniqueStage(id, index, stage);
         }
     }
 }

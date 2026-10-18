@@ -136,11 +136,8 @@ namespace Baryonyx.Training
         public bool CanMore { get; internal set; }
         public bool CanConfirm { get; internal set; }
 
-        // 目標のレベルまでに覚えるスキルと、その次に覚えるスキル（なければnull）。
+        // 目標のレベルまでに覚えるスキル。上げたあとの知らせに出す。
         public IReadOnlyList<TrainingSkillState> Learned { get; internal set; }
-        public TrainingSkillState NextUnlock { get; internal set; }
-
-        public long Remaining => Runes - Cost;
     }
 
     /// <summary>
@@ -185,6 +182,9 @@ namespace Baryonyx.Training
 
         // キャラのIDとスキルから、そのキャラのステータスで数字を入れた説明を作る。
         private readonly Func<string, CardSkill, string> describe;
+
+        // キャラのIDと固有スキルの番号から、セットしている進化の段階のカードを引く。なければ仮データの名前と効果を出す。
+        private readonly Func<string, int, CardSkill> uniqueOf;
         private readonly CancellationTokenSource lifetime = new();
         private int index;
         private bool dialog;
@@ -200,7 +200,8 @@ namespace Baryonyx.Training
             Func<string, int, int, CancellationToken, Task> levelUp = null,
             Func<string, IReadOnlyList<TrainingGearState>> gearOf = null,
             Func<string, Texture2D> artOf = null,
-            Func<string, CardSkill, string> describe = null
+            Func<string, CardSkill, string> describe = null,
+            Func<string, int, CardSkill> uniqueOf = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -211,6 +212,7 @@ namespace Baryonyx.Training
             this.gearOf = gearOf ?? (_ => Array.Empty<TrainingGearState>());
             this.artOf = artOf ?? (_ => null);
             this.describe = describe ?? ((_, card) => card.Text);
+            this.uniqueOf = uniqueOf ?? ((_, _) => null);
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -222,6 +224,7 @@ namespace Baryonyx.Training
             view.ConfirmPressed += Confirm;
             view.GearPressed += OpenGear;
             view.CardPressed += OpenCard;
+            view.UniquePressed += OpenUnique;
             Refresh();
         }
 
@@ -370,6 +373,14 @@ namespace Baryonyx.Training
             view.OpenCards(Current.Id, slot);
         }
 
+        // 固有スキルを押す。その固有スキルの進化ツリーを出したスキルの付け替えの画面を開く。
+        public void OpenUnique(int index)
+        {
+            if (disposed || dialog || Current == null || index < 0 || index >= State.Uniques.Count)
+                return;
+            view.OpenUnique(Current.Id, index);
+        }
+
         public static string LevelUpMessage(
             string name,
             int level,
@@ -443,7 +454,7 @@ namespace Baryonyx.Training
                 Passives = skills.Where(skill => skill.Type == PassiveType).ToArray(),
                 Uniques = skills
                     .Where(skill => skill.Type == TrainingCardState.UniqueType)
-                    .Select(Unique)
+                    .Select((skill, i) => Unique(current.Id, i, skill))
                     .ToArray(),
                 Cards = Enumerable
                     .Range(0, CustomSlots)
@@ -465,10 +476,6 @@ namespace Baryonyx.Training
                     .Where(skill => skill.UnlockLevel > level && skill.UnlockLevel <= target)
                     .OrderBy(skill => skill.UnlockLevel)
                     .ToArray(),
-                NextUnlock = targetSkills
-                    .Where(skill => !skill.Unlocked)
-                    .OrderBy(skill => skill.UnlockLevel)
-                    .FirstOrDefault(),
             };
         }
 
@@ -494,18 +501,38 @@ namespace Baryonyx.Training
                 Icon = skill.Icon,
             };
 
-        // 固有スキルを、カードの見た目で出すための形にする（属性はまだないので枠は属性なし）。
-        private static TrainingCardState Unique(TrainingSkillState skill) =>
-            new()
+        // 固有スキルを、カードの見た目で出すための形にする。セットしている進化の段階があれば、
+        // そのカードの種類・説明・コスト・属性を出す（doc/features/skill-evolution.md）。
+        private TrainingCardState Unique(string person, int index, TrainingSkillState skill)
+        {
+            var card = uniqueOf(person, index);
+            if (card == null)
+                return new TrainingCardState
+                {
+                    Type = TrainingCardState.UniqueType,
+                    Name = skill.Name,
+                    Description = skill.Description,
+                    Cost = skill.Energy,
+                    Art = skill.Icon,
+                    Locked = !skill.Unlocked,
+                    UnlockLevel = skill.UnlockLevel,
+                };
+            // 段階の挿絵がなければ、仮データの固有スキルの絵を出す。
+            var art = artOf(card.Id);
+            return new TrainingCardState
             {
                 Type = TrainingCardState.UniqueType,
-                Name = skill.Name,
-                Description = skill.Description,
-                Cost = skill.Energy,
-                Art = skill.Icon,
+                Name = card.Name,
+                Kind = CardText.KindLine(card),
+                Description = describe(person, card),
+                Cost = card.Cost,
+                Element = card.Element,
+                Icon = iconOf(card.Id),
+                Art = art != null ? art : skill.Icon,
                 Locked = !skill.Unlocked,
                 UnlockLevel = skill.UnlockLevel,
             };
+        }
 
         private TrainingCardState Card(string person, string id)
         {
@@ -570,6 +597,7 @@ namespace Baryonyx.Training
             view.ConfirmPressed -= Confirm;
             view.GearPressed -= OpenGear;
             view.CardPressed -= OpenCard;
+            view.UniquePressed -= OpenUnique;
         }
     }
 
@@ -585,6 +613,7 @@ namespace Baryonyx.Training
         event Action ConfirmPressed;
         event Action<int> GearPressed;
         event Action<int> CardPressed;
+        event Action<int> UniquePressed;
 
         void Render(TrainingState state);
 
@@ -596,5 +625,8 @@ namespace Baryonyx.Training
 
         // キャラのスキルの付け替えの画面を、押した枠を選んで開く。
         void OpenCards(string id, int slot);
+
+        // キャラのスキルの付け替えの画面を、押した固有スキルの進化ツリーを出して開く。
+        void OpenUnique(string id, int index);
     }
 }

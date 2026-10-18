@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.SkillEvolution;
 using UnityEngine;
 
 namespace Baryonyx.Party
@@ -40,7 +41,8 @@ namespace Baryonyx.Party
         /// </summary>
         public Sprite IconOf(string skill)
         {
-            var card = CardSkills.Find(skill);
+            // 固有スキル（進化の各段階）のカードも同じように引く。
+            var card = CardSkills.Find(skill) ?? UniqueSkillTrees.FindStage(skill)?.Card;
             int index = card != null ? (int)card.Element : -1;
             return card != null && card.Element != CardElement.None && index < ElementIcons.Length
                 ? ElementIcons[index]
