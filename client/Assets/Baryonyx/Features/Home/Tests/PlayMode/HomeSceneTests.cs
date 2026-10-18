@@ -67,7 +67,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(
                 view.GetComponentsInChildren<TMPro.TMP_Text>(true).Select(label => label.font.name),
-                Has.All.Contains("DotGothic16")
+                Has.All.Contains("KiwiMaru")
             );
         }
 
