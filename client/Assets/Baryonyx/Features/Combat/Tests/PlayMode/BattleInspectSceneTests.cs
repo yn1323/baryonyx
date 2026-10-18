@@ -35,7 +35,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.HandCards, Has.Count.EqualTo(6), "The opening hand is 6 cards.");
             Assert.That(view.DeckLabel.text, Is.EqualTo("10"));
             Assert.That(view.Enemies.Select(enemy => enemy.Sprite.texture), Has.None.Null);
-            Assert.That(view.MaxEnergy, Is.EqualTo(5), "Energy grows from 3 by one each turn.");
+            Assert.That(view.MaxEnergy, Is.EqualTo(5), "Energy starts at 5 on the first turn.");
             Assert.That(view.EnergyLabel.text, Is.EqualTo("5/5"));
             Assert.That(view.HeldCard, Is.EqualTo(-1));
 
@@ -166,22 +166,16 @@ namespace Baryonyx.Tests.PlayMode
 
             Play(view, 0, view.Enemies[1].TargetArea);
 
-            // The five left take the five places of a five-card fan, in their order.
+            // The five left take the five places of a five-card fan, in their order; those the
+            // energy left cannot pay for rest lower.
             int count = view.HandCards.Count;
             Assert.That(count, Is.EqualTo(5));
             for (int slot = 0; slot < count; slot++)
             {
-                var (expected, _) = BattleInspectView.FanPose(
-                    slot,
-                    count,
-                    BattleInspectView.FanStepFor(
-                        count,
-                        view.Settings.FanStep,
-                        view.Settings.FanMaxSpread
-                    ),
-                    view.Settings.FanRadius,
-                    view.Settings.FanDrop,
-                    view.Settings.RestBottom
+                var expected = FanPosition(view, slot);
+                expected.y -= BattleInspectView.RestDrop(
+                    view.Settings,
+                    view.Cards[view.HandCards[slot]].Cost <= view.Energy
                 );
                 Assert.That(
                     Vector2.Distance(view.RestPosition(view.HandCards[slot]), expected),
@@ -559,6 +553,22 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(slash.Face.Shade.enabled, Is.False, "Cost 1 is paid for.");
             Assert.That(slash.Face.CostDigit.color, Is.EqualTo(Color.white));
             Assert.That(slash.Group.alpha, Is.EqualTo(1f));
+            // It also rests lower than its place in the fan, while a card that can be played
+            // keeps its place.
+            Assert.That(view.Settings.UnplayableDrop, Is.GreaterThan(0f));
+            var icePlace = FanPosition(view, view.HandCards.ToList().IndexOf(iceIndex));
+            Assert.That(
+                view.RestPosition(iceIndex).y,
+                Is.EqualTo(icePlace.y - view.Settings.UnplayableDrop).Within(0.01f)
+            );
+            Assert.That(view.RestPosition(iceIndex).x, Is.EqualTo(icePlace.x).Within(0.01f));
+            Assert.That(
+                Vector2.Distance(
+                    view.RestPosition(0),
+                    FanPosition(view, view.HandCards.ToList().IndexOf(0))
+                ),
+                Is.LessThan(0.01f)
+            );
 
             // Raised, it is opaque again so its details can be read.
             view.PressCard(iceIndex, CardPoint(ice));
@@ -584,7 +594,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.EnemyTurn, Is.True);
             Assert.That(view.EndTurnButton.interactable, Is.False);
             yield return WaitEnemyTurn(view);
-            Assert.That(view.Turn, Is.EqualTo(4));
+            Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
             Assert.That(view.Energy, Is.EqualTo(6));
             // The cards in hand make room by moving right only, before any card flies.
             for (int i = 0; i < kept.Length; i++)
@@ -632,7 +642,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.EndTurnButton.interactable, Is.False);
 
             yield return WaitEnemyTurn(view);
-            Assert.That(view.Turn, Is.EqualTo(4));
+            Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
             Assert.That(view.Energy, Is.EqualTo(6));
         }
 
@@ -1764,6 +1774,25 @@ namespace Baryonyx.Tests.PlayMode
             view.PressCard(card, CardPoint(view.Cards[card]));
             view.DragCard(Center(target));
             view.ReleaseCard(Center(target));
+        }
+
+        /// <summary>Where the card at <paramref name="slot"/> of the hand stands in the fan.</summary>
+        private static Vector2 FanPosition(BattleInspectView view, int slot)
+        {
+            int count = view.HandCards.Count;
+            var (position, _) = BattleInspectView.FanPose(
+                slot,
+                count,
+                BattleInspectView.FanStepFor(
+                    count,
+                    view.Settings.FanStep,
+                    view.Settings.FanMaxSpread
+                ),
+                view.Settings.FanRadius,
+                view.Settings.FanDrop,
+                view.Settings.RestBottom
+            );
+            return position;
         }
 
         /// <summary>A point on the card's name row, which stays on screen while the card rests.</summary>

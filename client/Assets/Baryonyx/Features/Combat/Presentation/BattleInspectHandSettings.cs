@@ -35,6 +35,12 @@ namespace Baryonyx.Combat.Presentation
         [Range(0f, 1f)]
         public float UnplayableDarkness = 0.7f;
 
+        [Tooltip(
+            "エネルギーが足りないカードを、手札の扇の位置から下げる量（px）。0で下げない。押して上げたカードには掛けない。"
+        )]
+        [Min(0f)]
+        public float UnplayableDrop = 40f;
+
         [Header("手札の扇")]
         [Tooltip("隣のカードとの角度の差（度）。")]
         public float FanStep = 7f;

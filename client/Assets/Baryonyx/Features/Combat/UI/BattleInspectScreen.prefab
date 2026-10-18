@@ -9627,7 +9627,7 @@ MonoBehaviour:
   PartyBannerLine: {r: 0.4, g: 0.62, b: 0.92, a: 1}
   PartyBannerText: {r: 0.7, g: 0.84, b: 1, a: 1}
   Vfx: {fileID: 3500637460546641848}
-  StartTurn: 3
+  StartTurn: 1
 --- !u!1 &6934446805276594867
 GameObject:
   m_ObjectHideFlags: 0

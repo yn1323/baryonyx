@@ -501,7 +501,7 @@ namespace Baryonyx.Combat.Presentation
         public BattleSkillVfx Vfx;
 
         [Min(1)]
-        public int StartTurn = 3;
+        public int StartTurn = 1;
 
         private readonly List<int> targets = new();
         private readonly List<int> hand = new();
@@ -643,13 +643,14 @@ namespace Baryonyx.Combat.Presentation
                     Settings.FanDrop,
                     Settings.RestBottom
                 );
+                // Greyed out and lowered as in Play Mode when the opening energy cannot pay for it.
+                var card = Cards[i];
+                bool playable = card.Cost <= MaxEnergyAt(StartTurn);
+                position.y -= RestDrop(Settings, playable);
                 body.anchoredPosition = position;
                 body.localRotation = Quaternion.Euler(0, 0, angle);
                 body.localScale = Vector3.one * Settings.CardScale;
 
-                // Greyed out as in Play Mode when the opening energy cannot pay for it.
-                var card = Cards[i];
-                bool playable = card.Cost <= MaxEnergyAt(StartTurn);
                 float alpha = playable ? 1f : UnplayableAlpha(Settings, raised: false);
                 UnityEditor.Undo.RecordObject(card.Group, "Apply hand layout");
                 card.Group.alpha = alpha;
@@ -666,13 +667,16 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>Where the card rests in the fan now (it springs there when not held).</summary>
         public Vector2 RestPosition(int index) => motion[index].Rest.Position;
 
-        /// <summary>Energy starts at 3 and its maximum grows by one each turn, up to 9.</summary>
-        public static int MaxEnergyAt(int turn) => Mathf.Min(MaxEnergyCap, 3 + turn - 1);
+        /// <summary>Energy starts at 5 and its maximum grows by one each turn, up to 9.</summary>
+        public static int MaxEnergyAt(int turn) => Mathf.Min(MaxEnergyCap, 5 + turn - 1);
 
         public static string EnergyText(int energy, int max) => $"{energy}/{max}";
 
         /// <summary>The words of the turn band when the enemies' turn begins.</summary>
         public const string EnemyTurnText = "敵のターン";
+
+        /// <summary>The warning in place of the skill name when the energy cannot pay for a card.</summary>
+        public const string NoEnergyText = "エネルギー不足";
 
         /// <summary>
         /// The words of the turn band when a party turn begins: the turn's number after them, or,
@@ -689,6 +693,13 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public static float UnplayableAlpha(BattleInspectHandSettings settings, bool raised) =>
             raised ? 1f : settings.UnplayableAlpha;
+
+        /// <summary>
+        /// How far below its place in the fan a card rests: the settings' drop when the energy
+        /// cannot pay for it, so it stands lower than the cards that can be played.
+        /// </summary>
+        public static float RestDrop(BattleInspectHandSettings settings, bool playable) =>
+            playable ? 0f : settings.UnplayableDrop;
 
         /// <summary>
         /// The veil's own darkness on a card of <paramref name="alpha"/>: the card's alpha thins
@@ -842,17 +853,21 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>Puts the card where its motion is now, face up or down, and shows or hides it.</summary>
         private void ApplyMotion(int index)
         {
-            var pose = motion[index].Current;
-            var body = Cards[index].Body;
-            body.anchoredPosition = pose.Position;
-            body.localRotation = Quaternion.Euler(0, 0, pose.Angle);
-            // Turning over: the card narrows to an edge on its back and widens on its face.
-            float turn = Mathf.Max(0.04f, Mathf.Abs(Mathf.Cos(Mathf.PI * motion[index].Reveal)));
-            body.localScale = new Vector3(turn, 1f, 1f) * (pose.Scale * Settings.CardScale);
+            PlaceCard(Cards[index].Body, motion[index].Current, motion[index].Reveal);
             var back = Cards[index].Back;
             if (back != null && back.activeSelf != IsFaceDown(index))
                 back.SetActive(IsFaceDown(index));
             RefreshCard(index);
+        }
+
+        /// <summary>Puts a card's body at <paramref name="pose"/>, turned over as far as <paramref name="reveal"/> (0 back, 1 face).</summary>
+        private void PlaceCard(RectTransform body, Pose pose, float reveal)
+        {
+            body.anchoredPosition = pose.Position;
+            body.localRotation = Quaternion.Euler(0, 0, pose.Angle);
+            // Turning over: the card narrows to an edge on its back and widens on its face.
+            float turn = Mathf.Max(0.04f, Mathf.Abs(Mathf.Cos(Mathf.PI * reveal)));
+            body.localScale = new Vector3(turn, 1f, 1f) * (pose.Scale * Settings.CardScale);
         }
 
         /// <summary>
@@ -1012,7 +1027,7 @@ namespace Baryonyx.Combat.Presentation
             bool play = targets.Count > 0;
             if (play && CostOf(card) > Energy)
             {
-                ShowNotice("エネルギー不足");
+                ShowNotice(NoEnergyText);
                 play = false;
             }
             var chosen = new List<int>(targets);
@@ -1063,6 +1078,7 @@ namespace Baryonyx.Combat.Presentation
                     Settings.FanDrop,
                     Settings.RestBottom
                 );
+                position.y -= RestDrop(Settings, Playable(i));
                 motion[i].Rest = new Pose(position, angle, 1f);
                 if (i != held)
                     motion[i].Target = motion[i].Rest;
@@ -1191,22 +1207,25 @@ namespace Baryonyx.Combat.Presentation
 
         private void ApplyGlow(bool onEnemies)
         {
-            var card = held >= 0 ? Cards[held] : null;
             for (int i = 0; i < Enemies.Length; i++)
-            {
                 Enemies[i].Sprite.material =
                     onEnemies && targets.Contains(i) ? flash : ActorMaterial;
+            for (int i = 0; i < Allies.Length; i++)
+                Allies[i].Sprite.material =
+                    !onEnemies && targets.Contains(i) ? flash : ActorMaterial;
+            ShowMarkers(held >= 0 ? Cards[held] : null);
+        }
+
+        /// <summary>Puts the cursor over every character <paramref name="card"/> can target, or none without a card.</summary>
+        private void ShowMarkers(BattleInspectCard card)
+        {
+            for (int i = 0; i < Enemies.Length; i++)
                 Enemies[i]
                     .Marker.gameObject.SetActive(
                         card != null && card.TargetsEnemies && CanTarget(card, i)
                     );
-            }
             for (int i = 0; i < Allies.Length; i++)
-            {
-                Allies[i].Sprite.material =
-                    !onEnemies && targets.Contains(i) ? flash : ActorMaterial;
                 Allies[i].Marker.gameObject.SetActive(card != null && !card.TargetsEnemies);
-            }
         }
 
         /// <summary>
@@ -1231,10 +1250,19 @@ namespace Baryonyx.Combat.Presentation
                 EventCamera(),
                 out var end
             );
+            LayoutAim(start, end, targets.Count > 0);
+        }
+
+        /// <summary>
+        /// Lays the aim's dots on a bend from <paramref name="start"/> to <paramref name="end"/>
+        /// (in the aim's space), white when the finger is <paramref name="onTarget"/>.
+        /// </summary>
+        private void LayoutAim(Vector2 start, Vector2 end, bool onTarget)
+        {
             var bend = new Vector2(start.x, end.y);
             float length = Vector2.Distance(start, bend) + Vector2.Distance(bend, end);
             int count = Mathf.Clamp(Mathf.RoundToInt(length / AimSpacing), 1, AimDots.Length);
-            var tint = targets.Count > 0 ? Color.white : AimIdle;
+            var tint = onTarget ? Color.white : AimIdle;
             for (int i = 0; i < AimDots.Length; i++)
             {
                 var dot = AimDots[i];
@@ -1905,14 +1933,20 @@ namespace Baryonyx.Combat.Presentation
                 return;
             if (turnBannerShow != null)
                 StopCoroutine(turnBannerShow);
+            PaintTurnBanner(text, enemies);
+            SetTurnBanner(0f, 0f);
+            turnBannerShow = StartCoroutine(PlayTurnBanner());
+        }
+
+        /// <summary>Puts <paramref name="text"/> on the turn band in the colours of the enemies or the party, and shows it.</summary>
+        private void PaintTurnBanner(string text, bool enemies)
+        {
             TurnBanner.SetText(text);
             if (TurnBanner.Label != null)
                 TurnBanner.Label.color = enemies ? EnemyBannerText : PartyBannerText;
             foreach (var line in TurnBannerLines)
                 line.color = enemies ? EnemyBannerLine : PartyBannerLine;
             TurnBanner.gameObject.SetActive(true);
-            SetTurnBanner(0f, 0f);
-            turnBannerShow = StartCoroutine(PlayTurnBanner());
         }
 
         /// <summary>The band fades in as its lines open from the middle, holds, and fades out.</summary>
@@ -2082,12 +2116,17 @@ namespace Baryonyx.Combat.Presentation
             RefreshTurnOrder();
         }
 
+        /// <summary>
+        /// Whether the energy can pay for the card. A card darkens and sinks only once it has
+        /// landed, so the backs fly in at full brightness straight to their place in the fan.
+        /// </summary>
+        private bool Playable(int index) => CostOf(Cards[index]) <= Energy || motion[index].Flying;
+
         /// <summary>Hides cards off the hand and darkens those the energy cannot pay for.</summary>
         private void RefreshCard(int index)
         {
             var card = Cards[index];
-            // A card darkens only once it has landed, so the backs fly in at full brightness.
-            bool playable = CostOf(card) <= Energy || motion[index].Flying;
+            bool playable = Playable(index);
             // A card the energy cannot pay for is see-through in the hand, but not once raised,
             // so its details can still be read.
             float alpha =

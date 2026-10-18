@@ -17,6 +17,7 @@ MonoBehaviour:
   RaisedBottom: 24
   UnplayableAlpha: 0.7
   UnplayableDarkness: 0.7
+  UnplayableDrop: 40
   FanStep: 7
   FanMaxSpread: 42
   FanRadius: 1300

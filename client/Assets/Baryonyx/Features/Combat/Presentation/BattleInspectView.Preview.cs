@@ -1,0 +1,138 @@
+using System.Collections.Generic;
+using Baryonyx.UI.EditModePreview;
+using UnityEngine;
+
+namespace Baryonyx.Combat.Presentation
+{
+    /// <summary>
+    /// The battle screen's states while the editor is stopped (doc/rules/ui-design.md#停止中の表示の切り替え):
+    /// the turn bands and the skill name's band held still, and a card of the opening hand raised.
+    /// They use the bands' and cards' own drawing, on the prefab's baked hand, without Awake.
+    /// </summary>
+    public sealed partial class BattleInspectView : IEditModePreview
+    {
+        public IReadOnlyList<string> PreviewStates =>
+            new[]
+            {
+                "ターンの帯（味方）",
+                "ターンの帯（連続）",
+                "ターンの帯（敵）",
+                "技名の帯",
+                "エネルギー不足",
+                "カードを選んだ（タップ）",
+                "カードを敵へ向けた（スワイプ）",
+            };
+
+        public void ShowPreviewState(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    StillTurnBanner(PartyTurnText(StartTurn, again: false), enemies: false);
+                    break;
+                case 1:
+                    StillTurnBanner(PartyTurnText(StartTurn + 1, again: true), enemies: false);
+                    break;
+                case 2:
+                    StillTurnBanner(EnemyTurnText, enemies: true);
+                    break;
+                case 3:
+                    int card = PreviewCard();
+                    if (card >= 0 && SkillBanner != null && SkillBanner.Label != null)
+                        ShowBanner(Deck[Cards[card].DeckIndex].Name, SkillBanner.Label.color);
+                    break;
+                case 4:
+                    ShowBanner(NoEnergyText, BattleInspectCardView.ShortCost);
+                    break;
+                case 5:
+                    RaisePreviewCard(swiped: false);
+                    break;
+                case 6:
+                    RaisePreviewCard(swiped: true);
+                    break;
+            }
+        }
+
+        // 帯が開ききって止まった1コマ。
+        private void StillTurnBanner(string text, bool enemies)
+        {
+            if (TurnBanner == null)
+                return;
+            PaintTurnBanner(text, enemies);
+            SetTurnBanner(1f, 1f);
+        }
+
+        // 初めの手札のうち、初めのエネルギーで出せる、敵1体に使うカード（なければ出せるカード）。
+        private int PreviewCard()
+        {
+            if (Settings == null)
+                return -1;
+            int count = Mathf.Min(Settings.OpeningDraw, Settings.HandLimit, Cards.Length);
+            int playable = -1;
+            for (int i = 0; i < count; i++)
+            {
+                var card = Cards[i];
+                if (card.Cost > MaxEnergyAt(StartTurn) || card.DeckIndex >= Deck.Length)
+                    continue;
+                if (card.Effect == BattleInspectCardEffect.DamageOne)
+                    return i;
+                if (playable < 0)
+                    playable = i;
+            }
+            return playable;
+        }
+
+        /// <summary>
+        /// Raises a card as a press does: up in the middle with its user stepped forward, its
+        /// ring and name, and the cursors over its targets; tapped, the tap area waits for the
+        /// target; swiped, the aim runs from the card to the first enemy it can hit.
+        /// </summary>
+        private void RaisePreviewCard(bool swiped)
+        {
+            int index = PreviewCard();
+            if (index < 0)
+                return;
+            // 停止中は Awake が動かず、敵のHPが入っていない（倒れた扱いになる）。
+            foreach (var enemy in Enemies)
+                enemy.Hp = enemy.MaxHp;
+            var card = Cards[index];
+            card.Body.SetAsLastSibling();
+            PlaceCard(card.Body, RaisedPose(index), 1f);
+
+            if (card.Caster >= 0 && card.Caster < Allies.Length)
+            {
+                var ally = Allies[card.Caster];
+                var step = StepOffset(Vector2.right);
+                ally.Body.anchoredPosition += step;
+                ally.HpBar.anchoredPosition += step;
+                SetShown(ally.CasterRing, true);
+                SetShown(ally.NameTag, true);
+            }
+            ShowMarkers(card);
+            if (TapArea != null)
+                TapArea.SetActive(!swiped);
+
+            if (Aim == null)
+                return;
+            int target = -1;
+            if (swiped && card.TargetsEnemies && !card.TargetsWholeSide)
+                for (int i = 0; i < Enemies.Length && target < 0; i++)
+                    if (CanTarget(card, i))
+                        target = i;
+            Aim.gameObject.SetActive(target >= 0);
+            if (target < 0)
+                return;
+            var area = Enemies[target].TargetArea;
+            Vector2 start = Aim.InverseTransformPoint(
+                card.Body.TransformPoint(card.Body.rect.center)
+            );
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                Aim,
+                ScreenPointOf(area, area.rect.center),
+                EventCamera(),
+                out var end
+            );
+            LayoutAim(start, end, onTarget: true);
+        }
+    }
+}

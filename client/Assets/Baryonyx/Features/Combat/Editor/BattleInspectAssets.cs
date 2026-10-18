@@ -1300,7 +1300,7 @@ namespace Baryonyx.Combat.Editor
             // Baked with the opening hand fanned out, so the prefab preview shows it; the rest of
             // the deck is hidden until dealt.
             int opening = Mathf.Min(settings.OpeningDraw, settings.HandLimit, DeckSize);
-            // Cards the opening energy cannot pay for are greyed out as in Play Mode.
+            // Cards the opening energy cannot pay for are greyed out and lowered as in Play Mode.
             int energy = BattleInspectView.MaxEnergyAt(view.StartTurn);
             float step = BattleInspectView.FanStepFor(
                 opening,
@@ -1329,10 +1329,11 @@ namespace Baryonyx.Combat.Editor
                     settings.FanDrop,
                     settings.RestBottom
                 );
+                bool playable = data.Cost <= energy;
+                position.y -= BattleInspectView.RestDrop(settings, playable);
                 card.anchoredPosition = position;
                 card.localRotation = Quaternion.Euler(0, 0, angle);
                 card.localScale = Vector3.one * settings.CardScale;
-                bool playable = data.Cost <= energy;
                 var group = instance.GetComponent<CanvasGroup>();
                 group.alpha =
                     i >= opening ? 0f

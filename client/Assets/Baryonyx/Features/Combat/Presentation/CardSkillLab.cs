@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,8 +14,10 @@ namespace Baryonyx.Combat.Presentation
     /// numbers). A skill picked while another plays cuts it short. The skill last picked, how
     /// hard its blows land, the enemy it aims at and whether it repeats are remembered, so the
     /// next Play after a change to the effect's code shows the same skill again.
+    /// While stopped, the list can be shown closed, or open with its skills
+    /// (doc/rules/ui-design.md#停止中の表示の切り替え).
     /// </summary>
-    public sealed class CardSkillLab : MonoBehaviour
+    public sealed class CardSkillLab : MonoBehaviour, IEditModePreview
     {
         // What is remembered between Plays (on this machine only).
         public const string SkillKey = "Baryonyx.CardSkillLab.Skill";
@@ -274,6 +277,32 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < skillButtons.Count; i++)
                 if (skillButtons[i].targetGraphic != null)
                     skillButtons[i].targetGraphic.color = i == index ? PickedColor : skillColors[i];
+        }
+
+        // 停止中の表示の切り替え：一覧を閉じた画面と、Play中と同じくスキルを並べて開いた一覧。
+        // 停止中は Start が動かず、一覧は開いたまま中身が空なので、並べるところから行う。
+        public IReadOnlyList<string> PreviewStates => new[] { "一覧を閉じた", "一覧を開いた" };
+
+        public void ShowPreviewState(int state)
+        {
+            if (state == 0)
+            {
+                ClosePicker();
+                return;
+            }
+            if (skillButtons.Count == 0)
+                BuildList();
+            // 足したボタンも、保存しない表示の一部にする。
+            foreach (var button in skillButtons)
+            {
+                foreach (var part in button.GetComponentsInChildren<Component>(true))
+                {
+                    part.gameObject.hideFlags |= gameObject.hideFlags;
+                    part.hideFlags |= gameObject.hideFlags;
+                }
+            }
+            Refresh();
+            OpenPicker();
         }
 
         private static string NameOf(string[] names, int at) =>
