@@ -2,18 +2,15 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Baryonyx.Training
+namespace Baryonyx.UI.GuideMenu
 {
     /// <summary>
-    /// A horizontal flick over the adventurer's page: to the left shows the next person, to the
-    /// right the previous one. It sits on the layer that holds the page, so a drag that starts on
-    /// a frame or a slot reaches it too; once the finger moves, the slot's tap is cancelled.
+    /// A horizontal flick over a guide screen's panel that shows one person at a time (the
+    /// adventurer's page and its change screens): to the left shows the next person, to the right
+    /// the previous one. It sits on the layer that holds the page, so a drag that starts on a
+    /// frame or a slot reaches it too; once the finger moves, the slot's tap is cancelled.
     /// </summary>
-    public sealed class TrainingSwipe
-        : MonoBehaviour,
-            IBeginDragHandler,
-            IDragHandler,
-            IEndDragHandler
+    public sealed class GuideSwipe : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         // 指を離すまでに横へ動いた距離（設計座標）。縦の動きより大きいときだけ人を替える。
         public const float Distance = 120f;

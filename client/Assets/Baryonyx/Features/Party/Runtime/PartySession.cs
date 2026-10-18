@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Economy;
 using UnityEngine;
 
@@ -54,6 +56,16 @@ namespace Baryonyx.Party
         }
 
         /// <summary>
+        /// The formation a panel shows on opening: the server's when <paramref name="source"/> is
+        /// set (it replaces the party), otherwise the one kept while the app runs.
+        /// </summary>
+        public static async Task<PartyFormation> LoadAsync(
+            PartyMockData data,
+            IPartySource source,
+            CancellationToken token
+        ) => source != null ? Use(data, await source.LoadAsync(token)) : Formation(data);
+
+        /// <summary>
         /// The character's level: the server's, or without it the raised level or the mock
         /// data's. Outside Play Mode (the prefab generators) it is always the mock data's level.
         /// </summary>
@@ -90,6 +102,13 @@ namespace Baryonyx.Party
                 ? Array.ConvertAll(member.Cards, card => card.Skill)
                 : Array.Empty<string>();
         }
+
+        /// <summary>
+        /// The element icons of the character's card skills, in card order without repeats
+        /// (<see cref="CardsOf"/> and <see cref="PartyMockData.IconOf"/>).
+        /// </summary>
+        public static IReadOnlyList<Sprite> ElementIconsOf(PartyMockData data, string id) =>
+            data == null || id == null ? Array.Empty<Sprite>() : data.IconsOf(CardsOf(data, id));
 
         // サーバーがないときだけ使う。サーバーがあれば、カードはサーバーで付け替える。
         public static void SetCards(string id, IReadOnlyList<string> skills)

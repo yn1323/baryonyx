@@ -43,13 +43,11 @@ namespace Baryonyx.Tavern
     /// (<see cref="PartySession.Source"/>) it reads the party on opening; otherwise it uses the
     /// mock data and the equipment kept while the app runs.
     /// </summary>
-    public sealed class AdventurerPickerView : MonoBehaviour, IEditModePreview
+    public sealed class AdventurerPickerView : GuidePanel, IEditModePreview
     {
         // 編成のメニューの「装備」の項目のキー。リストの代わりにこの人選びを開く。
         public const string GuideItemKey = "gear";
 
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "編成を取得できませんでした";
         public const string EmptyText = "なし";
 
@@ -58,21 +56,12 @@ namespace Baryonyx.Tavern
 
         public PartyMockData Party;
 
-        // 通知は案内人の画面の通知の帯に出し、人を押すと案内人の画面で個別の画面を開く。
-        public GuideMenuView Guide;
-
         public TMP_Text Status;
         public AdventurerPickWidget[] Cards = Array.Empty<AdventurerPickWidget>();
         public ScrollRect List;
 
-        private readonly GuidePanelLoad load = new();
         private readonly List<(GlassCard Card, Action Pressed)> bindings = new();
         private bool ready;
-
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -95,15 +84,16 @@ namespace Baryonyx.Tavern
             var source = PartySession.Source;
             if (source != null || EquipmentSession.Source != null)
                 ShowLoading();
-            load.Start(
+            StartLoad(
                 token => LoadAsync(source, EquipmentSession.SourceOrLocal, token),
-                LoadFailed
+                LoadFailedMessage,
+                ShowLoadFailed
             );
         }
 
         private void OnDisable()
         {
-            load.Cancel();
+            Load.Cancel();
             foreach (var (card, pressed) in bindings)
                 card.Clicked -= pressed;
             bindings.Clear();
@@ -116,22 +106,12 @@ namespace Baryonyx.Tavern
         )
         {
             // 同じセッションを順に使う（ログインのやり直しを重ねない）。
-            var formation =
-                source != null
-                    ? PartySession.Use(Party, await source.LoadAsync(token))
-                    : PartySession.Formation(Party);
+            var formation = await PartySession.LoadAsync(Party, source, token);
             var equipment = await gear.LoadAsync(token);
             if (token.IsCancellationRequested)
                 return;
             Render(formation, equipment);
             ready = true;
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("編成を取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
@@ -223,18 +203,8 @@ namespace Baryonyx.Tavern
         /// <summary>Opens the character's page; back on the page returns to this picker.</summary>
         public void Pick(string id)
         {
-            if (!ready || Guide == null || !Guide.HasItem(TrainingSession.GuideItemKey))
-                return;
-            PartySession.Selected = id;
-            TrainingSession.ReturnKey = GuideItemKey;
-            Guide.OpenItem(TrainingSession.GuideItemKey);
-        }
-
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
+            if (ready)
+                TrainingSession.OpenPage(Guide, id, GuideItemKey);
         }
     }
 }

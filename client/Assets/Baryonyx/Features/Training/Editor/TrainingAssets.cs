@@ -37,9 +37,6 @@ namespace Baryonyx.Training.Editor
     {
         public const string Folder = "Assets/Baryonyx/Features/Training";
         public const string DataPath = Folder + "/Data/TrainingMockData.asset";
-        public const string LockPath = Folder + "/UI/Art/TrainingLock.png";
-        public const string IconRunePath =
-            "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
 
         private const float Dot = Guide.DotScale;
         private static readonly Vector2 Design = Layout.Design;
@@ -84,33 +81,6 @@ namespace Baryonyx.Training.Editor
         // －＋の押せる範囲。
         private const float HitSize = Layout.HitSize;
 
-        // ステータスの8項目を置く枠（列, 行）。4列2行で、物攻・属攻の下に物防・属防を置く。
-        private static readonly Vector2Int[] StatCells =
-        {
-            new(0, 0), // HP
-            new(1, 0), // 物攻
-            new(1, 1), // 物防
-            new(2, 0), // 属攻
-            new(2, 1), // 属防
-            new(0, 1), // 速度
-            new(3, 0), // 会心
-            new(3, 1), // 幸運
-        };
-        private const float StatGap = 24f;
-
-        // 2列のときの枠（列, 行）。HP・物攻、属攻・速度、会心・物防、属防・幸運の順に並べる。
-        private static readonly Vector2Int[] StatCellsNarrow =
-        {
-            new(0, 0), // HP
-            new(1, 0), // 物攻
-            new(1, 2), // 物防
-            new(0, 1), // 属攻
-            new(0, 3), // 属防
-            new(1, 1), // 速度
-            new(0, 2), // 会心
-            new(1, 3), // 幸運
-        };
-
         // 重ねて開くレベルアップ。
         private static readonly Rect Modal = new(280, 150, 1360, 890);
         private const float ModalPad = 48f;
@@ -119,12 +89,11 @@ namespace Baryonyx.Training.Editor
         private const float DiffTop = 350f;
         private const float DiffHeight = 42f;
 
-        // カードの挿絵（64×58）の中央24×24ドット。スキルの仮のアイコンに使う。
-        private static readonly Rect IconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
+        // カードの挿絵（64×58）の中央24×24ドット。スキルの仮のアイコンに使う（スキルの付け替えと共有）。
+        public static readonly Rect SkillIconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
 
         private static readonly Color Green = new(0.49f, 0.88f, 0.42f);
         private static readonly Color Before = new(0.72f, 0.75f, 0.83f);
-        private static readonly Color Line = new(0.27f, 0.32f, 0.48f, 0.55f);
         private static readonly Color Inset = new(0.03f, 0.05f, 0.12f, 0.75f);
         private static readonly Color Dim = new(0.01f, 0.015f, 0.04f, 0.74f);
         private static readonly Color FigureSpot = new(0.01f, 0.015f, 0.04f, 0.7f);
@@ -246,49 +215,26 @@ namespace Baryonyx.Training.Editor
         {
             var party = PartyAssets.CreateData();
             var data = CreateData();
-            WriteLock();
 
-            var root = Rect("Training", safe);
-            Stretch(root);
-            var view = root.gameObject.AddComponent<TrainingView>();
+            var (view, layer) = GuideFrameAssets.FramedPanel<TrainingView>(safe, "Training");
             view.Party = party;
             view.Data = data;
             view.Guide = guide;
             view.WeaponIcon = Guide.Icon(EquipmentAssets.IconWeaponPath);
             view.ArmorIcon = Guide.Icon(EquipmentAssets.IconArmorPath);
 
-            root.gameObject.AddComponent<GuideFramedPanel>();
-            var layer = Layout.Layer(root, "Layout");
-            GuideFrameAssets.Pane(
-                layer,
-                "PortraitPane",
-                0f,
-                Split,
-                Portrait.y,
-                GuideFrameAssets.PaneDark,
-                true,
-                false
-            );
-            GuideFrameAssets.Pane(
-                layer,
-                "DetailPane",
-                Split,
-                1920f,
-                Portrait.y,
-                GuideFrameAssets.PaneLight,
-                false,
-                true
-            );
+            // 金の2本線は、左のイラストの上に重ねる。
+            GuideFrameAssets.SplitPanes(layer, Split, "PortraitPane", "DetailPane", divider: false);
             // ページの上の左右のフリックで人を替える。枠とボタンの上から動かしても届くよう、両方を載せる層で受ける。
-            view.Swipe = layer.gameObject.AddComponent<TrainingSwipe>();
+            view.Swipe = layer.gameObject.AddComponent<GuideSwipe>();
             BuildPortrait(layer, view, party);
             GuideFrameAssets.Divider(layer, Split, Portrait.y);
             BuildDetail(layer, view);
-            BuildDialog(root, view);
+            BuildDialog((RectTransform)view.transform, view);
 
             // 停止中のPrefabでも1人目が読めるよう、仮の装備で生成時に一度描く。
             TrainingView.Build(view, party, data, EquipmentLocalSource.Starter()).Dispose();
-            return root.gameObject;
+            return view.gameObject;
         }
 
         // --- Left: the illustration and the battle sprite in its corner ---------------------
@@ -300,7 +246,7 @@ namespace Baryonyx.Training.Editor
         )
         {
             // イラストは枠を付けず、左の面いっぱいに敷き、右端を面の色へなじませる。
-            var card = Box(
+            var card = Layout.Box(
                 layer,
                 "Portrait",
                 Portrait.x,
@@ -312,7 +258,7 @@ namespace Baryonyx.Training.Editor
             Stretch(picture);
             view.Illustration = picture.gameObject.AddComponent<RawImage>();
             view.Illustration.raycastTarget = false;
-            var fade = Box(
+            var fade = Layout.Box(
                 card,
                 "Fade",
                 Portrait.width - PortraitFade,
@@ -346,11 +292,11 @@ namespace Baryonyx.Training.Editor
 
         private static void BuildDetail(RectTransform layer, TrainingView view)
         {
-            var panel = Box(layer, "Detail", Panel.x, Panel.y, Panel.width, Panel.height);
+            var panel = Layout.Box(layer, "Detail", Panel.x, Panel.y, Panel.width, Panel.height);
             float width = Panel.width - PanelPad * 2;
 
             var header = Layout.Row(panel, "Header", PanelPad, 18, 760, 92, 14);
-            view.Name = Text(
+            view.Name = Label(
                 header,
                 "Name",
                 "",
@@ -358,12 +304,19 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            Fit(view.Name, 0);
-            Fit(
-                Text(header, "LevelTag", "Lv", 30, UiPalette.TextSub, TextAlignmentOptions.Midline),
+            Layout.Fit(view.Name, 0);
+            Layout.Fit(
+                Label(
+                    header,
+                    "LevelTag",
+                    "Lv",
+                    30,
+                    UiPalette.TextSub,
+                    TextAlignmentOptions.Midline
+                ),
                 0
             );
-            view.Level = Text(
+            view.Level = Label(
                 header,
                 "Level",
                 "",
@@ -371,7 +324,7 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            Fit(view.Level, 0);
+            Layout.Fit(view.Level, 0);
             view.Elements = Enumerable
                 .Range(0, 3)
                 .Select(i => Layout.RowIcon(header, "Element" + i, 12f * Dot))
@@ -379,7 +332,7 @@ namespace Baryonyx.Training.Editor
             BuildLevelUp(panel, view);
 
             // キャラ自身：ステータス（2列4行）と、その右にパッシブ2つ。
-            view.Stats = BuildStats(panel, PanelPad, StatsTop, StatsWidth, 2, StatRow);
+            view.Stats = StatGridAssets.Build(panel, PanelPad, StatsTop, StatsWidth, 2, StatRow);
             view.Passives = BuildPassives(panel);
 
             // デッキに入る4枚：固有スキル2枚と、カスタムスキル2枚。戦闘のカードと同じ組み方。
@@ -403,10 +356,18 @@ namespace Baryonyx.Training.Editor
                 36,
                 26
             );
-            var customTitle = Row(panel, "CustomTitle", cardX[2], DeckTop - 36, 420, 32, 14);
-            customTitle.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.LowerLeft;
-            Fit(
-                Text(
+            var customTitle = Layout.Row(
+                panel,
+                "CustomTitle",
+                cardX[2],
+                DeckTop - 36,
+                420,
+                32,
+                14,
+                TextAnchor.LowerLeft
+            );
+            Layout.Fit(
+                Label(
                     customTitle,
                     "Title",
                     "カスタムスキル",
@@ -416,8 +377,8 @@ namespace Baryonyx.Training.Editor
                 ),
                 0
             );
-            Fit(
-                Text(
+            Layout.Fit(
+                Label(
                     customTitle,
                     "Note",
                     "スキルかアイテム",
@@ -473,11 +434,11 @@ namespace Baryonyx.Training.Editor
         {
             // 選んだカードと同じ金の縁と光で、押せることを目立たせる。
             var (button, selected, levelUp) = GlassCardAssets.Choice(
-                Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96)
+                Layout.Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96)
             );
             selected.SetActive(true);
             view.LevelUp = button;
-            view.LevelUpLabel = Text(
+            view.LevelUpLabel = Label(
                 levelUp,
                 "Label",
                 "レベルアップ",
@@ -485,13 +446,13 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            At(view.LevelUpLabel, 26, 0, 200, 96);
+            Layout.At(view.LevelUpLabel, 26, 0, 200, 96);
             Guide.Shrink(view.LevelUpLabel, 22);
-            var cost = Box(levelUp, "Cost", 216, 0, 130, 96);
+            var cost = Layout.Box(levelUp, "Cost", 216, 0, 130, 96);
             view.LevelUpCost = cost.gameObject;
-            var icon = Icon(cost, "Icon", IconRunePath);
-            At(icon, 0, 26, 44, 44);
-            view.LevelUpCostLabel = Text(
+            var icon = Icon(cost, "Icon", Guide.IconRunePath);
+            Layout.At(icon, 0, 26, 44, 44);
+            view.LevelUpCostLabel = Label(
                 cost,
                 "Value",
                 "",
@@ -499,69 +460,14 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight
             );
-            At(view.LevelUpCostLabel, 44, 0, 80, 96);
+            Layout.At(view.LevelUpCostLabel, 44, 0, 80, 96);
             Guide.Shrink(view.LevelUpCostLabel, 20);
-        }
-
-        /// <summary>
-        /// The eight stats as label and value cells with a line under each, in
-        /// <see cref="CharacterStats"/> order: four columns (HP・物攻・属攻・会心 over 速度・物防・属防・幸運)
-        /// or two (HP・物攻, 属攻・速度, 会心・物防, 属防・幸運). The formation's other screens
-        /// build their stats with it too.
-        /// </summary>
-        public static TMP_Text[] BuildStats(
-            RectTransform parent,
-            float x,
-            float y,
-            float width,
-            int columns,
-            float rowHeight = 46f
-        )
-        {
-            var cells = columns >= 4 ? StatCells : StatCellsNarrow;
-            int count = columns >= 4 ? 4 : 2;
-            float cell = (width - StatGap * (count - 1)) / count;
-            var stats = Box(parent, "Stats", x, y, width, rowHeight * (8 / count));
-            return Enumerable
-                .Range(0, CharacterStats.Count)
-                .Select(i =>
-                {
-                    var row = Box(
-                        stats,
-                        "Stat" + i,
-                        cells[i].x * (cell + StatGap),
-                        cells[i].y * rowHeight,
-                        cell,
-                        rowHeight
-                    );
-                    Layout.Line(row, "Line", 0, rowHeight - 2, cell, 2);
-                    var label = Text(
-                        row,
-                        "Label",
-                        CharacterStats.Labels[i],
-                        24,
-                        UiPalette.TextSub,
-                        TextAlignmentOptions.BottomLeft
-                    );
-                    At(label, 0, 0, 80, rowHeight - 4);
-                    var value = Text(
-                        row,
-                        "Value",
-                        "",
-                        32,
-                        UiPalette.TextMain,
-                        TextAlignmentOptions.BottomRight
-                    );
-                    At(value, 70, 0, cell - 70, rowHeight - 4);
-                    return value;
-                })
-                .ToArray();
         }
 
         // パッシブ2つを、見出しの下に1行ずつ（アイコン、名前、効果）。未解放は名前の行の右に解放するLv。
         private static TrainingSkillWidget[] BuildPassives(RectTransform panel)
         {
-            var box = Box(
+            var box = Layout.Box(
                 panel,
                 "Passives",
                 Passives.x,
@@ -576,7 +482,7 @@ namespace Baryonyx.Training.Editor
                 .Range(0, 2)
                 .Select(i =>
                 {
-                    var row = Box(
+                    var row = Layout.Box(
                         box,
                         "Passive" + i,
                         0,
@@ -584,22 +490,13 @@ namespace Baryonyx.Training.Editor
                         Passives.width,
                         PassiveRow
                     );
-                    var icon = Box(row, "Icon", 18, (PassiveRow - 48) / 2f, 48, 48);
-                    var widget = new TrainingSkillWidget
-                    {
-                        Icon = icon.gameObject.AddComponent<RawImage>(),
-                    };
-                    widget.Icon.uvRect = IconCrop;
-                    widget.Icon.raycastTarget = false;
-                    var locked = Rect("Lock", icon);
-                    Stretch(locked);
-                    var lockImage = Rect("Image", locked);
-                    Place(lockImage, Vector2.zero, new Vector2(9, 10) * 3f);
-                    SpriteImage(lockImage, LockPath, Color.white);
-                    widget.Lock = locked.gameObject;
+                    var widget = new TrainingSkillWidget();
+                    (widget.Icon, widget.Lock) = SkillIcon(
+                        Layout.Box(row, "Icon", 18, (PassiveRow - 48) / 2f, 48, 48)
+                    );
 
                     const float textX = 82;
-                    widget.Name = Text(
+                    widget.Name = Label(
                         row,
                         "Name",
                         "",
@@ -607,9 +504,9 @@ namespace Baryonyx.Training.Editor
                         UiPalette.TextMain,
                         TextAlignmentOptions.TopLeft
                     );
-                    At(widget.Name, textX, 4, 300, 30);
+                    Layout.At(widget.Name, textX, 4, 300, 30);
                     Guide.Shrink(widget.Name, 18);
-                    widget.When = Text(
+                    widget.When = Label(
                         row,
                         "When",
                         "",
@@ -617,8 +514,8 @@ namespace Baryonyx.Training.Editor
                         UiPalette.Gold,
                         TextAlignmentOptions.TopRight
                     );
-                    At(widget.When, Passives.width - 18 - 200, 8, 200, 24);
-                    widget.Description = Text(
+                    Layout.At(widget.When, Passives.width - 18 - 200, 8, 200, 24);
+                    widget.Description = Label(
                         row,
                         "Description",
                         "",
@@ -626,7 +523,7 @@ namespace Baryonyx.Training.Editor
                         UiPalette.TextSub,
                         TextAlignmentOptions.TopLeft
                     );
-                    At(widget.Description, textX, 34, Passives.width - textX - 18, 28);
+                    Layout.At(widget.Description, textX, 34, Passives.width - textX - 18, 28);
                     Guide.Shrink(widget.Description, 15);
                     return widget;
                 })
@@ -647,7 +544,7 @@ namespace Baryonyx.Training.Editor
             bool button
         )
         {
-            var card = Box(panel, name, x, y, CardDots.x * CardDot, CardDots.y * CardDot);
+            var card = Layout.Box(panel, name, x, y, CardDots.x * CardDot, CardDots.y * CardDot);
             var widget = new TrainingCardWidget
             {
                 Frame = Dots(card, "Frame", 0, 0, CardDots, null),
@@ -657,12 +554,19 @@ namespace Baryonyx.Training.Editor
                 widget.Button = Guide.AddButton(card, widget.Frame);
             widget.Art = Dots(card, "Art", 3, 3, new Vector2(64, 58), null);
 
-            var band = Box(card, "Band", 3 * CardDot, 39 * CardDot, 64 * CardDot, 26 * CardDot);
+            var band = Layout.Box(
+                card,
+                "Band",
+                3 * CardDot,
+                39 * CardDot,
+                64 * CardDot,
+                26 * CardDot
+            );
             AddImage(band, CardBand, false);
             widget.Band = band.gameObject;
-            widget.Type = Text(card, "Type", "", 15, CardOwner, TextAlignmentOptions.MidlineLeft);
-            At(widget.Type, 6 * CardDot, 42.4f * CardDot, 58 * CardDot, 6.4f * CardDot);
-            widget.Name = Text(
+            widget.Type = Label(card, "Type", "", 15, CardOwner, TextAlignmentOptions.MidlineLeft);
+            Layout.At(widget.Type, 6 * CardDot, 42.4f * CardDot, 58 * CardDot, 6.4f * CardDot);
+            widget.Name = Label(
                 card,
                 "Name",
                 "",
@@ -670,9 +574,9 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            At(widget.Name, 6 * CardDot, 48.6f * CardDot, 58 * CardDot, 8.4f * CardDot);
+            Layout.At(widget.Name, 6 * CardDot, 48.6f * CardDot, 58 * CardDot, 8.4f * CardDot);
             Guide.Shrink(widget.Name, 15);
-            widget.Kind = Text(
+            widget.Kind = Label(
                 card,
                 "Kind",
                 "",
@@ -680,7 +584,7 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            At(widget.Kind, 7 * CardDot, 56.8f * CardDot, 56 * CardDot, 6 * CardDot);
+            Layout.At(widget.Kind, 7 * CardDot, 56.8f * CardDot, 56 * CardDot, 6 * CardDot);
             widget.Kind.richText = true;
             widget.Description = Label(
                 card,
@@ -691,7 +595,13 @@ namespace Baryonyx.Training.Editor
                 TextAlignmentOptions.TopLeft,
                 shadow: false
             );
-            At(widget.Description, 7.5f * CardDot, 66.6f * CardDot, 55 * CardDot, 26 * CardDot);
+            Layout.At(
+                widget.Description,
+                7.5f * CardDot,
+                66.6f * CardDot,
+                55 * CardDot,
+                26 * CardDot
+            );
             widget.Description.richText = true;
             widget.Description.textWrappingMode = TextWrappingModes.Normal;
 
@@ -715,7 +625,7 @@ namespace Baryonyx.Training.Editor
             widget.CostDigit = digit.gameObject.AddComponent<RawImage>();
             widget.CostDigit.texture = costDigits;
             widget.CostDigit.raycastTarget = false;
-            var element = Box(
+            var element = Layout.Box(
                 card,
                 "Element",
                 (70 - 5 - 12) * CardDot,
@@ -730,7 +640,7 @@ namespace Baryonyx.Training.Editor
             var locked = Rect("Lock", card);
             Stretch(locked);
             AddImage(locked, CardVeil, false);
-            var lockImage = Box(
+            var lockImage = Layout.Box(
                 locked,
                 "Image",
                 (CardDots.x * CardDot - 9 * 4) / 2f,
@@ -738,9 +648,16 @@ namespace Baryonyx.Training.Editor
                 9 * 4,
                 10 * 4
             );
-            SpriteImage(lockImage, LockPath, Color.white);
-            widget.When = Text(locked, "When", "", 22, UiPalette.Gold, TextAlignmentOptions.Center);
-            At(widget.When, 0, 100, CardDots.x * CardDot, 30);
+            SpriteImage(lockImage, GuideFrameAssets.LockPath, Color.white);
+            widget.When = Label(
+                locked,
+                "When",
+                "",
+                22,
+                UiPalette.Gold,
+                TextAlignmentOptions.Center
+            );
+            Layout.At(widget.When, 0, 100, CardDots.x * CardDot, 30);
             widget.Lock = locked.gameObject;
             locked.gameObject.SetActive(false);
             return widget;
@@ -756,7 +673,7 @@ namespace Baryonyx.Training.Editor
             Texture texture
         )
         {
-            var rect = Box(
+            var rect = Layout.Box(
                 parent,
                 name,
                 x * CardDot,
@@ -786,15 +703,15 @@ namespace Baryonyx.Training.Editor
         {
             // 装備の枠は小さいので、カードの模様は付けない。まだ付けられないアクセサリーは点線にする。
             var (button, _, cell) = GlassCardAssets.Choice(
-                Box(panel, "Gear" + index, x, y, width, GearHeight),
+                Layout.Box(panel, "Gear" + index, x, y, width, GearHeight),
                 dashed: index >= TrainingPresenter.OpenGearSlots,
                 pattern: false
             );
             var widget = new TrainingGearWidget { Button = button };
-            var icon = Box(cell, "Icon", 14, 14, 48, 48);
+            var icon = Layout.Box(cell, "Icon", 14, 14, 48, 48);
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
-            widget.Slot = Text(
+            widget.Slot = Label(
                 cell,
                 "Slot",
                 index < TrainingPresenter.OpenGearSlots
@@ -806,14 +723,14 @@ namespace Baryonyx.Training.Editor
             );
             // アクセサリーはアイコンがまだないため、枠の名前を中央に置く。
             if (index < TrainingPresenter.OpenGearSlots)
-                At(widget.Slot, 72, 14, width - 80, 24);
+                Layout.At(widget.Slot, 72, 14, width - 80, 24);
             else
             {
                 widget.Slot.alignment = TextAlignmentOptions.Top;
-                At(widget.Slot, 8, 18, width - 16, 24);
+                Layout.At(widget.Slot, 8, 18, width - 16, 24);
             }
             Guide.Shrink(widget.Slot, 14);
-            widget.Stars = Text(
+            widget.Stars = Label(
                 cell,
                 "Stars",
                 "",
@@ -821,8 +738,8 @@ namespace Baryonyx.Training.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
-            At(widget.Stars, 72, 40, width - 80, 24);
-            widget.Name = Text(
+            Layout.At(widget.Stars, 72, 40, width - 80, 24);
+            widget.Name = Label(
                 cell,
                 "Name",
                 "",
@@ -830,9 +747,9 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.TopLeft
             );
-            At(widget.Name, 14, 74, width - 28, 30);
+            Layout.At(widget.Name, 14, 74, width - 28, 30);
             Guide.Shrink(widget.Name, 16);
-            widget.Detail = Text(
+            widget.Detail = Label(
                 cell,
                 "Detail",
                 "",
@@ -840,16 +757,16 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
-            At(widget.Detail, 14, 106, width - 28, GearHeight - 118);
+            Layout.At(widget.Detail, 14, 106, width - 28, GearHeight - 118);
             widget.Detail.textWrappingMode = TextWrappingModes.Normal;
 
             var locked = Rect("Lock", cell);
             Stretch(locked);
-            var lockImage = Box(locked, "Image", (width - 9 * 4) / 2f, 62, 9 * 4, 10 * 4);
-            SpriteImage(lockImage, LockPath, Color.white);
+            var lockImage = Layout.Box(locked, "Image", (width - 9 * 4) / 2f, 62, 9 * 4, 10 * 4);
+            SpriteImage(lockImage, GuideFrameAssets.LockPath, Color.white);
             // 開いていないアクセサリーの枠は、解放するLv（「Lv 15で解放」）を出す。
             int accessory = index - TrainingPresenter.OpenGearSlots;
-            widget.When = Text(
+            widget.When = Label(
                 locked,
                 "When",
                 accessory >= 0 ? AccessorySlots.UnlockText(accessory) : "",
@@ -857,7 +774,7 @@ namespace Baryonyx.Training.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
-            At(widget.When, 8, 112, width - 16, 30);
+            Layout.At(widget.When, 8, 112, width - 16, 30);
             widget.Lock = locked.gameObject;
             locked.gameObject.SetActive(false);
             return widget;
@@ -891,7 +808,7 @@ namespace Baryonyx.Training.Editor
             float width = Modal.width;
 
             GuideFrameAssets.Heading(modal, "Title", "レベルアップ", ModalPad, 30, 500, 64, 44);
-            view.DialogName = Text(
+            view.DialogName = Label(
                 modal,
                 "Name",
                 "",
@@ -899,33 +816,49 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight
             );
-            At(view.DialogName, width - ModalPad - 500, 30, 500, 64);
+            Layout.At(view.DialogName, width - ModalPad - 500, 30, 500, 64);
 
-            var levels = Row(modal, "Levels", 0, 104, width, 124, 22);
-            Fit(
-                Text(levels, "FromTag", "Lv", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
+            var levels = Layout.Row(
+                modal,
+                "Levels",
+                0,
+                104,
+                width,
+                124,
+                22,
+                TextAnchor.MiddleCenter
+            );
+            Layout.Fit(
+                Label(
+                    levels,
+                    "FromTag",
+                    "Lv",
+                    36,
+                    UiPalette.TextSub,
+                    TextAlignmentOptions.Baseline
+                ),
                 0
             );
-            view.From = Text(levels, "From", "", 64, Before, TextAlignmentOptions.Baseline);
-            Fit(view.From, 0);
+            view.From = Label(levels, "From", "", 64, Before, TextAlignmentOptions.Baseline);
+            Layout.Fit(view.From, 0);
             var arrowCell = Rect("Arrow", levels);
-            Fit(arrowCell, 5 * 8);
+            Layout.Fit(arrowCell, 5 * 8);
             var arrow = Rect("Image", arrowCell);
             Place(arrow, new Vector2(0, 8), new Vector2(5, 9) * 8f);
             SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
-            Fit(
-                Text(levels, "ToTag", "Lv", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
+            Layout.Fit(
+                Label(levels, "ToTag", "Lv", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
                 0
             );
-            view.To = Text(levels, "To", "", 104, UiPalette.Gold, TextAlignmentOptions.Baseline);
-            Fit(view.To, 0);
+            view.To = Label(levels, "To", "", 104, UiPalette.Gold, TextAlignmentOptions.Baseline);
+            Layout.Fit(view.To, 0);
 
-            var step = Row(modal, "Step", 0, 238, width, 92, 16);
+            var step = Layout.Row(modal, "Step", 0, 238, width, 92, 16, TextAnchor.MiddleCenter);
             view.Less = Square(step, "Less", "－", HitSize);
             var count = Rect("Count", step);
-            Fit(count, 200);
+            Layout.Fit(count, 200);
             AddImage(count, Inset, false);
-            var countTag = Text(
+            var countTag = Label(
                 count,
                 "Tag",
                 "上げる数",
@@ -933,9 +866,9 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.Top
             );
-            At(countTag, 0, 8, 200, 28);
-            view.Count = Text(count, "Value", "", 44, UiPalette.Gold, TextAlignmentOptions.Top);
-            At(view.Count, 0, 34, 200, 54);
+            Layout.At(countTag, 0, 8, 200, 28);
+            view.Count = Label(count, "Value", "", 44, UiPalette.Gold, TextAlignmentOptions.Top);
+            Layout.At(view.Count, 0, 34, 200, 54);
             view.More = Square(step, "More", "＋", HitSize);
             view.Max = Square(step, "Max", "最大", 140);
 
@@ -947,10 +880,10 @@ namespace Baryonyx.Training.Editor
             float side = ModalPad + 640 + 48;
             float sideWidth = width - side - ModalPad;
             var learned = GlassCardAssets.Plaque(
-                Box(modal, "Learned", side, 372, sideWidth, 124),
+                Layout.Box(modal, "Learned", side, 372, sideWidth, 124),
                 pattern: false
             );
-            var learnedTag = Text(
+            var learnedTag = Label(
                 learned,
                 "Tag",
                 "このレベルアップで覚えるスキル",
@@ -958,8 +891,8 @@ namespace Baryonyx.Training.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
-            At(learnedTag, 24, 16, sideWidth - 48, 32);
-            view.Learned = Text(
+            Layout.At(learnedTag, 24, 16, sideWidth - 48, 32);
+            view.Learned = Label(
                 learned,
                 "Value",
                 "",
@@ -967,14 +900,14 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.TopLeft
             );
-            At(view.Learned, 24, 56, sideWidth - 48, 56);
+            Layout.At(view.Learned, 24, 56, sideWidth - 48, 56);
             view.Learned.textWrappingMode = TextWrappingModes.Normal;
             Guide.Shrink(view.Learned, 24);
 
-            var nextBox = Box(modal, "NextUnlock", side, 512, sideWidth, 160);
+            var nextBox = Layout.Box(modal, "NextUnlock", side, 512, sideWidth, 160);
             var next = GlassCardAssets.Plaque(nextBox, pattern: false);
             view.NextBox = nextBox.gameObject;
-            var nextTag = Text(
+            var nextTag = Label(
                 next,
                 "Tag",
                 "次の解放",
@@ -982,14 +915,14 @@ namespace Baryonyx.Training.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.TopLeft
             );
-            At(nextTag, 24, 14, 300, 32);
-            var nextIcon = Box(next, "Icon", 24, 50, Guide.IconSize, Guide.IconSize);
+            Layout.At(nextTag, 24, 14, 300, 32);
+            var nextIcon = Layout.Box(next, "Icon", 24, 50, Guide.IconSize, Guide.IconSize);
             view.NextIcon = nextIcon.gameObject.AddComponent<RawImage>();
-            view.NextIcon.uvRect = IconCrop;
+            view.NextIcon.uvRect = SkillIconCrop;
             view.NextIcon.color = new Color(0.55f, 0.55f, 0.6f, 1f);
             view.NextIcon.raycastTarget = false;
             float nextX = 24 + Guide.IconSize + 18;
-            view.NextLevel = Text(
+            view.NextLevel = Label(
                 next,
                 "Level",
                 "",
@@ -997,8 +930,8 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
-            At(view.NextLevel, nextX, 48, sideWidth - nextX - 20, 30);
-            view.NextName = Text(
+            Layout.At(view.NextLevel, nextX, 48, sideWidth - nextX - 20, 30);
+            view.NextName = Label(
                 next,
                 "Name",
                 "",
@@ -1006,9 +939,9 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.TopLeft
             );
-            At(view.NextName, nextX, 78, sideWidth - nextX - 20, 44);
+            Layout.At(view.NextName, nextX, 78, sideWidth - nextX - 20, 44);
             Guide.Shrink(view.NextName, 24);
-            view.NextRemain = Text(
+            view.NextRemain = Label(
                 next,
                 "Remain",
                 "",
@@ -1016,12 +949,12 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
-            At(view.NextRemain, nextX, 122, sideWidth - nextX - 20, 30);
+            Layout.At(view.NextRemain, nextX, 122, sideWidth - nextX - 20, 30);
 
             float footY = Modal.height - ModalPad - 110;
-            var runeIcon = Icon(modal, "RuneIcon", IconRunePath);
-            At(runeIcon, ModalPad, footY - 22, Guide.IconSize, Guide.IconSize);
-            view.Cost = Text(
+            var runeIcon = Icon(modal, "RuneIcon", Guide.IconRunePath);
+            Layout.At(runeIcon, ModalPad, footY - 22, Guide.IconSize, Guide.IconSize);
+            view.Cost = Label(
                 modal,
                 "Cost",
                 "",
@@ -1029,8 +962,8 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            At(view.Cost, ModalPad + Guide.IconSize + 12, footY - 22, 420, Guide.IconSize);
-            view.Balance = Text(
+            Layout.At(view.Cost, ModalPad + Guide.IconSize + 12, footY - 22, 420, Guide.IconSize);
+            view.Balance = Label(
                 modal,
                 "Balance",
                 "",
@@ -1038,16 +971,16 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
-            At(view.Balance, ModalPad, footY + 78, 600, 36);
+            Layout.At(view.Balance, ModalPad, footY + 78, 600, 36);
 
             // 決める方は、育成の画面の「レベルアップ」と同じ金の縁と光のカードにする。
             var (confirmButton, confirmRim, confirm) = GlassCardAssets.Choice(
-                Box(modal, "Confirm", width - ModalPad - 380, footY, 380, 110),
+                Layout.Box(modal, "Confirm", width - ModalPad - 380, footY, 380, 110),
                 pattern: false
             );
             confirmRim.SetActive(true);
             view.Confirm = confirmButton;
-            var confirmLabel = Text(
+            var confirmLabel = Label(
                 confirm,
                 "Label",
                 "レベルアップ",
@@ -1057,11 +990,11 @@ namespace Baryonyx.Training.Editor
             );
             Stretch((RectTransform)confirmLabel.transform);
             var (cancelButton, _, cancel) = GlassCardAssets.Choice(
-                Box(modal, "Cancel", width - ModalPad - 380 - 24 - 240, footY, 240, 110),
+                Layout.Box(modal, "Cancel", width - ModalPad - 380 - 24 - 240, footY, 240, 110),
                 pattern: false
             );
             view.Cancel = cancelButton;
-            var cancelLabel = Text(
+            var cancelLabel = Label(
                 cancel,
                 "Label",
                 "やめる",
@@ -1082,10 +1015,9 @@ namespace Baryonyx.Training.Editor
         )
         {
             const float text = DiffHeight - 4;
-            var row = Box(modal, "Diff" + index, x, y, 640, DiffHeight);
-            var line = Box(row, "Line", 0, DiffHeight - 2, 640, 2);
-            AddImage(line, Line, false);
-            var label = Text(
+            var row = Layout.Box(modal, "Diff" + index, x, y, 640, DiffHeight);
+            Layout.Line(row, "Line", 0, DiffHeight - 2, 640, 2);
+            var label = Label(
                 row,
                 "Label",
                 CharacterStats.Labels[index],
@@ -1093,11 +1025,11 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.BottomLeft
             );
-            At(label, 0, 0, 170, text);
+            Layout.At(label, 0, 0, 170, text);
             var widget = new TrainingDiffWidget
             {
-                Before = Text(row, "Before", "", 30, Before, TextAlignmentOptions.BottomRight),
-                After = Text(
+                Before = Label(row, "Before", "", 30, Before, TextAlignmentOptions.BottomRight),
+                After = Label(
                     row,
                     "After",
                     "",
@@ -1105,21 +1037,21 @@ namespace Baryonyx.Training.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.BottomRight
                 ),
-                Gain = Text(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
+                Gain = Label(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
             };
-            At(widget.Before, 170, 0, 110, text);
+            Layout.At(widget.Before, 170, 0, 110, text);
             Arrow(row, "Arrow", 300, 9, 3);
-            At(widget.After, 330, 0, 110, text);
-            At(widget.Gain, 450, 0, 190, text);
+            Layout.At(widget.After, 330, 0, 110, text);
+            Layout.At(widget.Gain, 450, 0, 190, text);
             return widget;
         }
 
         private static Button Square(RectTransform row, string name, string label, float width)
         {
             var rect = Rect(name, row);
-            Fit(rect, width);
+            Layout.Fit(rect, width);
             var (button, _, inside) = GlassCardAssets.Choice(rect, pattern: false);
-            var text = Text(
+            var text = Label(
                 inside,
                 "Label",
                 label,
@@ -1133,65 +1065,17 @@ namespace Baryonyx.Training.Editor
 
         // --- Helpers -------------------------------------------------------------------
 
-        // 左上からの設計座標で置く。
-        private static RectTransform Box(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            float width,
-            float height
-        )
+        /// <summary>
+        /// A skill's icon on <paramref name="icon"/> (the middle of its card art, until skills
+        /// have icons) with the lock over it for a skill not unlocked yet. The card skills' change
+        /// screen shows the unique skills with it too.
+        /// </summary>
+        public static (RawImage Icon, GameObject Lock) SkillIcon(RectTransform icon)
         {
-            var rect = Rect(name, parent);
-            Corner(rect, new Vector2(0, 1), new Vector2(x, -y), new Vector2(width, height));
-            return rect;
-        }
-
-        private static void At(Component item, float x, float y, float width, float height) =>
-            Corner(
-                (RectTransform)item.transform,
-                new Vector2(0, 1),
-                new Vector2(x, -y),
-                new Vector2(width, height)
-            );
-
-        private static TMP_Text Text(
-            RectTransform parent,
-            string name,
-            string text,
-            float size,
-            Color color,
-            TextAlignmentOptions alignment
-        ) => Label(parent, name, text, size, color, alignment);
-
-        // 子を中央に横へ並べる行。子の幅は各自の推奨の幅（文字なら文の長さ）。
-        private static RectTransform Row(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            float width,
-            float height,
-            float spacing
-        )
-        {
-            var row = Box(parent, name, x, y, width, height);
-            var group = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            group.childAlignment = TextAnchor.MiddleCenter;
-            group.spacing = spacing;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = false;
-            group.childForceExpandHeight = true;
-            return row;
-        }
-
-        // 行の子の幅を決める。0なら文字の推奨の幅に任せる。
-        private static void Fit(Component item, float width)
-        {
-            var element = item.gameObject.AddComponent<LayoutElement>();
-            if (width > 0)
-                element.minWidth = element.preferredWidth = width;
+            var image = icon.gameObject.AddComponent<RawImage>();
+            image.uvRect = SkillIconCrop;
+            image.raycastTarget = false;
+            return (image, GuideFrameAssets.IconLock(icon));
         }
 
         private static Image Icon(RectTransform parent, string name, string path)
@@ -1207,41 +1091,8 @@ namespace Baryonyx.Training.Editor
 
         private static void Arrow(RectTransform parent, string name, float x, float y, float scale)
         {
-            var arrow = Box(parent, name, x, y, 5 * scale, 9 * scale);
+            var arrow = Layout.Box(parent, name, x, y, 5 * scale, 9 * scale);
             SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
-        }
-
-        // 未解放のスキルのアイコンに重ねる、9×10ドットの錠前（4倍で表示する）。
-        private static void WriteLock()
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(LockPath));
-            ArtAssets.WritePattern(
-                LockPath,
-                new[]
-                {
-                    "..ooooo..",
-                    ".ohhhhho.",
-                    ".oh...ho.",
-                    ".oh...ho.",
-                    "ooooooooo",
-                    "olllllllo",
-                    "ogggkgggo",
-                    "ogggkgggo",
-                    "ossssssso",
-                    ".ooooooo.",
-                },
-                c =>
-                    c switch
-                    {
-                        'o' => new Color32(10, 13, 28, 255),
-                        'h' => new Color32(195, 201, 220, 255),
-                        'l' => new Color32(228, 232, 244, 255),
-                        'g' => new Color32(140, 150, 178, 255),
-                        's' => new Color32(92, 101, 132, 255),
-                        'k' => new Color32(10, 13, 28, 255),
-                        _ => Color.clear,
-                    }
-            );
         }
     }
 }

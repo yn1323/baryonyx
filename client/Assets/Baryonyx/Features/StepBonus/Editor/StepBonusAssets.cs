@@ -207,36 +207,12 @@ namespace Baryonyx.StepBonus.Editor
             var loadout = StepBonusLoadout.From(data);
             WriteSetMark();
 
-            var root = Rect("BonusSettings", safe);
-            Stretch(root);
-            var view = root.gameObject.AddComponent<StepBonusSettingsView>();
+            var (view, layer) = Frame.FramedPanel<StepBonusSettingsView>(safe, "BonusSettings");
             view.Data = data;
             view.Guide = guide;
             view.TierColors = StepBonusArt.Tiers.ToArray();
 
-            root.gameObject.AddComponent<GuideFramedPanel>();
-            var layer = Layout.Layer(root, "Layout");
-            Frame.Pane(
-                layer,
-                "EffectsPane",
-                0f,
-                Split,
-                Frame.HeaderHeight,
-                Frame.PaneDark,
-                true,
-                false
-            );
-            Frame.Pane(
-                layer,
-                "BonusesPane",
-                Split,
-                1920f,
-                Frame.HeaderHeight,
-                Frame.PaneLight,
-                false,
-                true
-            );
-            Frame.Divider(layer, Split, Frame.HeaderHeight);
+            Frame.SplitPanes(layer, Split, "EffectsPane", "BonusesPane");
             Frame.Heading(
                 layer,
                 "EffectsTitle",
@@ -271,7 +247,7 @@ namespace Baryonyx.StepBonus.Editor
 
             BuildEffects(layer, view, loadout);
             BuildBonuses(layer, view, loadout);
-            return root.gameObject;
+            return view.gameObject;
         }
 
         // --- Left: the slots, which are also today's effects --------------------------
@@ -395,29 +371,14 @@ namespace Baryonyx.StepBonus.Editor
                 0,
                 BonusesWidth / labels.Length,
                 TabHeight,
-                BonusesWidth,
-                lockPath: null
+                BonusesWidth
             );
 
-            var viewport = Rect("Viewport", panel);
-            Stretch(viewport);
-            viewport.offsetMax = new Vector2(0, -(TabHeight + CardGap));
-            viewport.gameObject.AddComponent<RectMask2D>();
-            AddImage(viewport, Color.clear, true);
-
-            var content = Rect("Rows", viewport);
-            content.anchorMin = new Vector2(0, 1);
-            content.anchorMax = Vector2.one;
-            content.pivot = new Vector2(0.5f, 1);
-            content.sizeDelta = Vector2.zero;
-            var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.spacing = 10;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = true;
-            group.childForceExpandHeight = false;
-            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
+            var viewport = Layout.Viewport(
+                panel,
+                offsetMax: new Vector2(0, -(TabHeight + CardGap))
+            );
+            var content = Layout.Column(viewport, "Rows", 10);
 
             // One row per known bonus, the mock owner's first; the view shows only the bonuses
             // the player owns and reorders them by rank.
@@ -434,13 +395,7 @@ namespace Baryonyx.StepBonus.Editor
                 .Select(roll => BuildRow(content, roll, loadout))
                 .ToArray();
 
-            var scroll = panel.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40;
-            view.List = scroll;
+            view.List = Layout.Scroll(panel, viewport, content);
         }
 
         private static StepBonusRowWidget BuildRow(
@@ -451,9 +406,7 @@ namespace Baryonyx.StepBonus.Editor
         {
             var bonus = loadout.Definition(roll.Id);
             float value = bonus.Value(roll.Rank);
-            var rect = Rect("Row_" + roll.Id, content);
-            var size = rect.gameObject.AddComponent<LayoutElement>();
-            size.minHeight = size.preferredHeight = BonusRowHeight;
+            var rect = Layout.ListItem(content, "Row_" + roll.Id, BonusRowHeight);
             var (button, _, row) = GlassCardAssets.Choice(rect, pattern: false);
             var widget = new StepBonusRowWidget { Id = roll.Id, Button = button };
 

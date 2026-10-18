@@ -192,6 +192,122 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return image;
         }
 
+        // --- Scrolling lists -------------------------------------------------------------
+
+        /// <summary>
+        /// A list's visible area filling <paramref name="parent"/>, inset by the offsets
+        /// (<see cref="RectTransform.offsetMin"/> and <see cref="RectTransform.offsetMax"/>).
+        /// </summary>
+        public static RectTransform Viewport(
+            RectTransform parent,
+            Vector2 offsetMin = default,
+            Vector2 offsetMax = default
+        )
+        {
+            var viewport = Rect("Viewport", parent);
+            Stretch(viewport);
+            viewport.offsetMin = offsetMin;
+            viewport.offsetMax = offsetMax;
+            Mask(viewport);
+            return viewport;
+        }
+
+        /// <summary>
+        /// Clips a list's rows to <paramref name="viewport"/> and takes drags anywhere in it, also
+        /// between the rows.
+        /// </summary>
+        public static void Mask(RectTransform viewport)
+        {
+            viewport.gameObject.AddComponent<RectMask2D>();
+            AddImage(viewport, Color.clear, true);
+        }
+
+        /// <summary>A column of rows that grows downward from the top of the viewport.</summary>
+        public static RectTransform Column(
+            RectTransform viewport,
+            string name,
+            float spacing,
+            RectOffset padding = null
+        )
+        {
+            var content = Content(viewport, name);
+            var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            group.spacing = spacing;
+            if (padding != null)
+                group.padding = padding;
+            group.childControlWidth = group.childControlHeight = true;
+            group.childForceExpandWidth = true;
+            group.childForceExpandHeight = false;
+            FitHeight(content);
+            return content;
+        }
+
+        /// <summary>
+        /// Cards of <paramref name="cell"/> size, <paramref name="columns"/> to a row, that grow
+        /// downward from the top of the viewport.
+        /// </summary>
+        public static RectTransform Grid(
+            RectTransform viewport,
+            string name,
+            Vector2 cell,
+            float gap,
+            RectOffset padding,
+            int columns
+        )
+        {
+            var content = Content(viewport, name);
+            var grid = content.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = cell;
+            grid.spacing = Vector2.one * gap;
+            grid.padding = padding;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.childAlignment = TextAnchor.UpperLeft;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = columns;
+            FitHeight(content);
+            return content;
+        }
+
+        /// <summary>A row of a <see cref="Column"/> at a fixed height.</summary>
+        public static RectTransform ListItem(RectTransform content, string name, float height)
+        {
+            var rect = Rect(name, content);
+            var size = rect.gameObject.AddComponent<LayoutElement>();
+            size.minHeight = size.preferredHeight = height;
+            return rect;
+        }
+
+        /// <summary>Scrolls <paramref name="content"/> up and down inside the viewport.</summary>
+        public static ScrollRect Scroll(
+            RectTransform host,
+            RectTransform viewport,
+            RectTransform content
+        )
+        {
+            var scroll = host.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40;
+            return scroll;
+        }
+
+        private static RectTransform Content(RectTransform viewport, string name)
+        {
+            var content = Rect(name, viewport);
+            content.anchorMin = new Vector2(0, 1);
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1);
+            content.sizeDelta = Vector2.zero;
+            return content;
+        }
+
+        private static void FitHeight(RectTransform content) =>
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
+                .FitMode
+                .PreferredSize;
+
         /// <summary>A thin line, e.g. under a stat or between two parts of a frame.</summary>
         public static void Line(
             RectTransform parent,

@@ -447,9 +447,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 }
                 // 冒険者の一覧と同じすりガラスのカード。中身はカードの板と一緒に沈む。
                 // アイコンと重なるので、左上のばら窓の模様は付けない。
-                var card = Rect("MenuItem" + i, panel);
-                var size = card.gameObject.AddComponent<LayoutElement>();
-                size.minHeight = size.preferredHeight = rowHeight;
+                var card = Layout.ListItem(panel, "MenuItem" + i, rowHeight);
                 var (button, _, row) = GlassCardAssets.Choice(card, pattern: false);
                 buttons.Add(button);
 
@@ -522,7 +520,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var lists = new List<RectTransform>();
             for (int i = 0; i < definition.Items.Length; i++)
             {
-                var content = ListContent(viewport, "List" + i);
+                var content = ListColumn(viewport, "List" + i);
                 var entries = definition.Items[i].Entries;
                 for (int j = 0; j < entries.Length; j++)
                     BuildEntry(
@@ -537,7 +535,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 lists.Add(content);
             }
             view.Lists = lists.ToArray();
-            view.ListScroll = ListScroll(viewport, lists.Count > 0 ? lists[0] : null);
+            view.ListScroll = Layout.Scroll(viewport, viewport, lists.Count > 0 ? lists[0] : null);
             (view.Confirm, view.ConfirmLabel) = ConfirmButton(layer, first.ConfirmLabel);
 
             // The menu shows first; turn the list on in the editor to read its rows.
@@ -555,7 +553,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             var (panel, layer, viewport) = FramedList(safe, "Destinations", 8f);
             view.DestinationPanel = panel.gameObject;
 
-            var content = ListContent(viewport, "List");
+            var content = ListColumn(viewport, "List");
             var rows = new Button[definition.Destinations.Length];
             for (int i = 0; i < rows.Length; i++)
             {
@@ -578,7 +576,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 }
             }
             view.DestinationRows = rows;
-            ListScroll(viewport, content);
+            Layout.Scroll(viewport, viewport, content);
             (view.Depart, _) = ConfirmButton(layer, definition.DepartLabel);
         }
 
@@ -614,46 +612,23 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 1920f - ListSplit,
                 bottom - top
             );
-            viewport.gameObject.AddComponent<RectMask2D>();
-            AddImage(viewport, Color.clear, true);
+            Layout.Mask(viewport);
             return (panel, layer, viewport);
         }
 
-        // A column of rows that grows downward from the top of the viewport.
-        private static RectTransform ListContent(RectTransform viewport, string name)
-        {
-            var content = Rect(name, viewport);
-            content.anchorMin = new Vector2(0, 1);
-            content.anchorMax = Vector2.one;
-            content.pivot = new Vector2(0.5f, 1);
-            content.sizeDelta = Vector2.zero;
-            var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.spacing = EntryGap;
-            group.padding = new RectOffset(
-                (int)ListGap,
-                (int)GuideFrameAssets.Margin,
-                (int)EntryGap,
-                (int)(EntryGap * 2f)
+        // 案内人の右の行の列。行の左右は面の端から離し、下には余白を残す。
+        private static RectTransform ListColumn(RectTransform viewport, string name) =>
+            Layout.Column(
+                viewport,
+                name,
+                EntryGap,
+                new RectOffset(
+                    (int)ListGap,
+                    (int)GuideFrameAssets.Margin,
+                    (int)EntryGap,
+                    (int)(EntryGap * 2f)
+                )
             );
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = true;
-            group.childForceExpandHeight = false;
-            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
-            return content;
-        }
-
-        private static ScrollRect ListScroll(RectTransform viewport, RectTransform content)
-        {
-            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40;
-            return scroll;
-        }
 
         // The gold button at the bottom right that applies the chosen row; off until one is chosen.
         // 編成の「レベルアップ」と同じ、金の縁と光のすりガラスのカード。決定ボタンには模様を付けない。
@@ -715,9 +690,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         {
             // 冒険者の一覧と同じすりガラスのカード。選んだ行は金の縁と光（「Selected」）を出す。
             // 文字が左上から始まるため、左上の模様は入れない。
-            var card = Rect(name, content);
-            var size = card.gameObject.AddComponent<LayoutElement>();
-            size.minHeight = size.preferredHeight = EntryHeight;
+            var card = Layout.ListItem(content, name, EntryHeight);
             var (button, selected, row) = GlassCardAssets.Choice(card, pattern: false);
             selected.name = "Selected";
             var label = Label(

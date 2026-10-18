@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Baryonyx.Combat;
 using UnityEngine;
 
@@ -44,6 +46,10 @@ namespace Baryonyx.Party
                 ? ElementIcons[index]
                 : null;
         }
+
+        /// <summary>The attribute icons of card skills, in their order without repeats or blanks.</summary>
+        public IReadOnlyList<Sprite> IconsOf(IEnumerable<string> skills) =>
+            skills.Select(IconOf).Where(icon => icon != null).Distinct().ToArray();
     }
 
     [Serializable]

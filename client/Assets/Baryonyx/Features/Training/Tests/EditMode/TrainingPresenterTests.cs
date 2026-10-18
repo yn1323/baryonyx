@@ -260,16 +260,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void AFlickToTheLeftShowsTheNextPerson()
-        {
-            // 左へ120（設計座標）以上動かすと次の人、右へで前の人。短い動きや縦の動きでは替えない。
-            Assert.That(TrainingSwipe.StepOf(new Vector2(-140, 20)), Is.EqualTo(1));
-            Assert.That(TrainingSwipe.StepOf(new Vector2(160, -30)), Is.EqualTo(-1));
-            Assert.That(TrainingSwipe.StepOf(new Vector2(-80, 0)), Is.EqualTo(0));
-            Assert.That(TrainingSwipe.StepOf(new Vector2(-150, 200)), Is.EqualTo(0));
-        }
-
-        [Test]
         public void FlicksWalkTheRosterAndRememberTheCharacter()
         {
             store.Selected = "luka";

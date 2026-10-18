@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Baryonyx.Party;
+using Baryonyx.UI.GuideMenu;
 using UnityEngine;
 
 namespace Baryonyx.Training
@@ -21,6 +22,41 @@ namespace Baryonyx.Training
 
         // 「もどる」で戻る編成の項目のキー。
         public static string ReturnKeyOrRoster => ReturnKey ?? PartySession.GuideItemKey;
+
+        /// <summary>
+        /// Opens the page of <paramref name="id"/> from the formation's item
+        /// <paramref name="returnKey"/> (null for the adventurers' list), where back returns.
+        /// </summary>
+        public static bool OpenPage(GuideMenuView guide, string id, string returnKey)
+        {
+            if (guide == null || !guide.HasItem(GuideItemKey))
+                return false;
+            Selected = id;
+            ReturnKey = returnKey;
+            return guide.OpenItem(GuideItemKey);
+        }
+
+        // 付け替えの画面から、同じ人を選んだまま個別の画面へ戻る。
+        public static bool BackToPage(GuideMenuView guide) =>
+            guide != null && guide.HasItem(GuideItemKey) && guide.OpenItem(GuideItemKey);
+
+        // 個別の画面から、開いた項目（冒険者の一覧か装備の人選び）へ戻る。
+        public static bool LeavePage(GuideMenuView guide) =>
+            guide != null && guide.HasItem(ReturnKeyOrRoster) && guide.OpenItem(ReturnKeyOrRoster);
+
+        /// <summary>
+        /// The breadcrumb of a change screen opened from the page: the item the page was opened
+        /// from, the person (empty until read) and the change screen's item <paramref name="key"/>,
+        /// e.g. 「冒険者 › アリア › 装備」.
+        /// </summary>
+        public static IReadOnlyList<string> ChangeTrail(
+            GuideMenuView guide,
+            string person,
+            string key
+        ) =>
+            guide != null
+                ? new[] { guide.LabelOf(ReturnKeyOrRoster), person, guide.LabelOf(key) }
+                : Array.Empty<string>();
 
         // サーバーがないときに育成で使ったルーンの合計。
         public static long Spent { get; private set; }

@@ -101874,7 +101874,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e9a674f7c69467bb1322095ab5c113, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Training.TrainingSwipe
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideSwipe
 --- !u!1 &3929586707142472903
 GameObject:
   m_ObjectHideFlags: 0
@@ -117800,7 +117800,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e9a674f7c69467bb1322095ab5c113, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Training.TrainingSwipe
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideSwipe
 --- !u!1 &4541955607497564145
 GameObject:
   m_ObjectHideFlags: 0
@@ -184383,7 +184383,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e9a674f7c69467bb1322095ab5c113, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Training.TrainingSwipe
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.GuideMenu.GuideSwipe
 --- !u!1 &7158534364337393495
 GameObject:
   m_ObjectHideFlags: 0

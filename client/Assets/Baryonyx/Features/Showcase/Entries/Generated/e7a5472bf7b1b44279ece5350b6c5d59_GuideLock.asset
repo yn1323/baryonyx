@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: e7a5472bf7b1b44279ece5350b6c5d59_TrainingLock
+  m_Name: e7a5472bf7b1b44279ece5350b6c5d59_GuideLock
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: e7a5472bf7b1b44279ece5350b6c5d59_TrainingLock
-  DisplayName: TrainingLock
-  Description: Assets/Baryonyx/Features/Training/UI/Art/TrainingLock.png#TrainingLock
+  Id: e7a5472bf7b1b44279ece5350b6c5d59_GuideLock
+  DisplayName: GuideLock
+  Description: Assets/Baryonyx/Shared/UI/GuideMenu/Art/GuideLock.png#GuideLock
   Category: 9
   Asset: {fileID: 21300000, guid: e7a5472bf7b1b44279ece5350b6c5d59, type: 3}
   PreviewPrefab: {fileID: 0}

@@ -2,7 +2,6 @@ using System.Linq;
 using Baryonyx.Editor.UI;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
-using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -10,6 +9,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using ChangeScreen = Baryonyx.Party.Editor.PartyChangeScreenAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
@@ -32,18 +32,11 @@ namespace Baryonyx.Equipment.Editor
         public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
         // 枠つきの表示（GuideFramedPanel）で、左の濃い面に人・枠・ステータス、金の2本線の右の透ける面に
-        // 持っている装備を置く。設計座標、左上から。
-        private const float Split = 800f;
-        private static readonly Rect Left = new(36, Frame.HeaderHeight + 6, 740, 956);
-        private static readonly Rect Right = new(
-            Split,
-            Frame.HeaderHeight + 6,
-            1920 - Split - 24,
-            956
-        );
+        // 持っている装備を置く（PartyChangeScreenAssets）。設計座標、左上から。
+        private static readonly Rect Left = ChangeScreen.Left;
+        private static readonly Rect Right = ChangeScreen.Right;
 
         // 左は上から人・ステータス・5つの枠。枠は面の下端（設計座標で1036）まで並べる。
-        private const float StatsTop = 156f;
         private const float SlotTop = 280f;
         private const float SlotHeight = 118f;
         private const float SlotStep = 130f;
@@ -53,6 +46,9 @@ namespace Baryonyx.Equipment.Editor
         private const float SlotTextLeft = 112f;
         private const float RowHeight = 128f;
         private const float RowTextLeft = 132f;
+
+        // タブの下から一覧を始める。
+        private const float ListTop = 100f;
 
         // 持っている装備の行を、この数だけ作り込む。足りなければ、ビューが実行中に写して増やす。
         private const int BakedRows = 8;
@@ -69,46 +65,21 @@ namespace Baryonyx.Equipment.Editor
             var training = TrainingAssets.CreateData();
             var (people, _) = PartyFormation.From(party).TabOrder();
 
-            var root = Rect("Equipment", safe);
-            Stretch(root);
-            var view = root.gameObject.AddComponent<EquipmentView>();
+            var (view, layer) = Frame.FramedPanel<EquipmentView>(safe, "Equipment");
             view.Party = party;
             view.Training = training;
             view.Guide = guide;
             view.WeaponIcon = Guide.Icon(IconWeaponPath);
             view.ArmorIcon = Guide.Icon(IconArmorPath);
 
-            root.gameObject.AddComponent<GuideFramedPanel>();
-            var layer = Layout.Layer(root, "Layout");
-            Frame.Pane(
-                layer,
-                "PersonPane",
-                0f,
-                Split,
-                Frame.HeaderHeight,
-                Frame.PaneDark,
-                true,
-                false
-            );
-            Frame.Pane(
+            RectTransform left,
+                right;
+            (left, right, view.Swipe, view.Person) = ChangeScreen.Build(
                 layer,
                 "ItemsPane",
-                Split,
-                1920f,
-                Frame.HeaderHeight,
-                Frame.PaneLight,
-                false,
-                true
+                "Items",
+                people.FirstOrDefault()
             );
-            Frame.Divider(layer, Split, Frame.HeaderHeight);
-            var left = Layout.Box(layer, "Person", Left.x, Left.y, Left.width, Left.height);
-            // 左の面の上の左右のフリックで人を替える。枠を押したところから動かしても届くよう、左全体で受ける。
-            AddImage(left, Color.clear, true);
-            view.Swipe = left.gameObject.AddComponent<TrainingSwipe>();
-            var right = Layout.Box(layer, "Items", Right.x, Right.y, Right.width, Right.height);
-
-            view.Person = PartyHeaderAssets.Build(left, 10, Left.width, people.FirstOrDefault());
-            Layout.Line(left, "HeaderLine", 24, 142, Left.width - 48, 2);
             view.Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                 .Select(slot => BuildSlot(left, slot))
                 .ToArray();
@@ -117,8 +88,7 @@ namespace Baryonyx.Equipment.Editor
                 .Select(i => BuildAccessory(left, i))
                 .ToArray();
             // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける。
-            view.Stats = TrainingAssets.BuildStats(left, 30, StatsTop, Left.width - 60, 4);
-            Layout.Line(left, "StatsLine", 24, SlotTop - 18, Left.width - 48, 2);
+            view.Stats = ChangeScreen.Stats(left);
             BuildItems(right, view);
 
             // 仮データの最初の人と仮の装備で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
@@ -128,7 +98,7 @@ namespace Baryonyx.Equipment.Editor
                 EquipmentLocalSource.Starter(),
                 new EquipmentLocalSource()
             ).Dispose();
-            return root.gameObject;
+            return view.gameObject;
         }
 
         // --- Left: the chosen person's weapon, armour and the accessory slots ---------------
@@ -217,7 +187,7 @@ namespace Baryonyx.Equipment.Editor
                 36,
                 40
             );
-            SpriteImage(lockImage, TrainingAssets.LockPath, Color.white);
+            SpriteImage(lockImage, Frame.LockPath, Color.white);
             widget.Lock = lockImage.gameObject;
             Layout.Text(
                 row,
@@ -251,75 +221,25 @@ namespace Baryonyx.Equipment.Editor
         private static void BuildItems(RectTransform panel, EquipmentView view)
         {
             // 上に、面の幅いっぱいの武器・防具・アクセサリーのタブ。左の枠と連動する。
-            view.Tabs = Frame.Tabs(
+            view.Tabs = ChangeScreen.Tabs(
                 panel,
-                "Tabs",
-                new[]
-                {
-                    EquipmentCatalog.NameOf(EquipmentSlot.Weapon),
-                    EquipmentCatalog.NameOf(EquipmentSlot.Armor),
-                    "アクセサリー",
-                },
-                24,
-                4,
-                (Right.width - 48) / 3f,
-                76,
-                Right.width - 48,
-                TrainingAssets.LockPath
+                EquipmentCatalog.NameOf(EquipmentSlot.Weapon),
+                EquipmentCatalog.NameOf(EquipmentSlot.Armor),
+                "アクセサリー"
             );
 
-            var viewport = Rect("Viewport", panel);
-            Stretch(viewport);
-            viewport.offsetMin = new Vector2(24, 24);
-            viewport.offsetMax = new Vector2(-24, -100);
-            viewport.gameObject.AddComponent<RectMask2D>();
-            AddImage(viewport, Color.clear, true);
-
-            var content = Rect("Rows", viewport);
-            content.anchorMin = new Vector2(0, 1);
-            content.anchorMax = Vector2.one;
-            content.pivot = new Vector2(0.5f, 1);
-            content.sizeDelta = Vector2.zero;
-            var rows = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            rows.spacing = 10;
-            rows.childControlWidth = rows.childControlHeight = true;
-            rows.childForceExpandWidth = true;
-            rows.childForceExpandHeight = false;
-            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
-
+            var (viewport, content) = ChangeScreen.List(panel, ListTop);
             view.Rows = Enumerable.Range(0, BakedRows).Select(i => BuildRow(content, i)).ToArray();
             (view.Remove, view.RemoveLabel) = BuildRemove(content);
-
-            var scroll = panel.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40;
-            view.List = scroll;
+            view.List = Layout.Scroll(panel, viewport, content);
 
             // 読み込み中と、読めなかったときだけ出す文字。
-            view.Status = Layout.Text(
-                panel,
-                "Status",
-                "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                24,
-                100,
-                Right.width - 48,
-                140
-            );
+            view.Status = ChangeScreen.Status(panel);
         }
 
         private static EquipmentRow BuildRow(RectTransform content, int index)
         {
-            var rect = Rect("Item" + index, content);
-            var size = rect.gameObject.AddComponent<LayoutElement>();
-            size.minHeight = size.preferredHeight = RowHeight;
+            var rect = Layout.ListItem(content, "Item" + index, RowHeight);
             var row = rect.gameObject.AddComponent<EquipmentRow>();
             var (button, _, card) = GlassCardAssets.Choice(rect, pattern: false);
             row.Button = button;
@@ -374,9 +294,7 @@ namespace Baryonyx.Equipment.Editor
         // 選んでいる枠の装備を外す行。リストの最後に置く。
         private static (Button Button, TMP_Text Label) BuildRemove(RectTransform content)
         {
-            var rect = Rect("Remove", content);
-            var size = rect.gameObject.AddComponent<LayoutElement>();
-            size.minHeight = size.preferredHeight = RowHeight;
+            var rect = Layout.ListItem(content, "Remove", RowHeight);
             var (button, _, card) = GlassCardAssets.Choice(rect, dashed: true);
             var label = Label(
                 card,

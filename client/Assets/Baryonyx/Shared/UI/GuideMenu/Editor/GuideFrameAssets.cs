@@ -25,6 +25,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string DiamondLargePath = GuideMenuAssets.ArtFolder + "/FrameDiamondLarge.png";
         public const string BlurFolder = GuideMenuAssets.ArtFolder + "/Blur";
 
+        // 未解放のスキル・枠と準備中のタブに重ねる、9×10ドットの錠前。
+        public const string LockPath = GuideMenuAssets.ArtFolder + "/GuideLock.png";
+
         private const float Dot = GuideMenuAssets.DotScale;
 
         // ヘッダーの下の線の位置（Safe Areaの上端から）と、横線の両端の余白。
@@ -67,10 +70,25 @@ namespace Baryonyx.UI.GuideMenu.Editor
             "...D...",
         };
 
+        private static readonly string[] LockDots =
+        {
+            "..ooooo..",
+            ".ohhhhho.",
+            ".oh...ho.",
+            ".oh...ho.",
+            "ooooooooo",
+            "olllllllo",
+            "ogggkgggo",
+            "ogggkgggo",
+            "ossssssso",
+            ".ooooooo.",
+        };
+
         public static void EnsureArt()
         {
             ArtAssets.WritePattern(DiamondPath, DiamondDots, Gold);
             ArtAssets.WritePattern(DiamondLargePath, DiamondLargeDots, Gold);
+            ArtAssets.WritePattern(LockPath, LockDots, Steel);
         }
 
         private static Color Gold(char dot) =>
@@ -79,6 +97,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 'D' => new Color32(0xa6, 0x50, 0x0d, 0xff),
                 'G' => new Color32(0xff, 0xd7, 0x66, 0xff),
                 'L' => new Color32(0xfd, 0xe4, 0x5a, 0xff),
+                _ => Color.clear,
+            };
+
+        private static Color Steel(char dot) =>
+            dot switch
+            {
+                'o' => new Color32(10, 13, 28, 255),
+                'h' => new Color32(195, 201, 220, 255),
+                'l' => new Color32(228, 232, 244, 255),
+                'g' => new Color32(140, 150, 178, 255),
+                's' => new Color32(92, 101, 132, 255),
+                'k' => new Color32(10, 13, 28, 255),
                 _ => Color.clear,
             };
 
@@ -155,6 +185,41 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // --- Panels inside the frame (design pixels from the top left of a 1920x1080 layer) ----
+
+        /// <summary>
+        /// A feature panel that fills the guide screen's safe area inside the frame: a stretched
+        /// root named <paramref name="name"/> with the view <typeparamref name="T"/> and
+        /// <see cref="GuideFramedPanel"/>, and the 1920x1080 layer its parts are placed on.
+        /// </summary>
+        public static (T View, RectTransform Layer) FramedPanel<T>(RectTransform safe, string name)
+            where T : Component
+        {
+            var root = Rect(name, safe);
+            Stretch(root);
+            var view = root.gameObject.AddComponent<T>();
+            root.gameObject.AddComponent<GuideFramedPanel>();
+            return (view, Layout.Layer(root, "Layout"));
+        }
+
+        /// <summary>
+        /// The two panes of a framed panel split at <paramref name="split"/>: the dark one on the
+        /// left (the person, the party), the one the scene shows through on the right (a list),
+        /// from the header's line down. The gold double line goes between them unless
+        /// <paramref name="divider"/> is false, for a panel that draws it over its own contents.
+        /// </summary>
+        public static void SplitPanes(
+            RectTransform layer,
+            float split,
+            string leftName,
+            string rightName,
+            bool divider = true
+        )
+        {
+            Pane(layer, leftName, 0f, split, HeaderHeight, PaneDark, true, false);
+            Pane(layer, rightName, split, Layout.Design.x, HeaderHeight, PaneLight, false, true);
+            if (divider)
+                Divider(layer, split, HeaderHeight);
+        }
 
         /// <summary>
         /// A translucent pane from <paramref name="left"/> to <paramref name="right"/> and from
@@ -248,6 +313,20 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return window;
         }
 
+        /// <summary>
+        /// The lock over a skill's icon that is not unlocked yet, in the middle of
+        /// <paramref name="icon"/> at 3 design pixels per dot. Returns it to show or hide.
+        /// </summary>
+        public static GameObject IconLock(RectTransform icon)
+        {
+            var locked = Rect("Lock", icon);
+            Stretch(locked);
+            var image = Rect("Image", locked);
+            Place(image, Vector2.zero, new Vector2(9, 10) * 3f);
+            SpriteImage(image, LockPath, Color.white);
+            return locked.gameObject;
+        }
+
         /// <summary>A pane's heading at (x, y): a gold diamond and the title in light gold.</summary>
         public static TMP_Text Heading(
             RectTransform layer,
@@ -303,8 +382,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// <summary>
         /// A row of tabs at (x, y) from the top left of <paramref name="parent"/>, each
         /// <paramref name="width"/> wide, over a thin gold line across <paramref name="lineWidth"/>.
-        /// The tabs whose index is in <paramref name="locked"/> show the <paramref name="lockPath"/>
-        /// sprite and take no taps.
+        /// The tabs whose index is in <paramref name="locked"/> show the lock and take no taps.
         /// </summary>
         public static GuideTab[] Tabs(
             RectTransform parent,
@@ -315,7 +393,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             float width,
             float height,
             float lineWidth,
-            string lockPath,
             params int[] locked
         )
         {
@@ -360,7 +437,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                         27f,
                         30f
                     );
-                    SpriteImage(lockIcon, lockPath, new Color(1f, 1f, 1f, 0.6f));
+                    SpriteImage(lockIcon, LockPath, new Color(1f, 1f, 1f, 0.6f));
                     tab.Lock = lockIcon.gameObject;
                     tab.Button.interactable = false;
                     tab.Chosen = false;

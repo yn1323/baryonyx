@@ -52,19 +52,14 @@ namespace Baryonyx.Tavern
     /// (<see cref="PartySession.Source"/>), it reads the party on opening and saves every change
     /// there; otherwise it uses the mock data. Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class AdventurerRosterView : MonoBehaviour, IPartyRosterView, IEditModePreview
+    public sealed class AdventurerRosterView : GuidePanel, IPartyRosterView, IEditModePreview
     {
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "編成を取得できませんでした";
 
         // 外せる人を選んでいないときの「パーティから外す」の濃さ。
         private const float RemoveIdleAlpha = 0.5f;
 
         public PartyMockData Party;
-
-        // 通知は案内人の画面の通知の帯に出す。
-        public GuideMenuView Guide;
 
         public AdventurerSlotWidget[] Slots = Array.Empty<AdventurerSlotWidget>();
         public AdventurerTileWidget[] Tiles = Array.Empty<AdventurerTileWidget>();
@@ -78,7 +73,6 @@ namespace Baryonyx.Tavern
 
         private PartyRosterPresenter presenter;
         private PartyRosterState state;
-        private readonly GuidePanelLoad load = new();
         private readonly List<(GlassCard Card, Action Click, Action Hold)> bindings = new();
 
         public event Action<int> SlotPressed;
@@ -87,10 +81,6 @@ namespace Baryonyx.Tavern
         public event Action<string> Held;
 
         public PartyRosterPresenter Presenter => presenter;
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -127,7 +117,7 @@ namespace Baryonyx.Tavern
             var source = PartySession.Source;
             if (source != null)
                 ShowLoading();
-            load.Start(token => LoadAsync(source, token), LoadFailed);
+            StartLoad(token => LoadAsync(source, token), LoadFailedMessage, ShowLoadFailed);
         }
 
         private void Bind(GlassCard card, Action click, Action hold)
@@ -143,10 +133,7 @@ namespace Baryonyx.Tavern
         private async Task LoadAsync(IPartySource source, CancellationToken token)
         {
             // 同じセッションを順に使う（ログインのやり直しを重ねない）。
-            var formation =
-                source != null
-                    ? PartySession.Use(Party, await source.LoadAsync(token))
-                    : PartySession.Formation(Party);
+            var formation = await PartySession.LoadAsync(Party, source, token);
             if (token.IsCancellationRequested)
                 return;
             Set(Status, "");
@@ -155,13 +142,6 @@ namespace Baryonyx.Tavern
                 formation,
                 source != null ? (slot, id, cancel) => SaveAsync(source, slot, id, cancel) : null
             );
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("編成を取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
@@ -202,7 +182,7 @@ namespace Baryonyx.Tavern
 
         private void OnDisable()
         {
-            load.Cancel();
+            Load.Cancel();
             foreach (var (card, click, hold) in bindings)
             {
                 if (card == null)
@@ -257,34 +237,12 @@ namespace Baryonyx.Tavern
             }
         }
 
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
-        }
-
-        /// <summary>Opens the person's page (equipment, card skills, training).</summary>
-        public void OpenDetail(string id)
-        {
-            if (Guide == null || !Guide.HasItem(TrainingSession.GuideItemKey))
-                return;
-            PartySession.Selected = id;
-            // 個別の画面の「もどる」で、この一覧へ戻る。
-            TrainingSession.ReturnKey = null;
-            Guide.OpenItem(TrainingSession.GuideItemKey);
-        }
+        /// <summary>Opens the person's page (equipment, card skills, training); back there returns here.</summary>
+        public void OpenDetail(string id) => TrainingSession.OpenPage(Guide, id, null);
 
         // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
         private IReadOnlyList<Sprite> ElementsOf(string id) =>
-            Party == null || id == null
-                ? Array.Empty<Sprite>()
-                : PartySession
-                    .CardsOf(Party, id)
-                    .Select(Party.IconOf)
-                    .Where(icon => icon != null)
-                    .Distinct()
-                    .ToArray();
+            PartySession.ElementIconsOf(Party, id);
 
         /// <summary>
         /// Shows a member (or an empty slot) on a party card. The generator calls it too, with the

@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using Card = Baryonyx.Tavern.Editor.AdventurerCardAssets;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
@@ -28,13 +29,11 @@ namespace Baryonyx.Tavern.Editor
     /// </summary>
     public static class AdventurerRosterAssets
     {
-        private const float Dot = Guide.DotScale;
-
         // 左（パーティ）と右（一覧）の境目と、見出し・カードの位置。設計座標、左上から。
         private const float Split = 600f;
         private const float Gap = 24f;
         private const float HeadingHeight = 76f;
-        private const float CardGap = 16f;
+        private const float CardGap = Card.CardGap;
         private const float PartyLeft = Frame.Margin;
         private const float PartyWidth = Split - Gap - Frame.Margin;
         private const float ListLeft = Split + Gap;
@@ -45,9 +44,8 @@ namespace Baryonyx.Tavern.Editor
         private static readonly float CardHeight = (Layout.Design.y - CardTop - CardGap * 4f) / 4f;
         private static readonly float ListCardWidth = (ListWidth - CardGap) / 2f;
 
-        // カードの中：立ち姿（余白を切って4倍）の中心、文字の左端。
-        private const float FigureCenter = 120f;
-        private const float TextLeft = 262f;
+        private const float FigureCenter = Card.FigureCenter;
+        private const float TextLeft = Card.TextLeft;
 
         /// <summary>
         /// Builds the adventurers over the guide screen's safe area. Called while the guide
@@ -59,35 +57,11 @@ namespace Baryonyx.Tavern.Editor
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             GlassCardAssets.EnsureArt();
 
-            var root = Rect("Adventurers", safe);
-            Stretch(root);
-            root.gameObject.AddComponent<GuideFramedPanel>();
-            var view = root.gameObject.AddComponent<AdventurerRosterView>();
+            var (view, layer) = Frame.FramedPanel<AdventurerRosterView>(safe, "Adventurers");
             view.Party = party;
             view.Guide = guide;
 
-            var layer = Layout.Layer(root, "Layout");
-            Frame.Pane(
-                layer,
-                "PartyPane",
-                0f,
-                Split,
-                Frame.HeaderHeight,
-                Frame.PaneDark,
-                true,
-                false
-            );
-            Frame.Pane(
-                layer,
-                "ListPane",
-                Split,
-                1920f,
-                Frame.HeaderHeight,
-                Frame.PaneLight,
-                false,
-                true
-            );
-            Frame.Divider(layer, Split, Frame.HeaderHeight);
+            Frame.SplitPanes(layer, Split, "PartyPane", "ListPane");
             Frame.Heading(
                 layer,
                 "PartyTitle",
@@ -112,7 +86,7 @@ namespace Baryonyx.Tavern.Editor
 
             // 仮データの編成で描き、Prefabを開くと停止中でも一覧が読めるようにする。
             new PartyRosterPresenter(view, PartyFormation.From(party)).Dispose();
-            return root.gameObject;
+            return view.gameObject;
         }
 
         // --- Left: the party's four cards ----------------------------------------------------
@@ -138,7 +112,12 @@ namespace Baryonyx.Tavern.Editor
                     );
                     var (card, content) = GlassCardAssets.Build(rect);
                     var widget = new AdventurerSlotWidget { Card = card };
-                    (widget.Figure, widget.Shadow) = BuildFigure(content, party.Members[0], shadow);
+                    (widget.Figure, widget.Shadow) = Card.Figure(
+                        content,
+                        party.Members[0],
+                        shadow,
+                        CardHeight
+                    );
                     (widget.Name, widget.LevelLine, widget.Level, widget.Elements) = BuildNameLines(
                         content,
                         PartyWidth
@@ -167,34 +146,19 @@ namespace Baryonyx.Tavern.Editor
             Sprite shadow
         )
         {
-            // カードの影と選んだときの光が切れないよう、表示範囲はカードより広く取る。
-            float top = Frame.HeaderHeight + HeadingHeight;
-            var list = Layout.Box(layer, "List", Split, top, 1920f - Split, Layout.Design.y - top);
-            var viewport = Rect("Viewport", list);
-            Stretch(viewport);
-            viewport.gameObject.AddComponent<RectMask2D>();
-            AddImage(viewport, Color.clear, true);
-            var content = Rect("Cards", viewport);
-            content.anchorMin = new Vector2(0, 1);
-            content.anchorMax = Vector2.one;
-            content.pivot = new Vector2(0.5f, 1);
-            content.sizeDelta = Vector2.zero;
-            var grid = content.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(ListCardWidth, CardHeight);
-            grid.spacing = Vector2.one * CardGap;
-            grid.padding = new RectOffset(
-                (int)Gap,
-                (int)Frame.Margin,
-                (int)CardGap,
-                (int)(CardGap + Frame.Margin)
+            var (list, viewport, content) = Card.Grid(
+                layer,
+                Split,
+                Frame.HeaderHeight + HeadingHeight,
+                new Vector2(ListCardWidth, CardHeight),
+                new RectOffset(
+                    (int)Gap,
+                    (int)Frame.Margin,
+                    (int)CardGap,
+                    (int)(CardGap + Frame.Margin)
+                ),
+                2
             );
-            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
-            grid.childAlignment = TextAnchor.UpperLeft;
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 2;
-            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-                .FitMode
-                .PreferredSize;
 
             var formation = PartyFormation.From(party);
             view.Tiles = party
@@ -202,13 +166,7 @@ namespace Baryonyx.Tavern.Editor
                 .ToArray();
             view.Remove = BuildRemove(content);
 
-            var scroll = list.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 40;
-            view.List = scroll;
+            view.List = Layout.Scroll(list, viewport, content);
 
             view.Status = Layout.Text(
                 layer,
@@ -234,7 +192,7 @@ namespace Baryonyx.Tavern.Editor
             var rect = Rect("Member_" + member.Id, content);
             var (card, inside) = GlassCardAssets.Build(rect);
             var widget = new AdventurerTileWidget { Id = member.Id, Card = card };
-            var (figure, _) = BuildFigure(inside, member, shadow);
+            var (figure, _) = Card.Figure(inside, member, shadow, CardHeight);
             PartyArt.Paint(figure, member, trim: true);
             var (name, _, level, elements) = BuildNameLines(inside, ListCardWidth);
             name.text = member.Name;
@@ -274,32 +232,6 @@ namespace Baryonyx.Tavern.Editor
             return card;
         }
 
-        // 立ち姿（余白を切って4倍）と足元の影。足をカードの下端の少し上にそろえる。
-        private static (RawImage Figure, GameObject Shadow) BuildFigure(
-            RectTransform card,
-            PartyMember member,
-            Sprite shadow
-        )
-        {
-            var size = new Vector2(PartyArt.Figure.width, PartyArt.Figure.height) * Dot;
-            float foot = CardHeight - 12f;
-            var feet = Picture(card, "Shadow", shadow, Vector2.zero, new Vector2(150, 24), 0.55f);
-            Layout.At(feet, FigureCenter - 75f, foot - 14f, 150, 24);
-            var figure = Layout.Box(
-                card,
-                "Figure",
-                FigureCenter - size.x / 2f,
-                foot - size.y,
-                size.x,
-                size.y
-            );
-            var image = figure.gameObject.AddComponent<RawImage>();
-            image.raycastTarget = false;
-            PartyArt.Paint(image, member, trim: true);
-            figure.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = Dot;
-            return (image, feet.gameObject);
-        }
-
         // 名前と、その下の「Lv」・Lv・属性のアイコン（12×12を3倍）。
         private static (
             TMP_Text Name,
@@ -309,19 +241,7 @@ namespace Baryonyx.Tavern.Editor
         ) BuildNameLines(RectTransform card, float width)
         {
             float middle = CardHeight / 2f;
-            var name = Layout.Text(
-                card,
-                "Name",
-                "",
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.BottomLeft,
-                TextLeft,
-                middle - 66f,
-                width - TextLeft - 24f,
-                60f
-            );
-            Guide.Shrink(name, 28);
+            var name = Card.Name(card, "", middle - 66f, width - TextLeft - 24f);
             var line = Layout.Row(
                 card,
                 "LevelLine",
@@ -331,12 +251,7 @@ namespace Baryonyx.Tavern.Editor
                 56f,
                 10f
             );
-            Layout.Fit(
-                Label(line, "LevelTag", "Lv", 28, UiPalette.Gold, TextAlignmentOptions.Bottom),
-                0
-            );
-            var level = Label(line, "Level", "", 40, UiPalette.Gold, TextAlignmentOptions.Bottom);
-            Layout.Fit(level, 0);
+            var level = Card.Level(line, "");
             var elements = Enumerable
                 .Range(0, 3)
                 .Select(i => Layout.RowIcon(line, "Element" + i, 12f * 3f))

@@ -48,22 +48,14 @@ namespace Baryonyx.StepBonus
     /// bonuses on opening and saves every change there; otherwise it uses the mock data.
     /// Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class StepBonusSettingsView
-        : MonoBehaviour,
-            IStepBonusSettingsView,
-            IEditModePreview
+    public sealed class StepBonusSettingsView : GuidePanel, IStepBonusSettingsView, IEditModePreview
     {
         // 段階に届いていない枠は、アイコン・枠・文字を暗くする。
         public static readonly Color Closed = new(0.42f, 0.42f, 0.48f, 1f);
 
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "ボーナスを取得できませんでした";
 
         public StepBonusMockData Data;
-
-        // 通知は案内人の画面の通知の帯に出す。
-        public GuideMenuView Guide;
 
         public TMP_Text Owned;
         public StepBonusSlotWidget[] Slots = Array.Empty<StepBonusSlotWidget>();
@@ -73,7 +65,6 @@ namespace Baryonyx.StepBonus
         public StepBonusRowWidget[] Rows = Array.Empty<StepBonusRowWidget>();
 
         private StepBonusSettingsPresenter presenter;
-        private readonly GuidePanelLoad load = new();
         private readonly ButtonBindings bindings = new();
 
         public event Action<int> SlotPressed;
@@ -81,10 +72,6 @@ namespace Baryonyx.StepBonus
         public event Action<int> TabPressed;
 
         public StepBonusSettingsPresenter Presenter => presenter;
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -119,7 +106,12 @@ namespace Baryonyx.StepBonus
                 return;
             }
             ShowLoading();
-            load.Start(token => LoadAsync(source, token), LoadFailed);
+            StartLoad(
+                token => LoadAsync(source, token),
+                LoadFailedMessage,
+                ShowLoadFailed,
+                "ACTボーナスを取得できませんでした"
+            );
         }
 
         private async Task LoadAsync(IStepBonusSource source, CancellationToken token)
@@ -136,13 +128,6 @@ namespace Baryonyx.StepBonus
             );
             if (state.Locked)
                 ShowNotice(StepBonusSettingsPresenter.LockedMessage);
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("ACTボーナスを取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Owned, LoadFailedText);
@@ -216,7 +201,7 @@ namespace Baryonyx.StepBonus
 
         private void OnDisable()
         {
-            load.Cancel();
+            Load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -265,13 +250,6 @@ namespace Baryonyx.StepBonus
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == tab;
-        }
-
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
         }
 
         private void RenderSlot(

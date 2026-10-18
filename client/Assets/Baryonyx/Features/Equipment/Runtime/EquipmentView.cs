@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Party;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
@@ -52,14 +53,12 @@ namespace Baryonyx.Equipment
     /// returns to the adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class EquipmentView
-        : MonoBehaviour,
+        : GuidePanel,
             IEquipmentView,
             IGuideBackHandler,
             IGuideBreadcrumb,
             IEditModePreview
     {
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "装備を取得できませんでした";
 
         public PartyMockData Party;
@@ -67,14 +66,11 @@ namespace Baryonyx.Equipment
         // ステータスは育成の仮データの成長から、今のレベルの値を出す。
         public TrainingMockData Training;
 
-        // 通知は案内人の画面の通知の帯に出す。
-        public GuideMenuView Guide;
-
         // 左上の人（立ち姿・名前・Lv）。
         public PartyPersonHeader Person = new();
 
         // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
-        public TrainingSwipe Swipe;
+        public GuideSwipe Swipe;
 
         // 武器・防具の順の2つの枠。
         public EquipmentSlotWidget[] Slots = Array.Empty<EquipmentSlotWidget>();
@@ -101,7 +97,6 @@ namespace Baryonyx.Equipment
         public Sprite ArmorIcon;
 
         private EquipmentPresenter presenter;
-        private readonly GuidePanelLoad load = new();
         private readonly ButtonBindings bindings = new();
 
         public event Action PrevPressed;
@@ -111,10 +106,6 @@ namespace Baryonyx.Equipment
         public event Action RemovePressed;
 
         public EquipmentPresenter Presenter => presenter;
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -153,7 +144,11 @@ namespace Baryonyx.Equipment
             var equipment = EquipmentSession.SourceOrLocal;
             if (party != null || EquipmentSession.Source != null)
                 ShowLoading();
-            load.Start(token => LoadAsync(party, equipment, token), LoadFailed);
+            StartLoad(
+                token => LoadAsync(party, equipment, token),
+                LoadFailedMessage,
+                ShowLoadFailed
+            );
         }
 
         private async Task LoadAsync(
@@ -163,10 +158,7 @@ namespace Baryonyx.Equipment
         )
         {
             // 同じセッションを順に使う（ログインのやり直しを重ねない）。
-            var formation =
-                party != null
-                    ? PartySession.Use(Party, await party.LoadAsync(token))
-                    : PartySession.Formation(Party);
+            var formation = await PartySession.LoadAsync(Party, party, token);
             var state = await equipment.LoadAsync(token);
             if (token.IsCancellationRequested)
                 return;
@@ -181,13 +173,6 @@ namespace Baryonyx.Equipment
                 EquipmentSession.OpenSlot,
                 EquipmentSession.OpenAccessory
             );
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("装備を取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
@@ -240,7 +225,7 @@ namespace Baryonyx.Equipment
             Person.ShowLoading(LoadingText);
             foreach (var widget in Slots)
                 ShowSlot(widget, null, null, false);
-            TrainingView.ShowStats(Stats, null);
+            StatGrid.Show(Stats, null);
             foreach (var row in Rows)
                 row.gameObject.SetActive(false);
             if (Remove != null)
@@ -258,7 +243,7 @@ namespace Baryonyx.Equipment
 
         private void OnDisable()
         {
-            load.Cancel();
+            Load.Cancel();
             bindings.Clear();
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
@@ -270,22 +255,12 @@ namespace Baryonyx.Equipment
         // パンくずの「冒険者 › アリア › 装備」（個別の画面を装備から開いたら「装備 › アリア › 装備」）。
         // 読み込むまでは人の名前を出さない。
         public IReadOnlyList<string> Trail =>
-            Guide != null
-                ? new[]
-                {
-                    Guide.LabelOf(TrainingSession.ReturnKeyOrRoster),
-                    person,
-                    Guide.LabelOf(EquipmentSession.GuideItemKey),
-                }
-                : Array.Empty<string>();
+            TrainingSession.ChangeTrail(Guide, person, EquipmentSession.GuideItemKey);
 
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        public bool HandleBack() =>
-            Guide != null
-            && Guide.HasItem(TrainingSession.GuideItemKey)
-            && Guide.OpenItem(TrainingSession.GuideItemKey);
+        public bool HandleBack() => TrainingSession.BackToPage(Guide);
 
         public void Render(EquipmentViewState state)
         {
@@ -306,7 +281,7 @@ namespace Baryonyx.Equipment
             for (int i = 0; i < Accessories.Length; i++)
                 ShowAccessory(Accessories[i], i, member != null ? level : 0, i == state.Accessory);
             var growth = Training != null ? Training.Find(state.PersonId) : null;
-            TrainingView.ShowStats(Stats, growth?.StatsAt(level));
+            StatGrid.Show(Stats, growth?.StatsAt(level));
             // 一覧の面の文字は、アクセサリーの枠を選んでいるときだけ出す（開いていなければ解放するLv）。
             Set(
                 Status,
@@ -318,13 +293,6 @@ namespace Baryonyx.Equipment
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == (accessory ? AccessoryTab : (int)state.Slot);
             ShowRows(state);
-        }
-
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
         }
 
         // アクセサリーの枠を選んでいて、開いているが持っていないときの一覧の面の文字。
@@ -361,20 +329,12 @@ namespace Baryonyx.Equipment
 
         // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
         private IReadOnlyList<Sprite> Elements(string id) =>
-            Party == null
-                ? Array.Empty<Sprite>()
-                : (
-                    previewing
-                        ? (IReadOnlyList<string>)(
-                            Party.Find(id)?.Cards.Select(card => card.Skill).ToArray()
-                            ?? Array.Empty<string>()
-                        )
-                        : PartySession.CardsOf(Party, id)
+            Party == null ? Array.Empty<Sprite>()
+            : previewing
+                ? Party.IconsOf(
+                    Party.Find(id)?.Cards.Select(card => card.Skill) ?? Array.Empty<string>()
                 )
-                    .Select(Party.IconOf)
-                    .Where(icon => icon != null)
-                    .Distinct()
-                    .ToArray();
+            : PartySession.ElementIconsOf(Party, id);
 
         // 持っている装備の行を並べ、足りなければ行を写して増やす。最後に「外す」。
         private void ShowRows(EquipmentViewState state)

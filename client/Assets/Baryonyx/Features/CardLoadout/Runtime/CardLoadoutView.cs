@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
@@ -75,14 +76,12 @@ namespace Baryonyx.CardLoadout
     /// adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class CardLoadoutView
-        : MonoBehaviour,
+        : GuidePanel,
             ICardLoadoutView,
             IGuideBackHandler,
             IGuideBreadcrumb,
             IEditModePreview
     {
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "スキルを取得できませんでした";
 
         // まだ解放していない固有スキルの挿絵の色。
@@ -91,14 +90,11 @@ namespace Baryonyx.CardLoadout
         public PartyMockData Party;
         public TrainingMockData Training;
 
-        // 通知は案内人の画面の通知の帯に出す。
-        public GuideMenuView Guide;
-
         // 左上の人（立ち姿・名前・Lv）。
         public PartyPersonHeader Person = new();
 
         // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
-        public TrainingSwipe Swipe;
+        public GuideSwipe Swipe;
         public CardLoadoutSlotWidget[] Slots = Array.Empty<CardLoadoutSlotWidget>();
 
         // デッキのほかの2枚（固有スキル）。外せないので押せない。
@@ -123,7 +119,6 @@ namespace Baryonyx.CardLoadout
         public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
         private CardLoadoutPresenter presenter;
-        private readonly GuidePanelLoad load = new();
         private readonly ButtonBindings bindings = new();
 
         public event Action PrevPressed;
@@ -133,10 +128,6 @@ namespace Baryonyx.CardLoadout
         public event Action<string> CardPressed;
 
         public CardLoadoutPresenter Presenter => presenter;
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -174,7 +165,7 @@ namespace Baryonyx.CardLoadout
                 return;
             }
             ShowLoading();
-            load.Start(token => LoadAsync(source, token), LoadFailed);
+            StartLoad(token => LoadAsync(source, token), LoadFailedMessage, ShowLoadFailed);
         }
 
         private async Task LoadAsync(IPartySource source, CancellationToken token)
@@ -186,13 +177,6 @@ namespace Baryonyx.CardLoadout
                 PartySession.Use(Party, state),
                 (id, slot, skill, cancel) => SaveAsync(source, id, slot, skill, cancel)
             );
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("スキルを取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
@@ -228,7 +212,7 @@ namespace Baryonyx.CardLoadout
             if (UsableLine != null)
                 UsableLine.SetActive(false);
             Person.ShowLoading(LoadingText);
-            TrainingView.ShowStats(Stats, null);
+            StatGrid.Show(Stats, null);
             foreach (var widget in Slots)
             {
                 ShowSlot(widget, null, null, null, false);
@@ -291,7 +275,7 @@ namespace Baryonyx.CardLoadout
 
         private void OnDisable()
         {
-            load.Cancel();
+            Load.Cancel();
             bindings.Clear();
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
@@ -302,22 +286,12 @@ namespace Baryonyx.CardLoadout
         // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
         // パンくずの「冒険者 › アリア › スキル」。読み込むまでは人の名前を出さない。
         public IReadOnlyList<string> Trail =>
-            Guide != null
-                ? new[]
-                {
-                    Guide.LabelOf(TrainingSession.ReturnKeyOrRoster),
-                    person,
-                    Guide.LabelOf(CardLoadoutSession.GuideItemKey),
-                }
-                : Array.Empty<string>();
+            TrainingSession.ChangeTrail(Guide, person, CardLoadoutSession.GuideItemKey);
 
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        public bool HandleBack() =>
-            Guide != null
-            && Guide.HasItem(TrainingSession.GuideItemKey)
-            && Guide.OpenItem(TrainingSession.GuideItemKey);
+        public bool HandleBack() => TrainingSession.BackToPage(Guide);
 
         public void Render(CardLoadoutState state)
         {
@@ -336,7 +310,7 @@ namespace Baryonyx.CardLoadout
                     .ToArray()
             );
             var growth = Training != null ? Training.Find(state.PersonId) : null;
-            TrainingView.ShowStats(Stats, growth?.StatsAt(level));
+            StatGrid.Show(Stats, growth?.StatsAt(level));
             for (int i = 0; i < Uniques.Length; i++)
                 ShowUnique(
                     Uniques[i],
@@ -380,13 +354,6 @@ namespace Baryonyx.CardLoadout
                     : $"エネルギー {skill.Energy}"
             );
             Set(widget.Description, skill?.Description);
-        }
-
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
         }
 
         public Sprite IconOf(CardElement element)

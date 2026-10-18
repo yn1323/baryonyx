@@ -105,14 +105,12 @@ namespace Baryonyx.Training
     /// closes the dialog before going back.
     /// </summary>
     public sealed class TrainingView
-        : MonoBehaviour,
+        : GuidePanel,
             ITrainingView,
             IGuideBackHandler,
             IGuideBreadcrumb,
             IEditModePreview
     {
-        public const string LoadingText = GuidePanelLoad.LoadingText;
-        public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
         public const string LoadFailedMessage = "キャラを取得できませんでした";
 
         // 足りないルーン・未解放のスキルの色。ほかの文字の色は UiPalette を使う。
@@ -126,12 +124,9 @@ namespace Baryonyx.Training
         public PartyMockData Party;
         public TrainingMockData Data;
 
-        // 通知は案内人の画面の通知の帯に出す。
-        public GuideMenuView Guide;
-
         [Header("Detail")]
         // ページの上の左右のフリックで人を替える。
-        public TrainingSwipe Swipe;
+        public GuideSwipe Swipe;
         public TMP_Text Name;
         public TMP_Text Level;
         public Image[] Elements = Array.Empty<Image>();
@@ -178,7 +173,6 @@ namespace Baryonyx.Training
         public TMP_Text Balance;
 
         private TrainingPresenter presenter;
-        private readonly GuidePanelLoad load = new();
 
         // パンくずに出す、表示している人の名前。
         private string person;
@@ -196,10 +190,6 @@ namespace Baryonyx.Training
         public event Action<int> CardPressed;
 
         public TrainingPresenter Presenter => presenter;
-        public string LastNotice { get; private set; } = "";
-
-        // 実行中または直前の読み込み。テストで完了を待つために公開する。
-        public Task LoadTask => load.Task;
 
         private void OnEnable()
         {
@@ -232,9 +222,11 @@ namespace Baryonyx.Training
             var source = PartySession.Source;
             if (source != null || EquipmentSession.Source != null)
                 ShowLoading();
-            load.Start(
+            StartLoad(
                 token => LoadAsync(source, EquipmentSession.SourceOrLocal, token),
-                LoadFailed
+                LoadFailedMessage,
+                ShowLoadFailed,
+                "育成のキャラを取得できませんでした"
             );
         }
 
@@ -268,13 +260,6 @@ namespace Baryonyx.Training
                 NextPressed?.Invoke();
             else if (step < 0)
                 PrevPressed?.Invoke();
-        }
-
-        private void LoadFailed(Exception exception)
-        {
-            Debug.LogWarning("育成のキャラを取得できませんでした。" + exception.Message, this);
-            ShowLoadFailed();
-            ShowNotice(LoadFailedMessage);
         }
 
         private void ShowLoadFailed() => Set(Name, LoadFailedText);
@@ -338,7 +323,7 @@ namespace Baryonyx.Training
         {
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
-            load.Cancel();
+            Load.Cancel();
             bindings.Clear();
             presenter?.Dispose();
             presenter = null;
@@ -395,9 +380,7 @@ namespace Baryonyx.Training
         {
             if (presenter != null && presenter.Back())
                 return true;
-            return Guide != null
-                && Guide.HasItem(TrainingSession.ReturnKeyOrRoster)
-                && Guide.OpenItem(TrainingSession.ReturnKeyOrRoster);
+            return TrainingSession.LeavePage(Guide);
         }
 
         public void Render(TrainingState state)
@@ -463,7 +446,7 @@ namespace Baryonyx.Training
                 LevelUpCost.SetActive(!state.Maxed);
             Set(LevelUpCostLabel, Number(state.NextCost));
 
-            ShowStats(Stats, state.Member != null ? state.Stats : (CharacterStats?)null);
+            StatGrid.Show(Stats, state.Member != null ? state.Stats : (CharacterStats?)null);
             for (int i = 0; i < Passives.Length; i++)
                 ShowSkill(Passives[i], i < state.Passives.Count ? state.Passives[i] : null);
             ShowCards(Uniques, state.Uniques);
@@ -491,19 +474,6 @@ namespace Baryonyx.Training
         {
             int element = (int)(card?.Element ?? CardElement.None);
             return element < CardFrames.Length ? CardFrames[element] : null;
-        }
-
-        /// <summary>
-        /// The eight stats in <see cref="CharacterStats"/> order, or empty while nothing is
-        /// shown. The other formation screens show the stats with it too.
-        /// </summary>
-        public static void ShowStats(IReadOnlyList<TMP_Text> labels, CharacterStats? stats)
-        {
-            for (int i = 0; i < labels.Count && i < CharacterStats.Count; i++)
-                Set(
-                    labels[i],
-                    stats.HasValue ? stats.Value[i].ToString(CultureInfo.InvariantCulture) : ""
-                );
         }
 
         private void RenderDialog(TrainingState state)
@@ -656,13 +626,6 @@ namespace Baryonyx.Training
             // 開いていないアクセサリーの枠も押せ、付け替えの画面のアクセサリーのタブを開く。
             if (widget.Button != null)
                 widget.Button.interactable = gear != null;
-        }
-
-        public void ShowNotice(string message)
-        {
-            LastNotice = message ?? "";
-            if (Guide != null)
-                Guide.ShowToast(message);
         }
 
         /// <summary>
