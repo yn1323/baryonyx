@@ -14,8 +14,6 @@ namespace Baryonyx.Editor.UI
         public const string TextShadowPath = "Assets/Baryonyx/Shared/UI/Fonts/TextShadow.mat";
         public const string CirclePath = Folder + "/Circle.png";
         public const string CapsulePath = Folder + "/Capsule.png";
-        public const string RoundedRectPath = Folder + "/RoundedRect.png";
-        public const string RoundedRingPath = Folder + "/RoundedRing.png";
         public const string ShadePath = Folder + "/ScreenShade.png";
         public const string ShadowPath = Folder + "/GroundShadow.png";
         public const string FeatherPath = Folder + "/FeatherPlate.png";
@@ -24,9 +22,6 @@ namespace Baryonyx.Editor.UI
         // 冒険の行き先を表す羅針盤（24×24を4倍。ホームの行き先カードと冒険の画面で使う）。
         public const string IconCompassPath = Folder + "/IconCompass.aseprite";
         public const string IconSettingsPath = Folder + "/IconSettings.png";
-
-        // 角丸の半径（テクスチャのピクセル。1ピクセル = Canvasの1単位）。
-        public const int CornerRadius = 18;
 
         private static readonly string[] Gear =
         {
@@ -94,22 +89,6 @@ namespace Baryonyx.Editor.UI
                 40f,
                 0f,
                 new Vector4(40, 40, 40, 40),
-                _ => Color.white
-            );
-            ArtAssets.WriteRounded(
-                RoundedRectPath,
-                48,
-                CornerRadius,
-                0f,
-                new Vector4(20, 20, 20, 20),
-                _ => Color.white
-            );
-            ArtAssets.WriteRounded(
-                RoundedRingPath,
-                48,
-                CornerRadius,
-                2.5f,
-                new Vector4(20, 20, 20, 20),
                 _ => Color.white
             );
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);

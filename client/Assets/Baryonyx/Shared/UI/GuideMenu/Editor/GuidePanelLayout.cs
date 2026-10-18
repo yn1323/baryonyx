@@ -15,9 +15,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
     {
         public static readonly Vector2 Design = new(1920, 1080);
 
-        // ◀▶の押せる範囲。見た目の枠より大きく、指で押しやすい大きさにする。
+        // 小さなボタン（レベルアップの－＋など）の押せる範囲。指で押しやすい大きさにする。
         public const float HitSize = 128f;
-        public const float ArrowFrame = 88f;
 
         /// <summary>A 1920x1080 layer in the middle that shrinks on screens narrower than 16:9.</summary>
         public static RectTransform Layer(RectTransform parent, string name)
@@ -50,83 +49,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 new Vector2(x, -y),
                 new Vector2(width, height)
             );
-
-        /// <summary>A guide frame at (x, y), taking taps so the screen behind does not.</summary>
-        public static RectTransform FrameBox(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            float width,
-            float height,
-            bool selected = false
-        )
-        {
-            var rect = Box(parent, name, x, y, width, height);
-            GuideMenuAssets
-                .Frame(
-                    rect,
-                    selected ? GuideMenuAssets.FrameSelectedPath : GuideMenuAssets.FramePath,
-                    Color.white
-                )
-                .raycastTarget = true;
-            return rect;
-        }
-
-        /// <summary>
-        /// A button in a guide frame at (x, y), with a gold frame over it that the view turns on
-        /// when it is chosen (returned as <c>Selected</c>, hidden).
-        /// </summary>
-        public static (Button Button, GameObject Selected) Choice(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            float width,
-            float height
-        )
-        {
-            var rect = Box(parent, name, x, y, width, height);
-            var button = GuideMenuAssets.AddButton(
-                rect,
-                GuideMenuAssets.Frame(rect, GuideMenuAssets.FramePath, new Color(1f, 1f, 1f, 0.9f))
-            );
-            // Under the contents, so the gold frame's fill does not cover them.
-            var selected = Rect("Selected", rect);
-            Stretch(selected);
-            GuideMenuAssets
-                .Frame(selected, GuideMenuAssets.FrameSelectedPath, Color.white)
-                .raycastTarget = false;
-            selected.gameObject.SetActive(false);
-            return (button, selected.gameObject);
-        }
-
-        /// <summary>
-        /// A ◀ or ▶ centred on (x, y): a frame of <see cref="ArrowFrame"/> that takes taps on
-        /// <see cref="HitSize"/> square.
-        /// </summary>
-        public static Button ArrowButton(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            bool flip
-        )
-        {
-            var rect = Box(parent, name, x - HitSize / 2f, y - HitSize / 2f, HitSize, HitSize);
-            AddImage(rect, Color.clear, true);
-            var frame = Rect("Frame", rect);
-            Place(frame, Vector2.zero, Vector2.one * ArrowFrame);
-            var image = GuideMenuAssets.Frame(frame, GuideMenuAssets.FramePath, Color.white);
-            image.raycastTarget = false;
-            var button = GuideMenuAssets.AddButton(rect, image);
-            var arrow = Rect("Arrow", frame);
-            Place(arrow, Vector2.zero, new Vector2(5, 9) * 6f);
-            if (flip)
-                arrow.localScale = new Vector3(-1, 1, 1);
-            SpriteImage(arrow, GuideMenuAssets.ArrowPath, UiPalette.Gold);
-            return button;
-        }
 
         /// <summary>A text at (x, y) with the guide screens' font and shadow.</summary>
         public static TMP_Text Text(

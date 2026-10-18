@@ -35,6 +35,10 @@ namespace Baryonyx.UI.Editor
         public static readonly Color GoldColor = new(1f, 0.84f, 0.4f, 1f);
         public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.55f);
 
+        // 案内人の画面の透ける面を通さず、景色や絵の上に直に置くカードの板の色。面と同じ紺を濃く敷き、
+        // 下の景色に負けずに文字が読めるようにする（探索の札・ダイアログの外の画面・デバッグルーム）。
+        public static readonly Color SceneFillColor = new(0.035f, 0.05f, 0.12f, 0.82f);
+
         // 影は少し下へずらし、周りへ広げる。選んだときの光も周りへ広げる。
         private const float ShadowDrop = 10f;
         private const float ShadowSpread = 14f;
@@ -82,11 +86,13 @@ namespace Baryonyx.UI.Editor
         /// with the rect to put its contents in. The contents sink with the plate when pressed.
         /// A <paramref name="dashed"/> card (an empty place, or an action such as "remove") has a
         /// dashed rim and no pattern; small cards (equipment slots) leave the pattern out.
+        /// A card straight over the scene passes <see cref="SceneFillColor"/> as <paramref name="fill"/>.
         /// </summary>
         public static (GlassCard Card, RectTransform Content) Build(
             RectTransform rect,
             bool dashed = false,
-            bool pattern = true
+            bool pattern = true,
+            Color? fill = null
         )
         {
             EnsureArt();
@@ -94,7 +100,7 @@ namespace Baryonyx.UI.Editor
             // カード全体で押せるようにする（見えない板）。
             AddImage(rect, Color.clear, true);
             card.Group = rect.gameObject.AddComponent<CanvasGroup>();
-            var (body, shadow, fill, content, selection) = Visuals(rect, dashed, pattern);
+            var (body, shadow, _, content, selection) = Visuals(rect, dashed, pattern, fill);
             card.Body = body;
             card.Shadow = shadow;
             card.Selection = selection;
@@ -109,12 +115,13 @@ namespace Baryonyx.UI.Editor
         public static (Button Button, GameObject Selected, RectTransform Content) Choice(
             RectTransform rect,
             bool dashed = false,
-            bool pattern = true
+            bool pattern = true,
+            Color? fill = null
         )
         {
-            var (card, content) = Build(rect, dashed, pattern);
-            var fill = card.Body.Find("Fill").GetComponent<Image>();
-            var button = ConfigureButton(rect.gameObject.AddComponent<Button>(), fill);
+            var (card, content) = Build(rect, dashed, pattern, fill);
+            var plate = card.Body.Find("Fill").GetComponent<Image>();
+            var button = ConfigureButton(rect.gameObject.AddComponent<Button>(), plate);
             var colors = button.colors;
             colors.disabledColor = new Color(0.55f, 0.55f, 0.6f, 0.7f);
             button.colors = colors;
@@ -128,12 +135,24 @@ namespace Baryonyx.UI.Editor
         public static RectTransform Plaque(
             RectTransform rect,
             bool dashed = false,
-            bool pattern = true
+            bool pattern = true,
+            Color? fill = null
         )
         {
             EnsureArt();
-            return Visuals(rect, dashed, pattern).Content;
+            return Visuals(rect, dashed, pattern, fill).Content;
         }
+
+        /// <summary>
+        /// The lit rim of a card built on <paramref name="rect"/>, for a card whose rim shows a
+        /// colour of its own (the bonus slots' tiers and the ranks).
+        /// </summary>
+        public static Image RimOf(RectTransform rect) =>
+            rect.Find("Body/Rim").GetComponent<Image>();
+
+        /// <summary>The plate of a card built on <paramref name="rect"/>, e.g. to mask a picture to its shape.</summary>
+        public static Image FillOf(RectTransform rect) =>
+            rect.Find("Body/Fill").GetComponent<Image>();
 
         private static (
             RectTransform Body,
@@ -141,7 +160,7 @@ namespace Baryonyx.UI.Editor
             Image Fill,
             RectTransform Content,
             GameObject Selection
-        ) Visuals(RectTransform rect, bool dashed, bool pattern)
+        ) Visuals(RectTransform rect, bool dashed, bool pattern, Color? plate)
         {
             RectTransform shadow = null;
             if (!dashed)
@@ -156,7 +175,7 @@ namespace Baryonyx.UI.Editor
             var fill = Plate(
                 Stretched("Fill", body),
                 FillPath,
-                dashed ? new Color(1f, 1f, 1f, 0.04f) : FillColor
+                plate ?? (dashed ? new Color(1f, 1f, 1f, 0.04f) : FillColor)
             );
 
             var tint = Stretched("SelectedTint", body);

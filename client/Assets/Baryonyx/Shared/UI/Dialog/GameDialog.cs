@@ -23,10 +23,11 @@ namespace Baryonyx.UI
     /// <summary>
     /// The shared dialog for a choice or a confirmation that the notice band cannot carry
     /// (doc/rules/ui-design.md): a dark veil over the whole screen that stops the taps behind
-    /// it, and a silver-framed window with a title, a body, an optional picture and up to five
-    /// choices stacked in equal rows. A pressed choice takes no more taps until the dialog is
-    /// shown again, so a slow server answer is not sent twice. The device's back key does what
-    /// <c>cancel</c> says (nothing when null). GameDialogAssets builds it.
+    /// it, and a window in the guide frame (a gold line on the dark pane) with a title, a body,
+    /// an optional picture and up to five choices stacked in equal rows of frosted glass cards.
+    /// A pressed choice takes no more taps until the dialog is shown again, so a slow server
+    /// answer is not sent twice. The device's back key does what <c>cancel</c> says (nothing
+    /// when null). GameDialogAssets builds it.
     /// </summary>
     public sealed class GameDialog : MonoBehaviour
     {

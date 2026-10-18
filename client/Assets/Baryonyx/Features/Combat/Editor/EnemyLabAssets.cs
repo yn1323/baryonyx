@@ -4,6 +4,7 @@ using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -24,7 +25,6 @@ namespace Baryonyx.Combat.Editor
         public const string PrefabPath = "Assets/Baryonyx/Features/Combat/UI/EnemyLabPanel.prefab";
 
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
-        private static readonly Color ButtonColor = new(0.06f, 0.07f, 0.12f, 0.88f);
         private static readonly Color StripColor = new(0.02f, 0.03f, 0.06f, 0.72f);
 
         // The enemies' names in the lab, by their art's name.
@@ -118,7 +118,7 @@ namespace Baryonyx.Combat.Editor
             strip.pivot = new Vector2(0.5f, 0f);
             strip.offsetMin = new Vector2(16f, ActionsBottom - 8f);
             strip.offsetMax = new Vector2(-16f, ChooserBottom + RowHeight + 6f);
-            Sliced(strip, UiArt.RoundedRectPath, StripColor).raycastTarget = false;
+            GlassCardAssets.Plaque(strip, pattern: false, fill: StripColor);
         }
 
         /// <summary>
@@ -201,10 +201,14 @@ namespace Baryonyx.Combat.Editor
         {
             var rect = Rect(name, parent);
             rect.gameObject.AddComponent<LayoutElement>().preferredWidth = width;
-            var image = Sliced(rect, UiArt.RoundedRectPath, ButtonColor);
-            var button = AddButton(rect, image);
-            var label = Label(
+            // 選んでいる行動は、Play中にカードの金の縁と光で示す（GlassCard.Selected）。
+            var (button, _, card) = GlassCardAssets.Choice(
                 rect,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            var label = Label(
+                card,
                 "Label",
                 text,
                 34,

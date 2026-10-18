@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -53,10 +54,6 @@ namespace Baryonyx.Combat.Presentation
         public const string ActionKey = "Baryonyx.EnemyLab.Action";
         public const string RepeatKey = "Baryonyx.EnemyLab.Repeat";
 
-        // The action last pressed is a gold button with dark words, to read on the gold.
-        private static readonly Color PickedColor = new(0.98f, 0.8f, 0.36f, 0.95f);
-        private static readonly Color PickedText = new(0.16f, 0.11f, 0.04f);
-
         [Tooltip(
             "敵を動かす戦闘画面（BattleInspectScreen）。空なら何もしない（展示室のプレビュー）。"
         )]
@@ -81,9 +78,6 @@ namespace Baryonyx.Combat.Presentation
         [Min(0f)]
         public float Gap = 0.8f;
 
-        private readonly List<Color> actionColors = new();
-        private readonly List<TMP_Text> actionLabels = new();
-        private readonly List<Color> actionTextColors = new();
         private int enemy;
         private EnemyLabAction action;
         private bool repeat;
@@ -115,14 +109,6 @@ namespace Baryonyx.Combat.Presentation
             {
                 var pressed = (EnemyLabAction)i;
                 Listen(ActionButtons[i], () => Run(pressed));
-                actionColors.Add(
-                    ActionButtons[i].targetGraphic != null
-                        ? ActionButtons[i].targetGraphic.color
-                        : Color.white
-                );
-                var label = ActionButtons[i].GetComponentInChildren<TMP_Text>(true);
-                actionLabels.Add(label);
-                actionTextColors.Add(label != null ? label.color : Color.white);
             }
             Load();
             Refresh();
@@ -255,14 +241,13 @@ namespace Baryonyx.Combat.Presentation
         {
             if (RepeatLabel != null)
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
-            for (int i = 0; i < ActionButtons.Length && i < actionColors.Count; i++)
-            {
-                bool picked = i == (int)action;
-                if (ActionButtons[i].targetGraphic != null)
-                    ActionButtons[i].targetGraphic.color = picked ? PickedColor : actionColors[i];
-                if (actionLabels[i] != null)
-                    actionLabels[i].color = picked ? PickedText : actionTextColors[i];
-            }
+            // 選んでいる行動は、すりガラスのカードの金の縁と光で示す。
+            for (int i = 0; i < ActionButtons.Length; i++)
+                if (
+                    ActionButtons[i] != null
+                    && ActionButtons[i].TryGetComponent(out GlassCard card)
+                )
+                    card.Selected = i == (int)action;
         }
 
         private void Load()

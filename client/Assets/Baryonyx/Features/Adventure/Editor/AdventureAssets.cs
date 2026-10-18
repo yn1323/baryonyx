@@ -67,7 +67,6 @@ namespace Baryonyx.Adventure.Editor
         };
 
         private static readonly Color TextMain = UiPalette.TextMain;
-        private static readonly Color Plate = new(0.02f, 0.024f, 0.047f, 0.82f);
         private static readonly Color MarkerPlate = new(0.11f, 0.165f, 0.19f, 0.96f);
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
 
@@ -311,9 +310,7 @@ namespace Baryonyx.Adventure.Editor
             var hintBox = Rect("Hint", body);
             Place(hintBox, new Vector2(66, 0), new Vector2(300, 64));
             hintBox.pivot = new Vector2(0, 0.5f);
-            var hintPlate = AddImage(hintBox, Plate, false);
-            hintPlate.sprite = ArtAssets.LoadSprite(UiArt.RoundedRectPath);
-            hintPlate.type = Image.Type.Sliced;
+            ScenePlaque(hintBox);
             var fitter = hintBox.gameObject.AddComponent<HorizontalLayoutGroup>();
             fitter.padding = new RectOffset(20, 20, 6, 6);
             fitter.childControlWidth = true;
@@ -437,15 +434,23 @@ namespace Baryonyx.Adventure.Editor
             return button;
         }
 
+        // 地図の上の札と帯：景色の上に直に置く、模様のないすりガラスの板。文字に合わせて伸び縮みする札でも
+        // 並べ方に入らないよう、板は並べ方の外の子に作る。
+        private static void ScenePlaque(RectTransform parent)
+        {
+            var plate = Rect("Plate", parent);
+            Stretch(plate);
+            plate.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            GlassCardAssets.Plaque(plate, pattern: false, fill: GlassCardAssets.SceneFillColor);
+        }
+
         private static TMP_Text BuildPrompt(RectTransform safe)
         {
             var band = Rect("PromptBand", safe);
             band.anchorMin = band.anchorMax = band.pivot = new Vector2(0.5f, 0f);
             band.anchoredPosition = new Vector2(0, 40);
             band.sizeDelta = new Vector2(1100, 96);
-            var image = AddImage(band, Plate, false);
-            image.sprite = ArtAssets.LoadSprite(UiArt.RoundedRectPath);
-            image.type = Image.Type.Sliced;
+            ScenePlaque(band);
             var prompt = Label(band, "Prompt", "", 44, TextMain, TextAlignmentOptions.Center);
             Stretch((RectTransform)prompt.transform);
             return prompt;

@@ -719,31 +719,17 @@ namespace Baryonyx.Home.Editor
             const float cardHeight = 200f;
             var cardOffset = new Vector2(-48, 44);
 
-            // Glow and drop shadow sit behind the card because the card masks its children.
-            var glow = Rect("ResumeGlow", safe);
-            Corner(
-                glow,
-                new Vector2(1, 0),
-                cardOffset + new Vector2(70, -70),
-                new Vector2(cardWidth + 140, cardHeight + 140)
-            );
-            SpriteImage(glow, UiArt.SoftSpotPath, new Color(0.949f, 0.675f, 0.263f, 0.45f));
-            var dropShadow = Rect("ResumeShadow", safe);
-            Corner(
-                dropShadow,
-                new Vector2(1, 0),
-                cardOffset + new Vector2(30, -50),
-                new Vector2(cardWidth + 60, cardHeight + 60)
-            );
-            SpriteImage(dropShadow, UiArt.SoftSpotPath, new Color(0f, 0f, 0f, 0.6f));
-
+            // すりガラスのカード。金の縁と光（選んだ印）は出さず、白い縁と影だけにする。
             var card = Rect("ResumeCard", safe);
             Corner(card, new Vector2(1, 0), cardOffset, new Vector2(cardWidth, cardHeight));
-            var cardImage = Sliced(card, UiArt.RoundedRectPath, new Color(0.039f, 0.047f, 0.086f));
-            card.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+            var (button, _, content) = GlassCardAssets.Choice(card, pattern: false);
+            // 行き先の絵は、カードの板の角丸で切り抜く。板は絵の下で不透明に塗る。
+            var plate = GlassCardAssets.FillOf(card);
+            plate.color = new Color(0.039f, 0.047f, 0.086f);
+            plate.gameObject.AddComponent<Mask>().showMaskGraphic = true;
 
             // The destination art covers the card like CSS object-fit: cover at 30% from the top.
-            var art = Rect("DestinationArt", card);
+            var art = Rect("DestinationArt", plate.rectTransform);
             Stretch(art);
             var artImage = art.gameObject.AddComponent<RawImage>();
             artImage.texture = travelArt;
@@ -756,19 +742,14 @@ namespace Baryonyx.Home.Editor
             view.DestinationArt = artImage;
             view.ResumeArt = destinationArt;
             view.TravelArt = travelArt;
-            var shade = Rect("DestinationShade", card);
+            var shade = Rect("DestinationShade", plate.rectTransform);
             Stretch(shade);
             var shadeImage = shade.gameObject.AddComponent<RawImage>();
             shadeImage.texture = ArtAssets.LoadTexture(HomeScreenArt.CardShadePath);
             shadeImage.color = new Color(0.024f, 0.031f, 0.055f);
             shadeImage.raycastTarget = false;
-            var rim = Rect("ResumeRim", card);
-            Stretch(rim);
-            Sliced(rim, UiArt.RoundedRingPath, new Color(1f, 0.824f, 0.478f, 0.55f)).raycastTarget =
-                false;
-
             view.DestinationNameLabel = Label(
-                card,
+                content,
                 "DestinationNameLabel",
                 "",
                 32,
@@ -782,7 +763,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(280, 40)
             );
             view.DestinationFloorLabel = Label(
-                card,
+                content,
                 "DestinationFloorLabel",
                 "",
                 64,
@@ -802,7 +783,7 @@ namespace Baryonyx.Home.Editor
 
             // "再開" (or "出発") is written straight on the card, in the same white as the floor number.
             var resume = Label(
-                card,
+                content,
                 "ResumeLabel",
                 "出発",
                 64,
@@ -819,8 +800,8 @@ namespace Baryonyx.Home.Editor
             view.ResumeLabel = resume;
 
             // The whole card is the button; pressing darkens the destination art.
-            cardImage.raycastTarget = true;
-            view.ResumeButton = AddButton(card, artImage);
+            button.targetGraphic = artImage;
+            view.ResumeButton = button;
         }
 
         // Runes fly from the step panel to the balance; the view clones the hidden particle.

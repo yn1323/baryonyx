@@ -26,8 +26,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
     {
         public const string Folder = "Assets/Baryonyx/Shared/UI/GuideMenu";
         public const string ArtFolder = Folder + "/Art";
-        public const string FramePath = ArtFolder + "/GuideFrame.png";
-        public const string FrameSelectedPath = ArtFolder + "/GuideFrameSelected.png";
         public const string ShadeHorizontalPath = ArtFolder + "/GuideShadeHorizontal.png";
         public const string SoftSpotPath = ArtFolder + "/GuideSoftSpot.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
@@ -37,14 +35,10 @@ namespace Baryonyx.UI.GuideMenu.Editor
             "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
 
-        // The window frames and the 24x24 icons are drawn at 4 design pixels per dot, like the
+        // The 24x24 icons and the frame's pixel art are drawn at 4 design pixels per dot, like the
         // game's sprites.
         public const float DotScale = 4f;
         public const float IconSize = 24f * DotScale;
-
-        // A frame keeps its 4-dot corners; the 16-dot edges and fill repeat (Image.Type.Tiled).
-        private const int FrameCorner = 4;
-        private const int FrameTile = 16;
 
         // The guide stands in this box at the bottom left; the lists start right of it.
         private const float GuideLeft = 24f;
@@ -301,7 +295,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(tab);
             tab.offsetMin = new Vector2(-BackBleed, 0);
             tab.offsetMax = new Vector2(0, BackBleed);
-            var backTab = Frame(tab, FramePath, Color.white);
+            // 枠つきの表示のヘッダーの帯と同じ紺の板。枠を出すと透明にして、帯に任せる。
+            var backTab = AddImage(tab, GuideFrameAssets.HeaderColor, true);
             tabBackdrops.Add(backTab);
             view.Back = AddTintButton(back, backTab);
             // 枠つきの画面では、タブの代わりに「もどる」とパンくずの間に細い線を引く。
@@ -321,7 +316,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 (RectTransform)label.transform,
                 new Vector2(0, 0.5f),
                 new Vector2(BackLabelLeft, 0),
-                new Vector2(BackWidth - BackLabelLeft - FrameCorner * DotScale, 40)
+                new Vector2(BackWidth - BackLabelLeft - 16f, 40)
             );
 
             BuildClose(safe, view);
@@ -355,7 +350,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             Stretch(tab);
             tab.offsetMin = new Vector2(0, 0);
             tab.offsetMax = new Vector2(BackBleed, BackBleed);
-            var closeTab = Frame(tab, FramePath, Color.white);
+            var closeTab = AddImage(tab, GuideFrameAssets.HeaderColor, true);
             tabBackdrops.Add(closeTab);
             view.Home = AddTintButton(close, closeTab);
             frameParts.Add(GuideFrameAssets.Separator(close, 0f, -HeaderGap / 4f));
@@ -733,115 +728,16 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         private static void WriteArt()
         {
-            // A silver line with rounded corners on a navy fill; the selected one is gold on purple.
-            WriteFrame(
-                FramePath,
-                outline: (Hex(0x465c85), Hex(0x0c1b36)),
-                line: (Hex(0xdcdfe1), Hex(0x8496ae)),
-                glint: (Hex(0xf4f4f1), Hex(0xa8b4c5)),
-                fill: Hex(0x141f3f),
-                shade: Hex(0x0a1229)
-            );
-            WriteFrame(
-                FrameSelectedPath,
-                outline: (Hex(0xa6500d), Hex(0x3c1903)),
-                line: (Hex(0xfde45a), Hex(0xde8613)),
-                glint: (Hex(0xfef6cb), Hex(0xf4b118)),
-                fill: Hex(0x2a2350),
-                shade: Hex(0x181432)
-            );
             WriteArrow(ArrowPath);
             WriteGradient(ShadeHorizontalPath);
             WriteSoftSpot(SoftSpotPath);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ArtAssets.ImportSprite(
-                FramePath,
-                Vector4.one * FrameCorner,
-                FilterMode.Point,
-                fullRect: true
-            );
-            ArtAssets.ImportSprite(
-                FrameSelectedPath,
-                Vector4.one * FrameCorner,
-                FilterMode.Point,
-                fullRect: true
-            );
             ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
             ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             Icon(IconBackPath);
             Icon(IconClosePath);
             ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
-
-        // The top-left corner, rows from the top edge and columns from the left edge, and the
-        // strip across an edge from the outside in: '.' clear, 'o' outline, 'L' line, 'G' glint,
-        // 's' the shadow the frame casts on the fill, 'f' fill. The other corners mirror it.
-        private static readonly string[] FrameCornerDots = { "..oo", ".oGL", "oGss", "oLsf" };
-        private const string FrameEdgeDots = "oLsf";
-
-        // Lit from the top left: each colour pair is (top and left, bottom and right).
-        private static void WriteFrame(
-            string path,
-            (Color32 Lit, Color32 Dark) outline,
-            (Color32 Lit, Color32 Dark) line,
-            (Color32 Lit, Color32 Dark) glint,
-            Color32 fill,
-            Color32 shade
-        )
-        {
-            const int size = FrameCorner * 2 + FrameTile;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                // Texture rows run from the bottom.
-                int row = size - 1 - y;
-                int fromSide = Mathf.Min(x, size - 1 - x);
-                int fromTop = Mathf.Min(row, size - 1 - row);
-                bool litTop = row < FrameCorner;
-                bool litLeft = x < FrameCorner;
-                char dot;
-                bool lit;
-                if (fromSide < FrameCorner && fromTop < FrameCorner)
-                {
-                    dot = FrameCornerDots[fromTop][fromSide];
-                    // A corner dot belongs to the nearer edge; the diagonal takes the lit one.
-                    lit =
-                        fromTop < fromSide ? litTop
-                        : fromSide < fromTop ? litLeft
-                        : litTop || litLeft;
-                }
-                else if (fromTop < FrameCorner)
-                {
-                    dot = FrameEdgeDots[fromTop];
-                    lit = litTop;
-                }
-                else if (fromSide < FrameCorner)
-                {
-                    dot = FrameEdgeDots[fromSide];
-                    lit = litLeft;
-                }
-                else
-                {
-                    dot = 'f';
-                    lit = true;
-                }
-                Color32 color = dot switch
-                {
-                    '.' => new Color32(0, 0, 0, 0),
-                    'o' => lit ? outline.Lit : outline.Dark,
-                    'L' => lit ? line.Lit : line.Dark,
-                    'G' => lit ? glint.Lit : glint.Dark,
-                    's' => lit ? shade : fill,
-                    _ => fill,
-                };
-                texture.SetPixel(x, y, color);
-            }
-            Save(texture, path);
-        }
-
-        private static Color32 Hex(int rgb) =>
-            new((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb, 255);
 
         // Clear on the left, dark on the right.
         private static void WriteGradient(string path)
@@ -898,18 +794,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // --- Helpers -------------------------------------------------------------------
-
-        public static Image Frame(RectTransform rect, string path, Color color)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            // Tiled keeps the dots of the edges instead of stretching them into a flat line.
-            image.type = Image.Type.Tiled;
-            image.pixelsPerUnitMultiplier = 1f / DotScale;
-            image.color = color;
-            image.raycastTarget = true;
-            return image;
-        }
 
         public static Button AddButton(RectTransform rect, Graphic target) =>
             DimWhenDisabled(UiBuild.AddButton(rect, target));

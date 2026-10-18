@@ -6,6 +6,7 @@ using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
@@ -28,8 +29,6 @@ namespace Baryonyx.Combat.Editor
             "Assets/Baryonyx/Features/Combat/UI/CardSkillLabScreen.prefab";
 
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
-        private static readonly Color ButtonColor = new(0.06f, 0.07f, 0.12f, 0.88f);
-        private static readonly Color SkillColor = new(0.12f, 0.13f, 0.2f, 0.95f);
 
         // The row's buttons and the list's close button are as tall as a finger needs
         // (doc/rules/ui-design.md). The list's rows are lower, so all 50 fit without scrolling:
@@ -271,6 +270,11 @@ namespace Baryonyx.Combat.Editor
             );
         }
 
+        // 舞台の上に直に置く、模様のないすりガラスのカードのボタン（案内人の画面のカードと同じ形）。
+        private static (Button Button, GameObject Selected, RectTransform Content) LabCard(
+            RectTransform rect
+        ) => GlassCardAssets.Choice(rect, pattern: false, fill: GlassCardAssets.SceneFillColor);
+
         private static (Button button, TMP_Text label) ControlButton(
             RectTransform parent,
             string name,
@@ -280,10 +284,9 @@ namespace Baryonyx.Combat.Editor
         {
             var rect = Rect(name, parent);
             rect.sizeDelta = new Vector2(width, ControlHeight);
-            var image = Sliced(rect, UiArt.RoundedRectPath, ButtonColor);
-            var button = AddButton(rect, image);
+            var (button, _, card) = LabCard(rect);
             var label = Label(
-                rect,
+                card,
                 "Label",
                 text,
                 34,
@@ -315,11 +318,11 @@ namespace Baryonyx.Combat.Editor
 
             var close = Rect("Close", safe);
             Corner(close, Vector2.one, new Vector2(-60f, -12f), new Vector2(220f, ControlHeight));
-            var closeImage = Sliced(close, UiArt.RoundedRectPath, ButtonColor);
-            lab.CloseButton = AddButton(close, closeImage);
+            var (closeButton, _, closeCard) = LabCard(close);
+            lab.CloseButton = closeButton;
             Stretch(
                 Label(
-                    close,
+                    closeCard,
                     "Label",
                     "とじる",
                     34,
@@ -378,11 +381,11 @@ namespace Baryonyx.Combat.Editor
         {
             var rect = Rect("SkillTemplate", parent);
             rect.sizeDelta = new Vector2(400f, 56f);
-            var image = Sliced(rect, UiArt.RoundedRectPath, SkillColor);
-            var button = AddButton(rect, image);
+            // 選んでいるスキルは、Play中にカードの金の縁と光で示す（GlassCard.Selected）。
+            var (button, _, card) = LabCard(rect);
             // Small enough that the longest name (チェインライトニング) stays clear of the cost.
             var name = Label(
-                rect,
+                card,
                 "Name",
                 "1　斬り払い",
                 28,
@@ -392,7 +395,7 @@ namespace Baryonyx.Combat.Editor
             Stretch(name.rectTransform);
             name.rectTransform.offsetMin = new Vector2(18f, 0f);
             name.rectTransform.offsetMax = new Vector2(-64f, 0f);
-            var cost = Label(rect, "Cost", "1", 28, Gold, TextAlignmentOptions.Right);
+            var cost = Label(card, "Cost", "1", 28, Gold, TextAlignmentOptions.Right);
             cost.rectTransform.anchorMin = new Vector2(1f, 0f);
             cost.rectTransform.anchorMax = Vector2.one;
             cost.rectTransform.offsetMin = new Vector2(-64f, 0f);

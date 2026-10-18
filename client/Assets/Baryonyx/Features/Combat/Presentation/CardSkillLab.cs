@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
@@ -24,9 +25,6 @@ namespace Baryonyx.Combat.Presentation
         public const string WeightKey = "Baryonyx.CardSkillLab.Weight";
         public const string EnemyKey = "Baryonyx.CardSkillLab.Enemy";
         public const string RepeatKey = "Baryonyx.CardSkillLab.Repeat";
-
-        // The skill picked now, marked in the list in a deep amber the white name still reads on.
-        private static readonly Color PickedColor = new(0.5f, 0.34f, 0.08f, 0.98f);
 
         [Header("戦場")]
         public BattleSkillVfx Vfx;
@@ -81,7 +79,6 @@ namespace Baryonyx.Combat.Presentation
         public float Gap = 0.9f;
 
         private readonly List<Button> skillButtons = new();
-        private readonly List<Color> skillColors = new();
         private int index;
         private BattleHitWeight weight;
         private int enemy;
@@ -245,9 +242,6 @@ namespace Baryonyx.Combat.Presentation
                     Play(picked);
                 });
                 skillButtons.Add(button);
-                skillColors.Add(
-                    button.targetGraphic != null ? button.targetGraphic.color : Color.white
-                );
             }
         }
 
@@ -274,9 +268,10 @@ namespace Baryonyx.Combat.Presentation
                 TargetLabel.text = "ねらう敵：" + NameOf(EnemyNames, enemy);
             if (RepeatLabel != null)
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
+            // 選んでいるスキルは、すりガラスのカードの金の縁と光で示す。
             for (int i = 0; i < skillButtons.Count; i++)
-                if (skillButtons[i].targetGraphic != null)
-                    skillButtons[i].targetGraphic.color = i == index ? PickedColor : skillColors[i];
+                if (skillButtons[i].TryGetComponent(out GlassCard card))
+                    card.Selected = i == index;
         }
 
         // 停止中の表示の切り替え：一覧を閉じた画面と、Play中と同じくスキルを並べて開いた一覧。

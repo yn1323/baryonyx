@@ -10,15 +10,15 @@ namespace Baryonyx.UI.Editor
 {
     /// <summary>
     /// Builds the shared <see cref="GameDialog"/> into a screen: the veil over the whole screen,
-    /// and in the safe area a window in the guide screens' silver frame with the title, an
-    /// optional picture, the body and five rows of choices.
+    /// and in the safe area the guide frame's window (<see cref="GuideFrameAssets.WindowFrame"/>)
+    /// with the title, an optional picture, the body and five rows of choices as frosted glass
+    /// cards (<see cref="GlassCardAssets"/>), like the formation's level-up.
     /// </summary>
     public static class GameDialogAssets
     {
         public const int ChoiceCount = 5;
 
         private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.72f);
-        private static readonly Color Fill = new(0.035f, 0.045f, 0.07f, 0.94f);
 
         /// <summary>
         /// Adds the dialog under <paramref name="parent"/>, which should span the whole screen.
@@ -41,13 +41,7 @@ namespace Baryonyx.UI.Editor
             window.pivot = new Vector2(0.5f, 0.5f);
             // 本文の1文（全角で約28字）が折り返さない幅。
             window.sizeDelta = new Vector2(1360, 0);
-            GuideMenuAssets.Frame(window, GuideMenuAssets.FramePath, Color.white);
-            var fill = Rect("Fill", window);
-            Stretch(fill);
-            fill.offsetMin = new Vector2(12, 12);
-            fill.offsetMax = new Vector2(-12, -12);
-            AddImage(fill, Fill, false);
-            fill.SetAsFirstSibling();
+            GuideFrameAssets.WindowFrame(window);
             var fitter = window.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             var layout = window.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -57,14 +51,13 @@ namespace Baryonyx.UI.Editor
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
-            fill.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
 
             dialog.Title = Label(
                 window,
                 "Title",
                 "",
                 56,
-                UiPalette.Gold,
+                UiPalette.GoldLight,
                 TextAlignmentOptions.Center
             );
 
@@ -94,10 +87,11 @@ namespace Baryonyx.UI.Editor
                 var row = Rect("Choice" + i, window);
                 var size = row.gameObject.AddComponent<LayoutElement>();
                 size.preferredHeight = size.minHeight = 112;
-                var frame = GuideMenuAssets.Frame(row, GuideMenuAssets.FramePath, Color.white);
-                buttons.Add(GuideMenuAssets.AddButton(row, frame));
+                // 選択肢は同じ形で縦に並べ、どれも模様のないすりガラスのカードにする。
+                var (button, _, card) = GlassCardAssets.Choice(row, pattern: false);
+                buttons.Add(button);
                 var label = Label(
-                    row,
+                    card,
                     "Label",
                     "",
                     44,

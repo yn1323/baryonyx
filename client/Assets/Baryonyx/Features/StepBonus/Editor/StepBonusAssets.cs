@@ -36,8 +36,8 @@ namespace Baryonyx.StepBonus.Editor
 
         private const float DotScale = 4f;
 
-        // The slot frame keeps its 4-dot edge outside the 24-dot icon, so the icon never
-        // overlaps the frame: 24 + 4 + 4 dots.
+        // The slot's plate keeps a 4-dot margin around the 24-dot icon, so the icon never
+        // overlaps the rim: 24 + 4 + 4 dots.
         private const float SlotSize = 32f * DotScale;
         private const float BonusRowHeight = 112f;
 
@@ -291,12 +291,13 @@ namespace Baryonyx.StepBonus.Editor
             );
             var widget = new StepBonusSlotWidget { Button = button, Selected = selected };
 
-            // 段階の色の枠に、24×24のアイコンを4倍で、枠の縁と重ならないように置く。
+            // 縁を段階の色にした小さなすりガラスの板に、24×24のアイコンを4倍で、縁と重ならないように置く。
             var frame = Rect("Frame", row);
             Corner(frame, new Vector2(0, 0.5f), new Vector2(14, 0), Vector2.one * SlotSize);
-            widget.Frame = Guide.Frame(frame, Guide.FramePath, StepBonusArt.Tiers[index]);
-            widget.Frame.raycastTarget = false;
-            var icon = Rect("Icon", frame);
+            var inside = GlassCardAssets.Plaque(frame, pattern: false);
+            widget.Frame = GlassCardAssets.RimOf(frame);
+            widget.Frame.color = StepBonusArt.Tiers[index];
+            var icon = Rect("Icon", inside);
             Place(icon, Vector2.zero, Vector2.one * Guide.IconSize);
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
@@ -419,10 +420,11 @@ namespace Baryonyx.StepBonus.Editor
             var color = StepBonusArt.Rank(roll.Rank);
             var badge = Rect("Rank", row);
             Corner(badge, new Vector2(0, 0.5f), new Vector2(128, 0), new Vector2(64, 64));
-            widget.RankFrame = Guide.Frame(badge, Guide.FramePath, color);
-            widget.RankFrame.raycastTarget = false;
+            var rank = GlassCardAssets.Plaque(badge, pattern: false);
+            widget.RankFrame = GlassCardAssets.RimOf(badge);
+            widget.RankFrame.color = color;
             widget.Rank = Label(
-                badge,
+                rank,
                 "Letter",
                 roll.Rank.ToString(),
                 38,

@@ -284,34 +284,67 @@ namespace Baryonyx.UI.GuideMenu.Editor
         )
         {
             var window = Layout.Box(layer, name, x, y, width, height);
-            // 後ろの画面の文字が透けないよう、濃い面の色で不透明に塗る（リニア色空間では少しの透けも目立つ）。
-            AddImage(window, new Color(PaneDark.r, PaneDark.g, PaneDark.b, 1f), true);
-            foreach (
-                var (lx, ly, lw, lh) in new[]
-                {
-                    (0f, 0f, width, 2f),
-                    (0f, height - 2f, width, 2f),
-                    (0f, 0f, 2f, height),
-                    (width - 2f, 0f, 2f, height),
-                }
-            )
-                AddImage(Layout.Box(window, "Line", lx, ly, lw, lh), DividerColor, false);
-            float size = DiamondDots.Length * Dot;
-            foreach (var (cx, cy) in new[] { (0f, 0f), (width, 0f), (0f, height), (width, height) })
-                SpriteImage(
-                    Layout.Box(
-                        window,
-                        "Diamond",
-                        cx - size / 2f + (cx > 0 ? -1f : 1f),
-                        cy - size / 2f + (cy > 0 ? -1f : 1f),
-                        size,
-                        size
-                    ),
-                    DiamondPath,
-                    Color.white
-                );
+            WindowFrame(window);
             return window;
         }
+
+        /// <summary>
+        /// Turns <paramref name="window"/> into a window over a screen, whatever its size (a
+        /// fixed one, or one that a layout group sizes to its contents such as the confirmation
+        /// dialog): the dark pane's navy, opaque, and a thin gold line around it with a diamond at
+        /// each corner. The line and diamonds are left out of any layout. It takes taps so the
+        /// screen behind does not.
+        /// </summary>
+        public static void WindowFrame(RectTransform window)
+        {
+            // 後ろの画面の文字が透けないよう、濃い面の色で不透明に塗る（リニア色空間では少しの透けも目立つ）。
+            AddImage(window, new Color(PaneDark.r, PaneDark.g, PaneDark.b, 1f), true);
+            // 上・下・左・右の辺に、2px の線を辺に沿わせて伸ばす。
+            foreach (
+                var (min, max, offsetMin, offsetMax) in new[]
+                {
+                    (new Vector2(0, 1), Vector2.one, new Vector2(0, -2), Vector2.zero),
+                    (Vector2.zero, new Vector2(1, 0), Vector2.zero, new Vector2(0, 2)),
+                    (Vector2.zero, new Vector2(0, 1), Vector2.zero, new Vector2(2, 0)),
+                    (new Vector2(1, 0), Vector2.one, new Vector2(-2, 0), Vector2.zero),
+                }
+            )
+            {
+                var line = Rect("Line", window);
+                line.anchorMin = min;
+                line.anchorMax = max;
+                line.offsetMin = offsetMin;
+                line.offsetMax = offsetMax;
+                AddImage(line, DividerColor, false);
+                Unlaid(line);
+            }
+            // 四隅のひし形は、角から1pxだけ内へ寄せて線の上に置く。
+            float size = DiamondDots.Length * Dot;
+            foreach (
+                var corner in new[]
+                {
+                    new Vector2(0, 1),
+                    Vector2.one,
+                    Vector2.zero,
+                    new Vector2(1, 0),
+                }
+            )
+            {
+                var diamond = Rect("Diamond", window);
+                diamond.anchorMin = diamond.anchorMax = corner;
+                diamond.pivot = new Vector2(0.5f, 0.5f);
+                diamond.sizeDelta = Vector2.one * size;
+                diamond.anchoredPosition = new Vector2(
+                    corner.x > 0 ? -1f : 1f,
+                    corner.y > 0 ? -1f : 1f
+                );
+                SpriteImage(diamond, DiamondPath, Color.white);
+                Unlaid(diamond);
+            }
+        }
+
+        private static void Unlaid(RectTransform rect) =>
+            rect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
 
         /// <summary>
         /// The lock over a skill's icon that is not unlocked yet, in the middle of
