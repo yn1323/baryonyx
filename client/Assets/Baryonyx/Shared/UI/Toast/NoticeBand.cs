@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
 
@@ -9,7 +11,7 @@ namespace Baryonyx.UI
     /// at the top middle of every screen. It shows for a moment, fades and never takes taps.
     /// NoticeBandAssets builds it; see doc/rules/ui-design.md.
     /// </summary>
-    public sealed class NoticeBand : MonoBehaviour
+    public sealed class NoticeBand : MonoBehaviour, IEditModePreview
     {
         public CanvasGroup Group;
         public TMP_Text Label;
@@ -58,5 +60,20 @@ namespace Baryonyx.UI
         }
 
         public void Hide() => (fade ??= new FadingMessage(this)).Hide(Group);
+
+        // 停止中の表示の切り替え：消えずに止まった帯。
+        public const string ShortSample = "ボーナスをセットしました";
+        public const string LongSample = "ルーンが足りないか、冒険の状態が変わりました";
+
+        public IReadOnlyList<string> PreviewStates => new[] { "短い文", "長い文" };
+
+        public void ShowPreviewState(int index)
+        {
+            if (Group == null || Label == null)
+                return;
+            Label.text = index == 0 ? ShortSample : LongSample;
+            Group.alpha = 1f;
+            Fit();
+        }
     }
 }

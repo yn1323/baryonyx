@@ -109,6 +109,23 @@ dpとUnityの基準単位を区別し、実際の描画サイズと検証端末�
 閉じた後は元の選択と閲覧位置へ戻す。
 操作結果を表示するためのスクロールと、単なる画面サイズ変更に伴う位置の保持は区別する。
 
+## 停止中の表示の切り替え
+
+同じシーンの中で、Play中の操作によって表示するUIが切り替わる画面は、停止中のUnity Editorでも切り替えた見た目を確かめられるようにする。
+対象は、項目のパネル、一覧と個別のページ、重ねた画面、ダイアログ、結果や報酬の表示など、押すと出るUIである。
+停止中は Awake・Start・OnEnable が動かないため、切り替えの処理を持たないと、Prefabに作り込んだUIも最初の表示しか見えないからである。
+
+| 項目 | 規則 |
+|---|---|
+| 表示の中身 | 切り替えて見せるUIは、生成時に仮データでPrefabやシーンへ作り込む。停止中に通信・保存・静的な状態から読まない |
+| 画面の部品 | 表示を切り替える部品に [`IEditModePreview`](../../client/Assets/Baryonyx/Shared/UI/EditModePreview/IEditModePreview.cs) を付け、状態の名前の一覧（`PreviewStates`）と、その状態にする処理（`ShowPreviewState`）を書く。処理はPlay中と同じ表示の切り替え（`Render` など）を呼び、自分のGameObjectの下だけを変える |
+| Inspector | 部品の型ごとに、空の [`EditModePreviewEditor`](../../client/Assets/Baryonyx/Shared/UI/EditModePreview/Editor/EditModePreviewEditor.cs) の派生を、機能の `Editor/` に置く。Inspectorの上に「停止中の表示の切り替え」と状態ごとのボタンが出る |
+| 入れ子 | 閉じたパネルの中の画面は、パネルを開く画面の状態の一覧に「パネル名 › 状態」として含め、親のInspectorから切り替える |
+| 保存しない | 切り替えは、元のUIを隠し、保存しない複製（名前の末尾が「(停止中の表示)」）の上で行う（[`EditModePreviewer`](../../client/Assets/Baryonyx/Shared/UI/EditModePreview/Editor/EditModePreviewer.cs)）。シーンやPrefabの保存、シーンを閉じる操作、Play Modeの前に自動で元の表示へ戻し、Undoに記録せず、変更済みにもしない |
+
+新しく画面を作るとき、また既存の画面に切り替わるUIを足すときは、同じ変更で状態の一覧へ加え、停止中に各ボタンで切り替わることと、元の表示へ戻ることを確かめる。
+動きを伴う演出（数が増える、粒子が流れるなど）は、止めた1コマを見せるだけでよく、動きはPlay Modeで確かめる。
+
 ## 操作を求めない通知
 
 「〇〇をセットしました」「設定（準備中）」「獲得ルーンはありません」のように、プレイヤーに操作を求めない通知は、どの画面でも共通の**通知の帯**で出す。

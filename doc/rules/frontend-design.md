@@ -141,6 +141,7 @@ client/
 | `Toast/` | 知らせをしばらく表示して消す `FadingMessage` |
 | `TranslucentTextPanel/` | 半透明の文字パネル。`Editor/` にPrefabの生成 |
 | `Cards/` | スキルの書き方 `CardText`（種類の行と、説明の数字を何をするかで色分けしたリッチテキスト）。戦闘のカードと編成のスキルが使う |
+| `EditModePreview/` | 停止中のEditorで、Play中に切り替わるUIを見るための仕組み。画面の部品に付ける `IEditModePreview` と、`Editor/` に切り替え・自動の戻し・Inspectorの基底クラス（[停止中の表示の切り替え](ui-design.md#停止中の表示の切り替え)） |
 | `GuideMenu/` | 案内人がいる画面の共通部品。項目のパネルは `IGuideBackHandler` を付けると、戻る操作を先に受け取れる。編成の各パネルが開くたびの読み込みは `GuidePanelLoad` が受け持つ |
 | `Dialog/` | 暗幕で背面を止め、題名・絵・本文・最大5つの選択肢を出す確認のダイアログ `GameDialog`。`Editor/` に画面への組み込み。冒険の確認・メニュー・報酬・復活・結果が使う |
 | `Tests/` | 上記の部品のEditMode・PlayModeテスト（`GuideMenu/` は自分の `Tests/` を持つ） |
