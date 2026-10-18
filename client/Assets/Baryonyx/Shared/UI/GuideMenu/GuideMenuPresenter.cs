@@ -64,6 +64,7 @@ namespace Baryonyx.UI.GuideMenu
             view.EntryPressed += SelectEntry;
             view.ConfirmPressed += Confirm;
             view.BackPressed += Back;
+            view.HomePressed += Home;
             view.Render(state);
         }
 
@@ -135,6 +136,22 @@ namespace Baryonyx.UI.GuideMenu
                 view.ShowToast("戻れませんでした");
         }
 
+        // 右上の×。開いているリストやパネルを飛ばして、いちどでホームへ戻る。
+        // 戻り先がなければ（展示室のプレビュー）、メニューへ戻す。
+        public void Home()
+        {
+            if (disposed || left)
+                return;
+            if (leave == null)
+            {
+                Show(new GuideMenuState(GuideMenuPage.Menu, -1, -1));
+                return;
+            }
+            left = leave();
+            if (!left)
+                view.ShowToast("戻れませんでした");
+        }
+
         public string ConfirmLabel() =>
             definition.Layout == GuideMenuLayout.Destinations ? definition.DepartLabel
             : state.Page == GuideMenuPage.List ? definition.Items[state.Item].ConfirmLabel
@@ -157,6 +174,7 @@ namespace Baryonyx.UI.GuideMenu
             view.EntryPressed -= SelectEntry;
             view.ConfirmPressed -= Confirm;
             view.BackPressed -= Back;
+            view.HomePressed -= Home;
         }
     }
 
@@ -166,6 +184,7 @@ namespace Baryonyx.UI.GuideMenu
         event Action<int> EntryPressed;
         event Action ConfirmPressed;
         event Action BackPressed;
+        event Action HomePressed;
 
         void Render(GuideMenuState state);
         void ShowToast(string message);

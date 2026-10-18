@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
+using Baryonyx.Economy;
 using Baryonyx.Equipment;
 using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
 using Baryonyx.UI.Cards;
+using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
@@ -74,8 +76,9 @@ namespace Baryonyx.Training
         public TMP_Text Stars;
         public TMP_Text Detail;
 
-        // まだ付けられない枠（アクセサリー）に出す錠前と「準備中」。
+        // まだ開いていない枠（アクセサリー）に出す錠前と、解放するLv（「Lv 15で解放」）。
         public GameObject Lock;
+        public TMP_Text When;
     }
 
     /// <summary>One stat's row in the level-up dialog: before, after and the gain.</summary>
@@ -101,7 +104,12 @@ namespace Baryonyx.Training
     /// <see cref="EquipmentSession.SourceOrLocal"/>. Back (the button and the device key)
     /// closes the dialog before going back.
     /// </summary>
-    public sealed class TrainingView : MonoBehaviour, ITrainingView, IGuideBackHandler
+    public sealed class TrainingView
+        : MonoBehaviour,
+            ITrainingView,
+            IGuideBackHandler,
+            IGuideBreadcrumb,
+            IEditModePreview
     {
         public const string LoadingText = GuidePanelLoad.LoadingText;
         public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
@@ -171,6 +179,9 @@ namespace Baryonyx.Training
 
         private TrainingPresenter presenter;
         private readonly GuidePanelLoad load = new();
+
+        // パンくずに出す、表示している人の名前。
+        private string person;
         private readonly ButtonBindings bindings = new();
 
         public event Action PrevPressed;
@@ -192,6 +203,7 @@ namespace Baryonyx.Training
 
         private void OnEnable()
         {
+            person = null;
             if (Swipe != null)
                 Swipe.Flicked += Flick;
             bindings.Bind(LevelUp, () => LevelUpPressed?.Invoke());
@@ -261,9 +273,11 @@ namespace Baryonyx.Training
         private void LoadFailed(Exception exception)
         {
             Debug.LogWarning("育成のキャラを取得できませんでした。" + exception.Message, this);
-            Set(Name, LoadFailedText);
+            ShowLoadFailed();
             ShowNotice(LoadFailedMessage);
         }
+
+        private void ShowLoadFailed() => Set(Name, LoadFailedText);
 
         // サーバーでレベルを上げる。断られたときは手元の表示がずれているので、読み直してから失敗を伝える。
         private async Task LevelUpAsync(
@@ -376,20 +390,48 @@ namespace Baryonyx.Training
                 })
                 .ToArray();
 
-        // 個別の画面で戻ると、冒険者の一覧へ戻る（同じ人を選んだまま）。重ねた画面は先に閉じる。
+        // 個別の画面で戻ると、開いた項目（冒険者の一覧か装備の人選び）へ戻る（同じ人を選んだまま）。重ねた画面は先に閉じる。
         public bool HandleBack()
         {
             if (presenter != null && presenter.Back())
                 return true;
             return Guide != null
-                && Guide.HasItem(PartySession.GuideItemKey)
-                && Guide.OpenItem(PartySession.GuideItemKey);
+                && Guide.HasItem(TrainingSession.ReturnKeyOrRoster)
+                && Guide.OpenItem(TrainingSession.ReturnKeyOrRoster);
         }
 
         public void Render(TrainingState state)
         {
             RenderDetail(state);
             RenderDialog(state);
+            // 右上の所持ルーンも、この画面で読んだ・使ったあとの残高にそろえる。
+            if (state.Member != null)
+                RuneBalance.Set(state.Runes);
+            person = state.Name;
+            if (Guide != null)
+                Guide.RefreshTrail();
+        }
+
+        // パンくずの「冒険者 › アリア」（装備から開いたら「装備 › アリア」）。読み込むまでは人の名前を出さない。
+        public IReadOnlyList<string> Trail =>
+            new[] { Guide != null ? Guide.LabelOf(TrainingSession.ReturnKeyOrRoster) : "", person };
+
+        // 停止中の表示の切り替え：レベルアップのダイアログ（生成時に1人目の値で作り込んである）と、
+        // サーバーから読み込む間・読めなかったときの表示。
+        public IReadOnlyList<string> PreviewStates =>
+            new[] { "レベルアップ" }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+
+        public void ShowPreviewState(int index)
+        {
+            if (index == 0)
+            {
+                if (Dialog != null)
+                    Dialog.SetActive(true);
+                return;
+            }
+            ShowLoading();
+            if (index == 2)
+                ShowLoadFailed();
         }
 
         private void RenderDetail(TrainingState state)
@@ -610,8 +652,10 @@ namespace Baryonyx.Training
             Set(widget.Detail, gear != null && gear.Filled ? gear.Detail : "");
             if (widget.Lock != null)
                 widget.Lock.SetActive(locked);
+            Set(widget.When, gear?.UnlockText ?? "");
+            // 開いていないアクセサリーの枠も押せ、付け替えの画面のアクセサリーのタブを開く。
             if (widget.Button != null)
-                widget.Button.interactable = gear != null && !locked;
+                widget.Button.interactable = gear != null;
         }
 
         public void ShowNotice(string message)
@@ -630,7 +674,12 @@ namespace Baryonyx.Training
             if (Guide == null || !Guide.HasItem(EquipmentSession.GuideItemKey))
                 return;
             EquipmentSession.Selected = id;
-            EquipmentSession.OpenSlot = (EquipmentSlot)slot;
+            // 0 武器、1 防具、2〜4 アクセサリー。
+            bool accessory = slot >= TrainingPresenter.OpenGearSlots;
+            EquipmentSession.OpenSlot = accessory ? EquipmentSlot.Weapon : (EquipmentSlot)slot;
+            EquipmentSession.OpenAccessory = accessory
+                ? slot - TrainingPresenter.OpenGearSlots
+                : -1;
             Guide.OpenItem(EquipmentSession.GuideItemKey);
         }
 

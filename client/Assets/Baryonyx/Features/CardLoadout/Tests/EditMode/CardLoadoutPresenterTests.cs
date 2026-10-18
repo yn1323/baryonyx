@@ -17,6 +17,7 @@ namespace Baryonyx.Tests.EditMode
             public event Action PrevPressed;
             public event Action NextPressed;
             public event Action<int> SlotPressed;
+            public event Action<int> TabPressed;
             public event Action<string> CardPressed;
 
             public CardLoadoutState Last;
@@ -38,6 +39,8 @@ namespace Baryonyx.Tests.EditMode
             }
 
             public void Slot(int index) => SlotPressed?.Invoke(index);
+
+            public void Tab(int index) => TabPressed?.Invoke(index);
 
             public void Card(string id) => CardPressed?.Invoke(id);
         }
@@ -145,10 +148,34 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Choices.Select(card => card.Id), Does.Contain("Heal"));
             Assert.That(state.Choices.Select(card => card.Id), Does.Not.Contain("Slash"));
             Assert.That(state.Choices.Select(card => card.Cost), Is.Ordered);
-            Assert.That(state.CountText, Is.EqualTo($"{state.Choices.Count}枚"));
+            Assert.That(state.Tab, Is.EqualTo(CardLoadoutPresenter.SkillTab));
             // 付けているカードには、何枚目に入っているかを出す。
             Assert.That(state.Choices.Single(card => card.Id == "Ice").Slot, Is.EqualTo(1));
             Assert.That(state.Choices.Single(card => card.Id == "Embers").Slot, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void TheItemTabListsNothingAndKeepsTheSlotAndTabAcrossPeople()
+        {
+            view.Person("toma");
+            view.Slot(1);
+            view.Tab(CardLoadoutPresenter.ItemTab);
+            var state = view.Last;
+            // アイテムはまだ持てないので、アイテムのタブには何も並べず、左の枠の選択は変えない。
+            Assert.That(state.Tab, Is.EqualTo(CardLoadoutPresenter.ItemTab));
+            Assert.That(state.Choices, Is.Empty);
+            Assert.That(state.Slot, Is.EqualTo(1));
+            // アイテムのタブでは、スキルを押しても入れない。
+            var before = store.Cards["toma"].ToArray();
+            view.Card("Embers");
+            Assert.That(store.Cards["toma"], Is.EqualTo(before));
+
+            // 人を替えても、枠とタブはそのまま。スキルのタブに戻すと一覧を並べる。
+            view.Next();
+            Assert.That(view.Last.Tab, Is.EqualTo(CardLoadoutPresenter.ItemTab));
+            Assert.That(view.Last.Slot, Is.EqualTo(1));
+            view.Tab(CardLoadoutPresenter.SkillTab);
+            Assert.That(view.Last.Choices, Is.Not.Empty);
         }
 
         [Test]
@@ -159,10 +186,7 @@ namespace Baryonyx.Tests.EditMode
             view.Card("Embers");
 
             Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Embers" }));
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { "トーマの「アイスランス」を「火の粉」に替えました" })
-            );
+            Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
             Assert.That(view.Last.Slot, Is.EqualTo(1));
         }
@@ -174,10 +198,7 @@ namespace Baryonyx.Tests.EditMode
             view.Card("Ice");
 
             Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Ice", "Fire" }));
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { "トーマの「アイスランス」と「ファイア」を入れ替えました" })
-            );
+            Assert.That(view.Notices, Is.Empty);
         }
 
         [Test]
@@ -200,10 +221,7 @@ namespace Baryonyx.Tests.EditMode
             view.Card("PoisonNeedle");
 
             Assert.That(store.Cards["luka"][1], Is.EqualTo("PoisonNeedle"));
-            Assert.That(
-                view.Notices.Single(),
-                Is.EqualTo("ルカの「サンダー」を「毒針」に替えました")
-            );
+            Assert.That(view.Notices, Is.Empty);
         }
 
         [Test]
@@ -264,10 +282,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
             Assert.That(presenter.Saving, Is.False);
             Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { "トーマの「アイスランス」を「火の粉」に替えました" })
-            );
+            Assert.That(view.Notices, Is.Empty);
         }
 
         [Test]

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
@@ -26,6 +27,20 @@ namespace Baryonyx.Equipment
         public TMP_Text Detail;
     }
 
+    /// <summary>One of the three accessory slots on the left, baked by the generator.</summary>
+    [Serializable]
+    public sealed class EquipmentAccessoryWidget
+    {
+        public Button Button;
+        public GameObject Selected;
+
+        // まだ開いていない枠の錠前。開いた枠では隠す。
+        public GameObject Lock;
+
+        // 「Lv 15で解放」、開いた枠では「なし」。
+        public TMP_Text Name;
+    }
+
     /// <summary>
     /// The formation's equipment change screen over the guide screen: the person (◀ ▶, figure,
     /// name and level), their weapon, armour and the accessory slots that are not ready yet,
@@ -36,7 +51,12 @@ namespace Baryonyx.Equipment
     /// and saves every change through <see cref="EquipmentSession.SourceOrLocal"/>. Back
     /// returns to the adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class EquipmentView : MonoBehaviour, IEquipmentView, IGuideBackHandler
+    public sealed class EquipmentView
+        : MonoBehaviour,
+            IEquipmentView,
+            IGuideBackHandler,
+            IGuideBreadcrumb,
+            IEditModePreview
     {
         public const string LoadingText = GuidePanelLoad.LoadingText;
         public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
@@ -50,20 +70,26 @@ namespace Baryonyx.Equipment
         // 通知は案内人の画面の通知の帯に出す。
         public GuideMenuView Guide;
 
-        // 左上の人（◀▶・立ち姿・名前・Lv）。
+        // 左上の人（立ち姿・名前・Lv）。
         public PartyPersonHeader Person = new();
+
+        // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
+        public TrainingSwipe Swipe;
 
         // 武器・防具の順の2つの枠。
         public EquipmentSlotWidget[] Slots = Array.Empty<EquipmentSlotWidget>();
 
-        // まだ付けられないアクセサリーの3つの枠（押せない）。
-        public GameObject[] Accessories = Array.Empty<GameObject>();
+        // アクセサリーの3つの枠。押すとアクセサリーのタブに移る（アクセサリーはまだ持てない）。
+        public EquipmentAccessoryWidget[] Accessories = Array.Empty<EquipmentAccessoryWidget>();
 
         // 選んでいる人のステータス（CharacterStats の順）。
         public TMP_Text[] Stats = Array.Empty<TMP_Text>();
 
-        public TMP_Text Title;
-        public TMP_Text Count;
+        // 右の上の武器・防具・アクセサリーのタブ（枠と同じ順）。左の枠と連動し、アクセサリーは準備中で押せない。
+        public GuideTab[] Tabs = Array.Empty<GuideTab>();
+
+        // 読み込み中と、読めなかったときだけ一覧の面に出す文字。
+        public TMP_Text Status;
         public EquipmentRow[] Rows = Array.Empty<EquipmentRow>();
 
         // リストの最後の「外す」。選んでいる枠が空いている間は押せない。
@@ -92,12 +118,25 @@ namespace Baryonyx.Equipment
 
         private void OnEnable()
         {
-            bindings.Bind(Person.Prev, () => PrevPressed?.Invoke());
-            bindings.Bind(Person.Next, () => NextPressed?.Invoke());
+            person = null;
+            if (Swipe != null)
+                Swipe.Flicked += Flick;
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
                 bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+            }
+            for (int i = 0; i < Accessories.Length; i++)
+            {
+                int index = Slots.Length + i;
+                bindings.Bind(Accessories[i].Button, () => SlotPressed?.Invoke(index));
+            }
+            // タブは左の枠と連動する。アクセサリーのタブは、選んでいたアクセサリーの枠（なければ1つ目）を選ぶ。
+            for (int i = 0; i < Tabs.Length; i++)
+            {
+                int index = i;
+                if (Tabs[i] != null)
+                    bindings.Bind(Tabs[i].Button, () => SlotPressed?.Invoke(TabTarget(index)));
             }
             foreach (var row in Rows)
                 BindRow(row);
@@ -139,21 +178,65 @@ namespace Baryonyx.Equipment
                 equipment,
                 EquipmentSession.Selected,
                 id => EquipmentSession.Selected = id,
-                EquipmentSession.OpenSlot
+                EquipmentSession.OpenSlot,
+                EquipmentSession.OpenAccessory
             );
         }
 
         private void LoadFailed(Exception exception)
         {
             Debug.LogWarning("装備を取得できませんでした。" + exception.Message, this);
-            Set(Count, LoadFailedText);
+            ShowLoadFailed();
             ShowNotice(LoadFailedMessage);
         }
+
+        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+
+        // 停止中の表示の切り替え（doc/rules/ui-design.md#停止中の表示の切り替え）。最初の表示は武器のタブ。
+        public IReadOnlyList<string> PreviewStates =>
+            new[] { "防具", "アクセサリー" }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+
+        public void ShowPreviewState(int index)
+        {
+            if (index >= 2)
+            {
+                ShowLoading();
+                if (index == 3)
+                    ShowLoadFailed();
+                return;
+            }
+            // 仮データの人と仮の装備で、Play中と同じ表示の切り替えを1度だけ通す。静的な状態は読まない。
+            previewing = true;
+            try
+            {
+                var (people, _) = PartyFormation.From(Party).TabOrder();
+                new EquipmentPresenter(
+                    this,
+                    people,
+                    EquipmentLocalSource.Starter(),
+                    new EquipmentLocalSource(),
+                    slot: index == 0 ? EquipmentSlot.Armor : EquipmentSlot.Weapon,
+                    accessory: index == 1 ? 0 : -1
+                ).Dispose();
+            }
+            finally
+            {
+                previewing = false;
+            }
+        }
+
+        // 停止中の表示を作っている間。Lvとスキルは仮データから読み、自分の外（パンくず）は変えない。
+        private bool previewing;
+
+        private int LevelOf(string id) =>
+            !previewing ? PartySession.LevelOf(Party, id)
+            : Party != null ? Party.Find(id)?.Level ?? 1
+            : 1;
 
         // 読み込むまで、仮データの装備を本当の装備として見せない。
         private void ShowLoading()
         {
-            Set(Count, LoadingText);
+            Set(Status, LoadingText);
             Person.ShowLoading(LoadingText);
             foreach (var widget in Slots)
                 ShowSlot(widget, null, null, false);
@@ -164,15 +247,41 @@ namespace Baryonyx.Equipment
                 Remove.gameObject.SetActive(false);
         }
 
+        // 左へのフリックで次の人、右へのフリックで前の人。
+        private void Flick(int step)
+        {
+            if (step > 0)
+                NextPressed?.Invoke();
+            else if (step < 0)
+                PrevPressed?.Invoke();
+        }
+
         private void OnDisable()
         {
             load.Cancel();
             bindings.Clear();
+            if (Swipe != null)
+                Swipe.Flicked -= Flick;
             presenter?.Dispose();
             presenter = null;
         }
 
         // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
+        // パンくずの「冒険者 › アリア › 装備」（個別の画面を装備から開いたら「装備 › アリア › 装備」）。
+        // 読み込むまでは人の名前を出さない。
+        public IReadOnlyList<string> Trail =>
+            Guide != null
+                ? new[]
+                {
+                    Guide.LabelOf(TrainingSession.ReturnKeyOrRoster),
+                    person,
+                    Guide.LabelOf(EquipmentSession.GuideItemKey),
+                }
+                : Array.Empty<string>();
+
+        // パンくずに出す、表示している人の名前。
+        private string person;
+
         public bool HandleBack() =>
             Guide != null
             && Guide.HasItem(TrainingSession.GuideItemKey)
@@ -181,19 +290,33 @@ namespace Baryonyx.Equipment
         public void Render(EquipmentViewState state)
         {
             var member = Party != null ? Party.Find(state.PersonId) : null;
-            int level = PartySession.LevelOf(Party, state.PersonId);
-            Person.Show(member, level, Elements(state.PersonId), state.CanSwitch);
+            person = member?.Name;
+            if (Guide != null && !previewing)
+                Guide.RefreshTrail();
+            int level = LevelOf(state.PersonId);
+            Person.Show(member, level, Elements(state.PersonId));
+            bool accessory = state.Accessory >= 0;
             for (int i = 0; i < Slots.Length; i++)
                 ShowSlot(
                     Slots[i],
                     i < state.Slots.Count ? state.Slots[i] : null,
                     IconOf((EquipmentSlot)i),
-                    i == (int)state.Slot
+                    !accessory && i == (int)state.Slot
                 );
+            for (int i = 0; i < Accessories.Length; i++)
+                ShowAccessory(Accessories[i], i, member != null ? level : 0, i == state.Accessory);
             var growth = Training != null ? Training.Find(state.PersonId) : null;
             TrainingView.ShowStats(Stats, growth?.StatsAt(level));
-            Set(Title, state.Title);
-            Set(Count, state.CountText);
+            // 一覧の面の文字は、アクセサリーの枠を選んでいるときだけ出す（開いていなければ解放するLv）。
+            Set(
+                Status,
+                !accessory ? ""
+                    : AccessorySlots.IsOpen(state.Accessory, level) ? NoAccessoryText
+                    : AccessorySlots.UnlockText(state.Accessory)
+            );
+            for (int i = 0; i < Tabs.Length; i++)
+                if (Tabs[i] != null)
+                    Tabs[i].Chosen = i == (accessory ? AccessoryTab : (int)state.Slot);
             ShowRows(state);
         }
 
@@ -204,6 +327,35 @@ namespace Baryonyx.Equipment
                 Guide.ShowToast(message);
         }
 
+        // アクセサリーの枠を選んでいて、開いているが持っていないときの一覧の面の文字。
+        public const string NoAccessoryText = "持っているアクセサリーはありません";
+        private const int AccessoryTab = 2;
+
+        // タブを押したときに選ぶ左の枠（0 武器、1 防具、2〜4 アクセサリー）。
+        private int TabTarget(int tab)
+        {
+            if (tab < AccessoryTab)
+                return tab;
+            int current = presenter?.State?.Accessory ?? -1;
+            return Slots.Length + Math.Max(0, current);
+        }
+
+        /// <summary>One accessory slot: locked with the level it opens at, or empty once open.</summary>
+        public static void ShowAccessory(
+            EquipmentAccessoryWidget widget,
+            int index,
+            int level,
+            bool selected
+        )
+        {
+            bool open = AccessorySlots.IsOpen(index, level);
+            if (widget.Selected != null)
+                widget.Selected.SetActive(selected);
+            if (widget.Lock != null)
+                widget.Lock.SetActive(!open);
+            Set(widget.Name, open ? "なし" : AccessorySlots.UnlockText(index));
+        }
+
         public Sprite IconOf(EquipmentSlot slot) =>
             slot == EquipmentSlot.Weapon ? WeaponIcon : ArmorIcon;
 
@@ -211,8 +363,14 @@ namespace Baryonyx.Equipment
         private IReadOnlyList<Sprite> Elements(string id) =>
             Party == null
                 ? Array.Empty<Sprite>()
-                : PartySession
-                    .CardsOf(Party, id)
+                : (
+                    previewing
+                        ? (IReadOnlyList<string>)(
+                            Party.Find(id)?.Cards.Select(card => card.Skill).ToArray()
+                            ?? Array.Empty<string>()
+                        )
+                        : PartySession.CardsOf(Party, id)
+                )
                     .Select(Party.IconOf)
                     .Where(icon => icon != null)
                     .Distinct()
@@ -234,7 +392,8 @@ namespace Baryonyx.Equipment
             }
             if (Remove != null)
             {
-                Remove.gameObject.SetActive(true);
+                // アクセサリーはまだ持てないので、外す行も出さない。
+                Remove.gameObject.SetActive(state.Accessory < 0);
                 Remove.transform.SetAsLastSibling();
                 Remove.interactable = state.CanRemove;
                 if (RemoveLabel != null)

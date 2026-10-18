@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Economy;
 using UnityEngine;
 
 namespace Baryonyx.Home
@@ -146,6 +147,7 @@ namespace Baryonyx.Home
             {
                 snapshot.Runes = reading.Runes.Value;
                 snapshot.RunesKnown = true;
+                RuneBalance.Set(reading.Runes.Value);
             }
             view.Render(HomeViewState.From(snapshot));
             // 付与前の残高から、サーバーと同じ付与後の残高まで数を増やして見せる。

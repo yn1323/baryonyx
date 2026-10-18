@@ -129,7 +129,7 @@ ScriptedImporter:
   animatedSpriteImportData:
   - name: IconBack
     originalName: 
-    pivot: {x: -0.047619052, y: -0.095238104}
+    pivot: {x: -0.16666667, y: -0.25}
     alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
@@ -137,8 +137,8 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 21
-      height: 21
+      width: 18
+      height: 16
     spriteID: 1554606c42e7fcd4c86e016adb3c04db
     spriteBone: []
     spriteOutline: []
@@ -147,7 +147,7 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 3, y: 2}
+    uvTransform: {x: 1, y: 0}
   spriteSheetImportData: []
   tileSetImportData: []
   asepriteLayers:

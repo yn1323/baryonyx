@@ -17,6 +17,7 @@ namespace Baryonyx.Tests.EditMode
             public event Action<int> EntryPressed;
             public event Action ConfirmPressed;
             public event Action BackPressed;
+            public event Action HomePressed;
 
             public GuideMenuState Last => Renders[^1];
 
@@ -31,6 +32,8 @@ namespace Baryonyx.Tests.EditMode
             public void PressConfirm() => ConfirmPressed?.Invoke();
 
             public void PressBack() => BackPressed?.Invoke();
+
+            public void PressHome() => HomePressed?.Invoke();
         }
 
         private GuideMenuDefinition definition;
@@ -122,6 +125,52 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.Menu));
         }
 
+        // 右上の×は、リストを開いていても、いちどでホームへ戻る。
+        [Test]
+        public void HomeLeavesFromAnOpenListOnlyOnce()
+        {
+            var view = new FakeView();
+            int leaves = 0;
+            using var presenter = new GuideMenuPresenter(view, definition, () => ++leaves > 0);
+
+            view.PressItem(0);
+            view.PressEntry(1);
+            view.PressHome();
+            view.PressHome();
+            view.PressBack();
+            Assert.That(leaves, Is.EqualTo(1));
+            Assert.That(presenter.Left, Is.True);
+            Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.List));
+        }
+
+        // 戻り先がない展示室のプレビューでは、×でメニューへ戻す。
+        [Test]
+        public void HomeWithoutALeaveShowsTheMenu()
+        {
+            var view = new FakeView();
+            using var presenter = new GuideMenuPresenter(view, definition, null);
+
+            view.PressItem(0);
+            view.PressHome();
+            Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.Menu));
+            Assert.That(presenter.Left, Is.False);
+        }
+
+        [Test]
+        public void FailedHomeCanBeRetried()
+        {
+            var view = new FakeView();
+            int tries = 0;
+            using var presenter = new GuideMenuPresenter(view, definition, () => ++tries > 1);
+
+            view.PressItem(0);
+            view.PressHome();
+            Assert.That(presenter.Left, Is.False);
+            Assert.That(view.Toasts, Is.EqualTo(new[] { "戻れませんでした" }));
+            view.PressHome();
+            Assert.That(presenter.Left, Is.True);
+        }
+
         [Test]
         public void FailedLeaveCanBeRetried()
         {
@@ -207,6 +256,7 @@ namespace Baryonyx.Tests.EditMode
             int renders = view.Renders.Count;
             view.PressItem(0);
             view.PressBack();
+            view.PressHome();
             Assert.That(view.Renders.Count, Is.EqualTo(renders));
         }
     }

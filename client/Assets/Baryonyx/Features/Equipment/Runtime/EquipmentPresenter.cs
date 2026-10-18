@@ -29,19 +29,19 @@ namespace Baryonyx.Equipment
     /// <summary>Everything the equipment shows, recomputed after every input.</summary>
     public sealed class EquipmentViewState
     {
-        // 選んでいる人とその人。◀▶はパーティの枠の順、続けてパーティにいない仲間を持っている順に替える。
+        // 選んでいる人とその人。フリックではパーティの枠の順、続けてパーティにいない仲間を持っている順に替える。
         public string PersonId { get; internal set; }
         public string Name { get; internal set; }
         public bool CanSwitch { get; internal set; }
 
-        // 選んでいる枠と、武器・防具の2つの枠の装備。
+        // 選んでいる枠と、武器・防具の2つの枠の装備。アクセサリーの枠を選んでいるときは Accessory が0〜2。
         public EquipmentSlot Slot { get; internal set; }
+        public int Accessory { get; internal set; } = -1;
         public IReadOnlyList<EquipmentItemState> Slots { get; internal set; }
 
-        // 右の見出し（「武器」「防具」）と、選んでいる枠に付けられる持っている装備。
+        // 選んでいる枠の名前（右のタブ「武器」「防具」）と、その枠に付けられる持っている装備。
         public string Title { get; internal set; }
         public IReadOnlyList<EquipmentItemState> Choices { get; internal set; }
-        public string CountText { get; internal set; }
 
         // 選んでいる枠に装備があり、外せる。
         public bool CanRemove { get; internal set; }
@@ -73,6 +73,7 @@ namespace Baryonyx.Equipment
     {
         public const string SaveFailedMessage = "装備を保存できませんでした";
         public const string RemoveLabel = "外す";
+        public const string AccessoryTitle = "アクセサリー";
 
         private readonly IEquipmentView view;
         private readonly IReadOnlyList<PartyMember> people;
@@ -82,6 +83,9 @@ namespace Baryonyx.Equipment
         private EquipmentState state;
         private int person;
         private EquipmentSlot slot = EquipmentSlot.Weapon;
+
+        // 選んでいるアクセサリーの枠（0〜2）。武器・防具の枠を選んでいるときは-1。
+        private int accessory = -1;
         private bool saving;
         private bool disposed;
 
@@ -92,7 +96,8 @@ namespace Baryonyx.Equipment
             IEquipmentSource source,
             string selected = null,
             Action<string> remember = null,
-            EquipmentSlot slot = EquipmentSlot.Weapon
+            EquipmentSlot slot = EquipmentSlot.Weapon,
+            int accessory = -1
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -102,6 +107,7 @@ namespace Baryonyx.Equipment
             this.remember = remember;
             person = Math.Max(0, IndexOf(selected));
             this.slot = Enum.IsDefined(typeof(EquipmentSlot), slot) ? slot : EquipmentSlot.Weapon;
+            this.accessory = accessory >= 0 && accessory < AccessorySlots.Count ? accessory : -1;
             view.PrevPressed += Previous;
             view.NextPressed += Next;
             view.SlotPressed += SelectSlot;
@@ -134,15 +140,30 @@ namespace Baryonyx.Equipment
             Refresh();
         }
 
+        /// <summary>
+        /// Chooses a slot by its place on the left: 0 the weapon, 1 the armour, 2 to 4 the
+        /// accessories. Accessories have no items yet, so their list stays empty.
+        /// </summary>
         public void SelectSlot(int index)
         {
+            if (disposed)
+                return;
+            int chosen = index - 2;
+            if (chosen >= 0 && chosen < AccessorySlots.Count)
+            {
+                if (chosen == accessory)
+                    return;
+                accessory = chosen;
+                Refresh();
+                return;
+            }
             if (
-                disposed
-                || !Enum.IsDefined(typeof(EquipmentSlot), index)
-                || (EquipmentSlot)index == slot
+                !Enum.IsDefined(typeof(EquipmentSlot), index)
+                || ((EquipmentSlot)index == slot && accessory < 0)
             )
                 return;
             slot = (EquipmentSlot)index;
+            accessory = -1;
             Refresh();
         }
 
@@ -160,6 +181,7 @@ namespace Baryonyx.Equipment
             if (
                 disposed
                 || saving
+                || accessory >= 0
                 || member == null
                 || definition == null
                 || definition.Slot != slot
@@ -168,42 +190,23 @@ namespace Baryonyx.Equipment
             string before = state.ItemIn(member.Id, slot);
             if (before == itemId)
                 return;
-            string beforeName = NameOfItem(before);
-            await Save(
-                token => source.EquipAsync(member.Id, slot, itemId, token),
-                saved =>
-                    saved.Change switch
-                    {
-                        "move" =>
-                            $"{NameOf(saved.From)}の「{definition.Name}」を{member.Name}に付け替えました",
-                        "replace" =>
-                            $"{member.Name}の「{beforeName}」を「{definition.Name}」に替えました",
-                        "equip" => $"{member.Name}に「{definition.Name}」を装備しました",
-                        _ => null,
-                    }
-            );
+            await Save(token => source.EquipAsync(member.Id, slot, itemId, token));
         }
 
         private async Task RemoveAsync()
         {
             var member = Current;
-            if (disposed || saving || member == null)
+            if (disposed || saving || accessory >= 0 || member == null)
                 return;
             string before = state.ItemIn(member.Id, slot);
             if (before == null)
                 return;
-            string name = NameOfItem(before);
-            await Save(
-                token => source.UnequipAsync(member.Id, slot, token),
-                saved => saved.Change == "remove" ? $"{member.Name}の「{name}」を外しました" : null
-            );
+            await Save(token => source.UnequipAsync(member.Id, slot, token));
         }
 
-        // 保存してから表示を変える。保存できなければ表示は変えずに知らせる。
-        private async Task Save(
-            Func<CancellationToken, Task<EquipmentState>> operation,
-            Func<EquipmentState, string> message
-        )
+        // 保存してから表示を変える。変わったことは枠と一覧を見ればわかるので知らせず、
+        // 保存できなければ表示は変えずに知らせる。
+        private async Task Save(Func<CancellationToken, Task<EquipmentState>> operation)
         {
             saving = true;
             try
@@ -212,9 +215,6 @@ namespace Baryonyx.Equipment
                 if (disposed)
                     return;
                 state = saved ?? state;
-                string notice = saved != null ? message(saved) : null;
-                if (!string.IsNullOrEmpty(notice))
-                    view.ShowNotice(notice);
             }
             catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
             {
@@ -242,34 +242,37 @@ namespace Baryonyx.Equipment
                 State = new EquipmentViewState
                 {
                     Slot = slot,
+                    Accessory = accessory,
                     Slots = Array.Empty<EquipmentItemState>(),
-                    Title = EquipmentCatalog.NameOf(slot),
+                    Title = TitleOf(),
                     Choices = Array.Empty<EquipmentItemState>(),
-                    CountText = "",
                 };
                 view.Render(State);
                 return;
             }
-            var choices = Choices(member.Id);
-            string current = state.ItemIn(member.Id, slot);
+            // アクセサリーはまだ持てないので、一覧は空にして外せなくする。
+            var choices = accessory >= 0 ? Array.Empty<EquipmentItemState>() : Choices(member.Id);
+            string current = accessory >= 0 ? null : state.ItemIn(member.Id, slot);
             State = new EquipmentViewState
             {
                 PersonId = member.Id,
                 Name = member.Name,
                 CanSwitch = people.Count > 1,
                 Slot = slot,
+                Accessory = accessory,
                 Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                     .Select(entry =>
                         ItemState(member.Id, state.Find(state.ItemIn(member.Id, entry)))
                     )
                     .ToArray(),
-                Title = EquipmentCatalog.NameOf(slot),
+                Title = TitleOf(),
                 Choices = choices,
-                CountText = $"所持 {choices.Count}",
                 CanRemove = current != null,
             };
             view.Render(State);
         }
+
+        private string TitleOf() => accessory >= 0 ? AccessoryTitle : EquipmentCatalog.NameOf(slot);
 
         // 選んでいる枠に付けられる持っている装備。レア度の高い順、同じなら仮データの順、続けて入手の順。
         private IReadOnlyList<EquipmentItemState> Choices(string personId) =>
@@ -314,9 +317,6 @@ namespace Baryonyx.Equipment
                     : $"{NameOf(wearer)}が装備中",
             };
         }
-
-        private string NameOfItem(string itemId) =>
-            EquipmentCatalog.Find(state.Find(itemId)?.EquipmentId)?.Name ?? "";
 
         private string NameOf(string id) =>
             people.FirstOrDefault(entry => entry.Id == id)?.Name ?? "仲間";

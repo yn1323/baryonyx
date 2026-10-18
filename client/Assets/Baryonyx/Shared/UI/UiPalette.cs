@@ -13,5 +13,8 @@ namespace Baryonyx.UI
         public static readonly Color TextFaint = new(0.604f, 0.580f, 0.514f);
         public static readonly Color Teal = new(0.498f, 0.890f, 0.839f);
         public static readonly Color Gold = new(1f, 0.843f, 0.4f);
+
+        // 見出しの明るい金（枠つきの画面の「パーティ」「一覧」など）。
+        public static readonly Color GoldLight = new(0.992f, 0.894f, 0.353f);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
+using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using NUnit.Framework;
@@ -505,18 +506,20 @@ namespace Baryonyx.Tests.EditMode
             view.Card(1);
             view.Next();
             view.Gear(0);
+            // 開いていないアクセサリーの枠も、付け替えの画面を開く。
+            view.Gear(3);
             Assert.That(
                 view.Opened,
-                Is.EqualTo(new[] { "gear toma 1", "cards toma 1", "gear luka 0" })
+                Is.EqualTo(new[] { "gear toma 1", "cards toma 1", "gear luka 0", "gear luka 3" })
             );
 
-            // アクセサリーの枠はまだ付けられず、押しても開かない。重ねた画面を開いている間も開かない。
-            view.Gear(2);
-            view.Gear(4);
+            // 枠の外は開かない。重ねた画面を開いている間も開かない。
+            view.Gear(5);
+            view.Gear(-1);
             view.LevelUp();
             view.Gear(0);
             view.Card(0);
-            Assert.That(view.Opened.Count, Is.EqualTo(3));
+            Assert.That(view.Opened.Count, Is.EqualTo(4));
             Assert.That(view.Notices, Is.Empty);
         }
 
@@ -546,10 +549,13 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(gear[0].Filled, Is.True);
             Assert.That(gear[0].Name, Is.EqualTo("樫の杖"));
             Assert.That(gear[1].Filled, Is.False);
+            // アクセサリーは、Lvで開くまで解放するLvを出す。
             Assert.That(
                 gear.Select(slot => slot.Locked),
                 Is.EqualTo(new[] { false, false, true, true, true })
             );
+            Assert.That(gear[2].UnlockText, Is.EqualTo(AccessorySlots.UnlockText(0)));
+            Assert.That(gear[0].UnlockText, Is.Empty);
 
             // 装備がわからない人は、武器と防具を空きとして出す。
             view.Next();

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baryonyx.Editor;
@@ -10,7 +9,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
+using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
+using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.StepBonus.Editor
 {
@@ -37,13 +39,23 @@ namespace Baryonyx.StepBonus.Editor
         // The slot frame keeps its 4-dot edge outside the 24-dot icon, so the icon never
         // overlaps the frame: 24 + 4 + 4 dots.
         private const float SlotSize = 32f * DotScale;
-        private const float SlotRowHeight = 136f;
         private const float BonusRowHeight = 112f;
 
-        // One large frame below the back button, split by a line into today's effects on the
-        // left (a fixed width) and the owned bonuses on the right (the rest of the width).
-        private const float LeftWidth = 780f;
-        private const float DividerWidth = DotScale;
+        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に今日の効果（5つの枠）、金の2本線の右の
+        // 透ける面に持っているボーナスを置く。設計座標、左上から。編成の冒険者の一覧と同じ間隔。
+        private const float Split = 800f;
+        private const float Gap = 24f;
+        private const float HeadingHeight = 76f;
+        private const float CardGap = 16f;
+        private const float TabHeight = 76f;
+        private const float EffectsLeft = Frame.Margin;
+        private const float EffectsWidth = Split - Gap - Frame.Margin;
+        private const float BonusesLeft = Split + Gap;
+        private const float BonusesWidth = 1920f - Frame.Margin - BonusesLeft;
+        private const float CardTop = Frame.HeaderHeight + HeadingHeight + CardGap;
+
+        // 5つの枠を、見出しの下から面の下端まで並べる。
+        private const float SlotHeight = (1080f - CardTop - CardGap * 5f) / 5f;
 
         public static string IconPath(string name) => $"{ArtFolder}/Icon{name}.aseprite";
 
@@ -183,10 +195,11 @@ namespace Baryonyx.StepBonus.Editor
         }
 
         /// <summary>
-        /// Builds the bonus settings over the guide screen's safe area: one large frame below
-        /// the back button, split into the slots (today's effects) on the left and the owned
-        /// bonuses on the right. Called while the guide screen's prefab is being built, so the
-        /// shared frames and font are ready.
+        /// Builds the bonus settings over the guide screen's safe area in the guide frame
+        /// (<see cref="GuideFramedPanel"/>), like the formation's other screens: the slots
+        /// (today's effects) on the dark pane on the left, the owned bonuses on the pane the
+        /// scene shows through on the right. Called while the guide screen's prefab is being
+        /// built, so the shared frames and font are ready.
         /// </summary>
         public static GameObject BuildSettingsPanel(RectTransform safe, GuideMenuView guide)
         {
@@ -201,52 +214,82 @@ namespace Baryonyx.StepBonus.Editor
             view.Guide = guide;
             view.TierColors = StepBonusArt.Tiers.ToArray();
 
-            var panel = Rect("Panel", root);
-            Stretch(panel);
-            panel.offsetMin = new Vector2(32, 24);
-            panel.offsetMax = new Vector2(-32, -208);
-            Guide.Frame(panel, Guide.FramePath, Color.white).raycastTarget = true;
+            root.gameObject.AddComponent<GuideFramedPanel>();
+            var layer = Layout.Layer(root, "Layout");
+            Frame.Pane(
+                layer,
+                "EffectsPane",
+                0f,
+                Split,
+                Frame.HeaderHeight,
+                Frame.PaneDark,
+                true,
+                false
+            );
+            Frame.Pane(
+                layer,
+                "BonusesPane",
+                Split,
+                1920f,
+                Frame.HeaderHeight,
+                Frame.PaneLight,
+                false,
+                true
+            );
+            Frame.Divider(layer, Split, Frame.HeaderHeight);
+            Frame.Heading(
+                layer,
+                "EffectsTitle",
+                "今日の効果",
+                EffectsLeft,
+                Frame.HeaderHeight,
+                400f,
+                HeadingHeight
+            );
+            Frame.Heading(
+                layer,
+                "BonusesTitle",
+                "ボーナス",
+                BonusesLeft,
+                Frame.HeaderHeight,
+                400f,
+                HeadingHeight
+            );
+            // 所持数は、右の見出しと同じ高さの右端に置く。
+            view.Owned = Layout.Text(
+                layer,
+                "Owned",
+                "",
+                28,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineRight,
+                BonusesLeft,
+                Frame.HeaderHeight,
+                BonusesWidth,
+                HeadingHeight
+            );
 
-            var left = Rect("Effects", panel);
-            left.anchorMin = Vector2.zero;
-            left.anchorMax = new Vector2(0, 1);
-            left.pivot = new Vector2(0, 0.5f);
-            left.offsetMin = Vector2.zero;
-            left.offsetMax = new Vector2(LeftWidth, 0);
-            var divider = Rect("Divider", panel);
-            divider.anchorMin = Vector2.zero;
-            divider.anchorMax = new Vector2(0, 1);
-            divider.pivot = new Vector2(0, 0.5f);
-            divider.offsetMin = new Vector2(LeftWidth, 28);
-            divider.offsetMax = new Vector2(LeftWidth + DividerWidth, -28);
-            AddImage(divider, new Color(0.52f, 0.59f, 0.68f, 0.7f), false);
-            var right = Rect("Bonuses", panel);
-            Stretch(right);
-            right.offsetMin = new Vector2(LeftWidth + DividerWidth, 0);
-
-            BuildEffects(left, view, loadout);
-            BuildBonuses(right, view, loadout);
+            BuildEffects(layer, view, loadout);
+            BuildBonuses(layer, view, loadout);
             return root.gameObject;
         }
 
         // --- Left: the slots, which are also today's effects --------------------------
 
         private static void BuildEffects(
-            RectTransform panel,
+            RectTransform layer,
             StepBonusSettingsView view,
             StepBonusLoadout loadout
         )
         {
-            var title = Label(
-                panel,
-                "Title",
-                "今日の効果",
-                44,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
+            var panel = Layout.Box(
+                layer,
+                "Effects",
+                EffectsLeft,
+                CardTop,
+                EffectsWidth,
+                Layout.Design.y - CardGap - CardTop
             );
-            Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
-
             view.Slots = Enumerable
                 .Range(0, loadout.SlotCount)
                 .Select(i => BuildSlot(panel, i, loadout))
@@ -259,27 +302,22 @@ namespace Baryonyx.StepBonus.Editor
             StepBonusLoadout loadout
         )
         {
-            var row = Rect("Slot" + index, panel);
-            row.anchorMin = new Vector2(0, 1);
-            row.anchorMax = Vector2.one;
-            row.pivot = new Vector2(0.5f, 1);
-            row.offsetMin = new Vector2(24, -(84 + index * (SlotRowHeight + 8) + SlotRowHeight));
-            row.offsetMax = new Vector2(-24, -(84 + index * (SlotRowHeight + 8)));
-            var widget = new StepBonusSlotWidget
-            {
-                Button = Guide.AddButton(
-                    row,
-                    Guide.Frame(row, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
+            var (button, selected, row) = GlassCardAssets.Choice(
+                Layout.Box(
+                    panel,
+                    "Slot" + index,
+                    0,
+                    index * (SlotHeight + CardGap),
+                    EffectsWidth,
+                    SlotHeight
                 ),
-            };
-            var selected = Rect("Selected", row);
-            Stretch(selected);
-            Guide.Frame(selected, Guide.FrameSelectedPath, Color.white).raycastTarget = false;
-            selected.gameObject.SetActive(false);
-            widget.Selected = selected.gameObject;
+                pattern: false
+            );
+            var widget = new StepBonusSlotWidget { Button = button, Selected = selected };
 
+            // 段階の色の枠に、24×24のアイコンを4倍で、枠の縁と重ならないように置く。
             var frame = Rect("Frame", row);
-            Corner(frame, new Vector2(0, 0.5f), new Vector2(4, 0), Vector2.one * SlotSize);
+            Corner(frame, new Vector2(0, 0.5f), new Vector2(14, 0), Vector2.one * SlotSize);
             widget.Frame = Guide.Frame(frame, Guide.FramePath, StepBonusArt.Tiers[index]);
             widget.Frame.raycastTarget = false;
             var icon = Rect("Icon", frame);
@@ -290,16 +328,16 @@ namespace Baryonyx.StepBonus.Editor
             widget.Icon.sprite = bonus?.Icon;
             widget.Icon.enabled = bonus?.Icon != null;
 
-            const float textLeft = 4 + SlotSize + 24;
+            const float textLeft = 14 + SlotSize + 24;
             widget.Tier = Label(
                 row,
                 "Tier",
                 $"{StepBonusLoadout.Act(loadout.Tier(index))} ACT {StepBonusLoadout.Times(loadout.Multiplier(index))}",
                 24,
-                UiPalette.TextFaint,
+                UiPalette.Gold,
                 TextAlignmentOptions.Left
             );
-            Guide.Band((RectTransform)widget.Tier.transform, top: true, 12, 30, textLeft, 24);
+            Guide.Band((RectTransform)widget.Tier.transform, top: true, 16, 30, textLeft, 24);
             widget.Name = Label(
                 row,
                 "Name",
@@ -308,7 +346,7 @@ namespace Baryonyx.StepBonus.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.Left
             );
-            Guide.Band((RectTransform)widget.Name.transform, top: true, 42, 48, textLeft, 24);
+            Guide.Band((RectTransform)widget.Name.transform, top: true, 46, 50, textLeft, 24);
             widget.Effect = Label(
                 row,
                 "Effect",
@@ -322,7 +360,7 @@ namespace Baryonyx.StepBonus.Editor
             Guide.Band(
                 (RectTransform)widget.Effect.transform,
                 top: false,
-                10,
+                16,
                 38,
                 textLeft + 2,
                 24
@@ -334,39 +372,36 @@ namespace Baryonyx.StepBonus.Editor
         // --- Right: the owned bonuses ------------------------------------------------
 
         private static void BuildBonuses(
-            RectTransform panel,
+            RectTransform layer,
             StepBonusSettingsView view,
             StepBonusLoadout loadout
         )
         {
-            var title = Label(
+            var panel = Layout.Box(
+                layer,
+                "Bonuses",
+                BonusesLeft,
+                CardTop,
+                BonusesWidth,
+                Layout.Design.y - CardGap - CardTop
+            );
+            // 上に、面の幅いっぱいのカテゴリのタブ（装備の付け替えのタブと同じ形）。
+            var labels = StepBonusSettingsPresenter.TabLabels;
+            view.Tabs = Frame.Tabs(
                 panel,
-                "Title",
-                "ボーナス",
-                44,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
+                "Tabs",
+                labels,
+                0,
+                0,
+                BonusesWidth / labels.Length,
+                TabHeight,
+                BonusesWidth,
+                lockPath: null
             );
-            Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
-            view.Owned = Label(
-                panel,
-                "Owned",
-                "",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopRight
-            );
-            Guide.Fill(
-                (RectTransform)view.Owned.transform,
-                new Vector2(40, 0),
-                new Vector2(-40, -36)
-            );
-            view.Tabs = BuildTabs(panel);
 
             var viewport = Rect("Viewport", panel);
             Stretch(viewport);
-            viewport.offsetMin = new Vector2(24, 24);
-            viewport.offsetMax = new Vector2(-24, -176);
+            viewport.offsetMax = new Vector2(0, -(TabHeight + CardGap));
             viewport.gameObject.AddComponent<RectMask2D>();
             AddImage(viewport, Color.clear, true);
 
@@ -408,36 +443,6 @@ namespace Baryonyx.StepBonus.Editor
             view.List = scroll;
         }
 
-        private static Button[] BuildTabs(RectTransform panel)
-        {
-            var tabs = new List<Button>();
-            for (int i = 0; i < StepBonusSettingsPresenter.TabLabels.Length; i++)
-            {
-                var tab = Rect("Tab" + i, panel);
-                Corner(
-                    tab,
-                    new Vector2(0, 1),
-                    new Vector2(36 + i * 180, -88),
-                    new Vector2(168, 72)
-                );
-                tabs.Add(Guide.AddButton(tab, Guide.Frame(tab, Guide.FramePath, Color.white)));
-                var selected = Rect("Selected", tab);
-                Stretch(selected);
-                Guide.Frame(selected, Guide.FrameSelectedPath, Color.white).raycastTarget = false;
-                selected.gameObject.SetActive(i == 0);
-                var label = Label(
-                    tab,
-                    "Label",
-                    StepBonusSettingsPresenter.TabLabels[i],
-                    30,
-                    UiPalette.TextMain,
-                    TextAlignmentOptions.Center
-                );
-                Stretch((RectTransform)label.transform);
-            }
-            return tabs.ToArray();
-        }
-
         private static StepBonusRowWidget BuildRow(
             RectTransform content,
             StepBonusRoll roll,
@@ -446,27 +451,21 @@ namespace Baryonyx.StepBonus.Editor
         {
             var bonus = loadout.Definition(roll.Id);
             float value = bonus.Value(roll.Rank);
-            var row = Rect("Row_" + roll.Id, content);
-            var size = row.gameObject.AddComponent<LayoutElement>();
+            var rect = Rect("Row_" + roll.Id, content);
+            var size = rect.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = BonusRowHeight;
-            var widget = new StepBonusRowWidget
-            {
-                Id = roll.Id,
-                Button = Guide.AddButton(
-                    row,
-                    Guide.Frame(row, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
-                ),
-            };
+            var (button, _, row) = GlassCardAssets.Choice(rect, pattern: false);
+            var widget = new StepBonusRowWidget { Id = roll.Id, Button = button };
 
             var icon = Rect("Icon", row);
-            Corner(icon, new Vector2(0, 0.5f), new Vector2(12, 0), Vector2.one * Guide.IconSize);
+            Corner(icon, new Vector2(0, 0.5f), new Vector2(16, 0), Vector2.one * Guide.IconSize);
             var iconImage = icon.gameObject.AddComponent<Image>();
             iconImage.sprite = bonus.Icon;
             iconImage.raycastTarget = false;
 
             var color = StepBonusArt.Rank(roll.Rank);
             var badge = Rect("Rank", row);
-            Corner(badge, new Vector2(0, 0.5f), new Vector2(124, 0), new Vector2(64, 64));
+            Corner(badge, new Vector2(0, 0.5f), new Vector2(128, 0), new Vector2(64, 64));
             widget.RankFrame = Guide.Frame(badge, Guide.FramePath, color);
             widget.RankFrame.raycastTarget = false;
             widget.Rank = Label(
@@ -479,12 +478,12 @@ namespace Baryonyx.StepBonus.Editor
             );
             Stretch((RectTransform)widget.Rank.transform);
 
-            const float textLeft = 212;
+            const float textLeft = 216;
             var name = Label(
                 row,
                 "Name",
                 bonus.Name,
-                38,
+                36,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Left
             );
@@ -493,7 +492,7 @@ namespace Baryonyx.StepBonus.Editor
                 row,
                 "Effect",
                 StepBonusLoadout.Effect(bonus, value),
-                28,
+                26,
                 UiPalette.TextSub,
                 TextAlignmentOptions.Left
             );
@@ -508,11 +507,11 @@ namespace Baryonyx.StepBonus.Editor
             Guide.Shrink(widget.Effect, 20);
 
             var mark = Rect("SetMark", row);
-            Corner(mark, new Vector2(1, 0.5f), new Vector2(-28, 0), new Vector2(11, 11) * DotScale);
+            Corner(mark, new Vector2(1, 0.5f), new Vector2(-32, 0), new Vector2(11, 11) * DotScale);
             SpriteImage(mark, SetMarkPath, Color.white);
             mark.gameObject.SetActive(loadout.SlotOf(roll.Id) >= 0);
             // 仮データで持っていないボーナスの行は、持ったときだけ出す。
-            row.gameObject.SetActive(loadout.Owns(roll.Id));
+            rect.gameObject.SetActive(loadout.Owns(roll.Id));
             widget.SetMark = mark.gameObject;
             return widget;
         }

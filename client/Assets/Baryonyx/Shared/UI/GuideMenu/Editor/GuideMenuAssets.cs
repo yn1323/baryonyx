@@ -12,6 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.UI.GuideMenu.Editor
 {
@@ -31,6 +32,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public const string SoftSpotPath = ArtFolder + "/GuideSoftSpot.png";
         public const string ArrowPath = ArtFolder + "/GuideArrow.png";
         public const string IconBackPath = ArtFolder + "/IconBack.aseprite";
+        public const string IconClosePath = ArtFolder + "/IconClose.aseprite";
+        public const string IconRunePath =
+            "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
         public const string TextShadowPath = Folder + "/GuideTextShadow.mat";
 
         // The window frames and the 24x24 icons are drawn at 4 design pixels per dot, like the
@@ -48,12 +52,42 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private const float GuideMaxHeight = 1048f;
         public const float RightLeft = 848f;
 
-        // The back button matches the Home buttons: an icon and a label over a soft shadow.
-        private const float BackWidth = 128f;
-        private const float BackHeight = 168f;
+        // The back button: a tab of the frames' navy against the safe area's top-left corner,
+        // with the arrow and the label side by side. The 24x24 icon keeps its 4x scale; the
+        // arrow fills its middle, so the label starts where the arrow ends rather than where the
+        // icon's clear margin does.
+        private const float BackWidth = 220f;
+        private const float BackHeight = IconSize;
+        private const float BackLabelLeft = 88f;
 
-        // Feature panels on a guide screen (e.g. the tavern's formation) use the same colours.
-        private static readonly Color Shadow = new(0.012f, 0.02f, 0.04f, 0.9f);
+        // How far the tab reaches past the safe area's top and left edges, so only its right and
+        // bottom edges show even where a notch insets the safe area.
+        private const float BackBleed = 240f;
+
+        // The close button at the top right mirrors the back tab: the same navy, bleeding past the
+        // top and right edges, with the 24x24 cross at 4x in the middle. 128 wide is the touch minimum.
+        private const float CloseWidth = 128f;
+
+        // The breadcrumb starts right of the back tab; the rune balance sits left of the close tab.
+        private const float HeaderGap = 32f;
+        private const float BreadcrumbSize = 44f;
+        private const float BreadcrumbMinSize = 28f;
+        private const float RuneIconSize = 24f * 2f;
+        private const float RuneTextSize = 40f;
+
+        // Room the rune balance keeps from the breadcrumb (its pill grows leftward with the digits).
+        private const float RuneRoom = 360f;
+
+        // 枠つきのリスト（商会・神殿の一覧、旅の案内所の行き先）：案内人の右に金の2本線を引き、
+        // 右の透ける面に見出しとすりガラスのカードを並べる。設計座標、左上から。
+        private const float ListSplit = RightLeft;
+        private const float ListGap = 24f;
+        private const float ListHeadingHeight = 76f;
+        private const float EntryHeight = 128f;
+        private const float EntryGap = 16f;
+        private const float ConfirmWidth = 360f;
+        private const float ConfirmHeight = 104f;
+        private const float ConfirmBottom = 32f;
 
         // A locked row (an unexplored destination) is drawn at this opacity, with its name hidden.
         private const float LockedAlpha = 0.5f;
@@ -62,11 +96,16 @@ namespace Baryonyx.UI.GuideMenu.Editor
         private static TMP_FontAsset font;
         private static Material shadowText;
 
+        // 組み立て中の画面の、枠つきのパネルを開いたときだけ出す部品と、透明にするタブ。
+        private static readonly List<GameObject> frameParts = new();
+        private static readonly List<Graphic> tabBackdrops = new();
+
         [MenuItem("Baryonyx/Guide Menu/Create Shared Art")]
         public static void CreateSharedArt()
         {
             Directory.CreateDirectory(ArtFolder);
             WriteArt();
+            GuideFrameAssets.EnsureArt();
         }
 
         /// <summary>
@@ -185,9 +224,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 var root = CanvasRoot(name);
                 var view = root.gameObject.AddComponent<GuideMenuView>();
                 view.Definition = definition;
+                frameParts.Clear();
+                tabBackdrops.Clear();
 
                 BuildBackground(root, definition);
+                // 枠つきのパネルを開いたとき：背景をぼかし、ヘッダーに帯を敷く。
+                frameParts.Add(GuideFrameAssets.BuildBackdrop(root, definition.Background));
                 var safe = SafeArea(root);
+                frameParts.Add(GuideFrameAssets.BuildHeaderBand(safe));
                 view.GuideArt = BuildGuide(safe, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Destinations)
@@ -198,6 +242,10 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     BuildList(safe, view, definition);
                     BuildItemPanels(safe, view, definition, itemPanel);
                 }
+                // ヘッダーの下の線は、パネルの上に重ねる。
+                frameParts.Add(GuideFrameAssets.BuildHeaderLine(safe));
+                view.FrameParts = frameParts.ToArray();
+                view.TabBackdrops = tabBackdrops.ToArray();
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
@@ -248,22 +296,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
         )
         {
             var back = Rect("Back", safe);
-            Corner(
-                back,
-                new Vector2(0, 1),
-                new Vector2(40, -24),
-                new Vector2(BackWidth, BackHeight)
-            );
-            // The shadow reaches past the button so the label reads over busy guide art.
-            var shadow = Rect("Shadow", back);
-            Stretch(shadow);
-            shadow.offsetMin = new Vector2(-56, -56);
-            shadow.offsetMax = new Vector2(56, 32);
-            var spot = SpriteImage(shadow, SoftSpotPath, Shadow);
-            spot.raycastTarget = true;
-            view.Back = AddTintButton(back, spot);
+            Corner(back, new Vector2(0, 1), Vector2.zero, new Vector2(BackWidth, BackHeight));
+            var tab = Rect("Tab", back);
+            Stretch(tab);
+            tab.offsetMin = new Vector2(-BackBleed, 0);
+            tab.offsetMax = new Vector2(0, BackBleed);
+            var backTab = Frame(tab, FramePath, Color.white);
+            tabBackdrops.Add(backTab);
+            view.Back = AddTintButton(back, backTab);
+            // 枠つきの画面では、タブの代わりに「もどる」とパンくずの間に細い線を引く。
+            frameParts.Add(GuideFrameAssets.Separator(back, 1f, HeaderGap / 2f));
             var icon = Rect("Icon", back);
-            Place(icon, new Vector2(0, 24), new Vector2(IconSize, IconSize));
+            Corner(icon, new Vector2(0, 0.5f), Vector2.zero, new Vector2(IconSize, IconSize));
             SpriteImage(icon, IconBackPath, Color.white);
             var label = Label(
                 back,
@@ -271,23 +315,97 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 "もどる",
                 32,
                 UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Place((RectTransform)label.transform, new Vector2(0, -60), new Vector2(BackWidth, 40));
-
-            var title = Label(
-                safe,
-                "Title",
-                definition.Title,
-                72,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Right
+                TextAlignmentOptions.Left
             );
             Corner(
-                (RectTransform)title.transform,
+                (RectTransform)label.transform,
+                new Vector2(0, 0.5f),
+                new Vector2(BackLabelLeft, 0),
+                new Vector2(BackWidth - BackLabelLeft - FrameCorner * DotScale, 40)
+            );
+
+            BuildClose(safe, view);
+            BuildRunes(safe, view);
+
+            // 画面名から始めるパンくず。すべて同じ大きさ・色で、「もどる」と縦の中央をそろえる。
+            var breadcrumb = Label(
+                safe,
+                "Breadcrumb",
+                definition.Title,
+                BreadcrumbSize,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Left
+            );
+            var rect = (RectTransform)breadcrumb.transform;
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0, 0.5f);
+            rect.offsetMin = new Vector2(BackWidth + HeaderGap, -BackHeight);
+            rect.offsetMax = new Vector2(-(CloseWidth + HeaderGap + RuneRoom), 0);
+            breadcrumb.overflowMode = TextOverflowModes.Ellipsis;
+            Shrink(breadcrumb, BreadcrumbMinSize);
+            view.Breadcrumb = breadcrumb;
+        }
+
+        private static void BuildClose(RectTransform safe, GuideMenuView view)
+        {
+            var close = Rect("Home", safe);
+            Corner(close, Vector2.one, Vector2.zero, new Vector2(CloseWidth, BackHeight));
+            var tab = Rect("Tab", close);
+            Stretch(tab);
+            tab.offsetMin = new Vector2(0, 0);
+            tab.offsetMax = new Vector2(BackBleed, BackBleed);
+            var closeTab = Frame(tab, FramePath, Color.white);
+            tabBackdrops.Add(closeTab);
+            view.Home = AddTintButton(close, closeTab);
+            frameParts.Add(GuideFrameAssets.Separator(close, 0f, -HeaderGap / 4f));
+            var icon = Rect("Icon", close);
+            Place(icon, Vector2.zero, new Vector2(IconSize, IconSize));
+            SpriteImage(icon, IconClosePath, Color.white);
+        }
+
+        // ×の左の所持ルーン。Homeと同じく、四方へ薄くなる暗い下地に、2倍のアイコンと数を並べる。
+        private static void BuildRunes(RectTransform safe, GuideMenuView view)
+        {
+            var pill = Rect("RunePill", safe);
+            Corner(
+                pill,
                 Vector2.one,
-                new Vector2(-56, -28),
-                new Vector2(900, 100)
+                new Vector2(-(CloseWidth + HeaderGap / 2f), 0),
+                new Vector2(0, BackHeight)
+            );
+            var plate = Rect("RuneShade", pill);
+            Stretch(plate);
+            plate.offsetMin = new Vector2(-16, 0);
+            plate.offsetMax = new Vector2(16, 0);
+            plate.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var shade = Sliced(plate, UiArt.FeatherPath, new Color(0.012f, 0.02f, 0.04f, 0.9f));
+            shade.pixelsPerUnitMultiplier = 0.5f;
+            shade.raycastTarget = false;
+            tabBackdrops.Add(shade);
+            frameParts.Add(GuideFrameAssets.Separator(pill, 0f, -HeaderGap / 4f));
+            var row = pill.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.padding = new RectOffset(36, 36, 0, 0);
+            row.spacing = 12;
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = row.childControlHeight = true;
+            row.childForceExpandWidth = row.childForceExpandHeight = false;
+            pill.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter
+                .FitMode
+                .PreferredSize;
+
+            var icon = Rect("RuneIcon", pill);
+            // 取り込み設定はHomeが持つ（HomeScreenArt）。ここでは読むだけにする。
+            SpriteImage(icon, IconRunePath, Color.white);
+            var size = icon.gameObject.AddComponent<LayoutElement>();
+            size.preferredWidth = size.preferredHeight = RuneIconSize;
+            view.Runes = Label(
+                pill,
+                "Runes",
+                "--",
+                RuneTextSize,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Midline
             );
         }
 
@@ -327,10 +445,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     buttons.Add(null);
                     continue;
                 }
-                var row = Rect("MenuItem" + i, panel);
-                var size = row.gameObject.AddComponent<LayoutElement>();
+                // 冒険者の一覧と同じすりガラスのカード。中身はカードの板と一緒に沈む。
+                // アイコンと重なるので、左上のばら窓の模様は付けない。
+                var card = Rect("MenuItem" + i, panel);
+                var size = card.gameObject.AddComponent<LayoutElement>();
                 size.minHeight = size.preferredHeight = rowHeight;
-                buttons.Add(AddButton(row, Frame(row, FramePath, Color.white)));
+                var (button, _, row) = GlassCardAssets.Choice(card, pattern: false);
+                buttons.Add(button);
 
                 // The 24x24 icon at 4x sits in a 96px column before the label.
                 float textLeft = 56;
@@ -385,13 +506,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition
         )
         {
-            var panel = RightPanel(safe, "List");
-            Frame(panel, FramePath, Color.white);
-            view.ListPanel = panel.gameObject;
-
             var first = definition.Items.Length > 0 ? definition.Items[0] : new GuideMenuItem();
-            view.ListTitle = ListTitle(panel, first.Label);
-            var viewport = ListViewport(panel, top: 104);
+            var (panel, layer, viewport) = FramedList(safe, "List", ListHeadingHeight);
+            view.ListPanel = panel.gameObject;
+            view.ListTitle = GuideFrameAssets.Heading(
+                layer,
+                "ListTitle",
+                first.Label,
+                ListSplit + ListGap,
+                GuideFrameAssets.HeaderHeight,
+                600f,
+                ListHeadingHeight
+            );
 
             var lists = new List<RectTransform>();
             for (int i = 0; i < definition.Items.Length; i++)
@@ -411,8 +537,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 lists.Add(content);
             }
             view.Lists = lists.ToArray();
-            view.ListScroll = ListScroll(panel, viewport, lists.Count > 0 ? lists[0] : null);
-            (view.Confirm, view.ConfirmLabel) = ConfirmButton(panel, first.ConfirmLabel);
+            view.ListScroll = ListScroll(viewport, lists.Count > 0 ? lists[0] : null);
+            (view.Confirm, view.ConfirmLabel) = ConfirmButton(layer, first.ConfirmLabel);
 
             // The menu shows first; turn the list on in the editor to read its rows.
             panel.gameObject.SetActive(false);
@@ -426,11 +552,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition
         )
         {
-            var panel = RightPanel(safe, "Destinations");
-            Frame(panel, FramePath, Color.white);
+            var (panel, layer, viewport) = FramedList(safe, "Destinations", 8f);
             view.DestinationPanel = panel.gameObject;
 
-            var viewport = ListViewport(panel, top: 28);
             var content = ListContent(viewport, "List");
             var rows = new Button[definition.Destinations.Length];
             for (int i = 0; i < rows.Length; i++)
@@ -447,42 +571,52 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 // 未踏の地は地名と説明を伏せ、1行で縦の中央に置き、行ごと暗くして押せなくする。
                 if (locked)
                 {
-                    CenterVertically(rows[i].transform, "Name", "Badge");
+                    var inside = rows[i].transform.Find("Body/Content");
+                    CenterVertically(inside, "Name", "Badge");
                     rows[i].interactable = false;
-                    rows[i].gameObject.AddComponent<CanvasGroup>().alpha = LockedAlpha;
+                    rows[i].GetComponent<CanvasGroup>().alpha = LockedAlpha;
                 }
             }
             view.DestinationRows = rows;
-            ListScroll(panel, viewport, content);
-            (view.Depart, _) = ConfirmButton(panel, definition.DepartLabel);
+            ListScroll(viewport, content);
+            (view.Depart, _) = ConfirmButton(layer, definition.DepartLabel);
         }
 
-        // The gold title at the top left of a full list.
-        private static TMP_Text ListTitle(RectTransform panel, string text)
+        // 枠つきのリストの土台：Safe Area全面のパネル、設計座標の層、案内人の右の透ける面と金の2本線、
+        // 決めるボタンの上までの行の表示範囲。行の影と選んだときの光が切れないよう、表示範囲は行より広く取る。
+        private static (
+            RectTransform Panel,
+            RectTransform Layer,
+            RectTransform Viewport
+        ) FramedList(RectTransform safe, string name, float headingHeight)
         {
-            var title = Label(
-                panel,
-                "ListTitle",
-                text,
-                48,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
+            var panel = Rect(name, safe);
+            Stretch(panel);
+            var layer = Layout.Layer(panel, "Layout");
+            GuideFrameAssets.Pane(
+                layer,
+                "Pane",
+                ListSplit,
+                1920f,
+                GuideFrameAssets.HeaderHeight,
+                GuideFrameAssets.PaneLight,
+                false,
+                true
             );
-            Fill((RectTransform)title.transform, new Vector2(48, 0), new Vector2(-48, -32));
-            return title;
-        }
-
-        // The clipped area above the confirm button where the rows scroll; top leaves room for a
-        // title.
-        private static RectTransform ListViewport(RectTransform panel, float top)
-        {
-            var viewport = Rect("Viewport", panel);
-            Stretch(viewport);
-            viewport.offsetMin = new Vector2(28, 148);
-            viewport.offsetMax = new Vector2(-28, -top);
+            GuideFrameAssets.Divider(layer, ListSplit, GuideFrameAssets.HeaderHeight);
+            float top = GuideFrameAssets.HeaderHeight + headingHeight;
+            float bottom = Layout.Design.y - ConfirmBottom - ConfirmHeight - 8f;
+            var viewport = Layout.Box(
+                layer,
+                "Viewport",
+                ListSplit,
+                top,
+                1920f - ListSplit,
+                bottom - top
+            );
             viewport.gameObject.AddComponent<RectMask2D>();
             AddImage(viewport, Color.clear, true);
-            return viewport;
+            return (panel, layer, viewport);
         }
 
         // A column of rows that grows downward from the top of the viewport.
@@ -494,7 +628,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
             content.pivot = new Vector2(0.5f, 1);
             content.sizeDelta = Vector2.zero;
             var group = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            group.spacing = 12;
+            group.spacing = EntryGap;
+            group.padding = new RectOffset(
+                (int)ListGap,
+                (int)GuideFrameAssets.Margin,
+                (int)EntryGap,
+                (int)(EntryGap * 2f)
+            );
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = true;
             group.childForceExpandHeight = false;
@@ -504,13 +644,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return content;
         }
 
-        private static ScrollRect ListScroll(
-            RectTransform panel,
-            RectTransform viewport,
-            RectTransform content
-        )
+        private static ScrollRect ListScroll(RectTransform viewport, RectTransform content)
         {
-            var scroll = panel.gameObject.AddComponent<ScrollRect>();
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
             scroll.viewport = viewport;
             scroll.content = content;
             scroll.horizontal = false;
@@ -520,14 +656,24 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // The gold button at the bottom right that applies the chosen row; off until one is chosen.
+        // 編成の「レベルアップ」と同じ、金の縁と光のすりガラスのカード。決定ボタンには模様を付けない。
         private static (Button Button, TMP_Text Label) ConfirmButton(
-            RectTransform panel,
+            RectTransform layer,
             string text
         )
         {
-            var confirm = Rect("Confirm", panel);
-            Corner(confirm, new Vector2(1, 0), new Vector2(-32, 28), new Vector2(360, 104));
-            var button = AddButton(confirm, Frame(confirm, FrameSelectedPath, Color.white));
+            var (button, rim, confirm) = GlassCardAssets.Choice(
+                Layout.Box(
+                    layer,
+                    "Confirm",
+                    1920f - GuideFrameAssets.Margin - ConfirmWidth,
+                    Layout.Design.y - ConfirmBottom - ConfirmHeight,
+                    ConfirmWidth,
+                    ConfirmHeight
+                ),
+                pattern: false
+            );
+            rim.SetActive(true);
             var label = Label(
                 confirm,
                 "Label",
@@ -559,16 +705,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             view.ItemPanels = panels;
         }
 
-        /// <summary>The rect of the right side where a list or a feature panel sits.</summary>
-        public static RectTransform RightPanel(RectTransform safe, string name)
-        {
-            var panel = Rect(name, safe);
-            Stretch(panel);
-            panel.offsetMin = new Vector2(RightLeft, 24);
-            panel.offsetMax = new Vector2(-32, -148);
-            return panel;
-        }
-
         private static Button BuildEntry(
             RectTransform content,
             string name,
@@ -577,14 +713,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string detail
         )
         {
-            var row = Rect(name, content);
-            var size = row.gameObject.AddComponent<LayoutElement>();
-            size.minHeight = size.preferredHeight = 128;
-            var button = AddButton(row, Frame(row, FramePath, new Color(1f, 1f, 1f, 0.9f)));
-            var selected = Rect("Selected", row);
-            Stretch(selected);
-            Frame(selected, FrameSelectedPath, Color.white).raycastTarget = false;
-            selected.gameObject.SetActive(false);
+            // 冒険者の一覧と同じすりガラスのカード。選んだ行は金の縁と光（「Selected」）を出す。
+            // 文字が左上から始まるため、左上の模様は入れない。
+            var card = Rect(name, content);
+            var size = card.gameObject.AddComponent<LayoutElement>();
+            size.minHeight = size.preferredHeight = EntryHeight;
+            var (button, selected, row) = GlassCardAssets.Choice(card, pattern: false);
+            selected.name = "Selected";
             var label = Label(
                 row,
                 "Name",
@@ -661,6 +796,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
             ArtAssets.ImportSprite(ArrowPath, Vector4.zero, FilterMode.Point);
             ArtAssets.ImportSprite(SoftSpotPath, Vector4.zero, FilterMode.Bilinear);
             Icon(IconBackPath);
+            Icon(IconClosePath);
             ArtAssets.ImportTexture(ShadeHorizontalPath, FilterMode.Bilinear);
         }
 
@@ -805,7 +941,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public static Button AddButton(RectTransform rect, Graphic target) =>
             DimWhenDisabled(UiBuild.AddButton(rect, target));
 
-        // For the back button over a dark shadow: the icon and label darken with it.
+        // For the back button's tab: the icon and label darken with it.
         private static Button AddTintButton(RectTransform rect, Graphic target) =>
             DimWhenDisabled(UiBuild.AddTintButton(rect, target));
 

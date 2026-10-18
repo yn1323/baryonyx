@@ -139,7 +139,6 @@ namespace Baryonyx.Tests.EditMode
             var weapons = EquipmentCatalog
                 .All.Where(entry => entry.Slot == EquipmentSlot.Weapon)
                 .ToArray();
-            Assert.That(state.CountText, Is.EqualTo($"所持 {weapons.Length}"));
             Assert.That(
                 state.Choices.Select(choice => choice.EquipmentId),
                 Is.EqualTo(
@@ -160,10 +159,7 @@ namespace Baryonyx.Tests.EditMode
             presenter.Choose(Choice("flame-dagger").ItemId);
             await presenter.ChangeTask;
 
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { "トーマの「樫の杖」を「炎のダガー」に替えました" })
-            );
+            Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Last.Slots[0].Name, Is.EqualTo("炎のダガー"));
             Assert.That(Choice("flame-dagger").Mark, Is.EqualTo("装備中"));
             Assert.That(Choice("oak-staff").Mark, Is.Empty);
@@ -175,10 +171,7 @@ namespace Baryonyx.Tests.EditMode
             presenter.Choose(Choice("iron-sword").ItemId);
             await presenter.ChangeTask;
 
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { "アリアの「鉄の剣」をトーマに付け替えました" })
-            );
+            Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Last.Slots[0].Name, Is.EqualTo("鉄の剣"));
             view.Person("aria");
             Assert.That(view.Last.Slots[0].ItemId, Is.Null);
@@ -204,7 +197,7 @@ namespace Baryonyx.Tests.EditMode
 
             presenter.Choose(Choice("iron-helm").ItemId);
             await presenter.ChangeTask;
-            Assert.That(view.Notices, Is.EqualTo(new[] { "アンセルムに「鉄の兜」を装備しました" }));
+            Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Last.Slots[1].Name, Is.EqualTo("鉄の兜"));
 
             // 武器を押しても、防具の枠には入らない。
@@ -219,7 +212,7 @@ namespace Baryonyx.Tests.EditMode
         {
             view.Remove();
             await presenter.ChangeTask;
-            Assert.That(view.Notices, Is.EqualTo(new[] { "トーマの「樫の杖」を外しました" }));
+            Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Last.Slots[0].ItemId, Is.Null);
             Assert.That(view.Last.CanRemove, Is.False);
             // 外した装備は持ち物に残る。

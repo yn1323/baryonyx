@@ -2,6 +2,7 @@ using System.Linq;
 using Baryonyx.Editor.UI;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -9,6 +10,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
+using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
@@ -28,20 +31,31 @@ namespace Baryonyx.Equipment.Editor
         public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
         public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
-        // 左の枠（人・枠・ステータス）と右の枠（持っている装備）。設計座標、左上から。
-        private static readonly Rect Left = new(40, 200, 740, 850);
-        private static readonly Rect Right = new(800, 200, 1080, 850);
-        private const float SlotTop = 154f;
-        private const float SlotHeight = 100f;
-        private const float SlotStep = 110f;
+        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に人・枠・ステータス、金の2本線の右の透ける面に
+        // 持っている装備を置く。設計座標、左上から。
+        private const float Split = 800f;
+        private static readonly Rect Left = new(36, Frame.HeaderHeight + 6, 740, 956);
+        private static readonly Rect Right = new(
+            Split,
+            Frame.HeaderHeight + 6,
+            1920 - Split - 24,
+            956
+        );
+
+        // 左は上から人・ステータス・5つの枠。枠は面の下端（設計座標で1036）まで並べる。
+        private const float StatsTop = 156f;
+        private const float SlotTop = 280f;
+        private const float SlotHeight = 118f;
+        private const float SlotStep = 130f;
+
+        // 枠の文字は、高さ100の枠のときの位置から、縦の中央へずらして置く。
+        private const float SlotInset = (SlotHeight - 100f) / 2f;
         private const float SlotTextLeft = 112f;
-        private const int AccessorySlots = 3;
         private const float RowHeight = 128f;
         private const float RowTextLeft = 132f;
 
         // 持っている装備の行を、この数だけ作り込む。足りなければ、ビューが実行中に写して増やす。
         private const int BakedRows = 8;
-        private static readonly Color Locked = new(0.62f, 0.62f, 0.68f, 0.85f);
 
         /// <summary>
         /// Builds the equipment over the guide screen's safe area: the person, their slots and
@@ -64,16 +78,34 @@ namespace Baryonyx.Equipment.Editor
             view.WeaponIcon = Guide.Icon(IconWeaponPath);
             view.ArmorIcon = Guide.Icon(IconArmorPath);
 
+            root.gameObject.AddComponent<GuideFramedPanel>();
             var layer = Layout.Layer(root, "Layout");
-            var left = Layout.FrameBox(layer, "Person", Left.x, Left.y, Left.width, Left.height);
-            var right = Layout.FrameBox(
+            Frame.Pane(
                 layer,
-                "Items",
-                Right.x,
-                Right.y,
-                Right.width,
-                Right.height
+                "PersonPane",
+                0f,
+                Split,
+                Frame.HeaderHeight,
+                Frame.PaneDark,
+                true,
+                false
             );
+            Frame.Pane(
+                layer,
+                "ItemsPane",
+                Split,
+                1920f,
+                Frame.HeaderHeight,
+                Frame.PaneLight,
+                false,
+                true
+            );
+            Frame.Divider(layer, Split, Frame.HeaderHeight);
+            var left = Layout.Box(layer, "Person", Left.x, Left.y, Left.width, Left.height);
+            // 左の面の上の左右のフリックで人を替える。枠を押したところから動かしても届くよう、左全体で受ける。
+            AddImage(left, Color.clear, true);
+            view.Swipe = left.gameObject.AddComponent<TrainingSwipe>();
+            var right = Layout.Box(layer, "Items", Right.x, Right.y, Right.width, Right.height);
 
             view.Person = PartyHeaderAssets.Build(left, 10, Left.width, people.FirstOrDefault());
             Layout.Line(left, "HeaderLine", 24, 142, Left.width - 48, 2);
@@ -81,12 +113,12 @@ namespace Baryonyx.Equipment.Editor
                 .Select(slot => BuildSlot(left, slot))
                 .ToArray();
             view.Accessories = Enumerable
-                .Range(0, AccessorySlots)
+                .Range(0, AccessorySlots.Count)
                 .Select(i => BuildAccessory(left, i))
                 .ToArray();
-            float statsTop = SlotTop + (2 + AccessorySlots) * SlotStep + 6;
-            Layout.Line(left, "StatsLine", 24, statsTop, Left.width - 48, 2);
-            view.Stats = TrainingAssets.BuildStats(left, 30, statsTop + 14, Left.width - 60, 4);
+            // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける。
+            view.Stats = TrainingAssets.BuildStats(left, 30, StatsTop, Left.width - 60, 4);
+            Layout.Line(left, "StatsLine", 24, SlotTop - 18, Left.width - 48, 2);
             BuildItems(right, view);
 
             // 仮データの最初の人と仮の装備で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
@@ -104,15 +136,17 @@ namespace Baryonyx.Equipment.Editor
         private static EquipmentSlotWidget BuildSlot(RectTransform panel, EquipmentSlot slot)
         {
             int index = (int)slot;
-            var (button, selected) = Layout.Choice(
-                panel,
-                "Slot_" + slot,
-                24,
-                SlotTop + index * SlotStep,
-                Left.width - 48,
-                SlotHeight
+            var (button, selected, row) = GlassCardAssets.Choice(
+                Layout.Box(
+                    panel,
+                    "Slot_" + slot,
+                    24,
+                    SlotTop + index * SlotStep,
+                    Left.width - 48,
+                    SlotHeight
+                ),
+                pattern: false
             );
-            var row = (RectTransform)button.transform;
             var widget = new EquipmentSlotWidget { Button = button, Selected = selected };
 
             // 24×24のアイコンを3倍で置き、右に枠の名前（武器・防具）と装備の名前・★。
@@ -127,7 +161,7 @@ namespace Baryonyx.Equipment.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.TopLeft,
                 SlotTextLeft,
-                10,
+                10 + SlotInset,
                 200,
                 26
             );
@@ -139,7 +173,7 @@ namespace Baryonyx.Equipment.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft,
                 SlotTextLeft,
-                38,
+                38 + SlotInset,
                 Left.width - 48 - SlotTextLeft - 150,
                 46
             );
@@ -152,25 +186,29 @@ namespace Baryonyx.Equipment.Editor
                 UiPalette.Gold,
                 TextAlignmentOptions.BottomRight,
                 Left.width - 48 - 170,
-                38,
+                38 + SlotInset,
                 150,
                 46
             );
             return widget;
         }
 
-        // まだ付けられないアクセサリーの枠。押せず、錠前と「準備中」だけを出す。
-        private static GameObject BuildAccessory(RectTransform panel, int index)
+        // アクセサリーの枠。押すとアクセサリーのタブに移る。開いていなければ錠前と「Lv 15で解放」を出す。
+        private static EquipmentAccessoryWidget BuildAccessory(RectTransform panel, int index)
         {
-            var row = Layout.Box(
-                panel,
-                "Accessory" + index,
-                24,
-                SlotTop + (2 + index) * SlotStep,
-                Left.width - 48,
-                SlotHeight
+            var (button, selected, row) = GlassCardAssets.Choice(
+                Layout.Box(
+                    panel,
+                    "Accessory" + index,
+                    24,
+                    SlotTop + (2 + index) * SlotStep,
+                    Left.width - 48,
+                    SlotHeight
+                ),
+                dashed: true,
+                pattern: false
             );
-            Guide.Frame(row, Guide.FramePath, Locked).raycastTarget = false;
+            var widget = new EquipmentAccessoryWidget { Button = button, Selected = selected };
             var lockImage = Layout.Box(
                 row,
                 "Lock",
@@ -180,62 +218,54 @@ namespace Baryonyx.Equipment.Editor
                 40
             );
             SpriteImage(lockImage, TrainingAssets.LockPath, Color.white);
+            widget.Lock = lockImage.gameObject;
             Layout.Text(
                 row,
                 "Tag",
-                "アクセサリー",
+                EquipmentPresenter.AccessoryTitle,
                 20,
-                UiPalette.TextSub,
+                UiPalette.Gold,
                 TextAlignmentOptions.TopLeft,
                 SlotTextLeft,
-                10,
+                10 + SlotInset,
                 300,
                 26
             );
-            Layout.Text(
+            widget.Name = Layout.Text(
                 row,
-                "Soon",
-                "準備中",
+                "Name",
+                AccessorySlots.UnlockText(index),
                 28,
                 UiPalette.TextSub,
                 TextAlignmentOptions.BottomLeft,
                 SlotTextLeft,
-                38,
-                300,
+                38 + SlotInset,
+                Left.width - 48 - SlotTextLeft - 24,
                 46
             );
-            return row.gameObject;
+            return widget;
         }
 
         // --- Right: the owned items for the chosen slot, then "外す" -------------------------
 
         private static void BuildItems(RectTransform panel, EquipmentView view)
         {
-            view.Title = Label(
+            // 上に、面の幅いっぱいの武器・防具・アクセサリーのタブ。左の枠と連動する。
+            view.Tabs = Frame.Tabs(
                 panel,
-                "Title",
-                "",
-                44,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            Guide.Fill(
-                (RectTransform)view.Title.transform,
-                new Vector2(40, 0),
-                new Vector2(-40, -24)
-            );
-            view.Count = Label(
-                panel,
-                "Count",
-                "",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopRight
-            );
-            Guide.Fill(
-                (RectTransform)view.Count.transform,
-                new Vector2(40, 0),
-                new Vector2(-40, -36)
+                "Tabs",
+                new[]
+                {
+                    EquipmentCatalog.NameOf(EquipmentSlot.Weapon),
+                    EquipmentCatalog.NameOf(EquipmentSlot.Armor),
+                    "アクセサリー",
+                },
+                24,
+                4,
+                (Right.width - 48) / 3f,
+                76,
+                Right.width - 48,
+                TrainingAssets.LockPath
             );
 
             var viewport = Rect("Viewport", panel);
@@ -269,6 +299,20 @@ namespace Baryonyx.Equipment.Editor
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40;
             view.List = scroll;
+
+            // 読み込み中と、読めなかったときだけ出す文字。
+            view.Status = Layout.Text(
+                panel,
+                "Status",
+                "",
+                36,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                24,
+                100,
+                Right.width - 48,
+                140
+            );
         }
 
         private static EquipmentRow BuildRow(RectTransform content, int index)
@@ -277,18 +321,16 @@ namespace Baryonyx.Equipment.Editor
             var size = rect.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = RowHeight;
             var row = rect.gameObject.AddComponent<EquipmentRow>();
-            row.Button = Guide.AddButton(
-                rect,
-                Guide.Frame(rect, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
-            );
+            var (button, _, card) = GlassCardAssets.Choice(rect, pattern: false);
+            row.Button = button;
 
-            var icon = Rect("Icon", rect);
+            var icon = Rect("Icon", card);
             Corner(icon, new Vector2(0, 0.5f), new Vector2(16, 0), Vector2.one * Guide.IconSize);
             row.Icon = icon.gameObject.AddComponent<Image>();
             row.Icon.raycastTarget = false;
 
             row.Name = Label(
-                rect,
+                card,
                 "Name",
                 "",
                 32,
@@ -298,7 +340,7 @@ namespace Baryonyx.Equipment.Editor
             Guide.Band((RectTransform)row.Name.transform, top: true, 12, 44, RowTextLeft, 300);
             Guide.Shrink(row.Name, 22);
             row.Stars = Label(
-                rect,
+                card,
                 "Stars",
                 "",
                 26,
@@ -314,7 +356,7 @@ namespace Baryonyx.Equipment.Editor
                 140
             );
             row.Detail = Label(
-                rect,
+                card,
                 "Detail",
                 "",
                 24,
@@ -323,7 +365,7 @@ namespace Baryonyx.Equipment.Editor
             );
             Guide.Band((RectTransform)row.Detail.transform, top: true, 64, 40, RowTextLeft, 24);
             Guide.Shrink(row.Detail, 18);
-            row.Mark = Label(rect, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
+            row.Mark = Label(card, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)row.Mark.transform, top: true, 20, 32, RowTextLeft, 24);
             row.Mark.gameObject.SetActive(false);
             return row;
@@ -335,12 +377,9 @@ namespace Baryonyx.Equipment.Editor
             var rect = Rect("Remove", content);
             var size = rect.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = RowHeight;
-            var button = Guide.AddButton(
-                rect,
-                Guide.Frame(rect, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
-            );
+            var (button, _, card) = GlassCardAssets.Choice(rect, dashed: true);
             var label = Label(
-                rect,
+                card,
                 "Label",
                 EquipmentPresenter.RemoveLabel,
                 32,

@@ -35,7 +35,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernCardLoadoutTests));
         }
 
-        // 個別の画面でカスタムスキルの枠を押すと、その人とその枠を選んだスキルの付け替えの画面を開く。◀▶で枠を
+        // 個別の画面でカスタムスキルの枠を押すと、その人とその枠を選んだスキルの付け替えの画面を開く。左のフリックで枠を
         // 選んだまま人を替え（パーティのあとにほかの仲間も回る）、右のカードを押すとその場で入れ替え、
         // 共通の通知の帯で知らせる。左にはステータスを出す。
         [UnityTest]
@@ -55,10 +55,24 @@ namespace Baryonyx.Tests.PlayMode
             SceneTests.AssertBelow(panel.transform.Find("Layout/Person"), view.Back.transform);
             SceneTests.AssertBelow(panel.transform.Find("Layout/Cards"), view.Back.transform);
             yield return null;
-            SceneTests.AssertTouchSize(panel.Person.Prev.transform);
-            SceneTests.AssertTouchSize(panel.Person.Next.transform);
             foreach (var slot in panel.Slots)
                 SceneTests.AssertTouchSize(slot.Button.transform, 0.7f);
+
+            // 装備と同じく、左は人・ステータス・枠の順に上から並べ、右の上にスキル・アイテムのタブを置く。
+            var left = panel.transform.Find("Layout/Person");
+            SceneTests.AssertBelow(panel.Slots[0].Button.transform, panel.Stats[0].transform);
+            Assert.That(
+                SceneTests.ScreenRect(panel.Slots[1].Button.transform).yMin,
+                Is.GreaterThanOrEqualTo(SceneTests.ScreenRect(left).yMin),
+                "The slots fit in the left pane."
+            );
+            Assert.That(
+                panel.Tabs.Select(tab => tab.Label.text),
+                Is.EqualTo(new[] { "スキル", "アイテム" })
+            );
+            Assert.That(panel.Tabs[0].Chosen, Is.True);
+            Assert.That(panel.Tabs[1].Chosen, Is.False);
+            Assert.That(panel.Tabs.All(tab => tab.Button.interactable), Is.True);
 
             // 開いたときは、個別の画面で見ていた人の、押した2つ目の枠。左はカスタムスキルの2枚。
             var data = panel.Party;
@@ -69,11 +83,23 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Stats.All(stat => stat.text != ""), Is.True);
             AssertShows(panel, data, people[0]);
 
-            // ◀でパーティにいない最後の仲間へ回る。枠は2つ目のまま。
+            // 右へのフリックで、パーティにいない最後の仲間へ回る。枠は2つ目のまま。
             var other = people[people.Count - 1];
-            panel.Person.Prev.onClick.Invoke();
+            panel.Swipe.Flick(-1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(other.Name));
             Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            AssertShows(panel, data, other);
+
+            // アイテムのタブは、アイテムをまだ持てないので一覧を空にして、持っていないことだけを出す。
+            panel.Tabs[1].Button.onClick.Invoke();
+            Assert.That(panel.Tabs[1].Chosen, Is.True);
+            Assert.That(panel.Tabs[0].Chosen, Is.False);
+            Assert.That(Rows(panel), Is.Empty);
+            Assert.That(panel.Status.text, Is.EqualTo(CardLoadoutView.NoItemText));
+            Assert.That(panel.UsableLine.activeSelf, Is.False);
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            panel.Tabs[0].Button.onClick.Invoke();
+            Assert.That(panel.Tabs[0].Chosen, Is.True);
             AssertShows(panel, data, other);
 
             // 2つ目の枠に、まだ付けていないカードを入れる。
@@ -82,13 +108,8 @@ namespace Baryonyx.Tests.PlayMode
             row.Button.onClick.Invoke();
             var after = PartySession.CardsOf(data, other.Id);
             Assert.That(after[1], Is.EqualTo(row.Id));
-            Assert.That(
-                panel.LastNotice,
-                Is.EqualTo(
-                    $"{other.Name}の「{CardSkills.Find(before[1]).Name}」を「{CardSkills.Find(row.Id).Name}」に替えました"
-                )
-            );
-            Assert.That(view.ToastMessage, Is.EqualTo(panel.LastNotice));
+            // 変わったことは枠を見ればわかるので、通知の帯は出さない。
+            Assert.That(panel.LastNotice, Is.Empty);
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find(row.Id).Name));
             Assert.That(row.Mark.gameObject.activeSelf, Is.True);
             Assert.That(row.Mark.text, Is.EqualTo("2枚目"));
@@ -97,7 +118,7 @@ namespace Baryonyx.Tests.PlayMode
             Row(panel, after[0]).Button.onClick.Invoke();
             Assert.That(PartySession.CardsOf(data, other.Id)[1], Is.EqualTo(after[0]));
             Assert.That(PartySession.CardsOf(data, other.Id)[0], Is.EqualTo(row.Id));
-            Assert.That(panel.LastNotice, Does.EndWith("を入れ替えました"));
+            Assert.That(panel.LastNotice, Is.Empty);
 
             // 「もどる」で個別の画面へ、付け替えの画面で最後に見ていた人のまま戻り、付け替えたカードを出す。
             view.Back.onClick.Invoke();
@@ -125,7 +146,8 @@ namespace Baryonyx.Tests.PlayMode
             var usable = CardLoadoutRules.Usable(member);
             var expected = CardLoadoutRules.Choices(usable).Select(card => card.Id).ToArray();
             Assert.That(Rows(panel).Select(row => row.Id), Is.EqualTo(expected), member.Id);
-            Assert.That(panel.Count.text, Is.EqualTo($"{expected.Length}枚"));
+            Assert.That(panel.Status.text, Is.Empty);
+            Assert.That(panel.UsableLine.activeSelf, Is.True);
             foreach (var row in Rows(panel))
             {
                 SceneTests.AssertTouchSize(row.Button.transform);
@@ -134,8 +156,8 @@ namespace Baryonyx.Tests.PlayMode
                 var transform = row.Button.transform;
                 AssertFits(
                     transform,
-                    transform.Find("NameLine/Name").GetComponent<TMP_Text>(),
-                    transform.Find("NameLine/Kind").GetComponent<TMP_Text>(),
+                    transform.Find("Body/Content/NameLine/Name").GetComponent<TMP_Text>(),
+                    transform.Find("Body/Content/NameLine/Kind").GetComponent<TMP_Text>(),
                     row.Description
                 );
             }
@@ -168,7 +190,7 @@ namespace Baryonyx.Tests.PlayMode
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
             var view = guide.View;
-            // 一覧がサーバーの編成を読んでから、選んでいる人の個別の画面を開く。
+            // 一覧がサーバーの編成を読んでから、パーティの先頭を長押しして個別の画面を開く。
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
             var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
@@ -176,7 +198,7 @@ namespace Baryonyx.Tests.PlayMode
                 () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
-            roster.Open.onClick.Invoke();
+            roster.Slots[0].Card.Hold();
             var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             Assert.That(page.gameObject.activeInHierarchy, Is.True);
@@ -187,7 +209,7 @@ namespace Baryonyx.Tests.PlayMode
             page.CardSlots[1].Button.onClick.Invoke();
             var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
                 .GetComponent<CardLoadoutView>();
-            Assert.That(panel.Count.text, Is.EqualTo(CardLoadoutView.LoadingText));
+            Assert.That(panel.Status.text, Is.EqualTo(CardLoadoutView.LoadingText));
             Assert.That(panel.Person.Name.text, Is.EqualTo(CardLoadoutView.LoadingText));
             Assert.That(Rows(panel), Is.Empty);
             yield return SceneTests.WaitUntil(
@@ -195,13 +217,13 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The party did not load."
             );
 
-            // サーバーのパーティと仲間だけを◀▶で回る。
+            // サーバーのパーティと仲間だけをフリックで回る。
             Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
             Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
-            panel.Person.Next.onClick.Invoke();
+            panel.Swipe.Flick(1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("luka").Name));
-            panel.Person.Next.onClick.Invoke();
+            panel.Swipe.Flick(1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
 
             Row(panel, "Embers").Button.onClick.Invoke();
@@ -211,7 +233,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
             Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
-            Assert.That(panel.LastNotice, Does.EndWith("に替えました"));
+            Assert.That(panel.LastNotice, Is.Empty);
 
             // 保存できなかったときはカードを変えずに知らせる。
             server.Fail = true;
@@ -224,12 +246,12 @@ namespace Baryonyx.Tests.PlayMode
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
             System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
-        // メニューの「冒険者」から一覧を開き、選んでいる人の個別の画面を開く。
+        // メニューの「冒険者」から一覧を開き、パーティの先頭を長押しして個別の画面を開く。
         private static TrainingView OpenPage(Baryonyx.UI.GuideMenu.GuideMenuView view)
         {
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            view.PanelFor(item).GetComponent<AdventurerRosterView>().Open.onClick.Invoke();
+            view.PanelFor(item).GetComponent<AdventurerRosterView>().Slots[0].Card.Hold();
             return view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
         }

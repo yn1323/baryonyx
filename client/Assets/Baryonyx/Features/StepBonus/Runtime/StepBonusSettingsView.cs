@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
@@ -39,14 +41,17 @@ namespace Baryonyx.StepBonus
     }
 
     /// <summary>
-    /// The tavern's bonus settings over the whole guide screen: the slots and today's effects on
-    /// the left, the owned bonuses on the right. StepBonusAssets bakes the rows into the tavern
+    /// The tavern's bonus settings over the whole guide screen, in the guide frame: the slots and
+    /// today's effects on the dark pane on the left, the owned bonuses on the right. StepBonusAssets bakes the rows into the tavern
     /// prefab, so they read in the editor; this view wires them up and drives its own presenter.
     /// When the app has a server (<see cref="StepBonusSession.Source"/>), it reads the player's
     /// bonuses on opening and saves every change there; otherwise it uses the mock data.
     /// Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class StepBonusSettingsView : MonoBehaviour, IStepBonusSettingsView
+    public sealed class StepBonusSettingsView
+        : MonoBehaviour,
+            IStepBonusSettingsView,
+            IEditModePreview
     {
         // 段階に届いていない枠は、アイコン・枠・文字を暗くする。
         public static readonly Color Closed = new(0.42f, 0.42f, 0.48f, 1f);
@@ -63,7 +68,7 @@ namespace Baryonyx.StepBonus
         public TMP_Text Owned;
         public StepBonusSlotWidget[] Slots = Array.Empty<StepBonusSlotWidget>();
         public Color[] TierColors = Array.Empty<Color>();
-        public Button[] Tabs = Array.Empty<Button>();
+        public GuideTab[] Tabs = Array.Empty<GuideTab>();
         public ScrollRect List;
         public StepBonusRowWidget[] Rows = Array.Empty<StepBonusRowWidget>();
 
@@ -91,7 +96,8 @@ namespace Baryonyx.StepBonus
             for (int i = 0; i < Tabs.Length; i++)
             {
                 int index = i;
-                bindings.Bind(Tabs[i], () => TabPressed?.Invoke(index));
+                if (Tabs[i] != null)
+                    bindings.Bind(Tabs[i].Button, () => TabPressed?.Invoke(index));
             }
             foreach (var row in Rows)
             {
@@ -135,9 +141,11 @@ namespace Baryonyx.StepBonus
         private void LoadFailed(Exception exception)
         {
             Debug.LogWarning("ACTボーナスを取得できませんでした。" + exception.Message, this);
-            Set(Owned, LoadFailedText);
+            ShowLoadFailed();
             ShowNotice(LoadFailedMessage);
         }
+
+        private void ShowLoadFailed() => Set(Owned, LoadFailedText);
 
         private async Task<StepBonusLoadout> SaveAsync(
             IStepBonusSource source,
@@ -181,6 +189,31 @@ namespace Baryonyx.StepBonus
                 row.Button.gameObject.SetActive(false);
         }
 
+        // 停止中の表示の切り替え：カテゴリのタブごとの一覧と、サーバーから読み込む間・読めなかったときの表示。
+        // タブは、静的なセッションではなく仮データの持ち物から、Play中と同じ絞り込み（InTab）で行を出す。
+        public IReadOnlyList<string> PreviewStates =>
+            StepBonusSettingsPresenter.TabLabels.Concat(GuidePanelLoad.PreviewStates).ToArray();
+
+        public void ShowPreviewState(int index)
+        {
+            int tabs = StepBonusSettingsPresenter.TabLabels.Length;
+            if (index >= tabs)
+            {
+                ShowLoading();
+                if (index == tabs + 1)
+                    ShowLoadFailed();
+                return;
+            }
+            ShowTab(index);
+            if (Data == null)
+                return;
+            foreach (var row in Rows)
+                row.Button.gameObject.SetActive(
+                    Array.Exists(Data.Owned, roll => roll.Id == row.Id)
+                        && StepBonusSettingsPresenter.InTab(Data.Find(row.Id), index)
+                );
+        }
+
         private void OnDisable()
         {
             load.Cancel();
@@ -195,12 +228,7 @@ namespace Baryonyx.StepBonus
             Set(Owned, state.OwnedText);
             for (int i = 0; i < Slots.Length && i < state.Slots.Count; i++)
                 RenderSlot(Slots[i], state.Slots[i], loadout, i);
-            for (int i = 0; i < Tabs.Length; i++)
-            {
-                var selected = Tabs[i].transform.Find("Selected");
-                if (selected != null)
-                    selected.gameObject.SetActive(i == state.Tab);
-            }
+            ShowTab(state.Tab);
 
             var rows = new Dictionary<string, StepBonusRowState>();
             foreach (var row in state.Rows)
@@ -229,6 +257,14 @@ namespace Baryonyx.StepBonus
             for (int i = 0; i < state.Rows.Count; i++)
                 if (byId.TryGetValue(state.Rows[i].Id, out var widget))
                     widget.Button.transform.SetSiblingIndex(i);
+        }
+
+        // 選んでいるタブにだけ金の下線を出し、文字を明るい金にする。
+        private void ShowTab(int tab)
+        {
+            for (int i = 0; i < Tabs.Length; i++)
+                if (Tabs[i] != null)
+                    Tabs[i].Chosen = i == tab;
         }
 
         public void ShowNotice(string message)

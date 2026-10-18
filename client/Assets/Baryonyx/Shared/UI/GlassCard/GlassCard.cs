@@ -1,0 +1,161 @@
+using System;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+namespace Baryonyx.UI
+{
+    /// <summary>
+    /// A frosted-glass card that the player taps or holds: a translucent rounded plate with a rim
+    /// lit from the top left, a pattern in the top-left corner and a soft shadow under it
+    /// (GlassCardAssets builds the parts). Pressing sinks the plate a little so it reads as
+    /// pressable; a tap raises <see cref="Clicked"/>, and holding for <see cref="HoldSeconds"/>
+    /// raises <see cref="Held"/> instead. Dragging (scrolling the list it sits in) cancels both.
+    /// The chosen card shows its gold rim and glow (<see cref="Selection"/>).
+    /// </summary>
+    public sealed class GlassCard
+        : MonoBehaviour,
+            IPointerDownHandler,
+            IPointerUpHandler,
+            IPointerExitHandler,
+            IPointerClickHandler
+    {
+        public const float DefaultHoldSeconds = 0.5f;
+
+        // 押している間に沈める板と、小さくする影。
+        public RectTransform Body;
+        public RectTransform Shadow;
+
+        // 選んだときの金の縁と光（中身の上）。板の金色の色づけ（中身の下）は GlassCardSelection が一緒に出す。
+        public GameObject Selection;
+
+        // 押せないとき（保存中など）は薄くする。
+        public CanvasGroup Group;
+        public float HoldSeconds = DefaultHoldSeconds;
+
+        private const float SinkDistance = 3f;
+        private const float DisabledAlpha = 0.55f;
+
+        private PointerEventData press;
+        private float pressedAt;
+        private bool held;
+        private bool sunk;
+        private bool interactable = true;
+
+        public event Action Clicked;
+        public event Action Held;
+
+        public bool Selected
+        {
+            get => Selection != null && Selection.activeSelf;
+            set
+            {
+                if (Selection != null)
+                    Selection.SetActive(value);
+            }
+        }
+
+        /// <summary>Whether the card takes taps; a card that does not is drawn faded.</summary>
+        public bool Interactable
+        {
+            get => interactable;
+            set
+            {
+                interactable = value;
+                if (Group != null)
+                    Group.alpha = value ? 1f : DisabledAlpha;
+                if (!value)
+                    Cancel();
+            }
+        }
+
+        /// <summary>Taps the card, as a finger lifting on it would.</summary>
+        public void Click()
+        {
+            if (interactable)
+                Clicked?.Invoke();
+        }
+
+        /// <summary>Holds the card, as a finger resting on it would.</summary>
+        public void Hold()
+        {
+            if (interactable)
+                Held?.Invoke();
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            // Buttonと組み合わせたカード（GlassCardAssets.Choice）は、Buttonが押せないときは沈めない。
+            if (
+                !interactable
+                || (TryGetComponent(out UnityEngine.UI.Button button) && !button.interactable)
+            )
+                return;
+            press = eventData;
+            pressedAt = Time.unscaledTime;
+            held = false;
+            Sink(true);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            press = null;
+            Sink(false);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (press != null && !held)
+                Cancel();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            // 長押しのあとに指を離したときは、押したことにしない。
+            if (held)
+            {
+                held = false;
+                return;
+            }
+            if (!eventData.dragging)
+                Click();
+        }
+
+        private void Update()
+        {
+            if (press == null || held)
+                return;
+            // 一覧を動かし始めたら、長押しにしない。
+            if (press.dragging)
+            {
+                Cancel();
+                return;
+            }
+            if (Time.unscaledTime - pressedAt >= HoldSeconds)
+            {
+                held = true;
+                Sink(false);
+                Hold();
+            }
+        }
+
+        private void OnDisable() => Cancel();
+
+        private void Cancel()
+        {
+            press = null;
+            Sink(false);
+        }
+
+        private void Sink(bool down)
+        {
+            if (sunk == down)
+                return;
+            sunk = down;
+            float offset = down ? -SinkDistance : SinkDistance;
+            if (Body != null)
+                Body.anchoredPosition += new Vector2(0f, offset);
+            if (Shadow != null)
+                Shadow.anchoredPosition += new Vector2(0f, -offset * 2f);
+        }
+    }
+}

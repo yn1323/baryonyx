@@ -11,6 +11,7 @@ using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
@@ -43,23 +44,36 @@ namespace Baryonyx.Training.Editor
         private const float Dot = Guide.DotScale;
         private static readonly Vector2 Design = Layout.Design;
 
-        // 左のイラストの枠、その右下に立たせるドット絵の足元、右の枠（設計座標、左上から）。
-        // 左上の「もどる」（下端が192）と重ならないよう、どちらも200から下に置く。
-        private static readonly Rect Portrait = new(60, 200, 576, 850);
+        // 枠つきの表示（GuideFramedPanel）で、左の濃い面いっぱいにイラスト、その右下にドット絵、
+        // 金の2本線の右の透ける面に詳細を置く（設計座標、左上から）。
+        private const float Split = 640f;
+        private static readonly Rect Portrait = new(
+            0,
+            GuideFrameAssets.HeaderHeight,
+            Split,
+            1080 - GuideFrameAssets.HeaderHeight
+        );
         private static readonly Vector2 FigureFeet = new(520, 1028);
-        private static readonly Rect Panel = new(670, 200, 1210, 850);
+        private static readonly Rect Panel = new(
+            Split + 14,
+            GuideFrameAssets.HeaderHeight + 6,
+            1210,
+            956
+        );
+        private const float PortraitFade = 140f;
         private const float PanelPad = 34f;
 
-        // 右の枠の中（枠の左上から）：ステータス（2列4行）とその右のパッシブの箱、デッキの4枚、装備の5枠。
-        private const float StatsTop = 122f;
+        // 右の面の中（左上から）：ステータス（2列4行）とその右のパッシブ、デッキの4枚、装備の5枠。
+        // 画面の下端（設計座標で1040）まで使い、段の間を空けて詰まって見えないようにする。
+        private const float StatsTop = 148f;
         private const float StatsWidth = 520f;
         private const float StatRow = 42f;
-        private static readonly Rect Passives = new(586, 116, 590, 178);
+        private static readonly Rect Passives = new(586, 140, 590, 178);
         private const float PassiveRow = 64f;
-        private const float DeckTop = 334f;
+        private const float DeckTop = 400f;
         private const float CardGap = 16f;
         private const float PairGap = 60f;
-        private const float GearTop = 666f;
+        private const float GearTop = 752f;
         private const float GearGap = 13f;
         private const float GearHeight = 168f;
 
@@ -243,10 +257,32 @@ namespace Baryonyx.Training.Editor
             view.WeaponIcon = Guide.Icon(EquipmentAssets.IconWeaponPath);
             view.ArmorIcon = Guide.Icon(EquipmentAssets.IconArmorPath);
 
+            root.gameObject.AddComponent<GuideFramedPanel>();
             var layer = Layout.Layer(root, "Layout");
+            GuideFrameAssets.Pane(
+                layer,
+                "PortraitPane",
+                0f,
+                Split,
+                Portrait.y,
+                GuideFrameAssets.PaneDark,
+                true,
+                false
+            );
+            GuideFrameAssets.Pane(
+                layer,
+                "DetailPane",
+                Split,
+                1920f,
+                Portrait.y,
+                GuideFrameAssets.PaneLight,
+                false,
+                true
+            );
             // ページの上の左右のフリックで人を替える。枠とボタンの上から動かしても届くよう、両方を載せる層で受ける。
             view.Swipe = layer.gameObject.AddComponent<TrainingSwipe>();
             BuildPortrait(layer, view, party);
+            GuideFrameAssets.Divider(layer, Split, Portrait.y);
             BuildDetail(layer, view);
             BuildDialog(root, view);
 
@@ -263,7 +299,8 @@ namespace Baryonyx.Training.Editor
             PartyMockData party
         )
         {
-            var card = Layout.FrameBox(
+            // イラストは枠を付けず、左の面いっぱいに敷き、右端を面の色へなじませる。
+            var card = Box(
                 layer,
                 "Portrait",
                 Portrait.x,
@@ -271,16 +308,23 @@ namespace Baryonyx.Training.Editor
                 Portrait.width,
                 Portrait.height
             );
-            var picture = Box(
-                card,
-                "Illustration",
-                12,
-                12,
-                Portrait.width - 24,
-                Portrait.height - 24
-            );
+            var picture = Rect("Illustration", card);
+            Stretch(picture);
             view.Illustration = picture.gameObject.AddComponent<RawImage>();
             view.Illustration.raycastTarget = false;
+            var fade = Box(
+                card,
+                "Fade",
+                Portrait.width - PortraitFade,
+                0,
+                PortraitFade,
+                Portrait.height
+            );
+            var fadeImage = fade.gameObject.AddComponent<RawImage>();
+            fadeImage.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(Guide.ShadeHorizontalPath);
+            var paneColor = GuideFrameAssets.PaneDark;
+            fadeImage.color = new Color(paneColor.r, paneColor.g, paneColor.b, 0.9f);
+            fadeImage.raycastTarget = false;
 
             // 右下の足元を暗くして、イラストの上でもドット絵が見えるようにする。
             var feet = new Vector2(FigureFeet.x - Design.x / 2f, Design.y / 2f - FigureFeet.y);
@@ -302,14 +346,7 @@ namespace Baryonyx.Training.Editor
 
         private static void BuildDetail(RectTransform layer, TrainingView view)
         {
-            var panel = Layout.FrameBox(
-                layer,
-                "Detail",
-                Panel.x,
-                Panel.y,
-                Panel.width,
-                Panel.height
-            );
+            var panel = Box(layer, "Detail", Panel.x, Panel.y, Panel.width, Panel.height);
             float width = Panel.width - PanelPad * 2;
 
             var header = Layout.Row(panel, "Header", PanelPad, 18, 760, 92, 14);
@@ -356,17 +393,15 @@ namespace Baryonyx.Training.Editor
                 deckLeft + cardSize.x * 2 + CardGap + PairGap,
                 deckLeft + cardSize.x * 3 + CardGap * 2 + PairGap,
             };
-            Layout.Text(
+            GuideFrameAssets.Heading(
                 panel,
                 "UniquesTitle",
                 "固有スキル",
-                24,
-                UiPalette.Gold,
-                TextAlignmentOptions.BottomLeft,
-                cardX[0],
-                DeckTop - 36,
+                cardX[0] - 4,
+                DeckTop - 40,
                 300,
-                32
+                36,
+                26
             );
             var customTitle = Row(panel, "CustomTitle", cardX[2], DeckTop - 36, 420, 32, 14);
             customTitle.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.LowerLeft;
@@ -392,6 +427,7 @@ namespace Baryonyx.Training.Editor
                 ),
                 0
             );
+            GuideFrameAssets.HeadingRow(customTitle, 26);
             Layout.Line(
                 panel,
                 "DeckLine",
@@ -414,17 +450,15 @@ namespace Baryonyx.Training.Editor
                 .ToArray();
 
             // 武器・防具・アクセサリー3つを同じ大きさの枠で並べる。
-            Layout.Text(
+            GuideFrameAssets.Heading(
                 panel,
                 "GearTitle",
                 "装備",
-                24,
-                UiPalette.Gold,
-                TextAlignmentOptions.BottomLeft,
-                PanelPad,
-                GearTop - 34,
+                PanelPad - 4,
+                GearTop - 40,
                 300,
-                32
+                36,
+                26
             );
             float gear =
                 (width - GearGap * (TrainingPresenter.GearSlots - 1)) / TrainingPresenter.GearSlots;
@@ -434,14 +468,15 @@ namespace Baryonyx.Training.Editor
                 .ToArray();
         }
 
-        // 右上の「レベルアップ」（金の枠）。1レベル上げるのに要るルーンを添え、押すと重ねた画面を開く。
+        // 右上の「レベルアップ」（金の縁のすりガラスのカード）。1レベル上げるのに要るルーンを添え、押すと重ねた画面を開く。
         private static void BuildLevelUp(RectTransform panel, TrainingView view)
         {
-            var levelUp = Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96);
-            view.LevelUp = Guide.AddButton(
-                levelUp,
-                Guide.Frame(levelUp, Guide.FrameSelectedPath, Color.white)
+            // 選んだカードと同じ金の縁と光で、押せることを目立たせる。
+            var (button, selected, levelUp) = GlassCardAssets.Choice(
+                Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96)
             );
+            selected.SetActive(true);
+            view.LevelUp = button;
             view.LevelUpLabel = Text(
                 levelUp,
                 "Label",
@@ -523,7 +558,7 @@ namespace Baryonyx.Training.Editor
                 .ToArray();
         }
 
-        // パッシブ2つを、見出し付きの暗い箱に1行ずつ（アイコン、名前、効果）。未解放は名前の行の右に解放するLv。
+        // パッシブ2つを、見出しの下に1行ずつ（アイコン、名前、効果）。未解放は名前の行の右に解放するLv。
         private static TrainingSkillWidget[] BuildPassives(RectTransform panel)
         {
             var box = Box(
@@ -534,16 +569,8 @@ namespace Baryonyx.Training.Editor
                 Passives.width,
                 Passives.height
             );
-            AddImage(box, Inset, false);
-            var title = Text(
-                box,
-                "Title",
-                "パッシブ",
-                22,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            At(title, 18, 10, 200, 28);
+            // カードにはせず、見出しと2行だけを面の上に置く。
+            GuideFrameAssets.Heading(box, "Title", "パッシブ", 14, 6, 240, 34, 22);
             Layout.Line(box, "Line", 18, 42 + PassiveRow, Passives.width - 36, 2);
             return Enumerable
                 .Range(0, 2)
@@ -757,8 +784,12 @@ namespace Baryonyx.Training.Editor
             float width
         )
         {
-            var (button, _) = Layout.Choice(panel, "Gear" + index, x, y, width, GearHeight);
-            var cell = (RectTransform)button.transform;
+            // 装備の枠は小さいので、カードの模様は付けない。まだ付けられないアクセサリーは点線にする。
+            var (button, _, cell) = GlassCardAssets.Choice(
+                Box(panel, "Gear" + index, x, y, width, GearHeight),
+                dashed: index >= TrainingPresenter.OpenGearSlots,
+                pattern: false
+            );
             var widget = new TrainingGearWidget { Button = button };
             var icon = Box(cell, "Icon", 14, 14, 48, 48);
             widget.Icon = icon.gameObject.AddComponent<Image>();
@@ -816,15 +847,17 @@ namespace Baryonyx.Training.Editor
             Stretch(locked);
             var lockImage = Box(locked, "Image", (width - 9 * 4) / 2f, 62, 9 * 4, 10 * 4);
             SpriteImage(lockImage, LockPath, Color.white);
-            var soon = Text(
+            // 開いていないアクセサリーの枠は、解放するLv（「Lv 15で解放」）を出す。
+            int accessory = index - TrainingPresenter.OpenGearSlots;
+            widget.When = Text(
                 locked,
-                "Soon",
-                "準備中",
+                "When",
+                accessory >= 0 ? AccessorySlots.UnlockText(accessory) : "",
                 22,
                 UiPalette.Gold,
                 TextAlignmentOptions.Center
             );
-            At(soon, 8, 112, width - 16, 30);
+            At(widget.When, 8, 112, width - 16, 30);
             widget.Lock = locked.gameObject;
             locked.gameObject.SetActive(false);
             return widget;
@@ -846,19 +879,18 @@ namespace Baryonyx.Training.Editor
             AddImage(dim, Dim, true);
 
             var layer = Layout.Layer(dialog, "Layout");
-            var modal = Box(layer, "Modal", Modal.x, Modal.y, Modal.width, Modal.height);
-            Guide.Frame(modal, Guide.FramePath, Color.white).raycastTarget = true;
+            // 枠つきの画面と同じ、濃い面に金の細い線の窓。見出しは金のひし形と淡い金の文字。
+            var modal = GuideFrameAssets.Window(
+                layer,
+                "Modal",
+                Modal.x,
+                Modal.y,
+                Modal.width,
+                Modal.height
+            );
             float width = Modal.width;
 
-            var title = Text(
-                modal,
-                "Title",
-                "レベルアップ",
-                48,
-                UiPalette.Gold,
-                TextAlignmentOptions.MidlineLeft
-            );
-            At(title, ModalPad, 30, 500, 64);
+            GuideFrameAssets.Heading(modal, "Title", "レベルアップ", ModalPad, 30, 500, 64, 44);
             view.DialogName = Text(
                 modal,
                 "Name",
@@ -914,8 +946,10 @@ namespace Baryonyx.Training.Editor
 
             float side = ModalPad + 640 + 48;
             float sideWidth = width - side - ModalPad;
-            var learned = Box(modal, "Learned", side, 372, sideWidth, 124);
-            AddImage(learned, Inset, false);
+            var learned = GlassCardAssets.Plaque(
+                Box(modal, "Learned", side, 372, sideWidth, 124),
+                pattern: false
+            );
             var learnedTag = Text(
                 learned,
                 "Tag",
@@ -937,10 +971,9 @@ namespace Baryonyx.Training.Editor
             view.Learned.textWrappingMode = TextWrappingModes.Normal;
             Guide.Shrink(view.Learned, 24);
 
-            var next = Box(modal, "NextUnlock", side, 512, sideWidth, 160);
-            Guide.Frame(next, Guide.FramePath, new Color(0.62f, 0.62f, 0.68f, 1f)).raycastTarget =
-                false;
-            view.NextBox = next.gameObject;
+            var nextBox = Box(modal, "NextUnlock", side, 512, sideWidth, 160);
+            var next = GlassCardAssets.Plaque(nextBox, pattern: false);
+            view.NextBox = nextBox.gameObject;
             var nextTag = Text(
                 next,
                 "Tag",
@@ -1007,11 +1040,13 @@ namespace Baryonyx.Training.Editor
             );
             At(view.Balance, ModalPad, footY + 78, 600, 36);
 
-            var confirm = Box(modal, "Confirm", width - ModalPad - 380, footY, 380, 110);
-            view.Confirm = Guide.AddButton(
-                confirm,
-                Guide.Frame(confirm, Guide.FrameSelectedPath, Color.white)
+            // 決める方は、育成の画面の「レベルアップ」と同じ金の縁と光のカードにする。
+            var (confirmButton, confirmRim, confirm) = GlassCardAssets.Choice(
+                Box(modal, "Confirm", width - ModalPad - 380, footY, 380, 110),
+                pattern: false
             );
+            confirmRim.SetActive(true);
+            view.Confirm = confirmButton;
             var confirmLabel = Text(
                 confirm,
                 "Label",
@@ -1021,11 +1056,11 @@ namespace Baryonyx.Training.Editor
                 TextAlignmentOptions.Center
             );
             Stretch((RectTransform)confirmLabel.transform);
-            var cancel = Box(modal, "Cancel", width - ModalPad - 380 - 24 - 240, footY, 240, 110);
-            view.Cancel = Guide.AddButton(
-                cancel,
-                Guide.Frame(cancel, Guide.FramePath, Color.white)
+            var (cancelButton, _, cancel) = GlassCardAssets.Choice(
+                Box(modal, "Cancel", width - ModalPad - 380 - 24 - 240, footY, 240, 110),
+                pattern: false
             );
+            view.Cancel = cancelButton;
             var cancelLabel = Text(
                 cancel,
                 "Label",
@@ -1083,9 +1118,9 @@ namespace Baryonyx.Training.Editor
         {
             var rect = Rect(name, row);
             Fit(rect, width);
-            var button = Guide.AddButton(rect, Guide.Frame(rect, Guide.FramePath, Color.white));
+            var (button, _, inside) = GlassCardAssets.Choice(rect, pattern: false);
             var text = Text(
-                rect,
+                inside,
                 "Label",
                 label,
                 label.Length > 1 ? 34 : 48,

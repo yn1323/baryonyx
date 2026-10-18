@@ -91,98 +91,98 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void RosterChoosesThePartysFirstAndListsTheBench()
+        public void RosterOpensWithNothingChosenAndListsTheBench()
         {
             var view = new FakeView();
             using var presenter = new PartyRosterPresenter(view, Full());
 
             Assert.That(view.State.Party, Is.EqualTo(new[] { "toma", "luka", "aria", "mina" }));
             Assert.That(view.State.Bench, Is.EqualTo(new[] { "anselm", "greta" }));
-            Assert.That(view.State.OwnedText, Is.EqualTo("所持 6人"));
-            // 最初はパーティの先頭を選び、ボタンは「パーティから外す」。
-            Assert.That(view.State.Selected, Is.EqualTo("toma"));
-            Assert.That(view.State.Action, Is.EqualTo(PartyRosterAction.Leave));
-            Assert.That(view.State.ActionLabel, Is.EqualTo(PartyRosterPresenter.LeaveLabel));
-            Assert.That(view.State.CanAct, Is.True);
-            Assert.That(view.State.CanOpen, Is.True);
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
+            Assert.That(view.State.SelectedBench, Is.Null);
+            Assert.That(view.State.CanRemove, Is.False);
 
-            // 押した人を選ぶ。控えの人のボタンは「パーティに入れる」。
+            // 押したカードを選び、もう一度押すとやめる。別のパーティの枠を押すと選び直す。
             view.PressSlot(2);
-            Assert.That(view.State.Selected, Is.EqualTo("aria"));
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(2));
+            Assert.That(view.State.CanRemove, Is.True);
+            view.PressSlot(0);
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(0));
+            view.PressSlot(0);
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
             view.PressBench("greta");
-            Assert.That(view.State.Selected, Is.EqualTo("greta"));
-            Assert.That(view.State.ActionLabel, Is.EqualTo(PartyRosterPresenter.JoinLabel));
+            Assert.That(view.State.SelectedBench, Is.EqualTo("greta"));
+            view.PressBench("anselm");
+            Assert.That(view.State.SelectedBench, Is.EqualTo("anselm"));
+            view.PressBench("anselm");
+            Assert.That(view.State.SelectedBench, Is.Null);
             Assert.That(view.Notices, Is.Empty);
-
-            // 選んだ人の個別の画面を開く。
-            view.PressOpen();
-            Assert.That(view.Opened, Is.EqualTo(new[] { "greta" }));
         }
 
         [Test]
-        public void ABenchCharacterSwapsWithThePartySlotChosenNext()
+        public void APartySlotAndABenchCharacterSwapInEitherOrder()
         {
             var view = new FakeView();
-            string remembered = null;
-            using var presenter = new PartyRosterPresenter(
-                view,
-                Full(),
-                remember: id => remembered = id
-            );
+            using var presenter = new PartyRosterPresenter(view, Full());
 
-            view.PressBench("anselm");
-            Assert.That(remembered, Is.EqualTo("anselm"));
-            // パーティに空きがないので、入れ替える相手を選び始める。
-            view.PressAction();
-            Assert.That(view.State.Swapping, Is.True);
-            Assert.That(view.State.Action, Is.EqualTo(PartyRosterAction.Cancel));
-            Assert.That(view.State.ActionLabel, Is.EqualTo(PartyRosterPresenter.CancelLabel));
-            Assert.That(view.State.CanOpen, Is.False);
-            view.PressOpen();
-            Assert.That(view.Opened, Is.Empty);
-
+            // パーティの枠を選んでから一覧の人を押す。
             view.PressSlot(1);
-            Assert.That(view.State.Swapping, Is.False);
+            view.PressBench("anselm");
             Assert.That(view.State.Party[1], Is.EqualTo("anselm"));
             Assert.That(view.State.Bench, Is.EqualTo(new[] { "luka", "greta" }));
-            Assert.That(view.State.Selected, Is.EqualTo("anselm"));
-            Assert.That(view.Notices.Last(), Is.EqualTo("ルカとアンセルムを入れ替えました"));
+            // 枠を見ればわかるので知らせない。入れ替えたあとは何も選んでいない。
+            Assert.That(view.Notices, Is.Empty);
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
+            Assert.That(view.State.SelectedBench, Is.Null);
 
-            // 「やめる」と、控えを押し直したときは、入れ替えをやめる。
+            // 一覧の人を選んでからパーティの枠を押す。
             view.PressBench("greta");
-            view.PressAction();
-            view.PressAction();
-            Assert.That(view.State.Swapping, Is.False);
-            view.PressAction();
-            view.PressBench("luka");
-            Assert.That(view.State.Swapping, Is.False);
-            Assert.That(view.State.Selected, Is.EqualTo("luka"));
+            view.PressSlot(3);
+            Assert.That(view.State.Party[3], Is.EqualTo("greta"));
+            Assert.That(view.Notices, Is.Empty);
+            Assert.That(view.State.SelectedBench, Is.Null);
         }
 
         [Test]
-        public void MembersLeaveAndBenchCharactersJoinTheEmptySlot()
+        public void RemoveEmptiesTheChosenSlotWhichABenchCharacterThenFills()
         {
             var view = new FakeView();
-            using var presenter = new PartyRosterPresenter(view, Full(), "luka");
+            using var presenter = new PartyRosterPresenter(view, Full());
 
-            view.PressAction();
+            // 枠を選んでいないと外せない。
+            view.PressRemove();
+            Assert.That(view.Notices.Last(), Is.EqualTo(PartyRosterPresenter.ChooseLeaverMessage));
+            Assert.That(view.State.Party[1], Is.EqualTo("luka"));
+
+            view.PressSlot(1);
+            view.PressRemove();
             Assert.That(view.State.Party[1], Is.Null);
-            Assert.That(view.Notices.Last(), Is.EqualTo("ルカを外しました"));
-            // 外した人は選んだまま控えに移り、空いた枠へ入れ直せる。
-            Assert.That(view.State.Selected, Is.EqualTo("luka"));
-            Assert.That(view.State.Action, Is.EqualTo(PartyRosterAction.Join));
+            Assert.That(view.State.Bench, Does.Contain("luka"));
+            Assert.That(view.Notices.Last(), Is.EqualTo(PartyRosterPresenter.ChooseLeaverMessage));
 
+            // 空いた枠も選べ、一覧の人を入れられる。空いた枠は外せない。
+            view.PressSlot(1);
+            Assert.That(view.State.CanRemove, Is.False);
+            view.PressRemove();
+            Assert.That(view.Notices.Last(), Is.EqualTo(PartyRosterPresenter.ChooseLeaverMessage));
             view.PressBench("greta");
-            view.PressAction();
             Assert.That(view.State.Party[1], Is.EqualTo("greta"));
-            Assert.That(view.Notices.Last(), Is.EqualTo("グレタを編成しました"));
+            Assert.That(view.Notices.Count, Is.EqualTo(2));
+        }
 
-            // 空いた枠を押すと、選んでいる控えの人を入れる。
-            view.PressSlot(3);
-            view.PressAction();
-            Assert.That(view.State.Party[3], Is.Null);
-            view.PressSlot(3);
-            Assert.That(view.State.Party[3], Is.EqualTo("mina"));
+        [Test]
+        public void HoldingACharacterOpensTheirPage()
+        {
+            var view = new FakeView();
+            using var presenter = new PartyRosterPresenter(view, Full());
+
+            view.Hold("aria");
+            view.Hold("greta");
+            view.Hold("nobody");
+            Assert.That(view.Opened, Is.EqualTo(new[] { "aria", "greta" }));
+            // 長押しは選び方を変えない。
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
+            Assert.That(view.State.SelectedBench, Is.Null);
         }
 
         [Test]
@@ -200,8 +200,9 @@ namespace Baryonyx.Tests.EditMode
                 }
             );
 
-            Assert.That(view.State.CanAct, Is.False);
-            view.PressAction();
+            view.PressSlot(0);
+            Assert.That(view.State.CanRemove, Is.False);
+            view.PressRemove();
             Assert.That(calls, Is.EqualTo(0));
             Assert.That(view.State.Party[0], Is.EqualTo("toma"));
             Assert.That(view.Notices.Last(), Is.EqualTo(PartyRosterPresenter.KeepOneMessage));
@@ -217,7 +218,6 @@ namespace Baryonyx.Tests.EditMode
             using var presenter = new PartyRosterPresenter(
                 view,
                 Full(),
-                "anselm",
                 (slot, id, _) =>
                 {
                     calls.Add((slot, id));
@@ -225,44 +225,49 @@ namespace Baryonyx.Tests.EditMode
                 }
             );
 
-            view.PressAction();
+            view.PressBench("anselm");
             view.PressSlot(1);
             Assert.That(presenter.Saving, Is.True);
+            Assert.That(view.State.Saving, Is.True);
             // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
             Assert.That(view.State.Party[1], Is.EqualTo("luka"));
-            Assert.That(view.State.CanAct, Is.False);
             view.PressSlot(2);
-            view.PressAction();
+            view.PressBench("greta");
+            view.PressRemove();
+            view.Hold("toma");
             Assert.That(calls, Is.EqualTo(new[] { (1, "anselm") }));
+            Assert.That(view.Opened, Is.Empty);
 
             pending.SetResult(saved);
             Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
             Assert.That(presenter.Saving, Is.False);
             Assert.That(presenter.Formation, Is.SameAs(saved));
             Assert.That(view.State.Party[1], Is.EqualTo("anselm"));
-            Assert.That(view.Notices, Is.EqualTo(new[] { "ルカとアンセルムを入れ替えました" }));
+            Assert.That(view.Notices, Is.Empty);
 
             // 外す操作は、キャラのIDの代わりにnullを渡す。
-            view.PressAction();
+            view.PressSlot(1);
+            view.PressRemove();
             Assert.That(calls.Last(), Is.EqualTo((1, (string)null)));
         }
 
         [Test]
-        public void AFailedSaveKeepsTheFormationAndSaysSo()
+        public void AFailedSaveKeepsTheFormationAndTheChoice()
         {
             var view = new FakeView();
             using var presenter = new PartyRosterPresenter(
                 view,
                 Full(),
-                "anselm",
                 (_, _, _) => Task.FromException<PartyFormation>(new InvalidOperationException())
             );
 
-            view.PressAction();
+            view.PressBench("anselm");
             view.PressSlot(1);
             Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
             Assert.That(presenter.Saving, Is.False);
             Assert.That(view.State.Party[1], Is.EqualTo("luka"));
+            // 選んだままにして、押し直せるようにする。
+            Assert.That(view.State.SelectedBench, Is.EqualTo("anselm"));
             Assert.That(view.Notices, Is.EqualTo(new[] { PartyRosterPresenter.SaveFailedMessage }));
         }
 
@@ -358,9 +363,10 @@ namespace Baryonyx.Tests.EditMode
             presenter.Dispose();
 
             view.PressSlot(2);
-            view.PressAction();
-            view.PressOpen();
-            Assert.That(view.State.Selected, Is.EqualTo("toma"));
+            view.PressBench("greta");
+            view.PressRemove();
+            view.Hold("toma");
+            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
             Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Opened, Is.Empty);
         }
@@ -369,8 +375,8 @@ namespace Baryonyx.Tests.EditMode
         {
             public event Action<int> SlotPressed;
             public event Action<string> BenchPressed;
-            public event Action ActionPressed;
-            public event Action OpenPressed;
+            public event Action RemovePressed;
+            public event Action<string> Held;
 
             public PartyRosterState State { get; private set; }
             public List<string> Notices { get; } = new();
@@ -386,9 +392,9 @@ namespace Baryonyx.Tests.EditMode
 
             public void PressBench(string id) => BenchPressed?.Invoke(id);
 
-            public void PressAction() => ActionPressed?.Invoke();
+            public void PressRemove() => RemovePressed?.Invoke();
 
-            public void PressOpen() => OpenPressed?.Invoke();
+            public void Hold(string id) => Held?.Invoke(id);
         }
     }
 }

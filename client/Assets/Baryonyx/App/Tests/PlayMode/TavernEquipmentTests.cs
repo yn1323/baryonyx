@@ -34,7 +34,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernEquipmentTests));
         }
 
-        // 個別の画面で武器か防具の枠を押すと、その人とその枠を選んだ装備の付け替えの画面を開く。左上の◀▶で
+        // 個別の画面で武器か防具の枠を押すと、その人とその枠を選んだ装備の付け替えの画面を開く。左のフリックで
         // 枠を選んだまま人を替え、右の装備を押すとその場で付け替え、「外す」で外す。左にはステータスを出す。
         [UnityTest]
         public IEnumerator EquipmentChangesFromTheAdventurersPage()
@@ -44,7 +44,7 @@ namespace Baryonyx.Tests.PlayMode
             var view = guide.View;
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            view.PanelFor(item).GetComponent<AdventurerRosterView>().Open.onClick.Invoke();
+            view.PanelFor(item).GetComponent<AdventurerRosterView>().Slots[0].Card.Hold();
             var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             yield return SceneTests.WaitForTask(page.LoadTask);
@@ -61,8 +61,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             SceneTests.AssertBelow(panel.transform.Find("Layout/Person"), view.Back.transform);
             SceneTests.AssertBelow(panel.transform.Find("Layout/Items"), view.Back.transform);
-            SceneTests.AssertTouchSize(panel.Person.Prev.transform);
-            SceneTests.AssertTouchSize(panel.Person.Next.transform);
             foreach (var slot in panel.Slots)
                 SceneTests.AssertTouchSize(slot.Button.transform, 0.7f);
 
@@ -70,10 +68,29 @@ namespace Baryonyx.Tests.PlayMode
             var (people, _) = PartySession.Formation(panel.Party).TabOrder();
             var person = people[0];
             Assert.That(panel.Person.Name.text, Is.EqualTo(person.Name));
+            Assert.That(
+                view.Breadcrumb.text,
+                Is.EqualTo(
+                    string.Join(
+                        Baryonyx.UI.GuideMenu.GuideMenuView.TrailSeparator,
+                        "編成",
+                        "冒険者",
+                        person.Name,
+                        "装備"
+                    )
+                )
+            );
             Assert.That(panel.Person.Figure.enabled, Is.True);
             Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
             Assert.That(panel.Slots[0].Selected.activeSelf, Is.False);
-            Assert.That(panel.Title.text, Is.EqualTo("防具"));
+            // 右のタブは左の枠と連動する。
+            Assert.That(
+                panel.Tabs.Select(tab => tab.Label.text),
+                Is.EqualTo(new[] { "武器", "防具", "アクセサリー" })
+            );
+            Assert.That(panel.Tabs[1].Chosen, Is.True);
+            Assert.That(panel.Tabs[0].Chosen, Is.False);
+            Assert.That(panel.Tabs.All(tab => tab.Button.interactable), Is.True);
             Assert.That(panel.Accessories, Has.Length.EqualTo(3));
             var growth = panel.Training.Find(person.Id);
             Assert.That(
@@ -89,19 +106,40 @@ namespace Baryonyx.Tests.PlayMode
                 )
             );
 
-            // ◀▶で人を替えても、防具の枠を選んだまま。
-            panel.Person.Next.onClick.Invoke();
+            // 左の面のフリックで人を替えても、防具の枠を選んだまま。
+            panel.Swipe.Flick(1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(people[1].Name));
             Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
-            panel.Person.Prev.onClick.Invoke();
+            panel.Swipe.Flick(-1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(person.Name));
 
             // 武器の枠を選び、まだ誰も付けていない武器に替える。
+            // アクセサリーのタブを押すと1つ目のアクセサリーの枠を選ぶ。まだ持てないので一覧は空で、
+            // 開いていない枠は解放するLvを出す。左のアクセサリーの枠を押してもアクセサリーのタブになる。
+            panel.Tabs[2].Button.onClick.Invoke();
+            Assert.That(panel.Tabs[2].Chosen, Is.True);
+            Assert.That(panel.Accessories[0].Selected.activeSelf, Is.True);
+            Assert.That(panel.Slots.Any(slot => slot.Selected.activeSelf), Is.False);
+            Assert.That(Rows(panel), Is.Empty);
+            Assert.That(panel.Remove.gameObject.activeSelf, Is.False);
+            Assert.That(panel.Accessories[0].Name.text, Is.EqualTo(AccessorySlots.UnlockText(0)));
+            Assert.That(panel.Status.text, Is.EqualTo(AccessorySlots.UnlockText(0)));
+            panel.Accessories[1].Button.onClick.Invoke();
+            Assert.That(panel.Accessories[1].Selected.activeSelf, Is.True);
+            Assert.That(panel.Accessories[0].Selected.activeSelf, Is.False);
+            Assert.That(panel.Tabs[2].Chosen, Is.True);
+
+            // タブを押しても、左の枠が連動して替わる。
+            panel.Tabs[0].Button.onClick.Invoke();
+            Assert.That(panel.Slots[0].Selected.activeSelf, Is.True);
+            panel.Tabs[1].Button.onClick.Invoke();
+            Assert.That(panel.Slots[1].Selected.activeSelf, Is.True);
+            Assert.That(panel.Slots[0].Selected.activeSelf, Is.False);
             panel.Slots[0].Button.onClick.Invoke();
             var weapons = EquipmentCatalog.All.Count(entry => entry.Slot == EquipmentSlot.Weapon);
             Assert.That(Rows(panel), Has.Length.EqualTo(weapons));
-            Assert.That(panel.Title.text, Is.EqualTo("武器"));
-            Assert.That(panel.Count.text, Is.EqualTo($"所持 {weapons}"));
+            Assert.That(panel.Tabs[0].Chosen, Is.True);
+            Assert.That(panel.Tabs[1].Chosen, Is.False);
             foreach (var row in Rows(panel))
             {
                 SceneTests.AssertTouchSize(row.Button.transform);
@@ -113,25 +151,20 @@ namespace Baryonyx.Tests.PlayMode
                 panel.Remove.transform.GetSiblingIndex(),
                 Is.EqualTo(panel.Remove.transform.parent.childCount - 1)
             );
-            string before = panel.Slots[0].Name.text;
             var dagger = Row(panel, "炎のダガー");
             Assert.That(dagger.Mark.gameObject.activeSelf, Is.False);
             dagger.Button.onClick.Invoke();
             yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
-            Assert.That(
-                panel.LastNotice,
-                Is.EqualTo($"{person.Name}の「{before}」を「炎のダガー」に替えました")
-            );
-            Assert.That(view.ToastMessage, Is.EqualTo(panel.LastNotice));
+            // 変わったことは枠と一覧を見ればわかるので、通知の帯は出さない。
+            Assert.That(panel.LastNotice, Is.Empty);
             Assert.That(panel.Slots[0].Name.text, Is.EqualTo("炎のダガー"));
             Assert.That(Row(panel, "炎のダガー").Mark.text, Is.EqualTo("装備中"));
 
             // 防具を外すと、外すボタンは押せなくなる。
             panel.Slots[1].Button.onClick.Invoke();
-            string armour = panel.Slots[1].Name.text;
             panel.Remove.onClick.Invoke();
             yield return SceneTests.WaitForTask(panel.Presenter.ChangeTask);
-            Assert.That(panel.LastNotice, Is.EqualTo($"{person.Name}の「{armour}」を外しました"));
+            Assert.That(panel.LastNotice, Is.Empty);
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo("なし"));
             Assert.That(panel.Remove.interactable, Is.False);
 

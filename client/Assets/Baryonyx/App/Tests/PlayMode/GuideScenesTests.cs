@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.Economy;
 using Baryonyx.Home;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
@@ -83,6 +84,51 @@ namespace Baryonyx.Tests.PlayMode
             }
         }
 
+        // 上の段：「もどる」の右に画面名から始まるパンくず、右上に×、その左に所持ルーン。
+        // ×はリストを開いていても、いちどでHomeへ戻る。
+        [UnityTest]
+        public IEnumerator HeaderShowsTheTrailAndTheCloseButtonReturnsHome()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            var view = guide.View;
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(view.Definition.Title));
+            // ×のタブは「もどる」と同じ高さ96で、高さは7割まで許す。
+            SceneTests.AssertTouchSize(view.Home.transform, 0.7f);
+            yield return SceneTests.WaitForTask(guide.RunesTask);
+            Assert.That(RuneBalance.Known, Is.Not.Null);
+            Assert.That(view.Runes.text, Is.EqualTo(RuneBalance.Text(RuneBalance.Known)));
+            // パンくずと所持ルーンは、「もどる」と×の間に収まる。
+            var crumb = SceneTests.ScreenRect(view.Breadcrumb.transform);
+            var runes = SceneTests.ScreenRect(view.Runes.transform.parent);
+            Assert.That(
+                crumb.xMin,
+                Is.GreaterThanOrEqualTo(SceneTests.ScreenRect(view.Back.transform).xMax)
+            );
+            Assert.That(crumb.xMax, Is.LessThanOrEqualTo(runes.xMin));
+            Assert.That(
+                runes.xMax,
+                Is.LessThanOrEqualTo(SceneTests.ScreenRect(view.Home.transform).xMin)
+            );
+
+            view.MenuItems[0].onClick.Invoke();
+            Assert.That(
+                view.Breadcrumb.text,
+                Is.EqualTo(
+                    view.Definition.Title
+                        + GuideMenuView.TrailSeparator
+                        + view.Definition.Items[0].Label
+                )
+            );
+            view.Home.onClick.Invoke();
+            view.Home.onClick.Invoke();
+            Assert.That(guide.Presenter.Left, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Home,
+                message: "Home did not open."
+            );
+        }
+
         [UnityTest]
         public IEnumerator ListScreensOpenAFullListAndConfirmTheChoice()
         {
@@ -95,6 +141,8 @@ namespace Baryonyx.Tests.PlayMode
 
                 Assert.That(view.MenuPanel.activeSelf, Is.True);
                 Assert.That(view.ListPanel.activeSelf, Is.False);
+                // メニューは案内人とカードだけで、枠（ぼかした背景・ヘッダーの帯と線）を出さない。
+                Assert.That(view.Framed, Is.False);
                 Assert.That(view.MenuItems.Length, Is.EqualTo(definition.Items.Length));
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
@@ -104,7 +152,7 @@ namespace Baryonyx.Tests.PlayMode
                         continue;
                     SceneTests.AssertTouchSize(view.MenuItems[i].transform, 0.7f);
                     // 編成と商会のメニューは、項目名の前にドット絵のアイコンを置く。
-                    var icon = view.MenuItems[i].transform.Find("Icon");
+                    var icon = view.MenuItems[i].transform.Find(CardContent + "Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
                 }
 
@@ -116,13 +164,16 @@ namespace Baryonyx.Tests.PlayMode
                     view.MenuItems[i].onClick.Invoke();
                     Assert.That(view.MenuPanel.activeSelf, Is.False);
                     Assert.That(view.ListPanel.activeSelf, Is.True);
+                    // 一覧は、編成の冒険者と同じ枠の中に出し、案内人は左に残す。
+                    Assert.That(view.Framed, Is.True);
+                    Assert.That(view.GuideArt.activeSelf, Is.True);
                     var entries = definition.Items[i].Entries;
                     Assert.That(view.Entries.Count, Is.EqualTo(entries.Length));
                     // 行の文字はPrefabに焼き込んであり、定義と一致する。
                     for (int j = 0; j < entries.Length; j++)
                         Assert.That(
                             view.Entries[j]
-                                .transform.Find("Name")
+                                .transform.Find(CardContent + "Name")
                                 .GetComponent<TMPro.TMP_Text>()
                                 .text,
                             Is.EqualTo(entries[j].Name)
@@ -140,6 +191,7 @@ namespace Baryonyx.Tests.PlayMode
 
                     view.Back.onClick.Invoke();
                     Assert.That(view.MenuPanel.activeSelf, Is.True);
+                    Assert.That(view.Framed, Is.False);
                     Assert.That(guide.Presenter.Left, Is.False);
                 }
             }
@@ -157,15 +209,15 @@ namespace Baryonyx.Tests.PlayMode
                 entry => entry.Key == StepBonusSession.GuideItemKey
             );
             Assert.That(item, Is.GreaterThanOrEqualTo(0));
-            Assert.That(view.MenuItems[item].transform.Find("Icon"), Is.Not.Null);
+            Assert.That(view.MenuItems[item].transform.Find(CardContent + "Icon"), Is.Not.Null);
             view.MenuItems[item].onClick.Invoke();
             var settings = BonusSettings(view);
             Assert.That(settings.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
-            // 左右の区画をまとめた大きな枠は「もどる」と重ならず、案内人は隠れる。
-            Assert.That(settings.transform.Find("Panel/Effects"), Is.Not.Null);
-            Assert.That(settings.transform.Find("Panel/Bonuses"), Is.Not.Null);
-            SceneTests.AssertBelow(settings.transform.Find("Panel"), view.Back.transform);
+            // 編成のほかの画面と同じ枠つきの表示で、左右の区画は「もどる」と重ならず、案内人は隠れる。
+            Assert.That(settings.GetComponent<GuideFramedPanel>(), Is.Not.Null);
+            SceneTests.AssertBelow(settings.transform.Find("Layout/Effects"), view.Back.transform);
+            SceneTests.AssertBelow(settings.transform.Find("Layout/Bonuses"), view.Back.transform);
             Assert.That(view.GuideArt.activeSelf, Is.False);
 
             var loadout = StepBonusSession.Loadout(settings.Data);
@@ -208,7 +260,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(settings.LastNotice, Does.EndWith("を入れ替えました"));
 
             // タブで1つのカテゴリだけを並べる。
-            settings.Tabs[2].onClick.Invoke();
+            settings.Tabs[2].Button.onClick.Invoke();
+            Assert.That(settings.Tabs[2].Chosen, Is.True);
+            Assert.That(settings.Tabs[0].Chosen, Is.False);
             foreach (var row in settings.Rows)
                 Assert.That(
                     row.Button.gameObject.activeSelf,
@@ -308,6 +362,8 @@ namespace Baryonyx.Tests.PlayMode
             var destinations = view.Definition.Destinations;
 
             Assert.That(view.DestinationPanel.activeSelf, Is.True);
+            // 行き先のリストは、編成の冒険者と同じ枠の中に出す。
+            Assert.That(view.Framed, Is.True);
             // 見ればわかるため、リストに題名を付けない。
             Assert.That(view.DestinationPanel.transform.Find("ListTitle"), Is.Null);
             // 行き先の画面には、メニューと項目のリストを作らない。
@@ -344,7 +400,10 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         private static string RowText(Button row, string label) =>
-            row.transform.Find(label).GetComponent<TMP_Text>().text;
+            row.transform.Find(CardContent + label).GetComponent<TMP_Text>().text;
+
+        // メニューの行・一覧の行・行き先はすりガラスのカードで、文字とアイコンは板と一緒に沈む中身に置く。
+        private const string CardContent = "Body/Content/";
 
         private static Button ButtonFor(HomeView view, HomeAction action) =>
             action switch

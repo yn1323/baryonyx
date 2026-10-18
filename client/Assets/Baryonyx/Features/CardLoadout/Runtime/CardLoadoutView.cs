@@ -7,6 +7,7 @@ using Baryonyx.Combat;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
@@ -64,15 +65,21 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// The formation's card skills change screen over the guide screen: the person (◀ ▶,
-    /// figure, name and level), their two custom skills, their two unique skills (read only) and
-    /// their stats on the left, the cards they can set on the right. CardLoadoutAssets bakes the parts and rows into the formation prefab,
+    /// The formation's card skills change screen over the guide screen, laid out like the
+    /// equipment's: the person (◀ ▶, figure, name and level), their stats, their two custom
+    /// skills and their two unique skills (read only) on the left; the skill and item tabs and
+    /// the cards they can set on the right. CardLoadoutAssets bakes the parts and rows into the formation prefab,
     /// so they read in the editor; this view wires them up and drives its own presenter. When
     /// the app has a server (<see cref="PartySession.Source"/>), it reads the party on opening
     /// and saves every change there; otherwise it uses the mock data. Back returns to the
     /// adventurer's page. Changes are told on the guide screen's notice band.
     /// </summary>
-    public sealed class CardLoadoutView : MonoBehaviour, ICardLoadoutView, IGuideBackHandler
+    public sealed class CardLoadoutView
+        : MonoBehaviour,
+            ICardLoadoutView,
+            IGuideBackHandler,
+            IGuideBreadcrumb,
+            IEditModePreview
     {
         public const string LoadingText = GuidePanelLoad.LoadingText;
         public const string LoadFailedText = GuidePanelLoad.LoadFailedText;
@@ -87,8 +94,11 @@ namespace Baryonyx.CardLoadout
         // 通知は案内人の画面の通知の帯に出す。
         public GuideMenuView Guide;
 
-        // 左上の人（◀▶・立ち姿・名前・Lv）。
+        // 左上の人（立ち姿・名前・Lv）。
         public PartyPersonHeader Person = new();
+
+        // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
+        public TrainingSwipe Swipe;
         public CardLoadoutSlotWidget[] Slots = Array.Empty<CardLoadoutSlotWidget>();
 
         // デッキのほかの2枚（固有スキル）。外せないので押せない。
@@ -97,9 +107,15 @@ namespace Baryonyx.CardLoadout
         // 選んでいる人のステータス（CharacterStats の順）。
         public TMP_Text[] Stats = Array.Empty<TMP_Text>();
 
-        // 右の見出しの横の、その人が付けられる属性のアイコン（2つまで）。
+        // 右の上のスキル・アイテムのタブ（CardLoadoutPresenter.SkillTab・ItemTab の順）。
+        public GuideTab[] Tabs = Array.Empty<GuideTab>();
+
+        // タブの下の、その人が付けられる属性の行と、そのアイコン（2つまで）。スキルのタブだけで出す。
+        public GameObject UsableLine;
         public Image[] Usable = Array.Empty<Image>();
-        public TMP_Text Count;
+
+        // 読み込み中と読めなかったとき、アイテムのタブを選んでいるときだけ一覧の面に出す文字。
+        public TMP_Text Status;
         public CardLoadoutRowWidget[] Rows = Array.Empty<CardLoadoutRowWidget>();
         public ScrollRect List;
 
@@ -113,6 +129,7 @@ namespace Baryonyx.CardLoadout
         public event Action PrevPressed;
         public event Action NextPressed;
         public event Action<int> SlotPressed;
+        public event Action<int> TabPressed;
         public event Action<string> CardPressed;
 
         public CardLoadoutPresenter Presenter => presenter;
@@ -123,12 +140,19 @@ namespace Baryonyx.CardLoadout
 
         private void OnEnable()
         {
-            bindings.Bind(Person.Prev, () => PrevPressed?.Invoke());
-            bindings.Bind(Person.Next, () => NextPressed?.Invoke());
+            person = null;
+            if (Swipe != null)
+                Swipe.Flicked += Flick;
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
                 bindings.Bind(Slots[i].Button, () => SlotPressed?.Invoke(index));
+            }
+            for (int i = 0; i < Tabs.Length; i++)
+            {
+                int index = i;
+                if (Tabs[i] != null)
+                    bindings.Bind(Tabs[i].Button, () => TabPressed?.Invoke(index));
             }
             foreach (var row in Rows)
             {
@@ -167,9 +191,11 @@ namespace Baryonyx.CardLoadout
         private void LoadFailed(Exception exception)
         {
             Debug.LogWarning("スキルを取得できませんでした。" + exception.Message, this);
-            Set(Count, LoadFailedText);
+            ShowLoadFailed();
             ShowNotice(LoadFailedMessage);
         }
+
+        private void ShowLoadFailed() => Set(Status, LoadFailedText);
 
         // 保存した結果に置き換える。カードは store が PartySession から読み直す。
         private async Task SaveAsync(
@@ -197,7 +223,10 @@ namespace Baryonyx.CardLoadout
         // 読み込むまで、仮データのカードを本当のカードとして見せない。
         private void ShowLoading()
         {
-            Set(Count, LoadingText);
+            ShowTabs(CardLoadoutPresenter.SkillTab);
+            Set(Status, LoadingText);
+            if (UsableLine != null)
+                UsableLine.SetActive(false);
             Person.ShowLoading(LoadingText);
             TrainingView.ShowStats(Stats, null);
             foreach (var widget in Slots)
@@ -208,20 +237,83 @@ namespace Baryonyx.CardLoadout
             foreach (var widget in Uniques)
                 ShowUnique(widget, null, 0);
             ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
+            HideRows();
+        }
+
+        private void HideRows()
+        {
             foreach (var row in Rows)
                 if (row.Button != null)
                     row.Button.gameObject.SetActive(false);
+        }
+
+        // 選んでいるタブに印を付け、アイテムのタブでは属性の行を隠して、持っていないことだけを出す。
+        private void ShowTabs(int tab)
+        {
+            for (int i = 0; i < Tabs.Length; i++)
+                if (Tabs[i] != null)
+                    Tabs[i].Chosen = i == tab;
+            bool items = tab == CardLoadoutPresenter.ItemTab;
+            if (UsableLine != null)
+                UsableLine.SetActive(!items);
+            Set(Status, items ? NoItemText : "");
+        }
+
+        // アイテムのタブを選んでいるときの一覧の面の文字。アイテムはまだ持てない。
+        public const string NoItemText = "持っているアイテムはありません";
+
+        // 停止中の表示の切り替え（doc/rules/ui-design.md#停止中の表示の切り替え）。最初の表示はスキルのタブ。
+        public IReadOnlyList<string> PreviewStates =>
+            new[] { "アイテム" }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+
+        public void ShowPreviewState(int index)
+        {
+            if (index == 0)
+            {
+                // 左は作り込んだ先頭の人のまま、右だけアイテムのタブにする。
+                ShowTabs(CardLoadoutPresenter.ItemTab);
+                HideRows();
+                return;
+            }
+            ShowLoading();
+            if (index == 2)
+                ShowLoadFailed();
+        }
+
+        // 左へのフリックで次の人、右へのフリックで前の人。
+        private void Flick(int step)
+        {
+            if (step > 0)
+                NextPressed?.Invoke();
+            else if (step < 0)
+                PrevPressed?.Invoke();
         }
 
         private void OnDisable()
         {
             load.Cancel();
             bindings.Clear();
+            if (Swipe != null)
+                Swipe.Flicked -= Flick;
             presenter?.Dispose();
             presenter = null;
         }
 
         // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
+        // パンくずの「冒険者 › アリア › スキル」。読み込むまでは人の名前を出さない。
+        public IReadOnlyList<string> Trail =>
+            Guide != null
+                ? new[]
+                {
+                    Guide.LabelOf(TrainingSession.ReturnKeyOrRoster),
+                    person,
+                    Guide.LabelOf(CardLoadoutSession.GuideItemKey),
+                }
+                : Array.Empty<string>();
+
+        // パンくずに出す、表示している人の名前。
+        private string person;
+
         public bool HandleBack() =>
             Guide != null
             && Guide.HasItem(TrainingSession.GuideItemKey)
@@ -230,6 +322,9 @@ namespace Baryonyx.CardLoadout
         public void Render(CardLoadoutState state)
         {
             var member = Party != null ? Party.Find(state.PersonId) : null;
+            person = member?.Name;
+            if (Guide != null)
+                Guide.RefreshTrail();
             int level = PartySession.LevelOf(Party, state.PersonId);
             Person.Show(
                 member,
@@ -238,8 +333,7 @@ namespace Baryonyx.CardLoadout
                     .Slots.Select(card => IconOf(card.Element))
                     .Where(icon => icon != null)
                     .Distinct()
-                    .ToArray(),
-                state.CanSwitch
+                    .ToArray()
             );
             var growth = Training != null ? Training.Find(state.PersonId) : null;
             TrainingView.ShowStats(Stats, growth?.StatsAt(level));
@@ -258,8 +352,7 @@ namespace Baryonyx.CardLoadout
                     i == state.Slot
                 );
             ShowUsable(Usable, state.Usable, IconOf);
-            if (Count != null)
-                Count.text = state.CountText;
+            ShowTabs(state.Tab);
             ShowRows(state);
         }
 

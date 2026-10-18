@@ -16,6 +16,12 @@ namespace Baryonyx.Training
         // 編成の「育成」の項目のキー。メニューには出さず、冒険者の一覧から1人の個別の画面として開く。
         public const string GuideItemKey = "training";
 
+        // 個別の画面を開いた編成の項目のキー（「もどる」の行き先とパンくず）。nullなら冒険者の一覧。
+        public static string ReturnKey { get; set; }
+
+        // 「もどる」で戻る編成の項目のキー。
+        public static string ReturnKeyOrRoster => ReturnKey ?? PartySession.GuideItemKey;
+
         // サーバーがないときに育成で使ったルーンの合計。
         public static long Spent { get; private set; }
 
@@ -37,6 +43,7 @@ namespace Baryonyx.Training
         public static void Reset()
         {
             Spent = 0;
+            ReturnKey = null;
         }
     }
 

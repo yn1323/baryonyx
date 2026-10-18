@@ -49,6 +49,9 @@ namespace Baryonyx.App
         // 編成の装備（持っている装備と付け替え）を読み書きするサーバー。接続先がなければnull。
         public IEquipmentSource Equipment { get; }
 
+        // 作った接続。まだ作っていなければnull（シーンを単体で開いたときなど）。
+        public static GameServices Current => current;
+
         public static GameServices GetOrCreate(HealthConnectionSettings settings)
         {
             if (current == null)

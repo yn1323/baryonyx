@@ -22,6 +22,7 @@ MonoBehaviour:
     Label: "\u4EF2\u9593\u3092\u53EC\u559A"
     Caption: "\u65B0\u3057\u3044\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u3092\u559A\u3073\u51FA\u3059"
     Icon: {fileID: 0}
+    Hidden: 0
     ConfirmLabel: "\u53EC\u559A\u3059\u308B"
     Entries:
     - Name: "\u30BB\u30E9\u30D5\u30A3\u30CA"
@@ -43,6 +44,7 @@ MonoBehaviour:
     Label: "\u88C5\u5099\u3092\u53EC\u559A"
     Caption: "\u6B66\u5668\u30FB\u9632\u5177\u3092\u559A\u3073\u51FA\u3059"
     Icon: {fileID: 0}
+    Hidden: 0
     ConfirmLabel: "\u53EC\u559A\u3059\u308B"
     Entries:
     - Name: "\u661F\u8A60\u307F\u306E\u6756"
@@ -61,6 +63,7 @@ MonoBehaviour:
     Label: "\u53EC\u559A\u306E\u8A18\u9332"
     Caption: "\u3053\u308C\u307E\u3067\u306B\u559A\u3073\u51FA\u3057\u305F\u3082\u306E"
     Icon: {fileID: 0}
+    Hidden: 0
     ConfirmLabel: "\u8A73\u3057\u304F\u898B\u308B"
     Entries:
     - Name: "9/26 \u4EF2\u9593\u3092\u53EC\u559A"

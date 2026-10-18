@@ -112,7 +112,7 @@ updated: 2026-10-06
 |---|---|
 | 編成の冒険者の一覧（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[一覧の操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyRosterPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerRosterView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Tavern/Editor/AdventurerRosterAssets.cs)・[仮データ（絵・イラスト）の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
 | 冒険者の個別の画面（デッキの4枚・装備・左右のフリック） | [表示](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[フリック](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingSwipe.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
-| 付け替えの画面の上の人（◀▶・立ち姿・名前・Lv） | [表示](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyPersonHeader.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyHeaderAssets.cs) |
+| 付け替えの画面の上の人（立ち姿・名前・Lv） | [表示](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyPersonHeader.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyHeaderAssets.cs) |
 | 編成のスキルの付け替え（仲間ごとのカスタムスキル2枚） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
 | キャラ・Lv・カード・編成のサーバーとの読み書き | [サーバーとの読み書き](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySource.cs)・[アプリ内での保持](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs)・[DB操作](../../server/src/features/party/repository.ts) |
 
@@ -155,6 +155,7 @@ updated: 2026-10-06
 
 ## 変更と判断の記録
 
+- 2026-10-18：ユーザーの依頼で、冒険者の一覧の入れ替えを、パーティの枠と一覧の人を順に押す操作に変えた（[画面一覧](screens.md#パーティ)）。枠を選んで「パーティから外す」で外し、長押しで個別の画面を開く。入れ替え・編成・外した通知はやめた。サーバーの読み書きと入れ替えの決まり（1人以上を残すなど）は変えていない。
 - 2026-10-07：ユーザーの指示により、スキルかアイテムを入れる2枠を「カスタムスキル」と呼ぶことにした（[キャラクターの構成](#キャラクターの構成)）。同日、ユーザーの選択で、編成とサーバーのスキルの枠を、自由に入れる4枠からカスタムスキルの2枠に作り替えた。初期データは、各キャラの4枚から属性の違う2枚を残した。固有スキル2枚はクライアントの仮データから出し、冒険者の個別の画面とスキルの付け替えの画面に表示する（[育成](screens.md#育成)・[スキル](screens.md#スキル)）。未リリースのため、DBにある3・4枚目は移行せずに消す（マイグレーション `0009_custom_skill_slots`）。
 - 2026-10-06：ユーザーの依頼で、編成のパーティ・装備・育成・スキルを「冒険者」にまとめた（[画面一覧](screens.md#パーティ)）。パーティの入れ替えは冒険者の一覧で、選んだ人の「パーティから外す」「パーティに入れる」と、空きがないときにパーティの4枠から入れ替える相手を選ぶ操作で行う。サーバーの読み書きと入れ替えの決まり（1人以上を残すなど）は変えていない。9人に縦長のイラストを加え、仮データ（`PartyMockData`）にイラストとスキルの挿絵を持たせた。
 - 2026-10-06：デッキの枚数の確認待ちに対し、ユーザーは「アイテム or スキルで合計2枚」「固有のスキルも2つあるので、一人4枚x4人で16枚のまま」とした。これにより、1人の4枚を、固有スキル2枚と、スキルかアイテムを入れる2枠に分けた（[キャラクターの構成](#キャラクターの構成)）。固有スキルを手札の外から使う決まりと、スキルを1人4枚とした2026-09-30の決まりを改めた。デッキは16枚のままである。

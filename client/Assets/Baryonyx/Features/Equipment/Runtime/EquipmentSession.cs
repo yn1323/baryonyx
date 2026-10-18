@@ -32,6 +32,9 @@ namespace Baryonyx.Equipment
         // 次に開いたときに選んでおく枠。個別の画面で押した枠を渡す。
         public static EquipmentSlot OpenSlot { get; set; } = EquipmentSlot.Weapon;
 
+        // 次に開いたときに選んでおくアクセサリーの枠（0〜2）。武器・防具を開くときは-1。
+        public static int OpenAccessory { get; set; } = -1;
+
         // Play Modeに入るたびに初期化する（ドメインの再読み込みを省く設定でも残さない）。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset()
@@ -39,6 +42,7 @@ namespace Baryonyx.Equipment
             Source = null;
             local = null;
             OpenSlot = EquipmentSlot.Weapon;
+            OpenAccessory = -1;
         }
     }
 }

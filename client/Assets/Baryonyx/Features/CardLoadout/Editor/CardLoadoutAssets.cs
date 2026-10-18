@@ -15,16 +15,19 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
+using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
+using GlassCardAssets = Baryonyx.UI.Editor.GlassCardAssets;
 using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.CardLoadout.Editor
 {
     /// <summary>
-    /// The formation's card skills change screen. The formation's generator calls
-    /// <see cref="BuildPanel"/> for its card skills item, so the person, the two slots, the
-    /// stats and a row for every card are baked into the formation prefab and read in the
-    /// editor without Play Mode. The cards are the combat's card skills; the people, levels and
+    /// The formation's card skills change screen, laid out like the equipment's
+    /// (EquipmentAssets): the person, the stats and the slots on the left, the tabs and the list
+    /// on the right. The formation's generator calls <see cref="BuildPanel"/> for its card
+    /// skills item, so the person, the two slots, the stats and a row for every card are baked
+    /// into the formation prefab and read in the editor without Play Mode. The cards are the combat's card skills; the people, levels and
     /// stats are the party's and the training's mock data (doc/features/party.md).
     /// </summary>
     public static class CardLoadoutAssets
@@ -32,10 +35,21 @@ namespace Baryonyx.CardLoadout.Editor
         // カードの挿絵（64×58）は2倍で出す。
         private const float ArtDot = 2f;
 
-        // 左の枠（人・カスタムスキル2枚・固有スキル2つ・ステータス）と右の枠（付けられるカード）。設計座標、左上から。
-        private static readonly Rect Left = new(40, 200, 740, 850);
-        private static readonly Rect Right = new(800, 200, 1080, 850);
-        private const float SlotTop = 186f;
+        // 枠つきの表示（GuideFramedPanel）で、左の濃い面に人・ステータス・枠、金の2本線の右の透ける面に
+        // タブとカードの一覧を置く。装備（EquipmentAssets）と同じ配置。設計座標、左上から。
+        private const float Split = 800f;
+        private static readonly Rect Left = new(36, Frame.HeaderHeight + 6, 740, 956);
+        private static readonly Rect Right = new(
+            Split,
+            Frame.HeaderHeight + 6,
+            1920 - Split - 24,
+            956
+        );
+
+        // 左は上から人・ステータス・カスタムスキル・固有スキル。ステータスと線の位置は装備と同じ。
+        private const float StatsTop = 156f;
+        private const float StatsLineTop = 262f;
+        private const float SlotTop = 318f;
         private const float SlotHeight = 136f;
         private const float SlotStep = 144f;
 
@@ -43,10 +57,14 @@ namespace Baryonyx.CardLoadout.Editor
         private const float UniqueHeight = 92f;
         private const float UniqueStep = 100f;
         private static readonly Rect IconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
-        private static readonly Color UniqueFrame = new(0.62f, 0.62f, 0.68f, 1f);
         private const float SlotTextLeft = 156f;
         private const float RowHeight = 140f;
         private const float RowTextLeft = 160f;
+
+        // 右の上のタブと、その下の付けられる属性の行。
+        private const float TabHeight = 76f;
+        private const float UsableTop = 92f;
+        private const float ListTop = 152f;
         private static readonly Color BadgeColor = new(0.02f, 0.03f, 0.06f, 0.85f);
 
         /// <summary>
@@ -72,19 +90,40 @@ namespace Baryonyx.CardLoadout.Editor
                 .Select(ElementIcon)
                 .ToArray();
 
+            root.gameObject.AddComponent<GuideFramedPanel>();
             var layer = Layout.Layer(root, "Layout");
-            var left = Layout.FrameBox(layer, "Person", Left.x, Left.y, Left.width, Left.height);
-            var right = Layout.FrameBox(
+            Frame.Pane(
                 layer,
-                "Cards",
-                Right.x,
-                Right.y,
-                Right.width,
-                Right.height
+                "PersonPane",
+                0f,
+                Split,
+                Frame.HeaderHeight,
+                Frame.PaneDark,
+                true,
+                false
             );
+            Frame.Pane(
+                layer,
+                "CardsPane",
+                Split,
+                1920f,
+                Frame.HeaderHeight,
+                Frame.PaneLight,
+                false,
+                true
+            );
+            Frame.Divider(layer, Split, Frame.HeaderHeight);
+            var left = Layout.Box(layer, "Person", Left.x, Left.y, Left.width, Left.height);
+            // 左の面の上の左右のフリックで人を替える。枠を押したところから動かしても届くよう、左全体で受ける。
+            AddImage(left, Color.clear, true);
+            view.Swipe = left.gameObject.AddComponent<TrainingSwipe>();
+            var right = Layout.Box(layer, "Cards", Right.x, Right.y, Right.width, Right.height);
 
             view.Person = PartyHeaderAssets.Build(left, 10, Left.width, people.FirstOrDefault());
             Layout.Line(left, "HeaderLine", 24, 142, Left.width - 48, 2);
+            // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける（装備と同じ）。
+            view.Stats = TrainingAssets.BuildStats(left, 30, StatsTop, Left.width - 60, 4);
+            Layout.Line(left, "StatsLine", 24, StatsLineTop, Left.width - 48, 2);
             Title(left, "CustomTitle", "カスタムスキル", "スキルかアイテム", SlotTop - 34);
             view.Slots = Enumerable
                 .Range(0, CardLoadoutRules.Size)
@@ -96,9 +135,6 @@ namespace Baryonyx.CardLoadout.Editor
                 .Range(0, 2)
                 .Select(i => BuildUnique(left, i, uniqueTop + i * UniqueStep))
                 .ToArray();
-            float statsTop = uniqueTop + 2 * UniqueStep + 6;
-            Layout.Line(left, "StatsLine", 24, statsTop, Left.width - 48, 2);
-            view.Stats = TrainingAssets.BuildStats(left, 30, statsTop + 14, Left.width - 60, 4);
             BuildCards(right, view);
 
             // 仮データの最初の人で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
@@ -110,15 +146,17 @@ namespace Baryonyx.CardLoadout.Editor
 
         private static CardLoadoutSlotWidget BuildSlot(RectTransform panel, int index)
         {
-            var (button, selected) = Layout.Choice(
-                panel,
-                "Slot" + index,
-                24,
-                SlotTop + index * SlotStep,
-                Left.width - 48,
-                SlotHeight
+            var (button, selected, row) = GlassCardAssets.Choice(
+                Layout.Box(
+                    panel,
+                    "Slot" + index,
+                    24,
+                    SlotTop + index * SlotStep,
+                    Left.width - 48,
+                    SlotHeight
+                ),
+                pattern: false
             );
-            var row = (RectTransform)button.transform;
             var widget = new CardLoadoutSlotWidget { Button = button, Selected = selected };
             (widget.Art, widget.Cost, widget.Element) = BuildThumb(row, 12);
             (widget.Name, widget.Kind) = BuildNameLine(row, 8, SlotTextLeft, 24);
@@ -144,14 +182,18 @@ namespace Baryonyx.CardLoadout.Editor
             group.childForceExpandHeight = true;
             Label(row, "Title", text, 24, UiPalette.Gold, TextAlignmentOptions.BottomLeft);
             Label(row, "Note", note, 18, UiPalette.TextSub, TextAlignmentOptions.BottomLeft);
+            Frame.HeadingRow(row, 24);
         }
 
         // 固有スキル1つ。挿絵の中央を3倍で出し、名前とエネルギー（未解放なら解放するLv）、効果を並べる。押せない。
         private static CardLoadoutUniqueWidget BuildUnique(RectTransform panel, int index, float y)
         {
             float width = Left.width - 48;
-            var row = Layout.Box(panel, "Unique" + index, 24, y, width, UniqueHeight);
-            Guide.Frame(row, Guide.FramePath, UniqueFrame).raycastTarget = false;
+            // 外せないので押せない板にする。
+            var row = GlassCardAssets.Plaque(
+                Layout.Box(panel, "Unique" + index, 24, y, width, UniqueHeight),
+                pattern: false
+            );
             var icon = Layout.Box(row, "Icon", 14, (UniqueHeight - 72) / 2f, 72, 72);
             var widget = new CardLoadoutUniqueWidget
             {
@@ -190,28 +232,39 @@ namespace Baryonyx.CardLoadout.Editor
             return widget;
         }
 
-        // --- Right: every card, shown when the person can set it ---------------------------
+        // --- Right: the skill and item tabs, then every card the person can set -------------
 
         private static void BuildCards(RectTransform panel, CardLoadoutView view)
         {
-            var title = Label(
+            // 上に、面の幅いっぱいのスキル・アイテムのタブ（装備のタブと同じ形）。
+            view.Tabs = Frame.Tabs(
                 panel,
-                "Title",
-                "スキル",
-                44,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
+                "Tabs",
+                new[] { "スキル", "アイテム" },
+                24,
+                4,
+                (Right.width - 48) / 2f,
+                TabHeight,
+                Right.width - 48,
+                TrainingAssets.LockPath
             );
-            Guide.Fill((RectTransform)title.transform, new Vector2(40, 0), new Vector2(-40, -24));
 
-            // 見出しの横に、その人が付けられる属性。属性のないカードは誰でも付けられる。
-            var usable = Rect("Usable", panel);
-            Corner(usable, new Vector2(0, 1), new Vector2(196, -28), new Vector2(420, 48));
+            // タブの下に、その人が付けられる属性。属性のないカードは誰でも付けられる。
+            var usable = Layout.Box(panel, "Usable", 36, UsableTop, Right.width - 72, 48);
+            view.UsableLine = usable.gameObject;
             var group = usable.gameObject.AddComponent<HorizontalLayoutGroup>();
             group.spacing = 8;
             group.childAlignment = TextAnchor.MiddleLeft;
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = group.childForceExpandHeight = false;
+            Label(
+                usable,
+                "Title",
+                "付けられる属性",
+                26,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineLeft
+            );
             view.Usable = Enumerable
                 .Range(0, 2)
                 .Select(i =>
@@ -234,24 +287,10 @@ namespace Baryonyx.CardLoadout.Editor
                 TextAlignmentOptions.MidlineLeft
             );
 
-            view.Count = Label(
-                panel,
-                "Count",
-                "",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopRight
-            );
-            Guide.Fill(
-                (RectTransform)view.Count.transform,
-                new Vector2(40, 0),
-                new Vector2(-40, -36)
-            );
-
             var viewport = Rect("Viewport", panel);
             Stretch(viewport);
             viewport.offsetMin = new Vector2(24, 24);
-            viewport.offsetMax = new Vector2(-24, -100);
+            viewport.offsetMax = new Vector2(-24, -ListTop);
             viewport.gameObject.AddComponent<RectMask2D>();
             AddImage(viewport, Color.clear, true);
 
@@ -280,6 +319,20 @@ namespace Baryonyx.CardLoadout.Editor
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40;
             view.List = scroll;
+
+            // 読み込み中と読めなかったとき、アイテムのタブを選んでいるときだけ出す文字。
+            view.Status = Layout.Text(
+                panel,
+                "Status",
+                "",
+                36,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                24,
+                100,
+                Right.width - 48,
+                140
+            );
         }
 
         private static CardLoadoutRowWidget BuildRow(
@@ -291,14 +344,10 @@ namespace Baryonyx.CardLoadout.Editor
             var row = Rect("Card_" + card.Id, content);
             var size = row.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = RowHeight;
-            var widget = new CardLoadoutRowWidget
-            {
-                Id = card.Id,
-                Button = Guide.AddButton(
-                    row,
-                    Guide.Frame(row, Guide.FramePath, new Color(1f, 1f, 1f, 0.9f))
-                ),
-            };
+            var widget = new CardLoadoutRowWidget { Id = card.Id };
+            var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false);
+            widget.Button = button;
+            row = inside;
             var (art, cost, element) = BuildThumb(row, 12);
             art.texture = ArtAssets.LoadTexture(
                 $"{BattleInspectAssets.ArtFolder}/Card{card.Id}.aseprite"

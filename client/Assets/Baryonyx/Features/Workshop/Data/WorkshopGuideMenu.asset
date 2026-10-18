@@ -22,6 +22,7 @@ MonoBehaviour:
     Label: "\u8CB7\u3046"
     Caption: "\u88C5\u5099\u30FB\u30B9\u30AD\u30EB\u30FB\u7D20\u6750\u3092\u30EB\u30FC\u30F3\u3067\u8CB7\u3046"
     Icon: {fileID: 5349011544834349465, guid: 7980be61172524121a0989c7d142d52f, type: 3}
+    Hidden: 0
     ConfirmLabel: "\u8CB7\u3046"
     Entries:
     - Name: "\u9244\u306E\u5263"
@@ -49,6 +50,7 @@ MonoBehaviour:
     Label: "\u58F2\u308B"
     Caption: "\u6301\u3063\u3066\u3044\u308B\u88C5\u5099\u30FB\u30B9\u30AD\u30EB\u30FB\u7D20\u6750\u3092\u58F2\u308B"
     Icon: {fileID: 5349011544834349465, guid: 459665c2b692a445b974d103c5e34787, type: 3}
+    Hidden: 0
     ConfirmLabel: "\u58F2\u308B"
     Entries:
     - Name: "\u6728\u306E\u5263"
@@ -70,6 +72,7 @@ MonoBehaviour:
     Label: "\u5408\u6210"
     Caption: "\u7D20\u6750\u3092\u5408\u308F\u305B\u3066\u88C5\u5099\u3084\u30B9\u30AD\u30EB\u3092\u4F5C\u308B"
     Icon: {fileID: 5349011544834349465, guid: 79be8b50fca264504893f010cfa6fc41, type: 3}
+    Hidden: 0
     ConfirmLabel: "\u5408\u6210\u3059\u308B"
     Entries:
     - Name: "\u708E\u306E\u30C0\u30AC\u30FC"

@@ -16,7 +16,8 @@ namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
     /// The formation screen (編成; the code keeps the Tavern name): the tavern girl guides the
-    /// adventurers and the ACT bonus slots. The adventurers open the list of every character;
+    /// adventurers, the equipment and the ACT bonus slots. The equipment opens a card for every
+    /// character, and tapping one opens their page. The adventurers open the list of every character;
     /// from there one character's page (the training item) opens, and from the page the
     /// equipment and card skills change screens. Those three items are hidden from the menu.
     /// The characters, levels and cards are mock values until the party has data; every item
@@ -49,6 +50,10 @@ namespace Baryonyx.Tavern.Editor
                     item.Key switch
                     {
                         PartySession.GuideItemKey => AdventurerRosterAssets.BuildPanel(safe, view),
+                        AdventurerPickerView.GuideItemKey => AdventurerPickerAssets.BuildPanel(
+                            safe,
+                            view
+                        ),
                         TrainingSession.GuideItemKey => TrainingAssets.BuildTrainingPanel(
                             safe,
                             view
@@ -71,6 +76,7 @@ namespace Baryonyx.Tavern.Editor
             d.Items = new[]
             {
                 Adventurers(),
+                Gear(),
                 Bonus(),
                 Hidden("育成", TrainingSession.GuideItemKey),
                 Hidden("装備", EquipmentSession.GuideItemKey),
@@ -89,6 +95,20 @@ namespace Baryonyx.Tavern.Editor
                 Icon(IconFormationPath)
             );
             item.Key = PartySession.GuideItemKey;
+            return item;
+        }
+
+        // The equipment item opens a card for every character instead of a list: tapping one opens
+        // their page, where the weapon and armour slots change what they wear.
+        private static GuideMenuItem Gear()
+        {
+            var item = Item(
+                "装備",
+                "冒険者を選んで、武器・防具を付け替える",
+                "選ぶ",
+                Icon(EquipmentAssets.IconChangeGearPath)
+            );
+            item.Key = AdventurerPickerView.GuideItemKey;
             return item;
         }
 

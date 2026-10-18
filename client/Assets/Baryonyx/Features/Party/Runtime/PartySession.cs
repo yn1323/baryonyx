@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Economy;
 using UnityEngine;
 
 namespace Baryonyx.Party
@@ -46,6 +47,8 @@ namespace Baryonyx.Party
         public static PartyFormation Use(PartyMockData data, PartyState value)
         {
             state = value;
+            if (value != null)
+                RuneBalance.Set(value.Runes);
             formation = PartyFormation.From(data, value);
             return formation;
         }

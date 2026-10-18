@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,6 +14,16 @@ namespace Baryonyx.UI.GuideMenu
     {
         public const string LoadingText = "読み込み中…";
         public const string LoadFailedText = "取得できませんでした";
+
+        /// <summary>
+        /// The states a panel shows while stopped for its read (doc/rules/ui-design.md#停止中の表示の切り替え):
+        /// reading, and the read failed.
+        /// </summary>
+        public static readonly IReadOnlyList<string> PreviewStates = new[]
+        {
+            "読み込み中",
+            "取得できない",
+        };
 
         private CancellationTokenSource source;
 

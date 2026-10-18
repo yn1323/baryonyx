@@ -8,26 +8,19 @@ using static Baryonyx.UI.UiText;
 namespace Baryonyx.Party
 {
     /// <summary>
-    /// The person at the top of the formation's change screens (equipment, card skills): ◀ and ▶
-    /// around the figure, the name, the level and the elements they can use. Baked by the
-    /// generator; the screens show the person and wire the arrows.
+    /// The person at the top of the formation's change screens (equipment, card skills): the
+    /// figure, the name, the level and the elements they can use. Baked by the generator; the
+    /// screens show the person and change them on a flick.
     /// </summary>
     [Serializable]
     public sealed class PartyPersonHeader
     {
-        public Button Prev;
-        public Button Next;
         public RawImage Figure;
         public TMP_Text Name;
         public TMP_Text Level;
         public Image[] Elements = Array.Empty<Image>();
 
-        public void Show(
-            PartyMember member,
-            int level,
-            IReadOnlyList<Sprite> elements,
-            bool canSwitch
-        )
+        public void Show(PartyMember member, int level, IReadOnlyList<Sprite> elements)
         {
             if (Figure != null)
             {
@@ -45,16 +38,12 @@ namespace Baryonyx.Party
                 Elements[i].sprite = icon;
                 Elements[i].gameObject.SetActive(icon != null);
             }
-            if (Prev != null)
-                Prev.interactable = canSwitch;
-            if (Next != null)
-                Next.interactable = canSwitch;
         }
 
         // 読み込むまで、仮データの人を本当の仲間として見せない。
         public void ShowLoading(string text)
         {
-            Show(null, 0, null, false);
+            Show(null, 0, null);
             Set(Name, text);
         }
     }

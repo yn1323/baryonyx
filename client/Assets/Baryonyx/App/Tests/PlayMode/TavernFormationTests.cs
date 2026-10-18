@@ -31,10 +31,10 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernFormationTests));
         }
 
-        // 編成の「冒険者」は一覧の代わりに冒険者の一覧を開く。右はパーティの4枠、その下に控え。押した人の
-        // 見本を左に出し、「装備・スキル・育成」でその人の個別の画面へ移る。下のボタンで外す・入れる・入れ替える。
+        // 編成の「冒険者」は、案内人の画面の枠の中に冒険者の一覧を開く。左にパーティの4枚、右にパーティにいない
+        // 人と最後に「パーティから外す」。パーティの枠と一覧の人を順に押すと入れ替え、長押しで個別の画面へ移る。
         [UnityTest]
-        public IEnumerator AdventurersShowTheChosenAndChangeTheParty()
+        public IEnumerator AdventurersSwapThePartyAndOpenAPageOnHold()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
@@ -42,82 +42,71 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Definition.Title, Is.EqualTo("編成"));
             int item = ItemOf(view, PartySession.GuideItemKey);
             Assert.That(item, Is.GreaterThanOrEqualTo(0));
-            Assert.That(view.MenuItems[item].transform.Find("Icon"), Is.Not.Null);
+            Assert.That(view.MenuItems[item].transform.Find("Body/Content/Icon"), Is.Not.Null);
+            Assert.That(view.Framed, Is.False);
             view.MenuItems[item].onClick.Invoke();
             var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
             Assert.That(roster.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.ListPanel.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.False);
+            // 画面いっぱいの枠：ぼかした背景・ヘッダーの帯と区切り・四隅の飾りを出す。
+            Assert.That(view.Framed, Is.True);
+            Assert.That(view.FrameParts.All(part => part.activeSelf), Is.True);
             yield return null;
 
-            // 左の見本と右の一覧は「もどる」と重ならない。ボタンとタイルは指で押せる大きさ。
-            var chosen = roster.transform.Find("Layout/Chosen");
-            var list = roster.transform.Find("Layout/Roster");
-            SceneTests.AssertBelow(chosen, view.Back.transform);
-            SceneTests.AssertBelow(list, view.Back.transform);
-            Assert.That(
-                SceneTests.ScreenRect(chosen).xMax,
-                Is.LessThanOrEqualTo(SceneTests.ScreenRect(list).xMin)
-            );
-            SceneTests.AssertTouchSize(roster.Open.transform, 0.7f);
-            SceneTests.AssertTouchSize(roster.Action.transform, 0.7f);
-            foreach (var slot in roster.Slots)
-                SceneTests.AssertTouchSize(slot.Button.transform);
-
-            // 最初はパーティの先頭を選び、見本にその人を出す。
+            // カードは「もどる」と重ならず、パーティの4枚は一覧の左にある。どれも指で押せる大きさ。
             var data = roster.Party;
             var party = PartySession.Formation(data);
-            var first = party.Find(party.Member(0));
-            Assert.That(roster.Slots[0].Selected.activeSelf, Is.True);
-            Assert.That(roster.Name.text, Is.EqualTo(first.Name));
-            Assert.That(roster.Level.text, Is.EqualTo(first.Level.ToString()));
-            Assert.That(roster.Figure.enabled, Is.True);
-            Assert.That(roster.Stats.All(stat => stat.text != ""), Is.True);
-            Assert.That(roster.Cards.All(card => card.enabled), Is.True);
-            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.LeaveLabel));
-            // 控えは持っている順に、パーティにいない人だけを並べる。
-            Assert.That(Shown(roster), Is.EqualTo(party.Bench.Select(member => member.Id)));
-            foreach (var id in Shown(roster))
-                SceneTests.AssertTouchSize(Tile(roster, id).Button.transform);
-
-            // 控えの人を選ぶと見本が替わり、ボタンは「パーティに入れる」。
-            string bench = Shown(roster).First();
-            Tile(roster, bench).Button.onClick.Invoke();
-            Assert.That(roster.Name.text, Is.EqualTo(party.Name(bench)));
-            Assert.That(Tile(roster, bench).Selected.activeSelf, Is.True);
-            Assert.That(roster.Slots[0].Selected.activeSelf, Is.False);
-            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.JoinLabel));
-
-            // パーティに空きがないので、押すとパーティの4枠が入れ替える相手になる。
-            roster.Action.onClick.Invoke();
-            Assert.That(roster.Slots.All(slot => slot.Swap.activeSelf), Is.True);
-            Assert.That(roster.ActionLabel.text, Is.EqualTo(PartyRosterPresenter.CancelLabel));
-            Assert.That(roster.Open.interactable, Is.False);
-            string before = party.Member(1);
-            roster.Slots[1].Button.onClick.Invoke();
-            Assert.That(party.Member(1), Is.EqualTo(bench));
-            Assert.That(roster.Slots.Any(slot => slot.Swap.activeSelf), Is.False);
-            Assert.That(roster.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
-            Assert.That(Shown(roster), Does.Contain(before));
+            foreach (var slot in roster.Slots)
+            {
+                SceneTests.AssertBelow(slot.Card.transform, view.Back.transform);
+                SceneTests.AssertTouchSize(slot.Card.transform);
+            }
             Assert.That(
-                roster.LastNotice,
-                Is.EqualTo($"{party.Name(before)}と{party.Name(bench)}を入れ替えました")
+                SceneTests.ScreenRect(roster.Slots[0].Card.transform).xMax,
+                Is.LessThanOrEqualTo(SceneTests.ScreenRect(roster.List.transform).xMin)
             );
-            Assert.That(view.ToastMessage, Is.EqualTo(roster.LastNotice));
+            // 一覧はパーティにいない人を持っている順に並べ、最後に「パーティから外す」を置く。
+            Assert.That(Shown(roster), Is.EqualTo(party.Bench.Select(member => member.Id)));
+            Assert.That(roster.Remove.transform.GetSiblingIndex(), Is.EqualTo(LastSibling(roster)));
+            foreach (var id in Shown(roster))
+                SceneTests.AssertTouchSize(Tile(roster, id).Card.transform);
+            SceneTests.AssertTouchSize(roster.Remove.transform);
 
-            // パーティの人を外すと空きになり、空いた枠を押すと選んだ控えを入れる。
-            roster.Action.onClick.Invoke();
+            // 最初は何も選んでいない。パーティの名前とLvはパーティの順に出す。
+            var first = party.Find(party.Member(0));
+            Assert.That(roster.Slots.Any(slot => slot.Card.Selected), Is.False);
+            Assert.That(roster.Slots[0].Name.text, Is.EqualTo(first.Name));
+            Assert.That(roster.Slots[0].Level.text, Is.EqualTo(first.Level.ToString()));
+            Assert.That(roster.Slots[0].Figure.gameObject.activeSelf, Is.True);
+
+            // パーティの枠を選んでから一覧の人を押すと入れ替え、何も選んでいない状態に戻る。
+            string bench = Shown(roster).First();
+            string before = party.Member(1);
+            roster.Slots[1].Card.Click();
+            Assert.That(roster.Slots[1].Card.Selected, Is.True);
+            Tile(roster, bench).Card.Click();
+            Assert.That(party.Member(1), Is.EqualTo(bench));
+            Assert.That(roster.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
+            Assert.That(roster.Slots[1].Card.Selected, Is.False);
+            Assert.That(Shown(roster), Does.Contain(before));
+            // 変わったことは枠を見ればわかるので、通知の帯は出さない。
+            Assert.That(roster.LastNotice, Is.Empty);
+
+            // 枠を選んで「パーティから外す」と空きになり、一覧の人を選んでから空いた枠を押すと入れる。
+            roster.Slots[1].Card.Click();
+            roster.Remove.Click();
             Assert.That(party.Member(1), Is.Null);
             Assert.That(roster.Slots[1].Empty.gameObject.activeSelf, Is.True);
             Assert.That(roster.Slots[1].Figure.gameObject.activeSelf, Is.False);
-            Assert.That(roster.LastNotice, Does.EndWith("を外しました"));
-            Tile(roster, before).Button.onClick.Invoke();
-            roster.Slots[1].Button.onClick.Invoke();
+            Tile(roster, before).Card.Click();
+            Assert.That(Tile(roster, before).Card.Selected, Is.True);
+            roster.Slots[1].Card.Click();
             Assert.That(party.Member(1), Is.EqualTo(before));
-            Assert.That(roster.LastNotice, Does.EndWith("を編成しました"));
+            Assert.That(roster.LastNotice, Is.Empty);
 
-            // 「装備・スキル・育成」は、選んだ人の個別の画面を開く。「もどる」で一覧へ、もう一度でメニューへ。
-            roster.Open.onClick.Invoke();
+            // 長押しで、その人の個別の画面を開く。「もどる」で一覧へ、もう一度でメニューへ戻り、枠を消す。
+            roster.Slots[1].Card.Hold();
             var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             Assert.That(training.gameObject.activeInHierarchy, Is.True);
@@ -125,10 +114,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Name.text, Is.EqualTo(party.Name(before)));
             view.Back.onClick.Invoke();
             Assert.That(roster.gameObject.activeSelf, Is.True);
-            Assert.That(roster.Name.text, Is.EqualTo(party.Name(before)));
+            Assert.That(view.Framed, Is.True);
+            Tile(roster, bench).Card.Hold();
+            Assert.That(training.Name.text, Is.EqualTo(party.Name(bench)));
+            view.Back.onClick.Invoke();
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(view.GuideArt.activeSelf, Is.True);
+            Assert.That(view.Framed, Is.False);
+            Assert.That(view.FrameParts.Any(part => part.activeSelf), Is.False);
         }
 
         // サーバーがあるときは、開くたびにサーバーの編成を読み、入れ替えを保存してから表示を変える。
@@ -148,8 +142,9 @@ namespace Baryonyx.Tests.PlayMode
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
             var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
-            Assert.That(roster.Owned.text, Is.EqualTo(AdventurerRosterView.LoadingText));
+            Assert.That(roster.Status.text, Is.EqualTo(AdventurerRosterView.LoadingText));
             Assert.That(Shown(roster), Is.Empty);
+            Assert.That(roster.Remove.gameObject.activeSelf, Is.False);
             Assert.That(roster.Slots[0].Name.text, Is.Empty);
             yield return SceneTests.WaitUntil(
                 () => roster.LoadTask.IsCompleted,
@@ -158,25 +153,26 @@ namespace Baryonyx.Tests.PlayMode
 
             // サーバーの持っているキャラ・編成・Lvを出す。
             var data = roster.Party;
-            Assert.That(roster.Owned.text, Is.EqualTo("所持 4人"));
+            Assert.That(roster.Status.text, Is.Empty);
             Assert.That(roster.Slots[0].Name.text, Is.EqualTo(data.Find("anselm").Name));
-            Assert.That(roster.Slots[1].Level.text, Is.EqualTo("Lv 20"));
+            Assert.That(roster.Slots[1].Level.text, Is.EqualTo("20"));
             Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
             Assert.That(Shown(roster), Is.EqualTo(new[] { "luka", "greta" }));
 
-            // 空きがあるので、ルカを選んで「パーティに入れる」と空いた枠へ入れる。保存してから枠に出す。
-            Tile(roster, "luka").Button.onClick.Invoke();
-            roster.Action.onClick.Invoke();
+            // 空いた枠を選んでからルカを押すと、保存してから枠に出す。
+            roster.Slots[2].Card.Click();
+            Tile(roster, "luka").Card.Click();
             Assert.That(roster.Presenter.Saving, Is.True);
             Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
             yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "slot 2 luka" }));
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
-            Assert.That(roster.LastNotice, Does.EndWith("を編成しました"));
+            Assert.That(roster.LastNotice, Is.Empty);
 
             // 保存できなかったときは枠を変えずに知らせる。
             server.Fail = true;
-            roster.Action.onClick.Invoke();
+            roster.Slots[2].Card.Click();
+            Tile(roster, "greta").Card.Click();
             yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
             Assert.That(roster.LastNotice, Is.EqualTo(PartyRosterPresenter.SaveFailedMessage));
@@ -185,7 +181,7 @@ namespace Baryonyx.Tests.PlayMode
             view.Back.onClick.Invoke();
             view.MenuItems[item].onClick.Invoke();
             yield return SceneTests.WaitUntil(() => roster.LoadTask.IsCompleted);
-            Assert.That(roster.Owned.text, Is.EqualTo(AdventurerRosterView.LoadFailedText));
+            Assert.That(roster.Status.text, Is.EqualTo(AdventurerRosterView.LoadFailedText));
             Assert.That(roster.LastNotice, Is.EqualTo(AdventurerRosterView.LoadFailedMessage));
             Assert.That(Shown(roster), Is.Empty);
 
@@ -195,8 +191,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitUntil(() => roster.LoadTask.IsCompleted);
             Assert.That(server.Loads, Is.EqualTo(2));
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
-            // 最後に選んでいたルカを選んだまま開く。
-            Assert.That(roster.Name.text, Is.EqualTo(data.Find("luka").Name));
+            // 開き直したときは何も選んでいない。
+            Assert.That(roster.Slots.Any(slot => slot.Card.Selected), Is.False);
         }
 
         private static int ItemOf(GuideMenuView view, string key) =>
@@ -204,10 +200,13 @@ namespace Baryonyx.Tests.PlayMode
 
         private static string[] Shown(AdventurerRosterView roster) =>
             roster
-                .Tiles.Where(tile => tile.Button.gameObject.activeSelf)
-                .OrderBy(tile => tile.Button.transform.GetSiblingIndex())
+                .Tiles.Where(tile => tile.Card.gameObject.activeSelf)
+                .OrderBy(tile => tile.Card.transform.GetSiblingIndex())
                 .Select(tile => tile.Id)
                 .ToArray();
+
+        private static int LastSibling(AdventurerRosterView roster) =>
+            roster.Remove.transform.parent.childCount - 1;
 
         private static AdventurerTileWidget Tile(AdventurerRosterView roster, string id) =>
             roster.Tiles.Single(tile => tile.Id == id);

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
+using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.UI.Cards;
 using UnityEngine;
@@ -75,8 +76,9 @@ namespace Baryonyx.Training
         public string Detail { get; internal set; } = "";
         public bool Filled { get; internal set; }
 
-        // まだ付けられない枠（アクセサリーは準備中）。押しても開かない。
+        // まだ開いていない枠（アクセサリー）と、解放するLv（「Lv 15で解放」）。押すと付け替えの画面を開く。
         public bool Locked { get; internal set; }
+        public string UnlockText { get; internal set; } = "";
 
         public static TrainingGearState Worn(
             string slot,
@@ -355,7 +357,7 @@ namespace Baryonyx.Training
         // 装備の枠を押す。武器・防具はその枠を選んだ装備の付け替えの画面を開く。
         public void OpenGear(int slot)
         {
-            if (disposed || dialog || Current == null || slot < 0 || slot >= OpenGearSlots)
+            if (disposed || dialog || Current == null || slot < 0 || slot >= GearSlots)
                 return;
             view.OpenGear(Current.Id, slot);
         }
@@ -447,7 +449,7 @@ namespace Baryonyx.Training
                     .Range(0, CustomSlots)
                     .Select(i => Card(current.Id, i < cards.Count ? cards[i] : null))
                     .ToArray(),
-                Gear = Gear(current.Id),
+                Gear = Gear(current.Id, level),
                 Runes = runes,
                 NextCost = maxed ? 0 : TrainingRules.CostToNext(level, costPerLevel),
                 DialogOpen = open,
@@ -524,8 +526,19 @@ namespace Baryonyx.Training
             };
         }
 
-        // 武器・防具は付けているもの、続けてまだ付けられないアクセサリー3つ。
-        private TrainingGearState[] Gear(string id)
+        private static TrainingGearState Accessory(int index, int level)
+        {
+            bool open = AccessorySlots.IsOpen(index, level);
+            return new TrainingGearState
+            {
+                Slot = GearLabels[2],
+                Locked = !open,
+                UnlockText = open ? "" : AccessorySlots.UnlockText(index),
+            };
+        }
+
+        // 武器・防具は付けているもの、続けてアクセサリー3つ（Lvで開き、アクセサリーはまだ持てないので空き）。
+        private TrainingGearState[] Gear(string id, int level)
         {
             var worn = gearOf(id) ?? Array.Empty<TrainingGearState>();
             return Enumerable
@@ -535,7 +548,7 @@ namespace Baryonyx.Training
                         ? i < worn.Count && worn[i] != null
                             ? worn[i]
                             : TrainingGearState.Worn(GearLabels[i], null, null)
-                        : new TrainingGearState { Slot = GearLabels[2], Locked = true }
+                        : Accessory(i - OpenGearSlots, level)
                 )
                 .ToArray();
         }

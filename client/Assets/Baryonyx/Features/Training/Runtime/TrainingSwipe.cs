@@ -35,6 +35,9 @@ namespace Baryonyx.Training
                 Flicked?.Invoke(step);
         }
 
+        /// <summary>Flicks as a finger would: 1 for the next person, -1 for the previous one.</summary>
+        public void Flick(int step) => Flicked?.Invoke(step);
+
         /// <summary>
         /// The person a flick of <paramref name="delta"/> (design pixels) moves to: 1 for a long
         /// enough flick to the left, -1 to the right, 0 for a short or mostly vertical one.

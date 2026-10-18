@@ -5,6 +5,7 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
+using Baryonyx.Equipment;
 using Baryonyx.Party;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
@@ -64,7 +65,7 @@ namespace Baryonyx.Tests.PlayMode
             var detail = training.transform.Find("Layout/Detail");
             SceneTests.AssertBelow(portrait, view.Back.transform);
             SceneTests.AssertBelow(detail, view.Back.transform);
-            SceneTests.AssertBelow(detail, view.transform.Find("SafeArea/Title"));
+            SceneTests.AssertBelow(detail, view.Breadcrumb.transform);
             Assert.That(
                 SceneTests.ScreenRect(portrait).xMax,
                 Is.LessThanOrEqualTo(SceneTests.ScreenRect(detail).xMin)
@@ -88,6 +89,12 @@ namespace Baryonyx.Tests.PlayMode
             var growth = training.Data.Find(first.Id);
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
             Assert.That(training.Level.text, Is.EqualTo(first.Level.ToString()));
+            // 上の段のパンくずは「編成 › 冒険者 › 名前」、所持ルーンはこの画面で読んだ残高。
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first.Name)));
+            Assert.That(
+                view.Runes.text,
+                Is.EqualTo(Baryonyx.Economy.RuneBalance.Text(training.Presenter.State.Runes))
+            );
             Assert.That(training.Illustration.texture, Is.EqualTo(first.Illustration));
             Assert.That(
                 training.Stats.Select(label => label.text),
@@ -120,10 +127,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Gear[0].Name.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Detail.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Icon.enabled, Is.True);
-            // アクセサリーの3枠は準備中で押せない。
+            // アクセサリーの3枠は、Lvで開くまで錠前と解放するLvを出す。押すと付け替えの画面を開ける。
             Assert.That(training.Gear[4].Slot.text, Is.EqualTo("アクセサリー 3"));
             Assert.That(training.Gear.Skip(2).All(gear => gear.Lock.activeSelf), Is.True);
-            Assert.That(training.Gear.Skip(2).All(gear => !gear.Button.interactable), Is.True);
+            Assert.That(
+                training.Gear.Skip(2).Select(gear => gear.When.text),
+                Is.EqualTo(
+                    Enumerable.Range(0, AccessorySlots.Count).Select(AccessorySlots.UnlockText)
+                )
+            );
+            Assert.That(training.Gear.All(gear => gear.Button.interactable), Is.True);
 
             // 左へのフリックで次の人、右へのフリックで前の人。枠の上から動かしてもフリックとして届く。
             Assert.That(
@@ -134,6 +147,10 @@ namespace Baryonyx.Tests.PlayMode
             );
             Flick(training, -1);
             Assert.That(training.Name.text, Is.EqualTo(party.Name(party.Member(1))));
+            Assert.That(
+                view.Breadcrumb.text,
+                Is.EqualTo(Trail("編成", "冒険者", party.Name(party.Member(1))))
+            );
             Flick(training, 1);
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
 
@@ -198,15 +215,13 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.gameObject.activeSelf, Is.True);
             Assert.That(training.Name.text, Is.EqualTo(party.Name(second)));
 
-            // 「もどる」で冒険者の一覧へ、同じ人を選んだまま戻る。アプリを動かしている間はレベルが残る。
+            // 「もどる」で冒険者の一覧へ戻る。パーティの先頭を長押しして開き直すと、アプリを動かしている間はレベルが残る。
             view.Back.onClick.Invoke();
             var roster = view.PanelFor(ItemOf(view, PartySession.GuideItemKey))
                 .GetComponent<AdventurerRosterView>();
             Assert.That(roster.gameObject.activeSelf, Is.True);
             Assert.That(training.gameObject.activeSelf, Is.False);
-            Assert.That(roster.Name.text, Is.EqualTo(party.Name(second)));
-            roster.Slots[0].Button.onClick.Invoke();
-            roster.Open.onClick.Invoke();
+            roster.Slots[0].Card.Hold();
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
             Assert.That(training.Level.text, Is.EqualTo(target.ToString()));
             yield return null;
@@ -231,7 +246,7 @@ namespace Baryonyx.Tests.PlayMode
                 () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
-            roster.Open.onClick.Invoke();
+            roster.Slots[0].Card.Hold();
             var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             Assert.That(training.Name.text, Is.EqualTo(TrainingView.LoadingText));
@@ -277,11 +292,14 @@ namespace Baryonyx.Tests.PlayMode
             System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
         // メニューの「冒険者」から一覧を開き、選んでいる人の個別の画面を開く。
+        private static string Trail(params string[] parts) =>
+            string.Join(Baryonyx.UI.GuideMenu.GuideMenuView.TrailSeparator, parts);
+
         private static TrainingView OpenPage(Baryonyx.UI.GuideMenu.GuideMenuView view)
         {
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            view.PanelFor(item).GetComponent<AdventurerRosterView>().Open.onClick.Invoke();
+            view.PanelFor(item).GetComponent<AdventurerRosterView>().Slots[0].Card.Hold();
             return view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
         }

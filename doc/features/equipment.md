@@ -29,7 +29,9 @@ updated: 2026-10-06
 1人に最大3つ付けられる。
 初めは枠が0で、レベルアップに合わせて枠が開く（[レベルアップ](progression.md#レベルアップ)）。
 パッシブスキルのように、付けたキャラのステータスを底上げしたり、ちょっとした効果を与えたりする。
-枠を開くレベルと効果の中身は[未決](#未決事項)である。
+効果の中身は[未決](#未決事項)である。
+枠を開くレベルは、仮に1つ目がLv 15、2つ目がLv 20、3つ目がLv 25とする（2026-10-18、[値の定義](../../client/Assets/Baryonyx/Features/Equipment/Runtime/AccessorySlots.cs)）。
+画面では、開くまで「Lv 15で解放」と出し、開いても持てるアクセサリーがまだないため空きのままにする（[装備](screens.md#装備)）。
 
 ## 設計方針
 
@@ -63,7 +65,7 @@ APIは `GET /v1/equipment`、`PUT /v1/equipment/characters/:characterId/:slot`�
 | 決める項目 | 状態 |
 |---|---|
 | 武器・防具の種別と装備枠 | 種別は未決。装備枠は、実装ではキャラごとに武器1つ・防具1つとした（仮）。アクセサリーは最大3つ（2026-10-06） |
-| アクセサリーの枠を開くレベル | 未決（[育成の未決事項](progression.md#未決事項)） |
+| アクセサリーの枠を開くレベル | 仮にLv 15・20・25（[アクセサリー](#アクセサリー)）。確定は[育成の未決事項](progression.md#未決事項) |
 | アクセサリーの効果 | 底上げするステータスと量、「ちょっとした効果」の種類、パッシブスキルとの重ね方、同じアクセサリーを1人に複数付けられるか |
 | 「基本的に」どのキャラでも付けられるとした例外の有無 | 未決 |
 | 装備が参照するステータスと割合、レア度による差 | 未決 |
@@ -83,11 +85,13 @@ APIは `GET /v1/equipment`、`PUT /v1/equipment/characters/:characterId/:slot`�
 
 本ページは企画上の要求・未決事項を記す。
 編成の[装備](screens.md#装備)で武器と防具を付け替え、サーバーに保存する（[持っている装備と付け替えの保存](#持っている装備と付け替えの保存)）。
+付け替えの画面へは、冒険者の個別の画面から進む。個別の画面へは、編成のメニューの冒険者と[装備](screens.md#装備の人選び)の2つの入口がある。
 装備の生成・厳選・売買・合成は未実装である。
 アクセサリーと、1つずつ持つ倍率もまだなく、保存の形にも含まれていない。
 
 | 対象 | 入口 |
 |---|---|
+| 編成のメニューの「装備」（人選び） | [AdventurerPickerView](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerPickerView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Tavern/Editor/AdventurerPickerAssets.cs) |
 | 表示と付け替え | [EquipmentPresenter](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentPresenter.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Equipment/Editor/EquipmentAssets.cs) |
 | サーバーとの読み書き | [EquipmentSource](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentSource.cs)・[API](../../server/src/features/equipment/routes.ts)・[DB操作](../../server/src/features/equipment/repository.ts) |
 
