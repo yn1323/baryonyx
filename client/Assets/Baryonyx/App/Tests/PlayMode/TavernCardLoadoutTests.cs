@@ -284,21 +284,23 @@ namespace Baryonyx.Tests.PlayMode
             panel.Swipe.Flick(1);
             Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
 
+            // 保存を待たずに枠を変え、そのあとで保存する。
             Row(panel, "Embers").Button.onClick.Invoke();
-            Assert.That(panel.Presenter.Saving, Is.True);
-            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Ice").Name));
+            Assert.That(panel.Presenter.ChooseTask.IsCompleted, Is.False);
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
             yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "card toma 1 Embers" }));
             Assert.That(server.CardsOf("toma")[1], Is.EqualTo("Embers"));
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
             Assert.That(panel.LastNotice, Is.Empty);
 
-            // 保存できなかったときはカードを変えずに知らせる。
+            // 保存できなかったときは、出したカードを戻して通知の帯で知らせる。
             server.Fail = true;
             Row(panel, "Meteor").Button.onClick.Invoke();
+            Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Meteor").Name));
             yield return SceneTests.WaitUntil(() => panel.Presenter.ChooseTask.IsCompleted);
             Assert.That(panel.Slots[1].Name.text, Is.EqualTo(CardSkills.Find("Embers").Name));
-            Assert.That(panel.LastNotice, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
+            Assert.That(view.ToastMessage, Is.EqualTo(CardLoadoutPresenter.SaveFailedMessage));
         }
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>

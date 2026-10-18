@@ -72,6 +72,55 @@ namespace Baryonyx.Equipment
 
         public IEnumerable<(string Character, EquipmentSlot Slot, string Item)> Worn =>
             worn.Select(entry => (entry.Key.Character, entry.Key.Slot, entry.Value));
+
+        /// <summary>
+        /// The items worn after the character puts the item on in the slot, by the server's rules
+        /// (doc/features/equipment.md): an item someone else wears moves to the character. An
+        /// item not owned or for another slot changes nothing ("none").
+        /// </summary>
+        public EquipmentState WithEquipped(string characterId, EquipmentSlot slot, string itemId)
+        {
+            var item = Find(itemId);
+            if (
+                string.IsNullOrEmpty(characterId)
+                || item == null
+                || EquipmentCatalog.Find(item.EquipmentId)?.Slot != slot
+            )
+                return With(worn, "none");
+            string current = ItemIn(characterId, slot);
+            if (current == itemId)
+                return With(worn, "none");
+            var next = new Dictionary<(string Character, EquipmentSlot Slot), string>(worn);
+            var holder = next.FirstOrDefault(entry => entry.Value == itemId).Key;
+            if (holder.Character != null)
+                next.Remove(holder);
+            next[(characterId, slot)] = itemId;
+            if (holder.Character != null)
+                return With(next, "move", holder.Character);
+            return With(next, current == null ? "equip" : "replace");
+        }
+
+        /// <summary>The items worn after the character takes the slot's item off.</summary>
+        public EquipmentState WithUnequipped(string characterId, EquipmentSlot slot)
+        {
+            if (ItemIn(characterId, slot) == null)
+                return With(worn, "none");
+            var next = new Dictionary<(string Character, EquipmentSlot Slot), string>(worn);
+            next.Remove((characterId, slot));
+            return With(next, "remove");
+        }
+
+        private EquipmentState With(
+            Dictionary<(string Character, EquipmentSlot Slot), string> next,
+            string change,
+            string from = null
+        ) =>
+            new(
+                Items,
+                next.Select(entry => (entry.Key.Character, entry.Key.Slot, entry.Value)).ToArray(),
+                change,
+                from
+            );
     }
 
     /// <summary>Where the formation's equipment reads and saves what the characters wear.</summary>

@@ -450,7 +450,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void AChangeIsShownAfterTheServerSavesIt()
+        public void AChangeShowsAtOnceAndTheSavedSlotsAfter()
         {
             var view = new FakeView();
             var saved = StepBonusLoadoutTests.Create();
@@ -461,7 +461,7 @@ namespace Baryonyx.Tests.EditMode
                 view,
                 StepBonusLoadoutTests.Create(),
                 3240,
-                (slot, id, _) =>
+                (slot, id) =>
                 {
                     calls.Add((slot, id));
                     return pending.Task;
@@ -470,41 +470,37 @@ namespace Baryonyx.Tests.EditMode
 
             view.PressSlot(3);
             view.PressBonus("guard");
-            Assert.That(presenter.Saving, Is.True);
-            // Until the server answers, the slot keeps its bonus and taps wait.
-            Assert.That(view.Last.Slots[3].Name, Is.EqualTo("闘志"));
+            // Without waiting for the server, the slot shows the bonus and taps go on.
+            Assert.That(view.Last.Slots[3].Name, Is.EqualTo("守り"));
+            Assert.That(view.Notices, Is.EqualTo(new[] { "5,000の枠に「守り」をセットしました" }));
+            Assert.That(presenter.ChooseTask.IsCompleted, Is.False);
             view.PressBonus("omen");
-            Assert.That(calls, Is.EqualTo(new[] { (3, "guard") }));
+            Assert.That(calls, Is.EqualTo(new[] { (3, "guard"), (3, "omen") }));
 
             pending.SetResult(saved);
             Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
             Assert.That(presenter.Loadout, Is.SameAs(saved));
             Assert.That(view.Last.Slots[3].Name, Is.EqualTo("守り"));
-            Assert.That(view.Notices, Is.EqualTo(new[] { "5,000の枠に「守り」をセットしました" }));
         }
 
         [Test]
-        public void AFailedSaveKeepsTheSlotsAndSaysSo()
+        public void AFailedSaveShowsTheSlotsPutBack()
         {
             var view = new FakeView();
+            // 保存できなかったときは、戻した枠が返る（知らせるのは SaveQueue）。
+            var back = StepBonusLoadoutTests.Create();
             using var presenter = new StepBonusSettingsPresenter(
                 view,
                 StepBonusLoadoutTests.Create(),
                 3240,
-                (_, _, _) => Task.FromException<StepBonusLoadout>(new InvalidOperationException())
+                (_, _) => Task.FromResult(back)
             );
 
             view.PressSlot(3);
             view.PressBonus("guard");
             Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
-            Assert.That(presenter.Loadout.Bonus(3), Is.EqualTo("fighting"));
+            Assert.That(presenter.Loadout, Is.SameAs(back));
             Assert.That(view.Last.Slots[3].Name, Is.EqualTo("闘志"));
-            Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { StepBonusSettingsPresenter.SaveFailedMessage })
-            );
-            Assert.That(presenter.Saving, Is.False);
         }
 
         // 冒険の途中は付け替えを送らず、理由を知らせる。
@@ -517,7 +513,7 @@ namespace Baryonyx.Tests.EditMode
                 view,
                 StepBonusLoadoutTests.Create(),
                 3240,
-                (_, _, _) =>
+                (_, _) =>
                 {
                     saves++;
                     return Task.FromResult(StepBonusLoadoutTests.Create());
@@ -539,22 +535,15 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void AServerRefusalDuringAnAdventureSaysWhy()
         {
-            var view = new FakeView();
-            using var presenter = new StepBonusSettingsPresenter(
-                view,
-                StepBonusLoadoutTests.Create(),
-                3240,
-                (_, _, _) =>
-                    Task.FromException<StepBonusLoadout>(
-                        new Baryonyx.Networking.ServerApiException(409)
-                    )
-            );
-
-            view.PressSlot(3);
-            view.PressBonus("guard");
             Assert.That(
-                view.Notices,
-                Is.EqualTo(new[] { StepBonusSettingsPresenter.LockedMessage })
+                StepBonusSettingsPresenter.FailedMessage(
+                    new Baryonyx.Networking.ServerApiException(409)
+                ),
+                Is.EqualTo(StepBonusSettingsPresenter.LockedMessage)
+            );
+            Assert.That(
+                StepBonusSettingsPresenter.FailedMessage(new InvalidOperationException()),
+                Is.EqualTo(StepBonusSettingsPresenter.SaveFailedMessage)
             );
         }
 

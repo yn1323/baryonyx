@@ -213,30 +213,25 @@ namespace Baryonyx.CardLoadout
 
         private async Task LoadAsync(IPartySource source, CancellationToken token)
         {
-            var state = await source.LoadAsync(token);
+            // 保存を待っている変更があれば、読み直さずに手元の編成を出す。
+            var formation = await PartySession.LoadAsync(Party, source, token);
             if (token.IsCancellationRequested)
                 return;
             Present(
-                PartySession.Use(Party, state),
-                (id, slot, skill, cancel) => SaveAsync(source, id, slot, skill, cancel)
+                formation,
+                (id, slot, skill) =>
+                    PartySession.SetCardAsync(
+                        id,
+                        slot,
+                        skill,
+                        CardLoadoutPresenter.SaveFailedMessage
+                    )
             );
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
 
-        // 保存した結果に置き換える。カードは store が PartySession から読み直す。
-        private async Task SaveAsync(
-            IPartySource source,
-            string id,
-            int slot,
-            string skill,
-            CancellationToken token
-        ) => PartySession.Use(Party, await source.SetCardAsync(id, slot, skill, token));
-
-        private void Present(
-            PartyFormation formation,
-            Func<string, int, string, CancellationToken, Task> save
-        )
+        private void Present(PartyFormation formation, Func<string, int, string, Task> save)
         {
             presenter = new CardLoadoutPresenter(
                 this,

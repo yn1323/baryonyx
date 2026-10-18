@@ -237,20 +237,23 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public async Task PressesWhileSavingAreIgnored()
+        public async Task AChangeShowsAtOnceAndPressesGoOnWhileSaving()
         {
             source.Gate = new TaskCompletionSource<bool>();
             presenter.Choose(Choice("flame-dagger").ItemId);
             var first = presenter.ChangeTask;
-            Assert.That(presenter.Saving, Is.True);
+            // 保存を待たずに枠を変える。
+            Assert.That(first.IsCompleted, Is.False);
+            Assert.That(view.Last.Slots[0].Name, Is.EqualTo("炎のダガー"));
             presenter.Choose(Choice("thunder-spear").ItemId);
-            view.Remove();
-            Assert.That(source.Saves, Is.EqualTo(1));
+            Assert.That(view.Last.Slots[0].Name, Is.EqualTo(Choice("thunder-spear").Name));
+            Assert.That(source.Saves, Is.EqualTo(2));
 
             source.Gate.SetResult(true);
             await first;
-            Assert.That(presenter.Saving, Is.False);
-            Assert.That(view.Last.Slots[0].Name, Is.EqualTo("炎のダガー"));
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Slots[0].Name, Is.EqualTo(Choice("thunder-spear").Name));
+            Assert.That(view.Notices, Is.Empty);
         }
 
         [Test]

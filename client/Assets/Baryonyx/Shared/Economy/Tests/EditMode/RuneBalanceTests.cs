@@ -27,5 +27,22 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(RuneBalance.Known, Is.EqualTo(0));
             Assert.That(changes, Is.EqualTo(2));
         }
+
+        [Test]
+        public void ReservedRunesStayOffTheBalanceUntilReleased()
+        {
+            RuneBalance.Set(1000);
+            RuneBalance.Reserve(300);
+            Assert.That(RuneBalance.Known, Is.EqualTo(700));
+
+            // 保存を待つ間に読み直した残高にも、先に使った分を引いて見せる。
+            RuneBalance.Set(1000);
+            Assert.That(RuneBalance.Known, Is.EqualTo(700));
+
+            // 保存できたら、サーバーの残高にしてから取り置きを戻す。
+            RuneBalance.Set(700);
+            RuneBalance.Release(300);
+            Assert.That(RuneBalance.Known, Is.EqualTo(700));
+        }
     }
 }

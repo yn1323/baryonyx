@@ -276,7 +276,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.GuideArt.activeSelf, Is.True);
         }
 
-        // サーバーがあるときは、プレイヤーごとの持ち物と枠を読み、変更をサーバーに保存してから見せる。
+        // サーバーがあるときは、プレイヤーごとの持ち物と枠を読み、変更はすぐ見せてからサーバーに保存する。
         [UnityTest]
         public IEnumerator TavernBonusSettingsReadAndSaveThroughTheServer()
         {
@@ -312,6 +312,7 @@ namespace Baryonyx.Tests.PlayMode
 
             settings.Slots[1].Button.onClick.Invoke();
             Row(settings, "guard").Button.onClick.Invoke();
+            Assert.That(settings.Slots[1].Name.text, Is.EqualTo("守り"));
             yield return SceneTests.WaitUntil(
                 () => settings.Presenter.ChooseTask.IsCompleted,
                 message: "The bonus was not saved."
@@ -320,14 +321,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(settings.Slots[1].Name.text, Is.EqualTo("守り"));
             Assert.That(settings.LastNotice, Does.EndWith("をセットしました"));
 
-            // 保存に失敗したら、枠を変えずに知らせる。
+            // 保存に失敗したら、出した枠を戻して通知の帯で知らせる。
             server.Fail = true;
             settings.Slots[2].Button.onClick.Invoke();
             Row(settings, "luck").Button.onClick.Invoke();
+            Assert.That(settings.Slots[2].Name.text, Is.EqualTo("幸運"));
             yield return SceneTests.WaitUntil(() => settings.Presenter.ChooseTask.IsCompleted);
             Assert.That(settings.Slots[0].Name.text, Is.EqualTo("幸運"));
+            Assert.That(settings.Slots[2].Name.text, Is.EqualTo("空き"));
             Assert.That(
-                settings.LastNotice,
+                guide.View.ToastMessage,
                 Is.EqualTo(StepBonusSettingsPresenter.SaveFailedMessage)
             );
         }

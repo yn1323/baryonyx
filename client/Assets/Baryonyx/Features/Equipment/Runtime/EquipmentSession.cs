@@ -6,8 +6,9 @@ namespace Baryonyx.Equipment
     /// <summary>
     /// Where the formation's equipment reads and saves what the characters wear, and who it
     /// shows while the app runs. The app sets <see cref="Source"/> to the game server, which
-    /// keeps each player's items (doc/features/equipment.md); without it (the showcase, or no
-    /// server URL) the equipment is kept only while the app runs.
+    /// keeps each player's items (doc/features/equipment.md), and a change shows at once and is
+    /// saved behind it (<see cref="EquipmentSaves"/>); without it (the showcase, or no server
+    /// URL) the equipment is kept only while the app runs.
     /// </summary>
     public static class EquipmentSession
     {
@@ -15,12 +16,16 @@ namespace Baryonyx.Equipment
         public const string GuideItemKey = "equipment";
 
         private static EquipmentLocalSource local;
+        private static EquipmentSaves saves;
 
         // 装備を読み書きするサーバー。なければアプリを動かしている間だけの装備を使う。
         public static IEquipmentSource Source { get; set; }
 
+        // 画面が読み書きする置き場。サーバーがあれば、すぐ表示して裏で保存する置き場を通す。
         public static IEquipmentSource SourceOrLocal =>
-            Source ?? (local ??= new EquipmentLocalSource());
+            Source == null ? local ??= new EquipmentLocalSource()
+            : saves != null && saves.Server == Source ? saves
+            : saves = new EquipmentSaves(Source);
 
         // 最後に見ていたキャラのID。冒険者の一覧・個別・スキルの画面と共有する。
         public static string Selected
@@ -41,6 +46,7 @@ namespace Baryonyx.Equipment
         {
             Source = null;
             local = null;
+            saves = null;
             OpenSlot = EquipmentSlot.Weapon;
             OpenAccessory = -1;
         }

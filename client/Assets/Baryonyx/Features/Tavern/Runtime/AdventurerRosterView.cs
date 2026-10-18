@@ -140,18 +140,14 @@ namespace Baryonyx.Tavern
             presenter = new PartyRosterPresenter(
                 this,
                 formation,
-                source != null ? (slot, id, cancel) => SaveAsync(source, slot, id, cancel) : null
+                source != null
+                    ? (slot, id) =>
+                        PartySession.SetSlotAsync(slot, id, PartyRosterPresenter.SaveFailedMessage)
+                    : null
             );
         }
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
-
-        private async Task<PartyFormation> SaveAsync(
-            IPartySource source,
-            int slot,
-            string id,
-            CancellationToken token
-        ) => PartySession.Use(Party, await source.SetSlotAsync(slot, id, token));
 
         // 読み込むまで、仮データの編成を本当の編成として見せない。
         private void ShowLoading()

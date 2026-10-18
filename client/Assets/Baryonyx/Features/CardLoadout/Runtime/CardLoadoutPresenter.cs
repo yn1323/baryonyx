@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Party;
@@ -147,9 +146,10 @@ namespace Baryonyx.CardLoadout
     /// where tapping a stage acquired sets it; the stages not acquired are shadows. The stage set
     /// is kept while the app runs only, since the server does not keep it yet.
     /// A card the person holds in another slot swaps with the chosen slot. Each change shows a
-    /// notice that asks nothing of the player. With a <c>save</c> function the change is saved on
-    /// the server first, and the store then reads the saved cards; otherwise (the showcase) the
-    /// store keeps the cards in memory.
+    /// notice that asks nothing of the player. With a <c>save</c> function the change shows at
+    /// once from the store and is saved on the server behind it, and the store reads the saved
+    /// cards again (put back when the save failed, which <see cref="Networking.SaveQueue"/> tells
+    /// on the notice band); otherwise (the showcase) the store keeps the cards in memory.
     /// </summary>
     public sealed class CardLoadoutPresenter : IDisposable
     {
@@ -166,23 +166,22 @@ namespace Baryonyx.CardLoadout
         private readonly IReadOnlyList<PartyMember> people;
         private readonly ICardLoadoutStore store;
 
-        // その人・枠・カードのIDを保存する。保存したカードは store から読み直す。
-        private readonly Func<string, int, string, CancellationToken, Task> save;
-        private readonly CancellationTokenSource lifetime = new();
+        // その人・枠・カードのIDを保存する。すぐに store へ当て、保存が済む（失敗なら戻す）と終わる。
+        // 表示は store から読み直す。
+        private readonly Func<string, int, string, Task> save;
         private int person;
         private int slot;
 
         // 選んでいる固有スキル。カスタムスキルの枠を選んでいるときは-1。
         private int unique = -1;
         private int tab;
-        private bool saving;
         private bool disposed;
 
         public CardLoadoutPresenter(
             ICardLoadoutView view,
             IReadOnlyList<PartyMember> people,
             ICardLoadoutStore store,
-            Func<string, int, string, CancellationToken, Task> save = null,
+            Func<string, int, string, Task> save = null,
             int slot = 0,
             int tab = SkillTab,
             int unique = -1
@@ -208,10 +207,7 @@ namespace Baryonyx.CardLoadout
 
         public CardLoadoutState State { get; private set; }
 
-        // 保存を待っている間。重ねて押されても受け付けない。
-        public bool Saving => saving;
-
-        // 実行中または直前の付け替え。テストで完了を待つために公開する。
+        // 直前の付け替えの保存。テストで完了を待つために公開する。
         public Task ChooseTask { get; private set; } = Task.CompletedTask;
 
         private PartyMember Current => people.Count > 0 ? people[person] : null;
@@ -227,7 +223,7 @@ namespace Baryonyx.CardLoadout
         // 人を替える。選んでいる枠（固有スキル）とタブはそのままにし、同じ枠のスキルを人ごとに見比べられるようにする。
         private void Step(int delta)
         {
-            if (disposed || saving || people.Count < 2)
+            if (disposed || people.Count < 2)
                 return;
             person = (person + delta + people.Count) % people.Count;
             store.Selected = people[person].Id;
@@ -258,7 +254,7 @@ namespace Baryonyx.CardLoadout
         public void ChooseStage(int stage)
         {
             var member = Current;
-            if (disposed || saving || unique < 0 || member == null)
+            if (disposed || unique < 0 || member == null)
                 return;
             var skill = UniqueOf(member.Id, unique);
             if (skill?.Tree == null || !skill.Unlocked || !skill.Progress.Has(stage))
@@ -282,19 +278,12 @@ namespace Baryonyx.CardLoadout
         // 選んでいる枠に、押したカードを入れる。
         public void Choose(string skill) => ChooseTask = ChooseAsync(skill);
 
-        // サーバーがあれば保存してから表示を変える。
+        // すぐに表示を変え、サーバーがあればそのあとで保存する。
         private async Task ChooseAsync(string skill)
         {
             var member = Current;
             var card = CardSkills.Find(skill);
-            if (
-                disposed
-                || saving
-                || unique >= 0
-                || tab != SkillTab
-                || member == null
-                || card == null
-            )
+            if (disposed || unique >= 0 || tab != SkillTab || member == null || card == null)
                 return;
             if (!CardLoadoutRules.CanUse(CardLoadoutRules.Usable(member), card))
                 return;
@@ -311,26 +300,13 @@ namespace Baryonyx.CardLoadout
                 return;
             }
 
-            saving = true;
-            try
-            {
-                await save(member.Id, target, skill, lifetime.Token);
-                if (disposed)
-                    return;
-            }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
-            {
+            // save はすぐに store へ当てるので、保存を待たずに描き直す。
+            var saved = save(member.Id, target, skill);
+            Refresh();
+            await saved;
+            if (disposed)
                 return;
-            }
-            catch (Exception)
-            {
-                if (!disposed)
-                    view.ShowNotice(SaveFailedMessage);
-            }
-            finally
-            {
-                saving = false;
-            }
+            // 保存したカード（失敗なら戻したカード）で描き直す。
             Refresh();
         }
 
@@ -472,8 +448,6 @@ namespace Baryonyx.CardLoadout
             if (disposed)
                 return;
             disposed = true;
-            lifetime.Cancel();
-            lifetime.Dispose();
             view.PrevPressed -= Previous;
             view.NextPressed -= Next;
             view.SlotPressed -= SelectSlot;

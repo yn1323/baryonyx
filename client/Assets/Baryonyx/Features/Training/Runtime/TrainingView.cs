@@ -8,7 +8,6 @@ using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Economy;
 using Baryonyx.Equipment;
-using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
@@ -237,21 +236,13 @@ namespace Baryonyx.Training
             CancellationToken token
         )
         {
-            // 同じセッションを順に使う（ログインのやり直しを重ねない）。
+            // 同じセッションを順に使う（ログインのやり直しを重ねない）。保存を待っている変更があれば読み直さない。
             if (source != null)
-                PartySession.Use(Party, await source.LoadAsync(token));
+                await PartySession.LoadAsync(Party, source, token);
             var worn = await equipment.LoadAsync(token);
             if (token.IsCancellationRequested)
                 return;
-            presenter = Build(
-                this,
-                Party,
-                Data,
-                worn,
-                source != null
-                    ? (id, from, to, cancel) => LevelUpAsync(source, id, from, to, cancel)
-                    : null
-            );
+            presenter = Build(this, Party, Data, worn, source != null ? LevelUpAsync : null);
         }
 
         // 左へのフリックで次の人、右へのフリックで前の人。
@@ -265,31 +256,19 @@ namespace Baryonyx.Training
 
         private void ShowLoadFailed() => Set(Name, LoadFailedText);
 
-        // サーバーでレベルを上げる。断られたときは手元の表示がずれているので、読み直してから失敗を伝える。
-        private async Task LevelUpAsync(
-            IPartySource source,
-            string id,
-            int from,
-            int to,
-            CancellationToken token
-        )
+        // すぐにレベルを上げてルーンを引き、サーバーで上げる。費用はサーバーが計算する。
+        // 断られたとき（409）は手元の表示がずれているので、PartySession が戻したあとに読み直す。
+        private static Task LevelUpAsync(string id, int from, int to)
         {
-            try
-            {
-                PartySession.Use(Party, await source.LevelUpAsync(id, from, to, token));
-            }
-            catch (ServerApiException exception) when (exception.StatusCode == 409)
-            {
-                try
-                {
-                    PartySession.Use(Party, await source.LoadAsync(token));
-                }
-                catch (Exception reload) when (reload is not OperationCanceledException)
-                {
-                    Debug.LogWarning("育成のキャラを読み直せませんでした。" + reload.Message, this);
-                }
-                throw;
-            }
+            var state = PartySession.State;
+            long runes = TrainingRules.CostBetween(from, to, state?.CostPerLevel ?? 0);
+            return PartySession.LevelUpAsync(
+                id,
+                from,
+                to,
+                runes,
+                _ => TrainingPresenter.LevelUpFailedMessage
+            );
         }
 
         // 読み込むまで、仮データのキャラを本当のキャラとして見せない。
@@ -340,7 +319,7 @@ namespace Baryonyx.Training
             PartyMockData party,
             TrainingMockData data,
             EquipmentState equipment,
-            Func<string, int, int, CancellationToken, Task> levelUp = null
+            Func<string, int, int, Task> levelUp = null
         ) =>
             new(
                 view,
@@ -385,8 +364,9 @@ namespace Baryonyx.Training
         {
             RenderDetail(state);
             RenderDialog(state);
-            // 右上の所持ルーンも、この画面で読んだ・使ったあとの残高にそろえる。
-            if (state.Member != null)
+            // サーバーがないときは、右上の所持ルーンも、この画面で使ったあとの仮の残高にそろえる。
+            // サーバーがあれば PartySession が確かめた残高と、保存を待っている分の取り置きで出す。
+            if (state.Member != null && PartySession.State == null)
                 RuneBalance.Set(state.Runes);
             person = state.Name;
             if (Guide != null)

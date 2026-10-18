@@ -159,23 +159,25 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
             Assert.That(Shown(roster), Is.EqualTo(new[] { "luka", "greta" }));
 
-            // 空いた枠を選んでからルカを押すと、保存してから枠に出す。
+            // 空いた枠を選んでからルカを押すと、すぐに枠に出し、そのあとで保存する。
             roster.Slots[2].Card.Click();
             Tile(roster, "luka").Card.Click();
-            Assert.That(roster.Presenter.Saving, Is.True);
-            Assert.That(roster.Slots[2].Empty.gameObject.activeSelf, Is.True);
+            Assert.That(roster.Presenter.ChangeTask.IsCompleted, Is.False);
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
             yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "slot 2 luka" }));
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
             Assert.That(roster.LastNotice, Is.Empty);
+            Assert.That(view.ToastMessage, Is.Empty);
 
-            // 保存できなかったときは枠を変えずに知らせる。
+            // 保存できなかったときは、出した枠を戻して通知の帯で知らせる。
             server.Fail = true;
             roster.Slots[2].Card.Click();
             Tile(roster, "greta").Card.Click();
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("greta").Name));
             yield return SceneTests.WaitUntil(() => roster.Presenter.ChangeTask.IsCompleted);
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
-            Assert.That(roster.LastNotice, Is.EqualTo(PartyRosterPresenter.SaveFailedMessage));
+            Assert.That(view.ToastMessage, Is.EqualTo(PartyRosterPresenter.SaveFailedMessage));
 
             // 開き直すと読み直す。読めなかったときは仮データを見せずに知らせる。
             view.Back.onClick.Invoke();

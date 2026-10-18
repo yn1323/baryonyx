@@ -407,52 +407,73 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void ACardIsShownAfterTheServerSavesIt()
+        public void ACardShowsAtOnceAndTheSavedCardsAfter()
         {
             var calls = new List<(string, int, string)>();
             var pending = new TaskCompletionSource<bool>();
             presenter.Dispose();
             presenter = Open(
-                async (id, slot, skill, _) =>
+                (id, slot, skill) =>
                 {
                     calls.Add((id, slot, skill));
-                    await pending.Task;
-                    // サーバーが保存したカードを、store が読み直す。
-                    store.Cards[id] = new[] { "Fire", "Embers" };
+                    // 保存する関数は、すぐに store へ当てる（PartySession と同じ）。
+                    var cards = store.Cards[id].ToArray();
+                    CardLoadoutRules.Apply(cards, slot, skill, out _);
+                    store.Cards[id] = cards;
+                    return SavedAsync(id);
+                }
+            );
+
+            async Task SavedAsync(string id)
+            {
+                await pending.Task;
+                // サーバーが保存したカードを、store が読み直す。
+                store.Cards[id] = new[] { "Fire", "Embers" };
+            }
+
+            view.Person("toma");
+            view.Slot(1);
+            view.Card("Embers");
+
+            // 保存を待たずに枠を変え、続けて押しても受け付ける。
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
+            Assert.That(presenter.ChooseTask.IsCompleted, Is.False);
+            view.Slot(0);
+            view.Card("FlamePillar");
+            Assert.That(view.Last.Slots[0].Id, Is.EqualTo("FlamePillar"));
+            Assert.That(
+                calls,
+                Is.EqualTo(new[] { ("toma", 1, "Embers"), ("toma", 0, "FlamePillar") })
+            );
+
+            pending.SetResult(true);
+            Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
+            Assert.That(view.Notices, Is.Empty);
+        }
+
+        [Test]
+        public void AFailedSaveShowsTheCardsPutBack()
+        {
+            presenter.Dispose();
+            var applied = false;
+            presenter = Open(
+                (id, slot, skill) =>
+                {
+                    // すぐに当てたあと、保存できずに戻す（知らせるのは SaveQueue）。
+                    applied = store.Cards[id][slot] == "Ice";
+                    return Task.CompletedTask;
                 }
             );
             view.Person("toma");
             view.Slot(1);
             view.Card("Embers");
 
-            // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
-            Assert.That(presenter.Saving, Is.True);
-            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Ice"));
-            Assert.That(store.Cards["toma"][1], Is.EqualTo("Ice"));
-            view.Card("FlamePillar");
-            Assert.That(calls, Is.EqualTo(new[] { ("toma", 1, "Embers") }));
-
-            pending.SetResult(true);
+            Assert.That(applied, Is.True);
             Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
-            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Embers"));
+            Assert.That(store.Cards["toma"][1], Is.EqualTo("Ice"));
+            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Ice"));
             Assert.That(view.Notices, Is.Empty);
-        }
-
-        [Test]
-        public void AFailedSaveKeepsTheCardsAndSaysSo()
-        {
-            presenter.Dispose();
-            presenter = Open((_, _, _, _) => Task.FromException(new InvalidOperationException()));
-            view.Person("toma");
-            view.Slot(1);
-            view.Card("Embers");
-
-            Assert.That(presenter.ChooseTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
-            Assert.That(store.Cards["toma"][1], Is.EqualTo("Ice"));
-            Assert.That(view.Last.Slots[1].Id, Is.EqualTo("Ice"));
-            Assert.That(view.Notices, Is.EqualTo(new[] { CardLoadoutPresenter.SaveFailedMessage }));
         }
 
         [Test]
@@ -497,9 +518,7 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        private CardLoadoutPresenter Open(
-            Func<string, int, string, System.Threading.CancellationToken, Task> save = null
-        )
+        private CardLoadoutPresenter Open(Func<string, int, string, Task> save = null)
         {
             return new CardLoadoutPresenter(
                 view,

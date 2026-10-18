@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Economy;
+using Baryonyx.Networking;
 using UnityEngine;
 
 namespace Baryonyx.Party
@@ -12,8 +13,10 @@ namespace Baryonyx.Party
     /// Keeps the formation and the characters' levels and card skills, and where they are saved.
     /// The app sets <see cref="Source"/> to the game server, which keeps each player's party; the
     /// tavern's screens read it on opening and save every change there (doc/features/party.md).
-    /// Without it (the showcase, or no server URL) they start from the mock data and stay only
-    /// while the app runs. The mock data asset itself is never written.
+    /// A change shows at once and is saved behind it in order (<see cref="OptimisticState{T}"/>);
+    /// one that cannot be saved goes back and is told on the notice band. Without a server (the
+    /// showcase, or no server URL) they start from the mock data and stay only while the app
+    /// runs. The mock data asset itself is never written.
     /// </summary>
     public static class PartySession
     {
@@ -22,8 +25,11 @@ namespace Baryonyx.Party
 
         private static PartyFormation formation;
 
-        // サーバーから最後に読んだ、または保存した結果。サーバーがなければnull。
-        private static PartyState state;
+        // 編成を作るときの名前と絵。サーバーの結果を使うたびに覚える。
+        private static PartyMockData data;
+
+        // サーバーが確かめた編成と、保存を待っている変更。サーバーがなければnull。
+        private static OptimisticState<PartyState> saves;
 
         // サーバーがないときに育成で上げたレベル。上げていないキャラは仮データのレベルのまま。
         private static readonly Dictionary<string, int> levels = new();
@@ -37,7 +43,11 @@ namespace Baryonyx.Party
         // 最後に選んでいた冒険者のID。一覧・個別・付け替えの画面が共有し、開き直すとその人から見せる。
         public static string Selected { get; set; }
 
-        public static PartyState State => state;
+        // サーバーが確かめた編成に、保存を待っている変更を当てたもの。サーバーがなければnull。
+        public static PartyState State => saves?.Current;
+
+        // 保存を待っている変更がある。
+        public static bool Saving => saves?.Pending ?? false;
 
         public static PartyFormation Formation(PartyMockData data) =>
             formation ??= PartyFormation.From(data);
@@ -48,11 +58,30 @@ namespace Baryonyx.Party
         /// </summary>
         public static PartyFormation Use(PartyMockData data, PartyState value)
         {
-            state = value;
-            if (value != null)
-                RuneBalance.Set(value.Runes);
-            formation = PartyFormation.From(data, value);
+            PartySession.data = data;
+            if (value == null)
+                return Formation(data);
+            if (saves == null)
+            {
+                var source = Source;
+                saves = new OptimisticState<PartyState>(
+                    value,
+                    source != null ? token => source.LoadAsync(token) : null
+                );
+                saves.Changed += Show;
+                Show();
+            }
+            else
+                saves.Confirm(value);
             return formation;
+        }
+
+        // 保存を待っている変更も含めた編成で作り直す。右上のルーンは確かめた残高にし、
+        // 保存を待っているレベルアップの分は RuneBalance の取り置きで引く。
+        private static void Show()
+        {
+            RuneBalance.Set(saves.Confirmed.Runes);
+            formation = PartyFormation.From(data, saves.Current);
         }
 
         /// <summary>
@@ -63,7 +92,92 @@ namespace Baryonyx.Party
             PartyMockData data,
             IPartySource source,
             CancellationToken token
-        ) => source != null ? Use(data, await source.LoadAsync(token)) : Formation(data);
+        )
+        {
+            if (source == null)
+                return Formation(data);
+            // 保存を待っている間は、読み直すと保存前の編成が返るので、手元の編成を出す。
+            if (Saving)
+                return Use(data, saves.Confirmed);
+            return Use(data, await source.LoadAsync(token));
+        }
+
+        /// <summary>
+        /// Puts the character in the slot (null empties it) at once and saves it on the server
+        /// behind the writes before it. Returns the formation to show once it is saved, or put
+        /// back when it failed (told as <paramref name="failedMessage"/>).
+        /// </summary>
+        public static Task<PartyFormation> SetSlotAsync(
+            int slot,
+            string characterId,
+            string failedMessage
+        ) =>
+            Save(
+                state => state.WithSlot(slot, characterId),
+                (source, token) => source.SetSlotAsync(slot, characterId, token),
+                failedMessage
+            );
+
+        /// <summary>Sets the character's card slot to the skill at once and saves it (see <see cref="SetSlotAsync"/>).</summary>
+        public static Task<PartyFormation> SetCardAsync(
+            string characterId,
+            int slot,
+            string skillId,
+            string failedMessage
+        ) =>
+            Save(
+                state => state.WithCard(characterId, slot, skillId),
+                (source, token) => source.SetCardAsync(characterId, slot, skillId, token),
+                failedMessage
+            );
+
+        /// <summary>
+        /// Raises the character at once, taking <paramref name="runes"/> off the balance, and
+        /// saves it; the server works out what it really costs (see <see cref="SetSlotAsync"/>).
+        /// </summary>
+        public static async Task<PartyFormation> LevelUpAsync(
+            string characterId,
+            int fromLevel,
+            int toLevel,
+            long runes,
+            Func<Exception, string> failedMessage
+        )
+        {
+            RuneBalance.Reserve(runes);
+            try
+            {
+                return await Save(
+                    state => state.WithLevel(characterId, toLevel, runes),
+                    (source, token) => source.LevelUpAsync(characterId, fromLevel, toLevel, token),
+                    failedMessage
+                );
+            }
+            finally
+            {
+                RuneBalance.Release(runes);
+            }
+        }
+
+        private static Task<PartyFormation> Save(
+            Func<PartyState, PartyState> apply,
+            Func<IPartySource, CancellationToken, Task<PartyState>> send,
+            string failedMessage
+        ) => Save(apply, send, _ => failedMessage);
+
+        private static async Task<PartyFormation> Save(
+            Func<PartyState, PartyState> apply,
+            Func<IPartySource, CancellationToken, Task<PartyState>> send,
+            Func<Exception, string> failedMessage
+        )
+        {
+            var source = Source;
+            if (source == null || saves == null)
+                throw new InvalidOperationException(
+                    "The party is saved after it is read from the server."
+                );
+            await saves.ChangeAsync(apply, token => send(source, token), failedMessage);
+            return formation;
+        }
 
         /// <summary>
         /// The character's level: the server's, or without it the raised level or the mock
@@ -71,6 +185,7 @@ namespace Baryonyx.Party
         /// </summary>
         public static int LevelOf(PartyMockData data, string id)
         {
+            var state = State;
             if (state != null)
                 return state.Find(id)?.Level ?? 1;
             if (id != null && levels.TryGetValue(id, out int level))
@@ -93,6 +208,7 @@ namespace Baryonyx.Party
         /// </summary>
         public static IReadOnlyList<string> CardsOf(PartyMockData data, string id)
         {
+            var state = State;
             if (state != null)
                 return state.Find(id)?.Cards ?? Array.Empty<string>();
             if (id != null && cards.TryGetValue(id, out string[] set))
@@ -122,7 +238,8 @@ namespace Baryonyx.Party
         public static void Reset()
         {
             formation = null;
-            state = null;
+            data = null;
+            saves = null;
             levels.Clear();
             cards.Clear();
             Source = null;

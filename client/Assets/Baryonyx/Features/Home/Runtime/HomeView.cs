@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using Baryonyx.Networking;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.Vfx.Hd2d;
@@ -242,10 +243,13 @@ namespace Baryonyx.Home
             HideToast();
             HideNotice();
             FinishRuneGain();
+            // 案内人の画面で先に表示した変更を、ホームへ戻ったあとに保存できなかったときも知らせる。
+            SaveQueue.Failed += ShowNotice;
         }
 
         private void OnDisable()
         {
+            SaveQueue.Failed -= ShowNotice;
             foreach (var (button, listener) in bindings)
                 if (button != null)
                     button.onClick.RemoveListener(listener);

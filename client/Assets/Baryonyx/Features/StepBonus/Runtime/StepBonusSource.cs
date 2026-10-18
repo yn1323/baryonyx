@@ -28,6 +28,24 @@ namespace Baryonyx.StepBonus
 
         // 冒険の途中で、枠を付け替えられない（doc/features/step-bonus.md の枠の付け替え）。
         public bool Locked { get; }
+
+        /// <summary>
+        /// The slots after the bonus goes in the slot, by the server's rules, before it is saved:
+        /// a bonus set in another slot swaps with the slot's bonus.
+        /// </summary>
+        public StepBonusState WithSlot(int slot, string bonusId)
+        {
+            if (slot < 0 || string.IsNullOrEmpty(bonusId))
+                return this;
+            var slots = new string[Math.Max(Slots.Count, slot + 1)];
+            for (int i = 0; i < Slots.Count; i++)
+                slots[i] = Slots[i];
+            int other = Array.IndexOf(slots, bonusId);
+            if (other >= 0)
+                slots[other] = slots[slot];
+            slots[slot] = bonusId;
+            return new StepBonusState(Owned, slots, Locked);
+        }
     }
 
     /// <summary>Where the bonus settings read and save a player's bonuses.</summary>

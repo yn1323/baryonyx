@@ -116,37 +116,36 @@ namespace Baryonyx.StepBonus
 
         private async Task LoadAsync(IStepBonusSource source, CancellationToken token)
         {
-            var state = await source.LoadAsync(token);
+            // 保存を待っている付け替えがあれば、読み直さずに手元の枠を出す。
+            var state = await StepBonusSession.LoadAsync(source, token);
             var loadout = StepBonusLoadout.From(Data, state);
             if (token.IsCancellationRequested)
                 return;
             StepBonusSession.Use(loadout);
-            Present(
-                loadout,
-                (slot, id, cancel) => SaveAsync(source, slot, id, cancel),
-                state.Locked
-            );
+            Present(loadout, (slot, id) => SaveAsync(source, slot, id), state.Locked);
             if (state.Locked)
                 ShowNotice(StepBonusSettingsPresenter.LockedMessage);
         }
 
         private void ShowLoadFailed() => Set(Owned, LoadFailedText);
 
-        private async Task<StepBonusLoadout> SaveAsync(
-            IStepBonusSource source,
-            int slot,
-            string id,
-            CancellationToken token
-        )
+        // 保存できたら保存した枠、失敗したら戻した枠を返す。
+        private async Task<StepBonusLoadout> SaveAsync(IStepBonusSource source, int slot, string id)
         {
-            var loadout = StepBonusLoadout.From(Data, await source.SetSlotAsync(slot, id, token));
+            var state = await StepBonusSession.SetSlotAsync(
+                source,
+                slot,
+                id,
+                StepBonusSettingsPresenter.FailedMessage
+            );
+            var loadout = StepBonusLoadout.From(Data, state);
             StepBonusSession.Use(loadout);
             return loadout;
         }
 
         private void Present(
             StepBonusLoadout loadout,
-            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save,
+            Func<int, string, Task<StepBonusLoadout>> save,
             bool locked = false
         ) =>
             presenter = new StepBonusSettingsPresenter(

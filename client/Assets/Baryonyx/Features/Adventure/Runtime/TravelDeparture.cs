@@ -76,6 +76,8 @@ namespace Baryonyx.Adventure
             AdventureState state;
             try
             {
+                // 先に表示した編成・装備・ボーナスの保存が済んでから始める（冒険の途中は付け替えられない）。
+                await SaveQueue.IdleAsync(lifetime.Token);
                 state = await source.StartAsync(destinationId, lifetime.Token);
             }
             catch (OperationCanceledException)

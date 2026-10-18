@@ -65,9 +65,10 @@ namespace Baryonyx.Equipment
     /// The formation's equipment change screen: ◀ ▶ walks the people (the party first, then
     /// the other companions) keeping the chosen slot, choose the weapon or armour slot on the
     /// left, then tap an owned item on the right to wear it at once. An item another person wears moves to the chosen person; "外す" takes the
-    /// chosen slot's item off. Every change is saved through the source first (the server, or
-    /// the app's memory without one) and then shown, with a notice that asks nothing of the
-    /// player. A change that cannot be saved leaves the screen as it was.
+    /// chosen slot's item off. Every change shows at once and is then saved through the source
+    /// (the server behind it, or the app's memory without one), and the screen is drawn again
+    /// from what the source returns: the saved items, or the ones put back when the save failed
+    /// (which <see cref="Networking.SaveQueue"/> tells on the notice band).
     /// </summary>
     public sealed class EquipmentPresenter : IDisposable
     {
@@ -79,14 +80,12 @@ namespace Baryonyx.Equipment
         private readonly IReadOnlyList<PartyMember> people;
         private readonly IEquipmentSource source;
         private readonly Action<string> remember;
-        private readonly CancellationTokenSource lifetime = new();
         private EquipmentState state;
         private int person;
         private EquipmentSlot slot = EquipmentSlot.Weapon;
 
         // 選んでいるアクセサリーの枠（0〜2）。武器・防具の枠を選んでいるときは-1。
         private int accessory = -1;
-        private bool saving;
         private bool disposed;
 
         public EquipmentPresenter(
@@ -118,10 +117,7 @@ namespace Baryonyx.Equipment
 
         public EquipmentViewState State { get; private set; }
 
-        // 保存を待っている間。重ねて押されても受け付けない。
-        public bool Saving => saving;
-
-        // 実行中または直前の付け替え。テストで完了を待つために公開する。
+        // 直前の付け替えの保存。テストで完了を待つために公開する。
         public Task ChangeTask { get; private set; } = Task.CompletedTask;
 
         private PartyMember Current => people.Count > 0 ? people[person] : null;
@@ -133,7 +129,7 @@ namespace Baryonyx.Equipment
         // 人を替える。選んでいる枠はそのままにし、同じ枠の装備を人ごとに見比べられるようにする。
         private void Step(int delta)
         {
-            if (disposed || saving || people.Count < 2)
+            if (disposed || people.Count < 2)
                 return;
             person = (person + delta + people.Count) % people.Count;
             remember?.Invoke(people[person].Id);
@@ -180,7 +176,6 @@ namespace Baryonyx.Equipment
             var definition = EquipmentCatalog.Find(item?.EquipmentId);
             if (
                 disposed
-                || saving
                 || accessory >= 0
                 || member == null
                 || definition == null
@@ -190,44 +185,50 @@ namespace Baryonyx.Equipment
             string before = state.ItemIn(member.Id, slot);
             if (before == itemId)
                 return;
-            await Save(token => source.EquipAsync(member.Id, slot, itemId, token));
+            await Save(
+                current => current.WithEquipped(member.Id, slot, itemId),
+                () => source.EquipAsync(member.Id, slot, itemId, CancellationToken.None)
+            );
         }
 
         private async Task RemoveAsync()
         {
             var member = Current;
-            if (disposed || saving || accessory >= 0 || member == null)
+            if (disposed || accessory >= 0 || member == null)
                 return;
             string before = state.ItemIn(member.Id, slot);
             if (before == null)
                 return;
-            await Save(token => source.UnequipAsync(member.Id, slot, token));
+            await Save(
+                current => current.WithUnequipped(member.Id, slot),
+                () => source.UnequipAsync(member.Id, slot, CancellationToken.None)
+            );
         }
 
-        // 保存してから表示を変える。変わったことは枠と一覧を見ればわかるので知らせず、
-        // 保存できなければ表示は変えずに知らせる。
-        private async Task Save(Func<CancellationToken, Task<EquipmentState>> operation)
+        // すぐに表示を変えてから保存し、置き場が返した装備（保存したもの、失敗なら戻したもの）で描き直す。
+        // 変わったことは枠と一覧を見ればわかるので知らせない。保存は画面を閉じても続ける。
+        private async Task Save(
+            Func<EquipmentState, EquipmentState> apply,
+            Func<Task<EquipmentState>> operation
+        )
         {
-            saving = true;
+            var before = state;
+            state = apply(state);
+            Refresh();
             try
             {
-                var saved = await operation(lifetime.Token);
+                var saved = await operation();
                 if (disposed)
                     return;
                 state = saved ?? state;
             }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
-            {
-                return;
-            }
             catch (Exception)
             {
-                if (!disposed)
-                    view.ShowNotice(SaveFailedMessage);
-            }
-            finally
-            {
-                saving = false;
+                // サーバーの置き場は失敗しても戻した装備を返す。投げるのは、それ以外の置き場だけ。
+                if (disposed)
+                    return;
+                state = before;
+                view.ShowNotice(SaveFailedMessage);
             }
             Refresh();
         }
@@ -334,8 +335,6 @@ namespace Baryonyx.Equipment
             if (disposed)
                 return;
             disposed = true;
-            lifetime.Cancel();
-            lifetime.Dispose();
             view.PrevPressed -= Previous;
             view.NextPressed -= Next;
             view.SlotPressed -= SelectSlot;

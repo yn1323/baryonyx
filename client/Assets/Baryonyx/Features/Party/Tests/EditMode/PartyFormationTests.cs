@@ -193,7 +193,7 @@ namespace Baryonyx.Tests.EditMode
             using var presenter = new PartyRosterPresenter(
                 view,
                 new PartyFormation(Roster(), new[] { "toma" }),
-                save: (_, _, _) =>
+                save: (_, _) =>
                 {
                     calls++;
                     return Task.FromResult<PartyFormation>(null);
@@ -209,16 +209,16 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void AChangeIsShownAfterTheServerSavesIt()
+        public void AChangeShowsAtOnceAndTheSavedFormationAfter()
         {
             var view = new FakeView();
-            var saved = new PartyFormation(Roster(), new[] { "toma", "anselm", "aria", "mina" });
+            var saved = new PartyFormation(Roster(), new[] { "toma", "anselm", "greta", "mina" });
             var calls = new List<(int, string)>();
             var pending = new TaskCompletionSource<PartyFormation>();
             using var presenter = new PartyRosterPresenter(
                 view,
                 Full(),
-                (slot, id, _) =>
+                (slot, id) =>
                 {
                     calls.Add((slot, id));
                     return pending.Task;
@@ -227,22 +227,22 @@ namespace Baryonyx.Tests.EditMode
 
             view.PressBench("anselm");
             view.PressSlot(1);
-            Assert.That(presenter.Saving, Is.True);
-            Assert.That(view.State.Saving, Is.True);
-            // サーバーが答えるまで枠は変えず、続けて押しても受け付けない。
-            Assert.That(view.State.Party[1], Is.EqualTo("luka"));
+            // 保存を待たずに枠を変え、続けて押しても受け付ける。
+            Assert.That(view.State.Party[1], Is.EqualTo("anselm"));
+            Assert.That(view.State.SelectedBench, Is.Null);
+            Assert.That(presenter.ChangeTask.IsCompleted, Is.False);
             view.PressSlot(2);
             view.PressBench("greta");
-            view.PressRemove();
+            Assert.That(view.State.Party[2], Is.EqualTo("greta"));
             view.Hold("toma");
-            Assert.That(calls, Is.EqualTo(new[] { (1, "anselm") }));
-            Assert.That(view.Opened, Is.Empty);
+            Assert.That(calls, Is.EqualTo(new[] { (1, "anselm"), (2, "greta") }));
+            Assert.That(view.Opened, Is.EqualTo(new[] { "toma" }));
 
+            // 保存が済んだら、保存した編成で描き直す。
             pending.SetResult(saved);
             Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
             Assert.That(presenter.Formation, Is.SameAs(saved));
-            Assert.That(view.State.Party[1], Is.EqualTo("anselm"));
+            Assert.That(view.State.Party, Is.EqualTo(new[] { "toma", "anselm", "greta", "mina" }));
             Assert.That(view.Notices, Is.Empty);
 
             // 外す操作は、キャラのIDの代わりにnullを渡す。
@@ -252,23 +252,23 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void AFailedSaveKeepsTheFormationAndTheChoice()
+        public void AFailedSaveShowsTheFormationPutBack()
         {
             var view = new FakeView();
+            // 保存できなかったときは、戻した編成が返る（知らせるのは SaveQueue）。
+            var back = Full();
             using var presenter = new PartyRosterPresenter(
                 view,
                 Full(),
-                (_, _, _) => Task.FromException<PartyFormation>(new InvalidOperationException())
+                (_, _) => Task.FromResult(back)
             );
 
             view.PressBench("anselm");
             view.PressSlot(1);
             Assert.That(presenter.ChangeTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
+            Assert.That(presenter.Formation, Is.SameAs(back));
             Assert.That(view.State.Party[1], Is.EqualTo("luka"));
-            // 選んだままにして、押し直せるようにする。
-            Assert.That(view.State.SelectedBench, Is.EqualTo("anselm"));
-            Assert.That(view.Notices, Is.EqualTo(new[] { PartyRosterPresenter.SaveFailedMessage }));
+            Assert.That(view.Notices, Is.Empty);
         }
 
         [Test]

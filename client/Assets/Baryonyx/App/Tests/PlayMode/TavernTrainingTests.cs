@@ -284,12 +284,13 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Level.text, Is.EqualTo("12"));
             Assert.That(training.LevelUpCostLabel.text, Is.EqualTo("1,200"));
 
-            // Lv 12 → 14 は 1,200 + 1,300 = 2,500ルーン。サーバーが上げるまで重ねた画面を開いたまま待つ。
+            // Lv 12 → 14 は 1,200 + 1,300 = 2,500ルーン。保存を待たずに重ねた画面を閉じ、上げたLvを出す。
             training.LevelUp.onClick.Invoke();
             training.More.onClick.Invoke();
             training.Confirm.onClick.Invoke();
-            Assert.That(training.Presenter.Saving, Is.True);
-            Assert.That(training.Confirm.interactable, Is.False);
+            Assert.That(training.Presenter.ConfirmTask.IsCompleted, Is.False);
+            Assert.That(training.Dialog.activeSelf, Is.False);
+            Assert.That(training.Level.text, Is.EqualTo("14"));
             yield return SceneTests.WaitUntil(() => training.Presenter.ConfirmTask.IsCompleted);
             Assert.That(server.Calls, Is.EqualTo(new[] { "level toma 12 14" }));
             Assert.That(server.LevelOf("toma"), Is.EqualTo(14));
@@ -300,15 +301,16 @@ namespace Baryonyx.Tests.PlayMode
             training.Cancel.onClick.Invoke();
             Assert.That(view.ToastMessage, Does.StartWith($"{data.Find("toma").Name}が Lv 14"));
 
-            // 別の端末でLv 16まで上げていると断られ、読み直したLvを出す。
+            // 別の端末でLv 16まで上げていると断られ、通知の帯で知らせて、読み直したLvを出す。
             server.SetLevel("toma", 16);
             training.LevelUp.onClick.Invoke();
             training.Confirm.onClick.Invoke();
+            Assert.That(training.Level.text, Is.EqualTo("15"));
             yield return SceneTests.WaitUntil(() => training.Presenter.ConfirmTask.IsCompleted);
             Assert.That(server.LevelOf("toma"), Is.EqualTo(16));
             Assert.That(server.Runes, Is.EqualTo(2500));
             Assert.That(training.Level.text, Is.EqualTo("16"));
-            Assert.That(training.LastNotice, Is.EqualTo(TrainingPresenter.LevelUpFailedMessage));
+            Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.LevelUpFailedMessage));
         }
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>

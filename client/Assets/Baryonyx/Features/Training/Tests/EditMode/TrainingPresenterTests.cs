@@ -360,7 +360,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void TheServerRaisesTheLevelBeforeTheDetailShowsIt()
+        public void ALevelUpShowsAtOnceAndTheServersLevelAfter()
         {
             var calls = new List<(string, int, int)>();
             var pending = new TaskCompletionSource<bool>();
@@ -368,33 +368,32 @@ namespace Baryonyx.Tests.EditMode
                 view,
                 Roster(),
                 store,
-                levelUp: async (id, from, to, _) =>
+                levelUp: (id, from, to) =>
                 {
                     calls.Add((id, from, to));
-                    await pending.Task;
-                    // サーバーが上げたレベルと残高を、store が読み直す。
+                    // レベルアップする関数は、すぐに store へ当てる（PartySession と同じ）。
                     store.Levels[id] = to;
                     store.Runes = 8450 - 3900;
+                    return SavedAsync(id);
                 }
             );
+
+            async Task SavedAsync(string id)
+            {
+                await pending.Task;
+                // サーバーが上げたレベルと残高を、store が読み直す。
+                store.Levels[id] = 15;
+                store.Runes = 8450 - 3900;
+            }
+
             view.LevelUp();
             view.More();
             view.More();
             view.Confirm();
 
-            // サーバーが答えるまでは、重ねた画面を開いたまま、押し直しや数の変更を受け付けない。
-            Assert.That(presenter.Saving, Is.True);
-            Assert.That(view.Last.DialogOpen, Is.True);
-            Assert.That(view.Last.CanConfirm, Is.False);
-            Assert.That(view.Last.CanLess, Is.False);
-            view.Confirm();
-            view.Less();
+            // 保存を待たずに重ねた画面を閉じ、上げたレベルと残りのルーンを出して知らせる。
             Assert.That(calls, Is.EqualTo(new[] { ("toma", 12, 15) }));
-            Assert.That(view.Last.Count, Is.EqualTo(3));
-
-            pending.SetResult(true);
-            Assert.That(presenter.ConfirmTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
+            Assert.That(presenter.ConfirmTask.IsCompleted, Is.False);
             Assert.That(view.Last.DialogOpen, Is.False);
             Assert.That(view.Last.Level, Is.EqualTo(15));
             Assert.That(view.Last.Runes, Is.EqualTo(8450 - 3900));
@@ -402,27 +401,35 @@ namespace Baryonyx.Tests.EditMode
                 view.Notices,
                 Is.EqualTo(new[] { "トーマが Lv 15 になり、「炎の心得」を覚えました" })
             );
+            // 保存を待つ間も、続けてレベルアップできる。
+            view.LevelUp();
+            Assert.That(view.Last.DialogOpen, Is.True);
+            Assert.That(view.Last.Level, Is.EqualTo(15));
+
+            pending.SetResult(true);
+            Assert.That(presenter.ConfirmTask.IsCompleted, Is.True);
+            Assert.That(view.Last.Level, Is.EqualTo(15));
         }
 
         [Test]
-        public void AFailedLevelUpKeepsTheDialogAndSaysSo()
+        public void AFailedLevelUpShowsTheLevelPutBack()
         {
             presenter = new TrainingPresenter(
                 view,
                 Roster(),
                 store,
-                levelUp: (_, _, _, _) => Task.FromException(new InvalidOperationException())
+                // すぐに当てたあと、保存できずに戻す（知らせるのは SaveQueue）。
+                levelUp: (_, _, _) => Task.CompletedTask
             );
             view.LevelUp();
             view.Confirm();
 
             Assert.That(presenter.ConfirmTask.IsCompleted, Is.True);
-            Assert.That(presenter.Saving, Is.False);
             Assert.That(store.Levels["toma"], Is.EqualTo(12));
             Assert.That(store.Runes, Is.EqualTo(8450));
-            Assert.That(view.Last.DialogOpen, Is.True);
-            Assert.That(view.Last.CanConfirm, Is.True);
-            Assert.That(view.Notices, Is.EqualTo(new[] { TrainingPresenter.LevelUpFailedMessage }));
+            Assert.That(view.Last.Level, Is.EqualTo(12));
+            Assert.That(view.Last.Runes, Is.EqualTo(8450));
+            Assert.That(view.Notices, Is.EqualTo(new[] { "トーマが Lv 13 になりました" }));
         }
 
         [Test]

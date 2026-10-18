@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
@@ -147,8 +146,10 @@ namespace Baryonyx.Training
     /// or armour slot opens its change screen for the character. "レベルアップ" opens a dialog
     /// over the page that shows what the chosen levels change before any rune is spent; back
     /// closes the dialog first. A level-up shows a notice that asks nothing. With a
-    /// <c>levelUp</c> function the server raises the level and spends its runes first, and the
-    /// store then reads them; otherwise (the showcase) the store keeps them in memory.
+    /// <c>levelUp</c> function the level and runes change in the store at once and the server
+    /// raises the level behind it (put back when it failed, which
+    /// <see cref="Networking.SaveQueue"/> tells on the notice band); otherwise (the showcase) the
+    /// store keeps them in memory.
     /// </summary>
     public sealed class TrainingPresenter : IDisposable
     {
@@ -171,8 +172,9 @@ namespace Baryonyx.Training
         // スキルのIDから属性のアイコンを引く。属性のないカードはnull。
         private readonly Func<string, Sprite> iconOf;
 
-        // キャラのID・今のLv・上げたあとのLvでレベルアップを保存する。保存した結果は store から読み直す。
-        private readonly Func<string, int, int, CancellationToken, Task> levelUp;
+        // キャラのID・今のLv・上げたあとのLvでレベルアップを保存する。すぐに store へ当て、
+        // 保存が済む（失敗なら戻す）と終わる。表示は store から読み直す。
+        private readonly Func<string, int, int, Task> levelUp;
 
         // キャラが付けている武器と防具（枠の順）。なければ空き。
         private readonly Func<string, IReadOnlyList<TrainingGearState>> gearOf;
@@ -185,11 +187,9 @@ namespace Baryonyx.Training
 
         // キャラのIDと固有スキルの番号から、セットしている進化の段階のカードを引く。なければ仮データの名前と効果を出す。
         private readonly Func<string, int, CardSkill> uniqueOf;
-        private readonly CancellationTokenSource lifetime = new();
         private int index;
         private bool dialog;
         private int count = 1;
-        private bool saving;
         private bool disposed;
 
         public TrainingPresenter(
@@ -197,7 +197,7 @@ namespace Baryonyx.Training
             IReadOnlyList<TrainingMember> roster,
             ITrainingStore store,
             Func<string, Sprite> iconOf = null,
-            Func<string, int, int, CancellationToken, Task> levelUp = null,
+            Func<string, int, int, Task> levelUp = null,
             Func<string, IReadOnlyList<TrainingGearState>> gearOf = null,
             Func<string, Texture2D> artOf = null,
             Func<string, CardSkill, string> describe = null,
@@ -230,10 +230,7 @@ namespace Baryonyx.Training
 
         public TrainingState State { get; private set; }
 
-        // レベルアップの保存を待っている間。重ねて押されても受け付けない。
-        public bool Saving => saving;
-
-        // 実行中または直前のレベルアップ。テストで完了を待つために公開する。
+        // 直前のレベルアップの保存。テストで完了を待つために公開する。
         public Task ConfirmTask { get; private set; } = Task.CompletedTask;
 
         private TrainingMember Current => roster.Count > 0 ? roster[index] : null;
@@ -279,7 +276,7 @@ namespace Baryonyx.Training
 
         public void Less()
         {
-            if (disposed || saving || !dialog || count <= 1)
+            if (disposed || !dialog || count <= 1)
                 return;
             count--;
             Refresh();
@@ -287,7 +284,7 @@ namespace Baryonyx.Training
 
         public void More()
         {
-            if (disposed || saving || !dialog || count >= LevelsLeft)
+            if (disposed || !dialog || count >= LevelsLeft)
                 return;
             count++;
             Refresh();
@@ -296,7 +293,7 @@ namespace Baryonyx.Training
         // 所持ルーンで上げられるだけ上げる数にする。1つも上げられなければ1のまま（足りない量を見せる）。
         public void Max()
         {
-            if (disposed || saving || !dialog)
+            if (disposed || !dialog)
                 return;
             int level = store.LevelOf(Current.Id);
             int affordable = TrainingRules.Affordable(
@@ -311,10 +308,10 @@ namespace Baryonyx.Training
 
         public void Confirm() => ConfirmTask = ConfirmAsync();
 
-        // サーバーがあれば、サーバーでレベルを上げてルーンを使ってから表示を変える。
+        // すぐにレベルを上げてルーンを使い、サーバーがあればそのあとで保存する。
         private async Task ConfirmAsync()
         {
-            if (disposed || saving || !dialog || !State.CanConfirm)
+            if (disposed || !dialog || !State.CanConfirm)
                 return;
             var member = Current;
             int level = State.Level;
@@ -331,29 +328,15 @@ namespace Baryonyx.Training
                 return;
             }
 
-            saving = true;
+            // levelUp はすぐに store へ当てるので、保存を待たずにダイアログを閉じて知らせる。
+            var saved = levelUp(member.Id, level, target);
+            dialog = false;
+            view.ShowNotice(message);
             Refresh();
-            try
-            {
-                await levelUp(member.Id, level, target, lifetime.Token);
-                if (disposed)
-                    return;
-                dialog = false;
-                view.ShowNotice(message);
-            }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
-            {
+            await saved;
+            if (disposed)
                 return;
-            }
-            catch (Exception)
-            {
-                if (!disposed)
-                    view.ShowNotice(LevelUpFailedMessage);
-            }
-            finally
-            {
-                saving = false;
-            }
+            // 保存したレベル（失敗なら戻したレベルとルーン）で描き直す。
             Refresh();
         }
 
@@ -469,9 +452,9 @@ namespace Baryonyx.Training
                 TargetStats = current.Growth.StatsAt(target),
                 Cost = cost,
                 CanAfford = cost <= runes,
-                CanLess = open && count > 1 && !saving,
-                CanMore = open && count < levelsLeft && !saving,
-                CanConfirm = open && cost <= runes && !saving,
+                CanLess = open && count > 1,
+                CanMore = open && count < levelsLeft,
+                CanConfirm = open && cost <= runes,
                 Learned = targetSkills
                     .Where(skill => skill.UnlockLevel > level && skill.UnlockLevel <= target)
                     .OrderBy(skill => skill.UnlockLevel)
@@ -585,8 +568,6 @@ namespace Baryonyx.Training
             if (disposed)
                 return;
             disposed = true;
-            lifetime.Cancel();
-            lifetime.Dispose();
             view.PrevPressed -= Previous;
             view.NextPressed -= Next;
             view.LevelUpPressed -= OpenDialog;

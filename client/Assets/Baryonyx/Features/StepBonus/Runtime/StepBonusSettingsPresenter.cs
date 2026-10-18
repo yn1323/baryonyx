@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Baryonyx.StepBonus
@@ -87,9 +86,11 @@ namespace Baryonyx.StepBonus
     /// <summary>
     /// The tavern's bonus settings: choose a slot on the left, then tap an owned bonus on the
     /// right to put it in. Choosing a bonus that sits in another slot swaps the two. Each change
-    /// shows a notice that asks nothing of the player. With a <c>save</c> function the change is
-    /// saved on the server first and the server's result is shown; otherwise (the showcase) it
-    /// changes only the loadout in memory.
+    /// shows a notice that asks nothing of the player. The change shows at once; with a
+    /// <c>save</c> function it is then saved on the server behind it, and the slots are drawn
+    /// again from the saved ones, or put back when the save failed (which
+    /// <see cref="Networking.SaveQueue"/> tells on the notice band). Without it (the showcase)
+    /// it changes only the loadout in memory.
     /// </summary>
     public sealed class StepBonusSettingsPresenter : IDisposable
     {
@@ -98,14 +99,20 @@ namespace Baryonyx.StepBonus
         public const string SaveFailedMessage = "ボーナスを保存できませんでした";
         public const string LockedMessage = "冒険の途中は、ボーナスを付け替えられません";
 
+        // 保存できなかったときの知らせ。409は、冒険を始めたあとに付け替えようとしたとき（別の端末で出発したなど）。
+        public static string FailedMessage(Exception exception) =>
+            exception is Networking.ServerApiException { StatusCode: 409 }
+                ? LockedMessage
+                : SaveFailedMessage;
+
         private readonly IStepBonusSettingsView view;
         private readonly int act;
-        private readonly Func<int, string, CancellationToken, Task<StepBonusLoadout>> save;
-        private readonly CancellationTokenSource lifetime = new();
+
+        // 枠とボーナスのIDを保存する。保存できたあと（失敗したら戻したあと）の枠を返す。
+        private readonly Func<int, string, Task<StepBonusLoadout>> save;
         private StepBonusLoadout loadout;
         private int slot;
         private int tab;
-        private bool saving;
         private bool disposed;
         private readonly bool locked;
 
@@ -113,7 +120,7 @@ namespace Baryonyx.StepBonus
             IStepBonusSettingsView view,
             StepBonusLoadout loadout,
             int act,
-            Func<int, string, CancellationToken, Task<StepBonusLoadout>> save = null,
+            Func<int, string, Task<StepBonusLoadout>> save = null,
             bool locked = false
         )
         {
@@ -134,10 +141,7 @@ namespace Baryonyx.StepBonus
         // 冒険の途中で、枠を付け替えられない。
         public bool Locked => locked;
 
-        // 保存を待っている間。重ねて押されても受け付けない。
-        public bool Saving => saving;
-
-        // 実行中または直前の保存。テストで完了を待つために公開する。
+        // 直前の付け替えの保存。テストで完了を待つために公開する。
         public Task ChooseTask { get; private set; } = Task.CompletedTask;
 
         // 一覧に並べる順。ランクの高い順で、同じランクはボーナスの定義順。
@@ -161,10 +165,10 @@ namespace Baryonyx.StepBonus
 
         private void OnBonusPressed(string id) => ChooseTask = ChooseAsync(id);
 
-        // 選んでいる枠に、押したボーナスを入れる。サーバーがあれば保存してから表示を変える。
+        // 選んでいる枠に、押したボーナスを入れてすぐ表示する。サーバーがあれば、そのあとで保存する。
         public async Task ChooseAsync(string id)
         {
-            if (disposed || saving)
+            if (disposed)
                 return;
             if (locked)
             {
@@ -180,41 +184,17 @@ namespace Baryonyx.StepBonus
                 change == StepBonusChange.Swap
                     ? $"「{Name(id)}」と「{Name(before)}」を入れ替えました"
                     : $"{StepBonusLoadout.Act(loadout.Tier(target))}の枠に「{Name(id)}」をセットしました";
+            loadout.Apply(target, id);
+            view.ShowNotice(message);
+            Refresh();
             if (save == null)
-            {
-                loadout.Apply(target, id);
-                view.ShowNotice(message);
-                Refresh();
                 return;
-            }
 
-            saving = true;
-            try
-            {
-                var saved = await save(target, id, lifetime.Token);
-                if (disposed)
-                    return;
-                loadout = saved ?? loadout;
-                view.ShowNotice(message);
-            }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
-            {
+            // 保存できたら保存した枠で、失敗したら戻した枠で描き直す。
+            var saved = await save(target, id);
+            if (disposed)
                 return;
-            }
-            catch (Exception exception)
-            {
-                // 409は、冒険を始めたあとに付け替えようとしたとき（別の端末で出発したなど）。
-                if (!disposed)
-                    view.ShowNotice(
-                        exception is Networking.ServerApiException { StatusCode: 409 }
-                            ? LockedMessage
-                            : SaveFailedMessage
-                    );
-            }
-            finally
-            {
-                saving = false;
-            }
+            loadout = saved ?? loadout;
             Refresh();
         }
 
@@ -277,8 +257,6 @@ namespace Baryonyx.StepBonus
             if (disposed)
                 return;
             disposed = true;
-            lifetime.Cancel();
-            lifetime.Dispose();
             view.SlotPressed -= SelectSlot;
             view.BonusPressed -= OnBonusPressed;
             view.TabPressed -= SelectTab;

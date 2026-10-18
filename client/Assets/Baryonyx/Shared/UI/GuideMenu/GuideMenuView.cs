@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Economy;
+using Baryonyx.Networking;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
 using UnityEngine;
@@ -140,10 +141,16 @@ namespace Baryonyx.UI.GuideMenu
         private void OnEnable()
         {
             RuneBalance.Changed += ShowRunes;
+            // 先に表示した変更を保存できなかったときは、どの画面を開いていても通知の帯で知らせる。
+            SaveQueue.Failed += ShowToast;
             ShowRunes();
         }
 
-        private void OnDisable() => RuneBalance.Changed -= ShowRunes;
+        private void OnDisable()
+        {
+            RuneBalance.Changed -= ShowRunes;
+            SaveQueue.Failed -= ShowToast;
+        }
 
         private void ShowRunes() => SetText(Runes, RuneBalance.Text(RuneBalance.Known));
 

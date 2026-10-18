@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Baryonyx.Party
@@ -21,9 +20,6 @@ namespace Baryonyx.Party
         // 選んでいる一覧の人のID。選んでいなければnull。
         public string SelectedBench { get; internal set; }
 
-        // 保存を待っている間。
-        public bool Saving { get; internal set; }
-
         // 「パーティから外す」で外せる人を選んでいる（最後の1人は外せない）。
         public bool CanRemove { get; internal set; }
     }
@@ -34,8 +30,10 @@ namespace Baryonyx.Party
     /// and then a character on the right swaps them (or fills the empty slot); tapping in the
     /// other order does the same. With a slot chosen, "remove" empties it. Tapping the chosen card
     /// again lets it go. Holding a character opens their page (equipment, card skills, training).
-    /// A change shows no notice (the cards show it); only refusals and failures do. With a <c>save</c> function the
-    /// change is saved on the server first and the server's formation is shown; otherwise (the
+    /// A change shows no notice (the cards show it); only refusals and failures do. A change
+    /// shows at once; with a <c>save</c> function it is then saved on the server behind it, and
+    /// the formation is drawn again from the saved one, or put back when the save failed (the
+    /// failure is told on the notice band by <see cref="Networking.SaveQueue"/>). Without it (the
     /// showcase) it changes only the formation in memory.
     /// </summary>
     public sealed class PartyRosterPresenter : IDisposable
@@ -47,19 +45,17 @@ namespace Baryonyx.Party
 
         private readonly IPartyRosterView view;
 
-        // 枠と、入れるキャラのID（nullなら外す）を保存し、保存したあとの編成を返す。
-        private readonly Func<int, string, CancellationToken, Task<PartyFormation>> save;
-        private readonly CancellationTokenSource lifetime = new();
+        // 枠と、入れるキャラのID（nullなら外す）を保存する。保存できたあと（失敗したら戻したあと）の編成を返す。
+        private readonly Func<int, string, Task<PartyFormation>> save;
         private PartyFormation formation;
         private int selectedSlot = -1;
         private string selectedBench;
-        private bool saving;
         private bool disposed;
 
         public PartyRosterPresenter(
             IPartyRosterView view,
             PartyFormation formation,
-            Func<int, string, CancellationToken, Task<PartyFormation>> save = null
+            Func<int, string, Task<PartyFormation>> save = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -75,16 +71,13 @@ namespace Baryonyx.Party
         public PartyRosterState State { get; private set; }
         public PartyFormation Formation => formation;
 
-        // 保存を待っている間。重ねて押されても受け付けない。
-        public bool Saving => saving;
-
-        // 実行中または直前の変更。テストで完了を待つために公開する。
+        // 直前の変更の保存。テストで完了を待つために公開する。
         public Task ChangeTask { get; private set; } = Task.CompletedTask;
 
         // パーティの枠を押す。一覧の人を選んでいればその枠と入れ替え（空きなら入れ）、そうでなければ枠を選ぶ。
         public void PressSlot(int slot)
         {
-            if (disposed || saving || slot < 0 || slot >= formation.SlotCount)
+            if (disposed || slot < 0 || slot >= formation.SlotCount)
                 return;
             if (selectedBench != null)
             {
@@ -98,7 +91,7 @@ namespace Baryonyx.Party
         // 一覧の人を押す。パーティの枠を選んでいればその枠と入れ替え、そうでなければその人を選ぶ。
         public void PressBench(string id)
         {
-            if (disposed || saving || formation.Find(id) == null || formation.SlotOf(id) >= 0)
+            if (disposed || formation.Find(id) == null || formation.SlotOf(id) >= 0)
                 return;
             if (selectedSlot >= 0)
             {
@@ -112,7 +105,7 @@ namespace Baryonyx.Party
         // 「パーティから外す」。選んでいるパーティの枠を空ける。
         public void PressRemove()
         {
-            if (disposed || saving)
+            if (disposed)
                 return;
             if (selectedSlot < 0 || formation.Member(selectedSlot) == null)
             {
@@ -125,51 +118,30 @@ namespace Baryonyx.Party
         // 長押し。その人の個別の画面（装備・スキル・育成）を開く。
         public void Hold(string id)
         {
-            if (disposed || saving || formation.Find(id) == null)
+            if (disposed || formation.Find(id) == null)
                 return;
             view.OpenDetail(id);
         }
 
-        // 枠を変える。サーバーがあれば保存してから表示を変える。変わったことは枠を見ればわかるので知らせない。
+        // 枠を変えて、すぐ表示する。サーバーがあれば、そのあとで保存する。変わったことは枠を見ればわかるので知らせない。
         private async Task ChangeAsync(int slot, string id)
         {
             var change = formation.Preview(slot, id);
             bool changes = change is PartyChange.Join or PartyChange.Replace or PartyChange.Leave;
-            if (!changes || save == null)
-            {
-                if (changes)
-                    formation.Apply(slot, id);
-                Release();
-                if (change == PartyChange.KeepOne)
-                    view.ShowNotice(KeepOneMessage);
-                Refresh();
-                return;
-            }
-
-            saving = true;
+            if (changes)
+                formation.Apply(slot, id);
+            Release();
+            if (change == PartyChange.KeepOne)
+                view.ShowNotice(KeepOneMessage);
             Refresh();
-            try
-            {
-                var saved = await save(slot, id, lifetime.Token);
-                if (disposed)
-                    return;
-                formation = saved ?? formation;
-                Release();
-            }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
-            {
+            if (!changes || save == null)
                 return;
-            }
-            catch (Exception)
-            {
-                // 選んだままにして、押し直せるようにする。
-                if (!disposed)
-                    view.ShowNotice(SaveFailedMessage);
-            }
-            finally
-            {
-                saving = false;
-            }
+
+            // 保存できたら保存した編成で、失敗したら戻した編成で描き直す。
+            var saved = await save(slot, id);
+            if (disposed)
+                return;
+            formation = saved ?? formation;
             Refresh();
         }
 
@@ -194,10 +166,8 @@ namespace Baryonyx.Party
                 Bench = formation.Bench.Select(member => member.Id).ToArray(),
                 SelectedSlot = selectedSlot,
                 SelectedBench = selectedBench,
-                Saving = saving,
                 CanRemove =
-                    !saving
-                    && selectedSlot >= 0
+                    selectedSlot >= 0
                     && formation.Member(selectedSlot) != null
                     && formation.Count > 1,
             };
@@ -209,8 +179,6 @@ namespace Baryonyx.Party
             if (disposed)
                 return;
             disposed = true;
-            lifetime.Cancel();
-            lifetime.Dispose();
             view.SlotPressed -= PressSlot;
             view.BenchPressed -= PressBench;
             view.RemovePressed -= PressRemove;

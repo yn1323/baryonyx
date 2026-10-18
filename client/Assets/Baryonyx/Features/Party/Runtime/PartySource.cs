@@ -59,6 +59,61 @@ namespace Baryonyx.Party
 
         public PartyCharacterState Find(string id) =>
             id != null && characters.TryGetValue(id, out var character) ? character : null;
+
+        // 以下は、サーバーへ保存する前に画面へ出すための、サーバーと同じ決まりの変更（doc/features/party.md）。
+
+        /// <summary>The party with the slot set to the character (null empties it).</summary>
+        public PartyState WithSlot(int slot, string characterId)
+        {
+            if (slot < 0 || slot >= Slots.Count)
+                return this;
+            var slots = Slots.ToArray();
+            slots[slot] = string.IsNullOrEmpty(characterId) ? null : characterId;
+            return new PartyState(Owned, slots, Runes, MaxLevel, CostPerLevel);
+        }
+
+        /// <summary>
+        /// The party with the character's card slot set to the skill. A skill in the
+        /// character's other slot swaps with the slot's card.
+        /// </summary>
+        public PartyState WithCard(string characterId, int slot, string skillId) =>
+            With(
+                characterId,
+                character =>
+                {
+                    var cards = character.Cards.ToArray();
+                    if (slot < 0 || slot >= cards.Length)
+                        return character;
+                    int other = Array.IndexOf(cards, skillId);
+                    if (other >= 0)
+                        cards[other] = cards[slot];
+                    cards[slot] = skillId;
+                    return new PartyCharacterState(character.Id, character.Level, cards);
+                },
+                0
+            );
+
+        /// <summary>The party with the character raised to the level and the runes spent.</summary>
+        public PartyState WithLevel(string characterId, int level, long runes) =>
+            With(
+                characterId,
+                character => new PartyCharacterState(character.Id, level, character.Cards),
+                runes
+            );
+
+        private PartyState With(
+            string characterId,
+            Func<PartyCharacterState, PartyCharacterState> change,
+            long spent
+        )
+        {
+            if (Find(characterId) == null)
+                return this;
+            var owned = Owned
+                .Select(character => character.Id == characterId ? change(character) : character)
+                .ToArray();
+            return new PartyState(owned, Slots, Runes - spent, MaxLevel, CostPerLevel);
+        }
     }
 
     /// <summary>Where the tavern's formation, card skills and training read and save the party.</summary>
