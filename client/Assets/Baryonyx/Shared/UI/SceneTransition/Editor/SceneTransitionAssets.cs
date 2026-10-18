@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 namespace Baryonyx.UI.Editor
 {
     /// <summary>
-    /// Builds the shared scene transition prefab (the shutter that closes and opens between
+    /// Builds the shared scene transition prefab (the cover that closes and opens between
     /// scenes) and puts a configured instance into a scene. The scene setups in App decide which
     /// scenes get it and what it is wired to.
     /// </summary>
@@ -16,7 +16,12 @@ namespace Baryonyx.UI.Editor
     {
         public const string Folder = "Assets/Baryonyx/Shared/UI/SceneTransition";
         public const string PrefabPath = Folder + "/SceneTransition.prefab";
-        private const float TransitionDuration = 0.75f;
+
+        // シーン間の移動は短い暗転にし、何度も行き来しても待たせない。
+        private const float QuickFadeDuration = 0.15f;
+
+        // TopからHomeへ入るときだけ、上下のシャッターで間を取る。
+        private const float TopShutterDuration = 0.75f;
 
         /// <summary>Makes the transition prefab, or repairs its root canvas when it exists.</summary>
         public static void EnsurePrefab()
@@ -147,18 +152,40 @@ namespace Baryonyx.UI.Editor
                 throw new InvalidOperationException("SceneTransition prefab has no controller.");
             SetBool(controller, "startCovered", startCovered);
             SetBool(controller, "revealOnStart", revealOnStart);
-            ConfigureShutter(controller, "defaultSettings");
-            ConfigureShutter(controller, "enterSettings");
+            ConfigureQuickFade(controller, "defaultSettings");
+            ConfigureQuickFade(controller, "enterSettings");
             PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
             return controller;
         }
 
-        private static void ConfigureShutter(UnityEngine.Object target, string settingsName)
+        /// <summary>
+        /// Makes Top close with the long shutter (Home opens the same way) and fade in slowly on
+        /// launch.
+        /// </summary>
+        public static void ConfigureTop(SceneTransitionController controller)
         {
-            SetEnum(target, $"{settingsName}.type", SceneTransitionType.Shutter);
-            SetEnum(target, $"{settingsName}.shutterAxis", SceneTransitionShutterAxis.Vertical);
-            SetFloat(target, $"{settingsName}.coverDuration", TransitionDuration);
-            SetFloat(target, $"{settingsName}.revealDuration", TransitionDuration);
+            SetEnum(controller, "defaultSettings.type", SceneTransitionType.Shutter);
+            SetEnum(controller, "defaultSettings.shutterAxis", SceneTransitionShutterAxis.Vertical);
+            SetDurations(controller, "defaultSettings", TopShutterDuration);
+            SetEnum(controller, "enterSettings.type", SceneTransitionType.Fade);
+            SetDurations(controller, "enterSettings", TopShutterDuration);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
+        }
+
+        private static void ConfigureQuickFade(UnityEngine.Object target, string settingsName)
+        {
+            SetEnum(target, $"{settingsName}.type", SceneTransitionType.Fade);
+            SetDurations(target, settingsName, QuickFadeDuration);
+        }
+
+        private static void SetDurations(
+            UnityEngine.Object target,
+            string settingsName,
+            float duration
+        )
+        {
+            SetFloat(target, $"{settingsName}.coverDuration", duration);
+            SetFloat(target, $"{settingsName}.revealDuration", duration);
         }
 
         private static void SetFloat(UnityEngine.Object target, string propertyName, float value)

@@ -6,6 +6,7 @@ using Object = UnityEngine.Object;
 namespace Baryonyx.UI
 {
     // シーンを遷移演出で覆ってから読み込む。演出がなければすぐに読み込む。
+    // 読み込んだ先のシーンは、覆ったときと同じ演出で開く。
     // 読み込めなかったときは覆いを開き、onFailed を呼んで、押した画面の操作を戻せるようにする。
     public static class SceneLoader
     {
@@ -52,7 +53,11 @@ namespace Baryonyx.UI
                 error = exception;
             }
             if (operation != null)
+            {
+                if (transition != null)
+                    transition.HandOffTo(sceneName);
                 return true;
+            }
 
             if (transition != null)
                 transition.PlayIn();

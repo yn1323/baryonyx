@@ -112,6 +112,9 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitUntil(() => !transition.IsPlaying);
             Assert.That(transition.IsPlaying, Is.False);
             Assert.That(transition.IsCovered, Is.False);
+            // Homeは、Topが閉じたのと同じ上下のシャッターで開く。
+            Assert.That(transition.transform.Find("ShutterFirst").gameObject.activeSelf, Is.True);
+            Assert.That(transition.transform.Find("FadePanel").gameObject.activeSelf, Is.False);
             Assert.That(
                 loadedScene
                     .GetRootGameObjects()

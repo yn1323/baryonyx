@@ -501,7 +501,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             // サーバーのように、開く演出（元の長さ）の途中で冒険を読み終える。
             UI.SceneTransitionController.DurationScale = 1f;
-            services.AdventureLoadSeconds = 0.3f;
+            services.AdventureLoadSeconds = 0.05f;
             yield return SceneManager.LoadSceneAsync(
                 SceneTests.ExplorationPath,
                 LoadSceneMode.Single

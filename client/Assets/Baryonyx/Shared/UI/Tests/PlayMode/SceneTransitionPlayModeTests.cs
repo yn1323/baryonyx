@@ -95,6 +95,30 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(root.transform.Find("ShutterSecond").gameObject.activeSelf, Is.True);
         }
 
+        [UnityTest]
+        public IEnumerator ASlowFrameDoesNotFinishTheRevealAtOnce()
+        {
+            SceneTransitionController.DurationScale = 1f;
+            var settings = new SceneTransitionSettings
+            {
+                Type = SceneTransitionType.Fade,
+                CoverDuration = 0.02f,
+                RevealDuration = 0.15f,
+            };
+            Assert.That(controller.PlayOut(settings), Is.True);
+            yield return WaitUntilStopped();
+
+            Assert.That(controller.PlayIn(settings), Is.True);
+            yield return null;
+            // シーンを読み込んだ直後のような重いフレームを挟んでも、暗転から少しずつ明るくなる。
+            System.Threading.Thread.Sleep(300);
+            yield return null;
+            Assert.That(controller.IsPlaying, Is.True);
+            Assert.That(root.GetComponent<CanvasGroup>().alpha, Is.GreaterThan(0.3f));
+            yield return WaitUntilStopped();
+            Assert.That(root.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f).Within(0.001f));
+        }
+
         private IEnumerator AssertCoverAndReveal(SceneTransitionSettings settings)
         {
             Assert.That(controller.PlayOut(settings), Is.True);

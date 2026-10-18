@@ -382,6 +382,12 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The travel office did not open."
             );
             Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
+            // Top以外からの移動は、短い暗転で閉じて開く。
+            var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
+            Assert.That(
+                guide.Transition.transform.Find("FadePanel").gameObject.activeSelf,
+                Is.True
+            );
         }
 
         // 冒険の途中は、右下のカードに行き先と階を出し、探索を再開する。

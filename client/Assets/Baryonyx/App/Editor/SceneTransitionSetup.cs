@@ -61,6 +61,7 @@ namespace Baryonyx.App.Editor
                 );
                 if (configureTop)
                 {
+                    SceneTransitionAssets.ConfigureTop(controller);
                     var topController = scene
                         .GetRootGameObjects()
                         .SelectMany(root => root.GetComponentsInChildren<TopSceneController>(true))

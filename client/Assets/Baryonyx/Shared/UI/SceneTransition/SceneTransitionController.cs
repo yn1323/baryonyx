@@ -42,6 +42,16 @@ namespace Baryonyx.UI
 
         private bool playing;
         private bool covered;
+        private SceneTransitionSettings coveredWith;
+
+        // 閉じた演出を、読み込んだ先のシーンが同じ演出で開くために渡す。
+        // 遷移元ごとに演出の長さを変え、TopからHomeだけ長いシャッターにする。
+        private static SceneTransitionSettings handOff;
+        private static string handOffScene;
+
+        // 1フレームで進める演出の時間の上限。シーンを読み込んだ直後の重いフレームで
+        // 短い演出が一度に終わり、暗転から急に明るくならないようにする。
+        private const float MaxStepSeconds = 1f / 30f;
 
         // テストで演出の時間に掛ける倍率。画面の動きを確かめないテストが待ち時間を縮める。
         internal static float DurationScale = 1f;
@@ -65,13 +75,15 @@ namespace Baryonyx.UI
         {
             if (!ResolveReferences())
                 return;
-            var initialSettings = startCovered ? enterSettings : defaultSettings;
+            var enter =
+                startCovered && revealOnStart ? TakeHandOff() ?? enterSettings : enterSettings;
+            var initialSettings = startCovered ? enter : defaultSettings;
             Configure(initialSettings);
             covered = startCovered;
             ApplyProgress(initialSettings, 1f, startCovered);
             SetInputBlocked(startCovered);
             if (startCovered && revealOnStart)
-                PlayIn(enterSettings);
+                PlayIn(enter);
         }
 
         private void OnDisable()
@@ -86,9 +98,30 @@ namespace Baryonyx.UI
             }
         }
 
-        // Domain Reloadを省略したPlay開始でも、前回のテストの倍率を持ち越さない。
+        // Domain Reloadを省略したPlay開始でも、前回のテストの倍率や演出の引き継ぎを持ち越さない。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetDurationScale() => DurationScale = 1f;
+        private static void ResetDurationScale()
+        {
+            DurationScale = 1f;
+            handOff = null;
+            handOffScene = null;
+        }
+
+        // 覆った演出を、次に開くシーンへ渡す。SceneLoaderが読み込みを始めたときに呼ぶ。
+        internal void HandOffTo(string sceneName)
+        {
+            handOff = covered ? coveredWith : null;
+            handOffScene = handOff != null ? sceneName : null;
+        }
+
+        // 自分のシーン宛ての演出だけを受け取り、別のシーンへ持ち越さない。
+        private SceneTransitionSettings TakeHandOff()
+        {
+            var settings = handOffScene == gameObject.scene.name ? handOff : null;
+            handOff = null;
+            handOffScene = null;
+            return settings;
+        }
 
         private void OnValidate()
         {
@@ -125,6 +158,7 @@ namespace Baryonyx.UI
         )
         {
             yield return Animate(settings, closing);
+            coveredWith = closing ? settings : null;
             playing = false;
             callback?.Invoke();
         }
@@ -142,7 +176,7 @@ namespace Baryonyx.UI
             while (elapsed < duration)
             {
                 yield return null;
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += Mathf.Min(Time.unscaledDeltaTime, MaxStepSeconds);
                 ApplyProgress(settings, settings.EvaluateProgress(elapsed, duration), closing);
             }
             ApplyProgress(settings, 1f, closing);
