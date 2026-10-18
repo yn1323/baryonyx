@@ -128,7 +128,7 @@ namespace Baryonyx.Combat.Editor
         private static void BuildChooser(RectTransform safe, EnemyLab lab)
         {
             var row = Row(safe, "Chooser", ChooserBottom);
-            // DotGothic16 has no arrows (◀▶), so the neighbours are named in words.
+            // Kiwi Maru has no arrows (◀▶), so the neighbours are named in words.
             lab.PreviousButton = ControlButton(row, "Previous", "前の敵", 170f).button;
             var label = Label(
                 row,

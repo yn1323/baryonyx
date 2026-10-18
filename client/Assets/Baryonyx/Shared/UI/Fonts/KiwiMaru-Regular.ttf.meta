@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 1c28bb9db34f54475893a36522cdcbf0
+guid: 2d3c6aba7ee1e4f59af9396ae29b4623
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - DotGothic16
+  - Kiwi Maru
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

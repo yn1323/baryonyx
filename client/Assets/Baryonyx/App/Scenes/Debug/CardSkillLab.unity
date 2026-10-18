@@ -262,7 +262,7 @@ PrefabInstance:
     - target: {fileID: 819895671348917888, guid: c1016c8a4c01743b6920c6c8544b22cc, type: 3}
       propertyPath: m_sharedMaterial
       value: 
-      objectReference: {fileID: 2211783335638712115, guid: 4a47d3cbed1cd4c43b1115423e52db6b, type: 2}
+      objectReference: {fileID: -2557733962885195199, guid: 610198641dd04458eb542909596fea1e, type: 2}
     - target: {fileID: 819895671348917888, guid: c1016c8a4c01743b6920c6c8544b22cc, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901

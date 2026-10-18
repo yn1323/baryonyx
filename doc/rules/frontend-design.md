@@ -134,7 +134,7 @@ client/
 |---|---|
 | 直下 | 画面が共有する文字色・青緑・金の定数 `UiPalette` と、文字の設定の補助 `UiText` |
 | `Art/` | 角丸・円・カプセルの形、画面の端の影、足元の影、文字の下地、設定の歯車のアイコンは、白で描き、使う側で色を付ける。ホームと冒険が使うコンパスのアイコン `IconCompass.aseprite` も置く |
-| `Fonts/` | DotGothic16と、影つきの文字のマテリアル `TextShadow.mat` |
+| `Fonts/` | Kiwi Maruと、影つきの文字のマテリアル `TextShadow.mat` |
 | `Buttons/` | 押すとアイコンと文字も暗くなるボタンと、画面を開いている間だけ押したときの処理をつなぐ `ButtonBindings` |
 | `ResponsiveLayout/` | 背景の比率の維持、Safe Areaへの追従、狭い画面での中央の層の縮小（`WorldLayerFit`）、ドット絵を整数倍に保つ `PixelPerfectRawImage` |
 | `SceneTransition/` | 画面を覆う遷移演出と、覆ってからシーンを読み込む `SceneLoader`。`Editor/` に遷移演出のPrefabの生成 |

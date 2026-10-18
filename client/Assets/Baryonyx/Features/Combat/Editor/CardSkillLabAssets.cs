@@ -246,7 +246,7 @@ namespace Baryonyx.Combat.Editor
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            // DotGothic16 has no arrows (◀▶), so the neighbours are named in words.
+            // Kiwi Maru has no arrows (◀▶), so the neighbours are named in words.
             lab.PreviousButton = ControlButton(row, "Previous", "前へ", 130f).button;
             lab.ListButton = ControlButton(row, "List", "スキル一覧", 230f).button;
             lab.NextButton = ControlButton(row, "Next", "次へ", 130f).button;

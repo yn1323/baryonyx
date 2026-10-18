@@ -333,7 +333,7 @@ DotGothic16は線が1ドット幅で、戦闘の数字としては細く、迫�
 色は、通常が白からベージュ、弱点が黄から橙、回復が緑である。大きさは弱点、通常、回復の順に小さくする。
 ブラウザで作った見本（塗りだけ、縁取りだけ、3つを重ねたもの、内側に明るい縁を足したもの）と、弱点の色（黄から橙、黄から山吹、レモン黄、赤）を並べて比べ、ユーザーが3つを重ねた見せ方と黄から橙を選んだ。
 フォントとマテリアルは `Features/Combat/UI/Fonts/`（[フォントの出典](../../client/Assets/Baryonyx/Features/Combat/UI/Fonts/README.md)）に置き、[DamageNumberAssets](../../client/Assets/Baryonyx/Features/Combat/Editor/DamageNumberAssets.cs) が画面の生成時に作る。
-ブロックの文字は、DotGothic16のままにしている。
+ブロックの文字は、ゲーム全体と同じKiwi Maruにしている。
 
 ### スキルの演出と背景
 

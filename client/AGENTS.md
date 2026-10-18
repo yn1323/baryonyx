@@ -40,7 +40,7 @@ Unity CLIの利用手順は、Unityプラグインの `unity:unity-cli` スキ�
 
 ## フォントアセットの差分
 
-[DotGothic16.asset](Assets/Baryonyx/Shared/UI/Fonts/DotGothic16.asset) はTextMeshProの動的フォントアセットである。
+[KiwiMaru.asset](Assets/Baryonyx/Shared/UI/Fonts/KiwiMaru.asset) はTextMeshProの動的フォントアセットである。
 Editorで新しい文字を表示すると、Unityが文字の一覧とアトラス画像をこのファイルへ書き足すため、作業内容と関係なく差分が出る。
 
 - コミットするときは、この差分もコミットの対象に含める。作業内容とは別の `chore` コミットに分ける。
