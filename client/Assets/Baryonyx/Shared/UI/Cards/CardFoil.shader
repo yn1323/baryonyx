@@ -132,8 +132,8 @@ Shader "Baryonyx/UI/CardFoil"
             }
 
             // ラメ：格子のマスごとに1粒。近くの9マスだけを調べる。
-            // cells は横のマス数、chance は粒のあるマスの割合、star は大きい粒に十字の光条を足す強さ。
-            float3 Glitter(float2 uv, float aspect, float t, float seed, float cells, float chance, float star)
+            // cells は横のマス数、chance は粒のあるマスの割合。
+            float3 Glitter(float2 uv, float aspect, float t, float seed, float cells, float chance)
             {
                 float2 grid = uv * float2(cells, cells / aspect);
                 float2 cell = floor(grid);
@@ -154,17 +154,15 @@ Shader "Baryonyx/UI/CardFoil"
                     float big = step(0.72, Hash(id + 5.5));
                     float r = length(d);
                     float dot0 = exp(-r * r * (big > 0 ? 22.0 : 45.0));
-                    float rays = star * big * (exp(-abs(d.x) * 14.0) * exp(-abs(d.y) * 2.2)
-                        + exp(-abs(d.y) * 14.0) * exp(-abs(d.x) * 2.2));
                     float3 tint = lerp(float3(1, 1, 1), Rainbow(Hash(id + 1.7)), 0.35);
-                    sum += tint * blink * (dot0 * 1.6 + rays);
+                    sum += tint * blink * dot0 * 1.6;
                 }
                 return sum;
             }
 
             // 漂う光の粒：格子ごと上へ流し、横に揺らす。層ごとに大きさと速さを変え、奥行きを出す。
-            // 粒は近くの9マスだけを調べる。star は十字の光条の強さ。
-            float3 Drift(float2 uv, float aspect, float t, float seed, int layers, float chance, float star)
+            // 粒は近くの9マスだけを調べる。
+            float3 Drift(float2 uv, float aspect, float t, float seed, int layers, float chance)
             {
                 float3 sum = 0;
                 [unroll] for (int l = 0; l < 3; l++)
@@ -191,11 +189,10 @@ Shader "Baryonyx/UI/CardFoil"
                         // ふわっと明るくなって消えるのを、粒ごとにずらしてくり返す。
                         float pulse = pow(saturate(sin(t * (0.9 + Hash(id + 4.4)) + wob)), 3.0);
                         float size = 1.0 - l * 0.25;
-                        float glow = exp(-r2 * 30.0 / size) + 0.35 * exp(-r2 * 6.0 / size);
-                        float rays = star * (exp(-abs(d.x) * 16.0) * exp(-abs(d.y) * 2.6)
-                            + exp(-abs(d.y) * 16.0) * exp(-abs(d.x) * 2.6)) * size;
+                        // 外側のにじみは薄く狭くし、粒が重なって挿絵が白くかすまないようにする。
+                        float glow = exp(-r2 * 30.0 / size) + 0.2 * exp(-r2 * 10.0 / size);
                         float3 tint = lerp(float3(1, 0.97, 0.88), Rainbow(Hash(id + 8.8)), 0.25);
-                        sum += tint * pulse * (glow + rays) * (0.7 + 0.3 * size);
+                        sum += tint * pulse * glow * (0.7 + 0.3 * size);
                     }
                 }
                 return sum;
@@ -219,29 +216,28 @@ Shader "Baryonyx/UI/CardFoil"
                 float3 light = 0;
 
                 // 光の帯（☆2から）。☆5は細い2本目が後を追う。
-                float sweepPower = rarity >= 5 ? 0.85 : rarity >= 4 ? 0.65 : rarity >= 3 ? 0.5 : 0.32;
+                // ☆4・☆5は他の層も重なるため、帯は強めすぎず、挿絵が白く飛ばないようにする。
+                float sweepPower = rarity >= 5 ? 0.62 : rarity >= 4 ? 0.52 : rarity >= 3 ? 0.45 : 0.32;
                 float period = rarity >= 5 ? 2.8 : 3.8;
                 float band = Sweep(uv, t, period, 0.0, rarity >= 5 ? 0.075 : 0.06);
                 if (rarity >= 5)
                     band += 0.6 * Sweep(uv, t, period, -0.07, 0.035);
                 light += float3(1.0, 0.97, 0.9) * band * sweepPower * (0.55 + 0.45 * lum);
 
-                // ラメ（☆3から）。☆5は粒が多く、大きい粒に十字の光条。
+                // ラメ（☆3から）。☆が上がるほど粒が細かく多い。
                 if (rarity >= 3)
                 {
-                    float cells = rarity >= 5 ? 14.0 : rarity >= 4 ? 11.0 : 9.0;
-                    float chance = rarity >= 5 ? 0.7 : rarity >= 4 ? 0.55 : 0.4;
-                    float star = rarity >= 5 ? 0.9 : 0.0;
-                    light += Glitter(uv, aspect, t, seed, cells, chance, star) * (rarity >= 5 ? 1.0 : 0.75);
+                    float cells = rarity >= 5 ? 13.0 : rarity >= 4 ? 11.0 : 9.0;
+                    float chance = rarity >= 5 ? 0.5 : rarity >= 4 ? 0.45 : 0.4;
+                    light += Glitter(uv, aspect, t, seed, cells, chance) * (rarity >= 5 ? 0.8 : 0.72);
                 }
 
-                // 漂う光の粒（☆3から）。☆が上がるほど層と粒が増え、☆5は十字の光条つき。
+                // 漂う光の粒（☆3から）。☆が上がるほど層と粒が増える。
                 if (rarity >= 3)
                 {
                     int layers = rarity >= 5 ? 3 : rarity >= 4 ? 2 : 1;
-                    float chance = rarity >= 5 ? 0.6 : rarity >= 4 ? 0.45 : 0.3;
-                    light += Drift(uv, aspect, t, seed, layers, chance, rarity >= 5 ? 0.8 : 0.0)
-                        * (rarity >= 5 ? 0.9 : 0.7);
+                    float chance = rarity >= 5 ? 0.42 : rarity >= 4 ? 0.38 : 0.3;
+                    light += Drift(uv, aspect, t, seed, layers, chance) * (rarity >= 5 ? 0.72 : 0.68);
                 }
 
                 // ホロの虹色（☆4から）：位置と時間でずれる虹を、細かい縞で変調し、明るい所ほど強く。
@@ -249,7 +245,8 @@ Shader "Baryonyx/UI/CardFoil"
                 {
                     float hue = uv.x * 0.9 + (1.0 - uv.y) * 0.55 + t * 0.06;
                     float stripes = 0.75 + 0.25 * sin((uv.x * 1.3 + uv.y) * 38.0 + t * 1.5);
-                    float holo = (rarity >= 5 ? 0.3 : 0.2) * stripes * (0.35 + 0.65 * lum);
+                    // 挿絵全体に足す層なので薄くする。濃いと虹色より先に白っぽさが目立つ。
+                    float holo = (rarity >= 5 ? 0.17 : 0.12) * stripes * (0.35 + 0.65 * lum);
                     light += Rainbow(hue) * holo;
                 }
 
@@ -258,7 +255,7 @@ Shader "Baryonyx/UI/CardFoil"
                 {
                     float edge = min(min(uv.x, 1.0 - uv.x), 1.0 - uv.y);
                     float rim = exp(-edge * 28.0) * (0.55 + 0.45 * sin(t * 2.2));
-                    light += float3(1.0, 0.78, 0.32) * rim * 0.55;
+                    light += float3(1.0, 0.78, 0.32) * rim * 0.45;
                 }
 
                 float4 color = float4(light * cover, 0);
