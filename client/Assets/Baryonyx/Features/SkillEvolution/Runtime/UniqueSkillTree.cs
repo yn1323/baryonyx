@@ -49,7 +49,7 @@ namespace Baryonyx.SkillEvolution
     {
         public CardSkill Card;
 
-        // カードの挿絵のファイル名（"Card" + 名前）。固有スキルの絵はまだないため、スキルの挿絵を借りる。
+        // カードの挿絵のファイル名（"CardUnique" + ツリー + 段階）。
         public string Art;
     }
 

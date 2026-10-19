@@ -2,7 +2,7 @@
 id: skill-fire
 type: visual-entity
 status: 候補
-updated: 2026-10-18
+updated: 2026-10-19
 name: ファイア
 category: skills
 silhouette: 尾を引く火球
@@ -25,7 +25,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFire.aseprite
 | 項目 | 内容 |
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-03、ユーザーの依頼「バトルで利用するカードスキルとVFX・効果・挿絵を、重複のないよう50個ほど」により作成した仮設定 |
-| 対象の役割・説明 | 攻撃のカード。敵1体に〇ダメージ。 |
+| 対象の役割・説明 | 攻撃のカード。敵1体に〇ダメージ。弱点を突くとやけど2ターン。 |
 | 元となる対象・亜種・衣装差分のID | なし |
 | 参照する仕様・関連する個別ID | [戦闘システム](../../features/combat.md)・[スキルの仮設定](../../features/combat.md#スキルの仮設定) |
 | 必要な画像用途 | カードの挿絵（64×58ドット、1ドット3px） |
@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFire.aseprite
 | 属性 | 炎 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 2 |
-| 説明文 | 敵1体に属攻の100%ダメージ。 |
-| 効果（行う順） | 敵単体：ダメージ（属攻の100%） |
+| 説明文 | 敵1体に属攻の100%ダメージ。弱点を突くとやけど2ターン。 |
+| 効果（行う順） | 敵単体：ダメージ（属攻の100%）<br>弱点を突いたとき、敵単体：やけど2ターン |
 
 ## 分類固有のデータ
 
@@ -116,3 +116,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFire.aseprite
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-19 | 弱点を突くとやけど2ターンを付ける効果を加えた。炎が弱点の敵に、フレイムピラー・メテオとつながる | ユーザーの依頼（今あるスキルの効果を深く考える） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |

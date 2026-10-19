@@ -41,8 +41,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
-                "敵1体に{0}ダメージ。",
-                Damage(Enemy, Phy, 100)
+                "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。",
+                Damage(Enemy, Phy, 100).Bonus(CardCondition.OnBleeding, 50)
             ),
             Card(
                 "Fire",
@@ -52,8 +52,9 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 2,
-                "敵1体に{0}ダメージ。",
-                Damage(Enemy, Mag, 100)
+                "敵1体に{0}ダメージ。[弱点]を突くと[やけど]2ターン。",
+                Damage(Enemy, Mag, 100),
+                Apply(Enemy, CardStatus.Burn, 2).Only(CardCondition.OnWeakness)
             ),
             Card(
                 "Ice",
@@ -75,8 +76,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 3,
-                "敵全体に{0}ダメージ。",
-                Damage(Enemies, Mag, 70)
+                "敵全体に{0}ダメージ。[麻痺]中の敵には1.5倍。",
+                Damage(Enemies, Mag, 70).Bonus(CardCondition.OnParalyzed, 50)
             ),
             Card(
                 "Heal",
@@ -178,8 +179,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
-                "敵全体に{0}ダメージ。",
-                Damage(Enemies, Phy, 85)
+                "敵全体に{0}ダメージ。[防御ダウン]中の敵には1.5倍。",
+                Damage(Enemies, Phy, 85).Bonus(CardCondition.OnVulnerable, 50)
             ),
             Card(
                 "GiantImpact",
@@ -189,8 +190,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 7,
-                "敵1体に{0}ダメージ。",
-                Damage(Enemy, Phy, 320)
+                "敵1体に{0}ダメージ。自分に[ブロック]があれば1.5倍。",
+                Damage(Enemy, Phy, 320).Bonus(CardCondition.OnGuarded, 50)
             ),
             Card(
                 "StrideStrike",
@@ -281,8 +282,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 9,
-                "敵全体に{0}ダメージ。",
-                Damage(Enemies, Mag, 260)
+                "敵全体に{0}ダメージ。[やけど]中の敵には1.5倍。",
+                Damage(Enemies, Mag, 260).Bonus(CardCondition.OnBurning, 50)
             ),
             Card(
                 "FlameEnchant",
@@ -337,8 +338,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 8,
-                "敵1体に{0}ダメージ。[凍結]させ、次の行動を封じる。",
-                Damage(Enemy, Mag, 230),
+                "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。[凍結]させる。",
+                Damage(Enemy, Mag, 230).Bonus(CardCondition.OnChilled, 50),
                 Apply(Enemy, CardStatus.Freeze, 1)
             ),
             Card(
@@ -409,8 +410,8 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
-                "敵全体に{0}ダメージ×2。",
-                Damage(Enemies, Phy, 45, hits: 2)
+                "敵全体に{0}ダメージ×2。[毒]がある敵には1.5倍。",
+                Damage(Enemies, Phy, 45, hits: 2).Bonus(CardCondition.OnPoisoned, 50)
             ),
             Card(
                 "ShadowSnipe",

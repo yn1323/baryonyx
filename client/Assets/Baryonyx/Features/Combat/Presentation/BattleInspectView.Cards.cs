@@ -153,7 +153,10 @@ namespace Baryonyx.Combat.Presentation
             bool weak = false;
             foreach (var action in hit.Actions)
             {
-                if (action.When == CardCondition.OnWeakness && !weak)
+                if (
+                    action.When != CardCondition.Always
+                    && !Holds(action.When, hit.Ally ? -1 : hit.Index, caster, weak)
+                )
                     continue;
                 if (!hit.Ally && !Enemies[hit.Index].Alive && action.Kind != CardActionKind.Damage)
                     continue;
@@ -261,14 +264,10 @@ namespace Baryonyx.Combat.Presentation
         {
             var target = Enemies[enemy];
             int power = Power(action, caster);
-            bool bonus = action.BonusWhen switch
-            {
-                CardCondition.OnWeakness => weak,
-                CardCondition.OnBurning => HasStatus(false, enemy, CardStatus.Burn),
-                CardCondition.OnWounded => target.Hp * 2 <= target.MaxHp,
-                _ => false,
-            };
-            if (bonus)
+            if (
+                action.BonusWhen != CardCondition.Always
+                && Holds(action.BonusWhen, enemy, caster, weak)
+            )
                 power = CardRules.WithBonus(action, power);
             var up = Find(true, caster, CardStatus.AttackUp);
             if (up != null)
@@ -285,6 +284,30 @@ namespace Baryonyx.Combat.Presentation
                 ? BattleInspectElement.Fire
                 : BattleInspectElement.None;
             return Hit(enemy, power, element, extra);
+        }
+
+        /// <summary>
+        /// True when <paramref name="when"/> holds for the card: on the enemy it lands on (-1 when
+        /// it lands on an ally), for its user, or for the blow just dealt (<paramref name="weak"/>).
+        /// </summary>
+        private bool Holds(CardCondition when, int enemy, int caster, bool weak)
+        {
+            bool On(CardStatus status) => enemy >= 0 && HasStatus(false, enemy, status);
+            return when switch
+            {
+                CardCondition.Always => true,
+                CardCondition.OnWeakness => weak,
+                CardCondition.OnBurning => On(CardStatus.Burn),
+                CardCondition.OnWounded => enemy >= 0
+                    && Enemies[enemy].Hp * 2 <= Enemies[enemy].MaxHp,
+                CardCondition.OnChilled => On(CardStatus.Chill),
+                CardCondition.OnPoisoned => On(CardStatus.Poison),
+                CardCondition.OnBleeding => On(CardStatus.Bleed),
+                CardCondition.OnVulnerable => On(CardStatus.Vulnerable),
+                CardCondition.OnParalyzed => On(CardStatus.Paralysis),
+                CardCondition.OnGuarded => BlockOf(caster) > 0,
+                _ => false,
+            };
         }
 
         private int Power(CardAction action, int caster) =>

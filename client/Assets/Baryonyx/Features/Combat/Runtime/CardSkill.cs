@@ -159,6 +159,24 @@ namespace Baryonyx.Combat
 
         /// <summary>The target has half of its HP or less left.</summary>
         OnWounded,
+
+        /// <summary>The target is chilled.</summary>
+        OnChilled,
+
+        /// <summary>The target has poison on it.</summary>
+        OnPoisoned,
+
+        /// <summary>The target is bleeding.</summary>
+        OnBleeding,
+
+        /// <summary>The target's defense is down.</summary>
+        OnVulnerable,
+
+        /// <summary>The target is paralysed.</summary>
+        OnParalyzed,
+
+        /// <summary>The card's user has a block.</summary>
+        OnGuarded,
     }
 
     /// <summary>One thing a card does, in order.</summary>
