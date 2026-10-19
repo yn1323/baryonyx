@@ -63,7 +63,10 @@ namespace Baryonyx.StepBonus
         public sealed class Holding
         {
             public string bonusId;
-            public string rank;
+
+            // 倍率（×1.37なら1.37）と品質（S・A・B・C）。
+            public float multiplier;
+            public string quality;
             public string acquiredAt;
             public string updatedAt;
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.Inventory;
 using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
@@ -77,8 +78,8 @@ namespace Baryonyx.Combat.Presentation
         public Texture ElementIcon;
         public int Cost;
 
-        /// <summary>The rarity (☆1 to ☆5): how much the card sparkles.</summary>
-        public int Rarity = 1;
+        /// <summary>The quality (S, A, B or C): how much the card sparkles.</summary>
+        public ItemQuality Quality = ItemQuality.C;
         public int Power;
         public BattleInspectElement Element;
         public BattleInspectCardEffect Effect;
@@ -1605,7 +1606,7 @@ namespace Baryonyx.Combat.Presentation
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Rarity
+                    data.Quality
                 );
         }
 

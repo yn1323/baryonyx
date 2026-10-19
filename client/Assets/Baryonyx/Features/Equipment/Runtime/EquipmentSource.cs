@@ -4,22 +4,31 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.Equipment
 {
     /// <summary>One weapon or piece of armour a player owns. Two of the same kind are two items.</summary>
     public sealed class EquipmentItem
     {
-        public EquipmentItem(string id, string equipmentId)
+        public EquipmentItem(
+            string id,
+            string equipmentId,
+            float multiplier = Quality.MinMultiplier
+        )
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             EquipmentId = equipmentId ?? "";
+            Multiplier = Math.Max(Quality.MinMultiplier, multiplier);
         }
 
         public string Id { get; }
 
         // 装備の種類（EquipmentCatalog のID）。
         public string EquipmentId { get; }
+
+        // この1つの倍率（×1.37なら1.37）。品質は種類の上限から求める（doc/features/inventory.md の品質）。
+        public float Multiplier { get; }
     }
 
     /// <summary>The items a player owns and what each character wears, as the server keeps them.</summary>
@@ -184,7 +193,7 @@ namespace Baryonyx.Equipment
         {
             var items = (state?.items ?? Array.Empty<EquipmentApiClient.Item>())
                 .Where(item => item != null && !string.IsNullOrEmpty(item.id))
-                .Select(item => new EquipmentItem(item.id, item.equipmentId))
+                .Select(item => new EquipmentItem(item.id, item.equipmentId, item.multiplier))
                 .ToArray();
             var worn = (state?.characters ?? Array.Empty<EquipmentApiClient.Character>())
                 .Where(character => character != null && !string.IsNullOrEmpty(character.id))

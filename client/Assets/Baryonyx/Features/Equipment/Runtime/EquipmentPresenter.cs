@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 using Baryonyx.Party;
 
 namespace Baryonyx.Equipment
@@ -15,8 +16,14 @@ namespace Baryonyx.Equipment
         public string EquipmentId { get; internal set; }
         public string Name { get; internal set; }
 
-        // 「★★★」。
+        // 「★★★」。種類ごとのレア度で、強さは表さない。
         public string Stars { get; internal set; }
+
+        // この1つの品質と倍率。空いている枠ではCと×1.00。
+        public ItemQuality Quality { get; internal set; } = ItemQuality.C;
+        public float Multiplier { get; internal set; } = Inventory.Quality.MinMultiplier;
+
+        // 効果の短い説明。数字は倍率を掛けた後の値。
         public string Detail { get; internal set; }
 
         // 右の行の右上に出す、誰が付けているか（「装備中」「アリアが装備中」）。誰も付けていなければ空。
@@ -289,6 +296,7 @@ namespace Baryonyx.Equipment
                 .Where(entry => entry.Definition != null && entry.Definition.Slot == slot)
                 .OrderByDescending(entry => entry.Definition.Rarity)
                 .ThenBy(entry => EquipmentCatalog.IndexOf(entry.Item.EquipmentId))
+                .ThenByDescending(entry => Inventory.Quality.Percent(entry.Item.Multiplier))
                 .ThenBy(entry => entry.Index)
                 .Select(entry => ItemState(personId, entry.Item))
                 .ToArray();
@@ -310,7 +318,9 @@ namespace Baryonyx.Equipment
                 EquipmentId = definition.Id,
                 Name = definition.Name,
                 Stars = EquipmentCatalog.Stars(definition.Rarity),
-                Detail = definition.Detail,
+                Quality = definition.QualityOf(item.Multiplier),
+                Multiplier = item.Multiplier,
+                Detail = definition.DetailAt(item.Multiplier),
                 Worn = wearer != null && wearer == personId,
                 Mark =
                     wearer == null ? ""

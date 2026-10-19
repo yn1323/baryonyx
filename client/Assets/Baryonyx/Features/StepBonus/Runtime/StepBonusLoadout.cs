@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.StepBonus
 {
@@ -29,9 +30,9 @@ namespace Baryonyx.StepBonus
     /// <summary>
     /// The ACT bonus slots and the bonuses the player owns, kept free of Unity objects so the
     /// rules can be tested directly. A slot opens when today's ACT reaches its tier, and the
-    /// bonus in it works at its rank's fixed value times the slot's multiplier. A bonus fits in
-    /// one slot only, so choosing one already set swaps the two slots. Owning the same bonus
-    /// again keeps the higher rank. See doc/features/step-bonus.md.
+    /// bonus in it works at its base value times its own multiplier (its quality) times the
+    /// slot's multiplier. A bonus fits in one slot only, so choosing one already set swaps the two
+    /// slots. Owning the same bonus again keeps the higher multiplier. See doc/features/step-bonus.md.
     /// </summary>
     public sealed class StepBonusLoadout
     {
@@ -68,7 +69,7 @@ namespace Baryonyx.StepBonus
                 var kept = Roll(roll.Id);
                 if (kept == null)
                     this.owned.Add(roll);
-                else if (roll.Rank > kept.Rank)
+                else if (roll.Multiplier > kept.Multiplier)
                     this.owned[this.owned.IndexOf(kept)] = roll;
             }
             slots = new string[this.tiers.Length];
@@ -85,7 +86,11 @@ namespace Baryonyx.StepBonus
                     data.Tiers,
                     data.Multipliers,
                     data.Bonuses,
-                    data.Owned.Select(roll => new StepBonusRoll { Id = roll.Id, Rank = roll.Rank }),
+                    data.Owned.Select(roll => new StepBonusRoll
+                    {
+                        Id = roll.Id,
+                        Multiplier = roll.Multiplier,
+                    }),
                     data.Loadout,
                     data.TotalKinds
                 );
@@ -101,7 +106,7 @@ namespace Baryonyx.StepBonus
                     (state?.Owned ?? Array.Empty<StepBonusRoll>()).Select(roll => new StepBonusRoll
                     {
                         Id = roll.Id,
-                        Rank = roll.Rank,
+                        Multiplier = roll.Multiplier,
                     }),
                     state?.Slots ?? Array.Empty<string>(),
                     data.TotalKinds
@@ -149,28 +154,35 @@ namespace Baryonyx.StepBonus
             return change;
         }
 
-        // 同じボーナスをもう一度手に入れたら、ランクの高いほうだけを残す。
-        public StepBonusAcquired Acquire(string id, StepBonusRank rank)
+        // 同じボーナスをもう一度手に入れたら、倍率の高いほうだけを残す。
+        public StepBonusAcquired Acquire(string id, float multiplier)
         {
             if (Definition(id) == null)
                 throw new ArgumentException($"Unknown bonus: {id}", nameof(id));
             var roll = Roll(id);
             if (roll == null)
             {
-                owned.Add(new StepBonusRoll { Id = id, Rank = rank });
+                owned.Add(new StepBonusRoll { Id = id, Multiplier = multiplier });
                 return StepBonusAcquired.Added;
             }
-            if (rank <= roll.Rank)
+            if (Quality.Percent(multiplier) <= Quality.Percent(roll.Multiplier))
                 return StepBonusAcquired.Discarded;
-            roll.Rank = rank;
+            roll.Multiplier = multiplier;
             return StepBonusAcquired.Updated;
         }
 
-        // 持っているボーナスの、枠に入れる前の効果量（ランクの効果量）。
+        // 持っているボーナスの、枠に入れる前の効果量（基本の効果量×倍率）。
         public float Value(string id)
         {
             var roll = Roll(id);
-            return roll != null ? Definition(id).Value(roll.Rank) : 0f;
+            return roll != null ? Definition(id).Value(roll.Multiplier) : 0f;
+        }
+
+        // 持っているボーナスの品質。持っていなければC。
+        public ItemQuality QualityOf(string id)
+        {
+            var roll = Roll(id);
+            return roll != null ? Definition(id).QualityOf(roll.Multiplier) : ItemQuality.C;
         }
 
         // 枠の倍率を掛けた効果量。確率の効果は上限で止める。

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 using Baryonyx.Networking;
 using Baryonyx.StepBonus;
 
@@ -103,10 +104,12 @@ namespace Baryonyx.Adventure
                     token,
                     State(reward: run.Rewards.FirstOrDefault(entry => entry.RoomId == roomId))
                 );
+            var quality = QualityFor(room.Kind);
             var reward = new AdventureReward(
                 roomId,
                 BonusIds[random.Next(BonusIds.Length)],
-                RankFor(room.Kind),
+                MultiplierOf(quality),
+                quality,
                 AdventureRewardOutcome.Added
             );
             run.Rewards.Add(reward);
@@ -175,40 +178,48 @@ namespace Baryonyx.Adventure
             return result;
         }
 
-        // サーバーの REWARD_RANK_WEIGHTS と同じ重み。
-        private StepBonusRank RankFor(AdventureRoomKind kind)
+        // サーバーの REWARD_QUALITY_WEIGHTS と同じ重み。
+        private ItemQuality QualityFor(AdventureRoomKind kind)
         {
             var weights = kind switch
             {
                 AdventureRoomKind.Battle => new[]
                 {
-                    (StepBonusRank.E, 40),
-                    (StepBonusRank.D, 35),
-                    (StepBonusRank.C, 20),
-                    (StepBonusRank.B, 5),
+                    (ItemQuality.C, 75),
+                    (ItemQuality.B, 20),
+                    (ItemQuality.A, 5),
                 },
                 AdventureRoomKind.Boss => new[]
                 {
-                    (StepBonusRank.B, 40),
-                    (StepBonusRank.A, 45),
-                    (StepBonusRank.S, 15),
+                    (ItemQuality.B, 40),
+                    (ItemQuality.A, 45),
+                    (ItemQuality.S, 15),
                 },
                 _ => new[]
                 {
-                    (StepBonusRank.D, 30),
-                    (StepBonusRank.C, 40),
-                    (StepBonusRank.B, 25),
-                    (StepBonusRank.A, 5),
+                    (ItemQuality.C, 30),
+                    (ItemQuality.B, 40),
+                    (ItemQuality.A, 25),
+                    (ItemQuality.S, 5),
                 },
             };
             int roll = random.Next(weights.Sum(entry => entry.Item2));
-            foreach (var (rank, weight) in weights)
+            foreach (var (quality, weight) in weights)
             {
                 if (roll < weight)
-                    return rank;
+                    return quality;
                 roll -= weight;
             }
             return weights[^1].Item1;
+        }
+
+        // 品質の幅の中から、倍率を百分率の整数で均等に選ぶ（サーバーの rollMultiplierPercent と同じ）。
+        private float MultiplierOf(ItemQuality quality)
+        {
+            var (low, high) = Quality.Range(quality, Quality.DefaultMaxMultiplier);
+            int min = Quality.Percent(low);
+            int max = Quality.Percent(high);
+            return random.Next(min, max + 1) / 100f;
         }
 
         private AdventureState State(

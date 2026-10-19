@@ -284,8 +284,8 @@ namespace Baryonyx.Tests.PlayMode
             var server = new FakeStepBonusSource(
                 new[]
                 {
-                    new StepBonusRoll { Id = "luck", Rank = StepBonusRank.E },
-                    new StepBonusRoll { Id = "guard", Rank = StepBonusRank.A },
+                    new StepBonusRoll { Id = "luck", Multiplier = 1f },
+                    new StepBonusRoll { Id = "guard", Multiplier = 1.4f },
                 },
                 new[] { "luck", null, null, null, null }
             );
@@ -300,14 +300,14 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The bonuses did not load."
             );
 
-            // サーバーの持ち物だけを、ランクの高い順に、サーバーのランクで並べる。
+            // サーバーの持ち物だけを、品質の高い順に、サーバーの倍率から求めた品質で並べる。
             var shown = settings
                 .Rows.Where(row => row.Button.gameObject.activeSelf)
                 .OrderBy(row => row.Button.transform.GetSiblingIndex())
                 .Select(row => row.Id);
             Assert.That(shown, Is.EqualTo(new[] { "guard", "luck" }));
-            Assert.That(Row(settings, "luck").Rank.text, Is.EqualTo("E"));
-            Assert.That(Row(settings, "guard").Rank.text, Is.EqualTo("A"));
+            Assert.That(Row(settings, "luck").Quality.text, Is.EqualTo("C"));
+            Assert.That(Row(settings, "guard").Quality.text, Is.EqualTo("A"));
             Assert.That(settings.Slots[0].Name.text, Is.EqualTo("幸運"));
             Assert.That(settings.Slots[1].Name.text, Is.EqualTo("空き"));
 

@@ -6,6 +6,7 @@ using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.Inventory;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d.Editor;
@@ -593,7 +594,7 @@ namespace Baryonyx.Combat.Editor
                 Art("CardFrameFire"),
                 fireIcon,
                 fire.Cost,
-                fire.Rarity
+                fire.Quality
             );
             AddCardParts(card, cardView);
             PrefabUtility.SaveAsPrefabAsset(card.gameObject, CardPrefabPath);
@@ -1410,7 +1411,7 @@ namespace Baryonyx.Combat.Editor
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Rarity
+                    data.Quality
                 );
                 cardView.SetPlayable(
                     playable,
@@ -1647,8 +1648,18 @@ namespace Baryonyx.Combat.Editor
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, NumberSamplesPath);
         }
 
+        // ギャラリーのカードの品質の順（S・A・B・Cをくり返す）。
+        private static readonly ItemQuality[] GalleryQualities =
+        {
+            ItemQuality.S,
+            ItemQuality.A,
+            ItemQuality.B,
+            ItemQuality.C,
+        };
+
         // Only 16 of the cards are in the mock's deck, so the showcase gets every card skill laid
-        // out face up in their order, ten to a row, over a dark backdrop.
+        // out face up in their order, ten to a row, over a dark backdrop, each at a quality in
+        // turn (S, A, B, C) so the sparkle of every quality shows.
         private static void BuildCardGallery(int act)
         {
             const int columns = 10;
@@ -1662,7 +1673,11 @@ namespace Baryonyx.Combat.Editor
             var pitch = new Vector2(CardWidth + 7f, CardHeight + 6f) * scale;
             for (int i = 0; i < all.Count; i++)
             {
-                var data = CardData(all[i], act);
+                // 品質ごとのキラキラを見比べられるよう、S・A・B・Cの順に、その品質の中ほどの倍率にする。
+                var quality = GalleryQualities[i % GalleryQualities.Length];
+                var skill = all[i]
+                    .WithMultiplier(Quality.Middle(quality, CardSkillQuality.LimitOf(all[i])));
+                var data = CardData(skill, act);
                 var instance = InstantiatePrefab(CardPrefabPath, $"{i + 1:00}_{all[i].Id}", root);
                 var card = (RectTransform)instance.transform;
                 card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
@@ -1684,7 +1699,7 @@ namespace Baryonyx.Combat.Editor
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Rarity
+                    data.Quality
                 );
                 view.SetPlayable(true, 0f);
                 if (view.Back != null)
@@ -1898,7 +1913,7 @@ namespace Baryonyx.Combat.Editor
                 ElementIcon =
                     skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
                 Cost = skill.Cost,
-                Rarity = skill.Rarity,
+                Quality = skill.Quality,
                 Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), act),
                 Element = element,
                 Effect = BattleCardText.EffectOf(skill),

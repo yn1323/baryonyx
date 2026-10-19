@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
+using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
@@ -581,7 +582,7 @@ namespace Baryonyx.CardLoadout
                 widget.Art.enabled = filled && art != null;
             }
             if (widget.Foil != null)
-                widget.Foil.Show(art, filled ? card.Rarity : CardFoil.MinRarity);
+                widget.Foil.Show(art, filled ? card.Quality : ItemQuality.C);
             if (widget.Cost != null)
             {
                 widget.Cost.transform.parent.gameObject.SetActive(filled);

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.Equipment
 {
@@ -18,7 +20,8 @@ namespace Baryonyx.Equipment
             string name,
             EquipmentSlot slot,
             int rarity,
-            string detail
+            string detail,
+            float maxMultiplier = Quality.DefaultMaxMultiplier
         )
         {
             Id = id;
@@ -26,6 +29,7 @@ namespace Baryonyx.Equipment
             Slot = slot;
             Rarity = rarity;
             Detail = detail;
+            MaxMultiplier = maxMultiplier;
         }
 
         public string Id { get; }
@@ -35,8 +39,20 @@ namespace Baryonyx.Equipment
         // レア度（★の数）。
         public int Rarity { get; }
 
-        // 効果の短い説明（「物攻の 120%｜斬」）。効果の計算はまだない。
+        // 効果の短い説明（「物攻の 120%｜斬」）。倍率×1.00のときの値。効果の計算はまだない。
         public string Detail { get; }
+
+        // 1つずつ持つ倍率の上限（doc/features/inventory.md の品質）。サーバーの仮設定と同じ×1.5。
+        public float MaxMultiplier { get; }
+
+        public ItemQuality QualityOf(float multiplier) => Quality.Of(multiplier, MaxMultiplier);
+
+        /// <summary>
+        /// The description at <paramref name="multiplier"/>: every percent and "+" amount grows with
+        /// it and every count of hits ("2回") is rounded (doc/features/inventory.md, how the
+        /// multiplier is applied).
+        /// </summary>
+        public string DetailAt(float multiplier) => EquipmentCatalog.Scale(Detail, multiplier);
     }
 
     /// <summary>
@@ -48,7 +64,8 @@ namespace Baryonyx.Equipment
     {
         private static readonly EquipmentDefinition[] all =
         {
-            Weapon("flame-dagger", "炎のダガー", 4, "速度の 125%｜斬・炎｜2回攻撃"),
+            // 回数も伸びるため、上限は低め（スキルの複数回の攻撃と同じ×1.3）。
+            Weapon("flame-dagger", "炎のダガー", 4, "速度の 125%｜斬・炎｜2回攻撃", 1.3f),
             Weapon("thunder-spear", "雷鳴の槍", 3, "物攻の 140%｜貫・雷"),
             Weapon("frost-wand", "氷晶のワンド", 3, "属攻の 135%｜氷｜会心 +5%"),
             Weapon("war-hammer", "戦鎚", 2, "物攻の 150%｜打"),
@@ -94,12 +111,28 @@ namespace Baryonyx.Equipment
 
         public static string Stars(int rarity) => new('★', Math.Max(0, rarity));
 
+        // 説明の数字のうち、「%」「回」が後ろに付く数と「+」の後ろの数に倍率を掛ける。
+        private static readonly Regex Numbers = new(
+            "(?<![0-9.])[0-9]+(?=%|回)|(?<=\\+)[0-9]+",
+            RegexOptions.CultureInvariant
+        );
+
+        /// <summary>The numbers of a free-text effect grown by <paramref name="multiplier"/>.</summary>
+        public static string Scale(string text, float multiplier) =>
+            string.IsNullOrEmpty(text) || Quality.Percent(multiplier) == 100
+                ? text ?? ""
+                : Numbers.Replace(
+                    text,
+                    match => Quality.Amount(int.Parse(match.Value), multiplier).ToString()
+                );
+
         private static EquipmentDefinition Weapon(
             string id,
             string name,
             int rarity,
-            string detail
-        ) => new(id, name, EquipmentSlot.Weapon, rarity, detail);
+            string detail,
+            float maxMultiplier = Quality.DefaultMaxMultiplier
+        ) => new(id, name, EquipmentSlot.Weapon, rarity, detail, maxMultiplier);
 
         private static EquipmentDefinition Armor(
             string id,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.StepBonus
 {
@@ -47,21 +48,21 @@ namespace Baryonyx.StepBonus
             string id,
             bool visible,
             bool set,
-            StepBonusRank rank,
+            ItemQuality quality,
             string effect
         )
         {
             Id = id;
             Visible = visible;
             Set = set;
-            Rank = rank;
+            Quality = quality;
             Effect = effect;
         }
 
         public string Id { get; }
-        public StepBonusRank Rank { get; }
+        public ItemQuality Quality { get; }
 
-        // ランクの効果量（枠に入れる前）。
+        // 倍率を掛けた効果量（枠に入れる前）。
         public string Effect { get; }
 
         // 選んだタブのカテゴリに入っている。
@@ -144,11 +145,11 @@ namespace Baryonyx.StepBonus
         // 直前の付け替えの保存。テストで完了を待つために公開する。
         public Task ChooseTask { get; private set; } = Task.CompletedTask;
 
-        // 一覧に並べる順。ランクの高い順で、同じランクはボーナスの定義順。
+        // 一覧に並べる順。品質の高い順で、同じ品質は持っている順。
         public static IEnumerable<StepBonusRoll> Order(StepBonusLoadout loadout) =>
             loadout
                 .Owned.Select((roll, index) => (roll, index))
-                .OrderByDescending(item => item.roll.Rank)
+                .OrderByDescending(item => loadout.QualityOf(item.roll.Id))
                 .ThenBy(item => item.index)
                 .Select(item => item.roll);
 
@@ -243,7 +244,7 @@ namespace Baryonyx.StepBonus
                         roll.Id,
                         InTab(loadout.Definition(roll.Id), tab),
                         loadout.SlotOf(roll.Id) >= 0,
-                        roll.Rank,
+                        loadout.QualityOf(roll.Id),
                         StepBonusLoadout.Effect(loadout.Definition(roll.Id), loadout.Value(roll.Id))
                     ))
                     .ToArray(),

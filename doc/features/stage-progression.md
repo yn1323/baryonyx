@@ -134,7 +134,7 @@ updated: 2026-10-06
 - 階ごとの決まり（仮）：最初の階（第2層）は魔物、強い魔物は第4層以降で最奥の直前（第9層）には置かない、道中の中ほどの階（第6層）はどの道も宝箱、同じ道で強い魔物や宝箱を続けない、強い魔物を道全体で2つ以上置く。
 - 部屋の種類は、魔物・強い魔物・宝箱・最奥の間の4つである。「なにか起きそう」（出来事）と「ひと休みできそう」（休憩）は、中身が決まっていないため入れていない。
 
-道の部屋の種類は端末が作るため、端末を書き換えれば、選ぶ部屋の種類（報酬のランクの重み）を変えられてしまう。
+道の部屋の種類は端末が作るため、端末を書き換えれば、選ぶ部屋の種類（報酬の品質の重み）を変えられてしまう。
 ユーザーが「途中の進捗はUnity内に保存する形でOK」としたため、サーバーで道を作り直して確かめる処理は入れていない（[確認待ち](#確認待ち)）。
 
 ### 段階的な解放
@@ -198,7 +198,7 @@ updated: 2026-10-06
 本ページは企画上の要求・設計方針・未決事項を記す。
 2026-10-04に、冒険の1周（出発・部屋単位の探索・戦闘・報酬・復活・結果・中断と再開）と、冒険の状態のサーバー保存を実装した（[実装計画](../plans/2026-10-04-adventure-loop.md)）。
 冒険先は森の遺跡（表示名はミストラ遺跡）だけで、道中の部屋の数は8（最奥の間は第10層）である（[サーバーの設定値](../../server/src/features/adventure/catalog.ts)）。
-出来事を終えた部屋では、ACTボーナスを1つ手に入れる（ランクの重みは仮）。
+出来事を終えた部屋では、ACTボーナスを1つ手に入れる（品質の重みは仮。[実装との対応](step-bonus.md#実装との対応)）。
 装備・スキルの入手、深度に応じた敵、序盤の工夫は未実装である。
 同じ日に、探索を森を見下ろす地図にし、道を冒険ごとに作るようにした（[計画](../plans/2026-10-04-exploration-route-map.md)、[画面](screens.md#冒険の画面)）。
 道を作る処理は [AdventureRouteMap](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureRouteMap.cs)、地図の絵は [ExplorationMapPainter](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapPainter.cs)、見える距離は [ExplorationMapSight](../../client/Assets/Baryonyx/Features/Adventure/Runtime/ExplorationMapProjection.cs) にある。

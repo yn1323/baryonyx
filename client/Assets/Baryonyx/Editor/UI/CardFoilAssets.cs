@@ -1,3 +1,4 @@
+using Baryonyx.Inventory;
 using Baryonyx.UI.Cards;
 using UnityEditor;
 using UnityEngine;
@@ -28,9 +29,9 @@ namespace Baryonyx.Editor.UI
 
         /// <summary>
         /// Lays the sparkle over <paramref name="art"/>: a sibling just after it, the same size and
-        /// place, showing <paramref name="rarity"/>.
+        /// place, showing <paramref name="quality"/>.
         /// </summary>
-        public static CardFoil Add(RawImage art, int rarity = CardFoil.MinRarity)
+        public static CardFoil Add(RawImage art, ItemQuality quality = ItemQuality.C)
         {
             var source = art.rectTransform;
             var go = new GameObject(
@@ -51,7 +52,7 @@ namespace Baryonyx.Editor.UI
             rect.localScale = source.localScale;
             var foil = go.GetComponent<CardFoil>();
             foil.Image.material = Material();
-            foil.Show(art.texture, art.uvRect, rarity);
+            foil.Show(art.texture, art.uvRect, quality);
             return foil;
         }
     }

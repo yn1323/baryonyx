@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.Combat
 {
@@ -344,11 +345,6 @@ namespace Baryonyx.Combat
         public CardTarget Target;
         public int Cost;
 
-        /// <summary>
-        /// The rarity, ☆1 to ☆5. A card skill's own rarity is not decided yet, so it is a stand-in
-        /// worked out from its cost, used for its sparkle (doc/art/direction.md, card sparkle).
-        /// </summary>
-        public int Rarity = 1;
         public string Text;
         public IReadOnlyList<CardAction> Actions = Array.Empty<CardAction>();
 
@@ -360,6 +356,26 @@ namespace Baryonyx.Combat
 
         /// <summary>The art's name in the card art folder.</summary>
         public string Art => "Card" + (BorrowedArt ?? Id);
+
+        /// <summary>
+        /// The upper limit of this kind's multiplier (doc/features/inventory.md, quality); 0 for the
+        /// provisional one (<see cref="CardSkillQuality.LimitOf"/>).
+        /// </summary>
+        public float MaxMultiplier;
+
+        /// <summary>
+        /// This one card's multiplier, ×1.00 up to the limit. The numbers of <see cref="Actions"/>,
+        /// <see cref="Cost"/> and <see cref="Text"/> already have it applied
+        /// (<see cref="CardSkillQuality.WithMultiplier"/>); the definitions are at ×1.00.
+        /// </summary>
+        public float Multiplier = Inventory.Quality.MinMultiplier;
+
+        /// <summary>The card at ×1.00 this one was grown from; null for a definition itself.</summary>
+        public CardSkill Base;
+
+        /// <summary>The quality of this one card, from its multiplier (S, A, B or C).</summary>
+        public ItemQuality Quality =>
+            Inventory.Quality.Of(Multiplier, CardSkillQuality.LimitOf(this));
 
         /// <summary>The actions that show a number in the description, in order.</summary>
         public IEnumerable<CardAction> Powered()

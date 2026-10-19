@@ -832,10 +832,7 @@ namespace Baryonyx.SkillEvolution
         {
             var all = new UniqueSkillStage[UniqueSkillTreeShape.Count];
             Array.Copy(stages, all, Math.Min(stages.Length, all.Length));
-            // 仮のレア度：最初の段階は☆3、枝の1段目は☆4、2段目は☆5（doc/art/direction.md のカードのキラキラ）。
-            for (int i = 0; i < all.Length; i++)
-                if (all[i] != null)
-                    all[i].Card.Rarity = 3 + UniqueSkillTreeShape.Step(i);
+            // 固有スキルはレア度を持たず、品質C（×1.00）で始まる（doc/features/inventory.md の品質）。
             return new UniqueSkillTree { Id = id, Stages = Array.AsReadOnly(all) };
         }
 

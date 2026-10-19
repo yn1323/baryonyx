@@ -69,6 +69,10 @@ namespace Baryonyx.Equipment
         {
             public string id;
             public string equipmentId;
+
+            // 倍率（×1.37なら1.37）と品質（S・A・B・C）。
+            public float multiplier;
+            public string quality;
         }
 
         [Serializable]

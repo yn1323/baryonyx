@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
@@ -398,11 +399,20 @@ namespace Baryonyx.Equipment
                 widget.Icon.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             }
             Set(widget.Name, item == null ? "" : item.Name);
-            Set(widget.Stars, filled ? item.Stars : "");
+            SetRich(widget.Stars, filled ? Grade(item) : "");
             Set(widget.Detail, filled ? item.Detail : "");
         }
 
-        /// <summary>One owned item: its name, rarity, effect and who wears it.</summary>
+        /// <summary>
+        /// The kind's rarity in stars, then this one item's quality letter in its colour
+        /// ("★★★　S", rich text; doc/features/inventory.md).
+        /// </summary>
+        public static string Grade(EquipmentItemState item) =>
+            item == null || string.IsNullOrEmpty(item.Name) || item.ItemId == null
+                ? item?.Stars ?? ""
+                : $"{item.Stars}　{QualityPalette.Painted(item.Quality)}";
+
+        /// <summary>One owned item: its name, rarity, quality, effect and who wears it.</summary>
         public static void ShowRow(EquipmentRow row, EquipmentItemState item, Sprite icon)
         {
             row.ItemId = item.ItemId;
@@ -412,7 +422,7 @@ namespace Baryonyx.Equipment
                 row.Icon.enabled = icon != null;
             }
             Set(row.Name, item.Name);
-            Set(row.Stars, item.Stars);
+            SetRich(row.Stars, Grade(item));
             Set(row.Detail, item.Detail);
             if (row.Mark != null)
             {

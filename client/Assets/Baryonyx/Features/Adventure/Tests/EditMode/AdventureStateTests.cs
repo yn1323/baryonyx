@@ -1,5 +1,6 @@
 using System.Linq;
 using Baryonyx.Adventure;
+using Baryonyx.Inventory;
 using Baryonyx.Networking;
 using Baryonyx.StepBonus;
 using NUnit.Framework;
@@ -26,8 +27,8 @@ namespace Baryonyx.Tests.EditMode
                 "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"seed\":12345,\"roomCount\":8,"
                 + "\"roomId\":\"f2-0\",\"floor\":2,\"roomKind\":\"battle\","
                 + "\"roomCleared\":false,\"route\":[\"entrance\",\"f2-0\"],\"revives\":1,\"reviveCost\":200,"
-                + "\"rewards\":[{\"roomId\":\"entrance\",\"bonusId\":\"luck\",\"rank\":\"A\",\"outcome\":\"updated\"},"
-                + "{\"roomId\":\"x\",\"bonusId\":\"luck\",\"rank\":\"Z\",\"outcome\":\"added\"}]},"
+                + "\"rewards\":[{\"roomId\":\"entrance\",\"bonusId\":\"luck\",\"multiplier\":1.4,\"quality\":\"A\",\"outcome\":\"updated\"},"
+                + "{\"roomId\":\"x\",\"bonusId\":\"luck\",\"multiplier\":1.4,\"quality\":\"Z\",\"outcome\":\"added\"}]},"
                 + "\"records\":[{\"destinationId\":\"forest-ruins\",\"bestFloor\":3,\"clears\":0}],"
                 + "\"runes\":4500,\"reward\":null,\"revive\":null}";
             var state = AdventureServerSource.ToState(
@@ -51,10 +52,12 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(run.Exits, Is.Empty);
             Assert.That(run.ReviveCost, Is.EqualTo(200));
             Assert.That(run.DeepestFloor, Is.EqualTo(10));
-            // 知らないランクの報酬は外す。
+            // 知らない品質の報酬は外す。
             Assert.That(
-                run.Rewards.Select(reward => (reward.BonusId, reward.Rank, reward.Outcome)),
-                Is.EqualTo(new[] { ("luck", StepBonusRank.A, AdventureRewardOutcome.Updated) })
+                run.Rewards.Select(reward =>
+                    (reward.BonusId, reward.Multiplier, reward.Quality, reward.Outcome)
+                ),
+                Is.EqualTo(new[] { ("luck", 1.4f, ItemQuality.A, AdventureRewardOutcome.Updated) })
             );
             Assert.That(state.Runes, Is.EqualTo(4500));
             Assert.That(state.RecordOf("forest-ruins").BestFloor, Is.EqualTo(3));
@@ -207,7 +210,12 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Result.Floor, Is.EqualTo(10));
             Assert.That(state.Result.Clears, Is.EqualTo(1));
             Assert.That(state.Result.Rewards.Count, Is.EqualTo(9));
-            Assert.That(state.Reward.Rank, Is.GreaterThanOrEqualTo(StepBonusRank.B));
+            // ボスの部屋の報酬は品質B以上で、倍率はその品質の幅に入る。
+            Assert.That(state.Reward.Quality, Is.GreaterThanOrEqualTo(ItemQuality.B));
+            Assert.That(
+                Quality.Of(state.Reward.Multiplier, Quality.DefaultMaxMultiplier),
+                Is.EqualTo(state.Reward.Quality)
+            );
         }
 
         // 結果には、手放したボーナスを持ち帰った物として出さない。
@@ -224,11 +232,18 @@ namespace Baryonyx.Tests.EditMode
                 0,
                 new[]
                 {
-                    new AdventureReward("a", "luck", StepBonusRank.A, AdventureRewardOutcome.Added),
+                    new AdventureReward(
+                        "a",
+                        "luck",
+                        1.4f,
+                        ItemQuality.A,
+                        AdventureRewardOutcome.Added
+                    ),
                     new AdventureReward(
                         "b",
                         "guard",
-                        StepBonusRank.E,
+                        1f,
+                        ItemQuality.C,
                         AdventureRewardOutcome.Discarded
                     ),
                 }

@@ -370,7 +370,7 @@ namespace Baryonyx.Combat.Presentation
                         At(CardFrames, (int)skill.Element),
                         At(ElementIcons, (int)skill.Element),
                         skill.Cost,
-                        skill.Rarity
+                        skill.Quality
                     );
                     face.SetPlayable(true, 0f);
                 }

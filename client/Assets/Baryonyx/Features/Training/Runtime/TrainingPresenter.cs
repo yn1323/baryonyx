@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Equipment;
+using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.UI.Cards;
 using UnityEngine;
@@ -46,8 +47,8 @@ namespace Baryonyx.Training
         // コスト（固有スキルはエネルギー）。
         public int Cost { get; internal set; }
 
-        /// <summary>The rarity (☆1 to ☆5): how much the card sparkles.</summary>
-        public int Rarity { get; internal set; } = 1;
+        /// <summary>The card's quality (S, A, B or C): how much it sparkles.</summary>
+        public ItemQuality Quality { get; internal set; } = ItemQuality.C;
 
         // カードの枠の色を決める属性と、属性のアイコン。属性のないカードはアイコンがnull。
         public CardElement Element { get; internal set; }
@@ -512,7 +513,7 @@ namespace Baryonyx.Training
                 Kind = CardText.KindLine(card),
                 Description = describe(person, card),
                 Cost = card.Cost,
-                Rarity = card.Rarity,
+                Quality = card.Quality,
                 Element = card.Element,
                 Icon = iconOf(card.Id),
                 Art = art != null ? art : skill.Icon,
@@ -534,7 +535,7 @@ namespace Baryonyx.Training
                 Kind = CardText.KindLine(card),
                 Description = describe(person, card),
                 Cost = card.Cost,
-                Rarity = card.Rarity,
+                Quality = card.Quality,
                 Element = card.Element,
                 Icon = iconOf(id),
                 Art = artOf(id),

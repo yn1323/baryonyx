@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.StepBonus
 {
@@ -88,21 +89,21 @@ namespace Baryonyx.StepBonus
                 )
             );
 
-        // 知らないランクのボーナスは外し、枠は番号の位置へ並べる。
+        // 倍率が×1.00より小さい（届いていない）ボーナスは外し、枠は番号の位置へ並べる。
+        // 品質は、サーバーと同じ決まりで、ボーナスの定義の上限から求める。
         public static StepBonusState ToState(StepBonusApiClient.State state)
         {
             var owned = (state?.holdings ?? Array.Empty<StepBonusApiClient.Holding>())
-                .Where(holding => holding != null && !string.IsNullOrEmpty(holding.bonusId))
-                .Select(holding =>
-                    holding.rank != null && Enum.IsDefined(typeof(StepBonusRank), holding.rank)
-                        ? new StepBonusRoll
-                        {
-                            Id = holding.bonusId,
-                            Rank = (StepBonusRank)Enum.Parse(typeof(StepBonusRank), holding.rank),
-                        }
-                        : null
+                .Where(holding =>
+                    holding != null
+                    && !string.IsNullOrEmpty(holding.bonusId)
+                    && holding.multiplier >= Quality.MinMultiplier
                 )
-                .Where(roll => roll != null)
+                .Select(holding => new StepBonusRoll
+                {
+                    Id = holding.bonusId,
+                    Multiplier = holding.multiplier,
+                })
                 .ToArray();
             var slots = state?.slots ?? Array.Empty<StepBonusApiClient.Slot>();
             int count = slots.Length == 0 ? 0 : slots.Max(slot => slot?.slot ?? -1) + 1;

@@ -32,8 +32,8 @@ namespace Baryonyx.StepBonus
     {
         public string Id = "";
         public Button Button;
-        public Image RankFrame;
-        public TMP_Text Rank;
+        public Image QualityFrame;
+        public TMP_Text Quality;
         public TMP_Text Effect;
 
         // どこかの枠に入れているときだけ出す印。
@@ -225,16 +225,16 @@ namespace Baryonyx.StepBonus
                     continue;
                 if (widget.SetMark != null)
                     widget.SetMark.SetActive(row.Set);
-                var color = StepBonusArt.Rank(row.Rank);
-                Set(widget.Rank, row.Rank.ToString());
-                if (widget.Rank != null)
-                    widget.Rank.color = color;
-                if (widget.RankFrame != null)
-                    widget.RankFrame.color = color;
+                var color = StepBonusArt.Quality(row.Quality);
+                Set(widget.Quality, Inventory.Quality.Letter(row.Quality));
+                if (widget.Quality != null)
+                    widget.Quality.color = color;
+                if (widget.QualityFrame != null)
+                    widget.QualityFrame.color = color;
                 Set(widget.Effect, row.Effect);
             }
 
-            // 一覧は持ち物の順（ランクの高い順）に並べ直す。
+            // 一覧は持ち物の順（品質の高い順）に並べ直す。
             var byId = new Dictionary<string, StepBonusRowWidget>();
             foreach (var widget in Rows)
                 byId[widget.Id] = widget;

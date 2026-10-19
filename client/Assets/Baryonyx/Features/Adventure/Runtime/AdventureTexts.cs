@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 using UnityEngine;
 
@@ -47,7 +48,7 @@ namespace Baryonyx.Adventure
         public static string RewardBody(StepBonusMockData bonuses, AdventureReward reward) =>
             reward == null
                 ? "何も見つからなかった"
-                : $"ACTボーナス「{BonusName(bonuses, reward.BonusId)}」（{reward.Rank}）を手に入れた\n"
+                : $"ACTボーナス「{BonusName(bonuses, reward.BonusId)}」（品質{Quality.Letter(reward.Quality)}）を手に入れた\n"
                     + AdventureCatalog.Outcome(reward.Outcome);
 
         public static string ResultBody(StepBonusMockData bonuses, AdventureResult result)
@@ -61,7 +62,9 @@ namespace Baryonyx.Adventure
             };
             var kept = result
                 .Rewards.Where(reward => reward.Outcome != AdventureRewardOutcome.Discarded)
-                .Select(reward => $"{BonusName(bonuses, reward.BonusId)} {reward.Rank}")
+                .Select(reward =>
+                    $"{BonusName(bonuses, reward.BonusId)} {Quality.Letter(reward.Quality)}"
+                )
                 .ToArray();
             lines.Add(
                 kept.Length == 0

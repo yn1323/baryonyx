@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
@@ -19,10 +20,10 @@ namespace Baryonyx.Adventure
         // 持っていないボーナスを持ち物に加えた。
         Added,
 
-        // 持っているボーナスのランクを上げた。
+        // 持っているボーナスの倍率を上げた。
         Updated,
 
-        // 持っているほうがランクが高いため、手に入れたほうを手放した。
+        // 持っているほうが倍率が高いため、手に入れたほうを手放した。
         Discarded,
     }
 
@@ -84,19 +85,24 @@ namespace Baryonyx.Adventure
         public AdventureReward(
             string roomId,
             string bonusId,
-            StepBonusRank rank,
+            float multiplier,
+            ItemQuality quality,
             AdventureRewardOutcome outcome
         )
         {
             RoomId = roomId ?? "";
             BonusId = bonusId ?? "";
-            Rank = rank;
+            Multiplier = multiplier;
+            Quality = quality;
             Outcome = outcome;
         }
 
         public string RoomId { get; }
         public string BonusId { get; }
-        public StepBonusRank Rank { get; }
+
+        /// <summary>The bonus's own multiplier (×1.37 as 1.37) and the quality it gives.</summary>
+        public float Multiplier { get; }
+        public ItemQuality Quality { get; }
         public AdventureRewardOutcome Outcome { get; }
     }
 

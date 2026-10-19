@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Inventory;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -66,7 +67,7 @@ namespace Baryonyx.StepBonus.Editor
             data.Tiers = new[] { 1000, 2000, 3000, 5000, 8000 };
             data.Multipliers = new[] { 1f, 1.2f, 1.4f, 1.7f, 2f };
             data.TotalKinds = 20;
-            // ランクごとの効果量はE・D・C・B・A・Sの順。doc/features/step-bonus.md の仮設定と同じ値。
+            // 基本の効果量（倍率×1.00のとき）。doc/features/step-bonus.md の仮設定の☆1の値を当てた。
             data.Bonuses = new[]
             {
                 Bonus(
@@ -77,28 +78,9 @@ namespace Baryonyx.StepBonus.Editor
                     1,
                     0,
                     "Guard",
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    8
+                    3
                 ),
-                Bonus(
-                    "luck",
-                    "幸運",
-                    StepBonusCategory.Drop,
-                    "ドロップ率 +{0}%",
-                    1,
-                    0,
-                    "Luck",
-                    3,
-                    5,
-                    7,
-                    9,
-                    12,
-                    15
-                ),
+                Bonus("luck", "幸運", StepBonusCategory.Drop, "ドロップ率 +{0}%", 1, 0, "Luck", 5),
                 Bonus(
                     "treasure-sight",
                     "宝箱透視",
@@ -107,12 +89,7 @@ namespace Baryonyx.StepBonus.Editor
                     0,
                     100,
                     "TreasureSight",
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
+                    20
                 ),
                 Bonus(
                     "foresight",
@@ -122,12 +99,7 @@ namespace Baryonyx.StepBonus.Editor
                     0,
                     100,
                     "Foresight",
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
+                    20
                 ),
                 Bonus(
                     "omen",
@@ -137,12 +109,7 @@ namespace Baryonyx.StepBonus.Editor
                     0,
                     100,
                     "Omen",
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
+                    20
                 ),
                 Bonus(
                     "appraisal",
@@ -152,12 +119,7 @@ namespace Baryonyx.StepBonus.Editor
                     1,
                     0,
                     "Appraisal",
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6
+                    2
                 ),
                 Bonus(
                     "fighting",
@@ -167,23 +129,18 @@ namespace Baryonyx.StepBonus.Editor
                     1,
                     0,
                     "Fighting",
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    8
+                    3
                 ),
             };
             data.Owned = new[]
             {
-                Roll("guard", StepBonusRank.S),
-                Roll("luck", StepBonusRank.A),
-                Roll("treasure-sight", StepBonusRank.B),
-                Roll("appraisal", StepBonusRank.B),
-                Roll("foresight", StepBonusRank.C),
-                Roll("fighting", StepBonusRank.D),
-                Roll("omen", StepBonusRank.E),
+                Roll("guard", 1.48f),
+                Roll("luck", 1.4f),
+                Roll("treasure-sight", 1.28f),
+                Roll("appraisal", 1.24f),
+                Roll("foresight", 1.15f),
+                Roll("fighting", 1.08f),
+                Roll("omen", 1f),
             };
             data.Loadout = new[] { "foresight", "luck", "treasure-sight", "fighting", "appraisal" };
             EditorUtility.SetDirty(data);
@@ -379,7 +336,7 @@ namespace Baryonyx.StepBonus.Editor
             var content = Layout.Column(viewport, "Rows", 10);
 
             // One row per known bonus, the mock owner's first; the view shows only the bonuses
-            // the player owns and reorders them by rank.
+            // the player owns and reorders them by quality.
             view.Rows = StepBonusSettingsPresenter
                 .Order(loadout)
                 .Concat(
@@ -387,7 +344,7 @@ namespace Baryonyx.StepBonus.Editor
                         .Select(bonus => new StepBonusRoll
                         {
                             Id = bonus.Id,
-                            Rank = StepBonusRank.E,
+                            Multiplier = Quality.MinMultiplier,
                         })
                 )
                 .Select(roll => BuildRow(content, roll, loadout))
@@ -403,7 +360,8 @@ namespace Baryonyx.StepBonus.Editor
         )
         {
             var bonus = loadout.Definition(roll.Id);
-            float value = bonus.Value(roll.Rank);
+            float value = bonus.Value(roll.Multiplier);
+            var quality = bonus.QualityOf(roll.Multiplier);
             var rect = Layout.ListItem(content, "Row_" + roll.Id, BonusRowHeight);
             var (button, _, row) = GlassCardAssets.Choice(rect, pattern: false);
             var widget = new StepBonusRowWidget { Id = roll.Id, Button = button };
@@ -414,21 +372,21 @@ namespace Baryonyx.StepBonus.Editor
             iconImage.sprite = bonus.Icon;
             iconImage.raycastTarget = false;
 
-            var color = StepBonusArt.Rank(roll.Rank);
-            var badge = Rect("Rank", row);
+            var color = StepBonusArt.Quality(quality);
+            var badge = Rect("Quality", row);
             Corner(badge, new Vector2(0, 0.5f), new Vector2(128, 0), new Vector2(64, 64));
-            var rank = GlassCardAssets.Plaque(badge, pattern: false);
-            widget.RankFrame = GlassCardAssets.RimOf(badge);
-            widget.RankFrame.color = color;
-            widget.Rank = Label(
-                rank,
+            var plaque = GlassCardAssets.Plaque(badge, pattern: false);
+            widget.QualityFrame = GlassCardAssets.RimOf(badge);
+            widget.QualityFrame.color = color;
+            widget.Quality = Label(
+                plaque,
                 "Letter",
-                roll.Rank.ToString(),
+                Quality.Letter(quality),
                 38,
                 color,
                 TextAlignmentOptions.Center
             );
-            Stretch((RectTransform)widget.Rank.transform);
+            Stretch((RectTransform)widget.Quality.transform);
 
             const float textLeft = 216;
             var name = Label(
@@ -511,7 +469,7 @@ namespace Baryonyx.StepBonus.Editor
             int decimals,
             float cap,
             string icon,
-            params float[] values
+            float baseValue
         ) =>
             new()
             {
@@ -519,13 +477,14 @@ namespace Baryonyx.StepBonus.Editor
                 Name = name,
                 Category = category,
                 Effect = effect,
-                Values = values,
+                BaseValue = baseValue,
                 Decimals = decimals,
                 Cap = cap,
                 Icon = Guide.Icon(IconPath(icon)),
             };
 
-        private static StepBonusRoll Roll(string id, StepBonusRank rank) =>
-            new() { Id = id, Rank = rank };
+        // 持っているボーナスと倍率。品質がそろうよう、サーバーの初期のボーナスと同じ倍率にする。
+        private static StepBonusRoll Roll(string id, float multiplier) =>
+            new() { Id = id, Multiplier = multiplier };
     }
 }

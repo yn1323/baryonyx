@@ -439,7 +439,7 @@ namespace Baryonyx.CardLoadout.Editor
             element.sprite = view.IconOf(card.Element);
             element.enabled = element.sprite != null;
             widget.Art = art;
-            Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Rarity);
+            Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Quality);
 
             var (name, kind) = BuildNameLine(row, 12, RowTextLeft, 150);
             name.text = card.Name;

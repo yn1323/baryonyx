@@ -1,4 +1,5 @@
 using System;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
@@ -33,7 +34,8 @@ namespace Baryonyx.Adventure
             new(
                 "",
                 bonuses != null && bonuses.Bonuses.Length > 0 ? bonuses.Bonuses[0].Id : "",
-                StepBonusRank.B,
+                1.25f,
+                ItemQuality.B,
                 AdventureRewardOutcome.Added
             );
 

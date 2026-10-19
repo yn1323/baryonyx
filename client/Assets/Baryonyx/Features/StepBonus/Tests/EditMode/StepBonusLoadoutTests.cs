@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 using NUnit.Framework;
 
@@ -13,34 +14,8 @@ namespace Baryonyx.Tests.EditMode
         internal static StepBonusDefinition[] Definitions() =>
             new[]
             {
-                Bonus(
-                    "guard",
-                    "守り",
-                    StepBonusCategory.Battle,
-                    "受けるダメージ -{0}%",
-                    1,
-                    0,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    8
-                ),
-                Bonus(
-                    "luck",
-                    "幸運",
-                    StepBonusCategory.Drop,
-                    "ドロップ率 +{0}%",
-                    1,
-                    0,
-                    3,
-                    5,
-                    7,
-                    9,
-                    12,
-                    15
-                ),
+                Bonus("guard", "守り", StepBonusCategory.Battle, "受けるダメージ -{0}%", 1, 0, 3),
+                Bonus("luck", "幸運", StepBonusCategory.Drop, "ドロップ率 +{0}%", 1, 0, 5),
                 Bonus(
                     "treasure-sight",
                     "宝箱透視",
@@ -48,69 +23,12 @@ namespace Baryonyx.Tests.EditMode
                     "確率 {0}%",
                     0,
                     100,
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
+                    20
                 ),
-                Bonus(
-                    "foresight",
-                    "先読み",
-                    StepBonusCategory.Explore,
-                    "確率 {0}%",
-                    0,
-                    100,
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
-                ),
-                Bonus(
-                    "omen",
-                    "兆し",
-                    StepBonusCategory.Explore,
-                    "確率 {0}%",
-                    0,
-                    100,
-                    15,
-                    20,
-                    25,
-                    30,
-                    40,
-                    50
-                ),
-                Bonus(
-                    "appraisal",
-                    "目利き",
-                    StepBonusCategory.Drop,
-                    "レア度アップ +{0}%",
-                    1,
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6
-                ),
-                Bonus(
-                    "fighting",
-                    "闘志",
-                    StepBonusCategory.Battle,
-                    "攻撃力 +{0}%",
-                    1,
-                    0,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    8
-                ),
+                Bonus("foresight", "先読み", StepBonusCategory.Explore, "確率 {0}%", 0, 100, 20),
+                Bonus("omen", "兆し", StepBonusCategory.Explore, "確率 {0}%", 0, 100, 20),
+                Bonus("appraisal", "目利き", StepBonusCategory.Drop, "レア度アップ +{0}%", 1, 0, 2),
+                Bonus("fighting", "闘志", StepBonusCategory.Battle, "攻撃力 +{0}%", 1, 0, 3),
             };
 
         internal static StepBonusLoadout Create(params string[] loadout) =>
@@ -120,13 +38,13 @@ namespace Baryonyx.Tests.EditMode
                 Definitions(),
                 new[]
                 {
-                    Roll("guard", StepBonusRank.S),
-                    Roll("luck", StepBonusRank.A),
-                    Roll("treasure-sight", StepBonusRank.B),
-                    Roll("appraisal", StepBonusRank.B),
-                    Roll("foresight", StepBonusRank.C),
-                    Roll("fighting", StepBonusRank.D),
-                    Roll("omen", StepBonusRank.E),
+                    Roll("guard", 1.48f),
+                    Roll("luck", 1.4f),
+                    Roll("treasure-sight", 1.28f),
+                    Roll("appraisal", 1.24f),
+                    Roll("foresight", 1.15f),
+                    Roll("fighting", 1.08f),
+                    Roll("omen", 1f),
                 },
                 loadout.Length > 0
                     ? loadout
@@ -184,52 +102,74 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void TheEffectIsTheRanksValueTimesTheSlotsMultiplierUpToTheCap()
+        public void TheEffectIsTheBaseValueTimesTheBonusAndSlotMultipliersUpToTheCap()
         {
             var loadout = Create();
 
-            // 幸運のA（12%）を2,000の枠（×1.2）に入れると14.4%。
-            Assert.That(loadout.Value("luck"), Is.EqualTo(12f));
-            Assert.That(loadout.Effective("luck", 1), Is.EqualTo(14.4f).Within(0.001f));
-            Assert.That(loadout.Effective("guard", 3), Is.EqualTo(13.6f).Within(0.001f));
-            Assert.That(loadout.Effective("treasure-sight", 4), Is.EqualTo(60f).Within(0.001f));
+            // 幸運（基本5%）の×1.40は7%。2,000の枠（×1.2）に入れると8.4%。
+            Assert.That(loadout.Value("luck"), Is.EqualTo(7f).Within(0.001f));
+            Assert.That(loadout.Effective("luck", 1), Is.EqualTo(8.4f).Within(0.001f));
+            Assert.That(
+                loadout.Effective("guard", 3),
+                Is.EqualTo(3f * 1.48f * 1.7f).Within(0.001f)
+            );
+            Assert.That(
+                loadout.Effective("treasure-sight", 4),
+                Is.EqualTo(20f * 1.28f * 2f).Within(0.001f)
+            );
+
             // A chance stops at 100%.
-            loadout.Acquire("treasure-sight", StepBonusRank.S);
-            Assert.That(loadout.Effective("treasure-sight", 4), Is.EqualTo(100f));
-        }
-
-        [Test]
-        public void EachRankHasItsOwnFixedValue()
-        {
-            var luck = Definitions().Single(bonus => bonus.Id == "luck");
-
-            Assert.That(
-                Enum.GetValues(typeof(StepBonusRank)).Cast<StepBonusRank>().Select(luck.Value),
-                Is.EqualTo(new[] { 3f, 5f, 7f, 9f, 12f, 15f })
+            var sure = new StepBonusDefinition
+            {
+                Id = "sure",
+                Effect = "{0}%",
+                BaseValue = 60f,
+                Cap = 100f,
+            };
+            var capped = new StepBonusLoadout(
+                new[] { 1000 },
+                new[] { 2f },
+                new[] { sure },
+                new[] { Roll("sure", 1.5f) },
+                new[] { "sure" },
+                1
             );
-            Assert.That(StepBonusLoadout.Effect(luck, 14.4f), Is.EqualTo("ドロップ率 +14.4%"));
-            Assert.That(StepBonusLoadout.Effect(luck, 12f), Is.EqualTo("ドロップ率 +12%"));
+            Assert.That(capped.Effective("sure", 0), Is.EqualTo(100f));
         }
 
         [Test]
-        public void GettingTheSameBonusAgainKeepsTheHigherRank()
+        public void TheQualityComesFromWhereTheMultiplierFallsInTheRange()
         {
             var loadout = Create();
 
-            Assert.That(
-                loadout.Acquire("luck", StepBonusRank.B),
-                Is.EqualTo(StepBonusAcquired.Discarded)
-            );
-            Assert.That(loadout.Roll("luck").Rank, Is.EqualTo(StepBonusRank.A));
+            Assert.That(loadout.QualityOf("guard"), Is.EqualTo(ItemQuality.S));
+            Assert.That(loadout.QualityOf("luck"), Is.EqualTo(ItemQuality.A));
+            Assert.That(loadout.QualityOf("treasure-sight"), Is.EqualTo(ItemQuality.B));
+            Assert.That(loadout.QualityOf("omen"), Is.EqualTo(ItemQuality.C));
+            Assert.That(loadout.QualityOf("missing"), Is.EqualTo(ItemQuality.C));
 
-            Assert.That(
-                loadout.Acquire("luck", StepBonusRank.S),
-                Is.EqualTo(StepBonusAcquired.Updated)
-            );
-            Assert.That(loadout.Roll("luck").Rank, Is.EqualTo(StepBonusRank.S));
+            var luck = Definitions().Single(bonus => bonus.Id == "luck");
+            Assert.That(luck.Value(1f), Is.EqualTo(5f));
+            Assert.That(luck.Value(1.5f), Is.EqualTo(7.5f));
+            Assert.That(StepBonusLoadout.Effect(luck, 8.4f), Is.EqualTo("ドロップ率 +8.4%"));
+            Assert.That(StepBonusLoadout.Effect(luck, 7f), Is.EqualTo("ドロップ率 +7%"));
+        }
+
+        [Test]
+        public void GettingTheSameBonusAgainKeepsTheHigherMultiplier()
+        {
+            var loadout = Create();
+
+            Assert.That(loadout.Acquire("luck", 1.25f), Is.EqualTo(StepBonusAcquired.Discarded));
+            Assert.That(loadout.Acquire("luck", 1.4f), Is.EqualTo(StepBonusAcquired.Discarded));
+            Assert.That(loadout.Roll("luck").Multiplier, Is.EqualTo(1.4f));
+
+            Assert.That(loadout.Acquire("luck", 1.47f), Is.EqualTo(StepBonusAcquired.Updated));
+            Assert.That(loadout.Roll("luck").Multiplier, Is.EqualTo(1.47f));
+            Assert.That(loadout.QualityOf("luck"), Is.EqualTo(ItemQuality.S));
             Assert.That(loadout.Owned.Count(roll => roll.Id == "luck"), Is.EqualTo(1));
 
-            Assert.Throws<ArgumentException>(() => loadout.Acquire("missing", StepBonusRank.E));
+            Assert.Throws<ArgumentException>(() => loadout.Acquire("missing", 1f));
         }
 
         [Test]
@@ -239,18 +179,13 @@ namespace Baryonyx.Tests.EditMode
                 new[] { 1000, 2000 },
                 new[] { 1f, 1.2f },
                 Definitions(),
-                new[]
-                {
-                    Roll("luck", StepBonusRank.D),
-                    Roll("luck", StepBonusRank.A),
-                    Roll("missing", StepBonusRank.S),
-                },
+                new[] { Roll("luck", 1.05f), Roll("luck", 1.4f), Roll("missing", 1.5f) },
                 new[] { "luck", "luck" },
                 2
             );
 
             Assert.That(loadout.Owned.Count, Is.EqualTo(1));
-            Assert.That(loadout.Roll("luck").Rank, Is.EqualTo(StepBonusRank.A));
+            Assert.That(loadout.Roll("luck").Multiplier, Is.EqualTo(1.4f));
             Assert.That(loadout.Bonus(0), Is.EqualTo("luck"));
             Assert.That(loadout.Bonus(1), Is.Null);
         }
@@ -262,7 +197,7 @@ namespace Baryonyx.Tests.EditMode
             string effect,
             int decimals,
             float cap,
-            params float[] values
+            float baseValue
         ) =>
             new()
             {
@@ -272,11 +207,11 @@ namespace Baryonyx.Tests.EditMode
                 Effect = effect,
                 Decimals = decimals,
                 Cap = cap,
-                Values = values,
+                BaseValue = baseValue,
             };
 
-        private static StepBonusRoll Roll(string id, StepBonusRank rank) =>
-            new() { Id = id, Rank = rank };
+        private static StepBonusRoll Roll(string id, float multiplier) =>
+            new() { Id = id, Multiplier = multiplier };
     }
 
     public sealed class StepBonusSettingsPresenterTests
@@ -319,9 +254,9 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(view.Last.Slots[1].Tier, Is.EqualTo("2,000 ACT ×1.2"));
             Assert.That(view.Last.Slots[1].Name, Is.EqualTo("幸運"));
-            Assert.That(view.Last.Slots[1].Effect, Is.EqualTo("ドロップ率 +14.4%"));
+            Assert.That(view.Last.Slots[1].Effect, Is.EqualTo("ドロップ率 +8.4%"));
             Assert.That(view.Last.SelectedSlot, Is.Zero);
-            // The list runs from the highest rank and marks the bonuses in a slot.
+            // The list runs from the highest quality and marks the bonuses in a slot.
             Assert.That(view.Last.Rows[0].Id, Is.EqualTo("guard"));
             Assert.That(view.Last.Rows[0].Set, Is.False);
             Assert.That(view.Last.Rows.Single(row => row.Id == "luck").Set, Is.True);
@@ -338,7 +273,7 @@ namespace Baryonyx.Tests.EditMode
             view.PressBonus("guard");
             Assert.That(loadout.Bonus(3), Is.EqualTo("guard"));
             Assert.That(view.Notices, Is.EqualTo(new[] { "5,000の枠に「守り」をセットしました" }));
-            Assert.That(view.Last.Slots[3].Effect, Is.EqualTo("受けるダメージ -13.6%"));
+            Assert.That(view.Last.Slots[3].Effect, Is.EqualTo("受けるダメージ -7.5%"));
             Assert.That(view.Last.Rows.Single(row => row.Id == "fighting").Set, Is.False);
 
             // Tapping it again changes nothing and says nothing.
@@ -428,9 +363,15 @@ namespace Baryonyx.Tests.EditMode
                 {
                     holdings = new[]
                     {
-                        new StepBonusApiClient.Holding { bonusId = "luck", rank = "A" },
-                        new StepBonusApiClient.Holding { bonusId = "guard", rank = "Z" },
-                        new StepBonusApiClient.Holding { bonusId = "omen", rank = "3" },
+                        new StepBonusApiClient.Holding
+                        {
+                            bonusId = "luck",
+                            multiplier = 1.4f,
+                            quality = "A",
+                        },
+                        // 倍率が届いていない（JSONにない）ボーナスは外す。
+                        new StepBonusApiClient.Holding { bonusId = "guard" },
+                        new StepBonusApiClient.Holding { bonusId = "", multiplier = 1.2f },
                     },
                     slots = new[]
                     {
@@ -442,8 +383,8 @@ namespace Baryonyx.Tests.EditMode
             );
 
             Assert.That(
-                state.Owned.Select(roll => (roll.Id, roll.Rank)),
-                Is.EqualTo(new[] { ("luck", StepBonusRank.A) })
+                state.Owned.Select(roll => (roll.Id, roll.Multiplier)),
+                Is.EqualTo(new[] { ("luck", 1.4f) })
             );
             Assert.That(state.Slots, Is.EqualTo(new[] { null, "luck", null, null, null }));
             Assert.That(StepBonusServerSource.ToState(null).Owned, Is.Empty);

@@ -91,9 +91,9 @@ namespace Baryonyx.Adventure
         public static string Outcome(AdventureRewardOutcome outcome) =>
             outcome switch
             {
-                AdventureRewardOutcome.Updated => "ランクが上がりました",
+                AdventureRewardOutcome.Updated => "倍率が上がりました",
                 AdventureRewardOutcome.Discarded =>
-                    "持っているほうがランクが高いため、手放しました",
+                    "持っているほうが倍率が高いため、手放しました",
                 _ => "持ち物に加えました",
             };
 

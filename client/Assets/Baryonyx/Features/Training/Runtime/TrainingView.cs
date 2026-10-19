@@ -8,6 +8,7 @@ using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Economy;
 using Baryonyx.Equipment;
+using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
@@ -346,11 +347,16 @@ namespace Baryonyx.Training
                 {
                     var item = equipment?.Find(equipment.ItemIn(id, slot));
                     var definition = EquipmentCatalog.Find(item?.EquipmentId);
+                    // レア度の★に続けて、その1つの品質の文字を出す。説明の数字は倍率を掛けた値。
                     return TrainingGearState.Worn(
                         EquipmentCatalog.NameOf(slot),
                         definition?.Name,
-                        definition != null ? EquipmentCatalog.Stars(definition.Rarity) : null,
-                        definition?.Detail
+                        definition != null
+                            ? EquipmentCatalog.Stars(definition.Rarity)
+                                + "　"
+                                + QualityPalette.Painted(definition.QualityOf(item.Multiplier))
+                            : null,
+                        definition?.DetailAt(item.Multiplier)
                     );
                 })
                 .ToArray();
@@ -527,10 +533,7 @@ namespace Baryonyx.Training
                 widget.Art.enabled = filled && card.Art != null;
             }
             if (widget.Foil != null)
-                widget.Foil.Show(
-                    card?.Art,
-                    filled && !card.Locked ? card.Rarity : CardFoil.MinRarity
-                );
+                widget.Foil.Show(card?.Art, filled && !card.Locked ? card.Quality : ItemQuality.C);
             if (widget.Cost != null)
                 widget.Cost.SetActive(filled && card.Cost >= 0 && card.Cost < CostDigits);
             if (widget.CostDigit != null && filled)
@@ -575,7 +578,7 @@ namespace Baryonyx.Training
                     : gear.Filled ? gear.Name
                     : "なし"
             );
-            Set(widget.Stars, gear != null && gear.Filled ? gear.Stars : "");
+            SetRich(widget.Stars, gear != null && gear.Filled ? gear.Stars : "");
             Set(widget.Detail, gear != null && gear.Filled ? gear.Detail : "");
             if (widget.Lock != null)
                 widget.Lock.SetActive(locked);

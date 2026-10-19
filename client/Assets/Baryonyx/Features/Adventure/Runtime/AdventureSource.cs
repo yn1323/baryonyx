@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
@@ -145,21 +146,22 @@ namespace Baryonyx.Adventure
                 .Where(reward => reward != null)
                 .ToArray();
 
-        // 知らないランクのボーナスは報酬から外す。
+        // 知らない品質や、倍率が届いていないボーナスは報酬から外す。
         private static AdventureReward ToReward(AdventureApiClient.Reward reward)
         {
             if (
                 reward == null
                 || string.IsNullOrEmpty(reward.roomId)
                 || string.IsNullOrEmpty(reward.bonusId)
-                || reward.rank == null
-                || !Enum.IsDefined(typeof(StepBonusRank), reward.rank)
+                || reward.multiplier < Quality.MinMultiplier
+                || !Quality.TryParse(reward.quality, out var quality)
             )
                 return null;
             return new AdventureReward(
                 reward.roomId,
                 reward.bonusId,
-                (StepBonusRank)Enum.Parse(typeof(StepBonusRank), reward.rank),
+                reward.multiplier,
+                quality,
                 reward.outcome switch
                 {
                     "updated" => AdventureRewardOutcome.Updated,

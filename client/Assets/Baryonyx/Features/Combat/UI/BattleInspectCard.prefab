@@ -1427,4 +1427,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 052fed6f42f134cfabb8e21545d1d239, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.Cards.CardFoil
-  Rarity: 1
+  Quality: 0
