@@ -50,7 +50,7 @@ export const adventureRuns = sqliteTable(
 );
 
 // 出来事を終えた部屋で手に入れたACTボーナス。1つの部屋で1回だけ手に入る。
-// 持ち物（step_bonus_holdings）には、ランクの高いほうだけが残る（outcome）。
+// 倍率は百分率の整数。持ち物（step_bonus_holdings）には、倍率の高いほうだけが残る（outcome）。
 export const adventureRewards = sqliteTable(
   "adventure_rewards",
   {
@@ -59,15 +59,15 @@ export const adventureRewards = sqliteTable(
       .references(() => adventureRuns.id),
     roomId: text("room_id").notNull(),
     bonusId: text("bonus_id").notNull(),
-    rank: text("rank").notNull(),
+    multiplierPercent: integer("multiplier_percent").notNull(),
     outcome: text("outcome").notNull(),
     createdAt: text("created_at").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.runId, table.roomId] }),
     check(
-      "adventure_rewards_rank_check",
-      sql`${table.rank} IN ('E', 'D', 'C', 'B', 'A', 'S')`,
+      "adventure_rewards_multiplier_check",
+      sql`${table.multiplierPercent} >= 100`,
     ),
     check(
       "adventure_rewards_outcome_check",

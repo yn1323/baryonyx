@@ -9,7 +9,8 @@ import { createAdventureRepository } from "./repository.js";
 type Reward = {
   roomId: string;
   bonusId: string;
-  rank: string;
+  multiplier: number;
+  quality: string;
   outcome: string;
 };
 
@@ -210,7 +211,9 @@ describe("冒険API", () => {
     const cleared = await clear(user.token, "f2-1");
     expect(cleared.run?.roomCleared).toBe(true);
     expect(cleared.reward?.roomId).toBe("f2-1");
-    expect(["D", "C", "B", "A"]).toContain(cleared.reward?.rank);
+    expect(["C", "B", "A", "S"]).toContain(cleared.reward?.quality);
+    expect(cleared.reward?.multiplier).toBeGreaterThanOrEqual(1);
+    expect(cleared.reward?.multiplier).toBeLessThanOrEqual(1.5);
     expect(cleared.run?.rewards).toEqual([cleared.reward]);
 
     // 再送は、記録した報酬を返し、もう一度は手に入らない。
@@ -225,21 +228,24 @@ describe("冒険API", () => {
       user.token,
     );
     const holdings = (
-      (await bonus.json()) as { holdings: { bonusId: string; rank: string }[] }
+      (await bonus.json()) as {
+        holdings: { bonusId: string; multiplier: number; quality: string }[];
+      }
     ).holdings;
     const held = holdings.find(
       (holding) => holding.bonusId === cleared.reward?.bonusId,
     );
     expect(held).toBeDefined();
     if (cleared.reward?.outcome !== "discarded") {
-      expect(held?.rank).toBe(cleared.reward?.rank);
+      expect(held?.multiplier).toBe(cleared.reward?.multiplier);
+      expect(held?.quality).toBe(cleared.reward?.quality);
     }
   });
 
-  it("手に入れたボーナスは、持っているものよりランクが高いときだけ入れ替える", async () => {
+  it("手に入れたボーナスは、持っているものより倍率が高いときだけ入れ替える", async () => {
     const user = await scenario.login("adventure-rank");
     const now = new Date().toISOString();
-    // guard は初期のボーナスでSランク。最小の乱数で guard と最低ランクを引かせる。
+    // guard は初期のボーナスで×1.48（S）。最小の乱数で guard と品質Cの最小の倍率を引かせる。
     const low = createAdventureRepository(scenario.env.DB, () => 0);
     await low.start(user.userId, "forest-ruins", now);
     await low.move(
@@ -250,7 +256,8 @@ describe("冒険API", () => {
     const result = await low.clear(user.userId, "f2-0", now);
     expect("reward" in result && result.reward).toMatchObject({
       bonusId: "guard",
-      rank: "E",
+      multiplier: 1,
+      quality: "C",
       outcome: "discarded",
     });
     const bonus = await scenario.request(
@@ -260,11 +267,13 @@ describe("冒険API", () => {
       user.token,
     );
     const holdings = (
-      (await bonus.json()) as { holdings: { bonusId: string; rank: string }[] }
+      (await bonus.json()) as {
+        holdings: { bonusId: string; multiplier: number; quality: string }[];
+      }
     ).holdings;
-    expect(holdings.find((holding) => holding.bonusId === "guard")?.rank).toBe(
-      "S",
-    );
+    expect(
+      holdings.find((holding) => holding.bonusId === "guard"),
+    ).toMatchObject({ multiplier: 1.48, quality: "S" });
   });
 
   it("負けた戦闘からルーンで復活し、2回目は費用が上がり、再送では二重に引かない", async () => {
@@ -397,7 +406,7 @@ describe("冒険API", () => {
       clears: 1,
     });
     expect(cleared.result?.rewards).toHaveLength(9);
-    expect(["B", "A", "S"]).toContain(cleared.reward?.rank);
+    expect(["B", "A", "S"]).toContain(cleared.reward?.quality);
     expect((await call(user.token, "/adventure")).records).toEqual([
       { destinationId: "forest-ruins", bestFloor: 10, clears: 1 },
     ]);

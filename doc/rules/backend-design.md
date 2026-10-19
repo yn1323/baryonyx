@@ -115,7 +115,7 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個、ボーナス7種が高ランクで5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み |
 | `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み |
 | `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ボーナス1つ、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
 
@@ -208,6 +208,7 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0007_end_fixed_route_adventures.sql](../../server/migrations/0007_end_fixed_route_adventures.sql) は、決まった6部屋の道で進行中だった冒険を、続きから再開できないため、自分からやめた扱いで終える手書きのSQLである。
 [0008_equipment.sql](../../server/migrations/0008_equipment.sql) は、[持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存)の装備・キャラごとの武器と防具・初期付与の3テーブルを作る。
 [0009_custom_skill_slots.sql](../../server/migrations/0009_custom_skill_slots.sql) は、キャラごとのスキルの枠を4つから[カスタムスキル](../features/party.md#キャラクターの構成)の2つに減らす。枠の範囲の制約を変えるため表を作り直し、3・4枠目の行は移さずに消す。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
+[0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) は、持っている装備・ACTボーナス・冒険の報酬に1つずつの倍率の列（`multiplier_percent`、百分率の整数で100以上）を持たせ、ボーナスと報酬のランクの列をなくす（[品質](../features/inventory.md#品質)）。表を作り直すため、Drizzle Kitが生成した、元の表にない列を読む行を手で直し、既存のランクをS 147・A 138・B 126・C 112・D 105・E 100の倍率へ、既存の装備を100へ写した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 
 ```sh
 pnpm db:generate --name add_example
@@ -261,9 +262,9 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
-ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時のランクの比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
+ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時の倍率の比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
 パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
-冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることとランクの比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
+冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることと倍率の比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
 
 テストの並列数、ファイル内の実行順、DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) を正本とする。
@@ -318,4 +319,5 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-19：[品質](../features/inventory.md#品質)の実装で、[0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) を[マイグレーション](#マイグレーション)に加え、seedの装備とボーナスに倍率を持たせた。Drizzle Kitが列の新設か改名かを対話で尋ねて止まるため、疑似端末から既定の答え（新設）を選んで生成した。
 - 2026-10-05：ルートの [AGENTS.md](../../AGENTS.md#作業の基本) の「未リリースのため、Migration、既存データとの互換性、旧バージョンとの互換性は考慮しない」に合わせ、[マイグレーション](#マイグレーション)の「既存Workerとの互換性を確認」「旧Workerと互換性を保つSQLを用意する」を、未リリースの間は考慮せずDBを作り直す扱いに改めた。リリース前に見直す。あわせて、[開発用データ（seed）](#開発用データseed)を加え、serverのAGENTS.mdにあったディレクトリ構成と配置をこの文書へ移した。

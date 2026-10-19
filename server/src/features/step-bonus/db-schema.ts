@@ -18,7 +18,7 @@ export const stepBonusProfiles = sqliteTable("step_bonus_profiles", {
   createdAt: text("created_at").notNull(),
 });
 
-// 持っているボーナス。1種類につき1つで、ランクの高いほうだけを残す。
+// 持っているボーナス。1種類につき1つで、倍率（百分率の整数）の高いほうだけを残す。
 export const stepBonusHoldings = sqliteTable(
   "step_bonus_holdings",
   {
@@ -26,15 +26,15 @@ export const stepBonusHoldings = sqliteTable(
       .notNull()
       .references(() => appUsers.id),
     bonusId: text("bonus_id").notNull(),
-    rank: text("rank").notNull(),
+    multiplierPercent: integer("multiplier_percent").notNull(),
     acquiredAt: text("acquired_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.bonusId] }),
     check(
-      "step_bonus_holdings_rank_check",
-      sql`${table.rank} IN ('E', 'D', 'C', 'B', 'A', 'S')`,
+      "step_bonus_holdings_multiplier_check",
+      sql`${table.multiplierPercent} >= 100`,
     ),
   ],
 );

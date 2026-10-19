@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import { pickQuality, rollMultiplierPercent } from "../../shared/quality.js";
 import {
   debitRunes,
   runeBalance,
@@ -7,13 +8,15 @@ import {
 } from "../exercise-rewards/wallet.js";
 import { enemyStatements } from "../library/discoveries.js";
 import {
-  rankOrder,
+  maxMultiplierPercent,
   STEP_BONUS_IDS,
   type StepBonusId,
-  type StepBonusRank,
 } from "../step-bonus/catalog.js";
 import { stepBonusHoldings } from "../step-bonus/db-schema.js";
-import { createStepBonusRepository } from "../step-bonus/repository.js";
+import {
+  createStepBonusRepository,
+  holdingQuality,
+} from "../step-bonus/repository.js";
 import {
   bossFloor,
   type Destination,
@@ -23,7 +26,7 @@ import {
   hasEvent,
   isBattle,
   newSeed,
-  REWARD_RANK_WEIGHTS,
+  REWARD_QUALITY_WEIGHTS,
   type RoomKind,
   reviveCost,
 } from "./catalog.js";
@@ -75,7 +78,7 @@ export function createAdventureRepository(
   const reward = (row: RewardRow) => ({
     roomId: row.roomId,
     bonusId: row.bonusId,
-    rank: row.rank,
+    ...holdingQuality(row.bonusId, row.multiplierPercent),
     outcome: row.outcome,
   });
 
@@ -212,18 +215,14 @@ export function createAdventureRepository(
     return readState(userId);
   }
 
-  function pickRank(kind: EventKind): StepBonusRank {
-    const weights = Object.entries(REWARD_RANK_WEIGHTS[kind]) as [
-      StepBonusRank,
-      number,
-    ][];
-    const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
-    let roll = random() * total;
-    for (const [rank, weight] of weights) {
-      if (roll < weight) return rank;
-      roll -= weight;
-    }
-    return weights[weights.length - 1][0];
+  // 部屋の種類ごとの重みで品質を選び、その品質の幅から倍率（百分率）を選ぶ。
+  function pickMultiplier(kind: EventKind, bonusId: StepBonusId): number {
+    const quality = pickQuality(REWARD_QUALITY_WEIGHTS[kind], random);
+    return rollMultiplierPercent(
+      quality,
+      random,
+      maxMultiplierPercent(bonusId),
+    );
   }
 
   function pickBonus(): StepBonusId {
@@ -340,9 +339,9 @@ export function createAdventureRepository(
     // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
     await createStepBonusRepository(binding).getState(userId, now);
     const bonusId = pickBonus();
-    const rank = pickRank(kind as EventKind);
+    const multiplierPercent = pickMultiplier(kind as EventKind, bonusId);
     const held = await db
-      .select({ rank: stepBonusHoldings.rank })
+      .select({ multiplierPercent: stepBonusHoldings.multiplierPercent })
       .from(stepBonusHoldings)
       .where(
         and(
@@ -353,12 +352,12 @@ export function createAdventureRepository(
       .get();
     const outcome = !held
       ? "added"
-      : rankOrder(rank) > rankOrder(held.rank as StepBonusRank)
+      : multiplierPercent > held.multiplierPercent
         ? "updated"
         : "discarded";
     const boss = kind === "boss";
     const previousBest = boss ? await bestFloor(userId, run.destinationId) : 0;
-    const written = sql`EXISTS (SELECT 1 FROM ${adventureRewards} WHERE ${adventureRewards.runId} = ${run.id} AND ${adventureRewards.roomId} = ${roomId} AND ${adventureRewards.createdAt} = ${now} AND ${adventureRewards.bonusId} = ${bonusId} AND ${adventureRewards.rank} = ${rank})`;
+    const written = sql`EXISTS (SELECT 1 FROM ${adventureRewards} WHERE ${adventureRewards.runId} = ${run.id} AND ${adventureRewards.roomId} = ${roomId} AND ${adventureRewards.createdAt} = ${now} AND ${adventureRewards.bonusId} = ${bonusId} AND ${adventureRewards.multiplierPercent} = ${multiplierPercent})`;
 
     await db.batch([
       db
@@ -369,7 +368,9 @@ export function createAdventureRepository(
               runId: adventureRuns.id,
               roomId: adventureRuns.roomId,
               bonusId: sql<string>`${bonusId}`.as("bonus_id"),
-              rank: sql<string>`${rank}`.as("rank"),
+              multiplierPercent: sql<number>`${multiplierPercent}`.as(
+                "multiplier_percent",
+              ),
               outcome: sql<string>`${outcome}`.as("outcome"),
               createdAt: sql<string>`${now}`.as("created_at"),
             })
@@ -404,7 +405,9 @@ export function createAdventureRepository(
             .select({
               userId: sql<string>`${userId}`.as("user_id"),
               bonusId: sql<string>`${bonusId}`.as("bonus_id"),
-              rank: sql<string>`${rank}`.as("rank"),
+              multiplierPercent: sql<number>`${multiplierPercent}`.as(
+                "multiplier_percent",
+              ),
               acquiredAt: sql<string>`${now}`.as("acquired_at"),
               updatedAt: sql<string>`${now}`.as("updated_at"),
             })
@@ -414,11 +417,11 @@ export function createAdventureRepository(
         .onConflictDoUpdate({
           target: [stepBonusHoldings.userId, stepBonusHoldings.bonusId],
           set: {
-            rank: sql`excluded.rank`,
+            multiplierPercent: sql`excluded.multiplier_percent`,
             updatedAt: sql`excluded.updated_at`,
           },
-          // ランクの高いほうだけを残す（低い順に E D C B A S）。
-          setWhere: sql`instr('EDCBAS', excluded.rank) > instr('EDCBAS', ${stepBonusHoldings.rank})`,
+          // 倍率の高いほうだけを残す。
+          setWhere: sql`excluded.multiplier_percent > ${stepBonusHoldings.multiplierPercent}`,
         }),
       ...(boss
         ? [recordStatement({ ...run, roomId }, "cleared", now, written)]

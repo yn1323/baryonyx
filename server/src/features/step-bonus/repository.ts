@@ -1,13 +1,13 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import { multiplierOf, qualityOf } from "../../shared/quality.js";
 import { adventureRuns } from "../adventure/db-schema.js";
 import {
-  rankOrder,
+  maxMultiplierPercent,
   STARTER_HOLDINGS,
   STARTER_SLOTS,
   STEP_BONUS_SLOT_COUNT,
   type StepBonusId,
-  type StepBonusRank,
 } from "./catalog.js";
 import {
   stepBonusHoldings,
@@ -18,14 +18,25 @@ import {
 export type StepBonusChange = "set" | "swap" | "none";
 export type StepBonusAcquired = "added" | "updated" | "discarded";
 
+// 応答のボーナスの倍率（×1.37 なら 1.37）と品質。
+export function holdingQuality(bonusId: string, multiplierPercent: number) {
+  return {
+    multiplier: multiplierOf(multiplierPercent),
+    quality: qualityOf(
+      multiplierPercent,
+      maxMultiplierPercent(bonusId as StepBonusId),
+    ),
+  };
+}
+
 export function createStepBonusRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
   async function readState(userId: string) {
-    const holdings = await db
+    const rows = await db
       .select({
         bonusId: stepBonusHoldings.bonusId,
-        rank: stepBonusHoldings.rank,
+        multiplierPercent: stepBonusHoldings.multiplierPercent,
         acquiredAt: stepBonusHoldings.acquiredAt,
         updatedAt: stepBonusHoldings.updatedAt,
       })
@@ -36,14 +47,20 @@ export function createStepBonusRepository(binding: D1Database) {
         asc(stepBonusHoldings.bonusId),
       )
       .all();
-    const rows = await db
+    const holdings = rows.map(({ multiplierPercent, ...holding }) => ({
+      bonusId: holding.bonusId,
+      ...holdingQuality(holding.bonusId, multiplierPercent),
+      acquiredAt: holding.acquiredAt,
+      updatedAt: holding.updatedAt,
+    }));
+    const slotRows = await db
       .select({ slot: stepBonusSlots.slot, bonusId: stepBonusSlots.bonusId })
       .from(stepBonusSlots)
       .where(eq(stepBonusSlots.userId, userId))
       .all();
     const slots = Array.from({ length: STEP_BONUS_SLOT_COUNT }, (_, slot) => ({
       slot,
-      bonusId: rows.find((row) => row.slot === slot)?.bonusId ?? null,
+      bonusId: slotRows.find((row) => row.slot === slot)?.bonusId ?? null,
     }));
     // 冒険の途中は枠を付け替えられない（doc/features/step-bonus.md の枠の付け替え）。
     const adventure = await db
@@ -78,7 +95,7 @@ export function createStepBonusRepository(binding: D1Database) {
           STARTER_HOLDINGS.map((holding) => ({
             userId,
             bonusId: holding.bonusId,
-            rank: holding.rank,
+            multiplierPercent: holding.multiplierPercent,
             acquiredAt: now,
             updatedAt: now,
           })),
@@ -142,15 +159,15 @@ export function createStepBonusRepository(binding: D1Database) {
     return { change, ...(await readState(userId)) };
   }
 
-  // 冒険で手に入れたボーナスを持ち物へ入れる。同じボーナスはランクの高いほうだけを残す。
+  // 冒険で手に入れたボーナスを持ち物へ入れる。同じボーナスは倍率の高いほうだけを残す。
   async function acquire(
     userId: string,
     bonusId: StepBonusId,
-    rank: StepBonusRank,
+    multiplierPercent: number,
     now: string,
   ): Promise<StepBonusAcquired> {
     const existing = await db
-      .select({ rank: stepBonusHoldings.rank })
+      .select({ multiplierPercent: stepBonusHoldings.multiplierPercent })
       .from(stepBonusHoldings)
       .where(
         and(
@@ -160,17 +177,19 @@ export function createStepBonusRepository(binding: D1Database) {
       )
       .get();
     if (!existing) {
-      await db
-        .insert(stepBonusHoldings)
-        .values({ userId, bonusId, rank, acquiredAt: now, updatedAt: now });
+      await db.insert(stepBonusHoldings).values({
+        userId,
+        bonusId,
+        multiplierPercent,
+        acquiredAt: now,
+        updatedAt: now,
+      });
       return "added";
     }
-    if (rankOrder(rank) <= rankOrder(existing.rank as StepBonusRank)) {
-      return "discarded";
-    }
+    if (multiplierPercent <= existing.multiplierPercent) return "discarded";
     await db
       .update(stepBonusHoldings)
-      .set({ rank, updatedAt: now })
+      .set({ multiplierPercent, updatedAt: now })
       .where(
         and(
           eq(stepBonusHoldings.userId, userId),

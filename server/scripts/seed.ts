@@ -4,8 +4,6 @@
 
 import { createHash } from "node:crypto";
 
-type Rank = "E" | "D" | "C" | "B" | "A" | "S";
-
 type SeedCharacter = {
   id: string;
   level: number;
@@ -25,7 +23,10 @@ export type SeedPlayer = {
   party: readonly (string | null)[];
   // 持っている装備（同じ種類を複数持てる）。付けている装備は characters の weapon・armor で指す。
   items: readonly string[];
-  bonuses: readonly { id: string; rank: Rank }[];
+  // items と同じ順の、装備の倍率（百分率の整数。doc/features/inventory.md の品質）。省くと、どれも×1.00。
+  itemMultipliers?: readonly number[];
+  // 持っているボーナスと倍率（百分率の整数）。
+  bonuses: readonly { id: string; multiplierPercent: number }[];
   // ボーナスの5枠。空き枠はnull。
   bonusSlots: readonly (string | null)[];
   records: readonly {
@@ -134,14 +135,19 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       "leather-armor",
       "wooden-shield",
     ],
+    // 品質を見比べられるよう、S・A・B・C がそろう倍率にする。
+    itemMultipliers: [
+      150, 146, 138, 135, 126, 120, 112, 100, 145, 140, 131, 118, 104, 100, 128,
+      109,
+    ],
     bonuses: [
-      { id: "guard", rank: "S" },
-      { id: "luck", rank: "S" },
-      { id: "treasure-sight", rank: "A" },
-      { id: "foresight", rank: "A" },
-      { id: "omen", rank: "B" },
-      { id: "appraisal", rank: "A" },
-      { id: "fighting", rank: "S" },
+      { id: "guard", multiplierPercent: 147 },
+      { id: "luck", multiplierPercent: 147 },
+      { id: "treasure-sight", multiplierPercent: 138 },
+      { id: "foresight", multiplierPercent: 138 },
+      { id: "omen", multiplierPercent: 126 },
+      { id: "appraisal", multiplierPercent: 138 },
+      { id: "fighting", multiplierPercent: 147 },
     ],
     bonusSlots: ["fighting", "luck", "guard", "treasure-sight", "appraisal"],
     records: [{ destinationId: "forest-ruins", bestFloor: 10, clears: 3 }],
@@ -206,9 +212,9 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       "leather-armor",
     ],
     bonuses: [
-      { id: "luck", rank: "B" },
-      { id: "foresight", rank: "C" },
-      { id: "fighting", rank: "D" },
+      { id: "luck", multiplierPercent: 126 },
+      { id: "foresight", multiplierPercent: 112 },
+      { id: "fighting", multiplierPercent: 105 },
     ],
     bonusSlots: ["foresight", "luck", "fighting", null, null],
     records: [{ destinationId: "forest-ruins", bestFloor: 6, clears: 0 }],
@@ -234,7 +240,7 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     ],
     party: ["toma", null, null, null],
     items: ["wooden-sword", "leather-armor"],
-    bonuses: [{ id: "luck", rank: "E" }],
+    bonuses: [{ id: "luck", multiplierPercent: 100 }],
     bonusSlots: ["luck", null, null, null, null],
     records: [],
     weaknesses: [],
@@ -275,6 +281,12 @@ function insert(table: string, rows: readonly Record<string, Value>[]) {
 
 function playerStatements(player: SeedPlayer, now: string) {
   const userId = stableUuid(`seed:${player.id}:user`);
+  if (
+    player.itemMultipliers &&
+    player.itemMultipliers.length !== player.items.length
+  ) {
+    throw new Error(`${player.id}: itemMultipliers の数が items と違います`);
+  }
   const itemIds = player.items.map((_, index) =>
     stableUuid(`seed:${player.id}:item:${index}`),
   );
@@ -379,6 +391,7 @@ function playerStatements(player: SeedPlayer, now: string) {
         id: itemIds[index],
         user_id: userId,
         equipment_id: equipmentId,
+        multiplier_percent: player.itemMultipliers?.[index] ?? 100,
         acquired_at: now,
       })),
     ),
@@ -389,7 +402,7 @@ function playerStatements(player: SeedPlayer, now: string) {
       player.bonuses.map((bonus) => ({
         user_id: userId,
         bonus_id: bonus.id,
-        rank: bonus.rank,
+        multiplier_percent: bonus.multiplierPercent,
         acquired_at: now,
         updated_at: now,
       })),

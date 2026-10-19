@@ -1,7 +1,8 @@
+import { DEFAULT_MAX_MULTIPLIER_PERCENT } from "../../shared/quality.js";
 import type { CharacterId } from "../party/catalog.js";
 
 // 装備の種類と、キャラごとの装備枠。名前・レア度・効果はクライアントの仮データが持ち、
-// サーバーは持っている装備と、どのキャラのどの枠に付けているかの整合だけを判定する（doc/features/equipment.md）。
+// サーバーは持っている装備と1つずつの倍率、どのキャラのどの枠に付けているかの整合を判定する（doc/features/equipment.md）。
 
 export const EQUIPMENT_SLOTS = ["weapon", "armor"] as const;
 
@@ -33,7 +34,14 @@ export function slotOf(id: string): EquipmentSlot | undefined {
   return EQUIPMENT.find((entry) => entry.id === id)?.slot;
 }
 
+// 装備の種類ごとの倍率の上限（百分率）。種類ごとの値が決まるまで、どれも仮の×1.5にする。
+// クライアントの仮データ（EquipmentDefinition の MaxMultiplier）と同じ値にする。
+export function maxMultiplierPercent(_id: EquipmentId): number {
+  return DEFAULT_MAX_MULTIPLIER_PERCENT;
+}
+
 // 最初から持っている装備（1つずつ）と、初めの4人が付けている装備。冒険と商会での入手ができるまでの仮設定。
+// 最初の装備は、どれも倍率×1.00（品質C）にする。
 export const STARTER_ITEMS: readonly EquipmentId[] = EQUIPMENT_IDS;
 
 export const STARTER_EQUIPPED: readonly {

@@ -1,4 +1,4 @@
-import type { StepBonusRank } from "../step-bonus/catalog.js";
+import type { Quality } from "../../shared/quality.js";
 
 // 冒険先と、入口から最奥の間までに通る部屋の数。行き先の数・敵の組み合わせ・報酬は決まっていない
 // （doc/features/stage-progression.md）。
@@ -67,14 +67,14 @@ export function reviveCost(revivesSoFar: number) {
   return REVIVE_COST_BASE * (revivesSoFar + 1);
 }
 
-// 出来事を終えた部屋で手に入れるACTボーナスのランクの重み（仮設定）。
+// 出来事を終えた部屋で手に入れるACTボーナスの品質の重み（仮設定）。倍率は、選んだ品質の幅の中から均等に選ぶ。
 // ボーナスの種類は均等に選ぶ。冒険で手に入る場所と確率は doc/features/step-bonus.md の未決事項。
-export const REWARD_RANK_WEIGHTS: Record<
+export const REWARD_QUALITY_WEIGHTS: Record<
   EventKind,
-  Partial<Record<StepBonusRank, number>>
+  Partial<Record<Quality, number>>
 > = {
-  battle: { E: 40, D: 35, C: 20, B: 5 },
-  elite: { D: 30, C: 40, B: 25, A: 5 },
-  treasure: { D: 30, C: 40, B: 25, A: 5 },
+  battle: { C: 75, B: 20, A: 5 },
+  elite: { C: 30, B: 40, A: 25, S: 5 },
+  treasure: { C: 30, B: 40, A: 25, S: 5 },
   boss: { B: 40, A: 45, S: 15 },
 };

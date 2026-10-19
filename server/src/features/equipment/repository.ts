@@ -1,11 +1,17 @@
 import { and, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import {
+  MIN_MULTIPLIER_PERCENT,
+  multiplierOf,
+  qualityOf,
+} from "../../shared/quality.js";
 import { discoveryStatements } from "../library/discoveries.js";
 import { createPartyRepository } from "../party/repository.js";
 import {
   EQUIPMENT_IDS,
   type EquipmentId,
   type EquipmentSlot,
+  maxMultiplierPercent,
   STARTER_EQUIPPED,
   STARTER_ITEMS,
   slotOf,
@@ -29,6 +35,7 @@ export function createEquipmentRepository(binding: D1Database) {
         .select({
           id: equipmentItems.id,
           equipmentId: equipmentItems.equipmentId,
+          multiplierPercent: equipmentItems.multiplierPercent,
           acquiredAt: equipmentItems.acquiredAt,
         })
         .from(equipmentItems)
@@ -55,7 +62,15 @@ export function createEquipmentRepository(binding: D1Database) {
             order(a.equipmentId) - order(b.equipmentId) ||
             a.id.localeCompare(b.id),
         )
-        .map((item) => ({ id: item.id, equipmentId: item.equipmentId })),
+        .map((item) => ({
+          id: item.id,
+          equipmentId: item.equipmentId,
+          multiplier: multiplierOf(item.multiplierPercent),
+          quality: qualityOf(
+            item.multiplierPercent,
+            maxMultiplierPercent(item.equipmentId as EquipmentId),
+          ),
+        })),
       characters: characterIds.map((id) => ({
         id,
         weapon: worn(id, "weapon"),
@@ -93,6 +108,9 @@ export function createEquipmentRepository(binding: D1Database) {
               id: sql<string>`${ids[index]}`.as("id"),
               userId: equipmentProfiles.userId,
               equipmentId: sql<string>`${equipmentId}`.as("equipment_id"),
+              multiplierPercent: sql<number>`${MIN_MULTIPLIER_PERCENT}`.as(
+                "multiplier_percent",
+              ),
               acquiredAt: sql<string>`${now}`.as("acquired_at"),
             })
             .from(equipmentProfiles)

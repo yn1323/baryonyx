@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   foreignKey,
+  integer,
   primaryKey,
   sqliteTable,
   text,
@@ -19,7 +20,7 @@ export const equipmentProfiles = sqliteTable("equipment_profiles", {
   createdAt: text("created_at").notNull(),
 });
 
-// 持っている装備。同じ種類でも1つずつ別の行にする（レア度や付与効果を個別に持てるようにするため）。
+// 持っている装備。同じ種類でも1つずつ別の行にし、1つずつ倍率（百分率の整数）を持つ（doc/features/inventory.md の品質）。
 export const equipmentItems = sqliteTable(
   "equipment_items",
   {
@@ -28,10 +29,15 @@ export const equipmentItems = sqliteTable(
       .notNull()
       .references(() => appUsers.id),
     equipmentId: text("equipment_id").notNull(),
+    multiplierPercent: integer("multiplier_percent").notNull(),
     acquiredAt: text("acquired_at").notNull(),
   },
   (table) => [
     uniqueIndex("equipment_items_user_item").on(table.userId, table.id),
+    check(
+      "equipment_items_multiplier_check",
+      sql`${table.multiplierPercent} >= 100`,
+    ),
   ],
 );
 

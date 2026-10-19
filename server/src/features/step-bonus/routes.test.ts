@@ -9,7 +9,7 @@ import { createStepBonusRepository } from "./repository.js";
 type State = {
   change?: string;
   slots: { slot: number; bonusId: string | null }[];
-  holdings: { bonusId: string; rank: string }[];
+  holdings: { bonusId: string; multiplier: number; quality: string }[];
   locked: boolean;
 };
 
@@ -44,9 +44,26 @@ describe("ACTボーナスAPI", () => {
     expect(first.slots.map((slot) => slot.bonusId)).toEqual(STARTER_SLOTS);
     expect(first.slots.map((slot) => slot.slot)).toEqual([0, 1, 2, 3, 4]);
     expect(
-      first.holdings.map(({ bonusId, rank }) => ({ bonusId, rank })),
+      first.holdings.map(({ bonusId, multiplier }) => ({
+        bonusId,
+        multiplierPercent: Math.round(multiplier * 100),
+      })),
     ).toEqual(expect.arrayContaining([...STARTER_HOLDINGS]));
     expect(first.holdings).toHaveLength(STARTER_HOLDINGS.length);
+    // 初期のボーナスは、S・A・B・C の品質がそろう（上限×1.5の仮設定）。
+    expect(
+      Object.fromEntries(
+        first.holdings.map(({ bonusId, quality }) => [bonusId, quality]),
+      ),
+    ).toEqual({
+      guard: "S",
+      luck: "A",
+      "treasure-sight": "B",
+      appraisal: "B",
+      foresight: "C",
+      fighting: "C",
+      omen: "C",
+    });
 
     const second = await read(user.token);
     expect(second).toEqual(first);
@@ -119,17 +136,20 @@ describe("ACTボーナスAPI", () => {
     expect(await read(other.token)).toEqual(before);
   });
 
-  it("同じボーナスを手に入れたらランクの高いほうだけを残す", async () => {
+  it("同じボーナスを手に入れたら倍率の高いほうだけを残す", async () => {
     const user = await scenario.login("step-bonus-acquire");
     await read(user.token);
     const repository = createStepBonusRepository(scenario.env.DB);
     const now = new Date().toISOString();
 
-    // 幸運はAから始まる。
-    expect(await repository.acquire(user.userId, "luck", "B", now)).toBe(
+    // 幸運は×1.40（A）から始まる。同じ倍率は残さない。
+    expect(await repository.acquire(user.userId, "luck", 125, now)).toBe(
       "discarded",
     );
-    expect(await repository.acquire(user.userId, "luck", "S", now)).toBe(
+    expect(await repository.acquire(user.userId, "luck", 140, now)).toBe(
+      "discarded",
+    );
+    expect(await repository.acquire(user.userId, "luck", 147, now)).toBe(
       "updated",
     );
     await scenario.env.DB.prepare(
@@ -137,17 +157,15 @@ describe("ACTボーナスAPI", () => {
     )
       .bind(user.userId)
       .run();
-    expect(await repository.acquire(user.userId, "omen", "C", now)).toBe(
+    expect(await repository.acquire(user.userId, "omen", 112, now)).toBe(
       "added",
     );
 
     const holdings = (await read(user.token)).holdings;
-    expect(holdings.find((holding) => holding.bonusId === "luck")?.rank).toBe(
-      "S",
-    );
-    expect(holdings.find((holding) => holding.bonusId === "omen")?.rank).toBe(
-      "C",
-    );
+    const luck = holdings.find((holding) => holding.bonusId === "luck");
+    expect(luck).toMatchObject({ multiplier: 1.47, quality: "S" });
+    const omen = holdings.find((holding) => holding.bonusId === "omen");
+    expect(omen).toMatchObject({ multiplier: 1.12, quality: "C" });
     expect(
       holdings.filter((holding) => holding.bonusId === "luck"),
     ).toHaveLength(1);

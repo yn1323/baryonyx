@@ -17,11 +17,16 @@ type Party = {
   runes: number;
 };
 type Equipment = {
-  items: { id: string; equipmentId: string }[];
+  items: {
+    id: string;
+    equipmentId: string;
+    multiplier: number;
+    quality: string;
+  }[];
   characters: { id: string; weapon: string | null; armor: string | null }[];
 };
 type StepBonus = {
-  holdings: { bonusId: string; rank: string }[];
+  holdings: { bonusId: string; multiplier: number; quality: string }[];
   slots: { slot: number; bonusId: string | null }[];
   locked: boolean;
 };
@@ -87,6 +92,24 @@ describe("開発用のプレイヤー（seed）", () => {
       expect(equipment.items.map((item) => item.equipmentId).sort()).toEqual(
         [...seed.items].sort(),
       );
+      // 装備ごとの倍率（品質）も、そのまま読める。
+      const multipliers = (entries: { id: string; multiplier: number }[]) =>
+        entries.map((entry) => `${entry.id}:${entry.multiplier}`).sort();
+      expect(
+        multipliers(
+          equipment.items.map((item) => ({
+            id: item.equipmentId,
+            multiplier: item.multiplier,
+          })),
+        ),
+      ).toEqual(
+        multipliers(
+          seed.items.map((id, index) => ({
+            id,
+            multiplier: (seed.itemMultipliers?.[index] ?? 100) / 100,
+          })),
+        ),
+      );
       const kind = (itemId: string | null) =>
         equipment.items.find((item) => item.id === itemId)?.equipmentId ?? null;
       expect(
@@ -107,7 +130,10 @@ describe("開発用のプレイヤー（seed）", () => {
       expect(bonus.holdings).toEqual(
         expect.arrayContaining(
           seed.bonuses.map((entry) =>
-            expect.objectContaining({ bonusId: entry.id, rank: entry.rank }),
+            expect.objectContaining({
+              bonusId: entry.id,
+              multiplier: entry.multiplierPercent / 100,
+            }),
           ),
         ),
       );

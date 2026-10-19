@@ -9,7 +9,12 @@ import { STARTER_EQUIPPED, STARTER_ITEMS } from "./catalog.js";
 type State = {
   change?: string;
   from?: string;
-  items: { id: string; equipmentId: string }[];
+  items: {
+    id: string;
+    equipmentId: string;
+    multiplier: number;
+    quality: string;
+  }[];
   characters: { id: string; weapon: string | null; armor: string | null }[];
 };
 
@@ -79,6 +84,12 @@ describe("装備API", () => {
       read(user.token),
     ]);
     expect(first.items.map((item) => item.equipmentId)).toEqual(STARTER_ITEMS);
+    // 最初の装備は、どれも倍率×1.00（品質C）。
+    expect(
+      first.items.every(
+        (item) => item.multiplier === 1 && item.quality === "C",
+      ),
+    ).toBe(true);
     expect(new Set(first.items.map((item) => item.id)).size).toBe(
       STARTER_ITEMS.length,
     );
