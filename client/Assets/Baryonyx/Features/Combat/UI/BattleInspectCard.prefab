@@ -314,6 +314,7 @@ RectTransform:
   m_Children:
   - {fileID: 6298780214765412152}
   - {fileID: 3419166472926340183}
+  - {fileID: 9155497748228196034}
   - {fileID: 2500405178598744141}
   - {fileID: 3965057751387301841}
   - {fileID: 6221842445960639841}
@@ -358,6 +359,7 @@ MonoBehaviour:
   Shade: {fileID: 2709293576086210474}
   Frame: {fileID: 4624699430801738883}
   Art: {fileID: 4827638043472110252}
+  Foil: {fileID: 5331052302697383702}
   Element: {fileID: 5055470477764816046}
   CostDigit: {fileID: 8150438230002721588}
   Owner: {fileID: 8288489541435336460}
@@ -1340,3 +1342,89 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
+--- !u!1 &8017776650577974205
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9155497748228196034}
+  - component: {fileID: 8674410404197286919}
+  - component: {fileID: 3729944377628138954}
+  - component: {fileID: 5331052302697383702}
+  m_Layer: 0
+  m_Name: Foil
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &9155497748228196034
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017776650577974205}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3539806729213964269}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 9, y: -9}
+  m_SizeDelta: {x: 192, y: 174}
+  m_Pivot: {x: 0, y: 1}
+--- !u!222 &8674410404197286919
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017776650577974205}
+  m_CullTransparentMesh: 1
+--- !u!114 &3729944377628138954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017776650577974205}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
+  m_Material: {fileID: 2100000, guid: 21de92a741e5445d2b07e1987aa33f16, type: 2}
+  m_Color: {r: 0.2, g: 0.18945312, b: 0, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Texture: {fileID: -6622703189942226176, guid: 1c71f99b82009e14e8c763b470641745, type: 3}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+--- !u!114 &5331052302697383702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017776650577974205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 052fed6f42f134cfabb8e21545d1d239, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.Cards.CardFoil
+  Rarity: 1

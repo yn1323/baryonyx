@@ -218,24 +218,114 @@ MonoBehaviour:
   - Skill: DivineShield
     Art: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
   - Skill: ManaBurst
-    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 091e6357db2e24eebad383e53557e50d, type: 3}
   - Skill: ManaBurst.1
-    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 57cbd8d9b533f43d9be4d262913649ea, type: 3}
   - Skill: ManaBurst.2
-    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    Art: {fileID: -6622703189942226176, guid: b1d6c53514d66437ca9ecb408cad1428, type: 3}
   - Skill: ManaBurst.3
-    Art: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 3dcc2a747c7c4432d9532996ef46621f, type: 3}
+  - Skill: ManaBurst.4
+    Art: {fileID: -6622703189942226176, guid: 36aeaa29951e9418ba95626b4309b1d8, type: 3}
+  - Skill: ManaBurst.5
+    Art: {fileID: -6622703189942226176, guid: 15a55cde4f0bd4d459a4fb9dae14f073, type: 3}
+  - Skill: ManaBurst.6
+    Art: {fileID: -6622703189942226176, guid: e6e12e76db8994a7b8379803c239ad21, type: 3}
   - Skill: StarFall
-    Art: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+    Art: {fileID: -6622703189942226176, guid: c9326fec5bf4441f48651e91bf8e40dd, type: 3}
+  - Skill: StarFall.1
+    Art: {fileID: -6622703189942226176, guid: 6db9529e6cb33434fb18ab869a244965, type: 3}
+  - Skill: StarFall.2
+    Art: {fileID: -6622703189942226176, guid: b1472089ae8fe44a0925fff0cbde07c7, type: 3}
+  - Skill: StarFall.3
+    Art: {fileID: -6622703189942226176, guid: 0b415c7ced41d4389889a581574d2c98, type: 3}
+  - Skill: StarFall.4
+    Art: {fileID: -6622703189942226176, guid: e7a61268d34704e7a8629a40b2666a28, type: 3}
+  - Skill: StarFall.5
+    Art: {fileID: -6622703189942226176, guid: ece8881b2a7d84df780788d79580ac62, type: 3}
+  - Skill: StarFall.6
+    Art: {fileID: -6622703189942226176, guid: 1c0e557adc03540ca9ef10c344207dde, type: 3}
   - Skill: ThunderArrow
-    Art: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 5bfefae7593a44d73beb8dae84143834, type: 3}
+  - Skill: ThunderArrow.1
+    Art: {fileID: -6622703189942226176, guid: 77e30ea34fd8c45e288b4579e8e40456, type: 3}
+  - Skill: ThunderArrow.2
+    Art: {fileID: -6622703189942226176, guid: d719e9504ba644c66a82af27fbbb32f1, type: 3}
+  - Skill: ThunderArrow.3
+    Art: {fileID: -6622703189942226176, guid: 4833dfe83d6634937b3e0b72dcc67e93, type: 3}
+  - Skill: ThunderArrow.4
+    Art: {fileID: -6622703189942226176, guid: 3528ac119605841f3bf655c35f3ada6d, type: 3}
+  - Skill: ThunderArrow.5
+    Art: {fileID: -6622703189942226176, guid: d5ae01df2ae07404a863c17246264d55, type: 3}
+  - Skill: ThunderArrow.6
+    Art: {fileID: -6622703189942226176, guid: 670ccbfd37b514430a7f7c8012924e71, type: 3}
   - Skill: ArrowStorm
-    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 2cceb918e7f8b4de0a34f27bb0a9f330, type: 3}
+  - Skill: ArrowStorm.1
+    Art: {fileID: -6622703189942226176, guid: 4dfbd7500bfa14ea4ba4cda751dc9a23, type: 3}
+  - Skill: ArrowStorm.2
+    Art: {fileID: -6622703189942226176, guid: 271f1c5a7b9e4434cbe6b7c9e8e6d98b, type: 3}
+  - Skill: ArrowStorm.3
+    Art: {fileID: -6622703189942226176, guid: 65fc865d0fa434209a541d38eeed2e9c, type: 3}
+  - Skill: ArrowStorm.4
+    Art: {fileID: -6622703189942226176, guid: 098b0ee5ca7824eeba8b000199267c74, type: 3}
+  - Skill: ArrowStorm.5
+    Art: {fileID: -6622703189942226176, guid: a15c78dde79b04691869e6178c2e541e, type: 3}
+  - Skill: ArrowStorm.6
+    Art: {fileID: -6622703189942226176, guid: bb5fb433f2a0b485690053a54334a94c, type: 3}
   - Skill: ShieldStance
-    Art: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 206ac09fd573047a7839759253664778, type: 3}
+  - Skill: ShieldStance.1
+    Art: {fileID: -6622703189942226176, guid: 212f2ed679ae443a1a173ebc0648b0a1, type: 3}
+  - Skill: ShieldStance.2
+    Art: {fileID: -6622703189942226176, guid: 9cf0b6f6ff0054559bce7df0c4c83f51, type: 3}
+  - Skill: ShieldStance.3
+    Art: {fileID: -6622703189942226176, guid: 3a046e1322517428a9d91fa577bdb76b, type: 3}
+  - Skill: ShieldStance.4
+    Art: {fileID: -6622703189942226176, guid: daef87b9b869a4e1c9bab244356ec2c0, type: 3}
+  - Skill: ShieldStance.5
+    Art: {fileID: -6622703189942226176, guid: 0b91fc1e09602409aa46a8741dbee949, type: 3}
+  - Skill: ShieldStance.6
+    Art: {fileID: -6622703189942226176, guid: b4a6dd1763a41461ab0807241c903ee6, type: 3}
   - Skill: Issen
-    Art: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+    Art: {fileID: -6622703189942226176, guid: e6d36a224483744db8fd6b476030e6b6, type: 3}
+  - Skill: Issen.1
+    Art: {fileID: -6622703189942226176, guid: 45efc59bdda1648c3a105eaa420f5b76, type: 3}
+  - Skill: Issen.2
+    Art: {fileID: -6622703189942226176, guid: 94aad96d918044cd5a07fa24eb92f45c, type: 3}
+  - Skill: Issen.3
+    Art: {fileID: -6622703189942226176, guid: 5be7cf1c221a4412fbe9d617a60a69ad, type: 3}
+  - Skill: Issen.4
+    Art: {fileID: -6622703189942226176, guid: 7bcbf633245844f978ae1e8802f1e1c8, type: 3}
+  - Skill: Issen.5
+    Art: {fileID: -6622703189942226176, guid: 2a4f582e95ff24aa4a65b359b3b7698f, type: 3}
+  - Skill: Issen.6
+    Art: {fileID: -6622703189942226176, guid: 644fcf86bee044c92be2774d223af907, type: 3}
   - Skill: HealingWind
-    Art: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+    Art: {fileID: -6622703189942226176, guid: e996becdeaf5342039270e1cad65bde8, type: 3}
+  - Skill: HealingWind.1
+    Art: {fileID: -6622703189942226176, guid: 517eee12997e94521b7993c1b6c84f52, type: 3}
+  - Skill: HealingWind.2
+    Art: {fileID: -6622703189942226176, guid: 002d0e937a7d74ac5a156ee80f54069e, type: 3}
+  - Skill: HealingWind.3
+    Art: {fileID: -6622703189942226176, guid: cd192672f9ae24a27b88f3497ad63bb3, type: 3}
+  - Skill: HealingWind.4
+    Art: {fileID: -6622703189942226176, guid: 850b111ce01ee45b4849551496bc8d0a, type: 3}
+  - Skill: HealingWind.5
+    Art: {fileID: -6622703189942226176, guid: 38f04ba2446c849048a5b5231cb598bf, type: 3}
+  - Skill: HealingWind.6
+    Art: {fileID: -6622703189942226176, guid: d104c01af2e4240e58c5a25e0a37b8db, type: 3}
   - Skill: Revive
-    Art: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+    Art: {fileID: -6622703189942226176, guid: 87cdbc792d88245bb95a1d01386c6edf, type: 3}
+  - Skill: Revive.1
+    Art: {fileID: -6622703189942226176, guid: 446534ec5ecc744a385d5b611aabe98d, type: 3}
+  - Skill: Revive.2
+    Art: {fileID: -6622703189942226176, guid: c8d40f1fe4b5a419a93c5ef1dce4fa84, type: 3}
+  - Skill: Revive.3
+    Art: {fileID: -6622703189942226176, guid: 3bdf5010649eb44ec991857230969536, type: 3}
+  - Skill: Revive.4
+    Art: {fileID: -6622703189942226176, guid: 690b22c2b67994fdfb5e0ad1c550f367, type: 3}
+  - Skill: Revive.5
+    Art: {fileID: -6622703189942226176, guid: f2d3d5aea06b1415c968ef97a62ed51f, type: 3}
+  - Skill: Revive.6
+    Art: {fileID: -6622703189942226176, guid: be04ac960400d4da0b2d4923a2598d4f, type: 3}
