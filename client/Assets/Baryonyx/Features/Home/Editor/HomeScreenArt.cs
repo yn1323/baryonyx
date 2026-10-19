@@ -10,11 +10,11 @@ namespace Baryonyx.Home.Editor
     /// Images owned by the home screen, drawn from code and saved as PNG so the showcase can
     /// list them and regeneration stays reproducible. The campfire and the rune sparkle are
     /// point-filtered pixel art; the shades are smooth. The navigation icons are plain white
-    /// shapes without outlines, drawn as tools (sword and shield, scales, a summoning circle)
-    /// on a 64-unit design square and tinted by the screen. The rune icon is shared game art
-    /// and the compass is shared pixel art, both drawn in Aseprite, so regeneration only fixes
-    /// their import settings; the rune uses mipmaps because the flying runes shrink below its
-    /// drawn size. Shapes, shades and icons that other screens use too come from
+    /// shapes without outlines, drawn as tools (sword and shield, scales, a summoning circle,
+    /// fanned cards for the skill debugging room) on a 64-unit design square and tinted by the
+    /// screen. The rune icon is shared game art and the compass is shared pixel art, both drawn
+    /// in Aseprite, so regeneration only fixes their import settings; the rune uses mipmaps
+    /// because the flying runes shrink below its drawn size. Shapes, shades and icons that other screens use too come from
     /// <see cref="UiArt"/>.
     /// </summary>
     public static class HomeScreenArt
@@ -31,6 +31,9 @@ namespace Baryonyx.Home.Editor
         public const string IconShopPath = ArtFolder + "/IconShop.png";
         public const string IconSummonPath = ArtFolder + "/IconSummon.png";
         public const string IconLibraryPath = ArtFolder + "/IconLibrary.png";
+
+        // The skill debugging room, opened from under the settings at the top right.
+        public const string IconSkillLabPath = ArtFolder + "/IconSkillLab.png";
 
         // Drawn at twice the 96 px the buttons show them at, so they stay sharp on larger
         // screens and shrink smoothly with mipmaps.
@@ -95,6 +98,24 @@ namespace Baryonyx.Home.Editor
                     2.4f
                 );
 
+        // The skill debugging room, where every skill's card is played: two cards fanned out,
+        // the front one marked with a four-pointed star.
+        private static VectorIcon SkillCards()
+        {
+            IconShape Back(IconShape part) => part.Rotated(-14f, 24f, 32f);
+            IconShape Front(IconShape part) => part.Rotated(10f, 38f, 34f);
+            return new VectorIcon()
+                .Fill(Back(IconShape.Rect(10f, 9f, 28f, 42f)))
+                .Fill(Front(IconShape.Rect(24f, 12f, 29f, 44f)), PartGap)
+                .Cut(
+                    Front(
+                        IconShape.Path(
+                            "M38.5 22 Q39.8 32.7 50 34 Q39.8 35.3 38.5 46 Q37.2 35.3 27 34 Q37.2 32.7 38.5 22Z"
+                        )
+                    )
+                );
+        }
+
         // The same 11x14 campfire as the design mock, split where the flame meets the logs: the
         // flame's bottom row and the logs' top row share a row of the picture without overlapping.
         // Flame: outer red, orange, yellow, white core (11x12, the top of the campfire).
@@ -142,6 +163,7 @@ namespace Baryonyx.Home.Editor
             Scales().Save(IconShopPath, NavIconTextureSize);
             SummoningCircle().Save(IconSummonPath, NavIconTextureSize);
             OpenBook().Save(IconLibraryPath, NavIconTextureSize);
+            SkillCards().Save(IconSkillLabPath, NavIconTextureSize);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
             ArtAssets.WritePattern(

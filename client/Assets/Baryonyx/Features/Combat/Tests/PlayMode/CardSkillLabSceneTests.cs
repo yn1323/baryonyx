@@ -62,9 +62,12 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator AnySkillPickedFromTheListCutsShortTheOnePlayingAndIsRemembered()
         {
             CardSkillLab lab = null;
+            // ホームから開くときのシャッターが開ききってから押す。
             yield return SceneTests.Load<CardSkillLab>(
                 ScenePath,
-                found => found.SkillButtons.Count > 0,
+                found =>
+                    found.SkillButtons.Count > 0
+                    && (found.Transition == null || !found.Transition.IsPlaying),
                 found => lab = found
             );
             var all = CardSkillLab.Skills;
@@ -72,8 +75,8 @@ namespace Baryonyx.Tests.PlayMode
             for (int i = 0; i < all.Count; i++)
                 Assert.That(
                     lab.SkillButtons[i].transform.parent,
-                    Is.SameAs(lab.Columns[(int)all[i].User]),
-                    all[i].Name + " is under its user."
+                    Is.SameAs(lab.TabContents[CardSkillLab.TabOf(i)]),
+                    all[i].Name + " is on its tab."
                 );
             Assert.That(lab.Index, Is.Zero, "With nothing remembered, the first skill plays.");
             Assert.That(lab.Playing, Is.True);
@@ -99,15 +102,31 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(control.transform);
             }
 
-            // The list opens over the stage, and a skill picked there plays at once.
+            // The list opens over the stage on the tab of the skill playing; the other tab shows
+            // the unique skills' stages, and the list scrolls with a swipe.
             lab.ListButton.onClick.Invoke();
             Assert.That(lab.PickerOpen, Is.True);
+            Assert.That(lab.Tab, Is.Zero, "It opens on the card skills.");
+            Assert.That(
+                lab.ListButton.gameObject.activeInHierarchy,
+                Is.False,
+                "The row of controls hides under the list."
+            );
+            Assert.That(lab.TabContents[0].gameObject.activeSelf, Is.True);
+            Assert.That(lab.TabContents[1].gameObject.activeSelf, Is.False);
+            Assert.That(lab.Scroll.vertical, Is.True);
+            lab.Tabs[1].Button.onClick.Invoke();
+            Assert.That(lab.Tab, Is.EqualTo(1));
+            Assert.That(lab.Scroll.content, Is.SameAs(lab.TabContents[1]));
+            Assert.That(lab.TabContents[0].gameObject.activeSelf, Is.False);
+            lab.Tabs[0].Button.onClick.Invoke();
             // A graphic just shown takes taps once it has been drawn.
             yield return null;
             int meteor = Enumerable.Range(0, all.Count).Single(i => all[i].Id == "Meteor");
             AssertReachable(lab.SkillButtons[meteor]);
             lab.SkillButtons[meteor].onClick.Invoke();
             Assert.That(lab.PickerOpen, Is.False, "The list closes on a pick.");
+            Assert.That(lab.ListButton.gameObject.activeInHierarchy, Is.True);
             Assert.That(lab.Current.Id, Is.EqualTo("Meteor"));
             Assert.That(lab.Playing, Is.True);
             Assert.That(lab.Caption.text, Does.Contain("メテオ"));

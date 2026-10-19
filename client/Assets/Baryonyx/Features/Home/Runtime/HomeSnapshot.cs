@@ -18,6 +18,9 @@ namespace Baryonyx.Home
         TravelOffice,
         Resume,
         Library,
+
+        // 公開前の確認用に、スキルのデバッグルームを開く。
+        SkillLab,
     }
 
     /// <summary>

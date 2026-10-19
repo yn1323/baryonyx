@@ -1,8 +1,10 @@
 using System;
 using Baryonyx.Combat.Editor;
+using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Stages.Editor;
+using Baryonyx.UI.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,7 +14,7 @@ namespace Baryonyx.App.Editor
     /// Rebuilds CardSkillLab.unity, the debugging room for the card skills' effects: the lab's
     /// screen (<see cref="CardSkillLabAssets"/>) on the battle's 3D stone circle on the highland at
     /// dusk, with the battle's camera, lens and grade, so an effect looks as it does in battle
-    /// without the rest of BattleInspect.
+    /// without the rest of BattleInspect. Home's button opens it, and its own button goes back.
     /// </summary>
     public static class CardSkillLabSceneSetup
     {
@@ -70,6 +72,16 @@ namespace Baryonyx.App.Editor
                         .AddVolume(scene, "StageLookVolume", StageSetAssets.DuskHighlandLookPath)
                         .priority = 1f;
                     ScreenScenes.AddEventSystem(scene);
+                    // Opened from home's button, it comes in behind the shutter and goes back
+                    // the same way.
+                    var lab = screen.GetComponent<CardSkillLab>();
+                    lab.Transition = SceneTransitionAssets.AddTransition(
+                        scene,
+                        startCovered: true,
+                        revealOnStart: true
+                    );
+                    lab.HomeSceneName = SceneNames.Home;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(lab);
                 }
             );
 

@@ -18,7 +18,7 @@ namespace Baryonyx.App
     /// bottom right resumes the adventure in progress in the exploration scene, or, with none,
     /// opens the travel office to set out from. The tavern, workshop and temple buttons open
     /// their guide screen scenes behind the shutter, with today's ACT handed over for the
-    /// tavern's bonus settings.
+    /// tavern's bonus settings; the button under the settings opens the skill debugging room.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
@@ -130,7 +130,7 @@ namespace Baryonyx.App
 
         private bool OpenScreen(HomeAction action)
         {
-            var scene = SceneNames.GuideFor(action);
+            var scene = SceneNames.ScreenFor(action);
             if (scene == null)
                 return false;
             StepBonusSession.TodayAct = presenter?.TodayAct;

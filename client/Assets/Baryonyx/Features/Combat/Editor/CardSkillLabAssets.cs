@@ -5,8 +5,10 @@ using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
+using Baryonyx.UI.GuideMenu.Editor;
 using Baryonyx.Vfx.Hd2d.Editor;
 using TMPro;
 using UnityEditor;
@@ -20,8 +22,9 @@ namespace Baryonyx.Combat.Editor
     /// The card skill lab's screen (CardSkillLabScreen.prefab), a debugging room for the card
     /// skills' effects: the battle's stage with the party and the enemies where they stand in
     /// battle and the effects' layers among them, as on BattleInspectScreen, and over it only the
-    /// lab's controls (<see cref="CardSkillLab"/>): the skill playing at the top, a row of buttons
-    /// at the bottom and the list of every skill by user, opened from the row.
+    /// lab's controls (<see cref="CardSkillLab"/>): the skill playing at the top, the way back to
+    /// home at the top left, a row of buttons at the bottom and the list of every skill as its
+    /// card on two tabs, opened from the row.
     /// </summary>
     public static class CardSkillLabAssets
     {
@@ -31,9 +34,18 @@ namespace Baryonyx.Combat.Editor
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
 
         // The row's buttons and the list's close button are as tall as a finger needs
-        // (doc/rules/ui-design.md). The list's rows are lower, so all 50 fit without scrolling:
-        // the lab is a tool for the Editor's mouse first.
+        // (doc/rules/ui-design.md). The list's cards are larger still.
         private const float ControlHeight = 128f;
+
+        // The list's cards: the battle's card (70x98 dots at 3 px) at 0.8, in cells with room
+        // for the gold glow of the one picked. The card skills go 8 to a row; the unique skills
+        // 7, so each row is one evolution tree (its first stage, then the branches' steps).
+        private const float CardScale = 0.8f;
+        private static readonly Vector2 Cell = new(
+            70 * 3 * CardScale + 12f,
+            98 * 3 * CardScale + 12f
+        );
+        private const float CellGap = 18f;
 
         // The enemies' names in the lab's controls, by their art's name.
         private static readonly Dictionary<string, string> EnemyNames = new()
@@ -79,8 +91,15 @@ namespace Baryonyx.Combat.Editor
 
                 var safe = SafeArea(screen);
                 BuildCaption(safe, lab);
+                BuildHome(safe, lab);
                 BuildControls(safe, lab);
                 BuildPicker(screen, lab);
+                lab.HiddenWhilePicking = new[]
+                {
+                    lab.Caption.gameObject,
+                    lab.Detail.gameObject,
+                    lab.ListButton.transform.parent.gameObject,
+                };
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
@@ -218,6 +237,33 @@ namespace Baryonyx.Combat.Editor
             lab.Detail = detail;
         }
 
+        /// <summary>
+        /// The button back to home at the top left, beside the caption. The list covers it while
+        /// open; the scene sets where it goes, and without that it stays hidden.
+        /// </summary>
+        private static void BuildHome(RectTransform safe, CardSkillLab lab)
+        {
+            var home = Rect("Home", safe);
+            Corner(
+                home,
+                new Vector2(0f, 1f),
+                new Vector2(60f, -12f),
+                new Vector2(200f, ControlHeight)
+            );
+            var (button, _, card) = LabCard(home);
+            Stretch(
+                Label(
+                    card,
+                    "Label",
+                    "ホームへ",
+                    34,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.Center
+                ).rectTransform
+            );
+            lab.HomeButton = button;
+        }
+
         private static void Top(RectTransform rect, float y, Vector2 size)
         {
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
@@ -298,16 +344,17 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// The list of every skill over the whole screen: a column for each user (in
-        /// <see cref="CardUser"/>'s order) under the user's name, filled with a button per skill
-        /// as the lab starts, so a skill added to the catalog shows without building this again.
+        /// The list of every skill over the whole screen, as the battle's cards: a tab for the
+        /// card skills and one for the unique skills' stages, each a grid scrolled up and down
+        /// with a swipe. The cards are filled in as the lab starts, so a skill added to the catalog
+        /// shows without building this again; their art is baked here, in the skills' order.
         /// </summary>
         private static void BuildPicker(RectTransform screen, CardSkillLab lab)
         {
             var picker = Rect("Picker", screen);
             Stretch(picker);
             // Takes the taps, so nothing behind it is pressed while choosing.
-            AddImage(picker, new Color(0.02f, 0.03f, 0.06f, 0.9f), true);
+            AddImage(picker, new Color(0.02f, 0.03f, 0.06f, 0.96f), true);
             var safe = SafeArea(picker);
 
             var title = Label(safe, "Title", "スキルを選ぶ", 44, Gold, TextAlignmentOptions.Left);
@@ -331,77 +378,97 @@ namespace Baryonyx.Combat.Editor
                 ).rectTransform
             );
 
-            var columns = Rect("Columns", safe);
-            Stretch(columns);
-            columns.offsetMin = new Vector2(60f, 32f);
-            columns.offsetMax = new Vector2(-60f, -150f);
-            var row = columns.gameObject.AddComponent<HorizontalLayoutGroup>();
-            row.spacing = 24f;
-            row.childControlWidth = row.childControlHeight = true;
-            row.childForceExpandWidth = row.childForceExpandHeight = true;
+            int uniques = UniqueSkillTrees.Stages().Count();
+            lab.Tabs = GuideFrameAssets.Tabs(
+                safe,
+                "Tabs",
+                new[] { $"カードスキル　{CardSkills.All.Count}", $"固有スキル　{uniques}" },
+                60f,
+                112f,
+                400f,
+                76f,
+                1680f
+            );
 
-            var colors = BattleInspectAssets.Allies.ToDictionary(
-                ally => ally.User,
-                ally => ally.Color
+            // Swiping anywhere over the list scrolls it, between the cards too (the viewport
+            // takes the taps).
+            var viewport = GuidePanelLayout.Viewport(
+                safe,
+                new Vector2(60f, 24f),
+                new Vector2(-60f, -204f)
             );
-            var labels = BattleInspectAssets.Allies.ToDictionary(
-                ally => ally.User,
-                ally => ally.Label
-            );
-            var users = (CardUser[])Enum.GetValues(typeof(CardUser));
-            var columnRects = new RectTransform[users.Length];
-            foreach (var user in users)
-            {
-                var column = Rect("Column" + user, columns);
-                var list = column.gameObject.AddComponent<VerticalLayoutGroup>();
-                list.spacing = 6f;
-                list.childAlignment = TextAnchor.UpperCenter;
-                list.childControlWidth = true;
-                list.childForceExpandWidth = true;
-                list.childControlHeight = false;
-                list.childForceExpandHeight = false;
-                var header = Label(
-                    column,
-                    "User",
-                    labels.TryGetValue(user, out var name) ? name : user.ToString(),
-                    36,
-                    colors.TryGetValue(user, out var color) ? color : UiPalette.TextMain,
-                    TextAlignmentOptions.Left
-                );
-                header.rectTransform.sizeDelta = new Vector2(0f, 52f);
-                columnRects[(int)user] = column;
-            }
-            lab.Columns = columnRects;
-            lab.SkillTemplate = SkillButton(safe);
+            var padding = new RectOffset(0, 0, 12, 32);
+            var cards = GuidePanelLayout.Grid(viewport, "CardSkills", Cell, CellGap, padding, 8);
+            var trees = GuidePanelLayout.Grid(viewport, "UniqueSkills", Cell, CellGap, padding, 7);
+            foreach (var content in new[] { cards, trees })
+                content.GetComponent<GridLayoutGroup>().childAlignment = TextAnchor.UpperCenter;
+            trees.gameObject.SetActive(false);
+            lab.TabContents = new[] { cards, trees };
+            lab.Scroll = GuidePanelLayout.Scroll(viewport, viewport, cards);
+            lab.Tabs[0].Chosen = true;
+
+            lab.CardTemplate = CardButton(safe);
+            BakeCardArt(lab);
             lab.Picker = picker.gameObject;
         }
 
-        /// <summary>The model of a skill's button: its number and name, and its cost on the right.</summary>
-        private static Button SkillButton(RectTransform parent)
+        /// <summary>
+        /// The model of a skill's card in the list: a button the size of a cell, a gold glow
+        /// behind (shown while it is picked), and the battle's card over it, without the hand's
+        /// drag (so a swipe over it scrolls the list).
+        /// </summary>
+        private static Button CardButton(RectTransform parent)
         {
-            var rect = Rect("SkillTemplate", parent);
-            rect.sizeDelta = new Vector2(400f, 56f);
-            // 選んでいるスキルは、Play中にカードの金の縁と光で示す（GlassCard.Selected）。
-            var (button, _, card) = LabCard(rect);
-            // Small enough that the longest name (チェインライトニング) stays clear of the cost.
-            var name = Label(
-                card,
-                "Name",
-                "1　斬り払い",
-                28,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Left
-            );
-            Stretch(name.rectTransform);
-            name.rectTransform.offsetMin = new Vector2(18f, 0f);
-            name.rectTransform.offsetMax = new Vector2(-64f, 0f);
-            var cost = Label(card, "Cost", "1", 28, Gold, TextAlignmentOptions.Right);
-            cost.rectTransform.anchorMin = new Vector2(1f, 0f);
-            cost.rectTransform.anchorMax = Vector2.one;
-            cost.rectTransform.offsetMin = new Vector2(-64f, 0f);
-            cost.rectTransform.offsetMax = new Vector2(-18f, 0f);
+            var rect = Rect("CardTemplate", parent);
+            rect.sizeDelta = Cell;
+            var hit = AddImage(rect, Color.clear, true);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            button.transition = Selectable.Transition.None;
+
+            var glow = Rect(CardSkillLab.SelectedName, rect);
+            Stretch(glow);
+            AddImage(glow, new Color(Gold.r, Gold.g, Gold.b, 0.55f), false);
+            glow.gameObject.SetActive(false);
+
+            var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, "Card", rect);
+            var card = (RectTransform)instance.transform;
+            card.anchorMin = card.anchorMax = card.pivot = new Vector2(0.5f, 0.5f);
+            card.anchoredPosition = Vector2.zero;
+            card.localScale = Vector3.one * CardScale;
+            var input = instance.GetComponent<BattleInspectCardInput>();
+            if (input != null)
+                UnityEngine.Object.DestroyImmediate(input);
             rect.gameObject.SetActive(false);
             return button;
+        }
+
+        /// <summary>
+        /// The art the list's cards show, which the lab cannot load in Play: each skill's art in
+        /// <see cref="CardSkillLab.Skills"/>' order (a unique skill's stage has art of its own),
+        /// and the frame and element icon of every element.
+        /// </summary>
+        private static void BakeCardArt(CardSkillLab lab)
+        {
+            lab.CardArts = CardSkillLab
+                .Skills.Select(skill =>
+                    (Texture)
+                        BattleInspectAssets.Art(
+                            UniqueSkillTrees.FindStage(skill.Id)?.Art ?? skill.Art
+                        )
+                )
+                .ToArray();
+            var elements = (CardElement[])Enum.GetValues(typeof(CardElement));
+            lab.CardFrames = elements
+                .Select(element => (Texture)BattleInspectAssets.Art("CardFrame" + element))
+                .ToArray();
+            lab.ElementIcons = elements
+                .Select(element =>
+                    element == CardElement.None
+                        ? null
+                        : (Texture)BattleInspectAssets.Art("Element" + element)
+                )
+                .ToArray();
         }
     }
 }

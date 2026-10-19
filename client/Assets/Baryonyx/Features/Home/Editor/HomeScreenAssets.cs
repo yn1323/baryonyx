@@ -605,6 +605,27 @@ namespace Baryonyx.Home.Editor
             );
             Place((RectTransform)gear.transform, Vector2.zero, new Vector2(40, 40));
 
+            // The skill debugging room, for trying the skills before release: a round button like
+            // the settings, under it, far enough that their widened touch areas do not overlap.
+            var skillLab = Rect("SkillLabButton", safe);
+            Corner(skillLab, Vector2.one, new Vector2(-64, -(40 + 88 + 40)), new Vector2(88, 88));
+            HitArea(skillLab, 20, 20);
+            var skillLabSpot = SpriteImage(
+                skillLab,
+                UiArt.SoftSpotPath,
+                new Color(0.012f, 0.02f, 0.04f, 0.8f)
+            );
+            skillLabSpot.raycastTarget = true;
+            view.SkillLabButton = AddTintButton(skillLab, skillLabSpot);
+            var cards = Icon(
+                skillLab,
+                "SkillLabIcon",
+                HomeScreenArt.IconSkillLabPath,
+                52,
+                UiPalette.TextMain
+            );
+            Place((RectTransform)cards.transform, Vector2.zero, new Vector2(52, 52));
+
             var pill = Rect("RunePill", safe);
             Corner(pill, Vector2.one, new Vector2(-(64 + 88 + 16), -40), new Vector2(0, 88));
             // The same soft dark plate as the step panel, but reaching past the pill with a

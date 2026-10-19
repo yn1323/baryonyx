@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
+using Baryonyx.UI.Cards;
 using Baryonyx.UI.EditModePreview;
+using Baryonyx.UI.GuideMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,8 +19,9 @@ namespace Baryonyx.Combat.Presentation
     /// numbers). A skill picked while another plays cuts it short. The skill last picked, how
     /// hard its blows land, the enemy it aims at and whether it repeats are remembered, so the
     /// next Play after a change to the effect's code shows the same skill again.
-    /// While stopped, the list can be shown closed, or open with its skills
-    /// (doc/rules/ui-design.md#停止中の表示の切り替え).
+    /// The list shows every skill as its card, on two tabs (the card skills, and the unique
+    /// skills' stages a tree to a row), scrolled up and down with a swipe. While stopped, it can
+    /// be shown closed, or open on either tab (doc/rules/ui-design.md#停止中の表示の切り替え).
     /// </summary>
     public sealed class CardSkillLab : MonoBehaviour, IEditModePreview
     {
@@ -64,17 +67,49 @@ namespace Baryonyx.Combat.Presentation
         public Button RepeatButton;
         public TMP_Text RepeatLabel;
 
+        [Header("ホームへ戻る")]
+        [Tooltip(
+            "ホームへ戻るボタン。一覧を開いているあいだと、戻り先のシーンがないとき（展示室のPrefabなど）は隠す。"
+        )]
+        public Button HomeButton;
+
+        [Tooltip("戻るときにシーンを覆う遷移の演出。")]
+        public SceneTransitionController Transition;
+
+        [Tooltip("戻り先のシーンの名前。空なら戻るボタンを隠す。")]
+        public string HomeSceneName = "";
+
         [Header("スキルの一覧")]
         [Tooltip("スキルの一覧。スキルを押すと、それを再生して閉じる。")]
         public GameObject Picker;
 
         public Button CloseButton;
 
-        [Tooltip("使い手ごとの列（CardUserの順）。スキルのボタンを並べる。")]
-        public RectTransform[] Columns = new RectTransform[0];
+        [Tooltip(
+            "一覧を開いているあいだ隠す、上の表示と下の操作の列。一覧に重なって読みにくくなるため。"
+        )]
+        public GameObject[] HiddenWhilePicking = new GameObject[0];
 
-        [Tooltip("スキルのボタンの見本。使い手の列へ、スキルごとに複製する。")]
-        public Button SkillTemplate;
+        [Tooltip("一覧のタブ（カードスキル、固有スキル）。")]
+        public GuideTab[] Tabs = new GuideTab[0];
+
+        [Tooltip("タブごとのカードの並び（Tabsと同じ順）。開いているタブの並びだけを出す。")]
+        public RectTransform[] TabContents = new RectTransform[0];
+
+        [Tooltip("一覧を上下にスワイプで動かす。中身は開いているタブの並び。")]
+        public ScrollRect Scroll;
+
+        [Tooltip(
+            "一覧のカードの見本（押せる枠、選んだときの金の光、戦闘と同じカード）。スキルごとに複製する。"
+        )]
+        public Button CardTemplate;
+
+        [Tooltip("カードの挿絵（Skillsと同じ順）。")]
+        public Texture[] CardArts = new Texture[0];
+
+        [Tooltip("カードの枠と属性のアイコン（CardElementの順。属性なしのアイコンは空）。")]
+        public Texture[] CardFrames = new Texture[0];
+        public Texture[] ElementIcons = new Texture[0];
 
         [Tooltip("くり返すとき、1回の再生が終わってから次の再生までの間（秒）。")]
         [Min(0f)]
@@ -96,6 +131,9 @@ namespace Baryonyx.Combat.Presentation
             .All.Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card))
             .ToArray();
 
+        /// <summary>The tab a skill is on: 0 for a card skill, 1 for a unique skill's stage.</summary>
+        public static int TabOf(int skill) => skill < CardSkills.All.Count ? 0 : 1;
+
         /// <summary>The skill picked now, its place in <see cref="Skills"/>.</summary>
         public int Index => index;
 
@@ -113,11 +151,22 @@ namespace Baryonyx.Combat.Presentation
 
         public bool PickerOpen => Picker != null && Picker.activeSelf;
 
+        /// <summary>The tab shown in the list.</summary>
+        public int Tab { get; private set; }
+
         /// <summary>One button per skill, in <see cref="Skills"/>'s order.</summary>
         public IReadOnlyList<Button> SkillButtons => skillButtons;
 
+        private bool HasHome => !string.IsNullOrWhiteSpace(HomeSceneName);
+
+        /// <summary>Whether the home button was pressed and the lab is leaving for home.</summary>
+        public bool Leaving { get; private set; }
+
         private void Start()
         {
+            Listen(HomeButton, GoHome);
+            if (HomeButton != null)
+                HomeButton.gameObject.SetActive(!PickerOpen && HasHome);
             if (Vfx == null || Party.Length == 0 || Enemies.Length == 0)
                 return;
             foreach (var actor in Actors)
@@ -131,6 +180,12 @@ namespace Baryonyx.Combat.Presentation
             Listen(TargetButton, CycleTarget);
             Listen(RepeatButton, () => SetRepeat(!repeat));
             Listen(CloseButton, ClosePicker);
+            for (int t = 0; t < Tabs.Length; t++)
+            {
+                int tab = t;
+                if (Tabs[t] != null)
+                    Listen(Tabs[t].Button, () => ShowTab(tab));
+            }
             Load();
             ClosePicker();
             Play(index);
@@ -158,6 +213,24 @@ namespace Baryonyx.Combat.Presentation
         }
 
         public void Replay() => Play(index);
+
+        /// <summary>
+        /// Goes back to home behind the shutter, ending the skill playing so it does not repeat
+        /// while the shutter closes. If home cannot be loaded, the lab stays as it was.
+        /// </summary>
+        public void GoHome()
+        {
+            if (Leaving)
+                return;
+            Leaving = SceneLoader.Load(HomeSceneName, Transition, this, () => Leaving = false);
+            if (!Leaving)
+                return;
+            StopAllCoroutines();
+            routine = null;
+            playing = false;
+            if (Vfx != null)
+                Vfx.Clear();
+        }
 
         public void Next() => Play(index + 1);
 
@@ -192,16 +265,61 @@ namespace Baryonyx.Combat.Presentation
                 Replay();
         }
 
+        /// <summary>Opens the list on the tab of the skill playing, scrolled to its card.</summary>
         public void OpenPicker()
         {
-            if (Picker != null)
-                Picker.SetActive(true);
+            SetPicking(true);
+            ShowTab(TabOf(index));
+            ScrollTo(index);
         }
 
-        public void ClosePicker()
+        /// <summary>Shows the cards of <paramref name="tab"/>, from the top.</summary>
+        public void ShowTab(int tab)
+        {
+            if (TabContents.Length == 0)
+                return;
+            Tab = Mathf.Clamp(tab, 0, TabContents.Length - 1);
+            for (int i = 0; i < TabContents.Length; i++)
+                if (TabContents[i] != null)
+                    TabContents[i].gameObject.SetActive(i == Tab);
+            for (int i = 0; i < Tabs.Length; i++)
+                if (Tabs[i] != null)
+                    Tabs[i].Chosen = i == Tab;
+            if (Scroll == null)
+                return;
+            Scroll.StopMovement();
+            Scroll.content = TabContents[Tab];
+            Canvas.ForceUpdateCanvases();
+            Scroll.verticalNormalizedPosition = 1f;
+        }
+
+        // 一覧を開いたとき、選んでいるカードが見える所までスクロールする。
+        private void ScrollTo(int skill)
+        {
+            if (Scroll == null || skill < 0 || skill >= skillButtons.Count || TabOf(skill) != Tab)
+                return;
+            Canvas.ForceUpdateCanvases();
+            var content = Scroll.content;
+            float overflow = content.rect.height - Scroll.viewport.rect.height;
+            if (overflow <= 0f)
+                return;
+            var card = (RectTransform)skillButtons[skill].transform;
+            float top = -card.anchoredPosition.y - card.rect.height * (1f - card.pivot.y);
+            Scroll.verticalNormalizedPosition = 1f - Mathf.Clamp01(top / overflow);
+        }
+
+        public void ClosePicker() => SetPicking(false);
+
+        private void SetPicking(bool open)
         {
             if (Picker != null)
-                Picker.SetActive(false);
+                Picker.SetActive(open);
+            foreach (var hidden in HiddenWhilePicking)
+                if (hidden != null)
+                    hidden.SetActive(!open);
+            // 一覧の見出しと重なるため、開いているあいだは隠す。戻り先がなければ出さない。
+            if (HomeButton != null)
+                HomeButton.gameObject.SetActive(!open && HasHome);
         }
 
         private IEnumerator Run()
@@ -226,25 +344,36 @@ namespace Baryonyx.Combat.Presentation
             routine = null;
         }
 
-        /// <summary>A button for every skill, in its user's column, numbered as in the catalog.</summary>
+        /// <summary>A card for every skill on its tab, numbered as in the catalog.</summary>
         private void BuildList()
         {
-            if (SkillTemplate == null || Columns.Length == 0)
+            if (CardTemplate == null || TabContents.Length == 0)
                 return;
-            SkillTemplate.gameObject.SetActive(false);
+            CardTemplate.gameObject.SetActive(false);
             var all = Skills;
             for (int i = 0; i < all.Count; i++)
             {
                 var skill = all[i];
-                var column = Columns[Mathf.Clamp((int)skill.User, 0, Columns.Length - 1)];
-                var button = Instantiate(SkillTemplate, column);
+                var content = TabContents[Mathf.Min(TabOf(i), TabContents.Length - 1)];
+                var button = Instantiate(CardTemplate, content);
                 button.name = skill.Id;
                 button.gameObject.SetActive(true);
-                var labels = button.GetComponentsInChildren<TMP_Text>(true);
-                if (labels.Length > 0)
-                    labels[0].text = $"{i + 1}　{skill.Name}";
-                if (labels.Length > 1)
-                    labels[1].text = skill.Cost.ToString();
+                var face = button.GetComponentInChildren<BattleInspectCardView>(true);
+                if (face != null)
+                {
+                    face.Show(
+                        skill.Name,
+                        $"{i + 1}　{NameOf(PartyNames, (int)skill.User)}",
+                        CardText.KindLine(skill),
+                        CardText.Description(skill),
+                        At(CardArts, i),
+                        At(CardFrames, (int)skill.Element),
+                        At(ElementIcons, (int)skill.Element),
+                        skill.Cost,
+                        skill.Rarity
+                    );
+                    face.SetPlayable(true, 0f);
+                }
                 int picked = i;
                 button.onClick.AddListener(() =>
                 {
@@ -254,6 +383,9 @@ namespace Baryonyx.Combat.Presentation
                 skillButtons.Add(button);
             }
         }
+
+        private static Texture At(Texture[] textures, int at) =>
+            textures != null && at >= 0 && at < textures.Length ? textures[at] : null;
 
         private void Refresh()
         {
@@ -278,15 +410,22 @@ namespace Baryonyx.Combat.Presentation
                 TargetLabel.text = "ねらう敵：" + NameOf(EnemyNames, enemy);
             if (RepeatLabel != null)
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
-            // 選んでいるスキルは、すりガラスのカードの金の縁と光で示す。
+            // 選んでいるスキルは、カードの後ろの金の光で示す。
             for (int i = 0; i < skillButtons.Count; i++)
-                if (skillButtons[i].TryGetComponent(out GlassCard card))
-                    card.Selected = i == index;
+            {
+                var selected = skillButtons[i].transform.Find(SelectedName);
+                if (selected != null)
+                    selected.gameObject.SetActive(i == index);
+            }
         }
 
-        // 停止中の表示の切り替え：一覧を閉じた画面と、Play中と同じくスキルを並べて開いた一覧。
+        /// <summary>The name of the gold glow behind a card of the list, shown while it is picked.</summary>
+        public const string SelectedName = "Selected";
+
+        // 停止中の表示の切り替え：一覧を閉じた画面と、Play中と同じくカードを並べて開いた一覧の各タブ。
         // 停止中は Start が動かず、一覧は開いたまま中身が空なので、並べるところから行う。
-        public IReadOnlyList<string> PreviewStates => new[] { "一覧を閉じた", "一覧を開いた" };
+        public IReadOnlyList<string> PreviewStates =>
+            new[] { "一覧を閉じた", "一覧を開いた（カードスキル）", "一覧を開いた（固有スキル）" };
 
         public void ShowPreviewState(int state)
         {
@@ -307,7 +446,8 @@ namespace Baryonyx.Combat.Presentation
                 }
             }
             Refresh();
-            OpenPicker();
+            SetPicking(true);
+            ShowTab(state - 1);
         }
 
         private static string NameOf(string[] names, int at) =>

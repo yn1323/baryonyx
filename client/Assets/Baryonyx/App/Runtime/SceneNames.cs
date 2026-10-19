@@ -24,6 +24,13 @@ namespace Baryonyx.App
         // 戦闘画面のモック。展示室とテストから開く。
         public const string BattleInspect = "BattleInspect";
 
+        // スキルのデバッグルーム。Homeの右上の設定の下のボタンと、展示室から開く。
+        public const string CardSkillLab = "CardSkillLab";
+
+        // Homeのボタンが開く画面。案内人の画面のほか、スキルのデバッグルームを開く。
+        public static string ScreenFor(HomeAction action) =>
+            action == HomeAction.SkillLab ? CardSkillLab : GuideFor(action);
+
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。
         public static string GuideFor(HomeAction action) =>
             action switch
