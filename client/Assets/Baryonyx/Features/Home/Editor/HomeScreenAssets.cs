@@ -626,6 +626,31 @@ namespace Baryonyx.Home.Editor
             );
             Place((RectTransform)cards.transform, Vector2.zero, new Vector2(52, 52));
 
+            // The quality debugging room, the same round button under the skill one.
+            var qualityLab = Rect("QualityLabButton", safe);
+            Corner(
+                qualityLab,
+                Vector2.one,
+                new Vector2(-64, -(40 + (88 + 40) * 2)),
+                new Vector2(88, 88)
+            );
+            HitArea(qualityLab, 20, 20);
+            var qualityLabSpot = SpriteImage(
+                qualityLab,
+                UiArt.SoftSpotPath,
+                new Color(0.012f, 0.02f, 0.04f, 0.8f)
+            );
+            qualityLabSpot.raycastTarget = true;
+            view.QualityLabButton = AddTintButton(qualityLab, qualityLabSpot);
+            var gem = Icon(
+                qualityLab,
+                "QualityLabIcon",
+                HomeScreenArt.IconQualityLabPath,
+                52,
+                UiPalette.TextMain
+            );
+            Place((RectTransform)gem.transform, Vector2.zero, new Vector2(52, 52));
+
             var pill = Rect("RunePill", safe);
             Corner(pill, Vector2.one, new Vector2(-(64 + 88 + 16), -40), new Vector2(0, 88));
             // The same soft dark plate as the step panel, but reaching past the pill with a

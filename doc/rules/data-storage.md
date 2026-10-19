@@ -62,7 +62,7 @@ updated: 2026-10-18
 | ゲストの秘密値 | 実装済み | [GuestCredential](../../client/Assets/Baryonyx/Features/Account/Runtime/GuestCredential.cs)（`Account.GuestSecret`） |
 | Health Connectの許可画面を閉じた回数 | 実装済み | [HealthStepLink](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStepLink.cs)（`Health.PermissionDenials`） |
 | 歩数の送信元ID（ユーザーごと） | 実装済み | [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs)（`Health.RewardSourceId.<ユーザーID>`） |
-| 開発用のデバッグルームの表示設定 | 実装済み | [CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)・[EnemyLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/EnemyLab.cs)（`Baryonyx.<デバッグルーム>.<項目>`） |
+| 開発用のデバッグルームの表示設定 | 実装済み | [CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)・[EnemyLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/EnemyLab.cs)・[QualityLab](../../client/Assets/Baryonyx/Features/Inventory/Presentation/QualityLab.cs)（`Baryonyx.<デバッグルーム>.<項目>`） |
 | 音量・画質・振動などの設定 | 案 | [ユーザー設定とアクセシビリティ](../features/player-settings.md)。端末ごとにするかアカウント共通にするかは未決 |
 | ライブラリで新しく載った項目を見た記録 | 実装済み | [LibrarySeen](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySeen.cs)（`Library.Seen.<ユーザーID>`） |
 | 最後に開いたタブなど、表示上の記憶 | 案 | 必要になった機能の仕様 |

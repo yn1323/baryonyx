@@ -54,6 +54,11 @@ namespace Baryonyx.Home
         [Tooltip("設定の下の、スキルのデバッグルームを開くボタン（公開前の確認用）。")]
         public Button SkillLabButton;
 
+        [Tooltip(
+            "スキルのデバッグルームの下の、品質のデバッグルームを開くボタン（公開前の確認用）。"
+        )]
+        public Button QualityLabButton;
+
         [Header("世界")]
         public Button PartyWorldButton;
 
@@ -240,6 +245,7 @@ namespace Baryonyx.Home
             Bind(StepButton, HomeAction.SyncSteps);
             Bind(SettingsButton, HomeAction.Settings);
             Bind(SkillLabButton, HomeAction.SkillLab);
+            Bind(QualityLabButton, HomeAction.QualityLab);
             // The party standing in the world opens the tavern, where the party is formed.
             Bind(PartyWorldButton, HomeAction.Tavern);
             Bind(TavernButton, HomeAction.Tavern);

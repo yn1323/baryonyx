@@ -21,6 +21,9 @@ namespace Baryonyx.Home
 
         // 公開前の確認用に、スキルのデバッグルームを開く。
         SkillLab,
+
+        // 公開前の確認用に、品質のデバッグルームを開く。
+        QualityLab,
     }
 
     /// <summary>

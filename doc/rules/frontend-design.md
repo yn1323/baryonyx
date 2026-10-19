@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleInspect・CardSkillLab・EnemyLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleInspect・CardSkillLab・EnemyLab・QualityLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
@@ -76,6 +76,7 @@ client/
 │   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
+│   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質のデバッグルーム。Runtime・Presentation・Editor・UI・Tests
 │   │   ├── Features/StepBonus/          ACTボーナスの枠の設定（編成のボーナス）と、サーバーとの読み書き。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
@@ -170,6 +171,7 @@ client/
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所・ライブラリ）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleInspect.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Inspect Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
+| `Debug/QualityLab.unity` | スキル・装備・アクセサリー・ボーナスの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
 
 Top・Home・BattleInspect・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
@@ -240,7 +242,7 @@ Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない�
 
 | アセンブリ | 定義ファイル | 所属するコード |
 |---|---|---|
-| `Baryonyx.Combat` | [Features/Combat/Runtime/Baryonyx.Combat.asmdef](../../client/Assets/Baryonyx/Features/Combat/Runtime/Baryonyx.Combat.asmdef) | Unityに依存しない戦闘計算。`noEngineReferences` でUnityEngineを参照させない |
+| `Baryonyx.Combat` | [Features/Combat/Runtime/Baryonyx.Combat.asmdef](../../client/Assets/Baryonyx/Features/Combat/Runtime/Baryonyx.Combat.asmdef) | Unityに依存しない戦闘計算と、持ち物の品質の決まり（`Features/Inventory/Runtime/` を asmref で含める）。`noEngineReferences` でUnityEngineを参照させない |
 | `Baryonyx.Runtime` | [Baryonyx/Baryonyx.Runtime.asmdef](../../client/Assets/Baryonyx/Baryonyx.Runtime.asmdef) | Combat以外のAppと機能の製品コード |
 | `Baryonyx.Editor` | [Baryonyx/Editor/Baryonyx.Editor.asmdef](../../client/Assets/Baryonyx/Editor/Baryonyx.Editor.asmdef) | 共通・App・機能のEditor専用処理 |
 | `Baryonyx.EditModeTests` | [Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef](../../client/Assets/Baryonyx/Tests/EditMode/Baryonyx.EditModeTests.asmdef) | ロジックとビルド設定の検査 |

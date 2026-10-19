@@ -27,9 +27,17 @@ namespace Baryonyx.App
         // スキルのデバッグルーム。Homeの右上の設定の下のボタンと、展示室から開く。
         public const string CardSkillLab = "CardSkillLab";
 
-        // Homeのボタンが開く画面。案内人の画面のほか、スキルのデバッグルームを開く。
+        // 品質のデバッグルーム。Homeの右上のスキルのデバッグルームの下のボタンと、展示室から開く。
+        public const string QualityLab = "QualityLab";
+
+        // Homeのボタンが開く画面。案内人の画面のほか、スキルと品質のデバッグルームを開く。
         public static string ScreenFor(HomeAction action) =>
-            action == HomeAction.SkillLab ? CardSkillLab : GuideFor(action);
+            action switch
+            {
+                HomeAction.SkillLab => CardSkillLab,
+                HomeAction.QualityLab => QualityLab,
+                _ => GuideFor(action),
+            };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。
         public static string GuideFor(HomeAction action) =>
