@@ -67,7 +67,7 @@ namespace Baryonyx.Tests.PlayMode
                 found => found.SkillButtons.Count > 0,
                 found => lab = found
             );
-            var all = CardSkills.All;
+            var all = CardSkillLab.Skills;
             Assert.That(lab.SkillButtons, Has.Count.EqualTo(all.Count), "Every skill is listed.");
             for (int i = 0; i < all.Count; i++)
                 Assert.That(

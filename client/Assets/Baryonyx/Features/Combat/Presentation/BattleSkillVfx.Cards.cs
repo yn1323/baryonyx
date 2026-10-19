@@ -45,6 +45,7 @@ namespace Baryonyx.Combat.Presentation
         public static Color ColorOf(string id) =>
             id switch
             {
+                var unique when IsUnique(unique) => UniqueColor(unique),
                 "Slash" => ColorOf(BattleSkillVfxKind.Slash),
                 "Fire"
                 or "Embers"
@@ -106,65 +107,68 @@ namespace Baryonyx.Combat.Presentation
                 landed[index] = true;
                 return land(index);
             }
-            if (cutIn)
+            // A unique skill's last step always cuts in: the biggest moments get the biggest stage.
+            if (cutIn || (IsUnique(id) && TierOf(id) == 2))
                 yield return PlayCutIn(casterArt, skill, ColorOf(id));
             var areas = new List<RectTransform>();
             foreach (var hit in hits)
                 areas.Add(hit.Area);
-            yield return id switch
-            {
-                "Slash" => Slash(caster, areas, Once),
-                "Fire" => Fire(caster, areas, Once),
-                "Ice" => Ice(caster, areas, Once, cutIn),
-                "Thunder" => Thunder(caster, areas, Once, cutIn),
-                "Heal" => Heal(caster, areas, Once),
-                "Guard" => Guard(caster, areas, Once),
-                "Whirlwind" => Whirlwind(caster, hits, Once),
-                "Iai" => Iai(caster, hits, Once),
-                "BladeDance" => BladeDance(caster, hits, Once),
-                "Hone" => Hone(caster, hits, Once),
-                "ShieldBash" => ShieldBash(caster, hits, Once),
-                "ArmorBreak" => ArmorBreak(caster, hits, Once),
-                "EarthSplitter" => EarthSplitter(caster, hits, Once),
-                "GiantImpact" => GiantImpact(caster, hits, Once),
-                "StrideStrike" => StrideStrike(caster, hits, Once),
-                "GuardianOath" => GuardianOath(caster, hits, Once),
-                "WarCry" => WarCry(caster, hits, Once),
-                "Embers" => Embers(caster, hits, Once),
-                "FlamePillar" => FlamePillar(caster, hits, Once),
-                "FireStorm" => FireStorm(caster, hits, Once),
-                "BlastSigil" => BlastSigil(caster, hits, Once),
-                "Meteor" => Meteor(caster, hits, Once),
-                "FlameEnchant" => FlameEnchant(caster, hits, Once),
-                "Icicles" => Icicles(caster, hits, Once),
-                "Blizzard" => Blizzard(caster, hits, Once),
-                "IceMirror" => IceMirror(caster, hits, Once),
-                "AbsoluteZero" => AbsoluteZero(caster, hits, Once),
-                "QuickCast" => QuickCast(caster, hits, Once),
-                "VitalThrust" => VitalThrust(caster, hits, Once),
-                "PoisonNeedle" => PoisonNeedle(caster, hits, Once),
-                "ShadowStitch" => ShadowStitch(caster, hits, Once),
-                "InsightArrow" => InsightArrow(caster, hits, Once),
-                "ArrowRain" => ArrowRain(caster, hits, Once),
-                "ShadowSnipe" => ShadowSnipe(caster, hits, Once),
-                "LightningBolt" => LightningBolt(caster, hits, Once),
-                "ChainLightning" => ChainLightning(caster, hits, Once),
-                "Thundercloud" => Thundercloud(caster, hits, Once),
-                "ThunderSpear" => ThunderSpear(caster, hits, Once),
-                "Gale" => Gale(caster, hits, Once),
-                "Scout" => Scout(caster, hits, Once),
-                "StepPrayer" => StepPrayer(caster, hits, Once),
-                "Regen" => Regen(caster, hits, Once),
-                "Resurrection" => Resurrection(caster, hits, Once),
-                "HolyHammer" => HolyHammer(caster, hits, Once),
-                "Protect" => Protect(caster, hits, Once),
-                "Purify" => Purify(caster, hits, Once),
-                "ManaPrayer" => ManaPrayer(caster, hits, Once),
-                "Revelation" => Revelation(caster, hits, Once),
-                "HolyLight" => HolyLight(caster, hits, Once),
-                "DivineShield" => DivineShield(caster, hits, Once),
-                _ => Slash(caster, areas, Once),
-            };
+            yield return IsUnique(id)
+                ? Unique(id, caster, hits, Once)
+                : id switch
+                {
+                    "Slash" => Slash(caster, areas, Once),
+                    "Fire" => Fire(caster, areas, Once),
+                    "Ice" => Ice(caster, areas, Once, cutIn),
+                    "Thunder" => Thunder(caster, areas, Once, cutIn),
+                    "Heal" => Heal(caster, areas, Once),
+                    "Guard" => Guard(caster, areas, Once),
+                    "Whirlwind" => Whirlwind(caster, hits, Once),
+                    "Iai" => Iai(caster, hits, Once),
+                    "BladeDance" => BladeDance(caster, hits, Once),
+                    "Hone" => Hone(caster, hits, Once),
+                    "ShieldBash" => ShieldBash(caster, hits, Once),
+                    "ArmorBreak" => ArmorBreak(caster, hits, Once),
+                    "EarthSplitter" => EarthSplitter(caster, hits, Once),
+                    "GiantImpact" => GiantImpact(caster, hits, Once),
+                    "StrideStrike" => StrideStrike(caster, hits, Once),
+                    "GuardianOath" => GuardianOath(caster, hits, Once),
+                    "WarCry" => WarCry(caster, hits, Once),
+                    "Embers" => Embers(caster, hits, Once),
+                    "FlamePillar" => FlamePillar(caster, hits, Once),
+                    "FireStorm" => FireStorm(caster, hits, Once),
+                    "BlastSigil" => BlastSigil(caster, hits, Once),
+                    "Meteor" => Meteor(caster, hits, Once),
+                    "FlameEnchant" => FlameEnchant(caster, hits, Once),
+                    "Icicles" => Icicles(caster, hits, Once),
+                    "Blizzard" => Blizzard(caster, hits, Once),
+                    "IceMirror" => IceMirror(caster, hits, Once),
+                    "AbsoluteZero" => AbsoluteZero(caster, hits, Once),
+                    "QuickCast" => QuickCast(caster, hits, Once),
+                    "VitalThrust" => VitalThrust(caster, hits, Once),
+                    "PoisonNeedle" => PoisonNeedle(caster, hits, Once),
+                    "ShadowStitch" => ShadowStitch(caster, hits, Once),
+                    "InsightArrow" => InsightArrow(caster, hits, Once),
+                    "ArrowRain" => ArrowRain(caster, hits, Once),
+                    "ShadowSnipe" => ShadowSnipe(caster, hits, Once),
+                    "LightningBolt" => LightningBolt(caster, hits, Once),
+                    "ChainLightning" => ChainLightning(caster, hits, Once),
+                    "Thundercloud" => Thundercloud(caster, hits, Once),
+                    "ThunderSpear" => ThunderSpear(caster, hits, Once),
+                    "Gale" => Gale(caster, hits, Once),
+                    "Scout" => Scout(caster, hits, Once),
+                    "StepPrayer" => StepPrayer(caster, hits, Once),
+                    "Regen" => Regen(caster, hits, Once),
+                    "Resurrection" => Resurrection(caster, hits, Once),
+                    "HolyHammer" => HolyHammer(caster, hits, Once),
+                    "Protect" => Protect(caster, hits, Once),
+                    "Purify" => Purify(caster, hits, Once),
+                    "ManaPrayer" => ManaPrayer(caster, hits, Once),
+                    "Revelation" => Revelation(caster, hits, Once),
+                    "HolyLight" => HolyLight(caster, hits, Once),
+                    "DivineShield" => DivineShield(caster, hits, Once),
+                    _ => Slash(caster, areas, Once),
+                };
             for (int i = 0; i < landed.Length; i++)
                 Once(i);
             DimTo(0f, 0.4f);

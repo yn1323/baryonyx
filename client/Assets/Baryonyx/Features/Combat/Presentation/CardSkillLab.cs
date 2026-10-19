@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Baryonyx.SkillEvolution;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
@@ -86,10 +88,18 @@ namespace Baryonyx.Combat.Presentation
         private bool playing;
         private Coroutine routine;
 
-        /// <summary>The skill picked now, its place in <see cref="CardSkills.All"/>.</summary>
+        /// <summary>
+        /// The skills the room plays: the card skills, then every stage of the unique skills'
+        /// evolution trees (doc/features/skill-evolution.md).
+        /// </summary>
+        public static readonly IReadOnlyList<CardSkill> Skills = CardSkills
+            .All.Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card))
+            .ToArray();
+
+        /// <summary>The skill picked now, its place in <see cref="Skills"/>.</summary>
         public int Index => index;
 
-        public CardSkill Current => CardSkills.All[index];
+        public CardSkill Current => Skills[index];
 
         /// <summary>True from a skill's start until its last blow (and what it leaves) has landed.</summary>
         public bool Playing => playing;
@@ -103,7 +113,7 @@ namespace Baryonyx.Combat.Presentation
 
         public bool PickerOpen => Picker != null && Picker.activeSelf;
 
-        /// <summary>One button per skill, in <see cref="CardSkills.All"/>'s order.</summary>
+        /// <summary>One button per skill, in <see cref="Skills"/>'s order.</summary>
         public IReadOnlyList<Button> SkillButtons => skillButtons;
 
         private void Start()
@@ -137,7 +147,7 @@ namespace Baryonyx.Combat.Presentation
         {
             if (Vfx == null)
                 return;
-            int count = CardSkills.All.Count;
+            int count = Skills.Count;
             index = ((skill % count) + count) % count;
             Save();
             Refresh();
@@ -222,7 +232,7 @@ namespace Baryonyx.Combat.Presentation
             if (SkillTemplate == null || Columns.Length == 0)
                 return;
             SkillTemplate.gameObject.SetActive(false);
-            var all = CardSkills.All;
+            var all = Skills;
             for (int i = 0; i < all.Count; i++)
             {
                 var skill = all[i];
@@ -250,7 +260,7 @@ namespace Baryonyx.Combat.Presentation
             var skill = Current;
             int user = (int)skill.User;
             if (Caption != null)
-                Caption.text = $"{index + 1}/{CardSkills.All.Count}　{skill.Name}";
+                Caption.text = $"{index + 1}/{Skills.Count}　{skill.Name}";
             if (Detail != null)
                 Detail.text =
                     $"{NameOf(PartyNames, user)}・コスト{skill.Cost}・"
@@ -307,7 +317,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var id = PlayerPrefs.GetString(SkillKey, "");
             index = 0;
-            var all = CardSkills.All;
+            var all = Skills;
             for (int i = 0; i < all.Count; i++)
                 if (all[i].Id == id)
                     index = i;
