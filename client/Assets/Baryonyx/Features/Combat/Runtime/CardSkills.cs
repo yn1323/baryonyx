@@ -674,8 +674,20 @@ namespace Baryonyx.Combat
                 Kind = kind,
                 Target = target,
                 Cost = cost,
+                Rarity = RarityOfCost(cost),
                 Text = text,
                 Actions = Array.AsReadOnly(actions),
             };
+
+        /// <summary>
+        /// The stand-in rarity of a card skill of <paramref name="cost"/>: 1 is ☆1, 2 is ☆2, 3 to 4
+        /// ☆3, 5 to 6 ☆4 and 7 or more ☆5 (doc/art/direction.md, card sparkle).
+        /// </summary>
+        public static int RarityOfCost(int cost) =>
+            cost <= 1 ? 1
+            : cost == 2 ? 2
+            : cost <= 4 ? 3
+            : cost <= 6 ? 4
+            : 5;
     }
 }

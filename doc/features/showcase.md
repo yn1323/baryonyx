@@ -266,6 +266,7 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
 戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
 2026-10-19に試作した敵50体の絵（`DewSlime` など、`Features/Combat/UI/Art/Enemies/`）も、戦闘のモックの敵3体と同じキャラクターのカテゴリに入る。名前と弱点は[敵の定義](../catalog/enemies/README.md)にある。
+カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚をそれぞれの仮のレア度で並べ、☆2から☆5までキラキラが段階的に強くなる。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
 カードを上げたときに右に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」を選ぶか、展示室から `BattleInspect` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
 味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、味方のHPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、ブロックはガードかシールドバッシュを使って確かめる。
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。

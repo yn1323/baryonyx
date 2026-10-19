@@ -343,6 +343,12 @@ namespace Baryonyx.Combat
         /// <summary>Who the player picks, or the side it reaches: decides how the card is played.</summary>
         public CardTarget Target;
         public int Cost;
+
+        /// <summary>
+        /// The rarity, ☆1 to ☆5. A card skill's own rarity is not decided yet, so it is a stand-in
+        /// worked out from its cost, used for its sparkle (doc/art/direction.md, card sparkle).
+        /// </summary>
+        public int Rarity = 1;
         public string Text;
         public IReadOnlyList<CardAction> Actions = Array.Empty<CardAction>();
 

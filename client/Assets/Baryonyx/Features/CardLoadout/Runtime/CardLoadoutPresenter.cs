@@ -22,6 +22,9 @@ namespace Baryonyx.CardLoadout
         // 説明。数字はその人のステータスから求め、何をするかで色を変える（リッチテキスト）。
         public string Description { get; internal set; }
         public int Cost { get; internal set; }
+
+        /// <summary>The rarity (☆1 to ☆5): how much the card sparkles.</summary>
+        public int Rarity { get; internal set; } = 1;
         public CardElement Element { get; internal set; }
 
         // その人のどの枠に入っているか（0から）。入っていなければ-1。
@@ -431,6 +434,7 @@ namespace Baryonyx.CardLoadout
                 KindLine = CardText.KindLine(card),
                 Description = CardText.Description(card),
                 Cost = card.Cost,
+                Rarity = card.Rarity,
                 Element = card.Element,
                 Slot = slotIndex,
             };

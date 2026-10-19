@@ -1,0 +1,7 @@
+interface:
+  display_name: "カードのキラキラ"
+  short_description: "レアカードのようなラメ・光の帯・ホロの虹色を、レア度に応じて層を足しながらUIの絵に重ねる"
+  default_prompt: "Use $card-foil-sparkle to add or tune rarity-based foil, glitter and shine on cards and UI art."
+
+policy:
+  allow_implicit_invocation: true

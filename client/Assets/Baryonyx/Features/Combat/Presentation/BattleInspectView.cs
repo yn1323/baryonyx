@@ -76,6 +76,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The element icon, or null for a card without an element.</summary>
         public Texture ElementIcon;
         public int Cost;
+
+        /// <summary>The rarity (☆1 to ☆5): how much the card sparkles.</summary>
+        public int Rarity = 1;
         public int Power;
         public BattleInspectElement Element;
         public BattleInspectCardEffect Effect;
@@ -1601,7 +1604,8 @@ namespace Baryonyx.Combat.Presentation
                     data.Art,
                     data.Frame,
                     data.ElementIcon,
-                    data.Cost
+                    data.Cost,
+                    data.Rarity
                 );
         }
 

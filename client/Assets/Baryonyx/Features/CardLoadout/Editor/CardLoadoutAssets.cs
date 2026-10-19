@@ -142,6 +142,7 @@ namespace Baryonyx.CardLoadout.Editor
             var (button, selected, row) = GlassCardAssets.Choice(rect, pattern: false);
             var widget = new CardLoadoutSlotWidget { Button = button, Selected = selected };
             (widget.Art, widget.Cost, widget.Element) = BuildThumb(row, 12);
+            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(widget.Art);
             (widget.Name, widget.Kind) = BuildNameLine(row, 8, SlotTextLeft, 24);
             widget.Description = BuildDescription(row, 56, 72, SlotTextLeft, 24);
             return (widget, row);
@@ -299,6 +300,7 @@ namespace Baryonyx.CardLoadout.Editor
             Stretch(content);
             widget.Content = content.gameObject;
             (card.Art, card.Cost, card.Element) = BuildThumb(content, 12);
+            card.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(card.Art);
             (card.Name, card.Kind) = BuildNameLine(content, 8, SlotTextLeft, 24);
             card.Description = BuildDescription(content, 56, 72, SlotTextLeft, 24);
             widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
@@ -437,6 +439,7 @@ namespace Baryonyx.CardLoadout.Editor
             element.sprite = view.IconOf(card.Element);
             element.enabled = element.sprite != null;
             widget.Art = art;
+            Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Rarity);
 
             var (name, kind) = BuildNameLine(row, 12, RowTextLeft, 150);
             name.text = card.Name;

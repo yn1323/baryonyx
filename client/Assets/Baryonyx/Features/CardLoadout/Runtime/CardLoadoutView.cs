@@ -8,6 +8,7 @@ using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.Cards;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -24,8 +25,9 @@ namespace Baryonyx.CardLoadout
         public Button Button;
         public GameObject Selected;
 
-        // カードの挿絵（2倍）と、その上に重ねるコストと属性のアイコン。
+        // カードの挿絵（2倍）と、その上に重ねるキラキラ、コストと属性のアイコン。
         public RawImage Art;
+        public CardFoil Foil;
         public TMP_Text Cost;
         public Image Element;
         public TMP_Text Name;
@@ -445,6 +447,9 @@ namespace Baryonyx.CardLoadout
             bool locked = unique != null && unique.Locked;
             if (widget.Card.Art != null)
                 widget.Card.Art.color = locked ? LockedArt : Color.white;
+            // 鍵のかかったカードは光らせない。
+            if (widget.Card.Foil != null && locked)
+                widget.Card.Foil.Image.enabled = false;
             if (widget.Lock != null)
                 widget.Lock.SetActive(locked);
             Set(widget.Mark, locked ? UnlockText(unique.UnlockLevel) : "");
@@ -504,6 +509,9 @@ namespace Baryonyx.CardLoadout
                 widget.Card.Button.interactable = acquired && !locked;
             if (widget.Card.Art != null)
                 widget.Card.Art.color = locked ? LockedArt : Color.white;
+            // 鍵のかかったカードは光らせない。
+            if (widget.Card.Foil != null && locked)
+                widget.Card.Foil.Image.enabled = false;
             if (widget.Lock != null)
                 widget.Lock.SetActive(acquired && locked);
             Set(
@@ -572,6 +580,8 @@ namespace Baryonyx.CardLoadout
                 widget.Art.texture = art;
                 widget.Art.enabled = filled && art != null;
             }
+            if (widget.Foil != null)
+                widget.Foil.Show(art, filled ? card.Rarity : CardFoil.MinRarity);
             if (widget.Cost != null)
             {
                 widget.Cost.transform.parent.gameObject.SetActive(filled);

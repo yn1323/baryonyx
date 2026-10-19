@@ -601,6 +601,7 @@ namespace Baryonyx.Training.Editor
             if (button)
                 widget.Button = Guide.AddButton(card, widget.Frame);
             widget.Art = Dots(card, "Art", 3, 3, new Vector2(64, 58), null);
+            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(widget.Art);
 
             var band = Layout.Box(
                 card,

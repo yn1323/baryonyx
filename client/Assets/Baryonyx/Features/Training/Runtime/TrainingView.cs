@@ -46,6 +46,9 @@ namespace Baryonyx.Training
         public Button Button;
         public RawImage Frame;
         public RawImage Art;
+
+        // 挿絵の上に重ねるキラキラ（レア度で強くなる）。
+        public CardFoil Foil;
         public GameObject Cost;
 
         // 0〜9の数字を横に並べた画像の、コストの数字の部分を出す。
@@ -523,6 +526,11 @@ namespace Baryonyx.Training
                 widget.Art.texture = card?.Art;
                 widget.Art.enabled = filled && card.Art != null;
             }
+            if (widget.Foil != null)
+                widget.Foil.Show(
+                    card?.Art,
+                    filled && !card.Locked ? card.Rarity : CardFoil.MinRarity
+                );
             if (widget.Cost != null)
                 widget.Cost.SetActive(filled && card.Cost >= 0 && card.Cost < CostDigits);
             if (widget.CostDigit != null && filled)

@@ -1,3 +1,4 @@
+using Baryonyx.UI.Cards;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,6 +30,9 @@ namespace Baryonyx.Combat.Presentation
 
         public RawImage Frame;
         public RawImage Art;
+
+        /// <summary>The sparkle over the art, by the card's rarity.</summary>
+        public CardFoil Foil;
         public RawImage Element;
         public RawImage CostDigit;
         public TMP_Text Owner;
@@ -54,7 +58,8 @@ namespace Baryonyx.Combat.Presentation
             Texture art,
             Texture frame,
             Texture element,
-            int cost
+            int cost,
+            int rarity = CardFoil.MinRarity
         )
         {
             Name.text = cardName;
@@ -62,6 +67,8 @@ namespace Baryonyx.Combat.Presentation
             Kind.text = kind;
             Description.text = description;
             Art.texture = art;
+            if (Foil != null)
+                Foil.Show(art, Art.uvRect, rarity);
             Frame.texture = frame;
             Element.texture = element;
             Element.enabled = element != null;

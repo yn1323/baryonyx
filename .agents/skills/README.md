@@ -80,6 +80,7 @@
 |---|---|---|---|---|
 | [hd2d-stage-set](hd2d-stage-set/SKILL.md) | 3Dの舞台のカメラ・キャラの板・光・霧・光芒・レンズと色・停止中の表示と、地面・遠景・小物・草・汚し・マテリアル・テクスチャ | 自動 | [3Dの舞台](../../doc/art/hd2d-stage.md) | 技の演出は vfx-authoring。テクスチャは pixel-art-standards と一緒に使う |
 | [vfx-authoring](vfx-authoring/SKILL.md) | 技・被弾・撃破・カットイン・報酬やUIの演出を作る・直す・レビューする | 自動 | [エフェクトの描き方](../../doc/art/direction.md#エフェクトの描き方)、[画面一覧と操作](../../doc/features/screens.md) | 常設の光・霧・粒は hd2d-stage-set（3D）か hd2d-lighting-vfx（2D） |
+| [card-foil-sparkle](card-foil-sparkle/SKILL.md) | カード・UIの絵に、レア度に応じたラメ・光の帯・漂う光の粒・ホロの虹色を重ねる | 自動 | [カードのキラキラ](../../doc/art/direction.md#カードのキラキラ) | スキルを使ったときの演出は vfx-authoring |
 | [hd2d-lighting-vfx](hd2d-lighting-vfx/SKILL.md) | 描いた2D背景に常に出す光芒・霧・揺らぐ光・火の粉・ポストプロセスと、キラキラ粒子 | 手動 | [展示室の仕様](../../doc/features/showcase.md)（部品の調整項目） | 3Dの舞台は hd2d-stage-set。HD-2Dの調査資料と技法の一覧は両方のスキルが使う |
 
 ## 迷ったとき
@@ -89,6 +90,7 @@
 | Top・Home・戦闘の背景の光が足りない、霧・光芒・ぼけ・カメラの動きを直す（3Dの舞台に常設する光と空気） | hd2d-stage-set |
 | 3Dの舞台の背景が寂しい・平ら、地面・遠景・小物・草・テクスチャを足す | hd2d-stage-set |
 | 技の攻撃・回復・防御、被弾、撃破、カットイン、報酬を受け取る瞬間の演出 | vfx-authoring |
+| カードやキャラの絵をレアっぽくキラキラさせる（ラメ・光の帯・ホロ） | card-foil-sparkle |
 | 3Dの舞台がない画面（描いた2D背景）の光・霧・火の粉、キャラ紹介やホームのキラキラ | hd2d-lighting-vfx（手動専用。使ってよいかユーザーに確認する） |
 | 2Dの背景画像を新しく描く | pixellab-background-prompt（手動専用） |
 | キャラ・敵・アイテムのドット絵を作る、生成画像を採用する | pixel-art-standards と、対象の生成スキル |

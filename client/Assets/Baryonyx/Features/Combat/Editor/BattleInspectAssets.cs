@@ -592,15 +592,17 @@ namespace Baryonyx.Combat.Editor
                 fireArt,
                 Art("CardFrameFire"),
                 fireIcon,
-                fire.Cost
+                fire.Cost,
+                fire.Rarity
             );
             AddCardParts(card, cardView);
             PrefabUtility.SaveAsPrefabAsset(card.gameObject, CardPrefabPath);
         }
 
         /// <summary>
-        /// Adds the back and the shade to a card prefab made before cards could lie face down or
-        /// be darkened, and puts them in their order, keeping the rest of its hand-tuned layout.
+        /// Adds the sparkle, the back and the shade to a card prefab made before cards sparkled,
+        /// could lie face down or be darkened, and puts them in their order, keeping the rest of
+        /// its hand-tuned layout.
         /// </summary>
         private static void EnsureCardParts()
         {
@@ -625,6 +627,9 @@ namespace Baryonyx.Combat.Editor
         private static void AddCardParts(RectTransform card, BattleInspectCardView cardView)
         {
             var outline = Art("CardBack");
+            // The sparkle right over the art, under the bands and the text (doc/art/direction.md).
+            if (cardView.Foil == null)
+                cardView.Foil = CardFoilAssets.Add(cardView.Art);
             if (cardView.Shade == null)
             {
                 var shade = Rect("Shade", card);
@@ -1404,7 +1409,8 @@ namespace Baryonyx.Combat.Editor
                     data.Art,
                     data.Frame,
                     data.ElementIcon,
-                    data.Cost
+                    data.Cost,
+                    data.Rarity
                 );
                 cardView.SetPlayable(
                     playable,
@@ -1677,7 +1683,8 @@ namespace Baryonyx.Combat.Editor
                     data.Art,
                     data.Frame,
                     data.ElementIcon,
-                    data.Cost
+                    data.Cost,
+                    data.Rarity
                 );
                 view.SetPlayable(true, 0f);
                 if (view.Back != null)
@@ -1891,6 +1898,7 @@ namespace Baryonyx.Combat.Editor
                 ElementIcon =
                     skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
                 Cost = skill.Cost,
+                Rarity = skill.Rarity,
                 Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), act),
                 Element = element,
                 Effect = BattleCardText.EffectOf(skill),
