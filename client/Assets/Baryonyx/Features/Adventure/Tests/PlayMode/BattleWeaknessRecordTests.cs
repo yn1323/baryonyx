@@ -79,15 +79,22 @@ namespace Baryonyx.Tests.PlayMode
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var enemies = bootstrap.Battle.Enemies;
+            // The battle here has the three kinds the battle mock was made with, not every kind.
+            var kinds = new[]
+            {
+                CombatEnemies.MossSlime,
+                CombatEnemies.MossWolf,
+                CombatEnemies.ForestGuardian,
+            };
             Assert.That(
                 enemies.Select(enemy => enemy.Id),
-                Is.EqualTo(CombatEnemies.All.Select(enemy => enemy.Id))
+                Is.EqualTo(kinds.Select(kind => kind.Id))
             );
             for (int i = 0; i < enemies.Length; i++)
                 Assert.That(
                     enemies[i]
                         .Weaknesses.Select(weakness => BattleCardText.ElementOf(weakness.Element)),
-                    Is.EqualTo(CombatEnemies.All[i].Weaknesses)
+                    Is.EqualTo(kinds[i].Weaknesses)
                 );
         }
 

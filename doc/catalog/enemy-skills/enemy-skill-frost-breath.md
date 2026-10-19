@@ -2,7 +2,7 @@
 id: enemy-skill-frost-breath
 type: definition
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-19
 name: 冷たい息
 category: enemy-skills
 ---
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（共通化できる技も入れる）で、今の3体では使わない共通技として作った |
 | 役割・説明 | 味方全体への魔法攻撃と凍え |
-| 関連する仕様・個別ID | 使う敵：なし（今の敵は使わない）。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -35,7 +35,7 @@ category: enemy-skills
 | 物理・魔法と属性 | 魔法・氷 | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
 | 効果 | 属攻の50%のダメージ。凍え2ターン | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
 | 予告 | 全体攻撃・弱体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 使う敵 | なし（今の敵は使わない） | 各敵の定義の「技」の表 | 候補 |
+| 使う敵 | [つらら尾の狐](../enemies/enemy-icicle-fox.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[霧の竜](../enemies/enemy-mist-dragon.md) | 各敵の定義の「技」の表 | 候補 |
 | 似合う敵 | 雪原や氷の洞窟の敵 | 新しい敵へ付けるときの目安 | 候補 |
 
 ## 演出
@@ -50,6 +50,16 @@ category: enemy-skills
 | 色 | 白、水色、青 |
 | 格 | 中 |
 
+使う敵ごとの見た目の違いは、次のとおりである。
+
+| 敵 | 色・材質・形の違い |
+|---|---|
+| [つらら尾の狐](../enemies/enemy-icicle-fox.md) | 細い口から、吹雪の粒が混じった白い息を吐き広げる |
+| [霜の大猿人](../enemies/enemy-frost-ape.md) | 大きく開いた口から、吹雪の粒が混じった太い白い息を吐く |
+| [雪原のマンモス](../enemies/enemy-snow-mammoth.md) | 口ではなく鼻の先から、雪と冷気を吹きつける |
+| [死霊の魔導師](../enemies/enemy-lich.md) | 骨の口から死者の冷えた息を吹き、青白い冷気に緑の霧が混じる |
+| [霧の竜](../enemies/enemy-mist-dragon.md) | 山の上の冷えた白い霧を吹きつけ、水色の霜の粒が味方の足元に降りる |
+
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
@@ -62,3 +72,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-04 | 共通技として定義を作った | ユーザーの依頼 | 使う敵：なし（今の敵は使わない） |
+| 2026-10-19 | 使う敵に、新しく作った敵を加えた | ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる） | 使う敵：[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[霧の竜](../enemies/enemy-mist-dragon.md) |

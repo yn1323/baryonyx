@@ -2,7 +2,7 @@
 id: enemy-skill-fire-breath
 type: definition
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-19
 name: 火の息
 category: enemy-skills
 ---
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（共通化できる技も入れる）で、今の3体では使わない共通技として作った |
 | 役割・説明 | 味方全体への魔法攻撃とやけど |
-| 関連する仕様・個別ID | 使う敵：なし（今の敵は使わない）。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -35,7 +35,7 @@ category: enemy-skills
 | 物理・魔法と属性 | 魔法・炎 | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
 | 効果 | 属攻の50%のダメージ。やけど2ターン | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
 | 予告 | 全体攻撃・弱体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 使う敵 | なし（今の敵は使わない） | 各敵の定義の「技」の表 | 候補 |
+| 使う敵 | [呪いの燭台](../enemies/enemy-cursed-candelabra.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md) | 各敵の定義の「技」の表 | 候補 |
 | 似合う敵 | 竜、トカゲ、火山の敵 | 新しい敵へ付けるときの目安 | 候補 |
 
 ## 演出
@@ -50,6 +50,15 @@ category: enemy-skills
 | 色 | 白・黄・橙・赤と、暗い煙 |
 | 格 | 中 |
 
+使う敵ごとの見た目の違いは、次のとおりである。
+
+| 敵 | 色・材質・形の違い |
+|---|---|
+| [呪いの燭台](../enemies/enemy-cursed-candelabra.md) | 炎の色を青と水色にし、三本の細い炎の帯が重なって味方全体へ広がる形にする |
+| [火とかげ](../enemies/enemy-fire-lizard.md) | 首を伸ばし、橙と黄の炎を吐き広げる |
+| [炎尾の鳥](../enemies/enemy-flame-tail-bird.md) | 口からではなく、翼の羽ばたきで火の粉の混じった熱風を浴びせる |
+| [黒曜石の巨像](../enemies/enemy-obsidian-colossus.md) | 口からではなく、全身のひびから熱風を噴き出す |
+
 ## 未決事項
 
 | 項目 | 決める内容・先に必要な判断 |
@@ -63,3 +72,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-04 | 共通技として定義を作った | ユーザーの依頼 | 使う敵：なし（今の敵は使わない） |
+| 2026-10-19 | 使う敵に、新しく作った敵を加えた | ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる） | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md) |

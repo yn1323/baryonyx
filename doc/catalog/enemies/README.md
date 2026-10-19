@@ -11,9 +11,59 @@ IDの接頭辞は `enemy-`、メタデータの `category` は `enemies` とす�
 <!-- entries:start -->
 | ID | 名称 | 状態 | 詳細 |
 |---|---|---|---|
+| enemy-acorn-soldier | どんぐり兵 | 候補 | [定義](enemy-acorn-soldier.md) |
+| enemy-barnacle-crab | フジツボ大ガニ | 候補 | [定義](enemy-barnacle-crab.md) |
+| enemy-big-eared-bat | 大耳コウモリ | 候補 | [定義](enemy-big-eared-bat.md) |
+| enemy-blind-fishman | 地底湖の盲魚人 | 候補 | [定義](enemy-blind-fishman.md) |
+| enemy-blood-leech | 吸血大ヒル | 候補 | [定義](enemy-blood-leech.md) |
+| enemy-bone-croc | 骨背の大ワニ | 候補 | [定義](enemy-bone-croc.md) |
+| enemy-brass-warden | 真鍮の番人 | 候補 | [定義](enemy-brass-warden.md) |
+| enemy-cactus-warrior | サボテン戦士 | 候補 | [定義](enemy-cactus-warrior.md) |
+| enemy-chest-mimic | 人食い宝箱 | 候補 | [定義](enemy-chest-mimic.md) |
+| enemy-coin-pouch | 金貨袋 | 候補 | [定義](enemy-coin-pouch.md) |
+| enemy-cracked-urn | 割れ壺の番 | 候補 | [定義](enemy-cracked-urn.md) |
+| enemy-crystal-hare | 水晶角うさぎ | 候補 | [定義](enemy-crystal-hare.md) |
+| enemy-crystal-hermit | 水晶ヤドカリ | 候補 | [定義](enemy-crystal-hermit.md) |
+| enemy-cursed-candelabra | 呪いの燭台 | 候補 | [定義](enemy-cursed-candelabra.md) |
+| enemy-dew-slime | 朝露ぷるん | 候補 | [定義](enemy-dew-slime.md) |
+| enemy-fire-lizard | 火とかげ | 候補 | [定義](enemy-fire-lizard.md) |
+| enemy-flame-tail-bird | 炎尾の鳥 | 候補 | [定義](enemy-flame-tail-bird.md) |
+| enemy-floating-grimoire | 浮遊する魔導書 | 候補 | [定義](enemy-floating-grimoire.md) |
 | enemy-forest-guardian | 森の守り手 | 候補 | [定義](enemy-forest-guardian.md) |
+| enemy-frog-king | 沼のカエル王 | 候補 | [定義](enemy-frog-king.md) |
+| enemy-frost-ape | 霜の大猿人 | 候補 | [定義](enemy-frost-ape.md) |
+| enemy-ghost-jelly | クラゲの亡霊 | 候補 | [定義](enemy-ghost-jelly.md) |
+| enemy-giant-octopus | 沖の大ダコ | 候補 | [定義](enemy-giant-octopus.md) |
+| enemy-glow-worm | ツチボタル | 候補 | [定義](enemy-glow-worm.md) |
+| enemy-grave-raven | 墓守りの大鴉 | 候補 | [定義](enemy-grave-raven.md) |
+| enemy-hollow-armor | 古王国の空鎧 | 候補 | [定義](enemy-hollow-armor.md) |
+| enemy-hourglass-sprite | 砂時計の精 | 候補 | [定義](enemy-hourglass-sprite.md) |
+| enemy-ice-penguin | 氷槍のペンギン兵 | 候補 | [定義](enemy-ice-penguin.md) |
+| enemy-icicle-fox | つらら尾の狐 | 候補 | [定義](enemy-icicle-fox.md) |
+| enemy-lava-slime | 溶岩スライム | 候補 | [定義](enemy-lava-slime.md) |
+| enemy-lich | 死霊の魔導師 | 候補 | [定義](enemy-lich.md) |
+| enemy-lost-signpost | 迷い道標 | 候補 | [定義](enemy-lost-signpost.md) |
+| enemy-mist-dragon | 霧の竜 | 候補 | [定義](enemy-mist-dragon.md) |
 | enemy-moss-slime | 苔スライム | 候補 | [定義](enemy-moss-slime.md) |
 | enemy-moss-wolf | 苔むした狼 | 候補 | [定義](enemy-moss-wolf.md) |
+| enemy-mud-golem | 泥人形 | 候補 | [定義](enemy-mud-golem.md) |
+| enemy-nectar-bloom | 蜜吸い花 | 候補 | [定義](enemy-nectar-bloom.md) |
+| enemy-obsidian-colossus | 黒曜石の巨像 | 候補 | [定義](enemy-obsidian-colossus.md) |
+| enemy-ore-mole | 鉱石喰いモグラ | 候補 | [定義](enemy-ore-mole.md) |
+| enemy-pumpkin-scarecrow | かぼちゃ頭の案山子 | 候補 | [定義](enemy-pumpkin-scarecrow.md) |
+| enemy-rock-troll | 岩肌トロル | 候補 | [定義](enemy-rock-troll.md) |
+| enemy-sand-scorpion | 砂サソリ | 候補 | [定義](enemy-sand-scorpion.md) |
+| enemy-sand-shark | 砂鮫 | 候補 | [定義](enemy-sand-shark.md) |
+| enemy-skeleton-pirate | 骸骨海賊 | 候補 | [定義](enemy-skeleton-pirate.md) |
+| enemy-skeleton-soldier | 骸骨兵 | 候補 | [定義](enemy-skeleton-soldier.md) |
+| enemy-snow-mammoth | 雪原のマンモス | 候補 | [定義](enemy-snow-mammoth.md) |
+| enemy-snowball | 雪玉ころん | 候補 | [定義](enemy-snowball.md) |
+| enemy-spore-cap | 毒胞子オオダケ | 候補 | [定義](enemy-spore-cap.md) |
+| enemy-stone-gargoyle | 石のガーゴイル | 候補 | [定義](enemy-stone-gargoyle.md) |
+| enemy-stump-boar | 切り株猪 | 候補 | [定義](enemy-stump-boar.md) |
+| enemy-thorn-serpent | いばら蛇 | 候補 | [定義](enemy-thorn-serpent.md) |
+| enemy-will-o-wisp | 鬼火 | 候補 | [定義](enemy-will-o-wisp.md) |
+| enemy-wrapped-jackal | 包帯の山犬 | 候補 | [定義](enemy-wrapped-jackal.md) |
 <!-- entries:end -->
 
 ## 記入する項目

@@ -2,7 +2,7 @@
 id: enemy-skill-spore-burst
 type: definition
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-19
 name: 胞子ばらまき
 category: enemy-skills
 ---
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔スライム](../enemies/enemy-moss-slime.md)の技を共通技として作った |
 | 役割・説明 | 味方全体に毒を重ね、長い戦闘でじわじわ削る |
-| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -35,7 +35,7 @@ category: enemy-skills
 | 物理・魔法と属性 | ダメージなし | 味方は物理の技を物防で、魔法の技を属防で受ける（[使い道の候補](../../features/party.md#ステータスの項目)） | 候補 |
 | 効果 | 毒を2重ねる | 使う敵のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)）。状態は[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)の名前 | 仮 |
 | 予告 | 弱体 | [記入する項目](README.md#記入する項目) | 候補 |
-| 使う敵 | [苔スライム](../enemies/enemy-moss-slime.md) | 各敵の定義の「技」の表 | 候補 |
+| 使う敵 | [苔スライム](../enemies/enemy-moss-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md) | 各敵の定義の「技」の表 | 候補 |
 | 似合う敵 | 苔・きのこ・草が生えた敵（スライム、きのこ、植物） | 新しい敵へ付けるときの目安 | 候補 |
 
 ## 演出
@@ -55,6 +55,8 @@ category: enemy-skills
 | 敵 | 色・材質・形の違い |
 |---|---|
 | [苔スライム](../enemies/enemy-moss-slime.md) | 苔の黄緑とくすんだ黄。粒は背中の苔から出る |
+| [毒胞子オオダケ](../enemies/enemy-spore-cap.md) | 左右の胞子袋がしぼみ、明るい斑点のような黄緑の胞子が噴き出す |
+| [蜜吸い花](../enemies/enemy-nectar-bloom.md) | 胞子の代わりに、黄色の花芯から金色の花粉が噴き出す |
 
 ## 未決事項
 
@@ -69,3 +71,4 @@ category: enemy-skills
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-04 | 共通技として定義を作った | ユーザーの依頼 | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md) |
+| 2026-10-19 | 使う敵に、新しく作った敵を加えた | ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる） | 使う敵：[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md) |

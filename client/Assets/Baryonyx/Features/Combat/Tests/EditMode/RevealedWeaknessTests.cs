@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Records;
 using Baryonyx.Networking;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
@@ -31,7 +34,7 @@ namespace Baryonyx.Tests.EditMode
         {
             var ids = CombatEnemies.All.Select(enemy => enemy.Id).ToArray();
             Assert.That(ids, Is.Unique);
-            Assert.That(ids, Is.EqualTo(new[] { "moss-slime", "moss-wolf", "forest-guardian" }));
+            Assert.That(ids, Is.EqualTo(ServerEnemyIds()));
             foreach (var enemy in CombatEnemies.All)
             {
                 Assert.That(CombatEnemies.Find(enemy.Id), Is.SameAs(enemy));
@@ -39,6 +42,33 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(enemy.Weaknesses, Has.None.EqualTo(CardElement.None));
             }
             Assert.That(CombatEnemies.Find("dragon"), Is.Null);
+        }
+
+        // The ids in ENEMY_IDS of server/src/features/combat/catalog.ts, in order.
+        private static string[] ServerEnemyIds()
+        {
+            var path = Path.Combine(
+                Application.dataPath,
+                "..",
+                "..",
+                "server",
+                "src",
+                "features",
+                "combat",
+                "catalog.ts"
+            );
+            var source = File.ReadAllText(path);
+            var list = Regex.Match(
+                source,
+                @"ENEMY_IDS = \[(.*?)\] as const",
+                RegexOptions.Singleline
+            );
+            Assert.That(list.Success, "ENEMY_IDS was not found in " + path);
+            return Regex
+                .Matches(list.Groups[1].Value, "\"([a-z0-9-]+)\"")
+                .Cast<Match>()
+                .Select(match => match.Groups[1].Value)
+                .ToArray();
         }
 
         [Test]

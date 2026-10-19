@@ -3,6 +3,7 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
+import { ELEMENTS, ENEMY_IDS } from "./catalog.js";
 
 type State = {
   weaknesses: { enemyId: string; element: string; revealedAt: string }[];
@@ -82,10 +83,13 @@ describe("開示した敵の弱点のAPI", () => {
       expect((await reveal(user.token, body)).status).toBe(400);
     }
     const tooMany = {
-      weaknesses: Array.from({ length: 19 }, () => ({
-        enemyId: "moss-slime",
-        element: "fire",
-      })),
+      weaknesses: Array.from(
+        { length: ENEMY_IDS.length * ELEMENTS.length + 1 },
+        () => ({
+          enemyId: "moss-slime",
+          element: "fire",
+        }),
+      ),
     };
     expect((await reveal(user.token, tooMany)).status).toBe(400);
     expect(await read(user.token)).toEqual({ weaknesses: [] });
