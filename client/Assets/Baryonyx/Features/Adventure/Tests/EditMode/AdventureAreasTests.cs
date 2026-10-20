@@ -116,11 +116,16 @@ namespace Baryonyx.Tests.EditMode
             var elite = AdventureCatalog.Encounter("port-portoria/elite/4");
             Assert.That(elite.Kinds.Take(2), Is.EqualTo(pack.Kinds.Take(2)));
             Assert.That(elite.Level, Is.EqualTo(area.Level + AdventureCatalog.EliteLevelUp));
-            Assert.That(elite.HpScale, Is.GreaterThan(1f));
+            Assert.That(elite.HpScale, Is.EqualTo(AdventureCatalog.EliteHpScale));
+            Assert.That(elite.PowerScale, Is.EqualTo(AdventureCatalog.ElitePowerScale));
+            Assert.That(pack.PowerScale, Is.EqualTo(1f));
 
             var boss = AdventureCatalog.Encounter("port-portoria/boss/4");
             Assert.That(area.Bosses, Does.Contain(boss.Kinds[AdventureCatalog.LargePlace]));
             Assert.That(boss.Enemies, Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(boss.Level, Is.EqualTo(area.Level + AdventureCatalog.BossLevelUp));
+            Assert.That(boss.HpScale, Is.EqualTo(AdventureCatalog.BossHpScale));
+            Assert.That(boss.PowerScale, Is.EqualTo(AdventureCatalog.BossPowerScale));
 
             // 知らない組み合わせは、森の魔物の気配にする。
             var unknown = AdventureCatalog.Encounter("nowhere/pack/1");

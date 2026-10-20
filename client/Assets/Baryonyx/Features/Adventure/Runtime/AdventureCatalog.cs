@@ -9,16 +9,23 @@ namespace Baryonyx.Adventure
     /// The enemies a battle of the adventure is fought with: the kind of enemy in each place of
     /// the battle screen (by place in BattleInspectView.Enemies: 0 the small one in front, 1 the
     /// middle-sized one, 2 the large one at the back; null for an empty place), the level they
-    /// show up at and how much their HP is scaled.
+    /// show up at and how much their HP and their attacks are scaled.
     /// </summary>
     public sealed class AdventureEncounter
     {
-        public AdventureEncounter(string id, string[] kinds, int level, float hpScale)
+        public AdventureEncounter(
+            string id,
+            string[] kinds,
+            int level,
+            float hpScale,
+            float powerScale = 1f
+        )
         {
             Id = id;
             Kinds = kinds ?? Array.Empty<string>();
             Level = level;
             HpScale = hpScale;
+            PowerScale = powerScale;
         }
 
         public string Id { get; }
@@ -28,6 +35,7 @@ namespace Baryonyx.Adventure
 
         public int Level { get; }
         public float HpScale { get; }
+        public float PowerScale { get; }
 
         /// <summary>The places of the battle screen that have an enemy.</summary>
         public int[] Enemies =>
@@ -83,12 +91,18 @@ namespace Baryonyx.Adventure
         public const int MediumPlace = 1;
         public const int LargePlace = 2;
 
-        // 強敵の部屋は、同じ行き先の敵をLvを上げ、HPを増やして出す（仮）。
-        public const int EliteLevelUp = 4;
-        public const float EliteHpScale = 1.3f;
+        // 強敵の部屋は、同じ行き先の敵をLvを上げ、HPと攻撃を増やして出す（仮）。
+        // 実際の戦闘画面での自動対戦で、味方が5〜9ターンで勝ち、HPが2〜3割減る強さにした
+        // （doc/features/stage-progression.md の戦闘の試し）。
+        public const int EliteLevelUp = 8;
+        public const float EliteHpScale = 3.2f;
+        public const float ElitePowerScale = 2.2f;
 
-        // 最奥の主は、道中より少し高いLvで待つ。
+        // 最奥の主は、道中より少し高いLvで、HPと攻撃を増やして待つ。
+        // 自動対戦で、どの行き先の主にも勝ち、HPの2〜7割を失う、競った戦いになる強さにした。
         public const int BossLevelUp = 2;
+        public const float BossHpScale = 2f;
+        public const float BossPowerScale = 2.6f;
 
         /// <summary>
         /// The destinations, from the nearest to the deepest (2026-10-20). Each has the enemies of
@@ -307,7 +321,8 @@ namespace Baryonyx.Adventure
                     id,
                     new[] { small, medium, null },
                     area.Level + EliteLevelUp,
-                    EliteHpScale
+                    EliteHpScale,
+                    ElitePowerScale
                 ),
                 "boss" => new AdventureEncounter(
                     id,
@@ -318,7 +333,8 @@ namespace Baryonyx.Adventure
                         Pick(area.Bosses, variant, area.Small.Length * area.Medium.Length),
                     },
                     area.Level + BossLevelUp,
-                    1f
+                    BossHpScale,
+                    BossPowerScale
                 ),
                 _ => new AdventureEncounter(id, new[] { small, medium, null }, area.Level, 1f),
             };

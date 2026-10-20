@@ -61,7 +61,12 @@ namespace Baryonyx.Adventure
 
             var encounter = AdventureCatalog.Encounter(state.Run.Room.Encounter);
             battle.EndsWithOutcome = true;
-            battle.UseEncounter(encounter.Kinds, encounter.Level, encounter.HpScale);
+            battle.UseEncounter(
+                encounter.Kinds,
+                encounter.Level,
+                encounter.HpScale,
+                encounter.PowerScale
+            );
             standing = encounter.Enemies;
             // 前の戦闘までに開示した弱点を最初から見せ、この戦闘で開示した弱点を記録する。
             battle.UseRevealedWeaknesses(IsRevealed);

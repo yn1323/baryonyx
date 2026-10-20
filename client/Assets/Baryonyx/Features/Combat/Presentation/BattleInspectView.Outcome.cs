@@ -67,11 +67,17 @@ namespace Baryonyx.Combat.Presentation
         /// Sets the encounter of an adventure's room before the battle begins: the enemy kind of
         /// each place on the field (<paramref name="kinds"/>, by place in <see cref="Enemies"/>;
         /// null or empty leaves the place empty), at <paramref name="level"/>, with their HP
-        /// scaled by <paramref name="hpScale"/>. Each place takes the kind's picture, drawn part,
-        /// face, weaknesses and numbers (<see cref="CombatEnemyStats"/>). A kind without a
-        /// picture keeps the place's own, and a place without a kind is gone from the field.
+        /// scaled by <paramref name="hpScale"/> and their attacks by <paramref name="powerScale"/>.
+        /// Each place takes the kind's picture, drawn part, face, weaknesses and numbers
+        /// (<see cref="CombatEnemyStats"/>). A kind without a picture keeps the place's own, and a
+        /// place without a kind is gone from the field.
         /// </summary>
-        public void UseEncounter(IReadOnlyList<string> kinds, int level, float hpScale)
+        public void UseEncounter(
+            IReadOnlyList<string> kinds,
+            int level,
+            float hpScale,
+            float powerScale = 1f
+        )
         {
             var standing = new List<int>();
             for (int i = 0; i < Enemies.Length; i++)
@@ -81,6 +87,10 @@ namespace Baryonyx.Combat.Presentation
                     continue;
                 standing.Add(i);
                 Become(i, id, level);
+                Enemies[i].Power = Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(Enemies[i].Power * Mathf.Max(0.01f, powerScale))
+                );
             }
             UseEncounter(standing, hpScale);
         }

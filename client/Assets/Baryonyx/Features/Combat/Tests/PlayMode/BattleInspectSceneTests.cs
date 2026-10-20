@@ -1900,6 +1900,62 @@ namespace Baryonyx.Tests.PlayMode
             );
 
         /// <summary>The texts of the numbers now rising from a template.</summary>
+        // ダメージと状態を同時に与えると、数字の下に状態の名前が並び、上がる途中でも重ならない。
+        [UnityTest]
+        public IEnumerator ADamageNumberAndTheStatusPutOnWithItDoNotOverlap()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int embers = DeckIndexOf(view, "Embers");
+            view.RestartDeal(
+                new[] { embers }
+                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i != embers))
+                    .ToArray(),
+                instant: true
+            );
+            int index = System.Array.FindIndex(
+                view.Cards,
+                card => card.InHand && card.DeckIndex == embers
+            );
+            var target = view.Enemies[0];
+            Play(view, index, target.TargetArea);
+
+            TMP_Text number = null;
+            TMP_Text name = null;
+            for (float t = 0f; (number == null || name == null) && t < 5f; t += Time.unscaledDeltaTime)
+            {
+                number = RisingLabels(view.DamageNumber)
+                    .Concat(RisingLabels(view.WeakNumber))
+                    .FirstOrDefault();
+                name = RisingLabels(view.PopupTemplate)
+                    .FirstOrDefault(text => text.text.Contains("やけど"));
+                yield return null;
+            }
+            Assert.That(number, Is.Not.Null, "The damage number rises.");
+            Assert.That(name, Is.Not.Null, "The status name rises.");
+
+            // 大きく弾ける最初の一瞬を過ぎてから、消えるまでのあいだを見る。
+            float since = Time.unscaledTime;
+            int checkedFrames = 0;
+            while (number != null && name != null && Time.unscaledTime - since < 1.1f)
+            {
+                if (Time.unscaledTime - since >= 0.2f)
+                {
+                    float scale = number.rectTransform.lossyScale.y;
+                    float gap = number.rectTransform.position.y - name.rectTransform.position.y;
+                    float needed = (number.fontSize + name.fontSize) * 0.5f * scale;
+                    Assert.That(
+                        gap,
+                        Is.GreaterThanOrEqualTo(needed),
+                        $"The number stays a line above the name ({Time.unscaledTime - since:0.00}s)."
+                    );
+                    checkedFrames++;
+                }
+                yield return null;
+            }
+            Assert.That(checkedFrames, Is.GreaterThan(5));
+        }
+
         private static string[] Rising(TMP_Text template) =>
             RisingLabels(template).Select(text => text.text).ToArray();
 
