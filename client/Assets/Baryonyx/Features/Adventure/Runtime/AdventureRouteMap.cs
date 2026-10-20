@@ -142,11 +142,28 @@ namespace Baryonyx.Adventure
             int seed,
             int roomCount,
             Func<AdventureRoomKind, string> encounter = null
+        ) =>
+            Generate(
+                seed,
+                roomCount,
+                encounter == null
+                    ? (Func<AdventureRoomKind, string, string>)null
+                    : (kind, _) => encounter(kind)
+            );
+
+        /// <summary>
+        /// The same, with each room's encounter chosen from its kind and its id, so rooms of one
+        /// kind can hold different enemies.
+        /// </summary>
+        public static AdventureRouteMap Generate(
+            int seed,
+            int roomCount,
+            Func<AdventureRoomKind, string, string> encounter
         )
         {
             if (roomCount < 1)
                 throw new ArgumentOutOfRangeException(nameof(roomCount));
-            encounter ??= _ => "";
+            encounter ??= (_, _) => "";
             var random = new RouteRandom(seed);
             int laneCount = random.Next() < 0.3 ? 3 : 4;
             float amp = laneCount == 3 ? 0.13f : 0.11f;
@@ -225,7 +242,7 @@ namespace Baryonyx.Adventure
                             RoomId(floor, lane),
                             floor,
                             kind,
-                            encounter(kind),
+                            encounter(kind, RoomId(floor, lane)),
                             next.ToArray()
                         ),
                         new AdventureRoutePoint(at, map.LaneS(lane, at), lane)
@@ -238,7 +255,7 @@ namespace Baryonyx.Adventure
                     BossId,
                     map.BossFloor,
                     AdventureRoomKind.Boss,
-                    encounter(AdventureRoomKind.Boss),
+                    encounter(AdventureRoomKind.Boss, BossId),
                     Array.Empty<string>()
                 ),
                 new AdventureRoutePoint(1f, 0.5f, -1)

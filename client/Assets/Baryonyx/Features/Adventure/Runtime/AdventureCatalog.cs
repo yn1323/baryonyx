@@ -1,92 +1,332 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Baryonyx.Combat.Presentation;
 
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// The enemies a battle of the adventure is fought with: which of the battle screen's enemies
-    /// stand in it (indexes of BattleInspectView.Enemies: 0 苔スライム, 1 苔むした狼, 2 森の守り手)
-    /// and how much their HP is scaled. Provisional, like the route itself.
+    /// The enemies a battle of the adventure is fought with: the kind of enemy in each place of
+    /// the battle screen (by place in BattleInspectView.Enemies: 0 the small one in front, 1 the
+    /// middle-sized one, 2 the large one at the back; null for an empty place), the level they
+    /// show up at and how much their HP is scaled.
     /// </summary>
     public sealed class AdventureEncounter
     {
-        public AdventureEncounter(string id, int[] enemies, float hpScale)
+        public AdventureEncounter(string id, string[] kinds, int level, float hpScale)
         {
             Id = id;
-            Enemies = enemies;
+            Kinds = kinds ?? Array.Empty<string>();
+            Level = level;
             HpScale = hpScale;
         }
 
         public string Id { get; }
-        public int[] Enemies { get; }
+
+        /// <summary>The kind of enemy in each place of the battle screen, null where none stands.</summary>
+        public IReadOnlyList<string> Kinds { get; }
+
+        public int Level { get; }
         public float HpScale { get; }
+
+        /// <summary>The places of the battle screen that have an enemy.</summary>
+        public int[] Enemies =>
+            Enumerable
+                .Range(0, Kinds.Count)
+                .Where(i => !string.IsNullOrEmpty(Kinds[i]))
+                .ToArray();
     }
 
     /// <summary>
-    /// What the client shows of the server's adventure: the destinations' names and places, the
-    /// floor names, the hints at the rooms and the enemies of each encounter, and the route made
-    /// from the seed and the room count the server keeps (server/src/features/adventure/catalog.ts).
+    /// One destination of the adventure: its name, its battle background, the rooms between the
+    /// entrance and the deepest room (the same as the server's), the level its enemies show up
+    /// at and the enemies that live there, by size (doc/features/stage-progression.md).
+    /// </summary>
+    public sealed class AdventureArea
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public BattleStage Stage { get; set; }
+        public int RoomCount { get; set; } = 8;
+
+        /// <summary>
+        /// How much rarer rewards grow here, in percent (the same as the server's rewardBoost):
+        /// quality S is that much more likely, A half that.
+        /// </summary>
+        public int RewardBoost { get; set; }
+
+        /// <summary>The level of the enemies on the way; a strong enemy's room is higher.</summary>
+        public int Level { get; set; } = 10;
+
+        /// <summary>The small enemies (64 dots), standing in front.</summary>
+        public string[] Small { get; set; } = Array.Empty<string>();
+
+        /// <summary>The middle-sized enemies (96 dots).</summary>
+        public string[] Medium { get; set; } = Array.Empty<string>();
+
+        /// <summary>The masters of the deepest room (128 dots); one of them waits there.</summary>
+        public string[] Bosses { get; set; } = Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// What the client shows of the server's adventure: the destinations' names, places and
+    /// enemies, the floor names, the hints at the rooms and the enemies of each encounter, and
+    /// the route made from the seed and the room count the server keeps
+    /// (server/src/features/adventure/catalog.ts).
     /// </summary>
     public static class AdventureCatalog
     {
         public const string ForestRuins = AdventureLocalSource.ForestRuins;
 
-        // 戦闘画面の敵の並び（BattleInspectView.Enemies）。
-        public const int MossSlime = 0;
-        public const int MossWolf = 1;
-        public const int ForestGuardian = 2;
+        // 戦闘画面の敵の並び（BattleInspectView.Enemies）。小さな敵が手前、大きな敵が奥に立つ。
+        public const int SmallPlace = 0;
+        public const int MediumPlace = 1;
+        public const int LargePlace = 2;
 
-        private static readonly AdventureEncounter[] Encounters =
+        // 強敵の部屋は、同じ行き先の敵をLvを上げ、HPを増やして出す（仮）。
+        public const int EliteLevelUp = 4;
+        public const float EliteHpScale = 1.3f;
+
+        // 最奥の主は、道中より少し高いLvで待つ。
+        public const int BossLevelUp = 2;
+
+        /// <summary>
+        /// The destinations, from the nearest to the deepest (2026-10-20). Each has the enemies of
+        /// its own land (doc/catalog/enemies, where each lives), and every enemy kind shows up
+        /// somewhere.
+        /// </summary>
+        public static readonly IReadOnlyList<AdventureArea> Areas = new[]
         {
-            new("forest-pack", new[] { MossSlime, MossWolf }, 1f),
-            // 強い魔物の気配：同じ2体を硬くする（仮）。
-            new("forest-elite", new[] { MossSlime, MossWolf }, 1.6f),
-            new("forest-boss", new[] { MossSlime, MossWolf, ForestGuardian }, 1f),
+            new AdventureArea
+            {
+                Id = ForestRuins,
+                RewardBoost = 0,
+                Name = "ミストラ遺跡",
+                Stage = BattleStage.MistyWoods,
+                RoomCount = 8,
+                Level = 10,
+                Small = new[] { "moss-slime", "dew-slime", "acorn-soldier", "crystal-hare" },
+                Medium = new[]
+                {
+                    "moss-wolf",
+                    "spore-cap",
+                    "thorn-serpent",
+                    "stump-boar",
+                    "nectar-bloom",
+                },
+                Bosses = new[] { "forest-guardian" },
+            },
+            new AdventureArea
+            {
+                Id = "port-portoria",
+                RewardBoost = 20,
+                Name = "港町ポルトリア",
+                Stage = BattleStage.RockyShore,
+                RoomCount = 9,
+                Level = 14,
+                Small = new[] { "ghost-jelly", "coin-pouch", "lost-signpost" },
+                Medium = new[] { "barnacle-crab", "skeleton-pirate", "pumpkin-scarecrow" },
+                Bosses = new[] { "giant-octopus" },
+            },
+            new AdventureArea
+            {
+                Id = "glaciera-cave",
+                RewardBoost = 40,
+                Name = "グラシエラ氷窟",
+                Stage = BattleStage.CrystalCavern,
+                RoomCount = 9,
+                Level = 18,
+                Small = new[] { "big-eared-bat", "glow-worm", "ice-penguin" },
+                Medium = new[] { "crystal-hermit", "ore-mole", "blind-fishman", "icicle-fox" },
+                Bosses = new[] { "rock-troll" },
+            },
+            new AdventureArea
+            {
+                Id = "hush-mire",
+                RewardBoost = 60,
+                Name = "しじまの沼",
+                Stage = BattleStage.MistySwamp,
+                RoomCount = 10,
+                Level = 22,
+                Small = new[] { "blood-leech", "will-o-wisp", "dew-slime" },
+                Medium = new[] { "frog-king", "mud-golem", "spore-cap" },
+                Bosses = new[] { "bone-croc" },
+            },
+            new AdventureArea
+            {
+                Id = "almaja-tomb",
+                RewardBoost = 80,
+                Name = "アルマジャ王墓",
+                Stage = BattleStage.CastleHall,
+                RoomCount = 10,
+                Level = 26,
+                Small = new[]
+                {
+                    "cracked-urn",
+                    "floating-grimoire",
+                    "hourglass-sprite",
+                    "cactus-warrior",
+                },
+                Medium = new[]
+                {
+                    "hollow-armor",
+                    "stone-gargoyle",
+                    "chest-mimic",
+                    "wrapped-jackal",
+                    "sand-scorpion",
+                },
+                Bosses = new[] { "brass-warden", "sand-shark" },
+            },
+            new AdventureArea
+            {
+                Id = "moonshade-graveyard",
+                RewardBoost = 100,
+                Name = "月影の墓所",
+                Stage = BattleStage.MoonlitGraveyard,
+                RoomCount = 11,
+                Level = 30,
+                Small = new[] { "cursed-candelabra", "will-o-wisp", "floating-grimoire" },
+                Medium = new[]
+                {
+                    "skeleton-soldier",
+                    "grave-raven",
+                    "hollow-armor",
+                    "pumpkin-scarecrow",
+                },
+                Bosses = new[] { "lich" },
+            },
+            new AdventureArea
+            {
+                Id = "volgan-volcano",
+                RewardBoost = 130,
+                Name = "ヴォルガン火山",
+                Stage = BattleStage.VolcanoCrater,
+                RoomCount = 11,
+                Level = 35,
+                Small = new[] { "lava-slime", "will-o-wisp", "big-eared-bat" },
+                Medium = new[] { "fire-lizard", "flame-tail-bird", "ore-mole" },
+                Bosses = new[] { "obsidian-colossus" },
+            },
+            new AdventureArea
+            {
+                Id = "neve-peaks",
+                RewardBoost = 160,
+                Name = "白嶺ネーヴェ",
+                Stage = BattleStage.SnowField,
+                RoomCount = 12,
+                Level = 40,
+                Small = new[] { "snowball", "ice-penguin", "crystal-hare" },
+                Medium = new[] { "icicle-fox", "crystal-hermit", "stump-boar" },
+                Bosses = new[] { "frost-ape", "snow-mammoth", "mist-dragon" },
+            },
         };
 
+        public static AdventureArea Area(string destinationId) =>
+            Areas.FirstOrDefault(area => area.Id == destinationId);
+
         public static string DestinationName(string destinationId) =>
-            destinationId switch
-            {
-                ForestRuins => "ミストラ遺跡",
-                _ => "冒険先",
-            };
+            Area(destinationId)?.Name ?? "冒険先";
 
         // 探索と戦闘の背景。行き先ごとに戦闘の背景から選ぶ。
         public static BattleStage StageOf(string destinationId) =>
-            destinationId switch
-            {
-                ForestRuins => BattleStage.MistyWoods,
-                _ => BattleStage.MeadowRoad,
-            };
+            Area(destinationId)?.Stage ?? BattleStage.MeadowRoad;
 
         public static string FloorText(int floor) => $"第{Math.Max(1, floor)}層";
 
         // 入口と最奥の間のあいだに通る部屋の数。サーバーの設定値と同じ（アプリの中だけの冒険で使う）。
-        public static int RoomCount(string destinationId) => 8;
+        public static int RoomCount(string destinationId) => Area(destinationId)?.RoomCount ?? 8;
 
-        // 部屋の種類ごとに戦う敵の組み合わせ（仮）。行き先ごとに変える。
-        public static string EncounterOf(string destinationId, AdventureRoomKind kind) =>
-            kind switch
+        /// <summary>
+        /// The encounter of a room of <paramref name="kind"/>: its destination, what it holds and
+        /// which of the destination's enemies, picked by <paramref name="variant"/>
+        /// ("port-portoria/pack/17"). Empty for a room without a battle.
+        /// </summary>
+        public static string EncounterOf(
+            string destinationId,
+            AdventureRoomKind kind,
+            int variant = 0
+        )
+        {
+            string what = kind switch
             {
-                AdventureRoomKind.Battle => "forest-pack",
-                AdventureRoomKind.Elite => "forest-elite",
-                AdventureRoomKind.Boss => "forest-boss",
+                AdventureRoomKind.Battle => "pack",
+                AdventureRoomKind.Elite => "elite",
+                AdventureRoomKind.Boss => "boss",
                 _ => "",
             };
+            return what == "" ? "" : $"{destinationId}/{what}/{Math.Max(0, variant)}";
+        }
 
-        /// <summary>The adventure's route, made from the seed the server chose.</summary>
+        /// <summary>
+        /// The adventure's route, made from the seed the server chose. Each room's enemies are
+        /// picked from the seed and the room, so the same adventure meets the same enemies on
+        /// every device, and another adventure meets others.
+        /// </summary>
         public static AdventureRouteMap Route(string destinationId, int seed, int roomCount) =>
             AdventureRouteMap.Generate(
                 seed,
                 roomCount > 0 ? roomCount : RoomCount(destinationId),
-                kind => EncounterOf(destinationId, kind)
+                (kind, roomId) => EncounterOf(destinationId, kind, Variant(seed, roomId))
             );
+
+        // 種と部屋のIDから、0〜9999の組み合わせの番号を決める（どの端末でも同じになる計算）。
+        private static int Variant(int seed, string roomId)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u ^ (uint)seed;
+                foreach (char c in roomId ?? "")
+                    hash = (hash ^ c) * 16777619u;
+                hash ^= hash >> 13;
+                hash *= 0x5bd1e995u;
+                hash ^= hash >> 15;
+                return (int)(hash % 10000u);
+            }
+        }
 
         public static string Location(AdventureRun run) =>
             run == null ? "" : $"{DestinationName(run.DestinationId)} {FloorText(run.Floor)}";
 
-        public static AdventureEncounter Encounter(string id) =>
-            Array.Find(Encounters, encounter => encounter.Id == id) ?? Encounters[0];
+        /// <summary>
+        /// The enemies of an encounter ("port-portoria/pack/17"): a pack has a small and a
+        /// middle-sized enemy of the destination, a strong enemy's room the same at a higher level
+        /// and with more HP, and the deepest room adds the destination's master behind them. An
+        /// unknown encounter is the first destination's pack.
+        /// </summary>
+        public static AdventureEncounter Encounter(string id)
+        {
+            var parts = (id ?? "").Split('/');
+            var area = parts.Length == 3 ? Area(parts[0]) : null;
+            if (area == null || !int.TryParse(parts[2], out int variant) || variant < 0)
+                return Encounter(EncounterOf(ForestRuins, AdventureRoomKind.Battle));
+            string small = Pick(area.Small, variant, 1);
+            string medium = Pick(area.Medium, variant, area.Small.Length);
+            return parts[1] switch
+            {
+                "elite" => new AdventureEncounter(
+                    id,
+                    new[] { small, medium, null },
+                    area.Level + EliteLevelUp,
+                    EliteHpScale
+                ),
+                "boss" => new AdventureEncounter(
+                    id,
+                    new[]
+                    {
+                        small,
+                        medium,
+                        Pick(area.Bosses, variant, area.Small.Length * area.Medium.Length),
+                    },
+                    area.Level + BossLevelUp,
+                    1f
+                ),
+                _ => new AdventureEncounter(id, new[] { small, medium, null }, area.Level, 1f),
+            };
+        }
+
+        // 組み合わせの番号から、敵の一覧の1体を選ぶ。小・中・主の順に、番号の桁をずらして使う。
+        private static string Pick(string[] kinds, int variant, int stride) =>
+            kinds.Length == 0 ? null : kinds[variant / Math.Max(1, stride) % kinds.Length];
 
         public static string Outcome(AdventureRewardOutcome outcome) =>
             outcome switch

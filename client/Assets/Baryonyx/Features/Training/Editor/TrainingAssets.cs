@@ -165,11 +165,10 @@ namespace Baryonyx.Training.Editor
                     "マナバースト",
                     "敵全体に 属攻の80% のダメージ",
                     5,
-                    3,
                     "CardRevelation",
                     "ManaBurst"
                 ),
-                Unique("星降り", "ランダムな敵に5回ダメージ", 20, 5, "CardMeteor", "StarFall")
+                Unique("星降り", "ランダムな敵に5回ダメージ", 20, "CardMeteor", "StarFall")
             );
 
         private static TrainingCharacter Archer() =>
@@ -180,34 +179,26 @@ namespace Baryonyx.Training.Editor
                     "雷撃の矢",
                     "敵1体に雷のダメージ。まひさせる",
                     5,
-                    3,
                     "CardThunderSpear",
                     "ThunderArrow"
                 ),
-                Unique("矢の雨", "敵全体に3回ダメージ", 20, 5, "CardArrowRain", "ArrowStorm")
+                Unique("矢の雨", "敵全体に3回ダメージ", 20, "CardArrowRain", "ArrowStorm")
             );
 
         private static TrainingCharacter Knight() =>
             Skills(
                 Skill("守護の誓い", "味方が受けるダメージ -5%", 1, 0, "CardGuardianOath"),
                 Skill("不屈", "倒れるダメージを1度だけ耐える", 15, 0, "CardDivineShield"),
-                Unique(
-                    "盾の構え",
-                    "次のターンまでブロック +80",
-                    5,
-                    2,
-                    "CardProtect",
-                    "ShieldStance"
-                ),
-                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, 5, "CardIai", "Issen")
+                Unique("盾の構え", "次のターンまでブロック +80", 5, "CardProtect", "ShieldStance"),
+                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, "CardIai", "Issen")
             );
 
         private static TrainingCharacter Healer() =>
             Skills(
                 Skill("祈り", "ターンの終わりに味方のHPを少し回復", 1, 0, "CardRegen"),
                 Skill("浄化の光", "状態異常に1回かからない", 15, 0, "CardPurify"),
-                Unique("癒しの風", "味方全体のHPを回復", 5, 3, "CardHeal", "HealingWind"),
-                Unique("蘇生", "倒れた味方1人を復活させる", 20, 6, "CardResurrection", "Revive")
+                Unique("癒しの風", "味方全体のHPを回復", 5, "CardHeal", "HealingWind"),
+                Unique("蘇生", "倒れた味方1人を復活させる", 20, "CardResurrection", "Revive")
             );
 
         private static TrainingCharacter Skills(
@@ -218,16 +209,16 @@ namespace Baryonyx.Training.Editor
         ) =>
             new() { Passives = new[] { passive1, passive2 }, Uniques = new[] { unique1, unique2 } };
 
-        // 固有スキル。名前・エネルギーは進化ツリーの最初の段階と同じにする。
+        // 固有スキル。名前は進化ツリーの最初の段階と同じにし、エネルギーはその段階のコストから引く。
         private static TrainingSkill Unique(
             string name,
             string description,
             int level,
-            int energy,
             string art,
             string tree
         )
         {
+            int energy = UniqueSkillTrees.Find(tree)?.Stages[0]?.Card.Cost ?? 0;
             var skill = Skill(name, description, level, energy, art);
             skill.Tree = tree;
             return skill;
@@ -760,6 +751,9 @@ namespace Baryonyx.Training.Editor
             var icon = Layout.Box(cell, "Icon", 14, 14, 48, 48);
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
+            // 武器・防具のアイコンには、付けている装備の品質のキラキラを重ねる。
+            if (index < TrainingPresenter.OpenGearSlots)
+                widget.Foil = CardFoilAssets.Add(widget.Icon);
             widget.Slot = Label(
                 cell,
                 "Slot",

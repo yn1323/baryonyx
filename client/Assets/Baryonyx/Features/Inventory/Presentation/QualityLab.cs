@@ -25,28 +25,17 @@ namespace Baryonyx.Inventory
         public TMP_Text Stars;
         public TMP_Text Quality;
 
-        public void Show(string name, int stars, Sprite icon, ItemQuality quality)
+        public void Show(string name, int stars, Sprite icon, ItemQuality quality, int foilStyle)
         {
             var texture = icon != null ? icon.texture : null;
-            var uv = new Rect(0f, 0f, 1f, 1f);
-            if (texture != null)
-            {
-                var rect = icon.textureRect;
-                uv = new Rect(
-                    rect.x / texture.width,
-                    rect.y / texture.height,
-                    rect.width / texture.width,
-                    rect.height / texture.height
-                );
-            }
             if (Icon != null)
             {
                 Icon.texture = texture;
-                Icon.uvRect = uv;
+                Icon.uvRect = CardFoil.UvOf(icon);
                 Icon.enabled = texture != null;
             }
             if (Foil != null)
-                Foil.Show(texture, uv, quality);
+                Foil.Show(icon, quality, foilStyle);
             UiText.Set(Name, name);
             UiText.Set(Stars, stars > 0 ? new string('★', stars) : "");
             if (Quality != null)
@@ -83,7 +72,7 @@ namespace Baryonyx.Inventory
 
         /// <summary>The lowest and highest upper limit the lab lets the limit slider try.</summary>
         public const float MinLimit = 1.05f;
-        public const float MaxLimit = 2f;
+        public const float MaxLimit = 4f;
 
         [Header("一覧")]
         [Tooltip("種類のタブ（QualityLabTab の順）。")]
@@ -171,7 +160,7 @@ namespace Baryonyx.Inventory
         private IReadOnlyList<QualityLabEntry> entries = Array.Empty<QualityLabEntry>();
         private int entry;
         private float multiplier = Inventory.Quality.MinMultiplier;
-        private float limit = Inventory.Quality.DefaultMaxMultiplier;
+        private float limit = Inventory.Quality.MinMultiplier;
         private bool started;
 
         public QualityLabTab Tab { get; private set; }
@@ -280,7 +269,7 @@ namespace Baryonyx.Inventory
                     BuildRows();
             }
             entry = entries.Count == 0 ? -1 : Mathf.Clamp(index, 0, entries.Count - 1);
-            limit = Current?.Limit ?? Inventory.Quality.DefaultMaxMultiplier;
+            limit = Current?.Limit ?? Inventory.Quality.MinMultiplier;
             multiplier = Mathf.Clamp(
                 keep ?? Inventory.Quality.Middle(ItemQuality.S, limit),
                 Inventory.Quality.MinMultiplier,
@@ -450,12 +439,19 @@ namespace Baryonyx.Inventory
                     At(CardFrames, (int)skill.Element),
                     At(ElementIcons, (int)skill.Element),
                     skill.Cost,
-                    quality
+                    quality,
+                    skill.FoilStyle
                 );
                 preview.Card.SetPlayable(true, 0f);
             }
             else if (!card)
-                preview.Item?.Show(current.Name, current.Stars, IconOf(current), quality);
+                preview.Item?.Show(
+                    current.Name,
+                    current.Stars,
+                    IconOf(current),
+                    quality,
+                    current.FoilStyle
+                );
         }
 
         private Sprite IconOf(QualityLabEntry current) =>
@@ -489,7 +485,7 @@ namespace Baryonyx.Inventory
             Tab = tab;
             entries = QualityLabEntry.Of(tab, Bonuses);
             entry = entries.Count > 0 ? 0 : -1;
-            limit = Current?.Limit ?? Inventory.Quality.DefaultMaxMultiplier;
+            limit = Current?.Limit ?? Inventory.Quality.MinMultiplier;
             multiplier = Inventory.Quality.Middle(quality, limit);
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)

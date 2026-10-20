@@ -50,6 +50,9 @@ namespace Baryonyx.Training
         /// <summary>The card's quality (S, A, B or C): how much it sparkles.</summary>
         public ItemQuality Quality { get; internal set; } = ItemQuality.C;
 
+        /// <summary>How the card sparkles: its kind's style.</summary>
+        public int FoilStyle { get; internal set; }
+
         // カードの枠の色を決める属性と、属性のアイコン。属性のないカードはアイコンがnull。
         public CardElement Element { get; internal set; }
         public Sprite Icon { get; internal set; }
@@ -79,6 +82,10 @@ namespace Baryonyx.Training
         public string Detail { get; internal set; } = "";
         public bool Filled { get; internal set; }
 
+        // 付けている装備の品質と、種類ごとの光り方。S・Aのとき、アイコンにキラキラを重ねる。
+        public ItemQuality Quality { get; internal set; } = ItemQuality.C;
+        public int FoilStyle { get; internal set; }
+
         // まだ開いていない枠（アクセサリー）と、解放するLv（「Lv 15で解放」）。押すと付け替えの画面を開く。
         public bool Locked { get; internal set; }
         public string UnlockText { get; internal set; } = "";
@@ -87,7 +94,9 @@ namespace Baryonyx.Training
             string slot,
             string name,
             string stars,
-            string detail = null
+            string detail = null,
+            ItemQuality quality = ItemQuality.C,
+            int foilStyle = 0
         ) =>
             new()
             {
@@ -96,6 +105,8 @@ namespace Baryonyx.Training
                 Stars = stars ?? "",
                 Detail = detail ?? "",
                 Filled = !string.IsNullOrEmpty(name),
+                Quality = quality,
+                FoilStyle = foilStyle,
             };
     }
 
@@ -514,6 +525,7 @@ namespace Baryonyx.Training
                 Description = describe(person, card),
                 Cost = card.Cost,
                 Quality = card.Quality,
+                FoilStyle = card.FoilStyle,
                 Element = card.Element,
                 Icon = iconOf(card.Id),
                 Art = art != null ? art : skill.Icon,
@@ -536,6 +548,7 @@ namespace Baryonyx.Training
                 Description = describe(person, card),
                 Cost = card.Cost,
                 Quality = card.Quality,
+                FoilStyle = card.FoilStyle,
                 Element = card.Element,
                 Icon = iconOf(id),
                 Art = artOf(id),

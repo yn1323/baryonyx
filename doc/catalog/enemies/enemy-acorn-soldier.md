@@ -2,14 +2,14 @@
 id: enemy-acorn-soldier
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: どんぐり兵
 category: enemies
 silhouette: 帽子の兜を深くかぶった卵形のどんぐりの体に、小枝の細い手足。左手に槍を立て、右に大きな葉の盾
 palette: つやのある茶色 | こげ茶の帽子 | 緑の葉 | 石の穂先の灰白
 motifs: どんぐり | 小枝の槍 | 葉の盾
 personality: 生真面目で融通がきかない。森の小道を勝手に見回り、通る者に槍を向ける
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/AcornSoldier.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/AcornSoldier.as
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、ミストラ遺跡（`forest-ruins`、Lv10）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「どんぐりつぶて」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -167,10 +170,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/AcornSoldier.as
 | ランダムな標的 | どんぐりつぶての1回ごとに標的を選び直す仕組み（[どんぐりつぶて](../enemy-skills/enemy-skill-acorn-volley.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（どんぐりつぶて）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | ミストラ遺跡の戦闘に出るようにし、Lv100のステータスと技「どんぐりつぶて」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

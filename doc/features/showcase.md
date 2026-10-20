@@ -266,7 +266,8 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
 戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
 2026-10-19に試作した敵50体の絵（`DewSlime` など、`Features/Combat/UI/Art/Enemies/`）も、戦闘のモックの敵3体と同じキャラクターのカテゴリに入る。名前と弱点は[敵の定義](../catalog/enemies/README.md)にある。
-カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く、Aは少し光り、B・Cは光らない（[品質](inventory.md#品質)）。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
+冒険の戦闘で敵を入れ替えるための、53体の絵・狙える範囲・顔の表（`BattleEnemyLooks`、データのカテゴリ）は、戦闘画面の生成（`Baryonyx > Combat > Create Battle Inspect Assets`）が作る。行き先ごとの敵は[行き先と敵](stage-progression.md#行き先と敵)にある。
+カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く、Aは少し光り、B・Cは光らない（[品質](inventory.md#品質)）。光り方（模様と色）はカードごとに違う。装備とACTボーナスの光り方は、[品質のデバッグルーム](screens.md#品質のデバッグルーム)で確かめる。実際の画面では、`TavernScreen` の `BonusSettings` を表示すると、仮データの品質Sの「守り」とAの「幸運」のアイコンが光る。装備（`Equipment`・`Training`）の仮データは倍率×1.00（品質C）だけのため、Prefabのままでは光らない。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
 カードを上げたときに右に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」を選ぶか、展示室から `BattleInspect` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
 味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、味方のHPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、ブロックはガードかシールドバッシュを使って確かめる。
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。

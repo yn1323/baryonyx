@@ -52,7 +52,7 @@ namespace Baryonyx.Adventure
 
         public Task<AdventureState> StartAsync(string destinationId, CancellationToken token)
         {
-            if (destinationId != ForestRuins)
+            if (AdventureCatalog.Area(destinationId) == null)
                 return Fail(token, 404);
             if (run != null)
                 return run.DestinationId == destinationId && run.Route.Count == 1
@@ -104,7 +104,10 @@ namespace Baryonyx.Adventure
                     token,
                     State(reward: run.Rewards.FirstOrDefault(entry => entry.RoomId == roomId))
                 );
-            var quality = QualityFor(room.Kind);
+            var quality = QualityFor(
+                room.Kind,
+                AdventureCatalog.Area(run.DestinationId)?.RewardBoost ?? 0
+            );
             var reward = new AdventureReward(
                 roomId,
                 BonusIds[random.Next(BonusIds.Length)],
@@ -178,8 +181,8 @@ namespace Baryonyx.Adventure
             return result;
         }
 
-        // サーバーの REWARD_QUALITY_WEIGHTS と同じ重み。
-        private ItemQuality QualityFor(AdventureRoomKind kind)
+        // サーバーの rewardQualityWeights と同じ重み。奥の行き先ほど、Sを rewardBoost の分、Aをその半分だけ重くする。
+        private ItemQuality QualityFor(AdventureRoomKind kind, int rewardBoost)
         {
             var weights = kind switch
             {
@@ -203,6 +206,16 @@ namespace Baryonyx.Adventure
                     (ItemQuality.S, 5),
                 },
             };
+            weights = weights
+                .Select(entry =>
+                    entry.Item1 switch
+                    {
+                        ItemQuality.S => (entry.Item1, Grow(entry.Item2, rewardBoost)),
+                        ItemQuality.A => (entry.Item1, Grow(entry.Item2, rewardBoost / 2.0)),
+                        _ => entry,
+                    }
+                )
+                .ToArray();
             int roll = random.Next(weights.Sum(entry => entry.Item2));
             foreach (var (quality, weight) in weights)
             {
@@ -213,10 +226,13 @@ namespace Baryonyx.Adventure
             return weights[^1].Item1;
         }
 
+        private static int Grow(int weight, double percent) =>
+            (int)Math.Round(weight * (100 + percent) / 100.0, MidpointRounding.AwayFromZero);
+
         // 品質の幅の中から、倍率を百分率の整数で均等に選ぶ（サーバーの rollMultiplierPercent と同じ）。
         private float MultiplierOf(ItemQuality quality)
         {
-            var (low, high) = Quality.Range(quality, Quality.DefaultMaxMultiplier);
+            var (low, high) = Quality.Range(quality, StepBonusDefinition.DefaultMaxMultiplier);
             int min = Quality.Percent(low);
             int max = Quality.Percent(high);
             return random.Next(min, max + 1) / 100f;

@@ -165,7 +165,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Uniques[0].Card.Name, Is.EqualTo("マナバースト・烈"));
             Assert.That(state.Uniques[0].Card.KindLine, Does.Contain("攻撃").And.Contain("敵全体"));
             Assert.That(state.Uniques[0].Card.Description, Does.Contain(">"));
-            Assert.That(state.Uniques[0].Card.Cost, Is.EqualTo(3));
+            Assert.That(state.Uniques[0].Card.Cost, Is.EqualTo(2));
             Assert.That(state.Uniques[0].Locked, Is.False);
             Assert.That(state.Uniques[1].Card.Name, Is.EqualTo("星降り"));
             Assert.That(state.Uniques[1].Locked, Is.True);

@@ -29,5 +29,23 @@ namespace Baryonyx.StepBonus
         public string[] Loadout = Array.Empty<string>();
 
         public StepBonusDefinition Find(string id) => Array.Find(Bonuses, bonus => bonus.Id == id);
+
+        /// <summary>
+        /// How the kind <paramref name="id"/> sparkles: from its place in <see cref="Bonuses"/>
+        /// (empty entries skipped), the same as the quality lab's.
+        /// </summary>
+        public int FoilStyleOf(string id)
+        {
+            int index = 0;
+            foreach (var bonus in Bonuses)
+            {
+                if (bonus == null)
+                    continue;
+                if (bonus.Id == id)
+                    return StepBonusDefinition.FoilStyleAt(index);
+                index++;
+            }
+            return StepBonusDefinition.FoilStyleAt(-1);
+        }
     }
 }

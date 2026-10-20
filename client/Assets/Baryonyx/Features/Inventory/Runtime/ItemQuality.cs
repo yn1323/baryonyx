@@ -28,9 +28,6 @@ namespace Baryonyx.Inventory
         /// <summary>The lowest multiplier: the kind's own effect, never weaker.</summary>
         public const float MinMultiplier = 1f;
 
-        /// <summary>The upper limit every kind uses until each kind's own is decided (provisional).</summary>
-        public const float DefaultMaxMultiplier = 1.5f;
-
         /// <summary>The lower edge of each quality, as a place in the range from 0 (×1.00) to 1 (the limit).</summary>
         private static readonly double[] Floors = { 0, 0.4, 0.7, 0.9 };
 
@@ -128,9 +125,15 @@ namespace Baryonyx.Inventory
         public static int Chance(int percent, float multiplier) =>
             Math.Min(100, Amount(percent, multiplier));
 
-        /// <summary>A cost lowered by the multiplier; a cost of 1 or more stays at 1 or more.</summary>
+        /// <summary>
+        /// A cost lowered by 1 for each 1.0 the multiplier grows, rounded (×1.5 lowers it by 1,
+        /// ×2.5 by 2); a cost of 1 or more stays at 1 or more. Not divided by the multiplier, so a
+        /// big card stays a big card at a high multiplier.
+        /// </summary>
         public static int Cost(int cost, float multiplier) =>
-            cost <= 0 ? cost : Math.Max(1, Divide(cost, multiplier));
+            cost <= 0
+                ? cost
+                : Math.Max(1, cost - Round((Math.Max(100, Percent(multiplier)) - 100) / 100.0));
 
         /// <summary>An amount against the owner (HP lost) lowered by the multiplier.</summary>
         public static int Adverse(int value, float multiplier) => Divide(value, multiplier);

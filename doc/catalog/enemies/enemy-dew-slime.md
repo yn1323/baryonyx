@@ -2,14 +2,14 @@
 id: enemy-dew-slime
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 朝露ぷるん
 category: enemies
 silhouette: 上がとがったしずく型の小さな体。頭のてっぺんから双葉が左右に開く
 palette: 澄んだ水色 | 白いハイライト | 双葉の若草色 | 紺の輪郭
 motifs: 朝露 | 双葉 | 気泡
 personality: 人なつこくて気まぐれ。仲間にくっついて回り、水の膜で包みたがる
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/DewSlime.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/DewSlime.asepri
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、ミストラ遺跡（`forest-ruins`、Lv10）の小さな敵・しじまの沼（`hush-mire`、Lv22）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「たいあたり」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -166,10 +169,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/DewSlime.asepri
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 敵に付くプロテクト | 露の膜で、カードのプロテクトを敵にも付ける（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の「敵に付く強化」に加える） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（たいあたり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | ミストラ遺跡・しじまの沼の戦闘に出るようにし、Lv100のステータスと技「たいあたり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

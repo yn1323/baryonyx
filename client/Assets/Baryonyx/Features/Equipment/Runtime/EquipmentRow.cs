@@ -1,3 +1,4 @@
+using Baryonyx.UI.Cards;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,9 @@ namespace Baryonyx.Equipment
     {
         public Button Button;
         public Image Icon;
+
+        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
+        public CardFoil Foil;
         public TMP_Text Name;
         public TMP_Text Stars;
         public TMP_Text Detail;

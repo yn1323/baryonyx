@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Baryonyx.Inventory;
+using Baryonyx.UI.Cards;
 
 namespace Baryonyx.Equipment
 {
@@ -21,7 +22,7 @@ namespace Baryonyx.Equipment
             EquipmentSlot slot,
             int rarity,
             string detail,
-            float maxMultiplier = Quality.DefaultMaxMultiplier
+            float maxMultiplier
         )
         {
             Id = id;
@@ -42,7 +43,7 @@ namespace Baryonyx.Equipment
         // 効果の短い説明（「物攻の 120%｜斬」）。倍率×1.00のときの値。効果の計算はまだない。
         public string Detail { get; }
 
-        // 1つずつ持つ倍率の上限（doc/features/inventory.md の品質）。サーバーの仮設定と同じ×1.5。
+        // 1つずつ持つ倍率の上限（doc/features/inventory.md の品質）。種類ごとに決め、サーバーと同じ値にする。
         public float MaxMultiplier { get; }
 
         public ItemQuality QualityOf(float multiplier) => Quality.Of(multiplier, MaxMultiplier);
@@ -64,21 +65,22 @@ namespace Baryonyx.Equipment
     {
         private static readonly EquipmentDefinition[] all =
         {
-            // 回数も伸びるため、上限は低め（スキルの複数回の攻撃と同じ×1.3）。
-            Weapon("flame-dagger", "炎のダガー", 4, "速度の 125%｜斬・炎｜2回攻撃", 1.3f),
-            Weapon("thunder-spear", "雷鳴の槍", 3, "物攻の 140%｜貫・雷"),
-            Weapon("frost-wand", "氷晶のワンド", 3, "属攻の 135%｜氷｜会心 +5%"),
-            Weapon("war-hammer", "戦鎚", 2, "物攻の 150%｜打"),
-            Weapon("iron-sword", "鉄の剣", 2, "物攻の 120%｜斬"),
-            Weapon("short-bow", "短弓", 1, "速度の 100%｜貫"),
-            Weapon("oak-staff", "樫の杖", 1, "属攻の 110%｜炎"),
-            Weapon("wooden-sword", "木の剣", 1, "物攻の 100%｜斬"),
-            Armor("traveler-cloak", "旅人のマント", 3, "速度 +8%｜物防の 110%"),
-            Armor("chainmail", "鎖かたびら", 2, "物防の 130%"),
-            Armor("magic-robe", "魔法のローブ", 2, "属攻の 115%｜物防の 105%"),
-            Armor("iron-helm", "鉄の兜", 2, "物防の 115%｜HP +40"),
-            Armor("leather-armor", "革の鎧", 1, "物防の 110%"),
-            Armor("wooden-shield", "木の丸盾", 1, "物防の 120%"),
+            // 上限の倍率はサーバー（server/src/features/equipment/catalog.ts）と同じ。
+            // 回数も伸びる炎のダガーと、素朴な木・革の装備は低め、尖った性能の装備は高めにした。
+            Weapon("flame-dagger", "炎のダガー", 4, "速度の 125%｜斬・炎｜2回攻撃", 1.8f),
+            Weapon("thunder-spear", "雷鳴の槍", 3, "物攻の 140%｜貫・雷", 2.4f),
+            Weapon("frost-wand", "氷晶のワンド", 3, "属攻の 135%｜氷｜会心 +5%", 2.2f),
+            Weapon("war-hammer", "戦鎚", 2, "物攻の 150%｜打", 2.6f),
+            Weapon("iron-sword", "鉄の剣", 2, "物攻の 120%｜斬", 2f),
+            Weapon("short-bow", "短弓", 1, "速度の 100%｜貫", 2f),
+            Weapon("oak-staff", "樫の杖", 1, "属攻の 110%｜炎", 2f),
+            Weapon("wooden-sword", "木の剣", 1, "物攻の 100%｜斬", 1.8f),
+            Armor("traveler-cloak", "旅人のマント", 3, "速度 +8%｜物防の 110%", 2.2f),
+            Armor("chainmail", "鎖かたびら", 2, "物防の 130%", 2.4f),
+            Armor("magic-robe", "魔法のローブ", 2, "属攻の 115%｜物防の 105%", 2.2f),
+            Armor("iron-helm", "鉄の兜", 2, "物防の 115%｜HP +40", 2f),
+            Armor("leather-armor", "革の鎧", 1, "物防の 110%", 1.8f),
+            Armor("wooden-shield", "木の丸盾", 1, "物防の 120%", 2f),
         };
 
         public static IReadOnlyList<EquipmentDefinition> All => all;
@@ -101,6 +103,14 @@ namespace Baryonyx.Equipment
 
         // 仮データの順。並べるときの最後の手がかりにする。
         public static int IndexOf(string id) => Array.FindIndex(all, entry => entry.Id == id);
+
+        // 光り方の割り当て（doc/art/direction.md のカードのキラキラ）。仮データの順から、スキルと重ならないよう歩幅をずらして決める。
+        public const int FoilStyleStep = 5;
+        public const int FoilStyleOffset = 3;
+
+        /// <summary>How the kind <paramref name="id"/> sparkles (one of <see cref="CardFoil.StyleCount"/> styles).</summary>
+        public static int FoilStyleOf(string id) =>
+            CardFoil.StyleAt(IndexOf(id), FoilStyleStep, FoilStyleOffset);
 
         public static string NameOf(EquipmentSlot slot) =>
             slot == EquipmentSlot.Weapon ? "武器" : "防具";
@@ -131,14 +141,15 @@ namespace Baryonyx.Equipment
             string name,
             int rarity,
             string detail,
-            float maxMultiplier = Quality.DefaultMaxMultiplier
+            float maxMultiplier
         ) => new(id, name, EquipmentSlot.Weapon, rarity, detail, maxMultiplier);
 
         private static EquipmentDefinition Armor(
             string id,
             string name,
             int rarity,
-            string detail
-        ) => new(id, name, EquipmentSlot.Armor, rarity, detail);
+            string detail,
+            float maxMultiplier
+        ) => new(id, name, EquipmentSlot.Armor, rarity, detail, maxMultiplier);
     }
 }

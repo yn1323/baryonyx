@@ -358,8 +358,8 @@ namespace Baryonyx.Combat
         public string Art => "Card" + (BorrowedArt ?? Id);
 
         /// <summary>
-        /// The upper limit of this kind's multiplier (doc/features/inventory.md, quality); 0 for the
-        /// provisional one (<see cref="CardSkillQuality.LimitOf"/>).
+        /// The upper limit of this kind's multiplier (doc/features/inventory.md, quality), set by
+        /// each kind (<see cref="CardSkillQuality.LimitOf"/>).
         /// </summary>
         public float MaxMultiplier;
 
@@ -369,6 +369,13 @@ namespace Baryonyx.Combat
         /// (<see cref="CardSkillQuality.WithMultiplier"/>); the definitions are at ×1.00.
         /// </summary>
         public float Multiplier = Inventory.Quality.MinMultiplier;
+
+        /// <summary>
+        /// How this kind's card sparkles (doc/art/direction.md, card sparkle), one style for every
+        /// card of the kind and every stage of a unique skill: the card skills take the first
+        /// styles in their order, the unique skills and the prototypes the ones after them.
+        /// </summary>
+        public int FoilStyle;
 
         /// <summary>The card at ×1.00 this one was grown from; null for a definition itself.</summary>
         public CardSkill Base;

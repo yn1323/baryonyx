@@ -2,14 +2,14 @@
 id: enemy-mist-dragon
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 霧の竜
 category: enemies
 silhouette: 翼を左右に広げて宙に浮く竜。長い首が左上へ伸びて吠え、長い尾が下で巻く。体の周りを白い霧が渦巻く
 palette: 灰白色のうろこ | 青灰色の翼膜 | 水色の目 | 白い霧 | 枯れ木色の角
 motifs: 霧 | 広げた翼 | 長い首と枝分かれした角 | 迷い路の最奥
 personality: 霧の濃い山の上を巡る、古い竜。迷い路の最奥の気配をまとい、霧の中で迷う者を試す
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「迷い路の霧」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -194,10 +197,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 霧隠れ・継続ダメージ・引く枚数の減少 | 新しい仕組みの決まり（[霧隠れ](../enemy-skills/enemy-skill-mist-dragon-fog-veil.md)、[迷い路の霧](../enemy-skills/enemy-skill-mist-dragon-maze-fog.md)、[白霧の大息吹](../enemy-skills/enemy-skill-mist-dragon-whiteout-breath.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（迷い路の霧）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った。同じ地域の敵がいないため、仲間を呼ぶは持たせなかった | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「迷い路の霧」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

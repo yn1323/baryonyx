@@ -126,7 +126,7 @@ namespace Baryonyx.Tests.EditMode
                 Id = id,
                 Level100 = new CharacterStats(2300, 700, 850, 2450, 1700, 560, 300, 500),
                 Passives = new[] { Skill("魔力の泉", 1, 0), Skill("炎の心得", 15, 0) },
-                Uniques = new[] { Skill("マナバースト", 5, 3), Skill("星降り", 20, 5) },
+                Uniques = new[] { Skill("マナバースト", 5, 2), Skill("星降り", 20, 3) },
             };
 
         private static TrainingSkill Skill(string name, int level, int energy) =>
@@ -218,7 +218,7 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo(new[] { true, false, true, false })
             );
             Assert.That(state.Skills[2].Type, Is.EqualTo("固有スキル"));
-            Assert.That(state.Skills[2].Energy, Is.EqualTo(3));
+            Assert.That(state.Skills[2].Energy, Is.EqualTo(2));
             Assert.That(
                 state.Passives.Select(skill => skill.Name),
                 Is.EqualTo(new[] { "魔力の泉", "炎の心得" })
@@ -229,7 +229,7 @@ namespace Baryonyx.Tests.EditMode
                 state.Uniques.Select(card => card.Name),
                 Is.EqualTo(new[] { "マナバースト", "星降り" })
             );
-            Assert.That(state.Uniques.Select(card => card.Cost), Is.EqualTo(new[] { 3, 5 }));
+            Assert.That(state.Uniques.Select(card => card.Cost), Is.EqualTo(new[] { 2, 3 }));
             Assert.That(
                 state.Uniques.Select(card => card.Locked),
                 Is.EqualTo(new[] { false, true })

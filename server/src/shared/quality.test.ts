@@ -9,14 +9,14 @@ import {
 
 describe("品質", () => {
   it("上限×1.5の幅の中の位置で、品質を分ける", () => {
-    expect(qualityOf(100)).toBe("C");
-    expect(qualityOf(119)).toBe("C");
-    expect(qualityOf(120)).toBe("B");
-    expect(qualityOf(134)).toBe("B");
-    expect(qualityOf(135)).toBe("A");
-    expect(qualityOf(144)).toBe("A");
-    expect(qualityOf(145)).toBe("S");
-    expect(qualityOf(150)).toBe("S");
+    expect(qualityOf(100, 150)).toBe("C");
+    expect(qualityOf(119, 150)).toBe("C");
+    expect(qualityOf(120, 150)).toBe("B");
+    expect(qualityOf(134, 150)).toBe("B");
+    expect(qualityOf(135, 150)).toBe("A");
+    expect(qualityOf(144, 150)).toBe("A");
+    expect(qualityOf(145, 150)).toBe("S");
+    expect(qualityOf(150, 150)).toBe("S");
   });
 
   it("境目ちょうどの倍率は、上の品質に入れる", () => {
@@ -43,8 +43,8 @@ describe("品質", () => {
   it("選んだ倍率は、その品質の範囲に入る", () => {
     for (const quality of QUALITIES) {
       for (const roll of [0, 0.5, 0.999999]) {
-        const percent = rollMultiplierPercent(quality, () => roll);
-        expect(qualityOf(percent)).toBe(quality);
+        const percent = rollMultiplierPercent(quality, () => roll, 260);
+        expect(qualityOf(percent, 260)).toBe(quality);
       }
     }
   });

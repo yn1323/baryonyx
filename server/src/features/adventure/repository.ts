@@ -26,9 +26,9 @@ import {
   hasEvent,
   isBattle,
   newSeed,
-  REWARD_QUALITY_WEIGHTS,
   type RoomKind,
   reviveCost,
+  rewardQualityWeights,
 } from "./catalog.js";
 import {
   adventureRecords,
@@ -215,9 +215,16 @@ export function createAdventureRepository(
     return readState(userId);
   }
 
-  // 部屋の種類ごとの重みで品質を選び、その品質の幅から倍率（百分率）を選ぶ。
-  function pickMultiplier(kind: EventKind, bonusId: StepBonusId): number {
-    const quality = pickQuality(REWARD_QUALITY_WEIGHTS[kind], random);
+  // 部屋の種類と行き先ごとの重みで品質を選び、その品質の幅から倍率（百分率）を選ぶ。
+  function pickMultiplier(
+    kind: EventKind,
+    rewardBoost: number,
+    bonusId: StepBonusId,
+  ): number {
+    const quality = pickQuality(
+      rewardQualityWeights(kind, rewardBoost),
+      random,
+    );
     return rollMultiplierPercent(
       quality,
       random,
@@ -339,7 +346,11 @@ export function createAdventureRepository(
     // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
     await createStepBonusRepository(binding).getState(userId, now);
     const bonusId = pickBonus();
-    const multiplierPercent = pickMultiplier(kind as EventKind, bonusId);
+    const multiplierPercent = pickMultiplier(
+      kind as EventKind,
+      findDestination(run.destinationId)?.rewardBoost ?? 0,
+      bonusId,
+    );
     const held = await db
       .select({ multiplierPercent: stepBonusHoldings.multiplierPercent })
       .from(stepBonusHoldings)

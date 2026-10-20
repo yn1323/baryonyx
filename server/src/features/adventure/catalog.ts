@@ -1,7 +1,7 @@
 import type { Quality } from "../../shared/quality.js";
 
-// 冒険先と、入口から最奥の間までに通る部屋の数。行き先の数・敵の組み合わせ・報酬は決まっていない
-// （doc/features/stage-progression.md）。
+// 冒険先と、入口から最奥の間までに通る部屋の数、報酬の品質の上がり方（doc/features/stage-progression.md）。
+// 行き先ごとの名前・背景・敵の組み合わせ・敵のLvはクライアント（AdventureCatalog.cs）が持つ。
 // 分岐ルートの道は、冒険を始めたときにサーバーが決めた乱数の種から、クライアントが毎回同じ形に作る
 // （doc/plans/2026-10-04-exploration-route-map.md）。サーバーは道そのものを持たず、
 // 今いる部屋の階と種類を受け取って、進み方と報酬だけを判定する。
@@ -25,10 +25,20 @@ export type Destination = {
   id: string;
   // 入口（第1層）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
   roomCount: number;
+  // 報酬の品質の上がり方（百分率）。奥の行き先ほど、品質Sの重みをこの分だけ、Aの重みをその半分だけ増やす。
+  rewardBoost: number;
 };
 
+// 敵が強い順に奥の行き先とし、部屋の数と報酬の上がり方を増やす（2026-10-20）。
 export const DESTINATIONS: readonly Destination[] = [
-  { id: "forest-ruins", roomCount: 8 },
+  { id: "forest-ruins", roomCount: 8, rewardBoost: 0 },
+  { id: "port-portoria", roomCount: 9, rewardBoost: 20 },
+  { id: "glaciera-cave", roomCount: 9, rewardBoost: 40 },
+  { id: "hush-mire", roomCount: 10, rewardBoost: 60 },
+  { id: "almaja-tomb", roomCount: 10, rewardBoost: 80 },
+  { id: "moonshade-graveyard", roomCount: 11, rewardBoost: 100 },
+  { id: "volgan-volcano", roomCount: 11, rewardBoost: 130 },
+  { id: "neve-peaks", roomCount: 12, rewardBoost: 160 },
 ];
 
 export const DESTINATION_IDS = DESTINATIONS.map(
@@ -78,3 +88,19 @@ export const REWARD_QUALITY_WEIGHTS: Record<
   treasure: { C: 30, B: 40, A: 25, S: 5 },
   boss: { B: 40, A: 45, S: 15 },
 };
+
+// 行き先の報酬の上がり方を入れた、品質の重み。S は rewardBoost の分、A はその半分だけ重くする。
+export function rewardQualityWeights(
+  kind: EventKind,
+  rewardBoost: number,
+): Partial<Record<Quality, number>> {
+  const base = REWARD_QUALITY_WEIGHTS[kind];
+  const grow = (weight: number | undefined, percent: number) =>
+    weight === undefined
+      ? undefined
+      : Math.round((weight * (100 + percent)) / 100);
+  const weights: Partial<Record<Quality, number>> = { ...base };
+  if (base.A !== undefined) weights.A = grow(base.A, rewardBoost / 2);
+  if (base.S !== undefined) weights.S = grow(base.S, rewardBoost);
+  return weights;
+}

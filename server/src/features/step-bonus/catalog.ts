@@ -1,7 +1,4 @@
-import {
-  DEFAULT_MAX_MULTIPLIER_PERCENT,
-  MIN_MULTIPLIER_PERCENT,
-} from "../../shared/quality.js";
+import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
 
 // ACTボーナスの種類・倍率の上限・枠の数。表示用の名前や効果量はクライアントの定義が持ち、
 // サーバーは持ち物と枠の整合と、手に入れたボーナスの倍率を判定する（doc/features/step-bonus.md）。
@@ -18,10 +15,12 @@ export const STEP_BONUS_IDS = [
 
 export type StepBonusId = (typeof STEP_BONUS_IDS)[number];
 
-// ボーナスごとの倍率の上限（百分率）。種類ごとの値が決まるまで、どれも仮の×1.5にする。
+// ボーナスの倍率の上限（百分率）。ACTボーナスは、どの種類も×1.5にする（2026-10-20）。
 // クライアントの定義（StepBonusDefinition の MaxMultiplier）と同じ値にする。
+export const STEP_BONUS_MAX_MULTIPLIER_PERCENT = 150;
+
 export function maxMultiplierPercent(_bonusId: StepBonusId): number {
-  return DEFAULT_MAX_MULTIPLIER_PERCENT;
+  return STEP_BONUS_MAX_MULTIPLIER_PERCENT;
 }
 
 // 段階ごとの枠（1,000／2,000／3,000／5,000／8,000ACT）の数。

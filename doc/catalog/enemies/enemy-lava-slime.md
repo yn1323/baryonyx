@@ -2,14 +2,14 @@
 id: enemy-lava-slime
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 溶岩スライム
 category: enemies
 silhouette: 横に広い低い山形の塊。黒い岩の殻の板が積み重なり、その隙間から光る溶岩がのぞく
 palette: 黒い殻 | 焦げ茶の照り返し | 橙と黄色に光る溶岩
 motifs: 溶岩 | 黒い殻 | ひび | 熱
 personality: 鈍くて辛抱強いが、溜めた熱を一気に吐き出す癇癪持ち
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.aseprite
 ---
 
@@ -21,6 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/LavaSlime.asepr
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
+2026-10-20から、ヴォルガン火山（`volgan-volcano`、Lv35）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「殻はじけ」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -170,10 +173,11 @@ HPと物防を小の敵としては高めにし、黒い殻で打撃と刃をよ
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 敵に付く防御ダウン | [殻はじけ](../enemy-skills/enemy-skill-lava-slime-crust-burst.md)の未決事項 |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（殻はじけ）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「殻はじけ」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

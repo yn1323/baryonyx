@@ -353,6 +353,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.05882353
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.53125
       objectReference: {fileID: 0}
@@ -362,7 +366,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u81EA\u5206\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E165%</color></nobr>\u30022\u30BF\u30FC\u30F3\u3001\u6575\u306E\u653B\u6483\u3092\u5F15\u304D\u3064\u3051\u308B\u3002"
+      value: "\u81EA\u5206\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E179%</color></nobr>\u30022\u30BF\u30FC\u30F3\u3001\u6575\u306E\u653B\u6483\u3092\u5F15\u304D\u3064\u3051\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -391,6 +395,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 93.010025
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -535,6 +543,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.047058824
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.34375
       objectReference: {fileID: 0}
@@ -552,7 +564,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 2a350d98fefb94f3dbbac8525a21e04b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E126%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E198%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -577,6 +589,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -725,6 +741,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.101960786
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.75
       objectReference: {fileID: 0}
@@ -734,7 +754,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E292%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E598%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -761,6 +781,10 @@ PrefabInstance:
       value: 108.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 26
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
@@ -770,7 +794,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.6
+      value: 0.7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -907,6 +931,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.15294118
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.125
       objectReference: {fileID: 0}
@@ -946,13 +974,17 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[2]'
       value: 93.01012
       objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 39
+      objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u5075\u5BDF"
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -1093,6 +1125,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.015686275
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0
       objectReference: {fileID: 0}
@@ -1110,7 +1146,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B91\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E133%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
+      value: "\u5473\u65B91\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E218%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -1139,6 +1175,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.01004
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -1291,6 +1331,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.11372549
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.09375
       objectReference: {fileID: 0}
@@ -1308,7 +1352,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: b04d6fc883add4b90a3e4a79fe170710, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E49%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u30923\u3064\u91CD\u306D\u308B\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E68%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u30924\u3064\u91CD\u306D\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -1333,6 +1377,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01012
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 29
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -1481,6 +1529,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.02745098
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.1875
       objectReference: {fileID: 0}
@@ -1490,7 +1542,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E220%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002HP\u304C\u534A\u5206\u4EE5\u4E0B\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E354%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002HP\u304C\u534A\u5206\u4EE5\u4E0B\u306E\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -1515,6 +1567,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -1659,6 +1715,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.007843138
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.625
       objectReference: {fileID: 0}
@@ -1668,7 +1728,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 44db660941fa6c44ba973b85ae4e830b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E108%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E141%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -1695,12 +1755,20 @@ PrefabInstance:
       value: 108.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u30A2\u30A4\u30B9\u30E9\u30F3\u30B9"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0.1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1837,6 +1905,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18431373
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.8125
       objectReference: {fileID: 0}
@@ -1876,9 +1948,17 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[2]'
       value: 138.00998
       objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 47
+      objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u5929\u5553"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -2019,6 +2099,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.09019608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.625
       objectReference: {fileID: 0}
@@ -2028,7 +2112,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 94465e77857754831a8dfaba63190b27, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E37%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD74\u3002"
+      value: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E40%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD75\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -2053,6 +2137,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 138.00998
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -2193,6 +2281,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.14901961
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.84375
       objectReference: {fileID: 0}
@@ -2229,12 +2321,20 @@ PrefabInstance:
       value: 123.00995
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u75BE\u98A8\u8FC5\u96F7"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -2371,6 +2471,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.16862746
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.375
       objectReference: {fileID: 0}
@@ -2380,7 +2484,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E154%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F37\u5316</u></color></nobr>\u30921\u3064\u6D88\u3059\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E174%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F37\u5316</u></color></nobr>\u30921\u3064\u6D88\u3059\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -2406,13 +2510,13 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
       objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 43
+      objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u8056\u306A\u308B\u9244\u69CC"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
-      propertyPath: m_UVRect.x
-      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -2553,6 +2657,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.18039216
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.71875
       objectReference: {fileID: 0}
@@ -2591,6 +2699,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 138.00998
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 46
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -2739,6 +2851,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.06666667
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.78125
       objectReference: {fileID: 0}
@@ -2756,7 +2872,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: f5136e1860d674e74867dc0ae29f0855, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E63%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>4\u30BF\u30FC\u30F3\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E88%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>6\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -2773,6 +2889,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -2921,6 +3041,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.019607844
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.28125
       objectReference: {fileID: 0}
@@ -2938,7 +3062,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: d9ca4308889d5a4429d718733246fe04, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E84%</color></nobr>\u3002"
+      value: "\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E131%</color></nobr>\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -2967,6 +3091,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.010025
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -3119,6 +3247,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.03137255
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.40625
       objectReference: {fileID: 0}
@@ -3136,7 +3268,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: fdd08f55ab2bc479ab0943f2cedfa709, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u7269\u653B\u306E58%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD79\u3002"
+      value: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B<nobr><color=#ffce60>\u7269\u653B\u306E71%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD711\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -3163,6 +3295,10 @@ PrefabInstance:
       value: 138.00995
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 3
       objectReference: {fileID: 0}
@@ -3172,7 +3308,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.6
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -3313,6 +3449,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.1882353
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.78125
       objectReference: {fileID: 0}
@@ -3330,7 +3470,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E74%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E44%</color></nobr>\u56DE\u5FA9\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E107%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E64%</color></nobr>\u56DE\u5FA9\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -3361,16 +3501,16 @@ PrefabInstance:
       value: 108.00995
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 48
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u30DB\u30FC\u30EA\u30FC\u30E9\u30A4\u30C8"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
-      propertyPath: m_UVRect.x
-      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -3507,6 +3647,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.003921569
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.65625
       objectReference: {fileID: 0}
@@ -3520,7 +3664,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E140%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E212%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>4\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
@@ -3533,6 +3677,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -3673,6 +3821,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.050980393
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.125
       objectReference: {fileID: 0}
@@ -3690,7 +3842,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 4e6b03f8387bf426d906447a5cf562ea, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E448%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u81EA\u5206\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr>\u304C\u3042\u308C\u30701.5\u500D\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E972%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002\u81EA\u5206\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr>\u304C\u3042\u308C\u30702\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -3717,6 +3869,10 @@ PrefabInstance:
       value: 108.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 2
       objectReference: {fileID: 0}
@@ -3726,7 +3882,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.5
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -3867,6 +4023,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.12156863
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.34375
       objectReference: {fileID: 0}
@@ -3876,7 +4036,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E77%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u305D\u306E\u6575\u306E<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u3059\u3079\u3066\u898B\u629C\u304F\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E87%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u305D\u306E\u6575\u306E<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u3059\u3079\u3066\u898B\u629C\u304F\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -3901,6 +4061,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 31
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -4045,6 +4209,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.15686275
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.03125
       objectReference: {fileID: 0}
@@ -4062,7 +4230,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 30b4a8d82cd2b4ad4a64b79788797191, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E74%</color></nobr>\u56DE\u5FA9\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u56DE\u5FA9\u3002"
+      value: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E107%</color></nobr>\u56DE\u5FA9\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u56DE\u5FA9\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -4091,6 +4259,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -4235,6 +4407,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.05490196
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.40625
       objectReference: {fileID: 0}
@@ -4244,7 +4420,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E140%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u5F37\u3044\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E194%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u5F37\u3044\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -4269,6 +4445,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01004
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -4417,6 +4597,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.09411765
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.90625
       objectReference: {fileID: 0}
@@ -4434,7 +4618,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 9c1db89367064424c98cf7b1a349d325, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E133%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E193%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>4\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -4459,6 +4643,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01004
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -4603,6 +4791,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.039215688
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.625
       objectReference: {fileID: 0}
@@ -4612,7 +4804,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 2ef37e46ed43848b69edaa7bcc9e911b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u9632\u306E114%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E38%</color></nobr>\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u9632\u306E149%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002\u5473\u65B9\u5168\u4F53\u306B<nobr><color=#96d6ff><u>\u30D6\u30ED\u30C3\u30AF</u></color></nobr><nobr><color=#96c8ff>\u7269\u9632\u306E50%</color></nobr>\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -4637,6 +4829,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -4785,6 +4981,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.13333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.84375
       objectReference: {fileID: 0}
@@ -4794,7 +4994,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E89%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>1\u30BF\u30FC\u30F3\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E116%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -4819,6 +5019,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01004
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 34
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -4967,6 +5171,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.14509805
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0
       objectReference: {fileID: 0}
@@ -4984,7 +5192,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E336%</color></nobr>\u3001\u3055\u3089\u306B\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E56%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E636%</color></nobr>\u3001\u3055\u3089\u306B\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E114%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5009,6 +5217,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 37
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -5161,6 +5373,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.0627451
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.6875
       objectReference: {fileID: 0}
@@ -5178,7 +5394,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B9\u5168\u4F53\u306E\u653B\u6483\u529B\u30923\u30BF\u30FC\u30F337%\u4E0A\u3052\u308B\u3002"
+      value: "\u5473\u65B9\u5168\u4F53\u306E\u653B\u6483\u529B\u30924\u30BF\u30FC\u30F349%\u4E0A\u3052\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5207,6 +5423,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -5355,6 +5575,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.10980392
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.84375
       objectReference: {fileID: 0}
@@ -5372,7 +5596,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: cccfe4b3cd70d4aa1a1b6bcf7503f6bb, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E133%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u30A8\u30CD\u30EB\u30AE\u30FC+1\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E193%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u30A8\u30CD\u30EB\u30AE\u30FC+2\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5397,6 +5621,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00995
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 28
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -5545,6 +5773,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.12941177
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.40625
       objectReference: {fileID: 0}
@@ -5562,7 +5794,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E308%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u5A01\u529B+50%\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E590%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068\u5A01\u529B+50%\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5587,6 +5819,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 33
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -5739,6 +5975,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.043137256
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.75
       objectReference: {fileID: 0}
@@ -5748,7 +5988,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: b31a536d5d0b44472b162e5fcd4a2044, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E88%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E99%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5773,6 +6013,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -5917,6 +6161,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.13725491
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.09375
       objectReference: {fileID: 0}
@@ -5926,7 +6174,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 7c77087a8245640a2bf06c529d82e64d, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E69%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD73\u30021\u56DE\u3054\u3068\u306B\u5225\u306E\u6575\u3078\u79FB\u308B\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E75%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD73\u30021\u56DE\u3054\u3068\u306B\u5225\u306E\u6575\u3078\u79FB\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -5951,6 +6199,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 138.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -6099,6 +6351,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.08235294
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.25
       objectReference: {fileID: 0}
@@ -6116,7 +6372,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E364%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E1170%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD73\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F2\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -6135,6 +6391,10 @@ PrefabInstance:
       value: 108.01003
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 2
       objectReference: {fileID: 0}
@@ -6144,7 +6404,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.6
+      value: 0.7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6281,6 +6541,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.08627451
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.3125
       objectReference: {fileID: 0}
@@ -6290,7 +6554,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B91\u4F53\u306E\u653B\u6483\u306B\u30014\u30BF\u30FC\u30F3\u708E\u5C5E\u6027\u3092\u52A0\u3048\u308B\u3002"
+      value: "\u5473\u65B91\u4F53\u306E\u653B\u6483\u306B\u30015\u30BF\u30FC\u30F3\u708E\u5C5E\u6027\u3092\u52A0\u3048\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -6309,12 +6573,20 @@ PrefabInstance:
       value: 123.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u30D5\u30EC\u30A4\u30E0\u30A8\u30F3\u30C1\u30E3\u30F3\u30C8"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0.1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6451,6 +6723,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.19215687
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.375
       objectReference: {fileID: 0}
@@ -6497,6 +6773,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.01012
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 49
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -6662,7 +6942,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 4f1bf86aa23663f458bd6832aef91787, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E148%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E233%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -6839,6 +7119,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.14117648
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.90625
       objectReference: {fileID: 0}
@@ -6856,7 +7140,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: cf1e22047dbc8414ebe8b2307d2ebc75, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "4\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3\u30E9\u30F3\u30C0\u30E0\u306A\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E118%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+      value: "6\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3\u30E9\u30F3\u30C0\u30E0\u306A\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E156%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -6881,6 +7165,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 138.00998
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -7033,6 +7321,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.023529412
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.03125
       objectReference: {fileID: 0}
@@ -7042,7 +7334,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E76%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E93%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -7067,6 +7359,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -7211,6 +7507,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.07058824
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.6875
       objectReference: {fileID: 0}
@@ -7220,7 +7520,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 49e974873b5314cd6a48c7532947120b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E152%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E211%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -7237,6 +7537,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00995
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -7381,6 +7685,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.16078432
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.34375
       objectReference: {fileID: 0}
@@ -7398,7 +7706,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B91\u4F53\u3092\u30014\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3<nobr><color=#8ce878>\u5C5E\u653B\u306E56%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
+      value: "\u5473\u65B91\u4F53\u3092\u30016\u30BF\u30FC\u30F3\u306E\u9593\u3001\u6BCE\u30BF\u30FC\u30F3<nobr><color=#8ce878>\u5C5E\u653B\u306E78%</color></nobr>\u56DE\u5FA9\u3059\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -7427,6 +7735,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 41
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -7579,6 +7891,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.16470589
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.5625
       objectReference: {fileID: 0}
@@ -7588,7 +7904,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B91\u4F53\u306EHP\u3092\u6700\u5927\u306E64%\u56DE\u5FA9\u3002\u5012\u308C\u3066\u3044\u308C\u3070\u5FA9\u6D3B\u3002"
+      value: "\u5473\u65B91\u4F53\u306EHP\u3092\u6700\u5927\u306E78%\u56DE\u5FA9\u3002\u5012\u308C\u3066\u3044\u308C\u3070\u5FA9\u6D3B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -7619,6 +7935,10 @@ PrefabInstance:
       value: 123.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 42
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
@@ -7628,7 +7948,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.5
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -7769,6 +8089,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.09803922
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.1875
       objectReference: {fileID: 0}
@@ -7813,12 +8137,20 @@ PrefabInstance:
       value: 123.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u30A2\u30A4\u30B9\u30DF\u30E9\u30FC"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0.3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7951,6 +8283,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.078431375
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.75
       objectReference: {fileID: 0}
@@ -7968,7 +8304,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: d9177c5b8cd564c12826a94ce7778644, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#96d6ff><u>\u523B\u5370</u></color></nobr>\u3002\u6B21\u306E\u30BF\u30FC\u30F3\u3001\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E222%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#96d6ff><u>\u523B\u5370</u></color></nobr>\u3002\u6B21\u306E\u30BF\u30FC\u30F3\u3001\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E350%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -7985,6 +8321,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01003
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -8129,6 +8469,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.21875
       objectReference: {fileID: 0}
@@ -8138,7 +8482,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 82da91fd08c5c496d81937b0f169240b, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E76%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002\u305D\u306E\u6575\u306E\u884C\u52D5\u9806\u30921\u3064\u9045\u3089\u305B\u308B\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E93%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002\u305D\u306E\u6575\u306E\u884C\u52D5\u9806\u30922\u3064\u9045\u3089\u305B\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -8165,12 +8509,20 @@ PrefabInstance:
       value: 108.01003
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u5F71\u7E2B\u3044"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_UVRect.x
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -8311,6 +8663,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.105882354
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.40625
       objectReference: {fileID: 0}
@@ -8350,13 +8706,17 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[2]'
       value: 93.00999
       objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 27
+      objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u8A60\u5531\u77ED\u7E2E"
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8493,6 +8853,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.07450981
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.5
       objectReference: {fileID: 0}
@@ -8502,7 +8866,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E77%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E87%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4827638043472110252, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -8519,6 +8883,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.01012
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 19
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -8663,6 +9031,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.1254902
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.96875
       objectReference: {fileID: 0}
@@ -8680,7 +9052,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E58%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD73\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u304C\u3042\u308B\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E79%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD74\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u304C\u3042\u308B\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -8707,16 +9079,16 @@ PrefabInstance:
       value: 108.00999
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
       value: "\u30A2\u30ED\u30FC\u30EC\u30A4\u30F3"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
-      propertyPath: m_UVRect.x
-      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -8857,6 +9229,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.1764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.96875
       objectReference: {fileID: 0}
@@ -8874,7 +9250,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B9\u5168\u4F53\u306E<nobr><color=#96d6ff><u>\u72B6\u614B\u7570\u5E38</u></color></nobr>\u3092\u6D88\u3057\u3001HP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E35%</color></nobr>\u56DE\u5FA9\u3002"
+      value: "\u5473\u65B9\u5168\u4F53\u306E<nobr><color=#96d6ff><u>\u72B6\u614B\u7570\u5E38</u></color></nobr>\u3092\u6D88\u3057\u3001HP\u3092<nobr><color=#8ce878>\u5C5E\u653B\u306E49%</color></nobr>\u56DE\u5FA9\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -8903,6 +9279,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.010025
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 45
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -9055,6 +9435,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.011764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.375
       objectReference: {fileID: 0}
@@ -9064,7 +9448,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 35db9db0e6c090a4ca6429d6e89ca9f5, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E77%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E87%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -9089,6 +9473,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 108.00999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6438418484250081352, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
@@ -9237,6 +9625,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.17254902
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0
       objectReference: {fileID: 0}
@@ -9254,7 +9646,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u5473\u65B9\u5168\u4F53\u306E\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u3092\u30013\u30BF\u30FC\u30F337%\u6E1B\u3089\u3059\u3002"
+      value: "\u5473\u65B9\u5168\u4F53\u306E\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8\u3092\u30014\u30BF\u30FC\u30F349%\u6E1B\u3089\u3059\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -9283,6 +9675,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
       value: 123.01004
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 44
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
@@ -9435,6 +9831,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: m_Color.b
+      value: 0.03529412
+      objectReference: {fileID: 0}
+    - target: {fileID: 3729944377628138954, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
       value: 0.5625
       objectReference: {fileID: 0}
@@ -9452,7 +9852,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u624B\u672D\u306E\u65AC\u5C5E\u6027\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8\u3092\u3059\u3079\u30661\u4E0B\u3052\u308B\u3002"
+      value: "\u624B\u672D\u306E\u65AC\u5C5E\u6027\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8\u3092\u3059\u3079\u30662\u4E0B\u3052\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Texture
@@ -9479,6 +9879,10 @@ PrefabInstance:
       value: 93.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: Style
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Quality
       value: 2
       objectReference: {fileID: 0}
@@ -9488,7 +9892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8150438230002721588, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_UVRect.x
-      value: 0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8288489541435336460, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text

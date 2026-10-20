@@ -23,6 +23,9 @@ namespace Baryonyx.Equipment
         public ItemQuality Quality { get; internal set; } = ItemQuality.C;
         public float Multiplier { get; internal set; } = Inventory.Quality.MinMultiplier;
 
+        // 種類ごとの光り方（EquipmentCatalog.FoilStyleOf）。品質S・Aのとき、アイコンに重ねるキラキラに使う。
+        public int FoilStyle { get; internal set; }
+
         // 効果の短い説明。数字は倍率を掛けた後の値。
         public string Detail { get; internal set; }
 
@@ -320,6 +323,7 @@ namespace Baryonyx.Equipment
                 Stars = EquipmentCatalog.Stars(definition.Rarity),
                 Quality = definition.QualityOf(item.Multiplier),
                 Multiplier = item.Multiplier,
+                FoilStyle = EquipmentCatalog.FoilStyleOf(definition.Id),
                 Detail = definition.DetailAt(item.Multiplier),
                 Worn = wearer != null && wearer == personId,
                 Mark =

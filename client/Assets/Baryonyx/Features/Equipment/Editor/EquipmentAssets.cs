@@ -122,6 +122,7 @@ namespace Baryonyx.Equipment.Editor
             var icon = Layout.Box(row, "Icon", 18, (SlotHeight - 72) / 2f, 72, 72);
             widget.Icon = icon.gameObject.AddComponent<Image>();
             widget.Icon.raycastTarget = false;
+            widget.Foil = CardFoilAssets.Add(widget.Icon);
             Layout.Text(
                 row,
                 "Tag",
@@ -247,6 +248,7 @@ namespace Baryonyx.Equipment.Editor
             Corner(icon, new Vector2(0, 0.5f), new Vector2(16, 0), Vector2.one * Guide.IconSize);
             row.Icon = icon.gameObject.AddComponent<Image>();
             row.Icon.raycastTarget = false;
+            row.Foil = CardFoilAssets.Add(row.Icon);
 
             row.Name = Label(
                 card,

@@ -15,8 +15,9 @@ namespace Baryonyx.Tests.PlayMode
     // 記録はテストごとに空のアプリ内の記録（RevealedWeaknessSession）から始める。
     public sealed class BattleWeaknessRecordTests
     {
-        private const int Slime = AdventureCatalog.MossSlime;
-        private const int Wolf = AdventureCatalog.MossWolf;
+        // 戦闘画面の手前の小さな敵と、中くらいの敵の場所。
+        private const int Slime = AdventureCatalog.SmallPlace;
+        private const int Wolf = AdventureCatalog.MediumPlace;
 
         private TestGameServices services;
 
@@ -31,8 +32,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(BattleWeaknessRecordTests));
         }
 
-        // 冒険を始め、入口の次の部屋（戦闘）へ進んだ状態にする。
-        private void EnterTheFirstBattle()
+        // 冒険を始め、入口の次の部屋（戦闘）へ進んだ状態にする。その部屋の敵の組み合わせを返す。
+        private AdventureEncounter EnterTheFirstBattle()
         {
             var source = services.Adventure;
             var state = AdventureSession.Use(
@@ -47,6 +48,7 @@ namespace Baryonyx.Tests.PlayMode
                     .GetAwaiter()
                     .GetResult()
             );
+            return AdventureCatalog.Encounter(AdventureSession.Current.Run.Room.Encounter);
         }
 
         private static IEnumerator LoadBattle(System.Action<BattleBootstrap> found)
@@ -75,22 +77,23 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheEnemiesCarryTheirKindsAndWeaknesses()
         {
-            EnterTheFirstBattle();
+            var encounter = EnterTheFirstBattle();
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var enemies = bootstrap.Battle.Enemies;
-            // The battle here has the three kinds the battle mock was made with, not every kind.
-            var kinds = new[]
-            {
-                CombatEnemies.MossSlime,
-                CombatEnemies.MossWolf,
-                CombatEnemies.ForestGuardian,
-            };
+            // The battle has the room's kinds (a small and a middle-sized enemy of the forest),
+            // each with its own weaknesses.
+            var kinds = encounter.Kinds.Take(2).Select(CombatEnemies.Find).ToArray();
+            Assert.That(kinds, Has.None.Null);
             Assert.That(
-                enemies.Select(enemy => enemy.Id),
+                enemies.Take(2).Select(enemy => enemy.Id),
                 Is.EqualTo(kinds.Select(kind => kind.Id))
             );
-            for (int i = 0; i < enemies.Length; i++)
+            Assert.That(enemies[2].Alive, Is.False);
+            var area = AdventureCatalog.Area(AdventureCatalog.ForestRuins);
+            Assert.That(area.Small, Does.Contain(kinds[0].Id));
+            Assert.That(area.Medium, Does.Contain(kinds[1].Id));
+            for (int i = 0; i < kinds.Length; i++)
                 Assert.That(
                     enemies[i]
                         .Weaknesses.Select(weakness => BattleCardText.ElementOf(weakness.Element)),
@@ -101,31 +104,43 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator OnlyTheWeaknessesRevealedBeforeShowFromTheStart()
         {
-            RevealedWeaknessSession.Record(CombatEnemies.MossSlime.Id, CardElement.Thunder);
-            EnterTheFirstBattle();
+            var encounter = EnterTheFirstBattle();
+            var small = CombatEnemies.Find(encounter.Kinds[Slime]);
+            var medium = CombatEnemies.Find(encounter.Kinds[Wolf]);
+            RevealedWeaknessSession.Record(small.Id, small.Weaknesses[0]);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
 
-            // 苔スライムは雷だけが見え、モックで見せていた苔むした狼の氷も伏せる。
-            Assert.That(Shown(battle.Enemies[Slime]), Is.EqualTo(new[] { true, false }));
-            Assert.That(Shown(battle.Enemies[Wolf]), Is.EqualTo(new[] { false, false }));
+            // 小さな敵は記録した1つ目の弱点だけが見え、中くらいの敵はどれも伏せる。
+            Assert.That(
+                Shown(battle.Enemies[Slime]),
+                Is.EqualTo(small.Weaknesses.Select((_, i) => i == 0).ToArray())
+            );
+            Assert.That(
+                Shown(battle.Enemies[Wolf]),
+                Is.EqualTo(medium.Weaknesses.Select(_ => false).ToArray())
+            );
         }
 
         [UnityTest]
         public IEnumerator AWeaknessHitIsRecordedAndShowsInTheNextBattle()
         {
-            EnterTheFirstBattle();
+            var encounter = EnterTheFirstBattle();
+            var medium = CombatEnemies.Find(encounter.Kinds[Wolf]);
+            var first = medium.Weaknesses[0];
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
-            Assert.That(Shown(battle.Enemies[Wolf]), Is.EqualTo(new[] { false, false }));
+            Assert.That(
+                Shown(battle.Enemies[Wolf]),
+                Is.EqualTo(medium.Weaknesses.Select(_ => false).ToArray())
+            );
 
-            // 苔むした狼の伏せた弱点（氷）を突く。
+            // 中くらいの敵の伏せた1つ目の弱点を突く。
             battle.LabPlay(Wolf, EnemyLabAction.WeakHit);
             yield return SceneTests.WaitUntil(
-                () =>
-                    RevealedWeaknessSession.IsRevealed(CombatEnemies.MossWolf.Id, CardElement.Ice),
+                () => RevealedWeaknessSession.IsRevealed(medium.Id, first),
                 8f,
                 "The weakness hit was not recorded."
             );
@@ -141,13 +156,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 kept,
                 Is.EqualTo(
-                    new[] { new RevealedWeakness(CombatEnemies.MossWolf.Id, CardElement.Ice) }
+                    new[] { new RevealedWeakness(medium.Id, first) }
                 )
             );
 
-            // 同じ部屋の戦闘を開き直すと、氷を最初から見せる。
+            // 同じ部屋の戦闘を開き直すと、その弱点を最初から見せる。
             yield return LoadBattle(value => bootstrap = value);
-            Assert.That(Shown(bootstrap.Battle.Enemies[Wolf]), Is.EqualTo(new[] { true, false }));
+            Assert.That(
+                Shown(bootstrap.Battle.Enemies[Wolf]),
+                Is.EqualTo(medium.Weaknesses.Select((_, i) => i == 0).ToArray())
+            );
         }
     }
 }

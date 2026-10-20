@@ -42,7 +42,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardDivineShield.asepri
 | 使い手（モックの仮） | ミナ |
 | 属性 | なし |
 | 種類・対象 | 防御・味方単体 |
-| コスト | 4 |
+| コスト | 3 |
 | 説明文 | 味方1体は、次のターンまでダメージを受けない。 |
 | 効果（行う順） | 味方単体：無敵1ターン |
 
@@ -53,7 +53,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardDivineShield.asepri
 | カードの種類 | 防御 | [カードの種類と流れ](../../features/combat.md#カードの種類と流れ) | 仮 |
 | 対象 | 味方単体 | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
 | 属性 | なし | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
-| コスト | 4 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
+| コスト | 3 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
+| 倍率の上限 | ×1.6 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
 | 威力・回復量 | なし | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | 無敵1ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
@@ -115,3 +116,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardDivineShield.asepri
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
+| 2026-10-20 | コストを4から3にした。倍率の上限を×1.6にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |

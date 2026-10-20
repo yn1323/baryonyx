@@ -9,7 +9,8 @@ namespace Baryonyx.Combat
     /// A card skill grown by one card's multiplier (doc/features/inventory.md, quality): every
     /// number grows the way that helps its owner. The parts of a stat, the hits, the turns and the
     /// amounts (energy, cards drawn, cost lowered, stacks, a buff's percent) are multiplied and
-    /// rounded, a chance stops at 100%, and the cost is divided (staying at 1 or more). A
+    /// rounded, a chance stops at 100%, and the cost is lowered by 1 for each 1.0 the multiplier
+    /// grows (staying at 1 or more). A
     /// condition's threshold ("HPが半分以下") stays. The description is rewritten to match: the
     /// hits after "{0}ダメージ" ("×3"), the turns before "ターン", and each amount where its unit
     /// follows it. A number the description does not write stays unwritten.
@@ -17,25 +18,17 @@ namespace Baryonyx.Combat
     public static class CardSkillQuality
     {
         /// <summary>
-        /// The provisional upper limit for a card that hits more than once, lower than the others'
-        /// because its hits grow as well as its power (doc/features/inventory.md).
+        /// The upper limit of <paramref name="skill"/>'s multiplier, each kind's own
+        /// (doc/features/inventory.md): ×1.00 for a card without one, which then has no range.
         /// </summary>
-        public const float MultiHitMaxMultiplier = 1.3f;
-
-        /// <summary>The upper limit of <paramref name="skill"/>'s multiplier.</summary>
         public static float LimitOf(CardSkill skill)
         {
             if (skill == null)
-                return Quality.DefaultMaxMultiplier;
+                return Quality.MinMultiplier;
             if (skill.MaxMultiplier > 0f)
                 return skill.MaxMultiplier;
             var card = skill.Base ?? skill;
-            if (card.MaxMultiplier > 0f)
-                return card.MaxMultiplier;
-            foreach (var action in card.Actions)
-                if (action.Kind == CardActionKind.Damage && action.Hits > 1)
-                    return MultiHitMaxMultiplier;
-            return Quality.DefaultMaxMultiplier;
+            return card.MaxMultiplier > 0f ? card.MaxMultiplier : Quality.MinMultiplier;
         }
 
         /// <summary>
@@ -73,6 +66,7 @@ namespace Baryonyx.Combat
                 Actions = Array.AsReadOnly(actions),
                 BorrowedArt = card.BorrowedArt,
                 MaxMultiplier = limit > 0f ? limit : card.MaxMultiplier,
+                FoilStyle = card.FoilStyle,
                 Multiplier = m,
                 Base = card,
             };

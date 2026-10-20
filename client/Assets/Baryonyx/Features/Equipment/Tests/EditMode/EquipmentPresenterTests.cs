@@ -256,6 +256,33 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Notices, Is.Empty);
         }
 
+        // 枠と行のキラキラには、その1つの品質と、種類ごとの光り方（デバッグルームと同じ）を渡す。
+        [Test]
+        public void ItemsCarryTheirQualityAndSparkle()
+        {
+            presenter.Dispose();
+            var state = new EquipmentState(
+                new[]
+                {
+                    new EquipmentItem("top", "flame-dagger", 1.8f),
+                    new EquipmentItem("plain", "iron-sword"),
+                },
+                new[] { ("toma", EquipmentSlot.Weapon, "top") }
+            );
+            var (people, _) = new PartyFormation(
+                new[] { Member("toma", "トーマ") },
+                new[] { "toma" }
+            ).TabOrder();
+            presenter = new EquipmentPresenter(view, people, state, source);
+            var worn = view.Last.Slots[0];
+            Assert.That(worn.Quality, Is.EqualTo(Inventory.ItemQuality.S));
+            Assert.That(worn.FoilStyle, Is.EqualTo(EquipmentCatalog.FoilStyleOf("flame-dagger")));
+            var plain = view.Last.Choices.Single(item => item.ItemId == "plain");
+            Assert.That(plain.Quality, Is.EqualTo(Inventory.ItemQuality.C));
+            Assert.That(plain.FoilStyle, Is.EqualTo(EquipmentCatalog.FoilStyleOf("iron-sword")));
+            Assert.That(worn.FoilStyle, Is.Not.EqualTo(plain.FoilStyle));
+        }
+
         [Test]
         public void OpensOnTheRememberedPerson()
         {

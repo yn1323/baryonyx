@@ -2,14 +2,14 @@
 id: enemy-barnacle-crab
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: フジツボ大ガニ
 category: enemies
 silhouette: 横に広い甲羅と脚。左右の大きなはさみを高く振り上げ、甲羅の上に目が2本突き出る
 palette: 赤い甲羅 | 白いフジツボ | 緑の海藻 | 象牙色の腹と脚先
 motifs: カニ | 大きなはさみ | フジツボ | 海藻
 personality: 頑固でけんかっ早い磯の主。自分の岩場から一歩も引かない
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.aseprite
 ---
 
@@ -21,6 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BarnacleCrab.as
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
+2026-10-20から、港町ポルトリア（`port-portoria`、Lv14）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「大ばさみ砕き」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -171,10 +174,11 @@ HPと物防を中の敵としては高くし、甲羅で長く耐える壁にし
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | ブロックへの2倍のダメージ | [大ばさみ砕き](../enemy-skills/enemy-skill-barnacle-crab-crusher.md)の未決事項 |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（大ばさみ砕き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「大ばさみ砕き」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

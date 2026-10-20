@@ -377,6 +377,7 @@ namespace Baryonyx.Combat.Editor
                 view.TargetFlash = EnsureFlashMaterial();
                 view.ActorMaterial = EnsurePixelArtMaterial();
                 view.Settings = EnsureHandSettings();
+                view.EnemyLooks = BattleEnemyLooksAssets.Create(TurnIconDots);
                 var stageCanvas = CanvasRoot("StageCanvas");
                 stageCanvas.SetParent(root, false);
                 BattleSkillVfxAssets.MakeStageCanvas(stageCanvas);
@@ -594,7 +595,8 @@ namespace Baryonyx.Combat.Editor
                 Art("CardFrameFire"),
                 fireIcon,
                 fire.Cost,
-                fire.Quality
+                fire.Quality,
+                fire.FoilStyle
             );
             AddCardParts(card, cardView);
             PrefabUtility.SaveAsPrefabAsset(card.gameObject, CardPrefabPath);
@@ -887,7 +889,12 @@ namespace Baryonyx.Combat.Editor
                 // The weakness icons sit in a row over the HP bar.
                 var info = Rect("Info", body);
                 Place(info, new Vector2(0, -44), new Vector2(260, 64));
-                var weaknesses = WeaknessIcons(info, spec);
+                var slots = WeaknessIcons(info, spec);
+                var weaknesses = spec
+                    .Definition.Weaknesses.Select(weak =>
+                        Array.Find(slots, slot => slot.Element == BattleCardText.ElementOf(weak))
+                    )
+                    .ToArray();
                 var gauge = HpGauge(info, new Vector2(0, -16), 65, 6, HpEnemy);
 
                 enemies.Add(
@@ -906,7 +913,10 @@ namespace Baryonyx.Combat.Editor
                         Level = spec.Level,
                         PhysicalDefense = spec.PhysicalDefense,
                         MagicDefense = spec.MagicDefense,
+                        Magic = false,
                         Weaknesses = weaknesses,
+                        WeaknessSlots = slots,
+                        Shadow = footShadow.rectTransform,
                         IconUv = FaceUv(texture, spec.Face, TurnIconDots),
                         Boss = spec.Boss,
                     }
@@ -918,6 +928,16 @@ namespace Baryonyx.Combat.Editor
             view.Enemies = enemies.ToArray();
         }
 
+        private static readonly BattleInspectElement[] AllElements =
+        {
+            BattleInspectElement.Slash,
+            BattleInspectElement.Blunt,
+            BattleInspectElement.Pierce,
+            BattleInspectElement.Fire,
+            BattleInspectElement.Ice,
+            BattleInspectElement.Thunder,
+        };
+
         private static BattleInspectWeakness[] WeaknessIcons(RectTransform info, EnemySpec spec)
         {
             var row = Rect("Weaknesses", info);
@@ -928,12 +948,21 @@ namespace Baryonyx.Combat.Editor
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = layout.childForceExpandHeight = false;
 
+            // どの属性のアイコンも置き、この敵の弱点だけを定義の順に先頭へ並べて見せる。
+            // 冒険では、別の種類の敵がこの場所に入ると、その弱点に出し直す。
             var weaknesses = new List<BattleInspectWeakness>();
-            foreach (var weak in spec.Definition.Weaknesses)
+            var order = spec
+                .Definition.Weaknesses.Select(BattleCardText.ElementOf)
+                .Concat(AllElements.Except(spec.Definition.Weaknesses.Select(BattleCardText.ElementOf)));
+            foreach (var element in order)
             {
-                var element = BattleCardText.ElementOf(weak);
                 bool revealed = Array.IndexOf(spec.Revealed, element) >= 0;
-                weaknesses.Add(WeaknessIcon(row, element, revealed));
+                var weakness = WeaknessIcon(row, element, revealed);
+                bool weak = spec.Definition.Weaknesses.Any(entry =>
+                    BattleCardText.ElementOf(entry) == element
+                );
+                weakness.Known.transform.parent.gameObject.SetActive(weak);
+                weaknesses.Add(weakness);
             }
             return weaknesses.ToArray();
         }
@@ -1411,7 +1440,8 @@ namespace Baryonyx.Combat.Editor
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Quality
+                    data.Quality,
+                    data.FoilStyle
                 );
                 cardView.SetPlayable(
                     playable,
@@ -1699,7 +1729,8 @@ namespace Baryonyx.Combat.Editor
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Quality
+                    data.Quality,
+                    data.FoilStyle
                 );
                 view.SetPlayable(true, 0f);
                 if (view.Back != null)
@@ -1914,6 +1945,7 @@ namespace Baryonyx.Combat.Editor
                     skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
                 Cost = skill.Cost,
                 Quality = skill.Quality,
+                FoilStyle = skill.FoilStyle,
                 Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), act),
                 Element = element,
                 Effect = BattleCardText.EffectOf(skill),
@@ -1931,13 +1963,20 @@ namespace Baryonyx.Combat.Editor
             };
 
         /// <summary>The drawn part of a sprite in dots, with y measured up from the bottom.</summary>
-        private static UnityEngine.Rect OpaqueBounds(Texture2D texture)
-        {
-            var pixels = AssetDatabase.GetAssetPath(texture) is { } path
+        private static UnityEngine.Rect OpaqueBounds(Texture2D texture) => OpaqueBoundsOf(texture);
+
+        /// <summary>The picture's dots, bottom row first, read from its file; null if it cannot be read.</summary>
+        internal static Color32[] PixelsOf(Texture2D texture) =>
+            AssetDatabase.GetAssetPath(texture) is { } path
                 ? AsepriteCanvasImport.IsAseprite(path)
                     ? AsepriteCanvasImport.ReadFramePixels(path)
                     : LoadReadable(path)
                 : null;
+
+        /// <summary>The drawn (opaque) part of a picture, in dots from its bottom left.</summary>
+        internal static UnityEngine.Rect OpaqueBoundsOf(Texture2D texture)
+        {
+            var pixels = PixelsOf(texture);
             if (pixels == null)
                 return new UnityEngine.Rect(0, 0, texture.width, texture.height);
             int minX = texture.width,

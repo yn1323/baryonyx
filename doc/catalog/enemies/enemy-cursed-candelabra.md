@@ -2,14 +2,14 @@
 id: enemy-cursed-candelabra
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 呪いの燭台
 category: enemies
 silhouette: 細い柱から三本の腕が広がる燭台。腕の先の蝋燭に青い炎の顔が灯り、台座の曲がった脚で立つ
 palette: 黒ずんだ銀 | 白い蝋 | 青白い炎
 motifs: 燭台 | 蝋燭 | 青い炎の顔 | 垂れた蝋
 personality: 三つの炎がそれぞれ気ままで、いたずら好き。暗がりに入った者の明かりを奪い、困る顔を見て揺れて笑う
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabra.aseprite
 ---
 
@@ -23,6 +23,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 ステータス・技・行動は未実装で、絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)で表示するだけである。
+2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「火の玉」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -167,10 +170,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CursedCandelabr
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | やけどを延ばす | 新しい仕組みの決まり（[延焼](../enemy-skills/enemy-skill-candelabra-spread-fire.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（火の玉）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`caster`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[延焼](../enemy-skills/enemy-skill-candelabra-spread-fire.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「火の玉」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

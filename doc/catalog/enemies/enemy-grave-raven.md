@@ -2,14 +2,14 @@
 id: enemy-grave-raven
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 墓守りの大鴉
 category: enemies
 silhouette: 黒い翼を左右いっぱいに広げた大きな鴉。足に下げたランタンが体の下へ突き出る
 palette: 黒と濃紺の羽 | 赤い目 | ランタンの黄色い灯り | 灰色のくちばし
 motifs: 大鴉 | 古いランタン | 墓地の木 | ものまね
 personality: 墓地の見回り役を気取る。物まねが得意で、侵入者の声や技をまねてからかう
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、月影の墓所（`moonshade-graveyard`、Lv30）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「鴉のものまね」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -173,10 +176,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 | 技のまね | 新しい仕組み（[鴉のものまね](../enemy-skills/enemy-skill-raven-mimic-echo.md)）。味方のカードの記録から技の区分と属性を決める。予告の出し方 |
 | 呼び出し | 呼んだ骸骨兵のLvと立ち位置（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（鴉のものまね）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | 月影の墓所の戦闘に出るようにし、Lv100のステータスと技「鴉のものまね」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

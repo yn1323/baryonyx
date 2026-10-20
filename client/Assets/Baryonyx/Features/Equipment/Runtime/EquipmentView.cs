@@ -8,6 +8,7 @@ using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.Cards;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -24,6 +25,9 @@ namespace Baryonyx.Equipment
         public Button Button;
         public GameObject Selected;
         public Image Icon;
+
+        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
+        public CardFoil Foil;
         public TMP_Text Name;
         public TMP_Text Stars;
         public TMP_Text Detail;
@@ -398,6 +402,7 @@ namespace Baryonyx.Equipment
                 widget.Icon.enabled = icon != null;
                 widget.Icon.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             }
+            ShowFoil(widget.Foil, filled ? item : null, icon);
             Set(widget.Name, item == null ? "" : item.Name);
             SetRich(widget.Stars, filled ? Grade(item) : "");
             Set(widget.Detail, filled ? item.Detail : "");
@@ -421,6 +426,7 @@ namespace Baryonyx.Equipment
                 row.Icon.sprite = icon;
                 row.Icon.enabled = icon != null;
             }
+            ShowFoil(row.Foil, item.ItemId != null ? item : null, icon);
             Set(row.Name, item.Name);
             SetRich(row.Stars, Grade(item));
             Set(row.Detail, item.Detail);
@@ -430,6 +436,13 @@ namespace Baryonyx.Equipment
                 row.Mark.text = item.Mark;
                 row.Mark.alpha = item.Worn ? 1f : 0.75f;
             }
+        }
+
+        // 装備の品質のキラキラを、種類ごとの光り方でアイコンに重ねる。空いている枠では出さない。
+        private static void ShowFoil(CardFoil foil, EquipmentItemState item, Sprite icon)
+        {
+            if (foil != null)
+                foil.Show(icon, item?.Quality ?? ItemQuality.C, item?.FoilStyle ?? 0);
         }
 
         private void BindRow(EquipmentRow row)

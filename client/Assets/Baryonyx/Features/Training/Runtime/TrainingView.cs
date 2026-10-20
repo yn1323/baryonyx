@@ -73,6 +73,9 @@ namespace Baryonyx.Training
         public Button Button;
         public Image Icon;
 
+        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。武器・防具の枠だけにある。
+        public CardFoil Foil;
+
         // 「武器」「防具」「アクセサリー 1」。
         public TMP_Text Slot;
         public TMP_Text Name;
@@ -347,6 +350,7 @@ namespace Baryonyx.Training
                 {
                     var item = equipment?.Find(equipment.ItemIn(id, slot));
                     var definition = EquipmentCatalog.Find(item?.EquipmentId);
+                    var quality = definition?.QualityOf(item.Multiplier) ?? ItemQuality.C;
                     // レア度の★に続けて、その1つの品質の文字を出す。説明の数字は倍率を掛けた値。
                     return TrainingGearState.Worn(
                         EquipmentCatalog.NameOf(slot),
@@ -354,9 +358,11 @@ namespace Baryonyx.Training
                         definition != null
                             ? EquipmentCatalog.Stars(definition.Rarity)
                                 + "　"
-                                + QualityPalette.Painted(definition.QualityOf(item.Multiplier))
+                                + QualityPalette.Painted(quality)
                             : null,
-                        definition?.DetailAt(item.Multiplier)
+                        definition?.DetailAt(item.Multiplier),
+                        quality,
+                        definition != null ? EquipmentCatalog.FoilStyleOf(definition.Id) : 0
                     );
                 })
                 .ToArray();
@@ -533,7 +539,11 @@ namespace Baryonyx.Training
                 widget.Art.enabled = filled && card.Art != null;
             }
             if (widget.Foil != null)
-                widget.Foil.Show(card?.Art, filled && !card.Locked ? card.Quality : ItemQuality.C);
+                widget.Foil.Show(
+                    card?.Art,
+                    filled && !card.Locked ? card.Quality : ItemQuality.C,
+                    filled ? card.FoilStyle : 0
+                );
             if (widget.Cost != null)
                 widget.Cost.SetActive(filled && card.Cost >= 0 && card.Cost < CostDigits);
             if (widget.CostDigit != null && filled)
@@ -570,6 +580,16 @@ namespace Baryonyx.Training
                 widget.Icon.enabled = icon != null && !locked;
                 widget.Icon.color =
                     gear != null && gear.Filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+            }
+            // 付けている装備の品質のキラキラを、種類ごとの光り方で重ねる。空いた枠では出さない。
+            if (widget.Foil != null)
+            {
+                bool filled = gear != null && gear.Filled && !locked;
+                widget.Foil.Show(
+                    filled ? icon : null,
+                    filled ? gear.Quality : ItemQuality.C,
+                    filled ? gear.FoilStyle : 0
+                );
             }
             Set(
                 widget.Name,

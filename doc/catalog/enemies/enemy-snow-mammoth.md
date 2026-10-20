@@ -2,14 +2,14 @@
 id: enemy-snow-mammoth
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 雪原のマンモス
 category: enemies
 silhouette: 背の高い山のような四つ足の巨体。頭を下げ、長く曲がった牙を前へ突き出し、鼻を下へ巻く
 palette: 赤茶の長い毛 | 白い雪 | 象牙色の牙 | 赤い布 | 金の飾り
 motifs: マンモス | 長い牙 | 赤い布の飾り | 背の雪
 personality: 穏やかで動じない古い巨獣。雪原を決まった道でゆっくり渡り続ける
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.aseprite
 ---
 
@@ -21,6 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SnowMammoth.ase
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
+2026-10-20から、白嶺ネーヴェ（`neve-peaks`、Lv40）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「雪山のしかかり」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -189,10 +192,11 @@ HPと物防を大の敵としても高くし、倒すのに時間のかかる壁
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 呼び出しと敵のブロック | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)、[降り積もる雪](../enemy-skills/enemy-skill-mammoth-snowdrift.md)、[雪山のしかかり](../enemy-skills/enemy-skill-mammoth-snow-crush.md)）。敵のブロックが消えるタイミングで、大技の重さが大きく変わる |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（雪山のしかかり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | 白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「雪山のしかかり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

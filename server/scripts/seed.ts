@@ -135,10 +135,10 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       "leather-armor",
       "wooden-shield",
     ],
-    // 品質を見比べられるよう、S・A・B・C がそろう倍率にする。
+    // 品質を見比べられるよう、S・A・B・C がそろう倍率にする（装備ごとの上限の中の位置で決めた）。
     itemMultipliers: [
-      150, 146, 138, 135, 126, 120, 112, 100, 145, 140, 131, 118, 104, 100, 128,
-      109,
+      180, 229, 191, 212, 152, 140, 124, 100, 172, 196, 187, 150, 110, 100, 145,
+      118,
     ],
     bonuses: [
       { id: "guard", multiplierPercent: 147 },

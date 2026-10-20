@@ -54,6 +54,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 | 対象 | 味方全体 | 単体のカードは置いた相手、全体のカードはスワイプだけで使う | 仮 |
 | 属性 | なし | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 3 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
+| 倍率の上限 | ×2.2 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
 | 威力・回復量 | 属攻の50% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | 今日のACT1,000ごとに威力+10%、上限+100% | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
@@ -116,3 +117,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardStepPrayer.aseprite
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-20 | 倍率の上限を×2.2にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |

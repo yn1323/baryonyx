@@ -2,14 +2,14 @@
 id: enemy-ghost-jelly
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: クラゲの亡霊
 category: enemies
 silhouette: 左上へ傾いた丸い傘の下に、長い触手と波打つ口腕が右下へ流れる
 palette: 半透明の薄紫 | 桃色の触手 | 黄色い灯り | 紺の輪郭
 motifs: 沈んだ船の灯り | 半透明の傘 | 漂う触手
 personality: ぼんやりと漂い、灯りに寄ってきた者を引き込もうとする。自分が亡霊だと気づいていない
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GhostJelly.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GhostJelly.asep
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、港町ポルトリア（`port-portoria`、Lv14）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「火の玉」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -168,10 +171,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GhostJelly.asep
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | すり抜け | 新しい状態。物理の攻撃だけを受けない状態を、[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の仕組みに加えるか。魔法の攻撃しか持たない編成でないと倒しにくくならないよう、続けて使わない決まりで足りるか |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（火の玉）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | 港町ポルトリアの戦闘に出るようにし、Lv100のステータスと技「火の玉」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

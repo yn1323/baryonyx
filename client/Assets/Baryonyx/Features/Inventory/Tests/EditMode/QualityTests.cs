@@ -4,6 +4,7 @@ using Baryonyx.Combat;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.SkillEvolution;
+using Baryonyx.UI.Cards;
 using NUnit.Framework;
 
 namespace Baryonyx.Tests.EditMode
@@ -63,9 +64,14 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(Quality.Count(2, 1.4f), Is.EqualTo(3));
             Assert.That(Quality.Count(2, 1.2f), Is.EqualTo(2));
             Assert.That(Quality.Chance(80, 1.5f), Is.EqualTo(100));
+            // コストは倍率の伸び1.0ごとに1下げる（四捨五入）。大技は上限でも大技のまま。
+            Assert.That(Quality.Cost(4, 1.4f), Is.EqualTo(4));
             Assert.That(Quality.Cost(4, 1.5f), Is.EqualTo(3));
+            Assert.That(Quality.Cost(9, 2.4f), Is.EqualTo(8));
+            Assert.That(Quality.Cost(9, 3f), Is.EqualTo(7));
+            Assert.That(Quality.Cost(2, 3f), Is.EqualTo(1));
             Assert.That(Quality.Cost(1, 1.5f), Is.EqualTo(1));
-            Assert.That(Quality.Cost(0, 1.5f), Is.EqualTo(0));
+            Assert.That(Quality.Cost(0, 3f), Is.EqualTo(0));
             Assert.That(Quality.Adverse(10, 1.5f), Is.EqualTo(7));
             Assert.That(Quality.Times(1.3f), Is.EqualTo("×1.30"));
         }
@@ -86,18 +92,19 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(fire.Quality, Is.EqualTo(ItemQuality.C));
             Assert.That(fire.WithMultiplier(1f), Is.SameAs(fire));
 
-            var best = fire.WithMultiplier(1.5f);
+            Assert.That(CardSkillQuality.LimitOf(fire), Is.EqualTo(2.4f));
+            var best = fire.WithMultiplier(2.4f);
             Assert.That(best.Quality, Is.EqualTo(ItemQuality.S));
             Assert.That(best.Base, Is.SameAs(fire));
             Assert.That(best.Cost, Is.EqualTo(1));
-            Assert.That(best.Actions[0].Percent, Is.EqualTo(150));
+            Assert.That(best.Actions[0].Percent, Is.EqualTo(240));
             Assert.That(best.Actions[0].Hits, Is.EqualTo(2));
-            Assert.That(best.Actions[1].Turns, Is.EqualTo(3));
+            Assert.That(best.Actions[1].Turns, Is.EqualTo(5));
             Assert.That(
                 best.Text,
-                Is.EqualTo("敵1体に{0}ダメージ×2。[弱点]を突くと[やけど]3ターン。")
+                Is.EqualTo("敵1体に{0}ダメージ×2。[弱点]を突くと[やけど]5ターン。")
             );
-            Assert.That(CardRules.Describe(best), Does.Contain("属攻の150%ダメージ×2"));
+            Assert.That(CardRules.Describe(best), Does.Contain("属攻の240%ダメージ×2"));
             // The definition itself stays at ×1.00.
             Assert.That(fire.Actions[0].Percent, Is.EqualTo(100));
         }
@@ -106,14 +113,14 @@ namespace Baryonyx.Tests.EditMode
         public void ACardThatHitsMoreThanOnceHasALowerLimitAndRewritesItsHits()
         {
             var serpent = CardSkills.Find("SerpentFang");
-            Assert.That(CardSkillQuality.LimitOf(serpent), Is.EqualTo(1.3f));
+            Assert.That(CardSkillQuality.LimitOf(serpent), Is.EqualTo(1.6f));
 
-            var best = serpent.WithMultiplier(1.3f);
+            var best = serpent.WithMultiplier(1.6f);
             Assert.That(best.Quality, Is.EqualTo(ItemQuality.S));
             Assert.That(best.Actions[0].Hits, Is.EqualTo(3));
             Assert.That(best.Text, Does.StartWith("敵1体に{0}ダメージ×3。"));
             // A multiplier past the limit stops at it.
-            Assert.That(serpent.WithMultiplier(2f).Multiplier, Is.EqualTo(1.3f));
+            Assert.That(serpent.WithMultiplier(2f).Multiplier, Is.EqualTo(1.6f));
         }
 
         [Test]
@@ -143,7 +150,7 @@ namespace Baryonyx.Tests.EditMode
             foreach (var skill in all)
             {
                 Assert.That(skill.WithMultiplier(1f).Text, Is.EqualTo(skill.Text), skill.Id);
-                foreach (var multiplier in new[] { 1.2f, 1.37f, 1.5f })
+                foreach (var multiplier in new[] { 1.2f, 1.37f, 1.5f, 2.2f, 3f })
                 {
                     var grown = skill.WithMultiplier(multiplier);
                     Assert.That(
@@ -161,14 +168,130 @@ namespace Baryonyx.Tests.EditMode
         public void AnEquipmentsDescriptionGrowsWithItsMultiplier()
         {
             var dagger = EquipmentCatalog.Find("flame-dagger");
-            Assert.That(dagger.MaxMultiplier, Is.EqualTo(1.3f));
+            Assert.That(dagger.MaxMultiplier, Is.EqualTo(1.8f));
             Assert.That(dagger.DetailAt(1f), Is.EqualTo(dagger.Detail));
-            Assert.That(dagger.DetailAt(1.3f), Is.EqualTo("速度の 163%｜斬・炎｜3回攻撃"));
+            Assert.That(dagger.DetailAt(1.8f), Is.EqualTo("速度の 225%｜斬・炎｜4回攻撃"));
             Assert.That(
                 EquipmentCatalog.Find("iron-helm").DetailAt(1.5f),
                 Is.EqualTo("物防の 173%｜HP +60")
             );
-            Assert.That(dagger.QualityOf(1.3f), Is.EqualTo(ItemQuality.S));
+            Assert.That(dagger.QualityOf(1.8f), Is.EqualTo(ItemQuality.S));
+        }
+
+        // スキル・固有スキル・装備は、種類ごとに×1.00より大きい上限を持つ。仮の×1.5を共通で使わない。
+        [Test]
+        public void EverySkillAndEquipmentHasALimitOfItsOwn()
+        {
+            var skills = CardSkills
+                .All.Concat(CardSkills.Prototypes)
+                .Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card));
+            foreach (var skill in skills)
+                Assert.That(skill.MaxMultiplier, Is.GreaterThan(1f), skill.Id);
+            Assert.That(
+                CardSkills.All.Select(skill => skill.MaxMultiplier).Distinct().Count(),
+                Is.GreaterThan(3),
+                "Each kind has its own limit."
+            );
+            // 固有スキルは、進化しても同じ上限を使う。
+            foreach (var tree in UniqueSkillTrees.All)
+                Assert.That(
+                    tree.Stages.Where(stage => stage != null)
+                        .Select(stage => stage.Card.MaxMultiplier)
+                        .Distinct()
+                        .Count(),
+                    Is.EqualTo(1),
+                    tree.Id
+                );
+            foreach (var gear in EquipmentCatalog.All)
+                Assert.That(gear.MaxMultiplier, Is.GreaterThan(1f), gear.Id);
+        }
+
+        // スキルが違えば光り方も違う。固有スキルは進化しても同じ光り方で、倍率を掛けても変わらない。
+        [Test]
+        public void EverySkillSparklesItsOwnWay()
+        {
+            var styles = CardSkills
+                .All.Concat(CardSkills.Prototypes)
+                .Select(skill => skill.FoilStyle)
+                .Concat(UniqueSkillTrees.All.Select(tree => tree.Stages[0].Card.FoilStyle))
+                .ToArray();
+            Assert.That(styles, Is.Unique);
+            Assert.That(styles, Has.All.InRange(0, CardFoil.StyleCount - 1));
+            foreach (var tree in UniqueSkillTrees.All)
+                foreach (var stage in tree.Stages.Where(stage => stage != null))
+                    Assert.That(stage.Card.FoilStyle, Is.EqualTo(tree.Stages[0].Card.FoilStyle));
+            var fire = CardSkills.Find("Fire");
+            Assert.That(fire.WithMultiplier(2f).FoilStyle, Is.EqualTo(fire.FoilStyle));
+            // 隣り合うスキルは模様から違う。
+            Assert.That(
+                CardFoil.NameOf(CardSkills.All[0].FoilStyle),
+                Is.Not.EqualTo(CardFoil.NameOf(CardSkills.All[1].FoilStyle))
+            );
+        }
+
+        // 装備・アクセサリー・ACTボーナスも、それぞれの一覧の中で光り方が違う。
+        [Test]
+        public void EveryPieceOfEquipmentAndBonusSparklesItsOwnWay()
+        {
+            var gear = QualityLabEntry
+                .Of(QualityLabTab.Weapons, null)
+                .Concat(QualityLabEntry.Of(QualityLabTab.Armor, null))
+                .Select(entry => entry.FoilStyle);
+            Assert.That(gear, Is.Unique);
+            // デバッグルームと編成の画面は、装備の同じ割り当てを使う。
+            foreach (
+                var entry in QualityLabEntry
+                    .Of(QualityLabTab.Weapons, null)
+                    .Concat(QualityLabEntry.Of(QualityLabTab.Armor, null))
+            )
+                Assert.That(entry.FoilStyle, Is.EqualTo(EquipmentCatalog.FoilStyleOf(entry.Id)));
+            Assert.That(
+                QualityLabEntry.Of(QualityLabTab.Accessories, null).Select(entry => entry.FoilStyle),
+                Is.Unique
+            );
+            var bonuses = UnityEngine.ScriptableObject.CreateInstance<Baryonyx.StepBonus.StepBonusMockData>();
+            try
+            {
+                bonuses.Bonuses = Enumerable
+                    .Range(0, 7)
+                    .Select(i => new Baryonyx.StepBonus.StepBonusDefinition { Id = $"bonus-{i}" })
+                    .ToArray();
+                Assert.That(
+                    QualityLabEntry.Of(QualityLabTab.Bonuses, bonuses).Select(entry => entry.FoilStyle),
+                    Is.Unique
+                );
+                // デバッグルームと酒場のボーナス設定は、ボーナスの同じ割り当てを使う。
+                foreach (var entry in QualityLabEntry.Of(QualityLabTab.Bonuses, bonuses))
+                    Assert.That(entry.FoilStyle, Is.EqualTo(bonuses.FoilStyleOf(entry.Id)));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(bonuses);
+            }
+        }
+
+        // 装備の上限はサーバー（server/src/features/equipment/catalog.ts の maxPercent）と同じ。
+        [Test]
+        public void EquipmentLimitsMatchTheServer()
+        {
+            var path = System.IO.Path.Combine(
+                UnityEngine.Application.dataPath,
+                "..",
+                "..",
+                "server",
+                "src",
+                "features",
+                "equipment",
+                "catalog.ts"
+            );
+            var source = System.IO.File.ReadAllText(path);
+            var server = Regex
+                .Matches(source, "\\{ id: \"([a-z-]+)\", slot: \"[a-z]+\", maxPercent: ([0-9]+) \\}")
+                .Cast<Match>()
+                .ToDictionary(match => match.Groups[1].Value, match => int.Parse(match.Groups[2].Value));
+            Assert.That(server.Keys, Is.EquivalentTo(EquipmentCatalog.All.Select(gear => gear.Id)));
+            foreach (var gear in EquipmentCatalog.All)
+                Assert.That(Quality.Percent(gear.MaxMultiplier), Is.EqualTo(server[gear.Id]), gear.Id);
         }
     }
 }

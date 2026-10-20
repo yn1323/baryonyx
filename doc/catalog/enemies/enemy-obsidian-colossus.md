@@ -2,14 +2,14 @@
 id: enemy-obsidian-colossus
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 黒曜石の巨像
 category: enemies
 silhouette: 肩の大きく盛り上がった人型の巨体。肩・背・腕に鋭い結晶が逆立ち、小さな頭が肩の間に沈む
 palette: 黒と濃紺の黒曜石 | 紫の照り返し | 橙色の溶岩 | 黄色の溶岩の芯
 motifs: 黒曜石 | 溶岩のひび | 結晶 | 噴火
 personality: 無言で歩み続ける、噴火の熱を抱えた巨像。近づく者をただ押し潰す
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/ObsidianColossus.aseprite
 ---
 
@@ -21,6 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/ObsidianColossu
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
+2026-10-20から、ヴォルガン火山（`volgan-volcano`、Lv35）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「黒曜の破片嵐」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -189,10 +192,11 @@ HPと物防を高くし、硬い体で長く耐える壁にした。黒曜石は
 | 呼び出しと自分に付く弱体 | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)、[溶岩のあふれ](../enemy-skills/enemy-skill-obsidian-meltdown.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（黒曜の破片嵐）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「黒曜の破片嵐」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

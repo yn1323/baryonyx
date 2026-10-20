@@ -46,7 +46,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(run.Map.Seed, Is.EqualTo(12345));
             Assert.That(run.Map.RoomCount, Is.EqualTo(8));
             Assert.That(run.Room.Kind, Is.EqualTo(AdventureRoomKind.Battle));
-            Assert.That(run.Room.Encounter, Is.EqualTo("forest-pack"));
+            Assert.That(run.Room.Encounter, Does.StartWith("forest-ruins/pack/"));
             Assert.That(run.Floor, Is.EqualTo(2));
             Assert.That(run.InBattle, Is.True);
             Assert.That(run.Exits, Is.Empty);
@@ -213,7 +213,7 @@ namespace Baryonyx.Tests.EditMode
             // ボスの部屋の報酬は品質B以上で、倍率はその品質の幅に入る。
             Assert.That(state.Reward.Quality, Is.GreaterThanOrEqualTo(ItemQuality.B));
             Assert.That(
-                Quality.Of(state.Reward.Multiplier, Quality.DefaultMaxMultiplier),
+                Quality.Of(state.Reward.Multiplier, StepBonusDefinition.DefaultMaxMultiplier),
                 Is.EqualTo(state.Reward.Quality)
             );
         }

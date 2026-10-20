@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.Editor.UI;
 using Baryonyx.Inventory;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -222,14 +223,15 @@ namespace Baryonyx.StepBonus.Editor
             );
             view.Slots = Enumerable
                 .Range(0, loadout.SlotCount)
-                .Select(i => BuildSlot(panel, i, loadout))
+                .Select(i => BuildSlot(panel, i, loadout, view.Data))
                 .ToArray();
         }
 
         private static StepBonusSlotWidget BuildSlot(
             RectTransform panel,
             int index,
-            StepBonusLoadout loadout
+            StepBonusLoadout loadout,
+            StepBonusMockData data
         )
         {
             var (button, selected, row) = GlassCardAssets.Choice(
@@ -258,6 +260,11 @@ namespace Baryonyx.StepBonus.Editor
             var bonus = loadout.Definition(loadout.Bonus(index));
             widget.Icon.sprite = bonus?.Icon;
             widget.Icon.enabled = bonus?.Icon != null;
+            widget.Foil = CardFoilAssets.Add(
+                widget.Icon,
+                bonus != null ? loadout.QualityOf(bonus.Id) : ItemQuality.C,
+                bonus != null ? data.FoilStyleOf(bonus.Id) : 0
+            );
 
             const float textLeft = 14 + SlotSize + 24;
             widget.Tier = Label(
@@ -347,7 +354,7 @@ namespace Baryonyx.StepBonus.Editor
                             Multiplier = Quality.MinMultiplier,
                         })
                 )
-                .Select(roll => BuildRow(content, roll, loadout))
+                .Select(roll => BuildRow(content, roll, loadout, view.Data))
                 .ToArray();
 
             view.List = Layout.Scroll(panel, viewport, content);
@@ -356,7 +363,8 @@ namespace Baryonyx.StepBonus.Editor
         private static StepBonusRowWidget BuildRow(
             RectTransform content,
             StepBonusRoll roll,
-            StepBonusLoadout loadout
+            StepBonusLoadout loadout,
+            StepBonusMockData data
         )
         {
             var bonus = loadout.Definition(roll.Id);
@@ -371,6 +379,7 @@ namespace Baryonyx.StepBonus.Editor
             var iconImage = icon.gameObject.AddComponent<Image>();
             iconImage.sprite = bonus.Icon;
             iconImage.raycastTarget = false;
+            widget.Foil = CardFoilAssets.Add(iconImage, quality, data.FoilStyleOf(roll.Id));
 
             var color = StepBonusArt.Quality(quality);
             var badge = Rect("Quality", row);

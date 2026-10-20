@@ -30,8 +30,14 @@ namespace Baryonyx.Combat
             CardElement.Thunder,
         };
 
-        public static readonly IReadOnlyList<CardSkill> All = new[]
-        {
+        /// <summary>
+        /// How many sparkle styles the card skills take, one each in their order; the unique
+        /// skills and the prototypes take the styles after them.
+        /// </summary>
+        public const int FoilStyles = 50;
+
+        public static readonly IReadOnlyList<CardSkill> All = Styled(
+            0,
             // --- The mock's first six -------------------------------------------------------
             Card(
                 "Slash",
@@ -41,6 +47,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
+                2.4f,
                 "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。",
                 Damage(Enemy, Phy, 100).Bonus(CardCondition.OnBleeding, 50)
             ),
@@ -52,6 +59,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 2,
+                2.4f,
                 "敵1体に{0}ダメージ。[弱点]を突くと[やけど]2ターン。",
                 Damage(Enemy, Mag, 100),
                 Apply(Enemy, CardStatus.Burn, 2).Only(CardCondition.OnWeakness)
@@ -64,6 +72,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 2,
+                2.2f,
                 "敵1体に{0}ダメージ。[凍え]2ターン。",
                 Damage(Enemy, Mag, 85),
                 Apply(Enemy, CardStatus.Chill, 2)
@@ -76,6 +85,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 3,
+                2.2f,
                 "敵全体に{0}ダメージ。[麻痺]中の敵には1.5倍。",
                 Damage(Enemies, Mag, 70).Bonus(CardCondition.OnParalyzed, 50)
             ),
@@ -87,6 +97,7 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Ally,
                 1,
+                2.5f,
                 "味方1体のHPを{0}回復する。",
                 Heal(Ally, Mag, 90)
             ),
@@ -98,6 +109,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Allies,
                 1,
+                2.5f,
                 "味方全体に[ブロック]{0}。",
                 Block(Allies, Def, 60)
             ),
@@ -110,6 +122,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 3,
+                2f,
                 "敵全体に{0}ダメージ。[出血]2ターン。",
                 Damage(Enemies, Phy, 60),
                 Apply(Enemies, CardStatus.Bleed, 2)
@@ -122,8 +135,9 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 5,
+                2.8f,
                 "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。",
-                Damage(Enemy, Phy, 200).Bonus(CardCondition.OnWounded, 50)
+                Damage(Enemy, Phy, 260).Bonus(CardCondition.OnWounded, 50)
             ),
             Card(
                 "BladeDance",
@@ -132,7 +146,8 @@ namespace Baryonyx.Combat
                 CardElement.Slash,
                 CardKind.Attack,
                 Random,
-                8,
+                6,
+                1.6f,
                 "ランダムな敵に{0}ダメージ×7。",
                 Damage(Random, Phy, 45, hits: 7)
             ),
@@ -143,7 +158,8 @@ namespace Baryonyx.Combat
                 CardElement.Slash,
                 CardKind.Support,
                 Nobody,
-                1,
+                0,
+                2f,
                 "手札の斬属性カードのコストをすべて1下げる。",
                 CostDown(1, CardElement.Slash)
             ),
@@ -155,6 +171,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
+                2.2f,
                 "敵1体に{0}ダメージ。味方全体に[ブロック]{1}。",
                 Damage(Enemy, Def, 90),
                 Block(Allies, Def, 30)
@@ -167,6 +184,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 2,
+                2.2f,
                 "敵1体に{0}ダメージ。[防御ダウン]2ターン。",
                 Damage(Enemy, Phy, 80),
                 Apply(Enemy, CardStatus.Vulnerable, 2)
@@ -179,6 +197,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
+                2.4f,
                 "敵全体に{0}ダメージ。[防御ダウン]中の敵には1.5倍。",
                 Damage(Enemies, Phy, 85).Bonus(CardCondition.OnVulnerable, 50)
             ),
@@ -190,8 +209,9 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 7,
-                "敵1体に{0}ダメージ。自分に[ブロック]があれば1.5倍。",
-                Damage(Enemy, Phy, 320).Bonus(CardCondition.OnGuarded, 50)
+                2.8f,
+                "敵1体に{0}ダメージ。自分に[ブロック]があれば2倍。",
+                Damage(Enemy, Phy, 400).Bonus(CardCondition.OnGuarded, 100)
             ),
             Card(
                 "StrideStrike",
@@ -201,6 +221,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
+                2.4f,
                 "敵1体に{0}ダメージ。今日のACTが多いほど強い。",
                 Damage(Enemy, Phy, 110).WithAct(10, 100)
             ),
@@ -212,6 +233,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Self,
                 2,
+                2f,
                 "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。",
                 Block(Self, Def, 150),
                 Apply(Self, CardStatus.Taunt, 2)
@@ -224,6 +246,7 @@ namespace Baryonyx.Combat
                 CardKind.Buff,
                 Allies,
                 2,
+                2f,
                 "味方全体の攻撃力を2ターン25%上げる。",
                 Apply(Allies, CardStatus.AttackUp, 2, 25)
             ),
@@ -236,6 +259,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
+                2.2f,
                 "敵1体に{0}ダメージ。[やけど]3ターン。",
                 Damage(Enemy, Mag, 45),
                 Apply(Enemy, CardStatus.Burn, 3)
@@ -248,6 +272,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
+                2.4f,
                 "敵1体に{0}ダメージ。[やけど]中の敵には1.5倍。",
                 Damage(Enemy, Mag, 120).Bonus(CardCondition.OnBurning, 50)
             ),
@@ -259,6 +284,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 4,
+                2.2f,
                 "敵全体に{0}ダメージ。[やけど]2ターン。",
                 Damage(Enemies, Mag, 70),
                 Apply(Enemies, CardStatus.Burn, 2)
@@ -271,6 +297,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 3,
+                2.4f,
                 "敵1体に[刻印]。次のターン、敵全体に{0}ダメージ。",
                 Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150)
             ),
@@ -282,8 +309,9 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemies,
                 9,
-                "敵全体に{0}ダメージ。[やけど]中の敵には1.5倍。",
-                Damage(Enemies, Mag, 260).Bonus(CardCondition.OnBurning, 50)
+                3f,
+                "敵全体に{0}ダメージ。[やけど]中の敵には2倍。",
+                Damage(Enemies, Mag, 450).Bonus(CardCondition.OnBurning, 100)
             ),
             Card(
                 "FlameEnchant",
@@ -293,6 +321,7 @@ namespace Baryonyx.Combat
                 CardKind.Buff,
                 Ally,
                 2,
+                2f,
                 "味方1体の攻撃に、3ターン炎属性を加える。",
                 Apply(Ally, CardStatus.FireBlade, 3)
             ),
@@ -304,6 +333,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Random,
                 2,
+                1.7f,
                 "ランダムな敵に{0}ダメージ×4。",
                 Damage(Random, Mag, 35, hits: 4)
             ),
@@ -314,7 +344,8 @@ namespace Baryonyx.Combat
                 CardElement.Ice,
                 CardKind.Attack,
                 Enemies,
-                5,
+                4,
+                2.2f,
                 "敵全体に{0}ダメージ。[凍え]2ターン。",
                 Damage(Enemies, Mag, 90),
                 Apply(Enemies, CardStatus.Chill, 2)
@@ -327,6 +358,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Ally,
                 3,
+                1.6f,
                 "味方1体が次に受ける単体攻撃を、1回はね返す。",
                 Apply(Ally, CardStatus.Reflect, 1)
             ),
@@ -338,8 +370,9 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 8,
+                2.4f,
                 "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。[凍結]させる。",
-                Damage(Enemy, Mag, 230).Bonus(CardCondition.OnChilled, 50),
+                Damage(Enemy, Mag, 340).Bonus(CardCondition.OnChilled, 50),
                 Apply(Enemy, CardStatus.Freeze, 1)
             ),
             Card(
@@ -349,7 +382,8 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Support,
                 Nobody,
-                1,
+                0,
+                2f,
                 "手札の炎・氷・雷カードのコストをすべて1下げる。",
                 CostDown(1, Magic)
             ),
@@ -362,6 +396,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
+                2.2f,
                 "敵1体に{0}ダメージ。[弱点]を突くとエネルギー+1。",
                 Damage(Enemy, Phy, 90),
                 Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
@@ -374,6 +409,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 1,
+                2.2f,
                 "敵1体に{0}ダメージ。[毒]を2つ重ねる。",
                 Damage(Enemy, Phy, 35),
                 Apply(Enemy, CardStatus.Poison, 0, 2)
@@ -385,7 +421,8 @@ namespace Baryonyx.Combat
                 CardElement.Pierce,
                 CardKind.Debuff,
                 Enemy,
-                2,
+                1,
+                2f,
                 "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせる。",
                 Damage(Enemy, Phy, 60),
                 Simple(CardActionKind.Delay, Enemy, 1)
@@ -398,6 +435,7 @@ namespace Baryonyx.Combat
                 CardKind.Debuff,
                 Enemy,
                 2,
+                2.2f,
                 "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜く。",
                 Damage(Enemy, Phy, 70),
                 Simple(CardActionKind.RevealWeakness, Enemy)
@@ -409,7 +447,8 @@ namespace Baryonyx.Combat
                 CardElement.Pierce,
                 CardKind.Attack,
                 Enemies,
-                4,
+                3,
+                1.8f,
                 "敵全体に{0}ダメージ×2。[毒]がある敵には1.5倍。",
                 Damage(Enemies, Phy, 45, hits: 2).Bonus(CardCondition.OnPoisoned, 50)
             ),
@@ -420,9 +459,10 @@ namespace Baryonyx.Combat
                 CardElement.Pierce,
                 CardKind.Attack,
                 Enemy,
-                6,
+                5,
+                2.6f,
                 "敵1体に{0}ダメージ。[弱点]を突くと威力+50%。",
-                Damage(Enemy, Phy, 220).Bonus(CardCondition.OnWeakness, 50)
+                Damage(Enemy, Phy, 260).Bonus(CardCondition.OnWeakness, 50)
             ),
             Card(
                 "LightningBolt",
@@ -432,6 +472,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Enemy,
                 1,
+                2.2f,
                 "敵1体に{0}ダメージ。[麻痺]1ターン。",
                 Damage(Enemy, Mag, 70),
                 Apply(Enemy, CardStatus.Paralysis, 1)
@@ -444,6 +485,7 @@ namespace Baryonyx.Combat
                 CardKind.Attack,
                 Chain,
                 3,
+                1.8f,
                 "敵1体に{0}ダメージ×3。1回ごとに別の敵へ移る。",
                 Damage(Chain, Mag, 65, hits: 3)
             ),
@@ -454,7 +496,8 @@ namespace Baryonyx.Combat
                 CardElement.Thunder,
                 CardKind.Attack,
                 Nobody,
-                5,
+                4,
+                2f,
                 "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。",
                 Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 80)
             ),
@@ -465,10 +508,11 @@ namespace Baryonyx.Combat
                 CardElement.Thunder,
                 CardKind.Attack,
                 Enemy,
-                7,
+                6,
+                2.6f,
                 "敵1体に{0}、さらに敵全体に{1}ダメージ。",
-                Damage(Enemy, Mag, 240),
-                Damage(Enemies, Mag, 40)
+                Damage(Enemy, Mag, 280),
+                Damage(Enemies, Mag, 50)
             ),
             Card(
                 "Gale",
@@ -478,6 +522,7 @@ namespace Baryonyx.Combat
                 CardKind.Buff,
                 Allies,
                 2,
+                2f,
                 "味方全体の速度を2ターン上げる。",
                 Apply(Allies, CardStatus.SpeedUp, 2, 30)
             ),
@@ -488,7 +533,8 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Support,
                 Nobody,
-                1,
+                0,
+                2f,
                 "カードを2枚引く。",
                 Simple(CardActionKind.Draw, Nobody, 2)
             ),
@@ -501,6 +547,7 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Allies,
                 3,
+                2.2f,
                 "味方全体のHPを{0}回復。今日のACTが多いほど回復。",
                 Heal(Allies, Mag, 50).WithAct(10, 100)
             ),
@@ -512,6 +559,7 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Ally,
                 2,
+                2.2f,
                 "味方1体を、3ターンの間、毎ターン{0}回復する。",
                 Apply(Ally, CardStatus.Regen, 3, Mag, 40)
             ),
@@ -522,7 +570,8 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Heal,
                 Ally,
-                6,
+                5,
+                2f,
                 "味方1体のHPを最大の半分回復。倒れていれば復活。",
                 Simple(CardActionKind.Revive, Ally, 50)
             ),
@@ -533,7 +582,8 @@ namespace Baryonyx.Combat
                 CardElement.Blunt,
                 CardKind.Attack,
                 Enemy,
-                3,
+                2,
+                2.2f,
                 "敵1体に{0}ダメージ。[強化]を1つ消す。",
                 Damage(Enemy, Mag, 140),
                 Simple(CardActionKind.Dispel, Enemy, 1)
@@ -546,6 +596,7 @@ namespace Baryonyx.Combat
                 CardKind.Guard,
                 Allies,
                 2,
+                2f,
                 "味方全体の受けるダメージを、2ターン25%減らす。",
                 Apply(Allies, CardStatus.Protect, 2, 25)
             ),
@@ -557,6 +608,7 @@ namespace Baryonyx.Combat
                 CardKind.Heal,
                 Allies,
                 1,
+                2.2f,
                 "味方全体の[状態異常]を消し、HPを{0}回復。",
                 Simple(CardActionKind.Cleanse, Allies),
                 Heal(Allies, Mag, 25)
@@ -569,6 +621,7 @@ namespace Baryonyx.Combat
                 CardKind.Support,
                 Nobody,
                 1,
+                1.5f,
                 "エネルギーを2回復する。",
                 Simple(CardActionKind.Energy, Nobody, 2)
             ),
@@ -579,7 +632,8 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Support,
                 Nobody,
-                2,
+                0,
+                2f,
                 "次に使うカードのコストを0にする。",
                 Simple(CardActionKind.NextCardFree)
             ),
@@ -590,7 +644,8 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Attack,
                 Enemies,
-                4,
+                3,
+                2.2f,
                 "敵全体に{0}ダメージ。味方全体のHPを{1}回復。",
                 Damage(Enemies, Mag, 50),
                 Heal(Allies, Mag, 30)
@@ -602,11 +657,12 @@ namespace Baryonyx.Combat
                 CardElement.None,
                 CardKind.Guard,
                 Ally,
-                4,
+                3,
+                1.6f,
                 "味方1体は、次のターンまでダメージを受けない。",
                 Apply(Ally, CardStatus.Invincible, 1)
-            ),
-        };
+            )
+        );
 
         /// <summary>
         /// Cards tried only in the battle mock, not among the card skills (<see cref="All"/>): not
@@ -614,8 +670,8 @@ namespace Baryonyx.Combat
         /// 蛇牙の連撃 has many effects, to try the keyword notes stacked beside the raised card
         /// (doc/features/combat.md, card keywords).
         /// </summary>
-        public static readonly IReadOnlyList<CardSkill> Prototypes = new[]
-        {
+        public static readonly IReadOnlyList<CardSkill> Prototypes = Styled(
+            FoilStyles + 8,
             Borrow(
                 "VitalThrust",
                 Card(
@@ -626,6 +682,7 @@ namespace Baryonyx.Combat
                     CardKind.Attack,
                     Enemy,
                     2,
+                    1.6f,
                     "敵1体に{0}ダメージ×2。[出血]・[毒]・[防御ダウン]。[弱点]でエネルギー+1。",
                     Damage(Enemy, Phy, 45, hits: 2),
                     Apply(Enemy, CardStatus.Bleed, 2),
@@ -633,8 +690,8 @@ namespace Baryonyx.Combat
                     Apply(Enemy, CardStatus.Vulnerable, 2),
                     Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
                 )
-            ),
-        };
+            )
+        );
 
         /// <summary>The card (or prototype) with <paramref name="id"/>, or null.</summary>
         public static CardSkill Find(string id)
@@ -646,6 +703,14 @@ namespace Baryonyx.Combat
                 if (card.Id == id)
                     return card;
             return null;
+        }
+
+        // カードに、first から順に光り方を割り当てる。
+        private static IReadOnlyList<CardSkill> Styled(int first, params CardSkill[] cards)
+        {
+            for (int i = 0; i < cards.Length; i++)
+                cards[i].FoilStyle = first + i;
+            return Array.AsReadOnly(cards);
         }
 
         private static CardSkill Borrow(string art, CardSkill card)
@@ -662,6 +727,7 @@ namespace Baryonyx.Combat
             CardKind kind,
             CardTarget target,
             int cost,
+            float limit,
             string text,
             params CardAction[] actions
         ) =>
@@ -674,6 +740,7 @@ namespace Baryonyx.Combat
                 Kind = kind,
                 Target = target,
                 Cost = cost,
+                MaxMultiplier = limit,
                 Text = text,
                 Actions = Array.AsReadOnly(actions),
             };

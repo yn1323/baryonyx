@@ -60,7 +60,8 @@ namespace Baryonyx.Combat.Presentation
             Texture frame,
             Texture element,
             int cost,
-            ItemQuality quality = ItemQuality.C
+            ItemQuality quality = ItemQuality.C,
+            int foilStyle = 0
         )
         {
             Name.text = cardName;
@@ -69,7 +70,7 @@ namespace Baryonyx.Combat.Presentation
             Description.text = description;
             Art.texture = art;
             if (Foil != null)
-                Foil.Show(art, Art.uvRect, quality);
+                Foil.Show(art, Art.uvRect, quality, foilStyle);
             Frame.texture = frame;
             Element.texture = element;
             Element.enabled = element != null;

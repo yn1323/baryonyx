@@ -2,14 +2,14 @@
 id: enemy-hourglass-sprite
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 砂時計の精
 category: enemies
 silhouette: 縦長の砂時計の体がやや傾いて立ち、金の枠の左右から細い腕が曲がって伸びる。上の枠は冠のようにとがる
 palette: 金の枠 | 透明なガラス | 青い砂 | 枠の青い宝石
 motifs: 砂時計 | 逆に流れる砂 | 細い金の腕
 personality: せっかちで落ち着きがない。止まった時間を嫌い、自分の砂が止まりそうになると慌てて逆さに流す
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite.aseprite
 ---
 
@@ -47,6 +47,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 まだどの行き先にも出ない。
 生息する地域は砂漠とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
+2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「電撃」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 分類固有のデータ
 
@@ -170,10 +173,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 巻き戻し | 前に行動した直後のHPを覚える仕組み（[時の巻き戻し](../enemy-skills/enemy-skill-hourglass-sprite-rewind.md)） |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（電撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「電撃」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

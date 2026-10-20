@@ -80,6 +80,9 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The quality (S, A, B or C): how much the card sparkles.</summary>
         public ItemQuality Quality = ItemQuality.C;
+
+        /// <summary>How the card sparkles: its kind's style (<see cref="CardSkill.FoilStyle"/>).</summary>
+        public int FoilStyle;
         public int Power;
         public BattleInspectElement Element;
         public BattleInspectCardEffect Effect;
@@ -191,7 +194,20 @@ namespace Baryonyx.Combat.Presentation
         public int Level;
         public int PhysicalDefense;
         public int MagicDefense;
+
+        /// <summary>It attacks with spells, softened by the ally's magic defense instead of the physical.</summary>
+        public bool Magic;
         public BattleInspectWeakness[] Weaknesses = Array.Empty<BattleInspectWeakness>();
+
+        /// <summary>
+        /// An icon for every element in the row over its HP bar, so another kind of enemy can take
+        /// this place (<see cref="BattleInspectView.UseEncounter(System.Collections.Generic.IReadOnlyList{string}, int, float)"/>):
+        /// only its weaknesses (<see cref="Weaknesses"/>) are shown.
+        /// </summary>
+        public BattleInspectWeakness[] WeaknessSlots = Array.Empty<BattleInspectWeakness>();
+
+        /// <summary>The shadow at its feet, as wide as its picture.</summary>
+        public RectTransform Shadow;
 
         /// <summary>The face crop of <see cref="Sprite"/> shown in the turn order.</summary>
         public Rect IconUv;
@@ -468,6 +484,9 @@ namespace Baryonyx.Combat.Presentation
         /// keeps sharp while the camera's slow circle carries it between screen pixels.
         /// </summary>
         public Material ActorMaterial;
+
+        /// <summary>Every kind of enemy's picture, for a battle that puts other enemies on the field.</summary>
+        public BattleEnemyLooks EnemyLooks;
 
         /// <summary>
         /// Full-screen catcher under the hand, active while a tapped card waits for its target:
@@ -1425,11 +1444,14 @@ namespace Baryonyx.Combat.Presentation
         {
             if (Guarded(target, ref power, attacker))
                 yield break;
-            // The ally's defense softens the blow (enemy attacks are physical blows).
+            // The ally's defense softens the blow: magic defense against an enemy's spell,
+            // physical defense against its blow.
             if (attacker >= 0)
                 power = CombatFormula.Defend(
                     power,
-                    Allies[target].Stats.PhysicalDefense,
+                    Enemies[attacker].Magic
+                        ? Allies[target].Stats.MagicDefense
+                        : Allies[target].Stats.PhysicalDefense,
                     Enemies[attacker].Level
                 );
             HitAlly(target, power);
@@ -1606,7 +1628,8 @@ namespace Baryonyx.Combat.Presentation
                     data.Frame,
                     data.ElementIcon,
                     data.Cost,
-                    data.Quality
+                    data.Quality,
+                    data.FoilStyle
                 );
         }
 
@@ -2182,19 +2205,13 @@ namespace Baryonyx.Combat.Presentation
         {
             if (PopupTemplate == null || anchor == null)
                 return;
-            // Popups over the same character at once line up under one another.
-            float drop = popupStack.Place(
-                anchor,
-                size * PopupLineHeight,
-                Time.unscaledTime,
-                PopupDuration
-            );
             var popup = Spawn(
                 PopupTemplate,
-                ScreenPointOf(anchor, anchor.rect.center),
+                anchor,
+                anchor.rect.center,
                 text,
                 MessageRise,
-                drop
+                size * PopupLineHeight
             );
             popup.color = color;
             popup.fontSize = size;
@@ -2206,20 +2223,23 @@ namespace Baryonyx.Combat.Presentation
                 return;
             var rect = anchor.rect;
             var start = new Vector2(rect.center.x, rect.yMax - NumberBelowTop);
-            Spawn(template, ScreenPointOf(anchor, start), text, NumberRise);
+            Spawn(template, anchor, start, text, NumberRise, template.fontSize * PopupLineHeight);
         }
 
         /// <summary>
-        /// Puts a copy of a popup template at a screen point. The characters are on the stage
-        /// canvas and the popups on the overlay canvas over it, so the point is carried across in
-        /// screen space, then lowered by <paramref name="drop"/>.
+        /// Puts a copy of a popup template over <paramref name="anchor"/>, starting at
+        /// <paramref name="start"/> in the anchor's space. The characters are on the stage canvas
+        /// and the popups on the overlay canvas over it, so the point is carried across in screen
+        /// space. Numbers and names over the same character at once line up under one another
+        /// where they stop, and stay apart on their way up (<see cref="BattlePopupStack"/>).
         /// </summary>
         private TMP_Text Spawn(
             TMP_Text template,
-            Vector2 screenPoint,
+            RectTransform anchor,
+            Vector2 start,
             string text,
             float rise,
-            float drop = 0f
+            float lineHeight
         )
         {
             var popup = Instantiate(template, template.transform.parent);
@@ -2228,12 +2248,21 @@ namespace Baryonyx.Combat.Presentation
             var parent = (RectTransform)popup.transform.parent;
             RectTransformUtility.ScreenPointToWorldPointInRectangle(
                 parent,
-                screenPoint,
+                ScreenPointOf(anchor, start),
                 CameraOf(parent),
                 out var world
             );
             popup.transform.position = world;
-            ((RectTransform)popup.transform).anchoredPosition += Vector2.down * drop;
+            var rect = (RectTransform)popup.transform;
+            float drop = popupStack.Place(
+                anchor,
+                rect.anchoredPosition.y + rise,
+                lineHeight,
+                rise,
+                Time.unscaledTime,
+                PopupDuration
+            );
+            rect.anchoredPosition += Vector2.down * drop;
             StartCoroutine(Rise(popup, rise));
             return popup;
         }
@@ -2251,7 +2280,7 @@ namespace Baryonyx.Combat.Presentation
             for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
             {
                 float k = t / duration;
-                float rise = Mathf.Min(1f, t / 0.5f);
+                float rise = Mathf.Min(1f, t / BattlePopupStack.RiseTime);
                 rect.anchoredPosition =
                     start + Vector2.up * (distance * (1f - (1f - rise) * (1f - rise)));
                 rect.localScale = Vector3.one * PopScale(t / pop);

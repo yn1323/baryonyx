@@ -29,18 +29,36 @@ namespace Baryonyx.Editor.UI
 
         /// <summary>
         /// Lays the sparkle over <paramref name="art"/>: a sibling just after it, the same size and
-        /// place, showing <paramref name="quality"/>.
+        /// place, showing <paramref name="quality"/> in <paramref name="style"/>.
         /// </summary>
-        public static CardFoil Add(RawImage art, ItemQuality quality = ItemQuality.C)
+        public static CardFoil Add(RawImage art, ItemQuality quality = ItemQuality.C, int style = 0)
         {
-            var source = art.rectTransform;
+            var foil = Lay(art.rectTransform);
+            foil.Show(art.texture, art.uvRect, quality, style);
+            return foil;
+        }
+
+        /// <summary>
+        /// Lays the sparkle over an icon drawn as a sprite (equipment, ACT bonuses), the same way
+        /// as over a card's art.
+        /// </summary>
+        public static CardFoil Add(Image art, ItemQuality quality = ItemQuality.C, int style = 0)
+        {
+            var foil = Lay(art.rectTransform);
+            foil.Show(art.sprite, quality, style);
+            return foil;
+        }
+
+        // 絵のすぐ後ろの兄弟として、同じ大きさ・位置にキラキラの層を置く。
+        private static CardFoil Lay(RectTransform source)
+        {
             var go = new GameObject(
                 "Foil",
                 typeof(RectTransform),
                 typeof(RawImage),
                 typeof(CardFoil)
             );
-            go.layer = art.gameObject.layer;
+            go.layer = source.gameObject.layer;
             var rect = (RectTransform)go.transform;
             rect.SetParent(source.parent, false);
             rect.SetSiblingIndex(source.GetSiblingIndex() + 1);
@@ -52,7 +70,6 @@ namespace Baryonyx.Editor.UI
             rect.localScale = source.localScale;
             var foil = go.GetComponent<CardFoil>();
             foil.Image.material = Material();
-            foil.Show(art.texture, art.uvRect, quality);
             return foil;
         }
     }

@@ -2,14 +2,14 @@
 id: enemy-blood-leech
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 吸血大ヒル
 category: enemies
 silhouette: S字にくねる太い筒の体。左上に丸く開いた口を向け、右下の尾の先が上へ反る
 palette: 赤黒い体 | 橙の縞 | 桃色の口 | 白い歯
 motifs: 輪になった歯 | 体の縞 | ぬめり
 personality: しつこく食らいついて離れない。血の匂いのするほうへ真っすぐ這っていく
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.aseprite
 ---
 
@@ -48,6 +48,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 生息する地域は沼とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
 沼のカエル王と骨背の大ワニの[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)では、呼んだ敵と同じLvで現れる。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
+2026-10-20から、しじまの沼（`hush-mire`、Lv22）の小さな敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「ふさがらない噛み傷」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 分類固有のデータ
 
@@ -173,10 +176,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BloodLeech.asep
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 傷口 | 新しい状態の決まり（[ふさがらない噛み傷](../enemy-skills/enemy-skill-blood-leech-open-wound.md)） |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（ふさがらない噛み傷）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「ふさがらない噛み傷」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

@@ -330,7 +330,7 @@ namespace Baryonyx.Tests.PlayMode
             var battle = Object.FindAnyObjectByType<BattleBootstrap>();
             Assert.That(battle.Flow, Is.Not.Null);
             Assert.That(battle.Battle.EndsWithOutcome, Is.True);
-            // 魔物の気配の部屋は、苔スライムと苔むした狼だけ。森の守り手はいない。
+            // 魔物の気配の部屋は、森の小さな敵と中くらいの敵の2体だけ。奥の大きな敵はいない。
             Assert.That(
                 battle.Battle.Enemies.Select(enemy => enemy.Alive),
                 Is.EqualTo(new[] { true, true, false })

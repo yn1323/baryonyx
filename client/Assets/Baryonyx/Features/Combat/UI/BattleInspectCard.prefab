@@ -1428,3 +1428,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.Cards.CardFoil
   Quality: 0
+  Style: 0

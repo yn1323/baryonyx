@@ -1,0 +1,545 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22f2f6ea3bede46319faac5568760771, type: 3}
+  m_Name: BattleEnemyLooks
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleEnemyLooks
+  Looks:
+  - Id: moss-slime
+    Texture: {fileID: -6622703189942226176, guid: 0aef226f68170c4419e3055b3e6679c5, type: 3}
+    TargetCenter: {x: 0, y: 23.5}
+    TargetSize: {x: 64, y: 47}
+    IconUv:
+      serializedVersion: 2
+      x: 0.03125
+      y: 0.0625
+      width: 0.375
+      height: 0.375
+  - Id: moss-wolf
+    Texture: {fileID: -6622703189942226176, guid: 9fb3b0bb67dbf1c44a74e30b23d1c95e, type: 3}
+    TargetCenter: {x: 0, y: 28.5}
+    TargetSize: {x: 96, y: 57}
+    IconUv:
+      serializedVersion: 2
+      x: 0
+      y: 0.23958333
+      width: 0.25
+      height: 0.25
+  - Id: forest-guardian
+    Texture: {fileID: -6622703189942226176, guid: 6a5af1e64d4ab8246888b2b593bb1a6b, type: 3}
+    TargetCenter: {x: 0, y: 64}
+    TargetSize: {x: 110, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.09375
+      y: 0.59375
+      width: 0.1875
+      height: 0.1875
+  - Id: dew-slime
+    Texture: {fileID: -6622703189942226176, guid: ffe62f327d07c46e493bfa0bd6513dbc, type: 3}
+    TargetCenter: {x: -0.5, y: 32}
+    TargetSize: {x: 51, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.21875
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: acorn-soldier
+    Texture: {fileID: -6622703189942226176, guid: e1b375693c548490dbaecf465c6c03ab, type: 3}
+    TargetCenter: {x: 0, y: 29.5}
+    TargetSize: {x: 64, y: 59}
+    IconUv:
+      serializedVersion: 2
+      x: 0.28125
+      y: 0.546875
+      width: 0.375
+      height: 0.375
+  - Id: spore-cap
+    Texture: {fileID: -6622703189942226176, guid: 6ea204c271a6c4b5d8934675537c853d, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.30208334
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: thorn-serpent
+    Texture: {fileID: -6622703189942226176, guid: 2d39658b2424e4e6d908d2852922d69e, type: 3}
+    TargetCenter: {x: -0.5, y: 48}
+    TargetSize: {x: 95, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.21875
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: crystal-hare
+    Texture: {fileID: -6622703189942226176, guid: 24ed36c372ed244679c46e4ecae952d3, type: 3}
+    TargetCenter: {x: 0.5, y: 32}
+    TargetSize: {x: 43, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.296875
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: stump-boar
+    Texture: {fileID: -6622703189942226176, guid: ee0a0d377276d4e189d736e7f264073a, type: 3}
+    TargetCenter: {x: -0.5, y: 48}
+    TargetSize: {x: 95, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.40625
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: nectar-bloom
+    Texture: {fileID: -6622703189942226176, guid: 01256e648f3e54862b2dfd201a85f54f, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.36458334
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: hollow-armor
+    Texture: {fileID: -6622703189942226176, guid: 00a0c840b34664184aad2e2795f0e453, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 94, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.375
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: stone-gargoyle
+    Texture: {fileID: -6622703189942226176, guid: e0e09f6b0a6614fb7ae83f0f4d39b4aa, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.33333334
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: cracked-urn
+    Texture: {fileID: -6622703189942226176, guid: b2a1bfe06292144afb5fd4d863f5945c, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 56, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.265625
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: chest-mimic
+    Texture: {fileID: -6622703189942226176, guid: 51ed77f0a49b44c868d3f51cdfd98a5e, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.375
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: floating-grimoire
+    Texture: {fileID: -6622703189942226176, guid: 3902268cc62cb405ca15ecd9921b0220, type: 3}
+    TargetCenter: {x: 0, y: 31.5}
+    TargetSize: {x: 64, y: 63}
+    IconUv:
+      serializedVersion: 2
+      x: 0.265625
+      y: 0.609375
+      width: 0.375
+      height: 0.375
+  - Id: brass-warden
+    Texture: {fileID: -6622703189942226176, guid: e6b675ee72bbf432aa8b54a029a8f1c1, type: 3}
+    TargetCenter: {x: 0, y: 63.5}
+    TargetSize: {x: 128, y: 127}
+    IconUv:
+      serializedVersion: 2
+      x: 0.4375
+      y: 0.8046875
+      width: 0.1875
+      height: 0.1875
+  - Id: cursed-candelabra
+    Texture: {fileID: -6622703189942226176, guid: b63d60b83648e44daa17d46dd6bca4d2, type: 3}
+    TargetCenter: {x: -0.5, y: 32}
+    TargetSize: {x: 53, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.25
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: big-eared-bat
+    Texture: {fileID: -6622703189942226176, guid: 00f9a0f95c95b4112ae9e5b3907183f4, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 64, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.3125
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: crystal-hermit
+    Texture: {fileID: -6622703189942226176, guid: 0cc42f274823241c89bc003ff33f7d91, type: 3}
+    TargetCenter: {x: -0.5, y: 48}
+    TargetSize: {x: 95, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.5104167
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: ore-mole
+    Texture: {fileID: -6622703189942226176, guid: 8b0c4fc3f7ef042e78195b4c8b7a2cea, type: 3}
+    TargetCenter: {x: 0, y: 47}
+    TargetSize: {x: 96, y: 94}
+    IconUv:
+      serializedVersion: 2
+      x: 0.40625
+      y: 0.7291667
+      width: 0.25
+      height: 0.25
+  - Id: glow-worm
+    Texture: {fileID: -6622703189942226176, guid: eb80d467484d14529a44a7a1745db459, type: 3}
+    TargetCenter: {x: 0, y: 30.5}
+    TargetSize: {x: 64, y: 61}
+    IconUv:
+      serializedVersion: 2
+      x: 0.1875
+      y: 0.578125
+      width: 0.375
+      height: 0.375
+  - Id: rock-troll
+    Texture: {fileID: -6622703189942226176, guid: 63c6f298556644928b1099c4fb31c700, type: 3}
+    TargetCenter: {x: 0, y: 64}
+    TargetSize: {x: 128, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.453125
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: blind-fishman
+    Texture: {fileID: -6622703189942226176, guid: 5bdf6e30b925f4309ba2405cd6dbf5d8, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.42708334
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: frog-king
+    Texture: {fileID: -6622703189942226176, guid: 6aee426d8cdc64ab6ac3a6c95a37ff1c, type: 3}
+    TargetCenter: {x: 0, y: 47.5}
+    TargetSize: {x: 96, y: 95}
+    IconUv:
+      serializedVersion: 2
+      x: 0.29166666
+      y: 0.7395833
+      width: 0.25
+      height: 0.25
+  - Id: mud-golem
+    Texture: {fileID: -6622703189942226176, guid: faccafab138e84845b5a2b1c9baac104, type: 3}
+    TargetCenter: {x: -0.5, y: 48}
+    TargetSize: {x: 89, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.3125
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: blood-leech
+    Texture: {fileID: -6622703189942226176, guid: 2039f1fe80feb4516934f50e4f097613, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 64, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.140625
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: will-o-wisp
+    Texture: {fileID: -6622703189942226176, guid: 6f4c8640095ca4e8bb36d54526092112, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 64, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.453125
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: bone-croc
+    Texture: {fileID: -6622703189942226176, guid: 27fd76c5014b64cf79e5ffa3582dcfd8, type: 3}
+    TargetCenter: {x: 0, y: 63}
+    TargetSize: {x: 128, y: 126}
+    IconUv:
+      serializedVersion: 2
+      x: 0.671875
+      y: 0.796875
+      width: 0.1875
+      height: 0.1875
+  - Id: sand-scorpion
+    Texture: {fileID: -6622703189942226176, guid: 39eef168bea994bd7893e6994aa4747a, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.46875
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: cactus-warrior
+    Texture: {fileID: -6622703189942226176, guid: 8a52f2667cc9d4c49b84b7a7c44af570, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 62, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.3125
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: wrapped-jackal
+    Texture: {fileID: -6622703189942226176, guid: e77b6587c22e54fc9acc3cc0814beed3, type: 3}
+    TargetCenter: {x: 0, y: 46.5}
+    TargetSize: {x: 96, y: 93}
+    IconUv:
+      serializedVersion: 2
+      x: 0.25
+      y: 0.71875
+      width: 0.25
+      height: 0.25
+  - Id: sand-shark
+    Texture: {fileID: -6622703189942226176, guid: a636f332e127b436b8e8f1b6979d3ebb, type: 3}
+    TargetCenter: {x: -0.5, y: 64}
+    TargetSize: {x: 127, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.2890625
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: hourglass-sprite
+    Texture: {fileID: -6622703189942226176, guid: f22a0af76f09f436b9a21626e3655afb, type: 3}
+    TargetCenter: {x: -0.5, y: 32}
+    TargetSize: {x: 61, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.234375
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: snowball
+    Texture: {fileID: -6622703189942226176, guid: ee49753d4ee33460d93f65ae3b01c724, type: 3}
+    TargetCenter: {x: 0, y: 26}
+    TargetSize: {x: 64, y: 52}
+    IconUv:
+      serializedVersion: 2
+      x: 0.328125
+      y: 0.4375
+      width: 0.375
+      height: 0.375
+  - Id: icicle-fox
+    Texture: {fileID: -6622703189942226176, guid: 003bdd6f9d78640bfb2813fe1e0745d1, type: 3}
+    TargetCenter: {x: 0, y: 47.5}
+    TargetSize: {x: 96, y: 95}
+    IconUv:
+      serializedVersion: 2
+      x: 0.42708334
+      y: 0.7395833
+      width: 0.25
+      height: 0.25
+  - Id: frost-ape
+    Texture: {fileID: -6622703189942226176, guid: 21bdccec5a5744852a57c7512630a1c5, type: 3}
+    TargetCenter: {x: 0, y: 63.5}
+    TargetSize: {x: 128, y: 127}
+    IconUv:
+      serializedVersion: 2
+      x: 0.3203125
+      y: 0.8046875
+      width: 0.1875
+      height: 0.1875
+  - Id: ice-penguin
+    Texture: {fileID: -6622703189942226176, guid: 882f77b0c366546b6958dc39e0da5a41, type: 3}
+    TargetCenter: {x: 0, y: 29.5}
+    TargetSize: {x: 64, y: 59}
+    IconUv:
+      serializedVersion: 2
+      x: 0.25
+      y: 0.546875
+      width: 0.375
+      height: 0.375
+  - Id: snow-mammoth
+    Texture: {fileID: -6622703189942226176, guid: ec588516fab53448c993d02c46e2c704, type: 3}
+    TargetCenter: {x: 0, y: 64}
+    TargetSize: {x: 128, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.359375
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: fire-lizard
+    Texture: {fileID: -6622703189942226176, guid: 5aef2499a56f94a6b95dc760aaf9c32f, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.5
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: lava-slime
+    Texture: {fileID: -6622703189942226176, guid: aa436715a185041d2ac90832c212471d, type: 3}
+    TargetCenter: {x: 0, y: 25.5}
+    TargetSize: {x: 64, y: 51}
+    IconUv:
+      serializedVersion: 2
+      x: 0.3125
+      y: 0.421875
+      width: 0.375
+      height: 0.375
+  - Id: flame-tail-bird
+    Texture: {fileID: -6622703189942226176, guid: 7605357ff358646d7b248abb80216048, type: 3}
+    TargetCenter: {x: -0.5, y: 48}
+    TargetSize: {x: 95, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.375
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: obsidian-colossus
+    Texture: {fileID: -6622703189942226176, guid: 6d42316c385844c20bad2a5d2fdb6986, type: 3}
+    TargetCenter: {x: -0.5, y: 64}
+    TargetSize: {x: 127, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.4453125
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: barnacle-crab
+    Texture: {fileID: -6622703189942226176, guid: 963472e7b08524739a5719998e8893ef, type: 3}
+    TargetCenter: {x: 0, y: 47.5}
+    TargetSize: {x: 96, y: 95}
+    IconUv:
+      serializedVersion: 2
+      x: 0.27083334
+      y: 0.7395833
+      width: 0.25
+      height: 0.25
+  - Id: ghost-jelly
+    Texture: {fileID: -6622703189942226176, guid: de68726d9fb0042ba896e9aa566662ed, type: 3}
+    TargetCenter: {x: 0, y: 32}
+    TargetSize: {x: 64, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.1875
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: skeleton-pirate
+    Texture: {fileID: -6622703189942226176, guid: 63abae17ec2b1416791c3b6f8f56c09c, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.35416666
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: giant-octopus
+    Texture: {fileID: -6622703189942226176, guid: 2daedd00b86414025b5fe09a6062f3b3, type: 3}
+    TargetCenter: {x: 0, y: 64}
+    TargetSize: {x: 128, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.46875
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: skeleton-soldier
+    Texture: {fileID: -6622703189942226176, guid: 13e0b549200b94b72b12479b5cf15db9, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.33333334
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: grave-raven
+    Texture: {fileID: -6622703189942226176, guid: d5ae9186bcce146998f8f439ebe9639e, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 96, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.40625
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: lich
+    Texture: {fileID: -6622703189942226176, guid: 1350f7f9e7d16417799c58f1955983a4, type: 3}
+    TargetCenter: {x: -0.5, y: 64}
+    TargetSize: {x: 127, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.2890625
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875
+  - Id: pumpkin-scarecrow
+    Texture: {fileID: -6622703189942226176, guid: f75ded7334b814dc7ac365f0408fc692, type: 3}
+    TargetCenter: {x: 0, y: 48}
+    TargetSize: {x: 90, y: 96}
+    IconUv:
+      serializedVersion: 2
+      x: 0.28125
+      y: 0.75
+      width: 0.25
+      height: 0.25
+  - Id: lost-signpost
+    Texture: {fileID: -6622703189942226176, guid: 8ad08bed34a7d4b2ba15c7c2417ee3ae, type: 3}
+    TargetCenter: {x: -0.5, y: 32}
+    TargetSize: {x: 63, y: 64}
+    IconUv:
+      serializedVersion: 2
+      x: 0.1875
+      y: 0.625
+      width: 0.375
+      height: 0.375
+  - Id: coin-pouch
+    Texture: {fileID: -6622703189942226176, guid: 32eee4984b929475dbe752aa3023a9e8, type: 3}
+    TargetCenter: {x: 0, y: 29.5}
+    TargetSize: {x: 64, y: 59}
+    IconUv:
+      serializedVersion: 2
+      x: 0.28125
+      y: 0.546875
+      width: 0.375
+      height: 0.375
+  - Id: mist-dragon
+    Texture: {fileID: -6622703189942226176, guid: dd6eacd76919a4513b2b16d05fc2885a, type: 3}
+    TargetCenter: {x: -0.5, y: 64}
+    TargetSize: {x: 127, y: 128}
+    IconUv:
+      serializedVersion: 2
+      x: 0.4375
+      y: 0.8125
+      width: 0.1875
+      height: 0.1875

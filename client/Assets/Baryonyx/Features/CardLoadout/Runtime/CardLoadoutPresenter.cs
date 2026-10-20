@@ -26,6 +26,9 @@ namespace Baryonyx.CardLoadout
 
         /// <summary>The card's quality (S, A, B or C): how much it sparkles.</summary>
         public ItemQuality Quality { get; internal set; } = ItemQuality.C;
+
+        /// <summary>How the card sparkles: its kind's style.</summary>
+        public int FoilStyle { get; internal set; }
         public CardElement Element { get; internal set; }
 
         // その人のどの枠に入っているか（0から）。入っていなければ-1。
@@ -436,6 +439,7 @@ namespace Baryonyx.CardLoadout
                 Description = CardText.Description(card),
                 Cost = card.Cost,
                 Quality = card.Quality,
+                FoilStyle = card.FoilStyle,
                 Element = card.Element,
                 Slot = slotIndex,
             };

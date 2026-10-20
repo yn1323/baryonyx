@@ -2,14 +2,14 @@
 id: enemy-bone-croc
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 骨背の大ワニ
 category: enemies
 silhouette: 左へ大きく口を開けた横長のワニ。背中から尾にかけて白い骨のとげが列になって並び、尾が右上へ巻き上がる
 palette: 泥色と暗緑のうろこ | 骨のとげの白 | 目の黄 | 口の中の赤茶
 motifs: 骨のとげ | 大きな顎 | 苔の垂れたうろこ
 personality: 沼の底の年老いた主。辛抱強く待ち、血の匂いをかぐと容赦がなくなる
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BoneCroc.aseprite
 ---
 
@@ -48,6 +48,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BoneCroc.asepri
 生息する地域は沼とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
 沼の行き先の最奥の部屋に置く案がある。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
+2026-10-20から、しじまの沼（`hush-mire`、Lv22）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「血の匂い」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 分類固有のデータ
 
@@ -195,10 +198,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BoneCroc.asepri
 | 数値 | ステータス、行動の回数制限、激化の条件は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 仲間をのみ込む仕組みと呼び出し | 新しい仕組みの決まり（[丸のみ](../enemy-skills/enemy-skill-bone-croc-swallow-whole.md)、[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（血の匂い）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「血の匂い」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

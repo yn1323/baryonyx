@@ -2,14 +2,14 @@
 id: enemy-flame-tail-bird
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 炎尾の鳥
 category: enemies
 silhouette: 翼を大きく広げて宙に浮く鳥。長い尾羽が炎になって右下へ流れる
 palette: 朱色の羽 | 黄色の胸 | 炎の尾羽の橙と黄 | 茶色の脚
 motifs: 鳥 | 炎の尾羽 | 火の粉 | 火口
 personality: 落ち着きがなく見栄っ張り。高いところから火の粉を振りまいて騒ぐ
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FlameTailBird.aseprite
 ---
 
@@ -21,6 +21,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FlameTailBird.a
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、この敵はどの行き先にも出ない。画像はライブラリと展示室で表示する下書きで、HP・技・行動は未実装である。
+2026-10-20から、ヴォルガン火山（`volgan-volcano`、Lv35）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「火の尾羽落とし」だけを属攻で魔法として（味方の属防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -172,10 +175,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FlameTailBird.a
 | 時間差の攻撃と敵の速度アップ | [火の尾羽落とし](../enemy-skills/enemy-skill-flame-tail-feather-drop.md)と[熱風の羽ばたき](../enemy-skills/enemy-skill-flame-tail-updraft.md)の未決事項 |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（火の尾羽落とし）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。ステータスと弱点は試作の設計値をそのまま使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「火の尾羽落とし」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

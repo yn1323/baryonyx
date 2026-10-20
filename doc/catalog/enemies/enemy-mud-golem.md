@@ -2,14 +2,14 @@
 id: enemy-mud-golem
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 泥人形
 category: enemies
 silhouette: 前かがみの泥の人型。長い腕が膝の下まで垂れ、体じゅうから泥がしたたる。頭から葦が束になって生える
 palette: 黄土と焦げ茶の泥 | 葦の緑 | 指輪の金
 motifs: 泥 | 葦とガマの穂 | 沈んだ指輪
 personality: 無口でのろまな沼の番。胸の指輪を誰にも触れさせず、傷ついた仲間には自分の泥を分けてやる
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MudGolem.aseprite
 ---
 
@@ -47,6 +47,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MudGolem.asepri
 まだどの行き先にも出ない。
 生息する地域は沼とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
+2026-10-20から、しじまの沼（`hush-mire`、Lv22）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「たいあたり」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 分類固有のデータ
 
@@ -173,10 +176,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MudGolem.asepri
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 自分のHPを削る回復 | 新しい仕組みの決まり（[泥の継ぎ当て](../enemy-skills/enemy-skill-mud-golem-mud-patch.md)） |
-| 実装 | HP・技・行動は未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（たいあたり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「たいあたり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

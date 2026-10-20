@@ -389,18 +389,23 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(RowText(view.DestinationRows[locked], "Name"), Is.EqualTo("？？？"));
             Assert.That(RowText(view.DestinationRows[locked], "Detail"), Is.Empty);
 
-            int open = System.Array.FindIndex(
-                destinations,
-                destination => !destination.Locked && destination.Id == ""
+            // 冒険の行き先は、どれも出発できる（出発すると冒険が始まるため、ここでは押さない）。
+            var areas = Baryonyx.Adventure.AdventureCatalog.Areas;
+            Assert.That(
+                destinations.Where(destination => !destination.Locked).Select(destination => destination.Id),
+                Is.EqualTo(areas.Select(area => area.Id))
             );
+            Assert.That(
+                destinations.Where(destination => !destination.Locked).Select(destination => destination.RecommendedLevel),
+                Is.EqualTo(areas.Select(area => area.Level))
+            );
+            int open = areas.Count - 1;
             view.DestinationRows[open].onClick.Invoke();
             Assert.That(view.Depart.interactable, Is.True);
             Assert.That(
                 view.DestinationRows[open].transform.Find("Selected").gameObject.activeSelf,
                 Is.True
             );
-            view.Depart.onClick.Invoke();
-            Assert.That(view.ToastMessage, Is.EqualTo("出発（準備中）"));
         }
 
         private static string RowText(Button row, string label) =>

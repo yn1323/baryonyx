@@ -2,14 +2,14 @@
 id: enemy-rock-troll
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 岩肌トロル
 category: enemies
 silhouette: 前かがみの巨体。右の肩に岩が積み重なり、担いだ石柱の棍棒が頭の上を横切る
 palette: 灰青の岩肌 | 黄土色の腰布 | 石柱の灰茶 | 黄色い目
 motifs: 岩の肌 | 石柱の棍棒 | 肩の岩 | 腰布
 personality: 縄張りにうるさい乱暴者。考えるより先に棍棒を振り下ろし、傷はすぐ岩で塞いでしまうしぶとさがある
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/RockTroll.aseprite
 ---
 
@@ -23,6 +23,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/RockTroll.asepr
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 ステータス・技・行動は未実装で、絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)で表示するだけである。
+2026-10-20から、グラシエラ氷窟（`glaciera-cave`、Lv18）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「肩石投げ」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -191,10 +194,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/RockTroll.asepr
 | 飛び散る攻撃・失ったHPの割合での回復・全体の絡みつき | 新しい仕組みの決まり（[肩石投げ](../enemy-skills/enemy-skill-rock-troll-boulder-toss.md)、[岩肌の再生](../enemy-skills/enemy-skill-rock-troll-regrow.md)、[洞窟崩し](../enemy-skills/enemy-skill-rock-troll-cave-in.md)） |
 | 呼び出し | 呼んだ敵の立ち位置と行動順への入れ方（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（肩石投げ）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、ステータス・技8つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`bruiser`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[肩石投げ](../enemy-skills/enemy-skill-rock-troll-boulder-toss.md)、[岩肌の再生](../enemy-skills/enemy-skill-rock-troll-regrow.md)、[洞窟崩し](../enemy-skills/enemy-skill-rock-troll-cave-in.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-20 | グラシエラ氷窟の戦闘に出るようにし、Lv100のステータスと技「肩石投げ」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

@@ -2,14 +2,14 @@
 id: enemy-blind-fishman
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 地底湖の盲魚人
 category: enemies
 silhouette: 魚の頭をした細身の人型。背と腕と脚に破れた大きなひれが広がり、骨の銛を斜めに構える
 palette: 青白い肌 | 半透明の薄紫のひれ | 骨の白 | 巻いた紐の茶
 motifs: 魚の頭 | ひれ | 骨の銛 | しずく
 personality: 静かで用心深い地底湖の漁師。目を持たず、水と空気の震えで獲物の動きを聞き分ける
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.aseprite
 ---
 
@@ -23,6 +23,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.as
 この文書は、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 ステータス・技・行動は未実装で、絵は[ライブラリ](../../features/library.md)と[展示室](../../features/showcase.md)で表示するだけである。
+2026-10-20から、グラシエラ氷窟（`glaciera-cave`、Lv18）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「波紋聞き」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -171,10 +174,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.as
 | 狙いの選び方 | 新しい仕組みの決まり（[波紋聞き](../enemy-skills/enemy-skill-blind-fishman-ripple-sense.md)） |
 | 敵のブロック | 消えるタイミング（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の未決） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（波紋聞き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`balanced`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[波紋聞き](../enemy-skills/enemy-skill-blind-fishman-ripple-sense.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-20 | グラシエラ氷窟の戦闘に出るようにし、Lv100のステータスと技「波紋聞き」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

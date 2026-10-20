@@ -582,7 +582,7 @@ namespace Baryonyx.CardLoadout
                 widget.Art.enabled = filled && art != null;
             }
             if (widget.Foil != null)
-                widget.Foil.Show(art, filled ? card.Quality : ItemQuality.C);
+                widget.Foil.Show(art, filled ? card.Quality : ItemQuality.C, filled ? card.FoilStyle : 0);
             if (widget.Cost != null)
             {
                 widget.Cost.transform.parent.gameObject.SetActive(filled);

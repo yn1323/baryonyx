@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.UI.Buttons;
+using Baryonyx.UI.Cards;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
 using TMPro;
@@ -20,6 +21,9 @@ namespace Baryonyx.StepBonus
         public Button Button;
         public Image Frame;
         public Image Icon;
+
+        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
+        public CardFoil Foil;
         public GameObject Selected;
         public TMP_Text Tier;
         public TMP_Text Name;
@@ -32,6 +36,9 @@ namespace Baryonyx.StepBonus
     {
         public string Id = "";
         public Button Button;
+
+        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。
+        public CardFoil Foil;
         public Image QualityFrame;
         public TMP_Text Quality;
         public TMP_Text Effect;
@@ -164,6 +171,8 @@ namespace Baryonyx.StepBonus
             {
                 if (widget.Icon != null)
                     widget.Icon.enabled = false;
+                if (widget.Foil != null)
+                    widget.Foil.Show((Sprite)null, Inventory.ItemQuality.C, 0);
                 if (widget.Selected != null)
                     widget.Selected.SetActive(false);
                 Set(widget.Name, "");
@@ -231,6 +240,12 @@ namespace Baryonyx.StepBonus
                     widget.Quality.color = color;
                 if (widget.QualityFrame != null)
                     widget.QualityFrame.color = color;
+                if (widget.Foil != null)
+                    widget.Foil.Show(
+                        Data.Find(widget.Id)?.Icon,
+                        row.Quality,
+                        Data.FoilStyleOf(widget.Id)
+                    );
                 Set(widget.Effect, row.Effect);
             }
 
@@ -264,6 +279,16 @@ namespace Baryonyx.StepBonus
                 widget.Icon.sprite = bonus?.Icon;
                 widget.Icon.enabled = bonus != null && bonus.Icon != null;
                 widget.Icon.color = state.Open ? Color.white : Closed;
+            }
+            // 入れているボーナスの品質のキラキラを、種類ごとの光り方で重ね、段階に届いていない枠ではアイコンと同じだけ暗くする。
+            if (widget.Foil != null)
+            {
+                widget.Foil.Show(
+                    bonus?.Icon,
+                    bonus != null ? loadout.QualityOf(bonus.Id) : Inventory.ItemQuality.C,
+                    bonus != null ? Data.FoilStyleOf(bonus.Id) : 0
+                );
+                widget.Foil.Fade(state.Open ? 1f : Closed.r);
             }
             if (widget.Frame != null && index < TierColors.Length)
                 widget.Frame.color = state.Open ? TierColors[index] : TierColors[index] * Closed;

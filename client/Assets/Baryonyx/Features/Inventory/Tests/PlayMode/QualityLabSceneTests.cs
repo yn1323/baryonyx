@@ -80,14 +80,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Main.Card.gameObject.activeSelf, Is.True);
             Assert.That(lab.Main.Item.Root.activeSelf, Is.False);
 
-            // ファイアを選び、上限で：品質S、威力150%、やけど3ターン、コスト1、キラキラが出る。
+            // ファイアを選び、上限（×2.4）で：品質S、威力240%、やけど5ターン、コスト1、キラキラが出る。
             lab.Rows[CardSkills.All.ToList().FindIndex(skill => skill.Id == "Fire")]
                 .onClick.Invoke();
-            lab.SetMultiplier(1.5f);
+            lab.SetMultiplier(2.4f);
             Assert.That(lab.Current.Id, Is.EqualTo("Fire"));
+            Assert.That(lab.Limit, Is.EqualTo(2.4f));
             Assert.That(lab.QualityLetter.text, Is.EqualTo("S"));
-            Assert.That(lab.EffectText.text, Does.Contain("属攻の150%"));
-            Assert.That(lab.EffectText.text, Does.Contain("3ターン"));
+            Assert.That(lab.EffectText.text, Does.Contain("属攻の240%"));
+            Assert.That(lab.EffectText.text, Does.Contain("5ターン"));
             Assert.That(lab.NumbersText.text, Does.Contain("コスト　2 → 1"));
             var foil = lab.Main.Card.Foil;
             Assert.That(foil.Quality, Is.EqualTo(ItemQuality.S));
@@ -101,7 +102,7 @@ namespace Baryonyx.Tests.PlayMode
             lab.StepDownButton.onClick.Invoke();
             Assert.That(
                 lab.Multiplier,
-                Is.EqualTo(Quality.Middle(ItemQuality.B, 1.5f) - 0.01f).Within(0.001f)
+                Is.EqualTo(Quality.Middle(ItemQuality.B, 2.4f) - 0.01f).Within(0.001f)
             );
 
             // ×1.00より下と上限より上には動かない。
@@ -118,12 +119,12 @@ namespace Baryonyx.Tests.PlayMode
             );
 
             // 上限を試しに下げると、同じ倍率でも品質が上がる。戻すと種類の上限になる。
-            lab.SetMultiplier(1.2f);
+            lab.SetMultiplier(1.8f);
             Assert.That(lab.Quality, Is.EqualTo(ItemQuality.B));
-            lab.SetLimit(1.25f);
+            lab.SetLimit(2f);
             Assert.That(lab.Quality, Is.EqualTo(ItemQuality.A));
             lab.LimitResetButton.onClick.Invoke();
-            Assert.That(lab.Limit, Is.EqualTo(1.5f));
+            Assert.That(lab.Limit, Is.EqualTo(2.4f));
         }
 
         [UnityTest]
@@ -139,13 +140,13 @@ namespace Baryonyx.Tests.PlayMode
                     EquipmentCatalog.All.Count(gear => gear.Slot == EquipmentSlot.Weapon)
                 )
             );
-            // 装備は絵の板で出し、2回攻撃の炎のダガーは上限が×1.3。
+            // 装備は絵の板で出し、2回攻撃の炎のダガーは上限が×1.8。
             Assert.That(lab.Main.Item.Root.activeSelf, Is.True);
             Assert.That(lab.Main.Card.gameObject.activeSelf, Is.False);
             Assert.That(lab.Current.Id, Is.EqualTo("flame-dagger"));
-            Assert.That(lab.Limit, Is.EqualTo(1.3f));
-            lab.SetMultiplier(1.3f);
-            Assert.That(lab.EffectText.text, Is.EqualTo("速度の 163%｜斬・炎｜3回攻撃"));
+            Assert.That(lab.Limit, Is.EqualTo(1.8f));
+            lab.SetMultiplier(1.8f);
+            Assert.That(lab.EffectText.text, Is.EqualTo("速度の 225%｜斬・炎｜4回攻撃"));
             Assert.That(lab.Main.Item.Quality.text, Is.EqualTo("S"));
             Assert.That(lab.Main.Item.Foil.Image.enabled, Is.True);
 

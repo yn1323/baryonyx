@@ -2,14 +2,14 @@
 id: enemy-stone-gargoyle
 type: visual-entity
 status: 候補
-updated: 2026-10-19
+updated: 2026-10-20
 name: 石のガーゴイル
 category: enemies
 silhouette: 大きな石の翼を左右に広げてしゃがむ、角のある獣の石像。体中のひびから光がもれる
 palette: 灰色の石 | 乾いた石肌の淡い灰 | 黄色い目とひびの光
 motifs: 石の翼 | ひび | 屋根の見張り
 personality: 見張りの役目に忠実で、じっと動かない。侵入者を見つけると、屋根から舞い降りる
-art_status: 下書きを取り込み済み（戦闘では未使用）
+art_status: 下書きを取り込み済み（冒険の戦闘で使用）
 art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.aseprite
 ---
 
@@ -22,6 +22,9 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.a
 この文書は、生息する地域、ステータス、使う技と行動パターン、外見と性格の設定を持つ。
 技の効果と演出は[敵の技の定義](../enemy-skills/README.md)に置く。
 2026-10-19の時点で、画像と弱点だけをクライアントに取り込んでおり、どの行き先にも出ない。HP・技・行動は未実装である。
+2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の中くらいの敵として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
+戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「屋根からの急降下」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
+ほかの技と行動パターンは未実装である。
 
 ## 識別情報と根拠
 
@@ -171,10 +174,11 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.a
 | 宙にいる間の扱い | 単体攻撃を受けない仕組みと、大技までのターン数の予告（[屋根からの急降下](../enemy-skills/enemy-skill-gargoyle-dive.md)） |
 | 呼び出し | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 技とステータスは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（屋根からの急降下）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
 | 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-20 | アルマジャ王墓の戦闘に出るようにし、Lv100のステータスと技「屋根からの急降下」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |
