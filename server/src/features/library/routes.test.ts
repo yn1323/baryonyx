@@ -3,7 +3,7 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
-import { EQUIPMENT } from "../equipment/catalog.js";
+import { STARTER_ITEMS, slotOf } from "../equipment/catalog.js";
 import { STARTER_CHARACTERS } from "../party/catalog.js";
 
 type Discovery = {
@@ -75,11 +75,7 @@ describe("ライブラリのAPI", () => {
     );
     for (const slot of ["weapon", "armor"] as const) {
       expect(entries(state, slot)).toEqual(
-        unique(
-          EQUIPMENT.filter((entry) => entry.slot === slot).map(
-            (entry) => entry.id,
-          ),
-        ),
+        unique(STARTER_ITEMS.filter((id) => slotOf(id) === slot)),
       );
     }
     expect(entries(state, "enemy")).toEqual([]);
@@ -87,26 +83,6 @@ describe("ライブラリのAPI", () => {
 
     // 読み直しても増えず、初めて見つけた日時も変わらない。
     expect(await read(user.token)).toEqual(state);
-  });
-
-  it("編成でカードを付けると、そのカードを見つけたスキルとして残し、外しても消さない", async () => {
-    const user = await scenario.login("library-card");
-    const before = await read(user.token);
-    expect(entries(before, "skill")).not.toContain("FireStorm");
-
-    const path = "/party/characters/toma/cards/0";
-    const set = (skillId: string) =>
-      scenario.request(path, "PUT", { skillId }, user.token);
-    expect((await set("FireStorm")).status).toBe(200);
-    expect((await set("Fire")).status).toBe(200);
-
-    const after = await read(user.token);
-    expect(entries(after, "skill")).toContain("FireStorm");
-    const fire = (state: State) =>
-      state.discoveries.find(
-        (entry) => entry.kind === "skill" && entry.entryId === "Fire",
-      );
-    expect(fire(after)).toEqual(fire(before));
   });
 
   it("戦闘を終えると遭遇した敵と倒した体数を足し、終えた知らせの再送では二重に数えない", async () => {

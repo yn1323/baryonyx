@@ -1,12 +1,20 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
 import {
+  MIN_MULTIPLIER_PERCENT,
+  multiplierOf,
+  qualityOf,
+} from "../../shared/quality.js";
+import {
   debitRunes,
   runeBalance,
   selectRuneBalance,
 } from "../exercise-rewards/wallet.js";
+import { ITEM_IDS, type ItemId } from "../items/catalog.js";
+import { itemHoldings } from "../items/db-schema.js";
 import { discoveryStatements } from "../library/discoveries.js";
 import {
+  CARD_SKILL_IDS,
   CARD_SLOT_COUNT,
   type CardSkillId,
   CHARACTER_IDS,
@@ -14,6 +22,7 @@ import {
   COST_PER_LEVEL,
   levelUpCost,
   MAX_LEVEL,
+  maxMultiplierPercent,
   PARTY_SLOT_COUNT,
   STARTER_CHARACTERS,
   STARTER_SLOTS,
@@ -24,18 +33,34 @@ import {
   partyLevelUps,
   partyProfiles,
   partySlots,
+  skillCards,
 } from "./db-schema.js";
 import type { LevelUp } from "./schema.js";
 
 export type PartySlotChange = "join" | "replace" | "leave" | "none";
-export type PartyCardChange = "replace" | "swap" | "none";
+export type PartyCardChange = "replace" | "swap" | "move" | "none";
+
+// カスタムスキルの枠に入れる物の書き方。持っているスキルの1枚は `card:<ID>`、アイテムは `item:<アイテムのID>`。
+type CardContent = { cardId: string | null; itemId: string | null };
+const keyOf = (content: CardContent) =>
+  content.cardId !== null
+    ? `card:${content.cardId}`
+    : content.itemId !== null
+      ? `item:${content.itemId}`
+      : null;
+const contentOf = (key: string): CardContent => {
+  const id = key.slice(key.indexOf(":") + 1);
+  return key.startsWith("item:")
+    ? { cardId: null, itemId: id }
+    : { cardId: id, itemId: null };
+};
 
 export function createPartyRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
-  // 持っているキャラ（Lvと4枠のカード）、4つの枠、所持ルーン、レベルの決まり。
+  // 持っているキャラ（Lvと2つのカスタムスキルの枠）、4つの枠、持っているスキルとアイテム、所持ルーン、レベルの決まり。
   async function readState(userId: string) {
-    const [characters, cards, slots, wallets] = await db.batch([
+    const [characters, cards, slots, owned, items, wallets] = await db.batch([
       db
         .select({
           characterId: partyCharacters.characterId,
@@ -48,7 +73,8 @@ export function createPartyRepository(binding: D1Database) {
         .select({
           characterId: partyCharacterCards.characterId,
           slot: partyCharacterCards.slot,
-          skillId: partyCharacterCards.skillId,
+          cardId: partyCharacterCards.cardId,
+          itemId: partyCharacterCards.itemId,
         })
         .from(partyCharacterCards)
         .where(eq(partyCharacterCards.userId, userId)),
@@ -56,9 +82,25 @@ export function createPartyRepository(binding: D1Database) {
         .select({ slot: partySlots.slot, characterId: partySlots.characterId })
         .from(partySlots)
         .where(eq(partySlots.userId, userId)),
+      db
+        .select({
+          id: skillCards.id,
+          skillId: skillCards.skillId,
+          multiplierPercent: skillCards.multiplierPercent,
+          acquiredAt: skillCards.acquiredAt,
+        })
+        .from(skillCards)
+        .where(eq(skillCards.userId, userId)),
+      db
+        .select({ itemId: itemHoldings.itemId, count: itemHoldings.count })
+        .from(itemHoldings)
+        .where(eq(itemHoldings.userId, userId)),
       selectRuneBalance(db, userId),
     ]);
     const order = (id: string) => CHARACTER_IDS.indexOf(id as CharacterId);
+    const skillOrder = (id: string) =>
+      CARD_SKILL_IDS.indexOf(id as CardSkillId);
+    const itemOrder = (id: string) => ITEM_IDS.indexOf(id as ItemId);
     return {
       // 入手の古い順。同時に入手したキャラは仮データの順。
       characters: [...characters]
@@ -70,27 +112,49 @@ export function createPartyRepository(binding: D1Database) {
         .map((character) => ({
           id: character.characterId,
           level: character.level,
-          cards: Array.from(
-            { length: CARD_SLOT_COUNT },
-            (_, slot) =>
-              cards.find(
-                (card) =>
-                  card.characterId === character.characterId &&
-                  card.slot === slot,
-              )?.skillId ?? null,
-          ),
+          cards: Array.from({ length: CARD_SLOT_COUNT }, (_, slot) => {
+            const row = cards.find(
+              (card) =>
+                card.characterId === character.characterId &&
+                card.slot === slot,
+            );
+            return row ? keyOf(row) : null;
+          }),
         })),
       slots: Array.from({ length: PARTY_SLOT_COUNT }, (_, slot) => ({
         slot,
         characterId:
           slots.find((row) => row.slot === slot)?.characterId ?? null,
       })),
+      // 持っているスキル。入手の古い順、同時に入手したスキルは仮データの順。
+      skillCards: [...owned]
+        .sort(
+          (a, b) =>
+            a.acquiredAt.localeCompare(b.acquiredAt) ||
+            skillOrder(a.skillId) - skillOrder(b.skillId) ||
+            a.id.localeCompare(b.id),
+        )
+        .map((card) => ({
+          id: card.id,
+          skillId: card.skillId,
+          multiplier: multiplierOf(card.multiplierPercent),
+          quality: qualityOf(
+            card.multiplierPercent,
+            maxMultiplierPercent(card.skillId as CardSkillId),
+          ),
+        })),
+      // 持っているアイテムと数。アイテムの定義の順。
+      items: [...items]
+        .sort((a, b) => itemOrder(a.itemId) - itemOrder(b.itemId))
+        .map((item) => ({ itemId: item.itemId, count: item.count })),
       runes: wallets[0]?.balance ?? 0,
       rules: { maxLevel: MAX_LEVEL, costPerLevel: COST_PER_LEVEL },
     };
   }
 
-  // 初めて読むユーザーにだけ、仮のキャラ・カード・編成を1回だけ付与する。
+  // 初めて読むユーザーにだけ、仮のキャラ・カード・編成を1回だけ付与する。初めのカードは、品質C（×1.00）の
+  // スキルを1枚ずつ持ち物に入れ、その1枚を枠に入れる。カードのIDは毎回作るため、同時に届いた要求で
+  // 二重に付与しないよう、印を書けた要求（grant_id）だけがカードを入れる。
   async function ensureStarter(userId: string, now: string) {
     const profile = await db
       .select({ userId: partyProfiles.userId })
@@ -98,10 +162,23 @@ export function createPartyRepository(binding: D1Database) {
       .where(eq(partyProfiles.userId, userId))
       .get();
     if (profile) return;
+    const grantId = crypto.randomUUID();
+    const granted = and(
+      eq(partyProfiles.userId, userId),
+      eq(partyProfiles.grantId, grantId),
+    );
+    const starterCards = STARTER_CHARACTERS.flatMap((character) =>
+      character.cards.map((skillId, slot) => ({
+        id: crypto.randomUUID(),
+        characterId: character.characterId,
+        slot,
+        skillId,
+      })),
+    );
     await db.batch([
       db
         .insert(partyProfiles)
-        .values({ userId, createdAt: now })
+        .values({ userId, grantId, createdAt: now })
         .onConflictDoNothing(),
       db
         .insert(partyCharacters)
@@ -115,22 +192,38 @@ export function createPartyRepository(binding: D1Database) {
           })),
         )
         .onConflictDoNothing(),
-      // D1は1つの文に100個までしか値を渡せないため、カードはキャラごとの文に分ける。
-      ...STARTER_CHARACTERS.map((character) =>
-        db
-          .insert(partyCharacterCards)
-          .values(
-            character.cards.map((skillId, slot) => ({
-              userId,
-              characterId: character.characterId,
-              slot,
-              skillId,
-              updatedAt: now,
-            })),
-          )
-          .onConflictDoNothing(),
+      // D1は1つの文に100個までしか値を渡せないため、カードは1枚ずつの文に分ける。
+      ...starterCards.map((card) =>
+        db.insert(skillCards).select(
+          db
+            .select({
+              id: sql<string>`${card.id}`.as("id"),
+              userId: partyProfiles.userId,
+              skillId: sql<string>`${card.skillId}`.as("skill_id"),
+              multiplierPercent: sql<number>`${MIN_MULTIPLIER_PERCENT}`.as(
+                "multiplier_percent",
+              ),
+              acquiredAt: sql<string>`${now}`.as("acquired_at"),
+            })
+            .from(partyProfiles)
+            .where(granted),
+        ),
       ),
-      // ライブラリの見つけた記録。カードはスキルを1枚ずつ持つ仕組みができるまで、枠に付けたものを記録する。
+      ...starterCards.map((card) =>
+        db.insert(partyCharacterCards).select(
+          db
+            .select({
+              userId: partyProfiles.userId,
+              characterId: sql<string>`${card.characterId}`.as("character_id"),
+              slot: sql<number>`${card.slot}`.as("slot"),
+              cardId: sql<string>`${card.id}`.as("card_id"),
+              itemId: sql<null>`NULL`.as("item_id"),
+              updatedAt: sql<string>`${now}`.as("updated_at"),
+            })
+            .from(partyProfiles)
+            .where(granted),
+        ),
+      ),
       ...discoveryStatements(
         db,
         userId,
@@ -217,12 +310,14 @@ export function createPartyRepository(binding: D1Database) {
     return { change: "leave" as const, ...after };
   }
 
-  // キャラの枠にカードを入れる。そのキャラのほかの枠にあれば、2つの枠の中身を入れ替える。
+  // キャラの枠に、持っているスキルの1枚かアイテムを入れる（key は `card:<ID>`・`item:<アイテムのID>` の形）。
+  // そのキャラのほかの枠にあれば、2つの枠の中身を入れ替える。スキルの1枚をほかのキャラが付けていれば、
+  // そのキャラから外して付け替える。アイテムは、ほかの枠に入れている数が持っている数に届いていれば入れられない。
   async function setCard(
     userId: string,
     characterId: CharacterId,
     slot: number,
-    skillId: CardSkillId,
+    key: string,
     now: string,
   ) {
     await ensureStarter(userId, now);
@@ -231,23 +326,39 @@ export function createPartyRepository(binding: D1Database) {
       (entry) => entry.id === characterId,
     );
     if (!character) return { error: "character_not_owned" as const };
-    const current = character.cards[slot];
-    if (current === skillId) return { change: "none" as const, ...state };
-
-    const from = character.cards.indexOf(skillId);
-    const touched = from >= 0 ? [slot, from] : [slot];
-    const inserts: (typeof partyCharacterCards.$inferInsert)[] = [
-      { userId, characterId, slot, skillId, updatedAt: now },
-    ];
-    if (from >= 0 && current !== null) {
-      inserts.push({
-        userId,
-        characterId,
-        slot: from,
-        skillId: current,
-        updatedAt: now,
-      });
+    const { cardId, itemId } = contentOf(key);
+    const item = state.items.find((entry) => entry.itemId === itemId);
+    if (!item && !state.skillCards.some((card) => card.id === cardId)) {
+      return { error: "card_not_owned" as const };
     }
+    const current = character.cards[slot];
+    if (current === key) return { change: "none" as const, ...state };
+
+    const from = character.cards.indexOf(key);
+    // ほかのキャラが付けているスキルの1枚。アイテムは動かさない。
+    const holder =
+      from >= 0 || cardId === null
+        ? undefined
+        : state.characters.find(
+            (entry) => entry.id !== characterId && entry.cards.includes(key),
+          );
+    if (item && from < 0) {
+      const used = state.characters
+        .flatMap((entry) => entry.cards)
+        .filter((card) => card === key).length;
+      if (used >= item.count) return { error: "item_in_use" as const };
+    }
+
+    const row = (target: number, content: string) => ({
+      userId,
+      characterId,
+      slot: target,
+      ...contentOf(content),
+      updatedAt: now,
+    });
+    const touched = from >= 0 ? [slot, from] : [slot];
+    const inserts = [row(slot, key)];
+    if (from >= 0 && current !== null) inserts.push(row(from, current));
     await db.batch([
       db
         .delete(partyCharacterCards)
@@ -258,11 +369,27 @@ export function createPartyRepository(binding: D1Database) {
             inArray(partyCharacterCards.slot, touched),
           ),
         ),
+      ...(holder
+        ? [
+            db
+              .delete(partyCharacterCards)
+              .where(
+                and(
+                  eq(partyCharacterCards.userId, userId),
+                  eq(partyCharacterCards.cardId, cardId as string),
+                ),
+              ),
+          ]
+        : []),
       db.insert(partyCharacterCards).values(inserts),
-      ...discoveryStatements(db, userId, "skill", [skillId], now),
     ]);
-    const change: PartyCardChange = from >= 0 ? "swap" : "replace";
-    return { change, ...(await readState(userId)) };
+    const change: PartyCardChange =
+      from >= 0 ? "swap" : holder ? "move" : "replace";
+    return {
+      change,
+      ...(holder ? { from: holder.id } : {}),
+      ...(await readState(userId)),
+    };
   }
 
   async function findLevelUp(userId: string, requestId: string) {

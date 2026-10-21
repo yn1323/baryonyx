@@ -35,6 +35,48 @@ export function discoveryStatements(
   );
 }
 
+// 別の書き込み（written）が条件どおり入ったときだけ、見つけた記録の1行を返す select。
+function discoveryWhen(
+  db: Database,
+  userId: string,
+  kind: DiscoveryKind,
+  entryId: string,
+  now: string,
+  defeated: number,
+  written: SQL,
+) {
+  return db
+    .select({
+      userId: sql<string>`${userId}`.as("user_id"),
+      kind: sql<string>`${kind}`.as("kind"),
+      entryId: sql<string>`${entryId}`.as("entry_id"),
+      discoveredAt: sql<string>`${now}`.as("discovered_at"),
+      defeated: sql<number>`${defeated}`.as("defeated"),
+    })
+    .from(sql`(SELECT 1)`)
+    .where(written);
+}
+
+/**
+ * 見つけた物を、別の書き込み（written）が条件どおり入ったときだけ記録する文。
+ * 冒険のドロップのように、送り直しや同時の要求で付与しなかった物を記録しないために使う。
+ */
+export function discoveryStatementsWhen(
+  db: Database,
+  userId: string,
+  kind: Exclude<DiscoveryKind, "enemy">,
+  entryIds: readonly string[],
+  now: string,
+  written: SQL,
+) {
+  return [...new Set(entryIds)].map((entryId) =>
+    db
+      .insert(libraryDiscoveries)
+      .select(discoveryWhen(db, userId, kind, entryId, now, 0, written))
+      .onConflictDoNothing(),
+  );
+}
+
 export type EnemyEncounter = { enemyId: string; defeated: number };
 
 /**
@@ -58,18 +100,7 @@ export function enemyStatements(
   return [...defeated].map(([enemyId, count]) =>
     db
       .insert(libraryDiscoveries)
-      .select(
-        db
-          .select({
-            userId: sql<string>`${userId}`.as("user_id"),
-            kind: sql<string>`'enemy'`.as("kind"),
-            entryId: sql<string>`${enemyId}`.as("entry_id"),
-            discoveredAt: sql<string>`${now}`.as("discovered_at"),
-            defeated: sql<number>`${count}`.as("defeated"),
-          })
-          .from(sql`(SELECT 1)`)
-          .where(written),
-      )
+      .select(discoveryWhen(db, userId, "enemy", enemyId, now, count, written))
       .onConflictDoUpdate({
         target: [
           libraryDiscoveries.userId,

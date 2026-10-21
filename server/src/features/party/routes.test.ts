@@ -20,11 +20,21 @@ type State = {
     runes: number;
     balanceAfter: number;
   };
+  from?: string;
   characters: { id: string; level: number; cards: (string | null)[] }[];
   slots: { slot: number; characterId: string | null }[];
+  skillCards: {
+    id: string;
+    skillId: string;
+    multiplier: number;
+    quality: string;
+  }[];
+  items: { itemId: string; count: number }[];
   runes: number;
   rules: { maxLevel: number; costPerLevel: number };
 };
+
+const missingCard = "card:bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb";
 
 const requestIds = {
   first: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
@@ -48,6 +58,14 @@ describe("パーティAPI", () => {
   const slots = (state: State) => state.slots.map((slot) => slot.characterId);
   const character = (state: State, id: string) =>
     state.characters.find((entry) => entry.id === id);
+  // 枠の中身を、スキルの種類のID（アイテムは item:<ID> のまま）で読む。
+  const skillsOf = (state: State, id: string) =>
+    character(state, id)?.cards.map((key) =>
+      key?.startsWith("card:")
+        ? (state.skillCards.find((card) => `card:${card.id}` === key)
+            ?.skillId ?? key)
+        : key,
+    );
 
   function levelUp(
     token: string,
@@ -68,7 +86,7 @@ describe("パーティAPI", () => {
       scenario.request("/party/slots/0", "PUT", { characterId: "toma" }),
       scenario.request("/party/slots/0", "DELETE"),
       scenario.request("/party/characters/toma/cards/0", "PUT", {
-        skillId: "Fire",
+        card: "item:herb",
       }),
       scenario.request("/party/characters/toma/level-up", "POST", {
         requestId: requestIds.first,
@@ -83,14 +101,26 @@ describe("パーティAPI", () => {
 
   it("初めて読むユーザーに仮のキャラ・カード・編成を1回だけ付与する", async () => {
     const user = await scenario.login("party-starter");
-    const first = await read(user.token);
-    expect(first.characters).toEqual(
-      STARTER_CHARACTERS.map((entry) => ({
-        id: entry.characterId,
-        level: entry.level,
-        cards: [...entry.cards],
-      })),
+    // 同時に届いても、カードは1回分だけ入る。
+    const [first, second] = await Promise.all([
+      read(user.token),
+      read(user.token),
+    ]);
+    expect(second).toEqual(first);
+    expect(first.characters.map((entry) => entry.level)).toEqual(
+      STARTER_CHARACTERS.map((entry) => entry.level),
     );
+    for (const entry of STARTER_CHARACTERS) {
+      expect(skillsOf(first, entry.characterId)).toEqual([...entry.cards]);
+    }
+    // 初めのカードは、1枚ずつ品質C（×1.00）で持ち物に入る。
+    expect(first.skillCards).toHaveLength(STARTER_CHARACTERS.length * 2);
+    expect(
+      first.skillCards.every(
+        (card) => card.multiplier === 1 && card.quality === "C",
+      ),
+    ).toBe(true);
+    expect(first.items).toEqual([]);
     expect(first.slots.map((slot) => slot.slot)).toEqual([0, 1, 2, 3]);
     expect(slots(first)).toEqual(STARTER_SLOTS);
     expect(first.runes).toBe(0);
@@ -145,35 +175,70 @@ describe("パーティAPI", () => {
     expect(slots(await read(user.token))).toEqual(["toma", null, null, null]);
   });
 
-  it("キャラの枠にカードを入れ、そのキャラのほかの枠にあれば入れ替える", async () => {
+  it("持っているスキルの1枚かアイテムを枠に入れ、ほかの枠やほかのキャラからは付け替える", async () => {
     const user = await scenario.login("party-cards");
     const before = await read(user.token);
-    const put = (id: string, slot: number, skillId: string) =>
+    // 冒険で手に入れた火の粉（×1.72）と、薬草1つを持たせる。
+    const embers = "cccccccc-1111-4111-8111-cccccccccccc";
+    const now = new Date().toISOString();
+    await scenario.env.DB.batch([
+      scenario.env.DB.prepare(
+        "INSERT INTO skill_cards (id, user_id, skill_id, multiplier_percent, acquired_at) VALUES (?, ?, 'Embers', 172, ?)",
+      ).bind(embers, user.userId, now),
+      scenario.env.DB.prepare(
+        "INSERT INTO item_holdings (user_id, item_id, count, acquired_at, updated_at) VALUES (?, 'herb', 1, ?, ?)",
+      ).bind(user.userId, now, now),
+    ]);
+    const put = (id: string, slot: number, card: string) =>
       scenario.request(
         `/party/characters/${id}/cards/${slot}`,
         "PUT",
-        { skillId },
+        { card },
         user.token,
       );
+    const ice = character(before, "toma")?.cards[1] as string;
 
-    const replaced = (await (await put("toma", 0, "Embers")).json()) as State;
+    const replaced = (await (
+      await put("toma", 0, `card:${embers}`)
+    ).json()) as State;
     expect(replaced.change).toBe("replace");
-    expect(character(replaced, "toma")?.cards).toEqual(["Embers", "Ice"]);
+    expect(skillsOf(replaced, "toma")).toEqual(["Embers", "Ice"]);
+    expect(
+      replaced.skillCards.find((card) => card.id === embers),
+    ).toMatchObject({ skillId: "Embers", multiplier: 1.72 });
+    expect(replaced.items).toEqual([{ itemId: "herb", count: 1 }]);
 
-    const swapped = (await (await put("toma", 0, "Ice")).json()) as State;
+    const swapped = (await (await put("toma", 0, ice)).json()) as State;
     expect(swapped.change).toBe("swap");
-    expect(character(swapped, "toma")?.cards).toEqual(["Ice", "Embers"]);
-    expect(((await (await put("toma", 0, "Ice")).json()) as State).change).toBe(
+    expect(skillsOf(swapped, "toma")).toEqual(["Ice", "Embers"]);
+    expect(((await (await put("toma", 0, ice)).json()) as State).change).toBe(
       "none",
     );
 
-    // ほかのキャラが同じカードを付けていても付けられ、ほかのキャラは変わらない。
-    expect((await put("luka", 0, "Embers")).status).toBe(200);
+    // ほかのキャラが付けている1枚は、そのキャラから外して付ける。
+    const moved = (await (
+      await put("luka", 0, `card:${embers}`)
+    ).json()) as State;
+    expect(moved.change).toBe("move");
+    expect(moved.from).toBe("toma");
+    expect(character(moved, "toma")?.cards).toEqual([ice, null]);
+    expect(skillsOf(moved, "luka")?.[0]).toBe("Embers");
+
+    // アイテムは持っている数まで入れられる。
+    expect((await put("aria", 0, "item:herb")).status).toBe(200);
+    const used = await put("mina", 0, "item:herb");
+    expect(used.status).toBe(409);
+    expect(await used.json()).toEqual({ error: "item_in_use" });
+
+    // 持っていない1枚とアイテムは入れられない。
+    for (const card of [missingCard, "item:acorn"]) {
+      const missing = await put("mina", 0, card);
+      expect(missing.status).toBe(404);
+      expect(await missing.json()).toEqual({ error: "card_not_owned" });
+    }
     const after = await read(user.token);
-    expect(character(after, "toma")?.cards).toEqual(
-      character(swapped, "toma")?.cards,
-    );
-    expect(character(after, "aria")).toEqual(character(before, "aria"));
+    expect(skillsOf(after, "aria")).toEqual(["item:herb", "ShieldBash"]);
+    expect(character(after, "mina")).toEqual(character(before, "mina"));
   });
 
   it("不正な枠・キャラ・カード・レベルを400で、持っていないキャラを404で拒否する", async () => {
@@ -209,19 +274,25 @@ describe("パーティAPI", () => {
       scenario.request(
         "/party/characters/toma/cards/2",
         "PUT",
-        { skillId: "Fire" },
+        { card: missingCard },
         user.token,
       ),
       scenario.request(
         "/party/characters/nobody/cards/0",
         "PUT",
-        { skillId: "Fire" },
+        { card: missingCard },
         user.token,
       ),
       scenario.request(
         "/party/characters/toma/cards/0",
         "PUT",
-        { skillId: "Unknown" },
+        { card: "Fire" },
+        user.token,
+      ),
+      scenario.request(
+        "/party/characters/toma/cards/0",
+        "PUT",
+        { card: "item:unknown" },
         user.token,
       ),
       levelUp(user.token, "toma", {
@@ -268,7 +339,7 @@ describe("パーティAPI", () => {
       scenario.request(
         "/party/characters/ritsu/cards/0",
         "PUT",
-        { skillId: "Fire" },
+        { card: missingCard },
         user.token,
       ),
       levelUp(user.token, "ritsu", {
@@ -355,7 +426,7 @@ describe("パーティAPI", () => {
   it("ユーザーごとに別のキャラ・編成・カードを持つ", async () => {
     const owner = await scenario.login("party-owner");
     const other = await scenario.login("party-other");
-    await read(owner.token);
+    const owned = await read(owner.token);
     const before = await read(other.token);
 
     await scenario.request(
@@ -367,7 +438,7 @@ describe("パーティAPI", () => {
     await scenario.request(
       "/party/characters/toma/cards/0",
       "PUT",
-      { skillId: "Heal" },
+      { card: character(owned, "luka")?.cards[0] },
       owner.token,
     );
     await scenario.setRunes(owner.userId, 5000);

@@ -7,7 +7,8 @@ import { createHash } from "node:crypto";
 type SeedCharacter = {
   id: string;
   level: number;
-  // カスタムスキルの2枠。属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
+  // カスタムスキルの2枠に入れるスキル。属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
+  // スキルは1枚ずつ（×1.00）持ち物に入れ、枠はその1枚を指す。
   cards: readonly [string, string];
   weapon?: string;
   armor?: string;
@@ -25,6 +26,10 @@ export type SeedPlayer = {
   items: readonly string[];
   // items と同じ順の、装備の倍率（百分率の整数。doc/features/inventory.md の品質）。省くと、どれも×1.00。
   itemMultipliers?: readonly number[];
+  // 枠に入れていない、冒険で手に入れたスキルと倍率（百分率の整数）。
+  skillCards?: readonly { id: string; multiplierPercent: number }[];
+  // 持っているアイテムと数。
+  itemCounts?: readonly { id: string; count: number }[];
   // 持っているボーナスと倍率（百分率の整数）。
   bonuses: readonly { id: string; multiplierPercent: number }[];
   // ボーナスの5枠。空き枠はnull。
@@ -52,6 +57,25 @@ const ARMOR_IDS: readonly string[] = [
   "leather-armor",
   "wooden-shield",
 ];
+
+// アクセサリーの種類。防具と同じく equipment/catalog.ts の EQUIPMENT から写す。
+const ACCESSORY_IDS: readonly string[] = [
+  "moss-charm",
+  "acorn-brooch",
+  "dew-pendant",
+  "guardian-circlet",
+  "shell-necklace",
+  "anchor-bangle",
+  "gold-earring",
+  "kraken-pearl",
+];
+
+const kindOf = (equipmentId: string) =>
+  ACCESSORY_IDS.includes(equipmentId)
+    ? "accessory"
+    : ARMOR_IDS.includes(equipmentId)
+      ? "armor"
+      : "weapon";
 
 export const SEED_PLAYERS: readonly SeedPlayer[] = [
   {
@@ -134,11 +158,27 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       "iron-helm",
       "leather-armor",
       "wooden-shield",
+      "dew-pendant",
+      "guardian-circlet",
+      "kraken-pearl",
     ],
     // 品質を見比べられるよう、S・A・B・C がそろう倍率にする（装備ごとの上限の中の位置で決めた）。
     itemMultipliers: [
       180, 229, 191, 212, 152, 140, 124, 100, 172, 196, 187, 150, 110, 100, 145,
-      118,
+      118, 130, 205, 250,
+    ],
+    skillCards: [
+      { id: "Hone", multiplierPercent: 196 },
+      { id: "ManaPrayer", multiplierPercent: 128 },
+      { id: "Slash", multiplierPercent: 172 },
+      { id: "Slash", multiplierPercent: 104 },
+    ],
+    itemCounts: [
+      { id: "herb", count: 12 },
+      { id: "spore-powder", count: 3 },
+      { id: "guardian-seed", count: 1 },
+      { id: "dried-fish", count: 5 },
+      { id: "pirate-rum", count: 1 },
     ],
     bonuses: [
       { id: "guard", multiplierPercent: 147 },
@@ -210,6 +250,11 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       "traveler-cloak",
       "chainmail",
       "leather-armor",
+      "moss-charm",
+    ],
+    itemCounts: [
+      { id: "herb", count: 2 },
+      { id: "acorn", count: 1 },
     ],
     bonuses: [
       { id: "luck", multiplierPercent: 126 },
@@ -287,9 +332,13 @@ function playerStatements(player: SeedPlayer, now: string) {
   ) {
     throw new Error(`${player.id}: itemMultipliers の数が items と違います`);
   }
+  const grantId = stableUuid(`seed:${player.id}:grant`);
   const itemIds = player.items.map((_, index) =>
     stableUuid(`seed:${player.id}:item:${index}`),
   );
+  // 枠に入れる初めのカード（持っているスキルの1枚）のID。
+  const starterCardId = (characterId: string, slot: number) =>
+    stableUuid(`seed:${player.id}:card:${characterId}:${slot}`);
   // 同じ種類を複数持つときは、まだ誰も付けていない物から順に付ける。
   const used = new Set<number>();
   const itemFor = (equipmentId: string) => {
@@ -340,7 +389,9 @@ function playerStatements(player: SeedPlayer, now: string) {
       { user_id: userId, balance: player.runes, updated_at: now },
     ]),
     // 初期データの付与（ensureStarter）を済ませた扱いにして、seedの内容だけを残す。
-    ...insert("party_profiles", [{ user_id: userId, created_at: now }]),
+    ...insert("party_profiles", [
+      { user_id: userId, grant_id: grantId, created_at: now },
+    ]),
     ...insert(
       "party_characters",
       player.characters.map((character) => ({
@@ -352,13 +403,25 @@ function playerStatements(player: SeedPlayer, now: string) {
       })),
     ),
     ...insert(
-      "party_character_cards",
+      "skill_cards",
       player.characters.flatMap((character) =>
         character.cards.map((skillId, slot) => ({
+          id: starterCardId(character.id, slot),
+          user_id: userId,
+          skill_id: skillId,
+          multiplier_percent: 100,
+          acquired_at: now,
+        })),
+      ),
+    ),
+    ...insert(
+      "party_character_cards",
+      player.characters.flatMap((character) =>
+        character.cards.map((_, slot) => ({
           user_id: userId,
           character_id: character.id,
           slot,
-          skill_id: skillId,
+          card_id: starterCardId(character.id, slot),
           updated_at: now,
         })),
       ),
@@ -381,7 +444,7 @@ function playerStatements(player: SeedPlayer, now: string) {
     ...insert("equipment_profiles", [
       {
         user_id: userId,
-        grant_id: stableUuid(`seed:${player.id}:grant`),
+        grant_id: grantId,
         created_at: now,
       },
     ]),
@@ -396,6 +459,26 @@ function playerStatements(player: SeedPlayer, now: string) {
       })),
     ),
     ...insert("equipment_character_slots", worn),
+    ...insert(
+      "skill_cards",
+      (player.skillCards ?? []).map((card, index) => ({
+        id: stableUuid(`seed:${player.id}:skill:${index}`),
+        user_id: userId,
+        skill_id: card.id,
+        multiplier_percent: card.multiplierPercent,
+        acquired_at: now,
+      })),
+    ),
+    ...insert(
+      "item_holdings",
+      (player.itemCounts ?? []).map((item) => ({
+        user_id: userId,
+        item_id: item.id,
+        count: item.count,
+        acquired_at: now,
+        updated_at: now,
+      })),
+    ),
     ...insert("step_bonus_profiles", [{ user_id: userId, created_at: now }]),
     ...insert(
       "step_bonus_holdings",
@@ -452,18 +535,19 @@ function playerStatements(player: SeedPlayer, now: string) {
         "character",
         player.characters.map((c) => c.id),
       ),
-      ...discoveries(
-        "skill",
-        player.characters.flatMap((character) => character.cards),
-      ),
-      ...(["weapon", "armor"] as const).flatMap((slot) =>
+      ...discoveries("skill", [
+        ...player.characters.flatMap((character) => character.cards),
+        ...(player.skillCards ?? []).map((card) => card.id),
+      ]),
+      ...(["weapon", "armor", "accessory"] as const).flatMap((kind) =>
         discoveries(
-          slot,
-          player.items.filter(
-            (equipmentId) =>
-              ARMOR_IDS.includes(equipmentId) === (slot === "armor"),
-          ),
+          kind,
+          player.items.filter((equipmentId) => kindOf(equipmentId) === kind),
         ),
+      ),
+      ...discoveries(
+        "item",
+        (player.itemCounts ?? []).map((item) => item.id),
       ),
       ...player.enemies.map((enemy) => ({
         user_id: userId,

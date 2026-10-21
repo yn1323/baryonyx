@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { ITEM_IDS } from "../items/catalog.js";
 import {
-  CARD_SKILL_IDS,
   CARD_SLOT_COUNT,
   CHARACTER_IDS,
   MAX_LEVEL,
@@ -23,8 +23,12 @@ export const setPartySlotSchema = z.object({
   characterId: characterIdSchema,
 });
 
+// 枠に入れる物。持っているスキルの1枚（`card:<ID>`）か、アイテム（`item:<アイテムのID>`）。
 export const setCardSchema = z.object({
-  skillId: z.enum(CARD_SKILL_IDS),
+  card: z.union([
+    z.string().regex(/^card:[a-f0-9-]{36}$/),
+    z.enum(ITEM_IDS.map((id) => `item:${id}` as const)),
+  ]),
 });
 
 // 今のレベルと上げたあとのレベル。費用はサーバーが計算する。

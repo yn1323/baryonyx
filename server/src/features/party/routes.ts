@@ -11,9 +11,11 @@ import {
   setPartySlotSchema,
 } from "./schema.js";
 
-// 持っていないキャラは404、決まりや今の状態と合わない変更は409で返す。
+// 持っていないキャラ・カードは404、決まりや今の状態と合わない変更は409で返す。
 function errorStatus(error: string) {
-  return error === "character_not_owned" ? 404 : 409;
+  return error === "character_not_owned" || error === "card_not_owned"
+    ? 404
+    : 409;
 }
 
 export function createPartyApi() {
@@ -65,7 +67,7 @@ export function createPartyApi() {
       c.get("userId"),
       characterId.data,
       slot.data,
-      body.data.skillId,
+      body.data.card,
       new Date().toISOString(),
     );
     return respond(c, result, errorStatus);

@@ -92,6 +92,20 @@
       "when": 1792421526127,
       "tag": "0012_item_quality",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792499646313,
+      "tag": "0013_drops",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1792504657773,
+      "tag": "0014_owned_cards",
+      "breakpoints": true
     }
   ]
 }

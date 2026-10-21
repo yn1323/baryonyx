@@ -13,6 +13,8 @@ import {
 
 type Party = {
   characters: { id: string; level: number; cards: (string | null)[] }[];
+  skillCards: { id: string; skillId: string; multiplier: number }[];
+  items: { itemId: string; count: number }[];
   slots: { slot: number; characterId: string | null }[];
   runes: number;
 };
@@ -79,11 +81,29 @@ describe("開発用のプレイヤー（seed）", () => {
       const token = await signIn(seed.id);
       const party = await scenario.read<Party>("/party", token);
       expect(party.runes).toBe(seed.runes);
-      expect(party.characters).toEqual(
+      // 枠は持っているスキルの1枚（card:<ID>）を指す。指した1枚のスキルがseedのカードになる。
+      const skillOf = (key: string | null) =>
+        party.skillCards.find((card) => `card:${card.id}` === key)?.skillId ??
+        null;
+      expect(
+        party.characters.map((character) => ({
+          ...character,
+          cards: character.cards.map(skillOf),
+        })),
+      ).toEqual(
         seed.characters.map((character) => ({
           id: character.id,
           level: character.level,
           cards: [...character.cards],
+        })),
+      );
+      expect(party.skillCards).toHaveLength(
+        seed.characters.length * 2 + (seed.skillCards?.length ?? 0),
+      );
+      expect(party.items).toEqual(
+        (seed.itemCounts ?? []).map((item) => ({
+          itemId: item.id,
+          count: item.count,
         })),
       );
       expect(party.slots.map((slot) => slot.characterId)).toEqual(seed.party);
@@ -169,9 +189,15 @@ describe("開発用のプレイヤー（seed）", () => {
         unique(seed.characters.map((character) => character.id)),
       );
       expect(entries("skill")).toEqual(
-        unique(seed.characters.flatMap((character) => character.cards)),
+        unique([
+          ...seed.characters.flatMap((character) => character.cards),
+          ...(seed.skillCards ?? []).map((card) => card.id),
+        ]),
       );
-      for (const slot of ["weapon", "armor"] as const) {
+      expect(entries("item")).toEqual(
+        unique((seed.itemCounts ?? []).map((item) => item.id)),
+      );
+      for (const slot of ["weapon", "armor", "accessory"] as const) {
         expect(entries(slot)).toEqual(
           unique(seed.items.filter((id) => slotOf(id) === slot)),
         );

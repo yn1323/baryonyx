@@ -1,22 +1,21 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import type { SelectedFields } from "drizzle-orm/sqlite-core";
 import { createDatabase } from "../../shared/db.js";
-import { pickQuality, rollMultiplierPercent } from "../../shared/quality.js";
+import { multiplierOf, qualityOf } from "../../shared/quality.js";
+import { equipmentItems } from "../equipment/db-schema.js";
 import {
   debitRunes,
   runeBalance,
   selectRuneBalance,
 } from "../exercise-rewards/wallet.js";
-import { enemyStatements } from "../library/discoveries.js";
+import { itemHoldings } from "../items/db-schema.js";
 import {
-  maxMultiplierPercent,
-  STEP_BONUS_IDS,
-  type StepBonusId,
-} from "../step-bonus/catalog.js";
+  discoveryStatementsWhen,
+  enemyStatements,
+} from "../library/discoveries.js";
+import { skillCards } from "../party/db-schema.js";
 import { stepBonusHoldings } from "../step-bonus/db-schema.js";
-import {
-  createStepBonusRepository,
-  holdingQuality,
-} from "../step-bonus/repository.js";
+import { createStepBonusRepository } from "../step-bonus/repository.js";
 import {
   bossFloor,
   type Destination,
@@ -28,18 +27,24 @@ import {
   newSeed,
   type RoomKind,
   reviveCost,
-  rewardQualityWeights,
 } from "./catalog.js";
 import {
+  adventureDrops,
   adventureRecords,
   adventureRevives,
-  adventureRewards,
   adventureRuns,
 } from "./db-schema.js";
+import {
+  type Drop,
+  type DropCategory,
+  maxPercentOf,
+  rollDrops,
+} from "./drops.js";
 import type { EndReason, Enemies, Move, Revive } from "./schema.js";
 
 type RunRow = typeof adventureRuns.$inferSelect;
-type RewardRow = typeof adventureRewards.$inferSelect;
+type DropRow = typeof adventureDrops.$inferSelect;
+type DropOutcome = "added" | "updated" | "discarded";
 type EndStatus = "cleared" | "defeated" | "retreated";
 
 // 0以上1未満の乱数。テストでは固定の値に差し替える。
@@ -64,23 +69,35 @@ export function createAdventureRepository(
       .get();
   }
 
-  function rewardsOf(runId: string) {
+  function dropsOf(runId: string) {
     return db
       .select()
-      .from(adventureRewards)
-      .where(eq(adventureRewards.runId, runId))
-      .orderBy(adventureRewards.createdAt);
+      .from(adventureDrops)
+      .where(eq(adventureDrops.runId, runId))
+      .orderBy(adventureDrops.createdAt, adventureDrops.seq);
   }
 
   const route = (run: RunRow) => JSON.parse(run.route) as string[];
   const kindOf = (run: RunRow) => run.roomKind as RoomKind;
 
-  const reward = (row: RewardRow) => ({
-    roomId: row.roomId,
-    bonusId: row.bonusId,
-    ...holdingQuality(row.bonusId, row.multiplierPercent),
-    outcome: row.outcome,
-  });
+  // 応答の1つのドロップ。アイテムは倍率と品質を持たないため、その項目を返さない
+  // （UnityのJsonUtilityが数値の null を読めないため、null ではなく項目を省く）。
+  const drop = (row: DropRow) => {
+    const maxPercent = maxPercentOf(row.category as DropCategory, row.entryId);
+    const percent = row.multiplierPercent;
+    return {
+      roomId: row.roomId,
+      category: row.category,
+      id: row.entryId,
+      ...(percent === null || maxPercent === null
+        ? {}
+        : {
+            multiplier: multiplierOf(percent),
+            quality: qualityOf(percent, maxPercent),
+          }),
+      outcome: row.outcome,
+    };
+  };
 
   // 進行中の冒険（道を作る種と部屋の数、今いる部屋、この冒険で手に入れた物を含む）、行き先ごとの記録、所持ルーン。
   async function readState(userId: string) {
@@ -122,7 +139,7 @@ export function createAdventureRepository(
               route: route(run),
               revives: run.revives,
               reviveCost: reviveCost(run.revives),
-              rewards: (await rewardsOf(run.id)).map(reward),
+              drops: (await dropsOf(run.id)).map(drop),
             }
           : null,
       records,
@@ -215,31 +232,6 @@ export function createAdventureRepository(
     return readState(userId);
   }
 
-  // 部屋の種類と行き先ごとの重みで品質を選び、その品質の幅から倍率（百分率）を選ぶ。
-  function pickMultiplier(
-    kind: EventKind,
-    rewardBoost: number,
-    bonusId: StepBonusId,
-  ): number {
-    const quality = pickQuality(
-      rewardQualityWeights(kind, rewardBoost),
-      random,
-    );
-    return rollMultiplierPercent(
-      quality,
-      random,
-      maxMultiplierPercent(bonusId),
-    );
-  }
-
-  function pickBonus(): StepBonusId {
-    const index = Math.min(
-      STEP_BONUS_IDS.length - 1,
-      Math.floor(random() * STEP_BONUS_IDS.length),
-    );
-    return STEP_BONUS_IDS[index];
-  }
-
   // 1階ずつしか進まないため、今いる階がこの冒険で着いた最も深い階になる。
   const floorOf = (run: RunRow) => run.floor;
 
@@ -265,7 +257,7 @@ export function createAdventureRepository(
       newRecord: floor > previousBest,
       clears: record?.clears ?? 0,
       revives: run.revives,
-      rewards: (await rewardsOf(run.id)).map(reward),
+      drops: (await dropsOf(run.id)).map(drop),
     };
   }
 
@@ -318,8 +310,8 @@ export function createAdventureRepository(
       });
   }
 
-  // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、ACTボーナスを1つ手に入れる。
-  // 最奥のボスを倒したら冒険を終える。部屋の終了・報酬の記録・持ち物・記録を1回のbatchで行う。
+  // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、行き先の一覧から物を落とす（doc/features/drops.md）。
+  // 最奥のボスを倒したら冒険を終える。部屋の終了・ドロップの記録・持ち物・記録を1回のbatchで行う。
   async function clear(
     userId: string,
     roomId: string,
@@ -332,58 +324,184 @@ export function createAdventureRepository(
     if (run.roomId !== roomId || !hasEvent(kind)) {
       return { error: "room_mismatch" as const };
     }
+    const dropsInRoom = async () =>
+      (await dropsOf(run.id)).filter((row) => row.roomId === roomId).map(drop);
     if (run.roomCleared) {
-      // 届かなかった応答の再送は、記録した報酬を返す。
-      const recorded = (await rewardsOf(run.id)).find(
-        (row) => row.roomId === roomId,
-      );
-      return {
-        reward: recorded ? reward(recorded) : null,
-        ...(await readState(userId)),
-      };
+      // 届かなかった応答の再送は、記録したドロップを返す。
+      return { drops: await dropsInRoom(), ...(await readState(userId)) };
     }
 
     // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
     await createStepBonusRepository(binding).getState(userId, now);
-    const bonusId = pickBonus();
-    const multiplierPercent = pickMultiplier(
-      kind as EventKind,
-      findDestination(run.destinationId)?.rewardBoost ?? 0,
-      bonusId,
+    const rolled = rollDrops(run.destinationId, kind as EventKind, random);
+
+    // ACTボーナスは1種類につき1つだけ持ち、倍率の高いほうを残す。同じ部屋で2つ落ちたときは順に比べる。
+    const bonusIds = [
+      ...new Set(
+        rolled.filter((entry) => entry.category === "bonus").map((e) => e.id),
+      ),
+    ];
+    const heldRows =
+      bonusIds.length === 0
+        ? []
+        : await db
+            .select({
+              bonusId: stepBonusHoldings.bonusId,
+              multiplierPercent: stepBonusHoldings.multiplierPercent,
+            })
+            .from(stepBonusHoldings)
+            .where(
+              and(
+                eq(stepBonusHoldings.userId, userId),
+                inArray(stepBonusHoldings.bonusId, bonusIds),
+              ),
+            );
+    const held = new Map(
+      heldRows.map((row) => [row.bonusId, row.multiplierPercent]),
     );
-    const held = await db
-      .select({ multiplierPercent: stepBonusHoldings.multiplierPercent })
-      .from(stepBonusHoldings)
-      .where(
-        and(
-          eq(stepBonusHoldings.userId, userId),
-          eq(stepBonusHoldings.bonusId, bonusId),
-        ),
-      )
-      .get();
-    const outcome = !held
-      ? "added"
-      : multiplierPercent > held.multiplierPercent
-        ? "updated"
-        : "discarded";
+    const drops = rolled.map((entry): Drop & { outcome: DropOutcome } => {
+      if (entry.category !== "bonus") return { ...entry, outcome: "added" };
+      const best = held.get(entry.id);
+      const percent = entry.multiplierPercent as number;
+      const outcome: DropOutcome =
+        best === undefined ? "added" : percent > best ? "updated" : "discarded";
+      held.set(entry.id, Math.max(best ?? 0, percent));
+      return { ...entry, outcome };
+    });
+
     const boss = kind === "boss";
     const previousBest = boss ? await bestFloor(userId, run.destinationId) : 0;
-    const written = sql`EXISTS (SELECT 1 FROM ${adventureRewards} WHERE ${adventureRewards.runId} = ${run.id} AND ${adventureRewards.roomId} = ${roomId} AND ${adventureRewards.createdAt} = ${now} AND ${adventureRewards.bonusId} = ${bonusId} AND ${adventureRewards.multiplierPercent} = ${multiplierPercent})`;
+    const grantId = crypto.randomUUID();
+    const written = sql`EXISTS (SELECT 1 FROM ${adventureDrops} WHERE ${adventureDrops.runId} = ${run.id} AND ${adventureDrops.roomId} = ${roomId} AND ${adventureDrops.grantId} = ${grantId})`;
+    const dropRow = (index: number) => {
+      const entry = drops[index];
+      return {
+        seq: sql<number>`${index}`.as("seq"),
+        grantId: sql<string>`${grantId}`.as("grant_id"),
+        category: sql<string>`${entry.category}`.as("category"),
+        entryId: sql<string>`${entry.id}`.as("entry_id"),
+        multiplierPercent: sql<number | null>`${entry.multiplierPercent}`.as(
+          "multiplier_percent",
+        ),
+        outcome: sql<string>`${entry.outcome}`.as("outcome"),
+        createdAt: sql<string>`${now}`.as("created_at"),
+      };
+    };
+    // 1つの文に入れる値の数を抑えるため、1つの物を1つの文で付与する。
+    const fromWritten = <T extends SelectedFields>(columns: T) =>
+      db.select(columns).from(sql`(SELECT 1)`).where(written);
+    const percentOf = (entry: (typeof drops)[number]) =>
+      entry.multiplierPercent as number;
+    const equipmentGrants = drops
+      .filter(
+        (entry) =>
+          entry.category === "weapon" ||
+          entry.category === "armor" ||
+          entry.category === "accessory",
+      )
+      .map((entry) =>
+        db.insert(equipmentItems).select(
+          fromWritten({
+            id: sql<string>`${crypto.randomUUID()}`.as("id"),
+            userId: sql<string>`${userId}`.as("user_id"),
+            equipmentId: sql<string>`${entry.id}`.as("equipment_id"),
+            multiplierPercent: sql<number>`${percentOf(entry)}`.as(
+              "multiplier_percent",
+            ),
+            acquiredAt: sql<string>`${now}`.as("acquired_at"),
+          }),
+        ),
+      );
+    const skillGrants = drops
+      .filter((entry) => entry.category === "skill")
+      .map((entry) =>
+        db.insert(skillCards).select(
+          fromWritten({
+            id: sql<string>`${crypto.randomUUID()}`.as("id"),
+            userId: sql<string>`${userId}`.as("user_id"),
+            skillId: sql<string>`${entry.id}`.as("skill_id"),
+            multiplierPercent: sql<number>`${percentOf(entry)}`.as(
+              "multiplier_percent",
+            ),
+            acquiredAt: sql<string>`${now}`.as("acquired_at"),
+          }),
+        ),
+      );
+    const itemCounts = new Map<string, number>();
+    for (const entry of drops) {
+      if (entry.category === "item") {
+        itemCounts.set(entry.id, (itemCounts.get(entry.id) ?? 0) + 1);
+      }
+    }
+    const itemGrants = [...itemCounts].map(([itemId, count]) =>
+      db
+        .insert(itemHoldings)
+        .select(
+          fromWritten({
+            userId: sql<string>`${userId}`.as("user_id"),
+            itemId: sql<string>`${itemId}`.as("item_id"),
+            count: sql<number>`${count}`.as("count"),
+            acquiredAt: sql<string>`${now}`.as("acquired_at"),
+            updatedAt: sql<string>`${now}`.as("updated_at"),
+          }),
+        )
+        .onConflictDoUpdate({
+          target: [itemHoldings.userId, itemHoldings.itemId],
+          set: {
+            count: sql`${itemHoldings.count} + excluded.count`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+        }),
+    );
+    const bonusGrants = bonusIds.map((bonusId) =>
+      db
+        .insert(stepBonusHoldings)
+        .select(
+          fromWritten({
+            userId: sql<string>`${userId}`.as("user_id"),
+            bonusId: sql<string>`${bonusId}`.as("bonus_id"),
+            multiplierPercent: sql<number>`${held.get(bonusId)}`.as(
+              "multiplier_percent",
+            ),
+            acquiredAt: sql<string>`${now}`.as("acquired_at"),
+            updatedAt: sql<string>`${now}`.as("updated_at"),
+          }),
+        )
+        .onConflictDoUpdate({
+          target: [stepBonusHoldings.userId, stepBonusHoldings.bonusId],
+          set: {
+            multiplierPercent: sql`excluded.multiplier_percent`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+          // 倍率の高いほうだけを残す。
+          setWhere: sql`excluded.multiplier_percent > ${stepBonusHoldings.multiplierPercent}`,
+        }),
+    );
+    const discoveries = (
+      ["weapon", "armor", "accessory", "skill", "item"] as const
+    ).flatMap((category) =>
+      discoveryStatementsWhen(
+        db,
+        userId,
+        category,
+        drops
+          .filter((entry) => entry.category === category)
+          .map((entry) => entry.id),
+        now,
+        written,
+      ),
+    );
 
     await db.batch([
+      // 1つ目の物は、部屋を終えていない進行中の冒険のときだけ書く。残りはそれが書けたときだけ書く。
       db
-        .insert(adventureRewards)
+        .insert(adventureDrops)
         .select(
           db
             .select({
               runId: adventureRuns.id,
               roomId: adventureRuns.roomId,
-              bonusId: sql<string>`${bonusId}`.as("bonus_id"),
-              multiplierPercent: sql<number>`${multiplierPercent}`.as(
-                "multiplier_percent",
-              ),
-              outcome: sql<string>`${outcome}`.as("outcome"),
-              createdAt: sql<string>`${now}`.as("created_at"),
+              ...dropRow(0),
             })
             .from(adventureRuns)
             .where(
@@ -396,6 +514,18 @@ export function createAdventureRepository(
             ),
         )
         .onConflictDoNothing(),
+      ...drops.slice(1).map((_, offset) =>
+        db
+          .insert(adventureDrops)
+          .select(
+            fromWritten({
+              runId: sql<string>`${run.id}`.as("run_id"),
+              roomId: sql<string>`${roomId}`.as("room_id"),
+              ...dropRow(offset + 1),
+            }),
+          )
+          .onConflictDoNothing(),
+      ),
       db
         .update(adventureRuns)
         .set(
@@ -409,31 +539,11 @@ export function createAdventureRepository(
             : { roomCleared: true, updatedAt: now },
         )
         .where(and(eq(adventureRuns.id, run.id), written)),
-      db
-        .insert(stepBonusHoldings)
-        .select(
-          db
-            .select({
-              userId: sql<string>`${userId}`.as("user_id"),
-              bonusId: sql<string>`${bonusId}`.as("bonus_id"),
-              multiplierPercent: sql<number>`${multiplierPercent}`.as(
-                "multiplier_percent",
-              ),
-              acquiredAt: sql<string>`${now}`.as("acquired_at"),
-              updatedAt: sql<string>`${now}`.as("updated_at"),
-            })
-            .from(sql`(SELECT 1)`)
-            .where(written),
-        )
-        .onConflictDoUpdate({
-          target: [stepBonusHoldings.userId, stepBonusHoldings.bonusId],
-          set: {
-            multiplierPercent: sql`excluded.multiplier_percent`,
-            updatedAt: sql`excluded.updated_at`,
-          },
-          // 倍率の高いほうだけを残す。
-          setWhere: sql`excluded.multiplier_percent > ${stepBonusHoldings.multiplierPercent}`,
-        }),
+      ...equipmentGrants,
+      ...skillGrants,
+      ...itemGrants,
+      ...bonusGrants,
+      ...discoveries,
       ...(boss
         ? [recordStatement({ ...run, roomId }, "cleared", now, written)]
         : []),
@@ -442,19 +552,17 @@ export function createAdventureRepository(
         : []),
     ]);
 
-    const recorded = (await rewardsOf(run.id)).find(
-      (row) => row.roomId === roomId,
-    );
-    if (!recorded) return { error: "adventure_changed" as const };
+    const recorded = await dropsInRoom();
+    if (recorded.length === 0) return { error: "adventure_changed" as const };
     const state = await readState(userId);
-    if (!boss) return { reward: reward(recorded), ...state };
+    if (!boss) return { drops: recorded, ...state };
     const ended = await db
       .select()
       .from(adventureRuns)
       .where(eq(adventureRuns.id, run.id))
       .get();
     return {
-      reward: reward(recorded),
+      drops: recorded,
       result: await result(ended as RunRow, previousBest),
       ...state,
     };

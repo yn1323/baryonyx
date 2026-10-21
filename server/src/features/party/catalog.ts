@@ -73,6 +73,66 @@ export const CARD_SKILL_IDS = [
 
 export type CardSkillId = (typeof CARD_SKILL_IDS)[number];
 
+// スキルの種類ごとの倍率の上限（百分率。doc/features/inventory.md の上限の決め方）。
+// クライアントの定義（CardSkills の MaxMultiplier）と同じ値にする。
+const CARD_SKILL_MAX_PERCENT: Record<CardSkillId, number> = {
+  Slash: 240,
+  Fire: 240,
+  Ice: 220,
+  Thunder: 220,
+  Heal: 250,
+  Guard: 250,
+  Whirlwind: 200,
+  Iai: 280,
+  BladeDance: 160,
+  Hone: 200,
+  ShieldBash: 220,
+  ArmorBreak: 220,
+  EarthSplitter: 240,
+  GiantImpact: 280,
+  StrideStrike: 240,
+  GuardianOath: 200,
+  WarCry: 200,
+  Embers: 220,
+  FlamePillar: 240,
+  FireStorm: 220,
+  BlastSigil: 240,
+  Meteor: 300,
+  FlameEnchant: 200,
+  Icicles: 170,
+  Blizzard: 220,
+  IceMirror: 160,
+  AbsoluteZero: 240,
+  QuickCast: 200,
+  VitalThrust: 220,
+  PoisonNeedle: 220,
+  ShadowStitch: 200,
+  InsightArrow: 220,
+  ArrowRain: 180,
+  ShadowSnipe: 260,
+  LightningBolt: 220,
+  ChainLightning: 180,
+  Thundercloud: 200,
+  ThunderSpear: 260,
+  Gale: 200,
+  Scout: 200,
+  StepPrayer: 220,
+  Regen: 220,
+  Resurrection: 200,
+  HolyHammer: 220,
+  Protect: 200,
+  Purify: 220,
+  ManaPrayer: 150,
+  Revelation: 200,
+  HolyLight: 220,
+  DivineShield: 160,
+};
+
+// スキルの種類ごとの倍率の上限（百分率）。冒険のドロップで倍率を選ぶときと、品質を求めるときに使う。
+export function maxMultiplierPercent(id: CardSkillId): number {
+  return CARD_SKILL_MAX_PERCENT[id] ?? 100;
+}
+
 // パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル2枚はクライアントの仮データが持つ。
 export const PARTY_SLOT_COUNT = 4;
 export const CARD_SLOT_COUNT = 2;

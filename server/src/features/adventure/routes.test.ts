@@ -4,13 +4,22 @@ import {
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
 import { REVIVE_COST_BASE, reviveCost } from "./catalog.js";
+import { eligibleEntries } from "./drops.js";
 import { createAdventureRepository } from "./repository.js";
 
-type Reward = {
+// 決めた順に値を返し、尽きたら0を返す乱数。抽選は落ちる数・分類・物・品質・倍率の順に引く。
+const fixed =
+  (...values: number[]) =>
+  () =>
+    values.shift() ?? 0;
+
+type Drop = {
   roomId: string;
-  bonusId: string;
-  multiplier: number;
-  quality: string;
+  category: string;
+  id: string;
+  // アイテムは倍率と品質を持たず、項目がない。
+  multiplier?: number;
+  quality?: string;
   outcome: string;
 };
 
@@ -23,11 +32,11 @@ type Result = {
   newRecord: boolean;
   clears: number;
   revives: number;
-  rewards: Reward[];
+  drops: Drop[];
 };
 
 type State = {
-  reward?: Reward | null;
+  drops?: Drop[];
   revive?: { roomId: string; runes: number; balanceAfter: number };
   result?: Result;
   run: {
@@ -42,7 +51,7 @@ type State = {
     route: string[];
     revives: number;
     reviveCost: number;
-    rewards: Reward[];
+    drops: Drop[];
   } | null;
   records: { destinationId: string; bestFloor: number; clears: number }[];
   runes: number;
@@ -204,76 +213,160 @@ describe("冒険API", () => {
     expect(seedOf(second)).not.toBe(seedOf(first));
   });
 
-  it("出来事を終えると報酬のACTボーナスを1回だけ手に入れ、持ち物に入れる", async () => {
+  it("出来事を終えると、行き先の一覧から物を落とし、1回だけ持ち物に入れる", async () => {
     const user = await scenario.login("adventure-reward");
     await start(user.token);
     await move(user.token, rooms.treasure);
     const cleared = await clear(user.token, "f2-1");
     expect(cleared.run?.roomCleared).toBe(true);
-    expect(cleared.reward?.roomId).toBe("f2-1");
-    expect(["C", "B", "A", "S"]).toContain(cleared.reward?.quality);
-    expect(cleared.reward?.multiplier).toBeGreaterThanOrEqual(1);
-    expect(cleared.reward?.multiplier).toBeLessThanOrEqual(1.5);
-    expect(cleared.run?.rewards).toEqual([cleared.reward]);
-
-    // 再送は、記録した報酬を返し、もう一度は手に入らない。
-    const again = await clear(user.token, "f2-1");
-    expect(again.reward).toEqual(cleared.reward);
-    expect(again.run?.rewards).toHaveLength(1);
-
-    const bonus = await scenario.request(
-      "/step-bonus",
-      "GET",
-      undefined,
-      user.token,
-    );
-    const holdings = (
-      (await bonus.json()) as {
-        holdings: { bonusId: string; multiplier: number; quality: string }[];
+    const drops = cleared.drops ?? [];
+    // 宝箱は1〜3つ落ちる。
+    expect(drops.length).toBeGreaterThanOrEqual(1);
+    expect(drops.length).toBeLessThanOrEqual(3);
+    const pool = eligibleEntries("forest-ruins", "treasure");
+    for (const drop of drops) {
+      expect(drop.roomId).toBe("f2-1");
+      expect(
+        pool.some(
+          (entry) => entry.category === drop.category && entry.id === drop.id,
+        ),
+      ).toBe(true);
+      if (drop.category === "item") {
+        expect("multiplier" in drop || "quality" in drop).toBe(false);
+      } else {
+        expect(["C", "B", "A", "S"]).toContain(drop.quality);
+        expect(drop.multiplier).toBeGreaterThanOrEqual(1);
       }
-    ).holdings;
-    const held = holdings.find(
-      (holding) => holding.bonusId === cleared.reward?.bonusId,
+    }
+    expect(cleared.run?.drops).toEqual(drops);
+
+    // 再送は、記録したドロップを返し、もう一度は手に入らない。
+    const again = await clear(user.token, "f2-1");
+    expect(again.drops).toEqual(drops);
+    expect(again.run?.drops).toEqual(drops);
+  });
+
+  it("落ちた装備・アクセサリー・スキル・アイテムを持ち物に足す", async () => {
+    const user = await scenario.login("adventure-grant");
+    const now = new Date().toISOString();
+    const equipment = async () =>
+      (
+        await scenario.read<{
+          items: { equipmentId: string; multiplier: number; quality: string }[];
+        }>("/equipment", user.token)
+      ).items;
+    const before = await equipment();
+    // 魔物の部屋で、2つ落ちる（0.9）。分類は重みの累積（アイテム40・アクセサリー22・武器13・防具13・スキル9・ボーナス3）で、
+    // 武器（0.65）と、スキル（0.9）。どちらも一覧の最初の物（0）・品質C（0）・最小の倍率（0）。
+    const repository = createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.9, 0.65, 0, 0, 0, 0.9, 0, 0, 0),
     );
-    expect(held).toBeDefined();
-    if (cleared.reward?.outcome !== "discarded") {
-      expect(held?.multiplier).toBe(cleared.reward?.multiplier);
-      expect(held?.quality).toBe(cleared.reward?.quality);
+    await start(user.token);
+    await move(user.token, rooms.battle);
+    const result = await repository.clear(user.userId, "f2-0", now);
+    expect("drops" in result && result.drops).toEqual([
+      {
+        roomId: "f2-0",
+        category: "weapon",
+        id: "wooden-sword",
+        multiplier: 1,
+        quality: "C",
+        outcome: "added",
+      },
+      {
+        roomId: "f2-0",
+        category: "skill",
+        id: "Slash",
+        multiplier: 1,
+        quality: "C",
+        outcome: "added",
+      },
+    ]);
+    const after = await equipment();
+    expect(after).toHaveLength(before.length + 1);
+    expect(after.filter((item) => item.equipmentId === "wooden-sword")).toEqual(
+      [expect.objectContaining({ multiplier: 1, quality: "C" })],
+    );
+    const cards = await scenario.env.DB.prepare(
+      "SELECT skill_id, multiplier_percent FROM skill_cards WHERE user_id = ? AND acquired_at = ?",
+    )
+      .bind(user.userId, now)
+      .all();
+    // 初めのカードとは別に、落ちた1枚が増える。
+    expect(cards.results).toEqual([
+      { skill_id: "Slash", multiplier_percent: 100 },
+    ]);
+
+    // 同じアイテムが2つ落ちれば、数を2つ足す。アクセサリーは装備の持ち物に入る。
+    await move(user.token, rooms.elite);
+    const elite = createAdventureRepository(
+      scenario.env.DB,
+      // 強い魔物の部屋で3つ（0.99）：アイテム（0）の薬草（0）を2つと、アクセサリー（0.5）の苔玉のお守り（0）。
+      fixed(0.99, 0, 0, 0, 0, 0.5, 0, 0, 0),
+    );
+    const second = await elite.clear(user.userId, "f3-0", now);
+    expect("drops" in second && second.drops.map((drop) => drop.id)).toEqual([
+      "herb",
+      "herb",
+      "moss-charm",
+    ]);
+    const items = await scenario.env.DB.prepare(
+      "SELECT item_id, count FROM item_holdings WHERE user_id = ?",
+    )
+      .bind(user.userId)
+      .all();
+    expect(items.results).toEqual([{ item_id: "herb", count: 2 }]);
+    expect((await equipment()).map((item) => item.equipmentId)).toContain(
+      "moss-charm",
+    );
+    const library = await scenario.read<{
+      discoveries: { kind: string; entryId: string }[];
+    }>("/library", user.token);
+    for (const [kind, entryId] of [
+      ["item", "herb"],
+      ["accessory", "moss-charm"],
+      ["skill", "Slash"],
+    ]) {
+      expect(library.discoveries).toContainEqual(
+        expect.objectContaining({ kind, entryId }),
+      );
     }
   });
 
   it("手に入れたボーナスは、持っているものより倍率が高いときだけ入れ替える", async () => {
     const user = await scenario.login("adventure-rank");
     const now = new Date().toISOString();
-    // guard は初期のボーナスで×1.48（S）。最小の乱数で guard と品質Cの最小の倍率を引かせる。
-    const low = createAdventureRepository(scenario.env.DB, () => 0);
-    await low.start(user.userId, "forest-ruins", now);
-    await low.move(
-      user.userId,
-      { roomId: "f2-0", floor: 2, kind: "battle" },
-      now,
-    );
-    const result = await low.clear(user.userId, "f2-0", now);
-    expect("reward" in result && result.reward).toMatchObject({
-      bonusId: "guard",
-      multiplier: 1,
-      quality: "C",
-      outcome: "discarded",
-    });
-    const bonus = await scenario.request(
-      "/step-bonus",
-      "GET",
-      undefined,
-      user.token,
-    );
-    const holdings = (
-      (await bonus.json()) as {
-        holdings: { bonusId: string; multiplier: number; quality: string }[];
-      }
-    ).holdings;
+    // appraisal は初期のボーナスで×1.24。最大の乱数で、ボーナスの一覧の最後（appraisal）を、
+    // 品質Sの最大の倍率（×1.5）で2つ引かせる。1つ目は入れ替え、2つ目は同じ倍率のため捨てる。
+    const high = createAdventureRepository(scenario.env.DB, () => 0.999999);
+    await start(user.token);
+    await move(user.token, rooms.battle);
+    const result = await high.clear(user.userId, "f2-0", now);
+    expect("drops" in result && result.drops).toEqual([
+      {
+        roomId: "f2-0",
+        category: "bonus",
+        id: "appraisal",
+        multiplier: 1.5,
+        quality: "S",
+        outcome: "updated",
+      },
+      {
+        roomId: "f2-0",
+        category: "bonus",
+        id: "appraisal",
+        multiplier: 1.5,
+        quality: "S",
+        outcome: "discarded",
+      },
+    ]);
+    const { holdings } = await scenario.read<{
+      holdings: { bonusId: string; multiplier: number; quality: string }[];
+    }>("/step-bonus", user.token);
     expect(
-      holdings.find((holding) => holding.bonusId === "guard"),
-    ).toMatchObject({ multiplier: 1.48, quality: "S" });
+      holdings.find((holding) => holding.bonusId === "appraisal"),
+    ).toMatchObject({ multiplier: 1.5, quality: "S" });
   });
 
   it("負けた戦闘からルーンで復活し、2回目は費用が上がり、再送では二重に引かない", async () => {
@@ -352,7 +445,7 @@ describe("冒険API", () => {
       newRecord: true,
       clears: 0,
     });
-    expect(ended.result?.rewards).toEqual([won.reward]);
+    expect(ended.result?.drops).toEqual(won.drops);
     expect(ended.records).toEqual([
       { destinationId: "forest-ruins", bestFloor: 3, clears: 0 },
     ]);
@@ -389,9 +482,9 @@ describe("冒険API", () => {
     for (let floor = 2; floor <= 9; floor++) {
       const room = { roomId: `f${floor}-1`, floor, kind: "battle" };
       await move(user.token, room);
-      expect((await clear(user.token, room.roomId)).reward?.roomId).toBe(
-        room.roomId,
-      );
+      const drops = (await clear(user.token, room.roomId)).drops ?? [];
+      expect(drops.length).toBeGreaterThanOrEqual(1);
+      expect(drops.every((drop) => drop.roomId === room.roomId)).toBe(true);
     }
     // 最奥の階には、ボスの部屋だけがある。
     await move(user.token, { ...rooms.boss, kind: "battle" }, 409);
@@ -405,8 +498,17 @@ describe("冒険API", () => {
       newRecord: true,
       clears: 1,
     });
-    expect(cleared.result?.rewards).toHaveLength(9);
-    expect(["B", "A", "S"]).toContain(cleared.reward?.quality);
+    const rooms9 = new Set(cleared.result?.drops.map((drop) => drop.roomId));
+    expect(rooms9.size).toBe(9);
+    // 最奥の間では2〜4つ落ち、☆3〜5と最奥の間だけの物から選ぶ。
+    const bossDrops = cleared.drops ?? [];
+    expect(bossDrops.length).toBeGreaterThanOrEqual(2);
+    expect(bossDrops.length).toBeLessThanOrEqual(4);
+    const bossPool = eligibleEntries("forest-ruins", "boss");
+    expect(bossPool.every((entry) => entry.stars >= 3)).toBe(true);
+    for (const drop of bossDrops) {
+      expect(bossPool.some((entry) => entry.id === drop.id)).toBe(true);
+    }
     expect((await call(user.token, "/adventure")).records).toEqual([
       { destinationId: "forest-ruins", bestFloor: 10, clears: 1 },
     ]);

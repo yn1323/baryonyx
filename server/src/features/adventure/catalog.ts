@@ -1,6 +1,5 @@
-import type { Quality } from "../../shared/quality.js";
-
-// 冒険先と、入口から最奥の間までに通る部屋の数、報酬の品質の上がり方（doc/features/stage-progression.md）。
+// 冒険先と、入口から最奥の間までに通る部屋の数（doc/features/stage-progression.md）。
+// 部屋で落ちる物は drops.ts（doc/features/drops.md）が決める。
 // 行き先ごとの名前・背景・敵の組み合わせ・敵のLvはクライアント（AdventureCatalog.cs）が持つ。
 // 分岐ルートの道は、冒険を始めたときにサーバーが決めた乱数の種から、クライアントが毎回同じ形に作る
 // （doc/plans/2026-10-04-exploration-route-map.md）。サーバーは道そのものを持たず、
@@ -25,20 +24,18 @@ export type Destination = {
   id: string;
   // 入口（第1層）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
   roomCount: number;
-  // 報酬の品質の上がり方（百分率）。奥の行き先ほど、品質Sの重みをこの分だけ、Aの重みをその半分だけ増やす。
-  rewardBoost: number;
 };
 
-// 敵が強い順に奥の行き先とし、部屋の数と報酬の上がり方を増やす（2026-10-20）。
+// 敵が強い順に奥の行き先とし、部屋の数を増やす（2026-10-20）。
 export const DESTINATIONS: readonly Destination[] = [
-  { id: "forest-ruins", roomCount: 8, rewardBoost: 0 },
-  { id: "port-portoria", roomCount: 9, rewardBoost: 20 },
-  { id: "glaciera-cave", roomCount: 9, rewardBoost: 40 },
-  { id: "hush-mire", roomCount: 10, rewardBoost: 60 },
-  { id: "almaja-tomb", roomCount: 10, rewardBoost: 80 },
-  { id: "moonshade-graveyard", roomCount: 11, rewardBoost: 100 },
-  { id: "volgan-volcano", roomCount: 11, rewardBoost: 130 },
-  { id: "neve-peaks", roomCount: 12, rewardBoost: 160 },
+  { id: "forest-ruins", roomCount: 8 },
+  { id: "port-portoria", roomCount: 9 },
+  { id: "glaciera-cave", roomCount: 9 },
+  { id: "hush-mire", roomCount: 10 },
+  { id: "almaja-tomb", roomCount: 10 },
+  { id: "moonshade-graveyard", roomCount: 11 },
+  { id: "volgan-volcano", roomCount: 11 },
+  { id: "neve-peaks", roomCount: 12 },
 ];
 
 export const DESTINATION_IDS = DESTINATIONS.map(
@@ -75,32 +72,4 @@ export const REVIVE_COST_BASE = 100;
 
 export function reviveCost(revivesSoFar: number) {
   return REVIVE_COST_BASE * (revivesSoFar + 1);
-}
-
-// 出来事を終えた部屋で手に入れるACTボーナスの品質の重み（仮設定）。倍率は、選んだ品質の幅の中から均等に選ぶ。
-// ボーナスの種類は均等に選ぶ。冒険で手に入る場所と確率は doc/features/step-bonus.md の未決事項。
-export const REWARD_QUALITY_WEIGHTS: Record<
-  EventKind,
-  Partial<Record<Quality, number>>
-> = {
-  battle: { C: 75, B: 20, A: 5 },
-  elite: { C: 30, B: 40, A: 25, S: 5 },
-  treasure: { C: 30, B: 40, A: 25, S: 5 },
-  boss: { B: 40, A: 45, S: 15 },
-};
-
-// 行き先の報酬の上がり方を入れた、品質の重み。S は rewardBoost の分、A はその半分だけ重くする。
-export function rewardQualityWeights(
-  kind: EventKind,
-  rewardBoost: number,
-): Partial<Record<Quality, number>> {
-  const base = REWARD_QUALITY_WEIGHTS[kind];
-  const grow = (weight: number | undefined, percent: number) =>
-    weight === undefined
-      ? undefined
-      : Math.round((weight * (100 + percent)) / 100);
-  const weights: Partial<Record<Quality, number>> = { ...base };
-  if (base.A !== undefined) weights.A = grow(base.A, rewardBoost / 2);
-  if (base.S !== undefined) weights.S = grow(base.S, rewardBoost);
-  return weights;
 }

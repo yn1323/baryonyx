@@ -111,29 +111,32 @@ describe("装備API", () => {
 
   it("空いた枠に付け、付けている装備を替え、外す", async () => {
     const user = await scenario.login("equipment-change");
+    // 最初の装備はどれも初めの4人が付けているため、外して空いた装備を使う。
     const state = await read(user.token);
-    const dagger = itemOf(state, "flame-dagger");
-    const helm = itemOf(state, "iron-helm");
+    const staff = itemOf(state, "oak-staff");
+    const leather = itemOf(state, "leather-armor");
+    await remove(user.token, "toma", "weapon");
+    await remove(user.token, "mina", "armor");
 
-    const equipped = await put(user.token, "anselm", "weapon", dagger);
+    const equipped = await put(user.token, "anselm", "weapon", staff);
     expect(equipped.status).toBe(200);
     const afterEquip = (await equipped.json()) as State;
     expect(afterEquip.change).toBe("equip");
-    expect(worn(afterEquip, "anselm").weapon).toBe("flame-dagger");
+    expect(worn(afterEquip, "anselm").weapon).toBe("oak-staff");
 
     const replaced = (await (
-      await put(user.token, "toma", "armor", helm)
+      await put(user.token, "toma", "armor", leather)
     ).json()) as State;
     expect(replaced.change).toBe("replace");
     expect(worn(replaced, "toma")).toEqual({
-      weapon: "oak-staff",
-      armor: "iron-helm",
+      weapon: null,
+      armor: "leather-armor",
     });
     // 外れた装備は持ち物に残る。
     expect(replaced.items).toHaveLength(STARTER_ITEMS.length);
 
     const same = (await (
-      await put(user.token, "toma", "armor", helm)
+      await put(user.token, "toma", "armor", leather)
     ).json()) as State;
     expect(same.change).toBe("none");
 
@@ -206,7 +209,7 @@ describe("装備API", () => {
       other.token,
       "toma",
       "weapon",
-      itemOf(owned, "flame-dagger"),
+      itemOf(owned, "iron-sword"),
     );
     expect(stolen.status).toBe(404);
     expect(await stolen.json()).toEqual({ error: "item_not_owned" });
