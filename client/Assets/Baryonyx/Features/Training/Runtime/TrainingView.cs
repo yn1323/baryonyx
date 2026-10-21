@@ -46,6 +46,9 @@ namespace Baryonyx.Training
         // カスタムスキルだけ押せる。固有スキルはnull。
         public Button Button;
         public RawImage Frame;
+
+        // 枠の品質の光（Aは金、Sは虹）。
+        public CardFrameFoil FrameFoil;
         public RawImage Art;
 
         // 挿絵の上に重ねるキラキラ（レア度で強くなる）。
@@ -156,6 +159,9 @@ namespace Baryonyx.Training
         public TrainingGearWidget[] Gear = Array.Empty<TrainingGearWidget>();
         public Sprite WeaponIcon;
         public Sprite ArmorIcon;
+
+        // 装備の種類ごとの絵。絵のない種類と空いた枠は、枠ごとのアイコンを出す。
+        public ItemArt ItemArt;
 
         [Header("Level-up dialog")]
         public GameObject Dialog;
@@ -362,7 +368,8 @@ namespace Baryonyx.Training
                             : null,
                         definition?.DetailAt(item.Multiplier),
                         quality,
-                        definition != null ? EquipmentCatalog.FoilStyleOf(definition.Id) : 0
+                        definition != null ? EquipmentCatalog.FoilStyleOf(definition.Id) : 0,
+                        definition?.Id
                     );
                 })
                 .ToArray();
@@ -445,13 +452,21 @@ namespace Baryonyx.Training
             ShowCards(Uniques, state.Uniques);
             ShowCards(CardSlots, state.Cards);
             for (int i = 0; i < Gear.Length; i++)
+            {
+                var gear = i < state.Gear.Count ? state.Gear[i] : null;
+                var art =
+                    ItemArt != null && gear?.EquipmentId != null
+                        ? ItemArt.Find(gear.EquipmentId)
+                        : null;
                 ShowGear(
                     Gear[i],
-                    i < state.Gear.Count ? state.Gear[i] : null,
-                    i == 0 ? WeaponIcon
+                    gear,
+                    art != null ? art
+                        : i == 0 ? WeaponIcon
                         : i == 1 ? ArmorIcon
                         : null
                 );
+            }
         }
 
         private void ShowCards(TrainingCardWidget[] widgets, IReadOnlyList<TrainingCardState> cards)
@@ -533,6 +548,8 @@ namespace Baryonyx.Training
                 widget.Frame.enabled = frame != null;
                 widget.Frame.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             }
+            if (widget.FrameFoil != null)
+                widget.FrameFoil.Show(filled && !card.Locked ? card.Quality : ItemQuality.C);
             if (widget.Art != null)
             {
                 widget.Art.texture = card?.Art;
@@ -576,7 +593,7 @@ namespace Baryonyx.Training
             bool locked = gear != null && gear.Locked;
             if (widget.Icon != null)
             {
-                widget.Icon.sprite = icon;
+                PixelIcon.Show(widget.Icon, icon);
                 widget.Icon.enabled = icon != null && !locked;
                 widget.Icon.color =
                     gear != null && gear.Filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);

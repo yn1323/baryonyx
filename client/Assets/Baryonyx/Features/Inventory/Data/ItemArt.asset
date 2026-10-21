@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faa35afa96c2348329520208e7970858, type: 3}
+  m_Name: ItemArt
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Inventory.ItemArt
+  Entries:
+  - Id: herb
+    Sprite: {fileID: 5349011544834349465, guid: b104b7c33779c4736ae70f0b159a9480, type: 3}
+  - Id: acorn
+    Sprite: {fileID: 5349011544834349465, guid: 7862e781ae2234e6a88f973bac05a68b, type: 3}
+  - Id: moss-wad
+    Sprite: {fileID: 5349011544834349465, guid: f9f417ab145ba4d0fb01dac87fcce915, type: 3}
+  - Id: dew-vial
+    Sprite: {fileID: 5349011544834349465, guid: f668e3c3677ce4db69edba5085b5cd0c, type: 3}
+  - Id: spore-powder
+    Sprite: {fileID: 5349011544834349465, guid: 1e01462b6110f4d95b8bb1688291ce60, type: 3}
+  - Id: guardian-seed
+    Sprite: {fileID: 5349011544834349465, guid: 7c226e7752068424098e82da83446295, type: 3}
+  - Id: dried-fish
+    Sprite: {fileID: 5349011544834349465, guid: 1394c02c30ae04078a53f15ebd6bac1b, type: 3}
+  - Id: shell-shard
+    Sprite: {fileID: 5349011544834349465, guid: 3aa2a8d9f8067407cb508f1a702b9377, type: 3}
+  - Id: sailor-rope
+    Sprite: {fileID: 5349011544834349465, guid: 5e222f1a472b34b738398a8365b25bb8, type: 3}
+  - Id: sea-salt
+    Sprite: {fileID: 5349011544834349465, guid: 938b534026fb54cb691765572466dc1d, type: 3}
+  - Id: ink-pot
+    Sprite: {fileID: 5349011544834349465, guid: 7ca45ab6c427f4f2496be0f7ad6afd55, type: 3}
+  - Id: pirate-rum
+    Sprite: {fileID: 5349011544834349465, guid: 6bce9cac7128842c192d0691ac1755f9, type: 3}
+  - Id: flame-dagger
+    Sprite: {fileID: 5349011544834349465, guid: 687b235bec6194cc4b9e8f912b8968bb, type: 3}
+  - Id: thunder-spear
+    Sprite: {fileID: 5349011544834349465, guid: 5cd1e5379dae14b61a02bfa4778556b7, type: 3}
+  - Id: frost-wand
+    Sprite: {fileID: 5349011544834349465, guid: 0a101ae35afd2421d8e0059b54a7363a, type: 3}
+  - Id: war-hammer
+    Sprite: {fileID: 5349011544834349465, guid: 998ed9c05f16f43e89dc1245ab7674f6, type: 3}
+  - Id: iron-sword
+    Sprite: {fileID: 5349011544834349465, guid: 0999e4772f8e147d7945e0a323367f0a, type: 3}
+  - Id: short-bow
+    Sprite: {fileID: 5349011544834349465, guid: 3f4d4fd5e62344fd98a86a5803ca6eed, type: 3}
+  - Id: oak-staff
+    Sprite: {fileID: 5349011544834349465, guid: 9a18e0f6ae0f04b4a8dc18ec0736f872, type: 3}
+  - Id: wooden-sword
+    Sprite: {fileID: 5349011544834349465, guid: 5a7f2aeecdb2b4d649f7ec07cd99ee82, type: 3}
+  - Id: traveler-cloak
+    Sprite: {fileID: 5349011544834349465, guid: 07b48d0fccada4d3d81abe6e98ba8cc4, type: 3}
+  - Id: chainmail
+    Sprite: {fileID: 5349011544834349465, guid: fac775775fd134ee29e722a02a98d455, type: 3}
+  - Id: magic-robe
+    Sprite: {fileID: 5349011544834349465, guid: b1ee9a77238104644a56d6f320bef1b2, type: 3}
+  - Id: iron-helm
+    Sprite: {fileID: 5349011544834349465, guid: 3fa872a73ebe246cdaa6b527440d3458, type: 3}
+  - Id: leather-armor
+    Sprite: {fileID: 5349011544834349465, guid: 686950c52f940411e80ad0f7af73f9ce, type: 3}
+  - Id: wooden-shield
+    Sprite: {fileID: 5349011544834349465, guid: 7c2555e4a25274aa697c29f070e544bb, type: 3}
+  - Id: moss-charm
+    Sprite: {fileID: 5349011544834349465, guid: 514579d4284e34012b4273cec033ad56, type: 3}
+  - Id: acorn-brooch
+    Sprite: {fileID: 5349011544834349465, guid: 4ec94024c026e49cd8f1ca2b722f2de1, type: 3}
+  - Id: dew-pendant
+    Sprite: {fileID: 5349011544834349465, guid: c13f9c0649d87450bb73daff06c3328a, type: 3}
+  - Id: guardian-circlet
+    Sprite: {fileID: 5349011544834349465, guid: 5a4c3ad788a0d47519867f6f5368e877, type: 3}
+  - Id: shell-necklace
+    Sprite: {fileID: 5349011544834349465, guid: 87c7e9edadbcf4109bf395f970be3307, type: 3}
+  - Id: anchor-bangle
+    Sprite: {fileID: 5349011544834349465, guid: af39bb5d8ad7b457298eb0a6ae1d0b7e, type: 3}
+  - Id: gold-earring
+    Sprite: {fileID: 5349011544834349465, guid: a22fc415609e343c98f7e6f7c2440b8e, type: 3}
+  - Id: kraken-pearl
+    Sprite: {fileID: 5349011544834349465, guid: d3e52f15ca4f34c29b44f3158ab4ed56, type: 3}

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
+using Baryonyx.Combat;
 
 namespace Baryonyx.Party
 {
@@ -20,7 +21,7 @@ namespace Baryonyx.Party
         public string Id { get; }
         public int Level { get; }
 
-        // 枠の順のスキルのID。空いている枠はnull。
+        // 枠の順の中身（PartyCardKey の形）。空いている枠はnull。
         public IReadOnlyList<string> Cards { get; }
     }
 
@@ -34,10 +35,14 @@ namespace Baryonyx.Party
             IReadOnlyList<string> slots,
             long runes,
             int maxLevel,
-            int costPerLevel
+            int costPerLevel,
+            IReadOnlyList<PartySkillCard> skillCards = null,
+            IReadOnlyList<PartyItem> items = null
         )
         {
             Owned = owned ?? Array.Empty<PartyCharacterState>();
+            SkillCards = skillCards;
+            Items = items;
             foreach (var character in Owned)
                 characters.TryAdd(character.Id, character);
             Slots = slots ?? Array.Empty<string>();
@@ -53,12 +58,43 @@ namespace Baryonyx.Party
         public IReadOnlyList<string> Slots { get; }
         public long Runes { get; }
 
+        // 持っているスキルの1枚ずつと、持っているアイテム。サーバーから読んでいなければnull（仮データの
+        // カードはスキルIDのまま、どのスキルも×1.00で使える）。
+        public IReadOnlyList<PartySkillCard> SkillCards { get; }
+        public IReadOnlyList<PartyItem> Items { get; }
+
         // レベルの上限と、Lv n から n+1 へ上げるのに要るルーンの n あたり。サーバーが正本で、0なら知らない。
         public int MaxLevel { get; }
         public int CostPerLevel { get; }
 
         public PartyCharacterState Find(string id) =>
             id != null && characters.TryGetValue(id, out var character) ? character : null;
+
+        public PartySkillCard SkillCardOf(string key)
+        {
+            if (SkillCards == null || !PartyCardKey.IsCard(key))
+                return null;
+            string id = PartyCardKey.IdOf(key);
+            foreach (var card in SkillCards)
+                if (card.Id == id)
+                    return card;
+            return null;
+        }
+
+        /// <summary>
+        /// The skill a slot's key stands for, with the owned card's multiplier; a mock skill id is
+        /// the definition itself. Null for an item, an empty slot or an unknown key.
+        /// </summary>
+        public CardSkill SkillOf(string key) =>
+            string.IsNullOrEmpty(key) || PartyCardKey.IsItem(key) ? null
+            : PartyCardKey.IsCard(key) ? SkillCardOf(key)?.Skill
+            : CardSkills.Find(key);
+
+        /// <summary>The skill id a slot's key stands for (for the element icons and art), or null.</summary>
+        public string SkillIdOf(string key) =>
+            string.IsNullOrEmpty(key) || PartyCardKey.IsItem(key) ? null
+            : PartyCardKey.IsCard(key) ? SkillCardOf(key)?.SkillId
+            : key;
 
         // 以下は、サーバーへ保存する前に画面へ出すための、サーバーと同じ決まりの変更（doc/features/party.md）。
 
@@ -69,29 +105,44 @@ namespace Baryonyx.Party
                 return this;
             var slots = Slots.ToArray();
             slots[slot] = string.IsNullOrEmpty(characterId) ? null : characterId;
-            return new PartyState(Owned, slots, Runes, MaxLevel, CostPerLevel);
+            return Copy(Owned, slots, Runes);
         }
 
         /// <summary>
-        /// The party with the character's card slot set to the skill. A skill in the
-        /// character's other slot swaps with the slot's card.
+        /// The party with the character's card slot set to the key. A key in the character's
+        /// other slot swaps with the slot's card; an owned skill card another character holds
+        /// leaves that character (an item stays, since it is counted, not moved).
         /// </summary>
-        public PartyState WithCard(string characterId, int slot, string skillId) =>
-            With(
-                characterId,
-                character =>
+        public PartyState WithCard(string characterId, int slot, string key)
+        {
+            var target = Find(characterId);
+            if (target == null || slot < 0 || slot >= target.Cards.Count)
+                return this;
+            bool moves = PartyCardKey.IsCard(key) && !target.Cards.Contains(key);
+            var owned = Owned
+                .Select(character =>
                 {
                     var cards = character.Cards.ToArray();
-                    if (slot < 0 || slot >= cards.Length)
+                    if (character.Id == characterId)
+                    {
+                        int other = Array.IndexOf(cards, key);
+                        if (other >= 0)
+                            cards[other] = cards[slot];
+                        cards[slot] = key;
+                    }
+                    else if (moves)
+                    {
+                        for (int i = 0; i < cards.Length; i++)
+                            if (cards[i] == key)
+                                cards[i] = null;
+                    }
+                    else
                         return character;
-                    int other = Array.IndexOf(cards, skillId);
-                    if (other >= 0)
-                        cards[other] = cards[slot];
-                    cards[slot] = skillId;
                     return new PartyCharacterState(character.Id, character.Level, cards);
-                },
-                0
-            );
+                })
+                .ToArray();
+            return Copy(owned, Slots, Runes);
+        }
 
         /// <summary>The party with the character raised to the level and the runes spent.</summary>
         public PartyState WithLevel(string characterId, int level, long runes) =>
@@ -112,8 +163,14 @@ namespace Baryonyx.Party
             var owned = Owned
                 .Select(character => character.Id == characterId ? change(character) : character)
                 .ToArray();
-            return new PartyState(owned, Slots, Runes - spent, MaxLevel, CostPerLevel);
+            return Copy(owned, Slots, Runes - spent);
         }
+
+        private PartyState Copy(
+            IReadOnlyList<PartyCharacterState> owned,
+            IReadOnlyList<string> slots,
+            long runes
+        ) => new(owned, slots, runes, MaxLevel, CostPerLevel, SkillCards, Items);
     }
 
     /// <summary>Where the tavern's formation, card skills and training read and save the party.</summary>
@@ -124,10 +181,11 @@ namespace Baryonyx.Party
         // 枠にキャラを入れる。nullなら枠のキャラを外す。
         Task<PartyState> SetSlotAsync(int slot, string characterId, CancellationToken token);
 
+        // 枠に入れる物は PartyCardKey の形で渡す。
         Task<PartyState> SetCardAsync(
             string characterId,
             int slot,
-            string skillId,
+            string key,
             CancellationToken token
         );
 
@@ -174,9 +232,9 @@ namespace Baryonyx.Party
         public Task<PartyState> SetCardAsync(
             string characterId,
             int slot,
-            string skillId,
+            string key,
             CancellationToken token
-        ) => Run(session => api.SetCardAsync(session, characterId, slot, skillId, token), token);
+        ) => Run(session => api.SetCardAsync(session, characterId, slot, key, token), token);
 
         public Task<PartyState> LevelUpAsync(
             string characterId,
@@ -218,12 +276,22 @@ namespace Baryonyx.Party
                     slots[slot.slot] = string.IsNullOrEmpty(slot.characterId)
                         ? null
                         : slot.characterId;
+            var skillCards = (state?.skillCards ?? Array.Empty<PartyApiClient.SkillCard>())
+                .Where(card => card != null && !string.IsNullOrEmpty(card.id))
+                .Select(card => new PartySkillCard(card.id, card.skillId, card.multiplier))
+                .ToArray();
+            var items = (state?.items ?? Array.Empty<PartyApiClient.Item>())
+                .Where(item => item != null && !string.IsNullOrEmpty(item.itemId) && item.count > 0)
+                .Select(item => new PartyItem(item.itemId, item.count))
+                .ToArray();
             return new PartyState(
                 owned,
                 slots,
                 state?.runes ?? 0,
                 state?.rules?.maxLevel ?? 0,
-                state?.rules?.costPerLevel ?? 0
+                state?.rules?.costPerLevel ?? 0,
+                skillCards,
+                items
             );
         }
     }

@@ -52,13 +52,13 @@ namespace Baryonyx.Party
             AccountSession session,
             string characterId,
             int slot,
-            string skillId,
+            string card,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
                 $"/v1/party/characters/{Uri.EscapeDataString(characterId)}/cards/{slot}",
                 "PUT",
-                new SetCardRequest { skillId = skillId },
+                new SetCardRequest { card = card },
                 session.Token,
                 token
             );
@@ -93,7 +93,8 @@ namespace Baryonyx.Party
         [Serializable]
         private sealed class SetCardRequest
         {
-            public string skillId;
+            // 枠に入れる物（PartyCardKey の形：card:<ID> か item:<アイテムのID>）。
+            public string card;
         }
 
         [Serializable]
@@ -111,8 +112,27 @@ namespace Baryonyx.Party
             public string change;
             public Character[] characters;
             public Slot[] slots;
+            public SkillCard[] skillCards;
+            public Item[] items;
             public long runes;
             public Rules rules;
+        }
+
+        // 持っているスキルの1枚。倍率（×1.37なら1.37）と品質（S〜C）を持つ。
+        [Serializable]
+        public sealed class SkillCard
+        {
+            public string id;
+            public string skillId;
+            public float multiplier;
+            public string quality;
+        }
+
+        [Serializable]
+        public sealed class Item
+        {
+            public string itemId;
+            public int count;
         }
 
         [Serializable]
@@ -121,7 +141,7 @@ namespace Baryonyx.Party
             public string id;
             public int level;
 
-            // 枠の順のスキルのID。空いている枠はnullまたは空文字。
+            // 枠の順の中身（card:<持っているスキルのID> か item:<アイテムのID>）。空いている枠はnullまたは空文字。
             public string[] cards;
         }
 

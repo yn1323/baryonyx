@@ -70,6 +70,7 @@ namespace Baryonyx.Equipment.Editor
             view.Guide = guide;
             view.WeaponIcon = Guide.Icon(IconWeaponPath);
             view.ArmorIcon = Guide.Icon(IconArmorPath);
+            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
 
             RectTransform left,
                 right;

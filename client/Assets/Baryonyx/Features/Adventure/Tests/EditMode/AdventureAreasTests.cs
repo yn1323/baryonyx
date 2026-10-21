@@ -25,38 +25,31 @@ namespace Baryonyx.Tests.EditMode
                 "catalog.ts"
             );
             var server = Regex
-                .Matches(
-                    File.ReadAllText(path),
-                    "\\{ id: \"([a-z-]+)\", roomCount: ([0-9]+), rewardBoost: ([0-9]+) \\}"
-                )
+                .Matches(File.ReadAllText(path), "\\{ id: \"([a-z-]+)\", roomCount: ([0-9]+) \\}")
                 .Cast<Match>()
-                .Select(match =>
-                    (
-                        match.Groups[1].Value,
-                        int.Parse(match.Groups[2].Value),
-                        int.Parse(match.Groups[3].Value)
-                    )
-                )
+                .Select(match => (match.Groups[1].Value, int.Parse(match.Groups[2].Value)))
                 .ToArray();
             Assert.That(
-                AdventureCatalog.Areas.Select(area => (area.Id, area.RoomCount, area.RewardBoost)),
+                AdventureCatalog.Areas.Select(area => (area.Id, area.RoomCount)),
                 Is.EqualTo(server)
             );
             Assert.That(AdventureCatalog.Areas.Count, Is.GreaterThanOrEqualTo(8));
         }
 
-        // 奥の行き先ほど敵が強く、部屋が多く、報酬の品質が上がりやすい。
+        // 奥の行き先ほど敵が強く、部屋が多い。
         [Test]
-        public void DeeperAreasAreHarderAndPayBetter()
+        public void DeeperAreasAreHarderAndLonger()
         {
             var areas = AdventureCatalog.Areas;
             for (int i = 1; i < areas.Count; i++)
             {
                 Assert.That(areas[i].Level, Is.GreaterThan(areas[i - 1].Level), areas[i].Id);
                 Assert.That(areas[i].RoomCount, Is.GreaterThanOrEqualTo(areas[i - 1].RoomCount));
-                Assert.That(areas[i].RewardBoost, Is.GreaterThan(areas[i - 1].RewardBoost));
             }
-            Assert.That(areas.Select(area => area.Stage).Distinct().Count(), Is.EqualTo(areas.Count));
+            Assert.That(
+                areas.Select(area => area.Stage).Distinct().Count(),
+                Is.EqualTo(areas.Count)
+            );
         }
 
         // どの敵もどこかの行き先に出る。敵は大きさの合う場所に立つ。
@@ -129,7 +122,10 @@ namespace Baryonyx.Tests.EditMode
 
             // 知らない組み合わせは、森の魔物の気配にする。
             var unknown = AdventureCatalog.Encounter("nowhere/pack/1");
-            Assert.That(AdventureCatalog.Area(AdventureCatalog.ForestRuins).Small, Does.Contain(unknown.Kinds[0]));
+            Assert.That(
+                AdventureCatalog.Area(AdventureCatalog.ForestRuins).Small,
+                Does.Contain(unknown.Kinds[0])
+            );
         }
 
         // 同じ冒険（種）は、どの端末でも同じ敵に会い、部屋ごとに違う組み合わせが出る。
@@ -146,7 +142,9 @@ namespace Baryonyx.Tests.EditMode
                 );
                 var packs = first
                     .Rooms.Where(room => room.Kind == AdventureRoomKind.Battle)
-                    .Select(room => string.Join(",", AdventureCatalog.Encounter(room.Encounter).Kinds))
+                    .Select(room =>
+                        string.Join(",", AdventureCatalog.Encounter(room.Encounter).Kinds)
+                    )
                     .Distinct()
                     .Count();
                 Assert.That(packs, Is.GreaterThan(1), area.Id);

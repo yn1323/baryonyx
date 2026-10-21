@@ -114,7 +114,7 @@ updated: 2026-10-19
 
 | 記録 | 書く時点 | 状態 |
 |---|---|---|
-| キャラ・装備・スキル・アイテムを見つけた記録 | サーバーが付与したとき（スキルは当面、編成でカードを付けたとき） | 未実装（保存先は決定） |
+| キャラ・装備・スキル・アイテムを見つけた記録 | サーバーが付与したとき（初めのキャラ・カード・装備と、冒険のドロップ） | 未実装（保存先は決定） |
 | 敵に遭遇した記録と倒した数 | 部屋を終えた知らせ、全滅で冒険が終わったとき | 未実装（保存先は決定） |
 | 開示した敵の弱点 | 戦闘で弱点を突いたとき（[弱点の開示](combat.md#弱点の開示)の作業が所有する） | 実装中 |
 | 固有スキルの取得した段階 | 冒険で進化したとき（[進化の保存](skill-evolution.md#進化の保存)が所有する） | 未実装 |
@@ -131,7 +131,7 @@ updated: 2026-10-19
 メニューは、キャラクター・装備・スキル・アイテム・敵・日々の歩数の6行にする。
 8つの分類を1行ずつ並べると、メニューが画面の高さに収まらないためである。
 装備を選ぶと武器のパネルが開き、見出しのタブで武器・防具・アクセサリーを切り替える。
-アクセサリーは定義がないため、錠前の付いた準備中のタブにする。
+定義が1つもない分類は、準備中のタブにする（2026-10-20に、アクセサリーとアイテムの定義ができた）。
 
 分類を選ぶと、左にカードのタイル一覧（4列）、右に選んだ項目の個別の内容を並べる。
 個別の内容を一覧と同じ画面の右に出すため、タイルを選んでも別の画面には移らない。
@@ -145,7 +145,6 @@ updated: 2026-10-19
 | ホームのボタン | アイコンの図案（ほかのボタンと同じ白一色の道具の形）と、置く位置 |
 | 番号の固定 | 定義を足しても番号がずれないよう、リリースの前に番号を固定するか |
 | 日々の歩数の範囲と集計 | 何日前まで見せるか、月ごとの区切りや合計・最高を出すか。起動時の同期は直近7日分だけを送るため、使い始めた日の7日前より古い日は記録がない |
-| アクセサリー・アイテムの定義 | 定義がないため、載せる項目がない。定義ができるまでの見せ方（メニューに出して「準備中」と知らせる案が[計画](../plans/2026-10-18-library.md#進める順序)にある） |
 
 ## 関連する仕様とデータ
 
@@ -161,7 +160,7 @@ updated: 2026-10-19
 | 敵の遭遇と倒した数 | `POST /v1/adventure/clear`・`/v1/adventure/end` の `enemies`、クライアントは [BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs) | 戦闘を終えた記録を書けたときだけ足すため、送り直しても二重に数えない。接続先がないときは記録しない |
 | API | `GET /v1/library`（見つけた記録）・`GET /v1/library/steps`（日々の歩数）。[routes.ts](../../server/src/features/library/routes.ts) | 初めて読む利用者には、編成と装備の初期の付与を先に済ませる |
 | 画面 | `Library.unity`、[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)（`Baryonyx > Library > Create Screen Assets`）、[LibraryCatalogView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryCatalogView.cs)・[LibraryStepsView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryStepsView.cs) | 案内人と背景の生成指示は [ArtSource](../../client/ArtSource/UI/Library/prompts.json) に記録した |
-| 項目の定義 | 生成メニューが各機能の正本から [LibraryData.asset](../../client/Assets/Baryonyx/Features/Library/Data/LibraryData.asset) に書き出す | 定義を変えたら生成し直す。武器・防具の絵は種類のアイコン、アクセサリーとアイテムは定義がないため準備中 |
+| 項目の定義 | 生成メニューが各機能の正本から [LibraryData.asset](../../client/Assets/Baryonyx/Features/Library/Data/LibraryData.asset) に書き出す | 定義を変えたら生成し直す。武器・防具・アクセサリー・アイテムは種類ごとの絵（[ItemArt](../../client/Assets/Baryonyx/Features/Inventory/Presentation/ItemArt.cs)）を出し、絵のない種類は武器・防具のアイコンにする。スキルの☆は[冒険のドロップ](drops.md)の一覧から入れる |
 | 固有スキル | [UniqueSkillSession](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillSession.cs) の進み具合を読む | 進化の保存が未実装のため、仮データとアプリを動かしている間の進み具合を出す。取得していない段階は影の帯にした |
 | 開示した弱点 | [RevealedWeaknessSession](../../client/Assets/Baryonyx/Features/Combat/Records/RevealedWeaknessSession.cs) を読む | 開示した弱点の属性のアイコンを出す |
 | 新しく載った印 | [LibrarySeen](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySeen.cs)。`PlayerPrefs` の `Library.Seen.<ユーザーID>` | 初めて開いたときは、初めに配った物にもすべて印が付く |

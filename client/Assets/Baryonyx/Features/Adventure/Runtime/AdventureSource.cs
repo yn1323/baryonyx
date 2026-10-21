@@ -99,7 +99,7 @@ namespace Baryonyx.Adventure
             CancellationToken token
         ) => ToState(await sessions.WithSessionAsync(operation, token));
 
-        // JsonUtilityはnullの代わりに空の値を入れるため、IDの空いた冒険・報酬・結果をなしとみなす。
+        // JsonUtilityはnullの代わりに空の値を入れるため、IDの空いた冒険・ドロップ・結果をなしとみなす。
         public static AdventureState ToState(AdventureApiClient.State state)
         {
             if (state == null)
@@ -117,7 +117,7 @@ namespace Baryonyx.Adventure
                 run != null && !string.IsNullOrEmpty(run.id) ? ToRun(run) : null,
                 records,
                 state.runes,
-                ToReward(state.reward),
+                state.drops != null && state.drops.Length > 0 ? ToDrops(state.drops) : null,
                 ToResult(state.result),
                 state.revive != null && !string.IsNullOrEmpty(state.revive.roomId)
                     ? state.revive.runes
@@ -136,38 +136,46 @@ namespace Baryonyx.Adventure
                 run.revives,
                 run.reviveCost,
                 AdventureCatalog.Route(run.destinationId, run.seed, run.roomCount),
-                ToRewards(run.rewards),
+                ToDrops(run.drops),
                 run.floor
             );
 
-        private static AdventureReward[] ToRewards(AdventureApiClient.Reward[] rewards) =>
-            (rewards ?? Array.Empty<AdventureApiClient.Reward>())
-                .Select(ToReward)
-                .Where(reward => reward != null)
+        private static AdventureDrop[] ToDrops(AdventureApiClient.Drop[] drops) =>
+            (drops ?? Array.Empty<AdventureApiClient.Drop>())
+                .Select(ToDrop)
+                .Where(drop => drop != null)
                 .ToArray();
 
-        // 知らない品質や、倍率が届いていないボーナスは報酬から外す。
-        private static AdventureReward ToReward(AdventureApiClient.Reward reward)
+        // 知らない分類や品質、倍率が届いていない物（アイテムを除く）はドロップから外す。
+        private static AdventureDrop ToDrop(AdventureApiClient.Drop drop)
         {
             if (
-                reward == null
-                || string.IsNullOrEmpty(reward.roomId)
-                || string.IsNullOrEmpty(reward.bonusId)
-                || reward.multiplier < Quality.MinMultiplier
-                || !Quality.TryParse(reward.quality, out var quality)
+                drop == null
+                || string.IsNullOrEmpty(drop.roomId)
+                || string.IsNullOrEmpty(drop.id)
+                || !AdventureDrops.TryParse(drop.category, out var category)
             )
                 return null;
-            return new AdventureReward(
-                reward.roomId,
-                reward.bonusId,
-                reward.multiplier,
+            var outcome = drop.outcome switch
+            {
+                "updated" => AdventureDropOutcome.Updated,
+                "discarded" => AdventureDropOutcome.Discarded,
+                _ => AdventureDropOutcome.Added,
+            };
+            if (category == AdventureDropCategory.Item)
+                return new AdventureDrop(drop.roomId, category, drop.id, outcome: outcome);
+            if (
+                drop.multiplier < Quality.MinMultiplier
+                || !Quality.TryParse(drop.quality, out var quality)
+            )
+                return null;
+            return new AdventureDrop(
+                drop.roomId,
+                category,
+                drop.id,
+                drop.multiplier,
                 quality,
-                reward.outcome switch
-                {
-                    "updated" => AdventureRewardOutcome.Updated,
-                    "discarded" => AdventureRewardOutcome.Discarded,
-                    _ => AdventureRewardOutcome.Added,
-                }
+                outcome
             );
         }
 
@@ -188,7 +196,7 @@ namespace Baryonyx.Adventure
                 result.newRecord,
                 result.clears,
                 result.revives,
-                ToRewards(result.rewards)
+                ToDrops(result.drops)
             );
         }
     }

@@ -34,7 +34,7 @@ namespace Baryonyx.Party
         // サーバーがないときに育成で上げたレベル。上げていないキャラは仮データのレベルのまま。
         private static readonly Dictionary<string, int> levels = new();
 
-        // サーバーがないときに酒場のスキルの画面で付け替えたカード（スキルIDを枠の順に）。
+        // サーバーがないときに酒場のスキルの画面で付け替えたカード（PartyCardKey の形で枠の順に）。
         private static readonly Dictionary<string, string[]> cards = new();
 
         // 編成・レベル・カードを読み書きするサーバー。なければ仮データを使う。
@@ -118,16 +118,19 @@ namespace Baryonyx.Party
                 failedMessage
             );
 
-        /// <summary>Sets the character's card slot to the skill at once and saves it (see <see cref="SetSlotAsync"/>).</summary>
+        /// <summary>
+        /// Sets the character's card slot to the key (<see cref="PartyCardKey"/>) at once and
+        /// saves it (see <see cref="SetSlotAsync"/>).
+        /// </summary>
         public static Task<PartyFormation> SetCardAsync(
             string characterId,
             int slot,
-            string skillId,
+            string key,
             string failedMessage
         ) =>
             Save(
-                state => state.WithCard(characterId, slot, skillId),
-                (source, token) => source.SetCardAsync(characterId, slot, skillId, token),
+                state => state.WithCard(characterId, slot, key),
+                (source, token) => source.SetCardAsync(characterId, slot, key, token),
                 failedMessage
             );
 
@@ -202,9 +205,9 @@ namespace Baryonyx.Party
         }
 
         /// <summary>
-        /// The character's card skills (skill ids, in slot order): the server's, or without it
-        /// the cards set on the tavern's card skills or the mock data's. Outside Play Mode (the
-        /// prefab generators) they are always the mock data's.
+        /// The character's custom skill slots as keys (<see cref="PartyCardKey"/>, in slot order):
+        /// the server's, or without it the skill ids set on the tavern's card skills or the mock
+        /// data's. Outside Play Mode (the prefab generators) they are always the mock data's.
         /// </summary>
         public static IReadOnlyList<string> CardsOf(PartyMockData data, string id)
         {
@@ -220,11 +223,30 @@ namespace Baryonyx.Party
         }
 
         /// <summary>
+        /// The skill ids of the character's slots, in slot order; null for an item or an empty
+        /// slot (<see cref="CardsOf"/> resolved through the owned cards).
+        /// </summary>
+        public static IReadOnlyList<string> SkillIdsOf(PartyMockData data, string id)
+        {
+            var keys = CardsOf(data, id);
+            var state = State;
+            return state == null ? keys : keys.Select(state.SkillIdOf).ToArray();
+        }
+
+        /// <summary>The skill a slot's key stands for, with its multiplier (see <see cref="PartyState.SkillOf"/>).</summary>
+        public static Combat.CardSkill SkillOf(string key) =>
+            State != null ? State.SkillOf(key)
+            : PartyCardKey.IsItem(key) ? null
+            : Combat.CardSkills.Find(key);
+
+        /// <summary>
         /// The element icons of the character's card skills, in card order without repeats
-        /// (<see cref="CardsOf"/> and <see cref="PartyMockData.IconOf"/>).
+        /// (<see cref="SkillIdsOf"/> and <see cref="PartyMockData.IconOf"/>).
         /// </summary>
         public static IReadOnlyList<Sprite> ElementIconsOf(PartyMockData data, string id) =>
-            data == null || id == null ? Array.Empty<Sprite>() : data.IconsOf(CardsOf(data, id));
+            data == null || id == null
+                ? Array.Empty<Sprite>()
+                : data.IconsOf(SkillIdsOf(data, id).Where(skill => skill != null));
 
         // サーバーがないときだけ使う。サーバーがあれば、カードはサーバーで付け替える。
         public static void SetCards(string id, IReadOnlyList<string> skills)

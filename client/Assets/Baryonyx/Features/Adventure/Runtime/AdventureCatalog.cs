@@ -39,10 +39,7 @@ namespace Baryonyx.Adventure
 
         /// <summary>The places of the battle screen that have an enemy.</summary>
         public int[] Enemies =>
-            Enumerable
-                .Range(0, Kinds.Count)
-                .Where(i => !string.IsNullOrEmpty(Kinds[i]))
-                .ToArray();
+            Enumerable.Range(0, Kinds.Count).Where(i => !string.IsNullOrEmpty(Kinds[i])).ToArray();
     }
 
     /// <summary>
@@ -56,12 +53,6 @@ namespace Baryonyx.Adventure
         public string Name { get; set; } = "";
         public BattleStage Stage { get; set; }
         public int RoomCount { get; set; } = 8;
-
-        /// <summary>
-        /// How much rarer rewards grow here, in percent (the same as the server's rewardBoost):
-        /// quality S is that much more likely, A half that.
-        /// </summary>
-        public int RewardBoost { get; set; }
 
         /// <summary>The level of the enemies on the way; a strong enemy's room is higher.</summary>
         public int Level { get; set; } = 10;
@@ -114,7 +105,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = ForestRuins,
-                RewardBoost = 0,
                 Name = "ミストラ遺跡",
                 Stage = BattleStage.MistyWoods,
                 RoomCount = 8,
@@ -133,7 +123,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "port-portoria",
-                RewardBoost = 20,
                 Name = "港町ポルトリア",
                 Stage = BattleStage.RockyShore,
                 RoomCount = 9,
@@ -145,7 +134,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "glaciera-cave",
-                RewardBoost = 40,
                 Name = "グラシエラ氷窟",
                 Stage = BattleStage.CrystalCavern,
                 RoomCount = 9,
@@ -157,7 +145,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "hush-mire",
-                RewardBoost = 60,
                 Name = "しじまの沼",
                 Stage = BattleStage.MistySwamp,
                 RoomCount = 10,
@@ -169,7 +156,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "almaja-tomb",
-                RewardBoost = 80,
                 Name = "アルマジャ王墓",
                 Stage = BattleStage.CastleHall,
                 RoomCount = 10,
@@ -194,7 +180,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "moonshade-graveyard",
-                RewardBoost = 100,
                 Name = "月影の墓所",
                 Stage = BattleStage.MoonlitGraveyard,
                 RoomCount = 11,
@@ -212,7 +197,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "volgan-volcano",
-                RewardBoost = 130,
                 Name = "ヴォルガン火山",
                 Stage = BattleStage.VolcanoCrater,
                 RoomCount = 11,
@@ -224,7 +208,6 @@ namespace Baryonyx.Adventure
             new AdventureArea
             {
                 Id = "neve-peaks",
-                RewardBoost = 160,
                 Name = "白嶺ネーヴェ",
                 Stage = BattleStage.SnowField,
                 RoomCount = 12,
@@ -344,13 +327,12 @@ namespace Baryonyx.Adventure
         private static string Pick(string[] kinds, int variant, int stride) =>
             kinds.Length == 0 ? null : kinds[variant / Math.Max(1, stride) % kinds.Length];
 
-        public static string Outcome(AdventureRewardOutcome outcome) =>
+        public static string Outcome(AdventureDropOutcome outcome) =>
             outcome switch
             {
-                AdventureRewardOutcome.Updated => "倍率が上がりました",
-                AdventureRewardOutcome.Discarded =>
-                    "持っているほうが倍率が高いため、手放しました",
-                _ => "持ち物に加えました",
+                AdventureDropOutcome.Updated => "倍率が上がった",
+                AdventureDropOutcome.Discarded => "手持ちのほうが上なので手放した",
+                _ => "持ち物に加えた",
             };
 
         public static string StatusTitle(AdventureEndStatus status) =>

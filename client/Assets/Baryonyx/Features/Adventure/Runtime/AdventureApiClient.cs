@@ -160,7 +160,7 @@ namespace Baryonyx.Adventure
             public EnemyEntry[] enemies;
         }
 
-        // 冒険がないときの run と、出来事のない応答の reward・revive・result はJSONではnullになる。
+        // 冒険がないときの run と、出来事のない応答の drops・revive・result はJSONではnullか、ない。
         // JsonUtilityはnullの代わりに空の値を入れるため、IDが空かどうかで見分ける。
         [Serializable]
         public sealed class State
@@ -168,7 +168,7 @@ namespace Baryonyx.Adventure
             public Run run;
             public Record[] records;
             public long runes;
-            public Reward reward;
+            public Drop[] drops;
             public Revive revive;
             public Result result;
         }
@@ -189,16 +189,18 @@ namespace Baryonyx.Adventure
             public string[] route;
             public int revives;
             public int reviveCost;
-            public Reward[] rewards;
+            public Drop[] drops;
         }
 
+        // 部屋で落ちた物（doc/features/drops.md）。category は item・accessory・weapon・armor・skill・bonus。
         [Serializable]
-        public sealed class Reward
+        public sealed class Drop
         {
             public string roomId;
-            public string bonusId;
+            public string category;
+            public string id;
 
-            // 倍率（×1.37なら1.37）と品質（S・A・B・C）。
+            // 倍率（×1.37なら1.37）と品質（S・A・B・C）。アイテムは項目がなく、JsonUtilityでは0と空になる。
             public float multiplier;
             public string quality;
             public string outcome;
@@ -223,7 +225,7 @@ namespace Baryonyx.Adventure
             public bool newRecord;
             public int clears;
             public int revives;
-            public Reward[] rewards;
+            public Drop[] drops;
         }
 
         [Serializable]

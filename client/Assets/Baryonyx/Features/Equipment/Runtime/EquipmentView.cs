@@ -101,6 +101,9 @@ namespace Baryonyx.Equipment
         public Sprite WeaponIcon;
         public Sprite ArmorIcon;
 
+        // 装備の種類ごとの絵。絵のない種類は、枠ごとのアイコン（WeaponIcon・ArmorIcon）を出す。
+        public ItemArt ItemArt;
+
         private EquipmentPresenter presenter;
         private readonly ButtonBindings bindings = new();
 
@@ -277,12 +280,15 @@ namespace Baryonyx.Equipment
             Person.Show(member, level, Elements(state.PersonId));
             bool accessory = state.Accessory >= 0;
             for (int i = 0; i < Slots.Length; i++)
+            {
+                var item = i < state.Slots.Count ? state.Slots[i] : null;
                 ShowSlot(
                     Slots[i],
-                    i < state.Slots.Count ? state.Slots[i] : null,
-                    IconOf((EquipmentSlot)i),
+                    item,
+                    IconOf(item, (EquipmentSlot)i),
                     !accessory && i == (int)state.Slot
                 );
+            }
             for (int i = 0; i < Accessories.Length; i++)
                 ShowAccessory(Accessories[i], i, member != null ? level : 0, i == state.Accessory);
             var growth = Training != null ? Training.Find(state.PersonId) : null;
@@ -332,6 +338,14 @@ namespace Baryonyx.Equipment
         public Sprite IconOf(EquipmentSlot slot) =>
             slot == EquipmentSlot.Weapon ? WeaponIcon : ArmorIcon;
 
+        /// <summary>The item's own picture, or the slot's icon for an empty slot or a kind without art.</summary>
+        public Sprite IconOf(EquipmentItemState item, EquipmentSlot slot)
+        {
+            var art =
+                ItemArt != null && item?.ItemId != null ? ItemArt.Find(item.EquipmentId) : null;
+            return art != null ? art : IconOf(slot);
+        }
+
         // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
         private IReadOnlyList<Sprite> Elements(string id) =>
             Party == null ? Array.Empty<Sprite>()
@@ -345,7 +359,6 @@ namespace Baryonyx.Equipment
         private void ShowRows(EquipmentViewState state)
         {
             EnsureRows(state.Choices.Count);
-            var icon = IconOf(state.Slot);
             for (int i = 0; i < Rows.Length; i++)
             {
                 bool on = i < state.Choices.Count;
@@ -353,7 +366,7 @@ namespace Baryonyx.Equipment
                 if (!on)
                     continue;
                 Rows[i].transform.SetSiblingIndex(i);
-                ShowRow(Rows[i], state.Choices[i], icon);
+                ShowRow(Rows[i], state.Choices[i], IconOf(state.Choices[i], state.Slot));
             }
             if (Remove != null)
             {
@@ -398,8 +411,7 @@ namespace Baryonyx.Equipment
                 widget.Selected.SetActive(selected);
             if (widget.Icon != null)
             {
-                widget.Icon.sprite = icon;
-                widget.Icon.enabled = icon != null;
+                PixelIcon.Show(widget.Icon, icon);
                 widget.Icon.color = filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             }
             ShowFoil(widget.Foil, filled ? item : null, icon);
@@ -421,11 +433,7 @@ namespace Baryonyx.Equipment
         public static void ShowRow(EquipmentRow row, EquipmentItemState item, Sprite icon)
         {
             row.ItemId = item.ItemId;
-            if (row.Icon != null)
-            {
-                row.Icon.sprite = icon;
-                row.Icon.enabled = icon != null;
-            }
+            PixelIcon.Show(row.Icon, icon);
             ShowFoil(row.Foil, item.ItemId != null ? item : null, icon);
             Set(row.Name, item.Name);
             SetRich(row.Stars, Grade(item));

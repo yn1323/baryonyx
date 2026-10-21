@@ -90,16 +90,21 @@ namespace Baryonyx.Training
         public bool Locked { get; internal set; }
         public string UnlockText { get; internal set; } = "";
 
+        // 付けている装備の種類のID。絵を引くのに使う。空いていればnull。
+        public string EquipmentId { get; internal set; }
+
         public static TrainingGearState Worn(
             string slot,
             string name,
             string stars,
             string detail = null,
             ItemQuality quality = ItemQuality.C,
-            int foilStyle = 0
+            int foilStyle = 0,
+            string equipmentId = null
         ) =>
             new()
             {
+                EquipmentId = equipmentId,
                 Slot = slot,
                 Name = name ?? "",
                 Stars = stars ?? "",
@@ -534,9 +539,10 @@ namespace Baryonyx.Training
             };
         }
 
-        private TrainingCardState Card(string person, string id)
+        // 枠の中身（PartyCardKey の形）のカード。持っているスキルは倍率を掛けたカード、アイテムはアイテムのカード。
+        private TrainingCardState Card(string person, string key)
         {
-            var card = CardSkills.Find(id);
+            var card = PartySession.SkillOf(key) ?? PartyCardKey.ItemOf(key)?.Card;
             if (card == null)
                 return new TrainingCardState { Name = EmptyName };
             return new TrainingCardState
@@ -550,8 +556,8 @@ namespace Baryonyx.Training
                 Quality = card.Quality,
                 FoilStyle = card.FoilStyle,
                 Element = card.Element,
-                Icon = iconOf(id),
-                Art = artOf(id),
+                Icon = iconOf(card.Id),
+                Art = artOf(card.Id),
             };
         }
 

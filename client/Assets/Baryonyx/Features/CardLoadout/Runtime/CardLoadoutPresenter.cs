@@ -13,8 +13,12 @@ namespace Baryonyx.CardLoadout
     /// <summary>One card as the card skills show it, with the numbers for the person on screen.</summary>
     public sealed class CardLoadoutCardState
     {
-        // 空いている枠ではnull。
+        // 枠に入れる物のキー（PartyCardKey の形）。空いている枠ではnull。
         public string Id { get; internal set; }
+
+        // 挿絵を引くスキルのID。アイテムでは null で、ItemId から絵を引く。
+        public string ArtId { get; internal set; }
+        public string ItemId { get; internal set; }
         public string Name { get; internal set; }
 
         // 「攻撃・敵単体」（リッチテキスト）。
@@ -33,6 +37,13 @@ namespace Baryonyx.CardLoadout
 
         // その人のどの枠に入っているか（0から）。入っていなければ-1。
         public int Slot { get; internal set; } = -1;
+
+        // 右の一覧の右上の印。その人の枠に入っていれば「1枚目」、ほかの人が使っていれば「トーマが使用中」、
+        // アイテムは「所持 3」。
+        public string Mark { get; internal set; } = "";
+
+        // 押しても入れられない（アイテムを持っている数だけほかの人が使っている）。
+        public bool Unavailable { get; internal set; }
     }
 
     /// <summary>One of the person's two unique skills on the left: the card of the stage set.</summary>
@@ -107,15 +118,24 @@ namespace Baryonyx.CardLoadout
         // 右の上で選んでいるタブ（CardLoadoutPresenter.SkillTab か ItemTab）。
         public int Tab { get; internal set; }
 
-        // 右に並べる、その人が付けられるカード（コストの低い順）。アイテムのタブでは空。
+        // 右に並べる、その人が付けられるカード（コストの低い順）か、持っているアイテム。
         public IReadOnlyList<CardLoadoutCardState> Choices { get; internal set; }
     }
 
     /// <summary>Where the card skills read and write each person's cards and the numbers on them.</summary>
     public interface ICardLoadoutStore
     {
+        // その人の2つの枠の中身（PartyCardKey の形）。
         IReadOnlyList<string> CardsOf(string id);
         void SetCards(string id, IReadOnlyList<string> skills);
+
+        // 候補にする持ち物：持っているスキルの1枚ずつのキーと、持っているアイテム。サーバーから読んでいない
+        // 仮データ（展示室など）では null で、スキルは50枚すべてを×1.00で候補にし、アイテムはない。
+        IReadOnlyList<string> OwnedSkills => null;
+        IReadOnlyList<PartyItem> OwnedItems => null;
+
+        // キーのスキル（持っている1枚は倍率を掛けたもの）。アイテムや知らないキーでは null。
+        CardSkill SkillOf(string key) => PartyCardKey.IsItem(key) ? null : CardSkills.Find(key);
 
         string Selected { get; set; }
 
@@ -147,8 +167,11 @@ namespace Baryonyx.CardLoadout
     /// <summary>
     /// The formation's card skills change screen: ◀ ▶ walks the people (the party first, then
     /// the other companions) keeping the chosen slot and tab, choose a slot on the left, then tap
-    /// a card on the right to set it there at once. The right's tabs pick skills or items; items
-    /// cannot be owned yet, so the item tab lists nothing. Choosing one of the two unique skills
+    /// a card on the right to set it there at once. The right's tabs pick the skill cards or the
+    /// items the player owns (doc/features/party.md): every owned skill card is its own row with
+    /// its quality, and one another person holds moves here; an item fits as many slots as the
+    /// player has of it. Without owned things (the mock data) every skill is a choice at ×1.00
+    /// and the item tab lists nothing. Choosing one of the two unique skills
     /// on the left shows its evolution tree on the right instead (doc/features/skill-evolution.md),
     /// where tapping a stage acquired sets it; the stages not acquired are shadows. The stage set
     /// is kept while the app runs only, since the server does not keep it yet.
@@ -282,21 +305,32 @@ namespace Baryonyx.CardLoadout
             Refresh();
         }
 
-        // 選んでいる枠に、押したカードを入れる。
-        public void Choose(string skill) => ChooseTask = ChooseAsync(skill);
+        // 選んでいる枠に、押したカード（キー）を入れる。
+        public void Choose(string key) => ChooseTask = ChooseAsync(key);
 
         // すぐに表示を変え、サーバーがあればそのあとで保存する。
-        private async Task ChooseAsync(string skill)
+        private async Task ChooseAsync(string key)
         {
             var member = Current;
-            var card = CardSkills.Find(skill);
-            if (disposed || unique >= 0 || tab != SkillTab || member == null || card == null)
-                return;
-            if (!CardLoadoutRules.CanUse(CardLoadoutRules.Usable(member), card))
+            if (disposed || unique >= 0 || member == null || string.IsNullOrEmpty(key))
                 return;
             int target = slot;
             var cards = Cards(member.Id);
-            var change = CardLoadoutRules.Apply(cards, target, skill, out _);
+            if (tab == ItemTab)
+            {
+                var item = OwnedItem(key);
+                if (item == null)
+                    return;
+                if (!cards.Contains(key) && Holding(key) >= item.Count)
+                    return;
+            }
+            else
+            {
+                var card = store.SkillOf(key);
+                if (card == null || !CardLoadoutRules.CanUse(CardLoadoutRules.Usable(member), card))
+                    return;
+            }
+            var change = CardLoadoutRules.Apply(cards, target, key, out _);
             if (change == CardLoadoutChange.None)
                 return;
             // 変わったことは枠を見ればわかるので知らせない。
@@ -308,7 +342,7 @@ namespace Baryonyx.CardLoadout
             }
 
             // save はすぐに store へ当てるので、保存を待たずに描き直す。
-            var saved = save(member.Id, target, skill);
+            var saved = save(member.Id, target, key);
             Refresh();
             await saved;
             if (disposed)
@@ -316,6 +350,23 @@ namespace Baryonyx.CardLoadout
             // 保存したカード（失敗なら戻したカード）で描き直す。
             Refresh();
         }
+
+        private PartyItem OwnedItem(string key) =>
+            store.OwnedItems?.FirstOrDefault(item => item.Key == key && item.Count > 0);
+
+        // キーを、全員の枠でいくつ使っているか。
+        private int Holding(string key) =>
+            people.Sum(person => CardsOf(person.Id).Count(card => card == key));
+
+        // キーを枠に入れている、選んでいる人ではない人の名前。いなければ null。
+        private string HolderOf(string key, string except) =>
+            people
+                .FirstOrDefault(person => person.Id != except && CardsOf(person.Id).Contains(key))
+                ?.Name;
+
+        // store にあるその人の枠の中身。なければ空。
+        private IReadOnlyList<string> CardsOf(string id) =>
+            store.CardsOf(id) ?? Array.Empty<string>();
 
         public void Refresh()
         {
@@ -338,9 +389,6 @@ namespace Baryonyx.CardLoadout
             }
             var usable = CardLoadoutRules.Usable(member);
             var cards = Cards(member.Id);
-            // アイテムはまだ持てないので、アイテムのタブには何も並べない。
-            var choices =
-                tab == SkillTab ? CardLoadoutRules.Choices(usable) : Array.Empty<CardSkill>();
             State = new CardLoadoutState
             {
                 PersonId = member.Id,
@@ -356,17 +404,58 @@ namespace Baryonyx.CardLoadout
                     .ToArray(),
                 Tree = unique >= 0 ? Tree(member.Id, unique) : null,
                 Tab = tab,
-                Choices = choices
-                    .Select(card => Card(member.Id, card.Id, Array.IndexOf(cards, card.Id)))
+                Choices = (tab == SkillTab ? SkillChoices(usable) : ItemChoices())
+                    .Select(key => Choice(member.Id, key, Array.IndexOf(cards, key)))
                     .ToArray(),
             };
             view.Render(State);
         }
 
+        // その人が付けられるスキルのキー。持っている1枚ずつを、コストの低い順・仮データの順・品質の高い順に並べる。
+        // 持ち物を読んでいなければ、50枚すべて（スキルID）。
+        private IEnumerable<string> SkillChoices(IReadOnlyList<CardElement> usable)
+        {
+            var owned = store.OwnedSkills;
+            if (owned == null)
+                return CardLoadoutRules.Choices(usable).Select(card => card.Id);
+            var catalog = CardSkills.All.ToList();
+            int Order(CardSkill card) => catalog.FindIndex(entry => entry.Id == card.Id);
+            return owned
+                .Select(key => (Key: key, Card: store.SkillOf(key)))
+                .Where(entry => CardLoadoutRules.CanUse(usable, entry.Card))
+                .OrderBy(entry => entry.Card.Cost)
+                .ThenBy(entry => Order(entry.Card))
+                .ThenByDescending(entry => entry.Card.Multiplier)
+                .Select(entry => entry.Key);
+        }
+
+        // 持っているアイテムのキー（アイテムの定義の順）。
+        private IEnumerable<string> ItemChoices() =>
+            (store.OwnedItems ?? Array.Empty<PartyItem>())
+                .Where(item => item.Count > 0 && item.Item != null)
+                .Select(item => item.Key);
+
+        // 右の一覧の1行。その人の枠・ほかの人が使っているか・アイテムの数を印にする。
+        private CardLoadoutCardState Choice(string person, string key, int slotIndex)
+        {
+            var state = Card(person, key, slotIndex);
+            var item = PartyCardKey.IsItem(key) ? OwnedItem(key) : null;
+            if (slotIndex >= 0)
+                state.Mark = $"{slotIndex + 1}枚目";
+            else if (item != null)
+            {
+                state.Mark = $"所持 {item.Count}";
+                state.Unavailable = Holding(key) >= item.Count;
+            }
+            else if (store.OwnedSkills != null && HolderOf(key, person) is { } holder)
+                state.Mark = $"{holder}が使用中";
+            return state;
+        }
+
         // その人のカスタムスキル2枚。足りない枠はnull（空き）にする。
         private string[] Cards(string id)
         {
-            var cards = store.CardsOf(id) ?? Array.Empty<string>();
+            var cards = CardsOf(id);
             return Enumerable
                 .Range(0, CardLoadoutRules.Size)
                 .Select(i => i < cards.Count ? cards[i] : null)
@@ -422,18 +511,33 @@ namespace Baryonyx.CardLoadout
             };
         }
 
-        private CardLoadoutCardState Card(string person, string id, int slotIndex)
+        // 枠の中身（キー）のカード。持っているスキルは倍率を掛けたカード、アイテムはアイテムのカードにする。
+        private CardLoadoutCardState Card(string person, string key, int slotIndex)
         {
-            var card = CardSkills.Find(id);
+            if (PartyCardKey.IsItem(key))
+            {
+                var item = PartyCardKey.ItemOf(key);
+                if (item == null)
+                    return new CardLoadoutCardState { Name = "空き", Slot = slotIndex };
+                var state = Card(person, item.Card, slotIndex);
+                state.Id = key;
+                state.ArtId = null;
+                state.ItemId = item.Id;
+                return state;
+            }
+            var card = store.SkillOf(key);
             if (card == null)
                 return new CardLoadoutCardState { Name = "空き", Slot = slotIndex };
-            return Card(person, card, slotIndex);
+            var skill = Card(person, card, slotIndex);
+            skill.Id = key;
+            return skill;
         }
 
         private CardLoadoutCardState Card(string person, CardSkill card, int slotIndex) =>
             new()
             {
                 Id = card.Id,
+                ArtId = card.Id,
                 Name = card.Name,
                 KindLine = CardText.KindLine(card),
                 Description = CardText.Description(card),

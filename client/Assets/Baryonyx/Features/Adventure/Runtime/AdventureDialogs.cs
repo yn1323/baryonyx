@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
 
@@ -40,29 +42,25 @@ namespace Baryonyx.Adventure
         public static void Treasure(
             GameDialog dialog,
             StepBonusMockData bonuses,
-            AdventureReward reward,
-            Action close
+            IReadOnlyList<AdventureDrop> drops,
+            Action close,
+            ItemArt art = null
         ) =>
             dialog.Show(
                 TreasureTitle,
-                AdventureTexts.RewardBody(bonuses, reward),
-                reward != null ? AdventureTexts.BonusIcon(bonuses, reward.BonusId) : null,
+                AdventureTexts.DropsBody(bonuses, drops),
+                AdventureTexts.DropIcon(bonuses, drops, art),
                 close,
                 new DialogChoice(AdventureTexts.NextChoice, close)
             );
 
+        // 手に入れた物は、ダイアログの前にドロップの演出の札で1つずつ見せるため、本文には書かない。
         // 冒険が終わった勝利（最奥の主を倒した）は、「つぎへ」で結果へ進む。
-        public static void Victory(
-            GameDialog dialog,
-            StepBonusMockData bonuses,
-            AdventureReward reward,
-            bool ended,
-            Action next
-        ) =>
+        public static void Victory(GameDialog dialog, bool ended, Action next) =>
             dialog.Show(
                 VictoryTitle,
-                AdventureTexts.RewardBody(bonuses, reward),
-                reward != null ? AdventureTexts.BonusIcon(bonuses, reward.BonusId) : null,
+                null,
+                null,
                 null,
                 new DialogChoice(ended ? ToResultChoice : AdventureTexts.NextChoice, next)
             );

@@ -42,6 +42,16 @@ namespace Baryonyx.Inventory
             ItemQuality.S,
         };
 
+        /// <summary>0 for C up to 3 for S: how big an effect of <paramref name="quality"/> is shown.</summary>
+        public static int Grade(ItemQuality quality) =>
+            quality switch
+            {
+                ItemQuality.S => 3,
+                ItemQuality.A => 2,
+                ItemQuality.B => 1,
+                _ => 0,
+            };
+
         /// <summary>A multiplier in whole hundredths (×1.37 is 137).</summary>
         public static int Percent(float multiplier) =>
             (int)Math.Round(multiplier * 100.0, MidpointRounding.AwayFromZero);

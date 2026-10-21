@@ -79,13 +79,23 @@ namespace Baryonyx.CardLoadout
         public ScrollRect Scroll;
     }
 
-    /// <summary>One card's row on the right, baked by the generator.</summary>
+    /// <summary>
+    /// One card's row on the right. The generator bakes one row per skill so the prefab reads in
+    /// the editor; the view fills the rows with the cards the person can choose, copying the
+    /// first row when it needs more (every owned card and item is a row of its own).
+    /// </summary>
     [Serializable]
     public sealed class CardLoadoutRowWidget
     {
+        // 今出しているカードのキー（PartyCardKey の形）。押すとこのキーを入れる。
         public string Id = "";
         public Button Button;
         public RawImage Art;
+        public CardFoil Foil;
+        public TMP_Text Cost;
+        public Image Element;
+        public TMP_Text Name;
+        public TMP_Text Kind;
 
         // 説明の数字は選んでいる人のステータスで変わる。
         public TMP_Text Description;
@@ -119,6 +129,9 @@ namespace Baryonyx.CardLoadout
 
         public PartyMockData Party;
         public TrainingMockData Training;
+
+        // アイテムの絵（種類のIDで引く）。
+        public ItemArt ItemArt;
 
         // 左上の人（立ち姿・名前・Lv）。
         public PartyPersonHeader Person = new();
@@ -192,10 +205,7 @@ namespace Baryonyx.CardLoadout
                     bindings.Bind(Tabs[i].Button, () => TabPressed?.Invoke(index));
             }
             foreach (var row in Rows)
-            {
-                string id = row.Id;
-                bindings.Bind(row.Button, () => CardPressed?.Invoke(id));
-            }
+                BindRow(row);
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
             presenter?.Dispose();
@@ -222,13 +232,8 @@ namespace Baryonyx.CardLoadout
                 return;
             Present(
                 formation,
-                (id, slot, skill) =>
-                    PartySession.SetCardAsync(
-                        id,
-                        slot,
-                        skill,
-                        CardLoadoutPresenter.SaveFailedMessage
-                    )
+                (id, slot, key) =>
+                    PartySession.SetCardAsync(id, slot, key, CardLoadoutPresenter.SaveFailedMessage)
             );
         }
 
@@ -300,8 +305,9 @@ namespace Baryonyx.CardLoadout
                     row.Button.gameObject.SetActive(false);
         }
 
-        // 選んでいるタブに印を付け、アイテムのタブでは属性の行を隠して、持っていないことだけを出す。
-        private void ShowTabs(int tab)
+        // 選んでいるタブに印を付け、アイテムのタブでは属性の行を隠す（アイテムは誰でも使える）。
+        // 持っていなければ、持っていないことを出す。
+        private void ShowTabs(int tab, bool empty = true)
         {
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
@@ -309,10 +315,10 @@ namespace Baryonyx.CardLoadout
             bool items = tab == CardLoadoutPresenter.ItemTab;
             if (UsableLine != null)
                 UsableLine.SetActive(!items);
-            Set(Status, items ? NoItemText : "");
+            Set(Status, items && empty ? NoItemText : "");
         }
 
-        // アイテムのタブを選んでいるときの一覧の面の文字。アイテムはまだ持てない。
+        // アイテムのタブで、アイテムを1つも持っていないときの一覧の面の文字。
         public const string NoItemText = "持っているアイテムはありません";
 
         // 停止中の表示の切り替え（doc/rules/ui-design.md#停止中の表示の切り替え）。最初の表示はスキルのタブ。
@@ -415,12 +421,12 @@ namespace Baryonyx.CardLoadout
                 ShowSlot(
                     Slots[i],
                     i < state.Slots.Count ? state.Slots[i] : null,
-                    i < state.Slots.Count ? ArtOf(state.Slots[i].Id) : null,
+                    i < state.Slots.Count ? ArtOf(state.Slots[i]) : null,
                     i < state.Slots.Count ? IconOf(state.Slots[i].Element) : null,
                     i == state.Slot
                 );
             ShowUsable(Usable, state.Usable, IconOf);
-            ShowTabs(state.Tab);
+            ShowTabs(state.Tab, state.Choices.Count == 0);
             ShowRows(state);
             if (state.Tree != null)
                 ShowTreeState(state.Tree, state.PersonId);
@@ -538,27 +544,71 @@ namespace Baryonyx.CardLoadout
                 : null;
         }
 
+        private void BindRow(CardLoadoutRowWidget row) =>
+            bindings.Bind(row.Button, () => CardPressed?.Invoke(row.Id));
+
+        // 選べるカードを、上から順に行へ入れる。行が足りなければ1行目を写して増やす。
         private void ShowRows(CardLoadoutState state)
         {
-            var order = new Dictionary<string, int>();
-            for (int i = 0; i < state.Choices.Count; i++)
-                order[state.Choices[i].Id] = i;
-            var shown = new SortedList<int, CardLoadoutRowWidget>();
-            foreach (var row in Rows)
+            EnsureRows(state.Choices.Count);
+            for (int i = 0; i < Rows.Length; i++)
             {
+                var row = Rows[i];
                 if (row.Button == null)
                     continue;
-                bool on = order.TryGetValue(row.Id, out int index);
+                bool on = i < state.Choices.Count;
                 row.Button.gameObject.SetActive(on);
-                if (on)
-                    shown[index] = row;
+                if (!on)
+                    continue;
+                var card = state.Choices[i];
+                row.Id = card.Id;
+                row.Button.transform.SetSiblingIndex(i);
+                ShowRow(row, card, ArtOf(card), IconOf(card.Element));
             }
-            int sibling = 0;
-            foreach (var (index, row) in shown)
+        }
+
+        private void EnsureRows(int count)
+        {
+            if (Rows.Length == 0 || Rows.Length >= count || Rows[0].Button == null)
+                return;
+            var rows = new List<CardLoadoutRowWidget>(Rows);
+            var template = Rows[0];
+            var source = template.Button.gameObject;
+            while (rows.Count < count)
             {
-                row.Button.transform.SetSiblingIndex(sibling++);
-                ShowRow(row, state.Choices[index]);
+                var copy = Instantiate(source, source.transform.parent);
+                copy.name = "Card_" + rows.Count;
+                var widget = new CardLoadoutRowWidget
+                {
+                    Button = copy.GetComponent<Button>(),
+                    Art = Same(template.Art, source, copy),
+                    Foil = Same(template.Foil, source, copy),
+                    Cost = Same(template.Cost, source, copy),
+                    Element = Same(template.Element, source, copy),
+                    Name = Same(template.Name, source, copy),
+                    Kind = Same(template.Kind, source, copy),
+                    Description = Same(template.Description, source, copy),
+                    Mark = Same(template.Mark, source, copy),
+                };
+                rows.Add(widget);
+                BindRow(widget);
             }
+            Rows = rows.ToArray();
+        }
+
+        // 写した行の中で、元の行の part と同じ位置にある部品。
+        private static T Same<T>(T part, GameObject source, GameObject copy)
+            where T : Component
+        {
+            if (part == null)
+                return null;
+            var path = new List<int>();
+            for (var at = part.transform; at != null && at != source.transform; at = at.parent)
+                path.Insert(0, at.GetSiblingIndex());
+            var found = copy.transform;
+            foreach (int index in path)
+                found = found.GetChild(index);
+            return found.GetComponent<T>();
         }
 
         /// <summary>
@@ -582,7 +632,11 @@ namespace Baryonyx.CardLoadout
                 widget.Art.enabled = filled && art != null;
             }
             if (widget.Foil != null)
-                widget.Foil.Show(art, filled ? card.Quality : ItemQuality.C, filled ? card.FoilStyle : 0);
+                widget.Foil.Show(
+                    art,
+                    filled ? card.Quality : ItemQuality.C,
+                    filled ? card.FoilStyle : 0
+                );
             if (widget.Cost != null)
             {
                 widget.Cost.transform.parent.gameObject.SetActive(filled);
@@ -598,15 +652,41 @@ namespace Baryonyx.CardLoadout
             Set(widget.Description, filled ? card.Description : "");
         }
 
-        /// <summary>The description with the person's numbers, and which of their slots holds the card.</summary>
-        public static void ShowRow(CardLoadoutRowWidget widget, CardLoadoutCardState card)
+        /// <summary>
+        /// One card on the right: its art, cost, element, name and kind, the description with the
+        /// person's numbers, and the mark (which slot of theirs holds it, who else uses it, or how
+        /// many items there are). A card that cannot be set now is dimmed.
+        /// </summary>
+        public static void ShowRow(
+            CardLoadoutRowWidget widget,
+            CardLoadoutCardState card,
+            Texture art,
+            Sprite element
+        )
         {
+            if (widget.Art != null)
+            {
+                widget.Art.texture = art;
+                widget.Art.enabled = art != null;
+            }
+            if (widget.Foil != null)
+                widget.Foil.Show(art, card.Quality, card.FoilStyle);
+            Set(widget.Cost, card.Cost.ToString());
+            if (widget.Element != null)
+            {
+                widget.Element.sprite = element;
+                widget.Element.enabled = element != null;
+            }
+            Set(widget.Name, card.Name);
+            Set(widget.Kind, card.KindLine);
             Set(widget.Description, card.Description);
             if (widget.Mark != null)
             {
-                widget.Mark.gameObject.SetActive(card.Slot >= 0);
-                widget.Mark.text = card.Slot >= 0 ? $"{card.Slot + 1}枚目" : "";
+                widget.Mark.gameObject.SetActive(!string.IsNullOrEmpty(card.Mark));
+                widget.Mark.text = card.Mark ?? "";
             }
+            if (widget.Button != null)
+                widget.Button.interactable = !card.Unavailable;
         }
 
         /// <summary>The icons of the elements the person can set, with the unused icons hidden.</summary>
@@ -626,15 +706,14 @@ namespace Baryonyx.CardLoadout
             }
         }
 
-        // 左の枠の挿絵は、右の行に作り込んだ挿絵を使う。固有スキルの段階は仮データの挿絵を使う。
-        private Texture ArtOf(string id)
-        {
-            if (id == null)
-                return null;
-            foreach (var row in Rows)
-                if (row.Id == id && row.Art != null)
-                    return row.Art.texture;
-            return Party != null ? Party.ArtOf(id) : null;
-        }
+        // スキルの挿絵（固有スキルの段階を含む）は仮データの挿絵を使う。
+        private Texture ArtOf(string skillId) =>
+            skillId != null && Party != null ? Party.ArtOf(skillId) : null;
+
+        // カードの絵。アイテムはアイテムの絵、スキルはスキルの挿絵。
+        private Texture ArtOf(CardLoadoutCardState card) =>
+            card == null ? null
+            : card.ItemId != null ? (ItemArt != null ? ItemArt.TextureOf(card.ItemId) : null)
+            : ArtOf(card.ArtId);
     }
 }

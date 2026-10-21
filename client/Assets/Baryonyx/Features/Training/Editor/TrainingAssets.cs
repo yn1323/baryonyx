@@ -260,6 +260,7 @@ namespace Baryonyx.Training.Editor
             view.Guide = guide;
             view.WeaponIcon = Guide.Icon(EquipmentAssets.IconWeaponPath);
             view.ArmorIcon = Guide.Icon(EquipmentAssets.IconArmorPath);
+            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
 
             // 金の2本線は、左のイラストの上に重ねる。
             GuideFrameAssets.SplitPanes(layer, Split, "PortraitPane", "DetailPane", divider: false);
@@ -589,6 +590,7 @@ namespace Baryonyx.Training.Editor
                 Frame = Dots(card, "Frame", 0, 0, CardDots, null),
             };
             widget.Frame.raycastTarget = button;
+            widget.FrameFoil = CardFoilAssets.AddFrame(widget.Frame);
             if (button)
                 widget.Button = Guide.AddButton(card, widget.Frame);
             widget.Art = Dots(card, "Art", 3, 3, new Vector2(64, 58), null);

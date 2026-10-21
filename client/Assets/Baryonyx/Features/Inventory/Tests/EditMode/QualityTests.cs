@@ -6,6 +6,7 @@ using Baryonyx.Inventory;
 using Baryonyx.SkillEvolution;
 using Baryonyx.UI.Cards;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
@@ -206,6 +207,25 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(gear.MaxMultiplier, Is.GreaterThan(1f), gear.Id);
         }
 
+        // 枠はSが虹、Aが金で、B・Cは今の枠のまま。B・Cの頂点色は白（元の枠）になり、
+        // 線形の色空間で値が変わっても見分けられるよう、金は虹と白から離れた値にする。
+        [Test]
+        public void TheFrameShinesByQuality()
+        {
+            Assert.That(
+                CardFrameFoil.LookOf(ItemQuality.S),
+                Is.EqualTo(CardFrameFoil.Look.Rainbow)
+            );
+            Assert.That(CardFrameFoil.LookOf(ItemQuality.A), Is.EqualTo(CardFrameFoil.Look.Gold));
+            Assert.That(CardFrameFoil.LookOf(ItemQuality.B), Is.EqualTo(CardFrameFoil.Look.Plain));
+            Assert.That(CardFrameFoil.LookOf(ItemQuality.C), Is.EqualTo(CardFrameFoil.Look.Plain));
+            Assert.That(CardFrameFoil.RedOf(CardFrameFoil.Look.Plain), Is.EqualTo(1f));
+            Assert.That(CardFrameFoil.RedOf(CardFrameFoil.Look.Rainbow), Is.EqualTo(0f));
+            float gold = CardFrameFoil.RedOf(CardFrameFoil.Look.Gold);
+            Assert.That(gold, Is.InRange(0.1f, 0.75f));
+            Assert.That(Mathf.GammaToLinearSpace(gold), Is.InRange(0.1f, 0.75f));
+        }
+
         // スキルが違えば光り方も違う。固有スキルは進化しても同じ光り方で、倍率を掛けても変わらない。
         [Test]
         public void EverySkillSparklesItsOwnWay()
@@ -218,8 +238,8 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(styles, Is.Unique);
             Assert.That(styles, Has.All.InRange(0, CardFoil.StyleCount - 1));
             foreach (var tree in UniqueSkillTrees.All)
-                foreach (var stage in tree.Stages.Where(stage => stage != null))
-                    Assert.That(stage.Card.FoilStyle, Is.EqualTo(tree.Stages[0].Card.FoilStyle));
+            foreach (var stage in tree.Stages.Where(stage => stage != null))
+                Assert.That(stage.Card.FoilStyle, Is.EqualTo(tree.Stages[0].Card.FoilStyle));
             var fire = CardSkills.Find("Fire");
             Assert.That(fire.WithMultiplier(2f).FoilStyle, Is.EqualTo(fire.FoilStyle));
             // 隣り合うスキルは模様から違う。
@@ -246,10 +266,13 @@ namespace Baryonyx.Tests.EditMode
             )
                 Assert.That(entry.FoilStyle, Is.EqualTo(EquipmentCatalog.FoilStyleOf(entry.Id)));
             Assert.That(
-                QualityLabEntry.Of(QualityLabTab.Accessories, null).Select(entry => entry.FoilStyle),
+                QualityLabEntry
+                    .Of(QualityLabTab.Accessories, null)
+                    .Select(entry => entry.FoilStyle),
                 Is.Unique
             );
-            var bonuses = UnityEngine.ScriptableObject.CreateInstance<Baryonyx.StepBonus.StepBonusMockData>();
+            var bonuses =
+                UnityEngine.ScriptableObject.CreateInstance<Baryonyx.StepBonus.StepBonusMockData>();
             try
             {
                 bonuses.Bonuses = Enumerable
@@ -257,7 +280,9 @@ namespace Baryonyx.Tests.EditMode
                     .Select(i => new Baryonyx.StepBonus.StepBonusDefinition { Id = $"bonus-{i}" })
                     .ToArray();
                 Assert.That(
-                    QualityLabEntry.Of(QualityLabTab.Bonuses, bonuses).Select(entry => entry.FoilStyle),
+                    QualityLabEntry
+                        .Of(QualityLabTab.Bonuses, bonuses)
+                        .Select(entry => entry.FoilStyle),
                     Is.Unique
                 );
                 // デバッグルームと酒場のボーナス設定は、ボーナスの同じ割り当てを使う。
@@ -286,12 +311,22 @@ namespace Baryonyx.Tests.EditMode
             );
             var source = System.IO.File.ReadAllText(path);
             var server = Regex
-                .Matches(source, "\\{ id: \"([a-z-]+)\", slot: \"[a-z]+\", maxPercent: ([0-9]+) \\}")
+                .Matches(
+                    source,
+                    "\\{ id: \"([a-z-]+)\", slot: \"[a-z]+\", maxPercent: ([0-9]+) \\}"
+                )
                 .Cast<Match>()
-                .ToDictionary(match => match.Groups[1].Value, match => int.Parse(match.Groups[2].Value));
+                .ToDictionary(
+                    match => match.Groups[1].Value,
+                    match => int.Parse(match.Groups[2].Value)
+                );
             Assert.That(server.Keys, Is.EquivalentTo(EquipmentCatalog.All.Select(gear => gear.Id)));
             foreach (var gear in EquipmentCatalog.All)
-                Assert.That(Quality.Percent(gear.MaxMultiplier), Is.EqualTo(server[gear.Id]), gear.Id);
+                Assert.That(
+                    Quality.Percent(gear.MaxMultiplier),
+                    Is.EqualTo(server[gear.Id]),
+                    gear.Id
+                );
         }
     }
 }

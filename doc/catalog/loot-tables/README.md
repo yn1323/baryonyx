@@ -1,6 +1,6 @@
 # 報酬・ドロップテーブルの定義
 
-[データ索引](../README.md) / [関連仕様](../../features/stage-progression.md)
+[データ索引](../README.md) / [関連仕様](../../features/drops.md)
 
 個別内容と決定状態は、下の索引から各定義を参照する。
 定義テンプレートを使う。

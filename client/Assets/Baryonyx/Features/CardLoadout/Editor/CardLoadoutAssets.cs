@@ -90,6 +90,7 @@ namespace Baryonyx.CardLoadout.Editor
             var (view, layer) = Frame.FramedPanel<CardLoadoutView>(safe, "CardLoadout");
             view.Party = party;
             view.Training = training;
+            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             view.Guide = guide;
             view.ElementIcons = Enum.GetValues(typeof(CardElement))
                 .Cast<CardElement>()
@@ -439,11 +440,15 @@ namespace Baryonyx.CardLoadout.Editor
             element.sprite = view.IconOf(card.Element);
             element.enabled = element.sprite != null;
             widget.Art = art;
-            Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Quality);
+            widget.Cost = cost;
+            widget.Element = element;
+            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(art, card.Quality);
 
             var (name, kind) = BuildNameLine(row, 12, RowTextLeft, 150);
             name.text = card.Name;
             kind.text = CardText.KindLine(card);
+            widget.Name = name;
+            widget.Kind = kind;
             widget.Description = BuildDescription(row, 64, 64, RowTextLeft, 24);
             widget.Mark = Label(row, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)widget.Mark.transform, top: true, 20, 32, RowTextLeft, 28);
@@ -557,6 +562,7 @@ namespace Baryonyx.CardLoadout.Editor
                 this.training = training;
             }
 
+            // 仮データのカードは、スキルIDのまま枠に入れる（持ち物は読まない）。
             public IReadOnlyList<string> CardsOf(string id) =>
                 party.Find(id)?.Cards.Select(card => card.Skill).ToArray() ?? Array.Empty<string>();
 

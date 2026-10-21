@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baryonyx.Inventory;
 using Baryonyx.Networking;
-using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
 {
@@ -13,30 +11,19 @@ namespace Baryonyx.Adventure
     /// The adventure kept only while the app runs, for the editor without a server and the
     /// showcase. It follows the server's rules (server/src/features/adventure) on a route made
     /// from a seed of its own, like the server's, so the loop can be played through without a
-    /// server. Rewards are told but not added to the bonuses, and the runes are a fixed mock balance.
+    /// server. Drops are told but not added to the belongings, and the runes are a fixed mock balance.
     /// </summary>
     public sealed class AdventureLocalSource : IAdventureSource
     {
         public const string ForestRuins = "forest-ruins";
         public const int ReviveCostBase = 100;
 
-        private static readonly string[] BonusIds =
-        {
-            "guard",
-            "luck",
-            "treasure-sight",
-            "foresight",
-            "omen",
-            "appraisal",
-            "fighting",
-        };
-
         private readonly Random random;
         private readonly Dictionary<string, AdventureRecord> records = new();
         private Run run;
         private long runes;
 
-        // seed を決めると、報酬と道の種も毎回同じになる（テスト用）。
+        // seed を決めると、ドロップと道の種も毎回同じになる（テスト用）。
         public AdventureLocalSource(long runes = 1000, int seed = 0, int roomCount = 0)
         {
             this.runes = runes;
@@ -102,25 +89,21 @@ namespace Baryonyx.Adventure
             if (run.RoomCleared)
                 return Answer(
                     token,
-                    State(reward: run.Rewards.FirstOrDefault(entry => entry.RoomId == roomId))
+                    State(drops: run.Drops.Where(entry => entry.RoomId == roomId).ToArray())
                 );
-            var quality = QualityFor(
+            var drops = AdventureDrops.Roll(
+                run.DestinationId,
                 room.Kind,
-                AdventureCatalog.Area(run.DestinationId)?.RewardBoost ?? 0
-            );
-            var reward = new AdventureReward(
                 roomId,
-                BonusIds[random.Next(BonusIds.Length)],
-                MultiplierOf(quality),
-                quality,
-                AdventureRewardOutcome.Added
+                AdventureTexts.MaxMultiplierOf,
+                random
             );
-            run.Rewards.Add(reward);
+            run.Drops.AddRange(drops);
             run.RoomCleared = true;
             if (room.Kind != AdventureRoomKind.Boss)
-                return Answer(token, State(reward: reward));
+                return Answer(token, State(drops: drops));
             var result = Finish(AdventureEndStatus.Cleared);
-            return Answer(token, State(reward: reward, result: result));
+            return Answer(token, State(drops: drops, result: result));
         }
 
         public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token)
@@ -175,71 +158,14 @@ namespace Baryonyx.Adventure
                 floor > previous,
                 clears,
                 run.Revives,
-                run.Rewards.ToArray()
+                run.Drops.ToArray()
             );
             run = null;
             return result;
         }
 
-        // サーバーの rewardQualityWeights と同じ重み。奥の行き先ほど、Sを rewardBoost の分、Aをその半分だけ重くする。
-        private ItemQuality QualityFor(AdventureRoomKind kind, int rewardBoost)
-        {
-            var weights = kind switch
-            {
-                AdventureRoomKind.Battle => new[]
-                {
-                    (ItemQuality.C, 75),
-                    (ItemQuality.B, 20),
-                    (ItemQuality.A, 5),
-                },
-                AdventureRoomKind.Boss => new[]
-                {
-                    (ItemQuality.B, 40),
-                    (ItemQuality.A, 45),
-                    (ItemQuality.S, 15),
-                },
-                _ => new[]
-                {
-                    (ItemQuality.C, 30),
-                    (ItemQuality.B, 40),
-                    (ItemQuality.A, 25),
-                    (ItemQuality.S, 5),
-                },
-            };
-            weights = weights
-                .Select(entry =>
-                    entry.Item1 switch
-                    {
-                        ItemQuality.S => (entry.Item1, Grow(entry.Item2, rewardBoost)),
-                        ItemQuality.A => (entry.Item1, Grow(entry.Item2, rewardBoost / 2.0)),
-                        _ => entry,
-                    }
-                )
-                .ToArray();
-            int roll = random.Next(weights.Sum(entry => entry.Item2));
-            foreach (var (quality, weight) in weights)
-            {
-                if (roll < weight)
-                    return quality;
-                roll -= weight;
-            }
-            return weights[^1].Item1;
-        }
-
-        private static int Grow(int weight, double percent) =>
-            (int)Math.Round(weight * (100 + percent) / 100.0, MidpointRounding.AwayFromZero);
-
-        // 品質の幅の中から、倍率を百分率の整数で均等に選ぶ（サーバーの rollMultiplierPercent と同じ）。
-        private float MultiplierOf(ItemQuality quality)
-        {
-            var (low, high) = Quality.Range(quality, StepBonusDefinition.DefaultMaxMultiplier);
-            int min = Quality.Percent(low);
-            int max = Quality.Percent(high);
-            return random.Next(min, max + 1) / 100f;
-        }
-
         private AdventureState State(
-            AdventureReward reward = null,
+            IReadOnlyList<AdventureDrop> drops = null,
             AdventureResult result = null,
             int? revived = null
         ) =>
@@ -255,12 +181,12 @@ namespace Baryonyx.Adventure
                         run.Revives,
                         ReviveCostBase * (run.Revives + 1),
                         run.Map,
-                        run.Rewards.ToArray(),
+                        run.Drops.ToArray(),
                         run.Find(run.RoomId).Floor
                     ),
                 records.Values.ToArray(),
                 runes,
-                reward,
+                drops,
                 result,
                 revived
             );
@@ -293,7 +219,7 @@ namespace Baryonyx.Adventure
             public bool RoomCleared;
             public List<string> Route { get; }
             public int Revives;
-            public List<AdventureReward> Rewards { get; } = new();
+            public List<AdventureDrop> Drops { get; } = new();
 
             public AdventureRoom Find(string id) => Map.Find(id);
         }

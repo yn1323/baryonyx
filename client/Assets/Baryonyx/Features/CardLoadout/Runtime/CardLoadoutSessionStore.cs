@@ -26,6 +26,14 @@ namespace Baryonyx.CardLoadout
 
         public IReadOnlyList<string> CardsOf(string id) => PartySession.CardsOf(party, id);
 
+        // サーバーから読んだ持ち物。読んでいなければ null（仮データ）。
+        public IReadOnlyList<string> OwnedSkills =>
+            PartySession.State?.SkillCards?.Select(card => card.Key).ToArray();
+
+        public IReadOnlyList<PartyItem> OwnedItems => PartySession.State?.Items;
+
+        public CardSkill SkillOf(string key) => PartySession.SkillOf(key);
+
         public void SetCards(string id, IReadOnlyList<string> skills) =>
             PartySession.SetCards(id, skills);
 

@@ -15,15 +15,15 @@ namespace Baryonyx.Adventure
         Boss,
     }
 
-    public enum AdventureRewardOutcome
+    public enum AdventureDropOutcome
     {
-        // 持っていないボーナスを持ち物に加えた。
+        // 持ち物に加えた。ACTボーナス以外は、いつもこれになる。
         Added,
 
-        // 持っているボーナスの倍率を上げた。
+        // 持っているACTボーナスの倍率を上げた。
         Updated,
 
-        // 持っているほうが倍率が高いため、手に入れたほうを手放した。
+        // 持っているACTボーナスのほうが倍率が高いため、手に入れたほうを手放した。
         Discarded,
     }
 
@@ -79,31 +79,40 @@ namespace Baryonyx.Adventure
             || Kind == AdventureRoomKind.Boss;
     }
 
-    /// <summary>A ACT bonus found in a room whose event was done.</summary>
-    public sealed class AdventureReward
+    /// <summary>
+    /// One thing dropped in a room whose event was done (doc/features/drops.md). Items have no
+    /// quality: their multiplier is 0 and their quality null.
+    /// </summary>
+    public sealed class AdventureDrop
     {
-        public AdventureReward(
+        public AdventureDrop(
             string roomId,
-            string bonusId,
-            float multiplier,
-            ItemQuality quality,
-            AdventureRewardOutcome outcome
+            AdventureDropCategory category,
+            string id,
+            float multiplier = 0f,
+            ItemQuality? quality = null,
+            AdventureDropOutcome outcome = AdventureDropOutcome.Added
         )
         {
             RoomId = roomId ?? "";
-            BonusId = bonusId ?? "";
+            Category = category;
+            Id = id ?? "";
             Multiplier = multiplier;
             Quality = quality;
             Outcome = outcome;
         }
 
         public string RoomId { get; }
-        public string BonusId { get; }
+        public AdventureDropCategory Category { get; }
+        public string Id { get; }
 
-        /// <summary>The bonus's own multiplier (×1.37 as 1.37) and the quality it gives.</summary>
+        /// <summary>The drop's own multiplier (×1.37 as 1.37) and the quality it gives.</summary>
         public float Multiplier { get; }
-        public ItemQuality Quality { get; }
-        public AdventureRewardOutcome Outcome { get; }
+        public ItemQuality? Quality { get; }
+        public AdventureDropOutcome Outcome { get; }
+
+        /// <summary>The stars of the kind (doc/features/inventory.md, rarity).</summary>
+        public int Stars => AdventureDrops.StarsOf(Category, Id);
     }
 
     /// <summary>
@@ -121,7 +130,7 @@ namespace Baryonyx.Adventure
             int revives,
             int reviveCost,
             AdventureRouteMap map,
-            IReadOnlyList<AdventureReward> rewards,
+            IReadOnlyList<AdventureDrop> drops,
             int floor = 1
         )
         {
@@ -133,7 +142,7 @@ namespace Baryonyx.Adventure
             Revives = revives;
             ReviveCost = reviveCost;
             Map = map;
-            Rewards = rewards ?? Array.Empty<AdventureReward>();
+            Drops = drops ?? Array.Empty<AdventureDrop>();
             savedFloor = Math.Max(1, floor);
         }
 
@@ -154,7 +163,7 @@ namespace Baryonyx.Adventure
         // 冒険の種から作った道。
         public AdventureRouteMap Map { get; }
         public IReadOnlyList<AdventureRoom> Rooms => Map?.Rooms ?? Array.Empty<AdventureRoom>();
-        public IReadOnlyList<AdventureReward> Rewards { get; }
+        public IReadOnlyList<AdventureDrop> Drops { get; }
 
         public AdventureRoom Room => Find(RoomId);
 
@@ -186,7 +195,7 @@ namespace Baryonyx.Adventure
             bool newRecord,
             int clears,
             int revives,
-            IReadOnlyList<AdventureReward> rewards
+            IReadOnlyList<AdventureDrop> drops
         )
         {
             DestinationId = destinationId ?? "";
@@ -196,7 +205,7 @@ namespace Baryonyx.Adventure
             NewRecord = newRecord;
             Clears = clears;
             Revives = revives;
-            Rewards = rewards ?? Array.Empty<AdventureReward>();
+            Drops = drops ?? Array.Empty<AdventureDrop>();
         }
 
         public string DestinationId { get; }
@@ -208,7 +217,7 @@ namespace Baryonyx.Adventure
         public bool NewRecord { get; }
         public int Clears { get; }
         public int Revives { get; }
-        public IReadOnlyList<AdventureReward> Rewards { get; }
+        public IReadOnlyList<AdventureDrop> Drops { get; }
     }
 
     /// <summary>A destination's record: the deepest floor reached and the times it was cleared.</summary>
@@ -228,7 +237,7 @@ namespace Baryonyx.Adventure
 
     /// <summary>
     /// What the server answered: the adventure in progress (null when there is none), the
-    /// records and the runes, with the reward, the revive or the result of the request.
+    /// records and the runes, with the drops, the revive or the result of the request.
     /// </summary>
     public sealed class AdventureState
     {
@@ -238,7 +247,7 @@ namespace Baryonyx.Adventure
             AdventureRun run,
             IReadOnlyList<AdventureRecord> records,
             long runes,
-            AdventureReward reward = null,
+            IReadOnlyList<AdventureDrop> drops = null,
             AdventureResult result = null,
             int? revivedFor = null
         )
@@ -246,7 +255,7 @@ namespace Baryonyx.Adventure
             Run = run;
             Records = records ?? Array.Empty<AdventureRecord>();
             Runes = runes;
-            Reward = reward;
+            Drops = drops;
             Result = result;
             RevivedFor = revivedFor;
         }
@@ -255,8 +264,8 @@ namespace Baryonyx.Adventure
         public IReadOnlyList<AdventureRecord> Records { get; }
         public long Runes { get; }
 
-        // 出来事を終えた要求で手に入れた物。
-        public AdventureReward Reward { get; }
+        // 出来事を終えた要求で落ちた物。出来事を終えた要求でなければnull。
+        public IReadOnlyList<AdventureDrop> Drops { get; }
 
         // 冒険を終えた要求の結果。
         public AdventureResult Result { get; }

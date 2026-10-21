@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using Baryonyx.Adventure;
 using Baryonyx.Combat;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
+using Baryonyx.Items;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.Training.Editor;
@@ -75,7 +77,7 @@ namespace Baryonyx.Library.Editor
 
         private const string GearLabel = "装備";
 
-        // 装備のパネルの見出しに並べるタブ。アクセサリーは定義がないため、錠前の付いた準備中のタブにする。
+        // 装備のパネルの見出しに並べるタブ。定義が1つもない分類は、準備中のタブにする。
         private static readonly LibraryKind[] GearTabs =
         {
             LibraryKind.Weapon,
@@ -275,27 +277,52 @@ namespace Baryonyx.Library.Editor
                     };
                 }
             );
-            var equipment = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }.SelectMany(slot =>
+            // 装備・アイテムは種類ごとの絵（ItemArt）を出す。絵のない種類は、武器・防具のアイコンにする。
+            var itemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
+            var equipment = new[]
+            {
+                EquipmentSlot.Weapon,
+                EquipmentSlot.Armor,
+                EquipmentSlot.Accessory,
+            }.SelectMany(slot =>
                 EquipmentCatalog
                     .All.Where(entry => entry.Slot == slot)
                     .Select(
                         (entry, index) =>
                             new LibraryEntryData
                             {
-                                Kind =
-                                    slot == EquipmentSlot.Weapon
-                                        ? LibraryKind.Weapon
-                                        : LibraryKind.Armor,
+                                Kind = slot switch
+                                {
+                                    EquipmentSlot.Weapon => LibraryKind.Weapon,
+                                    EquipmentSlot.Armor => LibraryKind.Armor,
+                                    _ => LibraryKind.Accessory,
+                                },
                                 Id = entry.Id,
                                 Number = index + 1,
                                 Name = entry.Name,
                                 Rarity = entry.Rarity,
                                 KindLine = EquipmentCatalog.NameOf(slot),
                                 Description = entry.Detail,
-                                // 1つずつの絵ができるまでは、種類のアイコンを使う。
-                                Art = slot == EquipmentSlot.Weapon ? weaponIcon : armorIcon,
+                                Art =
+                                    itemArt.Find(entry.Id) != null ? itemArt.TextureOf(entry.Id)
+                                    : slot == EquipmentSlot.Weapon ? weaponIcon
+                                    : armorIcon,
                             }
                     )
+            );
+            var items = ItemCards.All.Select(
+                (item, index) =>
+                    new LibraryEntryData
+                    {
+                        Kind = LibraryKind.Item,
+                        Id = item.Id,
+                        Number = index + 1,
+                        Name = item.Name,
+                        Rarity = item.Rarity,
+                        KindLine = $"{CardText.KindLine(item.Card)}　コスト {item.Cost}",
+                        Description = CardText.Description(item.Card),
+                        Art = itemArt.TextureOf(item.Id),
+                    }
             );
             var skills = CardSkills.All.Select(
                 (card, index) =>
@@ -305,6 +332,8 @@ namespace Baryonyx.Library.Editor
                         Id = card.Id,
                         Number = index + 1,
                         Name = card.Name,
+                        // ☆は、冒険のドロップの一覧が持つ（doc/features/drops.md）。
+                        Rarity = AdventureDrops.StarsOf(AdventureDropCategory.Skill, card.Id),
                         KindLine = $"{CardText.KindLine(card)}　コスト {card.Cost}",
                         Description = CardText.Description(card),
                         Art = party.ArtOf(card.Id),
@@ -326,7 +355,12 @@ namespace Baryonyx.Library.Editor
                     }
             );
 
-            data.Entries = characters.Concat(equipment).Concat(skills).Concat(enemies).ToArray();
+            data.Entries = characters
+                .Concat(equipment)
+                .Concat(skills)
+                .Concat(items)
+                .Concat(enemies)
+                .ToArray();
             data.ElementIcons = party.ElementIcons;
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssetIfDirty(data);

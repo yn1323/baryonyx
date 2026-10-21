@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Combat;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
+using Baryonyx.Items;
 using Baryonyx.StepBonus;
 using UnityEngine;
 
@@ -45,11 +49,83 @@ namespace Baryonyx.Adventure
         public static Sprite BonusIcon(StepBonusMockData bonuses, string id) =>
             bonuses != null ? bonuses.Find(id)?.Icon : null;
 
-        public static string RewardBody(StepBonusMockData bonuses, AdventureReward reward) =>
-            reward == null
+        /// <summary>The name of a dropped kind, from its definition (the id when it has none).</summary>
+        public static string DropName(StepBonusMockData bonuses, AdventureDrop drop)
+        {
+            string name = drop.Category switch
+            {
+                AdventureDropCategory.Item => ItemCards.Find(drop.Id)?.Name,
+                AdventureDropCategory.Skill => CardSkills.Find(drop.Id)?.Name,
+                AdventureDropCategory.Bonus => BonusName(bonuses, drop.Id),
+                _ => EquipmentCatalog.Find(drop.Id)?.Name,
+            };
+            return string.IsNullOrEmpty(name) ? drop.Id : name;
+        }
+
+        /// <summary>The top of a kind's multiplier, as its definition sets it.</summary>
+        public static float MaxMultiplierOf(AdventureDropCategory category, string id) =>
+            category switch
+            {
+                AdventureDropCategory.Skill => CardSkills.Find(id)?.MaxMultiplier
+                    ?? Quality.MinMultiplier,
+                AdventureDropCategory.Bonus => StepBonusDefinition.DefaultMaxMultiplier,
+                AdventureDropCategory.Item => Quality.MinMultiplier,
+                _ => EquipmentCatalog.Find(id)?.MaxMultiplier ?? Quality.MinMultiplier,
+            };
+
+        /// <summary>One drop as a line: the stars, the name, the category and the quality.</summary>
+        public static string DropLine(StepBonusMockData bonuses, AdventureDrop drop)
+        {
+            string stars = EquipmentCatalog.Stars(drop.Stars);
+            string detail = drop.Quality is { } quality
+                ? $"{AdventureDrops.NameOf(drop.Category)}・品質{Quality.Letter(quality)}"
+                : AdventureDrops.NameOf(drop.Category);
+            string line = $"{stars} {DropName(bonuses, drop)}（{detail}）".TrimStart();
+            return drop.Outcome == AdventureDropOutcome.Added
+                ? line
+                : line + "　" + AdventureCatalog.Outcome(drop.Outcome);
+        }
+
+        public static string DropsBody(
+            StepBonusMockData bonuses,
+            IReadOnlyList<AdventureDrop> drops
+        ) =>
+            drops == null || drops.Count == 0
                 ? "何も見つからなかった"
-                : $"ACTボーナス「{BonusName(bonuses, reward.BonusId)}」（品質{Quality.Letter(reward.Quality)}）を手に入れた\n"
-                    + AdventureCatalog.Outcome(reward.Outcome);
+                : "手に入れた物\n"
+                    + string.Join("\n", drops.Select(drop => DropLine(bonuses, drop)));
+
+        /// <summary>
+        /// The picture of one drop: the ACT bonus's icon, or the kind's own art for an item, an
+        /// accessory, a weapon or armour (<see cref="ItemArt"/>). Null for a skill or a kind
+        /// without art.
+        /// </summary>
+        public static Sprite DropIcon(StepBonusMockData bonuses, AdventureDrop drop, ItemArt art)
+        {
+            if (drop == null)
+                return null;
+            if (drop.Category == AdventureDropCategory.Bonus)
+                return BonusIcon(bonuses, drop.Id);
+            if (drop.Category == AdventureDropCategory.Skill || art == null)
+                return null;
+            return art.Find(drop.Id);
+        }
+
+        /// <summary>The picture of the drop worth showing most: the rarest that has a picture.</summary>
+        public static Sprite DropIcon(
+            StepBonusMockData bonuses,
+            IReadOnlyList<AdventureDrop> drops,
+            ItemArt art = null
+        ) =>
+            (drops ?? Array.Empty<AdventureDrop>())
+                .OrderByDescending(drop => drop.Stars)
+                .Select(drop => DropIcon(bonuses, drop, art))
+                .FirstOrDefault(icon => icon != null);
+
+        // 結果に「目玉」として名前を挙げる物：☆4以上か、品質S。
+        private static bool Highlight(AdventureDrop drop) =>
+            drop.Outcome != AdventureDropOutcome.Discarded
+            && (drop.Stars >= 4 || drop.Quality == ItemQuality.S);
 
         public static string ResultBody(StepBonusMockData bonuses, AdventureResult result)
         {
@@ -61,16 +137,28 @@ namespace Baryonyx.Adventure
                     : $"最深記録 {AdventureCatalog.FloorText(result.BestFloor)}",
             };
             var kept = result
-                .Rewards.Where(reward => reward.Outcome != AdventureRewardOutcome.Discarded)
-                .Select(reward =>
-                    $"{BonusName(bonuses, reward.BonusId)} {Quality.Letter(reward.Quality)}"
-                )
+                .Drops.Where(drop => drop.Outcome != AdventureDropOutcome.Discarded)
+                .ToArray();
+            var counts = kept.GroupBy(drop => drop.Category)
+                .OrderBy(group => group.Key)
+                .Select(group => $"{AdventureDrops.NameOf(group.Key)} {group.Count()}")
                 .ToArray();
             lines.Add(
-                kept.Length == 0
-                    ? "持ち帰ったボーナス：なし"
-                    : "持ち帰ったボーナス：" + string.Join("・", kept)
+                counts.Length == 0
+                    ? "持ち帰った物：なし"
+                    : "持ち帰った物：" + string.Join("・", counts)
             );
+            var best = kept.Where(Highlight)
+                .OrderByDescending(drop => drop.Stars)
+                .ThenByDescending(drop => drop.Quality ?? ItemQuality.C)
+                .Take(3)
+                .Select(drop =>
+                    $"{EquipmentCatalog.Stars(drop.Stars)} {DropName(bonuses, drop)}"
+                    + (drop.Quality is { } quality ? $" {Quality.Letter(quality)}" : "")
+                )
+                .ToArray();
+            if (best.Length > 0)
+                lines.Add("目玉：" + string.Join("・", best));
             return string.Join("\n", lines);
         }
     }

@@ -6,11 +6,15 @@ using Baryonyx.UI.Cards;
 
 namespace Baryonyx.Equipment
 {
-    /// <summary>The two equipment slots every character has.</summary>
+    /// <summary>
+    /// The two equipment slots every character has, and accessories. Accessories are owned one by
+    /// one like weapons and armour, but cannot be worn yet.
+    /// </summary>
     public enum EquipmentSlot
     {
         Weapon,
         Armor,
+        Accessory,
     }
 
     /// <summary>One kind of weapon or armour as the screens show it.</summary>
@@ -57,9 +61,9 @@ namespace Baryonyx.Equipment
     }
 
     /// <summary>
-    /// The mock weapons and armour until equipment has data (doc/features/equipment.md). The ids
-    /// and slots match the server (server/src/features/equipment/catalog.ts), which keeps what each
-    /// player owns and wears; the names, rarity and effects are shown only here.
+    /// The mock weapons, armour and accessories until equipment has data (doc/features/equipment.md).
+    /// The ids and slots match the server (server/src/features/equipment/catalog.ts), which keeps
+    /// what each player owns and wears; the names, rarity and effects are shown only here.
     /// </summary>
     public static class EquipmentCatalog
     {
@@ -81,6 +85,17 @@ namespace Baryonyx.Equipment
             Armor("iron-helm", "鉄の兜", 2, "物防の 115%｜HP +40", 2f),
             Armor("leather-armor", "革の鎧", 1, "物防の 110%", 1.8f),
             Armor("wooden-shield", "木の丸盾", 1, "物防の 120%", 2f),
+            // アクセサリーは、冒険のドロップで見つかる行き先ごとに作る（doc/features/drops.md）。
+            // ミストラ遺跡
+            Accessory("moss-charm", "苔玉のお守り", 1, "HP +20", 2f),
+            Accessory("acorn-brooch", "どんぐりのブローチ", 2, "物防 +4%", 2f),
+            Accessory("dew-pendant", "朝露のペンダント", 3, "属攻 +5%", 2.2f),
+            Accessory("guardian-circlet", "守り手の葉冠", 5, "物攻 +6%｜属攻 +6%", 2.4f),
+            // 港町ポルトリア
+            Accessory("shell-necklace", "貝殻の首飾り", 1, "物防 +6%", 2f),
+            Accessory("anchor-bangle", "錨の腕輪", 2, "物攻 +6%", 2.2f),
+            Accessory("gold-earring", "金貨の耳飾り", 3, "速度 +6%", 2.2f),
+            Accessory("kraken-pearl", "大ダコの黒真珠", 5, "属攻 +8%｜会心 +4%", 2.6f),
         };
 
         public static IReadOnlyList<EquipmentDefinition> All => all;
@@ -113,11 +128,21 @@ namespace Baryonyx.Equipment
             CardFoil.StyleAt(IndexOf(id), FoilStyleStep, FoilStyleOffset);
 
         public static string NameOf(EquipmentSlot slot) =>
-            slot == EquipmentSlot.Weapon ? "武器" : "防具";
+            slot switch
+            {
+                EquipmentSlot.Weapon => "武器",
+                EquipmentSlot.Armor => "防具",
+                _ => "アクセサリー",
+            };
 
-        // サーバーのAPIでの枠の名前。
+        // サーバーのAPIでの枠（分類）の名前。
         public static string KeyOf(EquipmentSlot slot) =>
-            slot == EquipmentSlot.Weapon ? "weapon" : "armor";
+            slot switch
+            {
+                EquipmentSlot.Weapon => "weapon",
+                EquipmentSlot.Armor => "armor",
+                _ => "accessory",
+            };
 
         public static string Stars(int rarity) => new('★', Math.Max(0, rarity));
 
@@ -151,5 +176,13 @@ namespace Baryonyx.Equipment
             string detail,
             float maxMultiplier
         ) => new(id, name, EquipmentSlot.Armor, rarity, detail, maxMultiplier);
+
+        private static EquipmentDefinition Accessory(
+            string id,
+            string name,
+            int rarity,
+            string detail,
+            float maxMultiplier
+        ) => new(id, name, EquipmentSlot.Accessory, rarity, detail, maxMultiplier);
     }
 }

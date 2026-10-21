@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 
@@ -25,19 +26,31 @@ namespace Baryonyx.Adventure
                 0,
                 ReviveCost,
                 null,
-                Array.Empty<AdventureReward>(),
+                Array.Empty<AdventureDrop>(),
                 Floor
             );
 
-        // 仮データの最初のボーナス。
-        public static AdventureReward Reward(StepBonusMockData bonuses) =>
-            new(
-                "",
-                bonuses != null && bonuses.Bonuses.Length > 0 ? bonuses.Bonuses[0].Id : "",
-                1.25f,
-                ItemQuality.B,
-                AdventureRewardOutcome.Added
-            );
+        // ミストラ遺跡で落ちる物の見本。アイテム・武器と、仮データの最初のボーナス。
+        public static IReadOnlyList<AdventureDrop> Drops(StepBonusMockData bonuses) =>
+            new[]
+            {
+                new AdventureDrop("", AdventureDropCategory.Item, "herb"),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Weapon,
+                    "wooden-sword",
+                    1.45f,
+                    ItemQuality.B
+                ),
+                new AdventureDrop(
+                    "",
+                    AdventureDropCategory.Bonus,
+                    bonuses != null && bonuses.Bonuses.Length > 0 ? bonuses.Bonuses[0].Id : "",
+                    1.25f,
+                    ItemQuality.B,
+                    AdventureDropOutcome.Updated
+                ),
+            };
 
         public static AdventureResult Result(
             StepBonusMockData bonuses,
@@ -51,7 +64,7 @@ namespace Baryonyx.Adventure
                 status == AdventureEndStatus.Cleared,
                 status == AdventureEndStatus.Cleared ? 1 : 0,
                 0,
-                new[] { Reward(bonuses) }
+                Drops(bonuses)
             );
     }
 }

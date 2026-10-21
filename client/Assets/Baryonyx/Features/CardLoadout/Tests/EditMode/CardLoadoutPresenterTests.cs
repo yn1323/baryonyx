@@ -13,7 +13,8 @@ namespace Baryonyx.Tests.EditMode
 {
     public sealed class CardLoadoutPresenterTests
     {
-        private sealed class FakeView : ICardLoadoutView
+        // CardLoadoutOwnedTests も使う。
+        internal sealed class FakeView : ICardLoadoutView
         {
             public event Action PrevPressed;
             public event Action NextPressed;
@@ -317,7 +318,7 @@ namespace Baryonyx.Tests.EditMode
             view.Slot(1);
             view.Tab(CardLoadoutPresenter.ItemTab);
             var state = view.Last;
-            // アイテムはまだ持てないので、アイテムのタブには何も並べず、左の枠の選択は変えない。
+            // 持ち物を読んでいない仮データでは、アイテムのタブには何も並べず、左の枠の選択は変えない。
             Assert.That(state.Tab, Is.EqualTo(CardLoadoutPresenter.ItemTab));
             Assert.That(state.Choices, Is.Empty);
             Assert.That(state.Slot, Is.EqualTo(1));
@@ -541,7 +542,7 @@ namespace Baryonyx.Tests.EditMode
                 Progress = progress,
             };
 
-        private static PartyMember Member(string id, string name, params string[] cards) =>
+        internal static PartyMember Member(string id, string name, params string[] cards) =>
             new()
             {
                 Id = id,
