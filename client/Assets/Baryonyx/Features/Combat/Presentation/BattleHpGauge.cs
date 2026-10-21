@@ -109,7 +109,11 @@ namespace Baryonyx.Combat.Presentation
             {
                 flash -= Time.deltaTime;
                 if (TrailBody != null)
-                    TrailBody.color = Color.Lerp(trailColor, Flash, Mathf.Clamp01(flash / FlashTime));
+                    TrailBody.color = Color.Lerp(
+                        trailColor,
+                        Flash,
+                        Mathf.Clamp01(flash / FlashTime)
+                    );
             }
             if (trail <= Ratio)
                 return;

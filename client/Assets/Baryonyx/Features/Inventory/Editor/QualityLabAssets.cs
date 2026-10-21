@@ -306,12 +306,37 @@ namespace Baryonyx.Inventory.Editor
             lab.Title = Text(safe, "Title", 44, UiPalette.TextMain, left, 236f, width, 56f);
             lab.Detail = Text(safe, "Detail", 26, UiPalette.TextSub, left, 292f, width, 36f);
 
-            lab.QualityLetter = Label(safe, "QualityLetter", "S", 150, Gold, TextAlignmentOptions.Center);
+            lab.QualityLetter = Label(
+                safe,
+                "QualityLetter",
+                "S",
+                150,
+                Gold,
+                TextAlignmentOptions.Center
+            );
             Layout.At(lab.QualityLetter, left, 332f, 150f, 150f);
             const float barLeft = left + 160f;
             const float barWidth = 610f;
-            lab.MultiplierText = Text(safe, "Multiplier", 40, UiPalette.TextMain, barLeft, 340f, barWidth, 52f);
-            lab.RangeText = Text(safe, "Ranges", 21, UiPalette.TextSub, barLeft, 396f, barWidth, 32f);
+            lab.MultiplierText = Text(
+                safe,
+                "Multiplier",
+                40,
+                UiPalette.TextMain,
+                barLeft,
+                340f,
+                barWidth,
+                52f
+            );
+            lab.RangeText = Text(
+                safe,
+                "Ranges",
+                21,
+                UiPalette.TextSub,
+                barLeft,
+                396f,
+                barWidth,
+                32f
+            );
 
             // 幅の帯：左端が×1.00、右端が上限。品質ごとの区間に色を付け、今の位置に白い印を立てる。
             var bar = Layout.Box(safe, "Bar", barLeft, 438f, barWidth, 34f);
@@ -321,7 +346,15 @@ namespace Baryonyx.Inventory.Editor
                     var segment = Rect("Segment" + quality, bar);
                     var color = QualityPalette.Of(quality);
                     AddImage(segment, new Color(color.r, color.g, color.b, 0.6f), false);
-                    var letter = Label(segment, "Letter", Quality.Letter(quality), 22, Color.black, TextAlignmentOptions.Center, false);
+                    var letter = Label(
+                        segment,
+                        "Letter",
+                        Quality.Letter(quality),
+                        22,
+                        Color.black,
+                        TextAlignmentOptions.Center,
+                        false
+                    );
                     Stretch(letter.rectTransform);
                     return segment;
                 })
@@ -332,18 +365,57 @@ namespace Baryonyx.Inventory.Editor
             lab.Marker = marker;
 
             // 倍率のつまみを、1ずつ動かすボタンで挟む。ボタンは指で押せる128にする（doc/rules/ui-design.md）。
-            lab.StepDownButton = Button(safe, "StepDown", "−0.01", left, 492f, ButtonHeight, UiPalette.TextMain);
-            lab.MultiplierSlider = BuildSlider(safe, "MultiplierSlider", left + 140f, 528f, 490f, 56f);
-            lab.StepUpButton = Button(safe, "StepUp", "+0.01", left + width - ButtonHeight, 492f, ButtonHeight, UiPalette.TextMain);
+            lab.StepDownButton = Button(
+                safe,
+                "StepDown",
+                "−0.01",
+                left,
+                492f,
+                ButtonHeight,
+                UiPalette.TextMain
+            );
+            lab.MultiplierSlider = BuildSlider(
+                safe,
+                "MultiplierSlider",
+                left + 140f,
+                528f,
+                490f,
+                56f
+            );
+            lab.StepUpButton = Button(
+                safe,
+                "StepUp",
+                "+0.01",
+                left + width - ButtonHeight,
+                492f,
+                ButtonHeight,
+                UiPalette.TextMain
+            );
 
             var buttons = new[] { "C", "B", "A", "S" };
             lab.QualityButtons = buttons
                 .Select(
                     (name, i) =>
-                        Button(safe, "Jump" + name, name, left + i * 138f, 632f, ButtonHeight, QualityPalette.Of(Quality.All[i]))
+                        Button(
+                            safe,
+                            "Jump" + name,
+                            name,
+                            left + i * 138f,
+                            632f,
+                            ButtonHeight,
+                            QualityPalette.Of(Quality.All[i])
+                        )
                 )
                 .ToArray();
-            lab.LimitResetButton = Button(safe, "LimitReset", "上限を戻す", left + 560f, 632f, 210f, UiPalette.TextMain);
+            lab.LimitResetButton = Button(
+                safe,
+                "LimitReset",
+                "上限を戻す",
+                left + 560f,
+                632f,
+                210f,
+                UiPalette.TextMain
+            );
 
             lab.LimitText = Text(safe, "Limit", 28, UiPalette.TextSub, left, 776f, 170f, 56f);
             lab.LimitSlider = BuildSlider(safe, "LimitSlider", left + 170f, 772f, 600f, 56f);

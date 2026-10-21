@@ -392,11 +392,15 @@ namespace Baryonyx.Tests.PlayMode
             // 冒険の行き先は、どれも出発できる（出発すると冒険が始まるため、ここでは押さない）。
             var areas = Baryonyx.Adventure.AdventureCatalog.Areas;
             Assert.That(
-                destinations.Where(destination => !destination.Locked).Select(destination => destination.Id),
+                destinations
+                    .Where(destination => !destination.Locked)
+                    .Select(destination => destination.Id),
                 Is.EqualTo(areas.Select(area => area.Id))
             );
             Assert.That(
-                destinations.Where(destination => !destination.Locked).Select(destination => destination.RecommendedLevel),
+                destinations
+                    .Where(destination => !destination.Locked)
+                    .Select(destination => destination.RecommendedLevel),
                 Is.EqualTo(areas.Select(area => area.Level))
             );
             int open = areas.Count - 1;

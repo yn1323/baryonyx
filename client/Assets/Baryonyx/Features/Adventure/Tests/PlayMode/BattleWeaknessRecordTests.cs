@@ -153,12 +153,7 @@ namespace Baryonyx.Tests.PlayMode
                 .SourceOrLocal.LoadAsync(CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
-            Assert.That(
-                kept,
-                Is.EqualTo(
-                    new[] { new RevealedWeakness(medium.Id, first) }
-                )
-            );
+            Assert.That(kept, Is.EqualTo(new[] { new RevealedWeakness(medium.Id, first) }));
 
             // 同じ部屋の戦闘を開き直すと、その弱点を最初から見せる。
             yield return LoadBattle(value => bootstrap = value);

@@ -37,7 +37,8 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             if (!lines.TryGetValue(anchor, out var shown))
-                lines[anchor] = shown = new List<(float until, float rising, float bottom, float rise)>();
+                lines[anchor] = shown =
+                    new List<(float until, float rising, float bottom, float rise)>();
             shown.RemoveAll(line => line.until <= now);
             float drop = 0f;
             foreach (var line in shown)
