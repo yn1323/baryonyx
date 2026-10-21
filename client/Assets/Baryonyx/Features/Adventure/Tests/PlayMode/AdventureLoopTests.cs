@@ -74,10 +74,17 @@ namespace Baryonyx.Tests.PlayMode
                 name + " did not open."
             );
 
-        private static IEnumerator WaitForDialog(UI.GameDialog dialog, string title) =>
+        // 勝利のダイアログは、勝利の演出とドロップ（最奥の間は最大4つ）を1つずつ見せた後に出る。
+        private const float VictorySeconds = 30f;
+
+        private static IEnumerator WaitForDialog(
+            UI.GameDialog dialog,
+            string title,
+            float seconds = 8f
+        ) =>
             SceneTests.WaitUntil(
                 () => dialog.IsShown && !dialog.Busy && dialog.TitleText == title,
-                8f,
+                seconds,
                 $"The dialog \"{title}\" did not show (it shows \"{dialog.TitleText}\")."
             );
 
@@ -138,7 +145,7 @@ namespace Baryonyx.Tests.PlayMode
                 view.MarkerOf(here.Next[1]).Button.onClick.Invoke();
             Assert.That(view.Walking, Is.True);
 
-            // 地図を消さずに、カメラが道に沿って選んだ部屋へ追いかける。
+            // 地図を消さずに、カメラが道の奥へ選んだ部屋を追いかける。
             var from = view.CameraPoint;
             var to = run.Map.PointOf(chosen);
             yield return SceneTests.WaitUntil(
@@ -148,13 +155,18 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(view.Walking, Is.True);
             Assert.That(view.MapImage.color.a, Is.EqualTo(1f));
+            // カメラは左右の中央のまま、4人だけが道に沿って左右へ動く。
+            Assert.That(view.CameraPoint.y, Is.EqualTo(ExplorationView.CameraAcross));
             yield return SceneTests.WaitUntil(
                 () => view.LocationText == Forest + " 第6層" && ExplorationReady(bootstrap),
                 6f,
                 "The next room did not show."
             );
             // 着いた部屋の上で止まり、霧から現れた印は見え切っている。
-            Assert.That(view.CameraPoint, Is.EqualTo(new Vector2(to.T, to.S)));
+            Assert.That(
+                view.CameraPoint,
+                Is.EqualTo(new Vector2(to.T, ExplorationView.CameraAcross))
+            );
             Assert.That(view.ShownMarkers.All(marker => marker.Group.alpha == 1f), Is.True);
             var saved = services
                 .Adventure.LoadAsync(CancellationToken.None)
@@ -168,7 +180,7 @@ namespace Baryonyx.Tests.PlayMode
 
             view.ChestButton.onClick.Invoke();
             yield return WaitForDialog(view.Dialog, "宝箱を開けた！");
-            Assert.That(view.Dialog.BodyText, Does.StartWith("ACTボーナス「"));
+            Assert.That(view.Dialog.BodyText, Does.StartWith("手に入れた物\n"));
             Assert.That(view.Dialog.Choose(AdventureTexts.NextChoice), Is.True);
             Assert.That(view.Dialog.IsShown, Is.False);
             Assert.That(view.ChestSprite.texture, Is.SameAs(view.ChestOpen));
@@ -240,7 +252,10 @@ namespace Baryonyx.Tests.PlayMode
                 6f,
                 "The next room did not show."
             );
-            Assert.That(view.CameraPoint, Is.EqualTo(new Vector2(to.T, to.S)));
+            Assert.That(
+                view.CameraPoint,
+                Is.EqualTo(new Vector2(to.T, ExplorationView.CameraAcross))
+            );
         }
 
         // 地図を1本指で上下に動かす（dy は画面のピクセル、負で下へ引く）。
@@ -330,6 +345,9 @@ namespace Baryonyx.Tests.PlayMode
             var battle = Object.FindAnyObjectByType<BattleBootstrap>();
             Assert.That(battle.Flow, Is.Not.Null);
             Assert.That(battle.Battle.EndsWithOutcome, Is.True);
+            // 魔物が現れる演出のあいだは、まだ手札を配らない。
+            Assert.That(battle.Battle.Acting, Is.True);
+            Assert.That(battle.Battle.HandCards, Is.Empty);
             // 魔物の気配の部屋は、森の小さな敵と中くらいの敵の2体だけ。奥の大きな敵はいない。
             Assert.That(
                 battle.Battle.Enemies.Select(enemy => enemy.Alive),
@@ -364,8 +382,16 @@ namespace Baryonyx.Tests.PlayMode
                 enemy.Hp = 0;
             battle.EndTurn();
             var dialog = bootstrap.Overlay.Dialog;
-            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle);
+            // 勝利の演出のあと、ドロップを札で見せてからダイアログを出す。本文に報酬は書かない。
+            yield return SceneTests.WaitUntil(
+                () => bootstrap.Overlay.Reveal.Shown,
+                VictorySeconds,
+                "The drop was not shown."
+            );
+            Assert.That(dialog.IsShown, Is.False);
+            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle, VictorySeconds);
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Victory));
+            Assert.That(dialog.BodyText, Is.Empty);
             Assert.That(AdventureSession.Current.Run.RoomCleared, Is.True);
             Assert.That(dialog.ChoiceLabels, Is.EqualTo(new[] { AdventureTexts.NextChoice }));
 
@@ -399,10 +425,11 @@ namespace Baryonyx.Tests.PlayMode
             );
 
             // 復活すると味方は全快し、敵の減ったHPはそのまま。ルーンは100減る。
+            // 立ち上がる演出のあとに全快し、次のターンの手札を配る。
             dialog.Choose(AdventureTexts.ReviveChoice(100));
             yield return SceneTests.WaitUntil(
-                () => !dialog.IsShown,
-                5f,
+                () => !dialog.IsShown && !battle.Dealing && !battle.Acting,
+                8f,
                 "The revive did not finish."
             );
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.None));
@@ -411,7 +438,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(services.Adventure.Runes, Is.EqualTo(900));
             Assert.That(AdventureSession.Current.Run.ReviveCost, Is.EqualTo(200));
 
-            yield return SceneTests.WaitUntil(() => !battle.Dealing && !battle.Acting);
             foreach (var ally in battle.Allies)
                 ally.Hp = 0;
             battle.EndTurn();
@@ -436,7 +462,7 @@ namespace Baryonyx.Tests.PlayMode
                 enemy.Hp = 0;
             battle.EndTurn();
             var dialog = bootstrap.Overlay.Dialog;
-            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle);
+            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle, VictorySeconds);
             dialog.Choose(dialog.ChoiceLabels[0]);
             yield return WaitForDialog(dialog, "踏破！");
             Assert.That(

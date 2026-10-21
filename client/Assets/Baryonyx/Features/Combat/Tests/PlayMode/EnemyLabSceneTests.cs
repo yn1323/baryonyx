@@ -6,7 +6,6 @@ using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -76,7 +75,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             foreach (var button in controls)
             {
-                AssertTappable(button);
+                SceneTests.AssertTappable(loadedScene, button);
                 SceneTests.AssertTouchSize(button.transform);
             }
 
@@ -170,28 +169,6 @@ namespace Baryonyx.Tests.PlayMode
                 "Each run starts from full HP, so the blows do not add up."
             );
             lab.SetRepeat(false);
-        }
-
-        /// <summary>Nothing lies over the button's middle to take its tap.</summary>
-        private void AssertTappable(Button button)
-        {
-            var events = loadedScene
-                .GetRootGameObjects()
-                .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true))
-                .Single();
-            var data = new PointerEventData(events)
-            {
-                position = RectTransformUtility.WorldToScreenPoint(
-                    null,
-                    ((RectTransform)button.transform).TransformPoint(
-                        ((RectTransform)button.transform).rect.center
-                    )
-                ),
-            };
-            var hits = new List<RaycastResult>();
-            events.RaycastAll(data, hits);
-            Assert.That(hits, Is.Not.Empty, button.name);
-            Assert.That(hits[0].gameObject.GetComponentInParent<Button>(), Is.SameAs(button));
         }
 
         /// <summary>Presses the action's button and waits for the battle to finish it.</summary>

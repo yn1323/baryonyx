@@ -13,16 +13,19 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// Runs a battle of the adventure on the battle screen (doc/features/combat.md): the room's
-    /// encounter on the destination's stage, and, when the battle ends, the reward of the room
-    /// and the way on to the next room, or, after a defeat, the revive paid with runes or the
-    /// return with what was found (both shown alike, with no countdown). The boss's defeat ends
-    /// the adventure with its result. The menu suspends the adventure (the battle begins again
-    /// on resuming) or ends it. Scene changes are the caller's.
+    /// encounter on the destination's stage, opening with the enemies appearing (the boss last,
+    /// in the deepest room), and, when the battle ends, the win, each drop of the room falling
+    /// from the last enemy beaten and the way on to the next room, or, after the party is wiped
+    /// out, the revive paid with runes or the return with what was found (both shown alike, with
+    /// no countdown). The boss's defeat ends the adventure with its result. The menu suspends the
+    /// adventure (the battle begins again on resuming) or ends it. Scene changes are the caller's.
     /// </summary>
     public sealed class BattleAdventureFlow : IDisposable
     {
-        public const float VictoryDelaySeconds = 1.4f;
         public const float DefeatDelaySeconds = 1.0f;
+
+        // ドロップの札を開いてから次のドロップ（最後ならダイアログ）までの、読む間。
+        public const float DropReadSeconds = 0.6f;
         public const string VictoryTitle = AdventureDialogs.VictoryTitle;
         public const string DefeatTitle = AdventureDialogs.DefeatTitle;
 
@@ -59,8 +62,10 @@ namespace Baryonyx.Adventure
             if (state.Run == null || !state.Run.InBattle)
                 throw new ArgumentException("The adventure has no battle to fight.", nameof(state));
 
-            var encounter = AdventureCatalog.Encounter(state.Run.Room.Encounter);
+            var room = state.Run.Room;
+            var encounter = AdventureCatalog.Encounter(room.Encounter);
             battle.EndsWithOutcome = true;
+            battle.BossEncounter = room.Kind == AdventureRoomKind.Boss;
             battle.UseEncounter(
                 encounter.Kinds,
                 encounter.Level,
@@ -99,7 +104,26 @@ namespace Baryonyx.Adventure
             if (disposed || Leaving)
                 return;
             busy = true;
-            Work = outcome == BattleOutcome.Victory ? VictoryAsync() : DefeatAsync();
+            Work = outcome == BattleOutcome.Victory ? VictoryAsync() : WipeoutAsync();
+        }
+
+        /// <summary>
+        /// Plays a turning point of the battle (<paramref name="moment"/> queues it) and waits
+        /// for it to end. False when the flow was disposed meanwhile.
+        /// </summary>
+        private async Task<bool> Play(Action moment)
+        {
+            moment();
+            try
+            {
+                while (!disposed && battle != null && battle.Acting)
+                    await Awaitable.NextFrameAsync(lifetime.Token);
+                return !disposed && battle != null;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Task<bool> Pause(float seconds)
@@ -115,15 +139,40 @@ namespace Baryonyx.Adventure
             }
         }
 
-        // 勝った部屋を終え、報酬を見せて次の部屋へ。最奥のボスなら冒険の結果を見せてホームへ。
+        // 勝利の演出のあいだに勝った部屋を保存し、ドロップを1つずつ見せてから次の部屋へ。
+        // 最奥のボスなら冒険の結果を見せてホームへ。
         private async Task VictoryAsync()
         {
-            if (!await Pause(VictoryDelaySeconds))
+            var clearing = ClearAsync();
+            if (!await Play(battle.PlayVictory))
                 return;
+            await RewardAsync(clearing);
+        }
+
+        private Task<AdventureState> ClearAsync() =>
+            Begin(() => source.ClearAsync(RoomId, lifetime.Token, Tally()));
+
+        private Task<AdventureState> LoadAsync() => Begin(() => source.LoadAsync(lifetime.Token));
+
+        // 保存・取得を演出と並べて始める。すぐに投げた例外も、待つところで受け取る。
+        private static Task<AdventureState> Begin(Func<Task<AdventureState>> start)
+        {
+            try
+            {
+                return start();
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException<AdventureState>(exception);
+            }
+        }
+
+        private async Task RewardAsync(Task<AdventureState> clearing)
+        {
             AdventureState cleared;
             try
             {
-                cleared = await source.ClearAsync(RoomId, lifetime.Token, Tally());
+                cleared = await clearing;
             }
             catch (OperationCanceledException)
             {
@@ -134,18 +183,17 @@ namespace Baryonyx.Adventure
                 Debug.LogWarning("勝利を保存できませんでした。" + exception.Message);
                 if (disposed)
                     return;
-                AdventureDialogs.SaveFailed(Dialog, () => Work = VictoryAsync());
+                AdventureDialogs.SaveFailed(Dialog, () => Work = RewardAsync(ClearAsync()));
                 return;
             }
             if (disposed)
                 return;
             state = AdventureSession.Use(cleared);
-            var reward = cleared.Reward;
+            if (!await ShowDrops(cleared.Drops))
+                return;
             var result = cleared.Result;
             AdventureDialogs.Victory(
                 Dialog,
-                overlay.Bonuses,
-                reward,
                 result != null,
                 result != null
                     ? () => ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, result, GoHome)
@@ -153,15 +201,55 @@ namespace Baryonyx.Adventure
             );
         }
 
-        // 復活と帰還を同じ重みで並べる。どちらを選んでも手に入れた物は残る。
+        // ドロップを1つずつ、最後に倒した敵から落として札で見せる。何もなければ「何も見つからなかった」。
+        private async Task<bool> ShowDrops(IReadOnlyList<AdventureDrop> drops)
+        {
+            var reveal = overlay.Reveal;
+            if (drops == null || drops.Count == 0)
+            {
+                if (!await Play(() => battle.PlayDrop(null, reveal)))
+                    return false;
+            }
+            else
+            {
+                foreach (var drop in drops)
+                {
+                    var item = AdventureDropItems.From(overlay.Bonuses, drop, overlay.ItemArt);
+                    if (!await Play(() => battle.PlayDrop(item, reveal)))
+                        return false;
+                    if (!await Pause(DropReadSeconds))
+                        return false;
+                }
+            }
+            if (reveal != null)
+                reveal.Hide();
+            return true;
+        }
+
+        // 全滅の演出のあいだに最新の冒険を取り、復活と帰還を選ばせる。
+        private async Task WipeoutAsync()
+        {
+            var loading = LoadAsync();
+            if (!await Play(battle.PlayWipeout))
+                return;
+            await ChooseAfterDefeatAsync(loading);
+        }
+
+        // 復活を断られたときは、間を置いて最新の値で選び直す。
         private async Task DefeatAsync()
         {
             if (!await Pause(DefeatDelaySeconds))
                 return;
+            await ChooseAfterDefeatAsync(LoadAsync());
+        }
+
+        // 復活と帰還を同じ重みで並べる。どちらを選んでも手に入れた物は残る。
+        private async Task ChooseAfterDefeatAsync(Task<AdventureState> loading)
+        {
             try
             {
                 // 所持ルーンと次の復活の費用を、最新の値で見せる。
-                state = AdventureSession.Use(await source.LoadAsync(lifetime.Token));
+                state = AdventureSession.Use(await loading);
             }
             catch (OperationCanceledException)
             {

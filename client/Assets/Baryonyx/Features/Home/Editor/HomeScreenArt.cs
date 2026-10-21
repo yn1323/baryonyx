@@ -32,11 +32,8 @@ namespace Baryonyx.Home.Editor
         public const string IconSummonPath = ArtFolder + "/IconSummon.png";
         public const string IconLibraryPath = ArtFolder + "/IconLibrary.png";
 
-        // The skill debugging room, opened from under the settings at the top right.
-        public const string IconSkillLabPath = ArtFolder + "/IconSkillLab.png";
-
-        // The quality debugging room, opened from under the skill debugging room.
-        public const string IconQualityLabPath = ArtFolder + "/IconQualityLab.png";
+        // The list of debugging rooms, opened from under the settings at the top right.
+        public const string IconDebugRoomsPath = ArtFolder + "/IconDebugRooms.png";
 
         // Drawn at twice the 96 px the buttons show them at, so they stay sharp on larger
         // screens and shrink smoothly with mipmaps.
@@ -101,33 +98,20 @@ namespace Baryonyx.Home.Editor
                     2.4f
                 );
 
-        // The skill debugging room, where every skill's card is played: two cards fanned out,
-        // the front one marked with a four-pointed star.
-        private static VectorIcon SkillCards()
-        {
-            IconShape Back(IconShape part) => part.Rotated(-14f, 24f, 32f);
-            IconShape Front(IconShape part) => part.Rotated(10f, 38f, 34f);
-            return new VectorIcon()
-                .Fill(Back(IconShape.Rect(10f, 9f, 28f, 42f)))
-                .Fill(Front(IconShape.Rect(24f, 12f, 29f, 44f)), PartGap)
-                .Cut(
-                    Front(
-                        IconShape.Path(
-                            "M38.5 22 Q39.8 32.7 50 34 Q39.8 35.3 38.5 46 Q37.2 35.3 27 34 Q37.2 32.7 38.5 22Z"
-                        )
-                    )
-                );
-        }
-
-        // The quality debugging room, where a thing's quality and sparkle are tried: a cut gem
-        // with a line across its widest part, and a small four-pointed star at its top right.
-        private static VectorIcon Gem() =>
+        // The debugging rooms, where the skills, the qualities, the enemies and the moments are
+        // tried before release: a laboratory flask with a line where the liquid lies, and a small
+        // four-pointed star at its top right.
+        private static VectorIcon Flask() =>
             new VectorIcon()
-                .Fill(IconShape.Path("M8 24 L18 12 L40 12 L50 24 L29 54 Z"))
-                .Cut(IconShape.Rect(8f, 23f, 42f, 3f))
                 .Fill(
                     IconShape.Path(
-                        "M52 4 Q53.2 10.8 60 12 Q53.2 13.2 52 20 Q50.8 13.2 44 12 Q50.8 10.8 52 4Z"
+                        "M22 4 L42 4 L42 10 L38 10 L38 24 L55 51 Q58 58 50 58 L14 58 Q6 58 9 51 L26 24 L26 10 L22 10Z"
+                    )
+                )
+                .Cut(IconShape.Rect(12f, 37f, 40f, 3f))
+                .Fill(
+                    IconShape.Path(
+                        "M54 4 Q55.2 10.8 62 12 Q55.2 13.2 54 20 Q52.8 13.2 46 12 Q52.8 10.8 54 4Z"
                     ),
                     PartGap
                 );
@@ -179,8 +163,7 @@ namespace Baryonyx.Home.Editor
             Scales().Save(IconShopPath, NavIconTextureSize);
             SummoningCircle().Save(IconSummonPath, NavIconTextureSize);
             OpenBook().Save(IconLibraryPath, NavIconTextureSize);
-            SkillCards().Save(IconSkillLabPath, NavIconTextureSize);
-            Gem().Save(IconQualityLabPath, NavIconTextureSize);
+            Flask().Save(IconDebugRoomsPath, NavIconTextureSize);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
             ArtAssets.WritePattern(

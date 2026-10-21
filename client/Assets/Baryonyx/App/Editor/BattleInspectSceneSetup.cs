@@ -10,16 +10,16 @@ using UnityEngine.SceneManagement;
 namespace Baryonyx.App.Editor
 {
     /// <summary>
-    /// Rebuilds BattleInspect.unity: the mock card battle screen on its own, with a camera and
+    /// Rebuilds BattleLab.unity: the mock card battle screen on its own, with a camera and
     /// input, so the battle look can be checked without playing through Top and Home. The
     /// battle takes place on the 3D stone circle on the highland at dusk (HD-2D); the camera
     /// follows the stage's slow circle and shake, so near and far part as it moves.
     /// </summary>
     public static class BattleInspectSceneSetup
     {
-        public const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity";
+        public const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
 
-        [MenuItem("Baryonyx/App/Create Battle Inspect Scene")]
+        [MenuItem("Baryonyx/App/Create Battle Lab Scene")]
         public static void CreateScene()
         {
             EditorGuard.RequireEditMode();
@@ -39,6 +39,25 @@ namespace Baryonyx.App.Editor
             // The showcase loads scenes through SceneManager, which only finds scenes in the build.
             ScreenScenes.AddToBuildSettings(ScenePath);
             ShowcaseCatalogBuilder.RefreshCatalog();
+        }
+
+        /// <summary>
+        /// Makes the battle screen's prefab and the dusk highland (its prefab and its lens and
+        /// grade) only if they are missing, for a scene that puts the battle in with
+        /// <see cref="AddBattle"/> and leaves them as they are.
+        /// </summary>
+        public static void EnsureBattleAssets()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(BattleInspectAssets.PrefabPath) == null)
+                BattleInspectAssets.CreateAssets();
+            if (
+                AssetDatabase.LoadAssetAtPath<GameObject>(StageSetAssets.DuskHighlandPrefabPath)
+                    == null
+                || AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(
+                    StageSetAssets.DuskHighlandLookPath
+                ) == null
+            )
+                StageSetAssets.EnsureAssets();
         }
 
         /// <summary>

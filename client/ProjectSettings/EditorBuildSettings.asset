@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Baryonyx/App/Scenes/Showcase.unity
     guid: 8ea5e68f50054444ac8bd507416be5ec
   - enabled: 1
-    path: Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity
+    path: Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity
     guid: 9ba16e9a3c551458b85ecc053ba0a01f
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Guide/Pub.unity
@@ -47,5 +47,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Debug/QualityLab.unity
     guid: 6b36abc89fe9846cfa75d0c6c54fd155
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Debug/BattleMomentLab.unity
+    guid: 33898b8811608460997138495f137ae8
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Debug/ExplorationMomentLab.unity
+    guid: 3f7863ff647334335a4f5d4b0a5eda31
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -109,7 +109,7 @@ namespace Baryonyx.UI.Cards
             raw.uvRect = uvRect;
             raw.raycastTarget = false;
             raw.enabled = art != null && level > MinLevel;
-            raw.color = new Color(level / (float)MaxLevel, Seed(), Style / 255f, 1f);
+            raw.color = new Color(level / (float)MaxLevel, SeedOf(transform), Style / 255f, 1f);
         }
 
         public void Show(Texture art, ItemQuality quality, int style) =>
@@ -148,8 +148,11 @@ namespace Baryonyx.UI.Cards
             );
         }
 
-        // カードごとの乱数の種（0〜1）。並んだカードの光る時がずれるよう、置かれた場所の名前から決める。
-        private float Seed()
+        /// <summary>
+        /// A seed of the card's own (0 to 1) from where <paramref name="transform"/> sits, so cards
+        /// side by side do not flash together.
+        /// </summary>
+        public static float SeedOf(Transform transform)
         {
             unchecked
             {

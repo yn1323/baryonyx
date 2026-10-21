@@ -87,7 +87,7 @@ namespace Baryonyx.Tests.EditMode
         public void TheBattlefieldIsDrawnByTheSceneCameraWhileTheSceneIsEdited()
         {
             var scene = EditorSceneManager.OpenScene(
-                "Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity",
+                "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity",
                 OpenSceneMode.Additive
             );
             try
@@ -288,7 +288,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [TestCase(HomeScenePath)]
-        [TestCase("Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity")]
+        [TestCase("Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity")]
         public void TheDressingKeepsClearOfTheCharactersFeet(string scenePath)
         {
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);

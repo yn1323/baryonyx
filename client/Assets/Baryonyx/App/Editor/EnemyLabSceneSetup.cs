@@ -4,7 +4,6 @@ using Baryonyx.Combat.Editor;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Showcase.Editor;
-using Baryonyx.Stages.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -30,6 +29,19 @@ namespace Baryonyx.App.Editor
             "ScreenCanvas/SafeArea/EndTurn",
         };
 
+        /// <summary>Hides the battle screen's parts for playing cards, for a lab that plays none.</summary>
+        internal static void PutCardsAway(GameObject screen)
+        {
+            foreach (var path in CardParts)
+            {
+                var part = screen.transform.Find(path);
+                if (part == null)
+                    throw new InvalidOperationException("The battle screen has no " + path);
+                part.gameObject.SetActive(false);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(part.gameObject);
+            }
+        }
+
         [MenuItem("Baryonyx/App/Create Enemy Lab Scene")]
         public static void CreateScene()
         {
@@ -37,30 +49,14 @@ namespace Baryonyx.App.Editor
 
             // The battle screen and the dusk highland are BattleInspect's; they are made here
             // only if they are missing, so building the lab leaves them as they are.
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(BattleInspectAssets.PrefabPath) == null)
-                BattleInspectAssets.CreateAssets();
-            if (
-                AssetDatabase.LoadAssetAtPath<GameObject>(StageSetAssets.DuskHighlandPrefabPath)
-                    == null
-                || AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(
-                    StageSetAssets.DuskHighlandLookPath
-                ) == null
-            )
-                StageSetAssets.EnsureAssets();
+            BattleInspectSceneSetup.EnsureBattleAssets();
             EnemyLabAssets.CreateAssets();
             ScreenScenes.Rebuild(
                 ScenePath,
                 scene =>
                 {
                     var screen = BattleInspectSceneSetup.AddBattle(scene);
-                    foreach (var path in CardParts)
-                    {
-                        var part = screen.transform.Find(path);
-                        if (part == null)
-                            throw new InvalidOperationException("The battle screen has no " + path);
-                        part.gameObject.SetActive(false);
-                        PrefabUtility.RecordPrefabInstancePropertyModifications(part.gameObject);
-                    }
+                    PutCardsAway(screen);
 
                     var view = screen.GetComponent<BattleInspectView>();
                     var panel = ScreenScenes.AddScreen(

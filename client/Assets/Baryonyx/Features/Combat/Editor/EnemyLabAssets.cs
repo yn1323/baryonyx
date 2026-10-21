@@ -24,8 +24,8 @@ namespace Baryonyx.Combat.Editor
     {
         public const string PrefabPath = "Assets/Baryonyx/Features/Combat/UI/EnemyLabPanel.prefab";
 
-        private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
-        private static readonly Color StripColor = new(0.02f, 0.03f, 0.06f, 0.72f);
+        internal static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
+        internal static readonly Color StripColor = new(0.02f, 0.03f, 0.06f, 0.72f);
 
         // The enemies' names in the lab, by their art's name.
         private static readonly Dictionary<string, string> EnemyNames = new()
@@ -51,10 +51,10 @@ namespace Baryonyx.Combat.Editor
 
         // Two rows of buttons a finger can press (128 on the 1920x1080 design, as the UI rules
         // ask), kept under the lowest HP bars of the party and the enemies.
-        private const float RowHeight = 128f;
-        private const float RowGap = 8f;
-        private const float ActionsBottom = 12f;
-        private const float ChooserBottom = ActionsBottom + RowHeight + RowGap;
+        internal const float RowHeight = 128f;
+        internal const float RowGap = 8f;
+        internal const float ActionsBottom = 12f;
+        internal const float ChooserBottom = ActionsBottom + RowHeight + RowGap;
 
         /// <summary>The enemy's name in the lab, from the name of its body on the battle screen ("EnemyMossSlime").</summary>
         public static string NameOf(string bodyName)
@@ -91,16 +91,12 @@ namespace Baryonyx.Combat.Editor
             AssetDatabase.SaveAssets();
         }
 
-        private static void BuildTitle(RectTransform safe)
+        private static void BuildTitle(RectTransform safe) => Title(safe, "敵の挙動デバッグルーム");
+
+        /// <summary>The room's name at the top right.</summary>
+        internal static void Title(RectTransform safe, string text)
         {
-            var title = Label(
-                safe,
-                "Title",
-                "敵の挙動デバッグルーム",
-                34,
-                Gold,
-                TextAlignmentOptions.Right
-            );
+            var title = Label(safe, "Title", text, 34, Gold, TextAlignmentOptions.Right);
             Corner(
                 title.rectTransform,
                 Vector2.one,
@@ -110,7 +106,7 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>A dark band behind the two rows, so they read over the stage.</summary>
-        private static void BuildStrip(RectTransform safe)
+        internal static void BuildStrip(RectTransform safe)
         {
             var strip = Rect("Strip", safe);
             strip.anchorMin = Vector2.zero;
@@ -159,23 +155,15 @@ namespace Baryonyx.Combat.Editor
             var row = Row(safe, "Actions", ActionsBottom);
             var buttons = new Button[ActionLabels.Length];
             for (int i = 0; i < ActionLabels.Length; i++)
-            {
-                var (button, label) = ControlButton(
+                buttons[i] = SharedWidthButton(
                     row,
                     ((EnemyLabAction)i).ToString(),
-                    ActionLabels[i],
-                    0f
+                    ActionLabels[i]
                 );
-                button.GetComponent<LayoutElement>().flexibleWidth = 1f;
-                label.enableAutoSizing = true;
-                label.fontSizeMin = 20f;
-                label.fontSizeMax = 34f;
-                buttons[i] = button;
-            }
             lab.ActionButtons = buttons;
         }
 
-        private static RectTransform Row(RectTransform safe, string name, float bottom)
+        internal static RectTransform Row(RectTransform safe, string name, float bottom)
         {
             var row = Rect(name, safe);
             row.anchorMin = Vector2.zero;
@@ -192,7 +180,18 @@ namespace Baryonyx.Combat.Editor
             return row;
         }
 
-        private static (Button button, TMP_Text label) ControlButton(
+        /// <summary>A button sharing the row's width with the others, its words shrinking to fit.</summary>
+        internal static Button SharedWidthButton(RectTransform row, string name, string text)
+        {
+            var (button, label) = ControlButton(row, name, text, 0f);
+            button.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 20f;
+            label.fontSizeMax = 34f;
+            return button;
+        }
+
+        internal static (Button button, TMP_Text label) ControlButton(
             RectTransform parent,
             string name,
             string text,

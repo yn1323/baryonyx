@@ -633,6 +633,9 @@ namespace Baryonyx.Combat.Editor
             // The sparkle right over the art, under the bands and the text (doc/art/direction.md).
             if (cardView.Foil == null)
                 cardView.Foil = CardFoilAssets.Add(cardView.Art);
+            // The quality's light on the frame (doc/art/direction.md).
+            if (cardView.FrameFoil == null)
+                cardView.FrameFoil = CardFoilAssets.AddFrame(cardView.Frame);
             if (cardView.Shade == null)
             {
                 var shade = Rect("Shade", card);
@@ -953,7 +956,9 @@ namespace Baryonyx.Combat.Editor
             var weaknesses = new List<BattleInspectWeakness>();
             var order = spec
                 .Definition.Weaknesses.Select(BattleCardText.ElementOf)
-                .Concat(AllElements.Except(spec.Definition.Weaknesses.Select(BattleCardText.ElementOf)));
+                .Concat(
+                    AllElements.Except(spec.Definition.Weaknesses.Select(BattleCardText.ElementOf))
+                );
             foreach (var element in order)
             {
                 bool revealed = Array.IndexOf(spec.Revealed, element) >= 0;

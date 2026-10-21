@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
@@ -19,7 +20,8 @@ namespace Baryonyx.Adventure
     /// far away, coloured dots (the colour tells the room's kind, as the legend at the bottom
     /// right says), the deepest room's ruin far away, the chest of a treasure room, the place and
     /// floor at the top, a prompt at the bottom and the menu at the top left. A room tapped sends
-    /// the party walking along its road with the camera following it, and once it arrives the
+    /// the party walking along its road with the camera following it up the screen (the camera
+    /// stays in the middle across, and the party walks left and right), and once it arrives the
     /// rooms newly in sight appear, nearer floors first. One finger dragged on
     /// the map looks along the route ahead (<see cref="Look"/>). AdventureAssets builds
     /// it; the adventure's flow (<see cref="ExplorationFlow"/>) drives it. AdventureAssets also
@@ -27,12 +29,15 @@ namespace Baryonyx.Adventure
     /// Play Mode; on <see cref="Awake"/> the sample's picture is hidden and its markers and
     /// floors are reused.
     /// </summary>
-    public sealed class ExplorationView : MonoBehaviour, IEditModePreview
+    public sealed partial class ExplorationView : MonoBehaviour, IEditModePreview
     {
         // 移動の時間：4人が道を歩く時間、カメラが追い始めるまでと追いつくまで（どれも部屋を押してからの秒数）。
         public const float WalkSeconds = 1.2f;
         public const float CameraDelaySeconds = 0.2f;
         public const float CameraSeconds = 1.3f;
+
+        // カメラが立つ道の横の位置（s）。カメラは道の左右の中央から動かず、4人だけが左右へ動く。
+        public const float CameraAcross = 0.5f;
 
         // 部屋の印・宝箱が現れる・消える時間と、着いて新しく見えた印を奥の階ほど遅らせる時間。
         public const float MarkerFadeSeconds = 0.4f;
@@ -130,6 +135,9 @@ namespace Baryonyx.Adventure
         // 報酬のボーナスの名前とアイコン。
         public StepBonusMockData Bonuses;
 
+        // ドロップのアイテム・装備の絵（種類のIDで引く）。
+        public ItemArt ItemArt;
+
         // 見本の種。冒険の流れが動かさないとき（展示室など）に、この種の道を描く。0なら描かない。
         public int SampleSeed;
 
@@ -169,8 +177,8 @@ namespace Baryonyx.Adventure
             public Vector2[] Road;
             public float Elapsed;
 
-            // 歩き出したときのカメラの、道の始めからのずれ（先を見ていた分）。追いつくまでに縮める。
-            public Vector2 CameraOffset;
+            // 歩き出したときのカメラの、道の始めからの奥行きのずれ（先を見ていた分）。追いつくまでに縮める。
+            public float CameraOffset;
 
             // 4人とカメラが着いたときに呼ぶ。呼んだあとは null。
             public Action Arrived;
@@ -255,7 +263,8 @@ namespace Baryonyx.Adventure
             RoomPressed += WalkSample;
         }
 
-        private void WalkSample(string roomId)
+        /// <summary>On the sample route, the party walks to <paramref name="roomId"/> and the room it reaches shows.</summary>
+        public void WalkSample(string roomId)
         {
             var run = ShownRun;
             if (Walking || run?.Map == null)
@@ -269,7 +278,7 @@ namespace Baryonyx.Adventure
                 0,
                 0,
                 run.Map,
-                run.Rewards
+                run.Drops
             );
             WalkTo(roomId, () => Render(ExplorationRoom.From(next)));
         }
@@ -326,7 +335,7 @@ namespace Baryonyx.Adventure
                         0,
                         0,
                         map,
-                        Array.Empty<AdventureReward>()
+                        Array.Empty<AdventureDrop>()
                     )
                 )
             );
@@ -371,7 +380,7 @@ namespace Baryonyx.Adventure
             if (!reveal)
             {
                 var here = RoutePoint(run.RoomId);
-                cameraAt = here;
+                cameraAt = new Vector2(here.x, CameraAcross);
                 partyRoute = here;
             }
             projection = ViewFrom(cameraAt);
@@ -401,26 +410,25 @@ namespace Baryonyx.Adventure
         private ExplorationMapProjection ViewFrom(Vector2 at) => new(painter.Map, at.x, at.y);
 
         /// <summary>
-        /// Looks along the route: the finger's move on the map (design units, y up) moves the
-        /// camera ahead or back and across, as if the ground at the party's row followed the
-        /// finger. Pulling the map down looks ahead. The camera stays where it is left, from the
-        /// party's room to three floors before the deepest room, where the last floors and the
-        /// deepest room fill the screen; walking to a room brings it back.
+        /// Looks along the route: the finger's move up or down the map (design units, y up) moves
+        /// the camera ahead or back, as if the ground at the party's row followed the finger; it
+        /// stays in the middle across. Pulling the map down looks ahead. The camera stays where it
+        /// is left, from the party's room to three floors before the deepest room, where the last
+        /// floors and the deepest room fill the screen; walking to a room brings it back.
         /// </summary>
         public void Look(Vector2 delta)
         {
             if (walking || painter == null || ShownRun?.Map == null || shownRoom == null)
                 return;
-            var to = cameraAt + ToRoute(delta);
             var here = RoutePoint(ShownRun.RoomId);
             float last = painter
                 .Map.Rooms.Where(room => room.Floor == painter.Map.BossFloor - LookFloors)
                 .Select(room => painter.Map.PointOf(room.Id).T)
                 .DefaultIfEmpty(here.x)
                 .Average();
-            to = new Vector2(
-                Mathf.Clamp(to.x, here.x, Mathf.Max(here.x, last)),
-                Mathf.Clamp01(to.y)
+            var to = new Vector2(
+                Mathf.Clamp(cameraAt.x + ToRoute(delta), here.x, Mathf.Max(here.x, last)),
+                CameraAcross
             );
             if (to == cameraAt)
                 return;
@@ -440,21 +448,16 @@ namespace Baryonyx.Adventure
             Animate();
         }
 
-        // 指の動き（設計座標）を、カメラの立つ道の上の位置の動きに直す。パーティの行の地面が、
-        // 指と同じだけ動くようにする。
-        private Vector2 ToRoute(Vector2 delta)
+        // 指の上下の動き（設計座標）を、カメラの立つ道の上の奥行き（t）の動きに直す。パーティの
+        // 行の地面が、指と同じだけ動くようにする。
+        private float ToRoute(Vector2 delta)
         {
             const float Step = 0.01f;
             var at = projection.ToDots(cameraAt.x, cameraAt.y);
             var ahead = ViewFrom(cameraAt + new Vector2(Step, 0f)).ToDots(cameraAt.x, cameraAt.y);
-            var across = ViewFrom(cameraAt + new Vector2(0f, Step)).ToDots(cameraAt.x, cameraAt.y);
             // 設計座標は y が上、ドットは y が下。
             float rows = (ahead.y - at.y) / Step;
-            float columns = (across.x - at.x) / Step;
-            return new Vector2(
-                rows != 0f ? -delta.y / Dot / rows : 0f,
-                columns != 0f ? delta.x / Dot / columns : 0f
-            );
+            return rows != 0f ? -delta.y / Dot / rows : 0f;
         }
 
         // カメラの立つ階：カメラに最も近い部屋の階（今いる階より手前にはしない）。
@@ -775,7 +778,7 @@ namespace Baryonyx.Adventure
                 Road = road.Select(point => new Vector2(point.T, point.S)).ToArray(),
                 Arrived = arrived,
             };
-            move.CameraOffset = cameraAt - move.Road[0];
+            move.CameraOffset = cameraAt.x - move.Road[0].x;
             walking = true;
             revealFor = roomId;
             paintedRun = new AdventureRun(
@@ -787,7 +790,7 @@ namespace Baryonyx.Adventure
                 run.Revives,
                 run.ReviveCost,
                 run.Map,
-                run.Rewards,
+                run.Drops,
                 run.Floor + 1
             );
             paintedSight = new ExplorationMapSight(paintedRun);
@@ -851,7 +854,11 @@ namespace Baryonyx.Adventure
                 float walked = Ease(move.Elapsed / WalkSeconds);
                 float followed = Ease((move.Elapsed - CameraDelaySeconds) / CameraSeconds);
                 partyRoute = move.At(walked);
-                cameraAt = move.At(followed) + move.CameraOffset * (1f - followed);
+                // カメラは道の奥行きだけ追い、左右は中央のまま。
+                cameraAt = new Vector2(
+                    move.At(followed).x + move.CameraOffset * (1f - followed),
+                    CameraAcross
+                );
                 projection = ViewFrom(cameraAt);
                 Paint(seconds);
                 PlaceOnMap();
@@ -962,8 +969,9 @@ namespace Baryonyx.Adventure
                     AdventureDialogs.Treasure(
                         Dialog,
                         Bonuses,
-                        AdventureDialogSamples.Reward(Bonuses),
-                        none
+                        AdventureDialogSamples.Drops(Bonuses),
+                        none,
+                        ItemArt
                     );
                     break;
                 case 3:

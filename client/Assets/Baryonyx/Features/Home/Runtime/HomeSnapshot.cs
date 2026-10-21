@@ -19,11 +19,8 @@ namespace Baryonyx.Home
         Resume,
         Library,
 
-        // 公開前の確認用に、スキルのデバッグルームを開く。
-        SkillLab,
-
-        // 公開前の確認用に、品質のデバッグルームを開く。
-        QualityLab,
+        // 公開前の確認用に、デバッグルーム（スキル・品質・敵の挙動・演出など）の一覧を出す。
+        DebugRooms,
     }
 
     /// <summary>

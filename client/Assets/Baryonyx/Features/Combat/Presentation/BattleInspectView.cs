@@ -831,8 +831,14 @@ namespace Baryonyx.Combat.Presentation
 
         private void Start()
         {
+            // The adventure's battle opens with the enemies appearing, and deals after them.
+            if (EndsWithOutcome)
+            {
+                Enqueue(Opening());
+                return;
+            }
             RestartDeal();
-            ShowTurnBanner(PartyTurnText(Turn, again: false), enemies: false);
+            ShowPartyTurnBanner(again: false);
         }
 
         private void OnDestroy()
@@ -1387,11 +1393,20 @@ namespace Baryonyx.Combat.Presentation
                 if (Array.TrueForAll(Allies, ally => ally.Down))
                     ReviveAllies();
             }
+            BeginPartyTurn(again: !enemiesAct);
+        }
+
+        /// <summary>
+        /// The party's next turn begins: the cards are dealt under the band of the party's turn
+        /// (of a turn <paramref name="again"/>, when no enemy acted in between).
+        /// </summary>
+        private void BeginPartyTurn(bool again)
+        {
             EnemyTurn = false;
             StartOfTurn(Turn + 1);
             dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
             // Over the deal, so the party's turn begins with no wait.
-            ShowTurnBanner(PartyTurnText(Turn, again: !enemiesAct), enemies: false);
+            ShowPartyTurnBanner(again);
         }
 
         /// <summary>True when an enemy still standing comes before the party's next turn.</summary>
@@ -1967,33 +1982,56 @@ namespace Baryonyx.Combat.Presentation
         /// Shows the turn band with <paramref name="text"/> in the colours of the enemies or the
         /// party, then fades it.
         /// </summary>
-        private void ShowTurnBanner(string text, bool enemies)
+        private void ShowTurnBanner(string text, bool enemies) =>
+            ShowBand(
+                text,
+                enemies ? EnemyBannerLine : PartyBannerLine,
+                enemies ? EnemyBannerText : PartyBannerText,
+                Settings.TurnBannerHold
+            );
+
+        /// <summary>The band of the party's turn, or of a turn <paramref name="again"/>.</summary>
+        private void ShowPartyTurnBanner(bool again) =>
+            ShowTurnBanner(PartyTurnText(Turn, again), enemies: false);
+
+        /// <summary>
+        /// Shows the turn band with <paramref name="text"/> in <paramref name="words"/>, between
+        /// lines of <paramref name="line"/>, for <paramref name="hold"/> seconds, then fades it.
+        /// </summary>
+        private void ShowBand(string text, Color line, Color words, float hold)
         {
             if (TurnBanner == null)
                 return;
             if (turnBannerShow != null)
                 StopCoroutine(turnBannerShow);
-            PaintTurnBanner(text, enemies);
+            PaintBand(text, line, words);
             SetTurnBanner(0f, 0f);
-            turnBannerShow = StartCoroutine(PlayTurnBanner());
+            turnBannerShow = StartCoroutine(PlayTurnBanner(hold));
         }
 
         /// <summary>Puts <paramref name="text"/> on the turn band in the colours of the enemies or the party, and shows it.</summary>
-        private void PaintTurnBanner(string text, bool enemies)
+        private void PaintTurnBanner(string text, bool enemies) =>
+            PaintBand(
+                text,
+                enemies ? EnemyBannerLine : PartyBannerLine,
+                enemies ? EnemyBannerText : PartyBannerText
+            );
+
+        private void PaintBand(string text, Color line, Color words)
         {
             TurnBanner.SetText(text);
             if (TurnBanner.Label != null)
-                TurnBanner.Label.color = enemies ? EnemyBannerText : PartyBannerText;
-            foreach (var line in TurnBannerLines)
-                line.color = enemies ? EnemyBannerLine : PartyBannerLine;
+                TurnBanner.Label.color = words;
+            foreach (var graphic in TurnBannerLines)
+                graphic.color = line;
             TurnBanner.gameObject.SetActive(true);
         }
 
         /// <summary>The band fades in as its lines open from the middle, holds, and fades out.</summary>
-        private IEnumerator PlayTurnBanner()
+        private IEnumerator PlayTurnBanner(float holdFor)
         {
             float fade = Settings.TurnBannerFade;
-            float hold = Mathf.Max(fade, Settings.TurnBannerHold);
+            float hold = Mathf.Max(fade, holdFor);
             for (float t = 0f; t < hold + fade; t += Time.deltaTime)
             {
                 float alpha =
@@ -2067,6 +2105,8 @@ namespace Baryonyx.Combat.Presentation
         {
             var enemy = Enemies[index];
             yield return Blink(enemy.Sprite);
+            if (!enemy.Alive)
+                lastBeaten = index;
             if (!enemy.Alive && Vfx != null)
             {
                 enemy.Sprite.color = Color.white;

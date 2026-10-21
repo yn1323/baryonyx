@@ -59,6 +59,9 @@ namespace Baryonyx.Combat.Presentation
                 if (enemy.Group != null)
                     enemy.Group.alpha = here ? 1f : 0f;
                 RefreshEnemy(enemy);
+                // A drop falls from the last enemy beaten; until one is, from one on the field.
+                if (here)
+                    lastBeaten = i;
             }
             RefreshTurnOrder();
         }
@@ -207,16 +210,8 @@ namespace Baryonyx.Combat.Presentation
                 return;
             Outcome = BattleOutcome.None;
             ClearStatuses(true);
-            foreach (var ally in Allies)
-            {
-                ally.Hp = ally.MaxHp;
-                ally.Sprite.color = Color.white;
-                RefreshAlly(ally);
-            }
-            EnemyTurn = false;
-            StartOfTurn(Turn + 1);
-            dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
-            ShowTurnBanner(PartyTurnText(Turn, again: false), enemies: false);
+            // The party stands up again with its moment, then its turn begins (Moments).
+            Enqueue(Revived());
         }
 
         /// <summary>

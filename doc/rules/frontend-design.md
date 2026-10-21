@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleInspect・CardSkillLab・EnemyLab・QualityLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
@@ -169,14 +169,16 @@ client/
 | `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
 | `Battle.unity` | 冒険の戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所・ライブラリ）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
-| `Debug/BattleInspect.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Inspect Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
+| `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
 | `Debug/QualityLab.unity` | スキル・装備・アクセサリー・ボーナスの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
+| `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens.md#戦闘の演出デバッグルーム) |
+| `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・部屋へ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens.md#探索の演出デバッグルーム) |
 
-Top・Home・BattleInspect・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
+Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
 3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。
-Top・Home・BattleInspectを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../art/hd2d-stage.md#sceneタブでの表示)）。
+Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見る設定になり、手前のUI（Screen Space - Overlay）はSceneタブでだけ隠れる（[Sceneタブでの表示](../art/hd2d-stage.md#sceneタブでの表示)）。
 
 画面のPrefab・データ・画像は、次のメニューで作り直す。
 
@@ -188,7 +190,8 @@ Top・Home・BattleInspectを開くと、Sceneタブは舞台のカメラから�
 | 編成の画面と、パーティ・装備・育成・スキル・ボーナスのパネル | `Baryonyx > Tavern > Create Screen Assets` |
 | 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
 | 探索と冒険用の重ね画面のPrefab、探索の地図に立てる絵の画素の写し（`Features/Adventure/Data/ExplorationMapArt.asset`） | `Baryonyx > Adventure > Create Screen Assets` |
-| 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets` |
+| 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |
+| 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
 | 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |
 | 接続設定アセット（`HealthConnectionSettings.asset`）と共有フォント | `Baryonyx > Health > Create Screen Assets`（[実行環境と接続先](../features/startup-sync.md#実行環境と接続先)） |
 | 展示室の登録 | `Baryonyx > Showcase > Refresh Catalog`（[展示室](../features/showcase.md)） |

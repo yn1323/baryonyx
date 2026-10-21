@@ -22,7 +22,7 @@ namespace Baryonyx.Adventure.Editor
     /// Builds the adventure's screens: the exploration screen (the map painted on the device with
     /// its room markers, the party and the chest, the floors, the place, the prompt, the menu and
     /// the dialog), the pictures the map is painted with, and the overlay laid over the battle
-    /// screen (the menu, the dialog and the notice band). Coordinates follow the 1920x1080 design;
+    /// screen (the menu, the plate of a drop, the dialog and the notice band). Coordinates follow the 1920x1080 design;
     /// the map is 2400x1080, three pixels a dot, centred so a wider screen shows more of it.
     /// </summary>
     public static class AdventureAssets
@@ -80,6 +80,9 @@ namespace Baryonyx.Adventure.Editor
             (AdventureRoomKind.Boss, "最奥の間"),
         };
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
+
+        // 勝った戦闘のドロップの札の中心。戦闘の演出デバッグルームと同じく、敵と味方の上に出す。
+        private static readonly Vector2 DropPlateCenter = new(40f, 250f);
 
         private const float MenuWidth = 128f;
         private const float MenuHeight = 168f;
@@ -207,6 +210,7 @@ namespace Baryonyx.Adventure.Editor
             var view = root.gameObject.AddComponent<ExplorationView>();
             view.KindIcons = KindIcons();
             view.Bonuses = bonuses;
+            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             view.Art = art;
             // 展示室でPrefabだけを開いたときに描く見本の道。冒険の場面では使わない。
             view.SampleSeed = 20261004;
@@ -508,8 +512,10 @@ namespace Baryonyx.Adventure.Editor
             root.GetComponent<Canvas>().sortingOrder = 5;
             var overlay = root.gameObject.AddComponent<AdventureOverlay>();
             overlay.Bonuses = bonuses;
+            overlay.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             var safe = SafeArea(root);
             overlay.MenuButton = BuildMenuButton(safe, right: true);
+            overlay.Reveal = RewardRevealAssets.Build(safe, DropPlateCenter);
             overlay.Notice = NoticeBandAssets.Build(root);
             overlay.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);

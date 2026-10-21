@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
-using Baryonyx.Home;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // Homeの右上の設定の下のボタンからスキルのデバッグルームへ移り、ルームの「ホームへ」でHomeへ戻る。
+    // Homeの右上のデバッグルームの一覧からスキルのデバッグルームへ移り、ルームの「ホームへ」でHomeへ戻る。
     public sealed class HomeSkillLabTests
     {
         private static readonly string[] Keys =
@@ -55,18 +54,16 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SkillLabButtonOpensTheLabAndItsHomeButtonReturns()
+        public IEnumerator TheListOpensTheSkillLabAndItsHomeButtonReturns()
         {
             var home = default(HomeBootstrap);
             yield return SceneTests.LoadHome(value => home = value);
-            Assert.That(
-                SceneNames.ScreenFor(HomeAction.SkillLab),
-                Is.EqualTo(SceneNames.CardSkillLab)
-            );
+            home.View.DebugRoomsButton.onClick.Invoke();
+            Assert.That(home.View.Dialog.IsShown, Is.True);
 
             // 続けて押しても、画面は1回だけ開く。
-            home.View.SkillLabButton.onClick.Invoke();
-            home.View.SkillLabButton.onClick.Invoke();
+            Assert.That(home.View.Dialog.Choose("スキルのデバッグルーム"), Is.True);
+            Assert.That(home.View.Dialog.Choose("スキルのデバッグルーム"), Is.False);
             Assert.That(home.Presenter.ScreenOpened, Is.True);
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.CardSkillLab,

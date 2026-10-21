@@ -14,17 +14,40 @@ namespace Baryonyx.Editor.UI
     {
         public const string ShaderName = "Baryonyx/UI/CardFoil";
         public const string MaterialPath = "Assets/Baryonyx/Shared/UI/Cards/CardFoil.mat";
+        public const string FrameShaderName = "Baryonyx/UI/CardFrameFoil";
+        public const string FrameMaterialPath = "Assets/Baryonyx/Shared/UI/Cards/CardFrameFoil.mat";
 
         /// <summary>The shared material, made the first time it is asked for.</summary>
-        public static Material Material()
+        public static Material Material() => LoadOrCreate(MaterialPath, ShaderName, "CardFoil");
+
+        /// <summary>The shared material of a card frame's light, made the first time it is asked for.</summary>
+        public static Material FrameMaterial() =>
+            LoadOrCreate(FrameMaterialPath, FrameShaderName, "CardFrameFoil");
+
+        // パスのマテリアルを読み、なければシェーダーから作って保存する。
+        private static Material LoadOrCreate(string path, string shaderName, string name)
         {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
                 return material;
-            material = new Material(Shader.Find(ShaderName)) { name = "CardFoil" };
-            AssetDatabase.CreateAsset(material, MaterialPath);
+            material = new Material(Shader.Find(shaderName)) { name = name };
+            AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
             return material;
+        }
+
+        /// <summary>
+        /// Lets <paramref name="frame"/> (a card's frame) shine by the card's quality: the frame
+        /// draws itself with the frame light's material, showing <paramref name="quality"/>.
+        /// </summary>
+        public static CardFrameFoil AddFrame(RawImage frame, ItemQuality quality = ItemQuality.C)
+        {
+            var foil = frame.GetComponent<CardFrameFoil>();
+            if (foil == null)
+                foil = frame.gameObject.AddComponent<CardFrameFoil>();
+            frame.material = FrameMaterial();
+            foil.Show(quality);
+            return foil;
         }
 
         /// <summary>

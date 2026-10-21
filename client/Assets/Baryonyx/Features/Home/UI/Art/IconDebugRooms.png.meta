@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e63dcf5a0b9814b3c8c9cb6b59219c8b
+guid: 2ffb8a63ec9de4d2dbae8b1f7e5f8df4
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3177842391478922108
-    second: IconSkillLab_0
+      213: 8090057125351848864
+    second: IconDebugRooms_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -115,7 +115,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: IconSkillLab_0
+      name: IconDebugRooms_0
       rect:
         serializedVersion: 2
         x: 0
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 48498bf8e2906e3d0800000000000000
-      internalID: -3177842391478922108
+      spriteID: 0abf631b718a54070800000000000000
+      internalID: 8090057125351848864
       vertices: []
       indices: 
       edges: []

@@ -358,6 +358,7 @@ MonoBehaviour:
   Back: {fileID: 4194085868269086332}
   Shade: {fileID: 2709293576086210474}
   Frame: {fileID: 4624699430801738883}
+  FrameFoil: {fileID: 7748973607861601861}
   Art: {fileID: 4827638043472110252}
   Foil: {fileID: 5331052302697383702}
   Element: {fileID: 5055470477764816046}
@@ -469,6 +470,7 @@ GameObject:
   - component: {fileID: 6298780214765412152}
   - component: {fileID: 1650544854490893241}
   - component: {fileID: 4624699430801738883}
+  - component: {fileID: 7748973607861601861}
   m_Layer: 0
   m_Name: Frame
   m_TagString: Untagged
@@ -515,8 +517,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Material: {fileID: 2100000, guid: 4b3f128a848d6402590ced6c0b23bb25, type: 2}
+  m_Color: {r: 1, g: 0.12109375, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -530,6 +532,18 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
+--- !u!114 &7748973607861601861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2684736051545927542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f71821238f294e06ae1e577a6f4b176, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.UI.Cards.CardFrameFoil
 --- !u!1 &4021359333893083195
 GameObject:
   m_ObjectHideFlags: 0

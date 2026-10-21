@@ -207,7 +207,13 @@ namespace Baryonyx.Adventure
                 return;
             Enter(state);
             busy = true;
-            AdventureDialogs.Treasure(view.Dialog, view.Bonuses, state.Reward, CloseReward);
+            AdventureDialogs.Treasure(
+                view.Dialog,
+                view.Bonuses,
+                state.Drops,
+                CloseReward,
+                view.ItemArt
+            );
         }
 
         private void CloseReward()

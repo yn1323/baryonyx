@@ -19,7 +19,7 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class BattleInspectSceneTests
     {
-        private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleInspect.unity";
+        private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
         private Scene loadedScene;
 
         [UnityTest]
@@ -1922,7 +1922,11 @@ namespace Baryonyx.Tests.PlayMode
 
             TMP_Text number = null;
             TMP_Text name = null;
-            for (float t = 0f; (number == null || name == null) && t < 5f; t += Time.unscaledDeltaTime)
+            for (
+                float t = 0f;
+                (number == null || name == null) && t < 5f;
+                t += Time.unscaledDeltaTime
+            )
             {
                 number = RisingLabels(view.DamageNumber)
                     .Concat(RisingLabels(view.WeakNumber))

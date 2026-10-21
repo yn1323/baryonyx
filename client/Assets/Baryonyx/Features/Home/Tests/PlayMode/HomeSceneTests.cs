@@ -168,11 +168,11 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(button.transform);
             SceneTests.AssertTouchSize(view.ResumeButton.transform);
             SceneTests.AssertTouchSize(view.SettingsButton.transform.Find("HitArea"));
-            SceneTests.AssertTouchSize(view.SkillLabButton.transform.Find("HitArea"));
-            // 設定とスキルのデバッグルームの丸いボタンは、広げた押せる範囲が重ならない。
+            SceneTests.AssertTouchSize(view.DebugRoomsButton.transform.Find("HitArea"));
+            // 設定とデバッグルームの丸いボタンは、広げた押せる範囲が重ならない。
             var settingsArea = SceneTests.ScreenRect(view.SettingsButton.transform.Find("HitArea"));
-            var skillLabArea = SceneTests.ScreenRect(view.SkillLabButton.transform.Find("HitArea"));
-            Assert.That(settingsArea.Overlaps(skillLabArea), Is.False);
+            var roomsArea = SceneTests.ScreenRect(view.DebugRoomsButton.transform.Find("HitArea"));
+            Assert.That(settingsArea.Overlaps(roomsArea), Is.False);
             Assert.That(
                 ((RectTransform)view.StepButton.transform).rect.height,
                 Is.GreaterThanOrEqualTo(SceneTests.MinimumTouchSize)
@@ -293,7 +293,7 @@ namespace Baryonyx.Tests.PlayMode
                 view.WorkshopButton,
                 view.TempleButton,
                 view.SettingsButton,
-                view.SkillLabButton,
+                view.DebugRoomsButton,
                 view.StepButton,
             };
             foreach (var button in buttons)

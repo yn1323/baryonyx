@@ -12,7 +12,8 @@ namespace Baryonyx.UI.Editor
     /// Builds the shared <see cref="GameDialog"/> into a screen: the veil over the whole screen,
     /// and in the safe area the guide frame's window (<see cref="GuideFrameAssets.WindowFrame"/>)
     /// with the title, an optional picture, the body and five rows of choices as frosted glass
-    /// cards (<see cref="GlassCardAssets"/>), like the formation's level-up.
+    /// cards (<see cref="GlassCardAssets"/>), like the formation's level-up. A screen that needs
+    /// more choices (Home's list of debugging rooms) asks for more, lower rows.
     /// </summary>
     public static class GameDialogAssets
     {
@@ -25,7 +26,12 @@ namespace Baryonyx.UI.Editor
         /// Call it inside a <see cref="Baryonyx.Editor.UI.UiBuild"/> session, after the screen's
         /// other parts, so the dialog lies over them.
         /// </summary>
-        public static GameDialog Build(RectTransform parent, string name = "Dialog")
+        public static GameDialog Build(
+            RectTransform parent,
+            string name = "Dialog",
+            int choiceCount = ChoiceCount,
+            float rowHeight = 112f
+        )
         {
             var root = Rect(name, parent);
             Stretch(root);
@@ -82,11 +88,11 @@ namespace Baryonyx.UI.Editor
 
             var buttons = new List<Button>();
             var labels = new List<TMP_Text>();
-            for (int i = 0; i < ChoiceCount; i++)
+            for (int i = 0; i < choiceCount; i++)
             {
                 var row = Rect("Choice" + i, window);
                 var size = row.gameObject.AddComponent<LayoutElement>();
-                size.preferredHeight = size.minHeight = 112;
+                size.preferredHeight = size.minHeight = rowHeight;
                 // 選択肢は同じ形で縦に並べ、どれも模様のないすりガラスのカードにする。
                 var (button, _, card) = GlassCardAssets.Choice(row, pattern: false);
                 buttons.Add(button);

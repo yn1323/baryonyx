@@ -275,7 +275,13 @@ namespace Baryonyx.Showcase.Editor
                 return ShowcaseCategory.Environment;
             if (value.Contains("weapon") || value.Contains("sword") || value.Contains("bow"))
                 return ShowcaseCategory.Weapon;
-            if (value.Contains("item") || value.Contains("potion") || value.Contains("icon"))
+            if (
+                value.Contains("item")
+                || value.Contains("potion")
+                || value.Contains("icon")
+                || value.Contains("/armor/")
+                || value.Contains("/accessories/")
+            )
                 return ShowcaseCategory.Item;
             if (
                 value.Contains("/ui/")

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Baryonyx.Inventory;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
@@ -11,8 +12,9 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// The adventure's controls laid over the battle screen: the menu at the top left, the
-    /// dialog of the reward, the revive and the result, and the notice band. The battle screen
-    /// itself stays the mock's (BattleInspectView). AdventureAssets builds it.
+    /// plate that shows each drop of a won battle, the dialog of the win, the revive and the
+    /// result, and the notice band. The battle screen itself stays the mock's
+    /// (BattleInspectView). AdventureAssets builds it.
     /// </summary>
     public sealed class AdventureOverlay : MonoBehaviour, IEditModePreview
     {
@@ -20,8 +22,14 @@ namespace Baryonyx.Adventure
         public GameDialog Dialog;
         public NoticeBand Notice;
 
+        // 勝った戦闘のドロップを1つずつ見せる札。
+        public RewardReveal Reveal;
+
         // 報酬のボーナスの名前とアイコン。
         public StepBonusMockData Bonuses;
+
+        // ドロップのアイテム・装備の絵（種類のIDで引く）。
+        public ItemArt ItemArt;
 
         private bool wired;
 
@@ -86,13 +94,12 @@ namespace Baryonyx.Adventure
             if (Dialog == null)
                 return;
             Action none = () => { };
-            var reward = AdventureDialogSamples.Reward(Bonuses);
             int cost = AdventureDialogSamples.ReviveCost;
             switch (index)
             {
                 case 0:
                 case 1:
-                    AdventureDialogs.Victory(Dialog, Bonuses, reward, index == 1, none);
+                    AdventureDialogs.Victory(Dialog, index == 1, none);
                     break;
                 case 2:
                     AdventureDialogs.Revive(

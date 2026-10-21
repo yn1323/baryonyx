@@ -21,6 +21,7 @@ namespace Baryonyx.Home
         private readonly Func<bool> startAdventure;
         private readonly IHomeStepSource steps;
         private readonly Func<HomeAction, bool> openScreen;
+        private readonly Action openDebugRooms;
         private readonly CancellationTokenSource lifetime = new();
         private bool adventureStarted;
         private bool screenOpened;
@@ -31,7 +32,8 @@ namespace Baryonyx.Home
             HomeSnapshot snapshot,
             Func<bool> startAdventure,
             IHomeStepSource steps = null,
-            Func<HomeAction, bool> openScreen = null
+            Func<HomeAction, bool> openScreen = null,
+            Action openDebugRooms = null
         )
         {
             this.view = view != null ? view : throw new ArgumentNullException(nameof(view));
@@ -39,6 +41,7 @@ namespace Baryonyx.Home
             this.startAdventure = startAdventure;
             this.steps = steps;
             this.openScreen = openScreen;
+            this.openDebugRooms = openDebugRooms;
             view.ActionRequested += Handle;
             if (steps != null)
             {
@@ -80,6 +83,9 @@ namespace Baryonyx.Home
             view.Render(HomeViewState.From(snapshot));
         }
 
+        /// <summary>A screen opened outside <see cref="Handle"/> (a debugging room chosen from the list): taps are ignored from now on.</summary>
+        public void MarkScreenOpened() => screenOpened = true;
+
         public void Handle(HomeAction action)
         {
             if (disposed || adventureStarted || screenOpened)
@@ -98,6 +104,13 @@ namespace Baryonyx.Home
             {
                 if (!snapshot.StepSyncing)
                     StepTask = RefreshStepsAsync(steps.SyncAsync, true);
+                return;
+            }
+
+            // デバッグルームは一覧から選ぶ。選んで開いたら、呼び出し元が MarkScreenOpened を呼ぶ。
+            if (action == HomeAction.DebugRooms && openDebugRooms != null)
+            {
+                openDebugRooms();
                 return;
             }
 

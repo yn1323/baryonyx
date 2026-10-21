@@ -30,6 +30,9 @@ namespace Baryonyx.Combat.Presentation
         public RawImage Shade;
 
         public RawImage Frame;
+
+        /// <summary>The quality's light on the frame (gold at A, a rainbow at S).</summary>
+        public CardFrameFoil FrameFoil;
         public RawImage Art;
 
         /// <summary>The sparkle over the art, by the card's quality.</summary>
@@ -72,6 +75,8 @@ namespace Baryonyx.Combat.Presentation
             if (Foil != null)
                 Foil.Show(art, Art.uvRect, quality, foilStyle);
             Frame.texture = frame;
+            if (FrameFoil != null)
+                FrameFoil.Show(quality);
             Element.texture = element;
             Element.enabled = element != null;
             CostDigit.uvRect = new Rect(cost / (float)CostDigits, 0f, 1f / CostDigits, 1f);

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
@@ -18,12 +19,15 @@ namespace Baryonyx.App
     /// bottom right resumes the adventure in progress in the exploration scene, or, with none,
     /// opens the travel office to set out from. The tavern, workshop and temple buttons open
     /// their guide screen scenes behind the shutter, with today's ACT handed over for the
-    /// tavern's bonus settings; the buttons under the settings open the skill and quality
-    /// debugging rooms.
+    /// tavern's bonus settings; the button under the settings lists the debugging rooms
+    /// (<see cref="SceneNames.DebugRooms"/>) and opens the one chosen, putting a button back to
+    /// Home over a room without its own.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
         public const string CheckingMessage = "冒険の状態を確かめています";
+        public const string DebugRoomsTitle = "デバッグルーム";
+        public const string CloseChoice = "閉じる";
 
         [SerializeField]
         private HomeView view;
@@ -65,7 +69,8 @@ namespace Baryonyx.App
                 data.ToSnapshot(HealthDays.Today()),
                 string.IsNullOrWhiteSpace(adventureSceneName) ? null : OpenDestination,
                 new HomeStepSource(GameServices.GetOrCreate(settings).Health),
-                OpenScreen
+                OpenScreen,
+                ShowDebugRooms
             );
             // モックの「冒険の途中」を実際の状態として見せない。
             presenter.ShowAdventure(false, "", "");
@@ -129,11 +134,49 @@ namespace Baryonyx.App
             );
         }
 
+        // デバッグルームの一覧。選ぶとそのルームを開き、閉じればHomeのまま。
+        private void ShowDebugRooms()
+        {
+            var dialog = view.Dialog;
+            if (dialog == null)
+            {
+                view.ShowToast(
+                    HomeViewState.MessageFor(HomeAction.DebugRooms, HomeStepLink.Linked)
+                );
+                return;
+            }
+            var choices = SceneNames
+                .DebugRooms.Select(room => new DialogChoice(
+                    room.Name,
+                    () => OpenDebugRoom(room.Scene, room.OwnHome, room.Corner)
+                ))
+                .Append(new DialogChoice(CloseChoice, dialog.Hide))
+                .ToArray();
+            dialog.Show(DebugRoomsTitle, null, null, dialog.Hide, choices);
+        }
+
+        private void OpenDebugRoom(string scene, bool ownHome, DebugRoomCorner corner)
+        {
+            if (!ownHome)
+                DebugRoomReturn.ShowWhenLoaded(view.RoomReturn, scene, corner);
+            if (LoadWithTodayAct(scene))
+            {
+                presenter?.MarkScreenOpened();
+                return;
+            }
+            view.Dialog.Hide();
+        }
+
+        // Homeのボタンが開く案内人の画面。デバッグルームは一覧から選ぶ。
         private bool OpenScreen(HomeAction action)
         {
-            var scene = SceneNames.ScreenFor(action);
-            if (scene == null)
-                return false;
+            var scene = SceneNames.GuideFor(action);
+            return scene != null && LoadWithTodayAct(scene);
+        }
+
+        // 今日のACTを渡して、遷移演出を挟んでシーンを開く。
+        private bool LoadWithTodayAct(string scene)
+        {
             StepBonusSession.TodayAct = presenter?.TodayAct;
             return SceneLoader.Load(scene, transition, this);
         }

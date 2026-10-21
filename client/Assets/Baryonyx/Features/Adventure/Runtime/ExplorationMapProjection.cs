@@ -9,8 +9,10 @@ namespace Baryonyx.Adventure
     /// room the party is in near the bottom and the road ahead running up the screen, the rows
     /// narrowing with distance. The screen shows a fixed length of the road, about five floors
     /// ahead of the party, so the deepest room comes into sight as the party nears it or the map
-    /// is dragged. The camera follows the party across near the bottom and keeps the middle of
-    /// the route in the middle far away. Positions are in map dots (800x360, y down), drawn
+    /// is dragged. A camera standing off the middle across puts its own point in the middle near
+    /// the bottom and the middle of the route in the middle far away; the exploration screen
+    /// keeps the camera in the middle across (<see cref="ExplorationView.CameraAcross"/>), so
+    /// the route stays still left and right. Positions are in map dots (800x360, y down), drawn
     /// three pixels a dot: 2400x1080, wide enough for a 20:9 screen; a 16:9 screen shows the
     /// middle 640 dots, and the map is never scaled, so every dot stays three pixels.
     /// The camera can stand anywhere on the route, so it can follow the party along a road.

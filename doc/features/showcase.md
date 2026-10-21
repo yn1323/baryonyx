@@ -61,7 +61,7 @@ Homeの焚き火の画像は、3Dの舞台に立てる薪の `CampfireLogs` と�
 焚き火の炎の揺らぎと火の粉は、シーンのカテゴリから `Home` を開いて確認する。
 Prefabのプレビューは舞台全体を遠くから写すだけで、画面ごとのカメラ・霧・キャラは映らない。
 [戦闘の背景](../art/hd2d-stage.md#戦闘の背景)の10種類（`MeadowRoadStage`・`MistyWoodsStage`・`MineTunnelStage`・`CrystalCavernStage`・`RockyShoreStage`・`MistySwampStage`・`SnowFieldStage`・`VolcanoCraterStage`・`MoonlitGraveyardStage`・`CastleHallStage`）も、Prefab・テクスチャ（`Meadow〈名前〉` など舞台ごとの接頭辞の `.aseprite`）・マテリアル・法線マップ・ポストプロセス（`〈舞台〉Look`）が背景・環境のカテゴリに入る。
-キャラが立った見た目、光と影、カメラの動きは、シーンのカテゴリから `Top`・`Home`・`BattleInspect` を開いて確認する。
+キャラが立った見た目、光と影、カメラの動きは、シーンのカテゴリから `Top`・`Home`・`BattleLab` を開いて確認する。
 戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
@@ -264,25 +264,27 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 タイトル画面はシーンカテゴリの `Top` を開き、`TopCanvas > TopScreen > TopSafeArea` 配下のタイトルと開始操作が画面端から離れていることを確認する。
 展示室のカタログには `HomeScreen` Prefab、Health Connectの連携モーダル `HealthLinkModal` Prefab、`Top` シーンを登録済みである。
 連携モーダルはUIカテゴリで、未許可の状態の文言を表示する。
-戦闘画面のモックは、シーンカテゴリの `BattleInspect`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
+戦闘画面のモックは、シーンカテゴリの `BattleLab`、UIカテゴリの `BattleInspectScreen` Prefab、キャラクターカテゴリの味方4人と敵3体の画像で確認する。
 2026-10-19に試作した敵50体の絵（`DewSlime` など、`Features/Combat/UI/Art/Enemies/`）も、戦闘のモックの敵3体と同じキャラクターのカテゴリに入る。名前と弱点は[敵の定義](../catalog/enemies/README.md)にある。
 冒険の戦闘で敵を入れ替えるための、53体の絵・狙える範囲・顔の表（`BattleEnemyLooks`、データのカテゴリ）は、戦闘画面の生成（`Baryonyx > Combat > Create Battle Inspect Assets`）が作る。行き先ごとの敵は[行き先と敵](stage-progression.md#行き先と敵)にある。
-カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く、Aは少し光り、B・Cは光らない（[品質](inventory.md#品質)）。光り方（模様と色）はカードごとに違う。装備とACTボーナスの光り方は、[品質のデバッグルーム](screens.md#品質のデバッグルーム)で確かめる。実際の画面では、`TavernScreen` の `BonusSettings` を表示すると、仮データの品質Sの「守り」とAの「幸運」のアイコンが光る。装備（`Equipment`・`Training`）の仮データは倍率×1.00（品質C）だけのため、Prefabのままでは光らない。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
-カードを上げたときに右に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」を選ぶか、展示室から `BattleInspect` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
-味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、味方のHPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、ブロックはガードかシールドバッシュを使って確かめる。
-カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleInspect` シーンを開き、カードを押して確かめる。
-ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleInspect` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
+カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）、枠の光は `CardFrameFoil` で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く光って枠が虹、Aは少し光って枠の外側の線が金、B・Cは光らない（[品質](inventory.md#品質)）。光り方（模様と色）はカードごとに違う。装備とACTボーナスの光り方は、[品質のデバッグルーム](screens.md#品質のデバッグルーム)で確かめる。実際の画面では、`TavernScreen` の `BonusSettings` を表示すると、仮データの品質Sの「守り」とAの「幸運」のアイコンが光る。装備（`Equipment`・`Training`）の仮データは倍率×1.00（品質C）だけのため、Prefabのままでは光らない。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
+カードを上げたときに右に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」を選ぶか、展示室から `BattleLab` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
+味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、味方のHPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleLab` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、ブロックはガードかシールドバッシュを使って確かめる。
+カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleLab` シーンを開き、カードを押して確かめる。
+ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleLab` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
 カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[スキルの仮設定](combat.md#スキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
 好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](screens.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。ホームの設定の下にある、このシーンを開くボタンのアイコン（`IconSkillLab`）は画像のカテゴリに入る。
 スキル・固有スキル・武器・防具・アクセサリー・ACTボーナスの倍率を動かして、品質の文字・キラキラ・効果の数字を確かめるときは、シーンのカテゴリから `QualityLab` を開く（[品質のデバッグルーム](screens.md#品質のデバッグルーム)）。同じ画面のPrefab `QualityLabScreen` はUIカテゴリに入り、停止中の表示の切り替えでスキル・武器・ボーナスを品質ごとに見られる。ホームのこのシーンを開くボタンのアイコン（`IconQualityLab`）は画像のカテゴリに入る。
 敵の攻撃・被弾・撃破・状態が付いたときの行動・敵のターンは、シーンのカテゴリから `EnemyLab` を開き、敵と行動を選んで確かめる（[敵の挙動デバッグルーム](screens.md#敵の挙動デバッグルーム)）。操作盤のPrefab `EnemyLabPanel` はUIカテゴリに入るが、操作する戦闘画面がないため、単体のプレビューでは押しても敵は動かない。
+魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出は、シーンのカテゴリから `BattleMomentLab` を開き、ボタンを押して確かめる（[戦闘の演出デバッグルーム](screens.md#戦闘の演出デバッグルーム)）。操作盤とドロップの札のPrefab `BattleMomentLabPanel` はUIカテゴリに入るが、演出を再生する戦闘画面がないため、単体のプレビューでは押しても何も起きない。ドロップの光の柱や出現の土煙は計算で描くエフェクトで、専用のPrefabやマテリアルを足していないため、VFXカテゴリには増えない。
+探索の魔物の出現・宝箱・部屋へ進む演出は、シーンのカテゴリから `ExplorationMomentLab` を開いて確かめる（[探索の演出デバッグルーム](screens.md#探索の演出デバッグルーム)）。操作盤と演出の部品のPrefab `ExplorationMomentLabPanel` はUIカテゴリに入るが、演出を重ねる探索画面がないため、単体のプレビューでは押しても何も起きない。宝箱の光のシェーダーとマテリアル（どちらも `ExplorationLight`）はVFXカテゴリに入るが、形と色は演出のコードが渡すため、プレビューでは光らない。
 撃破で敵の絵をドットごとに削るシェーダー（`BattleDefeat`）とマテリアル（`VfxDefeat`）はVFXカテゴリに入る。マテリアルは敵の絵と削る順番を持たないため、プレビューでは崩れる様子が見えない。崩れる動きは `EnemyLab` の「撃破」で確かめる。
 50枚のカードの見た目（挿絵・枠・属性のアイコン・使い手・名前・種類と対象・説明文・コスト）は、UIカテゴリの `BattleCardGallery` Prefabで、10枚×5段に並べて確認する。戦闘画面のモックの山札に入るのは、このうち16枚だけである。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`。撃破で舞う粒の `VfxShapeMote` を含む）はVFXカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
 弱点を開示するときの光（[戦闘画面の見た目モック](screens.md#戦闘画面の見た目モック)）は、初めて弱点を突いたときにしか出ないため、VFXカテゴリの `BattleWeaknessRevealPreview` Prefabで確認する。炎・氷・雷・斬の「？」を拡大して並べ、1つずつ開示してから全部を「？」へ戻す動きを繰り返す。アイコンの上の光のシェーダー（`BattleWeaknessGlint`）とマテリアル（`VfxWeaknessGlint`）も同じカテゴリに入る。
-展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleInspect` シーンを開いてカードを使う。
-カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleInspect` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
-シーンの生成時に `BattleInspect` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab`・`QualityLab` も同じく生成時に追加する。
+展示室のプレビューはポストプロセスを掛けないカメラで描くため、戦闘で掛かるBloomは映らない。光のにじみまで確かめるときは、展示室から `BattleLab` シーンを開いてカードを使う。
+カメラの中心がゆっくり円を描く動き（[カメラの中心のゆっくりした円運動](screens.md#カメラの中心のゆっくりした円運動)）はPlay Mode中だけ動くため、Play Modeの展示室で `BattleInspectScreen` Prefabのプレビューを選ぶか、`BattleLab` シーンを開いて確認する。半径12pxを40秒で1周するほど小さな動きのため、Hierarchyで `StageDrift` を選び、`Period` を短くすると見分けやすい。戦場のドット絵を画素の端数の位置でも滑らかに描くマテリアル `StagePixelArt` とシェーダー `UI Pixel Art` は、マテリアル・シェーダーのカテゴリに入る。
+シーンの生成時に `BattleLab` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab`・`BattleMomentLab`・`ExplorationMomentLab`・`QualityLab` も同じく生成時に追加する。
 案内人がいる画面（編成・商会・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
 編成の[冒険者の一覧](screens.md#パーティ)は `TavernScreen` のメニューの「冒険者」から開き、カードの長押しで[個別の画面](screens.md#育成)、そこから装備とスキルの付け替えへ進む。停止中も、Prefabの `Adventurers`・`Training`・`Equipment`・`CardLoadout` を表示すれば、仮データの先頭の人で、一覧・個別の画面・付け替えの画面を確認できる。スキルの付け替え（`CardLoadout`）は、停止中の表示の切り替えの「固有スキルの進化ツリー」で、先頭の人（トーマ）の1つ目の固有スキルの[進化ツリー](skill-evolution.md)も確認できる。[ボーナス設定](screens.md#ボーナス設定)も、`BonusSettings` を表示すれば仮データの枠と持ち物で確認できる（停止中は[枠つきの表示](screens.md#枠つきの表示)のぼかした背景とヘッダーの帯は出ないため、Play Modeで開いて確かめる）。Play Modeではサーバーの接続先がなくても、入れ替え・レベルアップ・付け替えを操作でき、個別の画面では左右のフリックで人を替えられる。すりガラスのカードの画像（`GlassCardFill`・`GlassCardRim`・`GlassCardRose` など、`Shared/UI/GlassCard/Art/`）、枠のひし形（`FrameDiamond`・`FrameDiamondLarge`）と編成の背景をぼかした写し（`TavernBackgroundBlur`）は画像のカテゴリに入る。
 9人の縦長のイラスト（`toma` など、`Shared/Art/Characters/Illustrations/`）はキャラクターのカテゴリに入る。展示室の画像のプレビューは枠いっぱいに伸ばして描くため、縦横の比は個別の画面で確かめる。武器・防具のアイコン（`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）と、編成のメニューの冒険者・装備・ボーナスのアイコン（`IconFormation`・`IconChangeGear`・`IconBonus`、`Features/Tavern/UI/Art/`）は画像のカテゴリに入る。進化ツリーの未取得の段階の封印と鎖（`StageSeal`・`StageSealChain`、`Features/CardLoadout/UI/Art/`）も画像のカテゴリに入る。

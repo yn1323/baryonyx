@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Baryonyx.App;
-using Baryonyx.Home;
 using Baryonyx.Inventory;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // Homeの右上のスキルのデバッグルームの下のボタンから品質のデバッグルームへ移り、ルームの「ホームへ」でHomeへ戻る。
+    // Homeの右上のデバッグルームの一覧から品質のデバッグルームへ移り、ルームの「ホームへ」でHomeへ戻る。
     public sealed class HomeQualityLabTests
     {
         private static readonly string[] Keys =
@@ -60,21 +59,15 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator QualityLabButtonOpensTheLabAndItsHomeButtonReturns()
+        public IEnumerator TheListOpensTheQualityLabAndItsHomeButtonReturns()
         {
             var home = default(HomeBootstrap);
             yield return SceneTests.LoadHome(value => home = value);
-            Assert.That(
-                SceneNames.ScreenFor(HomeAction.QualityLab),
-                Is.EqualTo(SceneNames.QualityLab)
-            );
-            Assert.That(home.View.QualityLabButton, Is.Not.Null);
-            // ボタンは88の丸で、押せる範囲（HitArea）を広げて指の大きさにしている。
-            SceneTests.AssertTouchSize(home.View.QualityLabButton.transform.Find("HitArea"));
+            home.View.DebugRoomsButton.onClick.Invoke();
 
             // 続けて押しても、画面は1回だけ開く。
-            home.View.QualityLabButton.onClick.Invoke();
-            home.View.QualityLabButton.onClick.Invoke();
+            Assert.That(home.View.Dialog.Choose("品質のデバッグルーム"), Is.True);
+            Assert.That(home.View.Dialog.Choose("品質のデバッグルーム"), Is.False);
             Assert.That(home.Presenter.ScreenOpened, Is.True);
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.QualityLab,

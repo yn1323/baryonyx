@@ -21,23 +21,45 @@ namespace Baryonyx.App
         // 冒険の戦闘。探索で戦闘の部屋に入ると開き、終わると探索かHomeへ戻る。
         public const string Battle = "Battle";
 
-        // 戦闘画面のモック。展示室とテストから開く。
-        public const string BattleInspect = "BattleInspect";
+        // 以下のデバッグルームは、Homeの右上のデバッグルームの一覧（DebugRooms）と、展示室から開く。
 
-        // スキルのデバッグルーム。Homeの右上の設定の下のボタンと、展示室から開く。
+        // 戦闘画面のモック（BattleLab）。テストからも開く。
+        public const string BattleLab = "BattleLab";
+
+        // スキルのデバッグルーム。
         public const string CardSkillLab = "CardSkillLab";
 
-        // 品質のデバッグルーム。Homeの右上のスキルのデバッグルームの下のボタンと、展示室から開く。
+        // 品質のデバッグルーム。
         public const string QualityLab = "QualityLab";
 
-        // Homeのボタンが開く画面。案内人の画面のほか、スキルと品質のデバッグルームを開く。
-        public static string ScreenFor(HomeAction action) =>
-            action switch
-            {
-                HomeAction.SkillLab => CardSkillLab,
-                HomeAction.QualityLab => QualityLab,
-                _ => GuideFor(action),
-            };
+        // 敵の挙動デバッグルーム。
+        public const string EnemyLab = "EnemyLab";
+
+        // 戦闘の演出デバッグルーム。
+        public const string BattleMomentLab = "BattleMomentLab";
+
+        // 探索の演出デバッグルーム。
+        public const string ExplorationMomentLab = "ExplorationMomentLab";
+
+        /// <summary>
+        /// The debugging rooms Home's list opens, in its order: the name shown, the scene,
+        /// whether the room has its own button back to Home, and for the others where the one
+        /// put over them goes (a corner their controls leave free).
+        /// </summary>
+        public static readonly (
+            string Name,
+            string Scene,
+            bool OwnHome,
+            DebugRoomCorner Corner
+        )[] DebugRooms =
+        {
+            ("スキルのデバッグルーム", CardSkillLab, true, DebugRoomCorner.TopRight),
+            ("品質のデバッグルーム", QualityLab, true, DebugRoomCorner.TopRight),
+            ("戦闘画面のモック", BattleLab, false, DebugRoomCorner.TopRight),
+            ("敵の挙動デバッグルーム", EnemyLab, false, DebugRoomCorner.TopRight),
+            ("戦闘の演出デバッグルーム", BattleMomentLab, false, DebugRoomCorner.TopRight),
+            ("探索の演出デバッグルーム", ExplorationMomentLab, false, DebugRoomCorner.BottomLeft),
+        };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。
         public static string GuideFor(HomeAction action) =>

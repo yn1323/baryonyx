@@ -74,6 +74,54 @@ namespace Baryonyx.Home.Editor
         private static Texture2D destinationArt;
         private static Texture2D travelArt;
 
+        // デバッグルームの一覧の行（6つのルームと「閉じる」）と、その高さ。
+        private const int DebugRoomChoices = 7;
+        private const float DebugRoomRowHeight = 84f;
+
+        public const string RoomReturnPath =
+            "Assets/Baryonyx/Features/Home/UI/DebugRoomReturn.prefab";
+
+        /// <summary>
+        /// The "ホームへ" button put over a debugging room without its own way back: on its own
+        /// canvas over the room, laid out at the top right of the safe area; the room moves it
+        /// to its free corner (<see cref="DebugRoomReturn.Place"/>).
+        /// </summary>
+        private static DebugRoomReturn BuildRoomReturn()
+        {
+            var root = CanvasRoot("DebugRoomReturn");
+            root.GetComponent<Canvas>().sortingOrder = 1000;
+            var safe = SafeArea(root);
+            var home = Rect("Home", safe);
+            // 押せる大きさ（48dp相当の128）を、スキルのデバッグルームの「ホームへ」と同じ高さで取る。
+            Corner(
+                home,
+                Vector2.one,
+                new Vector2(-DebugRoomReturn.Margin.x, -DebugRoomReturn.BelowTitle),
+                new Vector2(200f, 128f)
+            );
+            var (button, _, card) = GlassCardAssets.Choice(
+                home,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            Stretch(
+                Label(
+                    card,
+                    "Label",
+                    "ホームへ",
+                    34,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.Center
+                ).rectTransform
+            );
+            var back = root.gameObject.AddComponent<DebugRoomReturn>();
+            back.Button = button;
+            back.Frame = home;
+            back.HomeScene = Baryonyx.App.SceneNames.Home;
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root.gameObject, RoomReturnPath);
+            return prefab.GetComponent<DebugRoomReturn>();
+        }
+
         [MenuItem("Baryonyx/Home/Create Screen Assets")]
         public static void CreateAssets()
         {
@@ -109,6 +157,15 @@ namespace Baryonyx.Home.Editor
                 BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
+                // The list of debugging rooms: six rooms and "閉じる", in lower rows than the
+                // usual five so they fit the screen.
+                view.Dialog = GameDialogAssets.Build(
+                    root,
+                    "DebugRooms",
+                    DebugRoomChoices,
+                    DebugRoomRowHeight
+                );
+                view.RoomReturn = BuildRoomReturn();
 
                 // Bake the sample values so prefab and showcase previews match the running screen.
                 var data = AssetDatabase.LoadAssetAtPath<HomeMockData>(DataPath);
@@ -605,51 +662,27 @@ namespace Baryonyx.Home.Editor
             );
             Place((RectTransform)gear.transform, Vector2.zero, new Vector2(40, 40));
 
-            // The skill debugging room, for trying the skills before release: a round button like
-            // the settings, under it, far enough that their widened touch areas do not overlap.
-            var skillLab = Rect("SkillLabButton", safe);
-            Corner(skillLab, Vector2.one, new Vector2(-64, -(40 + 88 + 40)), new Vector2(88, 88));
-            HitArea(skillLab, 20, 20);
-            var skillLabSpot = SpriteImage(
-                skillLab,
+            // The debugging rooms, for trying things before release: a round button like the
+            // settings, under it, far enough that their widened touch areas do not overlap. It
+            // lists the rooms in a dialog (HomeBootstrap).
+            var rooms = Rect("DebugRoomsButton", safe);
+            Corner(rooms, Vector2.one, new Vector2(-64, -(40 + 88 + 40)), new Vector2(88, 88));
+            HitArea(rooms, 20, 20);
+            var roomsSpot = SpriteImage(
+                rooms,
                 UiArt.SoftSpotPath,
                 new Color(0.012f, 0.02f, 0.04f, 0.8f)
             );
-            skillLabSpot.raycastTarget = true;
-            view.SkillLabButton = AddTintButton(skillLab, skillLabSpot);
-            var cards = Icon(
-                skillLab,
-                "SkillLabIcon",
-                HomeScreenArt.IconSkillLabPath,
+            roomsSpot.raycastTarget = true;
+            view.DebugRoomsButton = AddTintButton(rooms, roomsSpot);
+            var flask = Icon(
+                rooms,
+                "DebugRoomsIcon",
+                HomeScreenArt.IconDebugRoomsPath,
                 52,
                 UiPalette.TextMain
             );
-            Place((RectTransform)cards.transform, Vector2.zero, new Vector2(52, 52));
-
-            // The quality debugging room, the same round button under the skill one.
-            var qualityLab = Rect("QualityLabButton", safe);
-            Corner(
-                qualityLab,
-                Vector2.one,
-                new Vector2(-64, -(40 + (88 + 40) * 2)),
-                new Vector2(88, 88)
-            );
-            HitArea(qualityLab, 20, 20);
-            var qualityLabSpot = SpriteImage(
-                qualityLab,
-                UiArt.SoftSpotPath,
-                new Color(0.012f, 0.02f, 0.04f, 0.8f)
-            );
-            qualityLabSpot.raycastTarget = true;
-            view.QualityLabButton = AddTintButton(qualityLab, qualityLabSpot);
-            var gem = Icon(
-                qualityLab,
-                "QualityLabIcon",
-                HomeScreenArt.IconQualityLabPath,
-                52,
-                UiPalette.TextMain
-            );
-            Place((RectTransform)gem.transform, Vector2.zero, new Vector2(52, 52));
+            Place((RectTransform)flask.transform, Vector2.zero, new Vector2(52, 52));
 
             var pill = Rect("RunePill", safe);
             Corner(pill, Vector2.one, new Vector2(-(64 + 88 + 16), -40), new Vector2(0, 88));

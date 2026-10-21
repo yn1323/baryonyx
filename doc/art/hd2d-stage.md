@@ -9,9 +9,9 @@ updated: 2026-10-05
 
 [アート索引](README.md) / 根拠：[アート方針](direction.md)
 
-2026-10-02、ユーザーの依頼で、Top・Home・戦闘画面のモック（BattleInspect）を、3Dの地面と背景にドット絵のキャラを立たせ、3Dの光と影で見せるHD-2Dの構成へ移した。
+2026-10-02、ユーザーの依頼で、Top・Home・戦闘画面のモック（BattleLab）を、3Dの地面と背景にドット絵のキャラを立たせ、3Dの光と影で見せるHD-2Dの構成へ移した。
 同日、続く依頼で、Homeを昼の森の野営地に変え、舞台ごとのレンズ（被写界深度）と色調、カメラの動きを加え、停止中のシーンでもHD-2Dで見えるようにした。
-さらに同日、TopとBattleInspectも、Homeと時間帯と色が重ならない屋外（星空の夜の山の門、夕暮れの高原の環状列石）に変えた。
+さらに同日、TopとBattleLabも、Homeと時間帯と色が重ならない屋外（星空の夜の山の門、夕暮れの高原の環状列石）に変えた。
 2026-10-03には、3つの舞台に小物・草の房・地面の汚しを足して密度を上げ、光を受ける面に法線マップを付けた。
 同日、続く依頼で、戦闘の背景を10種類足し、`Battle.unity` で選べるようにした（[戦闘の背景](#戦闘の背景)）。
 この文書は、その構成・カメラ・光・ポストプロセス・テクスチャ・描く順番の値の正本である。
@@ -47,8 +47,8 @@ updated: 2026-10-05
 |---|---|---|---|---|
 | Top | 星空の夜の山の門（[StarlitGateStage](../../client/Assets/Baryonyx/Shared/Art/Stages/StarlitGate/StarlitGateStage.prefab)） | 目の高さに近い位置から、松明の並ぶ石の道と段の先の門を見る。縦の画角42度、見下ろし5度。半径10px・30秒で1周する揺れ。開いたときに2.2m後ろ・0.4m上から4秒ですべり込む | 門の背後からの月明かり（冷色・影あり）、手前からの弱い冷色の補助光（影なし）、松明6本、門の中の青い光、蛍 | `StarlitGateLook`。従来の2Dの塵は3Dの舞台の上に重ねる（広間の天井から差す光芒と、2Dの霧は外した） |
 | Home | 昼の森の野営地（[ForestGladeStage](../../client/Assets/Baryonyx/Shared/Art/Stages/ForestGlade/ForestGladeStage.prefab)） | 高さ4.4mから見下ろし18度、縦の画角32度の望遠寄り。半径6px・26秒で1周する揺れ。開いたときに0.9m後ろ・0.35m上から2.6秒ですべり込む | 左上の背後からの太陽（暖色・影あり・木漏れ日）、光の筋5本と漂う塵、焚き火の小さな光（影なし） | `ForestGladeLook` |
-| BattleInspect | 夕暮れの高原の環状列石（[DuskHighlandStage](../../client/Assets/Baryonyx/Shared/Art/Stages/DuskHighland/DuskHighlandStage.prefab)） | 縦の画角30度、見下ろし20度の望遠寄り。戦場の円運動と被弾の揺れに合わせてカメラが動く | 左からの低い夕日（暖色・影あり。影は右へ長く落ちる）、奥の2つのかがり火、漂う砂ぼこり | 戦場の `BattlePostProcess`（Bloomのしきい値1）に、優先度1の `DuskHighlandLook` を重ねる |
-| Battle | 夕暮れの高原と10種類の[戦闘の背景](#戦闘の背景)から、Inspectorで1つを選ぶ。冒険から開いたときは行き先の背景（森の遺跡は朝霧の森） | BattleInspectと同じ | 背景ごと（[戦闘の背景](#戦闘の背景)） | `BattlePostProcess` に、優先度1の背景ごとの `<舞台>Look` を重ねる |
+| BattleLab | 夕暮れの高原の環状列石（[DuskHighlandStage](../../client/Assets/Baryonyx/Shared/Art/Stages/DuskHighland/DuskHighlandStage.prefab)） | 縦の画角30度、見下ろし20度の望遠寄り。戦場の円運動と被弾の揺れに合わせてカメラが動く | 左からの低い夕日（暖色・影あり。影は右へ長く落ちる）、奥の2つのかがり火、漂う砂ぼこり | 戦場の `BattlePostProcess`（Bloomのしきい値1）に、優先度1の `DuskHighlandLook` を重ねる |
+| Battle | 夕暮れの高原と10種類の[戦闘の背景](#戦闘の背景)から、Inspectorで1つを選ぶ。冒険から開いたときは行き先の背景（森の遺跡は朝霧の森） | BattleLabと同じ | 背景ごと（[戦闘の背景](#戦闘の背景)） | `BattlePostProcess` に、優先度1の背景ごとの `<舞台>Look` を重ねる |
 
 冒険の探索（Exploration）は3Dの舞台を使わず、森を見下ろす地図を端末で描く（[冒険の画面](../features/screens.md#冒険の画面)）。
 
@@ -96,7 +96,7 @@ Enter Play Mode Optionsでシーンの再読み込みを省くと、停止中に
 
 ## Sceneタブでの表示
 
-3Dの舞台のカメラがあるシーン（Top・Home・BattleInspect）を開くと、[Hd2dSceneViewSync](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dSceneViewSync.cs) がSceneタブをゲームと同じ見た目にする。
+3Dの舞台のカメラがあるシーン（Top・Home・BattleLab）を開くと、[Hd2dSceneViewSync](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dSceneViewSync.cs) がSceneタブをゲームと同じ見た目にする。
 Sceneタブを動かしたあとは、メニュー `Baryonyx > HD-2D > Scene View Through Stage Camera` で戻せる。
 
 | 設定 | 内容 |
@@ -202,7 +202,7 @@ UIのシェーダーは深度で比べるため、Canvasの面が3Dの床より�
 場所の名前と行き先の構成はまだ決まっていない（[探索する場所の定義](../catalog/stages/README.md)）。
 ここでは、王道ファンタジーのRPGでよく行く場所を、序盤の草原から終盤の古城まで、時間帯と主な色が重ならないように選んだ。
 
-戦闘シーン `Battle.unity` は、BattleInspectと同じ戦闘画面に、夕暮れの高原と下の10種類の舞台を置く。
+戦闘シーン `Battle.unity` は、BattleLabと同じ戦闘画面に、夕暮れの高原と下の10種類の舞台を置く。
 シーンの `BattleStages` の [BattleStageSelector](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleStageSelector.cs) の `Stage`（Inspectorでは日本語の名前のドロップダウン）で、表示する背景を選ぶ。
 選んだ舞台だけを有効にし、その舞台の環境光・霧・カメラの背景色、レンズと色調（`StageLookVolume` のProfile）、キャラの影を向ける主光源を切り替える。
 停止中のシーンでも選んだ時点で切り替わり、Play Mode中にコードから `Apply` を呼んでも切り替わる。
@@ -223,7 +223,7 @@ UIのシェーダーは深度で比べるため、Canvasの面が3Dの床より�
 | `CastleHall` 古城の大広間 | 夜の古城の大広間。赤い絨毯と玉座 | ステンドグラス越しの月明かり | 鉄の燭台2つの炎と火の粉、画面外の左右のランプ |
 
 10種類の舞台は、同じ配置の決まりで組み立てる（[BattleStageSets](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/BattleStageSets.cs)）。
-カメラはBattleInspectと同じで、キャラは夕暮れの高原と同じ地面の位置に立つ。
+カメラはBattleLabと同じで、キャラは夕暮れの高原と同じ地面の位置に立つ。
 
 | 物 | 置き方 |
 |---|---|
@@ -399,10 +399,10 @@ HD-2Dの開発者は、点光源でキャラと物に影を落とし、光と影
 |---|---|
 | 舞台の組み立て | [StageSetAssets](../../client/Assets/Baryonyx/Shared/Art/Stages/Editor/StageSetAssets.cs)（メニュー `Baryonyx > Stages > Create 3D Stage Assets`） |
 | 舞台の部品 | [Hd2dStageKit](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dStageKit.cs) |
-| シーンへの配置 | [Hd2dStageSceneSetup](../../client/Assets/Baryonyx/App/Editor/Hd2dStageSceneSetup.cs)。TopはTopHomeSceneSetupの `EnsureTopStage`、HomeとBattleInspectは各シーンの作り直し |
+| シーンへの配置 | [Hd2dStageSceneSetup](../../client/Assets/Baryonyx/App/Editor/Hd2dStageSceneSetup.cs)。TopはTopHomeSceneSetupの `EnsureTopStage`、HomeとBattleLabは各シーンの作り直し |
 | カメラ | [Hd2dStageCamera](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dStageCamera.cs)、計算は [Hd2dStageMath](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dStageMath.cs) |
 | キャラの板 | [Hd2dUiBillboard](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dUiBillboard.cs)、シェーダー `Baryonyx/HD2D/Stage Sprite`・`Baryonyx/HD2D/Contact Shadow` |
-| 2Dのときだけの部品 | [Hd2dFlatOnly](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dFlatOnly.cs)（HomeとBattleInspectの描いた背景と、その上の光・霧・火の粉） |
+| 2Dのときだけの部品 | [Hd2dFlatOnly](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dFlatOnly.cs)（HomeとBattleLabの描いた背景と、その上の光・霧・火の粉） |
 | 舞台のレンズ | [Hd2dStageFocus](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dStageFocus.cs)、[Hd2dStageFocusRendererFeature](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dStageFocusRendererFeature.cs)、シェーダー `Hidden/Baryonyx/HD2D/StageFocus`。Renderer Featureは `Hd2dAssets` が両方のURP Rendererへ加える |
 | 光の筋・塵・木漏れ日 | `Hd2dStageKit` の `LightBeam`・`Motes`・`LeafCookie` |
 | 停止中とSceneタブの表示 | [Hd2dParticlePreview](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Runtime/Hd2dParticlePreview.cs)、[Hd2dSceneViewSync](../../client/Assets/Baryonyx/Shared/VFX/HD2D/Editor/Hd2dSceneViewSync.cs) |
@@ -428,7 +428,7 @@ HD-2Dの開発者は、点光源でキャラと物に影を落とし、光と影
 | 探索・マップ移動の舞台 | 移動しない前提で作った。移動を加えるときは、床の分割や光の数を見直す |
 | 戦闘の背景とゲームの行き先の対応 | 場所の名前・行き先・敵の構成が未決のため、背景はInspectorで選ぶだけで、どの戦闘でどれを使うかは決めていない |
 | Battleシーンの読み込みの重さ | 11種類の舞台を1つのシーンに置き、選んでいない舞台は無効にしている。無効でもテクスチャとメッシュは読み込まれる。Android端末でのメモリと読み込み時間は未確認。実際の戦闘で使うときは、選んだ舞台だけを読み込む作りに改める |
-| BattleとBattleInspectの関係 | BattleはBattleInspectと同じ戦闘画面のPrefabを使う。Homeの行き先カードは今もBattleInspectを開く |
+| BattleとBattleLabの関係 | BattleはBattleLabと同じ戦闘画面のPrefabを使う。Homeの行き先カードは今もBattleLabを開く |
 
 ## 変更と判断の記録
 

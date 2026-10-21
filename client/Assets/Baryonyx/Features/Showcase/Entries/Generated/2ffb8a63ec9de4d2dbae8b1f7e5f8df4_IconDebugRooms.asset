@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 5b5e3ada7f97540c3befc7d8b5e80f3b_IconQualityLab
+  m_Name: 2ffb8a63ec9de4d2dbae8b1f7e5f8df4_IconDebugRooms
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 5b5e3ada7f97540c3befc7d8b5e80f3b_IconQualityLab
-  DisplayName: IconQualityLab
-  Description: Assets/Baryonyx/Features/Home/UI/Art/IconQualityLab.png#IconQualityLab
+  Id: 2ffb8a63ec9de4d2dbae8b1f7e5f8df4_IconDebugRooms
+  DisplayName: IconDebugRooms
+  Description: Assets/Baryonyx/Features/Home/UI/Art/IconDebugRooms.png#IconDebugRooms
   Category: 5
-  Asset: {fileID: 21300000, guid: 5b5e3ada7f97540c3befc7d8b5e80f3b, type: 3}
+  Asset: {fileID: 21300000, guid: 2ffb8a63ec9de4d2dbae8b1f7e5f8df4, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

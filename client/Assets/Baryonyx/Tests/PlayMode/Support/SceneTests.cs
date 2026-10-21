@@ -1,9 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Baryonyx.App;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Baryonyx.Tests.PlayMode
@@ -96,6 +100,28 @@ namespace Baryonyx.Tests.PlayMode
                 Is.GreaterThanOrEqualTo(MinimumTouchSize * heightRatio),
                 target.name
             );
+        }
+
+        /// <summary>Nothing lies over the button's middle to take its tap.</summary>
+        public static void AssertTappable(Scene scene, Button button)
+        {
+            var events = scene
+                .GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true))
+                .Single();
+            var data = new PointerEventData(events)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    ((RectTransform)button.transform).TransformPoint(
+                        ((RectTransform)button.transform).rect.center
+                    )
+                ),
+            };
+            var hits = new List<RaycastResult>();
+            events.RaycastAll(data, hits);
+            Assert.That(hits, Is.Not.Empty, button.name);
+            Assert.That(hits[0].gameObject.GetComponentInParent<Button>(), Is.SameAs(button));
         }
 
         /// <summary>The screen rectangle of a UI element, after the canvases are laid out.</summary>

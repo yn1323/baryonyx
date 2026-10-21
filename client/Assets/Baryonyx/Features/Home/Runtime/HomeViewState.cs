@@ -117,8 +117,7 @@ namespace Baryonyx.Home
                 HomeAction.TravelOffice => "旅の案内所（準備中）",
                 HomeAction.Resume => "再開（準備中）",
                 HomeAction.Library => "ライブラリ（準備中）",
-                HomeAction.SkillLab => "スキルのデバッグルーム（準備中）",
-                HomeAction.QualityLab => "品質のデバッグルーム（準備中）",
+                HomeAction.DebugRooms => "デバッグルーム（準備中）",
                 _ => "",
             };
 
