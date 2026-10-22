@@ -4,11 +4,10 @@ using UnityEngine.UI;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// One room on the exploration map (doc/features/screens.md): its round plate coloured by the
-    /// room's kind and its kind icon, the glow of a strong monster far away or of the deepest
-    /// room, and where it is tapped. <see cref="ExplorationView"/> makes
-    /// one from the template for each room it shows, and fades it in as the fog clears and out
-    /// as the room drops out of sight.
+    /// One room on the exploration map (doc/features/screens.md): its round pedestal coloured by
+    /// the room's kind and its kind icon, the glow of a room to go to next or of the deepest room,
+    /// and where it is tapped. <see cref="ExplorationView"/> makes one from the template for each
+    /// room of the route, and fades out the rooms not chosen as the party walks on.
     /// </summary>
     public sealed class ExplorationMapMarker : MonoBehaviour
     {
@@ -22,9 +21,8 @@ namespace Baryonyx.Adventure
 
         public string RoomId { get; set; } = "";
 
-        // 今いる部屋から進める部屋。押すとその部屋へ進む。
+        // 今いるマスから進めるマス。押すとそのマスへ進む。
         public bool IsExit { get; set; }
-        public ExplorationRoomSight Sight { get; set; }
 
         // 見え方（1で見える）と、向かう先、薄れ始めるまでの待ち時間（秒）。
         public float Alpha { get; set; } = 1f;

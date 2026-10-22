@@ -30,7 +30,7 @@ namespace Baryonyx.Combat
         {
             new CardKeyword(
                 "ブロック",
-                "受けるダメージをブロックから先に引く。次の味方ターンの開始時に消える。"
+                "受けるダメージをブロックから先に引く。ターンをまたいで残り、最大HPまで貯まる。"
             ),
             new CardKeyword(
                 "弱点",

@@ -690,6 +690,49 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator EnergyLeftOverForNoCardInHandEndsTheTurn()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var wolf = view.Enemies[1];
+            int slash = view.HandCards.First();
+            // Every other card in hand costs more than the energy the slash leaves.
+            foreach (int i in view.HandCards)
+                view.Cards[i].Cost = i == slash ? 1 : view.Energy;
+            Assert.That(view.EndTurnButton.interactable, Is.True);
+
+            Play(view, slash, wolf.TargetArea);
+            Assert.That(view.Energy, Is.GreaterThan(0));
+            Assert.That(view.EnemyTurn, Is.False, "The card acts before the turn ends.");
+            Assert.That(
+                view.EndTurnButton.interactable,
+                Is.False,
+                "With no card to pay for, the button cannot be pressed."
+            );
+            for (float t = 0f; !view.EnemyTurn && t < 5f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn, Is.True, "The energy left pays for no card.");
+            yield return WaitEnemyTurn(view);
+        }
+
+        [UnityTest]
+        public IEnumerator TheEndTurnButtonSitsHalfwayUpTheCardsOnScreen()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var button = (RectTransform)view.EndTurnButton.transform;
+            var settings = view.Settings;
+            float top = settings.RestBottom + view.Cards[0].Body.rect.height * settings.CardScale;
+            float middle = (Mathf.Max(0f, settings.RestBottom) + top) / 2f;
+            Assert.That(button.anchorMin.y, Is.EqualTo(0f));
+            Assert.That(button.anchorMax.y, Is.EqualTo(0f));
+            Assert.That(
+                button.anchoredPosition.y + (0.5f - button.pivot.y) * button.rect.height,
+                Is.EqualTo(middle).Within(0.5f)
+            );
+        }
+
+        [UnityTest]
         public IEnumerator PlayModeStartsWithNoCardsAndDealsTheOpeningHandOneByOne()
         {
             var view = default(BattleInspectView);
@@ -817,6 +860,100 @@ namespace Baryonyx.Tests.PlayMode
                 hand.Take(2).Concat(view.DrawPile).OrderBy(i => i),
                 Is.EqualTo(Enumerable.Range(0, 16)),
                 "The new deck is all 16, so cards in hand come again."
+            );
+        }
+
+        [UnityTest]
+        public IEnumerator AFallenAllysCardsCrumbleOutOfTheHandAndComeBackWhenItStandsUp()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int healer = view.Deck[DeckIndexOf(view, "Heal")].Caster;
+            int fallen = view
+                .HandCards.Select(i => view.Cards[i].Caster)
+                .First(caster => caster != healer);
+            var theirs = Enumerable
+                .Range(0, view.Deck.Length)
+                .Where(i => view.Deck[i].Caster == fallen)
+                .ToArray();
+            int inHand = view.HandCards.Count(i => view.Cards[i].Caster == fallen);
+            int handBefore = view.HandCards.Count;
+
+            view.Allies[fallen].Hp = 0;
+            yield return null;
+
+            Assert.That(view.HandCards.Select(i => view.Cards[i].Caster), Has.No.Member(fallen));
+            Assert.That(view.HandCards, Has.Count.EqualTo(handBefore - inHand));
+            Assert.That(view.DrawPile.Intersect(theirs), Is.Empty, "Its cards leave the deck.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo(view.DrawPile.Count.ToString()));
+            // A copy of each card crumbles over the hand, then is gone.
+            var layer = view.Hand.parent.Find("VanishingCards");
+            Assert.That(layer, Is.Not.Null);
+            Assert.That(layer.childCount, Is.GreaterThanOrEqualTo(inHand));
+            for (float t = 0f; layer.childCount > 0 && t < 3f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(layer.childCount, Is.Zero, "The crumbling copies and motes are gone.");
+
+            // A deck made anew leaves them out.
+            view.RestartDeal(instant: true);
+            Assert.That(
+                view.HandCards.Select(i => view.Cards[i].DeckIndex).Concat(view.DrawPile),
+                Is.EquivalentTo(Enumerable.Range(0, view.Deck.Length).Except(theirs))
+            );
+
+            // A heal is for those standing.
+            int heal = DealInto(view, "Heal");
+            Assert.That(heal, Is.GreaterThanOrEqualTo(0));
+            var target = view.Allies[fallen];
+            view.PressCard(heal, CardPoint(view.Cards[heal]));
+            view.DragCard(Center(target.TargetArea));
+            Assert.That(view.Targets, Has.No.Member(fallen));
+            Assert.That(target.Marker.gameObject.activeSelf, Is.False);
+            Assert.That(view.Allies[healer].Marker.gameObject.activeSelf, Is.True);
+            view.ReleaseCard(Center(target.TargetArea));
+            yield return WaitActions(view);
+            Assert.That(target.Down, Is.True);
+
+            // Up again, its cards are shuffled back into the deck.
+            view.Allies[fallen].Hp = view.Allies[fallen].MaxHp;
+            yield return null;
+            Assert.That(view.DrawPile.Intersect(theirs), Is.EquivalentTo(theirs));
+            Assert.That(view.DeckLabel.text, Is.EqualTo(view.DrawPile.Count.ToString()));
+        }
+
+        [UnityTest]
+        public IEnumerator AnAllyFelledByAnEnemyLosesItsCardsAtOnce()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            // Any blow fells any of them.
+            foreach (var ally in view.Allies)
+                ally.Hp = 1;
+
+            view.EndTurnButton.onClick.Invoke();
+            for (float t = 0f; view.EnemyTurn && t < 10f; t += Time.deltaTime)
+            {
+                foreach (var down in Enumerable.Range(0, 4).Where(i => view.Allies[i].Down))
+                {
+                    Assert.That(
+                        view.HandCards.Select(i => view.Cards[i].Caster),
+                        Has.No.Member(down)
+                    );
+                    Assert.That(
+                        view.DrawPile.Select(i => view.Deck[i].Caster),
+                        Has.No.Member(down)
+                    );
+                }
+                yield return null;
+            }
+            yield return WaitDealt(view);
+            var fallen = Enumerable.Range(0, 4).Where(i => view.Allies[i].Down).ToArray();
+            Assert.That(fallen, Is.Not.Empty, "The enemies felled someone.");
+            Assert.That(fallen, Has.Length.LessThan(4), "Someone still stands.");
+            Assert.That(
+                view.HandCards.Select(i => view.Cards[i].Caster).Intersect(fallen),
+                Is.Empty,
+                "The cards drawn are of those standing."
             );
         }
 
@@ -1654,16 +1791,48 @@ namespace Baryonyx.Tests.PlayMode
                     Is.EqualTo((Mathf.Max(1, dots) + 2) * gauge.DotSize).Within(0.01f)
                 );
             }
-            int partyHp = view.Allies.Sum(ally => ally.Hp);
+            int[] hpBefore = view.Allies.Select(ally => ally.Hp).ToArray();
 
             view.EndTurnButton.onClick.Invoke();
             for (float t = 0f; view.EnemyTurn && t < 15f; t += Time.deltaTime)
                 yield return null;
-            int lost = partyHp - view.Allies.Sum(ally => ally.Hp);
+            int lost = hpBefore.Sum() - view.Allies.Sum(ally => ally.Hp);
             Assert.That(lost, Is.LessThan(wolf.Power + slime.Power));
-            // The block lasts until the party's next turn.
-            Assert.That(view.BlockOf(0), Is.EqualTo(0));
-            Assert.That(view.Allies.All(ally => !ally.Gauge.Block.gameObject.activeSelf), Is.True);
+            // The block stays into the party's next turn; only the blows wear it down.
+            Assert.That(
+                Enumerable.Range(0, view.Allies.Length).Sum(i => view.BlockOf(i)),
+                Is.GreaterThan(0),
+                "The block lasts past the party's next turn."
+            );
+            for (int i = 0; i < view.Allies.Length; i++)
+            {
+                if (view.Allies[i].Hp < hpBefore[i])
+                    Assert.That(view.BlockOf(i), Is.EqualTo(0), "A blow takes the block first.");
+                Assert.That(
+                    view.Allies[i].Gauge.Block.gameObject.activeSelf,
+                    Is.EqualTo(view.BlockOf(i) > 0)
+                );
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator BlockGrowsNoFurtherThanTheAllysMaxHp()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var ally = view.Allies[1];
+            ally.MaxHp = 1;
+            ally.Hp = 1;
+            int bash = DealInto(view, "ShieldBash");
+            Play(view, bash, view.Enemies[0].TargetArea);
+            yield return WaitActions(view);
+            Assert.That(view.BlockOf(0), Is.GreaterThan(1));
+            Assert.That(view.BlockOf(1), Is.EqualTo(1), "The block stops at the ally's max HP.");
+            Assert.That(
+                ally.Gauge.Block.sizeDelta.x,
+                Is.EqualTo((ally.Gauge.InnerDots + 2) * ally.Gauge.DotSize).Within(0.01f),
+                "A full block fills the bar."
+            );
         }
 
         [UnityTest]

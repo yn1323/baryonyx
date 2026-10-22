@@ -46,6 +46,14 @@ namespace Baryonyx.Combat.Presentation
         [NonSerialized]
         public bool BossEncounter;
 
+        /// <summary>
+        /// While true, the enemies wait out of sight before they step in (the adventure's battle
+        /// holds them while the shutter from the exploration still covers the screen). Null: they
+        /// step in at once.
+        /// </summary>
+        [NonSerialized]
+        public Func<bool> HoldEntrance;
+
         [Header("節目の帯")]
         public Color VictoryBannerLine = new(0.98f, 0.8f, 0.36f);
         public Color VictoryBannerText = new(1f, 0.92f, 0.62f);
@@ -153,6 +161,10 @@ namespace Baryonyx.Combat.Presentation
                 Enemies[i].Sprite.color = Silhouette;
                 Enemies[i].Body.anchoredPosition = enemyBase[i] + Vector2.right * EntranceDistance;
             }
+            // A frame first: the scene's shutter may cover the screen only after the battle began.
+            yield return null;
+            while (HoldEntrance != null && HoldEntrance())
+                yield return null;
             yield return Wait(0.25f);
 
             var first = boss ? standing.FindAll(i => !Enemies[i].Boss) : standing;
@@ -356,17 +368,19 @@ namespace Baryonyx.Combat.Presentation
                 RefreshAlly(ally);
             }
             yield return Wait(0.35f);
+            // No one rises where the party's slot is empty.
+            var rising = Array.FindAll(Allies, ally => !ally.Absent);
             if (Vfx != null)
-                Vfx.Rise(Array.ConvertAll(Allies, ally => ally.TargetArea));
+                Vfx.Rise(Array.ConvertAll(rising, ally => ally.TargetArea));
             yield return Wait(0.18f);
             // The grey lifts as the light rises, then the HP fills.
             for (float t = 0f; t < 0.45f; t += Time.deltaTime)
             {
-                foreach (var ally in Allies)
-                    ally.Sprite.color = Color.Lerp(DownTint, Color.white, t / 0.45f);
+                foreach (var ally in rising)
+                    ally.Sprite.color = Color.Lerp(DownTint * ally.Tint, ally.Tint, t / 0.45f);
                 yield return null;
             }
-            foreach (var ally in Allies)
+            foreach (var ally in rising)
             {
                 ally.Hp = ally.MaxHp;
                 RefreshAlly(ally);

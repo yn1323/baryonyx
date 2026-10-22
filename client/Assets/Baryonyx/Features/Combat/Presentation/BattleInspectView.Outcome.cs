@@ -210,6 +210,7 @@ namespace Baryonyx.Combat.Presentation
                 return;
             Outcome = BattleOutcome.None;
             ClearStatuses(true);
+            ClearBlock();
             // The party stands up again with its moment, then its turn begins (Moments).
             Enqueue(Revived());
         }

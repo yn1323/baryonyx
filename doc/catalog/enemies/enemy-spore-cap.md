@@ -2,7 +2,7 @@
 id: enemy-spore-cap
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 毒胞子オオダケ
 category: enemies
 silhouette: 大きく張り出した傘の下に、筋ばった太い柄の体。左右に丸い胞子袋を下げ、根の足で立つ
@@ -45,7 +45,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SporeCap.asepri
 
 まだどの行き先にも出ない。
 生息する地域は森である。
-出現する行き先・部屋・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
+出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
 
@@ -169,7 +169,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SporeCap.asepri
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 出現する場所 | 出現する行き先・部屋・敵の組み合わせ・Lv |
+| 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 毒の上限 | 胞子の芽吹きで毒が倍になるため、味方に付く毒の重なりの上限を設けるか（[胞子の芽吹き](../enemy-skills/enemy-skill-spore-sac-bloom.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |

@@ -104,7 +104,9 @@ namespace Baryonyx.Tests.PlayMode
             var boards = view.GetComponentsInChildren<Hd2dUiBillboard>(true);
             Assert.That(
                 boards.Select(board => board.name),
-                Is.EquivalentTo(new[] { "Toma", "Luka", "Aria", "Mina", "Campfire" })
+                Is.EquivalentTo(
+                    new[] { "PartyMember1", "PartyMember2", "PartyMember3", "PartyMember4", "Campfire" }
+                )
             );
             foreach (var board in boards)
             {
@@ -180,7 +182,7 @@ namespace Baryonyx.Tests.PlayMode
 
             // Party members, the fire and the gate stay in the centred world layer; controls
             // follow the Safe Area.
-            Assert.That(view.transform.Find("World/Aria"), Is.Not.Null);
+            Assert.That(view.transform.Find("World/PartyMember3"), Is.Not.Null);
             Assert.That(view.transform.Find("World/Campfire"), Is.Not.Null);
             Assert.That(
                 view.transform.Find("SafeArea").GetComponent<SafeAreaFollower>(),

@@ -2,7 +2,7 @@
 id: feature-inventory
 type: specification
 status: 一部確定
-updated: 2026-10-19
+updated: 2026-10-21
 ---
 
 # 持ち物の分類、レア度と品質
@@ -132,7 +132,7 @@ updated: 2026-10-19
 |---|---|
 | 品質の計算 | サーバー（[quality.ts](../../server/src/shared/quality.ts)）とクライアント（[ItemQuality.cs](../../client/Assets/Baryonyx/Features/Inventory/Runtime/ItemQuality.cs)）が同じ決まりを持つ。倍率は百分率の整数（×1.37なら137）で比べ、境目ちょうどは上の品質に入れる |
 | 装備 | サーバーが1つずつ倍率を持ち、APIが倍率と品質を返す（[持っている装備と付け替えの保存](equipment.md#持っている装備と付け替えの保存)）。初めの装備は×1.00。画面は★に続けて品質の文字を出し、説明の数字に倍率を掛ける |
-| ACTボーナス | サーバーがボーナスごとに倍率を持ち、冒険のドロップは部屋の品質の重みと幅から倍率を選ぶ（[冒険のドロップ](drops.md)） |
+| ACTボーナス | サーバーがボーナスごとに倍率を持ち、冒険のドロップはマスの品質の重みと幅から倍率を選ぶ（[冒険のドロップ](drops.md)） |
 | スキル | 持っているスキルの仕組みがなく、50枚すべてを持っている扱いのため、1枚ずつの倍率はサーバーに保存しない。サーバーはキャラの枠ごとにスキルのIDだけを保存する（[実装との対応](party.md#実装との対応)）。カードは倍率と品質を持ち、倍率を掛けたカードを作れる（[CardSkillQuality](../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkillQuality.cs)）。戦闘・編成・育成のカードは×1.00（品質C）である |
 | 固有スキル | 品質C・×1.00。強化するアイテムはまだない |
 | キラキラ | 品質で層を変える（[カードのキラキラ](../art/direction.md#カードのキラキラ)） |

@@ -178,6 +178,12 @@ namespace Baryonyx.Combat.Editor
 
             /// <summary>Who the ally is among the cards' users.</summary>
             public CardUser User;
+
+            /// <summary>
+            /// The party slot whose member stands here in an adventure's battle: the mock's
+            /// formation (Toma, Luka, Aria, Mina) keeps everyone where the mock has them.
+            /// </summary>
+            public int Slot;
         }
 
         internal sealed class EnemySpec
@@ -227,6 +233,7 @@ namespace Baryonyx.Combat.Editor
                 Level = 12,
                 Level100 = new(2300, 700, 850, 2450, 1700, 560, 300, 500),
                 User = CardUser.Toma,
+                Slot = 0,
             },
             new()
             {
@@ -238,6 +245,7 @@ namespace Baryonyx.Combat.Editor
                 Level = 10,
                 Level100 = new(2500, 800, 1150, 1600, 1800, 540, 200, 900),
                 User = CardUser.Mina,
+                Slot = 3,
             },
             new()
             {
@@ -249,6 +257,7 @@ namespace Baryonyx.Combat.Editor
                 Level = 10,
                 Level100 = new(3900, 1950, 1600, 950, 1200, 490, 500, 300),
                 User = CardUser.Aria,
+                Slot = 2,
             },
             new()
             {
@@ -260,6 +269,7 @@ namespace Baryonyx.Combat.Editor
                 Level = 11,
                 Level100 = new(2850, 1800, 950, 2050, 1100, 670, 900, 600),
                 User = CardUser.Luka,
+                Slot = 1,
             },
         };
 
@@ -378,6 +388,16 @@ namespace Baryonyx.Combat.Editor
                 view.ActorMaterial = EnsurePixelArtMaterial();
                 view.Settings = EnsureHandSettings();
                 view.EnemyLooks = BattleEnemyLooksAssets.Create(TurnIconDots);
+                // The frames and icons of every element, for the deck an adventure's party makes.
+                var elements = (CardElement[])Enum.GetValues(typeof(CardElement));
+                view.CardFrames = elements
+                    .Select(element => (Texture)Art("CardFrame" + element))
+                    .ToArray();
+                view.ElementIcons = elements
+                    .Select(element =>
+                        element == CardElement.None ? null : (Texture)Art("Element" + element)
+                    )
+                    .ToArray();
                 var stageCanvas = CanvasRoot("StageCanvas");
                 stageCanvas.SetParent(root, false);
                 BattleSkillVfxAssets.MakeStageCanvas(stageCanvas);
@@ -424,6 +444,14 @@ namespace Baryonyx.Combat.Editor
                 BuildEndTurn(safe, view);
                 BuildAim(safe, view);
                 BuildPopup(screen, view);
+                // 固有スキルの進化先を選ぶ画面。操作の上に重ねる（doc/features/skill-evolution.md）。
+                view.Choice = BattleEvolutionChoiceAssets.Build(
+                    screen,
+                    view.Vfx.MaterialOf(BattleVfxShape.Beam),
+                    view.Vfx.MaterialOf(BattleVfxShape.Glow),
+                    view.Vfx.MaterialOf(BattleVfxShape.FlameTongue),
+                    view.Vfx.MaterialOf(BattleVfxShape.Sparkle)
+                );
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 BuildNumberSamples();
@@ -840,6 +868,8 @@ namespace Baryonyx.Combat.Editor
                         NameTag = tag,
                         StartHp = ally.Hp,
                         MaxHp = ally.MaxHp,
+                        Name = ally.Label,
+                        Slot = ally.Slot,
                         Level = ally.Level,
                         Stats = ally.Stats,
                     }
@@ -1589,17 +1619,17 @@ namespace Baryonyx.Combat.Editor
             label.enableAutoSizing = true;
         }
 
-        /// <summary>A quiet end-turn button: a thin muted-gold frame around a dark inside.</summary>
+        /// <summary>
+        /// A quiet end-turn button: a thin muted-gold frame around a dark inside, at the right
+        /// halfway up the cards on screen. When no card can be paid for it greys out, words and all.
+        /// </summary>
         private static void BuildEndTurn(RectTransform safe, BattleInspectView view)
         {
             var art = Art("EndTurnFrame");
             var button = Rect("EndTurn", safe);
-            Corner(
-                button,
-                new Vector2(1, 0),
-                new Vector2(-40, 40),
-                new Vector2(art.width, art.height) * DotSize
-            );
+            var size = new Vector2(art.width, art.height) * DotSize;
+            float middle = BattleInspectView.EndTurnMiddle(view.Settings, CardHeight);
+            Corner(button, new Vector2(1, 0), new Vector2(-40, middle - size.y / 2f), size);
             var face = AddRaw(button, art);
             face.raycastTarget = true;
             var label = Label(
@@ -1611,7 +1641,9 @@ namespace Baryonyx.Combat.Editor
                 TextAlignmentOptions.Center
             );
             Stretch(label.rectTransform);
-            view.EndTurnButton = AddButton(button, face);
+            var endTurn = (TintGroupButton)AddTintButton(button, face);
+            endTurn.SetTintGraphics(new Graphic[] { label });
+            view.EndTurnButton = endTurn;
         }
 
         private static void BuildPopup(RectTransform root, BattleInspectView view)
@@ -1935,37 +1967,17 @@ namespace Baryonyx.Combat.Editor
         {
             int user = Array.FindIndex(Allies, ally => ally.User == skill.User);
             var ally = Allies[user];
-            var element = BattleCardText.ElementOf(skill.Element);
-            var first = skill.Powered().FirstOrDefault();
-            return new BattleInspectCardData
-            {
-                Name = skill.Name,
-                Owner = ally.Label,
-                Skill = skill.Id,
-                Kind = Baryonyx.UI.Cards.CardText.KindLine(skill),
-                Description = Baryonyx.UI.Cards.CardText.Description(skill),
-                Art = Art(skill.Art),
-                Frame = Art("CardFrame" + skill.Element),
-                ElementIcon =
-                    skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
-                Cost = skill.Cost,
-                Quality = skill.Quality,
-                FoilStyle = skill.FoilStyle,
-                Power = first == null ? 0 : CardRules.Power(first, StatOf(ally, first.Stat), act),
-                Element = element,
-                Effect = BattleCardText.EffectOf(skill),
-                Caster = user,
-            };
+            return BattleInspectView.CardData(
+                skill,
+                user,
+                ally.Label,
+                ally.Stats,
+                Art(skill.Art),
+                Art("CardFrame" + skill.Element),
+                skill.Element == CardElement.None ? null : Art("Element" + skill.Element),
+                act
+            );
         }
-
-        private static int StatOf(AllySpec ally, CardStat stat) =>
-            stat switch
-            {
-                CardStat.PhysicalAttack => ally.Stats.PhysicalAttack,
-                CardStat.MagicAttack => ally.Stats.MagicAttack,
-                CardStat.PhysicalDefense => ally.Stats.PhysicalDefense,
-                _ => 0,
-            };
 
         /// <summary>The drawn part of a sprite in dots, with y measured up from the bottom.</summary>
         private static UnityEngine.Rect OpaqueBounds(Texture2D texture) => OpaqueBoundsOf(texture);

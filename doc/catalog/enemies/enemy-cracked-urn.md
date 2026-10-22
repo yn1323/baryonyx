@@ -2,7 +2,7 @@
 id: enemy-cracked-urn
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 割れ壺の番
 category: enemies
 silhouette: 丸い胴の壺が斜めに傾き、上の口のふちが牙の並ぶあごになって大きく開く。胴の右に縦の割れ目
@@ -45,7 +45,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CrackedUrn.asep
 
 まだどの行き先にも出ない。
 生息する地域は遺跡である。
-出現する行き先・部屋・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
+出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 [石のガーゴイル](enemy-stone-gargoyle.md)の仲間を呼ぶでも現れる。
 
 ## 分類固有のデータ
@@ -166,7 +166,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CrackedUrn.asep
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 出現する場所 | 出現する行き先・部屋・敵の組み合わせ・Lv |
+| 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 味方の強化を消す | 敵の技で味方の強化を消す新しい仕組み（[壺の吸い込み](../enemy-skills/enemy-skill-urn-gulp.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |

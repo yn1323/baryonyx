@@ -59,7 +59,7 @@ namespace Baryonyx.Combat.Presentation
                 deckKeywords = new IReadOnlyList<CardKeyword>[Deck.Length];
             if (deckKeywords[deckIndex] == null)
             {
-                var skill = CardSkills.Find(Deck[deckIndex].Skill);
+                var skill = SkillOf(Deck[deckIndex]);
                 deckKeywords[deckIndex] =
                     skill == null ? Array.Empty<CardKeyword>() : CardKeywords.In(skill.Text);
             }

@@ -2,7 +2,7 @@
 id: enemy-mist-dragon
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 霧の竜
 category: enemies
 silhouette: 翼を左右に広げて宙に浮く竜。長い首が左上へ伸びて吠え、長い尾が下で巻く。体の周りを白い霧が渦巻く
@@ -45,7 +45,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 
 まだどの行き先にも出ない。
 生息する地域は空（霧の濃い山の上）である。
-出現する行き先・部屋・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
+出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 空の地域に出る敵はほかにいないため、霧の竜は取り巻きを呼ばず、1体で戦う。
 
 ## 分類固有のデータ
@@ -192,7 +192,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | ステータス、行動の割合と回数、激化の条件は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 出現する場所 | 出現する行き先・部屋・敵の組み合わせ・Lv。空の地域をどの行き先として作るか |
+| 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv。空の地域をどの行き先として作るか |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 霧隠れ・継続ダメージ・引く枚数の減少 | 新しい仕組みの決まり（[霧隠れ](../enemy-skills/enemy-skill-mist-dragon-fog-veil.md)、[迷い路の霧](../enemy-skills/enemy-skill-mist-dragon-maze-fog.md)、[白霧の大息吹](../enemy-skills/enemy-skill-mist-dragon-whiteout-breath.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |

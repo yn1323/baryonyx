@@ -89,6 +89,26 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The ally who uses the card (an index of the view's Allies).</summary>
         public int Caster;
+
+        /// <summary>
+        /// The card skill itself, with its multiplier, when the deck was made from a party
+        /// (<see cref="BattleInspectView.UseParty"/>); null for the baked deck, whose skill is
+        /// found by <see cref="Skill"/>.
+        /// </summary>
+        [NonSerialized]
+        public CardSkill Card;
+
+        /// <summary>The character whose unique skill the card is (<see cref="BattlePartyCard.Person"/>).</summary>
+        [NonSerialized]
+        public string Person = "";
+
+        /// <summary>Which of the character's unique skills it is, or -1 (<see cref="BattlePartyCard.Unique"/>).</summary>
+        [NonSerialized]
+        public int Unique = -1;
+
+        /// <summary>The art of another card skill by its id (<see cref="BattlePartyCard.ArtOf"/>).</summary>
+        [NonSerialized]
+        public Func<string, Texture> ArtOf;
     }
 
     /// <summary>
@@ -150,6 +170,12 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The ally's name under the HP bar, shown with the ring.</summary>
         public GameObject NameTag;
+
+        /// <summary>The ally's name, shown on the name tag and as the owner of its cards.</summary>
+        public string Name;
+
+        /// <summary>The party slot (0 to 3) whose member stands here (<see cref="BattleInspectView.UseParty"/>).</summary>
+        public int Slot;
         public int StartHp;
         public int MaxHp;
 
@@ -164,6 +190,20 @@ namespace Baryonyx.Combat.Presentation
 
         [NonSerialized]
         public int Hp;
+
+        [NonSerialized]
+        private Color? tint;
+
+        /// <summary>The colour the sprite is drawn in (a stand-in character's tint), white unless set.</summary>
+        public Color Tint
+        {
+            get => tint ?? Color.white;
+            set => tint = value;
+        }
+
+        /// <summary>No one stands here: the party's slot is empty. It is down and hidden for the whole battle.</summary>
+        [NonSerialized]
+        public bool Absent;
 
         /// <summary>The HP bar under the feet; it steps forward with the ally.</summary>
         public RectTransform HpBar => (RectTransform)Gauge.transform;
@@ -720,6 +760,17 @@ namespace Baryonyx.Combat.Presentation
                 : $"味方のターン<size=62%>　ターン{turn}</size>";
 
         /// <summary>
+        /// The height of the end-turn button's middle above the bottom of the safe area: halfway
+        /// up the part of the middle card of the hand that is on screen, so the thumb finds it
+        /// beside the cards.
+        /// </summary>
+        public static float EndTurnMiddle(BattleInspectHandSettings settings, float cardHeight)
+        {
+            float top = settings.RestBottom + cardHeight * settings.CardScale;
+            return (Mathf.Max(0f, settings.RestBottom) + top) / 2f;
+        }
+
+        /// <summary>
         /// How see-through a card the energy cannot pay for is: the settings' opacity in the hand,
         /// none once raised so its details can be read.
         /// </summary>
@@ -861,8 +912,11 @@ namespace Baryonyx.Combat.Presentation
                     idleBase[i] + (up ? Vector2.up * step : Vector2.zero);
             }
 
+            // An ally felled or raised by anything (a lab, a moment) takes its cards with it.
+            RefreshFallen();
             // Laid out every frame so changes to the settings show at once.
             LayoutHand();
+            PlaceEndTurn();
             if (held >= 0)
                 motion[held].Target = RaisedPose(held);
             float dt = Mathf.Min(Time.deltaTime, 1f / 30f);
@@ -887,6 +941,19 @@ namespace Baryonyx.Combat.Presentation
             if (TapArea != null)
                 TapArea.SetActive(Selected);
             RefreshAim();
+        }
+
+        /// <summary>Keeps the end-turn button halfway up the cards on screen as the settings change.</summary>
+        private void PlaceEndTurn()
+        {
+            if (EndTurnButton == null || Cards.Length == 0)
+                return;
+            var button = (RectTransform)EndTurnButton.transform;
+            var position = button.anchoredPosition;
+            position.y =
+                EndTurnMiddle(Settings, Cards[0].Body.rect.height)
+                + (button.pivot.y - 0.5f) * button.rect.height;
+            button.anchoredPosition = position;
         }
 
         /// <summary>Puts the card where its motion is now, face up or down, and shows or hides it.</summary>
@@ -1192,8 +1259,11 @@ namespace Baryonyx.Combat.Presentation
                     targets.Add(i);
         }
 
+        // A fallen ally takes only a card that revives (Fallen).
         private bool CanTarget(BattleInspectCard card, int index) =>
-            !card.TargetsEnemies || Enemies[index].Alive;
+            card.TargetsEnemies
+                ? Enemies[index].Alive
+                : !Allies[index].Absent && (!Allies[index].Down || Revives(card));
 
         /// <summary>The character of the card's side under or near a screen point, or -1.</summary>
         private int NearestTarget(BattleInspectCard card, Vector2 screenPoint)
@@ -1266,7 +1336,10 @@ namespace Baryonyx.Combat.Presentation
                         card != null && card.TargetsEnemies && CanTarget(card, i)
                     );
             for (int i = 0; i < Allies.Length; i++)
-                Allies[i].Marker.gameObject.SetActive(card != null && !card.TargetsEnemies);
+                Allies[i]
+                    .Marker.gameObject.SetActive(
+                        card != null && !card.TargetsEnemies && CanTarget(card, i)
+                    );
         }
 
         /// <summary>
@@ -1337,24 +1410,30 @@ namespace Baryonyx.Combat.Presentation
                 return;
             PutBack();
             EnemyTurn = true;
+            EndTurnPassives();
             Refresh();
             Enqueue(EnemyPhase());
         }
 
         /// <summary>
-        /// Ends the party's turn by itself when the energy is spent: once the played cards have
-        /// acted (one may give energy back) and the cards they drew have landed, and only when
-        /// no card in hand costs nothing (a lowered cost, or a free next card).
+        /// Ends the party's turn by itself when no card in hand can be paid for, whether the
+        /// energy is spent or what is left is too little: once the played cards have acted (one
+        /// may give energy back) and the cards they drew have landed. Not where the hand is put
+        /// away (the labs): no card is played there, and the lab ends the turn by its own button.
         /// </summary>
         private void EndTurnIfSpent()
         {
-            if (acting || Dealing || EnemyTurn || Energy > 0)
+            if (acting || Dealing || EnemyTurn || AnyAffordable())
                 return;
-            foreach (int index in hand)
-                if (CostOf(Cards[index]) <= Energy)
-                    return;
+            if (!Hand.gameObject.activeInHierarchy)
+                return;
             EndTurn();
         }
+
+        /// <summary>
+        /// True when the energy can pay for a card in hand (a lowered cost, or a free next card).
+        /// </summary>
+        private bool AnyAffordable() => hand.Exists(Affordable);
 
         private IEnumerator EnemyPhase()
         {
@@ -1443,6 +1522,7 @@ namespace Baryonyx.Combat.Presentation
             int taunting = standing.Find(ally => HasStatus(true, ally, CardStatus.Taunt));
             if (HasStatus(true, taunting, CardStatus.Taunt))
                 target = taunting;
+            target = CoverTarget(target);
             yield return Perform(
                 enemy.SkillName,
                 new[] { enemy.Body },
@@ -1472,6 +1552,7 @@ namespace Baryonyx.Combat.Presentation
             HitAlly(target, power);
             if (Vfx != null)
                 Vfx.Strike(Allies[target].TargetArea);
+            Riposte(target, attacker);
             yield break;
         }
 
@@ -1492,16 +1573,19 @@ namespace Baryonyx.Combat.Presentation
             if (order != null)
             {
                 drawPile.Clear();
-                drawPile.AddRange(order);
+                foreach (int deckIndex in order)
+                    if (!Benched(deckIndex))
+                        drawPile.Add(deckIndex);
             }
             RefreshDeck();
+            int opening = OpeningDraw();
             if (instant)
             {
-                for (int i = 0; i < Settings.OpeningDraw && Draw(false); i++) { }
+                for (int i = 0; i < opening && Draw(false); i++) { }
                 Refresh();
             }
             else
-                dealing = StartCoroutine(Deal(Settings.OpeningDraw, Settings.DealDelay));
+                dealing = StartCoroutine(Deal(opening, Settings.DealDelay));
         }
 
         /// <summary>Puts every card on screen away, hidden, and shuffles the whole deck anew.</summary>
@@ -1510,8 +1594,10 @@ namespace Baryonyx.Combat.Presentation
             PutBack();
             reserved = 0;
             hand.Clear();
+            ResetPassives();
             foreach (var card in Cards)
                 card.Place = BattleInspectCardPlace.Deck;
+            NoteFallen();
             NewDeck();
             Refresh();
         }
@@ -1523,8 +1609,10 @@ namespace Baryonyx.Combat.Presentation
         private void NewDeck()
         {
             drawPile.Clear();
+            // A fallen ally's cards stay out (Fallen).
             for (int i = 0; i < Deck.Length; i++)
-                drawPile.Add(i);
+                if (!Benched(i))
+                    drawPile.Add(i);
             Shuffle(drawPile);
             RefreshDeck();
         }
@@ -1567,6 +1655,9 @@ namespace Baryonyx.Combat.Presentation
                 return false;
             if (drawPile.Count == 0)
                 NewDeck();
+            // Every card left is a fallen ally's.
+            if (drawPile.Count == 0)
+                return false;
             Show(index, drawPile[0]);
             drawPile.RemoveAt(0);
             Cards[index].Place = BattleInspectCardPlace.Hand;
@@ -1628,7 +1719,7 @@ namespace Baryonyx.Combat.Presentation
             var card = Cards[index];
             var data = Deck[deckIndex];
             card.DeckIndex = deckIndex;
-            card.Cost = data.Cost;
+            card.Cost = CostWithPassives(data);
             card.Power = data.Power;
             card.Element = data.Element;
             card.Effect = data.Effect;
@@ -1642,7 +1733,7 @@ namespace Baryonyx.Combat.Presentation
                     data.Art,
                     data.Frame,
                     data.ElementIcon,
-                    data.Cost,
+                    card.Cost,
                     data.Quality,
                     data.FoilStyle
                 );
@@ -1710,6 +1801,7 @@ namespace Baryonyx.Combat.Presentation
             Turn = turn;
             MaxEnergy = MaxEnergyAt(turn);
             Energy = MaxEnergy;
+            StartTurnPassives();
             Refresh();
         }
 
@@ -1743,6 +1835,12 @@ namespace Baryonyx.Combat.Presentation
             }
             else
                 caster = -1;
+            // A unique skill's card may evolve before its effect (doc/features/skill-evolution.md).
+            if (DrawEvolution(card.DeckIndex, data, caster))
+            {
+                Enqueue(EvolveThenPerform(card.DeckIndex, data, parts, bases, chosen, onEnemies, caster));
+                return;
+            }
             Enqueue(
                 Perform(
                     data.Name,
@@ -1752,6 +1850,40 @@ namespace Baryonyx.Combat.Presentation
                     UseCard(data, chosen, onEnemies, caster),
                     caster
                 )
+            );
+        }
+
+        // The card evolves (its omen, the stage picked, its burst), and then the stage it became
+        // is played as the card was: the user steps forward and its effect lands.
+        private IEnumerator EvolveThenPerform(
+            int deckIndex,
+            BattleInspectCardData data,
+            RectTransform[] parts,
+            Vector2[] bases,
+            List<int> chosen,
+            bool onEnemies,
+            int caster
+        )
+        {
+            var played = data;
+            yield return Evolve(deckIndex, data, caster, evolved => played = evolved);
+            // A stage that works on the other side (a heal become an attack) picks its own target.
+            bool side =
+                played.Effect
+                    is BattleInspectCardEffect.DamageOne
+                        or BattleInspectCardEffect.DamageAll;
+            if (side != onEnemies)
+            {
+                chosen = new List<int>();
+                onEnemies = side;
+            }
+            yield return Perform(
+                played.Name,
+                parts,
+                bases,
+                Vector2.right,
+                UseCard(played, chosen, onEnemies, caster),
+                caster
             );
         }
 
@@ -1766,7 +1898,7 @@ namespace Baryonyx.Combat.Presentation
             int caster
         )
         {
-            var skill = string.IsNullOrEmpty(card.Skill) ? null : CardSkills.Find(card.Skill);
+            var skill = SkillOf(card);
             if (skill != null)
             {
                 yield return UseSkill(skill, card, chosen, onEnemies, caster);
@@ -1860,6 +1992,9 @@ namespace Baryonyx.Combat.Presentation
             int ally = -1
         )
         {
+            // An ally fallen after its card was played does not act.
+            if (ally >= 0 && Allies[ally].Down)
+                yield break;
             var from = Vector2.zero;
             if (ally >= 0)
             {
@@ -2148,6 +2283,8 @@ namespace Baryonyx.Combat.Presentation
             damage = Absorb(index, damage);
             ally.Hp = Mathf.Max(0, ally.Hp - damage);
             RefreshAlly(ally);
+            // Its cards leave the hand and the deck the moment it falls.
+            RefreshFallen();
             ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
             StartCoroutine(AllyHitReaction(index));
         }
@@ -2168,8 +2305,11 @@ namespace Baryonyx.Combat.Presentation
 
         private void ReviveAllies()
         {
+            ClearBlock();
             foreach (var ally in Allies)
             {
+                if (ally.Absent)
+                    continue;
                 ally.Hp = ally.StartHp;
                 RefreshAlly(ally);
             }
@@ -2188,10 +2328,11 @@ namespace Baryonyx.Combat.Presentation
 
         private void Refresh()
         {
+            RefreshFallen();
             for (int i = 0; i < Cards.Length; i++)
                 RefreshCard(i);
             if (EndTurnButton != null)
-                EndTurnButton.interactable = !Dealing && !EnemyTurn;
+                EndTurnButton.interactable = !Dealing && !EnemyTurn && AnyAffordable();
             if (EnergyLabel != null)
                 EnergyLabel.text = EnergyText(Energy, MaxEnergy);
             foreach (var enemy in Enemies)
@@ -2238,7 +2379,7 @@ namespace Baryonyx.Combat.Presentation
         {
             ally.Gauge.SetHp(ally.Hp, ally.MaxHp);
             // A downed ally is greyed out until healed.
-            ally.Sprite.color = ally.Down ? DownTint : Color.white;
+            ally.Sprite.color = ally.Down ? DownTint * ally.Tint : ally.Tint;
         }
 
         private void ShowPopup(RectTransform anchor, string text, Color color, float size)

@@ -2,7 +2,7 @@
 id: enemy-bone-croc
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 骨背の大ワニ
 category: enemies
 silhouette: 左へ大きく口を開けた横長のワニ。背中から尾にかけて白い骨のとげが列になって並び、尾が右上へ巻き上がる
@@ -40,13 +40,13 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BoneCroc.asepri
 
 ## 出現する場所
 
-| 行き先 | 部屋 | 敵の組み合わせ | Lv |
+| 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
 | 未決（生息する地域は沼） | 未決 | 未決 | 未決 |
 
 まだどの行き先にも出ない。
-生息する地域は沼とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
-沼の行き先の最奥の部屋に置く案がある。
+生息する地域は沼とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
+沼の行き先の最奥のマスに置く案がある。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 2026-10-20から、しじまの沼（`hush-mire`、Lv22）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
 戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「血の匂い」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
@@ -194,7 +194,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BoneCroc.asepri
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 沼の行き先を作るときに、部屋・敵の組み合わせ・Lvを決める |
+| 出現する場所とLv | 沼の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
 | 数値 | ステータス、行動の回数制限、激化の条件は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 仲間をのみ込む仕組みと呼び出し | 新しい仕組みの決まり（[丸のみ](../enemy-skills/enemy-skill-bone-croc-swallow-whole.md)、[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |

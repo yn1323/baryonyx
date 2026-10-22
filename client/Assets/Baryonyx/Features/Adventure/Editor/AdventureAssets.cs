@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
@@ -19,65 +20,69 @@ using static Baryonyx.Editor.UI.UiBuild;
 namespace Baryonyx.Adventure.Editor
 {
     /// <summary>
-    /// Builds the adventure's screens: the exploration screen (the map painted on the device with
-    /// its room markers, the party and the chest, the floors, the place, the prompt, the menu and
-    /// the dialog), the pictures the map is painted with, and the overlay laid over the battle
-    /// screen (the menu, the plate of a drop, the dialog and the notice band). Coordinates follow the 1920x1080 design;
-    /// the map is 2400x1080, three pixels a dot, centred so a wider screen shows more of it.
+    /// Builds the adventure's screens: the exploration screen (the route laid out from left to
+    /// right on the destination's ground, its roads of light and room pedestals, the party and the
+    /// chest, the place, floor and prompt, the menu, the bar of where the map is, the legend and
+    /// the dialog), and the overlay laid over the battle screen (the menu, the plate of a drop, the
+    /// dialog and the notice band). Coordinates follow the 1920x1080 design; the map is as wide as
+    /// the route and slides across the screen.
     /// </summary>
     public static class AdventureAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Adventure";
         public const string ExplorationPrefabPath = Folder + "/UI/ExplorationScreen.prefab";
         public const string OverlayPrefabPath = Folder + "/UI/AdventureOverlay.prefab";
-        public const string MapArtPath = Folder + "/Data/ExplorationMapArt.asset";
         public const string ArtFolder = Folder + "/UI/Art";
         public const string IconBattlePath = ArtFolder + "/IconRoomBattle.aseprite";
         public const string IconElitePath = ArtFolder + "/IconRoomElite.aseprite";
         public const string IconTreasurePath = ArtFolder + "/IconRoomTreasure.aseprite";
         public const string IconBossPath = ArtFolder + "/IconRoomBoss.aseprite";
-
-        // 停止中の探索画面に見せる、見本の道の地図の絵。生成のたびに描き直す。
-        public const string MapPreviewPath = ArtFolder + "/ExplorationMapPreview.png";
+        public const string IconRestPath = ArtFolder + "/IconRoomRest.aseprite";
+        public const string IconMerchantPath = ArtFolder + "/IconRoomMerchant.aseprite";
+        public const string IconShadyChestPath = ArtFolder + "/IconRoomShadyChest.aseprite";
+        public const string IconTrialPath = ArtFolder + "/IconRoomTrial.aseprite";
+        public const string IconStepDoorPath = ArtFolder + "/IconRoomStepDoor.aseprite";
+        public const string IconAltarPath = ArtFolder + "/IconRoomAltar.aseprite";
 
         public const string StageArtFolder = "Assets/Baryonyx/Shared/Art/Stages/Exploration";
         public const string ChestClosedPath = StageArtFolder + "/ChestClosed.aseprite";
         public const string ChestOpenPath = StageArtFolder + "/ChestOpen.aseprite";
 
-        // 地図に立てる絵。木と下草は、近い行に使う原寸と、遠い行に使う半分の大きさがある。
-        public const string MapTreesPath = StageArtFolder + "/MapTrees.aseprite";
-        public const string MapUndergrowthPath = StageArtFolder + "/MapUndergrowth.aseprite";
-        public const string MapTreesFarPath = StageArtFolder + "/MapTreesFar.aseprite";
-        public const string MapUndergrowthFarPath = StageArtFolder + "/MapUndergrowthFar.aseprite";
-        public const string MapRuinPath = StageArtFolder + "/MapRuin.aseprite";
-
-        // 下草の絵のうち、岩の2枚（4・5フレーム目）。明るい灰色が部屋の札と紛れるため、地図には立てない。
-        private static readonly int[] RockFrames = { 3, 4 };
+        // 行き先ごとの地図の地面（Codexの生成画像を清書せずに使う。doc/art/direction.md の例外）。
+        public static string GroundPath(string destinationId) =>
+            $"{StageArtFolder}/Ground{Pascal(destinationId)}.png";
 
         private const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
 
-        // 地図は1ドット3px。戦闘のキャラは地図の上では1ドット1pxの小さい姿にする。
-        private const float MapDot = ExplorationMapProjection.Dot;
+        // 宝箱は1ドット3px。戦闘のキャラは地図の上では1ドット1pxの小さい姿にする。
+        private const float MapDot = ExplorationView.MapDot;
         private const float PartyDot = 1f;
 
-        // 部屋の中心からの隊列（設計座標）。後ろの者から描く。
-        private static readonly (string Name, Vector2 Offset)[] Party =
+        // 部屋の中心からの隊列（設計座標）と、そこに立つ編成の枠。後ろの者から描く。
+        // 仮データの編成（トーマ・ルカ・アリア・ミナ）なら、今までの並びのままになる。
+        private static readonly (string Name, Vector2 Offset, int Slot)[] Party =
         {
-            ("Mina", new Vector2(-12, 12)),
-            ("Luka", new Vector2(24, 9)),
-            ("Toma", new Vector2(-30, -6)),
-            ("Aria", new Vector2(9, -12)),
+            ("Mina", new Vector2(-12, 12), 3),
+            ("Luka", new Vector2(24, 9), 1),
+            ("Toma", new Vector2(-30, -6), 0),
+            ("Aria", new Vector2(9, -12), 2),
         };
 
         private static readonly Color TextMain = UiPalette.TextMain;
 
-        // 凡例に並べる部屋の種類と名前。
-        private static readonly (AdventureRoomKind Kind, string Name)[] LegendKinds =
+        // 凡例に並べるマスの種類。名前は AdventureTexts.KindName。
+        private static readonly AdventureRoomKind[] LegendKinds =
         {
-            (AdventureRoomKind.Battle, "魔物"),
-            (AdventureRoomKind.Elite, "強い魔物"),
-            (AdventureRoomKind.Treasure, "宝箱"),
-            (AdventureRoomKind.Boss, "最奥の間"),
+            AdventureRoomKind.Battle,
+            AdventureRoomKind.Elite,
+            AdventureRoomKind.Treasure,
+            AdventureRoomKind.ShadyChest,
+            AdventureRoomKind.Trial,
+            AdventureRoomKind.Rest,
+            AdventureRoomKind.Merchant,
+            AdventureRoomKind.StepDoor,
+            AdventureRoomKind.Altar,
+            AdventureRoomKind.Boss,
         };
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
 
@@ -92,12 +97,23 @@ namespace Baryonyx.Adventure.Editor
         {
             EditorGuard.RequireEditMode();
             Directory.CreateDirectory(Path.GetDirectoryName(ExplorationPrefabPath));
-            Directory.CreateDirectory(Path.GetDirectoryName(MapArtPath));
             AssetDatabase.Refresh();
             UiArt.EnsureAll();
             GuideMenuAssets.CreateSharedArt();
             foreach (
-                var path in new[] { IconBattlePath, IconElitePath, IconTreasurePath, IconBossPath }
+                var path in new[]
+                {
+                    IconBattlePath,
+                    IconElitePath,
+                    IconTreasurePath,
+                    IconBossPath,
+                    IconRestPath,
+                    IconMerchantPath,
+                    IconShadyChestPath,
+                    IconTrialPath,
+                    IconStepDoorPath,
+                    IconAltarPath,
+                }
             )
                 ArtAssets.ImportDrawn(path);
             foreach (var path in new[] { ChestClosedPath, ChestOpenPath })
@@ -109,7 +125,7 @@ namespace Baryonyx.Adventure.Editor
                     FilterMode.Point
                 );
 
-            var art = CreateMapArt();
+            var grounds = ImportGrounds();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
             var bonuses = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(
@@ -117,7 +133,7 @@ namespace Baryonyx.Adventure.Editor
             );
             using (Begin(font, shadowText))
             {
-                BuildExploration(bonuses, art);
+                BuildExploration(bonuses, grounds);
                 BuildOverlay(bonuses);
             }
             AssetDatabase.SaveAssetIfDirty(font);
@@ -132,86 +148,59 @@ namespace Baryonyx.Adventure.Editor
                 ArtAssets.LoadSprite(IconElitePath),
                 ArtAssets.LoadSprite(IconTreasurePath),
                 ArtAssets.LoadSprite(IconBossPath),
+                ArtAssets.LoadSprite(IconRestPath),
+                ArtAssets.LoadSprite(IconMerchantPath),
+                ArtAssets.LoadSprite(IconShadyChestPath),
+                ArtAssets.LoadSprite(IconTrialPath),
+                ArtAssets.LoadSprite(IconStepDoorPath),
+                ArtAssets.LoadSprite(IconAltarPath),
             };
 
-        // --- Map art -------------------------------------------------------------------------
+        // --- Ground --------------------------------------------------------------------------
 
-        // .aseprite の絵は実行中に画素を読めないため、地図に立てる絵の画素を Data に写しておく。
-        public static ExplorationMapArt CreateMapArt()
+        // 行き先ごとの地面を、並べて敷けるよう繰り返しの設定で取り込む。絵のない行き先は森の地面を使う。
+        private static ExplorationGround[] ImportGrounds()
         {
-            var art = AssetDatabase.LoadAssetAtPath<ExplorationMapArt>(MapArtPath);
-            bool created = art == null;
-            if (created)
-                art = ScriptableObject.CreateInstance<ExplorationMapArt>();
-            art.Trees = Stamps(MapTreesPath);
-            art.Undergrowth = Stamps(MapUndergrowthPath, RockFrames);
-            art.TreesFar = Stamps(MapTreesFarPath);
-            art.UndergrowthFar = Stamps(MapUndergrowthFarPath, RockFrames);
-            var ruin = Stamps(MapRuinPath);
-            art.Ruin = ruin.Length > 0 ? ruin[0] : new PixelStamp();
-            if (created)
-                AssetDatabase.CreateAsset(art, MapArtPath);
-            EditorUtility.SetDirty(art);
-            AssetDatabase.SaveAssetIfDirty(art);
-            return art;
-        }
-
-        // 1フレームを1枚の絵とし、絵のある範囲だけに切り詰める。下辺が根元になる。skip のフレームは使わない。
-        private static PixelStamp[] Stamps(string path, int[] skip = null)
-        {
-            ArtAssets.ImportDrawn(path);
-            var frames = AsepriteCanvasImport.LoadFrames(path);
-            var stamps = new List<PixelStamp>();
-            for (int frame = 0; frame < frames.Count; frame++)
+            var grounds = new List<ExplorationGround>();
+            foreach (var area in AdventureCatalog.Areas)
             {
-                if (skip != null && Array.IndexOf(skip, frame) >= 0)
+                string path = GroundPath(area.Id);
+                if (!File.Exists(path))
                     continue;
-                var size = Vector2Int.RoundToInt(frames[frame].rect.size);
-                var pixels = AsepriteCanvasImport.ReadFramePixels(path, frame);
-                int minX = size.x,
-                    minY = size.y,
-                    maxX = -1,
-                    maxY = -1;
-                for (int y = 0; y < size.y; y++)
-                for (int x = 0; x < size.x; x++)
-                {
-                    if (pixels[y * size.x + x].a == 0)
-                        continue;
-                    minX = Math.Min(minX, x);
-                    maxX = Math.Max(maxX, x);
-                    minY = Math.Min(minY, y);
-                    maxY = Math.Max(maxY, y);
-                }
-                if (maxX < 0)
-                    continue;
-                int width = maxX - minX + 1;
-                int height = maxY - minY + 1;
-                var cropped = new Color32[width * height];
-                for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    cropped[y * width + x] = pixels[(minY + y) * size.x + minX + x];
-                stamps.Add(
-                    PixelStamp.From(
-                        $"{Path.GetFileNameWithoutExtension(path)}{frame}",
-                        width,
-                        height,
-                        cropped
-                    )
+                ArtAssets.ImportTexture(path, FilterMode.Bilinear);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.mipmapEnabled = true;
+                importer.SaveAndReimport();
+                grounds.Add(
+                    new ExplorationGround
+                    {
+                        DestinationId = area.Id,
+                        Texture = ArtAssets.LoadTexture(path),
+                    }
                 );
             }
-            return stamps.ToArray();
+            return grounds.ToArray();
         }
+
+        // "forest-ruins" を "ForestRuins" にする。
+        private static string Pascal(string id) =>
+            string.Concat(
+                (id ?? "")
+                    .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => char.ToUpperInvariant(part[0]) + part.Substring(1))
+            );
 
         // --- Exploration ---------------------------------------------------------------------
 
-        private static void BuildExploration(StepBonusMockData bonuses, ExplorationMapArt art)
+        private static void BuildExploration(StepBonusMockData bonuses, ExplorationGround[] grounds)
         {
             var root = CanvasRoot("ExplorationScreen");
             var view = root.gameObject.AddComponent<ExplorationView>();
             view.KindIcons = KindIcons();
             view.Bonuses = bonuses;
             view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
-            view.Art = art;
+            view.Grounds = grounds;
             // 展示室でPrefabだけを開いたときに描く見本の道。冒険の場面では使わない。
             view.SampleSeed = 20261004;
 
@@ -219,75 +208,140 @@ namespace Baryonyx.Adventure.Editor
             Stretch(backdrop);
             AddImage(backdrop, ScreenScenes.CameraColor, false);
 
+            // 地図の窓は画面いっぱい。中の板（Content）を左右に動かす。
             var map = Rect("Map", root);
-            Place(
-                map,
-                Vector2.zero,
-                new Vector2(ExplorationMapProjection.Width, ExplorationMapProjection.Height)
-                    * MapDot
-            );
+            Stretch(map);
             view.Map = map;
-            var picture = Rect("Picture", map);
-            Stretch(picture);
-            view.MapImage = picture.gameObject.AddComponent<RawImage>();
-            // 地図の絵は指を受け、地図の上のどこを1本指で動かしても道の先を見られる。
-            view.MapImage.raycastTarget = true;
             view.Drag = map.gameObject.AddComponent<ExplorationMapDrag>();
-            // 地図の絵が届くまでは、背景と同じ暗い色にしておく。
-            view.MapImage.color = ScreenScenes.CameraColor;
-            var preview = Rect("Preview", map);
-            Stretch(preview);
-            preview.gameObject.tag = "EditorOnly";
-            view.MapPreview = preview.gameObject.AddComponent<RawImage>();
-            view.MapPreview.raycastTarget = false;
+            var content = Rect("Content", map);
+            content.anchorMin = new Vector2(0f, 0f);
+            content.anchorMax = new Vector2(0f, 1f);
+            content.pivot = new Vector2(0f, 0.5f);
+            content.sizeDelta = new Vector2(1920f, 0f);
+            content.anchoredPosition = Vector2.zero;
+            view.Content = content;
+            var ground = Rect("Ground", content);
+            Stretch(ground);
+            view.Ground = ground.gameObject.AddComponent<RawImage>();
+            view.Ground.color = ScreenScenes.CameraColor;
+            // 地面は指を受け、地図の上のどこを1本指で動かしても道の先を見られる。
+            view.Ground.raycastTarget = true;
+            if (grounds.Length > 0)
+            {
+                view.Ground.texture = grounds[0].Texture;
+                view.Ground.color = Color.white;
+            }
+            // 地面を少し暗くして、光の道と台座を浮かせる。
+            var shade = Rect("Shade", content);
+            Stretch(shade);
+            AddImage(shade, new Color(0.02f, 0.03f, 0.06f, 0.28f), false);
 
-            var markers = Rect("Markers", map);
-            Stretch(markers);
+            view.Roads = Layer("Roads", content);
+            view.RoadTemplate = BuildRoad(view.Roads);
+            var markers = Layer("Markers", content);
             view.Markers = markers;
             view.MarkerTemplate = BuildMarker(markers);
-            BuildParty(map, view);
-            BuildChest(map, view);
+            BuildParty(Layer("Party", content), view);
+            BuildChest(Layer("ChestLayer", content), view);
 
             var safe = SafeArea(root);
-            BuildFloors(safe, view);
-            view.Legend = BuildLegend(safe);
             view.MenuButton = BuildMenuButton(safe);
             view.Location = Label(
                 safe,
                 "Location",
                 AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins) + " 第1層",
-                64,
+                56,
                 TextMain,
                 TextAlignmentOptions.Right
             );
             Corner(
                 (RectTransform)view.Location.transform,
                 Vector2.one,
-                new Vector2(-56, -32),
-                new Vector2(900, 96)
+                new Vector2(-56, -28),
+                new Vector2(900, 80)
             );
             view.Prompt = BuildPrompt(safe);
+            BuildScrollBar(safe, view);
+            view.LegendButton = BuildLegendButton(safe);
+            view.Legend = BuildLegend(safe);
+            // 魔物の出現と宝箱の演出は、地図と文字の上、通知とダイアログの下に重ねる。
+            view.Moments = ExplorationMomentsAssets.Build(root, view);
 
             view.Notice = NoticeBandAssets.Build(root);
-            view.Dialog = GameDialogAssets.Build(root);
+            // 行商人の品物5つと「立ち去る」を並べるため、選択肢を6つにして行を少し低くする。
+            view.Dialog = GameDialogAssets.Build(root, choiceCount: 6, rowHeight: 96f);
             CollectTintGraphics(root);
             DrawSample(view);
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, ExplorationPrefabPath);
         }
 
-        // 見本の道を入口から見た形で一度描き、印・パーティ・階・文字をPrefabに作り込む。
-        // 地図の絵はPNGにして停止中だけ見せ、実行中はビューが隠して冒険の地図を描く。
+        // 地図の板の左端・上下の中央を原点にする層。中の物は、そこから道に沿って置く。
+        private static RectTransform Layer(string name, RectTransform content)
+        {
+            var layer = Rect(name, content);
+            layer.anchorMin = layer.anchorMax = layer.pivot = new Vector2(0f, 0.5f);
+            layer.sizeDelta = Vector2.zero;
+            layer.anchoredPosition = Vector2.zero;
+            return layer;
+        }
+
+        // 見本の道を入口から見た形で一度並べ、印・道・パーティをPrefabに作り込む。
         private static void DrawSample(ExplorationView view)
         {
             view.MarkerTemplate.gameObject.SetActive(false);
-            view.FloorTemplate.gameObject.SetActive(false);
+            view.RoadTemplate.gameObject.SetActive(false);
+            view.Legend.gameObject.SetActive(false);
             view.RenderSample(view.SampleSeed);
-            var painted = (Texture2D)view.MapImage.texture;
-            File.WriteAllBytes(MapPreviewPath, painted.EncodeToPNG());
-            view.MapPreview.texture = ArtAssets.ImportTexture(MapPreviewPath, FilterMode.Point);
-            view.MapImage.texture = null;
-            view.MapImage.color = ScreenScenes.CameraColor;
-            UnityEngine.Object.DestroyImmediate(painted);
+        }
+
+        // 道の型：淡い光の帯と、光の芯。長さと向きと色はビューが道ごとに決める。
+        private static RectTransform BuildRoad(RectTransform roads)
+        {
+            var body = Rect("RoadTemplate", roads);
+            Place(body, Vector2.zero, Vector2.zero);
+            var glow = Rect("Glow", body);
+            Place(glow, Vector2.zero, new Vector2(100, 22));
+            SpriteImage(glow, UiArt.SoftSpotPath, Color.white).raycastTarget = false;
+            var core = Rect("Core", body);
+            Place(core, Vector2.zero, new Vector2(100, 6));
+            AddImage(core, Color.white, false);
+            return body;
+        }
+
+        // 下の細いバー：地図の幅に対して、画面に入っている所を示す。
+        private static void BuildScrollBar(RectTransform safe, ExplorationView view)
+        {
+            var track = Rect("ScrollTrack", safe);
+            track.anchorMin = track.anchorMax = track.pivot = new Vector2(0.5f, 0f);
+            track.anchoredPosition = new Vector2(-60, 44);
+            track.sizeDelta = new Vector2(1200, 10);
+            AddImage(track, new Color(0.04f, 0.06f, 0.1f, 0.6f), false);
+            var thumb = Rect("Thumb", track);
+            thumb.anchorMin = thumb.anchorMax = thumb.pivot = new Vector2(0f, 0.5f);
+            thumb.anchoredPosition = Vector2.zero;
+            thumb.sizeDelta = new Vector2(240, 10);
+            AddImage(thumb, new Color(0.62f, 0.82f, 1f, 0.9f), false);
+            view.ScrollTrack = track;
+            view.ScrollThumb = thumb;
+        }
+
+        // 右下の「？」。押すと凡例を開く。
+        private static Button BuildLegendButton(RectTransform safe)
+        {
+            var body = Rect("LegendButton", safe);
+            Corner(body, Vector2.right, new Vector2(-40, 32), new Vector2(104, 104));
+            var ring = Rect("Ring", body);
+            Stretch(ring);
+            var image = SpriteImage(ring, UiArt.CirclePath, new Color(0.04f, 0.06f, 0.1f, 0.82f));
+            image.raycastTarget = true;
+            var rim = Rect("Rim", body);
+            Stretch(rim);
+            rim.offsetMin = new Vector2(4, 4);
+            rim.offsetMax = new Vector2(-4, -4);
+            SpriteImage(rim, UiArt.CirclePath, new Color(1f, 1f, 1f, 0.1f)).raycastTarget = false;
+            var label = Label(body, "Label", "？", 56, TextMain, TextAlignmentOptions.Center);
+            Stretch((RectTransform)label.transform);
+            return AddTintButton(body, image);
         }
 
         // 部屋の印の型：光、丸い札、部屋の種類のアイコン、押せる範囲。札の色はビューが部屋の種類で決める。
@@ -331,23 +385,29 @@ namespace Baryonyx.Adventure.Editor
             return marker;
         }
 
-        // 右下の凡例：部屋の札と同じ色の小さい札とアイコンに、部屋の種類の名前を添えて2列に並べる。
+        // 「？」で開く凡例：マスの札と同じ色の小さい札とアイコンに、マスの種類の名前を添えて2列に並べる。
         private static RectTransform BuildLegend(RectTransform safe)
         {
-            const float Cell = 168f;
+            const float Cell = 224f;
             const float Row = 60f;
             const float Padding = 16f;
             var legend = Rect("Legend", safe);
             Corner(
                 legend,
                 Vector2.right,
-                new Vector2(-40, 40),
-                new Vector2(Cell * 2 + Padding * 2, Row * 2 + Padding * 2)
+                new Vector2(-40, 152),
+                new Vector2(
+                    Cell * 2 + Padding * 2,
+                    Row * ((LegendKinds.Length + 1) / 2) + Padding * 2
+                )
             );
             ScenePlaque(legend);
+            // 凡例を押しても閉じる。
+            UiBuild.AddButton(legend, AddImage(legend, new Color(0, 0, 0, 0), true));
             for (int i = 0; i < LegendKinds.Length; i++)
             {
-                var (kind, name) = LegendKinds[i];
+                var kind = LegendKinds[i];
+                string name = AdventureTexts.KindName(kind);
                 var entry = Rect(kind.ToString(), legend);
                 entry.anchorMin = entry.anchorMax = entry.pivot = new Vector2(0, 1);
                 entry.anchoredPosition = new Vector2(
@@ -378,12 +438,11 @@ namespace Baryonyx.Adventure.Editor
         }
 
         // 地図の上のパーティ。戦闘の姿を1ドット1pxで、部屋の中心のまわりに並べる。
-        private static void BuildParty(RectTransform map, ExplorationView view)
+        private static void BuildParty(RectTransform party, ExplorationView view)
         {
-            var party = Rect("Party", map);
-            Stretch(party);
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
             var bodies = new List<RectTransform>();
+            var sprites = new List<RawImage>();
             foreach (var member in Party)
             {
                 var texture = ArtAssets.LoadTexture(
@@ -392,10 +451,12 @@ namespace Baryonyx.Adventure.Editor
                 var body = Rect("Ally" + member.Name, party);
                 Place(body, member.Offset, Vector2.zero);
                 Picture(body, "Shadow", shadow, new Vector2(0, 1), new Vector2(40, 8), 0.5f);
-                PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot);
+                sprites.Add(PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot));
                 bodies.Add(body);
             }
             view.Party = bodies.ToArray();
+            view.PartySprites = sprites.ToArray();
+            view.PartySlots = Array.ConvertAll(Party, member => member.Slot);
             view.Formation = Array.ConvertAll(Party, member => member.Offset);
         }
 
@@ -418,32 +479,6 @@ namespace Baryonyx.Adventure.Editor
             view.ChestOpen = ArtAssets.LoadTexture(ChestOpenPath);
             view.ChestGroup.alpha = 0f;
             view.ChestGroup.blocksRaycasts = false;
-        }
-
-        // 左端の階の目安。地図の各階の高さに置く。
-        private static void BuildFloors(RectTransform safe, ExplorationView view)
-        {
-            var floors = Rect("Floors", safe);
-            floors.anchorMin = new Vector2(0, 0.5f);
-            floors.anchorMax = new Vector2(0, 0.5f);
-            floors.pivot = new Vector2(0, 0.5f);
-            floors.sizeDelta = new Vector2(140, 1080);
-            floors.anchoredPosition = new Vector2(24, 0);
-            view.Floors = floors;
-            var label = Label(
-                floors,
-                "FloorTemplate",
-                "第1層",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Left
-            );
-            var rect = (RectTransform)label.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0, 0.5f);
-            rect.pivot = new Vector2(0, 0.5f);
-            rect.sizeDelta = new Vector2(140, 40);
-            rect.anchoredPosition = Vector2.zero;
-            view.FloorTemplate = label;
         }
 
         // The menu at the top left like the guide screens' back button, or at the top right over
@@ -490,16 +525,23 @@ namespace Baryonyx.Adventure.Editor
             GlassCardAssets.Plaque(plate, pattern: false, fill: GlassCardAssets.SceneFillColor);
         }
 
+        // 案内は、右上の行き先と層の下に小さく添える。
         private static TMP_Text BuildPrompt(RectTransform safe)
         {
-            var band = Rect("PromptBand", safe);
-            band.anchorMin = band.anchorMax = band.pivot = new Vector2(0.5f, 0f);
-            band.anchoredPosition = new Vector2(0, 40);
-            // 右下の凡例と重ならない幅にする。
-            band.sizeDelta = new Vector2(1000, 96);
-            ScenePlaque(band);
-            var prompt = Label(band, "Prompt", "", 44, TextMain, TextAlignmentOptions.Center);
-            Stretch((RectTransform)prompt.transform);
+            var prompt = Label(
+                safe,
+                "Prompt",
+                "",
+                32,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Right
+            );
+            Corner(
+                (RectTransform)prompt.transform,
+                Vector2.one,
+                new Vector2(-56, -104),
+                new Vector2(900, 48)
+            );
             return prompt;
         }
 

@@ -62,6 +62,12 @@ namespace Baryonyx.Adventure
                 AdventureRoomKind.Elite => "elite",
                 AdventureRoomKind.Treasure => "treasure",
                 AdventureRoomKind.Boss => "boss",
+                AdventureRoomKind.Rest => "rest",
+                AdventureRoomKind.Merchant => "merchant",
+                AdventureRoomKind.ShadyChest => "shady-chest",
+                AdventureRoomKind.Trial => "trial",
+                AdventureRoomKind.StepDoor => "step-door",
+                AdventureRoomKind.Altar => "altar",
                 _ => "start",
             };
 
@@ -69,12 +75,55 @@ namespace Baryonyx.Adventure
             AccountSession session,
             string roomId,
             IReadOnlyList<AdventureEnemyTally> enemies,
+            AdventureClearOptions options,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
                 "/v1/adventure/clear",
                 "POST",
-                new ClearRequest { roomId = roomId, enemies = Enemies(enemies) },
+                new ClearRequest
+                {
+                    roomId = roomId,
+                    enemies = Enemies(enemies),
+                    pass = options?.Pass ?? false,
+                    trialMet = options?.TrialMet ?? false,
+                    evolved = options?.Evolved ?? false,
+                },
+                session.Token,
+                token
+            );
+
+        // 怪しい宝箱を開ける。ミミックなら run.mimic が true になり、本物ならその場で終えて drops を返す。
+        public Task<State> OpenAsync(
+            AccountSession session,
+            string roomId,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                "/v1/adventure/open",
+                "POST",
+                new OpenRequest { roomId = roomId },
+                session.Token,
+                token
+            );
+
+        // 行商人の品物を買う。同じ requestId の再送では二重に引かない。
+        public Task<State> BuyAsync(
+            AccountSession session,
+            string requestId,
+            string roomId,
+            int index,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                "/v1/adventure/buy",
+                "POST",
+                new BuyRequest
+                {
+                    requestId = requestId,
+                    roomId = roomId,
+                    index = index,
+                },
                 session.Token,
                 token
             );
@@ -127,8 +176,29 @@ namespace Baryonyx.Adventure
         {
             public string roomId;
 
-            // 戦闘で遭遇した敵の種類と倒した体数（ライブラリの記録）。戦闘のない部屋は空。
+            // 戦闘で遭遇した敵の種類と倒した体数（ライブラリの記録）。戦闘のないマスは空。
             public EnemyEntry[] enemies;
+
+            // 怪しい宝箱を開けずに通り過ぎる。試練の条件を満たして勝った。
+            public bool pass;
+            public bool trialMet;
+
+            // 進化の祭壇で固有スキルを進化させた。
+            public bool evolved;
+        }
+
+        [Serializable]
+        private sealed class OpenRequest
+        {
+            public string roomId;
+        }
+
+        [Serializable]
+        private sealed class BuyRequest
+        {
+            public string requestId;
+            public string roomId;
+            public int index;
         }
 
         [Serializable]
@@ -171,6 +241,29 @@ namespace Baryonyx.Adventure
             public Drop[] drops;
             public Revive revive;
             public Result result;
+
+            // 歩数の扉を開けた応答だけにある。ほかでは0の値になる。
+            public StepDoor stepDoor;
+        }
+
+        [Serializable]
+        public sealed class StepDoor
+        {
+            public int steps;
+            public int tier;
+        }
+
+        // 行商人の品物。倍率は百分率の整数（137なら×1.37）で、drops の倍率（小数）と形が違う。
+        [Serializable]
+        public sealed class Ware
+        {
+            public int index;
+            public string category;
+            public string id;
+            public int multiplierPercent;
+            public string quality;
+            public int price;
+            public bool sold;
         }
 
         [Serializable]
@@ -190,6 +283,11 @@ namespace Baryonyx.Adventure
             public int revives;
             public int reviveCost;
             public Drop[] drops;
+
+            // 開けた怪しい宝箱がミミックか。試練のマスの条件と、行商人のマスの品物（ほかのマスではない）。
+            public bool mimic;
+            public string trial;
+            public Ware[] merchant;
         }
 
         // 部屋で落ちた物（doc/features/drops.md）。category は item・accessory・weapon・armor・skill・bonus。

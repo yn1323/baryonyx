@@ -1,6 +1,11 @@
+using System;
 using System.Collections;
+using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Health;
+using Baryonyx.Party;
+using Baryonyx.Training;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -9,7 +14,8 @@ namespace Baryonyx.App
     /// <summary>
     /// Runs the exploration scene: the map of the adventure in progress. The next room is shown
     /// on the same map as the camera follows the party there; a room with a battle opens the
-    /// battle scene, and suspending or ending the adventure returns to Home.
+    /// battle scene, and suspending or ending the adventure returns to Home. The party on the map
+    /// is the formation's (read from the server when not read yet in this run).
     /// </summary>
     public sealed class ExplorationBootstrap : MonoBehaviour
     {
@@ -22,11 +28,27 @@ namespace Baryonyx.App
         [SerializeField]
         private HealthConnectionSettings settings;
 
+        // 編成の名前と絵。
+        [SerializeField]
+        private PartyMockData party;
+
+        // 進化の祭壇で、固有スキルの段階を引く育成の仮データ。
+        [SerializeField]
+        private TrainingMockData training;
+
+        // 読んだ編成。読めるまでは、アプリを動かしている間の編成を使う。
+        private PartyFormation formation;
+
         private ExplorationFlow flow;
+        private readonly CancellationTokenSource lifetime = new();
 
         public ExplorationView View => view;
         public ExplorationFlow Flow => flow;
         public SceneTransitionController Transition => transition;
+        public PartyMockData Party => party;
+
+        // 編成の読み込みと地図への反映。テストで完了を待つために公開する。
+        public Task PartyTask { get; private set; } = Task.CompletedTask;
 
         // 冒険の流れが地図を描くため、見本の道は描かせない。
         private void Awake()
@@ -48,9 +70,43 @@ namespace Baryonyx.App
                 view,
                 AdventureSession.SourceOrLocal,
                 () => Leave(SceneNames.Home),
-                () => Leave(SceneNames.Battle)
+                () => Leave(SceneNames.Battle),
+                null,
+                () =>
+                    AdventureAltar.ChoicesOf(
+                        formation ?? (party != null ? PartySession.Formation(party) : null),
+                        party,
+                        training
+                    ),
+                (choice, stage) => AdventureAltar.Evolve(choice, stage, training)
             );
             flow.Start();
+            PartyTask = UsePartyAsync();
+        }
+
+        private async Task UsePartyAsync()
+        {
+            if (party == null)
+            {
+                Debug.LogError("ExplorationBootstrap requires the party mock data.", this);
+                return;
+            }
+            try
+            {
+                formation = await PartySession.CurrentAsync(party, lifetime.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                // 読めなければ、地図には今のまま（仮データの4人）を出す。
+                Debug.LogWarning("編成を取得できませんでした。" + exception.Message);
+                return;
+            }
+            if (view != null)
+                view.UseParty(PartySession.Members(formation));
         }
 
         // 開く演出の途中では次の演出を始められない。サーバーの返事が演出より早く届き、冒険がなくて
@@ -72,6 +128,8 @@ namespace Baryonyx.App
 
         private void OnDestroy()
         {
+            lifetime.Cancel();
+            lifetime.Dispose();
             flow?.Dispose();
             flow = null;
         }

@@ -104,7 +104,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         /// <summary>
         /// Writes a feature's definition and builds its screen prefab from it. The guide is
-        /// scaled to the largest size that fits the guide box.
+        /// scaled to the largest size that fits the guide box. A feature adds its own parts over
+        /// the whole screen with <paramref name="overlay"/> (the travel office's treasures), and
+        /// returns the object that steps back first (<see cref="GuideMenuView.Overlay"/>).
         /// </summary>
         public static GameObject CreateScreen(
             string definitionPath,
@@ -112,7 +114,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string guideArtPath,
             string backgroundPath,
             Action<GuideMenuDefinition> fill,
-            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel = null
+            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel = null,
+            Func<RectTransform, GuideMenuView, GameObject> overlay = null
         )
         {
             EditorGuard.RequireEditMode();
@@ -142,7 +145,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 definition,
                 Path.GetFileNameWithoutExtension(prefabPath),
                 prefabPath,
-                itemPanel
+                itemPanel,
+                overlay
             );
             AssetDatabase.SaveAssetIfDirty(font);
             return prefab;
@@ -215,7 +219,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition,
             string name,
             string prefabPath,
-            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel
+            Func<GuideMenuItem, RectTransform, GuideMenuView, GameObject> itemPanel,
+            Func<RectTransform, GuideMenuView, GameObject> overlay
         )
         {
             using (UiBuild.Begin(font, shadowText))
@@ -245,6 +250,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 frameParts.Add(GuideFrameAssets.BuildHeaderLine(safe));
                 view.FrameParts = frameParts.ToArray();
                 view.TabBackdrops = tabBackdrops.ToArray();
+                if (overlay != null)
+                    view.Overlay = overlay(root, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
@@ -621,14 +628,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 )
             );
 
-        // The gold button at the bottom right that applies the chosen row; off until one is chosen.
-        // 編成の「レベルアップ」と同じ、金の縁と光のすりガラスのカード。決定ボタンには模様を付けない。
+        // The button at the bottom right that applies the chosen row; off until one is chosen.
+        // 編成の「レベルアップ」と同じすりガラスのカード。金の縁と光（選んだ印）は出さず、模様も付けない。
         private static (Button Button, TMP_Text Label) ConfirmButton(
             RectTransform layer,
             string text
         )
         {
-            var (button, rim, confirm) = GlassCardAssets.Choice(
+            var (button, _, confirm) = GlassCardAssets.Choice(
                 Layout.Box(
                     layer,
                     "Confirm",
@@ -639,7 +646,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 ),
                 pattern: false
             );
-            rim.SetActive(true);
             var label = Label(
                 confirm,
                 "Label",

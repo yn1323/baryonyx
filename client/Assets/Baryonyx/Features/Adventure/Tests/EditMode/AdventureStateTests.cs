@@ -217,14 +217,20 @@ namespace Baryonyx.Tests.EditMode
             var source = new AdventureLocalSource(seed: 5);
             var state = Walk(source, 9);
             Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Boss));
+            var walked = state.Run;
             state = Run(source.ClearAsync(state.Run.RoomId, default));
             Assert.That(state.InProgress, Is.False);
             Assert.That(state.Result.Status, Is.EqualTo(AdventureEndStatus.Cleared));
             Assert.That(state.Result.Floor, Is.EqualTo(10));
             Assert.That(state.Result.Clears, Is.EqualTo(1));
+            // 通ったマスのうち、物を落とすマス（休憩・行商人を除く）で落ちた。
             Assert.That(
-                state.Result.Drops.Select(drop => drop.RoomId).Distinct().Count(),
-                Is.EqualTo(9)
+                state.Result.Drops.Select(drop => drop.RoomId).Distinct(),
+                Is.EquivalentTo(
+                    walked.Route.Where(id =>
+                        AdventureDrops.RewardOf(walked.Map.Find(id).Kind) != null
+                    )
+                )
             );
             // 最奥の間では2〜4つ落ち、どれも☆3以上で、倍率はその品質の幅に入る。
             Assert.That(state.Drops.Count, Is.InRange(2, 4));

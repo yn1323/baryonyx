@@ -67,8 +67,9 @@ namespace Baryonyx.Library
 
     /// <summary>
     /// Mock records without a server (the showcase, or no server URL): the first characters, the
-    /// starting cards and part of the equipment found, the slime met and beaten, and a week of
-    /// steps, so the library shows both the found and the shadowed entries.
+    /// starting cards, part of the equipment and a few of the first destinations' items found,
+    /// the slime met and beaten, and a week of steps, so the library and the travel office's
+    /// treasures show both the found and the shadowed entries.
     /// </summary>
     public sealed class LibraryMemorySource : ILibrarySource
     {
@@ -105,6 +106,8 @@ namespace Baryonyx.Library
             );
             Add(LibraryKind.Weapon, 0, "oak-staff", "short-bow", "iron-sword", "war-hammer");
             Add(LibraryKind.Armor, 0, "magic-robe", "traveler-cloak", "chainmail", "leather-armor");
+            Add(LibraryKind.Accessory, 0, "moss-charm", "acorn-brooch");
+            Add(LibraryKind.Item, 0, "herb", "acorn", "moss-wad", "dried-fish");
             found.Add((LibraryKind.Enemy, "moss-slime", 12));
             found.Add((LibraryKind.Enemy, "moss-wolf", 3));
             var steps = new[]

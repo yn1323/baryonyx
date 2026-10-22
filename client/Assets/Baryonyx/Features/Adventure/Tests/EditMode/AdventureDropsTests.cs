@@ -157,7 +157,8 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(ItemCards.All.Select(item => item.Id), Is.EqualTo(server));
         }
 
-        // 部屋ごとの数だけ落とし、最奥の間では☆3以上だけが落ちる。品質は倍率の幅に合う。
+        // マスごとの数だけ落とし、最奥の間では☆3以上だけが落ちる。品質は倍率の幅に合う。
+        // 休憩と行商人は落とさず、怪しい宝箱（本物）は宝箱より1つ多い（サーバーの rewardOf と同じ）。
         [Test]
         public void ARoomDropsItsCountAndQualitiesFitTheirMultipliers()
         {
@@ -170,6 +171,12 @@ namespace Baryonyx.Tests.EditMode
                     AdventureRoomKind.Elite,
                     AdventureRoomKind.Treasure,
                     AdventureRoomKind.Boss,
+                    AdventureRoomKind.Rest,
+                    AdventureRoomKind.Merchant,
+                    AdventureRoomKind.ShadyChest,
+                    AdventureRoomKind.Trial,
+                    AdventureRoomKind.StepDoor,
+                    AdventureRoomKind.Altar,
                 }
             )
             {
@@ -199,6 +206,12 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(counts[AdventureRoomKind.Battle], Is.EquivalentTo(new[] { 1, 2 }));
             Assert.That(counts[AdventureRoomKind.Elite], Is.EquivalentTo(new[] { 1, 2, 3 }));
             Assert.That(counts[AdventureRoomKind.Boss], Is.EquivalentTo(new[] { 2, 3, 4 }));
+            Assert.That(counts[AdventureRoomKind.Rest], Is.EquivalentTo(new[] { 0 }));
+            Assert.That(counts[AdventureRoomKind.Merchant], Is.EquivalentTo(new[] { 0 }));
+            Assert.That(counts[AdventureRoomKind.ShadyChest], Is.EquivalentTo(new[] { 2, 3, 4 }));
+            Assert.That(counts[AdventureRoomKind.Trial], Is.EquivalentTo(new[] { 1, 2 }));
+            Assert.That(counts[AdventureRoomKind.StepDoor], Is.EquivalentTo(new[] { 1, 2 }));
+            Assert.That(counts[AdventureRoomKind.Altar], Is.EquivalentTo(new[] { 1, 2, 3 }));
         }
 
         [Test]

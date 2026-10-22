@@ -54,6 +54,108 @@ namespace Baryonyx.Adventure
                 new DialogChoice(AdventureTexts.NextChoice, close)
             );
 
+        public const string ShadyChestTitle = "怪しい宝箱";
+        public const string ShadyChestBody =
+            "ふたのすき間から、何かがこちらを見ている気がする…\nミミックなら手ごわいが、勝てば大きな報酬になる。";
+        public const string OpenChoice = "開ける";
+        public const string PassChoice = "通り過ぎる";
+        public const string MerchantTitle = "行商人";
+        public const string LeaveChoice = "立ち去る";
+        public const string BuyChoice = "買う";
+        public const string KeepChoice = "やめる";
+        public const string AltarTitle = "進化の祭壇";
+        public const string AltarBody =
+            "祭壇の光が、仲間の固有スキルを1段進化させる。\n誰の力を目覚めさせる？";
+        public const string EvolveChoice = "進化させる";
+        public const string BackChoice = "もどる";
+
+        // 祭壇で、選べるものを並べ、最後に閉じる・戻るを足す（選択肢は6つまで）。
+        public static void Altar(
+            GameDialog dialog,
+            string body,
+            IReadOnlyList<(string Label, Action Choose)> options,
+            string backLabel,
+            Action back
+        )
+        {
+            var choices = new List<DialogChoice>();
+            foreach (var (label, choose) in options)
+                choices.Add(new DialogChoice(label, choose));
+            choices.Add(new DialogChoice(backLabel, back));
+            dialog.Show(AltarTitle, body, null, back, choices.ToArray());
+        }
+
+        // 怪しい宝箱を開けるか、開けずに通り過ぎるか。閉じると、選ばずに地図へ戻る。
+        public static void ShadyChest(GameDialog dialog, Action open, Action pass, Action close) =>
+            dialog.Show(
+                ShadyChestTitle,
+                ShadyChestBody,
+                null,
+                close,
+                new DialogChoice(OpenChoice, open),
+                new DialogChoice(PassChoice, pass),
+                new DialogChoice(AdventureTexts.CloseChoice, close)
+            );
+
+        // 行商人の品物の一覧。売り切れと、ルーンが足りない物は押せない。立ち去ると、行商人のマスを終える。
+        public static void Merchant(
+            GameDialog dialog,
+            StepBonusMockData bonuses,
+            IReadOnlyList<AdventureWare> wares,
+            long runes,
+            Action<AdventureWare> buy,
+            Action leave
+        )
+        {
+            var choices = new List<DialogChoice>();
+            foreach (var ware in wares)
+            {
+                var chosen = ware;
+                choices.Add(
+                    new DialogChoice(
+                        AdventureTexts.WareLine(bonuses, ware),
+                        () => buy(chosen),
+                        !ware.Sold && runes >= ware.Price
+                    )
+                );
+            }
+            choices.Add(new DialogChoice(LeaveChoice, leave));
+            dialog.Show(
+                MerchantTitle,
+                AdventureTexts.MerchantBody(runes),
+                null,
+                leave,
+                choices.ToArray()
+            );
+        }
+
+        public static void ConfirmBuy(
+            GameDialog dialog,
+            StepBonusMockData bonuses,
+            AdventureWare ware,
+            long runes,
+            Action buy,
+            Action back
+        ) =>
+            dialog.Show(
+                MerchantTitle,
+                AdventureTexts.ConfirmBuyBody(bonuses, ware, runes),
+                null,
+                back,
+                new DialogChoice(BuyChoice, buy),
+                new DialogChoice(KeepChoice, back)
+            );
+
+        // 宝箱の中身を演出の札で1つずつ見せたあとの、題だけのダイアログ。
+        public static void TreasureOpened(GameDialog dialog, Action close) =>
+            dialog.Show(
+                TreasureTitle,
+                null,
+                null,
+                close,
+                new DialogChoice(AdventureTexts.NextChoice, close)
+            );
+
         // 手に入れた物は、ダイアログの前にドロップの演出の札で1つずつ見せるため、本文には書かない。
         // 冒険が終わった勝利（最奥の主を倒した）は、「つぎへ」で結果へ進む。
         public static void Victory(GameDialog dialog, bool ended, Action next) =>

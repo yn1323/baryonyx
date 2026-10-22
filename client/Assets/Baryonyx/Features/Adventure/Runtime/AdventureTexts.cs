@@ -27,9 +27,68 @@ namespace Baryonyx.Adventure
             "ここまでに手に入れた物は持ち帰れます。\n次の冒険は入口（第1層）から始まります。";
 
         public const string SuspendBody =
-            "今いる部屋から、ホームの行き先カードで再開できます。\n戦闘の途中なら、その戦闘の始めからになります。";
+            "今いるマスから、ホームの行き先カードで再開できます。\n戦闘の途中なら、その戦闘の始めからになります。";
 
         public const string SaveFailed = "冒険を保存できませんでした";
+        public const string Rested = "焚き火で休んで、全員のHPが回復した";
+        public const string PassedChest = "怪しい宝箱を通り過ぎた";
+        public const string BuyFailed = "買えませんでした";
+        public const string TrialMet = "試練を達成した！";
+        public const string TrialMissed = "試練の条件は満たせなかった";
+
+        public static string TrialNotice(AdventureTrial trial) =>
+            "試練：" + AdventureTrials.NameOf(trial);
+
+        // 歩数の扉の報酬の段（AdventureStepDoor.Tier の順）。
+        private static readonly string[] DoorTiers =
+        {
+            "少しだけ開いた",
+            "大きく開いた",
+            "大きく開き、奥まで光が差した",
+            "全開になり、まばゆい光があふれた",
+        };
+
+        public static string StepDoorNotice(AdventureStepDoor door) =>
+            $"今日の歩数 {door.Steps:N0}歩：扉が{DoorTiers[Math.Clamp(door.Tier, 0, DoorTiers.Length - 1)]}";
+
+        public static string MerchantBody(long runes) =>
+            "旅の品をそろえているよ。\n" + $"所持ルーン {runes:N0}";
+
+        // 品物の行：☆、名前、品質と倍率、値段。売り切れなら値段の代わりに「売り切れ」。
+        public static string WareLine(StepBonusMockData bonuses, AdventureWare ware)
+        {
+            var drop = ware.AsDrop("");
+            string stars = ware.Stars > 0 ? new string('☆', ware.Stars) + " " : "";
+            string grade = ware.Quality is { } quality ? $" {quality}×{ware.Multiplier:0.00}" : "";
+            string price = ware.Sold ? "売り切れ" : $"{ware.Price:N0}ルーン";
+            return $"{stars}{DropName(bonuses, drop)}{grade}　{price}";
+        }
+
+        public static string ConfirmBuyBody(
+            StepBonusMockData bonuses,
+            AdventureWare ware,
+            long runes
+        ) =>
+            $"{DropName(bonuses, ware.AsDrop(""))}を {ware.Price:N0}ルーンで買いますか？\n"
+            + $"所持ルーン {runes:N0} → {runes - ware.Price:N0}";
+
+        /// <summary>The name of a room's kind, as the map's legend shows it (doc/features/stage-progression.md).</summary>
+        public static string KindName(AdventureRoomKind kind) =>
+            kind switch
+            {
+                AdventureRoomKind.Battle => "魔物",
+                AdventureRoomKind.Elite => "強い魔物",
+                AdventureRoomKind.Treasure => "宝箱",
+                AdventureRoomKind.Boss => "最奥の間",
+                AdventureRoomKind.Rest => "休憩",
+                AdventureRoomKind.Merchant => "行商人",
+                AdventureRoomKind.ShadyChest => "怪しい宝箱",
+                AdventureRoomKind.Trial => "試練",
+                AdventureRoomKind.StepDoor => "歩数の扉",
+                AdventureRoomKind.Altar => "進化の祭壇",
+                _ => "入口",
+            };
+
         public const string LoadFailed = "冒険を取得できませんでした";
 
         public static string ReviveChoice(int cost) => $"ルーンで復活（{cost:N0}）";

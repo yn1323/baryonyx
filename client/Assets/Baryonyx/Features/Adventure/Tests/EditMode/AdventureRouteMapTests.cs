@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 冒険の種から作る分岐ルート（doc/plans/2026-10-04-exploration-route-map.md）と、その地図。
+    // 冒険の種から作る網の目の道（doc/features/stage-progression.md の冒険の道の作り方）と、その地図。
     public sealed class AdventureRouteMapTests
     {
         private const int RoomCount = 8;
@@ -40,14 +40,17 @@ namespace Baryonyx.Tests.EditMode
         {
             var signatures = Routes(20).Select(Signature).Distinct().Count();
             Assert.That(signatures, Is.EqualTo(20));
-            // 道の本数も、3本と4本の両方が出る。
+            // 入口から分かれる数も、2つと3つの両方が出る。
             Assert.That(
-                Routes(40).Select(map => map.LaneCount).Distinct(),
-                Is.EquivalentTo(new[] { 3, 4 })
+                Routes(40)
+                    .Select(map => map.Find(AdventureRouteMap.EntranceId).Next.Count)
+                    .Distinct(),
+                Is.EquivalentTo(new[] { 2, 3 })
             );
         }
 
-        // 入口から1階ずつ進み、どの部屋からも最奥の間へ着き、道は交差しない。
+        // 網の目の道：入口から2〜3つに分かれ、階ごとに2〜6のマスが並び、5つ以上並ぶ階がある。
+        // 入口から1階ずつ進み、どのマスにも前の階から来られて、どのマスからも最奥の間へ着き、道は交差しない。
         [Test]
         public void EveryRoomLeadsOnToTheDeepestRoomWithoutCrossingRoads()
         {
@@ -55,33 +58,36 @@ namespace Baryonyx.Tests.EditMode
             {
                 var entrance = map.Find(AdventureRouteMap.EntranceId);
                 Assert.That(entrance.Floor, Is.EqualTo(1));
-                Assert.That(entrance.Next.Count, Is.EqualTo(map.LaneCount));
+                Assert.That(entrance.Next.Count, Is.InRange(2, 3));
                 var boss = map.Find(AdventureRouteMap.BossId);
                 Assert.That(boss.Floor, Is.EqualTo(RoomCount + 2));
                 Assert.That(boss.Kind, Is.EqualTo(AdventureRoomKind.Boss));
-                Assert.That(map.Rooms.Count, Is.EqualTo(RoomCount * map.LaneCount + 2));
+                var widths = Enumerable
+                    .Range(2, RoomCount)
+                    .Select(floor => map.Rooms.Count(room => room.Floor == floor))
+                    .ToArray();
+                Assert.That(widths, Is.All.InRange(2, 6), $"seed {map.Seed}");
+                Assert.That(widths.Max(), Is.GreaterThanOrEqualTo(5), $"seed {map.Seed}");
                 Assert.That(
                     map.Reachable(new[] { entrance.Id }).Count,
                     Is.EqualTo(map.Rooms.Count)
                 );
+                var reached = new HashSet<string>(map.Rooms.SelectMany(room => room.Next));
                 foreach (var room in map.Rooms.Where(room => room != boss))
                 {
                     Assert.That(room.Next, Is.Not.Empty, room.Id);
                     Assert.That(map.Reachable(new[] { room.Id }), Does.Contain(boss.Id), room.Id);
                     foreach (var next in room.Next)
                         Assert.That(map.Find(next).Floor, Is.EqualTo(room.Floor + 1), room.Id);
-                    // 道中の部屋から出る道は、まっすぐ先と隣の道への横道の2本まで。
                     if (room != entrance)
-                        Assert.That(room.Next.Count, Is.LessThanOrEqualTo(2), room.Id);
+                        Assert.That(reached, Does.Contain(room.Id), $"seed {map.Seed}");
                 }
                 for (int floor = 2; floor < RoomCount + 1; floor++)
                 {
                     var roads = map
                         .Rooms.Where(room => room.Floor == floor)
                         .SelectMany(room =>
-                            room.Next.Select(next =>
-                                (map.PointOf(room.Id).Lane, map.PointOf(next).Lane)
-                            )
+                            room.Next.Select(next => (map.PointOf(room.Id).S, map.PointOf(next).S))
                         )
                         .ToArray();
                     foreach (var a in roads)
@@ -95,11 +101,13 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 最初の階は弱い魔物、強い魔物は第4層から、中ほどの階は宝箱、最奥の直前に強い魔物を置かない。
+        // 道の決まり（doc/features/stage-progression.md）：第2層は魔物、真ん中の第6層は宝箱、最奥の直前の
+        // 第9層は休憩。ほかの階には、その種類を置ける階から先にだけ置き、サーバーが受け付ける形にする。
         [Test]
         public void TheFloorsFollowTheRouteRules()
         {
-            foreach (var map in Routes(200))
+            bool altar = false;
+            foreach (var map in Routes(300))
             {
                 IEnumerable<AdventureRoom> Floor(int floor) =>
                     map.Rooms.Where(room => room.Floor == floor);
@@ -111,249 +119,118 @@ namespace Baryonyx.Tests.EditMode
                     Floor(2 + RoomCount / 2).Select(room => room.Kind),
                     Is.All.EqualTo(AdventureRoomKind.Treasure)
                 );
-                foreach (int floor in new[] { 2, 3, RoomCount + 1 })
-                    Assert.That(
-                        Floor(floor).Select(room => room.Kind),
-                        Has.None.EqualTo(AdventureRoomKind.Elite),
-                        $"seed {map.Seed} floor {floor}"
-                    );
                 Assert.That(
-                    map.Rooms.Count(room => room.Kind == AdventureRoomKind.Elite),
+                    Floor(RoomCount + 1).Select(room => room.Kind),
+                    Is.All.EqualTo(AdventureRoomKind.Rest)
+                );
+                foreach (var room in map.Rooms.Where(room => room.Floor >= 2))
+                {
+                    var fixedKind = AdventureRouteMap.FixedKindOf(RoomCount, room.Floor);
+                    if (fixedKind != null)
+                        Assert.That(room.Kind, Is.EqualTo(fixedKind), room.Id);
+                    else
+                        Assert.That(
+                            room.Floor - 1,
+                            Is.GreaterThanOrEqualTo(AdventureRouteMap.EarliestOf(room.Kind)),
+                            $"seed {map.Seed} {room.Id} {room.Kind}"
+                        );
+                }
+                int Count(AdventureRoomKind kind) => map.Rooms.Count(room => room.Kind == kind);
+                Assert.That(
+                    Count(AdventureRoomKind.Elite),
                     Is.GreaterThanOrEqualTo(2),
                     $"seed {map.Seed}"
                 );
                 Assert.That(
-                    map.Rooms.Count(room => room.Kind == AdventureRoomKind.Boss),
-                    Is.EqualTo(1)
+                    Count(AdventureRoomKind.Merchant),
+                    Is.InRange(1, 2),
+                    $"seed {map.Seed}"
                 );
+                Assert.That(
+                    Count(AdventureRoomKind.StepDoor),
+                    Is.InRange(1, 2),
+                    $"seed {map.Seed}"
+                );
+                Assert.That(Count(AdventureRoomKind.Altar), Is.LessThanOrEqualTo(1));
+                Assert.That(Count(AdventureRoomKind.Boss), Is.EqualTo(1));
+                altar |= Count(AdventureRoomKind.Altar) == 1;
             }
+            Assert.That(altar, Is.True, "進化の祭壇が一度も出ない");
         }
 
-        // 道は順番を保ち、部屋の札が重ならないだけ離れて、地図からはみ出さない。
+        // 進化の祭壇は、冒険を始めたときに5%で1つだけ地図に置く（doc/features/stage-progression.md）。
         [Test]
-        public void TheRoadsKeepApartOnTheMap()
+        public void TheAltarIsOnAboutOneMapInTwenty()
         {
-            foreach (var map in Routes(100))
-            {
-                float gap = map.LaneCount == 3 ? 0.26f : 0.2f;
-                for (float t = 0f; t <= 1f; t += 0.01f)
-                for (int lane = 0; lane < map.LaneCount; lane++)
-                {
-                    float s = map.LaneS(lane, t);
-                    Assert.That(s, Is.InRange(0.02f, 0.98f));
-                    if (lane > 0)
-                        Assert.That(
-                            s - map.LaneS(lane - 1, t),
-                            Is.GreaterThanOrEqualTo(gap - 0.001f),
-                            $"seed {map.Seed} t {t}"
-                        );
-                }
-            }
-        }
-
-        // 2階先までは詳しく、4階先までは行ける部屋の印だけ、その先は強い魔物の光と最奥の間だけを見せる。
-        // 道の先の部屋は全部、種類が分かる形で見せる。カメラの立つ階に近いほど大きく、遠いほど小さい。
-        [Test]
-        public void EveryRoomAheadIsShownSmallerFurtherFromTheCamera()
-        {
-            var map = AdventureRouteMap.Generate(4242, RoomCount);
-            var run = new AdventureRun(
-                "r",
-                AdventureCatalog.ForestRuins,
-                AdventureRouteMap.EntranceId,
-                true,
-                new[] { AdventureRouteMap.EntranceId },
-                0,
-                100,
-                map,
-                null
+            var maps = Routes(2000).ToArray();
+            int withAltar = maps.Count(map =>
+                map.Rooms.Any(room => room.Kind == AdventureRoomKind.Altar)
             );
-            var sight = new ExplorationMapSight(run);
-            foreach (var view in new[] { 1, 4 })
+            Assert.That(
+                maps.Select(map => map.Rooms.Count(room => room.Kind == AdventureRoomKind.Altar)),
+                Is.All.LessThanOrEqualTo(1)
+            );
+            Assert.That(withAltar / (double)maps.Length, Is.InRange(0.03, 0.07));
+        }
+
+        // 道でつながった2つのマスに、魔物以外の同じ種類や、強い魔物と試練を続けない。真ん中の宝箱の階と
+        // 最後の休憩の階の隣の階には、宝箱と休憩を置かない。
+        [Test]
+        public void ConnectedRoomsDoNotRepeat()
+        {
+            foreach (var map in Routes(300))
             foreach (var room in map.Rooms)
             {
-                var seen = sight.Of(room, view);
-                int ahead = room.Floor - view;
-                if (room.Floor == 1)
-                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Hidden));
-                else if (room.Kind == AdventureRoomKind.Boss || ahead <= 2)
-                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Detail), room.Id);
-                else if (ahead <= 4)
-                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Mark), room.Id);
-                else
-                    Assert.That(seen, Is.EqualTo(ExplorationRoomSight.Far), room.Id);
-                if (view == 1)
-                    Assert.That(sight.Of(room), Is.EqualTo(seen), room.Id);
-            }
-        }
-
-        // 地図の絵：同じ道と部屋なら同じ絵になり、木が立ち、透明な画素を残さない。最奥の遺跡は、
-        // 入口からは画面より先にあって見えず、最奥の3階手前まで来ると立って見える。
-        [Test]
-        public void TheMapIsPaintedTheSameEveryTime()
-        {
-            var art = ScriptableObject.CreateInstance<ExplorationMapArt>();
-            try
-            {
-                var tree = Stamp("tree", 9, 11, new Color32(10, 200, 30, 255));
-                art.Trees = new[] { tree };
-                art.TreesFar = new[] { Stamp("far", 5, 6, new Color32(10, 200, 30, 255)) };
-                art.Ruin = Stamp("ruin", 12, 20, new Color32(250, 10, 250, 255));
-                var map = AdventureRouteMap.Generate(99, RoomCount);
-                var first = Paint(RunAt(map, 1), art);
-                var again = Paint(RunAt(map, 1), art);
-                Assert.That(again, Is.EqualTo(first));
-                Assert.That(first.All(pixel => pixel.a == 255), Is.True);
-                Assert.That(
-                    first.Count(pixel => pixel.r == 10 && pixel.b == 30),
-                    Is.GreaterThan(500)
-                );
-                Assert.That(first.Count(pixel => pixel.r == 250 && pixel.g == 10), Is.Zero);
-
-                var near = Paint(RunAt(map, map.BossFloor - 3), art);
-                Assert.That(near.All(pixel => pixel.a == 255), Is.True);
-                Assert.That(
-                    near.Count(pixel => pixel.r == 250 && pixel.g == 10),
-                    Is.GreaterThan(100)
-                );
-            }
-            finally
-            {
-                Object.DestroyImmediate(art);
-            }
-        }
-
-        // カメラは道の上のどこにでも立てる。部屋の位置に立てば、その部屋から見た地図と同じになる。
-        [Test]
-        public void TheCameraCanStandAnywhereOnTheRoute()
-        {
-            var map = AdventureRouteMap.Generate(4242, RoomCount);
-            foreach (var id in new[] { AdventureRouteMap.EntranceId, "f3-1", "f7-2" })
-            {
-                var point = map.PointOf(id);
-                var room = new ExplorationMapProjection(map, id);
-                var camera = new ExplorationMapProjection(map, point.T, point.S);
-                foreach (var other in map.Rooms)
-                    Assert.That(
-                        camera.ToDots(map.PointOf(other.Id)),
-                        Is.EqualTo(room.ToDots(map.PointOf(other.Id))),
-                        id + " " + other.Id
-                    );
-                // 行と道の t は互いに戻せる。上から見下ろすため地平線は画面より上にあり、
-                // 画面の中はどの行も地面になる。地平線より上には地面がない。
-                for (float y = 0f; y < ExplorationMapProjection.Height; y += 17f)
-                    Assert.That(camera.RowOf(camera.TAtRow(y)), Is.EqualTo(y).Within(0.01f));
-                Assert.That(ExplorationMapProjection.HorizonY, Is.LessThan(0f));
-                Assert.That(
-                    float.IsInfinity(camera.TAtRow(ExplorationMapProjection.HorizonY - 1f)),
-                    Is.True
-                );
-            }
-        }
-
-        // カメラが道に沿って着いた絵は、着いた部屋で描いた絵と同じになり、着いたときに絵が飛ばない。
-        // 動いている間は、木が一度に入れ替わらず、少しずつ現れ・消える。
-        [Test]
-        public void TheCameraFollowingARoadArrivesAtThePictureOfTheRoom()
-        {
-            var art = ScriptableObject.CreateInstance<ExplorationMapArt>();
-            try
-            {
-                art.Trees = new[] { Stamp("tree", 9, 11, new Color32(10, 200, 30, 255)) };
-                art.TreesFar = new[] { Stamp("far", 5, 6, new Color32(10, 200, 30, 255)) };
-                var map = AdventureRouteMap.Generate(99, RoomCount);
-                var entrance = map.Find(AdventureRouteMap.EntranceId);
-                var next = entrance.Next[1];
-                var start = new AdventureRun(
-                    "r",
-                    AdventureCatalog.ForestRuins,
-                    entrance.Id,
-                    true,
-                    new[] { entrance.Id },
-                    0,
-                    100,
-                    map,
-                    null
-                );
-                var arrived = new AdventureRun(
-                    "r",
-                    AdventureCatalog.ForestRuins,
-                    next,
-                    false,
-                    new[] { entrance.Id, next },
-                    0,
-                    100,
-                    map,
-                    null
-                );
-                var painter = new ExplorationMapPainter(map, art);
-                var pixels = Paint(painter, start);
-                var sight = new ExplorationMapSight(arrived);
-                bool fading = false;
-                foreach (var (t, s) in map.Path(entrance.Id, next, 12))
+                bool heavy = room.Kind is AdventureRoomKind.Elite or AdventureRoomKind.Trial;
+                foreach (var next in room.Next.Select(map.Find))
                 {
-                    var camera = new ExplorationMapProjection(map, t, s);
-                    painter.Paint(pixels, arrived, camera, sight, 1f / 30f);
-                    fading |= !painter.Settled;
+                    if (room.Kind == AdventureRoomKind.Start || next.Kind == AdventureRoomKind.Boss)
+                        continue;
+                    if (room.Kind != AdventureRoomKind.Battle)
+                        Assert.That(
+                            next.Kind,
+                            Is.Not.EqualTo(room.Kind),
+                            $"seed {map.Seed} {room.Id}"
+                        );
+                    if (heavy)
+                        Assert.That(
+                            new[] { AdventureRoomKind.Elite, AdventureRoomKind.Trial },
+                            Has.No.Member(next.Kind),
+                            $"seed {map.Seed} {room.Id}"
+                        );
                 }
-                Assert.That(fading, Is.True);
-                var room = new ExplorationMapProjection(map, next);
-                for (int frame = 0; frame < 30 && !painter.Settled; frame++)
-                    painter.Paint(pixels, arrived, room, sight, 1f / 30f);
-                Assert.That(painter.Settled, Is.True);
-                Assert.That(pixels, Is.EqualTo(Paint(arrived, art)));
-            }
-            finally
-            {
-                Object.DestroyImmediate(art);
+                foreach (int floor in new[] { 1 + RoomCount / 2, 3 + RoomCount / 2, RoomCount })
+                    if (room.Floor == floor)
+                        Assert.That(
+                            new[] { AdventureRoomKind.Treasure, AdventureRoomKind.Rest },
+                            Has.No.Member(room.Kind),
+                            $"seed {map.Seed} {room.Id}"
+                        );
             }
         }
 
-        // 1本目の道を floor の階の部屋まで進んだ冒険。
-        private static AdventureRun RunAt(AdventureRouteMap map, int floor)
+        // 同じ階のマスは順番を保ち、札が重ならないだけ離れて、地図からはみ出さない。
+        [Test]
+        public void TheRoomsOfAFloorKeepApartOnTheMap()
         {
-            var route = new List<string> { AdventureRouteMap.EntranceId };
-            for (int f = 2; f <= floor; f++)
-                route.Add(AdventureRouteMap.RoomId(f, 0));
-            return new AdventureRun(
-                "r",
-                AdventureCatalog.ForestRuins,
-                route[^1],
-                true,
-                route.ToArray(),
-                0,
-                100,
-                map,
-                null
-            );
+            foreach (var map in Routes(200))
+                for (int floor = 2; floor <= RoomCount + 1; floor++)
+                {
+                    var across = map
+                        .Rooms.Where(room => room.Floor == floor)
+                        .Select(room => map.PointOf(room.Id).S)
+                        .ToArray();
+                    Assert.That(across, Is.All.InRange(0.029f, 0.971f), $"seed {map.Seed}");
+                    for (int i = 1; i < across.Length; i++)
+                        Assert.That(
+                            across[i] - across[i - 1],
+                            Is.GreaterThanOrEqualTo(AdventureRouteMap.MinGap - 0.001f),
+                            $"seed {map.Seed} floor {floor}"
+                        );
+                }
         }
 
-        private static Color32[] Paint(AdventureRun run, ExplorationMapArt art) =>
-            Paint(new ExplorationMapPainter(run.Map, art), run);
-
-        private static Color32[] Paint(ExplorationMapPainter painter, AdventureRun run)
-        {
-            var pixels = new Color32[
-                ExplorationMapProjection.Width * ExplorationMapProjection.Height
-            ];
-            painter.Paint(
-                pixels,
-                run,
-                new ExplorationMapProjection(run.Map, run.RoomId),
-                new ExplorationMapSight(run)
-            );
-            return pixels;
-        }
-
-        private static PixelStamp Stamp(string name, int width, int height, Color32 color) =>
-            PixelStamp.From(
-                name,
-                width,
-                height,
-                Enumerable.Repeat(color, width * height).ToArray()
-            );
-
-        // 部屋へ進む要求には、道の部屋の階と種類を付ける（server/src/features/adventure/schema.ts）。
+        // マスへ進む要求には、道のマスの階と種類を付ける（server/src/features/adventure/schema.ts）。
         [Test]
         public void TheKindsAreSentWithTheServersNames()
         {
@@ -364,8 +241,28 @@ namespace Baryonyx.Tests.EditMode
                     AdventureRoomKind.Elite,
                     AdventureRoomKind.Treasure,
                     AdventureRoomKind.Boss,
+                    AdventureRoomKind.Rest,
+                    AdventureRoomKind.Merchant,
+                    AdventureRoomKind.ShadyChest,
+                    AdventureRoomKind.Trial,
+                    AdventureRoomKind.StepDoor,
+                    AdventureRoomKind.Altar,
                 }.Select(AdventureApiClient.KindName),
-                Is.EqualTo(new[] { "battle", "elite", "treasure", "boss" })
+                Is.EqualTo(
+                    new[]
+                    {
+                        "battle",
+                        "elite",
+                        "treasure",
+                        "boss",
+                        "rest",
+                        "merchant",
+                        "shady-chest",
+                        "trial",
+                        "step-door",
+                        "altar",
+                    }
+                )
             );
         }
     }

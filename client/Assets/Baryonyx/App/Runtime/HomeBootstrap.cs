@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Health;
 using Baryonyx.Home;
+using Baryonyx.Party;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using UnityEngine;
@@ -13,8 +14,8 @@ namespace Baryonyx.App
 {
     /// <summary>
     /// Builds the home screen from fixed sample data, except for today's steps, the rune
-    /// balance and the adventure in progress, which come from the server through the shared
-    /// <see cref="GameServices"/>. Tapping the ACT panel turns the ACT gained since the last
+    /// balance, the adventure in progress and the party around the campfire (the formation),
+    /// which come from the server through the shared <see cref="GameServices"/>. Tapping the ACT panel turns the ACT gained since the last
     /// claim into runes on the server, which keeps the balance. The destination card at the
     /// bottom right resumes the adventure in progress in the exploration scene, or, with none,
     /// opens the travel office to set out from. The tavern, workshop and temple buttons open
@@ -44,6 +45,10 @@ namespace Baryonyx.App
         [SerializeField]
         private HealthConnectionSettings settings;
 
+        // 焚き火を囲む編成の4人の名前と絵。
+        [SerializeField]
+        private PartyMockData party;
+
         private HomePresenter presenter;
         private readonly CancellationTokenSource lifetime = new();
         private bool adventureKnown;
@@ -53,9 +58,13 @@ namespace Baryonyx.App
         public SceneTransitionController Transition => transition;
         public string AdventureSceneName => adventureSceneName;
         public HomePresenter Presenter => presenter;
+        public PartyMockData Party => party;
 
         // 実行中または直前の冒険の読み込み。テストで完了を待つために公開する。
         public Task AdventureTask { get; private set; } = Task.CompletedTask;
+
+        // 実行中または直前の編成の読み込み。テストで完了を待つために公開する。
+        public Task PartyTask { get; private set; } = Task.CompletedTask;
 
         private void Start()
         {
@@ -75,6 +84,33 @@ namespace Baryonyx.App
             // モックの「冒険の途中」を実際の状態として見せない。
             presenter.ShowAdventure(false, "", "");
             AdventureTask = LoadAdventureAsync();
+            PartyTask = LoadPartyAsync();
+        }
+
+        // 焚き火のまわりに、今の編成の4人を立たせる。読めなければ仮データの4人のまま。
+        private async Task LoadPartyAsync()
+        {
+            if (party == null)
+            {
+                Debug.LogError("HomeBootstrap requires the party mock data.", this);
+                return;
+            }
+            PartyFormation formation;
+            try
+            {
+                formation = await PartySession.CurrentAsync(party, lifetime.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("編成を取得できませんでした。" + exception.Message);
+                return;
+            }
+            if (view != null)
+                view.UseParty(PartySession.Members(formation));
         }
 
         private void OnDestroy()
@@ -148,17 +184,23 @@ namespace Baryonyx.App
             var choices = SceneNames
                 .DebugRooms.Select(room => new DialogChoice(
                     room.Name,
-                    () => OpenDebugRoom(room.Scene, room.OwnHome, room.Corner)
+                    () => OpenDebugRoom(room.Scene, room.OwnHome)
                 ))
                 .Append(new DialogChoice(CloseChoice, dialog.Hide))
                 .ToArray();
             dialog.Show(DebugRoomsTitle, null, null, dialog.Hide, choices);
         }
 
-        private void OpenDebugRoom(string scene, bool ownHome, DebugRoomCorner corner)
+        // 戻るボタンのないルームには「ホームへ」を重ねる。そこから移れるルームにも重ねるため、全部を渡す。
+        private void OpenDebugRoom(string scene, bool ownHome)
         {
             if (!ownHome)
-                DebugRoomReturn.ShowWhenLoaded(view.RoomReturn, scene, corner);
+                DebugRoomReturn.ShowInRooms(
+                    view.RoomReturn,
+                    SceneNames
+                        .DebugRooms.Where(room => !room.OwnHome)
+                        .ToDictionary(room => room.Scene, room => room.Corner)
+                );
             if (LoadWithTodayAct(scene))
             {
                 presenter?.MarkScreenOpened();

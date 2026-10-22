@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-10-05
+updated: 2026-10-21
 ---
 
 # バックエンドの開発環境
@@ -115,8 +115,8 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み |
-| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み |
+| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ進化済み |
 | `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ボーナス1つ、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
 
 プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
@@ -203,9 +203,9 @@ DBとコードが食い違ったら、DBを作り直す（Localは[`pnpm db:rese
 SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
 [0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[ACTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
 [0004_party.sql](../../server/migrations/0004_party.sql) は、[キャラと編成の保存](../features/party.md#実装との対応)のキャラ・枠・カード・レベルアップの記録・初期付与の5テーブルを作る。
-[0005_adventure.sql](../../server/migrations/0005_adventure.sql) は、[冒険の1周](../plans/2026-10-04-adventure-loop.md#サーバー)の冒険・部屋ごとの報酬・復活の記録・行き先ごとの記録の4テーブルを作る。進行中の冒険をユーザーごとに1つにする部分一意インデックスを持つ。
-[0006_adventure_route.sql](../../server/migrations/0006_adventure_route.sql) は、冒険に道を作る乱数の種と、今いる部屋の階と種類の列を加える（[探索の地図](../plans/2026-10-04-exploration-route-map.md#実装したこと)）。
-[0007_end_fixed_route_adventures.sql](../../server/migrations/0007_end_fixed_route_adventures.sql) は、決まった6部屋の道で進行中だった冒険を、続きから再開できないため、自分からやめた扱いで終える手書きのSQLである。
+[0005_adventure.sql](../../server/migrations/0005_adventure.sql) は、[冒険の1周](../plans/2026-10-04-adventure-loop.md#サーバー)の冒険・マスごとの報酬・復活の記録・行き先ごとの記録の4テーブルを作る。進行中の冒険をユーザーごとに1つにする部分一意インデックスを持つ。
+[0006_adventure_route.sql](../../server/migrations/0006_adventure_route.sql) は、冒険に道を作る乱数の種と、今いるマスの階と種類の列を加える（[探索の地図](../plans/2026-10-04-exploration-route-map.md#実装したこと)）。
+[0007_end_fixed_route_adventures.sql](../../server/migrations/0007_end_fixed_route_adventures.sql) は、決まった6マスの道で進行中だった冒険を、続きから再開できないため、自分からやめた扱いで終える手書きのSQLである。
 [0008_equipment.sql](../../server/migrations/0008_equipment.sql) は、[持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存)の装備・キャラごとの武器と防具・初期付与の3テーブルを作る。
 [0009_custom_skill_slots.sql](../../server/migrations/0009_custom_skill_slots.sql) は、キャラごとのスキルの枠を4つから[カスタムスキル](../features/party.md#キャラクターの構成)の2つに減らす。枠の範囲の制約を変えるため表を作り直し、3・4枠目の行は移さずに消す。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) は、持っている装備・ACTボーナス・冒険の報酬に1つずつの倍率の列（`multiplier_percent`、百分率の整数で100以上）を持たせ、ボーナスと報酬のランクの列をなくす（[品質](../features/inventory.md#品質)）。表を作り直すため、Drizzle Kitが生成した、元の表にない列を読む行を手で直し、既存のランクをS 147・A 138・B 126・C 112・D 105・E 100の倍率へ、既存の装備を100へ写した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
@@ -264,7 +264,7 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
 ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時の倍率の比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
 パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
-冒険APIの認証・入力エラー・部屋の保存と進む条件・報酬が1回だけ入ることと倍率の比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
+冒険APIの認証・入力エラー・マスの保存と進む条件・報酬が1回だけ入ることと倍率の比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
 
 テストの並列数、ファイル内の実行順、DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) を正本とする。

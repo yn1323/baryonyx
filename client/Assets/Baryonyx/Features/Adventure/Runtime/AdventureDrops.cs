@@ -57,6 +57,29 @@ namespace Baryonyx.Adventure
             (AdventureDropCategory.Bonus, 3),
         };
 
+        /// <summary>
+        /// Which row of weights a room's kind borrows, and how many more fall, as the server's
+        /// rewardOf; null for a room that drops nothing. Until their contents are made, a trial
+        /// gives what a win without the condition gives, a step door what fewer than 3,000 steps
+        /// give, a shady chest is a real one, and an altar gives a chest's drops
+        /// (doc/features/stage-progression.md).
+        /// </summary>
+        public static (AdventureRoomKind Row, int Extra)? RewardOf(AdventureRoomKind kind) =>
+            kind switch
+            {
+                AdventureRoomKind.Battle
+                or AdventureRoomKind.Elite
+                or AdventureRoomKind.Treasure
+                or AdventureRoomKind.Boss => (kind, 0),
+                AdventureRoomKind.ShadyChest => (AdventureRoomKind.Treasure, 1),
+                AdventureRoomKind.Trial or AdventureRoomKind.StepDoor => (
+                    AdventureRoomKind.Battle,
+                    0
+                ),
+                AdventureRoomKind.Altar => (AdventureRoomKind.Treasure, 0),
+                _ => null,
+            };
+
         private static (int Count, int Weight)[] CountWeights(AdventureRoomKind kind) =>
             kind switch
             {
@@ -257,17 +280,24 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>The kinds that may fall in a room: no boss-only kind on the way, only stars 3–5 at the boss.</summary>
-        public static IReadOnlyList<Entry> Eligible(string destinationId, AdventureRoomKind kind)
+        public static IReadOnlyList<Entry> Eligible(string destinationId, AdventureRoomKind kind) =>
+            RewardOf(kind) is { } reward
+                ? EligibleIn(destinationId, reward.Row, kind == AdventureRoomKind.Boss)
+                : Array.Empty<Entry>();
+
+        // 報酬の行で落ちうる物。主の物は最奥の間でだけ落ちる。
+        private static IReadOnlyList<Entry> EligibleIn(
+            string destinationId,
+            AdventureRoomKind row,
+            bool bossOnly
+        )
         {
-            var weights = StarWeights(kind);
+            var weights = StarWeights(row);
             var pool = Pools.TryGetValue(destinationId ?? "", out var found)
                 ? found
                 : Array.Empty<Entry>();
             return pool.Concat(Common)
-                .Where(entry =>
-                    (kind == AdventureRoomKind.Boss || !entry.BossOnly)
-                    && weights[entry.Stars - 1] > 0
-                )
+                .Where(entry => (bossOnly || !entry.BossOnly) && weights[entry.Stars - 1] > 0)
                 .ToArray();
         }
 
@@ -278,43 +308,84 @@ namespace Baryonyx.Adventure
             string roomId,
             Func<AdventureDropCategory, string, float> maxMultiplierOf,
             Random random
+        ) =>
+            RewardOf(kind) is { } reward
+                ? Roll(destinationId, kind, reward, roomId, maxMultiplierOf, random)
+                : Array.Empty<AdventureDrop>();
+
+        /// <summary>
+        /// Picks the drops of a room of <paramref name="kind"/> by another row of weights: a mimic
+        /// beaten, a trial met or a step door opened by many steps (doc/features/stage-progression.md).
+        /// </summary>
+        public static IReadOnlyList<AdventureDrop> Roll(
+            string destinationId,
+            AdventureRoomKind kind,
+            (AdventureRoomKind Row, int Extra) reward,
+            string roomId,
+            Func<AdventureDropCategory, string, float> maxMultiplierOf,
+            Random random
         )
         {
-            var pool = Eligible(destinationId, kind);
+            var row = reward.Row;
+            var pool = EligibleIn(destinationId, row, kind == AdventureRoomKind.Boss);
             if (pool.Count == 0)
                 return Array.Empty<AdventureDrop>();
-            var stars = StarWeights(kind);
             var categories = CategoryWeights
                 .Where(entry => pool.Any(choice => choice.Category == entry.Category))
                 .ToArray();
-            int count = Pick(CountWeights(kind), entry => entry.Weight, random).Count;
+            int count = Pick(CountWeights(row), entry => entry.Weight, random).Count + reward.Extra;
             var drops = new List<AdventureDrop>();
             for (int i = 0; i < count; i++)
             {
                 var category = Pick(categories, entry => entry.Weight, random).Category;
-                var entry = Pick(
-                    pool.Where(choice => choice.Category == category).ToArray(),
-                    choice => stars[choice.Stars - 1],
-                    random
-                );
-                if (category == AdventureDropCategory.Item)
-                {
-                    drops.Add(new AdventureDrop(roomId, category, entry.Id));
-                    continue;
-                }
-                var quality = Pick(QualityWeights(kind), choice => choice.Weight, random).Quality;
-                var (low, high) = Quality.Range(quality, maxMultiplierOf(category, entry.Id));
-                drops.Add(
-                    new AdventureDrop(
-                        roomId,
-                        category,
-                        entry.Id,
-                        random.Next(Quality.Percent(low), Quality.Percent(high) + 1) / 100f,
-                        quality
-                    )
-                );
+                drops.Add(PickIn(pool, category, row, roomId, maxMultiplierOf, random));
             }
             return drops;
+        }
+
+        /// <summary>
+        /// One thing of <paramref name="category"/> a merchant of the destination sells: its stars
+        /// and quality by the strong reward's weights. Null when the destination has none.
+        /// </summary>
+        public static AdventureDrop PickWare(
+            string destinationId,
+            AdventureDropCategory category,
+            Func<AdventureDropCategory, string, float> maxMultiplierOf,
+            Random random
+        )
+        {
+            var pool = EligibleIn(destinationId, AdventureRoomKind.Elite, false);
+            return pool.Any(entry => entry.Category == category)
+                ? PickIn(pool, category, AdventureRoomKind.Elite, "", maxMultiplierOf, random)
+                : null;
+        }
+
+        private static AdventureDrop PickIn(
+            IReadOnlyList<Entry> pool,
+            AdventureDropCategory category,
+            AdventureRoomKind row,
+            string roomId,
+            Func<AdventureDropCategory, string, float> maxMultiplierOf,
+            Random random
+        )
+        {
+            var stars = StarWeights(row);
+            var entry = Pick(
+                pool.Where(choice => choice.Category == category).ToArray(),
+                choice => stars[choice.Stars - 1],
+                random
+            );
+            if (category == AdventureDropCategory.Item)
+                return new AdventureDrop(roomId, category, entry.Id);
+            var quality = Pick(QualityWeights(row), choice => choice.Weight, random).Quality;
+            var (low, high) = Quality.Range(quality, maxMultiplierOf(category, entry.Id));
+            return new AdventureDrop(
+                roomId,
+                category,
+                entry.Id,
+                random.Next(Quality.Percent(low), Quality.Percent(high) + 1) / 100f,
+                quality
+            );
         }
 
         private static T Pick<T>(IReadOnlyList<T> choices, Func<T, int> weightOf, Random random)

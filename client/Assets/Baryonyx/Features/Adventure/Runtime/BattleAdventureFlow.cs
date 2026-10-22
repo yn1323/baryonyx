@@ -38,7 +38,15 @@ namespace Baryonyx.Adventure
 
         // この戦闘に出た敵（Enemies の番号）。終えたときに、種類ごとの倒した数をライブラリへ送る。
         private readonly IReadOnlyCollection<int> standing;
+
+        // この戦闘での固有スキルの進化。部屋を終えたときに残し、サーバーへ送る。
+        private readonly AdventureEvolution evolution = new(step =>
+            Baryonyx.Party.PartyUniqueSkills.Evolve(step.Person, step.Unique, step.Stage)
+        );
         private AdventureState state;
+        private readonly AdventureTrial trial;
+        private readonly int revivesAtStart;
+        private AdventureClearOptions clearOptions = AdventureClearOptions.None;
         private bool busy;
         private bool disposed;
 
@@ -73,12 +81,22 @@ namespace Baryonyx.Adventure
                 encounter.PowerScale
             );
             standing = encounter.Enemies;
+            // 固有スキルは、部屋の種類と行き先の推奨Lvで決まる確率で進化する（doc/features/skill-evolution.md）。
+            battle.Evolution = evolution.Rules(
+                room.Kind,
+                AdventureCatalog.Area(state.Run.DestinationId)?.Level ?? encounter.Level
+            );
             // 前の戦闘までに開示した弱点を最初から見せ、この戦闘で開示した弱点を記録する。
             battle.UseRevealedWeaknesses(IsRevealed);
             battle.WeaknessRevealed += OnWeaknessRevealed;
             RevealedWeaknessSession.Changed += battle.RefreshRevealedWeaknesses;
             _ = RevealedWeaknessSession.LoadAsync(CancellationToken.None);
             battle.Finished += OnFinished;
+            // 試練の条件は、戦闘の始めに知らせる。条件の判定に、この戦闘での復活の回数を使う。
+            trial = state.Run.Contents.Trial;
+            revivesAtStart = state.Run.Revives;
+            if (trial != AdventureTrial.None)
+                overlay.ShowNotice(AdventureTexts.TrialNotice(trial));
             overlay.MenuPressed += OpenMenu;
             overlay.BackPressed += OpenMenu;
             overlay.ShowMenu(true);
@@ -104,6 +122,8 @@ namespace Baryonyx.Adventure
             if (disposed || Leaving)
                 return;
             busy = true;
+            // 部屋を終えた戦闘の進化を残す。負けても残す（復活して続けた分は、次に終えたときに残す）。
+            evolution.Keep();
             Work = outcome == BattleOutcome.Victory ? VictoryAsync() : WipeoutAsync();
         }
 
@@ -143,6 +163,25 @@ namespace Baryonyx.Adventure
         // 最奥のボスなら冒険の結果を見せてホームへ。
         private async Task VictoryAsync()
         {
+            // 勝ったときのHPを、次のマスへ持ち越す。
+            var shares = battle.HpSharesBySlot();
+            AdventureVitals.Keep(state.Run?.Id, shares);
+            // 試練は、勝ったときに条件を満たしたかを判定する。倒れた味方がいるか、この戦闘で復活したら
+            // 誰かが倒れたとみなす。
+            if (trial != AdventureTrial.None)
+            {
+                var present = battle.Allies.Where(ally => !ally.Absent).ToArray();
+                bool fell =
+                    present.Any(ally => ally.Down) || (state.Run?.Revives ?? 0) > revivesAtStart;
+                bool met = AdventureTrials.Met(
+                    trial,
+                    battle.Turn,
+                    fell,
+                    present.Select(ally => ally.MaxHp > 0 ? ally.Hp / (float)ally.MaxHp : 1f)
+                );
+                clearOptions = new AdventureClearOptions { TrialMet = met };
+                overlay.ShowNotice(met ? AdventureTexts.TrialMet : AdventureTexts.TrialMissed);
+            }
             var clearing = ClearAsync();
             if (!await Play(battle.PlayVictory))
                 return;
@@ -150,7 +189,7 @@ namespace Baryonyx.Adventure
         }
 
         private Task<AdventureState> ClearAsync() =>
-            Begin(() => source.ClearAsync(RoomId, lifetime.Token, Tally()));
+            Begin(() => source.ClearAsync(RoomId, lifetime.Token, Tally(), clearOptions));
 
         private Task<AdventureState> LoadAsync() => Begin(() => source.LoadAsync(lifetime.Token));
 

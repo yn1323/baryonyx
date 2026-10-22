@@ -1,5 +1,7 @@
 using System;
 using Baryonyx.Editor;
+using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.Home;
 using Baryonyx.Home.Editor;
 using Baryonyx.Showcase.Editor;
@@ -82,6 +84,8 @@ namespace Baryonyx.App.Editor
                     serialized.FindProperty("transition").objectReferenceValue = transition;
                     serialized.FindProperty("adventureSceneName").stringValue =
                         SceneNames.Exploration;
+                    serialized.FindProperty("party").objectReferenceValue =
+                        AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     TopStartupSyncSetup.SetHomeSettings(bootstrap);
                 }

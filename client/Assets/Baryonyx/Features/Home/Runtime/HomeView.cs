@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Baryonyx.Networking;
+using Baryonyx.Party;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.Vfx.Hd2d;
@@ -62,6 +63,12 @@ namespace Baryonyx.Home
 
         [Header("世界")]
         public Button PartyWorldButton;
+
+        [Tooltip("焚き火を囲む4人の絵（編成の枠の順）。右の2人は焚き火を向くよう左右を反転して置く。")]
+        public RawImage[] PartyMembers = Array.Empty<RawImage>();
+
+        [Tooltip("4人の足元の影（PartyMembers と同じ順）。枠が空いていれば絵と一緒に隠す。")]
+        public Graphic[] PartyShadows = Array.Empty<Graphic>();
 
         [Header("左下")]
         [FormerlySerializedAs("PartyButton")]
@@ -342,6 +349,27 @@ namespace Baryonyx.Home
             float period = Mathf.Max(0.1f, periodSeconds);
             float wave = (Mathf.Cos(time / period * Mathf.PI * 2f) + 1f) * 0.5f;
             return Mathf.Lerp(Mathf.Clamp01(minimumAlpha), 1f, wave);
+        }
+
+        /// <summary>
+        /// Stands the formation's members around the campfire, in slot order (null for an empty
+        /// slot, whose place is left empty).
+        /// </summary>
+        public void UseParty(IReadOnlyList<PartyMember> slots)
+        {
+            if (slots == null)
+                return;
+            for (int i = 0; i < PartyMembers.Length; i++)
+            {
+                var member = i < slots.Count ? slots[i] : null;
+                var picture = PartyMembers[i];
+                if (picture == null)
+                    continue;
+                picture.gameObject.SetActive(member != null);
+                if (i < PartyShadows.Length && PartyShadows[i] != null)
+                    PartyShadows[i].gameObject.SetActive(member != null);
+                PartyArt.Stand(picture, member);
+            }
         }
 
         public void ShowToast(string message)

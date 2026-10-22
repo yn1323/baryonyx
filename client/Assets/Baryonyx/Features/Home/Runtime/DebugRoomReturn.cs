@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -17,8 +18,10 @@ namespace Baryonyx.Home
     /// <summary>
     /// The "ホームへ" button put over a debugging room opened from Home's list when the room has
     /// no way back of its own (the battle mock, the enemy and moment rooms). Home hands the
-    /// prefab over before the room loads; once the room's scene is loaded, a copy is put in it.
-    /// It goes with the room when another scene loads.
+    /// prefab and those rooms over before the room loads; once a room's scene is loaded, a copy
+    /// is put in it. It goes with the room when another scene loads, and a room moved to from
+    /// it (the moment rooms open each other) gets a copy too, until a scene that is not one of
+    /// those rooms loads.
     /// </summary>
     public sealed class DebugRoomReturn : MonoBehaviour
     {
@@ -35,8 +38,7 @@ namespace Baryonyx.Home
         public string HomeScene = "Home";
 
         private static DebugRoomReturn pending;
-        private static string pendingScene;
-        private static DebugRoomCorner pendingCorner;
+        private static IReadOnlyDictionary<string, DebugRoomCorner> pendingRooms;
 
         private void Awake()
         {
@@ -66,36 +68,33 @@ namespace Baryonyx.Home
         }
 
         /// <summary>
-        /// Puts a copy of <paramref name="prefab"/> at <paramref name="corner"/> of
-        /// <paramref name="scene"/> once it is loaded.
+        /// Puts a copy of <paramref name="prefab"/> in each of <paramref name="rooms"/> loaded
+        /// from now on, at the room's corner, until a scene that is not one of them loads.
         /// </summary>
-        public static void ShowWhenLoaded(
+        public static void ShowInRooms(
             DebugRoomReturn prefab,
-            string scene,
-            DebugRoomCorner corner
+            IReadOnlyDictionary<string, DebugRoomCorner> rooms
         )
         {
-            if (prefab == null || string.IsNullOrEmpty(scene))
+            if (prefab == null || rooms == null || rooms.Count == 0)
                 return;
             pending = prefab;
-            pendingScene = scene;
-            pendingCorner = corner;
+            pendingRooms = rooms;
             SceneManager.sceneLoaded -= Loaded;
             SceneManager.sceneLoaded += Loaded;
         }
 
         private static void Loaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.name != pendingScene)
+            if (mode == LoadSceneMode.Additive)
                 return;
-            SceneManager.sceneLoaded -= Loaded;
-            var prefab = pending;
-            pending = null;
-            pendingScene = null;
-            if (prefab == null)
+            if (pending == null || !pendingRooms.TryGetValue(scene.name, out var corner))
+            {
+                Reset();
                 return;
-            var copy = Instantiate(prefab);
-            copy.Place(pendingCorner);
+            }
+            var copy = Instantiate(pending);
+            copy.Place(corner);
             SceneManager.MoveGameObjectToScene(copy.gameObject, scene);
         }
 
@@ -105,7 +104,7 @@ namespace Baryonyx.Home
         {
             SceneManager.sceneLoaded -= Loaded;
             pending = null;
-            pendingScene = null;
+            pendingRooms = null;
         }
     }
 }

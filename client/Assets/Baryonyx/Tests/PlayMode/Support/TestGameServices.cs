@@ -83,8 +83,18 @@ namespace Baryonyx.Tests.PlayMode
             public Task<AdventureState> ClearAsync(
                 string roomId,
                 CancellationToken token,
-                IReadOnlyList<AdventureEnemyTally> enemies = null
-            ) => owner.Adventure.ClearAsync(roomId, token, enemies);
+                IReadOnlyList<AdventureEnemyTally> enemies = null,
+                AdventureClearOptions options = null
+            ) => owner.Adventure.ClearAsync(roomId, token, enemies, options);
+
+            public Task<AdventureState> OpenAsync(string roomId, CancellationToken token) =>
+                owner.Adventure.OpenAsync(roomId, token);
+
+            public Task<AdventureState> BuyAsync(
+                string roomId,
+                int index,
+                CancellationToken token
+            ) => owner.Adventure.BuyAsync(roomId, index, token);
 
             public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token) =>
                 owner.Adventure.ReviveAsync(roomId, token);

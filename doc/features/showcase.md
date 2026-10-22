@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-10-06
+updated: 2026-10-22
 ---
 
 # クライアントアセット展示室
@@ -65,7 +65,7 @@ Prefabのプレビューは舞台全体を遠くから写すだけで、画面�
 戦闘の背景をキャラと一緒に見比べるときは、シーンのカテゴリから `Battle` を開く。展示室から開いたシーンには背景を選ぶInspectorがないため、背景の切り替えはUnity Editorで `Battle.unity` を開き、`BattleStages` の `Stage` を変えて確かめる。
 ポストプロセスはカメラの描画に掛かるため、単体のプレビューではなく、シーンカテゴリの `Top` を開いて確認する。
 親Canvasの全面に伸ばすUI Prefabは、展示室では1920×1080の領域を用意してプレビューする。
-探索の地図に立てる木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で描く（[冒険の画面](screens.md#冒険の画面)）。Play Modeで明るい縁の部屋の札を押すと、4人がその部屋まで歩いてカメラが追い、新しく見えた先の部屋の印が現れる様子を確かめられる（見本の部屋は出来事を終えた扱いで、着くと次の札が出る）。停止中に見せる見本の地図の絵 `ExplorationMapPreview`（Prefabの生成で描き直す）はUIのカテゴリに入る。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
+行き先ごとの地図の地面（`GroundForestRuins` など8枚、`Shared/Art/Stages/Exploration/`）と、2026-10-22まで地図に立てていた木・下草・遺跡（`MapTrees`・`MapTreesFar`・`MapUndergrowth`・`MapUndergrowthFar`・`MapRuin`。今は使っていない）は背景・環境のカテゴリに入る。探索画面の `ExplorationScreen` を選ぶと、決まった種の見本の地図を入口から見た形で並べる（[冒険の画面](screens.md#冒険の画面)）。Play Modeで金色の縁のマスの札を押すと、4人がそのマスまで歩いて地図が追いかける様子を、1本指で左右に引くと道の先を、右下の「？」で凡例を確かめられる（見本のマスは出来事を終えた扱いで、着くと次の札が出る）。冒険を進めた地図は、シーンのカテゴリから開いた `Exploration` ではなく、Homeから冒険に出て確かめる。
 
 ### 光芒の調整
 
@@ -270,15 +270,16 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 カードの挿絵の手前に重ねる[キラキラ](../art/direction.md#カードのキラキラ)は、マテリアルのカテゴリの `CardFoil`（シェーダーとマテリアル）、枠の光は `CardFrameFoil` で、効果はUIカテゴリの `BattleCardGallery` Prefabで確かめる。ギャラリーは50枚を品質S・A・B・Cの順にくり返して、それぞれの品質の中ほどの倍率で並べ、Sは強く光って枠が虹、Aは少し光って枠の外側の線が金、B・Cは光らない（[品質](inventory.md#品質)）。光り方（模様と色）はカードごとに違う。装備とACTボーナスの光り方は、[品質のデバッグルーム](screens.md#品質のデバッグルーム)で確かめる。実際の画面では、`TavernScreen` の `BonusSettings` を表示すると、仮データの品質Sの「守り」とAの「幸運」のアイコンが光る。装備（`Equipment`・`Training`）の仮データは倍率×1.00（品質C）だけのため、Prefabのままでは光らない。光は時間で動くため、停止中のプレビューではSceneビューの描画が進むときだけ動く。
 カードを上げたときに右に出す[キーワード](combat.md#カードのキーワード)の説明札は、`BattleInspectScreen` Prefabのプレビューで「キーワードの説明札」を選ぶか、展示室から `BattleLab` シーンを開き、説明文に水色の下線の語があるカード（アイスランスなど）を押して確かめる。
 味方と敵のドット絵のHPバーは、`BattleInspectScreen` Prefabのプレビューで確認する。HPが減るときの残像と、味方のHPバーに重ねるブロックの黄色のバーは、プレイ中にしか出ないため、プレビューには映らない。展示室から `BattleLab` シーンを開き、残像は攻撃のカードで敵を攻撃するかターン終了で敵の攻撃を受けて、ブロックはガードかシールドバッシュを使って確かめる。
+味方が倒れたときに、その味方の手札のカードが崩れて消える演出（[倒れた味方](combat.md#倒れた味方)）も、プレイ中にしか出ない。展示室から `BattleLab` シーンを開き、ターン終了をくり返して敵の攻撃で味方を倒して確かめる。崩れる絵と粒はコードがその場で作るため、展示室に増えるアセットはない。
 カードの使い手の足元に出す金の輪は、UIカテゴリの `CasterRing` で確認する。輪と名前の札はカードを上げている間だけ出るため、`BattleInspectScreen` Prefabのプレビューには映らない。動きは展示室から `BattleLab` シーンを開き、カードを押して確かめる。
 ターンの始まりに画面の中央へ出す帯（`TurnBanner`）も `BattleInspectScreen` Prefabに入っているが、ターンが切り替わるときだけ出るため、プレビューには映らない。展示室から `BattleLab` シーンを開き、戦闘の開始時と、ターン終了を押したときに確かめる。ターン終了を2回押すと、連続ターンの「もう一度 味方のターン」も出る。
 ダメージ・弱点・回復の数字は、プレイ中に浮かんで消えるだけで `BattleInspectScreen` には映らないため、戦闘の背景の上に3つを並べた `BattleDamageNumbers` Prefab（UIカテゴリ）で確認する。
 カードを使ったときのスキルの演出は、VFXカテゴリの `BattleSkillVfxPreview` Prefabで確認する。戦闘の背景に味方と敵を並べ、[スキルの仮設定](combat.md#スキルの仮設定)の50枚の演出を、それぞれの使い手と対象で順に繰り返し再生する（2周目ごとに弱点の当たりとして大きく出す）。画面の上に、再生中のカードの番号と名前を出す。やけど・毒・出血・リジェネ・爆炎の刻印・雷雲は、続けて働くときの演出も再生する。1枚だけを見るときは、Play中に `BattleSkillVfxDemo` の `Only` にカードのID（`Meteor` など）を入れ、途中から見るときは `First` に番号を入れる。
-好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](screens.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。ホームの設定の下にある、このシーンを開くボタンのアイコン（`IconSkillLab`）は画像のカテゴリに入る。
+好きなスキルを一覧から選んで再生するときは、シーンのカテゴリから `CardSkillLab` を開く（[スキルのデバッグルーム](screens.md#スキルのデバッグルーム)）。戦闘と同じ3Dの舞台とポストプロセスで再生するため、Bloomも映る。右上を「進化：入」にして固有スキルの最初の段階か1段目を選ぶと、カードが魔法陣で浮いてひびが入り、[進化先を選ぶ画面](skill-evolution.md#進化先を選ぶ画面)で選んだ段階に割れて進化する（[進化のエフェクト](skill-evolution.md#進化のエフェクト)）。進化のエフェクトは計算で描く形と、戦闘のカードのPrefabの複製だけで作るため、VFXカテゴリには増えない。選択画面は `CardSkillLabScreen` の中にあり、開いていないときは何も表示しない。同じ選択画面は戦闘画面のPrefab `BattleInspectScreen` にも入っており、冒険の戦闘で固有スキルが進化するときに開く。冒険の外の `BattleLab` では抽選しないため開かない。同じ画面のPrefab `CardSkillLabScreen` はUIカテゴリに入る。ホームの設定の下にある、このシーンを開くボタンのアイコン（`IconSkillLab`）は画像のカテゴリに入る。
 スキル・固有スキル・武器・防具・アクセサリー・ACTボーナスの倍率を動かして、品質の文字・キラキラ・効果の数字を確かめるときは、シーンのカテゴリから `QualityLab` を開く（[品質のデバッグルーム](screens.md#品質のデバッグルーム)）。同じ画面のPrefab `QualityLabScreen` はUIカテゴリに入り、停止中の表示の切り替えでスキル・武器・ボーナスを品質ごとに見られる。ホームのこのシーンを開くボタンのアイコン（`IconQualityLab`）は画像のカテゴリに入る。
 敵の攻撃・被弾・撃破・状態が付いたときの行動・敵のターンは、シーンのカテゴリから `EnemyLab` を開き、敵と行動を選んで確かめる（[敵の挙動デバッグルーム](screens.md#敵の挙動デバッグルーム)）。操作盤のPrefab `EnemyLabPanel` はUIカテゴリに入るが、操作する戦闘画面がないため、単体のプレビューでは押しても敵は動かない。
 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出は、シーンのカテゴリから `BattleMomentLab` を開き、ボタンを押して確かめる（[戦闘の演出デバッグルーム](screens.md#戦闘の演出デバッグルーム)）。操作盤とドロップの札のPrefab `BattleMomentLabPanel` はUIカテゴリに入るが、演出を再生する戦闘画面がないため、単体のプレビューでは押しても何も起きない。ドロップの光の柱や出現の土煙は計算で描くエフェクトで、専用のPrefabやマテリアルを足していないため、VFXカテゴリには増えない。
-探索の魔物の出現・宝箱・部屋へ進む演出は、シーンのカテゴリから `ExplorationMomentLab` を開いて確かめる（[探索の演出デバッグルーム](screens.md#探索の演出デバッグルーム)）。操作盤と演出の部品のPrefab `ExplorationMomentLabPanel` はUIカテゴリに入るが、演出を重ねる探索画面がないため、単体のプレビューでは押しても何も起きない。宝箱の光のシェーダーとマテリアル（どちらも `ExplorationLight`）はVFXカテゴリに入るが、形と色は演出のコードが渡すため、プレビューでは光らない。
+探索の魔物の出現・宝箱・マスへ進む演出は、シーンのカテゴリから `ExplorationMomentLab` を開いて確かめる（[探索の演出デバッグルーム](screens.md#探索の演出デバッグルーム)）。操作盤のPrefab `ExplorationMomentLabPanel` はUIカテゴリに入るが、演出を重ねる探索画面がないため、単体のプレビューでは押しても何も起きない。演出の部品は探索画面のPrefab `ExplorationScreen` の中にあり、演出を再生していないときは何も表示しない。宝箱の光のシェーダーとマテリアル（どちらも `ExplorationLight`）はVFXカテゴリに入るが、形と色は演出のコードが渡すため、プレビューでは光らない。
 撃破で敵の絵をドットごとに削るシェーダー（`BattleDefeat`）とマテリアル（`VfxDefeat`）はVFXカテゴリに入る。マテリアルは敵の絵と削る順番を持たないため、プレビューでは崩れる様子が見えない。崩れる動きは `EnemyLab` の「撃破」で確かめる。
 50枚のカードの見た目（挿絵・枠・属性のアイコン・使い手・名前・種類と対象・説明文・コスト）は、UIカテゴリの `BattleCardGallery` Prefabで、10枚×5段に並べて確認する。戦闘画面のモックの山札に入るのは、このうち16枚だけである。形を計算するシェーダー（`BattleVfxShape`）と、形ごとのマテリアル（`Features/Combat/Vfx/Materials/` の `VfxShape〈形の名前〉`。撃破で舞う粒の `VfxShapeMote` を含む）はVFXカテゴリに入る。演出の内容は[スキルの演出と背景](screens.md#スキルの演出と背景)に記す。
 弱点を開示するときの光（[戦闘画面の見た目モック](screens.md#戦闘画面の見た目モック)）は、初めて弱点を突いたときにしか出ないため、VFXカテゴリの `BattleWeaknessRevealPreview` Prefabで確認する。炎・氷・雷・斬の「？」を拡大して並べ、1つずつ開示してから全部を「？」へ戻す動きを繰り返す。アイコンの上の光のシェーダー（`BattleWeaknessGlint`）とマテリアル（`VfxWeaknessGlint`）も同じカテゴリに入る。
@@ -287,11 +288,11 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 シーンの生成時に `BattleLab` をBuild Settingsへ追加するため、展示室から開ける。`Battle`・`CardSkillLab`・`EnemyLab`・`BattleMomentLab`・`ExplorationMomentLab`・`QualityLab` も同じく生成時に追加する。
 案内人がいる画面（編成・商会・神殿・旅の案内所）は、UIカテゴリの `TavernScreen`・`WorkshopScreen`・`TempleScreen`・`TravelOfficeScreen` Prefabで確認する。メニュー・リスト・地図の印はPrefabに作り込んであるため、停止中もPrefabを開けば文字を確認でき、Play Modeでは押して操作できる。案内人の画像はUI、背景は背景・環境、定義アセットはデータ、4つのシーンはシーンのカテゴリに入る。
 編成の[冒険者の一覧](screens.md#パーティ)は `TavernScreen` のメニューの「冒険者」から開き、カードの長押しで[個別の画面](screens.md#育成)、そこから装備とスキルの付け替えへ進む。停止中も、Prefabの `Adventurers`・`Training`・`Equipment`・`CardLoadout` を表示すれば、仮データの先頭の人で、一覧・個別の画面・付け替えの画面を確認できる。スキルの付け替え（`CardLoadout`）は、停止中の表示の切り替えの「固有スキルの進化ツリー」で、先頭の人（トーマ）の1つ目の固有スキルの[進化ツリー](skill-evolution.md)も確認できる。[ボーナス設定](screens.md#ボーナス設定)も、`BonusSettings` を表示すれば仮データの枠と持ち物で確認できる（停止中は[枠つきの表示](screens.md#枠つきの表示)のぼかした背景とヘッダーの帯は出ないため、Play Modeで開いて確かめる）。Play Modeではサーバーの接続先がなくても、入れ替え・レベルアップ・付け替えを操作でき、個別の画面では左右のフリックで人を替えられる。すりガラスのカードの画像（`GlassCardFill`・`GlassCardRim`・`GlassCardRose` など、`Shared/UI/GlassCard/Art/`）、枠のひし形（`FrameDiamond`・`FrameDiamondLarge`）と編成の背景をぼかした写し（`TavernBackgroundBlur`）は画像のカテゴリに入る。
-9人の縦長のイラスト（`toma` など、`Shared/Art/Characters/Illustrations/`）はキャラクターのカテゴリに入る。展示室の画像のプレビューは枠いっぱいに伸ばして描くため、縦横の比は個別の画面で確かめる。武器・防具のアイコン（`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）と、編成のメニューの冒険者・装備・ボーナスのアイコン（`IconFormation`・`IconChangeGear`・`IconBonus`、`Features/Tavern/UI/Art/`）は画像のカテゴリに入る。進化ツリーの未取得の段階の封印と鎖（`StageSeal`・`StageSealChain`、`Features/CardLoadout/UI/Art/`）も画像のカテゴリに入る。
+9人の縦長のイラスト（`toma` など、`Shared/Art/Characters/Illustrations/`）はキャラクターのカテゴリに入る。パッシブスキルの18個のアイコン（`PassiveStarChart` など、`Features/Combat/UI/Art/Passives/`）は画像のカテゴリに入り、[個別の画面](screens.md#育成)では `TavernScreen` の冒険者から開いて確かめる。展示室の画像のプレビューは枠いっぱいに伸ばして描くため、縦横の比は個別の画面で確かめる。武器・防具のアイコン（`IconWeapon`・`IconArmor`、`Features/Equipment/UI/Art/`）と、編成のメニューの冒険者・装備・ボーナスのアイコン（`IconFormation`・`IconChangeGear`・`IconBonus`、`Features/Tavern/UI/Art/`）は画像のカテゴリに入る。進化ツリーの未取得の段階の封印と鎖（`StageSeal`・`StageSealChain`、`Features/CardLoadout/UI/Art/`）も画像のカテゴリに入る。
 [商会](screens.md#商会)は `WorkshopScreen` のメニューの買う・売る・合成から仮の一覧を開く。メニューのアイコン（`IconBuy`・`IconSell`・`IconCraft`）とホームの商会のボタンのアイコン（`IconShop`）は画像のカテゴリに入る。仮データの `PartyMockData` はデータのカテゴリに入る。
 神殿は `TempleScreen` のメニューの仲間を召喚・アイテムを召喚から仮の一覧を開く。メニューのアイコン（`IconSummonFriend`・`IconSummonItem`）とホームの神殿のボタンのアイコン（`IconSummon`）は画像のカテゴリに入る。
 編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
-[冒険の画面](screens.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上に4人と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、部屋の種類のアイコン（`IconRoomBattle` など）はアイテムのカテゴリに入る。
+[冒険の画面](screens.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上に4人と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、マスの種類のアイコン（`IconRoomBattle`・`IconRoomElite`・`IconRoomTreasure`・`IconRoomBoss`と、2026-10-22に足した `IconRoomRest`・`IconRoomMerchant`・`IconRoomShadyChest`・`IconRoomTrial`・`IconRoomStepDoor`・`IconRoomAltar`、`Features/Adventure/UI/Art/`）はアイテムのカテゴリに入り、地図の札と右下の凡例では `ExplorationScreen` で確かめる。
 プレビュー用のCanvasはカメラへ接続するため、ドット絵を整数倍に保つ `PixelPerfectRawImage` は、画面直描き（Screen Space - Overlay）のCanvasでだけ画面のピクセルへ合わせる。
 それ以外のCanvasでは設計上の大きさ（1ドット4単位）で表示する。
 2026-09-27まではプレビューで縮尺を誤り、HomeScreenのトーマや戦闘画面のキャラが画面を覆うほど大きく表示されていた。

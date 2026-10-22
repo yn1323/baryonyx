@@ -44,18 +44,8 @@ namespace Baryonyx.Combat.Presentation
         public int CostOf(BattleInspectCard card) => nextCardFree ? 0 : card.Cost;
 
         /// <summary>The stat of an ally that a power is a part of.</summary>
-        public int StatOf(int ally, CardStat stat)
-        {
-            if (ally < 0 || ally >= Allies.Length)
-                return 0;
-            return stat switch
-            {
-                CardStat.PhysicalAttack => Allies[ally].Stats.PhysicalAttack,
-                CardStat.MagicAttack => Allies[ally].Stats.MagicAttack,
-                CardStat.PhysicalDefense => Allies[ally].Stats.PhysicalDefense,
-                _ => 0,
-            };
-        }
+        public int StatOf(int ally, CardStat stat) =>
+            ally >= 0 && ally < Allies.Length ? StatOf(Allies[ally].Stats, stat) : 0;
 
         private sealed class ActiveStatus
         {
@@ -81,11 +71,13 @@ namespace Baryonyx.Combat.Presentation
             int caster
         )
         {
+            skill = BeginCardPassives(skill, caster);
             var plan = PlanHits(skill, chosen, onEnemies, caster);
             if (Vfx == null)
             {
                 for (int i = 0; i < plan.Count; i++)
                     ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave);
+                EndCardPassives(skill, caster);
                 Refresh();
                 yield break;
             }
@@ -108,6 +100,7 @@ namespace Baryonyx.Combat.Presentation
                 hits,
                 i => ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave)
             );
+            EndCardPassives(skill, caster);
             Refresh();
         }
 
@@ -172,7 +165,11 @@ namespace Baryonyx.Combat.Presentation
                         }
                         break;
                     case CardActionKind.Heal:
-                        HealAlly(hit.Index, Power(action, caster));
+                        HealFrom(
+                            hit.Index,
+                            HealWithPassives(Power(action, caster), caster),
+                            caster
+                        );
                         break;
                     case CardActionKind.Revive:
                     {
@@ -183,9 +180,7 @@ namespace Baryonyx.Combat.Presentation
                     case CardActionKind.Block:
                     {
                         int block = Power(action, caster);
-                        EnsureBlock();
-                        allyBlock[hit.Index] += block;
-                        RefreshBlock(hit.Index);
+                        int gained = AddBlock(hit.Index, block);
                         // A block for the party shows once, over the party.
                         if (action.Target == CardTarget.AllAllies)
                         {
@@ -195,7 +190,7 @@ namespace Baryonyx.Combat.Presentation
                         else
                             ShowPopup(
                                 Allies[hit.Index].TargetArea,
-                                $"ブロック +{block}",
+                                $"ブロック +{gained}",
                                 GuardColor,
                                 44f
                             );
@@ -269,6 +264,7 @@ namespace Baryonyx.Combat.Presentation
                 && Holds(action.BonusWhen, enemy, caster, weak)
             )
                 power = CardRules.WithBonus(action, power);
+            power = CardPowerWithPassives(power, skill, enemy, caster);
             var up = Find(true, caster, CardStatus.AttackUp);
             if (up != null)
                 power = Mathf.RoundToInt(power * (1f + up.Amount / 100f));
@@ -283,7 +279,10 @@ namespace Baryonyx.Combat.Presentation
             var extra = HasStatus(true, caster, CardStatus.FireBlade)
                 ? BattleInspectElement.Fire
                 : BattleInspectElement.None;
-            return Hit(enemy, power, element, extra);
+            int before = target.Hp;
+            var weight = Hit(enemy, power, element, extra);
+            AfterCardBlow(skill, enemy, caster, before - target.Hp);
+            return weight;
         }
 
         /// <summary>
@@ -395,7 +394,11 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         private void AddStatus(bool ally, int index, CardAction action, int caster)
         {
+            if (ally && Purified(index, action.Status))
+                return;
             int power = action.HasPower ? Power(action, caster) : 0;
+            if (action.Status == CardStatus.Regen)
+                power = HealWithPassives(power, caster);
             var (tickStat, tickPercent) = CardRules.TickOf(action.Status);
             if (tickPercent > 0)
                 power = Mathf.Max(
@@ -433,13 +436,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// The start of a party turn: block fades, burns and poison hurt the enemies, sigils blow
-        /// up, regen heals, clouds strike, then every status counts down a turn.
+        /// The start of a party turn: burns and poison hurt the enemies, sigils blow up, regen
+        /// heals, clouds strike, then every status counts down a turn. Block stays.
         /// </summary>
         private IEnumerator PartyTurnStatuses()
         {
-            ClearBlock();
-
             for (int i = 0; i < Enemies.Length; i++)
             {
                 foreach (var status in new[] { CardStatus.Burn, CardStatus.Poison })
@@ -476,7 +477,7 @@ namespace Baryonyx.Combat.Presentation
                 yield return Tick(
                     CardStatus.Regen,
                     Allies[i].TargetArea,
-                    () => HealAlly(ally, regen.Power)
+                    () => HealFrom(ally, regen.Power, regen.Source)
                 );
             }
             for (int i = 0; i < Allies.Length; i++)
@@ -618,6 +619,22 @@ namespace Baryonyx.Combat.Presentation
         {
             if (allyBlock.Length != Allies.Length)
                 allyBlock = new int[Allies.Length];
+        }
+
+        /// <summary>
+        /// Adds to an ally's block, up to the ally's max HP, and returns how much it grew. The
+        /// block stays from turn to turn until damage takes it.
+        /// </summary>
+        private int AddBlock(int ally, int amount)
+        {
+            EnsureBlock();
+            int before = allyBlock[ally];
+            allyBlock[ally] = Mathf.Min(Allies[ally].MaxHp, before + Mathf.Max(0, amount));
+            RefreshBlock(ally);
+            int gained = allyBlock[ally] - before;
+            if (gained > 0)
+                ChargedShield(ally);
+            return gained;
         }
 
         /// <summary>Takes every ally's block away.</summary>

@@ -2,7 +2,11 @@ using System;
 using Baryonyx.Adventure;
 using Baryonyx.Adventure.Editor;
 using Baryonyx.Editor;
+using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.Showcase.Editor;
+using Baryonyx.Training;
+using Baryonyx.Training.Editor;
 using Baryonyx.UI.Editor;
 using UnityEditor;
 
@@ -47,6 +51,10 @@ namespace Baryonyx.App.Editor
                     serialized.FindProperty("transition").objectReferenceValue = transition;
                     serialized.FindProperty("settings").objectReferenceValue =
                         TopStartupSyncSetup.LoadSettings();
+                    serialized.FindProperty("party").objectReferenceValue =
+                        AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
+                    serialized.FindProperty("training").objectReferenceValue =
+                        AssetDatabase.LoadAssetAtPath<TrainingMockData>(TrainingAssets.DataPath);
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                 }
             );

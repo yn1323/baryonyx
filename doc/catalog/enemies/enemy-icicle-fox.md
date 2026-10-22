@@ -2,7 +2,7 @@
 id: enemy-icicle-fox
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: つらら尾の狐
 category: enemies
 silhouette: 低く身構えた白い狐。背の後ろに三本の尾が扇のように立ち上がり、先が大きなつららになる
@@ -42,12 +42,12 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/IcicleFox.asepr
 
 ## 出現する場所
 
-| 行き先 | 部屋 | 敵の組み合わせ | Lv |
+| 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
 | 未決 | 未決 | 未決 | 未決 |
 
 まだどの行き先にも出ない。
-生息する地域は雪原とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決である（[ステージの定義](../stages/README.md)）。
+生息する地域は雪原とし、出現する行き先・マス・敵の組み合わせ・Lvは未決である（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
 
@@ -170,7 +170,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/IcicleFox.asepr
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所 | 行き先・部屋・敵の組み合わせ・Lv。行き先が決まったら、その行き先のLvの行をステータスの表に足す |
+| 出現する場所 | 行き先・マス・敵の組み合わせ・Lv。行き先が決まったら、その行き先のLvの行をステータスの表に足す |
 | 数値 | ステータス、行動の割合と回数、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 凍結 | つらら刺しで味方に付ける凍結の扱い（[つらら刺し](../enemy-skills/enemy-skill-icicle-tail-pin.md)の未決事項） |

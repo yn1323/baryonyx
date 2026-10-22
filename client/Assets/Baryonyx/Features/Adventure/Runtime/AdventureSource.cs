@@ -23,12 +23,20 @@ namespace Baryonyx.Adventure
         // 道で次の階の部屋を選んで進む。選んだ時点で保存する。
         Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token);
 
-        // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、報酬を手に入れる。戦闘なら遭遇した敵を添える。
+        // 今いるマスの出来事（戦闘の勝利・宝箱など）を終え、報酬を手に入れる。戦闘なら遭遇した敵を添える。
+        // 怪しい宝箱を開けずに通り過ぎるときと、試練の条件を満たしたときは options で伝える。
         Task<AdventureState> ClearAsync(
             string roomId,
             CancellationToken token,
-            IReadOnlyList<AdventureEnemyTally> enemies = null
+            IReadOnlyList<AdventureEnemyTally> enemies = null,
+            AdventureClearOptions options = null
         );
+
+        // 怪しい宝箱を開ける。ミミックなら戦闘のマスになり、本物ならその場で終えて物を落とす。
+        Task<AdventureState> OpenAsync(string roomId, CancellationToken token);
+
+        // 行商人から、品物の番号の物をルーンで買う。
+        Task<AdventureState> BuyAsync(string roomId, int index, CancellationToken token);
 
         // 負けた戦闘からルーンで復活する。
         Task<AdventureState> ReviveAsync(string roomId, CancellationToken token);
@@ -68,8 +76,19 @@ namespace Baryonyx.Adventure
         public Task<AdventureState> ClearAsync(
             string roomId,
             CancellationToken token,
-            IReadOnlyList<AdventureEnemyTally> enemies = null
-        ) => Run(session => api.ClearAsync(session, roomId, enemies, token), token);
+            IReadOnlyList<AdventureEnemyTally> enemies = null,
+            AdventureClearOptions options = null
+        ) => Run(session => api.ClearAsync(session, roomId, enemies, options, token), token);
+
+        public Task<AdventureState> OpenAsync(string roomId, CancellationToken token) =>
+            Run(session => api.OpenAsync(session, roomId, token), token);
+
+        public Task<AdventureState> BuyAsync(string roomId, int index, CancellationToken token)
+        {
+            // 応答が届かずに送り直しても、同じ要求IDで二重に買わない。
+            string requestId = Guid.NewGuid().ToString("D");
+            return Run(session => api.BuyAsync(session, requestId, roomId, index, token), token);
+        }
 
         public Task<AdventureState> ReviveAsync(string roomId, CancellationToken token)
         {
@@ -121,9 +140,17 @@ namespace Baryonyx.Adventure
                 ToResult(state.result),
                 state.revive != null && !string.IsNullOrEmpty(state.revive.roomId)
                     ? state.revive.runes
+                    : null,
+                state.stepDoor != null
+                && (state.stepDoor.steps > 0 || state.stepDoor.tier > 0 || IsStepDoor(run))
+                    ? new AdventureStepDoor(state.stepDoor.steps, state.stepDoor.tier)
                     : null
             );
         }
+
+        // 歩数の扉を終えた応答。0歩の扉も、扉のマスなら結果として見せる。
+        private static bool IsStepDoor(AdventureApiClient.Run run) =>
+            run != null && run.roomKind == "step-door" && run.roomCleared;
 
         // 道は、サーバーが冒険を始めたときに決めた種と部屋の数から、毎回同じ形に作る。
         private static AdventureRun ToRun(AdventureApiClient.Run run) =>
@@ -137,8 +164,37 @@ namespace Baryonyx.Adventure
                 run.reviveCost,
                 AdventureCatalog.Route(run.destinationId, run.seed, run.roomCount),
                 ToDrops(run.drops),
-                run.floor
+                run.floor,
+                new AdventureContents(
+                    run.mimic,
+                    AdventureTrials.Parse(run.trial),
+                    (run.merchant ?? Array.Empty<AdventureApiClient.Ware>())
+                        .Select(ToWare)
+                        .Where(ware => ware != null)
+                        .ToArray()
+                )
             );
+
+        // 知らない分類や品質の品物は並べない。
+        private static AdventureWare ToWare(AdventureApiClient.Ware ware)
+        {
+            if (
+                ware == null
+                || string.IsNullOrEmpty(ware.id)
+                || !AdventureDrops.TryParse(ware.category, out var category)
+                || !Quality.TryParse(ware.quality, out var quality)
+            )
+                return null;
+            return new AdventureWare(
+                ware.index,
+                category,
+                ware.id,
+                ware.multiplierPercent / 100f,
+                quality,
+                ware.price,
+                ware.sold
+            );
+        }
 
         private static AdventureDrop[] ToDrops(AdventureApiClient.Drop[] drops) =>
             (drops ?? Array.Empty<AdventureApiClient.Drop>())

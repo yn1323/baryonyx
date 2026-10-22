@@ -28,7 +28,7 @@ namespace Baryonyx.Combat.Presentation
         private const float BossCrumbleTime = 1.1f;
 
         // How much of the crumble's order is burning white just ahead of its front.
-        private const float CrumbleBand = 0.12f;
+        internal const float CrumbleBand = 0.12f;
 
         // The crumble starts slow and quickens: the share eaten is time to this power.
         private const float CrumbleEase = 1.5f;
@@ -300,7 +300,7 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>The picture's pixels, read straight or copied back from the GPU.</summary>
-        private static Color32[] ReadPicture(Texture texture)
+        internal static Color32[] ReadPicture(Texture texture)
         {
             if (texture is Texture2D readable && readable.isReadable)
             {

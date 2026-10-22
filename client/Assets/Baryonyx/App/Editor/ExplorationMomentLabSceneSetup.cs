@@ -9,8 +9,8 @@ namespace Baryonyx.App.Editor
     /// <summary>
     /// Rebuilds ExplorationMomentLab.unity, the debugging room for the turning points of the
     /// exploration: the exploration screen on its sample route, with no adventure behind it
-    /// (no bootstrap), and the lab's overlay (<see cref="ExplorationMomentLabAssets"/>) over it
-    /// to play each moment (<see cref="ExplorationMomentLab"/>).
+    /// (no bootstrap), and the lab's controls (<see cref="ExplorationMomentLabAssets"/>) over it
+    /// to play each moment with the screen's own parts (<see cref="ExplorationMomentLab"/>).
     /// </summary>
     public static class ExplorationMomentLabSceneSetup
     {
@@ -46,11 +46,9 @@ namespace Baryonyx.App.Editor
                     );
                     var view = screen.GetComponent<ExplorationView>();
                     var lab = panel.GetComponent<ExplorationMomentLab>();
-                    var moments = panel.GetComponent<ExplorationMoments>();
                     lab.View = view;
-                    moments.View = view;
+                    lab.Moments = view.Moments;
                     PrefabUtility.RecordPrefabInstancePropertyModifications(lab);
-                    PrefabUtility.RecordPrefabInstancePropertyModifications(moments);
                     ScreenScenes.AddEventSystem(scene);
                 }
             );

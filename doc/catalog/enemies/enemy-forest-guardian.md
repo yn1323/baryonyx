@@ -2,7 +2,7 @@
 id: enemy-forest-guardian
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-21
 name: 森の守り手
 category: enemies
 silhouette: 前かがみの岩の巨体。頭から枝の角が広がり、岩を積んだ太い腕が床近くまで垂れる
@@ -40,12 +40,12 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 
 ## 出現する場所
 
-| 行き先 | 部屋 | 敵の組み合わせ | Lv |
+| 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
 | 森の遺跡（`forest-ruins`） | 第4層の最奥の間（`sanctum`） | `forest-boss`：森の守り手に、苔スライムと苔むした狼が付き従う | 10（仮） |
 
 戦闘の背景は朝霧の森（`MistyWoods`）である。
-部屋の構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。
+マスの構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 Lv10は、HPと物攻が戦闘画面のモックの値とほぼ同じになるLvである。
 

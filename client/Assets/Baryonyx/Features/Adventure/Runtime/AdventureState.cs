@@ -6,6 +6,7 @@ using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
 {
+    // マスの種類（doc/features/stage-progression.md のマスの種類）。色とアイコンの並びはこの順。
     public enum AdventureRoomKind
     {
         Start,
@@ -13,6 +14,12 @@ namespace Baryonyx.Adventure
         Elite,
         Treasure,
         Boss,
+        Rest,
+        Merchant,
+        ShadyChest,
+        Trial,
+        StepDoor,
+        Altar,
     }
 
     public enum AdventureDropOutcome
@@ -76,7 +83,18 @@ namespace Baryonyx.Adventure
         public bool IsBattle =>
             Kind == AdventureRoomKind.Battle
             || Kind == AdventureRoomKind.Elite
-            || Kind == AdventureRoomKind.Boss;
+            || Kind == AdventureRoomKind.Boss
+            || Kind == AdventureRoomKind.Trial;
+
+        // 宝箱のように開けて中身を得るマス。怪しい宝箱・歩数の扉・進化の祭壇は、中身を作るまで宝箱と同じに開ける。
+        public bool Opens =>
+            Kind == AdventureRoomKind.Treasure
+            || Kind == AdventureRoomKind.ShadyChest
+            || Kind == AdventureRoomKind.StepDoor
+            || Kind == AdventureRoomKind.Altar;
+
+        // 着いたら、そのまま終えて先へ進めるマス。休憩は着いたときに回復する。
+        public bool PassesThrough => Kind == AdventureRoomKind.Rest;
     }
 
     /// <summary>
@@ -131,9 +149,11 @@ namespace Baryonyx.Adventure
             int reviveCost,
             AdventureRouteMap map,
             IReadOnlyList<AdventureDrop> drops,
-            int floor = 1
+            int floor = 1,
+            AdventureContents contents = null
         )
         {
+            Contents = contents ?? AdventureContents.Empty;
             Id = id ?? "";
             DestinationId = destinationId ?? "";
             RoomId = roomId ?? "";
@@ -165,6 +185,9 @@ namespace Baryonyx.Adventure
         public IReadOnlyList<AdventureRoom> Rooms => Map?.Rooms ?? Array.Empty<AdventureRoom>();
         public IReadOnlyList<AdventureDrop> Drops { get; }
 
+        // 今いるマスの中身：開けた怪しい宝箱がミミックだったか、試練の条件、行商人の品物。
+        public AdventureContents Contents { get; }
+
         public AdventureRoom Room => Find(RoomId);
 
         // 今いる階。道にない部屋（以前の冒険の部屋など）でも、サーバーが保存した階を返す。
@@ -177,7 +200,11 @@ namespace Baryonyx.Adventure
                 : Room.Next.Select(Find).Where(room => room != null).ToArray();
 
         // 今いる部屋の戦闘がまだ終わっていない。
-        public bool InBattle => !RoomCleared && Room != null && Room.IsBattle;
+        // 開けた怪しい宝箱がミミックなら、戦闘のマスになる。
+        public bool InBattle =>
+            !RoomCleared
+            && Room != null
+            && (Room.IsBattle || (Room.Kind == AdventureRoomKind.ShadyChest && Contents.Mimic));
 
         public int DeepestFloor => Map?.BossFloor ?? 1;
 
@@ -249,9 +276,11 @@ namespace Baryonyx.Adventure
             long runes,
             IReadOnlyList<AdventureDrop> drops = null,
             AdventureResult result = null,
-            int? revivedFor = null
+            int? revivedFor = null,
+            AdventureStepDoor stepDoor = null
         )
         {
+            StepDoor = stepDoor;
             Run = run;
             Records = records ?? Array.Empty<AdventureRecord>();
             Runes = runes;
@@ -272,6 +301,9 @@ namespace Baryonyx.Adventure
 
         // 復活した要求で使ったルーン。
         public int? RevivedFor { get; }
+
+        // 歩数の扉を開けた要求で、サーバーが読んだ今日の歩数と報酬の段。
+        public AdventureStepDoor StepDoor { get; }
 
         public bool InProgress => Run != null;
 

@@ -4,6 +4,8 @@ using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.Vfx.Hd2d;
@@ -34,11 +36,19 @@ namespace Baryonyx.Home.Editor
 
         /// <summary>The travel office's world map, on the card while no adventure is in progress.</summary>
         public const string TravelArtPath = HomeScreenArt.ArtFolder + "/WorldMap.png";
-        public const string CharactersPath =
-            "Assets/Baryonyx/Shared/Art/Characters/Adventurers.png";
 
-        /// <summary>Toma's standing sprite on a 100x100 canvas (centred, feet on the bottom row).</summary>
-        public const string TomaPath = "Assets/Baryonyx/Shared/Art/Characters/Toma.aseprite";
+        /// <summary>
+        /// Where the party's slots stand around the campfire (feet in the world layer, before the
+        /// camp's lift): the first two behind the fire, the last two in front, the right of each
+        /// pair turned to face the fire. The shadow under each is as wide as the row is near.
+        /// </summary>
+        private static readonly (Vector2 Feet, Vector2 Shadow, float ShadowAlpha)[] PartyPlaces =
+        {
+            (new Vector2(-175, -392), new Vector2(150, 24), 0.45f),
+            (new Vector2(175, -392), new Vector2(150, 24), 0.45f),
+            (new Vector2(-330, -441), new Vector2(164, 26), 0.5f),
+            (new Vector2(330, -441), new Vector2(164, 26), 0.5f),
+        };
 
         // Light colours taken from the rune palette (highlight and the brightest facets).
         private static readonly Color RuneSpark = new(0.933f, 0.988f, 1f, 1f);
@@ -139,8 +149,10 @@ namespace Baryonyx.Home.Editor
             // The map is a generated illustration used as it is, like on the travel office.
             travelArt = ArtAssets.ImportTexture(TravelArtPath, FilterMode.Bilinear);
             var background = ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
-            var characters = ArtAssets.ImportTexture(CharactersPath, FilterMode.Point);
-            var toma = ArtAssets.ImportTexture(TomaPath, FilterMode.Point);
+            // The mock formation stands until the bootstrap stands the player's (HomeBootstrap).
+            var party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
+            if (party == null)
+                party = PartyAssets.CreateData();
 
             using (UiBuild.Begin(font, shadowText))
             {
@@ -148,7 +160,7 @@ namespace Baryonyx.Home.Editor
                 var view = root.gameObject.AddComponent<HomeView>();
 
                 BuildBackground(root, background);
-                BuildWorld(root, view, characters, toma);
+                BuildWorld(root, view, PartySession.Members(PartyFormation.From(party)));
                 var safe = SafeArea(root);
                 BuildStepPanel(safe, view);
                 BuildTopRight(safe, view);
@@ -298,8 +310,7 @@ namespace Baryonyx.Home.Editor
         private static void BuildWorld(
             RectTransform root,
             HomeView view,
-            Texture2D characters,
-            Texture2D toma
+            IReadOnlyList<PartyMember> members
         )
         {
             var world = Rect("World", root);
@@ -337,38 +348,11 @@ namespace Baryonyx.Home.Editor
             Hd2dStageKit.FlatOnly(campLight.gameObject);
 
             var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            var shadowToma = Picture(
-                world,
-                "ShadowToma",
-                shadow,
-                new Vector2(-175, -394 + CampLift),
-                new Vector2(150, 24),
-                0.45f
-            );
-            var shadowLuka = Picture(
-                world,
-                "ShadowLuka",
-                shadow,
-                new Vector2(175, -394 + CampLift),
-                new Vector2(150, 24),
-                0.45f
-            );
-            var tomaPicture = PixelActor(
-                world,
-                "Toma",
-                toma,
-                new Vector2(-175, -392 + CampLift),
-                4f
-            );
-            var lukaPicture = Actor(
-                world,
-                "Luka",
-                characters,
-                ActorUv(2),
-                new Vector2(158.5f, -271 + CampLift),
-                new Vector2(207, 276),
-                true
-            );
+            var pictures = new RawImage[PartyPlaces.Length];
+            var shadows = new Graphic[PartyPlaces.Length];
+            // The back row stands behind the fire.
+            for (int slot = 0; slot < 2; slot++)
+                (pictures[slot], shadows[slot]) = StandMember(world, shadow, slot, members[slot]);
             var shadowFire = Picture(
                 world,
                 "ShadowFire",
@@ -398,8 +382,6 @@ namespace Baryonyx.Home.Editor
             flame.color = Color.white;
             // On a 3D stage the members and the logs stand on the floor as boards, and the
             // scene burns a computed flame in the logs (HomeSceneSetup) in place of the drawn one.
-            Hd2dStageKit.Stand(tomaPicture.gameObject, tomaPicture, shadowToma);
-            Hd2dStageKit.Stand(lukaPicture.gameObject, lukaPicture, shadowLuka);
             var fireBoard = Hd2dStageKit.Stand(fire.gameObject, fire, shadowFire);
             fireBoard.HideWhenStaged = new Graphic[] { flame };
             // The logs keep their drawn colours: lit, the fire's light beside them turned them
@@ -442,42 +424,11 @@ namespace Baryonyx.Home.Editor
             // On the 3D stage the computed flame's own embers rise instead.
             Hd2dStageKit.FlatOnly(campEmbers.gameObject);
 
-            var shadowAria = Picture(
-                world,
-                "ShadowAria",
-                shadow,
-                new Vector2(-330, -443 + CampLift),
-                new Vector2(164, 26),
-                0.5f
-            );
-            var shadowMina = Picture(
-                world,
-                "ShadowMina",
-                shadow,
-                new Vector2(330, -443 + CampLift),
-                new Vector2(164, 26),
-                0.5f
-            );
-            var ariaPicture = Actor(
-                world,
-                "Aria",
-                characters,
-                ActorUv(0),
-                new Vector2(-323.5f, -316 + CampLift),
-                new Vector2(225, 300),
-                false
-            );
-            var minaPicture = Actor(
-                world,
-                "Mina",
-                characters,
-                ActorUv(3),
-                new Vector2(314.5f, -316 + CampLift),
-                new Vector2(225, 300),
-                true
-            );
-            Hd2dStageKit.Stand(ariaPicture.gameObject, ariaPicture, shadowAria);
-            Hd2dStageKit.Stand(minaPicture.gameObject, minaPicture, shadowMina);
+            // The front row stands before it.
+            for (int slot = 2; slot < PartyPlaces.Length; slot++)
+                (pictures[slot], shadows[slot]) = StandMember(world, shadow, slot, members[slot]);
+            view.PartyMembers = pictures;
+            view.PartyShadows = shadows;
 
             // One invisible target over the four members opens the party screen.
             var party = Rect("PartyTapArea", world);
@@ -1196,30 +1147,41 @@ namespace Baryonyx.Home.Editor
                 Twinkle = 0.35f,
             };
 
-        private static RawImage Actor(
+        /// <summary>
+        /// One of the party around the fire: the member's 64x64 battle sprite at 4 px a dot, feet
+        /// on its shadow, standing as a board on the 3D glade. The right of each row is turned to
+        /// face the fire; an empty slot's place is hidden.
+        /// </summary>
+        private static (RawImage Picture, Graphic Shadow) StandMember(
             RectTransform world,
-            string name,
-            Texture2D texture,
-            Rect uv,
-            Vector2 center,
-            Vector2 size,
-            bool mirrored
+            Sprite shadow,
+            int slot,
+            PartyMember member
         )
         {
-            var rect = Rect(name, world);
-            Place(rect, center, size);
-            if (mirrored)
-                rect.localScale = new Vector3(-1, 1, 1);
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = texture;
-            image.uvRect = uv;
-            image.raycastTarget = false;
-            return image;
+            var place = PartyPlaces[slot];
+            var feet = place.Feet + new Vector2(0, CampLift);
+            var footShadow = Picture(
+                world,
+                $"PartyShadow{slot + 1}",
+                shadow,
+                feet + new Vector2(0, -2),
+                place.Shadow,
+                place.ShadowAlpha
+            );
+            var art =
+                member != null && member.Art != null
+                    ? member.Art
+                    : ArtAssets.LoadTexture(PartyAssets.CharacterArtFolder + "/BattleToma.aseprite");
+            var picture = PixelActor(world, $"PartyMember{slot + 1}", art, feet, 4f);
+            if (feet.x > 0)
+                picture.rectTransform.localScale = new Vector3(-1, 1, 1);
+            PartyArt.Stand(picture, member);
+            Hd2dStageKit.Stand(picture.gameObject, picture, footShadow);
+            picture.gameObject.SetActive(member != null);
+            footShadow.gameObject.SetActive(member != null);
+            return (picture, footShadow);
         }
-
-        /// <summary>The 4x2 character sheet: party members on the top row.</summary>
-        public static Rect ActorUv(int index) =>
-            new((index % 4) * 0.25f, index < 4 ? 0.5f : 0f, 0.25f, 0.5f);
 
         private static Image Icon(
             RectTransform parent,

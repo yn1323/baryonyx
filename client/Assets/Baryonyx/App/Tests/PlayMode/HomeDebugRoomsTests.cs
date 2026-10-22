@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using Baryonyx.App;
+using Baryonyx.Combat.Presentation;
 using Baryonyx.Home;
 using NUnit.Framework;
 using UnityEngine;
@@ -89,6 +90,55 @@ namespace Baryonyx.Tests.PlayMode
             home = Object.FindAnyObjectByType<HomeBootstrap>();
             yield return SceneTests.WaitUntil(() => SceneTests.HomeReady(home));
             // Homeへ戻ったら、戻るボタンはルームと一緒に消えている。
+            Assert.That(Object.FindAnyObjectByType<DebugRoomReturn>(), Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator TheButtonFollowsTheMomentRoomsIntoEachOther()
+        {
+            var home = default(HomeBootstrap);
+            yield return SceneTests.LoadHome(value => home = value);
+            home.View.DebugRoomsButton.onClick.Invoke();
+            Assert.That(home.View.Dialog.Choose("戦闘の演出デバッグルーム"), Is.True);
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.BattleMomentLab,
+                10f,
+                "The battle moment lab did not open."
+            );
+            yield return SceneTests.WaitUntil(
+                () => Object.FindAnyObjectByType<DebugRoomReturn>() != null,
+                5f,
+                "The button back to Home was not put over the battle moment lab."
+            );
+
+            // 「探索の演出へ」で移った先にも、その角（左下）に重ねる。
+            Object.FindAnyObjectByType<BattleMomentLab>().OtherLabButton.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.ExplorationMomentLab,
+                10f,
+                "The exploration moment lab did not open."
+            );
+            var back = default(DebugRoomReturn);
+            yield return SceneTests.WaitUntil(
+                () => (back = Object.FindAnyObjectByType<DebugRoomReturn>()) != null,
+                5f,
+                "The button back to Home did not follow into the exploration moment lab."
+            );
+            Assert.That(back.gameObject.scene.name, Is.EqualTo(SceneNames.ExplorationMomentLab));
+            Assert.That(back.Frame.anchorMin, Is.EqualTo(Vector2.zero));
+            Assert.That(
+                Object.FindObjectsByType<DebugRoomReturn>(FindObjectsSortMode.None),
+                Has.Length.EqualTo(1)
+            );
+
+            back.Button.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Home,
+                10f,
+                "Home did not open again."
+            );
+            home = Object.FindAnyObjectByType<HomeBootstrap>();
+            yield return SceneTests.WaitUntil(() => SceneTests.HomeReady(home));
             Assert.That(Object.FindAnyObjectByType<DebugRoomReturn>(), Is.Null);
         }
     }

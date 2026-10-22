@@ -2,7 +2,7 @@
 id: enemy-sand-shark
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 砂鮫
 category: enemies
 silhouette: 砂の山から斜め左上へ突き出す鮫の上半身。大きく開いた口が左上に、背びれと胸びれが右へ張り出し、体から砂のかたまりがこぼれ落ちる
@@ -40,13 +40,13 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SandShark.asepr
 
 ## 出現する場所
 
-| 行き先 | 部屋 | 敵の組み合わせ | Lv |
+| 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
 | 未決（生息する地域は砂漠） | 未決 | 未決 | 未決 |
 
 まだどの行き先にも出ない。
-生息する地域は砂漠とし、出現する行き先・部屋・敵の組み合わせ・Lvは未決とする。
-砂漠の行き先の最奥の部屋に置く案がある。
+生息する地域は砂漠とし、出現する行き先・マス・敵の組み合わせ・Lvは未決とする。
+砂漠の行き先の最奥のマスに置く案がある。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 2026-10-20から、アルマジャ王墓（`almaja-tomb`、Lv26）の最奥の主として、冒険の戦闘に出る（[行き先と敵](../../features/stage-progression.md#行き先と敵)）。
 戦闘では、下のLv100のステータスに出るLvの成長率を掛けて使い、技は「砂の大波」だけを物攻で物理として（味方の物防で受ける）使う（[CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs)）。
@@ -193,7 +193,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/SandShark.asepr
 
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
-| 出現する場所とLv | 砂漠の行き先を作るときに、部屋・敵の組み合わせ・Lvを決める |
+| 出現する場所とLv | 砂漠の行き先を作るときに、マス・敵の組み合わせ・Lvを決める |
 | 数値 | ステータス、行動の回数制限、激化の条件は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 2回行動と呼び出し | 新しい仕組みの決まり（[狩りの狂乱](../enemy-skills/enemy-skill-sand-shark-frenzy.md)、[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |

@@ -2,7 +2,7 @@
 id: enemy-big-eared-bat
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 大耳コウモリ
 category: enemies
 silhouette: 大きく広げた翼と、頭の上に立つ二枚の大きな耳。足のかぎ爪を下へ垂らす
@@ -46,7 +46,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BigEaredBat.ase
 
 まだどの行き先にも出ない。
 生息する地域は洞窟とする。
-出現する行き先・部屋・敵の組み合わせ・Lvは未決である。
+出現する行き先・マス・敵の組み合わせ・Lvは未決である。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
@@ -166,7 +166,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BigEaredBat.ase
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | ステータス、行動の割合と回数制限、激化の条件と倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 出現する場所とLv | 洞窟のどの行き先・部屋に、どの敵と組んで、どのLvで出すか（[ステージの定義](../stages/README.md)） |
+| 出現する場所とLv | 洞窟のどの行き先・マスに、どの敵と組んで、どのLvで出すか（[ステージの定義](../stages/README.md)） |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 回避 | 新しい状態の決まり（[耳ざとい身かわし](../enemy-skills/enemy-skill-big-ear-dodge.md)） |
 | 吸い取りの回復 | 敵のHPの上限を超えて回復しないこと。回復を止める状態が味方から敵に付くかどうか |

@@ -12,7 +12,7 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// The exploration screen's turning points (doc/features/screens.md, the exploration moment
     /// lab), laid over the map: monsters found in the room the party walks into (a "！" over the
-    /// party, a band with the room's words and the wipe that would carry it into the battle),
+    /// party, a band with the room's words and the wipe that carries it into the battle),
     /// stronger for a strong monster and darker for the deepest room's master; and a chest opened,
     /// which trembles, glows in the colour of the quality it holds and bursts open on the plate of
     /// what was found. The light is worked out by a shader with no picture (Exploration Light).
@@ -21,6 +21,8 @@ namespace Baryonyx.Adventure
     {
         public const string StrongPrompt = "強い魔物が現れた！";
         public const string MasterPrompt = "最奥の主が現れた！";
+        public const string TrialPrompt = "試練の魔物が現れた！";
+        public const string MimicPrompt = "ミミックだ！";
 
         // The wipe's bands, and how long they take to close and to open.
         public const float WipeClose = 0.34f;
@@ -73,7 +75,9 @@ namespace Baryonyx.Adventure
         public static (Color line, Color words, Color mark) ColorsOf(AdventureRoomKind kind) =>
             kind switch
             {
-                AdventureRoomKind.Elite => (
+                AdventureRoomKind.Elite
+                or AdventureRoomKind.Trial
+                or AdventureRoomKind.ShadyChest => (
                     new Color(1f, 0.34f, 0.26f),
                     new Color(1f, 0.6f, 0.52f),
                     new Color(1f, 0.36f, 0.26f)
@@ -96,6 +100,8 @@ namespace Baryonyx.Adventure
             {
                 AdventureRoomKind.Elite => StrongPrompt,
                 AdventureRoomKind.Boss => MasterPrompt,
+                AdventureRoomKind.Trial => TrialPrompt,
+                AdventureRoomKind.ShadyChest => MimicPrompt,
                 _ => ExplorationRoom.BattlePrompt,
             };
 
@@ -138,8 +144,13 @@ namespace Baryonyx.Adventure
                 View.ChestSprite.rectTransform.anchoredPosition = Vector2.zero;
         }
 
-        /// <summary>The party meets the monsters of the room it is in, of <paramref name="kind"/>.</summary>
-        public void PlayEncounter(AdventureRoomKind kind) => Play(Encounter(kind));
+        /// <summary>
+        /// The party meets the monsters of the room it is in, of <paramref name="kind"/>. Into the
+        /// battle (<paramref name="intoBattle"/>, the adventure's), the wipe stays closed over the
+        /// map for the battle scene to open; otherwise (the lab's) it opens on the map again.
+        /// </summary>
+        public void PlayEncounter(AdventureRoomKind kind, bool intoBattle = false) =>
+            Play(Encounter(kind, intoBattle));
 
         /// <summary>The chest in the party's room opens on <paramref name="item"/> (null: nothing found).</summary>
         public void PlayChest(RewardItem item) => Play(Chest(item));
@@ -158,10 +169,13 @@ namespace Baryonyx.Adventure
 
         // --- Monsters ----------------------------------------------------------------------------
 
-        private IEnumerator Encounter(AdventureRoomKind kind)
+        private IEnumerator Encounter(AdventureRoomKind kind, bool intoBattle)
         {
             var (line, words, mark) = ColorsOf(kind);
-            bool strong = kind == AdventureRoomKind.Elite;
+            bool strong =
+                kind == AdventureRoomKind.Elite
+                || kind == AdventureRoomKind.Trial
+                || kind == AdventureRoomKind.ShadyChest;
             bool master = kind == AdventureRoomKind.Boss;
             if (master)
             {
@@ -185,8 +199,10 @@ namespace Baryonyx.Adventure
             yield return ShowBand(PromptOf(kind), line, words, 0.75f);
             // Into the battle: the screen closes in bands from both sides.
             yield return Wipe(close: true, master ? new Color(0.05f, 0.02f, 0.08f) : Color.black);
+            // In the adventure the battle opens from here; the lab opens the map again.
+            if (intoBattle)
+                yield break;
             yield return Wait(WipeHold);
-            // In the adventure the battle would open here; the lab opens the map again.
             SetShown(Mark, false);
             SetAlpha(Dim, 0f);
             yield return Wipe(close: false, Color.black);

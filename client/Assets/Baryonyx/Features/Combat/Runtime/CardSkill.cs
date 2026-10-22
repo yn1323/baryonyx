@@ -325,6 +325,9 @@ namespace Baryonyx.Combat
             ActCapPercent = capPercent;
             return this;
         }
+
+        /// <summary>A copy to change without changing this one (its elements are shared).</summary>
+        public CardAction Copy() => (CardAction)MemberwiseClone();
     }
 
     /// <summary>
@@ -383,6 +386,9 @@ namespace Baryonyx.Combat
         /// <summary>The quality of this one card, from its multiplier (S, A, B or C).</summary>
         public ItemQuality Quality =>
             Inventory.Quality.Of(Multiplier, CardSkillQuality.LimitOf(this));
+
+        /// <summary>A copy to change without changing this one (its actions are shared).</summary>
+        public CardSkill Copy() => (CardSkill)MemberwiseClone();
 
         /// <summary>The actions that show a number in the description, in order.</summary>
         public IEnumerable<CardAction> Powered()

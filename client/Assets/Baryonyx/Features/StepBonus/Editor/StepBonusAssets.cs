@@ -96,7 +96,7 @@ namespace Baryonyx.StepBonus.Editor
                     "foresight",
                     "先読み",
                     StepBonusCategory.Explore,
-                    "次の部屋の敵が見える確率 {0}%",
+                    "次のマスの敵が見える確率 {0}%",
                     0,
                     100,
                     "Foresight",

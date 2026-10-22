@@ -92,7 +92,7 @@ IDの接頭辞は `enemy-`、メタデータの `category` は `enemies` とす�
 | 項目 | 書き方 |
 |---|---|
 | ステータス | 味方と同じ8つの項目（[ステータスの項目](../../features/party.md#ステータスの項目)）を、Lv100のときの値で書く。各Lvの値は成長率を掛けて出す（[レベルとステータス](../../features/progression.md#レベルとステータス)）。モックにいる敵は、出現するLvでのHP・物攻・物防・属防とLvを、戦闘画面のモックの値（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)の `MaxHp`・`Power`・`PhysicalDefense`・`MagicDefense`・`Level`）と同じにする |
-| 出現する場所とLv | 行き先・部屋・敵の組み合わせと、出現するLvを書く。ステージの難しさは、出現するLvを上げ下げして調整する |
+| 出現する場所とLv | 行き先・マス・敵の組み合わせと、出現するLvを書く。ステージの難しさは、出現するLvを上げ下げして調整する |
 | 技 | 技の数は、敵の大きさに合わせて小3つ・中5つ・大8つを目安にする（2026-10-04、ユーザーの依頼）。[共通技](../enemy-skills/README.md#共通技と固有技)から合うものを選び、その敵らしさは固有技で出す。技ごとに「この敵が持つ理由」と、出現するLvでの値を書く |
 | 行動パターン | 1ターン目の行動、通常の選び方（順番か割合）、同じ技を続けてよい回数、条件で割り込む技、[激化](../../features/combat.md#防御と敵の激化)するターンと変化を書く。ターンは戦闘の経過ターンで数える。同じ技を続けて使う回数の制限は、Slay the Spireの敵の作り方を参考にした（[スライムの行動](https://slaythespire.wiki.gg/wiki/Slimes)、2026-10-04確認） |
 | 外見の指示文 | 敵ごとの外見だけを書き、共通の画風・寸法・色数は書かない。生成するときに[pixel-art-standards](../../../.agents/skills/pixel-art-standards/SKILL.md)で[ドット絵の制作規格](../../art/direction.md#ドット絵の制作規格)を加える。亜種は、定義に書いた「変えない特徴」を残し、「変えてよい特徴」を差し替えて作る |

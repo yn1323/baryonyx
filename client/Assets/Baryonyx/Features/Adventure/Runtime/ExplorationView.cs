@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Inventory;
+using Baryonyx.Party;
 using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
@@ -13,66 +14,83 @@ using UnityEngine.UI;
 
 namespace Baryonyx.Adventure
 {
+    /// <summary>The ground the exploration map is laid on, for one destination.</summary>
+    [Serializable]
+    public sealed class ExplorationGround
+    {
+        public string DestinationId = "";
+        public Texture Texture;
+    }
+
     /// <summary>
-    /// The exploration screen (doc/features/screens.md): the forest seen from above with the
-    /// adventure's branching route on it, the party standing in the room it is in, the rooms of
-    /// the next floor it can go to as large plates, the rooms further on as small plates and,
-    /// far away, coloured dots (the colour tells the room's kind, as the legend at the bottom
-    /// right says), the deepest room's ruin far away, the chest of a treasure room, the place and
-    /// floor at the top, a prompt at the bottom and the menu at the top left. A room tapped sends
-    /// the party walking along its road with the camera following it up the screen (the camera
-    /// stays in the middle across, and the party walks left and right), and once it arrives the
-    /// rooms newly in sight appear, nearer floors first. One finger dragged on
-    /// the map looks along the route ahead (<see cref="Look"/>). AdventureAssets builds
-    /// it; the adventure's flow (<see cref="ExplorationFlow"/>) drives it. AdventureAssets also
-    /// draws the sample route into it once, so the prefab and the scene show the map outside
-    /// Play Mode; on <see cref="Awake"/> the sample's picture is hidden and its markers and
-    /// floors are reused.
+    /// The exploration screen (doc/features/stage-progression.md, 地図の作り直し): the
+    /// adventure's route laid out from left to right on the destination's ground, its rooms as
+    /// round pedestals with their kind's icon, joined by lines of light; the roads to the rooms
+    /// the party can go to next shine and pulse, the roads further on glow faintly, the roads
+    /// walked are dim and the roads no longer open fade away. The party stands on the room it is
+    /// in, the chest of a room that holds one beside it. The map is wider than the screen: one
+    /// finger dragged across it looks along the route (<see cref="Look"/>), a thin bar at the
+    /// bottom shows where the screen is on it, and walking to a room brings the party back near
+    /// the left of the screen. The place, floor and prompt are at the top right, the menu at the
+    /// top left, and the "?" at the bottom right opens the legend. AdventureAssets builds it; the
+    /// adventure's flow (<see cref="ExplorationFlow"/>) drives it. AdventureAssets also lays the
+    /// sample route out once, so the prefab and the scene show the map outside Play Mode.
     /// </summary>
     public sealed partial class ExplorationView : MonoBehaviour, IEditModePreview
     {
-        // 移動の時間：4人が道を歩く時間、カメラが追い始めるまでと追いつくまで（どれも部屋を押してからの秒数）。
-        public const float WalkSeconds = 1.2f;
-        public const float CameraDelaySeconds = 0.2f;
-        public const float CameraSeconds = 1.3f;
+        // 移動の時間：4人が道を歩く時間と、地図が4人に追いつくまでの時間（どれもマスを押してからの秒数）。
+        public const float WalkSeconds = 1.0f;
+        public const float CameraSeconds = 1.1f;
 
-        // カメラが立つ道の横の位置（s）。カメラは道の左右の中央から動かず、4人だけが左右へ動く。
-        public const float CameraAcross = 0.5f;
-
-        // 部屋の印・宝箱が現れる・消える時間と、着いて新しく見えた印を奥の階ほど遅らせる時間。
-        public const float MarkerFadeSeconds = 0.4f;
-        public const float RevealStepSeconds = 0.12f;
-
-        // 選んだ部屋の印は、4人が着く少し前に消す。
+        // マスの印が消える時間。選んだマスの印は、4人が着く少し前に消す。
+        public const float MarkerFadeSeconds = 0.3f;
         private const float ChosenFadeDelaySeconds = 0.6f;
 
-        // 1本指で先を見るとき、カメラを進められる最も奥の階（最奥の間から数えた階の数）。
-        private const int LookFloors = 3;
+        // 地図の寸法（設計座標）：階の間隔、入口と最奥の間の外の余白、マスが並ぶ上下の幅と中心。
+        // 上の行き先の文字と、下の位置のバーに掛からないよう、少し下に寄せる。
+        public const float FloorGap = 300f;
+        public const float EdgeMargin = 240f;
+        public const float AcrossSpan = 660f;
+        public const float AcrossCenter = -20f;
 
-        // 部屋の印を、空き地から浮かせる高さ（ドット）。
-        private const float Lift = 15f;
+        // 4人を、画面の左から何割の所に置くか。先のマスを広く見せる。
+        public const float PartyAtScreen = 0.26f;
 
-        // 部屋の印を出す高さの上限（地図の中央からの設計座標）。これより上は行き先と階の文字と
-        // メニューを置く帯で、最奥の間のほかは印を出さない。先を見るか進むと、帯の下に来て現れる。
-        private const float MarkersTop = 390f;
-        private const int Dot = ExplorationMapProjection.Dot;
+        // 宝箱のドット絵は、1ドット3pxで置く。
+        public const int MapDot = 3;
 
-        // 札の大きさ（px）：次に選べる部屋と最奥の間は大きい札、その先は小さい札、遠くは色の点。
-        public const float LargeRing = 108f;
-        public const float SmallRing = 60f;
-        public const float DotRing = 28f;
+        // 地面の絵1枚の大きさ（設計座標）。地図いっぱいに並べて敷く。
+        public const float GroundTile = 512f;
 
-        private static readonly Color RingExit = new(1f, 0.953f, 0.812f);
-        private static readonly Color RingFaint = new(0.17f, 0.21f, 0.19f);
-        private static readonly Color PlateFaint = new(0.12f, 0.14f, 0.14f, 0.96f);
-        private static readonly Color DotEdge = new(0.04f, 0.05f, 0.05f);
-        private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.85f);
-        private static readonly Color BossGlow = new(0.55f, 0.25f, 0.9f, 0.6f);
-        private static readonly Color Faded = new(0.5f, 0.5f, 0.5f, 1f);
-        private static readonly Color FloorHere = new(0.949f, 0.761f, 0.31f);
+        // 印の大きさ（px）：次に進めるマスは大きく、最奥の間はさらに大きく、ほかのマスは小さく。
+        public const float LargeRing = 112f;
+        public const float SmallRing = 80f;
+        public const float BossRing = 136f;
+        public const float HereRing = 96f;
 
-        // 部屋の種類ごとの札の地の色と、縁・遠くの点の明るい色（AdventureRoomKind の順）。
+        // 道の太さ（px）：光の芯と、まわりの淡い光。
+        private const float RoadCore = 7f;
+        private const float RoadGlow = 22f;
+
+        private static readonly Color RingExit = new(1f, 0.86f, 0.45f);
+        private static readonly Color RingHere = new(1f, 0.95f, 0.78f);
+        private static readonly Color RingFaint = new(0.28f, 0.31f, 0.33f);
+        private static readonly Color PlateFaint = new(0.12f, 0.14f, 0.15f, 0.92f);
+        private static readonly Color ExitGlow = new(1f, 0.82f, 0.36f, 0.6f);
+        private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.55f);
+        private static readonly Color BossGlow = new(0.6f, 0.3f, 0.95f, 0.7f);
+        private static readonly Color Faded = new(0.55f, 0.55f, 0.55f, 0.7f);
+
+        // 道の色：次に進める道は金、その先の行ける道は淡い青、通った道は暗い金、行けなくなった道は消えかけ。
+        private static readonly Color RoadExit = new(1f, 0.84f, 0.42f);
+        private static readonly Color RoadAhead = new(0.56f, 0.82f, 1f, 0.95f);
+        private static readonly Color RoadWalked = new(0.72f, 0.62f, 0.4f, 0.55f);
+        private static readonly Color RoadClosed = new(0.55f, 0.6f, 0.66f, 0.16f);
+
+        // マスの種類ごとの札の地の色と、縁の明るい色（AdventureRoomKind の順）。
         // いちばん多い魔物は目立たない青灰色にし、強い魔物は赤、宝箱は金、最奥の間は紫で目を引く。
+        // 休憩は焚き火の橙、行商人は革の茶、怪しい宝箱はくすんだ紫、試練は深紅、歩数の扉は緑、
+        // 進化の祭壇は青白い光の色にする。
         private static readonly Color[] KindPlates =
         {
             new(0.11f, 0.165f, 0.19f, 0.96f),
@@ -80,6 +98,12 @@ namespace Baryonyx.Adventure
             new(0.46f, 0.08f, 0.08f, 0.96f),
             new(0.42f, 0.30f, 0.05f, 0.96f),
             new(0.26f, 0.11f, 0.42f, 0.96f),
+            new(0.42f, 0.19f, 0.05f, 0.96f),
+            new(0.30f, 0.21f, 0.12f, 0.96f),
+            new(0.20f, 0.16f, 0.25f, 0.96f),
+            new(0.40f, 0.06f, 0.22f, 0.96f),
+            new(0.07f, 0.30f, 0.14f, 0.96f),
+            new(0.08f, 0.22f, 0.42f, 0.96f),
         };
         private static readonly Color[] KindAccents =
         {
@@ -88,6 +112,12 @@ namespace Baryonyx.Adventure
             new(1f, 0.34f, 0.26f),
             new(1f, 0.80f, 0.30f),
             new(0.70f, 0.45f, 0.98f),
+            new(1f, 0.62f, 0.28f),
+            new(0.92f, 0.72f, 0.44f),
+            new(0.68f, 0.58f, 0.80f),
+            new(1f, 0.40f, 0.62f),
+            new(0.46f, 1f, 0.55f),
+            new(0.56f, 0.86f, 1f),
         };
 
         public static Color PlateOf(AdventureRoomKind kind) => KindPlates[(int)kind];
@@ -95,21 +125,26 @@ namespace Baryonyx.Adventure
         public static Color AccentOf(AdventureRoomKind kind) => KindAccents[(int)kind];
 
         [Header("地図")]
+        // 画面いっぱいの地図の窓。中の Content を左右に動かして、道の先を見る。
         public RectTransform Map;
-        public RawImage MapImage;
+        public RectTransform Content;
+        public RawImage Ground;
+        public ExplorationGround[] Grounds = Array.Empty<ExplorationGround>();
 
-        // 停止中に見せる、生成時に描いた見本の地図の絵。EditorOnlyのためビルドには入らない。
-        public RawImage MapPreview;
-
-        // 1本指で地図を動かし、道の先を見る。
+        // 1本指で地図を左右に動かし、道の先を見る。
         public ExplorationMapDrag Drag;
-        public ExplorationMapArt Art;
+        public RectTransform Roads;
+        public RectTransform RoadTemplate;
         public RectTransform Markers;
         public ExplorationMapMarker MarkerTemplate;
 
-        // 地図の上のパーティと、部屋の中心からの隊列の位置（設計座標）。
+        // 地図の上のパーティと、マスの中心からの隊列の位置（設計座標）。
         public RectTransform[] Party = Array.Empty<RectTransform>();
         public Vector2[] Formation = Array.Empty<Vector2>();
+
+        // Party と同じ順の、その位置に立つ人の絵と、その人がいる編成の枠（0〜3）。
+        public RawImage[] PartySprites = Array.Empty<RawImage>();
+        public int[] PartySlots = Array.Empty<int>();
         public RectTransform Chest;
         public CanvasGroup ChestGroup;
         public Button ChestButton;
@@ -123,13 +158,16 @@ namespace Baryonyx.Adventure
         public Button MenuButton;
         public GameDialog Dialog;
         public NoticeBand Notice;
-        public RectTransform Floors;
-        public TMP_Text FloorTemplate;
 
-        // 右下の凡例：札の色とアイコンが、どの部屋の種類かを示す。
+        // 地図のどこを見ているかを示す、下の細いバー。
+        public RectTransform ScrollTrack;
+        public RectTransform ScrollThumb;
+
+        // 右下の「？」と、押すと開く凡例：札の色とアイコンが、どのマスの種類かを示す。
+        public Button LegendButton;
         public RectTransform Legend;
 
-        // 部屋の種類ごとのアイコン（AdventureRoomKind の順）。
+        // マスの種類ごとのアイコン（AdventureRoomKind の順）。
         public Sprite[] KindIcons = Array.Empty<Sprite>();
 
         // 報酬のボーナスの名前とアイコン。
@@ -143,52 +181,47 @@ namespace Baryonyx.Adventure
 
         private readonly List<ExplorationMapMarker> pool = new();
         private readonly Dictionary<string, ExplorationMapMarker> shown = new();
-        private readonly List<ExplorationMapMarker> leaving = new();
-        private readonly List<TMP_Text> floorLabels = new();
-        private Texture2D texture;
-        private Color32[] pixels;
-        private ExplorationMapPainter painter;
+        private readonly List<Road> roadPool = new();
+        private readonly List<Road> roads = new();
 
-        // 地図の絵に描いている冒険の状態。部屋を選ぶと、着く前から選んだ道を通った道として描く。
-        private AdventureRun paintedRun;
-        private ExplorationMapSight paintedSight;
-        private ExplorationMapProjection projection;
-
-        // 道の上の位置（x が t、y が s）：カメラ、パーティ。
-        private Vector2 cameraAt;
-        private Vector2 partyRoute;
+        // 地図を左右に動かした量（設計座標、0で入口が画面の左）と、パーティの位置（地図の中の設計座標）。
+        private float scroll;
         private Vector2 partyAt;
+        private AdventureRouteMap laidOut;
+        private float width;
         private Move move;
         private bool walking;
-        private string revealFor;
+        private string arrivedAt;
 
-        // 宝箱を置いた部屋と、宝箱の見え方（1で見える）。
+        // 宝箱を置いたマスと、宝箱の見え方（1で見える）。
         private string chestRoom;
         private float chestAlpha;
         private float chestTarget;
         private Coroutine animating;
         private int animationRun;
-        private bool repaint;
         private bool wired;
 
-        /// <summary>A walk along a road, with the camera following the party.</summary>
+        /// <summary>One road between two rooms: the line of light and the glow around it.</summary>
+        private sealed class Road
+        {
+            public RectTransform Body;
+            public Image Core;
+            public Image Glow;
+            public bool Pulses;
+        }
+
+        /// <summary>A walk along a road, with the map following the party.</summary>
         private sealed class Move
         {
-            public Vector2[] Road;
+            public string RoomId = "";
+            public Vector2 From;
+            public Vector2 To;
+            public float ScrollFrom;
+            public float ScrollTo;
             public float Elapsed;
 
-            // 歩き出したときのカメラの、道の始めからの奥行きのずれ（先を見ていた分）。追いつくまでに縮める。
-            public float CameraOffset;
-
-            // 4人とカメラが着いたときに呼ぶ。呼んだあとは null。
+            // 4人と地図が着いたときに呼ぶ。呼んだあとは null。
             public Action Arrived;
-
-            public Vector2 At(float progress)
-            {
-                float along = Mathf.Clamp01(progress) * (Road.Length - 1);
-                int i = Mathf.Min(Mathf.FloorToInt(along), Road.Length - 2);
-                return Vector2.Lerp(Road[i], Road[i + 1], along - i);
-            }
         }
 
         public event Action<string> RoomPressed;
@@ -201,57 +234,78 @@ namespace Baryonyx.Adventure
         public AdventureRun ShownRun { get; private set; }
         private ExplorationRoom shownRoom;
 
-        // 4人が道を歩き、カメラが追いかけている。
+        // 4人が道を歩き、地図が追いかけている。
         public bool Walking => walking;
 
-        // 着いたあと、新しく見えた印や木が現れ切るまで。
+        // 着いたあと、消える印や宝箱が消え切るまで。
         public bool Clearing => animating != null && !walking;
 
-        // カメラが見下ろしている道の上の位置（x が t、y が s）。
-        public Vector2 CameraPoint => cameraAt;
+        // 地図を左右に動かした量（設計座標）と、動かせる上限。
+        public float Scroll => scroll;
+        public float MaxScroll => Mathf.Max(0f, width - ViewportWidth);
+        public float MapWidth => width;
         public string LocationText => Location != null ? Location.text : "";
         public string PromptText => Prompt != null ? Prompt.text : "";
         public Vector2 PartyPosition => partyAt;
         public IReadOnlyCollection<ExplorationMapMarker> ShownMarkers => shown.Values;
-        public IReadOnlyList<string> FloorTexts =>
-            floorLabels
-                .Where(label => label.gameObject.activeSelf)
-                .Select(label => label.text)
-                .ToArray();
+        public int RoadCount => roads.Count;
+        public bool LegendShown => Legend != null && Legend.gameObject.activeSelf;
+
+        // 画面に入る地図の幅（設計座標）。配置が済む前は、設計の画面幅とする。
+        private float ViewportWidth => Map != null && Map.rect.width > 0f ? Map.rect.width : 1920f;
 
         public ExplorationMapMarker MarkerOf(string roomId) =>
             roomId != null && shown.TryGetValue(roomId, out var marker) ? marker : null;
+
+        /// <summary>Where a room lies on the map (design units, from the map's left and middle).</summary>
+        public Vector2 PointOf(string roomId)
+        {
+            var map = laidOut ?? ShownRun?.Map;
+            var point = map?.PointOf(roomId);
+            if (point == null)
+                return Vector2.zero;
+            return new Vector2(
+                EdgeMargin + point.T * (map.RoomCount + 1) * FloorGap,
+                AcrossCenter + (0.5f - point.S) * AcrossSpan
+            );
+        }
+
+        /// <summary>Where on the screen a room is now, from the screen's left (design units).</summary>
+        public float ScreenXOf(string roomId) => PointOf(roomId).x - scroll;
 
         private void Awake()
         {
             if (MarkerTemplate != null)
                 MarkerTemplate.gameObject.SetActive(false);
-            if (FloorTemplate != null)
-                FloorTemplate.gameObject.SetActive(false);
-            if (MapPreview != null)
-                MapPreview.gameObject.SetActive(false);
+            if (RoadTemplate != null)
+                RoadTemplate.gameObject.SetActive(false);
+            if (Legend != null)
+                Legend.gameObject.SetActive(false);
             KeepSample();
             Wire();
         }
 
-        // 生成時に見本の道を描いて作った印と階は、隠して使い回す。
+        // 生成時に見本の道を描いて作った印と道は、隠して使い回す。
         private void KeepSample()
         {
             if (Markers != null)
                 foreach (var marker in Markers.GetComponentsInChildren<ExplorationMapMarker>(true))
-                    if (marker != MarkerTemplate)
+                    if (marker != MarkerTemplate && !pool.Contains(marker))
                     {
                         Keep(marker);
                         marker.gameObject.SetActive(false);
                     }
-            if (Floors == null)
-                return;
-            foreach (Transform child in Floors)
-                if (child.TryGetComponent<TMP_Text>(out var label) && label != FloorTemplate)
-                {
-                    label.gameObject.SetActive(false);
-                    floorLabels.Add(label);
-                }
+            if (Roads != null)
+                foreach (Transform child in Roads)
+                    if (child != RoadTemplate && Wrap((RectTransform)child) is { } road)
+                    {
+                        if (roadPool.Any(entry => entry.Body == road.Body))
+                            continue;
+                        roadPool.Add(road);
+                        child.gameObject.SetActive(false);
+                    }
+            shown.Clear();
+            roads.Clear();
         }
 
         private void Start()
@@ -259,7 +313,7 @@ namespace Baryonyx.Adventure
             if (SampleSeed == 0 || ShownRun != null)
                 return;
             RenderSample(SampleSeed);
-            // 展示室では、見本の道の部屋を押すと、そこまで歩いて霧が晴れる様子を確かめられる。
+            // 展示室では、見本の道のマスを押すと、そこまで歩いて先へ進む様子を確かめられる。
             RoomPressed += WalkSample;
         }
 
@@ -283,12 +337,6 @@ namespace Baryonyx.Adventure
             WalkTo(roomId, () => Render(ExplorationRoom.From(next)));
         }
 
-        private void OnDestroy()
-        {
-            if (texture != null)
-                Destroy(texture);
-        }
-
         private void Wire()
         {
             if (wired)
@@ -298,6 +346,10 @@ namespace Baryonyx.Adventure
                 ChestButton.onClick.AddListener(() => ChestPressed?.Invoke());
             if (MenuButton != null)
                 MenuButton.onClick.AddListener(() => MenuPressed?.Invoke());
+            if (LegendButton != null)
+                LegendButton.onClick.AddListener(ToggleLegend);
+            if (Legend != null && Legend.GetComponent<Button>() is { } close)
+                close.onClick.AddListener(ToggleLegend);
             if (Drag != null)
                 Drag.Dragged += Look;
         }
@@ -306,14 +358,27 @@ namespace Baryonyx.Adventure
         {
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 PressBack();
+            Pulse(Time.unscaledTime);
         }
 
-        /// <summary>The device's back key, as <see cref="Update"/> reads it.</summary>
+        /// <summary>The device's back key, as <see cref="Update"/> reads it: a dialog first, then the legend, then the menu.</summary>
         public void PressBack()
         {
             if (Dialog != null && Dialog.HandleBack())
                 return;
+            if (LegendShown)
+            {
+                ToggleLegend();
+                return;
+            }
             BackPressed?.Invoke();
+        }
+
+        /// <summary>Opens the legend, or closes it when open.</summary>
+        public void ToggleLegend()
+        {
+            if (Legend != null)
+                Legend.gameObject.SetActive(!Legend.gameObject.activeSelf);
         }
 
         /// <summary>Draws the route of a seed from its entrance, as a sample (the showcase).</summary>
@@ -342,25 +407,19 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>
-        /// Shows the room: the map seen from it, the rooms ahead as far as the party can see,
-        /// the next floor's rooms to choose once the room is done, and its chest. The room the
-        /// party just walked to keeps the camera where it arrived, and the rooms newly in sight
-        /// appear, nearer floors first. Any other room is shown at once.
+        /// Shows the room: the route on the destination's ground, the party in the room, the
+        /// rooms of the next floor to choose once the room is done, and its chest. The room the
+        /// party just walked to keeps the map where it followed the party; any other room puts the
+        /// party near the left of the screen.
         /// </summary>
         public void Render(ExplorationRoom room)
         {
             if (room == null)
                 throw new ArgumentNullException(nameof(room));
             var run = room.Run;
-            bool reveal =
-                run?.Map != null
-                && revealFor != null
-                && run.RoomId == revealFor
-                && painter != null
-                && SameRoute(painter.Map, run.Map);
-            revealFor = null;
-            if (!reveal)
-                StopAnimation();
+            bool arrived = run?.Map != null && arrivedAt != null && run.RoomId == arrivedAt;
+            arrivedAt = null;
+            StopAnimation();
             if (Location != null)
                 Location.text = room.Location;
             if (Prompt != null)
@@ -370,234 +429,252 @@ namespace Baryonyx.Adventure
             if (run?.Map == null)
             {
                 HideMarkers();
-                PlaceChest(room, false);
+                HideRoads();
+                PlaceChest(room);
                 return;
             }
-            if (painter == null || !SameRoute(painter.Map, run.Map))
-                painter = new ExplorationMapPainter(run.Map, Art);
-            paintedRun = run;
-            paintedSight = new ExplorationMapSight(run);
-            if (!reveal)
-            {
-                var here = RoutePoint(run.RoomId);
-                cameraAt = new Vector2(here.x, CameraAcross);
-                partyRoute = here;
-            }
-            projection = ViewFrom(cameraAt);
-            if (reveal)
-                repaint = true;
-            else
-                Paint(0f);
+            LayOut(run);
+            partyAt = PointOf(run.RoomId);
+            if (!arrived || laidOut == null)
+                scroll = Home(partyAt.x);
+            PlaceRoads(run, room, run);
+            PlaceMarkers(run, room);
             PlaceParty();
-            PlaceMarkers(run, room, paintedSight, reveal);
-            PlaceChest(room, reveal);
-            PlaceFloors(run);
-            if (reveal)
-                Animate();
+            PlaceChest(room);
+            ApplyScroll();
         }
 
-        // 同じ種と部屋の数から作った道は、同じ道になる。
-        private static bool SameRoute(AdventureRouteMap a, AdventureRouteMap b) =>
-            a == b || (a.Seed == b.Seed && a.RoomCount == b.RoomCount);
-
-        private Vector2 RoutePoint(string roomId)
+        // 道の長さに合わせて地図の幅を決め、行き先の地面を敷く。
+        private void LayOut(AdventureRun run)
         {
-            var point =
-                painter.Map.PointOf(roomId) ?? painter.Map.PointOf(AdventureRouteMap.EntranceId);
-            return new Vector2(point.T, point.S);
+            laidOut = run.Map;
+            width = EdgeMargin * 2f + (run.Map.RoomCount + 1) * FloorGap;
+            if (Content != null)
+                Content.sizeDelta = new Vector2(width, Content.sizeDelta.y);
+            if (Ground == null)
+                return;
+            var ground =
+                Grounds.FirstOrDefault(entry => entry.DestinationId == run.DestinationId)
+                ?? Grounds.FirstOrDefault();
+            if (ground?.Texture != null)
+            {
+                Ground.texture = ground.Texture;
+                Ground.color = Color.white;
+            }
+            float height =
+                Content != null && Content.rect.height > 0f ? Content.rect.height : 1080f;
+            Ground.uvRect = new Rect(0f, 0f, width / GroundTile, height / GroundTile);
         }
 
-        private ExplorationMapProjection ViewFrom(Vector2 at) => new(painter.Map, at.x, at.y);
+        // 4人を画面の左寄りに置く地図の位置。地図の端より先には動かさない。
+        private float Home(float x) =>
+            Mathf.Clamp(x - ViewportWidth * PartyAtScreen, 0f, MaxScroll);
 
         /// <summary>
-        /// Looks along the route: the finger's move up or down the map (design units, y up) moves
-        /// the camera ahead or back, as if the ground at the party's row followed the finger; it
-        /// stays in the middle across. Pulling the map down looks ahead. The camera stays where it
-        /// is left, from the party's room to three floors before the deepest room, where the last
-        /// floors and the deepest room fill the screen; walking to a room brings it back.
+        /// Looks along the route: the finger's move across the map (design units) moves the map
+        /// with it, from the entrance at the left of the screen to the deepest room at the right.
+        /// The map stays where it is left; walking to a room brings it back to the party.
         /// </summary>
         public void Look(Vector2 delta)
         {
-            if (walking || painter == null || ShownRun?.Map == null || shownRoom == null)
+            if (walking || ShownRun?.Map == null)
                 return;
-            var here = RoutePoint(ShownRun.RoomId);
-            float last = painter
-                .Map.Rooms.Where(room => room.Floor == painter.Map.BossFloor - LookFloors)
-                .Select(room => painter.Map.PointOf(room.Id).T)
-                .DefaultIfEmpty(here.x)
-                .Average();
-            var to = new Vector2(
-                Mathf.Clamp(cameraAt.x + ToRoute(delta), here.x, Mathf.Max(here.x, last)),
-                CameraAcross
+            float to = Mathf.Clamp(scroll - delta.x, 0f, MaxScroll);
+            if (Mathf.Approximately(to, scroll))
+                return;
+            scroll = to;
+            ApplyScroll();
+        }
+
+        private void ApplyScroll()
+        {
+            if (Content != null)
+                Content.anchoredPosition = new Vector2(
+                    -Mathf.Round(scroll),
+                    Content.anchoredPosition.y
+                );
+            if (ScrollTrack == null || ScrollThumb == null)
+                return;
+            bool scrolls = MaxScroll > 0f && width > 0f;
+            ScrollTrack.gameObject.SetActive(scrolls);
+            if (!scrolls)
+                return;
+            float track =
+                ScrollTrack.rect.width > 0f ? ScrollTrack.rect.width : ScrollTrack.sizeDelta.x;
+            float thumb = Mathf.Max(64f, track * ViewportWidth / width);
+            ScrollThumb.sizeDelta = new Vector2(thumb, ScrollThumb.sizeDelta.y);
+            ScrollThumb.anchoredPosition = new Vector2(
+                (track - thumb) * (scroll / MaxScroll),
+                ScrollThumb.anchoredPosition.y
             );
-            if (to == cameraAt)
+        }
+
+        // --- Roads ---------------------------------------------------------------------------
+
+        private void HideRoads()
+        {
+            foreach (var road in roads)
+                road.Body.gameObject.SetActive(false);
+            roads.Clear();
+        }
+
+        // 道を引く。walked は通った道として描く冒険（マスを選ぶと、着く前から選んだ道を通った道にする）。
+        private void PlaceRoads(AdventureRun run, ExplorationRoom room, AdventureRun walked)
+        {
+            HideRoads();
+            if (RoadTemplate == null || Roads == null)
                 return;
-            // 印が現れている途中なら、現れ切った所から動かす。
-            if (animating != null)
+            var map = run.Map;
+            var route = walked.Route;
+            var passed = new HashSet<(string, string)>();
+            for (int i = 1; i < route.Count; i++)
+                passed.Add((route[i - 1], route[i]));
+            var here = map.Find(walked.RoomId);
+            bool open = room.Exits.Count > 0 && walked.RoomId == run.RoomId;
+            var exits = open
+                ? new HashSet<string>(room.Exits.Select(exit => exit.Id))
+                : new HashSet<string>();
+            var ahead = map.Reachable(here != null ? here.Next : Array.Empty<string>());
+            foreach (var from in map.Rooms)
+            foreach (var to in from.Next)
             {
-                StopAnimation();
-                chestAlpha = chestTarget;
-            }
-            cameraAt = to;
-            projection = ViewFrom(cameraAt);
-            PlaceParty();
-            PlaceMarkers(ShownRun, shownRoom, paintedSight, false);
-            PlaceChestOnMap();
-            PlaceFloors(ShownRun);
-            repaint = true;
-            Animate();
-        }
-
-        // 指の上下の動き（設計座標）を、カメラの立つ道の上の奥行き（t）の動きに直す。パーティの
-        // 行の地面が、指と同じだけ動くようにする。
-        private float ToRoute(Vector2 delta)
-        {
-            const float Step = 0.01f;
-            var at = projection.ToDots(cameraAt.x, cameraAt.y);
-            var ahead = ViewFrom(cameraAt + new Vector2(Step, 0f)).ToDots(cameraAt.x, cameraAt.y);
-            // 設計座標は y が上、ドットは y が下。
-            float rows = (ahead.y - at.y) / Step;
-            return rows != 0f ? -delta.y / Dot / rows : 0f;
-        }
-
-        // カメラの立つ階：カメラに最も近い部屋の階（今いる階より手前にはしない）。
-        private int ViewFloor(AdventureRun run)
-        {
-            int floor = run.Floor;
-            float gap = float.MaxValue;
-            foreach (var room in run.Map.Rooms)
-            {
-                var point = run.Map.PointOf(room.Id);
-                float distance = Mathf.Abs(point.T - cameraAt.x);
-                if (room.Floor >= run.Floor && distance < gap)
+                Color color;
+                bool pulses = false;
+                float core = RoadCore;
+                if (passed.Contains((from.Id, to)))
+                    color = RoadWalked;
+                else if (from.Id == walked.RoomId && exits.Contains(to))
                 {
-                    gap = distance;
-                    floor = room.Floor;
+                    color = RoadExit;
+                    pulses = true;
+                    core = RoadCore + 3f;
                 }
-            }
-            return floor;
-        }
-
-        // 地図の絵を描き直す。seconds は前の絵からの時間で、0なら木をすぐに立て終える。
-        private void Paint(float seconds)
-        {
-            if (texture == null)
-            {
-                texture = new Texture2D(
-                    ExplorationMapProjection.Width,
-                    ExplorationMapProjection.Height,
-                    TextureFormat.RGBA32,
-                    false
+                else if (
+                    (from.Id == walked.RoomId || ahead.Contains(from.Id)) && ahead.Contains(to)
                 )
-                {
-                    name = "ExplorationMap",
-                    filterMode = FilterMode.Point,
-                    wrapMode = TextureWrapMode.Clamp,
-                };
-                pixels = new Color32[texture.width * texture.height];
-            }
-            painter.Paint(pixels, paintedRun, projection, paintedSight, seconds);
-            repaint = false;
-            texture.SetPixelData(pixels, 0);
-            texture.Apply(false);
-            if (MapImage != null)
-            {
-                MapImage.texture = texture;
-                MapImage.color = Color.white;
+                    color = RoadAhead;
+                else
+                    color = RoadClosed;
+                Draw(PointOf(from.Id), PointOf(to), color, core, pulses);
             }
         }
 
-        // 部屋の位置（地図の中央からの設計座標）。1ドットの格子にそろえる。
-        private Vector2 PointOf(string roomId, float lift)
+        private void Draw(Vector2 from, Vector2 to, Color color, float core, bool pulses)
         {
-            var point = projection.Map.PointOf(roomId);
-            if (point == null)
-                return Vector2.zero;
-            var dots = projection.ToDots(point);
-            dots.y -= lift * ExplorationMapProjection.ScaleAt(dots.y);
-            return Snap(ExplorationMapProjection.ToDesign(dots));
+            var road = TakeRoad();
+            var delta = to - from;
+            road.Body.anchoredPosition = (from + to) * 0.5f;
+            road.Body.localRotation = Quaternion.Euler(
+                0f,
+                0f,
+                Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg
+            );
+            float length = delta.magnitude;
+            road.Core.rectTransform.sizeDelta = new Vector2(length, core);
+            road.Core.color = color;
+            road.Glow.rectTransform.sizeDelta = new Vector2(length + RoadGlow * 0.5f, RoadGlow);
+            road.Glow.color = new Color(color.r, color.g, color.b, color.a * 0.42f);
+            road.Glow.gameObject.SetActive(color.a > 0.3f);
+            road.Pulses = pulses;
+            roads.Add(road);
         }
 
-        private static Vector2 Snap(Vector2 position) =>
-            new(Mathf.Round(position.x / Dot) * Dot, Mathf.Round(position.y / Dot) * Dot);
+        private Road TakeRoad()
+        {
+            var road = roadPool.FirstOrDefault(entry =>
+                !entry.Body.gameObject.activeSelf && !roads.Contains(entry)
+            );
+            if (road == null)
+            {
+                var body = Instantiate(RoadTemplate, Roads);
+                body.name = "Road" + roadPool.Count;
+                road = Wrap(body);
+                roadPool.Add(road);
+            }
+            road.Body.gameObject.SetActive(true);
+            return road;
+        }
+
+        private static Road Wrap(RectTransform body)
+        {
+            var coreBody = body.Find("Core");
+            var glowBody = body.Find("Glow");
+            var core = coreBody != null ? coreBody.GetComponent<Image>() : null;
+            var glow = glowBody != null ? glowBody.GetComponent<Image>() : null;
+            return core != null && glow != null
+                ? new Road
+                {
+                    Body = body,
+                    Core = core,
+                    Glow = glow,
+                }
+                : null;
+        }
+
+        // 次に進める道と、次に進めるマスの光を、ゆっくり脈打たせる。
+        private void Pulse(float time)
+        {
+            if (!Application.isPlaying)
+                return;
+            float beat = 0.5f + 0.5f * Mathf.Sin(time * 3.2f);
+            foreach (var road in roads)
+                if (road.Pulses)
+                    road.Glow.color = new Color(
+                        RoadExit.r,
+                        RoadExit.g,
+                        RoadExit.b,
+                        0.18f + 0.3f * beat
+                    );
+            foreach (var marker in shown.Values)
+                if (marker.IsExit && marker.Glow != null && marker.Glow.gameObject.activeSelf)
+                    marker.Glow.color = new Color(
+                        ExitGlow.r,
+                        ExitGlow.g,
+                        ExitGlow.b,
+                        0.3f + 0.4f * beat
+                    );
+        }
+
+        // --- Rooms ---------------------------------------------------------------------------
 
         private void HideMarkers()
         {
-            foreach (var marker in shown.Values)
-                marker.gameObject.SetActive(false);
-            foreach (var marker in leaving)
+            foreach (var marker in pool)
                 marker.gameObject.SetActive(false);
             shown.Clear();
-            leaving.Clear();
         }
 
-        // 部屋の印を置く。reveal では、前から見えていた印はそのまま、新しく見えた印は奥の階ほど
-        // 遅れて現れ、見えなくなった印は薄れて消える。
-        private void PlaceMarkers(
-            AdventureRun run,
-            ExplorationRoom room,
-            ExplorationMapSight sight,
-            bool reveal
-        )
+        // マスの印を置く。今いるマスは4人が立つ台だけ、通ったマスと行けなくなったマスは暗く沈める。
+        private void PlaceMarkers(AdventureRun run, ExplorationRoom room)
         {
-            if (!reveal)
-                HideMarkers();
+            HideMarkers();
             if (MarkerTemplate == null || Markers == null)
                 return;
-            var before = new Dictionary<string, ExplorationMapMarker>(shown);
-            shown.Clear();
             var exits = new HashSet<string>(room.Exits.Select(exit => exit.Id));
-            var placed = new List<ExplorationMapMarker>();
-            int view = ViewFloor(run);
+            var here = run.Room ?? run.Map.Find(AdventureRouteMap.EntranceId);
+            var reachable = run.Map.Reachable(here != null ? here.Next : Array.Empty<string>());
+            var passed = new HashSet<string>(run.Route);
             foreach (var mapRoom in run.Map.Rooms)
             {
-                if (mapRoom.Id == run.RoomId || sight.Passed.Contains(mapRoom.Id))
-                    continue;
-                bool exit = exits.Contains(mapRoom.Id);
-                var level = exit ? ExplorationRoomSight.Detail : sight.Of(mapRoom, view);
-                if (level == ExplorationRoomSight.Hidden)
-                    continue;
-                if (
-                    mapRoom.Kind != AdventureRoomKind.Boss
-                    && PointOf(mapRoom.Id, LiftOf(level, exit)).y > MarkersTop
-                )
-                    continue;
-                bool seen = before.Remove(mapRoom.Id, out var marker) && marker.TargetAlpha > 0f;
-                if (marker == null || !seen)
-                {
-                    if (marker != null)
-                        Leave(marker);
-                    marker = Take();
-                    marker.Alpha = reveal ? 0f : 1f;
-                    marker.Wait = reveal ? (mapRoom.Floor - run.Floor - 1) * RevealStepSeconds : 0f;
-                }
-                marker.TargetAlpha = 1f;
-                Configure(marker, mapRoom, level, exit, sight.Reachable.Contains(mapRoom.Id));
+                var marker = Take();
+                marker.Alpha = marker.TargetAlpha = 1f;
+                marker.Wait = 0f;
+                Configure(
+                    marker,
+                    mapRoom,
+                    mapRoom.Id == run.RoomId,
+                    exits.Contains(mapRoom.Id),
+                    reachable.Contains(mapRoom.Id),
+                    passed.Contains(mapRoom.Id)
+                );
                 ApplyFade(marker);
                 shown[mapRoom.Id] = marker;
-                placed.Add(marker);
             }
-            foreach (var marker in before.Values)
-                Leave(marker);
-            // 奥の印から描き、手前の印を上に重ねる。
-            foreach (var marker in placed.OrderByDescending(entry => entry.Body.anchoredPosition.y))
-                marker.transform.SetAsLastSibling();
-        }
-
-        // 見えなくなった印は、薄れてから隠す。
-        private void Leave(ExplorationMapMarker marker)
-        {
-            marker.TargetAlpha = 0f;
-            marker.Wait = 0f;
-            if (!leaving.Contains(marker))
-                leaving.Add(marker);
         }
 
         private ExplorationMapMarker Take()
         {
-            var marker = pool.FirstOrDefault(entry =>
-                !entry.gameObject.activeSelf && !leaving.Contains(entry)
-            );
+            var marker = pool.FirstOrDefault(entry => !entry.gameObject.activeSelf);
             if (marker == null)
             {
                 marker = Instantiate(MarkerTemplate, Markers);
@@ -614,13 +691,6 @@ namespace Baryonyx.Adventure
                 marker.Group.alpha = marker.Alpha;
         }
 
-        // 大きい札は高く、小さい札と点は低く浮かせる。
-        private static float LiftOf(ExplorationRoomSight level, bool exit) =>
-            exit || level == ExplorationRoomSight.Detail ? Lift : Lift * 0.6f;
-
-        private static float LiftOf(ExplorationMapMarker marker) =>
-            LiftOf(marker.Sight, marker.IsExit);
-
         private void Keep(ExplorationMapMarker marker)
         {
             marker.Button.onClick.AddListener(() => RoomPressed?.Invoke(marker.RoomId));
@@ -630,65 +700,93 @@ namespace Baryonyx.Adventure
         private void Configure(
             ExplorationMapMarker marker,
             AdventureRoom room,
-            ExplorationRoomSight level,
+            bool here,
             bool exit,
-            bool reachable
+            bool reachable,
+            bool passed
         )
         {
             marker.RoomId = room.Id;
             marker.IsExit = exit;
-            marker.Sight = level;
             bool boss = room.Kind == AdventureRoomKind.Boss;
-            bool large = exit || boss;
-            bool dot = !large && level == ExplorationRoomSight.Far;
-            bool lit = reachable || boss;
-            marker.Body.anchoredPosition = PointOf(room.Id, LiftOf(level, exit));
+            bool start = room.Kind == AdventureRoomKind.Start;
+            bool lit = exit || reachable || boss;
+            marker.Body.anchoredPosition = PointOf(room.Id);
 
-            // 大きい札は24ドットのアイコンを3倍、小さい札は2倍で出す。遠くの点はアイコンを出さず、
-            // 札の色で部屋の種類を見せる。
+            // 大きい札は24ドットのアイコンを3倍、小さい札は2倍で出す。今いるマスと入口は台だけ。
             float ring =
-                large ? LargeRing
-                : dot ? DotRing
+                boss ? BossRing
+                : exit ? LargeRing
+                : here ? HereRing
                 : SmallRing;
             marker.Ring.rectTransform.sizeDelta = Vector2.one * ring;
-            marker.Plate.rectTransform.sizeDelta = Vector2.one * (ring - (large ? 12 : 8));
-            marker.Icon.rectTransform.sizeDelta = Vector2.one * (large ? 24 * Dot : 24 * 2);
-            // 遠くの点は、森に紛れないよう暗い縁で囲む。
+            marker.Plate.rectTransform.sizeDelta = Vector2.one * (ring - (exit || boss ? 12 : 8));
+            marker.Icon.rectTransform.sizeDelta = Vector2.one * (exit || boss ? 72 : 48);
             marker.Ring.color =
-                exit ? RingExit
-                : dot ? DotEdge
+                here ? RingHere
+                : exit ? RingExit
                 : lit ? AccentOf(room.Kind)
                 : RingFaint;
             marker.Plate.color =
-                !lit ? PlateFaint
-                : dot ? AccentOf(room.Kind)
-                : PlateOf(room.Kind);
+                here || start ? PlateFaint
+                : lit ? PlateOf(room.Kind)
+                : PlateFaint;
             marker.Icon.sprite = KindIcon(room.Kind);
-            marker.Icon.enabled = marker.Icon.sprite != null && !dot;
+            marker.Icon.enabled = marker.Icon.sprite != null && !here && !start;
             marker.Icon.color = lit ? Color.white : Faded;
 
-            // 遠くの強い魔物は、点の後ろの赤い光でも分かるようにする。
-            bool glow = dot && reachable && room.Kind == AdventureRoomKind.Elite;
-            marker.Glow.gameObject.SetActive(glow || boss);
-            marker.Glow.color = boss ? BossGlow : EliteGlow;
-            marker.Glow.rectTransform.sizeDelta = Vector2.one * (boss ? 260 : 100);
+            // 次に進めるマスは金の光、行ける先の強い魔物は赤い光、最奥の間は紫の光で見せる。
+            bool eliteGlow = reachable && !exit && room.Kind == AdventureRoomKind.Elite;
+            marker.Glow.gameObject.SetActive(exit || boss || eliteGlow);
+            marker.Glow.color =
+                exit ? ExitGlow
+                : boss ? BossGlow
+                : EliteGlow;
+            marker.Glow.rectTransform.sizeDelta =
+                Vector2.one
+                * (
+                    boss ? 300
+                    : exit ? 220
+                    : 150
+                );
+            // 通ったマスは、来た道が分かるよう薄く残す。
+            marker.Alpha = marker.TargetAlpha = passed && !here ? 0.55f : 1f;
 
             marker.Button.interactable = exit;
             if (marker.Button.targetGraphic != null)
                 marker.Button.targetGraphic.raycastTarget = exit;
         }
 
+        /// <summary>
+        /// Stands the formation's members on the map: each place of the party takes the member of
+        /// its slot (<see cref="PartySlots"/>; <paramref name="slots"/> in slot order, null for an
+        /// empty slot), and a place whose slot is empty is hidden.
+        /// </summary>
+        public void UseParty(IReadOnlyList<PartyMember> slots)
+        {
+            if (slots == null)
+                return;
+            for (int i = 0; i < Party.Length; i++)
+            {
+                int slot = i < PartySlots.Length ? PartySlots[i] : i;
+                var member = slot >= 0 && slot < slots.Count ? slots[slot] : null;
+                Party[i].gameObject.SetActive(member != null);
+                if (member != null && i < PartySprites.Length)
+                    PartyArt.Stand(PartySprites[i], member);
+            }
+        }
+
         private void PlaceParty()
         {
-            partyAt = Snap(
-                ExplorationMapProjection.ToDesign(projection.ToDots(partyRoute.x, partyRoute.y))
-            );
             for (int i = 0; i < Party.Length && i < Formation.Length; i++)
                 Party[i].anchoredPosition = Snap(partyAt + Formation[i]);
         }
 
-        // 宝箱は、宝箱の部屋の右手前に置く。部屋を離れると、部屋に残したまま薄れて消える。
-        private void PlaceChest(ExplorationRoom room, bool reveal)
+        private static Vector2 Snap(Vector2 position) =>
+            new(Mathf.Round(position.x), Mathf.Round(position.y));
+
+        // 宝箱は、宝箱のマスの右手前に置く。マスを離れると、マスに残したまま薄れて消える。
+        private void PlaceChest(ExplorationRoom room)
         {
             if (ChestGroup == null)
                 return;
@@ -698,20 +796,11 @@ namespace Baryonyx.Adventure
             ChestGroup.interactable = closed;
             if (ChestButton != null)
                 ChestButton.gameObject.SetActive(closed);
-            chestTarget = chest ? 1f : 0f;
-            if (!chest)
-            {
-                if (!reveal)
-                    chestAlpha = 0f;
-                ChestGroup.alpha = chestAlpha;
-                return;
-            }
-            if (reveal && chestRoom != room.Run.RoomId)
-                chestAlpha = 0f;
-            else if (!reveal)
-                chestAlpha = 1f;
-            chestRoom = room.Run.RoomId;
+            chestAlpha = chestTarget = chest ? 1f : 0f;
             ChestGroup.alpha = chestAlpha;
+            if (!chest)
+                return;
+            chestRoom = room.Run.RoomId;
             PlaceChestOnMap();
             if (ChestSprite != null)
                 ChestSprite.texture = room.Chest == ExplorationChest.Open ? ChestOpen : ChestClosed;
@@ -720,68 +809,38 @@ namespace Baryonyx.Adventure
         private void PlaceChestOnMap()
         {
             if (Chest != null && chestRoom != null)
-                Chest.anchoredPosition = Snap(PointOf(chestRoom, 0f) + new Vector2(126f, -18f));
+                Chest.anchoredPosition = Snap(PointOf(chestRoom) + new Vector2(96f, -36f));
         }
 
-        // 左端の階の目安：画面に入る今いる階から、カメラの立つ階の2階先まで。
-        private void PlaceFloors(AdventureRun run)
-        {
-            foreach (var label in floorLabels)
-                label.gameObject.SetActive(false);
-            if (FloorTemplate == null || Floors == null)
-                return;
-            int index = 0;
-            int view = ViewFloor(run);
-            for (int floor = run.Floor; floor < run.Map.BossFloor; floor++)
-            {
-                var rooms = run.Map.Rooms.Where(room => room.Floor == floor).ToArray();
-                if (rooms.Length == 0)
-                    continue;
-                float y = rooms.Average(room => PointOf(room.Id, 0f).y);
-                if (y > 330f || floor - view > ExplorationMapSight.DefaultDetailFloors)
-                    continue;
-                if (index >= floorLabels.Count)
-                {
-                    var copy = Instantiate(FloorTemplate, Floors);
-                    copy.name = "Floor" + index;
-                    floorLabels.Add(copy);
-                }
-                var label = floorLabels[index++];
-                label.gameObject.SetActive(true);
-                label.text = AdventureCatalog.FloorText(floor);
-                label.color = floor == run.Floor ? FloorHere : FloorTemplate.color;
-                var rect = (RectTransform)label.transform;
-                rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, y);
-            }
-        }
+        // --- Walking -------------------------------------------------------------------------
 
         /// <summary>
-        /// The party walks the road to the room with the camera following it, then
-        /// <paramref name="arrived"/> runs.
-        /// The road chosen is painted as walked at once, and the other roads as closed.
+        /// The party walks the road to the room with the map following it, then
+        /// <paramref name="arrived"/> runs. The road chosen is drawn as walked at once, the other
+        /// roads as closed, and the rooms not chosen fade.
         /// </summary>
         public void WalkTo(string roomId, Action arrived)
         {
             var run = ShownRun;
-            var road =
-                run?.Map != null && painter != null && isActiveAndEnabled
-                    ? run.Map.Path(run.RoomId, roomId, 48)
-                    : Array.Empty<(float T, float S)>();
-            if (road.Count < 2)
+            bool known = run?.Map?.Find(roomId) != null && run.Map.Find(run.RoomId) != null;
+            if (!known || !isActiveAndEnabled)
             {
                 arrived?.Invoke();
                 return;
             }
             StopAnimation();
+            var to = PointOf(roomId);
             move = new Move
             {
-                Road = road.Select(point => new Vector2(point.T, point.S)).ToArray(),
+                RoomId = roomId,
+                From = partyAt,
+                To = to,
+                ScrollFrom = scroll,
+                ScrollTo = Home(to.x),
                 Arrived = arrived,
             };
-            move.CameraOffset = cameraAt.x - move.Road[0].x;
             walking = true;
-            revealFor = roomId;
-            paintedRun = new AdventureRun(
+            var walked = new AdventureRun(
                 run.Id,
                 run.DestinationId,
                 roomId,
@@ -793,13 +852,14 @@ namespace Baryonyx.Adventure
                 run.Drops,
                 run.Floor + 1
             );
-            paintedSight = new ExplorationMapSight(paintedRun);
-            // 選んだ部屋の印は着く少し前に、ほかの部屋の印はすぐに薄れて消える。
+            PlaceRoads(run, shownRoom, walked);
+            // 選んだマスの印は着く少し前に、ほかの次に進めたマスの印はすぐに薄れて消える。
             foreach (var marker in shown.Values)
                 if (marker.IsExit)
                 {
-                    marker.TargetAlpha = 0f;
+                    marker.TargetAlpha = marker.RoomId == roomId ? 0f : 0.45f;
                     marker.Wait = marker.RoomId == roomId ? ChosenFadeDelaySeconds : 0f;
+                    marker.Button.interactable = false;
                 }
             chestTarget = 0f;
             Animate();
@@ -834,7 +894,6 @@ namespace Baryonyx.Adventure
             animating = null;
             move = null;
             walking = false;
-            revealFor = null;
         }
 
         private static float Ease(float x)
@@ -843,8 +902,7 @@ namespace Baryonyx.Adventure
             return x * x * (3f - 2f * x);
         }
 
-        // 1コマ進める：4人とカメラを道に沿って動かし、地図を描き直し、印と宝箱を薄れさせる。
-        // まだ動いている物があれば true。
+        // 1コマ進める：4人と地図を道に沿って動かし、印と宝箱を薄れさせる。まだ動いている物があれば true。
         private bool Step(float seconds)
         {
             bool moving = false;
@@ -852,51 +910,25 @@ namespace Baryonyx.Adventure
             {
                 move.Elapsed += seconds;
                 float walked = Ease(move.Elapsed / WalkSeconds);
-                float followed = Ease((move.Elapsed - CameraDelaySeconds) / CameraSeconds);
-                partyRoute = move.At(walked);
-                // カメラは道の奥行きだけ追い、左右は中央のまま。
-                cameraAt = new Vector2(
-                    move.At(followed).x + move.CameraOffset * (1f - followed),
-                    CameraAcross
-                );
-                projection = ViewFrom(cameraAt);
-                Paint(seconds);
-                PlaceOnMap();
+                float followed = Ease(move.Elapsed / CameraSeconds);
+                partyAt = Vector2.Lerp(move.From, move.To, walked);
+                scroll = Mathf.Lerp(move.ScrollFrom, move.ScrollTo, followed);
+                PlaceParty();
+                ApplyScroll();
                 if (move.Arrived != null && walked >= 1f && followed >= 1f)
                 {
                     var arrived = move.Arrived;
-                    move.Arrived = null;
-                    walking = false;
-                    // 着いた部屋を見せる（Render）。別の部屋を見せたら、移動はそこで終わる。
-                    arrived();
-                    if (move == null)
-                        return false;
-                }
-                if (move.Arrived == null)
+                    arrivedAt = move.RoomId;
                     move = null;
-                else
-                    moving = true;
+                    walking = false;
+                    // 着いたマスを見せる（Render）。
+                    arrived();
+                    return animating != null && FadeMarkers(seconds);
+                }
+                moving = true;
             }
-            else if (repaint || (painter != null && !painter.Settled))
-            {
-                Paint(seconds);
-                PlaceOnMap();
-            }
-            moving |= painter != null && !painter.Settled;
             moving |= FadeMarkers(seconds);
             return moving;
-        }
-
-        // 動いたカメラから見た、パーティ・印・宝箱・階の位置。
-        private void PlaceOnMap()
-        {
-            PlaceParty();
-            foreach (var marker in pool)
-                if (marker.gameObject.activeSelf)
-                    marker.Body.anchoredPosition = PointOf(marker.RoomId, LiftOf(marker));
-            PlaceChestOnMap();
-            if (ShownRun != null)
-                PlaceFloors(ShownRun);
         }
 
         private bool FadeMarkers(float seconds)
@@ -914,8 +946,6 @@ namespace Baryonyx.Adventure
                 ApplyFade(marker);
                 if (marker.Alpha != marker.TargetAlpha)
                     fading = true;
-                else if (marker.TargetAlpha <= 0f && leaving.Remove(marker))
-                    marker.gameObject.SetActive(false);
             }
             if (ChestGroup != null)
             {

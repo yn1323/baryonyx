@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Inventory;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -11,15 +14,21 @@ namespace Baryonyx.Adventure
     /// reads where the party is, shows the map from its room, walks the road to the room tapped
     /// with the camera following and saves the room chosen before showing the map from it, opens
     /// a treasure room's chest for its reward, and hands a room with a battle to the battle scene.
+    /// The monsters found and the chest opened play the screen's moments (<see cref="ExplorationMoments"/>)
+    /// as the exploration moment lab shows them.
     /// The menu suspends the adventure to Home (it goes on from the room the party is in), or ends
     /// it and shows what it brought back. Scene changes are the caller's (<c>toHome</c>,
     /// <c>toBattle</c>); the next room inside the scene is shown without leaving the map.
     /// </summary>
     public sealed class ExplorationFlow : IDisposable
     {
+        // 出現の演出がない画面で、戦闘へ移るまで案内を見せる間。
         public const float BattleDelaySeconds = 0.9f;
+
+        // 宝箱の2つ目からの中身の札を開いてから、次（最後ならダイアログ）までの読む間。
+        public const float ItemReadSeconds = 1.1f;
         public const string MenuBody =
-            "中断しても、ホームの行き先カードから\n今いる部屋の続きを再開できます。";
+            "中断しても、ホームの行き先カードから\n今いるマスの続きを再開できます。";
 
         private readonly ExplorationView view;
         private readonly IAdventureSource source;
@@ -36,9 +45,13 @@ namespace Baryonyx.Adventure
             IAdventureSource source,
             Func<bool> toHome,
             Func<bool> toBattle,
-            Action<AdventureRun> entered = null
+            Action<AdventureRun> entered = null,
+            Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices = null,
+            Action<AdventureAltar.Choice, int> evolve = null
         )
         {
+            this.altarChoices = altarChoices;
+            this.evolve = evolve;
             this.view = view != null ? view : throw new ArgumentNullException(nameof(view));
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.toHome = toHome ?? throw new ArgumentNullException(nameof(toHome));
@@ -49,6 +62,10 @@ namespace Baryonyx.Adventure
             view.MenuPressed += OpenMenu;
             view.BackPressed += OpenMenu;
         }
+
+        // 進化の祭壇で進められる固有スキルと、進化させる処理（編成と育成の仮データを持つシーンが渡す）。
+        private readonly Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices;
+        private readonly Action<AdventureAltar.Choice, int> evolve;
 
         public AdventureState State { get; private set; }
         public ExplorationRoom Room => room;
@@ -109,27 +126,285 @@ namespace Baryonyx.Adventure
             busy = false;
             if (room.StartsBattle)
                 Work = BattleAsync();
+            else if (room.PassesBy)
+                Work = PassAsync();
+            else if (room.Shops)
+                OpenMerchant();
         }
 
-        private async Task BattleAsync()
+        // 休憩は、着いたら全員のHPを回復して終える。怪しい宝箱を通り過ぎるときも、ここで終える。
+        private async Task PassAsync(AdventureClearOptions options = null)
         {
             busy = true;
+            var kind = State.Run.Room?.Kind ?? AdventureRoomKind.Rest;
+            AdventureState state;
             try
             {
-                await Awaitable.WaitForSecondsAsync(BattleDelaySeconds, lifetime.Token);
+                state = await source.ClearAsync(State.Run.RoomId, lifetime.Token, null, options);
             }
             catch (OperationCanceledException)
             {
                 return;
             }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("マスを終えられませんでした。" + exception.Message);
+                if (disposed)
+                    return;
+                view.ShowNotice(AdventureTexts.SaveFailed);
+                Work = LoadAsync();
+                return;
+            }
+            if (disposed)
+                return;
+            // 終えたと保存できてから回復し、読み直しても二度は回復しない。
+            if (kind == AdventureRoomKind.Rest)
+                AdventureVitals.Rest(state.Run?.Id ?? State.Run.Id);
+            Enter(state);
+            view.ShowNotice(
+                kind == AdventureRoomKind.Rest ? AdventureTexts.Rested
+                : kind == AdventureRoomKind.ShadyChest ? AdventureTexts.PassedChest
+                : AdventureTexts.KindName(kind)
+            );
+        }
+
+        // --- Altar ---------------------------------------------------------------------------
+
+        private IReadOnlyList<AdventureAltar.Choice> AltarChoices() =>
+            altarChoices?.Invoke() ?? Array.Empty<AdventureAltar.Choice>();
+
+        // 祭壇：仲間を選び、その固有スキルを選び、次の段階を選んで進化させる。進められる固有スキルが
+        // なければ、宝箱と同じに開ける（OnChest）。
+        private void OpenAltar()
+        {
+            var choices = AltarChoices();
+            var people = choices.Select(choice => choice.Person).Distinct().ToArray();
+            AdventureDialogs.Altar(
+                view.Dialog,
+                AdventureDialogs.AltarBody,
+                people
+                    .Select(person =>
+                    {
+                        var mine = choices.Where(choice => choice.Person == person).ToArray();
+                        return (mine[0].Name, (Action)(() => OpenAltarUniques(mine)));
+                    })
+                    .ToArray(),
+                AdventureTexts.CloseChoice,
+                view.Dialog.Hide
+            );
+        }
+
+        private void OpenAltarUniques(IReadOnlyList<AdventureAltar.Choice> mine)
+        {
+            if (mine.Count == 1)
+            {
+                OpenAltarStages(mine[0], () => OpenAltar());
+                return;
+            }
+            AdventureDialogs.Altar(
+                view.Dialog,
+                mine[0].Name + "のどの固有スキルを進化させる？",
+                mine.Select(choice =>
+                        (
+                            choice.CardName(choice.From),
+                            (Action)(() => OpenAltarStages(choice, () => OpenAltarUniques(mine)))
+                        )
+                    )
+                    .ToArray(),
+                AdventureDialogs.BackChoice,
+                OpenAltar
+            );
+        }
+
+        private void OpenAltarStages(AdventureAltar.Choice choice, Action back) =>
+            AdventureDialogs.Altar(
+                view.Dialog,
+                $"{choice.Name}の「{choice.CardName(choice.From)}」の進化先を選ぶ",
+                choice
+                    .Next.Select(stage =>
+                        (choice.CardName(stage), (Action)(() => ConfirmEvolve(choice, stage, back)))
+                    )
+                    .ToArray(),
+                AdventureDialogs.BackChoice,
+                back
+            );
+
+        private void ConfirmEvolve(AdventureAltar.Choice choice, int stage, Action back) =>
+            AdventureDialogs.Altar(
+                view.Dialog,
+                $"「{choice.CardName(choice.From)}」を「{choice.CardName(stage)}」へ進化させますか？",
+                new (string, Action)[]
+                {
+                    (AdventureDialogs.EvolveChoice, () => Work = EvolveAsync(choice, stage)),
+                },
+                AdventureDialogs.BackChoice,
+                () => OpenAltarStages(choice, back)
+            );
+
+        // 祭壇のマスを終えてから進化させ、終えたことを保存できなければ進化させない。
+        private async Task EvolveAsync(AdventureAltar.Choice choice, int stage)
+        {
+            busy = true;
+            view.Dialog.Hide();
+            AdventureState state;
+            try
+            {
+                state = await source.ClearAsync(
+                    State.Run.RoomId,
+                    lifetime.Token,
+                    null,
+                    new AdventureClearOptions { Evolved = true }
+                );
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("祭壇のマスを終えられませんでした。" + exception.Message);
+                if (disposed)
+                    return;
+                view.ShowNotice(AdventureTexts.SaveFailed);
+                Work = LoadAsync();
+                return;
+            }
+            if (disposed)
+                return;
+            evolve?.Invoke(choice, stage);
+            Enter(state);
+            view.ShowNotice(
+                $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に進化した！"
+            );
+        }
+
+        // --- Merchant ------------------------------------------------------------------------
+
+        // 行商人の品物を並べる。買うと確かめてから買い、一覧へ戻る。立ち去ると、行商人のマスを終える。
+        private void OpenMerchant()
+        {
+            if (State?.Run == null)
+                return;
+            AdventureDialogs.Merchant(
+                view.Dialog,
+                view.Bonuses,
+                State.Run.Contents.Wares,
+                State.Runes,
+                ConfirmBuy,
+                () =>
+                {
+                    view.Dialog.Hide();
+                    Work = PassAsync();
+                }
+            );
+        }
+
+        private void ConfirmBuy(AdventureWare ware) =>
+            AdventureDialogs.ConfirmBuy(
+                view.Dialog,
+                view.Bonuses,
+                ware,
+                State.Runes,
+                () => Work = BuyAsync(ware),
+                OpenMerchant
+            );
+
+        private async Task BuyAsync(AdventureWare ware)
+        {
+            busy = true;
+            view.Dialog.Hide();
+            AdventureState state;
+            try
+            {
+                state = await source.BuyAsync(State.Run.RoomId, ware.Index, lifetime.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("品物を買えませんでした。" + exception.Message);
+                if (disposed)
+                    return;
+                busy = false;
+                view.ShowNotice(AdventureTexts.BuyFailed);
+                OpenMerchant();
+                return;
+            }
+            if (disposed)
+                return;
+            // 買った物を札で見せてから、一覧へ戻る（Enter が開き直す）。
+            if (view.Moments != null && view.Moments.Reveal != null)
+            {
+                var item = AdventureDropItems.From(
+                    view.Bonuses,
+                    ware.AsDrop(state.Run.RoomId),
+                    view.ItemArt
+                );
+                if (item != null)
+                {
+                    view.Moments.Reveal.Show(item);
+                    try
+                    {
+                        await Awaitable.WaitForSecondsAsync(ItemReadSeconds, lifetime.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    view.Moments.Reveal.Hide();
+                }
+            }
+            Enter(state);
+        }
+
+        private async Task BattleAsync()
+        {
+            busy = true;
+            if (State.Run.Contents.Trial != AdventureTrial.None)
+                view.ShowNotice(AdventureTexts.TrialNotice(State.Run.Contents.Trial));
+            if (!await EncounterAsync(State.Run.Room?.Kind ?? AdventureRoomKind.Battle))
+                return;
             if (disposed || Leaving)
                 return;
             Leaving = toBattle();
             if (!Leaving)
             {
                 busy = false;
+                if (view.Moments != null)
+                    view.Moments.Clear();
                 view.ShowNotice("戦闘を始められませんでした");
             }
+        }
+
+        // 魔物の出現の演出を、戦闘へ移る幕が閉じきるまで見せる。演出の部品がない画面では、下の案内を
+        // 少し見せる。
+        private async Task<bool> EncounterAsync(AdventureRoomKind kind)
+        {
+            var moments = view.Moments;
+            try
+            {
+                if (moments == null)
+                {
+                    await Awaitable.WaitForSecondsAsync(BattleDelaySeconds, lifetime.Token);
+                    return !disposed;
+                }
+                moments.PlayEncounter(kind, intoBattle: true);
+                return await WhileBusy(moments);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        // 演出が終わるまで待つ。待つ間に流れを捨てたら false。
+        private async Task<bool> WhileBusy(ExplorationMoments moments)
+        {
+            while (!disposed && moments != null && moments.Busy)
+                await Awaitable.NextFrameAsync(lifetime.Token);
+            return !disposed && moments != null;
         }
 
         private void OnRoom(string roomId)
@@ -161,7 +436,7 @@ namespace Baryonyx.Adventure
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("部屋を選べませんでした。" + exception.Message);
+                Debug.LogWarning("マスを選べませんでした。" + exception.Message);
                 if (disposed)
                     return;
                 view.ShowNotice(AdventureTexts.SaveFailed);
@@ -178,17 +453,38 @@ namespace Baryonyx.Adventure
         {
             if (busy || Leaving || room == null || room.Chest != ExplorationChest.Closed)
                 return;
-            Work = OpenChestAsync();
+            if (room.Run?.Room?.Kind == AdventureRoomKind.Altar && AltarChoices().Count > 0)
+                OpenAltar();
+            else if (room.Run?.Room?.Kind == AdventureRoomKind.ShadyChest)
+                AdventureDialogs.ShadyChest(
+                    view.Dialog,
+                    () =>
+                    {
+                        view.Dialog.Hide();
+                        Work = OpenChestAsync(open: true);
+                    },
+                    () =>
+                    {
+                        view.Dialog.Hide();
+                        Work = PassAsync(new AdventureClearOptions { Pass = true });
+                    },
+                    view.Dialog.Hide
+                );
+            else
+                Work = OpenChestAsync();
         }
 
-        private async Task OpenChestAsync()
+        // 宝箱・歩数の扉・進化の祭壇は終えて中身を得る。怪しい宝箱（open）は開け、ミミックなら戦闘へ移る。
+        private async Task OpenChestAsync(bool open = false)
         {
             busy = true;
             var run = State.Run;
             AdventureState state;
             try
             {
-                state = await source.ClearAsync(run.RoomId, lifetime.Token);
+                state = open
+                    ? await source.OpenAsync(run.RoomId, lifetime.Token)
+                    : await source.ClearAsync(run.RoomId, lifetime.Token);
             }
             catch (OperationCanceledException)
             {
@@ -205,15 +501,62 @@ namespace Baryonyx.Adventure
             }
             if (disposed)
                 return;
+            if (state.Run != null && state.Run.InBattle)
+            {
+                // ミミックだった。宝箱を閉じたまま、魔物の出現から戦闘へ移る。
+                Enter(state);
+                return;
+            }
+            if (state.StepDoor != null)
+                view.ShowNotice(AdventureTexts.StepDoorNotice(state.StepDoor));
+            bool shown = view.Moments != null;
+            if (shown && !await ChestAsync(view.Moments, state.Drops))
+                return;
             Enter(state);
             busy = true;
-            AdventureDialogs.Treasure(
-                view.Dialog,
-                view.Bonuses,
-                state.Drops,
-                CloseReward,
-                view.ItemArt
-            );
+            // 手に入れた物を演出の札で見せたあとは、ダイアログの本文に書かない。
+            if (shown)
+                AdventureDialogs.TreasureOpened(view.Dialog, CloseReward);
+            else
+                AdventureDialogs.Treasure(
+                    view.Dialog,
+                    view.Bonuses,
+                    state.Drops,
+                    CloseReward,
+                    view.ItemArt
+                );
+        }
+
+        // 宝箱が震えて開き、中身を札で1つずつ見せる。宝箱は一番良い物の品質の色で光り、その札から開く。
+        private async Task<bool> ChestAsync(
+            ExplorationMoments moments,
+            IReadOnlyList<AdventureDrop> drops
+        )
+        {
+            var items = (drops ?? Array.Empty<AdventureDrop>())
+                .Select(drop => AdventureDropItems.From(view.Bonuses, drop, view.ItemArt))
+                .Where(item => item != null)
+                .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
+                .ToList();
+            try
+            {
+                moments.PlayChest(items.Count > 0 ? items[0] : null);
+                if (!await WhileBusy(moments))
+                    return false;
+                var reveal = moments.Reveal;
+                for (int i = 1; i < items.Count && reveal != null; i++)
+                {
+                    reveal.Show(items[i]);
+                    await Awaitable.WaitForSecondsAsync(ItemReadSeconds, lifetime.Token);
+                }
+                if (reveal != null)
+                    reveal.Hide();
+                return !disposed;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private void CloseReward()

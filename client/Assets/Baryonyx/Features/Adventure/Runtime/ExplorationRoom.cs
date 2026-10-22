@@ -32,8 +32,21 @@ namespace Baryonyx.Adventure
     /// </summary>
     public sealed class ExplorationRoom
     {
+        private static string OpenPrompt(AdventureRoomKind kind) =>
+            kind switch
+            {
+                AdventureRoomKind.ShadyChest => ShadyChestPrompt,
+                AdventureRoomKind.StepDoor => StepDoorPrompt,
+                AdventureRoomKind.Altar => AltarPrompt,
+                _ => ChestPrompt,
+            };
+
         public const string ChoosePrompt = "進む道を選んでください";
         public const string ChestPrompt = "宝箱がある。タップして開けよう";
+        public const string ShadyChestPrompt = "怪しい宝箱がある。タップして開けよう";
+        public const string StepDoorPrompt = "歩数の扉がある。タップして開けよう";
+        public const string AltarPrompt = "進化の祭壇がある。タップして調べよう";
+        public const string MerchantPrompt = "行商人が店を広げている";
         public const string BattlePrompt = "魔物が現れた！";
 
         private ExplorationRoom() { }
@@ -44,8 +57,14 @@ namespace Baryonyx.Adventure
             Array.Empty<ExplorationExit>();
         public ExplorationChest Chest { get; private set; }
 
-        // 着いた部屋の戦闘がまだ終わっていない。探索から戦闘へ移る。
+        // 着いたマスの戦闘がまだ終わっていない。探索から戦闘へ移る。
         public bool StartsBattle { get; private set; }
+
+        // 着いたマスを、そのまま終えて先へ進む（休憩）。
+        public bool PassesBy { get; private set; }
+
+        // 着いたら行商人の店を開く。立ち去るまで先へ進めない。
+        public bool Shops { get; private set; }
         public string Prompt { get; private set; } = "";
 
         public static ExplorationRoom From(AdventureRun run)
@@ -53,7 +72,7 @@ namespace Baryonyx.Adventure
             if (run == null)
                 return new ExplorationRoom();
             var room = run.Room;
-            bool treasure = room != null && room.Kind == AdventureRoomKind.Treasure;
+            bool treasure = room != null && room.Opens;
             var exits = run.Exits.Select(next => new ExplorationExit(next)).ToArray();
             return new ExplorationRoom
             {
@@ -65,9 +84,13 @@ namespace Baryonyx.Adventure
                     : run.RoomCleared ? ExplorationChest.Open
                     : ExplorationChest.Closed,
                 StartsBattle = run.InBattle,
+                PassesBy = room != null && room.PassesThrough && !run.RoomCleared,
+                Shops = room != null && room.Kind == AdventureRoomKind.Merchant && !run.RoomCleared,
                 Prompt =
                     run.InBattle ? BattlePrompt
-                    : treasure && !run.RoomCleared ? ChestPrompt
+                    : treasure && !run.RoomCleared ? OpenPrompt(room.Kind)
+                    : room != null && room.Kind == AdventureRoomKind.Merchant && !run.RoomCleared
+                        ? MerchantPrompt
                     : exits.Length > 0 ? ChoosePrompt
                     : "",
             };

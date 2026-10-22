@@ -2,7 +2,7 @@
 id: enemy-stone-gargoyle
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-21
 name: 石のガーゴイル
 category: enemies
 silhouette: 大きな石の翼を左右に広げてしゃがむ、角のある獣の石像。体中のひびから光がもれる
@@ -45,7 +45,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.a
 
 まだどの行き先にも出ない。
 生息する地域は遺跡である。
-出現する行き先・部屋・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
+出現する行き先・マス・敵の組み合わせ・Lvは未決とする（[ステージの定義](../stages/README.md)）。
 
 ## 分類固有のデータ
 
@@ -169,7 +169,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.a
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 出現する場所 | 出現する行き先・部屋・敵の組み合わせ・Lv |
+| 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 宙にいる間の扱い | 単体攻撃を受けない仕組みと、大技までのターン数の予告（[屋根からの急降下](../enemy-skills/enemy-skill-gargoyle-dive.md)） |
 | 呼び出し | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |

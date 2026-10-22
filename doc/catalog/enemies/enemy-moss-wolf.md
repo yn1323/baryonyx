@@ -2,7 +2,7 @@
 id: enemy-moss-wolf
 type: visual-entity
 status: 候補
-updated: 2026-10-04
+updated: 2026-10-21
 name: 苔むした狼
 category: enemies
 silhouette: 頭を低く下げて身構えた、横に長い四つ足。背中が苔で盛り上がり、尾は下へ垂れる
@@ -40,17 +40,17 @@ HPと攻撃の威力の実行上の正本は、戦闘画面のモックの [Batt
 
 ## 出現する場所
 
-| 行き先 | 部屋 | 敵の組み合わせ | Lv |
+| 行き先 | マス | 敵の組み合わせ | Lv |
 |---|---|---|---|
-| 森の遺跡（`forest-ruins`） | 第2層の戦闘の部屋（`moss-hall`）、第3層の戦闘の部屋（`root-gallery`） | `forest-pack`：苔スライムと苔むした狼 | 10（仮） |
-| 森の遺跡（`forest-ruins`） | 第3層の強敵の部屋（`guardian-gate`） | `forest-elite`：同じ2体のHPを1.6倍にした仮の強敵 | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第2層の戦闘のマス（`moss-hall`）、第3層の戦闘のマス（`root-gallery`） | `forest-pack`：苔スライムと苔むした狼 | 10（仮） |
+| 森の遺跡（`forest-ruins`） | 第3層の強敵のマス（`guardian-gate`） | `forest-elite`：同じ2体のHPを1.6倍にした仮の強敵 | 10（仮） |
 | 森の遺跡（`forest-ruins`） | 第4層の最奥の間（`sanctum`） | `forest-boss`：森の守り手の取り巻き | 10（仮） |
 
 戦闘の背景は朝霧の森（`MistyWoods`）である。
-部屋の構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。
+マスの構成の正本は[サーバーの冒険先の定義](../../../server/src/features/adventure/catalog.ts)、組み合わせの中身は [AdventureCatalog](../../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureCatalog.cs) にある。
 行き先の個別定義（`stage-`）はまだない（[ステージの定義](../stages/README.md)）。
 Lv10は、HPと物攻が戦闘画面のモックの値とほぼ同じになるLvである。
-強敵の部屋は、HPを1.6倍にする代わりにLvを上げて表す案もある（Lvが5高いと、8つの項目がすべて約12%上がる）。
+強敵のマスは、HPを1.6倍にする代わりにLvを上げて表す案もある（Lvが5高いと、8つの項目がすべて約12%上がる）。
 
 ## 分類固有のデータ
 

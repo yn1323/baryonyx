@@ -56,6 +56,9 @@ namespace Baryonyx.UI.GuideMenu
         public Button[] DestinationRows = Array.Empty<Button>();
         public Button Depart;
 
+        // 画面の上に重ねる、機能の部品（旅の案内所のお宝の窓など）。戻る操作では、開いた窓を先に閉じる。
+        public GameObject Overlay;
+
         // 操作を求めない通知（共通の通知の帯）。
         public NoticeBand Notice;
 
@@ -164,9 +167,15 @@ namespace Baryonyx.UI.GuideMenu
                 PressBack();
         }
 
-        // 開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
+        // 重ねた窓や、開いている項目のパネルが自分の中で戻れるなら（重ねた画面を閉じるなど）、そちらを先にする。
         public void PressBack()
         {
+            if (
+                Overlay != null
+                && Overlay.TryGetComponent(out IGuideBackHandler overlay)
+                && overlay.HandleBack()
+            )
+                return;
             if (
                 openPanel != null
                 && openPanel.TryGetComponent(out IGuideBackHandler panel)

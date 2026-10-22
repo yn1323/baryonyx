@@ -3,7 +3,9 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Economy;
 using Baryonyx.Home;
+using Baryonyx.Library;
 using Baryonyx.StepBonus;
+using Baryonyx.TravelOffice;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
@@ -410,6 +412,107 @@ namespace Baryonyx.Tests.PlayMode
                 view.DestinationRows[open].transform.Find("Selected").gameObject.activeSelf,
                 Is.True
             );
+        }
+
+        // 行き先の行に見つけたお宝の数を出し、宝箱のボタンで画面の中央にお宝の窓を開く。
+        // 見つけたお宝は絵のまま、まだのお宝は影にする。「もどる」では窓だけを閉じる。
+        [UnityTest]
+        public IEnumerator TravelOfficeShowsEachDestinationsTreasures()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.TravelOffice, value => guide = value);
+            var view = guide.View;
+            var treasures = view.Overlay.GetComponent<TravelTreasureView>();
+            yield return SceneTests.WaitForTask(treasures.LoadTask);
+            // テストではサーバーがないため、ライブラリの仮の記録を読む。
+            var records = LibraryMemorySource.Mock();
+
+            // 未踏の地には、お宝のボタンを出さない。
+            var destinations = view.Definition.Destinations.Where(d => !d.Locked).ToArray();
+            Assert.That(
+                treasures.Rows.Select(row => row.DestinationId),
+                Is.EqualTo(destinations.Select(d => d.Id))
+            );
+            foreach (var row in treasures.Rows)
+            {
+                Assert.That(
+                    row.Count.text,
+                    Is.EqualTo(TravelTreasures.CountText(row.DestinationId, records))
+                );
+                SceneTests.AssertTouchSize(row.Open.transform);
+            }
+            Assert.That(treasures.IsOpen, Is.False);
+
+            // 宝箱のボタンは行を選ばずに窓を開く。
+            treasures.Rows[0].Open.onClick.Invoke();
+            Assert.That(treasures.IsOpen, Is.True);
+            Assert.That(guide.Presenter.State.Selected, Is.EqualTo(-1));
+            Assert.That(treasures.Title.text, Is.EqualTo(destinations[0].Name + "のお宝"));
+            Assert.That(
+                treasures.Count.text,
+                Is.EqualTo(TravelTreasures.CountText(destinations[0].Id, records))
+            );
+
+            // 窓は画面の中央に出す。
+            Canvas.ForceUpdateCanvases();
+            var modal = treasures
+                .Window.GetComponentsInChildren<RectTransform>()
+                .Single(rect => rect.name == "Modal");
+            var screen = (RectTransform)view.transform;
+            Vector2 offset =
+                modal.TransformPoint(modal.rect.center) - screen.TransformPoint(screen.rect.center);
+            Assert.That(offset.magnitude, Is.LessThan(1f));
+
+            var list = treasures.Lists[treasures.OpenIndex];
+            Assert.That(list.Content.gameObject.activeSelf, Is.True);
+            Assert.That(list.Tiles.Any(tile => records.IsFound(tile.Kind, tile.Id)), Is.True);
+            Assert.That(list.Tiles.Any(tile => !records.IsFound(tile.Kind, tile.Id)), Is.True);
+            foreach (var tile in list.Tiles)
+            {
+                bool found = records.IsFound(tile.Kind, tile.Id);
+                if (tile.Kind == LibraryKind.Skill)
+                {
+                    // スキルの挿絵は四角いため、まだ見つけていない札は影でなく「？」にする。
+                    Assert.That(tile.Art.enabled, Is.EqualTo(found), tile.Id);
+                    Assert.That(tile.Unknown.activeSelf, Is.EqualTo(!found), tile.Id);
+                }
+                else
+                {
+                    Assert.That(
+                        tile.Art.color == LibraryCatalogView.ShadowTint,
+                        Is.EqualTo(!found),
+                        tile.Id
+                    );
+                    Assert.That(tile.Unknown == null, Is.True, tile.Id);
+                }
+                // ☆は、まだ見つけていないお宝にも出す。
+                Assert.That(tile.Stars.text, Is.Not.Empty, tile.Id);
+            }
+
+            // 押したお宝の名前を下に出す。まだ見つけていないお宝は名前を伏せる。
+            var foundTile = list.Tiles.First(tile => records.IsFound(tile.Kind, tile.Id));
+            treasures.Select(foundTile.Kind, foundTile.Id);
+            var entry = treasures.Data.Entries.Single(e =>
+                e.Kind == foundTile.Kind && e.Id == foundTile.Id
+            );
+            StringAssert.StartsWith(entry.Name, treasures.Info.text);
+            // 分類は段の名前でわかるため、名前の行に書かない。
+            StringAssert.DoesNotContain(LibraryKinds.Label(foundTile.Kind), treasures.Info.text);
+            var hiddenTile = list.Tiles.First(tile => !records.IsFound(tile.Kind, tile.Id));
+            treasures.Select(hiddenTile.Kind, hiddenTile.Id);
+            StringAssert.StartsWith(TravelTreasureView.HiddenName, treasures.Info.text);
+            StringAssert.Contains("★", treasures.Info.text);
+
+            // 「もどる」は窓を閉じるだけで、画面に残る。
+            view.PressBack();
+            Assert.That(treasures.IsOpen, Is.False);
+            Assert.That(guide.Presenter.Left, Is.False);
+
+            // 窓の外の暗い幕を押しても閉じる。
+            treasures.Rows[1].Open.onClick.Invoke();
+            Assert.That(treasures.Title.text, Is.EqualTo(destinations[1].Name + "のお宝"));
+            treasures.Veil.onClick.Invoke();
+            Assert.That(treasures.IsOpen, Is.False);
         }
 
         private static string RowText(Button row, string label) =>

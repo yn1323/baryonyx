@@ -2,7 +2,7 @@
 id: rule-frontend-design
 type: reference
 status: 運用中
-updated: 2026-10-18
+updated: 2026-10-21
 ---
 
 # クライアントの構成と依存関係
@@ -174,7 +174,7 @@ client/
 | `Debug/QualityLab.unity` | スキル・装備・アクセサリー・ボーナスの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
 | `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens.md#戦闘の演出デバッグルーム) |
-| `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・部屋へ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens.md#探索の演出デバッグルーム) |
+| `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens.md#探索の演出デバッグルーム) |
 
 Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
 3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。
@@ -189,7 +189,7 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | ホーム画面 | `Baryonyx > Home > Create Screen Assets` |
 | 編成の画面と、パーティ・装備・育成・スキル・ボーナスのパネル | `Baryonyx > Tavern > Create Screen Assets` |
 | 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
-| 探索と冒険用の重ね画面のPrefab、探索の地図に立てる絵の画素の写し（`Features/Adventure/Data/ExplorationMapArt.asset`） | `Baryonyx > Adventure > Create Screen Assets` |
+| 探索と冒険用の重ね画面のPrefab（行き先ごとの地面の取り込み設定を含む） | `Baryonyx > Adventure > Create Screen Assets` |
 | 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |
 | 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
 | 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |

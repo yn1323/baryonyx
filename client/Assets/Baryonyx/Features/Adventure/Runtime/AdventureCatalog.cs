@@ -92,6 +92,9 @@ namespace Baryonyx.Adventure
         // 最奥の主は、道中より少し高いLvで、HPと攻撃を増やして待つ。
         // 自動対戦で、どの行き先の主にも勝ち、HPの2〜7割を失う、競った戦いになる強さにした。
         public const int BossLevelUp = 2;
+
+        // 怪しい宝箱のミミック（doc/catalog/enemies/enemy-chest-mimic.md）。
+        public const string MimicId = "chest-mimic";
         public const float BossHpScale = 2f;
         public const float BossPowerScale = 2.6f;
 
@@ -247,8 +250,11 @@ namespace Baryonyx.Adventure
             string what = kind switch
             {
                 AdventureRoomKind.Battle => "pack",
-                AdventureRoomKind.Elite => "elite",
+                // 試練の敵は、強い魔物と同じ強さにする（doc/features/stage-progression.md のマスの中身）。
+                AdventureRoomKind.Elite or AdventureRoomKind.Trial => "elite",
                 AdventureRoomKind.Boss => "boss",
+                // 開けた怪しい宝箱がミミックだったときに戦う。
+                AdventureRoomKind.ShadyChest => "mimic",
                 _ => "",
             };
             return what == "" ? "" : $"{destinationId}/{what}/{Math.Max(0, variant)}";
@@ -303,6 +309,14 @@ namespace Baryonyx.Adventure
                 "elite" => new AdventureEncounter(
                     id,
                     new[] { small, medium, null },
+                    area.Level + EliteLevelUp,
+                    EliteHpScale,
+                    ElitePowerScale
+                ),
+                // 宝箱ミミックに、行き先の小さな敵1体を加え、強い魔物と同じ強さにする。
+                "mimic" => new AdventureEncounter(
+                    id,
+                    new[] { small, MimicId, null },
                     area.Level + EliteLevelUp,
                     EliteHpScale,
                     ElitePowerScale
