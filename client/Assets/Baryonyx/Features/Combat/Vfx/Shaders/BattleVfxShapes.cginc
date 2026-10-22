@@ -131,6 +131,51 @@ float2 VoronoiCell(float2 p)
     return cell;
 }
 
+// The cell of VoronoiCell, and how far the point is from the nearest border between cells (0 on
+// a border; Inigo Quilez), so cracks can run along the borders the pieces later break apart at.
+float2 VoronoiCellBorder(float2 p, out float border)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    float best = 8;
+    float2 cell = i;
+    float2 toBest = 0;
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 g = float2(x, y);
+            float2 o = float2(Hash(float3(i + g, 1.7)), Hash(float3(i + g, 8.3)));
+            float2 r = g + o - f;
+            float d = dot(r, r);
+            if (d < best)
+            {
+                best = d;
+                cell = i + g;
+                toBest = r;
+            }
+        }
+    }
+    border = 8;
+    [unroll]
+    for (int v = -1; v <= 1; v++)
+    {
+        [unroll]
+        for (int u = -1; u <= 1; u++)
+        {
+            float2 g = float2(u, v);
+            float2 o = float2(Hash(float3(i + g, 1.7)), Hash(float3(i + g, 8.3)));
+            float2 r = g + o - f;
+            float2 between = r - toBest;
+            if (dot(between, between) > 1e-5)
+                border = min(border, dot(0.5 * (toBest + r), normalize(between)));
+        }
+    }
+    return cell;
+}
+
 // The colour of a flame at heat h: dark, the tint, yellow, then white-hot.
 half3 HeatColor(float h, half3 tint)
 {
@@ -298,24 +343,30 @@ half4 ShapeFireball(ShapeIn s)
     return half4(col * BoardFade(s.p), 1);
 }
 
+static const float IceSpearTip = 0.86;
+
+// The half width of an ice lance at x along it: a long thin shaft from -0.9 swelling into a
+// faceted head that comes to its tip.
+float IceSpearWidth(float x)
+{
+    if (x > 0.55)
+        return 0.13 * saturate((IceSpearTip - x) / (IceSpearTip - 0.55));
+    if (x > 0.4)
+        return lerp(0.055, 0.13, (x - 0.4) / 0.15);
+    return lerp(0.02, 0.05, saturate((x + 0.9) / 1.3)) * step(-0.9, x);
+}
+
 // An ice lance flying along +x: a long shaft swelling into a faceted head, a bright ridge and
 // rims, and a cold glow around the head.
 half4 ShapeIceSpear(ShapeIn s)
 {
     float x = s.p.x;
     float y = s.p.y;
-    const float tip = 0.86;
-    float w;
-    if (x > 0.55)
-        w = 0.13 * saturate((tip - x) / (tip - 0.55));
-    else if (x > 0.4)
-        w = lerp(0.055, 0.13, (x - 0.4) / 0.15);
-    else
-        w = lerp(0.02, 0.05, saturate((x + 0.9) / 1.3)) * step(-0.9, x);
+    float w = IceSpearWidth(x);
     float aa = max(s.aa, 0.004);
     float inside = 1 - smoothstep(w - aa, w + aa, abs(y));
     float facet = y > 0 ? 0.85 : 0.4;
-    float shaft = step(-0.9, x) * step(x, tip);
+    float shaft = step(-0.9, x) * step(x, IceSpearTip);
     float ridge = Gauss(y, max(0.008, aa)) * shaft;
     float rim = Gauss(abs(y) - w, max(0.01, aa)) * shaft * step(0.001, w);
     float glint = smoothstep(0.6, 0.9, Noise(float3(x * 14.0, y * 30.0, s.seed * 5.0)));
@@ -633,49 +684,520 @@ half4 ShapeFrost(ShapeIn s)
     return half4(s.tint * (0.9 + crystal * 0.3) + glint * 1.2, saturate(density) * keep);
 }
 
+// The outline of a spike of ice standing on its root (at 3% of the height), with its own width,
+// tip and facet split from its seed.
+struct SpikeShape
+{
+    // Up the spike: 0 at the root, 1 at the tip.
+    float t;
+    // In from its nearer side (negative outside).
+    float dEdge;
+    float halfWidth;
+    // 1 inside, 0 outside, smoothed over a pixel.
+    float inside;
+    // Where its lit facet meets its shadowed one, at this height and at its root.
+    float split;
+    float splitRoot;
+    float tipX;
+    // 1 on the lit facet, 0 on the shadowed one.
+    float lit;
+};
+
+SpikeShape SpikeAt(ShapeIn s)
+{
+    float b = 0.5 + 0.35 * Hash1(1.0, s.seed);
+    SpikeShape g;
+    g.tipX = (Hash1(2.0, s.seed) - 0.5) * 0.5;
+    g.splitRoot = (Hash1(3.0, s.seed) - 0.5) * b * 0.8;
+    g.t = saturate((s.p.y + 0.94) / 1.9);
+    float left = lerp(-b, g.tipX, g.t);
+    float right = lerp(b, g.tipX, g.t);
+    g.dEdge = min(s.p.x - left, right - s.p.x);
+    g.halfWidth = (right - left) * 0.5;
+    float aa = max(s.aa, 0.01);
+    g.inside = smoothstep(-aa, aa, g.dEdge) * step(-0.94, s.p.y) * step(s.p.y, 0.96);
+    g.split = lerp(g.splitRoot, g.tipX, g.t);
+    g.lit = smoothstep(g.split + 0.02, g.split - 0.02, s.p.x);
+    return g;
+}
+
+// Where a point of a spike falls among the cells it breaks into.
+float2 SpikeCells(ShapeIn s)
+{
+    return float2(s.p.x * 2.5, s.p.y * 3.5) + s.seed * 10.0;
+}
+
+// How much of a spike is kept as rem falls: it crumbles in the chunks of its cells, from the tip
+// down.
+float SpikeChunkKeep(float2 cell, ShapeIn s, SpikeShape g, float rem)
+{
+    return Keep(Hash(float3(cell, s.seed * 4.0)) * 0.65 + (1 - g.t) * 0.35, rem, 0.04);
+}
+
+float SpikeKeep(ShapeIn s, SpikeShape g)
+{
+    return SpikeChunkKeep(VoronoiCell(SpikeCells(s)), s, g, s.rem);
+}
+
 // A spike of clear ice standing on its root (at 3% of the height): a lit facet and a shadowed
 // one, bright rims, faint streaks; it crumbles in chunks from the tip down.
 half4 ShapeIceSpike(ShapeIn s)
 {
-    float b = 0.5 + 0.35 * Hash1(1.0, s.seed);
-    float tx = (Hash1(2.0, s.seed) - 0.5) * 0.5;
-    float sx = (Hash1(3.0, s.seed) - 0.5) * b * 0.8;
-    float t = saturate((s.p.y + 0.94) / 1.9);
-    float left = lerp(-b, tx, t);
-    float right = lerp(b, tx, t);
-    float dEdge = min(s.p.x - left, right - s.p.x);
-    float aa = max(s.aa, 0.01);
-    float inside = smoothstep(-aa, aa, dEdge) * step(-0.94, s.p.y) * step(s.p.y, 0.96);
-    float split = lerp(sx, tx, t);
-    float lit = smoothstep(split + 0.02, split - 0.02, s.p.x);
-    half3 face = lerp(half3(0.42, 0.62, 0.88), half3(0.85, 0.95, 1.0), lit);
+    SpikeShape g = SpikeAt(s);
+    half3 face = lerp(half3(0.42, 0.62, 0.88), half3(0.85, 0.95, 1.0), g.lit);
     // Clearer toward the root, frosted toward the tip.
-    face *= 0.8 + 0.3 * Noise(float3(s.p.x * 9.0 + s.seed * 7.0, s.p.y * 1.4, s.seed * 3.0)) + 0.15 * t;
-    float rim = Gauss(max(dEdge, 0), 0.04) * inside;
-    float splitLine = Gauss(s.p.x - split, 0.012) * inside * 0.7;
+    face *= 0.8 + 0.3 * Noise(float3(s.p.x * 9.0 + s.seed * 7.0, s.p.y * 1.4, s.seed * 3.0)) + 0.15 * g.t;
+    float rim = Gauss(max(g.dEdge, 0), 0.04) * g.inside;
+    float splitLine = Gauss(s.p.x - g.split, 0.012) * g.inside * 0.7;
     // Faint cracks inside, catching the light.
     float crack = Gauss(frac((s.p.x * 1.3 + s.p.y * 0.9 + s.seed * 5.0) * 2.0) - 0.5, 0.03)
-        * inside * 0.35 * step(0.4, Hash1(floor((s.p.x * 1.3 + s.p.y * 0.9) * 2.0), s.seed));
-    float2 cell = VoronoiCell(float2(s.p.x * 2.5, s.p.y * 3.5) + s.seed * 10.0);
-    float keep = Keep(Hash(float3(cell, s.seed * 4.0)) * 0.65 + (1 - t) * 0.35, s.rem, 0.04);
+        * g.inside * 0.35 * step(0.4, Hash1(floor((s.p.x * 1.3 + s.p.y * 0.9) * 2.0), s.seed));
+    float keep = SpikeKeep(s, g);
     half3 col = s.tint * (face + rim * 1.1 + splitLine + crack);
-    return half4(col, inside * (0.5 + 0.45 * rim + 0.2 * splitLine) * keep);
+    return half4(col, g.inside * (0.5 + 0.45 * rim + 0.2 * splitLine) * keep);
+}
+
+// The outline of a broken chip, a skewed diamond turned by its seed: how far out a point is (1 on
+// its edge), and q, the point in the chip's own frame.
+float ChipDistance(ShapeIn s, out float2 q)
+{
+    q = Rotate(s.p, s.seed * Tau);
+    q.x += q.y * (Hash1(5.0, s.seed) - 0.5) * 0.8;
+    float ax = 0.45 + 0.4 * Hash1(6.0, s.seed);
+    float ay = 0.75 + 0.2 * Hash1(7.0, s.seed);
+    return abs(q.x) / ax + abs(q.y) / ay;
 }
 
 // A broken chip (of ice, or of dark debris): a skewed diamond with a lit half and a bright rim.
 half4 ShapeChip(ShapeIn s)
 {
-    float2 q = Rotate(s.p, s.seed * Tau);
-    q.x += q.y * (Hash1(5.0, s.seed) - 0.5) * 0.8;
-    float ax = 0.45 + 0.4 * Hash1(6.0, s.seed);
-    float ay = 0.75 + 0.2 * Hash1(7.0, s.seed);
-    float d = abs(q.x) / ax + abs(q.y) / ay;
+    float2 q;
+    float d = ChipDistance(s, q);
     float aa = max(s.aa * 2.0, 0.03);
     float inside = 1 - smoothstep(1 - aa, 1 + aa, d);
     float lit = q.x + q.y > 0 ? 1.0 : 0.55;
     float rim = Gauss(d - 0.92, 0.08) * inside;
     float keep = Keep(1 - d * 0.7, s.rem, 0.08);
     return half4(s.tint * (lit + rim * 0.6), inside * keep);
+}
+
+// --- Shapes of the rich look (premultiplied) -------------------------------------------------
+// Drawn premultiplied (One, OneMinusSrcAlpha): the alpha is how much a shape covers (darkens or
+// veils) what is behind it and the colour is what it shows, so a deep, half-clear body or a pale
+// veil and hard edges of light come from one shape. The tint is the colour of its light; clear
+// ice takes the tint squared for its body, a deeper blue of the same hue.
+
+// A spike of clear ice: a deep body, thin in the middle and thicker toward its sides and its
+// frosted tip so the floor shows through; an inner edge seen faintly through it; hard bright rims
+// and a facet line, brighter on the lit side and toward the tip; a band of light that climbs it
+// once as it catches the light; and a glint that twinkles on it. It breaks as rem falls: to 0.9
+// its cracks light up, racing up it along the borders of the chunks it is cut into, and below
+// 0.9 it breaks into those chunks, each flashing as it goes.
+half4 ShapeClearIceSpike(ShapeIn s)
+{
+    SpikeShape g = SpikeAt(s);
+    float aa = max(s.aa, 0.006);
+    // 0 at its sides, 1 down its middle.
+    float across = saturate(g.dEdge / max(g.halfWidth, 1e-3));
+    float n = Noise(float3(s.p.x * 6.0 + s.seed * 7.0, s.p.y * 1.5, s.seed * 3.0));
+    float side = 1 - across;
+    float cover = g.inside * saturate(0.4 + 0.45 * side * side + 0.2 * g.t + 0.12 * (n - 0.5));
+    half3 body = s.tint * s.tint * lerp(0.12, 0.38, g.lit);
+
+    float inner = Gauss(across - 0.45, 0.06) * g.inside;
+    float rim = (1 - smoothstep(aa, aa * 3.0, g.dEdge)) * g.inside
+        * lerp(0.5, 1.0, g.lit) * (0.55 + 0.45 * g.t);
+    float facet = Gauss(s.p.x - g.split, aa * 1.2) * g.inside * (0.3 + 0.7 * g.t);
+    float climb = -0.3 + s.k * 1.8;
+    float band = Gauss(g.t - climb + s.p.x * 0.35, 0.07) * g.inside * (0.4 + 0.6 * g.lit);
+    // Faint fractures run along the borders of its chunks from the start; as rem falls to 0.9
+    // they light up, racing from its root to its tip.
+    float border;
+    float2 cell = VoronoiCellBorder(SpikeCells(s), border);
+    float bw = max(fwidth(border), 1e-4);
+    float cracking = saturate((1 - s.rem) / 0.1);
+    float reached = smoothstep(cracking * 1.3, cracking * 1.3 - 0.15, g.t);
+    float crack = (1 - smoothstep(bw * 0.6, bw * 2.0, border)) * g.inside
+        * (0.12 + 1.6 * reached * cracking);
+    // Below 0.9 it breaks into those chunks, each flashing as it goes.
+    float breaking = 1 - smoothstep(0.88, 0.9, s.rem);
+
+    // The glint sits on the facet line high up; the board is half as wide as it is high.
+    float gt = lerp(0.4, 0.75, Hash1(4.0, s.seed));
+    float2 gp = float2(lerp(g.splitRoot, g.tipX, gt), gt * 1.9 - 0.94);
+    float2 dg = (s.p - gp) * float2(0.5, 1.0);
+    float twinkle = pow(saturate(sin(s.k * 9.0 + s.seed * Tau)), 8);
+    float glint = (Gauss(dg.x, 0.006) * Gauss(dg.y, 0.07) + Gauss(dg.y, 0.006) * Gauss(dg.x, 0.07)
+        + Gauss(length(dg), 0.012)) * twinkle;
+
+    float keep = SpikeChunkKeep(cell, s, g, saturate(s.rem / 0.9));
+    half3 light = lerp(s.tint, 1, 0.5) * (rim * 2.2 + facet * 1.1 + band * 0.9)
+        + lerp(s.tint, 1, 0.75) * (crack * 1.4 + cover * breaking * 1.5)
+        + s.tint * inner * 0.3
+        + lerp(s.tint, 1, 0.7) * glint * 2.5;
+    half a = saturate(cover + rim * 0.5) * keep;
+    return half4(body * a + light * keep, a);
+}
+
+// An ice lance of clear ice flying along +x: a deep body the background shows through, thicker
+// toward its rims; hard bright rims and ridge; a white-hot tip; and a cold glow around the head
+// and down the shaft that is only added light.
+half4 ShapeClearIceSpear(ShapeIn s)
+{
+    float x = s.p.x;
+    float y = s.p.y;
+    float w = IceSpearWidth(x);
+    float aa = max(s.aa, 0.004);
+    float shaft = step(-0.9, x) * step(x, IceSpearTip);
+    float inside = (1 - smoothstep(w - aa, w + aa, abs(y))) * shaft;
+    // 0 down its middle, 1 at its rims.
+    float side = saturate(abs(y) / max(w, 1e-3));
+    float lit = y > 0 ? 1.0 : 0.0;
+    float cover = inside * (0.35 + 0.5 * side * side);
+    half3 body = s.tint * s.tint * lerp(0.15, 0.45, lit);
+
+    float rim = (1 - smoothstep(aa, aa * 3.0, w - abs(y))) * inside * lerp(0.6, 1.0, lit);
+    float head = smoothstep(0.4, 0.6, x);
+    float ridge = Gauss(y, max(aa, 0.006)) * inside * (0.8 + 0.8 * head);
+    float hot = Gauss(length((s.p - float2(IceSpearTip - 0.06, 0)) * float2(1.0, 2.5)), 0.08);
+    float glow = Gauss(length(s.p - float2(0.68, 0)), 0.3) * 0.3
+        + Gauss(y, 0.07) * smoothstep(0.4, -0.9, x) * 0.25 * step(-1.0, x);
+
+    half3 light = lerp(s.tint, 1, 0.5) * (rim * 2.0 + ridge)
+        + lerp(s.tint, 1, 0.8) * hot * 2.0
+        + s.tint * glow;
+    half a = saturate(cover + rim * 0.5);
+    float fade = BoardFade(s.p);
+    return half4((body * a + light) * fade, a * fade);
+}
+
+// A chip of clear ice tumbling as it falls: a deep, half-clear body, a hard bright rim on its lit
+// side, and a glint that flashes now and then as it turns to catch the light.
+half4 ShapeClearChip(ShapeIn s)
+{
+    float2 q;
+    float d = ChipDistance(s, q);
+    float aa = max(s.aa * 2.0, 0.03);
+    float inside = 1 - smoothstep(1 - aa, 1 + aa, d);
+    float lit = q.x + q.y > 0 ? 1.0 : 0.4;
+    float rim = smoothstep(1 - aa * 4.0, 1 - aa, d) * inside;
+    float glint = pow(saturate(sin(s.k * 26.0 + s.seed * Tau)), 6);
+    float keep = Keep(1 - d * 0.7, s.rem, 0.08);
+    half3 body = s.tint * s.tint * lerp(0.15, 0.45, lit);
+    half a = inside * saturate(0.45 + 0.4 * rim) * keep;
+    half3 light = lerp(s.tint, 1, 0.6) * (rim * 1.8 * lit + inside * glint * 2.2);
+    return half4(body * a + light * keep, a);
+}
+
+// --- Gas and cracks of the rich look (premultiplied) ------------------------------------------
+// For gas that really forms (smoke, dust, steam, blowing snow), drawn as real gas looks in light:
+// detail at every scale, a colour that changes with brightness, edges that are thicker where the
+// eye passes through more of it, and dark lanes. Costly per pixel.
+
+// Five octaves of noise (0 to 1), each turned and twice as fine, for detail down to a pixel.
+float Fbm5(float2 p, float z)
+{
+    const float2x2 turn = float2x2(0.8, -0.6, 0.6, 0.8);
+    float sum = 0;
+    float amp = 0.5;
+    [unroll]
+    for (int i = 0; i < 5; i++)
+    {
+        sum += amp * Noise(float3(p, z + i * 7.3));
+        p = mul(turn, p) * 2.02;
+        amp *= 0.5;
+    }
+    return sum / 0.96875;
+}
+
+// A patch of gas: its pattern warped twice so it streams and curls (Inigo Quilez's domain
+// warping), with its broad density, a fine grain and thin bright filaments.
+struct Gas
+{
+    float density;
+    float fine;
+    float filament;
+};
+
+Gas GasAt(float2 p, float z)
+{
+    float2 q = float2(Fbm(float3(p, z)), Fbm(float3(p + float2(5.2, 1.3), z))) - 0.5;
+    float2 w = p + q * 1.6;
+    Gas g;
+    g.density = Fbm5(w, z * 1.3);
+    g.fine = Fbm5(w * 3.1 + 17.0, z * 2.0);
+    // Strands where a noise crosses its middle.
+    float strand = 1 - abs(Fbm(float3(w * 2.3 + 9.1, z)) * 2 - 1);
+    g.filament = strand * strand * strand * strand;
+    return g;
+}
+
+// The colour of gas at brightness e, in the hue of its tint: the tint cubed and dark where it is
+// faint (deep navy for blue, deep amber for gold), the tint squared, the tint, and white where it
+// is brightest.
+half3 GasRamp(float e, half3 tint)
+{
+    float t = saturate(e) * 3;
+    half3 c = lerp(tint * tint * tint * 0.35, tint * tint * 0.9, saturate(t));
+    c = lerp(c, tint, saturate(t - 1));
+    return lerp(c, half3(1, 1, 1), saturate(t - 2));
+}
+
+// Smoke, dust or steam as real ones look in light: a billow of gas with detail at every scale,
+// ragged and curling at its edge and melting away below, thicker toward its rim where the eye
+// passes through more of it, lit from above and shadowed below, with dark lanes in it. It dims as
+// it ages (cooling or settling), curls as it goes and wears away into wisps. It is matter, so its
+// colour leans to a pale of its tint; a low brightness makes it dark, as soot or dust. Laid flat
+// (a low, wide board), it is a sheet creeping along the floor.
+half4 ShapeRichSmoke(ShapeIn s)
+{
+    Gas g = GasAt(s.p * 1.5 + s.seed * 5.0, s.seed * 13.0 + s.k * 0.7);
+    float edge = s.r + (0.5 - g.density) * 0.85;
+    float soft = lerp(0.06, 0.22, saturate(-s.p.y * 1.4));
+    float body = 1 - smoothstep(0.7 - soft, 0.74, edge);
+    float rim = smoothstep(0.4, 0.72, edge) * body;
+    float lit = saturate(0.4 + s.p.y * 0.9);
+    float density = body * (0.45 + 0.8 * g.density) * (0.7 + 0.5 * g.fine);
+    float e = density * (0.3 + 0.7 * lit) * (0.65 + 0.7 * rim) * (0.8 + 0.4 * g.filament)
+        * lerp(1.1, 0.6, s.k);
+    float dust = smoothstep(0.58, 0.82, g.fine) * body * 0.6;
+    e *= 1 - dust * 0.6;
+    float keep = Keep(g.density * 0.7 + body * 0.3, s.rem, 0.06);
+    half a = saturate(density * 0.5 + dust * 0.25) * keep;
+    half3 col = lerp(GasRamp(e, s.tint), lerp(s.tint, 1, 0.6), 0.35) * e;
+    float fade = BoardFade(s.p);
+    return half4(col * keep * fade, a * fade);
+}
+
+// A crack in stone, earth or armour, as a real one looks: dark, jagged lines branching out from
+// the middle that split open as it runs (k), wider and darker near the middle, their lips catching
+// the light in the tint, with grit scattered along them; it is worn away from its tips. It shows
+// by its shadow, not as lines of light.
+half4 ShapeFissure(ShapeIn s)
+{
+    float dark = 0;
+    float lip = 0;
+    [unroll]
+    for (int i = 0; i < 9; i++)
+    {
+        float a0 = (i + Hash1(i, s.seed) * 0.6) / 9.0 * Tau;
+        float len = (0.45 + 0.5 * Hash1(i + 10, s.seed)) * saturate(s.k * 3.0 + 0.2);
+        float a = a0 + (Noise(float3(s.r * 7.0, i * 3.1, s.seed * 11.0)) - 0.5) * 0.5;
+        float2 u = float2(cos(a), sin(a));
+        float along = dot(s.p, u);
+        float perp = abs(s.p.x * u.y - s.p.y * u.x);
+        float t = saturate(along / max(len, 1e-3));
+        float on = step(0, along) * (1 - smoothstep(0.85, 1.0, t));
+        float w = max(0.022 * (1 - t) + 0.004, s.aa);
+        dark += on * Gauss(perp, w) * (1 - t * 0.5);
+        lip += on * Gauss(perp - w * 1.6, max(w * 0.45, s.aa)) * (1 - t);
+    }
+    dark = saturate(dark + Gauss(s.r, 0.08) * 0.6);
+    float2 grid = s.p * 30.0 + s.seed * 7.0;
+    float2 ci = floor(grid);
+    float grit = Gauss(length(grid - ci - 0.5), 0.12) * step(0.8, Hash(float3(ci, 2.7)))
+        * saturate(dark * 3.0 + lip);
+    float keep = Keep(1 - s.r * 0.9, s.rem, 0.1);
+    float fade = BoardFade(s.p);
+    half a = saturate(dark * 0.85 + grit * 0.5) * keep * fade;
+    half3 col = lerp(s.tint, 1, 0.4) * saturate(lip) * 0.5 * keep * fade + s.tint * 0.05 * a;
+    return half4(col, a);
+}
+
+// --- Blades and beams of the rich look (premultiplied, all light) ------------------------------
+
+// A sword arc, as a real blade looks when it swings fast: a sheaf of thin strands along the
+// crescent (its afterimages), the outermost white-hot along its leading edge where the metal
+// catches the light and the inner ones fainter in the tint; behind them a short motion blur that
+// fades inward, striated along the arc and gone soon after the blade has passed; and a glint at
+// the tip as it draws the arc. No cloud: a blade leaves none. It is drawn in from one tip to the
+// other, then eaten away.
+half4 ShapeRichSlashArc(ShapeIn s)
+{
+    float2 q = s.p - float2(0, -0.35);
+    float rr = length(q);
+    float ang = atan2(q.y, q.x);
+    const float a0 = 0.3;
+    const float a1 = 2.84;
+    float t = saturate((ang - a0) / (a1 - a0));
+    float inArc = step(a0, ang) * step(ang, a1);
+    float shape = pow(saturate(sin(Pi * t)), 0.8);
+    // 0 on its leading (outer) edge, below 0 inside it.
+    float d = rr - 0.88;
+    float aa = max(s.aa, 0.004);
+
+    float strands = 0;
+    float hot = 0;
+    [unroll]
+    for (int i = 0; i < 5; i++)
+    {
+        float h1 = Hash1(i, s.seed);
+        float start = Hash1(i + 5, s.seed) * 0.25 * min(i, 1);
+        float end = 1 - Hash1(i + 10, s.seed) * 0.25 * min(i, 1);
+        float span = saturate((t - start) / max(end - start, 0.05));
+        float taper = pow(saturate(sin(Pi * span)), 0.7) * step(start, t) * step(t, end);
+        float offset = -(i * 0.032 + h1 * 0.018) * shape;
+        float w = max(aa, (0.004 + 0.007 * (1 - i * 0.2)) * taper);
+        float stroke = Gauss(d - offset, w) * taper;
+        hot += i == 0 ? stroke : 0;
+        strands += i == 0 ? 0 : stroke * (0.35 + 0.45 * h1);
+    }
+
+    // Fine streaks across the arc, long along it, as a blur is.
+    float streak = Noise(float3(d * 90.0, t * 1.5 + s.seed * 5.0, s.seed * 3.0));
+    float smear = exp(min(d, 0) / max(0.12 * shape, 0.01)) * (1 - smoothstep(0, 0.02, d)) * shape
+        * (0.35 + 0.65 * smoothstep(0.3, 0.8, streak)) * saturate(1.2 - s.k * 1.5);
+
+    float headAt = s.k * 3.5;
+    float drawn = 1 - smoothstep(headAt - 0.15, headAt + 0.05, t);
+    float glint = Gauss(t - min(headAt, 1.0), 0.04) * step(headAt, 1.15) * hot;
+    float keep = Keep(streak * 0.5 + shape * 0.5, s.rem, 0.08) * drawn * inArc;
+    half3 col = lerp(s.tint, 1, 0.9) * hot * 2.2
+        + s.tint * strands * 1.3
+        + lerp(s.tint, 1, smear * smear * 0.5) * smear * 0.9
+        + glint * 2.0;
+    float fade = BoardFade(s.p);
+    return half4(col * keep * fade, 0);
+}
+
+// The finishing cross cut: two blades of light crossing, each a white-hot edge with a few
+// fainter strands beside it of different lengths and a short motion blur striated along it,
+// shooting out to full length over a hot centre, then eaten away from their ends.
+half4 ShapeRichSlashCross(ShapeIn s)
+{
+    float aa = max(s.aa, 0.004);
+    half3 col = 0;
+    float grain = Noise(float3(s.p * 6.0, s.seed * 9.0));
+    [unroll]
+    for (int b = 0; b < 2; b++)
+    {
+        float a = (b == 0 ? 0.785398 : 2.356194) + (s.seed - 0.5) * 0.3 * (b == 0 ? 1 : -1);
+        float2 u = float2(cos(a), sin(a));
+        float along = dot(s.p, u);
+        float perp = s.p.x * u.y - s.p.y * u.x;
+        float len = 0.95 * (0.55 + 0.45 * saturate(s.k * 4.0));
+        float t = saturate(abs(along) / len);
+        float taper = 1 - t * t;
+        float keep = Keep((1 - t) * 0.85 + grain * 0.15, s.rem, 0.1);
+        float hot = Gauss(perp, max(aa, 0.009 * taper)) * taper;
+        float strands = 0;
+        [unroll]
+        for (int i = 1; i < 4; i++)
+        {
+            float off = (Hash1(i + b * 4, s.seed) - 0.5) * 0.09 * taper;
+            float reach = 0.55 + 0.45 * Hash1(i + 20 + b * 4, s.seed);
+            strands += Gauss(perp - off, max(aa, 0.004 * taper)) * taper * step(t, reach)
+                * (0.4 + 0.3 * Hash1(i + 9 + b * 4, s.seed));
+        }
+        float streak = Noise(float3(perp * 90.0, along * 1.5 + s.seed * 5.0, b * 3.1));
+        float smear = Gauss(perp, 0.05 * taper + 0.006) * taper
+            * (0.3 + 0.7 * smoothstep(0.3, 0.8, streak)) * saturate(1.2 - s.k * 1.5);
+        col += (lerp(s.tint, 1, 0.9) * hot * 2.4 + s.tint * strands * 1.3 + s.tint * smear * 0.9) * keep;
+    }
+    col += lerp(s.tint, 1, 0.7) * Gauss(s.r, 0.12) * 1.2 * s.rem;
+    float fade = BoardFade(s.p);
+    return half4(col * fade, 0);
+}
+
+// A shaft of light along +x across the board, seen as real light is in the air: a smooth column,
+// brightest down its middle, that shows because the dust in the air scatters it, with specks of
+// that dust glinting in it as they drift; a thin white-hot core and a few fainter strands. Drawn
+// in from the left end and worn away.
+half4 ShapeRichBeam(ShapeIn s)
+{
+    float x01 = s.p.x * 0.5 + 0.5;
+    float y = s.p.y;
+    float aa = max(s.aa, 0.004);
+    float ends = smoothstep(0.0, 0.08, x01) * (1 - smoothstep(0.9, 1.0, x01));
+    float w = 0.45 * ends + 1e-3;
+    float haze = exp(-(y * y) / (w * w)) * ends * (0.75 + 0.25 * (1 - x01));
+    // Dust in the shaft: one speck in some cells of a grid that drifts along it, twinkling.
+    float2 grid = float2(s.p.x * 18.0 - s.k * 3.0, y * 6.0) + s.seed * 7.0;
+    float2 ci = floor(grid);
+    float2 speck = ci + float2(Hash(float3(ci, 3.1)), Hash(float3(ci, 6.7)));
+    float mote = Gauss(length((grid - speck) * float2(1.0, 0.5)), 0.05) * step(0.75, Hash(float3(ci, 9.9)))
+        * (0.4 + 0.6 * sin(s.k * 20.0 + Hash(float3(ci, 4.4)) * Tau)) * haze;
+    float core = Gauss(y, max(aa, 0.03 * ends)) * ends;
+    float strands = 0;
+    [unroll]
+    for (int i = 0; i < 3; i++)
+    {
+        float off = (Hash1(i, s.seed) - 0.5) * 0.5;
+        float flicker = 0.5 + 0.5 * sin(s.k * 30.0 + i * 2.1 + s.seed * Tau);
+        strands += Gauss(y - off, max(aa, 0.012)) * ends * flicker;
+    }
+    float drawn = 1 - smoothstep(s.k * 4.0 - 0.1, s.k * 4.0, x01);
+    float keep = Keep(x01 * 0.5 + Noise(float3(s.p * 4.0, s.seed * 5.0)) * 0.5, s.rem, 0.08) * drawn;
+    half3 col = lerp(s.tint, 1, 0.9) * core * 1.8 + s.tint * strands * 0.6
+        + lerp(s.tint * s.tint, s.tint, haze) * haze * 0.8 + lerp(s.tint, 1, 0.8) * saturate(mote) * 2.0;
+    float fade = BoardFade(float2(s.p.x * 0.98, s.p.y));
+    return half4(col * keep * fade, 0);
+}
+
+// Ice freezing over the floor, seen low from the side (the board is flattened to lie on it, so
+// the plates are flattened as the floor is): plates of clear ice that freeze outward from the
+// middle one by one over the first fifth of its life, each appearing whole when the freezing
+// front reaches its centre, so the edge is jagged and the growth snaps; hard bright cracks between
+// the plates; thin feathers of frost shooting out past the edge; each plate catching the light a
+// little differently, and a glint sweeping across. A thin, clear cover with hard edges of light.
+// It breaks up plate by plate as it is eaten.
+half4 ShapeIceSheet(ShapeIn s)
+{
+    float border;
+    float2 cell = VoronoiCellBorder(s.p * 4.5 + s.seed * 10.0, border);
+    float2 centre = cell + float2(Hash(float3(cell, 1.7)), Hash(float3(cell, 8.3)));
+    float plateR = length((centre - s.seed * 10.0) / 4.5);
+    float front = saturate(s.k * 5.0) * 1.1;
+    float frozen = step(plateR + Hash(float3(cell, 5.5)) * 0.12, front) * step(plateR, 0.92);
+
+    float bw = max(fwidth(border), 1e-4);
+    float crack = (1 - smoothstep(bw * 0.6, bw * 1.8, border)) * frozen;
+    // Feathers of frost: sparse thin streaks out along the radius, just past the edge.
+    float edge = min(front, 0.92);
+    float ang = atan2(s.p.y, s.p.x);
+    float rays = smoothstep(0.78, 0.92, Noise(float3(cos(ang) * 16.0, sin(ang) * 16.0, s.r * 2.0 + s.seed * 4.0)));
+    float feather = rays * step(edge - 0.08, s.r) * (1 - smoothstep(edge - 0.02, edge + 0.14, s.r))
+        * step(0.05, front);
+    float shade = Hash(float3(cell, 7.7));
+    float sweep = -1.4 + saturate((s.k - 0.15) / 0.45) * 2.8;
+    float glint = Gauss(s.p.x + s.p.y * 0.6 - sweep, 0.12) * frozen * (0.3 + 0.7 * step(0.7, shade));
+
+    float keep = Keep(Hash(float3(cell, 3.3)) * 0.7 + (1 - plateR) * 0.3, s.rem, 0.02);
+    half3 body = s.tint * s.tint * (0.25 + 0.2 * shade);
+    half a = frozen * (0.22 + 0.1 * shade) * keep;
+    half3 light = lerp(s.tint, 1, 0.7) * (crack * 1.6 + glint * 1.2)
+        + lerp(s.tint, 1, 0.5) * feather * 0.9 + s.tint * frozen * shade * 0.12;
+    return half4(body * a + light * keep, a + crack * 0.25 * keep);
+}
+
+// Snow blown along by a strong wind, seen from the side, the wind running toward +x across a
+// band of the stage: a few long, thin streams low in the band that snake and fray, fibrous along
+// the wind and fine across it, gusting brighter and fainter as they go. The pattern runs through
+// the band with the wind (k), the fine fibres faster than the streams, while the band stays: snow
+// flows past rather than a picture sliding. Pale snow with a little cover.
+half4 ShapeWindStream(ShapeIn s)
+{
+    float u = s.p.x * 2.0 - s.k * 4.8;
+    float y = s.p.y;
+    float gust = smoothstep(0.25, 0.75, Noise(float3(u * 0.35, s.seed * 7.0, 0.5)));
+    float density = 0;
+    [unroll]
+    for (int i = 0; i < 4; i++)
+    {
+        float lane = -0.65 + i * 0.28 + (Hash1(i, s.seed) - 0.5) * 0.15;
+        float snake = (Noise(float3(u * 0.8 + i * 13.1, s.seed * 3.0, 1.7)) - 0.5) * 0.35;
+        float width = (0.03 + 0.09 * Noise(float3(u * 0.6 + i * 5.3, s.seed * 5.0, 2.9))) * (1 - i * 0.15);
+        density += Gauss(y - lane - snake, width) * (1 - i * 0.18);
+    }
+    // Short fibres that break up into patches, not lines drawn across the whole stage.
+    float fibre = Fbm5(float2(s.p.x * 7.0 - s.k * 18.0, y * 28.0), s.seed * 11.0);
+    float patches = smoothstep(0.35, 0.65, Noise(float3(s.p.x * 2.5 - s.k * 6.0, y * 3.0, s.seed * 13.0)));
+    density *= (0.15 + 1.0 * smoothstep(0.4, 0.8, fibre)) * (0.35 + 0.65 * gust) * patches;
+    float ends = smoothstep(-1.0, -0.75, s.p.x) * (1 - smoothstep(0.75, 1.0, s.p.x));
+    float rows = smoothstep(-1.0, -0.85, y) * (1 - smoothstep(0.6, 0.95, y));
+    density *= ends * rows;
+    half a = saturate(density * 0.4);
+    return half4(lerp(s.tint, 1, 0.55) * density * 0.75, a);
 }
 
 // --- Shapes of the card skills (additive) ----------------------------------------------------

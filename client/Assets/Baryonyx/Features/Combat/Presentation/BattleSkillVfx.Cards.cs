@@ -41,6 +41,10 @@ namespace Baryonyx.Combat.Presentation
         private static readonly Color Venom = new(0.62f, 1f, 0.32f);
         private static readonly Color Blood = new(1f, 0.22f, 0.2f);
 
+        // The light of ホーリーライト: a warm gold, so it glows gold rather than washing the stage
+        // white, and burns white only at its brightest.
+        private static readonly Color HolyGold = new(1f, 0.78f, 0.36f);
+
         /// <summary>The colour of a card's light (its cut-in, its glow), by the card's id.</summary>
         public static Color ColorOf(string id) =>
             id switch
@@ -191,7 +195,7 @@ namespace Baryonyx.Combat.Presentation
             var from = Center(FrontLayer, caster);
             DimTo(0.42f, 0.15f);
             Star(from + new Vector2(30f, 40f), Color.white, 150f, 0.18f);
-            Ring(backLight, Feet(FrontLayer, caster), color, 300f, 0.35f, floor: true);
+            Shockwave(Feet(FrontLayer, caster), 260f, 0.4f);
             yield return Wait(0.16f);
 
             var wave = Wave(hits, 0);
@@ -211,6 +215,9 @@ namespace Baryonyx.Combat.Presentation
                 color,
                 new Vector2(0.5f, 0.05f)
             );
+            // A whirlwind shows by the dust it lifts: puffs of it are caught up and spun along its
+            // path, and the wind itself is only a faint swirl.
+            float nextPuff = 0f;
             Animate(
                 tornado,
                 run + 0.35f,
@@ -226,7 +233,35 @@ namespace Baryonyx.Combat.Presentation
                         color,
                         Mathf.Min(1f, t / run),
                         Eaten(t / (run + 0.35f), 0.6f),
-                        ErodeBright
+                        0.6f
+                    );
+                    if (t < nextPuff || t > run)
+                        return;
+                    nextPuff = t + 0.06f;
+                    var dust = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.55f);
+                    Spray(
+                        backSmoke,
+                        s.Holder.anchoredPosition + Vector2.up * 40f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Smoke,
+                            Bright = 0.45f,
+                            From = dust,
+                            To = dust,
+                            Speed = new Vector2(60f, 220f),
+                            Direction = 90f,
+                            Spread = 160f,
+                            Life = new Vector2(0.5f, 0.8f),
+                            Size = new Vector2(120f, 200f),
+                            Aspect = 0.6f,
+                            Grow = 0.5f,
+                            Shrink = 1.5f,
+                            Drag = 2f,
+                            Spin = 300f,
+                            Hold = 0.3f,
+                            Area = 60f,
+                        },
+                        1
                     );
                 }
             );
@@ -472,14 +507,7 @@ namespace Baryonyx.Combat.Presentation
                         Vector2.right,
                         flashScreen: true
                     );
-                    Ring(
-                        backLight,
-                        Feet(FrontLayer, hits[index].Area),
-                        color,
-                        700f,
-                        0.5f,
-                        floor: true
-                    );
+                    Shockwave(Feet(FrontLayer, hits[index].Area), 560f, 1f);
                 }
                 else
                 {
@@ -743,7 +771,7 @@ namespace Baryonyx.Combat.Presentation
                 0.6f
             );
             yield return Wait(0.22f);
-            Ring(backLight, feet, color, 500f, 0.45f, floor: true);
+            Shockwave(feet, 500f, 1f);
             Shake(0.45f, Vector2.down);
             HitStop(0.05f);
             Puffs(backSmoke, feet, new Color(0.45f, 0.38f, 0.3f, 0.7f), 4, 60f, 1f);
@@ -760,6 +788,8 @@ namespace Baryonyx.Combat.Presentation
                     new Vector2(320f, 320f),
                     color
                 );
+                // The floor splits open dark, as a real crack shows by its shadow.
+                crack.Image.material = RichMaterialOf(BattleVfxShape.Crack);
                 crack.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
                 Animate(
                     crack,
@@ -870,8 +900,7 @@ namespace Baryonyx.Combat.Presentation
                     CoreBright,
                     floor: true
                 );
-                Ring(backLight, feet, Color.white, 600f, 0.4f, floor: true);
-                Ring(backLight, feet, color, 900f, 0.6f, floor: true);
+                Shockwave(feet, 860f, 1f);
                 Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: true);
                 HitStop(0.16f);
                 SlowMotion(0.4f, 0.25f);
@@ -1068,22 +1097,8 @@ namespace Baryonyx.Combat.Presentation
             DimTo(0.36f, 0.15f);
             for (int n = 0; n < 3; n++)
             {
-                var ring = Spawn(
-                    frontLight,
-                    BattleVfxShape.Ring,
-                    at,
-                    new Vector2(700f, 700f),
-                    color
-                );
-                Animate(
-                    ring,
-                    0.5f,
-                    (s, k) =>
-                    {
-                        s.Holder.localScale = RingScale(k, false);
-                        Show(s, color, k, k);
-                    }
-                );
+                // The cry's pressure drives dust out along the floor, wider each time.
+                Shockwave(Feet(FrontLayer, caster), 360f + n * 140f, 0.5f);
                 Shake(0.12f, Vector2.zero);
                 yield return Wait(0.1f);
             }
@@ -1513,8 +1528,7 @@ namespace Baryonyx.Combat.Presentation
             SlowMotion(0.4f, 0.3f);
             Punch(mid, 0.05f);
             Shake(1f, Vector2.down);
-            Ring(backLight, mid, Color.white, 900f, 0.45f, floor: true);
-            Ring(backLight, mid, color, 1300f, 0.7f, floor: true);
+            Shockwave(mid, 1100f, 1f);
             Illuminate(mid + Vector2.up * 100f, color, 1f, 1200f, 0.4f, 0.8f, flicker: 0.4f);
             foreach (int index in Wave(hits, 0))
             {
@@ -1608,28 +1622,25 @@ namespace Baryonyx.Combat.Presentation
             DimTo(SpellDim, 0.15f);
             float top = FrontLayer.rect.yMax - 40f;
             var mid = MidFeet(hits, 0);
+            // The icicles freeze out of the air above: glints of ice crystals gather there.
             Spray(
-                backSmoke,
+                frontLight,
                 new Vector2(mid.x, top),
                 new Burst
                 {
-                    Shape = BattleVfxShape.Smoke,
-                    From = new Color(0.85f, 0.94f, 1f, 0.6f),
-                    To = new Color(0.7f, 0.85f, 1f, 0.6f),
-                    Speed = new Vector2(20f, 80f),
-                    Direction = 0f,
+                    Shape = BattleVfxShape.Sparkle,
+                    Bright = CoreBright,
+                    From = new Color(0.85f, 0.95f, 1f, 0f),
+                    To = Color.white,
+                    Speed = new Vector2(10f, 40f),
+                    Direction = -90f,
                     Spread = 360f,
-                    Life = new Vector2(1.2f, 1.8f),
-                    Size = new Vector2(200f, 300f),
-                    Aspect = 0.5f,
-                    Grow = 0.5f,
-                    Shrink = 1.5f,
-                    Drag = 1f,
-                    Spin = 6f,
-                    Hold = 0.35f,
+                    Life = new Vector2(0.25f, 0.45f),
+                    Size = new Vector2(8f, 16f),
+                    Spin = 120f,
                     Area = 300f,
                 },
-                6
+                24
             );
             yield return Wait(0.25f);
             foreach (int index in Wave(hits, 0))
@@ -1692,9 +1703,15 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// ブリザード, a howling cold: the stage goes dark, then a gale of snow streams across the
-        /// enemies from the left with a pale whirl among them; each is frosted over, and a cold
-        /// mist rolls low over the floor long after.
+        /// ブリザード, a howling cold, as a real snowstorm moves: a strong wind blows steadily from
+        /// the left. Snow is blown along the floor in long thin streams that snake and fray (the
+        /// pattern flows through bands that stay, as snow streams past, see
+        /// <see cref="WindStream"/>), thin veils of it sweep higher up, and snowflakes rush past at
+        /// every depth, small and dim far off, big and blurred close by
+        /// (<see cref="SnowFlakes"/>); nothing hangs in the air. The floor under every enemy
+        /// freezes over and ice grows on them, leaning into the wind as rime does, in a blue light;
+        /// then it cracks and breaks, and its pieces and dust are blown away downwind
+        /// (<see cref="Shatter"/>). The screen does not flash.
         /// </summary>
         private IEnumerator Blizzard(
             RectTransform caster,
@@ -1702,127 +1719,159 @@ namespace Baryonyx.Combat.Presentation
             Func<int, BattleHitWeight> land
         )
         {
-            var color = ColorOf("Blizzard");
-            yield return Charge(caster, color, 0.26f, big: true);
+            var snow = new Color(0.78f, 0.9f, 1f);
+            var wind = Vector2.right;
+            DimTo(IceDim, 0.15f);
+            yield return Charge(caster, IceLight, 0.26f, big: true);
             var mid = MidFeet(hits, 0);
-            var whirl = Spawn(
-                backLight,
-                BattleVfxShape.Tornado,
-                mid,
-                new Vector2(700f, 700f),
-                new Color(0.85f, 0.95f, 1f),
-                new Vector2(0.5f, 0.05f)
+            float storm = IceBreakAt + 1.3f;
+            WindStream(backSmoke, mid.y + 30f, 240f, snow, storm, 0.9f);
+            WindStream(frontSmoke, mid.y - 90f, 200f, snow, storm, 0.45f);
+            WindStream(frontSmoke, mid.y + 200f, 380f, snow, storm, 0.18f);
+            SnowFlakes(
+                new Vector2(FrontLayer.rect.xMin - 120f, mid.y + 120f),
+                320f,
+                storm - 0.6f,
+                snow
             );
-            Animate(
-                whirl,
-                1.3f,
-                (s, k) =>
-                {
-                    s.Holder.localScale = new Vector3(1f, EaseOut(Mathf.Min(1f, k * 5f)), 1f);
-                    Show(s, new Color(0.85f, 0.95f, 1f, 0.6f), k, Eaten(k, 0.6f), ErodeBright);
-                }
-            );
-            for (int n = 0; n < 5; n++)
-            {
-                Spray(
-                    frontLight,
-                    new Vector2(mid.x - 600f, mid.y + 120f + n * 50f),
-                    new Burst
-                    {
-                        Shape = n % 2 == 0 ? BattleVfxShape.Spark : BattleVfxShape.Sparkle,
-                        From = Color.white,
-                        To = new Color(0.8f, 0.92f, 1f, 0f),
-                        Speed = new Vector2(900f, 1500f),
-                        Direction = -8f,
-                        Spread = 20f,
-                        Life = new Vector2(0.6f, 1f),
-                        Size = new Vector2(10f, 22f),
-                        Gravity = 100f,
-                        Drag = 0.5f,
-                        Spin = 300f,
-                        Area = 120f,
-                        Delay = new Vector2(0f, 0.5f),
-                    },
-                    14
-                );
-                Spray(
-                    backSmoke,
-                    new Vector2(mid.x - 500f, mid.y + 100f + n * 40f),
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Smoke,
-                        From = new Color(0.86f, 0.94f, 1f, 0.45f),
-                        To = new Color(0.75f, 0.88f, 1f, 0.45f),
-                        Speed = new Vector2(700f, 1000f),
-                        Direction = -5f,
-                        Spread = 10f,
-                        Life = new Vector2(0.8f, 1.1f),
-                        Size = new Vector2(180f, 260f),
-                        Aspect = 0.5f,
-                        Grow = 0.6f,
-                        Shrink = 1.4f,
-                        Drag = 1.2f,
-                        Spin = 6f,
-                        Hold = 0.3f,
-                        Area = 60f,
-                        Delay = new Vector2(0f, 0.3f),
-                    },
-                    3
-                );
-            }
-            Illuminate(mid + Vector2.up * 150f, color, 0.8f, 800f, 0.6f, 0.6f);
-            ScreenFlash(new Color(0.85f, 0.95f, 1f), 0.2f);
+            Illuminate(mid + Vector2.up * 150f, IceLight, 0.7f, 800f, 0.8f, 0.6f);
             yield return Wait(0.3f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
+                var at = Center(FrontLayer, area);
+                var feet = Feet(FrontLayer, area);
+                var (low, high) = Bounds(FrontLayer, area);
+                float width = Mathf.Max(160f, high.x - low.x);
                 var weight = land(index);
-                Impact(
-                    area,
-                    Center(FrontLayer, area),
-                    color,
-                    weight,
-                    0.6f,
-                    Vector2.right,
-                    flashScreen: false,
-                    rays: false
-                );
-                FloorMark(
-                    BattleVfxShape.Frost,
-                    Feet(FrontLayer, area),
-                    new Vector2(320f, 110f),
-                    new Color(0.85f, 0.95f, 1f),
-                    0.75f,
-                    2f,
-                    flat: false
-                );
+                HitStop(Weighted(0.05f, weight));
+                Shake(Weighted(0.3f, weight), wind);
+                FrostSheet(feet, width * 1.6f, IceBreakAt + 0.9f);
+                // Rime grows into the wind.
+                SpikeRing(feet, width, 0.75f, IceBreakAt, lean: 22f);
+                Pool(feet, IceLight, 340f, IceBreakAt, 0.4f);
+                Illuminate(at, IceLight, 0.7f, 420f, IceBreakAt, 0.5f);
+                StartCoroutine(Shatter(at, feet, width, IceBreakAt, 0.45f, wind));
                 yield return Wait(0.08f);
             }
+            // Waits for the ice to break, so it breaks while the stage is still dark.
+            yield return Wait(IceBreakAt + 0.1f);
+        }
+
+        /// <summary>
+        /// Snow blown along by a strong wind in a band across the whole stage at
+        /// <paramref name="y"/>, <paramref name="height"/> tall (the shader's stream of wind): long,
+        /// thin streams that snake and fray, gusting, with the snow running through the band while
+        /// the band itself stays. It rises and dies away with the wind over
+        /// <paramref name="seconds"/>; <paramref name="strength"/> is how thick it is.
+        /// </summary>
+        private void WindStream(
+            RectTransform layer,
+            float y,
+            float height,
+            Color color,
+            float seconds,
+            float strength
+        )
+        {
+            if (layer == null)
+                return;
+            var shot = Spawn(
+                layer,
+                BattleVfxShape.Tornado,
+                new Vector2(FrontLayer.rect.center.x, y),
+                new Vector2(FrontLayer.rect.width * 1.25f, height),
+                Color.clear
+            );
+            shot.Image.material = RichMaterialOf(BattleVfxShape.Tornado);
+            Animate(
+                shot,
+                seconds,
+                (s, k) =>
+                {
+                    float rise = Mathf.Min(1f, k * 6f);
+                    float fall = 1f - EaseIn(Mathf.Clamp01((k - 0.7f) / 0.3f));
+                    var tint = new Color(color.r, color.g, color.b, strength * rise * fall);
+                    Show(s, tint, k, 0f, 1.2f);
+                }
+            );
+        }
+
+        /// <summary>
+        /// Snowflakes rushing past on the wind from <paramref name="from"/> (at the upwind edge),
+        /// spread <paramref name="spread"/> px up and down, for <paramref name="seconds"/>: at
+        /// every depth, as a real storm looks. Far ones are small, dim and slower, behind the
+        /// actors; middle ones streak past; a few near ones are big and blurred as they rush by
+        /// the eye. Each streaks along its flight in proportion to its speed.
+        /// </summary>
+        private void SnowFlakes(Vector2 from, float spread, float seconds, Color color)
+        {
+            var gone = new Color(color.r, color.g, color.b, 0f);
             Spray(
-                backSmoke,
-                mid + Vector2.up * 20f,
+                backLight,
+                from,
                 new Burst
                 {
-                    Shape = BattleVfxShape.Smoke,
-                    From = new Color(0.86f, 0.95f, 1f, 0.7f),
-                    To = new Color(0.7f, 0.85f, 1f, 0.7f),
-                    Speed = new Vector2(40f, 160f),
-                    Direction = 0f,
-                    Spread = 360f,
-                    Life = new Vector2(1.4f, 2f),
-                    Size = new Vector2(220f, 320f),
-                    Aspect = 0.45f,
-                    Grow = 0.5f,
-                    Shrink = 1.5f,
-                    Gravity = 10f,
-                    Drag = 1.8f,
-                    Spin = 6f,
-                    Hold = 0.3f,
-                    Area = 200f,
+                    Shape = BattleVfxShape.Spark,
+                    From = new Color(color.r, color.g, color.b, 0.7f),
+                    To = gone,
+                    Speed = new Vector2(900f, 1300f),
+                    Direction = -6f,
+                    Spread = 14f,
+                    Life = new Vector2(1.4f, 1.9f),
+                    Size = new Vector2(2f, 4f),
+                    Stretch = 0.012f,
+                    Gravity = 80f,
+                    Drag = 0.05f,
+                    Area = spread,
+                    Delay = new Vector2(0f, seconds),
                 },
-                7
+                70
             );
-            yield return Wait(0.5f);
+            Spray(
+                frontLight,
+                from,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Spark,
+                    Bright = 1.4f,
+                    From = Color.white,
+                    To = gone,
+                    Speed = new Vector2(1500f, 2100f),
+                    Direction = -10f,
+                    Spread = 20f,
+                    Life = new Vector2(0.9f, 1.3f),
+                    Size = new Vector2(3f, 6f),
+                    Stretch = 0.012f,
+                    Gravity = 140f,
+                    Drag = 0.05f,
+                    Area = spread,
+                    Delay = new Vector2(0f, seconds),
+                },
+                70
+            );
+            Spray(
+                frontLight,
+                from,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Spark,
+                    Bright = 1.2f,
+                    From = new Color(1f, 1f, 1f, 0.55f),
+                    To = gone,
+                    Speed = new Vector2(2600f, 3400f),
+                    Direction = -12f,
+                    Spread = 22f,
+                    Life = new Vector2(0.5f, 0.8f),
+                    Size = new Vector2(6f, 11f),
+                    Stretch = 0.018f,
+                    Gravity = 60f,
+                    Drag = 0.02f,
+                    Area = spread * 1.2f,
+                    Delay = new Vector2(0f, seconds),
+                },
+                14
+            );
         }
 
         /// <summary>
@@ -2005,15 +2054,6 @@ namespace Baryonyx.Combat.Presentation
                         Area = 120f,
                     },
                     30
-                );
-                Puffs(
-                    backSmoke,
-                    feet + Vector2.up * 30f,
-                    new Color(0.86f, 0.95f, 1f, 0.7f),
-                    6,
-                    160f,
-                    1.6f,
-                    200f
                 );
             }
             yield return Wait(0.4f);
@@ -2234,7 +2274,7 @@ namespace Baryonyx.Combat.Presentation
                     rays: false
                 );
                 Bubbles(at, color, Violet, 10);
-                Puffs(backSmoke, at, new Color(0.35f, 0.18f, 0.45f, 0.45f), 4, 50f, 1.3f, 120f);
+                PoisonBlow(at, Feet(FrontLayer, area), Vector2.right);
             }
             yield return Wait(0.6f);
         }
@@ -2278,6 +2318,7 @@ namespace Baryonyx.Combat.Presentation
                     new Vector2(360f, 360f),
                     color
                 );
+                crack.Image.material = RichMaterialOf(BattleVfxShape.Crack);
                 crack.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
                 Animate(
                     crack,
@@ -2611,7 +2652,7 @@ namespace Baryonyx.Combat.Presentation
                 HitStop(0.14f);
                 Punch(at, 0.035f);
                 if (weight != BattleHitWeight.Normal)
-                    Ring(backLight, Feet(FrontLayer, area), Gold, 800f, 0.5f, floor: true);
+                    Shockwave(Feet(FrontLayer, area), 520f, 0.7f);
             }
             yield return Wait(0.45f);
         }
@@ -2675,7 +2716,7 @@ namespace Baryonyx.Combat.Presentation
                 Zap(from, at, Color.white, 0.24f);
                 var weight = land(index);
                 Star(at, color, 220f, 0.18f);
-                Ring(frontLight, at, color, 260f, 0.3f, floor: false);
+                Puffs(backSmoke, at, new Color(0.18f, 0.17f, 0.2f, 0.5f), 1, 20f, 0.8f, 100f);
                 Sparks(at, color, 10, 0.8f, (at - from).normalized);
                 HitStop(Weighted(0.04f, weight));
                 Shake(Weighted(0.22f, weight), (at - from).normalized);
@@ -2785,8 +2826,16 @@ namespace Baryonyx.Combat.Presentation
                 Bolt(feet);
                 var weight = land(index);
                 ScreenFlash(new Color(1f, 0.95f, 0.75f), MaxFlash);
-                Ring(backLight, feet, Color.white, 600f, 0.4f, floor: true);
-                Ring(backLight, feet, Violet, 900f, 0.55f, floor: true);
+                Shockwave(feet, 700f, 1f);
+                FloorMark(
+                    BattleVfxShape.Scorch,
+                    feet,
+                    new Vector2(320f, 100f),
+                    new Color(0.1f, 0.08f, 0.1f),
+                    0.8f,
+                    1.6f,
+                    flat: false
+                );
                 Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: false);
                 HitStop(0.14f);
                 Punch(at, 0.04f);
@@ -2857,7 +2906,15 @@ namespace Baryonyx.Combat.Presentation
                 );
                 yield return Wait(0.05f);
             }
-            Leaves(frontLight, new Vector2(mid.x - 500f, mid.y), Color.white, 12, 4f, 1100f, 40f);
+            Leaves(
+                frontLight,
+                new Vector2(mid.x - 500f, mid.y),
+                new Color(0.58f, 0.74f, 0.34f),
+                12,
+                4f,
+                1100f,
+                40f
+            );
             yield return Wait(0.2f);
             foreach (int index in Wave(hits, 0))
             {
@@ -3063,7 +3120,7 @@ namespace Baryonyx.Combat.Presentation
                     down: true,
                     fast: false
                 );
-                Leaves(frontLight, new Vector2(at.x, top - 80f), Color.white, 8, -90f, 160f, 60f);
+                DustInLight(new Vector2(at.x, top - 80f), Gold, -1f);
                 yield return Wait(0.6f);
                 land(index);
                 Illuminate(at, Color.white, 1f, 360f, 0.4f, 0.6f);
@@ -3373,8 +3430,14 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// ホーリーライト, a flood of light: a white-gold star blooms high in the middle, rays shoot
-        /// from it to every enemy and strike, then a soft light falls on every ally as they heal.
+        /// ホーリーライト, a flood of light, as strong light from above looks in real air: a small,
+        /// blinding source high in the middle with a glare round it; shafts of light from it to
+        /// every enemy, seen because the dust in the air scatters them, specks of that dust
+        /// glinting in them; where each lands, a pool of light on the floor, the enemy lit gold and
+        /// a glare; then light falls on every ally, a warm pool at their feet and a gold-green light
+        /// on them, with specks of dust drifting down through it as they heal. No cloud: light
+        /// makes none. Its light is gold and burns white only at its brightest; the screen does
+        /// not flash.
         /// </summary>
         private IEnumerator HolyLight(
             RectTransform caster,
@@ -3382,66 +3445,69 @@ namespace Baryonyx.Combat.Presentation
             Func<int, BattleHitWeight> land
         )
         {
-            var color = ColorOf("HolyLight");
-            yield return Charge(caster, color, 0.26f, big: false);
-            var source = new Vector2(0f, FrontLayer.rect.yMax - 200f);
-            var star = Spawn(
-                frontLight,
-                BattleVfxShape.Star,
-                source,
-                new Vector2(520f, 520f),
-                color
-            );
-            Animate(
-                star,
-                0.9f,
-                (s, k) =>
-                {
-                    float grow = BackOut(Mathf.Min(1f, k * 4f));
-                    s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, k * 40f);
-                    Show(s, color, k, Eaten(k, 0.6f), CoreBright);
-                }
-            );
-            Glow(backLight, source, color, 700f, 0.9f, 0.6f);
-            Illuminate(source, color, 0.8f, 1200f, 0.4f, 0.5f);
-            yield return Wait(0.22f);
+            var gold = HolyGold;
+            var white = Color.Lerp(gold, Color.white, 0.6f);
+            DimTo(0.6f, 0.2f);
+            yield return Charge(caster, gold, 0.26f, big: false);
+            var source = new Vector2(0f, FrontLayer.rect.yMax - 220f);
+            Glow(backLight, source, gold, 260f, 1.2f, 0.9f);
+            Twinkle(source, white, 280f, 0.6f, 0.08f, 1f);
+            Illuminate(source, gold, 0.6f, 800f, 0.5f, 0.6f);
+            yield return Wait(0.3f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
-                Line(frontLight, source, at, Color.white, 50f, 0.35f, 0.3f);
+                var feet = Feet(FrontLayer, area);
+                Line(frontLight, source, at, gold, 150f, 0.5f, 0.35f);
                 var weight = land(index);
-                Star(at, color, 260f, 0.2f);
-                Impact(area, at, color, weight, 0.55f, Vector2.down, flashScreen: false);
+                Twinkle(at, white, Weighted(220f, weight), 0.3f, 0f, 1f);
+                HitStop(Weighted(0.06f, weight));
+                Shake(Weighted(0.3f, weight), Vector2.down);
+                Pool(feet, gold, 340f, 0.2f, 0.6f);
+                Illuminate(at, gold, 0.9f, 380f, 0.1f, 0.5f, spill: false);
+                DustInLight(at, gold, 1f);
             }
-            yield return Wait(0.25f);
+            yield return Wait(0.3f);
+            var heal = Color.Lerp(gold, ColorOf(BattleSkillVfxKind.Heal), 0.5f);
             foreach (int index in Wave(hits, 1))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
-                Spray(
-                    frontLight,
-                    at + Vector2.up * 160f,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Sparkle,
-                        From = Color.white,
-                        To = new Color(1f, 0.92f, 0.6f, 0f),
-                        Speed = new Vector2(60f, 160f),
-                        Direction = -90f,
-                        Spread = 30f,
-                        Life = new Vector2(0.6f, 0.9f),
-                        Size = new Vector2(14f, 28f),
-                        Spin = 120f,
-                        Area = 60f,
-                    },
-                    8
-                );
-                Glow(backLight, at, ColorOf(BattleSkillVfxKind.Heal), 240f, 0.7f, 0.4f);
+                Pool(Feet(FrontLayer, area), heal, 260f, 0.4f, 0.6f);
+                Illuminate(at, heal, 0.7f, 300f, 0.4f, 0.5f, spill: false);
+                DustInLight(at + Vector2.up * 120f, gold, -1f);
                 land(index);
             }
             yield return Wait(0.5f);
+        }
+
+        /// <summary>
+        /// Specks of dust caught glinting in a light at <paramref name="at"/>: tiny points that
+        /// drift up (<paramref name="rise"/> 1) or settle down (-1) through it and fade.
+        /// </summary>
+        private void DustInLight(Vector2 at, Color color, float rise)
+        {
+            Spray(
+                frontLight,
+                at,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Spark,
+                    Bright = CoreBright,
+                    From = Color.white,
+                    To = new Color(color.r, color.g, color.b, 0f),
+                    Speed = new Vector2(20f, 90f),
+                    Direction = rise > 0f ? 90f : -90f,
+                    Spread = 70f,
+                    Life = new Vector2(0.8f, 1.4f),
+                    Size = new Vector2(3f, 6f),
+                    Drag = 1.5f,
+                    Area = 80f,
+                    Delay = new Vector2(0f, 0.3f),
+                },
+                16
+            );
         }
 
         /// <summary>
@@ -3493,7 +3559,7 @@ namespace Baryonyx.Combat.Presentation
                     CoreBright
                 );
                 Ring(backLight, feet, color, 420f, 0.6f, floor: true);
-                Leaves(frontLight, at + Vector2.up * 220f, Color.white, 6, -90f, 120f, 60f);
+                DustInLight(at + Vector2.up * 220f, Gold, -1f);
                 Illuminate(at, color, 0.8f, 320f, 0.4f, 0.6f);
                 Shake(0.1f, Vector2.zero);
                 land(index);
@@ -3703,6 +3769,9 @@ namespace Baryonyx.Combat.Presentation
             if (layer == null)
                 return null;
             var shot = Spawn(layer, shape, at, size, Color.clear);
+            // A crack is drawn as a real one shows, by its shadow (the rich look), not as light.
+            if (shape == BattleVfxShape.Crack)
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Crack);
             shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, angle);
             float total = seconds + delay;
             Animate(
@@ -3735,6 +3804,7 @@ namespace Baryonyx.Combat.Presentation
         /// Flies a shape (its <paramref name="head"/> at the front) from one point to another on an
         /// arc of <paramref name="lift"/> px, turned along its path (plus <paramref name="turnBy"/>
         /// degrees) unless <paramref name="turn"/> is off, shedding <paramref name="trail"/> as it goes.
+        /// A <paramref name="material"/> draws it in place of its shape's own.
         /// </summary>
         private IEnumerator Shoot(
             BattleVfxShape shape,
@@ -3747,10 +3817,13 @@ namespace Baryonyx.Combat.Presentation
             Color color,
             float turnBy,
             Burst? trail,
-            bool turn = true
+            bool turn = true,
+            Material material = null
         )
         {
             var shot = Spawn(frontLight, shape, from, size, color, head);
+            if (material != null)
+                shot.Image.material = material;
             float shed = 0f;
             var last = from;
             if (!turn)
@@ -3790,7 +3863,8 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// A beam from one point to another, <paramref name="width"/> px thick, drawn in from
-        /// <paramref name="from"/> fast and worn away after <paramref name="hold"/> of its life.
+        /// <paramref name="from"/> fast and worn away after <paramref name="hold"/> of its life, as a
+        /// shaft of light looks in real air: a smooth column with specks of dust glinting in it.
         /// </summary>
         private void Line(
             RectTransform layer,
@@ -3812,6 +3886,7 @@ namespace Baryonyx.Combat.Presentation
                 color,
                 new Vector2(0f, 0.5f)
             );
+            shot.Image.material = RichMaterialOf(BattleVfxShape.Beam);
             shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, Angle(to - from));
             Animate(
                 shot,

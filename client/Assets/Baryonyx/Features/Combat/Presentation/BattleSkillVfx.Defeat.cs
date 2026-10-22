@@ -52,6 +52,11 @@ namespace Baryonyx.Combat.Presentation
             foreach (var art in crumbleArt.Values)
                 art.Release();
             crumbleArt.Clear();
+            foreach (var material in richMaterials.Values)
+                Discard(material);
+            richMaterials.Clear();
+            Discard(exposureMaterial);
+            exposureMaterial = null;
         }
 
         /// <summary>

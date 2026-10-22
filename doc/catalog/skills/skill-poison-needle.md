@@ -59,7 +59,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardPoisonNeedle.asepri
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | じわりと効く | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
-| 演出の流れ | 緑の針が3本続けて飛び、毒々しい光。敵から毒の泡と紫の靄がしばらく昇る | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
+| 演出の流れ | 緑の針が3本続けて飛び、毒々しい光。毒のしぶきが落ち、重い毒のガスが敵の足元に沈んで這う | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
 ## 外見を表現する文章
 

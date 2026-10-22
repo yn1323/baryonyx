@@ -51,6 +51,26 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(BattleSkillVfx.KindFor(element, effect), Is.EqualTo(expected));
         }
 
+        [TestCase("引き裂き", false, EnemyBlow.Claw)]
+        [TestCase("かみつき", false, EnemyBlow.Bite)]
+        [TestCase("二段突き", false, EnemyBlow.Pierce)]
+        [TestCase("たいあたり", false, EnemyBlow.Blunt)]
+        [TestCase("肩石投げ", false, EnemyBlow.Rock)]
+        [TestCase("どんぐりつぶて", false, EnemyBlow.Rock)]
+        [TestCase("火の玉", true, EnemyBlow.Fire)]
+        [TestCase("つらら刺し", false, EnemyBlow.Ice)]
+        [TestCase("電撃", true, EnemyBlow.Thunder)]
+        [TestCase("毒針", false, EnemyBlow.Poison)]
+        [TestCase("水晶の共鳴", true, EnemyBlow.Magic)]
+        [TestCase("砂の大波", false, EnemyBlow.Water)]
+        [TestCase("金切り声", false, EnemyBlow.Sound)]
+        [TestCase(null, false, EnemyBlow.Claw)]
+        [TestCase("見知らぬ技", true, EnemyBlow.Magic)]
+        public void AnEnemysBlowIsDrawnAsWhatItsTechniqueIs(string skill, bool magic, EnemyBlow blow)
+        {
+            Assert.That(BattleSkillVfx.EnemyBlowOf(skill, magic), Is.EqualTo(blow));
+        }
+
         [Test]
         public void FullScreenFlashesStayUnderThreeASecond()
         {

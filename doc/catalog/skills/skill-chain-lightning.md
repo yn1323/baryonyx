@@ -59,7 +59,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardChainLightning.asep
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 跳ね回る | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
-| 演出の流れ | 稲妻が使い手から最初の敵へ跳び、当たった敵から次の敵へ跳ぶ。当たるたびに光・輪・火花 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
+| 演出の流れ | 稲妻が使い手から最初の敵へ跳び、当たった敵から次の敵へ跳ぶ。当たるたびに光・火花・焦げた煙 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
 ## 外見を表現する文章
 

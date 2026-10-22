@@ -6,6 +6,11 @@
 // - 頂点色：rgbで形を染め、アルファで全体を薄める。
 // - 明るさの倍率（_Intensity）：1を超える明るさにして、HDRのBloomで光だけをにじませる。
 // - 合成（_SrcBlend・_DstBlend）：光は加算（SrcAlpha One）、煙や氷は通常合成（SrcAlpha OneMinusSrcAlpha）。
+// - 作り込んだ見た目（_Rich）：1にすると、現実の見え方で描く。氷の槍・棘・破片を透ける氷、霜を床に広がる氷の板、
+//   煙を陰影のある煙・土ぼこり・湯気、亀裂を影で見える割れ目、竜巻を風で流れる雪、
+//   斬撃・十字の斬撃を細い筋と短い残像、光線を塵で見える光の柱として描く。
+//   乗算済みアルファ（One OneMinusSrcAlpha）用で、アルファで奥を暗くするか覆い、色で光を足す。
+//   マテリアルの複製に、合成と一緒に設定する。
 Shader "Baryonyx/Combat/Battle Vfx Shape"
 {
     Properties
@@ -13,6 +18,7 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _Intensity ("Intensity", Float) = 1
+        _Rich ("Rich Look (premultiplied)", Float) = 0
         [KeywordEnum(Glow, Ring, Star, SlashArc, SlashCross, Fireball, IceSpear, Lightning, Pillar, Dome, MagicCircle, Streak, Spark, Sparkle, Shard, Flame, FlameTongue, Smoke, Scorch, Frost, IceSpike, Chip, CutInStreaks, Beam, Arrow, Crack, Tornado, Bubble, Leaf, Chevron, Snowflake, Crest, Reticle, Mote)] _Shape ("Shape", Float) = 0
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 1
@@ -94,6 +100,7 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
 
             half4 _Color;
             half _Intensity;
+            half _Rich;
             float4 _ClipRect;
             float _UIMaskSoftnessX;
             float _UIMaskSoftnessY;
@@ -142,13 +149,22 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_STAR)
                 shape = ShapeStar(s);
                 #elif defined(_SHAPE_SLASHARC)
-                shape = ShapeSlashArc(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichSlashArc(s);
+                else
+                    shape = ShapeSlashArc(s);
                 #elif defined(_SHAPE_SLASHCROSS)
-                shape = ShapeSlashCross(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichSlashCross(s);
+                else
+                    shape = ShapeSlashCross(s);
                 #elif defined(_SHAPE_FIREBALL)
                 shape = ShapeFireball(s);
                 #elif defined(_SHAPE_ICESPEAR)
-                shape = ShapeIceSpear(s);
+                if (_Rich > 0.5)
+                    shape = ShapeClearIceSpear(s);
+                else
+                    shape = ShapeIceSpear(s);
                 #elif defined(_SHAPE_LIGHTNING)
                 shape = ShapeLightning(s);
                 #elif defined(_SHAPE_PILLAR)
@@ -170,25 +186,46 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_FLAMETONGUE)
                 shape = ShapeFlameTongue(s);
                 #elif defined(_SHAPE_SMOKE)
-                shape = ShapeSmoke(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichSmoke(s);
+                else
+                    shape = ShapeSmoke(s);
                 #elif defined(_SHAPE_SCORCH)
                 shape = ShapeScorch(s);
                 #elif defined(_SHAPE_FROST)
-                shape = ShapeFrost(s);
+                if (_Rich > 0.5)
+                    shape = ShapeIceSheet(s);
+                else
+                    shape = ShapeFrost(s);
                 #elif defined(_SHAPE_ICESPIKE)
-                shape = ShapeIceSpike(s);
+                if (_Rich > 0.5)
+                    shape = ShapeClearIceSpike(s);
+                else
+                    shape = ShapeIceSpike(s);
                 #elif defined(_SHAPE_CHIP)
-                shape = ShapeChip(s);
+                if (_Rich > 0.5)
+                    shape = ShapeClearChip(s);
+                else
+                    shape = ShapeChip(s);
                 #elif defined(_SHAPE_CUTINSTREAKS)
                 shape = ShapeCutInStreaks(s);
                 #elif defined(_SHAPE_BEAM)
-                shape = ShapeBeam(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichBeam(s);
+                else
+                    shape = ShapeBeam(s);
                 #elif defined(_SHAPE_ARROW)
                 shape = ShapeArrow(s);
                 #elif defined(_SHAPE_CRACK)
-                shape = ShapeCrack(s);
+                if (_Rich > 0.5)
+                    shape = ShapeFissure(s);
+                else
+                    shape = ShapeCrack(s);
                 #elif defined(_SHAPE_TORNADO)
-                shape = ShapeTornado(s);
+                if (_Rich > 0.5)
+                    shape = ShapeWindStream(s);
+                else
+                    shape = ShapeTornado(s);
                 #elif defined(_SHAPE_BUBBLE)
                 shape = ShapeBubble(s);
                 #elif defined(_SHAPE_LEAF)
@@ -208,12 +245,16 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #endif
 
                 float bright = IN.params.w > 0 ? IN.params.w : 1;
-                half4 color = half4(shape.rgb * (_Intensity * bright), shape.a * IN.color.a * _Color.a);
+                half fade = IN.color.a * _Color.a;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 half2 m = saturate((_ClipRect.zw - _ClipRect.xy - abs(IN.mask.xy)) * IN.mask.zw);
-                color.a *= m.x * m.y;
+                fade *= m.x * m.y;
                 #endif
+
+                // A premultiplied shape's light thins with it too, not only its cover.
+                half3 rgb = shape.rgb * (_Intensity * bright) * lerp(1, fade, step(0.5, _Rich));
+                half4 color = half4(rgb, shape.a * fade);
 
                 #ifdef UNITY_UI_ALPHACLIP
                 clip(color.a - 0.001);

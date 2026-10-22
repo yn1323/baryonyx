@@ -1625,7 +1625,14 @@ namespace Baryonyx.Combat.Presentation
             }
             HitAlly(target, power, pastBlock: move is { IgnoreBlock: true });
             if (Vfx != null)
-                Vfx.Strike(Allies[target].TargetArea);
+                Vfx.Strike(
+                    Allies[target].TargetArea,
+                    move != null ? move.Name
+                        : attacker >= 0 ? Enemies[attacker].SkillName
+                        : null,
+                    attacker >= 0 ? Enemies[attacker].Body : null,
+                    magic
+                );
             Riposte(target, attacker);
             yield break;
         }

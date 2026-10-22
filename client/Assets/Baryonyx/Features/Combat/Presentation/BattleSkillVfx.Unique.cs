@@ -194,7 +194,7 @@ namespace Baryonyx.Combat.Presentation
             Shake(0.06f, Vector2.zero);
             yield return Charge(caster, color, 0.5f, big: true);
             Twinkle(center + new Vector2(30f, 40f), color, 260f, 0.4f, 0f, 1f);
-            Ring(frontLight, center, Color.white, 360f, 0.25f, floor: false);
+            HotFlash(center, color, 220f);
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Baryonyx.Combat.Presentation
                 var feet = Feet(FrontLayer, hit.Area);
                 if (hit.Ally)
                 {
-                    Ring(backLight, feet, color, 420f + 160f * tier, 0.5f, floor: true);
+                    Shockwave(feet, 360f + 120f * tier, 0.6f + 0.2f * tier);
                     Twinkle(
                         at + new Vector2(-30f, 50f),
                         color,
@@ -249,14 +249,7 @@ namespace Baryonyx.Combat.Presentation
                     }
                     return weight;
                 }
-                Ring(
-                    backLight,
-                    feet,
-                    Color.Lerp(color, Color.white, 0.4f),
-                    560f,
-                    0.4f,
-                    floor: true
-                );
+                Shockwave(feet, 480f, 0.8f);
                 Star(at, Color.white, 200f + 60f * tier, 0.18f);
                 Sparks(at, color, 14 + 10 * tier, 1f + 0.2f * tier, Vector2.up);
                 Illuminate(
@@ -276,8 +269,7 @@ namespace Baryonyx.Combat.Presentation
                     SlowMotion(0.35f, 0.3f);
                     Punch(at, 0.05f);
                     Shake(0.9f, Vector2.down);
-                    Ring(backLight, feet, Color.white, 980f, 0.45f, floor: true);
-                    Ring(backLight, feet, color, 1400f, 0.75f, floor: true);
+                    Shockwave(feet, 960f, 1f);
                     Illuminate(
                         at + Vector2.up * 80f,
                         color,
@@ -303,7 +295,7 @@ namespace Baryonyx.Combat.Presentation
             var feet = Feet(FrontLayer, target);
             HotFlash(at, Color.white, 320f);
             Star(at, color, 420f, 0.3f);
-            Ring(frontLight, at, Color.Lerp(color, Color.white, 0.5f), 700f, 0.35f, floor: false);
+            HotFlash(at, color, 320f);
             Sparks(at, color, 40, 1.5f, Vector2.up);
             Spray(
                 frontLight,
@@ -401,14 +393,7 @@ namespace Baryonyx.Combat.Presentation
                     );
                     land(index);
                     HotFlash(at, color, 200f * scale);
-                    Ring(
-                        backLight,
-                        Feet(FrontLayer, hits[index].Area),
-                        color,
-                        380f,
-                        0.3f,
-                        floor: true
-                    );
+                    Shockwave(Feet(FrontLayer, hits[index].Area), 320f, 0.5f);
                 }
                 yield break;
             }
@@ -435,7 +420,7 @@ namespace Baryonyx.Combat.Presentation
                 CoreBright,
                 spin: 40f
             );
-            Ring(frontLight, mid, color, 1000f * scale, 0.5f, floor: false);
+            HotFlash(mid, color, 600f * scale);
             if (stage == 2)
                 Column(
                     frontLight,
@@ -475,7 +460,7 @@ namespace Baryonyx.Combat.Presentation
                     -120f,
                     Gold
                 );
-                Ring(frontLight, home, Gold, 380f, 0.4f, floor: false);
+                Glow(frontLight, home, Gold, 260f, 0.45f, 0.6f);
                 Twinkle(home + new Vector2(20f, 40f), Gold, 200f, 0.45f, 0f, -1f);
                 if (stage == 6)
                     Bloom(
@@ -494,8 +479,8 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// 星降り, a shower of falling stars: stars streak down from the sky onto their targets
         /// one after another and burst. 灼・焔獄 fall as fireballs and set the ground alight;
-        /// 氷晶・凍星 fall as ice and freeze where they land; 墜星・天墜 all converge on one
-        /// enemy, 天墜 ending in a pillar of light.
+        /// 氷晶・凍星 fall as clear ice that freezes the ground where it lands, then breaks;
+        /// 墜星・天墜 all converge on one enemy, 天墜 ending in a pillar of light.
         /// </summary>
         private IEnumerator StarFallVfx(
             int stage,
@@ -563,7 +548,8 @@ namespace Baryonyx.Combat.Presentation
                             Life = new Vector2(0.25f, 0.5f),
                             Size = new Vector2(10f, 22f),
                             Area = 20f,
-                        }
+                        },
+                        material: branch == 1 ? RichMaterialOf(BattleVfxShape.IceSpear) : null
                     );
                     var weight = land(index);
                     switch (branch)
@@ -572,18 +558,11 @@ namespace Baryonyx.Combat.Presentation
                             Explosion(area, at, weight);
                             break;
                         case 1:
-                            Frost(area, at, weight);
+                            ClearIce(area, at, weight);
                             break;
                         default:
                             Star(at, Color.white, 260f * scale, 0.2f);
-                            Ring(
-                                backLight,
-                                Feet(FrontLayer, area),
-                                color,
-                                520f * scale,
-                                0.35f,
-                                floor: true
-                            );
+                            Shockwave(Feet(FrontLayer, area), 460f * scale, 0.8f);
                             Sparks(at, color, 14, 1f, Vector2.up);
                             break;
                     }
@@ -604,7 +583,7 @@ namespace Baryonyx.Combat.Presentation
                     down: true,
                     fast: true
                 );
-                Ring(backLight, feet, Color.white, 1100f, 0.5f, floor: true);
+                Shockwave(feet, 900f, 1f);
                 Puffs(
                     backSmoke,
                     feet + Vector2.up * 60f,
@@ -677,8 +656,15 @@ namespace Baryonyx.Combat.Presentation
                 StartCoroutine(Crackle(area, color));
                 if (branch == 0)
                 {
-                    Ring(frontLight, at, color, 300f, 0.5f, floor: false);
-                    Ring(backLight, feet, color, 420f, 0.6f, floor: true);
+                    FloorMark(
+                        BattleVfxShape.Scorch,
+                        feet,
+                        new Vector2(240f, 78f),
+                        new Color(0.1f, 0.08f, 0.1f),
+                        0.8f,
+                        1.4f,
+                        flat: false
+                    );
                     if (stage == 2)
                     {
                         yield return Wait(0.1f);
@@ -786,16 +772,32 @@ namespace Baryonyx.Combat.Presentation
             if (branch == 2)
             {
                 var mid = MidFeet(hits, 0);
-                Bloom(
-                    backLight,
-                    BattleVfxShape.Tornado,
-                    mid,
-                    new Vector2(520f, 640f) * scale,
-                    color,
-                    0.7f,
-                    0.2f,
-                    ErodeBright
+                // A gust as a real one shows: dust and leaves caught up and spun round.
+                Spray(
+                    backSmoke,
+                    mid + Vector2.up * 30f,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = 0.5f,
+                        From = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.6f),
+                        To = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.6f),
+                        Speed = new Vector2(80f, 260f),
+                        Direction = 90f,
+                        Spread = 120f,
+                        Life = new Vector2(0.6f, 1f),
+                        Size = new Vector2(140f, 240f) * scale,
+                        Aspect = 0.6f,
+                        Grow = 0.5f,
+                        Shrink = 1.5f,
+                        Drag = 1.5f,
+                        Spin = 200f,
+                        Hold = 0.3f,
+                        Area = 120f * scale,
+                    },
+                    5
                 );
+                Leaves(frontLight, mid, new Color(0.58f, 0.74f, 0.34f), 10, 90f, 420f, -20f);
                 // 疾風 hastens the party: a gust of leaves round each ally.
                 if (stage == 6)
                     foreach (var hit in hits)
@@ -873,7 +875,7 @@ namespace Baryonyx.Combat.Presentation
                             Vector2.right,
                             flashScreen: false
                         );
-                        Ring(frontLight, at, Color.white, 420f, 0.3f, floor: false);
+                        Twinkle(at, Color.Lerp(color, Color.white, 0.5f), 200f, 0.2f, 0f, 1f);
                     }
                     continue;
                 }
@@ -1119,7 +1121,7 @@ namespace Baryonyx.Combat.Presentation
             if (branch == 2)
             {
                 var home = Center(FrontLayer, caster);
-                Ring(frontLight, home, Gold, 340f, 0.45f, floor: false);
+                Glow(frontLight, home, Gold, 240f, 0.45f, 0.6f);
                 Twinkle(home + new Vector2(30f, 50f), Gold, 220f, 0.45f, 0.05f, 1f);
                 if (stage == 6)
                     Bloom(
