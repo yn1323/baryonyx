@@ -34,6 +34,12 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>Its attack on a party holding up mirrors: the blow is thrown back at it.</summary>
         Reflect,
 
+        /// <summary>Its next skill, as its pattern picks it in battle (doc/catalog/enemies).</summary>
+        Skill,
+
+        /// <summary>Its big skill: it gathers its strength, glowing, then lets it land.</summary>
+        BigSkill,
+
         /// <summary>The enemies' turn of the battle: every enemy before the party's next turn, in order.</summary>
         EnemyTurn,
     }

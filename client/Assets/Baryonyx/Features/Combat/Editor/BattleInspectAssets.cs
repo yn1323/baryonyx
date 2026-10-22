@@ -929,6 +929,8 @@ namespace Baryonyx.Combat.Editor
                     )
                     .ToArray();
                 var gauge = HpGauge(info, new Vector2(0, -16), 65, 6, HpEnemy);
+                // 敵の技のブロック（doc/features/combat.md）も、味方と同じ黄色の帯で出す。
+                gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
 
                 enemies.Add(
                     new BattleInspectEnemy

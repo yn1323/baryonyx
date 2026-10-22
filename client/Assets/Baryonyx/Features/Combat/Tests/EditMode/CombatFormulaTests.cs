@@ -43,6 +43,15 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void AnAllyKeepsHalfItsBlockRoundedDownIntoTheNextTurn()
+        {
+            Assert.That(CardRules.BlockKept(118), Is.EqualTo(59));
+            Assert.That(CardRules.BlockKept(59), Is.EqualTo(29));
+            Assert.That(CardRules.BlockKept(1), Is.EqualTo(0));
+            Assert.That(CardRules.BlockKept(0), Is.EqualTo(0));
+        }
+
+        [Test]
         public void ABlowWithPowerDealsAtLeastOne()
         {
             Assert.That(CombatFormula.Defend(1, 5000, 1), Is.EqualTo(1));

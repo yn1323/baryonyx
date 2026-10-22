@@ -82,21 +82,27 @@ namespace Baryonyx.Adventure
         public const int MediumPlace = 1;
         public const int LargePlace = 2;
 
-        // 強敵の部屋は、同じ行き先の敵をLvを上げ、HPと攻撃を増やして出す（仮）。
-        // 実際の戦闘画面での自動対戦で、味方が5〜9ターンで勝ち、HPが2〜3割減る強さにした
-        // （doc/features/stage-progression.md の戦闘の試し）。
+        // 倍率は、実際の戦闘画面での自動対戦で決めた仮の値（doc/features/stage-progression.md の
+        // 戦闘の試し）。2026-10-22に敵が毎ターン動くようにしたため、決め直した。
+        // 魔物の気配は、行き先のLvのまま、HPと攻撃を少し増やす。2〜4ターンで勝ち、HPを1割ほど失う。
+        public const float PackHpScale = 1.3f;
+        public const float PackPowerScale = 1.8f;
+
+        // 強敵の部屋は、同じ行き先の敵のLvを上げ、HPと攻撃を増やして出す。
+        // 5〜15ターンで勝ち、残るHPが組み合わせで1割未満から9割まで分かれる強さ。
         public const int EliteLevelUp = 8;
         public const float EliteHpScale = 3.2f;
-        public const float ElitePowerScale = 2.2f;
+        public const float ElitePowerScale = 3.0f;
 
         // 最奥の主は、道中より少し高いLvで、HPと攻撃を増やして待つ。
-        // 自動対戦で、どの行き先の主にも勝ち、HPの2〜7割を失う、競った戦いになる強さにした。
+        // 味方のブロックを毎ターン半分にしたあとの自動対戦で、11〜23ターンかかり、
+        // 16戦すべてに勝って、残るHPが平均で半分弱になる強さ。
         public const int BossLevelUp = 2;
 
         // 怪しい宝箱のミミック（doc/catalog/enemies/enemy-chest-mimic.md）。
         public const string MimicId = "chest-mimic";
-        public const float BossHpScale = 2f;
-        public const float BossPowerScale = 2.6f;
+        public const float BossHpScale = 1.8f;
+        public const float BossPowerScale = 1.6f;
 
         /// <summary>
         /// The destinations, from the nearest to the deepest (2026-10-20). Each has the enemies of
@@ -333,7 +339,13 @@ namespace Baryonyx.Adventure
                     BossHpScale,
                     BossPowerScale
                 ),
-                _ => new AdventureEncounter(id, new[] { small, medium, null }, area.Level, 1f),
+                _ => new AdventureEncounter(
+                    id,
+                    new[] { small, medium, null },
+                    area.Level,
+                    PackHpScale,
+                    PackPowerScale
+                ),
             };
         }
 

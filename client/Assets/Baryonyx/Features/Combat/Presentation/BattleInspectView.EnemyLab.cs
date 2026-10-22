@@ -99,6 +99,12 @@ namespace Baryonyx.Combat.Presentation
                 case EnemyLabAction.Reflect:
                     yield return LabReflected(enemy);
                     break;
+                case EnemyLabAction.Skill:
+                    yield return LabSkill(enemy);
+                    break;
+                case EnemyLabAction.BigSkill:
+                    yield return LabBigSkill(enemy);
+                    break;
             }
             Refresh();
         }
@@ -175,11 +181,89 @@ namespace Baryonyx.Combat.Presentation
             return (found, caster);
         }
 
+        /// <summary>The enemy's next skill by its pattern, as on the enemies' turn.</summary>
+        private IEnumerator LabSkill(int enemy)
+        {
+            var brain = LabBrain(enemy);
+            if (brain == null)
+            {
+                yield return EnemyAttack(enemy);
+                yield break;
+            }
+            yield return Carry(enemy, brain.Next(Situation(enemy)));
+        }
+
+        /// <summary>
+        /// The enemy's big skill: the first it gathers its strength for, each turn of gathering
+        /// and then the blow; an enemy with none uses its strongest blow.
+        /// </summary>
+        private IEnumerator LabBigSkill(int enemy)
+        {
+            var brain = LabBrain(enemy);
+            if (brain == null)
+            {
+                yield return EnemyAttack(enemy);
+                yield break;
+            }
+            EnemyMove gathered = null;
+            EnemyMove strongest = null;
+            foreach (var move in brain.Behavior.Moves)
+            {
+                if (!move.Supported || !move.Strikes)
+                    continue;
+                if (gathered == null && move.ChargeTurns > 0)
+                    gathered = move;
+                if (
+                    strongest == null
+                    || move.Percent * move.Hits > strongest.Percent * strongest.Hits
+                )
+                    strongest = move;
+            }
+            var big = gathered ?? strongest;
+            if (big == null)
+                yield break;
+            for (int left = big.ChargeTurns; left > 0; left--)
+            {
+                yield return Carry(
+                    enemy,
+                    new EnemyStep
+                    {
+                        Move = big,
+                        Charging = true,
+                        ChargeLeft = left,
+                    }
+                );
+                yield return Wait(LabStatusHold);
+            }
+            yield return Carry(enemy, new EnemyStep { Move = big });
+        }
+
+        /// <summary>
+        /// The enemy's skills (the mock's enemies have only their one attack until the lab asks
+        /// for more), with the stats at its level its blows are parts of.
+        /// </summary>
+        private EnemyBrain LabBrain(int index)
+        {
+            var enemy = Enemies[index];
+            if (enemy.Brain != null)
+                return enemy.Brain;
+            var behavior = CombatEnemyBehaviors.Find(enemy.Id);
+            var stats = CombatEnemyStats.Find(enemy.Id);
+            if (behavior == null || stats == null)
+                return null;
+            enemy.PhysicalAttack = EnemyStats.At(stats.PhysicalAttack, enemy.Level);
+            enemy.MagicAttack = EnemyStats.At(stats.MagicAttack, enemy.Level);
+            enemy.Brain = new EnemyBrain(behavior, n => UnityEngine.Random.Range(0, n));
+            return enemy.Brain;
+        }
+
         /// <summary>The enemy stands again with its full HP and no status.</summary>
         private void LabReviveEnemy(int index)
         {
             var enemy = Enemies[index];
             StatusesOf(false, index).Clear();
+            SetEnemyBlock(index, 0);
+            StopGathering(index);
             enemy.Hp = enemy.MaxHp;
             enemy.Group.alpha = 1f;
             enemy.Sprite.color = Color.white;

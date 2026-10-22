@@ -255,6 +255,34 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>A boss: its defeat holds longer, flashes the screen and crumbles slower.</summary>
         public bool Boss;
 
+        /// <summary>
+        /// Its speed for the turn order; 0 (the mock's enemies) keeps <see cref="BattleInspectView.TurnCycle"/>.
+        /// </summary>
+        [NonSerialized]
+        public int Speed;
+
+        /// <summary>Its 物攻 and 属攻 at its level, which its skills' blows are parts of, and how much stronger the room makes them.</summary>
+        [NonSerialized]
+        public int PhysicalAttack;
+
+        [NonSerialized]
+        public int MagicAttack;
+
+        [NonSerialized]
+        public float AttackScale = 1f;
+
+        /// <summary>Its choice of skills (doc/catalog/enemies); null for the mock's one attack.</summary>
+        [NonSerialized]
+        public EnemyBrain Brain;
+
+        /// <summary>The block it holds; it lasts until its next action.</summary>
+        [NonSerialized]
+        public int Block;
+
+        /// <summary>The percent its next attacking skill is stronger by (力を溜める).</summary>
+        [NonSerialized]
+        public int PowerUp;
+
         [NonSerialized]
         public int Hp;
 
@@ -466,9 +494,10 @@ namespace Baryonyx.Combat.Presentation
         public float[] IdleSteps = Array.Empty<float>();
 
         /// <summary>
-        /// The repeating turn order. <see cref="PartyTurn"/> is a party turn (the party acts as
-        /// one side), other values are enemy indexes. A party entry twice in a row is the
-        /// consecutive turn that a large speed gap gives.
+        /// The repeating turn order of the mock, whose enemies have no speed. <see cref="PartyTurn"/>
+        /// is a party turn (the party acts as one side), other values are enemy indexes. A party
+        /// entry twice in a row is the consecutive turn that a large speed gap gives. Enemies with
+        /// a speed (an adventure's encounter) take their order from it instead (<see cref="CombatTurnOrder"/>).
         /// </summary>
         public int[] TurnCycle = Array.Empty<int>();
 
@@ -615,11 +644,18 @@ namespace Baryonyx.Combat.Presentation
         private bool reselected;
         private Vector2 pressPoint;
         private Vector2 fingerPoint;
-        private int cycleIndex;
+
+        // The enemies acting in the enemies' turn under way, and the place of the one acting (-1
+        // before the first acts and between the enemies' turns).
+        private List<int> roundOrder = new();
+        private int roundStep = -1;
 
         public const int PartyTurn = -1;
 
         public int Turn { get; private set; }
+
+        /// <summary>The battle's turn counted from 1, as the enemies' patterns count it.</summary>
+        public int BattleTurn => Turn - StartTurn + 1;
         public int Energy { get; private set; }
         public int MaxEnergy { get; private set; }
 
@@ -930,6 +966,7 @@ namespace Baryonyx.Combat.Presentation
 
             if (flash != null)
                 flash.SetFloat("_FlashAmount", 0.5f + 0.2f * Mathf.Sin(time * 9f));
+            RefreshChargeGlow(time);
 
             // The cursors bob by one dot, a second up and a second down.
             var bob = Mathf.Repeat(time * 0.5f, 1f) < 0.5f ? Vector2.up * Dot : Vector2.zero;
@@ -1439,24 +1476,23 @@ namespace Baryonyx.Combat.Presentation
         {
             // The band tells that the enemies' turn has come, and they wait for it, unless none
             // of them acts before the party's next turn.
-            bool enemiesAct = EnemiesActBeforeParty();
+            roundOrder = EnemiesAfter(BattleTurn);
+            bool enemiesAct = roundOrder.Count > 0;
             if (enemiesAct)
             {
                 ShowTurnBanner(EnemyTurnText, enemies: true);
                 yield return Wait(Settings.TurnBannerHold);
             }
-            for (int step = 0; step < TurnCycle.Length; step++)
+            for (roundStep = 0; roundStep < roundOrder.Count; roundStep++)
             {
-                cycleIndex = (cycleIndex + 1) % TurnCycle.Length;
-                int entry = TurnCycle[cycleIndex];
-                if (entry == PartyTurn)
-                    break;
+                int entry = roundOrder[roundStep];
                 if (!Enemies[entry].Alive)
                     continue;
                 RefreshTurnOrder();
                 yield return Wait(Settings.EnemyGap);
-                yield return EnemyAttack(entry);
+                yield return EnemyAct(entry);
             }
+            roundStep = -1;
 
             // Burns, poison, regen, sigils and clouds work as the party's turn comes round.
             yield return PartyTurnStatuses();
@@ -1482,24 +1518,52 @@ namespace Baryonyx.Combat.Presentation
         private void BeginPartyTurn(bool again)
         {
             EnemyTurn = false;
+            // Block carries over, but only half of it, so it does not pile up turn after turn.
+            HalveBlock();
             StartOfTurn(Turn + 1);
             dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
             // Over the deal, so the party's turn begins with no wait.
             ShowPartyTurnBanner(again);
         }
 
-        /// <summary>True when an enemy still standing comes before the party's next turn.</summary>
-        private bool EnemiesActBeforeParty()
+        /// <summary>
+        /// The enemies standing that act after the party's turn <paramref name="round"/> (1 for
+        /// the battle's first), in order: from their speeds and the party's when they have speeds,
+        /// or else from <see cref="TurnCycle"/>, whose runs of enemies follow its party turns in turn.
+        /// </summary>
+        public List<int> EnemiesAfter(int round)
         {
-            for (int step = 1; step <= TurnCycle.Length; step++)
+            if (Array.Exists(Enemies, enemy => enemy.Alive && enemy.Speed > 0))
             {
-                int entry = TurnCycle[(cycleIndex + step) % TurnCycle.Length];
-                if (entry == PartyTurn)
-                    return false;
-                if (Enemies[entry].Alive)
-                    return true;
+                var speeds = new double[Enemies.Length];
+                for (int i = 0; i < Enemies.Length; i++)
+                    speeds[i] = Enemies[i].Alive ? Math.Max(1, Enemies[i].Speed) : 0;
+                return CombatTurnOrder.After(round, PartySpeed(), speeds);
             }
-            return false;
+            var runs = new List<List<int>>();
+            int first = Array.IndexOf(TurnCycle, PartyTurn);
+            if (first < 0)
+                return new List<int>();
+            for (int step = 0; step < TurnCycle.Length; step++)
+            {
+                int entry = TurnCycle[(first + step) % TurnCycle.Length];
+                if (entry == PartyTurn)
+                    runs.Add(new List<int>());
+                else if (entry >= 0 && entry < Enemies.Length)
+                    runs[^1].Add(entry);
+            }
+            var run = runs[(Mathf.Max(1, round) - 1) % runs.Count];
+            return run.FindAll(enemy => Enemies[enemy].Alive);
+        }
+
+        /// <summary>The party's speed in the turn order: the average of the allies standing.</summary>
+        public double PartySpeed()
+        {
+            var speeds = new List<int>();
+            foreach (var ally in Allies)
+                if (!ally.Down)
+                    speeds.Add(ally.Stats.Speed);
+            return CombatTurnOrder.PartySpeed(speeds);
         }
 
         /// <summary>The enemy steps forward, hits one ally still standing at random, and steps back.</summary>
@@ -1535,21 +1599,31 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>An enemy's blow landing on an ally, with its burst when there are effects.</summary>
-        private IEnumerator Strike(int target, int power, int attacker = -1)
+        private IEnumerator Strike(int target, int power, int attacker = -1, EnemyMove move = null)
         {
             if (Guarded(target, ref power, attacker))
                 yield break;
             // The ally's defense softens the blow: magic defense against an enemy's spell,
-            // physical defense against its blow.
-            if (attacker >= 0)
+            // physical defense against its blow. A skill's spell is one of 属攻.
+            bool magic =
+                move != null
+                    ? move.Stat == CardStat.MagicAttack
+                    : attacker >= 0 && Enemies[attacker].Magic;
+            if (attacker >= 0 && move is not { IgnoreDefense: true })
                 power = CombatFormula.Defend(
                     power,
-                    Enemies[attacker].Magic
+                    magic
                         ? Allies[target].Stats.MagicDefense
                         : Allies[target].Stats.PhysicalDefense,
                     Enemies[attacker].Level
                 );
-            HitAlly(target, power);
+            if (move is { BreakBlock: true } && BlockOf(target) > 0)
+            {
+                ShowPopup(Allies[target].TargetArea, "ブロックを砕かれた", GuardColor, 36f);
+                allyBlock[target] = 0;
+                RefreshBlock(target);
+            }
+            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true });
             if (Vfx != null)
                 Vfx.Strike(Allies[target].TargetArea);
             Riposte(target, attacker);
@@ -1748,28 +1822,21 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The upcoming turns from the current one, skipping defeated enemies.</summary>
         public int[] UpcomingTurns(int count)
         {
-            var turns = new int[count];
-            if (TurnCycle.Length == 0)
-                return turns;
-            int filled = 0;
-            for (int step = 0; filled < count && step < TurnCycle.Length * (count + 1); step++)
+            var turns = new List<int>();
+            int round = BattleTurn;
+            if (EnemyTurn && roundStep >= 0)
             {
-                int entry = TurnCycle[(cycleIndex + step) % TurnCycle.Length];
-                if (entry == PartyTurn || Enemies[entry].Alive)
-                    turns[filled++] = entry;
+                for (int k = roundStep; k < roundOrder.Count; k++)
+                    if (Enemies[roundOrder[k]].Alive)
+                        turns.Add(roundOrder[k]);
+                round++;
             }
-            return turns;
-        }
-
-        private int NextPartyEntry(int from)
-        {
-            for (int step = 1; step <= TurnCycle.Length; step++)
+            while (turns.Count < count)
             {
-                int index = (from + step) % TurnCycle.Length;
-                if (TurnCycle[index] == PartyTurn)
-                    return index;
+                turns.Add(PartyTurn);
+                turns.AddRange(EnemiesAfter(round++));
             }
-            return from;
+            return turns.GetRange(0, count).ToArray();
         }
 
         private void RefreshTurnOrder()
@@ -1838,7 +1905,9 @@ namespace Baryonyx.Combat.Presentation
             // A unique skill's card may evolve before its effect (doc/features/skill-evolution.md).
             if (DrawEvolution(card.DeckIndex, data, caster))
             {
-                Enqueue(EvolveThenPerform(card.DeckIndex, data, parts, bases, chosen, onEnemies, caster));
+                Enqueue(
+                    EvolveThenPerform(card.DeckIndex, data, parts, bases, chosen, onEnemies, caster)
+                );
                 return;
             }
             Enqueue(
@@ -1870,8 +1939,8 @@ namespace Baryonyx.Combat.Presentation
             // A stage that works on the other side (a heal become an attack) picks its own target.
             bool side =
                 played.Effect
-                    is BattleInspectCardEffect.DamageOne
-                        or BattleInspectCardEffect.DamageAll;
+                is BattleInspectCardEffect.DamageOne
+                    or BattleInspectCardEffect.DamageAll;
             if (side != onEnemies)
             {
                 chosen = new List<int>();
@@ -2196,7 +2265,8 @@ namespace Baryonyx.Combat.Presentation
             int index,
             int power,
             BattleInspectElement element,
-            BattleInspectElement extra = BattleInspectElement.None
+            BattleInspectElement extra = BattleInspectElement.None,
+            bool lasting = false
         )
         {
             var enemy = Enemies[index];
@@ -2218,6 +2288,13 @@ namespace Baryonyx.Combat.Presentation
                 OnWeaknessRevealed(enemy, weakness);
             }
             int damage = weak ? Mathf.RoundToInt(power * WeakMultiplier) : power;
+            // Its protection and block soften a blow, but not a burn, poison nor bleeding (lasting).
+            if (!lasting)
+            {
+                if (HasStatus(false, index, CardStatus.Protect))
+                    damage = Mathf.RoundToInt(damage * (1f - ProtectCut));
+                damage = AbsorbEnemy(index, damage);
+            }
             enemy.Hp = Mathf.Max(0, enemy.Hp - damage);
             RefreshEnemy(enemy);
 
@@ -2277,10 +2354,11 @@ namespace Baryonyx.Combat.Presentation
                 sprite.material = ActorMaterial;
         }
 
-        private void HitAlly(int index, int damage)
+        private void HitAlly(int index, int damage, bool pastBlock = false)
         {
             var ally = Allies[index];
-            damage = Absorb(index, damage);
+            if (!pastBlock)
+                damage = Absorb(index, damage);
             ally.Hp = Mathf.Max(0, ally.Hp - damage);
             RefreshAlly(ally);
             // Its cards leave the hand and the deck the moment it falls.
@@ -2318,10 +2396,13 @@ namespace Baryonyx.Combat.Presentation
         private void ReviveEnemies()
         {
             ClearStatuses(false);
-            foreach (var enemy in Enemies)
+            for (int i = 0; i < Enemies.Length; i++)
             {
+                var enemy = Enemies[i];
                 enemy.Hp = enemy.MaxHp;
                 enemy.Group.alpha = 1f;
+                SetEnemyBlock(i, 0);
+                StopGathering(i);
                 RefreshEnemy(enemy);
             }
         }

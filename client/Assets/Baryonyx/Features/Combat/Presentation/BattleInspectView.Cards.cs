@@ -12,8 +12,8 @@ namespace Baryonyx.Combat.Presentation
     /// block, statuses, energy, draws, lowered costs, a free next card and revealed weaknesses.
     /// Statuses last a number of party turns: burns, poison, sigils, clouds and regen work as the
     /// party's turn comes round; freezing, paralysis, bleeding, taunts, reflection, protection and
-    /// invincibility change the enemies' blows. Chill, speed up and delays only show (the mock's
-    /// turn order is fixed); block lasts until the party's next turn.
+    /// invincibility change the enemies' blows. Chill, speed up and delays only show (they do not
+    /// change the turn order yet); block carries over, halved as each party turn begins.
     /// </summary>
     public sealed partial class BattleInspectView
     {
@@ -454,7 +454,7 @@ namespace Baryonyx.Combat.Presentation
                     yield return Tick(
                         status,
                         Enemies[i].TargetArea,
-                        () => Hit(enemy, damage, BattleInspectElement.None)
+                        () => Hit(enemy, damage, BattleInspectElement.None, lasting: true)
                     );
                     if (status == CardStatus.Poison && --active.Amount <= 0)
                         StatusesOf(false, i).Remove(active);
@@ -468,6 +468,7 @@ namespace Baryonyx.Combat.Presentation
                 StatusesOf(false, i).Remove(sigil);
                 yield return Detonate(i, sigil.Power, sigil.Source);
             }
+            yield return EnemyRegen();
             for (int i = 0; i < Allies.Length; i++)
             {
                 var regen = Find(true, i, CardStatus.Regen);
@@ -573,7 +574,7 @@ namespace Baryonyx.Combat.Presentation
             yield return Tick(
                 CardStatus.Bleed,
                 Enemies[enemy].TargetArea,
-                () => Hit(enemy, bleed.Power, BattleInspectElement.None)
+                () => Hit(enemy, bleed.Power, BattleInspectElement.None, lasting: true)
             );
         }
 
@@ -623,7 +624,7 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// Adds to an ally's block, up to the ally's max HP, and returns how much it grew. The
-        /// block stays from turn to turn until damage takes it.
+        /// block stays from turn to turn until damage takes it, halved as each party turn begins.
         /// </summary>
         private int AddBlock(int ally, int amount)
         {
@@ -635,6 +636,25 @@ namespace Baryonyx.Combat.Presentation
             if (gained > 0)
                 ChargedShield(ally);
             return gained;
+        }
+
+        /// <summary>
+        /// The party's turn comes round: each ally keeps half of its block (<see cref="CardRules.BlockKept"/>)
+        /// and shows what it lost.
+        /// </summary>
+        private void HalveBlock()
+        {
+            EnsureBlock();
+            for (int i = 0; i < allyBlock.Length; i++)
+            {
+                int kept = CardRules.BlockKept(allyBlock[i]);
+                int lost = allyBlock[i] - kept;
+                if (lost <= 0)
+                    continue;
+                allyBlock[i] = kept;
+                RefreshBlock(i);
+                ShowPopup(Allies[i].TargetArea, $"ブロック -{lost}", GuardColor, 36f);
+            }
         }
 
         /// <summary>Takes every ally's block away.</summary>

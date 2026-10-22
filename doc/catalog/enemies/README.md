@@ -88,6 +88,8 @@ IDの接頭辞は `enemy-`、メタデータの `category` は `enemies` とす�
 
 個別の定義では、ステータス、使う技、行動パターンを分けて書く。
 技そのもの（効果・予告・演出）は[敵の技の定義](../enemy-skills/README.md)に1技1ファイルで置き、敵の定義からはリンクする。
+冒険の戦闘は、2026-10-22から、この技と行動パターンを [CombatEnemyBehaviors](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) に写して動かす。速度は [CombatEnemyStats](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs) に写す。定義の技・行動パターン・速度を変えたら、両方を合わせて直す。
+戦闘にまだない効果（味方に付く状態・呼び出しなど）は写していない。その一覧は[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)にある。
 
 | 項目 | 書き方 |
 |---|---|

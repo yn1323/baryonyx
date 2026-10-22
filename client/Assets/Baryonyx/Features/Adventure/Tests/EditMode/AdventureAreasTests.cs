@@ -104,14 +104,14 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(pack.Kinds[AdventureCatalog.LargePlace], Is.Null);
             Assert.That(pack.Enemies, Is.EqualTo(new[] { 0, 1 }));
             Assert.That(pack.Level, Is.EqualTo(area.Level));
-            Assert.That(pack.HpScale, Is.EqualTo(1f));
+            Assert.That(pack.HpScale, Is.EqualTo(AdventureCatalog.PackHpScale));
 
             var elite = AdventureCatalog.Encounter("port-portoria/elite/4");
             Assert.That(elite.Kinds.Take(2), Is.EqualTo(pack.Kinds.Take(2)));
             Assert.That(elite.Level, Is.EqualTo(area.Level + AdventureCatalog.EliteLevelUp));
             Assert.That(elite.HpScale, Is.EqualTo(AdventureCatalog.EliteHpScale));
             Assert.That(elite.PowerScale, Is.EqualTo(AdventureCatalog.ElitePowerScale));
-            Assert.That(pack.PowerScale, Is.EqualTo(1f));
+            Assert.That(pack.PowerScale, Is.EqualTo(AdventureCatalog.PackPowerScale));
 
             var boss = AdventureCatalog.Encounter("port-portoria/boss/4");
             Assert.That(area.Bosses, Does.Contain(boss.Kinds[AdventureCatalog.LargePlace]));

@@ -1798,7 +1798,7 @@ namespace Baryonyx.Tests.PlayMode
                 yield return null;
             int lost = hpBefore.Sum() - view.Allies.Sum(ally => ally.Hp);
             Assert.That(lost, Is.LessThan(wolf.Power + slime.Power));
-            // The block stays into the party's next turn; only the blows wear it down.
+            // The block stays into the party's next turn, halved; the blows wear it down first.
             Assert.That(
                 Enumerable.Range(0, view.Allies.Length).Sum(i => view.BlockOf(i)),
                 Is.GreaterThan(0),
@@ -1833,6 +1833,37 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo((ally.Gauge.InnerDots + 2) * ally.Gauge.DotSize).Within(0.01f),
                 "A full block fills the bar."
             );
+        }
+
+        [UnityTest]
+        public IEnumerator HalfOfTheBlockIsKeptAsEachPartyTurnBegins()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int guard = DealInto(view, "Guard");
+            Play(view, guard, view.Allies[0].TargetArea);
+            yield return WaitActions(view);
+            int[] block = Enumerable.Range(0, view.Allies.Length).Select(view.BlockOf).ToArray();
+            Assert.That(block, Has.All.GreaterThan(1));
+
+            // No enemy stands, so no blow wears the block down: only the turn halves it.
+            for (int turn = 0; turn < 2; turn++)
+            {
+                foreach (var enemy in view.Enemies)
+                    enemy.Hp = 0;
+                view.EndTurnButton.onClick.Invoke();
+                yield return WaitEnemyTurn(view);
+                for (int i = 0; i < view.Allies.Length; i++)
+                {
+                    block[i] /= 2;
+                    Assert.That(view.BlockOf(i), Is.EqualTo(block[i]), $"Half is kept (ally {i}).");
+                    Assert.That(
+                        view.Allies[i].Gauge.Block.gameObject.activeSelf,
+                        Is.EqualTo(block[i] > 0)
+                    );
+                }
+                yield return WaitDealt(view);
+            }
         }
 
         [UnityTest]

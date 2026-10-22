@@ -171,6 +171,64 @@ namespace Baryonyx.Tests.PlayMode
             lab.SetRepeat(false);
         }
 
+        [UnityTest]
+        public IEnumerator TheSkillButtonPlaysTheEnemysPatternAndItsBlockTakesBlowsFirst()
+        {
+            var (lab, view) = (default(EnemyLab), default(BattleInspectView));
+            yield return Load((l, v) => (lab, view) = (l, v));
+            lab.Select(2);
+            var guardian = view.Enemies[2];
+
+            // 森の守り手 opens with 大地の拳, then goes round its order: 身を固める next.
+            yield return Press(lab, EnemyLabAction.Skill, seconds: 10f);
+            Assert.That(guardian.Brain, Is.Not.Null, "It takes its skills from its document.");
+            Assert.That(guardian.Brain.History, Is.EqualTo(new[] { "大地の拳" }));
+            yield return Press(lab, EnemyLabAction.Skill, seconds: 10f);
+            Assert.That(guardian.Brain.History[1], Is.EqualTo("身を固める"));
+            int block = view.EnemyBlockOf(2);
+            Assert.That(block, Is.GreaterThan(0));
+            Assert.That(
+                guardian.Gauge.Block.gameObject.activeSelf,
+                Is.True,
+                "Shown over its HP bar."
+            );
+
+            // A blow takes its block before its HP.
+            int hp = guardian.Hp;
+            int power = view.LabBlowPower(2);
+            yield return Press(lab, EnemyLabAction.Hit);
+            Assert.That(view.EnemyBlockOf(2), Is.EqualTo(Mathf.Max(0, block - power)));
+            Assert.That(guardian.Hp, Is.EqualTo(hp - Mathf.Max(0, power - block)));
+        }
+
+        [UnityTest]
+        public IEnumerator TheBigSkillIsGatheredWithAGlowAndThenLandsOnTheWholeParty()
+        {
+            var (lab, view) = (default(EnemyLab), default(BattleInspectView));
+            yield return Load((l, v) => (lab, view) = (l, v));
+            lab.Select(2);
+            int[] before = view.Allies.Select(ally => ally.Hp).ToArray();
+
+            lab.ActionButtons[(int)EnemyLabAction.BigSkill].onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => view.IsCharging(2), 5f, "It gathers.");
+            Assert.That(view.EnemyBlockOf(2), Is.GreaterThan(0), "It braces as it gathers.");
+            Assert.That(
+                view.Allies.Select(ally => ally.Hp),
+                Is.EqualTo(before),
+                "Nothing lands while it gathers."
+            );
+            yield return SceneTests.WaitUntil(() => !lab.Busy, 10f, "It lands.");
+            Assert.That(view.IsCharging(2), Is.False);
+            Assert.That(view.Enemies[2].Sprite.color, Is.EqualTo(Color.white), "The glow is gone.");
+            for (int i = 0; i < view.Allies.Length; i++)
+                if (!view.Allies[i].Absent)
+                    Assert.That(
+                        view.Allies[i].Hp,
+                        Is.LessThan(before[i]),
+                        "森羅の鉄槌 hits every ally."
+                    );
+        }
+
         /// <summary>Presses the action's button and waits for the battle to finish it.</summary>
         private static IEnumerator Press(EnemyLab lab, EnemyLabAction action, float seconds = 5f)
         {

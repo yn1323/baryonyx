@@ -30,6 +30,7 @@
 | 2026-10-04 | [冒険の1周（出発・探索・戦闘・報酬・復活・結果・中断と再開）](2026-10-04-adventure-loop.md) | 完了（探索の部分は置き換え） | 後継：[探索の地図](2026-10-04-exploration-route-map.md)。反映先：[探索とダンジョンの進行](../features/stage-progression.md)・[冒険の画面](../features/screens.md#冒険の画面) |
 | 2026-10-04 | [探索を森を見下ろす地図にし、分岐ルートを冒険ごとに作る](2026-10-04-exploration-route-map.md) | 完了 | [探索とダンジョンの進行](../features/stage-progression.md)・[冒険の画面](../features/screens.md#冒険の画面) |
 | 2026-10-18 | [ライブラリ（手に入れた物・敵・日々の歩数の図鑑）](2026-10-18-library.md) | 進行中 | [ライブラリ](../features/library.md) |
+| 2026-10-22 | [冒険の戦闘のターン順と敵の技](2026-10-22-enemy-skills-turn-order.md) | 完了（人が遊んだ感触は未確認） | [戦闘システム](../features/combat.md)・[探索とダンジョンの進行の戦闘の試し](../features/stage-progression.md#戦闘の試し) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 今は、Health Connectの連携とGoogle接続を独立して扱う（[健康データの読み取りと保存](../features/health-data.md)）。

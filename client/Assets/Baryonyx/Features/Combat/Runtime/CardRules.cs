@@ -13,6 +13,16 @@ namespace Baryonyx.Combat
         public const int ActPerStep = 1000;
 
         /// <summary>
+        /// The part of an ally's block kept as the party's turn comes round, in percent
+        /// (provisional: doc/features/combat.md, card statuses). The rest is lost, so block carries
+        /// over without piling up.
+        /// </summary>
+        public const int BlockKeptPercent = 50;
+
+        /// <summary>The block an ally keeps of <paramref name="block"/> into the party's next turn, rounded down.</summary>
+        public static int BlockKept(int block) => Math.Max(0, block) * BlockKeptPercent / 100;
+
+        /// <summary>
         /// The power of an action from its user's <paramref name="stat"/>, with today's
         /// <paramref name="act"/> for the cards that grow with it. Rounded half away from zero.
         /// </summary>

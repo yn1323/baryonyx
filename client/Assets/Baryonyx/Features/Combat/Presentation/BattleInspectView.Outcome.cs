@@ -90,9 +90,10 @@ namespace Baryonyx.Combat.Presentation
                     continue;
                 standing.Add(i);
                 Become(i, id, level);
+                Enemies[i].AttackScale = Mathf.Max(0.01f, powerScale);
                 Enemies[i].Power = Mathf.Max(
                     1,
-                    Mathf.RoundToInt(Enemies[i].Power * Mathf.Max(0.01f, powerScale))
+                    Mathf.RoundToInt(Enemies[i].Power * Enemies[i].AttackScale)
                 );
             }
             UseEncounter(standing, hpScale);
@@ -117,6 +118,18 @@ namespace Baryonyx.Combat.Presentation
             );
             enemy.PhysicalDefense = EnemyStats.At(stats.PhysicalDefense, enemy.Level);
             enemy.MagicDefense = EnemyStats.At(stats.MagicDefense, enemy.Level);
+            enemy.PhysicalAttack = EnemyStats.At(stats.PhysicalAttack, enemy.Level);
+            enemy.MagicAttack = EnemyStats.At(stats.MagicAttack, enemy.Level);
+            enemy.Speed = EnemyStats.At(stats.Speed, enemy.Level);
+            enemy.AttackScale = 1f;
+            enemy.Block = 0;
+            enemy.PowerUp = 0;
+            // その種類の技と行動パターンで動く（doc/catalog/enemies）。定義がなければ、技1つで攻撃する。
+            var behavior = CombatEnemyBehaviors.Find(id);
+            enemy.Brain =
+                behavior != null
+                    ? new EnemyBrain(behavior, n => UnityEngine.Random.Range(0, n))
+                    : null;
             enemy.SkillName = stats.Skill;
             enemy.Boss = stats.Body == EnemyBody.Large;
             if (look != null && look.Texture != null && enemy.Sprite != null)
