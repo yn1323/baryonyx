@@ -53,8 +53,8 @@ jobs:
         run: python3 -B -m unittest discover -s client/ci -p 'test_unity_ci.py'
       - name: Test shared Editor lock
         run: python3 -B -m unittest discover -s client/ci -p 'test_editor_lock.py'
-      - name: Test PlayMode class runner
-        run: python3 -B -m unittest discover -s client/ci -p 'test_run_playmode_classes.py'
+      - name: Test Editor test runner
+        run: python3 -B -m unittest discover -s client/ci -p 'test_run_editor_tests.py'
 
   format:
     name: Client format (${{ matrix.os }})

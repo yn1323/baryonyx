@@ -78,9 +78,9 @@ Appの起動テストは `App/Tests/PlayMode/` に置き、起動シーンの読
 ## 作業中に実行するPlayModeテスト
 
 PlayModeテストはシーンの読み込みとフレームの経過を待つため、1件あたりの時間がEditModeより長い。
-2026-09-29にmacOSのEditorで全件を実行したときのテスト本体の実行時間は、EditMode 223件の合計が約23秒、PlayMode 29件が約12秒だった（遷移演出を短くする前は34件で約50秒）。
+2026-10-22にmacOSのEditor（背面で表示）で [run-editor-tests.py](../../client/ci/run-editor-tests.py) から全件を実行したときの所要時間（スクリプトの開始から終了まで）は、EditMode 557件で約50秒、PlayMode 145件で約6分（0件によるやり直し1回を含む）だった。PlayModeの2クラス8件は約15秒だった。
 作業中は関連するPlayModeテストだけを実行し、全件はcommit前に実行する（[commitの手順](../../AGENTS.md#commitの手順)）。
-EditModeは全件でも30秒ほどで終わるため、作業中も `Baryonyx.EditModeTests` を全件実行する。
+EditModeは全件でも1分ほどで終わるため、作業中も `Baryonyx.EditModeTests` を全件実行する（`--mode editmode`）。
 
 関連するPlayModeテストは、次の順に選ぶ。
 
@@ -92,24 +92,23 @@ EditModeは全件でも30秒ほどで終わるため、作業中も `Baryonyx.Ed
    - `Packages/`、`ProjectSettings/`、ビルド対象シーンの変更
    - 関連するテストを判断できない場合
 
-PlayModeテストはすべて名前空間 `Baryonyx.Tests.PlayMode` に属するため、クラス名で絞る。
-接続中のEditorでは `run_tests --mode playmode --filter PlayMode.<テストクラス名>. --async_tests true` をクラスごとに実行する（例：`--filter PlayMode.HomeSceneTests.`）。
-`filter_type` の既定値 `testName` は、テストの完全名（`Baryonyx.Tests.PlayMode.<クラス名>.<メソッド名>`）を大文字小文字を区別せず部分一致で絞り込む。
-クラス名だけを渡すと、名前にそのクラス名を含む別のクラスも実行される（例：`HomeSceneTests` は `TopHomeSceneTests` にも一致する）。
-そのため、前に `PlayMode.`、後ろに `.` を付けてクラスの境界を示す。
-複数のクラスは、接続中のEditorで [run-playmode-classes.py](../../client/ci/run-playmode-classes.py) にクラス名を並べて続けて実行する（例：`python3 client/ci/run-playmode-classes.py HomeSceneTests TavernTrainingTests --owner "<作業の名前>"`）。
-スクリプトは、[実行と結果確認](#実行と結果確認)の手順6を除く手順をクラスごとに行い、クラスごとの成否と件数を1行ずつ出す。
+接続中のEditorでは、[run-editor-tests.py](../../client/ci/run-editor-tests.py) にクラス名を並べて実行する（例：`python3 client/ci/run-editor-tests.py HomeSceneTests TavernTrainingTests --owner "<作業の名前>"`）。
+並べたクラスは1回の実行にまとめ、再生の開始と停止も1回で済ませる。
+EditModeは `--mode editmode` を付ける。クラス名を省くと、そのモードのアセンブリ（`Baryonyx.PlayModeTests`・`Baryonyx.EditModeTests`）を全件実行する（例：`python3 client/ci/run-editor-tests.py --mode editmode --owner "<作業の名前>"`）。
+クラス名は名前空間を付けずに書く。スクリプトはテストの完全名のうちクラスの部分を前後の `.` で区切って照らすため、`HomeSceneTests` に `TopHomeSceneTests` は含まれない。
+スクリプトは[実行と結果確認](#実行と結果確認)の手順を順に行い、クラスごとの成否と件数を1行ずつ出す。
 札を自分で取らずにスクリプトに取らせる。すでに札を持っているときは `--token <token>` を渡すと、札を延長し、返さずに終わる。
 クラス名の誤りは、札を取る前に `list_tests` の一覧と照らして止める。
-数分かかるため、バックグラウンドで1回だけ実行し、終了の通知を待つ。終了コードは、すべて成功で0、失敗ありで1、クラス名の誤りで2、札が取れないと3、Editorの異常や時間切れで5である。
-`run_tests` の `--filter` に `;` 区切りや「A|B」で複数のクラスを渡すと0件になるため、接続中のEditorでは使わない。
+数分かかることがあるため、バックグラウンドで1回だけ実行し、終了の通知を待つ。終了コードは、すべて成功で0、失敗ありで1、クラス名の誤りで2、札が取れないと3、Editorの異常や時間切れで5である。
+
+接続中のEditorで `run_tests` を直接使うと、クラスを1つずつしか絞り込めない（`--filter` に `;` 区切りや「A|B」で複数のクラスを渡すと0件になる）。
+保存の確認ダイアログも防げないため、スクリプトを使う。
 Unity CLIの別起動では、`unity test` の `--filter` にクラス名を `;` 区切りで渡す（[Unity Test Frameworkのコマンドライン引数](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/reference-command-line.html)）。
 絞り込んだ実行で0件になった場合は、指定を誤っているため成功に含めない。
 
 1件だけの実行でも、PlayModeテストはEditorを再生状態にして実行し、終了後に停止する。
 再生が始まったことは、全件を実行した証拠にならない。
-実行した件数は、`test_status` の件数、またはEditorログの `[TestResultCollector] Run finished: <件数> total` で確かめる。
-同じログの `Run started: <件数> test(s)` は、絞り込む前のPlayModeテスト全体の件数を表示するため、実行件数の確認に使わない。
+実行した件数は、スクリプトが出す件数、またはEditorログの `[EditorTestRun] Run finished: <件数> total` で確かめる。
 
 ## 複数のチャットで1台のEditorを使うとき
 
@@ -154,18 +153,24 @@ Unityは終了時に `Temp/` を消すため、Editorを開き直すと札も消
 Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実行する。
 対象プロジェクトをEditorで開いている場合、CLIの別起動には検証コピーを使う。
 
-接続中のEditorでは `run_tests --mode editor` または `run_tests --mode playmode` に `--filter <アセンブリ名> --filter_type assembly --async_tests true` を付け、`test_status` で完了と件数を確認する。
-接続中のEditorでテストを実行するときは、毎回次の順に進める。
+接続中のEditorでは [run-editor-tests.py](../../client/ci/run-editor-tests.py) で実行する（[使い方](#作業中に実行するplaymodeテスト)）。
+スクリプトは次の順に進める。
 
 1. Editorの札を取る（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）。
-2. 開いているシーンに未保存の変更があれば保存する（[client/AGENTS.md](../../client/AGENTS.md#unityの操作と検証)）。
-3. `run_tests` で実行を始める。
-4. 開始から数秒のうちに、Editorログの今回の `[TestResultCollector] Run started: <件数> test(s)` を確認する。この件数は絞り込む前の全体の件数で、PlayModeでは0にならない。0なら、テストを見つけられていない。
-5. 0のときは、完了を待たずにすぐ `cancel_tests` と `editor_stop` で止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
-6. やり直しても0なら、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行し、検証後に元へ戻す。
-7. 完了を待つ時間には上限を設ける（EditModeは2分、PlayModeは5分を目安）。上限を超えたら待つのをやめ、Editorの状態（保存の確認ダイアログ、再生中か、コンパイル中か）を確かめてユーザーに報告する。
-8. 完了は、`test_status` が completed になり、かつ今回の開始以降のログに `Run finished: <件数> total` が出たことで判断する。前回の実行の結果と取り違えない。実行件数が0の結果は成功に含めない。
-9. 結果を確かめたら札を返す。続けて別のテストを実行する場合は、返さずに手順2へ戻ってよい。
+2. 再生中なら止め、コンパイルや再読み込みが終わるのを待つ。
+3. `eval` の1回の呼び出しで [EditorTestRun](../../client/Assets/Baryonyx/Editor/CI/EditorTestRun.cs) の `Start` を呼ぶ。`Start` は開いているシーンを保存し（`EditorSceneManager.SaveOpenScenes`）、同じ呼び出しの中で `TestRunnerApi.Execute` を呼んで実行を始める。複数のクラスは `Filter.groupNames` の正規表現で1回の実行にまとめる。
+4. `EditorTestRun` が `client/Temp/editor-test-run.json` に書く今回の結果を待つ。開始の件数が0なら、テストを見つけられていない。
+5. 0のときは、完了を待たずにすぐ止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
+6. 完了を待つ時間には上限を設ける（既定は10分。`--timeout` で変える）。上限を超えたら止めて、終了コード5で終わる。
+7. 完了したら、クラスごとの件数を `list_tests` の件数と照らす。実行件数が0の結果は成功に含めない。
+8. 札を返す。
+
+Unity Test Frameworkは、テストを始めるたびに開いているシーンに未保存の変更がないかを確かめ、あれば保存の確認ダイアログを出す（`SaveModifiedSceneTask`）。
+ダイアログは人が押すまでEditorを止め、Unity CLIからは押せない。
+保存と実行の開始を別々の命令にすると、その間に他のチャットの操作やPrefabの生成し直しでシーンが未保存に戻ることがあるため、`Start` で1回にまとめている。
+名前のない（Untitled）シーンに未保存の変更があると、保存先を選ぶダイアログになるため、`Start` は実行を始めずにエラーを返す。スクリプトは終了コード5で終わるので、ユーザーに保存か破棄を頼む。
+スクリプトが終了コード5で止まったら、Editorの状態（確認ダイアログ、再生中か、コンパイル中か）を確かめてユーザーに報告する。
+やり直しても0件なら、検証中だけEnter Play Mode Optionsの省略設定を無効にして再実行し、検証後に元へ戻す。
 
 1回の実行の完了は、1つの待ち方で待つ。同じ完了を複数の監視やコマンドで待っても早くは終わらず、同じ通知が重なって確認の手間が増える。
 
@@ -200,7 +205,7 @@ AnalyzerとAndroidのLibraryは、従来どおり別のキーで管理する。
 `Client CI scripts` はUnityを起動せず、実行補助の後始末と結果検証の異常系を検査する。
 ローカルでは `python -B -m unittest discover -s client/ci -p 'test_unity_ci.py'` で実行する。
 Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同じjobで `python -B -m unittest discover -s client/ci -p 'test_editor_lock.py'` が検査する。
-PlayModeのクラスを続けて実行するスクリプトは、偽のEditorを相手に `python -B -m unittest discover -s client/ci -p 'test_run_playmode_classes.py'` が検査する。
+接続中のEditorでテストを実行するスクリプトは、偽のEditorを相手に `python -B -m unittest discover -s client/ci -p 'test_run_editor_tests.py'` が検査する。
 実行補助の検査にはBashが必要で、WindowsではGit for WindowsのBashを使う。
 ライセンス設定は [コード品質の手順](client-code-quality.md) を参照する。
 
