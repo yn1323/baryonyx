@@ -15,5 +15,5 @@ MonoBehaviour:
   GoogleWebClientId: 557809248205-nr5ojfs7jlr1gcc7ckvc8a3n4po6hv79.apps.googleusercontent.com
   DevServerUrl: https://baryonyx-server-dev.croissant-lab.workers.dev
   ProdServerUrl: 
-  BuildServerUrl: 
+  BuildServerUrl: https://baryonyx-server-dev.croissant-lab.workers.dev
   PreviewStartsUnlinked: 0
