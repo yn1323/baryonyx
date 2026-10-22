@@ -67,7 +67,10 @@ test("名前が部分一致する別DBを再利用しない", async () => {
       : [{ ...database, name: `${database.name}3` }];
   }, database.name);
   assert.equal(calls.length, 2);
-  assert.deepEqual(JSON.parse(calls[1].options.body), { name: database.name });
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    name: database.name,
+    primary_location_hint: "apac",
+  });
 });
 
 test("PR終了時はWorkerを先に削除し、そのPRのDBだけを削除する", async () => {

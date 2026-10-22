@@ -299,6 +299,7 @@ APIのURLはjob summary、GitHub environment、`preview-url` 出力から取得�
 開発者が1人で `feat/` のブランチを常に1本にする運用が前提で、`develop` へマージしなくてもサーバーの変更をDevで確かめられる。
 `feat/` のブランチが同時に複数あると、最後にpushしたブランチの内容でDevが上書きされる。
 マージコミットを検査してから公開し、DBがなければ作成し、あれば再利用する。
+DBは東京を含むアジア太平洋（`apac`）に作り、Workerは東京（`aws:ap-northeast-1`）の近くで動かす。D1は都市を指定できず、場所は作成時にだけ決まる。既存のDBの場所を変えるには、DBを削除してから公開し直す。
 PRをマージせずに閉じた場合は公開しない。
 手動実行では `dev` または `prod` を選んで任意のGit参照を公開できる。
 `feat/` 以外のブランチへの直接pushは自動公開の契機にしない。
@@ -319,5 +320,6 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-22：ユーザーの「東京を指定したい。DBもHonoのserverも」を受け、[deploy.mjs](../../server/scripts/deploy.mjs) でD1の作成時に `primary_location_hint: "apac"` を、Workerに `placement.region: "aws:ap-northeast-1"` を指定した。それまでは場所を指定せず、作成を実行したGitHub Actionsの近く（北米と推定）にDBができていた。参考：[D1のデータの場所](https://developers.cloudflare.com/d1/configuration/data-location/)、[D1作成API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-19：[品質](../features/inventory.md#品質)の実装で、[0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) を[マイグレーション](#マイグレーション)に加え、seedの装備とボーナスに倍率を持たせた。Drizzle Kitが列の新設か改名かを対話で尋ねて止まるため、疑似端末から既定の答え（新設）を選んで生成した。
 - 2026-10-05：ルートの [AGENTS.md](../../AGENTS.md#作業の基本) の「未リリースのため、Migration、既存データとの互換性、旧バージョンとの互換性は考慮しない」に合わせ、[マイグレーション](#マイグレーション)の「既存Workerとの互換性を確認」「旧Workerと互換性を保つSQLを用意する」を、未リリースの間は考慮せずDBを作り直す扱いに改めた。リリース前に見直す。あわせて、[開発用データ（seed）](#開発用データseed)を加え、serverのAGENTS.mdにあったディレクトリ構成と配置をこの文書へ移した。

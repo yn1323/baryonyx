@@ -14,6 +14,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+// D1は都市を指定できないため、東京を含むアジア太平洋を指定する。作成後は変えられない。
+export const databaseLocationHint = "apac";
+// Workerは東京のAWSリージョンに近いデータセンターで動かす。
+export const workerPlacement = { region: "aws:ap-northeast-1" };
+
 export function targetNames(stage, pr) {
   if (stage === "preview") {
     assert.match(pr ?? "", /^[1-9]\d{0,9}$/, "有効なPR番号が必要です");
@@ -85,7 +90,10 @@ export async function ensureDatabase(api, name) {
   if (existing) return existing;
   return api("/d1/database", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({
+      name,
+      primary_location_hint: databaseLocationHint,
+    }),
   });
 }
 
@@ -218,6 +226,7 @@ async function deploy(api, stage, pr) {
       compatibility_flags: info.compatibility_flags,
       workers_dev: true,
       preview_urls: false,
+      placement: workerPlacement,
       vars,
       d1_databases: [
         {
