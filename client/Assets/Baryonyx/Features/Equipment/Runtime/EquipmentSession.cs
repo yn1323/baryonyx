@@ -27,6 +27,17 @@ namespace Baryonyx.Equipment
             : saves != null && saves.Server == Source ? saves
             : saves = new EquipmentSaves(Source);
 
+        /// <summary>
+        /// The equipment read from the server earlier in this run, which a panel shows at once
+        /// while it reads the equipment again; null before the first read or without a server.
+        /// </summary>
+        public static EquipmentState Known =>
+            Source != null && saves != null && saves.Server == Source ? saves.Current : null;
+
+        // 最後にサーバーから読んだ装備の指紋（EquipmentSaves.ReadVersion）。サーバーがなければnull。
+        public static string ReadVersion =>
+            Source != null && saves != null && saves.Server == Source ? saves.ReadVersion : null;
+
         // 最後に見ていたキャラのID。冒険者の一覧・個別・スキルの画面と共有する。
         public static string Selected
         {

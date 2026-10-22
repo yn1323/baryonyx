@@ -15,6 +15,9 @@ namespace Baryonyx.Equipment
     {
         private OptimisticState<EquipmentState> saves;
 
+        // 付け替えを始めた回数。読み直している間に付け替えたら、その前の読み込みで手元の装備を戻さない。
+        private int changes;
+
         public EquipmentSaves(IEquipmentSource server)
         {
             Server = server ?? throw new ArgumentNullException(nameof(server));
@@ -25,11 +28,18 @@ namespace Baryonyx.Equipment
         // サーバーが確かめた装備に、保存を待っている付け替えを当てたもの。まだ読んでいなければnull。
         public EquipmentState Current => saves?.Current;
 
+        // 最後にサーバーから読んだ装備の指紋。読み直して変わったかを比べる（変わらなければ描き直さない）。
+        public string ReadVersion => saves?.Confirmed.Fingerprint;
+
         public async Task<EquipmentState> LoadAsync(CancellationToken token)
         {
             if (saves is { Pending: true })
                 return saves.Current;
+            int before = changes;
             var state = await Server.LoadAsync(token);
+            // 読んでいる間に付け替えたら、読み込みは付け替えの前の装備なので使わない。
+            if (saves != null && changes != before)
+                return saves.Current;
             if (saves == null)
                 saves = new OptimisticState<EquipmentState>(state, Server.LoadAsync);
             else
@@ -66,6 +76,7 @@ namespace Baryonyx.Equipment
         {
             if (saves == null)
                 throw new InvalidOperationException("The equipment is saved after it is read.");
+            changes++;
             await saves.ChangeAsync(apply, send, _ => EquipmentPresenter.SaveFailedMessage);
             return saves.Current;
         }

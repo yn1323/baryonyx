@@ -31,6 +31,9 @@ namespace Baryonyx.Party
         // サーバーが確かめた編成と、保存を待っている変更。サーバーがなければnull。
         private static OptimisticState<PartyState> saves;
 
+        // 変更を始めた回数。読み直している間に変更したら、その前の読み込みで手元の編成を戻さない。
+        private static int changes;
+
         // サーバーがないときに育成で上げたレベル。上げていないキャラは仮データのレベルのまま。
         private static readonly Dictionary<string, int> levels = new();
 
@@ -48,6 +51,15 @@ namespace Baryonyx.Party
 
         // 保存を待っている変更がある。
         public static bool Saving => saves?.Pending ?? false;
+
+        /// <summary>
+        /// The formation read from the server earlier in this run, which a panel shows at once
+        /// while it reads the party again; null before the first read or without a server.
+        /// </summary>
+        public static PartyFormation Known => Source != null && saves != null ? formation : null;
+
+        // 最後にサーバーから読んだ編成の指紋。読み直して変わったかを比べる（変わらなければ描き直さない）。
+        public static string ReadVersion => saves?.Confirmed.Fingerprint;
 
         public static PartyFormation Formation(PartyMockData data) =>
             formation ??= PartyFormation.From(data);
@@ -101,7 +113,12 @@ namespace Baryonyx.Party
             // 保存を待っている間は、読み直すと保存前の編成が返るので、手元の編成を出す。
             if (Saving)
                 return Use(data, saves.Confirmed);
-            return Use(data, await source.LoadAsync(token));
+            int before = changes;
+            var read = await source.LoadAsync(token);
+            // 読んでいる間に変更したら、読み込みは変更の前の編成なので使わない。
+            if (saves != null && changes != before)
+                return formation;
+            return Use(data, read);
         }
 
         /// <summary>
@@ -202,6 +219,7 @@ namespace Baryonyx.Party
                 throw new InvalidOperationException(
                     "The party is saved after it is read from the server."
                 );
+            changes++;
             await saves.ChangeAsync(apply, token => send(source, token), failedMessage);
             return formation;
         }
@@ -286,6 +304,7 @@ namespace Baryonyx.Party
             formation = null;
             data = null;
             saves = null;
+            changes = 0;
             levels.Clear();
             cards.Clear();
             Source = null;

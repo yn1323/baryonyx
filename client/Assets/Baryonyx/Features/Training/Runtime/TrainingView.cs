@@ -226,34 +226,62 @@ namespace Baryonyx.Training
                     bindings.Bind(Uniques[i].Button, () => UniquePressed?.Invoke(index));
             }
 
-            // 開くたびに、サーバーのレベル・所持ルーン・編成・装備（なければアプリを動かしている間のもの）で描き直す。
+            // 開くたびに、サーバーのレベル・所持ルーン・編成・装備（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
             presenter = null;
             if (Party == null || Data == null)
                 return;
             var source = PartySession.Source;
-            if (source != null || EquipmentSession.Source != null)
+            // 前に読んだ編成と装備があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
+            var knownGear = EquipmentSession.Known;
+            bool shown = PartySession.Known != null && knownGear != null;
+            if (shown)
+                Present(knownGear, source);
+            else if (source != null || EquipmentSession.Source != null)
                 ShowLoading();
             StartLoad(
-                token => LoadAsync(source, EquipmentSession.SourceOrLocal, token),
+                token => LoadAsync(source, EquipmentSession.SourceOrLocal, shown, token),
                 LoadFailedMessage,
-                ShowLoadFailed,
-                "育成のキャラを取得できませんでした"
+                () =>
+                {
+                    // 前のキャラを出しているときは、そのまま残して通知だけにする。
+                    if (!shown)
+                        ShowLoadFailed();
+                },
+                "育成のキャラを取得できませんでした",
+                readAgain: shown
             );
         }
 
         private async Task LoadAsync(
             IPartySource source,
             IEquipmentSource equipment,
+            bool shown,
             CancellationToken token
         )
         {
-            // 同じセッションを順に使う（ログインのやり直しを重ねない）。保存を待っている変更があれば読み直さない。
-            if (source != null)
-                await PartySession.LoadAsync(Party, source, token);
-            var worn = await equipment.LoadAsync(token);
+            string shownParty = PartySession.ReadVersion;
+            string shownGear = EquipmentSession.ReadVersion;
+            // 編成と装備は同時に読む。ログインは AccountSessionRunner が1回にまとめる。
+            // 保存を待っている変更があれば、編成は読み直さない（PartySession.LoadAsync）。
+            var reading =
+                source != null ? PartySession.LoadAsync(Party, source, token) : Task.CompletedTask;
+            var wearing = equipment.LoadAsync(token);
+            await Task.WhenAll(reading, wearing);
             if (token.IsCancellationRequested)
                 return;
+            if (
+                shown
+                && Unchanged(shownParty, PartySession.ReadVersion)
+                && Unchanged(shownGear, EquipmentSession.ReadVersion)
+            )
+                return;
+            Present(await wearing, source);
+        }
+
+        private void Present(EquipmentState worn, IPartySource source)
+        {
+            presenter?.Dispose();
             presenter = Build(this, Party, Data, worn, source != null ? LevelUpAsync : null);
         }
 

@@ -141,7 +141,7 @@ namespace Baryonyx.Equipment
                 BindRow(row);
             bindings.Bind(Remove, () => RemovePressed?.Invoke());
 
-            // 開くたびに、サーバー（なければアプリを動かしている間）の編成と装備で描き直す。
+            // 開くたびに、サーバー（なければアプリを動かしている間）の編成と装備を読み直す。
             presenter?.Dispose();
             presenter = null;
             if (List != null)
@@ -150,26 +150,58 @@ namespace Baryonyx.Equipment
                 return;
             var party = PartySession.Source;
             var equipment = EquipmentSession.SourceOrLocal;
-            if (party != null || EquipmentSession.Source != null)
+            // 前に読んだ編成と装備があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
+            var knownParty = PartySession.Known;
+            var knownGear = EquipmentSession.Known;
+            bool shown = knownParty != null && knownGear != null;
+            if (shown)
+                Present(knownParty, knownGear, equipment);
+            else if (party != null || EquipmentSession.Source != null)
                 ShowLoading();
             StartLoad(
-                token => LoadAsync(party, equipment, token),
+                token => LoadAsync(party, equipment, shown, token),
                 LoadFailedMessage,
-                ShowLoadFailed
+                () =>
+                {
+                    // 前の編成と装備を出しているときは、そのまま残して通知だけにする。
+                    if (!shown)
+                        ShowLoadFailed();
+                },
+                readAgain: shown
             );
         }
 
         private async Task LoadAsync(
             IPartySource party,
             IEquipmentSource equipment,
+            bool shown,
             CancellationToken token
         )
         {
-            // 同じセッションを順に使う（ログインのやり直しを重ねない）。
-            var formation = await PartySession.LoadAsync(Party, party, token);
-            var state = await equipment.LoadAsync(token);
+            string shownParty = PartySession.ReadVersion;
+            string shownGear = EquipmentSession.ReadVersion;
+            // 編成と装備は同時に読む。ログインは AccountSessionRunner が1回にまとめる。
+            var reading = PartySession.LoadAsync(Party, party, token);
+            var wearing = equipment.LoadAsync(token);
+            await Task.WhenAll(reading, wearing);
             if (token.IsCancellationRequested)
                 return;
+            if (
+                shown
+                && Unchanged(shownParty, PartySession.ReadVersion)
+                && Unchanged(shownGear, EquipmentSession.ReadVersion)
+            )
+                return;
+            Present(await reading, await wearing, equipment);
+        }
+
+        private void Present(
+            PartyFormation formation,
+            EquipmentState state,
+            IEquipmentSource equipment
+        )
+        {
+            presenter?.Dispose();
             var (people, _) = formation.TabOrder();
             presenter = new EquipmentPresenter(
                 this,

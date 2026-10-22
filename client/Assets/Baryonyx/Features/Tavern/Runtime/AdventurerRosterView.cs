@@ -106,7 +106,7 @@ namespace Baryonyx.Tavern
             }
             Bind(Remove, () => RemovePressed?.Invoke(), null);
 
-            // 開くたびに、サーバーの編成（なければアプリを動かしている間のもの）で描き直す。
+            // 開くたびに、サーバーの編成（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
             presenter = null;
             state = null;
@@ -115,9 +115,23 @@ namespace Baryonyx.Tavern
             if (Party == null)
                 return;
             var source = PartySession.Source;
-            if (source != null)
+            // 前に読んだ編成があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
+            var known = PartySession.Known;
+            if (known != null)
+                Present(known, source);
+            else if (source != null)
                 ShowLoading();
-            StartLoad(token => LoadAsync(source, token), LoadFailedMessage, ShowLoadFailed);
+            StartLoad(
+                token => LoadAsync(source, known != null, token),
+                LoadFailedMessage,
+                () =>
+                {
+                    // 前の編成を出しているときは、そのまま残して通知だけにする。
+                    if (known == null)
+                        ShowLoadFailed();
+                },
+                readAgain: known != null
+            );
         }
 
         private void Bind(GlassCard card, Action click, Action hold)
@@ -130,12 +144,20 @@ namespace Baryonyx.Tavern
             bindings.Add((card, click, hold));
         }
 
-        private async Task LoadAsync(IPartySource source, CancellationToken token)
+        private async Task LoadAsync(IPartySource source, bool shown, CancellationToken token)
         {
-            // 同じセッションを順に使う（ログインのやり直しを重ねない）。
+            string shownVersion = PartySession.ReadVersion;
             var formation = await PartySession.LoadAsync(Party, source, token);
             if (token.IsCancellationRequested)
                 return;
+            if (shown && Unchanged(shownVersion, PartySession.ReadVersion))
+                return;
+            Present(formation, source);
+        }
+
+        private void Present(PartyFormation formation, IPartySource source)
+        {
+            presenter?.Dispose();
             Set(Status, "");
             presenter = new PartyRosterPresenter(
                 this,

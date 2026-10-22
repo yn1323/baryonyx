@@ -80,6 +80,9 @@ namespace Baryonyx.Party
         public int MaxLevel { get; }
         public int CostPerLevel { get; }
 
+        // サーバーから読んだ中身を表す文字列。読み直して変わったかを比べる。サーバーから読んでいなければnull。
+        public string Fingerprint { get; internal set; }
+
         public PartyCharacterState Find(string id) =>
             id != null && characters.TryGetValue(id, out var character) ? character : null;
 
@@ -366,7 +369,22 @@ namespace Baryonyx.Party
                 state?.rules?.costPerLevel ?? 0,
                 skillCards,
                 items
-            );
+            )
+            {
+                Fingerprint = FingerprintOf(state),
+            };
+        }
+
+        // 変更の結果（change）は中身ではないので、指紋に含めない。
+        private static string FingerprintOf(PartyApiClient.State state)
+        {
+            if (state == null)
+                return null;
+            string change = state.change;
+            state.change = null;
+            string json = UnityEngine.JsonUtility.ToJson(state);
+            state.change = change;
+            return json;
         }
     }
 }

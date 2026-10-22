@@ -267,9 +267,10 @@ namespace Baryonyx.Tests.PlayMode
             page.CardSlots[1].Button.onClick.Invoke();
             var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
                 .GetComponent<CardLoadoutView>();
-            Assert.That(panel.Status.text, Is.EqualTo(CardLoadoutView.LoadingText));
-            Assert.That(panel.Person.Name.text, Is.EqualTo(CardLoadoutView.LoadingText));
-            Assert.That(Rows(panel), Is.Empty);
+            // 個別の画面で読んだ編成をすぐ出し、読み直しを待たない（読み込み中…を出さない）。
+            Assert.That(panel.LoadTask.IsCompleted, Is.False);
+            Assert.That(panel.Status.text, Is.Not.EqualTo(CardLoadoutView.LoadingText));
+            Assert.That(panel.Person.Name.text, Is.EqualTo(panel.Party.Find("toma").Name));
             yield return SceneTests.WaitUntil(
                 () => panel.LoadTask.IsCompleted,
                 message: "The party did not load."

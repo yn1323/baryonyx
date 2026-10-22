@@ -66,6 +66,9 @@ namespace Baryonyx.Equipment
         // 「move」のとき、装備を外されたキャラのID。
         public string From { get; }
 
+        // サーバーから読んだ中身を表す文字列。読み直して変わったかを比べる。サーバーから読んでいなければnull。
+        public string Fingerprint { get; internal set; }
+
         public EquipmentItem Find(string itemId) =>
             itemId != null && items.TryGetValue(itemId, out var item) ? item : null;
 
@@ -209,7 +212,22 @@ namespace Baryonyx.Equipment
                 worn,
                 state?.change,
                 string.IsNullOrEmpty(state?.from) ? null : state.from
-            );
+            )
+            {
+                Fingerprint = FingerprintOf(state),
+            };
+        }
+
+        // 変更の結果（change・from）は中身ではないので、指紋に含めない。
+        private static string FingerprintOf(EquipmentApiClient.State state)
+        {
+            if (state == null)
+                return null;
+            var (change, from) = (state.change, state.from);
+            (state.change, state.from) = (null, null);
+            string json = UnityEngine.JsonUtility.ToJson(state);
+            (state.change, state.from) = (change, from);
+            return json;
         }
     }
 }

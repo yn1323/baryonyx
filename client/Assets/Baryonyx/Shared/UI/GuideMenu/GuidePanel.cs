@@ -28,6 +28,14 @@ namespace Baryonyx.UI.GuideMenu
         // 最後に出した通知。テストで確かめるために公開する。
         public string LastNotice { get; private set; } = "";
 
+        /// <summary>
+        /// True when reading the server again gave what the panel already shows (the fingerprint
+        /// <paramref name="read"/> matches <paramref name="shown"/>), so the panel keeps it instead
+        /// of drawing it again. Never true without a fingerprint (nothing was read from a server).
+        /// </summary>
+        protected static bool Unchanged(string shown, string read) =>
+            shown != null && shown == read;
+
         public void ShowNotice(string message)
         {
             LastNotice = message ?? "";
@@ -38,12 +46,15 @@ namespace Baryonyx.UI.GuideMenu
         /// <summary>
         /// Starts <paramref name="load"/>. If it fails, logs <paramref name="log"/> (or the
         /// message), calls <paramref name="showFailed"/> and tells <paramref name="failedMessage"/>.
+        /// <paramref name="readAgain"/> tells that the panel already shows what it read before, so
+        /// the logged time is the read behind it rather than the wait for the panel.
         /// </summary>
         protected void StartLoad(
             Func<CancellationToken, Task> load,
             string failedMessage,
             Action showFailed,
-            string log = null
+            string log = null,
+            bool readAgain = false
         ) =>
             Load.Start(
                 load,
@@ -53,7 +64,7 @@ namespace Baryonyx.UI.GuideMenu
                     showFailed();
                     ShowNotice(failedMessage);
                 },
-                GetType().Name
+                readAgain ? GetType().Name + " 読み直し" : GetType().Name
             );
     }
 }

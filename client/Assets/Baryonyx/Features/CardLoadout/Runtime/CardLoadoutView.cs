@@ -207,7 +207,7 @@ namespace Baryonyx.CardLoadout
             foreach (var row in Rows)
                 BindRow(row);
 
-            // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）で描き直す。
+            // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
             presenter = null;
             if (List != null)
@@ -220,27 +220,45 @@ namespace Baryonyx.CardLoadout
                 Present(PartySession.Formation(Party), null);
                 return;
             }
-            ShowLoading();
-            StartLoad(token => LoadAsync(source, token), LoadFailedMessage, ShowLoadFailed);
+            // 前に読んだ編成があれば、すぐ出して裏で読み直す。なければ読み終えるまで仮データを隠す。
+            var known = PartySession.Known;
+            if (known != null)
+                Present(known, Save);
+            else
+                ShowLoading();
+            StartLoad(
+                token => LoadAsync(source, known != null, token),
+                LoadFailedMessage,
+                () =>
+                {
+                    // 前の編成を出しているときは、そのまま残して通知だけにする。
+                    if (known == null)
+                        ShowLoadFailed();
+                },
+                readAgain: known != null
+            );
         }
 
-        private async Task LoadAsync(IPartySource source, CancellationToken token)
+        private async Task LoadAsync(IPartySource source, bool shown, CancellationToken token)
         {
+            string shownVersion = PartySession.ReadVersion;
             // 保存を待っている変更があれば、読み直さずに手元の編成を出す。
             var formation = await PartySession.LoadAsync(Party, source, token);
             if (token.IsCancellationRequested)
                 return;
-            Present(
-                formation,
-                (id, slot, key) =>
-                    PartySession.SetCardAsync(id, slot, key, CardLoadoutPresenter.SaveFailedMessage)
-            );
+            if (shown && Unchanged(shownVersion, PartySession.ReadVersion))
+                return;
+            Present(formation, Save);
         }
+
+        private static Task Save(string id, int slot, string key) =>
+            PartySession.SetCardAsync(id, slot, key, CardLoadoutPresenter.SaveFailedMessage);
 
         private void ShowLoadFailed() => Set(Status, LoadFailedText);
 
         private void Present(PartyFormation formation, Func<string, int, string, Task> save)
         {
+            presenter?.Dispose();
             presenter = new CardLoadoutPresenter(
                 this,
                 CardLoadoutPresenter.People(formation),

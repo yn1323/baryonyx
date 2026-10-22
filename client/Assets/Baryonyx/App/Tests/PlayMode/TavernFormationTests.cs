@@ -179,13 +179,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
             Assert.That(view.ToastMessage, Is.EqualTo(PartyRosterPresenter.SaveFailedMessage));
 
-            // 開き直すと読み直す。読めなかったときは仮データを見せずに知らせる。
+            // 開き直すと、前に読んだ編成をすぐ出して読み直す。読めなかったときは、その編成を残して知らせる。
             view.Back.onClick.Invoke();
             view.MenuItems[item].onClick.Invoke();
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
             yield return SceneTests.WaitUntil(() => roster.LoadTask.IsCompleted);
-            Assert.That(roster.Status.text, Is.EqualTo(AdventurerRosterView.LoadFailedText));
+            Assert.That(roster.Status.text, Is.Not.EqualTo(AdventurerRosterView.LoadFailedText));
             Assert.That(roster.LastNotice, Is.EqualTo(AdventurerRosterView.LoadFailedMessage));
-            Assert.That(Shown(roster), Is.Empty);
+            Assert.That(roster.Slots[2].Name.text, Is.EqualTo(data.Find("luka").Name));
 
             server.Fail = false;
             view.Back.onClick.Invoke();
