@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
 import { healthDays, healthSources } from "./db-schema.js";
 import type { HealthDay } from "./schema.js";
@@ -103,6 +103,35 @@ export function createHealthRepository(binding: D1Database) {
           and(eq(healthSources.id, sourceId), eq(healthSources.userId, userId)),
         )
         .get();
+    },
+
+    // ユーザーの今日（朝4時区切りのゲームの1日）の歩数。日ごとの記録は、端末の地域のその日の朝4時（startAt）から始まる。
+    // 今日の記録は startAt から24時間のうちにある（夏時間で25時間になる日の最後の1時間は数えない）。
+    // 今日の記録がなければ0歩とする。取得元が複数あれば多いほうを使い、歩数を読めなかった日は最後に読めた歩数を使う。
+    async todaySteps(userId: string, now: string) {
+      const at = Date.parse(now);
+      const since = new Date(at - 2 * 86_400_000).toISOString().slice(0, 10);
+      const rows = await db
+        .select({
+          startAt: healthDays.startAt,
+          steps: healthDays.steps,
+          lastKnownSteps: healthDays.lastKnownSteps,
+        })
+        .from(healthDays)
+        .innerJoin(healthSources, eq(healthSources.id, healthDays.sourceId))
+        .where(
+          and(eq(healthSources.userId, userId), gte(healthDays.day, since)),
+        )
+        .all();
+      return rows
+        .filter((row) => {
+          const start = Date.parse(row.startAt);
+          return start <= at && at < start + 86_400_000;
+        })
+        .reduce(
+          (best, row) => Math.max(best, row.steps ?? row.lastKnownSteps ?? 0),
+          0,
+        );
     },
 
     listDays(sourceId: string) {

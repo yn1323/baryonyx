@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import type { SelectedFields } from "drizzle-orm/sqlite-core";
 import { createDatabase } from "../../shared/db.js";
 import { multiplierOf, qualityOf } from "../../shared/quality.js";
@@ -8,6 +8,7 @@ import {
   runeBalance,
   selectRuneBalance,
 } from "../exercise-rewards/wallet.js";
+import { createHealthRepository } from "../health/repository.js";
 import { itemHoldings } from "../items/db-schema.js";
 import {
   discoveryStatementsWhen,
@@ -18,18 +19,24 @@ import { stepBonusHoldings } from "../step-bonus/db-schema.js";
 import { createStepBonusRepository } from "../step-bonus/repository.js";
 import {
   bossFloor,
+  canPlace,
   type Destination,
   ENTRANCE_ROOM_ID,
   type EventKind,
   findDestination,
   hasEvent,
   isBattle,
+  MIMIC_CHANCE,
   newSeed,
+  pickTrialCondition,
   type RoomKind,
   reviveCost,
+  stepDoorTier,
 } from "./catalog.js";
 import {
   adventureDrops,
+  adventureMerchantGoods,
+  adventurePurchases,
   adventureRecords,
   adventureRevives,
   adventureRuns,
@@ -40,10 +47,12 @@ import {
   maxPercentOf,
   rollDrops,
 } from "./drops.js";
-import type { EndReason, Enemies, Move, Revive } from "./schema.js";
+import { rollMerchantGoods } from "./merchant.js";
+import type { Buy, EndReason, Enemies, Move, Revive } from "./schema.js";
 
 type RunRow = typeof adventureRuns.$inferSelect;
 type DropRow = typeof adventureDrops.$inferSelect;
+type PurchaseRow = typeof adventurePurchases.$inferSelect;
 type DropOutcome = "added" | "updated" | "discarded";
 type EndStatus = "cleared" | "defeated" | "retreated";
 
@@ -80,6 +89,59 @@ export function createAdventureRepository(
   const route = (run: RunRow) => JSON.parse(run.route) as string[];
   const kindOf = (run: RunRow) => run.roomKind as RoomKind;
 
+  // 戦闘のマスか。開けてミミックだった怪しい宝箱も、勝つまで戦闘のマスとして扱う（復活・負けて帰還ができる）。
+  const battleRoom = (run: RunRow) =>
+    isBattle(kindOf(run)) ||
+    (kindOf(run) === "shady-chest" && run.mimic === true);
+
+  const isEquipment = (category: string) =>
+    category === "weapon" || category === "armor" || category === "accessory";
+
+  // 別の書き込み（written）が条件どおり入ったときだけ、1行を返す select。
+  // 1つの文に入れる値の数を抑えるため、1つの物を1つの文で付与する。
+  const writtenSelect =
+    (written: SQL) =>
+    <T extends SelectedFields>(columns: T) =>
+      db.select(columns).from(sql`(SELECT 1)`).where(written);
+
+  // 装備（武器・防具・アクセサリー）とスキルを1つずつ持ち物に足す文。ドロップと行商人の購入が使う。
+  const equipmentGrant = (
+    fromWritten: ReturnType<typeof writtenSelect>,
+    userId: string,
+    equipmentId: string,
+    multiplierPercent: number,
+    now: string,
+  ) =>
+    db.insert(equipmentItems).select(
+      fromWritten({
+        id: sql<string>`${crypto.randomUUID()}`.as("id"),
+        userId: sql<string>`${userId}`.as("user_id"),
+        equipmentId: sql<string>`${equipmentId}`.as("equipment_id"),
+        multiplierPercent: sql<number>`${multiplierPercent}`.as(
+          "multiplier_percent",
+        ),
+        acquiredAt: sql<string>`${now}`.as("acquired_at"),
+      }),
+    );
+  const skillGrant = (
+    fromWritten: ReturnType<typeof writtenSelect>,
+    userId: string,
+    skillId: string,
+    multiplierPercent: number,
+    now: string,
+  ) =>
+    db.insert(skillCards).select(
+      fromWritten({
+        id: sql<string>`${crypto.randomUUID()}`.as("id"),
+        userId: sql<string>`${userId}`.as("user_id"),
+        skillId: sql<string>`${skillId}`.as("skill_id"),
+        multiplierPercent: sql<number>`${multiplierPercent}`.as(
+          "multiplier_percent",
+        ),
+        acquiredAt: sql<string>`${now}`.as("acquired_at"),
+      }),
+    );
+
   // 応答の1つのドロップ。アイテムは倍率と品質を持たないため、その項目を返さない
   // （UnityのJsonUtilityが数値の null を読めないため、null ではなく項目を省く）。
   const drop = (row: DropRow) => {
@@ -99,7 +161,49 @@ export function createAdventureRepository(
     };
   };
 
+  const dropsInRoom = async (runId: string, roomId: string) =>
+    (await dropsOf(runId)).filter((row) => row.roomId === roomId).map(drop);
+
+  // 行商人のマスの品物と、売れたか。
+  async function merchantOf(run: RunRow) {
+    const rows = await db
+      .select({
+        goods: adventureMerchantGoods,
+        purchaseId: adventurePurchases.id,
+      })
+      .from(adventureMerchantGoods)
+      .leftJoin(
+        adventurePurchases,
+        and(
+          eq(adventurePurchases.runId, adventureMerchantGoods.runId),
+          eq(adventurePurchases.roomId, adventureMerchantGoods.roomId),
+          eq(adventurePurchases.idx, adventureMerchantGoods.idx),
+        ),
+      )
+      .where(
+        and(
+          eq(adventureMerchantGoods.runId, run.id),
+          eq(adventureMerchantGoods.roomId, run.roomId),
+        ),
+      )
+      .orderBy(adventureMerchantGoods.idx);
+    return rows.map(({ goods, purchaseId }) => ({
+      index: goods.idx,
+      category: goods.category,
+      id: goods.entryId,
+      multiplierPercent: goods.multiplierPercent,
+      quality: qualityOf(
+        goods.multiplierPercent,
+        maxPercentOf(goods.category as DropCategory, goods.entryId) as number,
+      ),
+      price: goods.price,
+      sold: purchaseId !== null,
+    }));
+  }
+
   // 進行中の冒険（道を作る種と部屋の数、今いる部屋、この冒険で手に入れた物を含む）、行き先ごとの記録、所持ルーン。
+  // 今いるマスで決まったことも返す。mimic は開けた怪しい宝箱がミミックだったか、trial は試練のマスの条件、
+  // merchant は行商人のマスの品物。trial と merchant は、そのマスにいるときだけ項目を返す。
   async function readState(userId: string) {
     const [runs, records, wallets] = await db.batch([
       db
@@ -139,6 +243,13 @@ export function createAdventureRepository(
               route: route(run),
               revives: run.revives,
               reviveCost: reviveCost(run.revives),
+              mimic: run.mimic === true,
+              ...(run.roomKind === "trial" && run.trial !== null
+                ? { trial: run.trial }
+                : {}),
+              ...(run.roomKind === "merchant"
+                ? { merchant: await merchantOf(run) }
+                : {}),
               drops: (await dropsOf(run.id)).map(drop),
             }
           : null,
@@ -193,7 +304,8 @@ export function createAdventureRepository(
 
   // 今いる部屋から、次の階の部屋へ進む。選んだ時点で保存する。
   // 部屋のつながりはクライアントが種から作った道で決まるため、サーバーは1階ずつ進むこと、
-  // 最奥の間の階にだけボスがいること、出来事を終えてから進むことを確かめる。
+  // マスの種類をその階に置けること（最奥の間の階にだけボスがいることを含む）、出来事を終えてから
+  // 進むことを確かめる。
   async function move(userId: string, target: Move, now: string) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
@@ -204,30 +316,70 @@ export function createAdventureRepository(
     if (
       target.floor !== run.floor + 1 ||
       target.floor > boss ||
-      (target.floor === boss) !== (target.kind === "boss")
+      !canPlace(destination, target.floor, target.kind)
     ) {
       return { error: "room_not_reachable" as const };
     }
     if (!run.roomCleared) return { error: "room_not_cleared" as const };
-    const moved = await db
-      .update(adventureRuns)
-      .set({
-        roomId: target.roomId,
-        floor: target.floor,
-        roomKind: target.kind,
-        roomCleared: !hasEvent(target.kind),
-        route: JSON.stringify([...route(run), target.roomId]),
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(adventureRuns.id, run.id),
-          eq(adventureRuns.status, "active"),
-          eq(adventureRuns.roomId, run.roomId),
-          eq(adventureRuns.roomCleared, true),
-        ),
-      )
-      .returning({ id: adventureRuns.id });
+    // 試練は入ったときに条件を、行商人は品ぞろえを決めて保存する（doc/features/stage-progression.md のマスの中身）。
+    const trial = target.kind === "trial" ? pickTrialCondition(random) : null;
+    const goods =
+      target.kind === "merchant"
+        ? rollMerchantGoods(run.destinationId, random)
+        : [];
+    const [moved] = await db.batch([
+      db
+        .update(adventureRuns)
+        .set({
+          roomId: target.roomId,
+          floor: target.floor,
+          roomKind: target.kind,
+          roomCleared: !hasEvent(target.kind),
+          mimic: null,
+          trial,
+          doorSteps: null,
+          route: JSON.stringify([...route(run), target.roomId]),
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(adventureRuns.id, run.id),
+            eq(adventureRuns.status, "active"),
+            eq(adventureRuns.roomId, run.roomId),
+            eq(adventureRuns.roomCleared, true),
+          ),
+        )
+        .returning({ id: adventureRuns.id }),
+      // 品物は、冒険がそのマスへ進んだときだけ書く。同時の要求で先に書いた品物は残す。
+      ...goods.map((entry, index) =>
+        db
+          .insert(adventureMerchantGoods)
+          .select(
+            db
+              .select({
+                runId: adventureRuns.id,
+                roomId: adventureRuns.roomId,
+                idx: sql<number>`${index}`.as("idx"),
+                category: sql<string>`${entry.category}`.as("category"),
+                entryId: sql<string>`${entry.id}`.as("entry_id"),
+                multiplierPercent: sql<number>`${entry.multiplierPercent}`.as(
+                  "multiplier_percent",
+                ),
+                price: sql<number>`${entry.price}`.as("price"),
+                createdAt: sql<string>`${now}`.as("created_at"),
+              })
+              .from(adventureRuns)
+              .where(
+                and(
+                  eq(adventureRuns.id, run.id),
+                  eq(adventureRuns.status, "active"),
+                  eq(adventureRuns.roomId, target.roomId),
+                ),
+              ),
+          )
+          .onConflictDoNothing(),
+      ),
+    ]);
     if (moved.length === 0) return { error: "adventure_changed" as const };
     return readState(userId);
   }
@@ -310,30 +462,47 @@ export function createAdventureRepository(
       });
   }
 
-  // 今いる部屋の出来事（戦闘の勝利・宝箱）を終え、行き先の一覧から物を落とす（doc/features/drops.md）。
-  // 最奥のボスを倒したら冒険を終える。部屋の終了・ドロップの記録・持ち物・記録を1回のbatchで行う。
-  async function clear(
+  // 今いるマスを、物を落とさずに終えた印だけを付ける（休憩・行商人・開けずに通り過ぎた怪しい宝箱）。
+  async function markCleared(
     userId: string,
-    roomId: string,
+    run: RunRow,
     now: string,
-    enemies: Enemies = [],
+    guard?: SQL,
   ) {
-    const run = await activeRun(userId);
-    if (!run) return { error: "no_adventure" as const };
-    const kind = kindOf(run);
-    if (run.roomId !== roomId || !hasEvent(kind)) {
-      return { error: "room_mismatch" as const };
-    }
-    const dropsInRoom = async () =>
-      (await dropsOf(run.id)).filter((row) => row.roomId === roomId).map(drop);
-    if (run.roomCleared) {
-      // 届かなかった応答の再送は、記録したドロップを返す。
-      return { drops: await dropsInRoom(), ...(await readState(userId)) };
-    }
+    const marked = await db
+      .update(adventureRuns)
+      .set({ roomCleared: true, updatedAt: now })
+      .where(
+        and(
+          eq(adventureRuns.id, run.id),
+          eq(adventureRuns.status, "active"),
+          eq(adventureRuns.roomId, run.roomId),
+          eq(adventureRuns.roomCleared, false),
+          guard,
+        ),
+      )
+      .returning({ id: adventureRuns.id });
+    if (marked.length === 0) return { error: "adventure_changed" as const };
+    return { drops: [], ...(await readState(userId)) };
+  }
 
+  // 落ちた物を記録して持ち物に入れ、今いるマスを終える（doc/features/drops.md）。最奥のボスなら冒険も終える。
+  // マスの終了・ドロップの記録・持ち物・記録を1回のbatchで行う。guard は1つ目の物を書く条件に足す冒険の条件、
+  // set はマスを終えるときに冒険へ一緒に書く値。書けなかったとき（再送や同時の要求）は、記録した物が空になる。
+  async function award(
+    userId: string,
+    run: RunRow,
+    rolled: Drop[],
+    now: string,
+    options: {
+      enemies: Enemies;
+      guard?: SQL;
+      set?: Partial<typeof adventureRuns.$inferInsert>;
+    },
+  ) {
+    const roomId = run.roomId;
     // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
     await createStepBonusRepository(binding).getState(userId, now);
-    const rolled = rollDrops(run.destinationId, kind as EventKind, random);
 
     // ACTボーナスは1種類につき1つだけ持ち、倍率の高いほうを残す。同じ部屋で2つ落ちたときは順に比べる。
     const bonusIds = [
@@ -369,8 +538,7 @@ export function createAdventureRepository(
       return { ...entry, outcome };
     });
 
-    const boss = kind === "boss";
-    const previousBest = boss ? await bestFloor(userId, run.destinationId) : 0;
+    const boss = kindOf(run) === "boss";
     const grantId = crypto.randomUUID();
     const written = sql`EXISTS (SELECT 1 FROM ${adventureDrops} WHERE ${adventureDrops.runId} = ${run.id} AND ${adventureDrops.roomId} = ${roomId} AND ${adventureDrops.grantId} = ${grantId})`;
     const dropRow = (index: number) => {
@@ -387,45 +555,18 @@ export function createAdventureRepository(
         createdAt: sql<string>`${now}`.as("created_at"),
       };
     };
-    // 1つの文に入れる値の数を抑えるため、1つの物を1つの文で付与する。
-    const fromWritten = <T extends SelectedFields>(columns: T) =>
-      db.select(columns).from(sql`(SELECT 1)`).where(written);
+    const fromWritten = writtenSelect(written);
     const percentOf = (entry: (typeof drops)[number]) =>
       entry.multiplierPercent as number;
     const equipmentGrants = drops
-      .filter(
-        (entry) =>
-          entry.category === "weapon" ||
-          entry.category === "armor" ||
-          entry.category === "accessory",
-      )
+      .filter((entry) => isEquipment(entry.category))
       .map((entry) =>
-        db.insert(equipmentItems).select(
-          fromWritten({
-            id: sql<string>`${crypto.randomUUID()}`.as("id"),
-            userId: sql<string>`${userId}`.as("user_id"),
-            equipmentId: sql<string>`${entry.id}`.as("equipment_id"),
-            multiplierPercent: sql<number>`${percentOf(entry)}`.as(
-              "multiplier_percent",
-            ),
-            acquiredAt: sql<string>`${now}`.as("acquired_at"),
-          }),
-        ),
+        equipmentGrant(fromWritten, userId, entry.id, percentOf(entry), now),
       );
     const skillGrants = drops
       .filter((entry) => entry.category === "skill")
       .map((entry) =>
-        db.insert(skillCards).select(
-          fromWritten({
-            id: sql<string>`${crypto.randomUUID()}`.as("id"),
-            userId: sql<string>`${userId}`.as("user_id"),
-            skillId: sql<string>`${entry.id}`.as("skill_id"),
-            multiplierPercent: sql<number>`${percentOf(entry)}`.as(
-              "multiplier_percent",
-            ),
-            acquiredAt: sql<string>`${now}`.as("acquired_at"),
-          }),
-        ),
+        skillGrant(fromWritten, userId, entry.id, percentOf(entry), now),
       );
     const itemCounts = new Map<string, number>();
     for (const entry of drops) {
@@ -510,6 +651,7 @@ export function createAdventureRepository(
                 eq(adventureRuns.status, "active"),
                 eq(adventureRuns.roomId, roomId),
                 eq(adventureRuns.roomCleared, false),
+                options.guard,
               ),
             ),
         )
@@ -531,12 +673,13 @@ export function createAdventureRepository(
         .set(
           boss
             ? {
+                ...options.set,
                 roomCleared: true,
                 status: "cleared",
                 updatedAt: now,
                 endedAt: now,
               }
-            : { roomCleared: true, updatedAt: now },
+            : { ...options.set, roomCleared: true, updatedAt: now },
         )
         .where(and(eq(adventureRuns.id, run.id), written)),
       ...equipmentGrants,
@@ -544,18 +687,88 @@ export function createAdventureRepository(
       ...itemGrants,
       ...bonusGrants,
       ...discoveries,
-      ...(boss
-        ? [recordStatement({ ...run, roomId }, "cleared", now, written)]
-        : []),
-      ...(isBattle(kind)
-        ? enemyStatements(db, userId, enemies, now, written)
+      ...(boss ? [recordStatement(run, "cleared", now, written)] : []),
+      ...(battleRoom(run)
+        ? enemyStatements(db, userId, options.enemies, now, written)
         : []),
     ]);
+    return dropsInRoom(run.id, roomId);
+  }
 
-    const recorded = await dropsInRoom();
+  // 歩数の扉を開けたときの今日の歩数と段。扉のマスにいて、開けたあとだけ返す。
+  const stepDoorOf = (run: RunRow) =>
+    kindOf(run) === "step-door" && run.doorSteps !== null
+      ? {
+          stepDoor: {
+            steps: run.doorSteps,
+            tier: stepDoorTier(run.doorSteps),
+          },
+        }
+      : {};
+
+  // 今いる部屋の出来事（戦闘の勝利・宝箱など）を終え、行き先の一覧から物を落とす（doc/features/drops.md）。
+  // 報酬の行はマスで決まったことで選ぶ（ミミックか・試練の条件を満たしたか・歩数の扉の今日の歩数）。
+  // 怪しい宝箱は、ミミックに勝ったか、開けずに通り過ぎる（pass）ときだけ終えられる。本物は開けたときに終わる。
+  async function clear(
+    userId: string,
+    roomId: string,
+    now: string,
+    enemies: Enemies = [],
+    options: { pass?: boolean; trialMet?: boolean; evolved?: boolean } = {},
+  ) {
+    const run = await activeRun(userId);
+    if (!run) return { error: "no_adventure" as const };
+    const kind = kindOf(run);
+    if (run.roomId !== roomId || !hasEvent(kind)) {
+      return { error: "room_mismatch" as const };
+    }
+    if (options.pass && kind !== "shady-chest") {
+      return { error: "pass_not_allowed" as const };
+    }
+    if (run.roomCleared) {
+      // 届かなかった応答の再送は、記録したドロップを返す。
+      return {
+        drops: await dropsInRoom(run.id, roomId),
+        ...stepDoorOf(run),
+        ...(await readState(userId)),
+      };
+    }
+    if (kind === "shady-chest") {
+      // 開けたあと（ミミック）は通り過ぎられない。開ける前は、ミミックに勝ったとは言えない。
+      if (options.pass) {
+        if (run.mimic !== null) return { error: "pass_not_allowed" as const };
+        return markCleared(userId, run, now, isNull(adventureRuns.mimic));
+      }
+      if (run.mimic !== true) return { error: "chest_not_opened" as const };
+    }
+
+    // 歩数の扉は、扉を開けたとき（マスを終えたとき）の今日の歩数で報酬を決める。
+    const steps =
+      kind === "step-door"
+        ? await createHealthRepository(binding).todaySteps(userId, now)
+        : null;
+    const rolled = rollDrops(run.destinationId, kind as EventKind, random, {
+      mimic: run.mimic === true,
+      trialMet: options.trialMet ?? false,
+      evolved: kind === "altar" && (options.evolved ?? false),
+      ...(steps === null ? {} : { stepDoorTier: stepDoorTier(steps) }),
+    });
+    // 落とす物のないマス（休憩・行商人）は、進行中の冒険のそのマスを終えた印だけを付ける。
+    if (rolled.length === 0 && kind !== "boss") {
+      return markCleared(userId, run, now);
+    }
+
+    const boss = kind === "boss";
+    const previousBest = boss ? await bestFloor(userId, run.destinationId) : 0;
+    const recorded = await award(userId, run, rolled, now, {
+      enemies,
+      ...(steps === null ? {} : { set: { doorSteps: steps } }),
+    });
     if (recorded.length === 0) return { error: "adventure_changed" as const };
+    const doorState =
+      steps === null ? {} : { stepDoor: { steps, tier: stepDoorTier(steps) } };
     const state = await readState(userId);
-    if (!boss) return { drops: recorded, ...state };
+    if (!boss) return { drops: recorded, ...doorState, ...state };
     const ended = await db
       .select()
       .from(adventureRuns)
@@ -566,6 +779,63 @@ export function createAdventureRepository(
       result: await result(ended as RunRow, previousBest),
       ...state,
     };
+  }
+
+  // 開けた怪しい宝箱の結果。ミミックなら戦闘のマスのまま、本物なら記録したドロップを返す。開ける前は null。
+  async function openedChest(userId: string, run: RunRow) {
+    if (run.mimic === null) return null;
+    return {
+      drops: run.mimic ? [] : await dropsInRoom(run.id, run.roomId),
+      ...(await readState(userId)),
+    };
+  }
+
+  // 今いる怪しい宝箱を開ける。半分の確率でミミックとの戦闘になり、本物ならその場で強い報酬を1つ多く落として終える。
+  // 結果は冒険に保存し、同じマスでの再送には決めた結果を返す。
+  async function open(userId: string, roomId: string, now: string) {
+    const run = await activeRun(userId);
+    if (!run) return { error: "no_adventure" as const };
+    if (run.roomId !== roomId || kindOf(run) !== "shady-chest") {
+      return { error: "room_mismatch" as const };
+    }
+    const opened = await openedChest(userId, run);
+    if (opened) return opened;
+    // 開けずに通り過ぎたマスは、もう開けられない。
+    if (run.roomCleared) return { error: "room_cleared" as const };
+
+    if (random() < MIMIC_CHANCE) {
+      await db
+        .update(adventureRuns)
+        .set({ mimic: true, updatedAt: now })
+        .where(
+          and(
+            eq(adventureRuns.id, run.id),
+            eq(adventureRuns.status, "active"),
+            eq(adventureRuns.roomId, roomId),
+            eq(adventureRuns.roomCleared, false),
+            isNull(adventureRuns.mimic),
+          ),
+        );
+    } else {
+      await award(
+        userId,
+        run,
+        rollDrops(run.destinationId, "shady-chest", random),
+        now,
+        {
+          enemies: [],
+          guard: isNull(adventureRuns.mimic),
+          set: { mimic: false },
+        },
+      );
+    }
+    // 同時の要求で先に決まった結果があれば、それを返す。
+    const after = await activeRun(userId);
+    const decided =
+      after && after.id === run.id && after.roomId === roomId
+        ? await openedChest(userId, after)
+        : null;
+    return decided ?? { error: "adventure_changed" as const };
   }
 
   function findRevive(userId: string, requestId: string) {
@@ -606,11 +876,7 @@ export function createAdventureRepository(
     if (replay) return recordedRevive(userId, request, replay);
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
-    if (
-      run.roomId !== request.roomId ||
-      !isBattle(kindOf(run)) ||
-      run.roomCleared
-    ) {
+    if (run.roomId !== request.roomId || !battleRoom(run) || run.roomCleared) {
       return { error: "room_mismatch" as const };
     }
 
@@ -674,6 +940,155 @@ export function createAdventureRepository(
     };
   }
 
+  function findPurchase(userId: string, requestId: string) {
+    return db
+      .select()
+      .from(adventurePurchases)
+      .where(
+        and(
+          eq(adventurePurchases.userId, userId),
+          eq(adventurePurchases.requestId, requestId),
+        ),
+      )
+      .get();
+  }
+
+  async function recordedPurchase(
+    userId: string,
+    request: Buy,
+    row: PurchaseRow,
+  ) {
+    if (row.roomId !== request.roomId || row.idx !== request.index) {
+      return { error: "request_conflict" as const };
+    }
+    return {
+      purchase: {
+        roomId: row.roomId,
+        index: row.idx,
+        runes: row.runes,
+        balanceAfter: row.balanceAfter,
+      },
+      ...(await readState(userId)),
+    };
+  }
+
+  // 今いる行商人のマスで、品物を1つルーンで買う。値段は品ぞろえを作ったときにサーバーが決めた額で、
+  // 購入の記録・ルーンの減算・持ち物への追加・ライブラリの見つけた記録を、残高と売れていないことを条件にした
+  // 1回のbatchで行う。要求IDで再送を見分け、品物ごとの一意で同じ品物を二度売らない。
+  // マスを終えたあとも、次のマスへ進むまでは買える。
+  async function buy(userId: string, request: Buy, now: string) {
+    const replay = await findPurchase(userId, request.requestId);
+    if (replay) return recordedPurchase(userId, request, replay);
+    const run = await activeRun(userId);
+    if (!run) return { error: "no_adventure" as const };
+    if (run.roomId !== request.roomId || kindOf(run) !== "merchant") {
+      return { error: "room_mismatch" as const };
+    }
+    const goods = await db
+      .select()
+      .from(adventureMerchantGoods)
+      .where(
+        and(
+          eq(adventureMerchantGoods.runId, run.id),
+          eq(adventureMerchantGoods.roomId, run.roomId),
+          eq(adventureMerchantGoods.idx, request.index),
+        ),
+      )
+      .get();
+    if (!goods) return { error: "goods_not_found" as const };
+
+    const id = crypto.randomUUID();
+    const balance = runeBalance(userId);
+    const written = sql`EXISTS (SELECT 1 FROM ${adventurePurchases} WHERE ${adventurePurchases.id} = ${id})`;
+    const fromWritten = writtenSelect(written);
+    const category = goods.category as
+      | "skill"
+      | "weapon"
+      | "armor"
+      | "accessory";
+    await db.batch([
+      db
+        .insert(adventurePurchases)
+        .select(
+          db
+            .select({
+              id: sql<string>`${id}`.as("id"),
+              userId: adventureRuns.userId,
+              runId: adventureRuns.id,
+              requestId: sql<string>`${request.requestId}`.as("request_id"),
+              roomId: adventureRuns.roomId,
+              idx: sql<number>`${goods.idx}`.as("idx"),
+              runes: sql<number>`${goods.price}`.as("runes"),
+              balanceAfter: sql<number>`0`.as("balance_after"),
+              createdAt: sql<string>`${now}`.as("created_at"),
+            })
+            .from(adventureRuns)
+            .where(
+              and(
+                eq(adventureRuns.id, run.id),
+                eq(adventureRuns.status, "active"),
+                eq(adventureRuns.roomId, request.roomId),
+                eq(adventureRuns.roomKind, "merchant"),
+                sql`${balance} >= ${goods.price}`,
+              ),
+            ),
+        )
+        // 要求IDの再送と、売れた品物の二度目の購入のどちらでも書かない。
+        .onConflictDoNothing(),
+      debitRunes(db, userId, goods.price, written, now),
+      category === "skill"
+        ? skillGrant(
+            fromWritten,
+            userId,
+            goods.entryId,
+            goods.multiplierPercent,
+            now,
+          )
+        : equipmentGrant(
+            fromWritten,
+            userId,
+            goods.entryId,
+            goods.multiplierPercent,
+            now,
+          ),
+      ...discoveryStatementsWhen(
+        db,
+        userId,
+        category,
+        [goods.entryId],
+        now,
+        written,
+      ),
+      db
+        .update(adventurePurchases)
+        .set({ balanceAfter: sql`COALESCE(${balance}, 0)` })
+        .where(eq(adventurePurchases.id, id)),
+    ]);
+
+    const row = await findPurchase(userId, request.requestId);
+    if (row) return recordedPurchase(userId, request, row);
+    // 書き込めなかった理由を、品物と今の冒険の状態で見分ける。
+    const sold = await db
+      .select({ id: adventurePurchases.id })
+      .from(adventurePurchases)
+      .where(
+        and(
+          eq(adventurePurchases.runId, run.id),
+          eq(adventurePurchases.roomId, goods.roomId),
+          eq(adventurePurchases.idx, goods.idx),
+        ),
+      )
+      .get();
+    if (sold) return { error: "sold_out" as const };
+    const after = await activeRun(userId);
+    return {
+      error:
+        !after || after.id !== run.id || after.roomId !== request.roomId
+          ? ("adventure_changed" as const)
+          : ("insufficient_runes" as const),
+    };
+  }
+
   // 冒険を終える。負けて帰還する（defeat）か、自分からやめる（retreat）。手に入れた物は残る。
   async function end(
     userId: string,
@@ -683,7 +1098,7 @@ export function createAdventureRepository(
   ) {
     const run = await activeRun(userId);
     if (!run) return { error: "no_adventure" as const };
-    if (reason === "defeat" && (!isBattle(kindOf(run)) || run.roomCleared)) {
+    if (reason === "defeat" && (!battleRoom(run) || run.roomCleared)) {
       return { error: "room_mismatch" as const };
     }
     const status: EndStatus = reason === "defeat" ? "defeated" : "retreated";
@@ -720,5 +1135,5 @@ export function createAdventureRepository(
     return (await activeRun(userId)) !== undefined;
   }
 
-  return { getState, start, move, clear, revive, end, inProgress };
+  return { getState, start, move, clear, open, buy, revive, end, inProgress };
 }

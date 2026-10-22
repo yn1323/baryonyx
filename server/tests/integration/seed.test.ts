@@ -5,14 +5,24 @@ import {
   seedGuestSecret,
 } from "../../scripts/seed.js";
 import { slotOf } from "../../src/features/equipment/catalog.js";
-import { levelUpCost } from "../../src/features/party/catalog.js";
+import {
+  levelUpCost,
+  UNIQUE_SKILL_COUNT,
+  UNIQUE_UNLOCK_LEVELS,
+} from "../../src/features/party/catalog.js";
 import {
   type ApiScenario,
   createApiScenario,
 } from "../support/api-scenario.js";
 
+type Unique = { index: number; set: number; acquired: number[] };
 type Party = {
-  characters: { id: string; level: number; cards: (string | null)[] }[];
+  characters: {
+    id: string;
+    level: number;
+    cards: (string | null)[];
+    uniques: Unique[];
+  }[];
   skillCards: { id: string; skillId: string; multiplier: number }[];
   items: { itemId: string; count: number }[];
   slots: { slot: number; characterId: string | null }[];
@@ -95,8 +105,32 @@ describe("開発用のプレイヤー（seed）", () => {
           id: character.id,
           level: character.level,
           cards: [...character.cards],
+          // 固有スキルの段階。seedに書いていない固有スキルは最初の段階だけを持つ。
+          uniques: Array.from(
+            { length: UNIQUE_SKILL_COUNT },
+            (_, index): Unique => {
+              const unique = character.uniques?.[index];
+              return {
+                index,
+                set: unique?.set ?? 0,
+                acquired: unique
+                  ? [...unique.acquired].sort((a, b) => a - b)
+                  : [0],
+              };
+            },
+          ),
         })),
       );
+      // 段階を書いた固有スキルは、解放するLvに届いている。
+      for (const character of seed.characters) {
+        (character.uniques ?? []).forEach((unique, index) => {
+          if (unique) {
+            expect(character.level).toBeGreaterThanOrEqual(
+              UNIQUE_UNLOCK_LEVELS[index],
+            );
+          }
+        });
+      }
       expect(party.skillCards).toHaveLength(
         seed.characters.length * 2 + (seed.skillCards?.length ?? 0),
       );

@@ -133,9 +133,29 @@ export function maxMultiplierPercent(id: CardSkillId): number {
   return CARD_SKILL_MAX_PERCENT[id] ?? 100;
 }
 
-// パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル2枚はクライアントの仮データが持つ。
+// パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル2枚の名前と効果はクライアントの仮データが持つ。
 export const PARTY_SLOT_COUNT = 4;
 export const CARD_SLOT_COUNT = 2;
+
+// キャラごとの固有スキルの数と、それぞれを解放するLv（doc/features/skill-evolution.md）。
+// 解放のLvはクライアントの仮データ（PartyMockData）と同じ値にし、判定はサーバーの値で行う。
+export const UNIQUE_SKILL_COUNT = 2;
+export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [5, 20];
+
+// 固有スキルの進化の段階。どの固有スキルも同じ形のツリーで、0が最初の段階、
+// 1・2が枝1、3・4が枝2、5・6が枝3の1段目と2段目になる。
+export const UNIQUE_STAGE_COUNT = 7;
+
+// 冒険の戦闘での進化は、マスの戦闘を終えたときに送られる。最奥のボスや全滅でそのマスと一緒に冒険も
+// 終わるため、踏破・敗北で冒険を終えてからこの分のあいだに届いた進化も受け付ける。
+export const EVOLUTION_GRACE_MINUTES = 10;
+
+// 段階の1つ手前の段階。最初の段階（0）にはないためnullを返す。
+// 各枝の1段目（1・3・5）は最初の段階から、2段目（2・4・6）はその枝の1段目から進む。
+export function uniqueParent(stage: number): number | null {
+  if (stage <= 0) return null;
+  return stage % 2 === 1 ? 0 : stage - 1;
+}
 
 // レベルの上限と、Lv n から n+1 へ上げるのに要るルーン（n × COST_PER_LEVEL）。仮の値。
 export const MAX_LEVEL = 30;

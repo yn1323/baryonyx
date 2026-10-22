@@ -1,10 +1,11 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
 import {
   MIN_MULTIPLIER_PERCENT,
   multiplierOf,
   qualityOf,
 } from "../../shared/quality.js";
+import { adventureRuns } from "../adventure/db-schema.js";
 import {
   debitRunes,
   runeBalance,
@@ -20,12 +21,17 @@ import {
   CHARACTER_IDS,
   type CharacterId,
   COST_PER_LEVEL,
+  EVOLUTION_GRACE_MINUTES,
   levelUpCost,
   MAX_LEVEL,
   maxMultiplierPercent,
   PARTY_SLOT_COUNT,
   STARTER_CHARACTERS,
   STARTER_SLOTS,
+  UNIQUE_SKILL_COUNT,
+  UNIQUE_STAGE_COUNT,
+  UNIQUE_UNLOCK_LEVELS,
+  uniqueParent,
 } from "./catalog.js";
 import {
   partyCharacterCards,
@@ -33,12 +39,22 @@ import {
   partyLevelUps,
   partyProfiles,
   partySlots,
+  partyUniqueSkills,
   skillCards,
 } from "./db-schema.js";
 import type { LevelUp } from "./schema.js";
 
 export type PartySlotChange = "join" | "replace" | "leave" | "none";
 export type PartyCardChange = "replace" | "swap" | "move" | "none";
+export type PartyUniqueChange = "set" | "none";
+export type PartyEvolveChange = "evolve" | "none";
+
+// 取得した段階のビット（段階 n が 1 << n）と段階の一覧の変換。最初の段階（0）は常に取得している。
+const bitOf = (stage: number) => 1 << stage;
+const stagesOf = (mask: number) =>
+  Array.from({ length: UNIQUE_STAGE_COUNT }, (_, stage) => stage).filter(
+    (stage) => stage === 0 || (mask & bitOf(stage)) !== 0,
+  );
 
 // カスタムスキルの枠に入れる物の書き方。持っているスキルの1枚は `card:<ID>`、アイテムは `item:<アイテムのID>`。
 type CardContent = { cardId: string | null; itemId: string | null };
@@ -58,45 +74,59 @@ const contentOf = (key: string): CardContent => {
 export function createPartyRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
-  // 持っているキャラ（Lvと2つのカスタムスキルの枠）、4つの枠、持っているスキルとアイテム、所持ルーン、レベルの決まり。
+  // 持っているキャラ（Lv・2つのカスタムスキルの枠・2つの固有スキルの段階）、4つの枠、持っているスキルとアイテム、
+  // 所持ルーン、レベルの決まり。
   async function readState(userId: string) {
-    const [characters, cards, slots, owned, items, wallets] = await db.batch([
-      db
-        .select({
-          characterId: partyCharacters.characterId,
-          level: partyCharacters.level,
-          acquiredAt: partyCharacters.acquiredAt,
-        })
-        .from(partyCharacters)
-        .where(eq(partyCharacters.userId, userId)),
-      db
-        .select({
-          characterId: partyCharacterCards.characterId,
-          slot: partyCharacterCards.slot,
-          cardId: partyCharacterCards.cardId,
-          itemId: partyCharacterCards.itemId,
-        })
-        .from(partyCharacterCards)
-        .where(eq(partyCharacterCards.userId, userId)),
-      db
-        .select({ slot: partySlots.slot, characterId: partySlots.characterId })
-        .from(partySlots)
-        .where(eq(partySlots.userId, userId)),
-      db
-        .select({
-          id: skillCards.id,
-          skillId: skillCards.skillId,
-          multiplierPercent: skillCards.multiplierPercent,
-          acquiredAt: skillCards.acquiredAt,
-        })
-        .from(skillCards)
-        .where(eq(skillCards.userId, userId)),
-      db
-        .select({ itemId: itemHoldings.itemId, count: itemHoldings.count })
-        .from(itemHoldings)
-        .where(eq(itemHoldings.userId, userId)),
-      selectRuneBalance(db, userId),
-    ]);
+    const [characters, cards, uniques, slots, owned, items, wallets] =
+      await db.batch([
+        db
+          .select({
+            characterId: partyCharacters.characterId,
+            level: partyCharacters.level,
+            acquiredAt: partyCharacters.acquiredAt,
+          })
+          .from(partyCharacters)
+          .where(eq(partyCharacters.userId, userId)),
+        db
+          .select({
+            characterId: partyCharacterCards.characterId,
+            slot: partyCharacterCards.slot,
+            cardId: partyCharacterCards.cardId,
+            itemId: partyCharacterCards.itemId,
+          })
+          .from(partyCharacterCards)
+          .where(eq(partyCharacterCards.userId, userId)),
+        db
+          .select({
+            characterId: partyUniqueSkills.characterId,
+            uniqueIndex: partyUniqueSkills.uniqueIndex,
+            setStage: partyUniqueSkills.setStage,
+            acquiredMask: partyUniqueSkills.acquiredMask,
+          })
+          .from(partyUniqueSkills)
+          .where(eq(partyUniqueSkills.userId, userId)),
+        db
+          .select({
+            slot: partySlots.slot,
+            characterId: partySlots.characterId,
+          })
+          .from(partySlots)
+          .where(eq(partySlots.userId, userId)),
+        db
+          .select({
+            id: skillCards.id,
+            skillId: skillCards.skillId,
+            multiplierPercent: skillCards.multiplierPercent,
+            acquiredAt: skillCards.acquiredAt,
+          })
+          .from(skillCards)
+          .where(eq(skillCards.userId, userId)),
+        db
+          .select({ itemId: itemHoldings.itemId, count: itemHoldings.count })
+          .from(itemHoldings)
+          .where(eq(itemHoldings.userId, userId)),
+        selectRuneBalance(db, userId),
+      ]);
     const order = (id: string) => CHARACTER_IDS.indexOf(id as CharacterId);
     const skillOrder = (id: string) =>
       CARD_SKILL_IDS.indexOf(id as CardSkillId);
@@ -119,6 +149,19 @@ export function createPartyRepository(binding: D1Database) {
                 card.slot === slot,
             );
             return row ? keyOf(row) : null;
+          }),
+          // 固有スキルごとのセットしている段階と、取得した段階（小さい順）。行がなければ最初の段階だけ。
+          uniques: Array.from({ length: UNIQUE_SKILL_COUNT }, (_, index) => {
+            const row = uniques.find(
+              (unique) =>
+                unique.characterId === character.characterId &&
+                unique.uniqueIndex === index,
+            );
+            return {
+              index,
+              set: row?.setStage ?? 0,
+              acquired: stagesOf(row?.acquiredMask ?? bitOf(0)),
+            };
           }),
         })),
       slots: Array.from({ length: PARTY_SLOT_COUNT }, (_, slot) => ({
@@ -509,5 +552,158 @@ export function createPartyRepository(binding: D1Database) {
     };
   }
 
-  return { getState, setSlot, clearSlot, setCard, levelUp };
+  // 固有スキルを確かめる。持っていないキャラと、解放するLvに届いていない固有スキルは扱わない。
+  function findUnique(
+    state: Awaited<ReturnType<typeof readState>>,
+    characterId: CharacterId,
+    index: number,
+  ) {
+    const character = state.characters.find(
+      (entry) => entry.id === characterId,
+    );
+    if (!character) return { error: "character_not_owned" as const };
+    if (character.level < UNIQUE_UNLOCK_LEVELS[index]) {
+      return { error: "unique_locked" as const };
+    }
+    return { unique: character.uniques[index] };
+  }
+
+  // 編成で、固有スキルに取得した段階のどれか1つをセットする。手前の段階に戻すのもこの操作で行う。
+  async function setUnique(
+    userId: string,
+    characterId: CharacterId,
+    index: number,
+    stage: number,
+    now: string,
+  ) {
+    await ensureStarter(userId, now);
+    const state = await readState(userId);
+    const found = findUnique(state, characterId, index);
+    if ("error" in found) return found;
+    if (!found.unique.acquired.includes(stage)) {
+      return { error: "stage_not_acquired" as const };
+    }
+    if (found.unique.set === stage) {
+      return { change: "none" as const, ...state };
+    }
+    // 最初の段階以外を取得していれば行がある。取得の確認を更新と同じ文に入れる。
+    await db
+      .update(partyUniqueSkills)
+      .set({ setStage: stage, updatedAt: now })
+      .where(
+        and(
+          eq(partyUniqueSkills.userId, userId),
+          eq(partyUniqueSkills.characterId, characterId),
+          eq(partyUniqueSkills.uniqueIndex, index),
+          sql`(${partyUniqueSkills.acquiredMask} & ${bitOf(stage)}) <> 0`,
+        ),
+      );
+    const after = await readState(userId);
+    const unique = after.characters.find((entry) => entry.id === characterId)
+      ?.uniques[index];
+    if (unique?.set !== stage) return { error: "stage_not_acquired" as const };
+    const change: PartyUniqueChange = "set";
+    return { change, ...after };
+  }
+
+  // 冒険の戦闘で起きた1回の進化を保存する。進む先は、セットしている段階の次の段階だけで、
+  // 進化した段階を取得し、そのままセットする。取得済みの段階へ進むのも進化として扱う。
+  // 同じ進化の再送（すでにその段階をセットしている）は、何も変えずに成功として返す。
+  // 進化は冒険の戦闘でだけ起きる。冒険の途中か、踏破・敗北で終えた直後（そのマスの戦闘の進化が、
+  // 冒険を終えた知らせと前後して届く）だけ受け付ける。途中でやめた冒険の戦闘の進化は残さない。
+  async function inAdventure(userId: string, now: string) {
+    const since = new Date(
+      Date.parse(now) - EVOLUTION_GRACE_MINUTES * 60_000,
+    ).toISOString();
+    const runs = await db
+      .select({ id: adventureRuns.id })
+      .from(adventureRuns)
+      .where(
+        and(
+          eq(adventureRuns.userId, userId),
+          or(
+            eq(adventureRuns.status, "active"),
+            and(
+              inArray(adventureRuns.status, ["cleared", "defeated"]),
+              gte(adventureRuns.endedAt, since),
+            ),
+          ),
+        ),
+      )
+      .limit(1);
+    return runs.length > 0;
+  }
+
+  async function evolveUnique(
+    userId: string,
+    characterId: CharacterId,
+    index: number,
+    stage: number,
+    now: string,
+  ) {
+    await ensureStarter(userId, now);
+    const state = await readState(userId);
+    const found = findUnique(state, characterId, index);
+    if ("error" in found) return found;
+    if (found.unique.set === stage) {
+      return { change: "none" as const, ...state };
+    }
+    const parent = uniqueParent(stage);
+    if (parent !== found.unique.set) {
+      return { error: "not_next_stage" as const };
+    }
+    if (!(await inAdventure(userId, now))) {
+      return { error: "no_adventure" as const };
+    }
+    const target = and(
+      eq(partyUniqueSkills.userId, userId),
+      eq(partyUniqueSkills.characterId, characterId),
+      eq(partyUniqueSkills.uniqueIndex, index),
+    );
+    // 確認と書き込みの間に別の進化やセットが割り込んでも、手前の段階をセットしていることと、
+    // 解放するLvに届いていることを更新と同じ文に入れる。
+    await db.batch([
+      db
+        .insert(partyUniqueSkills)
+        .values({
+          userId,
+          characterId,
+          uniqueIndex: index,
+          setStage: 0,
+          acquiredMask: bitOf(0),
+          updatedAt: now,
+        })
+        .onConflictDoNothing(),
+      db
+        .update(partyUniqueSkills)
+        .set({
+          setStage: stage,
+          acquiredMask: sql`${partyUniqueSkills.acquiredMask} | ${bitOf(stage)}`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            target,
+            eq(partyUniqueSkills.setStage, parent),
+            sql`EXISTS (SELECT 1 FROM ${partyCharacters} WHERE ${partyCharacters.userId} = ${userId} AND ${partyCharacters.characterId} = ${characterId} AND ${partyCharacters.level} >= ${UNIQUE_UNLOCK_LEVELS[index]})`,
+          ),
+        ),
+    ]);
+    const after = await readState(userId);
+    const unique = after.characters.find((entry) => entry.id === characterId)
+      ?.uniques[index];
+    if (unique?.set !== stage) return { error: "not_next_stage" as const };
+    const change: PartyEvolveChange = "evolve";
+    return { change, ...after };
+  }
+
+  return {
+    getState,
+    setSlot,
+    clearSlot,
+    setCard,
+    levelUp,
+    setUnique,
+    evolveUnique,
+  };
 }

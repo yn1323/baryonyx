@@ -3,9 +3,11 @@ import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createAdventureRepository } from "./repository.js";
 import {
+  buySchema,
   clearSchema,
   endSchema,
   moveSchema,
+  openSchema,
   reviveSchema,
   startSchema,
 } from "./schema.js";
@@ -60,6 +62,35 @@ export function createAdventureApi() {
       body.data.roomId,
       new Date().toISOString(),
       body.data.enemies,
+      {
+        pass: body.data.pass,
+        trialMet: body.data.trialMet,
+        evolved: body.data.evolved,
+      },
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  // 今いる怪しい宝箱を開ける。ミミックなら戦闘のマスになり、本物ならその場でマスを終えて物を落とす。
+  api.post("/adventure/open", async (c) => {
+    const body = await parseJson(c, openSchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createAdventureRepository(c.env.DB).open(
+      c.get("userId"),
+      body.data.roomId,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  // 今いる行商人のマスで、品物を1つルーンで買う。
+  api.post("/adventure/buy", async (c) => {
+    const body = await parseJson(c, buySchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createAdventureRepository(c.env.DB).buy(
+      c.get("userId"),
+      body.data,
+      new Date().toISOString(),
     );
     return respond(c, result, errorStatus);
   });

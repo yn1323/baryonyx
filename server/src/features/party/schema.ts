@@ -5,6 +5,8 @@ import {
   CHARACTER_IDS,
   MAX_LEVEL,
   PARTY_SLOT_COUNT,
+  UNIQUE_SKILL_COUNT,
+  UNIQUE_STAGE_COUNT,
 } from "./catalog.js";
 
 // パスの枠番号。0から枠の数-1までの1桁だけを受け付ける。
@@ -17,6 +19,7 @@ function slotNumber(count: number) {
 
 export const partySlotSchema = slotNumber(PARTY_SLOT_COUNT);
 export const cardSlotSchema = slotNumber(CARD_SLOT_COUNT);
+export const uniqueIndexSchema = slotNumber(UNIQUE_SKILL_COUNT);
 export const characterIdSchema = z.enum(CHARACTER_IDS);
 
 export const setPartySlotSchema = z.object({
@@ -41,3 +44,21 @@ export const levelUpSchema = z
   .refine((body) => body.toLevel > body.fromLevel);
 
 export type LevelUp = z.infer<typeof levelUpSchema>;
+
+// 編成でセットする固有スキルの段階。最初の段階（0）から最後の段階まで。
+export const setUniqueSchema = z.object({
+  stage: z
+    .number()
+    .int()
+    .min(0)
+    .max(UNIQUE_STAGE_COUNT - 1),
+});
+
+// 冒険の戦闘で進化した先の段階。最初の段階（0）へは進化しない。
+export const evolveUniqueSchema = z.object({
+  stage: z
+    .number()
+    .int()
+    .min(1)
+    .max(UNIQUE_STAGE_COUNT - 1),
+});

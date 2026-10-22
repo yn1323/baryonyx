@@ -3,6 +3,7 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
+import { days } from "../health/fixtures.js";
 import { REVIVE_COST_BASE, reviveCost } from "./catalog.js";
 import { eligibleEntries } from "./drops.js";
 import { createAdventureRepository } from "./repository.js";
@@ -35,9 +36,26 @@ type Result = {
   drops: Drop[];
 };
 
+type Goods = {
+  index: number;
+  category: string;
+  id: string;
+  multiplierPercent: number;
+  quality: string;
+  price: number;
+  sold: boolean;
+};
+
 type State = {
   drops?: Drop[];
   revive?: { roomId: string; runes: number; balanceAfter: number };
+  purchase?: {
+    roomId: string;
+    index: number;
+    runes: number;
+    balanceAfter: number;
+  };
+  stepDoor?: { steps: number; tier: number };
   result?: Result;
   run: {
     id: string;
@@ -51,6 +69,9 @@ type State = {
     route: string[];
     revives: number;
     reviveCost: number;
+    mimic: boolean;
+    trial?: string;
+    merchant?: Goods[];
     drops: Drop[];
   } | null;
   records: { destinationId: string; bestFloor: number; clears: number }[];
@@ -59,18 +80,28 @@ type State = {
 
 type Room = { roomId: string; floor: number; kind: string };
 
-// クライアントが種から作る道の部屋（IDは「f階-道」）。サーバーは階と種類だけを確かめる。
+// クライアントが種から作る道のマス（IDは「f階-番号」）。サーバーは階と種類だけを確かめる。
+// 第2層は魔物だけで、宝箱は第3層から、強い魔物は第4層から置ける（doc/features/stage-progression.md の道の決まり）。
 const rooms = {
   battle: { roomId: "f2-0", floor: 2, kind: "battle" },
-  treasure: { roomId: "f2-1", floor: 2, kind: "treasure" },
-  elite: { roomId: "f3-0", floor: 3, kind: "elite" },
+  treasure: { roomId: "f3-0", floor: 3, kind: "treasure" },
+  battle3: { roomId: "f3-1", floor: 3, kind: "battle" },
+  elite: { roomId: "f4-0", floor: 4, kind: "elite" },
   boss: { roomId: "boss", floor: 10, kind: "boss" },
 } satisfies Record<string, Room>;
 
 const requestIds = {
   first: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
   second: "bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb",
+  third: "bbbbbbbb-3333-4333-8333-bbbbbbbbbbbb",
 };
+
+// 最奥の間の行を借りるマス（ミミック・試練・歩数の扉）で落ちうる物。主の物を除く。
+const bossRowPool = eligibleEntries("forest-ruins", "boss", false);
+const inPool = (pool: typeof bossRowPool, drop: Drop) =>
+  pool.some(
+    (entry) => entry.category === drop.category && entry.id === drop.id,
+  );
 
 describe("冒険API", () => {
   let scenario: ApiScenario;
@@ -106,6 +137,32 @@ describe("冒険API", () => {
   const clear = (token: string, roomId: string, expected = 200) =>
     call(token, "/adventure/clear", { roomId }, expected);
 
+  // 失敗する要求を送り、ステータスとエラーの名前を確かめる。
+  async function rejects(
+    token: string,
+    path: string,
+    body: unknown,
+    error: string,
+    status = 409,
+  ) {
+    const response = await scenario.request(path, "POST", body, token);
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error });
+  }
+
+  // 第2層から until の手前の階まで、魔物（第6層は宝箱）のマス「f階-0」を進んで終える。
+  async function walk(token: string, until: number) {
+    for (let floor = 2; floor < until; floor++) {
+      const roomId = `f${floor}-0`;
+      await move(token, {
+        roomId,
+        floor,
+        kind: floor === 6 ? "treasure" : "battle",
+      });
+      await clear(token, roomId);
+    }
+  }
+
   it("セッションのない要求を401で拒否する", async () => {
     const responses = await Promise.all([
       scenario.request("/adventure"),
@@ -117,9 +174,15 @@ describe("冒険API", () => {
         roomId: "f2-0",
       }),
       scenario.request("/adventure/end", "POST", { reason: "retreat" }),
+      scenario.request("/adventure/open", "POST", { roomId: "f4-0" }),
+      scenario.request("/adventure/buy", "POST", {
+        requestId: requestIds.first,
+        roomId: "f4-0",
+        index: 0,
+      }),
     ]);
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401, 401,
+      401, 401, 401, 401, 401, 401, 401, 401,
     ]);
   });
 
@@ -137,6 +200,27 @@ describe("冒険API", () => {
       { requestId: "short", roomId: "f2-0" },
       400,
     );
+    await call(user.token, "/adventure/open", { roomId: "BAD ID" }, 400);
+    await call(
+      user.token,
+      "/adventure/clear",
+      { roomId: "f2-0", pass: "yes" },
+      400,
+    );
+    await call(
+      user.token,
+      "/adventure/clear",
+      { roomId: "f2-0", trialMet: 1 },
+      400,
+    );
+    for (const body of [
+      { requestId: "short", roomId: "f4-0", index: 0 },
+      { requestId: requestIds.first, roomId: "f4-0", index: -1 },
+      { requestId: requestIds.first, roomId: "f4-0", index: 1.5 },
+      { requestId: requestIds.first, roomId: "f4-0" },
+    ]) {
+      await call(user.token, "/adventure/buy", body, 400);
+    }
   });
 
   it("冒険がないあいだは進行中の冒険を返さず、進む・終える要求を404で返す", async () => {
@@ -149,7 +233,7 @@ describe("冒険API", () => {
     await call(user.token, "/adventure/end", { reason: "retreat" }, 404);
   });
 
-  it("入口の部屋から道の種と部屋の数を決めて始め、選んだ部屋を保存して、出来事を終えるまで先へ進ませない", async () => {
+  it("入口のマスから道の種とマスの数を決めて始め、選んだマスを保存して、出来事を終えるまで先へ進ませない", async () => {
     const user = await scenario.login("adventure-route");
     const started = await start(user.token);
     expect(started.run).toMatchObject({
@@ -195,6 +279,34 @@ describe("冒険API", () => {
     expect((await move(user.token, rooms.battle)).run?.roomId).toBe("f2-0");
   });
 
+  it("マスはその種類を置ける階でだけ選べる", async () => {
+    const user = await scenario.login("adventure-kinds");
+    await start(user.token);
+    // 第2層は魔物だけ。
+    await move(user.token, { roomId: "f2-0", floor: 2, kind: "rest" }, 409);
+    await move(user.token, rooms.battle);
+    await clear(user.token, "f2-0");
+    // 第3層（2つ目）には、行商人・休憩・試練はまだ置けない。進化の祭壇は置ける。
+    for (const kind of ["merchant", "rest", "trial", "elite", "step-door"]) {
+      await move(user.token, { roomId: "f3-0", floor: 3, kind }, 409);
+    }
+    const altar = await move(user.token, {
+      roomId: "f3-0",
+      floor: 3,
+      kind: "altar",
+    });
+    expect(altar.run).toMatchObject({ roomKind: "altar", roomCleared: false });
+    // 祭壇は、進化を作るまでは宝箱と同じ1〜3つを落とす。
+    const drops = (await clear(user.token, "f3-0")).drops ?? [];
+    expect(drops.length).toBeGreaterThanOrEqual(1);
+    expect(drops.length).toBeLessThanOrEqual(3);
+    // 第4層（3つ目）の行商人は何も落とさずに終える。
+    await move(user.token, { roomId: "f4-0", floor: 4, kind: "merchant" });
+    const merchant = await clear(user.token, "f4-0");
+    expect(merchant.drops).toEqual([]);
+    expect(merchant.run?.roomCleared).toBe(true);
+  });
+
   it("冒険ごとに道の種が変わる", async () => {
     const user = await scenario.login("adventure-seed");
     const values = [0.25, 0.75];
@@ -216,8 +328,10 @@ describe("冒険API", () => {
   it("出来事を終えると、行き先の一覧から物を落とし、1回だけ持ち物に入れる", async () => {
     const user = await scenario.login("adventure-reward");
     await start(user.token);
+    await move(user.token, rooms.battle);
+    await clear(user.token, "f2-0");
     await move(user.token, rooms.treasure);
-    const cleared = await clear(user.token, "f2-1");
+    const cleared = await clear(user.token, "f3-0");
     expect(cleared.run?.roomCleared).toBe(true);
     const drops = cleared.drops ?? [];
     // 宝箱は1〜3つ落ちる。
@@ -225,7 +339,7 @@ describe("冒険API", () => {
     expect(drops.length).toBeLessThanOrEqual(3);
     const pool = eligibleEntries("forest-ruins", "treasure");
     for (const drop of drops) {
-      expect(drop.roomId).toBe("f2-1");
+      expect(drop.roomId).toBe("f3-0");
       expect(
         pool.some(
           (entry) => entry.category === drop.category && entry.id === drop.id,
@@ -238,12 +352,14 @@ describe("冒険API", () => {
         expect(drop.multiplier).toBeGreaterThanOrEqual(1);
       }
     }
-    expect(cleared.run?.drops).toEqual(drops);
+    expect(
+      cleared.run?.drops?.filter((drop) => drop.roomId === "f3-0"),
+    ).toEqual(drops);
 
     // 再送は、記録したドロップを返し、もう一度は手に入らない。
-    const again = await clear(user.token, "f2-1");
+    const again = await clear(user.token, "f3-0");
     expect(again.drops).toEqual(drops);
-    expect(again.run?.drops).toEqual(drops);
+    expect(again.run?.drops).toEqual(cleared.run?.drops);
   });
 
   it("落ちた装備・アクセサリー・スキル・アイテムを持ち物に足す", async () => {
@@ -299,10 +415,10 @@ describe("冒険API", () => {
     ]);
 
     // 同じアイテムが2つ落ちれば、数を2つ足す。アクセサリーは装備の持ち物に入る。
-    await move(user.token, rooms.elite);
+    await move(user.token, rooms.treasure);
     const elite = createAdventureRepository(
       scenario.env.DB,
-      // 強い魔物の部屋で3つ（0.99）：アイテム（0）の薬草（0）を2つと、アクセサリー（0.5）の苔玉のお守り（0）。
+      // 宝箱（強い魔物と同じ重み）で3つ（0.99）：アイテム（0）の薬草（0）を2つと、アクセサリー（0.5）の苔玉のお守り（0）。
       fixed(0.99, 0, 0, 0, 0, 0.5, 0, 0, 0),
     );
     const second = await elite.clear(user.userId, "f3-0", now);
@@ -409,7 +525,7 @@ describe("冒険API", () => {
     expect(await short.json()).toEqual({ error: "insufficient_runes" });
   });
 
-  it("戦闘のない部屋や終えた部屋からは復活できない", async () => {
+  it("戦闘のないマスや終えたマスからは復活できない", async () => {
     const user = await scenario.login("adventure-revive-room");
     await scenario.setRunes(user.userId, 1000);
     await start(user.token);
@@ -419,11 +535,13 @@ describe("冒険API", () => {
       { requestId: requestIds.first, roomId: "entrance" },
       409,
     );
+    await move(user.token, rooms.battle);
+    await clear(user.token, "f2-0");
     await move(user.token, rooms.treasure);
     await call(
       user.token,
       "/adventure/revive",
-      { requestId: requestIds.second, roomId: "f2-1" },
+      { requestId: requestIds.second, roomId: "f3-0" },
       409,
     );
   });
@@ -433,7 +551,7 @@ describe("冒険API", () => {
     await start(user.token);
     await move(user.token, rooms.battle);
     const won = await clear(user.token, "f2-0");
-    await move(user.token, rooms.elite);
+    await move(user.token, rooms.battle3);
     const ended = await call(user.token, "/adventure/end", {
       reason: "defeat",
     });
@@ -464,7 +582,7 @@ describe("冒険API", () => {
     });
   });
 
-  it("戦闘のない部屋では負けて終えられないが、自分からはいつでもやめられる", async () => {
+  it("戦闘のないマスでは負けて終えられないが、自分からはいつでもやめられる", async () => {
     const user = await scenario.login("adventure-retreat");
     await start(user.token);
     await call(user.token, "/adventure/end", { reason: "defeat" }, 409);
@@ -479,14 +597,17 @@ describe("冒険API", () => {
   it("最奥のボスを倒すと冒険を終え、踏破の回数を数える", async () => {
     const user = await scenario.login("adventure-clear");
     await start(user.token);
+    // 第6層は宝箱、最奥の直前の第9層は休憩（落とす物はない）。
     for (let floor = 2; floor <= 9; floor++) {
-      const room = { roomId: `f${floor}-1`, floor, kind: "battle" };
+      const kind = floor === 6 ? "treasure" : floor === 9 ? "rest" : "battle";
+      const room = { roomId: `f${floor}-1`, floor, kind };
       await move(user.token, room);
       const drops = (await clear(user.token, room.roomId)).drops ?? [];
-      expect(drops.length).toBeGreaterThanOrEqual(1);
+      if (kind === "rest") expect(drops).toEqual([]);
+      else expect(drops.length).toBeGreaterThanOrEqual(1);
       expect(drops.every((drop) => drop.roomId === room.roomId)).toBe(true);
     }
-    // 最奥の階には、ボスの部屋だけがある。
+    // 最奥の階には、ボスのマスだけがある。
     await move(user.token, { ...rooms.boss, kind: "battle" }, 409);
     await move(user.token, rooms.boss);
     const cleared = await clear(user.token, "boss");
@@ -498,8 +619,9 @@ describe("冒険API", () => {
       newRecord: true,
       clears: 1,
     });
-    const rooms9 = new Set(cleared.result?.drops.map((drop) => drop.roomId));
-    expect(rooms9.size).toBe(9);
+    // 休憩（第9層）を除く、道中の7マスと最奥の間で落ちた。
+    const dropped = new Set(cleared.result?.drops.map((drop) => drop.roomId));
+    expect(dropped.size).toBe(8);
     // 最奥の間では2〜4つ落ち、☆3〜5と最奥の間だけの物から選ぶ。
     const bossDrops = cleared.drops ?? [];
     expect(bossDrops.length).toBeGreaterThanOrEqual(2);
@@ -512,6 +634,504 @@ describe("冒険API", () => {
     expect((await call(user.token, "/adventure")).records).toEqual([
       { destinationId: "forest-ruins", bestFloor: 10, clears: 1 },
     ]);
+  });
+
+  it("怪しい宝箱を開けてミミックなら戦闘のマスになり、勝つと最大の報酬（主の物を除く）を落とす", async () => {
+    const user = await scenario.login("adventure-mimic");
+    const now = new Date().toISOString();
+    await scenario.setRunes(user.userId, 1000);
+    await start(user.token);
+    await walk(user.token, 4);
+    const arrived = await move(user.token, {
+      roomId: "f4-1",
+      floor: 4,
+      kind: "shady-chest",
+    });
+    expect(arrived.run).toMatchObject({
+      roomKind: "shady-chest",
+      roomCleared: false,
+      mimic: false,
+    });
+    // 開ける前は、ミミックに勝ったとして終えられず、戦闘のマスでもない。
+    await rejects(
+      user.token,
+      "/adventure/clear",
+      { roomId: "f4-1" },
+      "chest_not_opened",
+    );
+    await rejects(
+      user.token,
+      "/adventure/end",
+      { reason: "defeat" },
+      "room_mismatch",
+    );
+    await rejects(
+      user.token,
+      "/adventure/open",
+      { roomId: "f4-0" },
+      "room_mismatch",
+    );
+
+    // 乱数が半分より小さければミミック。マスはまだ終えていない。
+    const opened = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.1),
+    ).open(user.userId, "f4-1", now);
+    expect("run" in opened && opened.run).toMatchObject({
+      roomCleared: false,
+      mimic: true,
+    });
+    expect("drops" in opened && opened.drops).toEqual([]);
+    // 再送は、決めた結果をそのまま返す（もう一度は決めない）。
+    const replay = await call(user.token, "/adventure/open", {
+      roomId: "f4-1",
+    });
+    expect(replay.run).toMatchObject({ roomCleared: false, mimic: true });
+    expect(replay.drops).toEqual([]);
+    expect((await call(user.token, "/adventure")).run?.mimic).toBe(true);
+    // 開けたあとは通り過ぎられず、戦闘のマスとして復活できる。
+    await rejects(
+      user.token,
+      "/adventure/clear",
+      { roomId: "f4-1", pass: true },
+      "pass_not_allowed",
+    );
+    const revived = await call(user.token, "/adventure/revive", {
+      requestId: requestIds.first,
+      roomId: "f4-1",
+    });
+    expect(revived.revive?.runes).toBe(REVIVE_COST_BASE);
+
+    // 勝つと、最奥の間の行から2〜4つ落ち、遭遇した敵を記録する。
+    const won = await call(user.token, "/adventure/clear", {
+      roomId: "f4-1",
+      enemies: [{ enemyId: "chest-mimic", defeated: 1 }],
+    });
+    const drops = won.drops ?? [];
+    expect(drops.length).toBeGreaterThanOrEqual(2);
+    expect(drops.length).toBeLessThanOrEqual(4);
+    expect(drops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
+    expect(won.run).toMatchObject({ roomCleared: true, mimic: true });
+    const library = await scenario.read<{
+      discoveries: { kind: string; entryId: string; defeated: number }[];
+    }>("/library", user.token);
+    expect(library.discoveries).toContainEqual(
+      expect.objectContaining({
+        kind: "enemy",
+        entryId: "chest-mimic",
+        defeated: 1,
+      }),
+    );
+    // 次のマスへ進むと、ミミックの印は消える。
+    const next = await move(user.token, {
+      roomId: "f5-0",
+      floor: 5,
+      kind: "battle",
+    });
+    expect(next.run?.mimic).toBe(false);
+  });
+
+  it("怪しい宝箱を開けて本物なら、その場でマスを終え、強い報酬を1つ多く落とし、再送では記録した物を返す", async () => {
+    const user = await scenario.login("adventure-chest");
+    const now = new Date().toISOString();
+    await start(user.token);
+    await walk(user.token, 4);
+    await move(user.token, { roomId: "f4-1", floor: 4, kind: "shady-chest" });
+    // 本物（0.9）で、宝箱の行の3つ（0.99）に1つ足した4つ。どれもアイテム（0）の薬草（0）。
+    const opened = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.9, 0.99),
+    ).open(user.userId, "f4-1", now);
+    expect("drops" in opened && opened.drops?.map((drop) => drop.id)).toEqual([
+      "herb",
+      "herb",
+      "herb",
+      "herb",
+    ]);
+    expect("run" in opened && opened.run).toMatchObject({
+      roomCleared: true,
+      mimic: false,
+    });
+    const items = await scenario.env.DB.prepare(
+      "SELECT count FROM item_holdings WHERE user_id = ? AND item_id = 'herb'",
+    )
+      .bind(user.userId)
+      .first<{ count: number }>();
+    const herbs = items?.count ?? 0;
+    expect(herbs).toBeGreaterThanOrEqual(4);
+
+    const replay = await call(user.token, "/adventure/open", {
+      roomId: "f4-1",
+    });
+    expect(replay.drops).toEqual("drops" in opened ? opened.drops : []);
+    expect(replay.run?.mimic).toBe(false);
+    expect((await clear(user.token, "f4-1")).drops).toEqual(replay.drops);
+    const after = await scenario.env.DB.prepare(
+      "SELECT count FROM item_holdings WHERE user_id = ? AND item_id = 'herb'",
+    )
+      .bind(user.userId)
+      .first<{ count: number }>();
+    expect(after?.count).toBe(herbs);
+  });
+
+  it("怪しい宝箱は開けずに通り過ぎられ、何も落とさず、そのあとは開けられない", async () => {
+    const user = await scenario.login("adventure-pass");
+    await start(user.token);
+    await move(user.token, rooms.battle);
+    // 通り過ぎるのは怪しい宝箱だけ。
+    await rejects(
+      user.token,
+      "/adventure/clear",
+      { roomId: "f2-0", pass: true },
+      "pass_not_allowed",
+    );
+    await clear(user.token, "f2-0");
+    await move(user.token, rooms.battle3);
+    await clear(user.token, "f3-1");
+    await move(user.token, { roomId: "f4-1", floor: 4, kind: "shady-chest" });
+    const passed = await call(user.token, "/adventure/clear", {
+      roomId: "f4-1",
+      pass: true,
+    });
+    expect(passed.drops).toEqual([]);
+    expect(passed.run).toMatchObject({ roomCleared: true, mimic: false });
+    // 再送は同じ結果を返す。
+    const again = await call(user.token, "/adventure/clear", {
+      roomId: "f4-1",
+      pass: true,
+    });
+    expect(again.drops).toEqual([]);
+    await rejects(
+      user.token,
+      "/adventure/open",
+      { roomId: "f4-1" },
+      "room_cleared",
+    );
+    expect(passed.run?.drops.filter((drop) => drop.roomId === "f4-1")).toEqual(
+      [],
+    );
+  });
+
+  it("試練のマスに入ると条件を1つ決め、条件を満たして勝てば最大の報酬、満たさなければ魔物の報酬を落とす", async () => {
+    const user = await scenario.login("adventure-trial");
+    const now = new Date().toISOString();
+    await start(user.token);
+    await walk(user.token, 5);
+    // 条件は乱数で選ぶ（0.5 は2つ目の「誰も倒れずに勝つ」）。
+    const entered = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.5),
+    ).move(user.userId, { roomId: "f5-1", floor: 5, kind: "trial" }, now);
+    expect("run" in entered && entered.run).toMatchObject({
+      roomKind: "trial",
+      trial: "no-one-falls",
+      roomCleared: false,
+    });
+    // 読み直しても、同じ部屋の再送でも、条件は変わらない。
+    expect((await call(user.token, "/adventure")).run?.trial).toBe(
+      "no-one-falls",
+    );
+    expect(
+      (await move(user.token, { roomId: "f5-1", floor: 5, kind: "trial" })).run
+        ?.trial,
+    ).toBe("no-one-falls");
+    const met = await call(user.token, "/adventure/clear", {
+      roomId: "f5-1",
+      trialMet: true,
+      enemies: [{ enemyId: "moss-slime", defeated: 2 }],
+    });
+    const metDrops = met.drops ?? [];
+    expect(metDrops.length).toBeGreaterThanOrEqual(2);
+    expect(metDrops.length).toBeLessThanOrEqual(4);
+    expect(metDrops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
+
+    // 試練のほかのマスでは、条件を返さない。
+    const treasure = await move(user.token, {
+      roomId: "f6-0",
+      floor: 6,
+      kind: "treasure",
+    });
+    expect(treasure.run && "trial" in treasure.run).toBe(false);
+    await clear(user.token, "f6-0");
+
+    // 条件を満たさずに勝つと、魔物の行から1〜2つ落ちる。
+    await move(user.token, { roomId: "f7-1", floor: 7, kind: "trial" });
+    const missed = await call(user.token, "/adventure/clear", {
+      roomId: "f7-1",
+      trialMet: false,
+    });
+    const missedDrops = missed.drops ?? [];
+    expect(missedDrops.length).toBeGreaterThanOrEqual(1);
+    expect(missedDrops.length).toBeLessThanOrEqual(2);
+    expect(
+      missedDrops.every((drop) =>
+        inPool(eligibleEntries("forest-ruins", "battle"), drop),
+      ),
+    ).toBe(true);
+  });
+
+  it("歩数の扉は、扉を開けたときの今日の歩数の段で報酬を決め、歩数と段を返す", async () => {
+    const user = await scenario.login("adventure-step-door");
+    const sourceId = "cccccccc-1111-4111-8111-cccccccccccc";
+    let revision = 0;
+    const sync = async (steps: number) => {
+      const lease = await scenario.request(
+        "/health/syncs",
+        "POST",
+        { sourceId, provider: "health_connect" },
+        user.token,
+      );
+      revision = ((await lease.json()) as { revision: number }).revision;
+      const put = await scenario.request(
+        `/health/sources/${sourceId}/days`,
+        "PUT",
+        { revision, days: days(steps) },
+        user.token,
+      );
+      expect(put.status).toBe(200);
+    };
+    const door = (floor: number) => ({
+      roomId: `f${floor}-1`,
+      floor,
+      kind: "step-door",
+    });
+    await start(user.token);
+    await walk(user.token, 4);
+
+    // 歩数を同期していなければ0歩で、0段（魔物の報酬）になる。それでも扉は開く。
+    await move(user.token, door(4));
+    const none = await clear(user.token, "f4-1");
+    expect(none.stepDoor).toEqual({ steps: 0, tier: 0 });
+    expect(none.drops?.length).toBeGreaterThanOrEqual(1);
+    expect(none.drops?.length).toBeLessThanOrEqual(2);
+    // 再送は、開けたときの歩数と段を返す。
+    expect((await clear(user.token, "f4-1")).stepDoor).toEqual({
+      steps: 0,
+      tier: 0,
+    });
+
+    // 5,000〜7,999歩は、強い報酬で1つ多い（2〜4つ）。
+    await sync(5000);
+    await move(user.token, door(5));
+    const strong = await clear(user.token, "f5-1");
+    expect(strong.stepDoor).toEqual({ steps: 5000, tier: 2 });
+    expect(strong.drops?.length).toBeGreaterThanOrEqual(2);
+    expect(strong.drops?.length).toBeLessThanOrEqual(4);
+    await move(user.token, { roomId: "f6-0", floor: 6, kind: "treasure" });
+    await clear(user.token, "f6-0");
+
+    // 3,000〜4,999歩は強い報酬（1〜3つ）。
+    await sync(3000);
+    await move(user.token, door(7));
+    const elite = await clear(user.token, "f7-1");
+    expect(elite.stepDoor).toEqual({ steps: 3000, tier: 1 });
+    expect(elite.drops?.length).toBeLessThanOrEqual(3);
+
+    // 8,000歩以上は、最大の報酬（主の物を除く）。
+    await sync(8000);
+    await move(user.token, door(8));
+    const best = await clear(user.token, "f8-1");
+    expect(best.stepDoor).toEqual({ steps: 8000, tier: 3 });
+    const bestDrops = best.drops ?? [];
+    expect(bestDrops.length).toBeGreaterThanOrEqual(2);
+    expect(bestDrops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
+    // 扉のほかのマスでは、歩数の扉の項目を返さない。
+    await move(user.token, { roomId: "f9-0", floor: 9, kind: "rest" });
+    expect("stepDoor" in (await clear(user.token, "f9-0"))).toBe(false);
+  });
+
+  it("行商人のマスに入ると品ぞろえを作り、ルーンで買え、残高不足・二重購入・売り切れを拒む", async () => {
+    const user = await scenario.login("adventure-merchant");
+    const now = new Date().toISOString();
+    await start(user.token);
+    await walk(user.token, 4);
+    // 乱数が0なら、スキル3つと装備2つが一覧の初めの物から、品質Cの最小の倍率で並ぶ。
+    const entered = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(),
+    ).move(user.userId, { roomId: "f4-1", floor: 4, kind: "merchant" }, now);
+    const goods = ("run" in entered && entered.run?.merchant) || [];
+    expect(goods).toEqual([
+      {
+        index: 0,
+        category: "skill",
+        id: "Slash",
+        multiplierPercent: 100,
+        quality: "C",
+        price: 300,
+        sold: false,
+      },
+      {
+        index: 1,
+        category: "skill",
+        id: "Fire",
+        multiplierPercent: 100,
+        quality: "C",
+        price: 300,
+        sold: false,
+      },
+      {
+        index: 2,
+        category: "skill",
+        id: "Heal",
+        multiplierPercent: 100,
+        quality: "C",
+        price: 300,
+        sold: false,
+      },
+      {
+        index: 3,
+        category: "accessory",
+        id: "moss-charm",
+        multiplierPercent: 100,
+        quality: "C",
+        price: 300,
+        sold: false,
+      },
+      {
+        index: 4,
+        category: "accessory",
+        id: "acorn-brooch",
+        multiplierPercent: 100,
+        quality: "C",
+        price: 600,
+        sold: false,
+      },
+    ]);
+    // 同じ部屋の再送で、品ぞろえは変わらない。
+    expect(
+      (await move(user.token, { roomId: "f4-1", floor: 4, kind: "merchant" }))
+        .run?.merchant,
+    ).toEqual(goods);
+
+    const buy = (requestId: string, index: number, roomId = "f4-1") => ({
+      requestId,
+      roomId,
+      index,
+    });
+    // ルーンが足りなければ買えず、残高は変わらない。
+    await scenario.setRunes(user.userId, 500);
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 4),
+      "insufficient_runes",
+    );
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 9),
+      "goods_not_found",
+    );
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 0, "f4-0"),
+      "room_mismatch",
+    );
+    expect((await call(user.token, "/adventure")).runes).toBe(500);
+
+    // 買うと、値段を引いて持ち物に入れ、売れた印を付ける。道中で落ちた物とは別に1つ増える。
+    const charms = async () =>
+      (
+        await scenario.read<{
+          items: { equipmentId: string; multiplier: number; quality: string }[];
+        }>("/equipment", user.token)
+      ).items.filter((item) => item.equipmentId === "moss-charm");
+    const charmsBefore = await charms();
+    const bought = await call(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 3),
+    );
+    expect(bought.purchase).toEqual({
+      roomId: "f4-1",
+      index: 3,
+      runes: 300,
+      balanceAfter: 200,
+    });
+    expect(bought.runes).toBe(200);
+    expect(bought.run?.merchant?.map((entry) => entry.sold)).toEqual([
+      false,
+      false,
+      false,
+      true,
+      false,
+    ]);
+    const charmsAfter = await charms();
+    expect(charmsAfter).toHaveLength(charmsBefore.length + 1);
+    expect(charmsAfter).toContainEqual(
+      expect.objectContaining({ multiplier: 1, quality: "C" }),
+    );
+
+    // 同じ要求の再送は、同じ結果を返し、二重に引かない。
+    const replay = await call(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 3),
+    );
+    expect(replay.purchase).toEqual(bought.purchase);
+    expect(replay.runes).toBe(200);
+    // 同じ要求IDで別の品物は買えない。売れた品物は、別の要求でも買えない。
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.first, 0),
+      "request_conflict",
+    );
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.second, 3),
+      "sold_out",
+    );
+
+    // マスを終えても、次のマスへ進むまでは買える。スキルは持ち物のカードに入り、ライブラリに記録する。
+    const cleared = await clear(user.token, "f4-1");
+    expect(cleared.drops).toEqual([]);
+    expect(cleared.run?.merchant).toHaveLength(5);
+    await scenario.setRunes(user.userId, 1000);
+    const slashes = async () =>
+      (
+        await scenario.env.DB.prepare(
+          "SELECT multiplier_percent FROM skill_cards WHERE user_id = ? AND skill_id = 'Slash' ORDER BY acquired_at",
+        )
+          .bind(user.userId)
+          .all<{ multiplier_percent: number }>()
+      ).results;
+    const before = await slashes();
+    const skill = await call(
+      user.token,
+      "/adventure/buy",
+      buy(requestIds.third, 0),
+    );
+    expect(skill.runes).toBe(700);
+    expect(await slashes()).toHaveLength(before.length + 1);
+    const library = await scenario.read<{
+      discoveries: { kind: string; entryId: string }[];
+    }>("/library", user.token);
+    for (const [kind, entryId] of [
+      ["skill", "Slash"],
+      ["accessory", "moss-charm"],
+    ]) {
+      expect(library.discoveries).toContainEqual(
+        expect.objectContaining({ kind, entryId }),
+      );
+    }
+
+    // 次のマスへ進むと、品ぞろえは返さず、もう買えない。
+    const next = await move(user.token, {
+      roomId: "f5-0",
+      floor: 5,
+      kind: "battle",
+    });
+    expect(next.run && "merchant" in next.run).toBe(false);
+    await rejects(
+      user.token,
+      "/adventure/buy",
+      buy("bbbbbbbb-4444-4444-8444-bbbbbbbbbbbb", 1),
+      "room_mismatch",
+    );
   });
 
   it("進行中の冒険があるあいだは、別の冒険を始められずボーナスの枠も付け替えられない", async () => {

@@ -16,8 +16,9 @@ type State = { discoveries: Discovery[] };
 type Steps = { days: { day: string; steps: number }[] };
 
 // クライアントが種から作る道の部屋（IDは「f階-道」）。サーバーは階と種類だけを確かめる。
+// 第2層は魔物だけで、宝箱は第3層から置ける（doc/features/stage-progression.md の道の決まり）。
 const battleRoom = { roomId: "f2-0", floor: 2, kind: "battle" };
-const treasureRoom = { roomId: "f2-1", floor: 2, kind: "treasure" };
+const treasureRoom = { roomId: "f3-0", floor: 3, kind: "treasure" };
 
 describe("ライブラリのAPI", () => {
   let scenario: ApiScenario;
@@ -132,7 +133,8 @@ describe("ライブラリのAPI", () => {
 
   it("戦闘のない部屋を終えた知らせに添えた敵は記録しない", async () => {
     const user = await scenario.login("library-treasure");
-    await post(user.token, "/adventure", { destinationId: "forest-ruins" });
+    await enterBattle(user.token);
+    await post(user.token, "/adventure/clear", { roomId: battleRoom.roomId });
     await post(user.token, "/adventure/move", treasureRoom);
     await post(user.token, "/adventure/clear", {
       roomId: treasureRoom.roomId,

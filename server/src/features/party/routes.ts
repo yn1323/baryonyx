@@ -5,10 +5,13 @@ import { createPartyRepository } from "./repository.js";
 import {
   cardSlotSchema,
   characterIdSchema,
+  evolveUniqueSchema,
   levelUpSchema,
   partySlotSchema,
   setCardSchema,
   setPartySlotSchema,
+  setUniqueSchema,
+  uniqueIndexSchema,
 } from "./schema.js";
 
 // 持っていないキャラ・カードは404、決まりや今の状態と合わない変更は409で返す。
@@ -85,6 +88,47 @@ export function createPartyApi() {
     );
     return respond(c, result, errorStatus);
   });
+
+  // 編成で、固有スキルにセットする段階を選ぶ。取得した段階だけを選べる。
+  api.put("/party/characters/:characterId/uniques/:index", async (c) => {
+    const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
+    const index = uniqueIndexSchema.safeParse(c.req.param("index"));
+    const body = await parseJson(c, setUniqueSchema);
+    if (!characterId.success || !index.success || !body.success) {
+      return invalidRequest(c);
+    }
+    const result = await createPartyRepository(c.env.DB).setUnique(
+      c.get("userId"),
+      characterId.data,
+      index.data,
+      body.data.stage,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  // 冒険の戦闘で起きた固有スキルの進化を1段保存する。
+  api.post(
+    "/party/characters/:characterId/uniques/:index/evolve",
+    async (c) => {
+      const characterId = characterIdSchema.safeParse(
+        c.req.param("characterId"),
+      );
+      const index = uniqueIndexSchema.safeParse(c.req.param("index"));
+      const body = await parseJson(c, evolveUniqueSchema);
+      if (!characterId.success || !index.success || !body.success) {
+        return invalidRequest(c);
+      }
+      const result = await createPartyRepository(c.env.DB).evolveUnique(
+        c.get("userId"),
+        characterId.data,
+        index.data,
+        body.data.stage,
+        new Date().toISOString(),
+      );
+      return respond(c, result, errorStatus);
+    },
+  );
 
   return api;
 }

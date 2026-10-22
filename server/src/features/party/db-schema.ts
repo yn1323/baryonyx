@@ -125,6 +125,48 @@ export const partyCharacterCards = sqliteTable(
   ],
 );
 
+// キャラごとの2つの固有スキルの、取得した段階と編成でセットしている段階（doc/features/skill-evolution.md）。
+// acquired_mask は段階ごとのビット（段階 n が 1 << n）で、最初の段階（ビット0）は常に立てる。
+// セットできるのは取得した段階だけ。進化していない固有スキルは行を持たず、最初の段階をセットした扱いにする。
+export const partyUniqueSkills = sqliteTable(
+  "party_unique_skills",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => appUsers.id),
+    characterId: text("character_id").notNull(),
+    uniqueIndex: integer("unique_index").notNull(),
+    setStage: integer("set_stage").notNull(),
+    acquiredMask: integer("acquired_mask").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userId, table.characterId, table.uniqueIndex],
+    }),
+    foreignKey({
+      columns: [table.userId, table.characterId],
+      foreignColumns: [partyCharacters.userId, partyCharacters.characterId],
+    }),
+    check(
+      "party_unique_skills_index_check",
+      sql`${table.uniqueIndex} >= 0 AND ${table.uniqueIndex} < 2`,
+    ),
+    check(
+      "party_unique_skills_stage_check",
+      sql`${table.setStage} >= 0 AND ${table.setStage} < 7`,
+    ),
+    check(
+      "party_unique_skills_mask_check",
+      sql`${table.acquiredMask} >= 1 AND ${table.acquiredMask} < 128 AND (${table.acquiredMask} & 1) = 1`,
+    ),
+    check(
+      "party_unique_skills_set_acquired_check",
+      sql`((${table.acquiredMask} >> ${table.setStage}) & 1) = 1`,
+    ),
+  ],
+);
+
 // レベルアップ1回ごとの記録。使ったルーンの記録を兼ね、要求IDで再送を見分ける。
 // 残高（rune_wallets）は、ルーンの台帳の合計からここで使った合計を引いた値になる。
 export const partyLevelUps = sqliteTable(

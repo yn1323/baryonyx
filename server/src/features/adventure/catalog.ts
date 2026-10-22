@@ -1,32 +1,37 @@
-// 冒険先と、入口から最奥の間までに通る部屋の数（doc/features/stage-progression.md）。
-// 部屋で落ちる物は drops.ts（doc/features/drops.md）が決める。
+// 冒険先と、入口から最奥の間までに通るマスの数（doc/features/stage-progression.md）。
+// マスで落ちる物は drops.ts（doc/features/drops.md）が決める。
 // 行き先ごとの名前・背景・敵の組み合わせ・敵のLvはクライアント（AdventureCatalog.cs）が持つ。
 // 分岐ルートの道は、冒険を始めたときにサーバーが決めた乱数の種から、クライアントが毎回同じ形に作る
 // （doc/plans/2026-10-04-exploration-route-map.md）。サーバーは道そのものを持たず、
-// 今いる部屋の階と種類を受け取って、進み方と報酬だけを判定する。
+// 今いるマスの階と種類を受け取って、進み方と報酬だけを判定する。
 
-export const ROOM_KINDS = [
-  "start",
+// 入口の次から選んで進むマスの種類（doc/features/stage-progression.md のマスの種類）。
+export const EVENT_KINDS = [
   "battle",
   "elite",
   "treasure",
   "boss",
+  "rest",
+  "merchant",
+  "shady-chest",
+  "trial",
+  "step-door",
+  "altar",
 ] as const;
 
-export type RoomKind = (typeof ROOM_KINDS)[number];
+export const ROOM_KINDS = ["start", ...EVENT_KINDS] as const;
 
-// 入口の次から選んで進む部屋の種類。
-export const EVENT_KINDS = ["battle", "elite", "treasure", "boss"] as const;
+export type RoomKind = (typeof ROOM_KINDS)[number];
 
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 export type Destination = {
   id: string;
-  // 入口（第1層）と最奥の間のあいだに通る部屋の数。1階ごとに1部屋を通る。
+  // 入口（第1層）と最奥の間のあいだに通るマスの数。1階ごとに1マスを通る。
   roomCount: number;
 };
 
-// 敵が強い順に奥の行き先とし、部屋の数を増やす（2026-10-20）。
+// 敵が強い順に奥の行き先とし、マスの数を増やす（2026-10-20）。
 export const DESTINATIONS: readonly Destination[] = [
   { id: "forest-ruins", roomCount: 8 },
   { id: "port-portoria", roomCount: 9 },
@@ -48,7 +53,7 @@ export function findDestination(id: string) {
   return DESTINATIONS.find((destination) => destination.id === id);
 }
 
-// 最奥の間の階。入口が第1層、道中の部屋が第2層から続く。
+// 最奥の間の階。入口が第1層、道中のマスが第2層から続く。
 export function bossFloor(destination: Destination) {
   return destination.roomCount + 2;
 }
@@ -58,13 +63,88 @@ export function newSeed(random: () => number) {
   return 1 + Math.floor(random() * 0x7ffffffe);
 }
 
-// 出来事（戦闘・宝箱）のある部屋。着いた時点では終わっておらず、終えるまで先へ進めない。
+// 出来事（戦闘・宝箱など）のあるマス。着いた時点では終わっておらず、終えるまで先へ進めない。
 export function hasEvent(kind: RoomKind) {
   return kind !== "start";
 }
 
 export function isBattle(kind: RoomKind) {
-  return kind === "battle" || kind === "elite" || kind === "boss";
+  return (
+    kind === "battle" || kind === "elite" || kind === "boss" || kind === "trial"
+  );
+}
+
+// 決まった階以外で、そのマスを置ける最初の階。道中の最初の階（第2層）を1つ目と数える
+// （doc/features/stage-progression.md の置ける階）。進化の祭壇は、決まった階以外ならどこでも置き換える。
+const EARLIEST: Record<Exclude<EventKind, "boss">, number> = {
+  battle: 2,
+  elite: 3,
+  treasure: 2,
+  rest: 4,
+  merchant: 3,
+  "shady-chest": 3,
+  trial: 4,
+  "step-door": 3,
+  altar: 2,
+};
+
+// 決まった階のマス。1つ目は魔物、道中が5マス以上なら真ん中は宝箱、3マス以上なら最後（最奥の直前）は休憩。
+export function fixedKindOf(
+  destination: Destination,
+  floor: number,
+): EventKind | null {
+  const count = destination.roomCount;
+  const index = floor - 1;
+  if (floor === bossFloor(destination)) return "boss";
+  if (index === 1) return "battle";
+  if (count >= 5 && index === Math.floor(count / 2) + 1) return "treasure";
+  if (count >= 3 && index === count) return "rest";
+  return null;
+}
+
+// そのマスを、その階に置けるか。道はクライアントが種から作るため、サーバーは置ける階だけを確かめる。
+export function canPlace(
+  destination: Destination,
+  floor: number,
+  kind: EventKind,
+) {
+  if (floor < 2 || floor > bossFloor(destination)) return false;
+  const fixed = fixedKindOf(destination, floor);
+  if (fixed !== null) return kind === fixed;
+  return kind !== "boss" && floor - 1 >= EARLIEST[kind];
+}
+
+// 怪しい宝箱がミミックである確率（doc/features/stage-progression.md のマスの中身）。開けたときにサーバーが決める。
+export const MIMIC_CHANCE = 0.5;
+
+// 試練の条件。試練のマスに入ったときにサーバーが1つ選ぶ。満たしたかはクライアントが判定して clear で送る。
+// 6ターン以内に勝つ・誰も倒れずに勝つ・HPを全員半分以上残して勝つ。
+export const TRIAL_CONDITIONS = [
+  "within-6-turns",
+  "no-one-falls",
+  "half-hp",
+] as const;
+
+export type TrialCondition = (typeof TRIAL_CONDITIONS)[number];
+
+export function pickTrialCondition(random: () => number): TrialCondition {
+  return TRIAL_CONDITIONS[
+    Math.min(
+      TRIAL_CONDITIONS.length - 1,
+      Math.floor(random() * TRIAL_CONDITIONS.length),
+    )
+  ];
+}
+
+// 歩数の扉の段。今日の歩数が段の歩数に届くほど報酬が増える（doc/features/stage-progression.md の歩数の扉の報酬）。
+// 段の歩数は、ACTボーナスの段階の候補に合わせた。0段は3,000歩未満で、扉は歩いていなくても開く。
+export const STEP_DOOR_STEPS = [3000, 5000, 8000] as const;
+
+export type StepDoorTier = 0 | 1 | 2 | 3;
+
+export function stepDoorTier(steps: number): StepDoorTier {
+  return STEP_DOOR_STEPS.filter((threshold) => steps >= threshold)
+    .length as StepDoorTier;
 }
 
 // 復活に使うルーン。2回目以降は上がる（仮設定。doc/features/combat.md の未決事項）。

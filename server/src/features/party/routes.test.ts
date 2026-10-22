@@ -5,10 +5,13 @@ import {
 } from "../../../tests/support/api-scenario.js";
 import {
   COST_PER_LEVEL,
+  EVOLUTION_GRACE_MINUTES,
   levelUpCost,
   MAX_LEVEL,
   STARTER_CHARACTERS,
   STARTER_SLOTS,
+  UNIQUE_SKILL_COUNT,
+  UNIQUE_UNLOCK_LEVELS,
 } from "./catalog.js";
 
 type State = {
@@ -21,7 +24,12 @@ type State = {
     balanceAfter: number;
   };
   from?: string;
-  characters: { id: string; level: number; cards: (string | null)[] }[];
+  characters: {
+    id: string;
+    level: number;
+    cards: (string | null)[];
+    uniques: { index: number; set: number; acquired: number[] }[];
+  }[];
   slots: { slot: number; characterId: string | null }[];
   skillCards: {
     id: string;
@@ -67,6 +75,39 @@ describe("パーティAPI", () => {
         : key,
     );
 
+  // 固有スキルにセットする段階を選ぶ・冒険の戦闘での進化を保存する。
+  const setUnique = (token: string, id: string, index: number, stage: number) =>
+    scenario.request(
+      `/party/characters/${id}/uniques/${index}`,
+      "PUT",
+      { stage },
+      token,
+    );
+  const evolve = (token: string, id: string, index: number, stage: number) =>
+    scenario.request(
+      `/party/characters/${id}/uniques/${index}/evolve`,
+      "POST",
+      { stage },
+      token,
+    );
+  // 進化は冒険の戦闘でだけ起きるため、進化を送る前に冒険を始めておく。
+  const startAdventure = async (token: string) => {
+    await read(token);
+    const response = await scenario.request(
+      "/adventure",
+      "POST",
+      { destinationId: "forest-ruins" },
+      token,
+    );
+    expect(response.status).toBe(200);
+  };
+  const uniqueOf = (state: State, id: string, index: number) =>
+    character(state, id)?.uniques[index];
+  const initialUniques = Array.from(
+    { length: UNIQUE_SKILL_COUNT },
+    (_, index) => ({ index, set: 0, acquired: [0] }),
+  );
+
   function levelUp(
     token: string,
     id: string,
@@ -93,9 +134,15 @@ describe("パーティAPI", () => {
         fromLevel: 12,
         toLevel: 13,
       }),
+      scenario.request("/party/characters/toma/uniques/0", "PUT", {
+        stage: 0,
+      }),
+      scenario.request("/party/characters/toma/uniques/0/evolve", "POST", {
+        stage: 1,
+      }),
     ]);
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401,
+      401, 401, 401, 401, 401, 401, 401,
     ]);
   });
 
@@ -315,6 +362,26 @@ describe("パーティAPI", () => {
         fromLevel: 1,
         toLevel: 2,
       }),
+      setUnique(user.token, "toma", 2, 0),
+      setUnique(user.token, "toma", 0, 7),
+      setUnique(user.token, "toma", 0, -1),
+      setUnique(user.token, "nobody", 0, 0),
+      scenario.request(
+        "/party/characters/toma/uniques/0",
+        "PUT",
+        { stage: "1" },
+        user.token,
+      ),
+      scenario.request(
+        "/party/characters/toma/uniques/a/evolve",
+        "POST",
+        { stage: 1 },
+        user.token,
+      ),
+      evolve(user.token, "toma", 0, 0),
+      evolve(user.token, "toma", 0, 7),
+      evolve(user.token, "toma", 0, 1.5),
+      evolve(user.token, "toma", -1, 1),
     ];
     for (const response of await Promise.all(invalid)) {
       expect(response.status).toBe(400);
@@ -347,6 +414,8 @@ describe("パーティAPI", () => {
         fromLevel: 1,
         toLevel: 2,
       }),
+      setUnique(user.token, "ritsu", 0, 0),
+      evolve(user.token, "ritsu", 0, 1),
     ]);
     for (const response of missing) {
       expect(response.status).toBe(404);
@@ -448,5 +517,228 @@ describe("パーティAPI", () => {
       toLevel: 12,
     });
     expect(await read(other.token)).toEqual(before);
+  });
+
+  it("固有スキルは最初の段階をセットした状態から始まり、取得していない段階はセットできない", async () => {
+    const user = await scenario.login("party-unique-start");
+    const first = await read(user.token);
+    for (const entry of first.characters) {
+      expect(entry.uniques).toEqual(initialUniques);
+    }
+
+    const unacquired = await setUnique(user.token, "toma", 0, 1);
+    expect(unacquired.status).toBe(409);
+    expect(await unacquired.json()).toEqual({ error: "stage_not_acquired" });
+    const same = (await (
+      await setUnique(user.token, "toma", 0, 0)
+    ).json()) as State;
+    expect(same.change).toBe("none");
+    expect(await read(user.token)).toEqual(first);
+  });
+
+  it("固有スキルは次の段階へ1段ずつ進化し、同じ進化の再送では何も変えない", async () => {
+    const user = await scenario.login("party-unique-evolve");
+    await startAdventure(user.token);
+    const before = await read(user.token);
+
+    // 枝の2段目へ、最初の段階から飛んでは進めない。
+    const skipped = await evolve(user.token, "toma", 0, 2);
+    expect(skipped.status).toBe(409);
+    expect(await skipped.json()).toEqual({ error: "not_next_stage" });
+
+    const first = await evolve(user.token, "toma", 0, 1);
+    expect(first.status).toBe(200);
+    const evolved = (await first.json()) as State;
+    expect(evolved.change).toBe("evolve");
+    expect(uniqueOf(evolved, "toma", 0)).toEqual({
+      index: 0,
+      set: 1,
+      acquired: [0, 1],
+    });
+
+    // 通信が切れて送り直した同じ進化は、失敗させずに何も変えない。
+    const replay = (await (
+      await evolve(user.token, "toma", 0, 1)
+    ).json()) as State;
+    expect(replay.change).toBe("none");
+    expect({ ...replay, change: undefined }).toEqual({
+      ...evolved,
+      change: undefined,
+    });
+
+    const second = (await (
+      await evolve(user.token, "toma", 0, 2)
+    ).json()) as State;
+    expect(second.change).toBe("evolve");
+
+    // 枝の2段目から先へは進まず、別の枝へも移れない。
+    const other = await evolve(user.token, "toma", 0, 3);
+    expect(other.status).toBe(409);
+    expect(await other.json()).toEqual({ error: "not_next_stage" });
+
+    const after = await read(user.token);
+    expect(uniqueOf(after, "toma", 0)).toEqual({
+      index: 0,
+      set: 2,
+      acquired: [0, 1, 2],
+    });
+    // ほかの固有スキルとキャラは変わらない。
+    expect(uniqueOf(after, "toma", 1)).toEqual(uniqueOf(before, "toma", 1));
+    expect(character(after, "luka")).toEqual(character(before, "luka"));
+  });
+
+  it("解放するLvに届いていない固有スキルは進化もセットもできない", async () => {
+    const user = await scenario.login("party-unique-locked");
+    await startAdventure(user.token);
+    const before = await read(user.token);
+    // トーマ（Lv12）の2つ目と、リタ（Lv3）の1つ目はまだ解放していない。
+    expect(character(before, "toma")?.level).toBeLessThan(
+      UNIQUE_UNLOCK_LEVELS[1],
+    );
+    expect(character(before, "rita")?.level).toBeLessThan(
+      UNIQUE_UNLOCK_LEVELS[0],
+    );
+    const locked = await Promise.all([
+      evolve(user.token, "toma", 1, 1),
+      evolve(user.token, "rita", 0, 1),
+      setUnique(user.token, "toma", 1, 0),
+    ]);
+    for (const response of locked) {
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: "unique_locked" });
+    }
+
+    // ちょうど解放するLv（ルッツのLv5）なら進化できる。
+    expect(character(before, "lutz")?.level).toBe(UNIQUE_UNLOCK_LEVELS[0]);
+    expect((await evolve(user.token, "lutz", 0, 5)).status).toBe(200);
+
+    const after = await read(user.token);
+    expect(uniqueOf(after, "toma", 1)).toEqual(initialUniques[1]);
+    expect(uniqueOf(after, "rita", 0)).toEqual(initialUniques[0]);
+    expect(uniqueOf(after, "lutz", 0)).toEqual({
+      index: 0,
+      set: 5,
+      acquired: [0, 5],
+    });
+  });
+
+  it("手前の段階にセットし直すと、そこから別の枝へ進化でき、取得した段階は残る", async () => {
+    const user = await scenario.login("party-unique-branch");
+    await startAdventure(user.token);
+    await read(user.token);
+    await evolve(user.token, "toma", 0, 1);
+    await evolve(user.token, "toma", 0, 2);
+
+    const reset = (await (
+      await setUnique(user.token, "toma", 0, 0)
+    ).json()) as State;
+    expect(reset.change).toBe("set");
+    expect(uniqueOf(reset, "toma", 0)).toEqual({
+      index: 0,
+      set: 0,
+      acquired: [0, 1, 2],
+    });
+
+    const branched = (await (
+      await evolve(user.token, "toma", 0, 3)
+    ).json()) as State;
+    expect(branched.change).toBe("evolve");
+    expect(uniqueOf(branched, "toma", 0)).toEqual({
+      index: 0,
+      set: 3,
+      acquired: [0, 1, 2, 3],
+    });
+
+    // 取得済みの段階へ進むのも進化として扱う。
+    await setUnique(user.token, "toma", 0, 0);
+    const again = (await (
+      await evolve(user.token, "toma", 0, 1)
+    ).json()) as State;
+    expect(again.change).toBe("evolve");
+    expect(uniqueOf(again, "toma", 0)).toEqual({
+      index: 0,
+      set: 1,
+      acquired: [0, 1, 2, 3],
+    });
+
+    // 取得した段階は、どれでもセットできる。
+    const picked = (await (
+      await setUnique(user.token, "toma", 0, 2)
+    ).json()) as State;
+    expect(picked.change).toBe("set");
+    expect(uniqueOf(await read(user.token), "toma", 0)).toEqual({
+      index: 0,
+      set: 2,
+      acquired: [0, 1, 2, 3],
+    });
+  });
+
+  it("ユーザーごとに別の固有スキルの段階を持つ", async () => {
+    const owner = await scenario.login("party-unique-owner");
+    const other = await scenario.login("party-unique-other");
+    await startAdventure(owner.token);
+    await read(owner.token);
+    const before = await read(other.token);
+
+    await evolve(owner.token, "toma", 0, 1);
+    await evolve(owner.token, "luka", 0, 3);
+    expect(uniqueOf(await read(owner.token), "toma", 0)?.set).toBe(1);
+    expect(await read(other.token)).toEqual(before);
+
+    // ほかのユーザーが取得した段階は、自分ではセットできない。
+    const foreign = await setUnique(other.token, "toma", 0, 1);
+    expect(foreign.status).toBe(409);
+    expect(await foreign.json()).toEqual({ error: "stage_not_acquired" });
+  });
+
+  it("進化は冒険の途中か、踏破・敗北で終えた直後だけ受け付け、途中でやめた冒険では受け付けない", async () => {
+    const user = await scenario.login("party-unique-adventure");
+    await read(user.token);
+    const outside = await evolve(user.token, "toma", 0, 1);
+    expect(outside.status).toBe(409);
+    expect(await outside.json()).toEqual({ error: "no_adventure" });
+
+    // 途中でやめた（撤退した）冒険の戦闘の進化は残さない。
+    await startAdventure(user.token);
+    const retreat = await scenario.request(
+      "/adventure/end",
+      "POST",
+      { reason: "retreat", enemies: [] },
+      user.token,
+    );
+    expect(retreat.status).toBe(200);
+    const retreated = await evolve(user.token, "toma", 0, 1);
+    expect(retreated.status).toBe(409);
+    expect(await retreated.json()).toEqual({ error: "no_adventure" });
+
+    // 敗北で終えた直後は、そのマスの戦闘の進化を受け付ける。
+    await startAdventure(user.token);
+    const ended = (minutesAgo: number) =>
+      scenario.env.DB.prepare(
+        "UPDATE adventure_runs SET status = 'defeated', ended_at = ? WHERE user_id = ? AND status = 'active'",
+      )
+        .bind(
+          new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+          user.userId,
+        )
+        .run();
+    await ended(1);
+    expect((await evolve(user.token, "toma", 0, 1)).status).toBe(200);
+
+    // 終えてから時間が経った冒険では受け付けない。
+    await scenario.env.DB.prepare(
+      "UPDATE adventure_runs SET ended_at = ? WHERE user_id = ?",
+    )
+      .bind(
+        new Date(
+          Date.now() - (EVOLUTION_GRACE_MINUTES + 1) * 60_000,
+        ).toISOString(),
+        user.userId,
+      )
+      .run();
+    const late = await evolve(user.token, "toma", 0, 2);
+    expect(late.status).toBe(409);
+    expect(await late.json()).toEqual({ error: "no_adventure" });
+    expect(uniqueOf(await read(user.token), "toma", 0)?.set).toBe(1);
   });
 });

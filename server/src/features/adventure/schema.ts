@@ -28,9 +28,26 @@ const enemiesSchema = z
   .default([]);
 
 // 今いる部屋の出来事（戦闘の勝利・宝箱）を終える。戦闘なら、遭遇した敵を添える。
+// pass は怪しい宝箱を開けずに通り過ぎるとき。trialMet は試練の条件を満たして勝ったか（クライアントの判定）。
 export const clearSchema = z.object({
   roomId: roomIdSchema,
   enemies: enemiesSchema,
+  pass: z.boolean().default(false),
+  trialMet: z.boolean().default(false),
+  // 進化の祭壇で固有スキルを進化させた（進化の保存は編成のAPIが受け持つ）。
+  evolved: z.boolean().default(false),
+});
+
+// 今いる怪しい宝箱を開ける。ミミックかどうかはサーバーが決める。
+export const openSchema = z.object({
+  roomId: roomIdSchema,
+});
+
+// 今いる行商人のマスで、品物を1つ買う。値段はサーバーが持つ。
+export const buySchema = z.object({
+  requestId: z.string().regex(/^[a-f0-9-]{36}$/),
+  roomId: roomIdSchema,
+  index: z.number().int().min(0).max(19),
 });
 
 // 負けた戦闘からルーンで復活する。費用はサーバーが計算する。
@@ -48,5 +65,7 @@ export const endSchema = z.object({
 
 export type Move = z.infer<typeof moveSchema>;
 export type Revive = z.infer<typeof reviveSchema>;
+export type Clear = z.infer<typeof clearSchema>;
+export type Buy = z.infer<typeof buySchema>;
 export type EndReason = z.infer<typeof endSchema>["reason"];
 export type Enemies = z.infer<typeof enemiesSchema>;

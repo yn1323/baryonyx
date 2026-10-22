@@ -12,6 +12,9 @@ type SeedCharacter = {
   cards: readonly [string, string];
   weapon?: string;
   armor?: string;
+  // 2つの固有スキルの、セットしている段階と取得した段階（0〜6、party/catalog.ts の uniqueParent のツリー）。
+  // 解放するLv（UNIQUE_UNLOCK_LEVELS：1つ目Lv5・2つ目Lv20）に届いた固有スキルだけに書く。省くと最初の段階だけ。
+  uniques?: readonly ({ set: number; acquired: readonly number[] } | null)[];
 };
 
 export type SeedPlayer = {
@@ -89,6 +92,11 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
         cards: ["FireStorm", "AbsoluteZero"],
         weapon: "frost-wand",
         armor: "magic-robe",
+        // 1つ目は7つの段階をすべて取得済み、2つ目は枝1を取りきって枝2の1段目にいる。
+        uniques: [
+          { set: 6, acquired: [0, 1, 2, 3, 4, 5, 6] },
+          { set: 3, acquired: [0, 1, 2, 3] },
+        ],
       },
       {
         id: "luka",
@@ -96,6 +104,11 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
         cards: ["ShadowSnipe", "ChainLightning"],
         weapon: "thunder-spear",
         armor: "traveler-cloak",
+        // 1つ目は枝1の2段目、2つ目は枝3の1段目まで進んだ。
+        uniques: [
+          { set: 2, acquired: [0, 1, 2] },
+          { set: 5, acquired: [0, 5] },
+        ],
       },
       {
         id: "aria",
@@ -103,6 +116,8 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
         cards: ["BladeDance", "GiantImpact"],
         weapon: "flame-dagger",
         armor: "chainmail",
+        // 枝2と枝3の1段目を取得し、手前の最初の段階にセットし直している。
+        uniques: [{ set: 0, acquired: [0, 3, 4, 5] }],
       },
       {
         id: "mina",
@@ -216,6 +231,8 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
         cards: ["Fire", "Ice"],
         weapon: "oak-staff",
         armor: "magic-robe",
+        // 冒険の途中で、1つ目の固有スキルが枝1の1段目へ進化した。
+        uniques: [{ set: 1, acquired: [0, 1] }],
       },
       {
         id: "luka",
@@ -424,6 +441,38 @@ function playerStatements(player: SeedPlayer, now: string) {
           card_id: starterCardId(character.id, slot),
           updated_at: now,
         })),
+      ),
+    ),
+    ...insert(
+      "party_unique_skills",
+      player.characters.flatMap((character) =>
+        (character.uniques ?? []).flatMap((unique, index) => {
+          if (!unique) return [];
+          if (!unique.acquired.includes(0)) {
+            throw new Error(
+              `${player.id}: ${character.id} の固有スキル${index}に最初の段階がありません`,
+            );
+          }
+          if (!unique.acquired.includes(unique.set)) {
+            throw new Error(
+              `${player.id}: ${character.id} の固有スキル${index}は取得していない段階をセットしています`,
+            );
+          }
+          return [
+            {
+              user_id: userId,
+              character_id: character.id,
+              unique_index: index,
+              set_stage: unique.set,
+              // 段階 n を 1 << n のビットにまとめる（party/db-schema.ts の acquired_mask）。
+              acquired_mask: unique.acquired.reduce(
+                (mask, stage) => mask | (1 << stage),
+                0,
+              ),
+              updated_at: now,
+            },
+          ];
+        }),
       ),
     ),
     ...insert(

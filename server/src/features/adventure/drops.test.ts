@@ -10,6 +10,8 @@ import {
   DROP_POOLS,
   type DropEntry,
   eligibleEntries,
+  REWARD_ROWS,
+  rewardOf,
   rollDrops,
 } from "./drops.js";
 
@@ -71,7 +73,7 @@ describe("ドロップの一覧", () => {
 
   it("最奥の間だけの物は道中で落ちず、最奥の間は☆3〜5だけが落ちる", () => {
     for (const destination of DESTINATION_IDS) {
-      for (const kind of EVENT_KINDS) {
+      for (const kind of REWARD_ROWS) {
         const entries = eligibleEntries(destination, kind);
         expect(entries.length).toBeGreaterThan(0);
         if (kind === "boss") {
@@ -88,7 +90,7 @@ describe("ドロップの一覧", () => {
 });
 
 describe("ドロップの抽選", () => {
-  it("部屋の種類ごとの数だけ落とし、アイテムだけが倍率を持たない", () => {
+  it("マスの種類ごとの数だけ落とし、アイテムだけが倍率を持たない", () => {
     const random = seeded(7);
     const counts: Record<string, Set<number>> = {};
     for (const kind of EVENT_KINDS) {
@@ -107,6 +109,17 @@ describe("ドロップの抽選", () => {
     expect([...counts.elite].sort()).toEqual([1, 2, 3]);
     expect([...counts.treasure].sort()).toEqual([1, 2, 3]);
     expect([...counts.boss].sort()).toEqual([2, 3, 4]);
+    // 休憩と行商人は落とさない。怪しい宝箱（本物）は宝箱より1つ多い。
+    expect([...counts.rest]).toEqual([0]);
+    expect([...counts.merchant]).toEqual([0]);
+    expect([...counts["shady-chest"]].sort()).toEqual([2, 3, 4]);
+    expect([...counts.trial].sort()).toEqual([1, 2]);
+    expect([...counts["step-door"]].sort()).toEqual([1, 2]);
+    expect([...counts.altar].sort()).toEqual([1, 2, 3]);
+    // 祭壇で固有スキルを進化させたら、何も落とさない。
+    expect(
+      rollDrops("forest-ruins", "altar", random, { evolved: true }),
+    ).toEqual([]);
   });
 
   it("分類はアイテム＞アクセサリー＞武器・防具＞スキル＞ACTボーナスの順に出やすい", () => {
@@ -139,5 +152,82 @@ describe("ドロップの抽選", () => {
     expect(rare).toBeGreaterThan(0);
     // 森の武器の上限は×1.8〜×2.0で、品質S（上位10%）なら×1.72以上になる。
     expect(best).toBeGreaterThanOrEqual(172);
+  });
+});
+
+describe("新しいマスの報酬の行", () => {
+  it("怪しい宝箱・試練・歩数の扉は、マスで決まったことで行を選ぶ", () => {
+    expect(rewardOf("shady-chest")).toEqual({ row: "treasure", extra: 1 });
+    expect(rewardOf("shady-chest", { mimic: true })).toEqual({
+      row: "boss",
+      extra: 0,
+    });
+    expect(rewardOf("trial")).toEqual({ row: "battle", extra: 0 });
+    expect(rewardOf("trial", { trialMet: true })).toEqual({
+      row: "boss",
+      extra: 0,
+    });
+    expect(
+      ([0, 1, 2, 3] as const).map((stepDoorTier) =>
+        rewardOf("step-door", { stepDoorTier }),
+      ),
+    ).toEqual([
+      { row: "battle", extra: 0 },
+      { row: "elite", extra: 0 },
+      { row: "elite", extra: 1 },
+      { row: "boss", extra: 0 },
+    ]);
+  });
+
+  it("最奥の間の行を借りるマスは、☆3〜5を2〜4つ落とし、主の物を落とさない", () => {
+    const random = seeded(5);
+    const bossOnly = new Set<string>(
+      allEntries()
+        .filter((entry) => entry.bossOnly)
+        .map((entry) => entry.id),
+    );
+    const stars = new Map<string, number>(
+      allEntries().map((entry) => [entry.id, entry.stars]),
+    );
+    const outcomes = [
+      ["shady-chest", { mimic: true }],
+      ["trial", { trialMet: true }],
+      ["step-door", { stepDoorTier: 3 }],
+    ] as const;
+    for (const destination of ["forest-ruins", "port-portoria"]) {
+      for (const [kind, outcome] of outcomes) {
+        const counts = new Set<number>();
+        for (let i = 0; i < 500; i++) {
+          const drops = rollDrops(destination, kind, random, outcome);
+          counts.add(drops.length);
+          for (const drop of drops) {
+            expect(bossOnly.has(drop.id)).toBe(false);
+            expect(stars.get(drop.id)).toBeGreaterThanOrEqual(3);
+          }
+        }
+        expect([...counts].sort()).toEqual([2, 3, 4]);
+      }
+    }
+    // 最奥の間そのものは、主の物も落とす。
+    expect(
+      eligibleEntries("forest-ruins", "boss", false).map((entry) => entry.id),
+    ).not.toContain("guardian-circlet");
+  });
+
+  it("歩数の扉は、段が上がるほど落ちる数が増える", () => {
+    const random = seeded(9);
+    const countsOf = (stepDoorTier: 0 | 1 | 2) => {
+      const counts = new Set<number>();
+      for (let i = 0; i < 300; i++) {
+        counts.add(
+          rollDrops("forest-ruins", "step-door", random, { stepDoorTier })
+            .length,
+        );
+      }
+      return [...counts].sort();
+    };
+    expect(countsOf(0)).toEqual([1, 2]);
+    expect(countsOf(1)).toEqual([1, 2, 3]);
+    expect(countsOf(2)).toEqual([2, 3, 4]);
   });
 });

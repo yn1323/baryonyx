@@ -28,6 +28,12 @@ export const adventureRuns = sqliteTable(
     roomKind: text("room_kind").notNull().default("start"),
     // 今いる部屋の出来事（戦闘・宝箱）を終えたか。終えるまで次の部屋へ進めない。
     roomCleared: integer("room_cleared", { mode: "boolean" }).notNull(),
+    // 今いるマスで決まったこと。マスを移ると消す（doc/features/stage-progression.md のマスの中身）。
+    // mimic は怪しい宝箱を開けた結果（開ける前は null）。true のあいだ、そのマスは戦闘のマスになる。
+    // trial は試練のマスに入ったときに選んだ条件。door_steps は歩数の扉を開けたときの今日の歩数。
+    mimic: integer("mimic", { mode: "boolean" }),
+    trial: text("trial"),
+    doorSteps: integer("door_steps"),
     // 通った部屋のID（JSONの配列）。最初は出発の部屋だけ。
     route: text("route").notNull(),
     revives: integer("revives").notNull().default(0),
@@ -111,6 +117,73 @@ export const adventureRevives = sqliteTable(
     check("adventure_revives_runes_check", sql`${table.runes} > 0`),
     check(
       "adventure_revives_balance_after_check",
+      sql`${table.balanceAfter} >= 0`,
+    ),
+  ],
+);
+
+// 行商人のマスの品物（doc/features/stage-progression.md のマスの中身）。マスに入ったときに作り、1つのマスに並べた数だけ行を持つ（idx は0から）。
+// 倍率は百分率の整数。値段はルーンで、作ったときの☆と品質で決める。売れたかは adventure_purchases の行で分かる。
+export const adventureMerchantGoods = sqliteTable(
+  "adventure_merchant_goods",
+  {
+    runId: text("run_id")
+      .notNull()
+      .references(() => adventureRuns.id),
+    roomId: text("room_id").notNull(),
+    idx: integer("idx").notNull(),
+    category: text("category").notNull(),
+    entryId: text("entry_id").notNull(),
+    multiplierPercent: integer("multiplier_percent").notNull(),
+    price: integer("price").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.runId, table.roomId, table.idx] }),
+    check(
+      "adventure_merchant_goods_category_check",
+      sql`${table.category} IN ('skill', 'weapon', 'armor', 'accessory')`,
+    ),
+    check(
+      "adventure_merchant_goods_multiplier_check",
+      sql`${table.multiplierPercent} >= 100`,
+    ),
+    check("adventure_merchant_goods_price_check", sql`${table.price} > 0`),
+  ],
+);
+
+// 行商人での購入1回ごとの記録。使ったルーンの記録を兼ね、要求IDで再送を、品物ごとの一意で二重の購入を見分ける。
+// 残高（rune_wallets）は、復活と同じく使った記録を書けたときだけ減らす。
+export const adventurePurchases = sqliteTable(
+  "adventure_purchases",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => appUsers.id),
+    runId: text("run_id")
+      .notNull()
+      .references(() => adventureRuns.id),
+    requestId: text("request_id").notNull(),
+    roomId: text("room_id").notNull(),
+    idx: integer("idx").notNull(),
+    runes: integer("runes").notNull(),
+    balanceAfter: integer("balance_after").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("adventure_purchases_user_request").on(
+      table.userId,
+      table.requestId,
+    ),
+    uniqueIndex("adventure_purchases_goods").on(
+      table.runId,
+      table.roomId,
+      table.idx,
+    ),
+    check("adventure_purchases_runes_check", sql`${table.runes} > 0`),
+    check(
+      "adventure_purchases_balance_after_check",
       sql`${table.balanceAfter} >= 0`,
     ),
   ],

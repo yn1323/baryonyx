@@ -16,11 +16,67 @@ import {
   maxMultiplierPercent as bonusMaxPercent,
   type StepBonusId,
 } from "../step-bonus/catalog.js";
-import type { EventKind } from "./catalog.js";
+import type { EventKind, StepDoorTier } from "./catalog.js";
 
-// 冒険のドロップ（doc/features/drops.md）。出来事を終えた部屋で、行き先の一覧から物を落とす。
+// 報酬の重みの行（doc/features/drops.md の仮設定）。ほかのマスは、どれかの行を借りる。
+export const REWARD_ROWS = ["battle", "elite", "treasure", "boss"] as const;
+
+export type RewardRow = (typeof REWARD_ROWS)[number];
+
+// マスで決まったこと。報酬の行を選ぶのに使う。
+// mimic は怪しい宝箱がミミックだったか、trialMet は試練の条件を満たして勝ったか（クライアントの判定を信じる）、
+// stepDoorTier は歩数の扉を開けたときの今日の歩数の段。
+export type RoomOutcome = {
+  mimic?: boolean;
+  trialMet?: boolean;
+  stepDoorTier?: StepDoorTier;
+  evolved?: boolean;
+};
+
+// 歩数の扉の段ごとの報酬。3,000歩未満は魔物、3,000〜4,999歩は強い報酬、5,000〜7,999歩は強い報酬で1つ多く、
+// 8,000歩以上は最大の報酬。
+const STEP_DOOR_REWARDS: Record<
+  StepDoorTier,
+  { row: RewardRow; extra: number }
+> = {
+  0: { row: "battle", extra: 0 },
+  1: { row: "elite", extra: 0 },
+  2: { row: "elite", extra: 1 },
+  3: { row: "boss", extra: 0 },
+};
+
+// マスの種類ごとの報酬の行と、落ちる数に足す数。報酬のないマスは null
+// （doc/features/stage-progression.md のマスの中身）。「最大の報酬」は最奥の間の行を借りるが、
+// 主の物（bossOnly）は最奥の間でだけ落ちるため、最奥の間のほかは入れない（rollDrops）。
+// 怪しい宝箱は、ミミックに勝てば最大の報酬、本物なら強い報酬で1つ多い。開けずに通り過ぎたときは抽選しない。
+// 試練は条件を満たして勝てば最大の報酬、満たさなければ魔物の報酬。歩数の扉は今日の歩数の段で決まる。
+// 進化の祭壇は、固有スキルを進化させたら何も落とさず、進められる固有スキルがなければ宝箱と同じにする。
+export function rewardOf(
+  kind: EventKind,
+  outcome: RoomOutcome = {},
+): { row: RewardRow; extra: number } | null {
+  switch (kind) {
+    case "rest":
+    case "merchant":
+      return null;
+    case "shady-chest":
+      return outcome.mimic
+        ? { row: "boss", extra: 0 }
+        : { row: "treasure", extra: 1 };
+    case "trial":
+      return { row: outcome.trialMet ? "boss" : "battle", extra: 0 };
+    case "step-door":
+      return STEP_DOOR_REWARDS[outcome.stepDoorTier ?? 0];
+    case "altar":
+      return outcome.evolved ? null : { row: "treasure", extra: 0 };
+    default:
+      return { row: kind, extra: 0 };
+  }
+}
+
+// 冒険のドロップ（doc/features/drops.md）。出来事を終えたマスで、行き先の一覧から物を落とす。
 // 一覧の物はその行き先でしか出ず、物の強さは行き先のLvに合わせて決める。ACTボーナスだけは、どの行き先でも出る。
-// 落ちる数・分類・物（☆）・品質の順に、部屋の種類ごとの重みで選ぶ。重みはどれも仮の値である。
+// 落ちる数・分類・物（☆）・品質の順に、マスの種類ごとの重みで選ぶ。重みはどれも仮の値である。
 
 export const DROP_CATEGORIES = [
   "item",
@@ -55,8 +111,8 @@ export type Drop = {
   multiplierPercent: number | null;
 };
 
-// 部屋ごとの、落ちる数の重み。
-export const DROP_COUNT_WEIGHTS: Record<EventKind, Record<number, number>> = {
+// マスごとの、落ちる数の重み。
+export const DROP_COUNT_WEIGHTS: Record<RewardRow, Record<number, number>> = {
   battle: { 1: 70, 2: 30 },
   elite: { 1: 25, 2: 50, 3: 25 },
   treasure: { 1: 25, 2: 50, 3: 25 },
@@ -64,7 +120,7 @@ export const DROP_COUNT_WEIGHTS: Record<EventKind, Record<number, number>> = {
 };
 
 // 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキル＞ACTボーナスの順に出やすい。
-// 部屋で落ちうる物がない分類は除き、残りの重みで選ぶ。
+// マスで落ちうる物がない分類は除き、残りの重みで選ぶ。
 export const CATEGORY_WEIGHTS: Record<DropCategory, number> = {
   item: 40,
   accessory: 22,
@@ -74,9 +130,9 @@ export const CATEGORY_WEIGHTS: Record<DropCategory, number> = {
   bonus: 3,
 };
 
-// 部屋ごとの、☆1〜☆5の物1つあたりの重み（千分率）。最奥の間は☆3〜5だけが落ちる。
+// マスごとの、☆1〜☆5の物1つあたりの重み（千分率）。最奥の間は☆3〜5だけが落ちる。
 export const STAR_WEIGHTS: Record<
-  EventKind,
+  RewardRow,
   readonly [number, number, number, number, number]
 > = {
   battle: [550, 300, 130, 17, 3],
@@ -85,8 +141,8 @@ export const STAR_WEIGHTS: Record<
   boss: [0, 0, 650, 280, 70],
 };
 
-// 部屋ごとの品質の重み（千分率）。行き先によっては変えない（2026-10-20）。
-export const QUALITY_WEIGHTS: Record<EventKind, Record<Quality, number>> = {
+// マスごとの品質の重み（千分率）。行き先によっては変えない（2026-10-20）。
+export const QUALITY_WEIGHTS: Record<RewardRow, Record<Quality, number>> = {
   battle: { C: 720, B: 220, A: 55, S: 5 },
   elite: { C: 400, B: 350, A: 210, S: 40 },
   treasure: { C: 400, B: 350, A: 210, S: 40 },
@@ -238,7 +294,7 @@ export function maxPercentOf(
   }
 }
 
-function pickWeighted<T>(
+export function pickWeighted<T>(
   choices: readonly T[],
   weightOf: (choice: T) => number,
   random: () => number,
@@ -253,27 +309,32 @@ function pickWeighted<T>(
   return choices[choices.length - 1];
 }
 
-const starWeight = (kind: EventKind, entry: DropEntry) =>
+export const starWeight = (kind: RewardRow, entry: DropEntry) =>
   STAR_WEIGHTS[kind][entry.stars - 1];
 
-// その部屋で落ちうる物。最奥の間だけの物と、重みが0の☆の物を除く。
+// そのマスで落ちうる物。重みが0の☆の物と、最奥の間のほかでは最奥の間だけの物を除く。
+// 最奥の間の行を借りるマス（ミミック・試練・歩数の扉）は bossItems を false にして、主の物を除く。
 export function eligibleEntries(
   destinationId: string,
-  kind: EventKind,
+  kind: RewardRow,
+  bossItems = kind === "boss",
 ): DropEntry[] {
   return [...(DROP_POOLS[destinationId] ?? []), ...COMMON_POOL].filter(
-    (entry) =>
-      (kind === "boss" || !entry.bossOnly) && starWeight(kind, entry) > 0,
+    (entry) => (bossItems || !entry.bossOnly) && starWeight(kind, entry) > 0,
   );
 }
 
-// 部屋で落ちる物を選ぶ。同じ物が2つ落ちることもある。
+// マスで落ちる物を選ぶ。同じ物が2つ落ちることもある。
 export function rollDrops(
   destinationId: string,
-  kind: EventKind,
+  roomKind: EventKind,
   random: () => number,
+  outcome: RoomOutcome = {},
 ): Drop[] {
-  const pool = eligibleEntries(destinationId, kind);
+  const reward = rewardOf(roomKind, outcome);
+  if (reward === null) return [];
+  const kind = reward.row;
+  const pool = eligibleEntries(destinationId, kind, roomKind === "boss");
   if (pool.length === 0) return [];
   const categories = DROP_CATEGORIES.filter((category) =>
     pool.some((entry) => entry.category === category),
@@ -281,7 +342,8 @@ export function rollDrops(
   const counts = Object.entries(DROP_COUNT_WEIGHTS[kind]).map(
     ([count, weight]) => ({ count: Number(count), weight }),
   );
-  const { count } = pickWeighted(counts, (entry) => entry.weight, random);
+  const count =
+    pickWeighted(counts, (entry) => entry.weight, random).count + reward.extra;
   const drops: Drop[] = [];
   for (let index = 0; index < count; index++) {
     const category = pickWeighted(
