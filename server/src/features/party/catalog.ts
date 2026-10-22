@@ -157,8 +157,9 @@ export function uniqueParent(stage: number): number | null {
   return stage % 2 === 1 ? 0 : stage - 1;
 }
 
-// レベルの上限と、Lv n から n+1 へ上げるのに要るルーン（n × COST_PER_LEVEL）。仮の値。
-export const MAX_LEVEL = 30;
+// レベルの上限（2026-10-23、ユーザー指示）と、Lv n から n+1 へ上げるのに要るルーン
+// （n × COST_PER_LEVEL。仮の値）。
+export const MAX_LEVEL = 100;
 export const COST_PER_LEVEL = 100;
 
 export function levelUpCost(fromLevel: number, toLevel: number): number {

@@ -20,8 +20,9 @@ namespace Baryonyx.Training
         [Min(1)]
         public int CostPerLevel = 100;
 
+        // レベルの上限（doc/features/progression.md）。サーバーの MAX_LEVEL と同じにする。
         [Min(2)]
-        public int MaxLevel = 30;
+        public int MaxLevel = 100;
 
         // ホームで所持ルーンを取得していないとき（展示室、シーンを単体で開いたとき）の所持ルーン。
         [Min(0)]

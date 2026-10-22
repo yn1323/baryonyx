@@ -124,7 +124,7 @@ namespace Baryonyx.Training.Editor
             AssetDatabase.Refresh();
             var data = AssetFolders.LoadOrCreate<TrainingMockData>(DataPath);
             data.CostPerLevel = 100;
-            data.MaxLevel = 30;
+            data.MaxLevel = 100;
             data.MockRunes = 8450;
             // ステータスは Lv 100 の値（doc/features/progression.md の自キャラのLv100の
             // ステータス）。絵のないキャラは、絵を借りたキャラと同じスキルにする。

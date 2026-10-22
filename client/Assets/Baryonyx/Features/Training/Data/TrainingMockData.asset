@@ -349,5 +349,5 @@ MonoBehaviour:
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
     UniqueProgress: []
   CostPerLevel: 100
-  MaxLevel: 30
+  MaxLevel: 100
   MockRunes: 8450
