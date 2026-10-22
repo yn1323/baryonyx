@@ -16,12 +16,13 @@ import { createPartyApi } from "./features/party/routes.js";
 import { createStepBonusApi } from "./features/step-bonus/routes.js";
 import { createDatabase } from "./shared/db.js";
 import { applyApiDefaults } from "./shared/http.js";
+import { applyServerTiming } from "./shared/server-timing.js";
 
 // 公開APIを組み立てる。テストでは本人確認だけを差し替える。
 export function createApi(
   verifyIdentity: VerifyIdentity = verifyGoogleIdentity,
 ) {
-  const api = applyApiDefaults(new Hono<SessionEnv>());
+  const api = applyServerTiming(applyApiDefaults(new Hono<SessionEnv>()));
   api.route("/", createAccountsApi(verifyIdentity));
   api.route("/", createHealthApi());
   api.route("/", createExerciseRewardsApi());

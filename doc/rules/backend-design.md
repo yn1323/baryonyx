@@ -175,6 +175,20 @@ DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ�
 Honoでは同じ接続先へ接続した機能の `use("*")` が他機能のパスにも適用されるため、機能内で `use("*")` を使わない。
 署名検証テストはルート定義を読み込まずに認証処理を検証し、HTTPの認証失敗・期限切れ・ログアウトはAPIシナリオで確認する。
 
+## 処理時間の計測（Server-Timing）
+
+`createApi` は [shared/server-timing.ts](../../server/src/shared/server-timing.ts) の `applyServerTiming` で、`/v1` のすべての応答に `Server-Timing` ヘッダーを付ける。
+`total` は処理の合計時間、`d1` はD1と往復した回数（`desc`）と待った時間の合計（`dur`、ミリ秒）である。
+`db.batch()` は文がいくつあっても1回の往復として数える。
+要求ごとにD1 bindingを包み直して数えるため、ほかの要求の数は混ざらない。
+Workersの時計は通信のたびにしか進まないため、計算だけの時間はほぼ0に出る。D1の待ち時間は測れる。
+`/health`・`/ready` には付けない。
+
+クライアントは、開発ビルドとEditorで、要求ごとの時間とこのヘッダーの内訳を `[計測] 通信` の行としてログに出す（[ServerApi](../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs)）。
+案内人の画面のパネルは、開いてから描き終えるまでの時間を `[計測] 画面` の行として出す（[GuidePanelLoad](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuidePanelLoad.cs)）。
+遅い画面は、同じ時刻の行を並べて、端末とサーバーの通信、サーバーとDBの往復、画面を描く時間に分けて調べる。
+EditorはふだんLocalのサーバーへつなぐため、DBとの往復の時間はDevやProdより短く出る。通信の時間を調べるときは、接続先の環境を確かめてから測る。
+
 ## DrizzleによるDB操作
 
 DB操作には `drizzle-orm/d1` を使い、リクエストのD1 bindingから [createDatabase](../../server/src/shared/db.ts) で接続を作る。
@@ -320,6 +334,7 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-22：ユーザーの「キャラのスキル表示に1秒ちょっとかかる。何が原因なのか」を受け、[処理時間の計測](#処理時間の計測server-timing)を加えた。Miniflareで数えると、2回目以降の読み込みのD1の往復は `GET /v1/party` が4回、`GET /v1/equipment`・`GET /v1/step-bonus` が6回、`GET /v1/library` が7回、`GET /v1/adventure` が3回だった。各機能が `use("/party")` と `use("/party/*")` の両方へ `requireSession` を付けており、Honoでは `/party/*` が `/party` にも一致するため、一覧を読むGETでセッションの確認が2回走っている。往復を減らす変更は、計測の結果を見てから別に行う。参考：[Hono Timing Middleware](https://hono.dev/middleware/builtin/timing)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-22：ユーザーの「東京を指定したい。DBもHonoのserverも」を受け、[deploy.mjs](../../server/scripts/deploy.mjs) でD1の作成時に `primary_location_hint: "apac"` を、Workerに `placement.region: "aws:ap-northeast-1"` を指定した。それまでは場所を指定せず、作成を実行したGitHub Actionsの近く（北米と推定）にDBができていた。参考：[D1のデータの場所](https://developers.cloudflare.com/d1/configuration/data-location/)、[D1作成API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-19：[品質](../features/inventory.md#品質)の実装で、[0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) を[マイグレーション](#マイグレーション)に加え、seedの装備とボーナスに倍率を持たせた。Drizzle Kitが列の新設か改名かを対話で尋ねて止まるため、疑似端末から既定の答え（新設）を選んで生成した。
 - 2026-10-05：ルートの [AGENTS.md](../../AGENTS.md#作業の基本) の「未リリースのため、Migration、既存データとの互換性、旧バージョンとの互換性は考慮しない」に合わせ、[マイグレーション](#マイグレーション)の「既存Workerとの互換性を確認」「旧Workerと互換性を保つSQLを用意する」を、未リリースの間は考慮せずDBを作り直す扱いに改めた。リリース前に見直す。あわせて、[開発用データ（seed）](#開発用データseed)を加え、serverのAGENTS.mdにあったディレクトリ構成と配置をこの文書へ移した。
