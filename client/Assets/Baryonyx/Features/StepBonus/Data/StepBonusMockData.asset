@@ -52,7 +52,7 @@ MonoBehaviour:
   - Id: foresight
     Name: "\u5148\u8AAD\u307F"
     Category: 0
-    Effect: "\u6B21\u306E\u90E8\u5C4B\u306E\u6575\u304C\u898B\u3048\u308B\u78BA\u7387 {0}%"
+    Effect: "\u6B21\u306E\u30DE\u30B9\u306E\u6575\u304C\u898B\u3048\u308B\u78BA\u7387 {0}%"
     BaseValue: 20
     MaxMultiplier: 1.5
     Decimals: 0

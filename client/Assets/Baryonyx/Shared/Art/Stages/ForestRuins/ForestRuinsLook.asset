@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3926983668688475605
+--- !u!114 &-3548783025021072180
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -28,7 +28,7 @@ MonoBehaviour:
   saturation:
     m_OverrideState: 1
     m_Value: 8
---- !u!114 &-3601288094956603357
+--- !u!114 &-2607089750535692010
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -37,17 +37,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70afe9e12c7a7ed47911bb608a23a8ff, type: 3}
-  m_Name: SplitToning
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.SplitToning
+  m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
+  m_Name: Vignette
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.Vignette
   active: 1
-  shadows:
+  color:
     m_OverrideState: 1
-    m_Value: {r: 0.4, g: 0.46, b: 0.6, a: 1}
-  highlights:
+    m_Value: {r: 0, g: 0, b: 0, a: 1}
+  center:
     m_OverrideState: 1
-    m_Value: {r: 0.6, g: 0.54, b: 0.44, a: 1}
-  balance:
+    m_Value: {x: 0.5, y: 0.5}
+  intensity:
+    m_OverrideState: 1
+    m_Value: 0.32
+  smoothness:
+    m_OverrideState: 1
+    m_Value: 0.5
+  rounded:
     m_OverrideState: 1
     m_Value: 0
 --- !u!114 &11400000
@@ -63,11 +69,11 @@ MonoBehaviour:
   m_Name: ForestRuinsLook
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.VolumeProfile
   components:
-  - {fileID: 1478212553789258503}
-  - {fileID: -3926983668688475605}
-  - {fileID: -3601288094956603357}
-  - {fileID: 5785733904669758977}
---- !u!114 &1478212553789258503
+  - {fileID: 2296808769060075526}
+  - {fileID: -3548783025021072180}
+  - {fileID: 3770556919081037728}
+  - {fileID: -2607089750535692010}
+--- !u!114 &2296808769060075526
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -101,7 +107,7 @@ MonoBehaviour:
   nearMaxRadius:
     m_OverrideState: 1
     m_Value: 10
---- !u!114 &5785733904669758977
+--- !u!114 &3770556919081037728
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,22 +116,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
-  m_Name: Vignette
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.Vignette
+  m_Script: {fileID: 11500000, guid: 70afe9e12c7a7ed47911bb608a23a8ff, type: 3}
+  m_Name: SplitToning
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.SplitToning
   active: 1
-  color:
+  shadows:
     m_OverrideState: 1
-    m_Value: {r: 0, g: 0, b: 0, a: 1}
-  center:
+    m_Value: {r: 0.4, g: 0.46, b: 0.6, a: 1}
+  highlights:
     m_OverrideState: 1
-    m_Value: {x: 0.5, y: 0.5}
-  intensity:
-    m_OverrideState: 1
-    m_Value: 0.32
-  smoothness:
-    m_OverrideState: 1
-    m_Value: 0.5
-  rounded:
+    m_Value: {r: 0.6, g: 0.54, b: 0.44, a: 1}
+  balance:
     m_OverrideState: 1
     m_Value: 0
