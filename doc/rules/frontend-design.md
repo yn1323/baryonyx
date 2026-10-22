@@ -209,7 +209,7 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、歩数の保存・ルーン請求を順に行う `HealthServerSync`。[GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)が作り、TopとHomeが使う |
 | [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、ログイン・ログアウトAPI、ゲストの秘密値、全機能で共有するゲストのセッション（`AccountSessionRunner`。ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し） |
 | [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・履歴・残高のAPIと応答の型 |
-| [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外。パスと入出力の型は各機能が持つ |
+| [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外、開発ビルドでの要求ごとの時間のログ（[処理時間の計測](backend-design.md#処理時間の計測server-timing)）。パスと入出力の型は各機能が持つ |
 | [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成する |
 
 HealthのPresenterは、認証・権限・取得結果に応じた画面状態と、次に実行する操作を決める。

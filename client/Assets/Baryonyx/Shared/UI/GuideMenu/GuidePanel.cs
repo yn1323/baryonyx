@@ -52,7 +52,8 @@ namespace Baryonyx.UI.GuideMenu
                     Debug.LogWarning((log ?? failedMessage) + "。" + exception.Message, this);
                     showFailed();
                     ShowNotice(failedMessage);
-                }
+                },
+                GetType().Name
             );
     }
 }
