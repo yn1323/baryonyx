@@ -40,6 +40,20 @@ namespace Baryonyx.Party
         }
 
         /// <summary>
+        /// Stands the member where a scene places the party (Home, the adventure's map): the
+        /// whole 64x64 sprite in the member's tint, facing the way the image is set. A stand-in's
+        /// flip is left out, so everyone faces where the scene turns them.
+        /// </summary>
+        public static void Stand(RawImage image, PartyMember member)
+        {
+            if (image == null || member == null)
+                return;
+            image.texture = member.Art;
+            image.color = member.Tint;
+            image.uvRect = new Rect(0f, 0f, 1f, 1f);
+        }
+
+        /// <summary>
         /// Fills the frame with the illustration without stretching it: the middle of the
         /// picture, cut at the sides or the top and bottom.
         /// </summary>

@@ -97,6 +97,47 @@ namespace Baryonyx.Party
             public string card;
         }
 
+        /// <summary>Sets the stage the formation uses of a character's unique skill (doc/features/skill-evolution.md).</summary>
+        public Task<State> SetUniqueAsync(
+            AccountSession session,
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                $"/v1/party/characters/{characterId}/uniques/{index}",
+                "PUT",
+                new StageRequest { stage = stage },
+                session.Token,
+                token
+            );
+
+        /// <summary>
+        /// Saves one evolution of a character's unique skill in an adventure's battle: the stage
+        /// is acquired and set. Sent again, it changes nothing.
+        /// </summary>
+        public Task<State> EvolveUniqueAsync(
+            AccountSession session,
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                $"/v1/party/characters/{characterId}/uniques/{index}/evolve",
+                "POST",
+                new StageRequest { stage = stage },
+                session.Token,
+                token
+            );
+
+        [Serializable]
+        private sealed class StageRequest
+        {
+            public int stage;
+        }
+
         [Serializable]
         private sealed class LevelUpRequest
         {
@@ -143,6 +184,17 @@ namespace Baryonyx.Party
 
             // 枠の順の中身（card:<持っているスキルのID> か item:<アイテムのID>）。空いている枠はnullまたは空文字。
             public string[] cards;
+
+            // 2つの固有スキルの進み具合（セットしている段階と、取得した段階）。
+            public Unique[] uniques;
+        }
+
+        [Serializable]
+        public sealed class Unique
+        {
+            public int index;
+            public int set;
+            public int[] acquired;
         }
 
         [Serializable]

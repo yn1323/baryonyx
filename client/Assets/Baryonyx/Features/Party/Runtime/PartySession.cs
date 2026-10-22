@@ -61,6 +61,8 @@ namespace Baryonyx.Party
             PartySession.data = data;
             if (value == null)
                 return Formation(data);
+            // 固有スキルの進み具合も、サーバーが確かめたものにそろえる（doc/features/skill-evolution.md）。
+            PartyUniqueSkills.Use(value);
             if (saves == null)
             {
                 var source = Source;
@@ -100,6 +102,28 @@ namespace Baryonyx.Party
             if (Saving)
                 return Use(data, saves.Confirmed);
             return Use(data, await source.LoadAsync(token));
+        }
+
+        /// <summary>
+        /// The formation now, for the screens that show the party without changing it (Home, the
+        /// adventure): the one already read from the server or kept while the app runs, and
+        /// otherwise read from the server first.
+        /// </summary>
+        public static Task<PartyFormation> CurrentAsync(PartyMockData data, CancellationToken token)
+        {
+            var source = Source;
+            if (source == null || saves != null)
+                return Task.FromResult(Formation(data));
+            return LoadAsync(data, source, token);
+        }
+
+        /// <summary>The members in the party's slots, in slot order; null for an empty slot.</summary>
+        public static IReadOnlyList<PartyMember> Members(PartyFormation formation)
+        {
+            var members = new PartyMember[PartyFormation.Size];
+            for (int slot = 0; slot < members.Length; slot++)
+                members[slot] = formation?.Find(formation.Member(slot));
+            return members;
         }
 
         /// <summary>

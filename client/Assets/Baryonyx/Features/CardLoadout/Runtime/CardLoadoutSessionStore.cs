@@ -54,13 +54,19 @@ namespace Baryonyx.CardLoadout
             return (unique?.Tree?.StageAt(unique.Progress.SetStage) ?? unique?.Tree?.Root)?.Card;
         }
 
-        public bool SetUniqueStage(string id, int index, int stage) =>
-            UniqueSkillSession.SetStage(
+        /// <summary>Sets an acquired stage of the person's unique skill at once, and saves it on the server.</summary>
+        public bool SetUniqueStage(string id, int index, int stage)
+        {
+            bool changed = UniqueSkillSession.SetStage(
                 id,
                 index,
                 stage,
                 training != null ? training.Find(id)?.MockProgressOf(index) : null
             );
+            if (changed)
+                PartyUniqueSkills.SetStage(id, index, stage);
+            return changed;
+        }
 
         /// <summary>
         /// The person's unique skills from the training's mock data at <paramref name="level"/>,

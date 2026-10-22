@@ -5,17 +5,27 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
 using Baryonyx.Combat;
+using Baryonyx.SkillEvolution;
 
 namespace Baryonyx.Party
 {
-    /// <summary>One owned character as the server keeps them: the level and the card skills.</summary>
+    /// <summary>
+    /// One owned character as the server keeps them: the level, the card skills and the progress
+    /// of the unique skills.
+    /// </summary>
     public sealed class PartyCharacterState
     {
-        public PartyCharacterState(string id, int level, IReadOnlyList<string> cards)
+        public PartyCharacterState(
+            string id,
+            int level,
+            IReadOnlyList<string> cards,
+            IReadOnlyList<UniqueSkillProgress> uniques = null
+        )
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Level = Math.Max(1, level);
             Cards = cards ?? Array.Empty<string>();
+            Uniques = uniques;
         }
 
         public string Id { get; }
@@ -23,6 +33,9 @@ namespace Baryonyx.Party
 
         // 枠の順の中身（PartyCardKey の形）。空いている枠はnull。
         public IReadOnlyList<string> Cards { get; }
+
+        // 固有スキルの番号の順の進み具合（doc/features/skill-evolution.md）。サーバーが返さなければnull。
+        public IReadOnlyList<UniqueSkillProgress> Uniques { get; }
     }
 
     /// <summary>A player's characters, party slots and runes as the server keeps them.</summary>
@@ -199,10 +212,31 @@ namespace Baryonyx.Party
     }
 
     /// <summary>
+    /// Saves the progress of the characters' unique skills (doc/features/skill-evolution.md#進化の保存):
+    /// the stage the formation sets, and each evolution in an adventure's battle.
+    /// </summary>
+    public interface IPartyUniqueSkillSource
+    {
+        Task<PartyState> SetUniqueAsync(
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        );
+
+        Task<PartyState> EvolveUniqueAsync(
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        );
+    }
+
+    /// <summary>
     /// Reads and saves the party on the game server with the shared session, so each player has
     /// their own characters, levels, card skills and formation.
     /// </summary>
-    public sealed class PartyServerSource : IPartySource
+    public sealed class PartyServerSource : IPartySource, IPartyUniqueSkillSource
     {
         private readonly IAccountSessionRunner sessions;
         private readonly PartyApiClient api;
@@ -252,10 +286,49 @@ namespace Baryonyx.Party
             );
         }
 
+        public Task<PartyState> SetUniqueAsync(
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        ) => Run(session => api.SetUniqueAsync(session, characterId, index, stage, token), token);
+
+        public Task<PartyState> EvolveUniqueAsync(
+            string characterId,
+            int index,
+            int stage,
+            CancellationToken token
+        ) =>
+            Run(session => api.EvolveUniqueAsync(session, characterId, index, stage, token), token);
+
         private async Task<PartyState> Run(
             Func<AccountSession, Task<PartyApiClient.State>> operation,
             CancellationToken token
         ) => ToState(await sessions.WithSessionAsync(operation, token));
+
+        // 固有スキルの進み具合を番号の位置へ並べる。サーバーが返さなければnull。最初の段階は取得済みに書かない。
+        private static UniqueSkillProgress[] UniquesOf(PartyApiClient.Unique[] uniques)
+        {
+            if (uniques == null)
+                return null;
+            int count = 0;
+            foreach (var unique in uniques)
+                if (unique != null && unique.index >= 0)
+                    count = Math.Max(count, unique.index + 1);
+            var progress = new UniqueSkillProgress[count];
+            for (int i = 0; i < count; i++)
+                progress[i] = new UniqueSkillProgress();
+            foreach (var unique in uniques)
+                if (unique != null && unique.index >= 0)
+                    progress[unique.index] = new UniqueSkillProgress
+                    {
+                        Set = unique.set,
+                        Acquired = (unique.acquired ?? Array.Empty<int>())
+                            .Where(stage => stage > 0)
+                            .ToArray(),
+                    };
+            return progress;
+        }
 
         // IDのないキャラは外し、枠とカードは番号の位置へ並べる。空文字はnull（空き）として扱う。
         public static PartyState ToState(PartyApiClient.State state)
@@ -267,7 +340,8 @@ namespace Baryonyx.Party
                     character.level,
                     (character.cards ?? Array.Empty<string>())
                         .Select(card => string.IsNullOrEmpty(card) ? null : card)
-                        .ToArray()
+                        .ToArray(),
+                    UniquesOf(character.uniques)
                 ))
                 .ToArray();
             var slots = new string[PartyFormation.Size];

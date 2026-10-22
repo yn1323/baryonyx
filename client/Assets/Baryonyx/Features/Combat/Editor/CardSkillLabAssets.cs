@@ -23,8 +23,9 @@ namespace Baryonyx.Combat.Editor
     /// skills' effects: the battle's stage with the party and the enemies where they stand in
     /// battle and the effects' layers among them, as on BattleInspectScreen, and over it only the
     /// lab's controls (<see cref="CardSkillLab"/>): the skill playing at the top, the way back to
-    /// home at the top left, a row of buttons at the bottom and the list of every skill as its
-    /// card on two tabs, opened from the row.
+    /// home at the top left, whether a unique skill evolves first at the top right, a row of
+    /// buttons at the bottom, where the stage to evolve into is picked, and the list of every
+    /// skill as its card on two tabs, opened from the row.
     /// </summary>
     public static class CardSkillLabAssets
     {
@@ -92,13 +93,23 @@ namespace Baryonyx.Combat.Editor
                 var safe = SafeArea(screen);
                 BuildCaption(safe, lab);
                 BuildHome(safe, lab);
+                BuildEvolve(safe, lab);
                 BuildControls(safe, lab);
+                // Over the controls (hidden while choosing) and under the list.
+                lab.Choice = BattleEvolutionChoiceAssets.Build(
+                    screen,
+                    lab.Vfx.MaterialOf(BattleVfxShape.Beam),
+                    lab.Vfx.MaterialOf(BattleVfxShape.Glow),
+                    lab.Vfx.MaterialOf(BattleVfxShape.FlameTongue),
+                    lab.Vfx.MaterialOf(BattleVfxShape.Sparkle)
+                );
                 BuildPicker(screen, lab);
                 lab.HiddenWhilePicking = new[]
                 {
                     lab.Caption.gameObject,
                     lab.Detail.gameObject,
                     lab.ListButton.transform.parent.gameObject,
+                    lab.EvolveButton.transform.parent.gameObject,
                 };
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
@@ -220,8 +231,9 @@ namespace Baryonyx.Combat.Editor
         /// <summary>The skill playing, at the top middle, and under it its user, cost, kind and reach.</summary>
         private static void BuildCaption(RectTransform safe, CardSkillLab lab)
         {
+            // Narrow enough to clear the buttons in the top corners.
             var caption = Label(safe, "Caption", "", 52, Color.white, TextAlignmentOptions.Center);
-            Top(caption.rectTransform, -20f, new Vector2(1400f, 70f));
+            Top(caption.rectTransform, -20f, new Vector2(1200f, 70f));
             caption.outlineWidth = 0.2f;
             caption.outlineColor = new Color(0.05f, 0.04f, 0.1f);
             lab.Caption = caption;
@@ -233,7 +245,7 @@ namespace Baryonyx.Combat.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.Center
             );
-            Top(detail.rectTransform, -92f, new Vector2(1400f, 44f));
+            Top(detail.rectTransform, -92f, new Vector2(1200f, 44f));
             lab.Detail = detail;
         }
 
@@ -262,6 +274,28 @@ namespace Baryonyx.Combat.Editor
                 ).rectTransform
             );
             lab.HomeButton = button;
+        }
+
+        /// <summary>
+        /// Whether a unique skill's stage that can evolve evolves first, at the top right. The
+        /// list covers it while open.
+        /// </summary>
+        private static void BuildEvolve(RectTransform safe, CardSkillLab lab)
+        {
+            var evolve = Rect("Evolve", safe);
+            Corner(evolve, Vector2.one, new Vector2(-60f, -12f), new Vector2(240f, ControlHeight));
+            var (button, _, card) = LabCard(evolve);
+            var label = Label(
+                card,
+                "Label",
+                "進化：切",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch(label.rectTransform);
+            lab.EvolveButton = button;
+            lab.EvolveLabel = label;
         }
 
         private static void Top(RectTransform rect, float y, Vector2 size)

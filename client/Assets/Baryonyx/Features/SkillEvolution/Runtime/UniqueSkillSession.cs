@@ -45,6 +45,34 @@ namespace Baryonyx.SkillEvolution
             return true;
         }
 
+        /// <summary>
+        /// Evolves the person's unique skill <paramref name="index"/> into <paramref name="stage"/>
+        /// (doc/features/skill-evolution.md#取得した段階とセット): the stage is acquired and set.
+        /// </summary>
+        public static void Evolve(string person, int index, int stage, UniqueSkillProgress mock)
+        {
+            if (!UniqueSkillTreeShape.IsStage(stage))
+                return;
+            var progress = ProgressOf(person, index, mock);
+            if (!progress.Has(stage))
+            {
+                var acquired = new List<int>(progress.Acquired ?? System.Array.Empty<int>())
+                {
+                    stage,
+                };
+                acquired.Sort();
+                progress.Acquired = acquired.ToArray();
+            }
+            progress.Set = stage;
+        }
+
+        /// <summary>Puts the progress the server keeps in place of what the app had.</summary>
+        public static void Use(string person, int index, UniqueSkillProgress progress)
+        {
+            if (!string.IsNullOrEmpty(person) && progress != null)
+                Progress[(person, index)] = progress.Copy();
+        }
+
         // Play Modeに入るたびに初期化する（ドメインの再読み込みを省く設定でも残さない）。
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset() => Progress.Clear();

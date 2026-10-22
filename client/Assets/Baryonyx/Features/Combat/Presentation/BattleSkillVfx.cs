@@ -382,6 +382,7 @@ namespace Baryonyx.Combat.Presentation
             backLight = SubLayer(BackLayer, "Light");
             frontSmoke = SubLayer(FrontLayer, "Smoke");
             frontLight = SubLayer(FrontLayer, "Light");
+            MakeEvolutionLayers();
         }
 
         private static RectTransform SubLayer(RectTransform layer, string name)
@@ -423,8 +424,10 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public void Clear()
         {
-            // The effects' own side work (a crackle of lightning that outlives a blow).
+            // The effects' own side work (a crackle of lightning that outlives a blow, an evolving
+            // card hovering).
             StopAllCoroutines();
+            ClearEvolution();
             foreach (var particle in particles)
             {
                 particle.Live = false;

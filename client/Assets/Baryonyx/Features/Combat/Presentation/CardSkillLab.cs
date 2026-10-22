@@ -16,9 +16,14 @@ namespace Baryonyx.Combat.Presentation
     /// The card skill lab, a debugging room for the card skills' effects: any card skill
     /// (<see cref="CardSkills"/>) picked from a list is played at once by its user on the
     /// battle's party and enemies, with nothing else of the battle (no hand, no turns, no
-    /// numbers). A skill picked while another plays cuts it short. The skill last picked, how
-    /// hard its blows land, the enemy it aims at and whether it repeats are remembered, so the
-    /// next Play after a change to the effect's code shows the same skill again.
+    /// numbers). A skill picked while another plays cuts it short. With evolution turned on, a
+    /// unique skill's stage that can evolve is played as the battle plays an evolution
+    /// (doc/features/skill-evolution.md#戦闘中の進化): its card rises and cracks, the stage it
+    /// becomes is picked from those it can (<see cref="BattleEvolutionChoice"/>), the card shatters
+    /// into it, and the stage picked plays. The skill last picked,
+    /// how hard its blows land, the enemy it aims at, whether it evolves and whether it repeats
+    /// are remembered, so the next Play after a change to the effect's code shows the same skill
+    /// again.
     /// The list shows every skill as its card, on two tabs (the card skills, and the unique
     /// skills' stages a tree to a row), scrolled up and down with a swipe. While stopped, it can
     /// be shown closed, or open on either tab (doc/rules/ui-design.md#停止中の表示の切り替え).
@@ -30,6 +35,7 @@ namespace Baryonyx.Combat.Presentation
         public const string WeightKey = "Baryonyx.CardSkillLab.Weight";
         public const string EnemyKey = "Baryonyx.CardSkillLab.Enemy";
         public const string RepeatKey = "Baryonyx.CardSkillLab.Repeat";
+        public const string EvolveKey = "Baryonyx.CardSkillLab.Evolve";
 
         [Header("戦場")]
         public BattleSkillVfx Vfx;
@@ -66,6 +72,21 @@ namespace Baryonyx.Combat.Presentation
         public TMP_Text TargetLabel;
         public Button RepeatButton;
         public TMP_Text RepeatLabel;
+
+        [Tooltip(
+            "入にすると、進化できる固有スキル（最初の段階と1段目）を、進化先を選んで進化させてから再生する。ほかのスキルには効かない。初めは切。"
+        )]
+        public Button EvolveButton;
+        public TMP_Text EvolveLabel;
+
+        [Tooltip("進化先を選ぶ画面。")]
+        public BattleEvolutionChoice Choice;
+
+        [Tooltip(
+            "進化先を選ぶ画面がないときの、前触れのあと割れるまでの間（秒）。1つ目の進化先へ進む。"
+        )]
+        [Min(0f)]
+        public float ChoosePause = 0.4f;
 
         [Header("ホームへ戻る")]
         [Tooltip(
@@ -120,7 +141,11 @@ namespace Baryonyx.Combat.Presentation
         private BattleHitWeight weight;
         private int enemy;
         private bool repeat = true;
+        private bool evolve;
+        private bool choosing;
         private bool playing;
+        private readonly HashSet<string> acquired = new();
+        private BattleInspectCardView evolutionCard;
         private Coroutine routine;
 
         /// <summary>
@@ -148,6 +173,27 @@ namespace Baryonyx.Combat.Presentation
         public int Enemy => enemy;
 
         public bool Repeat => repeat;
+
+        /// <summary>Whether a unique skill's stage that can evolve evolves before it plays.</summary>
+        public bool Evolve => evolve;
+
+        /// <summary>True while the stage to evolve into is being picked.</summary>
+        public bool Choosing => choosing;
+
+        /// <summary>
+        /// The stages a unique skill's stage can evolve into (doc/features/skill-evolution.md):
+        /// three from a first stage, one from a branch's first step, none from a last step or a
+        /// card skill.
+        /// </summary>
+        public static IReadOnlyList<CardSkill> EvolvesInto(CardSkill skill)
+        {
+            var into = new List<CardSkill>();
+            if (skill == null || !UniqueSkillEvolution.TryFind(skill.Id, out var tree, out _))
+                return into;
+            foreach (int stage in UniqueSkillEvolution.NextStages(skill.Id))
+                into.Add(tree.StageAt(stage).Card);
+            return into;
+        }
 
         public bool PickerOpen => Picker != null && Picker.activeSelf;
 
@@ -179,6 +225,7 @@ namespace Baryonyx.Combat.Presentation
             Listen(WeightButton, CycleWeight);
             Listen(TargetButton, CycleTarget);
             Listen(RepeatButton, () => SetRepeat(!repeat));
+            Listen(EvolveButton, () => SetEvolve(!evolve));
             Listen(CloseButton, ClosePicker);
             for (int t = 0; t < Tabs.Length; t++)
             {
@@ -208,6 +255,7 @@ namespace Baryonyx.Combat.Presentation
             Refresh();
             StopAllCoroutines();
             playing = false;
+            EndChoosing();
             Vfx.Clear();
             routine = StartCoroutine(Run());
         }
@@ -228,6 +276,7 @@ namespace Baryonyx.Combat.Presentation
             StopAllCoroutines();
             routine = null;
             playing = false;
+            EndChoosing();
             if (Vfx != null)
                 Vfx.Clear();
         }
@@ -263,6 +312,13 @@ namespace Baryonyx.Combat.Presentation
             Refresh();
             if (repeat && routine == null)
                 Replay();
+        }
+
+        /// <summary>Evolves a unique skill's stage that can evolve before it plays, or not; either way it plays again.</summary>
+        public void SetEvolve(bool value)
+        {
+            evolve = value;
+            Replay();
         }
 
         /// <summary>Opens the list on the tab of the skill playing, scrolled to its card.</summary>
@@ -327,12 +383,21 @@ namespace Baryonyx.Combat.Presentation
             do
             {
                 playing = true;
+                var played = Current;
+                var into = evolve ? EvolvesInto(played) : System.Array.Empty<CardSkill>();
+                if (into.Count > 0)
+                {
+                    CardSkill picked = null;
+                    yield return Evolution(played, into, stage => picked = stage);
+                    if (picked != null)
+                        played = picked;
+                }
                 yield return BattleSkillVfxDemo.PlaySkill(
                     Vfx,
                     Party,
                     Enemies,
                     Actors,
-                    Current,
+                    played,
                     enemy,
                     weight
                 );
@@ -342,6 +407,149 @@ namespace Baryonyx.Combat.Presentation
                     yield return null;
             } while (repeat);
             routine = null;
+        }
+
+        /// <summary>
+        /// The card played rises as the stage <paramref name="from"/> and cracks, as in battle;
+        /// the stage it becomes is picked from <paramref name="into"/> (each acquired once evolved
+        /// into in this Play), and it shatters into that stage, which <paramref name="done"/> is
+        /// told.
+        /// </summary>
+        private IEnumerator Evolution(
+            CardSkill from,
+            IReadOnlyList<CardSkill> into,
+            System.Action<CardSkill> done
+        )
+        {
+            var card = EvolutionCard();
+            if (card == null)
+                yield break;
+            ShowCard(card, from);
+            int user = Mathf.Clamp((int)from.User, 0, Party.Length - 1);
+            // From a branch's first step, it evolves into the branch's last.
+            bool deep = BattleSkillVfx.TierOf(from.Id) == 1;
+            yield return Vfx.EvolutionOmen((RectTransform)card.transform, Party[user], deep);
+            int pick = 0;
+            if (Choice != null)
+            {
+                yield return Vfx.EvolutionPresent();
+                pick = -1;
+                SetChoosing(true);
+                // The lab's controls come back as soon as the stage is confirmed.
+                Choice.Open(
+                    OptionsOf(into),
+                    Vfx.EvolvingScreenPoint(),
+                    picked =>
+                    {
+                        pick = picked;
+                        SetChoosing(false);
+                    }
+                );
+                while (pick < 0)
+                    yield return null;
+            }
+            else
+                for (float t = 0f; t < ChoosePause; t += Time.deltaTime)
+                    yield return null;
+            var to = into[Mathf.Clamp(pick, 0, into.Count - 1)];
+            acquired.Add(to.Id);
+            done(to);
+            yield return Vfx.EvolutionBurst(
+                BattleSkillVfx.UniqueColor(to.Id),
+                deep,
+                () => ShowCard(card, to)
+            );
+        }
+
+        private List<BattleEvolutionChoice.Option> OptionsOf(IReadOnlyList<CardSkill> into)
+        {
+            var options = new List<BattleEvolutionChoice.Option>();
+            foreach (var skill in into)
+            {
+                int at = IndexOf(skill);
+                options.Add(
+                    new BattleEvolutionChoice.Option
+                    {
+                        Name = skill.Name,
+                        Owner = NameOf(PartyNames, (int)skill.User),
+                        Kind = CardText.KindLine(skill),
+                        Description = CardText.Description(skill),
+                        Art = At(CardArts, at),
+                        Frame = At(CardFrames, (int)skill.Element),
+                        Element = At(ElementIcons, (int)skill.Element),
+                        Cost = skill.Cost,
+                        Quality = skill.Quality,
+                        FoilStyle = skill.FoilStyle,
+                        Acquired = acquired.Contains(skill.Id),
+                    }
+                );
+            }
+            return options;
+        }
+
+        // While a stage is picked, the lab's own controls step aside for the stages and the button.
+        private void SetChoosing(bool value)
+        {
+            choosing = value;
+            foreach (var hidden in HiddenWhilePicking)
+                if (hidden != null)
+                    hidden.SetActive(!value);
+            if (HomeButton != null)
+                HomeButton.gameObject.SetActive(!value && HasHome);
+        }
+
+        private void EndChoosing()
+        {
+            if (Choice != null)
+                Choice.Close();
+            if (choosing)
+                SetChoosing(false);
+        }
+
+        // The card that evolves: a copy of the list's card on the effects' layer, made once.
+        private BattleInspectCardView EvolutionCard()
+        {
+            if (evolutionCard != null)
+                return evolutionCard;
+            var layer = Vfx.EvolutionLayer;
+            var face =
+                CardTemplate != null
+                    ? CardTemplate.GetComponentInChildren<BattleInspectCardView>(true)
+                    : null;
+            if (layer == null || face == null)
+                return null;
+            var copy = Instantiate(face.gameObject, layer, false);
+            copy.name = "EvolvingCard";
+            copy.SetActive(false);
+            evolutionCard = copy.GetComponent<BattleInspectCardView>();
+            return evolutionCard;
+        }
+
+        private void ShowCard(BattleInspectCardView card, CardSkill skill)
+        {
+            int at = IndexOf(skill);
+            card.Show(
+                skill.Name,
+                NameOf(PartyNames, (int)skill.User),
+                CardText.KindLine(skill),
+                CardText.Description(skill),
+                At(CardArts, at),
+                At(CardFrames, (int)skill.Element),
+                At(ElementIcons, (int)skill.Element),
+                skill.Cost,
+                skill.Quality,
+                skill.FoilStyle
+            );
+            card.SetPlayable(true, 0f);
+        }
+
+        private static int IndexOf(CardSkill skill)
+        {
+            var all = Skills;
+            for (int i = 0; i < all.Count; i++)
+                if (all[i].Id == skill.Id)
+                    return i;
+            return -1;
         }
 
         /// <summary>A card for every skill on its tab, numbered as in the catalog.</summary>
@@ -394,10 +602,12 @@ namespace Baryonyx.Combat.Presentation
             int user = (int)skill.User;
             if (Caption != null)
                 Caption.text = $"{index + 1}/{Skills.Count}　{skill.Name}";
+            bool evolves = evolve && EvolvesInto(skill).Count > 0;
             if (Detail != null)
                 Detail.text =
                     $"{NameOf(PartyNames, user)}・コスト{skill.Cost}・"
-                    + $"{CardRules.KindName(skill.Kind)}・{CardRules.ScopeName(skill)}";
+                    + $"{CardRules.KindName(skill.Kind)}・{CardRules.ScopeName(skill)}"
+                    + (evolves ? "　進化して使う" : "");
             if (WeightLabel != null)
                 WeightLabel.text =
                     "当たり："
@@ -411,6 +621,8 @@ namespace Baryonyx.Combat.Presentation
                 TargetLabel.text = "ねらう敵：" + NameOf(EnemyNames, enemy);
             if (RepeatLabel != null)
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
+            if (EvolveLabel != null)
+                EvolveLabel.text = evolve ? "進化：入" : "進化：切";
             // 選んでいるスキルは、カードの後ろの金の光で示す。
             for (int i = 0; i < skillButtons.Count; i++)
             {
@@ -466,6 +678,7 @@ namespace Baryonyx.Combat.Presentation
                 Mathf.Clamp(PlayerPrefs.GetInt(WeightKey, 0), 0, (int)BattleHitWeight.Defeat);
             enemy = Mathf.Clamp(PlayerPrefs.GetInt(EnemyKey, 0), 0, Enemies.Length - 1);
             repeat = PlayerPrefs.GetInt(RepeatKey, 1) != 0;
+            evolve = PlayerPrefs.GetInt(EvolveKey, 0) != 0;
         }
 
         private void Save()
@@ -474,6 +687,7 @@ namespace Baryonyx.Combat.Presentation
             PlayerPrefs.SetInt(WeightKey, (int)weight);
             PlayerPrefs.SetInt(EnemyKey, enemy);
             PlayerPrefs.SetInt(RepeatKey, repeat ? 1 : 0);
+            PlayerPrefs.SetInt(EvolveKey, evolve ? 1 : 0);
         }
     }
 }

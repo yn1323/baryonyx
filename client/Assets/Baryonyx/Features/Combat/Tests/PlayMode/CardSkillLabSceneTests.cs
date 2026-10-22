@@ -22,6 +22,7 @@ namespace Baryonyx.Tests.PlayMode
             CardSkillLab.WeightKey,
             CardSkillLab.EnemyKey,
             CardSkillLab.RepeatKey,
+            CardSkillLab.EvolveKey,
         };
 
         // 開発者が最後に選んだスキルを、テストで上書きしたまま残さない。
@@ -168,6 +169,144 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Playing, Is.False, "It does not start again.");
             lab.ReplayButton.onClick.Invoke();
             Assert.That(lab.Playing, Is.True, "Played again on demand.");
+        }
+
+        [UnityTest]
+        public IEnumerator AUniqueSkillEvolvesIntoTheStagePickedAndThatStagePlays()
+        {
+            CardSkillLab lab = null;
+            yield return SceneTests.Load<CardSkillLab>(
+                ScenePath,
+                found =>
+                    found.SkillButtons.Count > 0
+                    && (found.Transition == null || !found.Transition.IsPlaying),
+                found => lab = found
+            );
+            var all = CardSkillLab.Skills;
+            int Find(string id) => Enumerable.Range(0, all.Count).Single(i => all[i].Id == id);
+            string[] Ids(IEnumerable<CardSkill> skills) =>
+                skills.Select(skill => skill.Id).ToArray();
+            Assert.That(lab.Evolve, Is.False, "Evolution starts turned off.");
+            Assert.That(lab.EvolveLabel.text, Is.EqualTo("進化：切"));
+            AssertReachable(lab.EvolveButton);
+            SceneTests.AssertTouchSize(lab.EvolveButton.transform);
+
+            // A first stage evolves into its branches' first steps, a first step into its
+            // branch's last; a last step and a card skill do not evolve.
+            Assert.That(
+                Ids(CardSkillLab.EvolvesInto(all[Find("ManaBurst")])),
+                Is.EqualTo(new[] { "ManaBurst.1", "ManaBurst.3", "ManaBurst.5" })
+            );
+            Assert.That(
+                Ids(CardSkillLab.EvolvesInto(all[Find("ManaBurst.1")])),
+                Is.EqualTo(new[] { "ManaBurst.2" })
+            );
+            Assert.That(CardSkillLab.EvolvesInto(all[Find("ManaBurst.2")]), Is.Empty);
+            Assert.That(CardSkillLab.EvolvesInto(all[0]), Is.Empty);
+
+            // Turned off, a unique skill plays at once.
+            int first = Find("ManaBurst");
+            lab.Play(first);
+            yield return null;
+            Assert.That(lab.Vfx.Evolving, Is.False);
+            Assert.That(lab.Detail.text, Does.Not.Contain("進化して使う"));
+
+            // Turned on, the card played rises and cracks, and the stages it can become are
+            // offered under it, with nothing picked yet.
+            lab.EvolveButton.onClick.Invoke();
+            Assert.That(lab.Evolve, Is.True);
+            Assert.That(lab.EvolveLabel.text, Is.EqualTo("進化：入"));
+            Assert.That(PlayerPrefs.GetInt(CardSkillLab.EvolveKey), Is.EqualTo(1));
+            Assert.That(lab.Detail.text, Does.Contain("進化して使う"));
+            yield return SceneTests.WaitUntil(
+                () => lab.Vfx.Evolving,
+                message: "The card played rises to evolve."
+            );
+            var card = lab.Vfx.EvolutionLayer.GetComponentInChildren<BattleInspectCardView>();
+            Assert.That(card.Name.text, Is.EqualTo(all[first].Name), "It shows the stage played.");
+            Assert.That(lab.Vfx.DimAlpha, Is.GreaterThan(0f), "The stage darkens.");
+            var choice = lab.Choice;
+            yield return SceneTests.WaitUntil(
+                () => choice.IsOpen && choice.Panel.blocksRaycasts,
+                seconds: 4f,
+                message: "The stages to evolve into are offered."
+            );
+            Assert.That(lab.Choosing, Is.True);
+            Assert.That(choice.Count, Is.EqualTo(3));
+            Assert.That(choice.Selected, Is.EqualTo(-1));
+            Assert.That(choice.ConfirmButton.interactable, Is.False, "Nothing to confirm yet.");
+            Assert.That(
+                lab.ListButton.gameObject.activeInHierarchy,
+                Is.False,
+                "The lab's controls step aside."
+            );
+            for (int i = 0; i < 3; i++)
+            {
+                AssertReachable(choice.Slots[i]);
+                Assert.That(
+                    choice.Cards[i].Name.text,
+                    Is.EqualTo(all[Find("ManaBurst." + (1 + i * 2))].Name)
+                );
+                Assert.That(choice.AcquiredTags[i].activeSelf, Is.False);
+            }
+            AssertReachable(choice.ConfirmButton);
+            SceneTests.AssertTouchSize(choice.ConfirmButton.transform);
+
+            // The stage picked is confirmed; the card shatters into it, goes into its user, and
+            // that stage plays.
+            choice.Slots[1].onClick.Invoke();
+            Assert.That(choice.Selected, Is.EqualTo(1));
+            Assert.That(choice.ConfirmButton.interactable, Is.True);
+            choice.ConfirmButton.onClick.Invoke();
+            Assert.That(choice.IsOpen, Is.False);
+            Assert.That(lab.Choosing, Is.False);
+            Assert.That(lab.ListButton.gameObject.activeInHierarchy, Is.True);
+            string picked = all[Find("ManaBurst.3")].Name;
+            yield return SceneTests.WaitUntil(
+                () => card.Name.text == picked,
+                message: "It shatters into the stage picked."
+            );
+            yield return SceneTests.WaitUntil(
+                () => !lab.Vfx.Evolving,
+                message: "The evolved card goes into its user."
+            );
+            Assert.That(card.gameObject.activeSelf, Is.False);
+            Assert.That(lab.Playing, Is.True, "Then the stage picked plays.");
+
+            // Offered again, the stage evolved into is marked acquired.
+            lab.Replay();
+            yield return SceneTests.WaitUntil(() => choice.IsOpen, seconds: 4f);
+            Assert.That(choice.AcquiredTags[1].activeSelf, Is.True);
+            Assert.That(choice.AcquiredTags[0].activeSelf, Is.False);
+
+            // Cut short while choosing, nothing of it is left.
+            lab.Play(0);
+            Assert.That(choice.IsOpen, Is.False);
+            Assert.That(lab.Choosing, Is.False);
+            Assert.That(lab.Vfx.Evolving, Is.False);
+            Assert.That(card.gameObject.activeSelf, Is.False, "The cut-short card is hidden.");
+            Assert.That(lab.ListButton.gameObject.activeInHierarchy, Is.True);
+            Assert.That(lab.Vfx.TimeBent, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+
+            // From a first step, its one stage is shown picked for a moment with no button, and
+            // the card shatters into it by itself.
+            lab.Play(Find("ManaBurst.1"));
+            yield return SceneTests.WaitUntil(() => choice.IsOpen, seconds: 4f);
+            Assert.That(choice.Count, Is.EqualTo(1));
+            Assert.That(choice.Selected, Is.Zero);
+            Assert.That(choice.ConfirmButton.gameObject.activeSelf, Is.False);
+            yield return SceneTests.WaitUntil(
+                () => !choice.IsOpen,
+                seconds: choice.SingleShow + 1f,
+                message: "It goes on without a tap."
+            );
+            Assert.That(lab.Choosing, Is.False);
+            string last = all[Find("ManaBurst.2")].Name;
+            yield return SceneTests.WaitUntil(
+                () => card.Name.text == last,
+                message: "It shatters into its one stage."
+            );
         }
 
         // Nothing over the button takes the tap: the first thing under its middle is the button.
