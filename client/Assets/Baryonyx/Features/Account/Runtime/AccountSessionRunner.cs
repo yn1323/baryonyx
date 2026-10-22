@@ -9,7 +9,8 @@ namespace Baryonyx.Account
     /// The player's one server session, shared by every feature that calls the game server
     /// (health, the party, equipment, bonuses and the adventure). It signs in as the guest when
     /// there is no session or it is about to expire, and when the server rejects the session it
-    /// signs in again once and retries the call.
+    /// signs in again once and retries the call. Calls made while a sign-in is running wait for
+    /// that sign-in instead of signing in again, so the features can read the server at once.
     /// </summary>
     public sealed class AccountSessionRunner : IAccountSessionRunner
     {
@@ -18,6 +19,9 @@ namespace Baryonyx.Account
 
         private readonly Func<CancellationToken, Task<AccountSession>> signInAsGuest;
         private readonly Func<DateTimeOffset> now;
+
+        // 実行中または直前のゲストのログイン。同時に届いた要求は、このログインを待つ。
+        private Task signingIn = Task.CompletedTask;
 
         public AccountSessionRunner(AccountApiClient accounts, Func<string> guestSecret = null)
             : this(GuestSignIn(accounts, guestSecret ?? GuestCredential.GetOrCreate)) { }
@@ -47,12 +51,18 @@ namespace Baryonyx.Account
             Started?.Invoke(session);
         }
 
+        // ログインは、待っている要求のどれかが取り消されても止めない。ほかの要求も同じログインを待つため。
         public async Task ConnectAsync(CancellationToken token)
         {
             if (Current != null && Current.ExpiresAt - RenewBefore > now())
                 return;
-            Start(await signInAsGuest(token));
+            if (signingIn.IsCompleted)
+                signingIn = SignInAsync();
+            await signingIn;
+            token.ThrowIfCancellationRequested();
         }
+
+        private async Task SignInAsync() => Start(await signInAsGuest(CancellationToken.None));
 
         // 失効・取り消し済みのセッションは一度だけゲストで取り直して再実行する。
         public async Task<T> WithSessionAsync<T>(
@@ -61,13 +71,16 @@ namespace Baryonyx.Account
         )
         {
             await ConnectAsync(token);
+            var session = Current;
             try
             {
-                return await operation(Current);
+                return await operation(session);
             }
             catch (ServerApiException exception) when (exception.StatusCode == 401)
             {
-                Current = null;
+                // 同時に断られたほかの要求が取り直したセッションは、捨てずに使う。
+                if (Current == session)
+                    Current = null;
                 await ConnectAsync(token);
                 return await operation(Current);
             }
