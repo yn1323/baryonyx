@@ -105,11 +105,15 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(training.Passives[0].Name.text, Is.EqualTo(growth.Passives[0].Name));
             Assert.That(training.Passives[0].Description.text, Is.Not.Empty);
-            Assert.That(training.Passives[1].Lock.activeSelf, Is.True);
+            // 2つ目のパッシブは、今のレベルで解放していなければ鍵と解放するレベルを出す。
+            bool locked = first.Level < growth.Passives[1].UnlockLevel;
+            Assert.That(training.Passives[1].Lock.activeSelf, Is.EqualTo(locked));
             Assert.That(
                 training.Passives[1].When.text,
-                Is.EqualTo($"Lv {growth.Passives[1].UnlockLevel}で解放")
+                Is.EqualTo(locked ? $"Lv {growth.Passives[1].UnlockLevel}で解放" : "")
             );
+            Assert.That(training.Passives[0].Icon.texture, Is.Not.Null);
+            Assert.That(training.Passives[0].Icon.uvRect, Is.EqualTo(new Rect(0, 0, 1, 1)));
             // 固有スキルは押せるカードで、セットしている進化の段階を出す。未解放のものは暗くして
             // 解放するレベルを重ねる。
             Assert.That(
@@ -185,6 +189,15 @@ namespace Baryonyx.Tests.PlayMode
                 }
             )
                 SceneTests.AssertTouchSize(button.transform, 0.7f);
+            // 上の段は、左にLv、右に「－」「＋」「最大」を同じ高さで並べる。
+            var to = SceneTests.ScreenRect(training.To.transform);
+            var less = SceneTests.ScreenRect(training.Less.transform);
+            Assert.That(to.xMax, Is.LessThan(less.xMin));
+            Assert.That(to.yMin, Is.LessThan(less.yMax));
+            Assert.That(to.yMax, Is.GreaterThan(less.yMin));
+            Assert.That(training.To.fontSize, Is.EqualTo(training.From.fontSize));
+            // 使うルーンは「レベルアップ」の中に添える。
+            Assert.That(training.Cost.transform.IsChildOf(training.Confirm.transform), Is.True);
             Assert.That(TopHit(view.Back.transform).name, Is.EqualTo("Dim"));
             // 端末の戻るキーと同じ経路（「もどる」）は、重ねた画面だけを閉じる。
             view.Back.onClick.Invoke();

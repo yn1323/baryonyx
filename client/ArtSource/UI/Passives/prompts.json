@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-21",
+  "tool": "Codex CLI built-in image_gen (.agents/skills/shared/scripts/codex_image.py)",
+  "scope": "Passive skill icons (24x24). Provisional passives: doc/features/passives.md.",
+  "process": "Each sheet was generated as one transparent image with the icons in a row. The style reference was the existing 24x24 UI icons at 16x (output/icons/step-bonus/ref-icons-x16.png). Each icon was cut out, fitted to a 24x24 grid by its outline, coloured with the median of the centre of each cell, reduced to 32 colours (median cut) with output/icons/step-bonus/fit24.py, and converted to an indexed .aseprite with .agents/skills/pixel-art-standards/scripts/png_to_aseprite.lua. All eighteen passed check_pixel_art.py --kind ui-icon.",
+  "commonPrompt": "■ドット絵の規格\nスーファミ後期〜GBAのRPGのドット絵。はっきりした四角いドットで描き、1ドットを1色で塗る。\n光源は左上。輪郭はセルアウトにする。背景と接する外周に輪郭を描き、影側は暗く、光が当たる左上側は接する部分の色に合わせて明るくする。腕と胴の境目などの内側の線は、外周より明るく、その場所の色より2段暗い色で描く。\n色数は32色以内。陰影は段を分けて塗り、色の境目にディザ（2色の市松模様）を入れる。アンチエイリアスは輪郭の内側にだけ、中間色を1ドット単位で置く。背景側へのぼかしや滑らかなグラデーションは使わない。\nしわや細部まで多めに描き込む。\n\n■このゲームのタッチに合わせる\n- 添付の画像1は、このゲームの既存のUIアイコン8個（どれも24×24ドットを16倍に拡大したもの）です。ドットの大きさ、セルアウトの輪郭、段を分けた塗り、彩度の高さ、ハイライトの置き方、ディザの入れ方をこれにそろえてください。精密さもこれと同じ水準で、1ドットずつ意味を持たせて描き込んでください。\n- アイコンは、冒険者の育成画面の暗い紺色のパネル（パッシブスキルの一覧）に並び、戦闘中にも小さく出ます。暗い紺の上でもはっきり見えるよう、明るい面と彩度を十分に持たせます。\n- これはキャラが持つパッシブスキル（常に働く能力）のアイコンです。紋章のように1つのモチーフで能力を表します。\n- 彩度と明るさを高めにしたGBA寄りの色にする。影は青・紫寄りに、光は黄・白寄りに色相をずらす。\n\n■大きさとそろえ方\n- 各アイコンは、ちょうど24×24ドットの格子に収まる大きさで描く。24ドットの幅いっぱいを使い、画面では1ドットを4×4pxに拡大して表示する。\n- すべてのアイコンを、同じドットの細かさ（1ドットが同じ大きさの正方形）、同じ輪郭の太さ（1ドット）、同じ光の向き、同じくらいの見た目の大きさにそろえる。\n- 24×24ドットと少ないので、シルエットだけで何かわかる太くて単純な形にする。1ドット幅の細い線を並べた細かい模様は避ける。\n- 正面から見た図案として描き、横一列に並べ、アイコンどうしの間はアイコン1個分以上空ける。\n- 背景は透明にする。枠、ボタンの台座、地面、落ち影、文字、ラベル、番号は描かない。",
+  "sheets": [
+    {
+      "name": "passive-icons-a",
+      "used": [
+        "PassiveStarChart",
+        "PassiveThermalShock",
+        "PassiveHeadStart",
+        "PassiveChainedArrows",
+        "PassiveCover"
+      ],
+      "icons": "1. 星図の計算：真鍮の縁の丸い星図盤。面は深い紺で、金色の星4つを白い細い線でつなぐ。右下の縁に小さな水色の菱形の結晶が1つ乗っている。\n2. 寒暖の理：丸い玉を縦に二分し、左半分は橙と黄色の燃える炎、右半分は水色と白の氷の結晶。境目に白い光の縦筋。\n3. 早駆け：横から見た茶色の革の短いブーツ1つ。かかとに白い小さな翼が1枚、ブーツの後ろに黄色い速さの線を3本。\n4. 連ね矢：右上を向いた矢を3本、少しずつずらして平行に並べる。矢じりは銀、矢羽は赤、矢柄は木の茶色。\n5. かばう：正面から見た大きな青い凧盾。太い金の縁取り、面の中央に赤いハートの紋章。左上の面を明るい水色、右下を濃い紺にする。"
+    },
+    {
+      "name": "passive-icons-b",
+      "used": [
+        "PassiveIaiForm",
+        "PassiveOverflowingPrayer",
+        "PassiveWalkersBlessing",
+        "PassiveHolyFlameHammer",
+        "PassivePurifyingVow"
+      ],
+      "icons": "1. 居合の型：黒い鞘に納めた反りのある刀を左下から右上へ斜めに1本。金の鍔、紺の柄巻き。刀の前を横切る、白く鋭い斬撃の三日月形の弧。\n2. あふれる祈り：正面から見た金の聖杯。杯から水色に光る水があふれ、縁から左右にこぼれ落ちる。杯の前に、小さな水色の盾の形の光が浮かぶ。\n3. 歩み手の加護：白い足あと1つ（つま先側が大きい楕円、かかと側が小さい楕円をつなげた靴底の形）を、緑の葉2枚と金色の光の輪が囲む。\n4. 聖火の鉄槌：左下から右上へ斜めに置いた戦鎚。銀の四角い槌頭に金の装飾、焦げ茶の柄。槌頭を白と金色の聖なる炎が包み込む。\n5. 浄めの誓い：金の縁の白い円形の紋章（中央に金の十字）。紋章のまわりで、紫色の毒の泡3つがはじかれて外へ飛ぶ。"
+    },
+    {
+      "name": "passive-icons-c",
+      "used": [
+        "PassiveMarkTheWeak",
+        "PassiveSilentKill",
+        "PassiveChargedShield",
+        "PassiveManaShield"
+      ],
+      "icons": "1. 急所狙い：赤い照準（太い円と十字）。中心に、ひびの入った赤いハート形の宝石。\n2. 影の一刺し：切っ先を下に向けた細身の黒鉄の短剣。刃のまわりに紫の影の煙がまとわりつき、柄頭に小さな水色の結晶。\n3. 帯電の盾：正面から見た四角い盾。銀の縁、面は濃い紺。盾の中央から黄色い稲妻が上へ飛び出している。\n4. 魔力の盾：水色に光る半透明に見える六角形の魔法の障壁の板（中を少し明るくして表す。透明度は使わない）。中央に黄色い稲妻の印。"
+    },
+    {
+      "name": "passive-icons-d",
+      "used": [
+        "PassiveRiposte",
+        "PassiveOpenWounds",
+        "PassiveCopycat",
+        "PassiveStandingAlone"
+      ],
+      "icons": "1. 切り返し：細身の銀の剣2本をX字に交差させ、交点に白と黄色の火花。柄は赤。\n2. 傷口を開く：右上から左下へ斜めに走る赤い3本の斬り傷（爪あとのような太めの線）と、下にたれる赤いしずく2つ。\n3. 見よう見まね：正面から見た、開いた青い表紙の本。白いページの上に、小さな水色の氷の結晶と黄色い稲妻が浮かぶ。\n4. 独り立ち：短い木の杖を縦に1本。先端に水色の宝石と、その左右に黄色い稲妻の飾り。杖のまわりに白い小さな星の光を3つ。"
+    }
+  ],
+  "assets": [
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStarChart.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveThermalShock.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHeadStart.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChainedArrows.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCover.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveIaiForm.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveOverflowingPrayer.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveWalkersBlessing.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveHolyFlameHammer.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassivePurifyingVow.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveMarkTheWeak.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveSilentKill.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChargedShield.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveManaShield.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveRiposte.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveOpenWounds.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveCopycat.aseprite",
+    "Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveStandingAlone.aseprite"
+  ]
+}

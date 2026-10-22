@@ -1,0 +1,7 @@
+interface:
+  display_name: "パッシブスキルの考え方"
+  short_description: "キャラの見立てから、仕掛けが重ならず働く回数まで見積もったパッシブを考え、仕様と定義に記録する"
+  default_prompt: "Use $passive-skill-authoring when designing, adding, changing, or reviewing a character's passive skills."
+
+policy:
+  allow_implicit_invocation: true

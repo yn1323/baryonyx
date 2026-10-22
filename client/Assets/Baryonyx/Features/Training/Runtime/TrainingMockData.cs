@@ -70,7 +70,7 @@ namespace Baryonyx.Training
         // 固有スキルの進化ツリーのID（UniqueSkillTrees）。パッシブは空。
         public string Tree = "";
 
-        // 仮のアイコン。カードの挿絵（64×58）の中央24×24ドットを4倍で出す。
+        // アイコン。パッシブは24×24ドットの専用の絵、固有スキルはカードの挿絵（64×58）の中央24×24ドットを仮に使う。
         public Texture2D Icon;
     }
 }

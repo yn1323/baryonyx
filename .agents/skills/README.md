@@ -57,11 +57,12 @@
 |---|---|---|---|---|
 | [ui-advisor](ui-advisor/SKILL.md) | スマホゲームのUI、画面構成、UX、報酬表示、保守を設計・実装・レビューする | 自動 | [UI設計ルール](../../doc/rules/ui-design.md)、[ゲーム概要](../../doc/game/overview.md) | 保存は data-storage、演出は vfx-authoring |
 
-## 戦闘のカード
+## 戦闘のカードとパッシブ
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
 |---|---|---|---|---|
 | [card-skill-authoring](card-skill-authoring/SKILL.md) | カードスキルの効果と説明文を足す・直す・レビューする | 自動 | [戦闘システム](../../doc/features/combat.md)（[カードの説明文に書くこと](../../doc/features/combat.md#カードの説明文に書くこと)） | 挿絵は pixel-art-standards、演出は vfx-authoring |
+| [passive-skill-authoring](passive-skill-authoring/SKILL.md) | キャラのパッシブスキルを考える・足す・直す・レビューする | 自動 | [パッシブスキル](../../doc/features/passives.md)（[設計方針](../../doc/features/passives.md#設計方針)） | 説明文の書き方は card-skill-authoring に従う |
 
 ## ドット絵と画像生成
 
@@ -96,6 +97,7 @@
 | キャラ・敵・アイテムのドット絵を作る、生成画像を採用する | pixel-art-standards と、対象の生成スキル |
 | 新しいキャラを考える → 絵にする | rpg-character-profile → character-sprite-sheet・character-illustration |
 | カードスキルを足す・文言を直す | card-skill-authoring |
+| キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
 | 保存する処理を足す、保存先を聞かれた | data-storage |
 | APKを作る・配る → 端末で確かめる | unity-android-ci-distribution → unity-android-device-validation |

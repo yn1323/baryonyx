@@ -167,7 +167,6 @@ namespace Baryonyx.Training
         public GameObject Dialog;
         public TMP_Text From;
         public TMP_Text To;
-        public TMP_Text Count;
         public Button Less;
         public Button More;
         public Button Max;
@@ -490,7 +489,6 @@ namespace Baryonyx.Training
                 Dialog.SetActive(state.DialogOpen);
             Set(From, state.Level.ToString(CultureInfo.InvariantCulture));
             Set(To, state.Target.ToString(CultureInfo.InvariantCulture));
-            Set(Count, state.Count.ToString(CultureInfo.InvariantCulture));
             if (Less != null)
                 Less.interactable = state.CanLess;
             if (More != null)

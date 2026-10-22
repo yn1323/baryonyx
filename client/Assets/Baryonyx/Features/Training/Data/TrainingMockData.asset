@@ -24,18 +24,18 @@ MonoBehaviour:
       Critical: 300
       Luck: 500
     Passives:
-    - Name: "\u9B54\u529B\u306E\u6CC9"
-      Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
+    - Name: "\u661F\u56F3\u306E\u8A08\u7B97"
+      Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u6B8B\u3063\u305F\u30A8\u30CD\u30EB\u30AE\u30FC\u30921\u307E\u3067\u3001\u6B21\u306E\u30BF\u30FC\u30F3\u3078\u6301\u3061\u8D8A\u3059\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
-    - Name: "\u708E\u306E\u5FC3\u5F97"
-      Description: "\u708E\u306E\u30AB\u30FC\u30C9\u306E\u5A01\u529B +10%"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 99db8cc72898d4800987142c802efbbd, type: 3}
+    - Name: "\u5BD2\u6696\u306E\u7406"
+      Description: "\u3084\u3051\u3069\u3068\u51CD\u3048\u304C\u4E21\u65B9\u4ED8\u3044\u305F\u6575\u3078\u306E\u30C0\u30E1\u30FC\u30B8+30%\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: e5b1eefa2db8e491f9e08a7ee8a8e76f, type: 3}
     Uniques:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
       Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
@@ -63,18 +63,18 @@ MonoBehaviour:
       Critical: 900
       Luck: 600
     Passives:
-    - Name: "\u72E9\u4EBA\u306E\u76EE"
-      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+    - Name: "\u65E9\u99C6\u3051"
+      Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u914D\u308B\u624B\u672D+1\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
-    - Name: "\u75BE\u98A8"
-      Description: "\u901F\u5EA6 +10%"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 28c56c9f25a3240b187aeef7dfe3549e, type: 3}
+    - Name: "\u9023\u306D\u77E2"
+      Description: "\u30EB\u30AB\u306E\xD7\u56DE\u6570\u306E\u653B\u6483\u306F\u3001\u56DE\u6570+1\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: b2c803db0f40f49b496fabc64abf5bb3, type: 3}
     Uniques:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
@@ -100,18 +100,18 @@ MonoBehaviour:
       Critical: 500
       Luck: 300
     Passives:
-    - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
-      Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
+    - Name: "\u304B\u3070\u3046"
+      Description: "HP\u304C30%\u4EE5\u4E0B\u306E\u5473\u65B9\u3078\u306E\u5358\u4F53\u653B\u6483\u3092\u30011\u30BF\u30FC\u30F3\u306B1\u56DE\u3001\u4EE3\u308F\u308A\u306B\u53D7\u3051\u308B\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
-    - Name: "\u4E0D\u5C48"
-      Description: "\u5012\u308C\u308B\u30C0\u30E1\u30FC\u30B8\u30921\u5EA6\u3060\u3051\u8010\u3048\u308B"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 57aa5ba2799fd4389890e5d4dae22ab2, type: 3}
+    - Name: "\u5C45\u5408\u306E\u578B"
+      Description: "\u6BCE\u30BF\u30FC\u30F3\u3001\u5473\u65B9\u304C\u6700\u521D\u306B\u4F7F\u3046\u65AC\u5C5E\u6027\u306E\u653B\u6483\u306E\u30C0\u30E1\u30FC\u30B8+40%\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 1ce9b4787cccd4da89435fc39cb06c24, type: 3}
     Uniques:
     - Name: "\u76FE\u306E\u69CB\u3048"
       Description: "\u6B21\u306E\u30BF\u30FC\u30F3\u307E\u3067\u30D6\u30ED\u30C3\u30AF +80"
@@ -137,18 +137,18 @@ MonoBehaviour:
       Critical: 200
       Luck: 900
     Passives:
-    - Name: "\u7948\u308A"
-      Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
+    - Name: "\u3042\u3075\u308C\u308B\u7948\u308A"
+      Description: "\u30DF\u30CA\u306E\u56DE\u5FA9\u3067\u6700\u5927HP\u3092\u8D85\u3048\u305F\u5206\u3092\u3001\u305D\u306E\u5473\u65B9\u306E\u30D6\u30ED\u30C3\u30AF\u306B\u3059\u308B\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
-    - Name: "\u6D44\u5316\u306E\u5149"
-      Description: "\u72B6\u614B\u7570\u5E38\u306B1\u56DE\u304B\u304B\u3089\u306A\u3044"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: e784ae8c9bb784cc88997878a531edda, type: 3}
+    - Name: "\u6B69\u307F\u624B\u306E\u52A0\u8B77"
+      Description: "\u30DF\u30CA\u306E\u56DE\u5FA9\u91CF\u304C\u3001\u4ECA\u65E5\u306EACT\u304C\u591A\u3044\u307B\u3069\u4E0A\u304C\u308B\uFF08\u6700\u5927+50%\uFF09\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 08755643461f14ea8af79ad01dbb068a, type: 3}
     Uniques:
     - Name: "\u7652\u3057\u306E\u98A8"
       Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
@@ -174,18 +174,18 @@ MonoBehaviour:
       Critical: 300
       Luck: 500
     Passives:
-    - Name: "\u5B88\u8B77\u306E\u8A93\u3044"
-      Description: "\u5473\u65B9\u304C\u53D7\u3051\u308B\u30C0\u30E1\u30FC\u30B8 -5%"
+    - Name: "\u8056\u706B\u306E\u9244\u69CC"
+      Description: "\u30A2\u30F3\u30BB\u30EB\u30E0\u306E\u6253\u5C5E\u6027\u306E\u653B\u6483\u306F\u3001\u3084\u3051\u30692\u30BF\u30FC\u30F3\u3092\u4ED8\u3051\u308B\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
-    - Name: "\u4E0D\u5C48"
-      Description: "\u5012\u308C\u308B\u30C0\u30E1\u30FC\u30B8\u30921\u5EA6\u3060\u3051\u8010\u3048\u308B"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 78676d2b352094044953e5df679dc22d, type: 3}
+    - Name: "\u6D44\u3081\u306E\u8A93\u3044"
+      Description: "\u5473\u65B9\u306B\u4ED8\u304F\u72B6\u614B\u7570\u5E38\u3092\u30011\u30BF\u30FC\u30F3\u306B1\u56DE\u9632\u3050\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 592a0e625a9874f0b9e6426ed9507975, type: 3}
     Uniques:
     - Name: "\u76FE\u306E\u69CB\u3048"
       Description: "\u6B21\u306E\u30BF\u30FC\u30F3\u307E\u3067\u30D6\u30ED\u30C3\u30AF +80"
@@ -211,18 +211,18 @@ MonoBehaviour:
       Critical: 1000
       Luck: 800
     Passives:
-    - Name: "\u72E9\u4EBA\u306E\u76EE"
-      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+    - Name: "\u6025\u6240\u72D9\u3044"
+      Description: "HP\u304C\u534A\u5206\u4EE5\u4E0B\u306E\u6575\u3078\u3001\u30B0\u30EC\u30BF\u306E\u653B\u6483\u306E\u30C0\u30E1\u30FC\u30B8+30%\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
-    - Name: "\u75BE\u98A8"
-      Description: "\u901F\u5EA6 +10%"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 12c1926ddf9964beab4332f6f2393a74, type: 3}
+    - Name: "\u5F71\u306E\u4E00\u523A\u3057"
+      Description: "\u30B0\u30EC\u30BF\u306E\u653B\u6483\u3067\u6575\u3092\u5012\u3059\u3068\u3001\u30A8\u30CD\u30EB\u30AE\u30FC+1\uFF081\u30BF\u30FC\u30F3\u306B1\u56DE\uFF09\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 9b15826afc1f64bcda82837a1e5637d1, type: 3}
     Uniques:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
@@ -248,18 +248,18 @@ MonoBehaviour:
       Critical: 300
       Luck: 400
     Passives:
-    - Name: "\u9B54\u529B\u306E\u6CC9"
-      Description: "\u6226\u95D8\u306E\u59CB\u3081\u306B\u30A8\u30CD\u30EB\u30AE\u30FC +1"
+    - Name: "\u5E2F\u96FB\u306E\u76FE"
+      Description: "\u30EB\u30C3\u30C4\u304C\u30D6\u30ED\u30C3\u30AF\u3092\u5F97\u308B\u305F\u3073\u306B\u3001\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B\u5C5E\u653B\u306E20%\u306E\u96F7\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
-    - Name: "\u708E\u306E\u5FC3\u5F97"
-      Description: "\u708E\u306E\u30AB\u30FC\u30C9\u306E\u5A01\u529B +10%"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 3a0f684ab086947ad8f8ee3cefe620b4, type: 3}
+    - Name: "\u9B54\u529B\u306E\u76FE"
+      Description: "\u30EB\u30C3\u30C4\u306E\u96F7\u5C5E\u6027\u306E\u653B\u6483\u306F\u3001\u4E0E\u3048\u305F\u30C0\u30E1\u30FC\u30B8\u306E20%\u3092\u81EA\u5206\u306E\u30D6\u30ED\u30C3\u30AF\u306B\u3059\u308B\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 4fdefdf7806914a029489bd6841bb819, type: 3}
     Uniques:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
       Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
@@ -285,18 +285,18 @@ MonoBehaviour:
       Critical: 800
       Luck: 500
     Passives:
-    - Name: "\u7948\u308A"
-      Description: "\u30BF\u30FC\u30F3\u306E\u7D42\u308F\u308A\u306B\u5473\u65B9\u306EHP\u3092\u5C11\u3057\u56DE\u5FA9"
+    - Name: "\u5207\u308A\u8FD4\u3057"
+      Description: "\u30EA\u30BF\u304C\u5358\u4F53\u653B\u6483\u3092\u53D7\u3051\u308B\u3068\u3001\u305D\u306E\u6575\u306B\u7269\u653B\u306E30%\u306E\u65AC\u5C5E\u6027\u30C0\u30E1\u30FC\u30B8\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
-    - Name: "\u6D44\u5316\u306E\u5149"
-      Description: "\u72B6\u614B\u7570\u5E38\u306B1\u56DE\u304B\u304B\u3089\u306A\u3044"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 930426f9695ba4613a94240fef8fb7b8, type: 3}
+    - Name: "\u50B7\u53E3\u3092\u958B\u304F"
+      Description: "\u51FA\u8840\u4E2D\u306E\u6575\u306B\u30EA\u30BF\u306E\u653B\u6483\u304C\u5F53\u305F\u308B\u305F\u3073\u306B\u3001\u51FA\u8840\u306E\u30C0\u30E1\u30FC\u30B8\u304C\u3082\u30461\u56DE\u8D77\u304D\u308B\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: dcaaa088b3b6e4d779c9a7930c4fd6e4, type: 3}
     Uniques:
     - Name: "\u7652\u3057\u306E\u98A8"
       Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
@@ -322,18 +322,18 @@ MonoBehaviour:
       Critical: 400
       Luck: 600
     Passives:
-    - Name: "\u72E9\u4EBA\u306E\u76EE"
-      Description: "\u6575\u306E\u5F31\u70B9\u3092\u898B\u3064\u3051\u3084\u3059\u304F\u306A\u308B"
+    - Name: "\u898B\u3088\u3046\u898B\u307E\u306D"
+      Description: "\u307B\u304B\u306E\u5473\u65B9\u304C\u6C37\u30FB\u96F7\u5C5E\u6027\u306E\u30AB\u30FC\u30C9\u3092\u4F7F\u3046\u305F\u3073\u306B\u3001\u30EA\u30C4\u306E\u6C37\u30FB\u96F7\u5C5E\u6027\u306E\u30C0\u30E1\u30FC\u30B8+10%\uFF08\u6700\u5927+50%\uFF09\u3002"
       UnlockLevel: 1
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
-    - Name: "\u75BE\u98A8"
-      Description: "\u901F\u5EA6 +10%"
-      UnlockLevel: 15
+      Icon: {fileID: -6622703189942226176, guid: 910ec160e185d411b8e1ca5f6d239606, type: 3}
+    - Name: "\u72EC\u308A\u7ACB\u3061"
+      Description: "\u898B\u3088\u3046\u898B\u307E\u306D\u304C\u6700\u5927\u306B\u306A\u308B\u3068\u3001\u30EA\u30C4\u306E\u6C37\u30FB\u96F7\u5C5E\u6027\u306E\u30AB\u30FC\u30C9\u306E\u30B3\u30B9\u30C8-1\u3002"
+      UnlockLevel: 10
       Energy: 0
       Tree: 
-      Icon: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+      Icon: {fileID: -6622703189942226176, guid: 544c6356311764cf99c5b2eab0a14fcc, type: 3}
     Uniques:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
