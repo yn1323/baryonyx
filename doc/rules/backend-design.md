@@ -170,6 +170,7 @@ Zodのエラー詳細や入力値はHTTP応答へ含めない。
 [routes.ts](../../server/src/features/accounts/routes.ts) はGoogleログイン、ゲストの開始（`POST /v1/auth/guest`）、ログアウト、[auth.ts](../../server/src/features/accounts/auth.ts) はGoogle IDトークンの検証、セッションの発行、トークンのハッシュ化、Bearerトークンからのセッション確認を担当する。
 DBの検索・書き込みは、認証処理から同じ機能のrepositoryへ委譲する。
 セッションが必要な機能は [session.ts](../../server/src/features/accounts/session.ts) の `requireSession` を、自分のパス（`/health/*` など）にだけ付ける。
+Honoでは `/party/*` が `/party` にも一致するため、`use("/party/*")` の1つだけで一覧のパスも守れる。`use("/party")` と両方に付けると、1つの要求でセッションを2回確かめる。
 
 [app.ts](../../server/src/app.ts) の `createApi` は、`Cache-Control: no-store`、16KBの本文上限、503応答の共通設定を [shared/http.ts](../../server/src/shared/http.ts) で一度だけ付け、各機能のHonoアプリを接続する。
 Honoでは同じ接続先へ接続した機能の `use("*")` が他機能のパスにも適用されるため、機能内で `use("*")` を使わない。
@@ -198,6 +199,7 @@ HTTPの入力検証は `schema.ts` に残し、DBスキーマと分ける。
 
 取得・更新にはDrizzleのクエリービルダーを使い、値をSQLへ埋め込む場合はパラメーター化する `sql` タグを使う。
 複数の書き込みを一括で確定する処理はD1対応の `db.batch()` を使う。
+画面を開くたびに読むGETは、D1との往復の回数がそのまま待ち時間になる（[処理時間の計測](#処理時間の計測server-timing)）。読む表は1つの `db.batch()` にまとめ、初回の付与を済ませたかの印も同じbatchで読む。付与がまだのときだけ付与して読み直す（[party](../../server/src/features/party/repository.ts) の `loadState`、[equipment](../../server/src/features/equipment/repository.ts) の `load`）。往復の回数は [read-round-trips.test.ts](../../server/tests/scenarios/read-round-trips.test.ts) で確かめる。
 D1は1つの文に渡せる値を100個までに制限しているため、多くの行を入れるときは文を分けて `db.batch()` に並べる（[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)）。
 健康データの保存では、所有者と同期の版を確認する条件をINSERT SELECTに含め、確認と書き込みの間に別の同期が割り込むことを防ぐ。
 `has_value` はSQLiteの整数とTypeScriptのbooleanをDrizzleで相互変換する。
@@ -334,6 +336,7 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-22：ユーザーの「段階3（往復の削減）だけ進めて」を受け、一覧を読むGETのD1との往復を減らした。セッションの確認の二重登録を外し（party・equipment・adventure・library・step-bonus）、partyとequipmentは初回の付与の印を読み込みのbatchに入れた。2回目からの往復は、`GET /v1/party` が4回から2回、`GET /v1/equipment` が6回から2回、`GET /v1/library` が7回から3回、`GET /v1/adventure` が3回から2回、`GET /v1/step-bonus` が6回から5回になった。書き込みのAPIも同じ読み方にし、partyは1往復、equipmentは3往復ずつ減った。
 - 2026-10-22：ユーザーの「キャラのスキル表示に1秒ちょっとかかる。何が原因なのか」を受け、[処理時間の計測](#処理時間の計測server-timing)を加えた。Miniflareで数えると、2回目以降の読み込みのD1の往復は `GET /v1/party` が4回、`GET /v1/equipment`・`GET /v1/step-bonus` が6回、`GET /v1/library` が7回、`GET /v1/adventure` が3回だった。各機能が `use("/party")` と `use("/party/*")` の両方へ `requireSession` を付けており、Honoでは `/party/*` が `/party` にも一致するため、一覧を読むGETでセッションの確認が2回走っている。往復を減らす変更は、計測の結果を見てから別に行う。参考：[Hono Timing Middleware](https://hono.dev/middleware/builtin/timing)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-22：ユーザーの「東京を指定したい。DBもHonoのserverも」を受け、[deploy.mjs](../../server/scripts/deploy.mjs) でD1の作成時に `primary_location_hint: "apac"` を、Workerに `placement.region: "aws:ap-northeast-1"` を指定した。それまでは場所を指定せず、作成を実行したGitHub Actionsの近く（北米と推定）にDBができていた。参考：[D1のデータの場所](https://developers.cloudflare.com/d1/configuration/data-location/)、[D1作成API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-19：[品質](../features/inventory.md#品質)の実装で、[0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) を[マイグレーション](#マイグレーション)に加え、seedの装備とボーナスに倍率を持たせた。Drizzle Kitが列の新設か改名かを対話で尋ねて止まるため、疑似端末から既定の答え（新設）を選んで生成した。

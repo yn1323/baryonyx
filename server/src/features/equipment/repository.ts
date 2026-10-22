@@ -6,7 +6,8 @@ import {
   qualityOf,
 } from "../../shared/quality.js";
 import { discoveryStatements } from "../library/discoveries.js";
-import { createPartyRepository } from "../party/repository.js";
+import { partyCharacters, partyProfiles } from "../party/db-schema.js";
+import { createPartyRepository, ownedInOrder } from "../party/repository.js";
 import {
   EQUIPMENT_IDS,
   type EquipmentId,
@@ -28,27 +29,32 @@ export function createEquipmentRepository(binding: D1Database) {
   const db = createDatabase(binding);
   const party = createPartyRepository(binding);
 
+  const itemsOf = (userId: string) =>
+    db
+      .select({
+        id: equipmentItems.id,
+        equipmentId: equipmentItems.equipmentId,
+        multiplierPercent: equipmentItems.multiplierPercent,
+        acquiredAt: equipmentItems.acquiredAt,
+      })
+      .from(equipmentItems)
+      .where(eq(equipmentItems.userId, userId));
+  const slotsOf = (userId: string) =>
+    db
+      .select({
+        characterId: equipmentCharacterSlots.characterId,
+        slot: equipmentCharacterSlots.slot,
+        itemId: equipmentCharacterSlots.itemId,
+      })
+      .from(equipmentCharacterSlots)
+      .where(eq(equipmentCharacterSlots.userId, userId));
+
   // 持っている装備と、持っているキャラ（パーティの一覧と同じ順）ごとの武器・防具。
-  async function readState(userId: string, characterIds: readonly string[]) {
-    const [items, slots] = await db.batch([
-      db
-        .select({
-          id: equipmentItems.id,
-          equipmentId: equipmentItems.equipmentId,
-          multiplierPercent: equipmentItems.multiplierPercent,
-          acquiredAt: equipmentItems.acquiredAt,
-        })
-        .from(equipmentItems)
-        .where(eq(equipmentItems.userId, userId)),
-      db
-        .select({
-          characterId: equipmentCharacterSlots.characterId,
-          slot: equipmentCharacterSlots.slot,
-          itemId: equipmentCharacterSlots.itemId,
-        })
-        .from(equipmentCharacterSlots)
-        .where(eq(equipmentCharacterSlots.userId, userId)),
-    ]);
+  function stateOf(
+    items: Awaited<ReturnType<typeof itemsOf>>,
+    slots: Awaited<ReturnType<typeof slotsOf>>,
+    characterIds: readonly string[],
+  ) {
     const order = (id: string) => EQUIPMENT_IDS.indexOf(id as EquipmentId);
     const worn = (characterId: string, slot: EquipmentSlot) =>
       slots.find((row) => row.characterId === characterId && row.slot === slot)
@@ -79,15 +85,45 @@ export function createEquipmentRepository(binding: D1Database) {
     };
   }
 
+  async function readState(userId: string, characterIds: readonly string[]) {
+    const [items, slots] = await db.batch([itemsOf(userId), slotsOf(userId)]);
+    return stateOf(items, slots, characterIds);
+  }
+
+  // 持っているキャラ・装備と、パーティと装備の初回の付与を済ませたかを、1回の往復で読む。
+  async function read(userId: string) {
+    const [partyGranted, owned, granted, items, slots] = await db.batch([
+      db
+        .select({ userId: partyProfiles.userId })
+        .from(partyProfiles)
+        .where(eq(partyProfiles.userId, userId)),
+      db
+        .select({
+          characterId: partyCharacters.characterId,
+          acquiredAt: partyCharacters.acquiredAt,
+        })
+        .from(partyCharacters)
+        .where(eq(partyCharacters.userId, userId)),
+      db
+        .select({ userId: equipmentProfiles.userId })
+        .from(equipmentProfiles)
+        .where(eq(equipmentProfiles.userId, userId)),
+      itemsOf(userId),
+      slotsOf(userId),
+    ]);
+    const characters = ownedInOrder(owned).map((row) => row.characterId);
+    return {
+      partyGranted: partyGranted.length > 0,
+      granted: granted.length > 0,
+      characters,
+      state: stateOf(items, slots, characters),
+    };
+  }
+
   // 初めて読むユーザーにだけ、仮の装備と初めの4人の装備を1回だけ付与する。
   // 装備のIDは毎回作るため、同時に届いた要求で二重に付与しないよう、印を書けた要求（grant_id）だけが装備を入れる。
-  async function ensureStarter(userId: string, now: string) {
-    const profile = await db
-      .select({ userId: equipmentProfiles.userId })
-      .from(equipmentProfiles)
-      .where(eq(equipmentProfiles.userId, userId))
-      .get();
-    if (profile) return;
+  // 付与の印がない（granted でない）ときにだけ呼ぶ。
+  async function grantStarter(userId: string, now: string) {
     const grantId = crypto.randomUUID();
     const granted = and(
       eq(equipmentProfiles.userId, userId),
@@ -148,13 +184,14 @@ export function createEquipmentRepository(binding: D1Database) {
     ]);
   }
 
-  // キャラの装備は持っているキャラにしか付けられないため、先にパーティの初期データを付与する。
+  // ふだんは1回の往復で読む。付与がまだのときだけ付与して読み直す。キャラの装備は持っているキャラにしか
+  // 付けられないため、先にパーティの初期データを付与する。
   async function load(userId: string, now: string) {
-    const characters = (await party.getState(userId, now)).characters.map(
-      (character) => character.id,
-    );
-    await ensureStarter(userId, now);
-    return { characters, state: await readState(userId, characters) };
+    const first = await read(userId);
+    if (first.partyGranted && first.granted) return first;
+    if (!first.partyGranted) await party.grantStarter(userId, now);
+    if (!first.granted) await grantStarter(userId, now);
+    return read(userId);
   }
 
   async function getState(userId: string, now: string) {

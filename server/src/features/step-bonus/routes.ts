@@ -11,7 +11,7 @@ function errorStatus(error: string) {
 
 export function createStepBonusApi() {
   const api = new Hono<SessionEnv>();
-  api.use("/step-bonus", requireSession);
+  // Honoでは `/step-bonus/*` が `/step-bonus` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/step-bonus/*", requireSession);
 
   // 持っているボーナスと枠の設定。初めて読むユーザーには仮の初期ボーナスを付与する。

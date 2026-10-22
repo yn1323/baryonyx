@@ -4,7 +4,7 @@ import { createLibraryRepository } from "./repository.js";
 
 export function createLibraryApi() {
   const api = new Hono<SessionEnv>();
-  api.use("/library", requireSession);
+  // Honoでは `/library/*` が `/library` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/library/*", requireSession);
 
   // 見つけた記録（doc/features/library.md）。定義は返さず、クライアントが各機能の正本と重ねる。

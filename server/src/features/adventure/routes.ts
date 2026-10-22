@@ -21,7 +21,7 @@ function errorStatus(error: string) {
 
 export function createAdventureApi() {
   const api = new Hono<SessionEnv>();
-  api.use("/adventure", requireSession);
+  // Honoでは `/adventure/*` が `/adventure` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/adventure/*", requireSession);
 
   // 進行中の冒険・行き先ごとの記録・所持ルーン。

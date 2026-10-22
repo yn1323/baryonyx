@@ -71,14 +71,30 @@ const contentOf = (key: string): CardContent => {
     : { cardId: id, itemId: null };
 };
 
+// 持っているキャラの並び。入手の古い順で、同時に入手したキャラは仮データの順。装備の一覧も同じ順に並べる。
+export function ownedInOrder<
+  T extends { characterId: string; acquiredAt: string },
+>(rows: readonly T[]) {
+  const order = (id: string) => CHARACTER_IDS.indexOf(id as CharacterId);
+  return [...rows].sort(
+    (a, b) =>
+      a.acquiredAt.localeCompare(b.acquiredAt) ||
+      order(a.characterId) - order(b.characterId),
+  );
+}
+
 export function createPartyRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
   // 持っているキャラ（Lv・2つのカスタムスキルの枠・2つの固有スキルの段階）、4つの枠、持っているスキルとアイテム、
-  // 所持ルーン、レベルの決まり。
-  async function readState(userId: string) {
-    const [characters, cards, uniques, slots, owned, items, wallets] =
+  // 所持ルーン、レベルの決まり。初回の付与を済ませたか（granted）も同じbatchで読み、往復を1回にする。
+  async function read(userId: string) {
+    const [profiles, characters, cards, uniques, slots, owned, items, wallets] =
       await db.batch([
+        db
+          .select({ userId: partyProfiles.userId })
+          .from(partyProfiles)
+          .where(eq(partyProfiles.userId, userId)),
         db
           .select({
             characterId: partyCharacters.characterId,
@@ -127,43 +143,34 @@ export function createPartyRepository(binding: D1Database) {
           .where(eq(itemHoldings.userId, userId)),
         selectRuneBalance(db, userId),
       ]);
-    const order = (id: string) => CHARACTER_IDS.indexOf(id as CharacterId);
     const skillOrder = (id: string) =>
       CARD_SKILL_IDS.indexOf(id as CardSkillId);
     const itemOrder = (id: string) => ITEM_IDS.indexOf(id as ItemId);
-    return {
-      // 入手の古い順。同時に入手したキャラは仮データの順。
-      characters: [...characters]
-        .sort(
-          (a, b) =>
-            a.acquiredAt.localeCompare(b.acquiredAt) ||
-            order(a.characterId) - order(b.characterId),
-        )
-        .map((character) => ({
-          id: character.characterId,
-          level: character.level,
-          cards: Array.from({ length: CARD_SLOT_COUNT }, (_, slot) => {
-            const row = cards.find(
-              (card) =>
-                card.characterId === character.characterId &&
-                card.slot === slot,
-            );
-            return row ? keyOf(row) : null;
-          }),
-          // 固有スキルごとのセットしている段階と、取得した段階（小さい順）。行がなければ最初の段階だけ。
-          uniques: Array.from({ length: UNIQUE_SKILL_COUNT }, (_, index) => {
-            const row = uniques.find(
-              (unique) =>
-                unique.characterId === character.characterId &&
-                unique.uniqueIndex === index,
-            );
-            return {
-              index,
-              set: row?.setStage ?? 0,
-              acquired: stagesOf(row?.acquiredMask ?? bitOf(0)),
-            };
-          }),
-        })),
+    const state = {
+      characters: ownedInOrder(characters).map((character) => ({
+        id: character.characterId,
+        level: character.level,
+        cards: Array.from({ length: CARD_SLOT_COUNT }, (_, slot) => {
+          const row = cards.find(
+            (card) =>
+              card.characterId === character.characterId && card.slot === slot,
+          );
+          return row ? keyOf(row) : null;
+        }),
+        // 固有スキルごとのセットしている段階と、取得した段階（小さい順）。行がなければ最初の段階だけ。
+        uniques: Array.from({ length: UNIQUE_SKILL_COUNT }, (_, index) => {
+          const row = uniques.find(
+            (unique) =>
+              unique.characterId === character.characterId &&
+              unique.uniqueIndex === index,
+          );
+          return {
+            index,
+            set: row?.setStage ?? 0,
+            acquired: stagesOf(row?.acquiredMask ?? bitOf(0)),
+          };
+        }),
+      })),
       slots: Array.from({ length: PARTY_SLOT_COUNT }, (_, slot) => ({
         slot,
         characterId:
@@ -193,18 +200,26 @@ export function createPartyRepository(binding: D1Database) {
       runes: wallets[0]?.balance ?? 0,
       rules: { maxLevel: MAX_LEVEL, costPerLevel: COST_PER_LEVEL },
     };
+    return { granted: profiles.length > 0, state };
+  }
+
+  async function readState(userId: string) {
+    return (await read(userId)).state;
+  }
+
+  // 初回の付与を済ませた編成を読む。ふだんは1回の往復で済み、付与がまだのときだけ付与して読み直す。
+  async function loadState(userId: string, now: string) {
+    const { granted, state } = await read(userId);
+    if (granted) return state;
+    await grantStarter(userId, now);
+    return readState(userId);
   }
 
   // 初めて読むユーザーにだけ、仮のキャラ・カード・編成を1回だけ付与する。初めのカードは、品質C（×1.00）の
   // スキルを1枚ずつ持ち物に入れ、その1枚を枠に入れる。カードのIDは毎回作るため、同時に届いた要求で
-  // 二重に付与しないよう、印を書けた要求（grant_id）だけがカードを入れる。
-  async function ensureStarter(userId: string, now: string) {
-    const profile = await db
-      .select({ userId: partyProfiles.userId })
-      .from(partyProfiles)
-      .where(eq(partyProfiles.userId, userId))
-      .get();
-    if (profile) return;
+  // 二重に付与しないよう、印を書けた要求（grant_id）だけがカードを入れる。外した枠を戻してしまうため、
+  // 付与の印がない（granted でない）ときにだけ呼ぶ。
+  async function grantStarter(userId: string, now: string) {
     const grantId = crypto.randomUUID();
     const granted = and(
       eq(partyProfiles.userId, userId),
@@ -296,8 +311,7 @@ export function createPartyRepository(binding: D1Database) {
   }
 
   async function getState(userId: string, now: string) {
-    await ensureStarter(userId, now);
-    return readState(userId);
+    return loadState(userId, now);
   }
 
   // 枠にパーティにいないキャラを入れる。枠にいたキャラは外れる。
@@ -307,8 +321,7 @@ export function createPartyRepository(binding: D1Database) {
     characterId: CharacterId,
     now: string,
   ) {
-    await ensureStarter(userId, now);
-    const state = await readState(userId);
+    const state = await loadState(userId, now);
     if (!state.characters.some((character) => character.id === characterId)) {
       return { error: "character_not_owned" as const };
     }
@@ -331,8 +344,7 @@ export function createPartyRepository(binding: D1Database) {
 
   // 枠のキャラを外して空きにする。最後の1人は外さない。
   async function clearSlot(userId: string, slot: number, now: string) {
-    await ensureStarter(userId, now);
-    const state = await readState(userId);
+    const state = await loadState(userId, now);
     if (state.slots[slot].characterId === null) {
       return { change: "none" as const, ...state };
     }
@@ -363,8 +375,7 @@ export function createPartyRepository(binding: D1Database) {
     key: string,
     now: string,
   ) {
-    await ensureStarter(userId, now);
-    const state = await readState(userId);
+    const state = await loadState(userId, now);
     const character = state.characters.find(
       (entry) => entry.id === characterId,
     );
@@ -479,10 +490,9 @@ export function createPartyRepository(binding: D1Database) {
     request: LevelUp,
     now: string,
   ) {
-    await ensureStarter(userId, now);
+    const state = await loadState(userId, now);
     const replay = await findLevelUp(userId, request.requestId);
     if (replay) return recorded(userId, characterId, request, replay);
-    const state = await readState(userId);
     if (!state.characters.some((character) => character.id === characterId)) {
       return { error: "character_not_owned" as const };
     }
@@ -576,8 +586,7 @@ export function createPartyRepository(binding: D1Database) {
     stage: number,
     now: string,
   ) {
-    await ensureStarter(userId, now);
-    const state = await readState(userId);
+    const state = await loadState(userId, now);
     const found = findUnique(state, characterId, index);
     if ("error" in found) return found;
     if (!found.unique.acquired.includes(stage)) {
@@ -641,8 +650,7 @@ export function createPartyRepository(binding: D1Database) {
     stage: number,
     now: string,
   ) {
-    await ensureStarter(userId, now);
-    const state = await readState(userId);
+    const state = await loadState(userId, now);
     const found = findUnique(state, characterId, index);
     if ("error" in found) return found;
     if (found.unique.set === stage) {
@@ -699,6 +707,7 @@ export function createPartyRepository(binding: D1Database) {
 
   return {
     getState,
+    grantStarter,
     setSlot,
     clearSlot,
     setCard,

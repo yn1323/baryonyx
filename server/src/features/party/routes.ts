@@ -23,7 +23,7 @@ function errorStatus(error: string) {
 
 export function createPartyApi() {
   const api = new Hono<SessionEnv>();
-  api.use("/party", requireSession);
+  // Honoでは `/party/*` が `/party` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/party/*", requireSession);
 
   // 持っているキャラ・編成・カード・所持ルーン。初めて読むユーザーには仮の初期データを付与する。

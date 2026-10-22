@@ -15,7 +15,7 @@ function errorStatus(error: string) {
 
 export function createEquipmentApi() {
   const api = new Hono<SessionEnv>();
-  api.use("/equipment", requireSession);
+  // Honoでは `/equipment/*` が `/equipment` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/equipment/*", requireSession);
 
   // 持っている装備と、キャラごとの武器・防具。初めて読むユーザーには仮の初期データを付与する。
