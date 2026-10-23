@@ -2,7 +2,7 @@
 id: skill-ice-mirror
 type: visual-entity
 status: 候補
-updated: 2026-10-18
+updated: 2026-10-24
 name: アイスミラー
 category: skills
 silhouette: 六角形の氷の鏡
@@ -59,7 +59,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIceMirror.aseprite
 | 持続ターン | 反射1ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 澄んだ反射 | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
-| 演出の流れ | 氷の破片が味方の前へ集まって雪の結晶の鏡になり、透明な泡が味方を包む。光の帯が鏡を横切って反射する | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
+| 演出の流れ | 溜めは氷の前触れ（床を這う冷気）（[溜めの割り当て](../../features/skill-windups.md#技への割り当て仮設定)）。氷の破片が味方の前へ集まって雪の結晶の鏡になり、透明な泡が味方を包む。光の帯が鏡を横切って反射する | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
 ## 外見を表現する文章
 
@@ -117,3 +117,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardIceMirror.aseprite
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-20 | 倍率の上限を×1.6にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |
+| 2026-10-24 | 溜めを氷の前触れ（床を這う冷気）にした | ユーザーから溜めの割り当てを任された。平らな魔法陣の溜めを、属性や役割に合うものへ置き換えた | [溜めの割り当て](../../features/skill-windups.md#技への割り当て仮設定) |

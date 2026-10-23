@@ -2,7 +2,7 @@
 id: skill-thunder
 type: visual-entity
 status: 候補
-updated: 2026-10-20
+updated: 2026-10-24
 name: サンダー
 category: skills
 silhouette: 上から落ちる稲妻
@@ -59,7 +59,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunder.aseprite
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 激しい | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
-| 演出の流れ | 空が暗くなり、敵ごとに稲妻が形を変えて落ちる。床の焦げ跡、敵の周りを走る放電、最初の一撃だけ閃光 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
+| 演出の流れ | 溜めは雷の前触れ（帯電）（[溜めの割り当て](../../features/skill-windups.md#技への割り当て仮設定)）。空が暗くなり、敵ごとに稲妻が形を変えて落ちる。床の焦げ跡、敵の周りを走る放電、最初の一撃だけ閃光 | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
 ## 外見を表現する文章
 
@@ -119,3 +119,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardThunder.aseprite
 | 2026-10-04 | ステータスの呼び方を、ちから・まりょく・まもり・すばやさから物攻・属攻・物防・速度に改めた。説明文の数値は、使い手のLv100の値と仮のLvから出したステータスで計算し直した | ユーザーの指示（ステータスの項目を8つにした） | [ステータスの項目](../../features/party.md#ステータスの項目) |
 | 2026-10-19 | 効果に条件つきの威力の上乗せを加えた。ライトニングボルト・雷撃の矢で付けた麻痺とつながるようにした | ユーザーの依頼（今あるスキルの効果を深く考える） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-20 | 倍率の上限を×2.2にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |
+| 2026-10-24 | 溜めを雷の前触れ（帯電）にした | ユーザーから溜めの割り当てを任された。平らな魔法陣の溜めを、属性や役割に合うものへ置き換えた | [溜めの割り当て](../../features/skill-windups.md#技への割り当て仮設定) |

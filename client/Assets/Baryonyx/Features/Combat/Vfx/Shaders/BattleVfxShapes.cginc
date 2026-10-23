@@ -5,6 +5,7 @@
 // - seed：乱数の種（0〜1）。同じ形でも1枚ずつ模様を変える。
 // - k：進み具合（0〜1）。形の動き（広がる、流れる、描き込まれる）に使う。
 // - rem：残り（1で欠けていない、0で消えた）。削れ・途切れ・崩れに使う。
+// - bright：明るさの倍率（1が通常）。ふつうは描いたあとに全体へ掛けるが、雷雲は中の稲光の強さとして使う。
 #ifndef BARYONYX_BATTLE_VFX_SHAPES
 #define BARYONYX_BATTLE_VFX_SHAPES
 
@@ -18,6 +19,7 @@ struct ShapeIn
     float seed;
     float k;
     float rem;
+    float bright;
     half3 tint;
 };
 
@@ -432,6 +434,111 @@ half4 ShapeLightning(ShapeIn s)
     return half4(col * BoardFade(s.p), 1);
 }
 
+// Where a real lightning channel runs at height y01 (0 at its foot, 1 at the top of the board),
+// in the square units of the lightning board: a slow wander, sharp turns every ninth of the height
+// and a fine tortuous jitter, all drawn in to the foot so it strikes its target.
+float RichBoltX(float y01, float seed)
+{
+    float f = y01 * 9.0;
+    float i = floor(f);
+    float zig = lerp(Hash1(i, seed), Hash1(i + 1, seed), frac(f)) - 0.5;
+    float wander = Noise(float3(y01 * 1.7, seed * 13.0, 3.1)) - 0.5;
+    float fine = Noise(float3(y01 * 46.0, seed * 7.0, 5.3)) - 0.5;
+    return (zig * 0.3 + wander * 0.5 + fine * 0.03) * smoothstep(0.0, 0.3, y01);
+}
+
+// How far q is from the channel of RichBoltX, measured across its slope.
+float RichBoltDistance(float2 q, float y01, float span, float seed)
+{
+    float x0 = RichBoltX(y01, seed);
+    float x1 = RichBoltX(y01 + 0.004, seed);
+    float slope = (x1 - x0) / (0.004 * span);
+    return abs(q.x - x0) / sqrt(1 + slope * slope);
+}
+
+// One layer of a cloud-to-ground lightning flash as a real one looks, from the cloud at the top of
+// the board down to its foot (at 9% of the height; the board 0.62 times as wide as it is tall). A
+// flash is drawn as four boards with the same seed, so they share one channel, each its own layer
+// with its own timing and cover from the caller: part 1, the core, a thin white-hot line on the
+// main channel only; part 2, the channel, a narrower bright body in the tint with the branches
+// forked off it (and, before the stroke, the stepped leader); part 3, the halo, a wide soft glow of
+// the air round the channel and its branches; part 4, the afterimage, a thin trace of the channel
+// that is left in the eye and breaks up as it is eaten. The progress k tells the stage: up to 0.5
+// the stepped leader comes down in six steps (only the channel and the halo draw it, faint, its
+// tips brightest); past 0.5 it has struck, and the branches dim within a fifth of the rest, since
+// the strokes that follow light the same main channel again. Light only, for the premultiplied
+// blend (alpha 0).
+half4 ShapeRichLightning(ShapeIn s, float part)
+{
+    float2 q = float2(s.p.x * 0.62, s.p.y);
+    const float foot = -0.82;
+    const float top = 0.92;
+    const float span = top - foot;
+    float y01 = (q.y - foot) / span;
+    float aa = max(s.aa * 0.62, 0.0015);
+    float leading = step(s.k, 0.5);
+    // The leader's front, stepping down: everything above it has formed.
+    float front = 1 - floor(saturate(s.k / 0.5) * 6.0 + 1.0) / 6.0;
+    float age = saturate((s.k - 0.5) / 0.5);
+    float formed = leading > 0.5 ? smoothstep(front - 0.01, front + 0.01, y01) : 1;
+
+    // The main channel, uneven along it and brighter low down.
+    float d = RichBoltDistance(q, y01, span, s.seed);
+    d = y01 < 0 ? length(q - float2(0, foot)) : d;
+    float along = 0.7 + 0.3 * Noise(float3(y01 * 7.0, s.seed * 3.0, 1.1)) + 0.25 * (1 - y01);
+
+    // The branches, forked off the channel, reaching down and out and fading to their tips: the
+    // distance to the nearest and how strongly it is lit there.
+    float branchCore = 0;
+    float branchGlow = 0;
+    [unroll]
+    for (int b = 0; b < 7; b++)
+    {
+        float start = lerp(0.3, 0.95, Hash1(b + 20, s.seed));
+        float side = Hash1(b + 30, s.seed) < 0.5 ? -1 : 1;
+        float len = lerp(0.12, 0.4, Hash1(b + 40, s.seed));
+        float down = start - y01;
+        float xb = RichBoltX(start, s.seed) + side * down * span * lerp(0.35, 0.8, Hash1(b + 50, s.seed))
+            + (Noise(float3(down * 30.0, b * 3.7, s.seed * 11.0)) - 0.5) * 0.05 * saturate(down * 8.0);
+        float db = abs(q.x - xb) * 0.8;
+        float on = step(0, down) * (1 - smoothstep(len * 0.5, len, down)) * (1 - down / len);
+        branchCore += Gauss(db, max(aa, 0.005)) * on;
+        branchGlow += Gauss(db, 0.05) * on;
+    }
+    float branchesLit = lerp(1 - smoothstep(0.0, 0.2, age), 0.5, leading);
+    // The leader's tips glow brightest as they feel their way down.
+    float tip = leading * Gauss(y01 - front, 0.02) * Gauss(d, 0.03);
+
+    half3 col;
+    if (part < 1.5)
+    {
+        // The core: white-hot, only once it has struck.
+        float core = Gauss(d, max(aa, 0.012 * (1 - 0.5 * age))) * along * (1 - leading);
+        col = half3(1, 1, 1) * core * 2.0;
+    }
+    else if (part < 2.5)
+    {
+        // The channel and its branches, white toward the middle and the tint at the sides.
+        float body = Gauss(d, max(aa, 0.022)) * along * lerp(1.0, 0.35, leading);
+        float branches = branchCore * branchesLit;
+        col = lerp(s.tint, half3(1, 1, 1), lerp(0.75, 0.3, leading)) * (body + branches * 0.9 + tip * 0.8);
+    }
+    else if (part < 3.5)
+    {
+        // The halo: the air lit round the channel and, more faintly, round its branches.
+        float halo = (Gauss(d, 0.07) * 0.5 + Gauss(d, 0.2) * 0.18) * along;
+        col = s.tint * (halo * lerp(1.0, 0.3, leading) + branchGlow * branchesLit * 0.25);
+    }
+    else
+    {
+        // The afterimage: a thin trace of the main channel, broken as it is eaten.
+        float trace = Gauss(d, max(aa, 0.009)) * 0.8 + Gauss(d, 0.03) * 0.25;
+        col = s.tint * trace * along * (1 - leading);
+    }
+    float keep = Keep(Hash1(floor(y01 * 14.0), s.seed + 0.37) * 0.6 + Noise(float3(q * 9.0, s.seed)) * 0.4, s.rem, 0.08);
+    return half4(col * formed * keep * BoardFade(s.p), 0);
+}
+
 // A pillar of light rising from the feet (at 10% of the height): a soft column of rising
 // streaks, a bright middle, motes drifting up inside and a glow on the floor at its foot.
 half4 ShapePillar(ShapeIn s)
@@ -552,6 +659,151 @@ half4 ShapeMagicCircle(ShapeIn s)
     float light = (min(lines, 1.5) + glow) * drawn * keep;
     half3 col = s.tint * light + saturate(lines - 0.8) * 0.3 * drawn * keep;
     return half4(col * BoardFade(s.p), 1);
+}
+
+// --- A layered magic circle, burned into the floor ----------------------------------------
+// Its parts are drawn on boards of their own, so each turns its own way and keeps its own time
+// (the outer band, the band of glyphs, the figure inside, and the veil of heat rising from it).
+// The lines glow as hot metal does: dark red when cool, then orange and yellow, with a thin
+// white-hot core that only shows, and widens, as they heat. The heat (0 to 1) is taken from the
+// brightness above 1 (twice it, from 1 to 1.5), as a hotter line is a brighter one. The parts add their light (alpha 0)
+// on the premultiplied material, which thins it with the board.
+
+float CircleHeat(ShapeIn s)
+{
+    return saturate((s.bright - 1) * 2);
+}
+
+// One hot line at a distance of 0, w wide: x its body and halo, y its white-hot core.
+float2 HotStroke(float d, float w, float heat)
+{
+    return float2(
+        Gauss(d, w) + Gauss(d, w * 4.0) * 0.15,
+        Gauss(d, w * lerp(0.2, 0.55, heat)) * smoothstep(0.2, 1.0, heat));
+}
+
+// The colour of hot lines (from HotStroke), glowing unevenly as heated metal does.
+half3 HotShade(float2 lines, float heat, half3 tint, float uneven)
+{
+    half3 hot = lerp(half3(1, 0.72, 0.32), half3(1, 0.97, 0.88), heat);
+    return (tint * min(lines.x, 1.6) + hot * min(lines.y, 1.2)) * uneven;
+}
+
+// How far round a point is (0 to 1), and whether the part drawn in round to k covers it.
+float CircleDrawn(float around, float k)
+{
+    return 1 - smoothstep(k - 0.02, k, around);
+}
+
+// The outer band: two rings, ticks between and small rings just outside. It is drawn in around
+// the circle by k, hotter where it is being drawn, and breaks up along its length as it is
+// eaten away.
+half4 ShapeCircleOuter(ShapeIn s)
+{
+    float heat = CircleHeat(s);
+    float r = s.r;
+    float w = max(0.012, s.aa * 1.2);
+    float around = atan2(s.p.y, s.p.x) / Tau + 0.5;
+    float2 lines = HotStroke(r - 0.94, w * 1.3, heat) + HotStroke(r - 0.86, w * 0.8, heat);
+    float tickDist = abs(frac(around * 48 + 0.5) - 0.5) / 48 * Tau * r;
+    lines += HotStroke(tickDist, w * 0.9, heat) * step(0.865, r) * step(r, 0.935);
+    float a = (round(around * 16) / 16 - 0.5) * Tau;
+    lines += HotStroke(length(s.p - float2(cos(a), sin(a)) * 0.975) - 0.014, w * 0.7, heat);
+
+    float lead = Gauss(around - s.k, 0.03) * (1 - step(0.999, s.k));
+    float local = saturate(heat + lead);
+    lines.y += lines.x * lead * 0.8;
+    float uneven = 0.7 + 0.6 * Noise(float3(s.dir * 3.0, s.seed * 7.0));
+    float keep = Keep(Noise(float3(s.dir * 4.0, s.seed * 3.0 + 1.3)), s.rem, 0.08);
+    half3 col = HotShade(lines, local, s.tint, uneven) * CircleDrawn(around, s.k) * keep;
+    return half4(col * BoardFade(s.p), 0);
+}
+
+// The band of glyphs between two thin rings: the glyphs light one by one as k goes round, each
+// flaring as it lights.
+half4 ShapeCircleGlyphs(ShapeIn s)
+{
+    float heat = CircleHeat(s);
+    float r = s.r;
+    float w = max(0.01, s.aa * 1.2);
+    float around = atan2(s.p.y, s.p.x) / Tau + 0.5;
+    float drawn = CircleDrawn(around, s.k);
+    float2 lines = (HotStroke(r - 0.8, w * 0.7, heat) + HotStroke(r - 0.665, w * 0.7, heat)) * drawn;
+
+    float cu = around * 20;
+    float ci = floor(cu);
+    float2 g = float2((frac(cu) - 0.5) * 2.0, (r - 0.732) / 0.05);
+    float glyphHash = Hash1(ci, 4.2);
+    float gw = max(0.13, s.aa / 0.05);
+    float glyph = step(0.3, glyphHash) * Gauss(g.x, gw) * step(abs(g.y), 0.8);
+    glyph += step(0.55, frac(glyphHash * 7.3)) * Gauss(g.y - (frac(glyphHash * 3.1) - 0.5), gw)
+        * step(abs(g.x), 0.6);
+    glyph += step(0.6, frac(glyphHash * 5.7)) * Gauss(g.x - g.y * 0.6, gw) * step(length(g), 0.85);
+    glyph *= step(abs(g.y), 1.0) * step(abs(g.x), 0.75);
+    float order = (ci + 0.5) / 20;
+    float lit = step(order, s.k);
+    float flare = 1 + 1.5 * saturate(1 - (s.k - order) * 12);
+    lines += float2(glyph * flare, glyph * glyph * glyph * smoothstep(0.2, 1.0, heat)) * lit;
+
+    float uneven = 0.75 + 0.5 * Noise(float3(s.dir * 5.0, s.seed * 5.0));
+    float keep = Keep(Noise(float3(s.dir * 6.0, s.seed * 3.0 + 4.1)), s.rem, 0.08);
+    half3 col = HotShade(lines, heat, s.tint, uneven) * keep;
+    return half4(col * BoardFade(s.p), 0);
+}
+
+// The figure inside: a hexagram with small rings at its points, two rings and a small turned
+// square in the middle, drawn out from the middle by k.
+half4 ShapeCircleInner(ShapeIn s)
+{
+    float heat = CircleHeat(s);
+    float2 p = s.p;
+    float r = s.r;
+    float w = max(0.011, s.aa * 1.2);
+    float2 lines = HotStroke(r - 0.6, w, heat) + HotStroke(r - 0.2, w * 0.8, heat);
+    lines += HotStroke(abs(TriangleDistance(p, 0.52)), w, heat)
+        + HotStroke(abs(TriangleDistance(-p, 0.52)), w, heat);
+    [unroll]
+    for (int i = 0; i < 6; i++)
+    {
+        float a = i * 1.0471976 + 1.5707963;
+        lines += HotStroke(length(p - float2(cos(a), sin(a)) * 0.6) - 0.05, w * 0.8, heat);
+    }
+    float2 q = abs(Rotate(p, 0.785398));
+    lines += HotStroke(max(q.x, q.y) - 0.09, w * 0.8, heat);
+
+    float drawn = 1 - smoothstep(s.k * 0.7 - 0.05, s.k * 0.7, r);
+    float uneven = 0.75 + 0.5 * Noise(float3(p * 3.0, s.seed * 9.0));
+    float keep = Keep(Noise(float3(p * 4.0, s.seed * 3.0 + 7.7)), s.rem, 0.08);
+    half3 col = HotShade(lines, heat, s.tint, uneven) * drawn * keep;
+    return half4(col * BoardFade(s.p), 0);
+}
+
+// The veil of heat rising from the circle's rim, on a standing board as wide as the rim with its
+// foot at the bottom: it stands on the rim's front curve (the circle lies flat, so that curve
+// sags to the bottom edge in the middle and reaches 0.18 of the board up at the sides), is
+// brightest at its two sides, where the eye looks through more of it, and rises in wavering
+// streaks that thin out as they go up. k moves the streaks up; it is eaten away from its foot.
+half4 ShapeCircleVeil(ShapeIn s)
+{
+    float heat = CircleHeat(s);
+    float y = saturate((s.uv.y - 0.04) / 0.96);
+    float x = s.p.x + (Noise(float3(y * 3.0 - s.k * 2.0, s.seed * 4.0, 0.7)) - 0.5) * 0.14;
+    float side = saturate(1 - x * x);
+    float rise = y - 0.18 * (1 - sqrt(side));
+    float streak = Noise(float3(x * 9.0, y * 1.6 - s.k * 3.0, s.seed * 5.0));
+    streak = 0.3 + 1.1 * smoothstep(0.35, 0.85, streak);
+    // Brightest a little inside its sides, so they do not stand as straight lines.
+    float limb = 0.35 + 0.65 * (1 - side) * (1 - side);
+    float body = smoothstep(0.0, 0.05, rise) * exp(-rise * 2.4)
+        * (1 - smoothstep(0.5, 0.95, rise + (streak - 0.6) * 0.25));
+    float edge = 1 - smoothstep(0.7, 1.0, abs(x) + (streak - 0.6) * 0.1);
+    // Nothing below the rim it stands on.
+    float stand = smoothstep(-0.015, 0.005, rise) * edge;
+    float foot = Gauss(rise - 0.02, 0.04) * (0.4 + 0.6 * heat) * stand;
+    float keep = Keep(y * 0.6 + streak * 0.3, s.rem, 0.1);
+    float light = (body * limb * streak * stand + foot * 0.6) * keep;
+    half3 col = s.tint * light + foot * heat * keep * half3(1, 0.9, 0.7) * 0.5;
+    return half4(col, 0);
 }
 
 // A streak of a spark flying along +y: a narrow tail and a hot head.
@@ -969,6 +1221,131 @@ half4 ShapeRichSmoke(ShapeIn s)
     return half4(col * keep * fade, a * fade);
 }
 
+// A billow of a thundercloud (cumulonimbus) as real ones look from below, on a square board: a
+// flat, dark base at 29% of the height with ragged scud hanging under it, and a cauliflower top of
+// round bulges grown on bulges, each lit from above and shadowed under it, so the creases between
+// them are dark, with a pale lining where the sky light catches the top edge. Its gas churns with
+// the progress (k). It is gas: the sky shows through its thin parts and soft, wispy edge, and it
+// covers more where it is deep and dense, never wholly. The brightness (s.bright, 1
+// at rest) is the lightning inside it: above 1 the billow lights up from within around a spot of
+// its own, most where the gas is fine, and its edge glows. For the premultiplied blend; the caller
+// must not scale it by the brightness again.
+half4 ShapeStormCloud(ShapeIn s)
+{
+    float2 p = s.p;
+    Gas g = GasAt(p * 1.6 + s.seed * 5.0, s.seed * 13.0 + s.k * 0.6);
+
+    // The flat base, a little ragged, under a low dark body with rounded ends.
+    float baseY = -0.42 + (g.density - 0.5) * 0.08;
+    float2 slab = abs(p - float2(0, baseY + 0.2)) - float2(0.42, 0.0);
+    float dist = length(max(slab, 0)) + min(max(slab.x, slab.y), 0) - 0.2;
+    dist = max(dist, baseY - p.y);
+    float lit = 0.12 + 0.25 * saturate((p.y - baseY) * 2.0);
+    [unroll]
+    for (int i = 0; i < 4; i++)
+    {
+        float x = lerp(-0.5, 0.5, i / 3.0) + (Hash1(i, s.seed) - 0.5) * 0.16;
+        float r = lerp(0.22, 0.34, Hash1(i + 10, s.seed));
+        float y = -0.2 + r + 0.25 * (1 - abs(x)) * Hash1(i + 20, s.seed);
+        [unroll]
+        for (int j = 0; j < 3; j++)
+        {
+            // The bulge, and two smaller ones grown on its upper side.
+            float a = j == 0 ? 0 : lerp(0.35, 1.25, Hash1(i * 3 + j + 60, s.seed)) * (j == 1 ? 1 : -1);
+            float rr = j == 0 ? r : r * lerp(0.45, 0.62, Hash1(i * 3 + j + 70, s.seed));
+            float2 c = float2(x, y) + (j == 0 ? 0 : float2(sin(a), cos(a)) * (r - rr * 0.35));
+            float di = length(p - c) - rr;
+            // A smooth union, so the bulges grow out of each other.
+            float h = saturate(0.5 + 0.5 * (dist - di) / 0.08);
+            dist = lerp(dist, di, h) - 0.08 * h * (1 - h);
+            // Each bulge is lit on its top and dark under it; the ones in front hide the creases.
+            float inside = 1 - smoothstep(rr * 0.7, rr * 1.02, length(p - c));
+            float up = saturate(0.45 + 0.75 * (p.y - c.y) / rr);
+            lit = max(lit, inside * (0.15 + 0.85 * up * up));
+        }
+    }
+    float edge = dist + (0.5 - g.density) * 0.16 + (0.5 - g.fine) * 0.06;
+    float under = saturate((baseY + 0.06 - p.y) * 6.0);
+    float body = 1 - smoothstep(-0.14 - 0.1 * under, 0.03, edge);
+    // How deep inside the silhouette, where the eye passes through the most gas.
+    float depth = saturate(-edge * 3.0);
+    float lining = smoothstep(-0.07, 0.0, edge) * body * saturate(p.y * 1.5 + 0.2);
+
+    float shade = lit * (0.75 + 0.5 * g.density) * (0.8 + 0.4 * g.fine);
+    half3 dark = s.tint * s.tint * 0.35;
+    half3 col = lerp(dark, s.tint, saturate(shade * 1.6));
+    col = lerp(col, lerp(s.tint, 1, 0.5), saturate(shade * 1.6 - 1) * 0.8 + lining * 0.35);
+    // Dark lanes where the gas is thin (washed out where lightning lights it from within).
+    col *= 1 - 0.35 * smoothstep(0.5, 0.75, 1 - g.fine) * saturate(1.5 - s.bright * 0.5);
+
+    // The lightning inside, around a spot of its own in the middle, seen through the gas.
+    float flash = max(0, s.bright - 1);
+    float2 spot = float2((Hash1(7, s.seed) - 0.5) * 0.6, -0.1 + Hash1(8, s.seed) * 0.3);
+    float hot = exp(-dot(p - spot, p - spot) * 3.0);
+    float through = saturate(0.45 + 1.0 * g.fine * g.density + 0.6 * g.filament - 0.25 * (1 - lit));
+    float glowing = (flash * body * (0.12 + hot * hot) * through + flash * lining * 0.35) * 0.6;
+    half3 inner = half3(0.76, 0.72, 1.0);
+
+    float keep = Keep(g.density * 0.6 + lit * 0.4, s.rem, 0.08);
+    half a = body * saturate(0.3 + 0.6 * depth + 0.7 * (g.density - 0.35)) * (0.75 + 0.4 * g.filament) * keep;
+    a = min(a, 0.86);
+    float fade = BoardFade(p);
+    return half4((col * a + inner * glowing * keep) * fade, a * fade);
+}
+
+// The dark mass of a thundercloud, the layer behind its billows: a broad, soft body over a flat
+// base, darkest low down, its density patchy and its outline torn by the gas so it is no smooth
+// round; the sky shows through it everywhere, a little. Lightning inside (s.bright above 1) only
+// tinges it, as the billows in front catch most of the light. For the premultiplied blend.
+half4 ShapeStormMass(ShapeIn s)
+{
+    float2 p = s.p;
+    Gas g = GasAt(p * float2(1.1, 1.8) + s.seed * 9.0, s.seed * 7.0 + s.k * 0.4);
+    float baseY = -0.35 + (g.density - 0.5) * 0.1;
+    // A wide dome over the base, its outline broken by the gas.
+    float dome = length(float2(p.x * 0.95, max(0, p.y - baseY) * 1.5)) - 0.78;
+    float edge = max(dome, baseY - p.y) + (0.5 - g.density) * 0.4 + (0.5 - g.fine) * 0.12;
+    float body = 1 - smoothstep(-0.25, 0.05, edge);
+    float low = saturate(1 - (p.y - baseY) * 1.6);
+    half3 col = lerp(s.tint * 0.7, s.tint * s.tint * 0.3, low) * (0.8 + 0.4 * g.fine);
+    float flash = max(0, s.bright - 1);
+    half a = body * saturate(0.35 + 0.6 * g.density + 0.2 * low) * 0.85 * Keep(g.density, s.rem, 0.1);
+    float fade = BoardFade(p);
+    half3 light = half3(0.76, 0.72, 1.0) * flash * 0.12 * body * g.density;
+    return half4((col * a + light) * fade, a * fade);
+}
+
+// Scud: torn, ragged shreds of cloud hanging under a thundercloud's base and blown along faster
+// than it, the front layer of the cloud. Thin and broken, mostly holes, pale grey where they catch
+// the light. For the premultiplied blend.
+half4 ShapeStormScud(ShapeIn s)
+{
+    float2 p = s.p;
+    Gas g = GasAt(p * float2(1.3, 2.6) + s.seed * 11.0, s.seed * 5.0 + s.k * 0.9);
+    float shred = smoothstep(0.42, 0.62, g.density + g.filament * 0.25) * (1 - smoothstep(0.35, 0.95, length(p * float2(1.0, 1.7))));
+    float lit = saturate(0.5 + p.y * 0.8);
+    half3 col = lerp(s.tint * 0.6, lerp(s.tint, 1, 0.35), lit * g.fine);
+    float flash = max(0, s.bright - 1);
+    half a = shred * (0.45 + 0.4 * g.fine) * 0.5 * Keep(g.density, s.rem, 0.1);
+    float fade = BoardFade(p);
+    return half4((col * a + half3(0.76, 0.72, 1.0) * flash * 0.2 * shred) * fade, a * fade);
+}
+
+// The light of lightning inside a thundercloud, seen through its gas: a glow in the tint that is
+// brightest at its middle and broken up by the gas into bright and dark patches and filaments, so
+// it lights the cloud from within rather than lying on it as a round blot; s.bright is how bright
+// it is now (it is not scaled again). Light only, for the premultiplied blend (alpha 0).
+half4 ShapeStormGlow(ShapeIn s)
+{
+    float2 p = s.p;
+    Gas g = GasAt(p * 1.4 + s.seed * 3.0, s.seed * 17.0 + s.k * 0.5);
+    float spread = exp(-dot(p, p) * 3.2) * (1 - smoothstep(0.75, 1.0, s.r));
+    float through = saturate(0.2 + 1.3 * g.fine * g.density + 0.9 * g.filament);
+    float light = spread * through * s.bright;
+    half3 col = lerp(s.tint, half3(1, 1, 1), saturate(light * 0.4)) * light;
+    return half4(col * BoardFade(p), 0);
+}
+
 // A crack in stone, earth or armour, as a real one looks: dark, jagged lines branching out from
 // the middle that split open as it runs (k), wider and darker near the middle, their lips catching
 // the light in the tint, with grit scattered along them; it is worn away from its tips. It shows
@@ -1001,6 +1378,137 @@ half4 ShapeFissure(ShapeIn s)
     float fade = BoardFade(s.p);
     half a = saturate(dark * 0.85 + grit * 0.5) * keep * fade;
     half3 col = lerp(s.tint, 1, 0.4) * saturate(lip) * 0.5 * keep * fade + s.tint * 0.05 * a;
+    return half4(col, a);
+}
+
+// --- The ground cracked round a point (ShapeRupture) -------------------------------------------
+// The floor is broken into pieces round the point it is stamped on, as stone and dry earth break:
+// the cracks are the borders of Voronoi cells laid out in log-polar coordinates, so they run out
+// from the point and are joined by arcs, the pieces small near it and larger further out. The
+// map is conformal (the same scale both ways, K / r), so a distance worked out in it is a distance
+// on the floor times K / r.
+
+// How many pieces go round the point, and how many times the ground snaps further.
+static const float RuptureAround = 9.0;
+static const int RuptureSnaps = 6;
+
+// A cell's seed point in the log-polar grid, wrapped round the point (0.1 to 0.9 of the cell).
+float2 RuptureSeed(float2 cell, float seed)
+{
+    cell.y = fmod(fmod(cell.y, RuptureAround) + RuptureAround, RuptureAround);
+    return 0.1 + 0.8 * float2(Hash(float3(cell, seed)), Hash(float3(cell, seed + 1.7)));
+}
+
+// The nearest crack to a point q of the log-polar grid: x the distance to it (in the grid), y how
+// far from the middle it is (the radius of its midpoint), z a number of its own (0 to 1, plus 2
+// when it runs round the middle rather than out from it), w a number of the piece the point is on.
+float4 RuptureEdge(float2 q, float seed)
+{
+    float2 ip = floor(q);
+    float2 fp = frac(q);
+    float2 mg = 0;
+    float2 mr = 0;
+    float md = 8;
+    [unroll]
+    for (int j = -1; j <= 1; j++)
+    [unroll]
+    for (int i = -1; i <= 1; i++)
+    {
+        float2 g = float2(i, j);
+        float2 r = g + RuptureSeed(ip + g, seed) - fp;
+        float d = dot(r, r);
+        if (d < md)
+        {
+            md = d;
+            mr = r;
+            mg = g;
+        }
+    }
+    float piece = Hash(float3(fmod(fmod(ip.y + mg.y, RuptureAround) + RuptureAround, RuptureAround), ip.x + mg.x, seed + 5.3));
+    md = 8;
+    float2 mid = 0;
+    float own = 0;
+    [unroll]
+    for (int y = -2; y <= 2; y++)
+    [unroll]
+    for (int x = -2; x <= 2; x++)
+    {
+        float2 g = mg + float2(x, y);
+        float2 r = g + RuptureSeed(ip + g, seed) - fp;
+        float2 between = r - mr;
+        if (dot(between, between) > 1e-5)
+        {
+            float e = dot(0.5 * (mr + r), normalize(between));
+            if (e < md)
+            {
+                md = e;
+                mid = 0.5 * (mr + r);
+                // An arc when the pieces it parts lie one outside the other.
+                float arc = step(0.7, abs(normalize(between).x));
+                own = Hash(float3(ip + g + ip + mg, seed + 9.1)) + arc * 2;
+            }
+        }
+    }
+    float midR = exp((q.x + mid.x) / (RuptureAround / Tau));
+    return float4(md, midR, own, piece);
+}
+
+// How far out the ground has cracked after n snaps (0 to 1 of the board's radius).
+float RuptureReachAfter(float n)
+{
+    return n <= 0 ? 0 : 0.1 + 0.8 * pow(saturate(n / RuptureSnaps), 1.2);
+}
+
+// The darkness of the cracks at board point p, and of the one just broken: x every crack the
+// ground has broken so far, y those the last snap broke; z a number of the piece p is on.
+float3 RuptureCracks(float2 p, float reach, float before, float aa, float seed)
+{
+    const float K = RuptureAround / Tau;
+    float r = max(length(p), 1e-3);
+    float2 q = float2(log(r) * K, atan2(p.y, p.x) * K);
+    float4 e = RuptureEdge(q, seed);
+    float d = e.x * r / K;
+    float own = frac(e.z);
+    bool arc = e.z >= 2;
+    // Hairline, measured in pixels (aa) so it stays one to two pixels however the floor lies:
+    // wider near the middle and by a number of its own, fading out to its tips. Arcs are
+    // thinner, and half of them never break, so the pieces do not ring the middle like a web.
+    float w = aa * 1.3 * lerp(2.0, 1.0, saturate(r * 2.5)) * (0.75 + 0.5 * own) * (arc ? 0.8 : 1.0);
+    float taper = 1 - smoothstep(0.6, 0.95, e.y);
+    float slit = (1 - smoothstep(w * 0.5, w * 1.2, d)) * taper * step(0.035, r)
+        * (arc ? step(0.5, own) : 1.0);
+    float shown = step(e.y, reach);
+    float fresh = shown * step(before, e.y);
+    return float3(slit * shown, slit * fresh, e.w);
+}
+
+// The ground cracked round the point it is stamped on, seen from above (laid onto the floor by the
+// caller, not turned, so up the board is away from the camera): hairline cracks dark as slits,
+// their far side (up the board) lit where the far wall of the slit faces the camera and catches
+// the light from above, the stamped point crushed dark; it cracks outward in sudden snaps (ぴき),
+// each reaching at once a step further out, the cracks a snap has just broken catching the light
+// for a moment; at the stamp the pieces near the point tip a little, some lighter, some darker. k
+// counts the snaps so far (0 to RuptureSnaps), its fraction the time since the last (0 just after
+// it). It closes up from the outside as it is eaten away. It shows by its shadow, not as light.
+half4 ShapeRupture(ShapeIn s)
+{
+    float snaps = floor(s.k);
+    float since = frac(s.k);
+    // Worn away from the outside in: what it reaches shrinks back to the middle.
+    float reach = RuptureReachAfter(snaps) * saturate(s.rem * 1.2);
+    float before = RuptureReachAfter(snaps - 1);
+    float3 here = RuptureCracks(s.p, reach, before, s.aa, s.seed);
+    // The far wall: a crack just below a point (down the board, nearer the camera) lights it.
+    float3 below = RuptureCracks(s.p - float2(0, s.aa * 1.6), reach, before, s.aa, s.seed);
+    float wall = saturate(below.x - here.x);
+    float crushed = Gauss(length(s.p), 0.04) * step(0.5, snaps);
+    float stamped = step(RuptureSnaps - 0.5, snaps);
+    float tipped = stamped * (here.z - 0.5) * 0.24 * (1 - smoothstep(0.15, 0.45, length(s.p)))
+        * step(length(s.p), reach);
+    float fade = BoardFade(s.p);
+    half a = saturate(here.x * 0.95 + crushed * 0.8 + max(-tipped, 0)) * fade;
+    half3 col = s.tint * (wall * 0.55 + max(tipped, 0)) * fade
+        + s.tint * 1.2 * here.y * (1 - since) * (1 - since) * 0.5 * fade;
     return half4(col, a);
 }
 

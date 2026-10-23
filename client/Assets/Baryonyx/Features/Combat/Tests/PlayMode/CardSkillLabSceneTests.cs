@@ -187,7 +187,7 @@ namespace Baryonyx.Tests.PlayMode
             string[] Ids(IEnumerable<CardSkill> skills) =>
                 skills.Select(skill => skill.Id).ToArray();
             Assert.That(lab.Evolve, Is.False, "Evolution starts turned off.");
-            Assert.That(lab.EvolveLabel.text, Is.EqualTo("進化：切"));
+            Assert.That(lab.EvolveLabel.text, Is.EqualTo("覚醒：切"));
             AssertReachable(lab.EvolveButton);
             SceneTests.AssertTouchSize(lab.EvolveButton.transform);
 
@@ -209,15 +209,15 @@ namespace Baryonyx.Tests.PlayMode
             lab.Play(first);
             yield return null;
             Assert.That(lab.Vfx.Evolving, Is.False);
-            Assert.That(lab.Detail.text, Does.Not.Contain("進化して使う"));
+            Assert.That(lab.Detail.text, Does.Not.Contain("覚醒して使う"));
 
             // Turned on, the card played rises and cracks, and the stages it can become are
             // offered under it, with nothing picked yet.
             lab.EvolveButton.onClick.Invoke();
             Assert.That(lab.Evolve, Is.True);
-            Assert.That(lab.EvolveLabel.text, Is.EqualTo("進化：入"));
+            Assert.That(lab.EvolveLabel.text, Is.EqualTo("覚醒：入"));
             Assert.That(PlayerPrefs.GetInt(CardSkillLab.EvolveKey), Is.EqualTo(1));
-            Assert.That(lab.Detail.text, Does.Contain("進化して使う"));
+            Assert.That(lab.Detail.text, Does.Contain("覚醒して使う"));
             yield return SceneTests.WaitUntil(
                 () => lab.Vfx.Evolving,
                 message: "The card played rises to evolve."
@@ -307,6 +307,84 @@ namespace Baryonyx.Tests.PlayMode
                 () => card.Name.text == last,
                 message: "It shatters into its one stage."
             );
+        }
+
+        // 溜めのタブには、スキルが最初に出す溜めが全種類並び、押した溜めだけを当てる相手なしで再生する。
+        [UnityTest]
+        public IEnumerator EveryWindUpIsListedOnItsTabAndPlaysOnItsOwn()
+        {
+            CardSkillLab lab = null;
+            yield return SceneTests.Load<CardSkillLab>(
+                ScenePath,
+                found =>
+                    found.SkillButtons.Count > 0
+                    && (found.Transition == null || !found.Transition.IsPlaying),
+                found => lab = found
+            );
+            var windUps = CardSkillLab.WindUps;
+            Assert.That(
+                lab.WindUpButtons,
+                Has.Count.EqualTo(windUps.Count),
+                "Every wind-up is listed."
+            );
+            Assert.That(lab.TabContents, Has.Length.EqualTo(3));
+            foreach (var button in lab.WindUpButtons)
+                Assert.That(button.transform.parent, Is.SameAs(lab.TabContents[2]));
+
+            lab.ListButton.onClick.Invoke();
+            lab.Tabs[2].Button.onClick.Invoke();
+            Assert.That(lab.Tab, Is.EqualTo(2));
+            Assert.That(lab.Scroll.content, Is.SameAs(lab.TabContents[2]));
+            yield return null;
+            int fire = windUps.ToList().IndexOf(BattleWindUp.FireSpell);
+            var picked = lab.WindUpButtons[fire];
+            AssertReachable(picked);
+            SceneTests.AssertTouchSize(picked.transform);
+            Assert.That(
+                picked.GetComponentInChildren<TMPro.TMP_Text>().text,
+                Is.EqualTo(CardSkillLab.WindUpName(BattleWindUp.FireSpell))
+            );
+            picked.onClick.Invoke();
+            Assert.That(lab.PickerOpen, Is.False, "The list closes on a pick.");
+            Assert.That(lab.IsWindUp, Is.True);
+            Assert.That(lab.CurrentWindUp, Is.EqualTo(BattleWindUp.FireSpell));
+            Assert.That(lab.Current, Is.Null);
+            Assert.That(lab.Index, Is.EqualTo(CardSkillLab.Skills.Count + fire));
+            Assert.That(lab.Caption.text, Does.Contain("炎の溜め"));
+            Assert.That(lab.Detail.text, Does.Contain("トーマ"));
+            Assert.That(
+                PlayerPrefs.GetString(CardSkillLab.SkillKey),
+                Is.EqualTo("WindUp.FireSpell")
+            );
+            yield return SceneTests.WaitUntil(
+                () => lab.Vfx.LiveCount > 0,
+                message: "The wind-up's circle shows."
+            );
+
+            // Every wind-up draws something of its own as soon as it is played.
+            for (int i = 0; i < windUps.Count; i++)
+            {
+                lab.Play(CardSkillLab.Skills.Count + i);
+                Assert.That(lab.CurrentWindUp, Is.EqualTo(windUps[i]));
+                yield return SceneTests.WaitUntil(
+                    () => lab.Vfx.LiveCount > 0,
+                    seconds: 2f,
+                    message: CardSkillLab.WindUpName(windUps[i]) + " draws."
+                );
+            }
+
+            // Played once, it ends; the next one after the last wind-up wraps round to the first skill.
+            lab.RepeatButton.onClick.Invoke();
+            lab.Play(CardSkillLab.Count - 1);
+            Assert.That(lab.CurrentWindUp, Is.EqualTo(windUps[windUps.Count - 1]));
+            yield return SceneTests.WaitUntil(
+                () => !lab.Playing,
+                seconds: 6f,
+                message: "The wind-up ends."
+            );
+            lab.NextButton.onClick.Invoke();
+            Assert.That(lab.Index, Is.Zero);
+            Assert.That(lab.IsWindUp, Is.False);
         }
 
         // Nothing over the button takes the tap: the first thing under its middle is the button.

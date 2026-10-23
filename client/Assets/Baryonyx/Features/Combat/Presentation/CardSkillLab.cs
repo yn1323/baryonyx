@@ -18,15 +18,16 @@ namespace Baryonyx.Combat.Presentation
     /// battle's party and enemies, with nothing else of the battle (no hand, no turns, no
     /// numbers). A skill picked while another plays cuts it short. With evolution turned on, a
     /// unique skill's stage that can evolve is played as the battle plays an evolution
-    /// (doc/features/skill-evolution.md#戦闘中の進化): its card rises and cracks, the stage it
+    /// (doc/features/skill-evolution.md#戦闘中の覚醒): its card rises and cracks, the stage it
     /// becomes is picked from those it can (<see cref="BattleEvolutionChoice"/>), the card shatters
     /// into it, and the stage picked plays. The skill last picked,
     /// how hard its blows land, the enemy it aims at, whether it evolves and whether it repeats
     /// are remembered, so the next Play after a change to the effect's code shows the same skill
     /// again.
     /// The list shows every skill as its card, on two tabs (the card skills, and the unique
-    /// skills' stages a tree to a row), scrolled up and down with a swipe. While stopped, it can
-    /// be shown closed, or open on either tab (doc/rules/ui-design.md#停止中の表示の切り替え).
+    /// skills' stages a tree to a row), scrolled up and down with a swipe; a third tab plays the
+    /// wind-ups the skills open with on their own (<see cref="BattleWindUp"/>). While stopped, it
+    /// can be shown closed, or open on any tab (doc/rules/ui-design.md#停止中の表示の切り替え).
     /// </summary>
     public sealed class CardSkillLab : MonoBehaviour, IEditModePreview
     {
@@ -74,16 +75,16 @@ namespace Baryonyx.Combat.Presentation
         public TMP_Text RepeatLabel;
 
         [Tooltip(
-            "入にすると、進化できる固有スキル（最初の段階と1段目）を、進化先を選んで進化させてから再生する。ほかのスキルには効かない。初めは切。"
+            "入にすると、覚醒できる固有スキル（最初の段階と1段目）を、覚醒先を選んで覚醒させてから再生する。ほかのスキルには効かない。初めは切。"
         )]
         public Button EvolveButton;
         public TMP_Text EvolveLabel;
 
-        [Tooltip("進化先を選ぶ画面。")]
+        [Tooltip("覚醒先を選ぶ画面。")]
         public BattleEvolutionChoice Choice;
 
         [Tooltip(
-            "進化先を選ぶ画面がないときの、前触れのあと割れるまでの間（秒）。1つ目の進化先へ進む。"
+            "覚醒先を選ぶ画面がないときの、前触れのあと割れるまでの間（秒）。1つ目の覚醒先へ進む。"
         )]
         [Min(0f)]
         public float ChoosePause = 0.4f;
@@ -111,7 +112,7 @@ namespace Baryonyx.Combat.Presentation
         )]
         public GameObject[] HiddenWhilePicking = new GameObject[0];
 
-        [Tooltip("一覧のタブ（カードスキル、固有スキル）。")]
+        [Tooltip("一覧のタブ（カードスキル、固有スキル、溜め）。")]
         public GuideTab[] Tabs = new GuideTab[0];
 
         [Tooltip("タブごとのカードの並び（Tabsと同じ順）。開いているタブの並びだけを出す。")]
@@ -125,6 +126,9 @@ namespace Baryonyx.Combat.Presentation
         )]
         public Button CardTemplate;
 
+        [Tooltip("溜めのボタンの見本（押せる枠、選んだときの金の光、名前）。溜めごとに複製する。")]
+        public Button WindUpTemplate;
+
         [Tooltip("カードの挿絵（Skillsと同じ順）。")]
         public Texture[] CardArts = new Texture[0];
 
@@ -137,6 +141,7 @@ namespace Baryonyx.Combat.Presentation
         public float Gap = 0.9f;
 
         private readonly List<Button> skillButtons = new();
+        private readonly List<Button> windUpButtons = new();
         private int index;
         private BattleHitWeight weight;
         private int enemy;
@@ -156,13 +161,57 @@ namespace Baryonyx.Combat.Presentation
             .All.Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card))
             .ToArray();
 
-        /// <summary>The tab a skill is on: 0 for a card skill, 1 for a unique skill's stage.</summary>
-        public static int TabOf(int skill) => skill < CardSkills.All.Count ? 0 : 1;
+        /// <summary>The wind-ups the room plays on their own, after the skills.</summary>
+        public static readonly IReadOnlyList<BattleWindUp> WindUps = (BattleWindUp[])
+            System.Enum.GetValues(typeof(BattleWindUp));
 
-        /// <summary>The skill picked now, its place in <see cref="Skills"/>.</summary>
+        /// <summary>How many things the room plays: the skills, then the wind-ups.</summary>
+        public static int Count => Skills.Count + WindUps.Count;
+
+        /// <summary>
+        /// The tab a thing played is on: 0 for a card skill, 1 for a unique skill's stage, 2 for a
+        /// wind-up.
+        /// </summary>
+        public static int TabOf(int skill) =>
+            skill < CardSkills.All.Count ? 0
+            : skill < Skills.Count ? 1
+            : 2;
+
+        /// <summary>The thing picked now: a skill's place in <see cref="Skills"/>, then the wind-ups'.</summary>
         public int Index => index;
 
-        public CardSkill Current => Skills[index];
+        /// <summary>The skill picked now, or null while a wind-up is.</summary>
+        public CardSkill Current => index < Skills.Count ? Skills[index] : null;
+
+        /// <summary>Whether a wind-up is picked now (<see cref="CurrentWindUp"/>).</summary>
+        public bool IsWindUp => index >= Skills.Count;
+
+        public BattleWindUp CurrentWindUp => WindUps[Mathf.Max(0, index - Skills.Count)];
+
+        /// <summary>The buttons of the wind-ups' tab, in <see cref="WindUps"/>' order.</summary>
+        public IReadOnlyList<Button> WindUpButtons => windUpButtons;
+
+        /// <summary>A wind-up's name in the list and at the top.</summary>
+        public static string WindUpName(BattleWindUp windUp) =>
+            windUp switch
+            {
+                BattleWindUp.BigSpell => "魔法の溜め・大技",
+                BattleWindUp.UniqueFirstStep => "固有スキルの溜め・1段目",
+                BattleWindUp.UniqueLastStep => "固有スキルの溜め・最終段",
+                BattleWindUp.FireSpell => "炎の溜め（層に分けた魔法陣）",
+                BattleWindUp.Inhale => "吸い込む溜め",
+                BattleWindUp.Aura => "立ち上るオーラ",
+                BattleWindUp.BladeGlint => "刃のきらめきと踏み込み",
+                BattleWindUp.ColdFront => "氷の前触れ（床を這う冷気）",
+                BattleWindUp.StaticCharge => "雷の前触れ（帯電）",
+                BattleWindUp.Tremor => "土の前触れ（地鳴り）",
+                BattleWindUp.Tiered => "段階で変わる溜め",
+                _ => "魔法の溜め",
+            };
+
+        // The wind-ups are played by the fire mage, whose spells open with them.
+        private static int WindUpUser =>
+            (int)CardSkills.All.First(skill => skill.Id == "Fire").User;
 
         /// <summary>True from a skill's start until its last blow (and what it leaves) has landed.</summary>
         public bool Playing => playing;
@@ -249,7 +298,7 @@ namespace Baryonyx.Combat.Presentation
         {
             if (Vfx == null)
                 return;
-            int count = Skills.Count;
+            int count = Count;
             index = ((skill % count) + count) % count;
             Save();
             Refresh();
@@ -383,6 +432,15 @@ namespace Baryonyx.Combat.Presentation
             do
             {
                 playing = true;
+                if (IsWindUp)
+                {
+                    int user = Mathf.Clamp(WindUpUser, 0, Party.Length - 1);
+                    yield return Vfx.PlayWindUp(CurrentWindUp, Party[user]);
+                    playing = false;
+                    for (float t = 0f; t < Gap && repeat; t += Time.deltaTime)
+                        yield return null;
+                    continue;
+                }
                 var played = Current;
                 var into = evolve ? EvolvesInto(played) : System.Array.Empty<CardSkill>();
                 if (into.Count > 0)
@@ -591,6 +649,31 @@ namespace Baryonyx.Combat.Presentation
                 });
                 skillButtons.Add(button);
             }
+            BuildWindUps();
+        }
+
+        /// <summary>A button for every wind-up on its own tab, named as at the top.</summary>
+        private void BuildWindUps()
+        {
+            if (WindUpTemplate == null || TabContents.Length < 3)
+                return;
+            WindUpTemplate.gameObject.SetActive(false);
+            for (int i = 0; i < WindUps.Count; i++)
+            {
+                var button = Instantiate(WindUpTemplate, TabContents[2]);
+                button.name = WindUps[i].ToString();
+                button.gameObject.SetActive(true);
+                var label = button.GetComponentInChildren<TMP_Text>(true);
+                if (label != null)
+                    label.text = WindUpName(WindUps[i]);
+                int picked = Skills.Count + i;
+                button.onClick.AddListener(() =>
+                {
+                    ClosePicker();
+                    Play(picked);
+                });
+                windUpButtons.Add(button);
+            }
         }
 
         private static Texture At(Texture[] textures, int at) =>
@@ -599,15 +682,25 @@ namespace Baryonyx.Combat.Presentation
         private void Refresh()
         {
             var skill = Current;
-            int user = (int)skill.User;
-            if (Caption != null)
-                Caption.text = $"{index + 1}/{Skills.Count}　{skill.Name}";
-            bool evolves = evolve && EvolvesInto(skill).Count > 0;
-            if (Detail != null)
-                Detail.text =
-                    $"{NameOf(PartyNames, user)}・コスト{skill.Cost}・"
-                    + $"{CardRules.KindName(skill.Kind)}・{CardRules.ScopeName(skill)}"
-                    + (evolves ? "　進化して使う" : "");
+            if (skill == null)
+            {
+                if (Caption != null)
+                    Caption.text = $"{index + 1}/{Count}　{WindUpName(CurrentWindUp)}";
+                if (Detail != null)
+                    Detail.text = $"{NameOf(PartyNames, WindUpUser)}・溜めだけ（当てる相手なし）";
+            }
+            else
+            {
+                int user = (int)skill.User;
+                if (Caption != null)
+                    Caption.text = $"{index + 1}/{Count}　{skill.Name}";
+                bool evolves = evolve && EvolvesInto(skill).Count > 0;
+                if (Detail != null)
+                    Detail.text =
+                        $"{NameOf(PartyNames, user)}・コスト{skill.Cost}・"
+                        + $"{CardRules.KindName(skill.Kind)}・{CardRules.ScopeName(skill)}"
+                        + (evolves ? "　覚醒して使う" : "");
+            }
             if (WeightLabel != null)
                 WeightLabel.text =
                     "当たり："
@@ -622,13 +715,19 @@ namespace Baryonyx.Combat.Presentation
             if (RepeatLabel != null)
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
             if (EvolveLabel != null)
-                EvolveLabel.text = evolve ? "進化：入" : "進化：切";
+                EvolveLabel.text = evolve ? "覚醒：入" : "覚醒：切";
             // 選んでいるスキルは、カードの後ろの金の光で示す。
             for (int i = 0; i < skillButtons.Count; i++)
             {
                 var selected = skillButtons[i].transform.Find(SelectedName);
                 if (selected != null)
                     selected.gameObject.SetActive(i == index);
+            }
+            for (int i = 0; i < windUpButtons.Count; i++)
+            {
+                var selected = windUpButtons[i].transform.Find(SelectedName);
+                if (selected != null)
+                    selected.gameObject.SetActive(Skills.Count + i == index);
             }
         }
 
@@ -638,7 +737,13 @@ namespace Baryonyx.Combat.Presentation
         // 停止中の表示の切り替え：一覧を閉じた画面と、Play中と同じくカードを並べて開いた一覧の各タブ。
         // 停止中は Start が動かず、一覧は開いたまま中身が空なので、並べるところから行う。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "一覧を閉じた", "一覧を開いた（カードスキル）", "一覧を開いた（固有スキル）" };
+            new[]
+            {
+                "一覧を閉じた",
+                "一覧を開いた（カードスキル）",
+                "一覧を開いた（固有スキル）",
+                "一覧を開いた（溜め）",
+            };
 
         public void ShowPreviewState(int state)
         {
@@ -650,7 +755,7 @@ namespace Baryonyx.Combat.Presentation
             if (skillButtons.Count == 0)
                 BuildList();
             // 足したボタンも、保存しない表示の一部にする。
-            foreach (var button in skillButtons)
+            foreach (var button in skillButtons.Concat(windUpButtons))
             {
                 foreach (var part in button.GetComponentsInChildren<Component>(true))
                 {
@@ -670,9 +775,8 @@ namespace Baryonyx.Combat.Presentation
         {
             var id = PlayerPrefs.GetString(SkillKey, "");
             index = 0;
-            var all = Skills;
-            for (int i = 0; i < all.Count; i++)
-                if (all[i].Id == id)
+            for (int i = 0; i < Count; i++)
+                if (IdOf(i) == id)
                     index = i;
             weight = (BattleHitWeight)
                 Mathf.Clamp(PlayerPrefs.GetInt(WeightKey, 0), 0, (int)BattleHitWeight.Defeat);
@@ -681,9 +785,13 @@ namespace Baryonyx.Combat.Presentation
             evolve = PlayerPrefs.GetInt(EvolveKey, 0) != 0;
         }
 
+        // The name a thing played is remembered by: a skill's id, or a wind-up's.
+        private static string IdOf(int at) =>
+            at < Skills.Count ? Skills[at].Id : "WindUp." + WindUps[at - Skills.Count];
+
         private void Save()
         {
-            PlayerPrefs.SetString(SkillKey, Current.Id);
+            PlayerPrefs.SetString(SkillKey, IdOf(index));
             PlayerPrefs.SetInt(WeightKey, (int)weight);
             PlayerPrefs.SetInt(EnemyKey, enemy);
             PlayerPrefs.SetInt(RepeatKey, repeat ? 1 : 0);

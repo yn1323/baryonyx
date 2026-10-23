@@ -9,6 +9,9 @@
 // - 作り込んだ見た目（_Rich）：1にすると、現実の見え方で描く。氷の槍・棘・破片を透ける氷、霜を床に広がる氷の板、
 //   煙を陰影のある煙・土ぼこり・湯気、亀裂を影で見える割れ目、竜巻を風で流れる雪、
 //   斬撃・十字の斬撃を細い筋と短い残像、光線を塵で見える光の柱として描く。
+//   稲妻は値で層を選ぶ（1 芯、2 通り道と枝・先駆放電、3 にじみ、4 残像）。
+//   煙は2以上で雷雲の層になる（2 盛り上がり、3 暗い本体、4 ちぎれ雲、5 中の稲光の光）。
+//   雷雲の層は明るさの倍率を全体に掛けず、中の稲光の強さとして使う。
 //   乗算済みアルファ（One OneMinusSrcAlpha）用で、アルファで奥を暗くするか覆い、色で光を足す。
 //   マテリアルの複製に、合成と一緒に設定する。
 Shader "Baryonyx/Combat/Battle Vfx Shape"
@@ -141,6 +144,8 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 s.seed = IN.params.x;
                 s.k = IN.params.y;
                 s.rem = saturate(1 - IN.params.z);
+                float bright = IN.params.w > 0 ? IN.params.w : 1;
+                s.bright = bright;
                 s.tint = IN.color.rgb * _Color.rgb;
 
                 half4 shape;
@@ -166,13 +171,26 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeIceSpear(s);
                 #elif defined(_SHAPE_LIGHTNING)
-                shape = ShapeLightning(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichLightning(s, _Rich);
+                else
+                    shape = ShapeLightning(s);
                 #elif defined(_SHAPE_PILLAR)
                 shape = ShapePillar(s);
                 #elif defined(_SHAPE_DOME)
                 shape = ShapeDome(s);
                 #elif defined(_SHAPE_MAGICCIRCLE)
-                shape = ShapeMagicCircle(s);
+                // The layered circle's parts, each on a board of its own (BattleSkillVfx.HotCircle).
+                if (_Rich > 3.5)
+                    shape = ShapeCircleVeil(s);
+                else if (_Rich > 2.5)
+                    shape = ShapeCircleInner(s);
+                else if (_Rich > 1.5)
+                    shape = ShapeCircleGlyphs(s);
+                else if (_Rich > 0.5)
+                    shape = ShapeCircleOuter(s);
+                else
+                    shape = ShapeMagicCircle(s);
                 #elif defined(_SHAPE_STREAK)
                 shape = ShapeStreak(s);
                 #elif defined(_SHAPE_SPARK)
@@ -186,7 +204,20 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_FLAMETONGUE)
                 shape = ShapeFlameTongue(s);
                 #elif defined(_SHAPE_SMOKE)
-                if (_Rich > 0.5)
+                if (_Rich > 1.5)
+                {
+                    // The thundercloud's layers take the brightness as the lightning inside them.
+                    if (_Rich < 2.5)
+                        shape = ShapeStormCloud(s);
+                    else if (_Rich < 3.5)
+                        shape = ShapeStormMass(s);
+                    else if (_Rich < 4.5)
+                        shape = ShapeStormScud(s);
+                    else
+                        shape = ShapeStormGlow(s);
+                    bright = 1;
+                }
+                else if (_Rich > 0.5)
                     shape = ShapeRichSmoke(s);
                 else
                     shape = ShapeSmoke(s);
@@ -217,7 +248,9 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_ARROW)
                 shape = ShapeArrow(s);
                 #elif defined(_SHAPE_CRACK)
-                if (_Rich > 0.5)
+                if (_Rich > 1.5)
+                    shape = ShapeRupture(s);
+                else if (_Rich > 0.5)
                     shape = ShapeFissure(s);
                 else
                     shape = ShapeCrack(s);
@@ -244,7 +277,6 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 shape = ShapeGlow(s);
                 #endif
 
-                float bright = IN.params.w > 0 ? IN.params.w : 1;
                 half fade = IN.color.a * _Color.a;
 
                 #ifdef UNITY_UI_CLIP_RECT

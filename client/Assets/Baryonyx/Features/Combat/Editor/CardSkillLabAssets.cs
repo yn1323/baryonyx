@@ -25,7 +25,7 @@ namespace Baryonyx.Combat.Editor
     /// lab's controls (<see cref="CardSkillLab"/>): the skill playing at the top, the way back to
     /// home at the top left, whether a unique skill evolves first at the top right, a row of
     /// buttons at the bottom, where the stage to evolve into is picked, and the list of every
-    /// skill as its card on two tabs, opened from the row.
+    /// skill as its card on two tabs and of the wind-ups on a third, opened from the row.
     /// </summary>
     public static class CardSkillLabAssets
     {
@@ -47,6 +47,9 @@ namespace Baryonyx.Combat.Editor
             98 * 3 * CardScale + 12f
         );
         private const float CellGap = 18f;
+
+        // The wind-ups' buttons, 3 to a row, as tall as the list's other buttons.
+        private static readonly Vector2 WindUpCell = new(540f, 160f);
 
         // The enemies' names in the lab's controls, by their art's name.
         private static readonly Dictionary<string, string> EnemyNames = new()
@@ -288,7 +291,7 @@ namespace Baryonyx.Combat.Editor
             var label = Label(
                 card,
                 "Label",
-                "進化：切",
+                "覚醒：切",
                 34,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center
@@ -380,7 +383,7 @@ namespace Baryonyx.Combat.Editor
         /// <summary>
         /// The list of every skill over the whole screen, as the battle's cards: a tab for the
         /// card skills and one for the unique skills' stages, each a grid scrolled up and down
-        /// with a swipe. The cards are filled in as the lab starts, so a skill added to the catalog
+        /// with a swipe, and a tab of the wind-ups the skills open with, played on their own. The cards are filled in as the lab starts, so a skill added to the catalog
         /// shows without building this again; their art is baked here, in the skills' order.
         /// </summary>
         private static void BuildPicker(RectTransform screen, CardSkillLab lab)
@@ -416,7 +419,12 @@ namespace Baryonyx.Combat.Editor
             lab.Tabs = GuideFrameAssets.Tabs(
                 safe,
                 "Tabs",
-                new[] { $"カードスキル　{CardSkills.All.Count}", $"固有スキル　{uniques}" },
+                new[]
+                {
+                    $"カードスキル　{CardSkills.All.Count}",
+                    $"固有スキル　{uniques}",
+                    $"溜め　{CardSkillLab.WindUps.Count}",
+                },
                 60f,
                 112f,
                 400f,
@@ -434,14 +442,24 @@ namespace Baryonyx.Combat.Editor
             var padding = new RectOffset(0, 0, 12, 32);
             var cards = GuidePanelLayout.Grid(viewport, "CardSkills", Cell, CellGap, padding, 8);
             var trees = GuidePanelLayout.Grid(viewport, "UniqueSkills", Cell, CellGap, padding, 7);
-            foreach (var content in new[] { cards, trees })
+            var windUps = GuidePanelLayout.Grid(
+                viewport,
+                "WindUps",
+                WindUpCell,
+                CellGap,
+                padding,
+                3
+            );
+            foreach (var content in new[] { cards, trees, windUps })
                 content.GetComponent<GridLayoutGroup>().childAlignment = TextAnchor.UpperCenter;
             trees.gameObject.SetActive(false);
-            lab.TabContents = new[] { cards, trees };
+            windUps.gameObject.SetActive(false);
+            lab.TabContents = new[] { cards, trees, windUps };
             lab.Scroll = GuidePanelLayout.Scroll(viewport, viewport, cards);
             lab.Tabs[0].Chosen = true;
 
             lab.CardTemplate = CardButton(safe);
+            lab.WindUpTemplate = WindUpButton(safe);
             BakeCardArt(lab);
             lab.Picker = picker.gameObject;
         }
@@ -473,6 +491,47 @@ namespace Baryonyx.Combat.Editor
             var input = instance.GetComponent<BattleInspectCardInput>();
             if (input != null)
                 UnityEngine.Object.DestroyImmediate(input);
+            rect.gameObject.SetActive(false);
+            return button;
+        }
+
+        /// <summary>
+        /// The model of a wind-up's button in the list: a button the size of a cell, a gold glow
+        /// behind (shown while it is picked), and a glass card over it with the wind-up's name.
+        /// </summary>
+        private static Button WindUpButton(RectTransform parent)
+        {
+            var rect = Rect("WindUpTemplate", parent);
+            rect.sizeDelta = WindUpCell;
+            var hit = AddImage(rect, Color.clear, true);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            button.transition = Selectable.Transition.None;
+
+            var glow = Rect(CardSkillLab.SelectedName, rect);
+            Stretch(glow);
+            AddImage(glow, new Color(Gold.r, Gold.g, Gold.b, 0.55f), false);
+            glow.gameObject.SetActive(false);
+
+            var face = Rect("Card", rect);
+            Stretch(face);
+            face.offsetMin = Vector2.one * 6f;
+            face.offsetMax = -Vector2.one * 6f;
+            var content = GlassCardAssets.Plaque(
+                face,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            Stretch(
+                Label(
+                    content,
+                    "Label",
+                    "魔法の溜め",
+                    34,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.Center
+                ).rectTransform
+            );
             rect.gameObject.SetActive(false);
             return button;
         }

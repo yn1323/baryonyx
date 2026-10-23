@@ -140,8 +140,9 @@ namespace Baryonyx.Combat.Presentation
     /// The skill effects of the mock battle, drawn with uGUI among the actors of the battlefield,
     /// which a camera draws with Bloom. Every shape is worked out by a shader with no picture
     /// (<see cref="BattleVfxShape"/>). Each effect is timed in three beats: a wind-up (the stage
-    /// darkens to a night blue, a magic circle turns under the user, light gathers on it and lights
-    /// it from below for big skills), the climax (the blow lands with a hit stop, a shake, a burst
+    /// darkens to a night blue and the user charges in a way that fits the skill: a magic circle
+    /// turning under it, cold air flowing off it, static crackling over it, the ground cracking
+    /// round it, an aura rising off it; see <see cref="PlayWindUp"/>), the climax (the blow lands with a hit stop, a shake, a burst
     /// split behind and in front of the target, sparks, and a light that falls on the characters,
     /// the floor and the background around it), and a fall-off (the shapes are eaten away from
     /// their faint parts, embers rise and smoke drifts behind the light). Smoke is drawn behind the
@@ -263,8 +264,8 @@ namespace Baryonyx.Combat.Presentation
         private readonly List<LightSource> lights = new();
         private readonly List<BattleActorLight> actorLights = new();
 
-        // The copies of the shape materials that draw the rich look, made when first used.
-        private readonly Dictionary<BattleVfxShape, Material> richMaterials = new();
+        // The copies of the shape materials that draw the rich looks, made when first used.
+        private readonly Dictionary<(BattleVfxShape, float), Material> richMaterials = new();
 
         // The flash's material, blended to raise the exposure (see StepFlash).
         private Material exposureMaterial;
@@ -1037,10 +1038,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Toma's fireball, hot and heavy: a magic circle and gathering embers, a fireball flung on
-        /// an arc with a tail of sparks and smoke, then a blast split around the target (a wide
-        /// dim burst behind it, a small bright core in front), embers flung up, licks of flame and
-        /// soot rising behind, and an orange light on everyone near and the floor.
+        /// Toma's fireball, hot and heavy: a magic circle burned into the floor that heats from
+        /// dark red to white-hot (<see cref="FireCharge"/>), a fireball flung on an arc with a
+        /// tail of sparks and smoke while the circle cools, then a blast split around the target
+        /// (a wide dim burst behind it, a small bright core in front), embers flung up, licks of
+        /// flame and soot rising behind, and an orange light on everyone near and the floor.
         /// </summary>
         private IEnumerator Fire(
             RectTransform caster,
@@ -1049,7 +1051,7 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf(BattleSkillVfxKind.Fire);
-            yield return Charge(caster, color, 0.3f, big: false);
+            yield return FireCharge(caster, FireChargeSeconds);
             var from = Center(FrontLayer, caster) + new Vector2(60f, 30f);
             for (int i = 0; i < targets.Count; i++)
             {
@@ -1096,7 +1098,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var color = ColorOf(BattleSkillVfxKind.Ice);
             DimTo(IceDim, 0.15f);
-            yield return Charge(caster, IceLight, 0.26f, big);
+            yield return ColdFront(caster, 0.4f);
             var from = Center(FrontLayer, caster) + new Vector2(60f, 20f);
             var lance = RichMaterialOf(BattleVfxShape.IceSpear);
             for (int i = 0; i < targets.Count; i++)
@@ -1142,7 +1144,7 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf(BattleSkillVfxKind.Thunder);
             var violet = new Color(0.72f, 0.48f, 1f);
             DimTo(NightDim, 0.18f);
-            yield return Charge(caster, violet, 0.26f, big);
+            yield return StaticCharge(caster, 0.4f);
             for (int i = 0; i < targets.Count; i++)
             {
                 var feet = Feet(FrontLayer, targets[i]);
@@ -1884,10 +1886,11 @@ namespace Baryonyx.Combat.Presentation
             Twinkle(at, light, width * 1.5f, 0.3f, 0f, 1f);
             for (int i = 0; i < 3; i++)
                 Twinkle(
-                    at + new Vector2(
-                        UnityEngine.Random.Range(-0.5f, 0.5f) * width,
-                        UnityEngine.Random.Range(-40f, 90f)
-                    ),
+                    at
+                        + new Vector2(
+                            UnityEngine.Random.Range(-0.5f, 0.5f) * width,
+                            UnityEngine.Random.Range(-40f, 90f)
+                        ),
                     light,
                     width * 0.5f,
                     0.22f,
@@ -2658,30 +2661,29 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// The material that draws a shape in the rich look (the shader's _Rich): the ice lance,
         /// spikes and chips as clear ice, smoke as a sheet of gas along the floor, a glow as a
-        /// nebula-like cloud of light, and sword arcs, cross cuts and beams as thin strands in a
-        /// haze of light. It is a copy of the
+        /// nebula-like cloud of light, sword arcs, cross cuts and beams as thin strands in a
+        /// haze of light, and lightning as the core of a stroke; a <paramref name="look"/> above 1
+        /// picks another layer of a lightning flash, or of a thundercloud drawn on smoke (see
+        /// <see cref="StormBolt"/> and <see cref="StormBank"/>). It is a copy of the
         /// shape's material blended premultiplied, so its cover darkens or veils what is behind
         /// it and its light is added. Null when the shape's material is missing.
         /// </summary>
-        private Material RichMaterialOf(BattleVfxShape shape)
+        private Material RichMaterialOf(BattleVfxShape shape, float look = 1f)
         {
-            if (richMaterials.TryGetValue(shape, out var cached) && cached != null)
+            if (richMaterials.TryGetValue((shape, look), out var cached) && cached != null)
                 return cached;
             var source = MaterialOf(shape);
             if (source == null)
                 return null;
             var material = new Material(source)
             {
-                name = source.name + " (Rich)",
+                name = source.name + (look == 1f ? " (Rich)" : $" (Rich {look})"),
                 hideFlags = HideFlags.DontSave,
             };
-            material.SetFloat("_Rich", 1f);
+            material.SetFloat("_Rich", look);
             material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
-            material.SetFloat(
-                "_DstBlend",
-                (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha
-            );
-            richMaterials[shape] = material;
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            richMaterials[(shape, look)] = material;
             return material;
         }
 

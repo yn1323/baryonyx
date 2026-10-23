@@ -228,13 +228,7 @@ namespace Baryonyx.Combat.Presentation
                     s.Holder.anchoredPosition = new Vector2(Mathf.Lerp(start, end, move), floorY);
                     float grow = EaseOut(Mathf.Min(1f, t / 0.12f));
                     s.Holder.localScale = new Vector3(0.6f + 0.4f * grow, grow, 1f);
-                    Show(
-                        s,
-                        color,
-                        Mathf.Min(1f, t / run),
-                        Eaten(t / (run + 0.35f), 0.6f),
-                        0.6f
-                    );
+                    Show(s, color, Mathf.Min(1f, t / run), Eaten(t / (run + 0.35f), 0.6f), 0.6f);
                     if (t < nextPuff || t > run)
                         return;
                     nextPuff = t + 0.06f;
@@ -762,15 +756,8 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("EarthSplitter");
             var feet = Feet(FrontLayer, caster) + new Vector2(80f, 0f);
             DimTo(0.42f, 0.15f);
-            Glow(
-                frontLight,
-                Center(FrontLayer, caster) + new Vector2(30f, 120f),
-                color,
-                240f,
-                0.3f,
-                0.6f
-            );
-            yield return Wait(0.22f);
+            // The ground cracks round the user's feet first, then splits toward the enemies.
+            yield return Tremor(caster, 0.4f);
             Shockwave(feet, 500f, 1f);
             Shake(0.45f, Vector2.down);
             HitStop(0.05f);
@@ -1043,7 +1030,7 @@ namespace Baryonyx.Combat.Presentation
             var at = Center(FrontLayer, caster);
             var feet = Feet(FrontLayer, caster);
             DimTo(0.42f, 0.18f);
-            yield return Charge(caster, color, 0.2f, big: false);
+            yield return Aura(caster, color, 0.4f);
             Bloom(
                 backLight,
                 BattleVfxShape.Crest,
@@ -1320,7 +1307,7 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("FireStorm");
-            yield return Charge(caster, color, 0.28f, big: false);
+            yield return FireCharge(caster, 0.4f);
             var wave = Wave(hits, 0);
             var mid = MidFeet(hits, 0);
             float left = mid.x - 260f;
@@ -1421,7 +1408,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var color = ColorOf("BlastSigil");
             var from = Center(FrontLayer, caster) + new Vector2(60f, 30f);
-            yield return Charge(caster, color, 0.22f, big: false);
+            yield return Inhale(caster, color, 0.35f);
             foreach (int index in Wave(hits, 0))
             {
                 var at = Center(FrontLayer, hits[index].Area);
@@ -1560,7 +1547,7 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("FlameEnchant");
-            yield return Charge(caster, color, 0.2f, big: false);
+            yield return Inhale(caster, color, 0.3f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
@@ -1722,7 +1709,7 @@ namespace Baryonyx.Combat.Presentation
             var snow = new Color(0.78f, 0.9f, 1f);
             var wind = Vector2.right;
             DimTo(IceDim, 0.15f);
-            yield return Charge(caster, IceLight, 0.26f, big: true);
+            yield return ColdFront(caster, 0.45f);
             var mid = MidFeet(hits, 0);
             float storm = IceBreakAt + 1.3f;
             WindStream(backSmoke, mid.y + 30f, 240f, snow, storm, 0.9f);
@@ -1886,7 +1873,7 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("IceMirror");
-            yield return Charge(caster, color, 0.2f, big: false);
+            yield return ColdFront(caster, 0.35f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
@@ -2708,7 +2695,7 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("ChainLightning");
             var from = Center(FrontLayer, caster) + new Vector2(60f, 30f);
             DimTo(0.55f, 0.12f);
-            yield return Charge(caster, color, 0.2f, big: false);
+            yield return StaticCharge(caster, 0.35f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
@@ -2728,9 +2715,9 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 雷雲, gathering: dark clouds roll in over the enemies at the top of the screen, light
-        /// flickering inside them with a rumble; they stay (and strike at the start of each party
-        /// turn: <see cref="CloudStrike"/>).
+        /// 雷雲, called: the user gathers violet light for the storm. The cloud itself comes only
+        /// when it strikes, at the start of each party turn (<see cref="CloudStrike"/>), so it rolls
+        /// in once and strikes instead of gathering now, drawing off and coming back.
         /// </summary>
         private IEnumerator Thundercloud(
             RectTransform caster,
@@ -2738,35 +2725,10 @@ namespace Baryonyx.Combat.Presentation
             Func<int, BattleHitWeight> land
         )
         {
-            var color = ColorOf("Thundercloud");
-            DimTo(NightDim, 0.25f);
-            yield return Charge(caster, Violet, 0.24f, big: true);
-            float top = FrontLayer.rect.yMax - 80f;
-            float x = 560f;
-            Clouds(new Vector2(x, top), 18, 2.2f);
-            Clouds(new Vector2(x, top - 60f), 8, 2f);
-            yield return Wait(0.2f);
-            for (int n = 0; n < 5; n++)
-            {
-                var spot = new Vector2(
-                    x + UnityEngine.Random.Range(-300f, 300f),
-                    top + UnityEngine.Random.Range(-40f, 20f)
-                );
-                Glow(backLight, spot, n % 2 == 0 ? Color.white : Violet, 420f, 0.16f, 1f);
-                // A short bolt flickering between the clouds.
-                Zap(
-                    spot + new Vector2(-90f, 30f),
-                    spot + new Vector2(80f, -50f),
-                    n % 2 == 0 ? Color.white : Violet,
-                    0.14f
-                );
-                Illuminate(spot, color, 0.5f, 600f, 0.02f, 0.18f, spill: false);
-                Shake(0.12f, Vector2.zero);
-                yield return Wait(0.16f);
-            }
+            yield return StaticCharge(caster, 0.4f);
             foreach (int index in Wave(hits, 0))
                 land(index);
-            yield return Wait(0.4f);
+            yield return Wait(0.3f);
         }
 
         /// <summary>
@@ -2782,7 +2744,7 @@ namespace Baryonyx.Combat.Presentation
         {
             var color = ColorOf("ThunderSpear");
             DimTo(NightDim, 0.2f);
-            yield return Charge(caster, Violet, 0.22f, big: true);
+            yield return StaticCharge(caster, 0.45f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
@@ -3448,7 +3410,7 @@ namespace Baryonyx.Combat.Presentation
             var gold = HolyGold;
             var white = Color.Lerp(gold, Color.white, 0.6f);
             DimTo(0.6f, 0.2f);
-            yield return Charge(caster, gold, 0.26f, big: false);
+            yield return Inhale(caster, gold, 0.35f);
             var source = new Vector2(0f, FrontLayer.rect.yMax - 220f);
             Glow(backLight, source, gold, 260f, 1.2f, 0.9f);
             Twinkle(source, white, 280f, 0.6f, 0.08f, 1f);
@@ -3674,32 +3636,112 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// The thundercloud striking <paramref name="target"/>: a dark cloud gathers over it and a
-        /// bolt comes down with a ring and a light.
+        /// The thundercloud striking <paramref name="target"/>, as real lightning strikes
+        /// (doc/catalog/skills/skill-thundercloud.md, its timing): a cloud gathers over it and
+        /// flickers; a faint stepped leader feels its way down from the base; the channel that
+        /// reaches the target burns white with a flash of the screen, then lights again twice on
+        /// the same path, the cloud lighting with it; dust runs out along the floor, sparks fly, a
+        /// scorch smokes, the thunder cracks and rolls, and the channel cools and breaks up.
         /// </summary>
         public IEnumerator CloudStrike(RectTransform target, Func<BattleHitWeight> land)
         {
-            var color = ColorOf("Thundercloud");
             if (FrontLayer == null || target == null)
             {
                 land?.Invoke();
                 yield break;
             }
-            DimTo(SpellDim, 0.12f);
+            DimTo(SpellDim, 0.25f);
             var feet = Feet(FrontLayer, target);
             var at = Center(FrontLayer, target);
-            Clouds(new Vector2(at.x, FrontLayer.rect.yMax - 80f), 5, 1.1f);
-            yield return Wait(0.25f);
-            Bolt(feet);
+            // High in the sky over it, so the bolt comes down the whole height of the stage.
+            float baseY = FrontLayer.rect.yMax - 230f;
+            var storm = StormBank(
+                new Vector2(at.x + 40f, baseY),
+                720f,
+                4,
+                3,
+                420f,
+                0.3f,
+                0.03f,
+                1.6f,
+                0.62f
+            );
+            yield return Wait(0.2f);
+            StartCoroutine(
+                StormFlash(
+                    storm,
+                    new Vector2(at.x + 60f, baseY + 90f),
+                    380f,
+                    CloudBlinks,
+                    0.5f,
+                    0.8f
+                )
+            );
+            yield return Wait(0.15f);
+            StormBolt(new Vector2(at.x, baseY + 40f), feet + Vector2.up * 6f);
+            yield return Wait(StormLeader);
             var weight = land?.Invoke() ?? BattleHitWeight.Normal;
-            Star(at, color, 260f, 0.2f);
-            Ring(backLight, feet, Violet, 460f, 0.4f, floor: true);
-            Illuminate(at, color, 0.9f, 420f, 0.1f, 0.4f);
-            HitStop(Weighted(0.05f, weight));
-            Shake(Weighted(0.3f, weight), Vector2.down);
+            var color = ColorOf("Thundercloud");
+            ScreenFlash(StormFlashLight, MaxFlash);
+            // The world lights up for a moment: the dark of the spell lifts with the flash (one
+            // flash with it, not one per stroke) and comes back.
+            DimTo(0f, 0f);
+            StartCoroutine(After(0.08f, () => DimTo(SpellDim, 0.4f)));
+            HitStop(Weighted(0.06f, weight));
+            Shake(Weighted(0.32f, weight), Vector2.down);
+            // The strokes light the cloud they come from, and the target and the floor from above.
+            StartCoroutine(
+                StormFlash(storm, new Vector2(at.x, baseY + 60f), 520f, StrokeBlinks, 1.6f, 0f)
+            );
+            StartCoroutine(StrokeLights(at + Vector2.up * 160f, feet));
+            // A small hot flare where it meets the target; the floor's light is the pool above.
+            Glow(frontLight, feet + Vector2.up * 10f, Color.white, 190f, 0.16f, 0.9f);
+            DustKick(feet, Vector2.left, 320f);
+            DustKick(feet, Vector2.right, 320f);
+            Sparks(
+                feet + Vector2.up * 10f,
+                color,
+                Mathf.RoundToInt(Weighted(14f, weight)),
+                0.9f,
+                Vector2.up
+            );
+            FloorMark(
+                BattleVfxShape.Scorch,
+                feet,
+                new Vector2(300f, 90f),
+                new Color(0.1f, 0.08f, 0.1f),
+                0.75f,
+                1.6f,
+                flat: false
+            );
+            Spray(
+                backSmoke,
+                feet,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Smoke,
+                    Bright = 0.4f,
+                    From = new Color(0.32f, 0.3f, 0.33f, 0.55f),
+                    To = new Color(0.32f, 0.3f, 0.33f, 0.55f),
+                    Speed = new Vector2(25f, 60f),
+                    Direction = 90f,
+                    Spread = 25f,
+                    Life = new Vector2(0.7f, 1f),
+                    Size = new Vector2(70f, 110f),
+                    Grow = 0.4f,
+                    Shrink = 1.6f,
+                    Drag = 0.6f,
+                    Hold = 0.35f,
+                    Area = 30f,
+                    Delay = new Vector2(0.15f, 0.4f),
+                },
+                3
+            );
             StartCoroutine(Crackle(target, Violet));
-            yield return Wait(0.45f);
-            DimTo(0f, 0.4f);
+            StartCoroutine(Rumble());
+            yield return Wait(0.55f);
+            DimTo(0f, 0.5f);
+            yield return Wait(0.5f);
         }
 
         // --- Building blocks of the card effects -----------------------------------------------
@@ -4294,5 +4336,491 @@ namespace Baryonyx.Combat.Presentation
                 },
                 count
             );
+
+        // --- The thundercloud ------------------------------------------------------------------
+
+        // A thundercloud's own colour, a dark slate; its billows are drawn darker below it and
+        // paler where the sky lights their tops.
+        private static readonly Color StormCloud = new(0.2f, 0.21f, 0.29f);
+
+        // The light of lightning: white with a little violet.
+        private static readonly Color StormFlashLight = new(0.82f, 0.8f, 1f);
+
+        // A lightning channel's own colour round its white core: a pale violet.
+        private static readonly Color BoltHaloColor = new(0.8f, 0.72f, 1f);
+
+        // The scud under a thundercloud: a paler grey than the cloud, catching more light.
+        private static readonly Color StormScudColor = new(0.42f, 0.42f, 0.5f);
+
+        // How long the stepped leader takes to come down to the target (s).
+        private const float StormLeader = 0.12f;
+
+        // The shader's _Rich for each layer of a thundercloud (drawn on smoke), from the back.
+        private const float StormMass = 3f;
+        private const float StormBillows = 2f;
+        private const float StormScud = 4f;
+        private const float StormGlow = 5f;
+
+        // The shader's _Rich for each layer of a lightning flash (drawn on lightning).
+        private const float BoltCore = 1f;
+        private const float BoltChannel = 2f;
+        private const float BoltHalo = 3f;
+        private const float BoltTrace = 4f;
+
+        // The strokes down one channel (after the leader, s) and how bright each is: the return
+        // stroke, then the strokes that light the same path again. Real ones come 20 to 50 ms
+        // apart; these are drawn out to be seen.
+        private static readonly float[] StrokeTimes = { 0f, 0.1f, 0.2f };
+        private static readonly float[] StrokePeaks = { 1f, 0.7f, 0.5f };
+
+        // The blinks of lightning flickering inside a cloud (s, and how bright each is).
+        private static readonly float[] CloudBlinkTimes = { 0f, 0.05f, 0.12f };
+        private static readonly float[] CloudBlinkPeaks = { 1f, 0.45f, 0.8f };
+        private static readonly (float[] times, float[] peaks) CloudBlinks = (
+            CloudBlinkTimes,
+            CloudBlinkPeaks
+        );
+        private static readonly (float[] times, float[] peaks) StrokeBlinks = (
+            StrokeTimes,
+            StrokePeaks
+        );
+
+        /// <summary>A bank of thundercloud billows, and the lightning lighting them from within.</summary>
+        private sealed class Storm
+        {
+            public float Left;
+            public float Right;
+            public float Base;
+
+            /// <summary>The flashes inside it now: where, how far their light reaches, how bright.</summary>
+            public readonly List<(Vector2 at, float radius, float level)> Flashes = new();
+
+            /// <summary>How much lightning lights the billow at <paramref name="at"/> now.</summary>
+            public float LightAt(Vector2 at)
+            {
+                float light = 0f;
+                foreach (var flash in Flashes)
+                {
+                    float near = 1f - Mathf.Clamp01(Vector2.Distance(at, flash.at) / flash.radius);
+                    light += flash.level * near * near;
+                }
+                return light;
+            }
+        }
+
+        /// <summary>
+        /// A bank of thundercloud <paramref name="width"/> wide over <paramref name="center"/> (the
+        /// height of its flat base), in layers from the back, each its own shape, cover and speed:
+        /// a few broad, dark masses; the billows, a lower row and behind and above it a row of
+        /// towering ones, lit on their tops; and torn scud under the base, blown along faster. (The
+        /// fourth layer, the light of the lightning inside, comes with each flash:
+        /// <see cref="StormFlash"/>.) They roll in from <paramref name="roll"/> px to the right,
+        /// the leading ones first, slowing and swelling over <paramref name="rollTime"/>, then
+        /// churn and drift on, and are worn away after <paramref name="hold"/> of
+        /// <paramref name="seconds"/>.
+        /// </summary>
+        private Storm StormBank(
+            Vector2 center,
+            float width,
+            int lower,
+            int upper,
+            float roll,
+            float rollTime,
+            float stagger,
+            float seconds,
+            float hold
+        )
+        {
+            var storm = new Storm
+            {
+                Left = center.x - width * 0.5f,
+                Right = center.x + width * 0.5f,
+                Base = center.y,
+            };
+            float Across(int i, int count) =>
+                Mathf.Lerp(
+                    storm.Left + width * 0.1f,
+                    storm.Right - width * 0.1f,
+                    count == 1 ? 0.5f : i / (count - 1f)
+                )
+                + UnityEngine.Random.Range(-0.05f, 0.05f) * width;
+
+            // The dark masses behind, broad boards whose base is at 32% of the height.
+            var massSize = new Vector2(width * 0.6f, width * 0.3f);
+            for (int i = 0; i < 3; i++)
+            {
+                var size = massSize * UnityEngine.Random.Range(0.9f, 1.15f);
+                var rest = new Vector2(Across(i, 3), center.y + size.y * 0.16f);
+                StormLayer(
+                    storm,
+                    StormMass,
+                    rest,
+                    size,
+                    roll,
+                    rollTime,
+                    stagger * i,
+                    seconds,
+                    hold,
+                    UnityEngine.Random.Range(8f, 18f),
+                    StormCloud,
+                    1f
+                );
+            }
+            // The billows on square boards, so the round bulges stay round; the towering row
+            // first, its base just above the lower row's so the lower billows hide it. On the
+            // board the base is at 29% of the height.
+            float lowWidth = width / lower * 1.9f;
+            float highWidth = width / upper * 1.7f;
+            for (int row = 1; row >= 0; row--)
+            {
+                int count = row == 1 ? upper : lower;
+                for (int i = 0; i < count; i++)
+                {
+                    float side =
+                        (row == 1 ? highWidth : lowWidth) * UnityEngine.Random.Range(0.85f, 1.15f);
+                    var size = new Vector2(side, side);
+                    float y = center.y + (row == 1 ? lowWidth * 0.06f : 0f) + size.y * 0.21f;
+                    var rest = new Vector2(
+                        Across(i, count),
+                        y + UnityEngine.Random.Range(-14f, 14f)
+                    );
+                    StormLayer(
+                        storm,
+                        StormBillows,
+                        rest,
+                        size,
+                        roll,
+                        rollTime,
+                        stagger * (i + row * 0.5f),
+                        seconds,
+                        hold,
+                        UnityEngine.Random.Range(14f, 30f),
+                        StormCloud,
+                        1.5f
+                    );
+                }
+            }
+            // The scud in front, under the base: thin shreds blown along faster.
+            for (int i = 0; i < 7; i++)
+            {
+                var size =
+                    new Vector2(width * 0.22f, width * 0.08f)
+                    * UnityEngine.Random.Range(0.8f, 1.3f);
+                var rest = new Vector2(
+                    UnityEngine.Random.Range(storm.Left, storm.Right),
+                    center.y - UnityEngine.Random.Range(5f, 70f)
+                );
+                StormLayer(
+                    storm,
+                    StormScud,
+                    rest,
+                    size,
+                    roll * 1.3f,
+                    rollTime,
+                    stagger * i,
+                    seconds,
+                    hold * 0.9f,
+                    UnityEngine.Random.Range(60f, 120f),
+                    StormScudColor,
+                    2f
+                );
+            }
+            return storm;
+        }
+
+        /// <summary>
+        /// One board of a layer of <paramref name="storm"/>, drawn in its <paramref name="look"/>:
+        /// it rolls in from <paramref name="roll"/> px to the right of <paramref name="rest"/>
+        /// after <paramref name="delay"/>, drifts left at <paramref name="drift"/> px/s, churns, is
+        /// lit by the lightning inside (by <paramref name="flashGain"/>) and is worn away after
+        /// <paramref name="hold"/> of <paramref name="seconds"/>.
+        /// </summary>
+        private void StormLayer(
+            Storm storm,
+            float look,
+            Vector2 rest,
+            Vector2 size,
+            float roll,
+            float rollTime,
+            float delay,
+            float seconds,
+            float hold,
+            float drift,
+            Color color,
+            float flashGain
+        )
+        {
+            var from = rest + new Vector2(roll, UnityEngine.Random.Range(-20f, 30f));
+            var board = Spawn(backSmoke, BattleVfxShape.Smoke, from, size, Color.clear);
+            board.Image.material = RichMaterialOf(BattleVfxShape.Smoke, look);
+            Animate(
+                board,
+                seconds,
+                (s, k) =>
+                {
+                    float t = k * seconds;
+                    float arrive = EaseOut(Mathf.Clamp01((t - delay) / rollTime));
+                    var at = Vector2.LerpUnclamped(from, rest, arrive) + Vector2.left * (drift * t);
+                    s.Holder.anchoredPosition = at;
+                    float grow = Mathf.Lerp(0.55f, 1f, arrive);
+                    s.Holder.localScale = new Vector3(grow, grow, 1f);
+                    float shown = t < delay ? 0f : Mathf.Clamp01((t - delay) / 0.15f);
+                    var tint = new Color(color.r, color.g, color.b, shown);
+                    // Its gas churns as it goes; the lightning inside lights it.
+                    Show(s, tint, t * 0.8f, Eaten(k, hold), 1f + flashGain * storm.LightAt(at));
+                }
+            );
+        }
+
+        /// <summary>
+        /// Lightning flashing inside <paramref name="storm"/> at <paramref name="spot"/>, the
+        /// storm's fourth layer: a glow seen through the gas, and the layers within
+        /// <paramref name="radius"/> lighting up from within at each blink and dying away fast;
+        /// the characters below are lit from above (by <paramref name="light"/> of each blink,
+        /// none when 0). In real time, so it goes on through a hit stop.
+        /// </summary>
+        private IEnumerator StormFlash(
+            Storm storm,
+            Vector2 spot,
+            float radius,
+            (float[] times, float[] peaks) blinks,
+            float strength,
+            float light
+        )
+        {
+            int slot = storm.Flashes.Count;
+            storm.Flashes.Add((spot, radius, 0f));
+            int next = 0;
+            float end = blinks.times[^1] + 0.2f;
+            // The light itself, seen through the gas, over the cloud's layers.
+            var glow = Spawn(
+                backLight,
+                BattleVfxShape.Smoke,
+                spot,
+                Vector2.one * radius * 1.1f,
+                StormFlashLight
+            );
+            glow.Image.material = RichMaterialOf(BattleVfxShape.Smoke, StormGlow);
+            Animate(
+                glow,
+                end,
+                (s, k) =>
+                    Show(
+                        s,
+                        StormFlashLight,
+                        k,
+                        0f,
+                        0.001f + 0.8f * strength * BlinkLight(k * end, blinks)
+                    )
+            );
+            for (float t = 0f; t < end; t += Mathf.Min(Time.unscaledDeltaTime, 0.1f))
+            {
+                while (next < blinks.times.Length && t >= blinks.times[next])
+                {
+                    if (light > 0f)
+                        Illuminate(
+                            spot + Vector2.down * 80f,
+                            StormFlashLight,
+                            light * blinks.peaks[next],
+                            radius + 160f,
+                            0.02f,
+                            0.12f,
+                            spill: false
+                        );
+                    next++;
+                }
+                storm.Flashes[slot] = (spot, radius, strength * BlinkLight(t, blinks));
+                yield return null;
+            }
+            storm.Flashes[slot] = (spot, radius, 0f);
+        }
+
+        /// <summary>How bright a run of <paramref name="blinks"/> is <paramref name="t"/> s after it began: each flares and dies away in tens of milliseconds.</summary>
+        private static float BlinkLight(float t, (float[] times, float[] peaks) blinks)
+        {
+            float light = 0f;
+            for (int i = 0; i < blinks.times.Length; i++)
+                if (t >= blinks.times[i])
+                    light += blinks.peaks[i] * Mathf.Exp(-(t - blinks.times[i]) / 0.035f);
+            return light;
+        }
+
+        /// <summary>
+        /// Lightning from a cloud's base at <paramref name="top"/> down to <paramref name="feet"/>,
+        /// as four layers on one channel (one seed), each with its own cover and timing: the halo
+        /// of lit air, faint for the leader and pulsing with the strokes; the afterimage, a thin
+        /// violet trace left once it has struck that fades and breaks up slowest; the channel and
+        /// its branches, the faint stepped leader for <see cref="StormLeader"/> and then lit with
+        /// each stroke (<see cref="StrokeTimes"/>); and the core, a white-hot line seen only at the
+        /// strokes.
+        /// </summary>
+        private void StormBolt(Vector2 top, Vector2 feet)
+        {
+            // The bolt's foot is at 9% of its board's height and its top 4% from the top.
+            float height = Mathf.Max(300f, (top.y - feet.y) / 0.87f);
+            float seed = UnityEngine.Random.value;
+            Shot Layer(float look, Color color)
+            {
+                var shot = Spawn(
+                    frontLight,
+                    BattleVfxShape.Lightning,
+                    feet,
+                    new Vector2(height * 0.62f, height),
+                    color,
+                    new Vector2(0.5f, 0.09f)
+                );
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Lightning, look);
+                shot.Image.rectTransform.localEulerAngles = new Vector3(
+                    0f,
+                    0f,
+                    Angle(top - feet) - 90f
+                );
+                return shot;
+            }
+            // The stage the layers draw (0 to 0.5 the leader coming down, then struck and ageing),
+            // and the light of the strokes, at t s.
+            const float struckFor = 0.5f;
+            float Stage(float t) =>
+                t < StormLeader
+                    ? 0.5f * t / StormLeader
+                    : 0.5f + 0.5f * Mathf.Clamp01((t - StormLeader) / struckFor);
+            float Strokes(float t) =>
+                t < StormLeader ? 0f : BlinkLight(t - StormLeader, StrokeBlinks);
+
+            const float haloLife = StormLeader + 0.45f;
+            Animate(
+                Layer(BoltHalo, BoltHaloColor),
+                haloLife,
+                (s, k) =>
+                {
+                    float t = k * haloLife;
+                    // Violet while the leader comes down, the paler lit air at the strokes.
+                    float light = t < StormLeader ? 0.5f : 0.25f + Strokes(t);
+                    var color = t < StormLeader ? Violet : BoltHaloColor;
+                    Show(
+                        s,
+                        new Color(color.r, color.g, color.b, Mathf.Clamp01(light)),
+                        Stage(t),
+                        Eaten(k, 0.6f),
+                        1f + Strokes(t)
+                    );
+                }
+            );
+            const float traceLife = StormLeader + 0.75f;
+            Animate(
+                Layer(BoltTrace, Violet),
+                traceLife,
+                (s, k) =>
+                {
+                    float t = k * traceLife;
+                    float since = Mathf.Max(0f, t - StormLeader);
+                    float alpha = t < StormLeader ? 0f : 0.7f * Mathf.Exp(-since / 0.35f);
+                    Show(
+                        s,
+                        new Color(Violet.r, Violet.g, Violet.b, alpha),
+                        Stage(t),
+                        Eaten(since / (traceLife - StormLeader), 0.3f)
+                    );
+                }
+            );
+            const float channelLife = StormLeader + 0.4f;
+            Animate(
+                Layer(BoltChannel, BoltHaloColor),
+                channelLife,
+                (s, k) =>
+                {
+                    float t = k * channelLife;
+                    float alpha = t < StormLeader ? 0.8f : Mathf.Clamp01(0.15f + Strokes(t));
+                    var tint = new Color(BoltHaloColor.r, BoltHaloColor.g, BoltHaloColor.b, alpha);
+                    Show(s, tint, Stage(t), Eaten(k, 0.55f), 1f + 1.5f * Strokes(t));
+                }
+            );
+            const float coreLife = StormLeader + 0.3f;
+            Animate(
+                Layer(BoltCore, Color.white),
+                coreLife,
+                (s, k) =>
+                {
+                    float t = k * coreLife;
+                    float light = Strokes(t);
+                    Show(
+                        s,
+                        new Color(1f, 1f, 1f, Mathf.Clamp01(light * 1.5f)),
+                        Stage(t),
+                        0f,
+                        1f + 6f * light
+                    );
+                }
+            );
+        }
+
+        /// <summary>
+        /// Each stroke lights the field, in real time: the characters from the channel
+        /// (<paramref name="above"/> the target) far across the field and from where it meets the
+        /// ground at <paramref name="feet"/>, hotter and nearer, and the floor round the feet in a
+        /// wide pool of light, each as bright as its stroke.
+        /// </summary>
+        private IEnumerator StrokeLights(Vector2 above, Vector2 feet)
+        {
+            float last = 0f;
+            for (int i = 0; i < StrokeTimes.Length; i++)
+            {
+                for (
+                    float t = last;
+                    t < StrokeTimes[i];
+                    t += Mathf.Min(Time.unscaledDeltaTime, 0.1f)
+                )
+                    yield return null;
+                last = StrokeTimes[i];
+                float peak = StrokePeaks[i];
+                Illuminate(above, StormFlashLight, 2.2f * peak, 1100f, 0.03f, 0.18f, spill: false);
+                Illuminate(feet, Color.white, 1.4f * peak, 520f, 0.02f, 0.14f, spill: false);
+                StrokeFloor(feet, peak);
+            }
+        }
+
+        /// <summary>The floor lit round <paramref name="feet"/> by one stroke of <paramref name="peak"/> brightness: a wide pool laid on the floor, gone in a fifth of a second.</summary>
+        private void StrokeFloor(Vector2 feet, float peak)
+        {
+            if (backLight == null)
+                return;
+            var pool = Spawn(
+                backLight,
+                BattleVfxShape.Glow,
+                feet,
+                new Vector2(1000f, 1000f),
+                StormFlashLight
+            );
+            pool.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
+            const float hold = 0.03f;
+            const float fade = 0.2f;
+            Animate(
+                pool,
+                hold + fade,
+                (s, k) =>
+                {
+                    float t = k * (hold + fade);
+                    float alpha = 0.8f * peak * (t < hold ? 1f : 1f - EaseIn((t - hold) / fade));
+                    Show(
+                        s,
+                        new Color(StormFlashLight.r, StormFlashLight.g, StormFlashLight.b, alpha),
+                        k,
+                        0f
+                    );
+                }
+            );
+        }
+
+        /// <summary>Thunder rolling on after a strike: small knocks, each weaker, for about half a second.</summary>
+        private IEnumerator Rumble()
+        {
+            yield return Wait(0.08f);
+            foreach (float knock in new[] { 0.1f, 0.08f, 0.06f, 0.05f })
+            {
+                Shake(knock, Vector2.zero);
+                yield return Wait(0.12f);
+            }
+        }
     }
 }

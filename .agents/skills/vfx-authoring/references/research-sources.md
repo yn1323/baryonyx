@@ -1,6 +1,7 @@
 # VFX制作の調査資料
 
 調査日は2026-10-01。
+2026-10-23に追加した資料は、「取得」の欄に日付を添える。
 URLと内容は更新されるため、実装へ反映するときは、プロジェクトのUnity `6000.6.0f1` とURP `17.6.0` に対応する公式マニュアルを確かめ直す。
 
 「取得」の欄は、ページ本文を読んで確かめたもの（本文）、検索結果の要約だけで確かめたもの（要約）、読めなかったもの（未取得）を区別する。
@@ -20,6 +21,9 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [CEDEC 2019「こっそり教えます！エフェクトデザインのイ・ロ・ハ」の講演レポート（gamebiz）](https://gamebiz.jp/news/248246) | 二次（講演の報告） | 円と線、不完全にする、誇張した形、粒の4属性、緩急、消え方の5つの方法、最悪の背景で作る | 本文 |
 | [CEDEC 2011「アニメのエフェクト、ゲームのエフェクト」の講演レポート（GIGAZINE）](http://gigazine.net/news/20111019_anime_effect_cedec2011/) | 二次（講演の報告） | シルエットの変化、密度の差、物理を曲げる、時間の違う要素を混ぜる、火花の流れ、煙の濃淡 | 本文 |
 | [ポリゴン・マジックのエフェクト制作の連載 第5回（CGWORLD）](https://cgworld.jp/regular/1410-polygonmagic05.html) | 二次 | 白飛びの失敗と対策、手前と奥の配置、照り返し | 本文 |
+| [FX Timing Principles（VFX Apprentice）](https://www.vfxapprentice.com/courses/fx-timing-principles) | 二次（講座の紹介） | フォロースルーとオーバーラップ、副要素も含めて全体を弧に乗せる | 本文（2026-10-23） |
+| [Give me your Feedback and Critique Please（realtimevfx）](https://realtimevfx.com/t/give-me-your-feedback-and-critique-please/23059) | 二次（講評） | 要素が一瞬で現れて消えるのは現実ではまれ、透明度やノイズで溶かす、雷は消えたあとも像が残る | 本文（2026-10-23） |
+| [色相のずらし方の議論（Pixel Joint）](https://pixeljoint.com/forum/forum_posts.asp?TID=15138) | 二次（フォーラム） | 色の段階で色相をずらしてコントラストを上げ、単調さを避ける。明るい側と暗い側を補色に寄せる | 本文（2026-10-23） |
 
 ## 技法
 
@@ -36,6 +40,10 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [5 years ago I was asking this forum how to make sword slash trails（realtimevfx）](https://realtimevfx.com/t/5-years-ago-i-was-asking-this-forum-how-to-make-sword-slash-trails-in-unity-now-i-built-a-tool-for-it-and-id-love-your-feedback/31306) | 二次 | リボンのメッシュに端を固定した素材を流す斬撃の軌跡 | 要約 |
 | [Free VFX image sequences and flipbooks（Unity公式ブログ）](https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks) | 一次 | Unity Labsが公開した連番素材 | 要約 |
 | [How to fix screen space heat haze distortion not visible（bugnet）](https://bugnet.io/blog/how-to-fix-screen-space-heat-haze-distortion-not-visible) | 二次 | URPのOpaque Textureを使う歪みの手順 | 要約 |
+| [PreMulAlpha（GitHub）](https://github.com/dtrebilco/PreMulAlpha) | 二次 | すべての粒を乗算済みアルファにすると描画をまとめやすい | 要約（2026-10-23） |
+| [Premultiplied blend modeの質問（realtimevfx）](https://realtimevfx.com/t/im-having-a-hard-time-understanding-how-premultiplied-blend-mode-is-suppose-to-work-in-unity/17552) | 二次（フォーラム） | URPの一部の版で、Shader Graphの乗算済みアルファが通常のアルファ合成と同じに振る舞った | 本文（2026-10-23） |
+| [Are transparent quads ok on mobile?（Unity Discussions）](https://discussions.unity.com/t/are-transparent-quads-ok-on-mobile/857421) | 二次（フォーラム） | 透明な板の重さは、数より重なりの度合いと画面に占める大きさで決まる | 本文（2026-10-23） |
+| [How to fix perf overdraw from stacked transparent shader fillrate（bugnet）](https://bugnet.io/blog/how-to-fix-perf-overdraw-from-stacked-transparent-shader-fillrate) | 二次 | 透明な板を見える形に合わせて小さくする | 要約（2026-10-23） |
 
 ## 計算で描く形
 
@@ -47,6 +55,13 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [Canvas.additionalShaderChannels](https://docs.unity3d.com/ScriptReference/Canvas-additionalShaderChannels.html) | 一次 | uGUIの頂点にUV1以降を含める設定 | 要約 |
 | [Shock Wave Shader（Godot Shaders）](https://godotshaders.com/shader/shock-wave-shader/) | 二次（制作者の投稿） | 極座標とノイズで衝撃波を描く例 | 要約 |
 | [Arm Mali Best Practices（Arm）](https://developer.arm.com/community/arm-community-blogs/b/mobile-graphics-and-gaming-blog/posts/arm-mali-best-practices) | 一次 | GPUごとに計算と画像の読み込みの性能比が違う | 要約 |
+| [Aspect correct coordinates（GameDev.net）](https://gamedev.net/shaderlab/16-aspect-correct-coordinates/) | 二次 | 横の座標に縦横比を掛けて、縦横の単位をそろえてから円を描く | 未取得（403）。検索結果の要約で確認（2026-10-23） |
+| [Domain warped noise（GameDev.net）](https://gamedev.net/shaderlab/23-domain-warped-noise/) | 二次 | 座標をゆがめてからノイズを読むと、一様な見え方が崩れる | 未取得（403）。検索結果の要約で確認（2026-10-23） |
+| [shader-noise（skills.sh）](https://skills.sh/bbeierle12/skill-mcp-claude/shader-noise) | 二次 | 値ノイズは最も軽いが、ブロック状に見えやすい | 要約（2026-10-23） |
+| [Fix Unity Shader Graph procedural UV noise banding（bugnet）](https://bugnet.io/blog/fix-unity-shader-graph-procedural-uv-noise-banding) | 二次 | ノイズの四角い帯を、勾配ノイズ・fBM・座標のゆがみで消す | 要約。本文は記事に届かなかった（2026-10-23） |
+| [Help with procedural planets（Godot Forum）](https://forum.godotengine.org/t/help-with-procedural-planets/139951) | 二次（フォーラム） | 種をそのまま座標に足すと、fBMの細かい段で座標が大きくなり、精度不足で角ばって崩れる。種をハッシュして0〜8のずらしにした | 本文（2026-10-23） |
+| [EStampes: Sketch #15 WIP（realtimevfx）](https://realtimevfx.com/t/estampes-sketch-15-wip/5388) | 二次（講評） | 浸食が一様に濃い面で止まり、縁が硬くなる。値を0〜1になだらかに分布させる | 本文（2026-10-23） |
+| [Gradient banding issue on mobile（Unity Discussions）](https://discussions.unity.com/t/gradient-banding-issue-on-mobile/810994) | 二次（フォーラム） | 8ビットの段差をごく弱いノイズで散らす。ノイズを画面のピクセルに対応させる。圧縮で細かいノイズが消える | 本文（2026-10-23） |
 
 ## HD-2Dとの組み合わせ
 
@@ -107,6 +122,22 @@ HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査
 | 資料 | 使った内容 | 取得 |
 |---|---|---|
 | [ParticleEffectForUGUI（mob-sakai）](https://github.com/mob-sakai/ParticleEffectForUGUI) | MITライセンス、uGUIでParticle Systemを描く、URP対応、すべてのRender Mode、マスクと並び順、Unity 6の明記なし | 本文（README） |
+
+## 現象（雷と雲）
+
+| 資料 | 種類 | 使った内容 | 取得 |
+|---|---|---|---|
+| [What is lightning?（米国気象局）](https://www.weather.gov/mlb/what_is_lightning) | 一次 | 先駆放電、主放電、20〜50ミリ秒の間を置いて同じ経路を降りる後続の放電、後続ほど弱く短い、ちらつきの理由 | 本文（2026-10-23） |
+| [Stolzenburg et al.（NSSL、ICAE 2014の予稿）](https://www.nssl.noaa.gov/users/mansell/icae2014/preprints/Stolzenburg_267.pdf) | 一次（研究） | 後続の放電の多くは、直前に使った通り道を通る | 要約（2026-10-23） |
+| [Cumulonimbus clouds（Met Office）](https://weather.metoffice.gov.uk/learn-about/weather/types-of-weather/clouds/low-level-clouds/cumulonimbus) | 一次 | 積乱雲の底は平らで、暗い | 未取得（404）。検索結果の要約で確認（2026-10-23） |
+| [Cumulonimbus（オクラホマ大学）](https://weather.ou.edu/~broberts/METR2011/clouds/types/cb.html) | 二次（講義資料） | 真下から見ると底は黒に近い灰色。カリフラワーのような上部 | 要約（2026-10-23） |
+
+## AIで作るとき
+
+| 資料 | 種類 | 使った内容 | 取得 |
+|---|---|---|---|
+| [AI-generated GLSL shaders（14islands）](https://www.14islands.com/journal/ai-generated-glsl-shaders) | 二次（制作会社の実験記事） | AIは結果を見ないため美的判断が弱い、計画を先に作らせると質が上がりエラーが減る、同じ指示でも結果がぶれる、重くなりやすい | 本文（2026-10-23） |
+| [AI VFX（Coplay）](https://coplay.dev/blog/ai-vfx) | 二次（ツール開発会社の記事） | AIは空間の推論が弱い、静止画では動きと時間を判断できない、レシピと描画して見る工程が効いた | 本文（2026-10-23） |
 
 ## 読み方
 

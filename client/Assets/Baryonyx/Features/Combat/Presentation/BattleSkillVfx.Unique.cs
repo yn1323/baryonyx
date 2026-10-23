@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Baryonyx.SkillEvolution;
 using UnityEngine;
 
 namespace Baryonyx.Combat.Presentation
@@ -27,6 +28,10 @@ namespace Baryonyx.Combat.Presentation
             "Issen",
             "HealingWind",
             "Revive",
+            "ArcaneEye",
+            "QuickShot",
+            "Rally",
+            "Judgment",
         };
 
         private static readonly Color Arcane = new(0.74f, 0.46f, 1f);
@@ -85,6 +90,9 @@ namespace Baryonyx.Combat.Presentation
                 ("ThunderArrow", 4) => 5,
                 ("ArrowStorm", 4) => 4,
                 ("ArrowStorm", _) => 3,
+                ("QuickShot", 1 or 6) => 3,
+                ("QuickShot", 2) => 6,
+                ("QuickShot", _) => 2,
                 _ => 1,
             };
             for (int i = 0; i < count; i++)
@@ -119,6 +127,10 @@ namespace Baryonyx.Combat.Presentation
                     2 => Gold,
                     _ => Leafy,
                 },
+                "ArcaneEye" => branch == 2 ? Gold : Arcane,
+                "QuickShot" => branch == 2 ? Steel : Teal,
+                "Rally" => branch == 2 ? ColorOf(BattleSkillVfxKind.Guard) : Gold,
+                "Judgment" => branch == 2 ? Leafy : Dawn,
                 _ => branch == 1 ? ColorOf(BattleSkillVfxKind.Fire) : Dawn,
             };
         }
@@ -138,7 +150,7 @@ namespace Baryonyx.Combat.Presentation
             int tier = TierOf(id);
             var color = UniqueColor(id);
             float scale = 1f + 0.22f * tier;
-            yield return WindUp(caster, color, tier);
+            yield return WindUp(caster, color, tier, UniqueSkillTrees.FindStage(id)?.Card);
             var main = new List<int>(MainWaves(TreeOf(id), stage));
             var empowered = Empower(hits, land, color, tier, main);
             yield return TreeOf(id) switch
@@ -150,49 +162,75 @@ namespace Baryonyx.Combat.Presentation
                 "ShieldStance" => ShieldStanceVfx(stage, caster, hits, empowered, color, scale),
                 "Issen" => IssenVfx(stage, caster, hits, empowered, color, scale),
                 "HealingWind" => HealingWindVfx(stage, caster, hits, empowered, color, scale),
-                _ => ReviveVfx(stage, caster, hits, empowered, color, scale),
+                "Revive" => ReviveVfx(stage, caster, hits, empowered, color, scale),
+                _ => BorrowedVfx(TreeOf(id), stage, caster, hits, empowered),
             };
             if (tier == 2)
                 Ebb(caster, hits, color);
             yield return Wait(0.25f + 0.15f * tier);
         }
 
+        /// <summary>
+        /// The third unique skills' effect, borrowed from the card skill nearest each stage until
+        /// they have effects of their own; the steps' layers are laid over it as for the others.
+        /// </summary>
+        private IEnumerator BorrowedVfx(
+            string tree,
+            int stage,
+            RectTransform caster,
+            IReadOnlyList<BattleSkillHit> hits,
+            Func<int, BattleHitWeight> land
+        )
+        {
+            int branch = BranchOf(stage);
+            return tree switch
+            {
+                "ArcaneEye" => branch == 0
+                    ? InsightArrow(caster, hits, land)
+                    : Scout(caster, hits, land),
+                "QuickShot" => branch switch
+                {
+                    0 when stage == 2 => ArrowRain(caster, hits, land),
+                    2 => ShadowSnipe(caster, hits, land),
+                    _ => InsightArrow(caster, hits, land),
+                },
+                "Rally" => branch switch
+                {
+                    0 => EarthSplitter(caster, hits, land),
+                    2 => GuardianOath(caster, hits, land),
+                    _ => WarCry(caster, hits, land),
+                },
+                _ => branch == 0 ? HolyHammer(caster, hits, land) : HolyLight(caster, hits, land),
+            };
+        }
+
         // --- The steps' layers --------------------------------------------------------------
 
         /// <summary>
-        /// The wind-up a step earns: none for the first stage beyond its own effect, a charge for a
-        /// first step, and for a last step the night falling, light gathering into the user in
-        /// slow motion, a magic circle turning under the user and a twinkle as it is let go.
+        /// The wind-up a step earns: none for the first stage beyond its own effect, for a first
+        /// step one chosen by the stage's <paramref name="card"/> (<see cref="FirstStepWindUp"/>),
+        /// and for a last step the night falling, a charge in three steps in the stage's colour
+        /// (<see cref="Tiered"/>), and a twinkle and a hot flash as it is let go
+        /// (doc/features/skill-windups.md#技への割り当て仮設定).
         /// </summary>
-        private IEnumerator WindUp(RectTransform caster, Color color, int tier)
+        private IEnumerator WindUp(
+            RectTransform caster,
+            Color color,
+            int tier,
+            CardSkill card = null
+        )
         {
             if (tier == 0)
                 yield break;
             if (tier == 1)
             {
-                yield return Charge(caster, color, 0.32f, big: false);
+                yield return FirstStepWindUp(caster, color, card);
                 yield break;
             }
             DimTo(NightDim, 0.25f);
             var center = Center(FrontLayer, caster);
-            var feet = Feet(FrontLayer, caster);
-            Bloom(
-                backLight,
-                BattleVfxShape.MagicCircle,
-                feet,
-                new Vector2(420f, 420f),
-                color,
-                1.1f,
-                0.6f,
-                ErodeBright,
-                floor: true,
-                spin: 90f
-            );
-            Glow(frontLight, center, color, 520f, 0.9f, 0.7f);
-            Gather(center, color, 36, 380f, 0.55f);
-            SlowMotion(0.55f, 0.45f);
             Shake(0.06f, Vector2.zero);
-            yield return Charge(caster, color, 0.5f, big: true);
+            yield return Tiered(caster, 0.22f, color);
             Twinkle(center + new Vector2(30f, 40f), color, 260f, 0.4f, 0f, 1f);
             HotFlash(center, color, 220f);
         }

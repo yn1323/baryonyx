@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// A unique skill's evolution (doc/features/skill-evolution.md#戦闘中の進化), before the skill's
+    /// A unique skill's evolution (doc/features/skill-evolution.md#戦闘中の覚醒), before the skill's
     /// effect. The omen (<see cref="EvolutionOmen"/>): the stage darkens, the card just played rises
     /// from its user onto an upright circle of runes, a circle turns under the user, light gathers
     /// into the card and cracks it, and a star glints on its corner; then it hovers, shivering.

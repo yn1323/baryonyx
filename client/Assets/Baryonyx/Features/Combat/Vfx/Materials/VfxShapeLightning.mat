@@ -33,6 +33,7 @@ Material:
     - _ColorMask: 15
     - _DstBlend: 1
     - _Intensity: 1
+    - _Rich: 0
     - _Shape: 7
     - _SrcBlend: 5
     - _Stencil: 0

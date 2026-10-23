@@ -671,7 +671,8 @@ namespace Baryonyx.Combat
         /// (doc/features/combat.md, card keywords).
         /// </summary>
         public static readonly IReadOnlyList<CardSkill> Prototypes = Styled(
-            FoilStyles + 8,
+            // 固有スキル（4人×3つの12種類）の後の光り方。
+            FoilStyles + 12,
             Borrow(
                 "VitalThrust",
                 Card(
