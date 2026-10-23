@@ -51,6 +51,7 @@ class FakeEditor:
         self.zero_runs = 0
         self.failing = set()
         self.holders = []
+        self.holder_pids = []
         self.unreachable = 0
         self.eval_timeouts = 0
         self.start_timeouts = 0
@@ -66,7 +67,9 @@ class FakeEditor:
 
     def start(self, code):
         run_id, mode, assembly, pattern = [part.split('"')[0] for part in code.split('@"')[1:]]
-        self.holders.append(editor_lock.read(self.lock_path)["owner"])
+        lock = editor_lock.read(self.lock_path)
+        self.holders.append(lock["owner"])
+        self.holder_pids.append(lock.get("pid"))
         if self.zero_runs:
             self.zero_runs -= 1
             self.write_result({"id": run_id, "status": "started", "started": 0})
@@ -251,6 +254,13 @@ class RunEditorTestsTests(unittest.TestCase):
         token = editor_lock.acquire(self.lock_path, "skills", 0, 600)
         self.assertEqual(self.main("TavernTrainingTests", "--token", token), 0)
         self.assertEqual(editor_lock.read(self.lock_path)["token"], token)
+
+    def test_the_end_of_turn_hook_leaves_the_lock_to_a_running_script(self):
+        token = editor_lock.acquire(self.lock_path, "skills", 0, 600, session="chat")
+        self.assertEqual(self.main("TavernTrainingTests", "--token", token), 0)
+        self.assertEqual(self.editor.holder_pids, [runner_module.os.getpid()])
+        self.assertIsNone(editor_lock.read(self.lock_path)["pid"])
+        self.assertTrue(editor_lock.release_session(self.lock_path, "chat"))
 
     def test_a_busy_editor_returns_busy_without_running(self):
         editor_lock.acquire(self.lock_path, "other chat", 0, 600)

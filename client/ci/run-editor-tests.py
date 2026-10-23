@@ -10,6 +10,7 @@ The Editor lock is held throughout.
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -293,19 +294,27 @@ def main(argv=None, runner=None, lock_file=None):
         runner.out(f"no {args.mode} tests in: {', '.join(unknown)} (use class names without the namespace)")
         return EXIT_USAGE
 
+    # The pid in the lock keeps the end-of-turn hook from returning the lock while this script runs.
     token = args.token
     if token is None:
         try:
-            token = editor_lock.acquire(lock_file, args.owner, args.lock_wait, editor_lock.DEFAULT_LEASE_SECONDS)
+            token = editor_lock.acquire(
+                lock_file,
+                args.owner,
+                args.lock_wait,
+                editor_lock.DEFAULT_LEASE_SECONDS,
+                session=os.environ.get(editor_lock.SESSION_VARIABLE),
+                pid=os.getpid(),
+            )
         except editor_lock.Busy as busy:
-            runner.out(f"busy: {editor_lock.describe(busy.lock, time.time())}")
+            runner.out(f"busy: {editor_lock.describe(busy.lock, busy.ahead, time.time())}")
             return EXIT_BUSY
 
     def renew():
         editor_lock.renew(lock_file, token, editor_lock.DEFAULT_LEASE_SECONDS)
 
     try:
-        renew()
+        editor_lock.renew(lock_file, token, editor_lock.DEFAULT_LEASE_SECONDS, pid=os.getpid())
         ok = runner.run(args.mode, args.classes, expected, args.timeout, renew)
         renew()
         return 0 if ok else EXIT_FAILED
@@ -316,11 +325,13 @@ def main(argv=None, runner=None, lock_file=None):
         runner.out(f"editor: {trouble}")
         return EXIT_EDITOR
     finally:
-        if args.token is None:
-            try:
+        try:
+            if args.token is None:
                 editor_lock.release(lock_file, token)
-            except editor_lock.NotHeld:
-                pass
+            else:
+                editor_lock.renew(lock_file, token, editor_lock.DEFAULT_LEASE_SECONDS, pid=None)
+        except editor_lock.NotHeld:
+            pass
 
 
 if __name__ == "__main__":
