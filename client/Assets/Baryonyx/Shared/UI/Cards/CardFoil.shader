@@ -1,9 +1,10 @@
 // カードの挿絵の手前に重ねるキラキラ（doc/art/direction.md のカードのキラキラ）。
 // 挿絵と同じテクスチャを受け取り、挿絵の不透明な所にだけ、光の帯・瞬く小さな粒・模様・縁のにじみを加算で足す。
+// 4つの層は、カードを手の中でゆっくり傾ける1つの動きでまとめて動かし、照りが通った所の粒が光を拾って光る。
 // 光り方（模様と色）は63通りあり、スキル・装備・ボーナスの種類ごとに1つを使う。
 // 模様は7種類（星屑・コスモ・氷の結晶・光沢・波紋・オーロラ・格子）、色は9種類で、光り方の番号を7で割った余りが模様、商が色。
-// 値は頂点色で受け取る：r は段階÷5、g はカードごとの乱数の種、b は光り方の番号÷255、a は全体の濃さ（CanvasGroupの透け）。
-// 値として読むため、UI/Default と違って頂点色をガンマ補正しない。
+// 値は頂点色で受け取る：r は段階÷5、g はカードごとの乱数の種、b は（光り方の番号＋0.5）÷63、a は全体の濃さ（CanvasGroupの透け）。
+// 線形の色空間ではCanvasが頂点色を線形へ変えて渡すため、CardFoil.cs が先に逆へ変えて渡す。ここでは値をそのまま読む。
 Shader "Baryonyx/UI/CardFoil"
 {
     Properties
@@ -157,27 +158,37 @@ Shader "Baryonyx/UI/CardFoil"
                 return palette == 7 ? lerp(Rainbow(h), float3(1, 1, 1), 0.3) : c;
             }
 
-            // 斜めに横切る光の帯：周期 period 秒に1回、中心 offset だけずらして通る。
-            float Sweep(float2 uv, float t, float period, float offset, float width)
+            // 斜めの光の帯：照りの中心 pos からの距離 d（どちらもカードの斜めの座標）で、柔らかい帯にする。
+            float Band(float d, float pos, float width)
             {
-                float d = uv.x * 0.8 + (1.0 - uv.y) * 0.6;
-                float pos = frac(t / period + offset) * 2.6 - 0.8;
                 float x = (d - pos) / width;
                 return exp(-x * x);
+            }
+
+            // 照りの近さ（0〜1）。照りの進む先は狭く（来る直前に光り始める）、通った後ろは長く尾を引く（余韻）。
+            // dir は照りの進む向き（1 か -1）。
+            float Glint(float d, float pos, float dir, float ahead, float behind)
+            {
+                float x = (d - pos) * dir;
+                float w = x > 0 ? ahead : behind;
+                return exp(-(x / w) * (x / w));
             }
 
             // 瞬く小さな粒：挿絵のドット（テクセル）で測った cell ごとに1粒まで。粒は1ドットに満たない大きさで、
             // 粒ごとに速さと位相をずらして、明るくなる・暗くなるをくり返す。暗いときも dim の明るさは残し、
             // 止めたコマでも粒が見えるようにする。
+            // 照りが通ると（glint）、粒は箔のかけらのように光を拾って白く光る。粒ごとに反応の鋭さと強さを変え、
+            // 一斉には光らせない。ふだんは見えず、照りが通るときだけ光る粒も混ぜる（chance の6割ぶん）。
             // 粒はマスの中ほどにだけ置くため、隣のマスを調べなくてよい。flow は流す量（ドット）。
             float3 Twinkle(float2 px, float t, float seed, float cell, float chance, float size,
-                int palette, float2 flow, float dim)
+                int palette, float2 flow, float dim, float glint, float flash)
             {
                 float2 grid = (px - flow) / cell;
                 float2 id = floor(grid);
                 float2 h = Hash2(id + seed * 31.7);
-                if (h.x > chance)
+                if (h.x > chance * 1.6)
                     return 0;
+                float hidden = step(chance, h.x);
                 float2 at = 0.3 + 0.4 * Hash2(id + 7.1 + seed);
                 float2 d = (frac(grid) - at) * cell;
                 float s = size * (0.6 + 0.8 * h.y);
@@ -185,18 +196,20 @@ Shader "Baryonyx/UI/CardFoil"
                 float phase = Hash(id + 3.3) * 6.2831;
                 float speed = 1.3 + 2.2 * Hash(id + 9.9);
                 float w = 0.5 + 0.5 * sin(t * speed + phase);
-                float twinkle = dim + (1.0 - dim) * w * w * w;
-                return Tint(palette, Hash(id + 1.7)) * core * twinkle;
+                float twinkle = (dim + (1.0 - dim) * w * w * w) * (1.0 - hidden);
+                float catchLight = flash * pow(glint, 1.0 + 3.0 * Hash(id + 5.5)) * (0.5 + Hash(id + 8.1));
+                float3 tint = Tint(palette, Hash(id + 1.7));
+                return core * (tint * twinkle + lerp(tint, 1.0, 0.5) * catchLight);
             }
 
             // 0 星屑：粒より細かい点が一面に散って瞬く（スターライトのホロ）。
-            float3 Stardust(float2 px, float t, float seed, int palette)
+            float3 Stardust(float2 px, float t, float seed, int palette, float glint)
             {
-                return Twinkle(px, t * 1.4, seed + 0.37, 1.7, 0.42, 0.2, palette, 0, 0.08) * 0.9;
+                return Twinkle(px, t * 1.4, seed + 0.37, 1.7, 0.42, 0.2, palette, 0, 0.08, glint, 1.5) * 0.9;
             }
 
-            // 1 コスモ：大小の輪と丸が浮かび、ゆっくり明滅する。色は場所と時間でずれる虹。
-            float3 Cosmos(float2 px, float2 uv, float t, float seed, int palette)
+            // 1 コスモ：大小の輪と丸が浮かび、ゆっくり明滅する。色は場所と傾きでずれる虹。
+            float3 Cosmos(float2 px, float2 uv, float t, float tilt, float seed, int palette)
             {
                 const float cell = 9.0;
                 float2 grid = px / cell;
@@ -215,12 +228,12 @@ Shader "Baryonyx/UI/CardFoil"
                     float fill = exp(-d * d / (r * r)) * 0.25;
                     sum += (ring + fill) * (0.35 + 0.65 * pow(0.5 + 0.5 * sin(t * 0.9 + Hash(id) * 6.2831), 2.0));
                 }
-                float hue = uv.x * 0.8 + uv.y * 0.6 + t * 0.05;
+                float hue = uv.x * 0.8 + uv.y * 0.6 + t * 0.03 + tilt * 0.3;
                 return lerp(Tint(palette, frac(hue)), Rainbow(hue), 0.5) * sum;
             }
 
-            // 2 氷の結晶：割れた氷のような面が、1枚ずつ光を拾って光り、細い割れ目が瞬く（クラックアイス）。
-            float3 Crystal(float2 px, float2 uv, float t, float seed, int palette)
+            // 2 氷の結晶：割れた氷のような面が、傾きに合わせて1枚ずつ光を拾って光り、細い割れ目が瞬く（クラックアイス）。
+            float3 Crystal(float2 px, float2 uv, float t, float tilt, float seed, int palette)
             {
                 float2 grid = px / 7.0;
                 float2 cellId = floor(grid);
@@ -242,42 +255,42 @@ Shader "Baryonyx/UI/CardFoil"
                         runnerUp = d;
                 }
                 float h = Hash(nearId + 6.6);
-                float face = pow(0.5 + 0.5 * sin(t * 0.8 + h * 6.2831 + uv.x * 2.5 - uv.y * 1.5), 5.0);
+                float face = pow(0.5 + 0.5 * cos(tilt * 4.0 + h * 6.2831 + uv.x * 1.5 - uv.y * 1.0), 5.0);
                 float crack = exp(-pow((runnerUp - nearest) / 0.05, 2.0)) * (0.4 + 0.6 * (0.5 + 0.5 * sin(t * 1.7 + h * 9.0)));
                 return Tint(palette, h) * (face * 0.6 + crack * 0.7);
             }
 
-            // 3 光沢：模様のない、広く柔らかな光がゆっくり往復する。細い横の筋で金属の照りを出す（シーン）。
-            float3 Sheen(float2 px, float2 uv, float t, int palette)
+            // 3 光沢：模様のない、広く柔らかな光が傾きに合わせて往復する。細い横の筋で金属の照りを出す（シーン）。
+            float3 Sheen(float2 px, float2 uv, float t, float tilt, int palette)
             {
                 float g = uv.x * 0.75 + uv.y * 0.45;
-                float pos = 0.6 + 0.75 * sin(t * 0.45);
+                float pos = 0.6 + 0.75 * tilt;
                 float broad = exp(-pow((g - pos) / 0.22, 2.0));
                 float lines = 0.75 + 0.25 * sin(px.y * 3.14159);
-                return lerp(Tint(palette, frac(g + t * 0.05)), Rainbow(g * 0.8 + t * 0.04), 0.35) * broad * lines;
+                return lerp(Tint(palette, frac(g + tilt * 0.2)), Rainbow(g * 0.8 + tilt * 0.25), 0.35) * broad * lines;
             }
 
             // 4 波紋：上の縁の一点から、細い虹の輪が外へ広がり続ける。
-            float3 Ripple(float2 uv, float aspect, float t, float seed, int palette)
+            float3 Ripple(float2 uv, float aspect, float t, float tilt, float seed, int palette)
             {
                 float2 center = float2(0.15 + 0.7 * seed, 1.1);
                 float d = length((uv - center) * float2(aspect, 1.0));
                 float wave = pow(0.5 + 0.5 * sin(d * 46.0 - t * 2.4), 12.0);
                 float fade = exp(-d * 0.9);
-                return lerp(Tint(palette, frac(d * 1.5)), Rainbow(d * 1.8 - t * 0.08), 0.45) * wave * fade;
+                return lerp(Tint(palette, frac(d * 1.5)), Rainbow(d * 1.8 - t * 0.04 + tilt * 0.25), 0.45) * wave * fade;
             }
 
             // 5 オーロラ：揺れる縦の光の幕が、上ほど明るく、色を移しながら流れる。
-            float3 Aurora(float2 uv, float t, int palette)
+            float3 Aurora(float2 uv, float t, float tilt, int palette)
             {
                 float x = uv.x + 0.06 * sin(uv.y * 7.0 + t * 0.8) + 0.035 * sin(uv.y * 13.0 - t * 1.1);
                 float curtain = pow(0.5 + 0.5 * sin(x * 19.0 + t * 0.45), 6.0);
                 float top = smoothstep(0.05, 0.9, uv.y);
-                return Tint(palette, 0.5 + 0.5 * sin(x * 5.0 + t * 0.3)) * curtain * top;
+                return Tint(palette, 0.5 + 0.5 * sin(x * 5.0 + t * 0.15 + tilt * 1.2)) * curtain * top;
             }
 
             // 6 格子：斜めの細い格子に沿って光が走り、交点がきらめく。
-            float3 Lattice(float2 px, float t, int palette)
+            float3 Lattice(float2 px, float t, float tilt, int palette)
             {
                 float2 q = float2(px.x + px.y, px.x - px.y) / 6.0;
                 float2 f = frac(q);
@@ -287,7 +300,7 @@ Shader "Baryonyx/UI/CardFoil"
                 float run = pow(0.5 + 0.5 * sin((q.x + q.y) * 0.7 - t * 2.2), 8.0)
                     + pow(0.5 + 0.5 * sin((q.x - q.y) * 0.55 + t * 1.6), 8.0);
                 float joint = exp(-dot(d, d) / 0.006) * (0.5 + 0.5 * sin(t * 2.0 + Hash(floor(q)) * 6.2831));
-                return Tint(palette, frac((q.x + q.y) * 0.05)) * (lineGlow * run * 0.6 + joint * 0.8);
+                return Tint(palette, frac((q.x + q.y) * 0.05 + tilt * 0.2)) * (lineGlow * run * 0.6 + joint * 0.8);
             }
 
             float4 frag(v2f IN) : SV_Target
@@ -296,7 +309,7 @@ Shader "Baryonyx/UI/CardFoil"
                 float level = round(IN.color.r * 5.0);
                 float seed = IN.color.g;
                 // 整数の割り算は遅いことがあるため、小数で求めてから整数にする。
-                float styleIndex = fmod(round(IN.color.b * 255.0), 63.0);
+                float styleIndex = min(floor(IN.color.b * 63.0), 62.0);
                 float paletteIndex = floor(styleIndex / 7.0 + 0.001);
                 int pattern = (int)(styleIndex - paletteIndex * 7.0 + 0.5);
                 int palette = (int)(paletteIndex + 0.5);
@@ -315,57 +328,83 @@ Shader "Baryonyx/UI/CardFoil"
                 bool top = level >= 5;
                 float3 light = 0;
 
-                // 光の帯（段階2から）。Sは細い2本目が後を追う。帯の色は光り方の色に寄せる。
+                // 1つの傾き：手の中でカードをゆっくり傾け、戻すくり返し（-1〜1）。端ではゆっくり、真ん中では速く動き、
+                // period 秒に1回、照りがカードを斜めに横切る（行きと帰りで向きが変わる）。
+                // 光の帯・粒が光を拾う瞬間・模様の色のずれ・縁の光は、すべてこの傾きから決める。
                 float period = top ? 2.8 : 3.8;
-                float band = Sweep(uv, t, period, 0.0, top ? 0.07 : 0.06);
+                float phase = t * 3.14159265 / period;
+                float tilt = sin(phase);
+                float dir = cos(phase) >= 0 ? 1.0 : -1.0;
+                float diagonal = uv.x * 0.8 + (1.0 - uv.y) * 0.6;
+                float shine = 0.7 + 1.15 * tilt;
+                // 照りの近さ：粒用は狭く鋭く、模様と縁用は広く柔らかく。
+                float glint = Glint(diagonal, shine, dir, top ? 0.15 : 0.13, top ? 0.42 : 0.38);
+                float broad = Glint(diagonal, shine, dir, 0.35, 0.6);
+
+                // 光の帯（段階2から）。Sは細い2本目が後を追う。帯の色は光り方の色に寄せる。
+                // 照りの明るさは粒が受け持つため、帯は灰色のもやにならないよう控えめにする。
+                float band = Band(diagonal, shine, top ? 0.07 : 0.06);
                 if (top)
-                    band += 0.6 * Sweep(uv, t, period, -0.07, 0.033);
+                    band += 0.6 * Band(diagonal, shine - dir * 0.12, 0.033);
                 float3 bandColor = lerp(float3(1.0, 0.97, 0.9), PaletteB[palette], 0.5);
-                light += bandColor * band * (top ? 0.5 : 0.4) * (0.55 + 0.45 * lum);
+                light += bandColor * band * (top ? 0.4 : 0.3) * (0.55 + 0.45 * lum);
 
                 // 瞬く小さな粒（段階3から）。Sは粒が多く、ゆっくり上へ流れる2層目が重なる。
                 // Aも粒を多めにし、暗いときも少し光らせて、止めたコマでもキラキラして見えるようにする。
+                // 照りが通ると、粒が光を拾って白く光る。
                 if (level >= 3)
                 {
                     light += Twinkle(px, t, seed, 3.0, top ? 0.5 : 0.38, top ? 0.36 : 0.36, palette, 0,
-                        top ? 0.15 : 0.3) * (top ? 1.0 : 0.95);
+                        top ? 0.15 : 0.3, glint, top ? 1.8 : 2.0) * (top ? 1.0 : 0.95);
                     if (top)
                     {
                         float2 flow = float2(sin(t * 0.5 + seed * 6.0) * 1.2, t * 1.6);
-                        light += Twinkle(px, t * 0.8, seed + 0.53, 4.0, 0.35, 0.42, palette, flow, 0.08) * 0.75;
+                        light += Twinkle(px, t * 0.8, seed + 0.53, 4.0, 0.35, 0.42, palette, flow, 0.08,
+                            glint, 1.4) * 0.75;
                     }
                     // 光の芯：まばらな粒を、いつも明るめに光らせる（1ドットに満たない大きさのまま）。
                     light += Twinkle(px, t * 0.6, seed + 0.91, top ? 6.0 : 7.0, top ? 0.32 : 0.26, 0.5,
-                        palette, 0, 0.55) * (top ? 0.9 : 0.65);
+                        palette, 0, 0.55, glint, 1.5) * (top ? 0.9 : 0.65);
                 }
 
                 // 光り方ごとの模様（段階3から）。挿絵全体に掛かる層なので薄くし、Sでも挿絵の色を残す。
+                // 照りの近くほど強く出し、離れた所は沈める。
                 if (level >= 3)
                 {
                     float3 motif;
                     if (pattern == 0)
-                        motif = Stardust(px, t, seed, palette) * 1.2;
+                        motif = Stardust(px, t, seed, palette, glint) * 1.2;
                     else if (pattern == 1)
-                        motif = Cosmos(px, uv, t, seed, palette) * 0.48;
+                        motif = Cosmos(px, uv, t, tilt, seed, palette) * 0.48;
                     else if (pattern == 2)
-                        motif = Crystal(px, uv, t, seed, palette) * 0.38;
+                        motif = Crystal(px, uv, t, tilt, seed, palette) * 0.38;
                     else if (pattern == 3)
-                        motif = Sheen(px, uv, t, palette) * 0.42;
+                        motif = Sheen(px, uv, t, tilt, palette) * 0.42;
                     else if (pattern == 4)
-                        motif = Ripple(uv, aspect, t, seed, palette) * 0.5;
+                        motif = Ripple(uv, aspect, t, tilt, seed, palette) * 0.5;
                     else if (pattern == 5)
-                        motif = Aurora(uv, t, palette) * 0.4;
+                        motif = Aurora(uv, t, tilt, palette) * 0.4;
                     else
-                        motif = Lattice(px, t, palette) * 0.5;
-                    light += motif * (top ? 1.0 : 0.65) * (0.45 + 0.55 * lum);
+                        motif = Lattice(px, t, tilt, palette) * 0.5;
+                    light += motif * (top ? 1.0 : 0.65) * (0.45 + 0.55 * lum) * (0.55 + 0.9 * broad);
                 }
 
-                // 挿絵の縁のにじみ（段階3から）：上と左右の縁を、ゆっくり脈打つ光り方の色で。Aは細く薄く。
+                // ホロの虹（段階3から）：挿絵全体に、斜めの細い筋に沿った虹がうっすら掛かり、照りの近くで濃くなる。
+                // 色は場所と傾きでずれる。挿絵が白くかすまないよう薄くし、Sのほうを少し濃くする。
                 if (level >= 3)
                 {
+                    float grain = 0.6 + 0.4 * sin((px.x * 0.9 - px.y * 0.5) * 2.1);
+                    float3 holo = Rainbow(diagonal * 1.6 - tilt * 0.5 + 0.08 * sin(px.y * 0.7));
+                    light += holo * grain * (0.3 + 0.7 * broad) * (top ? 0.12 : 0.07) * (0.4 + 0.6 * lum);
+                }
+
+                // 挿絵の縁のにじみ（Sだけ）：上と左右の縁を、ゆっくり脈打つ光り方の色で。
+                // Aは枠の金の線を目立たせるため出さない（2026-10-23、ユーザーの判断）。
+                if (top)
+                {
                     float edge = min(min(uv.x, 1.0 - uv.x), 1.0 - uv.y);
-                    float rim = exp(-edge * (top ? 28.0 : 40.0)) * (0.55 + 0.45 * sin(t * 2.2));
-                    light += lerp(float3(1.0, 0.78, 0.32), PaletteA[palette], 0.6) * rim * (top ? 0.4 : 0.2);
+                    float rim = exp(-edge * 28.0) * (0.55 + 0.45 * sin(t * 2.2));
+                    light += lerp(float3(1.0, 0.78, 0.32), PaletteA[palette], 0.6) * rim * 0.4;
                 }
 
                 float4 color = float4(light * cover, 0);

@@ -109,7 +109,35 @@ namespace Baryonyx.UI.Cards
             raw.uvRect = uvRect;
             raw.raycastTarget = false;
             raw.enabled = art != null && level > MinLevel;
-            raw.color = new Color(level / (float)MaxLevel, SeedOf(transform), Style / 255f, 1f);
+            raw.color = Encode(
+                raw,
+                level / (float)MaxLevel,
+                SeedOf(transform),
+                (Style + 0.5f) / StyleCount
+            );
+        }
+
+        /// <summary>
+        /// The vertex colour that reaches the shader as <paramref name="level"/>,
+        /// <paramref name="seed"/> and <paramref name="style"/> (all 0 to 1). In the linear colour
+        /// space a canvas turns vertex colours from gamma to linear on their way, which made A's
+        /// third level arrive as the second (no specks, motif or rim) and mixed up the styles; the
+        /// values are turned the other way first so that they arrive as they are.
+        /// </summary>
+        public static Color Encode(Graphic graphic, float level, float seed, float style)
+        {
+            var canvas = graphic != null ? graphic.canvas : null;
+            if (
+                QualitySettings.activeColorSpace != ColorSpace.Linear
+                || (canvas != null && canvas.vertexColorAlwaysGammaSpace)
+            )
+                return new Color(level, seed, style, 1f);
+            return new Color(
+                Mathf.LinearToGammaSpace(level),
+                Mathf.LinearToGammaSpace(seed),
+                Mathf.LinearToGammaSpace(style),
+                1f
+            );
         }
 
         public void Show(Texture art, ItemQuality quality, int style) =>
