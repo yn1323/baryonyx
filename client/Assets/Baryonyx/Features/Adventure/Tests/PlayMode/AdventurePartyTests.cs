@@ -6,6 +6,7 @@ using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Party;
 using Baryonyx.SkillEvolution;
+using Baryonyx.Training;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -172,7 +173,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(ally.Absent, Is.False, id);
                 Assert.That(ally.Name, Is.EqualTo(member.Name), id);
                 Assert.That(ally.Level, Is.EqualTo(level), id);
-                Assert.That(ally.MaxHp, Is.EqualTo(growth.StatsAt(level).Hp), id);
+                Assert.That(ally.MaxHp, Is.EqualTo(TrainingBond.StatsOf(growth, level).Hp), id);
                 Assert.That(ally.Hp, Is.EqualTo(ally.MaxHp), id);
                 Assert.That(ally.Sprite.texture, Is.SameAs(member.Art), id);
                 Assert.That(ally.Tint, Is.EqualTo(member.Tint), id);

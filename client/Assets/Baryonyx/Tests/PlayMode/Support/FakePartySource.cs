@@ -9,10 +9,11 @@ using Baryonyx.Party;
 namespace Baryonyx.Tests.PlayMode
 {
     // 酒場のシーンテストで、ゲームサーバーのパーティAPIの代わりをする。
-    // サーバーと同じ決まりで編成・カード・レベルを変え、答えるのを1フレーム遅らせる。
-    public sealed class FakePartySource : IPartySource
+    // サーバーと同じ決まりで編成・カード・レベル・絆を変え、答えるのを1フレーム遅らせる。
+    public sealed class FakePartySource : IPartySource, IPartyBondSource
     {
         private readonly List<(string Id, int Level, string[] Cards)> characters = new();
+        private readonly Dictionary<string, (int Bond, int Tokens)> bonds = new();
         private readonly string[] slots = new string[PartyFormation.Size];
 
         public FakePartySource(long runes, params string[] party)
@@ -32,6 +33,16 @@ namespace Baryonyx.Tests.PlayMode
             characters.Add((id, level, cards));
             return this;
         }
+
+        // 絆の段と、持っている絆のしるし。
+        public FakePartySource WithBond(string id, int bond, int tokens)
+        {
+            bonds[id] = (bond, tokens);
+            return this;
+        }
+
+        public (int Bond, int Tokens) BondOf(string id) =>
+            bonds.TryGetValue(id, out var bond) ? bond : (0, 0);
 
         public int LevelOf(string id) => characters.Single(entry => entry.Id == id).Level;
 
@@ -99,6 +110,21 @@ namespace Baryonyx.Tests.PlayMode
             return State();
         }
 
+        public async Task<PartyState> DeepenBondAsync(
+            string characterId,
+            int bond,
+            CancellationToken token
+        )
+        {
+            await Answer(token);
+            Calls.Add($"bond {characterId} {bond}");
+            var now = BondOf(characterId);
+            if (now.Bond != bond - 1 || now.Tokens < 1)
+                throw new ServerApiException(409);
+            bonds[characterId] = (bond, now.Tokens - 1);
+            return State();
+        }
+
         private async Task Answer(CancellationToken token)
         {
             await Task.Yield();
@@ -113,7 +139,9 @@ namespace Baryonyx.Tests.PlayMode
                     .Select(entry => new PartyCharacterState(
                         entry.Id,
                         entry.Level,
-                        entry.Cards.ToArray()
+                        entry.Cards.ToArray(),
+                        bond: BondOf(entry.Id).Bond,
+                        tokens: BondOf(entry.Id).Tokens
                     ))
                     .ToArray(),
                 slots.ToArray(),

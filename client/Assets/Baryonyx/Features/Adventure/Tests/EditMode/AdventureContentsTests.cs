@@ -18,6 +18,10 @@ namespace Baryonyx.Tests.EditMode
     // アプリの中だけの冒険でサーバーと同じ決まりを確かめ、サーバーの応答の読み方を確かめる。
     public sealed class AdventureContentsTests
     {
+        // 強化素材は、ふつうのドロップのあとに別に抽選する（AdventureDrops.RollMaterials）。数と☆の検査からは外す。
+        private static AdventureDrop[] Ordinary(IEnumerable<AdventureDrop> drops) =>
+            drops.Where(drop => drop.Category != AdventureDropCategory.Material).ToArray();
+
         private static T Run<T>(System.Threading.Tasks.Task<T> task) =>
             task.GetAwaiter().GetResult();
 
@@ -105,7 +109,7 @@ namespace Baryonyx.Tests.EditMode
             var opened = Run(source.OpenAsync(state.Run.RoomId, default));
             Assert.That(opened.Run.RoomCleared, Is.True);
             Assert.That(opened.Run.InBattle, Is.False);
-            Assert.That(opened.Drops.Count, Is.InRange(2, 4));
+            Assert.That(Ordinary(opened.Drops).Length, Is.InRange(2, 4));
             // 開けて終えたあとの通り過ぎる要求は、送り直しと同じく終えた結果を返す。
             Assert.That(
                 Fails(() =>
@@ -144,8 +148,8 @@ namespace Baryonyx.Tests.EditMode
                 Is.GreaterThan(0)
             );
             var won = Run(source.ClearAsync(state.Run.RoomId, default));
-            Assert.That(won.Drops.Count, Is.InRange(2, 4));
-            Assert.That(won.Drops.Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(Ordinary(won.Drops).Length, Is.InRange(2, 4));
+            Assert.That(Ordinary(won.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
         }
 
         // 開けずに通り過ぎると、何も落とさずに終える。開けていない怪しい宝箱は、通り過ぎるほかに終えられない。
@@ -195,12 +199,12 @@ namespace Baryonyx.Tests.EditMode
                     new AdventureClearOptions { TrialMet = true }
                 )
             );
-            Assert.That(met.Drops.Count, Is.InRange(2, 4));
-            Assert.That(met.Drops.Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(Ordinary(met.Drops).Length, Is.InRange(2, 4));
+            Assert.That(Ordinary(met.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
 
             var (other, missedAt) = WalkTo(AdventureRoomKind.Trial);
             var missed = Run(other.ClearAsync(missedAt.Run.RoomId, default));
-            Assert.That(missed.Drops.Count, Is.InRange(1, 2));
+            Assert.That(Ordinary(missed.Drops).Length, Is.InRange(1, 2));
         }
 
         [Test]
@@ -246,8 +250,8 @@ namespace Baryonyx.Tests.EditMode
             var opened = Run(source.ClearAsync(state.Run.RoomId, default));
             Assert.That(opened.StepDoor.Steps, Is.EqualTo(8000));
             Assert.That(opened.StepDoor.Tier, Is.EqualTo(3));
-            Assert.That(opened.Drops.Count, Is.InRange(2, 4));
-            Assert.That(opened.Drops.Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(Ordinary(opened.Drops).Length, Is.InRange(2, 4));
+            Assert.That(Ordinary(opened.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
         }
 
         // 行商人は、スキル3つと装備2つを並べ、☆と品質の値段で売る。売れた物と、ルーンが足りない物は買えない。
@@ -389,7 +393,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(evolved.Drops, Is.Empty);
             var (other, at) = WalkTo(AdventureRoomKind.Altar);
             Assert.That(
-                Run(other.ClearAsync(at.Run.RoomId, default)).Drops.Count,
+                Ordinary(Run(other.ClearAsync(at.Run.RoomId, default)).Drops).Length,
                 Is.InRange(1, 3)
             );
         }

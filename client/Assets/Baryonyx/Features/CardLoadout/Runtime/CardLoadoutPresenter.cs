@@ -46,7 +46,7 @@ namespace Baryonyx.CardLoadout
         public bool Unavailable { get; internal set; }
     }
 
-    /// <summary>One of the person's two unique skills on the left: the card of the stage set.</summary>
+    /// <summary>One of the person's three unique skills on the left: the card of the stage set.</summary>
     public sealed class CardLoadoutUniqueState
     {
         public CardLoadoutCardState Card { get; internal set; }
@@ -104,13 +104,19 @@ namespace Baryonyx.CardLoadout
         // その人が付けられる属性（属性のないカードは誰でも付けられる）。
         public IReadOnlyList<CardElement> Usable { get; internal set; }
 
-        // 選んでいるカスタムスキルの枠（固有スキルを選んでいるときは-1）と、2つの枠のカード。
-        public int Slot { get; internal set; }
+        // 選んでいるカスタムスキルの枠（選んでいないときと固有スキルを選んでいるときは-1）と、3つの枠のカード。
+        public int Slot { get; internal set; } = -1;
         public IReadOnlyList<CardLoadoutCardState> Slots { get; internal set; }
 
-        // 選んでいる固有スキル（カスタムスキルの枠を選んでいるときは-1）と、固有スキル2つ。
+        // 選んでいる固有スキル（選んでいないときとカスタムスキルの枠を選んでいるときは-1）と、固有スキル3つ。
         public int Unique { get; internal set; } = -1;
         public IReadOnlyList<CardLoadoutUniqueState> Uniques { get; internal set; }
+
+        // 枠か固有スキルを1つ選んで付け替えている（選択モード）。選んでいないときは、右の一覧を押しても何もしない。
+        public bool Selecting => Slot >= 0 || Unique >= 0;
+
+        // 今のデッキ（6枚）を全画面で出している。
+        public bool DeckOpen { get; internal set; }
 
         // 固有スキルを選んでいるときの、右の進化ツリー。カスタムスキルの枠を選んでいるときはnull。
         public CardLoadoutTreeState Tree { get; internal set; }
@@ -125,7 +131,7 @@ namespace Baryonyx.CardLoadout
     /// <summary>Where the card skills read and write each person's cards and the numbers on them.</summary>
     public interface ICardLoadoutStore
     {
-        // その人の2つの枠の中身（PartyCardKey の形）。
+        // その人の3つの枠の中身（PartyCardKey の形）。
         IReadOnlyList<string> CardsOf(string id);
         void SetCards(string id, IReadOnlyList<string> skills);
 
@@ -139,7 +145,7 @@ namespace Baryonyx.CardLoadout
 
         string Selected { get; set; }
 
-        // その人の固有スキル（2つ）。進化ツリーのないものはnull。
+        // その人の固有スキル（3つ）。進化ツリーのないものはnull。
         IReadOnlyList<CardLoadoutUnique> UniquesOf(string id);
 
         // 固有スキル index に、取得した段階 stage をセットする。変わらなければfalse。
@@ -158,6 +164,11 @@ namespace Baryonyx.CardLoadout
         event Action<int> UniquePressed;
         event Action<int> StagePressed;
 
+        // 選択モードをやめて6枚の一覧に戻る。今のデッキの全画面を開く・閉じる。
+        event Action BackPressed;
+        event Action DeckPressed;
+        event Action DeckClosed;
+
         void Render(CardLoadoutState state);
 
         // 操作を求めない通知（共通の通知の帯）を出す。
@@ -166,12 +177,15 @@ namespace Baryonyx.CardLoadout
 
     /// <summary>
     /// The formation's card skills change screen: ◀ ▶ walks the people (the party first, then
-    /// the other companions) keeping the chosen slot and tab, choose a slot on the left, then tap
-    /// a card on the right to set it there at once. The right's tabs pick the skill cards or the
+    /// the other companions) keeping the chosen slot and tab. It opens on the person's six
+    /// cards with the right's list to read (tapping it does nothing); choosing a slot on the left
+    /// shows that card large beside the list (the selection mode), where tapping a card on the
+    /// right sets it there at once, and back returns to the six. 「今のデッキ」 shows the six
+    /// cards whole over the screen. The right's tabs pick the skill cards or the
     /// items the player owns (doc/features/party.md): every owned skill card is its own row with
     /// its quality, and one another person holds moves here; an item fits as many slots as the
     /// player has of it. Without owned things (the mock data) every skill is a choice at ×1.00
-    /// and the item tab lists nothing. Choosing one of the two unique skills
+    /// and the item tab lists nothing. Choosing one of the three unique skills
     /// on the left shows its evolution tree on the right instead (doc/features/skill-evolution.md),
     /// where tapping a stage acquired sets it; the stages not acquired are shadows. The stage set
     /// is kept while the app runs only, since the server does not keep it yet.
@@ -190,7 +204,7 @@ namespace Baryonyx.CardLoadout
         public const int ItemTab = 1;
 
         // 1人の固有スキルの数（doc/features/party.md）。
-        public const int UniqueCount = 2;
+        public const int UniqueCount = 3;
 
         private readonly ICardLoadoutView view;
         private readonly IReadOnlyList<PartyMember> people;
@@ -200,11 +214,14 @@ namespace Baryonyx.CardLoadout
         // 表示は store から読み直す。
         private readonly Func<string, int, string, Task> save;
         private int person;
-        private int slot;
+
+        // 選んでいるカスタムスキルの枠。選んでいないときと固有スキルを選んでいるときは-1。
+        private int slot = -1;
 
         // 選んでいる固有スキル。カスタムスキルの枠を選んでいるときは-1。
         private int unique = -1;
         private int tab;
+        private bool deck;
         private bool disposed;
 
         public CardLoadoutPresenter(
@@ -212,7 +229,7 @@ namespace Baryonyx.CardLoadout
             IReadOnlyList<PartyMember> people,
             ICardLoadoutStore store,
             Func<string, int, string, Task> save = null,
-            int slot = 0,
+            int slot = -1,
             int tab = SkillTab,
             int unique = -1
         )
@@ -222,9 +239,9 @@ namespace Baryonyx.CardLoadout
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.save = save;
             person = Math.Max(0, IndexOf(store.Selected));
-            this.slot = slot >= 0 && slot < CardLoadoutRules.Size ? slot : 0;
-            this.tab = tab == ItemTab ? ItemTab : SkillTab;
             this.unique = unique >= 0 && unique < UniqueCount ? unique : -1;
+            this.slot = this.unique < 0 && slot >= 0 && slot < CardLoadoutRules.Size ? slot : -1;
+            this.tab = tab == ItemTab ? ItemTab : SkillTab;
             view.PrevPressed += Previous;
             view.NextPressed += Next;
             view.SlotPressed += SelectSlot;
@@ -232,6 +249,9 @@ namespace Baryonyx.CardLoadout
             view.CardPressed += Choose;
             view.UniquePressed += SelectUnique;
             view.StagePressed += ChooseStage;
+            view.BackPressed += Back;
+            view.DeckPressed += OpenDeck;
+            view.DeckClosed += CloseDeck;
             Refresh();
         }
 
@@ -264,7 +284,7 @@ namespace Baryonyx.CardLoadout
         {
             if (disposed || index < 0 || index >= CardLoadoutRules.Size)
                 return;
-            if (index == slot && unique < 0)
+            if (index == slot)
                 return;
             slot = index;
             unique = -1;
@@ -277,6 +297,33 @@ namespace Baryonyx.CardLoadout
             if (disposed || index < 0 || index >= UniqueCount || index == unique)
                 return;
             unique = index;
+            slot = -1;
+            Refresh();
+        }
+
+        // 選択モードをやめ、左を6枚の一覧に戻す。右の一覧はそのまま読める。
+        public void Back()
+        {
+            if (disposed || (slot < 0 && unique < 0))
+                return;
+            slot = -1;
+            unique = -1;
+            Refresh();
+        }
+
+        public void OpenDeck()
+        {
+            if (disposed || deck)
+                return;
+            deck = true;
+            Refresh();
+        }
+
+        public void CloseDeck()
+        {
+            if (disposed || !deck)
+                return;
+            deck = false;
             Refresh();
         }
 
@@ -312,7 +359,8 @@ namespace Baryonyx.CardLoadout
         private async Task ChooseAsync(string key)
         {
             var member = Current;
-            if (disposed || unique >= 0 || member == null || string.IsNullOrEmpty(key))
+            // 枠を選んでいないとき（6枚の一覧）は、一覧を押しても何もしない。
+            if (disposed || slot < 0 || member == null || string.IsNullOrEmpty(key))
                 return;
             int target = slot;
             var cards = Cards(member.Id);
@@ -379,8 +427,10 @@ namespace Baryonyx.CardLoadout
                 {
                     Usable = Array.Empty<CardElement>(),
                     Slots = Array.Empty<CardLoadoutCardState>(),
+                    Slot = slot,
                     Unique = unique,
                     Uniques = Array.Empty<CardLoadoutUniqueState>(),
+                    DeckOpen = deck,
                     Tab = tab,
                     Choices = Array.Empty<CardLoadoutCardState>(),
                 };
@@ -395,7 +445,7 @@ namespace Baryonyx.CardLoadout
                 Name = member.Name,
                 CanSwitch = people.Count > 1,
                 Usable = usable,
-                Slot = unique >= 0 ? -1 : slot,
+                Slot = slot,
                 Slots = cards.Select((id, i) => Card(member.Id, id, i)).ToArray(),
                 Unique = unique,
                 Uniques = Enumerable
@@ -403,6 +453,7 @@ namespace Baryonyx.CardLoadout
                     .Select(i => Unique(member.Id, UniqueOf(member.Id, i)))
                     .ToArray(),
                 Tree = unique >= 0 ? Tree(member.Id, unique) : null,
+                DeckOpen = deck,
                 Tab = tab,
                 Choices = (tab == SkillTab ? SkillChoices(usable) : ItemChoices())
                     .Select(key => Choice(member.Id, key, Array.IndexOf(cards, key)))
@@ -452,7 +503,7 @@ namespace Baryonyx.CardLoadout
             return state;
         }
 
-        // その人のカスタムスキル2枚。足りない枠はnull（空き）にする。
+        // その人のカスタムスキル3枚。足りない枠はnull（空き）にする。
         private string[] Cards(string id)
         {
             var cards = CardsOf(id);
@@ -568,6 +619,9 @@ namespace Baryonyx.CardLoadout
             view.CardPressed -= Choose;
             view.UniquePressed -= SelectUnique;
             view.StagePressed -= ChooseStage;
+            view.BackPressed -= Back;
+            view.DeckPressed -= OpenDeck;
+            view.DeckClosed -= CloseDeck;
         }
     }
 }

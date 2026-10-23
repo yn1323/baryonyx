@@ -2,7 +2,7 @@
 id: passive-chained-arrows
 type: visual-entity
 status: 候補
-updated: 2026-10-21
+updated: 2026-10-24
 name: 連ね矢
 category: passives
 silhouette: 右上を向いて並ぶ3本の矢
@@ -45,12 +45,12 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveChained
 
 ## 設計の意図
 
-弓使いの手数を、回数で表す。固有スキルの進化で、回数の多い枝を選ぶ理由になる（[取得した段階とセット](../../features/skill-evolution.md)）。
+弓使いの手数を、回数で表す。固有スキルの覚醒で、回数の多い枝を選ぶ理由になる（[取得した段階とセット](../../features/skill-evolution.md)）。
 
 | 遊ぶ人 | 受け取り方 |
 |---|---|
 | 初めて遊ぶ人 | 連続攻撃が1回多く当たる。 |
-| 慣れた人 | 回数の少ない連続攻撃を選んで割合を稼ぐ。進化の枝を回数の多い側へ育てる。 |
+| 慣れた人 | 回数の少ない連続攻撃を選んで割合を稼ぐ。覚醒の枝を回数の多い側へ育てる。 |
 
 ## 分類固有のデータ
 

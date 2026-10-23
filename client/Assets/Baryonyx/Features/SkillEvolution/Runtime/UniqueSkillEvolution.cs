@@ -5,7 +5,7 @@ namespace Baryonyx.SkillEvolution
 {
     /// <summary>
     /// How a unique skill evolves when its card is used in battle
-    /// (doc/features/skill-evolution.md#戦闘中の進化): the stages a stage's card can become, and
+    /// (doc/features/skill-evolution.md#戦闘中の覚醒): the stages a stage's card can become, and
     /// the chance that it evolves (the room's base chance, lowered the more the user's level is
     /// over the destination's recommended level, doc/features/skill-evolution.md#確率の仮設定).
     /// </summary>

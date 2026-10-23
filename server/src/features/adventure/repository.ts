@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import type { SelectedFields } from "drizzle-orm/sqlite-core";
 import { createDatabase } from "../../shared/db.js";
 import { multiplierOf, qualityOf } from "../../shared/quality.js";
+import { materialGrants } from "../enhancement/repository.js";
 import { equipmentItems } from "../equipment/db-schema.js";
 import {
   debitRunes,
@@ -45,7 +46,7 @@ import {
   type Drop,
   type DropCategory,
   maxPercentOf,
-  rollDrops,
+  rollRoomDrops,
 } from "./drops.js";
 import { rollMerchantGoods } from "./merchant.js";
 import type { Buy, EndReason, Enemies, Move, Revive } from "./schema.js";
@@ -594,6 +595,16 @@ export function createAdventureRepository(
           },
         }),
     );
+    // 強化素材は、アイテムと同じく種類ごとの数を増やす（doc/features/enhancement.md の強化素材）。
+    const materialGrantStatements = materialGrants(
+      db,
+      userId,
+      drops
+        .filter((entry) => entry.category === "material")
+        .map((entry) => entry.id),
+      now,
+      written,
+    );
     const bonusGrants = bonusIds.map((bonusId) =>
       db
         .insert(stepBonusHoldings)
@@ -685,6 +696,7 @@ export function createAdventureRepository(
       ...equipmentGrants,
       ...skillGrants,
       ...itemGrants,
+      ...materialGrantStatements,
       ...bonusGrants,
       ...discoveries,
       ...(boss ? [recordStatement(run, "cleared", now, written)] : []),
@@ -747,7 +759,7 @@ export function createAdventureRepository(
       kind === "step-door"
         ? await createHealthRepository(binding).todaySteps(userId, now)
         : null;
-    const rolled = rollDrops(run.destinationId, kind as EventKind, random, {
+    const rolled = rollRoomDrops(run.destinationId, kind as EventKind, random, {
       mimic: run.mimic === true,
       trialMet: options.trialMet ?? false,
       evolved: kind === "altar" && (options.evolved ?? false),
@@ -820,7 +832,7 @@ export function createAdventureRepository(
       await award(
         userId,
         run,
-        rollDrops(run.destinationId, "shady-chest", random),
+        rollRoomDrops(run.destinationId, "shady-chest", random),
         now,
         {
           enemies: [],

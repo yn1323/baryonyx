@@ -99,8 +99,8 @@ namespace Baryonyx.Tests.PlayMode
                     Enumerable
                         .Range(0, 8)
                         .Select(i =>
-                            growth
-                                .StatsAt(PartySession.LevelOf(panel.Party, person.Id))[i]
+                            TrainingBond
+                                .StatsOf(growth, PartySession.LevelOf(panel.Party, person.Id))[i]
                                 .ToString()
                         )
                 )

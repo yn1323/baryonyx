@@ -218,7 +218,7 @@ namespace Baryonyx.Adventure
                 "discarded" => AdventureDropOutcome.Discarded,
                 _ => AdventureDropOutcome.Added,
             };
-            if (category == AdventureDropCategory.Item)
+            if (category is AdventureDropCategory.Item or AdventureDropCategory.Material)
                 return new AdventureDrop(drop.roomId, category, drop.id, outcome: outcome);
             if (
                 drop.multiplier < Quality.MinMultiplier

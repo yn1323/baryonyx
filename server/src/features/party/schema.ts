@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ITEM_IDS } from "../items/catalog.js";
+import { BOND_MAX } from "../summon/catalog.js";
 import {
   CARD_SLOT_COUNT,
   CHARACTER_IDS,
@@ -61,4 +62,9 @@ export const evolveUniqueSchema = z.object({
     .int()
     .min(1)
     .max(UNIQUE_STAGE_COUNT - 1),
+});
+
+// 絆を深めたあとの段。1段目から上限まで。
+export const deepenBondSchema = z.object({
+  bond: z.number().int().min(1).max(BOND_MAX),
 });

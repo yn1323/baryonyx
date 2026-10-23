@@ -10,7 +10,7 @@ namespace Baryonyx.Adventure
     /// chance by the kind of room and the destination's recommended level
     /// (doc/features/skill-evolution.md#確率の仮設定), and the evolutions of the room, which are
     /// kept once the room ends (won, or lost and the adventure over) and dropped when the battle
-    /// is left unfinished (doc/features/skill-evolution.md#進化の保存).
+    /// is left unfinished (doc/features/skill-evolution.md#覚醒の保存).
     /// </summary>
     public sealed class AdventureEvolution
     {

@@ -4,6 +4,13 @@ import {
   rollMultiplierPercent,
 } from "../../shared/quality.js";
 import {
+  AWAKENING_SHARD_ID,
+  POLISH_DROP_CHANCE,
+  POLISH_DROP_WEIGHTS,
+  POLISH_IDS,
+  SHARD_DROP_CHANCE,
+} from "../enhancement/catalog.js";
+import {
   type EquipmentId,
   maxMultiplierPercent as equipmentMaxPercent,
 } from "../equipment/catalog.js";
@@ -104,9 +111,10 @@ export type DropEntry =
   | { category: "skill"; id: CardSkillId; stars: Stars; bossOnly?: true }
   | { category: "bonus"; id: StepBonusId; stars: Stars; bossOnly?: true };
 
-// 1回の抽選で落ちた物。アイテムは倍率を持たない（null）。
+// 1回の抽選で落ちた物。アイテムと強化素材（material）は倍率を持たない（null）。
+// 強化素材は分類の重みで選ばず、ふつうのドロップとは別に抽選する（rollMaterials）。
 export type Drop = {
-  category: DropCategory;
+  category: DropCategory | "material";
   id: string;
   multiplierPercent: number | null;
 };
@@ -277,13 +285,14 @@ export const COMMON_POOL: readonly DropEntry[] = [
   bonus("appraisal", 4),
 ];
 
-// 物の倍率の上限（百分率）。アイテムは倍率を持たない。抽選と、応答の品質を求めるのに使う。
+// 物の倍率の上限（百分率）。アイテムと強化素材は倍率を持たない。抽選と、応答の品質を求めるのに使う。
 export function maxPercentOf(
-  category: DropCategory,
+  category: DropCategory | "material",
   id: string,
 ): number | null {
   switch (category) {
     case "item":
+    case "material":
       return null;
     case "skill":
       return skillMaxPercent(id as CardSkillId);
@@ -324,7 +333,29 @@ export function eligibleEntries(
   );
 }
 
-// マスで落ちる物を選ぶ。同じ物が2つ落ちることもある。
+// 強化素材（doc/features/enhancement.md の磨き石の落ち方）。ふつうのドロップのあとに、磨き石と覚醒の欠片を
+// それぞれ1回だけ抽選する。ふつうのドロップの分類に混ぜると、ほかの物が出にくくなるためである。
+export function rollMaterials(kind: RewardRow, random: () => number): Drop[] {
+  const drops: Drop[] = [];
+  if (random() * 1000 < POLISH_DROP_CHANCE[kind]) {
+    const weights = POLISH_DROP_WEIGHTS[kind];
+    drops.push({
+      category: "material",
+      id: pickWeighted(POLISH_IDS, (id) => weights[id], random),
+      multiplierPercent: null,
+    });
+  }
+  if (random() * 1000 < SHARD_DROP_CHANCE[kind]) {
+    drops.push({
+      category: "material",
+      id: AWAKENING_SHARD_ID,
+      multiplierPercent: null,
+    });
+  }
+  return drops;
+}
+
+// マスで落ちる物を選ぶ。同じ物が2つ落ちることもある。強化素材は含めない（rollRoomDrops）。
 export function rollDrops(
   destinationId: string,
   roomKind: EventKind,
@@ -371,4 +402,19 @@ export function rollDrops(
     });
   }
   return drops;
+}
+
+// マスで落ちる物と強化素材。ふつうのドロップのあとに強化素材を足す。報酬のないマスでは何も落とさない。
+export function rollRoomDrops(
+  destinationId: string,
+  roomKind: EventKind,
+  random: () => number,
+  outcome: RoomOutcome = {},
+): Drop[] {
+  const reward = rewardOf(roomKind, outcome);
+  if (reward === null) return [];
+  return [
+    ...rollDrops(destinationId, roomKind, random, outcome),
+    ...rollMaterials(reward.row, random),
+  ];
 }

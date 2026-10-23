@@ -5,6 +5,7 @@ import { createPartyRepository } from "./repository.js";
 import {
   cardSlotSchema,
   characterIdSchema,
+  deepenBondSchema,
   evolveUniqueSchema,
   levelUpSchema,
   partySlotSchema,
@@ -129,6 +130,20 @@ export function createPartyApi() {
       return respond(c, result, errorStatus);
     },
   );
+
+  // 絆のしるしを1つ使って、絆を1段深める（育成の画面の「絆を深める」）。
+  api.post("/party/characters/:characterId/bond", async (c) => {
+    const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
+    const body = await parseJson(c, deepenBondSchema);
+    if (!characterId.success || !body.success) return invalidRequest(c);
+    const result = await createPartyRepository(c.env.DB).deepenBond(
+      c.get("userId"),
+      characterId.data,
+      body.data.bond,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
 
   return api;
 }

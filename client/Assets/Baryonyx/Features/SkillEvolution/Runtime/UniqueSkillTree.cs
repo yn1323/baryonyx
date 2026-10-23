@@ -81,6 +81,9 @@ namespace Baryonyx.SkillEvolution
         // 進化で取得した段階。最初の段階（0）は書かなくても取得している。
         public int[] Acquired = Array.Empty<int>();
 
+        // 倍率（doc/features/enhancement.md の品質強化）。×1.00で始まり、覚醒しても引き継ぐ。
+        public float Multiplier = Inventory.Quality.MinMultiplier;
+
         public bool Has(int stage) =>
             stage == 0
             || (
@@ -93,6 +96,11 @@ namespace Baryonyx.SkillEvolution
         public int SetStage => Has(Set) ? Set : 0;
 
         public UniqueSkillProgress Copy() =>
-            new() { Set = Set, Acquired = (int[])(Acquired ?? Array.Empty<int>()).Clone() };
+            new()
+            {
+                Set = Set,
+                Acquired = (int[])(Acquired ?? Array.Empty<int>()).Clone(),
+                Multiplier = Multiplier,
+            };
     }
 }

@@ -153,7 +153,8 @@ namespace Baryonyx.Tests.EditMode
                 entrance.Exits.Select(exit => exit.Kind),
                 Is.All.EqualTo(AdventureRoomKind.Battle)
             );
-            Assert.That(entrance.Prompt, Is.EqualTo(ExplorationRoom.ChoosePrompt));
+            // 進む道は脈打つ道と札で伝えるため、案内は出さない。
+            Assert.That(entrance.Prompt, Is.Empty);
             Assert.That(entrance.StartsBattle, Is.False);
 
             var first = entrance.Exits[0].Room;
@@ -171,7 +172,8 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Treasure));
             Assert.That(treasure.Chest, Is.EqualTo(ExplorationChest.Closed));
             Assert.That(treasure.Exits, Is.Empty);
-            Assert.That(treasure.Prompt, Is.EqualTo(ExplorationRoom.ChestPrompt));
+            // 開けることは、マスに置いた閉じた宝箱で伝えるため、案内は出さない。
+            Assert.That(treasure.Prompt, Is.Empty);
         }
 
         // サーバーと同じ決まり：出来事を終えるまで進めない・道でつながっていない部屋へは進めない。

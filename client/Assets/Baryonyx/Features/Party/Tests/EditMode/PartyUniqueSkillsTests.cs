@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 固有スキルの進み具合の保存（doc/features/skill-evolution.md#進化の保存）：編成と一緒に読み、変更を待ち行列で送る。
+    // 固有スキルの進み具合の保存（doc/features/skill-evolution.md#覚醒の保存）：編成と一緒に読み、変更を待ち行列で送る。
     public sealed class PartyUniqueSkillsTests
     {
         // サーバーの応答（server/src/features/party/routes.ts）を JsonUtility で読んだ形。

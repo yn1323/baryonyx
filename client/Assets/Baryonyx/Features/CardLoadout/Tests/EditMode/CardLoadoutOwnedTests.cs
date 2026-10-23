@@ -67,8 +67,8 @@ namespace Baryonyx.Tests.EditMode
                 State = new PartyState(
                     new[]
                     {
-                        new PartyCharacterState("toma", 12, new[] { TomaFire, TomaIce }),
-                        new PartyCharacterState("luka", 11, new[] { LukaThunder, null }),
+                        new PartyCharacterState("toma", 12, new[] { TomaFire, TomaIce, null }),
+                        new PartyCharacterState("luka", 11, new[] { LukaThunder, null, null }),
                     },
                     new[] { "toma", "luka", null, null },
                     0,
@@ -90,7 +90,8 @@ namespace Baryonyx.Tests.EditMode
             presenter = new CardLoadoutPresenter(
                 view,
                 CardLoadoutPresenter.People(new PartyFormation(roster, new[] { "toma", "luka" })),
-                store
+                store,
+                slot: 0
             );
         }
 
@@ -126,7 +127,7 @@ namespace Baryonyx.Tests.EditMode
         public void ABetterCopyReplacesTheSlotAndACardAnotherHoldsMovesHere()
         {
             view.Card(GoodFire);
-            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { GoodFire, TomaIce }));
+            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { GoodFire, TomaIce, null }));
             Assert.That(view.Last.Slots[0].Quality, Is.EqualTo(ItemQuality.S));
 
             // アイテムは誰でも使えるので、ルカの空いた枠に入れられる。
@@ -138,7 +139,10 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(items.Select(card => card.ItemId), Is.EqualTo(new[] { "herb", "acorn" }));
             Assert.That(items.Select(card => card.Mark), Is.EqualTo(new[] { "所持 1", "所持 2" }));
             view.Card("item:herb");
-            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, "item:herb" }));
+            Assert.That(
+                store.CardsOf("luka"),
+                Is.EqualTo(new[] { LukaThunder, "item:herb", null })
+            );
             Assert.That(view.Last.Slots[1].Name, Is.EqualTo("薬草"));
         }
 
@@ -148,7 +152,7 @@ namespace Baryonyx.Tests.EditMode
             view.Slot(1);
             view.Tab(CardLoadoutPresenter.ItemTab);
             view.Card("item:herb");
-            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { TomaFire, "item:herb" }));
+            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { TomaFire, "item:herb", null }));
 
             // 薬草は1つだけなので、ルカは入れられない。どんぐりは2つあるので入れられる。
             view.Next();
@@ -156,9 +160,12 @@ namespace Baryonyx.Tests.EditMode
             var herb = view.Last.Choices.Single(card => card.ItemId == "herb");
             Assert.That(herb.Unavailable, Is.True);
             view.Card("item:herb");
-            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, null }));
+            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, null, null }));
             view.Card("item:acorn");
-            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, "item:acorn" }));
+            Assert.That(
+                store.CardsOf("luka"),
+                Is.EqualTo(new[] { LukaThunder, "item:acorn", null })
+            );
         }
 
         [Test]
@@ -179,8 +186,8 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(scout.Mark, Is.EqualTo("ルカが使用中"));
 
             view.Card("card:scout");
-            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { "card:scout", TomaIce }));
-            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, null }));
+            Assert.That(store.CardsOf("toma"), Is.EqualTo(new[] { "card:scout", TomaIce, null }));
+            Assert.That(store.CardsOf("luka"), Is.EqualTo(new[] { LukaThunder, null, null }));
         }
     }
 }

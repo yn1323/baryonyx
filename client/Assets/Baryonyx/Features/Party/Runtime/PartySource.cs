@@ -19,13 +19,17 @@ namespace Baryonyx.Party
             string id,
             int level,
             IReadOnlyList<string> cards,
-            IReadOnlyList<UniqueSkillProgress> uniques = null
+            IReadOnlyList<UniqueSkillProgress> uniques = null,
+            int bond = 0,
+            int tokens = 0
         )
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Level = Math.Max(1, level);
             Cards = cards ?? Array.Empty<string>();
             Uniques = uniques;
+            Bond = Math.Max(0, bond);
+            Tokens = Math.Max(0, tokens);
         }
 
         public string Id { get; }
@@ -36,6 +40,10 @@ namespace Baryonyx.Party
 
         // 固有スキルの番号の順の進み具合（doc/features/skill-evolution.md）。サーバーが返さなければnull。
         public IReadOnlyList<UniqueSkillProgress> Uniques { get; }
+
+        // 絆の段と、持っている絆のしるし（doc/features/monetization.md のキャラが被ったとき）。
+        public int Bond { get; }
+        public int Tokens { get; }
     }
 
     /// <summary>A player's characters, party slots and runes as the server keeps them.</summary>
@@ -154,7 +162,14 @@ namespace Baryonyx.Party
                     }
                     else
                         return character;
-                    return new PartyCharacterState(character.Id, character.Level, cards);
+                    return new PartyCharacterState(
+                        character.Id,
+                        character.Level,
+                        cards,
+                        character.Uniques,
+                        character.Bond,
+                        character.Tokens
+                    );
                 })
                 .ToArray();
             return Copy(owned, Slots, Runes);
@@ -164,8 +179,33 @@ namespace Baryonyx.Party
         public PartyState WithLevel(string characterId, int level, long runes) =>
             With(
                 characterId,
-                character => new PartyCharacterState(character.Id, level, character.Cards),
+                character => new PartyCharacterState(
+                    character.Id,
+                    level,
+                    character.Cards,
+                    character.Uniques,
+                    character.Bond,
+                    character.Tokens
+                ),
                 runes
+            );
+
+        /// <summary>The party with the character's bond one stage deeper and one token spent.</summary>
+        public PartyState WithBond(string characterId) =>
+            With(
+                characterId,
+                character =>
+                    character.Tokens < 1
+                        ? character
+                        : new PartyCharacterState(
+                            character.Id,
+                            character.Level,
+                            character.Cards,
+                            character.Uniques,
+                            character.Bond + 1,
+                            character.Tokens - 1
+                        ),
+                0
             );
 
         private PartyState With(
@@ -215,7 +255,7 @@ namespace Baryonyx.Party
     }
 
     /// <summary>
-    /// Saves the progress of the characters' unique skills (doc/features/skill-evolution.md#進化の保存):
+    /// Saves the progress of the characters' unique skills (doc/features/skill-evolution.md#覚醒の保存):
     /// the stage the formation sets, and each evolution in an adventure's battle.
     /// </summary>
     public interface IPartyUniqueSkillSource
@@ -235,11 +275,18 @@ namespace Baryonyx.Party
         );
     }
 
+    /// <summary>Deepens a character's bond with one of its tokens (doc/features/monetization.md).</summary>
+    public interface IPartyBondSource
+    {
+        // bond は深めたあとの段。
+        Task<PartyState> DeepenBondAsync(string characterId, int bond, CancellationToken token);
+    }
+
     /// <summary>
     /// Reads and saves the party on the game server with the shared session, so each player has
     /// their own characters, levels, card skills and formation.
     /// </summary>
-    public sealed class PartyServerSource : IPartySource, IPartyUniqueSkillSource
+    public sealed class PartyServerSource : IPartySource, IPartyUniqueSkillSource, IPartyBondSource
     {
         private readonly IAccountSessionRunner sessions;
         private readonly PartyApiClient api;
@@ -304,6 +351,12 @@ namespace Baryonyx.Party
         ) =>
             Run(session => api.EvolveUniqueAsync(session, characterId, index, stage, token), token);
 
+        public Task<PartyState> DeepenBondAsync(
+            string characterId,
+            int bond,
+            CancellationToken token
+        ) => Run(session => api.DeepenBondAsync(session, characterId, bond, token), token);
+
         private async Task<PartyState> Run(
             Func<AccountSession, Task<PartyApiClient.State>> operation,
             CancellationToken token
@@ -329,6 +382,8 @@ namespace Baryonyx.Party
                         Acquired = (unique.acquired ?? Array.Empty<int>())
                             .Where(stage => stage > 0)
                             .ToArray(),
+                        // 倍率を返さない古いサーバーでは×1.00。
+                        Multiplier = Math.Max(Inventory.Quality.MinMultiplier, unique.multiplier),
                     };
             return progress;
         }
@@ -344,7 +399,9 @@ namespace Baryonyx.Party
                     (character.cards ?? Array.Empty<string>())
                         .Select(card => string.IsNullOrEmpty(card) ? null : card)
                         .ToArray(),
-                    UniquesOf(character.uniques)
+                    UniquesOf(character.uniques),
+                    character.bond,
+                    character.tokens
                 ))
                 .ToArray();
             var slots = new string[PartyFormation.Size];

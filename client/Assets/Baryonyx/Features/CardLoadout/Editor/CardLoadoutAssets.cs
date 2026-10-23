@@ -27,10 +27,12 @@ namespace Baryonyx.CardLoadout.Editor
 {
     /// <summary>
     /// The formation's card skills change screen, laid out like the equipment's
-    /// (EquipmentAssets): the person, the stats and the slots on the left, the tabs and the list
-    /// on the right. The formation's generator calls <see cref="BuildPanel"/> for its card
-    /// skills item, so the person, the two slots, the stats and a row for every card are baked
-    /// into the formation prefab and read in the editor without Play Mode. The cards are the combat's card skills; the people, levels and
+    /// (EquipmentAssets): the person, the stats and the six cards (or, in the selection mode,
+    /// six tiles over the chosen card shown large) on the left, the tabs and the list on the
+    /// right, and the deck's six cards over the whole screen. The formation's generator calls
+    /// <see cref="BuildPanel"/> for its card skills item, so the person, the cards, the stats and
+    /// a row for every card are baked into the formation prefab and read in the editor without
+    /// Play Mode. The cards are the combat's card skills; the people, levels and
     /// stats are the party's and the training's mock data (doc/features/party.md).
     /// </summary>
     public static class CardLoadoutAssets
@@ -43,14 +45,34 @@ namespace Baryonyx.CardLoadout.Editor
         private static readonly Rect Left = ChangeScreen.Left;
         private static readonly Rect Right = ChangeScreen.Right;
 
-        // 左は上から人・ステータス・固有スキル・カスタムスキル。ステータスと線の位置は装備と同じ。
-        // 固有スキルもカスタムスキルと同じ形のカードにする。
-        private const float SlotTop = 318f;
-        private const float SlotHeight = 136f;
-        private const float SlotStep = 144f;
+        // 左は上から人・ステータス、その下に6枚の一覧か選択モード。ステータスと線の位置は装備と同じ。
+        // 6枚の一覧：固有スキル3枚とカスタムスキル3枚を、戦闘のカードの小さなカード（3倍）で並べる。
+        private const float SmallDot = 3f;
+        private const float UniqueTop = 324f;
+        private const float CustomTop = 608f;
+        private const float CardGap = 16f;
 
-        // 固有スキル2つの下で、見出しの前に空ける間。
-        private const float GroupGap = 40f;
+        // 選択モード：左に6枚の札を2列（固有スキル・カスタムスキル）×3段、右に選んでいる枠のカード（戦闘と同じ5倍）。
+        // 札は押せる範囲の決まり（128四方）の大きさにし、挿絵の中央56×56ドットを2倍で出す。
+        private const float SelectionTop = 290f;
+        private const float TileTop = 368f;
+        private const float TileSize = 128f;
+        private const float TileGap = 8f;
+        private const float TileArtDots = 56f;
+        private const float ChosenGap = 24f;
+        private const float ChosenDot = 5f;
+
+        // 今のデッキの全画面：上の帯の下に「〇〇のデッキ」と×、戦闘のカード（4倍）を固有スキルと
+        // カスタムスキルの2段に並べ、段の見出しはカードの左に置く。上の帯は全画面の上に残る。
+        private const float DeckDot = 4f;
+        private const float DeckGap = 32f;
+        private const float DeckTop = Frame.HeaderHeight + 14f;
+        private const float DeckFirstTop = DeckTop + 72f;
+        private const float DeckRowGap = 22f;
+        private const float DeckLabelWidth = 240f;
+        private static readonly Color DeckDim = new(0.01f, 0.015f, 0.04f, 0.93f);
+
+        private const float SlotHeight = 136f;
         private const float SlotTextLeft = 156f;
         private const float RowHeight = 140f;
         private const float RowTextLeft = 160f;
@@ -107,47 +129,255 @@ namespace Baryonyx.CardLoadout.Editor
             );
             // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける（装備と同じ）。
             view.Stats = ChangeScreen.Stats(left);
-            Title(left, "UniqueTitle", "固有スキル", SlotTop - 34);
-            view.Uniques = Enumerable
-                .Range(0, CardLoadoutPresenter.UniqueCount)
-                .Select(i => BuildUnique(left, i, SlotTop + i * SlotStep))
+            view.CardFrames = Enum.GetValues(typeof(CardElement))
+                .Cast<CardElement>()
+                .Select(element => (Texture)DeckCardAssets.CardArt($"CardFrame{element}"))
                 .ToArray();
-            float customTop = SlotTop + CardLoadoutPresenter.UniqueCount * SlotStep + GroupGap;
-            Title(left, "CustomTitle", "カスタムスキル", customTop - 34);
-            view.Slots = Enumerable
-                .Range(0, CardLoadoutRules.Size)
-                .Select(i => BuildSlot(left, "Slot" + i, customTop + i * SlotStep))
-                .ToArray();
+            BuildOverview(left, view);
+            BuildSelection(left, view);
             BuildCards(right, view);
             view.Tree = BuildTree(right);
+            BuildDeck((RectTransform)view.transform, view);
+            // 全画面は、画面のほかの部品より手前に描く。
+            view.Deck.transform.SetAsLastSibling();
 
             // 仮データの最初の人で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
-            // 先に1つ目の固有スキルの進化ツリーを作り込み（停止中の表示の切り替えで見せる）、
-            // そのあと開いたときの表示（1枚目のカスタムスキルを選んだ状態）に戻す。
+            // 先に1つ目の固有スキルの選択モードと進化ツリーを作り込み（停止中の表示の切り替えで見せる）、
+            // そのあと開いたときの表示（6枚の一覧）に戻す。
             var store = new MockStore(party, training);
             new CardLoadoutPresenter(view, people, store, unique: 0).Dispose();
             new CardLoadoutPresenter(view, people, store).Dispose();
             return view.gameObject;
         }
 
-        // --- Left: the chosen person's two custom skill slots -------------------------------
+        // --- Left: the six cards, or the selection mode ------------------------------------
 
-        // カスタムスキルの枠1つ（固有スキルも同じ形）。挿絵・コスト・属性、名前と「攻撃・敵単体」、説明。
-        private static CardLoadoutSlotWidget BuildSlot(RectTransform panel, string name, float y) =>
-            BuildCard(Layout.Box(panel, name, 24, y, Left.width - 48, SlotHeight)).Widget;
+        // 開いたときの6枚の一覧。固有スキルの見出しの右端に「今のデッキ」。
+        private static void BuildOverview(RectTransform left, CardLoadoutView view)
+        {
+            var root = Layout.Box(left, "Overview", 0, 0, Left.width, Left.height);
+            view.Overview = root.gameObject;
+            Title(root, "UniqueTitle", "固有スキル", UniqueTop - 40);
+            view.DeckButton = SmallButton(
+                root,
+                "DeckButton",
+                "今のデッキ",
+                Left.width - 24 - 200,
+                UniqueTop - 52,
+                200
+            );
+            view.UniqueCards = Enumerable
+                .Range(0, CardLoadoutPresenter.UniqueCount)
+                .Select(i => SmallCard(root, "Unique" + i, i, UniqueTop))
+                .ToArray();
+            Title(root, "CustomTitle", "カスタムスキル", CustomTop - 40);
+            view.SlotCards = Enumerable
+                .Range(0, CardLoadoutRules.Size)
+                .Select(i => SmallCard(root, "Slot" + i, i, CustomTop))
+                .ToArray();
+        }
 
-        private static (CardLoadoutSlotWidget Widget, RectTransform Content) BuildCard(
-            RectTransform rect
+        private static TrainingCardWidget SmallCard(
+            RectTransform root,
+            string name,
+            int index,
+            float y
         )
         {
-            var (button, selected, row) = GlassCardAssets.Choice(rect, pattern: false);
-            var widget = new CardLoadoutSlotWidget { Button = button, Selected = selected };
-            (widget.Art, widget.Cost, widget.Element) = BuildThumb(row, 12);
-            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(widget.Art);
-            (widget.Name, widget.Kind) = BuildNameLine(row, 8, SlotTextLeft, 24);
-            widget.Description = BuildDescription(row, 56, 72, SlotTextLeft, 24);
-            return (widget, row);
+            var size = DeckCardAssets.Size(SmallDot, small: true);
+            float x = 24 + index * (size.x + CardGap);
+            return DeckCardAssets.Build(root, name, x, y, SmallDot, button: true, small: true);
         }
+
+        // 選択モード：右上に「戻る」、左に6枚の札（左の列が固有スキル、右の列がカスタムスキル）、
+        // 右に選んでいる枠のカード。見出しや列の名前は付けず、並びで伝える。
+        private static void BuildSelection(RectTransform left, CardLoadoutView view)
+        {
+            var root = Layout.Box(left, "Selection", 0, 0, Left.width, Left.height);
+            view.Selection = root.gameObject;
+            view.Back = SmallButton(
+                root,
+                "Back",
+                "戻る",
+                Left.width - 24 - 160,
+                SelectionTop - 12,
+                160,
+                arrow: true
+            );
+            const float x = 24f;
+            int uniques = CardLoadoutPresenter.UniqueCount;
+            view.Tiles = Enumerable
+                .Range(0, uniques + CardLoadoutRules.Size)
+                .Select(i =>
+                {
+                    int column = i < uniques ? 0 : 1;
+                    int row = i < uniques ? i : i - uniques;
+                    return BuildTile(
+                        root,
+                        i,
+                        x + column * (TileSize + TileGap),
+                        TileTop + row * (TileSize + TileGap)
+                    );
+                })
+                .ToArray();
+            view.Chosen = DeckCardAssets.Build(
+                root,
+                "Chosen",
+                x + TileSize * 2 + TileGap + ChosenGap,
+                TileTop - 34,
+                ChosenDot,
+                button: false
+            );
+            root.gameObject.SetActive(false);
+        }
+
+        // 札1枚：すりガラスの札に、挿絵の中央を2倍で出す。選ぶと金の枠で光る。
+        private static CardLoadoutTileWidget BuildTile(
+            RectTransform root,
+            int index,
+            float x,
+            float y
+        )
+        {
+            var (button, selected, inside) = GlassCardAssets.Choice(
+                Layout.Box(root, "Tile" + index, x, y, TileSize, TileSize),
+                pattern: false
+            );
+            var widget = new CardLoadoutTileWidget { Button = button, Selected = selected };
+            var art = Rect("Art", inside);
+            Place(art, Vector2.zero, Vector2.one * TileArtDots * ArtDot);
+            widget.Art = art.gameObject.AddComponent<RawImage>();
+            widget.Art.raycastTarget = false;
+            widget.Art.uvRect = new Rect(
+                (64 - TileArtDots) / 2f / 64f,
+                (58 - TileArtDots) / 2f / 58f,
+                TileArtDots / 64f,
+                TileArtDots / 58f
+            );
+            widget.Lock = Frame.IconLock(art);
+            widget.Lock.SetActive(false);
+            var empty = Label(
+                inside,
+                "Empty",
+                "＋",
+                40,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)empty.transform);
+            widget.Empty = empty.gameObject;
+            empty.gameObject.SetActive(false);
+            return widget;
+        }
+
+        // 文字の小さなボタン（「今のデッキ」「戻る」）。模様のないすりガラスの札にする。
+        // arrow なら、文字の左に左向きの金の矢印を置く。
+        private static Button SmallButton(
+            RectTransform parent,
+            string name,
+            string text,
+            float x,
+            float y,
+            float width,
+            bool arrow = false
+        )
+        {
+            var (button, _, inside) = GlassCardAssets.Choice(
+                Layout.Box(parent, name, x, y, width, 52),
+                pattern: false
+            );
+            var row = Layout.Row(inside, "Row", 0, 0, width, 52, 10, TextAnchor.MiddleCenter);
+            if (arrow)
+            {
+                var cell = Rect("Arrow", row);
+                Layout.Fit(cell, 5 * 3);
+                var image = Rect("Image", cell);
+                Place(image, Vector2.zero, new Vector2(5, 9) * 3);
+                image.localScale = new Vector3(-1, 1, 1);
+                SpriteImage(image, Guide.ArrowPath, UiPalette.Gold);
+            }
+            Layout.Fit(
+                Label(row, "Label", text, 24, UiPalette.TextMain, TextAlignmentOptions.Midline),
+                0
+            );
+            return button;
+        }
+
+        // --- The deck over the whole screen ------------------------------------------------
+
+        /// <summary>
+        /// The deck's six cards over everything, hidden until 「今のデッキ」 is pressed: a dim
+        /// that takes every tap, 「〇〇のデッキ」 with × at the top, then the three unique skills
+        /// and below them the three custom skills, as large as the battle's cards nearly.
+        /// </summary>
+        private static void BuildDeck(RectTransform root, CardLoadoutView view)
+        {
+            var deck = Rect("Deck", root);
+            Stretch(deck);
+            view.Deck = deck.gameObject;
+            // 後ろの画面を押せないよう、Safe Areaの外まで暗くする。
+            var dim = Rect("Dim", deck);
+            Stretch(dim);
+            dim.offsetMin = new Vector2(-400, -400);
+            dim.offsetMax = new Vector2(400, 400);
+            AddImage(dim, DeckDim, true);
+
+            var layer = Layout.Layer(deck, "Layout");
+            var size = DeckCardAssets.Size(DeckDot, small: false);
+            int count = CardLoadoutRules.Size;
+            float cardsWidth = count * size.x + (count - 1) * DeckGap;
+            float left = (1920 - DeckLabelWidth - cardsWidth) / 2f;
+            float x = left + DeckLabelWidth;
+            float secondTop = DeckFirstTop + size.y + DeckRowGap;
+            view.DeckTitle = Frame.Heading(layer, "Title", "", left - 4, DeckTop, 900, 56, 40);
+
+            var close = Layout.Box(layer, "Close", x + cardsWidth - 72, DeckTop - 8, 72, 72);
+            var hit = AddImage(close, Color.clear, true);
+            var icon = Rect("Icon", close);
+            Place(icon, Vector2.zero, Vector2.one * 48);
+            SpriteImage(icon, Guide.IconClosePath, Color.white);
+            view.DeckClose = Guide.AddButton(close, hit);
+
+            float label = DeckLabelWidth - 16;
+            Frame.Heading(
+                layer,
+                "UniqueTitle",
+                "固有スキル",
+                left - 4,
+                DeckFirstTop,
+                label,
+                36,
+                26
+            );
+            Frame.Heading(
+                layer,
+                "CustomTitle",
+                "カスタムスキル",
+                left - 4,
+                secondTop,
+                label,
+                36,
+                26
+            );
+            view.DeckUniques = Enumerable
+                .Range(0, CardLoadoutPresenter.UniqueCount)
+                .Select(i =>
+                    DeckCard(layer, "Unique" + i, x + i * (size.x + DeckGap), DeckFirstTop)
+                )
+                .ToArray();
+            view.DeckSlots = Enumerable
+                .Range(0, count)
+                .Select(i => DeckCard(layer, "Slot" + i, x + i * (size.x + DeckGap), secondTop))
+                .ToArray();
+            deck.gameObject.SetActive(false);
+        }
+
+        private static TrainingCardWidget DeckCard(
+            RectTransform layer,
+            string name,
+            float x,
+            float y
+        ) => DeckCardAssets.Build(layer, name, x, y, DeckDot, button: false);
 
         // 左の見出し（金のひし形と明るい金の文字）。
         private static void Title(RectTransform panel, string name, string text, float y)
@@ -155,19 +385,6 @@ namespace Baryonyx.CardLoadout.Editor
             var row = Layout.Row(panel, name, 30, y, Left.width - 60, 30, 14, TextAnchor.LowerLeft);
             Label(row, "Title", text, 24, UiPalette.Gold, TextAlignmentOptions.BottomLeft);
             Frame.HeadingRow(row, 24);
-        }
-
-        // 固有スキル1つ。カスタムスキルと同じ形のカードに、未解放のときの錠前と「Lv 20で解放」を足す。
-        private static CardLoadoutUniqueWidget BuildUnique(RectTransform panel, int index, float y)
-        {
-            var (card, row) = BuildCard(
-                Layout.Box(panel, "Unique" + index, 24, y, Left.width - 48, SlotHeight)
-            );
-            var widget = new CardLoadoutUniqueWidget { Card = card };
-            widget.Lock = Frame.IconLock((RectTransform)card.Art.transform);
-            widget.Lock.SetActive(false);
-            widget.Mark = BuildMark(row);
-            return widget;
         }
 
         // カードの右上の金の小さな文字（「Lv 20で解放」「セット中」）。
@@ -371,7 +588,8 @@ namespace Baryonyx.CardLoadout.Editor
             // 上に、面の幅いっぱいのスキル・アイテムのタブ（装備のタブと同じ形）。
             view.Tabs = ChangeScreen.Tabs(panel, "スキル", "アイテム");
 
-            // タブの下に、その人が付けられる属性。属性のないカードは誰でも付けられる。
+            // タブの下に、その人が付けられる属性のアイコンだけを並べる。属性のないカードは誰でも
+            // 付けられる。見出しや「属性なし」の文字は付けず、下の一覧の属性のアイコンと見比べさせる。
             var usable = Layout.Box(panel, "Usable", 36, UsableTop, Right.width - 72, 48);
             view.UsableLine = usable.gameObject;
             var group = usable.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -379,14 +597,6 @@ namespace Baryonyx.CardLoadout.Editor
             group.childAlignment = TextAnchor.MiddleLeft;
             group.childControlWidth = group.childControlHeight = true;
             group.childForceExpandWidth = group.childForceExpandHeight = false;
-            Label(
-                usable,
-                "Title",
-                "付けられる属性",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft
-            );
             view.Usable = Enumerable
                 .Range(0, 2)
                 .Select(i =>
@@ -400,14 +610,6 @@ namespace Baryonyx.CardLoadout.Editor
                     return image;
                 })
                 .ToArray();
-            Label(
-                usable,
-                "None",
-                "＋属性なし",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft
-            );
 
             var (viewport, content) = ChangeScreen.List(panel, ListTop);
 

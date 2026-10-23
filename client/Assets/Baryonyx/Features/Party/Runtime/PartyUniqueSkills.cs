@@ -9,7 +9,7 @@ namespace Baryonyx.Party
 {
     /// <summary>
     /// The progress of the characters' unique skills as the game server keeps it
-    /// (doc/features/skill-evolution.md#進化の保存): read with the party into
+    /// (doc/features/skill-evolution.md#覚醒の保存): read with the party into
     /// <see cref="UniqueSkillSession"/>, and each change (the stage the formation sets, an
     /// evolution in an adventure's battle) saved behind the other writes in the
     /// <see cref="SaveQueue"/>. The change shows at once; a save that fails is told by the

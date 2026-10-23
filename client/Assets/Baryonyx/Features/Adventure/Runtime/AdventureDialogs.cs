@@ -63,10 +63,10 @@ namespace Baryonyx.Adventure
         public const string LeaveChoice = "立ち去る";
         public const string BuyChoice = "買う";
         public const string KeepChoice = "やめる";
-        public const string AltarTitle = "進化の祭壇";
+        public const string AltarTitle = "覚醒の祭壇";
         public const string AltarBody =
-            "祭壇の光が、仲間の固有スキルを1段進化させる。\n誰の力を目覚めさせる？";
-        public const string EvolveChoice = "進化させる";
+            "祭壇の光が、仲間の固有スキルを1段覚醒させる。\n誰の力を引き出す？";
+        public const string EvolveChoice = "覚醒させる";
         public const string BackChoice = "もどる";
 
         // 祭壇で、選べるものを並べ、最後に閉じる・戻るを足す（選択肢は6つまで）。
@@ -186,8 +186,9 @@ namespace Baryonyx.Adventure
             );
 
         /// <summary>
-        /// The menu: suspend to Home, quit, or stay. The exploration and the battle word the
-        /// body and the last choice differently.
+        /// The menu: suspend to Home, quit, or stay. The body is the location, then the battle
+        /// adds what suspending mid-battle does (the exploration adds nothing); the last choice
+        /// is worded differently.
         /// </summary>
         public static void Menu(
             GameDialog dialog,
@@ -200,7 +201,9 @@ namespace Baryonyx.Adventure
         ) =>
             dialog.Show(
                 AdventureTexts.MenuTitle,
-                AdventureCatalog.Location(run) + "\n" + body,
+                string.IsNullOrEmpty(body)
+                    ? AdventureCatalog.Location(run)
+                    : AdventureCatalog.Location(run) + "\n" + body,
                 null,
                 stay,
                 new DialogChoice(AdventureTexts.SuspendChoice, suspend),

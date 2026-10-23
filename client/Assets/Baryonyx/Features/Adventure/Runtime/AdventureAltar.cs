@@ -9,7 +9,7 @@ namespace Baryonyx.Adventure
     /// <summary>
     /// The altar of evolution (doc/features/stage-progression.md, マスの中身): one unique skill of
     /// the party, chosen, evolves one stage, the same as a chest's evolution
-    /// (doc/features/skill-evolution.md#進化が起きる場面). The candidates are the next stages of the
+    /// (doc/features/skill-evolution.md#覚醒が起きる場面). The candidates are the next stages of the
     /// stage each unlocked unique skill sets; one whose set stage has none cannot evolve.
     /// </summary>
     public static class AdventureAltar

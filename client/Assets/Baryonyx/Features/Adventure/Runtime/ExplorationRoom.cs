@@ -32,20 +32,7 @@ namespace Baryonyx.Adventure
     /// </summary>
     public sealed class ExplorationRoom
     {
-        private static string OpenPrompt(AdventureRoomKind kind) =>
-            kind switch
-            {
-                AdventureRoomKind.ShadyChest => ShadyChestPrompt,
-                AdventureRoomKind.StepDoor => StepDoorPrompt,
-                AdventureRoomKind.Altar => AltarPrompt,
-                _ => ChestPrompt,
-            };
-
-        public const string ChoosePrompt = "進む道を選んでください";
-        public const string ChestPrompt = "宝箱がある。タップして開けよう";
-        public const string ShadyChestPrompt = "怪しい宝箱がある。タップして開けよう";
-        public const string StepDoorPrompt = "歩数の扉がある。タップして開けよう";
-        public const string AltarPrompt = "進化の祭壇がある。タップして調べよう";
+        // 進む道を選ぶときと、宝箱などを開けるときは、案内を出さない。脈打つ道と札、マスに置いた宝箱で伝える。
         public const string MerchantPrompt = "行商人が店を広げている";
         public const string BattlePrompt = "魔物が現れた！";
 
@@ -88,10 +75,8 @@ namespace Baryonyx.Adventure
                 Shops = room != null && room.Kind == AdventureRoomKind.Merchant && !run.RoomCleared,
                 Prompt =
                     run.InBattle ? BattlePrompt
-                    : treasure && !run.RoomCleared ? OpenPrompt(room.Kind)
                     : room != null && room.Kind == AdventureRoomKind.Merchant && !run.RoomCleared
                         ? MerchantPrompt
-                    : exits.Length > 0 ? ChoosePrompt
                     : "",
             };
         }

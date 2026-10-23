@@ -985,7 +985,7 @@ namespace Baryonyx.Adventure
                     AdventureDialogs.Menu(
                         Dialog,
                         AdventureDialogSamples.Run,
-                        ExplorationFlow.MenuBody,
+                        null,
                         AdventureTexts.CloseChoice,
                         none,
                         none,

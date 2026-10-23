@@ -6,22 +6,34 @@ import {
 } from "../../scripts/seed.js";
 import { slotOf } from "../../src/features/equipment/catalog.js";
 import {
+  CARD_SLOT_COUNT,
+  type CharacterId,
   levelUpCost,
   UNIQUE_SKILL_COUNT,
   UNIQUE_UNLOCK_LEVELS,
+  uniqueMaxPercent,
 } from "../../src/features/party/catalog.js";
+import { qualityOf } from "../../src/shared/quality.js";
 import {
   type ApiScenario,
   createApiScenario,
 } from "../support/api-scenario.js";
 
-type Unique = { index: number; set: number; acquired: number[] };
+type Unique = {
+  index: number;
+  set: number;
+  acquired: number[];
+  multiplier: number;
+  quality: string;
+};
 type Party = {
   characters: {
     id: string;
     level: number;
     cards: (string | null)[];
     uniques: Unique[];
+    bond: number;
+    tokens: number;
   }[];
   skillCards: { id: string; skillId: string; multiplier: number }[];
   items: { itemId: string; count: number }[];
@@ -104,21 +116,35 @@ describe("開発用のプレイヤー（seed）", () => {
         seed.characters.map((character) => ({
           id: character.id,
           level: character.level,
-          cards: [...character.cards],
+          // 書かなかった後ろの枠は空き（null）として読める。
+          cards: Array.from(
+            { length: CARD_SLOT_COUNT },
+            (_, slot) => character.cards[slot] ?? null,
+          ),
           // 固有スキルの段階。seedに書いていない固有スキルは最初の段階だけを持つ。
           uniques: Array.from(
             { length: UNIQUE_SKILL_COUNT },
             (_, index): Unique => {
               const unique = character.uniques?.[index];
+              const percent = unique?.multiplierPercent ?? 100;
               return {
                 index,
                 set: unique?.set ?? 0,
                 acquired: unique
                   ? [...unique.acquired].sort((a, b) => a - b)
                   : [0],
+                multiplier: percent / 100,
+                quality: qualityOf(
+                  percent,
+                  uniqueMaxPercent(character.id as CharacterId, index),
+                ),
               };
             },
           ),
+          // 絆の段としるし。seedに書いていないキャラは0。
+          bond: seed.bonds?.find((bond) => bond.id === character.id)?.bond ?? 0,
+          tokens:
+            seed.bonds?.find((bond) => bond.id === character.id)?.tokens ?? 0,
         })),
       );
       // 段階を書いた固有スキルは、解放するLvに届いている。
@@ -132,7 +158,10 @@ describe("開発用のプレイヤー（seed）", () => {
         });
       }
       expect(party.skillCards).toHaveLength(
-        seed.characters.length * 2 + (seed.skillCards?.length ?? 0),
+        seed.characters.reduce(
+          (total, character) => total + character.cards.length,
+          0,
+        ) + (seed.skillCards?.length ?? 0),
       );
       expect(party.items).toEqual(
         (seed.itemCounts ?? []).map((item) => ({
@@ -141,6 +170,31 @@ describe("開発用のプレイヤー（seed）", () => {
         })),
       );
       expect(party.slots.map((slot) => slot.characterId)).toEqual(seed.party);
+      // 強化素材は、seedに書いた数を、持っていない種類は0で読める。
+      const materials = await scenario.read<{
+        materials: { id: string; count: number }[];
+      }>("/enhancement", token);
+      for (const material of materials.materials) {
+        expect(material.count).toBe(
+          seed.materials?.find((entry) => entry.id === material.id)?.count ?? 0,
+        );
+      }
+
+      // 絆としるし、かけらも、seedに書いた値で読める。
+      const summon = await scenario.read<{
+        bonds: { characterId: string; bond: number; tokens: number }[];
+        shards: number;
+      }>("/summon", token);
+      expect(summon.bonds).toEqual(
+        [...(seed.bonds ?? [])]
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map((bond) => ({
+            characterId: bond.id,
+            bond: bond.bond,
+            tokens: bond.tokens ?? 0,
+          })),
+      );
+      expect(summon.shards).toBe(seed.shards ?? 0);
 
       const equipment = await scenario.read<Equipment>("/equipment", token);
       expect(equipment.items.map((item) => item.equipmentId).sort()).toEqual(

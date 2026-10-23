@@ -72,7 +72,7 @@ namespace Baryonyx.Adventure
                 Art = member.Art,
                 Tint = member.Tint,
                 Level = level,
-                Stats = growth != null ? growth.StatsAt(level) : default,
+                Stats = TrainingBond.StatsOf(growth, level),
                 Cards = cards,
                 Passives = passives,
             };

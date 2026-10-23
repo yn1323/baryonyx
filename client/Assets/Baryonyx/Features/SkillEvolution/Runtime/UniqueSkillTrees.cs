@@ -8,8 +8,9 @@ namespace Baryonyx.SkillEvolution
     /// <summary>
     /// The unique skills' evolution trees (provisional mock data: doc/features/skill-evolution.md).
     /// Every tree has all seven stages: the card the unique skill starts as, and three branches
-    /// of two steps each, every branch growing the skill a way of its own. Each stage has art of
-    /// its own ("CardUnique" + tree + stage).
+    /// of two steps each, every branch growing the skill a way of its own. Each stage of the first
+    /// two unique skills has art of its own ("CardUnique" + tree + stage); the third's stages
+    /// borrow a card skill's art for now.
     /// </summary>
     public static class UniqueSkillTrees
     {
@@ -805,6 +806,411 @@ namespace Baryonyx.SkillEvolution
                     Simple(CardActionKind.Revive, Ally, 60),
                     Apply(Ally, CardStatus.AttackUp, 2, 25),
                     Simple(CardActionKind.Energy, Nobody, 1)
+                )
+            ),
+            // --- 3つ目の固有スキル（Lv40で解放） ---------------------------------------------
+            // 専用の挿絵ができるまで、枝ごとに近いスキルの挿絵を借りる（doc/features/skill-evolution.md）。
+            // The mage: 敵全体の弱点を見抜き、魔法のカードにつなぐ。
+            Tree(
+                "ArcaneEye",
+                2f,
+                Stage(
+                    "ArcaneEye",
+                    "魔眼",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemies,
+                    1,
+                    "Scout",
+                    "敵全体の[弱点]をすべて見抜く。カードを1枚引く。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                ),
+                // 1本目の枝：見抜いた敵を撃つ。
+                Stage(
+                    "ArcaneEye.1",
+                    "魔眼・射",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemy,
+                    2,
+                    "LightningBolt",
+                    "敵全体の[弱点]をすべて見抜く。敵1体に{0}ダメージ。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    Damage(Enemy, Mag, 130)
+                ),
+                Stage(
+                    "ArcaneEye.2",
+                    "魔眼・滅光",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    "LightningBolt",
+                    "敵全体の[弱点]をすべて見抜く。敵1体に{0}ダメージ。[防御ダウン]2ターン。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    Damage(Enemy, Mag, 170),
+                    Apply(Enemy, CardStatus.Vulnerable, 2)
+                ),
+                // 2本目の枝：手札を増やす。
+                Stage(
+                    "ArcaneEye.3",
+                    "魔眼・識",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemies,
+                    1,
+                    "ManaPrayer",
+                    "敵全体の[弱点]をすべて見抜く。カードを2枚引く。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    Simple(CardActionKind.Draw, Nobody, 2)
+                ),
+                Stage(
+                    "ArcaneEye.4",
+                    "魔眼・叡智",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemies,
+                    1,
+                    "ManaPrayer",
+                    "敵全体の[弱点]をすべて見抜く。カードを2枚引く。エネルギー+1。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    Simple(CardActionKind.Draw, Nobody, 2),
+                    Simple(CardActionKind.Energy, Nobody, 1)
+                ),
+                // 3本目の枝：炎・氷・雷のカードを軽くする。
+                Stage(
+                    "ArcaneEye.5",
+                    "魔眼・律",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemies,
+                    1,
+                    "QuickCast",
+                    "敵全体の[弱点]をすべて見抜く。手札の炎・氷・雷カードのコストをすべて1下げる。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    CostDown(1, CardElement.Fire, CardElement.Ice, CardElement.Thunder)
+                ),
+                Stage(
+                    "ArcaneEye.6",
+                    "魔眼・星律",
+                    CardUser.Toma,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemies,
+                    2,
+                    "QuickCast",
+                    "敵全体の[弱点]をすべて見抜く。手札の炎・氷・雷カードのコストをすべて2下げる。",
+                    Simple(CardActionKind.RevealWeakness, Enemies),
+                    CostDown(2, CardElement.Fire, CardElement.Ice, CardElement.Thunder)
+                )
+            ),
+            // The archer: 低いコストで素早く撃つ。
+            Tree(
+                "QuickShot",
+                1.8f,
+                Stage(
+                    "QuickShot",
+                    "速射",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "InsightArrow",
+                    "敵1体に{0}ダメージ×2。",
+                    Damage(Enemy, Phy, 45, hits: 2)
+                ),
+                // 1本目の枝：撃つ数を増やす。
+                Stage(
+                    "QuickShot.1",
+                    "速射・連",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "ArrowRain",
+                    "敵1体に{0}ダメージ×3。",
+                    Damage(Enemy, Phy, 45, hits: 3)
+                ),
+                Stage(
+                    "QuickShot.2",
+                    "速射・乱れ撃ち",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Random,
+                    2,
+                    "ArrowRain",
+                    "ランダムな敵に{0}ダメージ×6。",
+                    Damage(Random, Phy, 45, hits: 6)
+                ),
+                // 2本目の枝：撃ちながら手札をつなぐ。
+                Stage(
+                    "QuickShot.3",
+                    "速射・継",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "Gale",
+                    "敵1体に{0}ダメージ×2。カードを1枚引く。",
+                    Damage(Enemy, Phy, 45, hits: 2),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                ),
+                Stage(
+                    "QuickShot.4",
+                    "速射・流転",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "Gale",
+                    "敵1体に{0}ダメージ×2。カードを1枚引く。エネルギー+1。",
+                    Damage(Enemy, Phy, 45, hits: 2),
+                    Simple(CardActionKind.Draw, Nobody, 1),
+                    Simple(CardActionKind.Energy, Nobody, 1)
+                ),
+                // 3本目の枝：守りを崩す。
+                Stage(
+                    "QuickShot.5",
+                    "速射・穿",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "ShadowSnipe",
+                    "敵1体に{0}ダメージ×2。[防御ダウン]1ターン。",
+                    Damage(Enemy, Phy, 45, hits: 2),
+                    Apply(Enemy, CardStatus.Vulnerable, 1)
+                ),
+                Stage(
+                    "QuickShot.6",
+                    "速射・貫通",
+                    CardUser.Luka,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    2,
+                    "ShadowSnipe",
+                    "敵1体に{0}ダメージ×3。[防御ダウン]中は1.5倍。[防御ダウン]2ターン。",
+                    Damage(Enemy, Phy, 50, hits: 3).Bonus(CardCondition.OnVulnerable, 50),
+                    Apply(Enemy, CardStatus.Vulnerable, 2)
+                )
+            ),
+            // The knight: 味方全体を守りながら奮い立たせる。
+            Tree(
+                "Rally",
+                2f,
+                Stage(
+                    "Rally",
+                    "鼓舞",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Allies,
+                    2,
+                    "WarCry",
+                    "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。",
+                    Block(Allies, Def, 40),
+                    Apply(Allies, CardStatus.AttackUp, 2, 20)
+                ),
+                // 1本目の枝：自ら斬り込む。
+                Stage(
+                    "Rally.1",
+                    "鼓舞・突撃",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    2,
+                    "StrideStrike",
+                    "敵全体に{0}ダメージ。味方全体の攻撃力を2ターン20%上げる。",
+                    Damage(Enemies, Phy, 60),
+                    Apply(Allies, CardStatus.AttackUp, 2, 20)
+                ),
+                Stage(
+                    "Rally.2",
+                    "鼓舞・総攻撃",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    "StrideStrike",
+                    "敵全体に{0}ダメージ。味方全体の攻撃力を3ターン30%上げる。",
+                    Damage(Enemies, Phy, 80),
+                    Apply(Allies, CardStatus.AttackUp, 3, 30)
+                ),
+                // 2本目の枝：号令で手札をつなぐ。
+                Stage(
+                    "Rally.3",
+                    "鼓舞・号令",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Allies,
+                    2,
+                    "Hone",
+                    "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。カードを1枚引く。",
+                    Block(Allies, Def, 40),
+                    Apply(Allies, CardStatus.AttackUp, 2, 20),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                ),
+                Stage(
+                    "Rally.4",
+                    "鼓舞・凱歌",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Allies,
+                    2,
+                    "Hone",
+                    "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。カードを2枚引く。",
+                    Block(Allies, Def, 40),
+                    Apply(Allies, CardStatus.AttackUp, 2, 20),
+                    Simple(CardActionKind.Draw, Nobody, 2)
+                ),
+                // 3本目の枝：守りを固める。
+                Stage(
+                    "Rally.5",
+                    "鼓舞・堅陣",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    2,
+                    "GuardianOath",
+                    "味方全体に[ブロック]{0}。味方全体の受けるダメージを、2ターン25%減らす。",
+                    Block(Allies, Def, 60),
+                    Apply(Allies, CardStatus.Protect, 2, 25)
+                ),
+                Stage(
+                    "Rally.6",
+                    "鼓舞・鉄壁",
+                    CardUser.Aria,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    3,
+                    "GuardianOath",
+                    "味方全体に[ブロック]{0}。味方全体の受けるダメージを、2ターン40%減らす。",
+                    Block(Allies, Def, 80),
+                    Apply(Allies, CardStatus.Protect, 2, 40)
+                )
+            ),
+            // The healer: 敵を撃ち、その光で味方を癒やす。
+            Tree(
+                "Judgment",
+                2f,
+                Stage(
+                    "Judgment",
+                    "裁きの光",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    "HolyLight",
+                    "敵全体に{0}ダメージ。味方全体のHPを{1}回復する。",
+                    Damage(Enemies, Mag, 60),
+                    Heal(Allies, Mag, 25)
+                ),
+                // 1本目の枝：1体に集める。
+                Stage(
+                    "Judgment.1",
+                    "裁きの光・断罪",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemy,
+                    3,
+                    "HolyHammer",
+                    "敵1体に{0}ダメージ。味方全体のHPを{1}回復する。",
+                    Damage(Enemy, Mag, 140),
+                    Heal(Allies, Mag, 25)
+                ),
+                Stage(
+                    "Judgment.2",
+                    "裁きの光・天罰",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemy,
+                    4,
+                    "HolyHammer",
+                    "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。味方全体のHPを{1}回復する。",
+                    Damage(Enemy, Mag, 160).Bonus(CardCondition.OnWounded, 50),
+                    Heal(Allies, Mag, 30)
+                ),
+                // 2本目の枝：清める。
+                Stage(
+                    "Judgment.3",
+                    "裁きの光・浄",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    "Purify",
+                    "敵全体に{0}ダメージ。味方全体の[状態異常]を消し、HPを{1}回復。",
+                    Damage(Enemies, Mag, 60),
+                    Simple(CardActionKind.Cleanse, Allies),
+                    Heal(Allies, Mag, 25)
+                ),
+                Stage(
+                    "Judgment.4",
+                    "裁きの光・聖浄",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    4,
+                    "Purify",
+                    "敵全体の[強化]を1つ消し、{0}ダメージ。味方全体の[状態異常]を消し、HPを{1}回復。",
+                    Simple(CardActionKind.Dispel, Enemies, 1),
+                    Damage(Enemies, Mag, 70),
+                    Simple(CardActionKind.Cleanse, Allies),
+                    Heal(Allies, Mag, 30)
+                ),
+                // 3本目の枝：癒やしを残す。
+                Stage(
+                    "Judgment.5",
+                    "裁きの光・陽光",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    "Regen",
+                    "敵全体に{0}ダメージ。味方全体のHPを{1}回復。2ターン毎ターン{2}回復。",
+                    Damage(Enemies, Mag, 60),
+                    Heal(Allies, Mag, 25),
+                    Apply(Allies, CardStatus.Regen, 2, Mag, 15)
+                ),
+                Stage(
+                    "Judgment.6",
+                    "裁きの光・天照",
+                    CardUser.Mina,
+                    CardElement.None,
+                    CardKind.Attack,
+                    Enemies,
+                    3,
+                    "Regen",
+                    "敵全体に{0}ダメージ。味方全体のHPを{1}回復。3ターン毎ターン{2}回復。",
+                    Damage(Enemies, Mag, 60),
+                    Heal(Allies, Mag, 25),
+                    Apply(Allies, CardStatus.Regen, 3, Mag, 20)
                 )
             )
         );

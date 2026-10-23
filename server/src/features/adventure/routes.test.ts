@@ -14,6 +14,10 @@ const fixed =
   () =>
     values.shift() ?? 0;
 
+// 強化素材（material）は、ふつうのドロップとは別に抽選する（rollRoomDrops）。数や一覧の検査からは外す。
+const withoutMaterials = (drops: Drop[] = []) =>
+  drops.filter((drop) => drop.category !== "material");
+
 type Drop = {
   roomId: string;
   category: string;
@@ -297,7 +301,7 @@ describe("冒険API", () => {
     });
     expect(altar.run).toMatchObject({ roomKind: "altar", roomCleared: false });
     // 祭壇は、進化を作るまでは宝箱と同じ1〜3つを落とす。
-    const drops = (await clear(user.token, "f3-0")).drops ?? [];
+    const drops = withoutMaterials((await clear(user.token, "f3-0")).drops);
     expect(drops.length).toBeGreaterThanOrEqual(1);
     expect(drops.length).toBeLessThanOrEqual(3);
     // 第4層（3つ目）の行商人は何も落とさずに終える。
@@ -333,7 +337,7 @@ describe("冒険API", () => {
     await move(user.token, rooms.treasure);
     const cleared = await clear(user.token, "f3-0");
     expect(cleared.run?.roomCleared).toBe(true);
-    const drops = cleared.drops ?? [];
+    const drops = withoutMaterials(cleared.drops);
     // 宝箱は1〜3つ落ちる。
     expect(drops.length).toBeGreaterThanOrEqual(1);
     expect(drops.length).toBeLessThanOrEqual(3);
@@ -354,11 +358,11 @@ describe("冒険API", () => {
     }
     expect(
       cleared.run?.drops?.filter((drop) => drop.roomId === "f3-0"),
-    ).toEqual(drops);
+    ).toEqual(cleared.drops);
 
     // 再送は、記録したドロップを返し、もう一度は手に入らない。
     const again = await clear(user.token, "f3-0");
-    expect(again.drops).toEqual(drops);
+    expect(again.drops).toEqual(cleared.drops);
     expect(again.run?.drops).toEqual(cleared.run?.drops);
   });
 
@@ -374,6 +378,7 @@ describe("冒険API", () => {
     const before = await equipment();
     // 魔物の部屋で、2つ落ちる（0.9）。分類は重みの累積（アイテム40・アクセサリー22・武器13・防具13・スキル9・ボーナス3）で、
     // 武器（0.65）と、スキル（0.9）。どちらも一覧の最初の物（0）・品質C（0）・最小の倍率（0）。
+    // 続く強化素材の抽選は乱数が尽きて0になり、磨き石（30%）は白が落ち、覚醒の欠片（魔物では0%）は落ちない。
     const repository = createAdventureRepository(
       scenario.env.DB,
       fixed(0.9, 0.65, 0, 0, 0, 0.9, 0, 0, 0),
@@ -398,6 +403,12 @@ describe("冒険API", () => {
         quality: "C",
         outcome: "added",
       },
+      {
+        roomId: "f2-0",
+        category: "material",
+        id: "polish-white",
+        outcome: "added",
+      },
     ]);
     const after = await equipment();
     expect(after).toHaveLength(before.length + 1);
@@ -419,6 +430,7 @@ describe("冒険API", () => {
     const elite = createAdventureRepository(
       scenario.env.DB,
       // 宝箱（強い魔物と同じ重み）で3つ（0.99）：アイテム（0）の薬草（0）を2つと、アクセサリー（0.5）の苔玉のお守り（0）。
+      // 強化素材は乱数が尽きて0になり、白い磨き石と覚醒の欠片（宝箱では3%）が落ちる。
       fixed(0.99, 0, 0, 0, 0, 0.5, 0, 0, 0),
     );
     const second = await elite.clear(user.userId, "f3-0", now);
@@ -426,6 +438,23 @@ describe("冒険API", () => {
       "herb",
       "herb",
       "moss-charm",
+      "polish-white",
+      "awakening-shard",
+    ]);
+    // 強化素材は種類ごとの数を足す。
+    expect(
+      (
+        await scenario.read<{ materials: { id: string; count: number }[] }>(
+          "/enhancement",
+          user.token,
+        )
+      ).materials,
+    ).toEqual([
+      { id: "polish-white", count: 2 },
+      { id: "polish-blue", count: 0 },
+      { id: "polish-purple", count: 0 },
+      { id: "polish-gold", count: 0 },
+      { id: "awakening-shard", count: 1 },
     ]);
     const items = await scenario.env.DB.prepare(
       "SELECT item_id, count FROM item_holdings WHERE user_id = ?",
@@ -623,7 +652,7 @@ describe("冒険API", () => {
     const dropped = new Set(cleared.result?.drops.map((drop) => drop.roomId));
     expect(dropped.size).toBe(8);
     // 最奥の間では2〜4つ落ち、☆3〜5と最奥の間だけの物から選ぶ。
-    const bossDrops = cleared.drops ?? [];
+    const bossDrops = withoutMaterials(cleared.drops);
     expect(bossDrops.length).toBeGreaterThanOrEqual(2);
     expect(bossDrops.length).toBeLessThanOrEqual(4);
     const bossPool = eligibleEntries("forest-ruins", "boss");
@@ -707,7 +736,7 @@ describe("冒険API", () => {
       roomId: "f4-1",
       enemies: [{ enemyId: "chest-mimic", defeated: 1 }],
     });
-    const drops = won.drops ?? [];
+    const drops = withoutMaterials(won.drops);
     expect(drops.length).toBeGreaterThanOrEqual(2);
     expect(drops.length).toBeLessThanOrEqual(4);
     expect(drops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
@@ -738,6 +767,7 @@ describe("冒険API", () => {
     await walk(user.token, 4);
     await move(user.token, { roomId: "f4-1", floor: 4, kind: "shady-chest" });
     // 本物（0.9）で、宝箱の行の3つ（0.99）に1つ足した4つ。どれもアイテム（0）の薬草（0）。
+    // 続く強化素材は乱数が尽きて0になり、白い磨き石と覚醒の欠片が落ちる。
     const opened = await createAdventureRepository(
       scenario.env.DB,
       fixed(0.9, 0.99),
@@ -747,6 +777,8 @@ describe("冒険API", () => {
       "herb",
       "herb",
       "herb",
+      "polish-white",
+      "awakening-shard",
     ]);
     expect("run" in opened && opened.run).toMatchObject({
       roomCleared: true,
@@ -840,7 +872,7 @@ describe("冒険API", () => {
       trialMet: true,
       enemies: [{ enemyId: "moss-slime", defeated: 2 }],
     });
-    const metDrops = met.drops ?? [];
+    const metDrops = withoutMaterials(met.drops);
     expect(metDrops.length).toBeGreaterThanOrEqual(2);
     expect(metDrops.length).toBeLessThanOrEqual(4);
     expect(metDrops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
@@ -860,7 +892,7 @@ describe("冒険API", () => {
       roomId: "f7-1",
       trialMet: false,
     });
-    const missedDrops = missed.drops ?? [];
+    const missedDrops = withoutMaterials(missed.drops);
     expect(missedDrops.length).toBeGreaterThanOrEqual(1);
     expect(missedDrops.length).toBeLessThanOrEqual(2);
     expect(
@@ -902,8 +934,8 @@ describe("冒険API", () => {
     await move(user.token, door(4));
     const none = await clear(user.token, "f4-1");
     expect(none.stepDoor).toEqual({ steps: 0, tier: 0 });
-    expect(none.drops?.length).toBeGreaterThanOrEqual(1);
-    expect(none.drops?.length).toBeLessThanOrEqual(2);
+    expect(withoutMaterials(none.drops).length).toBeGreaterThanOrEqual(1);
+    expect(withoutMaterials(none.drops).length).toBeLessThanOrEqual(2);
     // 再送は、開けたときの歩数と段を返す。
     expect((await clear(user.token, "f4-1")).stepDoor).toEqual({
       steps: 0,
@@ -915,8 +947,8 @@ describe("冒険API", () => {
     await move(user.token, door(5));
     const strong = await clear(user.token, "f5-1");
     expect(strong.stepDoor).toEqual({ steps: 5000, tier: 2 });
-    expect(strong.drops?.length).toBeGreaterThanOrEqual(2);
-    expect(strong.drops?.length).toBeLessThanOrEqual(4);
+    expect(withoutMaterials(strong.drops).length).toBeGreaterThanOrEqual(2);
+    expect(withoutMaterials(strong.drops).length).toBeLessThanOrEqual(4);
     await move(user.token, { roomId: "f6-0", floor: 6, kind: "treasure" });
     await clear(user.token, "f6-0");
 
@@ -925,14 +957,14 @@ describe("冒険API", () => {
     await move(user.token, door(7));
     const elite = await clear(user.token, "f7-1");
     expect(elite.stepDoor).toEqual({ steps: 3000, tier: 1 });
-    expect(elite.drops?.length).toBeLessThanOrEqual(3);
+    expect(withoutMaterials(elite.drops).length).toBeLessThanOrEqual(3);
 
     // 8,000歩以上は、最大の報酬（主の物を除く）。
     await sync(8000);
     await move(user.token, door(8));
     const best = await clear(user.token, "f8-1");
     expect(best.stepDoor).toEqual({ steps: 8000, tier: 3 });
-    const bestDrops = best.drops ?? [];
+    const bestDrops = withoutMaterials(best.drops);
     expect(bestDrops.length).toBeGreaterThanOrEqual(2);
     expect(bestDrops.every((drop) => inPool(bossRowPool, drop))).toBe(true);
     // 扉のほかのマスでは、歩数の扉の項目を返さない。

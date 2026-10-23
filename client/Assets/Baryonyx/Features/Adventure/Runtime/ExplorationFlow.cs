@@ -27,8 +27,6 @@ namespace Baryonyx.Adventure
 
         // 宝箱の2つ目からの中身の札を開いてから、次（最後ならダイアログ）までの読む間。
         public const float ItemReadSeconds = 1.1f;
-        public const string MenuBody =
-            "中断しても、ホームの行き先カードから\n今いるマスの続きを再開できます。";
 
         private readonly ExplorationView view;
         private readonly IAdventureSource source;
@@ -203,7 +201,7 @@ namespace Baryonyx.Adventure
             }
             AdventureDialogs.Altar(
                 view.Dialog,
-                mine[0].Name + "のどの固有スキルを進化させる？",
+                mine[0].Name + "のどの固有スキルを覚醒させる？",
                 mine.Select(choice =>
                         (
                             choice.CardName(choice.From),
@@ -219,7 +217,7 @@ namespace Baryonyx.Adventure
         private void OpenAltarStages(AdventureAltar.Choice choice, Action back) =>
             AdventureDialogs.Altar(
                 view.Dialog,
-                $"{choice.Name}の「{choice.CardName(choice.From)}」の進化先を選ぶ",
+                $"{choice.Name}の「{choice.CardName(choice.From)}」の覚醒先を選ぶ",
                 choice
                     .Next.Select(stage =>
                         (choice.CardName(stage), (Action)(() => ConfirmEvolve(choice, stage, back)))
@@ -232,7 +230,7 @@ namespace Baryonyx.Adventure
         private void ConfirmEvolve(AdventureAltar.Choice choice, int stage, Action back) =>
             AdventureDialogs.Altar(
                 view.Dialog,
-                $"「{choice.CardName(choice.From)}」を「{choice.CardName(stage)}」へ進化させますか？",
+                $"「{choice.CardName(choice.From)}」を「{choice.CardName(stage)}」へ覚醒させますか？",
                 new (string, Action)[]
                 {
                     (AdventureDialogs.EvolveChoice, () => Work = EvolveAsync(choice, stage)),
@@ -274,7 +272,7 @@ namespace Baryonyx.Adventure
             evolve?.Invoke(choice, stage);
             Enter(state);
             view.ShowNotice(
-                $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に進化した！"
+                $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に覚醒した！"
             );
         }
 
@@ -572,7 +570,7 @@ namespace Baryonyx.Adventure
             AdventureDialogs.Menu(
                 view.Dialog,
                 State.Run,
-                MenuBody,
+                null,
                 AdventureTexts.CloseChoice,
                 view.Dialog.Hide,
                 GoHome,

@@ -51,7 +51,9 @@ namespace Baryonyx.CardLoadout
         {
             var uniques = UniquesOf(id);
             var unique = index >= 0 && index < uniques.Count ? uniques[index] : null;
-            return (unique?.Tree?.StageAt(unique.Progress.SetStage) ?? unique?.Tree?.Root)?.Card;
+            var card = (unique?.Tree?.StageAt(unique.Progress.SetStage) ?? unique?.Tree?.Root)?.Card;
+            // 品質強化で上げた倍率を掛ける（doc/features/enhancement.md）。
+            return card?.WithMultiplier(unique.Progress.Multiplier);
         }
 
         /// <summary>Sets an acquired stage of the person's unique skill at once, and saves it on the server.</summary>

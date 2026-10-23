@@ -7,14 +7,20 @@ import { createHash } from "node:crypto";
 type SeedCharacter = {
   id: string;
   level: number;
-  // カスタムスキルの2枠に入れるスキル。属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
+  // カスタムスキルの枠（CARD_SLOT_COUNT：3枠）に前から入れるスキル。書かなかった後ろの枠は空ける。
+  // 属性は初期データ（party/catalog.ts の STARTER_CHARACTERS）と同じものにそろえる。
   // スキルは1枚ずつ（×1.00）持ち物に入れ、枠はその1枚を指す。
-  cards: readonly [string, string];
+  cards: readonly string[];
   weapon?: string;
   armor?: string;
-  // 2つの固有スキルの、セットしている段階と取得した段階（0〜6、party/catalog.ts の uniqueParent のツリー）。
-  // 解放するLv（UNIQUE_UNLOCK_LEVELS：1つ目Lv5・2つ目Lv20）に届いた固有スキルだけに書く。省くと最初の段階だけ。
-  uniques?: readonly ({ set: number; acquired: readonly number[] } | null)[];
+  // 3つの固有スキルの、セットしている段階と取得した段階（0〜6、party/catalog.ts の uniqueParent のツリー）。
+  // 解放するLv（UNIQUE_UNLOCK_LEVELS：1つ目Lv5・2つ目Lv20・3つ目Lv40）に届いた固有スキルだけに書く。省くと最初の段階だけ。
+  // multiplierPercent は商会の品質強化で上げた倍率（百分率の整数）。省くと×1.00。
+  uniques?: readonly ({
+    set: number;
+    acquired: readonly number[];
+    multiplierPercent?: number;
+  } | null)[];
 };
 
 export type SeedPlayer = {
@@ -33,6 +39,12 @@ export type SeedPlayer = {
   skillCards?: readonly { id: string; multiplierPercent: number }[];
   // 持っているアイテムと数。
   itemCounts?: readonly { id: string; count: number }[];
+  // 持っている強化素材（磨き石・覚醒の欠片）と数（doc/features/enhancement.md）。
+  materials?: readonly { id: string; count: number }[];
+  // キャラの絆（0〜6段）と持っている絆のしるし（段との合計は6まで）、全キャラ共通のかけら
+  // （doc/features/monetization.md のキャラが被ったとき）。
+  bonds?: readonly { id: string; bond: number; tokens?: number }[];
+  shards?: number;
   // 持っているボーナスと倍率（百分率の整数）。
   bonuses: readonly { id: string; multiplierPercent: number }[];
   // ボーナスの5枠。空き枠はnull。
@@ -88,14 +100,20 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     characters: [
       {
         id: "toma",
-        level: 30,
-        cards: ["FireStorm", "AbsoluteZero"],
+        level: 45,
+        cards: ["FireStorm", "AbsoluteZero", "Thunder"],
         weapon: "frost-wand",
         armor: "magic-robe",
-        // 1つ目は7つの段階をすべて取得済み、2つ目は枝1を取りきって枝2の1段目にいる。
+        // 1つ目は7つの段階をすべて取得済みで、品質強化で品質Aまで上げた。2つ目は枝1を取りきって枝2の1段目にいる。
+        // 3つ目（Lv40で解放）は枝1の1段目まで進んだ。
         uniques: [
-          { set: 6, acquired: [0, 1, 2, 3, 4, 5, 6] },
+          {
+            set: 6,
+            acquired: [0, 1, 2, 3, 4, 5, 6],
+            multiplierPercent: 196,
+          },
           { set: 3, acquired: [0, 1, 2, 3] },
+          { set: 1, acquired: [0, 1] },
         ],
       },
       {
@@ -195,6 +213,18 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       { id: "dried-fish", count: 5 },
       { id: "pirate-rum", count: 1 },
     ],
+    materials: [
+      { id: "polish-white", count: 12 },
+      { id: "polish-blue", count: 6 },
+      { id: "polish-purple", count: 3 },
+      { id: "polish-gold", count: 1 },
+      { id: "awakening-shard", count: 2 },
+    ],
+    bonds: [
+      { id: "toma", bond: 6 },
+      { id: "aria", bond: 2, tokens: 2 },
+    ],
+    shards: 3,
     bonuses: [
       { id: "guard", multiplierPercent: 147 },
       { id: "luck", multiplierPercent: 147 },
@@ -273,6 +303,7 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       { id: "herb", count: 2 },
       { id: "acorn", count: 1 },
     ],
+    materials: [{ id: "polish-white", count: 2 }],
     bonuses: [
       { id: "luck", multiplierPercent: 126 },
       { id: "foresight", multiplierPercent: 112 },
@@ -469,6 +500,7 @@ function playerStatements(player: SeedPlayer, now: string) {
                 (mask, stage) => mask | (1 << stage),
                 0,
               ),
+              multiplier_percent: unique.multiplierPercent ?? 100,
               updated_at: now,
             },
           ];
@@ -527,6 +559,32 @@ function playerStatements(player: SeedPlayer, now: string) {
         acquired_at: now,
         updated_at: now,
       })),
+    ),
+    ...insert(
+      "enhancement_materials",
+      (player.materials ?? []).map((material) => ({
+        user_id: userId,
+        material_id: material.id,
+        count: material.count,
+        acquired_at: now,
+        updated_at: now,
+      })),
+    ),
+    ...insert(
+      "character_bonds",
+      (player.bonds ?? []).map((bond) => ({
+        user_id: userId,
+        character_id: bond.id,
+        bond: bond.bond,
+        tokens: bond.tokens ?? 0,
+        updated_at: now,
+      })),
+    ),
+    ...insert(
+      "summon_shards",
+      player.shards
+        ? [{ user_id: userId, shards: player.shards, updated_at: now }]
+        : [],
     ),
     ...insert("step_bonus_profiles", [{ user_id: userId, created_at: now }]),
     ...insert(

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Enhancement;
 using Baryonyx.Inventory;
 
 namespace Baryonyx.Adventure
@@ -14,6 +15,9 @@ namespace Baryonyx.Adventure
         Armor,
         Skill,
         Bonus,
+
+        // 強化素材（磨き石・覚醒の欠片）。分類の重みでは選ばず、ふつうのドロップのあとに別に抽選する。
+        Material,
     }
 
     /// <summary>
@@ -273,6 +277,8 @@ namespace Baryonyx.Adventure
         /// <summary>The stars of a kind, from the lists (0 when no list has it).</summary>
         public static int StarsOf(AdventureDropCategory category, string id)
         {
+            if (category == AdventureDropCategory.Material)
+                return EnhancementMaterials.Find(id)?.Stars ?? 0;
             foreach (var entry in Pools.Values.SelectMany(pool => pool).Concat(Common))
                 if (entry.Category == category && entry.Id == id)
                     return entry.Stars;
@@ -343,6 +349,76 @@ namespace Baryonyx.Adventure
             return drops;
         }
 
+        // 磨き石が落ちる確率（千分率）と色の重み、覚醒の欠片が落ちる確率（千分率）。サーバーの
+        // POLISH_DROP_CHANCE・POLISH_DROP_WEIGHTS・SHARD_DROP_CHANCE と同じ値（doc/features/enhancement.md）。
+        private static int PolishChance(AdventureRoomKind row) =>
+            row switch
+            {
+                AdventureRoomKind.Battle => 300,
+                AdventureRoomKind.Boss => 1000,
+                _ => 600,
+            };
+
+        private static (string Id, int Weight)[] PolishWeights(AdventureRoomKind row) =>
+            row switch
+            {
+                AdventureRoomKind.Battle => new[]
+                {
+                    (EnhancementMaterials.White, 80),
+                    (EnhancementMaterials.Blue, 18),
+                    (EnhancementMaterials.Purple, 2),
+                    (EnhancementMaterials.Gold, 0),
+                },
+                AdventureRoomKind.Boss => new[]
+                {
+                    (EnhancementMaterials.White, 20),
+                    (EnhancementMaterials.Blue, 45),
+                    (EnhancementMaterials.Purple, 28),
+                    (EnhancementMaterials.Gold, 7),
+                },
+                _ => new[]
+                {
+                    (EnhancementMaterials.White, 55),
+                    (EnhancementMaterials.Blue, 35),
+                    (EnhancementMaterials.Purple, 9),
+                    (EnhancementMaterials.Gold, 1),
+                },
+            };
+
+        private static int ShardChance(AdventureRoomKind row) =>
+            row switch
+            {
+                AdventureRoomKind.Battle => 0,
+                AdventureRoomKind.Boss => 150,
+                _ => 30,
+            };
+
+        /// <summary>
+        /// The enhancement materials of a room, rolled after its other drops as the server's
+        /// rollRoomDrops does: a polishing stone and an awakening shard, each rolled once.
+        /// </summary>
+        public static IReadOnlyList<AdventureDrop> RollMaterials(
+            AdventureRoomKind row,
+            string roomId,
+            Random random
+        )
+        {
+            var drops = new List<AdventureDrop>();
+            if (random.Next(1000) < PolishChance(row))
+                drops.Add(
+                    new AdventureDrop(
+                        roomId,
+                        AdventureDropCategory.Material,
+                        Pick(PolishWeights(row), entry => entry.Weight, random).Id
+                    )
+                );
+            if (random.Next(1000) < ShardChance(row))
+                drops.Add(
+                    new AdventureDrop(roomId, AdventureDropCategory.Material, EnhancementMaterials.Shard)
+                );
+            return drops;
+        }
+
         /// <summary>
         /// One thing of <paramref name="category"/> a merchant of the destination sells: its stars
         /// and quality by the strong reward's weights. Null when the destination has none.
@@ -410,6 +486,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Weapon => "weapon",
                 AdventureDropCategory.Armor => "armor",
                 AdventureDropCategory.Skill => "skill",
+                AdventureDropCategory.Material => "material",
                 _ => "bonus",
             };
 
@@ -436,6 +513,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Weapon => "武器",
                 AdventureDropCategory.Armor => "防具",
                 AdventureDropCategory.Skill => "スキル",
+                AdventureDropCategory.Material => "強化素材",
                 _ => "ACTボーナス",
             };
     }

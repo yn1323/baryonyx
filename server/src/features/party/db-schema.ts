@@ -89,7 +89,7 @@ export const skillCards = sqliteTable(
   ],
 );
 
-// キャラごとの2つのカスタムスキルの枠。持っているスキル1枚（card_id）か、持っているアイテム（item_id）の
+// キャラごとの3つのカスタムスキルの枠。持っているスキル1枚（card_id）か、持っているアイテム（item_id）の
 // どちらかを入れる（doc/features/party.md）。スキルの1枚は1人の1つの枠にだけ入れられる。アイテムは、
 // 持っている数まで別々の枠に入れられる（数の確かめは処理で行う）。空いている枠は行を持たない。
 export const partyCharacterCards = sqliteTable(
@@ -116,7 +116,7 @@ export const partyCharacterCards = sqliteTable(
     }),
     check(
       "party_character_cards_slot_check",
-      sql`${table.slot} >= 0 AND ${table.slot} < 2`,
+      sql`${table.slot} >= 0 AND ${table.slot} < 3`,
     ),
     check(
       "party_character_cards_content_check",
@@ -125,7 +125,7 @@ export const partyCharacterCards = sqliteTable(
   ],
 );
 
-// キャラごとの2つの固有スキルの、取得した段階と編成でセットしている段階（doc/features/skill-evolution.md）。
+// キャラごとの3つの固有スキルの、取得した段階と編成でセットしている段階（doc/features/skill-evolution.md）。
 // acquired_mask は段階ごとのビット（段階 n が 1 << n）で、最初の段階（ビット0）は常に立てる。
 // セットできるのは取得した段階だけ。進化していない固有スキルは行を持たず、最初の段階をセットした扱いにする。
 export const partyUniqueSkills = sqliteTable(
@@ -138,6 +138,8 @@ export const partyUniqueSkills = sqliteTable(
     uniqueIndex: integer("unique_index").notNull(),
     setStage: integer("set_stage").notNull(),
     acquiredMask: integer("acquired_mask").notNull(),
+    // 倍率（百分率）。品質C・×1.00で始まり、商会の品質強化で上がる（doc/features/enhancement.md）。
+    multiplierPercent: integer("multiplier_percent").notNull().default(100),
     updatedAt: text("updated_at").notNull(),
   },
   (table) => [
@@ -150,7 +152,7 @@ export const partyUniqueSkills = sqliteTable(
     }),
     check(
       "party_unique_skills_index_check",
-      sql`${table.uniqueIndex} >= 0 AND ${table.uniqueIndex} < 2`,
+      sql`${table.uniqueIndex} >= 0 AND ${table.uniqueIndex} < 3`,
     ),
     check(
       "party_unique_skills_stage_check",

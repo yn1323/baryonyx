@@ -155,7 +155,7 @@ namespace Baryonyx.Tests.EditMode
                 Assert.That(Count(AdventureRoomKind.Boss), Is.EqualTo(1));
                 altar |= Count(AdventureRoomKind.Altar) == 1;
             }
-            Assert.That(altar, Is.True, "進化の祭壇が一度も出ない");
+            Assert.That(altar, Is.True, "覚醒の祭壇が一度も出ない");
         }
 
         // 進化の祭壇は、冒険を始めたときに5%で1つだけ地図に置く（doc/features/stage-progression.md）。

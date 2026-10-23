@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Items;
@@ -85,7 +86,7 @@ namespace Baryonyx.Adventure
                 AdventureRoomKind.ShadyChest => "怪しい宝箱",
                 AdventureRoomKind.Trial => "試練",
                 AdventureRoomKind.StepDoor => "歩数の扉",
-                AdventureRoomKind.Altar => "進化の祭壇",
+                AdventureRoomKind.Altar => "覚醒の祭壇",
                 _ => "入口",
             };
 
@@ -116,6 +117,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Item => ItemCards.Find(drop.Id)?.Name,
                 AdventureDropCategory.Skill => CardSkills.Find(drop.Id)?.Name,
                 AdventureDropCategory.Bonus => BonusName(bonuses, drop.Id),
+                AdventureDropCategory.Material => EnhancementMaterials.Find(drop.Id)?.Name,
                 _ => EquipmentCatalog.Find(drop.Id)?.Name,
             };
             return string.IsNullOrEmpty(name) ? drop.Id : name;
@@ -128,7 +130,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Skill => CardSkills.Find(id)?.MaxMultiplier
                     ?? Quality.MinMultiplier,
                 AdventureDropCategory.Bonus => StepBonusDefinition.DefaultMaxMultiplier,
-                AdventureDropCategory.Item => Quality.MinMultiplier,
+                AdventureDropCategory.Item or AdventureDropCategory.Material => Quality.MinMultiplier,
                 _ => EquipmentCatalog.Find(id)?.MaxMultiplier ?? Quality.MinMultiplier,
             };
 
@@ -156,8 +158,8 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The picture of one drop: the ACT bonus's icon, or the kind's own art for an item, an
-        /// accessory, a weapon or armour (<see cref="ItemArt"/>). Null for a skill or a kind
-        /// without art.
+        /// enhancement material, an accessory, a weapon or armour (<see cref="ItemArt"/>). Null
+        /// for a skill or a kind without art.
         /// </summary>
         public static Sprite DropIcon(StepBonusMockData bonuses, AdventureDrop drop, ItemArt art)
         {

@@ -133,18 +133,51 @@ export function maxMultiplierPercent(id: CardSkillId): number {
   return CARD_SKILL_MAX_PERCENT[id] ?? 100;
 }
 
-// パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル2枚の名前と効果はクライアントの仮データが持つ。
+// パーティの枠と、キャラごとのカスタムスキルの枠の数。固有スキル3枚の名前と効果はクライアントの仮データが持つ。
 export const PARTY_SLOT_COUNT = 4;
-export const CARD_SLOT_COUNT = 2;
+export const CARD_SLOT_COUNT = 3;
 
 // キャラごとの固有スキルの数と、それぞれを解放するLv（doc/features/skill-evolution.md）。
 // 解放のLvはクライアントの仮データ（PartyMockData）と同じ値にし、判定はサーバーの値で行う。
-export const UNIQUE_SKILL_COUNT = 2;
-export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [5, 20];
+export const UNIQUE_SKILL_COUNT = 3;
+export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [5, 20, 40];
 
 // 固有スキルの進化の段階。どの固有スキルも同じ形のツリーで、0が最初の段階、
 // 1・2が枝1、3・4が枝2、5・6が枝3の1段目と2段目になる。
 export const UNIQUE_STAGE_COUNT = 7;
+
+// 固有スキル3つの倍率の上限（百分率）を、キャラの職ごとに並べたもの（doc/features/inventory.md の上限の決め方）。
+// クライアントの UniqueSkillTrees の limit と同じ値。覚醒しても同じ上限を使う。
+const UNIQUE_MAX_PERCENT_BY_CLASS = {
+  // マナバースト・星降り・魔眼
+  mage: [220, 170, 200],
+  // 雷撃の矢・矢の雨・速射
+  archer: [220, 170, 180],
+  // 盾の構え・一閃・鼓舞
+  knight: [220, 260, 200],
+  // 癒しの風・蘇生・裁きの光
+  healer: [220, 200, 200],
+} as const;
+
+const CHARACTER_CLASSES: Record<
+  CharacterId,
+  keyof typeof UNIQUE_MAX_PERCENT_BY_CLASS
+> = {
+  toma: "mage",
+  luka: "archer",
+  aria: "knight",
+  mina: "healer",
+  anselm: "knight",
+  greta: "archer",
+  lutz: "mage",
+  rita: "healer",
+  ritsu: "archer",
+};
+
+// キャラの index 番目の固有スキルの倍率の上限（百分率）。品質強化と、品質を求めるときに使う。
+export function uniqueMaxPercent(characterId: CharacterId, index: number) {
+  return UNIQUE_MAX_PERCENT_BY_CLASS[CHARACTER_CLASSES[characterId]][index];
+}
 
 // 冒険の戦闘での進化は、マスの戦闘を終えたときに送られる。最奥のボスや全滅でそのマスと一緒に冒険も
 // 終わるため、踏破・敗北で冒険を終えてからこの分のあいだに届いた進化も受け付ける。

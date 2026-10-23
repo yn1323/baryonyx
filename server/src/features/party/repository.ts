@@ -14,6 +14,8 @@ import {
 import { ITEM_IDS, type ItemId } from "../items/catalog.js";
 import { itemHoldings } from "../items/db-schema.js";
 import { discoveryStatements } from "../library/discoveries.js";
+import { BOND_MAX } from "../summon/catalog.js";
+import { characterBonds } from "../summon/db-schema.js";
 import {
   CARD_SKILL_IDS,
   CARD_SLOT_COUNT,
@@ -31,6 +33,7 @@ import {
   UNIQUE_SKILL_COUNT,
   UNIQUE_STAGE_COUNT,
   UNIQUE_UNLOCK_LEVELS,
+  uniqueMaxPercent,
   uniqueParent,
 } from "./catalog.js";
 import {
@@ -48,6 +51,7 @@ export type PartySlotChange = "join" | "replace" | "leave" | "none";
 export type PartyCardChange = "replace" | "swap" | "move" | "none";
 export type PartyUniqueChange = "set" | "none";
 export type PartyEvolveChange = "evolve" | "none";
+export type PartyBondChange = "deepen" | "none";
 
 // 取得した段階のビット（段階 n が 1 << n）と段階の一覧の変換。最初の段階（0）は常に取得している。
 const bitOf = (stage: number) => 1 << stage;
@@ -86,63 +90,81 @@ export function ownedInOrder<
 export function createPartyRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
-  // 持っているキャラ（Lv・2つのカスタムスキルの枠・2つの固有スキルの段階）、4つの枠、持っているスキルとアイテム、
+  // 持っているキャラ（Lv・3つのカスタムスキルの枠・3つの固有スキルの段階・絆と絆のしるし）、4つの枠、持っているスキルとアイテム、
   // 所持ルーン、レベルの決まり。初回の付与を済ませたか（granted）も同じbatchで読み、往復を1回にする。
   async function read(userId: string) {
-    const [profiles, characters, cards, uniques, slots, owned, items, wallets] =
-      await db.batch([
-        db
-          .select({ userId: partyProfiles.userId })
-          .from(partyProfiles)
-          .where(eq(partyProfiles.userId, userId)),
-        db
-          .select({
-            characterId: partyCharacters.characterId,
-            level: partyCharacters.level,
-            acquiredAt: partyCharacters.acquiredAt,
-          })
-          .from(partyCharacters)
-          .where(eq(partyCharacters.userId, userId)),
-        db
-          .select({
-            characterId: partyCharacterCards.characterId,
-            slot: partyCharacterCards.slot,
-            cardId: partyCharacterCards.cardId,
-            itemId: partyCharacterCards.itemId,
-          })
-          .from(partyCharacterCards)
-          .where(eq(partyCharacterCards.userId, userId)),
-        db
-          .select({
-            characterId: partyUniqueSkills.characterId,
-            uniqueIndex: partyUniqueSkills.uniqueIndex,
-            setStage: partyUniqueSkills.setStage,
-            acquiredMask: partyUniqueSkills.acquiredMask,
-          })
-          .from(partyUniqueSkills)
-          .where(eq(partyUniqueSkills.userId, userId)),
-        db
-          .select({
-            slot: partySlots.slot,
-            characterId: partySlots.characterId,
-          })
-          .from(partySlots)
-          .where(eq(partySlots.userId, userId)),
-        db
-          .select({
-            id: skillCards.id,
-            skillId: skillCards.skillId,
-            multiplierPercent: skillCards.multiplierPercent,
-            acquiredAt: skillCards.acquiredAt,
-          })
-          .from(skillCards)
-          .where(eq(skillCards.userId, userId)),
-        db
-          .select({ itemId: itemHoldings.itemId, count: itemHoldings.count })
-          .from(itemHoldings)
-          .where(eq(itemHoldings.userId, userId)),
-        selectRuneBalance(db, userId),
-      ]);
+    const [
+      profiles,
+      characters,
+      cards,
+      uniques,
+      bonds,
+      slots,
+      owned,
+      items,
+      wallets,
+    ] = await db.batch([
+      db
+        .select({ userId: partyProfiles.userId })
+        .from(partyProfiles)
+        .where(eq(partyProfiles.userId, userId)),
+      db
+        .select({
+          characterId: partyCharacters.characterId,
+          level: partyCharacters.level,
+          acquiredAt: partyCharacters.acquiredAt,
+        })
+        .from(partyCharacters)
+        .where(eq(partyCharacters.userId, userId)),
+      db
+        .select({
+          characterId: partyCharacterCards.characterId,
+          slot: partyCharacterCards.slot,
+          cardId: partyCharacterCards.cardId,
+          itemId: partyCharacterCards.itemId,
+        })
+        .from(partyCharacterCards)
+        .where(eq(partyCharacterCards.userId, userId)),
+      db
+        .select({
+          characterId: partyUniqueSkills.characterId,
+          uniqueIndex: partyUniqueSkills.uniqueIndex,
+          setStage: partyUniqueSkills.setStage,
+          acquiredMask: partyUniqueSkills.acquiredMask,
+          multiplierPercent: partyUniqueSkills.multiplierPercent,
+        })
+        .from(partyUniqueSkills)
+        .where(eq(partyUniqueSkills.userId, userId)),
+      db
+        .select({
+          characterId: characterBonds.characterId,
+          bond: characterBonds.bond,
+          tokens: characterBonds.tokens,
+        })
+        .from(characterBonds)
+        .where(eq(characterBonds.userId, userId)),
+      db
+        .select({
+          slot: partySlots.slot,
+          characterId: partySlots.characterId,
+        })
+        .from(partySlots)
+        .where(eq(partySlots.userId, userId)),
+      db
+        .select({
+          id: skillCards.id,
+          skillId: skillCards.skillId,
+          multiplierPercent: skillCards.multiplierPercent,
+          acquiredAt: skillCards.acquiredAt,
+        })
+        .from(skillCards)
+        .where(eq(skillCards.userId, userId)),
+      db
+        .select({ itemId: itemHoldings.itemId, count: itemHoldings.count })
+        .from(itemHoldings)
+        .where(eq(itemHoldings.userId, userId)),
+      selectRuneBalance(db, userId),
+    ]);
     const skillOrder = (id: string) =>
       CARD_SKILL_IDS.indexOf(id as CardSkillId);
     const itemOrder = (id: string) => ITEM_IDS.indexOf(id as ItemId);
@@ -157,19 +179,33 @@ export function createPartyRepository(binding: D1Database) {
           );
           return row ? keyOf(row) : null;
         }),
-        // 固有スキルごとのセットしている段階と、取得した段階（小さい順）。行がなければ最初の段階だけ。
+        // 固有スキルごとのセットしている段階と、取得した段階（小さい順）、倍率と品質。
+        // 行がなければ最初の段階だけで、倍率は×1.00。
         uniques: Array.from({ length: UNIQUE_SKILL_COUNT }, (_, index) => {
           const row = uniques.find(
             (unique) =>
               unique.characterId === character.characterId &&
               unique.uniqueIndex === index,
           );
+          const percent = row?.multiplierPercent ?? MIN_MULTIPLIER_PERCENT;
           return {
             index,
             set: row?.setStage ?? 0,
             acquired: stagesOf(row?.acquiredMask ?? bitOf(0)),
+            multiplier: multiplierOf(percent),
+            quality: qualityOf(
+              percent,
+              uniqueMaxPercent(character.characterId as CharacterId, index),
+            ),
           };
         }),
+        // 絆の段と、持っている絆のしるし（doc/features/monetization.md のキャラが被ったとき）。行がなければ0。
+        bond:
+          bonds.find((row) => row.characterId === character.characterId)
+            ?.bond ?? 0,
+        tokens:
+          bonds.find((row) => row.characterId === character.characterId)
+            ?.tokens ?? 0,
       })),
       slots: Array.from({ length: PARTY_SLOT_COUNT }, (_, slot) => ({
         slot,
@@ -705,6 +741,50 @@ export function createPartyRepository(binding: D1Database) {
     return { change, ...after };
   }
 
+  // 絆のしるしを1つ使って、絆を1段深める（doc/features/monetization.md のキャラが被ったとき）。
+  // bond は深めたあとの段で、今の段の次だけを受け付ける。同じ要求の再送（すでにその段）は、何も変えずに成功として返す。
+  async function deepenBond(
+    userId: string,
+    characterId: CharacterId,
+    bond: number,
+    now: string,
+  ) {
+    const state = await loadState(userId, now);
+    const character = state.characters.find(
+      (entry) => entry.id === characterId,
+    );
+    if (!character) return { error: "character_not_owned" as const };
+    if (character.bond === bond) return { change: "none" as const, ...state };
+    if (character.bond !== bond - 1 || bond > BOND_MAX) {
+      return { error: "not_next_bond" as const };
+    }
+    if (character.tokens < 1) return { error: "no_bond_token" as const };
+    // 確認と書き込みの間に別の深める操作が割り込んでも、今の段としるしの数を更新と同じ文に入れる。
+    await db
+      .update(characterBonds)
+      .set({
+        bond: sql`${characterBonds.bond} + 1`,
+        tokens: sql`${characterBonds.tokens} - 1`,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(characterBonds.userId, userId),
+          eq(characterBonds.characterId, characterId),
+          eq(characterBonds.bond, bond - 1),
+          gte(characterBonds.tokens, 1),
+        ),
+      );
+    const after = await readState(userId);
+    if (
+      after.characters.find((entry) => entry.id === characterId)?.bond !== bond
+    ) {
+      return { error: "not_next_bond" as const };
+    }
+    const change: PartyBondChange = "deepen";
+    return { change, ...after };
+  }
+
   return {
     getState,
     grantStarter,
@@ -714,5 +794,6 @@ export function createPartyRepository(binding: D1Database) {
     levelUp,
     setUnique,
     evolveUnique,
+    deepenBond,
   };
 }

@@ -139,15 +139,19 @@ namespace Baryonyx.Adventure
                 door = new AdventureStepDoor(TodaySteps, AdventureStepDoor.TierOf(TodaySteps));
                 reward = StepDoorReward(door.Tier);
             }
+            // 強化素材は、ふつうのドロップのあとに足す（サーバーの rollRoomDrops）。
             var drops = reward is { } row
-                ? AdventureDrops.Roll(
-                    run.DestinationId,
-                    room.Kind,
-                    row,
-                    roomId,
-                    AdventureTexts.MaxMultiplierOf,
-                    random
-                )
+                ? AdventureDrops
+                    .Roll(
+                        run.DestinationId,
+                        room.Kind,
+                        row,
+                        roomId,
+                        AdventureTexts.MaxMultiplierOf,
+                        random
+                    )
+                    .Concat(AdventureDrops.RollMaterials(row.Row, roomId, random))
+                    .ToArray()
                 : Array.Empty<AdventureDrop>();
             run.Drops.AddRange(drops);
             run.RoomCleared = true;
@@ -186,13 +190,14 @@ namespace Baryonyx.Adventure
             NextMimic = null;
             if (run.Mimic)
                 return Answer(token, State());
-            var drops = AdventureDrops.Roll(
-                run.DestinationId,
-                room.Kind,
-                roomId,
-                AdventureTexts.MaxMultiplierOf,
-                random
-            );
+            var drops = AdventureDrops
+                .Roll(run.DestinationId, room.Kind, roomId, AdventureTexts.MaxMultiplierOf, random)
+                .Concat(
+                    AdventureDrops.RewardOf(room.Kind) is { } chest
+                        ? AdventureDrops.RollMaterials(chest.Row, roomId, random)
+                        : Array.Empty<AdventureDrop>()
+                )
+                .ToArray();
             run.Drops.AddRange(drops);
             run.RoomCleared = true;
             return Answer(token, State(drops: drops));

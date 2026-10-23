@@ -20,8 +20,8 @@ namespace Baryonyx.CardLoadout
             set => PartySession.Selected = value;
         }
 
-        // 次に開いたときに選んでおく枠（0から）。個別の画面で押した枠を渡す。
-        public static int OpenSlot { get; set; }
+        // 次に開いたときに選んでおく枠（0から）。個別の画面で押した枠を渡し、ほかは-1（6枚の一覧で開く）。
+        public static int OpenSlot { get; set; } = -1;
 
         // 次に開いたときに選んでおく固有スキル（0から）。個別の画面で固有スキルを押したときだけ渡し、ほかは-1。
         public static int OpenUnique { get; set; } = -1;
@@ -30,7 +30,7 @@ namespace Baryonyx.CardLoadout
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset()
         {
-            OpenSlot = 0;
+            OpenSlot = -1;
             OpenUnique = -1;
         }
     }

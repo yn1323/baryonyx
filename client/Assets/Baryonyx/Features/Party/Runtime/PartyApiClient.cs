@@ -138,6 +138,30 @@ namespace Baryonyx.Party
             public int stage;
         }
 
+        /// <summary>
+        /// Spends one of the character's bond tokens to deepen the bond to <paramref name="bond"/>
+        /// (the stage after it). Sent again, it changes nothing.
+        /// </summary>
+        public Task<State> DeepenBondAsync(
+            AccountSession session,
+            string characterId,
+            int bond,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                $"/v1/party/characters/{Uri.EscapeDataString(characterId)}/bond",
+                "POST",
+                new BondRequest { bond = bond },
+                session.Token,
+                token
+            );
+
+        [Serializable]
+        private sealed class BondRequest
+        {
+            public int bond;
+        }
+
         [Serializable]
         private sealed class LevelUpRequest
         {
@@ -187,6 +211,10 @@ namespace Baryonyx.Party
 
             // 2つの固有スキルの進み具合（セットしている段階と、取得した段階）。
             public Unique[] uniques;
+
+            // 絆の段と、持っている絆のしるし（doc/features/monetization.md のキャラが被ったとき）。
+            public int bond;
+            public int tokens;
         }
 
         [Serializable]
@@ -195,6 +223,7 @@ namespace Baryonyx.Party
             public int index;
             public int set;
             public int[] acquired;
+            public float multiplier;
         }
 
         [Serializable]

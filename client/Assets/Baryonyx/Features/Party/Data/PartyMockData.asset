@@ -329,3 +329,59 @@ MonoBehaviour:
     Art: {fileID: -6622703189942226176, guid: f2d3d5aea06b1415c968ef97a62ed51f, type: 3}
   - Skill: Revive.6
     Art: {fileID: -6622703189942226176, guid: be04ac960400d4da0b2d4923a2598d4f, type: 3}
+  - Skill: ArcaneEye
+    Art: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
+  - Skill: ArcaneEye.1
+    Art: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
+  - Skill: ArcaneEye.2
+    Art: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
+  - Skill: ArcaneEye.3
+    Art: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+  - Skill: ArcaneEye.4
+    Art: {fileID: -6622703189942226176, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+  - Skill: ArcaneEye.5
+    Art: {fileID: -6622703189942226176, guid: 5a16a3638866f4d98a1861918714e0d1, type: 3}
+  - Skill: ArcaneEye.6
+    Art: {fileID: -6622703189942226176, guid: 5a16a3638866f4d98a1861918714e0d1, type: 3}
+  - Skill: QuickShot
+    Art: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+  - Skill: QuickShot.1
+    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Skill: QuickShot.2
+    Art: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Skill: QuickShot.3
+    Art: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+  - Skill: QuickShot.4
+    Art: {fileID: -6622703189942226176, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+  - Skill: QuickShot.5
+    Art: {fileID: -6622703189942226176, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
+  - Skill: QuickShot.6
+    Art: {fileID: -6622703189942226176, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
+  - Skill: Rally
+    Art: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
+  - Skill: Rally.1
+    Art: {fileID: -6622703189942226176, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
+  - Skill: Rally.2
+    Art: {fileID: -6622703189942226176, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
+  - Skill: Rally.3
+    Art: {fileID: -6622703189942226176, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
+  - Skill: Rally.4
+    Art: {fileID: -6622703189942226176, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
+  - Skill: Rally.5
+    Art: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+  - Skill: Rally.6
+    Art: {fileID: -6622703189942226176, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+  - Skill: Judgment
+    Art: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
+  - Skill: Judgment.1
+    Art: {fileID: -6622703189942226176, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
+  - Skill: Judgment.2
+    Art: {fileID: -6622703189942226176, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
+  - Skill: Judgment.3
+    Art: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+  - Skill: Judgment.4
+    Art: {fileID: -6622703189942226176, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+  - Skill: Judgment.5
+    Art: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+  - Skill: Judgment.6
+    Art: {fileID: -6622703189942226176, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}

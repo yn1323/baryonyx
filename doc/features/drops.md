@@ -2,7 +2,7 @@
 id: feature-drops
 type: specification
 status: 一部確定
-updated: 2026-10-22
+updated: 2026-10-24
 ---
 
 # 冒険のドロップ
@@ -24,6 +24,7 @@ updated: 2026-10-22
 - 物の強さ（有用性）は、出る行き先のLvに比例させる。奥の行き先の物ほど、基本の効果量が大きい。
 - 強い敵のマスと最奥の主のマスは、その行き先の☆の多い物が落ちやすい。最奥の主のマスは☆3〜5だけが落ちる。
 - ACTボーナスだけは、どの行き先でも落ちる。ただし出にくくする。
+- 強化素材（磨き石・覚醒の欠片）は、この抽選とは別に、出来事を終えたマスごとに抽選する（[磨き石の落ち方](enhancement.md#磨き石の落ち方)、2026-10-24）。
 - 落ちやすさは、アイテム＞アクセサリー＞武器＝防具＞スキル＞ACTボーナスの順にする。
 - 1回に落ちる数にも、ばらつきを入れる。
 
@@ -130,12 +131,12 @@ ACTボーナスの☆は、守り・闘志が☆1、先読み・兆しが☆2、
 
 | 項目 | 実装 |
 |---|---|
-| マスの種類と報酬の行 | 2026-10-22に足したマス（休憩・行商人・怪しい宝箱・試練・歩数の扉・進化の祭壇）は、[落ちる数](#落ちる数)などの表の行を借りる。どの行を借りるかと、中身を作るまでの仮の扱いは[マスの中身](stage-progression.md#マスの中身仮)と[実装との対応](stage-progression.md#実装との対応)に記す（`rewardOf`） |
+| マスの種類と報酬の行 | 2026-10-22に足したマス（休憩・行商人・怪しい宝箱・試練・歩数の扉・覚醒の祭壇）は、[落ちる数](#落ちる数)などの表の行を借りる。どの行を借りるかと、中身を作るまでの仮の扱いは[マスの中身](stage-progression.md#マスの中身仮)と[実装との対応](stage-progression.md#実装との対応)に記す（`rewardOf`） |
 | 抽選と一覧 | サーバーの [drops.ts](../../server/src/features/adventure/drops.ts)。マスを終える処理（[repository.ts](../../server/src/features/adventure/repository.ts) の `clear`）が抽選し、落ちた物の記録・持ち物への追加・ライブラリの見つけた記録を1回のbatchで書く |
 | 落ちた物の記録 | `adventure_drops`（[0013_drops.sql](../../server/migrations/0013_drops.sql)）。1つのマスに落ちた数だけ行を持つ |
 | 持ち物 | スキルは `skill_cards`（1枚ずつ、倍率つき）、アイテムは `item_holdings`（種類ごとの数）、アクセサリーは武器・防具と同じ `equipment_items` |
-| API | `POST /v1/adventure/clear` は、そのマスの `drops`（分類・ID・倍率・品質・outcome）を返す。冒険と結果の `drops` は、その冒険で落ちた物すべてである。アイテムは倍率と品質の項目を持たない |
-| クライアント | 勝利・宝箱のダイアログは落ちた物を1行ずつ（☆・名前・分類・品質）並べ、結果は分類ごとの数と、☆4以上か品質Sの物を「目玉」として出す（[AdventureTexts](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureTexts.cs)）。サーバーなしの冒険（AdventureLocalSource）も同じ抽選を使う |
+| API | `POST /v1/adventure/clear` は、そのマスの `drops`（分類・ID・倍率・品質・outcome）を返す。冒険と結果の `drops` は、その冒険で落ちた物すべてである。アイテムは倍率と品質の項目を持たない。強化素材は分類 `material` で、倍率と品質の項目を持たない（[商会の強化](enhancement.md#実装との対応)） |
+| クライアント | 勝利・宝箱のダイアログは落ちた物を1行ずつ（☆・名前・分類・品質）並べ、結果は分類ごとの数と、☆4以上か品質Sの物を「目玉」として出す（[AdventureTexts](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureTexts.cs)）。サーバーなしの冒険（AdventureLocalSource）も同じ抽選を使う。強化素材は分類「強化素材」として並べ、☆と名前を素材の定義から出す（[商会の強化](enhancement.md#実装との対応)） |
 | 絵 | Codex CLIで1つずつ描かせ、背景を抜いて32×32・32色に縮め、外周にセルアウトの輪郭を描き直して `.aseprite` にした（[アイテム](../art/direction.md#画面と寸法)の寸法）。縮めるときは区画で一番多い色を使い、平均で色が濁らないようにした |
 | 旅の案内所のお宝 | 行き先の一覧（ACTボーナスを除く）を、旅の案内所の行き先ごとのお宝の窓に並べ、ライブラリの見つけた記録で見つけた数を数える（[旅の案内所のお宝](screens.md#編成商会神殿旅の案内所の画面)、[TravelTreasures](../../client/Assets/Baryonyx/Features/TravelOffice/Runtime/TravelTreasures.cs)） |
 | 持ち物を編成で使う | 落ちたスキルとアイテムは、編成のカスタムスキルの枠に入れられる（[実装との対応](party.md#実装との対応)）。`GET /v1/party` が持っているスキルとアイテムを返す |

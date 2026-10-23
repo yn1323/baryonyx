@@ -13,6 +13,8 @@ import {
   REWARD_ROWS,
   rewardOf,
   rollDrops,
+  rollMaterials,
+  rollRoomDrops,
 } from "./drops.js";
 
 // 同じ種から同じ並びを返す乱数（線形合同法）。
@@ -229,5 +231,52 @@ describe("新しいマスの報酬の行", () => {
     expect(countsOf(0)).toEqual([1, 2]);
     expect(countsOf(1)).toEqual([1, 2, 3]);
     expect(countsOf(2)).toEqual([2, 3, 4]);
+  });
+});
+
+describe("強化素材の抽選", () => {
+  it("磨き石と覚醒の欠片は、ふつうのドロップのあとに、報酬のあるマスでだけ落ちる", () => {
+    // 乱数0なら、磨き石は白、覚醒の欠片は魔物のマスで落ちず、宝箱では落ちる。
+    expect(rollMaterials("battle", () => 0)).toEqual([
+      { category: "material", id: "polish-white", multiplierPercent: null },
+    ]);
+    expect(rollMaterials("treasure", () => 0).map((drop) => drop.id)).toEqual([
+      "polish-white",
+      "awakening-shard",
+    ]);
+    // 乱数が大きければ、最奥の間のほかでは何も落ちない。最奥の間では磨き石が必ず落ちる。
+    expect(rollMaterials("elite", () => 0.99)).toEqual([]);
+    expect(rollMaterials("boss", () => 0.99).map((drop) => drop.id)).toEqual([
+      "polish-gold",
+    ]);
+    // 報酬のないマス（休憩・行商人）では、強化素材も落とさない。
+    expect(rollRoomDrops("forest-ruins", "rest", () => 0)).toEqual([]);
+    const room = rollRoomDrops("forest-ruins", "battle", () => 0);
+    expect(room.at(-1)?.category).toBe("material");
+    expect(
+      room.slice(0, -1).every((drop) => drop.category !== "material"),
+    ).toBe(true);
+  });
+
+  it("1周（魔物6・強い魔物と宝箱3・最奥の間1）で、白い磨き石が2〜3個ほど落ちる", () => {
+    const random = seeded(7);
+    const runs = 4000;
+    const counts = new Map<string, number>();
+    const rows = [
+      ...Array<"battle">(6).fill("battle"),
+      ...Array<"elite">(3).fill("elite"),
+      "boss" as const,
+    ];
+    for (let run = 0; run < runs; run++) {
+      for (const row of rows) {
+        for (const drop of rollMaterials(row, random)) {
+          counts.set(drop.id, (counts.get(drop.id) ?? 0) + 1);
+        }
+      }
+    }
+    const perRun = (id: string) => (counts.get(id) ?? 0) / runs;
+    expect(perRun("polish-white")).toBeCloseTo(2.6, 0);
+    expect(perRun("polish-blue")).toBeCloseTo(1.4, 0);
+    expect(perRun("awakening-shard")).toBeCloseTo(0.24, 1);
   });
 });

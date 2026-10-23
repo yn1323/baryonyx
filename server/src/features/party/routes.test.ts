@@ -4,6 +4,7 @@ import {
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
 import {
+  CARD_SLOT_COUNT,
   COST_PER_LEVEL,
   EVOLUTION_GRACE_MINUTES,
   levelUpCost,
@@ -105,7 +106,13 @@ describe("パーティAPI", () => {
     character(state, id)?.uniques[index];
   const initialUniques = Array.from(
     { length: UNIQUE_SKILL_COUNT },
-    (_, index) => ({ index, set: 0, acquired: [0] }),
+    (_, index) => ({
+      index,
+      set: 0,
+      acquired: [0],
+      multiplier: 1,
+      quality: "C",
+    }),
   );
 
   function levelUp(
@@ -158,7 +165,13 @@ describe("パーティAPI", () => {
       STARTER_CHARACTERS.map((entry) => entry.level),
     );
     for (const entry of STARTER_CHARACTERS) {
-      expect(skillsOf(first, entry.characterId)).toEqual([...entry.cards]);
+      // 初めのカードのない後ろの枠は空き（null）になる。
+      expect(skillsOf(first, entry.characterId)).toEqual(
+        Array.from(
+          { length: CARD_SLOT_COUNT },
+          (_, slot) => entry.cards[slot] ?? null,
+        ),
+      );
     }
     // 初めのカードは、1枚ずつ品質C（×1.00）で持ち物に入る。
     expect(first.skillCards).toHaveLength(STARTER_CHARACTERS.length * 2);
@@ -249,7 +262,7 @@ describe("パーティAPI", () => {
       await put("toma", 0, `card:${embers}`)
     ).json()) as State;
     expect(replaced.change).toBe("replace");
-    expect(skillsOf(replaced, "toma")).toEqual(["Embers", "Ice"]);
+    expect(skillsOf(replaced, "toma")).toEqual(["Embers", "Ice", null]);
     expect(
       replaced.skillCards.find((card) => card.id === embers),
     ).toMatchObject({ skillId: "Embers", multiplier: 1.72 });
@@ -257,7 +270,7 @@ describe("パーティAPI", () => {
 
     const swapped = (await (await put("toma", 0, ice)).json()) as State;
     expect(swapped.change).toBe("swap");
-    expect(skillsOf(swapped, "toma")).toEqual(["Ice", "Embers"]);
+    expect(skillsOf(swapped, "toma")).toEqual(["Ice", "Embers", null]);
     expect(((await (await put("toma", 0, ice)).json()) as State).change).toBe(
       "none",
     );
@@ -268,7 +281,7 @@ describe("パーティAPI", () => {
     ).json()) as State;
     expect(moved.change).toBe("move");
     expect(moved.from).toBe("toma");
-    expect(character(moved, "toma")?.cards).toEqual([ice, null]);
+    expect(character(moved, "toma")?.cards).toEqual([ice, null, null]);
     expect(skillsOf(moved, "luka")?.[0]).toBe("Embers");
 
     // アイテムは持っている数まで入れられる。
@@ -284,7 +297,7 @@ describe("パーティAPI", () => {
       expect(await missing.json()).toEqual({ error: "card_not_owned" });
     }
     const after = await read(user.token);
-    expect(skillsOf(after, "aria")).toEqual(["item:herb", "ShieldBash"]);
+    expect(skillsOf(after, "aria")).toEqual(["item:herb", "ShieldBash", null]);
     expect(character(after, "mina")).toEqual(character(before, "mina"));
   });
 
@@ -319,7 +332,7 @@ describe("パーティAPI", () => {
       ),
       scenario.request("/party/slots/0", "PUT", null, user.token),
       scenario.request(
-        "/party/characters/toma/cards/2",
+        `/party/characters/toma/cards/${CARD_SLOT_COUNT}`,
         "PUT",
         { card: missingCard },
         user.token,
@@ -362,7 +375,7 @@ describe("パーティAPI", () => {
         fromLevel: 1,
         toLevel: 2,
       }),
-      setUnique(user.token, "toma", 2, 0),
+      setUnique(user.token, "toma", UNIQUE_SKILL_COUNT, 0),
       setUnique(user.token, "toma", 0, 7),
       setUnique(user.token, "toma", 0, -1),
       setUnique(user.token, "nobody", 0, 0),
@@ -554,6 +567,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 1,
       acquired: [0, 1],
+      multiplier: 1,
+      quality: "C",
     });
 
     // 通信が切れて送り直した同じ進化は、失敗させずに何も変えない。
@@ -581,6 +596,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 2,
       acquired: [0, 1, 2],
+      multiplier: 1,
+      quality: "C",
     });
     // ほかの固有スキルとキャラは変わらない。
     expect(uniqueOf(after, "toma", 1)).toEqual(uniqueOf(before, "toma", 1));
@@ -619,6 +636,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 5,
       acquired: [0, 5],
+      multiplier: 1,
+      quality: "C",
     });
   });
 
@@ -637,6 +656,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 0,
       acquired: [0, 1, 2],
+      multiplier: 1,
+      quality: "C",
     });
 
     const branched = (await (
@@ -647,6 +668,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 3,
       acquired: [0, 1, 2, 3],
+      multiplier: 1,
+      quality: "C",
     });
 
     // 取得済みの段階へ進むのも進化として扱う。
@@ -659,6 +682,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 1,
       acquired: [0, 1, 2, 3],
+      multiplier: 1,
+      quality: "C",
     });
 
     // 取得した段階は、どれでもセットできる。
@@ -670,6 +695,8 @@ describe("パーティAPI", () => {
       index: 0,
       set: 2,
       acquired: [0, 1, 2, 3],
+      multiplier: 1,
+      quality: "C",
     });
   });
 

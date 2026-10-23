@@ -202,6 +202,24 @@ namespace Baryonyx.Party
             }
         }
 
+        /// <summary>
+        /// Deepens the character's bond to <paramref name="bond"/> with one of its tokens at once
+        /// and saves it (see <see cref="SetSlotAsync"/>).
+        /// </summary>
+        public static Task<PartyFormation> DeepenBondAsync(
+            string characterId,
+            int bond,
+            string failedMessage
+        ) =>
+            Save(
+                state => state.WithBond(characterId),
+                (source, token) =>
+                    source is IPartyBondSource bonds
+                        ? bonds.DeepenBondAsync(characterId, bond, token)
+                        : throw new InvalidOperationException("The server keeps no bonds."),
+                failedMessage
+            );
+
         private static Task<PartyFormation> Save(
             Func<PartyState, PartyState> apply,
             Func<IPartySource, CancellationToken, Task<PartyState>> send,

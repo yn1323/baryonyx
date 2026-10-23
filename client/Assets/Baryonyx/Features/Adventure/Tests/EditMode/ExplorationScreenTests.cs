@@ -37,7 +37,7 @@ namespace Baryonyx.Tests.EditMode
                     AdventureCatalog.DestinationName(AdventureCatalog.ForestRuins) + " 第1層"
                 )
             );
-            Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
+            Assert.That(view.PromptText, Is.Empty);
 
             // 型は隠し、入口から行けるマスの大きい札と、マスどうしを結ぶ道を並べておく。
             Assert.That(view.MarkerTemplate.gameObject.activeSelf, Is.False);

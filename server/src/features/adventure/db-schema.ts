@@ -78,11 +78,11 @@ export const adventureDrops = sqliteTable(
     primaryKey({ columns: [table.runId, table.roomId, table.seq] }),
     check(
       "adventure_drops_category_check",
-      sql`${table.category} IN ('item', 'accessory', 'weapon', 'armor', 'skill', 'bonus')`,
+      sql`${table.category} IN ('item', 'accessory', 'weapon', 'armor', 'skill', 'bonus', 'material')`,
     ),
     check(
       "adventure_drops_multiplier_check",
-      sql`(${table.category} = 'item' AND ${table.multiplierPercent} IS NULL) OR (${table.category} <> 'item' AND ${table.multiplierPercent} >= 100)`,
+      sql`(${table.category} IN ('item', 'material') AND ${table.multiplierPercent} IS NULL) OR (${table.category} NOT IN ('item', 'material') AND ${table.multiplierPercent} >= 100)`,
     ),
     check(
       "adventure_drops_outcome_check",

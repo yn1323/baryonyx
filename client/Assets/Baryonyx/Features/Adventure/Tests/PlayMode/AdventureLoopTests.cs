@@ -128,7 +128,8 @@ namespace Baryonyx.Tests.PlayMode
             var view = bootstrap.View;
             var run = AdventureSession.Current.Run;
             Assert.That(view.LocationText, Is.EqualTo(Forest + " 第5層"));
-            Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
+            // 進む道は脈打つ道と札で伝えるため、案内は出さない。
+            Assert.That(view.PromptText, Is.Empty);
             // 地図には道のマスを全部出し、停止中に作り込んだ見本の印は残さない。
             Assert.That(view.ShownMarkers.Count, Is.EqualTo(run.Map.Rooms.Count));
             Assert.That(
@@ -199,7 +200,7 @@ namespace Baryonyx.Tests.PlayMode
                 .GetResult();
             Assert.That(saved.Run.Route[^1], Is.EqualTo(chosen));
             Assert.That(saved.Run.Route.Count, Is.EqualTo(run.Route.Count + 1));
-            Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ChestPrompt));
+            Assert.That(view.PromptText, Is.Empty);
             Assert.That(view.ShownMarkers.Where(marker => marker.IsExit), Is.Empty);
             Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
 
@@ -402,7 +403,7 @@ namespace Baryonyx.Tests.PlayMode
                 value => bootstrap = value
             );
             var view = bootstrap.View;
-            Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.ShadyChestPrompt));
+            Assert.That(view.PromptText, Is.Empty);
             Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
             view.ChestButton.onClick.Invoke();
             yield return WaitForDialog(view.Dialog, AdventureDialogs.ShadyChestTitle);
@@ -436,7 +437,7 @@ namespace Baryonyx.Tests.PlayMode
                 value => bootstrap = value
             );
             var view = bootstrap.View;
-            Assert.That(view.PromptText, Is.EqualTo(ExplorationRoom.AltarPrompt));
+            Assert.That(view.PromptText, Is.Empty);
             view.ChestButton.onClick.Invoke();
             yield return WaitForDialog(view.Dialog, AdventureDialogs.AltarTitle);
             // 仲間 → （固有スキルが2つあれば）固有スキル → 進化先 → 確かめる、の順に、いつも最初を選ぶ。
@@ -456,7 +457,7 @@ namespace Baryonyx.Tests.PlayMode
                 8f,
                 "The altar was not used."
             );
-            Assert.That(view.Notice.LastMessage, Does.Contain("進化した"));
+            Assert.That(view.Notice.LastMessage, Does.Contain("覚醒した"));
             Assert.That(
                 AdventureSession.Current.Run.Drops.Where(drop =>
                     drop.RoomId == AdventureSession.Current.Run.RoomId
@@ -720,7 +721,7 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(new[] { 0.9f, 0.4f, 1f, 1f }).Within(0.0001f)
             );
             Assert.That(bootstrap.View.Notice.LastMessage, Is.EqualTo(AdventureTexts.Rested));
-            Assert.That(bootstrap.View.PromptText, Is.EqualTo(ExplorationRoom.ChoosePrompt));
+            Assert.That(bootstrap.View.PromptText, Is.Empty);
         }
 
         [UnityTest]
