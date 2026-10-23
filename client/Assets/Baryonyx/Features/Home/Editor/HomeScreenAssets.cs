@@ -84,9 +84,9 @@ namespace Baryonyx.Home.Editor
         private static Texture2D destinationArt;
         private static Texture2D travelArt;
 
-        // デバッグルームの一覧の行（6つのルームと「閉じる」）と、その高さ。
-        private const int DebugRoomChoices = 7;
-        private const float DebugRoomRowHeight = 84f;
+        // デバッグルームの一覧の行（7つのルームと「閉じる」）と、その高さ。
+        private const int DebugRoomChoices = 8;
+        private const float DebugRoomRowHeight = 76f;
 
         public const string RoomReturnPath =
             "Assets/Baryonyx/Features/Home/UI/DebugRoomReturn.prefab";
@@ -169,7 +169,7 @@ namespace Baryonyx.Home.Editor
                 BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
-                // The list of debugging rooms: six rooms and "閉じる", in lower rows than the
+                // The list of debugging rooms: seven rooms and "閉じる", in lower rows than the
                 // usual five so they fit the screen.
                 view.Dialog = GameDialogAssets.Build(
                     root,
@@ -550,14 +550,6 @@ namespace Baryonyx.Home.Editor
                 "歩数がまだ届いていません",
                 48,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Label(
-                unlinked,
-                "UnlinkedBody",
-                "1歩が1ACTになり、仲間の力になります",
-                32,
-                UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft
             );
             view.UnlinkedDetails = unlinked.gameObject;
@@ -1172,7 +1164,9 @@ namespace Baryonyx.Home.Editor
             var art =
                 member != null && member.Art != null
                     ? member.Art
-                    : ArtAssets.LoadTexture(PartyAssets.CharacterArtFolder + "/BattleToma.aseprite");
+                    : ArtAssets.LoadTexture(
+                        PartyAssets.CharacterArtFolder + "/BattleToma.aseprite"
+                    );
             var picture = PixelActor(world, $"PartyMember{slot + 1}", art, feet, 4f);
             if (feet.x > 0)
                 picture.rectTransform.localScale = new Vector3(-1, 1, 1);

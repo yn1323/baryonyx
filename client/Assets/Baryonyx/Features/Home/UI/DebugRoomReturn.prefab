@@ -105,7 +105,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7750092124778009656}
-  - {fileID: 3185817754568520253}
+  - {fileID: 2972953816040793546}
   m_Father: {fileID: 5558588963645632626}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -771,7 +771,7 @@ MonoBehaviour:
   Button: {fileID: 2456858130548004003}
   Frame: {fileID: 5558588963645632626}
   HomeScene: Home
---- !u!1 &6900315592728035097
+--- !u!1 &6963910756296355468
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -779,9 +779,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3185817754568520253}
-  - component: {fileID: 1547092969723480346}
-  - component: {fileID: 8076568368211790214}
+  - component: {fileID: 2972953816040793546}
+  - component: {fileID: 5520798251869188947}
+  - component: {fileID: 5680288142099688797}
   m_Layer: 0
   m_Name: Rim
   m_TagString: Untagged
@@ -789,13 +789,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &3185817754568520253
+--- !u!224 &2972953816040793546
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6900315592728035097}
+  m_GameObject: {fileID: 6963910756296355468}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -808,21 +808,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &1547092969723480346
+--- !u!222 &5520798251869188947
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6900315592728035097}
+  m_GameObject: {fileID: 6963910756296355468}
   m_CullTransparentMesh: 1
---- !u!114 &8076568368211790214
+--- !u!114 &5680288142099688797
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6900315592728035097}
+  m_GameObject: {fileID: 6963910756296355468}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}

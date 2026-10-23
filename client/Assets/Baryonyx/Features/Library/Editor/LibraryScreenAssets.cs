@@ -124,31 +124,26 @@ namespace Baryonyx.Library.Editor
             d.Layout = GuideMenuLayout.List;
             // メニューに収まる6行にするため、武器・防具・アクセサリーは「装備」1行にまとめ、
             // 装備のパネルの見出しのタブで切り替える。防具は武器のパネルから開く隠れた項目。
-            var gear = Kind(LibraryKind.Weapon, "手に入れた武器・防具・アクセサリー", IconGearPath);
+            var gear = Kind(LibraryKind.Weapon, IconGearPath);
             gear.Label = GearLabel;
-            var armor = Kind(LibraryKind.Armor, "", null);
+            var armor = Kind(LibraryKind.Armor, null);
             armor.Hidden = true;
             d.Items = new[]
             {
-                Kind(
-                    LibraryKind.Character,
-                    "仲間にした冒険者と、その固有スキル",
-                    IconCharacterPath
-                ),
+                Kind(LibraryKind.Character, IconCharacterPath),
                 gear,
-                Kind(LibraryKind.Skill, "手に入れたスキル", IconSkillPath),
-                Kind(LibraryKind.Item, "手に入れた道具と素材", IconItemPath),
-                Kind(LibraryKind.Enemy, "戦った敵と、開示した弱点", IconEnemyPath),
-                Kind(LibraryKind.Steps, "日ごとに歩いた記録", IconStepsPath),
+                Kind(LibraryKind.Skill, IconSkillPath),
+                Kind(LibraryKind.Item, IconItemPath),
+                Kind(LibraryKind.Enemy, IconEnemyPath),
+                Kind(LibraryKind.Steps, IconStepsPath),
                 armor,
             };
         }
 
-        private static GuideMenuItem Kind(LibraryKind kind, string caption, string iconPath)
+        private static GuideMenuItem Kind(LibraryKind kind, string iconPath)
         {
             var item = Item(
                 LibraryKinds.Label(kind),
-                caption,
                 "見る",
                 iconPath != null ? Icon(iconPath) : null
             );
@@ -266,7 +261,6 @@ namespace Baryonyx.Library.Editor
                         Id = member.Id,
                         Number = index + 1,
                         Name = member.Name,
-                        KindLine = "冒険者",
                         Description =
                             passives != null && passives.Length > 0
                                 ? "パッシブ　" + string.Join("・", passives.Select(p => p.Name))
@@ -347,7 +341,6 @@ namespace Baryonyx.Library.Editor
                         Id = enemy.Id,
                         Number = index + 1,
                         Name = enemy.Name,
-                        KindLine = "敵",
                         Art = ArtAssets.ImportTexture(
                             $"{EnemyArtFolder}/{ArtName(enemy.Id)}.aseprite",
                             FilterMode.Point

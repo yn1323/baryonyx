@@ -35,12 +35,12 @@ namespace Baryonyx.Home
         public string RunesText { get; private set; }
 
         // 右下のカード。冒険の途中なら行き先と階と「再開」、そうでなければ旅の案内所と「出発」。
+        // 冒険していないときは行き先の名前の行を空け、「出発」と同じことを言う題は付けない。
         public bool AdventureInProgress { get; private set; }
         public string DestinationNameText { get; private set; }
         public string DestinationFloorText { get; private set; }
         public string ResumeText { get; private set; }
 
-        public const string TravelTitle = "冒険に出る";
         public const string TravelName = "旅の案内所";
 
         public static HomeViewState From(HomeSnapshot snapshot)
@@ -75,7 +75,7 @@ namespace Baryonyx.Home
                 AdventureInProgress = snapshot.AdventureInProgress,
                 DestinationNameText = snapshot.AdventureInProgress
                     ? snapshot.DestinationName ?? ""
-                    : TravelTitle,
+                    : "",
                 DestinationFloorText = snapshot.AdventureInProgress
                     ? snapshot.DestinationFloor ?? ""
                     : TravelName,

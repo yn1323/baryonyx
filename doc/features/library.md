@@ -2,7 +2,7 @@
 id: feature-library
 type: specification
 status: 一部確定
-updated: 2026-10-21
+updated: 2026-10-24
 ---
 
 # ライブラリ
@@ -23,7 +23,7 @@ updated: 2026-10-21
 
 | 分類 | 載る条件 | 個別の画面で見せるもの | 定義の正本 |
 |---|---|---|---|
-| キャラクター | 仲間にした | 名前・絵・ステータス、固有スキル2つの[進化ツリー](skill-evolution.md) | [キャラクターとパーティ編成](party.md) |
+| キャラクター | 仲間にした | 名前・絵・ステータス、固有スキル3つの[覚醒ツリー](skill-evolution.md) | [キャラクターとパーティ編成](party.md) |
 | 武器・防具 | 一度でも手に入れた | 名前・☆・説明 | [装備](equipment.md) |
 | アクセサリー | 一度でも手に入れた | 名前・☆・効果 | [アクセサリー](equipment.md#アクセサリー) |
 | スキル | 一度でも手に入れた。スキルを1枚ずつ持つ仕組みができるまでは、編成で付けたことがある | カードの絵・名前・コスト・説明 | [キャラクターの構成](party.md#キャラクターの構成)・[技・カード](../catalog/skills/README.md) |
@@ -44,7 +44,8 @@ updated: 2026-10-21
 
 まだ見つけていない項目も一覧に並べ、枠と番号だけを見せる（2026-10-18）。
 名前の欄は消し、絵は「？」に替えずに、形だけの影にする。
-[固有スキルの進化ツリー](skill-evolution.md#編成での見せ方)で、取得していない段階を形だけの影で見せるのと同じ見せ方である。
+個別の画面の説明の欄にも、「まだ見つけていない」のような文は書かない。見つけていないことは、影と消えた名前でわかる（2026-10-24）。
+[固有スキルの覚醒ツリー](skill-evolution.md#編成での見せ方)で、取得していない段階を形だけの影で見せるのと同じ見せ方である。
 分類ごとに、見つけた数と全体の数（例：12/50）を見せる。
 
 番号は、分類ごとに定義の並び順で1から振る（2026-10-18）。
@@ -66,11 +67,11 @@ updated: 2026-10-21
 戦闘の途中でアプリが終わった場合は、そのマスの戦闘を始めからやり直すため（[冒険の中断と再開](stage-progression.md#冒険の中断と再開)）、その戦闘で倒した敵は数えない。
 弱点は、戦闘で[開示した](combat.md#弱点の開示)ものだけを見せる。
 
-### 固有スキルの進化後の段階
+### 固有スキルの覚醒後の段階
 
-キャラクターの個別の画面では、固有スキルの段階のうち、そのキャラで一度でも進化させた段階だけを名前と効果つきで見せる（2026-10-18）。
-進化させていない段階は、編成での見せ方と同じく形だけの影にする。
-進化の記録は[進化の保存](skill-evolution.md#進化の保存)の記録を読む。
+キャラクターの個別の画面では、固有スキルの段階のうち、そのキャラで一度でも覚醒させた段階だけを名前と効果つきで見せる（2026-10-18）。
+覚醒させていない段階は、編成での見せ方と同じく形だけの影にする。
+覚醒の記録は[覚醒の保存](skill-evolution.md#覚醒の保存)の記録を読む。
 
 ### 入口
 
@@ -117,12 +118,12 @@ updated: 2026-10-21
 | キャラ・装備・スキル・アイテムを見つけた記録 | サーバーが付与したとき（初めのキャラ・カード・装備と、冒険のドロップ） | 未実装（保存先は決定） |
 | 敵に遭遇した記録と倒した数 | マスを終えた知らせ、全滅で冒険が終わったとき | 未実装（保存先は決定） |
 | 開示した敵の弱点 | 戦闘で弱点を突いたとき（[弱点の開示](combat.md#弱点の開示)の作業が所有する） | 実装中 |
-| 固有スキルの取得した段階 | 冒険で進化したとき（[進化の保存](skill-evolution.md#進化の保存)が所有する） | 未実装 |
+| 固有スキルの取得した段階 | 冒険で覚醒したとき（[覚醒の保存](skill-evolution.md#覚醒の保存)が所有する） | 未実装 |
 | 日々の歩数 | 歩数の同期のとき（既存の記録をそのまま読む） | 実装済み |
 | 新しく載った項目を見た記録 | 個別の画面を開いたとき（端末に置く） | 未実装（保存先は決定） |
 
 ライブラリが書くのは、表の上の2行と、端末に置く見た記録だけである。
-弱点・進化・歩数は、それぞれの機能が持つ記録を読むだけにする。
+弱点・覚醒・歩数は、それぞれの機能が持つ記録を読むだけにする。
 テーブルとAPIの形は[ライブラリの実装計画](../plans/2026-10-18-library.md#サーバー)に記す。
 
 ### 画面の作り
@@ -148,7 +149,7 @@ updated: 2026-10-21
 
 ## 関連する仕様とデータ
 
-[画面一覧と操作](screens.md)・[持ち物の分類、レア度と品質](inventory.md)・[キャラクターとパーティ編成](party.md)・[固有スキルの進化](skill-evolution.md)・[装備](equipment.md)・[アイテム](items.md)・[戦闘システム](combat.md)・[起動時の連携と歩数の同期](startup-sync.md)・[保存先の決め方](../rules/data-storage.md)・[合成の記録](synthesis.md#合成の記録)
+[画面一覧と操作](screens.md)・[持ち物の分類、レア度と品質](inventory.md)・[キャラクターとパーティ編成](party.md)・[固有スキルの覚醒](skill-evolution.md)・[装備](equipment.md)・[アイテム](items.md)・[戦闘システム](combat.md)・[起動時の連携と歩数の同期](startup-sync.md)・[保存先の決め方](../rules/data-storage.md)・[合成の記録](synthesis.md#合成の記録)
 
 ## 実装との対応
 
@@ -156,12 +157,12 @@ updated: 2026-10-21
 
 | 対象 | 実装の入口 | 仕様との差・残り |
 |---|---|---|
-| 見つけた記録 | [library/db-schema.ts](../../server/src/features/library/db-schema.ts) の `library_discoveries`、書く文は [discoveries.ts](../../server/src/features/library/discoveries.ts) | キャラ・カード・装備は初めに配るときと、カスタムスキルの枠にカードを付けたときに記録する。冒険・召喚・商会での入手はまだないため、記録する場所もまだない |
+| 見つけた記録 | [library/db-schema.ts](../../server/src/features/library/db-schema.ts) の `library_discoveries`、書く文は [discoveries.ts](../../server/src/features/library/discoveries.ts) | キャラ・カード・装備は初めに配るときと、カスタムスキルの枠にカードを付けたときに記録する。冒険のドロップと行商人の購入は、持ち物に足す書き込みと同じbatchで記録する。[商会](screens.md#商会)の「買う」は、この記録に載っている物だけを売り、記録は書き足さない（2026-10-24）。召喚で出た物（キャラ・装備・アイテム）は、持ち物に足す書き込みと同じbatchで記録する（2026-10-24） |
 | 敵の遭遇と倒した数 | `POST /v1/adventure/clear`・`/v1/adventure/end` の `enemies`、クライアントは [BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs) | 戦闘を終えた記録を書けたときだけ足すため、送り直しても二重に数えない。接続先がないときは記録しない |
 | API | `GET /v1/library`（見つけた記録）・`GET /v1/library/steps`（日々の歩数）。[routes.ts](../../server/src/features/library/routes.ts) | 初めて読む利用者には、編成と装備の初期の付与を先に済ませる |
 | 画面 | `Library.unity`、[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)（`Baryonyx > Library > Create Screen Assets`）、[LibraryCatalogView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryCatalogView.cs)・[LibraryStepsView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryStepsView.cs) | 案内人と背景の生成指示は [ArtSource](../../client/ArtSource/UI/Library/prompts.json) に記録した |
 | 項目の定義 | 生成メニューが各機能の正本から [LibraryData.asset](../../client/Assets/Baryonyx/Features/Library/Data/LibraryData.asset) に書き出す | 定義を変えたら生成し直す。武器・防具・アクセサリー・アイテムは種類ごとの絵（[ItemArt](../../client/Assets/Baryonyx/Features/Inventory/Presentation/ItemArt.cs)）を出し、絵のない種類は武器・防具のアイコンにする。スキルの☆は[冒険のドロップ](drops.md)の一覧から入れる |
-| 固有スキル | [UniqueSkillSession](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillSession.cs) の進み具合を読む | 進化の保存が未実装のため、仮データとアプリを動かしている間の進み具合を出す。取得していない段階は影の帯にした |
+| 固有スキル | [UniqueSkillSession](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillSession.cs) の進み具合を読む | 覚醒の保存が未実装のため、仮データとアプリを動かしている間の進み具合を出す。取得していない段階は影の帯にした |
 | 開示した弱点 | [RevealedWeaknessSession](../../client/Assets/Baryonyx/Features/Combat/Records/RevealedWeaknessSession.cs) を読む | 開示した弱点の属性のアイコンを出す |
 | 新しく載った印 | [LibrarySeen](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySeen.cs)。`PlayerPrefs` の `Library.Seen.<ユーザーID>` | 初めて開いたときは、初めに配った物にもすべて印が付く |
 | 接続先がないとき | [LibraryMemorySource](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySource.cs) の仮の記録 | 展示室とシーンを単体で開いたときは、見つけた物と影の両方が出るよう、一部だけ見つけた仮の記録を出す |

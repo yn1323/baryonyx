@@ -105,7 +105,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 boards.Select(board => board.name),
                 Is.EquivalentTo(
-                    new[] { "PartyMember1", "PartyMember2", "PartyMember3", "PartyMember4", "Campfire" }
+                    new[]
+                    {
+                        "PartyMember1",
+                        "PartyMember2",
+                        "PartyMember3",
+                        "PartyMember4",
+                        "Campfire",
+                    }
                 )
             );
             foreach (var board in boards)
@@ -374,7 +381,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.LoadHome(value => bootstrap = value);
             yield return SceneTests.WaitForTask(bootstrap.AdventureTask);
             var view = bootstrap.View;
-            Assert.That(view.DestinationNameLabel.text, Is.EqualTo(HomeViewState.TravelTitle));
+            Assert.That(view.DestinationNameLabel.text, Is.Empty);
             Assert.That(view.DestinationFloorLabel.text, Is.EqualTo(HomeViewState.TravelName));
             Assert.That(view.ResumeLabel.text, Is.EqualTo("出発"));
             Assert.That(view.DestinationArt.texture, Is.SameAs(view.TravelArt));

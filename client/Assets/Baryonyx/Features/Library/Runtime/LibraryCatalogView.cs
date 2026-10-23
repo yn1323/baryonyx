@@ -41,7 +41,6 @@ namespace Baryonyx.Library
     public sealed class LibraryCatalogView : GuidePanel, IEditModePreview
     {
         public const string LoadFailedMessage = "ライブラリを取得できませんでした";
-        public const string NotFoundNote = "まだ見つけていない";
         public const string PreparingText = "準備中";
 
         // まだ見つけていない絵の影の色。
@@ -219,7 +218,8 @@ namespace Baryonyx.Library
             Set(DetailName, found ? entry.Name : "");
             Set(DetailRarity, found && entry.Rarity > 0 ? new string('★', entry.Rarity) : "");
             Set(DetailKind, found ? entry.KindLine : "");
-            Set(DetailBody, found ? entry.Description : NotFoundNote);
+            // まだ見つけていないことは、名前を消した影の絵でわかるため書かない。
+            Set(DetailBody, found ? entry.Description : "");
             Set(DetailExtra, found ? ExtraOf(entry) : "");
             ShowWeaknesses(found ? entry.Id : null);
         }

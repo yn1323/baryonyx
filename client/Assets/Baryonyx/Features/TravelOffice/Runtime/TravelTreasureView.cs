@@ -57,7 +57,6 @@ namespace Baryonyx.TravelOffice
     public sealed class TravelTreasureView : MonoBehaviour, IGuideBackHandler, IEditModePreview
     {
         public const string LoadFailedMessage = "お宝の記録を取得できませんでした";
-        public const string BossOnlyNote = "最奥の主だけが落とす";
         public const string HiddenName = "？？？";
 
         public GuideMenuView Guide;
@@ -242,7 +241,6 @@ namespace Baryonyx.TravelOffice
                 return;
             }
             var entry = EntryOf(tile.Kind, tile.Id);
-            string boss = tile.BossOnly ? BossOnlyNote : "";
             bool found = entry != null && IsFound(tile.Kind, tile.Id);
             // まだ見つけていないお宝は名前を伏せるが、☆は札と同じく出す。分類は段の名前でわかるため書かない。
             string stars = entry != null ? StarsText(entry.Rarity) : "";
@@ -255,10 +253,8 @@ namespace Baryonyx.TravelOffice
                         : ""
                 )
             );
-            Set(
-                InfoBody,
-                found ? Join(boss, entry.Description) : Join(LibraryCatalogView.NotFoundNote, boss)
-            );
+            // 主の物は札の王冠で、まだ見つけていない物は伏せた名前でわかるため、説明だけを書く。
+            Set(InfoBody, found ? entry.Description : "");
         }
 
         private void Paint(TravelTreasureTile tile, bool found)

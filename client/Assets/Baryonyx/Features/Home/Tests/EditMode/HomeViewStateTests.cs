@@ -41,7 +41,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.ResumeText, Is.EqualTo("再開"));
         }
 
-        // 冒険していないとき、右下のカードは行き先の代わりに旅の案内所を出す。
+        // 冒険していないとき、右下のカードは行き先の代わりに旅の案内所を出す。「出発」と同じことを言う題は出さない。
         [Test]
         public void WithNoAdventureTheCardOpensTheTravelOffice()
         {
@@ -50,7 +50,7 @@ namespace Baryonyx.Tests.EditMode
             var state = HomeViewState.From(snapshot);
 
             Assert.That(state.AdventureInProgress, Is.False);
-            Assert.That(state.DestinationNameText, Is.EqualTo(HomeViewState.TravelTitle));
+            Assert.That(state.DestinationNameText, Is.Empty);
             Assert.That(state.DestinationFloorText, Is.EqualTo(HomeViewState.TravelName));
             Assert.That(state.ResumeText, Is.EqualTo("出発"));
         }
