@@ -53,5 +53,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/Debug/ExplorationMomentLab.unity
     guid: 3f7863ff647334335a4f5d4b0a5eda31
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Debug/TempleSummonLab.unity
+    guid: 61a662b2a1b1f4dd690765f871ead05a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

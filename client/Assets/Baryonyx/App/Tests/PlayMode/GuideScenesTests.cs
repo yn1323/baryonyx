@@ -5,6 +5,7 @@ using Baryonyx.Economy;
 using Baryonyx.Home;
 using Baryonyx.Library;
 using Baryonyx.StepBonus;
+using Baryonyx.Temple;
 using Baryonyx.TravelOffice;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -135,7 +136,7 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTest]
         public IEnumerator ListScreensOpenAFullListAndConfirmTheChoice()
         {
-            foreach (var sceneName in new[] { SceneNames.Pub, SceneNames.Shop, SceneNames.Temple })
+            foreach (var sceneName in new[] { SceneNames.Pub, SceneNames.Shop })
             {
                 var guide = default(GuideSceneBootstrap);
                 yield return SceneTests.LoadGuide(sceneName, value => guide = value);
@@ -157,6 +158,13 @@ namespace Baryonyx.Tests.PlayMode
                     // 編成・商会・神殿のメニューは、項目名の前にアイコンを置く。
                     var icon = view.MenuItems[i].transform.Find(CardContent + "Icon");
                     Assert.That(icon != null, Is.EqualTo(definition.Items[i].Icon != null));
+                    // 行はアイコンと項目名だけで、何ができるかの説明は添えない。
+                    Assert.That(
+                        view.MenuItems[i]
+                            .GetComponentsInChildren<TMP_Text>(true)
+                            .Select(t => t.text),
+                        Is.EqualTo(new[] { definition.Items[i].Label })
+                    );
                 }
 
                 for (int i = 0; i < definition.Items.Length; i++)
@@ -198,6 +206,94 @@ namespace Baryonyx.Tests.PlayMode
                     Assert.That(guide.Presenter.Left, Is.False);
                 }
             }
+        }
+
+        // 神殿のメニューの「召喚」は、全画面の召喚の画面を開く。左下の「確率」で確率の窓を開き、
+        // 召喚すると、案内人の画面を隠して演出を流し、押して飛ばすと結果の窓を出す。
+        [UnityTest]
+        public IEnumerator TempleSummonsOverTheWholeScreenWithItsPresentation()
+        {
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Temple, value => guide = value);
+            var view = guide.View;
+            Assert.That(view.MenuItems, Has.Length.EqualTo(1));
+            view.MenuItems[0].onClick.Invoke();
+            var summon = view.PanelFor(0).GetComponent<TempleSummonView>();
+            Assert.That(summon.gameObject.activeInHierarchy, Is.True);
+            // 全画面のため、案内人も枠も出さない。上の帯は絵の手前に残る。
+            Assert.That(view.GuideArt.activeSelf, Is.False);
+            Assert.That(view.Framed, Is.False);
+            Assert.That(summon.transform.GetSiblingIndex(), Is.Zero);
+            Assert.That(
+                view.Breadcrumb.text,
+                Is.EqualTo(view.Definition.Title + GuideMenuView.TrailSeparator + "召喚")
+            );
+            SceneTests.AssertTouchSize(summon.Single.transform);
+            SceneTests.AssertTouchSize(summon.Ten.transform);
+            SceneTests.AssertTouchSize(summon.RatesButton.transform, 0.7f);
+
+            summon.RatesButton.onClick.Invoke();
+            Assert.That(summon.Rates.IsOpen, Is.True);
+            view.Back.onClick.Invoke();
+            Assert.That(summon.Rates.IsOpen, Is.False, "Back closes the rates first.");
+            Assert.That(summon.gameObject.activeInHierarchy, Is.True);
+
+            // サーバーのない召喚は、画面に出ている残高から引いて、仮に引いた結果を出す。
+            var results = summon.Results;
+            var canvas = view.GetComponent<Canvas>();
+            RuneBalance.Set(100000);
+            summon.Ten.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => summon.Presenting, message: "No presentation.");
+            Assert.That(
+                canvas.enabled,
+                Is.False,
+                "The guide screen hides behind the presentation."
+            );
+            Assert.That(summon.TenShow.gameObject.activeInHierarchy, Is.True);
+            // 押すと伏せた札まで飛び、もう一度押すとめくる。
+            summon.TapPresentation();
+            summon.TapPresentation();
+            yield return SceneTests.WaitForTask(summon.SummonTask);
+            Assert.That(canvas.enabled, Is.True);
+            Assert.That(summon.TenShow.gameObject.activeSelf, Is.False);
+            Assert.That(RuneBalance.Known, Is.EqualTo(100000 - TempleSummon.TenPrice));
+            Assert.That(results.IsOpen, Is.True);
+            Assert.That(results.Shown.Count, Is.EqualTo(TempleSummon.TenCount));
+            Assert.That(
+                results.Shown.Any(result =>
+                    result.Entry.Kind == LibraryKind.Character
+                    || result.Entry.Stars >= TempleSummon.GuaranteedStars
+                ),
+                Is.True
+            );
+            view.Back.onClick.Invoke();
+            Assert.That(results.IsOpen, Is.False);
+
+            summon.Single.onClick.Invoke();
+            yield return SceneTests.WaitUntil(() => summon.Presenting, message: "No presentation.");
+            Assert.That(summon.Show.gameObject.activeInHierarchy, Is.True);
+            // 演出の間の「もどる」は、押して飛ばすのと同じ。
+            view.Back.onClick.Invoke();
+            yield return SceneTests.WaitForTask(summon.SummonTask);
+            Assert.That(guide.Presenter.Left, Is.False);
+            Assert.That(results.Shown.Count, Is.EqualTo(1));
+            results.Veil.onClick.Invoke();
+            Assert.That(results.IsOpen, Is.False);
+
+            // 残高が足りなければ引かず、通知の帯で知らせる。
+            RuneBalance.Set(100);
+            summon.Ten.onClick.Invoke();
+            Assert.That(summon.Presenting, Is.False);
+            Assert.That(view.ToastMessage, Is.EqualTo(TempleSummonSession.ShortMessage));
+
+            view.Back.onClick.Invoke();
+            Assert.That(view.MenuPanel.activeSelf, Is.True);
+            view.Back.onClick.Invoke();
+            Assert.That(guide.Presenter.Left, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => SceneManager.GetActiveScene().name == SceneNames.Home,
+                message: "Home did not open."
+            );
         }
 
         // 左で枠を選び、右のボーナスを押すと、その場でセットか入れ替えをして共通の通知の帯で知らせる。
@@ -502,6 +598,8 @@ namespace Baryonyx.Tests.PlayMode
             treasures.Select(hiddenTile.Kind, hiddenTile.Id);
             StringAssert.StartsWith(TravelTreasureView.HiddenName, treasures.Info.text);
             StringAssert.Contains("★", treasures.Info.text);
+            // まだ見つけていないことは伏せた名前でわかるため、説明の欄には何も書かない。
+            Assert.That(treasures.InfoBody.text, Is.Empty);
 
             // 「もどる」は窓を閉じるだけで、画面に残る。
             view.PressBack();
@@ -604,7 +702,7 @@ namespace Baryonyx.Tests.PlayMode
         private static void AssertGuideFitsTheScreen(GuideMenuView view)
         {
             Canvas.ForceUpdateCanvases();
-            var guide = (RectTransform)view.transform.Find("SafeArea/Guide");
+            var guide = (RectTransform)view.transform.Find("SafeArea/Core/Guide");
             var screen = (RectTransform)view.transform;
             var corners = new Vector3[4];
             guide.GetWorldCorners(corners);

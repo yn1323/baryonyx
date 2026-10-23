@@ -74,14 +74,15 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 枠つきのリスト（商会・神殿の一覧、旅の案内所の行き先）：案内人の右に金の2本線を引き、
         // 右の透ける面に見出しとすりガラスのカードを並べる。設計座標、左上から。
-        private const float ListSplit = RightLeft;
-        private const float ListGap = 24f;
-        private const float ListHeadingHeight = 76f;
-        private const float EntryHeight = 128f;
+        // 機能の一覧のパネル（商会の品物）も、同じ寸法で並べる。
+        public const float ListSplit = RightLeft;
+        public const float ListGap = 24f;
+        public const float ListHeadingHeight = 76f;
+        public const float EntryHeight = 128f;
         private const float EntryGap = 16f;
-        private const float ConfirmWidth = 360f;
-        private const float ConfirmHeight = 104f;
-        private const float ConfirmBottom = 16f;
+        public const float ConfirmWidth = 360f;
+        public const float ConfirmHeight = 104f;
+        public const float ConfirmBottom = 16f;
 
         // A locked row (an unexplored destination) is drawn at this opacity, with its name hidden.
         private const float LockedAlpha = 0.5f;
@@ -175,7 +176,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         public static GuideMenuItem Item(
             string label,
-            string caption,
             string confirmLabel,
             Sprite icon,
             params GuideListEntry[] entries
@@ -183,7 +183,6 @@ namespace Baryonyx.UI.GuideMenu.Editor
             new()
             {
                 Label = label,
-                Caption = caption,
                 ConfirmLabel = confirmLabel,
                 Icon = icon,
                 Entries = entries,
@@ -236,13 +235,14 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 frameParts.Add(GuideFrameAssets.BuildBackdrop(root, definition.Background));
                 var safe = SafeArea(root);
                 frameParts.Add(GuideFrameAssets.BuildHeaderBand(safe));
-                view.GuideArt = BuildGuide(safe, definition);
+                var core = CoreLayer(safe);
+                view.GuideArt = BuildGuide(core, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Destinations)
                     BuildDestinations(safe, view, definition);
                 else
                 {
-                    BuildMenu(safe, view, definition);
+                    BuildMenu(core, view, definition);
                     BuildList(safe, view, definition);
                     BuildItemPanels(safe, view, definition, itemPanel);
                 }
@@ -279,9 +279,19 @@ namespace Baryonyx.UI.GuideMenu.Editor
             shadeImage.raycastTarget = false;
         }
 
-        private static GameObject BuildGuide(RectTransform safe, GuideMenuDefinition definition)
+        // 案内人とメニューを置く、中央の1920x1080の層。枠つきの表示の層と同じ座標で、
+        // 16:9より横長の画面でも左右の端へ離れない。狭い画面では下端を軸に縮め、案内人の腰を下端に付けたままにする。
+        private static RectTransform CoreLayer(RectTransform safe)
         {
-            var guide = Rect("Guide", safe);
+            var core = Layout.Layer(safe, "Core");
+            core.anchorMin = core.anchorMax = core.pivot = new Vector2(0.5f, 0f);
+            core.anchoredPosition = Vector2.zero;
+            return core;
+        }
+
+        private static GameObject BuildGuide(RectTransform core, GuideMenuDefinition definition)
+        {
+            var guide = Rect("Guide", core);
             guide.anchorMin = guide.anchorMax = Vector2.zero;
             guide.pivot = new Vector2(0.5f, 0f);
             guide.sizeDelta =
@@ -403,7 +413,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         private static void BuildMenu(
-            RectTransform safe,
+            RectTransform core,
             GuideMenuView view,
             GuideMenuDefinition definition
         )
@@ -418,7 +428,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 rows > 5 ? 12
                 : rows > 4 ? 20
                 : 28;
-            var panel = Rect("Menu", safe);
+            var panel = Rect("Menu", core);
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1, 0.5f);
             panel.anchoredPosition = new Vector2(-56, rows > 5 ? -44 : -16);
             panel.sizeDelta = new Vector2(
@@ -465,25 +475,17 @@ namespace Baryonyx.UI.GuideMenu.Editor
                     iconImage.raycastTarget = false;
                     textLeft = 36 + IconSize + 28;
                 }
+                // 項目名だけを行の縦の中央に置く。何ができるかはアイコンと項目名と、開いた先で伝える。
                 var label = Label(
                     row,
                     "Label",
                     item.Label,
                     52,
                     UiPalette.TextMain,
-                    TextAlignmentOptions.Left
+                    TextAlignmentOptions.MidlineLeft
                 );
-                Band((RectTransform)label.transform, top: true, 20, 68, textLeft, 96);
-                var caption = Label(
-                    row,
-                    "Caption",
-                    item.Caption,
-                    30,
-                    UiPalette.TextSub,
-                    TextAlignmentOptions.Left
-                );
-                Band((RectTransform)caption.transform, top: false, 22, 40, textLeft + 2, 96);
-                Shrink(caption, 20);
+                Band((RectTransform)label.transform, top: true, 0, 68, textLeft, 96);
+                CenterVertically(row, "Label");
                 var arrow = Rect("Arrow", row);
                 Corner(
                     arrow,
@@ -580,11 +582,11 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 枠つきのリストの土台：Safe Area全面のパネル、設計座標の層、案内人の右の透ける面と金の2本線、
         // 決めるボタンの上までの行の表示範囲。行の影と選んだときの光が切れないよう、表示範囲は行より広く取る。
-        private static (
-            RectTransform Panel,
-            RectTransform Layer,
-            RectTransform Viewport
-        ) FramedList(RectTransform safe, string name, float headingHeight)
+        public static (RectTransform Panel, RectTransform Layer, RectTransform Viewport) FramedList(
+            RectTransform safe,
+            string name,
+            float headingHeight
+        )
         {
             var panel = Rect(name, safe);
             Stretch(panel);
@@ -615,7 +617,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         // 案内人の右の行の列。行の左右は面の端から離し、下には余白を残す。
-        private static RectTransform ListColumn(RectTransform viewport, string name) =>
+        public static RectTransform ListColumn(RectTransform viewport, string name) =>
             Layout.Column(
                 viewport,
                 name,
@@ -630,7 +632,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // The button at the bottom right that applies the chosen row; off until one is chosen.
         // 編成の「レベルアップ」と同じすりガラスのカード。金の縁と光（選んだ印）は出さず、模様も付けない。
-        private static (Button Button, TMP_Text Label) ConfirmButton(
+        public static (Button Button, TMP_Text Label) ConfirmButton(
             RectTransform layer,
             string text
         )

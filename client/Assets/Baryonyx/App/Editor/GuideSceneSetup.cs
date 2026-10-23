@@ -11,6 +11,7 @@ using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using Baryonyx.Workshop.Editor;
 using UnityEditor;
+using UnityEngine.Rendering.Universal;
 
 namespace Baryonyx.App.Editor
 {
@@ -56,12 +57,50 @@ namespace Baryonyx.App.Editor
             ShowcaseCatalogBuilder.RefreshCatalog();
         }
 
-        private static void CreateScene(string sceneName, string prefabPath) =>
+        // 神殿の召喚の演出（1回・10回）。光をBloomでにじませるため、カメラで描き、戦闘と同じポストプロセスを掛ける。
+        // 案内人の画面（Overlay）の奥に隠れるため、召喚の画面が演出の間だけ案内人の画面を隠して出す。
+        private static void AddSummonShows(
+            UnityEngine.SceneManagement.Scene scene,
+            UnityEngine.Camera camera
+        )
+        {
+            camera.allowHDR = true;
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            Hd2dStageSceneSetup.AddVolume(
+                scene,
+                "SummonPostProcessVolume",
+                Baryonyx.Combat.Editor.BattleSkillVfxAssets.PostProcessProfilePath
+            );
+            foreach (
+                var (path, name) in new[]
+                {
+                    (TempleSummonShowAssets.PrefabPath, "TempleSummonShow"),
+                    (TempleSummonTenShowAssets.PrefabPath, "TempleSummonTenShow"),
+                }
+            )
+            {
+                var show = ScreenScenes.AddScreen(scene, path, name);
+                var canvas = show.GetComponent<UnityEngine.Canvas>();
+                canvas.renderMode = UnityEngine.RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = camera;
+                canvas.planeDistance = 10f;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(canvas);
+                show.SetActive(false);
+            }
+        }
+
+        public static void CreateScene(string sceneName, string prefabPath) =>
             ScreenScenes.Rebuild(
                 ScenePath(sceneName),
                 scene =>
                 {
-                    ScreenScenes.AddCamera(scene, sceneName + "Camera", ScreenScenes.CameraColor);
+                    var camera = ScreenScenes.AddCamera(
+                        scene,
+                        sceneName + "Camera",
+                        ScreenScenes.CameraColor
+                    );
+                    if (sceneName == SceneNames.Temple)
+                        AddSummonShows(scene, camera);
                     var screen = ScreenScenes.AddScreen(scene, prefabPath, sceneName + "Screen");
                     var bootstrap = ScreenScenes.AddObject<GuideSceneBootstrap>(
                         scene,

@@ -2,6 +2,7 @@ using System;
 using Baryonyx.Account;
 using Baryonyx.Adventure;
 using Baryonyx.Combat.Records;
+using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
@@ -9,6 +10,8 @@ using Baryonyx.Library;
 using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.StepBonus;
+using Baryonyx.Temple;
+using Baryonyx.Workshop;
 using UnityEngine;
 
 namespace Baryonyx.App
@@ -27,7 +30,10 @@ namespace Baryonyx.App
             IAdventureSource adventure = null,
             IEquipmentSource equipment = null,
             IRevealedWeaknessSource weaknesses = null,
-            ILibrarySource library = null
+            ILibrarySource library = null,
+            IWorkshopSource workshop = null,
+            IEnhancementSource enhancement = null,
+            ITempleSummonSource summon = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
@@ -38,6 +44,9 @@ namespace Baryonyx.App
             Equipment = equipment;
             Weaknesses = weaknesses;
             Library = library;
+            Workshop = workshop;
+            Enhancement = enhancement;
+            Summon = summon;
         }
 
         public HealthStepLink Health { get; }
@@ -60,6 +69,15 @@ namespace Baryonyx.App
 
         // ライブラリの見つけた記録と日々の歩数を読むサーバー。接続先がなければnull。
         public ILibrarySource Library { get; }
+
+        // 商会で買うサーバー。接続先がなければnull。
+        public IWorkshopSource Workshop { get; }
+
+        // 商会で強化するサーバー。接続先がなければnull。
+        public IEnhancementSource Enhancement { get; }
+
+        // 神殿で召喚するサーバー。接続先がなければnull。
+        public ITempleSummonSource Summon { get; }
 
         // 作った接続。まだ作っていなければnull（シーンを単体で開いたときなど）。
         public static GameServices Current => current;
@@ -84,6 +102,9 @@ namespace Baryonyx.App
             EquipmentSession.Source = services?.Equipment;
             RevealedWeaknessSession.Source = services?.Weaknesses;
             LibrarySession.Source = services?.Library;
+            WorkshopSession.Source = services?.Workshop;
+            EnhancementSession.Source = services?.Enhancement;
+            TempleSummonSession.Source = services?.Summon;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -131,6 +152,15 @@ namespace Baryonyx.App
                     : null,
                 sync != null
                     ? new LibraryServerSource(sync.Sessions, new LibraryApiClient(server))
+                    : null,
+                sync != null
+                    ? new WorkshopServerSource(sync.Sessions, new WorkshopApiClient(server))
+                    : null,
+                sync != null
+                    ? new EnhancementServerSource(sync.Sessions, new EnhancementApiClient(server))
+                    : null,
+                sync != null
+                    ? new TempleSummonServerSource(sync.Sessions, new TempleSummonApiClient(server))
                     : null
             );
         }

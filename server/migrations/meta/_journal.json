@@ -120,6 +120,48 @@
       "when": 1792602253141,
       "tag": "0016_unique_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1792759136961,
+      "tag": "0017_three_cards_per_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792768889331,
+      "tag": "0018_workshop_purchases",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792773864216,
+      "tag": "0019_enhancement",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792780337697,
+      "tag": "0020_workshop_crafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1792783597570,
+      "tag": "0021_summon",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1792785443631,
+      "tag": "0022_bond_tokens",
+      "breakpoints": true
     }
   ]
 }

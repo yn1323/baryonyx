@@ -194,16 +194,19 @@ namespace Baryonyx.UI.GuideMenu
             var custom = open ? PanelFor(state.Item) : null;
             openPanel = custom;
             bool list = open && custom == null;
+            // 一覧の代わりに案内人の右に出す項目のパネル（商会の品物など）。
+            bool besideGuide = custom != null && custom.GetComponent<GuideListPanel>() != null;
             for (int i = 0; i < ItemPanels.Length; i++)
                 if (ItemPanels[i] != null && ItemPanels[i] != custom)
                     ItemPanels[i].SetActive(false);
             if (custom != null)
                 custom.SetActive(true);
             if (GuideArt != null)
-                GuideArt.SetActive(custom == null);
+                GuideArt.SetActive(custom == null || besideGuide);
             // 枠は、画面いっぱいの項目のパネルと、案内人の右に出す一覧・行き先のリストで出す。
             ShowFrame(
                 list
+                    || besideGuide
                     || destinations
                     || (custom != null && custom.GetComponent<GuideFramedPanel>() != null)
             );

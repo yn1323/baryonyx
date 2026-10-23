@@ -41,6 +41,9 @@ namespace Baryonyx.App
         // 探索の演出デバッグルーム。
         public const string ExplorationMomentLab = "ExplorationMomentLab";
 
+        // 召喚の演出デバッグルーム。
+        public const string TempleSummonLab = "TempleSummonLab";
+
         /// <summary>
         /// The debugging rooms Home's list opens, in its order: the name shown, the scene,
         /// whether the room has its own button back to Home, and for the others where the one
@@ -59,6 +62,7 @@ namespace Baryonyx.App
             ("敵の挙動デバッグルーム", EnemyLab, false, DebugRoomCorner.TopRight),
             ("戦闘の演出デバッグルーム", BattleMomentLab, false, DebugRoomCorner.TopRight),
             ("探索の演出デバッグルーム", ExplorationMomentLab, false, DebugRoomCorner.BottomLeft),
+            ("召喚の演出デバッグルーム", TempleSummonLab, false, DebugRoomCorner.TopRight),
         };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。

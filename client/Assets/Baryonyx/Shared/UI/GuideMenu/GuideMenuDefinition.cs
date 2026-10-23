@@ -47,7 +47,6 @@ namespace Baryonyx.UI.GuideMenu
         // Names the item for code, e.g. the tavern's "bonus" opens the bonus settings, not a list.
         public string Key = "";
         public string Label = "";
-        public string Caption = "";
 
         // A 24x24 pixel-art icon before the label, drawn at 4x. Optional.
         public Sprite Icon;
