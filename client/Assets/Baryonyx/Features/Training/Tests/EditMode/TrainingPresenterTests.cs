@@ -26,6 +26,10 @@ namespace Baryonyx.Tests.EditMode
             public event Action<int> GearPressed;
             public event Action<int> CardPressed;
             public event Action<int> UniquePressed;
+            public event Action BondPressed;
+            public event Action BondCancelPressed;
+            public event Action BondConfirmPressed;
+            public event Action CelebrationClosed;
 
             public TrainingState Last;
             public readonly List<string> Notices = new();
@@ -62,6 +66,14 @@ namespace Baryonyx.Tests.EditMode
             public void Card(int slot) => CardPressed?.Invoke(slot);
 
             public void Unique(int index) => UniquePressed?.Invoke(index);
+
+            public void Bond() => BondPressed?.Invoke();
+
+            public void BondCancel() => BondCancelPressed?.Invoke();
+
+            public void BondConfirm() => BondConfirmPressed?.Invoke();
+
+            public void CloseCelebration() => CelebrationClosed?.Invoke();
         }
 
         private sealed class FakeStore : ITrainingStore
@@ -85,6 +97,22 @@ namespace Baryonyx.Tests.EditMode
             public int CostPerLevel { get; set; } = 100;
 
             public string Selected { get; set; }
+
+            public readonly Dictionary<string, int> Bonds = new();
+            public readonly Dictionary<string, int> Tokens = new();
+
+            public int BondOf(string id) => Bonds.TryGetValue(id, out int stage) ? stage : 0;
+
+            public int BondTokensOf(string id) => Tokens.TryGetValue(id, out int count) ? count : 0;
+
+            public bool DeepenBond(string id)
+            {
+                if (BondOf(id) >= TrainingBond.Max || BondTokensOf(id) < 1)
+                    return false;
+                Bonds[id] = BondOf(id) + 1;
+                Tokens[id] = BondTokensOf(id) - 1;
+                return true;
+            }
         }
 
         private TrainingMockData data;
@@ -240,13 +268,15 @@ namespace Baryonyx.Tests.EditMode
             // カスタムスキルの名前・コスト・属性は、スキルの定義から引き、説明はそのキャラで作る。
             Assert.That(
                 state.Cards.Select(card => card.Name),
-                Is.EqualTo(new[] { "ファイア", "アイスランス" })
+                Is.EqualTo(new[] { "ファイア", "アイスランス", TrainingPresenter.EmptyName })
             );
-            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 2, 2 }));
+            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 2, 2, 0 }));
             Assert.That(
                 state.Cards.Select(card => card.Element),
-                Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice })
+                Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice, CardElement.None })
             );
+            // 3枚目のカスタムスキルの枠は空き。
+            Assert.That(state.Cards[2].Filled, Is.False);
             Assert.That(state.Cards[0].Type, Is.EqualTo(TrainingCardState.SkillType));
             Assert.That(state.Cards[0].Description, Is.EqualTo("toma:Fire"));
             Assert.That(state.Cards[0].Kind, Is.Not.Empty);
@@ -258,7 +288,7 @@ namespace Baryonyx.Tests.EditMode
             store.Cards["toma"] = new[] { "Fire" };
             Open();
 
-            // カスタムスキルはいつも2枠。足りない枠は「空き」。
+            // カスタムスキルはいつも3枠。足りない枠は「空き」。
             Assert.That(view.Last.Cards.Count, Is.EqualTo(TrainingPresenter.CustomSlots));
             Assert.That(view.Last.Cards[1].Filled, Is.False);
             Assert.That(view.Last.Cards[1].Name, Is.EqualTo(TrainingPresenter.EmptyName));
@@ -603,6 +633,111 @@ namespace Baryonyx.Tests.EditMode
                 PartySession.Reset();
                 UnityEngine.Object.DestroyImmediate(party);
             }
+        }
+
+        [Test]
+        public void EachBondStageRaisesEveryStatByTwoPercentUpToSix()
+        {
+            var growth = data.Find("toma");
+            Assert.That(TrainingBond.PercentAt(3), Is.EqualTo(6));
+            Assert.That(TrainingBond.PercentAt(9), Is.EqualTo(12));
+            Assert.That(growth.StatsAt(12, 0), Is.EqualTo(growth.StatsAt(12)));
+            Assert.That(
+                growth.StatsAt(12, 3),
+                Is.EqualTo(growth.Level100.Scaled(CombatFormula.GrowthRate(12) * 1.06))
+            );
+            Assert.That(growth.StatsAt(12, 3).Hp, Is.GreaterThan(growth.StatsAt(12).Hp));
+        }
+
+        [Test]
+        public void TheBondStartsFromTheMockDataAndDeepensWithATokenWhileTheAppRuns()
+        {
+            var growth = data.Find("toma");
+            growth.Bond = 5;
+            growth.BondTokens = 2;
+            TrainingBond.Reset();
+            try
+            {
+                Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(5));
+                Assert.That(TrainingBond.Deepen(growth), Is.True);
+                Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(6));
+                Assert.That(TrainingBond.TokensOf(growth), Is.EqualTo(1));
+                Assert.That(TrainingBond.StatsOf(growth, 12), Is.EqualTo(growth.StatsAt(12, 6)));
+                // 上限を超えては深めず、しるしも使わない。仮データは書き換えない。
+                Assert.That(TrainingBond.Deepen(growth), Is.False);
+                Assert.That(TrainingBond.TokensOf(growth), Is.EqualTo(1));
+                Assert.That(growth.Bond, Is.EqualTo(5));
+
+                TrainingBond.Reset();
+                Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(5));
+            }
+            finally
+            {
+                TrainingBond.Reset();
+            }
+        }
+
+        [Test]
+        public void TheBondDialogShowsTheNextStageAndDeepeningLightsItUp()
+        {
+            store.Bonds["toma"] = 2;
+            store.Tokens["toma"] = 1;
+            Open();
+            var growth = data.Find("toma");
+            Assert.That(view.Last.Bond, Is.EqualTo(2));
+            Assert.That(view.Last.Stats, Is.EqualTo(growth.StatsAt(12, 2)));
+
+            view.Bond();
+            Assert.That(view.Last.BondOpen, Is.True);
+            Assert.That(view.Last.BondTarget, Is.EqualTo(3));
+            Assert.That(view.Last.BondStats, Is.EqualTo(growth.StatsAt(12, 3)));
+            Assert.That(view.Last.CanDeepen, Is.True);
+            // 重ねた窓の間は、人を替えず、レベルアップも開かない。
+            view.Next();
+            view.LevelUp();
+            Assert.That(view.Last.Name, Is.EqualTo("トーマ"));
+            Assert.That(view.Last.DialogOpen, Is.False);
+
+            view.BondConfirm();
+            Assert.That(store.BondOf("toma"), Is.EqualTo(3));
+            Assert.That(store.BondTokensOf("toma"), Is.EqualTo(0));
+            Assert.That(view.Last.BondOpen, Is.False);
+            Assert.That(view.Last.Celebrated, Is.EqualTo(3));
+            Assert.That(view.Last.Stats, Is.EqualTo(growth.StatsAt(12, 3)));
+            view.Next();
+            Assert.That(view.Last.Name, Is.EqualTo("トーマ"));
+
+            // 戻る操作は、演出を先に閉じる。
+            Assert.That(presenter.Back(), Is.True);
+            Assert.That(view.Last.Celebrated, Is.EqualTo(0));
+            Assert.That(presenter.Back(), Is.False);
+        }
+
+        [Test]
+        public void WithoutATokenOrAtTheCapTheBondDoesNotDeepen()
+        {
+            store.Bonds["toma"] = 2;
+            store.Bonds["luka"] = TrainingBond.Max;
+            store.Tokens["luka"] = 3;
+            Open();
+
+            view.Bond();
+            Assert.That(view.Last.CanDeepen, Is.False);
+            view.BondConfirm();
+            Assert.That(store.BondOf("toma"), Is.EqualTo(2));
+            Assert.That(view.Last.Celebrated, Is.EqualTo(0));
+            view.BondCancel();
+            Assert.That(view.Last.BondOpen, Is.False);
+
+            view.Next();
+            view.Bond();
+            Assert.That(view.Last.BondMaxed, Is.True);
+            Assert.That(view.Last.BondTarget, Is.EqualTo(TrainingBond.Max));
+            Assert.That(view.Last.CanDeepen, Is.False);
+            view.BondConfirm();
+            Assert.That(store.BondTokensOf("luka"), Is.EqualTo(3));
+            Assert.That(presenter.Back(), Is.True);
+            Assert.That(view.Last.BondOpen, Is.False);
         }
     }
 }

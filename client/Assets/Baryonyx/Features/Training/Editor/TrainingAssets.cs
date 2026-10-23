@@ -34,7 +34,7 @@ namespace Baryonyx.Training.Editor
     /// screens narrower than 16:9 (<see cref="GuidePanelLayout"/>). The growth, skills and
     /// costs are mock data until levels have data (doc/features/progression.md).
     /// </summary>
-    public static class TrainingAssets
+    public static partial class TrainingAssets
     {
         public const string Folder = "Assets/Baryonyx/Features/Training";
         public const string DataPath = Folder + "/Data/TrainingMockData.asset";
@@ -61,23 +61,23 @@ namespace Baryonyx.Training.Editor
         private const float PortraitFade = 140f;
         private const float PanelPad = 34f;
 
-        // 右の面の中（左上から）：ステータス（2列4行）とその右のパッシブ、デッキの4枚、装備の5枠。
+        // 右の面の中（左上から）：ステータス（2列4行）とその右のパッシブ、デッキの6枚、装備の5枠。
         // 画面の下端（設計座標で1040）まで使い、段の間を空けて詰まって見えないようにする。
         private const float StatsTop = 148f;
         private const float StatsWidth = 520f;
         private const float StatRow = 42f;
         private static readonly Rect Passives = new(586, 140, 590, 200);
         private const float PassiveRow = 76f;
-        private const float DeckTop = 400f;
+        private const float DeckTop = 420f;
         private const float CardGap = 16f;
         private const float PairGap = 60f;
-        private const float GearTop = 752f;
+        private const float GearTop = 660f;
         private const float GearGap = 13f;
         private const float GearHeight = 168f;
 
-        // デッキのカードは戦闘と同じ70×98ドットを3倍で出す。
-        private static readonly Vector2 CardDots = new(70, 98);
-        private const float CardDot = 3f;
+        // デッキのカードは、戦闘のカードを効果の文の上で切った小さなカード（70×70ドット）を2倍で出す。
+        // 効果はカードを押して開くスキルの付け替えの画面で読む。
+        private const float CardDot = 2f;
 
         // －＋の押せる範囲。
         private const float HitSize = Layout.HitSize;
@@ -113,9 +113,6 @@ namespace Baryonyx.Training.Editor
         private static readonly Color Before = new(0.72f, 0.75f, 0.83f);
         private static readonly Color Dim = new(0.01f, 0.015f, 0.04f, 0.74f);
         private static readonly Color FigureSpot = new(0.01f, 0.015f, 0.04f, 0.7f);
-        private static readonly Color CardBand = new(0.02f, 0.03f, 0.07f, 0.68f);
-        private static readonly Color CardOwner = new(1f, 0.93f, 0.76f);
-        private static readonly Color CardVeil = new(0.01f, 0.015f, 0.04f, 0.72f);
 
         [MenuItem("Baryonyx/Training/Create Mock Data")]
         public static TrainingMockData CreateData()
@@ -151,9 +148,20 @@ namespace Baryonyx.Training.Editor
                 Character("rita", new(3000, 2100, 1000, 600, 800, 650, 800, 500), healer),
                 Character("ritsu", new(2100, 500, 700, 2400, 1500, 600, 400, 600), archer),
             };
+            // 絆の仮データ：トーマは絆2でしるし1つ、ルカは絆0でしるし2つ、アリアは上限の一つ手前（doc/features/monetization.md）。
+            Bond(data, "toma", 2, 1);
+            Bond(data, "luka", 0, 2);
+            Bond(data, "aria", 5, 1);
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssetIfDirty(data);
             return data;
+        }
+
+        private static void Bond(TrainingMockData data, string id, int stage, int tokens)
+        {
+            var character = data.Find(id);
+            character.Bond = stage;
+            character.BondTokens = tokens;
         }
 
         private static TrainingCharacter Character(
@@ -180,7 +188,8 @@ namespace Baryonyx.Training.Editor
                     "CardRevelation",
                     "ManaBurst"
                 ),
-                Unique("星降り", "ランダムな敵に5回ダメージ", 20, "CardMeteor", "StarFall")
+                Unique("星降り", "ランダムな敵に5回ダメージ", 20, "CardMeteor", "StarFall"),
+                Unique("魔眼", "敵全体の弱点を見抜き、1枚引く", 40, "CardScout", "ArcaneEye")
             );
 
         private static TrainingCharacter Archer() =>
@@ -192,23 +201,32 @@ namespace Baryonyx.Training.Editor
                     "CardThunderSpear",
                     "ThunderArrow"
                 ),
-                Unique("矢の雨", "敵全体に3回ダメージ", 20, "CardArrowRain", "ArrowStorm")
+                Unique("矢の雨", "敵全体に3回ダメージ", 20, "CardArrowRain", "ArrowStorm"),
+                Unique("速射", "敵1体に2回ダメージ", 40, "CardInsightArrow", "QuickShot")
             );
 
         private static TrainingCharacter Knight() =>
             Skills(
                 Unique("盾の構え", "次のターンまでブロック +80", 5, "CardProtect", "ShieldStance"),
-                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, "CardIai", "Issen")
+                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, "CardIai", "Issen"),
+                Unique("鼓舞", "味方全体にブロック、攻撃力アップ", 40, "CardWarCry", "Rally")
             );
 
         private static TrainingCharacter Healer() =>
             Skills(
                 Unique("癒しの風", "味方全体のHPを回復", 5, "CardHeal", "HealingWind"),
-                Unique("蘇生", "倒れた味方1人を復活させる", 20, "CardResurrection", "Revive")
+                Unique("蘇生", "倒れた味方1人を復活させる", 20, "CardResurrection", "Revive"),
+                Unique(
+                    "裁きの光",
+                    "敵全体にダメージ、味方全体を回復",
+                    40,
+                    "CardHolyLight",
+                    "Judgment"
+                )
             );
 
-        private static TrainingCharacter Skills(TrainingSkill unique1, TrainingSkill unique2) =>
-            new() { Uniques = new[] { unique1, unique2 } };
+        private static TrainingCharacter Skills(params TrainingSkill[] uniques) =>
+            new() { Uniques = uniques };
 
         // パッシブは戦闘の定義（CombatPassives）から作り、アイコンは24×24ドットの専用の絵を使う。
         private static TrainingSkill Passive(CombatPassive passive) =>
@@ -258,7 +276,7 @@ namespace Baryonyx.Training.Editor
         /// <summary>
         /// Builds the adventurer's page over the guide screen's safe area: the illustration with
         /// the battle sprite in its corner on the left; on the right one frame of the name and
-        /// level-up, the stats beside the passives, the four deck cards (two unique skills, two
+        /// level-up, the stats beside the passives, the six deck cards (three unique skills, three
         /// custom skills) and the five equipment slots; and the level-up dialog (hidden) over
         /// everything. A flick over the page changes the person. Called while the guide
         /// screen's prefab is being built, so the shared frames and font are ready.
@@ -284,9 +302,12 @@ namespace Baryonyx.Training.Editor
             GuideFrameAssets.Divider(layer, Split, Portrait.y);
             BuildDetail(layer, view);
             BuildDialog((RectTransform)view.transform, view);
+            BuildBondDialog((RectTransform)view.transform, view);
+            BuildCelebration((RectTransform)view.transform, view);
 
             // 停止中のPrefabでも1人目が読めるよう、仮の装備で生成時に一度描く。
             TrainingView.Build(view, party, data, EquipmentLocalSource.Starter()).Dispose();
+            BakeCelebration(view, party, data);
             return view.gameObject;
         }
 
@@ -348,7 +369,13 @@ namespace Baryonyx.Training.Editor
             var panel = Layout.Box(layer, "Detail", Panel.x, Panel.y, Panel.width, Panel.height);
             float width = Panel.width - PanelPad * 2;
 
-            var header = Layout.Row(panel, "Header", PanelPad, 18, 760, 92, 14);
+            // 行は左の中央を起点にし、縮めても上下の中央が「絆」「レベルアップ」とそろう。
+            float headerWidth = LevelUpX - BondGap - BondWidth - BondGap - PanelPad;
+            var header = Layout.Row(panel, "Header", PanelPad, 18, headerWidth, 92, 14);
+            header.pivot = new Vector2(0f, 0.5f);
+            header.anchoredPosition = new Vector2(PanelPad, -18 - 92 / 2f);
+            view.Header = header;
+            view.HeaderWidth = headerWidth;
             view.Name = Label(
                 header,
                 "Name",
@@ -383,22 +410,23 @@ namespace Baryonyx.Training.Editor
                 .Select(i => Layout.RowIcon(header, "Element" + i, 12f * Dot))
                 .ToArray();
             BuildLevelUp(panel, view);
+            BuildBond(panel, view);
 
             // キャラ自身：ステータス（2列4行）と、その右にパッシブ2つ。
             view.Stats = StatGridAssets.Build(panel, PanelPad, StatsTop, StatsWidth, 2, StatRow);
             view.Passives = BuildPassives(panel);
 
-            // デッキに入る4枚：固有スキル2枚と、カスタムスキル2枚。戦闘のカードと同じ組み方。
-            var cardSize = CardDots * CardDot;
-            float deckWidth = cardSize.x * 4 + CardGap * 2 + PairGap;
+            // デッキに入る6枚：固有スキル3枚と、カスタムスキル3枚。戦闘のカードと同じ組み方の小さなカード。
+            var cardSize = DeckCardAssets.Size(CardDot, small: true);
+            int half = TrainingPresenter.CustomSlots;
+            float deckWidth = cardSize.x * half * 2 + CardGap * (half - 1) * 2 + PairGap;
             float deckLeft = (Panel.width - deckWidth) / 2f;
-            float[] cardX =
-            {
-                deckLeft,
-                deckLeft + cardSize.x + CardGap,
-                deckLeft + cardSize.x * 2 + CardGap + PairGap,
-                deckLeft + cardSize.x * 3 + CardGap * 2 + PairGap,
-            };
+            var cardX = Enumerable
+                .Range(0, half * 2)
+                .Select(i =>
+                    deckLeft + (cardSize.x + CardGap) * i - (i >= half ? CardGap - PairGap : 0)
+                )
+                .ToArray();
             GuideFrameAssets.Heading(
                 panel,
                 "UniquesTitle",
@@ -412,7 +440,7 @@ namespace Baryonyx.Training.Editor
             var customTitle = Layout.Row(
                 panel,
                 "CustomTitle",
-                cardX[2],
+                cardX[half],
                 DeckTop - 36,
                 420,
                 32,
@@ -430,22 +458,11 @@ namespace Baryonyx.Training.Editor
                 ),
                 0
             );
-            Layout.Fit(
-                Label(
-                    customTitle,
-                    "Note",
-                    "スキルかアイテム",
-                    18,
-                    UiPalette.TextSub,
-                    TextAlignmentOptions.BottomLeft
-                ),
-                0
-            );
             GuideFrameAssets.HeadingRow(customTitle, 26);
             Layout.Line(
                 panel,
                 "DeckLine",
-                cardX[1] + cardSize.x + PairGap / 2f - 1,
+                cardX[half - 1] + cardSize.x + PairGap / 2f - 1,
                 DeckTop + 8,
                 2,
                 cardSize.y - 16
@@ -455,12 +472,12 @@ namespace Baryonyx.Training.Editor
                 .Select(element => (Texture)CardArt($"CardFrame{element}"))
                 .ToArray();
             view.Uniques = Enumerable
-                .Range(0, 2)
-                .Select(i => BuildCard(panel, "Unique" + i, cardX[i], DeckTop, button: true))
+                .Range(0, CardLoadout.CardLoadoutPresenter.UniqueCount)
+                .Select(i => Card(panel, "Unique" + i, cardX[i]))
                 .ToArray();
             view.CardSlots = Enumerable
                 .Range(0, TrainingPresenter.CustomSlots)
-                .Select(i => BuildCard(panel, "Custom" + i, cardX[2 + i], DeckTop, button: true))
+                .Select(i => Card(panel, "Custom" + i, cardX[half + i]))
                 .ToArray();
 
             // 武器・防具・アクセサリー3つを同じ大きさの枠で並べる。
@@ -487,7 +504,7 @@ namespace Baryonyx.Training.Editor
         {
             // 金の縁と光（選んだ印）は出さず、背景の模様も付けない。
             var (button, _, levelUp) = GlassCardAssets.Choice(
-                Layout.Box(panel, "LevelUp", Panel.width - PanelPad - 360, 18, 360, 96),
+                Layout.Box(panel, "LevelUp", LevelUpX, 18, LevelUpWidth, 96),
                 pattern: false
             );
             view.LevelUp = button;
@@ -499,12 +516,12 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineLeft
             );
-            Layout.At(view.LevelUpLabel, 26, 0, 200, 96);
+            Layout.At(view.LevelUpLabel, 22, 0, 184, 96);
             Guide.Shrink(view.LevelUpLabel, 22);
-            var cost = Layout.Box(levelUp, "Cost", 216, 0, 130, 96);
+            var cost = Layout.Box(levelUp, "Cost", 214, 0, LevelUpWidth - 218, 96);
             view.LevelUpCost = cost.gameObject;
             var icon = Icon(cost, "Icon", Guide.IconRunePath);
-            Layout.At(icon, 0, 26, 44, 44);
+            Layout.At(icon, 0, 29, 38, 38);
             view.LevelUpCostLabel = Label(
                 cost,
                 "Value",
@@ -513,7 +530,7 @@ namespace Baryonyx.Training.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight
             );
-            Layout.At(view.LevelUpCostLabel, 44, 0, 80, 96);
+            Layout.At(view.LevelUpCostLabel, 40, 0, LevelUpWidth - 262, 96);
             Guide.Shrink(view.LevelUpCostLabel, 20);
         }
 
@@ -587,168 +604,11 @@ namespace Baryonyx.Training.Editor
                 .ToArray();
         }
 
-        /// <summary>
-        /// One deck card, laid out as the battle's card (70x98 dots at 3x, rows in dots as in
-        /// BattleInspectAssets): the frame, the art over its top, the cost and element on the top
-        /// corners, the type, name and kind on a dark band, the effect below, and a veil with the
-        /// level for a unique skill not unlocked yet. A custom skill's card is a button.
-        /// </summary>
-        private static TrainingCardWidget BuildCard(
-            RectTransform panel,
-            string name,
-            float x,
-            float y,
-            bool button
-        )
-        {
-            var card = Layout.Box(panel, name, x, y, CardDots.x * CardDot, CardDots.y * CardDot);
-            var widget = new TrainingCardWidget
-            {
-                Frame = Dots(card, "Frame", 0, 0, CardDots, null),
-            };
-            widget.Frame.raycastTarget = button;
-            widget.FrameFoil = CardFoilAssets.AddFrame(widget.Frame);
-            if (button)
-                widget.Button = Guide.AddButton(card, widget.Frame);
-            widget.Art = Dots(card, "Art", 3, 3, new Vector2(64, 58), null);
-            widget.Foil = Baryonyx.Editor.UI.CardFoilAssets.Add(widget.Art);
+        // デッキの小さなカード1枚。押すと、その枠を選んだスキルの付け替えの画面を開く。
+        private static TrainingCardWidget Card(RectTransform panel, string name, float x) =>
+            DeckCardAssets.Build(panel, name, x, DeckTop, CardDot, button: true, small: true);
 
-            var band = Layout.Box(
-                card,
-                "Band",
-                3 * CardDot,
-                39 * CardDot,
-                64 * CardDot,
-                26 * CardDot
-            );
-            AddImage(band, CardBand, false);
-            widget.Band = band.gameObject;
-            widget.Type = Label(card, "Type", "", 15, CardOwner, TextAlignmentOptions.MidlineLeft);
-            Layout.At(widget.Type, 6 * CardDot, 42.4f * CardDot, 58 * CardDot, 6.4f * CardDot);
-            widget.Name = Label(
-                card,
-                "Name",
-                "",
-                22,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Layout.At(widget.Name, 6 * CardDot, 48.6f * CardDot, 58 * CardDot, 8.4f * CardDot);
-            Guide.Shrink(widget.Name, 15);
-            widget.Kind = Label(
-                card,
-                "Kind",
-                "",
-                15,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Layout.At(widget.Kind, 7 * CardDot, 56.8f * CardDot, 56 * CardDot, 6 * CardDot);
-            widget.Kind.richText = true;
-            widget.Description = Label(
-                card,
-                "Description",
-                "",
-                15,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft,
-                shadow: false
-            );
-            Layout.At(
-                widget.Description,
-                7.5f * CardDot,
-                66.6f * CardDot,
-                55 * CardDot,
-                26 * CardDot
-            );
-            widget.Description.richText = true;
-            widget.Description.textWrappingMode = TextWrappingModes.Normal;
-
-            var costFrame = CardArt("CardCostFrame");
-            var costDigits = CardArt("CardCostDigits");
-            var cost = Dots(
-                card,
-                "Cost",
-                5,
-                5,
-                new Vector2(costFrame.width, costFrame.height),
-                costFrame
-            );
-            widget.Cost = cost.gameObject;
-            var digit = Rect("Digit", cost.rectTransform);
-            Place(
-                digit,
-                Vector2.zero,
-                new Vector2(costDigits.width / 10f, costDigits.height) * CardDot
-            );
-            widget.CostDigit = digit.gameObject.AddComponent<RawImage>();
-            widget.CostDigit.texture = costDigits;
-            widget.CostDigit.raycastTarget = false;
-            var element = Layout.Box(
-                card,
-                "Element",
-                (70 - 5 - 12) * CardDot,
-                5 * CardDot,
-                12 * CardDot,
-                12 * CardDot
-            );
-            widget.Element = element.gameObject.AddComponent<Image>();
-            widget.Element.raycastTarget = false;
-
-            // 未解放の固有スキル：カード全体を暗くして、錠前と解放するLvを重ねる。
-            var locked = Rect("Lock", card);
-            Stretch(locked);
-            AddImage(locked, CardVeil, false);
-            var lockImage = Layout.Box(
-                locked,
-                "Image",
-                (CardDots.x * CardDot - 9 * 4) / 2f,
-                54,
-                9 * 4,
-                10 * 4
-            );
-            SpriteImage(lockImage, GuideFrameAssets.LockPath, Color.white);
-            widget.When = Label(
-                locked,
-                "When",
-                "",
-                22,
-                UiPalette.Gold,
-                TextAlignmentOptions.Center
-            );
-            Layout.At(widget.When, 0, 100, CardDots.x * CardDot, 30);
-            widget.Lock = locked.gameObject;
-            locked.gameObject.SetActive(false);
-            return widget;
-        }
-
-        // ドット絵の画像を、左上からのドットの位置と大きさで3倍に置く。
-        private static RawImage Dots(
-            RectTransform parent,
-            string name,
-            float x,
-            float y,
-            Vector2 size,
-            Texture texture
-        )
-        {
-            var rect = Layout.Box(
-                parent,
-                name,
-                x * CardDot,
-                y * CardDot,
-                size.x * CardDot,
-                size.y * CardDot
-            );
-            var image = rect.gameObject.AddComponent<RawImage>();
-            image.texture = texture;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        // 戦闘のカードの画像（枠・コスト）。スキルの挿絵と同じく、戦闘画面のモックの画像を借りる。
-        private static Texture2D CardArt(string name) =>
-            ArtAssets.LoadTexture($"{BattleInspectAssets.ArtFolder}/{name}.aseprite");
+        private static Texture2D CardArt(string name) => DeckCardAssets.CardArt(name);
 
         // 装備の枠1つ。上にアイコン・枠の名前・星、下に名前と効果。武器・防具は押すと付け替えの画面を開く。
         // アクセサリーは決まりがないため、枠の名前と錠前・「準備中」だけを出して押せなくする。

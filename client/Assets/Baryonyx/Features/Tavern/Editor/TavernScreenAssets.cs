@@ -50,6 +50,7 @@ namespace Baryonyx.Tavern.Editor
             // 前のPlayやテストがセッションに残した編成・レベル・選んだ人を、Prefabに焼き込まない。
             PartySession.Reset();
             TrainingSession.Reset();
+            TrainingBond.Reset();
             EquipmentSession.Reset();
             CardLoadoutSession.Reset();
             WriteMenuIcons();
@@ -101,12 +102,7 @@ namespace Baryonyx.Tavern.Editor
         // choose one to see them, change the party, or open their page.
         private static GuideMenuItem Adventurers()
         {
-            var item = Item(
-                "冒険者",
-                "パーティを組み、装備・スキル・育成をする",
-                "編成する",
-                Icon(IconFormationPath)
-            );
+            var item = Item("冒険者", "編成する", Icon(IconFormationPath));
             item.Key = PartySession.GuideItemKey;
             return item;
         }
@@ -115,12 +111,7 @@ namespace Baryonyx.Tavern.Editor
         // their page, where the weapon and armour slots change what they wear.
         private static GuideMenuItem Gear()
         {
-            var item = Item(
-                "装備",
-                "冒険者を選んで、武器・防具を付け替える",
-                "選ぶ",
-                Icon(IconChangeGearPath)
-            );
+            var item = Item("装備", "選ぶ", Icon(IconChangeGearPath));
             item.Key = AdventurerPickerView.GuideItemKey;
             return item;
         }
@@ -128,12 +119,7 @@ namespace Baryonyx.Tavern.Editor
         // The bonus item opens the bonus settings panel instead of a list.
         private static GuideMenuItem Bonus()
         {
-            var item = Item(
-                "ボーナス",
-                "枠にセットして、歩いた日に効かせる",
-                "セットする",
-                Icon(IconBonusPath)
-            );
+            var item = Item("ボーナス", "セットする", Icon(IconBonusPath));
             item.Key = StepBonusSession.GuideItemKey;
             return item;
         }
@@ -185,7 +171,7 @@ namespace Baryonyx.Tavern.Editor
         // without a menu row.
         private static GuideMenuItem Hidden(string label, string key)
         {
-            var item = Item(label, "", "", null);
+            var item = Item(label, "", null);
             item.Key = key;
             item.Hidden = true;
             return item;

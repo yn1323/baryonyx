@@ -7,7 +7,7 @@ namespace Baryonyx.Training
 {
     /// <summary>
     /// The mock growth of each character until levels have data (doc/features/progression.md):
-    /// the stats at Lv 100, the two passive and two unique skills with the levels that unlock
+    /// the stats at Lv 100, the two passive and three unique skills with the levels that unlock
     /// them, and the runes a level costs. The characters themselves (name, level, art, cards)
     /// are the party's mock data.
     /// </summary>
@@ -47,7 +47,20 @@ namespace Baryonyx.Training
         // 固有スキル（Uniques と同じ順）の進化の進み具合の仮データ。ないものは最初の段階だけ。
         public UniqueSkillProgress[] UniqueProgress = Array.Empty<UniqueSkillProgress>();
 
+        // 絆の段と、持っている絆のしるしの仮データ（TrainingBond）。アプリを動かしている間の変化は TrainingBond が持つ。
+        [Range(0, TrainingBond.Max)]
+        public int Bond;
+
+        [Min(0)]
+        public int BondTokens;
+
         public CharacterStats StatsAt(int level) => Level100.At(level);
+
+        /// <summary>The stats at <paramref name="level"/> with the bond's raise at <paramref name="bond"/>.</summary>
+        public CharacterStats StatsAt(int level, int bond) =>
+            Level100.Scaled(
+                CombatFormula.GrowthRate(Math.Max(1, level)) * TrainingBond.RateOf(bond)
+            );
 
         public UniqueSkillProgress MockProgressOf(int index) =>
             UniqueProgress != null && index >= 0 && index < UniqueProgress.Length

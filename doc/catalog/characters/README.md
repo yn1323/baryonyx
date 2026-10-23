@@ -9,7 +9,17 @@ IDの接頭辞は `character-`、メタデータの `category` は `characters` 
 ## 個別データの索引
 
 <!-- entries:start -->
-登録された個別データはまだない。
+| ID | 名称 | 状態 | 詳細 |
+|---|---|---|---|
+| character-anselm | アンセルム | 候補 | [定義](character-anselm.md) |
+| character-aria | アリア | 候補 | [定義](character-aria.md) |
+| character-greta | グレタ | 候補 | [定義](character-greta.md) |
+| character-luka | ルカ | 候補 | [定義](character-luka.md) |
+| character-lutz | ルッツ | 候補 | [定義](character-lutz.md) |
+| character-mina | ミナ | 候補 | [定義](character-mina.md) |
+| character-rita | リタ | 候補 | [定義](character-rita.md) |
+| character-ritsu | リツ | 候補 | [定義](character-ritsu.md) |
+| character-toma | トーマ | 候補 | [定義](character-toma.md) |
 <!-- entries:end -->
 
 ## 記入する項目
@@ -18,9 +28,10 @@ IDの接頭辞は `character-`、メタデータの `category` は `characters` 
 |---|---|
 | 役割・加入方法 | 未決。職業を持たせるかは[パーティ仕様の確認待ち](../../features/party.md#確認待ち) |
 | 固有スキルID（2つ）・パッシブスキルID（2つ）と解放レベル | 個別設定は未決。構成は[キャラクターの構成](../../features/party.md#キャラクターの構成)に従う |
-| 固有スキルの進化のツリー（固有スキルごとに7つの段階の効果） | 個別設定は未決。構成は[進化の段階とツリー](../../features/skill-evolution.md#進化の段階とツリー)に従う |
+| 固有スキルの覚醒のツリー（固有スキルごとに7つの段階の効果） | 個別設定は未決。構成は[覚醒の段階とツリー](../../features/skill-evolution.md#覚醒の段階とツリー)に従う |
 | 装備できるカードの属性 | 個別設定は未決 |
 | 基礎ステータス・レベルによる成長 | 未決 |
+| 絆の段階と効果（6段） | 段数は[キャラが被ったとき](../../features/monetization.md#キャラが被ったとき)に従う。効果はキャラごとに決める。決まるまでは全キャラ共通の仮の値（1段ごとに全ステータス+2%） |
 | 年齢感・体格・頭身・輪郭・顔・髪・目 | 未決 |
 | 衣装・素材・装飾・装備・主色・差し色 | 未決 |
 | 価値観・欲求・弱点・葛藤・得意不得意 | 未決 |

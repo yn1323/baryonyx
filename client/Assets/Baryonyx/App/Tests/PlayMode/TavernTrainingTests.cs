@@ -101,7 +101,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Illustration.texture, Is.EqualTo(first.Illustration));
             Assert.That(
                 training.Stats.Select(label => label.text),
-                Is.EqualTo(Values(growth.StatsAt(first.Level)))
+                Is.EqualTo(Values(TrainingBond.StatsOf(growth, first.Level)))
             );
             Assert.That(training.Passives[0].Name.text, Is.EqualTo(growth.Passives[0].Name));
             Assert.That(training.Passives[0].Description.text, Is.Not.Empty);
@@ -114,8 +114,8 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(training.Passives[0].Icon.texture, Is.Not.Null);
             Assert.That(training.Passives[0].Icon.uvRect, Is.EqualTo(new Rect(0, 0, 1, 1)));
-            // 固有スキルは押せるカードで、セットしている進化の段階を出す。未解放のものは暗くして
-            // 解放するレベルを重ねる。
+            // 固有スキルは押せる小さなカードで、セットしている進化の段階を出す。未解放のものは暗くして
+            // 解放するレベルを重ねる。効果の文は出さず、カードを押して開く付け替えの画面で読む。
             Assert.That(
                 training.Uniques[0].Name.text,
                 Is.EqualTo(
@@ -124,7 +124,7 @@ namespace Baryonyx.Tests.PlayMode
                         .Name
                 )
             );
-            Assert.That(training.Uniques[0].Description.text, Is.Not.Empty);
+            Assert.That(training.Uniques[0].Description, Is.Null);
             Assert.That(training.Uniques[0].Lock.activeSelf, Is.False);
             Assert.That(training.Uniques[1].Lock.activeSelf, Is.True);
             Assert.That(
@@ -133,15 +133,13 @@ namespace Baryonyx.Tests.PlayMode
             );
             foreach (var card in training.Uniques)
                 SceneTests.AssertTouchSize(card.Button.transform);
-            // カスタムスキルは2枚で、枠は属性の枠、説明にはステータスの割合（例：属攻の100%）が入る。
+            // カスタムスキルは3枠で、枠は属性の枠。仮データの人は2枚を付け、3枚目の枠は空き。
             Assert.That(training.CardSlots.Length, Is.EqualTo(TrainingPresenter.CustomSlots));
             Assert.That(training.CardSlots.All(card => card.Name.text != ""), Is.True);
-            Assert.That(training.CardSlots.All(card => card.Art.enabled), Is.True);
+            Assert.That(training.CardSlots.Take(2).All(card => card.Art.enabled), Is.True);
             Assert.That(training.CardSlots.All(card => card.Frame.texture != null), Is.True);
-            Assert.That(
-                training.CardSlots[0].Description.text,
-                Does.Match(@"(物攻|属攻|物防)の\d+%")
-            );
+            Assert.That(training.CardSlots[2].Name.text, Is.EqualTo(TrainingPresenter.EmptyName));
+            Assert.That(training.CardSlots[2].Art.enabled, Is.False);
             Assert.That(training.Gear[0].Slot.text, Is.EqualTo("武器"));
             Assert.That(training.Gear[0].Name.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Detail.text, Is.Not.Empty);
@@ -211,7 +209,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.To.text, Is.EqualTo(target.ToString()));
             Assert.That(
                 training.Diffs[0].After.text,
-                Is.EqualTo(growth.StatsAt(target).Hp.ToString())
+                Is.EqualTo(growth.StatsAt(target, TrainingBond.StageOf(growth)).Hp.ToString())
             );
             long cost = TrainingRules.CostBetween(first.Level, target, training.Data.CostPerLevel);
             Assert.That(
@@ -233,7 +231,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.gameObject.activeSelf, Is.False);
             Assert.That(CardLoadoutSession.Selected, Is.EqualTo(second));
             Assert.That(
-                cards.GetComponent<CardLoadoutView>().Slots[1].Selected.activeSelf,
+                cards
+                    .GetComponent<CardLoadoutView>()
+                    .Tiles[CardLoadoutPresenter.UniqueCount + 1]
+                    .Selected.activeSelf,
                 Is.True
             );
             view.Back.onClick.Invoke();
@@ -245,8 +246,8 @@ namespace Baryonyx.Tests.PlayMode
             training.Uniques[1].Button.onClick.Invoke();
             var loadout = cards.GetComponent<CardLoadoutView>();
             Assert.That(cards.activeInHierarchy, Is.True);
-            Assert.That(loadout.Uniques[1].Card.Selected.activeSelf, Is.True);
-            Assert.That(loadout.Slots.All(slot => !slot.Selected.activeSelf), Is.True);
+            Assert.That(loadout.Tiles[1].Selected.activeSelf, Is.True);
+            Assert.That(loadout.Tiles.Count(tile => tile.Selected.activeSelf), Is.EqualTo(1));
             Assert.That(loadout.Tree.Root.activeSelf, Is.True);
             view.Back.onClick.Invoke();
             Assert.That(training.gameObject.activeSelf, Is.True);
@@ -325,6 +326,154 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Level.text, Is.EqualTo("16"));
             Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.LevelUpFailedMessage));
         }
+
+        // 右上の「絆」は、灯った段を6つのしるしで見せ、押すと次の段で上がるステータスを重ねた窓に出す。
+        // 「絆を深める」で絆のしるしを使って1段上げ、灯った段の演出を出す。戻る操作は演出を先に閉じる。
+        [UnityTest]
+        public IEnumerator TheBondDeepensFromThePageAndLightsUp()
+        {
+            TrainingBond.Reset();
+            try
+            {
+                var guide = default(GuideSceneBootstrap);
+                yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+                var view = guide.View;
+                var training = OpenPage(view);
+                var party = PartySession.Formation(training.Party);
+                var first = party.Find(party.Member(0));
+                var growth = training.Data.Find(first.Id);
+                int stage = TrainingBond.StageOf(growth);
+                Assert.That(stage, Is.LessThan(TrainingBond.Max - 1));
+                Assert.That(TrainingBond.TokensOf(growth), Is.EqualTo(1));
+
+                // 「絆」は名前の行と「レベルアップ」の間に並び、重ならない。
+                SceneTests.AssertTouchSize(training.Bond.transform, 0.7f);
+                var bond = SceneTests.ScreenRect(training.Bond.transform);
+                Assert.That(
+                    bond.xMax,
+                    Is.LessThanOrEqualTo(SceneTests.ScreenRect(training.LevelUp.transform).xMin)
+                );
+                foreach (var icon in training.Elements.Where(icon => icon.gameObject.activeSelf))
+                    Assert.That(
+                        SceneTests.ScreenRect(icon.transform).xMax,
+                        Is.LessThanOrEqualTo(bond.xMin)
+                    );
+                Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage));
+
+                training.Bond.onClick.Invoke();
+                Assert.That(training.BondDialog.activeSelf, Is.True);
+                Assert.That(training.BondFrom.text, Is.EqualTo(stage.ToString()));
+                Assert.That(training.BondTo.text, Is.EqualTo((stage + 1).ToString()));
+                Assert.That(Lit(training, training.BondStones), Is.EqualTo(stage));
+                Assert.That(
+                    training.BondDiffs[0].After.text,
+                    Is.EqualTo(growth.StatsAt(first.Level, stage + 1).Hp.ToString())
+                );
+                Assert.That(training.BondTokens.text, Is.EqualTo("1 / 1"));
+                Assert.That(training.BondConfirm.interactable, Is.True);
+                // 重ねた窓が配置されてから、「絆を深める」が背面より手前で押せることを確かめる。
+                yield return null;
+                Assert.That(
+                    TopHit(training.BondConfirm.transform)
+                        .transform.IsChildOf(training.BondConfirm.transform),
+                    Is.True
+                );
+
+                training.BondConfirm.onClick.Invoke();
+                Assert.That(training.BondDialog.activeSelf, Is.False);
+                Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
+                Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(stage + 1));
+                Assert.That(
+                    training.Stats.Select(label => label.text),
+                    Is.EqualTo(Values(growth.StatsAt(first.Level, stage + 1)))
+                );
+                Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage + 1));
+                var celebration = training.Celebration;
+                Assert.That(celebration.Name.text, Is.EqualTo(first.Name));
+                Assert.That(celebration.Stage.text, Is.EqualTo((stage + 1).ToString()));
+                Assert.That(
+                    celebration.Effect.text,
+                    Is.EqualTo($"全ステータス +{TrainingBond.PercentAt(stage + 1)}%")
+                );
+                yield return SceneTests.WaitUntil(
+                    () => celebration.Card.alpha >= 1f,
+                    message: "The bond's moment did not finish."
+                );
+                Assert.That(celebration.Stones[stage].sprite, Is.EqualTo(training.BondLit));
+                Assert.That(celebration.Stones[stage + 1].sprite, Is.EqualTo(training.BondDark));
+
+                // 戻る操作は演出だけを閉じる。しるしを使い切ると、深められない。
+                view.Back.onClick.Invoke();
+                Assert.That(celebration.gameObject.activeSelf, Is.False);
+                Assert.That(training.gameObject.activeSelf, Is.True);
+                training.Bond.onClick.Invoke();
+                Assert.That(training.BondTokens.text, Is.EqualTo("0 / 1"));
+                Assert.That(training.BondConfirm.interactable, Is.False);
+                view.Back.onClick.Invoke();
+                Assert.That(training.BondDialog.activeSelf, Is.False);
+                Assert.That(training.gameObject.activeSelf, Is.True);
+            }
+            finally
+            {
+                TrainingBond.Reset();
+            }
+        }
+
+        // サーバーがあるときは、サーバーの絆としるしを読み、保存を待たずに演出を出してサーバーで深める。
+        // 保存できなければ、演出を閉じて元の段に戻し、通知の帯で知らせる。
+        [UnityTest]
+        public IEnumerator TrainingDeepensTheBondOnTheServer()
+        {
+            var server = new FakePartySource(5000, "toma", "luka")
+                .With("toma", 12, "Fire", "Ice")
+                .With("luka", 11, "VitalThrust", "Thunder")
+                .WithBond("toma", 2, 2);
+            PartySession.Source = server;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
+            var view = guide.View;
+            var roster = view.PanelFor(ItemOf(view, PartySession.GuideItemKey))
+                .GetComponent<AdventurerRosterView>();
+            view.MenuItems[ItemOf(view, PartySession.GuideItemKey)].onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => roster.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+            roster.Slots[0].Card.Hold();
+            var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+            yield return SceneTests.WaitUntil(
+                () => training.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+            Assert.That(Lit(training, training.BondPips), Is.EqualTo(2));
+
+            training.Bond.onClick.Invoke();
+            Assert.That(training.BondTokens.text, Is.EqualTo("2 / 1"));
+            training.BondConfirm.onClick.Invoke();
+            Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
+            Assert.That(training.Celebration.Stage.text, Is.EqualTo("3"));
+            Assert.That(training.Presenter.DeepenTask.IsCompleted, Is.False);
+            yield return SceneTests.WaitUntil(() => training.Presenter.DeepenTask.IsCompleted);
+            Assert.That(server.Calls, Is.EqualTo(new[] { "bond toma 3" }));
+            Assert.That(server.BondOf("toma"), Is.EqualTo((3, 1)));
+            Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
+            Assert.That(Lit(training, training.BondPips), Is.EqualTo(3));
+            view.Back.onClick.Invoke();
+
+            // 保存できなければ、演出を閉じて段としるしを戻す。
+            server.Fail = true;
+            training.Bond.onClick.Invoke();
+            training.BondConfirm.onClick.Invoke();
+            Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
+            yield return SceneTests.WaitUntil(() => training.Presenter.DeepenTask.IsCompleted);
+            Assert.That(training.Celebration.gameObject.activeSelf, Is.False);
+            Assert.That(Lit(training, training.BondPips), Is.EqualTo(3));
+            Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.DeepenFailedMessage));
+        }
+
+        private static int Lit(TrainingView training, IEnumerable<UnityEngine.UI.Image> stones) =>
+            stones.Count(stone => stone.sprite == training.BondLit);
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
             System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);

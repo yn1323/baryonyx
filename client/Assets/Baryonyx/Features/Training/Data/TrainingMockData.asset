@@ -49,9 +49,18 @@ MonoBehaviour:
       Energy: 3
       Tree: StarFall
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+    - Name: "\u9B54\u773C"
+      Description: "\u6575\u5168\u4F53\u306E\u5F31\u70B9\u3092\u898B\u629C\u304D\u30011\u679A\u5F15\u304F"
+      UnlockLevel: 40
+      Energy: 1
+      Tree: ArcaneEye
+      Icon: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
     UniqueProgress:
     - Set: 1
       Acquired: 010000000200000003000000i
+      Multiplier: 1
+    Bond: 2
+    BondTokens: 1
   - Id: luka
     Level100:
       Hp: 2850
@@ -88,7 +97,15 @@ MonoBehaviour:
       Energy: 3
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+    - Name: "\u901F\u5C04"
+      Description: "\u65751\u4F53\u306B2\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 40
+      Energy: 1
+      Tree: QuickShot
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 2
   - Id: aria
     Level100:
       Hp: 3900
@@ -125,7 +142,15 @@ MonoBehaviour:
       Energy: 3
       Tree: Issen
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+    - Name: "\u9F13\u821E"
+      Description: "\u5473\u65B9\u5168\u4F53\u306B\u30D6\u30ED\u30C3\u30AF\u3001\u653B\u6483\u529B\u30A2\u30C3\u30D7"
+      UnlockLevel: 40
+      Energy: 2
+      Tree: Rally
+      Icon: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
     UniqueProgress: []
+    Bond: 5
+    BondTokens: 1
   - Id: mina
     Level100:
       Hp: 2500
@@ -162,7 +187,15 @@ MonoBehaviour:
       Energy: 5
       Tree: Revive
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+    - Name: "\u88C1\u304D\u306E\u5149"
+      Description: "\u6575\u5168\u4F53\u306B\u30C0\u30E1\u30FC\u30B8\u3001\u5473\u65B9\u5168\u4F53\u3092\u56DE\u5FA9"
+      UnlockLevel: 40
+      Energy: 3
+      Tree: Judgment
+      Icon: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   - Id: anselm
     Level100:
       Hp: 3600
@@ -199,7 +232,15 @@ MonoBehaviour:
       Energy: 3
       Tree: Issen
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+    - Name: "\u9F13\u821E"
+      Description: "\u5473\u65B9\u5168\u4F53\u306B\u30D6\u30ED\u30C3\u30AF\u3001\u653B\u6483\u529B\u30A2\u30C3\u30D7"
+      UnlockLevel: 40
+      Energy: 2
+      Tree: Rally
+      Icon: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   - Id: greta
     Level100:
       Hp: 2400
@@ -236,7 +277,15 @@ MonoBehaviour:
       Energy: 3
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+    - Name: "\u901F\u5C04"
+      Description: "\u65751\u4F53\u306B2\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 40
+      Energy: 1
+      Tree: QuickShot
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   - Id: lutz
     Level100:
       Hp: 3200
@@ -273,7 +322,15 @@ MonoBehaviour:
       Energy: 3
       Tree: StarFall
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+    - Name: "\u9B54\u773C"
+      Description: "\u6575\u5168\u4F53\u306E\u5F31\u70B9\u3092\u898B\u629C\u304D\u30011\u679A\u5F15\u304F"
+      UnlockLevel: 40
+      Energy: 1
+      Tree: ArcaneEye
+      Icon: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   - Id: rita
     Level100:
       Hp: 3000
@@ -310,7 +367,15 @@ MonoBehaviour:
       Energy: 5
       Tree: Revive
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+    - Name: "\u88C1\u304D\u306E\u5149"
+      Description: "\u6575\u5168\u4F53\u306B\u30C0\u30E1\u30FC\u30B8\u3001\u5473\u65B9\u5168\u4F53\u3092\u56DE\u5FA9"
+      UnlockLevel: 40
+      Energy: 3
+      Tree: Judgment
+      Icon: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   - Id: ritsu
     Level100:
       Hp: 2100
@@ -347,7 +412,15 @@ MonoBehaviour:
       Energy: 3
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+    - Name: "\u901F\u5C04"
+      Description: "\u65751\u4F53\u306B2\u56DE\u30C0\u30E1\u30FC\u30B8"
+      UnlockLevel: 40
+      Energy: 1
+      Tree: QuickShot
+      Icon: {fileID: -6622703189942226176, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
     UniqueProgress: []
+    Bond: 0
+    BondTokens: 0
   CostPerLevel: 100
   MaxLevel: 100
   MockRunes: 8450

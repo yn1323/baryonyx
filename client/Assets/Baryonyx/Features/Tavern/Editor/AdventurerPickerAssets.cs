@@ -29,12 +29,11 @@ namespace Baryonyx.Tavern.Editor
     /// </summary>
     public static class AdventurerPickerAssets
     {
-        public const string Heading = "冒険者を選ぶ";
-
         private const int Columns = 3;
-        private const float HeadingHeight = 76f;
         private const float CardGap = Card.CardGap;
-        private const float ListTop = Frame.HeaderHeight + HeadingHeight;
+
+        // 見出しは付けない。何の画面かは、上の帯のパンくず（編成 › 装備）と、武器・防具の並んだカードでわかる。
+        private const float ListTop = Frame.HeaderHeight;
         private const float CardWidth =
             (1920f - Frame.Margin * 2f - CardGap * (Columns - 1)) / Columns;
 
@@ -66,15 +65,6 @@ namespace Baryonyx.Tavern.Editor
             view.Guide = guide;
 
             Frame.Pane(layer, "Pane", 0f, 1920f, Frame.HeaderHeight, Frame.PaneLight, true, true);
-            Frame.Heading(
-                layer,
-                "Title",
-                Heading,
-                Frame.Margin,
-                Frame.HeaderHeight,
-                600f,
-                HeadingHeight
-            );
 
             var (list, viewport, content) = Card.Grid(
                 layer,

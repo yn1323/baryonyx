@@ -100,6 +100,11 @@ namespace Baryonyx.Training
         int MaxLevel { get; }
         int CostPerLevel { get; }
         string Selected { get; set; }
+
+        // 絆の段と、持っている絆のしるし。深めると、しるしを使って1段上げる（できなければfalse）。
+        int BondOf(string id);
+        int BondTokensOf(string id);
+        bool DeepenBond(string id);
     }
 
     /// <summary>
@@ -140,5 +145,11 @@ namespace Baryonyx.Training
             get => TrainingSession.Selected;
             set => TrainingSession.Selected = value;
         }
+
+        public int BondOf(string id) => TrainingBond.StageOf(data.Find(id));
+
+        public int BondTokensOf(string id) => TrainingBond.TokensOf(data.Find(id));
+
+        public bool DeepenBond(string id) => TrainingBond.Deepen(data.Find(id));
     }
 }

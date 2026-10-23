@@ -66,6 +66,42 @@ namespace Baryonyx.Training
 
         public bool Filled => Id != null || Type == UniqueType;
 
+        /// <summary>
+        /// A card for another screen that shows deck cards the same way (the card skills change
+        /// screen): <paramref name="id"/> null with <see cref="SkillType"/> is an empty slot.
+        /// </summary>
+        public static TrainingCardState Of(
+            string id,
+            string type,
+            string name,
+            string kind,
+            string description,
+            int cost,
+            ItemQuality quality,
+            int foilStyle,
+            CardElement element,
+            Sprite icon,
+            Texture2D art,
+            bool locked = false,
+            int unlockLevel = 0
+        ) =>
+            new()
+            {
+                Id = id,
+                Type = type ?? "",
+                Name = name ?? "",
+                Kind = kind ?? "",
+                Description = description ?? "",
+                Cost = cost,
+                Quality = quality,
+                FoilStyle = foilStyle,
+                Element = element,
+                Icon = icon,
+                Art = art,
+                Locked = locked,
+                UnlockLevel = unlockLevel,
+            };
+
         public const string UniqueType = "固有スキル";
         public const string SkillType = "スキル";
     }
@@ -157,6 +193,20 @@ namespace Baryonyx.Training
 
         // 目標のレベルまでに覚えるスキル。上げたあとの知らせに出す。
         public IReadOnlyList<TrainingSkillState> Learned { get; internal set; }
+
+        // --- 絆（詳細の上に重ねて開く） ---
+        public int Bond { get; internal set; }
+        public int BondTokens { get; internal set; }
+        public bool BondMaxed { get; internal set; }
+        public bool BondOpen { get; internal set; }
+
+        // 深めたあとの段と、そのときのステータス。上限なら今の段のまま。
+        public int BondTarget { get; internal set; }
+        public CharacterStats BondStats { get; internal set; }
+        public bool CanDeepen { get; internal set; }
+
+        // 深めた直後の演出で灯す段。0なら出さない。
+        public int Celebrated { get; internal set; }
     }
 
     /// <summary>
@@ -169,11 +219,14 @@ namespace Baryonyx.Training
     /// <c>levelUp</c> function the level and runes change in the store at once and the server
     /// raises the level behind it (put back when it failed, which
     /// <see cref="Networking.SaveQueue"/> tells on the notice band); otherwise (the showcase) the
-    /// store keeps them in memory.
+    /// store keeps them in memory. "絆" opens a dialog over the page that shows what the next
+    /// bond stage raises; deepening it spends a token and shows the stage lighting up over the
+    /// page until it is closed (doc/features/monetization.md).
     /// </summary>
     public sealed class TrainingPresenter : IDisposable
     {
         public const string LevelUpFailedMessage = "レベルアップできませんでした";
+        public const string DeepenFailedMessage = "絆を深められませんでした";
         public const string PassiveType = "パッシブ";
         public const string EmptyName = "空き";
 
@@ -207,8 +260,14 @@ namespace Baryonyx.Training
 
         // キャラのIDと固有スキルの番号から、セットしている進化の段階のカードを引く。なければ仮データの名前と効果を出す。
         private readonly Func<string, int, CardSkill> uniqueOf;
+
+        // キャラのIDと深めたあとの段で、絆を深めて保存する。すぐに store へ当て、保存が済む（失敗なら戻す）と終わる。
+        // なければ store だけで深める（サーバーがないとき）。
+        private readonly Func<string, int, Task> deepenBond;
         private int index;
         private bool dialog;
+        private bool bond;
+        private int celebrated;
         private int count = 1;
         private bool disposed;
 
@@ -221,7 +280,8 @@ namespace Baryonyx.Training
             Func<string, IReadOnlyList<TrainingGearState>> gearOf = null,
             Func<string, Texture2D> artOf = null,
             Func<string, CardSkill, string> describe = null,
-            Func<string, int, CardSkill> uniqueOf = null
+            Func<string, int, CardSkill> uniqueOf = null,
+            Func<string, int, Task> deepenBond = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -233,6 +293,7 @@ namespace Baryonyx.Training
             this.artOf = artOf ?? (_ => null);
             this.describe = describe ?? ((_, card) => card.Text);
             this.uniqueOf = uniqueOf ?? ((_, _) => null);
+            this.deepenBond = deepenBond;
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -245,6 +306,10 @@ namespace Baryonyx.Training
             view.GearPressed += OpenGear;
             view.CardPressed += OpenCard;
             view.UniquePressed += OpenUnique;
+            view.BondPressed += OpenBond;
+            view.BondCancelPressed += CloseBond;
+            view.BondConfirmPressed += Deepen;
+            view.CelebrationClosed += CloseCelebration;
             Refresh();
         }
 
@@ -253,7 +318,13 @@ namespace Baryonyx.Training
         // 直前のレベルアップの保存。テストで完了を待つために公開する。
         public Task ConfirmTask { get; private set; } = Task.CompletedTask;
 
+        // 直前に絆を深めた保存。テストで完了を待つために公開する。
+        public Task DeepenTask { get; private set; } = Task.CompletedTask;
+
         private TrainingMember Current => roster.Count > 0 ? roster[index] : null;
+
+        // 重ねた画面（レベルアップ・絆）か、深めた演出を出している。
+        private bool Busy => dialog || bond || celebrated > 0;
 
         public void Previous() => Step(-1);
 
@@ -261,7 +332,7 @@ namespace Baryonyx.Training
 
         private void Step(int delta)
         {
-            if (disposed || dialog || roster.Count < 2)
+            if (disposed || Busy || roster.Count < 2)
                 return;
             index = (index + delta + roster.Count) % roster.Count;
             store.Selected = Current.Id;
@@ -270,7 +341,7 @@ namespace Baryonyx.Training
 
         public void OpenDialog()
         {
-            if (disposed || dialog || Current == null || State.Maxed)
+            if (disposed || Busy || Current == null || State.Maxed)
                 return;
             dialog = true;
             count = 1;
@@ -285,13 +356,79 @@ namespace Baryonyx.Training
             Refresh();
         }
 
-        /// <summary>Back closes the dialog; true when it did, so the guide screen stays.</summary>
+        /// <summary>
+        /// Back closes the bond's lighting up, or the dialog over the page; true when it did, so
+        /// the guide screen stays.
+        /// </summary>
         public bool Back()
         {
-            if (disposed || !dialog)
+            if (disposed || !Busy)
                 return false;
-            CloseDialog();
+            if (celebrated > 0)
+                CloseCelebration();
+            else if (bond)
+                CloseBond();
+            else
+                CloseDialog();
             return true;
+        }
+
+        public void OpenBond()
+        {
+            if (disposed || Busy || Current == null)
+                return;
+            bond = true;
+            Refresh();
+        }
+
+        public void CloseBond()
+        {
+            if (disposed || !bond)
+                return;
+            bond = false;
+            Refresh();
+        }
+
+        // 絆のしるしを使って1段深め、重ねた画面を閉じて、灯った段の演出を出す。
+        // サーバーがあれば、保存を待たずに演出を出し、保存できなかったら演出を閉じて戻した段を出す。
+        public void Deepen()
+        {
+            if (disposed || !bond || !State.CanDeepen)
+                return;
+            string id = Current.Id;
+            int target = State.Bond + 1;
+            if (deepenBond == null)
+            {
+                if (!store.DeepenBond(id))
+                    return;
+                bond = false;
+                celebrated = store.BondOf(id);
+                Refresh();
+                return;
+            }
+            var saved = deepenBond(id, target);
+            bond = false;
+            celebrated = target;
+            Refresh();
+            DeepenTask = AfterDeepenAsync(saved, id, target);
+        }
+
+        private async Task AfterDeepenAsync(Task saved, string id, int target)
+        {
+            await saved;
+            if (disposed)
+                return;
+            if (celebrated == target && store.BondOf(id) < target)
+                celebrated = 0;
+            Refresh();
+        }
+
+        public void CloseCelebration()
+        {
+            if (disposed || celebrated == 0)
+                return;
+            celebrated = 0;
+            Refresh();
         }
 
         public void Less()
@@ -363,7 +500,7 @@ namespace Baryonyx.Training
         // 装備の枠を押す。武器・防具はその枠を選んだ装備の付け替えの画面を開く。
         public void OpenGear(int slot)
         {
-            if (disposed || dialog || Current == null || slot < 0 || slot >= GearSlots)
+            if (disposed || Busy || Current == null || slot < 0 || slot >= GearSlots)
                 return;
             view.OpenGear(Current.Id, slot);
         }
@@ -371,7 +508,7 @@ namespace Baryonyx.Training
         // カスタムスキルの枠を押す。その枠を選んだスキルの付け替えの画面を開く。
         public void OpenCard(int slot)
         {
-            if (disposed || dialog || Current == null || slot < 0 || slot >= State.Cards.Count)
+            if (disposed || Busy || Current == null || slot < 0 || slot >= State.Cards.Count)
                 return;
             view.OpenCards(Current.Id, slot);
         }
@@ -379,7 +516,7 @@ namespace Baryonyx.Training
         // 固有スキルを押す。その固有スキルの進化ツリーを出したスキルの付け替えの画面を開く。
         public void OpenUnique(int index)
         {
-            if (disposed || dialog || Current == null || index < 0 || index >= State.Uniques.Count)
+            if (disposed || Busy || Current == null || index < 0 || index >= State.Uniques.Count)
                 return;
             view.OpenUnique(Current.Id, index);
         }
@@ -444,15 +581,19 @@ namespace Baryonyx.Training
             var skills = Skills(current.Growth, level);
             var targetSkills = Skills(current.Growth, target);
             bool open = dialog && !maxed;
+            int stage = store.BondOf(current.Id);
+            int tokens = store.BondTokensOf(current.Id);
+            bool bondMaxed = stage >= TrainingBond.Max;
+            int bondTarget = bondMaxed ? stage : stage + 1;
             return new TrainingState
             {
                 Member = current.Member,
                 Name = current.Member.Name,
                 Level = level,
                 Maxed = maxed,
-                CanSwitch = roster.Count > 1 && !open,
+                CanSwitch = roster.Count > 1 && !open && !bond && celebrated == 0,
                 Elements = cards.Select(iconOf).Where(icon => icon != null).Distinct().ToArray(),
-                Stats = current.Growth.StatsAt(level),
+                Stats = current.Growth.StatsAt(level, stage),
                 Skills = skills,
                 Passives = skills.Where(skill => skill.Type == PassiveType).ToArray(),
                 Uniques = skills
@@ -469,7 +610,7 @@ namespace Baryonyx.Training
                 DialogOpen = open,
                 Count = count,
                 Target = target,
-                TargetStats = current.Growth.StatsAt(target),
+                TargetStats = current.Growth.StatsAt(target, stage),
                 Cost = cost,
                 CanAfford = cost <= runes,
                 CanLess = open && count > 1,
@@ -479,6 +620,14 @@ namespace Baryonyx.Training
                     .Where(skill => skill.UnlockLevel > level && skill.UnlockLevel <= target)
                     .OrderBy(skill => skill.UnlockLevel)
                     .ToArray(),
+                Bond = stage,
+                BondTokens = tokens,
+                BondMaxed = bondMaxed,
+                BondOpen = bond,
+                BondTarget = bondTarget,
+                BondStats = current.Growth.StatsAt(level, bondTarget),
+                CanDeepen = bond && !bondMaxed && tokens >= TrainingBond.TokensPerStage,
+                Celebrated = celebrated,
             };
         }
 
@@ -604,6 +753,10 @@ namespace Baryonyx.Training
             view.GearPressed -= OpenGear;
             view.CardPressed -= OpenCard;
             view.UniquePressed -= OpenUnique;
+            view.BondPressed -= OpenBond;
+            view.BondCancelPressed -= CloseBond;
+            view.BondConfirmPressed -= Deepen;
+            view.CelebrationClosed -= CloseCelebration;
         }
     }
 
@@ -620,6 +773,12 @@ namespace Baryonyx.Training
         event Action<int> GearPressed;
         event Action<int> CardPressed;
         event Action<int> UniquePressed;
+        event Action BondPressed;
+        event Action BondCancelPressed;
+        event Action BondConfirmPressed;
+
+        // 深めた演出を閉じた（画面を押した）。
+        event Action CelebrationClosed;
 
         void Render(TrainingState state);
 
