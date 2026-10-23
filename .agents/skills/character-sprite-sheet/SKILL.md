@@ -106,7 +106,7 @@ ChatGPTのデスクトップアプリで元の画像を添付したときのほ�
 3. **Codexに依頼する**：[共通手順の「Codexへの依頼」](../shared/character-pipeline.md#codexへの依頼)に従い、リポジトリ直下で次の1行を実行する。
 
    ```bash
-   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name sprite-sheet --request output/characters/<キャラID>/sprite-request.md --profile output/characters/<キャラID>/profile.md --model gpt-6.1-sol --reasoning-effort high --image witch.png --image-role "ドット絵の画風見本。タッチ（ドットの大きさ、塗り、描き込み）を参考にする。輪郭・陰影・色数は依頼文の規則を優先する。人物、衣装、ポーズは写さない"
+   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name sprite-sheet --request output/characters/<キャラID>/sprite-request.md --profile output/characters/<キャラID>/profile.md --image witch.png --image-role "ドット絵の画風見本。タッチ（ドットの大きさ、塗り、描き込み）を参考にする。輪郭・陰影・色数は依頼文の規則を優先する。人物、衣装、ポーズは写さない"
    ```
 
 4. **見せる**：共通手順に従って画像を表示する。依頼文と比べて、必ず残す特徴、武器を描くコマ、コマ数、ラベル、背景の違いを報告する。

@@ -1,0 +1,5 @@
+interface:
+  display_name: "アイテムアイコンの候補生成"
+  short_description: "アイテム・武器・防具・素材の32x32アイコン候補をCodex CLIで作り、一覧を見せて選択を待つ"
+policy:
+  allow_implicit_invocation: false

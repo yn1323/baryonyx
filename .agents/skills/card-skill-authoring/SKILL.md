@@ -1,7 +1,7 @@
 ---
 name: card-skill-authoring
 description: >
-  戦闘のカードスキル（CardSkills.cs のカード、UniqueSkillTrees.cs の固有スキルとその進化段階、試作のカード）を追加・変更・レビューするとき、
+  戦闘のカードスキル（CardSkills.cs のカード、UniqueSkillTrees.cs の固有スキルとその覚醒段階、試作のカード）を追加・変更・レビューするとき、
   カードの説明文・効果・威力の割合・キーワードを書く・直すときに必ず使う。
   カードの文言が長い・分かりにくい、説明文に何を書くか、という相談にも当てはめる。
   カードの挿絵は pixel-art-standards、演出は vfx-authoring の担当で、カードを扱わない戦闘画面のUIだけの作業には使わない。
@@ -26,7 +26,7 @@ description: >
 ## 進め方
 
 1. [威力の決め方](../../../doc/features/combat.md#威力の決め方) と [スキルの仮設定](../../../doc/features/combat.md#スキルの仮設定)（重複を避ける基準）を読み、効果を決める。
-2. [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（固有スキルの進化の段階は [UniqueSkillTrees](../../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTrees.cs)）に定義を書き、上の決まりで説明文を書く。説明文の欄は4行に収める。
+2. [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)（固有スキルの覚醒の段階は [UniqueSkillTrees](../../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTrees.cs)）に定義を書き、上の決まりで説明文を書く。説明文の欄は4行に収める。
 3. 1枚ごとの記録 [技・カードの定義](../../../doc/catalog/skills/README.md) の「対象の役割・説明」と「説明文」の行を同じ文にそろえる。
 4. 説明文はPrefabに焼き込まれるため、メニューの `Baryonyx > Combat > Create Battle Inspect Assets`（戦闘画面のモック）と `Baryonyx > Tavern > Create Screen Assets`（酒場の付け替え・育成）で生成し直し、[展示室](../../../doc/features/showcase.md)で変わった文を確かめる。
 5. `CardSkillsTests`（EditMode）と、カードを出す画面のPlayModeテストを実行する（[UnityのテストとCI](../../../doc/rules/client-testing.md)）。

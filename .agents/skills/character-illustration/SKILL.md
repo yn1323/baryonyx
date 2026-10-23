@@ -91,7 +91,7 @@ JRPGのキャラクターイラストを1枚作ってください。背景付き
 3. **Codexに依頼する**：[共通手順の「Codexへの依頼」](../shared/character-pipeline.md#codexへの依頼)に従い、リポジトリ直下で次の1行を実行する。
 
    ```bash
-   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name illustration --request output/characters/<キャラID>/illustration-request.md --profile output/characters/<キャラID>/profile.md --model gpt-6.1-sol
+   uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir output/characters/<キャラID> --name illustration --request output/characters/<キャラID>/illustration-request.md --profile output/characters/<キャラID>/profile.md
    ```
 
    ユーザーがスプライトシートの添付を求めたときだけ、同じ行の末尾に次の2つを足す。

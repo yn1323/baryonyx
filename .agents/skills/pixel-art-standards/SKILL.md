@@ -2,7 +2,7 @@
 name: pixel-art-standards
 description: >
   このゲームのドット絵を生成・描画・修正・採用するとき、またドット絵をUnityへ取り込んで画面に置くときに必ず使う。
-  PixelLab、Codex・ChatGPTの画像生成、Asepriteスクリプト、手作業のどれで作る場合も、
+  Codex・ChatGPTの画像生成、Asepriteスクリプト、手作業のどれで作る場合も、
   アート方針のドット絵の制作規格（素材ごとの寸法、色数、光源、セルアウト、ディザ、輪郭の内側だけのアンチエイリアス）を
   指示文と出来上がりに当てはめ、規格との差を検査して報告し、採用した絵を `.aseprite` にする。
   ドット絵ではないイラストや、画像を扱わないUIレイアウトだけの作業には使わない。
@@ -17,11 +17,12 @@ description: >
 
 ## 使う場面
 
-- PixelLab（MCP・API）、Codex CLIやChatGPTの画像生成、Asepriteスクリプトでドット絵を作るとき
+- Codex CLIやChatGPTの画像生成、Asepriteスクリプトでドット絵を作るとき
 - 生成した候補や手描きの画像を、採用するか判断するとき・仕上げるとき
 - ドット絵をUnityへ取り込み、画面や展示室に置くとき
 
-ほかの生成スキル（[character-sprite-sheet](../character-sprite-sheet/SKILL.md)、[pixellab-item-prompt](../pixellab-item-prompt/SKILL.md)、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md)、[hd2d-stage-set](../hd2d-stage-set/SKILL.md) のテクスチャ）と一緒に使う。
+ほかの生成スキル（[character-sprite-sheet](../character-sprite-sheet/SKILL.md)、[item-icon](../item-icon/SKILL.md)、[hd2d-stage-set](../hd2d-stage-set/SKILL.md) のテクスチャ）と一緒に使う。
+PixelLabは使わない（2026-10-24、ユーザーの決定）。
 それらのスキルの固定文は、下の「指示文に入れる規格」と同じ共通の文（[shared/prompts/](../shared/prompts/)）を使っている。
 固定文があるスキルでは固定文を使い、このスキルの指示文を重ねて足さない。
 固定文と規格の食い違いに気づいたら、生成する前にユーザーへ伝える。
@@ -75,13 +76,11 @@ Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.asepri
 
 ## 指示文に入れる規格
 
-規格を指示文にした固定文は、[shared/prompts/](../shared/prompts/) の `pixel-style.ja.txt`（日本語）と `pixel-style.en.txt`（英語）の1か所にだけ置く。
+規格を指示文にした固定文は、[shared/prompts/](../shared/prompts/) の `pixel-style.ja.txt` の1か所にだけ置く。
 ファイルは「[部品名]」の行で区切った部品の集まりで、素材に合わせて部品を選んで並べる。
 並べた文は [pixel_style.py](../shared/scripts/pixel_style.py) で出力できる。
 
-### 日本語（Codex CLI・ChatGPTの画像生成）
-
-依頼文に「■ドット絵の規格」の見出しを置き、その下に次の部品を1行ずつ入れる。
+Codex CLI・ChatGPTの画像生成の依頼文に「■ドット絵の規格」の見出しを置き、その下に次の部品を1行ずつ入れる。
 
 | 素材 | 部品（この順） |
 |---|---|
@@ -92,17 +91,6 @@ Aseprite.exe -b --script-param src=<PNG> --script-param ase=<保存先の.asepri
 ```bash
 python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detail character
 ```
-
-### 英語（PixelLabのDescription）
-
-`touch`・`core`・`limits` を「, 」でつなぎ、キャラ・敵には `character`、背景には `background` を足す。
-
-```bash
-python3 .agents/skills/shared/scripts/pixel_style.py en touch core limits character
-```
-
-PixelLabの `outline` 設定を選べる場合は `selective outline` にする。
-PixFluxでは、`highly detailed` のような描き込みを増やす語を足すと画風が崩れやすいため、この文も短く縮めて使う。
 
 ## 出来上がりの検査
 
@@ -157,5 +145,5 @@ Codex CLIやChatGPTが描いた画像は、高解像度の「ドット絵風の�
 
 1. 正本の [ドット絵の制作規格](../../../doc/art/direction.md#ドット絵の制作規格) と「変更と判断の記録」
 2. このスキルの「種類と検査の指定」と、検査スクリプトの `KINDS`・`MAX_COLORS`・`STANDING_BODY`
-3. 共通の固定文：[pixel-style.ja.txt](../shared/prompts/pixel-style.ja.txt)・[pixel-style.en.txt](../shared/prompts/pixel-style.en.txt)
-4. 共通の固定文とは別に、規格の値や言い換えを持つ所：[character-sprite-sheet](../character-sprite-sheet/SKILL.md) の「■画風」の1〜2行目と「■大きさ」、[item_icon.py](../pixellab-item-prompt/scripts/item_icon.py) の `SIZE` と `STYLE_TAIL` の前後の語、[stage_requests.py](../hd2d-stage-set/scripts/stage_requests.py) の色数の行、[pixellab-background-prompt](../pixellab-background-prompt/SKILL.md) の「描き方（Rendering）」
+3. 共通の固定文：[pixel-style.ja.txt](../shared/prompts/pixel-style.ja.txt)
+4. 共通の固定文とは別に、規格の値や言い換えを持つ所：[character-sprite-sheet](../character-sprite-sheet/SKILL.md) の「■画風」の1〜2行目と「■大きさ」、[item_icons.py](../item-icon/scripts/item_icons.py) の `SIZE`・`COLORS`、[stage_requests.py](../hd2d-stage-set/scripts/stage_requests.py) の色数の行

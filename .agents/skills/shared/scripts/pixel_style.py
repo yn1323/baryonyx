@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""ドット絵の画風の固定文（shared/prompts/pixel-style.<言語>.txt）を部品ごとに読み、組み合わせて出力する。
+"""ドット絵の画風の固定文（shared/prompts/pixel-style.ja.txt）を部品ごとに読み、組み合わせて出力する。
 
 固定文の正本は doc/art/direction.md の「ドット絵の制作規格」で、文そのものは shared/prompts/ の1か所にだけ置く。
-pixellab-item-prompt の item_icon.py と hd2d-stage-set の stage_requests.py がこのモジュールを読み込む。
+hd2d-stage-set の stage_requests.py がこのモジュールを読み込む。
 
 使い方（リポジトリ直下で）:
   python3 .agents/skills/shared/scripts/pixel_style.py ja touch light colors detail character
-  python3 .agents/skills/shared/scripts/pixel_style.py en touch core limits background
-日本語は部品を改行でつなぎ、英語は「, 」でつなぐ。部品名を省くと、使える部品の一覧を出す。
+部品を改行でつなぐ。部品名を省くと、使える部品の一覧を出す。
 """
 import sys
 from pathlib import Path
 
 PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
-JOINERS = {"ja": "\n", "en": ", "}
+JOINERS = {"ja": "\n"}
 
 
 def parts(lang):

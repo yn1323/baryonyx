@@ -12,7 +12,7 @@ WindowsとmacOSの両方で動く。ファイルと標準入出力はOSの既定
 Windowsでnpmが入れる `codex.cmd` も解決して起動する。
 
 使い方（リポジトリ直下で、PowerShell・bash・zshのどれでも1行で実行する）:
-  uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir DIR --name NAME --request FILE [--profile FILE] [--image FILE --image-role TEXT]... [--model MODEL] [--reasoning-effort LEVEL] [--timeout SEC] [--dry-run]
+  uv run --no-project python .agents/skills/shared/scripts/codex_image.py --out-dir DIR --name NAME --request FILE [--profile FILE] [--image FILE --image-role TEXT]... [--timeout SEC] [--dry-run]
 """
 import argparse
 import filecmp
@@ -26,6 +26,9 @@ import time
 from pathlib import Path
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+# Codex本体のモデルと推論の強さは固定する。~/.codex/config.toml の設定や呼び出し側の指定には任せない
+MODEL = "gpt-6.1-sol"
+REASONING_EFFORT = "high"
 
 
 def png_size(path):
@@ -105,8 +108,6 @@ def main():
     ap.add_argument("--profile", help="キャラ設定の全文のファイル。人物を描かない依頼では省略する")
     ap.add_argument("--image", action="append", default=[], help="添付画像。--image-role と同じ順で指定する")
     ap.add_argument("--image-role", action="append", default=[], help="添付画像の役割の説明")
-    ap.add_argument("--model", help="Codexのモデル。省略時は ~/.codex/config.toml の設定")
-    ap.add_argument("--reasoning-effort", help="Codexの推論の強さ（low・medium・high など）。省略時は ~/.codex/config.toml の設定")
     ap.add_argument("--timeout", type=int, default=900, help="Codexの実行を待つ秒数")
     ap.add_argument("--dry-run", action="store_true", help="依頼文とコマンドを書き出すだけで、Codexを呼ばない")
     args = ap.parse_args()
@@ -133,11 +134,8 @@ def main():
     events = out_dir / f"{args.name}.codex-events.jsonl"
     last_message = out_dir / f"{args.name}.codex-reply.md"
     cmd = [codex, "exec", "--sandbox", "read-only", "--skip-git-repo-check", "--cd", str(out_dir),
-           "--json", "--output-last-message", str(last_message)]
-    if args.model:
-        cmd += ["--model", args.model]
-    if args.reasoning_effort:
-        cmd += ["-c", f'model_reasoning_effort="{args.reasoning_effort}"']
+           "--json", "--output-last-message", str(last_message),
+           "--model", MODEL, "-c", f'model_reasoning_effort="{REASONING_EFFORT}"']
     for path in attach_paths:
         cmd += ["--image", str(path)]
     # 依頼文は標準入力から渡す（引数に置くと --image の値と誤認されるおそれがあるため）

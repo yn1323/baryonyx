@@ -72,8 +72,7 @@
 | [rpg-character-profile](rpg-character-profile/SKILL.md) | キャラ設定（外見の必須6項目、動作設計、イラストの構図）を作る | 自動 | [アート方針](../../doc/art/direction.md)（寸法） | 次の工程は character-sprite-sheet・character-illustration。イラストのポーズと表情の規則の正本 |
 | [character-sprite-sheet](character-sprite-sheet/SKILL.md) | キャラ設定から全動作のドット絵スプライトシートをCodex CLIで生成する | 手動 | [アート方針](../../doc/art/direction.md) | [キャラ制作の共通手順](shared/character-pipeline.md)、pixel-art-standards |
 | [character-illustration](character-illustration/SKILL.md) | キャラ設定から背景付きのイラストをCodex CLIで生成する | 手動 | — | [キャラ制作の共通手順](shared/character-pipeline.md) |
-| [pixellab-item-prompt](pixellab-item-prompt/SKILL.md) | アイテム・武器・防具のアイコン候補64枚をPixelLab Proで作り、選ばせる | 手動 | [アート方針](../../doc/art/direction.md) | pixel-art-standards |
-| [pixellab-background-prompt](pixellab-background-prompt/SKILL.md) | 描いた2D背景をPixFluxの下書きとProの仕上げで作る | 手動 | [アート方針](../../doc/art/direction.md) | 3Dの舞台の背景は hd2d-stage-set |
+| [item-icon](item-icon/SKILL.md) | アイテム・武器・防具・素材のアイコン候補をCodex CLIで作り、32×32に直した一覧から選ばせる | 手動 | [アート方針](../../doc/art/direction.md) | pixel-art-standards |
 
 ## HD-2DとVFX
 
@@ -93,7 +92,7 @@
 | 技の攻撃・回復・防御、被弾、撃破、カットイン、報酬を受け取る瞬間の演出 | vfx-authoring |
 | カードやキャラの絵をレアっぽくキラキラさせる（ラメ・光の帯・ホロ） | card-foil-sparkle |
 | 3Dの舞台がない画面（描いた2D背景）の光・霧・火の粉、キャラ紹介やホームのキラキラ | hd2d-lighting-vfx（手動専用。使ってよいかユーザーに確認する） |
-| 2Dの背景画像を新しく描く | pixellab-background-prompt（手動専用） |
+| 2Dの背景画像を新しく描く | 専用のスキルはない。pixel-art-standards の規格を依頼文に入れ、Codex CLIの画像生成（shared/scripts/codex_image.py）で作る |
 | キャラ・敵・アイテムのドット絵を作る、生成画像を採用する | pixel-art-standards と、対象の生成スキル |
 | 新しいキャラを考える → 絵にする | rpg-character-profile → character-sprite-sheet・character-illustration |
 | カードスキルを足す・文言を直す | card-skill-authoring |
@@ -109,9 +108,9 @@
 
 | ファイル | 内容 | 使うスキル |
 |---|---|---|
-| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する | character-sprite-sheet、character-illustration、hd2d-stage-set |
-| [prompts/pixel-style.ja.txt](shared/prompts/pixel-style.ja.txt)・[pixel-style.en.txt](shared/prompts/pixel-style.en.txt) | ドット絵の規格を指示文にした固定文。正本は[ドット絵の制作規格](../../doc/art/direction.md#ドット絵の制作規格) | pixel-art-standards、character-sprite-sheet、pixellab-item-prompt、pixellab-background-prompt、hd2d-stage-set |
-| [scripts/pixel_style.py](shared/scripts/pixel_style.py) | 上の固定文を部品ごとに読み、組み合わせて出力する | pixel-art-standards、pixellab-item-prompt、hd2d-stage-set |
+| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する | character-sprite-sheet、character-illustration、item-icon、hd2d-stage-set |
+| [prompts/pixel-style.ja.txt](shared/prompts/pixel-style.ja.txt) | ドット絵の規格を指示文にした固定文。正本は[ドット絵の制作規格](../../doc/art/direction.md#ドット絵の制作規格) | pixel-art-standards、character-sprite-sheet、item-icon、hd2d-stage-set |
+| [scripts/pixel_style.py](shared/scripts/pixel_style.py) | 上の固定文を部品ごとに読み、組み合わせて出力する | pixel-art-standards、item-icon、hd2d-stage-set |
 | [character-pipeline.md](shared/character-pipeline.md) | キャラ制作の共通手順（出力先、キャラ設定の探し方、必ず残す特徴の1行、Codexへの依頼、見せ方） | character-sprite-sheet、character-illustration |
 | [unity-editor-notes.md](shared/unity-editor-notes.md) | Unity EditorとCLIの操作・撮影で得た知見 | hd2d-stage-set、vfx-authoring、hd2d-lighting-vfx |
 
