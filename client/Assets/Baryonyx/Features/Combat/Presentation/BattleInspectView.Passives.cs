@@ -102,6 +102,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>Pops the name up once for the card being played.</summary>
         private void ShowPassiveForCard(int place, CombatPassiveKind kind)
         {
+            // A forecast only works the card out; the passive shows when it plays.
+            if (forecastingCard)
+                return;
             if (shownForCard.Add((place, kind)))
                 ShowPassive(place, kind);
         }

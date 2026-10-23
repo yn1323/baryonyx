@@ -112,6 +112,18 @@ namespace Baryonyx.Combat.Editor
         private static readonly Color BlockEdge = new(0.36f, 0.25f, 0.02f);
         private static readonly Color BlockYellow = new(0.96f, 0.81f, 0.33f);
 
+        // The status list's top, below the turn order, from the safe area's top.
+        private const float StatusListTop = 150f;
+
+        // A raised card's forecast on the bars: the HP it would take in a light vermilion, the
+        // HP it would give back in mint, the line where the HP would end near white, and the
+        // block it would add in a pale gold.
+        private static readonly Color ForecastLoss = new(1f, 0.62f, 0.45f);
+        private static readonly Color ForecastGain = new(0.55f, 1f, 0.78f);
+        private static readonly Color ForecastLine = new(1f, 0.96f, 0.88f);
+        private static readonly Color BlockForecastEdge = new(0.42f, 0.33f, 0.1f);
+        private static readonly Color BlockForecastFill = new(1f, 0.95f, 0.66f);
+
         private static readonly GaugeColors HpAlly = new(
             new Color(0.61f, 0.88f, 0.48f),
             new Color(0.26f, 0.63f, 0.31f),
@@ -441,6 +453,7 @@ namespace Baryonyx.Combat.Editor
                 BuildDeck(safe, view);
                 BuildHand(safe, view);
                 BuildKeywordTips(safe, view);
+                BuildStatusList(safe, view);
                 BuildEndTurn(safe, view);
                 BuildAim(safe, view);
                 BuildPopup(screen, view);
@@ -851,10 +864,16 @@ namespace Baryonyx.Combat.Editor
             for (int i = 0; i < Allies.Length; i++)
             {
                 var ally = Allies[i];
-                var gauge = HpGauge(world, ally.Feet + new Vector2(0, -24), 30, 5, HpAlly);
+                var gauge = HpGauge(world, ally.Feet + new Vector2(0, -28), 30, 7, HpAlly, ally.Hp);
                 gauge.name = "Hp" + ally.Name;
                 gauge.Fill.anchorMax = new Vector2(ally.Hp / (float)ally.MaxHp, 1);
+                gauge.BlockForecast = BlockForecastStrip(
+                    (RectTransform)gauge.transform,
+                    gauge.InnerDots
+                );
                 gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
+                // The number stays over the block strip.
+                gauge.Number.rectTransform.SetAsLastSibling();
                 var tag = NameTag((RectTransform)gauge.transform, ally.Label);
                 allies.Add(
                     new BattleInspectAlly
@@ -928,9 +947,11 @@ namespace Baryonyx.Combat.Editor
                         Array.Find(slots, slot => slot.Element == BattleCardText.ElementOf(weak))
                     )
                     .ToArray();
-                var gauge = HpGauge(info, new Vector2(0, -16), 65, 6, HpEnemy);
+                var gauge = HpGauge(info, new Vector2(0, -20), 65, 8, HpEnemy, spec.MaxHp);
                 // 敵の技のブロック（doc/features/combat.md）も、味方と同じ黄色の帯で出す。
                 gauge.Block = BlockStrip((RectTransform)gauge.transform, gauge.InnerDots);
+                gauge.Number.rectTransform.SetAsLastSibling();
+                gauge.DefeatTag = DefeatTag((RectTransform)gauge.transform);
 
                 enemies.Add(
                     new BattleInspectEnemy
@@ -1102,7 +1123,7 @@ namespace Baryonyx.Combat.Editor
         {
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, "NameTag", bar);
             var rect = (RectTransform)instance.transform;
-            Place(rect, new Vector2(0, -28), new Vector2(112, 30));
+            Place(rect, new Vector2(0, -32), new Vector2(112, 30));
             var panel = instance.GetComponent<TranslucentTextPanel>();
             panel.Backdrop.color = new Color(0.02f, 0.025f, 0.04f);
             panel.SetBackdropSize(new Vector2(160, 44));
@@ -1120,8 +1141,9 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// A clear catcher over the battlefield and under the controls. The view turns it on while
-        /// a tapped card waits, so the next tap picks the target or puts the card back.
+        /// A clear catcher over the battlefield and under the controls. The view keeps it on
+        /// unless a card is pressed: while a tapped card waits, the next tap picks the target or
+        /// puts the card back; with no card up, a tap lists a character's statuses.
         /// </summary>
         private static void BuildTapArea(RectTransform root, BattleInspectView view)
         {
@@ -1536,18 +1558,31 @@ namespace Baryonyx.Combat.Editor
         /// </summary>
         private static void BuildKeywordTips(RectTransform safe, BattleInspectView view)
         {
-            const int slots = 4;
-            const float width = 340f;
+            var keyword = Baryonyx.UI.Cards.CardText.KeywordHex;
+            ColorUtility.TryParseHtmlString("#" + keyword, out var keywordColor);
+            view.KeywordTips = PlaqueStack(safe, "KeywordTips", 4, 340f, keywordColor);
+        }
+
+        /// <summary>
+        /// A stack of plaques that grows down from its top, each with a title in
+        /// <paramref name="titleColor"/> and a body that wraps. Hidden until shown.
+        /// </summary>
+        private static BattleInspectKeywordTips PlaqueStack(
+            RectTransform safe,
+            string name,
+            int slots,
+            float width,
+            Color titleColor
+        )
+        {
             const float inset = 22f;
-            var tips = Rect("KeywordTips", safe);
+            var tips = Rect(name, safe);
             Corner(tips, new Vector2(0.5f, 0f), Vector2.zero, new Vector2(width, 0f));
             tips.pivot = new Vector2(0f, 1f);
             var component = tips.gameObject.AddComponent<BattleInspectKeywordTips>();
             component.Slots = new RectTransform[slots];
             component.Titles = new TMP_Text[slots];
             component.Bodies = new TMP_Text[slots];
-            var keyword = Baryonyx.UI.Cards.CardText.KeywordHex;
-            ColorUtility.TryParseHtmlString("#" + keyword, out var keywordColor);
             for (int i = 0; i < slots; i++)
             {
                 var slot = Rect("Tip" + (i + 1), tips);
@@ -1557,14 +1592,7 @@ namespace Baryonyx.Combat.Editor
                     pattern: false,
                     fill: GlassCardAssets.SceneFillColor
                 );
-                var title = Label(
-                    content,
-                    "Title",
-                    "",
-                    26,
-                    keywordColor,
-                    TextAlignmentOptions.Left
-                );
+                var title = Label(content, "Title", "", 26, titleColor, TextAlignmentOptions.Left);
                 Corner(
                     title.rectTransform,
                     new Vector2(0f, 1f),
@@ -1593,9 +1621,27 @@ namespace Baryonyx.Combat.Editor
                 component.Titles[i] = title;
                 component.Bodies[i] = body;
             }
-            // Shown only while a card with keywords is up.
+            // Shown only while there is something to explain.
             tips.gameObject.SetActive(false);
-            view.KeywordTips = component;
+            return component;
+        }
+
+        /// <summary>
+        /// The status list a tap on a character opens, in the middle under the turn order: the
+        /// plaques of the keyword notes, wider, one for the name and HP and one for each status.
+        /// The view colours the titles.
+        /// </summary>
+        private static void BuildStatusList(RectTransform safe, BattleInspectView view)
+        {
+            view.StatusList = PlaqueStack(safe, "StatusList", 8, 520f, Color.white);
+            var rect = (RectTransform)view.StatusList.transform;
+            // A tap on the list falls through to the battlefield, where it closes the list.
+            var group = rect.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -StatusListTop);
         }
 
         /// <summary>
@@ -1855,7 +1901,8 @@ namespace Baryonyx.Combat.Editor
         /// <summary>
         /// A unit's HP bar as pixel art on 4px dots (doc/features/screens.md, the battle mock):
         /// a dark outline with its corners cut, the empty part dark with a darker top row, the
-        /// fill and its trail shaded in steps, and a tick in the bottom row every quarter.
+        /// fill and its trail shaded in steps, a tick in the bottom row every quarter, and the HP
+        /// (<paramref name="hp"/> until the screen sets it) written in the middle.
         /// <paramref name="width"/> and <paramref name="height"/> count dots with the outline.
         /// </summary>
         private static BattleHpGauge HpGauge(
@@ -1863,7 +1910,8 @@ namespace Baryonyx.Combat.Editor
             Vector2 center,
             int width,
             int height,
-            GaugeColors colors
+            GaugeColors colors,
+            int hp
         )
         {
             const float dot = DotSize;
@@ -1884,6 +1932,15 @@ namespace Baryonyx.Combat.Editor
             Row(Strip("Light", fill, colors.Light), top: true, dot);
             Row(Strip("Shade", fill, colors.Shade), top: false, dot);
 
+            // A raised card's forecast, over the fill and under the ticks and the number.
+            var band = Strip("Forecast", inner, ForecastLoss);
+            band.gameObject.SetActive(false);
+            var edge = Strip("ForecastEdge", inner, ForecastLine);
+            edge.anchorMax = new Vector2(0, 1);
+            edge.pivot = new Vector2(0, 0.5f);
+            edge.sizeDelta = new Vector2(dot, 0);
+            edge.gameObject.SetActive(false);
+
             int dots = width - 2;
             for (int k = 1; k < 4; k++)
             {
@@ -1894,13 +1951,49 @@ namespace Baryonyx.Combat.Editor
                 tick.offsetMax = new Vector2(tick.offsetMin.x + dot, dot);
             }
 
+            var number = DamageNumberAssets.Label(
+                bar,
+                "Number",
+                BattleHpGauge.HpText(hp),
+                DamageNumberAssets.Hp
+            );
+            Place(number.rectTransform, Vector2.zero, new Vector2(width * dot, height * dot));
+
             var gauge = bar.gameObject.AddComponent<BattleHpGauge>();
             gauge.Fill = fill;
             gauge.Trail = trail;
             gauge.TrailBody = trail.GetComponent<Image>();
+            gauge.Number = number;
+            gauge.ForecastBand = band.GetComponent<Image>();
+            gauge.ForecastEdge = edge;
+            gauge.LossColor = ForecastLoss;
+            gauge.GainColor = ForecastGain;
             gauge.InnerDots = dots;
             gauge.DotSize = dot;
             return gauge;
+        }
+
+        /// <summary>
+        /// "撃破" just right of an enemy's bar, shown while the raised card would beat it: the
+        /// forecast's vermilion on the game's text shadow, with nothing behind it.
+        /// </summary>
+        private static GameObject DefeatTag(RectTransform bar)
+        {
+            var label = Label(
+                bar,
+                "Defeat",
+                "撃破",
+                26,
+                ForecastLoss,
+                TextAlignmentOptions.MidlineLeft
+            );
+            var rect = label.rectTransform;
+            rect.anchorMin = rect.anchorMax = new Vector2(1, 0.5f);
+            rect.pivot = new Vector2(0, 0.5f);
+            rect.anchoredPosition = new Vector2(8, 0);
+            rect.sizeDelta = new Vector2(80, 36);
+            label.gameObject.SetActive(false);
+            return label.gameObject;
         }
 
         /// <summary>
@@ -1909,23 +2002,49 @@ namespace Baryonyx.Combat.Editor
         /// and the green under it still shows. The gauge sets its width and turns it on with
         /// block.
         /// </summary>
-        private static RectTransform BlockStrip(RectTransform bar, int dots)
+        private static RectTransform BlockStrip(RectTransform bar, int dots) =>
+            BlockStrip(bar, dots, "Block", BlockEdge, BlockYellow);
+
+        /// <summary>
+        /// The block a raised card would leave: a strip like the block's in a paler gold, behind
+        /// it, so only what the card adds shows past the block's end. It blinks as one.
+        /// </summary>
+        private static RectTransform BlockForecastStrip(RectTransform bar, int dots)
+        {
+            var strip = BlockStrip(
+                bar,
+                dots,
+                "BlockForecast",
+                BlockForecastEdge,
+                BlockForecastFill
+            );
+            strip.gameObject.AddComponent<CanvasGroup>().blocksRaycasts = false;
+            return strip;
+        }
+
+        private static RectTransform BlockStrip(
+            RectTransform bar,
+            int dots,
+            string name,
+            Color edgeColor,
+            Color fillColor
+        )
         {
             const float dot = DotSize;
-            var block = Rect("Block", bar);
+            var block = Rect(name, bar);
             block.anchorMin = new Vector2(0, 1);
             block.anchorMax = new Vector2(0, 1);
             block.pivot = new Vector2(0, 1);
             block.anchoredPosition = new Vector2(0, dot);
             block.sizeDelta = new Vector2((dots + 2) * dot, 3 * dot);
-            var top = Strip("Top", block, BlockEdge);
+            var top = Strip("Top", block, edgeColor);
             Row(top, top: true, dot);
             top.offsetMin = new Vector2(dot, -dot);
             top.offsetMax = new Vector2(-dot, 0);
-            var body = Strip("Edge", block, BlockEdge);
+            var body = Strip("Edge", block, edgeColor);
             body.anchorMax = new Vector2(1, 0);
             body.offsetMax = new Vector2(0, 2 * dot);
-            var yellow = Strip("Fill", block, BlockYellow);
+            var yellow = Strip("Fill", block, fillColor);
             yellow.anchorMax = new Vector2(1, 0);
             yellow.offsetMin = new Vector2(dot, dot);
             yellow.offsetMax = new Vector2(-dot, 2 * dot);

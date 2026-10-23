@@ -161,6 +161,34 @@ namespace Baryonyx.Combat
                 _ => "",
             };
 
+        /// <summary>
+        /// What a status does, for the list of a character's statuses: a keyword's own
+        /// explanation where the status is one, else a line of its own (doc/features/combat.md,
+        /// the provisional card statuses).
+        /// </summary>
+        public static string StatusNote(CardStatus status)
+        {
+            var keyword = CardKeywords.Find(StatusName(status));
+            if (keyword != null)
+                return keyword.Text;
+            return status switch
+            {
+                CardStatus.BlastSigil =>
+                    "次の味方ターンの開始時に爆発し、敵全体に炎属性のダメージ。",
+                CardStatus.Thundercloud => "味方ターンの開始時に、敵1体へ雷属性のダメージ。",
+                CardStatus.AttackUp => "与えるダメージが上がる。",
+                CardStatus.SpeedUp => "速度+30%。",
+                CardStatus.Regen => "味方ターンの開始時にHPを回復する。",
+                CardStatus.Taunt => "敵の単体攻撃を引き受ける。",
+                CardStatus.Reflect =>
+                    "次に受ける単体攻撃を1回、攻撃した敵へはね返す。自分はダメージを受けない。",
+                CardStatus.FireBlade => "攻撃に炎属性を加え、炎が弱点の敵には弱点の倍率を掛ける。",
+                CardStatus.Protect => "受けるダメージ-25%。",
+                CardStatus.Invincible => "ダメージを受けない。",
+                _ => "",
+            };
+        }
+
         /// <summary>True for the statuses that hurt or hinder (cleared by a cleanse).</summary>
         public static bool IsBad(CardStatus status) =>
             status

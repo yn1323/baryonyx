@@ -73,6 +73,12 @@ namespace Baryonyx.Combat.Presentation
         [Min(0)]
         public int TurnDraw = 3;
 
+        [Tooltip(
+            "TurnDraw枚を引いても手札がこの枚数に足りないときは、この枚数になるまで引く（doc/features/combat.md の手札）。"
+        )]
+        [Min(0)]
+        public int RefillTo = 5;
+
         [Tooltip("手札の上限。上限に届いたら、残りは引かずに山札に残す。")]
         [Min(1)]
         public int HandLimit = 9;

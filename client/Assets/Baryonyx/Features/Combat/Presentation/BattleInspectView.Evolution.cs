@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// What the battle needs to let unique skills evolve (doc/features/skill-evolution.md#戦闘中の進化):
+    /// What the battle needs to let unique skills evolve (doc/features/skill-evolution.md#戦闘中の覚醒):
     /// the chance for a user's level, the draw, which stages are acquired already, and who is told
     /// of each evolution. The adventure gives it; without it nothing evolves.
     /// </summary>
@@ -37,8 +37,8 @@ namespace Baryonyx.Combat.Presentation
     /// </summary>
     public sealed partial class BattleInspectView
     {
-        [Header("固有スキルの進化")]
-        [Tooltip("進化先を選ぶ画面。")]
+        [Header("固有スキルの覚醒")]
+        [Tooltip("覚醒先を選ぶ画面。")]
         public BattleEvolutionChoice Choice;
 
         /// <summary>How unique skills evolve in this battle, or null when they do not (outside an adventure).</summary>
@@ -117,7 +117,10 @@ namespace Baryonyx.Combat.Presentation
             SetHandAside(false);
 
             int stage = stages[Mathf.Clamp(pick, 0, stages.Count - 1)];
-            var skill = tree.StageAt(stage).Card;
+            // 覚醒しても、品質強化で上げた倍率を引き継ぐ。
+            var skill = tree.StageAt(stage).Card.WithMultiplier(
+                data.Card?.Multiplier ?? Inventory.Quality.MinMultiplier
+            );
             var art = data.ArtOf != null ? data.ArtOf(skill.Id) : null;
             var evolved = CardOf(skill, caster, art != null ? art : data.Art);
             evolved.Person = data.Person;

@@ -239,7 +239,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(slash.InHand, Is.False);
             Assert.That(view.Enemies.Any(enemy => enemy.Marker.gameObject.activeSelf), Is.False);
             yield return null;
-            Assert.That(view.TapArea.activeSelf, Is.False);
+            Assert.That(
+                view.TapArea.activeSelf,
+                Is.True,
+                "With no card up, the battlefield takes taps for the status list."
+            );
+            Assert.That(view.StatusListOpen, Is.False, "Playing the card lists no statuses.");
             yield return WaitActions(view);
             Assert.That(wolf.Hp, Is.EqualTo(wolf.MaxHp - Dealt(view, slash, wolf)));
         }
@@ -1890,6 +1895,198 @@ namespace Baryonyx.Tests.PlayMode
             gauge.SetHp(max, max);
             Assert.That(gauge.Ratio, Is.EqualTo(1f), "Healing fills the bar at once.");
             Assert.That(gauge.Trail.gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator EveryBarWritesItsHpInTheMiddle()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            foreach (var enemy in view.Enemies)
+                Assert.That(enemy.Gauge.Number.text, Is.EqualTo(enemy.Hp.ToString()));
+            foreach (var ally in view.Allies)
+                Assert.That(ally.Gauge.Number.text, Is.EqualTo(ally.Hp.ToString()));
+
+            var gauge = view.Enemies[0].Gauge;
+            int max = view.Enemies[0].MaxHp;
+            gauge.SetHp(max / 3, max);
+            Assert.That(gauge.Number.text, Is.EqualTo((max / 3).ToString()));
+            gauge.SetHp(-20, max);
+            Assert.That(gauge.Number.text, Is.EqualTo("0"), "Overkill still reads 0.");
+        }
+
+        [UnityTest]
+        public IEnumerator ARaisedCardForecastsItsBlowOnEveryEnemyItCanHit()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int embers = DealInto(view, "Embers");
+            // A weakness still hidden is left out of the forecast, so the blow lands on an enemy
+            // whose fire weakness, if it has one, is known.
+            int target = System.Array.FindIndex(
+                view.Enemies,
+                enemy =>
+                    enemy.Weaknesses.All(weakness =>
+                        weakness.Element != BattleInspectElement.Fire || weakness.Revealed
+                    )
+            );
+            Assert.That(target, Is.GreaterThanOrEqualTo(0));
+            var area = view.Enemies[target].TargetArea;
+
+            view.PressCard(embers, CardPoint(view.Cards[embers]));
+            view.DragCard(Center(area));
+            yield return null;
+            for (int i = 0; i < view.Enemies.Length; i++)
+            {
+                var enemy = view.Enemies[i];
+                Assert.That(view.EnemyForecasts[i].Shown, Is.True, $"Enemy {i} shows the blow.");
+                Assert.That(view.EnemyForecasts[i].Hp, Is.LessThan(enemy.Hp));
+                Assert.That(view.EnemyForecasts[i].Defeat, Is.False);
+                Assert.That(enemy.Gauge.ForecastBand.gameObject.activeSelf, Is.True);
+                Assert.That(enemy.Gauge.Number.text, Is.EqualTo(enemy.Hp.ToString()));
+            }
+            Assert.That(view.AllyForecasts.Any(forecast => forecast.Shown), Is.False);
+            int forecast = view.EnemyForecasts[target].Hp;
+
+            view.ReleaseCard(Center(area));
+            Assert.That(
+                view.Enemies.Any(enemy => enemy.Gauge.Forecasting),
+                Is.False,
+                "Playing the card takes the forecast away."
+            );
+            yield return WaitActions(view);
+            Assert.That(view.Enemies[target].Hp, Is.EqualTo(forecast), "The blow is as forecast.");
+        }
+
+        [UnityTest]
+        public IEnumerator HealingAndBlockAreForecastOnTheAllies()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int heal = DealInto(view, "Heal");
+            var hurt = view.Allies[0];
+            hurt.Hp = hurt.MaxHp / 3;
+
+            view.PressCard(heal, CardPoint(view.Cards[heal]));
+            view.DragCard(Center(hurt.TargetArea));
+            yield return null;
+            var healed = view.AllyForecasts[0];
+            Assert.That(healed.Shown, Is.True);
+            Assert.That(healed.Hp, Is.GreaterThan(hurt.Hp).And.AtMost(hurt.MaxHp));
+            Assert.That(hurt.Gauge.ForecastBand.gameObject.activeSelf, Is.True);
+            Assert.That(view.EnemyForecasts.Any(forecast => forecast.Shown), Is.False);
+            view.ReleaseCard(Center(hurt.TargetArea));
+            yield return WaitActions(view);
+            Assert.That(hurt.Hp, Is.EqualTo(healed.Hp), "The healing is as forecast.");
+
+            int guard = DealInto(view, "Guard");
+            view.PressCard(guard, CardPoint(view.Cards[guard]));
+            view.DragCard(Center(view.Allies[0].TargetArea));
+            yield return null;
+            var blocks = new int[view.Allies.Length];
+            for (int i = 0; i < view.Allies.Length; i++)
+            {
+                var forecast = view.AllyForecasts[i];
+                Assert.That(forecast.Shown, Is.True, $"Ally {i} shows the block.");
+                Assert.That(forecast.Block, Is.GreaterThan(view.BlockOf(i)));
+                Assert.That(view.Allies[i].Gauge.BlockForecast.gameObject.activeSelf, Is.True);
+                blocks[i] = forecast.Block;
+            }
+            view.ReleaseCard(Center(view.Allies[0].TargetArea));
+            yield return WaitActions(view);
+            for (int i = 0; i < view.Allies.Length; i++)
+                Assert.That(
+                    view.BlockOf(i),
+                    Is.EqualTo(blocks[i]),
+                    $"Ally {i}'s block is as forecast."
+                );
+        }
+
+        [UnityTest]
+        public IEnumerator TheForecastPromisesADefeatButKeepsAHiddenWeaknessHidden()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            int thunder = DealInto(view, "Thunder");
+            var card = view.Cards[thunder];
+            int weak = System.Array.FindIndex(
+                view.Enemies,
+                enemy =>
+                    enemy.Weaknesses.Any(weakness =>
+                        weakness.Element == BattleInspectElement.Thunder && !weakness.Revealed
+                    )
+            );
+            Assert.That(weak, Is.GreaterThanOrEqualTo(0), "An enemy hides a thunder weakness.");
+            var enemy = view.Enemies[weak];
+
+            int hidden = enemy.Hp - view.ForecastOf(card).enemies[weak].Hp;
+            foreach (var weakness in enemy.Weaknesses)
+                if (weakness.Element == BattleInspectElement.Thunder)
+                    weakness.Show(true);
+            int shown = enemy.Hp - view.ForecastOf(card).enemies[weak].Hp;
+            Assert.That(
+                shown,
+                Is.EqualTo(Mathf.RoundToInt(hidden * 1.5f)),
+                "Only a revealed weakness grows the forecast."
+            );
+
+            enemy.Hp = 1;
+            view.PressCard(thunder, CardPoint(card));
+            yield return null;
+            Assert.That(view.EnemyForecasts[weak].Defeat, Is.True);
+            Assert.That(enemy.Gauge.DefeatTag.activeSelf, Is.True);
+            for (int i = 0; i < view.Enemies.Length; i++)
+                if (i != weak)
+                    Assert.That(view.Enemies[i].Gauge.DefeatTag.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator TappingACharacterWithNoCardUpListsItsStatuses()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            // A burn from 火の粉 gives the wolf a status to list.
+            int embers = DealInto(view, "Embers");
+            var wolf = view.Enemies[1];
+            Play(view, embers, wolf.TargetArea);
+            yield return WaitActions(view);
+            Assert.That(view.HasStatus(false, 1, CardStatus.Burn), Is.True);
+            yield return null;
+            Assert.That(view.TapArea.activeSelf, Is.True);
+
+            var list = view.StatusList;
+            view.TapScreen(Center(wolf.TargetArea));
+            Assert.That(view.StatusListOpen, Is.True);
+            Assert.That(view.Listed, Is.EqualTo((false, 1)));
+            Assert.That(list.gameObject.activeSelf, Is.True);
+            Assert.That(list.Titles[0].text, Is.EqualTo(CombatEnemies.Find(wolf.Id).Name));
+            Assert.That(
+                list.Bodies[0].text,
+                Is.EqualTo(BattleInspectView.HpLine(wolf.Hp, wolf.MaxHp))
+            );
+            Assert.That(list.Titles[1].text, Does.StartWith("やけど　残り"));
+            Assert.That(list.Bodies[1].text, Is.EqualTo(CardRules.StatusNote(CardStatus.Burn)));
+
+            // Another character moves the list to it; an ally with no status says so.
+            var ally = view.Allies[0];
+            view.TapScreen(Center(ally.TargetArea));
+            Assert.That(view.Listed, Is.EqualTo((true, 0)));
+            Assert.That(list.Titles[0].text, Is.EqualTo(ally.Name));
+            Assert.That(list.Titles[1].text, Is.EqualTo(BattleInspectView.NoStatusText));
+
+            view.TapScreen(Center(ally.TargetArea));
+            Assert.That(view.StatusListOpen, Is.False, "A second tap closes the list.");
+            Assert.That(list.gameObject.activeSelf, Is.False);
+
+            view.TapScreen(Center(wolf.TargetArea));
+            view.TapScreen(new Vector2(Screen.width * 0.5f, Screen.height * 0.75f));
+            Assert.That(view.StatusListOpen, Is.False, "A tap on no one closes the list.");
+
+            view.TapScreen(Center(wolf.TargetArea));
+            int card = System.Array.FindIndex(view.Cards, c => c.InHand);
+            view.PressCard(card, CardPoint(view.Cards[card]));
+            Assert.That(view.StatusListOpen, Is.False, "Pressing a card closes the list.");
+            view.ReleaseCard(CardPoint(view.Cards[card]));
         }
 
         [UnityTest]

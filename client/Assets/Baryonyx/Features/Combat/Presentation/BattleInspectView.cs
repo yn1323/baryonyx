@@ -975,8 +975,9 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < Enemies.Length; i++)
                 Enemies[i].Marker.anchoredPosition = enemyMarkerBase[i] + bob;
 
+            // With no card pressed, a tap on the battlefield lists a character's statuses.
             if (TapArea != null)
-                TapArea.SetActive(Selected);
+                TapArea.SetActive(!pressing);
             RefreshAim();
         }
 
@@ -1073,6 +1074,8 @@ namespace Baryonyx.Combat.Presentation
             reselected = held == index;
             held = index;
             pressing = true;
+            // A card in the hand takes the place of the status list.
+            HideStatusList();
             armed = false;
             moved = false;
             pressPoint = ToHand(screenPoint);
@@ -1142,11 +1145,16 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// A tap on the battlefield while a tapped card waits: plays it on the character tapped
         /// (any of its side for a whole-side card), or puts it back when no target was tapped.
+        /// With no card up, it opens or closes the status list instead.
         /// </summary>
         public void TapScreen(Vector2 screenPoint)
         {
             if (!Selected)
+            {
+                if (!pressing)
+                    TapCharacter(screenPoint);
                 return;
+            }
             var card = Cards[held];
             int hit = NearestTarget(card, screenPoint);
             if (hit < 0)
@@ -1364,9 +1372,13 @@ namespace Baryonyx.Combat.Presentation
             ShowMarkers(held >= 0 ? Cards[held] : null);
         }
 
-        /// <summary>Puts the cursor over every character <paramref name="card"/> can target, or none without a card.</summary>
+        /// <summary>
+        /// Puts the cursor over every character <paramref name="card"/> can target, and its
+        /// forecast on their bars; or none without a card.
+        /// </summary>
         private void ShowMarkers(BattleInspectCard card)
         {
+            ShowForecast(card);
             for (int i = 0; i < Enemies.Length; i++)
                 Enemies[i]
                     .Marker.gameObject.SetActive(
@@ -1521,10 +1533,17 @@ namespace Baryonyx.Combat.Presentation
             // Block carries over, but only half of it, so it does not pile up turn after turn.
             HalveBlock();
             StartOfTurn(Turn + 1);
-            dealing = StartCoroutine(Deal(Settings.TurnDraw, 0f));
+            dealing = StartCoroutine(Deal(TurnDraw(), 0f));
             // Over the deal, so the party's turn begins with no wait.
             ShowPartyTurnBanner(again);
         }
+
+        /// <summary>
+        /// The cards dealt at the start of a turn: <see cref="BattleInspectHandSettings.TurnDraw"/>,
+        /// or more when the hand would still hold fewer than
+        /// <see cref="BattleInspectHandSettings.RefillTo"/>, to fill it up to that.
+        /// </summary>
+        public int TurnDraw() => Mathf.Max(Settings.TurnDraw, Settings.RefillTo - hand.Count);
 
         /// <summary>
         /// The enemies standing that act after the party's turn <paramref name="round"/> (1 for
@@ -2426,6 +2445,10 @@ namespace Baryonyx.Combat.Presentation
             foreach (var enemy in Enemies)
                 RefreshEnemy(enemy);
             RefreshTurnOrder();
+            RefreshStatusList();
+            // A card held up while another plays forecasts from the HP as it is now.
+            if (held >= 0)
+                ShowForecast(Cards[held]);
         }
 
         /// <summary>

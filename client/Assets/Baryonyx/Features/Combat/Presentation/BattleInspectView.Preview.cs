@@ -22,6 +22,10 @@ namespace Baryonyx.Combat.Presentation
                 "カードを選んだ（タップ）",
                 "カードを敵へ向けた（スワイプ）",
                 "キーワードの説明札",
+                "予告（倒せる敵）",
+                "予告（回復）",
+                "予告（ブロック）",
+                "状態の一覧",
             };
 
         public void ShowPreviewState(int index)
@@ -54,7 +58,36 @@ namespace Baryonyx.Combat.Presentation
                 case 7:
                     RaisePreviewCard(swiped: false, withKeywords: true);
                     break;
+                case 8:
+                    RaisePreviewCard(swiped: false, enemyHpPercent: 12);
+                    break;
+                case 9:
+                    RaisePreviewCard(PreviewCardWith(CardActionKind.Heal), allyHpPercent: 45);
+                    break;
+                case 10:
+                    RaisePreviewCard(PreviewCardWith(CardActionKind.Block));
+                    break;
+                case 11:
+                    ListPreviewStatuses();
+                    break;
             }
+        }
+
+        // 2体目の敵（狼）に見本の状態を付け、HPを減らして、その一覧を開く。
+        private void ListPreviewStatuses()
+        {
+            int index = Mathf.Min(1, Enemies.Length - 1);
+            if (index < 0)
+                return;
+            var enemy = Enemies[index];
+            enemy.Hp = Mathf.Max(1, enemy.MaxHp * 6 / 10);
+            enemy.Gauge.SetHp(enemy.Hp, enemy.MaxHp);
+            var list = StatusesOf(false, index);
+            list.Clear();
+            list.Add(new ActiveStatus { Status = CardStatus.Chill, Turns = 2 });
+            list.Add(new ActiveStatus { Status = CardStatus.Vulnerable, Turns = 2 });
+            list.Add(new ActiveStatus { Status = CardStatus.Poison, Amount = 3 });
+            ShowStatusList(false, index);
         }
 
         // 帯が開ききって止まった1コマ。
@@ -89,20 +122,60 @@ namespace Baryonyx.Combat.Presentation
             return playable;
         }
 
+        // 予告を見せる、手札に限らない最初のカードで、その種類の効果を持つもの。
+        private int PreviewCardWith(CardActionKind kind)
+        {
+            for (int i = 0; i < Cards.Length; i++)
+            {
+                var skill =
+                    Cards[i].DeckIndex < Deck.Length ? SkillOf(Deck[Cards[i].DeckIndex]) : null;
+                if (skill == null)
+                    continue;
+                foreach (var action in skill.Actions)
+                    if (action.Kind == kind)
+                        return i;
+            }
+            return -1;
+        }
+
+        private void RaisePreviewCard(
+            bool swiped,
+            bool withKeywords = false,
+            int enemyHpPercent = 100
+        ) => RaisePreviewCard(PreviewCard(withKeywords), swiped, withKeywords, enemyHpPercent);
+
         /// <summary>
         /// Raises a card as a press does: up in the middle with its user stepped forward, its
-        /// ring and name, and the cursors over its targets; tapped, the tap area waits for the
-        /// target; swiped, the aim runs from the card to the first enemy it can hit. With
-        /// <paramref name="withKeywords"/>, a card whose text names keywords, with their notes.
+        /// ring and name, the cursors over its targets and its forecast on their bars; tapped,
+        /// the tap area waits for the target; swiped, the aim runs from the card to the first
+        /// enemy it can hit. With <paramref name="withKeywords"/>, a card whose text names
+        /// keywords, with their notes. The enemies start from the part of their max HP given, and
+        /// the allies from it too, or from their HP at the start when none is given.
         /// </summary>
-        private void RaisePreviewCard(bool swiped, bool withKeywords = false)
+        private void RaisePreviewCard(
+            int index,
+            bool swiped = false,
+            bool withKeywords = false,
+            int enemyHpPercent = 100,
+            int allyHpPercent = -1
+        )
         {
-            int index = PreviewCard(withKeywords);
             if (index < 0)
                 return;
-            // 停止中は Awake が動かず、敵のHPが入っていない（倒れた扱いになる）。
+            // 停止中は Awake が動かず、HPが入っていない（倒れた扱いになる）。
             foreach (var enemy in Enemies)
-                enemy.Hp = enemy.MaxHp;
+            {
+                enemy.Hp = Mathf.Max(1, enemy.MaxHp * enemyHpPercent / 100);
+                enemy.Gauge.SetHp(enemy.Hp, enemy.MaxHp);
+            }
+            foreach (var ally in Allies)
+            {
+                ally.Hp =
+                    allyHpPercent < 0
+                        ? ally.StartHp
+                        : Mathf.Max(1, ally.MaxHp * allyHpPercent / 100);
+                ally.Gauge.SetHp(ally.Hp, ally.MaxHp);
+            }
             var card = Cards[index];
             card.Body.SetAsLastSibling();
             PlaceCard(card.Body, RaisedPose(index), 1f);

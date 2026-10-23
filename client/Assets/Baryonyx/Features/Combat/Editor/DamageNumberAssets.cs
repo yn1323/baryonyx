@@ -8,7 +8,7 @@ using UnityEngine.TextCore.LowLevel;
 namespace Baryonyx.Combat.Editor
 {
     /// <summary>
-    /// The font and materials of the damage and heal numbers: Dela Gothic One, a very thick
+    /// The font and materials of the damage and heal numbers, and of the HP on the bars: Dela Gothic One, a very thick
     /// smooth gothic, drawn over the pixel art with a thick dark outline and a hard drop shadow.
     /// Only the digits are baked, so the font file does not ship in the build.
     /// </summary>
@@ -20,6 +20,7 @@ namespace Baryonyx.Combat.Editor
         public const string NormalMaterialPath = Folder + "/DamageNormal.mat";
         public const string WeakMaterialPath = Folder + "/DamageWeak.mat";
         public const string HealMaterialPath = Folder + "/DamageHeal.mat";
+        public const string HpMaterialPath = Folder + "/HpNumber.mat";
 
         private const string Characters = "0123456789";
 
@@ -59,6 +60,17 @@ namespace Baryonyx.Combat.Editor
             Bottom = new Color(0.36f, 0.8f, 0.35f),
             Edge = new Color(0.05f, 0.16f, 0.06f),
             MaterialPath = HealMaterialPath,
+        };
+
+        // The HP on the middle of a bar: small, white with a slight cool shade, and the outline
+        // in the bar's own dark so it reads over the fill and the empty part alike.
+        public static readonly Style Hp = new()
+        {
+            Size = 22f,
+            Top = new Color(1f, 1f, 1f),
+            Bottom = new Color(0.84f, 0.86f, 0.9f),
+            Edge = new Color(0.08f, 0.06f, 0.08f),
+            MaterialPath = HpMaterialPath,
         };
 
         /// <summary>A centred number label in the style, made in the open <see cref="UiBuild"/> session.</summary>

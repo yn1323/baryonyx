@@ -11,7 +11,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    /// <summary>A unique skill's card evolving in the battle (doc/features/skill-evolution.md#戦闘中の進化).</summary>
+    /// <summary>A unique skill's card evolving in the battle (doc/features/skill-evolution.md#戦闘中の覚醒).</summary>
     public sealed class BattleEvolutionSceneTests
     {
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";

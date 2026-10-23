@@ -8,7 +8,7 @@ namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
     /// Where the next stage of an evolving unique skill is picked
-    /// (doc/features/skill-evolution.md#進化先を選ぶ画面), over the battle while the cracked card
+    /// (doc/features/skill-evolution.md#覚醒先を選ぶ画面), over the battle while the cracked card
     /// hovers above: a branch of light runs down from the card to each stage it can evolve into,
     /// shown as a battle card in a row below, one stage already acquired marked so. A tap picks a
     /// stage (it rises; a thin rim of light runs round it and wisps of pale gold light rise from

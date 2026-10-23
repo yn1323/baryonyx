@@ -34,7 +34,7 @@ namespace Baryonyx.Combat.Presentation
     /// <summary>
     /// A card a party member brings to the deck: the card skill with its multiplier, and its art.
     /// A unique skill's stage also tells whose unique skill it is, so it can evolve in battle
-    /// (doc/features/skill-evolution.md#戦闘中の進化).
+    /// (doc/features/skill-evolution.md#戦闘中の覚醒).
     /// </summary>
     public sealed class BattlePartyCard
     {

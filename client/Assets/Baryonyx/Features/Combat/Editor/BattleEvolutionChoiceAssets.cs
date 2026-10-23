@@ -91,7 +91,7 @@ namespace Baryonyx.Combat.Editor
                 Label(
                     content,
                     "Label",
-                    "この進化にする",
+                    "この覚醒にする",
                     36,
                     UiPalette.TextMain,
                     TextAlignmentOptions.Center

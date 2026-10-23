@@ -4,8 +4,8 @@ using UnityEngine.EventSystems;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// Passes a tap on the battlefield on to <see cref="BattleInspectView"/> while a tapped card
-    /// waits for its target.
+    /// Passes a tap on the battlefield on to <see cref="BattleInspectView"/>: the target of a
+    /// tapped card that waits, or, with no card up, the character whose statuses to list.
     /// </summary>
     public sealed class BattleInspectTapArea : MonoBehaviour, IPointerClickHandler
     {
