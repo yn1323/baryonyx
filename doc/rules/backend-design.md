@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-10-21
+updated: 2026-10-24
 ---
 
 # バックエンドの開発環境
@@ -115,8 +115,8 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み |
-| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ進化済み |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
+| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
 | `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ボーナス1つ、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
 
 プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
@@ -225,6 +225,7 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0008_equipment.sql](../../server/migrations/0008_equipment.sql) は、[持っている装備と付け替えの保存](../features/equipment.md#持っている装備と付け替えの保存)の装備・キャラごとの武器と防具・初期付与の3テーブルを作る。
 [0009_custom_skill_slots.sql](../../server/migrations/0009_custom_skill_slots.sql) は、キャラごとのスキルの枠を4つから[カスタムスキル](../features/party.md#キャラクターの構成)の2つに減らす。枠の範囲の制約を変えるため表を作り直し、3・4枠目の行は移さずに消す。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) は、持っている装備・ACTボーナス・冒険の報酬に1つずつの倍率の列（`multiplier_percent`、百分率の整数で100以上）を持たせ、ボーナスと報酬のランクの列をなくす（[品質](../features/inventory.md#品質)）。表を作り直すため、Drizzle Kitが生成した、元の表にない列を読む行を手で直し、既存のランクをS 147・A 138・B 126・C 112・D 105・E 100の倍率へ、既存の装備を100へ写した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
+[0022_bond_tokens.sql](../../server/migrations/0022_bond_tokens.sql) は、キャラの絆に絆のしるしの数の列（`tokens`、段との合計は6まで）を持たせる（[キャラが被ったとき](../features/monetization.md#キャラが被ったとき)）。表を作り直すため、Drizzle Kitが生成した、元の表にない `tokens` を読む行を0に直し、`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 
 ```sh
 pnpm db:generate --name add_example
