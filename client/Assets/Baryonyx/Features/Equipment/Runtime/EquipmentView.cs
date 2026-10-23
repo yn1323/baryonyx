@@ -324,7 +324,7 @@ namespace Baryonyx.Equipment
             for (int i = 0; i < Accessories.Length; i++)
                 ShowAccessory(Accessories[i], i, member != null ? level : 0, i == state.Accessory);
             var growth = Training != null ? Training.Find(state.PersonId) : null;
-            StatGrid.Show(Stats, growth?.StatsAt(level));
+            StatGrid.Show(Stats, growth != null ? TrainingBond.StatsOf(growth, level) : null);
             // 一覧の面の文字は、アクセサリーの枠を選んでいるときだけ出す（開いていなければ解放するLv）。
             Set(
                 Status,

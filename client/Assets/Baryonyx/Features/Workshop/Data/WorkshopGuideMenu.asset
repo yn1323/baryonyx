@@ -18,77 +18,29 @@ MonoBehaviour:
   Background: {fileID: 2800000, guid: 6552271eccc1740499e13c5d59a46914, type: 3}
   Layout: 0
   Items:
-  - Key: 
+  - Key: workshop-buy
     Label: "\u8CB7\u3046"
-    Caption: "\u88C5\u5099\u30FB\u30B9\u30AD\u30EB\u30FB\u7D20\u6750\u3092\u30EB\u30FC\u30F3\u3067\u8CB7\u3046"
     Icon: {fileID: 21300000, guid: 0f586075a9a9c4183a810735bf000967, type: 3}
     Hidden: 0
     ConfirmLabel: "\u8CB7\u3046"
-    Entries:
-    - Name: "\u9244\u306E\u5263"
-      Badge: "400 \u30EB\u30FC\u30F3"
-      Detail: "\u6B66\u5668\uFF5C\u7269\u653B\u306E 120%\uFF5C\u65AC"
-    - Name: "\u9396\u304B\u305F\u3073\u3089"
-      Badge: "450 \u30EB\u30FC\u30F3"
-      Detail: "\u9632\u5177\uFF5C\u7269\u9632\u306E 130%"
-    - Name: "\u30D5\u30A1\u30A4\u30A2"
-      Badge: "300 \u30EB\u30FC\u30F3"
-      Detail: "\u30B9\u30AD\u30EB\uFF5C\u708E\u306E\u9B54\u6CD5\u3067\u6575\u5358\u4F53\u3092\u653B\u6483"
-    - Name: "\u30D2\u30FC\u30EB"
-      Badge: "300 \u30EB\u30FC\u30F3"
-      Detail: "\u30B9\u30AD\u30EB\uFF5C\u5473\u65B9\u5358\u4F53\u306EHP\u3092\u56DE\u5FA9"
-    - Name: "\u9244\u304F\u305A"
-      Badge: "30 \u30EB\u30FC\u30F3"
-      Detail: "\u7D20\u6750\uFF5C\u6B66\u5668\u3068\u9632\u5177\u306E\u5408\u6210\u306B\u4F7F\u3046"
-    - Name: "\u706B\u306E\u9B54\u77F3"
-      Badge: "80 \u30EB\u30FC\u30F3"
-      Detail: "\u7D20\u6750\uFF5C\u708E\u306E\u88C5\u5099\u3068\u30B9\u30AD\u30EB\u306E\u5408\u6210\u306B\u4F7F\u3046"
-    - Name: "\u6C37\u306E\u7D50\u6676"
-      Badge: "80 \u30EB\u30FC\u30F3"
-      Detail: "\u7D20\u6750\uFF5C\u6C37\u306E\u88C5\u5099\u3068\u30B9\u30AD\u30EB\u306E\u5408\u6210\u306B\u4F7F\u3046"
-  - Key: 
+    Entries: []
+  - Key: workshop-sell
     Label: "\u58F2\u308B"
-    Caption: "\u6301\u3063\u3066\u3044\u308B\u88C5\u5099\u30FB\u30B9\u30AD\u30EB\u30FB\u7D20\u6750\u3092\u58F2\u308B"
     Icon: {fileID: 21300000, guid: db81fbb6fe7dd4d1a9e4c3cde9b7d79c, type: 3}
     Hidden: 0
     ConfirmLabel: "\u58F2\u308B"
-    Entries:
-    - Name: "\u6728\u306E\u5263"
-      Badge: "50 \u30EB\u30FC\u30F3"
-      Detail: "\u6B66\u5668\uFF5C\u7269\u653B\u306E 100%\uFF5C\u65AC"
-    - Name: "\u6728\u306E\u4E38\u76FE"
-      Badge: "60 \u30EB\u30FC\u30F3"
-      Detail: "\u9632\u5177\uFF5C\u7269\u9632\u306E 120%"
-    - Name: "\u65AC\u308A\u6255\u3044"
-      Badge: "40 \u30EB\u30FC\u30F3"
-      Detail: "\u30B9\u30AD\u30EB\uFF5C\u6240\u6301 2"
-    - Name: "\u7363\u306E\u7259"
-      Badge: "10 \u30EB\u30FC\u30F3"
-      Detail: "\u7D20\u6750\uFF5C\u6240\u6301 12"
-    - Name: "\u9244\u304F\u305A"
-      Badge: "15 \u30EB\u30FC\u30F3"
-      Detail: "\u7D20\u6750\uFF5C\u6240\u6301 8"
-  - Key: 
+    Entries: []
+  - Key: workshop-craft
     Label: "\u5408\u6210"
-    Caption: "\u7D20\u6750\u3092\u5408\u308F\u305B\u3066\u88C5\u5099\u3084\u30B9\u30AD\u30EB\u3092\u4F5C\u308B"
     Icon: {fileID: 21300000, guid: 89377459325bc4c43ab2e33255ecbe3e, type: 3}
     Hidden: 0
-    ConfirmLabel: "\u5408\u6210\u3059\u308B"
-    Entries:
-    - Name: "\u708E\u306E\u30C0\u30AC\u30FC"
-      Badge: "\u2605\u2605\u2605\u2605"
-      Detail: "\u706B\u306E\u9B54\u77F3\xD73\u30FB\u9244\u304F\u305A\xD72\u30FB\u7363\u306E\u7259\xD74"
-    - Name: "\u6C37\u6676\u306E\u30EF\u30F3\u30C9"
-      Badge: "\u2605\u2605\u2605"
-      Detail: "\u6C37\u306E\u7D50\u6676\xD73\u30FB\u9244\u304F\u305A\xD71"
-    - Name: "\u96F7\u9CF4\u306E\u69CD"
-      Badge: "\u2605\u2605\u2605"
-      Detail: "\u96F7\u306E\u7FBD\u6839\xD73\u30FB\u9244\u304F\u305A\xD73"
-    - Name: "\u30D6\u30EA\u30B6\u30FC\u30C9"
-      Badge: "\u30B9\u30AD\u30EB"
-      Detail: "\u6C37\u306E\u7D50\u6676\xD75\u30FB\u9B54\u77F3\u306E\u304B\u3051\u3089\xD72"
-    - Name: "\u30E9\u30A4\u30C8\u30CB\u30F3\u30B0\u30DC\u30EB\u30C8"
-      Badge: "\u30B9\u30AD\u30EB"
-      Detail: "\u96F7\u306E\u7FBD\u6839\xD74\u30FB\u9B54\u77F3\u306E\u304B\u3051\u3089\xD72"
+    ConfirmLabel: "\u5408\u6210"
+    Entries: []
+  - Key: workshop-enhance
+    Label: "\u5F37\u5316"
+    Icon: {fileID: 21300000, guid: 113b6176347e147b69c7bffe816d4045, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u5F37\u5316"
+    Entries: []
   Destinations: []
   DepartLabel: "\u51FA\u767A"

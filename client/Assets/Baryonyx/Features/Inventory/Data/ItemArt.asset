@@ -81,3 +81,13 @@ MonoBehaviour:
     Sprite: {fileID: 5349011544834349465, guid: a22fc415609e343c98f7e6f7c2440b8e, type: 3}
   - Id: kraken-pearl
     Sprite: {fileID: 5349011544834349465, guid: d3e52f15ca4f34c29b44f3158ab4ed56, type: 3}
+  - Id: polish-white
+    Sprite: {fileID: 5349011544834349465, guid: b2d244a92f72944a69312f410b0b4cb8, type: 3}
+  - Id: polish-blue
+    Sprite: {fileID: 5349011544834349465, guid: a85f0dc75d9d248878ecff8a6f344232, type: 3}
+  - Id: polish-purple
+    Sprite: {fileID: 5349011544834349465, guid: 8043d373c7a694a92a043e2b8ea05c45, type: 3}
+  - Id: polish-gold
+    Sprite: {fileID: 5349011544834349465, guid: 036be9ef0a17248d79647971a4e22e2b, type: 3}
+  - Id: awakening-shard
+    Sprite: {fileID: 5349011544834349465, guid: 8ef325244f31a40fa8d500912af939ab, type: 3}

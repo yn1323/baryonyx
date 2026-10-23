@@ -1,0 +1,41 @@
+import { Hono } from "hono";
+import { invalidRequest, parseJson, respond } from "../../shared/http.js";
+import { requireSession, type SessionEnv } from "../accounts/session.js";
+import { createWorkshopRepository } from "./repository.js";
+import { buySchema, craftSchema } from "./schema.js";
+
+// 売らない・作れない物は404、手に入れていない・材料が合わない・ルーンが足りない・要求IDの使い回しは409で返す。
+function errorStatus(error: string) {
+  return error === "goods_not_found" ? 404 : 409;
+}
+
+export function createWorkshopApi() {
+  const api = new Hono<SessionEnv>();
+  api.use("/workshop/*", requireSession);
+
+  // 商会で、これまでに手に入れた物を品質の最低で1つ買う（doc/features/screens.md の商会）。
+  api.post("/workshop/buy", async (c) => {
+    const body = await parseJson(c, buySchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createWorkshopRepository(c.env.DB).buy(
+      c.get("userId"),
+      body.data,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  // 商会で、☆が1つ低い同じ分類の物を3つ使い、これまでに手に入れた物を1つ作る（doc/features/screens.md の商会）。
+  api.post("/workshop/craft", async (c) => {
+    const body = await parseJson(c, craftSchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createWorkshopRepository(c.env.DB).craft(
+      c.get("userId"),
+      body.data,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  return api;
+}

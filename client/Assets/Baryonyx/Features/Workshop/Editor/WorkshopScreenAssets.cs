@@ -1,4 +1,5 @@
 using Baryonyx.Editor.Art;
+using Baryonyx.Enhancement;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using UnityEditor;
@@ -9,8 +10,13 @@ namespace Baryonyx.Workshop.Editor
     /// <summary>
     /// The trading house (商会; the code keeps the Workshop name): the young noble heir of an old
     /// arms shop buys and sells equipment, skills and materials for runes, and makes equipment
-    /// and skills from materials. The lists and prices are mock data until trading has data
-    /// (doc/features/equipment.md); choosing a row only tells it is not ready.
+    /// and skills from materials. Each item opens its own panel filling the screen without the
+    /// guide. "Buy" (<see cref="WorkshopBuyAssets"/>): what the player has found, at the lowest
+    /// quality, bought from the server. "Sell" (<see cref="WorkshopSellAssets"/>): the held
+    /// things, one by one; selling is not decided yet (doc/features/equipment.md), so the button
+    /// only tells it is not ready. "Craft" (<see cref="WorkshopCraftAssets"/>): three things one
+    /// star lower make a found thing. "Enhance" (<see cref="WorkshopEnhanceAssets"/>): polishing
+    /// stones raise a thing's quality, and awakening shards take a unique skill on a stage.
     /// </summary>
     public static class WorkshopScreenAssets
     {
@@ -21,12 +27,14 @@ namespace Baryonyx.Workshop.Editor
         public const string BackgroundPath = Folder + "/UI/Art/WorkshopBackground.png";
 
         // The menu's icons are plain shapes without outlines, like the formation menu: a price tag
-        // for buying, a stack of coins for selling, and an anvil and hammer for making things.
+        // for buying, a stack of coins for selling, an anvil and hammer for making things, and a cut
+        // gem for enhancing.
         // The home button already shows scales, so the menu avoids them. The text colour is
         // baked in, since the guide screens list pixel art with the same white tint.
         public const string IconBuyPath = Folder + "/UI/Art/IconBuy.png";
         public const string IconSellPath = Folder + "/UI/Art/IconSell.png";
         public const string IconCraftPath = Folder + "/UI/Art/IconCraft.png";
+        public const string IconEnhancePath = Folder + "/UI/Art/IconEnhance.png";
 
         // The clear margin that separates a front part from the part behind it (design units).
         private const float PartGap = 2.6f;
@@ -35,7 +43,25 @@ namespace Baryonyx.Workshop.Editor
         public static void CreateAssets()
         {
             WriteMenuIcons();
-            CreateScreen(DefinitionPath, PrefabPath, GuideArtPath, BackgroundPath, Fill);
+            CreateScreen(
+                DefinitionPath,
+                PrefabPath,
+                GuideArtPath,
+                BackgroundPath,
+                Fill,
+                itemPanel: (item, safe, view) =>
+                    item.Key switch
+                    {
+                        WorkshopSession.BuyItemKey => WorkshopBuyAssets.BuildPanel(safe, view),
+                        WorkshopSession.SellItemKey => WorkshopSellAssets.BuildPanel(safe, view),
+                        WorkshopSession.CraftItemKey => WorkshopCraftAssets.BuildPanel(safe, view),
+                        EnhancementSession.GuideItemKey => WorkshopEnhanceAssets.BuildPanel(
+                            safe,
+                            view
+                        ),
+                        _ => null,
+                    }
+            );
         }
 
         private static void WriteMenuIcons()
@@ -43,7 +69,19 @@ namespace Baryonyx.Workshop.Editor
             PriceTag().Save(IconBuyPath, SmoothIconTextureSize, UiPalette.TextMain);
             Coins().Save(IconSellPath, SmoothIconTextureSize, UiPalette.TextMain);
             AnvilAndHammer().Save(IconCraftPath, SmoothIconTextureSize, UiPalette.TextMain);
+            CutGem().Save(IconEnhancePath, SmoothIconTextureSize, UiPalette.TextMain);
         }
+
+        // A cut gem seen from the side: the table on top, the crown's facets, and the point below.
+        private static VectorIcon CutGem() =>
+            new VectorIcon()
+                .Fill(IconShape.Path("M18 9 L46 9 L60 25 L32 59 L4 25Z"))
+                .CutStroke(
+                    IconShape.Path(
+                        "M4 25 L60 25 M18 9 L25 25 L32 59 M46 9 L39 25 L32 59 M25 25 L32 9 L39 25"
+                    ),
+                    2.6f
+                );
 
         // A tag with a hole for its string and two price lines.
         private static VectorIcon PriceTag() =>
@@ -82,42 +120,31 @@ namespace Baryonyx.Workshop.Editor
             d.Layout = GuideMenuLayout.List;
             d.Items = new[]
             {
-                Item(
-                    "買う",
-                    "装備・スキル・素材をルーンで買う",
-                    "買う",
-                    Icon(IconBuyPath),
-                    Entry("鉄の剣", "400 ルーン", "武器｜物攻の 120%｜斬"),
-                    Entry("鎖かたびら", "450 ルーン", "防具｜物防の 130%"),
-                    Entry("ファイア", "300 ルーン", "スキル｜炎の魔法で敵単体を攻撃"),
-                    Entry("ヒール", "300 ルーン", "スキル｜味方単体のHPを回復"),
-                    Entry("鉄くず", "30 ルーン", "素材｜武器と防具の合成に使う"),
-                    Entry("火の魔石", "80 ルーン", "素材｜炎の装備とスキルの合成に使う"),
-                    Entry("氷の結晶", "80 ルーン", "素材｜氷の装備とスキルの合成に使う")
-                ),
-                Item(
-                    "売る",
-                    "持っている装備・スキル・素材を売る",
-                    "売る",
-                    Icon(IconSellPath),
-                    Entry("木の剣", "50 ルーン", "武器｜物攻の 100%｜斬"),
-                    Entry("木の丸盾", "60 ルーン", "防具｜物防の 120%"),
-                    Entry("斬り払い", "40 ルーン", "スキル｜所持 2"),
-                    Entry("獣の牙", "10 ルーン", "素材｜所持 12"),
-                    Entry("鉄くず", "15 ルーン", "素材｜所持 8")
-                ),
-                Item(
-                    "合成",
-                    "素材を合わせて装備やスキルを作る",
-                    "合成する",
-                    Icon(IconCraftPath),
-                    Entry("炎のダガー", "★★★★", "火の魔石×3・鉄くず×2・獣の牙×4"),
-                    Entry("氷晶のワンド", "★★★", "氷の結晶×3・鉄くず×1"),
-                    Entry("雷鳴の槍", "★★★", "雷の羽根×3・鉄くず×3"),
-                    Entry("ブリザード", "スキル", "氷の結晶×5・魔石のかけら×2"),
-                    Entry("ライトニングボルト", "スキル", "雷の羽根×4・魔石のかけら×2")
-                ),
+                Buy(),
+                Panel("売る", "売る", IconSellPath, WorkshopSession.SellItemKey),
+                Panel("合成", "合成", IconCraftPath, WorkshopSession.CraftItemKey),
+                Enhance(),
             };
+        }
+
+        // 一覧の代わりに強化のパネルを開く。磨き石で品質を上げ、覚醒の欠片で固有スキルを覚醒させる。
+        private static GuideMenuItem Enhance()
+        {
+            var item = Item("強化", "強化", Icon(IconEnhancePath));
+            item.Key = EnhancementSession.GuideItemKey;
+            return item;
+        }
+
+        // 一覧の代わりに品物のパネルを開く。これまでに手に入れたスキル・武器・防具・アクセサリーを、品質の最低で売る。
+        private static GuideMenuItem Buy() =>
+            Panel("買う", "買う", IconBuyPath, WorkshopSession.BuyItemKey);
+
+        // 一覧の代わりに、キーの項目のパネルを開く項目。
+        private static GuideMenuItem Panel(string label, string confirm, string icon, string key)
+        {
+            var item = Item(label, confirm, Icon(icon));
+            item.Key = key;
+            return item;
         }
     }
 }
