@@ -17,23 +17,15 @@ import {
   uniqueIndexSchema,
 } from "./schema.js";
 
-// 持っていないキャラ・カードは404、決まりや今の状態と合わない変更は409で返す。
-function errorStatus(error: string) {
-  return error === "character_not_owned" || error === "card_not_owned"
-    ? 404
-    : 409;
-}
-
 export function createPartyApi() {
   const api = new Hono<SessionEnv>();
   // Honoでは `/party/*` が `/party` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/party/*", requireSession);
 
-  // 持っているキャラ・編成・カード・所持ルーン。初めて読むユーザーには仮の初期データを付与する。
+  // 持っているキャラ・編成・カード・所持ルーン。初期データはログインしたときに付与する。
   api.get("/party", async (c) => {
     const state = await createPartyRepository(c.env.DB).getState(
       c.get("userId"),
-      new Date().toISOString(),
     );
     return c.json(state);
   });
@@ -48,7 +40,7 @@ export function createPartyApi() {
       body.data.characterId,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.delete("/party/slots/:slot", async (c) => {
@@ -57,9 +49,8 @@ export function createPartyApi() {
     const result = await createPartyRepository(c.env.DB).clearSlot(
       c.get("userId"),
       slot.data,
-      new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.put("/party/characters/:characterId/cards/:slot", async (c) => {
@@ -76,7 +67,7 @@ export function createPartyApi() {
       body.data.card,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // キャラの枠のスキル・アイテムを外して空きにする。本文の null は JsonUtility が空文字で送るため、PUT と分ける。
@@ -88,9 +79,8 @@ export function createPartyApi() {
       c.get("userId"),
       characterId.data,
       slot.data,
-      new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.post("/party/characters/:characterId/level-up", async (c) => {
@@ -103,7 +93,7 @@ export function createPartyApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 編成で、固有スキルにセットする段階を選ぶ。取得した段階だけを選べる。
@@ -121,7 +111,7 @@ export function createPartyApi() {
       body.data.stage,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 冒険の戦闘で起きた固有スキルの進化を1段保存する。
@@ -143,7 +133,7 @@ export function createPartyApi() {
         body.data.stage,
         new Date().toISOString(),
       );
-      return respond(c, result, errorStatus);
+      return respond(c, result);
     },
   );
 
@@ -158,7 +148,7 @@ export function createPartyApi() {
       body.data.branch,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 絆のしるしを1つ使って、絆を1段深める（育成の画面の「絆を深める」）。
@@ -172,7 +162,7 @@ export function createPartyApi() {
       body.data.bond,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   return api;

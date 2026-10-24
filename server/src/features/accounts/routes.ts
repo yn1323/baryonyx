@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { invalidRequest, parseJson } from "../../shared/http.js";
 import {
+  forgetSession,
   issueGuestSession,
   issueSession,
   type VerifyIdentity,
@@ -10,9 +11,17 @@ import { createAccountsRepository } from "./repository.js";
 import { googleAuthSchema, guestAuthSchema } from "./schema.js";
 import { requireSession, type SessionEnv } from "./session.js";
 
+// ログインしたユーザーに、ほかの機能が初期データを付与する。app.ts が組み立てるときに渡す。
+export type OnSignIn = (
+  binding: D1Database,
+  userId: string,
+  now: string,
+) => Promise<void>;
+
 // テストでは本人確認だけを差し替える。HTTP設定からの認証バイパスは設けない。
 export function createAccountsApi(
   verifyIdentity: VerifyIdentity = verifyGoogleIdentity,
+  onSignIn: OnSignIn = async () => {},
 ) {
   const api = new Hono<SessionEnv>();
 
@@ -28,18 +37,23 @@ export function createAccountsApi(
       return c.json({ error: "invalid_identity" }, 401);
     }
     const repository = createAccountsRepository(c.env.DB);
-    return c.json(await issueSession(repository, subject));
+    const session = await issueSession(repository, subject);
+    await onSignIn(c.env.DB, session.userId, new Date().toISOString());
+    return c.json(session);
   });
 
   api.post("/auth/guest", async (c) => {
     const parsed = await parseJson(c, guestAuthSchema);
     if (!parsed.success) return invalidRequest(c);
     const repository = createAccountsRepository(c.env.DB);
-    return c.json(await issueGuestSession(repository, parsed.data.secret));
+    const session = await issueGuestSession(repository, parsed.data.secret);
+    await onSignIn(c.env.DB, session.userId, new Date().toISOString());
+    return c.json(session);
   });
 
   api.post("/auth/logout", requireSession, async (c) => {
     await createAccountsRepository(c.env.DB).deleteSession(c.get("tokenHash"));
+    forgetSession(c.get("tokenHash"));
     return c.body(null, 204);
   });
 

@@ -1,7 +1,44 @@
 import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
-import { createDatabase } from "../../shared/db.js";
+import { createDatabase, type Database } from "../../shared/db.js";
 import { healthDays, healthSources } from "./db-schema.js";
 import type { HealthDay } from "./schema.js";
+
+// 今日（今の時刻を含む端末の1日）の歩数を求めるための日ごとの行を読む文。端末を複数使った日は、いちばん多い値にする。
+// 冒険の歩数の扉は、ほかの読み込みと同じ batch に入れて読む。
+export function todayStepsRows(db: Database, userId: string, now: string) {
+  const since = new Date(Date.parse(now) - 2 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  return db
+    .select({
+      startAt: healthDays.startAt,
+      steps: healthDays.steps,
+      lastKnownSteps: healthDays.lastKnownSteps,
+    })
+    .from(healthDays)
+    .innerJoin(healthSources, eq(healthSources.id, healthDays.sourceId))
+    .where(and(eq(healthSources.userId, userId), gte(healthDays.day, since)));
+}
+
+export function todayStepsOf(
+  rows: readonly {
+    startAt: string;
+    steps: number | null;
+    lastKnownSteps: number | null;
+  }[],
+  now: string,
+) {
+  const at = Date.parse(now);
+  return rows
+    .filter((row) => {
+      const start = Date.parse(row.startAt);
+      return start <= at && at < start + 86_400_000;
+    })
+    .reduce(
+      (best, row) => Math.max(best, row.steps ?? row.lastKnownSteps ?? 0),
+      0,
+    );
+}
 
 export function createHealthRepository(binding: D1Database) {
   const db = createDatabase(binding);
@@ -109,29 +146,7 @@ export function createHealthRepository(binding: D1Database) {
     // 今日の記録は startAt から24時間のうちにある（夏時間で25時間になる日の最後の1時間は数えない）。
     // 今日の記録がなければ0歩とする。取得元が複数あれば多いほうを使い、歩数を読めなかった日は最後に読めた歩数を使う。
     async todaySteps(userId: string, now: string) {
-      const at = Date.parse(now);
-      const since = new Date(at - 2 * 86_400_000).toISOString().slice(0, 10);
-      const rows = await db
-        .select({
-          startAt: healthDays.startAt,
-          steps: healthDays.steps,
-          lastKnownSteps: healthDays.lastKnownSteps,
-        })
-        .from(healthDays)
-        .innerJoin(healthSources, eq(healthSources.id, healthDays.sourceId))
-        .where(
-          and(eq(healthSources.userId, userId), gte(healthDays.day, since)),
-        )
-        .all();
-      return rows
-        .filter((row) => {
-          const start = Date.parse(row.startAt);
-          return start <= at && at < start + 86_400_000;
-        })
-        .reduce(
-          (best, row) => Math.max(best, row.steps ?? row.lastKnownSteps ?? 0),
-          0,
-        );
+      return todayStepsOf(await todayStepsRows(db, userId, now), now);
     },
 
     listDays(sourceId: string) {

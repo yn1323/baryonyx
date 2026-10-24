@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   authenticateSession,
   createGoogleVerifier,
+  forgetSession,
   hashToken,
   issueGuestSession,
   issueSession,
@@ -15,8 +16,13 @@ describe("セッションの発行と認証", () => {
       findOrCreateUser: vi.fn(async () => "user"),
       findOrCreateGuest: vi.fn(async (_hash: string) => "guest"),
       createSession: vi.fn(async () => {}),
-      findSessionUser: vi.fn(
-        async (_hash: string): Promise<string | undefined> => "user",
+      findSession: vi.fn(
+        async (
+          _hash: string,
+        ): Promise<{ userId: string; expiresAt: number } | undefined> => ({
+          userId: "user",
+          expiresAt: Date.now() + 3_600_000,
+        }),
       ),
     };
   }
@@ -37,7 +43,7 @@ describe("セッションの発行と認証", () => {
       userId: "user",
       tokenHash,
     });
-    expect(db.findSessionUser).toHaveBeenCalledWith(tokenHash);
+    expect(db.findSession).toHaveBeenCalledWith(tokenHash);
   });
 
   it("ゲストの秘密値はハッシュで照合し、そのユーザーのセッションを発行する", async () => {
@@ -64,11 +70,44 @@ describe("セッションの発行と認証", () => {
     ]) {
       expect(await authenticateSession(db, header)).toBeUndefined();
     }
-    expect(db.findSessionUser).not.toHaveBeenCalled();
-    db.findSessionUser.mockResolvedValue(undefined);
+    expect(db.findSession).not.toHaveBeenCalled();
+    db.findSession.mockResolvedValue(undefined);
     expect(
       await authenticateSession(db, `Bearer ${"a".repeat(64)}`),
     ).toBeUndefined();
+  });
+
+  it("確かめたセッションを短いあいだ覚え、有効期限とログアウトのあとはDBへ問い合わせ直す", async () => {
+    const db = repository();
+    const now = Date.now();
+    const token = `Bearer ${"b".repeat(64)}`;
+    const tokenHash = await hashToken("b".repeat(64));
+    // 有効期限が覚える長さより先なら、覚える長さのあいだはDBへ問い合わせない。
+    expect(await authenticateSession(db, token, now)).toEqual({
+      userId: "user",
+      tokenHash,
+    });
+    expect(await authenticateSession(db, token, now + 59_000)).toEqual({
+      userId: "user",
+      tokenHash,
+    });
+    expect(db.findSession).toHaveBeenCalledTimes(1);
+    expect(await authenticateSession(db, token, now + 60_000)).toBeDefined();
+    expect(db.findSession).toHaveBeenCalledTimes(2);
+    forgetSession(tokenHash);
+    db.findSession.mockResolvedValue(undefined);
+    expect(await authenticateSession(db, token, now + 61_000)).toBeUndefined();
+
+    // 有効期限が覚える長さより前なら、有効期限までしか覚えない。
+    const soon = `Bearer ${"c".repeat(64)}`;
+    db.findSession.mockResolvedValue({
+      userId: "user",
+      expiresAt: now + 10_000,
+    });
+    await authenticateSession(db, soon, now);
+    db.findSession.mockResolvedValue(undefined);
+    expect(await authenticateSession(db, soon, now + 9_000)).toBeDefined();
+    expect(await authenticateSession(db, soon, now + 10_000)).toBeUndefined();
   });
 });
 

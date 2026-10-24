@@ -190,6 +190,27 @@
       "when": 1792833574724,
       "tag": "0026_skill_awakening",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1792854007484,
+      "tag": "0027_accessory_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1792854539483,
+      "tag": "0028_chest_awakening",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1792858843545,
+      "tag": "0029_world_map_chests",
+      "breakpoints": true
     }
   ]
 }

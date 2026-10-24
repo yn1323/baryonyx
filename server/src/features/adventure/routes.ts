@@ -12,13 +12,6 @@ import {
   startSchema,
 } from "./schema.js";
 
-// 冒険がない・行き先が分からないときは404、今の冒険の状態と合わない要求は409で返す。
-function errorStatus(error: string) {
-  return error === "no_adventure" || error === "unknown_destination"
-    ? 404
-    : 409;
-}
-
 export function createAdventureApi() {
   const api = new Hono<SessionEnv>();
   // Honoでは `/adventure/*` が `/adventure` にも一致する。両方に付けると、セッションを2回確かめる。
@@ -40,7 +33,7 @@ export function createAdventureApi() {
       body.data.destinationId,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.post("/adventure/move", async (c) => {
@@ -51,7 +44,7 @@ export function createAdventureApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.post("/adventure/clear", async (c) => {
@@ -68,7 +61,7 @@ export function createAdventureApi() {
         evolved: body.data.evolved,
       },
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 今いる怪しい宝箱を開ける。ミミックなら戦闘のマスになり、本物ならその場でマスを終えて物を落とす。
@@ -80,7 +73,7 @@ export function createAdventureApi() {
       body.data.roomId,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 今いる行商人のマスで、品物を1つルーンで買う。
@@ -92,7 +85,7 @@ export function createAdventureApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.post("/adventure/revive", async (c) => {
@@ -103,7 +96,7 @@ export function createAdventureApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.post("/adventure/end", async (c) => {
@@ -115,7 +108,7 @@ export function createAdventureApi() {
       new Date().toISOString(),
       body.data.enemies,
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   return api;

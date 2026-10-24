@@ -7,29 +7,34 @@ export function createAccountsRepository(binding: D1Database) {
 
   return {
     async findOrCreateUser(googleSub: string) {
-      await db
-        .insert(appUsers)
-        .values({ id: crypto.randomUUID(), googleSub })
-        .onConflictDoNothing({ target: appUsers.googleSub });
-      const user = await db
-        .select({ id: appUsers.id })
-        .from(appUsers)
-        .where(eq(appUsers.googleSub, googleSub))
-        .get();
+      // 作成と読み込みを1回の往復で行う。作成済みなら作らずに読む。
+      const [, users] = await db.batch([
+        db
+          .insert(appUsers)
+          .values({ id: crypto.randomUUID(), googleSub })
+          .onConflictDoNothing({ target: appUsers.googleSub }),
+        db
+          .select({ id: appUsers.id })
+          .from(appUsers)
+          .where(eq(appUsers.googleSub, googleSub)),
+      ]);
+      const user = users[0];
       if (!user) throw new Error("User was not found after insert");
       return user.id;
     },
 
     async findOrCreateGuest(guestSecretHash: string) {
-      await db
-        .insert(appUsers)
-        .values({ id: crypto.randomUUID(), guestSecretHash })
-        .onConflictDoNothing({ target: appUsers.guestSecretHash });
-      const user = await db
-        .select({ id: appUsers.id })
-        .from(appUsers)
-        .where(eq(appUsers.guestSecretHash, guestSecretHash))
-        .get();
+      const [, users] = await db.batch([
+        db
+          .insert(appUsers)
+          .values({ id: crypto.randomUUID(), guestSecretHash })
+          .onConflictDoNothing({ target: appUsers.guestSecretHash }),
+        db
+          .select({ id: appUsers.id })
+          .from(appUsers)
+          .where(eq(appUsers.guestSecretHash, guestSecretHash)),
+      ]);
+      const user = users[0];
       if (!user) throw new Error("Guest was not found after insert");
       return user.id;
     },
@@ -41,9 +46,12 @@ export function createAccountsRepository(binding: D1Database) {
       ]);
     },
 
-    async findSessionUser(tokenHash: string) {
-      const session = await db
-        .select({ userId: appSessions.userId })
+    async findSession(tokenHash: string) {
+      return db
+        .select({
+          userId: appSessions.userId,
+          expiresAt: appSessions.expiresAt,
+        })
         .from(appSessions)
         .where(
           and(
@@ -52,7 +60,6 @@ export function createAccountsRepository(binding: D1Database) {
           ),
         )
         .get();
-      return session?.userId;
     },
 
     async deleteSession(tokenHash: string) {

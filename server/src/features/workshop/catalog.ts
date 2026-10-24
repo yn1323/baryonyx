@@ -1,5 +1,6 @@
 import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
-import { DROP_POOLS, type Stars } from "../adventure/drops.js";
+import { DROP_POOLS } from "../adventure/drops.js";
+import type { Stars } from "../inventory/catalog.js";
 
 // 商会の「買う」（doc/features/screens.md の商会）。これまでに手に入れた（ライブラリに見つけた記録がある）
 // スキル・武器・防具・アクセサリーを、品質の最低（倍率×1.00）で、ルーンと引き換えに何度でも売る。

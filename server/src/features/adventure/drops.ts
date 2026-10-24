@@ -3,6 +3,7 @@ import {
   type Quality,
   rollMultiplierPercent,
 } from "../../shared/quality.js";
+import { pickWeighted, type Random } from "../../shared/random.js";
 import {
   AWAKENING_SHARD_ID,
   POLISH_DROP_CHANCE,
@@ -11,15 +12,10 @@ import {
   type PolishDepth,
   SHARD_DROP_CHANCE,
 } from "../enhancement/catalog.js";
-import {
-  type EquipmentId,
-  maxMultiplierPercent as equipmentMaxPercent,
-} from "../equipment/catalog.js";
+import type { EquipmentId } from "../equipment/catalog.js";
+import { maxPercentOf, type Stars } from "../inventory/catalog.js";
 import type { ItemId } from "../items/catalog.js";
-import {
-  type CardSkillId,
-  maxMultiplierPercent as skillMaxPercent,
-} from "../party/catalog.js";
+import type { CardSkillId } from "../party/catalog.js";
 import { DESTINATIONS, type EventKind, type StepDoorTier } from "./catalog.js";
 
 // 報酬の重みの行（doc/features/drops.md の仮設定）。ほかのマスは、どれかの行を借りる。
@@ -94,8 +90,6 @@ export const DROP_CATEGORIES = [
 
 export type DropCategory = (typeof DROP_CATEGORIES)[number];
 
-export type Stars = 1 | 2 | 3 | 4 | 5;
-
 // 一覧の1つの物。stars はレア度（☆）で、クライアントの定義と同じ値にする。
 // bossOnly の物は、最奥の間でだけ落ちる。
 export type DropEntry =
@@ -164,8 +158,9 @@ const weapon = entryOf("weapon");
 const armor = entryOf("armor");
 const skill = entryOf("skill");
 
-// 行き先ごとの一覧（仮）。スキル50枚を強さで8つの行き先へ分け、武器・防具は今ある14種を浅い行き先へ置いた。
-// アイテムとアクセサリーは、まずミストラ遺跡と港町ポルトリアの分だけを作った。
+// 行き先ごとの一覧（仮）。スキル50枚を強さで8つの行き先へ分けた。アイテム・アクセサリー・武器・防具は
+// 行き先ごとに作り、奥の行き先ほど基本の効果量を大きくした。主の物（bossOnly）は各行き先のアイテムと
+// アクセサリーに1つずつ置く。
 export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
   "forest-ruins": [
     item("herb", 1),
@@ -218,8 +213,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("ManaPrayer", 4),
   ],
   "glaciera-cave": [
+    item("icicle-shard", 1),
+    item("cavern-water", 1),
+    item("glowworm-lamp", 2),
+    item("frost-crystal", 3),
+    item("troll-stoneskin", 4, true),
+    accessory("penguin-feather", 1),
+    accessory("crystal-ring", 3),
+    accessory("troll-heartstone", 5, true),
     weapon("thunder-spear", 3),
     weapon("frost-wand", 3),
+    armor("miner-helm", 2),
+    armor("crystal-shield", 4),
     skill("Icicles", 1),
     skill("LightningBolt", 1),
     skill("Purify", 1),
@@ -229,6 +234,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("IceMirror", 4),
   ],
   "hush-mire": [
+    item("mud-ball", 1),
+    item("lotus-root", 1),
+    item("wisp-wick", 2),
+    item("bog-venom", 3),
+    item("croc-tear", 4, true),
+    accessory("leech-bell", 2),
+    accessory("frog-crown", 3),
+    accessory("croc-fang", 5, true),
+    weapon("reed-bow", 2),
+    weapon("wisp-staff", 3),
+    armor("mudcloth-robe", 2),
+    armor("clay-armor", 3),
     skill("Regen", 1),
     skill("InsightArrow", 2),
     skill("FlamePillar", 2),
@@ -237,6 +254,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("QuickCast", 5),
   ],
   "almaja-tomb": [
+    item("cactus-fruit", 1),
+    item("scorpion-stinger", 1),
+    item("hourglass-sand", 2),
+    item("grimoire-page", 3),
+    item("brass-spring", 5, true),
+    accessory("scarab-amulet", 1),
+    accessory("gargoyle-eye", 3),
+    accessory("golden-mask", 5, true),
+    weapon("scorpion-bow", 2),
+    weapon("tomb-khopesh", 3),
+    armor("burial-wraps", 2),
+    armor("ancient-plate", 4),
     skill("ArrowRain", 1),
     skill("EarthSplitter", 2),
     skill("BlastSigil", 2),
@@ -245,6 +274,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("Revelation", 5),
   ],
   "moonshade-graveyard": [
+    item("grave-candle", 1),
+    item("moonflower-honey", 1),
+    item("raven-feather", 2),
+    item("holy-water", 3),
+    item("soul-phial", 5, true),
+    accessory("bone-ring", 2),
+    accessory("moonstone-pendant", 3),
+    accessory("lich-signet", 5, true),
+    weapon("bone-axe", 2),
+    weapon("moonshade-staff", 4),
+    armor("hollow-helm", 2),
+    armor("grave-cloak", 3),
     skill("ChainLightning", 1),
     skill("FireStorm", 2),
     skill("Blizzard", 2),
@@ -253,6 +294,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("DivineShield", 4),
   ],
   "volgan-volcano": [
+    item("lava-rock", 1),
+    item("lizard-tail", 1),
+    item("sulfur-powder", 2),
+    item("flametail-plume", 3),
+    item("obsidian-core", 5, true),
+    accessory("ember-charm", 1),
+    accessory("magma-ring", 3),
+    accessory("obsidian-crown", 5, true),
+    weapon("firebird-bow", 2),
+    weapon("magma-hammer", 3),
+    armor("lizardscale-mail", 2),
+    armor("obsidian-shield", 4),
     skill("FlameEnchant", 1),
     skill("Thundercloud", 2),
     skill("WarCry", 2),
@@ -261,6 +314,18 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("Meteor", 5),
   ],
   "neve-peaks": [
+    item("hard-snowball", 1),
+    item("snowdrop", 1),
+    item("boar-jerky", 2),
+    item("crystal-horn", 3),
+    item("mistdragon-scale", 5, true),
+    accessory("snowflake-brooch", 2),
+    accessory("foxtail-charm", 3),
+    accessory("mistdragon-eye", 5, true),
+    weapon("hailstone-staff", 3),
+    weapon("glacier-greatsword", 4),
+    armor("snow-cloak", 2),
+    armor("mammoth-fur", 3),
     skill("Gale", 2),
     skill("BladeDance", 3),
     skill("ThunderSpear", 3),
@@ -268,37 +333,6 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
     skill("AbsoluteZero", 5),
   ],
 };
-
-// 物の倍率の上限（百分率）。アイテムと強化素材は倍率を持たない。抽選と、応答の品質を求めるのに使う。
-export function maxPercentOf(
-  category: DropCategory | "material",
-  id: string,
-): number | null {
-  switch (category) {
-    case "item":
-    case "material":
-      return null;
-    case "skill":
-      return skillMaxPercent(id as CardSkillId);
-    default:
-      return equipmentMaxPercent(id as EquipmentId);
-  }
-}
-
-export function pickWeighted<T>(
-  choices: readonly T[],
-  weightOf: (choice: T) => number,
-  random: () => number,
-): T {
-  const total = choices.reduce((sum, choice) => sum + weightOf(choice), 0);
-  let roll = random() * total;
-  for (const choice of choices) {
-    const weight = weightOf(choice);
-    if (roll < weight) return choice;
-    roll -= weight;
-  }
-  return choices[choices.length - 1];
-}
 
 export const starWeight = (kind: RewardRow, entry: DropEntry) =>
   STAR_WEIGHTS[kind][entry.stars - 1];
@@ -330,7 +364,7 @@ export function polishDepthOf(destinationId: string): PolishDepth {
 export function rollMaterials(
   destinationId: string,
   kind: RewardRow,
-  random: () => number,
+  random: Random,
 ): Drop[] {
   const drops: Drop[] = [];
   if (random() * 1000 < POLISH_DROP_CHANCE[kind]) {
@@ -355,7 +389,7 @@ export function rollMaterials(
 export function rollDrops(
   destinationId: string,
   roomKind: EventKind,
-  random: () => number,
+  random: Random,
   outcome: RoomOutcome = {},
 ): Drop[] {
   const reward = rewardOf(roomKind, outcome);
@@ -404,7 +438,7 @@ export function rollDrops(
 export function rollRoomDrops(
   destinationId: string,
   roomKind: EventKind,
-  random: () => number,
+  random: Random,
   outcome: RoomOutcome = {},
 ): Drop[] {
   const reward = rewardOf(roomKind, outcome);

@@ -73,6 +73,10 @@ export const CARD_SKILL_IDS = [
 
 export type CardSkillId = (typeof CARD_SKILL_IDS)[number];
 
+// 持っているスキルの1枚が覚醒できる種類か（doc/features/skill-awakening.md）。覚醒版はカスタムスキルにだけある。
+export const isAwakenableSkill = (skillId: string) =>
+  CARD_SKILL_IDS.includes(skillId as CardSkillId);
+
 // スキルの種類ごとの倍率の上限（百分率。doc/features/inventory.md の上限の決め方）。
 // クライアントの定義（CardSkills の MaxMultiplier）と同じ値にする。
 const CARD_SKILL_MAX_PERCENT: Record<CardSkillId, number> = {
@@ -145,6 +149,13 @@ export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [1, 10, 30];
 // 固有スキルの進化の段階。どの固有スキルも同じ形のツリーで、0が最初の段階、
 // 1・2が枝1、3・4が枝2、5・6が枝3の1段目と2段目になる。
 export const UNIQUE_STAGE_COUNT = 7;
+
+// 取得した段階のビット（段階 n が 1 << n）と段階の一覧の変換。最初の段階（0）は常に取得している。
+export const bitOf = (stage: number) => 1 << stage;
+export const stagesOf = (mask: number) =>
+  Array.from({ length: UNIQUE_STAGE_COUNT }, (_, stage) => stage).filter(
+    (stage) => stage === 0 || (mask & bitOf(stage)) !== 0,
+  );
 
 // 固有スキル3つの倍率の上限（百分率）を、キャラの職ごとに並べたもの（doc/features/inventory.md の上限の決め方）。
 // クライアントの UniqueSkillTrees の limit と同じ値。覚醒しても同じ上限を使う。

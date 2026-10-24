@@ -63,7 +63,9 @@ export const workshopCrafts = sqliteTable(
     multiplierPercent: integer("multiplier_percent"),
     runes: integer("runes").notNull(),
     balanceAfter: integer("balance_after").notNull(),
-    materials: text("materials").notNull(),
+    materials: text("materials", { mode: "json" })
+      .$type<string[] | { id: string; count: number }[]>()
+      .notNull(),
     createdAt: text("created_at").notNull(),
   },
   (table) => [
@@ -100,7 +102,13 @@ export const workshopSales = sqliteTable(
     requestId: text("request_id").notNull(),
     runes: integer("runes").notNull(),
     balanceAfter: integer("balance_after").notNull(),
-    goods: text("goods").notNull(),
+    goods: text("goods", { mode: "json" })
+      .$type<{
+        cardIds: string[];
+        equipmentIds: string[];
+        items: { id: string; count: number }[];
+      }>()
+      .notNull(),
     createdAt: text("created_at").notNull(),
   },
   (table) => [

@@ -121,8 +121,12 @@ describe("WorkersとD1の結合", () => {
           .get(),
       ).toBeUndefined();
 
-      await repository.createSession("valid", userId, Date.now() + 60_000);
-      expect(await repository.findSessionUser("valid")).toBe(userId);
+      const expiresAt = Date.now() + 60_000;
+      await repository.createSession("valid", userId, expiresAt);
+      expect(await repository.findSession("valid")).toEqual({
+        userId,
+        expiresAt,
+      });
       expect(
         await db
           .select()
@@ -131,7 +135,7 @@ describe("WorkersとD1の結合", () => {
           .get(),
       ).toBeUndefined();
       await repository.deleteSession("valid");
-      expect(await repository.findSessionUser("valid")).toBeUndefined();
+      expect(await repository.findSession("valid")).toBeUndefined();
     } finally {
       await db.delete(appSessions).where(eq(appSessions.userId, userId));
       await db.delete(appUsers).where(eq(appUsers.id, userId));

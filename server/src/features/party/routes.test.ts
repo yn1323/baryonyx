@@ -762,7 +762,7 @@ describe("パーティAPI", () => {
     await read(user.token);
     const outside = await evolve(user.token, "toma", 0, 1);
     expect(outside.status).toBe(409);
-    expect(await outside.json()).toEqual({ error: "no_adventure" });
+    expect(await outside.json()).toEqual({ error: "not_in_adventure" });
 
     // 途中でやめた（撤退した）冒険の戦闘の進化は残さない。
     await startAdventure(user.token);
@@ -775,7 +775,7 @@ describe("パーティAPI", () => {
     expect(retreat.status).toBe(200);
     const retreated = await evolve(user.token, "toma", 0, 1);
     expect(retreated.status).toBe(409);
-    expect(await retreated.json()).toEqual({ error: "no_adventure" });
+    expect(await retreated.json()).toEqual({ error: "not_in_adventure" });
 
     // 敗北で終えた直後は、そのマスの戦闘の進化を受け付ける。
     await startAdventure(user.token);
@@ -804,7 +804,7 @@ describe("パーティAPI", () => {
       .run();
     const late = await evolve(user.token, "toma", 0, 2);
     expect(late.status).toBe(409);
-    expect(await late.json()).toEqual({ error: "no_adventure" });
+    expect(await late.json()).toEqual({ error: "not_in_adventure" });
     expect(uniqueOf(await read(user.token), "toma", 0)?.set).toBe(1);
   });
 
@@ -874,7 +874,7 @@ describe("パーティAPI", () => {
     const [first, second, third] = (await read(user.token)).skillCards;
     const outside = await awakenCard(user.token, first.id, 1);
     expect(outside.status).toBe(409);
-    expect(await outside.json()).toEqual({ error: "no_adventure" });
+    expect(await outside.json()).toEqual({ error: "not_in_adventure" });
 
     // 途中でやめた（撤退した）冒険の戦闘の覚醒は残さない。
     await startAdventure(user.token);
@@ -888,7 +888,7 @@ describe("パーティAPI", () => {
     expect(retreat.status).toBe(200);
     const retreated = await awakenCard(user.token, second.id, 1);
     expect(retreated.status).toBe(409);
-    expect(await retreated.json()).toEqual({ error: "no_adventure" });
+    expect(await retreated.json()).toEqual({ error: "not_in_adventure" });
     // 保存済みの覚醒の再送は、冒険の外でも成功として返す。
     const resent = await awakenCard(user.token, first.id, 1);
     expect(resent.status).toBe(200);
@@ -919,7 +919,7 @@ describe("パーティAPI", () => {
       .run();
     const late = await awakenCard(user.token, third.id, 1);
     expect(late.status).toBe(409);
-    expect(await late.json()).toEqual({ error: "no_adventure" });
+    expect(await late.json()).toEqual({ error: "not_in_adventure" });
 
     const after = await read(user.token);
     expect(

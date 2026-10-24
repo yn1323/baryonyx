@@ -15,7 +15,12 @@ type State = {
     multiplier: number;
     quality: string;
   }[];
-  characters: { id: string; weapon: string | null; armor: string | null }[];
+  characters: {
+    id: string;
+    weapon: string | null;
+    armor: string | null;
+    accessories: (string | null)[];
+  }[];
 };
 
 const missingItem = "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb";
@@ -104,6 +109,7 @@ describe("装備API", () => {
       id: "anselm",
       weapon: null,
       armor: null,
+      accessories: [null, null, null],
     });
     expect(second).toEqual(first);
     expect(await read(user.token)).toEqual(first);
@@ -197,6 +203,82 @@ describe("装備API", () => {
     ]);
 
     expect(await read(user.token)).toEqual(state);
+  });
+
+  // 持っているアクセサリーを直接足す。アクセサリーはドロップなどで手に入れるため、最初は持っていない。
+  const addAccessory = async (userId: string, equipmentId: string) => {
+    const id = crypto.randomUUID();
+    await scenario.env.DB.prepare(
+      "INSERT INTO equipment_items (id, user_id, equipment_id, multiplier_percent, acquired_at) VALUES (?, ?, ?, 100, ?)",
+    )
+      .bind(id, userId, equipmentId, new Date().toISOString())
+      .run();
+    return id;
+  };
+
+  it("アクセサリーを3つの枠に付け、開いていない枠と武器の枠には付けない", async () => {
+    const user = await scenario.login("equipment-accessory");
+    await read(user.token);
+    const charm = await addAccessory(user.userId, "moss-charm");
+    const pearl = await addAccessory(user.userId, "kraken-pearl");
+
+    const first = await put(user.token, "toma", "accessory1", charm);
+    expect(first.status).toBe(200);
+    const equipped = (await first.json()) as State;
+    expect(equipped.change).toBe("equip");
+    expect(character(equipped, "toma")?.accessories).toEqual([
+      charm,
+      null,
+      null,
+    ]);
+
+    // トーマはLv12のため、Lv20で開く2つ目の枠には付けられない。
+    const locked = await put(user.token, "toma", "accessory2", pearl);
+    expect(locked.status).toBe(409);
+    expect(await locked.json()).toEqual({ error: "slot_locked" });
+
+    // 武器の枠にアクセサリーは付けられず、アクセサリーの枠に武器も付けられない。
+    const weapon = await put(user.token, "toma", "weapon", pearl);
+    expect(weapon.status).toBe(409);
+    expect(await weapon.json()).toEqual({ error: "slot_mismatch" });
+    const sword = itemOf(equipped, "iron-sword");
+    expect((await put(user.token, "toma", "accessory1", sword)).status).toBe(
+      409,
+    );
+
+    // Lv40になると3つとも開き、同じアクセサリーをほかの枠へ付け替えられる。
+    await scenario.env.DB.prepare(
+      "UPDATE party_characters SET level = 40 WHERE user_id = ? AND character_id = 'toma'",
+    )
+      .bind(user.userId)
+      .run();
+    const moved = (await (
+      await put(user.token, "toma", "accessory3", charm)
+    ).json()) as State;
+    expect(moved.change).toBe("move");
+    expect(character(moved, "toma")?.accessories).toEqual([null, null, charm]);
+    const both = (await (
+      await put(user.token, "toma", "accessory2", pearl)
+    ).json()) as State;
+    expect(character(both, "toma")?.accessories).toEqual([null, pearl, charm]);
+
+    // ほかのキャラに付けると、トーマから外れる。
+    const taken = (await (
+      await put(user.token, "luka", "accessory1", pearl)
+    ).json()) as State;
+    expect(taken.from).toBe("toma");
+    expect(character(taken, "toma")?.accessories).toEqual([null, null, charm]);
+    expect(character(taken, "luka")?.accessories).toEqual([pearl, null, null]);
+
+    const removed = await remove(user.token, "toma", "accessory3");
+    expect(
+      character((await removed.json()) as State, "toma")?.accessories,
+    ).toEqual([null, null, null]);
+    expect(character(await read(user.token), "luka")?.accessories).toEqual([
+      pearl,
+      null,
+      null,
+    ]);
   });
 
   it("ほかのユーザーの装備は付けられず、ユーザーごとに分かれる", async () => {

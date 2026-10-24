@@ -11,7 +11,6 @@ export function createLibraryApi() {
   api.get("/library", async (c) => {
     const state = await createLibraryRepository(c.env.DB).getState(
       c.get("userId"),
-      new Date().toISOString(),
     );
     return c.json(state);
   });

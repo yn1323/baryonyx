@@ -1,3 +1,5 @@
+import { pickWeighted, type Random } from "../../shared/random.js";
+
 // 冒険先と、入口から最奥の間までに通るマスの数（doc/features/stage-progression.md）。
 // マスで落ちる物は drops.ts（doc/features/drops.md）が決める。
 // 行き先ごとの名前・背景・敵の組み合わせ・敵のLvはクライアント（AdventureCatalog.cs）が持つ。
@@ -30,18 +32,21 @@ export type Destination = {
   id: string;
   // 入口（第1層）と最奥の間のあいだに通るマスの数。1階ごとに1マスを通る。
   roomCount: number;
+  // ダンジョンがある街（街道の世界地図の街のマスのID）。街のマスをクリアすると解放される
+  // （doc/features/stage-progression.md の街とダンジョン）。
+  town: string;
 };
 
 // 敵が強い順に奥の行き先とし、マスの数を増やす（2026-10-20）。
 export const DESTINATIONS: readonly Destination[] = [
-  { id: "forest-ruins", roomCount: 8 },
-  { id: "port-portoria", roomCount: 9 },
-  { id: "glaciera-cave", roomCount: 9 },
-  { id: "hush-mire", roomCount: 10 },
-  { id: "almaja-tomb", roomCount: 10 },
-  { id: "moonshade-graveyard", roomCount: 11 },
-  { id: "volgan-volcano", roomCount: 11 },
-  { id: "neve-peaks", roomCount: 12 },
+  { id: "forest-ruins", roomCount: 8, town: "porta" },
+  { id: "port-portoria", roomCount: 9, town: "portoria" },
+  { id: "glaciera-cave", roomCount: 9, town: "fredda" },
+  { id: "hush-mire", roomCount: 10, town: "palude" },
+  { id: "almaja-tomb", roomCount: 10, town: "duna" },
+  { id: "moonshade-graveyard", roomCount: 11, town: "campanella" },
+  { id: "volgan-volcano", roomCount: 11, town: "forgia" },
+  { id: "neve-peaks", roomCount: 12, town: "cima" },
 ];
 
 export const DESTINATION_IDS = DESTINATIONS.map(
@@ -60,7 +65,7 @@ export function bossFloor(destination: Destination) {
 }
 
 // 道を作る乱数の種（1以上2^31未満）。
-export function newSeed(random: () => number) {
+export function newSeed(random: Random) {
   return 1 + Math.floor(random() * 0x7ffffffe);
 }
 
@@ -127,18 +132,20 @@ export const MYSTERY_KINDS = [
 
 export type MysteryKind = (typeof MYSTERY_KINDS)[number]["kind"];
 
-export function pickMysteryKind(random: () => number): MysteryKind {
-  const total = MYSTERY_KINDS.reduce((sum, entry) => sum + entry.weight, 0);
-  let roll = random() * total;
-  for (const entry of MYSTERY_KINDS) {
-    if (roll < entry.weight) return entry.kind;
-    roll -= entry.weight;
-  }
-  return MYSTERY_KINDS[0].kind;
+export function pickMysteryKind(random: Random): MysteryKind {
+  return pickWeighted(MYSTERY_KINDS, (entry) => entry.weight, random).kind;
 }
 
 // 怪しい宝箱がミミックである確率（doc/features/stage-progression.md のマスの中身）。開けたときにサーバーが決める。
 export const MIMIC_CHANCE = 0.5;
+
+// 宝箱から固有スキルの覚醒が出る確率（仮。doc/features/skill-evolution.md の覚醒が起きる場面）。
+// 宝箱のマスに入ったときにサーバーが決める。覚醒はドロップに加えて出る。
+export const CHEST_AWAKENING_CHANCE = 0.3;
+
+export function rollChestAwakening(random: Random): boolean {
+  return random() < CHEST_AWAKENING_CHANCE;
+}
 
 // 試練の条件。試練のマスに入ったときにサーバーが1つ選ぶ。満たしたかはクライアントが判定して clear で送る。
 // 6ターン以内に勝つ・誰も倒れずに勝つ・HPを全員半分以上残して勝つ。
@@ -150,7 +157,7 @@ export const TRIAL_CONDITIONS = [
 
 export type TrialCondition = (typeof TRIAL_CONDITIONS)[number];
 
-export function pickTrialCondition(random: () => number): TrialCondition {
+export function pickTrialCondition(random: Random): TrialCondition {
   return TRIAL_CONDITIONS[
     Math.min(
       TRIAL_CONDITIONS.length - 1,

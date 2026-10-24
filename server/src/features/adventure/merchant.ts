@@ -4,15 +4,14 @@ import {
   qualityOf,
   rollMultiplierPercent,
 } from "../../shared/quality.js";
+import { pickWeighted } from "../../shared/random.js";
+import { maxPercentOf, type Stars } from "../inventory/catalog.js";
 import {
   CATEGORY_WEIGHTS,
   type DropEntry,
   eligibleEntries,
-  maxPercentOf,
-  pickWeighted,
   QUALITY_WEIGHTS,
   type RewardRow,
-  type Stars,
   starWeight,
 } from "./drops.js";
 

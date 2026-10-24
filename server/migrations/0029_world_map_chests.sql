@@ -1,0 +1,1 @@
+ALTER TABLE `world_map_squares` ADD `grant_id` text;

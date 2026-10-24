@@ -433,7 +433,7 @@ function playerStatements(player: SeedPlayer, now: string) {
     ...insert("rune_wallets", [
       { user_id: userId, balance: player.runes, updated_at: now },
     ]),
-    // 初期データの付与（ensureStarter）を済ませた扱いにして、seedの内容だけを残す。
+    // 初期データの付与（ログインしたときの grantStarters）を済ませた扱いにして、seedの内容だけを残す。
     ...insert("party_profiles", [
       { user_id: userId, grant_id: grantId, created_at: now },
     ]),

@@ -113,8 +113,6 @@ describe("強化API", () => {
       .materials;
   const countOf = async (token: string, id: string) =>
     (await materialsOf(token)).find((entry) => entry.id === id)?.count;
-  const runesOf = async (token: string) =>
-    (await scenario.read<Party>("/party", token)).runes;
   const uniqueOf = async (token: string, characterId: string, index: number) =>
     (await scenario.read<Party>("/party", token)).characters.find(
       (character) => character.id === characterId,
@@ -249,7 +247,7 @@ describe("強化API", () => {
     // 同じ要求の再送は、記録した結果を返し、もう一度は使わない。
     const replay = await polish(user.token, body);
     expect(replay.enhancement).toEqual(first.enhancement);
-    expect(await runesOf(user.token)).toBe(800);
+    expect(await scenario.runesOf(user.token)).toBe(800);
     expect(await countOf(user.token, "polish-white")).toBe(1);
 
     // 同じ要求IDで別の内容は拒む。
@@ -540,7 +538,9 @@ describe("強化API", () => {
     expect(
       first.materials?.find((entry) => entry.id === "awakening-shard")?.count,
     ).toBe(0);
-    expect(await runesOf(user.token)).toBe(1500 - SKILL_AWAKENING_RUNES);
+    expect(await scenario.runesOf(user.token)).toBe(
+      1500 - SKILL_AWAKENING_RUNES,
+    );
     expect((await cardOf(target.id))?.awakenedBranch).toBe(1);
 
     // 再送は、記録した結果を返し、もう一度は使わない。中身の違う再送は受け付けない。
@@ -558,7 +558,9 @@ describe("強化API", () => {
         )
       ).error,
     ).toBe("request_conflict");
-    expect(await runesOf(user.token)).toBe(1500 - SKILL_AWAKENING_RUNES);
+    expect(await scenario.runesOf(user.token)).toBe(
+      1500 - SKILL_AWAKENING_RUNES,
+    );
 
     // 覚醒した1枚は、同じ枝へも別の枝へも覚醒しない。欠片もルーンも使わない。
     await give(user.userId, { "awakening-shard": 1 });
@@ -574,7 +576,7 @@ describe("強化API", () => {
       ).toBe("already_awakened");
     }
     expect(await countOf(user.token, "awakening-shard")).toBe(1);
-    expect(await runesOf(user.token)).toBe(1500);
+    expect(await scenario.runesOf(user.token)).toBe(1500);
 
     // 欠片がなければ覚醒できず、何も変えない。
     await give(user.userId, { "awakening-shard": 0 });
@@ -587,7 +589,7 @@ describe("強化API", () => {
       ).error,
     ).toBe("insufficient_materials");
     expect((await cardOf(other.id))?.awakenedBranch).toBeNull();
-    expect(await runesOf(user.token)).toBe(1500);
+    expect(await scenario.runesOf(user.token)).toBe(1500);
 
     // 不正な枝は400で拒否する。
     expect(

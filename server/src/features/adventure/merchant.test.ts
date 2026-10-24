@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { qualityOf } from "../../shared/quality.js";
+import { maxPercentOf } from "../inventory/catalog.js";
 import { DESTINATION_IDS } from "./catalog.js";
-import { eligibleEntries, maxPercentOf } from "./drops.js";
+import { eligibleEntries } from "./drops.js";
 import { merchantPrice, rollMerchantGoods } from "./merchant.js";
 
 // 同じ種から同じ並びを返す乱数（線形合同法）。
@@ -59,21 +60,19 @@ describe("行商人の品ぞろえ", () => {
     }
   });
 
-  it("分類に物が足りなければ、ほかの分類で5つまで埋める", () => {
+  // 2026-10-25に8か所すべてに装備をそろえたため、どの行き先もスキル3つと装備2つになる。
+  // 分類に物が足りないときにほかの分類で埋める決まりは、一覧を足すまでの行き先のために残している。
+  it("どの行き先でも、スキル3つと装備2つの5つをそろえる", () => {
     const random = seeded(17);
-    const categoriesOf = (destination: string) =>
-      rollMerchantGoods(destination, random).map((entry) => entry.category);
-    // グラシエラ氷窟の装備は武器2つだけ、しじまの沼より奥は装備がない。
-    expect(categoriesOf("glaciera-cave")).toEqual([
-      "skill",
-      "skill",
-      "skill",
-      "weapon",
-      "weapon",
-    ]);
-    expect(categoriesOf("hush-mire")).toEqual(Array(5).fill("skill"));
     for (const destination of DESTINATION_IDS) {
-      expect(rollMerchantGoods(destination, random)).toHaveLength(5);
+      const categories = rollMerchantGoods(destination, random).map(
+        (entry) => entry.category,
+      );
+      expect(categories).toHaveLength(5);
+      expect(categories.slice(0, 3)).toEqual(["skill", "skill", "skill"]);
+      for (const category of categories.slice(3)) {
+        expect(["weapon", "armor", "accessory"]).toContain(category);
+      }
     }
   });
 

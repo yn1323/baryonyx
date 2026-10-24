@@ -1,0 +1,1 @@
+ALTER TABLE `adventure_runs` ADD `awakening` integer;

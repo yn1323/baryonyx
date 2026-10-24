@@ -2,7 +2,7 @@
 id: rule-backend-design
 type: reference
 status: 運用中
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # バックエンドの開発環境
@@ -52,7 +52,10 @@ server/
 
 - `index.ts` はWorkerの入口、`app.ts` は共通middlewareと機能ルートの組み立てを担当する。機能ごとのHonoアプリを `app.route()` で接続する。
 - HTTPのパスとhandlerは `routes.ts` にまとめ、複雑になった業務処理・DB操作を同じ機能内のファイルへ分ける。全機能共通の `controllers/`・`services/`・`repositories/` へ種類別に分散させない。
+- repositoryが大きくなったら、操作のまとまりごとに同じ機能内のファイルへ分け、`repository.ts` は組み立てだけにする（例：[adventure](../../server/src/features/adventure/repository.ts) の `run.ts`・`rooms.ts`・`purchases.ts`、読み込みは `state.ts`）。
 - `shared/` には複数機能で実際に使う共通の認証・通信などを置く。個別機能の業務判断やテスト専用の補助は含めない。
+- `shared/` にはDBの共通処理（[db.ts](../../server/src/shared/db.ts)）、HTTPの共通処理とエラーのステータス（[http.ts](../../server/src/shared/http.ts)）、品質（[quality.ts](../../server/src/shared/quality.ts)）、重み付きの抽選（[random.ts](../../server/src/shared/random.ts)）を置く。同じ処理を機能ごとに書かない。
+- 複数機能の表をまたぐ業務処理は、それを扱う機能のフォルダーに置く。持ち物の分類・倍率の上限・付与の文は [inventory/](../../server/src/features/inventory/) に置く。ほかの機能の定数や部品を、その機能の `repository.ts` から読み込まない。
 - 入出力のスキーマは所有する機能に置く。API資料やクライアントコードを生成する場合は生成元を一つにし、生成結果を手編集しない。
 - マイグレーションは `migrations/` に集約する。機能をまたぐ適用順序と履歴を維持するため、機能別には分散させない。適用済みSQLへの変更は新しいマイグレーションで行う。
 - 開発・公開処理は `scripts/`、CIの起動条件と実行順序はルートの `.github/workflows/` で管理する。設定は対応するツールの読み込み位置に置く。
@@ -174,6 +177,20 @@ Honoでは `/party/*` が `/party` にも一致するため、`use("/party/*")` 
 
 [app.ts](../../server/src/app.ts) の `createApi` は、`Cache-Control: no-store`、16KBの本文上限、503応答の共通設定を [shared/http.ts](../../server/src/shared/http.ts) で一度だけ付け、各機能のHonoアプリを接続する。
 Honoでは同じ接続先へ接続した機能の `use("*")` が他機能のパスにも適用されるため、機能内で `use("*")` を使わない。
+
+確かめたセッションは、[auth.ts](../../server/src/features/accounts/auth.ts) の `authenticateSession` がWorker（isolate）のメモリに最長60秒覚え、同じWorkerへの続く要求ではD1へ問い合わせない。
+覚える長さはセッションの有効期限を超えない。
+ログアウトは同じWorkerではすぐ効き、別のWorkerでは覚えた長さ（最長60秒）だけ同じトークンを受け付ける。
+覚えるのは1,000件までで、上限に達したら古く覚えたものから忘れる。
+
+ログイン（Googleとゲスト）したときに、[equipment/starter.ts](../../server/src/features/equipment/starter.ts) の `grantStarters` が編成と装備の初期データを1回だけ付与する。
+付与を済ませた印（`party_profiles`・`equipment_profiles`）を1回の往復で読み、まだのものだけを付与する。
+accountsはほかの機能に依存させないため、[app.ts](../../server/src/app.ts) が `createAccountsApi` へ付与の処理を渡す。
+各機能の読み込みは初期データを付与しない。
+
+業務処理のエラーのHTTPステータスは、[shared/http.ts](../../server/src/shared/http.ts) の `errorStatus` が1つの表で決める。
+指した物がないエラー（持っていない・見つからない・進行中の冒険がない）は404、そのほか（今の状態や決まりと合わない要求、ルーンや素材の不足、要求IDの使い回し）は409で返す。
+同じエラーは、どの機能から返しても同じステータスにする。
 署名検証テストはルート定義を読み込まずに認証処理を検証し、HTTPの認証失敗・期限切れ・ログアウトはAPIシナリオで確認する。
 
 ## 処理時間の計測（Server-Timing）
@@ -199,10 +216,29 @@ HTTPの入力検証は `schema.ts` に残し、DBスキーマと分ける。
 
 取得・更新にはDrizzleのクエリービルダーを使い、値をSQLへ埋め込む場合はパラメーター化する `sql` タグを使う。
 複数の書き込みを一括で確定する処理はD1対応の `db.batch()` を使う。
-画面を開くたびに読むGETは、D1との往復の回数がそのまま待ち時間になる（[処理時間の計測](#処理時間の計測server-timing)）。読む表は1つの `db.batch()` にまとめ、初回の付与を済ませたかの印も同じbatchで読む。付与がまだのときだけ付与して読み直す（[party](../../server/src/features/party/repository.ts) の `loadState`、[equipment](../../server/src/features/equipment/repository.ts) の `load`）。往復の回数は [read-round-trips.test.ts](../../server/tests/scenarios/read-round-trips.test.ts) で確かめる。
-D1は1つの文に渡せる値を100個までに制限しているため、多くの行を入れるときは文を分けて `db.batch()` に並べる（[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)）。
+確認と書き込みの間に別の要求が割り込んでも壊れないよう、確かめた条件（所有者・今の状態・残高）を書き込みと同じ文に入れる。
 健康データの保存では、所有者と同期の版を確認する条件をINSERT SELECTに含め、確認と書き込みの間に別の同期が割り込むことを防ぐ。
 `has_value` はSQLiteの整数とTypeScriptのbooleanをDrizzleで相互変換する。
+JSONを入れる列は `text({ mode: "json" }).$type<…>()`、決まった値だけを入れる列は `text({ enum: […] })` で型を付け、読む側で `JSON.parse` や型の変換を書かない。
+
+## D1との往復と文の数
+
+APIの待ち時間の多くは、WorkerとD1の往復で決まる（[処理時間の計測](#処理時間の計測server-timing)）。
+D1の `db.batch()` は文を順に実行し、文がいくつあっても1回の往復になる（[D1のbatch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)）。
+後ろに並べた読み込みは、前の書き込みのあとの状態を読む。
+APIは次の形で組み立てる。
+
+- **往復の回数**：確かめる読み込み（要求IDの記録・今の状態）の1回と、書き込みと書いたあとの読み込みの1回の、2回の往復までにする。一覧を読むGETは1回にする。
+- **読み込みのまとめ方**：読む表は1つの `db.batch()` に並べる。`await` を重ねて順に読まない。`Promise.all` で同時に投げても、D1との往復は文の数だけ起きる。
+- **書いて読む**：書き込みのAPIは、[shared/db.ts](../../server/src/shared/db.ts) の `batchThenRead` で書き込みの文のあとに読み込みの文を並べ、応答に返す状態を同じ往復で読む。書いたあとに読み直すためだけの往復を足さない。冒険は [adventure/state.ts](../../server/src/features/adventure/state.ts)、編成は [party/state.ts](../../server/src/features/party/state.ts) の `batchWithState` が状態を読む文を足す。
+- **書けなかった理由**：再送や同時の要求で書けなかったときに理由を見分ける読み込み（今の状態・見つけた記録・材料）も、書き込みと同じbatchの後ろに並べる。
+- **要求IDとルーン**：ルーンを使う・得る操作は、[exercise-rewards/wallet.ts](../../server/src/features/exercise-rewards/wallet.ts) の `runeRecord` で記録を書く。要求IDの記録の行を残高などの条件を満たすときだけ書き、書けたとき（`written`）だけ残高を変え、変えたあとの残高を記録へ書き戻す。要求IDが一意のため、再送では記録を書かず、書いてある記録を読んで返す。確かめることがサーバーの定義だけなら、確かめる読み込みを省いて1回の往復にしてよい（[workshop/buy.ts](../../server/src/features/workshop/buy.ts)）。
+- **持ち物を足す**：スキル・装備・アイテム・強化素材を足す文は、[inventory/grants.ts](../../server/src/features/inventory/grants.ts) の `inventoryGrants` を使い、記録の書き込みと同じbatchに入れる。機能ごとに付与のSQLを書かない。
+- **ほかの機能の状態**：ほかの機能のrepositoryを呼んで状態を丸ごと読まない。読む文（`stateReads`・`todayStepsRows` など）を受け取り、自分のbatchに並べる。
+- **文の数**：D1は1つの文に渡せる値を100個までに制限している（[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)）。条件付きで多くの行を入れるときは、[shared/db.ts](../../server/src/shared/db.ts) の `insertRowsWhen` で行を1つのJSONの値として渡し、1つの文にする。batchの文は1つずつ準備されるため、文の数も待ち時間に効く。WindowsのMiniflareでは1文あたり15〜45msかかり、テストの時間にそのまま出る。
+- **初期データ**：編成と装備の初期データはログインしたときに付与する（[認証とAPIの組み立て](#認証とapiの組み立て)）。読み込みのAPIで付与の確認をしない。
+- **セッション**：`requireSession` は機能のパス（`/party/*` など）に1つだけ付ける。確かめたセッションはWorkerのメモリに覚えるため、2回目の要求からはD1へ問い合わせない（[認証とAPIの組み立て](#認証とapiの組み立て)）。
+- **確かめ方**：往復の回数は [read-round-trips.test.ts](../../server/tests/scenarios/read-round-trips.test.ts) で決めておく。APIを足す・変えるときは、応答の `Server-Timing` の `d1` の回数をテストで確かめる。
 
 ## マイグレーション
 
@@ -340,6 +376,13 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-25：ユーザーの「サーバーのリファクタ（マイグレーション以外）と、API読み込みのbatch化、セッション確認の1往復を減らす」を受け、次のように変えた。参考：[D1のbatch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)、[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)。
+  - 往復：書き込みのAPIは書き込みと書いたあとの読み込みを1回のbatchにし、[D1との往復と文の数](#d1との往復と文の数)を定めた。テストで数えたD1との往復（セッションの確認を含む平均）は、`POST /v1/adventure/buy` が7.7回から1.7回、`/adventure/end` が8.0回から2.0回、`/adventure/clear` が6.0回から1.9回、`/adventure/move` が5.0回から2.0回、`POST /v1/enhancement/polish`・`awaken` が約6回から1.8回、`POST /v1/workshop/craft`・`sell` が約5回から1.8回、`POST /v1/summon` が5.0回から1.5回、`GET /v1/library` が5.1回から1.6回になった。`POST /v1/exercise/rewards/claim`（5.8回）は今回変えていない。
+  - セッション：確かめたセッションをWorkerのメモリに最長60秒覚えるようにした（ユーザーが3案から選んだ）。2回目からの一覧を読むGETは、D1との往復が1回になった。
+  - 初期データ：読み込みのたびに付与を確かめていたのをやめ、ログインしたときに付与するようにした。付与の行は表ごとに1つの文（`insertRowsWhen`）にまとめ、Miniflareでの初回ログインは約5秒から約1.5秒になった。
+  - 共通化：持ち物の付与（[inventory/grants.ts](../../server/src/features/inventory/grants.ts)）、ルーンの記録（`runeRecord`）、エラーのステータス（`errorStatus`）、重み付きの抽選、倍率と品質の応答をまとめた。冒険・編成・商会・強化のrepositoryを操作ごとのファイルに分けた。
+  - エラー：同じエラーで機能ごとにステータスが違ったため、`goods_not_found` を冒険でも404にし、編成の「冒険の時間外」は `no_adventure`（404）と分けて `not_in_adventure`（409）にした。クライアントはどちらもステータスで分岐していない。
+  - 見送り：API契約の生成元とマスターデータの同期は、方針を決めてから別に進める（ユーザーの判断）。seedの表と列の手書きは、Node.jsがseed.tsを直接読み込みsrcのimportを解決できないため残した。
 - 2026-10-24：ユーザーの依頼で、街道の世界地図の進み具合を保存する `GET /v1/world-map`・`POST /v1/world-map/move` と2テーブル（[0025_world_map.sql](../../server/migrations/0025_world_map.sql)）を足し、seedの3人に進み具合を入れた。マスと道の形はクライアントだけが持つため、サーバーはマスのIDの形だけを確かめる。
 - 2026-10-24：ユーザーの指示でACTボーナスを廃止し（[記録](../archive/step-bonus.md)）、APIと3テーブル（[0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql)）とseedのボーナスを外した。開発中の確かめ用に、ルーンを10,000足す `POST /v1/debug/runes` を足した（ローカルとDevだけで使え、Prodでは404）。
 - 2026-10-22：ユーザーの「段階3（往復の削減）だけ進めて」を受け、一覧を読むGETのD1との往復を減らした。セッションの確認の二重登録を外し（party・equipment・adventure・library・step-bonus）、partyとequipmentは初回の付与の印を読み込みのbatchに入れた。2回目からの往復は、`GET /v1/party` が4回から2回、`GET /v1/equipment` が6回から2回、`GET /v1/library` が7回から3回、`GET /v1/adventure` が3回から2回、`GET /v1/step-bonus` が6回から5回になった。書き込みのAPIも同じ読み方にし、partyは1往復、equipmentは3往復ずつ減った。

@@ -1,35 +1,39 @@
-import { and, eq, sql } from "drizzle-orm";
-import { createDatabase } from "../../shared/db.js";
+import { and, eq } from "drizzle-orm";
+import type { BatchResponse } from "drizzle-orm/batch";
 import {
-  MIN_MULTIPLIER_PERCENT,
-  multiplierOf,
-  qualityOf,
-} from "../../shared/quality.js";
-import { discoveryStatements } from "../library/discoveries.js";
-import { partyCharacters, partyProfiles } from "../party/db-schema.js";
-import { createPartyRepository, ownedInOrder } from "../party/repository.js";
+  batchThenRead,
+  createDatabase,
+  type Database,
+  type Statement,
+} from "../../shared/db.js";
+import { qualityFields } from "../../shared/quality.js";
+import { partyCharacters } from "../party/db-schema.js";
+import { ownedInOrder } from "../party/state.js";
 import {
   EQUIPMENT_IDS,
+  EQUIPMENT_SLOTS,
   type EquipmentId,
   type EquipmentSlot,
+  kindOfSlot,
   maxMultiplierPercent,
-  STARTER_EQUIPPED,
-  STARTER_ITEMS,
   slotOf,
+  unlockLevelOf,
 } from "./catalog.js";
-import {
-  equipmentCharacterSlots,
-  equipmentItems,
-  equipmentProfiles,
-} from "./db-schema.js";
+import { equipmentCharacterSlots, equipmentItems } from "./db-schema.js";
 
-export type EquipmentChange = "equip" | "replace" | "move" | "remove" | "none";
+type EquipmentChange = "equip" | "replace" | "move" | "remove" | "none";
 
-export function createEquipmentRepository(binding: D1Database) {
-  const db = createDatabase(binding);
-  const party = createPartyRepository(binding);
-
-  const itemsOf = (userId: string) =>
+// 持っているキャラ（Lvと入手の日時）、持っている装備、キャラごとの装備を読む文。
+function stateReads(db: Database, userId: string) {
+  return [
+    db
+      .select({
+        characterId: partyCharacters.characterId,
+        level: partyCharacters.level,
+        acquiredAt: partyCharacters.acquiredAt,
+      })
+      .from(partyCharacters)
+      .where(eq(partyCharacters.userId, userId)),
     db
       .select({
         id: equipmentItems.id,
@@ -38,8 +42,7 @@ export function createEquipmentRepository(binding: D1Database) {
         acquiredAt: equipmentItems.acquiredAt,
       })
       .from(equipmentItems)
-      .where(eq(equipmentItems.userId, userId));
-  const slotsOf = (userId: string) =>
+      .where(eq(equipmentItems.userId, userId)),
     db
       .select({
         characterId: equipmentCharacterSlots.characterId,
@@ -47,19 +50,22 @@ export function createEquipmentRepository(binding: D1Database) {
         itemId: equipmentCharacterSlots.itemId,
       })
       .from(equipmentCharacterSlots)
-      .where(eq(equipmentCharacterSlots.userId, userId));
+      .where(eq(equipmentCharacterSlots.userId, userId)),
+  ] as const;
+}
 
-  // 持っている装備と、持っているキャラ（パーティの一覧と同じ順）ごとの武器・防具。
-  function stateOf(
-    items: Awaited<ReturnType<typeof itemsOf>>,
-    slots: Awaited<ReturnType<typeof slotsOf>>,
-    characterIds: readonly string[],
-  ) {
-    const order = (id: string) => EQUIPMENT_IDS.indexOf(id as EquipmentId);
-    const worn = (characterId: string, slot: EquipmentSlot) =>
-      slots.find((row) => row.characterId === characterId && row.slot === slot)
-        ?.itemId ?? null;
-    return {
+// 持っている装備と、持っているキャラ（パーティの一覧と同じ順）ごとの武器・防具・アクセサリー。
+function stateOf([owned, items, slots]: BatchResponse<
+  ReturnType<typeof stateReads>
+>) {
+  const order = (id: string) => EQUIPMENT_IDS.indexOf(id as EquipmentId);
+  const worn = (characterId: string, slot: EquipmentSlot) =>
+    slots.find((row) => row.characterId === characterId && row.slot === slot)
+      ?.itemId ?? null;
+  const characterIds = ownedInOrder(owned).map((row) => row.characterId);
+  return {
+    levels: new Map(owned.map((row) => [row.characterId, row.level])),
+    state: {
       // 入手の古い順。同時に入手した装備は仮データの順。
       items: [...items]
         .sort(
@@ -71,8 +77,7 @@ export function createEquipmentRepository(binding: D1Database) {
         .map((item) => ({
           id: item.id,
           equipmentId: item.equipmentId,
-          multiplier: multiplierOf(item.multiplierPercent),
-          quality: qualityOf(
+          ...qualityFields(
             item.multiplierPercent,
             maxMultiplierPercent(item.equipmentId as EquipmentId),
           ),
@@ -81,121 +86,34 @@ export function createEquipmentRepository(binding: D1Database) {
         id,
         weapon: worn(id, "weapon"),
         armor: worn(id, "armor"),
+        // アクセサリーの3つの枠。空いている枠はnull。
+        accessories: (["accessory1", "accessory2", "accessory3"] as const).map(
+          (slot) => worn(id, slot),
+        ),
       })),
-    };
-  }
+    },
+  };
+}
 
-  async function readState(userId: string, characterIds: readonly string[]) {
-    const [items, slots] = await db.batch([itemsOf(userId), slotsOf(userId)]);
-    return stateOf(items, slots, characterIds);
-  }
+// 初期データはログインしたときに付与する（starter.ts の grantStarters）。
+export function createEquipmentRepository(binding: D1Database) {
+  const db = createDatabase(binding);
 
-  // 持っているキャラ・装備と、パーティと装備の初回の付与を済ませたかを、1回の往復で読む。
-  async function read(userId: string) {
-    const [partyGranted, owned, granted, items, slots] = await db.batch([
-      db
-        .select({ userId: partyProfiles.userId })
-        .from(partyProfiles)
-        .where(eq(partyProfiles.userId, userId)),
-      db
-        .select({
-          characterId: partyCharacters.characterId,
-          acquiredAt: partyCharacters.acquiredAt,
-        })
-        .from(partyCharacters)
-        .where(eq(partyCharacters.userId, userId)),
-      db
-        .select({ userId: equipmentProfiles.userId })
-        .from(equipmentProfiles)
-        .where(eq(equipmentProfiles.userId, userId)),
-      itemsOf(userId),
-      slotsOf(userId),
-    ]);
-    const characters = ownedInOrder(owned).map((row) => row.characterId);
-    return {
-      partyGranted: partyGranted.length > 0,
-      granted: granted.length > 0,
-      characters,
-      state: stateOf(items, slots, characters),
-    };
-  }
-
-  // 初めて読むユーザーにだけ、仮の装備と初めの4人の装備を1回だけ付与する。
-  // 装備のIDは毎回作るため、同時に届いた要求で二重に付与しないよう、印を書けた要求（grant_id）だけが装備を入れる。
-  // 付与の印がない（granted でない）ときにだけ呼ぶ。
-  async function grantStarter(userId: string, now: string) {
-    const grantId = crypto.randomUUID();
-    const granted = and(
-      eq(equipmentProfiles.userId, userId),
-      eq(equipmentProfiles.grantId, grantId),
+  // statements のあとに装備を読む文を足し、1回の往復で書いて読む。
+  async function batchWithState<const T extends readonly Statement[]>(
+    userId: string,
+    statements: T,
+  ) {
+    const { reads } = await batchThenRead(
+      db,
+      statements,
+      stateReads(db, userId),
     );
-    const ids = STARTER_ITEMS.map(() => crypto.randomUUID());
-    const itemOf = (equipmentId: EquipmentId) =>
-      ids[STARTER_ITEMS.indexOf(equipmentId)];
-    await db.batch([
-      db
-        .insert(equipmentProfiles)
-        .values({ userId, grantId, createdAt: now })
-        .onConflictDoNothing(),
-      ...STARTER_ITEMS.map((equipmentId, index) =>
-        db.insert(equipmentItems).select(
-          db
-            .select({
-              id: sql<string>`${ids[index]}`.as("id"),
-              userId: equipmentProfiles.userId,
-              equipmentId: sql<string>`${equipmentId}`.as("equipment_id"),
-              multiplierPercent: sql<number>`${MIN_MULTIPLIER_PERCENT}`.as(
-                "multiplier_percent",
-              ),
-              acquiredAt: sql<string>`${now}`.as("acquired_at"),
-            })
-            .from(equipmentProfiles)
-            .where(granted),
-        ),
-      ),
-      // ライブラリの見つけた記録。二重に届いても初めの日時のまま残るため、付与の印を条件にしない。
-      ...(["weapon", "armor"] as const).flatMap((slot) =>
-        discoveryStatements(
-          db,
-          userId,
-          slot,
-          STARTER_ITEMS.filter((equipmentId) => slotOf(equipmentId) === slot),
-          now,
-        ),
-      ),
-      ...STARTER_EQUIPPED.flatMap((entry) =>
-        (["weapon", "armor"] as const).map((slot) =>
-          db.insert(equipmentCharacterSlots).select(
-            db
-              .select({
-                userId: equipmentProfiles.userId,
-                characterId: sql<string>`${entry.characterId}`.as(
-                  "character_id",
-                ),
-                slot: sql<string>`${slot}`.as("slot"),
-                itemId: sql<string>`${itemOf(entry[slot])}`.as("item_id"),
-                updatedAt: sql<string>`${now}`.as("updated_at"),
-              })
-              .from(equipmentProfiles)
-              .where(granted),
-          ),
-        ),
-      ),
-    ]);
+    return stateOf(reads);
   }
 
-  // ふだんは1回の往復で読む。付与がまだのときだけ付与して読み直す。キャラの装備は持っているキャラにしか
-  // 付けられないため、先にパーティの初期データを付与する。
-  async function load(userId: string, now: string) {
-    const first = await read(userId);
-    if (first.partyGranted && first.granted) return first;
-    if (!first.partyGranted) await party.grantStarter(userId, now);
-    if (!first.granted) await grantStarter(userId, now);
-    return read(userId);
-  }
-
-  async function getState(userId: string, now: string) {
-    return (await load(userId, now)).state;
+  async function getState(userId: string) {
+    return (await batchWithState(userId, [])).state;
   }
 
   // キャラの枠に装備を付ける。ほかのキャラが付けていれば、そのキャラから外して付け替える。
@@ -206,23 +124,32 @@ export function createEquipmentRepository(binding: D1Database) {
     itemId: string,
     now: string,
   ) {
-    const { characters, state } = await load(userId, now);
+    const { levels, state } = await batchWithState(userId, []);
     const character = state.characters.find(
       (entry) => entry.id === characterId,
     );
     if (!character) return { error: "character_not_owned" as const };
     const item = state.items.find((entry) => entry.id === itemId);
     if (!item) return { error: "item_not_owned" as const };
-    if (slotOf(item.equipmentId) !== slot) {
+    if (slotOf(item.equipmentId) !== kindOfSlot(slot)) {
       return { error: "slot_mismatch" as const };
     }
-    const current = character[slot];
+    // アクセサリーの2つ目と3つ目の枠は、キャラのレベルで開く。
+    if ((levels.get(characterId) ?? 1) < unlockLevelOf(slot)) {
+      return { error: "slot_locked" as const };
+    }
+    const current = wornIn(character, slot);
     if (current === itemId) return { change: "none" as const, ...state };
 
-    const holder = state.characters.find(
-      (entry) => entry.id !== characterId && entry[slot] === itemId,
+    // 同じキャラのほかのアクセサリーの枠に付けていても、選んだ枠へ付け替える。
+    const holder = state.characters.find((entry) =>
+      EQUIPMENT_SLOTS.some(
+        (other) =>
+          wornIn(entry, other) === itemId &&
+          (entry.id !== characterId || other !== slot),
+      ),
     );
-    await db.batch([
+    const after = await batchWithState(userId, [
       db
         .delete(equipmentCharacterSlots)
         .where(
@@ -251,7 +178,7 @@ export function createEquipmentRepository(binding: D1Database) {
     return {
       change,
       ...(holder ? { from: holder.id } : {}),
-      ...(await readState(userId, characters)),
+      ...after.state,
     };
   }
 
@@ -260,28 +187,40 @@ export function createEquipmentRepository(binding: D1Database) {
     userId: string,
     characterId: string,
     slot: EquipmentSlot,
-    now: string,
   ) {
-    const { characters, state } = await load(userId, now);
+    const { state } = await batchWithState(userId, []);
     const character = state.characters.find(
       (entry) => entry.id === characterId,
     );
     if (!character) return { error: "character_not_owned" as const };
-    if (character[slot] === null) return { change: "none" as const, ...state };
-    await db
-      .delete(equipmentCharacterSlots)
-      .where(
-        and(
-          eq(equipmentCharacterSlots.userId, userId),
-          eq(equipmentCharacterSlots.characterId, characterId),
-          eq(equipmentCharacterSlots.slot, slot),
+    if (wornIn(character, slot) === null) {
+      return { change: "none" as const, ...state };
+    }
+    const after = await batchWithState(userId, [
+      db
+        .delete(equipmentCharacterSlots)
+        .where(
+          and(
+            eq(equipmentCharacterSlots.userId, userId),
+            eq(equipmentCharacterSlots.characterId, characterId),
+            eq(equipmentCharacterSlots.slot, slot),
+          ),
         ),
-      );
-    return {
-      change: "remove" as const,
-      ...(await readState(userId, characters)),
-    };
+    ]);
+    return { change: "remove" as const, ...after.state };
   }
 
   return { getState, equip, unequip };
+}
+
+type WornCharacter = {
+  weapon: string | null;
+  armor: string | null;
+  accessories: (string | null)[];
+};
+
+// キャラがその枠に付けている装備のID。空いていればnull。
+function wornIn(character: WornCharacter, slot: EquipmentSlot) {
+  if (slot === "weapon" || slot === "armor") return character[slot];
+  return character.accessories[EQUIPMENT_SLOTS.indexOf(slot) - 2] ?? null;
 }

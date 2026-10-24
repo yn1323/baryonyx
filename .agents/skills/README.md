@@ -35,7 +35,13 @@
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
 |---|---|---|---|---|
-| [data-storage](data-storage/SKILL.md) | 保存するデータを端末とサーバーのどちらに置くか決め、作り、仕様へ記録する | 自動 | [保存先の決め方](../../doc/rules/data-storage.md) | 保存中・失敗の画面表示は ui-advisor |
+| [data-storage](data-storage/SKILL.md) | 保存するデータを端末とサーバーのどちらに置くか決め、作り、仕様へ記録する | 自動 | [保存先の決め方](../../doc/rules/data-storage.md) | 保存中・失敗の画面表示は ui-advisor。サーバーのAPIの書き方は server-api-authoring |
+
+## サーバー
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [server-api-authoring](server-api-authoring/SKILL.md) | `server/` のAPI・repository・D1の読み書きを足す・直す・レビュー・リファクタする。APIの待ち時間とD1との往復を減らす | 自動 | [バックエンドの開発環境](../../doc/rules/backend-design.md)（[D1との往復と文の数](../../doc/rules/backend-design.md#d1との往復と文の数)） | 保存先を決めるのは data-storage |
 
 ## Unity C#
 
@@ -99,6 +105,7 @@
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
 | 保存する処理を足す、保存先を聞かれた | data-storage |
+| サーバーのAPIを足す・直す、APIが遅い | server-api-authoring。保存先が未決なら先に data-storage |
 | APKを作る・配る → 端末で確かめる | unity-android-ci-distribution → unity-android-device-validation |
 | 文書・PR本文を書く。長い読み物を書く | japanese-tech-writing。長い読み物では cognitive-rhythm-writing も |
 

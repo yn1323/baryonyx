@@ -22,7 +22,7 @@ export function createSummonApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, () => 409);
+    return respond(c, result);
   });
 
   return api;

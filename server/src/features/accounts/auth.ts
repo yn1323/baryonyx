@@ -45,7 +45,7 @@ export async function hashToken(token: string): Promise<string> {
 
 type SessionRepository = Pick<
   ReturnType<typeof createAccountsRepository>,
-  "findOrCreateUser" | "createSession" | "findSessionUser"
+  "findOrCreateUser" | "createSession" | "findSession"
 >;
 
 type GuestRepository = Pick<
@@ -84,12 +84,38 @@ async function createUserSession(
   return { token, userId, expiresAt: new Date(expiresAt).toISOString() };
 }
 
+// 確かめたセッションを、このWorker（isolate）のメモリに短いあいだ覚え、続く要求ではDBへ問い合わせない
+// （doc/rules/backend-design.md の認証とAPIの組み立て）。覚える長さはセッションの有効期限を超えない。
+// ログアウトは同じWorkerではすぐ効き、別のWorkerでは覚えた長さだけ残る。
+const REMEMBER_MS = 60_000;
+const REMEMBER_LIMIT = 1_000;
+const remembered = new Map<string, { userId: string; until: number }>();
+
+/** ログアウトしたセッションを、このWorkerのメモリから消す。 */
+export function forgetSession(tokenHash: string) {
+  remembered.delete(tokenHash);
+}
+
 export async function authenticateSession(
-  repository: SessionRepository,
+  repository: Pick<SessionRepository, "findSession">,
   authorization: string,
+  now = Date.now(),
 ) {
   if (!/^Bearer [a-f0-9]{64}$/.test(authorization)) return undefined;
   const tokenHash = await hashToken(authorization.slice(7));
-  const userId = await repository.findSessionUser(tokenHash);
-  return userId ? { userId, tokenHash } : undefined;
+  const known = remembered.get(tokenHash);
+  if (known && known.until > now) return { userId: known.userId, tokenHash };
+  remembered.delete(tokenHash);
+  const session = await repository.findSession(tokenHash);
+  if (!session) return undefined;
+  // 上限に達したら、いちばん古く覚えたものから忘れる（Map は入れた順に並ぶ）。
+  if (remembered.size >= REMEMBER_LIMIT) {
+    const oldest = remembered.keys().next().value;
+    if (oldest !== undefined) remembered.delete(oldest);
+  }
+  remembered.set(tokenHash, {
+    userId: session.userId,
+    until: Math.min(now + REMEMBER_MS, session.expiresAt),
+  });
+  return { userId: session.userId, tokenHash };
 }

@@ -1,5 +1,6 @@
 import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
-import type { RewardRow, Stars } from "../adventure/drops.js";
+import type { RewardRow } from "../adventure/drops.js";
+import type { Stars } from "../inventory/catalog.js";
 import { uniqueParent } from "../party/catalog.js";
 
 // 商会の強化（doc/features/enhancement.md）。強化素材は、品質を上げる磨き石と、固有スキルを覚醒させる

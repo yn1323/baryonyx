@@ -1,3 +1,5 @@
+import { pickWeighted, type Random } from "./random.js";
+
 // 品質（doc/features/inventory.md の品質）。スキル・装備は1つずつ倍率を持ち、
 // 種類ごとの幅（×1.00〜上限）の中の位置で、品質を S・A・B・C に分ける。上限は種類ごとの定義が持つ。
 // 倍率は誤差なく比べられるよう、百分率の整数（×1.37 なら 137）で持つ。
@@ -60,17 +62,25 @@ export function multiplierOf(percent: number): number {
   return percent / 100;
 }
 
+// 応答の倍率と品質の項目。倍率を持たない物（アイテム・強化素材）は、null ではなく項目を省く
+// （UnityのJsonUtilityが数値の null を読めないため）。
+export function qualityFields(
+  percent: number | null,
+  maxPercent: number | null,
+) {
+  return percent === null || maxPercent === null
+    ? {}
+    : {
+        multiplier: multiplierOf(percent),
+        quality: qualityOf(percent, maxPercent),
+      };
+}
+
 // 重みに従って品質を1つ選ぶ。
 export function pickQuality(
   weights: Partial<Record<Quality, number>>,
-  random: () => number,
+  random: Random,
 ): Quality {
   const entries = Object.entries(weights) as [Quality, number][];
-  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
-  let roll = random() * total;
-  for (const [quality, weight] of entries) {
-    if (roll < weight) return quality;
-    roll -= weight;
-  }
-  return entries[entries.length - 1][0];
+  return pickWeighted(entries, ([, weight]) => weight, random)[0];
 }

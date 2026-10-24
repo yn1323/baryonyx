@@ -4,11 +4,6 @@ import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createWorkshopRepository } from "./repository.js";
 import { buySchema, craftSchema, sellSchema } from "./schema.js";
 
-// 売らない・作れない物は404、手に入れていない・材料や売る物が合わない・ルーンが足りない・要求IDの使い回しは409で返す。
-function errorStatus(error: string) {
-  return error === "goods_not_found" ? 404 : 409;
-}
-
 export function createWorkshopApi() {
   const api = new Hono<SessionEnv>();
   api.use("/workshop/*", requireSession);
@@ -22,7 +17,7 @@ export function createWorkshopApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 商会で、☆が1つ低い同じ分類の物を3つ使い、これまでに手に入れた物を1つ作る（doc/features/screens.md の商会）。
@@ -34,7 +29,7 @@ export function createWorkshopApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 商会で、キャラに付けていない持ち物を売り、ルーンを得る（doc/features/screens.md の商会）。
@@ -46,7 +41,7 @@ export function createWorkshopApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   return api;

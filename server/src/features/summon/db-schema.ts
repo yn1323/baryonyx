@@ -22,7 +22,7 @@ export const summonPulls = sqliteTable(
     requestId: text("request_id").notNull(),
     count: integer("count").notNull(),
     runes: integer("runes").notNull(),
-    results: text("results").notNull(),
+    results: text("results", { mode: "json" }).$type<unknown[]>().notNull(),
     balanceAfter: integer("balance_after").notNull(),
     createdAt: text("created_at").notNull(),
   },

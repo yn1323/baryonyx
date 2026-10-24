@@ -1,16 +1,14 @@
 import { and, asc, desc, eq, max } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
-import { createEquipmentRepository } from "../equipment/repository.js";
+import { ACTIVITY_TYPE, METRIC_TYPE } from "../exercise-rewards/catalog.js";
 import { exerciseRewardDays } from "../exercise-rewards/db-schema.js";
-import { ACTIVITY_TYPE, METRIC_TYPE } from "../exercise-rewards/repository.js";
 import { libraryDiscoveries } from "./db-schema.js";
 
 export function createLibraryRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
-  // 見つけた記録を、見つけた古い順に返す。初めて読むユーザーには、編成と装備の初期の付与を先に済ませる。
-  async function getState(userId: string, now: string) {
-    await createEquipmentRepository(binding).getState(userId, now);
+  // 見つけた記録を、見つけた古い順に返す。
+  async function getState(userId: string) {
     const discoveries = await db
       .select({
         kind: libraryDiscoveries.kind,

@@ -3,7 +3,7 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
-import { START_SQUARE } from "./catalog.js";
+import { CHESTS, START_SQUARE } from "./catalog.js";
 
 type State = { at: string; cleared: string[] };
 
@@ -92,6 +92,93 @@ describe("街道の世界地図の進み具合のAPI", () => {
     expect(await read(user.token)).toEqual({
       at: START_SQUARE,
       cleared: [START_SQUARE],
+    });
+  });
+
+  describe("宝箱のマス", () => {
+    type Chest = State & {
+      chest?: {
+        category: string;
+        id: string;
+        multiplier?: number;
+        quality?: string;
+      }[];
+    };
+
+    async function opened(token: string, squareId: string, clear = true) {
+      const response = await move(token, { squareId, clear });
+      expect(response.status).toBe(200);
+      return (await response.json()) as Chest;
+    }
+
+    // 持っている装備・スキル・強化素材の数。
+    async function holdings(token: string) {
+      const [equipment, party, enhancement] = await Promise.all([
+        scenario.read<{ items: { equipmentId: string; quality: string }[] }>(
+          "/equipment",
+          token,
+        ),
+        scenario.read<{ skillCards: { skillId: string; quality: string }[] }>(
+          "/party",
+          token,
+        ),
+        scenario.read<{ materials: { id: string; count: number }[] }>(
+          "/enhancement",
+          token,
+        ),
+      ]);
+      const countOf = (id: string) =>
+        enhancement.materials.find((entry) => entry.id === id)?.count ?? 0;
+      return {
+        wands: equipment.items.filter(
+          (item) => item.equipmentId === "frost-wand",
+        ),
+        holyLights: party.skillCards.filter(
+          (card) => card.skillId === "HolyLight",
+        ),
+        blue: countOf("polish-blue"),
+        shards: countOf("awakening-shard"),
+      };
+    }
+
+    it("初めてクリアしたときに決まった中身を持ち物に足し、応答に中身を添える", async () => {
+      const user = await scenario.login("world-map-chest");
+      const before = await holdings(user.token);
+      const state = await opened(user.token, "n8-5");
+      expect(state.cleared).toContain("n8-5");
+      expect(state.chest?.map((entry) => [entry.category, entry.id])).toEqual(
+        CHESTS["n8-5"].map((entry) => [entry.category, entry.id]),
+      );
+      // 装備は決めた品質で、強化素材は倍率と品質を持たない。
+      expect(state.chest?.[0]).toMatchObject({ quality: "A" });
+      expect(state.chest?.[1]).not.toHaveProperty("quality");
+
+      const after = await holdings(user.token);
+      expect(after.wands.length).toBe(before.wands.length + 1);
+      expect(after.wands.at(-1)?.quality).toBe("A");
+      expect(after.blue).toBe(before.blue + 2);
+    });
+
+    it("送り直しや戻ってきたときは、持ち物に足し直さない", async () => {
+      const user = await scenario.login("world-map-chest-again");
+      await opened(user.token, "n16-18");
+      const once = await holdings(user.token);
+      // 送り直しても中身は添えるが、持ち物は増えない。
+      const again = await opened(user.token, "n16-18");
+      expect(again.chest).toHaveLength(CHESTS["n16-18"].length);
+      // クリアしたマスへ戻るだけなら、中身を添えない。
+      const back = await opened(user.token, "n16-18", false);
+      expect(back.chest).toBeUndefined();
+      const after = await holdings(user.token);
+      expect(after.holyLights).toHaveLength(once.holyLights.length);
+      expect(after.shards).toBe(once.shards);
+      expect(once.holyLights.at(-1)?.quality).toBe("A");
+    });
+
+    it("宝箱でないマスは中身を添えない", async () => {
+      const user = await scenario.login("world-map-chest-none");
+      const state = await opened(user.token, "n10-10");
+      expect(state.chest).toBeUndefined();
     });
   });
 });

@@ -39,14 +39,27 @@ export function invalidRequest(c: Context) {
   return c.json({ error: "invalid_request" }, 400);
 }
 
-// 業務処理の結果を返す。`{ error }` を返したときは、statusOf で決めたステータスで返す。
-export function respond(
-  c: Context,
-  result: object,
-  statusOf: (error: string) => ContentfulStatusCode,
-) {
+// 業務処理のエラーのうち、指した物がない（持っていない・見つからない・進行中の冒険がない）ものは404で返す。
+// そのほか（今の状態や決まりと合わない要求、ルーンや素材の不足、要求IDの使い回し）は409で返す。
+// 同じエラーは、どの機能から返しても同じステータスにする。
+const NOT_FOUND_ERRORS = new Set([
+  "unknown_destination",
+  "no_adventure",
+  "character_not_owned",
+  "card_not_owned",
+  "item_not_owned",
+  "target_not_found",
+  "goods_not_found",
+]);
+
+export function errorStatus(error: string): ContentfulStatusCode {
+  return NOT_FOUND_ERRORS.has(error) ? 404 : 409;
+}
+
+// 業務処理の結果を返す。`{ error }` を返したときは、errorStatus で決めたステータスで返す。
+export function respond(c: Context, result: object) {
   if ("error" in result && typeof result.error === "string") {
-    return c.json({ error: result.error }, statusOf(result.error));
+    return c.json({ error: result.error }, errorStatus(result.error));
   }
   return c.json(result);
 }

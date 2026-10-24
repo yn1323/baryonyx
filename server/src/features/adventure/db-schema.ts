@@ -34,8 +34,10 @@ export const adventureRuns = sqliteTable(
     mimic: integer("mimic", { mode: "boolean" }),
     trial: text("trial"),
     doorSteps: integer("door_steps"),
+    // awakening は宝箱のマスに入ったときに決めた、宝箱から固有スキルの覚醒が出るか（宝箱のマスでなければ null）。
+    awakening: integer("awakening", { mode: "boolean" }),
     // 通った部屋のID（JSONの配列）。最初は出発の部屋だけ。
-    route: text("route").notNull(),
+    route: text("route", { mode: "json" }).$type<string[]>().notNull(),
     revives: integer("revives").notNull().default(0),
     status: text("status").notNull(),
     startedAt: text("started_at").notNull(),
@@ -67,7 +69,9 @@ export const adventureDrops = sqliteTable(
     roomId: text("room_id").notNull(),
     seq: integer("seq").notNull(),
     grantId: text("grant_id").notNull(),
-    category: text("category").notNull(),
+    category: text("category", {
+      enum: ["item", "accessory", "weapon", "armor", "skill", "material"],
+    }).notNull(),
     entryId: text("entry_id").notNull(),
     multiplierPercent: integer("multiplier_percent"),
     createdAt: text("created_at").notNull(),
@@ -126,7 +130,9 @@ export const adventureMerchantGoods = sqliteTable(
       .references(() => adventureRuns.id),
     roomId: text("room_id").notNull(),
     idx: integer("idx").notNull(),
-    category: text("category").notNull(),
+    category: text("category", {
+      enum: ["skill", "weapon", "armor", "accessory"],
+    }).notNull(),
     entryId: text("entry_id").notNull(),
     multiplierPercent: integer("multiplier_percent").notNull(),
     price: integer("price").notNull(),

@@ -41,7 +41,7 @@ export const equipmentItems = sqliteTable(
   ],
 );
 
-// キャラごとの武器・防具の枠。空いている枠は行を持たない。持っている装備だけを、1人の1つの枠にだけ付けられる。
+// キャラごとの武器・防具・アクセサリー（3つ）の枠。空いている枠は行を持たない。持っている装備だけを、1人の1つの枠にだけ付けられる。
 export const equipmentCharacterSlots = sqliteTable(
   "equipment_character_slots",
   {
@@ -69,7 +69,7 @@ export const equipmentCharacterSlots = sqliteTable(
     }),
     check(
       "equipment_character_slots_slot_check",
-      sql`${table.slot} IN ('weapon', 'armor')`,
+      sql`${table.slot} IN ('weapon', 'armor', 'accessory1', 'accessory2', 'accessory3')`,
     ),
   ],
 );

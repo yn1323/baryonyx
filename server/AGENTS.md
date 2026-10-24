@@ -9,4 +9,5 @@ HonoアプリをCloudflare Workersで実行し、D1へ接続する。
 - 実装・テスト・マイグレーション・スクリプトの置き場所は [ディレクトリ構成と配置](../doc/rules/backend-design.md#ディレクトリ構成と配置) に従う。全機能共通の `controllers/`・`services/`・`repositories/` へ種類別に分散させない。
 - 適用済みのマイグレーションSQLとスナップショットは書き換えず、変更は新しいマイグレーションで行う（[マイグレーション](../doc/rules/backend-design.md#マイグレーション)）。
 - テストの並列実行とDBの独立性は [tests/scenarios/AGENTS.md](tests/scenarios/AGENTS.md) に従う。
+- APIとDB操作は、D1との往復を増やさない形で書く（[D1との往復と文の数](../doc/rules/backend-design.md#d1との往復と文の数)）。進め方は [server-api-authoring](../.agents/skills/server-api-authoring/SKILL.md) スキルにある。
 - テーブルや初期付与を足したら、開発用データ（seed）も同じ変更で直す（[開発用データ（seed）](../doc/rules/backend-design.md#開発用データseed)）。

@@ -1,5 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
+import { ACTIVITY_TYPE, METRIC_TYPE } from "./catalog.js";
 import {
   exerciseRewardDays,
   runeClaims,
@@ -7,8 +8,6 @@ import {
   runeWallets,
 } from "./db-schema.js";
 
-export const ACTIVITY_TYPE = "all";
-export const METRIC_TYPE = "steps";
 const RULE_VERSION = "steps_v1";
 
 type RewardSourceDay = {

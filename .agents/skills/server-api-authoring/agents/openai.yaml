@@ -1,0 +1,7 @@
+interface:
+  display_name: "サーバーのAPIの書き方"
+  short_description: "HonoとD1のAPIを、往復が少なく再送や同時の要求で壊れない形で書き、テストと文書まで仕上げる"
+  default_prompt: "Use $server-api-authoring when adding, changing, reviewing or refactoring server APIs, repositories or D1 queries, so round trips and idempotency follow the project's rules."
+
+policy:
+  allow_implicit_invocation: true

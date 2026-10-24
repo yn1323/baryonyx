@@ -11,6 +11,7 @@ import { createCombatApi } from "./features/combat/routes.js";
 import { createDebugApi } from "./features/debug/routes.js";
 import { createEnhancementApi } from "./features/enhancement/routes.js";
 import { createEquipmentApi } from "./features/equipment/routes.js";
+import { grantStarters } from "./features/equipment/starter.js";
 import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
 import { createLibraryApi } from "./features/library/routes.js";
@@ -27,7 +28,8 @@ export function createApi(
   verifyIdentity: VerifyIdentity = verifyGoogleIdentity,
 ) {
   const api = applyServerTiming(applyApiDefaults(new Hono<SessionEnv>()));
-  api.route("/", createAccountsApi(verifyIdentity));
+  // ログインしたユーザーに、編成と装備の初期データを1回だけ付与する。
+  api.route("/", createAccountsApi(verifyIdentity, grantStarters));
   api.route("/", createHealthApi());
   api.route("/", createExerciseRewardsApi());
   api.route("/", createPartyApi());

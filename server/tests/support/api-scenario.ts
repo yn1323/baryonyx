@@ -70,6 +70,9 @@ export async function createApiScenario() {
       expect(response.status).toBe(200);
       return (await response.json()) as T;
     };
+    // 所持ルーンを読む。
+    const runesOf = async (token: string) =>
+      (await read<{ runes: number }>("/adventure", token)).runes;
     // 所持ルーンを直接書く。費用と残高の検査で、ルーンを貯める手順を省くために使う。
     const setRunes = async (userId: string, balance: number) => {
       await db
@@ -85,6 +88,7 @@ export async function createApiScenario() {
       request,
       login,
       read,
+      runesOf,
       setRunes,
       dispose: () => mf.dispose(),
     };

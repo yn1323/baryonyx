@@ -4,13 +4,6 @@ import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createEnhancementRepository } from "./repository.js";
 import { awakenSchema, polishSchema } from "./schema.js";
 
-// 持っていない物・キャラは404、そのほか（上限・素材やルーンの不足・取得済み・要求IDの使い回しなど）は409で返す。
-function errorStatus(error: string) {
-  return error === "target_not_found" || error === "character_not_owned"
-    ? 404
-    : 409;
-}
-
 export function createEnhancementApi() {
   const api = new Hono<SessionEnv>();
   api.use("/enhancement/*", requireSession);
@@ -31,7 +24,7 @@ export function createEnhancementApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   // 商会の覚醒。覚醒の欠片とルーンで、固有スキルを1段進めるか、持っているスキル1枚を覚醒させる。
@@ -43,7 +36,7 @@ export function createEnhancementApi() {
       body.data,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   return api;

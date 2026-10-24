@@ -8,21 +8,15 @@ import {
   equipSchema,
 } from "./schema.js";
 
-// 持っていないキャラ・装備は404、枠に合わない装備は409で返す。
-function errorStatus(error: string) {
-  return error === "slot_mismatch" ? 409 : 404;
-}
-
 export function createEquipmentApi() {
   const api = new Hono<SessionEnv>();
   // Honoでは `/equipment/*` が `/equipment` にも一致する。両方に付けると、セッションを2回確かめる。
   api.use("/equipment/*", requireSession);
 
-  // 持っている装備と、キャラごとの武器・防具。初めて読むユーザーには仮の初期データを付与する。
+  // 持っている装備と、キャラごとの武器・防具・アクセサリー。初めて読むユーザーには仮の初期データを付与する。
   api.get("/equipment", async (c) => {
     const state = await createEquipmentRepository(c.env.DB).getState(
       c.get("userId"),
-      new Date().toISOString(),
     );
     return c.json(state);
   });
@@ -41,7 +35,7 @@ export function createEquipmentApi() {
       body.data.itemId,
       new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   api.delete("/equipment/characters/:characterId/:slot", async (c) => {
@@ -52,9 +46,8 @@ export function createEquipmentApi() {
       c.get("userId"),
       characterId.data,
       slot.data,
-      new Date().toISOString(),
     );
-    return respond(c, result, errorStatus);
+    return respond(c, result);
   });
 
   return api;

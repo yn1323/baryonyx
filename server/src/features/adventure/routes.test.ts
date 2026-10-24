@@ -74,6 +74,7 @@ type State = {
     reviveCost: number;
     mimic: boolean;
     trial?: string;
+    awakening?: boolean;
     merchant?: Goods[];
     drops: Drop[];
   } | null;
@@ -985,6 +986,56 @@ describe("冒険API", () => {
     expect("stepDoor" in (await clear(user.token, "f9-0"))).toBe(false);
   });
 
+  it("ダンジョンは、その街のマスを街道でクリアするまで始められない", async () => {
+    const user = await scenario.login("adventure-unlock");
+    const port = { destinationId: "port-portoria" };
+    await rejects(user.token, "/adventure", port, "destination_locked");
+    // 街道で港町ポルトリアに着く（クリアする）と、港町のダンジョンに入れる。
+    const arrived = await scenario.request(
+      "/world-map/move",
+      "POST",
+      { squareId: "portoria", clear: true },
+      user.token,
+    );
+    expect(arrived.status).toBe(200);
+    const started = await call(user.token, "/adventure", port);
+    expect(started.run?.destinationId).toBe("port-portoria");
+  });
+
+  it("宝箱のマスに入ると、宝箱から覚醒が出るかを決めて保存し、次のマスへ進むと消す", async () => {
+    const user = await scenario.login("adventure-chest-awakening");
+    const now = new Date().toISOString();
+    await start(user.token);
+    await walk(user.token, 6);
+    // 乱数が覚醒の確率より小さければ、覚醒が出る。
+    const moved = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.1),
+    ).move(user.userId, { roomId: "f6-0", floor: 6, kind: "treasure" }, now);
+    expect("run" in moved && moved.run).toMatchObject({
+      roomKind: "treasure",
+      awakening: true,
+    });
+    expect((await call(user.token, "/adventure")).run?.awakening).toBe(true);
+    // 宝箱を開けても、そのマスにいるあいだは残る。
+    const opened = await clear(user.token, "f6-0");
+    expect(opened.run?.awakening).toBe(true);
+    await move(user.token, { roomId: "f7-0", floor: 7, kind: "battle" });
+    expect(
+      "awakening" in ((await call(user.token, "/adventure")).run ?? {}),
+    ).toBe(false);
+
+    // 乱数が確率以上なら出ず、項目を返さない。
+    const other = await scenario.login("adventure-chest-plain");
+    await start(other.token);
+    await walk(other.token, 6);
+    const plain = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.9),
+    ).move(other.userId, { roomId: "f6-0", floor: 6, kind: "treasure" }, now);
+    expect("run" in plain && plain.run && "awakening" in plain.run).toBe(false);
+  });
+
   it("行商人のマスに入ると品ぞろえを作り、ルーンで買え、残高不足・二重購入・売り切れを拒む", async () => {
     const user = await scenario.login("adventure-merchant");
     const now = new Date().toISOString();
@@ -1067,6 +1118,7 @@ describe("冒険API", () => {
       "/adventure/buy",
       buy(requestIds.first, 9),
       "goods_not_found",
+      404,
     );
     await rejects(
       user.token,

@@ -76,6 +76,3 @@ export const SUMMON_POOL: readonly SummonEntry[] = (() => {
   }
   return pool;
 })();
-
-export const isEquipmentCategory = (category: SummonCategory) =>
-  category === "weapon" || category === "armor" || category === "accessory";

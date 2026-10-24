@@ -3,9 +3,9 @@ import {
   type Quality,
   rollMultiplierPercent,
 } from "../../shared/quality.js";
-import { maxPercentOf, pickWeighted } from "../adventure/drops.js";
+import { pickWeighted, type Random } from "../../shared/random.js";
+import { isEquipmentCategory, maxPercentOf } from "../inventory/catalog.js";
 import {
-  isEquipmentCategory,
   SUMMON_CATEGORIES,
   SUMMON_CATEGORY_PERMILLE,
   SUMMON_GUARANTEED_STARS,
@@ -13,8 +13,6 @@ import {
   SUMMON_STAR_PERMILLE,
   type SummonEntry,
 } from "./catalog.js";
-
-export type Random = () => number;
 
 // 1回で出た物。装備だけが倍率（百分率）を持つ。
 export type SummonDraw = SummonEntry & { multiplierPercent: number | null };

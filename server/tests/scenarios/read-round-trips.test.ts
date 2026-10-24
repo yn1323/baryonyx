@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { DESTINATIONS } from "../../src/features/adventure/catalog.js";
 import {
   type ApiScenario,
   createApiScenario,
@@ -12,8 +13,9 @@ const d1Calls = (response: Response) =>
     )?.[1],
   );
 
-// 画面を開くたびに読むGETは、DBとの往復の回数がそのまま待ち時間になる。増えたら気づけるように回数を決めておく。
-describe("一覧を読むGETのDBとの往復", () => {
+// 画面を開くたびに読むGETと書き込みのAPIは、DBとの往復の回数がそのまま待ち時間になる。増えたら気づけるように回数を決めておく。
+// 確かめたセッションはWorkerのメモリに覚えるため、2回目の要求からはセッションの確認でDBへ問い合わせない。
+describe("APIのDBとの往復", () => {
   let scenario: ApiScenario;
 
   beforeAll(async () => {
@@ -24,13 +26,13 @@ describe("一覧を読むGETのDBとの往復", () => {
     await scenario?.dispose();
   });
 
-  it("2回目からは、セッションの確認と読み込みのbatchで済む", async () => {
+  it("2回目からは、一覧を読むGETが読み込みのbatchの1回で済む", async () => {
     const { token } = await scenario.login("round-trips");
     const paths = {
-      "/party": 2,
-      "/equipment": 2,
-      "/adventure": 2,
-      "/library": 3,
+      "/party": 1,
+      "/equipment": 1,
+      "/adventure": 1,
+      "/library": 1,
     };
     for (const path of Object.keys(paths)) {
       await scenario.read(path, token);
@@ -46,7 +48,7 @@ describe("一覧を読むGETのDBとの往復", () => {
     expect(calls).toEqual(paths);
   });
 
-  it("初めて読んだ装備は、パーティと装備を付与してから読み直す", async () => {
+  it("ログインで編成と装備を付与し、初めて読む装備もセッションの確認と読み込みの2回で済む", async () => {
     const { token } = await scenario.login("round-trips-first");
 
     const response = await scenario.request(
@@ -57,13 +59,34 @@ describe("一覧を読むGETのDBとの往復", () => {
     );
 
     expect(response.status).toBe(200);
-    // セッションの確認・読み込み・パーティの付与・装備の付与・読み直し。
-    expect(d1Calls(response)).toBe(5);
+    expect(d1Calls(response)).toBe(2);
     const state = (await response.json()) as {
       items: unknown[];
       characters: { id: string }[];
     };
     expect(state.items.length).toBeGreaterThan(0);
     expect(state.characters.length).toBeGreaterThan(0);
+  });
+
+  it("冒険を始める・やめるは、確かめる読み込みと、書き込みと書いたあとの読み込みの2回で済む", async () => {
+    const { token } = await scenario.login("round-trips-adventure");
+    await scenario.read("/adventure", token);
+
+    const started = await scenario.request(
+      "/adventure",
+      "POST",
+      { destinationId: DESTINATIONS[0].id },
+      token,
+    );
+    expect(started.status).toBe(200);
+    const ended = await scenario.request(
+      "/adventure/end",
+      "POST",
+      { reason: "retreat" },
+      token,
+    );
+    expect(ended.status).toBe(200);
+
+    expect([d1Calls(started), d1Calls(ended)]).toEqual([2, 2]);
   });
 });

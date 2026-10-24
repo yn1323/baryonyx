@@ -1,8 +1,11 @@
 import { and, eq, type SQL, sql } from "drizzle-orm";
-import type { createDatabase } from "../../shared/db.js";
+import type {
+  SQLiteColumn,
+  SQLiteTable,
+  SQLiteUpdateSetSource,
+} from "drizzle-orm/sqlite-core";
+import type { Database } from "../../shared/db.js";
 import { runeWallets } from "./db-schema.js";
-
-type Database = ReturnType<typeof createDatabase>;
 
 // ほかの機能（レベルアップ・復活・商会）が所持ルーンを読む・使う・得るための文と式。
 // 使うときは、使った記録を書けたときだけ残高を減らし、記録へ減らしたあとの残高を書き戻す。得るときも同じ。
@@ -61,4 +64,40 @@ export function creditRunes(
       .set({ balance: sql`${runeWallets.balance} + ${runes}`, updatedAt: now })
       .where(and(eq(runeWallets.userId, userId), written)),
   ] as const;
+}
+
+// ルーンを使う・得る操作の記録の表。要求ごとの行の id と、書いたあとの残高 balanceAfter を持つ。
+type RuneRecordTable = SQLiteTable & {
+  id: SQLiteColumn;
+  balanceAfter: SQLiteColumn;
+};
+
+/**
+ * ルーンを使う・得る記録を、要求IDごとに一度だけ書くための部品（doc/rules/backend-design.md のDrizzleによるDB操作）。
+ * 記録の行（id）を、残高などの条件を満たすときだけ INSERT ... SELECT で書き、written でその行を書けたかを確かめる。
+ * debit・credit は書けたときだけ残高を変える文、settle は変えたあとの残高を記録へ書き戻す文で、batch の最後に置く。
+ */
+export function runeRecord<T extends RuneRecordTable>(
+  db: Database,
+  userId: string,
+  table: T,
+  now: string,
+) {
+  const id = crypto.randomUUID();
+  const balance = runeBalance(userId);
+  const written = sql`EXISTS (SELECT 1 FROM ${table} WHERE ${table.id} = ${id})`;
+  return {
+    id,
+    written,
+    /** 残高が runes 以上か。記録を書く条件に入れる。 */
+    affords: (runes: number) => sql`${balance} >= ${runes}`,
+    debit: (runes: number) => debitRunes(db, userId, runes, written, now),
+    credit: (runes: number) => creditRunes(db, userId, runes, written, now),
+    settle: db
+      .update(table)
+      .set({
+        balanceAfter: sql`COALESCE(${balance}, 0)`,
+      } as SQLiteUpdateSetSource<T>)
+      .where(eq(table.id, id)),
+  };
 }

@@ -17,6 +17,42 @@ export const ITEM_IDS = [
   "sea-salt",
   "ink-pot",
   "pirate-rum",
+  // グラシエラ氷窟
+  "icicle-shard",
+  "cavern-water",
+  "glowworm-lamp",
+  "frost-crystal",
+  "troll-stoneskin",
+  // しじまの沼
+  "mud-ball",
+  "lotus-root",
+  "wisp-wick",
+  "bog-venom",
+  "croc-tear",
+  // アルマジャ王墓
+  "cactus-fruit",
+  "scorpion-stinger",
+  "hourglass-sand",
+  "grimoire-page",
+  "brass-spring",
+  // 月影の墓所
+  "grave-candle",
+  "moonflower-honey",
+  "raven-feather",
+  "holy-water",
+  "soul-phial",
+  // ヴォルガン火山
+  "lava-rock",
+  "lizard-tail",
+  "sulfur-powder",
+  "flametail-plume",
+  "obsidian-core",
+  // 白嶺ネーヴェ
+  "hard-snowball",
+  "snowdrop",
+  "boar-jerky",
+  "crystal-horn",
+  "mistdragon-scale",
 ] as const;
 
 export type ItemId = (typeof ITEM_IDS)[number];

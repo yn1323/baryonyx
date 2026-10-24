@@ -55,9 +55,6 @@ describe("召喚API", () => {
     return (await response.json()) as { summon?: Pull; error?: string };
   };
 
-  const runesOf = async (token: string) =>
-    (await scenario.read<{ runes: number }>("/adventure", token)).runes;
-
   const count = async (sql: string, ...values: string[]) =>
     (
       await scenario.env.DB.prepare(sql)
@@ -101,7 +98,7 @@ describe("召喚API", () => {
     expect(pull.runes).toBe(3000);
     expect(pull.balanceAfter).toBe(500);
     expect(pull.results).toHaveLength(10);
-    expect(await runesOf(user.token)).toBe(500);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     // 10回のうち1つは☆3以上かキャラ。
     expect(
       pull.results.some(
@@ -148,7 +145,7 @@ describe("召喚API", () => {
       count: 10,
     });
     expect(replay.summon).toEqual(pull);
-    expect(await runesOf(user.token)).toBe(500);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     // 回数を変えて使い回した要求IDは拒む。
     expect(
       (await summon(user.token, { requestId: requestIds.first, count: 1 }, 409))
@@ -164,7 +161,7 @@ describe("召喚API", () => {
         )
       ).error,
     ).toBe("insufficient_runes");
-    expect(await runesOf(user.token)).toBe(500);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     expect(
       await count(
         "SELECT COUNT(*) AS n FROM summon_pulls WHERE user_id = ?",
