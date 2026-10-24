@@ -211,7 +211,8 @@ namespace Baryonyx.Equipment
                 EquipmentSession.Selected,
                 id => EquipmentSession.Selected = id,
                 EquipmentSession.OpenSlot,
-                EquipmentSession.OpenAccessory
+                EquipmentSession.OpenAccessory,
+                LevelOf
             );
         }
 
@@ -322,13 +323,20 @@ namespace Baryonyx.Equipment
                 );
             }
             for (int i = 0; i < Accessories.Length; i++)
-                ShowAccessory(Accessories[i], i, member != null ? level : 0, i == state.Accessory);
+                ShowAccessory(
+                    Accessories[i],
+                    i,
+                    member != null ? level : 0,
+                    i == state.Accessory,
+                    i < state.Accessories.Count ? state.Accessories[i] : null
+                );
             var growth = Training != null ? Training.Find(state.PersonId) : null;
             StatGrid.Show(Stats, growth != null ? TrainingBond.StatsOf(growth, level) : null);
-            // 一覧の面の文字は、アクセサリーの枠を選んでいるときだけ出す（開いていなければ解放するLv）。
+            // 一覧の面の文字は、アクセサリーの枠を選んでいて、付けられる物がないときだけ出す
+            // （開いていなければ解放するLv）。
             Set(
                 Status,
-                !accessory ? ""
+                !accessory || state.Choices.Count > 0 ? ""
                     : AccessorySlots.IsOpen(state.Accessory, level) ? NoAccessoryText
                     : AccessorySlots.UnlockText(state.Accessory)
             );
@@ -351,12 +359,16 @@ namespace Baryonyx.Equipment
             return Slots.Length + Math.Max(0, current);
         }
 
-        /// <summary>One accessory slot: locked with the level it opens at, or empty once open.</summary>
+        /// <summary>
+        /// One accessory slot: locked with the level it opens at, or once open, the name of the
+        /// accessory worn there ("なし" when empty).
+        /// </summary>
         public static void ShowAccessory(
             EquipmentAccessoryWidget widget,
             int index,
             int level,
-            bool selected
+            bool selected,
+            EquipmentItemState worn = null
         )
         {
             bool open = AccessorySlots.IsOpen(index, level);
@@ -364,7 +376,12 @@ namespace Baryonyx.Equipment
                 widget.Selected.SetActive(selected);
             if (widget.Lock != null)
                 widget.Lock.SetActive(!open);
-            Set(widget.Name, open ? "なし" : AccessorySlots.UnlockText(index));
+            Set(
+                widget.Name,
+                !open ? AccessorySlots.UnlockText(index)
+                    : worn?.ItemId != null ? worn.Name
+                    : "なし"
+            );
         }
 
         public Sprite IconOf(EquipmentSlot slot) =>
@@ -402,8 +419,10 @@ namespace Baryonyx.Equipment
             }
             if (Remove != null)
             {
-                // アクセサリーはまだ持てないので、外す行も出さない。
-                Remove.gameObject.SetActive(state.Accessory < 0);
+                // 開いていないアクセサリーの枠では、外す行も出さない。
+                Remove.gameObject.SetActive(
+                    state.Accessory < 0 || state.Choices.Count > 0 || state.CanRemove
+                );
                 Remove.transform.SetAsLastSibling();
                 Remove.interactable = state.CanRemove;
                 if (RemoveLabel != null)

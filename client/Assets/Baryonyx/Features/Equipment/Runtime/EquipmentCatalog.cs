@@ -96,6 +96,54 @@ namespace Baryonyx.Equipment
             Accessory("anchor-bangle", "錨の腕輪", 2, "物攻 +6%", 2.2f),
             Accessory("gold-earring", "金貨の耳飾り", 3, "速度 +6%", 2.2f),
             Accessory("kraken-pearl", "大ダコの黒真珠", 5, "属攻 +8%｜会心 +4%", 2.6f),
+            // ここからは、グラシエラ氷窟より奥の行き先の武器・防具・アクセサリー（doc/features/drops.md）。
+            // 奥の行き先ほど、効果の基本の値を大きくした。
+            // グラシエラ氷窟（武器は上の雷鳴の槍・氷晶のワンド）
+            Armor("miner-helm", "鉱夫の兜", 2, "物防の 125%｜HP +60", 2f),
+            Armor("crystal-shield", "水晶の大盾", 4, "物防の 150%", 2.4f),
+            Accessory("penguin-feather", "ペンギンの羽飾り", 1, "物防 +8%", 2f),
+            Accessory("crystal-ring", "水晶の指輪", 3, "属攻 +9%", 2.2f),
+            Accessory("troll-heartstone", "トロルの心臓石", 5, "物攻 +10%｜物防 +8%", 2.4f),
+            // しじまの沼
+            Weapon("reed-bow", "葦の長弓", 2, "速度の 140%｜貫", 2f),
+            Weapon("wisp-staff", "鬼火の杖", 3, "属攻の 155%｜炎", 2.2f),
+            Armor("mudcloth-robe", "泥染めのローブ", 2, "属攻の 125%｜物防の 115%", 2.2f),
+            Armor("clay-armor", "土くれの鎧", 3, "物防の 150%", 2.4f),
+            Accessory("leech-bell", "ヒルよけの鈴", 2, "HP +60", 2f),
+            Accessory("frog-crown", "カエル王の冠", 3, "速度 +10%", 2.2f),
+            Accessory("croc-fang", "大ワニの牙飾り", 5, "物攻 +12%｜会心 +5%", 2.6f),
+            // アルマジャ王墓
+            Weapon("scorpion-bow", "砂蠍の弓", 2, "速度の 155%｜貫", 2f),
+            Weapon("tomb-khopesh", "王墓の鎌剣", 3, "物攻の 175%｜斬", 2.2f),
+            Armor("burial-wraps", "王墓の包帯", 2, "物防の 140%｜HP +80", 2f),
+            Armor("ancient-plate", "古王国の鎧", 4, "物防の 170%", 2.4f),
+            Accessory("scarab-amulet", "スカラベの護符", 1, "物防 +12%", 2f),
+            Accessory("gargoyle-eye", "ガーゴイルの石眼", 3, "物攻 +12%", 2.2f),
+            Accessory("golden-mask", "王の黄金仮面", 5, "属攻 +14%｜物防 +10%", 2.6f),
+            // 月影の墓所
+            Weapon("bone-axe", "骨の大斧", 2, "物攻の 190%｜斬", 2.4f),
+            Weapon("moonshade-staff", "月影の杖", 4, "属攻の 200%｜氷｜会心 +8%", 2.2f),
+            Armor("hollow-helm", "空鎧の兜", 2, "物防の 165%｜HP +100", 2f),
+            Armor("grave-cloak", "墓守りの外套", 3, "速度 +12%｜物防の 160%", 2.2f),
+            Accessory("bone-ring", "骨の指輪", 2, "物攻 +13%", 2f),
+            Accessory("moonstone-pendant", "月長石のペンダント", 3, "属攻 +14%", 2.2f),
+            Accessory("lich-signet", "死霊の印章", 5, "属攻 +16%｜会心 +6%", 2.6f),
+            // ヴォルガン火山
+            Weapon("firebird-bow", "炎尾の弓", 2, "速度の 180%｜貫・炎", 2f),
+            Weapon("magma-hammer", "溶岩の大槌", 3, "物攻の 225%｜打・炎", 2.6f),
+            Armor("lizardscale-mail", "火とかげの鱗鎧", 2, "物防の 185%", 2.2f),
+            Armor("obsidian-shield", "黒曜石の盾", 4, "物防の 200%｜HP +100", 2.4f),
+            Accessory("ember-charm", "熾火のお守り", 1, "物防 +15%", 2f),
+            Accessory("magma-ring", "溶岩の指輪", 3, "物攻 +16%", 2.2f),
+            Accessory("obsidian-crown", "黒曜石の冠", 5, "物攻 +18%｜物防 +14%", 2.6f),
+            // 白嶺ネーヴェ
+            Weapon("hailstone-staff", "雹の杖", 3, "属攻の 235%｜氷", 2.2f),
+            Weapon("glacier-greatsword", "氷河の大剣", 4, "物攻の 240%｜斬・氷", 2.4f),
+            Armor("snow-cloak", "雪原の外套", 2, "速度 +14%｜物防の 190%", 2.2f),
+            Armor("mammoth-fur", "マンモスの毛皮", 3, "物防の 210%｜HP +120", 2.2f),
+            Accessory("snowflake-brooch", "雪の結晶のブローチ", 2, "物防 +18%", 2f),
+            Accessory("foxtail-charm", "つらら尾の房飾り", 3, "速度 +18%", 2.2f),
+            Accessory("mistdragon-eye", "霧竜の瞳", 5, "属攻 +20%｜会心 +8%", 2.6f),
         };
 
         public static IReadOnlyList<EquipmentDefinition> All => all;

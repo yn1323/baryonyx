@@ -25,14 +25,14 @@ namespace Baryonyx.Tests.EditMode
 
             public Task<EquipmentState> EquipAsync(
                 string characterId,
-                EquipmentSlot slot,
+                EquipmentPlace slot,
                 string itemId,
                 CancellationToken token
             ) => inner.EquipAsync(characterId, slot, itemId, token);
 
             public Task<EquipmentState> UnequipAsync(
                 string characterId,
-                EquipmentSlot slot,
+                EquipmentPlace slot,
                 CancellationToken token
             ) => inner.UnequipAsync(characterId, slot, token);
         }

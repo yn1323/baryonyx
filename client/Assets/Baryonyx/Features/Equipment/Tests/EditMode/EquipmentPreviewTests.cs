@@ -69,10 +69,15 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Tabs[2].Chosen, Is.True);
             Assert.That(view.Accessories[0].Selected.activeSelf, Is.True);
             Assert.That(view.Slots.Any(slot => slot.Selected.activeSelf), Is.False);
-            Assert.That(view.Rows.Any(row => row.gameObject.activeSelf), Is.False);
-            Assert.That(view.Remove.gameObject.activeSelf, Is.False);
-            // 1つ目のアクセサリーの枠はLv1から開いているが、アクセサリーはまだ持っていない。
-            Assert.That(view.Status.text, Is.EqualTo(EquipmentView.NoAccessoryText));
+            // 1つ目のアクセサリーの枠はLv1から開いていて、仮データの持っているアクセサリーを並べる。
+            Assert.That(
+                view.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(
+                    EquipmentCatalog.All.Count(entry => entry.Slot == EquipmentSlot.Accessory)
+                )
+            );
+            Assert.That(view.Remove.gameObject.activeSelf, Is.True);
+            Assert.That(view.Status.text, Is.Empty);
         }
 
         [Test]

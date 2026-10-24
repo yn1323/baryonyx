@@ -24,7 +24,7 @@ namespace Baryonyx.Equipment
             var equipped = EquipmentCatalog.StarterEquipped.SelectMany(entry =>
                 new[]
                 {
-                    (entry.Character, EquipmentSlot.Weapon, ItemOf(entry.Weapon)),
+                    (entry.Character, (EquipmentPlace)EquipmentSlot.Weapon, ItemOf(entry.Weapon)),
                     (entry.Character, EquipmentSlot.Armor, ItemOf(entry.Armor)),
                 }
             );
@@ -36,15 +36,15 @@ namespace Baryonyx.Equipment
 
         public Task<EquipmentState> EquipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             string itemId,
             CancellationToken token
-        ) => Task.FromResult(state = state.WithEquipped(characterId, slot, itemId));
+        ) => Task.FromResult(state = state.WithEquipped(characterId, place, itemId));
 
         public Task<EquipmentState> UnequipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             CancellationToken token
-        ) => Task.FromResult(state = state.WithUnequipped(characterId, slot));
+        ) => Task.FromResult(state = state.WithUnequipped(characterId, place));
     }
 }

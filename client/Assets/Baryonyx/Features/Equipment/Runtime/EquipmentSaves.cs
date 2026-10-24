@@ -49,23 +49,23 @@ namespace Baryonyx.Equipment
 
         public Task<EquipmentState> EquipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             string itemId,
             CancellationToken token
         ) =>
             Save(
-                state => state.WithEquipped(characterId, slot, itemId),
-                cancel => Server.EquipAsync(characterId, slot, itemId, cancel)
+                state => state.WithEquipped(characterId, place, itemId),
+                cancel => Server.EquipAsync(characterId, place, itemId, cancel)
             );
 
         public Task<EquipmentState> UnequipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             CancellationToken token
         ) =>
             Save(
-                state => state.WithUnequipped(characterId, slot),
-                cancel => Server.UnequipAsync(characterId, slot, cancel)
+                state => state.WithUnequipped(characterId, place),
+                cancel => Server.UnequipAsync(characterId, place, cancel)
             );
 
         // 画面を閉じても保存は続けるので、画面の token は使わない。

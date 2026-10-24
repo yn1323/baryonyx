@@ -49,6 +49,10 @@ namespace Baryonyx.Equipment
         public int Accessory { get; internal set; } = -1;
         public IReadOnlyList<EquipmentItemState> Slots { get; internal set; }
 
+        // アクセサリーの3つの枠の装備。空いている枠は ItemId がnull。
+        public IReadOnlyList<EquipmentItemState> Accessories { get; internal set; } =
+            Array.Empty<EquipmentItemState>();
+
         // 選んでいる枠の名前（右のタブ「武器」「防具」）と、その枠に付けられる持っている装備。
         public string Title { get; internal set; }
         public IReadOnlyList<EquipmentItemState> Choices { get; internal set; }
@@ -73,9 +77,10 @@ namespace Baryonyx.Equipment
 
     /// <summary>
     /// The formation's equipment change screen: ◀ ▶ walks the people (the party first, then
-    /// the other companions) keeping the chosen slot, choose the weapon or armour slot on the
-    /// left, then tap an owned item on the right to wear it at once. An item another person wears moves to the chosen person; "外す" takes the
-    /// chosen slot's item off. Every change shows at once and is then saved through the source
+    /// the other companions) keeping the chosen slot, choose the weapon, armour or an accessory
+    /// slot on the left, then tap an owned item on the right to wear it at once. An item another
+    /// person (or another accessory slot) wears moves to the chosen slot; "外す" takes the chosen
+    /// slot's item off. An accessory slot opens at its level (<see cref="AccessorySlots"/>). Every change shows at once and is then saved through the source
     /// (the server behind it, or the app's memory without one), and the screen is drawn again
     /// from what the source returns: the saved items, or the ones put back when the save failed
     /// (which <see cref="Networking.SaveQueue"/> tells on the notice band).
@@ -90,6 +95,7 @@ namespace Baryonyx.Equipment
         private readonly IReadOnlyList<PartyMember> people;
         private readonly IEquipmentSource source;
         private readonly Action<string> remember;
+        private readonly Func<string, int> levelOf;
         private EquipmentState state;
         private int person;
         private EquipmentSlot slot = EquipmentSlot.Weapon;
@@ -106,7 +112,8 @@ namespace Baryonyx.Equipment
             string selected = null,
             Action<string> remember = null,
             EquipmentSlot slot = EquipmentSlot.Weapon,
-            int accessory = -1
+            int accessory = -1,
+            Func<string, int> levelOf = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -114,6 +121,7 @@ namespace Baryonyx.Equipment
             this.state = state ?? new EquipmentState(null, null);
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.remember = remember;
+            this.levelOf = levelOf;
             person = Math.Max(0, IndexOf(selected));
             this.slot = Enum.IsDefined(typeof(EquipmentSlot), slot) ? slot : EquipmentSlot.Weapon;
             this.accessory = accessory >= 0 && accessory < AccessorySlots.Count ? accessory : -1;
@@ -148,7 +156,7 @@ namespace Baryonyx.Equipment
 
         /// <summary>
         /// Chooses a slot by its place on the left: 0 the weapon, 1 the armour, 2 to 4 the
-        /// accessories. Accessories have no items yet, so their list stays empty.
+        /// accessories. An accessory slot not open yet lists nothing.
         /// </summary>
         public void SelectSlot(int index)
         {
@@ -184,36 +192,47 @@ namespace Baryonyx.Equipment
             var member = Current;
             var item = state.Find(itemId);
             var definition = EquipmentCatalog.Find(item?.EquipmentId);
+            var place = Place;
             if (
                 disposed
-                || accessory >= 0
                 || member == null
                 || definition == null
-                || definition.Slot != slot
+                || definition.Slot != place.Slot
+                || !IsOpen(member)
             )
                 return;
-            string before = state.ItemIn(member.Id, slot);
+            string before = state.ItemIn(member.Id, place);
             if (before == itemId)
                 return;
             await Save(
-                current => current.WithEquipped(member.Id, slot, itemId),
-                () => source.EquipAsync(member.Id, slot, itemId, CancellationToken.None)
+                current => current.WithEquipped(member.Id, place, itemId),
+                () => source.EquipAsync(member.Id, place, itemId, CancellationToken.None)
             );
         }
 
         private async Task RemoveAsync()
         {
             var member = Current;
-            if (disposed || accessory >= 0 || member == null)
+            var place = Place;
+            if (disposed || member == null)
                 return;
-            string before = state.ItemIn(member.Id, slot);
+            string before = state.ItemIn(member.Id, place);
             if (before == null)
                 return;
             await Save(
-                current => current.WithUnequipped(member.Id, slot),
-                () => source.UnequipAsync(member.Id, slot, CancellationToken.None)
+                current => current.WithUnequipped(member.Id, place),
+                () => source.UnequipAsync(member.Id, place, CancellationToken.None)
             );
         }
+
+        // 選んでいる枠（武器・防具、またはアクセサリーの枠）。
+        private EquipmentPlace Place => accessory >= 0 ? EquipmentPlace.Accessory(accessory) : slot;
+
+        private int LevelOf(PartyMember member) => levelOf?.Invoke(member.Id) ?? member.Level;
+
+        // 選んでいる枠が開いているか。武器と防具はいつも開いている。
+        private bool IsOpen(PartyMember member) =>
+            accessory < 0 || AccessorySlots.IsOpen(accessory, LevelOf(member));
 
         // すぐに表示を変えてから保存し、置き場が返した装備（保存したもの、失敗なら戻したもの）で描き直す。
         // 変わったことは枠と一覧を見ればわかるので知らせない。保存は画面を閉じても続ける。
@@ -261,9 +280,10 @@ namespace Baryonyx.Equipment
                 view.Render(State);
                 return;
             }
-            // アクセサリーはまだ持てないので、一覧は空にして外せなくする。
-            var choices = accessory >= 0 ? Array.Empty<EquipmentItemState>() : Choices(member.Id);
-            string current = accessory >= 0 ? null : state.ItemIn(member.Id, slot);
+            // 開いていないアクセサリーの枠は、一覧を空にして外せなくする。
+            bool open = IsOpen(member);
+            var choices = open ? Choices(member.Id) : Array.Empty<EquipmentItemState>();
+            string current = open ? state.ItemIn(member.Id, Place) : null;
             State = new EquipmentViewState
             {
                 PersonId = member.Id,
@@ -274,6 +294,15 @@ namespace Baryonyx.Equipment
                 Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                     .Select(entry =>
                         ItemState(member.Id, state.Find(state.ItemIn(member.Id, entry)))
+                    )
+                    .ToArray(),
+                Accessories = Enumerable
+                    .Range(0, AccessorySlots.Count)
+                    .Select(index =>
+                        ItemState(
+                            member.Id,
+                            state.Find(state.ItemIn(member.Id, EquipmentPlace.Accessory(index)))
+                        )
                     )
                     .ToArray(),
                 Title = TitleOf(),
@@ -296,7 +325,7 @@ namespace Baryonyx.Equipment
                             Definition: EquipmentCatalog.Find(item.EquipmentId)
                         )
                 )
-                .Where(entry => entry.Definition != null && entry.Definition.Slot == slot)
+                .Where(entry => entry.Definition != null && entry.Definition.Slot == Place.Slot)
                 .OrderByDescending(entry => entry.Definition.Rarity)
                 .ThenBy(entry => EquipmentCatalog.IndexOf(entry.Item.EquipmentId))
                 .ThenByDescending(entry => Inventory.Quality.Percent(entry.Item.Multiplier))

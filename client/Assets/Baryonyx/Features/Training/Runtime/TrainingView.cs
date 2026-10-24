@@ -448,15 +448,23 @@ namespace Baryonyx.Training
                 deepenBond
             );
 
-        // 武器と防具に付けている装備。
+        // 武器・防具と、アクセサリーの3つの枠に付けている装備。
         public static IReadOnlyList<TrainingGearState> GearOf(
             EquipmentState equipment,
             string id
         ) =>
-            new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
-                .Select(slot =>
+            new[]
+            {
+                (EquipmentPlace)EquipmentSlot.Weapon,
+                EquipmentSlot.Armor,
+                EquipmentPlace.Accessory(0),
+                EquipmentPlace.Accessory(1),
+                EquipmentPlace.Accessory(2),
+            }
+                .Select(place =>
                 {
-                    var item = equipment?.Find(equipment.ItemIn(id, slot));
+                    var slot = place.Slot;
+                    var item = equipment?.Find(equipment.ItemIn(id, place));
                     var definition = EquipmentCatalog.Find(item?.EquipmentId);
                     var quality = definition?.QualityOf(item.Multiplier) ?? ItemQuality.C;
                     // レア度の★に続けて、その1つの品質の文字を出す。説明の数字は倍率を掛けた値。

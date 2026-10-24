@@ -7,8 +7,8 @@ using Baryonyx.Networking;
 namespace Baryonyx.Equipment
 {
     /// <summary>
-    /// The server's equipment API: the weapons and armour a player owns and what each character
-    /// wears (server/src/features/equipment/routes.ts).
+    /// The server's equipment API: the weapons, armour and accessories a player owns and what each
+    /// character wears (server/src/features/equipment/routes.ts).
     /// </summary>
     public sealed class EquipmentApiClient
     {
@@ -23,12 +23,12 @@ namespace Baryonyx.Equipment
         public Task<State> EquipAsync(
             AccountSession session,
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             string itemId,
             CancellationToken token
         ) =>
             server.SendAsync<State>(
-                Path(characterId, slot),
+                Path(characterId, place),
                 "PUT",
                 new EquipRequest { itemId = itemId },
                 session.Token,
@@ -39,12 +39,13 @@ namespace Baryonyx.Equipment
         public Task<State> UnequipAsync(
             AccountSession session,
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             CancellationToken token
-        ) => server.SendAsync<State>(Path(characterId, slot), "DELETE", null, session.Token, token);
+        ) =>
+            server.SendAsync<State>(Path(characterId, place), "DELETE", null, session.Token, token);
 
-        private static string Path(string characterId, EquipmentSlot slot) =>
-            $"/v1/equipment/characters/{Uri.EscapeDataString(characterId)}/{EquipmentCatalog.KeyOf(slot)}";
+        private static string Path(string characterId, EquipmentPlace place) =>
+            $"/v1/equipment/characters/{Uri.EscapeDataString(characterId)}/{place.Key}";
 
         [Serializable]
         private sealed class EquipRequest
@@ -83,6 +84,9 @@ namespace Baryonyx.Equipment
             // 付けている装備のID。空いている枠はnullまたは空文字。
             public string weapon;
             public string armor;
+
+            // アクセサリーの3つの枠。空いている枠はnullまたは空文字。
+            public string[] accessories;
         }
     }
 }

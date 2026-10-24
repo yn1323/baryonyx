@@ -39,6 +39,8 @@ namespace Baryonyx.Tests.EditMode
 
             public void Slot(EquipmentSlot slot) => SlotPressed?.Invoke((int)slot);
 
+            public void SlotAt(int index) => SlotPressed?.Invoke(index);
+
             public void Item(string id) => ItemPressed?.Invoke(id);
 
             public void Remove() => RemovePressed?.Invoke();
@@ -58,7 +60,7 @@ namespace Baryonyx.Tests.EditMode
 
             public async Task<EquipmentState> EquipAsync(
                 string characterId,
-                EquipmentSlot slot,
+                EquipmentPlace slot,
                 string itemId,
                 CancellationToken token
             )
@@ -69,7 +71,7 @@ namespace Baryonyx.Tests.EditMode
 
             public async Task<EquipmentState> UnequipAsync(
                 string characterId,
-                EquipmentSlot slot,
+                EquipmentPlace slot,
                 CancellationToken token
             )
             {
@@ -151,6 +153,61 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(Choice("iron-sword").Mark, Is.EqualTo("アリアが装備中"));
             Assert.That(Choice("iron-sword").Worn, Is.False);
             Assert.That(Choice("flame-dagger").Mark, Is.Empty);
+        }
+
+        // アクセサリーの1つ目の枠はLv1から開いていて、持っているアクセサリーを付け、ほかの枠へ移せる。
+        // 2つ目と3つ目はLv20・Lv40で開くまで、一覧が空で付けられない。
+        [Test]
+        public async Task AnAccessorySlotTakesAnAccessoryOnceItIsOpen()
+        {
+            view.SlotAt(2);
+            Assert.That(view.Last.Accessory, Is.EqualTo(0));
+            Assert.That(view.Last.Title, Is.EqualTo(EquipmentPresenter.AccessoryTitle));
+            Assert.That(
+                view.Last.Choices.Select(choice => EquipmentCatalog.Find(choice.EquipmentId).Slot),
+                Is.Not.Empty.And.All.EqualTo(EquipmentSlot.Accessory)
+            );
+            string charm = Choice("moss-charm").ItemId;
+            presenter.Choose(charm);
+            await presenter.ChangeTask;
+            Assert.That(view.Notices, Is.Empty);
+            Assert.That(view.Last.Accessories[0].ItemId, Is.EqualTo(charm));
+            Assert.That(view.Last.CanRemove, Is.True);
+            Assert.That(
+                source.LoadAsync(default).Result.ItemIn("toma", EquipmentPlace.Accessory(0)),
+                Is.EqualTo(charm)
+            );
+
+            // トーマ（Lv1）の2つ目の枠はまだ開いていない。
+            view.SlotAt(3);
+            Assert.That(view.Last.Choices, Is.Empty);
+            presenter.Choose(charm);
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Accessories[1].ItemId, Is.Null);
+
+            view.SlotAt(2);
+            presenter.Remove();
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Accessories[0].ItemId, Is.Null);
+        }
+
+        [Test]
+        public async Task AHighLevelPersonWearsAnAccessoryInTheThirdSlot()
+        {
+            presenter.Dispose();
+            presenter = new EquipmentPresenter(
+                view,
+                new[] { Member("toma", "トーマ") },
+                EquipmentLocalSource.Starter(),
+                source,
+                accessory: 2,
+                levelOf: _ => 40
+            );
+            string pearl = Choice("kraken-pearl").ItemId;
+            presenter.Choose(pearl);
+            await presenter.ChangeTask;
+            Assert.That(view.Last.Accessories[2].ItemId, Is.EqualTo(pearl));
+            Assert.That(view.Last.Accessories[2].Name, Is.EqualTo("大ダコの黒真珠"));
         }
 
         [Test]
@@ -267,7 +324,7 @@ namespace Baryonyx.Tests.EditMode
                     new EquipmentItem("top", "flame-dagger", 1.8f),
                     new EquipmentItem("plain", "iron-sword"),
                 },
-                new[] { ("toma", EquipmentSlot.Weapon, "top") }
+                new[] { ("toma", (EquipmentPlace)EquipmentSlot.Weapon, "top") }
             );
             var (people, _) = new PartyFormation(
                 new[] { Member("toma", "トーマ") },
@@ -331,9 +388,14 @@ namespace Baryonyx.Tests.EditMode
 
         private EquipmentItemState Choice(string equipmentId)
         {
-            // 選んでいる枠の種類にない装備は、その種類の枠に切り替えて探す。
+            // 選んでいる枠の種類にない装備は、その種類の枠に切り替えて探す。アクセサリーは、
+            // アクセサリーの枠を選んでいれば、その枠のまま探す。
             var slot = EquipmentCatalog.Find(equipmentId).Slot;
-            if (view.Last.Slot != slot)
+            bool chosen =
+                slot == EquipmentSlot.Accessory
+                    ? view.Last.Accessory >= 0
+                    : view.Last.Accessory < 0 && view.Last.Slot == slot;
+            if (!chosen)
                 view.Slot(slot);
             return view.Last.Choices.Single(choice => choice.EquipmentId == equipmentId);
         }

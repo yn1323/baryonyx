@@ -721,7 +721,7 @@ namespace Baryonyx.Training
             };
         }
 
-        // 武器・防具は付けているもの、続けてアクセサリー3つ（Lvで開き、アクセサリーはまだ持てないので空き）。
+        // 武器・防具は付けているもの、続けてアクセサリー3つ（Lvで開き、開いた枠は付けているもの）。
         private TrainingGearState[] Gear(string id, int level)
         {
             var worn = gearOf(id) ?? Array.Empty<TrainingGearState>();
@@ -732,7 +732,11 @@ namespace Baryonyx.Training
                         ? i < worn.Count && worn[i] != null
                             ? worn[i]
                             : TrainingGearState.Worn(GearLabels[i], null, null)
-                        : Accessory(i - OpenGearSlots, level)
+                        : AccessorySlots.IsOpen(i - OpenGearSlots, level)
+                        && i < worn.Count
+                        && worn[i] != null
+                            ? worn[i]
+                            : Accessory(i - OpenGearSlots, level)
                 )
                 .ToArray();
         }

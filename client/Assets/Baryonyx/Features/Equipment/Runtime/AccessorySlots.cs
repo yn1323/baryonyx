@@ -1,9 +1,9 @@
 namespace Baryonyx.Equipment
 {
     /// <summary>
-    /// The three accessory slots and the level each one opens at. Accessories have no data yet
-    /// (doc/features/equipment.md#アクセサリー), so an open slot stays empty; the levels are
-    /// placeholders until the progression is decided.
+    /// The three accessory slots and the level each one opens at
+    /// (doc/features/equipment.md#アクセサリー). The server checks the same levels
+    /// (ACCESSORY_UNLOCK_LEVELS in server/src/features/equipment/catalog.ts).
     /// </summary>
     public static class AccessorySlots
     {

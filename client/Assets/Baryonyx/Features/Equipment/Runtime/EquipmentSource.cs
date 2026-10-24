@@ -31,15 +31,52 @@ namespace Baryonyx.Equipment
         public float Multiplier { get; }
     }
 
+    /// <summary>
+    /// One place a character wears an item: the weapon, the armour, or one of the three accessory
+    /// slots (<see cref="Index"/> 0 to 2). A slot converts to its place, so the weapon and the
+    /// armour are still named by their slot.
+    /// </summary>
+    public readonly struct EquipmentPlace : IEquatable<EquipmentPlace>
+    {
+        public EquipmentPlace(EquipmentSlot slot, int index = 0)
+        {
+            Slot = slot;
+            Index = slot == EquipmentSlot.Accessory ? index : 0;
+        }
+
+        public EquipmentSlot Slot { get; }
+
+        // アクセサリーの枠の番号（0〜2）。武器と防具では0。
+        public int Index { get; }
+
+        public static EquipmentPlace Accessory(int index) => new(EquipmentSlot.Accessory, index);
+
+        public static implicit operator EquipmentPlace(EquipmentSlot slot) => new(slot);
+
+        // APIの枠の名前（「weapon」「armor」「accessory1」〜「accessory3」）。
+        public string Key =>
+            Slot == EquipmentSlot.Accessory
+                ? $"accessory{Index + 1}"
+                : EquipmentCatalog.KeyOf(Slot);
+
+        public bool Equals(EquipmentPlace other) => Slot == other.Slot && Index == other.Index;
+
+        public override bool Equals(object obj) => obj is EquipmentPlace other && Equals(other);
+
+        public override int GetHashCode() => (int)Slot * 8 + Index;
+
+        public override string ToString() => Key;
+    }
+
     /// <summary>The items a player owns and what each character wears, as the server keeps them.</summary>
     public sealed class EquipmentState
     {
-        private readonly Dictionary<(string Character, EquipmentSlot Slot), string> worn = new();
+        private readonly Dictionary<(string Character, EquipmentPlace Place), string> worn = new();
         private readonly Dictionary<string, EquipmentItem> items = new();
 
         public EquipmentState(
             IReadOnlyList<EquipmentItem> owned,
-            IEnumerable<(string Character, EquipmentSlot Slot, string Item)> equipped,
+            IEnumerable<(string Character, EquipmentPlace Place, string Item)> equipped,
             string change = null,
             string from = null
         )
@@ -48,11 +85,11 @@ namespace Baryonyx.Equipment
             foreach (var item in Items)
                 items.TryAdd(item.Id, item);
             foreach (
-                var (character, slot, item) in equipped
-                    ?? Array.Empty<(string, EquipmentSlot, string)>()
+                var (character, place, item) in equipped
+                    ?? Array.Empty<(string, EquipmentPlace, string)>()
             )
                 if (!string.IsNullOrEmpty(character) && !string.IsNullOrEmpty(item))
-                    worn[(character, slot)] = item;
+                    worn[(character, place)] = item;
             Change = change ?? "";
             From = from;
         }
@@ -73,8 +110,10 @@ namespace Baryonyx.Equipment
             itemId != null && items.TryGetValue(itemId, out var item) ? item : null;
 
         // キャラの枠に付けている装備のID。空いていればnull。
-        public string ItemIn(string character, EquipmentSlot slot) =>
-            character != null && worn.TryGetValue((character, slot), out string item) ? item : null;
+        public string ItemIn(string character, EquipmentPlace place) =>
+            character != null && worn.TryGetValue((character, place), out string item)
+                ? item
+                : null;
 
         // その装備を付けているキャラのID。誰も付けていなければnull。
         public string WornBy(string itemId) =>
@@ -82,54 +121,55 @@ namespace Baryonyx.Equipment
                 ? null
                 : worn.FirstOrDefault(entry => entry.Value == itemId).Key.Character;
 
-        public IEnumerable<(string Character, EquipmentSlot Slot, string Item)> Worn =>
-            worn.Select(entry => (entry.Key.Character, entry.Key.Slot, entry.Value));
+        public IEnumerable<(string Character, EquipmentPlace Place, string Item)> Worn =>
+            worn.Select(entry => (entry.Key.Character, entry.Key.Place, entry.Value));
 
         /// <summary>
         /// The items worn after the character puts the item on in the slot, by the server's rules
         /// (doc/features/equipment.md): an item someone else wears moves to the character. An
-        /// item not owned or for another slot changes nothing ("none").
+        /// item not owned or for another slot changes nothing ("none"). An accessory worn in
+        /// another of the character's accessory slots moves too.
         /// </summary>
-        public EquipmentState WithEquipped(string characterId, EquipmentSlot slot, string itemId)
+        public EquipmentState WithEquipped(string characterId, EquipmentPlace place, string itemId)
         {
             var item = Find(itemId);
             if (
                 string.IsNullOrEmpty(characterId)
                 || item == null
-                || EquipmentCatalog.Find(item.EquipmentId)?.Slot != slot
+                || EquipmentCatalog.Find(item.EquipmentId)?.Slot != place.Slot
             )
                 return With(worn, "none");
-            string current = ItemIn(characterId, slot);
+            string current = ItemIn(characterId, place);
             if (current == itemId)
                 return With(worn, "none");
-            var next = new Dictionary<(string Character, EquipmentSlot Slot), string>(worn);
+            var next = new Dictionary<(string Character, EquipmentPlace Place), string>(worn);
             var holder = next.FirstOrDefault(entry => entry.Value == itemId).Key;
             if (holder.Character != null)
                 next.Remove(holder);
-            next[(characterId, slot)] = itemId;
+            next[(characterId, place)] = itemId;
             if (holder.Character != null)
                 return With(next, "move", holder.Character);
             return With(next, current == null ? "equip" : "replace");
         }
 
         /// <summary>The items worn after the character takes the slot's item off.</summary>
-        public EquipmentState WithUnequipped(string characterId, EquipmentSlot slot)
+        public EquipmentState WithUnequipped(string characterId, EquipmentPlace place)
         {
-            if (ItemIn(characterId, slot) == null)
+            if (ItemIn(characterId, place) == null)
                 return With(worn, "none");
-            var next = new Dictionary<(string Character, EquipmentSlot Slot), string>(worn);
-            next.Remove((characterId, slot));
+            var next = new Dictionary<(string Character, EquipmentPlace Place), string>(worn);
+            next.Remove((characterId, place));
             return With(next, "remove");
         }
 
         private EquipmentState With(
-            Dictionary<(string Character, EquipmentSlot Slot), string> next,
+            Dictionary<(string Character, EquipmentPlace Place), string> next,
             string change,
             string from = null
         ) =>
             new(
                 Items,
-                next.Select(entry => (entry.Key.Character, entry.Key.Slot, entry.Value)).ToArray(),
+                next.Select(entry => (entry.Key.Character, entry.Key.Place, entry.Value)).ToArray(),
                 change,
                 from
             );
@@ -143,14 +183,14 @@ namespace Baryonyx.Equipment
         // キャラの枠に装備を付ける。ほかのキャラが付けていれば、そのキャラから外して付け替える。
         Task<EquipmentState> EquipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             string itemId,
             CancellationToken token
         );
 
         Task<EquipmentState> UnequipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             CancellationToken token
         );
     }
@@ -175,16 +215,16 @@ namespace Baryonyx.Equipment
 
         public Task<EquipmentState> EquipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             string itemId,
             CancellationToken token
-        ) => Run(session => api.EquipAsync(session, characterId, slot, itemId, token), token);
+        ) => Run(session => api.EquipAsync(session, characterId, place, itemId, token), token);
 
         public Task<EquipmentState> UnequipAsync(
             string characterId,
-            EquipmentSlot slot,
+            EquipmentPlace place,
             CancellationToken token
-        ) => Run(session => api.UnequipAsync(session, characterId, slot, token), token);
+        ) => Run(session => api.UnequipAsync(session, characterId, place, token), token);
 
         private async Task<EquipmentState> Run(
             Func<AccountSession, Task<EquipmentApiClient.State>> operation,
@@ -203,9 +243,16 @@ namespace Baryonyx.Equipment
                 .SelectMany(character =>
                     new[]
                     {
-                        (character.id, EquipmentSlot.Weapon, character.weapon),
+                        (character.id, (EquipmentPlace)EquipmentSlot.Weapon, character.weapon),
                         (character.id, EquipmentSlot.Armor, character.armor),
-                    }
+                    }.Concat(
+                        (character.accessories ?? Array.Empty<string>())
+                            .Take(AccessorySlots.Count)
+                            .Select(
+                                (item, index) =>
+                                    (character.id, EquipmentPlace.Accessory(index), item)
+                            )
+                    )
                 );
             return new EquipmentState(
                 items,
