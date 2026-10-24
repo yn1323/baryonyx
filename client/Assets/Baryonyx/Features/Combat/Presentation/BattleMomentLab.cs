@@ -80,7 +80,7 @@ namespace Baryonyx.Combat.Presentation
         [Tooltip("ドロップした物を見せる札。")]
         public RewardReveal Reveal;
 
-        [Tooltip("ドロップの見本（ACTボーナスの名前・アイコン・光り方）。1回ごとに順に使う。")]
+        [Tooltip("ドロップの見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
         public RewardItem[] Samples = Array.Empty<RewardItem>();
 
         [Tooltip("ドロップの下に出す一言。")]

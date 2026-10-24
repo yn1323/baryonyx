@@ -139,11 +139,32 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The adventure's battle begins: the enemies appear, then the opening hand is dealt under
-        /// the band of the party's turn, as the battle mock begins at once.
+        /// the band of the party's turn, as the battle mock begins at once. When enemies are
+        /// faster than the party, they act first (doc/features/combat.md, the turn order).
         /// </summary>
         private IEnumerator Opening()
         {
+            var first = OpeningEnemies();
+            if (first.Count > 0)
+            {
+                // 現れている間も、順番の表示は敵から始める。
+                EnemyTurn = true;
+                openingPhase = true;
+                roundOrder = first;
+                roundStep = 0;
+            }
             yield return Encounter(BossEncounter, turnBanner: false);
+            if (first.Count > 0)
+            {
+                yield return EnemyPhase(first);
+                yield break;
+            }
+            DealOpeningHand();
+        }
+
+        // 最初の味方の番は、ターンを進めずに初めの手札を配って始める。
+        private void DealOpeningHand()
+        {
             RestartDeal();
             ShowPartyTurnBanner(again: false);
         }

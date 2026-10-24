@@ -66,7 +66,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FlameTailBird.a
 
 | Lv | HP | 物攻 | 物防 | 属攻 | 属防 | 速度 | 会心 | 幸運 |
 |---|---|---|---|---|---|---|---|---|
-| 100（定義の値） | 4700 | 760 | 280 | 1200 | 630 | 880 | 600 | 400 |
+| 100（定義の値） | 4700 | 760 | 280 | 1200 | 630 | 2180 | 600 | 400 |
 
 型は fast と caster で、[つらら尾の狐](enemy-icicle-fox.md)と同じ値である。
 速度を高くし、同じLvの味方より先に動きやすくした。

@@ -174,7 +174,8 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(ally.Name, Is.EqualTo(member.Name), id);
                 Assert.That(ally.Level, Is.EqualTo(level), id);
                 Assert.That(ally.MaxHp, Is.EqualTo(TrainingBond.StatsOf(growth, level).Hp), id);
-                Assert.That(ally.Hp, Is.EqualTo(ally.MaxHp), id);
+                // パーティより速い敵がいれば戦闘は敵の番から始まるため、もう攻撃を受けていることがある。
+                Assert.That(ally.Hp, Is.InRange(0, ally.MaxHp), id);
                 Assert.That(ally.Sprite.texture, Is.SameAs(member.Art), id);
                 Assert.That(ally.Tint, Is.EqualTo(member.Tint), id);
 
@@ -190,8 +191,12 @@ namespace Baryonyx.Tests.PlayMode
                 );
                 Assert.That(cards.All(card => card.Owner == member.Name), Is.True, id);
 
-                // その人のパッシブ：レベルで解放したものだけが戦闘で働く。
-                foreach (var passive in Combat.CombatPassives.Of(id))
+                // その人のパッシブ：レベルで解放したものだけが戦闘で働く。先に動いた敵に倒されていれば働かない。
+                foreach (
+                    var passive in ally.Down
+                        ? Enumerable.Empty<Combat.CombatPassive>()
+                        : Combat.CombatPassives.Of(id)
+                )
                     Assert.That(
                         battle.HasPassive(place, passive.Kind),
                         Is.EqualTo(passive.UnlockLevel <= level),
@@ -200,9 +205,9 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(cards.All(card => card.Card != null && card.Art != null), Is.True, id);
                 expectedCards += cards.Length;
             }
-            // トーマ（Lv 20）は固有スキルを2つ、アンセルム（Lv 8）は1つ、グレタ（Lv 3）はまだ使えない。
+            // 固有スキルはLv 1・10・30で開く。トーマ（Lv 20）は2つ、アンセルム（Lv 8）とグレタ（Lv 3）は1つ使える。
             Assert.That(battle.Deck, Has.Length.EqualTo(expectedCards));
-            Assert.That(expectedCards, Is.EqualTo(4 + 3 + 2));
+            Assert.That(expectedCards, Is.EqualTo(4 + 3 + 3));
         }
 
         // 冒険の戦闘では、固有スキルのカードが部屋の種類と推奨Lvの確率で進化し、

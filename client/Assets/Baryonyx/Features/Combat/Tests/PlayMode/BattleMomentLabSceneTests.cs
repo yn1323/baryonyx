@@ -55,7 +55,7 @@ namespace Baryonyx.Tests.PlayMode
                 lab.MomentButtons,
                 Has.Length.EqualTo(Enum.GetValues(typeof(BattleMoment)).Length)
             );
-            Assert.That(lab.Samples, Is.Not.Empty, "The drops hold the ACT bonuses.");
+            Assert.That(lab.Samples, Is.Not.Empty, "The drops hold pieces of equipment.");
             Assert.That(lab.Samples, Has.All.Matches<RewardItem>(drop => drop.Icon != null));
 
             // The first Play opens on the enemies appearing.
@@ -82,7 +82,10 @@ namespace Baryonyx.Tests.PlayMode
             yield return Press(lab, BattleMoment.Drop);
             Assert.That(lab.Reveal.Shown, Is.True, "The drop opens on its plate.");
             Assert.That(lab.Reveal.Quality.text, Is.EqualTo("S"));
-            Assert.That(lab.Reveal.Kind.text, Is.EqualTo("ACTボーナス"));
+            Assert.That(
+                lab.Reveal.Kind.text,
+                Is.EqualTo(lab.Samples[0].Kind).And.StartsWith("武器")
+            );
             Assert.That(lab.Reveal.Name.text, Is.EqualTo(lab.Samples[0].Name));
             Assert.That(lab.Reveal.Nothing.gameObject.activeSelf, Is.False);
 

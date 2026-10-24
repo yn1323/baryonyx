@@ -650,6 +650,9 @@ namespace Baryonyx.Combat.Presentation
         private List<int> roundOrder = new();
         private int roundStep = -1;
 
+        // 戦闘の最初に、パーティより速い敵が味方の番より先に動いている間（ターンはまだ進めない）。
+        private bool openingPhase;
+
         public const int PartyTurn = -1;
 
         public int Turn { get; private set; }
@@ -1484,11 +1487,13 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         private bool AnyAffordable() => hand.Exists(Affordable);
 
-        private IEnumerator EnemyPhase()
+        private IEnumerator EnemyPhase(List<int> opening = null)
         {
             // The band tells that the enemies' turn has come, and they wait for it, unless none
-            // of them acts before the party's next turn.
-            roundOrder = EnemiesAfter(BattleTurn);
+            // of them acts before the party's next turn. At the battle's start, the enemies
+            // faster than the party (opening) act before its first turn.
+            openingPhase = opening != null;
+            roundOrder = opening ?? EnemiesAfter(BattleTurn);
             bool enemiesAct = roundOrder.Count > 0;
             if (enemiesAct)
             {
@@ -1520,7 +1525,53 @@ namespace Baryonyx.Combat.Presentation
                 if (Array.TrueForAll(Allies, ally => ally.Down))
                     ReviveAllies();
             }
+            if (opening != null)
+            {
+                openingPhase = false;
+                EnemyTurn = false;
+                DealOpeningHand();
+                yield break;
+            }
             BeginPartyTurn(again: !enemiesAct);
+        }
+
+        /// <summary>
+        /// The enemies faster than the party, which act before its first turn: only when the
+        /// enemies have speeds (the adventure's battle), the faster first.
+        /// </summary>
+        public List<int> OpeningEnemies()
+        {
+            if (!Array.Exists(Enemies, enemy => enemy.Alive && enemy.Speed > 0))
+                return new List<int>();
+            return CombatTurnOrder.Opening(PartySpeed(), EnemySpeeds());
+        }
+
+        // 敵の速度（倒れた敵は0）。速度アップ・凍えを当てる。
+        private double[] EnemySpeeds()
+        {
+            var speeds = new double[Enemies.Length];
+            for (int i = 0; i < Enemies.Length; i++)
+                speeds[i] = Enemies[i].Alive
+                    ? SpeedWithStatuses(false, i, Math.Max(1, Enemies[i].Speed))
+                    : 0;
+            return speeds;
+        }
+
+        /// <summary>The part (percent) a chill takes off the speed (doc/features/combat.md, 凍え).</summary>
+        public const int ChillSpeedPercent = 30;
+
+        /// <summary>The part (percent) a speed up adds when the card gives none.</summary>
+        public const int SpeedUpPercent = 30;
+
+        /// <summary>A speed with the ally's (or enemy's) speed up and chill on it.</summary>
+        public double SpeedWithStatuses(bool ally, int index, double speed)
+        {
+            var up = Find(ally, index, CardStatus.SpeedUp);
+            if (up != null)
+                speed *= 1 + (up.Amount > 0 ? up.Amount : SpeedUpPercent) / 100.0;
+            if (HasStatus(ally, index, CardStatus.Chill))
+                speed *= 1 - ChillSpeedPercent / 100.0;
+            return speed;
         }
 
         /// <summary>
@@ -1553,12 +1604,7 @@ namespace Baryonyx.Combat.Presentation
         public List<int> EnemiesAfter(int round)
         {
             if (Array.Exists(Enemies, enemy => enemy.Alive && enemy.Speed > 0))
-            {
-                var speeds = new double[Enemies.Length];
-                for (int i = 0; i < Enemies.Length; i++)
-                    speeds[i] = Enemies[i].Alive ? Math.Max(1, Enemies[i].Speed) : 0;
-                return CombatTurnOrder.After(round, PartySpeed(), speeds);
-            }
+                return CombatTurnOrder.After(round, PartySpeed(), EnemySpeeds());
             var runs = new List<List<int>>();
             int first = Array.IndexOf(TurnCycle, PartyTurn);
             if (first < 0)
@@ -1575,13 +1621,16 @@ namespace Baryonyx.Combat.Presentation
             return run.FindAll(enemy => Enemies[enemy].Alive);
         }
 
-        /// <summary>The party's speed in the turn order: the average of the allies standing.</summary>
+        /// <summary>
+        /// The party's speed in the turn order: the average of the allies standing, each with its
+        /// speed up and chill.
+        /// </summary>
         public double PartySpeed()
         {
-            var speeds = new List<int>();
-            foreach (var ally in Allies)
-                if (!ally.Down)
-                    speeds.Add(ally.Stats.Speed);
+            var speeds = new List<double>();
+            for (int i = 0; i < Allies.Length; i++)
+                if (!Allies[i].Down)
+                    speeds.Add(SpeedWithStatuses(true, i, Allies[i].Stats.Speed));
             return CombatTurnOrder.PartySpeed(speeds);
         }
 
@@ -1855,7 +1904,9 @@ namespace Baryonyx.Combat.Presentation
                 for (int k = roundStep; k < roundOrder.Count; k++)
                     if (Enemies[roundOrder[k]].Alive)
                         turns.Add(roundOrder[k]);
-                round++;
+                // 最初の敵の番のあとは、まだ1つ目の味方の番。
+                if (!openingPhase)
+                    round++;
             }
             while (turns.Count < count)
             {

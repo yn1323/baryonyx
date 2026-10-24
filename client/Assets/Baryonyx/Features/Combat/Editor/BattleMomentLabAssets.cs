@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
+using Baryonyx.Inventory.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using UnityEditor;
@@ -26,11 +28,8 @@ namespace Baryonyx.Combat.Editor
         public const string PrefabPath =
             "Assets/Baryonyx/Features/Combat/UI/BattleMomentLabPanel.prefab";
 
-        private const string BonusDataPath =
-            "Assets/Baryonyx/Features/StepBonus/Data/StepBonusMockData.asset";
-
-        // How many bonuses the drops take in turn.
-        private const int SampleCount = 6;
+        // How many pieces of each slot the drops take in turn.
+        private const int SamplesPerSlot = 2;
 
         // The words on the moment buttons, in BattleMoment's order.
         private static readonly string[] MomentLabels =
@@ -74,36 +73,50 @@ namespace Baryonyx.Combat.Editor
                 lab.Reveal = RewardRevealAssets.Build(safe, PlateCenter);
                 EnemyLabAssets.BuildStrip(safe);
                 BuildRows(safe, lab);
-                lab.Samples = BonusSamples();
+                lab.Samples = RewardSamples();
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
             AssetDatabase.SaveAssets();
         }
 
-        /// <summary>The first ACT bonuses with an icon: what the labs' drops and chests hold, in turn.</summary>
-        public static RewardItem[] BonusSamples()
+        /// <summary>
+        /// The rarest weapons, armour and accessories with art, the slots in turn: what the labs'
+        /// drops and chests hold, shown as a real drop of them is.
+        /// </summary>
+        public static RewardItem[] RewardSamples()
         {
-            var data = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(BonusDataPath);
-            if (data == null)
-                throw new InvalidOperationException(
-                    "The ACT bonuses are missing: " + BonusDataPath
-                );
+            var art = ItemArtAssets.Load();
+            var slots = EquipmentCatalog
+                .All.Where(gear => art.Find(gear.Id) != null)
+                .GroupBy(gear => gear.Slot)
+                .OrderBy(slot => slot.Key)
+                .Select(slot =>
+                    slot.OrderByDescending(gear => gear.Rarity).Take(SamplesPerSlot).ToArray()
+                )
+                .ToArray();
             var samples = new List<RewardItem>();
-            foreach (var bonus in data.Bonuses)
+            for (int i = 0; i < SamplesPerSlot; i++)
             {
-                if (bonus == null || bonus.Icon == null || samples.Count >= SampleCount)
-                    continue;
-                samples.Add(
-                    new RewardItem
-                    {
-                        Kind = "ACTボーナス",
-                        Name = bonus.Name,
-                        Icon = bonus.Icon,
-                        FoilStyle = data.FoilStyleOf(bonus.Id),
-                    }
-                );
+                foreach (var slot in slots)
+                {
+                    if (i >= slot.Length)
+                        continue;
+                    var gear = slot[i];
+                    samples.Add(
+                        new RewardItem
+                        {
+                            Kind =
+                                $"{EquipmentCatalog.NameOf(gear.Slot)}　{EquipmentCatalog.Stars(gear.Rarity)}",
+                            Name = gear.Name,
+                            Icon = art.Find(gear.Id),
+                            FoilStyle = EquipmentCatalog.FoilStyleOf(gear.Id),
+                        }
+                    );
+                }
             }
+            if (samples.Count == 0)
+                throw new InvalidOperationException("No weapon, armour or accessory has art.");
             return samples.ToArray();
         }
 

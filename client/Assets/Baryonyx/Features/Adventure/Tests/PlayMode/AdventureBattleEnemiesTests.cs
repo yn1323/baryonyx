@@ -59,8 +59,10 @@ namespace Baryonyx.Tests.PlayMode
                 "The battle did not get ready."
             );
 
-            // The room's two enemies have speeds and skills, and act once after each party
-            // turn, the faster first: not two party turns in a row as the mock's order had.
+            // The room's two enemies have speeds and skills, and act once in each round, the
+            // faster first: one faster than the party before its turn (it already acted when the
+            // battle began), a slower one after it. Not two party turns in a row as the mock's
+            // order had.
             var standing = Enumerable
                 .Range(0, view.Enemies.Length)
                 .Where(i => view.Enemies[i].Alive)
@@ -72,20 +74,27 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(view.Enemies[i].Brain, Is.Not.Null);
             }
             var faster = standing.OrderByDescending(i => view.Enemies[i].Speed).ToArray();
-            const int party = BattleInspectView.PartyTurn;
+            double partySpeed = view.PartySpeed();
+            var first = faster.Where(i => view.Enemies[i].Speed > partySpeed).ToArray();
+            var after = faster.Where(i => view.Enemies[i].Speed <= partySpeed).ToArray();
             Assert.That(
-                view.UpcomingTurns(6),
-                Is.EqualTo(new[] { party, faster[0], faster[1], party, faster[0], faster[1] })
+                first,
+                Is.EqualTo(view.OpeningEnemies()),
+                "The enemies faster than the party act first."
             );
+            const int party = BattleInspectView.PartyTurn;
+            var round = new[] { party }.Concat(after).Concat(first).ToArray();
+            Assert.That(view.UpcomingTurns(6), Is.EqualTo(round.Concat(round).Take(6).ToArray()));
 
             view.EndTurn();
             yield return SceneTests.WaitUntil(() => !view.EnemyTurn, 20f, "The enemies acted.");
             foreach (int i in standing)
                 if (view.Enemies[i].Alive)
                     Assert.That(
-                        view.Enemies[i].Brain.History.Count == 1 || view.IsCharging(i),
+                        view.Enemies[i].Brain.History.Count == (first.Contains(i) ? 2 : 1)
+                            || view.IsCharging(i),
                         Is.True,
-                        $"{view.Enemies[i].Id} used its first skill, or gathers for it."
+                        $"{view.Enemies[i].Id} used its skills, or gathers for one."
                     );
             Assert.That(view.BattleTurn, Is.EqualTo(2));
         }

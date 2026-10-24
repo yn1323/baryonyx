@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardShieldBash.aseprite
 | 属性 | 打 |
 | 種類・対象 | 攻撃・敵単体 |
 | コスト | 1 |
-| 説明文 | 敵1体に物防の90%ダメージ。味方全体にブロック物防の30%。 |
-| 効果（行う順） | 敵単体：ダメージ（物防の90%）<br>味方全体：ブロック（物防の30%） |
+| 説明文 | 敵1体に物防の90%ダメージ。味方全体にブロック物防の15%。 |
+| 効果（行う順） | 敵単体：ダメージ（物防の90%）<br>味方全体：ブロック（物防の15%） |
 
 ## 分類固有のデータ
 
@@ -55,7 +55,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardShieldBash.aseprite
 | 属性 | 打 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 1 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 倍率の上限 | ×2.2 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
-| 威力・回復量 | 物防の90%、物防の30% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
+| 威力・回復量 | 物防の90%、物防の15% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 押し込む | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |

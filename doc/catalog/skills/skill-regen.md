@@ -43,8 +43,8 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRegen.aseprite
 | 属性 | なし |
 | 種類・対象 | 回復・味方単体 |
 | コスト | 2 |
-| 説明文 | 味方1体を、3ターンの間、毎ターン属攻の40%回復する。 |
-| 効果（行う順） | 味方単体：リジェネ3ターン（属攻の40%） |
+| 説明文 | 味方1体を、3ターンの間、毎ターン属攻の30%回復する。 |
+| 効果（行う順） | 味方単体：リジェネ3ターン（属攻の30%） |
 
 ## 分類固有のデータ
 
@@ -55,7 +55,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardRegen.aseprite
 | 属性 | なし | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 2 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。5以上はカットインを出す | 仮 |
 | 倍率の上限 | ×2.2 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
-| 威力・回復量 | 属攻の40% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
+| 威力・回復量 | 属攻の30% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | リジェネ3ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |
 | 演出（感覚の言葉） | 芽吹く | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |

@@ -70,6 +70,37 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ASkillThatLandsNoBlowKeepsLessOfItsWeight()
+        {
+            var behavior = new EnemyBehavior
+            {
+                Id = "test",
+                Moves = new[] { Attack("a", PhysicalAttack, 100), Guard("g", 100) },
+                Early = new EnemyPattern { Choices = new[] { Weight("a", 50), Weight("g", 50) } },
+            };
+            var brain = new EnemyBrain(behavior, _ => 0);
+            Assert.That(brain.WeightOf(new EnemyChoice("a", 50)), Is.EqualTo(50));
+            Assert.That(
+                brain.WeightOf(new EnemyChoice("g", 50)),
+                Is.EqualTo(50 * EnemyBrain.QuietWeightPercent / 100)
+            );
+            // 抽選の合計も、減らした重みで数える。
+            int total = 0;
+            Run(
+                new EnemyBrain(
+                    behavior,
+                    n =>
+                    {
+                        total = n;
+                        return 0;
+                    }
+                ),
+                1
+            );
+            Assert.That(total, Is.EqualTo(50 + 50 * EnemyBrain.QuietWeightPercent / 100));
+        }
+
+        [Test]
         public void ItsHpRunningLowCallsForItsRuleOnceAndThenWhatFollows()
         {
             var behavior = new EnemyBehavior

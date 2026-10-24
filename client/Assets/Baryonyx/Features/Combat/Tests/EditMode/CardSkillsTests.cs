@@ -130,7 +130,7 @@ namespace Baryonyx.Tests.EditMode
             var text = CardRules.Describe(card, (action, part) => $"[{part}]");
             Assert.That(
                 text,
-                Is.EqualTo("敵全体に[属攻の50%]ダメージ。味方全体のHPを[属攻の30%]回復。")
+                Is.EqualTo("敵全体に[属攻の50%]ダメージ。味方全体のHPを[属攻の25%]回復。")
             );
         }
 

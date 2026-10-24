@@ -70,6 +70,12 @@ namespace Baryonyx.Combat
     /// </summary>
     public sealed class EnemyBrain
     {
+        /// <summary>
+        /// The part of its weight a skill that lands no blow (guarding, gathering strength, a
+        /// status) keeps in the usual choice, so enemies mostly attack (2026-10-24, provisional).
+        /// </summary>
+        public const int QuietWeightPercent = 40;
+
         private readonly Func<int, int> random;
         private readonly List<string> history = new();
         private readonly Dictionary<string, int> lastUsed = new();
@@ -230,16 +236,23 @@ namespace Baryonyx.Combat
                 return null;
             int total = 0;
             foreach (var choice in open)
-                total += choice.Weight;
+                total += WeightOf(choice);
             int roll = random(total);
             foreach (var choice in open)
             {
-                if (roll < choice.Weight)
+                int weight = WeightOf(choice);
+                if (roll < weight)
                     return choice.Move;
-                roll -= choice.Weight;
+                roll -= weight;
             }
             return open[^1].Move;
         }
+
+        /// <summary>The weight of a choice, less for a skill that lands no blow.</summary>
+        public int WeightOf(EnemyChoice choice) =>
+            Behavior.Move(choice.Move) is { Strikes: true }
+                ? choice.Weight
+                : Math.Max(1, choice.Weight * QuietWeightPercent / 100);
 
         /// <summary>The first blow it has, when nothing else is left to choose.</summary>
         private string Fallback()

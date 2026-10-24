@@ -77,7 +77,7 @@ namespace Baryonyx.Items
                     Ally,
                     1,
                     "味方1体のHPを{0}回復。",
-                    Heal(Ally, Mag, 60)
+                    Heal(Ally, Mag, 50)
                 ),
                 Item(
                     "acorn",
@@ -99,7 +99,7 @@ namespace Baryonyx.Items
                     Ally,
                     1,
                     "味方1体に{0}ブロック。",
-                    Block(Ally, Def, 80)
+                    Block(Ally, Def, 45)
                 ),
                 Item(
                     "dew-vial",
@@ -132,8 +132,8 @@ namespace Baryonyx.Items
                     Allies,
                     2,
                     "味方全体のHPを{0}回復し、3ターンの間、毎ターン少し回復する。",
-                    Heal(Allies, Mag, 40),
-                    Apply(Allies, CardStatus.Regen, 3, Mag, 15)
+                    Heal(Allies, Mag, 30),
+                    Apply(Allies, CardStatus.Regen, 3, Mag, 10)
                 ),
                 // --- 港町ポルトリア（Lv 14） -------------------------------------------------
                 Item(
@@ -145,7 +145,7 @@ namespace Baryonyx.Items
                     Ally,
                     1,
                     "味方1体のHPを{0}回復。",
-                    Heal(Ally, Mag, 75)
+                    Heal(Ally, Mag, 60)
                 ),
                 Item(
                     "shell-shard",
@@ -179,7 +179,7 @@ namespace Baryonyx.Items
                     1,
                     "味方1体の[状態異常]を消し、HPを{0}回復。",
                     Simple(CardActionKind.Cleanse, Ally),
-                    Heal(Ally, Mag, 30)
+                    Heal(Ally, Mag, 25)
                 ),
                 Item(
                     "ink-pot",

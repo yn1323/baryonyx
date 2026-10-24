@@ -430,7 +430,7 @@ namespace Baryonyx.SkillEvolution
                     1,
                     "UniqueShieldStance0",
                     "自分に[ブロック]{0}。",
-                    Block(Self, Def, 80)
+                    Block(Self, Def, 45)
                 ),
                 // 1本目の枝：自分の守りを固める。
                 Stage(
@@ -443,7 +443,7 @@ namespace Baryonyx.SkillEvolution
                     1,
                     "UniqueShieldStance1",
                     "自分に[ブロック]{0}。2ターン、受けるダメージを25%減らす。",
-                    Block(Self, Def, 100),
+                    Block(Self, Def, 55),
                     Apply(Self, CardStatus.Protect, 2, 25)
                 ),
                 Stage(
@@ -456,7 +456,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueShieldStance2",
                     "自分に[ブロック]{0}。2ターン、受けるダメージを50%減らす。",
-                    Block(Self, Def, 150),
+                    Block(Self, Def, 85),
                     Apply(Self, CardStatus.Protect, 2, 50)
                 ),
                 // 2本目の枝：攻撃をはね返す。
@@ -470,7 +470,7 @@ namespace Baryonyx.SkillEvolution
                     1,
                     "UniqueShieldStance3",
                     "自分に[ブロック]{0}。次に受ける単体攻撃を1回はね返す。",
-                    Block(Self, Def, 80),
+                    Block(Self, Def, 45),
                     Apply(Self, CardStatus.Reflect, 1)
                 ),
                 Stage(
@@ -484,7 +484,7 @@ namespace Baryonyx.SkillEvolution
                     "UniqueShieldStance4",
                     "敵1体に{0}ダメージ。自分に[ブロック]{1}。単体攻撃を1回反射。",
                     Damage(Enemy, Def, 80),
-                    Block(Self, Def, 100),
+                    Block(Self, Def, 55),
                     Apply(Self, CardStatus.Reflect, 1)
                 ),
                 // 3本目の枝：仲間も守る。
@@ -498,8 +498,8 @@ namespace Baryonyx.SkillEvolution
                     1,
                     "UniqueShieldStance5",
                     "自分に[ブロック]{0}。味方全体に[ブロック]{1}。",
-                    Block(Self, Def, 80),
-                    Block(Allies, Def, 30)
+                    Block(Self, Def, 45),
+                    Block(Allies, Def, 15)
                 ),
                 Stage(
                     "ShieldStance.6",
@@ -511,7 +511,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueShieldStance6",
                     "味方全体に[ブロック]{0}。2ターン、敵の攻撃を引きつける。",
-                    Block(Allies, Def, 60),
+                    Block(Allies, Def, 35),
                     Apply(Self, CardStatus.Taunt, 2)
                 )
             ),
@@ -624,7 +624,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueHealingWind0",
                     "味方全体のHPを{0}回復する。",
-                    Heal(Allies, Mag, 60)
+                    Heal(Allies, Mag, 50)
                 ),
                 // 1本目の枝：回復を続ける。
                 Stage(
@@ -637,8 +637,8 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueHealingWind1",
                     "味方全体のHPを{0}回復。2ターンの間、毎ターン{1}回復する。",
-                    Heal(Allies, Mag, 40),
-                    Apply(Allies, CardStatus.Regen, 2, Mag, 20)
+                    Heal(Allies, Mag, 30),
+                    Apply(Allies, CardStatus.Regen, 2, Mag, 15)
                 ),
                 Stage(
                     "HealingWind.2",
@@ -650,8 +650,8 @@ namespace Baryonyx.SkillEvolution
                     3,
                     "UniqueHealingWind2",
                     "味方全体のHPを{0}回復。3ターンの間、毎ターン{1}回復する。",
-                    Heal(Allies, Mag, 50),
-                    Apply(Allies, CardStatus.Regen, 3, Mag, 25)
+                    Heal(Allies, Mag, 40),
+                    Apply(Allies, CardStatus.Regen, 3, Mag, 20)
                 ),
                 // 2本目の枝：守りと浄化を加える。
                 Stage(
@@ -664,7 +664,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueHealingWind3",
                     "味方全体のHPを{0}回復。1ターン、受けるダメージを25%減らす。",
-                    Heal(Allies, Mag, 45),
+                    Heal(Allies, Mag, 35),
                     Apply(Allies, CardStatus.Protect, 1, 25)
                 ),
                 Stage(
@@ -678,7 +678,7 @@ namespace Baryonyx.SkillEvolution
                     "UniqueHealingWind4",
                     "味方全体の[状態異常]を消し、HPを{0}回復。2ターン、受けるダメージを25%減らす。",
                     Simple(CardActionKind.Cleanse, Allies),
-                    Heal(Allies, Mag, 55),
+                    Heal(Allies, Mag, 45),
                     Apply(Allies, CardStatus.Protect, 2, 25)
                 ),
                 // 3本目の枝：エネルギーと手札を巡らせる。
@@ -692,7 +692,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueHealingWind5",
                     "味方全体のHPを{0}回復。エネルギー+1。",
-                    Heal(Allies, Mag, 45),
+                    Heal(Allies, Mag, 35),
                     Simple(CardActionKind.Energy, Nobody, 1)
                 ),
                 Stage(
@@ -705,7 +705,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "UniqueHealingWind6",
                     "味方全体のHPを{0}回復。エネルギー+1。カードを1枚引く。",
-                    Heal(Allies, Mag, 50),
+                    Heal(Allies, Mag, 40),
                     Simple(CardActionKind.Energy, Nobody, 1),
                     Simple(CardActionKind.Draw, Nobody, 1)
                 )
@@ -777,7 +777,7 @@ namespace Baryonyx.SkillEvolution
                     "倒れた味方1体を、HP最大の半分で復活。1ターン無敵。3ターン毎ターン{0}回復。",
                     Simple(CardActionKind.Revive, Ally, 50),
                     Apply(Ally, CardStatus.Invincible, 1),
-                    Apply(Ally, CardStatus.Regen, 3, Mag, 30)
+                    Apply(Ally, CardStatus.Regen, 3, Mag, 25)
                 ),
                 // 3本目の枝：奮い立たせて起こす。
                 Stage(
@@ -1022,7 +1022,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "WarCry",
                     "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。",
-                    Block(Allies, Def, 40),
+                    Block(Allies, Def, 20),
                     Apply(Allies, CardStatus.AttackUp, 2, 20)
                 ),
                 // 1本目の枝：自ら斬り込む。
@@ -1063,7 +1063,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "Hone",
                     "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。カードを1枚引く。",
-                    Block(Allies, Def, 40),
+                    Block(Allies, Def, 20),
                     Apply(Allies, CardStatus.AttackUp, 2, 20),
                     Simple(CardActionKind.Draw, Nobody, 1)
                 ),
@@ -1077,7 +1077,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "Hone",
                     "味方全体に[ブロック]{0}。味方全体の攻撃力を2ターン20%上げる。カードを2枚引く。",
-                    Block(Allies, Def, 40),
+                    Block(Allies, Def, 20),
                     Apply(Allies, CardStatus.AttackUp, 2, 20),
                     Simple(CardActionKind.Draw, Nobody, 2)
                 ),
@@ -1092,7 +1092,7 @@ namespace Baryonyx.SkillEvolution
                     2,
                     "GuardianOath",
                     "味方全体に[ブロック]{0}。味方全体の受けるダメージを、2ターン25%減らす。",
-                    Block(Allies, Def, 60),
+                    Block(Allies, Def, 35),
                     Apply(Allies, CardStatus.Protect, 2, 25)
                 ),
                 Stage(
@@ -1105,7 +1105,7 @@ namespace Baryonyx.SkillEvolution
                     3,
                     "GuardianOath",
                     "味方全体に[ブロック]{0}。味方全体の受けるダメージを、2ターン40%減らす。",
-                    Block(Allies, Def, 80),
+                    Block(Allies, Def, 45),
                     Apply(Allies, CardStatus.Protect, 2, 40)
                 )
             ),
@@ -1124,7 +1124,7 @@ namespace Baryonyx.SkillEvolution
                     "HolyLight",
                     "敵全体に{0}ダメージ。味方全体のHPを{1}回復する。",
                     Damage(Enemies, Mag, 60),
-                    Heal(Allies, Mag, 25)
+                    Heal(Allies, Mag, 20)
                 ),
                 // 1本目の枝：1体に集める。
                 Stage(
@@ -1138,7 +1138,7 @@ namespace Baryonyx.SkillEvolution
                     "HolyHammer",
                     "敵1体に{0}ダメージ。味方全体のHPを{1}回復する。",
                     Damage(Enemy, Mag, 140),
-                    Heal(Allies, Mag, 25)
+                    Heal(Allies, Mag, 20)
                 ),
                 Stage(
                     "Judgment.2",
@@ -1151,7 +1151,7 @@ namespace Baryonyx.SkillEvolution
                     "HolyHammer",
                     "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。味方全体のHPを{1}回復する。",
                     Damage(Enemy, Mag, 160).Bonus(CardCondition.OnWounded, 50),
-                    Heal(Allies, Mag, 30)
+                    Heal(Allies, Mag, 25)
                 ),
                 // 2本目の枝：清める。
                 Stage(
@@ -1166,7 +1166,7 @@ namespace Baryonyx.SkillEvolution
                     "敵全体に{0}ダメージ。味方全体の[状態異常]を消し、HPを{1}回復。",
                     Damage(Enemies, Mag, 60),
                     Simple(CardActionKind.Cleanse, Allies),
-                    Heal(Allies, Mag, 25)
+                    Heal(Allies, Mag, 20)
                 ),
                 Stage(
                     "Judgment.4",
@@ -1181,7 +1181,7 @@ namespace Baryonyx.SkillEvolution
                     Simple(CardActionKind.Dispel, Enemies, 1),
                     Damage(Enemies, Mag, 70),
                     Simple(CardActionKind.Cleanse, Allies),
-                    Heal(Allies, Mag, 30)
+                    Heal(Allies, Mag, 25)
                 ),
                 // 3本目の枝：癒やしを残す。
                 Stage(
@@ -1195,8 +1195,8 @@ namespace Baryonyx.SkillEvolution
                     "Regen",
                     "敵全体に{0}ダメージ。味方全体のHPを{1}回復。2ターン毎ターン{2}回復。",
                     Damage(Enemies, Mag, 60),
-                    Heal(Allies, Mag, 25),
-                    Apply(Allies, CardStatus.Regen, 2, Mag, 15)
+                    Heal(Allies, Mag, 20),
+                    Apply(Allies, CardStatus.Regen, 2, Mag, 10)
                 ),
                 Stage(
                     "Judgment.6",
@@ -1209,8 +1209,8 @@ namespace Baryonyx.SkillEvolution
                     "Regen",
                     "敵全体に{0}ダメージ。味方全体のHPを{1}回復。3ターン毎ターン{2}回復。",
                     Damage(Enemies, Mag, 60),
-                    Heal(Allies, Mag, 25),
-                    Apply(Allies, CardStatus.Regen, 3, Mag, 20)
+                    Heal(Allies, Mag, 20),
+                    Apply(Allies, CardStatus.Regen, 3, Mag, 15)
                 )
             )
         );

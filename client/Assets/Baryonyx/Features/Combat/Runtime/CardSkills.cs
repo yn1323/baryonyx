@@ -99,7 +99,7 @@ namespace Baryonyx.Combat
                 1,
                 2.5f,
                 "味方1体のHPを{0}回復する。",
-                Heal(Ally, Mag, 90)
+                Heal(Ally, Mag, 70)
             ),
             Card(
                 "Guard",
@@ -111,7 +111,7 @@ namespace Baryonyx.Combat
                 1,
                 2.5f,
                 "味方全体に[ブロック]{0}。",
-                Block(Allies, Def, 60)
+                Block(Allies, Def, 35)
             ),
             // --- Aria: slash, blunt, guarding the party -------------------------------------
             Card(
@@ -174,7 +174,7 @@ namespace Baryonyx.Combat
                 2.2f,
                 "敵1体に{0}ダメージ。味方全体に[ブロック]{1}。",
                 Damage(Enemy, Def, 90),
-                Block(Allies, Def, 30)
+                Block(Allies, Def, 15)
             ),
             Card(
                 "ArmorBreak",
@@ -235,7 +235,7 @@ namespace Baryonyx.Combat
                 2,
                 2f,
                 "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。",
-                Block(Self, Def, 150),
+                Block(Self, Def, 85),
                 Apply(Self, CardStatus.Taunt, 2)
             ),
             Card(
@@ -549,7 +549,7 @@ namespace Baryonyx.Combat
                 3,
                 2.2f,
                 "味方全体のHPを{0}回復。今日のACTが多いほど回復。",
-                Heal(Allies, Mag, 50).WithAct(10, 100)
+                Heal(Allies, Mag, 40).WithAct(10, 100)
             ),
             Card(
                 "Regen",
@@ -561,7 +561,7 @@ namespace Baryonyx.Combat
                 2,
                 2.2f,
                 "味方1体を、3ターンの間、毎ターン{0}回復する。",
-                Apply(Ally, CardStatus.Regen, 3, Mag, 40)
+                Apply(Ally, CardStatus.Regen, 3, Mag, 30)
             ),
             Card(
                 "Resurrection",
@@ -611,7 +611,7 @@ namespace Baryonyx.Combat
                 2.2f,
                 "味方全体の[状態異常]を消し、HPを{0}回復。",
                 Simple(CardActionKind.Cleanse, Allies),
-                Heal(Allies, Mag, 25)
+                Heal(Allies, Mag, 20)
             ),
             Card(
                 "ManaPrayer",
@@ -648,7 +648,7 @@ namespace Baryonyx.Combat
                 2.2f,
                 "敵全体に{0}ダメージ。味方全体のHPを{1}回復。",
                 Damage(Enemies, Mag, 50),
-                Heal(Allies, Mag, 30)
+                Heal(Allies, Mag, 25)
             ),
             Card(
                 "DivineShield",
