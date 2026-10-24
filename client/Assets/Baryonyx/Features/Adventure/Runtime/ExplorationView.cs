@@ -89,7 +89,7 @@ namespace Baryonyx.Adventure
         // マスの種類ごとの札の地の色と、縁の明るい色（AdventureRoomKind の順）。
         // いちばん多い魔物は目立たない青灰色にし、強い魔物は赤、宝箱は金、最奥の間は紫で目を引く。
         // 休憩は焚き火の橙、行商人は革の茶、怪しい宝箱はくすんだ紫、試練は深紅、歩数の扉は緑、
-        // 進化の祭壇は青白い光の色にする。
+        // 進化の祭壇は青白い光の色、「？」は中身の分からない灰青にする。
         private static readonly Color[] KindPlates =
         {
             new(0.11f, 0.165f, 0.19f, 0.96f),
@@ -103,6 +103,7 @@ namespace Baryonyx.Adventure
             new(0.40f, 0.06f, 0.22f, 0.96f),
             new(0.07f, 0.30f, 0.14f, 0.96f),
             new(0.08f, 0.22f, 0.42f, 0.96f),
+            new(0.18f, 0.22f, 0.27f, 0.96f),
         };
         private static readonly Color[] KindAccents =
         {
@@ -117,6 +118,7 @@ namespace Baryonyx.Adventure
             new(1f, 0.40f, 0.62f),
             new(0.46f, 1f, 0.55f),
             new(0.56f, 0.86f, 1f),
+            new(0.86f, 0.80f, 0.62f),
         };
 
         public static Color PlateOf(AdventureRoomKind kind) => KindPlates[(int)kind];
@@ -157,6 +159,9 @@ namespace Baryonyx.Adventure
         public Button MenuButton;
         public GameDialog Dialog;
         public NoticeBand Notice;
+
+        // 休憩の焚き火（休む・鍛える・研鑽を選ぶ）。
+        public ExplorationCampfire Campfire;
 
         // 地図のどこを見ているかを示す、下の細いバー。
         public RectTransform ScrollTrack;
@@ -357,10 +362,15 @@ namespace Baryonyx.Adventure
             Pulse(Time.unscaledTime);
         }
 
-        /// <summary>The device's back key, as <see cref="Update"/> reads it: a dialog first, then the legend, then the menu.</summary>
+        /// <summary>
+        /// The device's back key, as <see cref="Update"/> reads it: a dialog first, then the
+        /// rest's campfire, then the legend, then the menu.
+        /// </summary>
         public void PressBack()
         {
             if (Dialog != null && Dialog.HandleBack())
+                return;
+            if (Campfire != null && Campfire.HandleBack())
                 return;
             if (LegendShown)
             {

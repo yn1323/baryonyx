@@ -46,6 +46,9 @@ namespace Baryonyx.Adventure
         // 怪しい宝箱を開けたときにミミックになるか（テスト用）。null なら半分の確率で決める。
         public bool? NextMimic { get; set; }
 
+        // 「？」のマスの中身の種類（テスト用）。null なら重みで決める。
+        public AdventureRoomKind? MysteryKind { get; set; }
+
         public Task<AdventureState> LoadAsync(CancellationToken token) => Answer(token, State());
 
         public Task<AdventureState> StartAsync(string destinationId, CancellationToken token)
@@ -79,17 +82,20 @@ namespace Baryonyx.Adventure
             var target = run.Find(room.Id);
             if (target == null || !current.Next.Contains(room.Id) || !run.RoomCleared)
                 return Fail(token, 409);
+            // 「？」のマスは、入ったときに中身の種類を決める（サーバーの pickMysteryKind と同じ重み）。
+            var kind = target.Kind == AdventureRoomKind.Mystery ? PickMystery() : target.Kind;
             run.RoomId = room.Id;
-            run.RoomCleared = target.Kind == AdventureRoomKind.Start;
+            run.Revealed = target.Kind == AdventureRoomKind.Mystery ? kind : null;
+            run.RoomCleared = kind == AdventureRoomKind.Start;
             run.Route.Add(room.Id);
             run.Opened = false;
             run.Mimic = false;
             run.Trial =
-                target.Kind == AdventureRoomKind.Trial
+                kind == AdventureRoomKind.Trial
                     ? (AdventureTrial)random.Next(1, 4)
                     : AdventureTrial.None;
             run.Wares =
-                target.Kind == AdventureRoomKind.Merchant
+                kind == AdventureRoomKind.Merchant
                     ? Wares(run.DestinationId)
                     : new List<AdventureWare>();
             return Answer(token, State());
@@ -229,6 +235,29 @@ namespace Baryonyx.Adventure
         }
 
         // 行商人の品物：スキル3つと装備2つ。同じ物は並べず、その分類の物が足りない行き先ではスキルで埋める。
+        // 「？」のマスの中身の種類と重み（サーバーの MYSTERY_KINDS と同じ）。
+        public static readonly (AdventureRoomKind Kind, int Weight)[] MysteryKinds =
+        {
+            (AdventureRoomKind.Battle, 45),
+            (AdventureRoomKind.Treasure, 25),
+            (AdventureRoomKind.Merchant, 15),
+            (AdventureRoomKind.Rest, 15),
+        };
+
+        private AdventureRoomKind PickMystery()
+        {
+            if (MysteryKind is { } chosen)
+                return chosen;
+            int roll = random.Next(0, MysteryKinds.Sum(entry => entry.Weight));
+            foreach (var (kind, weight) in MysteryKinds)
+            {
+                if (roll < weight)
+                    return kind;
+                roll -= weight;
+            }
+            return AdventureRoomKind.Battle;
+        }
+
         private List<AdventureWare> Wares(string destinationId)
         {
             var wares = new List<AdventureWare>();
@@ -365,7 +394,12 @@ namespace Baryonyx.Adventure
                         run.Map,
                         run.Drops.ToArray(),
                         run.Find(run.RoomId).Floor,
-                        new AdventureContents(run.Mimic, run.Trial, run.Wares.ToArray())
+                        new AdventureContents(
+                            run.Mimic,
+                            run.Trial,
+                            run.Wares.ToArray(),
+                            run.Revealed
+                        )
                     ),
                 records.Values.ToArray(),
                 runes,
@@ -411,7 +445,11 @@ namespace Baryonyx.Adventure
             public AdventureTrial Trial;
             public List<AdventureWare> Wares = new();
 
-            public AdventureRoom Find(string id) => Map.Find(id);
+            // 今いる「？」のマスの中身の種類。
+            public AdventureRoomKind? Revealed;
+
+            public AdventureRoom Find(string id) =>
+                id == RoomId && Revealed is { } kind ? Map.Reveal(id, kind) : Map.Find(id);
         }
     }
 }

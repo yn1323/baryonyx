@@ -134,7 +134,7 @@ namespace Baryonyx.Adventure
 
     /// <summary>
     /// What the room the party is in holds besides its kind: whether a shady chest opened was a
-    /// mimic, a trial's condition, and a merchant's wares.
+    /// mimic, a trial's condition, a merchant's wares, and what a "?" room turned out to be.
     /// </summary>
     public sealed class AdventureContents
     {
@@ -143,17 +143,22 @@ namespace Baryonyx.Adventure
         public AdventureContents(
             bool mimic,
             AdventureTrial trial,
-            IReadOnlyList<AdventureWare> wares
+            IReadOnlyList<AdventureWare> wares,
+            AdventureRoomKind? revealed = null
         )
         {
             Mimic = mimic;
             Trial = trial;
             Wares = wares ?? Array.Empty<AdventureWare>();
+            Revealed = revealed;
         }
 
         public bool Mimic { get; }
         public AdventureTrial Trial { get; }
         public IReadOnlyList<AdventureWare> Wares { get; }
+
+        // 「？」のマスに入ったときにサーバーが決めた中身の種類。「？」のマスでなければnull。
+        public AdventureRoomKind? Revealed { get; }
     }
 
     /// <summary>What today's steps opened a step door to (doc/features/stage-progression.md).</summary>

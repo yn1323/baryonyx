@@ -6,10 +6,12 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// The adventure's branching route, made again the same from the seed the server chose when
-    /// the adventure started (doc/features/stage-progression.md). From the entrance the road
-    /// splits into two or three, and keeps branching and joining like a net: each floor has two
-    /// to six rooms, every room leads on to the next floor and is reached from the one before, and
-    /// no two roads cross. The party passes one room a floor.
+    /// the adventure started (doc/features/stage-progression.md). The rooms stand on five lanes
+    /// running from the entrance to the deepest room, like a board: from the entrance the road
+    /// splits into two or three, and each road goes straight on along its lane or slants to the
+    /// next lane, so roads split and join without crossing. Each floor has two to four rooms,
+    /// every room leads on to the next floor and is reached from the one before. The party passes
+    /// one room a floor.
     /// Positions are in route space: <see cref="AdventureRoutePoint.T"/> is how far along (0 at
     /// the entrance, 1 at the deepest room) and <see cref="AdventureRoutePoint.S"/> is across (0..1).
     /// </summary>
@@ -20,10 +22,15 @@ namespace Baryonyx.Adventure
 
         // 1つの階のマスの数の幅（doc/features/stage-progression.md の冒険の道の作り方）。
         public const int MinRoomsOnFloor = 2;
-        public const int MaxRoomsOnFloor = 6;
+        public const int MaxRoomsOnFloor = 4;
 
-        // 同じ階で隣り合うマスの、地図を横切る向きの間隔の下限。マスの札が重ならないようにする。
-        public const float MinGap = 0.13f;
+        // マスが並ぶ列の数と、隣り合う列の間隔（地図を横切る向き）。真ん中の列に入口と最奥の間を置く。
+        public const int LaneCount = 5;
+        public const float LaneGap = 0.235f;
+
+        // 道が次の階で、同じ列を真っすぐ進む・隣の列へ斜めに移る・2つに分かれる重み。
+        private const double StraightWeight = 0.5;
+        private const double SlantWeight = 0.32;
 
         // 冒険を始めたときに、進化の祭壇を1つ置く確率。置くときは、決まった階以外のマスを1つ置き換える。
         public const double AltarChance = 0.05;
@@ -39,15 +46,23 @@ namespace Baryonyx.Adventure
             (AdventureRoomKind.Rest, 6, 4),
             (AdventureRoomKind.Merchant, 6, 3),
             (AdventureRoomKind.StepDoor, 5, 3),
+            // 「？」：入るまで中身が分からない。中身はサーバーが入ったときに決める。
+            (AdventureRoomKind.Mystery, 10, 3),
         };
 
         private readonly Dictionary<string, AdventureRoom> rooms = new();
         private readonly Dictionary<string, AdventureRoutePoint> points = new();
+        private readonly Func<AdventureRoomKind, string, string> encounter;
 
-        private AdventureRouteMap(int seed, int roomCount)
+        private AdventureRouteMap(
+            int seed,
+            int roomCount,
+            Func<AdventureRoomKind, string, string> encounter
+        )
         {
             Seed = seed;
             RoomCount = roomCount;
+            this.encounter = encounter;
         }
 
         public int Seed { get; }
@@ -66,8 +81,35 @@ namespace Baryonyx.Adventure
         public AdventureRoutePoint PointOf(string id) =>
             id != null && points.TryGetValue(id, out var point) ? point : null;
 
+        /// <summary>
+        /// A "?" room as what it turned out to be: the same place and roads, the kind the server
+        /// chose, and that kind's encounter. Any other room stays as it is.
+        /// </summary>
+        public AdventureRoom Reveal(string id, AdventureRoomKind kind)
+        {
+            var room = Find(id);
+            if (room == null || room.Kind != AdventureRoomKind.Mystery)
+                return room;
+            return new AdventureRoom(
+                room.Id,
+                room.Floor,
+                kind,
+                encounter(kind, room.Id),
+                room.Next
+            );
+        }
+
         /// <summary>The room id of a floor's room, as the server is told it, counted across from 0.</summary>
         public static string RoomId(int floor, int index) => $"f{floor}-{index}";
+
+        /// <summary>The floor of a way's room id ("f5-2" is 5), or 0 for the entrance, the deepest room and others.</summary>
+        public static int FloorOf(string id)
+        {
+            if (id == null || !id.StartsWith("f", StringComparison.Ordinal))
+                return 0;
+            int dash = id.IndexOf('-');
+            return dash > 1 && int.TryParse(id.Substring(1, dash - 1), out int floor) ? floor : 0;
+        }
 
         /// <summary>
         /// The kind a floor always has, or null for a floor whose rooms are chosen: the first floor
@@ -99,25 +141,12 @@ namespace Baryonyx.Adventure
             return int.MaxValue;
         }
 
-        /// <summary>
-        /// Points along the road from one room to the next, in route space. The road eases across
-        /// from the one room to the other.
-        /// </summary>
-        public IReadOnlyList<(float T, float S)> Path(string fromId, string toId, int steps = 48)
-        {
-            var from = PointOf(fromId);
-            var to = PointOf(toId);
-            if (from == null || to == null)
-                return Array.Empty<(float, float)>();
-            var path = new (float T, float S)[steps + 1];
-            for (int k = 0; k <= steps; k++)
-            {
-                float u = k / (float)steps;
-                float ease = u * u * (3f - 2f * u);
-                path[k] = (from.T + (to.T - from.T) * u, from.S + (to.S - from.S) * ease);
-            }
-            return path;
-        }
+        /// <summary>The lane (0 to <see cref="LaneCount"/> - 1) a room stands on, or -1 for an unknown room.</summary>
+        public int LaneOf(string id) =>
+            PointOf(id) is { } point ? (int)Math.Round((point.S - LaneS(0)) / LaneGap) : -1;
+
+        // 列の、地図を横切る向きの位置。真ん中の列が 0.5。
+        private static float LaneS(int lane) => 0.5f + (lane - (LaneCount - 1) / 2) * LaneGap;
 
         /// <summary>The rooms reachable from the given rooms, themselves included.</summary>
         public HashSet<string> Reachable(IEnumerable<string> from)
@@ -169,25 +198,17 @@ namespace Baryonyx.Adventure
                 throw new ArgumentOutOfRangeException(nameof(roomCount));
             encounter ??= (_, _) => "";
             var random = new RouteRandom(seed);
-            var map = new AdventureRouteMap(seed, roomCount);
-            var counts = Counts(random, roomCount);
+            var map = new AdventureRouteMap(seed, roomCount, encounter);
+            // 階ごとのマスの列と、隣の階のマスどうしをつなぐ道。どのマスも次の階へ続き、前の階から来られる。
+            var (lanes, next) = Lanes(random, roomCount);
+            var counts = lanes.Select(floor => floor.Length).ToArray();
 
-            // 道中のマスの位置。階ごとに横へ少しずらし、毎回違う並びに見せる。
+            // 道中のマスの位置。同じ階のマスは縦に揃え、列の上に置く。
             var at = new (float T, float S)[roomCount][];
             for (int c = 0; c < roomCount; c++)
-                at[c] = Places(random, counts[c], (c + 1) / (float)(roomCount + 1), roomCount);
-
-            // 隣の階のマスどうしをつなぐ道。どのマスも次の階へ続き、前の階から来られる。
-            var next = new List<int>[roomCount][];
-            for (int c = 0; c < roomCount; c++)
-            {
-                next[c] = new List<int>[counts[c]];
-                for (int i = 0; i < counts[c]; i++)
-                    next[c][i] = new List<int>();
-            }
-            for (int c = 0; c < roomCount - 1; c++)
-                foreach (var (from, to) in Links(random, counts[c], counts[c + 1]))
-                    next[c][from].Add(to);
+                at[c] = lanes[c]
+                    .Select(lane => ((c + 1) / (float)(roomCount + 1), LaneS(lane)))
+                    .ToArray();
 
             var kinds = Kinds(random, roomCount, counts, next);
 
@@ -243,82 +264,69 @@ namespace Baryonyx.Adventure
             points[room.Id] = point;
         }
 
-        // 階ごとのマスの数。入口から2〜3つに分かれ、道中の前半で増え、後半は増減する。
-        // 道中が6マス以上なら、5つ以上並ぶ階を1つは作る。
-        private static int[] Counts(RouteRandom random, int roomCount)
+        // 階ごとのマスの列（小さい順）と、次の階のどのマスへ道が続くか（次の階の中の順番）。
+        // 入口の次の階は、真ん中の両隣の2列か、真ん中と両隣の3列。そこから先は、道ごとに同じ列を
+        // 真っすぐ進むか、隣の列へ斜めに移るか、両隣の列へ2つに分かれる。同じ列へ着いた道は合流する。
+        // 上の道より下へは行かないため、道は交差しない。1つの階のマスが2〜4にならなければ選び直す。
+        private static (int[][] Lanes, List<int>[][] Next) Lanes(RouteRandom random, int roomCount)
         {
-            var counts = new int[roomCount];
-            counts[0] = random.Next() < 0.5 ? 2 : 3;
-            for (int c = 1; c < roomCount; c++)
+            int middle = (LaneCount - 1) / 2;
+            var lanes = new int[roomCount][];
+            lanes[0] =
+                random.Next() < 0.5
+                    ? new[] { middle - 1, middle + 1 }
+                    : new[] { middle - 1, middle, middle + 1 };
+            var next = new List<int>[roomCount][];
+            for (int c = 0; c < roomCount; c++)
             {
-                int[] steps = c <= roomCount / 2 ? new[] { 0, 1, 1, 2 } : new[] { -1, 0, 0, 1 };
-                counts[c] = Math.Clamp(
-                    counts[c - 1] + steps[random.Range(0, steps.Length)],
-                    MinRoomsOnFloor,
-                    MaxRoomsOnFloor
-                );
-            }
-            if (roomCount >= 6 && counts.Max() < 5)
-            {
-                int widest = Array.IndexOf(counts, counts.Max());
-                counts[widest] = 5;
-            }
-            return counts;
-        }
-
-        // 1つの階のマスの位置。横は中央に寄せて等間隔に並べ、少しずつずらす。
-        private static (float T, float S)[] Places(
-            RouteRandom random,
-            int count,
-            float t,
-            int roomCount
-        )
-        {
-            float gap = Math.Min(0.24f, 0.84f / Math.Max(1, count - 1));
-            float span = gap * (count - 1);
-            float shift = (random.NextFloat() - 0.5f) * Math.Max(0f, 0.86f - span);
-            var places = new (float T, float S)[count];
-            for (int i = 0; i < count; i++)
-            {
-                float s = 0.5f + shift + (i - (count - 1) / 2f) * gap;
-                s += (random.NextFloat() - 0.5f) * 0.3f * gap;
-                float along = t + (random.NextFloat() - 0.5f) * 0.25f / (roomCount + 1);
-                places[i] = (along, s);
-            }
-            // 間隔の下限を保ち、全体をずらして地図の端（0.03〜0.97）に収める。
-            for (int i = 1; i < count; i++)
-                places[i].S = Math.Max(places[i].S, places[i - 1].S + MinGap);
-            float over = Math.Max(0f, places[count - 1].S - 0.97f);
-            float under = Math.Max(0f, 0.03f - (places[0].S - over));
-            for (int i = 0; i < count; i++)
-                places[i].S += under - over;
-            return places;
-        }
-
-        // 2つの階のマスを、交わらない道でつなぐ。上から順に階段のように進み、どのマスにも道を通す。
-        private static List<(int From, int To)> Links(RouteRandom random, int from, int to)
-        {
-            var links = new List<(int, int)> { (0, 0) };
-            int i = 0;
-            int j = 0;
-            while (i < from - 1 || j < to - 1)
-            {
-                if (i == from - 1)
-                    j++;
-                else if (j == to - 1)
-                    i++;
-                else if (random.Next() < 0.35)
+                var here = lanes[c];
+                next[c] = here.Select(_ => new List<int>()).ToArray();
+                if (c == roomCount - 1)
+                    break;
+                int[][] targets = null;
+                for (int attempt = 0; attempt < 20 && targets == null; attempt++)
                 {
-                    i++;
-                    j++;
+                    var tried = Branches(random, here);
+                    int count = tried.SelectMany(to => to).Distinct().Count();
+                    if (count >= MinRoomsOnFloor && count <= MaxRoomsOnFloor)
+                        targets = tried;
                 }
-                else if ((i + 1) / (float)from <= (j + 1) / (float)to)
-                    i++;
-                else
-                    j++;
-                links.Add((i, j));
+                // 選び直しても収まらなければ、どの道も真っすぐ進める（マスの数は今の階と同じ）。
+                targets ??= here.Select(lane => new[] { lane }).ToArray();
+                lanes[c + 1] = targets
+                    .SelectMany(to => to)
+                    .Distinct()
+                    .OrderBy(lane => lane)
+                    .ToArray();
+                for (int i = 0; i < here.Length; i++)
+                    foreach (int lane in targets[i])
+                        next[c][i].Add(Array.IndexOf(lanes[c + 1], lane));
             }
-            return links;
+            return (lanes, next);
+        }
+
+        // 1つの階の各マスから、次の階のどの列へ道を延ばすか。上のマスの道が着いた列より下へは行かない。
+        private static int[][] Branches(RouteRandom random, int[] here)
+        {
+            var targets = new int[here.Length][];
+            int floor = 0;
+            for (int i = 0; i < here.Length; i++)
+            {
+                int lane = here[i];
+                bool Open(int to) => to >= floor && to >= 0 && to < LaneCount;
+                double roll = random.Next();
+                int side = random.Next() < 0.5 ? -1 : 1;
+                int[] to;
+                if (roll < StraightWeight)
+                    to = new[] { lane };
+                else if (roll < StraightWeight + SlantWeight)
+                    to = new[] { Open(lane + side) ? lane + side : lane };
+                else
+                    to = new[] { lane - 1, lane + 1 }.Where(Open).DefaultIfEmpty(lane).ToArray();
+                targets[i] = to;
+                floor = to.Max();
+            }
+            return targets;
         }
 
         // マスの種類（doc/features/stage-progression.md の道の決まり）。決まった階はその種類にし、
@@ -407,17 +415,35 @@ namespace Baryonyx.Adventure
             }
 
             int Count(AdventureRoomKind kind) => kinds.Sum(floor => floor.Count(k => k == kind));
-            // 置き換えてよい魔物のマス：決まった階でなく、その種類を置ける階にあり、並びの決まりを守る。
-            List<(int C, int I)> Battles(AdventureRoomKind into) =>
+            // 置き換えてよいマス：決まった階でなく、その種類を置ける階にあり、並びの決まりを守る。
+            List<(int C, int I)> Replaceable(
+                AdventureRoomKind into,
+                Func<AdventureRoomKind, bool> from
+            ) =>
                 Enumerable
                     .Range(0, roomCount)
                     .Where(c => Fixed(c) == null && c + 1 >= EarliestOf(into))
                     .SelectMany(c => Enumerable.Range(0, counts[c]).Select(i => (c, i)))
-                    .Where(place =>
-                        kinds[place.c][place.i] == AdventureRoomKind.Battle
-                        && Fits(place.c, place.i, into)
-                    )
+                    .Where(place => from(kinds[place.c][place.i]) && Fits(place.c, place.i, into))
                     .ToList();
+            // 魔物のマスを置き換え、置き換えられる魔物のマスがなければ、宝箱・怪しい宝箱・休憩・試練・「？」の
+            // マスを置き換える。
+            List<(int C, int I)> Open(AdventureRoomKind into)
+            {
+                var open = Replaceable(into, kind => kind == AdventureRoomKind.Battle);
+                return open.Count > 0
+                    ? open
+                    : Replaceable(
+                        into,
+                        kind =>
+                            kind
+                                is AdventureRoomKind.Treasure
+                                    or AdventureRoomKind.ShadyChest
+                                    or AdventureRoomKind.Rest
+                                    or AdventureRoomKind.Trial
+                                    or AdventureRoomKind.Mystery
+                    );
+            }
 
             // 行商人と歩数の扉は、地図全体で1〜2つにする。多ければ魔物に戻し、なければ魔物を置き換える。
             foreach (var kind in new[] { AdventureRoomKind.Merchant, AdventureRoomKind.StepDoor })
@@ -427,7 +453,7 @@ namespace Baryonyx.Adventure
                 for (int i = 0; i < counts[c]; i++)
                     if (kinds[c][i] == kind && ++seen > 2)
                         kinds[c][i] = AdventureRoomKind.Battle;
-                if (seen == 0 && Battles(kind) is { Count: > 0 } open)
+                if (seen == 0 && Open(kind) is { Count: > 0 } open)
                 {
                     var (c, i) = open[random.Range(0, open.Count)];
                     kinds[c][i] = kind;
@@ -439,7 +465,7 @@ namespace Baryonyx.Adventure
             {
                 while (Count(AdventureRoomKind.Elite) < 2)
                 {
-                    var open = Battles(AdventureRoomKind.Elite);
+                    var open = Open(AdventureRoomKind.Elite);
                     if (open.Count == 0)
                         break;
                     var (c, i) = open[random.Range(0, open.Count)];

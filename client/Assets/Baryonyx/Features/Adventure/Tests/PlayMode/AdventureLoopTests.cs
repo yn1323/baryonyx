@@ -176,11 +176,13 @@ namespace Baryonyx.Tests.PlayMode
                 "The party did not walk."
             );
             Assert.That(view.Walking, Is.True);
+            // 宝箱のマスは、着くとすぐに宝箱を開け始める（開け終えるまで、ほかの操作は受け付けない）。
             yield return SceneTests.WaitUntil(
-                () => view.LocationText == Forest + " 第6層" && ExplorationReady(bootstrap),
+                () => view.LocationText == Forest + " 第6層" && !view.Walking,
                 6f,
                 "The next room did not show."
             );
+            Assert.That(bootstrap.Flow.Busy, Is.True);
             // 着いたマスに立ち、地図は4人を画面の左寄りに置く所まで追いかけている。
             Assert.That(view.PartyPosition, Is.EqualTo(to));
             Assert.That(
@@ -202,10 +204,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(saved.Run.Route.Count, Is.EqualTo(run.Route.Count + 1));
             Assert.That(view.PromptText, Is.Empty);
             Assert.That(view.ShownMarkers.Where(marker => marker.IsExit), Is.Empty);
-            Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
 
-            // 宝箱は震えてから開き、中身を札で見せる。ダイアログは札を閉じてから、題だけで出す。
-            view.ChestButton.onClick.Invoke();
+            // 宝箱は押さなくても震えてから開き、中身を札で見せる。ダイアログは札を閉じてから、題だけで出す。
             var reveal = view.Moments.Reveal;
             yield return SceneTests.WaitUntil(
                 () => reveal.Shown,
@@ -390,7 +390,8 @@ namespace Baryonyx.Tests.PlayMode
             return null;
         }
 
-        // 怪しい宝箱は、押すと開けるか通り過ぎるかを聞く。開けてミミックなら、戦闘へ移る。
+        // 怪しい宝箱は、着くと開けるか通り過ぎるかを聞く。閉じたあとは、宝箱を押すと聞き直す。
+        // 開けてミミックなら、戦闘へ移る。
         [UnityTest]
         public IEnumerator TheShadyChestAsksFirstAndAMimicGoesToBattle()
         {
@@ -404,6 +405,8 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             Assert.That(view.PromptText, Is.Empty);
+            yield return WaitForDialog(view.Dialog, AdventureDialogs.ShadyChestTitle);
+            Assert.That(view.Dialog.Choose(AdventureTexts.CloseChoice), Is.True);
             Assert.That(view.ChestButton.gameObject.activeSelf, Is.True);
             view.ChestButton.onClick.Invoke();
             yield return WaitForDialog(view.Dialog, AdventureDialogs.ShadyChestTitle);
@@ -438,7 +441,7 @@ namespace Baryonyx.Tests.PlayMode
             );
             var view = bootstrap.View;
             Assert.That(view.PromptText, Is.Empty);
-            view.ChestButton.onClick.Invoke();
+            // 着くと、押さなくても祭壇の選択を開く。
             yield return WaitForDialog(view.Dialog, AdventureDialogs.AltarTitle);
             // 仲間 → （固有スキルが2つあれば）固有スキル → 進化先 → 確かめる、の順に、いつも最初を選ぶ。
             for (int step = 0; step < 4; step++)
@@ -694,9 +697,18 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(carried[2], Is.EqualTo(1f));
         }
 
-        // 最奥の直前の休憩のマスに着くと、全員を最大HPの40%回復し、倒れた味方も起き上がる。
+        // 休憩のマスの焚き火を開くまで待つ。
+        private static IEnumerator WaitForCampfire(ExplorationBootstrap bootstrap) =>
+            SceneTests.WaitUntil(
+                () => bootstrap.View.Campfire != null && bootstrap.View.Campfire.CampShown,
+                8f,
+                "The campfire did not open."
+            );
+
+        // 最奥の直前の休憩のマスに着くと焚き火を開き、休む・鍛える・研鑽を選ぶまで先へ進めない。
+        // 戻るキーでは閉じない。休む（テント）を押すと、全員を最大HPの40%回復し、倒れた味方も起き上がる。
         [UnityTest]
-        public IEnumerator TheRestHealsThePartyOnArriving()
+        public IEnumerator TheRestHealsThePartyWhenItRests()
         {
             var rest = StartAt(8);
             Assert.That(rest.Kind, Is.EqualTo(AdventureRoomKind.Rest));
@@ -708,6 +720,19 @@ namespace Baryonyx.Tests.PlayMode
                 value => value.Flow != null,
                 value => bootstrap = value
             );
+            yield return WaitForCampfire(bootstrap);
+            var campfire = bootstrap.View.Campfire;
+            // 焚き火を囲むのは編成の仲間で、空いた枠には誰も立たない。
+            Assert.That(
+                campfire.Party.Count(image => image.gameObject.activeSelf),
+                Is.EqualTo(campfire.Members.Count(member => member != null))
+            );
+            Assert.That(AdventureSession.Current.Run.RoomCleared, Is.False);
+            bootstrap.View.PressBack();
+            Assert.That(campfire.CampShown, Is.True);
+            Assert.That(bootstrap.View.Dialog.IsShown, Is.False);
+            campfire.RestButton.onClick.Invoke();
+            Assert.That(campfire.IsOpen, Is.False);
             yield return SceneTests.WaitUntil(
                 () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
                 8f,
@@ -719,6 +744,136 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(bootstrap.View.Notice.LastMessage, Is.EqualTo(AdventureTexts.Rested));
             Assert.That(bootstrap.View.PromptText, Is.Empty);
+            Assert.That(AdventureVitals.HonedSlots(runId), Is.EqualTo(new[] { 0, 0, 0, 0 }));
+        }
+
+        // 鍛える（切り株と薪）を押すと仲間を台座に並べ、選ぶまで決められない。選んで決めると、その仲間を
+        // その冒険のあいだ鍛え、HPは回復しない。戻るキーで焚き火へ戻る。
+        [UnityTest]
+        public IEnumerator TheRestTrainsAMember()
+        {
+            StartAt(8);
+            string runId = AdventureSession.Current.Run.Id;
+            AdventureVitals.Keep(runId, new[] { 0.5f, 1f, 1f, 1f });
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                value => value.Flow != null,
+                value => bootstrap = value
+            );
+            yield return WaitForCampfire(bootstrap);
+            var campfire = bootstrap.View.Campfire;
+            campfire.TrainButton.onClick.Invoke();
+            Assert.That(campfire.TrainShown, Is.True);
+            Assert.That(campfire.TrainConfirm.interactable, Is.False);
+            Assert.That(campfire.TrainTag.gameObject.activeSelf, Is.False);
+            bootstrap.View.PressBack();
+            Assert.That(campfire.CampShown, Is.True);
+            campfire.TrainButton.onClick.Invoke();
+            int slot = Enumerable
+                .Range(0, campfire.TrainSlots.Length)
+                .First(index => campfire.TrainSlots[index].gameObject.activeSelf);
+            string name = campfire.TrainNames[slot].text;
+            campfire.TrainSlots[slot].onClick.Invoke();
+            Assert.That(campfire.PickedMember, Is.EqualTo(slot));
+            Assert.That(campfire.TrainTag.gameObject.activeSelf, Is.True);
+            Assert.That(campfire.TrainConfirm.interactable, Is.True);
+            campfire.TrainConfirm.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
+                8f,
+                "The rest was not taken."
+            );
+            Assert.That(AdventureVitals.HonedSlots(runId)[slot], Is.EqualTo(1));
+            Assert.That(AdventureVitals.HonedSlots(runId).Sum(), Is.EqualTo(1));
+            Assert.That(AdventureVitals.Of(runId)[0], Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(
+                bootstrap.View.Notice.LastMessage,
+                Is.EqualTo(AdventureTexts.HonedMember(name))
+            );
+        }
+
+        // 研鑽（木箱の上の本）を押すと、仲間ごとのカードスキルを戦闘のカードで並べる。選ぶと研鑽で
+        // どうなるかを出し、決めるとそのカードをその冒険のあいだ強くする。研鑽したカードは次は並ばない。
+        [UnityTest]
+        public IEnumerator TheRestStudiesACard()
+        {
+            StartAt(8);
+            string runId = AdventureSession.Current.Run.Id;
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                value => value.Flow != null,
+                value => bootstrap = value
+            );
+            yield return WaitForCampfire(bootstrap);
+            var campfire = bootstrap.View.Campfire;
+            var members = campfire.Members;
+            campfire.StudyButton.onClick.Invoke();
+            Assert.That(campfire.StudyShown, Is.True);
+            Assert.That(campfire.StudyConfirm.interactable, Is.False);
+            int index = Enumerable
+                .Range(0, campfire.StudyCards.Length)
+                .First(i => campfire.StudyCards[i].gameObject.activeSelf);
+            var (slot, card) = campfire.StudiedCards[index];
+            Assert.That(campfire.StudyFaces[index].Name.text, Is.EqualTo(card.Skill.Name));
+            campfire.StudyCards[index].onClick.Invoke();
+            Assert.That(campfire.PickedCard, Is.EqualTo(index));
+            Assert.That(
+                campfire.StudyLine.text,
+                Is.EqualTo(ExplorationCampfire.StudyText(card.Skill))
+            );
+            Assert.That(
+                campfire.StudyLine.text,
+                Does.Contain(card.Skill.Name + AdventureParty.HonedMark)
+            );
+            campfire.StudyConfirm.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
+                8f,
+                "The rest was not taken."
+            );
+            Assert.That(
+                AdventureVitals.HonedCards(runId),
+                Is.EqualTo(new[] { AdventureVitals.CardKey(slot, card.Skill.Id) })
+            );
+            Assert.That(
+                bootstrap.View.Notice.LastMessage,
+                Is.EqualTo(AdventureTexts.HonedCard(card.Skill.Name))
+            );
+            // 次に焚き火を開いたときは、研鑽したカードを並べない。
+            campfire.Open(members, AdventureVitals.HonedCards(runId), null, null, null);
+            campfire.StudyButton.onClick.Invoke();
+            Assert.That(
+                campfire
+                    .StudiedCards.Where(entry => entry.Card != null)
+                    .Select(entry => (entry.Slot, entry.Card.Skill.Id)),
+                Has.No.Member((slot, card.Skill.Id))
+            );
+            campfire.Close();
+        }
+
+        // 「？」のマスに着くと、サーバーが決めた中身の種類のマスになり、その種類を知らせる。
+        [UnityTest]
+        public IEnumerator AMysteryRoomTurnsIntoWhatItHolds()
+        {
+            services.Adventure.MysteryKind = AdventureRoomKind.Treasure;
+            var mystery = WalkTo(AdventureRoomKind.Mystery);
+            var run = AdventureSession.Current.Run;
+            Assert.That(run.Map.Find(mystery.Id).Kind, Is.EqualTo(AdventureRoomKind.Mystery));
+            Assert.That(run.Room.Kind, Is.EqualTo(AdventureRoomKind.Treasure));
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                value => value.Flow != null,
+                value => bootstrap = value
+            );
+            // 宝箱になったマスは、着くとすぐに宝箱を開ける。
+            yield return WaitForDialog(bootstrap.View.Dialog, AdventureDialogs.TreasureTitle);
+            Assert.That(
+                bootstrap.View.Notice.LastMessage,
+                Is.EqualTo(AdventureTexts.Revealed(AdventureRoomKind.Treasure))
+            );
         }
 
         [UnityTest]

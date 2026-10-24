@@ -1,9 +1,9 @@
 using System;
 using Baryonyx.Editor;
-using Baryonyx.Party;
-using Baryonyx.Party.Editor;
 using Baryonyx.Home;
 using Baryonyx.Home.Editor;
+using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.Showcase.Editor;
 using Baryonyx.Stages.Editor;
 using Baryonyx.UI.Editor;
@@ -96,8 +96,13 @@ namespace Baryonyx.App.Editor
         }
 
         // The campfire burns where the UI stands its logs: a computed flame rising out of the
-        // logs, its embers and its small warm light. In the day the sun casts the shadows.
-        private static void AddCampfire(Scene scene)
+        // logs, its embers and its small warm light. In the day the sun casts the shadows; the
+        // night's campfire of the adventure's rest (CampfireSceneArt) lights the camp brighter.
+        internal static void AddCampfire(
+            Scene scene,
+            float lightIntensity = 1.6f,
+            float lightRange = 4.5f
+        )
         {
             var ground = Hd2dStageSceneSetup.GroundUnder(
                 StageSetAssets.HomeView,
@@ -130,8 +135,8 @@ namespace Baryonyx.App.Editor
                 "CampfireLight",
                 ground + Vector3.up * 0.6f,
                 new Color(1f, 0.6f, 0.28f),
-                1.6f,
-                4.5f,
+                lightIntensity,
+                lightRange,
                 flicker: 0.25f,
                 seed: 5f
             );

@@ -62,6 +62,8 @@ export function rewardOf(
   switch (kind) {
     case "rest":
     case "merchant":
+    // 「？」のマスは入ったときに中身の種類へ変わるため、この種類のまま報酬を出すことはない。
+    case "mystery":
       return null;
     case "shady-chest":
       return outcome.mimic

@@ -47,8 +47,8 @@ namespace Baryonyx.Adventure
         // 着いたマスの戦闘がまだ終わっていない。探索から戦闘へ移る。
         public bool StartsBattle { get; private set; }
 
-        // 着いたマスを、そのまま終えて先へ進む（休憩）。
-        public bool PassesBy { get; private set; }
+        // 着いたら休憩の選択（休む・鍛える）を開く。選ぶまで先へ進めない。
+        public bool Rests { get; private set; }
 
         // 着いたら行商人の店を開く。立ち去るまで先へ進めない。
         public bool Shops { get; private set; }
@@ -71,7 +71,7 @@ namespace Baryonyx.Adventure
                     : run.RoomCleared ? ExplorationChest.Open
                     : ExplorationChest.Closed,
                 StartsBattle = run.InBattle,
-                PassesBy = room != null && room.PassesThrough && !run.RoomCleared,
+                Rests = room != null && room.Kind == AdventureRoomKind.Rest && !run.RoomCleared,
                 Shops = room != null && room.Kind == AdventureRoomKind.Merchant && !run.RoomCleared,
                 Prompt =
                     run.InBattle ? BattlePrompt

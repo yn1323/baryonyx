@@ -94,6 +94,44 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(CombatEnemyStats.Find("lich").Magic, Is.True);
         }
 
+        // 道中の敵の強さは、最初の階の85%から最奥の直前の階の115%まで、階ごとに等しく上がる。
+        [Test]
+        public void TheEnemiesGrowStrongerFloorByFloor()
+        {
+            Assert.That(AdventureCatalog.DepthPercentOf("f2-0", 8), Is.EqualTo(85));
+            Assert.That(AdventureCatalog.DepthPercentOf("f9-1", 8), Is.EqualTo(115));
+            var way = Enumerable
+                .Range(2, 8)
+                .Select(floor => AdventureCatalog.DepthPercentOf($"f{floor}-0", 8))
+                .ToArray();
+            for (int i = 1; i < way.Length; i++)
+                Assert.That(way[i], Is.GreaterThan(way[i - 1]));
+            Assert.That(way.Average(), Is.EqualTo(100).Within(1));
+            Assert.That(
+                AdventureCatalog.DepthPercentOf(AdventureRouteMap.BossId, 8),
+                Is.EqualTo(100)
+            );
+
+            // 道の敵の組み合わせに、その階の強さが付く。最奥の主には付かない。
+            var map = AdventureCatalog.Route(AdventureCatalog.ForestRuins, 20261004, 8);
+            foreach (var room in map.Rooms.Where(room => room.Kind == AdventureRoomKind.Battle))
+                Assert.That(
+                    AdventureCatalog.Encounter(room.Encounter).HpScale,
+                    Is.EqualTo(
+                            AdventureCatalog.PackHpScale
+                                * AdventureCatalog.DepthPercentOf(room.Id, 8)
+                                / 100f
+                        )
+                        .Within(1e-4),
+                    room.Id
+                );
+            var boss = map.Find(AdventureRouteMap.BossId);
+            Assert.That(
+                AdventureCatalog.Encounter(boss.Encounter).HpScale,
+                Is.EqualTo(AdventureCatalog.BossHpScale)
+            );
+        }
+
         [Test]
         public void AnEncounterPicksTheAreasEnemiesAtItsLevel()
         {
@@ -119,6 +157,23 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(boss.Level, Is.EqualTo(area.Level + AdventureCatalog.BossLevelUp));
             Assert.That(boss.HpScale, Is.EqualTo(AdventureCatalog.BossHpScale));
             Assert.That(boss.PowerScale, Is.EqualTo(AdventureCatalog.BossPowerScale));
+
+            // 奥の階の敵ほど、HPと攻撃が少しずつ上がる（最奥の主には掛けない）。
+            var deep = AdventureCatalog.Encounter("port-portoria/pack/4/115");
+            Assert.That(deep.Kinds, Is.EqualTo(pack.Kinds));
+            Assert.That(
+                deep.HpScale,
+                Is.EqualTo(AdventureCatalog.PackHpScale * 1.15f).Within(1e-4)
+            );
+            Assert.That(
+                deep.PowerScale,
+                Is.EqualTo(AdventureCatalog.PackPowerScale * 1.15f).Within(1e-4)
+            );
+            var shallowElite = AdventureCatalog.Encounter("port-portoria/elite/4/85");
+            Assert.That(
+                shallowElite.HpScale,
+                Is.EqualTo(AdventureCatalog.EliteHpScale * 0.85f).Within(1e-4)
+            );
 
             // 知らない組み合わせは、森の魔物の気配にする。
             var unknown = AdventureCatalog.Encounter("nowhere/pack/1");

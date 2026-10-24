@@ -100,6 +100,39 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(AdventureServerSource.ToState(null).InProgress, Is.False);
         }
 
+        // 「？」のマスにいるとき、サーバーが保存した種類を正体として読み、その種類の部屋にする。
+        [Test]
+        public void AMysteryRoomIsReadAsWhatTheServerChose()
+        {
+            int seed = Enumerable
+                .Range(1, 500)
+                .First(value =>
+                    AdventureCatalog
+                        .Route(AdventureCatalog.ForestRuins, value, 8)
+                        .Rooms.Any(room => room.Kind == AdventureRoomKind.Mystery)
+                );
+            var mystery = AdventureCatalog
+                .Route(AdventureCatalog.ForestRuins, seed, 8)
+                .Rooms.First(room => room.Kind == AdventureRoomKind.Mystery);
+            string json =
+                "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"seed\":"
+                + seed
+                + ",\"roomCount\":8,\"roomId\":\""
+                + mystery.Id
+                + "\",\"floor\":"
+                + mystery.Floor
+                + ",\"roomKind\":\"battle\",\"roomCleared\":false,\"route\":[\"entrance\"],"
+                + "\"revives\":0,\"reviveCost\":100,\"drops\":[]},\"records\":[],\"runes\":0}";
+            var run = AdventureServerSource
+                .ToState(JsonUtility.FromJson<AdventureApiClient.State>(json))
+                .Run;
+            Assert.That(run.Contents.Revealed, Is.EqualTo(AdventureRoomKind.Battle));
+            Assert.That(run.Room.Kind, Is.EqualTo(AdventureRoomKind.Battle));
+            Assert.That(run.Room.Encounter, Does.StartWith("forest-ruins/pack/"));
+            Assert.That(run.InBattle, Is.True);
+            Assert.That(run.Map.Find(mystery.Id).Kind, Is.EqualTo(AdventureRoomKind.Mystery));
+        }
+
         [Test]
         public void TheResultOfAnEndedAdventureIsRead()
         {
@@ -123,8 +156,19 @@ namespace Baryonyx.Tests.EditMode
             {
                 var room = state.Run.Exits[0];
                 state = Run(source.MoveAsync(room, default));
+                // 怪しい宝箱は、開けずに通り過ぎて終える。
                 if (i < moves - 1)
-                    state = Run(source.ClearAsync(room.Id, default));
+                    state = Run(
+                        source.ClearAsync(
+                            room.Id,
+                            default,
+                            null,
+                            new AdventureClearOptions
+                            {
+                                Pass = room.Kind == AdventureRoomKind.ShadyChest,
+                            }
+                        )
+                    );
             }
             return state;
         }
@@ -208,7 +252,11 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void BeatingTheBossEndsTheAdventureAsCleared()
         {
-            var source = new AdventureLocalSource(seed: 5);
+            // 「？」のマスは魔物にする。
+            var source = new AdventureLocalSource(seed: 5)
+            {
+                MysteryKind = AdventureRoomKind.Battle,
+            };
             var state = Walk(source, 9);
             Assert.That(state.Run.Room.Kind, Is.EqualTo(AdventureRoomKind.Boss));
             var walked = state.Run;
@@ -217,12 +265,17 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Result.Status, Is.EqualTo(AdventureEndStatus.Cleared));
             Assert.That(state.Result.Floor, Is.EqualTo(10));
             Assert.That(state.Result.Clears, Is.EqualTo(1));
-            // 通ったマスのうち、物を落とすマス（休憩・行商人を除く）で落ちた。
+            // 通ったマスのうち、物を落とすマス（休憩・行商人と、通り過ぎた怪しい宝箱を除く）で落ちた。
+            AdventureRoomKind KindOf(string id) =>
+                walked.Map.Find(id).Kind == AdventureRoomKind.Mystery
+                    ? AdventureRoomKind.Battle
+                    : walked.Map.Find(id).Kind;
             Assert.That(
                 state.Result.Drops.Select(drop => drop.RoomId).Distinct(),
                 Is.EquivalentTo(
                     walked.Route.Where(id =>
-                        AdventureDrops.RewardOf(walked.Map.Find(id).Kind) != null
+                        KindOf(id) != AdventureRoomKind.ShadyChest
+                        && AdventureDrops.RewardOf(KindOf(id)) != null
                     )
                 )
             );

@@ -78,7 +78,15 @@ namespace Baryonyx.App
                         party,
                         training
                     ),
-                (choice, stage) => AdventureAltar.Evolve(choice, stage, training)
+                (choice, stage) => AdventureAltar.Evolve(choice, stage, training),
+                () =>
+                    party != null
+                        ? AdventureParty.Of(
+                            formation ?? PartySession.Formation(party),
+                            party,
+                            training
+                        )
+                        : Array.Empty<Combat.Presentation.BattlePartyMember>()
             );
             flow.Start();
             PartyTask = UsePartyAsync();

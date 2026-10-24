@@ -863,6 +863,58 @@ describe("冒険API", () => {
     ).toBe(true);
   });
 
+  it("「？」のマスに入ると中身の種類を決め、その種類のマスとして保存し、再送でも変えない", async () => {
+    const user = await scenario.login("adventure-mystery");
+    const now = new Date().toISOString();
+    await start(user.token);
+    await walk(user.token, 4);
+    // 中身は乱数で選ぶ（0.5 は宝箱）。
+    const entered = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.5),
+    ).move(user.userId, { roomId: "f4-1", floor: 4, kind: "mystery" }, now);
+    expect("run" in entered && entered.run).toMatchObject({
+      roomId: "f4-1",
+      roomKind: "treasure",
+      roomCleared: false,
+    });
+    const again = await move(user.token, {
+      roomId: "f4-1",
+      floor: 4,
+      kind: "mystery",
+    });
+    expect(again.run?.roomKind).toBe("treasure");
+    // 宝箱として開けると、宝箱の行から物が落ちる。
+    const opened = await clear(user.token, "f4-1");
+    expect(withoutMaterials(opened.drops).length).toBeGreaterThanOrEqual(1);
+    expect(
+      withoutMaterials(opened.drops).every((drop) =>
+        inPool(eligibleEntries("forest-ruins", "treasure"), drop),
+      ),
+    ).toBe(true);
+
+    // 行商人になったマスは、入ったときに品ぞろえを作る（0.75 は行商人）。
+    const merchant = await createAdventureRepository(
+      scenario.env.DB,
+      fixed(0.75),
+    ).move(user.userId, { roomId: "f5-0", floor: 5, kind: "mystery" }, now);
+    expect("run" in merchant && merchant.run?.roomKind).toBe("merchant");
+    expect(
+      "run" in merchant && (merchant.run?.merchant?.length ?? 0),
+    ).toBeGreaterThan(0);
+
+    // 「？」は置ける階より前には置けない（第3層は2つ目）。
+    const other = await scenario.login("adventure-mystery-early");
+    await start(other.token);
+    await walk(other.token, 3);
+    await rejects(
+      other.token,
+      "/adventure/move",
+      { roomId: "f3-1", floor: 3, kind: "mystery" },
+      "room_not_reachable",
+    );
+  });
+
   it("歩数の扉は、扉を開けたときの今日の歩数の段で報酬を決め、歩数と段を返す", async () => {
     const user = await scenario.login("adventure-step-door");
     const sourceId = "cccccccc-1111-4111-8111-cccccccccccc";

@@ -49,8 +49,8 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        // 網の目の道：入口から2〜3つに分かれ、階ごとに2〜6のマスが並び、5つ以上並ぶ階がある。
-        // 入口から1階ずつ進み、どのマスにも前の階から来られて、どのマスからも最奥の間へ着き、道は交差しない。
+        // 列の上の道：入口から2〜3つに分かれ、階ごとに2〜4のマスが並ぶ。入口から1階ずつ進み、
+        // どのマスにも前の階から来られて、どのマスからも最奥の間へ着き、道は交差しない。
         [Test]
         public void EveryRoomLeadsOnToTheDeepestRoomWithoutCrossingRoads()
         {
@@ -66,8 +66,7 @@ namespace Baryonyx.Tests.EditMode
                     .Range(2, RoomCount)
                     .Select(floor => map.Rooms.Count(room => room.Floor == floor))
                     .ToArray();
-                Assert.That(widths, Is.All.InRange(2, 6), $"seed {map.Seed}");
-                Assert.That(widths.Max(), Is.GreaterThanOrEqualTo(5), $"seed {map.Seed}");
+                Assert.That(widths, Is.All.InRange(2, 4), $"seed {map.Seed}");
                 Assert.That(
                     map.Reachable(new[] { entrance.Id }).Count,
                     Is.EqualTo(map.Rooms.Count)
@@ -209,25 +208,66 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 同じ階のマスは順番を保ち、札が重ならないだけ離れて、地図からはみ出さない。
+        // 同じ階のマスは縦に揃って列の上に立ち、順番を保ち、札が重ならないだけ離れて、地図からはみ出さない。
         [Test]
-        public void TheRoomsOfAFloorKeepApartOnTheMap()
+        public void TheRoomsOfAFloorStandOnTheLanes()
         {
             foreach (var map in Routes(200))
                 for (int floor = 2; floor <= RoomCount + 1; floor++)
                 {
-                    var across = map
-                        .Rooms.Where(room => room.Floor == floor)
-                        .Select(room => map.PointOf(room.Id).S)
-                        .ToArray();
+                    var rooms = map.Rooms.Where(room => room.Floor == floor).ToArray();
+                    var across = rooms.Select(room => map.PointOf(room.Id).S).ToArray();
                     Assert.That(across, Is.All.InRange(0.029f, 0.971f), $"seed {map.Seed}");
+                    Assert.That(
+                        rooms.Select(room => map.PointOf(room.Id).T).Distinct().Count(),
+                        Is.EqualTo(1),
+                        $"seed {map.Seed} floor {floor}"
+                    );
+                    Assert.That(
+                        rooms.Select(room => map.LaneOf(room.Id)),
+                        Is.All.InRange(0, AdventureRouteMap.LaneCount - 1)
+                    );
                     for (int i = 1; i < across.Length; i++)
                         Assert.That(
                             across[i] - across[i - 1],
-                            Is.GreaterThanOrEqualTo(AdventureRouteMap.MinGap - 0.001f),
+                            Is.GreaterThanOrEqualTo(AdventureRouteMap.LaneGap - 0.001f),
                             $"seed {map.Seed} floor {floor}"
                         );
                 }
+        }
+
+        // 道中の道は、同じ列を真っすぐ進むか、隣の列へ斜めに移るだけで、列を飛ばさない。
+        // 真っすぐな道がいちばん多く、分かれ道（2つ以上へ続くマス）と合流（2つ以上から来るマス）もある。
+        [Test]
+        public void TheRoadsGoStraightOrToTheNextLane()
+        {
+            int straight = 0;
+            int slanted = 0;
+            bool splits = false;
+            bool joins = false;
+            foreach (var map in Routes(200))
+            {
+                var way = map
+                    .Rooms.Where(room => room.Floor >= 2 && room.Floor <= RoomCount)
+                    .ToArray();
+                foreach (var room in way)
+                foreach (var next in room.Next)
+                {
+                    int step = System.Math.Abs(map.LaneOf(next) - map.LaneOf(room.Id));
+                    Assert.That(step, Is.LessThanOrEqualTo(1), $"seed {map.Seed} {room.Id}");
+                    if (step == 0)
+                        straight++;
+                    else
+                        slanted++;
+                }
+                splits |= way.Any(room => room.Next.Count >= 2);
+                joins |= way.SelectMany(room => room.Next)
+                    .GroupBy(id => id)
+                    .Any(g => g.Count() >= 2);
+            }
+            Assert.That(straight, Is.GreaterThan(slanted));
+            Assert.That(splits, Is.True);
+            Assert.That(joins, Is.True);
         }
 
         // マスへ進む要求には、道のマスの階と種類を付ける（server/src/features/adventure/schema.ts）。
@@ -247,6 +287,7 @@ namespace Baryonyx.Tests.EditMode
                     AdventureRoomKind.Trial,
                     AdventureRoomKind.StepDoor,
                     AdventureRoomKind.Altar,
+                    AdventureRoomKind.Mystery,
                 }.Select(AdventureApiClient.KindName),
                 Is.EqualTo(
                     new[]
@@ -261,9 +302,41 @@ namespace Baryonyx.Tests.EditMode
                         "trial",
                         "step-door",
                         "altar",
+                        "mystery",
                     }
                 )
             );
+            // サーバーが返す種類の名前を読み、知らない名前は読まない。
+            Assert.That(
+                AdventureApiClient.ParseKind("treasure"),
+                Is.EqualTo(AdventureRoomKind.Treasure)
+            );
+            Assert.That(AdventureApiClient.ParseKind("nowhere"), Is.Null);
+        }
+
+        // 「？」のマスは道に出て、正体を明かすと、同じ場所と道のまま中身の種類のマスになる。
+        [Test]
+        public void AMysteryRoomTurnsIntoWhatItHolds()
+        {
+            var maps = Routes(300).ToArray();
+            Assert.That(
+                maps.Count(map => map.Rooms.Any(room => room.Kind == AdventureRoomKind.Mystery)),
+                Is.GreaterThan(150)
+            );
+            var map = maps.First(map =>
+                map.Rooms.Any(room => room.Kind == AdventureRoomKind.Mystery)
+            );
+            var mystery = map.Rooms.First(room => room.Kind == AdventureRoomKind.Mystery);
+            Assert.That(mystery.Floor - 1, Is.GreaterThanOrEqualTo(3));
+            var battle = map.Reveal(mystery.Id, AdventureRoomKind.Battle);
+            Assert.That(battle.Kind, Is.EqualTo(AdventureRoomKind.Battle));
+            Assert.That(battle.Floor, Is.EqualTo(mystery.Floor));
+            Assert.That(battle.Next, Is.EqualTo(mystery.Next));
+            // ほかのマスは、明かしても変わらない。
+            var other = map.Rooms.First(room => room.Kind == AdventureRoomKind.Battle);
+            Assert.That(map.Reveal(other.Id, AdventureRoomKind.Treasure), Is.SameAs(other));
+            Assert.That(AdventureRouteMap.FloorOf(mystery.Id), Is.EqualTo(mystery.Floor));
+            Assert.That(AdventureRouteMap.FloorOf(AdventureRouteMap.BossId), Is.Zero);
         }
     }
 }

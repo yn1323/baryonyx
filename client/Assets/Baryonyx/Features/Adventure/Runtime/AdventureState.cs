@@ -19,6 +19,7 @@ namespace Baryonyx.Adventure
         Trial,
         StepDoor,
         Altar,
+        Mystery,
     }
 
     public enum AdventureEndStatus
@@ -79,9 +80,6 @@ namespace Baryonyx.Adventure
             || Kind == AdventureRoomKind.ShadyChest
             || Kind == AdventureRoomKind.StepDoor
             || Kind == AdventureRoomKind.Altar;
-
-        // 着いたら、そのまま終えて先へ進めるマス。休憩は着いたときに回復する。
-        public bool PassesThrough => Kind == AdventureRoomKind.Rest;
     }
 
     /// <summary>
@@ -172,7 +170,11 @@ namespace Baryonyx.Adventure
         // 今いるマスの中身：開けた怪しい宝箱がミミックだったか、試練の条件、行商人の品物。
         public AdventureContents Contents { get; }
 
-        public AdventureRoom Room => Find(RoomId);
+        // 今いる部屋。「？」のマスは、入ったときにサーバーが決めた中身の種類の部屋になる。
+        public AdventureRoom Room =>
+            Contents.Revealed is { } revealed && Map != null
+                ? Map.Reveal(RoomId, revealed)
+                : Find(RoomId);
 
         // 今いる階。道にない部屋（以前の冒険の部屋など）でも、サーバーが保存した階を返す。
         public int Floor => Room?.Floor ?? savedFloor;

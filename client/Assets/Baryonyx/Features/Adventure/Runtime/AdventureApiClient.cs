@@ -68,8 +68,18 @@ namespace Baryonyx.Adventure
                 AdventureRoomKind.Trial => "trial",
                 AdventureRoomKind.StepDoor => "step-door",
                 AdventureRoomKind.Altar => "altar",
+                AdventureRoomKind.Mystery => "mystery",
                 _ => "start",
             };
+
+        /// <summary>The kind of a server's name (<see cref="KindName"/>), or null for a name it does not know.</summary>
+        public static AdventureRoomKind? ParseKind(string name)
+        {
+            foreach (AdventureRoomKind kind in Enum.GetValues(typeof(AdventureRoomKind)))
+                if (KindName(kind) == name)
+                    return kind;
+            return null;
+        }
 
         public Task<State> ClearAsync(
             AccountSession session,

@@ -5,6 +5,8 @@ import {
   EVENT_KINDS,
   findDestination,
   fixedKindOf,
+  MYSTERY_KINDS,
+  pickMysteryKind,
   pickTrialCondition,
   stepDoorTier,
   TRIAL_CONDITIONS,
@@ -49,6 +51,8 @@ describe("マスを置ける階", () => {
     expect(canPlace(forest, 3, "altar")).toBe(true);
     expect(canPlace(forest, 3, "elite")).toBe(false);
     expect(canPlace(forest, 3, "merchant")).toBe(false);
+    expect(canPlace(forest, 3, "mystery")).toBe(false);
+    expect(canPlace(forest, 4, "mystery")).toBe(true);
     expect(canPlace(forest, 4, "elite")).toBe(true);
     expect(canPlace(forest, 4, "shady-chest")).toBe(true);
     expect(canPlace(forest, 4, "step-door")).toBe(true);
@@ -72,6 +76,21 @@ describe("マスの中身", () => {
     expect(pickTrialCondition(() => 0)).toBe("within-6-turns");
     expect(pickTrialCondition(() => 0.5)).toBe("no-one-falls");
     expect(pickTrialCondition(() => 0.999999)).toBe("half-hp");
+  });
+
+  it("「？」のマスの中身は、魔物・宝箱・行商人・休憩から重みで1つ選ぶ", () => {
+    expect(MYSTERY_KINDS.map((entry) => [entry.kind, entry.weight])).toEqual([
+      ["battle", 45],
+      ["treasure", 25],
+      ["merchant", 15],
+      ["rest", 15],
+    ]);
+    expect(pickMysteryKind(() => 0)).toBe("battle");
+    expect(pickMysteryKind(() => 0.449)).toBe("battle");
+    expect(pickMysteryKind(() => 0.45)).toBe("treasure");
+    expect(pickMysteryKind(() => 0.7)).toBe("merchant");
+    expect(pickMysteryKind(() => 0.85)).toBe("rest");
+    expect(pickMysteryKind(() => 0.999999)).toBe("rest");
   });
 
   it("歩数の扉の段は、3,000歩・5,000歩・8,000歩で上がる", () => {

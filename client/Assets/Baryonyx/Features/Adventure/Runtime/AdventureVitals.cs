@@ -45,7 +45,8 @@ namespace Baryonyx.Adventure
     /// HPの持ち越し), as a share of each member's maximum HP, by party slot: 1 is full and 0 is
     /// fallen. It belongs to one adventure; another adventure starts at full HP. A battle won
     /// keeps the HP it ended with, and a rest heals each member by a share of the maximum HP,
-    /// standing a fallen one up again.
+    /// standing a fallen one up again. It also keeps what the rests honed in this adventure
+    /// (休憩の鍛える): how many times each slot was honed, and the cards honed.
     /// </summary>
     public static class AdventureVitals
     {
@@ -64,10 +65,8 @@ namespace Baryonyx.Adventure
         public static float[] Of(string runId)
         {
             var full = Enumerable.Repeat(1f, Slots).ToArray();
-            if (string.IsNullOrEmpty(runId))
-                return full;
-            var parts = (store.Read() ?? "").Split('|');
-            if (parts.Length != 2 || parts[0] != runId)
+            var parts = Parts(runId);
+            if (parts == null)
                 return full;
             var shares = parts[1].Split(',');
             for (int slot = 0; slot < Slots && slot < shares.Length; slot++)
@@ -95,7 +94,7 @@ namespace Baryonyx.Adventure
                 float share = slot < shares.Count ? Mathf.Clamp01(shares[slot]) : 1f;
                 kept[slot] = share.ToString("0.####", CultureInfo.InvariantCulture);
             }
-            store.Write(runId + "|" + string.Join(",", kept));
+            Write(runId, string.Join(",", kept), HonedSlots(runId), HonedCards(runId));
         }
 
         /// <summary>Heals each slot by the rest's share of its maximum HP, a fallen one too.</summary>
@@ -105,5 +104,72 @@ namespace Baryonyx.Adventure
             Keep(runId, shares);
             return shares;
         }
+
+        /// <summary>How many times each slot was honed in the adventure.</summary>
+        public static int[] HonedSlots(string runId)
+        {
+            var counts = new int[Slots];
+            var parts = Parts(runId);
+            if (parts == null || parts.Length < 3)
+                return counts;
+            var written = parts[2].Split(',');
+            for (int slot = 0; slot < Slots && slot < written.Length; slot++)
+                if (int.TryParse(written[slot], out int count))
+                    counts[slot] = Math.Max(0, count);
+            return counts;
+        }
+
+        /// <summary>The cards honed in the adventure, as <see cref="CardKey"/>.</summary>
+        public static IReadOnlyCollection<string> HonedCards(string runId)
+        {
+            var parts = Parts(runId);
+            return parts == null || parts.Length < 4 || parts[3] == ""
+                ? Array.Empty<string>()
+                : parts[3].Split(',').Distinct().ToArray();
+        }
+
+        /// <summary>The key of a slot's card skill among the cards honed.</summary>
+        public static string CardKey(int slot, string skillId) => $"{slot}:{skillId}";
+
+        /// <summary>Hones a slot once more (its attacks grow by <see cref="AdventureParty.HoneStat"/> each).</summary>
+        public static void HoneSlot(string runId, int slot)
+        {
+            if (string.IsNullOrEmpty(runId) || slot < 0 || slot >= Slots)
+                return;
+            var counts = HonedSlots(runId);
+            counts[slot]++;
+            Write(runId, SharesText(runId), counts, HonedCards(runId));
+        }
+
+        /// <summary>Hones one of a slot's card skills (once a card).</summary>
+        public static void HoneCard(string runId, int slot, string skillId)
+        {
+            if (string.IsNullOrEmpty(runId) || string.IsNullOrEmpty(skillId))
+                return;
+            var cards = HonedCards(runId).Append(CardKey(slot, skillId)).Distinct().ToArray();
+            Write(runId, SharesText(runId), HonedSlots(runId), cards);
+        }
+
+        // 保存した文字列（冒険のID|HPの割合|鍛えた回数|鍛えたカード）を区切る。別の冒険の物ならnull。
+        private static string[] Parts(string runId)
+        {
+            if (string.IsNullOrEmpty(runId))
+                return null;
+            var parts = (store.Read() ?? "").Split('|');
+            return parts.Length >= 2 && parts[0] == runId ? parts : null;
+        }
+
+        private static string SharesText(string runId) =>
+            Parts(runId) is { } parts ? parts[1] : string.Join(",", Enumerable.Repeat("1", Slots));
+
+        private static void Write(
+            string runId,
+            string shares,
+            IReadOnlyList<int> slots,
+            IEnumerable<string> cards
+        ) =>
+            store.Write(
+                runId + "|" + shares + "|" + string.Join(",", slots) + "|" + string.Join(",", cards)
+            );
     }
 }

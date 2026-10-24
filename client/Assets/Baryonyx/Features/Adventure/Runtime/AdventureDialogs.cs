@@ -67,9 +67,19 @@ namespace Baryonyx.Adventure
         public const string EvolveChoice = "覚醒させる";
         public const string BackChoice = "もどる";
 
-        // 祭壇で、選べるものを並べ、最後に閉じる・戻るを足す（選択肢は6つまで）。
+        // 祭壇で、選べるものを並べ、最後に閉じる・戻るを足す（選択肢は5つまで）。
         public static void Altar(
             GameDialog dialog,
+            string body,
+            IReadOnlyList<(string Label, Action Choose)> options,
+            string backLabel,
+            Action back
+        ) => Choose(dialog, AltarTitle, body, options, backLabel, back);
+
+        // 選べるものを並べ、最後に戻る（閉じる）を足す。backLabel が null なら足さず、選ぶまで閉じない。
+        public static void Choose(
+            GameDialog dialog,
+            string title,
             string body,
             IReadOnlyList<(string Label, Action Choose)> options,
             string backLabel,
@@ -79,8 +89,9 @@ namespace Baryonyx.Adventure
             var choices = new List<DialogChoice>();
             foreach (var (label, choose) in options)
                 choices.Add(new DialogChoice(label, choose));
-            choices.Add(new DialogChoice(backLabel, back));
-            dialog.Show(AltarTitle, body, null, back, choices.ToArray());
+            if (backLabel != null)
+                choices.Add(new DialogChoice(backLabel, back));
+            dialog.Show(title, body, null, back, choices.ToArray());
         }
 
         // 怪しい宝箱を開けるか、開けずに通り過ぎるか。閉じると、選ばずに地図へ戻る。

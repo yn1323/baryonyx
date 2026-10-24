@@ -56,13 +56,35 @@ namespace Baryonyx.Tests.EditMode
                 Is.GreaterThan(10)
             );
 
-            // 凡例は「？」で開き、停止中は閉じておく。マスの種類を10示す。
+            // 凡例は「？」で開き、停止中は閉じておく。マスの種類を11示す。
             Assert.That(view.LegendButton, Is.Not.Null);
             Assert.That(view.Legend.gameObject.activeSelf, Is.False);
             Assert.That(
                 view.Legend.GetComponentsInChildren<TMPro.TMP_Text>(true).Length,
-                Is.EqualTo(10)
+                Is.EqualTo(11)
             );
+            // どのマスの種類にもアイコンがある（入口を除く）。
+            foreach (AdventureRoomKind kind in System.Enum.GetValues(typeof(AdventureRoomKind)))
+                if (kind != AdventureRoomKind.Start)
+                    Assert.That(view.KindIcon(kind), Is.Not.Null, kind.ToString());
+
+            // 休憩の焚き火は停止中は閉じておき、夜の野営地の絵と、押せる3つの物（テント・切り株と薪・本）、
+            // 鍛える4人の台座、研鑽の戦闘のカード（1人2枚）を持つ。
+            var campfire = view.Campfire;
+            Assert.That(campfire, Is.Not.Null);
+            Assert.That(campfire.IsOpen, Is.False);
+            Assert.That(campfire.Scene.texture, Is.Not.Null);
+            Assert.That(
+                new[] { campfire.RestButton, campfire.TrainButton, campfire.StudyButton },
+                Is.All.Not.Null
+            );
+            Assert.That(campfire.Party, Has.Length.EqualTo(4));
+            Assert.That(campfire.TrainSlots, Has.Length.EqualTo(4));
+            Assert.That(
+                campfire.StudyFaces,
+                Has.Length.EqualTo(4 * ExplorationCampfire.CardsPerMember).And.All.Not.Null
+            );
+            Assert.That(campfire.CardFrames, Is.All.Not.Null);
 
             // 入口は地図の左にあり、地図は画面より広く、左右に動かして先を見る。
             // （Prefabには印の部屋のIDが残らないため、入口の台は位置で探す。）

@@ -152,8 +152,15 @@ namespace Baryonyx.Adventure
             run != null && run.roomKind == "step-door" && run.roomCleared;
 
         // 道は、サーバーが冒険を始めたときに決めた種と部屋の数から、毎回同じ形に作る。
-        private static AdventureRun ToRun(AdventureApiClient.Run run) =>
-            new(
+        // 「？」のマスは、サーバーが保存した中身の種類を正体として持たせる。
+        private static AdventureRun ToRun(AdventureApiClient.Run run)
+        {
+            var map = AdventureCatalog.Route(run.destinationId, run.seed, run.roomCount);
+            var revealed =
+                map.Find(run.roomId)?.Kind == AdventureRoomKind.Mystery
+                    ? AdventureApiClient.ParseKind(run.roomKind)
+                    : null;
+            return new(
                 run.id,
                 run.destinationId,
                 run.roomId,
@@ -161,7 +168,7 @@ namespace Baryonyx.Adventure
                 run.route ?? Array.Empty<string>(),
                 run.revives,
                 run.reviveCost,
-                AdventureCatalog.Route(run.destinationId, run.seed, run.roomCount),
+                map,
                 ToDrops(run.drops),
                 run.floor,
                 new AdventureContents(
@@ -170,9 +177,13 @@ namespace Baryonyx.Adventure
                     (run.merchant ?? Array.Empty<AdventureApiClient.Ware>())
                         .Select(ToWare)
                         .Where(ware => ware != null)
-                        .ToArray()
+                        .ToArray(),
+                    revealed is AdventureRoomKind.Mystery or AdventureRoomKind.Start
+                        ? null
+                        : revealed
                 )
             );
+        }
 
         // 知らない分類や品質の品物は並べない。
         private static AdventureWare ToWare(AdventureApiClient.Ware ware)

@@ -99,6 +99,13 @@ namespace Baryonyx.Adventure
 
         // 怪しい宝箱のミミック（doc/catalog/enemies/enemy-chest-mimic.md）。
         public const string MimicId = "chest-mimic";
+
+        // 道中の敵は、奥の階ほど少しずつ強くする（doc/features/stage-progression.md の行き先と敵）。
+        // 道中の最初の階でHPと攻撃を0.85倍、最奥の直前の階で1.15倍にし、そのあいだは階ごとに等しく上げる。
+        // 平均は1倍のままで、最奥の主には掛けない。
+        public const int FirstDepthPercent = 85;
+        public const int LastDepthPercent = 115;
+
         public const float BossHpScale = 2.3f;
         public const float BossPowerScale = 1.8f;
 
@@ -248,7 +255,8 @@ namespace Baryonyx.Adventure
         public static string EncounterOf(
             string destinationId,
             AdventureRoomKind kind,
-            int variant = 0
+            int variant = 0,
+            int depthPercent = 100
         )
         {
             string what = kind switch
@@ -261,7 +269,26 @@ namespace Baryonyx.Adventure
                 AdventureRoomKind.ShadyChest => "mimic",
                 _ => "",
             };
-            return what == "" ? "" : $"{destinationId}/{what}/{Math.Max(0, variant)}";
+            if (what == "")
+                return "";
+            string id = $"{destinationId}/{what}/{Math.Max(0, variant)}";
+            return what == "boss" || depthPercent == 100 ? id : $"{id}/{depthPercent}";
+        }
+
+        /// <summary>
+        /// How strong the enemies of a room on the way are, in percent: <see cref="FirstDepthPercent"/>
+        /// on the way's first floor up to <see cref="LastDepthPercent"/> on the last, rising evenly.
+        /// 100 for a room that is not on the way.
+        /// </summary>
+        public static int DepthPercentOf(string roomId, int roomCount)
+        {
+            int floor = AdventureRouteMap.FloorOf(roomId);
+            if (floor < 2 || floor > roomCount + 1)
+                return 100;
+            if (roomCount <= 1)
+                return 100;
+            float t = (floor - 2) / (float)(roomCount - 1);
+            return (int)Math.Round(FirstDepthPercent + (LastDepthPercent - FirstDepthPercent) * t);
         }
 
         /// <summary>
@@ -269,12 +296,21 @@ namespace Baryonyx.Adventure
         /// picked from the seed and the room, so the same adventure meets the same enemies on
         /// every device, and another adventure meets others.
         /// </summary>
-        public static AdventureRouteMap Route(string destinationId, int seed, int roomCount) =>
-            AdventureRouteMap.Generate(
+        public static AdventureRouteMap Route(string destinationId, int seed, int roomCount)
+        {
+            int count = roomCount > 0 ? roomCount : RoomCount(destinationId);
+            return AdventureRouteMap.Generate(
                 seed,
-                roomCount > 0 ? roomCount : RoomCount(destinationId),
-                (kind, roomId) => EncounterOf(destinationId, kind, Variant(seed, roomId))
+                count,
+                (kind, roomId) =>
+                    EncounterOf(
+                        destinationId,
+                        kind,
+                        Variant(seed, roomId),
+                        DepthPercentOf(roomId, count)
+                    )
             );
+        }
 
         // 種と部屋のIDから、0〜9999の組み合わせの番号を決める（どの端末でも同じになる計算）。
         private static int Variant(int seed, string roomId)
@@ -295,17 +331,22 @@ namespace Baryonyx.Adventure
             run == null ? "" : $"{DestinationName(run.DestinationId)} {FloorText(run.Floor)}";
 
         /// <summary>
-        /// The enemies of an encounter ("port-portoria/pack/17"): a pack has a small and a
-        /// middle-sized enemy of the destination, a strong enemy's room the same at a higher level
-        /// and with more HP, and the deepest room adds the destination's master behind them. An
-        /// unknown encounter is the first destination's pack.
+        /// The enemies of an encounter ("port-portoria/pack/17", or "port-portoria/pack/17/92"
+        /// with the room's depth in percent): a pack has a small and a middle-sized enemy of the
+        /// destination, a strong enemy's room the same at a higher level and with more HP, and the
+        /// deepest room adds the destination's master behind them. The depth scales the HP and the
+        /// attack. An unknown encounter is the first destination's pack.
         /// </summary>
         public static AdventureEncounter Encounter(string id)
         {
             var parts = (id ?? "").Split('/');
-            var area = parts.Length == 3 ? Area(parts[0]) : null;
+            var area = parts.Length is 3 or 4 ? Area(parts[0]) : null;
             if (area == null || !int.TryParse(parts[2], out int variant) || variant < 0)
                 return Encounter(EncounterOf(ForestRuins, AdventureRoomKind.Battle));
+            float depth =
+                parts.Length == 4 && int.TryParse(parts[3], out int percent) && percent > 0
+                    ? percent / 100f
+                    : 1f;
             string small = Pick(area.Small, variant, 1);
             string medium = Pick(area.Medium, variant, area.Small.Length);
             return parts[1] switch
@@ -314,16 +355,16 @@ namespace Baryonyx.Adventure
                     id,
                     new[] { small, medium, null },
                     area.Level + EliteLevelUp,
-                    EliteHpScale,
-                    ElitePowerScale
+                    EliteHpScale * depth,
+                    ElitePowerScale * depth
                 ),
                 // 宝箱ミミックに、行き先の小さな敵1体を加え、強い魔物と同じ強さにする。
                 "mimic" => new AdventureEncounter(
                     id,
                     new[] { small, MimicId, null },
                     area.Level + EliteLevelUp,
-                    EliteHpScale,
-                    ElitePowerScale
+                    EliteHpScale * depth,
+                    ElitePowerScale * depth
                 ),
                 "boss" => new AdventureEncounter(
                     id,
@@ -341,8 +382,8 @@ namespace Baryonyx.Adventure
                     id,
                     new[] { small, medium, null },
                     area.Level,
-                    PackHpScale,
-                    PackPowerScale
+                    PackHpScale * depth,
+                    PackPowerScale * depth
                 ),
             };
         }

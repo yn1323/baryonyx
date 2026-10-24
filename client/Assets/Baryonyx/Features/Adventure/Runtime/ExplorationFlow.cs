@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Combat.Presentation;
 using Baryonyx.Inventory;
 using Baryonyx.UI;
 using UnityEngine;
@@ -45,11 +46,13 @@ namespace Baryonyx.Adventure
             Func<bool> toBattle,
             Action<AdventureRun> entered = null,
             Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices = null,
-            Action<AdventureAltar.Choice, int> evolve = null
+            Action<AdventureAltar.Choice, int> evolve = null,
+            Func<IReadOnlyList<BattlePartyMember>> party = null
         )
         {
             this.altarChoices = altarChoices;
             this.evolve = evolve;
+            this.party = party;
             this.view = view != null ? view : throw new ArgumentNullException(nameof(view));
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.toHome = toHome ?? throw new ArgumentNullException(nameof(toHome));
@@ -64,6 +67,9 @@ namespace Baryonyx.Adventure
         // 進化の祭壇で進められる固有スキルと、進化させる処理（編成と育成の仮データを持つシーンが渡す）。
         private readonly Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices;
         private readonly Action<AdventureAltar.Choice, int> evolve;
+
+        // 休憩で鍛えられる仲間とカード（編成の枠の順、空いた枠はnull）。
+        private readonly Func<IReadOnlyList<BattlePartyMember>> party;
 
         public AdventureState State { get; private set; }
         public ExplorationRoom Room => room;
@@ -114,7 +120,8 @@ namespace Baryonyx.Adventure
             Enter(state);
         }
 
-        // 部屋を見せる。戦闘が残っていれば、少し見せてから戦闘へ移る。
+        // 部屋を見せる。戦闘が残っていれば、少し見せてから戦闘へ移る。閉じた宝箱は、押さなくても開ける。
+        // 休憩は、休むか鍛えるかを選ばせる。「？」のマスは、着いたときに中身の種類を知らせる。
         private void Enter(AdventureState state)
         {
             State = AdventureSession.Use(state);
@@ -122,16 +129,26 @@ namespace Baryonyx.Adventure
             entered?.Invoke(state.Run);
             view.Render(room);
             busy = false;
+            var run = state.Run;
+            if (run != null && !run.RoomCleared && run.Contents.Revealed is { } revealed)
+                view.ShowNotice(AdventureTexts.Revealed(revealed));
             if (room.StartsBattle)
                 Work = BattleAsync();
-            else if (room.PassesBy)
-                Work = PassAsync();
+            else if (room.Rests)
+                OpenRest();
             else if (room.Shops)
                 OpenMerchant();
+            else if (room.Chest == ExplorationChest.Closed)
+                OnChest();
         }
 
-        // 休憩は、着いたら全員のHPを回復して終える。怪しい宝箱を通り過ぎるときも、ここで終える。
-        private async Task PassAsync(AdventureClearOptions options = null)
+        // 戦わずにマスを終える（休憩・行商人を立ち去る・怪しい宝箱を通り過ぎる）。終えたと保存できてから
+        // done を行い、読み直しても二度は行わない。notice は終えたあとの知らせ。
+        private async Task PassAsync(
+            AdventureClearOptions options = null,
+            Action<string> done = null,
+            string notice = null
+        )
         {
             busy = true;
             var kind = State.Run.Room?.Kind ?? AdventureRoomKind.Rest;
@@ -155,15 +172,59 @@ namespace Baryonyx.Adventure
             }
             if (disposed)
                 return;
-            // 終えたと保存できてから回復し、読み直しても二度は回復しない。
-            if (kind == AdventureRoomKind.Rest)
-                AdventureVitals.Rest(state.Run?.Id ?? State.Run.Id);
+            done?.Invoke(state.Run?.Id ?? State.Run.Id);
             Enter(state);
             view.ShowNotice(
-                kind == AdventureRoomKind.Rest ? AdventureTexts.Rested
-                : kind == AdventureRoomKind.ShadyChest ? AdventureTexts.PassedChest
-                : AdventureTexts.KindName(kind)
+                notice
+                    ?? (
+                        kind == AdventureRoomKind.ShadyChest
+                            ? AdventureTexts.PassedChest
+                            : AdventureTexts.KindName(kind)
+                    )
             );
+        }
+
+        // --- Rest ----------------------------------------------------------------------------
+
+        private IReadOnlyList<BattlePartyMember> Party() =>
+            party?.Invoke() ?? Array.Empty<BattlePartyMember>();
+
+        // 休憩：焚き火の絵の中で、休む（全員のHPを回復する）・鍛える（仲間）・研鑽（カード）から選ぶ。
+        // 選ぶまで先へ進めない。焚き火の部品がない画面では、そのまま休む。
+        private void OpenRest()
+        {
+            var campfire = view.Campfire;
+            if (campfire == null)
+            {
+                Rest(runId => AdventureVitals.Rest(runId), AdventureTexts.Rested);
+                return;
+            }
+            var members = Party();
+            campfire.Open(
+                members,
+                AdventureVitals.HonedCards(State?.Run?.Id),
+                () => Rest(runId => AdventureVitals.Rest(runId), AdventureTexts.Rested),
+                slot =>
+                    Rest(
+                        runId => AdventureVitals.HoneSlot(runId, slot),
+                        AdventureTexts.HonedMember(
+                            slot < members.Count ? members[slot]?.Name ?? "" : ""
+                        )
+                    ),
+                (slot, card) =>
+                    Rest(
+                        runId => AdventureVitals.HoneCard(runId, slot, card.Id),
+                        AdventureTexts.HonedCard(card.Name)
+                    )
+            );
+        }
+
+        // 休憩のマスを終えてから、選んだこと（休む・鍛える・研鑽）を行う。
+        private void Rest(Action<string> done, string notice)
+        {
+            if (view.Campfire != null)
+                view.Campfire.Close();
+            Work = PassAsync(null, done, notice);
         }
 
         // --- Altar ---------------------------------------------------------------------------

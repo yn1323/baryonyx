@@ -31,6 +31,25 @@ namespace Baryonyx.Adventure
 
         public const string SaveFailed = "冒険を保存できませんでした";
         public const string Rested = "焚き火で休んで、全員のHPが回復した";
+
+        // 休憩の焚き火（doc/features/stage-progression.md の休憩の鍛える）。
+        public const string CampfireTitle = "焚き火";
+        public const string RestChoice = "休む";
+        public const string TrainChoice = "鍛える";
+        public const string StudyChoice = "研鑽";
+
+        // 鍛えると上がる能力値。選んだ仲間の上に出す。
+        public static string TrainEffect =>
+            $"物攻・属攻 +{Mathf.RoundToInt(AdventureParty.HoneStat * 100f)}%";
+
+        public static string HonedMember(string name) => $"{name}の物攻・属攻が上がった";
+
+        public static string HonedCard(string name) =>
+            $"「{name}」が「{name}{AdventureParty.HonedMark}」になった";
+
+        // 「？」のマスに着いたときの、中身の種類の知らせ。
+        public static string Revealed(AdventureRoomKind kind) => $"「？」は{KindName(kind)}だった";
+
         public const string PassedChest = "怪しい宝箱を通り過ぎた";
         public const string BuyFailed = "買えませんでした";
         public const string TrialMet = "試練を達成した！";
@@ -82,6 +101,7 @@ namespace Baryonyx.Adventure
                 AdventureRoomKind.Trial => "試練",
                 AdventureRoomKind.StepDoor => "歩数の扉",
                 AdventureRoomKind.Altar => "覚醒の祭壇",
+                AdventureRoomKind.Mystery => "？",
                 _ => "入口",
             };
 

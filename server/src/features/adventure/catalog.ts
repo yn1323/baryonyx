@@ -17,6 +17,7 @@ export const EVENT_KINDS = [
   "trial",
   "step-door",
   "altar",
+  "mystery",
 ] as const;
 
 export const ROOM_KINDS = ["start", ...EVENT_KINDS] as const;
@@ -86,6 +87,7 @@ const EARLIEST: Record<Exclude<EventKind, "boss">, number> = {
   trial: 4,
   "step-door": 3,
   altar: 2,
+  mystery: 3,
 };
 
 // 決まった階のマス。1つ目は魔物、道中が5マス以上なら真ん中は宝箱、3マス以上なら最後（最奥の直前）は休憩。
@@ -112,6 +114,27 @@ export function canPlace(
   const fixed = fixedKindOf(destination, floor);
   if (fixed !== null) return kind === fixed;
   return kind !== "boss" && floor - 1 >= EARLIEST[kind];
+}
+
+// 「？」のマスの中身と重み（doc/features/stage-progression.md のマスの中身）。入ったときにサーバーが1つ選び、
+// その種類のマスとして保存する。端末が決めると、選び直せてしまうため。
+export const MYSTERY_KINDS = [
+  { kind: "battle", weight: 45 },
+  { kind: "treasure", weight: 25 },
+  { kind: "merchant", weight: 15 },
+  { kind: "rest", weight: 15 },
+] as const satisfies readonly { kind: EventKind; weight: number }[];
+
+export type MysteryKind = (typeof MYSTERY_KINDS)[number]["kind"];
+
+export function pickMysteryKind(random: () => number): MysteryKind {
+  const total = MYSTERY_KINDS.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = random() * total;
+  for (const entry of MYSTERY_KINDS) {
+    if (roll < entry.weight) return entry.kind;
+    roll -= entry.weight;
+  }
+  return MYSTERY_KINDS[0].kind;
 }
 
 // 怪しい宝箱がミミックである確率（doc/features/stage-progression.md のマスの中身）。開けたときにサーバーが決める。

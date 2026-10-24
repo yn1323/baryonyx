@@ -41,6 +41,7 @@ namespace Baryonyx.Adventure.Editor
         public const string IconTrialPath = ArtFolder + "/IconRoomTrial.aseprite";
         public const string IconStepDoorPath = ArtFolder + "/IconRoomStepDoor.aseprite";
         public const string IconAltarPath = ArtFolder + "/IconRoomAltar.aseprite";
+        public const string IconMysteryPath = ArtFolder + "/IconRoomMystery.aseprite";
 
         public const string StageArtFolder = "Assets/Baryonyx/Shared/Art/Stages/Exploration";
         public const string ChestClosedPath = StageArtFolder + "/ChestClosed.aseprite";
@@ -80,6 +81,7 @@ namespace Baryonyx.Adventure.Editor
             AdventureRoomKind.Merchant,
             AdventureRoomKind.StepDoor,
             AdventureRoomKind.Altar,
+            AdventureRoomKind.Mystery,
             AdventureRoomKind.Boss,
         };
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
@@ -149,6 +151,7 @@ namespace Baryonyx.Adventure.Editor
                 ArtAssets.LoadSprite(IconTrialPath),
                 ArtAssets.LoadSprite(IconStepDoorPath),
                 ArtAssets.LoadSprite(IconAltarPath),
+                ArtAssets.LoadSprite(IconMysteryPath),
             };
 
         // --- Ground --------------------------------------------------------------------------
@@ -260,6 +263,8 @@ namespace Baryonyx.Adventure.Editor
             view.Legend = BuildLegend(safe);
             // 魔物の出現と宝箱の演出は、地図と文字の上、通知とダイアログの下に重ねる。
             view.Moments = ExplorationMomentsAssets.Build(root, view);
+            // 休憩の焚き火は、地図と演出の上、通知とダイアログの下に重ねる。
+            view.Campfire = ExplorationCampfireAssets.Build(root);
 
             view.Notice = NoticeBandAssets.Build(root);
             // 行商人の品物5つと「立ち去る」を並べるため、選択肢を6つにして行を少し低くする。
