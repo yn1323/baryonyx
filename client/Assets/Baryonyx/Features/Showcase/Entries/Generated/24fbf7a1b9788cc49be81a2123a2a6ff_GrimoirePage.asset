@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 6776d0053fcfe5d4d945c3c9db9c49fa_WorldNodeStepGate
+  m_Name: 24fbf7a1b9788cc49be81a2123a2a6ff_GrimoirePage
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 6776d0053fcfe5d4d945c3c9db9c49fa_WorldNodeStepGate
-  DisplayName: WorldNodeStepGate
-  Description: Assets/Baryonyx/Features/WorldMap/UI/Art/WorldNodeStepGate.png#WorldNodeStepGate
-  Category: 9
-  Asset: {fileID: 21300000, guid: 6776d0053fcfe5d4d945c3c9db9c49fa, type: 3}
+  Id: 24fbf7a1b9788cc49be81a2123a2a6ff_GrimoirePage
+  DisplayName: GrimoirePage
+  Description: Assets/Baryonyx/Shared/Art/Items/GrimoirePage.aseprite#GrimoirePage
+  Category: 5
+  Asset: {fileID: 5349011544834349465, guid: 24fbf7a1b9788cc49be81a2123a2a6ff, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

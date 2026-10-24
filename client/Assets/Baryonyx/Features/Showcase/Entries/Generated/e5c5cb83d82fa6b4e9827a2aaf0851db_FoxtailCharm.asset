@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 6776d0053fcfe5d4d945c3c9db9c49fa
+  m_Name: e5c5cb83d82fa6b4e9827a2aaf0851db_FoxtailCharm
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 6776d0053fcfe5d4d945c3c9db9c49fa
-  DisplayName: WorldNodeStepGate
-  Description: Assets/Baryonyx/Features/WorldMap/UI/Art/WorldNodeStepGate.png
-  Category: 9
-  Asset: {fileID: 2800000, guid: 6776d0053fcfe5d4d945c3c9db9c49fa, type: 3}
+  Id: e5c5cb83d82fa6b4e9827a2aaf0851db_FoxtailCharm
+  DisplayName: FoxtailCharm
+  Description: Assets/Baryonyx/Shared/Art/Accessories/FoxtailCharm.aseprite#FoxtailCharm
+  Category: 5
+  Asset: {fileID: 5349011544834349465, guid: e5c5cb83d82fa6b4e9827a2aaf0851db, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

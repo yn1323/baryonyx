@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: dc551b93dd8a8b94fa99d1c6dedd4dfc_FirebirdBow
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: dc551b93dd8a8b94fa99d1c6dedd4dfc_FirebirdBow
+  DisplayName: FirebirdBow
+  Description: Assets/Baryonyx/Shared/Art/Weapons/FirebirdBow.aseprite#FirebirdBow
+  Category: 4
+  Asset: {fileID: 5349011544834349465, guid: dc551b93dd8a8b94fa99d1c6dedd4dfc, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1
