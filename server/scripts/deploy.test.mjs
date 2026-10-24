@@ -16,10 +16,17 @@ const database = {
 
 test("公開WorkerへビルドSHAと設定したGoogleクライアントIDを渡す", () => {
   const revision = "a".repeat(40);
-  assert.deepEqual(workerVariables(revision, " test-client-id "), {
+  assert.deepEqual(workerVariables(revision, " test-client-id ", "dev"), {
     BUILD_SHA: revision,
     GOOGLE_CLIENT_ID: "test-client-id",
+    DEBUG_TOOLS: "on",
   });
+});
+
+test("デバッグ用の操作はProdで使えないようにする", () => {
+  const revision = "a".repeat(40);
+  assert.equal(workerVariables(revision, "id", "prod").DEBUG_TOOLS, "off");
+  assert.equal(workerVariables(revision, "id", "preview").DEBUG_TOOLS, "on");
 });
 
 test("GoogleクライアントIDの未設定を公開前に拒否する", () => {

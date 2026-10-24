@@ -6,7 +6,6 @@ using Baryonyx.Adventure;
 using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.Party;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using UnityEngine;
 
@@ -19,16 +18,17 @@ namespace Baryonyx.App
     /// claim into runes on the server, which keeps the balance. The destination card at the
     /// bottom right resumes the adventure in progress in the exploration scene, or, with none,
     /// opens the travel office to set out from. The tavern, workshop and temple buttons open
-    /// their guide screen scenes behind the shutter, with today's ACT handed over for the
-    /// tavern's bonus settings; the button under the settings lists the debugging rooms
-    /// (<see cref="SceneNames.DebugRooms"/>) and opens the one chosen, putting a button back to
-    /// Home over a room without its own.
+    /// their guide screen scenes behind the shutter; the button under the settings lists the
+    /// debugging rooms (<see cref="SceneNames.DebugRooms"/>) and opens the one chosen, putting a
+    /// button back to Home over a room without its own.
     /// </summary>
     public sealed class HomeBootstrap : MonoBehaviour
     {
         public const string CheckingMessage = "冒険の状態を確かめています";
         public const string DebugRoomsTitle = "デバッグルーム";
         public const string CloseChoice = "閉じる";
+        public const string DebugRunesChoice = "ルーン+10000";
+        public const string DebugRunesFailedMessage = "ルーンを足せませんでした";
 
         [SerializeField]
         private HomeView view;
@@ -161,8 +161,6 @@ namespace Baryonyx.App
                 return false;
             }
             bool inProgress = AdventureSession.Current?.InProgress ?? false;
-            if (!inProgress)
-                StepBonusSession.TodayAct = presenter?.TodayAct;
             return SceneLoader.Load(
                 inProgress ? adventureSceneName : SceneNames.TravelOffice,
                 transition,
@@ -186,9 +184,40 @@ namespace Baryonyx.App
                     room.Name,
                     () => OpenDebugRoom(room.Scene, room.OwnHome)
                 ))
+                .Prepend(
+                    new DialogChoice(
+                        DebugRunesChoice,
+                        () =>
+                        {
+                            dialog.Hide();
+                            DebugRunesTask = AddDebugRunesAsync();
+                        }
+                    )
+                )
                 .Append(new DialogChoice(CloseChoice, dialog.Hide))
                 .ToArray();
             dialog.Show(DebugRoomsTitle, null, null, dialog.Hide, choices);
+        }
+
+        // 直前の「ルーン+10000」。テストで完了を待つために公開する。
+        public Task DebugRunesTask { get; private set; } = Task.CompletedTask;
+
+        // 問答無用でルーンを足し、サーバーの残高まで数を増やして見せる。
+        private async Task AddDebugRunesAsync()
+        {
+            var debug = GameServices.Current?.DebugRunes ?? DebugRunes.Offline;
+            try
+            {
+                long after = await debug.AddAsync(destroyCancellationToken);
+                presenter?.ShowRunesAdded(after, DebugRunes.Amount);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(DebugRunesFailedMessage + "。" + exception.Message, this);
+                if (this != null)
+                    view.ShowToast(DebugRunesFailedMessage);
+            }
         }
 
         // 戻るボタンのないルームには「ホームへ」を重ねる。そこから移れるルームにも重ねるため、全部を渡す。
@@ -201,7 +230,7 @@ namespace Baryonyx.App
                         .DebugRooms.Where(room => !room.OwnHome)
                         .ToDictionary(room => room.Scene, room => room.Corner)
                 );
-            if (LoadWithTodayAct(scene))
+            if (SceneLoader.Load(scene, transition, this))
             {
                 presenter?.MarkScreenOpened();
                 return;
@@ -213,14 +242,7 @@ namespace Baryonyx.App
         private bool OpenScreen(HomeAction action)
         {
             var scene = SceneNames.GuideFor(action);
-            return scene != null && LoadWithTodayAct(scene);
-        }
-
-        // 今日のACTを渡して、遷移演出を挟んでシーンを開く。
-        private bool LoadWithTodayAct(string scene)
-        {
-            StepBonusSession.TodayAct = presenter?.TodayAct;
-            return SceneLoader.Load(scene, transition, this);
+            return scene != null && SceneLoader.Load(scene, transition, this);
         }
     }
 }

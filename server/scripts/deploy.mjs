@@ -159,10 +159,15 @@ export async function verifyHttp(
   }
 }
 
-export function workerVariables(revision, googleClientId) {
+// DEBUG_TOOLS は、開発中の確かめ用の操作（src/features/debug）をProd以外で使えるようにする。
+export function workerVariables(revision, googleClientId, stage) {
   const audience = googleClientId?.trim();
   assert.ok(audience, "公開先のGOOGLE_CLIENT_IDが必要です");
-  return { BUILD_SHA: revision, GOOGLE_CLIENT_ID: audience };
+  return {
+    BUILD_SHA: revision,
+    GOOGLE_CLIENT_ID: audience,
+    DEBUG_TOOLS: stage === "prod" ? "off" : "on",
+  };
 }
 
 async function deploy(api, stage, pr) {
@@ -179,7 +184,11 @@ async function deploy(api, stage, pr) {
     /^[a-f0-9]{40}$/i,
     "ビルドしたGitコミットのSHAが必要です",
   );
-  const vars = workerVariables(info.revision, process.env.GOOGLE_CLIENT_ID);
+  const vars = workerVariables(
+    info.revision,
+    process.env.GOOGLE_CLIENT_ID,
+    stage,
+  );
   assert.match(info.compatibility_date, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(
     Array.isArray(info.compatibility_flags) &&

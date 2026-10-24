@@ -5,7 +5,7 @@
   "compatibility_date": "2026-09-10",
   "workers_dev": false,
   "preview_urls": false,
-  "vars": { "BUILD_SHA": "local" },
+  "vars": { "BUILD_SHA": "local", "DEBUG_TOOLS": "on" },
   "d1_databases": [
     {
       "binding": "DB",

@@ -35,6 +35,7 @@ export async function createApiScenario() {
       DB: db,
       BUILD_SHA: "local",
       GOOGLE_CLIENT_ID: "test-audience",
+      DEBUG_TOOLS: "on",
     } as unknown as SessionEnv["Bindings"];
     const api = createApi(async (token) => {
       if (token === "invalid") throw new Error();

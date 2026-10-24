@@ -45,6 +45,7 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(
                     SceneNames
                         .DebugRooms.Select(room => room.Name)
+                        .Prepend(HomeBootstrap.DebugRunesChoice)
                         .Append(HomeBootstrap.CloseChoice)
                         .ToArray()
                 )
