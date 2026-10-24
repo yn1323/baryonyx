@@ -45,7 +45,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/PassiveIaiForm
 
 ## 設計の意図
 
-アリアの居合の型は、千年前の歩き手が伝えたもの（[小説の登場人物](../../../novel/setting/characters.md#アリア)、試案）。決めるのが早い性格を、ターンの初手の一太刀で表す。
+決めるのが早い性格を、ターンの初手の一太刀で表す。
 
 | 遊ぶ人 | 受け取り方 |
 |---|---|

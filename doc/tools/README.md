@@ -24,7 +24,7 @@ python -B doc/tools/check_docs.py
 ## 検査すること
 
 - `doc/` 内のMarkdownリンク先の存在と、MD内の見出しへのリンク。
-- `doc/` の外にある `AGENTS.md`（ルート・client・server・novelなど）と、`.agents/skills/` のMarkdownのリンク先と見出し。これらは索引からの到達とメタデータを検査しない。`node_modules`・`Library` などの生成物のフォルダーは探さない。
+- `doc/` の外にある `AGENTS.md`（ルート・client・serverなど）と、`.agents/skills/` のMarkdownのリンク先と見出し。これらは索引からの到達とメタデータを検査しない。`node_modules`・`Library` などの生成物のフォルダーは探さない。
 - `doc/README.md`から各MDへリンクをたどって到達できること。
 - 新しい企画仕様・個別データ・保管庫（`doc/archive/`）の必須メタデータと、文書IDの重複。保管庫の文書の状態は「記録」か「見送り」にする。
 - 個別データのIDとファイル名、分類と配置の一致。
