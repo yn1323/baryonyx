@@ -694,7 +694,10 @@ namespace Baryonyx.Combat
             )
         );
 
-        /// <summary>The card (or prototype) with <paramref name="id"/>, or null.</summary>
+        /// <summary>
+        /// The card (or prototype, or a card skill's awakened stage such as "Fire.1",
+        /// doc/features/skill-awakening.md) with <paramref name="id"/>, or null.
+        /// </summary>
         public static CardSkill Find(string id)
         {
             foreach (var card in All)
@@ -703,7 +706,7 @@ namespace Baryonyx.Combat
             foreach (var card in Prototypes)
                 if (card.Id == id)
                     return card;
-            return null;
+            return id != null && id.IndexOf('.') > 0 ? CardSkillAwakenings.Find(id) : null;
         }
 
         // カードに、first から順に光り方を割り当てる。

@@ -99,6 +99,32 @@ namespace Baryonyx.Combat.Editor
             );
             choice.ConfirmButton = button;
 
+            // カスタムスキルの覚醒でだけ出す「覚醒しない」。決定の左に、控えめな板で置く。
+            var decline = Rect("Decline", root);
+            decline.anchorMin = decline.anchorMax = new Vector2(0.5f, 0.5f);
+            decline.sizeDelta = new Vector2(420f, ButtonHeight);
+            decline.anchoredPosition = new Vector2(
+                -choice.ButtonSpread,
+                confirm.anchoredPosition.y
+            );
+            var (declineButton, _, declineContent) = GlassCardAssets.Choice(
+                decline,
+                pattern: false,
+                fill: GlassCardAssets.SceneFillColor
+            );
+            Stretch(
+                Label(
+                    declineContent,
+                    "Label",
+                    "覚醒しない",
+                    36,
+                    UiPalette.TextSub,
+                    TextAlignmentOptions.Center
+                ).rectTransform
+            );
+            choice.DeclineButton = declineButton;
+            decline.gameObject.SetActive(false);
+
             root.gameObject.SetActive(false);
             return choice;
         }

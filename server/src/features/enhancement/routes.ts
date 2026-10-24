@@ -34,7 +34,7 @@ export function createEnhancementApi() {
     return respond(c, result, errorStatus);
   });
 
-  // 商会の覚醒。覚醒の欠片とルーンで、固有スキルを1段進める。
+  // 商会の覚醒。覚醒の欠片とルーンで、固有スキルを1段進めるか、持っているスキル1枚を覚醒させる。
   api.post("/enhancement/awaken", async (c) => {
     const body = await parseJson(c, awakenSchema);
     if (!body.success) return invalidRequest(c);

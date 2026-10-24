@@ -13,7 +13,12 @@ import {
   maxMultiplierPercent as skillMaxPercent,
   uniqueMaxPercent,
 } from "../party/catalog.js";
-import { AWAKENING_RUNES, POLISHES, polishStep } from "./catalog.js";
+import {
+  AWAKENING_RUNES,
+  POLISHES,
+  polishStep,
+  SKILL_AWAKENING_RUNES,
+} from "./catalog.js";
 
 type Materials = { id: string; count: number }[];
 type Unique = {
@@ -25,7 +30,13 @@ type Unique = {
 };
 type Party = {
   characters: { id: string; level: number; uniques: Unique[] }[];
-  skillCards: { id: string; skillId: string; multiplier: number }[];
+  skillCards: {
+    id: string;
+    skillId: string;
+    multiplier: number;
+    quality: string;
+    awakenedBranch: number | null;
+  }[];
   runes: number;
 };
 type Polished = {
@@ -53,6 +64,17 @@ type Awakened = {
     balanceAfter: number;
   };
   unique?: Unique;
+  materials?: Materials;
+  error?: string;
+};
+type CardAwakened = {
+  awakening?: {
+    cardId: string;
+    branch: number;
+    runes: number;
+    balanceAfter: number;
+  };
+  card?: Party["skillCards"][number];
   materials?: Materials;
   error?: string;
 };
@@ -474,5 +496,109 @@ describe("強化API", () => {
         )
       ).error,
     ).toBe("insufficient_materials");
+  });
+
+  it("覚醒の欠片1個とルーンで、まだ覚醒していないスキル1枚を枝の1つへ覚醒させ、覚醒した1枚と欠片の不足を拒む", async () => {
+    const user = await scenario.login("enhancement-card-awaken");
+    const [target, other] = (await scenario.read<Party>("/party", user.token))
+      .skillCards;
+    await give(user.userId, { "awakening-shard": 1 });
+    await scenario.setRunes(user.userId, 1500);
+    const cardAwaken = (body: unknown, expected = 200) =>
+      post<CardAwakened>("/enhancement/awaken", user.token, body, expected);
+    const cardOf = async (cardId: string) =>
+      (await scenario.read<Party>("/party", user.token)).skillCards.find(
+        (card) => card.id === cardId,
+      );
+
+    // 持っていない1枚は404で拒否する。
+    expect(
+      (
+        await cardAwaken(
+          {
+            requestId: requestId(1),
+            cardId: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
+            branch: 1,
+          },
+          404,
+        )
+      ).error,
+    ).toBe("target_not_found");
+
+    const first = await cardAwaken({
+      requestId: requestId(2),
+      cardId: target.id,
+      branch: 1,
+    });
+    expect(first.awakening).toEqual({
+      cardId: target.id,
+      branch: 1,
+      runes: SKILL_AWAKENING_RUNES,
+      balanceAfter: 1500 - SKILL_AWAKENING_RUNES,
+    });
+    expect(first.card).toEqual({ ...target, awakenedBranch: 1 });
+    expect(
+      first.materials?.find((entry) => entry.id === "awakening-shard")?.count,
+    ).toBe(0);
+    expect(await runesOf(user.token)).toBe(1500 - SKILL_AWAKENING_RUNES);
+    expect((await cardOf(target.id))?.awakenedBranch).toBe(1);
+
+    // 再送は、記録した結果を返し、もう一度は使わない。中身の違う再送は受け付けない。
+    const replay = await cardAwaken({
+      requestId: requestId(2),
+      cardId: target.id,
+      branch: 1,
+    });
+    expect(replay.awakening).toEqual(first.awakening);
+    expect(
+      (
+        await cardAwaken(
+          { requestId: requestId(2), cardId: target.id, branch: 2 },
+          409,
+        )
+      ).error,
+    ).toBe("request_conflict");
+    expect(await runesOf(user.token)).toBe(1500 - SKILL_AWAKENING_RUNES);
+
+    // 覚醒した1枚は、同じ枝へも別の枝へも覚醒しない。欠片もルーンも使わない。
+    await give(user.userId, { "awakening-shard": 1 });
+    await scenario.setRunes(user.userId, 1500);
+    for (const branch of [1, 2]) {
+      expect(
+        (
+          await cardAwaken(
+            { requestId: requestId(2 + branch), cardId: target.id, branch },
+            409,
+          )
+        ).error,
+      ).toBe("already_awakened");
+    }
+    expect(await countOf(user.token, "awakening-shard")).toBe(1);
+    expect(await runesOf(user.token)).toBe(1500);
+
+    // 欠片がなければ覚醒できず、何も変えない。
+    await give(user.userId, { "awakening-shard": 0 });
+    expect(
+      (
+        await cardAwaken(
+          { requestId: requestId(5), cardId: other.id, branch: 2 },
+          409,
+        )
+      ).error,
+    ).toBe("insufficient_materials");
+    expect((await cardOf(other.id))?.awakenedBranch).toBeNull();
+    expect(await runesOf(user.token)).toBe(1500);
+
+    // 不正な枝は400で拒否する。
+    expect(
+      (
+        await scenario.request(
+          "/enhancement/awaken",
+          "POST",
+          { requestId: requestId(6), cardId: other.id, branch: 3 },
+          user.token,
+        )
+      ).status,
+    ).toBe(400);
   });
 });

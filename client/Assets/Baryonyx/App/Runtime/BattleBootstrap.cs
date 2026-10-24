@@ -130,6 +130,8 @@ namespace Baryonyx.App
                 for (int slot = 0; slot < members.Count && slot < shares.Length; slot++)
                     if (members[slot] != null)
                         members[slot].HpShare = shares[slot];
+                // 休憩で鍛えた仲間とカードは、その冒険のあいだ強くなる。
+                AdventureParty.Hone(members, flow.State.Run?.Id);
             }
             battle.UseParty(members);
             battle.enabled = true;

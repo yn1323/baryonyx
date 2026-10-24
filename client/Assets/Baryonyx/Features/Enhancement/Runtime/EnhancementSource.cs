@@ -62,8 +62,9 @@ namespace Baryonyx.Enhancement
 
         public async Task<IReadOnlyDictionary<string, int>> LoadAsync(CancellationToken token) =>
             CountsOf(
-                (await sessions.WithSessionAsync(session => api.ReadAsync(session, token), token))
-                    ?.materials
+                (
+                    await sessions.WithSessionAsync(session => api.ReadAsync(session, token), token)
+                )?.materials
             );
 
         public async Task<EnhancementOutcome> PolishAsync(
@@ -108,6 +109,28 @@ namespace Baryonyx.Enhancement
         {
             if (option == null)
                 throw new ArgumentNullException(nameof(option));
+            if (option.IsSkillCard)
+            {
+                var cardRequest = new EnhancementApiClient.SkillCardAwakenRequest
+                {
+                    requestId = Guid.NewGuid().ToString("D"),
+                    cardId = option.OwnedCard,
+                    branch = option.Branch,
+                };
+                var cardResult = await sessions.WithSessionAsync(
+                    session => api.AwakenSkillCardAsync(session, cardRequest, token),
+                    token
+                );
+                var awakened =
+                    cardResult?.awakening
+                    ?? throw new InvalidOperationException("覚醒の結果がありません。");
+                return new EnhancementOutcome(
+                    0f,
+                    awakened.branch > 0 ? awakened.branch : option.Branch,
+                    awakened.balanceAfter,
+                    CountsOf(cardResult.materials)
+                );
+            }
             var request = new EnhancementApiClient.AwakenRequest
             {
                 requestId = Guid.NewGuid().ToString("D"),
@@ -120,7 +143,8 @@ namespace Baryonyx.Enhancement
                 token
             );
             var awakening =
-                result?.awakening ?? throw new InvalidOperationException("覚醒の結果がありません。");
+                result?.awakening
+                ?? throw new InvalidOperationException("覚醒の結果がありません。");
             return new EnhancementOutcome(
                 0f,
                 awakening.stage,
@@ -192,7 +216,10 @@ namespace Baryonyx.Enhancement
                 return Fail("強化できない組み合わせです。");
             if (target.AtMax)
                 return Fail("上限に届いています。");
-            if (count > EnhancementMaterials.UsefulCount(target.Multiplier, stone, target.MaxMultiplier))
+            if (
+                count
+                > EnhancementMaterials.UsefulCount(target.Multiplier, stone, target.MaxMultiplier)
+            )
                 return Fail("上限を超える数です。");
             int cost = stone.Runes * count;
             if (!Spend(stone.Id, count, cost, out string reason))
@@ -206,10 +233,7 @@ namespace Baryonyx.Enhancement
             return Task.FromResult(new EnhancementOutcome(after, -1, runes, Snapshot()));
         }
 
-        public Task<EnhancementOutcome> AwakenAsync(
-            AwakeningOption option,
-            CancellationToken token
-        )
+        public Task<EnhancementOutcome> AwakenAsync(AwakeningOption option, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             if (option == null)
@@ -230,7 +254,8 @@ namespace Baryonyx.Enhancement
         {
             materials.TryGetValue(materialId, out int held);
             long balance = Runes;
-            reason = held < count ? "素材が足りません。"
+            reason =
+                held < count ? "素材が足りません。"
                 : balance < cost ? "ルーンが足りません。"
                 : null;
             if (reason != null)

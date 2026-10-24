@@ -117,7 +117,7 @@ namespace Baryonyx.Party
         /// <summary>The skill id a slot's key stands for (for the element icons and art), or null.</summary>
         public string SkillIdOf(string key) =>
             string.IsNullOrEmpty(key) || PartyCardKey.IsItem(key) ? null
-            : PartyCardKey.IsCard(key) ? SkillCardOf(key)?.SkillId
+            : PartyCardKey.IsCard(key) ? SkillCardOf(key)?.StageId
             : key;
 
         // 以下は、サーバーへ保存する前に画面へ出すための、サーバーと同じ決まりの変更（doc/features/party.md）。
@@ -210,6 +210,19 @@ namespace Baryonyx.Party
                 0
             );
 
+        /// <summary>The party with the owned card <paramref name="cardId"/> awakened into <paramref name="branch"/>.</summary>
+        public PartyState WithAwakened(string cardId, int branch)
+        {
+            if (SkillCards == null)
+                return this;
+            var cards = SkillCards
+                .Select(card =>
+                    card.Id == cardId && card.AwakenedBranch == 0 ? card.Awakened(branch) : card
+                )
+                .ToArray();
+            return new PartyState(Owned, Slots, Runes, MaxLevel, CostPerLevel, cards, Items);
+        }
+
         private PartyState With(
             string characterId,
             Func<PartyCharacterState, PartyCharacterState> change,
@@ -277,6 +290,15 @@ namespace Baryonyx.Party
         );
     }
 
+    /// <summary>
+    /// Saves an owned skill card awakening in an adventure's battle (doc/features/skill-awakening.md):
+    /// the card plays as the branch's stage from then on.
+    /// </summary>
+    public interface IPartySkillCardSource
+    {
+        Task<PartyState> AwakenSkillCardAsync(string cardId, int branch, CancellationToken token);
+    }
+
     /// <summary>Deepens a character's bond with one of its tokens (doc/features/monetization.md).</summary>
     public interface IPartyBondSource
     {
@@ -288,7 +310,11 @@ namespace Baryonyx.Party
     /// Reads and saves the party on the game server with the shared session, so each player has
     /// their own characters, levels, card skills and formation.
     /// </summary>
-    public sealed class PartyServerSource : IPartySource, IPartyUniqueSkillSource, IPartyBondSource
+    public sealed class PartyServerSource
+        : IPartySource,
+            IPartyUniqueSkillSource,
+            IPartySkillCardSource,
+            IPartyBondSource
     {
         private readonly IAccountSessionRunner sessions;
         private readonly PartyApiClient api;
@@ -361,6 +387,12 @@ namespace Baryonyx.Party
         ) =>
             Run(session => api.EvolveUniqueAsync(session, characterId, index, stage, token), token);
 
+        public Task<PartyState> AwakenSkillCardAsync(
+            string cardId,
+            int branch,
+            CancellationToken token
+        ) => Run(session => api.AwakenSkillCardAsync(session, cardId, branch, token), token);
+
         public Task<PartyState> DeepenBondAsync(
             string characterId,
             int bond,
@@ -422,7 +454,12 @@ namespace Baryonyx.Party
                         : slot.characterId;
             var skillCards = (state?.skillCards ?? Array.Empty<PartyApiClient.SkillCard>())
                 .Where(card => card != null && !string.IsNullOrEmpty(card.id))
-                .Select(card => new PartySkillCard(card.id, card.skillId, card.multiplier))
+                .Select(card => new PartySkillCard(
+                    card.id,
+                    card.skillId,
+                    card.multiplier,
+                    card.awakenedBranch
+                ))
                 .ToArray();
             var items = (state?.items ?? Array.Empty<PartyApiClient.Item>())
                 .Where(item => item != null && !string.IsNullOrEmpty(item.itemId) && item.count > 0)

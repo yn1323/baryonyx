@@ -93,6 +93,16 @@ namespace Baryonyx.Party.Editor
                             Art = ArtAssets.LoadTexture($"{SkillArtFolder}/{stage.Art}.aseprite"),
                         })
                 )
+                // スキルの覚醒版（doc/features/skill-awakening.md）。段階ごとに専用の挿絵がある。
+                .Concat(
+                    CardSkillAwakenings
+                        .All.SelectMany(awakening => awakening.Branches)
+                        .Select(stage => new PartySkillArt
+                        {
+                            Skill = stage.Id,
+                            Art = ArtAssets.LoadTexture($"{SkillArtFolder}/{stage.Art}.aseprite"),
+                        })
+                )
                 .ToArray();
             EditorUtility.SetDirty(data);
             AssetDatabase.SaveAssetIfDirty(data);

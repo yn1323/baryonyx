@@ -43,6 +43,20 @@ namespace Baryonyx.Enhancement
                 token
             );
 
+        /// <summary>Awakens an owned skill card into a branch (doc/features/skill-awakening.md).</summary>
+        public Task<AwakenResult> AwakenSkillCardAsync(
+            AccountSession session,
+            SkillCardAwakenRequest request,
+            CancellationToken token
+        ) =>
+            server.SendAsync<AwakenResult>(
+                "/v1/enhancement/awaken",
+                "POST",
+                request,
+                session.Token,
+                token
+            );
+
         [Serializable]
         public sealed class Material
         {
@@ -79,6 +93,15 @@ namespace Baryonyx.Enhancement
             public int stage;
         }
 
+        // 持っているスキルの1枚の覚醒の要求。固有スキルの項目は送らない。
+        [Serializable]
+        public sealed class SkillCardAwakenRequest
+        {
+            public string requestId;
+            public string cardId;
+            public int branch;
+        }
+
         [Serializable]
         public sealed class Polished
         {
@@ -103,6 +126,10 @@ namespace Baryonyx.Enhancement
             public string characterId;
             public int index;
             public int stage;
+
+            // 持っているスキルの1枚の覚醒では、カードのIDと覚醒した枝（1か2）が入る。
+            public string cardId;
+            public int branch;
             public int runes;
             public long balanceAfter;
         }

@@ -196,6 +196,7 @@ export function createWorkshopRepository(binding: D1Database) {
                     "multiplier_percent",
                   ),
                 acquiredAt: sql<string>`${now}`.as("acquired_at"),
+                awakenedBranch: sql<null>`NULL`.as("awakened_branch"),
               })
               .from(sql`(SELECT 1)`)
               .where(written),
@@ -410,6 +411,7 @@ export function createWorkshopRepository(binding: D1Database) {
                     "multiplier_percent",
                   ),
                   acquiredAt: sql<string>`${now}`.as("acquired_at"),
+                  awakenedBranch: sql<null>`NULL`.as("awakened_branch"),
                 })
                 .from(sql`(SELECT 1)`)
                 .where(written),

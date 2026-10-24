@@ -79,12 +79,18 @@ export const skillCards = sqliteTable(
     skillId: text("skill_id").notNull(),
     multiplierPercent: integer("multiplier_percent").notNull(),
     acquiredAt: text("acquired_at").notNull(),
+    // 覚醒した枝（1か2）。覚醒していない1枚は NULL で、覚醒すると戻らない（doc/features/skill-awakening.md）。
+    awakenedBranch: integer("awakened_branch"),
   },
   (table) => [
     index("skill_cards_user").on(table.userId, table.acquiredAt),
     check(
       "skill_cards_multiplier_check",
       sql`${table.multiplierPercent} >= 100`,
+    ),
+    check(
+      "skill_cards_awakened_branch_check",
+      sql`${table.awakenedBranch} IS NULL OR ${table.awakenedBranch} IN (1, 2)`,
     ),
   ],
 );

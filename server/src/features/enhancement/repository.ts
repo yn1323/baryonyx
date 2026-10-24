@@ -1,4 +1,4 @@
-import { and, eq, type SQL, sql } from "drizzle-orm";
+import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { createDatabase } from "../../shared/db.js";
 import {
@@ -14,6 +14,7 @@ import {
 import { equipmentItems } from "../equipment/db-schema.js";
 import { debitRunes, runeBalance } from "../exercise-rewards/wallet.js";
 import {
+  CARD_SKILL_IDS,
   type CardSkillId,
   type CharacterId,
   maxMultiplierPercent as skillMaxPercent,
@@ -35,9 +36,15 @@ import {
   type MaterialId,
   POLISHES,
   polishedPercent,
+  SKILL_AWAKENING_RUNES,
 } from "./catalog.js";
 import { enhancementMaterials, enhancementRecords } from "./db-schema.js";
-import type { Awaken, Polish } from "./schema.js";
+import type {
+  Awaken,
+  AwakenSkillCard,
+  AwakenUnique,
+  Polish,
+} from "./schema.js";
 
 type Database = ReturnType<typeof createDatabase>;
 type RecordRow = typeof enhancementRecords.$inferSelect;
@@ -482,15 +489,125 @@ export function createEnhancementRepository(binding: D1Database) {
     };
   }
 
+  // 固有スキルか、持っているスキル1枚を覚醒させる。
+  async function awaken(userId: string, request: Awaken, now: string) {
+    return "cardId" in request
+      ? awakenSkillCard(userId, request, now)
+      : awakenUnique(userId, request, now);
+  }
+
+  // 持っているスキル1枚の覚醒の応答。覚醒した1枚の今の状態を添える。
+  async function skillCardAwakened(
+    userId: string,
+    row: RecordRow,
+    now: string,
+  ) {
+    const state = await createPartyRepository(binding).getState(userId, now);
+    const card = state.skillCards.find((entry) => entry.id === row.target);
+    return {
+      awakening: {
+        cardId: row.target,
+        branch: row.after,
+        runes: row.runes,
+        balanceAfter: row.balanceAfter,
+      },
+      ...(card ? { card } : {}),
+      materials: await materials(userId),
+    };
+  }
+
+  // まだ覚醒していない持っているスキル1枚を、覚醒の欠片とルーンで2つの枝のどちらかへ覚醒させる
+  // （doc/features/skill-awakening.md）。覚醒は1枚に1回だけで、覚醒した1枚は受け付けない。
+  async function awakenSkillCard(
+    userId: string,
+    request: AwakenSkillCard,
+    now: string,
+  ) {
+    const { cardId, branch } = request;
+    const replay = await findRecord(userId, request.requestId);
+    if (replay) {
+      if (
+        replay.kind !== "awaken" ||
+        replay.category !== "skill" ||
+        replay.target !== cardId ||
+        replay.after !== branch
+      ) {
+        return { error: "request_conflict" as const };
+      }
+      return skillCardAwakened(userId, replay, now);
+    }
+    const card = await db
+      .select({
+        skillId: skillCards.skillId,
+        awakenedBranch: skillCards.awakenedBranch,
+      })
+      .from(skillCards)
+      .where(and(eq(skillCards.userId, userId), eq(skillCards.id, cardId)))
+      .get();
+    if (!card) return { error: "target_not_found" as const };
+    if (card.awakenedBranch !== null) {
+      return { error: "already_awakened" as const };
+    }
+    if (!CARD_SKILL_IDS.includes(card.skillId as CardSkillId)) {
+      return { error: "not_awakenable" as const };
+    }
+    const notAwakened = and(
+      eq(skillCards.userId, userId),
+      eq(skillCards.id, cardId),
+      isNull(skillCards.awakenedBranch),
+    );
+    const row = await write(
+      userId,
+      {
+        requestId: request.requestId,
+        kind: "awaken",
+        category: "skill",
+        target: cardId,
+        materialId: AWAKENING_SHARD_ID,
+        materialCount: AWAKENING_SHARDS_PER_STAGE,
+        before: 0,
+        after: branch,
+        runes: SKILL_AWAKENING_RUNES,
+      },
+      sql`EXISTS (SELECT 1 FROM ${skillCards} WHERE ${notAwakened})`,
+      (written) => [
+        db
+          .update(skillCards)
+          .set({ awakenedBranch: branch })
+          .where(and(notAwakened, written)),
+      ],
+      now,
+    );
+    if (row) return skillCardAwakened(userId, row, now);
+    return reason(
+      userId,
+      AWAKENING_SHARD_ID,
+      AWAKENING_SHARDS_PER_STAGE,
+      async () => {
+        const again = await db
+          .select({ awakenedBranch: skillCards.awakenedBranch })
+          .from(skillCards)
+          .where(and(eq(skillCards.userId, userId), eq(skillCards.id, cardId)))
+          .get();
+        return again !== undefined && again.awakenedBranch === null;
+      },
+    );
+  }
+
   // 固有スキルを、まだ取得していない段階へ覚醒の欠片とルーンで1段進める（doc/features/enhancement.md の覚醒）。
   // 冒険中の覚醒と違い、セットしている段階によらず、1つ手前の段階を取得していれば選べる。覚醒した段階をセットする。
-  async function awaken(userId: string, request: Awaken, now: string) {
+  async function awakenUnique(
+    userId: string,
+    request: AwakenUnique,
+    now: string,
+  ) {
     const { characterId, index, stage } = request;
     const target = uniqueTarget(characterId, index);
     const replay = await findRecord(userId, request.requestId);
     if (replay) {
       if (
         replay.kind !== "awaken" ||
+        replay.category !== "unique" ||
         replay.target !== target ||
         replay.after !== stage
       ) {

@@ -3,6 +3,7 @@ import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createPartyRepository } from "./repository.js";
 import {
+  awakenSkillCardSchema,
   cardSlotSchema,
   characterIdSchema,
   deepenBondSchema,
@@ -12,6 +13,7 @@ import {
   setCardSchema,
   setPartySlotSchema,
   setUniqueSchema,
+  skillCardIdSchema,
   uniqueIndexSchema,
 } from "./schema.js";
 
@@ -144,6 +146,20 @@ export function createPartyApi() {
       return respond(c, result, errorStatus);
     },
   );
+
+  // 冒険の戦闘で起きた、持っているスキル1枚の覚醒を保存する。
+  api.post("/party/skill-cards/:cardId/awaken", async (c) => {
+    const cardId = skillCardIdSchema.safeParse(c.req.param("cardId"));
+    const body = await parseJson(c, awakenSkillCardSchema);
+    if (!cardId.success || !body.success) return invalidRequest(c);
+    const result = await createPartyRepository(c.env.DB).awakenSkillCard(
+      c.get("userId"),
+      cardId.data,
+      body.data.branch,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
 
   // 絆のしるしを1つ使って、絆を1段深める（育成の画面の「絆を深める」）。
   api.post("/party/characters/:characterId/bond", async (c) => {

@@ -423,6 +423,7 @@ namespace Baryonyx.Combat.Editor
                 {
                     $"カードスキル　{CardSkills.All.Count}",
                     $"固有スキル　{uniques}",
+                    $"覚醒版　{CardSkillLab.Skills.Count - CardSkills.All.Count - uniques}",
                     $"溜め　{CardSkillLab.WindUps.Count}",
                 },
                 60f,
@@ -442,6 +443,14 @@ namespace Baryonyx.Combat.Editor
             var padding = new RectOffset(0, 0, 12, 32);
             var cards = GuidePanelLayout.Grid(viewport, "CardSkills", Cell, CellGap, padding, 8);
             var trees = GuidePanelLayout.Grid(viewport, "UniqueSkills", Cell, CellGap, padding, 7);
+            var awakened = GuidePanelLayout.Grid(
+                viewport,
+                "AwakenedSkills",
+                Cell,
+                CellGap,
+                padding,
+                8
+            );
             var windUps = GuidePanelLayout.Grid(
                 viewport,
                 "WindUps",
@@ -450,11 +459,12 @@ namespace Baryonyx.Combat.Editor
                 padding,
                 3
             );
-            foreach (var content in new[] { cards, trees, windUps })
+            foreach (var content in new[] { cards, trees, awakened, windUps })
                 content.GetComponent<GridLayoutGroup>().childAlignment = TextAnchor.UpperCenter;
             trees.gameObject.SetActive(false);
+            awakened.gameObject.SetActive(false);
             windUps.gameObject.SetActive(false);
-            lab.TabContents = new[] { cards, trees, windUps };
+            lab.TabContents = new[] { cards, trees, awakened, windUps };
             lab.Scroll = GuidePanelLayout.Scroll(viewport, viewport, cards);
             lab.Tabs[0].Chosen = true;
 

@@ -37,13 +37,15 @@ type State = {
     skillId: string;
     multiplier: number;
     quality: string;
+    awakenedBranch: number | null;
   }[];
   items: { itemId: string; count: number }[];
   runes: number;
   rules: { maxLevel: number; costPerLevel: number };
 };
 
-const missingCard = "card:bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb";
+const missingCardId = "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb";
+const missingCard = `card:${missingCardId}`;
 
 const requestIds = {
   first: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
@@ -91,6 +93,15 @@ describe("パーティAPI", () => {
       { stage },
       token,
     );
+  const awakenCard = (token: string, cardId: string, branch: unknown) =>
+    scenario.request(
+      `/party/skill-cards/${cardId}/awaken`,
+      "POST",
+      { branch },
+      token,
+    );
+  const cardOf = (state: State, cardId: string) =>
+    state.skillCards.find((card) => card.id === cardId);
   // 進化は冒険の戦闘でだけ起きるため、進化を送る前に冒険を始めておく。
   const startAdventure = async (token: string) => {
     await read(token);
@@ -147,9 +158,12 @@ describe("パーティAPI", () => {
       scenario.request("/party/characters/toma/uniques/0/evolve", "POST", {
         stage: 1,
       }),
+      scenario.request(`/party/skill-cards/${missingCardId}/awaken`, "POST", {
+        branch: 1,
+      }),
     ]);
     expect(responses.map((response) => response.status)).toEqual([
-      401, 401, 401, 401, 401, 401, 401,
+      401, 401, 401, 401, 401, 401, 401, 401,
     ]);
   });
 
@@ -792,5 +806,126 @@ describe("パーティAPI", () => {
     expect(late.status).toBe(409);
     expect(await late.json()).toEqual({ error: "no_adventure" });
     expect(uniqueOf(await read(user.token), "toma", 0)?.set).toBe(1);
+  });
+
+  it("持っているスキル1枚は冒険の戦闘で1回だけ覚醒し、同じ枝の再送は何も変えず、別の枝へは覚醒しない", async () => {
+    const user = await scenario.login("party-card-awaken");
+    const before = await read(user.token);
+    // 覚醒していない1枚は、枝を null で返す。
+    expect(before.skillCards.map((card) => card.awakenedBranch)).toEqual(
+      before.skillCards.map(() => null),
+    );
+    const [target, untouched] = before.skillCards;
+
+    await startAdventure(user.token);
+    const first = await awakenCard(user.token, target.id, 2);
+    expect(first.status).toBe(200);
+    const awakened = (await first.json()) as State;
+    expect(awakened.change).toBe("awaken");
+    expect(cardOf(awakened, target.id)).toEqual({
+      ...target,
+      awakenedBranch: 2,
+    });
+    // ほかの1枚は覚醒しない。
+    expect(cardOf(awakened, untouched.id)?.awakenedBranch).toBeNull();
+    expect(cardOf(await read(user.token), target.id)?.awakenedBranch).toBe(2);
+
+    // 同じ覚醒の再送は、何も変えずに成功として返す。
+    const resent = await awakenCard(user.token, target.id, 2);
+    expect(resent.status).toBe(200);
+    expect(await resent.json()).toEqual({
+      ...awakened,
+      change: "none",
+    });
+
+    // 覚醒した1枚は、別の枝へ覚醒しない。
+    const other = await awakenCard(user.token, target.id, 1);
+    expect(other.status).toBe(409);
+    expect(await other.json()).toEqual({ error: "already_awakened" });
+
+    // 持っていない1枚とほかの人の1枚は404、不正な枝とIDは400で拒否する。
+    const stranger = await scenario.login("party-card-awaken-other");
+    await read(stranger.token);
+    for (const [token, cardId] of [
+      [user.token, missingCardId],
+      [stranger.token, untouched.id],
+    ]) {
+      const missing = await awakenCard(token, cardId, 1);
+      expect(missing.status).toBe(404);
+      expect(await missing.json()).toEqual({ error: "card_not_owned" });
+    }
+    const invalid = await Promise.all([
+      awakenCard(user.token, untouched.id, 0),
+      awakenCard(user.token, untouched.id, 3),
+      awakenCard(user.token, untouched.id, 1.5),
+      awakenCard(user.token, untouched.id, "1"),
+      awakenCard(user.token, "not-a-card", 1),
+    ]);
+    expect(invalid.map((response) => response.status)).toEqual([
+      400, 400, 400, 400, 400,
+    ]);
+    expect(cardOf(await read(user.token), untouched.id)?.awakenedBranch).toBe(
+      null,
+    );
+  });
+
+  it("スキルの覚醒は冒険の途中か、踏破・敗北で終えた直後だけ受け付け、途中でやめた冒険では受け付けない", async () => {
+    const user = await scenario.login("party-card-awaken-adventure");
+    const [first, second, third] = (await read(user.token)).skillCards;
+    const outside = await awakenCard(user.token, first.id, 1);
+    expect(outside.status).toBe(409);
+    expect(await outside.json()).toEqual({ error: "no_adventure" });
+
+    // 途中でやめた（撤退した）冒険の戦闘の覚醒は残さない。
+    await startAdventure(user.token);
+    expect((await awakenCard(user.token, first.id, 1)).status).toBe(200);
+    const retreat = await scenario.request(
+      "/adventure/end",
+      "POST",
+      { reason: "retreat", enemies: [] },
+      user.token,
+    );
+    expect(retreat.status).toBe(200);
+    const retreated = await awakenCard(user.token, second.id, 1);
+    expect(retreated.status).toBe(409);
+    expect(await retreated.json()).toEqual({ error: "no_adventure" });
+    // 保存済みの覚醒の再送は、冒険の外でも成功として返す。
+    const resent = await awakenCard(user.token, first.id, 1);
+    expect(resent.status).toBe(200);
+    expect(((await resent.json()) as State).change).toBe("none");
+
+    // 踏破で終えた直後は受け付け、時間が経てば受け付けない。
+    await startAdventure(user.token);
+    const ended = (minutesAgo: number) =>
+      scenario.env.DB.prepare(
+        "UPDATE adventure_runs SET status = 'cleared', ended_at = ? WHERE user_id = ? AND status = 'active'",
+      )
+        .bind(
+          new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+          user.userId,
+        )
+        .run();
+    await ended(1);
+    expect((await awakenCard(user.token, second.id, 2)).status).toBe(200);
+    await scenario.env.DB.prepare(
+      "UPDATE adventure_runs SET ended_at = ? WHERE user_id = ?",
+    )
+      .bind(
+        new Date(
+          Date.now() - (EVOLUTION_GRACE_MINUTES + 1) * 60_000,
+        ).toISOString(),
+        user.userId,
+      )
+      .run();
+    const late = await awakenCard(user.token, third.id, 1);
+    expect(late.status).toBe(409);
+    expect(await late.json()).toEqual({ error: "no_adventure" });
+
+    const after = await read(user.token);
+    expect(
+      [first, second, third].map(
+        (card) => cardOf(after, card.id)?.awakenedBranch,
+      ),
+    ).toEqual([1, 2, null]);
   });
 });

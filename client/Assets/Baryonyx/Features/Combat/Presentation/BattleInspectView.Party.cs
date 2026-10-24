@@ -49,6 +49,12 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The art of another card skill by its id, for the stage a unique skill evolves into.</summary>
         public Func<string, Texture> ArtOf;
+
+        /// <summary>
+        /// The owned skill card it is (its id), for a custom skill that may awaken
+        /// (doc/features/skill-awakening.md); empty for a unique skill or a card not owned one by one.
+        /// </summary>
+        public string OwnedCard = "";
     }
 
     /// <summary>The party of the battle: who stands where, and the deck made of their cards.</summary>
@@ -94,6 +100,7 @@ namespace Baryonyx.Combat.Presentation
                         data.Person = card.Person;
                         data.Unique = card.Unique;
                         data.ArtOf = card.ArtOf;
+                        data.OwnedCard = card.OwnedCard ?? "";
                         deck.Add(data);
                     }
             }

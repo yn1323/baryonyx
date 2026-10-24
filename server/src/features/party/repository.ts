@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { createDatabase } from "../../shared/db.js";
 import {
   MIN_MULTIPLIER_PERCENT,
@@ -51,6 +51,7 @@ export type PartySlotChange = "join" | "replace" | "leave" | "none";
 export type PartyCardChange = "replace" | "swap" | "move" | "remove" | "none";
 export type PartyUniqueChange = "set" | "none";
 export type PartyEvolveChange = "evolve" | "none";
+export type PartyAwakenChange = "awaken" | "none";
 export type PartyBondChange = "deepen" | "none";
 
 // 取得した段階のビット（段階 n が 1 << n）と段階の一覧の変換。最初の段階（0）は常に取得している。
@@ -156,6 +157,7 @@ export function createPartyRepository(binding: D1Database) {
           skillId: skillCards.skillId,
           multiplierPercent: skillCards.multiplierPercent,
           acquiredAt: skillCards.acquiredAt,
+          awakenedBranch: skillCards.awakenedBranch,
         })
         .from(skillCards)
         .where(eq(skillCards.userId, userId)),
@@ -228,6 +230,8 @@ export function createPartyRepository(binding: D1Database) {
             card.multiplierPercent,
             maxMultiplierPercent(card.skillId as CardSkillId),
           ),
+          // 覚醒した枝（1か2）。覚醒していなければ null（doc/features/skill-awakening.md）。
+          awakenedBranch: card.awakenedBranch,
         })),
       // 持っているアイテムと数。アイテムの定義の順。
       items: [...items]
@@ -298,6 +302,7 @@ export function createPartyRepository(binding: D1Database) {
                 "multiplier_percent",
               ),
               acquiredAt: sql<string>`${now}`.as("acquired_at"),
+              awakenedBranch: sql<null>`NULL`.as("awakened_branch"),
             })
             .from(partyProfiles)
             .where(granted),
@@ -768,6 +773,51 @@ export function createPartyRepository(binding: D1Database) {
     return { change, ...after };
   }
 
+  // 冒険の戦闘で起きた、持っているスキル1枚の覚醒を保存する（doc/features/skill-awakening.md の保存）。
+  // 覚醒は1枚に1回だけで、元に戻らない。同じ枝の再送は、何も変えずに成功として返す。別の枝へは覚醒しない。
+  // 固有スキルの進化と同じく、冒険の途中か、踏破・敗北で終えた直後だけ受け付ける。
+  async function awakenSkillCard(
+    userId: string,
+    cardId: string,
+    branch: number,
+    now: string,
+  ) {
+    const state = await loadState(userId, now);
+    const card = state.skillCards.find((entry) => entry.id === cardId);
+    if (!card) return { error: "card_not_owned" as const };
+    if (card.awakenedBranch === branch) {
+      return { change: "none" as const, ...state };
+    }
+    if (card.awakenedBranch !== null) {
+      return { error: "already_awakened" as const };
+    }
+    if (!CARD_SKILL_IDS.includes(card.skillId as CardSkillId)) {
+      return { error: "not_awakenable" as const };
+    }
+    if (!(await inAdventure(userId, now))) {
+      return { error: "no_adventure" as const };
+    }
+    // 確認と書き込みの間に別の覚醒が割り込んでも、まだ覚醒していないことを更新と同じ文に入れる。
+    await db
+      .update(skillCards)
+      .set({ awakenedBranch: branch })
+      .where(
+        and(
+          eq(skillCards.userId, userId),
+          eq(skillCards.id, cardId),
+          isNull(skillCards.awakenedBranch),
+        ),
+      );
+    const after = await readState(userId);
+    const awakened = after.skillCards.find((entry) => entry.id === cardId);
+    if (!awakened) return { error: "card_not_owned" as const };
+    if (awakened.awakenedBranch !== branch) {
+      return { error: "already_awakened" as const };
+    }
+    const change: PartyAwakenChange = "awaken";
+    return { change, ...after };
+  }
+
   // 絆のしるしを1つ使って、絆を1段深める（doc/features/monetization.md のキャラが被ったとき）。
   // bond は深めたあとの段で、今の段の次だけを受け付ける。同じ要求の再送（すでにその段）は、何も変えずに成功として返す。
   async function deepenBond(
@@ -822,6 +872,7 @@ export function createPartyRepository(binding: D1Database) {
     levelUp,
     setUnique,
     evolveUnique,
+    awakenSkillCard,
     deepenBond,
   };
 }

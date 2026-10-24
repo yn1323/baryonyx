@@ -110,6 +110,7 @@ namespace Baryonyx.Workshop
         private IReadOnlyList<EnhancementTarget> equipment = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<EnhancementTarget> uniques = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<AwakeningOption> awakenings = Array.Empty<AwakeningOption>();
+        private List<PartySkillCard> ownedCards = new();
         private Dictionary<string, string> owners = new();
         private IReadOnlyList<PartyMember> roster = Array.Empty<PartyMember>();
         private Tab tab;
@@ -207,7 +208,8 @@ namespace Baryonyx.Workshop
         public void Use(PartyFormation formation, PartyState party, EquipmentState gear)
         {
             roster = formation?.Roster ?? Array.Empty<PartyMember>();
-            skills = EnhancementTargets.Skills(party?.SkillCards ?? MockCards(roster));
+            ownedCards = (party?.SkillCards ?? MockCards(roster)).ToList();
+            skills = EnhancementTargets.Skills(ownedCards);
             equipment = EnhancementTargets.Equipment(gear);
             owners = OwnersOf(roster, party, gear);
             RefreshUniques();
@@ -255,7 +257,11 @@ namespace Baryonyx.Workshop
         private void RefreshUniques()
         {
             uniques = EnhancementTargets.Uniques(roster, Training, ProgressOf);
-            awakenings = EnhancementTargets.Awakenings(roster, Training, ProgressOf);
+            // 固有スキルの段階のあとに、持っているスキルの1枚ずつの2つの枝（doc/features/skill-awakening.md）。
+            awakenings = EnhancementTargets
+                .Awakenings(roster, Training, ProgressOf)
+                .Concat(EnhancementTargets.SkillAwakenings(ownedCards, owners))
+                .ToArray();
         }
 
         /// <summary>Shows the tab's rows, none chosen.</summary>
@@ -416,8 +422,15 @@ namespace Baryonyx.Workshop
             RefreshInfo();
             try
             {
-                await EnhancementSession.AwakenAsync(option);
+                var outcome = await EnhancementSession.AwakenAsync(option);
                 ShowNotice(AwakenedText(option));
+                // 覚醒したスキルの1枚は、もう一覧に出さない。
+                if (option.IsSkillCard)
+                    ownedCards = ownedCards
+                        .Select(card =>
+                            card.Id == option.OwnedCard ? card.Awakened(outcome.Stage) : card
+                        )
+                        .ToList();
                 RefreshUniques();
                 if (this != null && isActiveAndEnabled)
                     ShowTab(Tab.Awakening);
@@ -533,15 +546,18 @@ namespace Baryonyx.Workshop
             if (option != null)
             {
                 // 覚醒は、覚醒する前と後の段階を、今の倍率のカードで並べる。
-                var progress = uniques.FirstOrDefault(entry =>
-                    entry.CharacterId == option.CharacterId && entry.Index == option.Index
-                );
-                beforeMultiplier = afterMultiplier = progress?.Multiplier ?? 1f;
-                max = progress?.MaxMultiplier ?? 1f;
+                var progress = option.IsSkillCard
+                    ? null
+                    : uniques.FirstOrDefault(entry =>
+                        entry.CharacterId == option.CharacterId && entry.Index == option.Index
+                    );
+                beforeMultiplier = afterMultiplier =
+                    progress?.Multiplier ?? (option.IsSkillCard ? option.Multiplier : 1f);
+                max = progress?.MaxMultiplier ?? (option.IsSkillCard ? option.MaxMultiplier : 1f);
                 beforeCard = option.From;
                 afterCard = option.Card;
                 name = option.Card?.Name ?? "";
-                sub = $"{option.CharacterName}｜{option.From?.Name}から{StepText(option.Stage)}";
+                sub = AwakeningDetail(option);
                 before = after = QualityText(
                     Inventory.Quality.Of(beforeMultiplier, max),
                     beforeMultiplier
@@ -764,10 +780,7 @@ namespace Baryonyx.Workshop
                 Set(row.Name, option.Card?.Name ?? "");
                 Set(row.Price, $"{option.Runes:N0} ルーン");
                 row.Price.color = UiPalette.Gold;
-                Set(
-                    row.Detail,
-                    $"{option.CharacterName}｜{option.From?.Name}から{StepText(option.Stage)}"
-                );
+                Set(row.Detail, AwakeningDetail(option));
                 PaintTexture(row.Art, Party != null ? Party.ArtOf(option.Card?.Id) : null, ArtBox);
                 return;
             }
@@ -814,6 +827,12 @@ namespace Baryonyx.Workshop
 
         private static string StepText(int stage) =>
             UniqueSkillTreeShape.Step(stage) == 1 ? "1段目へ" : "2段目へ";
+
+        // 覚醒の行と右の面の2行目：誰の何から、どこへ。スキルの1枚は元に戻せない。
+        private static string AwakeningDetail(AwakeningOption option) =>
+            option.IsSkillCard
+                ? $"{option.CharacterName}｜{option.From?.Name}から覚醒（元に戻せない）"
+                : $"{option.CharacterName}｜{option.From?.Name}から{StepText(option.Stage)}";
 
         private string DetailOf(EnhancementTarget target)
         {

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Economy;
 using Baryonyx.Networking;
+using Baryonyx.Party;
 using Baryonyx.SkillEvolution;
 using UnityEngine;
 
@@ -71,13 +72,26 @@ namespace Baryonyx.Enhancement
                 }
             );
 
-        /// <summary>Awakens a unique skill into the option's stage, sets it, and waits for the result.</summary>
+        /// <summary>
+        /// Awakens a unique skill into the option's stage and sets it, or an owned skill card into
+        /// the option's branch, and waits for the result.
+        /// </summary>
         public static Task<EnhancementOutcome> AwakenAsync(AwakeningOption option) =>
             Send(
                 option?.Runes ?? 0,
                 (source, token) => source.AwakenAsync(option, token),
                 outcome =>
-                    UniqueSkillSession.Evolve(option.CharacterId, option.Index, outcome.Stage, null)
+                {
+                    if (option.IsSkillCard)
+                        PartySession.ConfirmAwakened(option.OwnedCard, outcome.Stage);
+                    else
+                        UniqueSkillSession.Evolve(
+                            option.CharacterId,
+                            option.Index,
+                            outcome.Stage,
+                            null
+                        );
+                }
             );
 
         private static async Task<EnhancementOutcome> Send(

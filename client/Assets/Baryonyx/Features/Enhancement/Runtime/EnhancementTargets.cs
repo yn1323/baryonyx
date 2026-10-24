@@ -43,7 +43,8 @@ namespace Baryonyx.Enhancement
         public float MaxMultiplier { get; set; } = Inventory.Quality.MinMultiplier;
 
         public ItemQuality Quality => Inventory.Quality.Of(Multiplier, MaxMultiplier);
-        public bool AtMax => Inventory.Quality.Percent(Multiplier) >= Inventory.Quality.Percent(MaxMultiplier);
+        public bool AtMax =>
+            Inventory.Quality.Percent(Multiplier) >= Inventory.Quality.Percent(MaxMultiplier);
 
         public EnhancementTarget WithMultiplier(float multiplier) =>
             new()
@@ -59,7 +60,11 @@ namespace Baryonyx.Enhancement
             };
     }
 
-    /// <summary>One stage a unique skill can awaken into: one not acquired, whose stage before it is.</summary>
+    /// <summary>
+    /// One stage a card can awaken into: a unique skill's stage not acquired whose stage before
+    /// it is, or one of the two branches of an owned skill card that has not awakened
+    /// (doc/features/skill-awakening.md; <see cref="OwnedCard"/> set).
+    /// </summary>
     public sealed class AwakeningOption
     {
         public string CharacterId { get; set; } = "";
@@ -67,9 +72,37 @@ namespace Baryonyx.Enhancement
         public int Index { get; set; }
         public int Stage { get; set; }
         public UniqueSkillTree Tree { get; set; }
-        public CardSkill Card => Tree?.StageAt(Stage)?.Card;
-        public CardSkill From => Tree?.StageAt(UniqueSkillTreeShape.Parent(Stage))?.Card;
-        public int Runes => EnhancementMaterials.AwakeningRunes(Stage);
+
+        /// <summary>The owned skill card that awakens (its id), or empty for a unique skill.</summary>
+        public string OwnedCard { get; set; } = "";
+
+        /// <summary>The owned card's card skill, when <see cref="OwnedCard"/> is set.</summary>
+        public string SkillId { get; set; } = "";
+
+        /// <summary>The owned card's multiplier and its kind's limit, when <see cref="OwnedCard"/> is set.</summary>
+        public float Multiplier { get; set; } = Quality.MinMultiplier;
+        public float MaxMultiplier { get; set; } = Quality.MinMultiplier;
+
+        public bool IsSkillCard => !string.IsNullOrEmpty(OwnedCard);
+
+        /// <summary>The branch an owned card awakens into (1 or 2): the option's <see cref="Stage"/>.</summary>
+        public int Branch => IsSkillCard ? Stage : 0;
+
+        public CardSkill Card =>
+            IsSkillCard
+                ? CardSkillAwakenings.Find(SkillId + "." + Stage)
+                : Tree?.StageAt(Stage)?.Card;
+
+        public CardSkill From =>
+            IsSkillCard
+                ? CardSkills.Find(SkillId)
+                : Tree?.StageAt(UniqueSkillTreeShape.Parent(Stage))?.Card;
+
+        // スキルの覚醒は、固有スキルの1段目と同じ費用（doc/features/skill-awakening.md#商会での費用）。
+        public int Runes =>
+            IsSkillCard
+                ? EnhancementMaterials.FirstStageRunes
+                : EnhancementMaterials.AwakeningRunes(Stage);
     }
 
     /// <summary>
@@ -160,7 +193,8 @@ namespace Baryonyx.Enhancement
                         CharacterId = unique.Member.Id,
                         Index = unique.Index,
                         Multiplier = progress?.Multiplier ?? Quality.MinMultiplier,
-                        MaxMultiplier = root != null ? CardSkillQuality.LimitOf(root) : Quality.MinMultiplier,
+                        MaxMultiplier =
+                            root != null ? CardSkillQuality.LimitOf(root) : Quality.MinMultiplier,
                     };
                 })
                 .ToArray();
@@ -174,7 +208,8 @@ namespace Baryonyx.Enhancement
             UnlockedUniques(roster, training)
                 .SelectMany(unique =>
                 {
-                    var progress = progressOf(unique.Member.Id, unique.Index) ?? new UniqueSkillProgress();
+                    var progress =
+                        progressOf(unique.Member.Id, unique.Index) ?? new UniqueSkillProgress();
                     return Enumerable
                         .Range(1, UniqueSkillTreeShape.Count - 1)
                         .Where(stage =>
@@ -193,10 +228,49 @@ namespace Baryonyx.Enhancement
                 })
                 .ToArray();
 
-        private static IEnumerable<(PartyMember Member, int Index, UniqueSkillTree Tree)> UnlockedUniques(
-            IEnumerable<PartyMember> roster,
-            TrainingMockData training
-        )
+        /// <summary>
+        /// The two branches each owned skill card could awaken into, for the cards that have not
+        /// awakened, in the order owned (doc/features/skill-awakening.md).
+        /// <paramref name="holders"/> gives who holds a card in a slot, by its id.
+        /// </summary>
+        public static IReadOnlyList<AwakeningOption> SkillAwakenings(
+            IEnumerable<PartySkillCard> cards,
+            IReadOnlyDictionary<string, string> holders
+        ) =>
+            (cards ?? Array.Empty<PartySkillCard>())
+                .Where(card =>
+                    card.AwakenedBranch == 0
+                    && CardSkillAwakenings.NextStages(card.SkillId).Count > 0
+                )
+                .SelectMany(card =>
+                    CardSkillAwakenings
+                        .NextStages(card.SkillId)
+                        .Select(
+                            (stage, i) =>
+                                new AwakeningOption
+                                {
+                                    OwnedCard = card.Id,
+                                    SkillId = card.SkillId,
+                                    Stage = i + 1,
+                                    CharacterName =
+                                        holders != null
+                                        && holders.TryGetValue(card.Id, out string holder)
+                                            ? holder
+                                            : "持ち物",
+                                    Multiplier = card.Multiplier,
+                                    MaxMultiplier = CardSkillQuality.LimitOf(
+                                        CardSkills.Find(card.SkillId)
+                                    ),
+                                }
+                        )
+                )
+                .ToArray();
+
+        private static IEnumerable<(
+            PartyMember Member,
+            int Index,
+            UniqueSkillTree Tree
+        )> UnlockedUniques(IEnumerable<PartyMember> roster, TrainingMockData training)
         {
             foreach (var member in roster ?? Array.Empty<PartyMember>())
             {

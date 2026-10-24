@@ -176,6 +176,20 @@
       "when": 1792809007772,
       "tag": "0024_remove_step_bonus",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1792829738668,
+      "tag": "0025_world_map",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1792833574724,
+      "tag": "0026_skill_awakening",
+      "breakpoints": true
     }
   ]
 }

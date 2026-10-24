@@ -6,6 +6,7 @@ import {
   CHARACTER_IDS,
   MAX_LEVEL,
   PARTY_SLOT_COUNT,
+  SKILL_AWAKENING_BRANCH_COUNT,
   UNIQUE_SKILL_COUNT,
   UNIQUE_STAGE_COUNT,
 } from "./catalog.js";
@@ -22,6 +23,14 @@ export const partySlotSchema = slotNumber(PARTY_SLOT_COUNT);
 export const cardSlotSchema = slotNumber(CARD_SLOT_COUNT);
 export const uniqueIndexSchema = slotNumber(UNIQUE_SKILL_COUNT);
 export const characterIdSchema = z.enum(CHARACTER_IDS);
+// 持っているスキル1枚のID。
+export const skillCardIdSchema = z.string().regex(/^[a-f0-9-]{36}$/);
+// 持っているスキル1枚が覚醒する枝（1から枝の数まで）。
+export const skillAwakeningBranchSchema = z
+  .number()
+  .int()
+  .min(1)
+  .max(SKILL_AWAKENING_BRANCH_COUNT);
 
 export const setPartySlotSchema = z.object({
   characterId: characterIdSchema,
@@ -62,6 +71,11 @@ export const evolveUniqueSchema = z.object({
     .int()
     .min(1)
     .max(UNIQUE_STAGE_COUNT - 1),
+});
+
+// 冒険の戦闘で覚醒した、持っているスキル1枚の枝。
+export const awakenSkillCardSchema = z.object({
+  branch: skillAwakeningBranchSchema,
 });
 
 // 絆を深めたあとの段。1段目から上限まで。

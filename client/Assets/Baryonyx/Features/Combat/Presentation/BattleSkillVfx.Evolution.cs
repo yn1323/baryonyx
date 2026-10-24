@@ -307,7 +307,59 @@ namespace Baryonyx.Combat.Presentation
                 yield return null;
             }
 
-            // Into its user, leaving a trail of light.
+            yield return Dive(card, caster, at, color, 1.08f);
+        }
+
+        /// <summary>
+        /// The card left as it is after <see cref="EvolutionOmen"/> (doc/features/skill-awakening.md,
+        /// "覚醒しない"): no burst; the circles and the light around it fade, its cracks close as it
+        /// settles a little smaller, and it goes back into its user in a soft light.
+        /// </summary>
+        public IEnumerator EvolutionSettle()
+        {
+            var card = evolving;
+            if (card == null)
+                yield break;
+            if (hover != null)
+                StopCoroutine(hover);
+            hover = null;
+            var caster = evolvingCaster;
+            var at = evolvingRest;
+            foreach (var shot in omenShots)
+                Release(shot, 0.35f);
+            omenShots.Clear();
+            foreach (var light in omenLights)
+                light.Hold = light.Age;
+            omenLights.Clear();
+            haloLight = null;
+            DimTo(0f, 0.4f);
+
+            // It calms: the shiver stops and it sinks a little, as if the light had gone out of it.
+            const float settle = 0.3f;
+            for (float t = 0f; t < settle; t += Time.unscaledDeltaTime)
+            {
+                float k = EaseOut(t / settle);
+                Place(
+                    card,
+                    at + Vector2.down * (24f * k),
+                    evolvingScale * (1f - 0.12f * k),
+                    0f,
+                    1f
+                );
+                yield return null;
+            }
+            yield return Dive(card, caster, at + Vector2.down * 24f, Steel, 0.88f);
+        }
+
+        // The card goes into its user, leaving a trail of light, and its user glows.
+        private IEnumerator Dive(
+            RectTransform card,
+            RectTransform caster,
+            Vector2 at,
+            Color color,
+            float from
+        )
+        {
             const float dive = 0.26f;
             var into = caster != null ? Center(FrontLayer, caster) : at;
             var start = card.anchoredPosition;
@@ -319,7 +371,7 @@ namespace Baryonyx.Combat.Presentation
                 Place(
                     card,
                     p,
-                    evolvingScale * Mathf.Lerp(1.08f, 0.2f, EaseIn(k)),
+                    evolvingScale * Mathf.Lerp(from, 0.2f, EaseIn(k)),
                     Mathf.Lerp(0f, -18f, k),
                     1f - Mathf.Clamp01((k - 0.6f) / 0.4f)
                 );

@@ -65,6 +65,9 @@ export function awakeningRunes(stage: number): number {
     : AWAKENING_RUNES.second;
 }
 
+// 持っているスキル1枚の覚醒に払うルーン。欠片の数とともに、固有スキルの1段目と同じ（doc/features/skill-awakening.md）。
+export const SKILL_AWAKENING_RUNES = AWAKENING_RUNES.first;
+
 // 出来事を終えたマスごとの、磨き石が落ちる確率（千分率）。ふつうのドロップとは別に1回だけ抽選する。
 export const POLISH_DROP_CHANCE: Record<RewardRow, number> = {
   battle: 300,

@@ -155,11 +155,16 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The skills the room plays: the card skills, then every stage of the unique skills'
-        /// evolution trees (doc/features/skill-evolution.md).
+        /// evolution trees (doc/features/skill-evolution.md), then the card skills' awakened
+        /// stages (doc/features/skill-awakening.md).
         /// </summary>
         public static readonly IReadOnlyList<CardSkill> Skills = CardSkills
             .All.Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card))
+            .Concat(CardSkillAwakenings.All.SelectMany(awakening => awakening.Branches))
             .ToArray();
+
+        /// <summary>The tab of the wind-ups, after the skills' tabs.</summary>
+        public const int WindUpTab = 3;
 
         /// <summary>The wind-ups the room plays on their own, after the skills.</summary>
         public static readonly IReadOnlyList<BattleWindUp> WindUps = (BattleWindUp[])
@@ -169,13 +174,14 @@ namespace Baryonyx.Combat.Presentation
         public static int Count => Skills.Count + WindUps.Count;
 
         /// <summary>
-        /// The tab a thing played is on: 0 for a card skill, 1 for a unique skill's stage, 2 for a
-        /// wind-up.
+        /// The tab a thing played is on: 0 for a card skill, 1 for a unique skill's stage, 2 for
+        /// an awakened stage, 3 for a wind-up.
         /// </summary>
         public static int TabOf(int skill) =>
             skill < CardSkills.All.Count ? 0
-            : skill < Skills.Count ? 1
-            : 2;
+            : skill < CardSkills.All.Count + UniqueSkillTrees.Stages().Count() ? 1
+            : skill < Skills.Count ? 2
+            : WindUpTab;
 
         /// <summary>The thing picked now: a skill's place in <see cref="Skills"/>, then the wind-ups'.</summary>
         public int Index => index;
@@ -655,12 +661,12 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>A button for every wind-up on its own tab, named as at the top.</summary>
         private void BuildWindUps()
         {
-            if (WindUpTemplate == null || TabContents.Length < 3)
+            if (WindUpTemplate == null || TabContents.Length <= WindUpTab)
                 return;
             WindUpTemplate.gameObject.SetActive(false);
             for (int i = 0; i < WindUps.Count; i++)
             {
-                var button = Instantiate(WindUpTemplate, TabContents[2]);
+                var button = Instantiate(WindUpTemplate, TabContents[WindUpTab]);
                 button.name = WindUps[i].ToString();
                 button.gameObject.SetActive(true);
                 var label = button.GetComponentInChildren<TMP_Text>(true);
@@ -742,6 +748,7 @@ namespace Baryonyx.Combat.Presentation
                 "一覧を閉じた",
                 "一覧を開いた（カードスキル）",
                 "一覧を開いた（固有スキル）",
+                "一覧を開いた（覚醒版）",
                 "一覧を開いた（溜め）",
             };
 

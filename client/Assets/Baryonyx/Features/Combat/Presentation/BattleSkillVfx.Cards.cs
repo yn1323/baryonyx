@@ -50,6 +50,7 @@ namespace Baryonyx.Combat.Presentation
             id switch
             {
                 var unique when IsUnique(unique) => UniqueColor(unique),
+                var stage when IsAwakened(stage) => AwakenedColor(stage),
                 "Slash" => ColorOf(BattleSkillVfxKind.Slash),
                 "Fire"
                 or "Embers"
@@ -114,68 +115,80 @@ namespace Baryonyx.Combat.Presentation
             // A unique skill's last step always cuts in: the biggest moments get the biggest stage.
             if (cutIn || (IsUnique(id) && TierOf(id) == 2))
                 yield return PlayCutIn(casterArt, skill, ColorOf(id));
-            var areas = new List<RectTransform>();
-            foreach (var hit in hits)
-                areas.Add(hit.Area);
-            yield return IsUnique(id)
-                ? Unique(id, caster, hits, Once)
-                : id switch
-                {
-                    "Slash" => Slash(caster, areas, Once),
-                    "Fire" => Fire(caster, areas, Once),
-                    "Ice" => Ice(caster, areas, Once, cutIn),
-                    "Thunder" => Thunder(caster, areas, Once, cutIn),
-                    "Heal" => Heal(caster, areas, Once),
-                    "Guard" => Guard(caster, areas, Once),
-                    "Whirlwind" => Whirlwind(caster, hits, Once),
-                    "Iai" => Iai(caster, hits, Once),
-                    "BladeDance" => BladeDance(caster, hits, Once),
-                    "Hone" => Hone(caster, hits, Once),
-                    "ShieldBash" => ShieldBash(caster, hits, Once),
-                    "ArmorBreak" => ArmorBreak(caster, hits, Once),
-                    "EarthSplitter" => EarthSplitter(caster, hits, Once),
-                    "GiantImpact" => GiantImpact(caster, hits, Once),
-                    "StrideStrike" => StrideStrike(caster, hits, Once),
-                    "GuardianOath" => GuardianOath(caster, hits, Once),
-                    "WarCry" => WarCry(caster, hits, Once),
-                    "Embers" => Embers(caster, hits, Once),
-                    "FlamePillar" => FlamePillar(caster, hits, Once),
-                    "FireStorm" => FireStorm(caster, hits, Once),
-                    "BlastSigil" => BlastSigil(caster, hits, Once),
-                    "Meteor" => Meteor(caster, hits, Once),
-                    "FlameEnchant" => FlameEnchant(caster, hits, Once),
-                    "Icicles" => Icicles(caster, hits, Once),
-                    "Blizzard" => Blizzard(caster, hits, Once),
-                    "IceMirror" => IceMirror(caster, hits, Once),
-                    "AbsoluteZero" => AbsoluteZero(caster, hits, Once),
-                    "QuickCast" => QuickCast(caster, hits, Once),
-                    "VitalThrust" => VitalThrust(caster, hits, Once),
-                    "PoisonNeedle" => PoisonNeedle(caster, hits, Once),
-                    "ShadowStitch" => ShadowStitch(caster, hits, Once),
-                    "InsightArrow" => InsightArrow(caster, hits, Once),
-                    "ArrowRain" => ArrowRain(caster, hits, Once),
-                    "ShadowSnipe" => ShadowSnipe(caster, hits, Once),
-                    "LightningBolt" => LightningBolt(caster, hits, Once),
-                    "ChainLightning" => ChainLightning(caster, hits, Once),
-                    "Thundercloud" => Thundercloud(caster, hits, Once),
-                    "ThunderSpear" => ThunderSpear(caster, hits, Once),
-                    "Gale" => Gale(caster, hits, Once),
-                    "Scout" => Scout(caster, hits, Once),
-                    "StepPrayer" => StepPrayer(caster, hits, Once),
-                    "Regen" => Regen(caster, hits, Once),
-                    "Resurrection" => Resurrection(caster, hits, Once),
-                    "HolyHammer" => HolyHammer(caster, hits, Once),
-                    "Protect" => Protect(caster, hits, Once),
-                    "Purify" => Purify(caster, hits, Once),
-                    "ManaPrayer" => ManaPrayer(caster, hits, Once),
-                    "Revelation" => Revelation(caster, hits, Once),
-                    "HolyLight" => HolyLight(caster, hits, Once),
-                    "DivineShield" => DivineShield(caster, hits, Once),
-                    _ => Slash(caster, areas, Once),
-                };
+            yield return IsUnique(id) ? Unique(id, caster, hits, Once)
+            : IsAwakened(id) ? Awakened(id, caster, hits, Once, cutIn)
+            : CardEffect(id, caster, hits, Once, cutIn);
             for (int i = 0; i < landed.Length; i++)
                 Once(i);
             DimTo(0f, 0.4f);
+        }
+
+        /// <summary>The effect of the card skill <paramref name="id"/> itself (not a unique skill's or an awakened stage's).</summary>
+        private IEnumerator CardEffect(
+            string id,
+            RectTransform caster,
+            IReadOnlyList<BattleSkillHit> hits,
+            Func<int, BattleHitWeight> land,
+            bool cutIn
+        )
+        {
+            var areas = new List<RectTransform>();
+            foreach (var hit in hits)
+                areas.Add(hit.Area);
+            return id switch
+            {
+                "Slash" => Slash(caster, areas, land),
+                "Fire" => Fire(caster, areas, land),
+                "Ice" => Ice(caster, areas, land, cutIn),
+                "Thunder" => Thunder(caster, areas, land, cutIn),
+                "Heal" => Heal(caster, areas, land),
+                "Guard" => Guard(caster, areas, land),
+                "Whirlwind" => Whirlwind(caster, hits, land),
+                "Iai" => Iai(caster, hits, land),
+                "BladeDance" => BladeDance(caster, hits, land),
+                "Hone" => Hone(caster, hits, land),
+                "ShieldBash" => ShieldBash(caster, hits, land),
+                "ArmorBreak" => ArmorBreak(caster, hits, land),
+                "EarthSplitter" => EarthSplitter(caster, hits, land),
+                "GiantImpact" => GiantImpact(caster, hits, land),
+                "StrideStrike" => StrideStrike(caster, hits, land),
+                "GuardianOath" => GuardianOath(caster, hits, land),
+                "WarCry" => WarCry(caster, hits, land),
+                "Embers" => Embers(caster, hits, land),
+                "FlamePillar" => FlamePillar(caster, hits, land),
+                "FireStorm" => FireStorm(caster, hits, land),
+                "BlastSigil" => BlastSigil(caster, hits, land),
+                "Meteor" => Meteor(caster, hits, land),
+                "FlameEnchant" => FlameEnchant(caster, hits, land),
+                "Icicles" => Icicles(caster, hits, land),
+                "Blizzard" => Blizzard(caster, hits, land),
+                "IceMirror" => IceMirror(caster, hits, land),
+                "AbsoluteZero" => AbsoluteZero(caster, hits, land),
+                "QuickCast" => QuickCast(caster, hits, land),
+                "VitalThrust" => VitalThrust(caster, hits, land),
+                "PoisonNeedle" => PoisonNeedle(caster, hits, land),
+                "ShadowStitch" => ShadowStitch(caster, hits, land),
+                "InsightArrow" => InsightArrow(caster, hits, land),
+                "ArrowRain" => ArrowRain(caster, hits, land),
+                "ShadowSnipe" => ShadowSnipe(caster, hits, land),
+                "LightningBolt" => LightningBolt(caster, hits, land),
+                "ChainLightning" => ChainLightning(caster, hits, land),
+                "Thundercloud" => Thundercloud(caster, hits, land),
+                "ThunderSpear" => ThunderSpear(caster, hits, land),
+                "Gale" => Gale(caster, hits, land),
+                "Scout" => Scout(caster, hits, land),
+                "StepPrayer" => StepPrayer(caster, hits, land),
+                "Regen" => Regen(caster, hits, land),
+                "Resurrection" => Resurrection(caster, hits, land),
+                "HolyHammer" => HolyHammer(caster, hits, land),
+                "Protect" => Protect(caster, hits, land),
+                "Purify" => Purify(caster, hits, land),
+                "ManaPrayer" => ManaPrayer(caster, hits, land),
+                "Revelation" => Revelation(caster, hits, land),
+                "HolyLight" => HolyLight(caster, hits, land),
+                "DivineShield" => DivineShield(caster, hits, land),
+                _ => Slash(caster, areas, land),
+            };
         }
 
         // --- Aria ------------------------------------------------------------------------------

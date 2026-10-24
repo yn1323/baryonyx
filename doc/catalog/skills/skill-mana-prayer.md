@@ -2,7 +2,7 @@
 id: skill-mana-prayer
 type: visual-entity
 status: 候補
-updated: 2026-10-18
+updated: 2026-10-24
 name: マナの祈り
 category: skills
 silhouette: 水晶と金の杯
@@ -61,6 +61,26 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardManaPrayer.aseprite
 | 演出（感覚の言葉） | 満ちる | [vfx-authoring](../../../.agents/skills/vfx-authoring/SKILL.md)の3拍（溜め・発生・余韻） | 仮 |
 | 演出の流れ | 青い粒が使い手へ吸い込まれ、青い光の柱が立ち、2つの光の玉が上へ浮かんで去る（エネルギー） | 画像を貼らず、形をシェーダーで計算して描く（[エフェクトの描き方](../../art/direction.md#エフェクトの描き方)） | 仮 |
 
+## 覚醒版
+
+この1枚が[覚醒](../../features/skill-awakening.md)して進む、2つの枝の段階である（2026-10-24、仮）。
+覚醒は1段だけで、進んだ1枚は元に戻らない。倍率・品質・倍率の上限・レア度は元のスキルのものを引き継ぐ。
+
+| 項目 | 枝1：マナの祈り・満 | 枝2：マナの祈り・共鳴 |
+|---|---|---|
+| ID | `ManaPrayer.1` | `ManaPrayer.2` |
+| 枝の方向 | 魔力とともに手札も満たす | 魔力を仲間の癒やしにも分ける |
+| 種類・対象 | 支援・エネルギー | 支援・エネルギー |
+| 属性 | なし | なし |
+| コスト | 1（元と同じ） | 2（元は1） |
+| 説明文 | エネルギーを2回復する。カードを1枚引く。 | エネルギーを2回復する。味方全体のHPを属攻の15%回復。 |
+| 効果（行う順） | 全体：エネルギー+2<br>全体：カードを1枚引く | 全体：エネルギー+2<br>味方全体：回復（属攻の15%） |
+| 挿絵のモチーフ | 縁まで満ちた青い聖杯 | 共鳴して光る2つの水晶 |
+| 演出 | 元の演出に、魔力の紫の光の溜めと当たりを重ねる。使い手の頭上で星が瞬き、光の粒が使い手へ集まる | 元の演出に、青緑の光の溜めと当たりを重ねる。相手の足元から光の粒が立ちのぼり、柔らかい光で照らす |
+| 挿絵 | `CardManaPrayer1.aseprite` | `CardManaPrayer2.aseprite` |
+
+演出は、元のスキルの演出に、段階の色の光で覚醒した段階の溜めと当たりの層を重ね、段階ごとのしるしを付ける（[演出](../../features/skill-awakening.md#演出)）。
+
 ## 外見を表現する文章
 
 | 観点 | 内容 |
@@ -117,3 +137,4 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardManaPrayer.aseprite
 |---|---|---|---|
 | 2026-10-03 | 仮設定として作成 | ユーザーの依頼（50枚のカードスキル） | [CardSkills](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs) |
 | 2026-10-20 | 倍率の上限を×1.5にした | ユーザーの指示（コストを0〜9で配り直す。品質の上限の×1.5をなくし、スキルごとの値にする） | [スキルの仮設定](../../features/combat.md#スキルの仮設定)、[上限の決め方](../../features/inventory.md#上限の決め方) |
+| 2026-10-24 | 覚醒版の2つの枝を仮に作った | ユーザーの依頼（カスタムスキルも覚醒させる。名前と挿絵も段階ごとに作る） | [覚醒版](#覚醒版)、[カスタムスキルの覚醒](../../features/skill-awakening.md) |

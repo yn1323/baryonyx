@@ -59,6 +59,17 @@ namespace Baryonyx.Combat.Presentation
 
         public Button ConfirmButton;
 
+        [Tooltip(
+            "覚醒しないで、元の段階のまま使うボタン（カスタムスキルの覚醒だけで出す。doc/features/skill-awakening.md）。"
+        )]
+        public Button DeclineButton;
+
+        [Tooltip("「覚醒しない」を出すとき、2つのボタンの中心を左右へずらす幅。")]
+        public float ButtonSpread = 230f;
+
+        /// <summary>What <see cref="Open"/>'s callback is told when the card is left as it is.</summary>
+        public const int Declined = -2;
+
         [Tooltip("候補の並びの中心の高さ（画面の中央から）。")]
         public float RowY = -64f;
 
@@ -76,6 +87,7 @@ namespace Baryonyx.Combat.Presentation
         private Vector2 origin;
         private float age;
         private int selected = -1;
+        private bool declinable;
         private float pickedAt;
         private BattleVfxImage[][] rims = Array.Empty<BattleVfxImage[]>();
         private BattleVfxImage[][] wisps = Array.Empty<BattleVfxImage[]>();
@@ -114,6 +126,8 @@ namespace Baryonyx.Combat.Presentation
             }
             if (ConfirmButton != null)
                 ConfirmButton.onClick.AddListener(Confirm);
+            if (DeclineButton != null)
+                DeclineButton.onClick.AddListener(Decline);
             if (Panel != null && options.Count == 0)
                 Panel.gameObject.SetActive(false);
         }
@@ -121,12 +135,19 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// Offers <paramref name="offered"/> (one to three), the branches running from
         /// <paramref name="originScreen"/> (a point on the screen, under the hovering card).
-        /// <paramref name="onChosen"/> is called with the stage confirmed.
+        /// <paramref name="onChosen"/> is called with the stage confirmed, or with
+        /// <see cref="Declined"/> when <paramref name="canDecline"/> lets the card stay as it is.
         /// </summary>
-        public void Open(IReadOnlyList<Option> offered, Vector2 originScreen, Action<int> onChosen)
+        public void Open(
+            IReadOnlyList<Option> offered,
+            Vector2 originScreen,
+            Action<int> onChosen,
+            bool canDecline = false
+        )
         {
             if (Panel == null || offered == null || offered.Count == 0)
                 return;
+            declinable = canDecline;
             options.Clear();
             for (int i = 0; i < offered.Count && i < Slots.Length; i++)
                 options.Add(offered[i]);
@@ -211,10 +232,27 @@ namespace Baryonyx.Combat.Presentation
             then?.Invoke(picked);
         }
 
+        /// <summary>
+        /// Leaves the card as it is and closes, when it may (<see cref="Open"/>): the callback is
+        /// told <see cref="Declined"/>.
+        /// </summary>
+        public void Decline()
+        {
+            if (!IsOpen || !declinable)
+                return;
+            var then = chosen;
+            Close();
+            then?.Invoke(Declined);
+        }
+
+        /// <summary>Whether the card may be left as it is now.</summary>
+        public bool CanDecline => IsOpen && declinable;
+
         /// <summary>Closes at once without a pick (an evolution cut short).</summary>
         public void Close()
         {
             chosen = null;
+            declinable = false;
             options.Clear();
             selected = -1;
             if (Panel != null)
@@ -281,7 +319,14 @@ namespace Baryonyx.Combat.Presentation
                 bool shown = count > 1;
                 if (ConfirmButton.gameObject.activeSelf != shown)
                     ConfirmButton.gameObject.SetActive(shown);
+                // 「覚醒しない」を出すときは、2つを左右に並べる（右が決定）。
+                var confirm = (RectTransform)ConfirmButton.transform;
+                float x = declinable && DeclineButton != null ? ButtonSpread : 0f;
+                if (!Mathf.Approximately(confirm.anchoredPosition.x, x))
+                    confirm.anchoredPosition = new Vector2(x, confirm.anchoredPosition.y);
             }
+            if (DeclineButton != null && DeclineButton.gameObject.activeSelf != declinable)
+                DeclineButton.gameObject.SetActive(declinable);
         }
 
         // A branch of light from under the card to the top of a stage's card, drawn down to it.

@@ -153,6 +153,30 @@ namespace Baryonyx.Party
         }
 
         /// <summary>
+        /// Saves an owned skill card awakening into <paramref name="branch"/> (1 or 2) in an
+        /// adventure's battle (doc/features/skill-awakening.md). Sent again, it changes nothing.
+        /// </summary>
+        public Task<State> AwakenSkillCardAsync(
+            AccountSession session,
+            string cardId,
+            int branch,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                $"/v1/party/skill-cards/{Uri.EscapeDataString(cardId)}/awaken",
+                "POST",
+                new BranchRequest { branch = branch },
+                session.Token,
+                token
+            );
+
+        [Serializable]
+        private sealed class BranchRequest
+        {
+            public int branch;
+        }
+
+        /// <summary>
         /// Spends one of the character's bond tokens to deepen the bond to <paramref name="bond"/>
         /// (the stage after it). Sent again, it changes nothing.
         /// </summary>
@@ -205,6 +229,9 @@ namespace Baryonyx.Party
             public string skillId;
             public float multiplier;
             public string quality;
+
+            // 覚醒した枝（1か2）。覚醒していなければnullで、0として読む（doc/features/skill-awakening.md）。
+            public int awakenedBranch;
         }
 
         [Serializable]

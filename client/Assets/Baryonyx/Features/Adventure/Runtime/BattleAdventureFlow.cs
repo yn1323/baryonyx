@@ -40,8 +40,10 @@ namespace Baryonyx.Adventure
         private readonly IReadOnlyCollection<int> standing;
 
         // この戦闘での固有スキルの進化。部屋を終えたときに残し、サーバーへ送る。
-        private readonly AdventureEvolution evolution = new(step =>
-            Baryonyx.Party.PartyUniqueSkills.Evolve(step.Person, step.Unique, step.Stage)
+        private readonly AdventureEvolution evolution = new(
+            step => Baryonyx.Party.PartyUniqueSkills.Evolve(step.Person, step.Unique, step.Stage),
+            awakening =>
+                Baryonyx.Party.PartySkillAwakenings.Awaken(awakening.Card, awakening.Branch)
         );
         private AdventureState state;
         private readonly AdventureTrial trial;

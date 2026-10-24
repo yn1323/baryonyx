@@ -27,6 +27,7 @@ import {
   isBattle,
   MIMIC_CHANCE,
   newSeed,
+  pickMysteryKind,
   pickTrialCondition,
   type RoomKind,
   reviveCost,
@@ -137,6 +138,7 @@ export function createAdventureRepository(
           "multiplier_percent",
         ),
         acquiredAt: sql<string>`${now}`.as("acquired_at"),
+        awakenedBranch: sql<null>`NULL`.as("awakened_branch"),
       }),
     );
 
@@ -318,20 +320,21 @@ export function createAdventureRepository(
       return { error: "room_not_reachable" as const };
     }
     if (!run.roomCleared) return { error: "room_not_cleared" as const };
+    // 「？」のマスは、入ったときに中身の種類を決め、その種類のマスとして保存する。
     // 試練は入ったときに条件を、行商人は品ぞろえを決めて保存する（doc/features/stage-progression.md のマスの中身）。
-    const trial = target.kind === "trial" ? pickTrialCondition(random) : null;
+    const kind =
+      target.kind === "mystery" ? pickMysteryKind(random) : target.kind;
+    const trial = kind === "trial" ? pickTrialCondition(random) : null;
     const goods =
-      target.kind === "merchant"
-        ? rollMerchantGoods(run.destinationId, random)
-        : [];
+      kind === "merchant" ? rollMerchantGoods(run.destinationId, random) : [];
     const [moved] = await db.batch([
       db
         .update(adventureRuns)
         .set({
           roomId: target.roomId,
           floor: target.floor,
-          roomKind: target.kind,
-          roomCleared: !hasEvent(target.kind),
+          roomKind: kind,
+          roomCleared: !hasEvent(kind),
           mimic: null,
           trial,
           doorSteps: null,

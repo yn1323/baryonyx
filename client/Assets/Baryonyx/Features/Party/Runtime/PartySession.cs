@@ -220,6 +220,34 @@ namespace Baryonyx.Party
                 failedMessage
             );
 
+        /// <summary>
+        /// Takes the owned card <paramref name="cardId"/> as awakened into <paramref name="branch"/>
+        /// by a change the server has already made (the trading house's awakening).
+        /// </summary>
+        public static void ConfirmAwakened(string cardId, int branch)
+        {
+            if (saves != null)
+                saves.Confirm(saves.Confirmed.WithAwakened(cardId, branch));
+        }
+
+        /// <summary>
+        /// Awakens the owned card <paramref name="cardId"/> into <paramref name="branch"/> at once
+        /// and saves it (doc/features/skill-awakening.md; see <see cref="SetSlotAsync"/>).
+        /// </summary>
+        public static Task<PartyFormation> AwakenCardAsync(
+            string cardId,
+            int branch,
+            string failedMessage
+        ) =>
+            Save(
+                state => state.WithAwakened(cardId, branch),
+                (source, token) =>
+                    source is IPartySkillCardSource cards
+                        ? cards.AwakenSkillCardAsync(cardId, branch, token)
+                        : throw new InvalidOperationException("The server keeps no skill cards."),
+                failedMessage
+            );
+
         private static Task<PartyFormation> Save(
             Func<PartyState, PartyState> apply,
             Func<IPartySource, CancellationToken, Task<PartyState>> send,

@@ -310,6 +310,66 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 溜めのタブには、スキルが最初に出す溜めが全種類並び、押した溜めだけを当てる相手なしで再生する。
+        // 覚醒版の演出（doc/features/skill-awakening.md#演出）。先に状態を付ける段階、当たりの回数が
+        // 増える段階、当たりのあとに働きを足す段階、敵と味方のどちらにも届く段階を、しるしの種類が
+        // 一通りそろうように選んで、最後まで流れることを確かめる。
+        [UnityTest]
+        public IEnumerator AwakenedStagesAreListedOnTheirTabAndPlayToTheirEnd()
+        {
+            CardSkillLab lab = null;
+            yield return SceneTests.Load<CardSkillLab>(
+                ScenePath,
+                found =>
+                    found.SkillButtons.Count > 0
+                    && (found.Transition == null || !found.Transition.IsPlaying),
+                found => lab = found
+            );
+            var all = CardSkillLab.Skills;
+            var stages = CardSkillAwakenings.All.SelectMany(awakening => awakening.Branches);
+            foreach (var stage in stages)
+            {
+                int at = Enumerable.Range(0, all.Count).Single(i => all[i].Id == stage.Id);
+                Assert.That(CardSkillLab.TabOf(at), Is.EqualTo(2), stage.Name);
+            }
+            if (lab.Repeat)
+                lab.RepeatButton.onClick.Invoke();
+            foreach (
+                var id in new[]
+                {
+                    "Fire.2",
+                    "EarthSplitter.1",
+                    "Thundercloud.1",
+                    "Scout.2",
+                    "ShieldBash.1",
+                    "Heal.2",
+                    "Guard.2",
+                    "GuardianOath.2",
+                    "ArrowRain.2",
+                    "AbsoluteZero.1",
+                    "PoisonNeedle.2",
+                    "Revelation.2",
+                    "Regen.1",
+                    "Whirlwind.2",
+                    "ChainLightning.2",
+                    "Embers.1",
+                }
+            )
+            {
+                lab.Play(Enumerable.Range(0, all.Count).Single(i => all[i].Id == id));
+                Assert.That(lab.Current.Id, Is.EqualTo(id));
+                yield return SceneTests.WaitUntil(
+                    () => lab.Vfx.LiveCount > 0,
+                    seconds: 3f,
+                    message: id + " draws."
+                );
+                yield return SceneTests.WaitUntil(
+                    () => !lab.Playing,
+                    seconds: 15f,
+                    message: id + " plays to its end."
+                );
+            }
+        }
+
         [UnityTest]
         public IEnumerator EveryWindUpIsListedOnItsTabAndPlaysOnItsOwn()
         {
@@ -327,14 +387,15 @@ namespace Baryonyx.Tests.PlayMode
                 Has.Count.EqualTo(windUps.Count),
                 "Every wind-up is listed."
             );
-            Assert.That(lab.TabContents, Has.Length.EqualTo(3));
+            Assert.That(lab.TabContents, Has.Length.EqualTo(4));
+            const int tab = CardSkillLab.WindUpTab;
             foreach (var button in lab.WindUpButtons)
-                Assert.That(button.transform.parent, Is.SameAs(lab.TabContents[2]));
+                Assert.That(button.transform.parent, Is.SameAs(lab.TabContents[tab]));
 
             lab.ListButton.onClick.Invoke();
-            lab.Tabs[2].Button.onClick.Invoke();
-            Assert.That(lab.Tab, Is.EqualTo(2));
-            Assert.That(lab.Scroll.content, Is.SameAs(lab.TabContents[2]));
+            lab.Tabs[tab].Button.onClick.Invoke();
+            Assert.That(lab.Tab, Is.EqualTo(tab));
+            Assert.That(lab.Scroll.content, Is.SameAs(lab.TabContents[tab]));
             yield return null;
             int fire = windUps.ToList().IndexOf(BattleWindUp.FireSpell);
             var picked = lab.WindUpButtons[fire];

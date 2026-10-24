@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { CHARACTER_IDS, UNIQUE_SKILL_COUNT } from "../party/catalog.js";
+import {
+  skillAwakeningBranchSchema,
+  skillCardIdSchema,
+} from "../party/schema.js";
 import { POLISH_IDS } from "./catalog.js";
 
 const requestId = z.string().regex(/^[a-f0-9-]{36}$/);
@@ -33,11 +37,26 @@ export const polishSchema = z.discriminatedUnion("category", [
 export type Polish = z.infer<typeof polishSchema>;
 
 // 覚醒。固有スキルを、まだ取得していない段階（1〜6）へ1段進める。
-export const awakenSchema = z.object({
+export const awakenUniqueSchema = z.object({
   requestId,
   characterId,
   index: uniqueIndex,
   stage: z.number().int().min(1).max(6),
 });
 
+// 覚醒。まだ覚醒していない持っているスキル1枚（cardId）を、2つの枝のどちらかへ覚醒させる。
+export const awakenSkillCardSchema = z.object({
+  requestId,
+  cardId: skillCardIdSchema,
+  branch: skillAwakeningBranchSchema,
+});
+
+// 固有スキルの覚醒を先に確かめる。本文にどちらの項目もあれば、固有スキルとして扱う。
+export const awakenSchema = z.union([
+  awakenUniqueSchema,
+  awakenSkillCardSchema,
+]);
+
+export type AwakenUnique = z.infer<typeof awakenUniqueSchema>;
+export type AwakenSkillCard = z.infer<typeof awakenSkillCardSchema>;
 export type Awaken = z.infer<typeof awakenSchema>;

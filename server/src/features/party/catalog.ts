@@ -190,6 +190,9 @@ export function uniqueParent(stage: number): number | null {
   return stage % 2 === 1 ? 0 : stage - 1;
 }
 
+// 持っているスキル1枚が覚醒する枝の数（doc/features/skill-awakening.md）。枝は1から数え、1段だけ進む。
+export const SKILL_AWAKENING_BRANCH_COUNT = 2;
+
 // レベルの上限（2026-10-23、ユーザー指示）と、Lv n から n+1 へ上げるのに要るルーン
 // （n × COST_PER_LEVEL。仮の値）。
 export const MAX_LEVEL = 100;

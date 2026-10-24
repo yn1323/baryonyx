@@ -52,5 +52,25 @@ namespace Baryonyx.Tests.EditMode
             evolution.Keep();
             Assert.That(saved, Has.Count.EqualTo(1), "Kept once.");
         }
+
+        // スキルの1枚の覚醒（doc/features/skill-awakening.md）：確率は固有スキルの半分で、部屋を終えたときに送る。
+        [Test]
+        public void ASkillCardAwakensAtHalfTheChanceAndIsSavedWhenTheRoomEnds()
+        {
+            var cards = new List<AdventureEvolution.Awakening>();
+            var evolution = new AdventureEvolution(null, cards.Add);
+            var rules = evolution.Rules(AdventureRoomKind.Boss, 10);
+            Assert.That(rules.AwakenChance(10), Is.EqualTo(0.05f).Within(1e-6f));
+            Assert.That(rules.AwakenChance(12), Is.EqualTo(0.04f).Within(1e-6f));
+
+            rules.Awakened("card-1", 2);
+            Assert.That(evolution.PendingCards, Has.Count.EqualTo(1));
+            Assert.That(cards, Is.Empty, "Not saved before the room ends.");
+            evolution.Keep();
+            Assert.That(evolution.PendingCards, Is.Empty);
+            Assert.That(cards, Has.Count.EqualTo(1));
+            Assert.That(cards[0].Card, Is.EqualTo("card-1"));
+            Assert.That(cards[0].Branch, Is.EqualTo(2));
+        }
     }
 }

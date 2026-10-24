@@ -11,7 +11,10 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    /// <summary>A unique skill's card evolving in the battle (doc/features/skill-evolution.md#戦闘中の覚醒).</summary>
+    /// <summary>
+    /// A unique skill's card lighting up as it is drawn and evolving when used in the battle
+    /// (doc/features/skill-evolution.md#戦闘中の覚醒).
+    /// </summary>
     public sealed class BattleEvolutionSceneTests
     {
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
@@ -37,7 +40,14 @@ namespace Baryonyx.Tests.PlayMode
                 Evolved = (person, unique, stage) => evolved.Add((person, unique, stage)),
             };
             int deck = DeckOf(view, "ManaBurst");
-            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
+            int dealt = DealInto(view, deck);
+
+            // Drawn under the chance, it lights up in the hand.
+            Assert.That(draws, Is.EqualTo(1), "The draw is made as the card comes into the hand.");
+            Assert.That(view.HasOmen(deck), Is.True);
+            Assert.That(view.Glints(dealt), Is.True, "The card lit shows its light.");
+            Play(view, dealt, view.Enemies[0].TargetArea);
+            Assert.That(view.Glints(dealt), Is.False, "Its light goes with it out of the hand.");
 
             // Before its effect the card rises and its stages are offered, the hand set aside.
             yield return WaitUntil(() => view.Choice.IsOpen, "The stages are offered.");
@@ -59,11 +69,14 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(view.Deck[deck].Person, Is.EqualTo("toma"));
             Assert.That(view.HasEvolved(deck), Is.True);
+            Assert.That(view.HasOmen(deck), Is.False, "Its light is spent.");
             Assert.That(view.Evolving, Is.False);
             Assert.That(view.Hand.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f));
 
-            // A card evolves once a battle: used again, it is played at once.
-            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
+            // A card evolves once a battle: drawn again it stays unlit, and is played at once.
+            dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.False);
+            Play(view, dealt, view.Enemies[0].TargetArea);
             yield return null;
             Assert.That(view.Choice.IsOpen, Is.False);
             Assert.That(view.Evolving, Is.False);
@@ -99,7 +112,11 @@ namespace Baryonyx.Tests.PlayMode
                 },
                 Draw = () => 0.5f,
             };
-            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
+            int dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.False, "A card drawn over the chance stays unlit.");
+            // The draw was made as it came into the hand: a draw under the chance now changes nothing.
+            view.Evolution.Draw = () => 0f;
+            Play(view, dealt, view.Enemies[0].TargetArea);
             yield return null;
             Assert.That(view.Choice.IsOpen, Is.False);
             yield return WaitActions(view);
@@ -107,7 +124,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 seen,
                 Is.EqualTo(new[] { view.Allies[0].Level }),
-                "The chance is for the user's level."
+                "The chance is for the user's level, drawn once as it came into the hand."
             );
             Assert.That(view.HasEvolved(deck), Is.False);
         }
@@ -125,6 +142,118 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Choice.Count, Is.EqualTo(1));
             yield return WaitActions(view);
             Assert.That(view.Deck[deck].Skill, Is.EqualTo("ManaBurst.2"));
+        }
+
+        // 持っているスキルの1枚（doc/features/skill-awakening.md）：引いて光り、使うと2つの枝と
+        // 「覚醒しない」が出る。選んだ枝になって、その1枚と枝を知らせる。
+        [UnityTest]
+        public IEnumerator AnOwnedSkillCardAwakensIntoTheBranchPicked()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseOwnedCard(view, "Fire", "card-7");
+            var awakened = new List<(string Card, int Branch)>();
+            view.Evolution = new BattleEvolution
+            {
+                AwakenChance = level => 1f,
+                Draw = () => 0f,
+                Awakened = (card, branch) => awakened.Add((card, branch)),
+            };
+            int deck = DeckOf(view, "Fire");
+            int dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.True, "The owned card lights up.");
+            Play(view, dealt, view.Enemies[0].TargetArea);
+            yield return WaitUntil(() => view.Choice.IsOpen, "Its branches are offered.");
+            Assert.That(view.Choice.Count, Is.EqualTo(2));
+            Assert.That(view.Choice.CanDecline, Is.True, "It may be left as it is.");
+            Assert.That(view.Choice.DeclineButton.gameObject.activeInHierarchy, Is.True);
+            view.Choice.Select(1);
+            view.Choice.Confirm();
+            yield return WaitActions(view);
+            Assert.That(view.Deck[deck].Skill, Is.EqualTo("Fire.2"));
+            Assert.That(view.Deck[deck].OwnedCard, Is.EqualTo("card-7"));
+            Assert.That(awakened, Is.EqualTo(new[] { ("card-7", 2) }));
+            Assert.That(view.HasEvolved(deck), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator AnOwnedSkillCardLeftAsItIsPlaysAsItWasAndDoesNotLightAgain()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseOwnedCard(view, "Fire", "card-7");
+            var awakened = new List<(string Card, int Branch)>();
+            int draws = 0;
+            view.Evolution = new BattleEvolution
+            {
+                AwakenChance = level => 1f,
+                Draw = () =>
+                {
+                    draws++;
+                    return 0f;
+                },
+                Awakened = (card, branch) => awakened.Add((card, branch)),
+            };
+            int deck = DeckOf(view, "Fire");
+            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
+            yield return WaitUntil(() => view.Choice.IsOpen, "Its branches are offered.");
+            view.Choice.DeclineButton.onClick.Invoke();
+            Assert.That(view.Choice.IsOpen, Is.False);
+            yield return WaitActions(view);
+            Assert.That(view.Evolving, Is.False);
+            Assert.That(view.Deck[deck].Skill, Is.EqualTo("Fire"), "It is played as it was.");
+            Assert.That(awakened, Is.Empty, "Nothing is saved.");
+            int dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.False, "It does not light again in the battle.");
+            Assert.That(draws, Is.EqualTo(1));
+        }
+
+        // A unique skill's choice has no way to leave it as it is: it goes back in the formation.
+        [UnityTest]
+        public IEnumerator AUniqueSkillCannotBeLeftAsItIs()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseParty(view, "ManaBurst");
+            view.Evolution = new BattleEvolution { Chance = level => 1f, Draw = () => 0f };
+            int deck = DeckOf(view, "ManaBurst");
+            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
+            yield return WaitUntil(() => view.Choice.IsOpen, "The stages are offered.");
+            Assert.That(view.Choice.CanDecline, Is.False);
+            Assert.That(view.Choice.DeclineButton.gameObject.activeInHierarchy, Is.False);
+            view.Choice.Select(0);
+            view.Choice.Confirm();
+            yield return WaitActions(view);
+        }
+
+        // The battle's own party, the first ally bringing the owned card of a card skill.
+        private static void UseOwnedCard(BattleInspectView view, string skill, string card)
+        {
+            var slots = new BattlePartyMember[view.Allies.Length];
+            for (int place = 0; place < view.Allies.Length; place++)
+            {
+                var ally = view.Allies[place];
+                var cards = view
+                    .Deck.Where(data => data.Caster == place && data.Skill != skill)
+                    .Take(2)
+                    .Select(data => BattleInspectView.SkillOf(data))
+                    .Where(found => found != null)
+                    .Select(found => new BattlePartyCard { Skill = found })
+                    .ToList();
+                if (place == 0)
+                    cards.Add(
+                        new BattlePartyCard { Skill = CardSkills.Find(skill), OwnedCard = card }
+                    );
+                slots[ally.Slot] = new BattlePartyMember
+                {
+                    Name = ally.Name,
+                    Art = ally.Sprite.texture,
+                    Level = ally.Level,
+                    Stats = ally.Stats,
+                    Cards = cards,
+                };
+            }
+            view.UseParty(slots);
         }
 
         // The battle's own party, the first ally bringing a unique skill's stage of "toma".
