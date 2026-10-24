@@ -62,7 +62,7 @@ namespace Baryonyx.UI
         public void Hide() => (fade ??= new FadingMessage(this)).Hide(Group);
 
         // 停止中の表示の切り替え：消えずに止まった帯。
-        public const string ShortSample = "ボーナスをセットしました";
+        public const string ShortSample = "装備を付け替えました";
         public const string LongSample = "ルーンが足りないか、冒険の状態が変わりました";
 
         public IReadOnlyList<string> PreviewStates => new[] { "短い文", "長い文" };

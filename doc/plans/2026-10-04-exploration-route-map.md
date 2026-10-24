@@ -9,7 +9,7 @@ updated: 2026-10-04
 
 状態：完了（実装と自動テスト、Unity Editorでの確認まで。Androidエミュレーターでの確認と、見える距離をACTボーナスで延ばす効果は未実施。[検証結果](#検証結果)・[残っている作業](#残っている作業)）
 
-[計画索引](README.md) / [探索とダンジョンの進行](../features/stage-progression.md) / [戦闘システム](../features/combat.md) / [ACTボーナス](../features/step-bonus.md) / [冒険の1周の計画](2026-10-04-adventure-loop.md)
+[計画索引](README.md) / [探索とダンジョンの進行](../features/stage-progression.md) / [戦闘システム](../features/combat.md) / [ACTボーナス](../archive/step-bonus.md) / [冒険の1周の計画](2026-10-04-adventure-loop.md)
 
 ## 目的
 
@@ -207,4 +207,4 @@ updated: 2026-10-04
 ## 変更と判断の記録
 
 - 2026-10-04：ユーザーの指示で実装した。途中の進捗は端末でよいとの指示を受け、道は種から端末が作る形にし、進み具合はサーバーに残した（[道の保存先](#道の保存先)）。
-- 2026-10-04：ユーザーの依頼で探索画面の案を4つモックにし、ユーザーが案Bを選んだ。部屋の数と戦闘の長さの目安を決め、[探索とダンジョンの進行](../features/stage-progression.md)・[戦闘システム](../features/combat.md)・[UPTボーナス](../features/step-bonus.md)・[ゲーム概要](../game/overview.md)・[アート方針](../art/direction.md)・[用語集](../game/glossary.md)へ反映した。
+- 2026-10-04：ユーザーの依頼で探索画面の案を4つモックにし、ユーザーが案Bを選んだ。部屋の数と戦闘の長さの目安を決め、[探索とダンジョンの進行](../features/stage-progression.md)・[戦闘システム](../features/combat.md)・[UPTボーナス](../archive/step-bonus.md)・[ゲーム概要](../game/overview.md)・[アート方針](../art/direction.md)・[用語集](../game/glossary.md)へ反映した。

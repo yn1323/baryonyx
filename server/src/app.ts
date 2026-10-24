@@ -8,13 +8,13 @@ import { createAccountsApi } from "./features/accounts/routes.js";
 import type { SessionEnv } from "./features/accounts/session.js";
 import { createAdventureApi } from "./features/adventure/routes.js";
 import { createCombatApi } from "./features/combat/routes.js";
+import { createDebugApi } from "./features/debug/routes.js";
 import { createEnhancementApi } from "./features/enhancement/routes.js";
 import { createEquipmentApi } from "./features/equipment/routes.js";
 import { createExerciseRewardsApi } from "./features/exercise-rewards/routes.js";
 import { createHealthApi } from "./features/health/routes.js";
 import { createLibraryApi } from "./features/library/routes.js";
 import { createPartyApi } from "./features/party/routes.js";
-import { createStepBonusApi } from "./features/step-bonus/routes.js";
 import { createSummonApi } from "./features/summon/routes.js";
 import { createWorkshopApi } from "./features/workshop/routes.js";
 import { createDatabase } from "./shared/db.js";
@@ -29,7 +29,6 @@ export function createApi(
   api.route("/", createAccountsApi(verifyIdentity));
   api.route("/", createHealthApi());
   api.route("/", createExerciseRewardsApi());
-  api.route("/", createStepBonusApi());
   api.route("/", createPartyApi());
   api.route("/", createEquipmentApi());
   api.route("/", createAdventureApi());
@@ -38,6 +37,7 @@ export function createApi(
   api.route("/", createWorkshopApi());
   api.route("/", createEnhancementApi());
   api.route("/", createSummonApi());
+  api.route("/", createDebugApi());
   return api;
 }
 

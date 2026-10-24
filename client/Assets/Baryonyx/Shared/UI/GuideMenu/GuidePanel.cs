@@ -7,7 +7,7 @@ namespace Baryonyx.UI.GuideMenu
 {
     /// <summary>
     /// A feature's own panel on a guide screen (the formation's adventurers, the adventurer's
-    /// page, the change screens, the bonus settings): it tells the player on the guide screen's
+    /// page, the change screens): it tells the player on the guide screen's
     /// notice band, and makes the read it needs each time it opens (<see cref="GuidePanelLoad"/>),
     /// showing <see cref="LoadFailedText"/> and telling it when the read fails.
     /// </summary>

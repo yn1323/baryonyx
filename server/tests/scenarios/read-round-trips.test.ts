@@ -31,7 +31,6 @@ describe("一覧を読むGETのDBとの往復", () => {
       "/equipment": 2,
       "/adventure": 2,
       "/library": 3,
-      "/step-bonus": 5,
     };
     for (const path of Object.keys(paths)) {
       await scenario.read(path, token);

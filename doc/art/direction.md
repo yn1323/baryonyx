@@ -148,7 +148,7 @@ Top・HomeのHD-2Dの常設演出（光芒、霧、火の粉）は、この方�
 | A | 光の帯、小さな粒（暗いときも少し光る）、いつも明るめに光るまばらな粒、光り方の模様（Sの3分の2ほどの強さ）、Sより薄いホロの虹。光の帯が通っていない止めたコマでも、キラキラして見える（2026-10-20）。縁のにじみは出さない（2026-10-23）。枠は外側の線が金 |
 | B・C | なし |
 
-光り方（模様と色の組）は、スキル・装備・ACTボーナスの種類ごとに1つ決め、種類が違えば光り方も違う（2026-10-20）。
+光り方（模様と色の組）は、スキル・装備の種類ごとに1つ決め、種類が違えば光り方も違う（2026-10-20）。
 同じ種類なら、どの1枚も同じ光り方であり、固有スキルは覚醒しても同じ光り方を使う。
 模様はレアカードのホロの種類（細かい点のスターライト、大小の丸のコスモ、割れた氷のクラックアイス、模様のない光沢のシーン）を参考にし、波紋・オーロラ・格子を加えた7種類とした。
 色は9組あり、模様と合わせて63通りになる。
@@ -166,7 +166,7 @@ Top・HomeのHD-2Dの常設演出（光芒、霧、火の粉）は、この方�
 色の組は、金・銀・薔薇・水・翠・菫・焔・虹・薄氷と桜である。
 光り方の番号は、カードスキルが一覧の順に0〜49、固有スキルと試作のカードがその後を使う（[CardSkills](../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkills.cs)・[UniqueSkillTrees](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillTrees.cs)）。
 番号を7で割った余りが模様、商が色であり、隣り合うカードは模様から変わる。
-装備・アクセサリー・ACTボーナスは、それぞれの一覧の順から、スキルと重ならないよう歩幅をずらして選ぶ。装備は仮データの順（[EquipmentCatalog](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs)）、ACTボーナスはボーナスの一覧の順（[StepBonusDefinition](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusData.cs)）から決め、見本のアクセサリーだけはデバッグルームで決める（[QualityLabEntry](../../client/Assets/Baryonyx/Features/Inventory/Presentation/QualityLabEntry.cs)）。
+装備・アクセサリーは、一覧の順から、スキルと重ならないよう歩幅をずらして選ぶ。装備は仮データの順（[EquipmentCatalog](../../client/Assets/Baryonyx/Features/Equipment/Runtime/EquipmentCatalog.cs)）から決め、見本のアクセサリーだけはデバッグルームで決める（[QualityLabEntry](../../client/Assets/Baryonyx/Features/Inventory/Presentation/QualityLabEntry.cs)）。
 
 #### 枠の光
 
@@ -185,7 +185,7 @@ Top・HomeのHD-2Dの常設演出（光芒、霧、火の粉）は、この方�
 枠の光は、カードの枠を描く戦闘のカード（[BattleInspectCardView](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectCardView.cs)）と育成のカード（[TrainingView](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)）に付ける。
 
 固有スキルは品質Cで始まるため、強化して品質がAかSに上がるまでキラキラを出さない。
-キラキラを付ける対象は、品質を持つスキル（カード）・装備（武器・防具・アクセサリー）・ACTボーナスである。
+キラキラを付ける対象は、品質を持つスキル（カード）・装備（武器・防具・アクセサリー）である。
 アイテムは品質を持たないため、キラキラを付けない。
 
 シェーダーは品質に結び付ける前に作った5段階を持ち、Sは5段階目、Aは3段階目を使う（[CardFoil](../../client/Assets/Baryonyx/Shared/UI/Cards/CardFoil.cs)）。
@@ -194,9 +194,8 @@ Top・HomeのHD-2Dの常設演出（光芒、霧、火の粉）は、この方�
 スキルを1枚ずつ持つ仕組みがまだないため、戦闘・編成・育成のカードは品質Cで、キラキラは出ない。
 品質ごとの見え方は、[品質のデバッグルーム](../features/screens.md#品質のデバッグルーム)と、展示室のカードのギャラリー（S・A・B・Cの順にくり返す）で確かめる。
 デバッグルームでは、選んだ物の光り方の名前（「コスモ・金」など）も出す。
-装備とACTボーナスは、編成の[装備](../features/screens.md#装備)（付け替えの画面と[育成](../features/screens.md#育成)の装備の欄）と酒場の[ボーナス設定](../features/screens.md#ボーナス設定)で、アイコンにキラキラを重ねる（2026-10-20）。
+装備は、編成の[装備](../features/screens.md#装備)（付け替えの画面と[育成](../features/screens.md#育成)の装備の欄）で、アイコンにキラキラを重ねる（2026-10-20）。
 カードと同じく品質S・Aの物だけが光り、デバッグルームと同じ光り方を使う。
-ACTボーナスの枠が今日のACTに届いていないときは、アイコンと同じだけキラキラも暗くする。
 
 ## 探索と戦闘の設計方針
 

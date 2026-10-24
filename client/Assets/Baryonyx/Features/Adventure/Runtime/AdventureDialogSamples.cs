@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
 {
@@ -30,8 +29,8 @@ namespace Baryonyx.Adventure
                 Floor
             );
 
-        // ミストラ遺跡で落ちる物の見本。アイテム・武器と、仮データの最初のボーナス。
-        public static IReadOnlyList<AdventureDrop> Drops(StepBonusMockData bonuses) =>
+        // ミストラ遺跡で落ちる物の見本。アイテム・武器・アクセサリー。
+        public static IReadOnlyList<AdventureDrop> Drops() =>
             new[]
             {
                 new AdventureDrop("", AdventureDropCategory.Item, "herb"),
@@ -44,18 +43,14 @@ namespace Baryonyx.Adventure
                 ),
                 new AdventureDrop(
                     "",
-                    AdventureDropCategory.Bonus,
-                    bonuses != null && bonuses.Bonuses.Length > 0 ? bonuses.Bonuses[0].Id : "",
+                    AdventureDropCategory.Accessory,
+                    "moss-charm",
                     1.25f,
-                    ItemQuality.B,
-                    AdventureDropOutcome.Updated
+                    ItemQuality.B
                 ),
             };
 
-        public static AdventureResult Result(
-            StepBonusMockData bonuses,
-            AdventureEndStatus status
-        ) =>
+        public static AdventureResult Result(AdventureEndStatus status) =>
             new(
                 AdventureCatalog.ForestRuins,
                 status,
@@ -64,7 +59,7 @@ namespace Baryonyx.Adventure
                 status == AdventureEndStatus.Cleared,
                 status == AdventureEndStatus.Cleared ? 1 : 0,
                 0,
-                Drops(bonuses)
+                Drops()
             );
     }
 }

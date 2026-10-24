@@ -62,7 +62,7 @@ namespace Baryonyx.Editor.UI
         }
 
         /// <summary>
-        /// Lays the sparkle over an icon drawn as a sprite (equipment, ACT bonuses), the same way
+        /// Lays the sparkle over an icon drawn as a sprite (equipment), the same way
         /// as over a card's art.
         /// </summary>
         public static CardFoil Add(Image art, ItemQuality quality = ItemQuality.C, int style = 0)

@@ -5,8 +5,6 @@ using Baryonyx.Equipment;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
-using Baryonyx.StepBonus;
-using Baryonyx.StepBonus.Editor;
 using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
@@ -18,10 +16,10 @@ namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
     /// The formation screen (編成; the code keeps the Tavern name): the tavern girl guides the
-    /// adventurers, the equipment and the ACT bonus slots. The equipment opens a card for every
-    /// character, and tapping one opens their page. The adventurers open the list of every character;
-    /// from there one character's page (the training item) opens, and from the page the
-    /// equipment and card skills change screens. Those three items are hidden from the menu.
+    /// adventurers and the equipment. The equipment opens a card for every character, and
+    /// tapping one opens their page. The adventurers open the list of every character; from
+    /// there one character's page (the training item) opens, and from the page the equipment
+    /// and card skills change screens. Those three items are hidden from the menu.
     /// The characters, levels and cards are mock values until the party has data; every item
     /// shows its own panel instead of a list.
     /// </summary>
@@ -34,15 +32,11 @@ namespace Baryonyx.Tavern.Editor
         public const string BackgroundPath = Folder + "/UI/Art/TavernBackground.png";
 
         // The menu's icons are plain shapes without outlines, like the home buttons: a roster for
-        // the adventurers, a breastplate between two turning arrows for changing equipment, and a
-        // medal for the bonuses. The other guide screens list coloured pixel art with the same
-        // white tint, so the text colour is baked in.
+        // the adventurers and a breastplate between two turning arrows for changing equipment.
+        // The other guide screens list coloured pixel art with the same white tint, so the text
+        // colour is baked in.
         public const string IconFormationPath = Folder + "/UI/Art/IconFormation.png";
         public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.png";
-        public const string IconBonusPath = Folder + "/UI/Art/IconBonus.png";
-
-        // The clear margin that separates a front part from the part behind it (design units).
-        private const float PartGap = 2.6f;
 
         [MenuItem("Baryonyx/Tavern/Create Screen Assets")]
         public static void CreateAssets()
@@ -74,10 +68,6 @@ namespace Baryonyx.Tavern.Editor
                         ),
                         EquipmentSession.GuideItemKey => EquipmentAssets.BuildPanel(safe, view),
                         CardLoadoutSession.GuideItemKey => CardLoadoutAssets.BuildPanel(safe, view),
-                        StepBonusSession.GuideItemKey => StepBonusAssets.BuildSettingsPanel(
-                            safe,
-                            view
-                        ),
                         _ => null,
                     }
             );
@@ -91,7 +81,6 @@ namespace Baryonyx.Tavern.Editor
             {
                 Adventurers(),
                 Gear(),
-                Bonus(),
                 Hidden("育成", TrainingSession.GuideItemKey),
                 Hidden("装備", EquipmentSession.GuideItemKey),
                 Hidden("スキル", CardLoadoutSession.GuideItemKey),
@@ -116,19 +105,10 @@ namespace Baryonyx.Tavern.Editor
             return item;
         }
 
-        // The bonus item opens the bonus settings panel instead of a list.
-        private static GuideMenuItem Bonus()
-        {
-            var item = Item("ボーナス", "セットする", Icon(IconBonusPath));
-            item.Key = StepBonusSession.GuideItemKey;
-            return item;
-        }
-
         private static void WriteMenuIcons()
         {
             Roster().Save(IconFormationPath, SmoothIconTextureSize, UiPalette.TextMain);
             ChangeGear().Save(IconChangeGearPath, SmoothIconTextureSize, UiPalette.TextMain);
-            Medal().Save(IconBonusPath, SmoothIconTextureSize, UiPalette.TextMain);
         }
 
         // A sheet with a folded corner, a person at the top left and the lines of the list.
@@ -152,18 +132,6 @@ namespace Baryonyx.Tavern.Editor
                 .Fill(
                     IconShape.Path(
                         "M22 21 L27 21 Q32 25 37 21 L42 21 L46 27 L43 31 L42 44 Q32 50 22 44 L21 31 L18 27Z"
-                    )
-                );
-
-        // A medal hanging from two crossed ribbons, with a star cut out of it.
-        private static VectorIcon Medal() =>
-            new VectorIcon()
-                .Fill(IconShape.Path("M18 4 L29 4 L37 27 L27 31Z"))
-                .Fill(IconShape.Path("M46 4 L35 4 L27 27 L37 31Z"), 2f)
-                .Fill(IconShape.Circle(32f, 43f, 17f), PartGap)
-                .Cut(
-                    IconShape.Path(
-                        "M32 34 L34.2 39.9 L40.6 40.2 L35.6 44.2 L37.3 50.3 L32 46.8 L26.7 50.3 L28.4 44.2 L23.4 40.2 L29.8 39.9Z"
                     )
                 );
 

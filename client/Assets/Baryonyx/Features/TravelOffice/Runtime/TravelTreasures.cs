@@ -9,8 +9,7 @@ namespace Baryonyx.TravelOffice
     /// <summary>
     /// The treasures of a destination as the travel office shows them (doc/features/screens.md):
     /// the kinds in its drop list (<see cref="AdventureDrops.Pools"/>), in the sections' order and
-    /// the list's order inside each, and how many of them the library has found. The ACT bonuses
-    /// fall in every destination, so they are left out.
+    /// the list's order inside each, and how many of them the library has found.
     /// </summary>
     public static class TravelTreasures
     {
@@ -89,7 +88,7 @@ namespace Baryonyx.TravelOffice
             return $"{found}/{total}";
         }
 
-        /// <summary>The library's kind of a drop. The ACT bonuses are not in the library.</summary>
+        /// <summary>The library's kind of a drop. The enhancement materials are not in the library.</summary>
         public static LibraryKind KindOf(AdventureDropCategory category) =>
             category switch
             {

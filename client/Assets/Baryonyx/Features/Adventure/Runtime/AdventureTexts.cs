@@ -6,7 +6,6 @@ using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Items;
-using Baryonyx.StepBonus;
 using UnityEngine;
 
 namespace Baryonyx.Adventure
@@ -56,21 +55,17 @@ namespace Baryonyx.Adventure
             "旅の品をそろえているよ。\n" + $"所持ルーン {runes:N0}";
 
         // 品物の行：☆、名前、品質と倍率、値段。売り切れなら値段の代わりに「売り切れ」。
-        public static string WareLine(StepBonusMockData bonuses, AdventureWare ware)
+        public static string WareLine(AdventureWare ware)
         {
             var drop = ware.AsDrop("");
             string stars = ware.Stars > 0 ? new string('☆', ware.Stars) + " " : "";
             string grade = ware.Quality is { } quality ? $" {quality}×{ware.Multiplier:0.00}" : "";
             string price = ware.Sold ? "売り切れ" : $"{ware.Price:N0}ルーン";
-            return $"{stars}{DropName(bonuses, drop)}{grade}　{price}";
+            return $"{stars}{DropName(drop)}{grade}　{price}";
         }
 
-        public static string ConfirmBuyBody(
-            StepBonusMockData bonuses,
-            AdventureWare ware,
-            long runes
-        ) =>
-            $"{DropName(bonuses, ware.AsDrop(""))}を {ware.Price:N0}ルーンで買いますか？\n"
+        public static string ConfirmBuyBody(AdventureWare ware, long runes) =>
+            $"{DropName(ware.AsDrop(""))}を {ware.Price:N0}ルーンで買いますか？\n"
             + $"所持ルーン {runes:N0} → {runes - ware.Price:N0}";
 
         /// <summary>The name of a room's kind, as the map's legend shows it (doc/features/stage-progression.md).</summary>
@@ -100,23 +95,13 @@ namespace Baryonyx.Adventure
             + $"所持ルーン {runes:N0}"
             + (runes < cost ? $"（{cost - runes:N0} 足りません）" : "");
 
-        public static string BonusName(StepBonusMockData bonuses, string id)
-        {
-            var bonus = bonuses != null ? bonuses.Find(id) : null;
-            return bonus != null && !string.IsNullOrEmpty(bonus.Name) ? bonus.Name : id;
-        }
-
-        public static Sprite BonusIcon(StepBonusMockData bonuses, string id) =>
-            bonuses != null ? bonuses.Find(id)?.Icon : null;
-
         /// <summary>The name of a dropped kind, from its definition (the id when it has none).</summary>
-        public static string DropName(StepBonusMockData bonuses, AdventureDrop drop)
+        public static string DropName(AdventureDrop drop)
         {
             string name = drop.Category switch
             {
                 AdventureDropCategory.Item => ItemCards.Find(drop.Id)?.Name,
                 AdventureDropCategory.Skill => CardSkills.Find(drop.Id)?.Name,
-                AdventureDropCategory.Bonus => BonusName(bonuses, drop.Id),
                 AdventureDropCategory.Material => EnhancementMaterials.Find(drop.Id)?.Name,
                 _ => EquipmentCatalog.Find(drop.Id)?.Name,
             };
@@ -129,66 +114,52 @@ namespace Baryonyx.Adventure
             {
                 AdventureDropCategory.Skill => CardSkills.Find(id)?.MaxMultiplier
                     ?? Quality.MinMultiplier,
-                AdventureDropCategory.Bonus => StepBonusDefinition.DefaultMaxMultiplier,
-                AdventureDropCategory.Item or AdventureDropCategory.Material => Quality.MinMultiplier,
+                AdventureDropCategory.Item or AdventureDropCategory.Material =>
+                    Quality.MinMultiplier,
                 _ => EquipmentCatalog.Find(id)?.MaxMultiplier ?? Quality.MinMultiplier,
             };
 
         /// <summary>One drop as a line: the stars, the name, the category and the quality.</summary>
-        public static string DropLine(StepBonusMockData bonuses, AdventureDrop drop)
+        public static string DropLine(AdventureDrop drop)
         {
             string stars = EquipmentCatalog.Stars(drop.Stars);
             string detail = drop.Quality is { } quality
                 ? $"{AdventureDrops.NameOf(drop.Category)}・品質{Quality.Letter(quality)}"
                 : AdventureDrops.NameOf(drop.Category);
-            string line = $"{stars} {DropName(bonuses, drop)}（{detail}）".TrimStart();
-            return drop.Outcome == AdventureDropOutcome.Added
-                ? line
-                : line + "　" + AdventureCatalog.Outcome(drop.Outcome);
+            return $"{stars} {DropName(drop)}（{detail}）".TrimStart();
         }
 
-        public static string DropsBody(
-            StepBonusMockData bonuses,
-            IReadOnlyList<AdventureDrop> drops
-        ) =>
+        public static string DropsBody(IReadOnlyList<AdventureDrop> drops) =>
             drops == null || drops.Count == 0
                 ? "何も見つからなかった"
-                : "手に入れた物\n"
-                    + string.Join("\n", drops.Select(drop => DropLine(bonuses, drop)));
+                : "手に入れた物\n" + string.Join("\n", drops.Select(DropLine));
 
         /// <summary>
-        /// The picture of one drop: the ACT bonus's icon, or the kind's own art for an item, an
-        /// enhancement material, an accessory, a weapon or armour (<see cref="ItemArt"/>). Null
-        /// for a skill or a kind without art.
+        /// The picture of one drop: the kind's own art for an item, an enhancement material, an
+        /// accessory, a weapon or armour (<see cref="ItemArt"/>). Null for a skill or a kind
+        /// without art.
         /// </summary>
-        public static Sprite DropIcon(StepBonusMockData bonuses, AdventureDrop drop, ItemArt art)
+        public static Sprite DropIcon(AdventureDrop drop, ItemArt art)
         {
             if (drop == null)
                 return null;
-            if (drop.Category == AdventureDropCategory.Bonus)
-                return BonusIcon(bonuses, drop.Id);
             if (drop.Category == AdventureDropCategory.Skill || art == null)
                 return null;
             return art.Find(drop.Id);
         }
 
         /// <summary>The picture of the drop worth showing most: the rarest that has a picture.</summary>
-        public static Sprite DropIcon(
-            StepBonusMockData bonuses,
-            IReadOnlyList<AdventureDrop> drops,
-            ItemArt art = null
-        ) =>
+        public static Sprite DropIcon(IReadOnlyList<AdventureDrop> drops, ItemArt art = null) =>
             (drops ?? Array.Empty<AdventureDrop>())
                 .OrderByDescending(drop => drop.Stars)
-                .Select(drop => DropIcon(bonuses, drop, art))
+                .Select(drop => DropIcon(drop, art))
                 .FirstOrDefault(icon => icon != null);
 
         // 結果に「目玉」として名前を挙げる物：☆4以上か、品質S。
         private static bool Highlight(AdventureDrop drop) =>
-            drop.Outcome != AdventureDropOutcome.Discarded
-            && (drop.Stars >= 4 || drop.Quality == ItemQuality.S);
+            drop.Stars >= 4 || drop.Quality == ItemQuality.S;
 
-        public static string ResultBody(StepBonusMockData bonuses, AdventureResult result)
+        public static string ResultBody(AdventureResult result)
         {
             var lines = new List<string>
             {
@@ -197,10 +168,8 @@ namespace Baryonyx.Adventure
                     ? "最深記録を更新！"
                     : $"最深記録 {AdventureCatalog.FloorText(result.BestFloor)}",
             };
-            var kept = result
-                .Drops.Where(drop => drop.Outcome != AdventureDropOutcome.Discarded)
-                .ToArray();
-            var counts = kept.GroupBy(drop => drop.Category)
+            var counts = result
+                .Drops.GroupBy(drop => drop.Category)
                 .OrderBy(group => group.Key)
                 .Select(group => $"{AdventureDrops.NameOf(group.Key)} {group.Count()}")
                 .ToArray();
@@ -209,12 +178,13 @@ namespace Baryonyx.Adventure
                     ? "持ち帰った物：なし"
                     : "持ち帰った物：" + string.Join("・", counts)
             );
-            var best = kept.Where(Highlight)
+            var best = result
+                .Drops.Where(Highlight)
                 .OrderByDescending(drop => drop.Stars)
                 .ThenByDescending(drop => drop.Quality ?? ItemQuality.C)
                 .Take(3)
                 .Select(drop =>
-                    $"{EquipmentCatalog.Stars(drop.Stars)} {DropName(bonuses, drop)}"
+                    $"{EquipmentCatalog.Stars(drop.Stars)} {DropName(drop)}"
                     + (drop.Quality is { } quality ? $" {Quality.Letter(quality)}" : "")
                 )
                 .ToArray();

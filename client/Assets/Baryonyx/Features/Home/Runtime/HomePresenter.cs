@@ -60,12 +60,6 @@ namespace Baryonyx.Home
         public bool ScreenOpened => screenOpened;
         public bool StepSyncing => snapshot.StepSyncing;
 
-        // 取得済みの今日のACT。未連携・未取得ならnull。ボーナス設定へ渡す。
-        public int? TodayAct =>
-            snapshot.StepLink == HomeStepLink.Linked && snapshot.StepsKnown
-                ? HomeViewState.ActFor(snapshot.Steps)
-                : null;
-
         // 実行中または直前の歩数の取得。テストで完了を待つために公開する。
         public Task StepTask { get; private set; } = Task.CompletedTask;
 
@@ -157,11 +151,7 @@ namespace Baryonyx.Home
                     snapshot.Today = reading.Day.Value;
             }
             if (reading.Runes.HasValue)
-            {
-                snapshot.Runes = reading.Runes.Value;
-                snapshot.RunesKnown = true;
-                RuneBalance.Set(reading.Runes.Value);
-            }
+                SetRunes(reading.Runes.Value);
             view.Render(HomeViewState.From(snapshot));
             // 付与前の残高から、サーバーと同じ付与後の残高まで数を増やして見せる。
             // 仮のルーンは歩数の同期に失敗しても付与されるため、結果より先に扱う。
@@ -171,6 +161,23 @@ namespace Baryonyx.Home
                 view.ShowNotice(NoRunesMessage);
             else if (announce || reading.Result == HomeStepResult.Failed)
                 view.ShowToast(MessageFor(reading.Result));
+        }
+
+        /// <summary>Shows a balance raised outside the step sync (the debugging menu), counting up to it.</summary>
+        public void ShowRunesAdded(long after, long added)
+        {
+            if (disposed)
+                return;
+            SetRunes(after);
+            view.Render(HomeViewState.From(snapshot));
+            view.PlayRuneGain(Math.Max(0, after - added), after);
+        }
+
+        private void SetRunes(long runes)
+        {
+            snapshot.Runes = runes;
+            snapshot.RunesKnown = true;
+            RuneBalance.Set(runes);
         }
 
         public const string NoRunesMessage = "獲得ルーンはありません";

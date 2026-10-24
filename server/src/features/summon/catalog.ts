@@ -67,7 +67,7 @@ export const SUMMON_POOL: readonly SummonEntry[] = (() => {
   const seen = new Set<string>();
   for (const entries of Object.values(DROP_POOLS)) {
     for (const entry of entries) {
-      if (entry.category === "skill" || entry.category === "bonus") continue;
+      if (entry.category === "skill") continue;
       const key = `${entry.category}:${entry.id}`;
       if (seen.has(key)) continue;
       seen.add(key);

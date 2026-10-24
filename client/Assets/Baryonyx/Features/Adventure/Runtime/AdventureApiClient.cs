@@ -290,7 +290,7 @@ namespace Baryonyx.Adventure
             public Ware[] merchant;
         }
 
-        // 部屋で落ちた物（doc/features/drops.md）。category は item・accessory・weapon・armor・skill・bonus。
+        // 部屋で落ちた物（doc/features/drops.md）。category は item・accessory・weapon・armor・skill・material。
         [Serializable]
         public sealed class Drop
         {
@@ -301,7 +301,6 @@ namespace Baryonyx.Adventure
             // 倍率（×1.37なら1.37）と品質（S・A・B・C）。アイテムは項目がなく、JsonUtilityでは0と空になる。
             public float multiplier;
             public string quality;
-            public string outcome;
         }
 
         [Serializable]

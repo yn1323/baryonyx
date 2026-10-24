@@ -47,7 +47,7 @@ namespace Baryonyx.Adventure
 
         public ExplorationMoments Moments;
 
-        [Tooltip("宝箱の中身の見本（ACTボーナスの名前・アイコン・光り方）。1回ごとに順に使う。")]
+        [Tooltip("宝箱の中身の見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
         public RewardItem[] Samples = Array.Empty<RewardItem>();
 
         [Tooltip("宝箱の中身の下に出す一言。")]

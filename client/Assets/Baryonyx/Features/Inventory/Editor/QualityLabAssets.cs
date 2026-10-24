@@ -7,8 +7,6 @@ using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
 using Baryonyx.Equipment.Editor;
 using Baryonyx.SkillEvolution;
-using Baryonyx.StepBonus;
-using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu.Editor;
@@ -60,11 +58,6 @@ namespace Baryonyx.Inventory.Editor
                 == null
             )
                 BattleInspectAssets.CreateAssets();
-            var bonuses = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(
-                StepBonusAssets.DataPath
-            );
-            if (bonuses == null)
-                bonuses = StepBonusAssets.CreateData();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
             using (UiBuild.Begin(font, shadowText))
@@ -83,7 +76,6 @@ namespace Baryonyx.Inventory.Editor
                 BuildPreviews(safe, lab);
                 BuildInfo(safe, lab);
 
-                lab.Bonuses = bonuses;
                 lab.WeaponIcon = GuideMenuAssets.Icon(EquipmentAssets.IconWeaponPath);
                 lab.ArmorIcon = GuideMenuAssets.Icon(EquipmentAssets.IconArmorPath);
                 lab.AccessoryIcon = GuideMenuAssets.Icon(UiArt.IconCompassPath);
@@ -125,7 +117,7 @@ namespace Baryonyx.Inventory.Editor
             lab.Tabs = GuideFrameAssets.Tabs(
                 safe,
                 "Tabs",
-                new[] { "スキル", "固有スキル", "武器", "防具", "アクセサリー", "ボーナス" },
+                new[] { "スキル", "固有スキル", "武器", "防具", "アクセサリー" },
                 20f,
                 148f,
                 276f,
@@ -230,7 +222,7 @@ namespace Baryonyx.Inventory.Editor
             return preview;
         }
 
-        // 装備・アクセサリー・ボーナスの絵の板：アイコンにキラキラを重ね、名前・★・品質の文字を添える。
+        // 装備・アクセサリーの絵の板：アイコンにキラキラを重ね、名前・★・品質の文字を添える。
         private static QualityLabItemFace ItemFace(RectTransform host, Vector2 size, float scale)
         {
             var root = Rect("Item", host);

@@ -49,11 +49,6 @@ type Equipment = {
   }[];
   characters: { id: string; weapon: string | null; armor: string | null }[];
 };
-type StepBonus = {
-  holdings: { bonusId: string; multiplier: number; quality: string }[];
-  slots: { slot: number; bonusId: string | null }[];
-  locked: boolean;
-};
 type Weaknesses = {
   weaknesses: { enemyId: string; element: string }[];
 };
@@ -233,21 +228,6 @@ describe("開発用のプレイヤー（seed）", () => {
           armor: character.armor ?? null,
         })),
       );
-
-      const bonus = await scenario.read<StepBonus>("/step-bonus", token);
-      expect(bonus.holdings).toEqual(
-        expect.arrayContaining(
-          seed.bonuses.map((entry) =>
-            expect.objectContaining({
-              bonusId: entry.id,
-              multiplier: entry.multiplierPercent / 100,
-            }),
-          ),
-        ),
-      );
-      expect(bonus.holdings).toHaveLength(seed.bonuses.length);
-      expect(bonus.slots.map((slot) => slot.bonusId)).toEqual(seed.bonusSlots);
-      expect(bonus.locked).toBe(seed.adventure !== undefined);
 
       const adventure = await scenario.read<Adventure>("/adventure", token);
       expect(adventure.records).toEqual(seed.records);

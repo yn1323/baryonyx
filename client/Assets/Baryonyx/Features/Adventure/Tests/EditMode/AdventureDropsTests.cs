@@ -75,20 +75,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(pools.Keys, Is.EquivalentTo(AdventureDrops.Pools.Keys));
             foreach (var pair in AdventureDrops.Pools)
                 Assert.That(Tuples(pair.Value), Is.EqualTo(pools[pair.Key]), pair.Key);
-
-            var common = Regex
-                .Matches(source, "bonus\\(\"([a-z-]+)\", ([1-5])\\)")
-                .Cast<Match>()
-                .Select(match =>
-                    (
-                        AdventureDropCategory.Bonus,
-                        match.Groups[1].Value,
-                        int.Parse(match.Groups[2].Value),
-                        false
-                    )
-                )
-                .ToArray();
-            Assert.That(Tuples(AdventureDrops.Common), Is.EqualTo(common));
         }
 
         private static AdventureDropCategory Parse(string key)
@@ -219,7 +205,6 @@ namespace Baryonyx.Tests.EditMode
         {
             Assert.That(
                 AdventureTexts.DropLine(
-                    null,
                     new AdventureDrop(
                         "",
                         AdventureDropCategory.Armor,
@@ -231,28 +216,11 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo("★★ 鉄の兜（防具・品質C）")
             );
             Assert.That(
-                AdventureTexts.DropLine(
-                    null,
-                    new AdventureDrop("", AdventureDropCategory.Item, "herb")
-                ),
+                AdventureTexts.DropLine(new AdventureDrop("", AdventureDropCategory.Item, "herb")),
                 Is.EqualTo("★ 薬草（アイテム）")
             );
             Assert.That(
-                AdventureTexts.DropLine(
-                    null,
-                    new AdventureDrop(
-                        "",
-                        AdventureDropCategory.Bonus,
-                        "luck",
-                        1.4f,
-                        ItemQuality.S,
-                        AdventureDropOutcome.Updated
-                    )
-                ),
-                Is.EqualTo("★★★ luck（ACTボーナス・品質S）　倍率が上がった")
-            );
-            Assert.That(
-                AdventureTexts.DropsBody(null, Array.Empty<AdventureDrop>()),
+                AdventureTexts.DropsBody(Array.Empty<AdventureDrop>()),
                 Is.EqualTo("何も見つからなかった")
             );
         }

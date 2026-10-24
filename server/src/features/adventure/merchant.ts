@@ -18,7 +18,7 @@ import {
 
 // 行商人のマスの品ぞろえ（doc/features/stage-progression.md のマスの中身）。
 // マスに入ったときにサーバーが作って保存し、そのマスにいるあいだルーンで買える。Homeの商会とは別の一覧で、
-// 冒険・マスごとに変わる。品物は行き先のドロップの一覧から選び、主の物・アイテム・ACTボーナスは並べない。
+// 冒険・マスごとに変わる。品物は行き先のドロップの一覧から選び、主の物・アイテムは並べない。
 // ☆と品質は強い報酬（強い魔物）の行の重みで選び、倍率の出し方はドロップと同じにする。
 
 export type MerchantCategory = "skill" | "weapon" | "armor" | "accessory";
@@ -71,7 +71,7 @@ export function rollMerchantGoods(
   random: () => number,
 ): MerchantGoods[] {
   const pool = eligibleEntries(destinationId, MERCHANT_ROW).filter(
-    (entry) => entry.category !== "item" && entry.category !== "bonus",
+    (entry) => entry.category !== "item",
   );
   const skills = pool.filter((entry) => entry.category === "skill");
   const equipment = pool.filter((entry) => entry.category !== "skill");

@@ -101,7 +101,7 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 ## サーバー同期の経路
 
 歩数の保存とルーンの請求は [HealthServerSync](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) にまとめている。
-ゲストのセッション（ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し）は [AccountSessionRunner](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) が受け持ち、歩数・パーティ・装備・ボーナス・冒険の全機能で1つを共有する。
+ゲストのセッション（ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し）は [AccountSessionRunner](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) が受け持ち、歩数・パーティ・装備・冒険の全機能で1つを共有する。
 [GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs) が選んだ環境のURLからこれらを作り、Topの起動処理とHomeのACTパネルが [HealthStepLink](../../client/Assets/Baryonyx/Features/Health/Runtime/Link/HealthStepLink.cs) を通して使う。
 ゲストのセッションで7日分を保存し、HomeのACTパネルでは続けてルーンを請求する（[起動時の連携と歩数の同期](startup-sync.md)）。
 選んだ環境のURLが空なら、歩数を端末のメモリだけに保持する。

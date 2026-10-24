@@ -52,7 +52,7 @@ namespace Baryonyx.Adventure.Editor
                 BuildTitle(safe);
                 BuildStrip(safe);
                 BuildRows(safe, lab);
-                lab.Samples = BattleMomentLabAssets.BonusSamples();
+                lab.Samples = BattleMomentLabAssets.RewardSamples();
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
             }

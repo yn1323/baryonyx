@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
+import { and, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { SelectedFields } from "drizzle-orm/sqlite-core";
 import { createDatabase } from "../../shared/db.js";
 import { multiplierOf, qualityOf } from "../../shared/quality.js";
@@ -16,8 +16,6 @@ import {
   enemyStatements,
 } from "../library/discoveries.js";
 import { skillCards } from "../party/db-schema.js";
-import { stepBonusHoldings } from "../step-bonus/db-schema.js";
-import { createStepBonusRepository } from "../step-bonus/repository.js";
 import {
   bossFloor,
   canPlace,
@@ -54,7 +52,6 @@ import type { Buy, EndReason, Enemies, Move, Revive } from "./schema.js";
 type RunRow = typeof adventureRuns.$inferSelect;
 type DropRow = typeof adventureDrops.$inferSelect;
 type PurchaseRow = typeof adventurePurchases.$inferSelect;
-type DropOutcome = "added" | "updated" | "discarded";
 type EndStatus = "cleared" | "defeated" | "retreated";
 
 // 0以上1未満の乱数。テストでは固定の値に差し替える。
@@ -158,7 +155,6 @@ export function createAdventureRepository(
             multiplier: multiplierOf(percent),
             quality: qualityOf(percent, maxPercent),
           }),
-      outcome: row.outcome,
     };
   };
 
@@ -493,7 +489,7 @@ export function createAdventureRepository(
   async function award(
     userId: string,
     run: RunRow,
-    rolled: Drop[],
+    drops: Drop[],
     now: string,
     options: {
       enemies: Enemies;
@@ -502,42 +498,6 @@ export function createAdventureRepository(
     },
   ) {
     const roomId = run.roomId;
-    // 初めてのユーザーへ初期のボーナスを先に付与し、手に入れたボーナスを初期の付与で消さない。
-    await createStepBonusRepository(binding).getState(userId, now);
-
-    // ACTボーナスは1種類につき1つだけ持ち、倍率の高いほうを残す。同じ部屋で2つ落ちたときは順に比べる。
-    const bonusIds = [
-      ...new Set(
-        rolled.filter((entry) => entry.category === "bonus").map((e) => e.id),
-      ),
-    ];
-    const heldRows =
-      bonusIds.length === 0
-        ? []
-        : await db
-            .select({
-              bonusId: stepBonusHoldings.bonusId,
-              multiplierPercent: stepBonusHoldings.multiplierPercent,
-            })
-            .from(stepBonusHoldings)
-            .where(
-              and(
-                eq(stepBonusHoldings.userId, userId),
-                inArray(stepBonusHoldings.bonusId, bonusIds),
-              ),
-            );
-    const held = new Map(
-      heldRows.map((row) => [row.bonusId, row.multiplierPercent]),
-    );
-    const drops = rolled.map((entry): Drop & { outcome: DropOutcome } => {
-      if (entry.category !== "bonus") return { ...entry, outcome: "added" };
-      const best = held.get(entry.id);
-      const percent = entry.multiplierPercent as number;
-      const outcome: DropOutcome =
-        best === undefined ? "added" : percent > best ? "updated" : "discarded";
-      held.set(entry.id, Math.max(best ?? 0, percent));
-      return { ...entry, outcome };
-    });
 
     const boss = kindOf(run) === "boss";
     const grantId = crypto.randomUUID();
@@ -552,7 +512,6 @@ export function createAdventureRepository(
         multiplierPercent: sql<number | null>`${entry.multiplierPercent}`.as(
           "multiplier_percent",
         ),
-        outcome: sql<string>`${entry.outcome}`.as("outcome"),
         createdAt: sql<string>`${now}`.as("created_at"),
       };
     };
@@ -604,30 +563,6 @@ export function createAdventureRepository(
         .map((entry) => entry.id),
       now,
       written,
-    );
-    const bonusGrants = bonusIds.map((bonusId) =>
-      db
-        .insert(stepBonusHoldings)
-        .select(
-          fromWritten({
-            userId: sql<string>`${userId}`.as("user_id"),
-            bonusId: sql<string>`${bonusId}`.as("bonus_id"),
-            multiplierPercent: sql<number>`${held.get(bonusId)}`.as(
-              "multiplier_percent",
-            ),
-            acquiredAt: sql<string>`${now}`.as("acquired_at"),
-            updatedAt: sql<string>`${now}`.as("updated_at"),
-          }),
-        )
-        .onConflictDoUpdate({
-          target: [stepBonusHoldings.userId, stepBonusHoldings.bonusId],
-          set: {
-            multiplierPercent: sql`excluded.multiplier_percent`,
-            updatedAt: sql`excluded.updated_at`,
-          },
-          // 倍率の高いほうだけを残す。
-          setWhere: sql`excluded.multiplier_percent > ${stepBonusHoldings.multiplierPercent}`,
-        }),
     );
     const discoveries = (
       ["weapon", "armor", "accessory", "skill", "item"] as const
@@ -697,7 +632,6 @@ export function createAdventureRepository(
       ...skillGrants,
       ...itemGrants,
       ...materialGrantStatements,
-      ...bonusGrants,
       ...discoveries,
       ...(boss ? [recordStatement(run, "cleared", now, written)] : []),
       ...(battleRoom(run)
@@ -1142,10 +1076,5 @@ export function createAdventureRepository(
     };
   }
 
-  // 冒険の途中かどうか。冒険中はACTボーナスの枠を付け替えられない。
-  async function inProgress(userId: string) {
-    return (await activeRun(userId)) !== undefined;
-  }
-
-  return { getState, start, move, clear, open, buy, revive, end, inProgress };
+  return { getState, start, move, clear, open, buy, revive, end };
 }

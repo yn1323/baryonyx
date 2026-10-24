@@ -26,10 +26,10 @@ namespace Baryonyx.Tests.EditMode
                 "{\"run\":{\"id\":\"r1\",\"destinationId\":\"forest-ruins\",\"seed\":12345,\"roomCount\":8,"
                 + "\"roomId\":\"f2-0\",\"floor\":2,\"roomKind\":\"battle\","
                 + "\"roomCleared\":false,\"route\":[\"entrance\",\"f2-0\"],\"revives\":1,\"reviveCost\":200,"
-                + "\"drops\":[{\"roomId\":\"entrance\",\"category\":\"bonus\",\"id\":\"luck\",\"multiplier\":1.4,\"quality\":\"A\",\"outcome\":\"updated\"},"
-                + "{\"roomId\":\"entrance\",\"category\":\"item\",\"id\":\"herb\",\"outcome\":\"added\"},"
-                + "{\"roomId\":\"x\",\"category\":\"weapon\",\"id\":\"iron-sword\",\"multiplier\":1.4,\"quality\":\"Z\",\"outcome\":\"added\"},"
-                + "{\"roomId\":\"x\",\"category\":\"ring\",\"id\":\"gold\",\"multiplier\":1.4,\"quality\":\"A\",\"outcome\":\"added\"}]},"
+                + "\"drops\":[{\"roomId\":\"entrance\",\"category\":\"accessory\",\"id\":\"moss-charm\",\"multiplier\":1.4,\"quality\":\"A\"},"
+                + "{\"roomId\":\"entrance\",\"category\":\"item\",\"id\":\"herb\"},"
+                + "{\"roomId\":\"x\",\"category\":\"weapon\",\"id\":\"iron-sword\",\"multiplier\":1.4,\"quality\":\"Z\"},"
+                + "{\"roomId\":\"x\",\"category\":\"ring\",\"id\":\"gold\",\"multiplier\":1.4,\"quality\":\"A\"}]},"
                 + "\"records\":[{\"destinationId\":\"forest-ruins\",\"bestFloor\":3,\"clears\":0}],"
                 + "\"runes\":4500,\"revive\":null}";
             var state = AdventureServerSource.ToState(
@@ -55,20 +55,12 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(run.DeepestFloor, Is.EqualTo(10));
             // 知らない品質や分類のドロップは外す。アイテムは品質を持たない。
             Assert.That(
-                run.Drops.Select(drop =>
-                    (drop.Category, drop.Id, drop.Multiplier, drop.Quality, drop.Outcome)
-                ),
+                run.Drops.Select(drop => (drop.Category, drop.Id, drop.Multiplier, drop.Quality)),
                 Is.EqualTo(
-                    new (AdventureDropCategory, string, float, ItemQuality?, AdventureDropOutcome)[]
+                    new (AdventureDropCategory, string, float, ItemQuality?)[]
                     {
-                        (
-                            AdventureDropCategory.Bonus,
-                            "luck",
-                            1.4f,
-                            ItemQuality.A,
-                            AdventureDropOutcome.Updated
-                        ),
-                        (AdventureDropCategory.Item, "herb", 0f, null, AdventureDropOutcome.Added),
+                        (AdventureDropCategory.Accessory, "moss-charm", 1.4f, ItemQuality.A),
+                        (AdventureDropCategory.Item, "herb", 0f, null),
                     }
                 )
             );
@@ -234,9 +226,13 @@ namespace Baryonyx.Tests.EditMode
                     )
                 )
             );
-            // 最奥の間では2〜4つ落ち、どれも☆3以上で、倍率はその品質の幅に入る。
-            Assert.That(state.Drops.Count, Is.InRange(2, 4));
-            foreach (var drop in state.Drops)
+            // 最奥の間では2〜4つ落ち、どれも☆3以上で、倍率はその品質の幅に入る。強化素材は別に抽選する
+            // （AdventureDrops.RollMaterials）ため、数と☆の検査からは外す。
+            var drops = state
+                .Drops.Where(drop => drop.Category != AdventureDropCategory.Material)
+                .ToArray();
+            Assert.That(drops.Length, Is.InRange(2, 4));
+            foreach (var drop in drops)
             {
                 Assert.That(drop.Stars, Is.GreaterThanOrEqualTo(3), drop.Id);
                 AdventureDropsTests.AssertQualityFitsMultiplier(drop);
@@ -244,7 +240,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         // 結果には、持ち帰った物を分類ごとに数え、☆4以上か品質Sの物を目玉として挙げる。
-        // 手放したボーナスは持ち帰った物に数えない。
         [Test]
         public void TheResultCountsTheDropsKept()
         {
@@ -274,18 +269,10 @@ namespace Baryonyx.Tests.EditMode
                         1.2f,
                         ItemQuality.C
                     ),
-                    new AdventureDrop(
-                        "c",
-                        AdventureDropCategory.Bonus,
-                        "guard",
-                        1f,
-                        ItemQuality.C,
-                        AdventureDropOutcome.Discarded
-                    ),
                 }
             );
             Assert.That(
-                AdventureTexts.ResultBody(null, result),
+                AdventureTexts.ResultBody(result),
                 Is.EqualTo(
                     Forest
                         + "　第3層まで到達\n最深記録 第4層\n"

@@ -44,7 +44,7 @@ namespace Baryonyx.UI.GuideMenu
     [Serializable]
     public sealed class GuideMenuItem
     {
-        // Names the item for code, e.g. the tavern's "bonus" opens the bonus settings, not a list.
+        // Names the item for code, e.g. the tavern's adventurers open the roster, not a list.
         public string Key = "";
         public string Label = "";
 

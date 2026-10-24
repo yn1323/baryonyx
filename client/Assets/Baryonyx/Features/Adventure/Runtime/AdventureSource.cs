@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
 {
@@ -212,27 +211,14 @@ namespace Baryonyx.Adventure
                 || !AdventureDrops.TryParse(drop.category, out var category)
             )
                 return null;
-            var outcome = drop.outcome switch
-            {
-                "updated" => AdventureDropOutcome.Updated,
-                "discarded" => AdventureDropOutcome.Discarded,
-                _ => AdventureDropOutcome.Added,
-            };
             if (category is AdventureDropCategory.Item or AdventureDropCategory.Material)
-                return new AdventureDrop(drop.roomId, category, drop.id, outcome: outcome);
+                return new AdventureDrop(drop.roomId, category, drop.id);
             if (
                 drop.multiplier < Quality.MinMultiplier
                 || !Quality.TryParse(drop.quality, out var quality)
             )
                 return null;
-            return new AdventureDrop(
-                drop.roomId,
-                category,
-                drop.id,
-                drop.multiplier,
-                quality,
-                outcome
-            );
+            return new AdventureDrop(drop.roomId, category, drop.id, drop.multiplier, quality);
         }
 
         private static AdventureResult ToResult(AdventureApiClient.Result result)

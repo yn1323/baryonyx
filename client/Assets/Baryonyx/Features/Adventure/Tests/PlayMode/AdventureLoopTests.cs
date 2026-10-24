@@ -484,7 +484,7 @@ namespace Baryonyx.Tests.PlayMode
             var wares = AdventureSession.Current.Run.Contents.Wares;
             Assert.That(wares.Count, Is.EqualTo(AdventureWares.Skills + AdventureWares.Gear));
             Assert.That(view.Dialog.ChoiceLabels.Length, Is.EqualTo(wares.Count + 1));
-            string first = AdventureTexts.WareLine(view.Bonuses, wares[0]);
+            string first = AdventureTexts.WareLine(wares[0]);
             long before = AdventureSession.Current.Runes;
             Assert.That(view.Dialog.Choose(first), Is.True);
             yield return WaitForDialog(view.Dialog, AdventureDialogs.MerchantTitle);
@@ -502,10 +502,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(
                 view.Dialog.ChoiceLabels,
                 Does.Contain(
-                    AdventureTexts.WareLine(
-                        view.Bonuses,
-                        AdventureSession.Current.Run.Contents.Wares[0]
-                    )
+                    AdventureTexts.WareLine(AdventureSession.Current.Run.Contents.Wares[0])
                 )
             );
             Assert.That(view.Dialog.Choose(AdventureDialogs.LeaveChoice), Is.True);

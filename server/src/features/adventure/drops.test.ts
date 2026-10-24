@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 import { EQUIPMENT } from "../equipment/catalog.js";
 import { ITEM_IDS } from "../items/catalog.js";
 import { CARD_SKILL_IDS } from "../party/catalog.js";
-import { STEP_BONUS_IDS } from "../step-bonus/catalog.js";
 import { DESTINATION_IDS, EVENT_KINDS } from "./catalog.js";
 import {
   CATEGORY_WEIGHTS,
-  COMMON_POOL,
   DROP_POOLS,
   type DropEntry,
   eligibleEntries,
+  polishDepthOf,
   REWARD_ROWS,
   rewardOf,
   rollDrops,
@@ -26,10 +25,7 @@ function seeded(seed: number) {
   };
 }
 
-const allEntries = (): DropEntry[] => [
-  ...Object.values(DROP_POOLS).flat(),
-  ...COMMON_POOL,
-];
+const allEntries = (): DropEntry[] => Object.values(DROP_POOLS).flat();
 
 describe("ドロップの一覧", () => {
   it("どの行き先にも一覧があり、物は1つの行き先にだけ出る", () => {
@@ -56,7 +52,7 @@ describe("ドロップの一覧", () => {
     );
   });
 
-  it("装備の分類は装備の定義と一致し、ACTボーナスはすべての種類がどこでも出る", () => {
+  it("装備の分類は装備の定義と一致する", () => {
     for (const entry of allEntries()) {
       if (
         entry.category === "weapon" ||
@@ -68,9 +64,6 @@ describe("ドロップの一覧", () => {
         );
       }
     }
-    expect(COMMON_POOL.map((entry) => entry.id).sort()).toEqual(
-      [...STEP_BONUS_IDS].sort(),
-    );
   });
 
   it("最奥の間だけの物は道中で落ちず、最奥の間は☆3〜5だけが落ちる", () => {
@@ -124,7 +117,7 @@ describe("ドロップの抽選", () => {
     ).toEqual([]);
   });
 
-  it("分類はアイテム＞アクセサリー＞武器・防具＞スキル＞ACTボーナスの順に出やすい", () => {
+  it("分類はアイテム＞アクセサリー＞武器・防具＞スキルの順に出やすい", () => {
     const random = seeded(11);
     const tally: Record<string, number> = {};
     for (let i = 0; i < 20000; i++) {
@@ -237,18 +230,17 @@ describe("新しいマスの報酬の行", () => {
 describe("強化素材の抽選", () => {
   it("磨き石と覚醒の欠片は、ふつうのドロップのあとに、報酬のあるマスでだけ落ちる", () => {
     // 乱数0なら、磨き石は白、覚醒の欠片は魔物のマスで落ちず、宝箱では落ちる。
-    expect(rollMaterials("battle", () => 0)).toEqual([
+    expect(rollMaterials("forest-ruins", "battle", () => 0)).toEqual([
       { category: "material", id: "polish-white", multiplierPercent: null },
     ]);
-    expect(rollMaterials("treasure", () => 0).map((drop) => drop.id)).toEqual([
-      "polish-white",
-      "awakening-shard",
-    ]);
+    expect(
+      rollMaterials("forest-ruins", "treasure", () => 0).map((drop) => drop.id),
+    ).toEqual(["polish-white", "awakening-shard"]);
     // 乱数が大きければ、最奥の間のほかでは何も落ちない。最奥の間では磨き石が必ず落ちる。
-    expect(rollMaterials("elite", () => 0.99)).toEqual([]);
-    expect(rollMaterials("boss", () => 0.99).map((drop) => drop.id)).toEqual([
-      "polish-gold",
-    ]);
+    expect(rollMaterials("forest-ruins", "elite", () => 0.99)).toEqual([]);
+    expect(
+      rollMaterials("forest-ruins", "boss", () => 0.999).map((drop) => drop.id),
+    ).toEqual(["polish-gold"]);
     // 報酬のないマス（休憩・行商人）では、強化素材も落とさない。
     expect(rollRoomDrops("forest-ruins", "rest", () => 0)).toEqual([]);
     const room = rollRoomDrops("forest-ruins", "battle", () => 0);
@@ -258,7 +250,21 @@ describe("強化素材の抽選", () => {
     ).toBe(true);
   });
 
-  it("1周（魔物6・強い魔物と宝箱3・最奥の間1）で、白い磨き石が2〜3個ほど落ちる", () => {
+  it("行き先を近い順に浅い2つ・中ほど3つ・奥3つに分ける", () => {
+    expect(DESTINATION_IDS.map(polishDepthOf)).toEqual([
+      "shallow",
+      "shallow",
+      "middle",
+      "middle",
+      "middle",
+      "deep",
+      "deep",
+      "deep",
+    ]);
+  });
+
+  // 1周（魔物6・強い魔物と宝箱3・最奥の間1）で落ちる数の平均。
+  const perRun = (destinationId: string) => {
     const random = seeded(7);
     const runs = 4000;
     const counts = new Map<string, number>();
@@ -269,14 +275,28 @@ describe("強化素材の抽選", () => {
     ];
     for (let run = 0; run < runs; run++) {
       for (const row of rows) {
-        for (const drop of rollMaterials(row, random)) {
+        for (const drop of rollMaterials(destinationId, row, random)) {
           counts.set(drop.id, (counts.get(drop.id) ?? 0) + 1);
         }
       }
     }
-    const perRun = (id: string) => (counts.get(id) ?? 0) / runs;
-    expect(perRun("polish-white")).toBeCloseTo(2.6, 0);
-    expect(perRun("polish-blue")).toBeCloseTo(1.4, 0);
-    expect(perRun("awakening-shard")).toBeCloseTo(0.24, 1);
+    return (id: string) => (counts.get(id) ?? 0) / runs;
+  };
+
+  it("浅い行き先の1周では、白い磨き石が3〜4個落ち、金はほとんど落ちない", () => {
+    const of = perRun("forest-ruins");
+    expect(of("polish-white")).toBeCloseTo(3.56, 0);
+    expect(of("polish-blue")).toBeCloseTo(0.9, 0);
+    expect(of("polish-purple")).toBeLessThan(0.2);
+    expect(of("polish-gold")).toBeLessThan(0.02);
+    expect(of("awakening-shard")).toBeCloseTo(0.24, 1);
+  });
+
+  it("奥の行き先の1周でも、紫は約0.3個、金は約0.04個にとどまる", () => {
+    const of = perRun("neve-peaks");
+    expect(of("polish-white")).toBeCloseTo(2.63, 0);
+    expect(of("polish-blue")).toBeCloseTo(1.6, 0);
+    expect(of("polish-purple")).toBeCloseTo(0.33, 1);
+    expect(of("polish-gold")).toBeLessThan(0.08);
   });
 });

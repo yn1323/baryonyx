@@ -14,7 +14,7 @@ namespace Baryonyx.UI
     [System.Serializable]
     public sealed class RewardItem
     {
-        /// <summary>The kind of thing above its name ("ACTボーナス", "武器"); empty shows none.</summary>
+        /// <summary>The kind of thing above its name ("武器", "アイテム"); empty shows none.</summary>
         public string Kind = "";
 
         public string Name = "";
@@ -27,7 +27,7 @@ namespace Baryonyx.UI
         /// <summary>How it sparkles (<see cref="CardFoil.Style"/>), the kind's own.</summary>
         public int FoilStyle;
 
-        /// <summary>The line under it: added to the belongings, its multiplier raised, or let go.</summary>
+        /// <summary>The line under it: that it was added to the belongings.</summary>
         public string Note = "";
     }
 

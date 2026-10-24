@@ -68,7 +68,7 @@ client/
 │   │   │   ├── Vfx/                     スキルの演出のシェーダー・マテリアルと、戦闘のポストプロセス
 │   │   │   ├── Editor/                  モックとデバッグルームのPrefabの生成
 │   │   │   └── Tests/                   EditMode（計算・時間・再開）とPlayMode（モックの操作）
-│   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル・ボーナス）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
+│   │   ├── Features/Tavern/             編成（パーティ・装備・育成・スキル）の画面。商会 Workshop・神殿 Temple・旅の案内所 TravelOffice も同じ構成
 │   │   │   ├── UI/                      画面のPrefab、案内人・背景・メニューのアイコンの画像
 │   │   │   ├── Data/                    画面の中身（案内人・メニュー・仮データ）の定義アセット
 │   │   │   └── Editor/                  仮データと画面の生成
@@ -77,7 +77,6 @@ client/
 │   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
 │   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質のデバッグルーム。Runtime・Presentation・Editor・UI・Tests
-│   │   ├── Features/StepBonus/          ACTボーナスの枠の設定（編成のボーナス）と、サーバーとの読み書き。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
@@ -171,7 +170,7 @@ client/
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所・ライブラリ）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
-| `Debug/QualityLab.unity` | スキル・装備・アクセサリー・ボーナスの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
+| `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
 | `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens.md#戦闘の演出デバッグルーム) |
 | `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens.md#探索の演出デバッグルーム) |
@@ -187,7 +186,7 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | Topの起動処理（開始の案内と連携モーダル）のシーンへの配置 | `Baryonyx > App > Connect Startup Sync` |
 | 画面遷移の演出の共通Prefabと、Top・Homeへの配置 | `Baryonyx > App > Create Scene Transition Assets` |
 | ホーム画面 | `Baryonyx > Home > Create Screen Assets` |
-| 編成の画面と、パーティ・装備・育成・スキル・ボーナスのパネル | `Baryonyx > Tavern > Create Screen Assets` |
+| 編成の画面と、パーティ・装備・育成・スキルのパネル | `Baryonyx > Tavern > Create Screen Assets` |
 | 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
 | 探索と冒険用の重ね画面のPrefab（行き先ごとの地面の取り込み設定を含む） | `Baryonyx > Adventure > Create Screen Assets` |
 | 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |

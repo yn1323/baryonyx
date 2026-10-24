@@ -285,7 +285,6 @@ namespace Baryonyx.Adventure
                 return;
             AdventureDialogs.Merchant(
                 view.Dialog,
-                view.Bonuses,
                 State.Run.Contents.Wares,
                 State.Runes,
                 ConfirmBuy,
@@ -300,7 +299,6 @@ namespace Baryonyx.Adventure
         private void ConfirmBuy(AdventureWare ware) =>
             AdventureDialogs.ConfirmBuy(
                 view.Dialog,
-                view.Bonuses,
                 ware,
                 State.Runes,
                 () => Work = BuyAsync(ware),
@@ -335,11 +333,7 @@ namespace Baryonyx.Adventure
             // 買った物を札で見せてから、一覧へ戻る（Enter が開き直す）。
             if (view.Moments != null && view.Moments.Reveal != null)
             {
-                var item = AdventureDropItems.From(
-                    view.Bonuses,
-                    ware.AsDrop(state.Run.RoomId),
-                    view.ItemArt
-                );
+                var item = AdventureDropItems.From(ware.AsDrop(state.Run.RoomId), view.ItemArt);
                 if (item != null)
                 {
                     view.Moments.Reveal.Show(item);
@@ -516,13 +510,7 @@ namespace Baryonyx.Adventure
             if (shown)
                 AdventureDialogs.TreasureOpened(view.Dialog, CloseReward);
             else
-                AdventureDialogs.Treasure(
-                    view.Dialog,
-                    view.Bonuses,
-                    state.Drops,
-                    CloseReward,
-                    view.ItemArt
-                );
+                AdventureDialogs.Treasure(view.Dialog, state.Drops, CloseReward, view.ItemArt);
         }
 
         // 宝箱が震えて開き、中身を札で1つずつ見せる。宝箱は一番良い物の品質の色で光り、その札から開く。
@@ -532,7 +520,7 @@ namespace Baryonyx.Adventure
         )
         {
             var items = (drops ?? Array.Empty<AdventureDrop>())
-                .Select(drop => AdventureDropItems.From(view.Bonuses, drop, view.ItemArt))
+                .Select(drop => AdventureDropItems.From(drop, view.ItemArt))
                 .Where(item => item != null)
                 .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
                 .ToList();
@@ -611,23 +599,18 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             State = AdventureSession.Use(state);
-            ShowResult(view.Dialog, view.Bonuses, state.Result, GoHome);
+            ShowResult(view.Dialog, state.Result, GoHome);
         }
 
         /// <summary>The end of an adventure: how it ended and what it brought back, then Home.</summary>
-        public static void ShowResult(
-            GameDialog dialog,
-            StepBonus.StepBonusMockData bonuses,
-            AdventureResult result,
-            Action home
-        )
+        public static void ShowResult(GameDialog dialog, AdventureResult result, Action home)
         {
             if (result == null)
             {
                 home();
                 return;
             }
-            AdventureDialogs.Result(dialog, bonuses, result, home);
+            AdventureDialogs.Result(dialog, result, home);
         }
 
         private void GoHome()

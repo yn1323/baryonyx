@@ -1,23 +1,18 @@
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 
 namespace Baryonyx.Adventure
 {
     /// <summary>
     /// A drop as the plate that shows what was found draws it (<see cref="RewardReveal"/>): the
-    /// category and the stars above the name, the quality and the sparkle of the kind, and what
-    /// became of it. The ACT bonuses show their icon, and the items, accessories, weapons and
-    /// armour their own art (<see cref="AdventureTexts.DropIcon(StepBonusMockData, AdventureDrop, ItemArt)"/>).
+    /// category and the stars above the name, the quality and the sparkle of the kind, and that
+    /// it was added to the belongings. The items, accessories, weapons and armour show their own
+    /// art (<see cref="AdventureTexts.DropIcon(AdventureDrop, ItemArt)"/>).
     /// </summary>
     public static class AdventureDropItems
     {
-        public static RewardItem From(
-            StepBonusMockData bonuses,
-            AdventureDrop drop,
-            ItemArt art = null
-        )
+        public static RewardItem From(AdventureDrop drop, ItemArt art = null)
         {
             if (drop == null)
                 return null;
@@ -25,19 +20,18 @@ namespace Baryonyx.Adventure
             return new RewardItem
             {
                 Kind = $"{AdventureDrops.NameOf(drop.Category)}　{stars}".TrimEnd(),
-                Name = AdventureTexts.DropName(bonuses, drop),
-                Icon = AdventureTexts.DropIcon(bonuses, drop, art),
+                Name = AdventureTexts.DropName(drop),
+                Icon = AdventureTexts.DropIcon(drop, art),
                 Quality = drop.Quality ?? ItemQuality.C,
                 Graded = drop.Quality.HasValue,
-                FoilStyle = FoilStyleOf(bonuses, drop),
-                Note = AdventureCatalog.Outcome(drop.Outcome),
+                FoilStyle = FoilStyleOf(drop),
+                Note = AdventureCatalog.AddedNote,
             };
         }
 
-        private static int FoilStyleOf(StepBonusMockData bonuses, AdventureDrop drop) =>
+        private static int FoilStyleOf(AdventureDrop drop) =>
             drop.Category switch
             {
-                AdventureDropCategory.Bonus => bonuses != null ? bonuses.FoilStyleOf(drop.Id) : 0,
                 AdventureDropCategory.Weapon
                 or AdventureDropCategory.Armor
                 or AdventureDropCategory.Accessory => EquipmentCatalog.FoilStyleOf(drop.Id),

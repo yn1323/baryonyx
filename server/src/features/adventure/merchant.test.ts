@@ -26,7 +26,7 @@ describe("行商人の値段", () => {
 });
 
 describe("行商人の品ぞろえ", () => {
-  it("スキル3つと装備2つを、行き先の一覧から重ねずに並べ、主の物・アイテム・ACTボーナスは並べない", () => {
+  it("スキル3つと装備2つを、行き先の一覧から重ねずに並べ、主の物・アイテムは並べない", () => {
     const random = seeded(13);
     for (let i = 0; i < 200; i++) {
       const goods = rollMerchantGoods("forest-ruins", random);

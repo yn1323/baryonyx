@@ -8,6 +8,7 @@ import {
   POLISH_DROP_CHANCE,
   POLISH_DROP_WEIGHTS,
   POLISH_IDS,
+  type PolishDepth,
   SHARD_DROP_CHANCE,
 } from "../enhancement/catalog.js";
 import {
@@ -19,11 +20,7 @@ import {
   type CardSkillId,
   maxMultiplierPercent as skillMaxPercent,
 } from "../party/catalog.js";
-import {
-  maxMultiplierPercent as bonusMaxPercent,
-  type StepBonusId,
-} from "../step-bonus/catalog.js";
-import type { EventKind, StepDoorTier } from "./catalog.js";
+import { DESTINATIONS, type EventKind, type StepDoorTier } from "./catalog.js";
 
 // 報酬の重みの行（doc/features/drops.md の仮設定）。ほかのマスは、どれかの行を借りる。
 export const REWARD_ROWS = ["battle", "elite", "treasure", "boss"] as const;
@@ -82,7 +79,7 @@ export function rewardOf(
 }
 
 // 冒険のドロップ（doc/features/drops.md）。出来事を終えたマスで、行き先の一覧から物を落とす。
-// 一覧の物はその行き先でしか出ず、物の強さは行き先のLvに合わせて決める。ACTボーナスだけは、どの行き先でも出る。
+// 一覧の物はその行き先でしか出ず、物の強さは行き先のLvに合わせて決める。
 // 落ちる数・分類・物（☆）・品質の順に、マスの種類ごとの重みで選ぶ。重みはどれも仮の値である。
 
 export const DROP_CATEGORIES = [
@@ -91,7 +88,6 @@ export const DROP_CATEGORIES = [
   "weapon",
   "armor",
   "skill",
-  "bonus",
 ] as const;
 
 export type DropCategory = (typeof DROP_CATEGORIES)[number];
@@ -108,8 +104,7 @@ export type DropEntry =
       stars: Stars;
       bossOnly?: true;
     }
-  | { category: "skill"; id: CardSkillId; stars: Stars; bossOnly?: true }
-  | { category: "bonus"; id: StepBonusId; stars: Stars; bossOnly?: true };
+  | { category: "skill"; id: CardSkillId; stars: Stars; bossOnly?: true };
 
 // 1回の抽選で落ちた物。アイテムと強化素材（material）は倍率を持たない（null）。
 // 強化素材は分類の重みで選ばず、ふつうのドロップとは別に抽選する（rollMaterials）。
@@ -127,15 +122,14 @@ export const DROP_COUNT_WEIGHTS: Record<RewardRow, Record<number, number>> = {
   boss: { 2: 30, 3: 45, 4: 25 },
 };
 
-// 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキル＞ACTボーナスの順に出やすい。
+// 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキルの順に出やすい。
 // マスで落ちうる物がない分類は除き、残りの重みで選ぶ。
 export const CATEGORY_WEIGHTS: Record<DropCategory, number> = {
-  item: 40,
+  item: 43,
   accessory: 22,
   weapon: 13,
   armor: 13,
   skill: 9,
-  bonus: 3,
 };
 
 // マスごとの、☆1〜☆5の物1つあたりの重み（千分率）。最奥の間は☆3〜5だけが落ちる。
@@ -167,7 +161,6 @@ const accessory = entryOf("accessory");
 const weapon = entryOf("weapon");
 const armor = entryOf("armor");
 const skill = entryOf("skill");
-const bonus = entryOf("bonus");
 
 // 行き先ごとの一覧（仮）。スキル50枚を強さで8つの行き先へ分け、武器・防具は今ある14種を浅い行き先へ置いた。
 // アイテムとアクセサリーは、まずミストラ遺跡と港町ポルトリアの分だけを作った。
@@ -274,17 +267,6 @@ export const DROP_POOLS: Record<string, readonly DropEntry[]> = {
   ],
 };
 
-// どの行き先でも出るACTボーナス。
-export const COMMON_POOL: readonly DropEntry[] = [
-  bonus("guard", 1),
-  bonus("fighting", 1),
-  bonus("foresight", 2),
-  bonus("omen", 2),
-  bonus("treasure-sight", 3),
-  bonus("luck", 3),
-  bonus("appraisal", 4),
-];
-
 // 物の倍率の上限（百分率）。アイテムと強化素材は倍率を持たない。抽選と、応答の品質を求めるのに使う。
 export function maxPercentOf(
   category: DropCategory | "material",
@@ -296,8 +278,6 @@ export function maxPercentOf(
       return null;
     case "skill":
       return skillMaxPercent(id as CardSkillId);
-    case "bonus":
-      return bonusMaxPercent(id as StepBonusId);
     default:
       return equipmentMaxPercent(id as EquipmentId);
   }
@@ -328,17 +308,31 @@ export function eligibleEntries(
   kind: RewardRow,
   bossItems = kind === "boss",
 ): DropEntry[] {
-  return [...(DROP_POOLS[destinationId] ?? []), ...COMMON_POOL].filter(
+  return (DROP_POOLS[destinationId] ?? []).filter(
     (entry) => (bossItems || !entry.bossOnly) && starWeight(kind, entry) > 0,
   );
 }
 
+// 磨き石の色の重みを分ける、行き先の深さ。近い順の8つの行き先のうち、初めの2つ（敵のLv10・14）を浅い、
+// 次の3つ（Lv18〜26）を中ほど、残り（Lv30〜40）を奥とする。一覧にない行き先は浅いとする。
+export function polishDepthOf(destinationId: string): PolishDepth {
+  const index = DESTINATIONS.findIndex(
+    (destination) => destination.id === destinationId,
+  );
+  return index < 2 ? "shallow" : index < 5 ? "middle" : "deep";
+}
+
 // 強化素材（doc/features/enhancement.md の磨き石の落ち方）。ふつうのドロップのあとに、磨き石と覚醒の欠片を
 // それぞれ1回だけ抽選する。ふつうのドロップの分類に混ぜると、ほかの物が出にくくなるためである。
-export function rollMaterials(kind: RewardRow, random: () => number): Drop[] {
+// 磨き石の色は、行き先の深さとマスで決まる重みで選ぶ。
+export function rollMaterials(
+  destinationId: string,
+  kind: RewardRow,
+  random: () => number,
+): Drop[] {
   const drops: Drop[] = [];
   if (random() * 1000 < POLISH_DROP_CHANCE[kind]) {
-    const weights = POLISH_DROP_WEIGHTS[kind];
+    const weights = POLISH_DROP_WEIGHTS[polishDepthOf(destinationId)][kind];
     drops.push({
       category: "material",
       id: pickWeighted(POLISH_IDS, (id) => weights[id], random),
@@ -415,6 +409,6 @@ export function rollRoomDrops(
   if (reward === null) return [];
   return [
     ...rollDrops(destinationId, roomKind, random, outcome),
-    ...rollMaterials(reward.row, random),
+    ...rollMaterials(destinationId, reward.row, random),
   ];
 }

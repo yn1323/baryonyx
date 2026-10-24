@@ -235,7 +235,7 @@ namespace Baryonyx.Adventure
                 Dialog,
                 result != null,
                 result != null
-                    ? () => ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, result, GoHome)
+                    ? () => ExplorationFlow.ShowResult(Dialog, result, GoHome)
                     : GoExplore
             );
         }
@@ -253,7 +253,7 @@ namespace Baryonyx.Adventure
             {
                 foreach (var drop in drops)
                 {
-                    var item = AdventureDropItems.From(overlay.Bonuses, drop, overlay.ItemArt);
+                    var item = AdventureDropItems.From(drop, overlay.ItemArt);
                     if (!await Play(() => battle.PlayDrop(item, reveal)))
                         return false;
                     if (!await Pause(DropReadSeconds))
@@ -403,7 +403,7 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             state = AdventureSession.Use(ended);
-            ExplorationFlow.ShowResult(Dialog, overlay.Bonuses, ended.Result, GoHome);
+            ExplorationFlow.ShowResult(Dialog, ended.Result, GoHome);
         }
 
         /// <summary>The enemies of this battle by kind, with how many the party has beaten.</summary>

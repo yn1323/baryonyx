@@ -145,7 +145,7 @@ namespace Baryonyx.UI.Editor
 
         /// <summary>
         /// The lit rim of a card built on <paramref name="rect"/>, for a card whose rim shows a
-        /// colour of its own (the bonus slots' tiers and the ranks).
+        /// colour of its own (the quality of what was found, the ranks).
         /// </summary>
         public static Image RimOf(RectTransform rect) =>
             rect.Find("Body/Rim").GetComponent<Image>();

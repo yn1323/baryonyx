@@ -23,7 +23,7 @@ namespace Baryonyx.Tests.EditMode
             };
 
         [Test]
-        public void InProgressShowsRemainingActAndPartialGauge()
+        public void InProgressShowsTodayActAndPartialGauge()
         {
             var state = HomeViewState.From(Sample());
 
@@ -32,7 +32,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.ActText, Is.EqualTo("3,820"));
             Assert.That(state.FilledSegments, Is.EqualTo(9));
             Assert.That(state.DailyAchieved, Is.False);
-            Assert.That(state.RemainingText, Is.EqualTo("あと 1,180 ACTで次のボーナス獲得"));
             Assert.That(state.ClaimText, Is.EqualTo("タップでルーン獲得"));
             Assert.That(state.ClaimPulses, Is.True);
             Assert.That(state.RunesText, Is.EqualTo("12,480"));
@@ -56,28 +55,15 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void Reaching8000StepsFillsTheGaugeAndUnlocksEveryBonus()
+        public void Reaching8000StepsFillsTheGauge()
         {
-            var partial = HomeViewState.From(Sample(6240));
-            Assert.That(partial.FilledSegments, Is.EqualTo(15));
+            var partial = HomeViewState.From(Sample(7999));
+            Assert.That(partial.FilledSegments, Is.EqualTo(19));
             Assert.That(partial.DailyAchieved, Is.False);
-            Assert.That(partial.RemainingText, Is.EqualTo("あと 1,760 ACTで次のボーナス獲得"));
 
             var state = HomeViewState.From(Sample(8000));
             Assert.That(state.FilledSegments, Is.EqualTo(HomeViewState.GaugeSegments));
             Assert.That(state.DailyAchieved, Is.True);
-            Assert.That(state.RemainingText, Is.EqualTo("ボーナスをすべて獲得！"));
-        }
-
-        [TestCase(0, 1000)]
-        [TestCase(999, 1000)]
-        [TestCase(1000, 2000)]
-        [TestCase(3820, 5000)]
-        [TestCase(7999, 8000)]
-        [TestCase(8000, 0)]
-        public void NextBonusIsTheFirstLockedStage(int act, int expected)
-        {
-            Assert.That(HomeViewState.NextBonusFor(act), Is.EqualTo(expected));
         }
 
         [TestCase(-10, 0)]
@@ -130,7 +116,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.ActText, Is.EqualTo("--"));
             Assert.That(state.FilledSegments, Is.Zero);
             Assert.That(state.DailyAchieved, Is.False);
-            Assert.That(state.RemainingText, Is.Empty);
         }
 
         [Test]

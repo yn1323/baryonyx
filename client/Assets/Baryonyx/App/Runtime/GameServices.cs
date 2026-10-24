@@ -9,7 +9,6 @@ using Baryonyx.Health;
 using Baryonyx.Library;
 using Baryonyx.Networking;
 using Baryonyx.Party;
-using Baryonyx.StepBonus;
 using Baryonyx.Temple;
 using Baryonyx.Workshop;
 using UnityEngine;
@@ -25,7 +24,6 @@ namespace Baryonyx.App
         internal GameServices(
             HealthStepLink health,
             bool preview,
-            IStepBonusSource stepBonus = null,
             IPartySource party = null,
             IAdventureSource adventure = null,
             IEquipmentSource equipment = null,
@@ -38,7 +36,6 @@ namespace Baryonyx.App
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
             Preview = preview;
-            StepBonus = stepBonus;
             Party = party;
             Adventure = adventure;
             Equipment = equipment;
@@ -51,9 +48,6 @@ namespace Baryonyx.App
 
         public HealthStepLink Health { get; }
         public bool Preview { get; }
-
-        // ACTボーナスの持ち物と枠を読み書きするサーバー。接続先がなければnull。
-        public IStepBonusSource StepBonus { get; }
 
         // 酒場の編成・カード・レベルを読み書きするサーバー。接続先がなければnull。
         public IPartySource Party { get; }
@@ -79,6 +73,9 @@ namespace Baryonyx.App
         // 神殿で召喚するサーバー。接続先がなければnull。
         public ITempleSummonSource Summon { get; }
 
+        // デバッグルームの一覧の「ルーン+10000」。サーバーがなければ画面の残高に足す。
+        public DebugRunes DebugRunes { get; private set; } = DebugRunes.Offline;
+
         // 作った接続。まだ作っていなければnull（シーンを単体で開いたときなど）。
         public static GameServices Current => current;
 
@@ -96,7 +93,6 @@ namespace Baryonyx.App
         private static void Use(GameServices services)
         {
             current = services;
-            StepBonusSession.Source = services?.StepBonus;
             PartySession.Source = services?.Party;
             AdventureSession.Source = services?.Adventure;
             EquipmentSession.Source = services?.Equipment;
@@ -125,16 +121,13 @@ namespace Baryonyx.App
             const bool preview = true;
 #endif
             var sync = CreateServerSync(settings, out var server);
-            return new GameServices(
+            var services = new GameServices(
                 new HealthStepLink(
                     provider,
                     (IHealthStepServer)sync ?? new LocalHealthStepServer(),
                     new PlayerPrefsHealthLinkStore()
                 ),
                 preview,
-                sync != null
-                    ? new StepBonusServerSource(sync.Sessions, new StepBonusApiClient(server))
-                    : null,
                 sync != null
                     ? new PartyServerSource(sync.Sessions, new PartyApiClient(server))
                     : null,
@@ -163,6 +156,9 @@ namespace Baryonyx.App
                     ? new TempleSummonServerSource(sync.Sessions, new TempleSummonApiClient(server))
                     : null
             );
+            if (sync != null)
+                services.DebugRunes = new DebugRunes(sync.Sessions, server);
+            return services;
         }
 
         // 接続先のゲームサーバーへ、ログイン・歩数の保存・ルーンの請求を順に行う同期。

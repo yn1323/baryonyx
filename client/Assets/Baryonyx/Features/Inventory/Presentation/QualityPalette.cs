@@ -3,8 +3,8 @@ using UnityEngine;
 namespace Baryonyx.Inventory
 {
     /// <summary>
-    /// The colour of each quality's letter, the same on every screen that shows one (the bonus
-    /// settings, the equipment lists, the quality lab): S gold, A violet, B blue, C a dim grey.
+    /// The colour of each quality's letter, the same on every screen that shows one (the
+    /// equipment lists, the quality lab): S gold, A violet, B blue, C a dim grey.
     /// </summary>
     public static class QualityPalette
     {

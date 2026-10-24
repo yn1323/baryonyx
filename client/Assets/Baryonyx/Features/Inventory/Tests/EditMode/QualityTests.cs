@@ -249,50 +249,26 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        // 装備・アクセサリー・ACTボーナスも、それぞれの一覧の中で光り方が違う。
+        // 装備・アクセサリーも、それぞれの一覧の中で光り方が違う。
         [Test]
-        public void EveryPieceOfEquipmentAndBonusSparklesItsOwnWay()
+        public void EveryPieceOfEquipmentSparklesItsOwnWay()
         {
             var gear = QualityLabEntry
-                .Of(QualityLabTab.Weapons, null)
-                .Concat(QualityLabEntry.Of(QualityLabTab.Armor, null))
+                .Of(QualityLabTab.Weapons)
+                .Concat(QualityLabEntry.Of(QualityLabTab.Armor))
                 .Select(entry => entry.FoilStyle);
             Assert.That(gear, Is.Unique);
             // デバッグルームと編成の画面は、装備の同じ割り当てを使う。
             foreach (
                 var entry in QualityLabEntry
-                    .Of(QualityLabTab.Weapons, null)
-                    .Concat(QualityLabEntry.Of(QualityLabTab.Armor, null))
+                    .Of(QualityLabTab.Weapons)
+                    .Concat(QualityLabEntry.Of(QualityLabTab.Armor))
             )
                 Assert.That(entry.FoilStyle, Is.EqualTo(EquipmentCatalog.FoilStyleOf(entry.Id)));
             Assert.That(
-                QualityLabEntry
-                    .Of(QualityLabTab.Accessories, null)
-                    .Select(entry => entry.FoilStyle),
+                QualityLabEntry.Of(QualityLabTab.Accessories).Select(entry => entry.FoilStyle),
                 Is.Unique
             );
-            var bonuses =
-                UnityEngine.ScriptableObject.CreateInstance<Baryonyx.StepBonus.StepBonusMockData>();
-            try
-            {
-                bonuses.Bonuses = Enumerable
-                    .Range(0, 7)
-                    .Select(i => new Baryonyx.StepBonus.StepBonusDefinition { Id = $"bonus-{i}" })
-                    .ToArray();
-                Assert.That(
-                    QualityLabEntry
-                        .Of(QualityLabTab.Bonuses, bonuses)
-                        .Select(entry => entry.FoilStyle),
-                    Is.Unique
-                );
-                // デバッグルームと酒場のボーナス設定は、ボーナスの同じ割り当てを使う。
-                foreach (var entry in QualityLabEntry.Of(QualityLabTab.Bonuses, bonuses))
-                    Assert.That(entry.FoilStyle, Is.EqualTo(bonuses.FoilStyleOf(entry.Id)));
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(bonuses);
-            }
         }
 
         // 装備の上限はサーバー（server/src/features/equipment/catalog.ts の maxPercent）と同じ。

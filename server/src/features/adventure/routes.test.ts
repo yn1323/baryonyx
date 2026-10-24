@@ -25,7 +25,6 @@ type Drop = {
   // アイテムは倍率と品質を持たず、項目がない。
   multiplier?: number;
   quality?: string;
-  outcome: string;
 };
 
 type Result = {
@@ -376,12 +375,12 @@ describe("冒険API", () => {
         }>("/equipment", user.token)
       ).items;
     const before = await equipment();
-    // 魔物の部屋で、2つ落ちる（0.9）。分類は重みの累積（アイテム40・アクセサリー22・武器13・防具13・スキル9・ボーナス3）で、
-    // 武器（0.65）と、スキル（0.9）。どちらも一覧の最初の物（0）・品質C（0）・最小の倍率（0）。
+    // 魔物の部屋で、2つ落ちる（0.9）。分類は重みの累積（アイテム43・アクセサリー22・武器13・防具13・スキル9）で、
+    // 武器（0.65）と、スキル（0.95）。どちらも一覧の最初の物（0）・品質C（0）・最小の倍率（0）。
     // 続く強化素材の抽選は乱数が尽きて0になり、磨き石（30%）は白が落ち、覚醒の欠片（魔物では0%）は落ちない。
     const repository = createAdventureRepository(
       scenario.env.DB,
-      fixed(0.9, 0.65, 0, 0, 0, 0.9, 0, 0, 0),
+      fixed(0.9, 0.65, 0, 0, 0, 0.95, 0, 0, 0),
     );
     await start(user.token);
     await move(user.token, rooms.battle);
@@ -393,7 +392,6 @@ describe("冒険API", () => {
         id: "wooden-sword",
         multiplier: 1,
         quality: "C",
-        outcome: "added",
       },
       {
         roomId: "f2-0",
@@ -401,13 +399,11 @@ describe("冒険API", () => {
         id: "Slash",
         multiplier: 1,
         quality: "C",
-        outcome: "added",
       },
       {
         roomId: "f2-0",
         category: "material",
         id: "polish-white",
-        outcome: "added",
       },
     ]);
     const after = await equipment();
@@ -477,41 +473,6 @@ describe("冒険API", () => {
         expect.objectContaining({ kind, entryId }),
       );
     }
-  });
-
-  it("手に入れたボーナスは、持っているものより倍率が高いときだけ入れ替える", async () => {
-    const user = await scenario.login("adventure-rank");
-    const now = new Date().toISOString();
-    // appraisal は初期のボーナスで×1.24。最大の乱数で、ボーナスの一覧の最後（appraisal）を、
-    // 品質Sの最大の倍率（×1.5）で2つ引かせる。1つ目は入れ替え、2つ目は同じ倍率のため捨てる。
-    const high = createAdventureRepository(scenario.env.DB, () => 0.999999);
-    await start(user.token);
-    await move(user.token, rooms.battle);
-    const result = await high.clear(user.userId, "f2-0", now);
-    expect("drops" in result && result.drops).toEqual([
-      {
-        roomId: "f2-0",
-        category: "bonus",
-        id: "appraisal",
-        multiplier: 1.5,
-        quality: "S",
-        outcome: "updated",
-      },
-      {
-        roomId: "f2-0",
-        category: "bonus",
-        id: "appraisal",
-        multiplier: 1.5,
-        quality: "S",
-        outcome: "discarded",
-      },
-    ]);
-    const { holdings } = await scenario.read<{
-      holdings: { bonusId: string; multiplier: number; quality: string }[];
-    }>("/step-bonus", user.token);
-    expect(
-      holdings.find((holding) => holding.bonusId === "appraisal"),
-    ).toMatchObject({ multiplier: 1.5, quality: "S" });
   });
 
   it("負けた戦闘からルーンで復活し、2回目は費用が上がり、再送では二重に引かない", async () => {
@@ -1166,7 +1127,7 @@ describe("冒険API", () => {
     );
   });
 
-  it("進行中の冒険があるあいだは、別の冒険を始められずボーナスの枠も付け替えられない", async () => {
+  it("進行中の冒険があるあいだは、別の冒険を始められない", async () => {
     const user = await scenario.login("adventure-lock");
     await start(user.token);
     await move(user.token, rooms.battle);
@@ -1176,31 +1137,8 @@ describe("冒険API", () => {
       { destinationId: "forest-ruins" },
       409,
     );
-
-    const bonus = await scenario.request(
-      "/step-bonus",
-      "GET",
-      undefined,
-      user.token,
-    );
-    expect(((await bonus.json()) as { locked: boolean }).locked).toBe(true);
-    const put = await scenario.request(
-      "/step-bonus/slots/0",
-      "PUT",
-      { bonusId: "guard" },
-      user.token,
-    );
-    expect(put.status).toBe(409);
-    expect(await put.json()).toEqual({ error: "adventure_in_progress" });
-
     await call(user.token, "/adventure/end", { reason: "retreat" });
-    const unlocked = await scenario.request(
-      "/step-bonus",
-      "GET",
-      undefined,
-      user.token,
-    );
-    expect(((await unlocked.json()) as { locked: boolean }).locked).toBe(false);
+    await start(user.token);
   });
 
   it("ユーザーごとに冒険を分ける", async () => {

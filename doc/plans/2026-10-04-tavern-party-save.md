@@ -9,7 +9,7 @@ updated: 2026-10-04
 
 状態：完了（実装と自動テストは完了。Unity EditorでローカルのサーバーにつないだPlayでの確認と、Androidエミュレーターでの確認は未実施。[検証結果](#検証結果)）
 
-[計画索引](README.md) / [パーティ](../features/party.md) / [育成と強化](../features/progression.md) / [ACTボーナスの保存](../features/step-bonus.md#持ち物と枠の保存)
+[計画索引](README.md) / [パーティ](../features/party.md) / [育成と強化](../features/progression.md) / [ACTボーナスの保存](../archive/step-bonus.md#持ち物と枠の保存)
 
 ## 目的
 
@@ -127,7 +127,7 @@ updated: 2026-10-04
 | 場所 | 変更 |
 |---|---|
 | `Features/Party/Runtime/PartyApiClient.cs`（新規） | APIの呼び出しとJSONの型 |
-| `Features/Party/Runtime/PartySource.cs`（新規） | `IPartySource`・`PartyServerSource`・`PartyState`。ACTボーナスの [StepBonusSource](../../client/Assets/Baryonyx/Features/StepBonus/Runtime/StepBonusSource.cs) と同じ形にする |
+| `Features/Party/Runtime/PartySource.cs`（新規） | `IPartySource`・`PartyServerSource`・`PartyState`。ACTボーナスの StepBonusSource と同じ形にする |
 | [PartySession](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs) | `Source` を持ち、サーバーから読んだ状態（編成・Lv・カード・所持ルーン・Lvの規則）に置き換える。接続先がないときは今の辞書のまま |
 | [PartyFormation](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs) | 持っているキャラをサーバーの状態から決める。名前と絵は仮データから引く |
 | 編成の Presenter・View（`PartyFormationPresenter`・`PartyFormationView`。2026-10-06に冒険者の一覧の [Presenter](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyRosterPresenter.cs)・[View](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerRosterView.cs) に置き換えて削除） | 開くたびに読み込み（読み込むまで「読み込み中…」）、入れ替えを保存してから表示、失敗の通知 |

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 
 namespace Baryonyx.Adventure
 {
@@ -20,18 +19,6 @@ namespace Baryonyx.Adventure
         Trial,
         StepDoor,
         Altar,
-    }
-
-    public enum AdventureDropOutcome
-    {
-        // 持ち物に加えた。ACTボーナス以外は、いつもこれになる。
-        Added,
-
-        // 持っているACTボーナスの倍率を上げた。
-        Updated,
-
-        // 持っているACTボーナスのほうが倍率が高いため、手に入れたほうを手放した。
-        Discarded,
     }
 
     public enum AdventureEndStatus
@@ -108,8 +95,7 @@ namespace Baryonyx.Adventure
             AdventureDropCategory category,
             string id,
             float multiplier = 0f,
-            ItemQuality? quality = null,
-            AdventureDropOutcome outcome = AdventureDropOutcome.Added
+            ItemQuality? quality = null
         )
         {
             RoomId = roomId ?? "";
@@ -117,7 +103,6 @@ namespace Baryonyx.Adventure
             Id = id ?? "";
             Multiplier = multiplier;
             Quality = quality;
-            Outcome = outcome;
         }
 
         public string RoomId { get; }
@@ -127,7 +112,6 @@ namespace Baryonyx.Adventure
         /// <summary>The drop's own multiplier (×1.37 as 1.37) and the quality it gives.</summary>
         public float Multiplier { get; }
         public ItemQuality? Quality { get; }
-        public AdventureDropOutcome Outcome { get; }
 
         /// <summary>The stars of the kind (doc/features/inventory.md, rarity).</summary>
         public int Stars => AdventureDrops.StarsOf(Category, Id);

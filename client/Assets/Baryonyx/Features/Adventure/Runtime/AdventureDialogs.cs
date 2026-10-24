@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 
 namespace Baryonyx.Adventure
@@ -41,15 +40,14 @@ namespace Baryonyx.Adventure
 
         public static void Treasure(
             GameDialog dialog,
-            StepBonusMockData bonuses,
             IReadOnlyList<AdventureDrop> drops,
             Action close,
             ItemArt art = null
         ) =>
             dialog.Show(
                 TreasureTitle,
-                AdventureTexts.DropsBody(bonuses, drops),
-                AdventureTexts.DropIcon(bonuses, drops, art),
+                AdventureTexts.DropsBody(drops),
+                AdventureTexts.DropIcon(drops, art),
                 close,
                 new DialogChoice(AdventureTexts.NextChoice, close)
             );
@@ -100,7 +98,6 @@ namespace Baryonyx.Adventure
         // 行商人の品物の一覧。売り切れと、ルーンが足りない物は押せない。立ち去ると、行商人のマスを終える。
         public static void Merchant(
             GameDialog dialog,
-            StepBonusMockData bonuses,
             IReadOnlyList<AdventureWare> wares,
             long runes,
             Action<AdventureWare> buy,
@@ -113,7 +110,7 @@ namespace Baryonyx.Adventure
                 var chosen = ware;
                 choices.Add(
                     new DialogChoice(
-                        AdventureTexts.WareLine(bonuses, ware),
+                        AdventureTexts.WareLine(ware),
                         () => buy(chosen),
                         !ware.Sold && runes >= ware.Price
                     )
@@ -131,7 +128,6 @@ namespace Baryonyx.Adventure
 
         public static void ConfirmBuy(
             GameDialog dialog,
-            StepBonusMockData bonuses,
             AdventureWare ware,
             long runes,
             Action buy,
@@ -139,7 +135,7 @@ namespace Baryonyx.Adventure
         ) =>
             dialog.Show(
                 MerchantTitle,
-                AdventureTexts.ConfirmBuyBody(bonuses, ware, runes),
+                AdventureTexts.ConfirmBuyBody(ware, runes),
                 null,
                 back,
                 new DialogChoice(BuyChoice, buy),
@@ -222,15 +218,10 @@ namespace Baryonyx.Adventure
             );
 
         /// <summary>The end of an adventure: how it ended and what it brought back, then Home.</summary>
-        public static void Result(
-            GameDialog dialog,
-            StepBonusMockData bonuses,
-            AdventureResult result,
-            Action home
-        ) =>
+        public static void Result(GameDialog dialog, AdventureResult result, Action home) =>
             dialog.Show(
                 AdventureCatalog.StatusTitle(result.Status),
-                AdventureTexts.ResultBody(bonuses, result),
+                AdventureTexts.ResultBody(result),
                 null,
                 null,
                 new DialogChoice(AdventureTexts.HomeChoice, home)

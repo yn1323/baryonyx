@@ -17,17 +17,15 @@ namespace Baryonyx.Home
         // ゲージの最大は、厚生労働省が成人に勧める1日8,000歩を換算した8,000ACTに全員そろえる。
         public const int GaugeMaxAct = 8000;
 
-        // 日次のACTボーナスが解放されるACT。doc/game/redesign-2026-09-27.md の候補値で、未確定。
-        public static readonly int[] BonusAct = { 1000, 2000, 3000, 5000, 8000 };
-
         private static readonly string[] Weekdays = { "日", "月", "火", "水", "木", "金", "土" };
 
         public string DateText { get; private set; }
         public bool ShowSteps { get; private set; }
         public string ActText { get; private set; }
         public int FilledSegments { get; private set; }
+
+        // ゲージが満タン（今日のACTが GaugeMaxAct 以上）なら、数字とゲージを金色にする。
         public bool DailyAchieved { get; private set; }
-        public string RemainingText { get; private set; }
         public string ClaimText { get; private set; }
 
         // 同期中以外は、TAP TO STARTと同じように案内を点滅させて押せることを示す。
@@ -51,8 +49,7 @@ namespace Baryonyx.Home
             int act = ActFor(snapshot.Steps);
             bool linked = snapshot.StepLink == HomeStepLink.Linked;
             bool known = snapshot.StepsKnown;
-            int nextBonus = NextBonusFor(act);
-            bool achieved = linked && known && nextBonus == 0;
+            bool achieved = linked && known && act >= GaugeMaxAct;
 
             return new HomeViewState
             {
@@ -62,10 +59,6 @@ namespace Baryonyx.Home
                 ActText = known ? Number(act) : "--",
                 FilledSegments = known ? FilledSegmentsFor(act, GaugeMaxAct) : 0,
                 DailyAchieved = achieved,
-                RemainingText =
-                    !known ? ""
-                    : nextBonus == 0 ? "ボーナスをすべて獲得！"
-                    : $"あと {Number(nextBonus - act)} ACTで次のボーナス獲得",
                 ClaimText =
                     snapshot.StepSyncing ? "Loading..."
                     : linked ? "タップでルーン獲得"
@@ -93,15 +86,6 @@ namespace Baryonyx.Home
             if (act >= max)
                 return GaugeSegments;
             return (int)((long)act * GaugeSegments / max);
-        }
-
-        // まだ解放していない最初のボーナスのACT。すべて解放済みなら0。
-        public static int NextBonusFor(int act)
-        {
-            foreach (int bonus in BonusAct)
-                if (act < bonus)
-                    return bonus;
-            return 0;
         }
 
         public static string MessageFor(HomeAction action, HomeStepLink link) =>

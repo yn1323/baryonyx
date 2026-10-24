@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Baryonyx.Inventory;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using UnityEngine;
@@ -24,9 +23,6 @@ namespace Baryonyx.Adventure
 
         // 勝った戦闘のドロップを1つずつ見せる札。
         public RewardReveal Reveal;
-
-        // 報酬のボーナスの名前とアイコン。
-        public StepBonusMockData Bonuses;
 
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
@@ -131,8 +127,7 @@ namespace Baryonyx.Adventure
                 case 6:
                     AdventureDialogs.Result(
                         Dialog,
-                        Bonuses,
-                        AdventureDialogSamples.Result(Bonuses, AdventureEndStatus.Defeated),
+                        AdventureDialogSamples.Result(AdventureEndStatus.Defeated),
                         none
                     );
                     break;

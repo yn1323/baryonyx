@@ -137,7 +137,7 @@ export function pickTrialCondition(random: () => number): TrialCondition {
 }
 
 // 歩数の扉の段。今日の歩数が段の歩数に届くほど報酬が増える（doc/features/stage-progression.md の歩数の扉の報酬）。
-// 段の歩数は、ACTボーナスの段階の候補に合わせた。0段は3,000歩未満で、扉は歩いていなくても開く。
+// 0段は3,000歩未満で、扉は歩いていなくても開く。
 export const STEP_DOOR_STEPS = [3000, 5000, 8000] as const;
 
 export type StepDoorTier = 0 | 1 | 2 | 3;

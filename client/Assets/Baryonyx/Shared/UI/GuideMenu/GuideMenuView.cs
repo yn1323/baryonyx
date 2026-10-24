@@ -46,7 +46,7 @@ namespace Baryonyx.UI.GuideMenu
         public RectTransform[] Lists = Array.Empty<RectTransform>();
 
         // A feature's own panel that replaces the list for an item (null for a plain list),
-        // e.g. the tavern's bonus settings. The panel handles its own input.
+        // e.g. the tavern's roster of adventurers. The panel handles its own input.
         public GameObject[] ItemPanels = Array.Empty<GameObject>();
         public Button Confirm;
         public TMP_Text ConfirmLabel;

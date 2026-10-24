@@ -6,8 +6,6 @@ using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
 using Baryonyx.Home.Editor;
-using Baryonyx.StepBonus;
-using Baryonyx.StepBonus.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu.Editor;
@@ -128,13 +126,10 @@ namespace Baryonyx.Adventure.Editor
             var grounds = ImportGrounds();
             var font = GameFontAssets.GetOrCreate();
             var shadowText = UiArt.EnsureTextShadow(font);
-            var bonuses = AssetDatabase.LoadAssetAtPath<StepBonusMockData>(
-                StepBonusAssets.DataPath
-            );
             using (Begin(font, shadowText))
             {
-                BuildExploration(bonuses, grounds);
-                BuildOverlay(bonuses);
+                BuildExploration(grounds);
+                BuildOverlay();
             }
             AssetDatabase.SaveAssetIfDirty(font);
             AssetDatabase.SaveAssets();
@@ -193,12 +188,11 @@ namespace Baryonyx.Adventure.Editor
 
         // --- Exploration ---------------------------------------------------------------------
 
-        private static void BuildExploration(StepBonusMockData bonuses, ExplorationGround[] grounds)
+        private static void BuildExploration(ExplorationGround[] grounds)
         {
             var root = CanvasRoot("ExplorationScreen");
             var view = root.gameObject.AddComponent<ExplorationView>();
             view.KindIcons = KindIcons();
-            view.Bonuses = bonuses;
             view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             view.Grounds = grounds;
             // 展示室でPrefabだけを開いたときに描く見本の道。冒険の場面では使わない。
@@ -547,13 +541,12 @@ namespace Baryonyx.Adventure.Editor
 
         // --- Battle overlay ------------------------------------------------------------------
 
-        private static void BuildOverlay(StepBonusMockData bonuses)
+        private static void BuildOverlay()
         {
             var root = CanvasRoot("AdventureOverlay");
             // Over the battle's screen canvas (order 1).
             root.GetComponent<Canvas>().sortingOrder = 5;
             var overlay = root.gameObject.AddComponent<AdventureOverlay>();
-            overlay.Bonuses = bonuses;
             overlay.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
             var safe = SafeArea(root);
             overlay.MenuButton = BuildMenuButton(safe, right: true);

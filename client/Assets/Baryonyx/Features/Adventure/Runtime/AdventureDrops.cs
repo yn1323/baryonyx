@@ -14,7 +14,6 @@ namespace Baryonyx.Adventure
         Weapon,
         Armor,
         Skill,
-        Bonus,
 
         // 強化素材（磨き石・覚醒の欠片）。分類の重みでは選ばず、ふつうのドロップのあとに別に抽選する。
         Material,
@@ -50,15 +49,14 @@ namespace Baryonyx.Adventure
             public bool BossOnly { get; }
         }
 
-        // 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキル＞ACTボーナスの順に出やすい。
+        // 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキルの順に出やすい。
         private static readonly (AdventureDropCategory Category, int Weight)[] CategoryWeights =
         {
-            (AdventureDropCategory.Item, 40),
+            (AdventureDropCategory.Item, 43),
             (AdventureDropCategory.Accessory, 22),
             (AdventureDropCategory.Weapon, 13),
             (AdventureDropCategory.Armor, 13),
             (AdventureDropCategory.Skill, 9),
-            (AdventureDropCategory.Bonus, 3),
         };
 
         /// <summary>
@@ -142,9 +140,6 @@ namespace Baryonyx.Adventure
 
         private static Entry Skill(string id, int stars) =>
             new(AdventureDropCategory.Skill, id, stars);
-
-        private static Entry Bonus(string id, int stars) =>
-            new(AdventureDropCategory.Bonus, id, stars);
 
         /// <summary>The destinations' lists, the same as the server's DROP_POOLS.</summary>
         public static readonly IReadOnlyDictionary<string, Entry[]> Pools = new Dictionary<
@@ -262,24 +257,12 @@ namespace Baryonyx.Adventure
             },
         };
 
-        /// <summary>The ACT bonuses, found in every destination.</summary>
-        public static readonly IReadOnlyList<Entry> Common = new[]
-        {
-            Bonus("guard", 1),
-            Bonus("fighting", 1),
-            Bonus("foresight", 2),
-            Bonus("omen", 2),
-            Bonus("treasure-sight", 3),
-            Bonus("luck", 3),
-            Bonus("appraisal", 4),
-        };
-
         /// <summary>The stars of a kind, from the lists (0 when no list has it).</summary>
         public static int StarsOf(AdventureDropCategory category, string id)
         {
             if (category == AdventureDropCategory.Material)
                 return EnhancementMaterials.Find(id)?.Stars ?? 0;
-            foreach (var entry in Pools.Values.SelectMany(pool => pool).Concat(Common))
+            foreach (var entry in Pools.Values.SelectMany(pool => pool))
                 if (entry.Category == category && entry.Id == id)
                     return entry.Stars;
             return 0;
@@ -302,8 +285,9 @@ namespace Baryonyx.Adventure
             var pool = Pools.TryGetValue(destinationId ?? "", out var found)
                 ? found
                 : Array.Empty<Entry>();
-            return pool.Concat(Common)
-                .Where(entry => (bossOnly || !entry.BossOnly) && weights[entry.Stars - 1] > 0)
+            return pool.Where(entry =>
+                    (bossOnly || !entry.BossOnly) && weights[entry.Stars - 1] > 0
+                )
                 .ToArray();
         }
 
@@ -359,31 +343,112 @@ namespace Baryonyx.Adventure
                 _ => 600,
             };
 
-        private static (string Id, int Weight)[] PolishWeights(AdventureRoomKind row) =>
-            row switch
+        // 磨き石の色の重みを分ける行き先の深さ。サーバーの polishDepthOf と同じく、近い順の初めの2つを浅い、
+        // 次の3つを中ほど、残りを奥とする。一覧にない行き先は浅いとする。
+        private static int PolishDepthOf(string destinationId)
+        {
+            int index = 0;
+            while (
+                index < AdventureCatalog.Areas.Count
+                && AdventureCatalog.Areas[index].Id != destinationId
+            )
+                index++;
+            if (index == AdventureCatalog.Areas.Count)
+                return 0;
+            return index < 2 ? 0
+                : index < 5 ? 1
+                : 2;
+        }
+
+        // [深さ][魔物・強い魔物と宝箱・最奥の間]
+        private static readonly (string Id, int Weight)[][][] PolishWeightTable =
+        {
+            new[]
             {
-                AdventureRoomKind.Battle => new[]
+                new[]
                 {
-                    (EnhancementMaterials.White, 80),
-                    (EnhancementMaterials.Blue, 18),
-                    (EnhancementMaterials.Purple, 2),
+                    (EnhancementMaterials.White, 920),
+                    (EnhancementMaterials.Blue, 80),
+                    (EnhancementMaterials.Purple, 0),
                     (EnhancementMaterials.Gold, 0),
                 },
-                AdventureRoomKind.Boss => new[]
+                new[]
                 {
-                    (EnhancementMaterials.White, 20),
-                    (EnhancementMaterials.Blue, 45),
-                    (EnhancementMaterials.Purple, 28),
-                    (EnhancementMaterials.Gold, 7),
+                    (EnhancementMaterials.White, 780),
+                    (EnhancementMaterials.Blue, 200),
+                    (EnhancementMaterials.Purple, 20),
+                    (EnhancementMaterials.Gold, 0),
                 },
-                _ => new[]
+                new[]
                 {
-                    (EnhancementMaterials.White, 55),
-                    (EnhancementMaterials.Blue, 35),
-                    (EnhancementMaterials.Purple, 9),
-                    (EnhancementMaterials.Gold, 1),
+                    (EnhancementMaterials.White, 500),
+                    (EnhancementMaterials.Blue, 400),
+                    (EnhancementMaterials.Purple, 95),
+                    (EnhancementMaterials.Gold, 5),
                 },
-            };
+            },
+            new[]
+            {
+                new[]
+                {
+                    (EnhancementMaterials.White, 840),
+                    (EnhancementMaterials.Blue, 150),
+                    (EnhancementMaterials.Purple, 10),
+                    (EnhancementMaterials.Gold, 0),
+                },
+                new[]
+                {
+                    (EnhancementMaterials.White, 640),
+                    (EnhancementMaterials.Blue, 310),
+                    (EnhancementMaterials.Purple, 47),
+                    (EnhancementMaterials.Gold, 3),
+                },
+                new[]
+                {
+                    (EnhancementMaterials.White, 320),
+                    (EnhancementMaterials.Blue, 500),
+                    (EnhancementMaterials.Purple, 165),
+                    (EnhancementMaterials.Gold, 15),
+                },
+            },
+            new[]
+            {
+                new[]
+                {
+                    (EnhancementMaterials.White, 780),
+                    (EnhancementMaterials.Blue, 205),
+                    (EnhancementMaterials.Purple, 15),
+                    (EnhancementMaterials.Gold, 0),
+                },
+                new[]
+                {
+                    (EnhancementMaterials.White, 560),
+                    (EnhancementMaterials.Blue, 380),
+                    (EnhancementMaterials.Purple, 55),
+                    (EnhancementMaterials.Gold, 5),
+                },
+                new[]
+                {
+                    (EnhancementMaterials.White, 220),
+                    (EnhancementMaterials.Blue, 545),
+                    (EnhancementMaterials.Purple, 200),
+                    (EnhancementMaterials.Gold, 35),
+                },
+            },
+        };
+
+        private static (string Id, int Weight)[] PolishWeights(
+            string destinationId,
+            AdventureRoomKind row
+        ) =>
+            PolishWeightTable[PolishDepthOf(destinationId)][
+                row switch
+                {
+                    AdventureRoomKind.Battle => 0,
+                    AdventureRoomKind.Boss => 2,
+                    _ => 1,
+                }
+            ];
 
         private static int ShardChance(AdventureRoomKind row) =>
             row switch
@@ -398,6 +463,7 @@ namespace Baryonyx.Adventure
         /// rollRoomDrops does: a polishing stone and an awakening shard, each rolled once.
         /// </summary>
         public static IReadOnlyList<AdventureDrop> RollMaterials(
+            string destinationId,
             AdventureRoomKind row,
             string roomId,
             Random random
@@ -409,12 +475,16 @@ namespace Baryonyx.Adventure
                     new AdventureDrop(
                         roomId,
                         AdventureDropCategory.Material,
-                        Pick(PolishWeights(row), entry => entry.Weight, random).Id
+                        Pick(PolishWeights(destinationId, row), entry => entry.Weight, random).Id
                     )
                 );
             if (random.Next(1000) < ShardChance(row))
                 drops.Add(
-                    new AdventureDrop(roomId, AdventureDropCategory.Material, EnhancementMaterials.Shard)
+                    new AdventureDrop(
+                        roomId,
+                        AdventureDropCategory.Material,
+                        EnhancementMaterials.Shard
+                    )
                 );
             return drops;
         }
@@ -487,7 +557,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Armor => "armor",
                 AdventureDropCategory.Skill => "skill",
                 AdventureDropCategory.Material => "material",
-                _ => "bonus",
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
             };
 
         public static bool TryParse(string key, out AdventureDropCategory category)
@@ -514,7 +584,7 @@ namespace Baryonyx.Adventure
                 AdventureDropCategory.Armor => "防具",
                 AdventureDropCategory.Skill => "スキル",
                 AdventureDropCategory.Material => "強化素材",
-                _ => "ACTボーナス",
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null),
             };
     }
 }

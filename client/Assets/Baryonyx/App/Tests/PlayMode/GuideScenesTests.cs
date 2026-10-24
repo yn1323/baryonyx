@@ -4,7 +4,6 @@ using Baryonyx.App;
 using Baryonyx.Economy;
 using Baryonyx.Home;
 using Baryonyx.Library;
-using Baryonyx.StepBonus;
 using Baryonyx.Temple;
 using Baryonyx.TravelOffice;
 using Baryonyx.UI;
@@ -26,7 +25,6 @@ namespace Baryonyx.Tests.PlayMode
         public void UseTestServices()
         {
             services = TestGameServices.Use();
-            StepBonusSession.Reset();
         }
 
         [UnityTearDown]
@@ -169,7 +167,7 @@ namespace Baryonyx.Tests.PlayMode
 
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
-                    // 編成の各項目は一覧の代わりに専用のパネルを開く（ボーナスは下の別のテストで確かめる）。
+                    // 編成の各項目は一覧の代わりに専用のパネルを開く。
                     if (view.PanelFor(i) != null || definition.Items[i].Hidden)
                         continue;
                     view.MenuItems[i].onClick.Invoke();
@@ -250,10 +248,8 @@ namespace Baryonyx.Tests.PlayMode
                 "The guide screen hides behind the presentation."
             );
             Assert.That(summon.TenShow.gameObject.activeInHierarchy, Is.True);
-            // 押すと伏せた札まで飛び、もう一度押すとめくる。
-            summon.TapPresentation();
-            summon.TapPresentation();
-            yield return SceneTests.WaitForTask(summon.SummonTask);
+            // 押さなくても、札が並んだあとひとりでに結果まで進む。
+            yield return SceneTests.WaitForTask(summon.SummonTask, 15f);
             Assert.That(canvas.enabled, Is.True);
             Assert.That(summon.TenShow.gameObject.activeSelf, Is.False);
             Assert.That(RuneBalance.Known, Is.EqualTo(100000 - TempleSummon.TenPrice));
@@ -293,144 +289,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.Home,
                 message: "Home did not open."
-            );
-        }
-
-        // 左で枠を選び、右のボーナスを押すと、その場でセットか入れ替えをして共通の通知の帯で知らせる。
-        [UnityTest]
-        public IEnumerator TavernBonusSettingsSetAndSwapBonuses()
-        {
-            var guide = default(GuideSceneBootstrap);
-            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
-            var view = guide.View;
-            int item = System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == StepBonusSession.GuideItemKey
-            );
-            Assert.That(item, Is.GreaterThanOrEqualTo(0));
-            Assert.That(view.MenuItems[item].transform.Find(CardContent + "Icon"), Is.Not.Null);
-            view.MenuItems[item].onClick.Invoke();
-            var settings = BonusSettings(view);
-            Assert.That(settings.gameObject.activeInHierarchy, Is.True);
-            Assert.That(view.ListPanel.activeSelf, Is.False);
-            // 編成のほかの画面と同じ枠つきの表示で、左右の区画は「もどる」と重ならず、案内人は隠れる。
-            Assert.That(settings.GetComponent<GuideFramedPanel>(), Is.Not.Null);
-            SceneTests.AssertBelow(settings.transform.Find("Layout/Effects"), view.Back.transform);
-            SceneTests.AssertBelow(settings.transform.Find("Layout/Bonuses"), view.Back.transform);
-            Assert.That(view.GuideArt.activeSelf, Is.False);
-
-            var loadout = StepBonusSession.Loadout(settings.Data);
-            Assert.That(settings.Slots.Length, Is.EqualTo(loadout.SlotCount));
-            Assert.That(settings.Rows.Length, Is.EqualTo(loadout.Owned.Count));
-            foreach (var slot in settings.Slots)
-            {
-                SceneTests.AssertTouchSize(slot.Button.transform);
-                // アイコンは枠の縁の内側に収まる。
-                AssertInside(slot.Icon.transform, slot.Frame.transform, 16f);
-            }
-            foreach (var row in settings.Rows)
-                Assert.That(
-                    row.SetMark.activeSelf,
-                    Is.EqualTo(loadout.SlotOf(row.Id) >= 0),
-                    row.Id
-                );
-            // 単体で開くと仮データの今日のACT（3,240）を使い、届いていない枠は暗い。
-            Assert.That(settings.Slots[2].Icon.color, Is.EqualTo(Color.white));
-            Assert.That(settings.Slots[3].Icon.color, Is.EqualTo(StepBonusSettingsView.Closed));
-
-            // 空いているボーナスを5,000の枠へ。
-            string free = loadout.Owned.First(roll => loadout.SlotOf(roll.Id) < 0).Id;
-            settings.Slots[3].Button.onClick.Invoke();
-            Row(settings, free).Button.onClick.Invoke();
-            Assert.That(loadout.Bonus(3), Is.EqualTo(free));
-            Assert.That(settings.LastNotice, Does.EndWith("をセットしました"));
-            Assert.That(view.ToastMessage, Is.EqualTo(settings.LastNotice));
-            Assert.That(view.Notice.Message, Is.EqualTo(settings.LastNotice));
-            Assert.That(settings.Slots[3].Icon.sprite, Is.EqualTo(loadout.Definition(free).Icon));
-            Assert.That(Row(settings, free).SetMark.activeSelf, Is.True);
-
-            // 2,000の枠のボーナスを3,000の枠で押すと、2つの枠を入れ替える。
-            string second = loadout.Bonus(1);
-            string third = loadout.Bonus(2);
-            settings.Slots[2].Button.onClick.Invoke();
-            Row(settings, second).Button.onClick.Invoke();
-            Assert.That(loadout.Bonus(2), Is.EqualTo(second));
-            Assert.That(loadout.Bonus(1), Is.EqualTo(third));
-            Assert.That(settings.LastNotice, Does.EndWith("を入れ替えました"));
-
-            // タブで1つのカテゴリだけを並べる。
-            settings.Tabs[2].Button.onClick.Invoke();
-            Assert.That(settings.Tabs[2].Chosen, Is.True);
-            Assert.That(settings.Tabs[0].Chosen, Is.False);
-            foreach (var row in settings.Rows)
-                Assert.That(
-                    row.Button.gameObject.activeSelf,
-                    Is.EqualTo(loadout.Definition(row.Id).Category == StepBonusCategory.Drop),
-                    row.Id
-                );
-
-            view.Back.onClick.Invoke();
-            Assert.That(view.MenuPanel.activeSelf, Is.True);
-            Assert.That(settings.gameObject.activeSelf, Is.False);
-            Assert.That(view.GuideArt.activeSelf, Is.True);
-        }
-
-        // サーバーがあるときは、プレイヤーごとの持ち物と枠を読み、変更はすぐ見せてからサーバーに保存する。
-        [UnityTest]
-        public IEnumerator TavernBonusSettingsReadAndSaveThroughTheServer()
-        {
-            var server = new FakeStepBonusSource(
-                new[]
-                {
-                    new StepBonusRoll { Id = "luck", Multiplier = 1f },
-                    new StepBonusRoll { Id = "guard", Multiplier = 1.4f },
-                },
-                new[] { "luck", null, null, null, null }
-            );
-            StepBonusSession.Source = server;
-            var guide = default(GuideSceneBootstrap);
-            yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
-            Assert.That(guide.View.PanelFor(BonusItem(guide.View)), Is.Not.Null);
-            guide.View.MenuItems[BonusItem(guide.View)].onClick.Invoke();
-            var settings = BonusSettings(guide.View);
-            yield return SceneTests.WaitUntil(
-                () => settings.LoadTask.IsCompleted,
-                message: "The bonuses did not load."
-            );
-
-            // サーバーの持ち物だけを、品質の高い順に、サーバーの倍率から求めた品質で並べる。
-            var shown = settings
-                .Rows.Where(row => row.Button.gameObject.activeSelf)
-                .OrderBy(row => row.Button.transform.GetSiblingIndex())
-                .Select(row => row.Id);
-            Assert.That(shown, Is.EqualTo(new[] { "guard", "luck" }));
-            Assert.That(Row(settings, "luck").Quality.text, Is.EqualTo("C"));
-            Assert.That(Row(settings, "guard").Quality.text, Is.EqualTo("A"));
-            Assert.That(settings.Slots[0].Name.text, Is.EqualTo("幸運"));
-            Assert.That(settings.Slots[1].Name.text, Is.EqualTo("空き"));
-
-            settings.Slots[1].Button.onClick.Invoke();
-            Row(settings, "guard").Button.onClick.Invoke();
-            Assert.That(settings.Slots[1].Name.text, Is.EqualTo("守り"));
-            yield return SceneTests.WaitUntil(
-                () => settings.Presenter.ChooseTask.IsCompleted,
-                message: "The bonus was not saved."
-            );
-            Assert.That(server.Calls, Is.EqualTo(new[] { (1, "guard") }));
-            Assert.That(settings.Slots[1].Name.text, Is.EqualTo("守り"));
-            Assert.That(settings.LastNotice, Does.EndWith("をセットしました"));
-
-            // 保存に失敗したら、出した枠を戻して通知の帯で知らせる。
-            server.Fail = true;
-            settings.Slots[2].Button.onClick.Invoke();
-            Row(settings, "luck").Button.onClick.Invoke();
-            Assert.That(settings.Slots[2].Name.text, Is.EqualTo("幸運"));
-            yield return SceneTests.WaitUntil(() => settings.Presenter.ChooseTask.IsCompleted);
-            Assert.That(settings.Slots[0].Name.text, Is.EqualTo("幸運"));
-            Assert.That(settings.Slots[2].Name.text, Is.EqualTo("空き"));
-            Assert.That(
-                guide.View.ToastMessage,
-                Is.EqualTo(StepBonusSettingsPresenter.SaveFailedMessage)
             );
         }
 
@@ -629,71 +487,6 @@ namespace Baryonyx.Tests.PlayMode
                 // 旅の案内所は、冒険していないときの右下のカードから開く。
                 _ => view.ResumeButton,
             };
-
-        private static StepBonusSettingsView BonusSettings(GuideMenuView view) =>
-            view
-                .ItemPanels.Where(panel => panel != null)
-                .Select(panel => panel.GetComponent<StepBonusSettingsView>())
-                .Single(settings => settings != null);
-
-        private static int BonusItem(GuideMenuView view) =>
-            System.Array.FindIndex(
-                view.Definition.Items,
-                entry => entry.Key == StepBonusSession.GuideItemKey
-            );
-
-        // 持ち物と枠を覚え、枠の変更を入れ替えも含めて反映するだけのサーバー。
-        private sealed class FakeStepBonusSource : IStepBonusSource
-        {
-            private readonly StepBonusRoll[] owned;
-            private readonly string[] slots;
-
-            public FakeStepBonusSource(StepBonusRoll[] owned, string[] slots)
-            {
-                this.owned = owned;
-                this.slots = slots;
-            }
-
-            public bool Fail { get; set; }
-            public System.Collections.Generic.List<(int, string)> Calls { get; } = new();
-
-            public System.Threading.Tasks.Task<StepBonusState> LoadAsync(
-                System.Threading.CancellationToken token
-            ) => System.Threading.Tasks.Task.FromResult(new StepBonusState(owned, slots.ToArray()));
-
-            public async System.Threading.Tasks.Task<StepBonusState> SetSlotAsync(
-                int slot,
-                string bonusId,
-                System.Threading.CancellationToken token
-            )
-            {
-                await System.Threading.Tasks.Task.Yield();
-                if (Fail)
-                    throw new System.InvalidOperationException("offline");
-                Calls.Add((slot, bonusId));
-                int from = System.Array.IndexOf(slots, bonusId);
-                if (from >= 0)
-                    slots[from] = slots[slot];
-                slots[slot] = bonusId;
-                return new StepBonusState(owned, slots.ToArray());
-            }
-        }
-
-        private static StepBonusRowWidget Row(StepBonusSettingsView settings, string id) =>
-            settings.Rows.Single(row => row.Id == id);
-
-        // inner が outer の内側に、縁の幅（設計座標）だけ空けて収まる。
-        private static void AssertInside(Transform inner, Transform outer, float border)
-        {
-            var a = SceneTests.ScreenRect(inner);
-            var b = SceneTests.ScreenRect(outer);
-            float scale = b.width / ((RectTransform)outer).rect.width;
-            float edge = border * scale - 0.5f;
-            Assert.That(a.xMin - b.xMin, Is.GreaterThanOrEqualTo(edge), inner.name);
-            Assert.That(b.xMax - a.xMax, Is.GreaterThanOrEqualTo(edge), inner.name);
-            Assert.That(a.yMin - b.yMin, Is.GreaterThanOrEqualTo(edge), inner.name);
-            Assert.That(b.yMax - a.yMax, Is.GreaterThanOrEqualTo(edge), inner.name);
-        }
 
         private static bool Selected(Button button) =>
             button.transform.Find("Selected").gameObject.activeSelf;

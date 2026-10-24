@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Baryonyx.UI.GuideMenu
 {
     /// <summary>
-    /// The read a guide screen's panel makes each time it opens (the party, the bonuses, the
+    /// The read a guide screen's panel makes each time it opens (the party, the
     /// equipment...): one at a time, cancelled when the panel closes. A failure other than the
     /// cancel goes to the panel's handler, which shows <see cref="LoadFailedText"/>.
     /// </summary>

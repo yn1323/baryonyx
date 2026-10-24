@@ -25,7 +25,7 @@ describe("召喚の抽選", () => {
     expect(sum(Object.values(SUMMON_QUALITY_PERMILLE))).toBe(1000);
   });
 
-  it("引ける物はキャラ・装備・アイテムで、スキルとACTボーナスを含まない", () => {
+  it("引ける物はキャラ・装備・アイテムで、スキルを含まない", () => {
     expect(new Set(SUMMON_POOL.map((entry) => entry.category))).toEqual(
       new Set(["character", "weapon", "armor", "accessory", "item"]),
     );

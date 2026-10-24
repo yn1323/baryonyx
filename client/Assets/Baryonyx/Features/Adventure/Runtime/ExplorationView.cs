@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
@@ -169,9 +168,6 @@ namespace Baryonyx.Adventure
 
         // マスの種類ごとのアイコン（AdventureRoomKind の順）。
         public Sprite[] KindIcons = Array.Empty<Sprite>();
-
-        // 報酬のボーナスの名前とアイコン。
-        public StepBonusMockData Bonuses;
 
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
@@ -998,8 +994,7 @@ namespace Baryonyx.Adventure
                 case 2:
                     AdventureDialogs.Treasure(
                         Dialog,
-                        Bonuses,
-                        AdventureDialogSamples.Drops(Bonuses),
+                        AdventureDialogSamples.Drops(),
                         none,
                         ItemArt
                     );
@@ -1008,9 +1003,7 @@ namespace Baryonyx.Adventure
                 case 4:
                     AdventureDialogs.Result(
                         Dialog,
-                        Bonuses,
                         AdventureDialogSamples.Result(
-                            Bonuses,
                             index == 3 ? AdventureEndStatus.Cleared : AdventureEndStatus.Retreated
                         ),
                         none

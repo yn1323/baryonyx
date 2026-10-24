@@ -11,7 +11,7 @@ namespace Baryonyx.UI.Cards
     /// everything at S, a lighter sparkle at A, nothing at B and C. The shader draws five levels
     /// (made for the stars before quality); S takes its fifth and A its third. How it sparkles,
     /// one of <see cref="StyleCount"/> styles (a motif and its colours), belongs to the kind of
-    /// skill, equipment or bonus, so each kind sparkles its own way. The level, a seed of this
+    /// skill or equipment, so each kind sparkles its own way. The level, a seed of this
     /// card's own (so cards side by side do not flash together) and the style go to the shader in
     /// the vertex colour, so every card shares one material.
     /// </summary>
@@ -87,7 +87,7 @@ namespace Baryonyx.UI.Cards
 
         /// <summary>
         /// The style of the <paramref name="index"/>th thing of another list than the skills
-        /// (equipment, bonuses), stepped by <paramref name="step"/> from
+        /// (equipment), stepped by <paramref name="step"/> from
         /// <paramref name="offset"/> so its first things do not take the skills' first styles.
         /// A step without a common factor with <see cref="StyleCount"/> keeps the list's styles apart.
         /// </summary>
@@ -144,7 +144,7 @@ namespace Baryonyx.UI.Cards
             Show(art, new Rect(0f, 0f, 1f, 1f), quality, style);
 
         /// <summary>
-        /// Shows the sparkle over an icon drawn as a sprite (equipment, ACT bonuses): the part
+        /// Shows the sparkle over an icon drawn as a sprite (equipment): the part
         /// of its texture the sprite takes.
         /// </summary>
         public void Show(Sprite art, ItemQuality quality, int style) =>

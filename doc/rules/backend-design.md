@@ -115,9 +115,9 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ボーナス7種が高い倍率で5枠すべて使用、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
-| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。冒険中のため、ボーナスの付け替えはできない。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
-| `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ボーナス1つ、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
+| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
+| `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
 
 プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
 いまのマイグレーションとAPIでseedを読み書きできることは、[seed.test.ts](../../server/tests/integration/seed.test.ts)（`pnpm test` に含まれる）が確かめる。
@@ -217,7 +217,7 @@ DBとコードが食い違ったら、DBを作り直す（Localは[`pnpm db:rese
 このSQLがユーザー、セッション、取得元、日別歩数の4テーブルを作成する。
 [0002_guest_accounts.sql](../../server/migrations/0002_guest_accounts.sql) は、ゲストを識別する秘密値のハッシュ列を追加し、`google_sub` を任意にする。
 SQLiteは列の制約を変更できないため表を作り直す。D1はトランザクション内で `foreign_keys` を切り替えられないため、Drizzle Kitが生成した `PRAGMA foreign_keys` を `PRAGMA defer_foreign_keys` に書き換えた（[D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)）。
-[0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、[ACTボーナス](../features/step-bonus.md#実装との対応)の持ち物・枠・初期付与の3テーブルを作る。
+[0003_step_bonus.sql](../../server/migrations/0003_step_bonus.sql) は、ACTボーナス（2026-10-24に廃止、[記録](../archive/step-bonus.md)）の持ち物・枠・初期付与の3テーブルを作る。
 [0004_party.sql](../../server/migrations/0004_party.sql) は、[キャラと編成の保存](../features/party.md#実装との対応)のキャラ・枠・カード・レベルアップの記録・初期付与の5テーブルを作る。
 [0005_adventure.sql](../../server/migrations/0005_adventure.sql) は、[冒険の1周](../plans/2026-10-04-adventure-loop.md#サーバー)の冒険・マスごとの報酬・復活の記録・行き先ごとの記録の4テーブルを作る。進行中の冒険をユーザーごとに1つにする部分一意インデックスを持つ。
 [0006_adventure_route.sql](../../server/migrations/0006_adventure_route.sql) は、冒険に道を作る乱数の種と、今いるマスの階と種類の列を加える（[探索の地図](../plans/2026-10-04-exploration-route-map.md#実装したこと)）。
@@ -226,6 +226,8 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0009_custom_skill_slots.sql](../../server/migrations/0009_custom_skill_slots.sql) は、キャラごとのスキルの枠を4つから[カスタムスキル](../features/party.md#キャラクターの構成)の2つに減らす。枠の範囲の制約を変えるため表を作り直し、3・4枠目の行は移さずに消す。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0012_item_quality.sql](../../server/migrations/0012_item_quality.sql) は、持っている装備・ACTボーナス・冒険の報酬に1つずつの倍率の列（`multiplier_percent`、百分率の整数で100以上）を持たせ、ボーナスと報酬のランクの列をなくす（[品質](../features/inventory.md#品質)）。表を作り直すため、Drizzle Kitが生成した、元の表にない列を読む行を手で直し、既存のランクをS 147・A 138・B 126・C 112・D 105・E 100の倍率へ、既存の装備を100へ写した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0022_bond_tokens.sql](../../server/migrations/0022_bond_tokens.sql) は、キャラの絆に絆のしるしの数の列（`tokens`、段との合計は6まで）を持たせる（[キャラが被ったとき](../features/monetization.md#キャラが被ったとき)）。表を作り直すため、Drizzle Kitが生成した、元の表にない `tokens` を読む行を0に直し、`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
+[0023_workshop_sales.sql](../../server/migrations/0023_workshop_sales.sql) は、商会の売却の記録（`workshop_sales`）を作る（[売る](../features/screens.md#売る)）。
+[0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql) は、ACTボーナスをなくしたため（2026-10-24）、その3テーブルを消し、冒険の報酬から `bonus` の分類と、ボーナスだけが使った結果（`updated`・`discarded`）を外す。表を作り直すため、Drizzle Kitが生成したSQLのうち、外部キーの向きに合わせて枠の表を先に消す順に直し、`bonus` の行を移さず、結果を `added` にして写すよう手で直した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 
 ```sh
 pnpm db:generate --name add_example
@@ -279,9 +281,8 @@ Miniflareはバンドル済みのWorkerを使うため、ソースだけを変�
 各ファイルは専用のMiniflareとD1を作成し、外部の本人確認をテスト用に差し替えてHonoとDBを検証する。
 入力検証の単体テストは [健康データ](../../server/src/features/health/schema.test.ts) と [アカウント](../../server/src/features/accounts/schema.test.ts) の `schema.test.ts` に置き、実装と同じ機能内で管理する。
 運動報酬APIの認証・入力エラー・所有者確認は、機能内の [routes.test.ts](../../server/src/features/exercise-rewards/routes.test.ts) で確認する。
-ACTボーナスAPIの認証・入力エラー・初期付与・付け替え・ユーザーごとの分離・入手時の倍率の比較は、機能内の [routes.test.ts](../../server/src/features/step-bonus/routes.test.ts) で確認する。
 パーティAPIの認証・入力エラー・初期付与・編成とカードの変更・レベルアップの再送と拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/party/routes.test.ts) で確認する。
-冒険APIの認証・入力エラー・マスの保存と進む条件・報酬が1回だけ入ることと倍率の比較・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・冒険中のボーナスの拒否・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
+冒険APIの認証・入力エラー・マスの保存と進む条件・報酬が1回だけ入ること・復活の費用と再送と残高不足・負けた／やめたときの記録・ボスでの終了・ユーザーごとの分離は、機能内の [routes.test.ts](../../server/src/features/adventure/routes.test.ts) で確認する。
 歩数から請求したルーンでのレベルアップと、同時に届いたレベルアップを1回だけ通すことは、[レベルアップのシナリオ](../../server/tests/scenarios/party-level-up.test.ts)で確認する。
 
 テストの並列数、ファイル内の実行順、DBの独立性とシナリオ追加時のルールは [tests/scenarios/AGENTS.md](../../server/tests/scenarios/AGENTS.md) を正本とする。
@@ -337,6 +338,7 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-24：ユーザーの指示でACTボーナスを廃止し（[記録](../archive/step-bonus.md)）、APIと3テーブル（[0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql)）とseedのボーナスを外した。開発中の確かめ用に、ルーンを10,000足す `POST /v1/debug/runes` を足した（ローカルとDevだけで使え、Prodでは404）。
 - 2026-10-22：ユーザーの「段階3（往復の削減）だけ進めて」を受け、一覧を読むGETのD1との往復を減らした。セッションの確認の二重登録を外し（party・equipment・adventure・library・step-bonus）、partyとequipmentは初回の付与の印を読み込みのbatchに入れた。2回目からの往復は、`GET /v1/party` が4回から2回、`GET /v1/equipment` が6回から2回、`GET /v1/library` が7回から3回、`GET /v1/adventure` が3回から2回、`GET /v1/step-bonus` が6回から5回になった。書き込みのAPIも同じ読み方にし、partyは1往復、equipmentは3往復ずつ減った。
 - 2026-10-22：ユーザーの「キャラのスキル表示に1秒ちょっとかかる。何が原因なのか」を受け、[処理時間の計測](#処理時間の計測server-timing)を加えた。Miniflareで数えると、2回目以降の読み込みのD1の往復は `GET /v1/party` が4回、`GET /v1/equipment`・`GET /v1/step-bonus` が6回、`GET /v1/library` が7回、`GET /v1/adventure` が3回だった。各機能が `use("/party")` と `use("/party/*")` の両方へ `requireSession` を付けており、Honoでは `/party/*` が `/party` にも一致するため、一覧を読むGETでセッションの確認が2回走っている。往復を減らす変更は、計測の結果を見てから別に行う。参考：[Hono Timing Middleware](https://hono.dev/middleware/builtin/timing)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。
 - 2026-10-22：ユーザーの「東京を指定したい。DBもHonoのserverも」を受け、[deploy.mjs](../../server/scripts/deploy.mjs) でD1の作成時に `primary_location_hint: "apac"` を、Workerに `placement.region: "aws:ap-northeast-1"` を指定した。それまでは場所を指定せず、作成を実行したGitHub Actionsの近く（北米と推定）にDBができていた。参考：[D1のデータの場所](https://developers.cloudflare.com/d1/configuration/data-location/)、[D1作成API](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/create/)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。

@@ -40,7 +40,7 @@ namespace Baryonyx.Adventure
             set => runes = value;
         }
 
-        // 歩数の扉が読む今日の歩数。サーバーがないため、ACTボーナスの仮データと同じ値にしておく。
+        // 歩数の扉が読む今日の歩数。サーバーがないため、仮の値にしておく。
         public int TodaySteps { get; set; } = 3240;
 
         // 怪しい宝箱を開けたときにミミックになるか（テスト用）。null なら半分の確率で決める。
@@ -150,7 +150,9 @@ namespace Baryonyx.Adventure
                         AdventureTexts.MaxMultiplierOf,
                         random
                     )
-                    .Concat(AdventureDrops.RollMaterials(row.Row, roomId, random))
+                    .Concat(
+                        AdventureDrops.RollMaterials(run.DestinationId, row.Row, roomId, random)
+                    )
                     .ToArray()
                 : Array.Empty<AdventureDrop>();
             run.Drops.AddRange(drops);
@@ -194,7 +196,7 @@ namespace Baryonyx.Adventure
                 .Roll(run.DestinationId, room.Kind, roomId, AdventureTexts.MaxMultiplierOf, random)
                 .Concat(
                     AdventureDrops.RewardOf(room.Kind) is { } chest
-                        ? AdventureDrops.RollMaterials(chest.Row, roomId, random)
+                        ? AdventureDrops.RollMaterials(run.DestinationId, chest.Row, roomId, random)
                         : Array.Empty<AdventureDrop>()
                 )
                 .ToArray();

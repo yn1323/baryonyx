@@ -45,10 +45,6 @@ export type SeedPlayer = {
   // （doc/features/monetization.md のキャラが被ったとき）。
   bonds?: readonly { id: string; bond: number; tokens?: number }[];
   shards?: number;
-  // 持っているボーナスと倍率（百分率の整数）。
-  bonuses: readonly { id: string; multiplierPercent: number }[];
-  // ボーナスの5枠。空き枠はnull。
-  bonusSlots: readonly (string | null)[];
   records: readonly {
     destinationId: string;
     bestFloor: number;
@@ -225,16 +221,6 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       { id: "aria", bond: 2, tokens: 2 },
     ],
     shards: 3,
-    bonuses: [
-      { id: "guard", multiplierPercent: 147 },
-      { id: "luck", multiplierPercent: 147 },
-      { id: "treasure-sight", multiplierPercent: 138 },
-      { id: "foresight", multiplierPercent: 138 },
-      { id: "omen", multiplierPercent: 126 },
-      { id: "appraisal", multiplierPercent: 138 },
-      { id: "fighting", multiplierPercent: 147 },
-    ],
-    bonusSlots: ["fighting", "luck", "guard", "treasure-sight", "appraisal"],
     records: [{ destinationId: "forest-ruins", bestFloor: 10, clears: 3 }],
     weaknesses: [
       { enemyId: "moss-slime", element: "thunder" },
@@ -304,12 +290,6 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
       { id: "acorn", count: 1 },
     ],
     materials: [{ id: "polish-white", count: 2 }],
-    bonuses: [
-      { id: "luck", multiplierPercent: 126 },
-      { id: "foresight", multiplierPercent: 112 },
-      { id: "fighting", multiplierPercent: 105 },
-    ],
-    bonusSlots: ["foresight", "luck", "fighting", null, null],
     records: [{ destinationId: "forest-ruins", bestFloor: 6, clears: 0 }],
     adventure: { destinationId: "forest-ruins", seed: 20_261_005 },
     weaknesses: [{ enemyId: "moss-slime", element: "thunder" }],
@@ -333,8 +313,6 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     ],
     party: ["toma", null, null, null],
     items: ["wooden-sword", "leather-armor"],
-    bonuses: [{ id: "luck", multiplierPercent: 100 }],
-    bonusSlots: ["luck", null, null, null, null],
     records: [],
     weaknesses: [],
     enemies: [],
@@ -585,25 +563,6 @@ function playerStatements(player: SeedPlayer, now: string) {
       player.shards
         ? [{ user_id: userId, shards: player.shards, updated_at: now }]
         : [],
-    ),
-    ...insert("step_bonus_profiles", [{ user_id: userId, created_at: now }]),
-    ...insert(
-      "step_bonus_holdings",
-      player.bonuses.map((bonus) => ({
-        user_id: userId,
-        bonus_id: bonus.id,
-        multiplier_percent: bonus.multiplierPercent,
-        acquired_at: now,
-        updated_at: now,
-      })),
-    ),
-    ...insert(
-      "step_bonus_slots",
-      player.bonusSlots.flatMap((bonusId, slot) =>
-        bonusId
-          ? [{ user_id: userId, slot, bonus_id: bonusId, updated_at: now }]
-          : [],
-      ),
     ),
     ...insert(
       "adventure_records",

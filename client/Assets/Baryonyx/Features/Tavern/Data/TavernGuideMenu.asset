@@ -30,12 +30,6 @@ MonoBehaviour:
     Hidden: 0
     ConfirmLabel: "\u9078\u3076"
     Entries: []
-  - Key: bonus
-    Label: "\u30DC\u30FC\u30CA\u30B9"
-    Icon: {fileID: 21300000, guid: b08ccc2e9dab74d20be67ce5e958f4ea, type: 3}
-    Hidden: 0
-    ConfirmLabel: "\u30BB\u30C3\u30C8\u3059\u308B"
-    Entries: []
   - Key: training
     Label: "\u80B2\u6210"
     Icon: {fileID: 0}

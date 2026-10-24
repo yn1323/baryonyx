@@ -154,23 +154,20 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Rows.Count, Is.GreaterThan(0));
             lab.Tabs[(int)QualityLabTab.Armor].Button.onClick.Invoke();
             Assert.That(lab.Rows.Count, Is.GreaterThan(0));
+            // 見本のアクセサリーは、効果の数字に倍率を掛ける。
             lab.Tabs[(int)QualityLabTab.Accessories].Button.onClick.Invoke();
             Assert.That(lab.Rows, Has.Count.EqualTo(QualityLabEntry.SampleAccessories.Length));
-
-            // ボーナスは仮データのボーナスを並べ、効果量に倍率を掛ける。
-            lab.Tabs[(int)QualityLabTab.Bonuses].Button.onClick.Invoke();
-            Assert.That(lab.Rows, Has.Count.EqualTo(lab.Bonuses.Bonuses.Length));
-            int luck = lab.Entries.ToList().FindIndex(entry => entry.Id == "luck");
-            lab.Rows[luck].onClick.Invoke();
-            lab.SetMultiplier(1.3f);
-            Assert.That(lab.EffectText.text, Is.EqualTo("ドロップ率 +6.5%"));
-            Assert.That(lab.Quality, Is.EqualTo(ItemQuality.B));
+            int sample = lab.Entries.ToList().FindIndex(entry => entry.Id == "sample-accessory-2");
+            lab.Rows[sample].onClick.Invoke();
+            lab.SetMultiplier(2f);
+            Assert.That(lab.EffectText.text, Is.EqualTo("属攻 +12%｜会心 +6%"));
+            Assert.That(lab.Quality, Is.EqualTo(ItemQuality.A));
 
             // 次のPlayでは、同じ物を同じ倍率で出す。
             yield return Open(found => lab = found);
-            Assert.That(lab.Tab, Is.EqualTo(QualityLabTab.Bonuses));
-            Assert.That(lab.Current.Id, Is.EqualTo("luck"));
-            Assert.That(lab.Multiplier, Is.EqualTo(1.3f).Within(0.001f));
+            Assert.That(lab.Tab, Is.EqualTo(QualityLabTab.Accessories));
+            Assert.That(lab.Current.Id, Is.EqualTo("sample-accessory-2"));
+            Assert.That(lab.Multiplier, Is.EqualTo(2f).Within(0.001f));
         }
     }
 }

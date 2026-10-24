@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
-using Baryonyx.StepBonus;
 using Baryonyx.UI;
 using Baryonyx.UI.Cards;
 using Baryonyx.UI.EditModePreview;
@@ -14,7 +13,7 @@ using UnityEngine.UI;
 
 namespace Baryonyx.Inventory
 {
-    /// <summary>A picture of one thing that is not a card (equipment, a bonus): its icon with the sparkle, name, stars and quality.</summary>
+    /// <summary>A picture of one thing that is not a card (equipment, an accessory): its icon with the sparkle, name, stars and quality.</summary>
     [Serializable]
     public sealed class QualityLabItemFace
     {
@@ -57,8 +56,8 @@ namespace Baryonyx.Inventory
 
     /// <summary>
     /// The quality lab, a debugging room for quality (doc/features/inventory.md, quality): pick a
-    /// skill, a unique skill's stage, a weapon, a piece of armour, a sample accessory or an ACT
-    /// bonus from the tabs, then move its multiplier (and the kind's upper limit) to see the
+    /// skill, a unique skill's stage, a weapon, a piece of armour or a sample accessory from the
+    /// tabs, then move its multiplier (and the kind's upper limit) to see the
     /// quality letter, the sparkle on its card or picture and the numbers of its effect change.
     /// The four qualities' sparkles are shown side by side along the bottom. The tab, the thing
     /// and the multiplier are remembered on this machine, so the next Play shows them again.
@@ -145,9 +144,6 @@ namespace Baryonyx.Inventory
 
         [Tooltip("見本のアクセサリーの絵（仮）。")]
         public Sprite AccessoryIcon;
-
-        [Tooltip("ACTボーナスの定義（仮データ）。")]
-        public StepBonusMockData Bonuses;
 
         [Header("ホームへ戻る")]
         public Button HomeButton;
@@ -264,7 +260,7 @@ namespace Baryonyx.Inventory
             Tab = tab;
             if (tabChanged)
             {
-                entries = QualityLabEntry.Of(tab, Bonuses);
+                entries = QualityLabEntry.Of(tab);
                 if (started)
                     BuildRows();
             }
@@ -460,7 +456,7 @@ namespace Baryonyx.Inventory
                 QualityLabTab.Weapons => WeaponIcon,
                 QualityLabTab.Armor => ArmorIcon,
                 QualityLabTab.Accessories => AccessoryIcon,
-                _ => current.Bonus != null ? current.Bonus.Icon : null,
+                _ => null,
             };
 
         private static T At<T>(T[] items, int at)
@@ -469,21 +465,21 @@ namespace Baryonyx.Inventory
         /// <summary>The name of the gold frame of a row of the list, shown while it is picked.</summary>
         public const string SelectedName = "Selected";
 
-        // 停止中の表示の切り替え：スキル・装備・ボーナスを、それぞれ見せたい品質で出す。
+        // 停止中の表示の切り替え：スキル・武器・アクセサリーを、それぞれ見せたい品質で出す。
         // 一覧の行は作らず、選んでいる物の表示と見比べだけを変える。保存はしない。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "スキル（品質S）", "武器（品質A）", "ACTボーナス（品質C）" };
+            new[] { "スキル（品質S）", "武器（品質A）", "アクセサリー（品質C）" };
 
         public void ShowPreviewState(int state)
         {
             var (tab, quality) = state switch
             {
                 1 => (QualityLabTab.Weapons, ItemQuality.A),
-                2 => (QualityLabTab.Bonuses, ItemQuality.C),
+                2 => (QualityLabTab.Accessories, ItemQuality.C),
                 _ => (QualityLabTab.Skills, ItemQuality.S),
             };
             Tab = tab;
-            entries = QualityLabEntry.Of(tab, Bonuses);
+            entries = QualityLabEntry.Of(tab);
             entry = entries.Count > 0 ? 0 : -1;
             limit = Current?.Limit ?? Inventory.Quality.MinMultiplier;
             multiplier = Inventory.Quality.Middle(quality, limit);
@@ -499,12 +495,12 @@ namespace Baryonyx.Inventory
                 Mathf.Clamp(
                     PlayerPrefs.GetInt(TabKey, 0),
                     0,
-                    Tabs.Length > 0 ? Tabs.Length - 1 : 5
+                    Tabs.Length > 0 ? Tabs.Length - 1 : (int)QualityLabTab.Accessories
                 );
             var id = PlayerPrefs.GetString(EntryKey, "");
             float saved = PlayerPrefs.GetFloat(MultiplierKey, -1f);
             Tab = tab;
-            entries = QualityLabEntry.Of(tab, Bonuses);
+            entries = QualityLabEntry.Of(tab);
             BuildRows();
             int index = Mathf.Max(0, entries.ToList().FindIndex(each => each.Id == id));
             Select(tab, index, saved >= Inventory.Quality.MinMultiplier ? saved : null);

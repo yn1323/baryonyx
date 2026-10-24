@@ -84,8 +84,8 @@ namespace Baryonyx.Home.Editor
         private static Texture2D destinationArt;
         private static Texture2D travelArt;
 
-        // デバッグルームの一覧の行（7つのルームと「閉じる」）と、その高さ。
-        private const int DebugRoomChoices = 8;
+        // デバッグルームの一覧の行（「ルーン+10000」、7つのルーム、「閉じる」）と、その高さ。
+        private const int DebugRoomChoices = 9;
         private const float DebugRoomRowHeight = 76f;
 
         public const string RoomReturnPath =
@@ -169,7 +169,7 @@ namespace Baryonyx.Home.Editor
                 BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
-                // The list of debugging rooms: seven rooms and "閉じる", in lower rows than the
+                // The list of debugging rooms: "ルーン+10000", seven rooms and "閉じる", in lower rows than the
                 // usual five so they fit the screen.
                 view.Dialog = GameDialogAssets.Build(
                     root,
@@ -511,32 +511,6 @@ namespace Baryonyx.Home.Editor
                 size.minHeight = size.preferredHeight = 18;
             }
             view.Segments = segments;
-
-            // Gold notches under the gauge mark where each bonus tier opens.
-            var ticks = Rect("GaugeTicks", details);
-            var tickSize = ticks.gameObject.AddComponent<LayoutElement>();
-            tickSize.minHeight = tickSize.preferredHeight = 8;
-            foreach (int tier in HomeViewState.BonusAct)
-            {
-                float x = Mathf.Clamp01(tier / (float)HomeViewState.GaugeMaxAct);
-                var tick = Rect($"Tick{tier}", ticks);
-                tick.anchorMin = tick.anchorMax = new Vector2(x, 1);
-                tick.pivot = new Vector2(x >= 1f ? 1f : 0.5f, 1f);
-                tick.anchoredPosition = Vector2.zero;
-                tick.sizeDelta = new Vector2(4, 8);
-                AddImage(tick, HomeView.GaugeAchieved, false);
-            }
-
-            var footer = Row(details, "StepsFooter", 40, 12);
-            view.RemainingLabel = Label(
-                footer,
-                "RemainingLabel",
-                "",
-                32,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Flexible(view.RemainingLabel);
 
             var unlinked = Rect("UnlinkedDetails", panel);
             var unlinkedColumn = unlinked.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -1224,14 +1198,6 @@ namespace Baryonyx.Home.Editor
             var size = row.gameObject.AddComponent<LayoutElement>();
             size.minHeight = size.preferredHeight = height;
             return row;
-        }
-
-        private static void Flexible(TMP_Text label)
-        {
-            var size = label.GetComponent<LayoutElement>();
-            if (size == null)
-                size = label.gameObject.AddComponent<LayoutElement>();
-            size.flexibleWidth = 1;
         }
     }
 }

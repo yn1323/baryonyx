@@ -4,7 +4,6 @@ using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Equipment;
 using Baryonyx.SkillEvolution;
-using Baryonyx.StepBonus;
 using Baryonyx.UI.Cards;
 
 namespace Baryonyx.Inventory
@@ -17,12 +16,11 @@ namespace Baryonyx.Inventory
         Weapons,
         Armor,
         Accessories,
-        Bonuses,
     }
 
     /// <summary>
     /// One thing whose quality the lab tries: a card skill, a unique skill's stage, a weapon, a
-    /// piece of armour, a sample accessory or an ACT bonus. It knows its kind's upper limit and
+    /// piece of armour or a sample accessory. It knows its kind's upper limit and
     /// how its effect reads at any multiplier.
     /// </summary>
     public sealed class QualityLabEntry
@@ -42,7 +40,6 @@ namespace Baryonyx.Inventory
         public int ArtIndex = -1;
 
         public EquipmentDefinition Gear;
-        public StepBonusDefinition Bonus;
 
         /// <summary>
         /// How the thing sparkles (doc/art/direction.md, card sparkle): a skill its kind's style,
@@ -50,8 +47,8 @@ namespace Baryonyx.Inventory
         /// </summary>
         public int FoilStyle;
 
-        // 見本のアクセサリーの光り方の割り当て（一覧の何番目かから決める）。装備は EquipmentCatalog、
-        // ACTボーナスは StepBonusDefinition の割り当てを、実際の画面と同じく使う。
+        // 見本のアクセサリーの光り方の割り当て（一覧の何番目かから決める）。装備は EquipmentCatalog の
+        // 割り当てを、実際の画面と同じく使う。
         public const int AccessoryStyleStep = 2;
         public const int AccessoryStyleOffset = 1;
 
@@ -71,8 +68,6 @@ namespace Baryonyx.Inventory
                 return UI.Cards.CardText.Description(SkillAt(multiplier, limit));
             if (Gear != null)
                 return Gear.DetailAt(multiplier);
-            if (Bonus != null)
-                return StepBonusLoadout.Effect(Bonus, Bonus.Value(multiplier));
             return EquipmentCatalog.Scale(Detail, multiplier);
         }
 
@@ -100,8 +95,6 @@ namespace Baryonyx.Inventory
                         yield return $"量　{from.Amount} → {to.Amount}";
                 }
             }
-            else if (Bonus != null)
-                yield return $"効果量　{StepBonusLoadout.Number(Bonus, Bonus.BaseValue)} → {StepBonusLoadout.Number(Bonus, Bonus.Value(multiplier))}";
             else
                 yield return $"効果　{(Gear != null ? Gear.Detail : Detail)}";
             yield return $"光り方　{CardFoil.NameOf(FoilStyle)}";
@@ -115,8 +108,7 @@ namespace Baryonyx.Inventory
                 QualityLabTab.UniqueSkills => "固有スキル",
                 QualityLabTab.Weapons => "武器",
                 QualityLabTab.Armor => "防具",
-                QualityLabTab.Accessories => "アクセサリー（見本）",
-                _ => "ACTボーナス",
+                _ => "アクセサリー（見本）",
             };
 
         /// <summary>
@@ -141,10 +133,7 @@ namespace Baryonyx.Inventory
             CardSkills.All.Concat(UniqueSkillTrees.Stages().Select(stage => stage.Card)).ToArray();
 
         /// <summary>Every entry of <paramref name="tab"/>.</summary>
-        public static IReadOnlyList<QualityLabEntry> Of(
-            QualityLabTab tab,
-            StepBonusMockData bonuses
-        )
+        public static IReadOnlyList<QualityLabEntry> Of(QualityLabTab tab)
         {
             switch (tab)
             {
@@ -173,7 +162,7 @@ namespace Baryonyx.Inventory
                             FoilStyle = EquipmentCatalog.FoilStyleOf(gear.Id),
                         })
                         .ToArray();
-                case QualityLabTab.Accessories:
+                default:
                     return SampleAccessories
                         .Select(
                             (sample, i) =>
@@ -190,22 +179,6 @@ namespace Baryonyx.Inventory
                                         AccessoryStyleStep,
                                         AccessoryStyleOffset
                                     ),
-                                }
-                        )
-                        .ToArray();
-                default:
-                    return (bonuses != null ? bonuses.Bonuses : Array.Empty<StepBonusDefinition>())
-                        .Where(bonus => bonus != null)
-                        .Select(
-                            (bonus, i) =>
-                                new QualityLabEntry
-                                {
-                                    Tab = tab,
-                                    Id = bonus.Id,
-                                    Name = bonus.Name,
-                                    Limit = bonus.MaxMultiplier,
-                                    Bonus = bonus,
-                                    FoilStyle = StepBonusDefinition.FoilStyleAt(i),
                                 }
                         )
                         .ToArray();

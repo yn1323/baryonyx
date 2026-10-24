@@ -57,8 +57,7 @@ export const adventureRuns = sqliteTable(
 
 // 出来事を終えた部屋で落ちた物（doc/features/drops.md）。1つの部屋で1回だけ抽選し、落ちた数だけ行を持つ（seq は0から）。
 // grant_id は抽選1回ごとのIDで、部屋を終えた書き込みが条件どおり入ったかを見分ける。
-// 倍率は百分率の整数で、アイテムは持たない（null）。ACTボーナスは、持ち物に倍率の高いほうだけが残る（outcome）。
-// ほかの物は落ちるたびに持ち物へ足すため、outcome は added になる。
+// 倍率は百分率の整数で、アイテムは持たない（null）。落ちた物は落ちるたびに持ち物へ足す。
 export const adventureDrops = sqliteTable(
   "adventure_drops",
   {
@@ -71,22 +70,17 @@ export const adventureDrops = sqliteTable(
     category: text("category").notNull(),
     entryId: text("entry_id").notNull(),
     multiplierPercent: integer("multiplier_percent"),
-    outcome: text("outcome").notNull(),
     createdAt: text("created_at").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.runId, table.roomId, table.seq] }),
     check(
       "adventure_drops_category_check",
-      sql`${table.category} IN ('item', 'accessory', 'weapon', 'armor', 'skill', 'bonus', 'material')`,
+      sql`${table.category} IN ('item', 'accessory', 'weapon', 'armor', 'skill', 'material')`,
     ),
     check(
       "adventure_drops_multiplier_check",
       sql`(${table.category} IN ('item', 'material') AND ${table.multiplierPercent} IS NULL) OR (${table.category} NOT IN ('item', 'material') AND ${table.multiplierPercent} >= 100)`,
-    ),
-    check(
-      "adventure_drops_outcome_check",
-      sql`${table.outcome} IN ('added', 'updated', 'discarded')`,
     ),
   ],
 );

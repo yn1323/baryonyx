@@ -3,7 +3,7 @@ using System;
 namespace Baryonyx.Inventory
 {
     /// <summary>
-    /// The quality of one skill, piece of equipment or ACT bonus (doc/features/inventory.md, quality):
+    /// The quality of one skill or piece of equipment (doc/features/inventory.md, quality):
     /// where its multiplier falls in its kind's range, from ×1.00 to the kind's upper limit.
     /// Lowest first, so a higher quality compares greater.
     /// </summary>

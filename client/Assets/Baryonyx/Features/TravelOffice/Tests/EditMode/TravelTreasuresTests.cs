@@ -10,18 +10,13 @@ namespace Baryonyx.Tests.EditMode
     public sealed class TravelTreasuresTests
     {
         [Test]
-        public void TreasuresAreTheDestinationsDropListWithoutTheActBonuses()
+        public void TreasuresAreTheDestinationsDropList()
         {
             var treasures = TravelTreasures.Of(AdventureCatalog.ForestRuins);
             var pool = AdventureDrops.Pools[AdventureCatalog.ForestRuins];
             Assert.That(
                 treasures.Select(treasure => treasure.Id),
                 Is.EquivalentTo(pool.Select(entry => entry.Id))
-            );
-            // ACTボーナスはどの行き先でも落ちるため、お宝に入れない。
-            Assert.That(
-                treasures.Any(treasure => treasure.Category == AdventureDropCategory.Bonus),
-                Is.False
             );
         }
 

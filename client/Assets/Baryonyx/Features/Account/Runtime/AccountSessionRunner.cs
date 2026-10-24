@@ -7,7 +7,7 @@ namespace Baryonyx.Account
 {
     /// <summary>
     /// The player's one server session, shared by every feature that calls the game server
-    /// (health, the party, equipment, bonuses and the adventure). It signs in as the guest when
+    /// (health, the party, equipment and the adventure). It signs in as the guest when
     /// there is no session or it is about to expire, and when the server rejects the session it
     /// signs in again once and retries the call. Calls made while a sign-in is running wait for
     /// that sign-in instead of signing in again, so the features can read the server at once.

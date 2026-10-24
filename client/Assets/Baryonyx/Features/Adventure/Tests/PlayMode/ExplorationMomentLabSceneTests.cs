@@ -55,7 +55,7 @@ namespace Baryonyx.Tests.PlayMode
                 lab.MomentButtons,
                 Has.Length.EqualTo(Enum.GetValues(typeof(ExplorationMoment)).Length)
             );
-            Assert.That(lab.Samples, Is.Not.Empty, "The chests hold the ACT bonuses.");
+            Assert.That(lab.Samples, Is.Not.Empty, "The chests hold pieces of equipment.");
 
             // The first Play opens on the monsters of a monster room.
             Assert.That(lab.Moment, Is.EqualTo(ExplorationMoment.Encounter));
@@ -106,7 +106,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ChestSprite.texture, Is.SameAs(view.ChestOpen), "The chest is open.");
             Assert.That(moments.Reveal.Shown, Is.True, "What it held shows on its plate.");
             Assert.That(moments.Reveal.Quality.text, Is.EqualTo("S"));
-            Assert.That(moments.Reveal.Kind.text, Is.EqualTo("ACTボーナス"));
+            Assert.That(
+                moments.Reveal.Kind.text,
+                Is.EqualTo(lab.Samples[0].Kind).And.StartsWith("武器")
+            );
             Assert.That(moments.Reveal.Name.text, Is.EqualTo(lab.Samples[0].Name));
 
             lab.QualityButton.onClick.Invoke();

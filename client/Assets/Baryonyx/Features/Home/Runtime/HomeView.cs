@@ -27,7 +27,6 @@ namespace Baryonyx.Home
         public static readonly Color GaugeAchieved = new(0.95f, 0.76f, 0.31f);
         public static readonly Color GaugeEmpty = new(0.95f, 0.91f, 0.82f, 0.14f);
         public static readonly Color TextMain = new(0.95f, 0.91f, 0.82f);
-        public static readonly Color TextSub = new(0.79f, 0.75f, 0.66f);
 
         [Header("歩数")]
         public Button StepButton;
@@ -36,7 +35,6 @@ namespace Baryonyx.Home
         public GameObject UnlinkedDetails;
         public TMP_Text StepsLabel;
         public Image[] Segments = Array.Empty<Image>();
-        public TMP_Text RemainingLabel;
         public TMP_Text ClaimLabel;
 
         // 案内の行（アイコンと文言）。TopのTAP TO STARTと同じ周期と濃さで点滅させる。
@@ -64,7 +62,9 @@ namespace Baryonyx.Home
         [Header("世界")]
         public Button PartyWorldButton;
 
-        [Tooltip("焚き火を囲む4人の絵（編成の枠の順）。右の2人は焚き火を向くよう左右を反転して置く。")]
+        [Tooltip(
+            "焚き火を囲む4人の絵（編成の枠の順）。右の2人は焚き火を向くよう左右を反転して置く。"
+        )]
         public RawImage[] PartyMembers = Array.Empty<RawImage>();
 
         [Tooltip("4人の足元の影（PartyMembers と同じ順）。枠が空いていれば絵と一緒に隠す。")]
@@ -299,9 +299,6 @@ namespace Baryonyx.Home
                     : state.DailyAchieved ? GaugeAchieved
                     : GaugeFilled;
             }
-            Set(RemainingLabel, state.RemainingText);
-            if (RemainingLabel != null)
-                RemainingLabel.color = state.DailyAchieved ? GaugeAchieved : TextSub;
             Set(ClaimLabel, state.ClaimText);
             claimPulses = state.ClaimPulses;
             if (!claimPulses && ClaimGroup != null)
@@ -396,7 +393,7 @@ namespace Baryonyx.Home
                 "歩数の連携なし",
                 "同期中",
                 "歩数の取得前",
-                "ボーナスをすべて獲得",
+                "ゲージ満タン",
                 "冒険の途中",
                 "獲得ルーンなし",
                 "通知",
