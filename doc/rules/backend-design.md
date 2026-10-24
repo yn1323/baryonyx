@@ -115,9 +115,9 @@ Local以外のDBには接続しない。
 
 | ID | プレイヤー | 入っているデータ |
 |---|---|---|
-| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
-| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
-| `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ルーン150（Lv2までしか上げられない）、開示した弱点なし |
+| `veteran` | 遊び込んだプレイヤー | 9人全員が高レベル、装備16個（[品質](../features/inventory.md#品質)S〜Cがそろう倍率）、ルーン50,000、ミストラ遺跡の最深到達と踏破の記録、街道はポルタから西のブリーザと北のピーノまでクリアしてピーノにいる、3種の敵の弱点をすべて開示済み、トーマ・ルカ・アリアの固有スキルの段階をいくつも取得済み（トーマの1つ目は品質強化で品質A）、強化素材を5種とも所持 |
+| `adventurer` | 冒険の途中のプレイヤー | 初期と同じ4人、ルーン1,200、ミストラ遺跡の入口から冒険中。街道はポルタの隣のマスを1つクリアしてそこにいる。苔スライムの雷の弱点だけ開示済み、トーマの1つ目の固有スキルが1段目へ覚醒済み、白い磨き石2個 |
+| `newcomer` | 始めたばかりのプレイヤー | Lv1のトーマ1人だけ（パーティの空き枠3つ）、装備2個、ルーン150（Lv2までしか上げられない）、開示した弱点なし、街道はポルタだけ |
 
 プレイヤーの定義は [seed.ts](../../server/scripts/seed.ts)、実行は [db-reset.mjs](../../server/scripts/db-reset.mjs) にある。
 いまのマイグレーションとAPIでseedを読み書きできることは、[seed.test.ts](../../server/tests/integration/seed.test.ts)（`pnpm test` に含まれる）が確かめる。
@@ -228,6 +228,8 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0022_bond_tokens.sql](../../server/migrations/0022_bond_tokens.sql) は、キャラの絆に絆のしるしの数の列（`tokens`、段との合計は6まで）を持たせる（[キャラが被ったとき](../features/monetization.md#キャラが被ったとき)）。表を作り直すため、Drizzle Kitが生成した、元の表にない `tokens` を読む行を0に直し、`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0023_workshop_sales.sql](../../server/migrations/0023_workshop_sales.sql) は、商会の売却の記録（`workshop_sales`）を作る（[売る](../features/screens.md#売る)）。
 [0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql) は、ACTボーナスをなくしたため（2026-10-24）、その3テーブルを消し、冒険の報酬から `bonus` の分類と、ボーナスだけが使った結果（`updated`・`discarded`）を外す。表を作り直すため、Drizzle Kitが生成したSQLのうち、外部キーの向きに合わせて枠の表を先に消す順に直し、`bonus` の行を移さず、結果を `added` にして写すよう手で直した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
+[0025_world_map.sql](../../server/migrations/0025_world_map.sql) は、[街道の世界地図](../features/stage-progression.md#世界地図の形と試作2026-10-24)のクリアしたマス（`world_map_squares`）と今いるマス（`world_map_positions`）の2テーブルを作る。
+[0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql) は、持っているスキルの1枚が覚醒した枝（`skill_cards.awakened_branch`、NULLか1・2）を足す（[カスタムスキルの覚醒](../features/skill-awakening.md)）。制約を足すため表を作り直すSQLになり、0022と同じく `PRAGMA` を `defer_foreign_keys` に書き換え、元の表にない列を読む部分を `NULL` に直した。
 
 ```sh
 pnpm db:generate --name add_example
@@ -338,6 +340,7 @@ Worker名・DB名は [deploy.mjs](../../server/scripts/deploy.mjs) で環境ご�
 
 ## 変更と判断の記録
 
+- 2026-10-24：ユーザーの依頼で、街道の世界地図の進み具合を保存する `GET /v1/world-map`・`POST /v1/world-map/move` と2テーブル（[0025_world_map.sql](../../server/migrations/0025_world_map.sql)）を足し、seedの3人に進み具合を入れた。マスと道の形はクライアントだけが持つため、サーバーはマスのIDの形だけを確かめる。
 - 2026-10-24：ユーザーの指示でACTボーナスを廃止し（[記録](../archive/step-bonus.md)）、APIと3テーブル（[0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql)）とseedのボーナスを外した。開発中の確かめ用に、ルーンを10,000足す `POST /v1/debug/runes` を足した（ローカルとDevだけで使え、Prodでは404）。
 - 2026-10-22：ユーザーの「段階3（往復の削減）だけ進めて」を受け、一覧を読むGETのD1との往復を減らした。セッションの確認の二重登録を外し（party・equipment・adventure・library・step-bonus）、partyとequipmentは初回の付与の印を読み込みのbatchに入れた。2回目からの往復は、`GET /v1/party` が4回から2回、`GET /v1/equipment` が6回から2回、`GET /v1/library` が7回から3回、`GET /v1/adventure` が3回から2回、`GET /v1/step-bonus` が6回から5回になった。書き込みのAPIも同じ読み方にし、partyは1往復、equipmentは3往復ずつ減った。
 - 2026-10-22：ユーザーの「キャラのスキル表示に1秒ちょっとかかる。何が原因なのか」を受け、[処理時間の計測](#処理時間の計測server-timing)を加えた。Miniflareで数えると、2回目以降の読み込みのD1の往復は `GET /v1/party` が4回、`GET /v1/equipment`・`GET /v1/step-bonus` が6回、`GET /v1/library` が7回、`GET /v1/adventure` が3回だった。各機能が `use("/party")` と `use("/party/*")` の両方へ `requireSession` を付けており、Honoでは `/party/*` が `/party` にも一致するため、一覧を読むGETでセッションの確認が2回走っている。往復を減らす変更は、計測の結果を見てから別に行う。参考：[Hono Timing Middleware](https://hono.dev/middleware/builtin/timing)、[Workerの配置](https://developers.cloudflare.com/workers/configuration/placement/)。

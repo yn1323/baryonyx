@@ -24,6 +24,9 @@ namespace Baryonyx.UI.GuideMenu
     {
         public string Title = "";
 
+        // 案内人を置かない画面（旅の案内所）。リストを画面の幅いっぱいに広げる。
+        public bool NoGuide;
+
         public Texture2D GuideArt;
 
         // Design pixels per dot of the guide. The generated portraits differ in dot count, so

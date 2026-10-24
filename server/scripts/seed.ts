@@ -54,6 +54,8 @@ export type SeedPlayer = {
   adventure?: { destinationId: string; seed: number };
   // 戦闘で開示した敵の弱点。
   weaknesses: readonly { enemyId: string; element: string }[];
+  // 街道の世界地図の進み具合（今いるマスと、最初の街のほかにクリアしたマス）。なければ最初の街にいる。
+  worldMap?: { at: string; cleared: readonly string[] };
   // 戦闘で遭遇した敵と倒した数（ライブラリ）。キャラ・カード・装備の見つけた記録は、持ち物から作る。
   enemies: readonly { enemyId: string; defeated: number }[];
 };
@@ -222,6 +224,22 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     ],
     shards: 3,
     records: [{ destinationId: "forest-ruins", bestFloor: 10, clears: 3 }],
+    worldMap: {
+      at: "pino",
+      cleared: [
+        "n10-10",
+        "n9-10",
+        "n9-9",
+        "n9-8",
+        "brezza",
+        "n6-8",
+        "n12-8",
+        "n12-7",
+        "n11-7",
+        "pino",
+        "n11-4",
+      ],
+    },
     weaknesses: [
       { enemyId: "moss-slime", element: "thunder" },
       { enemyId: "moss-slime", element: "fire" },
@@ -292,6 +310,7 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     materials: [{ id: "polish-white", count: 2 }],
     records: [{ destinationId: "forest-ruins", bestFloor: 6, clears: 0 }],
     adventure: { destinationId: "forest-ruins", seed: 20_261_005 },
+    worldMap: { at: "n10-10", cleared: ["n10-10"] },
     weaknesses: [{ enemyId: "moss-slime", element: "thunder" }],
     enemies: [
       { enemyId: "moss-slime", defeated: 9 },
@@ -623,6 +642,20 @@ function playerStatements(player: SeedPlayer, now: string) {
         defeated: enemy.defeated,
       })),
     ]),
+    ...insert(
+      "world_map_squares",
+      (player.worldMap?.cleared ?? []).map((squareId) => ({
+        user_id: userId,
+        square_id: squareId,
+        cleared_at: now,
+      })),
+    ),
+    ...insert(
+      "world_map_positions",
+      player.worldMap
+        ? [{ user_id: userId, square_id: player.worldMap.at, updated_at: now }]
+        : [],
+    ),
     ...insert(
       "combat_revealed_weaknesses",
       player.weaknesses.map((weakness) => ({

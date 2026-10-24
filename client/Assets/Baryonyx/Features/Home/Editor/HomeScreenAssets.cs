@@ -779,7 +779,7 @@ namespace Baryonyx.Home.Editor
                 new Vector2(28, 24),
                 new Vector2(340, 72)
             );
-            // "旅の案内所" fits the box at 64; anything longer shrinks instead of reaching "出発".
+            // "街道" fits the box at 64; anything longer shrinks instead of reaching "出発".
             view.DestinationFloorLabel.enableAutoSizing = true;
             view.DestinationFloorLabel.fontSizeMin = 40;
             view.DestinationFloorLabel.fontSizeMax = 64;

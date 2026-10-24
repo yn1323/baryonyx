@@ -32,14 +32,14 @@ namespace Baryonyx.Home
         public bool ClaimPulses { get; private set; }
         public string RunesText { get; private set; }
 
-        // 右下のカード。冒険の途中なら行き先と階と「再開」、そうでなければ旅の案内所と「出発」。
+        // 右下のカード。冒険の途中なら行き先と階と「再開」、そうでなければ街道と「出発」。
         // 冒険していないときは行き先の名前の行を空け、「出発」と同じことを言う題は付けない。
         public bool AdventureInProgress { get; private set; }
         public string DestinationNameText { get; private set; }
         public string DestinationFloorText { get; private set; }
         public string ResumeText { get; private set; }
 
-        public const string TravelName = "旅の案内所";
+        public const string TravelName = "街道";
 
         public static HomeViewState From(HomeSnapshot snapshot)
         {
@@ -98,7 +98,7 @@ namespace Baryonyx.Home
                 HomeAction.Tavern => "編成（準備中）",
                 HomeAction.Workshop => "商会（準備中）",
                 HomeAction.Temple => "神殿（準備中）",
-                HomeAction.TravelOffice => "旅の案内所（準備中）",
+                HomeAction.TravelOffice => "街道（準備中）",
                 HomeAction.Resume => "再開（準備中）",
                 HomeAction.Library => "ライブラリ（準備中）",
                 HomeAction.DebugRooms => "デバッグルーム（準備中）",

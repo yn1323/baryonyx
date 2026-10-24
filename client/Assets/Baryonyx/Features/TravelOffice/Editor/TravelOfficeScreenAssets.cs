@@ -21,7 +21,8 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 namespace Baryonyx.TravelOffice.Editor
 {
     /// <summary>
-    /// The travel office (旅の案内所): the old owl cartographer's list of destinations, each row
+    /// The travel office (旅の案内所), opened from the world map as its list of dungeons: the
+    /// destinations across the screen without a guide, each row
     /// with a treasure button that shows how many of the destination's treasures were found and
     /// opens them in a window in the middle of the screen (<see cref="TravelTreasureView"/>).
     /// Place names are provisional mock values, not settled world settings.
@@ -31,7 +32,6 @@ namespace Baryonyx.TravelOffice.Editor
         public const string Folder = "Assets/Baryonyx/Features/TravelOffice";
         public const string DefinitionPath = Folder + "/Data/TravelOfficeGuideMenu.asset";
         public const string PrefabPath = Folder + "/UI/TravelOfficeScreen.prefab";
-        public const string GuideArtPath = Folder + "/UI/Art/TravelOfficeGuide.aseprite";
         public const string BackgroundPath = Folder + "/UI/Art/TravelOfficeBackground.png";
 
         // 最奥の主だけが落とす物の印。12×12の王冠を4倍で出す（UIアイコンの24×24からの例外）。
@@ -69,7 +69,7 @@ namespace Baryonyx.TravelOffice.Editor
             CreateScreen(
                 DefinitionPath,
                 PrefabPath,
-                GuideArtPath,
+                null,
                 BackgroundPath,
                 Fill,
                 overlay: BuildTreasures
@@ -77,7 +77,9 @@ namespace Baryonyx.TravelOffice.Editor
 
         private static void Fill(GuideMenuDefinition d)
         {
-            d.Title = "旅の案内所";
+            d.Title = "ダンジョン一覧";
+            // 世界地図のダンジョン一覧として開くため、案内人は置かない（2026-10-24）。
+            d.NoGuide = true;
             d.Layout = GuideMenuLayout.Destinations;
             d.DepartLabel = "出発";
             // 説明は仮の値。推奨Lvは、行き先の敵のLv（AdventureCatalog.Areas）と同じにする。

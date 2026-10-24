@@ -166,8 +166,9 @@ client/
 | `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens.md#ホーム画面の見た目モック) |
 | `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
 | `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
+| `WorldMap.unity` | 街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。冒険していないときのHomeの右下のカードが開き、右下のボタンで旅の案内所（ダンジョン一覧）を開く | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression.md#世界地図の形と試作2026-10-24) |
 | `Battle.unity` | 冒険の戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
-| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・旅の案内所・ライブラリ）。「もどる」でHomeへ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
+| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
 | `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
@@ -188,7 +189,9 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 | ホーム画面 | `Baryonyx > Home > Create Screen Assets` |
 | 編成の画面と、パーティ・装備・育成・スキルのパネル | `Baryonyx > Tavern > Create Screen Assets` |
 | 商会・神殿・旅の案内所の画面 | `Baryonyx > Workshop > Create Screen Assets`・`Baryonyx > Temple > Create Screen Assets`・`Baryonyx > Travel Office > Create Screen Assets` |
+| 街道の世界地図の画面（背景とマスの取り込み設定、ダンジョン一覧のボタンのアイコンを含む） | `Baryonyx > World Map > Create Screen Assets` |
 | 探索と冒険用の重ね画面のPrefab（行き先ごとの地面の取り込み設定を含む） | `Baryonyx > Adventure > Create Screen Assets` |
+| 休憩の焚き火の夜の野営地の絵（Homeの3Dの野営地を夜の光で描き出す。描いたあとは上の探索のPrefabと、それを置いたシーンを作り直す） | `Baryonyx > Adventure > Render Campfire Scene` |
 | 探索の演出デバッグルームの操作盤と演出の部品のPrefab、光のマテリアル | `Baryonyx > Adventure > Create Exploration Moment Lab Assets` |
 | 戦闘画面のモックとデバッグルームのPrefab | `Baryonyx > Combat > Create Battle Inspect Assets`・`Create Card Skill Lab Assets`・`Create Enemy Lab Assets`・`Create Battle Moment Lab Assets` |
 | 3Dの舞台と戦闘の背景 | `Baryonyx > Stages > Create 3D Stage Assets`・`Create Battle Stage Assets` |

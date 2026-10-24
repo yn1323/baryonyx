@@ -42,6 +42,9 @@ namespace Baryonyx.UI.GuideMenu
         private readonly GuideMenuDefinition definition;
         private readonly Func<bool> leave;
         private readonly Func<int, bool> depart;
+
+        // 右上の×の行き先。なければ「もどる」と同じ所へ戻る。
+        private readonly Func<bool> home;
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
         private bool left;
         private bool disposed;
@@ -50,7 +53,8 @@ namespace Baryonyx.UI.GuideMenu
             IGuideMenuView view,
             GuideMenuDefinition definition,
             Func<bool> leave,
-            Func<int, bool> depart = null
+            Func<int, bool> depart = null,
+            Func<bool> home = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -60,6 +64,7 @@ namespace Baryonyx.UI.GuideMenu
                     : throw new ArgumentNullException(nameof(definition));
             this.leave = leave;
             this.depart = depart;
+            this.home = home;
             view.ItemPressed += SelectItem;
             view.EntryPressed += SelectEntry;
             view.ConfirmPressed += Confirm;
@@ -142,12 +147,13 @@ namespace Baryonyx.UI.GuideMenu
         {
             if (disposed || left)
                 return;
-            if (leave == null)
+            var go = home ?? leave;
+            if (go == null)
             {
                 Show(new GuideMenuState(GuideMenuPage.Menu, -1, -1));
                 return;
             }
-            left = leave();
+            left = go();
             if (!left)
                 view.ShowToast("戻れませんでした");
         }

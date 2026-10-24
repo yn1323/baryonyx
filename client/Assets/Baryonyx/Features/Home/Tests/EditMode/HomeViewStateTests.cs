@@ -40,9 +40,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.ResumeText, Is.EqualTo("再開"));
         }
 
-        // 冒険していないとき、右下のカードは行き先の代わりに旅の案内所を出す。「出発」と同じことを言う題は出さない。
+        // 冒険していないとき、右下のカードは行き先の代わりに街道を出す。「出発」と同じことを言う題は出さない。
         [Test]
-        public void WithNoAdventureTheCardOpensTheTravelOffice()
+        public void WithNoAdventureTheCardShowsTheHighway()
         {
             var snapshot = Sample();
             snapshot.AdventureInProgress = false;

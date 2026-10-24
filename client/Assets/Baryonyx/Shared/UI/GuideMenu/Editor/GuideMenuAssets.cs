@@ -135,10 +135,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
             var definition = AssetFolders.LoadOrCreate<GuideMenuDefinition>(definitionPath);
             fill(definition);
-            definition.GuideArt = ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
+            definition.GuideArt = definition.NoGuide
+                ? null
+                : ArtAssets.ImportTexture(guideArtPath, FilterMode.Point);
             // The backgrounds are generated illustrations used as they are.
             definition.Background = ArtAssets.ImportTexture(backgroundPath, FilterMode.Bilinear);
-            definition.GuideDotSize = FitDotSize(definition.GuideArt);
+            if (definition.GuideArt != null)
+                definition.GuideDotSize = FitDotSize(definition.GuideArt);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssetIfDirty(definition);
 
@@ -236,7 +239,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 var safe = SafeArea(root);
                 frameParts.Add(GuideFrameAssets.BuildHeaderBand(safe));
                 var core = CoreLayer(safe);
-                view.GuideArt = BuildGuide(core, definition);
+                view.GuideArt = definition.NoGuide ? null : BuildGuide(core, definition);
                 BuildHeader(safe, view, definition);
                 if (definition.Layout == GuideMenuLayout.Destinations)
                     BuildDestinations(safe, view, definition);
@@ -550,7 +553,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideMenuDefinition definition
         )
         {
-            var (panel, layer, viewport) = FramedList(safe, "Destinations", 8f);
+            var (panel, layer, viewport) = FramedList(
+                safe,
+                "Destinations",
+                8f,
+                definition.NoGuide ? 0f : ListSplit
+            );
             view.DestinationPanel = panel.gameObject;
 
             var content = ListColumn(viewport, "List");
@@ -582,10 +590,12 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // 枠つきのリストの土台：Safe Area全面のパネル、設計座標の層、案内人の右の透ける面と金の2本線、
         // 決めるボタンの上までの行の表示範囲。行の影と選んだときの光が切れないよう、表示範囲は行より広く取る。
+        // 案内人のいない画面は split を0にし、面を左端から広げて区切りの線を引かない。
         public static (RectTransform Panel, RectTransform Layer, RectTransform Viewport) FramedList(
             RectTransform safe,
             string name,
-            float headingHeight
+            float headingHeight,
+            float split = ListSplit
         )
         {
             var panel = Rect(name, safe);
@@ -594,24 +604,18 @@ namespace Baryonyx.UI.GuideMenu.Editor
             GuideFrameAssets.Pane(
                 layer,
                 "Pane",
-                ListSplit,
+                split,
                 1920f,
                 GuideFrameAssets.HeaderHeight,
                 GuideFrameAssets.PaneLight,
                 false,
                 true
             );
-            GuideFrameAssets.Divider(layer, ListSplit, GuideFrameAssets.HeaderHeight);
+            if (split > 0f)
+                GuideFrameAssets.Divider(layer, split, GuideFrameAssets.HeaderHeight);
             float top = GuideFrameAssets.HeaderHeight + headingHeight;
             float bottom = Layout.Design.y - ConfirmBottom - ConfirmHeight - 8f;
-            var viewport = Layout.Box(
-                layer,
-                "Viewport",
-                ListSplit,
-                top,
-                1920f - ListSplit,
-                bottom - top
-            );
+            var viewport = Layout.Box(layer, "Viewport", split, top, 1920f - split, bottom - top);
             Layout.Mask(viewport);
             return (panel, layer, viewport);
         }

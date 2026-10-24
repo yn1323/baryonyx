@@ -11,6 +11,7 @@ using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.Temple;
 using Baryonyx.Workshop;
+using Baryonyx.WorldMap;
 using UnityEngine;
 
 namespace Baryonyx.App
@@ -31,7 +32,8 @@ namespace Baryonyx.App
             ILibrarySource library = null,
             IWorkshopSource workshop = null,
             IEnhancementSource enhancement = null,
-            ITempleSummonSource summon = null
+            ITempleSummonSource summon = null,
+            IWorldMapSource worldMap = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
@@ -44,6 +46,7 @@ namespace Baryonyx.App
             Workshop = workshop;
             Enhancement = enhancement;
             Summon = summon;
+            WorldMap = worldMap;
         }
 
         public HealthStepLink Health { get; }
@@ -73,6 +76,9 @@ namespace Baryonyx.App
         // 神殿で召喚するサーバー。接続先がなければnull。
         public ITempleSummonSource Summon { get; }
 
+        // 街道の世界地図の進み具合を読み書きするサーバー。接続先がなければnull。
+        public IWorldMapSource WorldMap { get; }
+
         // デバッグルームの一覧の「ルーン+10000」。サーバーがなければ画面の残高に足す。
         public DebugRunes DebugRunes { get; private set; } = DebugRunes.Offline;
 
@@ -101,6 +107,7 @@ namespace Baryonyx.App
             WorkshopSession.Source = services?.Workshop;
             EnhancementSession.Source = services?.Enhancement;
             TempleSummonSession.Source = services?.Summon;
+            WorldMapSession.Source = services?.WorldMap;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -154,6 +161,9 @@ namespace Baryonyx.App
                     : null,
                 sync != null
                     ? new TempleSummonServerSource(sync.Sessions, new TempleSummonApiClient(server))
+                    : null,
+                sync != null
+                    ? new WorldMapServerSource(sync.Sessions, new WorldMapApiClient(server))
                     : null
             );
             if (sync != null)

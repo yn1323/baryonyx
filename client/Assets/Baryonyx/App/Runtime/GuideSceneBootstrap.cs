@@ -27,6 +27,11 @@ namespace Baryonyx.App
         [SerializeField]
         private string homeSceneName = SceneNames.Home;
 
+        // 「もどる」で戻る画面。空ならHome。旅の案内所（ダンジョン一覧）は世界地図へ戻る。
+        // 右上の×は、どの画面でもHomeへ戻る。
+        [SerializeField]
+        private string backSceneName = "";
+
         // 行き先の出発で冒険を始める（旅の案内所）。
         [SerializeField]
         private bool departs;
@@ -43,6 +48,8 @@ namespace Baryonyx.App
         public GuideMenuPresenter Presenter => presenter;
         public TravelDeparture Departure => departure;
         public string HomeSceneName => homeSceneName;
+        public string BackSceneName =>
+            string.IsNullOrEmpty(backSceneName) ? homeSceneName : backSceneName;
 
         private void Awake()
         {
@@ -69,8 +76,9 @@ namespace Baryonyx.App
             presenter = new GuideMenuPresenter(
                 view,
                 view.Definition,
-                ReturnHome,
-                departure != null ? Depart : null
+                GoBack,
+                departure != null ? Depart : null,
+                ReturnHome
             );
             RunesTask = LoadRunesAsync();
         }
@@ -111,5 +119,12 @@ namespace Baryonyx.App
         }
 
         private bool ReturnHome() => SceneLoader.Load(homeSceneName, transition, this);
+
+        private bool GoBack() =>
+            SceneLoader.Load(
+                string.IsNullOrEmpty(backSceneName) ? homeSceneName : backSceneName,
+                transition,
+                this
+            );
     }
 }

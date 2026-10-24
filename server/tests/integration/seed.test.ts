@@ -246,6 +246,17 @@ describe("開発用のプレイヤー（seed）", () => {
       ).toEqual(expect.arrayContaining([...seed.weaknesses]));
       expect(revealed.weaknesses).toHaveLength(seed.weaknesses.length);
 
+      const map = await scenario.read<{ at: string; cleared: string[] }>(
+        "/world-map",
+        token,
+      );
+      expect(map.at).toBe(seed.worldMap?.at ?? "porta");
+      // seedのマスは同じ時刻に入るため、最初の街のあとは順序を問わない。
+      expect(map.cleared[0]).toBe("porta");
+      expect(map.cleared.slice(1).sort()).toEqual(
+        [...(seed.worldMap?.cleared ?? [])].sort(),
+      );
+
       const library = await scenario.read<Library>("/library", token);
       const entries = (kind: string) =>
         library.discoveries

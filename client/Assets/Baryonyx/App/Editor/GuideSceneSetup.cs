@@ -118,6 +118,9 @@ namespace Baryonyx.App.Editor
                         screen.GetComponent<GuideMenuView>();
                     serialized.FindProperty("transition").objectReferenceValue = transition;
                     serialized.FindProperty("homeSceneName").stringValue = SceneNames.Home;
+                    // 旅の案内所は世界地図のダンジョン一覧として開くため、「もどる」で世界地図へ戻る。
+                    serialized.FindProperty("backSceneName").stringValue =
+                        sceneName == SceneNames.TravelOffice ? SceneNames.WorldMap : "";
                     // The travel office's departure sets out on the adventure.
                     serialized.FindProperty("departs").boolValue =
                         sceneName == SceneNames.TravelOffice;

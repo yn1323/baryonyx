@@ -88,7 +88,7 @@ namespace Baryonyx.Home
         public TMP_Text DestinationFloorLabel;
         public TMP_Text ResumeLabel;
 
-        // カードの絵。冒険の途中は行き先の絵、そうでなければ旅の案内所の世界地図。
+        // カードの絵。冒険の途中は行き先の絵、そうでなければ世界地図の絵。
         public RawImage DestinationArt;
         public Texture ResumeArt;
         public Texture TravelArt;

@@ -17,6 +17,7 @@ import { createLibraryApi } from "./features/library/routes.js";
 import { createPartyApi } from "./features/party/routes.js";
 import { createSummonApi } from "./features/summon/routes.js";
 import { createWorkshopApi } from "./features/workshop/routes.js";
+import { createWorldMapApi } from "./features/world-map/routes.js";
 import { createDatabase } from "./shared/db.js";
 import { applyApiDefaults } from "./shared/http.js";
 import { applyServerTiming } from "./shared/server-timing.js";
@@ -37,6 +38,7 @@ export function createApi(
   api.route("/", createWorkshopApi());
   api.route("/", createEnhancementApi());
   api.route("/", createSummonApi());
+  api.route("/", createWorldMapApi());
   api.route("/", createDebugApi());
   return api;
 }

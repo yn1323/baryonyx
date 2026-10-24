@@ -143,6 +143,26 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.Page, Is.EqualTo(GuideMenuPage.List));
         }
 
+        // ×の行き先が別にある画面（世界地図から開くダンジョン一覧）では、「もどる」と×の行き先が分かれる。
+        [Test]
+        public void HomeGoesItsOwnWayWhenGiven()
+        {
+            var view = new FakeView();
+            int backs = 0;
+            int homes = 0;
+            using var presenter = new GuideMenuPresenter(
+                view,
+                definition,
+                () => ++backs > 0,
+                home: () => ++homes > 0
+            );
+
+            view.PressHome();
+            Assert.That(homes, Is.EqualTo(1));
+            Assert.That(backs, Is.Zero);
+            Assert.That(presenter.Left, Is.True);
+        }
+
         // 戻り先がない展示室のプレビューでは、×でメニューへ戻す。
         [Test]
         public void HomeWithoutALeaveShowsTheMenu()

@@ -343,7 +343,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 設定は準備中を知らせ、シーンを移らない。
-        // 編成・商会・神殿・旅の案内所は案内人の画面を開く（GuideScenesTestsで検査する）。
+        // 編成・商会・神殿・ライブラリは案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
         public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
         {
@@ -373,9 +373,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(HomeScenePath));
         }
 
-        // 冒険していないとき、右下のカードは旅の案内所を開く。
+        // 冒険していないとき、右下のカードは街道の世界地図を開く。
         [UnityTest]
-        public IEnumerator CardOpensTheTravelOfficeWithNoAdventure()
+        public IEnumerator CardOpensTheWorldMapWithNoAdventure()
         {
             var bootstrap = default(HomeBootstrap);
             yield return SceneTests.LoadHome(value => bootstrap = value);
@@ -393,16 +393,13 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.Transition.IsPlaying, Is.True);
 
             yield return SceneTests.WaitUntil(
-                () => SceneManager.GetActiveScene().name == SceneNames.TravelOffice,
-                message: "The travel office did not open."
+                () => SceneManager.GetActiveScene().name == SceneNames.WorldMap,
+                message: "The world map did not open."
             );
             Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
             // Top以外からの移動は、短い暗転で閉じて開く。
-            var guide = Object.FindAnyObjectByType<GuideSceneBootstrap>();
-            Assert.That(
-                guide.Transition.transform.Find("FadePanel").gameObject.activeSelf,
-                Is.True
-            );
+            var map = Object.FindAnyObjectByType<WorldMapBootstrap>();
+            Assert.That(map.Transition.transform.Find("FadePanel").gameObject.activeSelf, Is.True);
         }
 
         // 冒険の途中は、右下のカードに行き先と階を出し、探索を再開する。

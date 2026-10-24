@@ -15,6 +15,9 @@ namespace Baryonyx.App
         // 手に入れた物・遭遇した敵・日々の歩数を見返すライブラリ。Homeの左下のボタンが開く。
         public const string Library = "Library";
 
+        // 街道の世界地図（試作）。冒険していないときのHomeの右下のカードと、ダンジョン一覧の「もどる」が開く。
+        public const string WorldMap = "WorldMap";
+
         // 冒険の探索。Homeの右下の行き先カード（再開）と、旅の案内所の出発が開く。
         public const string Exploration = "Exploration";
 
