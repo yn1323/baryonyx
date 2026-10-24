@@ -2,7 +2,7 @@
 id: feature-items
 type: specification
 status: 一部確定
-updated: 2026-10-21
+updated: 2026-10-25
 ---
 
 # アイテム（道具・素材）
@@ -64,11 +64,14 @@ updated: 2026-10-21
 
 ## 実装との対応
 
-アイテムは、ミストラ遺跡と港町ポルトリアの12種を定義した（[ItemCards](../../client/Assets/Baryonyx/Features/Items/Runtime/ItemCards.cs)、サーバーは[種類のID](../../server/src/features/items/catalog.ts)と数だけを持つ）。
+アイテムは、8つの行き先に42種を定義した（[ItemCards](../../client/Assets/Baryonyx/Features/Items/Runtime/ItemCards.cs)、サーバーは[種類のID](../../server/src/features/items/catalog.ts)と数だけを持つ）。
 どれも戦闘のカードの形（コスト・対象・効果）で書き、品質を持たず☆だけを持つ。
 冒険のドロップで手に入り（[冒険のドロップ](drops.md)）、編成のカスタムスキルの枠に、持っている数まで入れられる（[実装との対応](party.md#実装との対応)）。
-戦闘でまだ2枠のカードを使わないため、戦闘で使うことはまだできない。
+枠に入れたアイテムは、冒険と街道の戦闘でデッキのカードになる（2026-10-25、[AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)）。カードの挿絵は、32×32の絵を2倍にして上下を3ドットずつ切った64×58で出す（[AdventureItemCardArt](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureItemCardArt.cs)）。アイテムのカードは休憩の研鑽の対象にしない。
+行き先ごとの内訳と効果量の決め方は、[行き先ごとの一覧](drops.md#行き先ごとの一覧)に記す。
+グラシエラ氷窟より奥の30種は、効果量が仮の値である。
 絵は32×32の `.aseprite` を `Shared/Art/Items` に置き、編成のスキルの画面・ライブラリ・ドロップの表示に出す。
+奥の30種の絵は、2026-10-25にCodex CLIの画像生成で作った（[冒険のドロップの変更と判断の記録](drops.md#変更と判断の記録)）。
 
 ## 変更と判断の記録
 

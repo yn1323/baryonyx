@@ -37,6 +37,66 @@ MonoBehaviour:
     Sprite: {fileID: 5349011544834349465, guid: 7ca45ab6c427f4f2496be0f7ad6afd55, type: 3}
   - Id: pirate-rum
     Sprite: {fileID: 5349011544834349465, guid: 6bce9cac7128842c192d0691ac1755f9, type: 3}
+  - Id: icicle-shard
+    Sprite: {fileID: 5349011544834349465, guid: 70e3a344ebba2104eb4a078a661df33f, type: 3}
+  - Id: cavern-water
+    Sprite: {fileID: 5349011544834349465, guid: 98bf727c7fe69254092709f86f387eac, type: 3}
+  - Id: glowworm-lamp
+    Sprite: {fileID: 5349011544834349465, guid: 193dd36cdfc4a4d4bbbb07f63d1e01f1, type: 3}
+  - Id: frost-crystal
+    Sprite: {fileID: 5349011544834349465, guid: 4e8227a66c28cb544b22e26e922d24e2, type: 3}
+  - Id: troll-stoneskin
+    Sprite: {fileID: 5349011544834349465, guid: 9e4c8e523a306074dbac4badb0139e1f, type: 3}
+  - Id: mud-ball
+    Sprite: {fileID: 5349011544834349465, guid: a773f7fd16c432a4dadfa79b2391579f, type: 3}
+  - Id: lotus-root
+    Sprite: {fileID: 5349011544834349465, guid: ab49e0532c59dfe4683441b5e913aaf6, type: 3}
+  - Id: wisp-wick
+    Sprite: {fileID: 5349011544834349465, guid: ff1aeb196b89304488416a1959f98fa6, type: 3}
+  - Id: bog-venom
+    Sprite: {fileID: 5349011544834349465, guid: 91b93435dfecd194b8127ba1dfc0b6eb, type: 3}
+  - Id: croc-tear
+    Sprite: {fileID: 5349011544834349465, guid: a2ea43f23f037ce48be46c21ee0514c4, type: 3}
+  - Id: cactus-fruit
+    Sprite: {fileID: 5349011544834349465, guid: 882cbcfde7ee42243a6de949c5fd7ab6, type: 3}
+  - Id: scorpion-stinger
+    Sprite: {fileID: 5349011544834349465, guid: 42a1f2c035c1499408954965d8a09b19, type: 3}
+  - Id: hourglass-sand
+    Sprite: {fileID: 5349011544834349465, guid: 72db7d5761b02ca489fb24c4ee0cbe39, type: 3}
+  - Id: grimoire-page
+    Sprite: {fileID: 5349011544834349465, guid: 24fbf7a1b9788cc49be81a2123a2a6ff, type: 3}
+  - Id: brass-spring
+    Sprite: {fileID: 5349011544834349465, guid: b93cf9dda1da6d94eaaace6ff38839c7, type: 3}
+  - Id: grave-candle
+    Sprite: {fileID: 5349011544834349465, guid: 4fd51766ade99784997fb92872977912, type: 3}
+  - Id: moonflower-honey
+    Sprite: {fileID: 5349011544834349465, guid: 7505a0f11a1a2cd4090b8f69a4b7e847, type: 3}
+  - Id: raven-feather
+    Sprite: {fileID: 5349011544834349465, guid: aa8d76beb4fb71849a7226e06ebeebf4, type: 3}
+  - Id: holy-water
+    Sprite: {fileID: 5349011544834349465, guid: 194c5e51c70042848bc3c5414adf550e, type: 3}
+  - Id: soul-phial
+    Sprite: {fileID: 5349011544834349465, guid: 974fa20170a65f0478ae282f136bd680, type: 3}
+  - Id: lava-rock
+    Sprite: {fileID: 5349011544834349465, guid: 915cb1a6642b2e94b8217e38ca401ae3, type: 3}
+  - Id: lizard-tail
+    Sprite: {fileID: 5349011544834349465, guid: 4c993308949c25344afb724c8070f968, type: 3}
+  - Id: sulfur-powder
+    Sprite: {fileID: 5349011544834349465, guid: 0c58131ff1cda654c859d55e0ee18cc0, type: 3}
+  - Id: flametail-plume
+    Sprite: {fileID: 5349011544834349465, guid: 672aa6fe5017bb64c81f5a0f93070ef2, type: 3}
+  - Id: obsidian-core
+    Sprite: {fileID: 5349011544834349465, guid: 0dbed552fbc148543a8efedb5f9d2ff3, type: 3}
+  - Id: hard-snowball
+    Sprite: {fileID: 5349011544834349465, guid: 8ca5f71eaf3b6d943b0730cae8a1ea49, type: 3}
+  - Id: snowdrop
+    Sprite: {fileID: 5349011544834349465, guid: 4ffc11d76557a5f48bb04216b98dd725, type: 3}
+  - Id: boar-jerky
+    Sprite: {fileID: 5349011544834349465, guid: 26fa0de31336ef14d8395c6305b68b2a, type: 3}
+  - Id: crystal-horn
+    Sprite: {fileID: 5349011544834349465, guid: 9dc9f3a1010d83b4d86c03cd79de7a89, type: 3}
+  - Id: mistdragon-scale
+    Sprite: {fileID: 5349011544834349465, guid: dc2354e8d7466d4429dbff8d57b0e3c6, type: 3}
   - Id: flame-dagger
     Sprite: {fileID: 5349011544834349465, guid: 687b235bec6194cc4b9e8f912b8968bb, type: 3}
   - Id: thunder-spear
@@ -81,6 +141,86 @@ MonoBehaviour:
     Sprite: {fileID: 5349011544834349465, guid: a22fc415609e343c98f7e6f7c2440b8e, type: 3}
   - Id: kraken-pearl
     Sprite: {fileID: 5349011544834349465, guid: d3e52f15ca4f34c29b44f3158ab4ed56, type: 3}
+  - Id: miner-helm
+    Sprite: {fileID: 5349011544834349465, guid: e87f3a7eb10d7404694ddaab37711731, type: 3}
+  - Id: crystal-shield
+    Sprite: {fileID: 5349011544834349465, guid: 46c7922a157cbf243b250590e0c15f36, type: 3}
+  - Id: penguin-feather
+    Sprite: {fileID: 5349011544834349465, guid: 6d029836591a6354fa333ca20d632fe1, type: 3}
+  - Id: crystal-ring
+    Sprite: {fileID: 5349011544834349465, guid: 9dde4577e8dcc2049aaad8edc160cd22, type: 3}
+  - Id: troll-heartstone
+    Sprite: {fileID: 5349011544834349465, guid: 056cde0ee5c2c27408374b9ce15f29d5, type: 3}
+  - Id: reed-bow
+    Sprite: {fileID: 5349011544834349465, guid: 98d7b19246267a2489c5d48f4232f1f0, type: 3}
+  - Id: wisp-staff
+    Sprite: {fileID: 5349011544834349465, guid: fc393025ff24ea14eb839aebd5c51a82, type: 3}
+  - Id: mudcloth-robe
+    Sprite: {fileID: 5349011544834349465, guid: 0431ba7eaf5e9374bbda85f9980439da, type: 3}
+  - Id: clay-armor
+    Sprite: {fileID: 5349011544834349465, guid: c05da6e5f3f12284e965e8487f219a77, type: 3}
+  - Id: leech-bell
+    Sprite: {fileID: 5349011544834349465, guid: f11aeb128a8a2e048bdd50bf5a37f2ad, type: 3}
+  - Id: frog-crown
+    Sprite: {fileID: 5349011544834349465, guid: dcf6b0dddc0e0df49be9d8d3045ae496, type: 3}
+  - Id: croc-fang
+    Sprite: {fileID: 5349011544834349465, guid: 077a83a0e5858fe42af82504d8cdd42f, type: 3}
+  - Id: scorpion-bow
+    Sprite: {fileID: 5349011544834349465, guid: f7d005642580ec640b76fa1e2c39fd2e, type: 3}
+  - Id: tomb-khopesh
+    Sprite: {fileID: 5349011544834349465, guid: f2b83e5126ab7e64da6a8931d668ae89, type: 3}
+  - Id: burial-wraps
+    Sprite: {fileID: 5349011544834349465, guid: 129ce0454d3c1ff47a040b507cc8ef05, type: 3}
+  - Id: ancient-plate
+    Sprite: {fileID: 5349011544834349465, guid: 48f99d33afeb858459545886799883b3, type: 3}
+  - Id: scarab-amulet
+    Sprite: {fileID: 5349011544834349465, guid: d67fec32e0c32fe4db4a773ef7443562, type: 3}
+  - Id: gargoyle-eye
+    Sprite: {fileID: 5349011544834349465, guid: 1b43808e11b110048b33c31c658a22d2, type: 3}
+  - Id: golden-mask
+    Sprite: {fileID: 5349011544834349465, guid: 2a60cc174fa16d94dac5d509344d0c65, type: 3}
+  - Id: bone-axe
+    Sprite: {fileID: 5349011544834349465, guid: 8e73b3d89668af44db01757af1a04db9, type: 3}
+  - Id: moonshade-staff
+    Sprite: {fileID: 5349011544834349465, guid: 1e24d9cf26b131f4eba21abbb599f9ae, type: 3}
+  - Id: hollow-helm
+    Sprite: {fileID: 5349011544834349465, guid: 8055d36e44cc743419eab52b1dacc2ae, type: 3}
+  - Id: grave-cloak
+    Sprite: {fileID: 5349011544834349465, guid: 4c0e547b48234d2488ea48cfffa1ffeb, type: 3}
+  - Id: bone-ring
+    Sprite: {fileID: 5349011544834349465, guid: 669b2fe25f7a5d94e9462dd06c05511a, type: 3}
+  - Id: moonstone-pendant
+    Sprite: {fileID: 5349011544834349465, guid: 5a2649b93c489ac4288beadebb16790f, type: 3}
+  - Id: lich-signet
+    Sprite: {fileID: 5349011544834349465, guid: 2ac9aa2653597334aaa8dce7093163cc, type: 3}
+  - Id: firebird-bow
+    Sprite: {fileID: 5349011544834349465, guid: dc551b93dd8a8b94fa99d1c6dedd4dfc, type: 3}
+  - Id: magma-hammer
+    Sprite: {fileID: 5349011544834349465, guid: 61f706d827e1f0946948d0f681633336, type: 3}
+  - Id: lizardscale-mail
+    Sprite: {fileID: 5349011544834349465, guid: fec7dfc331bdd9d44b0fe57884fda145, type: 3}
+  - Id: obsidian-shield
+    Sprite: {fileID: 5349011544834349465, guid: 328bc3c16c2932a4f904fe0274158c18, type: 3}
+  - Id: ember-charm
+    Sprite: {fileID: 5349011544834349465, guid: 4fea02b4e65502e4a81ad58a547ae7d0, type: 3}
+  - Id: magma-ring
+    Sprite: {fileID: 5349011544834349465, guid: abce071f1ece94042a38ca232ec39da3, type: 3}
+  - Id: obsidian-crown
+    Sprite: {fileID: 5349011544834349465, guid: 725144d54382f644d9536062363e9a16, type: 3}
+  - Id: hailstone-staff
+    Sprite: {fileID: 5349011544834349465, guid: 882aa2dd273e75a4f835c1655a0612c3, type: 3}
+  - Id: glacier-greatsword
+    Sprite: {fileID: 5349011544834349465, guid: 0b0657883fb37c64c975df7db11d48a7, type: 3}
+  - Id: snow-cloak
+    Sprite: {fileID: 5349011544834349465, guid: 2630906eb5923a949903938cdd54bc5a, type: 3}
+  - Id: mammoth-fur
+    Sprite: {fileID: 5349011544834349465, guid: f52497edd73773f47b7922788196837f, type: 3}
+  - Id: snowflake-brooch
+    Sprite: {fileID: 5349011544834349465, guid: 8f0f7829f23609647bb9be2585a91589, type: 3}
+  - Id: foxtail-charm
+    Sprite: {fileID: 5349011544834349465, guid: e5c5cb83d82fa6b4e9827a2aaf0851db, type: 3}
+  - Id: mistdragon-eye
+    Sprite: {fileID: 5349011544834349465, guid: 03d55e236353f2f498fbd0b0de93e9e0, type: 3}
   - Id: polish-white
     Sprite: {fileID: 5349011544834349465, guid: b2d244a92f72944a69312f410b0b4cb8, type: 3}
   - Id: polish-blue

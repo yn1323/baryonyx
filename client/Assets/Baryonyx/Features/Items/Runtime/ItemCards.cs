@@ -203,6 +203,355 @@ namespace Baryonyx.Items
                     "味方全体の攻撃力を2ターン20%上げる。",
                     Apply(Allies, CardStatus.AttackUp, 2, 20)
                 ),
+                // --- グラシエラ氷窟（Lv 18） -------------------------------------------------
+                Item(
+                    "icicle-shard",
+                    "氷柱のかけら",
+                    1,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に投げつけ、{0}ダメージ。",
+                    Damage(Enemy, Phy, 60)
+                ),
+                Item(
+                    "cavern-water",
+                    "地底湖の清水",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 70)
+                ),
+                Item(
+                    "glowworm-lamp",
+                    "ツチボタルの灯",
+                    2,
+                    CardElement.None,
+                    CardKind.Support,
+                    Enemy,
+                    0,
+                    "敵1体の[弱点]をすべて見抜き、カードを1枚引く。",
+                    Simple(CardActionKind.RevealWeakness, Enemy),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                ),
+                Item(
+                    "frost-crystal",
+                    "霜の結晶",
+                    3,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemies,
+                    1,
+                    "敵全体に{0}ダメージ。[凍え]2ターン。",
+                    Damage(Enemies, Mag, 40),
+                    Apply(Enemies, CardStatus.Chill, 2)
+                ),
+                Item(
+                    "troll-stoneskin",
+                    "トロルの石皮",
+                    4,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    2,
+                    "味方全体に[ブロック]{0}。",
+                    Block(Allies, Def, 60)
+                ),
+                // --- しじまの沼（Lv 22） -----------------------------------------------------
+                Item(
+                    "mud-ball",
+                    "泥だんご",
+                    1,
+                    CardElement.Blunt,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に投げつけ、{0}ダメージ。",
+                    Damage(Enemy, Phy, 70)
+                ),
+                Item(
+                    "lotus-root",
+                    "蓮の根",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 80)
+                ),
+                Item(
+                    "wisp-wick",
+                    "鬼火の灯心",
+                    2,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemy,
+                    1,
+                    "敵1体に{0}ダメージ。[やけど]2ターン。",
+                    Damage(Enemy, Mag, 50),
+                    Apply(Enemy, CardStatus.Burn, 2)
+                ),
+                Item(
+                    "bog-venom",
+                    "沼の毒水",
+                    3,
+                    CardElement.None,
+                    CardKind.Debuff,
+                    Enemies,
+                    1,
+                    "敵全体に[毒]を3つ重ねる。",
+                    Apply(Enemies, CardStatus.Poison, 0, 3)
+                ),
+                Item(
+                    "croc-tear",
+                    "大ワニの涙",
+                    4,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Allies,
+                    2,
+                    "味方全体の[状態異常]を消し、HPを{0}回復。",
+                    Simple(CardActionKind.Cleanse, Allies),
+                    Heal(Allies, Mag, 45)
+                ),
+                // --- アルマジャ王墓（Lv 26） -------------------------------------------------
+                Item(
+                    "cactus-fruit",
+                    "サボテンの実",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 90)
+                ),
+                Item(
+                    "scorpion-stinger",
+                    "砂サソリの毒針",
+                    1,
+                    CardElement.Pierce,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に{0}ダメージ。[毒]を1つ重ねる。",
+                    Damage(Enemy, Phy, 70),
+                    Apply(Enemy, CardStatus.Poison, 0, 1)
+                ),
+                Item(
+                    "hourglass-sand",
+                    "砂時計の砂",
+                    2,
+                    CardElement.None,
+                    CardKind.Debuff,
+                    Enemy,
+                    1,
+                    "敵1体の行動順を1つ遅らせ、カードを1枚引く。",
+                    Simple(CardActionKind.Delay, Enemy, 1),
+                    Simple(CardActionKind.Draw, Nobody, 1)
+                ),
+                Item(
+                    "grimoire-page",
+                    "魔導書の切れ端",
+                    3,
+                    CardElement.Thunder,
+                    CardKind.Attack,
+                    Enemies,
+                    1,
+                    "敵全体に{0}ダメージ。",
+                    Damage(Enemies, Mag, 60)
+                ),
+                Item(
+                    "brass-spring",
+                    "真鍮のぜんまい",
+                    5,
+                    CardElement.None,
+                    CardKind.Support,
+                    Nobody,
+                    1,
+                    "カードを2枚引き、次に使うカードのコストを0にする。",
+                    Simple(CardActionKind.Draw, Nobody, 2),
+                    Simple(CardActionKind.NextCardFree)
+                ),
+                // --- 月影の墓所（Lv 30） -----------------------------------------------------
+                Item(
+                    "grave-candle",
+                    "墓前のろうそく",
+                    1,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に火を移し、{0}ダメージ。",
+                    Damage(Enemy, Mag, 90)
+                ),
+                Item(
+                    "moonflower-honey",
+                    "月見草の蜜",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 100)
+                ),
+                Item(
+                    "raven-feather",
+                    "大鴉の羽根",
+                    2,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Allies,
+                    1,
+                    "味方全体の速度を2ターン上げる。",
+                    Apply(Allies, CardStatus.SpeedUp, 2, 20)
+                ),
+                Item(
+                    "holy-water",
+                    "聖水",
+                    3,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    1,
+                    "味方全体の[状態異常]を消し、[ブロック]{0}。",
+                    Simple(CardActionKind.Cleanse, Allies),
+                    Block(Allies, Def, 50)
+                ),
+                Item(
+                    "soul-phial",
+                    "魂の小瓶",
+                    5,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    2,
+                    "味方1体のHPを最大の半分回復。倒れていれば復活。",
+                    Simple(CardActionKind.Revive, Ally, 50)
+                ),
+                // --- ヴォルガン火山（Lv 35） -------------------------------------------------
+                Item(
+                    "lava-rock",
+                    "溶岩のつぶて",
+                    1,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に投げつけ、{0}ダメージ。",
+                    Damage(Enemy, Phy, 100)
+                ),
+                Item(
+                    "lizard-tail",
+                    "火とかげのしっぽ",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 110)
+                ),
+                Item(
+                    "sulfur-powder",
+                    "硫黄の粉",
+                    2,
+                    CardElement.Fire,
+                    CardKind.Attack,
+                    Enemies,
+                    1,
+                    "敵全体に{0}ダメージ。[やけど]2ターン。",
+                    Damage(Enemies, Mag, 45),
+                    Apply(Enemies, CardStatus.Burn, 2)
+                ),
+                Item(
+                    "flametail-plume",
+                    "炎尾の尾羽",
+                    3,
+                    CardElement.None,
+                    CardKind.Buff,
+                    Ally,
+                    1,
+                    "味方1体の攻撃に3ターン炎属性を加え、攻撃力を2ターン25%上げる。",
+                    Apply(Ally, CardStatus.FireBlade, 3),
+                    Apply(Ally, CardStatus.AttackUp, 2, 25)
+                ),
+                Item(
+                    "obsidian-core",
+                    "黒曜石の核",
+                    5,
+                    CardElement.Blunt,
+                    CardKind.Attack,
+                    Enemies,
+                    2,
+                    "敵全体に{0}ダメージ。[防御ダウン]2ターン。",
+                    Damage(Enemies, Phy, 110),
+                    Apply(Enemies, CardStatus.Vulnerable, 2)
+                ),
+                // --- 白嶺ネーヴェ（Lv 40） ---------------------------------------------------
+                Item(
+                    "hard-snowball",
+                    "固い雪玉",
+                    1,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemy,
+                    0,
+                    "敵1体に投げつけ、{0}ダメージ。",
+                    Damage(Enemy, Phy, 115)
+                ),
+                Item(
+                    "snowdrop",
+                    "雪割り草",
+                    1,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Ally,
+                    1,
+                    "味方1体のHPを{0}回復。",
+                    Heal(Ally, Mag, 125)
+                ),
+                Item(
+                    "boar-jerky",
+                    "猪の干し肉",
+                    2,
+                    CardElement.None,
+                    CardKind.Heal,
+                    Allies,
+                    1,
+                    "味方全体のHPを{0}回復。",
+                    Heal(Allies, Mag, 55)
+                ),
+                Item(
+                    "crystal-horn",
+                    "水晶角のかけら",
+                    3,
+                    CardElement.Ice,
+                    CardKind.Attack,
+                    Enemy,
+                    2,
+                    "敵1体に{0}ダメージ。[凍結]させる。",
+                    Damage(Enemy, Mag, 120),
+                    Apply(Enemy, CardStatus.Freeze, 1)
+                ),
+                Item(
+                    "mistdragon-scale",
+                    "霧竜の鱗",
+                    5,
+                    CardElement.None,
+                    CardKind.Guard,
+                    Allies,
+                    1,
+                    "味方全体の受けるダメージを2ターン30%減らし、エネルギーを1回復する。",
+                    Apply(Allies, CardStatus.Protect, 2, 30),
+                    Simple(CardActionKind.Energy, Nobody, 1)
+                ),
             }
         );
 
