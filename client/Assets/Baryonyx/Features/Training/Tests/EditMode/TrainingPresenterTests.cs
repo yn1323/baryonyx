@@ -591,12 +591,13 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(gear[0].Filled, Is.True);
             Assert.That(gear[0].Name, Is.EqualTo("樫の杖"));
             Assert.That(gear[1].Filled, Is.False);
-            // アクセサリーは、Lvで開くまで解放するLvを出す。
+            // アクセサリーの1つ目はLv1から開き、ほかはLvで開くまで解放するLvを出す。
             Assert.That(
-                gear.Select(slot => slot.Locked),
-                Is.EqualTo(new[] { false, false, true, true, true })
+                gear.Select(slot => slot.Locked).ToArray(),
+                Is.EqualTo(new[] { false, false, false, true, true })
             );
-            Assert.That(gear[2].UnlockText, Is.EqualTo(AccessorySlots.UnlockText(0)));
+            Assert.That(gear[2].UnlockText, Is.Empty);
+            Assert.That(gear[3].UnlockText, Is.EqualTo(AccessorySlots.UnlockText(1)));
             Assert.That(gear[0].UnlockText, Is.Empty);
 
             // 装備がわからない人は、武器と防具を空きとして出す。

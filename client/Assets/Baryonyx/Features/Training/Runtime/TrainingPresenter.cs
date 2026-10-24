@@ -122,7 +122,7 @@ namespace Baryonyx.Training
         public ItemQuality Quality { get; internal set; } = ItemQuality.C;
         public int FoilStyle { get; internal set; }
 
-        // まだ開いていない枠（アクセサリー）と、解放するLv（「Lv 15で解放」）。押すと付け替えの画面を開く。
+        // まだ開いていない枠（アクセサリー）と、解放するLv（「Lv 20で解放」）。押すと付け替えの画面を開く。
         public bool Locked { get; internal set; }
         public string UnlockText { get; internal set; } = "";
 

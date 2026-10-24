@@ -48,7 +48,7 @@ import {
 import type { LevelUp } from "./schema.js";
 
 export type PartySlotChange = "join" | "replace" | "leave" | "none";
-export type PartyCardChange = "replace" | "swap" | "move" | "none";
+export type PartyCardChange = "replace" | "swap" | "move" | "remove" | "none";
 export type PartyUniqueChange = "set" | "none";
 export type PartyEvolveChange = "evolve" | "none";
 export type PartyBondChange = "deepen" | "none";
@@ -482,6 +482,33 @@ export function createPartyRepository(binding: D1Database) {
     };
   }
 
+  // キャラの枠を空きにする（スキル変更の「スキルを外す」）。空きの枠はそのまま返す。
+  async function clearCard(
+    userId: string,
+    characterId: CharacterId,
+    slot: number,
+    now: string,
+  ) {
+    const state = await loadState(userId, now);
+    const character = state.characters.find(
+      (entry) => entry.id === characterId,
+    );
+    if (!character) return { error: "character_not_owned" as const };
+    if (character.cards[slot] === null) {
+      return { change: "none" as const, ...state };
+    }
+    await db
+      .delete(partyCharacterCards)
+      .where(
+        and(
+          eq(partyCharacterCards.userId, userId),
+          eq(partyCharacterCards.characterId, characterId),
+          eq(partyCharacterCards.slot, slot),
+        ),
+      );
+    return { change: "remove" as const, ...(await readState(userId)) };
+  }
+
   async function findLevelUp(userId: string, requestId: string) {
     return db
       .select({
@@ -791,6 +818,7 @@ export function createPartyRepository(binding: D1Database) {
     setSlot,
     clearSlot,
     setCard,
+    clearCard,
     levelUp,
     setUnique,
     evolveUnique,

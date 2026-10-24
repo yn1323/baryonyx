@@ -36,7 +36,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernGearPickerTests));
         }
 
-        // 編成のメニューの「装備」は、冒険者・ボーナスの間に並び、全員のカード（パーティが先）を開く。
+        // 編成のメニューの「装備」は、冒険者の次に並び、全員のカード（パーティが先）を開く。
         // 1人を押すとその人の個別の画面へ進み、個別の画面の「もどる」で人選びへ戻る。
         [UnityTest]
         public IEnumerator GearOpensThePageOfTheChosenAdventurer()

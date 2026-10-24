@@ -77,6 +77,20 @@ export function createPartyApi() {
     return respond(c, result, errorStatus);
   });
 
+  // キャラの枠のスキル・アイテムを外して空きにする。本文の null は JsonUtility が空文字で送るため、PUT と分ける。
+  api.delete("/party/characters/:characterId/cards/:slot", async (c) => {
+    const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
+    const slot = cardSlotSchema.safeParse(c.req.param("slot"));
+    if (!characterId.success || !slot.success) return invalidRequest(c);
+    const result = await createPartyRepository(c.env.DB).clearCard(
+      c.get("userId"),
+      characterId.data,
+      slot.data,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
   api.post("/party/characters/:characterId/level-up", async (c) => {
     const characterId = characterIdSchema.safeParse(c.req.param("characterId"));
     const body = await parseJson(c, levelUpSchema);

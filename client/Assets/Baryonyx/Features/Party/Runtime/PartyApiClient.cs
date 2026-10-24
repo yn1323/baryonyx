@@ -48,6 +48,20 @@ namespace Baryonyx.Party
                 token
             );
 
+        public Task<State> ClearCardAsync(
+            AccountSession session,
+            string characterId,
+            int slot,
+            CancellationToken token
+        ) =>
+            server.SendAsync<State>(
+                $"/v1/party/characters/{Uri.EscapeDataString(characterId)}/cards/{slot}",
+                "DELETE",
+                null,
+                session.Token,
+                token
+            );
+
         public Task<State> SetCardAsync(
             AccountSession session,
             string characterId,

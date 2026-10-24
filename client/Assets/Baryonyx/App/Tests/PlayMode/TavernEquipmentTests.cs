@@ -114,16 +114,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Person.Name.text, Is.EqualTo(person.Name));
 
             // 武器の枠を選び、まだ誰も付けていない武器に替える。
-            // アクセサリーのタブを押すと1つ目のアクセサリーの枠を選ぶ。まだ持てないので一覧は空で、
-            // 開いていない枠は解放するLvを出す。左のアクセサリーの枠を押してもアクセサリーのタブになる。
+            // アクセサリーのタブを押すと1つ目のアクセサリーの枠を選ぶ。1つ目はLv1から開いているが、
+            // まだ持てないので一覧は空。左のアクセサリーの枠を押してもアクセサリーのタブになる。
             panel.Tabs[2].Button.onClick.Invoke();
             Assert.That(panel.Tabs[2].Chosen, Is.True);
             Assert.That(panel.Accessories[0].Selected.activeSelf, Is.True);
             Assert.That(panel.Slots.Any(slot => slot.Selected.activeSelf), Is.False);
             Assert.That(Rows(panel), Is.Empty);
             Assert.That(panel.Remove.gameObject.activeSelf, Is.False);
-            Assert.That(panel.Accessories[0].Name.text, Is.EqualTo(AccessorySlots.UnlockText(0)));
-            Assert.That(panel.Status.text, Is.EqualTo(AccessorySlots.UnlockText(0)));
+            Assert.That(panel.Accessories[0].Name.text, Is.EqualTo("なし"));
+            Assert.That(panel.Status.text, Is.EqualTo(EquipmentView.NoAccessoryText));
             panel.Accessories[1].Button.onClick.Invoke();
             Assert.That(panel.Accessories[1].Selected.activeSelf, Is.True);
             Assert.That(panel.Accessories[0].Selected.activeSelf, Is.False);

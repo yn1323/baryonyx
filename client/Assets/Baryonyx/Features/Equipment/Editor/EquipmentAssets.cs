@@ -164,7 +164,7 @@ namespace Baryonyx.Equipment.Editor
             return widget;
         }
 
-        // アクセサリーの枠。押すとアクセサリーのタブに移る。開いていなければ錠前と「Lv 15で解放」を出す。
+        // アクセサリーの枠。押すとアクセサリーのタブに移る。開いていなければ錠前と「Lv 20で解放」を出す。
         private static EquipmentAccessoryWidget BuildAccessory(RectTransform panel, int index)
         {
             var (button, selected, row) = GlassCardAssets.Choice(

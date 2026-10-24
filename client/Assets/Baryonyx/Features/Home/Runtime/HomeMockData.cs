@@ -15,7 +15,7 @@ namespace Baryonyx.Home
         public HomeStepLink StepLink = HomeStepLink.Linked;
 
         [Min(0)]
-        [Tooltip("8,000以上にすると、ボーナスをすべて解放した表示になります。")]
+        [Tooltip("8,000以上にすると、ゲージが満タンの表示になります。")]
         public int Steps = 3820;
 
         [Min(0)]

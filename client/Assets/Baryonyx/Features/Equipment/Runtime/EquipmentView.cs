@@ -43,7 +43,7 @@ namespace Baryonyx.Equipment
         // まだ開いていない枠の錠前。開いた枠では隠す。
         public GameObject Lock;
 
-        // 「Lv 15で解放」、開いた枠では「なし」。
+        // 「Lv 20で解放」、開いた枠では「なし」。
         public TMP_Text Name;
     }
 

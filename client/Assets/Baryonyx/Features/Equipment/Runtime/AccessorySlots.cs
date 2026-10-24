@@ -9,15 +9,15 @@ namespace Baryonyx.Equipment
     {
         public const int Count = 3;
 
-        // 仮の解放レベル（上限のLv 30までの間に1つずつ開く）。
-        private static readonly int[] UnlockLevels = { 15, 20, 25 };
+        // 解放レベル。1つ目は初めから開いている（2026-10-24、ユーザーの指示）。
+        private static readonly int[] UnlockLevels = { 1, 20, 40 };
 
         public static int UnlockLevel(int index) =>
             index >= 0 && index < UnlockLevels.Length ? UnlockLevels[index] : int.MaxValue;
 
         public static bool IsOpen(int index, int level) => level >= UnlockLevel(index);
 
-        /// <summary>"Lv 15で解放", shown on a slot that is not open yet.</summary>
+        /// <summary>"Lv 20で解放", shown on a slot that is not open yet.</summary>
         public static string UnlockText(int index) => $"Lv {UnlockLevel(index)}で解放";
     }
 }

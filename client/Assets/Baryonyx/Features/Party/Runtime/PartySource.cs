@@ -135,7 +135,8 @@ namespace Baryonyx.Party
         /// <summary>
         /// The party with the character's card slot set to the key. A key in the character's
         /// other slot swaps with the slot's card; an owned skill card another character holds
-        /// leaves that character (an item stays, since it is counted, not moved).
+        /// leaves that character (an item stays, since it is counted, not moved). A null key
+        /// empties the slot.
         /// </summary>
         public PartyState WithCard(string characterId, int slot, string key)
         {
@@ -149,7 +150,8 @@ namespace Baryonyx.Party
                     var cards = character.Cards.ToArray();
                     if (character.Id == characterId)
                     {
-                        int other = Array.IndexOf(cards, key);
+                        // 外すときは、ほかの空きの枠と入れ替えない。
+                        int other = key != null ? Array.IndexOf(cards, key) : -1;
                         if (other >= 0)
                             cards[other] = cards[slot];
                         cards[slot] = key;
@@ -237,7 +239,7 @@ namespace Baryonyx.Party
         // 枠にキャラを入れる。nullなら枠のキャラを外す。
         Task<PartyState> SetSlotAsync(int slot, string characterId, CancellationToken token);
 
-        // 枠に入れる物は PartyCardKey の形で渡す。
+        // 枠に入れる物は PartyCardKey の形で渡す。null なら枠を空きにする。
         Task<PartyState> SetCardAsync(
             string characterId,
             int slot,
@@ -313,12 +315,20 @@ namespace Baryonyx.Party
                 token
             );
 
+        // 空のキーは枠を空きにする（DELETE で送る）。
         public Task<PartyState> SetCardAsync(
             string characterId,
             int slot,
             string key,
             CancellationToken token
-        ) => Run(session => api.SetCardAsync(session, characterId, slot, key, token), token);
+        ) =>
+            Run(
+                session =>
+                    string.IsNullOrEmpty(key)
+                        ? api.ClearCardAsync(session, characterId, slot, token)
+                        : api.SetCardAsync(session, characterId, slot, key, token),
+                token
+            );
 
         public Task<PartyState> LevelUpAsync(
             string characterId,

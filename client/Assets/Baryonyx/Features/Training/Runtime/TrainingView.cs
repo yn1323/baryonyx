@@ -88,7 +88,7 @@ namespace Baryonyx.Training
         public TMP_Text Stars;
         public TMP_Text Detail;
 
-        // まだ開いていない枠（アクセサリー）に出す錠前と、解放するLv（「Lv 15で解放」）。
+        // まだ開いていない枠（アクセサリー）に出す錠前と、解放するLv（「Lv 20で解放」）。
         public GameObject Lock;
         public TMP_Text When;
     }

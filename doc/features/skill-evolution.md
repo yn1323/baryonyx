@@ -198,7 +198,7 @@ Codex CLIで作った2つの案（ひびの入ったカードから枝を伸ば�
 | 鼓舞 | 騎士 | 自ら斬り込む（鼓舞・突撃→鼓舞・総攻撃） | 号令で手札をつなぐ（鼓舞・号令→鼓舞・凱歌） | 守りを固める（鼓舞・堅陣→鼓舞・鉄壁） |
 | 裁きの光 | 癒し手 | 1体に集める（裁きの光・断罪→裁きの光・天罰） | 清める（裁きの光・浄→裁きの光・聖浄） | 癒やしを残す（裁きの光・陽光→裁きの光・天照） |
 
-3つ目の固有スキル（魔眼・速射・鼓舞・裁きの光）はLv40で解放する（2026-10-23）。
+3つ目の固有スキル（魔眼・速射・鼓舞・裁きの光）はLv30で解放する（2026-10-24、ユーザーの指示。2026-10-23に決めたときはLv40）。
 1つ目・2つ目が攻撃と守りに寄っていたため、3つ目には、弱点の開示・手札・味方全体の強化・攻撃と回復の両立のように、ほかの2つにない役割を持たせた。
 
 ### 確率の仮設定
@@ -274,7 +274,7 @@ Lvの差による下限を0にしないのは、もう覚醒しない状態が�
 | 確率の計算と覚醒先 | [UniqueSkillEvolution](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillEvolution.cs) |
 | 冒険での確率の材料（部屋の種類・推奨Lv）と、マスを終えたときに残すこと | [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs)・[BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs)。固有スキルのカードに誰の何番目かを持たせるのは [AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs) |
 | サーバーへの保存（クライアント） | [PartyUniqueSkills](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyUniqueSkills.cs)・[PartyApiClient](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyApiClient.cs) |
-| サーバーへの保存（サーバー） | `GET /v1/party` の各キャラの `uniques`、`PUT /v1/party/characters/:characterId/uniques/:index`（セット）、`POST /v1/party/characters/:characterId/uniques/:index/evolve`（覚醒）。[routes](../../server/src/features/party/routes.ts)・[repository](../../server/src/features/party/repository.ts)・テーブル `party_unique_skills`（[db-schema](../../server/src/features/party/db-schema.ts)、マイグレーション0016）。解放のLv（1つ目はLv5、2つ目はLv20、3つ目はLv40）はサーバーの [catalog](../../server/src/features/party/catalog.ts) が判定に使う |
+| サーバーへの保存（サーバー） | `GET /v1/party` の各キャラの `uniques`、`PUT /v1/party/characters/:characterId/uniques/:index`（セット）、`POST /v1/party/characters/:characterId/uniques/:index/evolve`（覚醒）。[routes](../../server/src/features/party/routes.ts)・[repository](../../server/src/features/party/repository.ts)・テーブル `party_unique_skills`（[db-schema](../../server/src/features/party/db-schema.ts)、マイグレーション0016）。解放のLv（1つ目はLv1、2つ目はLv10、3つ目はLv30。2026-10-24）はサーバーの [catalog](../../server/src/features/party/catalog.ts) が判定に使う |
 | 付け替えの画面での表示と操作 | [プレゼンター](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
 
 仮データと実装の差は次のとおりである。

@@ -182,6 +182,9 @@ namespace Baryonyx.CardLoadout
         // 読み込み中と読めなかったとき、アイテムのタブを選んでいるときだけ一覧の面に出す文字。
         public TMP_Text Status;
         public CardLoadoutRowWidget[] Rows = Array.Empty<CardLoadoutRowWidget>();
+
+        // 一覧の最後の「スキルを外す」。カスタムスキルの枠に何か入っているときだけ出す。
+        public Button Remove;
         public ScrollRect List;
 
         // CardElement の順の属性のアイコン。属性なしはnull。
@@ -254,6 +257,7 @@ namespace Baryonyx.CardLoadout
             }
             foreach (var row in Rows)
                 BindRow(row);
+            BindRemove();
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
@@ -709,6 +713,9 @@ namespace Baryonyx.CardLoadout
         private void BindRow(CardLoadoutRowWidget row) =>
             bindings.Bind(row.Button, () => CardPressed?.Invoke(row.Id));
 
+        private void BindRemove() =>
+            bindings.Bind(Remove, () => CardPressed?.Invoke(CardLoadoutPresenter.RemoveKey));
+
         // 選べるカードを、上から順に行へ入れる。行が足りなければ1行目を写して増やす。
         private void ShowRows(CardLoadoutState state)
         {
@@ -726,6 +733,11 @@ namespace Baryonyx.CardLoadout
                 row.Id = card.Id;
                 row.Button.transform.SetSiblingIndex(i);
                 ShowRow(row, card, ArtOf(card), IconOf(card.Element));
+            }
+            if (Remove != null)
+            {
+                Remove.gameObject.SetActive(state.CanRemove);
+                Remove.transform.SetAsLastSibling();
             }
         }
 
@@ -814,6 +826,10 @@ namespace Baryonyx.CardLoadout
             Set(widget.Description, filled ? card.Description : "");
         }
 
+        // 右の一覧の絵の1ドットの画素数（設計座標）。スキルの挿絵は2倍、アイテムの絵は3倍。
+        public const float ArtDot = 2f;
+        public const float ItemArtDot = 3f;
+
         /// <summary>
         /// One card on the right: its art, cost, element, name and kind, the description with the
         /// person's numbers, and the mark (which slot of theirs holds it, who else uses it, or how
@@ -830,6 +846,10 @@ namespace Baryonyx.CardLoadout
             {
                 widget.Art.texture = art;
                 widget.Art.enabled = art != null;
+                // アイテムの絵（32×32）はスキルの挿絵（64×58）より小さいため、1ドットを大きく出す。
+                var fit = widget.Art.GetComponent<PixelPerfectRawImage>();
+                if (fit != null)
+                    fit.DotSize = card.ItemId != null ? ItemArtDot : ArtDot;
             }
             if (widget.Foil != null)
                 widget.Foil.Show(art, card.Quality, card.FoilStyle);

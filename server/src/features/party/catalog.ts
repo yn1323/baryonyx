@@ -138,9 +138,9 @@ export const PARTY_SLOT_COUNT = 4;
 export const CARD_SLOT_COUNT = 3;
 
 // キャラごとの固有スキルの数と、それぞれを解放するLv（doc/features/skill-evolution.md）。
-// 解放のLvはクライアントの仮データ（PartyMockData）と同じ値にし、判定はサーバーの値で行う。
+// 解放のLvはクライアントの仮データ（TrainingAssets.UniqueUnlockLevels）と同じ値にし、判定はサーバーの値で行う。
 export const UNIQUE_SKILL_COUNT = 3;
-export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [5, 20, 40];
+export const UNIQUE_UNLOCK_LEVELS: readonly number[] = [1, 10, 30];
 
 // 固有スキルの進化の段階。どの固有スキルも同じ形のツリーで、0が最初の段階、
 // 1・2が枝1、3・4が枝2、5・6が枝3の1段目と2段目になる。

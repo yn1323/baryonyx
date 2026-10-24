@@ -126,6 +126,9 @@ namespace Baryonyx.CardLoadout
 
         // 右に並べる、その人が付けられるカード（コストの低い順）か、持っているアイテム。
         public IReadOnlyList<CardLoadoutCardState> Choices { get; internal set; }
+
+        // 選んでいるカスタムスキルの枠に何か入っていて、一覧の最後に「スキルを外す」を出す。
+        public bool CanRemove => Slot >= 0 && Slot < (Slots?.Count ?? 0) && Slots[Slot] != null;
     }
 
     /// <summary>Where the card skills read and write each person's cards and the numbers on them.</summary>
@@ -352,8 +355,28 @@ namespace Baryonyx.CardLoadout
             Refresh();
         }
 
-        // 選んでいる枠に、押したカード（キー）を入れる。
-        public void Choose(string key) => ChooseTask = ChooseAsync(key);
+        // 一覧の最後の「スキルを外す」を押したときに、カードのキーの代わりに届く値。
+        public const string RemoveKey = "remove";
+
+        public const string RemoveLabel = "スキルを外す";
+
+        // 選んでいる枠に、押したカード（キー）を入れる。RemoveKey なら枠を空きにする。
+        public void Choose(string key) =>
+            ChooseTask = key == RemoveKey ? RemoveAsync() : ChooseAsync(key);
+
+        // 選んでいる枠を空きにし、サーバーがあればそのあとで保存する。
+        private async Task RemoveAsync()
+        {
+            var member = Current;
+            if (disposed || slot < 0 || member == null)
+                return;
+            int target = slot;
+            var cards = Cards(member.Id);
+            if (target >= cards.Length || cards[target] == null)
+                return;
+            cards[target] = null;
+            await CommitAsync(member.Id, cards, target, null);
+        }
 
         // すぐに表示を変え、サーバーがあればそのあとで保存する。
         private async Task ChooseAsync(string key)
@@ -382,15 +405,21 @@ namespace Baryonyx.CardLoadout
             if (change == CardLoadoutChange.None)
                 return;
             // 変わったことは枠を見ればわかるので知らせない。
+            await CommitAsync(member.Id, cards, target, key);
+        }
+
+        // 枠を変えたカードを当てて描き直す。サーバーがあれば枠 target に key（null なら空き）を保存する。
+        private async Task CommitAsync(string memberId, string[] cards, int target, string key)
+        {
             if (save == null)
             {
-                store.SetCards(member.Id, cards);
+                store.SetCards(memberId, cards);
                 Refresh();
                 return;
             }
 
             // save はすぐに store へ当てるので、保存を待たずに描き直す。
-            var saved = save(member.Id, target, key);
+            var saved = save(memberId, target, key);
             Refresh();
             await saved;
             if (disposed)

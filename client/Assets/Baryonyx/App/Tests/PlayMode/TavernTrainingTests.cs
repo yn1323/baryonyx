@@ -125,11 +125,13 @@ namespace Baryonyx.Tests.PlayMode
                 )
             );
             Assert.That(training.Uniques[0].Description, Is.Null);
+            // 1つ目はLv1、2つ目はLv10で開き、Lv12の先頭の人は3つ目（Lv30）だけがまだ開いていない。
             Assert.That(training.Uniques[0].Lock.activeSelf, Is.False);
-            Assert.That(training.Uniques[1].Lock.activeSelf, Is.True);
+            Assert.That(training.Uniques[1].Lock.activeSelf, Is.False);
+            Assert.That(training.Uniques[2].Lock.activeSelf, Is.True);
             Assert.That(
-                training.Uniques[1].When.text,
-                Is.EqualTo($"Lv {growth.Uniques[1].UnlockLevel}で解放")
+                training.Uniques[2].When.text,
+                Is.EqualTo($"Lv {growth.Uniques[2].UnlockLevel}で解放")
             );
             foreach (var card in training.Uniques)
                 SceneTests.AssertTouchSize(card.Button.transform);
@@ -144,14 +146,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Gear[0].Name.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Detail.text, Is.Not.Empty);
             Assert.That(training.Gear[0].Icon.enabled, Is.True);
-            // アクセサリーの3枠は、Lvで開くまで錠前と解放するLvを出す。押すと付け替えの画面を開ける。
+            // アクセサリーの1つ目はLv1から開き、2つ目と3つ目はLvで開くまで錠前と解放するLvを出す。
+            // 押すと付け替えの画面を開ける。
             Assert.That(training.Gear[4].Slot.text, Is.EqualTo("アクセサリー 3"));
-            Assert.That(training.Gear.Skip(2).All(gear => gear.Lock.activeSelf), Is.True);
+            Assert.That(training.Gear[2].Lock.activeSelf, Is.False);
+            Assert.That(training.Gear.Skip(3).All(gear => gear.Lock.activeSelf), Is.True);
             Assert.That(
-                training.Gear.Skip(2).Select(gear => gear.When.text),
-                Is.EqualTo(
-                    Enumerable.Range(0, AccessorySlots.Count).Select(AccessorySlots.UnlockText)
-                )
+                training.Gear.Skip(3).Select(gear => gear.When.text),
+                Is.EqualTo(new[] { AccessorySlots.UnlockText(1), AccessorySlots.UnlockText(2) })
             );
             Assert.That(training.Gear.All(gear => gear.Button.interactable), Is.True);
 

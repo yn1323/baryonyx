@@ -301,6 +301,29 @@ describe("パーティAPI", () => {
     expect(character(after, "mina")).toEqual(character(before, "mina"));
   });
 
+  it("キャラの枠のスキルやアイテムを外して空きにし、空きの枠は変えない", async () => {
+    const user = await scenario.login("party-card-clear");
+    const before = await read(user.token);
+    const clear = (id: string, slot: number) =>
+      scenario.request(
+        `/party/characters/${id}/cards/${slot}`,
+        "DELETE",
+        undefined,
+        user.token,
+      );
+    const removed = (await (await clear("toma", 0)).json()) as State;
+    expect(removed.change).toBe("remove");
+    expect(character(removed, "toma")?.cards).toEqual([
+      null,
+      ...(character(before, "toma")?.cards.slice(1) ?? []),
+    ]);
+    expect(((await (await clear("toma", 0)).json()) as State).change).toBe(
+      "none",
+    );
+    expect((await clear("toma", 9)).status).toBe(400);
+    expect((await clear("nobody", 0)).status).toBe(400);
+  });
+
   it("不正な枠・キャラ・カード・レベルを400で、持っていないキャラを404で拒否する", async () => {
     const user = await scenario.login("party-invalid");
     await read(user.token);
@@ -608,32 +631,34 @@ describe("パーティAPI", () => {
     const user = await scenario.login("party-unique-locked");
     await startAdventure(user.token);
     const before = await read(user.token);
-    // トーマ（Lv12）の2つ目と、リタ（Lv3）の1つ目はまだ解放していない。
+    // トーマ（Lv12）の3つ目と、リタ（Lv3）の2つ目はまだ解放していない。
     expect(character(before, "toma")?.level).toBeLessThan(
-      UNIQUE_UNLOCK_LEVELS[1],
+      UNIQUE_UNLOCK_LEVELS[2],
     );
     expect(character(before, "rita")?.level).toBeLessThan(
-      UNIQUE_UNLOCK_LEVELS[0],
+      UNIQUE_UNLOCK_LEVELS[1],
     );
     const locked = await Promise.all([
-      evolve(user.token, "toma", 1, 1),
-      evolve(user.token, "rita", 0, 1),
-      setUnique(user.token, "toma", 1, 0),
+      evolve(user.token, "toma", 2, 1),
+      evolve(user.token, "rita", 1, 1),
+      setUnique(user.token, "toma", 2, 0),
     ]);
     for (const response of locked) {
       expect(response.status).toBe(409);
       expect(await response.json()).toEqual({ error: "unique_locked" });
     }
 
-    // ちょうど解放するLv（ルッツのLv5）なら進化できる。
-    expect(character(before, "lutz")?.level).toBe(UNIQUE_UNLOCK_LEVELS[0]);
-    expect((await evolve(user.token, "lutz", 0, 5)).status).toBe(200);
+    // ちょうど解放するLv（アリアのLv10）なら、2つ目を進化できる。1つ目はLv1から使える。
+    expect(character(before, "aria")?.level).toBe(UNIQUE_UNLOCK_LEVELS[1]);
+    expect(UNIQUE_UNLOCK_LEVELS[0]).toBe(1);
+    expect((await evolve(user.token, "aria", 1, 5)).status).toBe(200);
+    expect((await evolve(user.token, "ritsu", 0, 1)).status).toBe(200);
 
     const after = await read(user.token);
-    expect(uniqueOf(after, "toma", 1)).toEqual(initialUniques[1]);
-    expect(uniqueOf(after, "rita", 0)).toEqual(initialUniques[0]);
-    expect(uniqueOf(after, "lutz", 0)).toEqual({
-      index: 0,
+    expect(uniqueOf(after, "toma", 2)).toEqual(initialUniques[2]);
+    expect(uniqueOf(after, "rita", 1)).toEqual(initialUniques[1]);
+    expect(uniqueOf(after, "aria", 1)).toEqual({
+      index: 1,
       set: 5,
       acquired: [0, 5],
       multiplier: 1,

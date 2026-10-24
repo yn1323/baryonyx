@@ -23,6 +23,11 @@ namespace Baryonyx.UI
         private float lastScale = -1f;
         private Vector3 lastParentPosition;
 
+        // 前に合わせた絵と切り取り範囲。一覧の行で絵を差し替えたときも測り直す。
+        private Texture lastTexture;
+        private Rect lastUv;
+        private float lastDot;
+
         private void Awake()
         {
             rect = (RectTransform)transform;
@@ -55,10 +60,19 @@ namespace Baryonyx.UI
             float scale = Mathf.Abs(parent.lossyScale.y * rect.localScale.y);
             if (scale <= 0f)
                 return;
-            if (Mathf.Approximately(scale, lastScale) && parent.position == lastParentPosition)
+            if (
+                Mathf.Approximately(scale, lastScale)
+                && parent.position == lastParentPosition
+                && texture == lastTexture
+                && image.uvRect == lastUv
+                && Mathf.Approximately(DotSize, lastDot)
+            )
                 return;
             lastScale = scale;
             lastParentPosition = parent.position;
+            lastTexture = texture;
+            lastUv = image.uvRect;
+            lastDot = DotSize;
 
             float unit = DotPixels(DotSize, scale) / scale;
             rect.sizeDelta = TexelSize(texture, image.uvRect) * unit;

@@ -68,16 +68,17 @@ namespace Baryonyx.Training.Editor
         private const float StatRow = 42f;
         private static readonly Rect Passives = new(586, 140, 590, 200);
         private const float PassiveRow = 76f;
-        private const float DeckTop = 420f;
-        private const float CardGap = 16f;
-        private const float PairGap = 60f;
-        private const float GearTop = 660f;
+        private const float DeckTop = 400f;
+        private const float CardGap = 12f;
+        private const float PairGap = 40f;
+        private const float GearTop = 680f;
         private const float GearGap = 13f;
         private const float GearHeight = 168f;
 
-        // デッキのカードは、戦闘のカードを効果の文の上で切った小さなカード（70×70ドット）を2倍で出す。
+        // デッキのカードは、戦闘のカードを効果の文の上で切った小さなカード（70×66ドット）を2.5倍で出す。
+        // 6枚が面の幅（1142）いっぱいに並ぶ大きさにした（2026-10-24、ユーザーの「もうちょい大きく」）。
         // 効果はカードを押して開くスキルの付け替えの画面で読む。
-        private const float CardDot = 2f;
+        private const float CardDot = 2.5f;
 
         // －＋の押せる範囲。
         private const float HitSize = Layout.HitSize;
@@ -135,18 +136,18 @@ namespace Baryonyx.Training.Editor
                 // 1本目の枝の1段目をセットしている（固有スキルの進化の仮データ）。
                 Character(
                     "toma",
-                    new(2300, 700, 850, 2450, 1700, 560, 300, 500),
+                    new(2300, 700, 1100, 2100, 1850, 1400, 300, 500),
                     mage,
                     new UniqueSkillProgress { Set = 1, Acquired = new[] { 1, 2, 3 } }
                 ),
-                Character("luka", new(2850, 1800, 950, 2050, 1100, 670, 900, 600), archer),
-                Character("aria", new(3900, 1950, 1600, 950, 1200, 490, 500, 300), knight),
-                Character("mina", new(2500, 800, 1150, 1600, 1800, 540, 200, 900), healer),
-                Character("anselm", new(3600, 1700, 1500, 1400, 1300, 430, 300, 500), knight),
-                Character("greta", new(2400, 1700, 800, 1500, 900, 700, 1000, 800), archer),
-                Character("lutz", new(3200, 1300, 1400, 1900, 1300, 450, 300, 400), mage),
-                Character("rita", new(3000, 2100, 1000, 600, 800, 650, 800, 500), healer),
-                Character("ritsu", new(2100, 500, 700, 2400, 1500, 600, 400, 600), archer),
+                Character("luka", new(2850, 1800, 1200, 1750, 1200, 1650, 900, 600), archer),
+                Character("aria", new(3900, 1950, 2050, 800, 1300, 1200, 500, 300), knight),
+                Character("mina", new(2500, 800, 1450, 1350, 1950, 1350, 200, 900), healer),
+                Character("anselm", new(3600, 1700, 1900, 1200, 1400, 1050, 300, 500), knight),
+                Character("greta", new(2400, 1700, 1000, 1250, 1000, 1750, 1000, 800), archer),
+                Character("lutz", new(3200, 1300, 1750, 1600, 1400, 1100, 300, 400), mage),
+                Character("rita", new(3000, 2100, 1250, 500, 850, 1600, 800, 500), healer),
+                Character("ritsu", new(2100, 500, 900, 2050, 1650, 1500, 400, 600), archer),
             };
             // 絆の仮データ：トーマは絆2でしるし1つ、ルカは絆0でしるし2つ、アリアは上限の一つ手前（doc/features/monetization.md）。
             Bond(data, "toma", 2, 1);
@@ -179,17 +180,19 @@ namespace Baryonyx.Training.Editor
                 UniqueProgress = progress,
             };
 
+        // 固有スキル3つを解放するLv。サーバーの UNIQUE_UNLOCK_LEVELS（server/src/features/party/catalog.ts）と同じ値。
+        public static readonly int[] UniqueUnlockLevels = { 1, 10, 30 };
+
         private static TrainingCharacter Mage() =>
             Skills(
                 Unique(
                     "マナバースト",
                     "敵全体に 属攻の80% のダメージ",
-                    5,
                     "CardRevelation",
                     "ManaBurst"
                 ),
-                Unique("星降り", "ランダムな敵に5回ダメージ", 20, "CardMeteor", "StarFall"),
-                Unique("魔眼", "敵全体の弱点を見抜き、1枚引く", 40, "CardScout", "ArcaneEye")
+                Unique("星降り", "ランダムな敵に5回ダメージ", "CardMeteor", "StarFall"),
+                Unique("魔眼", "敵全体の弱点を見抜き、1枚引く", "CardScout", "ArcaneEye")
             );
 
         private static TrainingCharacter Archer() =>
@@ -197,36 +200,34 @@ namespace Baryonyx.Training.Editor
                 Unique(
                     "雷撃の矢",
                     "敵1体に雷のダメージ。まひさせる",
-                    5,
                     "CardThunderSpear",
                     "ThunderArrow"
                 ),
-                Unique("矢の雨", "敵全体に3回ダメージ", 20, "CardArrowRain", "ArrowStorm"),
-                Unique("速射", "敵1体に2回ダメージ", 40, "CardInsightArrow", "QuickShot")
+                Unique("矢の雨", "敵全体に3回ダメージ", "CardArrowRain", "ArrowStorm"),
+                Unique("速射", "敵1体に2回ダメージ", "CardInsightArrow", "QuickShot")
             );
 
         private static TrainingCharacter Knight() =>
             Skills(
-                Unique("盾の構え", "次のターンまでブロック +80", 5, "CardProtect", "ShieldStance"),
-                Unique("一閃", "敵1体に 物攻の200% のダメージ", 20, "CardIai", "Issen"),
-                Unique("鼓舞", "味方全体にブロック、攻撃力アップ", 40, "CardWarCry", "Rally")
+                Unique("盾の構え", "次のターンまでブロック +45", "CardProtect", "ShieldStance"),
+                Unique("一閃", "敵1体に 物攻の200% のダメージ", "CardIai", "Issen"),
+                Unique("鼓舞", "味方全体にブロック、攻撃力アップ", "CardWarCry", "Rally")
             );
 
         private static TrainingCharacter Healer() =>
             Skills(
-                Unique("癒しの風", "味方全体のHPを回復", 5, "CardHeal", "HealingWind"),
-                Unique("蘇生", "倒れた味方1人を復活させる", 20, "CardResurrection", "Revive"),
-                Unique(
-                    "裁きの光",
-                    "敵全体にダメージ、味方全体を回復",
-                    40,
-                    "CardHolyLight",
-                    "Judgment"
-                )
+                Unique("癒しの風", "味方全体のHPを回復", "CardHeal", "HealingWind"),
+                Unique("蘇生", "倒れた味方1人を復活させる", "CardResurrection", "Revive"),
+                Unique("裁きの光", "敵全体にダメージ、味方全体を回復", "CardHolyLight", "Judgment")
             );
 
-        private static TrainingCharacter Skills(params TrainingSkill[] uniques) =>
-            new() { Uniques = uniques };
+        // 固有スキルは、並びの順に UniqueUnlockLevels のLvで解放する。
+        private static TrainingCharacter Skills(params TrainingSkill[] uniques)
+        {
+            for (int i = 0; i < uniques.Length; i++)
+                uniques[i].UnlockLevel = UniqueUnlockLevels[i];
+            return new() { Uniques = uniques };
+        }
 
         // パッシブは戦闘の定義（CombatPassives）から作り、アイコンは24×24ドットの専用の絵を使う。
         private static TrainingSkill Passive(CombatPassive passive) =>
@@ -242,16 +243,16 @@ namespace Baryonyx.Training.Editor
         public const string PassiveArtFolder = BattleInspectAssets.ArtFolder + "/Passives";
 
         // 固有スキル。名前は進化ツリーの最初の段階と同じにし、エネルギーはその段階のコストから引く。
+        // 解放するLvは Skills で入れる。
         private static TrainingSkill Unique(
             string name,
             string description,
-            int level,
             string art,
             string tree
         )
         {
             int energy = UniqueSkillTrees.Find(tree)?.Stages[0]?.Card.Cost ?? 0;
-            var skill = Skill(name, description, level, energy, art);
+            var skill = Skill(name, description, 0, energy, art);
             skill.Tree = tree;
             return skill;
         }
@@ -686,7 +687,7 @@ namespace Baryonyx.Training.Editor
             Stretch(locked);
             var lockImage = Layout.Box(locked, "Image", (width - 9 * 4) / 2f, 62, 9 * 4, 10 * 4);
             SpriteImage(lockImage, GuideFrameAssets.LockPath, Color.white);
-            // 開いていないアクセサリーの枠は、解放するLv（「Lv 15で解放」）を出す。
+            // 開いていないアクセサリーの枠は、解放するLv（「Lv 20で解放」）を出す。
             int accessory = index - TrainingPresenter.OpenGearSlots;
             widget.When = Label(
                 locked,

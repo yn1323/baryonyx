@@ -38,7 +38,7 @@ namespace Baryonyx.CardLoadout.Editor
     public static class CardLoadoutAssets
     {
         // カードの挿絵（64×58）は2倍で出す。
-        private const float ArtDot = 2f;
+        private const float ArtDot = CardLoadoutView.ArtDot;
 
         // 枠つきの表示（GuideFramedPanel）で、左の面に人・ステータス・枠、金の2本線の右の面に
         // タブとカードの一覧を置く。装備と同じ配置（PartyChangeScreenAssets）。設計座標、左上から。
@@ -616,11 +616,42 @@ namespace Baryonyx.CardLoadout.Editor
             // One row per card in the catalog's order; the view shows only the cards the person
             // can set, by cost.
             view.Rows = CardSkills.All.Select(card => BuildRow(content, card, view)).ToArray();
+            view.Remove = BuildRemove(content);
 
             view.List = Layout.Scroll(panel, viewport, content);
 
             // 読み込み中と読めなかったとき、アイテムのタブを選んでいるときだけ出す文字。
             view.Status = ChangeScreen.Status(panel);
+        }
+
+        // 一覧の最後の「スキルを外す」。点線のカードに×と文字（パーティの「パーティから外す」と同じ形）。
+        private static Button BuildRemove(RectTransform content)
+        {
+            var row = Layout.ListItem(content, "Remove", RowHeight);
+            var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false, dashed: true);
+            var icon = Layout.Box(
+                inside,
+                "Icon",
+                (RowTextLeft - Guide.IconSize) / 2f,
+                (RowHeight - Guide.IconSize) / 2f,
+                Guide.IconSize,
+                Guide.IconSize
+            );
+            SpriteImage(icon, Guide.IconClosePath, Color.white);
+            Layout.Text(
+                inside,
+                "Label",
+                CardLoadoutPresenter.RemoveLabel,
+                40,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineLeft,
+                RowTextLeft,
+                0f,
+                400f,
+                RowHeight
+            );
+            row.gameObject.SetActive(false);
+            return button;
         }
 
         private static CardLoadoutRowWidget BuildRow(
