@@ -109,3 +109,29 @@ export function craftedPercent(
     Math.round(average * (maxPercent - MIN_MULTIPLIER_PERCENT) + EPSILON);
   return Math.min(maxPercent, Math.max(MIN_MULTIPLIER_PERCENT, percent));
 }
+
+// 商会の「売る」（doc/features/screens.md の商会）。持ち物のうち、キャラに付けていない（デッキに入れていない）
+// スキル・装備を1つずつ、アイテムを種類ごとに持っている数のまま、ルーンと引き換えに手放す。仮の値。
+// クライアントの WorkshopSellView.PriceOf が同じ値を持つ。
+
+// 1回で売れる物の数（スキル・装備の行と、アイテムの種類の合計）。D1の1文に入れられる値の数に収める。
+export const SELL_LIMIT = 50;
+
+// アイテムの☆1の売値（1つ分）。☆が1つ増えるごとに倍にする。
+export const SELL_ITEM_STAR1_RUNES = 10;
+
+// スキル・装備の売値。買う値段の4分の1に倍率を掛け、四捨五入する。冒険のドロップの一覧にない物は☆1とする。
+export function sellPrice(
+  category: WorkshopCategory,
+  id: string,
+  percent: number,
+): number {
+  const base = WORKSHOP_STAR_PRICES[workshopStarsOf(category, id) ?? 1] / 4;
+  return Math.round((base * percent) / 100);
+}
+
+// アイテムの売値。1つ分の値段に数を掛ける。冒険のドロップの一覧にない物は☆1とする。
+export function sellItemPrice(id: string, count: number): number {
+  const stars = workshopStarsOf("item", id) ?? 1;
+  return SELL_ITEM_STAR1_RUNES * 2 ** (stars - 1) * count;
+}

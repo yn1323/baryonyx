@@ -104,7 +104,7 @@ describe("商会API", () => {
     for (const body of [
       { requestId: "short", category: "weapon", id: "iron-sword" },
       { requestId: requestIds.first, category: "item", id: "herb" },
-      { requestId: requestIds.first, category: "bonus", id: "luck" },
+      { requestId: requestIds.first, category: "unknown", id: "luck" },
       { requestId: requestIds.first, category: "weapon", id: "" },
       { requestId: requestIds.first, category: "weapon" },
     ]) {
@@ -406,7 +406,7 @@ describe("商会の合成API", () => {
         ],
       },
       { category: "item", id: "moss-wad", materialIds },
-      { category: "bonus", id: "luck", materialIds },
+      { category: "unknown", id: "luck", materialIds },
     ]) {
       await craft(user.token, { requestId: requestIds.first, ...body }, 400);
     }
@@ -691,5 +691,249 @@ describe("商会の合成API", () => {
     ).toEqual({ error: "invalid_materials" });
     expect(await skillCardsOf(user.userId, materialIds)).toHaveLength(3);
     expect(await runesOf(user.token)).toBe(1000);
+  });
+});
+
+type Sale = {
+  runes: number;
+  balanceAfter: number;
+  cardIds: string[];
+  equipmentIds: string[];
+  items: { id: string; count: number }[];
+};
+
+describe("商会の売却API", () => {
+  let scenario: ApiScenario;
+
+  beforeAll(async () => {
+    scenario = await createApiScenario();
+  });
+
+  afterAll(async () => {
+    await scenario?.dispose();
+  });
+
+  const sell = async (
+    token: string,
+    body: unknown,
+    expected = 200,
+  ): Promise<{ sale?: Sale; error?: string }> => {
+    const response = await scenario.request(
+      "/workshop/sell",
+      "POST",
+      body,
+      token,
+    );
+    expect(response.status).toBe(expected);
+    return (await response.json()) as { sale?: Sale; error?: string };
+  };
+
+  const runesOf = async (token: string) =>
+    (await scenario.read<{ runes: number }>("/adventure", token)).runes;
+
+  const now = () => new Date().toISOString();
+
+  // ライブラリを読むと、初めの装備とカードを配る（どれもキャラに付けている）。
+  const start = async (sub: string, runes?: number) => {
+    const user = await scenario.login(sub);
+    await scenario.read("/library", user.token);
+    if (runes !== undefined) await scenario.setRunes(user.userId, runes);
+    return user;
+  };
+
+  const insert = async (
+    table: string,
+    userId: string,
+    id: string,
+    percent: number,
+  ) => {
+    const row = crypto.randomUUID();
+    const column = table === "skill_cards" ? "skill_id" : "equipment_id";
+    await scenario.env.DB.prepare(
+      `INSERT INTO ${table} (id, user_id, ${column}, multiplier_percent, acquired_at) VALUES (?, ?, ?, ?, ?)`,
+    )
+      .bind(row, userId, id, percent, now())
+      .run();
+    return row;
+  };
+
+  const addItems = async (userId: string, id: string, count: number) => {
+    await scenario.env.DB.prepare(
+      "INSERT INTO item_holdings (user_id, item_id, count, acquired_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    )
+      .bind(userId, id, count, now(), now())
+      .run();
+  };
+
+  const countOf = async (sql: string, ...values: string[]) =>
+    (
+      await scenario.env.DB.prepare(sql)
+        .bind(...values)
+        .first<{ n: number }>()
+    )?.n;
+
+  it("付けていないスキル・装備とアイテムを売り、値段の合計を残高へ足して持ち物から消す。再送は二重に足さない", async () => {
+    const user = await start("sell-all", 1000);
+    // 火の玉（☆1）は50×1.24で62、木の剣（☆1）は50×1.25の62.5を四捨五入して63、鉄の剣（☆2）は100×1.50で150。
+    const card = await insert("skill_cards", user.userId, "Fire", 124);
+    const sword = await insert(
+      "equipment_items",
+      user.userId,
+      "wooden-sword",
+      125,
+    );
+    const iron = await insert(
+      "equipment_items",
+      user.userId,
+      "iron-sword",
+      150,
+    );
+    // 薬草（☆1）は1つ10を3つで30、苔玉（☆2）は1つ20。
+    await addItems(user.userId, "herb", 3);
+    await addItems(user.userId, "moss-wad", 1);
+    const body = {
+      requestId: requestIds.first,
+      cardIds: [card],
+      equipmentIds: [sword, iron],
+      items: [
+        { id: "herb", count: 3 },
+        { id: "moss-wad", count: 1 },
+      ],
+    };
+
+    const sold = await sell(user.token, body);
+    const { requestId: _, ...goods } = body;
+    expect(sold.sale).toEqual({
+      ...goods,
+      runes: 325,
+      balanceAfter: 1325,
+    });
+    expect(await runesOf(user.token)).toBe(1325);
+    expect(
+      await countOf("SELECT COUNT(*) AS n FROM skill_cards WHERE id = ?", card),
+    ).toBe(0);
+    expect(
+      await countOf(
+        "SELECT COUNT(*) AS n FROM equipment_items WHERE id IN (?, ?)",
+        sword,
+        iron,
+      ),
+    ).toBe(0);
+    expect(
+      await countOf(
+        "SELECT COUNT(*) AS n FROM item_holdings WHERE user_id = ? AND item_id IN ('herb', 'moss-wad')",
+        user.userId,
+      ),
+    ).toBe(0);
+
+    // 同じ要求の再送は、同じ結果を返して二重に足さない。売った物を変えた使い回しは拒む。
+    expect((await sell(user.token, body)).sale).toEqual(sold.sale);
+    expect(await runesOf(user.token)).toBe(1325);
+    expect(await sell(user.token, { ...body, cardIds: [] }, 409)).toEqual({
+      error: "request_conflict",
+    });
+
+    // 売った物は、別の要求IDでも売れない。
+    expect(
+      await sell(
+        user.token,
+        { requestId: requestIds.second, equipmentIds: [sword] },
+        409,
+      ),
+    ).toEqual({ error: "invalid_goods" });
+    expect(await runesOf(user.token)).toBe(1325);
+  });
+
+  it("付けている装備・デッキのスキルとアイテム・数の違うアイテム・ほかの人の物は売れず、残高も持ち物も変えない", async () => {
+    const user = await start("sell-reject", 100);
+    const other = await start("sell-other", 100);
+    const worn = await scenario.env.DB.prepare(
+      "SELECT item_id AS id FROM equipment_character_slots WHERE user_id = ?",
+    )
+      .bind(user.userId)
+      .first<{ id: string }>();
+    const deckCard = await scenario.env.DB.prepare(
+      "SELECT card_id AS id FROM party_character_cards WHERE user_id = ? AND card_id IS NOT NULL",
+    )
+      .bind(user.userId)
+      .first<{ id: string }>();
+    const free = await insert(
+      "equipment_items",
+      user.userId,
+      "wooden-sword",
+      100,
+    );
+    const others = await insert(
+      "equipment_items",
+      other.userId,
+      "wooden-sword",
+      100,
+    );
+    await addItems(user.userId, "herb", 2);
+    await addItems(user.userId, "acorn", 2);
+    // トーマの3つ目の枠にどんぐりを1つ入れている。
+    await scenario.env.DB.prepare(
+      "INSERT INTO party_character_cards (user_id, character_id, slot, card_id, item_id, updated_at) VALUES (?, 'toma', 2, NULL, 'acorn', ?)",
+    )
+      .bind(user.userId, now())
+      .run();
+
+    for (const goods of [
+      { equipmentIds: [free, worn?.id as string] },
+      { cardIds: [deckCard?.id as string] },
+      { items: [{ id: "acorn", count: 2 }] },
+      { items: [{ id: "herb", count: 1 }] },
+      { equipmentIds: [free, others] },
+      { equipmentIds: [crypto.randomUUID()] },
+    ]) {
+      expect(
+        await sell(user.token, { requestId: requestIds.first, ...goods }, 409),
+      ).toEqual({ error: "invalid_goods" });
+    }
+    expect(await runesOf(user.token)).toBe(100);
+    expect(
+      await countOf(
+        "SELECT COUNT(*) AS n FROM equipment_items WHERE id IN (?, ?)",
+        free,
+        others,
+      ),
+    ).toBe(2);
+
+    // 何も選ばない・同じ物を重ねた要求は400で拒む。
+    for (const body of [
+      { requestId: requestIds.first },
+      { requestId: requestIds.first, equipmentIds: [free, free] },
+      { requestId: "x", equipmentIds: [free] },
+    ]) {
+      await sell(user.token, body, 400);
+    }
+
+    // 断った要求IDも、あとで使える。
+    expect(
+      (
+        await sell(user.token, {
+          requestId: requestIds.first,
+          equipmentIds: [free],
+          items: [{ id: "herb", count: 2 }],
+        })
+      ).sale,
+    ).toMatchObject({ runes: 70, balanceAfter: 170 });
+  });
+
+  it("残高の行がまだなくても、売ったルーンで残高を作る", async () => {
+    const user = await start("sell-new-wallet");
+    await scenario.env.DB.prepare("DELETE FROM rune_wallets WHERE user_id = ?")
+      .bind(user.userId)
+      .run();
+    await addItems(user.userId, "herb", 1);
+    expect(
+      (
+        await sell(user.token, {
+          requestId: requestIds.first,
+          items: [{ id: "herb", count: 1 }],
+        })
+      ).sale,
+    ).toMatchObject({ runes: 10, balanceAfter: 10 });
+    expect(await runesOf(user.token)).toBe(10);
   });
 });

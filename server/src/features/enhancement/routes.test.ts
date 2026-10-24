@@ -133,10 +133,10 @@ describe("強化API", () => {
         materialId: "polish-white",
         count: 1,
       },
-      // ACTボーナスは品質強化の対象にしない。
+      // 知らない分類は品質強化の対象にしない。
       {
         requestId: requestId(1),
-        category: "bonus",
+        category: "unknown",
         itemId: "luck",
         materialId: "polish-white",
         count: 1,
@@ -359,7 +359,7 @@ describe("強化API", () => {
     });
 
     await give(user.userId, { "polish-purple": 1 });
-    // トーマ（Lv12）の2つ目の固有スキルはLv20で解放する。
+    // トーマ（Lv12）の3つ目の固有スキルはLv30で解放する。
     expect(
       (
         await polish(
@@ -368,7 +368,7 @@ describe("強化API", () => {
             requestId: requestId(2),
             category: "unique",
             characterId: "toma",
-            index: 1,
+            index: 2,
             materialId: "polish-purple",
             count: 1,
           },

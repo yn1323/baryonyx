@@ -3,6 +3,7 @@ using Baryonyx.Library;
 using Baryonyx.Library.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
+using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
@@ -30,6 +31,9 @@ namespace Baryonyx.Workshop.Editor
         private const float CardHeight = 272f;
         private const float CardArt = 128f;
         private const float DetailArt = 256f;
+
+        // スキルのデッキのカード（1ドットを4画素、280×392）。名前の行の下端まで使う。
+        private const float CardDot = 4f;
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
@@ -78,6 +82,18 @@ namespace Baryonyx.Workshop.Editor
                 150f,
                 DetailArt
             );
+            var cardSize = DeckCardAssets.Size(CardDot, small: false);
+            buy.DetailCard = DeckCardAssets.Build(
+                layer,
+                "DetailCard",
+                left + (width - cardSize.x) / 2f,
+                512f - cardSize.y,
+                CardDot,
+                button: false
+            );
+            buy.DetailCard.Frame.transform.parent.gameObject.SetActive(false);
+            buy.CardFrames = DeckCardFrames();
+            buy.ElementIcons = ElementIcons();
             buy.DetailName = Layout.Text(
                 layer,
                 "DetailName",

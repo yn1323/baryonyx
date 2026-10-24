@@ -37,10 +37,16 @@ MonoBehaviour:
     ConfirmLabel: "\u5408\u6210"
     Entries: []
   - Key: workshop-enhance
-    Label: "\u5F37\u5316"
+    Label: "\u54C1\u8CEA\u5F37\u5316"
     Icon: {fileID: 21300000, guid: 113b6176347e147b69c7bffe816d4045, type: 3}
     Hidden: 0
-    ConfirmLabel: "\u5F37\u5316"
+    ConfirmLabel: "\u54C1\u8CEA\u5F37\u5316"
+    Entries: []
+  - Key: workshop-awaken
+    Label: "\u30B9\u30AD\u30EB\u899A\u9192"
+    Icon: {fileID: 21300000, guid: 8391263632e1641fba35f40e8b54adf7, type: 3}
+    Hidden: 0
+    ConfirmLabel: "\u30B9\u30AD\u30EB\u899A\u9192"
     Entries: []
   Destinations: []
   DepartLabel: "\u51FA\u767A"

@@ -19,8 +19,11 @@ namespace Baryonyx.Enhancement
     /// </summary>
     public static class EnhancementSession
     {
-        // 商会の画面の「強化」の項目のキー。一覧の代わりに強化のパネルを開く。
+        // 商会の画面の「品質強化」の項目のキー。一覧の代わりに品質強化のパネルを開く。
         public const string GuideItemKey = "workshop-enhance";
+
+        // 商会の「スキル覚醒」の項目のキー。覚醒だけのパネルを開く（品質強化は GuideItemKey）。
+        public const string AwakeningItemKey = "workshop-awaken";
 
         private static EnhancementMemorySource local;
         private static Dictionary<string, int> known;
@@ -38,7 +41,9 @@ namespace Baryonyx.Enhancement
                 ? count
                 : 0;
 
-        public static async Task<IReadOnlyDictionary<string, int>> LoadAsync(CancellationToken token)
+        public static async Task<IReadOnlyDictionary<string, int>> LoadAsync(
+            CancellationToken token
+        )
         {
             var counts = await SourceOrLocal.LoadAsync(token);
             Use(counts);
@@ -60,8 +65,9 @@ namespace Baryonyx.Enhancement
                 outcome =>
                 {
                     if (target.Category == EnhancementCategory.Unique)
-                        UniqueSkillSession.ProgressOf(target.CharacterId, target.Index, null).Multiplier =
-                            outcome.Multiplier;
+                        UniqueSkillSession
+                            .ProgressOf(target.CharacterId, target.Index, null)
+                            .Multiplier = outcome.Multiplier;
                 }
             );
 

@@ -156,7 +156,8 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 商会の「売る」は、品質がそれぞれ違うため、持ち物を1つずつ別の札で並べる。使っている物には「E」を付けて
-        // 選べなくする。いくつでも選べ、右に選んだ物と合計を出す。売り方は未決のため、押すと準備中と知らせる。
+        // 選べなくする。いくつでも選べ、右に選んだ物と合計を出す。「売る」を押すと、サーバーの答えを待ってから
+        // 売った物を一覧から外し、得たルーンを残高にして知らせる。売れなければ知らせて読み直す。
         [UnityTest]
         public IEnumerator SellListsEachHeldThingApartAndSumsTheChosen()
         {
@@ -197,13 +198,44 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(sell.ChosenRows.Count(row => row.gameObject.activeSelf), Is.EqualTo(2));
             int total = free.Sum(i => WorkshopSellView.PriceOf(sell.Shown[i]));
             Assert.That(sell.Total.text, Is.EqualTo("+" + total.ToString("N0")));
-            sell.Confirm.onClick.Invoke();
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopSellView.NotReadyMessage));
 
             // 選び直すと、何も選んでいない状態に戻る。
             sell.Clear.onClick.Invoke();
             Assert.That(sell.Chosen, Is.Empty);
             Assert.That(sell.Total.text, Is.EqualTo("+0"));
+
+            // 売れないときは知らせ、持ち物を読み直す。
+            var picked = free.Select(i => sell.Shown[i]).ToArray();
+            foreach (int i in free)
+                sell.Toggle(i);
+            shop.Fail = true;
+            sell.Confirm.onClick.Invoke();
+            yield return SceneTests.WaitForTask(sell.Work);
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopSellView.FailedMessage));
+            yield return SceneTests.WaitForTask(sell.LoadTask);
+            Assert.That(sell.Shown.Count, Is.EqualTo(weapons.Count));
+
+            // 売ると、売った物が一覧から外れ、得たルーンが残高になる。
+            shop.Fail = false;
+            RuneBalance.Set(1000);
+            foreach (int i in free)
+                sell.Toggle(i);
+            sell.Confirm.onClick.Invoke();
+            Assert.That(sell.Confirm.interactable, Is.False);
+            yield return SceneTests.WaitForTask(sell.Work);
+            Assert.That(shop.Sold, Is.EquivalentTo(picked.Select(thing => thing.RowId)));
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000 + total));
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopSellView.SoldText(2, total)));
+            Assert.That(sell.Chosen, Is.Empty);
+            Assert.That(sell.Shown.Count, Is.EqualTo(weapons.Count - 2));
+            Assert.That(
+                sell.Owned.Any(thing => picked.Any(sold => sold.RowId == thing.RowId)),
+                Is.False
+            );
+            Assert.That(
+                sell.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(weapons.Count - 2)
+            );
 
             // アイテムには品質がないため、種類ごとに1枚で数を出す。
             sell.Tabs[WorkshopStock.Kinds.ToList().IndexOf(LibraryKind.Item)]
@@ -216,16 +248,31 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        // 合成した物を覚える商会の代役。Fail のあいだは失敗する。
+        // 合成した物・売った物を覚える商会の代役。Fail のあいだは失敗する。
         private sealed class FakeWorkshop : IWorkshopSource
         {
             public readonly List<(string Recipe, string[] Materials)> Crafted = new();
+            public readonly List<string> Sold = new();
             public long Runes { get; set; } = 1000;
             public bool Fail { get; set; }
             public string LastItemId { get; private set; }
 
             public Task<WorkshopPurchase> BuyAsync(WorkshopGood good, CancellationToken token) =>
                 Task.FromException<WorkshopPurchase>(new NotSupportedException());
+
+            public Task<WorkshopSale> SellAsync(
+                IReadOnlyList<WorkshopOwned> things,
+                CancellationToken token
+            )
+            {
+                if (Fail)
+                    return Task.FromException<WorkshopSale>(
+                        new InvalidOperationException("売れない設定")
+                    );
+                Sold.AddRange(things.Select(thing => thing.RowId));
+                int runes = things.Sum(WorkshopSellView.PriceOf);
+                return Task.FromResult(new WorkshopSale(runes, (RuneBalance.Known ?? 0) + runes));
+            }
 
             public Task<WorkshopCrafted> CraftAsync(
                 WorkshopRecipe recipe,

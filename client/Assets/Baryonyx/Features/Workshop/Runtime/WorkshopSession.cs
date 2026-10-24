@@ -9,8 +9,8 @@ using UnityEngine;
 namespace Baryonyx.Workshop
 {
     /// <summary>
-    /// The trading house while the app runs: buys from <see cref="Source"/> (the game server, set
-    /// by the app), or from a mock balance without one. A purchase on the server shows at once
+    /// The trading house while the app runs: buys, sells and makes on <see cref="Source"/> (the
+    /// game server, set by the app), or on a mock balance without one. A purchase on the server shows at once
     /// (doc/rules/data-storage.md, optimistic updates): its price is taken off the shown balance
     /// until the server answers, and the write goes in the app's one line of saves.
     /// </summary>
@@ -70,15 +70,31 @@ namespace Baryonyx.Workshop
         {
             if (recipe == null)
                 throw new ArgumentNullException(nameof(recipe));
-            var source = Source ?? Local;
-            var crafted = await (
-                Source != null
-                    ? SaveQueue.Enqueue(t => source.CraftAsync(recipe, materials, t))
-                    : source.CraftAsync(recipe, materials, token)
-            );
+            var crafted = await Send((source, t) => source.CraftAsync(recipe, materials, t), token);
             RuneBalance.Set(crafted.BalanceAfter);
             return crafted;
         }
+
+        /// <summary>
+        /// Sells <paramref name="things"/>, and sets the balance to the server's when it answers.
+        /// The screen takes the things off only then, so a failure (thrown to the screen) leaves
+        /// them held.
+        /// </summary>
+        public static async Task<WorkshopSale> SellAsync(
+            IReadOnlyList<WorkshopOwned> things,
+            CancellationToken token = default
+        )
+        {
+            var sale = await Send((source, t) => source.SellAsync(things, t), token);
+            RuneBalance.Set(sale.BalanceAfter);
+            return sale;
+        }
+
+        // サーバーへは保存の列に並べて送る。サーバーがなければ、手元の代わりでそのまま行う。
+        private static Task<T> Send<T>(
+            Func<IWorkshopSource, CancellationToken, Task<T>> send,
+            CancellationToken token
+        ) => Source is { } source ? SaveQueue.Enqueue(t => send(source, t)) : send(Local, token);
 
         private static async Task Spend(
             IWorkshopSource source,

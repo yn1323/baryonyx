@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createWorkshopRepository } from "./repository.js";
-import { buySchema, craftSchema } from "./schema.js";
+import { buySchema, craftSchema, sellSchema } from "./schema.js";
 
-// 売らない・作れない物は404、手に入れていない・材料が合わない・ルーンが足りない・要求IDの使い回しは409で返す。
+// 売らない・作れない物は404、手に入れていない・材料や売る物が合わない・ルーンが足りない・要求IDの使い回しは409で返す。
 function errorStatus(error: string) {
   return error === "goods_not_found" ? 404 : 409;
 }
@@ -30,6 +30,18 @@ export function createWorkshopApi() {
     const body = await parseJson(c, craftSchema);
     if (!body.success) return invalidRequest(c);
     const result = await createWorkshopRepository(c.env.DB).craft(
+      c.get("userId"),
+      body.data,
+      new Date().toISOString(),
+    );
+    return respond(c, result, errorStatus);
+  });
+
+  // 商会で、キャラに付けていない持ち物を売り、ルーンを得る（doc/features/screens.md の商会）。
+  api.post("/workshop/sell", async (c) => {
+    const body = await parseJson(c, sellSchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createWorkshopRepository(c.env.DB).sell(
       c.get("userId"),
       body.data,
       new Date().toISOString(),

@@ -35,6 +35,7 @@ namespace Baryonyx.Workshop.Editor
         public const string IconSellPath = Folder + "/UI/Art/IconSell.png";
         public const string IconCraftPath = Folder + "/UI/Art/IconCraft.png";
         public const string IconEnhancePath = Folder + "/UI/Art/IconEnhance.png";
+        public const string IconAwakenPath = Folder + "/UI/Art/IconAwaken.png";
 
         // The clear margin that separates a front part from the part behind it (design units).
         private const float PartGap = 2.6f;
@@ -59,6 +60,11 @@ namespace Baryonyx.Workshop.Editor
                             safe,
                             view
                         ),
+                        EnhancementSession.AwakeningItemKey => WorkshopEnhanceAssets.BuildPanel(
+                            safe,
+                            view,
+                            awakening: true
+                        ),
                         _ => null,
                     }
             );
@@ -70,6 +76,7 @@ namespace Baryonyx.Workshop.Editor
             Coins().Save(IconSellPath, SmoothIconTextureSize, UiPalette.TextMain);
             AnvilAndHammer().Save(IconCraftPath, SmoothIconTextureSize, UiPalette.TextMain);
             CutGem().Save(IconEnhancePath, SmoothIconTextureSize, UiPalette.TextMain);
+            RisingStar().Save(IconAwakenPath, SmoothIconTextureSize, UiPalette.TextMain);
         }
 
         // A cut gem seen from the side: the table on top, the crown's facets, and the point below.
@@ -84,6 +91,14 @@ namespace Baryonyx.Workshop.Editor
                 );
 
         // A tag with a hole for its string and two price lines.
+        // スキル覚醒：上へ伸びる光の筋の上に、4本の光を放つ星。
+        private static VectorIcon RisingStar() =>
+            new VectorIcon()
+                .Fill(IconShape.Path("M32 3 L38 21 L56 27 L38 33 L32 51 L26 33 L8 27 L26 21Z"))
+                .Fill(IconShape.Rect(14f, 50f, 6f, 11f, 3f), PartGap)
+                .Fill(IconShape.Rect(29f, 55f, 6f, 6f, 3f), PartGap)
+                .Fill(IconShape.Rect(44f, 50f, 6f, 11f, 3f), PartGap);
+
         private static VectorIcon PriceTag() =>
             new VectorIcon()
                 .Fill(IconShape.Path("M30 5 L57 5 L59 7 L59 34 L32 61 L3 32Z"))
@@ -123,16 +138,14 @@ namespace Baryonyx.Workshop.Editor
                 Buy(),
                 Panel("売る", "売る", IconSellPath, WorkshopSession.SellItemKey),
                 Panel("合成", "合成", IconCraftPath, WorkshopSession.CraftItemKey),
-                Enhance(),
+                Panel("品質強化", "品質強化", IconEnhancePath, EnhancementSession.GuideItemKey),
+                Panel(
+                    "スキル覚醒",
+                    "スキル覚醒",
+                    IconAwakenPath,
+                    EnhancementSession.AwakeningItemKey
+                ),
             };
-        }
-
-        // 一覧の代わりに強化のパネルを開く。磨き石で品質を上げ、覚醒の欠片で固有スキルを覚醒させる。
-        private static GuideMenuItem Enhance()
-        {
-            var item = Item("強化", "強化", Icon(IconEnhancePath));
-            item.Key = EnhancementSession.GuideItemKey;
-            return item;
         }
 
         // 一覧の代わりに品物のパネルを開く。これまでに手に入れたスキル・武器・防具・アクセサリーを、品質の最低で売る。

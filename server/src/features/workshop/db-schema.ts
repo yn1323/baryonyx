@@ -86,3 +86,32 @@ export const workshopCrafts = sqliteTable(
     ),
   ],
 );
+
+// 商会で売った1回ごとの記録。得たルーンと売った物の記録を兼ね、要求IDで再送を見分ける。
+// 残高（rune_wallets）と持ち物は、この記録を書けたときだけ変える。goods は売った物のJSONで、
+// スキル・装備は消した行のIDの配列（cardIds・equipmentIds）、アイテムは種類ごとの数（items）。
+export const workshopSales = sqliteTable(
+  "workshop_sales",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => appUsers.id),
+    requestId: text("request_id").notNull(),
+    runes: integer("runes").notNull(),
+    balanceAfter: integer("balance_after").notNull(),
+    goods: text("goods").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("workshop_sales_user_request").on(
+      table.userId,
+      table.requestId,
+    ),
+    check("workshop_sales_runes_check", sql`${table.runes} > 0`),
+    check(
+      "workshop_sales_balance_after_check",
+      sql`${table.balanceAfter} >= 0`,
+    ),
+  ],
+);

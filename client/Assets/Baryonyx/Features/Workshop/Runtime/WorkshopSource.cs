@@ -39,9 +39,24 @@ namespace Baryonyx.Workshop
         public long BalanceAfter { get; }
     }
 
-    /// <summary>Where the trading house sells and makes things.</summary>
+    /// <summary>What one sale earned, and the rune balance after it.</summary>
+    public readonly struct WorkshopSale
+    {
+        public WorkshopSale(int runes, long balanceAfter)
+        {
+            Runes = runes;
+            BalanceAfter = balanceAfter;
+        }
+
+        public int Runes { get; }
+        public long BalanceAfter { get; }
+    }
+
+    /// <summary>Where the trading house sells, buys and makes things.</summary>
     public interface IWorkshopSource
     {
+        Task<WorkshopSale> SellAsync(IReadOnlyList<WorkshopOwned> things, CancellationToken token);
+
         Task<WorkshopPurchase> BuyAsync(WorkshopGood good, CancellationToken token);
 
         Task<WorkshopCrafted> CraftAsync(
@@ -51,7 +66,7 @@ namespace Baryonyx.Workshop
         );
     }
 
-    /// <summary>Buys from the game server with the shared session. The server decides the price.</summary>
+    /// <summary>Buys, sells and makes on the game server with the shared session. The server decides the prices.</summary>
     public sealed class WorkshopServerSource : IWorkshopSource
     {
         private readonly IAccountSessionRunner sessions;
@@ -83,6 +98,21 @@ namespace Baryonyx.Workshop
             var purchase =
                 result?.purchase ?? throw new InvalidOperationException("購入の結果がありません。");
             return new WorkshopPurchase(purchase.runes, purchase.balanceAfter);
+        }
+
+        public async Task<WorkshopSale> SellAsync(
+            IReadOnlyList<WorkshopOwned> things,
+            CancellationToken token
+        )
+        {
+            string requestId = Guid.NewGuid().ToString("D");
+            var result = await sessions.WithSessionAsync(
+                session => api.SellAsync(session, requestId, things, token),
+                token
+            );
+            var sale =
+                result?.sale ?? throw new InvalidOperationException("売却の結果がありません。");
+            return new WorkshopSale(sale.runes, sale.balanceAfter);
         }
 
         public async Task<WorkshopCrafted> CraftAsync(
@@ -118,8 +148,9 @@ namespace Baryonyx.Workshop
     }
 
     /// <summary>
-    /// Buys and makes without a server (the showcase, or no server URL): spends the balance the
-    /// screen shows (a mock balance before one is read), and changes nothing in the belongings.
+    /// Buys, sells and makes without a server (the showcase, or no server URL): spends and earns
+    /// the balance the screen shows (a mock balance before one is read), and changes nothing in
+    /// the belongings.
     /// </summary>
     public sealed class WorkshopMemorySource : IWorkshopSource
     {
@@ -143,6 +174,18 @@ namespace Baryonyx.Workshop
                 );
             runes = balance - good.Price;
             return Task.FromResult(new WorkshopPurchase(good.Price, runes));
+        }
+
+        // 持ち物は変えず、売値の合計を足す。
+        public Task<WorkshopSale> SellAsync(
+            IReadOnlyList<WorkshopOwned> things,
+            CancellationToken token
+        )
+        {
+            token.ThrowIfCancellationRequested();
+            int earned = (things ?? Array.Empty<WorkshopOwned>()).Sum(WorkshopSellView.PriceOf);
+            runes = Runes + earned;
+            return Task.FromResult(new WorkshopSale(earned, runes));
         }
 
         // 持ち物は変えず、出来た物の倍率を材料から計算して返す。

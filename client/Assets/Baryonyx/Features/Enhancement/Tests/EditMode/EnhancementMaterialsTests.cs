@@ -16,10 +16,19 @@ namespace Baryonyx.Tests.EditMode
         public void StoneRaisesAShareOfTheRangeRoundedLikeTheServer()
         {
             // 上限×2.2なら、幅120の25%で30。
-            Assert.That(EnhancementMaterials.Step(Stone(EnhancementMaterials.Purple), 2.2f), Is.EqualTo(30));
+            Assert.That(
+                EnhancementMaterials.Step(Stone(EnhancementMaterials.Purple), 2.2f),
+                Is.EqualTo(30)
+            );
             // 上限×1.5なら、幅50の5%で2.5を3に上げる。
-            Assert.That(EnhancementMaterials.Step(Stone(EnhancementMaterials.White), 1.5f), Is.EqualTo(3));
-            Assert.That(EnhancementMaterials.Step(EnhancementMaterials.AwakeningShard, 2.2f), Is.Zero);
+            Assert.That(
+                EnhancementMaterials.Step(Stone(EnhancementMaterials.White), 1.5f),
+                Is.EqualTo(3)
+            );
+            Assert.That(
+                EnhancementMaterials.Step(EnhancementMaterials.AwakeningShard, 2.2f),
+                Is.Zero
+            );
             // 上限を超える分は上限で止める。
             Assert.That(
                 EnhancementMaterials.Polished(2f, Stone(EnhancementMaterials.Gold), 1, 2.2f),
@@ -69,17 +78,20 @@ namespace Baryonyx.Tests.EditMode
         {
             Assert.That(AdventureDrops.TryParse("material", out var category), Is.True);
             Assert.That(category, Is.EqualTo(AdventureDropCategory.Material));
-            Assert.That(AdventureDrops.KeyOf(AdventureDropCategory.Material), Is.EqualTo("material"));
+            Assert.That(
+                AdventureDrops.KeyOf(AdventureDropCategory.Material),
+                Is.EqualTo("material")
+            );
             Assert.That(AdventureDrops.StarsOf(category, EnhancementMaterials.Gold), Is.EqualTo(4));
             var drop = new AdventureDrop("f2-0", category, EnhancementMaterials.Shard);
             Assert.That(drop.Quality, Is.Null);
-            Assert.That(AdventureTexts.DropName(null, drop), Is.EqualTo("覚醒の欠片"));
-            Assert.That(AdventureTexts.DropLine(null, drop), Does.Contain("強化素材"));
+            Assert.That(AdventureTexts.DropName(drop), Is.EqualTo("覚醒の欠片"));
+            Assert.That(AdventureTexts.DropLine(drop), Does.Contain("強化素材"));
         }
 
-        // サーバーの rollMaterials と同じく、1周で白い磨き石が2〜3個ほど落ちる。
+        // サーバーの rollMaterials と同じく、浅い行き先の1周で白い磨き石が3〜4個落ちる（doc/features/enhancement.md）。
         [Test]
-        public void ARunDropsTwoOrThreeWhiteStones()
+        public void AShallowRunDropsThreeOrFourWhiteStones()
         {
             var random = new System.Random(11);
             var rows = Enumerable
@@ -91,14 +103,30 @@ namespace Baryonyx.Tests.EditMode
             var counts = new Dictionary<string, int>();
             for (int run = 0; run < runs; run++)
                 foreach (var row in rows)
-                    foreach (var drop in AdventureDrops.RollMaterials(row, "room", random))
-                    {
-                        Assert.That(drop.Category, Is.EqualTo(AdventureDropCategory.Material));
-                        counts[drop.Id] = counts.GetValueOrDefault(drop.Id) + 1;
-                    }
-            Assert.That(counts[EnhancementMaterials.White] / (float)runs, Is.EqualTo(2.6f).Within(0.15f));
-            Assert.That(counts[EnhancementMaterials.Blue] / (float)runs, Is.EqualTo(1.4f).Within(0.15f));
-            Assert.That(counts[EnhancementMaterials.Shard] / (float)runs, Is.EqualTo(0.24f).Within(0.05f));
+                foreach (
+                    var drop in AdventureDrops.RollMaterials(
+                        AdventureCatalog.ForestRuins,
+                        row,
+                        "room",
+                        random
+                    )
+                )
+                {
+                    Assert.That(drop.Category, Is.EqualTo(AdventureDropCategory.Material));
+                    counts[drop.Id] = counts.GetValueOrDefault(drop.Id) + 1;
+                }
+            Assert.That(
+                counts[EnhancementMaterials.White] / (float)runs,
+                Is.EqualTo(3.56f).Within(0.15f)
+            );
+            Assert.That(
+                counts[EnhancementMaterials.Blue] / (float)runs,
+                Is.EqualTo(0.9f).Within(0.1f)
+            );
+            Assert.That(
+                counts[EnhancementMaterials.Shard] / (float)runs,
+                Is.EqualTo(0.24f).Within(0.05f)
+            );
         }
     }
 }

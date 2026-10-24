@@ -52,7 +52,7 @@ namespace Baryonyx.Tests.PlayMode
 
         // 商会の「強化」は、案内人を隠して画面いっぱいに、タブで持っているスキル・装備・固有スキルと覚醒できる段階を
         // 並べ、選んだ物を右に出す。行と磨き石の色・数を選んで押すと、サーバーの答えを待ってから品質を書き換え、素材と所持ルーンを減らして知らせる。
-        // 覚醒のタブでは欠片だけを出し、覚醒した段階は一覧から消える。失敗したら知らせて読み直す。
+        // スキル覚醒の項目では欠片だけを出し、覚醒した段階は一覧から消える。失敗したら知らせて読み直す。
         [UnityTest]
         public IEnumerator EnhanceRaisesTheChosenQualityAndAwakensAUniqueSkill()
         {
@@ -161,8 +161,18 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(QualityPalette.Of(enhance.Targets[0].Quality))
             );
 
-            // 覚醒のタブでは、磨き石の札と数の段を隠し、欠片だけを出す。
-            enhance.Tabs[(int)WorkshopEnhanceView.Tab.Awakening].Button.onClick.Invoke();
+            // 覚醒は別の項目「スキル覚醒」で、タブのない覚醒だけのパネルを開く。磨き石の札と数の段を隠し、欠片だけを出す。
+            view.Back.onClick.Invoke();
+            int awakenItem = Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == EnhancementSession.AwakeningItemKey
+            );
+            Assert.That(awakenItem, Is.EqualTo(4));
+            enhance = view.PanelFor(awakenItem).GetComponent<WorkshopEnhanceView>();
+            view.MenuItems[awakenItem].onClick.Invoke();
+            Assert.That(enhance.gameObject.activeInHierarchy, Is.True);
+            yield return SceneTests.WaitForTask(enhance.LoadTask);
+            Assert.That(enhance.Tabs, Is.Empty);
             Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Awakening));
             Assert.That(enhance.Chips[0].gameObject.activeSelf, Is.False);
             Assert.That(enhance.Chips[4].gameObject.activeSelf, Is.True);

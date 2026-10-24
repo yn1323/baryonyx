@@ -1,3 +1,8 @@
+using System;
+using System.Linq;
+using Baryonyx.Combat;
+using Baryonyx.Party.Editor;
+using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
@@ -404,5 +409,23 @@ namespace Baryonyx.Workshop.Editor
             image.raycastTarget = false;
             return image;
         }
+
+        /// <summary>The deck card's frames, by element (the buy's detail, the enhancement's cards).</summary>
+        public static Texture[] DeckCardFrames() =>
+            Enum.GetValues(typeof(CardElement))
+                .Cast<CardElement>()
+                .Select(element => (Texture)DeckCardAssets.CardArt($"CardFrame{element}"))
+                .ToArray();
+
+        /// <summary>The element icons by element, none for no element.</summary>
+        public static Sprite[] ElementIcons() =>
+            Enum.GetValues(typeof(CardElement))
+                .Cast<CardElement>()
+                .Select(element =>
+                    element == CardElement.None
+                        ? null
+                        : Icon($"{PartyAssets.AttributeArtFolder}/Element{element}.aseprite")
+                )
+                .ToArray();
     }
 }

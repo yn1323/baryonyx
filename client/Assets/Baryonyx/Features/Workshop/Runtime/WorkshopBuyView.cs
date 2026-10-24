@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Combat;
 using Baryonyx.Economy;
 using Baryonyx.Library;
 using Baryonyx.Party;
+using Baryonyx.Training;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using Baryonyx.UI.GuideMenu;
@@ -19,7 +21,7 @@ namespace Baryonyx.Workshop
     /// The trading house's "buy" (doc/features/screens.md#商会), filling the screen: the tabs and
     /// a grid of every skill, weapon, armor and accessory the library has found
     /// (<see cref="WorkshopGoods"/>) on the left, read again each time it opens, and the chosen
-    /// one's art, quality, effect and price on the right. Press "buy" to buy one at the lowest
+    /// one's art (a skill as its deck card), quality, effect and price on the right. Press "buy" to buy one at the lowest
     /// quality: it shows at once and is saved behind (<see cref="WorkshopSession.BuyAsync"/>),
     /// so the same one can be bought again right away. A good the balance cannot pay for can be
     /// chosen, but not bought.
@@ -58,6 +60,11 @@ namespace Baryonyx.Workshop
         public TMP_Text DetailLine;
         public TMP_Text DetailEffect;
         public TMP_Text DetailOwned;
+
+        // スキルを選んだときに、絵・名前・効果の代わりに出すデッキのカード。属性ごとの枠とアイコン。
+        public TrainingCardWidget DetailCard = new();
+        public Texture[] CardFrames = Array.Empty<Texture>();
+        public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
         // 「買う」の左の値段と、ルーンが足りないときの文字。
         public GameObject Price;
@@ -221,16 +228,28 @@ namespace Baryonyx.Workshop
 
         private void ShowDetail(WorkshopGood good)
         {
+            // スキルは、買ったときの品質（×1.00）のデッキのカードで見せる。
+            var card = good?.Kind == LibraryKind.Skill ? CardSkills.Find(good.Id) : null;
+            WorkshopSkillCard.Show(
+                DetailCard,
+                card,
+                Inventory.Quality.MinMultiplier,
+                CardSkillQuality.LimitOf(card),
+                false,
+                Party,
+                CardFrames,
+                ElementIcons
+            );
             if (DetailArt != null)
             {
                 // 選ぶまでは、絵の後ろの光ごと隠す。
-                DetailArt.transform.parent.gameObject.SetActive(good != null);
-                if (good != null)
+                DetailArt.transform.parent.gameObject.SetActive(good != null && card == null);
+                if (good != null && card == null)
                     LibraryCatalogView.PaintArt(DetailArt, good.Entry, true, DetailArtBox);
             }
-            Set(DetailName, good?.Name);
+            Set(DetailName, card == null ? good?.Name : "");
             Set(DetailLine, good != null ? $"{StarsText(good.Stars)}　{QualityText}" : "");
-            Set(DetailEffect, good != null ? EffectOf(good) : "");
+            Set(DetailEffect, good != null && card == null ? EffectOf(good) : "");
             Set(
                 DetailOwned,
                 good != null && owned != null

@@ -173,6 +173,11 @@ namespace Baryonyx.Tests.PlayMode
                 CancellationToken token
             ) => Task.FromException<WorkshopCrafted>(new NotSupportedException());
 
+            public Task<WorkshopSale> SellAsync(
+                IReadOnlyList<WorkshopOwned> things,
+                CancellationToken token
+            ) => Task.FromException<WorkshopSale>(new NotSupportedException());
+
             public void Answer()
             {
                 while (held.Count > 0)

@@ -29,7 +29,9 @@ namespace Baryonyx.Workshop.Editor
         private const int Columns = 5;
         private const float CardHeight = 200f;
         private const float CardArt = 112f;
-        private const float ChosenHeight = 104f;
+
+        // 装備は品質の下に効果を書くため、名前・品質・効果の3行が入る高さにする。
+        private const float ChosenHeight = 150f;
         private const float ChosenArt = 72f;
         private const float ClearWidth = 300f;
 

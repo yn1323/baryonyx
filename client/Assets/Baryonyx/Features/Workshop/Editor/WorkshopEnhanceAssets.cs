@@ -217,9 +217,25 @@ namespace Baryonyx.Workshop.Editor
         private static readonly Color GaugeBack = new(0.02f, 0.03f, 0.08f, 0.8f);
         private static readonly Color GaugeGain = new(0.5f, 0.89f, 1f, 1f);
 
-        public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
+        /// <summary>
+        /// Builds the polishing panel (skills, equipment and unique skills in tabs), or with
+        /// <paramref name="awakening"/> the awakening panel: the unique skills that can awaken
+        /// under a heading instead of tabs.
+        /// </summary>
+        public static GameObject BuildPanel(
+            RectTransform safe,
+            GuideMenuView view,
+            bool awakening = false
+        )
         {
-            var (enhance, layer) = Panel<WorkshopEnhanceView>(safe, "WorkshopEnhance", Split);
+            var (enhance, layer) = Panel<WorkshopEnhanceView>(
+                safe,
+                awakening ? "WorkshopAwaken" : "WorkshopEnhance",
+                Split
+            );
+            enhance.TabOrder = awakening
+                ? WorkshopEnhanceView.AwakenTabs
+                : WorkshopEnhanceView.PolishTabs;
             enhance.Guide = view;
             enhance.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             enhance.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
@@ -228,19 +244,29 @@ namespace Baryonyx.Workshop.Editor
             );
             enhance.ArtBox = ArtBox;
             enhance.GearArtBox = GearArt;
-            enhance.CardFrames = Enum.GetValues(typeof(CardElement))
-                .Cast<CardElement>()
-                .Select(element => (Texture)DeckCardAssets.CardArt($"CardFrame{element}"))
-                .ToArray();
-            enhance.ElementIcons = Enum.GetValues(typeof(CardElement))
-                .Cast<CardElement>()
-                .Select(element =>
-                    element == CardElement.None
-                        ? null
-                        : Icon($"{PartyAssets.AttributeArtFolder}/Element{element}.aseprite")
-                )
-                .ToArray();
-            enhance.Tabs = Tabs(layer, WorkshopEnhanceView.TabLabels, Split);
+            enhance.CardFrames = DeckCardFrames();
+            enhance.ElementIcons = ElementIcons();
+            if (awakening)
+            {
+                enhance.Tabs = Array.Empty<GuideTab>();
+                GuideFrameAssets.Heading(
+                    layer,
+                    "ListTitle",
+                    "覚醒できる固有スキル",
+                    Edge,
+                    TabTop,
+                    Split - Edge - Inner,
+                    TabHeight
+                );
+            }
+            else
+                enhance.Tabs = Tabs(
+                    layer,
+                    enhance
+                        .TabOrder.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab])
+                        .ToArray(),
+                    Split
+                );
 
             var (content, scroll) = Column(
                 layer,
@@ -256,7 +282,7 @@ namespace Baryonyx.Workshop.Editor
             enhance.List = scroll;
             enhance.Template = ListRow(content, "Template", RowHeight, ArtBox, 38f, ValueWidth);
             enhance.Template.gameObject.SetActive(false);
-            // 仮の編成のスキルで描き、Prefabを開くと停止中でも一覧が読めるようにする。
+            // 仮の編成のスキルで描き、Prefabを開くと停止中でも一覧が読めるようにする。覚醒は実行中に読む。
             var formation = PartyFormation.From(enhance.Party);
             var mock = EnhancementTargets.Skills(
                 formation.Roster.SelectMany(member =>
@@ -265,7 +291,7 @@ namespace Baryonyx.Workshop.Editor
                     )
                 )
             );
-            for (int i = 0; i < mock.Count; i++)
+            for (int i = 0; i < (awakening ? 0 : mock.Count); i++)
             {
                 var row = ListRow(content, "Row" + i, RowHeight, ArtBox, 38f, ValueWidth);
                 var entry =
@@ -332,8 +358,15 @@ namespace Baryonyx.Workshop.Editor
             enhance.Info = info;
             (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
                 layer,
-                WorkshopEnhanceView.PolishLabel
+                awakening ? WorkshopEnhanceView.AwakenLabel : WorkshopEnhanceView.PolishLabel
             );
+            if (awakening)
+            {
+                // 覚醒は磨き石と数の段を使わず、覚醒の欠片だけを出す（実行中の ShowTab と同じ見た目）。
+                foreach (var chip in enhance.Chips)
+                    chip.gameObject.SetActive(!chip.gameObject.activeSelf);
+                enhance.Stepper.SetActive(false);
+            }
             return enhance.gameObject;
         }
 

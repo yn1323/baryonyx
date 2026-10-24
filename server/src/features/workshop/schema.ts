@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CRAFT_MATERIAL_COUNT, WORKSHOP_CATEGORIES } from "./catalog.js";
+import {
+  CRAFT_MATERIAL_COUNT,
+  SELL_LIMIT,
+  WORKSHOP_CATEGORIES,
+} from "./catalog.js";
 
 const requestId = z.string().regex(/^[a-f0-9-]{36}$/);
 const entryId = z.string().min(1).max(64);
@@ -48,3 +52,33 @@ export const craftSchema = z.discriminatedUnion("category", [
 ]);
 
 export type Craft = z.infer<typeof craftSchema>;
+
+const rowId = z.string().min(1).max(64);
+const distinct = (ids: readonly string[]) => new Set(ids).size === ids.length;
+
+// 商会で、持ち物を売る。スキルは持ち物の行のIDの cardIds、装備は equipmentIds、アイテムは種類ごとの持っている
+// 数の items で、重ねずに合計1〜SELL_LIMIT個を選ぶ。値段はサーバーが決める。
+// クライアント（JsonUtility）は使わない配列も空で送るため、どれも省略と空を受け付ける。
+export const sellSchema = z
+  .object({
+    requestId,
+    cardIds: z.array(rowId).max(SELL_LIMIT).refine(distinct).default([]),
+    equipmentIds: z.array(rowId).max(SELL_LIMIT).refine(distinct).default([]),
+    items: z
+      .array(
+        z.object({
+          id: entryId,
+          count: z.number().int().min(1).max(9999),
+        }),
+      )
+      .max(SELL_LIMIT)
+      .refine((items) => distinct(items.map((item) => item.id)))
+      .default([]),
+  })
+  .refine((sale) => {
+    const total =
+      sale.cardIds.length + sale.equipmentIds.length + sale.items.length;
+    return total >= 1 && total <= SELL_LIMIT;
+  });
+
+export type Sell = z.infer<typeof sellSchema>;

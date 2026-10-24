@@ -74,6 +74,62 @@ namespace Baryonyx.Workshop
             );
         }
 
+        // スキル・装備は持ち物の行のIDを、アイテムは種類ごとの持っている数を送る。
+        public Task<SellResult> SellAsync(
+            AccountSession session,
+            string requestId,
+            IReadOnlyList<WorkshopOwned> things,
+            CancellationToken token
+        )
+        {
+            var sold = things ?? Array.Empty<WorkshopOwned>();
+            string[] RowsOf(params LibraryKind[] kinds) =>
+                sold.Where(thing => kinds.Contains(thing.Kind))
+                    .Select(thing => thing.RowId)
+                    .ToArray();
+            return server.SendAsync<SellResult>(
+                "/v1/workshop/sell",
+                "POST",
+                new SellRequest
+                {
+                    requestId = requestId,
+                    cardIds = RowsOf(LibraryKind.Skill),
+                    equipmentIds = RowsOf(
+                        LibraryKind.Weapon,
+                        LibraryKind.Armor,
+                        LibraryKind.Accessory
+                    ),
+                    items = sold.Where(thing => thing.Kind == LibraryKind.Item)
+                        .Select(thing => new CraftItem { id = thing.KindId, count = thing.Count })
+                        .ToArray(),
+                },
+                session.Token,
+                token
+            );
+        }
+
+        [Serializable]
+        private sealed class SellRequest
+        {
+            public string requestId;
+            public string[] cardIds;
+            public string[] equipmentIds;
+            public CraftItem[] items;
+        }
+
+        [Serializable]
+        public sealed class SellResult
+        {
+            public Sale sale;
+        }
+
+        [Serializable]
+        public sealed class Sale
+        {
+            public int runes;
+            public long balanceAfter;
+        }
+
         [Serializable]
         private sealed class CraftRequest
         {

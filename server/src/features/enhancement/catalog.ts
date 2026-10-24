@@ -65,7 +65,7 @@ export function awakeningRunes(stage: number): number {
     : AWAKENING_RUNES.second;
 }
 
-// 出来事を終えたマスごとの、磨き石が落ちる確率（千分率）と色の重み。ふつうのドロップとは別に1回だけ抽選する。
+// 出来事を終えたマスごとの、磨き石が落ちる確率（千分率）。ふつうのドロップとは別に1回だけ抽選する。
 export const POLISH_DROP_CHANCE: Record<RewardRow, number> = {
   battle: 300,
   elite: 600,
@@ -73,33 +73,94 @@ export const POLISH_DROP_CHANCE: Record<RewardRow, number> = {
   boss: 1000,
 };
 
+// 磨き石の色の重みを分ける、行き先の深さ。浅い（敵のLv10〜14）は白がほとんどで金はまれ、奥（Lv30〜40）でも
+// 紫と金はまれにする（2026-10-24、ユーザーの指示）。行き先と深さの対応は adventure/drops.ts の polishDepthOf。
+export const POLISH_DEPTHS = ["shallow", "middle", "deep"] as const;
+
+export type PolishDepth = (typeof POLISH_DEPTHS)[number];
+
+// 落ちたときの色の重み（千分率）。行き先の深さと、マスごと。
 export const POLISH_DROP_WEIGHTS: Record<
-  RewardRow,
-  Record<PolishId, number>
+  PolishDepth,
+  Record<RewardRow, Record<PolishId, number>>
 > = {
-  battle: {
-    "polish-white": 80,
-    "polish-blue": 18,
-    "polish-purple": 2,
-    "polish-gold": 0,
+  shallow: {
+    battle: {
+      "polish-white": 920,
+      "polish-blue": 80,
+      "polish-purple": 0,
+      "polish-gold": 0,
+    },
+    elite: {
+      "polish-white": 780,
+      "polish-blue": 200,
+      "polish-purple": 20,
+      "polish-gold": 0,
+    },
+    treasure: {
+      "polish-white": 780,
+      "polish-blue": 200,
+      "polish-purple": 20,
+      "polish-gold": 0,
+    },
+    boss: {
+      "polish-white": 500,
+      "polish-blue": 400,
+      "polish-purple": 95,
+      "polish-gold": 5,
+    },
   },
-  elite: {
-    "polish-white": 55,
-    "polish-blue": 35,
-    "polish-purple": 9,
-    "polish-gold": 1,
+  middle: {
+    battle: {
+      "polish-white": 840,
+      "polish-blue": 150,
+      "polish-purple": 10,
+      "polish-gold": 0,
+    },
+    elite: {
+      "polish-white": 640,
+      "polish-blue": 310,
+      "polish-purple": 47,
+      "polish-gold": 3,
+    },
+    treasure: {
+      "polish-white": 640,
+      "polish-blue": 310,
+      "polish-purple": 47,
+      "polish-gold": 3,
+    },
+    boss: {
+      "polish-white": 320,
+      "polish-blue": 500,
+      "polish-purple": 165,
+      "polish-gold": 15,
+    },
   },
-  treasure: {
-    "polish-white": 55,
-    "polish-blue": 35,
-    "polish-purple": 9,
-    "polish-gold": 1,
-  },
-  boss: {
-    "polish-white": 20,
-    "polish-blue": 45,
-    "polish-purple": 28,
-    "polish-gold": 7,
+  deep: {
+    battle: {
+      "polish-white": 780,
+      "polish-blue": 205,
+      "polish-purple": 15,
+      "polish-gold": 0,
+    },
+    elite: {
+      "polish-white": 560,
+      "polish-blue": 380,
+      "polish-purple": 55,
+      "polish-gold": 5,
+    },
+    treasure: {
+      "polish-white": 560,
+      "polish-blue": 380,
+      "polish-purple": 55,
+      "polish-gold": 5,
+    },
+    boss: {
+      "polish-white": 220,
+      "polish-blue": 545,
+      "polish-purple": 200,
+      "polish-gold": 35,
+    },
   },
 };
 

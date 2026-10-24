@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Party;
@@ -19,14 +20,17 @@ namespace Baryonyx.Workshop
     /// The trading house's "sell" (doc/features/screens.md#商会), filling the screen: the held
     /// things on the left, each one apart since each has its own quality (items, which have none,
     /// one card per kind with the count), and the chosen ones with their prices and the total on
-    /// the right. Several can be chosen; a thing someone uses shows "E" and cannot be. Selling is
-    /// not decided yet (doc/features/equipment.md#未決事項), so the button only tells it is not
-    /// ready, and the prices are provisional.
+    /// the right. Several can be chosen; a thing someone uses shows "E" and cannot be. Press "sell"
+    /// to sell them for runes: they leave the list when the server answers, since it decides the
+    /// prices (provisional, the same as <see cref="PriceOf"/>).
     /// </summary>
     public sealed class WorkshopSellView : GuidePanel, IEditModePreview
     {
         public const string LoadFailedMessage = "持ち物を取得できませんでした";
-        public const string NotReadyMessage = "売る（準備中）";
+        public const string FailedMessage = "売れませんでした";
+
+        // 1回で売れる数。サーバーの SELL_LIMIT（server/src/features/workshop/catalog.ts）と同じ。
+        public const int MaxChosen = 50;
 
         public PartyMockData Party;
         public LibraryData Data;
@@ -52,10 +56,15 @@ namespace Baryonyx.Workshop
         private IReadOnlyList<WorkshopOwned> owned = Array.Empty<WorkshopOwned>();
         private IReadOnlyList<WorkshopOwned> shown = Array.Empty<WorkshopOwned>();
         private int tab;
+        private bool busy;
 
+        public IReadOnlyList<WorkshopOwned> Owned => owned;
         public IReadOnlyList<WorkshopOwned> Shown => shown;
         public IReadOnlyList<WorkshopOwned> Chosen => chosen;
         public int Tab => tab;
+
+        // 直前の売却。テストで完了を待つために公開する。
+        public Task Work { get; private set; } = Task.CompletedTask;
 
         private void OnEnable()
         {
@@ -79,7 +88,7 @@ namespace Baryonyx.Workshop
             if (Clear != null && bound.Add(Clear))
                 Clear.onClick.AddListener(ClearChosen);
             if (Confirm != null && bound.Add(Confirm))
-                Confirm.onClick.AddListener(() => ShowNotice(NotReadyMessage));
+                Confirm.onClick.AddListener(Sell);
         }
 
         private async Task LoadAsync(CancellationToken token)
@@ -99,7 +108,16 @@ namespace Baryonyx.Workshop
 
         public void ShowTab(int index)
         {
+            if (busy)
+                return;
             tab = Mathf.Clamp(index, 0, WorkshopStock.Kinds.Count - 1);
+            PaintTab();
+            if (List != null)
+                List.verticalNormalizedPosition = 1f;
+        }
+
+        private void PaintTab()
+        {
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == tab;
@@ -113,27 +131,84 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], shown[i], EntryOf(shown[i]), ArtBox);
             }
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
-            if (List != null)
-                List.verticalNormalizedPosition = 1f;
             RefreshChosen();
         }
 
         /// <summary>Chooses the card <paramref name="index"/> of the tab, or lets it go if chosen.</summary>
         public void Toggle(int index)
         {
-            if (index < 0 || index >= shown.Count || shown[index].User != null)
+            if (busy || index < 0 || index >= shown.Count || shown[index].User != null)
                 return;
             var thing = shown[index];
             if (!chosen.Remove(thing))
+            {
+                if (chosen.Count >= MaxChosen)
+                    return;
                 chosen.Add(thing);
+            }
             RefreshChosen();
         }
 
         public void ClearChosen()
         {
+            if (busy)
+                return;
             chosen.Clear();
             RefreshChosen();
         }
+
+        /// <summary>Sells the chosen things, and takes them off the list when the server answers.</summary>
+        public void Sell()
+        {
+            if (busy || chosen.Count == 0)
+                return;
+            Work = SellAsync(chosen.ToArray());
+        }
+
+        private async Task SellAsync(IReadOnlyList<WorkshopOwned> things)
+        {
+            busy = true;
+            RefreshChosen();
+            bool failed = false;
+            try
+            {
+                var sale = await WorkshopSession.SellAsync(things);
+                owned = Without(owned, things);
+                chosen.Clear();
+                ShowNotice(SoldText(things.Count, sale.Runes));
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(FailedMessage + "。" + exception.Message, this);
+                ShowNotice(FailedMessage);
+                failed = true;
+            }
+            finally
+            {
+                busy = false;
+            }
+            if (this == null || !isActiveAndEnabled)
+                return;
+            if (failed)
+                StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
+            else
+                PaintTab();
+        }
+
+        /// <summary>The held things after a sale: the sold ones gone.</summary>
+        public static IReadOnlyList<WorkshopOwned> Without(
+            IReadOnlyList<WorkshopOwned> before,
+            IReadOnlyList<WorkshopOwned> sold
+        ) =>
+            before
+                .Where(thing =>
+                    !sold.Any(other => other.Kind == thing.Kind && other.RowId == thing.RowId)
+                )
+                .ToArray();
+
+        public static string SoldText(int count, int runes) =>
+            $"{count}点を{runes:N0}ルーンで売った";
 
         private void RefreshChosen()
         {
@@ -150,9 +225,9 @@ namespace Baryonyx.Workshop
             }
             Set(Total, "+" + chosen.Sum(PriceOf).ToString("N0"));
             if (Clear != null)
-                Clear.interactable = chosen.Count > 0;
+                Clear.interactable = !busy && chosen.Count > 0;
             if (Confirm != null)
-                Confirm.interactable = chosen.Count > 0;
+                Confirm.interactable = !busy && chosen.Count > 0;
         }
 
         /// <summary>Writes a held thing on its card. The generator bakes the mock things with it too.</summary>
@@ -179,7 +254,10 @@ namespace Baryonyx.Workshop
             }
         }
 
-        /// <summary>Writes a chosen thing's row: its name, quality (or count) and price.</summary>
+        /// <summary>
+        /// Writes a chosen thing's row: its name, quality (or count) and price, and for equipment
+        /// its effect at its own multiplier under the quality.
+        /// </summary>
         public static void PaintChosen(
             WorkshopGoodRow row,
             WorkshopOwned thing,
@@ -189,20 +267,20 @@ namespace Baryonyx.Workshop
         {
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
             Set(row.Name, thing.Name);
-            Set(
-                row.Detail,
-                thing.HasQuality
-                    ? $"<color=#{QualityPalette.Hex(thing.Quality)}>品質{Quality.Letter(thing.Quality)}</color>（{Quality.Times(thing.Multiplier)}）"
-                    : "×" + thing.Count
-            );
+            string quality = thing.HasQuality
+                ? $"<color=#{QualityPalette.Hex(thing.Quality)}>品質{Quality.Letter(thing.Quality)}</color>（{Quality.Times(thing.Multiplier)}）"
+                : "×" + thing.Count;
+            string effect = GearEffectOf(thing);
+            Set(row.Detail, effect != null ? quality + "\n" + effect : quality);
             Set(row.Price, WorkshopBuyView.PriceText(PriceOf(thing)));
             if (row.Price != null)
                 row.Price.color = UiPalette.Gold;
         }
 
         /// <summary>
-        /// The provisional price: a quarter of the buy price by the stars, times the multiplier;
-        /// items ten runes at ☆1, doubled for each star, times the count.
+        /// The provisional price, the server's too (server/src/features/workshop/catalog.ts): a
+        /// quarter of the buy price by the stars, times the multiplier, rounded half up; items ten
+        /// runes at ☆1, doubled for each star, times the count.
         /// </summary>
         public static int PriceOf(WorkshopOwned thing)
         {
@@ -210,9 +288,17 @@ namespace Baryonyx.Workshop
                 return 0;
             if (thing.Kind == LibraryKind.Item)
                 return 10 * (1 << Math.Max(0, thing.Stars - 1)) * thing.Count;
-            int basePrice = WorkshopGoods.PriceOfStars(Math.Max(1, thing.Stars)) / 4;
-            return Mathf.RoundToInt(basePrice * thing.Multiplier);
+            return Quality.Amount(
+                WorkshopGoods.PriceOfStars(Math.Max(1, thing.Stars)) / 4,
+                thing.Multiplier
+            );
         }
+
+        /// <summary>The effect of a piece of equipment at its own multiplier, or null for others.</summary>
+        public static string GearEffectOf(WorkshopOwned thing) =>
+            thing != null && thing.Kind != LibraryKind.Skill && thing.Kind != LibraryKind.Item
+                ? EquipmentCatalog.Find(thing.KindId)?.DetailAt(thing.Multiplier)
+                : null;
 
         public static string EmptyText(string kind) => $"{kind}を持っていません";
 
@@ -265,6 +351,7 @@ namespace Baryonyx.Workshop
 
         private void ShowLoading()
         {
+            busy = false;
             owned = shown = Array.Empty<WorkshopOwned>();
             chosen.Clear();
             foreach (var row in Rows)

@@ -49,6 +49,13 @@ namespace Baryonyx.Workshop
 
         public static readonly string[] TabLabels = { "スキル", "装備", "固有スキル", "覚醒" };
 
+        // 品質強化のタブの順。スキル覚醒は別の項目（AwakeningItemKey）で、覚醒だけのパネルを開く。
+        public static readonly Tab[] PolishTabs = { Tab.Skills, Tab.Equipment, Tab.Uniques };
+        public static readonly Tab[] AwakenTabs = { Tab.Awakening };
+
+        /// <summary>The tabs this panel shows, in order; <see cref="Tabs"/> has a button for each (none when one).</summary>
+        public Tab[] TabOrder = PolishTabs;
+
         public LibraryData Data;
         public PartyMockData Party;
         public TrainingMockData Training;
@@ -164,7 +171,9 @@ namespace Baryonyx.Workshop
                 var item = Tabs[i];
                 if (item == null || item.Button == null || !bound.Add(item))
                     continue;
-                var next = (Tab)i;
+                if (i >= TabOrder.Length)
+                    continue;
+                var next = TabOrder[i];
                 item.Button.onClick.AddListener(() => ShowTab(next));
             }
             for (int i = 0; i < Chips.Length; i++)
@@ -191,7 +200,7 @@ namespace Baryonyx.Workshop
             if (token.IsCancellationRequested)
                 return;
             Use(formation, PartySession.State, gear);
-            ShowTab(tab);
+            ShowTab(Array.IndexOf(TabOrder, tab) >= 0 ? tab : TabOrder[0]);
         }
 
         /// <summary>Takes the party and the equipment as the lists to show.</summary>
@@ -257,7 +266,7 @@ namespace Baryonyx.Workshop
             count = 1;
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
-                    Tabs[i].Chosen = i == (int)tab;
+                    Tabs[i].Chosen = i < TabOrder.Length && TabOrder[i] == tab;
             EnsureRows(RowCount);
             for (int i = 0; i < Rows.Count; i++)
             {
@@ -591,34 +600,17 @@ namespace Baryonyx.Workshop
             float multiplier,
             float max,
             bool unique
-        )
-        {
-            var root = widget?.Frame != null ? widget.Frame.transform.parent.gameObject : null;
-            if (root != null)
-                root.SetActive(card != null);
-            if (card == null)
-                return;
-            var scaled = card.WithMultiplier(multiplier);
-            var state = TrainingCardState.Of(
-                card.Id,
-                unique ? TrainingCardState.UniqueType : TrainingCardState.SkillType,
-                scaled.Name,
-                CardText.KindLine(scaled),
-                CardText.Description(scaled),
-                scaled.Cost,
-                Inventory.Quality.Of(multiplier, max),
-                card.FoilStyle,
-                card.Element,
-                IconOf(card.Element),
-                Party != null ? Party.ArtOf(card.Id) : null
-            );
-            int element = (int)card.Element;
-            TrainingView.ShowCard(
+        ) =>
+            WorkshopSkillCard.Show(
                 widget,
-                state,
-                element < CardFrames.Length ? CardFrames[element] : null
+                card,
+                multiplier,
+                max,
+                unique,
+                Party,
+                CardFrames,
+                ElementIcons
             );
-        }
 
         // 装備の札：縁を品質の色にし、絵に品質のキラキラを重ね、効果をその倍率の数字で書く。
         // 強化した後の札は、強化する前から変わる数字を「前→後」で書く。
@@ -649,14 +641,6 @@ namespace Baryonyx.Workshop
             Set(card.Quality, QualityText(quality, multiplier));
             string effect = gear.DetailAt(multiplier);
             Set(card.Effect, before != null ? EffectChange(before, effect) : effect);
-        }
-
-        private Sprite IconOf(CardElement element)
-        {
-            int index = (int)element;
-            return element != CardElement.None && index < ElementIcons.Length
-                ? ElementIcons[index]
-                : null;
         }
 
         private static CardSkill CardOf(EnhancementTarget target) =>
