@@ -6,15 +6,16 @@ namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
     /// The keyword notes beside the raised card (doc/features/screens.md, the battle mock): each
-    /// keyword its text names, with what it means, right of the card while it is up. They go
-    /// while the card is swiped toward a target, so they hide nothing to aim at.
+    /// keyword its text names, with what it means, beside the card while it is up: left of a card
+    /// for the enemies, right of one for the party. They go while the card is swiped toward a
+    /// target, so they hide nothing to aim at.
     /// </summary>
     public sealed partial class BattleInspectView
     {
         /// <summary>The notes; placed beside the raised card, under the same anchor as the hand.</summary>
         public BattleInspectKeywordTips KeywordTips;
 
-        /// <summary>Space between the raised card's right edge and the notes, in px.</summary>
+        /// <summary>Space between the raised card's edge and the notes, in px.</summary>
         public float KeywordTipsGap = 16f;
 
         private IReadOnlyList<CardKeyword>[] deckKeywords;
@@ -45,7 +46,11 @@ namespace Baryonyx.Combat.Presentation
                 Settings.RaisedBottom + card.rect.height * scale,
                 Settings.RaisedBottom + tips.rect.height
             );
-            var place = new Vector2(card.rect.width * scale / 2f + KeywordTipsGap, top);
+            // On the side away from the card's targets: left of a card for the enemies (who stand
+            // on the right), right of one for the party, so the notes hide nothing to tap.
+            float beside = card.rect.width * scale / 2f + KeywordTipsGap;
+            float x = Cards[index].TargetsEnemies ? -beside - KeywordTips.Width : beside;
+            var place = new Vector2(x, top);
             if (tips.anchoredPosition != place)
                 tips.anchoredPosition = place;
         }

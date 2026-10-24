@@ -106,6 +106,10 @@ namespace Baryonyx.Combat.Presentation
         [NonSerialized]
         public int Unique = -1;
 
+        /// <summary>The owned skill card it is, or empty (<see cref="BattlePartyCard.OwnedCard"/>).</summary>
+        [NonSerialized]
+        public string OwnedCard = "";
+
         /// <summary>The art of another card skill by its id (<see cref="BattlePartyCard.ArtOf"/>).</summary>
         [NonSerialized]
         public Func<string, Texture> ArtOf;
@@ -1243,8 +1247,8 @@ namespace Baryonyx.Combat.Presentation
 
         private Pose RaisedPose(int index)
         {
-            // In the middle of the screen from left to right, standing on its bottom edge with a
-            // little room. The hand's origin is the bottom centre of the screen area and the card
+            // In the middle of the screen from left to right, a little below the middle from top
+            // to bottom, its bottom edge the settings' RaisedBottom up. The hand's origin is the bottom centre of the screen area and the card
             // turns about its bottom centre.
             return new Pose(
                 new Vector2(0f, Settings.RaisedBottom) - Hand.anchoredPosition,
@@ -1743,6 +1747,7 @@ namespace Baryonyx.Combat.Presentation
             PutBack();
             reserved = 0;
             hand.Clear();
+            ClearOmens();
             ResetPassives();
             foreach (var card in Cards)
                 card.Place = BattleInspectCardPlace.Deck;
@@ -1808,6 +1813,8 @@ namespace Baryonyx.Combat.Presentation
             if (drawPile.Count == 0)
                 return false;
             Show(index, drawPile[0]);
+            // A unique skill's card may light up as it comes into the hand, to evolve when used.
+            DrawOmen(drawPile[0]);
             drawPile.RemoveAt(0);
             Cards[index].Place = BattleInspectCardPlace.Hand;
             hand.Insert(0, index);
@@ -1979,8 +1986,8 @@ namespace Baryonyx.Combat.Presentation
             }
             else
                 caster = -1;
-            // A unique skill's card may evolve before its effect (doc/features/skill-evolution.md).
-            if (DrawEvolution(card.DeckIndex, data, caster))
+            // A unique skill's card lit in the hand evolves before its effect (doc/features/skill-evolution.md).
+            if (TakeOmen(card.DeckIndex))
             {
                 Enqueue(
                     EvolveThenPerform(card.DeckIndex, data, parts, bases, chosen, onEnemies, caster)
@@ -2530,6 +2537,8 @@ namespace Baryonyx.Combat.Presentation
                 card.Group.blocksRaycasts = blocks;
             if (card.Face != null)
                 card.Face.SetPlayable(playable, VeilDarkness(Settings, alpha));
+            // A card that evolves when used lights up once it is face up in the hand.
+            ShowGlint(index, card.InHand && !IsFaceDown(index) && HasOmen(card.DeckIndex));
         }
 
         private static void RefreshEnemy(BattleInspectEnemy enemy)

@@ -250,6 +250,42 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator TheKeywordNotesStandAwayFromTheCardsTargets()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var tips = (RectTransform)view.KeywordTips.transform;
+            var checkedSides = new HashSet<bool>();
+
+            foreach (int index in view.HandCards.ToArray())
+            {
+                var card = view.Cards[index];
+                var skill = CardSkills.Find(view.Deck[card.DeckIndex].Skill);
+                if (skill == null || CardKeywords.In(skill.Text).Count == 0)
+                    continue;
+                var point = CardPoint(card);
+                view.PressCard(index, point);
+                view.ReleaseCard(point);
+                yield return null;
+                Assert.That(view.KeywordTips.gameObject.activeSelf, Is.True);
+                // The card stands in the middle; the notes keep to the side its targets are not on.
+                float left = RectTransformUtility
+                    .WorldToScreenPoint(null, tips.TransformPoint(tips.rect.min))
+                    .x;
+                float right = RectTransformUtility
+                    .WorldToScreenPoint(null, tips.TransformPoint(tips.rect.max))
+                    .x;
+                float middle = Screen.width * 0.5f;
+                if (card.TargetsEnemies)
+                    Assert.That(right, Is.LessThan(middle), $"{skill.Name}: left of the card");
+                else
+                    Assert.That(left, Is.GreaterThan(middle), $"{skill.Name}: right of the card");
+                checkedSides.Add(card.TargetsEnemies);
+            }
+            Assert.That(checkedSides, Is.EquivalentTo(new[] { true, false }), "Both kinds held.");
+        }
+
+        [UnityTest]
         public IEnumerator ATappedCardGoesBackOnATapOnNoTarget()
         {
             var view = default(BattleInspectView);

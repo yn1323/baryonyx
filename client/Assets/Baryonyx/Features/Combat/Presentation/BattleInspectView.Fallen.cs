@@ -128,6 +128,7 @@ namespace Baryonyx.Combat.Presentation
             var layer = VanishLayer();
             var copy = (RectTransform)Instantiate(body.gameObject, layer, false).transform;
             copy.name = body.name + " (Vanishing)";
+            BattleEvolutionGlint.StripFrom(copy.gameObject);
             copy.SetAsLastSibling();
             var input = copy.GetComponent<BattleInspectCardInput>();
             if (input != null)

@@ -17,10 +17,12 @@ namespace Baryonyx.Combat.Presentation
 
         [Tooltip("押したカードの倍率（CardScaleに掛ける）。")]
         [Min(0.1f)]
-        public float RaisedScale = 1.6f;
+        public float RaisedScale = 2f;
 
-        [Tooltip("押したカードは画面の左右中央・下寄せに出す。その下端と画面下端のすき間（px）。")]
-        public float RaisedBottom = 24f;
+        [Tooltip(
+            "押したカードは画面の左右中央、上下中央より少し下に出す。その下端と画面下端のすき間（px）。"
+        )]
+        public float RaisedBottom = 160f;
 
         [Header("使えないカード")]
         [Tooltip(

@@ -26,6 +26,8 @@ namespace Baryonyx.Combat.Presentation
                 "予告（回復）",
                 "予告（ブロック）",
                 "状態の一覧",
+                "覚醒の予兆（光るカード）",
+                "キーワードの説明札（味方向け）",
             };
 
         public void ShowPreviewState(int index)
@@ -70,7 +72,35 @@ namespace Baryonyx.Combat.Presentation
                 case 11:
                     ListPreviewStatuses();
                     break;
+                case 12:
+                    GlintPreviewCard();
+                    break;
+                case 13:
+                    RaisePreviewCard(PreviewPartyCardWithKeywords(), withKeywords: true);
+                    break;
             }
+        }
+
+        // 手札に限らない最初のカードで、敵に使わず、説明文にキーワードがあるもの（説明札は右に出る）。
+        private int PreviewPartyCardWithKeywords()
+        {
+            for (int i = 0; i < Cards.Length; i++)
+                if (
+                    !Cards[i].TargetsEnemies
+                    && Cards[i].DeckIndex < Deck.Length
+                    && KeywordsOf(Cards[i].DeckIndex).Count > 0
+                )
+                    return i;
+            return -1;
+        }
+
+        // 初めの手札の1枚を、使えば覚醒するカードとして光らせた1コマ（光り始めの瞬きが収まったあと）。
+        private void GlintPreviewCard()
+        {
+            int index = PreviewCard();
+            var glint = index >= 0 ? MakeGlint(index) : null;
+            if (glint != null)
+                glint.ShowAt(1f);
         }
 
         // 2体目の敵（狼）に見本の状態を付け、HPを減らして、その一覧を開く。

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: BattleInspectHandSettings
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Combat.Presentation.BattleInspectHandSettings
   CardScale: 1
-  RaisedScale: 1.6
-  RaisedBottom: 24
+  RaisedScale: 2
+  RaisedBottom: 160
   UnplayableAlpha: 0.7
   UnplayableDarkness: 0.7
   UnplayableDrop: 40

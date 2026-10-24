@@ -1553,7 +1553,7 @@ namespace Baryonyx.Combat.Editor
 
         /// <summary>
         /// The notes beside the raised card: frosted-glass plaques over the scene, each a keyword
-        /// in its colour and what it means, stacked down from the top of the card's right edge.
+        /// in its colour and what it means, stacked down from the top of the card beside it.
         /// Placed and filled in Play.
         /// </summary>
         private static void BuildKeywordTips(RectTransform safe, BattleInspectView view)
