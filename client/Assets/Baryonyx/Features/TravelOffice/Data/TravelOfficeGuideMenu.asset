@@ -25,44 +25,329 @@ MonoBehaviour:
     Detail: "\u82D4\u306E\u4E0B\u3067\u3001\u5343\u5E74\u524D\u306E\u9580\u756A\u304C\u3044\u307E\u3082\u898B\u5F35\u308A\u3092\u7D9A\u3051\u3066\u3044\u308B"
     RecommendedLevel: 10
     Locked: 0
+    Town: porta
+  - Id: 
+    Name: "\u53D7\u3051\u77F3\u306E\u9AD8\u539F"
+    Detail: "\u9580\u524D\u753A\u30DD\u30EB\u30BF"
+    RecommendedLevel: 10
+    Locked: 0
+    Town: porta
+  - Id: 
+    Name: "\u82D4\u3080\u3059\u6C34\u8DEF"
+    Detail: "\u9580\u524D\u753A\u30DD\u30EB\u30BF"
+    RecommendedLevel: 11
+    Locked: 0
+    Town: porta
+  - Id: 
+    Name: "\u3069\u3093\u3050\u308A\u306E\u68EE"
+    Detail: "\u9580\u524D\u753A\u30DD\u30EB\u30BF"
+    RecommendedLevel: 12
+    Locked: 0
+    Town: porta
+  - Id: 
+    Name: "\u98A8\u9CF4\u308A\u306E\u4E18"
+    Detail: "\u5BBF\u5834\u753A\u30D6\u30EA\u30FC\u30B6"
+    RecommendedLevel: 12
+    Locked: 0
+    Town: brezza
+  - Id: 
+    Name: "\u53E4\u4E95\u6238\u306E\u5751\u9053"
+    Detail: "\u5BBF\u5834\u753A\u30D6\u30EA\u30FC\u30B6"
+    RecommendedLevel: 13
+    Locked: 0
+    Town: brezza
+  - Id: 
+    Name: "\u98A8\u8ECA\u5C0F\u5C4B\u306E\u5730\u4E0B"
+    Detail: "\u5BBF\u5834\u753A\u30D6\u30EA\u30FC\u30B6"
+    RecommendedLevel: 13
+    Locked: 0
+    Town: brezza
+  - Id: 
+    Name: "\u6848\u5C71\u5B50\u306E\u7551"
+    Detail: "\u5BBF\u5834\u753A\u30D6\u30EA\u30FC\u30B6"
+    RecommendedLevel: 14
+    Locked: 0
+    Town: brezza
   - Id: port-portoria
     Name: "\u6E2F\u753A\u30DD\u30EB\u30C8\u30EA\u30A2"
     Detail: "\u6F6E\u3068\u9B5A\u3068\u9152\u306E\u5302\u3044\u3002\u8239\u4E57\u308A\u306E\u5642\u8A71\u306F\u534A\u5206\u307B\u3069\u672C\u5F53"
     RecommendedLevel: 14
     Locked: 0
+    Town: portoria
+  - Id: 
+    Name: "\u6C88\u8239\u306E\u5165\u308A\u6C5F"
+    Detail: "\u6E2F\u753A\u30DD\u30EB\u30C8\u30EA\u30A2"
+    RecommendedLevel: 15
+    Locked: 0
+    Town: portoria
+  - Id: 
+    Name: "\u5B66\u9662\u306E\u5730\u4E0B\u66F8\u5EAB"
+    Detail: "\u6E2F\u753A\u30DD\u30EB\u30C8\u30EA\u30A2"
+    RecommendedLevel: 15
+    Locked: 0
+    Town: portoria
+  - Id: 
+    Name: "\u706F\u53F0\u306E\u87BA\u65CB"
+    Detail: "\u6E2F\u753A\u30DD\u30EB\u30C8\u30EA\u30A2"
+    RecommendedLevel: 16
+    Locked: 0
+    Town: portoria
+  - Id: 
+    Name: "\u6C96\u306E\u5C0F\u5CF6"
+    Detail: "\u6E2F\u753A\u30DD\u30EB\u30C8\u30EA\u30A2"
+    RecommendedLevel: 17
+    Locked: 0
+    Town: portoria
+  - Id: 
+    Name: "\u677E\u660E\u306E\u5751\u9053"
+    Detail: "\u5BBF\u5834\u753A\u30D4\u30FC\u30CE"
+    RecommendedLevel: 16
+    Locked: 0
+    Town: pino
+  - Id: 
+    Name: "\u91DD\u8449\u306E\u9727\u68EE"
+    Detail: "\u5BBF\u5834\u753A\u30D4\u30FC\u30CE"
+    RecommendedLevel: 17
+    Locked: 0
+    Town: pino
+  - Id: 
+    Name: "\u6A35\u306E\u5EC3\u6751"
+    Detail: "\u5BBF\u5834\u753A\u30D4\u30FC\u30CE"
+    RecommendedLevel: 17
+    Locked: 0
+    Town: pino
+  - Id: 
+    Name: "\u72FC\u306E\u5CA9\u68DA"
+    Detail: "\u5BBF\u5834\u753A\u30D4\u30FC\u30CE"
+    RecommendedLevel: 18
+    Locked: 0
+    Town: pino
   - Id: glaciera-cave
     Name: "\u30B0\u30E9\u30B7\u30A8\u30E9\u6C37\u7A9F"
     Detail: "\u5410\u304F\u606F\u307E\u3067\u51CD\u308B\u6D1E\u7A9F\u3002\u5965\u3067\u4F55\u304B\u304C\u5BDD\u8FD4\u308A\u3092\u6253\u3064"
     RecommendedLevel: 18
     Locked: 0
+    Town: fredda
+  - Id: 
+    Name: "\u6C34\u6676\u306E\u88C2\u3051\u76EE"
+    Detail: "\u6C37\u5BA4\u6751\u30D5\u30EC\u30C3\u30C0"
+    RecommendedLevel: 19
+    Locked: 0
+    Town: fredda
+  - Id: 
+    Name: "\u51CD\u3063\u305F\u6EDD\u88CF"
+    Detail: "\u6C37\u5BA4\u6751\u30D5\u30EC\u30C3\u30C0"
+    RecommendedLevel: 20
+    Locked: 0
+    Town: fredda
+  - Id: 
+    Name: "\u6C37\u5BA4\u306E\u8535"
+    Detail: "\u6C37\u5BA4\u6751\u30D5\u30EC\u30C3\u30C0"
+    RecommendedLevel: 20
+    Locked: 0
+    Town: fredda
+  - Id: 
+    Name: "\u767D\u72D0\u306E\u96EA\u539F"
+    Detail: "\u6C37\u5BA4\u6751\u30D5\u30EC\u30C3\u30C0"
+    RecommendedLevel: 21
+    Locked: 0
+    Town: fredda
   - Id: hush-mire
     Name: "\u3057\u3058\u307E\u306E\u6CBC"
     Detail: "\u9CE5\u3082\u866B\u3082\u9CF4\u304B\u306A\u3044\u6CBC\u3002\u6CE1\u306E\u97F3\u3060\u3051\u304C\u8FD4\u4E8B\u3092\u3059\u308B"
     RecommendedLevel: 22
     Locked: 0
+    Town: palude
+  - Id: 
+    Name: "\u6C88\u3093\u3060\u793C\u62DD\u5802"
+    Detail: "\u6E21\u3057\u753A\u30D1\u30EB\u30FC\u30C7"
+    RecommendedLevel: 23
+    Locked: 0
+    Town: palude
+  - Id: 
+    Name: "\u86CD\u306E\u5165\u308A\u6C5F"
+    Detail: "\u6E21\u3057\u753A\u30D1\u30EB\u30FC\u30C7"
+    RecommendedLevel: 23
+    Locked: 0
+    Town: palude
+  - Id: 
+    Name: "\u8338\u306E\u673D\u3061\u68EE"
+    Detail: "\u6E21\u3057\u753A\u30D1\u30EB\u30FC\u30C7"
+    RecommendedLevel: 24
+    Locked: 0
+    Town: palude
+  - Id: 
+    Name: "\u6DB8\u308C\u8C37"
+    Detail: "\u5BBF\u5834\u753A\u30B5\u30C3\u30D3\u30A2"
+    RecommendedLevel: 24
+    Locked: 0
+    Town: sabbia
+  - Id: 
+    Name: "\u8703\u6C17\u697C\u306E\u5E02\u8DE1"
+    Detail: "\u5BBF\u5834\u753A\u30B5\u30C3\u30D3\u30A2"
+    RecommendedLevel: 25
+    Locked: 0
+    Town: sabbia
+  - Id: 
+    Name: "\u7802\u5D50\u306E\u77F3\u67F1"
+    Detail: "\u5BBF\u5834\u753A\u30B5\u30C3\u30D3\u30A2"
+    RecommendedLevel: 25
+    Locked: 0
+    Town: sabbia
+  - Id: 
+    Name: "\u968A\u5546\u306E\u5893\u5834"
+    Detail: "\u5BBF\u5834\u753A\u30B5\u30C3\u30D3\u30A2"
+    RecommendedLevel: 26
+    Locked: 0
+    Town: sabbia
   - Id: almaja-tomb
     Name: "\u30A2\u30EB\u30DE\u30B8\u30E3\u738B\u5893"
     Detail: "\u7802\u306B\u6C88\u3093\u3060\u738B\u304C\u3001\u3044\u307E\u3082\u8CA1\u5B9D\u306E\u6570\u3092\u6570\u3048\u3066\u3044\u308B"
     RecommendedLevel: 26
     Locked: 0
+    Town: duna
+  - Id: 
+    Name: "\u7802\u9BAB\u306E\u5DE3"
+    Detail: "\u7802\u306E\u753A\u30C9\u30A5\u30FC\u30CA"
+    RecommendedLevel: 27
+    Locked: 0
+    Town: duna
+  - Id: 
+    Name: "\u661F\u898B\u306E\u795E\u6BBF"
+    Detail: "\u7802\u306E\u753A\u30C9\u30A5\u30FC\u30CA"
+    RecommendedLevel: 27
+    Locked: 0
+    Town: duna
+  - Id: 
+    Name: "\u7802\u6642\u8A08\u306E\u5854"
+    Detail: "\u7802\u306E\u753A\u30C9\u30A5\u30FC\u30CA"
+    RecommendedLevel: 28
+    Locked: 0
+    Town: duna
+  - Id: 
+    Name: "\u5730\u5E95\u6E56\u306E\u5BAE"
+    Detail: "\u7802\u306E\u753A\u30C9\u30A5\u30FC\u30CA"
+    RecommendedLevel: 29
+    Locked: 0
+    Town: duna
   - Id: moonshade-graveyard
     Name: "\u6708\u5F71\u306E\u5893\u6240"
     Detail: "\u6708\u306E\u591C\u3060\u3051\u3001\u5893\u5B88\u306E\u706F\u308A\u304C\u3072\u3068\u308A\u3067\u306B\u706F\u308B"
     RecommendedLevel: 30
     Locked: 0
+    Town: campanella
+  - Id: 
+    Name: "\u9CF4\u3089\u305A\u306E\u9418\u697C"
+    Detail: "\u9418\u306E\u753A\u30AB\u30F3\u30D1\u30CD\u30E9"
+    RecommendedLevel: 31
+    Locked: 0
+    Town: campanella
+  - Id: 
+    Name: "\u71ED\u53F0\u306E\u4FEE\u9053\u9662"
+    Detail: "\u9418\u306E\u753A\u30AB\u30F3\u30D1\u30CD\u30E9"
+    RecommendedLevel: 31
+    Locked: 0
+    Town: campanella
+  - Id: 
+    Name: "\u9D09\u306E\u68EE"
+    Detail: "\u9418\u306E\u753A\u30AB\u30F3\u30D1\u30CD\u30E9"
+    RecommendedLevel: 32
+    Locked: 0
+    Town: campanella
+  - Id: 
+    Name: "\u9B54\u5C0E\u66F8\u306E\u66F8\u5EAB"
+    Detail: "\u9418\u306E\u753A\u30AB\u30F3\u30D1\u30CD\u30E9"
+    RecommendedLevel: 33
+    Locked: 0
+    Town: campanella
   - Id: volgan-volcano
     Name: "\u30F4\u30A9\u30EB\u30AC\u30F3\u706B\u5C71"
     Detail: "\u5C71\u304C\u6012\u308B\u305F\u3073\u306B\u3001\u3075\u3082\u3068\u306E\u935B\u51B6\u5C4B\u304C\u5FD9\u3057\u304F\u306A\u308B"
     RecommendedLevel: 35
     Locked: 0
+    Town: forgia
+  - Id: 
+    Name: "\u6EB6\u5CA9\u306E\u5751\u9053"
+    Detail: "\u935B\u51B6\u753A\u30D5\u30A9\u30EB\u30B8\u30E3"
+    RecommendedLevel: 36
+    Locked: 0
+    Town: forgia
+  - Id: 
+    Name: "\u5E1D\u56FD\u306E\u5EC3\u7826"
+    Detail: "\u935B\u51B6\u753A\u30D5\u30A9\u30EB\u30B8\u30E3"
+    RecommendedLevel: 36
+    Locked: 0
+    Town: forgia
+  - Id: 
+    Name: "\u9ED2\u66DC\u306E\u63A1\u77F3\u5834"
+    Detail: "\u935B\u51B6\u753A\u30D5\u30A9\u30EB\u30B8\u30E3"
+    RecommendedLevel: 37
+    Locked: 0
+    Town: forgia
+  - Id: 
+    Name: "\u706B\u55B0\u3044\u9CE5\u306E\u5DE3"
+    Detail: "\u935B\u51B6\u753A\u30D5\u30A9\u30EB\u30B8\u30E3"
+    RecommendedLevel: 38
+    Locked: 0
+    Town: forgia
+  - Id: 
+    Name: "\u971C\u67AF\u308C\u306E\u68EE"
+    Detail: "\u5BBF\u5834\u753A\u30A2\u30EB\u30D0"
+    RecommendedLevel: 38
+    Locked: 0
+    Town: alba
+  - Id: 
+    Name: "\u51CD\u3066\u5DDD\u306E\u6D1E"
+    Detail: "\u5BBF\u5834\u753A\u30A2\u30EB\u30D0"
+    RecommendedLevel: 39
+    Locked: 0
+    Town: alba
+  - Id: 
+    Name: "\u5439\u96EA\u306E\u5CE0"
+    Detail: "\u5BBF\u5834\u753A\u30A2\u30EB\u30D0"
+    RecommendedLevel: 39
+    Locked: 0
+    Town: alba
+  - Id: 
+    Name: "\u96EA\u57CB\u3082\u308C\u306E\u7826"
+    Detail: "\u5BBF\u5834\u753A\u30A2\u30EB\u30D0"
+    RecommendedLevel: 40
+    Locked: 0
+    Town: alba
   - Id: neve-peaks
     Name: "\u767D\u5DBA\u30CD\u30FC\u30F4\u30A7"
     Detail: "\u767D\u3044\u5CF0\u306E\u4E0A\u3092\u3001\u9727\u3092\u307E\u3068\u3063\u305F\u5F71\u304C\u6E21\u3063\u3066\u3044\u304F"
     RecommendedLevel: 40
     Locked: 0
+    Town: cima
+  - Id: 
+    Name: "\u30DE\u30F3\u30E2\u30B9\u306E\u5893\u5834"
+    Detail: "\u5C71\u5C0F\u5C4B\u30C1\u30FC\u30DE"
+    RecommendedLevel: 41
+    Locked: 0
+    Town: cima
+  - Id: 
+    Name: "\u9727\u7ADC\u306E\u5DE3"
+    Detail: "\u5C71\u5C0F\u5C4B\u30C1\u30FC\u30DE"
+    RecommendedLevel: 42
+    Locked: 0
+    Town: cima
+  - Id: 
+    Name: "\u7A1C\u7DDA\u306E\u53E4\u5854"
+    Detail: "\u5C71\u5C0F\u5C4B\u30C1\u30FC\u30DE"
+    RecommendedLevel: 43
+    Locked: 0
+    Town: cima
+  - Id: 
+    Name: "\u5929\u7A7A\u306E\u796D\u58C7"
+    Detail: "\u5C71\u5C0F\u5C4B\u30C1\u30FC\u30DE"
+    RecommendedLevel: 45
+    Locked: 0
+    Town: cima
   - Id: 
     Name: "\u5929\u7A7A\u306E\u8FF7\u3044\u8DEF"
     Detail: "\u96F2\u306E\u4E0A\u306B\u3001\u3060\u308C\u3082\u5E30\u3063\u3066\u3053\u306A\u3044\u9053\u304C\u3042\u308B\u3068\u3044\u3046"
     RecommendedLevel: 50
     Locked: 1
+    Town: 
   DepartLabel: "\u51FA\u767A"

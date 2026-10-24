@@ -10,7 +10,6 @@ namespace Baryonyx.WorldMap
         Battle,
         Treasure,
         Story,
-        StepGate,
         Boss,
         Town,
     }
@@ -32,7 +31,7 @@ namespace Baryonyx.WorldMap
 
         public const string Start = "porta";
 
-        // 大文字は街、小文字はマスの種類（o 何もない・b 戦闘・t 宝箱・s 物語・g 歩数の関所・x 関所のボス）。
+        // 大文字は街、小文字はマスの種類（o 何もない・b 戦闘・t 宝箱・s 物語・x 関所のボス）。
         public static readonly string[] Rows =
         {
             "................................",
@@ -40,20 +39,20 @@ namespace Baryonyx.WorldMap
             ".....C.......F........s.........",
             ".............x........|.........",
             "......o-o-booos-b-o-x-K-b-oo....",
-            "......|.tg-N......|........|....",
+            "......|.to-N......|........|....",
             "......b....|......b........x....",
             "...R..|..o-ooo-o-t|........|....",
             "...ox-o-Bo..b..|..o-o-o-b-xG....",
             "......|..o..|..b..|.............",
             "......s..ob-P-bo-bo.............",
             "......|..b..|..o..|.............",
-            "......b..|..b..|..o-g...........",
+            "......b..|..b..|..o-o...........",
             "......|..o-oob-o..|.|...........",
             ".....xo.....|..|..b.t...........",
             ".....M|.....o..t..|.............",
             "......o-b-s-o-S-b-o-o-x.........",
             "..........|...|.......D.........",
-            "..........s...g-t...............",
+            "..........s...o-t...............",
             "................................",
             "................................",
         };
@@ -84,7 +83,6 @@ namespace Baryonyx.WorldMap
             ['b'] = WorldNodeKind.Battle,
             ['t'] = WorldNodeKind.Treasure,
             ['s'] = WorldNodeKind.Story,
-            ['g'] = WorldNodeKind.StepGate,
             ['x'] = WorldNodeKind.Boss,
         };
 

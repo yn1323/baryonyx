@@ -17,9 +17,9 @@ namespace Baryonyx.WorldMap.Editor
     /// <summary>
     /// Builds the world map screen (the highway prototype, <see cref="WorldMapView"/>): the
     /// generated picture of the continent, the sugoroku squares and straight lines over it from
-    /// <see cref="WorldMapCatalog"/>, the party, the place's name, and the buttons back to Home
-    /// and to the list of dungeons. The picture and the squares are generated illustrations
-    /// used as they are (doc/art/direction.md#例外).
+    /// <see cref="WorldMapCatalog"/>, the party, the place's name, the buttons back to Home and
+    /// to the list of dungeons, and the dialog showing what a chest held. The picture and the
+    /// squares are generated illustrations used as they are (doc/art/direction.md#例外).
     /// </summary>
     public static class WorldMapScreenAssets
     {
@@ -29,8 +29,6 @@ namespace Baryonyx.WorldMap.Editor
         public const string BackgroundPath = ArtFolder + "/WorldMapBackground.png";
         public const string HiddenNodePath = ArtFolder + "/WorldNodeLocked.png";
         public const string IconDungeonsPath = ArtFolder + "/IconDungeons.png";
-
-        private const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
 
         // 背景の1画素を3pxで出す。地図は横に約2.4画面、縦に約2.8画面ぶんになる。
         private const float Scale = 3f;
@@ -46,16 +44,10 @@ namespace Baryonyx.WorldMap.Editor
 
         private const float ButtonSize = 128f;
         private const float Margin = 24f;
-        private const float PartyDot = 1.5f;
 
-        // マスの上の隊列（マスの中心から、y が上）と、立たせる仲間。後ろの者から描く。
-        private static readonly (string Name, Vector2 Offset)[] Party =
-        {
-            ("Mina", new Vector2(-16, 22)),
-            ("Luka", new Vector2(30, 18)),
-            ("Toma", new Vector2(-36, 4)),
-            ("Aria", new Vector2(12, 0)),
-        };
+        // パーティを表す木の駒の高さと、マスの中心からの足元の位置（設計座標、y が上）。
+        private const float PawnHeight = 140f;
+        private static readonly Vector2 PawnFeet = new(0, -12);
 
         // WorldNodeKind の順。
         private static readonly string[] KindArt =
@@ -64,7 +56,6 @@ namespace Baryonyx.WorldMap.Editor
             "WorldNodeBattle",
             "WorldNodeTreasure",
             "WorldNodeStory",
-            "WorldNodeStepGate",
             "WorldNodeBoss",
             "WorldNodeTown",
         };
@@ -107,11 +98,6 @@ namespace Baryonyx.WorldMap.Editor
             for (int i = 0; i < KindArt.Length; i++)
                 kinds[i] = ImportNode($"{ArtFolder}/{KindArt[i]}.png");
             var hidden = ImportNode(HiddenNodePath);
-            foreach (var member in Party)
-                ArtAssets.ImportTexture(
-                    $"{CharacterArtFolder}/Battle{member.Name}.aseprite",
-                    FilterMode.Point
-                );
 
             var font = GameFontAssets.GetOrCreate();
             using (Begin(font, UiArt.EnsureTextShadow(font)))
@@ -123,6 +109,8 @@ namespace Baryonyx.WorldMap.Editor
                 view.HiddenSprite = hidden;
                 BuildMap(root, view, background);
                 BuildControls(root, view);
+                view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
+                view.Dialog = GameDialogAssets.Build(root);
                 CollectTintGraphics(root);
                 return PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
             }
@@ -270,17 +258,8 @@ namespace Baryonyx.WorldMap.Editor
             party.anchorMin = party.anchorMax = new Vector2(0f, 1f);
             party.pivot = new Vector2(0.5f, 0.5f);
             party.sizeDelta = Vector2.zero;
-            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            foreach (var member in Party)
-            {
-                var texture = ArtAssets.LoadTexture(
-                    $"{CharacterArtFolder}/Battle{member.Name}.aseprite"
-                );
-                var body = Rect("Ally" + member.Name, party);
-                Place(body, member.Offset, Vector2.zero);
-                Picture(body, "Shadow", shadow, new Vector2(0, 1), new Vector2(48, 10), 0.5f);
-                PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot);
-            }
+            // パーティは、4人の代わりに木の駒1つで歩く。
+            MapPawnAssets.Build(party, "Pawn", PawnHeight).anchoredPosition = PawnFeet;
             return party;
         }
 

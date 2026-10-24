@@ -46,8 +46,9 @@ namespace Baryonyx.UI.GuideMenu
         /// <summary>
         /// Starts <paramref name="load"/>. If it fails, logs <paramref name="log"/> (or the
         /// message), calls <paramref name="showFailed"/> and tells <paramref name="failedMessage"/>.
-        /// <paramref name="readAgain"/> tells that the panel already shows what it read before, so
-        /// the logged time is the read behind it rather than the wait for the panel.
+        /// <paramref name="readAgain"/> tells that the panel already shows what it read before:
+        /// the logged time is the read behind it rather than the wait for the panel, and a failed
+        /// read leaves what is shown (only the notice tells it), without <paramref name="showFailed"/>.
         /// </summary>
         protected void StartLoad(
             Func<CancellationToken, Task> load,
@@ -61,7 +62,8 @@ namespace Baryonyx.UI.GuideMenu
                 exception =>
                 {
                     Debug.LogWarning((log ?? failedMessage) + "。" + exception.Message, this);
-                    showFailed();
+                    if (!readAgain)
+                        showFailed();
                     ShowNotice(failedMessage);
                 },
                 readAgain ? GetType().Name + " 読み直し" : GetType().Name

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Adventure;
 using Baryonyx.Networking;
 using UnityEngine;
 
@@ -27,6 +29,12 @@ namespace Baryonyx.WorldMap
 
         public const string SaveFailedMessage = "街道の進み具合を保存できませんでした";
 
+        /// <summary>
+        /// The square whose battle the battle scene fights next, set by the map before it opens
+        /// the scene; null when the battle scene belongs to the dungeon.
+        /// </summary>
+        public static string Battle { get; set; }
+
         public static async Task<WorldMapProgress> LoadAsync(CancellationToken token)
         {
             var progress = await SourceOrLocal.LoadAsync(token);
@@ -39,7 +47,19 @@ namespace Baryonyx.WorldMap
         /// Keeps the move at once and saves it after the writes before it. True when it was saved;
         /// false when it failed, after reading the kept progress again.
         /// </summary>
-        public static async Task<bool> MoveAsync(string squareId, bool clear)
+        public static async Task<bool> MoveAsync(string squareId, bool clear) =>
+            await SaveAsync(squareId, clear) != null;
+
+        /// <summary>
+        /// Clears the treasure square <paramref name="squareId"/> like <see cref="MoveAsync"/>,
+        /// and gives what its chest held (given by the server only the first time). Null when
+        /// it was not saved.
+        /// </summary>
+        public static async Task<IReadOnlyList<AdventureDrop>> OpenChestAsync(string squareId) =>
+            (await SaveAsync(squareId, clear: true))?.Chest;
+
+        // 保存したあとの進み具合を返す。保存できなければ null。
+        private static async Task<WorldMapProgress> SaveAsync(string squareId, bool clear)
         {
             var source = SourceOrLocal;
             Known = (Known ?? WorldMapProgress.Start).Moved(squareId, clear);
@@ -51,11 +71,11 @@ namespace Baryonyx.WorldMap
                 // あとから出した移動がまだ送られていなければ、手元の進み具合のほうが新しい。
                 if (saved != null && !SaveQueue.Busy)
                     Known = saved;
-                return true;
+                return saved ?? Known;
             }
             catch (OperationCanceledException)
             {
-                return false;
+                return null;
             }
             catch (Exception exception)
             {
@@ -68,7 +88,7 @@ namespace Baryonyx.WorldMap
                 {
                     // 読み直せなければ、次に地図を開いたときに読み直す。
                 }
-                return false;
+                return null;
             }
         }
 
@@ -78,6 +98,7 @@ namespace Baryonyx.WorldMap
         {
             Source = null;
             Known = null;
+            Battle = null;
             local = null;
         }
     }

@@ -88,5 +88,9 @@ namespace Baryonyx.UI.GuideMenu
 
         // 未踏の地。地名を「？？？」に伏せ、説明を出さず、行を暗くして選べなくする。
         public bool Locked;
+
+        // ダンジョンがある街（街道の世界地図の街のマスのID）。街のマスをクリアするまで行を出さない。
+        // 空なら、いつも出す。
+        public string Town = "";
     }
 }

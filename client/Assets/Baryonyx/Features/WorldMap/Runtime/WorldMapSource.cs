@@ -1,7 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Account;
+using Baryonyx.Adventure;
+using Baryonyx.Inventory;
 
 namespace Baryonyx.WorldMap
 {
@@ -11,6 +14,7 @@ namespace Baryonyx.WorldMap
         Task<WorldMapProgress> LoadAsync(CancellationToken token);
 
         // 着いたマスを残し、残したあとの進み具合を返す。clear は、そのマスをクリアしたか。
+        // 宝箱のマスをクリアしたときは、進み具合がその中身を持つ。
         Task<WorldMapProgress> MoveAsync(string squareId, bool clear, CancellationToken token);
     }
 
@@ -44,7 +48,36 @@ namespace Baryonyx.WorldMap
             );
 
         public static WorldMapProgress ToProgress(WorldMapApiClient.State state) =>
-            new(state?.at, state?.cleared ?? Array.Empty<string>());
+            new(
+                state?.at,
+                state?.cleared ?? Array.Empty<string>(),
+                ToChest(state?.at, state?.chest)
+            );
+
+        // 知らない分類や品質、倍率が届いていない物（強化素材を除く）は中身から外す。
+        private static AdventureDrop[] ToChest(string squareId, WorldMapApiClient.Drop[] drops) =>
+            (drops ?? Array.Empty<WorldMapApiClient.Drop>())
+                .Select(drop => ToDrop(squareId, drop))
+                .Where(drop => drop != null)
+                .ToArray();
+
+        private static AdventureDrop ToDrop(string squareId, WorldMapApiClient.Drop drop)
+        {
+            if (
+                drop == null
+                || string.IsNullOrEmpty(drop.id)
+                || !AdventureDrops.TryParse(drop.category, out var category)
+            )
+                return null;
+            if (category is AdventureDropCategory.Item or AdventureDropCategory.Material)
+                return new AdventureDrop(squareId, category, drop.id);
+            if (
+                drop.multiplier < Quality.MinMultiplier
+                || !Quality.TryParse(drop.quality, out var quality)
+            )
+                return null;
+            return new AdventureDrop(squareId, category, drop.id, drop.multiplier, quality);
+        }
     }
 
     /// <summary>

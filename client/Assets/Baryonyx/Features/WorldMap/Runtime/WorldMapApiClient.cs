@@ -8,7 +8,7 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// The server's API of the highway's progress: reading it, and keeping the square the party
-    /// reached (server/src/features/world-map/routes.ts).
+    /// reached, which gives a treasure square's contents (server/src/features/world-map/routes.ts).
     /// </summary>
     public sealed class WorldMapApiClient
     {
@@ -47,6 +47,21 @@ namespace Baryonyx.WorldMap
         {
             public string at;
             public string[] cleared;
+
+            // 宝箱のマスをクリアした移動で、その宝箱の中身。ほかの移動と読み込みでは空になる。
+            public Drop[] chest;
+        }
+
+        // 宝箱の1つの中身。category は weapon・armor・accessory・skill・material。
+        [Serializable]
+        public sealed class Drop
+        {
+            public string category;
+            public string id;
+
+            // 倍率（×1.37なら1.37）と品質（S・A・B・C）。強化素材は項目がなく、JsonUtilityでは0と空になる。
+            public float multiplier;
+            public string quality;
         }
     }
 }

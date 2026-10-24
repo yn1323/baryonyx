@@ -9,6 +9,7 @@ using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
+using Baryonyx.WorldMap;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -83,8 +84,10 @@ namespace Baryonyx.TravelOffice.Editor
             d.Layout = GuideMenuLayout.Destinations;
             d.DepartLabel = "出発";
             // 説明は仮の値。推奨Lvは、行き先の敵のLv（AdventureCatalog.Areas）と同じにする。
-            // 行き先は近い順に並べ、どれも出発できる（server/src/features/adventure/catalog.ts）。
-            // 名前は探索・ホームと同じ冒険の定義から取る。最後の未踏の地は、行では地名を「？？？」に伏せる。
+            // 行き先は街ごとに、街の近い順に並べる。街道でその街に着くまで、行は出さない
+            // （doc/features/stage-progression.md の街とダンジョン、server/src/features/adventure/catalog.ts）。
+            // 名前は探索・ホームと同じ冒険の定義から取る。中身をまだ作っていないダンジョンは、名前と推奨Lvと
+            // 街の名前だけを出し、出発すると準備中と知らせる。最後の未踏の地は、行では地名を「？？？」に伏せる。
             var details = new Dictionary<string, string>
             {
                 [AdventureCatalog.ForestRuins] = "苔の下で、千年前の門番がいまも見張りを続けている",
@@ -96,24 +99,90 @@ namespace Baryonyx.TravelOffice.Editor
                 ["volgan-volcano"] = "山が怒るたびに、ふもとの鍛冶屋が忙しくなる",
                 ["neve-peaks"] = "白い峰の上を、霧をまとった影が渡っていく",
             };
-            d.Destinations = AdventureCatalog
-                .Areas.Select(area =>
-                    Destination(
-                        area.Name,
-                        details.TryGetValue(area.Id, out var detail) ? detail : "",
-                        area.Level,
-                        id: area.Id
-                    )
-                )
-                .Append(
-                    Destination(
-                        "天空の迷い路",
-                        "雲の上に、だれも帰ってこない道があるという",
-                        50,
-                        locked: true
-                    )
-                )
-                .ToArray();
+            string TownName(string town) =>
+                WorldMapCatalog.Towns.Values.FirstOrDefault(entry => entry.Id == town).Name ?? "";
+            GuideDestination Made(string id, string town)
+            {
+                var area = AdventureCatalog.Area(id);
+                return Destination(
+                    area.Name,
+                    details.TryGetValue(id, out var detail) ? detail : "",
+                    area.Level,
+                    id: id,
+                    town: town
+                );
+            }
+            GuideDestination Planned(string name, int level, string town) =>
+                Destination(name, TownName(town), level, town: town);
+            d.Destinations = new[]
+            {
+                // 門前町ポルタ（始まりの街。いつも着いている）
+                Made(AdventureCatalog.ForestRuins, "porta"),
+                Planned("受け石の高原", 10, "porta"),
+                Planned("苔むす水路", 11, "porta"),
+                Planned("どんぐりの森", 12, "porta"),
+                // 宿場町ブリーザ
+                Planned("風鳴りの丘", 12, "brezza"),
+                Planned("古井戸の坑道", 13, "brezza"),
+                Planned("風車小屋の地下", 13, "brezza"),
+                Planned("案山子の畑", 14, "brezza"),
+                // 港町ポルトリア
+                Made("port-portoria", "portoria"),
+                Planned("沈船の入り江", 15, "portoria"),
+                Planned("学院の地下書庫", 15, "portoria"),
+                Planned("灯台の螺旋", 16, "portoria"),
+                Planned("沖の小島", 17, "portoria"),
+                // 宿場町ピーノ
+                Planned("松明の坑道", 16, "pino"),
+                Planned("針葉の霧森", 17, "pino"),
+                Planned("樵の廃村", 17, "pino"),
+                Planned("狼の岩棚", 18, "pino"),
+                // 氷室村フレッダ
+                Made("glaciera-cave", "fredda"),
+                Planned("水晶の裂け目", 19, "fredda"),
+                Planned("凍った滝裏", 20, "fredda"),
+                Planned("氷室の蔵", 20, "fredda"),
+                Planned("白狐の雪原", 21, "fredda"),
+                // 渡し町パルーデ
+                Made("hush-mire", "palude"),
+                Planned("沈んだ礼拝堂", 23, "palude"),
+                Planned("蛍の入り江", 23, "palude"),
+                Planned("茸の朽ち森", 24, "palude"),
+                // 宿場町サッビア
+                Planned("涸れ谷", 24, "sabbia"),
+                Planned("蜃気楼の市跡", 25, "sabbia"),
+                Planned("砂嵐の石柱", 25, "sabbia"),
+                Planned("隊商の墓場", 26, "sabbia"),
+                // 砂の町ドゥーナ
+                Made("almaja-tomb", "duna"),
+                Planned("砂鮫の巣", 27, "duna"),
+                Planned("星見の神殿", 27, "duna"),
+                Planned("砂時計の塔", 28, "duna"),
+                Planned("地底湖の宮", 29, "duna"),
+                // 鐘の町カンパネラ
+                Made("moonshade-graveyard", "campanella"),
+                Planned("鳴らずの鐘楼", 31, "campanella"),
+                Planned("燭台の修道院", 31, "campanella"),
+                Planned("鴉の森", 32, "campanella"),
+                Planned("魔導書の書庫", 33, "campanella"),
+                // 鍛冶町フォルジャ
+                Made("volgan-volcano", "forgia"),
+                Planned("溶岩の坑道", 36, "forgia"),
+                Planned("帝国の廃砦", 36, "forgia"),
+                Planned("黒曜の採石場", 37, "forgia"),
+                Planned("火喰い鳥の巣", 38, "forgia"),
+                // 宿場町アルバ
+                Planned("霜枯れの森", 38, "alba"),
+                Planned("凍て川の洞", 39, "alba"),
+                Planned("吹雪の峠", 39, "alba"),
+                Planned("雪埋もれの砦", 40, "alba"),
+                // 山小屋チーマ
+                Made("neve-peaks", "cima"),
+                Planned("マンモスの墓場", 41, "cima"),
+                Planned("霧竜の巣", 42, "cima"),
+                Planned("稜線の古塔", 43, "cima"),
+                Planned("天空の祭壇", 45, "cima"),
+            }.Append(Destination("天空の迷い路", "雲の上に、だれも帰ってこない道があるという", 50, locked: true)).ToArray();
         }
 
         // --- The treasures ---------------------------------------------------------------
@@ -234,7 +303,20 @@ namespace Baryonyx.TravelOffice.Editor
                 WindowHeight
             );
 
-            view.Title = Frame.Heading(window, "Title", "", Pad, 24f, 900f, 96f, 44f);
+            view.Title = Frame.Heading(window, "Title", "", Pad, 24f, 680f, 96f, 44f);
+            // 最奥の主を倒した回数（クリア回数の報酬の進み具合）。お宝の数の左に置く。
+            view.Clears = Layout.Text(
+                window,
+                "Clears",
+                "",
+                36,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineRight,
+                WindowWidth - Layout.HitSize - 8f - 24f - 200f - 280f,
+                24f,
+                260f,
+                96f
+            );
             view.Count = Layout.Text(
                 window,
                 "Count",

@@ -1,10 +1,12 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Economy;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
+using Baryonyx.WorldMap;
 using UnityEngine;
 
 namespace Baryonyx.App
@@ -42,6 +44,9 @@ namespace Baryonyx.App
 
         // 所持ルーンの読み込み。テストで完了を待つために公開する。
         public Task RunesTask { get; private set; } = Task.CompletedTask;
+
+        // 解放したダンジョンの読み込み（旅の案内所）。テストで完了を待つために公開する。
+        public Task UnlockTask { get; private set; } = Task.CompletedTask;
 
         public GuideMenuView View => view;
         public SceneTransitionController Transition => transition;
@@ -81,7 +86,34 @@ namespace Baryonyx.App
                 ReturnHome
             );
             RunesTask = LoadRunesAsync();
+            if (departs)
+                UnlockTask = ShowUnlockedAsync();
         }
+
+        // ダンジョン一覧には、街道で着いた（クリアした）街のダンジョンだけを出す
+        // （doc/features/stage-progression.md の街とダンジョン）。世界地図で読んだ進み具合を先に出し、
+        // 読み直した進み具合で出し直す。読めなければ、手元の進み具合のまま出す。
+        private async Task ShowUnlockedAsync()
+        {
+            ShowUnlocked(WorldMapSession.Known ?? WorldMapProgress.Start);
+            try
+            {
+                var progress = await WorldMapSession.LoadAsync(lifetime.Token);
+                if (progress != null && view != null)
+                    ShowUnlocked(progress);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("街道の進み具合を取得できませんでした。" + exception.Message);
+            }
+        }
+
+        private void ShowUnlocked(WorldMapProgress progress) =>
+            view.ShowDestinations(destination =>
+                string.IsNullOrEmpty(destination.Town)
+                || progress.Cleared.Contains(destination.Town)
+            );
 
         // Homeから来たときは、Homeで読んだ残高を先に出しておき、読み直した値で描き直す。
         private async Task LoadRunesAsync()

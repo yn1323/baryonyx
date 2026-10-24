@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Adventure;
 using Baryonyx.Library;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
@@ -51,7 +52,9 @@ namespace Baryonyx.TravelOffice
     /// The travel office's treasures (doc/features/screens.md): each destination's row shows how
     /// many of its treasures the library has found, and its button opens a window in the middle of
     /// the screen with every treasure of the destination, the found ones in their own art and the
-    /// others as shadows. The records are read from the library each time the screen opens.
+    /// others as shadows, and how many times the destination was cleared. The records are read
+    /// from the library each time the screen opens; the clears come from the adventure read by
+    /// the departure (<see cref="AdventureSession.Current"/>).
     /// The back button and the device back key close the window first.
     /// </summary>
     public sealed class TravelTreasureView : MonoBehaviour, IGuideBackHandler, IEditModePreview
@@ -71,6 +74,9 @@ namespace Baryonyx.TravelOffice
         public Button Close;
         public TMP_Text Title;
         public TMP_Text Count;
+
+        // その行き先をクリアした（最奥の主を倒した）回数。
+        public TMP_Text Clears;
         public ScrollRect Scroll;
         public TravelTreasureList[] Lists = Array.Empty<TravelTreasureList>();
 
@@ -123,8 +129,10 @@ namespace Baryonyx.TravelOffice
                 unbind.Add(() => card.Clicked -= click);
             }
             Hide();
-            Render(null);
-            load.Start(LoadAsync, Failed);
+            // 前に読んだ記録があれば、すぐ出して裏で読み直す。なければ数を「-」、お宝を影にして待つ。
+            var known = LibrarySession.Known;
+            Render(known);
+            load.Start(token => LoadAsync(known != null, token), Failed);
         }
 
         private void OnDisable()
@@ -135,11 +143,16 @@ namespace Baryonyx.TravelOffice
             unbind.Clear();
         }
 
-        private async Task LoadAsync(CancellationToken token)
+        private async Task LoadAsync(bool shown, CancellationToken token)
         {
+            string shownVersion = LibrarySession.ReadVersion;
             var read = await LibrarySession.LoadAsync(token);
-            if (!token.IsCancellationRequested)
-                Render(read);
+            if (token.IsCancellationRequested)
+                return;
+            // 読み直しても変わらなければ、出している記録と選んだお宝のまま描き直さない。
+            if (shown && shownVersion != null && shownVersion == LibrarySession.ReadVersion)
+                return;
+            Render(read);
         }
 
         private void Failed(Exception exception)
@@ -227,9 +240,20 @@ namespace Baryonyx.TravelOffice
 
         private void ShowCount()
         {
-            if (open >= 0)
-                Set(Count, TravelTreasures.CountText(Lists[open].DestinationId, records));
+            if (open < 0)
+                return;
+            string id = Lists[open].DestinationId;
+            Set(Count, TravelTreasures.CountText(id, records));
+            Set(Clears, ClearsText(AdventureSession.Current, id));
         }
+
+        /// <summary>
+        /// How many times the destination was cleared (its master beaten), from the adventure's
+        /// records (doc/features/stage-progression.md#ダンジョンのクリア回数の報酬). "-" before
+        /// the records are read.
+        /// </summary>
+        public static string ClearsText(AdventureState state, string destinationId) =>
+            state == null ? "クリア -回" : $"クリア {state.RecordOf(destinationId)?.Clears ?? 0}回";
 
         private void ShowInfo()
         {

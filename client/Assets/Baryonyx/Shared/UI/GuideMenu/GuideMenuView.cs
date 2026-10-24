@@ -343,6 +343,19 @@ namespace Baryonyx.UI.GuideMenu
                 Confirm.interactable = state.CanConfirm;
         }
 
+        /// <summary>
+        /// Shows only the destination rows <paramref name="shown"/> keeps (the dungeons of the
+        /// towns reached), hiding the others; the rows keep their places in the definition.
+        /// </summary>
+        public void ShowDestinations(Func<GuideDestination, bool> shown)
+        {
+            if (Definition == null || shown == null)
+                return;
+            for (int i = 0; i < DestinationRows.Length && i < Definition.Destinations.Length; i++)
+                if (DestinationRows[i] != null)
+                    DestinationRows[i].gameObject.SetActive(shown(Definition.Destinations[i]));
+        }
+
         private void RenderDestinations()
         {
             for (int i = 0; i < DestinationRows.Length; i++)

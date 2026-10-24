@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Baryonyx.Adventure;
+using Baryonyx.Inventory;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,8 +14,10 @@ namespace Baryonyx.WorldMap
     /// seen through the screen and dragged in any direction, with sugoroku squares and straight
     /// lines over it. Tapping a cleared or open square walks the party there by the shortest way
     /// over cleared squares. The progress is read from <see cref="WorldMapSession"/> when the map
-    /// opens and each square reached is saved there. A prototype: reaching an open square clears
-    /// it at once (no battle yet).
+    /// opens and each square reached is saved there. Reaching an open square with a battle asks
+    /// for the battle (<see cref="BattleRequested"/>), which clears it when won; any other open
+    /// square is cleared on reaching it, and a treasure square shows what its chest held once
+    /// the server has given it.
     /// </summary>
     public sealed class WorldMapView : MonoBehaviour
     {
@@ -45,6 +50,10 @@ namespace Baryonyx.WorldMap
         public TMP_Text Notice;
         public CanvasGroup NoticeGroup;
 
+        // 宝箱の中身を見せるダイアログと、中身の絵。
+        public GameDialog Dialog;
+        public ItemArt ItemArt;
+
         public const string LoadingText = "読み込み中…";
         private const float NoticeSeconds = 2.5f;
 
@@ -61,6 +70,9 @@ namespace Baryonyx.WorldMap
 
         public event Action BackPressed;
         public event Action DungeonsPressed;
+
+        // 戦闘のあるマスに着いた。引数はマスのID。
+        public event Action<string> BattleRequested;
 
         private WorldMapGraph graph;
         private readonly HashSet<string> cleared = new();
@@ -80,6 +92,12 @@ namespace Baryonyx.WorldMap
         public int PartyAt => partyAt;
         public bool Walking => walk.Count > 0;
         public Vector2 Scroll => scroll;
+
+        // 戦闘の画面へ移るところ。マスを押しても歩かない。
+        public bool Fighting { get; private set; }
+
+        // 宝箱を開けて中身を見せ終えるまで。マスを押しても歩かない。
+        public bool Opening { get; private set; }
 
         // 保存先から進み具合を読み終えたか。読む前はマスを押しても歩かない。
         public bool Loaded { get; private set; }
@@ -202,7 +220,7 @@ namespace Baryonyx.WorldMap
         /// <summary>Taps a square: walks there when it can be reached.</summary>
         public bool Tap(int index)
         {
-            if (!Loaded || Walking || index == partyAt)
+            if (!Loaded || Walking || Fighting || Opening || index == partyAt)
                 return false;
             var path = graph.PathTo(partyAt, index, states);
             if (path.Count < 2)
@@ -245,13 +263,65 @@ namespace Baryonyx.WorldMap
                 return;
             partyAt = walkTarget;
             walkTarget = -1;
-            // 試作：挑めるマスに着いたら、そのままクリアにする（戦闘はまだない）。
             bool clear = states[partyAt] == WorldNodeState.Open;
             string id = graph.Nodes[partyAt].Id;
+            // 戦闘のあるマスは、勝つまでクリアにしない。保存も勝ったときに戦闘の画面がする。
+            // 戦闘の画面を開く先がない（展示室）ときは、着いたらそのままクリアにする。
+            if (clear && BattleRequested != null && WorldMapEncounters.Of(id) != null)
+            {
+                Fighting = true;
+                BattleRequested(id);
+                return;
+            }
+            // 戦闘のないマスは、着いたらクリアにする（物語の中身はまだない）。
             if (clear)
                 cleared.Add(id);
             Refresh();
-            SaveTask = SaveAsync(id, clear);
+            // 宝箱は、初めてクリアしたときに中身をもらう。中身は保存できてから見せる。
+            SaveTask =
+                clear && graph.Nodes[partyAt].Kind == WorldNodeKind.Treasure
+                    ? OpenChestAsync(id)
+                    : SaveAsync(id, clear);
+        }
+
+        // 宝箱のマスのクリアを保存し、もらった中身を見せる。失敗したら保存先の進み具合へ戻す。
+        private async System.Threading.Tasks.Task OpenChestAsync(string id)
+        {
+            Opening = true;
+            var chest = await WorldMapSession.OpenChestAsync(id);
+            if (this == null)
+                return;
+            if (chest == null)
+            {
+                Opening = false;
+                if (!Walking && WorldMapSession.Known != null)
+                    Apply(WorldMapSession.Known);
+                ShowNotice(WorldMapSession.SaveFailedMessage);
+                return;
+            }
+            if (Dialog == null)
+            {
+                Opening = false;
+                return;
+            }
+            AdventureDialogs.Treasure(Dialog, chest, CloseChest, ItemArt);
+        }
+
+        private void CloseChest()
+        {
+            if (Dialog != null)
+                Dialog.Hide();
+            Opening = false;
+        }
+
+        /// <summary>
+        /// The battle could not be opened: the party goes back to where it stood, and the square
+        /// can be tapped again.
+        /// </summary>
+        public void CancelBattle()
+        {
+            Fighting = false;
+            Apply(WorldMapSession.Known ?? WorldMapProgress.Start);
         }
 
         // 着いたマスを保存する。失敗したら、保存先に残っている進み具合へ戻して知らせる。

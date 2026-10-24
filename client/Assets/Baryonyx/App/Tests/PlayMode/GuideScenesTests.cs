@@ -342,19 +342,34 @@ namespace Baryonyx.Tests.PlayMode
 
             // 冒険の行き先は、どれも出発できる（出発すると冒険が始まるため、ここでは押さない）。
             var areas = Baryonyx.Adventure.AdventureCatalog.Areas;
+            var made = destinations.Where(destination => destination.Id != "").ToArray();
             Assert.That(
-                destinations
-                    .Where(destination => !destination.Locked)
-                    .Select(destination => destination.Id),
+                made.Select(destination => destination.Id),
                 Is.EqualTo(areas.Select(area => area.Id))
             );
             Assert.That(
-                destinations
-                    .Where(destination => !destination.Locked)
-                    .Select(destination => destination.RecommendedLevel),
+                made.Select(destination => destination.RecommendedLevel),
                 Is.EqualTo(areas.Select(area => area.Level))
             );
-            int open = areas.Count - 1;
+            // 中身を作っていないダンジョンは、説明の代わりに街の名前を出す。12の街に54のダンジョンがある。
+            Assert.That(destinations.Count(destination => !destination.Locked), Is.EqualTo(54));
+            Assert.That(
+                destinations.Where(destination => !destination.Locked).All(d => d.Town != ""),
+                Is.True
+            );
+
+            // 街道で着いた街のダンジョンだけを出す。テストの街道はポルタ・ブリーザ・ピーノまで進んでいる。
+            yield return SceneTests.WaitForTask(guide.UnlockTask);
+            for (int i = 0; i < destinations.Length; i++)
+                Assert.That(
+                    view.DestinationRows[i].gameObject.activeSelf,
+                    Is.EqualTo(destinations[i].Town is "" or "porta" or "brezza" or "pino"),
+                    destinations[i].Name
+                );
+            int open = System.Array.FindIndex(
+                destinations,
+                destination => destination.Id == Baryonyx.Adventure.AdventureCatalog.ForestRuins
+            );
             view.DestinationRows[open].onClick.Invoke();
             Assert.That(view.Depart.interactable, Is.True);
             Assert.That(
@@ -427,8 +442,10 @@ namespace Baryonyx.Tests.PlayMode
             // テストではサーバーがないため、ライブラリの仮の記録を読む。
             var records = LibraryMemorySource.Mock();
 
-            // 未踏の地には、お宝のボタンを出さない。
-            var destinations = view.Definition.Destinations.Where(d => !d.Locked).ToArray();
+            // 未踏の地と、中身を作っていないダンジョンには、お宝のボタンを出さない。
+            var destinations = view
+                .Definition.Destinations.Where(d => !d.Locked && d.Id != "")
+                .ToArray();
             Assert.That(
                 treasures.Rows.Select(row => row.DestinationId),
                 Is.EqualTo(destinations.Select(d => d.Id))
@@ -439,7 +456,9 @@ namespace Baryonyx.Tests.PlayMode
                     row.Count.text,
                     Is.EqualTo(TravelTreasures.CountText(row.DestinationId, records))
                 );
-                SceneTests.AssertTouchSize(row.Open.transform);
+                // 街道でまだ着いていない街の行は隠れていて、押せない。
+                if (row.Open.gameObject.activeInHierarchy)
+                    SceneTests.AssertTouchSize(row.Open.transform);
             }
             Assert.That(treasures.IsOpen, Is.False);
 
@@ -448,6 +467,19 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(treasures.IsOpen, Is.True);
             Assert.That(guide.Presenter.State.Selected, Is.EqualTo(-1));
             Assert.That(treasures.Title.text, Is.EqualTo(destinations[0].Name + "のお宝"));
+            // 見出しに、その行き先をクリアした回数を出す（冒険の記録は、出発の準備で読む）。
+            yield return SceneTests.WaitForTask(guide.Departure.Work);
+            treasures.Rows[0].Open.onClick.Invoke();
+            Assert.That(
+                treasures.Clears.text,
+                Is.EqualTo(
+                    TravelTreasureView.ClearsText(
+                        Baryonyx.Adventure.AdventureSession.Current,
+                        destinations[0].Id
+                    )
+                )
+            );
+            StringAssert.StartsWith("クリア ", treasures.Clears.text);
             Assert.That(
                 treasures.Count.text,
                 Is.EqualTo(TravelTreasures.CountText(destinations[0].Id, records))

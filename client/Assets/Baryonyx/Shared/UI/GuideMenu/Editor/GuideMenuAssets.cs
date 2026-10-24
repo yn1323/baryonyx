@@ -204,7 +204,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             string detail,
             int recommendedLevel,
             bool locked = false,
-            string id = ""
+            string id = "",
+            string town = ""
         ) =>
             new()
             {
@@ -213,6 +214,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
                 Detail = detail,
                 RecommendedLevel = recommendedLevel,
                 Locked = locked,
+                Town = town,
             };
 
         // --- Prefab --------------------------------------------------------------------------

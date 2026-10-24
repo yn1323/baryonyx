@@ -166,8 +166,8 @@ client/
 | `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens.md#ホーム画面の見た目モック) |
 | `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
 | `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
-| `WorldMap.unity` | 街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。冒険していないときのHomeの右下のカードが開き、右下のボタンで旅の案内所（ダンジョン一覧）を開く | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression.md#世界地図の形と試作2026-10-24) |
-| `Battle.unity` | 冒険の戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
+| `WorldMap.unity` | 街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。冒険していないときのHomeの右下のカードが開き、右下のボタンで旅の案内所（ダンジョン一覧）を開く。戦闘と関所のボスのマスに着くと `Battle.unity` を開く | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression.md#世界地図の形と試作2026-10-24) |
+| `Battle.unity` | 冒険の戦闘と、街道の世界地図のマスの戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
 | `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
