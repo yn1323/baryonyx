@@ -53,17 +53,31 @@ namespace Baryonyx.Library
         {
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
-            ShowLoading();
-            StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
+            // 前に読んだ記録があれば、すぐ出して裏で読み直す。
+            var known = LibrarySession.Known;
+            if (known != null)
+                Render(known.Steps);
+            else
+                ShowLoading();
+            StartLoad(
+                token => LoadAsync(known != null, token),
+                LoadFailedMessage,
+                ShowLoadFailed,
+                readAgain: known != null
+            );
         }
 
         private void OnDisable() => Load.Cancel();
 
-        private async Task LoadAsync(CancellationToken token)
+        private async Task LoadAsync(bool shown, CancellationToken token)
         {
+            string shownVersion = LibrarySession.ReadVersion;
             var read = await LibrarySession.LoadAsync(token);
-            if (!token.IsCancellationRequested)
-                Render(read.Steps);
+            if (token.IsCancellationRequested)
+                return;
+            if (shown && Unchanged(shownVersion, LibrarySession.ReadVersion))
+                return;
+            Render(read.Steps);
         }
 
         public void Render(IReadOnlyList<LibraryStepDay> days)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Baryonyx.Library
 {
@@ -47,6 +48,26 @@ namespace Baryonyx.Library
         }
 
         public IReadOnlyList<LibraryStepDay> Steps { get; }
+
+        private string fingerprint;
+
+        /// <summary>
+        /// The records as one string, the same for the same records in any order of reading:
+        /// compared after reading again, so a panel keeps what it shows when nothing changed.
+        /// </summary>
+        public string Fingerprint => fingerprint ??= FingerprintOf();
+
+        private string FingerprintOf()
+        {
+            var lines = new List<string>(found.Count);
+            foreach (var pair in found)
+                lines.Add($"{pair.Key.Kind}:{pair.Key.Id}:{pair.Value}");
+            lines.Sort(StringComparer.Ordinal);
+            var text = new StringBuilder(string.Join("\n", lines));
+            foreach (var day in Steps)
+                text.Append('\n').Append(day.Day).Append('=').Append(day.Steps);
+            return text.ToString();
+        }
 
         public bool IsFound(LibraryKind kind, string id) =>
             !string.IsNullOrEmpty(id) && found.ContainsKey((kind, id));

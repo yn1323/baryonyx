@@ -84,9 +84,25 @@ namespace Baryonyx.Workshop
         {
             if (PartySession.Source == null)
                 return Mock();
-            var formation = await PartySession.LoadAsync(data, PartySession.Source, token);
-            var gear = await EquipmentSession.SourceOrLocal.LoadAsync(token);
-            return Of(PartySession.State, formation?.Roster, gear);
+            // 編成と装備は互いに依存しないため、同時に読む。ログインは AccountSessionRunner が1回にまとめる。
+            var reading = PartySession.LoadAsync(data, PartySession.Source, token);
+            var wearing = EquipmentSession.SourceOrLocal.LoadAsync(token);
+            await Task.WhenAll(reading, wearing);
+            return Of(PartySession.State, (await reading)?.Roster, await wearing);
+        }
+
+        /// <summary>
+        /// What is held as read from the server earlier in this run (<see cref="PartySession.Known"/>
+        /// and <see cref="EquipmentSession.Known"/>), shown while it is read again; null before
+        /// both are read or without a server.
+        /// </summary>
+        public static IReadOnlyList<WorkshopOwned> Known()
+        {
+            var formation = PartySession.Known;
+            var gear = EquipmentSession.Known;
+            return formation != null && gear != null
+                ? Of(PartySession.State, formation.Roster, gear)
+                : null;
         }
 
         /// <summary>Everything held, kind by kind (<see cref="Kinds"/>), the stronger kinds last.</summary>

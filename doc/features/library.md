@@ -2,7 +2,7 @@
 id: feature-library
 type: specification
 status: 一部確定
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # ライブラリ
@@ -159,8 +159,8 @@ updated: 2026-10-24
 |---|---|---|
 | 見つけた記録 | [library/db-schema.ts](../../server/src/features/library/db-schema.ts) の `library_discoveries`、書く文は [discoveries.ts](../../server/src/features/library/discoveries.ts) | キャラ・カード・装備は初めに配るときと、カスタムスキルの枠にカードを付けたときに記録する。冒険のドロップと行商人の購入は、持ち物に足す書き込みと同じbatchで記録する。[商会](screens.md#商会)の「買う」は、この記録に載っている物だけを売り、記録は書き足さない（2026-10-24）。召喚で出た物（キャラ・装備・アイテム）は、持ち物に足す書き込みと同じbatchで記録する（2026-10-24） |
 | 敵の遭遇と倒した数 | `POST /v1/adventure/clear`・`/v1/adventure/end` の `enemies`、クライアントは [BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs) | 戦闘を終えた記録を書けたときだけ足すため、送り直しても二重に数えない。接続先がないときは記録しない |
-| API | `GET /v1/library`（見つけた記録）・`GET /v1/library/steps`（日々の歩数）。[routes.ts](../../server/src/features/library/routes.ts) | 初めて読む利用者には、編成と装備の初期の付与を先に済ませる |
-| 画面 | `Library.unity`、[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)（`Baryonyx > Library > Create Screen Assets`）、[LibraryCatalogView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryCatalogView.cs)・[LibraryStepsView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryStepsView.cs) | 案内人と背景の生成指示は [ArtSource](../../client/ArtSource/UI/Library/prompts.json) に記録した |
+| API | `GET /v1/library`（見つけた記録）・`GET /v1/library/steps`（日々の歩数）。[routes.ts](../../server/src/features/library/routes.ts) | 編成と装備の初期データは、ログインしたときに付与する（[equipment/starter.ts](../../server/src/features/equipment/starter.ts)） |
+| 画面 | `Library.unity`、[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)（`Baryonyx > Library > Create Screen Assets`）、[LibraryCatalogView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryCatalogView.cs)・[LibraryStepsView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryStepsView.cs) | 案内人と背景の生成指示は [ArtSource](../../client/ArtSource/UI/Library/prompts.json) に記録した。記録は開くたびに読み直し、見つけた記録と日々の歩数は同時に読む。開き直したときは、前に読んだ記録（[LibrarySession](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySession.cs) の `Known`）をすぐ出し、変わっていたときだけ描き直す（[開き直したときの表示](../rules/data-storage.md#サーバーに置くときの作り方)） |
 | 項目の定義 | 生成メニューが各機能の正本から [LibraryData.asset](../../client/Assets/Baryonyx/Features/Library/Data/LibraryData.asset) に書き出す | 定義を変えたら生成し直す。武器・防具・アクセサリー・アイテムは種類ごとの絵（[ItemArt](../../client/Assets/Baryonyx/Features/Inventory/Presentation/ItemArt.cs)）を出し、絵のない種類は武器・防具のアイコンにする。スキルの☆は[冒険のドロップ](drops.md)の一覧から入れる |
 | 固有スキル | [UniqueSkillSession](../../client/Assets/Baryonyx/Features/SkillEvolution/Runtime/UniqueSkillSession.cs) の進み具合を読む | 覚醒の保存が未実装のため、仮データとアプリを動かしている間の進み具合を出す。取得していない段階は影の帯にした |
 | 開示した弱点 | [RevealedWeaknessSession](../../client/Assets/Baryonyx/Features/Combat/Records/RevealedWeaknessSession.cs) を読む | 開示した弱点の属性のアイコンを出す |
@@ -174,3 +174,4 @@ updated: 2026-10-24
 - 2026-10-19：ユーザーの「とりあえず実装してみて」を受けて実装した。8つの分類をメニューに1行ずつ並べると画面の高さに収まらなかったため、武器・防具・アクセサリーを「装備」の1行にまとめ、見出しのタブで切り替える形にした（ユーザーには未確認）。個別の内容は別の画面に移さず、一覧の右に並べた。
 - 2026-10-19：ユーザーの「ライブラリの背景、フクロウ以外の人に切り替えて」「リストにも各々アイコンが欲しい」を受け、仮に使っていた旅の案内所のフクロウと背景を、新しい司書と大図書館の書庫に替え、メニューの6行にアイコンを付けた。司書は、三つ編みの若い女性の司書（A案）とエルフの青年の司書（B案）を生成し、ユーザーがB案を選んだ。アイコンの図案はこちらで決め、撮影した画面を見たユーザーが「このままでよい」とした。
 - 2026-10-19：ユーザーの「キャラクターのカードをもう少し下に下げてほしい。×、ルーンと近すぎる」を受け、6行以上ある案内人の画面のメニュー（今はライブラリだけ）の行の間隔を20pxから12pxに詰め、メニュー全体を28px下げた。1行目のカードの上端は、×とルーンの帯の下から約40px離れる。5行以下のメニューは変えていない。
+- 2026-10-25：画面を開いたときの待ち時間を減らすため、見つけた記録と日々の歩数を同時に読み、開き直したときは前に読んだ記録をすぐ出して裏で読み直すようにした（[開き直したときの表示](../rules/data-storage.md#サーバーに置くときの作り方)）。読み直せなかったときは、出している記録を残して通知の帯で知らせる。

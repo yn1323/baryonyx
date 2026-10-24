@@ -195,12 +195,14 @@ namespace Baryonyx.Workshop
 
         private async Task LoadAsync(CancellationToken token)
         {
-            var formation = await PartySession.LoadAsync(Party, PartySession.Source, token);
-            var gear = await EquipmentSession.SourceOrLocal.LoadAsync(token);
-            await EnhancementSession.LoadAsync(token);
+            // 編成・装備・素材は互いに依存しないため、同時に読む。ログインは AccountSessionRunner が1回にまとめる。
+            var reading = PartySession.LoadAsync(Party, PartySession.Source, token);
+            var wearing = EquipmentSession.SourceOrLocal.LoadAsync(token);
+            var materials = EnhancementSession.LoadAsync(token);
+            await Task.WhenAll(reading, wearing, materials);
             if (token.IsCancellationRequested)
                 return;
-            Use(formation, PartySession.State, gear);
+            Use(await reading, PartySession.State, await wearing);
             ShowTab(Array.IndexOf(TabOrder, tab) >= 0 ? tab : TabOrder[0]);
         }
 

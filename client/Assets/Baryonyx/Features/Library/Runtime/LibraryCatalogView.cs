@@ -123,8 +123,18 @@ namespace Baryonyx.Library
                 ShowPreparing();
                 return;
             }
-            ShowLoading();
-            StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
+            // 前に読んだ記録があれば、すぐ出して裏で読み直す。なければ読み終えるまで、どれを見つけたかを隠す。
+            var known = LibrarySession.Known;
+            if (known != null)
+                Render(known);
+            else
+                ShowLoading();
+            StartLoad(
+                token => LoadAsync(known != null, token),
+                LoadFailedMessage,
+                ShowLoadFailed,
+                readAgain: known != null
+            );
         }
 
         private void OnDisable()
@@ -151,14 +161,27 @@ namespace Baryonyx.Library
                 Guide.OpenItem(key);
         }
 
-        private async Task LoadAsync(CancellationToken token)
+        private async Task LoadAsync(bool shown, CancellationToken token)
         {
-            var read = await LibrarySession.LoadAsync(token);
-            if (Kind == LibraryKind.Enemy)
-                await RevealedWeaknessSession.LoadAsync(token);
+            string shownVersion = LibrarySession.ReadVersion;
+            int shownWeaknesses = RevealedWeaknessSession.Known.Count;
+            // 記録と、敵の開示した弱点は互いに依存しないため、同時に読む。
+            var reading = LibrarySession.LoadAsync(token);
+            var weaknesses =
+                Kind == LibraryKind.Enemy
+                    ? RevealedWeaknessSession.LoadAsync(token)
+                    : Task.CompletedTask;
+            await Task.WhenAll(reading, weaknesses);
             if (token.IsCancellationRequested)
                 return;
-            Render(read);
+            // 読み直しても変わらなければ、出している記録のまま描き直さない。
+            if (
+                shown
+                && Unchanged(shownVersion, LibrarySession.ReadVersion)
+                && shownWeaknesses == RevealedWeaknessSession.Known.Count
+            )
+                return;
+            Render(await reading);
         }
 
         /// <summary>Draws the records: found entries, shadows, new marks and the count.</summary>

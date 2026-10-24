@@ -79,6 +79,9 @@ namespace Baryonyx.Workshop
         private int tab;
         private int selected = -1;
 
+        // 買った回数。読み直している間に買ったら、その前の読み込みで持っている数を戻さない。
+        private int bought;
+
         public IReadOnlyList<WorkshopGood> Goods => goods;
 
         /// <summary>The goods of the chosen tab, in the grid's order.</summary>
@@ -96,8 +99,22 @@ namespace Baryonyx.Workshop
         {
             BindControls();
             RuneBalance.Changed += RefreshConfirm;
-            ShowLoading();
-            StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
+            // 前に読んだライブラリの記録があれば、品物をすぐ出して裏で読み直す。持っている数は、
+            // 前に読んだ編成と装備があれば添える。なければ読み終えるまで品物を出さない。
+            var known = LibrarySession.Known;
+            if (known != null)
+            {
+                owned = WorkshopStock.Known();
+                Render(WorkshopGoods.Of(Data, known));
+            }
+            else
+                ShowLoading();
+            StartLoad(
+                token => LoadAsync(known != null, token),
+                LoadFailedMessage,
+                ShowLoadFailed,
+                readAgain: known != null
+            );
         }
 
         private void OnDisable()
@@ -120,14 +137,25 @@ namespace Baryonyx.Workshop
                 Confirm.onClick.AddListener(Buy);
         }
 
-        private async Task LoadAsync(CancellationToken token)
+        private async Task LoadAsync(bool shown, CancellationToken token)
         {
+            string shownVersion = LibrarySession.ReadVersion;
+            int boughtBefore = bought;
             var stock = LoadOwnedAsync(token);
             var records = await LibrarySession.LoadAsync(token);
             if (token.IsCancellationRequested)
                 return;
-            owned = await stock;
-            if (!token.IsCancellationRequested)
+            var read = await stock;
+            if (token.IsCancellationRequested)
+                return;
+            // 読んでいる間に買ったら、読んだ持ち物は買う前のものなので、手元で足した数を残す。
+            // 前の持ち物を出しているときは、読めなくてもそのまま残す。
+            if (!shown || (read != null && bought == boughtBefore))
+                owned = read;
+            // 品物が変わらなければ、選んでいる品物のまま、持っている数だけを出し直す。
+            if (shown && Unchanged(shownVersion, LibrarySession.ReadVersion))
+                RefreshConfirm();
+            else
                 Render(WorkshopGoods.Of(Data, records));
         }
 
@@ -203,6 +231,7 @@ namespace Baryonyx.Workshop
             if (!CanBuy(good))
                 return;
             ShowNotice(BoughtText(good));
+            bought++;
             BuyTask = WorkshopSession.BuyAsync(good, BuyFailedMessage);
             if (owned != null)
                 owned = owned

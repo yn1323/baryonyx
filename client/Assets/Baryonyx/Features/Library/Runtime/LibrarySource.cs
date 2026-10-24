@@ -35,9 +35,11 @@ namespace Baryonyx.Library
                 async session =>
                 {
                     Owner = session.UserId ?? "";
-                    var state = await api.ReadAsync(session, token);
-                    var steps = await api.ReadStepsAsync(session, token);
-                    return ToRecords(state, steps);
+                    // 見つけた物と歩数は互いに依存しないため、同時に読む。
+                    var state = api.ReadAsync(session, token);
+                    var steps = api.ReadStepsAsync(session, token);
+                    await Task.WhenAll(state, steps);
+                    return ToRecords(await state, await steps);
                 },
                 token
             );

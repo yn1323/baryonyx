@@ -16,10 +16,25 @@ namespace Baryonyx.App
 
         public async Task<HomeStepReading> LoadAsync(CancellationToken token)
         {
-            long balance = await link.ReadRunesAsync(token);
+            // 所持ルーンの読み込みと、連携の確認・今日の歩数の読み込みは互いに依存しないため、同時に行う。
+            var runes = link.ReadRunesAsync(token);
+            var linked = ReadLinkedAsync(token);
+            await Task.WhenAll(runes, linked);
+            long balance = await runes;
+            var (isLinked, today) = await linked;
+            return isLinked
+                ? Reading(balance, 0, today)
+                : Unlinked(HomeStepResult.Unlinked, balance);
+        }
+
+        // 連携していれば、サーバーに保存済みの今日の歩数を読む。
+        private async Task<(bool Linked, HealthStepReading Today)> ReadLinkedAsync(
+            CancellationToken token
+        )
+        {
             if (await link.CheckAsync(token) != HealthLinkStatus.Linked)
-                return Unlinked(HomeStepResult.Unlinked, balance);
-            return await ReadAsync(balance, 0, token);
+                return (false, default);
+            return (true, await link.ReadTodayAsync(token));
         }
 
         public async Task<HomeStepReading> SyncAsync(CancellationToken token)
@@ -48,9 +63,14 @@ namespace Baryonyx.App
             long balance,
             long grantedRunes,
             CancellationToken token
+        ) => Reading(balance, grantedRunes, await link.ReadTodayAsync(token));
+
+        private static HomeStepReading Reading(
+            long balance,
+            long grantedRunes,
+            HealthStepReading today
         )
         {
-            var today = await link.ReadTodayAsync(token);
             int steps = today.HasValue ? (int)Math.Min(int.MaxValue, today.Steps) : 0;
             return new HomeStepReading(
                 HomeStepResult.Updated,
