@@ -180,7 +180,8 @@ namespace Baryonyx.Adventure
                         .ToArray(),
                     revealed is AdventureRoomKind.Mystery or AdventureRoomKind.Start
                         ? null
-                        : revealed
+                        : revealed,
+                    run.awakening
                 )
             );
         }

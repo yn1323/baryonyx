@@ -7,14 +7,17 @@ using Baryonyx.Health;
 using Baryonyx.Party;
 using Baryonyx.Training;
 using Baryonyx.UI;
+using Baryonyx.WorldMap;
 using UnityEngine;
 
 namespace Baryonyx.App
 {
     /// <summary>
-    /// Runs the battle scene. When the adventure in progress waits on a battle (the exploration
-    /// opened the scene), the battle is fought with the room's encounter on the destination's
-    /// stage and ends with its outcome (<see cref="BattleAdventureFlow"/>), going on to the
+    /// Runs the battle scene. Opened from the highway's map (<see cref="WorldMapSession.Battle"/>),
+    /// it fights the square's fixed enemies from full HP and returns to the map
+    /// (<see cref="WorldMapBattleFlow"/>). When the adventure in progress waits on a battle (the
+    /// exploration opened the scene), the battle is fought with the room's encounter on the
+    /// destination's stage and ends with its outcome (<see cref="BattleAdventureFlow"/>), going on to the
     /// exploration or Home. Opened on its own, it stays the battle mock with the stage chosen in
     /// the Inspector. It sets the encounter and the formation's party (<see cref="AdventureParty"/>)
     /// after the battle screen has set itself up and before the battle begins, so it runs after
@@ -47,11 +50,13 @@ namespace Baryonyx.App
         private TrainingMockData training;
 
         private BattleAdventureFlow flow;
+        private WorldMapBattleFlow worldMapFlow;
         private readonly CancellationTokenSource lifetime = new();
 
         public BattleInspectView Battle => battle;
         public AdventureOverlay Overlay => overlay;
         public BattleAdventureFlow Flow => flow;
+        public WorldMapBattleFlow WorldMapFlow => worldMapFlow;
         public SceneTransitionController Transition => transition;
         public PartyMockData Party => party;
         public TrainingMockData Training => training;
@@ -67,6 +72,26 @@ namespace Baryonyx.App
                 return;
             }
             GameServices.GetOrCreate(settings);
+            // 街道の地図から開いたときは、そのマスの決まった敵と戦い、地図へ戻る。
+            if (WorldMapEncounters.Of(WorldMapSession.Battle) is { } road)
+            {
+                if (stages != null)
+                {
+                    stages.Stage = road.Stage;
+                    stages.Apply();
+                }
+                worldMapFlow = new WorldMapBattleFlow(
+                    battle,
+                    overlay,
+                    WorldMapSession.Battle,
+                    () => SceneLoader.Load(SceneNames.WorldMap, transition, this),
+                    () => SceneLoader.Load(SceneNames.Battle, transition, this)
+                );
+                battle.HoldEntrance = () =>
+                    transition != null && (transition.IsCovered || transition.IsPlaying);
+                PartyTask = UsePartyAsync();
+                return;
+            }
             var state = AdventureSession.Current;
             if (state?.Run == null || !state.Run.InBattle)
             {
@@ -122,7 +147,7 @@ namespace Baryonyx.App
             }
             if (battle == null)
                 return;
-            var members = AdventureParty.Of(formation, party, training);
+            var members = AdventureParty.Of(formation, party, training, overlay.ItemArt);
             if (flow != null)
             {
                 // 冒険の戦闘は、マスの間で持ち越したHPから始める（doc/features/stage-progression.md）。
@@ -130,8 +155,13 @@ namespace Baryonyx.App
                 for (int slot = 0; slot < members.Count && slot < shares.Length; slot++)
                     if (members[slot] != null)
                         members[slot].HpShare = shares[slot];
-                // 休憩で鍛えた仲間とカードは、その冒険のあいだ強くなる。
-                AdventureParty.Hone(members, flow.State.Run?.Id);
+                // 休憩で鍛えた仲間とカードと、戦闘後に選んだ強化は、その冒険のあいだ効く。
+                AdventureParty.Hone(
+                    members,
+                    flow.State.Run?.Id,
+                    AdventureBoons.IsStrongBattle(flow.State.Run)
+                );
+                flow.Party = members;
             }
             battle.UseParty(members);
             battle.enabled = true;
@@ -143,6 +173,8 @@ namespace Baryonyx.App
             lifetime.Dispose();
             flow?.Dispose();
             flow = null;
+            worldMapFlow?.Dispose();
+            worldMapFlow = null;
         }
     }
 }

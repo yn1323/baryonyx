@@ -46,7 +46,8 @@ namespace Baryonyx.Adventure
     /// fallen. It belongs to one adventure; another adventure starts at full HP. A battle won
     /// keeps the HP it ended with, and a rest heals each member by a share of the maximum HP,
     /// standing a fallen one up again. It also keeps what the rests honed in this adventure
-    /// (休憩の鍛える): how many times each slot was honed, and the cards honed.
+    /// (休憩の鍛える): how many times each slot was honed, and the cards honed; and the boons
+    /// chosen after won battles (戦闘後の強化), with the room whose boon is not chosen yet.
     /// </summary>
     public static class AdventureVitals
     {
@@ -94,7 +95,9 @@ namespace Baryonyx.Adventure
                 float share = slot < shares.Count ? Mathf.Clamp01(shares[slot]) : 1f;
                 kept[slot] = share.ToString("0.####", CultureInfo.InvariantCulture);
             }
-            Write(runId, string.Join(",", kept), HonedSlots(runId), HonedCards(runId));
+            var record = Record.Of(runId);
+            record.Shares = string.Join(",", kept);
+            record.Write();
         }
 
         /// <summary>Heals each slot by the rest's share of its maximum HP, a fallen one too.</summary>
@@ -136,9 +139,11 @@ namespace Baryonyx.Adventure
         {
             if (string.IsNullOrEmpty(runId) || slot < 0 || slot >= Slots)
                 return;
+            var record = Record.Of(runId);
             var counts = HonedSlots(runId);
             counts[slot]++;
-            Write(runId, SharesText(runId), counts, HonedCards(runId));
+            record.Honed = string.Join(",", counts);
+            record.Write();
         }
 
         /// <summary>Hones one of a slot's card skills (once a card).</summary>
@@ -146,11 +151,91 @@ namespace Baryonyx.Adventure
         {
             if (string.IsNullOrEmpty(runId) || string.IsNullOrEmpty(skillId))
                 return;
-            var cards = HonedCards(runId).Append(CardKey(slot, skillId)).Distinct().ToArray();
-            Write(runId, SharesText(runId), HonedSlots(runId), cards);
+            var record = Record.Of(runId);
+            record.Cards = string.Join(
+                ",",
+                HonedCards(runId).Append(CardKey(slot, skillId)).Distinct()
+            );
+            record.Write();
         }
 
-        // 保存した文字列（冒険のID|HPの割合|鍛えた回数|鍛えたカード）を区切る。別の冒険の物ならnull。
+        // --- Boons after a won battle (戦闘後の強化) ------------------------------------------
+
+        /// <summary>The boons chosen in the adventure, in the order chosen.</summary>
+        public static IReadOnlyList<AdventureBoon> Boons(string runId)
+        {
+            var parts = Parts(runId);
+            if (parts == null || parts.Length < 5 || parts[4] == "")
+                return Array.Empty<AdventureBoon>();
+            return parts[4]
+                .Split(';')
+                .Select(AdventureBoon.Decode)
+                .Where(boon => boon != null)
+                .Select(boon => boon.Value)
+                .ToArray();
+        }
+
+        /// <summary>How many offers in a row came with no rainbow boon.</summary>
+        public static int BoonPity(string runId)
+        {
+            var parts = Parts(runId);
+            return parts != null && parts.Length >= 6 && int.TryParse(parts[5], out int pity)
+                ? Math.Max(0, pity)
+                : 0;
+        }
+
+        /// <summary>
+        /// The room whose won battle still waits for a boon to be chosen, with how hard the battle
+        /// was, or null.
+        /// </summary>
+        public static (string RoomId, AdventureBoonBattle Battle)? PendingBoon(string runId)
+        {
+            var parts = Parts(runId);
+            if (parts == null || parts.Length < 7 || parts[6] == "")
+                return null;
+            var pending = parts[6].Split('/');
+            return
+                pending.Length == 2
+                && int.TryParse(pending[1], out int battle)
+                && battle > (int)AdventureBoonBattle.None
+                && battle <= (int)AdventureBoonBattle.TrialMet
+                ? (pending[0], (AdventureBoonBattle)battle)
+                : null;
+        }
+
+        /// <summary>
+        /// Keeps that <paramref name="roomId"/>'s battle was won and waits for a boon, before the
+        /// win is saved, so that a boon not chosen yet is offered again after resuming.
+        /// </summary>
+        public static void AwaitBoon(string runId, string roomId, AdventureBoonBattle battle)
+        {
+            if (string.IsNullOrEmpty(runId) || string.IsNullOrEmpty(roomId))
+                return;
+            var record = Record.Of(runId);
+            record.Pending = battle == AdventureBoonBattle.None ? "" : $"{roomId}/{(int)battle}";
+            record.Write();
+        }
+
+        /// <summary>
+        /// Keeps the boon chosen and stops waiting. <paramref name="rainbowOffered"/> is whether
+        /// the offer had a rainbow boon, which starts the run of offers without one again.
+        /// </summary>
+        public static void ChooseBoon(string runId, AdventureBoon boon, bool rainbowOffered)
+        {
+            if (string.IsNullOrEmpty(runId))
+                return;
+            var record = Record.Of(runId);
+            record.Boons = string.Join(
+                ";",
+                Boons(runId).Append(boon).Select(chosen => chosen.Encode())
+            );
+            record.Pity = rainbowOffered ? "0" : (BoonPity(runId) + 1).ToString();
+            record.Pending = "";
+            record.Write();
+        }
+
+        // 保存した文字列（冒険のID|HPの割合|鍛えた回数|鍛えたカード|選んだ強化|虹の出ない回数|選んでいない
+        // 強化のマス）を区切る。別の冒険の物ならnull。
         private static string[] Parts(string runId)
         {
             if (string.IsNullOrEmpty(runId))
@@ -159,17 +244,39 @@ namespace Baryonyx.Adventure
             return parts.Length >= 2 && parts[0] == runId ? parts : null;
         }
 
-        private static string SharesText(string runId) =>
-            Parts(runId) is { } parts ? parts[1] : string.Join(",", Enumerable.Repeat("1", Slots));
+        // 1つの冒険の保存。読んだ値を書き換えて、まとめて書く。
+        private sealed class Record
+        {
+            public string RunId = "";
+            public string Shares = string.Join(",", Enumerable.Repeat("1", Slots));
+            public string Honed = string.Join(",", new int[Slots]);
+            public string Cards = "";
+            public string Boons = "";
+            public string Pity = "0";
+            public string Pending = "";
 
-        private static void Write(
-            string runId,
-            string shares,
-            IReadOnlyList<int> slots,
-            IEnumerable<string> cards
-        ) =>
-            store.Write(
-                runId + "|" + shares + "|" + string.Join(",", slots) + "|" + string.Join(",", cards)
-            );
+            public static Record Of(string runId)
+            {
+                var record = new Record { RunId = runId };
+                var parts = Parts(runId);
+                if (parts == null)
+                    return record;
+                record.Shares = parts[1];
+                if (parts.Length > 2)
+                    record.Honed = parts[2];
+                if (parts.Length > 3)
+                    record.Cards = parts[3];
+                if (parts.Length > 4)
+                    record.Boons = parts[4];
+                if (parts.Length > 5)
+                    record.Pity = parts[5];
+                if (parts.Length > 6)
+                    record.Pending = parts[6];
+                return record;
+            }
+
+            public void Write() =>
+                store.Write(string.Join("|", RunId, Shares, Honed, Cards, Boons, Pity, Pending));
+        }
     }
 }

@@ -144,13 +144,15 @@ namespace Baryonyx.Adventure
             bool mimic,
             AdventureTrial trial,
             IReadOnlyList<AdventureWare> wares,
-            AdventureRoomKind? revealed = null
+            AdventureRoomKind? revealed = null,
+            bool awakening = false
         )
         {
             Mimic = mimic;
             Trial = trial;
             Wares = wares ?? Array.Empty<AdventureWare>();
             Revealed = revealed;
+            Awakening = awakening;
         }
 
         public bool Mimic { get; }
@@ -159,6 +161,10 @@ namespace Baryonyx.Adventure
 
         // 「？」のマスに入ったときにサーバーが決めた中身の種類。「？」のマスでなければnull。
         public AdventureRoomKind? Revealed { get; }
+
+        // 宝箱のマスに入ったときにサーバーが決めた、宝箱から固有スキルの覚醒が出るか
+        // （doc/features/skill-evolution.md の覚醒が起きる場面）。
+        public bool Awakening { get; }
     }
 
     /// <summary>What today's steps opened a step door to (doc/features/stage-progression.md).</summary>

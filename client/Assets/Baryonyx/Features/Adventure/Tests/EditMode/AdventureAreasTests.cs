@@ -25,7 +25,10 @@ namespace Baryonyx.Tests.EditMode
                 "catalog.ts"
             );
             var server = Regex
-                .Matches(File.ReadAllText(path), "\\{ id: \"([a-z-]+)\", roomCount: ([0-9]+) \\}")
+                .Matches(
+                    File.ReadAllText(path),
+                    "\\{ id: \"([a-z-]+)\", roomCount: ([0-9]+)(?:, town: \"[a-z]+\")? \\}"
+                )
                 .Cast<Match>()
                 .Select(match => (match.Groups[1].Value, int.Parse(match.Groups[2].Value)))
                 .ToArray();

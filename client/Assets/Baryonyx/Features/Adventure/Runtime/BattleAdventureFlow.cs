@@ -105,6 +105,13 @@ namespace Baryonyx.Adventure
         }
 
         public AdventureState State => state;
+
+        /// <summary>
+        /// The party fought with (slot order, null for an empty slot), for the boons offered after
+        /// the win. The scene sets it once the party is read.
+        /// </summary>
+        public IReadOnlyList<BattlePartyMember> Party { get; set; } =
+            Array.Empty<BattlePartyMember>();
         public string RoomId => state.Run?.RoomId ?? "";
         public bool Leaving { get; private set; }
 
@@ -184,6 +191,13 @@ namespace Baryonyx.Adventure
                 clearOptions = new AdventureClearOptions { TrialMet = met };
                 overlay.ShowNotice(met ? AdventureTexts.TrialMet : AdventureTexts.TrialMissed);
             }
+            // 勝ったことを保存する前に、選ぶ強化を待つマスを残す。選ぶ前にアプリが終わっても、再開した
+            // 探索で同じ候補を開き直せるようにするため。
+            AdventureVitals.AwaitBoon(
+                state.Run?.Id,
+                RoomId,
+                AdventureBoons.BattleOf(state.Run, clearOptions.TrialMet)
+            );
             var clearing = ClearAsync();
             if (!await Play(battle.PlayVictory))
                 return;
@@ -233,6 +247,13 @@ namespace Baryonyx.Adventure
             if (!await ShowDrops(cleared.Drops))
                 return;
             var result = cleared.Result;
+            // 戦闘後の強化を選んでから、そのまま探索へ移る。
+            if (
+                result == null
+                && overlay.Boons != null
+                && overlay.Boons.OpenPending(state.Run, Party, _ => GoExploreOrStay())
+            )
+                return;
             AdventureDialogs.Victory(
                 Dialog,
                 result != null,
@@ -423,6 +444,16 @@ namespace Baryonyx.Adventure
             Leaving = toExploration();
             if (!Leaving)
                 Dialog.Resume();
+        }
+
+        // 強化を選んだあと、探索へ移る。移れなければ、勝利のダイアログから移り直す。
+        private void GoExploreOrStay()
+        {
+            if (Leaving || disposed)
+                return;
+            Leaving = toExploration();
+            if (!Leaving)
+                AdventureDialogs.Victory(Dialog, false, GoExplore);
         }
 
         private void GoHome()

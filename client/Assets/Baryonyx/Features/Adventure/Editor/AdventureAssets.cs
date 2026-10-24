@@ -51,21 +51,12 @@ namespace Baryonyx.Adventure.Editor
         public static string GroundPath(string destinationId) =>
             $"{StageArtFolder}/Ground{Pascal(destinationId)}.png";
 
-        private const string CharacterArtFolder = "Assets/Baryonyx/Shared/Art/Characters";
-
         // 宝箱は1ドット3px。戦闘のキャラは地図の上では1ドット1pxの小さい姿にする。
         private const float MapDot = ExplorationView.MapDot;
-        private const float PartyDot = 1f;
 
-        // 部屋の中心からの隊列（設計座標）と、そこに立つ編成の枠。後ろの者から描く。
-        // 仮データの編成（トーマ・ルカ・アリア・ミナ）なら、今までの並びのままになる。
-        private static readonly (string Name, Vector2 Offset, int Slot)[] Party =
-        {
-            ("Mina", new Vector2(-12, 12), 3),
-            ("Luka", new Vector2(24, 9), 1),
-            ("Toma", new Vector2(-30, -6), 0),
-            ("Aria", new Vector2(9, -12), 2),
-        };
+        // パーティを表す木の駒の高さと、マスの中心からの足元の位置（設計座標）。
+        private const float PawnHeight = 132f;
+        private static readonly Vector2 PawnFeet = new(0, -10);
 
         private static readonly Color TextMain = UiPalette.TextMain;
 
@@ -119,11 +110,6 @@ namespace Baryonyx.Adventure.Editor
             foreach (var path in new[] { ChestClosedPath, ChestOpenPath })
                 ArtAssets.ImportTexture(path, FilterMode.Point);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
-            foreach (var member in Party)
-                ArtAssets.ImportTexture(
-                    $"{CharacterArtFolder}/Battle{member.Name}.aseprite",
-                    FilterMode.Point
-                );
 
             var grounds = ImportGrounds();
             var font = GameFontAssets.GetOrCreate();
@@ -265,6 +251,8 @@ namespace Baryonyx.Adventure.Editor
             view.Moments = ExplorationMomentsAssets.Build(root, view);
             // 休憩の焚き火は、地図と演出の上、通知とダイアログの下に重ねる。
             view.Campfire = ExplorationCampfireAssets.Build(root);
+            // 戦闘後の強化を選ぶ前にアプリが終わったときは、探索で開き直す。
+            view.Boons = AdventureBoonPickerAssets.Build(root);
 
             view.Notice = NoticeBandAssets.Build(root);
             // 行商人の品物5つと「立ち去る」を並べるため、選択肢を6つにして行を少し低くする。
@@ -437,26 +425,13 @@ namespace Baryonyx.Adventure.Editor
         }
 
         // 地図の上のパーティ。戦闘の姿を1ドット1pxで、部屋の中心のまわりに並べる。
+        // パーティは、4人の代わりに木の駒1つで地図の上を歩く。
         private static void BuildParty(RectTransform party, ExplorationView view)
         {
-            var shadow = ArtAssets.LoadSprite(UiArt.ShadowPath);
-            var bodies = new List<RectTransform>();
-            var sprites = new List<RawImage>();
-            foreach (var member in Party)
-            {
-                var texture = ArtAssets.LoadTexture(
-                    $"{CharacterArtFolder}/Battle{member.Name}.aseprite"
-                );
-                var body = Rect("Ally" + member.Name, party);
-                Place(body, member.Offset, Vector2.zero);
-                Picture(body, "Shadow", shadow, new Vector2(0, 1), new Vector2(40, 8), 0.5f);
-                sprites.Add(PixelActor(body, "Sprite", texture, Vector2.zero, PartyDot));
-                bodies.Add(body);
-            }
-            view.Party = bodies.ToArray();
-            view.PartySprites = sprites.ToArray();
-            view.PartySlots = Array.ConvertAll(Party, member => member.Slot);
-            view.Formation = Array.ConvertAll(Party, member => member.Offset);
+            var pawn = MapPawnAssets.Build(party, "Pawn", PawnHeight);
+            pawn.anchoredPosition = PawnFeet;
+            view.Party = new[] { pawn };
+            view.Formation = new[] { PawnFeet };
         }
 
         private static void BuildChest(RectTransform map, ExplorationView view)
@@ -556,6 +531,8 @@ namespace Baryonyx.Adventure.Editor
             var safe = SafeArea(root);
             overlay.MenuButton = BuildMenuButton(safe, right: true);
             overlay.Reveal = RewardRevealAssets.Build(safe, DropPlateCenter);
+            // 戦闘後の強化は、ドロップの札の上、通知とダイアログの下に重ねる。
+            overlay.Boons = AdventureBoonPickerAssets.Build(root);
             overlay.Notice = NoticeBandAssets.Build(root);
             overlay.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);

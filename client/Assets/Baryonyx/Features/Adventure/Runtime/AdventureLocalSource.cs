@@ -46,6 +46,12 @@ namespace Baryonyx.Adventure
         // 怪しい宝箱を開けたときにミミックになるか（テスト用）。null なら半分の確率で決める。
         public bool? NextMimic { get; set; }
 
+        // 次に入る宝箱のマスで、宝箱から覚醒が出るか（テスト用）。null ならサーバーと同じ確率で決める。
+        public bool? NextAwakening { get; set; }
+
+        // 宝箱から覚醒が出る確率。サーバーの CHEST_AWAKENING_CHANCE と同じ。
+        public const double ChestAwakeningChance = 0.3;
+
         // 「？」のマスの中身の種類（テスト用）。null なら重みで決める。
         public AdventureRoomKind? MysteryKind { get; set; }
 
@@ -90,6 +96,11 @@ namespace Baryonyx.Adventure
             run.Route.Add(room.Id);
             run.Opened = false;
             run.Mimic = false;
+            run.Awakening =
+                kind == AdventureRoomKind.Treasure
+                && (NextAwakening ?? random.NextDouble() < ChestAwakeningChance);
+            if (kind == AdventureRoomKind.Treasure)
+                NextAwakening = null;
             run.Trial =
                 kind == AdventureRoomKind.Trial
                     ? (AdventureTrial)random.Next(1, 4)
@@ -398,7 +409,8 @@ namespace Baryonyx.Adventure
                             run.Mimic,
                             run.Trial,
                             run.Wares.ToArray(),
-                            run.Revealed
+                            run.Revealed,
+                            run.Awakening
                         )
                     ),
                 records.Values.ToArray(),
@@ -442,6 +454,9 @@ namespace Baryonyx.Adventure
             // 今いるマスの中身：怪しい宝箱を開けたか、それがミミックか、試練の条件、行商人の品物。
             public bool Opened;
             public bool Mimic;
+
+            // 宝箱のマスで、宝箱から覚醒が出るか。
+            public bool Awakening;
             public AdventureTrial Trial;
             public List<AdventureWare> Wares = new();
 

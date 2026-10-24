@@ -192,6 +192,20 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public CharacterStats Stats;
 
+        /// <summary>
+        /// Boosts that work while their condition holds, the stats before any boon and the
+        /// percents the boons grew <see cref="Stats"/> by (BattlePartyMember). The battle reads
+        /// the stats through <see cref="BattleInspectView.StatsNow"/>.
+        /// </summary>
+        [NonSerialized]
+        public IReadOnlyList<BattleStatBoost> Boosts = Array.Empty<BattleStatBoost>();
+
+        [NonSerialized]
+        public CharacterStats Unboosted;
+
+        [NonSerialized]
+        public IReadOnlyList<float> Percents = Array.Empty<float>();
+
         [NonSerialized]
         public int Hp;
 
@@ -1634,7 +1648,7 @@ namespace Baryonyx.Combat.Presentation
             var speeds = new List<double>();
             for (int i = 0; i < Allies.Length; i++)
                 if (!Allies[i].Down)
-                    speeds.Add(SpeedWithStatuses(true, i, Allies[i].Stats.Speed));
+                    speeds.Add(SpeedWithStatuses(true, i, StatsNow(i).Speed));
             return CombatTurnOrder.PartySpeed(speeds);
         }
 
@@ -1684,9 +1698,7 @@ namespace Baryonyx.Combat.Presentation
             if (attacker >= 0 && move is not { IgnoreDefense: true })
                 power = CombatFormula.Defend(
                     power,
-                    magic
-                        ? Allies[target].Stats.MagicDefense
-                        : Allies[target].Stats.PhysicalDefense,
+                    magic ? StatsNow(target).MagicDefense : StatsNow(target).PhysicalDefense,
                     Enemies[attacker].Level
                 );
             if (move is { BreakBlock: true } && BlockOf(target) > 0)
@@ -1953,6 +1965,7 @@ namespace Baryonyx.Combat.Presentation
             MaxEnergy = MaxEnergyAt(turn);
             Energy = MaxEnergy;
             StartTurnPassives();
+            ShowBoostsTurnedOn();
             Refresh();
         }
 
@@ -2447,6 +2460,7 @@ namespace Baryonyx.Combat.Presentation
             RefreshAlly(ally);
             // Its cards leave the hand and the deck the moment it falls.
             RefreshFallen();
+            ShowBoostsTurnedOn();
             ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
             StartCoroutine(AllyHitReaction(index));
         }

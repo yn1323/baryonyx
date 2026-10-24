@@ -14,8 +14,9 @@ namespace Baryonyx.App
     /// <summary>
     /// Runs the exploration scene: the map of the adventure in progress. The next room is shown
     /// on the same map as the camera follows the party there; a room with a battle opens the
-    /// battle scene, and suspending or ending the adventure returns to Home. The party on the map
-    /// is the formation's (read from the server when not read yet in this run).
+    /// battle scene, and suspending or ending the adventure returns to Home. The party walks the
+    /// map as one pawn; the rest and the altar choose from the formation's members (read from the
+    /// server when not read yet in this run).
     /// </summary>
     public sealed class ExplorationBootstrap : MonoBehaviour
     {
@@ -109,12 +110,9 @@ namespace Baryonyx.App
             }
             catch (Exception exception)
             {
-                // 読めなければ、地図には今のまま（仮データの4人）を出す。
+                // 読めなければ、休憩と祭壇は仮データの編成で選ぶ。
                 Debug.LogWarning("編成を取得できませんでした。" + exception.Message);
-                return;
             }
-            if (view != null)
-                view.UseParty(PartySession.Members(formation));
         }
 
         // 開く演出の途中では次の演出を始められない。サーバーの返事が演出より早く届き、冒険がなくて

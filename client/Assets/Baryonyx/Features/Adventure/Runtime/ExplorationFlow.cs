@@ -132,6 +132,9 @@ namespace Baryonyx.Adventure
             var run = state.Run;
             if (run != null && !run.RoomCleared && run.Contents.Revealed is { } revealed)
                 view.ShowNotice(AdventureTexts.Revealed(revealed));
+            // 勝った戦闘の強化を選ぶ前にアプリが終わっていたら、同じ候補を開き直す。
+            if (run != null && run.RoomCleared && view.Boons != null)
+                view.Boons.OpenPending(run, Party(), null);
             if (room.StartsBattle)
                 Work = BattleAsync();
             else if (room.Rests)
@@ -232,15 +235,33 @@ namespace Baryonyx.Adventure
         private IReadOnlyList<AdventureAltar.Choice> AltarChoices() =>
             altarChoices?.Invoke() ?? Array.Empty<AdventureAltar.Choice>();
 
+        // 宝箱から覚醒が出て、覚醒させる固有スキルを選んでいるところ。祭壇と同じ手順で選び、選ぶまで閉じない。
+        private bool chestAwakening;
+
+        // 祭壇と宝箱の覚醒の、選ぶダイアログ。題名だけが違う。
+        private void AltarDialog(
+            string body,
+            IReadOnlyList<(string Label, Action Choose)> options,
+            string backLabel,
+            Action back
+        ) =>
+            AdventureDialogs.Choose(
+                view.Dialog,
+                chestAwakening ? AdventureDialogs.ChestAwakeningTitle : AdventureDialogs.AltarTitle,
+                body,
+                options,
+                backLabel,
+                back
+            );
+
         // 祭壇：仲間を選び、その固有スキルを選び、次の段階を選んで進化させる。進められる固有スキルが
-        // なければ、宝箱と同じに開ける（OnChest）。
+        // なければ、宝箱と同じに開ける（OnChest）。宝箱の覚醒も同じ手順だが、閉じられない。
         private void OpenAltar()
         {
             var choices = AltarChoices();
             var people = choices.Select(choice => choice.Person).Distinct().ToArray();
-            AdventureDialogs.Altar(
-                view.Dialog,
-                AdventureDialogs.AltarBody,
+            AltarDialog(
+                chestAwakening ? AdventureDialogs.ChestAwakeningBody : AdventureDialogs.AltarBody,
                 people
                     .Select(person =>
                     {
@@ -248,9 +269,30 @@ namespace Baryonyx.Adventure
                         return (mine[0].Name, (Action)(() => OpenAltarUniques(mine)));
                     })
                     .ToArray(),
-                AdventureTexts.CloseChoice,
-                view.Dialog.Hide
+                chestAwakening ? null : AdventureTexts.CloseChoice,
+                chestAwakening ? null : view.Dialog.Hide
             );
+        }
+
+        // 宝箱を開けて中身を見せたあと、宝箱から出た覚醒で固有スキルを選ばせる。
+        private void OpenChestAwakening()
+        {
+            view.Dialog.Hide();
+            chestAwakening = true;
+            OpenAltar();
+        }
+
+        // 宝箱のマスは開けたときに終えているため、マスを終えずに覚醒だけを残す。
+        private Task ChestEvolveAsync(AdventureAltar.Choice choice, int stage)
+        {
+            chestAwakening = false;
+            view.Dialog.Hide();
+            evolve?.Invoke(choice, stage);
+            busy = false;
+            view.ShowNotice(
+                $"「{choice.CardName(choice.From)}」が「{choice.CardName(stage)}」に覚醒した！"
+            );
+            return Task.CompletedTask;
         }
 
         private void OpenAltarUniques(IReadOnlyList<AdventureAltar.Choice> mine)
@@ -260,8 +302,7 @@ namespace Baryonyx.Adventure
                 OpenAltarStages(mine[0], () => OpenAltar());
                 return;
             }
-            AdventureDialogs.Altar(
-                view.Dialog,
+            AltarDialog(
                 mine[0].Name + "のどの固有スキルを覚醒させる？",
                 mine.Select(choice =>
                         (
@@ -276,8 +317,7 @@ namespace Baryonyx.Adventure
         }
 
         private void OpenAltarStages(AdventureAltar.Choice choice, Action back) =>
-            AdventureDialogs.Altar(
-                view.Dialog,
+            AltarDialog(
                 $"{choice.Name}の「{choice.CardName(choice.From)}」の覚醒先を選ぶ",
                 choice
                     .Next.Select(stage =>
@@ -289,12 +329,17 @@ namespace Baryonyx.Adventure
             );
 
         private void ConfirmEvolve(AdventureAltar.Choice choice, int stage, Action back) =>
-            AdventureDialogs.Altar(
-                view.Dialog,
+            AltarDialog(
                 $"「{choice.CardName(choice.From)}」を「{choice.CardName(stage)}」へ覚醒させますか？",
                 new (string, Action)[]
                 {
-                    (AdventureDialogs.EvolveChoice, () => Work = EvolveAsync(choice, stage)),
+                    (
+                        AdventureDialogs.EvolveChoice,
+                        () =>
+                            Work = chestAwakening
+                                ? ChestEvolveAsync(choice, stage)
+                                : EvolveAsync(choice, stage)
+                    ),
                 },
                 AdventureDialogs.BackChoice,
                 () => OpenAltarStages(choice, back)
@@ -567,11 +612,17 @@ namespace Baryonyx.Adventure
                 return;
             Enter(state);
             busy = true;
+            // 宝箱から覚醒が出たら、中身を見せたあとに固有スキルを選ばせる。進められる固有スキルが
+            // なければ出さない（doc/features/skill-evolution.md の覚醒が起きる場面）。
+            Action next =
+                state.Run?.Contents.Awakening == true && AltarChoices().Count > 0
+                    ? OpenChestAwakening
+                    : CloseReward;
             // 手に入れた物を演出の札で見せたあとは、ダイアログの本文に書かない。
             if (shown)
-                AdventureDialogs.TreasureOpened(view.Dialog, CloseReward);
+                AdventureDialogs.TreasureOpened(view.Dialog, next);
             else
-                AdventureDialogs.Treasure(view.Dialog, state.Drops, CloseReward, view.ItemArt);
+                AdventureDialogs.Treasure(view.Dialog, state.Drops, next, view.ItemArt);
         }
 
         // 宝箱が震えて開き、中身を札で1つずつ見せる。宝箱は一番良い物の品質の色で光り、その札から開く。

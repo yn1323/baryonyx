@@ -29,6 +29,15 @@ namespace Baryonyx.Combat.Presentation
         /// (the adventure carries HP from room to room, doc/features/stage-progression.md).
         /// </summary>
         public float HpShare = 1f;
+
+        /// <summary>
+        /// Boosts that work only while their condition holds in the battle (the adventure's
+        /// boons, doc/features/stage-progression.md): with the stats before any boon and the
+        /// percents the boons grew <see cref="Stats"/> by, which the boosts add to.
+        /// </summary>
+        public IReadOnlyList<BattleStatBoost> Boosts = Array.Empty<BattleStatBoost>();
+        public CharacterStats Unboosted;
+        public IReadOnlyList<float> Percents = Array.Empty<float>();
     }
 
     /// <summary>
@@ -151,6 +160,9 @@ namespace Baryonyx.Combat.Presentation
             ally.Name = member.Name ?? "";
             ally.Level = Mathf.Max(1, member.Level);
             ally.Stats = member.Stats;
+            ally.Boosts = member.Boosts ?? Array.Empty<BattleStatBoost>();
+            ally.Unboosted = member.Unboosted;
+            ally.Percents = member.Percents ?? Array.Empty<float>();
             ally.MaxHp = Mathf.Max(1, member.Stats.Hp);
             ally.StartHp = ally.Hp = StartHpOf(ally.MaxHp, member.HpShare);
             ally.Tint = member.Tint;

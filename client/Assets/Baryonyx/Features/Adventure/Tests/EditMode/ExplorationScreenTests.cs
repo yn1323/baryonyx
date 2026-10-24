@@ -96,7 +96,10 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(entrance, Is.Not.Null);
             Assert.That(view.Content.sizeDelta.x, Is.GreaterThan(1920f));
 
-            // パーティは入口の台に、隊列のまま立つ。
+            // パーティは、木の駒1つで入口の台に立つ（4人の絵は出さない）。
+            Assert.That(view.Party, Has.Length.EqualTo(1));
+            var pawn = view.Party[0].GetComponentInChildren<UnityEngine.UI.RawImage>(true);
+            Assert.That(pawn.texture.name, Is.EqualTo("MapPawn"));
             Assert.That(view.Formation, Has.Length.EqualTo(view.Party.Length));
             for (int i = 0; i < view.Party.Length; i++)
                 Assert.That(

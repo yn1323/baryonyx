@@ -45,7 +45,7 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The stat of an ally that a power is a part of.</summary>
         public int StatOf(int ally, CardStat stat) =>
-            ally >= 0 && ally < Allies.Length ? StatOf(Allies[ally].Stats, stat) : 0;
+            ally >= 0 && ally < Allies.Length ? StatOf(StatsNow(ally), stat) : 0;
 
         private sealed class ActiveStatus
         {
@@ -339,6 +339,7 @@ namespace Baryonyx.Combat.Presentation
             ally.Hp = Mathf.Min(ally.MaxHp, ally.Hp + amount);
             RefreshAlly(ally);
             ShowNumber(HealNumber, ally.TargetArea, amount.ToString());
+            ShowBoostsTurnedOn();
         }
 
         /// <summary>Lowers the cost of the cards in hand of the action's elements, down to 0.</summary>

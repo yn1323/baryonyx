@@ -47,6 +47,10 @@ namespace Baryonyx.Adventure
         public static string HonedCard(string name) =>
             $"「{name}」が「{name}{AdventureParty.HonedMark}」になった";
 
+        // 戦闘後の強化（doc/features/stage-progression.md の戦闘後の強化）。
+        public const string BoonTitle = "強化";
+        public const string BoonChoice = "選ぶ";
+
         // 「？」のマスに着いたときの、中身の種類の知らせ。
         public static string Revealed(AdventureRoomKind kind) => $"「？」は{KindName(kind)}だった";
 

@@ -379,7 +379,7 @@ namespace Baryonyx.Combat.Presentation
             int enemy = alive[UnityEngine.Random.Range(0, alive.Count)];
             var ally = Allies[lutz];
             int power = CombatPassiveRules.Percent(
-                ally.Stats.MagicAttack,
+                StatsNow(lutz).MagicAttack,
                 CombatPassiveRules.ChargedShieldPercent
             );
             power = CombatPassiveRules.Grow(power, ThermalPercent(enemy));
@@ -431,7 +431,7 @@ namespace Baryonyx.Combat.Presentation
             var ally = Allies[rita];
             var enemy = Enemies[attacker];
             int power = CombatPassiveRules.Percent(
-                ally.Stats.PhysicalAttack,
+                StatsNow(rita).PhysicalAttack,
                 CombatPassiveRules.RipostePercent
             );
             power = CombatPassiveRules.Grow(power, ThermalPercent(attacker));

@@ -20,6 +20,9 @@ namespace Baryonyx.Editor.UI
         public const string FeatherPath = Folder + "/FeatherPlate.png";
         public const string SoftSpotPath = Folder + "/SoftSpot.png";
 
+        // 探索の地図と街道の世界地図で、パーティの代わりに歩く木の駒（Codexで描いた絵。ドット絵の規格の例外）。
+        public const string MapPawnPath = Folder + "/MapPawn.png";
+
         // 冒険の行き先を表す羅針盤（24×24を4倍。ホームの行き先カードと冒険の画面で使う）。
         public const string IconCompassPath = Folder + "/IconCompass.aseprite";
         public const string IconSettingsPath = Folder + "/IconSettings.png";

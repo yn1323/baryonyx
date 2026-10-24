@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.Inventory;
+using Baryonyx.Items;
 using Baryonyx.Party;
 using Baryonyx.Training;
 
@@ -12,8 +14,9 @@ namespace Baryonyx.Adventure
     /// members in slot order, each at the level kept for them with the stats of that level, and
     /// the cards they bring to the deck. A unique skill brings the card of the stage the formation
     /// sets, once the level has unlocked it; a custom skill brings the owned card with its
-    /// multiplier. Items and empty slots bring nothing yet. Each member brings the passive skills
-    /// its level has unlocked (doc/features/passives.md).
+    /// multiplier, and an item brings its card (doc/features/items.md#戦闘での使い方); an empty
+    /// slot brings nothing. Each member brings the passive skills its level has unlocked
+    /// (doc/features/passives.md).
     /// </summary>
     public static class AdventureParty
     {
@@ -25,17 +28,22 @@ namespace Baryonyx.Adventure
         // 鍛えたカードの名前に付ける印。
         public const string HonedMark = "+";
 
+        /// <summary>
+        /// The formation's members as the battle takes them. <paramref name="itemArt"/> draws the
+        /// cards of the items in the custom skill slots (without it, they have no art).
+        /// </summary>
         public static IReadOnlyList<BattlePartyMember> Of(
             PartyFormation formation,
             PartyMockData party,
-            TrainingMockData training
+            TrainingMockData training,
+            ItemArt itemArt = null
         )
         {
             var members = PartySession.Members(formation);
             var store = new CardLoadoutSessionStore(party, training);
             var result = new BattlePartyMember[members.Count];
             for (int slot = 0; slot < members.Count; slot++)
-                result[slot] = Member(members[slot], party, training, store);
+                result[slot] = Member(members[slot], party, training, store, itemArt);
             return result;
         }
 
@@ -43,7 +51,8 @@ namespace Baryonyx.Adventure
             PartyMember member,
             PartyMockData party,
             TrainingMockData training,
-            CardLoadoutSessionStore store
+            CardLoadoutSessionStore store,
+            ItemArt itemArt
         )
         {
             if (member == null)
@@ -71,7 +80,10 @@ namespace Baryonyx.Adventure
                     );
                 }
             foreach (string key in PartySession.CardsOf(party, member.Id))
-                Add(cards, key, PartySession.SkillOf(key), party);
+                if (PartyCardKey.ItemOf(key) is { } item)
+                    AddItem(cards, item, itemArt);
+                else
+                    Add(cards, key, PartySession.SkillOf(key), party);
             var passives = new List<Combat.CombatPassiveKind>();
             foreach (var passive in Combat.CombatPassives.UnlockedAt(member.Id, level))
                 passives.Add(passive.Kind);
@@ -88,28 +100,33 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>
-        /// The members as the adventure's rests honed them: each slot's physical and magic attack
-        /// grown for each time it was honed, and its honed card skills stronger.
+        /// The members as the adventure's rests and won battles grew them: each slot's physical
+        /// and magic attack grown for each time it was honed, the boons chosen after won battles
+        /// (<see cref="AdventureBoons"/>, added up with the honing), and its honed card skills
+        /// stronger. <paramref name="strongBattle"/> is whether the battle about to be fought is a
+        /// strong one, for the boons that work in those only.
         /// </summary>
-        public static void Hone(IReadOnlyList<BattlePartyMember> members, string runId)
+        public static void Hone(
+            IReadOnlyList<BattlePartyMember> members,
+            string runId,
+            bool strongBattle = false
+        )
         {
             if (members == null)
                 return;
-            var slots = AdventureVitals.HonedSlots(runId);
+            AdventureBoons.Apply(
+                members,
+                AdventureVitals.Boons(runId),
+                AdventureVitals.HonedSlots(runId),
+                HoneStat,
+                strongBattle
+            );
             var cards = new HashSet<string>(AdventureVitals.HonedCards(runId));
             for (int slot = 0; slot < members.Count; slot++)
             {
                 var member = members[slot];
                 if (member == null)
                     continue;
-                if (slot < slots.Length && slots[slot] > 0)
-                {
-                    float rate = 1f + HoneStat * slots[slot];
-                    var stats = member.Stats;
-                    stats.PhysicalAttack = (int)System.Math.Round(stats.PhysicalAttack * rate);
-                    stats.MagicAttack = (int)System.Math.Round(stats.MagicAttack * rate);
-                    member.Stats = stats;
-                }
                 foreach (var card in member.Cards)
                     if (
                         card?.Skill != null
@@ -122,7 +139,8 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The cards of a member a rest can study: the member's own card skills, each kind once,
-        /// without the unique skills (they change into another stage when they awaken).
+        /// without the unique skills (they change into another stage when they awaken) and the
+        /// items (they are not skills).
         /// </summary>
         public static IReadOnlyList<BattlePartyCard> HonableCards(BattlePartyMember member)
         {
@@ -133,6 +151,7 @@ namespace Baryonyx.Adventure
                 if (
                     card?.Skill != null
                     && card.Unique < 0
+                    && ItemCards.Find(card.Skill.Id) == null
                     && result.TrueForAll(other => other.Skill.Id != card.Skill.Id)
                 )
                     result.Add(card);
@@ -157,6 +176,17 @@ namespace Baryonyx.Adventure
             honed.Name = skill.Name + HonedMark;
             return honed;
         }
+
+        // 枠に入れたアイテムは、スキルと同じくデッキのカードになる。使っても持っている数は減らず、
+        // 品質を持たないため倍率は×1.00のまま、覚醒もしない。
+        private static void AddItem(List<BattlePartyCard> cards, ItemCard item, ItemArt itemArt) =>
+            cards.Add(
+                new BattlePartyCard
+                {
+                    Skill = item.Card,
+                    Art = AdventureItemCardArt.Of(itemArt, item.Id),
+                }
+            );
 
         // 持っているスキルの1枚は、戦闘で覚醒できるよう、どの1枚かと覚醒版の挿絵の引き方を持たせる
         // （doc/features/skill-awakening.md）。

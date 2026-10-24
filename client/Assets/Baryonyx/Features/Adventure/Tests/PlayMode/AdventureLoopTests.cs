@@ -91,7 +91,7 @@ namespace Baryonyx.Tests.PlayMode
                 name + " did not open."
             );
 
-        // 勝利のダイアログは、勝利の演出とドロップ（最奥の間は最大4つ）を1つずつ見せた後に出る。
+        // 戦闘後の強化と勝利のダイアログは、勝利の演出とドロップ（最奥の間は最大4つ）を1つずつ見せた後に出る。
         private const float VictorySeconds = 30f;
 
         private static IEnumerator WaitForDialog(
@@ -104,6 +104,56 @@ namespace Baryonyx.Tests.PlayMode
                 seconds,
                 $"The dialog \"{title}\" did not show (it shows \"{dialog.TitleText}\")."
             );
+
+        // 宝箱から覚醒が出たら、中身を見せたあとに「宝箱の覚醒」を開き、祭壇と同じ手順で固有スキルを
+        // 1段覚醒させる。選ぶまで閉じない（doc/features/skill-evolution.md の覚醒が起きる場面）。
+        [UnityTest]
+        public IEnumerator AChestWithAnAwakeningEvolvesAUniqueSkillChosen()
+        {
+            var here = StartAt(4);
+            Do(
+                services.Adventure.ClearAsync(
+                    here.Id,
+                    CancellationToken.None,
+                    null,
+                    new AdventureClearOptions { Pass = here.Kind == AdventureRoomKind.ShadyChest }
+                )
+            );
+            services.Adventure.NextAwakening = true;
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                ExplorationReady,
+                value => bootstrap = value
+            );
+            var view = bootstrap.View;
+            view.MarkerOf(here.Next[0]).Button.onClick.Invoke();
+            var dialog = view.Dialog;
+            yield return WaitForDialog(dialog, AdventureDialogs.TreasureTitle, VictorySeconds);
+            Assert.That(AdventureSession.Current.Run.Contents.Awakening, Is.True);
+            dialog.Choose(AdventureTexts.NextChoice);
+            yield return WaitForDialog(dialog, AdventureDialogs.ChestAwakeningTitle);
+            Assert.That(dialog.BodyText, Is.EqualTo(AdventureDialogs.ChestAwakeningBody));
+            // 選ぶまで閉じない：閉じる選択肢がなく、戻るキーでも閉じない。
+            Assert.That(dialog.ChoiceLabels, Has.No.Member(AdventureTexts.CloseChoice));
+            dialog.HandleBack();
+            Assert.That(dialog.IsShown, Is.True);
+            // 仲間・固有スキル・段階を、先頭から選んでいき、最後に覚醒させる。
+            for (
+                int i = 0;
+                i < 4 && !dialog.ChoiceLabels.Contains(AdventureDialogs.EvolveChoice);
+                i++
+            )
+                dialog.Choose(dialog.ChoiceLabels[0]);
+            Assert.That(dialog.TitleText, Is.EqualTo(AdventureDialogs.ChestAwakeningTitle));
+            dialog.Choose(AdventureDialogs.EvolveChoice);
+            yield return SceneTests.WaitUntil(
+                () => !dialog.IsShown && !bootstrap.Flow.Busy,
+                4f,
+                "The awakening did not end."
+            );
+            StringAssert.EndsWith("に覚醒した！", view.Notice.Message);
+        }
 
         // 地図：今いるマスから次の階のマスを大きい札で出し、押したマスへ光の道を歩いて進み、宝箱を開ける。
         [UnityTest]
@@ -119,6 +169,8 @@ namespace Baryonyx.Tests.PlayMode
                     new AdventureClearOptions { Pass = here.Kind == AdventureRoomKind.ShadyChest }
                 )
             );
+            // 宝箱から覚醒が出ると、中身のダイアログの後に覚醒のダイアログが続くため、出ないことにする。
+            services.Adventure.NextAwakening = false;
             var bootstrap = default(ExplorationBootstrap);
             yield return SceneTests.Load<ExplorationBootstrap>(
                 SceneTests.ExplorationPath,
@@ -625,38 +677,159 @@ namespace Baryonyx.Tests.PlayMode
             found(bootstrap);
         }
 
-        [UnityTest]
-        public IEnumerator AVictoryGivesTheRoomsRewardAndGoesOnToTheNextRoom()
+        // 勝った戦闘の強化の3枚が開くまで待つ（ドロップを1つずつ見せた後に開く）。
+        private static IEnumerator WaitForBoons(BattleBootstrap bootstrap) =>
+            SceneTests.WaitUntil(
+                () => bootstrap.Overlay.Boons.IsOpen,
+                VictorySeconds,
+                "The boons were not offered."
+            );
+
+        private static void WinAtOnce(BattleInspectView battle)
         {
-            StartAt(1);
-            var bootstrap = default(BattleBootstrap);
-            yield return LoadBattle(value => bootstrap = value);
-            var battle = bootstrap.Battle;
             foreach (var enemy in battle.Enemies)
                 enemy.Hp = 0;
             battle.EndTurn();
+        }
+
+        // 勝つとドロップを札で見せ、戦闘後の強化を3枚から選ぶと、そのまま次のマスを選ぶ探索へ移る
+        // （doc/features/stage-progression.md の戦闘後の強化）。選んだ強化は冒険のあいだ残る。
+        [UnityTest]
+        public IEnumerator AVictoryGivesTheRoomsRewardAndABoonAndGoesOnToTheNextRoom()
+        {
+            StartAt(1);
+            string runId = AdventureSession.Current.Run.Id;
+            var bootstrap = default(BattleBootstrap);
+            yield return LoadBattle(value => bootstrap = value);
+            var battle = bootstrap.Battle;
+            WinAtOnce(battle);
             var dialog = bootstrap.Overlay.Dialog;
-            // 勝利の演出のあと、ドロップを札で見せてからダイアログを出す。本文に報酬は書かない。
             yield return SceneTests.WaitUntil(
                 () => bootstrap.Overlay.Reveal.Shown,
                 VictorySeconds,
                 "The drop was not shown."
             );
             Assert.That(dialog.IsShown, Is.False);
-            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle, VictorySeconds);
+            yield return WaitForBoons(bootstrap);
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Victory));
-            Assert.That(dialog.BodyText, Is.Empty);
             Assert.That(AdventureSession.Current.Run.RoomCleared, Is.True);
-            Assert.That(dialog.ChoiceLabels, Is.EqualTo(new[] { AdventureTexts.NextChoice }));
+            var boons = bootstrap.Overlay.Boons;
+            Assert.That(boons.Offers.Count, Is.EqualTo(AdventureBoons.OfferCount));
+            // 選ぶまで「選ぶ」は押せず、戻るキーでも閉じない。
+            Assert.That(boons.Confirm.interactable, Is.False);
+            bootstrap.Overlay.PressBack();
+            Assert.That(boons.IsOpen, Is.True);
+            Assert.That(dialog.IsShown, Is.False);
+            boons.Pick(1);
+            Assert.That(boons.Confirm.interactable, Is.True);
+            var chosen = boons.Offers[1];
+            boons.Choose();
 
-            dialog.Choose(AdventureTexts.NextChoice);
             yield return WaitForScene(SceneNames.Exploration);
+            Assert.That(AdventureVitals.Boons(runId), Is.EqualTo(new[] { chosen }));
+            Assert.That(AdventureVitals.PendingBoon(runId), Is.Null);
             var exploration = Object.FindAnyObjectByType<ExplorationBootstrap>();
             yield return SceneTests.WaitUntil(() => ExplorationReady(exploration));
+            Assert.That(exploration.View.Boons.IsOpen, Is.False);
             Assert.That(exploration.View.LocationText, Is.EqualTo(Forest + " 第2層"));
             Assert.That(
                 exploration.Flow.Room.Exits.Select(exit => exit.Id),
                 Is.EqualTo(AdventureSession.Current.Run.Room.Next)
+            );
+        }
+
+        // 強化を選ぶ前にアプリが終わっても、再開した探索で同じ3枚を開き直す。
+        [UnityTest]
+        public IEnumerator ABoonNotChosenIsOfferedAgainOnResuming()
+        {
+            StartAt(1);
+            string runId = AdventureSession.Current.Run.Id;
+            var bootstrap = default(BattleBootstrap);
+            yield return LoadBattle(value => bootstrap = value);
+            WinAtOnce(bootstrap.Battle);
+            yield return WaitForBoons(bootstrap);
+            var offered = bootstrap.Overlay.Boons.Offers.ToArray();
+
+            var exploration = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                ExplorationReady,
+                value => exploration = value
+            );
+            var boons = exploration.View.Boons;
+            Assert.That(boons.IsOpen, Is.True);
+            Assert.That(boons.Offers, Is.EqualTo(offered));
+            boons.Pick(0);
+            boons.Choose();
+            Assert.That(boons.IsOpen, Is.False);
+            Assert.That(AdventureVitals.Boons(runId), Is.EqualTo(new[] { offered[0] }));
+            Assert.That(AdventureVitals.PendingBoon(runId), Is.Null);
+        }
+
+        // 選んだ強化は、次の戦闘のステータスに乗る。戦闘の途中で効く強化は、条件を満たす間だけ乗る。
+        [UnityTest]
+        public IEnumerator ABoonChosenGrowsThePartyInTheNextBattle()
+        {
+            StartAt(1);
+            string runId = AdventureSession.Current.Run.Id;
+            AdventureVitals.ChooseBoon(
+                runId,
+                new AdventureBoon(
+                    "attack",
+                    AdventureBoonRank.Rainbow,
+                    0,
+                    Combat.CardStat.PhysicalAttack
+                ),
+                true
+            );
+            AdventureVitals.ChooseBoon(
+                runId,
+                new AdventureBoon(
+                    "party-hp",
+                    AdventureBoonRank.Gold,
+                    -1,
+                    Combat.CardStat.PhysicalAttack
+                ),
+                false
+            );
+            AdventureVitals.ChooseBoon(
+                runId,
+                new AdventureBoon(
+                    "backwater",
+                    AdventureBoonRank.Gold,
+                    0,
+                    Combat.CardStat.PhysicalAttack
+                ),
+                false
+            );
+            var bootstrap = default(BattleBootstrap);
+            yield return LoadBattle(value => bootstrap = value);
+            var plain = AdventureParty.Of(
+                Party.PartySession.Formation(bootstrap.Party),
+                bootstrap.Party,
+                bootstrap.Training
+            );
+            var first = bootstrap.Battle.Allies.Single(ally => ally.Slot == 0);
+            Assert.That(
+                first.Stats.PhysicalAttack,
+                Is.EqualTo(Mathf.RoundToInt(plain[0].Stats.PhysicalAttack * 1.3f)).Within(1)
+            );
+            Assert.That(
+                first.Stats.Hp,
+                Is.EqualTo(Mathf.RoundToInt(plain[0].Stats.Hp * 1.08f)).Within(1)
+            );
+            // 背水は、HPが半分以下になった間だけ、物攻・属攻にさらに30%を足す。
+            var battle = bootstrap.Battle;
+            int place = System.Array.IndexOf(battle.Allies, first);
+            first.Hp = first.MaxHp;
+            Assert.That(
+                battle.StatsNow(place).PhysicalAttack,
+                Is.EqualTo(first.Stats.PhysicalAttack)
+            );
+            first.Hp = first.MaxHp / 2;
+            Assert.That(
+                battle.StatsNow(place).PhysicalAttack,
+                Is.EqualTo(Mathf.RoundToInt(plain[0].Stats.PhysicalAttack * 1.6f)).Within(1)
             );
         }
 
@@ -683,14 +856,8 @@ namespace Baryonyx.Tests.PlayMode
 
             half.Hp = Mathf.Max(1, half.MaxHp / 4);
             float kept = half.Hp / (float)half.MaxHp;
-            foreach (var enemy in battle.Enemies)
-                enemy.Hp = 0;
-            battle.EndTurn();
-            yield return WaitForDialog(
-                bootstrap.Overlay.Dialog,
-                BattleAdventureFlow.VictoryTitle,
-                VictorySeconds
-            );
+            WinAtOnce(battle);
+            yield return WaitForBoons(bootstrap);
             var carried = AdventureVitals.Of(runId);
             Assert.That(carried[0], Is.EqualTo(kept).Within(0.0001f));
             Assert.That(carried[1], Is.Zero);

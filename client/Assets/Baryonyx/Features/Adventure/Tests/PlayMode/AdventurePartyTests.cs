@@ -89,33 +89,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.PartyMembers[0].rectTransform.localScale.x, Is.GreaterThan(0f));
         }
 
-        // 探索の地図のパーティも、隊列の各位置にその枠の人を立たせ、空いた枠の位置は隠す。
-        [UnityTest]
-        public IEnumerator TheMapWalksTheFormation()
-        {
-            StartAdventure();
-            var bootstrap = default(ExplorationBootstrap);
-            yield return SceneTests.Load(
-                SceneTests.ExplorationPath,
-                (System.Func<ExplorationBootstrap, bool>)(value => value.Flow != null),
-                value => bootstrap = value
-            );
-            yield return SceneTests.WaitUntil(
-                () => bootstrap.PartyTask.IsCompleted,
-                message: "The party did not load."
-            );
-            var view = bootstrap.View;
-            var data = bootstrap.Party;
-            Assert.That(view.PartySlots, Is.EquivalentTo(new[] { 0, 1, 2, 3 }));
-            for (int i = 0; i < view.Party.Length; i++)
-            {
-                string id = Slots[view.PartySlots[i]];
-                Assert.That(view.Party[i].gameObject.activeSelf, Is.EqualTo(id != null), $"{i}");
-                if (id != null)
-                    Assert.That(view.PartySprites[i].texture, Is.SameAs(data.Find(id).Art), id);
-            }
-        }
-
         // 冒険の戦闘では、各位置にその枠の人がLvのステータス・満タンのHPで立ち、デッキは4人の
         // 解放した固有スキルとカスタムスキルになる。空いた枠の位置は隠れて、狙えない。
         [UnityTest]
@@ -208,6 +181,49 @@ namespace Baryonyx.Tests.PlayMode
             // 固有スキルはLv 1・10・30で開く。トーマ（Lv 20）は2つ、アンセルム（Lv 8）とグレタ（Lv 3）は1つ使える。
             Assert.That(battle.Deck, Has.Length.EqualTo(expectedCards));
             Assert.That(expectedCards, Is.EqualTo(4 + 3 + 3));
+        }
+
+        // カスタムスキルの枠に入れたアイテムは、スキルと同じくデッキのカードになる（doc/features/items.md）。
+        [UnityTest]
+        public IEnumerator AnItemInACustomSlotBecomesACardOfTheDeck()
+        {
+            server = new FakePartySource(0, "toma", null, null, null).With(
+                "toma",
+                20,
+                "Fire",
+                PartyCardKey.Item("herb")
+            );
+            PartySession.Source = server;
+            var state = StartAdventure();
+            AdventureSession.Use(
+                services
+                    .Adventure.MoveAsync(state.Run.Exits[0], CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult()
+            );
+            var bootstrap = default(BattleBootstrap);
+            yield return SceneTests.Load(
+                SceneTests.BattlePath,
+                (System.Func<BattleBootstrap, bool>)(_ => true),
+                value => bootstrap = value
+            );
+            yield return SceneTests.WaitUntil(
+                () =>
+                    bootstrap.PartyTask.IsCompleted
+                    && !bootstrap.Transition.IsPlaying
+                    && !bootstrap.Transition.IsCovered
+                    && !bootstrap.Battle.Dealing
+                    && !bootstrap.Battle.Acting,
+                8f,
+                "The battle did not get ready."
+            );
+            var battle = bootstrap.Battle;
+            int toma = System.Array.FindIndex(battle.Allies, ally => ally.Slot == 0);
+            var cards = battle.Deck.Where(card => card.Caster == toma).ToArray();
+            var herb = cards.Single(card => card.Skill == "herb");
+            Assert.That(herb.Name, Is.EqualTo(Items.ItemCards.Find("herb").Name));
+            Assert.That(herb.Art, Is.Not.Null);
+            Assert.That(cards.Count(card => card.Skill == "Fire"), Is.EqualTo(1));
         }
 
         // 冒険の戦闘では、固有スキルのカードが部屋の種類と推奨Lvの確率で進化し、

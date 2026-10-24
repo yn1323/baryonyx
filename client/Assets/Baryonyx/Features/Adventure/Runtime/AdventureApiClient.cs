@@ -298,6 +298,9 @@ namespace Baryonyx.Adventure
             public bool mimic;
             public string trial;
             public Ware[] merchant;
+
+            // 宝箱のマスで、宝箱から固有スキルの覚醒が出るか（出るときだけ true）。
+            public bool awakening;
         }
 
         // 部屋で落ちた物（doc/features/drops.md）。category は item・accessory・weapon・armor・skill・material。

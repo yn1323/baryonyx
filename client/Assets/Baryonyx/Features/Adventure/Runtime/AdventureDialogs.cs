@@ -65,6 +65,9 @@ namespace Baryonyx.Adventure
         public const string AltarBody =
             "祭壇の光が、仲間の固有スキルを1段覚醒させる。\n誰の力を引き出す？";
         public const string EvolveChoice = "覚醒させる";
+        public const string ChestAwakeningTitle = "宝箱の覚醒";
+        public const string ChestAwakeningBody =
+            "宝箱の底から、覚醒の光があふれ出した。\n誰の固有スキルを1段覚醒させる？";
         public const string BackChoice = "もどる";
 
         // 祭壇で、選べるものを並べ、最後に閉じる・戻るを足す（選択肢は5つまで）。

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Inventory;
-using Baryonyx.Party;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using TMPro;
@@ -139,13 +138,9 @@ namespace Baryonyx.Adventure
         public RectTransform Markers;
         public ExplorationMapMarker MarkerTemplate;
 
-        // 地図の上のパーティと、マスの中心からの隊列の位置（設計座標）。
+        // 地図の上でパーティを表す駒と、マスの中心からの足元の位置（設計座標）。
         public RectTransform[] Party = Array.Empty<RectTransform>();
         public Vector2[] Formation = Array.Empty<Vector2>();
-
-        // Party と同じ順の、その位置に立つ人の絵と、その人がいる編成の枠（0〜3）。
-        public RawImage[] PartySprites = Array.Empty<RawImage>();
-        public int[] PartySlots = Array.Empty<int>();
         public RectTransform Chest;
         public CanvasGroup ChestGroup;
         public Button ChestButton;
@@ -162,6 +157,9 @@ namespace Baryonyx.Adventure
 
         // 休憩の焚き火（休む・鍛える・研鑽を選ぶ）。
         public ExplorationCampfire Campfire;
+
+        // 戦闘後の強化を選ぶ前にアプリが終わったとき、再開した探索で開き直す3枚のカード。
+        public AdventureBoonPicker Boons;
 
         // 地図のどこを見ているかを示す、下の細いバー。
         public RectTransform ScrollTrack;
@@ -369,6 +367,8 @@ namespace Baryonyx.Adventure
         public void PressBack()
         {
             if (Dialog != null && Dialog.HandleBack())
+                return;
+            if (Boons != null && Boons.HandleBack())
                 return;
             if (Campfire != null && Campfire.HandleBack())
                 return;
@@ -761,25 +761,6 @@ namespace Baryonyx.Adventure
             marker.Button.interactable = exit;
             if (marker.Button.targetGraphic != null)
                 marker.Button.targetGraphic.raycastTarget = exit;
-        }
-
-        /// <summary>
-        /// Stands the formation's members on the map: each place of the party takes the member of
-        /// its slot (<see cref="PartySlots"/>; <paramref name="slots"/> in slot order, null for an
-        /// empty slot), and a place whose slot is empty is hidden.
-        /// </summary>
-        public void UseParty(IReadOnlyList<PartyMember> slots)
-        {
-            if (slots == null)
-                return;
-            for (int i = 0; i < Party.Length; i++)
-            {
-                int slot = i < PartySlots.Length ? PartySlots[i] : i;
-                var member = slot >= 0 && slot < slots.Count ? slots[slot] : null;
-                Party[i].gameObject.SetActive(member != null);
-                if (member != null && i < PartySprites.Length)
-                    PartyArt.Stand(PartySprites[i], member);
-            }
         }
 
         private void PlaceParty()
