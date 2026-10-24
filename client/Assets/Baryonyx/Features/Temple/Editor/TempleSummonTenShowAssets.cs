@@ -232,16 +232,6 @@ namespace Baryonyx.Temple.Editor
             pane.Card = rect;
             pane.CardGroup = rect.GetComponent<CanvasGroup>();
             pane.CardFace = card;
-
-            var back = Rect("Back", rect);
-            Stretch(back);
-            back.offsetMin = Vector2.one * 6f;
-            back.offsetMax = -Vector2.one * 6f;
-            AddImage(back, new Color(0.04f, 0.05f, 0.12f, 1f), false);
-            var mark = Rect("Mark", back);
-            Place(mark, Vector2.zero, Vector2.one * 72f);
-            SpriteImage(mark, GuideFrameAssets.DiamondLargePath, Color.white).preserveAspect = true;
-            pane.CardBack = back.gameObject;
         }
     }
 }

@@ -23,9 +23,6 @@ namespace Baryonyx.Temple
         public RectTransform Card;
         public CanvasGroup CardGroup;
         public TempleSummonCard CardFace;
-
-        // 伏せた札の裏。めくると消える。
-        public GameObject CardBack;
     }
 
     /// <summary>
@@ -33,8 +30,9 @@ namespace Baryonyx.Temple
     /// windows on the cathedral's wall light in their results' lights; the white ones break one
     /// after another from the top left, and the gold and rainbow ones are kept to the end and
     /// break after gathering light, a rainbow one raised from gold. Each window leaves its card
-    /// face down in its place; a tap turns them all over. Every layer is set from the time alone
-    /// (<see cref="Evaluate"/>), so a moment can be drawn again without running time.
+    /// face up in its place, and the presentation ends by itself a moment after the last one; a
+    /// tap jumps to the cards all out, and another ends at once. Every layer is set from the time
+    /// alone (<see cref="Evaluate"/>), so a moment can be drawn again without running time.
     /// </summary>
     public sealed class TempleSummonTenShow : MonoBehaviour, IEditModePreview
     {
@@ -44,8 +42,9 @@ namespace Baryonyx.Temple
         private const float RareGap = 0.65f;
         private const float RareCharge = 0.45f;
         private const float AfterLast = 1.0f;
-        private const float FlipTime = 0.35f;
-        private const float FlipStagger = 0.035f;
+
+        // 札が並んでから、ひとりでに終わるまで。
+        private const float Linger = 1.2f;
 
         public RectTransform Stage;
         public Image Dim;
@@ -55,7 +54,7 @@ namespace Baryonyx.Temple
         public LibraryData Data;
         public float CardArtBox = 128f;
 
-        // 画面全体の見えないボタン。押すと、伏せた札まで飛ばす・めくる・終える。
+        // 画面全体の見えないボタン。押すと、札が並んだところまで飛ばす・終える。
         public Button TapArea;
 
         // 窓の前に止まったときの札の大きさ（結果の窓の札に対する倍率）。
@@ -67,16 +66,16 @@ namespace Baryonyx.Temple
         private Material[] materials = Array.Empty<Material>();
         private float duration = 4f;
         private float firstBreak = FirstBreak;
-        private float flipAt = float.PositiveInfinity;
         private bool ready;
         private Coroutine playing;
 
         public bool Playing => playing != null;
 
-        /// <summary>When the last window has broken and the cards lie face down.</summary>
+        /// <summary>When the last window has broken and every card lies face up.</summary>
         public float Duration => duration;
 
-        public bool Flipped => !float.IsPositiveInfinity(flipAt);
+        /// <summary>When the presentation ends by itself, a moment after the cards are all out.</summary>
+        public float End => duration + Linger;
 
         public event Action Finished;
 
@@ -155,7 +154,6 @@ namespace Baryonyx.Temple
                 if (pane.Shards != null)
                     pane.Shards.Setup(pattern, Seed * 31 + i, 1.3f);
             }
-            flipAt = float.PositiveInfinity;
             ready = true;
             Evaluate(0f);
         }
@@ -166,7 +164,7 @@ namespace Baryonyx.Temple
                 TapArea.onClick.AddListener(Tap);
         }
 
-        /// <summary>Plays from the start, and waits for the tap that turns the cards over.</summary>
+        /// <summary>Plays from the start to the end, the cards face up.</summary>
         public void Play()
         {
             Stop();
@@ -174,31 +172,23 @@ namespace Baryonyx.Temple
         }
 
         /// <summary>
-        /// A tap on the screen: before every window has broken, jumps to the cards lying face
-        /// down; then turns them over; once they are turned, ends at once.
+        /// A tap on the screen: before every card is out, jumps to the cards all out; then ends
+        /// at once.
         /// </summary>
         public void Tap()
         {
             if (!Playing)
                 return;
-            if (current < duration)
-                current = duration;
-            else if (!Flipped)
-                flipAt = current;
-            else
-                current = flipAt + FlipEnd;
+            current = current < duration ? duration : End;
         }
 
-        /// <summary>Jumps to the end, the cards turned over.</summary>
+        /// <summary>Jumps to the end, the cards face up.</summary>
         public void Skip()
         {
             Stop();
-            flipAt = duration;
-            Evaluate(duration + FlipEnd);
+            Evaluate(End);
             Finished?.Invoke();
         }
-
-        private static float FlipEnd => FlipTime + FlipStagger * (TempleSummon.TenCount - 1);
 
         private float current;
 
@@ -213,16 +203,13 @@ namespace Baryonyx.Temple
         private IEnumerator Run()
         {
             current = 0f;
-            while (!Flipped || current < flipAt + FlipEnd)
+            while (current < End)
             {
                 Evaluate(current);
                 yield return null;
                 current += Time.unscaledDeltaTime;
-                // 伏せた札が並んだら、押されるまでその姿で待つ。
-                if (!Flipped && current > duration)
-                    current = duration;
             }
-            Evaluate(flipAt + FlipEnd);
+            Evaluate(End);
             playing = null;
             Finished?.Invoke();
         }
@@ -301,7 +288,7 @@ namespace Baryonyx.Temple
                     + (broken >= 0f ? (rare ? 1.4f : 0.8f) * Mathf.Exp(-broken * 3.5f) : 0f);
                 Show(pane.Glow, glow > 0.001f, light, Mathf.Clamp01(glow), 0f, 0f, 0f, 0.7f + glow);
 
-                // 窓から札が出て、窓の前に伏せて止まる。
+                // 窓から札が表を向いて出て、窓の前に止まる。
                 float card = Ramp(t, b + 0.05f, b + 0.4f);
                 if (pane.Card != null)
                 {
@@ -309,17 +296,8 @@ namespace Baryonyx.Temple
                     float ease = EaseOut(card);
                     var home = HomeOf(pane);
                     pane.Card.anchoredPosition = home + new Vector2(0f, 40f * (1f - ease));
-                    float flip = Flipped
-                        ? Ramp(t, flipAt + FlipStagger * i, flipAt + FlipStagger * i + FlipTime)
-                        : 0f;
                     float scale = Mathf.Lerp(0.45f, CardScale, ease);
-                    pane.Card.localScale = new Vector3(
-                        scale * Mathf.Abs(Mathf.Cos(flip * Mathf.PI)),
-                        scale,
-                        1f
-                    );
-                    if (pane.CardBack != null)
-                        pane.CardBack.SetActive(flip < 0.5f);
+                    pane.Card.localScale = new Vector3(scale, scale, 1f);
                     if (pane.CardGroup != null)
                         pane.CardGroup.alpha = Ramp(t, b + 0.05f, b + 0.15f);
                 }
@@ -418,8 +396,7 @@ namespace Baryonyx.Temple
             "灯る",
             "白の窓が砕ける",
             "虹の窓が砕ける",
-            "伏せた札",
-            "めくった札",
+            "並んだ札",
         };
 
         public IReadOnlyList<string> PreviewStates => MomentNames;
@@ -439,12 +416,8 @@ namespace Baryonyx.Temple
                 case 2:
                     Evaluate(rainbow + 0.08f);
                     break;
-                case 3:
-                    Evaluate(duration);
-                    break;
                 default:
-                    flipAt = duration;
-                    Evaluate(duration + FlipEnd);
+                    Evaluate(duration);
                     break;
             }
         }

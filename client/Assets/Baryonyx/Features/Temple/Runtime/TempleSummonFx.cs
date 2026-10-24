@@ -15,7 +15,7 @@ namespace Baryonyx.Temple
     {
         public static readonly Color Moonlight = new(0.62f, 0.72f, 1f);
         public static readonly Color WhiteLight = new(1f, 0.96f, 0.9f);
-        public static readonly Color GoldLight = new(1f, 0.7f, 0.26f);
+        public static readonly Color GoldLight = new(1f, 0.66f, 0.12f);
         public static readonly Color Night = new(0.02f, 0.025f, 0.07f);
 
         /// <summary>The light a result gives: rainbow for a character or ☆5, gold for ☆4 or quality S.</summary>

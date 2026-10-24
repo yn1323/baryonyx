@@ -137,8 +137,6 @@ namespace Baryonyx.Temple
             {
                 TenShow.Setup(TenSamples(), random.Next(1, 100000));
                 TenShow.Play();
-                if (repeat)
-                    StartCoroutine(TurnCardsOver());
             }
             else
             {
@@ -150,14 +148,6 @@ namespace Baryonyx.Temple
                 Show.Play();
             }
             plays++;
-        }
-
-        // くり返しの間は、伏せた札が並んでから少し待って、自動でめくる。
-        private IEnumerator TurnCardsOver()
-        {
-            yield return new WaitForSecondsRealtime(TenShow.Duration + 0.8f);
-            if (TenShow.Playing && !TenShow.Flipped)
-                TenShow.Tap();
         }
 
         // 10回の見本：選んだ光を最上にし、虹なら虹1つと金1つ、金なら金2つ、白なら全部白。

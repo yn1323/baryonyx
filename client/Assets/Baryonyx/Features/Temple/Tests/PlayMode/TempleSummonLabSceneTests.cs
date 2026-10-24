@@ -80,7 +80,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Show.Card.gameObject.activeSelf, Is.True);
             Assert.That(lab.Show.Card.anchoredPosition, Is.EqualTo(lab.Show.CardRest));
 
-            // 10回：窓の壁に切り替え、押すと伏せた札まで飛び、もう一度押すとめくって終わる。
+            // 10回：窓の壁に切り替え、札は表を向いて出る。押すと札が並んだところまで飛び、もう一度押すと終わる。
             lab.PlayTenButton.onClick.Invoke();
             Assert.That(lab.Ten, Is.True);
             var ten = lab.TenShow;
@@ -90,8 +90,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(ten.Playing, Is.True);
             ten.Tap();
             yield return null;
-            Assert.That(ten.Flipped, Is.False, "The cards wait face down for a tap.");
-            Assert.That(ten.Panes.All(pane => pane.CardBack.activeSelf), Is.True);
+            Assert.That(ten.Playing, Is.True, "The cards stay out for a moment.");
+            Assert.That(ten.Panes.All(pane => pane.Card.gameObject.activeSelf), Is.True);
             ten.Tap();
             float waited = 0f;
             while (ten.Playing && waited < 5f)
@@ -100,7 +100,6 @@ namespace Baryonyx.Tests.PlayMode
                 yield return null;
             }
             Assert.That(ten.Playing, Is.False);
-            Assert.That(ten.Panes.All(pane => !pane.CardBack.activeSelf), Is.True);
             Assert.That(lab.Plays, Is.EqualTo(4));
         }
 

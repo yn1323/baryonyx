@@ -115,13 +115,29 @@ Shader "Baryonyx/Temple/Summon Glass"
                 return saturate(abs(frac(h + float3(0, 2.0 / 3, 1.0 / 3)) * 6 - 3) - 1);
             }
 
-            // 段階の光の色。虹は、窓の周りの角度と進み具合で色相を回し、白に寄せて淡くする。
+            // 段階の光の色。虹は、窓の周りの角度と進み具合で色相を回し、少しだけ白に寄せる。
             half3 TierTint(half3 tint, float2 p, float k)
             {
                 if (_Tier < 1.5)
                     return tint;
                 float around = atan2(p.y, p.x) / Tau;
-                return lerp(half3(1, 1, 1), Hue(around + k * 0.6), 0.4);
+                return lerp(half3(1, 1, 1), Hue(around + k * 0.6), 0.8);
+            }
+
+            // 金と虹の窓は、ガラスの絵そのものを光の色に染める。金は頂点色の暖かさ（赤と青の差）で見分け、
+            // 白い光と月明かりの窓は染めない。虹は、絵の明るさと窓の周りの角度で色相を変え、色ガラスを並べた形にする。
+            half3 Stain(half3 glass, half3 tint, float2 p)
+            {
+                half lum = dot(glass, half3(0.3, 0.59, 0.11));
+                if (_Tier > 1.5)
+                {
+                    float around = atan2(p.y, p.x) / Tau;
+                    half3 hue = Hue(around + lum * 0.7 + length(p) * 0.25);
+                    return lerp(glass, hue * (0.35 + lum * 1.5), 0.8);
+                }
+                float gold = saturate((tint.r - tint.b) * 1.6 - 0.3);
+                half3 gilded = tint * (0.45 + lum * 2.0);
+                return lerp(glass, gilded, 0.9 * gold);
             }
 
             float WrapAngle(float a)
@@ -184,7 +200,7 @@ Shader "Baryonyx/Temple/Summon Glass"
                 float2 p = board * 2 - 1;
                 float r = length(p);
                 float inside = 1 - smoothstep(0.985, 1.0, r);
-                half3 glass = tex2D(_MainTex, tex).rgb;
+                half3 glass = Stain(tex2D(_MainTex, tex).rgb, tint, p);
                 float lit = params.z;
                 half3 color = glass * lit * inside;
                 float radial = saturate(params.y);
@@ -204,7 +220,7 @@ Shader "Baryonyx/Temple/Summon Glass"
             half4 Shard(float2 board, float2 tex, half3 tint, float4 params, half alpha)
             {
                 float2 p = board * 2 - 1;
-                half3 glass = tex2D(_MainTex, tex).rgb;
+                half3 glass = Stain(tex2D(_MainTex, tex).rgb, tint, p);
                 float eaten = params.y;
                 float n = Fbm(float3(board * 26, params.x * 9));
                 float keep = smoothstep(eaten - 0.08, eaten + 0.08, n * 0.85 + (1 - params.z) * 0.15);

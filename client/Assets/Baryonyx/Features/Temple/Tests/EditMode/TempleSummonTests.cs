@@ -76,7 +76,7 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 仮の一覧は、キャラと、冒険の行き先のアイテム・装備で、スキルとACTボーナスを含まない。
+        // 仮の一覧は、キャラと、冒険の行き先のアイテム・装備で、スキルを含まない。
         [Test]
         public void MockPoolHasCharactersItemsAndEquipment()
         {
