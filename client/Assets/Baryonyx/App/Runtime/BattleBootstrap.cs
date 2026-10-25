@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.Equipment;
 using Baryonyx.Health;
 using Baryonyx.Party;
 using Baryonyx.Training;
@@ -128,7 +129,9 @@ namespace Baryonyx.App
                 return;
             }
             var loading = PartySession.CurrentAsync(party, lifetime.Token);
-            if (!loading.IsCompleted)
+            // 付けている装備でステータスを上げる（doc/features/equipment.md#装備の効果）。編成と同時に読む。
+            var wearing = GearAsync(lifetime.Token);
+            if (!loading.IsCompleted || !wearing.IsCompleted)
                 battle.enabled = false;
             PartyFormation formation;
             try
@@ -145,9 +148,10 @@ namespace Baryonyx.App
                 Debug.LogWarning("編成を取得できませんでした。" + exception.Message);
                 formation = PartySession.Formation(party);
             }
+            var gear = await wearing;
             if (battle == null)
                 return;
-            var members = AdventureParty.Of(formation, party, training, overlay.ItemArt);
+            var members = AdventureParty.Of(formation, party, training, overlay.ItemArt, gear);
             if (flow != null)
             {
                 // 冒険の戦闘は、マスの間で持ち越したHPから始める（doc/features/stage-progression.md）。
@@ -165,6 +169,24 @@ namespace Baryonyx.App
             }
             battle.UseParty(members);
             battle.enabled = true;
+        }
+
+        // 読めなければ、前に読んだ装備で戦う（読んだことがなければ装備なし）。
+        private static async Task<EquipmentState> GearAsync(CancellationToken token)
+        {
+            try
+            {
+                return await EquipmentSession.SourceOrLocal.LoadAsync(token);
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("装備を取得できませんでした。" + exception.Message);
+                return EquipmentSession.Known;
+            }
         }
 
         private void OnDestroy()

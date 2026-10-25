@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Baryonyx.CardLoadout;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Items;
 using Baryonyx.Party;
@@ -11,8 +12,9 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// The party an adventure's battle is fought with (doc/features/party.md): the formation's
-    /// members in slot order, each at the level kept for them with the stats of that level, and
-    /// the cards they bring to the deck. A unique skill brings the card of the stage the formation
+    /// members in slot order, each at the level kept for them with the stats of that level raised
+    /// by what they wear (doc/features/equipment.md#装備の効果), and the cards they bring to the
+    /// deck. A unique skill brings the card of the stage the formation
     /// sets, once the level has unlocked it; a custom skill brings the owned card with its
     /// multiplier, and an item brings its card (doc/features/items.md#戦闘での使い方); an empty
     /// slot brings nothing. Each member brings the passive skills its level has unlocked
@@ -30,20 +32,22 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The formation's members as the battle takes them. <paramref name="itemArt"/> draws the
-        /// cards of the items in the custom skill slots (without it, they have no art).
+        /// cards of the items in the custom skill slots (without it, they have no art), and
+        /// <paramref name="equipment"/> raises their stats (without it, they wear nothing).
         /// </summary>
         public static IReadOnlyList<BattlePartyMember> Of(
             PartyFormation formation,
             PartyMockData party,
             TrainingMockData training,
-            ItemArt itemArt = null
+            ItemArt itemArt = null,
+            EquipmentState equipment = null
         )
         {
             var members = PartySession.Members(formation);
             var store = new CardLoadoutSessionStore(party, training);
             var result = new BattlePartyMember[members.Count];
             for (int slot = 0; slot < members.Count; slot++)
-                result[slot] = Member(members[slot], party, training, store, itemArt);
+                result[slot] = Member(members[slot], party, training, store, itemArt, equipment);
             return result;
         }
 
@@ -52,7 +56,8 @@ namespace Baryonyx.Adventure
             PartyMockData party,
             TrainingMockData training,
             CardLoadoutSessionStore store,
-            ItemArt itemArt
+            ItemArt itemArt,
+            EquipmentState equipment
         )
         {
             if (member == null)
@@ -93,7 +98,12 @@ namespace Baryonyx.Adventure
                 Art = member.Art,
                 Tint = member.Tint,
                 Level = level,
-                Stats = TrainingBond.StatsOf(growth, level),
+                Stats = EquipmentStats.With(
+                    TrainingBond.StatsOf(growth, level),
+                    equipment,
+                    member.Id
+                ),
+                TwiceChance = EquipmentStats.TwiceChance(equipment, member.Id),
                 Cards = cards,
                 Passives = passives,
             };

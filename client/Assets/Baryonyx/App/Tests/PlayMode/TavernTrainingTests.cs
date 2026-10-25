@@ -101,7 +101,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Illustration.texture, Is.EqualTo(first.Illustration));
             Assert.That(
                 training.Stats.Select(label => label.text),
-                Is.EqualTo(Values(TrainingBond.StatsOf(growth, first.Level)))
+                Is.EqualTo(Values(Worn(TrainingBond.StatsOf(growth, first.Level), first.Id)))
             );
             Assert.That(training.Passives[0].Name.text, Is.EqualTo(growth.Passives[0].Name));
             Assert.That(training.Passives[0].Description.text, Is.Not.Empty);
@@ -211,7 +211,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.To.text, Is.EqualTo(target.ToString()));
             Assert.That(
                 training.Diffs[0].After.text,
-                Is.EqualTo(growth.StatsAt(target, TrainingBond.StageOf(growth)).Hp.ToString())
+                Is.EqualTo(
+                    Worn(growth.StatsAt(target, TrainingBond.StageOf(growth)), first.Id)
+                        .Hp.ToString()
+                )
             );
             long cost = TrainingRules.CostBetween(first.Level, target, training.Data.CostPerLevel);
             Assert.That(
@@ -369,7 +372,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(Lit(training, training.BondStones), Is.EqualTo(stage));
                 Assert.That(
                     training.BondDiffs[0].After.text,
-                    Is.EqualTo(growth.StatsAt(first.Level, stage + 1).Hp.ToString())
+                    Is.EqualTo(Worn(growth.StatsAt(first.Level, stage + 1), first.Id).Hp.ToString())
                 );
                 Assert.That(training.BondTokens.text, Is.EqualTo("1 / 1"));
                 Assert.That(training.BondConfirm.interactable, Is.True);
@@ -387,7 +390,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(stage + 1));
                 Assert.That(
                     training.Stats.Select(label => label.text),
-                    Is.EqualTo(Values(growth.StatsAt(first.Level, stage + 1)))
+                    Is.EqualTo(Values(Worn(growth.StatsAt(first.Level, stage + 1), first.Id)))
                 );
                 Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage + 1));
                 var celebration = training.Celebration;
@@ -506,6 +509,10 @@ namespace Baryonyx.Tests.PlayMode
                 }
             );
         }
+
+        // 付けている装備で上げたステータス（サーバーがないので、アプリ内の初めの装備）。
+        private static CharacterStats Worn(CharacterStats stats, string id) =>
+            EquipmentStats.With(stats, EquipmentLocalSource.Starter(), id);
 
         private static IEnumerable<string> Values(CharacterStats stats) =>
             Enumerable.Range(0, CharacterStats.Count).Select(i => stats[i].ToString());

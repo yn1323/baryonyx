@@ -23,6 +23,9 @@ namespace Baryonyx.Equipment
         // 誰が付けているか（「装備中」「アリアが装備中」）。誰も付けていなければ隠す。
         public TMP_Text Mark;
 
+        // 選んでいる枠に付けたときのステータスの増減（「属攻 ▲43　会心 ▲2」）。効果の右に出す。
+        public TMP_Text Change;
+
         // 行が出している装備のID。
         public string ItemId { get; set; }
     }

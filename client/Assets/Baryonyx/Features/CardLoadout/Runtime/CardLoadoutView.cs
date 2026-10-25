@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
+using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.Training;
@@ -209,6 +210,10 @@ namespace Baryonyx.CardLoadout
         // 最後に描いた状態。戻るで今のデッキを閉じるために使う。
         private CardLoadoutState shown;
 
+        // 付けている装備。ステータスを装備で上げて出す（doc/features/equipment.md#装備の効果）。
+        // 開くたびに読み直し、読めたらステータスを描き直す。
+        private EquipmentState worn;
+
         private void OnEnable()
         {
             person = null;
@@ -258,6 +263,8 @@ namespace Baryonyx.CardLoadout
             foreach (var row in Rows)
                 BindRow(row);
             BindRemove();
+            worn = EquipmentSession.Known;
+            _ = ReadGearAsync();
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
@@ -301,6 +308,37 @@ namespace Baryonyx.CardLoadout
             if (shown && Unchanged(shownVersion, PartySession.ReadVersion))
                 return;
             Present(formation, Save);
+        }
+
+        private async Task ReadGearAsync()
+        {
+            EquipmentState gear;
+            try
+            {
+                gear = await EquipmentSession.SourceOrLocal.LoadAsync(destroyCancellationToken);
+            }
+            catch (Exception)
+            {
+                // 読めなければ、前に読んだ装備のまま出す。
+                return;
+            }
+            if (this == null || !isActiveAndEnabled)
+                return;
+            worn = gear;
+            if (shown != null)
+                ShowStats(shown.PersonId);
+        }
+
+        private void ShowStats(string personId)
+        {
+            var growth = Training != null ? Training.Find(personId) : null;
+            int level = PartySession.LevelOf(Party, personId);
+            StatGrid.Show(
+                Stats,
+                growth != null
+                    ? EquipmentStats.With(TrainingBond.StatsOf(growth, level), worn, personId)
+                    : null
+            );
         }
 
         private static Task Save(string id, int slot, string key) =>
@@ -498,8 +536,7 @@ namespace Baryonyx.CardLoadout
                     .Distinct()
                     .ToArray()
             );
-            var growth = Training != null ? Training.Find(state.PersonId) : null;
-            StatGrid.Show(Stats, growth != null ? TrainingBond.StatsOf(growth, level) : null);
+            ShowStats(state.PersonId);
             shown = state;
             var uniques = Enumerable
                 .Range(0, UniqueCards.Length)

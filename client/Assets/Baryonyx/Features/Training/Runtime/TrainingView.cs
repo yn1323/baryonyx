@@ -445,7 +445,8 @@ namespace Baryonyx.Training
                 party.ArtOf,
                 (_, card) => CardText.Description(card),
                 new CardLoadoutSessionStore(party, data).UniqueCardOf,
-                deepenBond
+                deepenBond,
+                (id, stats) => EquipmentStats.With(stats, equipment, id)
             );
 
         // 武器・防具と、アクセサリーの3つの枠に付けている装備。

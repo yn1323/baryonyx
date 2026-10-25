@@ -92,18 +92,26 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Tabs[0].Chosen, Is.False);
             Assert.That(panel.Tabs.All(tab => tab.Button.interactable), Is.True);
             Assert.That(panel.Accessories, Has.Length.EqualTo(3));
+            // ステータスは付けている装備で上げた値で、上がった項目だけ緑の上昇分を添える。
             var growth = panel.Training.Find(person.Id);
+            var stats = TrainingBond.StatsOf(growth, PartySession.LevelOf(panel.Party, person.Id));
+            var raise = EquipmentStats.Bonus(stats, EquipmentLocalSource.Starter(), person.Id);
+            for (int i = 0; i < 8; i++)
+                if (raise[i] > 0)
+                    Assert.That(
+                        panel.Stats[i].text,
+                        Does.StartWith((stats[i] + raise[i]).ToString())
+                            .And.EndWith($" +{raise[i]}</color></size>")
+                    );
+                else
+                    Assert.That(panel.Stats[i].text, Is.EqualTo(stats[i].ToString()));
+            // 一覧の行には、付けたときの増減を出す。付けている防具の行には出さない。
+            var wornRow = Rows(panel)
+                .Single(row => row.Mark.gameObject.activeSelf && row.Mark.text == "装備中");
+            Assert.That(wornRow.Change.text, Is.Empty);
             Assert.That(
-                panel.Stats.Select(stat => stat.text),
-                Is.EqualTo(
-                    Enumerable
-                        .Range(0, 8)
-                        .Select(i =>
-                            TrainingBond
-                                .StatsOf(growth, PartySession.LevelOf(panel.Party, person.Id))[i]
-                                .ToString()
-                        )
-                )
+                Rows(panel).Where(row => row != wornRow).Select(row => row.Change.text),
+                Has.Some.Contains("▲").Or.Some.Contains("▼")
             );
 
             // 左の面のフリックで人を替えても、防具の枠を選んだまま。

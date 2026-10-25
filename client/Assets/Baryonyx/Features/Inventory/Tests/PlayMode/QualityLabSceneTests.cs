@@ -140,13 +140,13 @@ namespace Baryonyx.Tests.PlayMode
                     EquipmentCatalog.All.Count(gear => gear.Slot == EquipmentSlot.Weapon)
                 )
             );
-            // 装備は絵の板で出し、2回攻撃の炎のダガーは上限が×1.8。
+            // 装備は絵の板で出し、2回発動の効果を持つ炎のダガーは上限が×1.8。
             Assert.That(lab.Main.Item.Root.activeSelf, Is.True);
             Assert.That(lab.Main.Card.gameObject.activeSelf, Is.False);
             Assert.That(lab.Current.Id, Is.EqualTo("flame-dagger"));
             Assert.That(lab.Limit, Is.EqualTo(1.8f));
             lab.SetMultiplier(1.8f);
-            Assert.That(lab.EffectText.text, Is.EqualTo("速度の 225%｜斬・炎｜4回攻撃"));
+            Assert.That(lab.EffectText.text, Is.EqualTo("速度 +23%｜攻撃スキルが18%で2回発動"));
             Assert.That(lab.Main.Item.Quality.text, Is.EqualTo("S"));
             Assert.That(lab.Main.Item.Foil.Image.enabled, Is.True);
 

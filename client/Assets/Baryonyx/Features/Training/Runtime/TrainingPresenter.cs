@@ -264,6 +264,10 @@ namespace Baryonyx.Training
         // キャラのIDと深めたあとの段で、絆を深めて保存する。すぐに store へ当て、保存が済む（失敗なら戻す）と終わる。
         // なければ store だけで深める（サーバーがないとき）。
         private readonly Func<string, int, Task> deepenBond;
+
+        // キャラのIDとステータスから、付けている装備で上げたステータスを出す（doc/features/equipment.md#装備の効果）。
+        // なければ装備なし。
+        private readonly Func<string, CharacterStats, CharacterStats> wear;
         private int index;
         private bool dialog;
         private bool bond;
@@ -281,7 +285,8 @@ namespace Baryonyx.Training
             Func<string, Texture2D> artOf = null,
             Func<string, CardSkill, string> describe = null,
             Func<string, int, CardSkill> uniqueOf = null,
-            Func<string, int, Task> deepenBond = null
+            Func<string, int, Task> deepenBond = null,
+            Func<string, CharacterStats, CharacterStats> wear = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -294,6 +299,7 @@ namespace Baryonyx.Training
             this.describe = describe ?? ((_, card) => card.Text);
             this.uniqueOf = uniqueOf ?? ((_, _) => null);
             this.deepenBond = deepenBond;
+            this.wear = wear ?? ((_, stats) => stats);
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -593,7 +599,7 @@ namespace Baryonyx.Training
                 Maxed = maxed,
                 CanSwitch = roster.Count > 1 && !open && !bond && celebrated == 0,
                 Elements = cards.Select(iconOf).Where(icon => icon != null).Distinct().ToArray(),
-                Stats = current.Growth.StatsAt(level, stage),
+                Stats = wear(current.Id, current.Growth.StatsAt(level, stage)),
                 Skills = skills,
                 Passives = skills.Where(skill => skill.Type == PassiveType).ToArray(),
                 Uniques = skills
@@ -610,7 +616,7 @@ namespace Baryonyx.Training
                 DialogOpen = open,
                 Count = count,
                 Target = target,
-                TargetStats = current.Growth.StatsAt(target, stage),
+                TargetStats = wear(current.Id, current.Growth.StatsAt(target, stage)),
                 Cost = cost,
                 CanAfford = cost <= runes,
                 CanLess = open && count > 1,
@@ -625,7 +631,7 @@ namespace Baryonyx.Training
                 BondMaxed = bondMaxed,
                 BondOpen = bond,
                 BondTarget = bondTarget,
-                BondStats = current.Growth.StatsAt(level, bondTarget),
+                BondStats = wear(current.Id, current.Growth.StatsAt(level, bondTarget)),
                 CanDeepen = bond && !bondMaxed && tokens >= TrainingBond.TokensPerStage,
                 Celebrated = celebrated,
             };

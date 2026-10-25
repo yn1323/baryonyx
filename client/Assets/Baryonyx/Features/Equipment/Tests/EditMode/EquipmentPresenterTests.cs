@@ -122,6 +122,41 @@ namespace Baryonyx.Tests.EditMode
         [TearDown]
         public void DisposePresenter() => presenter?.Dispose();
 
+        // 左のステータスには装備の上昇分、右の行には付け替えたときの増減を出す（doc/features/screens/loadout.md#装備）。
+        [Test]
+        public void ShowsTheRaiseAndHowEachItemWouldChangeTheStats()
+        {
+            presenter.Dispose();
+            var toma = new Combat.CharacterStats(309, 94, 148, 282, 248, 188, 40, 67);
+            presenter = new EquipmentPresenter(
+                view,
+                new[] { Member("toma", "トーマ") },
+                EquipmentLocalSource.Starter(),
+                source,
+                statsOf: id => toma
+            );
+            var state = view.Last;
+            // 樫の杖（属攻 +11%）と魔法のローブ（属攻 +12%・物防 +11%）。
+            Assert.That(state.Raise.MagicAttack, Is.EqualTo(65));
+            Assert.That(state.Stats.Value.MagicAttack, Is.EqualTo(347));
+            Assert.That(state.Raise.PhysicalAttack, Is.Zero);
+
+            // 付けている樫の杖の行は出さず、氷晶のワンド（属攻 +14%・会心 +5%）は属攻と会心が上がる。
+            var worn = state.Choices.Single(choice => choice.Name == "樫の杖");
+            Assert.That(worn.Changes, Is.Empty);
+            var wand = state.Choices.Single(choice => choice.Name == "氷晶のワンド");
+            Assert.That(wand.Changes, Is.EqualTo(new[] { (3, 8), (6, 2) })); // 282 × 26% = 73.32
+            // 雷鳴の槍（物攻 +14%）は物攻が上がり、属攻が下がる。
+            var spear = state.Choices.Single(choice => choice.Name == "雷鳴の槍");
+            Assert.That(spear.Changes, Is.EqualTo(new[] { (1, 13), (3, -31) }));
+            Assert.That(
+                EquipmentView.ChangeText(spear.Changes),
+                Does.StartWith("物攻 <color=#")
+                    .And.Contains(">▲13</color>　属攻 <color=#")
+                    .And.EndWith(">▼31</color>")
+            );
+        }
+
         [Test]
         public void OpensOnTheFirstPersonsWeaponWithTheOwnedWeaponsByRarity()
         {
@@ -135,7 +170,7 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo(new[] { "樫の杖", "魔法のローブ" })
             );
             Assert.That(state.Slots[0].Stars, Is.EqualTo("★"));
-            Assert.That(state.Slots[0].Detail, Is.EqualTo("属攻の 110%｜炎"));
+            Assert.That(state.Slots[0].Detail, Is.EqualTo("属攻 +11%"));
             Assert.That(state.CanRemove, Is.True);
 
             var weapons = EquipmentCatalog

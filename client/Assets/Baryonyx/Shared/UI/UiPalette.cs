@@ -16,5 +16,9 @@ namespace Baryonyx.UI
 
         // 見出しの明るい金（枠つきの画面の「パーティ」「一覧」など）。
         public static readonly Color GoldLight = new(0.992f, 0.894f, 0.353f);
+
+        // ステータスが上がる数字の緑と、下がる数字の赤（装備の上昇分と増減）。
+        public static readonly Color Rise = new(0.49f, 0.88f, 0.42f);
+        public static readonly Color Fall = new(1f, 0.45f, 0.4f);
     }
 }

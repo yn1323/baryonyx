@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Combat;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
 using Baryonyx.Training;
@@ -212,7 +213,8 @@ namespace Baryonyx.Equipment
                 id => EquipmentSession.Selected = id,
                 EquipmentSession.OpenSlot,
                 EquipmentSession.OpenAccessory,
-                LevelOf
+                LevelOf,
+                BaseStatsOf
             );
         }
 
@@ -242,7 +244,9 @@ namespace Baryonyx.Equipment
                     EquipmentLocalSource.Starter(),
                     new EquipmentLocalSource(),
                     slot: index == 0 ? EquipmentSlot.Armor : EquipmentSlot.Weapon,
-                    accessory: index == 1 ? 0 : -1
+                    accessory: index == 1 ? 0 : -1,
+                    levelOf: LevelOf,
+                    statsOf: BaseStatsOf
                 ).Dispose();
             }
             finally
@@ -258,6 +262,16 @@ namespace Baryonyx.Equipment
             !previewing ? PartySession.LevelOf(Party, id)
             : Party != null ? Party.Find(id)?.Level ?? 1
             : 1;
+
+        /// <summary>
+        /// The person's stats at their level with the bond, before the equipment raises them;
+        /// null without their growth.
+        /// </summary>
+        public CharacterStats? BaseStatsOf(string id)
+        {
+            var growth = Training != null ? Training.Find(id) : null;
+            return growth != null ? TrainingBond.StatsOf(growth, LevelOf(id)) : null;
+        }
 
         // 読み込むまで、仮データの装備を本当の装備として見せない。
         private void ShowLoading()
@@ -330,8 +344,7 @@ namespace Baryonyx.Equipment
                     i == state.Accessory,
                     i < state.Accessories.Count ? state.Accessories[i] : null
                 );
-            var growth = Training != null ? Training.Find(state.PersonId) : null;
-            StatGrid.Show(Stats, growth != null ? TrainingBond.StatsOf(growth, level) : null);
+            StatGrid.Show(Stats, state.Stats, state.Raise);
             // 一覧の面の文字は、アクセサリーの枠を選んでいて、付けられる物がないときだけ出す
             // （開いていなければ解放するLv）。
             Set(
@@ -480,7 +493,10 @@ namespace Baryonyx.Equipment
                 ? item?.Stars ?? ""
                 : $"{item.Stars}　{QualityPalette.Painted(item.Quality)}";
 
-        /// <summary>One owned item: its name, rarity, quality, effect and who wears it.</summary>
+        /// <summary>
+        /// One owned item: its name, rarity, quality, effect, how the stats change when it is put
+        /// on, and who wears it.
+        /// </summary>
         public static void ShowRow(EquipmentRow row, EquipmentItemState item, Sprite icon)
         {
             row.ItemId = item.ItemId;
@@ -489,12 +505,33 @@ namespace Baryonyx.Equipment
             Set(row.Name, item.Name);
             SetRich(row.Stars, Grade(item));
             Set(row.Detail, item.Detail);
+            SetRich(row.Change, ChangeText(item.Changes));
             if (row.Mark != null)
             {
                 row.Mark.gameObject.SetActive(item.Mark.Length > 0);
                 row.Mark.text = item.Mark;
                 row.Mark.alpha = item.Worn ? 1f : 0.75f;
             }
+        }
+
+        /// <summary>
+        /// The stat changes as "属攻 ▲43　会心 ▼2": the amount green when it rises and red when it
+        /// falls (rich text).
+        /// </summary>
+        public static string ChangeText(IReadOnlyList<(int Stat, int Amount)> changes)
+        {
+            if (changes == null || changes.Count == 0)
+                return "";
+            string rise = ColorUtility.ToHtmlStringRGB(UiPalette.Rise);
+            string fall = ColorUtility.ToHtmlStringRGB(UiPalette.Fall);
+            return string.Join(
+                "　",
+                changes.Select(change =>
+                    change.Amount > 0
+                        ? $"{CharacterStats.Labels[change.Stat]} <color=#{rise}>▲{change.Amount}</color>"
+                        : $"{CharacterStats.Labels[change.Stat]} <color=#{fall}>▼{-change.Amount}</color>"
+                )
+            );
         }
 
         // 装備の品質のキラキラを、種類ごとの光り方でアイコンに重ねる。空いている枠では出さない。

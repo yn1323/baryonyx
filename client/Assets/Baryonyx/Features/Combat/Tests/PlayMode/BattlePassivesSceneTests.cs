@@ -97,6 +97,44 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(seen.Texts, Does.Contain("連ね矢"));
         }
 
+        // 装備の「攻撃スキルが2回発動」（doc/features/equipment.md#装備の効果）も、ここで確かめる。
+        // 確率が100%なら、攻撃のカードの効果が同じ敵にもう一度起きる。
+        [UnityTest]
+        public IEnumerator AnEquipmentsChanceToPlayTwiceLandsTheAttackOnceMore()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var single = CardSkills.All.First(skill =>
+                skill.Cost <= 5
+                && skill.Actions.Count == 1
+                && skill.Actions[0].Kind == CardActionKind.Damage
+                && skill.Actions[0].Hits <= 1
+                && skill.Actions[0].Target == CardTarget.OneEnemy
+            );
+            UseParty(view, 0, new CombatPassiveKind[0], single, twice: 100);
+            int card = DealInto(view, 0, single.Id);
+            foreach (var enemy in view.Enemies)
+                enemy.Hp = enemy.MaxHp = 999999;
+
+            var seen = new Seen();
+            Play(view, card, view.Enemies[0].TargetArea);
+            seen.Look(view);
+            for (float t = 0f; view.Acting && t < 10f; t += Time.deltaTime)
+            {
+                yield return null;
+                seen.Look(view);
+            }
+            Assert.That(view.Acting, Is.False, "The actions end.");
+            Assert.That(seen.Numbers, Has.Count.EqualTo(2));
+            Assert.That(seen.Texts, Does.Contain(BattleInspectView.TwiceText));
+            for (int i = 1; i < view.Enemies.Length; i++)
+                Assert.That(
+                    view.Enemies[i].Hp,
+                    Is.EqualTo(999999),
+                    "Only the enemy aimed at is hit."
+                );
+        }
+
         [UnityTest]
         public IEnumerator OverflowingPrayerTurnsHealingPastTheMaxIntoBlock()
         {
@@ -198,7 +236,8 @@ namespace Baryonyx.Tests.PlayMode
             int holder,
             IReadOnlyList<CombatPassiveKind> passives,
             CardSkill card = null,
-            int cardsOf = -1
+            int cardsOf = -1,
+            int twice = 0
         )
         {
             if (cardsOf < 0)
@@ -223,6 +262,7 @@ namespace Baryonyx.Tests.PlayMode
                     Stats = ally.Stats,
                     Cards = cards.Select(skill => new BattlePartyCard { Skill = skill }).ToArray(),
                     Passives = place == holder ? passives : new CombatPassiveKind[0],
+                    TwiceChance = place == holder ? twice : 0,
                 };
             }
             view.UseParty(slots);

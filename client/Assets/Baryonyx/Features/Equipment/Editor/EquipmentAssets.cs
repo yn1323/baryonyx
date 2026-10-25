@@ -52,6 +52,9 @@ namespace Baryonyx.Equipment.Editor
         // 持っている装備の行を、この数だけ作り込む。足りなければ、ビューが実行中に写して増やす。
         private const int BakedRows = 8;
 
+        // 一覧の行の右に出すステータスの増減の幅。
+        private const float ChangeWidth = 340f;
+
         /// <summary>
         /// Builds the equipment over the guide screen's safe area: the person, their slots and
         /// stats in the left frame, the owned items for the chosen slot in the right frame.
@@ -87,8 +90,11 @@ namespace Baryonyx.Equipment.Editor
                 .Range(0, AccessorySlots.Count)
                 .Select(i => BuildAccessory(left, i))
                 .ToArray();
-            // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける。
+            // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける。装備の上昇分を添えても
+            // 収まるよう、値は縮めて入れる。
             view.Stats = ChangeScreen.Stats(left);
+            foreach (var value in view.Stats)
+                Guide.Shrink(value, 20);
             BuildItems(right, view);
 
             // 仮データの最初の人と仮の装備で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
@@ -96,7 +102,9 @@ namespace Baryonyx.Equipment.Editor
                 view,
                 people,
                 EquipmentLocalSource.Starter(),
-                new EquipmentLocalSource()
+                new EquipmentLocalSource(),
+                levelOf: id => party.Find(id)?.Level ?? 1,
+                statsOf: view.BaseStatsOf
             ).Dispose();
             return view.gameObject;
         }
@@ -285,8 +293,32 @@ namespace Baryonyx.Equipment.Editor
                 UiPalette.TextSub,
                 TextAlignmentOptions.TopLeft
             );
-            Guide.Band((RectTransform)row.Detail.transform, top: true, 64, 40, RowTextLeft, 24);
+            Guide.Band(
+                (RectTransform)row.Detail.transform,
+                top: true,
+                64,
+                40,
+                RowTextLeft,
+                ChangeWidth + 24
+            );
             Guide.Shrink(row.Detail, 18);
+            // 効果の右に、選んでいる枠に付けたときのステータスの増減。
+            row.Change = Label(
+                card,
+                "Change",
+                "",
+                24,
+                UiPalette.TextMain,
+                TextAlignmentOptions.TopRight
+            );
+            row.Change.richText = true;
+            Corner(
+                (RectTransform)row.Change.transform,
+                Vector2.one,
+                new Vector2(-24, -64),
+                new Vector2(ChangeWidth, 40)
+            );
+            Guide.Shrink(row.Change, 18);
             row.Mark = Label(card, "Mark", "", 24, UiPalette.Gold, TextAlignmentOptions.TopRight);
             Guide.Band((RectTransform)row.Mark.transform, top: true, 20, 32, RowTextLeft, 24);
             row.Mark.gameObject.SetActive(false);

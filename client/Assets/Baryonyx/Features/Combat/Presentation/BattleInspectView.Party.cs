@@ -38,6 +38,12 @@ namespace Baryonyx.Combat.Presentation
         public IReadOnlyList<BattleStatBoost> Boosts = Array.Empty<BattleStatBoost>();
         public CharacterStats Unboosted;
         public IReadOnlyList<float> Percents = Array.Empty<float>();
+
+        /// <summary>
+        /// The chance in percent that the member's attack card plays its effect once more (the
+        /// equipment's effect, doc/features/equipment.md#装備の効果).
+        /// </summary>
+        public int TwiceChance;
     }
 
     /// <summary>
@@ -155,6 +161,7 @@ namespace Baryonyx.Combat.Presentation
             if (ally.Absent)
             {
                 ally.StartHp = ally.MaxHp = ally.Hp = 0;
+                ally.TwiceChance = 0;
                 return;
             }
             ally.Name = member.Name ?? "";
@@ -163,6 +170,7 @@ namespace Baryonyx.Combat.Presentation
             ally.Boosts = member.Boosts ?? Array.Empty<BattleStatBoost>();
             ally.Unboosted = member.Unboosted;
             ally.Percents = member.Percents ?? Array.Empty<float>();
+            ally.TwiceChance = member.TwiceChance;
             ally.MaxHp = Mathf.Max(1, member.Stats.Hp);
             ally.StartHp = ally.Hp = StartHpOf(ally.MaxHp, member.HpShare);
             ally.Tint = member.Tint;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baryonyx.Combat;
 using Baryonyx.Inventory;
 using Baryonyx.Party;
 
@@ -34,6 +35,11 @@ namespace Baryonyx.Equipment
 
         // 選んでいる人が付けている。
         public bool Worn { get; internal set; }
+
+        // 右の行の装備を選んでいる枠に付けたときの、ステータスの増減（今の装備と比べて、変わる項目を
+        // CharacterStats の順に最大3つ）。付けている装備の行、変わらない行、左の枠では空。
+        public IReadOnlyList<(int Stat, int Amount)> Changes { get; internal set; } =
+            Array.Empty<(int, int)>();
     }
 
     /// <summary>Everything the equipment shows, recomputed after every input.</summary>
@@ -59,6 +65,11 @@ namespace Baryonyx.Equipment
 
         // 選んでいる枠に装備があり、外せる。
         public bool CanRemove { get; internal set; }
+
+        // 選んでいる人の、付けている装備で上げたステータスと、装備で上がった分
+        // （doc/features/equipment.md#装備の効果）。ステータスを出せないときは Stats がnull。
+        public CharacterStats? Stats { get; internal set; }
+        public CharacterStats Raise { get; internal set; }
     }
 
     public interface IEquipmentView
@@ -91,11 +102,15 @@ namespace Baryonyx.Equipment
         public const string RemoveLabel = "外す";
         public const string AccessoryTitle = "アクセサリー";
 
+        // 右の行に出す、ステータスの増減の数。
+        public const int MaxChanges = 3;
+
         private readonly IEquipmentView view;
         private readonly IReadOnlyList<PartyMember> people;
         private readonly IEquipmentSource source;
         private readonly Action<string> remember;
         private readonly Func<string, int> levelOf;
+        private readonly Func<string, CharacterStats?> statsOf;
         private EquipmentState state;
         private int person;
         private EquipmentSlot slot = EquipmentSlot.Weapon;
@@ -113,7 +128,8 @@ namespace Baryonyx.Equipment
             Action<string> remember = null,
             EquipmentSlot slot = EquipmentSlot.Weapon,
             int accessory = -1,
-            Func<string, int> levelOf = null
+            Func<string, int> levelOf = null,
+            Func<string, CharacterStats?> statsOf = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -122,6 +138,7 @@ namespace Baryonyx.Equipment
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.remember = remember;
             this.levelOf = levelOf;
+            this.statsOf = statsOf;
             person = Math.Max(0, IndexOf(selected));
             this.slot = Enum.IsDefined(typeof(EquipmentSlot), slot) ? slot : EquipmentSlot.Weapon;
             this.accessory = accessory >= 0 && accessory < AccessorySlots.Count ? accessory : -1;
@@ -282,7 +299,9 @@ namespace Baryonyx.Equipment
             }
             // 開いていないアクセサリーの枠は、一覧を空にして外せなくする。
             bool open = IsOpen(member);
-            var choices = open ? Choices(member.Id) : Array.Empty<EquipmentItemState>();
+            // Lvと絆を入れたステータス。装備の上昇分と、右の行の増減はここから求める。
+            var stats = statsOf?.Invoke(member.Id);
+            var choices = open ? Choices(member.Id, stats) : Array.Empty<EquipmentItemState>();
             string current = open ? state.ItemIn(member.Id, Place) : null;
             State = new EquipmentViewState
             {
@@ -308,6 +327,10 @@ namespace Baryonyx.Equipment
                 Title = TitleOf(),
                 Choices = choices,
                 CanRemove = current != null,
+                Stats = stats.HasValue ? EquipmentStats.With(stats.Value, state, member.Id) : null,
+                Raise = stats.HasValue
+                    ? EquipmentStats.Bonus(stats.Value, state, member.Id)
+                    : default,
             };
             view.Render(State);
         }
@@ -315,7 +338,7 @@ namespace Baryonyx.Equipment
         private string TitleOf() => accessory >= 0 ? AccessoryTitle : EquipmentCatalog.NameOf(slot);
 
         // 選んでいる枠に付けられる持っている装備。レア度の高い順、同じなら仮データの順、続けて入手の順。
-        private IReadOnlyList<EquipmentItemState> Choices(string personId) =>
+        private IReadOnlyList<EquipmentItemState> Choices(string personId, CharacterStats? stats) =>
             state
                 .Items.Select(
                     (item, index) =>
@@ -330,8 +353,35 @@ namespace Baryonyx.Equipment
                 .ThenBy(entry => EquipmentCatalog.IndexOf(entry.Item.EquipmentId))
                 .ThenByDescending(entry => Inventory.Quality.Percent(entry.Item.Multiplier))
                 .ThenBy(entry => entry.Index)
-                .Select(entry => ItemState(personId, entry.Item))
+                .Select(entry =>
+                {
+                    var choice = ItemState(personId, entry.Item);
+                    choice.Changes = ChangesOf(personId, entry.Item, stats);
+                    return choice;
+                })
                 .ToArray();
+
+        // 選んでいる枠にその装備を付けたときの、今と比べたステータスの増減。付けている装備では空。
+        private IReadOnlyList<(int Stat, int Amount)> ChangesOf(
+            string personId,
+            EquipmentItem item,
+            CharacterStats? stats
+        )
+        {
+            if (!stats.HasValue || state.ItemIn(personId, Place) == item.Id)
+                return Array.Empty<(int, int)>();
+            var now = EquipmentStats.With(stats.Value, state, personId);
+            var after = EquipmentStats.With(
+                stats.Value,
+                state.WithEquipped(personId, Place, item.Id),
+                personId
+            );
+            var changes = new List<(int, int)>();
+            for (int i = 0; i < CharacterStats.Count && changes.Count < MaxChanges; i++)
+                if (after[i] != now[i])
+                    changes.Add((i, after[i] - now[i]));
+            return changes;
+        }
 
         private EquipmentItemState ItemState(string personId, EquipmentItem item)
         {

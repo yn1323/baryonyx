@@ -85,6 +85,18 @@ namespace Baryonyx.Combat
                 Scale(Luck, rate)
             );
 
+        public static CharacterStats operator +(CharacterStats a, CharacterStats b) =>
+            new(
+                a.Hp + b.Hp,
+                a.PhysicalAttack + b.PhysicalAttack,
+                a.PhysicalDefense + b.PhysicalDefense,
+                a.MagicAttack + b.MagicAttack,
+                a.MagicDefense + b.MagicDefense,
+                a.Speed + b.Speed,
+                a.Critical + b.Critical,
+                a.Luck + b.Luck
+            );
+
         public static CharacterStats operator -(CharacterStats a, CharacterStats b) =>
             new(
                 a.Hp - b.Hp,
