@@ -13,9 +13,9 @@ namespace Baryonyx.Combat.Presentation
     /// shown as a battle card in a row below, one stage already acquired marked so. A tap picks a
     /// stage (it rises; a thin rim of light runs round it and wisps of pale gold light rise from
     /// its edges like steam over a soft light, motes drifting up through them; the others darken),
-    /// and the button under the row confirms it. With one stage to go to, there is nothing to choose:
-    /// it is shown picked for a moment, with no button, and goes on by itself. Nothing else is
-    /// pressed while open.
+    /// and the button under the row confirms it. With one stage to go to, it is picked and confirmed
+    /// the same way, so that what it does can be read before it is taken. Nothing else is pressed
+    /// while open.
     /// </summary>
     public sealed class BattleEvolutionChoice : MonoBehaviour
     {
@@ -75,10 +75,6 @@ namespace Baryonyx.Combat.Presentation
 
         [Tooltip("隣の候補との間（中心どうし）。")]
         public float Spacing = 490f;
-
-        [Tooltip("候補が1つのとき、見せてから自動で進むまでの間（秒、開いてから）。")]
-        [Min(0f)]
-        public float SingleShow = 0.9f;
 
         private static readonly Color BranchColor = new(1f, 0.84f, 0.42f);
 
@@ -197,8 +193,6 @@ namespace Baryonyx.Combat.Presentation
                     AcquiredTags[i].SetActive(option.Acquired);
             }
             selected = -1;
-            if (options.Count == 1)
-                Pick(0);
             Step();
         }
 
@@ -265,8 +259,6 @@ namespace Baryonyx.Combat.Presentation
                 return;
             age += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             Step();
-            if (options.Count == 1 && age >= SingleShow)
-                Confirm();
         }
 
         // The stages rise into their places one after another as the branches are drawn down
@@ -315,10 +307,8 @@ namespace Baryonyx.Combat.Presentation
             if (ConfirmButton != null)
             {
                 ConfirmButton.interactable = selected >= 0;
-                // With one stage there is nothing to confirm; it goes on by itself.
-                bool shown = count > 1;
-                if (ConfirmButton.gameObject.activeSelf != shown)
-                    ConfirmButton.gameObject.SetActive(shown);
+                if (!ConfirmButton.gameObject.activeSelf)
+                    ConfirmButton.gameObject.SetActive(true);
                 // 「覚醒しない」を出すときは、2つを左右に並べる（右が決定）。
                 var confirm = (RectTransform)ConfirmButton.transform;
                 float x = declinable && DeclineButton != null ? ButtonSpread : 0f;

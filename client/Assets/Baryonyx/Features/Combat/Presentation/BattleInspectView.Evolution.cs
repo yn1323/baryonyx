@@ -40,8 +40,8 @@ namespace Baryonyx.Combat.Presentation
     /// card that has not awakened, comes into the hand and the draw comes under its chance, it
     /// lights up in the hand (<see cref="BattleEvolutionGlint"/>) and awakens when used. Before
     /// its effect the card rises and cracks (<see cref="BattleSkillVfx.EvolutionOmen"/>), the
-    /// stage it becomes is picked from those it can (<see cref="Choice"/>; with one, it goes on
-    /// by itself), and it shatters into that stage, which is then played. An owned skill card
+    /// stage it becomes is picked from those it can (<see cref="Choice"/>; with one, it is
+    /// picked too), and it shatters into that stage, which is then played. An owned skill card
     /// never goes back, so it may also be left as it is ("覚醒しない"): its light settles, the
     /// card goes back to its user, and it is played as it was. The card stays at its stage for
     /// the rest of the battle; a card awakens (or is left) once a battle at most. The hand steps

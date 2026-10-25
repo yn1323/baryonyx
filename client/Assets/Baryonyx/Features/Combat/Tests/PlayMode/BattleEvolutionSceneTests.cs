@@ -130,7 +130,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator FromAFirstStepItsOneStageGoesOnByItself()
+        public IEnumerator FromAFirstStepItsOneStageIsPickedAndConfirmed()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -140,6 +140,12 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
             yield return WaitUntil(() => view.Choice.IsOpen, "Its stage is shown.");
             Assert.That(view.Choice.Count, Is.EqualTo(1));
+            // 1つでも、押して選んで決めるまで待つ。
+            yield return new WaitForSecondsRealtime(1.5f);
+            Assert.That(view.Choice.IsOpen, Is.True, "It waits for a tap.");
+            Assert.That(view.Deck[deck].Skill, Is.EqualTo("ManaBurst.1"));
+            view.Choice.Select(0);
+            view.Choice.Confirm();
             yield return WaitActions(view);
             Assert.That(view.Deck[deck].Skill, Is.EqualTo("ManaBurst.2"));
         }

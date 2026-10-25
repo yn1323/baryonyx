@@ -289,18 +289,25 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Vfx.TimeBent, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
 
-            // From a first step, its one stage is shown picked for a moment with no button, and
-            // the card shatters into it by itself.
+            // From a first step, its one stage waits to be picked and confirmed like several, so
+            // that what it does can be read first.
             lab.Play(Find("ManaBurst.1"));
-            yield return SceneTests.WaitUntil(() => choice.IsOpen, seconds: 4f);
-            Assert.That(choice.Count, Is.EqualTo(1));
-            Assert.That(choice.Selected, Is.Zero);
-            Assert.That(choice.ConfirmButton.gameObject.activeSelf, Is.False);
             yield return SceneTests.WaitUntil(
-                () => !choice.IsOpen,
-                seconds: choice.SingleShow + 1f,
-                message: "It goes on without a tap."
+                () => choice.IsOpen && choice.Panel.blocksRaycasts,
+                seconds: 4f
             );
+            Assert.That(choice.Count, Is.EqualTo(1));
+            Assert.That(choice.Selected, Is.EqualTo(-1));
+            Assert.That(choice.ConfirmButton.gameObject.activeSelf, Is.True);
+            Assert.That(choice.ConfirmButton.interactable, Is.False, "Nothing to confirm yet.");
+            yield return new WaitForSecondsRealtime(1.5f);
+            Assert.That(choice.IsOpen, Is.True, "It does not go on without a tap.");
+            AssertReachable(choice.Slots[0]);
+            choice.Slots[0].onClick.Invoke();
+            Assert.That(choice.Selected, Is.Zero);
+            Assert.That(choice.ConfirmButton.interactable, Is.True);
+            choice.ConfirmButton.onClick.Invoke();
+            Assert.That(choice.IsOpen, Is.False);
             Assert.That(lab.Choosing, Is.False);
             string last = all[Find("ManaBurst.2")].Name;
             yield return SceneTests.WaitUntil(

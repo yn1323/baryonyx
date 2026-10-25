@@ -271,6 +271,11 @@ namespace Baryonyx.Tests.PlayMode
             // Toma's first unique skill (its mock progress sets the first branch's first step)
             // evolves when the draw comes under the chance.
             rules.Draw = () => 0f;
+            // パーティより速い敵が先に動いて倒すことがあるため、配り直す前に全員を立て直す。
+            foreach (var ally in battle.Allies)
+                if (!ally.Absent)
+                    ally.Hp = ally.MaxHp;
+            yield return null;
             int deck = System.Array.FindIndex(
                 battle.Deck,
                 card => card.Person == "toma" && card.Unique == 0
@@ -304,8 +309,7 @@ namespace Baryonyx.Tests.PlayMode
                 6f,
                 "The stages to evolve into are offered."
             );
-            if (battle.Choice.Count > 1)
-                battle.Choice.Select(0);
+            battle.Choice.Select(0);
             battle.Choice.Confirm();
             yield return SceneTests.WaitUntil(
                 () => !battle.Evolving && !battle.Acting,
