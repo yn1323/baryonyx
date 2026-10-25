@@ -172,7 +172,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/IcePenguin.asep
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 仲間に付くブロック | [槍ぶすま](../enemy-skills/enemy-skill-penguin-spear-wall.md)の未決事項 |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（二段突き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（二段突き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

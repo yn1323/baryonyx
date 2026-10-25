@@ -13,7 +13,7 @@ updated: 2026-10-04
 
 ## 目的
 
-酒場の[編成](../features/screens.md#パーティ)・[カードスキル](../features/screens.md#スキル)・[育成](../features/screens.md#育成)で変えた内容を、ゲストを含むユーザーごとにサーバーのDBへ保存し、アプリを起動し直しても残るようにする。
+酒場の[編成](../features/screens/adventurers.md#パーティ)・[カードスキル](../features/screens/loadout.md#スキル)・[育成](../features/screens/adventurers.md#育成)で変えた内容を、ゲストを含むユーザーごとにサーバーのDBへ保存し、アプリを起動し直しても残るようにする。
 レベルアップに使うルーンもサーバーの残高から引き、Homeの所持ルーンと酒場の所持ルーンを一致させる。
 
 ## 現状と今取り組む理由

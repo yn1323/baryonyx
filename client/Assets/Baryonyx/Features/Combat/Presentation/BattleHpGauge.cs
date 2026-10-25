@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// A unit's HP bar drawn as pixel art (doc/features/screens.md, the battle mock): a dark
+    /// A unit's HP bar drawn as pixel art (doc/features/screens/battle-deck.md, the battle mock): a dark
     /// outline, a fill shaded in three steps and ticks every quarter, all on the dot grid. When
     /// HP drops, the lost part stays as a red trail, flashes white, holds a moment and then
     /// drains down to the fill. An ally's block lies over the top of it as a thin yellow strip.

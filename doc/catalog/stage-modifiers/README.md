@@ -24,7 +24,7 @@ IDの接頭辞は `modifier-`、メタデータの `category` は `stage-modifie
 | 予告・説明文・表示方法 | 未決 |
 
 [デイリー変異](../../features/daily-rules.md)の採用は未決である。
-旧危険度選択の案は[探索仕様の変更記録](../../features/stage-progression.md#変更と判断の記録)で扱い、現行進行の前提として個別データを作らない。
+旧危険度選択の案は[探索仕様の変更記録](../../features/stage-progression-history.md)で扱い、現行進行の前提として個別データを作らない。
 
 ## 追加方法
 

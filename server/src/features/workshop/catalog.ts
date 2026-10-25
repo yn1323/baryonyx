@@ -2,7 +2,7 @@ import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
 import { DROP_POOLS } from "../adventure/drops.js";
 import type { Stars } from "../inventory/catalog.js";
 
-// 商会の「買う」（doc/features/screens.md の商会）。これまでに手に入れた（ライブラリに見つけた記録がある）
+// 商会の「買う」（doc/features/screens/shop.md の商会）。これまでに手に入れた（ライブラリに見つけた記録がある）
 // スキル・武器・防具・アクセサリーを、品質の最低（倍率×1.00）で、ルーンと引き換えに何度でも売る。
 // 名前・説明はクライアントの定義が持ち、サーバーは売れる物かと値段だけを判定する。
 
@@ -58,7 +58,7 @@ export function workshopPrice(
   return stars === undefined ? undefined : WORKSHOP_STAR_PRICES[stars];
 }
 
-// 商会の「合成」（doc/features/screens.md の商会）。同じ分類で☆がちょうど1つ低い物を合計3つ使い、
+// 商会の「合成」（doc/features/screens/shop.md の商会）。同じ分類で☆がちょうど1つ低い物を合計3つ使い、
 // これまでに手に入れた（ライブラリに見つけた記録がある）☆2以上の物を1つ作る。アイテムも作れる。
 export const CRAFT_CATEGORIES = [...WORKSHOP_CATEGORIES, "item"] as const;
 
@@ -111,7 +111,7 @@ export function craftedPercent(
   return Math.min(maxPercent, Math.max(MIN_MULTIPLIER_PERCENT, percent));
 }
 
-// 商会の「売る」（doc/features/screens.md の商会）。持ち物のうち、キャラに付けていない（デッキに入れていない）
+// 商会の「売る」（doc/features/screens/shop.md の商会）。持ち物のうち、キャラに付けていない（デッキに入れていない）
 // スキル・装備を1つずつ、アイテムを種類ごとに持っている数のまま、ルーンと引き換えに手放す。仮の値。
 // クライアントの WorkshopSellView.PriceOf が同じ値を持つ。
 

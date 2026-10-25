@@ -10,7 +10,7 @@ namespace Baryonyx.Temple
 {
     /// <summary>
     /// The summoning moment lab, a debugging room for the summoning's presentation
-    /// (doc/features/screens.md): the summoning-once presentation over the cathedral, with
+    /// (doc/features/screens/temple.md): the summoning-once presentation over the cathedral, with
     /// buttons to choose the result's light (white, gold, rainbow), whether the light is raised
     /// from the one below before the window cracks, to play it again and to repeat it. Each play
     /// draws a sample of that light from the summoning's pool and breaks the window in a new

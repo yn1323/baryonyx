@@ -197,7 +197,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MistDragon.asep
 | 霧隠れ・継続ダメージ・引く枚数の減少 | 新しい仕組みの決まり（[霧隠れ](../enemy-skills/enemy-skill-mist-dragon-fog-veil.md)、[迷い路の霧](../enemy-skills/enemy-skill-mist-dragon-maze-fog.md)、[白霧の大息吹](../enemy-skills/enemy-skill-mist-dragon-whiteout-breath.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（迷い路の霧）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（迷い路の霧）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

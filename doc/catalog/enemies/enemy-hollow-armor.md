@@ -174,7 +174,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HollowArmor.ase
 | 敵のかばう・無敵 | 仲間への単体攻撃を引き受ける仕組み（[番兵の盾](../enemy-skills/enemy-skill-hollow-armor-guard.md)）と、敵に付く無敵と行動を休む仕組み（[空ろの鎧ばらし](../enemy-skills/enemy-skill-hollow-armor-scatter.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（空ろの鎧ばらし）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（空ろの鎧ばらし）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

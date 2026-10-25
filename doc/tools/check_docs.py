@@ -26,6 +26,8 @@ SKIPPED_DIRS = {
     "__pycache__", "dist", "node_modules", "obj", "output",
 }
 LINK = re.compile(r"!?\[[^\]\n]*\]\((<[^>\n]+>|[^)\n]+)\)")
+# The generated list of every current document's headings with their line numbers.
+HEADING_INDEX = "heading-index.md"
 ID = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
 
@@ -158,6 +160,54 @@ def check_links(path: Path, content: str, root: Path, contents: dict[Path, str],
             if unquote(parsed.fragment) not in anchors(text):
                 errors.append(f"{label}: 見出しがない: {target}")
     return linked
+
+
+def heading_lines(text: str) -> list[tuple[int, str]]:
+    """(1-based line number, heading line) of the actual headings, outside fenced examples."""
+    result = []
+    fence = ""
+    for number, line in enumerate(text.splitlines(), 1):
+        marker = re.match(r"^\s*(\x60{3,}|~{3,})", line)
+        if marker:
+            run = marker.group(1)
+            if not fence:
+                fence = run
+            elif run[0] == fence[0] and len(run) >= len(fence):
+                fence = ""
+            continue
+        if not fence and re.match(r"^#{1,6}\s+\S", line):
+            result.append((number, line.rstrip()))
+    return result
+
+
+def in_heading_index(relative: Path) -> bool:
+    """Current documents only: no individual catalog entries, no archive, not the index itself."""
+    if relative.as_posix() == HEADING_INDEX or relative.parts[0] == "archive":
+        return False
+    return not (relative.parts[0] == "catalog" and relative.name != "README.md")
+
+
+def heading_index(docs: Path, contents: dict[Path, str]) -> str:
+    lines = [
+        "# 見出しの索引",
+        "",
+        "[全体索引](README.md)",
+        "",
+        "`doc/` の文書ごとに、見出しとその行番号を並べた生成ファイルである。",
+        "読む節を決めてから、その行から必要な範囲だけを読む（読み方は `doc/rules/documentation-policy.md` の「見出しの索引」、"
+        "作り方は `doc/tools/README.md`）。",
+        "個別データ（`catalog/<分類>/<ID>.md`）と保管庫（`archive/`）は載せない。",
+        "手で編集せず、`python -B doc/tools/check_docs.py --write-index` で作り直す。",
+    ]
+    for path in sorted(contents, key=lambda p: p.relative_to(docs).as_posix()):
+        relative = path.relative_to(docs)
+        if not in_heading_index(relative):
+            continue
+        text = contents[path]
+        size = max(1, round(len(text.encode("utf-8")) / 1024))
+        lines += ["", f"## [{relative.as_posix()}]({relative.as_posix()})", "", f"{size}KB・{len(text.splitlines())}行", ""]
+        lines += [f"- {number}: {heading}" for number, heading in heading_lines(text)]
+    return "\n".join(lines) + "\n"
 
 
 def replace_region(text: str, marker: str, body: str) -> str | None:
@@ -298,6 +348,18 @@ def check(root: Path, write_index: bool = False) -> list[str]:
         else:
             errors.append(f"{path.relative_to(root)}: 生成索引が古い。--write-indexを実行する")
 
+    # The heading index lists the line numbers after the indexes above are written.
+    index_path = docs / HEADING_INDEX
+    expected = heading_index(docs, contents)
+    if contents.get(index_path) != expected:
+        if may_write:
+            index_path.write_text(expected, encoding="utf-8", newline="\n")
+            contents[index_path] = expected
+        elif index_path in contents:
+            errors.append(f"doc/{HEADING_INDEX}: 見出しの索引が古い。--write-indexを実行する")
+        else:
+            errors.append(f"doc/{HEADING_INDEX}: 見出しの索引がない。--write-indexを実行する")
+
     edges = {path: check_links(path, content, root, contents, errors) for path, content in contents.items()}
     # Outside doc/, check only that links resolve; these files need no metadata and no index entry.
     for path in outside_docs(root):
@@ -322,7 +384,9 @@ def check(root: Path, write_index: bool = False) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write-index", action="store_true", help="個別MDから生成索引を更新する")
+    parser.add_argument(
+        "--write-index", action="store_true", help="個別MDから生成索引と、見出しの索引を更新する"
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     errors = check(root, args.write_index)

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The effects of the battle's turning points (doc/features/screens.md, the battle moment
+    /// The effects of the battle's turning points (doc/features/screens/debug-rooms.md, the battle moment
     /// lab), drawn with the same shapes as the skills: an enemy landing on the field as the
     /// battle opens, the party's light when it wins, and a drop, a ball of light that falls from
     /// the beaten enemy, bounces on the floor, gathers itself and bursts into a pillar of light

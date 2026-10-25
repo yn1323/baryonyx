@@ -25,7 +25,7 @@ namespace Baryonyx.Workshop
     }
 
     /// <summary>
-    /// What the trading house's "buy" sells (doc/features/screens.md#商会): the skills, weapons,
+    /// What the trading house's "buy" sells (doc/features/screens/shop.md#商会): the skills, weapons,
     /// armor and accessories the library has found, at the lowest quality (×1.00, quality C),
     /// as many times as the player likes. The prices are the server's
     /// (server/src/features/workshop/catalog.ts); the server decides the price again when buying.

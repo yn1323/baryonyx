@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// The exploration screen's turning points (doc/features/screens.md, the exploration moment
+    /// The exploration screen's turning points (doc/features/screens/debug-rooms.md, the exploration moment
     /// lab), laid over the map: monsters found in the room the party walks into (a "！" over the
     /// party, a band with the room's words and the wipe that carries it into the battle),
     /// stronger for a strong monster and darker for the deepest room's master; and a chest opened,

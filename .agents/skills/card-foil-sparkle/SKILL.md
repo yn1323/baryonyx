@@ -20,7 +20,7 @@ description: >
 1. **正本の規則**：[カードのキラキラ](../../../doc/art/direction.md#カードのキラキラ)の、品質ごとの層と置く場所を読む。[エフェクトの描き方](../../../doc/art/direction.md#エフェクトの描き方)（計算で描く、滑らかな光の絵にする）にも従う。
 2. **既存の部品**：[CardFoil](../../../client/Assets/Baryonyx/Shared/UI/Cards/CardFoil.cs)（重ねる層と値の渡し方）と、そのシェーダー `Baryonyx/UI/CardFoil` を使い回す。層や光り方の模様を足すときは、このシェーダーに足し、別のシェーダーへ式を写さない。光り方（模様と色）は種類ごとに1つ決まる（[正本](../../../doc/art/direction.md#カードのキラキラ)）。新しい種類のキラキラを出すときは、その種類の光り方の番号を `CardFoil.Show` に渡す。
 3. **描画経路**：重ねる先のCanvasのRender Mode、カメラとBloom、絵と文字の重なり順（挿絵 → キラキラ → 帯・文字）を確かめる。`Screen Space - Overlay` にはBloomが掛からないため、にじみは式で描く。
-4. **品質の出どころ**：キラキラの強さを決める品質が、データのどこにあるかを確かめる（スキルは [CardSkill](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkill.cs) の `Quality`、装備は定義の上限と1つずつの倍率から求める）。品質ごとの見え方は [品質のデバッグルーム](../../../doc/features/screens.md#品質のデバッグルーム) で倍率を動かして確かめる。品質がまだない対象に推測で値を置かない。仮に置くときは、正本に「仮」と理由を書く。
+4. **品質の出どころ**：キラキラの強さを決める品質が、データのどこにあるかを確かめる（スキルは [CardSkill](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CardSkill.cs) の `Quality`、装備は定義の上限と1つずつの倍率から求める）。品質ごとの見え方は [品質のデバッグルーム](../../../doc/features/screens/debug-rooms.md#品質のデバッグルーム) で倍率を動かして確かめる。品質がまだない対象に推測で値を置かない。仮に置くときは、正本に「仮」と理由を書く。
 
 ## 進め方
 

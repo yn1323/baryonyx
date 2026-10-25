@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// Sets out on an adventure from the travel office (doc/features/screens.md): the depart
+    /// Sets out on an adventure from the travel office (doc/features/screens/adventure.md): the depart
     /// button starts the adventure on the server at the entrance and opens the exploration at
     /// once, without asking.
     /// </summary>

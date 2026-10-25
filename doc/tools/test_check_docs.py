@@ -12,13 +12,22 @@ class DocumentationChecks(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n[art](art/visual-index.md)\n")
+        self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n[art](art/visual-index.md)\n"
+                   "[headings](heading-index.md)\n")
         self.write("doc/catalog/characters/README.md",
                    "# Characters\n\n説明を保持する。\n\n<!-- entries:start -->\n"
                    "登録された個別データはまだない。\n<!-- entries:end -->\n\n末尾も保持する。\n")
         self.write("doc/art/visual-index.md",
                    "# Visuals\n\n<!-- visual-index:start -->\n"
                    "登録された画像対象はまだない。\n<!-- visual-index:end -->\n")
+        # 見出しの索引は文書から作る生成ファイル。テストの文書を書いたら作り直す。
+        self.headings()
+
+    def headings(self):
+        from check_docs import HEADING_INDEX, heading_index
+        docs = self.root / "doc"
+        contents = {p: p.read_text(encoding="utf-8") for p in sorted(docs.rglob("*.md")) if p.name != HEADING_INDEX}
+        self.write(f"doc/{HEADING_INDEX}", heading_index(docs, contents))
 
     def write(self, relative, text):
         path = self.root / relative
@@ -134,6 +143,7 @@ class DocumentationChecks(unittest.TestCase):
         content += "\n## Google認証の設定\n\n"
         content += chr(96) * 3 + "md\n[example](absent.md)\n" + chr(96) * 3 + "\n"
         path.write_text(content, encoding="utf-8")
+        self.headings()
         self.assertEqual([], check(self.root))
 
     def test_unreachable_document_fails(self):
@@ -170,9 +180,31 @@ class DocumentationChecks(unittest.TestCase):
         self.write("client/Library/AGENTS.md", "[gone](absent.md)\n")
         self.assertEqual([], check(self.root))
 
+    def test_heading_index_lists_lines_and_fails_when_stale(self):
+        meta = "---\nid: feature-spec\ntype: specification\nstatus: 候補\nupdated: 2026-10-25\n---\n\n"
+        self.write("doc/features/spec.md", meta + "# Spec\n\n```md\n# not a heading\n```\n\n## Rules\n")
+        self.write("doc/archive/old.md",
+                   "---\nid: archive-old\ntype: reference\nstatus: 記録\nupdated: 2026-10-05\n---\n\n# Old\n")
+        self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n[art](art/visual-index.md)\n"
+                   "[headings](heading-index.md)\n[spec](features/spec.md)\n[old](archive/old.md)\n")
+        self.assertTrue(any("見出しの索引が古い" in e for e in check(self.root)))
+        self.assertEqual([], check(self.root, write_index=True))
+        index = (self.root / "doc/heading-index.md").read_text(encoding="utf-8")
+        self.assertIn("## [features/spec.md](features/spec.md)", index)
+        self.assertIn("- 8: # Spec", index)
+        self.assertIn("- 14: ## Rules", index)
+        self.assertNotIn("not a heading", index)
+        self.assertNotIn("archive/old.md", index)
+        self.assertEqual([], check(self.root))
+
+    def test_missing_heading_index_fails(self):
+        (self.root / "doc/heading-index.md").unlink()
+        self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n[art](art/visual-index.md)\n")
+        self.assertTrue(any("見出しの索引がない" in e for e in check(self.root)))
+
     def test_archive_requires_metadata_with_record_status(self):
         self.write("doc/README.md", "# Index\n\n[catalog](catalog/characters/README.md)\n"
-                   "[art](art/visual-index.md)\n[archive](archive/README.md)\n")
+                   "[art](art/visual-index.md)\n[archive](archive/README.md)\n[headings](heading-index.md)\n")
         self.write("doc/archive/README.md", "# Archive\n\n[old](old.md)\n[kept](kept.md)\n")
         self.write("doc/archive/old.md", "# Old\n")
         self.write("doc/archive/kept.md",
@@ -184,6 +216,7 @@ class DocumentationChecks(unittest.TestCase):
                    "---\nid: archive-old\ntype: reference\nstatus: 記録\nupdated: 2026-10-05\n---\n\n# Old\n")
         self.write("doc/archive/kept.md",
                    "---\nid: archive-kept\ntype: reference\nstatus: 見送り\nupdated: 2026-10-05\n---\n\n# Kept\n")
+        self.headings()
         self.assertEqual([], check(self.root))
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ namespace Baryonyx.Temple
     }
 
     /// <summary>
-    /// The summoning ten times (doc/features/screens.md, the summoning's presentation): ten small
+    /// The summoning ten times (doc/features/screens/temple.md, the summoning's presentation): ten small
     /// windows on the cathedral's wall light in their results' lights; the white ones break one
     /// after another from the top left, and the gold and rainbow ones are kept to the end and
     /// break after gathering light, a rainbow one raised from gold. Each window leaves its card

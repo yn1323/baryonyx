@@ -119,7 +119,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BrassWarden.ase
 
 激化は、[炉心の全開](../enemy-skills/enemy-skill-brass-furnace-overdrive.md)の演出で見せる。
 全開のあとは、胸の炉の青い光が強まって脈打ち、関節に回る光の輪が速くなり、継ぎ目から細い蒸気が漏れ続ける。
-撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使い、炉の光が消えて歯車の光が止まる（[戦闘画面の見た目モック](../../features/screens.md#戦闘画面の見た目モック)）。
+撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使い、炉の光が消えて歯車の光が止まる（[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)）。
 
 ## 外見を表現する文章
 
@@ -194,7 +194,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BrassWarden.ase
 | 状態異常を消す技・過熱・反動 | 新しい仕組みの決まり（[蒸気の排気](../enemy-skills/enemy-skill-brass-steam-vent.md)、[炉心の全開](../enemy-skills/enemy-skill-brass-furnace-overdrive.md)、[蒼炉の砲撃](../enemy-skills/enemy-skill-brass-furnace-cannon.md)） |
 | 呼び出し | 呼んだ敵の立ち位置と行動順への入れ方（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決）。この敵は2つ持つ |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（蒼炉の砲撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（蒼炉の砲撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

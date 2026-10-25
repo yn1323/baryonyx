@@ -119,7 +119,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardHeal.aseprite
 | 入力にした文書のID・Gitコミット等の版 | なし |
 | 参照画像のパス・出所・利用条件 | 画風の見本：`output/battle-inspect/cards-wide.png`（最初の6枚の挿絵の生成画像） |
 | 使用ツール・モデル・再現用設定 | Codex CLIの組み込みの画像生成（モデルは既定） |
-| 出力画像のパス・生成日・案のID | 戦闘画面のモックの最初の6枚の挿絵をそのまま使う（2026-09-30にCodex CLIで作った横長の挿絵を64×58へ縮小。[戦闘画面の見た目モック](../../features/screens.md#戦闘画面の見た目モック)） |
+| 出力画像のパス・生成日・案のID | 戦闘画面のモックの最初の6枚の挿絵をそのまま使う（2026-09-30にCodex CLIで作った横長の挿絵を64×58へ縮小。[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)） |
 | 採用・候補・不採用と理由 | 採用（候補） |
 | 採用画像と文章の差・反映方法 | なし |
 | Unityアセットのパス・GUID・利用画面 | `client/Assets/Baryonyx/Features/Combat/UI/Art/CardHeal.aseprite`。戦闘画面のモック、展示室の `BattleCardGallery` |

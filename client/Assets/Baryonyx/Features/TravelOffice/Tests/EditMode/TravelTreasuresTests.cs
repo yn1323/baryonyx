@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 旅の案内所の、行き先ごとのお宝の一覧と見つけた数（doc/features/screens.md）。
+    // 旅の案内所の、行き先ごとのお宝の一覧と見つけた数（doc/features/screens/guide.md）。
     public sealed class TravelTreasuresTests
     {
         [Test]

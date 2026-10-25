@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The forecast of a raised card on the HP bars (doc/features/screens.md, the battle mock):
+    /// The forecast of a raised card on the HP bars (doc/features/screens/battle-deck.md, the battle mock):
     /// the HP each target would lose or get back and the block it would gain, worked out the way
     /// the card plays but without changing anyone. Every target the card can pick shows its own
     /// forecast at once, as a tap leaves no time to point at one first.

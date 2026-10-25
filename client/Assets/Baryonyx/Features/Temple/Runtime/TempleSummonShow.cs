@@ -10,7 +10,7 @@ using static Baryonyx.Temple.TempleSummonFx;
 
 namespace Baryonyx.Temple
 {
-    /// <summary>How bright a summoning's light is: the best of what it gave (doc/features/screens.md).</summary>
+    /// <summary>How bright a summoning's light is: the best of what it gave (doc/features/screens/temple.md).</summary>
     public enum TempleSummonTier
     {
         // ☆3以下
@@ -26,7 +26,7 @@ namespace Baryonyx.Temple
     /// <summary>
     /// The summoning once: the cathedral's rose window lights from behind, cracks from its middle
     /// and shatters toward the camera, and the card comes down in the light that pours through
-    /// (doc/features/screens.md, the summoning's presentation). Every layer is set from the time
+    /// (doc/features/screens/temple.md, the summoning's presentation). Every layer is set from the time
     /// alone (<see cref="Evaluate"/>), so a moment can be drawn again without running time.
     /// </summary>
     public sealed class TempleSummonShow : MonoBehaviour, IEditModePreview

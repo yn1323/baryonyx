@@ -6,7 +6,7 @@ namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
     /// The notes beside a raised card, one frosted-glass plaque for each keyword its text names
-    /// (doc/features/screens.md, the battle mock): the keyword, then what it means. The plaques
+    /// (doc/features/screens/battle.md, the battle mock): the keyword, then what it means. The plaques
     /// stack down from the top of this rect, each as tall as its text, and the rect grows to hold
     /// them all.
     /// </summary>

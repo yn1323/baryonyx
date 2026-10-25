@@ -174,7 +174,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WillOWisp.asepr
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 惑い | 新しい状態の決まり（[迷い火の誘い](../enemy-skills/enemy-skill-will-o-wisp-lure.md)） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（火の玉）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（火の玉）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

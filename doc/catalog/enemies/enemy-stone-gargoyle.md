@@ -174,7 +174,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StoneGargoyle.a
 | 宙にいる間の扱い | 単体攻撃を受けない仕組みと、大技までのターン数の予告（[屋根からの急降下](../enemy-skills/enemy-skill-gargoyle-dive.md)） |
 | 呼び出し | 新しい仕組みの決まり（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（屋根からの急降下）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（屋根からの急降下）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

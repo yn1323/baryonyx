@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// The exploration map under the finger (doc/features/screens.md): dragging it looks along
+    /// The exploration map under the finger (doc/features/screens/adventure.md): dragging it looks along
     /// the route ahead (<see cref="ExplorationView.Look"/>). A drag that starts on a room's plate
     /// or the chest moves the map too, and does not press them; a tap still does.
     /// </summary>

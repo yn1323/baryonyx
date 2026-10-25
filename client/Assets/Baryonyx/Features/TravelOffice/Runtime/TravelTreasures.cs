@@ -7,7 +7,7 @@ using Baryonyx.Library;
 namespace Baryonyx.TravelOffice
 {
     /// <summary>
-    /// The treasures of a destination as the travel office shows them (doc/features/screens.md):
+    /// The treasures of a destination as the travel office shows them (doc/features/screens/guide.md):
     /// the kinds in its drop list (<see cref="AdventureDrops.Pools"/>), in the sections' order and
     /// the list's order inside each, and how many of them the library has found.
     /// </summary>

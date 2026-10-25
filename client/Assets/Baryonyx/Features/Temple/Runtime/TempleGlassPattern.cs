@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Baryonyx.Temple
 {
     /// <summary>
-    /// How a window breaks (doc/features/screens.md, the summoning's presentation): a glass plate
+    /// How a window breaks (doc/features/screens/temple.md, the summoning's presentation): a glass plate
     /// hit at one point cracks in lines that run out from it, crossed by arcs around it. The
     /// pattern holds the radial lines' angles and, for each sector between two lines, the radii of
     /// three arcs, in a window of radius 1. The shader draws the cracks from these values, and the

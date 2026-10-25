@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// One room on the exploration map (doc/features/screens.md): its round pedestal coloured by
+    /// One room on the exploration map (doc/features/screens/adventure.md): its round pedestal coloured by
     /// the room's kind and its kind icon, the glow of a room to go to next or of the deepest room,
     /// and where it is tapped. <see cref="ExplorationView"/> makes one from the template for each
     /// room of the route, and fades out the rooms not chosen as the party walks on.

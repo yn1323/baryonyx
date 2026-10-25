@@ -147,7 +147,7 @@ Unityでの実装経路（uGUI、uGUI用の粒子プラグイン、Particle Syst
 - 端末で重くならないか（透明な板の重なりと面積、1ピクセルあたりのノイズの回数、粒の数）。Android端末での確認はユーザーに依頼する。重いときは、表現を削る前にユーザーと相談する。
 
 撮影画像の保存先は、[client/AGENTS.md](../../../client/AGENTS.md) の「Unityの操作と検証」に従う。
-スキルの演出は、[スキルのデバッグルーム](../../../doc/features/screens.md#スキルのデバッグルーム)で1枚ずつ選んで再生し、戦闘と同じ画面で撮る。
+スキルの演出は、[スキルのデバッグルーム](../../../doc/features/screens/debug-rooms.md#スキルのデバッグルーム)で1枚ずつ選んで再生し、戦闘と同じ画面で撮る。
 仕上げに、戦闘画面のモックでも実際の流れどおり（手札から使い、後から働く状態はターンをまたいで）撮り、HPバー・弱点アイコン・ダメージの数字・行動順との重なりを確かめる。
 デバッグルームにはこれらが出ない。
 進み具合を指定して止めたコマを撮る方法は、[止めたコマを撮る](references/procedural-shapes.md#止めたコマを撮る)に従う。
@@ -185,7 +185,7 @@ Editorが背面にあるとフレームが進まないなど、撮影のつま�
 
 ## 安全と読みやすさ
 
-- 画面全体の閃光や大きな面積の明滅は、[WCAG 2.3.1](https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html)と[Xbox Accessibility Guideline 118](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/118)の基準内に収める。大きな面積の明滅と、彩度の高い赤の明滅は特に避け、高コントラストの縞模様を広く出さない。戦闘の演出で決めた閃光の間隔と濃さは、[画面一覧と操作](../../../doc/features/screens.md)のスキルの演出と背景の節に従う。
+- 画面全体の閃光や大きな面積の明滅は、[WCAG 2.3.1](https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html)と[Xbox Accessibility Guideline 118](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/118)の基準内に収める。大きな面積の明滅と、彩度の高い赤の明滅は特に避け、高コントラストの縞模様を広く出さない。戦闘の演出で決めた閃光の間隔と濃さは、[スキルの演出と背景](../../../doc/features/screens/battle-effects.md#スキルの演出と背景)に従う。
 - 画面揺れ、閃光、ヒットストップは、強さを下げる・止める設定で弱められるようにする。
 - 長く感じるエフェクトは長すぎる。連続して使う技ほど短くする。
 - 戦闘中に隠してはいけない情報は、[戦闘中の情報の優先順位](../../../doc/features/combat.md#戦闘中の情報の優先順位)に従う。

@@ -174,7 +174,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/ChestMimic.asep
 | 手札を奪う仕組み | 新しい仕組みの決まり（[欲張りな舌](../enemy-skills/enemy-skill-mimic-card-pilfer.md)） |
 | 敵のブロック | 消えるタイミング（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の未決） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（欲張りな舌）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（欲張りな舌）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

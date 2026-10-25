@@ -174,7 +174,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/CoinPouch.asepr
 | 逃走 | 新しい仕組み（[すたこら逃げ](../enemy-skills/enemy-skill-coin-pouch-scamper.md)）。逃げた敵を倒した数に入れるか、金貨袋だけが残って逃げたら戦闘を勝ちで終えるか |
 | 報酬 | 倒したときに金貨（通貨）を多めに落とすか（[報酬・ドロップテーブル](../loot-tables/README.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（たいあたり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（たいあたり）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

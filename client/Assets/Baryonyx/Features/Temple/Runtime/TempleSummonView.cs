@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Temple
 {
     /// <summary>
-    /// The temple's summoning, over the whole screen (doc/features/screens.md): the cathedral's
+    /// The temple's summoning, over the whole screen (doc/features/screens/temple.md): the cathedral's
     /// key art, the buttons that summon once or ten times, and a small button at the bottom left
     /// that opens the rates and what can come out (<see cref="TempleSummonRates"/>). A press
     /// summons on the server (<see cref="TempleSummonSession"/>), which spends the runes and keeps

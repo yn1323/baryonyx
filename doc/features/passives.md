@@ -171,7 +171,6 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 | 同じパッシブの重複 | 同じキャラを2人編成できる場合の扱い（[パーティの未決事項](party.md#未決事項)） |
 | 働いたことの見せ方 | 仮に名前を浮かぶ文字で出す。位置・長さ・音、アイコンを添えるか。働く回数の多いパッシブ（帯電の盾など）で画面がうるさくならないか |
 | 説明の見せ方 | 育成の画面ではキーワードを強調せずに出す。キーワードの説明札を出すか |
-| 状態異常の付与率 | 戦闘のモックはカードの状態を必ず付けるため、聖火の鉄槌も幸運の補正なしの60%で付ける（[状態異常のかかりやすさ](combat.md#状態異常のかかりやすさ)の実装と合わせて直す） |
 | 浄めの誓い | 戦闘のモックの敵は味方に状態異常を付けないため、今は働く場面がない（[敵の行動の仮設定](combat.md#敵の行動の仮設定)の実装を待つ） |
 | 固有スキルとの対応 | 仮データでは、9人の固有スキルを4人分の固有スキルで使い回している（例：リタはミナの癒しの風・蘇生）。キャラごとの固有スキルが決まったら、2つ目のパッシブのつながりを見直す |
 
@@ -190,7 +189,7 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 | 18個の定義（持ち主・解放するLv・名前・説明文）と数値 | [CombatPassives](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs) |
 | 戦闘での働き | [BattleInspectView.Passives](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)（呼ぶ所は手札・ターン・カード・敵の攻撃の各処理） |
 | 編成から戦闘へ渡す | [AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs) |
-| 育成の画面の表示 | 仮データ（`TrainingMockData`）を [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) が定義から作る（[育成](screens.md#育成)） |
+| 育成の画面の表示 | 仮データ（`TrainingMockData`）を [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) が定義から作る（[育成](screens/adventurers.md#育成)） |
 | アイコン | `client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/Passive<種類>.aseprite`（24×24ドット）。指示文と作り方は [prompts.json](../../client/ArtSource/UI/Passives/prompts.json) |
 | テスト | EditModeの `CombatPassivesTests`、PlayModeの `BattlePassivesSceneTests`・`AdventurePartyTests`・`TavernTrainingTests` |
 

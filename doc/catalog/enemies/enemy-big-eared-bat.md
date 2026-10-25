@@ -171,7 +171,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BigEaredBat.ase
 | 回避 | 新しい状態の決まり（[耳ざとい身かわし](../enemy-skills/enemy-skill-big-ear-dodge.md)） |
 | 吸い取りの回復 | 敵のHPの上限を超えて回復しないこと。回復を止める状態が味方から敵に付くかどうか |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（吸い取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（吸い取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

@@ -49,7 +49,7 @@ namespace Baryonyx.TravelOffice
     }
 
     /// <summary>
-    /// The travel office's treasures (doc/features/screens.md): each destination's row shows how
+    /// The travel office's treasures (doc/features/screens/guide.md): each destination's row shows how
     /// many of its treasures the library has found, and its button opens a window in the middle of
     /// the screen with every treasure of the destination, the found ones in their own art and the
     /// others as shadows, and how many times the destination was cleared. The records are read

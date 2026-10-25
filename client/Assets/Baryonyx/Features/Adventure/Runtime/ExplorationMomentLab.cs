@@ -31,7 +31,7 @@ namespace Baryonyx.Adventure
 
     /// <summary>
     /// The exploration moment lab, a debugging room for the turning points of the exploration
-    /// (doc/features/screens.md): the exploration screen on its sample route, with no adventure
+    /// (doc/features/screens/debug-rooms.md): the exploration screen on its sample route, with no adventure
     /// behind it, where a button plays one moment at once (<see cref="ExplorationMoments"/>).
     /// Each run starts from the sample route's entrance. The chest's quality can be chosen, and
     /// the moment, the quality and whether it repeats are remembered between Plays.

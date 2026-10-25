@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// The list of a character's statuses (doc/features/screens.md, the battle mock): the
+    /// The list of a character's statuses (doc/features/screens/battle-deck.md, the battle mock): the
     /// battlefield shows no status icons, so a tap on an enemy or an ally while no card is up
     /// lists its name, its HP out of its max and each status with what is left of it and what it
     /// does, in plaques in the middle above the battlefield.

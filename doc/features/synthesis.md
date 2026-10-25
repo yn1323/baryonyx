@@ -18,7 +18,7 @@ updated: 2026-10-24
 
 素材・道具・武器・防具・アクセサリー・スキルを合成できる。
 合成すると、より良い素材・道具・武器・防具・アクセサリー・スキルになる（2026-10-06）。
-合成は[商会](screens.md#商会)で行う（2026-10-05）。
+合成は[商会](screens/shop.md#商会)で行う（2026-10-05）。
 
 ## 設計方針
 
@@ -42,7 +42,7 @@ updated: 2026-10-24
 | 材料 | 作る物と同じ分類で、☆がちょうど1つ低い物を3つ。種類は問わず、同じ種類が混ざってもよい |
 | 使えない材料 | キャラが付けている武器・防具・アクセサリー、デッキに入れているスキル。アイテムは、デッキに入れている枠の数を残す |
 | 出来上がる品質 | 材料それぞれの、倍率の幅（×1.00から種類ごとの上限まで）の中の位置を平均し、出来上がる物の幅に当てはめる。百分率の整数に四捨五入する。品質の高い材料を使うほど、出来上がる品質も高い。アイテムは品質を持たない |
-| 費用 | 出来上がる物の☆で、☆2 200、☆3 400、☆4 800、☆5 1,600ルーン（[商会](screens.md#商会)の買う値段の半分） |
+| 費用 | 出来上がる物の☆で、☆2 200、☆3 400、☆4 800、☆5 1,600ルーン（[商会](screens/shop.md#商会)の買う値段の半分） |
 | 材料の扱い | 材料にした物は持ち物からなくなる。アイテムは数が減り、0になった種類は消える |
 | 失敗 | ない |
 
@@ -62,7 +62,7 @@ updated: 2026-10-24
 
 ## 関連する仕様とデータ
 
-[強化・合成の定義](../catalog/upgrades/README.md)・[商会](screens.md#商会)・[持ち物の分類](inventory.md)・[アイテム](items.md)・[装備](equipment.md)・[ルーン経済](economy.md)
+[強化・合成の定義](../catalog/upgrades/README.md)・[商会](screens/shop.md#商会)・[持ち物の分類](inventory.md)・[アイテム](items.md)・[装備](equipment.md)・[ルーン経済](economy.md)
 
 ## 実装との対応
 
@@ -72,7 +72,7 @@ updated: 2026-10-24
 |---|---|
 | API | `POST /v1/workshop/craft`（`requestId`・`category`・`id`、スキルと装備は持ち物の行のIDを3つの `materialIds`、アイテムは種類ごとの数の `items`）。作れない物は `goods_not_found`、材料が決まりに合わない・持っていない・使っている物は `invalid_materials`、見つけていない物は `not_discovered`、ルーン不足は `insufficient_runes` で拒む（[routes](../../server/src/features/workshop/routes.ts)・[値](../../server/src/features/workshop/catalog.ts)） |
 | 合成の確定 | 記録（`workshop_crafts`、マイグレーション0020）・ルーンの減算・材料の削除・出来た物の追加を、残高・見つけた記録・材料の倍率と使っていないことを条件にした1回のbatchで行う。要求IDで再送を見分け、二重に使わない（[repository](../../server/src/features/workshop/repository.ts)） |
-| 画面 | [商会](screens.md#商会)の「合成」。決まりは [WorkshopCraft](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopCraft.cs) にサーバーと同じ計算で持ち、押す前に出来上がる品質を見せる。サーバーの答えを待ってから持ち物の表示を変える |
+| 画面 | [商会](screens/shop.md#商会)の「合成」。決まりは [WorkshopCraft](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopCraft.cs) にサーバーと同じ計算で持ち、押す前に出来上がる品質を見せる。サーバーの答えを待ってから持ち物の表示を変える |
 | サーバーがないとき | 展示室などでは、仮の持ち物（[WorkshopStock](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopStock.cs) の `Mock`）と仮の残高で試せる |
 | テスト | サーバーは [routes.test.ts](../../server/src/features/workshop/routes.test.ts)、クライアントは [WorkshopCraftTests（EditMode）](../../client/Assets/Baryonyx/Features/Workshop/Tests/EditMode/WorkshopCraftTests.cs) と [WorkshopCraftTests（PlayMode）](../../client/Assets/Baryonyx/App/Tests/PlayMode/WorkshopCraftTests.cs) |
 

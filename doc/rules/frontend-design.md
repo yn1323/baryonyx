@@ -162,19 +162,19 @@ client/
 
 | シーン | 役割 | シーンを作り直すメニュー | 仕様 |
 |---|---|---|---|
-| `Top.unity` | 起動画面。サーバーへの接続と歩数の同期を行い、全面押下でHomeへ移る | `Baryonyx > App > Create Top and Home Scenes` | [Top](../features/screens.md#top)・[起動時の連携と歩数の同期](../features/startup-sync.md) |
-| `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens.md#ホーム画面の見た目モック) |
+| `Top.unity` | 起動画面。サーバーへの接続と歩数の同期を行い、全面押下でHomeへ移る | `Baryonyx > App > Create Top and Home Scenes` | [Top](../features/screens/top-home.md#top)・[起動時の連携と歩数の同期](../features/startup-sync.md) |
+| `Home.unity` | ホーム画面 | `Baryonyx > App > Create Home Scene` | [ホーム画面](../features/screens/top-home.md#ホーム画面の見た目モック) |
 | `Showcase.unity` | クライアントアセット展示室 | `Baryonyx > Showcase > Create Scene` | [展示室](../features/showcase.md) |
-| `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens.md#冒険の画面) |
+| `Exploration.unity` | 冒険の探索。3Dの舞台を使わず、森を見下ろす地図を端末で描く | `Baryonyx > App > Create Exploration Scene` | [冒険の画面](../features/screens/adventure.md#冒険の画面) |
 | `WorldMap.unity` | 街道の世界地図の試作。上下左右に動かせる地図と、すごろくのマス。冒険していないときのHomeの右下のカードが開き、右下のボタンで旅の案内所（ダンジョン一覧）を開く。戦闘と関所のボスのマスに着くと `Battle.unity` を開く | `Baryonyx > App > Create World Map Scene` | [街道の世界地図の試作](../features/stage-progression.md#世界地図の形と試作2026-10-24) |
-| `Battle.unity` | 冒険の戦闘と、街道の世界地図のマスの戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
-| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
-| `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens.md#戦闘画面の見た目モック) |
-| `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens.md#スキルのデバッグルーム) |
-| `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens.md#品質のデバッグルーム) |
-| `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens.md#敵の挙動デバッグルーム) |
-| `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens.md#戦闘の演出デバッグルーム) |
-| `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens.md#探索の演出デバッグルーム) |
+| `Battle.unity` | 冒険の戦闘と、街道の世界地図のマスの戦闘。単体で開けば、背景を `BattleStages` の `Stage` で選べる | `Baryonyx > App > Create Battle Scene` | [戦闘の背景を選べる戦闘シーン](../features/screens/battle.md#戦闘の背景を選べる戦闘シーン)・[戦闘の背景](../art/hd2d-stage.md#戦闘の背景) |
+| `Guide/Pub.unity`・`Shop.unity`・`Temple.unity`・`TravelOffice.unity`・`Library.unity` | Homeから開く案内人の画面（編成・商会・神殿・ライブラリ）と、世界地図から開く旅の案内所（ダンジョン一覧。案内人なし）。「もどる」でHome（旅の案内所は世界地図）へ戻る | `Baryonyx > App > Create Guide Scenes` | [案内人がいる画面](../features/screens/guide.md#編成商会神殿旅の案内所の画面)・[ライブラリ](../features/library.md) |
+| `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens/battle.md#戦闘画面の見た目モック) |
+| `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens/debug-rooms.md#スキルのデバッグルーム) |
+| `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens/debug-rooms.md#品質のデバッグルーム) |
+| `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
+| `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens/debug-rooms.md#戦闘の演出デバッグルーム) |
+| `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens/debug-rooms.md#探索の演出デバッグルーム) |
 
 Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
 3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。

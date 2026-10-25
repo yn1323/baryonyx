@@ -118,7 +118,7 @@ updated: 2026-10-24
 | 火の粉 | 相手から火の粉が舞い上がる |
 
 段階ごとの色としるしは、スキルの定義文書の「覚醒版」の節の「演出」の行に書く。
-[スキルのデバッグルーム](screens.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブから、100の段階を選んで再生できる。
+[スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブから、100の段階を選んで再生できる。
 
 ### 挿絵
 
@@ -234,7 +234,7 @@ updated: 2026-10-24
 | 持ち物（クライアント） | [PartySkillCard](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyCards.cs) の `AwakenedBranch`・`StageId`。覚醒した1枚は覚醒版のカード（`CardSkills.Find` が `Fire.1` も引く）として、倍率をそのまま持つ。戦闘で覚醒した1枚は、マスを終えたときに [PartySkillAwakenings](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySkillAwakenings.cs) が送る |
 | 戦闘 | [BattleInspectView.Evolution](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Evolution.cs)。デッキのカードに持っているスキルの1枚のID（`OwnedCard`）を持たせ（[AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)）、固有スキルと同じ予兆の抽選に載せる。確率は [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs) の `AwakenChance`（固有スキルの半分）。「覚醒しない」は [BattleEvolutionChoice](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleEvolutionChoice.cs) の `DeclineButton` と、演出の `EvolutionSettle` |
 | 商会 | 「スキル覚醒」の一覧に、固有スキルの段階のあとへ、覚醒していない1枚ずつの2つの枝を並べる（[EnhancementTargets](../../client/Assets/Baryonyx/Features/Enhancement/Runtime/EnhancementTargets.cs) の `SkillAwakenings`、[WorkshopEnhanceView](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopEnhanceView.cs)）。2行目は「付けている人｜元の名前から覚醒（元に戻せない）」 |
-| 演出の確認 | [スキルのデバッグルーム](screens.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブ（[CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)）。PlayModeテストの `CardSkillLabSceneTests` が、しるしの種類と効果の並びが一通りそろう16の段階を最後まで流す |
+| 演出の確認 | [スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブ（[CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)）。PlayModeテストの `CardSkillLabSceneTests` が、しるしの種類と効果の並びが一通りそろう16の段階を最後まで流す |
 
 ### 挿絵の作り方
 

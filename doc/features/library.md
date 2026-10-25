@@ -128,7 +128,7 @@ updated: 2026-10-25
 
 ### 画面の作り
 
-[案内人がいる画面](screens.md#編成商会神殿旅の案内所の画面)と同じ作りにし、案内人の右のメニューに分類を並べる。
+[案内人がいる画面](screens/guide.md#編成商会神殿旅の案内所の画面)と同じ作りにし、案内人の右のメニューに分類を並べる。
 メニューは、キャラクター・装備・スキル・アイテム・敵・日々の歩数の6行にする。
 8つの分類を1行ずつ並べると、メニューが画面の高さに収まらないためである。
 装備を選ぶと武器のパネルが開き、見出しのタブで武器・防具・アクセサリーを切り替える。
@@ -136,7 +136,7 @@ updated: 2026-10-25
 
 分類を選ぶと、左にカードのタイル一覧（4列）、右に選んだ項目の個別の内容を並べる。
 個別の内容を一覧と同じ画面の右に出すため、タイルを選んでも別の画面には移らない。
-画面の枠とカードは、[枠つきの表示](screens.md#枠つきの表示)と[すりガラスのカード](screens.md#すりガラスのカード)を使う。
+画面の枠とカードは、[枠つきの表示](screens/guide.md#枠つきの表示)と[すりガラスのカード](screens/guide.md#すりガラスのカード)を使う。
 日々の歩数だけはタイルにせず、日付の新しい順の一覧にする。
 
 ## 未決事項
@@ -157,7 +157,7 @@ updated: 2026-10-25
 
 | 対象 | 実装の入口 | 仕様との差・残り |
 |---|---|---|
-| 見つけた記録 | [library/db-schema.ts](../../server/src/features/library/db-schema.ts) の `library_discoveries`、書く文は [discoveries.ts](../../server/src/features/library/discoveries.ts) | キャラ・カード・装備は初めに配るときと、カスタムスキルの枠にカードを付けたときに記録する。冒険のドロップと行商人の購入は、持ち物に足す書き込みと同じbatchで記録する。[商会](screens.md#商会)の「買う」は、この記録に載っている物だけを売り、記録は書き足さない（2026-10-24）。召喚で出た物（キャラ・装備・アイテム）は、持ち物に足す書き込みと同じbatchで記録する（2026-10-24） |
+| 見つけた記録 | [library/db-schema.ts](../../server/src/features/library/db-schema.ts) の `library_discoveries`、書く文は [discoveries.ts](../../server/src/features/library/discoveries.ts) | キャラ・カード・装備は初めに配るときと、カスタムスキルの枠にカードを付けたときに記録する。冒険のドロップと行商人の購入は、持ち物に足す書き込みと同じbatchで記録する。[商会](screens/shop.md#商会)の「買う」は、この記録に載っている物だけを売り、記録は書き足さない（2026-10-24）。召喚で出た物（キャラ・装備・アイテム）は、持ち物に足す書き込みと同じbatchで記録する（2026-10-24） |
 | 敵の遭遇と倒した数 | `POST /v1/adventure/clear`・`/v1/adventure/end` の `enemies`、クライアントは [BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs) | 戦闘を終えた記録を書けたときだけ足すため、送り直しても二重に数えない。接続先がないときは記録しない |
 | API | `GET /v1/library`（見つけた記録）・`GET /v1/library/steps`（日々の歩数）。[routes.ts](../../server/src/features/library/routes.ts) | 編成と装備の初期データは、ログインしたときに付与する（[equipment/starter.ts](../../server/src/features/equipment/starter.ts)） |
 | 画面 | `Library.unity`、[LibraryScreenAssets](../../client/Assets/Baryonyx/Features/Library/Editor/LibraryScreenAssets.cs)（`Baryonyx > Library > Create Screen Assets`）、[LibraryCatalogView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryCatalogView.cs)・[LibraryStepsView](../../client/Assets/Baryonyx/Features/Library/Runtime/LibraryStepsView.cs) | 案内人と背景の生成指示は [ArtSource](../../client/ArtSource/UI/Library/prompts.json) に記録した。記録は開くたびに読み直し、見つけた記録と日々の歩数は同時に読む。開き直したときは、前に読んだ記録（[LibrarySession](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySession.cs) の `Known`）をすぐ出し、変わっていたときだけ描き直す（[開き直したときの表示](../rules/data-storage.md#サーバーに置くときの作り方)） |

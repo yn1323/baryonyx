@@ -48,7 +48,7 @@ namespace Baryonyx.Workshop
     }
 
     /// <summary>
-    /// What the player holds, for the trading house's sell and craft (doc/features/screens.md#商会):
+    /// What the player holds, for the trading house's sell and craft (doc/features/screens/shop.md#商会):
     /// the skill cards and items from the party, and the equipment, with who uses each one.
     /// Without a server, a fixed mock list stands in, so the screens can be checked.
     /// </summary>

@@ -118,7 +118,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrostApe.asepri
 
 激化は、[霜の鎧毛](../enemy-skills/enemy-skill-frost-ape-rime-coat.md)の演出で見せる。
 鎧毛のあいだは、長毛の先が白く凍って光り、ときどき霜の粒が落ちる。
-撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使う（[戦闘画面の見た目モック](../../features/screens.md#戦闘画面の見た目モック)）。
+撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使う（[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)）。
 
 ## 外見を表現する文章
 
@@ -194,7 +194,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrostApe.asepri
 | 霜の鎧毛を炎で解く案 | [霜の鎧毛](../enemy-skills/enemy-skill-frost-ape-rime-coat.md)の未決事項。採ると、弱点の炎を突く理由が増える |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 行動順のコマ | 戦闘の1枚絵から行動順のコマ（24×24）を切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（雪崩おとし）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（雪崩おとし）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

@@ -179,7 +179,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/FrogKing.asepri
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 強化を奪う仕組みと呼び出し | 新しい仕組みの決まり（[舌のかすめ取り](../enemy-skills/enemy-skill-frog-king-tongue-snatch.md)、[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（舌のかすめ取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（舌のかすめ取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

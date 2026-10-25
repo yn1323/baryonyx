@@ -119,7 +119,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/RockTroll.asepr
 
 切り替えの行動で、肩の岩を拳で叩き割り、天井を仰いで吠える演出を出す。画面を短く揺らし、天井から細かい砂と小石を落とす。
 激化のあいだは、黄色い目の光が強まり、岩肌の継ぎ目に薄い赤の揺らぎを重ねる。揺らぎは予告と弱点のアイコンを隠さない明るさに抑える。
-撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使う（[戦闘画面の見た目モック](../../features/screens.md#戦闘画面の見た目モック)）。
+撃破の演出は、戦闘画面のモックのボスの撃破（長く重く崩れる）を使う（[戦闘画面の見た目モック](../../features/screens/battle.md#戦闘画面の見た目モック)）。
 
 ## 外見を表現する文章
 
@@ -194,7 +194,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/RockTroll.asepr
 | 飛び散る攻撃・失ったHPの割合での回復・全体の絡みつき | 新しい仕組みの決まり（[肩石投げ](../enemy-skills/enemy-skill-rock-troll-boulder-toss.md)、[岩肌の再生](../enemy-skills/enemy-skill-rock-troll-regrow.md)、[洞窟崩し](../enemy-skills/enemy-skill-rock-troll-cave-in.md)） |
 | 呼び出し | 呼んだ敵の立ち位置と行動順への入れ方（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（肩石投げ）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（肩石投げ）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

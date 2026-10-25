@@ -49,7 +49,7 @@ namespace Baryonyx.Combat.Presentation
     /// <summary>
     /// The battle moment lab, a debugging room for the turning points of a battle: the mock battle
     /// (<see cref="BattleInspectView"/>) with its cards put away, where a button plays one moment
-    /// at once through the battle's own code (doc/features/screens.md). Each run starts from the
+    /// at once through the battle's own code (doc/features/screens/debug-rooms.md). Each run starts from the
     /// battlefield that moment needs (the enemies standing for their entrance and the win, gone
     /// for a drop, the party fallen for a revive). The drop's quality can be chosen, and the
     /// moment, the quality and whether it repeats are remembered, so the next Play after a change

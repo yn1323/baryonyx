@@ -37,7 +37,7 @@ updated: 2026-10-22
 - 53体のデータ（[CombatEnemyBehaviors](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyBehaviors.cs) と行き先ごとのファイル）。モックの3体を見本に書き、残りの50体は5つに分けて並行して文書から写し、写した側が省いた・寄せた点をデータのコメントに残した。
 - 戦闘での動き（[BattleInspectView.EnemyMoves](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.EnemyMoves.cs)）：攻撃の形、敵のブロック（HPバーの黄色の帯）・回復・リジェネ・攻撃力アップ・プロテクト・次の攻撃の威力アップ、溜めの知らせと明滅、激化の知らせ。
 - 敵の速度を [CombatEnemyStats](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemyStats.cs) に写した。
-- 敵の挙動デバッグルームに「技」「大技（溜め）」を足した（[画面一覧](../features/screens.md#敵の挙動デバッグルーム)）。
+- 敵の挙動デバッグルームに「技」「大技（溜め）」を足した（[画面一覧](../features/screens/debug-rooms.md#敵の挙動デバッグルーム)）。
 
 ## 戦闘の試し
 

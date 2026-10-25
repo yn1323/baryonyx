@@ -173,7 +173,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/HourglassSprite
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 巻き戻し | 前に行動した直後のHPを覚える仕組み（[時の巻き戻し](../enemy-skills/enemy-skill-hourglass-sprite-rewind.md)） |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（電撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（電撃）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

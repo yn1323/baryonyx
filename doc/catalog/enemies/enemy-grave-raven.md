@@ -176,7 +176,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/GraveRaven.asep
 | 技のまね | 新しい仕組み（[鴉のものまね](../enemy-skills/enemy-skill-raven-mimic-echo.md)）。味方のカードの記録から技の区分と属性を決める。予告の出し方 |
 | 呼び出し | 呼んだ骸骨兵のLvと立ち位置（[仲間を呼ぶ](../enemy-skills/enemy-skill-call-ally.md)） |
 | 行動順のコマ | 1枚絵から切り出す位置 |
-| 実装 | 冒険の戦闘では、ステータスと技1つ（鴉のものまね）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens.md#敵の挙動デバッグルーム)の行動も増やす |
+| 実装 | 冒険の戦闘では、ステータスと技1つ（鴉のものまね）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
 ## 変更と判断の記録
 

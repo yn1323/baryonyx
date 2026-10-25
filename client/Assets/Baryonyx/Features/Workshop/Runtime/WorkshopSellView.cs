@@ -17,7 +17,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Workshop
 {
     /// <summary>
-    /// The trading house's "sell" (doc/features/screens.md#商会), filling the screen: the held
+    /// The trading house's "sell" (doc/features/screens/shop.md#商会), filling the screen: the held
     /// things on the left, each one apart since each has its own quality (items, which have none,
     /// one card per kind with the count), and the chosen ones with their prices and the total on
     /// the right. Several can be chosen; a thing someone uses shows "E" and cannot be. Press "sell"

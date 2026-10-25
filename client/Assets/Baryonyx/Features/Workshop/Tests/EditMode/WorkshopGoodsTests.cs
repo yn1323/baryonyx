@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 商会の「買う」：これまでに手に入れた物を品質の最低で売る品物と値段（doc/features/screens.md#商会）。
+    // 商会の「買う」：これまでに手に入れた物を品質の最低で売る品物と値段（doc/features/screens/shop.md#商会）。
     public sealed class WorkshopGoodsTests
     {
         private LibraryData data;

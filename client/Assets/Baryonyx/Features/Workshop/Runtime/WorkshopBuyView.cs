@@ -18,7 +18,7 @@ using UnityEngine.UI;
 namespace Baryonyx.Workshop
 {
     /// <summary>
-    /// The trading house's "buy" (doc/features/screens.md#商会), filling the screen: the tabs and
+    /// The trading house's "buy" (doc/features/screens/shop.md#商会), filling the screen: the tabs and
     /// a grid of every skill, weapon, armor and accessory the library has found
     /// (<see cref="WorkshopGoods"/>) on the left, read again each time it opens, and the chosen
     /// one's art (a skill as its deck card), quality, effect and price on the right. Press "buy" to buy one at the lowest

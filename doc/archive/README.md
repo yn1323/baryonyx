@@ -9,7 +9,7 @@
 
 | 文書 | 内容 | 移した日と理由 | 後継 |
 |---|---|---|---|
-| [遊べる試作の画面と操作](game-wireframe.md) | 2026-09-19に作った操作試作（Wireframe）の11画面の操作、戦闘と再戦、2026-09-19のユーザー評価 | 2026-10-05。試作は2026-09-24に削除した | [画面一覧と操作](../features/screens.md)（Topと画面遷移の演出は[Top](../features/screens.md#top)） |
+| [遊べる試作の画面と操作](game-wireframe.md) | 2026-09-19に作った操作試作（Wireframe）の11画面の操作、戦闘と再戦、2026-09-19のユーザー評価 | 2026-10-05。試作は2026-09-24に削除した | [画面一覧と操作](../features/screens.md)（Topと画面遷移の演出は[Top](../features/screens/top-home.md#top)） |
 | [体験版のゲームUIと生成素材](game-ui.md) | 操作試作の11画面の見た目、生成素材、検証とAPKの記録 | 2026-10-05。画面は2026-09-24に削除した | [アート方針](../art/direction.md)・[ゲーム内の対象の画像](../rules/frontend-design.md#ゲーム内の対象の画像) |
 | [削除した歩数画面の仕様と検証記録](health-data-local-screen.md) | 「1週間の歩数」画面（日別一覧・JSON詳細・Google接続）、利用条件の案内、縦画面の構成と検証 | 2026-10-05。画面は2026-09-24に削除した | [起動時の連携と歩数の同期](../features/startup-sync.md)・[健康データの読み取りと保存](../features/health-data.md) |
 | [ACTボーナス](step-bonus.md) | 段階ごとの枠に入れたボーナスが、今日のACTが段階に届くと翌朝4時まで効く仕組み。7種のボーナス、枠の付け替え、冒険のドロップの分類「bonus」、保存の3テーブル | 2026-10-24。ユーザーの指示で概念ごと廃止した | [運動データとルーン換算](../features/exercise-rewards.md)・[冒険のドロップ](../features/drops.md) |
