@@ -217,6 +217,81 @@ Editorの札の取得・待機・期限切れの引き継ぎ・返却は、同�
 
 実環境ではキャッシュ有無を分けて所要時間を比較し、2回目のイメージ取得と初期インポートが再利用されることを確認する。
 
+## 戦闘の自動対戦
+
+戦闘の強さは、カードを自動で使わせて同じ戦闘を何回も戦わせ、勝率とターン数で測る。
+自動対戦は本物の戦闘画面（`BattleInspectView`）をそのまま動かすため、カード・装備・ステータス・戦闘の計算の変更は、自動対戦にも同じように効く。
+調べ方の進め方は手動のスキル [battle-balance](../../.agents/skills/battle-balance/SKILL.md) にあり、測った結果は[戦闘の試し](../features/stage-progression.md#戦闘の試し)に記録する。
+
+### 回し方
+
+`client/Temp/battle-balance/request.json` に依頼を書き、PlayModeの `BattleBalanceTests` を実行する。
+
+```bash
+python3 client/ci/run-editor-tests.py BattleBalanceTests --timeout 900
+```
+
+結果は同じフォルダーの `result.md`（組ごとの表）と `result.json`（依頼、組ごとの集計、1戦ごとの記録）に書かれる。
+`RunsTheRequestedBattles` は、始めに依頼を `request.taken.json` へ移してから戦う。
+依頼がなければ何もせずに合格するため、全件実行に含まれていても時間はかからない。
+置いたままの依頼が、ほかの作業の全件実行で回り直すこともない。
+
+1戦はLv10の森の強い魔物で約6秒、最奥の間で約9秒かかる（2026-10-25）。
+Editorの札は1回15分までのため（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）、1回の依頼はその中に収まる量にし、多いときは分けて回す。
+強い魔物の20組を3回ずつ戦わせると約6分である。
+同じフォルダーの `BattleBalanceTests` には、森の魔物の1組を1回戦って終わりまで数えられることを確かめるテストもあり、こちらは全件実行でも毎回動く。
+
+### 依頼の項目
+
+依頼はJSONで書き、書かなかった項目は既定の値になる。
+
+| 項目 | 既定 | 内容 |
+|---|---|---|
+| `mode` | `single` | `single` は1つの部屋の戦闘を繰り返す。`through` は冒険の道を入口から最奥まで歩き、戦闘のマスで戦ってHPを持ち越す |
+| `destination` | `forest-ruins` | 行き先のID（[行き先と敵](../features/stage-progression.md#行き先と敵)） |
+| `room` | `elite` | `single` で戦う部屋。`pack`（魔物の気配）・`elite`（強い魔物の気配）・`boss`（最奥の間）・`mimic`（怪しい宝箱のミミック） |
+| `depthPercent` | `100` | 道中の深さの倍率（%）。最奥の間には掛けない |
+| `variants` | 空 | 敵の組み合わせの番号。空なら全組み合わせ。番号 v の小さな敵は v を小さな敵の数で割った余り、中くらいの敵はその商を中くらいの敵の数で割った余り、最奥の主はさらにその商で選ぶ。番号と敵は `result.md` の組の欄に出る |
+| `repeats` | `3` | `single` で組み合わせごとに戦う回数 |
+| `runs` | `5` | `through` で歩く冒険の数 |
+| `seed` | `1` | 乱数の種。1戦（`through` では1回の冒険）ごとに1ずつ進める。同じ依頼と同じ種なら、同じ戦闘になる |
+| `levels` | 空 | 編成の枠の順のLv。0や書かない枠は仮データのLv |
+| `cardMultiplier` | `1` | カスタムスキルのカードすべての倍率（[品質](../features/inventory.md#品質)） |
+| `awakenedBranch` | `0` | カスタムスキルのカードすべての覚醒（1か2）。その覚醒がないカードは覚醒しない |
+| `equipment` | 空 | 付ける装備の一覧。1つごとに `character`（キャラのID。空なら `slot` の編成の枠）、`equipment`（[装備](../features/equipment.md)の種類のID）、`multiplier`（倍率）、アクセサリーなら `accessory`（枠の番号0〜2）を書く。空なら装備なし |
+| `startHpShare` | `1` | 始めのHP（最大HPに対する割合）。`through` では最初の戦闘だけ |
+| `knowWeaknesses` | `false` | 敵の弱点を最初から開示しておくか |
+| `odds` | `random` | `random` は会心と状態異常を確率どおりに振る。`fixed` はテストと同じく、会心なし・状態異常は必ず付く |
+| `policy` | `default` | カードの選び方。今は1つだけ |
+| `openShadyChests` | `false` | `through` で怪しい宝箱を開けてミミックと戦うか |
+| `maxTurns` | `40` | このターンを超えた戦闘は打ち切り（`Timeout`）にする |
+| `verbose` | `false` | 1手ごとの記録（ターン・エネルギー・カード・対象・両方のHP）を `[balance] step` としてEditorのログに出す |
+| `timeScale` | `20` | 戦闘の時間を進める速さ |
+
+### 本物の戦闘との違い
+
+- 戦闘ごとに戦闘のデバッグルーム（`BattleLab.unity`）を開き、冒険の戦闘と同じく、戦闘が始まる前に部屋の敵と編成を入れる。このシーンの戦闘画面は、冒険の戦闘（`Battle.unity`）と同じPrefabである。
+- 演出を外し、時間を速く進める。演出がないときにカードの効果をすぐ当てる処理は、戦闘画面がもともと持っている。演出が要るため、戦闘中の固有スキルの覚醒は起きない。
+- カードは、戦闘画面の操作（カードを押して対象を押す、全体のカードは2回押す）で使う。選び方は、倒れた味方がいれば蘇生、HPが半分を切った味方がいれば回復・防御、ほかはコストの高い攻撃から使い、開示した弱点を突ける敵、なければHPの最も少ない敵を狙う。
+- 編成は仮データの編成で、サーバーに保存した編成ではない。Lv・カードの倍率・覚醒・装備は依頼で変える。
+- 装備は、冒険の戦闘がプレイヤーの装備を渡すのと同じ所（`AdventureParty.Of`）へ渡すため、ステータスの上昇と攻撃スキルの2回発動が本物と同じに効く。`result.json` の `partyStats` に、戦闘が始まったときの味方のステータスと2回発動の確率が残る。
+- 本物の初期のパーティは、サーバーの定義（[STARTER_EQUIPPED](../../server/src/features/equipment/catalog.ts)）の武器と防具を×1.00で付けている。初期のパーティを測るときは、この装備を `equipment` に書く。
+- `through` では、休憩のマスで休む（[HPの持ち越し](../features/stage-progression.md#hpの持ち越し)と同じ回復）だけを入れ、戦闘後の強化、休憩の鍛える・研鑽、「？」の中身、宝箱と行商人は入れていない。道の分かれ道は種で決めた乱数で選ぶ。全滅したらその冒険を終える。
+- 1戦ごとの種で、Unityの乱数（敵の行動・山札・狙い・2回発動）と、会心と状態異常の確率（`BattleOdds.Seed`）の両方を決める。テスト全体は確率を固定しているが（会心なし・状態異常は必ず付く）、自動対戦は `odds` が `random` なら種で振り、終わったら本物の戦闘と同じ共有の乱数へ戻す。テストの後片付けで固定へ戻る。
+- 手札は隠しておく。味方が倒れたときに手札が崩れる演出は、実時間で進みながらUnityの乱数を使うため、隠さないと種でそろわない。手札を隠すと、使えるカードがなくなったときの自動のターン終了も止まるため、自動対戦が、使えるカードがないときと手札を使い切ったときにターンを終える。
+
+### 実装の場所
+
+| 対象 | 入口 |
+|---|---|
+| 依頼の項目 | [BattleBalanceRequest](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceRequest.cs) |
+| 戦闘を開いて戦わせ、数える | [BattleBalanceSession](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceSession.cs) |
+| 敵の組み合わせ | [BattleBalanceEncounters](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceEncounters.cs) |
+| パーティ（`AdventureParty.Of` を通す） | [BattleBalanceParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceParty.cs) |
+| カードの選び方（差し替えられる） | [BattleAutoPolicy](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleAutoPolicy.cs) |
+| 集計と表 | [BattleBalanceResult](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceResult.cs) |
+| 実行の入口と確認のテスト | [BattleBalanceTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/PlayMode/BattleBalanceTests.cs)・[BattleBalanceResultTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/EditMode/BattleBalanceResultTests.cs) |
+
 ## 関連手順
 
 - [Androidビルドと実機確認](client-android-testing.md)：APKの取得、PRコメント、手動確認の範囲。

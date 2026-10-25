@@ -1,0 +1,6 @@
+interface:
+  display_name: "戦闘バランスを調べる"
+  short_description: "自動対戦で勝率とターン数を測り、目安と比べて原因と直し方の案を出す手順"
+  default_prompt: "Use $battle-balance to measure the battle balance with the automatic battles, compare it with the targets, and report the causes and fixes with numbers."
+policy:
+  allow_implicit_invocation: false

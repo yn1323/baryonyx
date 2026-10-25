@@ -70,6 +70,12 @@
 | [card-skill-authoring](card-skill-authoring/SKILL.md) | カードスキルの効果と説明文を足す・直す・レビューする | 自動 | [戦闘システム](../../doc/features/combat.md)（[カードの説明文に書くこと](../../doc/features/combat.md#カードの説明文に書くこと)） | 挿絵は pixel-art-standards、演出は vfx-authoring |
 | [passive-skill-authoring](passive-skill-authoring/SKILL.md) | キャラのパッシブスキルを考える・足す・直す・レビューする | 自動 | [パッシブスキル](../../doc/features/passives.md)（[設計方針](../../doc/features/passives.md#設計方針)） | 説明文の書き方は card-skill-authoring に従う |
 
+## 戦闘のバランス
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [battle-balance](battle-balance/SKILL.md) | 戦闘の自動対戦で勝率とターン数を測り、目安と比べ、原因の場所と数字の見込みつきの直し方を報告する。倍率・敵・カード・装備・ステータスを変えたあとの測り直し | 手動 | [戦闘の自動対戦](../../doc/rules/client-testing.md#戦闘の自動対戦)、[戦闘の長さ](../../doc/features/combat.md#戦闘の長さ)、[戦闘の試し](../../doc/features/stage-progression.md#戦闘の試し) | カードの効果と説明文は card-skill-authoring、パッシブは passive-skill-authoring |
+
 ## ドット絵と画像生成
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
@@ -103,6 +109,7 @@
 | 新しいキャラを考える → 絵にする | rpg-character-profile → character-sprite-sheet・character-illustration |
 | カードスキルを足す・文言を直す | card-skill-authoring |
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
+| 敵が硬い・弱い、戦闘が長い・危ない、倍率や数値を変えたあとに測り直す | battle-balance（手動専用。使ってよいかユーザーに確認する） |
 | 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
 | 保存する処理を足す、保存先を聞かれた | data-storage |
 | サーバーのAPIを足す・直す、APIが遅い | server-api-authoring。保存先が未決なら先に data-storage |
