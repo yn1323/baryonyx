@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // 冒険の1周（doc/features/screens.md の冒険の画面）を、実際のシーンで通す。
+    // 冒険の1周（doc/features/screens/adventure.md の冒険の画面）を、実際のシーンで通す。
     // 冒険はテストごとに新しい、アプリ内だけの冒険（TestGameServices.Adventure）を使う。
     public sealed class AdventureLoopTests
     {
@@ -847,7 +847,8 @@ namespace Baryonyx.Tests.PlayMode
             var half = battle.Allies.Single(ally => ally.Slot == 0);
             var fallen = battle.Allies.Single(ally => ally.Slot == 1);
             int fallenPlace = System.Array.IndexOf(battle.Allies, fallen);
-            Assert.That(half.Hp, Is.EqualTo(BattleInspectView.StartHpOf(half.MaxHp, 0.5f)));
+            // パーティより速い敵がいると、確かめる前に先に動いてHPを減らすことがあるため、始まりのHPで見る。
+            Assert.That(half.StartHp, Is.EqualTo(BattleInspectView.StartHpOf(half.MaxHp, 0.5f)));
             Assert.That(fallen.Down, Is.True);
             Assert.That(
                 battle.HandCards.Select(index => battle.Cards[index].Caster),
@@ -856,12 +857,15 @@ namespace Baryonyx.Tests.PlayMode
 
             half.Hp = Mathf.Max(1, half.MaxHp / 4);
             float kept = half.Hp / (float)half.MaxHp;
+            // 先に動いた速い敵がほかの味方のHPを減らしていることもあるため、勝ったときの割合と比べる。
+            var other = battle.Allies.Single(ally => ally.Slot == 2);
+            float otherKept = other.Hp / (float)other.MaxHp;
             WinAtOnce(battle);
             yield return WaitForBoons(bootstrap);
             var carried = AdventureVitals.Of(runId);
             Assert.That(carried[0], Is.EqualTo(kept).Within(0.0001f));
             Assert.That(carried[1], Is.Zero);
-            Assert.That(carried[2], Is.EqualTo(1f));
+            Assert.That(carried[2], Is.EqualTo(otherKept).Within(0.0001f));
         }
 
         // 休憩のマスの焚き火を開くまで待つ。
@@ -1018,6 +1022,99 @@ namespace Baryonyx.Tests.PlayMode
                 Has.No.Member((slot, card.Skill.Id))
             );
             campfire.Close();
+        }
+
+        // 焚き火の休む・鍛える・研鑽は、絵の中の物を押しても、その上の札を押しても選べる。
+        // 休憩の1つ前のマスから、地図の休憩のマスを押して歩いて着いたところで、画面の位置を押して確かめる。
+        [UnityTest]
+        public IEnumerator TheCampfireTakesTapsOnItsThingsAndTags()
+        {
+            var before = StartAt(7);
+            var cleared = Do(
+                services.Adventure.ClearAsync(
+                    before.Id,
+                    CancellationToken.None,
+                    null,
+                    new AdventureClearOptions { Pass = before.Kind == AdventureRoomKind.ShadyChest }
+                )
+            );
+            var rest = cleared.Run.Exits[0];
+            Assert.That(rest.Kind, Is.EqualTo(AdventureRoomKind.Rest));
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                value => value.Flow != null,
+                value => bootstrap = value
+            );
+            yield return SceneTests.WaitUntil(
+                () => ExplorationReady(bootstrap),
+                8f,
+                "The exploration did not open."
+            );
+            bootstrap.View.MarkerOf(rest.Id).Button.onClick.Invoke();
+            yield return WaitForCampfire(bootstrap);
+            yield return SceneTests.WaitUntil(
+                () => !bootstrap.View.Walking && !bootstrap.Transition.IsPlaying,
+                8f,
+                "The party did not arrive."
+            );
+            var campfire = bootstrap.View.Campfire;
+            foreach (
+                var button in new[]
+                {
+                    campfire.RestButton,
+                    campfire.TrainButton,
+                    campfire.StudyButton,
+                }
+            )
+                Assert.That(
+                    HandlerAt(button.transform),
+                    Is.EqualTo(button.gameObject),
+                    button.name
+                );
+
+            TapAt(campfire.TrainButton.transform.Find("Tag"));
+            Assert.That(campfire.TrainShown, Is.True);
+            campfire.TrainBack.onClick.Invoke();
+            TapAt(campfire.StudyButton.transform.Find("Tag"));
+            Assert.That(campfire.StudyShown, Is.True);
+            campfire.StudyBack.onClick.Invoke();
+            TapAt(campfire.RestButton.transform.Find("Tag"));
+            Assert.That(campfire.IsOpen, Is.False);
+            yield return SceneTests.WaitUntil(
+                () => AdventureSession.Current.Run.RoomCleared && ExplorationReady(bootstrap),
+                8f,
+                "The rest was not taken."
+            );
+            Assert.That(bootstrap.View.Notice.LastMessage, Is.EqualTo(AdventureTexts.Rested));
+        }
+
+        // 画面で target の中央を押したときに、押したことを受け取る物。
+        private static GameObject HandlerAt(Transform target)
+        {
+            var rect = (RectTransform)target;
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(
+                    null,
+                    rect.TransformPoint(rect.rect.center)
+                ),
+            };
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointer, hits);
+            Assert.That(hits, Is.Not.Empty, target.name);
+            return ExecuteEvents.GetEventHandler<IPointerClickHandler>(hits[0].gameObject);
+        }
+
+        // 画面で target の中央を、指で押して離したように押す。
+        private static void TapAt(Transform target)
+        {
+            var handler = HandlerAt(target);
+            ExecuteEvents.Execute(
+                handler,
+                new PointerEventData(EventSystem.current),
+                ExecuteEvents.pointerClickHandler
+            );
         }
 
         // 「？」のマスに着くと、サーバーが決めた中身の種類のマスになり、その種類を知らせる。

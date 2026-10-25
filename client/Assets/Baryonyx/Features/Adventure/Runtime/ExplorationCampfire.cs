@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -124,6 +125,8 @@ namespace Baryonyx.Adventure
                 TrainButton.onClick.AddListener(OpenTrain);
             if (StudyButton != null)
                 StudyButton.onClick.AddListener(OpenStudy);
+            foreach (var button in new[] { RestButton, TrainButton, StudyButton })
+                ForwardTags(button);
             for (int i = 0; i < TrainSlots.Length; i++)
             {
                 int slot = i;
@@ -149,6 +152,20 @@ namespace Baryonyx.Adventure
                     card != null ? ((RectTransform)card.transform).anchoredPosition : Vector2.zero
                 )
                 .ToArray();
+        }
+
+        // 押せる物の札（すりガラスのカード）は押されたことを自分で受け取り、下のボタンへ渡さないため、
+        // 札を押しても、その物を押したことにする。
+        private static void ForwardTags(Button button)
+        {
+            if (button == null)
+                return;
+            foreach (var tag in button.GetComponentsInChildren<GlassCard>(true))
+                tag.Clicked += () =>
+                {
+                    if (button.IsActive() && button.IsInteractable())
+                        button.onClick.Invoke();
+                };
         }
 
         /// <summary>
