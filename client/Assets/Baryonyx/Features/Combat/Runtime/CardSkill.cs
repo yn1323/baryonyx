@@ -145,6 +145,62 @@ namespace Baryonyx.Combat
 
         /// <summary>Heals part of the maximum HP, and brings a fallen ally back.</summary>
         Revive,
+
+        /// <summary>
+        /// Discards <see cref="CardAction.Amount"/> cards of the hand the player picks (捨てる),
+        /// or the whole hand for -1.
+        /// </summary>
+        Discard,
+
+        /// <summary>Puts <see cref="CardAction.Amount"/> cards the player picks from the discard pile into the hand.</summary>
+        TakeFromDiscard,
+
+        /// <summary>
+        /// The next card played of <see cref="CardAction.Elements"/> (any card when none) grows
+        /// by <see cref="CardAction.Amount"/> percent.
+        /// </summary>
+        NextCardBoost,
+    }
+
+    /// <summary>When an action of a card happens (doc/features/combat.md, カードのキーワード).</summary>
+    public enum CardActionPhase
+    {
+        /// <summary>When the card is played.</summary>
+        Play,
+
+        /// <summary>
+        /// When the card is played after the card of <see cref="CardSkill.ComboWith"/> in the
+        /// same turn (連携), before its other actions.
+        /// </summary>
+        Combo,
+
+        /// <summary>When a card's effect discards it from the hand (捨てたとき).</summary>
+        Discarded,
+    }
+
+    /// <summary>How a card moves between the piles, and how it shows (doc/features/combat.md, カードのキーワード).</summary>
+    [Flags]
+    public enum CardTrait
+    {
+        None = 0,
+
+        /// <summary>消滅: once played, it is out of the battle.</summary>
+        Exhaust = 1,
+
+        /// <summary>保持: it stays in the hand at the end of the turn.</summary>
+        Retain = 2,
+
+        /// <summary>霧散: left in the hand at the end of the turn, it is out of the battle.</summary>
+        Ethereal = 4,
+
+        /// <summary>初手: it is always in the battle's opening hand.</summary>
+        Innate = 8,
+
+        /// <summary>眠り札: each time it flows away or is discarded it wakes a stage and grows.</summary>
+        Sleeper = 16,
+
+        /// <summary>A big move: its effect opens with the cut-in.</summary>
+        CutIn = 32,
     }
 
     /// <summary>When an action happens, or when its power grows.</summary>
@@ -186,6 +242,9 @@ namespace Baryonyx.Combat
         public CardActionKind Kind;
         public CardTarget Target;
 
+        /// <summary>When it happens: as the card is played (most), on a combo, or when discarded.</summary>
+        public CardActionPhase Phase;
+
         /// <summary>The stat the power is a part of, and the part in percent (damage, healing, block).</summary>
         public CardStat Stat;
         public int Percent;
@@ -218,6 +277,18 @@ namespace Baryonyx.Combat
         /// <summary>The power grows by this percent for every 1,000 ACT walked today, up to <see cref="ActCapPercent"/>.</summary>
         public int ActStepPercent;
         public int ActCapPercent;
+
+        /// <summary>A damage that adds this percent of its user's block (シールドバッシュ).</summary>
+        public int BlockPercent;
+
+        /// <summary>
+        /// The hits of a damage, or the cards drawn, grow by one for each card this card
+        /// discarded (千刃乱舞).
+        /// </summary>
+        public bool PerDiscarded;
+
+        /// <summary>The cards taken from the discard pile cost nothing this turn.</summary>
+        public bool MakesFree;
 
         /// <summary>True when the action has a power worked out from a stat (shown as a number).</summary>
         public bool HasPower => Stat != CardStat.None && Percent > 0;
@@ -300,6 +371,44 @@ namespace Baryonyx.Combat
                 Amount = amount,
             };
 
+        /// <summary>Discards <paramref name="amount"/> cards the player picks, or the whole hand for -1.</summary>
+        public static CardAction Discard(int amount) =>
+            new()
+            {
+                Kind = CardActionKind.Discard,
+                Target = CardTarget.None,
+                Amount = amount,
+            };
+
+        /// <summary>Puts <paramref name="amount"/> cards picked from the discard pile into the hand.</summary>
+        public static CardAction TakeFromDiscard(int amount, bool free = false) =>
+            new()
+            {
+                Kind = CardActionKind.TakeFromDiscard,
+                Target = CardTarget.None,
+                Amount = amount,
+                MakesFree = free,
+            };
+
+        /// <summary>The next card of <paramref name="elements"/> (any when none) grows by <paramref name="percent"/>.</summary>
+        public static CardAction NextCardBoost(int percent, params CardElement[] elements) =>
+            new()
+            {
+                Kind = CardActionKind.NextCardBoost,
+                Target = CardTarget.None,
+                Amount = percent,
+                Elements = elements,
+            };
+
+        /// <summary>The next card of <paramref name="elements"/> (any when none) costs nothing.</summary>
+        public static CardAction NextCardFree(params CardElement[] elements) =>
+            new()
+            {
+                Kind = CardActionKind.NextCardFree,
+                Target = CardTarget.None,
+                Elements = elements,
+            };
+
         public static CardAction CostDown(int amount, params CardElement[] elements) =>
             new()
             {
@@ -328,6 +437,34 @@ namespace Baryonyx.Combat
         public CardAction Only(CardCondition when)
         {
             When = when;
+            return this;
+        }
+
+        /// <summary>The same action, done when the card follows its combo partner (連携).</summary>
+        public CardAction OnCombo()
+        {
+            Phase = CardActionPhase.Combo;
+            return this;
+        }
+
+        /// <summary>The same action, done when an effect discards the card (捨てたとき).</summary>
+        public CardAction WhenDiscarded()
+        {
+            Phase = CardActionPhase.Discarded;
+            return this;
+        }
+
+        /// <summary>The same damage, adding <paramref name="percent"/>% of the user's block.</summary>
+        public CardAction WithBlock(int percent)
+        {
+            BlockPercent = percent;
+            return this;
+        }
+
+        /// <summary>The same damage or draw, one more hit or card for each card this card discarded.</summary>
+        public CardAction Discarded()
+        {
+            PerDiscarded = true;
             return this;
         }
 
@@ -362,7 +499,29 @@ namespace Baryonyx.Combat
         public int Cost;
 
         public string Text;
+
+        /// <summary>
+        /// What the card does, in the order of its text: the actions as it is played, those of a
+        /// combo and those when discarded (<see cref="CardAction.Phase"/>).
+        /// </summary>
         public IReadOnlyList<CardAction> Actions = Array.Empty<CardAction>();
+
+        /// <summary>How the card moves between the piles (消滅・保持・霧散・初手・眠り札) and whether it cuts in.</summary>
+        public CardTrait Traits;
+
+        /// <summary>The card (its root id) this one fuses with when both are in hand (合体), or null.</summary>
+        public string FuseWith;
+
+        /// <summary>The fused card (its id) the two become, or null.</summary>
+        public string FusesInto;
+
+        /// <summary>The card (its root id) that, played before this one in the same turn, sets off its combo (連携), or null.</summary>
+        public string ComboWith;
+
+        /// <summary>The id without an awakening's or evolution's stage ("Slash" of "Slash.1").</summary>
+        public string RootId => Id == null ? null : Id.Split('.')[0];
+
+        public bool Has(CardTrait trait) => (Traits & trait) == trait;
 
         /// <summary>
         /// The art of another card this one borrows (a prototype without art of its own), by
@@ -402,6 +561,14 @@ namespace Baryonyx.Combat
 
         /// <summary>A copy to change without changing this one (its actions are shared).</summary>
         public CardSkill Copy() => (CardSkill)MemberwiseClone();
+
+        /// <summary>The actions done in <paramref name="phase"/>, in order.</summary>
+        public IEnumerable<CardAction> In(CardActionPhase phase)
+        {
+            foreach (var action in Actions)
+                if (action.Phase == phase)
+                    yield return action;
+        }
 
         /// <summary>The actions that show a number in the description, in order.</summary>
         public IEnumerable<CardAction> Powered()

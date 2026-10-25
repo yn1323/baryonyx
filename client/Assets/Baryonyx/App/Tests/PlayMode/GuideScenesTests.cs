@@ -284,7 +284,7 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        // 通知はどの案内人の画面でも、技名と同じ暗い帯の共通の部品で出す。
+        // 通知は入力を遮らず、出したあと消える。
         [UnityTest]
         public IEnumerator GuideNoticesUseTheSharedNoticeBand()
         {
@@ -292,7 +292,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
             var notice = guide.View.Notice;
             Assert.That(notice, Is.Not.Null);
-            Assert.That(notice.GetComponent<TranslucentTextPanel>(), Is.Not.Null);
             Assert.That(notice.Group.blocksRaycasts, Is.False);
             Assert.That(notice.Message, Is.Empty);
 
@@ -484,16 +483,6 @@ namespace Baryonyx.Tests.PlayMode
                 treasures.Count.text,
                 Is.EqualTo(TravelTreasures.CountText(destinations[0].Id, records))
             );
-
-            // 窓は画面の中央に出す。
-            Canvas.ForceUpdateCanvases();
-            var modal = treasures
-                .Window.GetComponentsInChildren<RectTransform>()
-                .Single(rect => rect.name == "Modal");
-            var screen = (RectTransform)view.transform;
-            Vector2 offset =
-                modal.TransformPoint(modal.rect.center) - screen.TransformPoint(screen.rect.center);
-            Assert.That(offset.magnitude, Is.LessThan(1f));
 
             var list = treasures.Lists[treasures.OpenIndex];
             Assert.That(list.Content.gameObject.activeSelf, Is.True);

@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 王冠の覚醒
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 死霊の魔導師の固有技で、激化の合図になる。錆びた王冠に宿る古王国の魔力が目覚め、1人へ向けた呪文が広間全体へ広がるようになる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[死霊の魔導師](../enemies/enemy-lich.md)の技として作った |
 | 役割・説明 | 激化。戦闘の終わりまで、味方単体を狙う技を味方全体へ広げ、行動パターンを後半へ切り替える |
-| 関連する仕様・個別ID | 使う敵：[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[防御と敵の激化](../../features/combat.md#防御と敵の激化) |
+| 関連する仕様・個別ID | 使う敵：[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[防御と敵の激化](../../features/combat.md#防御と敵の激化) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

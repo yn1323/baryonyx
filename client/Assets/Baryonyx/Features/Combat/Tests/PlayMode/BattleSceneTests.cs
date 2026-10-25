@@ -13,6 +13,12 @@ namespace Baryonyx.Tests.PlayMode
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Battle.unity";
         private Scene loadedScene;
 
+        private FixedRandom random;
+
+        // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
+        [SetUp]
+        public void FixRandom() => random = FixedRandom.Use();
+
         [UnityTest]
         public IEnumerator TheBattleCanBeMovedToAnotherBackgroundWhilePlaying()
         {
@@ -63,6 +69,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
+            Time.timeScale = 1f;
+            random?.Dispose();
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }

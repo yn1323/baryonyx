@@ -255,6 +255,9 @@ namespace Baryonyx.Training
         // スキルのIDから挿絵を引く。
         private readonly Func<string, Texture2D> artOf;
 
+        // アイテムのIDから絵を引く。カスタムスキルの枠にアイテムを入れたときに出す。
+        private readonly Func<string, Texture2D> itemArtOf;
+
         // キャラのIDとスキルから、そのキャラのステータスで数字を入れた説明を作る。
         private readonly Func<string, CardSkill, string> describe;
 
@@ -286,7 +289,8 @@ namespace Baryonyx.Training
             Func<string, CardSkill, string> describe = null,
             Func<string, int, CardSkill> uniqueOf = null,
             Func<string, int, Task> deepenBond = null,
-            Func<string, CharacterStats, CharacterStats> wear = null
+            Func<string, CharacterStats, CharacterStats> wear = null,
+            Func<string, Texture2D> itemArtOf = null
         )
         {
             this.view = view ?? throw new ArgumentNullException(nameof(view));
@@ -300,6 +304,7 @@ namespace Baryonyx.Training
             this.uniqueOf = uniqueOf ?? ((_, _) => null);
             this.deepenBond = deepenBond;
             this.wear = wear ?? ((_, stats) => stats);
+            this.itemArtOf = itemArtOf ?? (_ => null);
             index = Math.Max(0, IndexOf(store.Selected));
             view.PrevPressed += Previous;
             view.NextPressed += Next;
@@ -697,7 +702,8 @@ namespace Baryonyx.Training
         // 枠の中身（PartyCardKey の形）のカード。持っているスキルは倍率を掛けたカード、アイテムはアイテムのカード。
         private TrainingCardState Card(string person, string key)
         {
-            var card = PartySession.SkillOf(key) ?? PartyCardKey.ItemOf(key)?.Card;
+            var item = PartyCardKey.ItemOf(key);
+            var card = PartySession.SkillOf(key) ?? item?.Card;
             if (card == null)
                 return new TrainingCardState { Name = EmptyName };
             return new TrainingCardState
@@ -712,7 +718,7 @@ namespace Baryonyx.Training
                 FoilStyle = card.FoilStyle,
                 Element = card.Element,
                 Icon = iconOf(card.Id),
-                Art = artOf(card.Id),
+                Art = item != null ? itemArtOf(item.Id) : artOf(card.Id),
             };
         }
 

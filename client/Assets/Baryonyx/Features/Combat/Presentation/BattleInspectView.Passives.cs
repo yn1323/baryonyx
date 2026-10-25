@@ -383,7 +383,7 @@ namespace Baryonyx.Combat.Presentation
                     alive.Add(i);
             if (alive.Count == 0)
                 return;
-            int enemy = alive[UnityEngine.Random.Range(0, alive.Count)];
+            int enemy = Dice.Pick(alive);
             var ally = Allies[lutz];
             int power = CombatPassiveRules.Percent(
                 StatsNow(lutz).MagicAttack,

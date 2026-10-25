@@ -173,9 +173,6 @@ namespace Baryonyx.App
 
         // 接続先のゲームサーバーへ、ログイン・歩数の保存・ルーンの請求を順に行う同期。
         // 接続先がない、またはURLが無効なときはnullを返し、歩数を端末内だけに保持させる。
-        internal static HealthServerSync CreateServerSync(HealthConnectionSettings settings) =>
-            CreateServerSync(settings, out _);
-
         private static HealthServerSync CreateServerSync(
             HealthConnectionSettings settings,
             out ServerApi server
@@ -188,10 +185,8 @@ namespace Baryonyx.App
             try
             {
                 server = new ServerApi(url);
-                var accounts = new AccountApiClient(server);
                 return new HealthServerSync(
-                    new AccountSessionRunner(accounts),
-                    accounts,
+                    new AccountSessionRunner(new AccountApiClient(server)),
                     new HealthApiClient(server),
                     new ExerciseRewardsApiClient(server)
                 );

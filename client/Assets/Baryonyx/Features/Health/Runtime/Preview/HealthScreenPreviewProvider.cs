@@ -3,16 +3,11 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using Baryonyx.Account;
-using Newtonsoft.Json.Linq;
 
 namespace Baryonyx.Health
 {
-    // Used only by the local screen preview, never by the Android player or server sync.
-    public sealed class HealthScreenPreviewProvider
-        : IGoogleSignInProvider,
-            IHealthDataProvider,
-            IHealthStepProvider
+    // Editorとテストで使うサンプルの歩数。Androidの実機とサーバーの同期では使わない。
+    public sealed class HealthScreenPreviewProvider : IHealthStepProvider
     {
         private readonly Func<DateTimeOffset> clock;
 
@@ -28,49 +23,29 @@ namespace Baryonyx.Health
         // 未連携の画面をEditorで確認するための状態。許可を要求すると許可済みに変わる。
         public HealthPermission Permission { get; set; }
 
-        public string ProviderId => "preview";
-
-        public Task<GoogleSignInStatus> SignInAsync(CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            return Task.FromResult(GoogleSignInStatus.Success);
-        }
-
-        public Task<bool> SignOutAsync(CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            return Task.FromResult(true);
-        }
-
         public Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             return Task.FromResult(HealthAvailability.Available);
         }
 
-        public Task<HealthPermission> GetPermissionAsync(CancellationToken token)
+        public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             return Task.FromResult(Permission);
         }
 
-        public Task<HealthPermission> RequestPermissionAsync(CancellationToken token)
+        public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             Permission = HealthPermission.Granted;
             return Task.FromResult(Permission);
         }
 
-        // プレビューは歩数とほかの記録の許可を区別しない。
-        public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token) =>
-            GetPermissionAsync(token);
-
-        public Task<HealthPermission> RequestStepsPermissionAsync(CancellationToken token) =>
-            RequestPermissionAsync(token);
-
         public Task<HealthReadResult> ReadRecentStepsAsync(CancellationToken token) =>
             ReadRecentDaysAsync(token);
 
+        // 直近7日分のサンプルの歩数（朝4時区切りの日本の日）。
         public Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
@@ -80,7 +55,6 @@ namespace Baryonyx.Health
             var today = new DateTimeOffset(HealthDays.DayOf(now.DateTime), now.Offset);
             long[] steps = { 6432, 0, 0, 8214, 10532, 4218, 7500 };
             var days = new HealthDay[steps.Length];
-            var jsonDays = new JArray();
             for (int i = 0; i < days.Length; i++)
             {
                 var start = today.AddDays(-i).AddHours(HealthDays.StartHour);
@@ -97,47 +71,8 @@ namespace Baryonyx.Health
                     steps = steps[i],
                     observedAt = now.ToString("O", CultureInfo.InvariantCulture),
                 };
-                var jsonDay = JObject.FromObject(days[i]);
-                jsonDay["sample"] = true;
-                jsonDay["stepsStatus"] = days[i].hasValue ? "success" : "empty";
-                jsonDay["records"] = new JObject
-                {
-                    ["bloodPressure"] = new JObject
-                    {
-                        ["status"] = i < 2 ? "success" : "empty",
-                        ["truncated"] = false,
-                        ["records"] =
-                            i < 2
-                                ? new JArray(
-                                    new JObject
-                                    {
-                                        ["time"] = start.ToString(
-                                            "O",
-                                            CultureInfo.InvariantCulture
-                                        ),
-                                        ["sourceApp"] = "example.preview.health",
-                                        ["systolicMmHg"] = 118,
-                                        ["diastolicMmHg"] = 76,
-                                    }
-                                )
-                                : new JArray(),
-                    },
-                    ["weight"] = new JObject
-                    {
-                        ["status"] = "permission_required",
-                        ["truncated"] = false,
-                        ["records"] = new JArray(),
-                    },
-                };
-                jsonDays.Add(jsonDay);
             }
-            return Task.FromResult(
-                new HealthReadResult(
-                    HealthReadStatus.Success,
-                    days,
-                    new JObject { ["status"] = "success", ["days"] = jsonDays }.ToString()
-                )
-            );
+            return Task.FromResult(new HealthReadResult(HealthReadStatus.Success, days));
         }
 
         // Editorには設定画面がないため、設定で許可した場合と同じ状態にする。

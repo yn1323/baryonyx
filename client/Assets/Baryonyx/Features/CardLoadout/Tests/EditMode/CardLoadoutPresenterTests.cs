@@ -100,6 +100,10 @@ namespace Baryonyx.Tests.EditMode
         [SetUp]
         public void CreatePresenter()
         {
+            // 前のテストが残した人・枠・進み具合から始めない。
+            PartySession.Reset();
+            CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
             var roster = new[]
             {
                 Member("toma", "トーマ", "Fire", "Ice"),
@@ -220,7 +224,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Uniques[0].Card.Name, Is.EqualTo("マナバースト・烈"));
             Assert.That(state.Uniques[0].Card.KindLine, Does.Contain("攻撃").And.Contain("敵全体"));
             Assert.That(state.Uniques[0].Card.Description, Does.Contain(">"));
-            Assert.That(state.Uniques[0].Card.Cost, Is.EqualTo(2));
+            Assert.That(state.Uniques[0].Card.Cost, Is.EqualTo(1));
             Assert.That(state.Uniques[0].Locked, Is.False);
             Assert.That(state.Uniques[1].Card.Name, Is.EqualTo("星降り"));
             Assert.That(state.Uniques[1].Locked, Is.True);
@@ -454,11 +458,11 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void NumbersAreThePartOfTheStatNotThePersonsPower()
         {
-            // ファイアは 属攻の100%。誰が付けても、ステータスによらず割合で書く。
+            // ファイアは 属攻の150%。誰が付けても、ステータスによらず割合で書く。
             view.Person("toma");
-            Assert.That(view.Last.Slots[0].Description, Does.Contain(">属攻の100%<"));
+            Assert.That(view.Last.Slots[0].Description, Does.Contain(">属攻の150%<"));
             view.Person("anselm");
-            Assert.That(view.Last.Slots[1].Description, Does.Contain(">属攻の100%<"));
+            Assert.That(view.Last.Slots[1].Description, Does.Contain(">属攻の150%<"));
         }
 
         [Test]

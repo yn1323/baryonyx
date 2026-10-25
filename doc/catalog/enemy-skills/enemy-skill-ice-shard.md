@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 氷のつぶて
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。とがった氷の欠片を味方1人へ撃ち込む魔法の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 単体への魔法・氷の攻撃と凍え |
-| 関連する仕様・個別ID | 使う敵：[朝露ぷるん](../enemies/enemy-dew-slime.md)、[浮遊する魔導書](../enemies/enemy-floating-grimoire.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[朝露ぷるん](../enemies/enemy-dew-slime.md)、[浮遊する魔導書](../enemies/enemy-floating-grimoire.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

@@ -56,8 +56,10 @@ namespace Baryonyx.Combat.Presentation
                 );
                 bool here = present.Contains(i);
                 enemy.Hp = here ? enemy.MaxHp : 0;
+                // 勝敗で終わる戦闘では、敵は始まりの演出で歩み出るまで隠しておく。編成を読む間も
+                // 戦闘画面は描かれるため、定位置の敵が一瞬見えてしまう。
                 if (enemy.Group != null)
-                    enemy.Group.alpha = here ? 1f : 0f;
+                    enemy.Group.alpha = here && !EndsWithOutcome ? 1f : 0f;
                 RefreshEnemy(enemy);
                 // A drop falls from the last enemy beaten; until one is, from one on the field.
                 if (here)
@@ -128,10 +130,7 @@ namespace Baryonyx.Combat.Presentation
             enemy.PowerUp = 0;
             // その種類の技と行動パターンで動く（doc/catalog/enemies）。定義がなければ、技1つで攻撃する。
             var behavior = CombatEnemyBehaviors.Find(id);
-            enemy.Brain =
-                behavior != null
-                    ? new EnemyBrain(behavior, n => UnityEngine.Random.Range(0, n))
-                    : null;
+            enemy.Brain = behavior != null ? new EnemyBrain(behavior, n => Dice.Below(n)) : null;
             enemy.SkillName = stats.Skill;
             enemy.Boss = stats.Body == EnemyBody.Large;
             if (look != null && look.Texture != null && enemy.Sprite != null)

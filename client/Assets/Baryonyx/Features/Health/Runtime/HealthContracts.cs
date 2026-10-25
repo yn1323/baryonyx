@@ -45,28 +45,12 @@ namespace Baryonyx.Health
     {
         public HealthReadStatus Status { get; }
         public HealthDay[] Days { get; }
-        public string RawJson { get; }
 
-        public HealthReadResult(
-            HealthReadStatus status,
-            HealthDay[] days = null,
-            string rawJson = null
-        )
+        public HealthReadResult(HealthReadStatus status, HealthDay[] days = null)
         {
             Status = status;
             Days = days ?? Array.Empty<HealthDay>();
-            RawJson = rawJson;
         }
-    }
-
-    public interface IHealthDataProvider
-    {
-        string ProviderId { get; }
-        Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token);
-        Task<HealthPermission> GetPermissionAsync(CancellationToken token);
-        Task<HealthPermission> RequestPermissionAsync(CancellationToken token);
-        Task<HealthReadResult> ReadRecentDaysAsync(CancellationToken token);
-        void OpenSettings();
     }
 
     // 起動時の同期で使う、歩数だけを扱う取得元。権限の確認・要求と読み取りを歩数に限り、

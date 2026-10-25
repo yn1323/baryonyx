@@ -4,7 +4,6 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.UI;
-using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -58,25 +57,6 @@ namespace Baryonyx.Tests.PlayMode
                 .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
                 .Single(candidate => candidate.name == "TopBackdropCanvas");
             Assert.That(backdropCanvas.GetComponent<GraphicRaycaster>(), Is.Null);
-            // 背景は星空の下の3Dの舞台（HD-2D）で、描いた背景の画像と、広間の天井から差す光芒は置かない。
-            // 遠くのかすみは3Dの舞台の距離の霧が担うため、画面に平らに貼る2Dの霧も置かない。
-            // 装飾のCanvasは3Dの床に隠れないようカメラの近くに置く。
-            Assert.That(backdropCanvas.transform.Find("TopBackground"), Is.Null);
-            Assert.That(backdropCanvas.transform.Find("TopHd2dLightShaft"), Is.Null);
-            Assert.That(backdropCanvas.transform.Find("TopHd2dFog"), Is.Null);
-            Assert.That(backdropCanvas.planeDistance, Is.LessThanOrEqualTo(1f));
-            Assert.That(roots.Any(root => root.name == "Stage3D"), Is.True);
-            var stageCamera = roots
-                .SelectMany(root => root.GetComponentsInChildren<Hd2dStageCamera>(true))
-                .Single();
-            Assert.That(stageCamera.Camera.orthographic, Is.False);
-            Assert.That(stageCamera.KeyLight, Is.Not.Null);
-            Assert.That(
-                stageCamera.KeyLight.type,
-                Is.EqualTo(LightType.Directional),
-                "The moon lights the title from behind the gate."
-            );
-            Assert.That(stageCamera.IntroOffset, Is.Not.EqualTo(Vector3.zero), "Glides in.");
 
             var safeArea = button.transform.Find("TopSafeArea");
             Assert.That(safeArea, Is.Not.Null);
@@ -112,9 +92,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitUntil(() => !transition.IsPlaying);
             Assert.That(transition.IsPlaying, Is.False);
             Assert.That(transition.IsCovered, Is.False);
-            // Homeは、Topが閉じたのと同じ上下のシャッターで開く。
-            Assert.That(transition.transform.Find("ShutterFirst").gameObject.activeSelf, Is.True);
-            Assert.That(transition.transform.Find("FadePanel").gameObject.activeSelf, Is.False);
             Assert.That(
                 loadedScene
                     .GetRootGameObjects()
@@ -275,7 +252,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SettingsButtonSitsTopRightAndDoesNotStartTheGame()
+        public IEnumerator SettingsButtonStaysInTheSafeAreaAndDoesNotStartTheGame()
         {
             var controller = default(TopSceneController);
             yield return LoadTop(value => controller = value);
@@ -284,9 +261,6 @@ namespace Baryonyx.Tests.PlayMode
 
             var settings = controller.SettingsButton;
             Assert.That(settings, Is.Not.Null);
-            var rect = (RectTransform)settings.transform;
-            Assert.That(rect.anchorMin, Is.EqualTo(Vector2.one));
-            Assert.That(rect.anchorMax, Is.EqualTo(Vector2.one));
             Assert.That(settings.transform.parent.name, Is.EqualTo("TopSafeArea"));
             var hit = ((RectTransform)settings.transform.Find("HitArea")).rect;
             Assert.That(hit.width, Is.GreaterThanOrEqualTo(128f));

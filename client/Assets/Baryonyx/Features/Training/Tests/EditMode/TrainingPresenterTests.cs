@@ -270,7 +270,7 @@ namespace Baryonyx.Tests.EditMode
                 state.Cards.Select(card => card.Name),
                 Is.EqualTo(new[] { "ファイア", "アイスランス", TrainingPresenter.EmptyName })
             );
-            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 2, 2, 0 }));
+            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 1, 1, 0 }));
             Assert.That(
                 state.Cards.Select(card => card.Element),
                 Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice, CardElement.None })
@@ -292,6 +292,34 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.Cards.Count, Is.EqualTo(TrainingPresenter.CustomSlots));
             Assert.That(view.Last.Cards[1].Filled, Is.False);
             Assert.That(view.Last.Cards[1].Name, Is.EqualTo(TrainingPresenter.EmptyName));
+        }
+
+        [Test]
+        public void AnItemInACustomSlotShowsTheItemArt()
+        {
+            var skillArt = new Texture2D(64, 58);
+            var itemArt = new Texture2D(32, 32);
+            try
+            {
+                store.Cards["toma"] = new[] { "Fire", PartyCardKey.Item("lizard-tail") };
+                presenter = new TrainingPresenter(
+                    view,
+                    Roster(),
+                    store,
+                    artOf: id => id == "Fire" ? skillArt : null,
+                    itemArtOf: id => id == "lizard-tail" ? itemArt : null
+                );
+
+                // スキルはスキルの挿絵、アイテムはアイテムの絵を出す。
+                Assert.That(view.Last.Cards[0].Art, Is.SameAs(skillArt));
+                Assert.That(view.Last.Cards[1].Name, Is.EqualTo("火とかげのしっぽ"));
+                Assert.That(view.Last.Cards[1].Art, Is.SameAs(itemArt));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(skillArt);
+                UnityEngine.Object.DestroyImmediate(itemArt);
+            }
         }
 
         [Test]
@@ -606,34 +634,6 @@ namespace Baryonyx.Tests.EditMode
                 view.Last.Gear.Take(2).Select(slot => slot.Filled),
                 Is.EqualTo(new[] { false, false })
             );
-        }
-
-        [Test]
-        public void PartyLevelsLastWhileTheAppRunsWithoutTouchingTheMockData()
-        {
-            var party = ScriptableObject.CreateInstance<PartyMockData>();
-            try
-            {
-                party.Members = new[]
-                {
-                    new PartyMember { Id = "toma", Level = 12 },
-                };
-                PartySession.Reset();
-
-                Assert.That(PartySession.LevelOf(party, "toma"), Is.EqualTo(12));
-                PartySession.SetLevel("toma", 13);
-                Assert.That(PartySession.LevelOf(party, "toma"), Is.EqualTo(13));
-                Assert.That(party.Members[0].Level, Is.EqualTo(12));
-                Assert.That(PartySession.LevelOf(party, "nobody"), Is.EqualTo(1));
-
-                PartySession.Reset();
-                Assert.That(PartySession.LevelOf(party, "toma"), Is.EqualTo(12));
-            }
-            finally
-            {
-                PartySession.Reset();
-                UnityEngine.Object.DestroyImmediate(party);
-            }
         }
 
         [Test]

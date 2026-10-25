@@ -52,6 +52,24 @@ namespace Baryonyx.Combat
             new CardKeyword("防御ダウン", "受けるダメージ+25%。"),
             new CardKeyword("刻印", "次の味方ターンの開始時に爆発し、敵全体に炎属性のダメージ。"),
             new CardKeyword("強化", "攻撃力アップ・速度アップ・リジェネなど、付いた者に良い状態。"),
+            new CardKeyword("消滅", "使うと、その戦闘から除く。持ち主が倒れてから復活すると、山札へ戻る。"),
+            new CardKeyword("保持", "ターンの終わりに捨て札へ流れず、手札に残る。"),
+            new CardKeyword("霧散", "ターンの終わりに手札にあると、その戦闘から除く。"),
+            new CardKeyword("初手", "戦闘の開始時の手札に必ず入る。"),
+            new CardKeyword(
+                "捨てる",
+                "手札を選んで捨て札へ送る。「捨てたとき」の効果が働く。"
+            ),
+            new CardKeyword(
+                "眠り札",
+                "流れるか捨てられるたびに1段目覚め、1段ごとに効果量+50%（3段まで）。使うと眠りに戻る。"
+            ),
+            new CardKeyword(
+                "歩み",
+                "今日のACTが多いほど効果量が増える（1,000ごとに+10%、上限+100%）。"
+            ),
+            new CardKeyword("合体", "書かれたカードと手札にそろうと、2枚が1枚の合体カードに変わる。"),
+            new CardKeyword("連携", "書かれたカードを同じターンに先に使っていると、追加の効果が出る。"),
         };
 
         /// <summary>The keyword named <paramref name="name"/>, or null.</summary>

@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 牙のかち上げ
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 切り株猪の固有技。反り返った牙を構えの下へ差し入れ、守りごとはね上げてから突き刺す。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[切り株猪](../enemies/enemy-stump-boar.md)の技として作った |
 | 役割・説明 | 味方のブロックを消す単体攻撃 |
-| 関連する仕様・個別ID | 使う敵：[切り株猪](../enemies/enemy-stump-boar.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[切り株猪](../enemies/enemy-stump-boar.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

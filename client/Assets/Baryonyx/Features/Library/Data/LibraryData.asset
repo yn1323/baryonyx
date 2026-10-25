@@ -154,7 +154,7 @@ MonoBehaviour:
     Name: "\u708E\u306E\u30C0\u30AC\u30FC"
     Rarity: 4
     KindLine: "\u6B66\u5668"
-    Description: "\u901F\u5EA6\u306E 125%\uFF5C\u65AC\u30FB\u708E\uFF5C2\u56DE\u653B\u6483"
+    Description: "\u901F\u5EA6 +13%\uFF5C\u653B\u6483\u30B9\u30AD\u30EB\u304C10%\u30672\u56DE\u767A\u52D5"
     Art: {fileID: -6622703189942226176, guid: 687b235bec6194cc4b9e8f912b8968bb, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -169,7 +169,7 @@ MonoBehaviour:
     Name: "\u96F7\u9CF4\u306E\u69CD"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 140%\uFF5C\u8CAB\u30FB\u96F7"
+    Description: "\u7269\u653B +14%"
     Art: {fileID: -6622703189942226176, guid: 5cd1e5379dae14b61a02bfa4778556b7, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -184,7 +184,7 @@ MonoBehaviour:
     Name: "\u6C37\u6676\u306E\u30EF\u30F3\u30C9"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u5C5E\u653B\u306E 135%\uFF5C\u6C37\uFF5C\u4F1A\u5FC3 +5%"
+    Description: "\u5C5E\u653B +14%\uFF5C\u4F1A\u5FC3 +5%"
     Art: {fileID: -6622703189942226176, guid: 0a101ae35afd2421d8e0059b54a7363a, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -199,7 +199,7 @@ MonoBehaviour:
     Name: "\u6226\u939A"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 150%\uFF5C\u6253"
+    Description: "\u7269\u653B +15%"
     Art: {fileID: -6622703189942226176, guid: 998ed9c05f16f43e89dc1245ab7674f6, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -214,7 +214,7 @@ MonoBehaviour:
     Name: "\u9244\u306E\u5263"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 120%\uFF5C\u65AC"
+    Description: "\u7269\u653B +12%"
     Art: {fileID: -6622703189942226176, guid: 0999e4772f8e147d7945e0a323367f0a, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -229,7 +229,7 @@ MonoBehaviour:
     Name: "\u77ED\u5F13"
     Rarity: 1
     KindLine: "\u6B66\u5668"
-    Description: "\u901F\u5EA6\u306E 100%\uFF5C\u8CAB"
+    Description: "\u901F\u5EA6 +10%"
     Art: {fileID: -6622703189942226176, guid: 3f4d4fd5e62344fd98a86a5803ca6eed, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -244,7 +244,7 @@ MonoBehaviour:
     Name: "\u6A2B\u306E\u6756"
     Rarity: 1
     KindLine: "\u6B66\u5668"
-    Description: "\u5C5E\u653B\u306E 110%\uFF5C\u708E"
+    Description: "\u5C5E\u653B +11%"
     Art: {fileID: -6622703189942226176, guid: 9a18e0f6ae0f04b4a8dc18ec0736f872, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -259,7 +259,7 @@ MonoBehaviour:
     Name: "\u6728\u306E\u5263"
     Rarity: 1
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 100%\uFF5C\u65AC"
+    Description: "\u7269\u653B +10%"
     Art: {fileID: -6622703189942226176, guid: 5a7f2aeecdb2b4d649f7ec07cd99ee82, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -274,7 +274,7 @@ MonoBehaviour:
     Name: "\u8466\u306E\u9577\u5F13"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u901F\u5EA6\u306E 140%\uFF5C\u8CAB"
+    Description: "\u901F\u5EA6 +14%"
     Art: {fileID: -6622703189942226176, guid: 98d7b19246267a2489c5d48f4232f1f0, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -289,7 +289,7 @@ MonoBehaviour:
     Name: "\u9B3C\u706B\u306E\u6756"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u5C5E\u653B\u306E 155%\uFF5C\u708E"
+    Description: "\u5C5E\u653B +16%"
     Art: {fileID: -6622703189942226176, guid: fc393025ff24ea14eb839aebd5c51a82, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -304,7 +304,7 @@ MonoBehaviour:
     Name: "\u7802\u880D\u306E\u5F13"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u901F\u5EA6\u306E 155%\uFF5C\u8CAB"
+    Description: "\u901F\u5EA6 +16%"
     Art: {fileID: -6622703189942226176, guid: f7d005642580ec640b76fa1e2c39fd2e, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -319,7 +319,7 @@ MonoBehaviour:
     Name: "\u738B\u5893\u306E\u938C\u5263"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 175%\uFF5C\u65AC"
+    Description: "\u7269\u653B +18%"
     Art: {fileID: -6622703189942226176, guid: f2b83e5126ab7e64da6a8931d668ae89, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -334,7 +334,7 @@ MonoBehaviour:
     Name: "\u9AA8\u306E\u5927\u65A7"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 190%\uFF5C\u65AC"
+    Description: "\u7269\u653B +19%"
     Art: {fileID: -6622703189942226176, guid: 8e73b3d89668af44db01757af1a04db9, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -349,7 +349,7 @@ MonoBehaviour:
     Name: "\u6708\u5F71\u306E\u6756"
     Rarity: 4
     KindLine: "\u6B66\u5668"
-    Description: "\u5C5E\u653B\u306E 200%\uFF5C\u6C37\uFF5C\u4F1A\u5FC3 +8%"
+    Description: "\u5C5E\u653B +20%\uFF5C\u4F1A\u5FC3 +8%"
     Art: {fileID: -6622703189942226176, guid: 1e24d9cf26b131f4eba21abbb599f9ae, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -364,7 +364,7 @@ MonoBehaviour:
     Name: "\u708E\u5C3E\u306E\u5F13"
     Rarity: 2
     KindLine: "\u6B66\u5668"
-    Description: "\u901F\u5EA6\u306E 180%\uFF5C\u8CAB\u30FB\u708E"
+    Description: "\u901F\u5EA6 +18%"
     Art: {fileID: -6622703189942226176, guid: dc551b93dd8a8b94fa99d1c6dedd4dfc, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -379,7 +379,7 @@ MonoBehaviour:
     Name: "\u6EB6\u5CA9\u306E\u5927\u69CC"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 225%\uFF5C\u6253\u30FB\u708E"
+    Description: "\u7269\u653B +23%"
     Art: {fileID: -6622703189942226176, guid: 61f706d827e1f0946948d0f681633336, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -394,7 +394,7 @@ MonoBehaviour:
     Name: "\u96F9\u306E\u6756"
     Rarity: 3
     KindLine: "\u6B66\u5668"
-    Description: "\u5C5E\u653B\u306E 235%\uFF5C\u6C37"
+    Description: "\u5C5E\u653B +24%"
     Art: {fileID: -6622703189942226176, guid: 882aa2dd273e75a4f835c1655a0612c3, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -409,7 +409,7 @@ MonoBehaviour:
     Name: "\u6C37\u6CB3\u306E\u5927\u5263"
     Rarity: 4
     KindLine: "\u6B66\u5668"
-    Description: "\u7269\u653B\u306E 240%\uFF5C\u65AC\u30FB\u6C37"
+    Description: "\u7269\u653B +24%"
     Art: {fileID: -6622703189942226176, guid: 0b0657883fb37c64c975df7db11d48a7, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -424,7 +424,7 @@ MonoBehaviour:
     Name: "\u65C5\u4EBA\u306E\u30DE\u30F3\u30C8"
     Rarity: 3
     KindLine: "\u9632\u5177"
-    Description: "\u901F\u5EA6 +8%\uFF5C\u7269\u9632\u306E 110%"
+    Description: "\u901F\u5EA6 +8%\uFF5C\u7269\u9632 +11%"
     Art: {fileID: -6622703189942226176, guid: 07b48d0fccada4d3d81abe6e98ba8cc4, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -439,7 +439,7 @@ MonoBehaviour:
     Name: "\u9396\u304B\u305F\u3073\u3089"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 130%"
+    Description: "\u7269\u9632 +13%"
     Art: {fileID: -6622703189942226176, guid: fac775775fd134ee29e722a02a98d455, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -454,7 +454,7 @@ MonoBehaviour:
     Name: "\u9B54\u6CD5\u306E\u30ED\u30FC\u30D6"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u5C5E\u653B\u306E 115%\uFF5C\u7269\u9632\u306E 105%"
+    Description: "\u5C5E\u653B +12%\uFF5C\u7269\u9632 +11%"
     Art: {fileID: -6622703189942226176, guid: b1ee9a77238104644a56d6f320bef1b2, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -469,7 +469,7 @@ MonoBehaviour:
     Name: "\u9244\u306E\u515C"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 115%\uFF5CHP +40"
+    Description: "\u7269\u9632 +12%\uFF5CHP +3%"
     Art: {fileID: -6622703189942226176, guid: 3fa872a73ebe246cdaa6b527440d3458, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -484,7 +484,7 @@ MonoBehaviour:
     Name: "\u9769\u306E\u93A7"
     Rarity: 1
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 110%"
+    Description: "\u7269\u9632 +11%"
     Art: {fileID: -6622703189942226176, guid: 686950c52f940411e80ad0f7af73f9ce, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -499,7 +499,7 @@ MonoBehaviour:
     Name: "\u6728\u306E\u4E38\u76FE"
     Rarity: 1
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 120%"
+    Description: "\u7269\u9632 +12%"
     Art: {fileID: -6622703189942226176, guid: 7c2555e4a25274aa697c29f070e544bb, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -514,7 +514,7 @@ MonoBehaviour:
     Name: "\u9271\u592B\u306E\u515C"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 125%\uFF5CHP +60"
+    Description: "\u7269\u9632 +13%\uFF5CHP +5%"
     Art: {fileID: -6622703189942226176, guid: e87f3a7eb10d7404694ddaab37711731, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -529,7 +529,7 @@ MonoBehaviour:
     Name: "\u6C34\u6676\u306E\u5927\u76FE"
     Rarity: 4
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 150%"
+    Description: "\u7269\u9632 +15%"
     Art: {fileID: -6622703189942226176, guid: 46c7922a157cbf243b250590e0c15f36, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -544,7 +544,7 @@ MonoBehaviour:
     Name: "\u6CE5\u67D3\u3081\u306E\u30ED\u30FC\u30D6"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u5C5E\u653B\u306E 125%\uFF5C\u7269\u9632\u306E 115%"
+    Description: "\u5C5E\u653B +13%\uFF5C\u7269\u9632 +12%"
     Art: {fileID: -6622703189942226176, guid: 0431ba7eaf5e9374bbda85f9980439da, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -559,7 +559,7 @@ MonoBehaviour:
     Name: "\u571F\u304F\u308C\u306E\u93A7"
     Rarity: 3
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 150%"
+    Description: "\u7269\u9632 +15%"
     Art: {fileID: -6622703189942226176, guid: c05da6e5f3f12284e965e8487f219a77, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -574,7 +574,7 @@ MonoBehaviour:
     Name: "\u738B\u5893\u306E\u5305\u5E2F"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 140%\uFF5CHP +80"
+    Description: "\u7269\u9632 +14%\uFF5CHP +7%"
     Art: {fileID: -6622703189942226176, guid: 129ce0454d3c1ff47a040b507cc8ef05, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -589,7 +589,7 @@ MonoBehaviour:
     Name: "\u53E4\u738B\u56FD\u306E\u93A7"
     Rarity: 4
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 170%"
+    Description: "\u7269\u9632 +17%"
     Art: {fileID: -6622703189942226176, guid: 48f99d33afeb858459545886799883b3, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -604,7 +604,7 @@ MonoBehaviour:
     Name: "\u7A7A\u93A7\u306E\u515C"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 165%\uFF5CHP +100"
+    Description: "\u7269\u9632 +17%\uFF5CHP +8%"
     Art: {fileID: -6622703189942226176, guid: 8055d36e44cc743419eab52b1dacc2ae, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -619,7 +619,7 @@ MonoBehaviour:
     Name: "\u5893\u5B88\u308A\u306E\u5916\u5957"
     Rarity: 3
     KindLine: "\u9632\u5177"
-    Description: "\u901F\u5EA6 +12%\uFF5C\u7269\u9632\u306E 160%"
+    Description: "\u901F\u5EA6 +12%\uFF5C\u7269\u9632 +16%"
     Art: {fileID: -6622703189942226176, guid: 4c0e547b48234d2488ea48cfffa1ffeb, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -634,7 +634,7 @@ MonoBehaviour:
     Name: "\u706B\u3068\u304B\u3052\u306E\u9C57\u93A7"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 185%"
+    Description: "\u7269\u9632 +19%"
     Art: {fileID: -6622703189942226176, guid: fec7dfc331bdd9d44b0fe57884fda145, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -649,7 +649,7 @@ MonoBehaviour:
     Name: "\u9ED2\u66DC\u77F3\u306E\u76FE"
     Rarity: 4
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 200%\uFF5CHP +100"
+    Description: "\u7269\u9632 +20%\uFF5CHP +8%"
     Art: {fileID: -6622703189942226176, guid: 328bc3c16c2932a4f904fe0274158c18, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -664,7 +664,7 @@ MonoBehaviour:
     Name: "\u96EA\u539F\u306E\u5916\u5957"
     Rarity: 2
     KindLine: "\u9632\u5177"
-    Description: "\u901F\u5EA6 +14%\uFF5C\u7269\u9632\u306E 190%"
+    Description: "\u901F\u5EA6 +14%\uFF5C\u7269\u9632 +19%"
     Art: {fileID: -6622703189942226176, guid: 2630906eb5923a949903938cdd54bc5a, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -679,7 +679,7 @@ MonoBehaviour:
     Name: "\u30DE\u30F3\u30E2\u30B9\u306E\u6BDB\u76AE"
     Rarity: 3
     KindLine: "\u9632\u5177"
-    Description: "\u7269\u9632\u306E 210%\uFF5CHP +120"
+    Description: "\u7269\u9632 +21%\uFF5CHP +10%"
     Art: {fileID: -6622703189942226176, guid: f52497edd73773f47b7922788196837f, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -694,7 +694,7 @@ MonoBehaviour:
     Name: "\u82D4\u7389\u306E\u304A\u5B88\u308A"
     Rarity: 1
     KindLine: "\u30A2\u30AF\u30BB\u30B5\u30EA\u30FC"
-    Description: HP +20
+    Description: HP +2%
     Art: {fileID: -6622703189942226176, guid: 514579d4284e34012b4273cec033ad56, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -859,7 +859,7 @@ MonoBehaviour:
     Name: "\u30D2\u30EB\u3088\u3051\u306E\u9234"
     Rarity: 2
     KindLine: "\u30A2\u30AF\u30BB\u30B5\u30EA\u30FC"
-    Description: HP +60
+    Description: HP +5%
     Art: {fileID: -6622703189942226176, guid: f11aeb128a8a2e048bdd50bf5a37f2ad, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1099,7 +1099,7 @@ MonoBehaviour:
     Name: "\u30D5\u30A1\u30A4\u30A2"
     Rarity: 1
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E100%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u3068<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E100%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u5F31\u70B9</u></color></nobr>\u3092\u7A81\u304F\u306860%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 1c71f99b82009e14e8c763b470641745, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1114,7 +1114,7 @@ MonoBehaviour:
     Name: "\u30A2\u30A4\u30B9\u30E9\u30F3\u30B9"
     Rarity: 1
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E85%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E85%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 44db660941fa6c44ba973b85ae4e830b, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1174,7 +1174,7 @@ MonoBehaviour:
     Name: "\u65CB\u98A8\u65AC"
     Rarity: 3
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 3"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E60%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E60%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1339,7 +1339,7 @@ MonoBehaviour:
     Name: "\u706B\u306E\u7C89"
     Rarity: 2
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: f5136e1860d674e74867dc0ae29f0855, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1369,7 +1369,7 @@ MonoBehaviour:
     Name: "\u30D5\u30A1\u30A4\u30A2\u30B9\u30C8\u30FC\u30E0"
     Rarity: 2
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1444,7 +1444,7 @@ MonoBehaviour:
     Name: "\u30D6\u30EA\u30B6\u30FC\u30C9"
     Rarity: 2
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 4"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E90%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E90%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 9c1db89367064424c98cf7b1a349d325, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1474,7 +1474,7 @@ MonoBehaviour:
     Name: "\u7D76\u5BFE\u96F6\u5EA6"
     Rarity: 5
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 8"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E340%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E340%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u300240%\u3067<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
     Art: {fileID: -6622703189942226176, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -1594,7 +1594,7 @@ MonoBehaviour:
     Name: "\u30E9\u30A4\u30C8\u30CB\u30F3\u30B0\u30DC\u30EB\u30C8"
     Rarity: 1
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>1\u30BF\u30FC\u30F3\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u9EBB\u75FA</u></color></nobr>1\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2059,7 +2059,7 @@ MonoBehaviour:
     Name: "\u971C\u306E\u7D50\u6676"
     Rarity: 3
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 1"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E40%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E40%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 4e8227a66c28cb544b22e26e922d24e2, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2119,7 +2119,7 @@ MonoBehaviour:
     Name: "\u9B3C\u706B\u306E\u706F\u5FC3"
     Rarity: 2
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 1"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E50%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E50%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: ff1aeb196b89304488416a1959f98fa6, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2179,7 +2179,7 @@ MonoBehaviour:
     Name: "\u7802\u30B5\u30BD\u30EA\u306E\u6BD2\u91DD"
     Rarity: 1
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 0"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u30921\u3064\u91CD\u306D\u308B\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E70%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u6BD2</u></color></nobr>\u30921\u3064\u91CD\u306D\u308B\u3002"
     Art: {fileID: -6622703189942226176, guid: 42a1f2c035c1499408954965d8a09b19, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2344,7 +2344,7 @@ MonoBehaviour:
     Name: "\u786B\u9EC4\u306E\u7C89"
     Rarity: 2
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 1"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E45%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 0c58131ff1cda654c859d55e0ee18cc0, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2374,7 +2374,7 @@ MonoBehaviour:
     Name: "\u9ED2\u66DC\u77F3\u306E\u6838"
     Rarity: 5
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5168\u4F53\u3000\u30B3\u30B9\u30C8 2"
-    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E110%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+    Description: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E110%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300260%\u3067<nobr><color=#96d6ff><u>\u9632\u5FA1\u30C0\u30A6\u30F3</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
     Art: {fileID: -6622703189942226176, guid: 0dbed552fbc148543a8efedb5f9d2ff3, type: 3}
     ArtUv:
       serializedVersion: 2
@@ -2434,7 +2434,7 @@ MonoBehaviour:
     Name: "\u6C34\u6676\u89D2\u306E\u304B\u3051\u3089"
     Rarity: 3
     KindLine: "<color=#ff966e>\u653B\u6483</color><color=#9a9483>\u30FB</color>\u6575\u5358\u4F53\u3000\u30B3\u30B9\u30C8 2"
-    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E120%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
+    Description: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E120%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300240%\u3067<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
     Art: {fileID: -6622703189942226176, guid: 9dc9f3a1010d83b4d86c03cd79de7a89, type: 3}
     ArtUv:
       serializedVersion: 2

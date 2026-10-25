@@ -12,7 +12,7 @@
 ## 着手時の実装
 
 - `HealthScreenBootstrap.cs`（削除済み） はProviderと画面を組み立て、前面・背面への移行をPresenterへ伝えている。Android版には起動時の要件チェックがない。
-- [HealthScreenPresenter.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) は接続操作で利用可否と権限を調べ、接続を試した後の復帰では健康データを読み直す。
+- `HealthScreenPresenter.cs`（削除済み） は接続操作で利用可否と権限を調べ、接続を試した後の復帰では健康データを読み直す。
 - [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) と[既存Androidブリッジ](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) は利用可否、権限、7日分の読み取り、設定画面の起動に対応している。
 - 現在の権限確認は対象項目のいずれかの許可を表す。歩数単独の未許可は、読み取り結果の `stepsStatus` で区別している。
 - AndroidのSDK拡張バージョンと、端末の歩数センサーの有無は取得していない。
@@ -94,8 +94,8 @@ Google Playシステム更新を案内するときも、更新が必ず提供さ
 
 | 対象 | 変更内容 |
 |---|---|
-| [HealthRequirementCheck.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements/HealthRequirementCheck.cs) | 確認した事実から判定コードと案内を決定する。UnityやAndroidを直接呼ばず、EditModeで条件を差し替えてテストする。 |
-| [HealthRequirementMessage.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements/HealthRequirementMessage.cs) | 判定コード、日本語本文、案内先を保持する。正常時は案内なしとする。 |
+| `HealthRequirementCheck.cs`（削除済み） | 確認した事実から判定コードと案内を決定する。UnityやAndroidを直接呼ばず、EditModeで条件を差し替えてテストする。 |
+| `HealthRequirementMessage.cs`（削除済み） | 判定コード、日本語本文、案内先を保持する。正常時は案内なしとする。 |
 | 既存の `HealthConnectProvider.cs` / `HealthContracts.cs` | 端末情報とHealth Connectの状態を取得し、判定用の値として返す。取得の失敗・未許可・未確認を区別する。 |
 | 既存の `HealthScreenPresenter.cs` | チェックの実行、設定からの復帰待ち、重複抑制、キャンセル、案内の保持を担当する。接続や歩数取得で得た結果も案内に反映する。 |
 | 既存の `HealthScreenBootstrap.cs` | 起動時のチェックを1回開始する。既存の前面・背面通知を利用する。 |

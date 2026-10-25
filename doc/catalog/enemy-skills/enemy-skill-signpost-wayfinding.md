@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 道案内
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 迷い道標の固有技。案内したくてたまらない道標が、矢印の板で仲間の魔物に「あっちだ」と、いちばん弱っている味方を指し示す。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[迷い道標](../enemies/enemy-lost-signpost.md)の技として作った |
 | 役割・説明 | 仲間の強化。仲間1体の次の単体攻撃を、弱った味方へ向けて強める |
-| 関連する仕様・個別ID | 使う敵：[迷い道標](../enemies/enemy-lost-signpost.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[迷い道標](../enemies/enemy-lost-signpost.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -57,7 +57,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 威力の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 道案内 | 新しい状態。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の「敵に付く強化」に加えるか。味方の挑発や、ほかの敵が標的を決める技と重なったときの順 |
+| 道案内 | 新しい状態。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)の「敵に付く強化」に加えるか。味方の挑発や、ほかの敵が標的を決める技と重なったときの順 |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

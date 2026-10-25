@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 地響き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。大きな体で床を踏み鳴らし、味方全体を揺さぶる攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[森の守り手](../enemies/enemy-forest-guardian.md)の技を共通技として作った |
 | 役割・説明 | 味方全体への物理攻撃 |
-| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

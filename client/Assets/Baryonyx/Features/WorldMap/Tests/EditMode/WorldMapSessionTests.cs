@@ -17,10 +17,15 @@ namespace Baryonyx.Tests.EditMode
         {
             public WorldMapProgress Kept = WorldMapProgress.Start;
             public bool Fail;
+
+            // 読み直しも失敗する（オフライン）。
+            public bool FailLoads;
             public readonly List<(string, bool)> Moves = new();
 
             public Task<WorldMapProgress> LoadAsync(CancellationToken token) =>
-                Task.FromResult(Kept);
+                FailLoads
+                    ? Task.FromException<WorldMapProgress>(new InvalidOperationException())
+                    : Task.FromResult(Kept);
 
             public Task<WorldMapProgress> MoveAsync(
                 string squareId,
@@ -97,6 +102,43 @@ namespace Baryonyx.Tests.EditMode
                 new System.Text.RegularExpressions.Regex(WorldMapSession.SaveFailedMessage)
             );
             Assert.That(await WorldMapSession.MoveAsync("n10-10", clear: true), Is.False);
+            Assert.That(WorldMapSession.Known.At, Is.EqualTo("porta"));
+            Assert.That(WorldMapSession.Known.Cleared, Is.EqualTo(new[] { "porta" }));
+        }
+
+        [Test]
+        public async Task AFailedMoveThatCannotBeReadAgainGoesBackToWhatTheServerLastGave()
+        {
+            var source = new FakeSource();
+            WorldMapSession.Source = source;
+            await WorldMapSession.LoadAsync(CancellationToken.None);
+            Assert.That(await WorldMapSession.MoveAsync("n10-10", clear: true), Is.True);
+
+            source.Fail = true;
+            source.FailLoads = true;
+            LogAssert.Expect(
+                LogType.Warning,
+                new System.Text.RegularExpressions.Regex(WorldMapSession.SaveFailedMessage)
+            );
+            Assert.That(await WorldMapSession.MoveAsync("n9-10", clear: true), Is.False);
+            // 保存していない移動を残さず、サーバーが最後に返した進み具合へ戻す。
+            Assert.That(WorldMapSession.Known.At, Is.EqualTo("n10-10"));
+            Assert.That(WorldMapSession.Known.Cleared, Is.EqualTo(new[] { "porta", "n10-10" }));
+        }
+
+        [Test]
+        public async Task AChestThatFailedToSaveShowsNothingAndGoesBack()
+        {
+            var source = new FakeSource { Fail = true };
+            WorldMapSession.Source = source;
+            await WorldMapSession.LoadAsync(CancellationToken.None);
+
+            LogAssert.Expect(
+                LogType.Warning,
+                new System.Text.RegularExpressions.Regex(WorldMapSession.SaveFailedMessage)
+            );
+            // 保存できてから中身を見せるため、保存できなければ中身を渡さない。
+            Assert.That(await WorldMapSession.OpenChestAsync("n8-5"), Is.Null);
             Assert.That(WorldMapSession.Known.At, Is.EqualTo("porta"));
             Assert.That(WorldMapSession.Known.Cleared, Is.EqualTo(new[] { "porta" }));
         }

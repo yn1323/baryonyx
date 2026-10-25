@@ -23,8 +23,8 @@ MonoBehaviour:
   FanRadius: 1300
   FanDrop: 0.5
   RestBottom: -62
-  OpeningDraw: 6
-  TurnDraw: 3
+  OpeningDraw: 5
+  TurnDraw: 5
   HandLimit: 9
   DealDelay: 0.3
   DealInterval: 0.12

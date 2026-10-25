@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 熱風の羽ばたき
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 炎尾の鳥の固有技。火口の熱い風を羽ばたきで巻き起こし、自分と仲間を風に乗せる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)の技として作った |
 | 役割・説明 | 自分と仲間の速度アップ |
-| 関連する仕様・個別ID | 使う敵：[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -54,7 +54,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 敵に付く速度アップ | 速度を変える状態は、ターン順のしきい値が未決のため、モックでは表示だけになる（[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)）。敵に付く強化として[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)に加える |
+| 敵に付く速度アップ | 速度を変える状態は、ターン順のしきい値が未決のため、モックでは表示だけになる（[カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定)）。敵に付く強化として[敵の行動の仮設定](../../features/combat-enemy-behavior.md)に加える |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

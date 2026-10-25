@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 遠吠え
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。群れの仲間を奮い立たせる合図である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔むした狼](../enemies/enemy-moss-wolf.md)の技を共通技として作った |
 | 役割・説明 | 自分と仲間の攻撃を強める |
-| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[氷槍のペンギン兵](../enemies/enemy-ice-penguin.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[氷槍のペンギン兵](../enemies/enemy-ice-penguin.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

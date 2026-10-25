@@ -16,6 +16,9 @@ namespace Baryonyx.Tests.EditMode
         {
             private readonly EquipmentLocalSource inner = new();
             public bool Fail;
+
+            // サーバーが断る（409）。
+            public bool Refuse;
             public TaskCompletionSource<bool> Gate;
             public int Loads;
 
@@ -52,7 +55,13 @@ namespace Baryonyx.Tests.EditMode
                     await Gate.Task;
                 if (Fail)
                     throw new InvalidOperationException("offline");
+                if (Refuse)
+                    throw new ServerApiException(409);
             }
+
+            // ほかの端末で付け替えた。
+            public Task ChangeElsewhereAsync(Func<EquipmentLocalSource, Task> change) =>
+                change(inner);
         }
 
         private readonly List<string> failures = new();
@@ -99,6 +108,25 @@ namespace Baryonyx.Tests.EditMode
 
             var saved = await saves.UnequipAsync("toma", EquipmentSlot.Weapon, default);
             Assert.That(saved.ItemIn("toma", EquipmentSlot.Weapon), Is.EqualTo(worn));
+            Assert.That(failures, Is.EqualTo(new[] { EquipmentPresenter.SaveFailedMessage }));
+        }
+
+        [Test]
+        public async Task ARefusedChangeReturnsTheItemsReadAgain()
+        {
+            var server = new FakeServer();
+            var saves = new EquipmentSaves(server);
+            await saves.LoadAsync(CancellationToken.None);
+            await server.ChangeElsewhereAsync(inner =>
+                inner.UnequipAsync("toma", EquipmentSlot.Weapon, default)
+            );
+            server.Refuse = true;
+
+            var saved = await saves.UnequipAsync("toma", EquipmentSlot.Weapon, default);
+
+            // 断られたら、手元の古い装備ではなく、読み直したサーバーの装備へ戻す。
+            Assert.That(server.Loads, Is.EqualTo(2));
+            Assert.That(saved.ItemIn("toma", EquipmentSlot.Weapon), Is.Null);
             Assert.That(failures, Is.EqualTo(new[] { EquipmentPresenter.SaveFailedMessage }));
         }
     }

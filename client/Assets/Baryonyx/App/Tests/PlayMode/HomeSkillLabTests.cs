@@ -42,6 +42,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator RestoreServices()
         {
+            // スキルの演出が止めた時間を、途中で落ちても次のテストへ残さない。
+            Time.timeScale = 1f;
             services?.Dispose();
             services = null;
             yield return SceneTests.UnloadAll(nameof(HomeSkillLabTests));

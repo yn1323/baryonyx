@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 延焼
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 呪いの燭台の固有技。三つの炎から火の粉をまき散らし、一行に付いたやけどを燃え広がらせる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[呪いの燭台](../enemies/enemy-cursed-candelabra.md)の技として作った |
 | 役割・説明 | 味方全体のやけどを延ばし、広げる弱体 |
-| 関連する仕様・個別ID | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -57,7 +57,7 @@ category: enemy-skills
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | やけどを延ばす | 新しい仕組み。延ばす長さの上限と、延ばすときにも付与率（[状態異常の付与率の仮設定](../../features/combat.md#状態異常の付与率の仮設定)）を使うか |
-| 味方に付くやけど | 量を付いた味方の最大HPの割合で決める案（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)） |
+| 味方に付くやけど | 量を付いた味方の最大HPの割合で決める案（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

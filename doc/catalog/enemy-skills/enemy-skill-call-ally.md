@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 仲間を呼ぶ
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。空いた立ち位置に、仲間の敵を1体呼ぶ。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[森の守り手](../enemies/enemy-forest-guardian.md)の技を共通技として作った |
 | 役割・説明 | 戦闘の途中で敵を増やす |
-| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[死霊の魔導師](../enemies/enemy-lich.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -74,7 +74,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 呼び出しの決まり | 立ち位置、行動順への入れ方、呼んだ敵を倒す必要があるか（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)） |
+| 呼び出しの決まり | 立ち位置、行動順への入れ方、呼んだ敵を倒す必要があるか（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

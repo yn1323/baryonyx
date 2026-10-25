@@ -28,9 +28,12 @@ namespace Baryonyx.Tests.PlayMode
         // the developer's back after.
         private readonly Dictionary<string, int> saved = new();
 
+        private FixedRandom random;
+
         [SetUp]
         public void ForgetChoices()
         {
+            random = FixedRandom.Use();
             saved.Clear();
             foreach (var key in Keys)
             {
@@ -40,8 +43,10 @@ namespace Baryonyx.Tests.PlayMode
             }
         }
 
+        // 開発用の画面なので、読み込みと、選んだ敵がボタンで動くことだけを確かめる。行動の決まりは
+        // EnemyBrainTests・BattleBlowsTests（EditMode）と、戦闘画面のテストが確かめる。反射はここだけで見る。
         [UnityTest]
-        public IEnumerator TheChosenEnemyActsAndReactsAsInTheBattle()
+        public IEnumerator TheChosenEnemyActsOnItsButtons()
         {
             var (lab, view) = (default(EnemyLab), default(BattleInspectView));
             yield return Load((l, v) => (lab, view) = (l, v));
@@ -83,150 +88,27 @@ namespace Baryonyx.Tests.PlayMode
             yield return Press(lab, EnemyLabAction.Hit);
             Assert.That(slime.Hp, Is.EqualTo(slime.MaxHp - blow));
 
-            Assert.That(slime.Weaknesses[0].Revealed, Is.False);
-            yield return Press(lab, EnemyLabAction.WeakHit);
-            Assert.That(slime.Weaknesses[0].Revealed, Is.True, "The hidden weakness is revealed.");
-            Assert.That(slime.Hp, Is.EqualTo(slime.MaxHp - blow - Mathf.RoundToInt(blow * 1.5f)));
-
-            yield return Press(lab, EnemyLabAction.Defeat);
-            Assert.That(slime.Alive, Is.False);
-            Assert.That(view.UpcomingTurns(6), Has.No.Member(0), "It leaves the turn order.");
-
             int party = PartyHp(view);
-            yield return Press(lab, EnemyLabAction.Attack);
-            Assert.That(slime.Hp, Is.EqualTo(slime.MaxHp), "A beaten enemy stands to act again.");
-            Assert.That(
-                Blows(view, slime, slime.Power),
-                Has.Member(party - PartyHp(view)),
-                "It hits one ally, softened by that ally's defense."
-            );
-
-            party = PartyHp(view);
-            yield return Press(lab, EnemyLabAction.Freeze);
-            Assert.That(PartyHp(view), Is.EqualTo(party), "A frozen enemy does not move.");
-            Assert.That(
-                view.HasStatus(false, 0, CardStatus.Freeze),
-                Is.False,
-                "Its turn thaws it."
-            );
-
+            int before = slime.Hp;
             yield return Press(lab, EnemyLabAction.Reflect);
             Assert.That(PartyHp(view), Is.EqualTo(party), "The mirror takes the blow.");
             Assert.That(
                 slime.Hp,
                 Is.EqualTo(
-                    slime.MaxHp
-                        - CombatFormula.Defend(slime.Power, slime.PhysicalDefense, slime.Level)
+                    before - CombatFormula.Defend(slime.Power, slime.PhysicalDefense, slime.Level)
                 ),
                 "It hits itself, through its own defense."
             );
             for (int i = 0; i < view.Allies.Length; i++)
                 Assert.That(view.HasStatus(true, i, CardStatus.Reflect), Is.False);
 
-            yield return Press(lab, EnemyLabAction.Paralysis);
-            Assert.That(
-                Blows(view, slime, Mathf.RoundToInt(slime.Power * 0.75f)),
-                Has.Member(party - PartyHp(view)),
-                "A paralysed enemy hits a quarter weaker."
-            );
-            Assert.That(lab.EnemyLabel.text, Does.Contain("麻痺"));
-
             lab.Select(lab.Enemy + 1);
             Assert.That(lab.Enemy, Is.EqualTo(1));
             Assert.That(view.Enemies[1].Marker.gameObject.activeSelf, Is.True);
-            int turn = view.Turn;
-            yield return Press(lab, EnemyLabAction.EnemyTurn, seconds: 10f);
-            Assert.That(view.Turn, Is.EqualTo(turn + 1), "The party's next turn begins.");
 
             lab.ResetButton.onClick.Invoke();
             Assert.That(view.Enemies.All(enemy => enemy.Hp == enemy.MaxHp), Is.True);
-            Assert.That(view.StatusesNow(false, 0), Is.Empty);
-            Assert.That(slime.Weaknesses[0].Revealed, Is.False, "The weakness is hidden again.");
             Assert.That(view.Allies.All(ally => ally.Hp == ally.StartHp), Is.True);
-        }
-
-        [UnityTest]
-        public IEnumerator RepeatingPlaysTheActionAgainFromTheStart()
-        {
-            var (lab, view) = (default(EnemyLab), default(BattleInspectView));
-            yield return Load((l, v) => (lab, view) = (l, v));
-            var slime = view.Enemies[0];
-
-            // One blow now, then the same blow over and over.
-            lab.Run(EnemyLabAction.Hit);
-            lab.SetRepeat(true);
-            Assert.That(PlayerPrefs.GetInt(EnemyLab.RepeatKey), Is.EqualTo(1), "Remembered.");
-            Assert.That(
-                PlayerPrefs.GetInt(EnemyLab.ActionKey),
-                Is.EqualTo((int)EnemyLabAction.Hit)
-            );
-            yield return SceneTests.WaitUntil(() => !lab.Busy, 5f);
-            yield return SceneTests.WaitUntil(() => lab.Busy, message: "It plays again by itself.");
-            yield return SceneTests.WaitUntil(() => !lab.Busy, 5f);
-            Assert.That(
-                slime.Hp,
-                Is.EqualTo(slime.MaxHp - view.LabBlowPower(0)),
-                "Each run starts from full HP, so the blows do not add up."
-            );
-            lab.SetRepeat(false);
-        }
-
-        [UnityTest]
-        public IEnumerator TheSkillButtonPlaysTheEnemysPatternAndItsBlockTakesBlowsFirst()
-        {
-            var (lab, view) = (default(EnemyLab), default(BattleInspectView));
-            yield return Load((l, v) => (lab, view) = (l, v));
-            lab.Select(2);
-            var guardian = view.Enemies[2];
-
-            // 森の守り手 opens with 大地の拳, then goes round its order: 身を固める next.
-            yield return Press(lab, EnemyLabAction.Skill, seconds: 10f);
-            Assert.That(guardian.Brain, Is.Not.Null, "It takes its skills from its document.");
-            Assert.That(guardian.Brain.History, Is.EqualTo(new[] { "大地の拳" }));
-            yield return Press(lab, EnemyLabAction.Skill, seconds: 10f);
-            Assert.That(guardian.Brain.History[1], Is.EqualTo("身を固める"));
-            int block = view.EnemyBlockOf(2);
-            Assert.That(block, Is.GreaterThan(0));
-            Assert.That(
-                guardian.Gauge.Block.gameObject.activeSelf,
-                Is.True,
-                "Shown over its HP bar."
-            );
-
-            // A blow takes its block before its HP.
-            int hp = guardian.Hp;
-            int power = view.LabBlowPower(2);
-            yield return Press(lab, EnemyLabAction.Hit);
-            Assert.That(view.EnemyBlockOf(2), Is.EqualTo(Mathf.Max(0, block - power)));
-            Assert.That(guardian.Hp, Is.EqualTo(hp - Mathf.Max(0, power - block)));
-        }
-
-        [UnityTest]
-        public IEnumerator TheBigSkillIsGatheredWithAGlowAndThenLandsOnTheWholeParty()
-        {
-            var (lab, view) = (default(EnemyLab), default(BattleInspectView));
-            yield return Load((l, v) => (lab, view) = (l, v));
-            lab.Select(2);
-            int[] before = view.Allies.Select(ally => ally.Hp).ToArray();
-
-            lab.ActionButtons[(int)EnemyLabAction.BigSkill].onClick.Invoke();
-            yield return SceneTests.WaitUntil(() => view.IsCharging(2), 5f, "It gathers.");
-            Assert.That(view.EnemyBlockOf(2), Is.GreaterThan(0), "It braces as it gathers.");
-            Assert.That(
-                view.Allies.Select(ally => ally.Hp),
-                Is.EqualTo(before),
-                "Nothing lands while it gathers."
-            );
-            yield return SceneTests.WaitUntil(() => !lab.Busy, 10f, "It lands.");
-            Assert.That(view.IsCharging(2), Is.False);
-            Assert.That(view.Enemies[2].Sprite.color, Is.EqualTo(Color.white), "The glow is gone.");
-            for (int i = 0; i < view.Allies.Length; i++)
-                if (!view.Allies[i].Absent)
-                    Assert.That(
-                        view.Allies[i].Hp,
-                        Is.LessThan(before[i]),
-                        "森羅の鉄槌 hits every ally."
-                    );
         }
 
         /// <summary>Presses the action's button and waits for the battle to finish it.</summary>
@@ -242,16 +124,6 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         private static int PartyHp(BattleInspectView view) => view.Allies.Sum(ally => ally.Hp);
-
-        /// <summary>A blow of <paramref name="power"/> as each ally would take it, after that ally's defense.</summary>
-        private static IEnumerable<int> Blows(
-            BattleInspectView view,
-            BattleInspectEnemy enemy,
-            int power
-        ) =>
-            view.Allies.Select(ally =>
-                CombatFormula.Defend(power, ally.Stats.PhysicalDefense, enemy.Level)
-            );
 
         private IEnumerator Load(Action<EnemyLab, BattleInspectView> found)
         {
@@ -276,6 +148,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
+            Time.timeScale = 1f;
+            random?.Dispose();
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
             foreach (var key in Keys)

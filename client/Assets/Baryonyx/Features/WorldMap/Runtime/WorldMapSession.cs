@@ -27,6 +27,9 @@ namespace Baryonyx.WorldMap
         /// <summary>The progress last read or moved to; null before the first read.</summary>
         public static WorldMapProgress Known { get; private set; }
 
+        // サーバーが最後に返した進み具合。保存も読み直しもできなかったときは、ここへ戻す。
+        private static WorldMapProgress kept;
+
         public const string SaveFailedMessage = "街道の進み具合を保存できませんでした";
 
         /// <summary>
@@ -39,7 +42,7 @@ namespace Baryonyx.WorldMap
         {
             var progress = await SourceOrLocal.LoadAsync(token);
             if (!token.IsCancellationRequested && progress != null)
-                Known = progress;
+                Known = kept = progress;
             return progress;
         }
 
@@ -68,6 +71,8 @@ namespace Baryonyx.WorldMap
                 var saved = await SaveQueue.Enqueue(token =>
                     source.MoveAsync(squareId, clear, token)
                 );
+                if (saved != null)
+                    kept = saved;
                 // あとから出した移動がまだ送られていなければ、手元の進み具合のほうが新しい。
                 if (saved != null && !SaveQueue.Busy)
                     Known = saved;
@@ -86,7 +91,9 @@ namespace Baryonyx.WorldMap
                 }
                 catch (Exception)
                 {
-                    // 読み直せなければ、次に地図を開いたときに読み直す。
+                    // 読み直せなければ、保存していない移動を残さず、サーバーが最後に返した進み具合へ戻す。
+                    // 次に地図を開いたときに読み直す。
+                    Known = kept;
                 }
                 return null;
             }
@@ -98,6 +105,7 @@ namespace Baryonyx.WorldMap
         {
             Source = null;
             Known = null;
+            kept = null;
             Battle = null;
             local = null;
         }

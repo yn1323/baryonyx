@@ -26,7 +26,6 @@ namespace Baryonyx.Combat.Presentation
 
         // 凍結が解けて、次に動くまでは凍結にかからない敵。
         private readonly HashSet<int> thawed = new();
-        private const float ParalysisCut = 0.25f;
         private const float ProtectCut = 0.25f;
 
         /// <summary>Today's ACT, for the cards that grow with it (a mock value; the battle has no step data yet).</summary>
@@ -48,7 +47,14 @@ namespace Baryonyx.Combat.Presentation
             Find(ally, index, status) != null;
 
         /// <summary>The energy a card in hand costs now: nothing when the next card is free.</summary>
-        public int CostOf(BattleInspectCard card) => nextCardFree ? 0 : card.Cost;
+        public int CostOf(BattleInspectCard card) =>
+            nextCardFree && Covers(nextFreeElements, CardElementOf(card)) ? 0 : card.Cost;
+
+        // 画面のカードの属性（カードスキルの属性。スキルのないモックのカードは属性なし）。
+        private CardElement CardElementOf(BattleInspectCard card) =>
+            card.DeckIndex >= 0 && card.DeckIndex < Deck.Length
+                ? SkillOf(Deck[card.DeckIndex])?.Element ?? CardElement.None
+                : CardElement.None;
 
         /// <summary>The stat of an ally that a power is a part of.</summary>
         public int StatOf(int ally, CardStat stat) =>
@@ -103,7 +109,7 @@ namespace Baryonyx.Combat.Presentation
                 skill.Name,
                 user != null ? user.TargetArea : PartyAnchor,
                 user != null ? user.Sprite.texture : null,
-                card.Cost >= Vfx.CutInCost,
+                skill.Has(CardTrait.CutIn),
                 hits,
                 i => ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave)
             );
@@ -134,7 +140,7 @@ namespace Baryonyx.Combat.Presentation
                 chosen.Count > 0 ? chosen[0] : -1,
                 onEnemies,
                 caster >= 0 ? caster : 0,
-                count => UnityEngine.Random.Range(0, count)
+                count => Dice.Below(count)
             );
         }
 
@@ -222,7 +228,13 @@ namespace Baryonyx.Combat.Presentation
                         break;
                     case CardActionKind.NextCardFree:
                         nextCardFree = true;
+                        nextFreeElements = action.Elements;
                         ShowPopup(AreaOf(hit), "次のカード コスト0", Gold, 42f);
+                        break;
+                    case CardActionKind.NextCardBoost:
+                        nextBoost = action.Amount;
+                        nextBoostElements = action.Elements;
+                        ShowPopup(AreaOf(hit), $"次のカード 威力+{action.Amount}%", Gold, 42f);
                         break;
                     case CardActionKind.RevealWeakness:
                     {
@@ -267,6 +279,9 @@ namespace Baryonyx.Combat.Presentation
         {
             var target = Enemies[enemy];
             int power = Power(action, caster);
+            // シールドバッシュ：使い手のブロックの割合を足す。
+            if (action.BlockPercent > 0)
+                power += Mathf.RoundToInt(BlockOf(caster) * action.BlockPercent / 100f);
             if (
                 action.BonusWhen != CardCondition.Always
                 && Holds(action.BonusWhen, enemy, caster, weak)
@@ -323,8 +338,11 @@ namespace Baryonyx.Combat.Presentation
             };
         }
 
+        // 眠り札の段と次のカードの上乗せ（cardBoost）は、使っているカードの威力・回復量・ブロックに掛かる。
         private int Power(CardAction action, int caster) =>
-            CardRules.Power(action, StatOf(caster, action.Stat), TodayAct);
+            Mathf.RoundToInt(
+                CardRules.Power(action, StatOf(caster, action.Stat), TodayAct) * (1f + cardBoost / 100f)
+            );
 
         /// <summary>
         /// The enemy's defense against a power worked out from <paramref name="stat"/>: 属防 for
@@ -613,7 +631,7 @@ namespace Baryonyx.Combat.Presentation
                     alive.Add(i);
             if (alive.Count == 0)
                 yield break;
-            int enemy = alive[UnityEngine.Random.Range(0, alive.Count)];
+            int enemy = Dice.Pick(alive);
             power = CombatFormula.Defend(power, Enemies[enemy].MagicDefense, Allies[caster].Level);
             if (Vfx == null)
             {
@@ -642,10 +660,10 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>An enemy's blow, weakened while it is paralysed.</summary>
         private int EnemyPower(int enemy)
         {
-            int power = Enemies[enemy].Power;
-            if (HasStatus(false, enemy, CardStatus.Paralysis))
-                power = Mathf.RoundToInt(power * (1f - ParalysisCut));
-            return power;
+            return BattleBlows.Weakened(
+                Enemies[enemy].Power,
+                HasStatus(false, enemy, CardStatus.Paralysis)
+            );
         }
 
         /// <summary>
@@ -737,7 +755,7 @@ namespace Baryonyx.Combat.Presentation
             EnsureBlock();
             if (ally < 0 || ally >= allyBlock.Length || allyBlock[ally] <= 0)
                 return damage;
-            int absorbed = Mathf.Min(allyBlock[ally], damage);
+            int absorbed = BattleBlows.Soaked(allyBlock[ally], damage);
             allyBlock[ally] -= absorbed;
             RefreshBlock(ally);
             ShowPopup(Allies[ally].TargetArea, $"ブロック -{absorbed}", GuardColor, 36f);

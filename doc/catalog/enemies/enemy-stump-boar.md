@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StumpBoar.asepr
 
 # 切り株猪
 
-[敵の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 森に出る雑魚のうち、中くらいの大きさで、最も打たれ強く力も強い敵である。
 弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)、サーバーで記録できる敵のIDは [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS` とする。
@@ -178,5 +178,5 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/StumpBoar.asepr
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点) |
 | 2026-10-20 | ミストラ遺跡・白嶺ネーヴェの戦闘に出るようにし、Lv100のステータスと技「牙のかち上げ」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

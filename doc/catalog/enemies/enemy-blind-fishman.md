@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.as
 
 # 地底湖の盲魚人
 
-[敵の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 洞窟に棲む雑魚のうち、中くらいの大きさの敵である。
 2026-10-19の時点で、まだどの行き先にも出ない。
@@ -172,7 +172,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.as
 | 出現する場所とLv | 洞窟のどの行き先・マスに、どの敵と組んで、どのLvで出すか（[ステージの定義](../stages/README.md)） |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
 | 狙いの選び方 | 新しい仕組みの決まり（[波紋聞き](../enemy-skills/enemy-skill-blind-fishman-ripple-sense.md)） |
-| 敵のブロック | 消えるタイミング（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の未決） |
+| 敵のブロック | 消えるタイミング（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)の未決） |
 | 弱点の数 | 1体に複数の弱点を持たせるか（[弱点の開示](../../features/combat.md#弱点の開示)の未決） |
 | 実装 | 冒険の戦闘では、ステータスと技1つ（波紋聞き）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
@@ -180,5 +180,5 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/BlindFishman.as
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`balanced`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[波紋聞き](../enemy-skills/enemy-skill-blind-fishman-ripple-sense.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
+| 2026-10-19 | 定義を作り、ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値（型：`balanced`）をそのまま使い、外見の文章は生成した絵に合わせた。固有技として[波紋聞き](../enemy-skills/enemy-skill-blind-fishman-ripple-sense.md)を作った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点)、[ステータスの項目](../../features/party.md#ステータスの項目) |
 | 2026-10-20 | グラシエラ氷窟の戦闘に出るようにし、Lv100のステータスと技「波紋聞き」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

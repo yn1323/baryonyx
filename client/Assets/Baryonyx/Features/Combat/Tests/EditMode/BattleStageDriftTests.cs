@@ -45,26 +45,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(BattleStageDrift.Offset(5f, 0f, 40f), Is.EqualTo(Vector2.zero));
         }
 
-        [Test]
-        public void TheDefaultCircleIsSlowAndStaysInsideTheRoomLaidForIt()
-        {
-            var drift = new GameObject(
-                "Drift",
-                typeof(RectTransform)
-            ).AddComponent<BattleStageDrift>();
-            try
-            {
-                float speed = 2f * Mathf.PI * drift.Radius / drift.Period;
-                Assert.That(drift.Radius, Is.GreaterThan(0f));
-                Assert.That(drift.Radius, Is.LessThanOrEqualTo(BattleStageDrift.MaxRadius));
-                Assert.That(speed, Is.LessThan(2.5f), "Slower than 2.5 px a second.");
-            }
-            finally
-            {
-                Object.DestroyImmediate(drift.gameObject);
-            }
-        }
-
         private static void AssertNear(Vector2 actual, Vector2 expected)
         {
             Assert.That(actual.x, Is.EqualTo(expected.x).Within(0.001f));

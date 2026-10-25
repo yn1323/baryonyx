@@ -41,6 +41,13 @@ namespace Baryonyx.Combat.Presentation
             List<Hit> last = null;
             foreach (var action in skill.Actions)
             {
+                // A combo's and a discard's actions are played by the battle only when they work,
+                // and picking cards to discard or take back is no blow.
+                if (
+                    action.Phase != CardActionPhase.Play
+                    || action.Kind is CardActionKind.Discard or CardActionKind.TakeFromDiscard
+                )
+                    continue;
                 var rounds = TargetsOf(action, enemies, allies, picked, onEnemies, user, random);
                 if (rounds.Count == 0)
                     continue;

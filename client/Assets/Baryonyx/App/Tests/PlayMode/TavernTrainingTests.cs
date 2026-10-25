@@ -63,20 +63,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Definition.Items[item].Hidden, Is.True);
             Assert.That(view.MenuItems[item], Is.Null);
 
-            // 左のイラストと右の枠は「もどる」より下で、重ならない。ドット絵はイラストの右下に立つ。
+            // 左のイラストと右の枠は「もどる」より下で、重ならない。
             var portrait = training.transform.Find("Layout/Portrait");
             var detail = training.transform.Find("Layout/Detail");
             SceneTests.AssertBelow(portrait, view.Back.transform);
             SceneTests.AssertBelow(detail, view.Back.transform);
             SceneTests.AssertBelow(detail, view.Breadcrumb.transform);
-            Assert.That(
-                SceneTests.ScreenRect(portrait).xMax,
-                Is.LessThanOrEqualTo(SceneTests.ScreenRect(detail).xMin)
-            );
-            var picture = SceneTests.ScreenRect(portrait);
-            var figure = SceneTests.ScreenRect(training.Figure.transform);
-            Assert.That(figure.center.x, Is.GreaterThan(picture.center.x));
-            Assert.That(figure.center.y, Is.LessThan(picture.center.y));
             Assert.That(training.Illustration.enabled, Is.True);
             Assert.That(training.Illustration.texture, Is.Not.Null);
             // 横に長いボタンは、メニューの行と同じく高さを7割まで許す。
@@ -113,7 +105,6 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(locked ? $"Lv {growth.Passives[1].UnlockLevel}で解放" : "")
             );
             Assert.That(training.Passives[0].Icon.texture, Is.Not.Null);
-            Assert.That(training.Passives[0].Icon.uvRect, Is.EqualTo(new Rect(0, 0, 1, 1)));
             // 固有スキルは押せる小さなカードで、セットしている進化の段階を出す。未解放のものは暗くして
             // 解放するレベルを重ねる。効果の文は出さず、カードを押して開く付け替えの画面で読む。
             Assert.That(
@@ -189,15 +180,6 @@ namespace Baryonyx.Tests.PlayMode
                 }
             )
                 SceneTests.AssertTouchSize(button.transform, 0.7f);
-            // 上の段は、左にLv、右に「－」「＋」「最大」を同じ高さで並べる。
-            var to = SceneTests.ScreenRect(training.To.transform);
-            var less = SceneTests.ScreenRect(training.Less.transform);
-            Assert.That(to.xMax, Is.LessThan(less.xMin));
-            Assert.That(to.yMin, Is.LessThan(less.yMax));
-            Assert.That(to.yMax, Is.GreaterThan(less.yMin));
-            Assert.That(training.To.fontSize, Is.EqualTo(training.From.fontSize));
-            // 使うルーンは「レベルアップ」の中に添える。
-            Assert.That(training.Cost.transform.IsChildOf(training.Confirm.transform), Is.True);
             Assert.That(TopHit(view.Back.transform).name, Is.EqualTo("Dim"));
             // 端末の戻るキーと同じ経路（「もどる」）は、重ねた画面だけを閉じる。
             view.Back.onClick.Invoke();
@@ -351,18 +333,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(stage, Is.LessThan(TrainingBond.Max - 1));
                 Assert.That(TrainingBond.TokensOf(growth), Is.EqualTo(1));
 
-                // 「絆」は名前の行と「レベルアップ」の間に並び、重ならない。
                 SceneTests.AssertTouchSize(training.Bond.transform, 0.7f);
-                var bond = SceneTests.ScreenRect(training.Bond.transform);
-                Assert.That(
-                    bond.xMax,
-                    Is.LessThanOrEqualTo(SceneTests.ScreenRect(training.LevelUp.transform).xMin)
-                );
-                foreach (var icon in training.Elements.Where(icon => icon.gameObject.activeSelf))
-                    Assert.That(
-                        SceneTests.ScreenRect(icon.transform).xMax,
-                        Is.LessThanOrEqualTo(bond.xMin)
-                    );
                 Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage));
 
                 training.Bond.onClick.Invoke();

@@ -123,10 +123,13 @@ namespace Baryonyx.Tests.PlayMode
             // 保存できなかったときは、引いた値段を戻して知らせる。
             RuneBalance.Set(1000);
             shop.Fail = true;
+            string ownedBefore = buy.DetailOwned.text;
             buy.Confirm.onClick.Invoke();
             yield return SceneTests.WaitForTask(buy.BuyTask);
             Assert.That(view.ToastMessage, Is.EqualTo(WorkshopBuyView.BuyFailedMessage));
             Assert.That(RuneBalance.Known, Is.EqualTo(1000));
+            // 手元で足した持っている数も戻す。
+            Assert.That(buy.DetailOwned.text, Is.EqualTo(ownedBefore));
             Assert.That(buy.Confirm.interactable, Is.True);
 
             // 防具のタブに切り替えると、防具だけを並べ、選び直しになる。

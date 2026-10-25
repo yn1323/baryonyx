@@ -194,6 +194,18 @@ namespace Baryonyx.Temple
         public const string ShortMessage = "ルーンが足りません";
         public const string FailedMessage = "召喚できませんでした";
 
+        // 残高が足りないときにサーバーが断る理由（doc/features/monetization.md の召喚の保存）。
+        public const string InsufficientRunesError = "insufficient_runes";
+
+        /// <summary>
+        /// What to tell when a summoning failed: that the runes are short only when the server
+        /// said so. Its other refusals (a reused request ID) tell that it failed.
+        /// </summary>
+        public static string FailureMessageOf(Exception exception) =>
+            exception is ServerApiException { StatusCode: 409, Error: InsufficientRunesError }
+                ? ShortMessage
+                : FailedMessage;
+
         private static TempleSummonMemorySource local;
 
         /// <summary>The server to summon on. Without it, mock results are drawn.</summary>

@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 火の息
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。口から炎を吐き、味方全体を焼く魔法の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（共通化できる技も入れる）で、今の3体では使わない共通技として作った |
 | 役割・説明 | 味方全体への魔法攻撃とやけど |
-| 関連する仕様・個別ID | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[呪いの燭台](../enemies/enemy-cursed-candelabra.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -64,7 +64,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 味方に付くやけどの量 | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の案（味方のターンの開始時に最大HPの4%）で決める |
+| 味方に付くやけどの量 | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)の案（味方のターンの開始時に最大HPの4%）で決める |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

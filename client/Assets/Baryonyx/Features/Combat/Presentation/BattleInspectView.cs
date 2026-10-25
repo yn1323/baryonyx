@@ -51,6 +51,9 @@ namespace Baryonyx.Combat.Presentation
         Deck,
         Hand,
         Discard,
+
+        /// <summary>Shown in the row of the discard pile to take one back into the hand.</summary>
+        Choice,
     }
 
     /// <summary>One card of the deck as data: what a card on screen shows once it is drawn.</summary>
@@ -113,6 +116,10 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The art of another card skill by its id (<see cref="BattlePartyCard.ArtOf"/>).</summary>
         [NonSerialized]
         public Func<string, Texture> ArtOf;
+
+        /// <summary>A card made for the battle only (a fused card), never dealt.</summary>
+        [NonSerialized]
+        public bool Generated;
     }
 
     /// <summary>
@@ -574,6 +581,14 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The number of cards left in the deck.</summary>
         public TMP_Text DeckLabel;
+
+        /// <summary>The discard pile's counter and its number of cards.</summary>
+        public RectTransform DiscardAnchor;
+        public TMP_Text DiscardLabel;
+
+        /// <summary>The counter of the cards out of the battle (消滅), shown once there is one.</summary>
+        public RectTransform ExhaustAnchor;
+        public TMP_Text ExhaustLabel;
         public Button EndTurnButton;
 
         /// <summary>Material that turns a sprite white; the view pulses a copy of it.</summary>
@@ -636,7 +651,10 @@ namespace Baryonyx.Combat.Presentation
 
         private readonly List<int> targets = new();
         private readonly List<int> hand = new();
-        private readonly List<int> drawPile = new();
+        private static readonly BattleDice UnityDice = new(count =>
+            UnityEngine.Random.Range(0, count)
+        );
+        private readonly BattleDeck drawPile = new(UnityDice);
         private readonly Queue<IEnumerator> actions = new();
         private readonly BattlePopupStack popupStack = new();
         private Coroutine dealing;
@@ -713,7 +731,23 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// Cards left in the deck (indexes of <see cref="Deck"/>); the next draw takes the first.
         /// </summary>
-        public IReadOnlyList<int> DrawPile => drawPile;
+        public IReadOnlyList<int> DrawPile => drawPile.Pile;
+
+        /// <summary>The discarded cards (indexes of <see cref="Deck"/>), the last one put there last.</summary>
+        public IReadOnlyList<int> DiscardPile => drawPile.DiscardPile;
+
+        /// <summary>The cards out of the battle (消滅; indexes of <see cref="Deck"/>).</summary>
+        public IReadOnlyList<int> ExhaustedCards => drawPile.Exhausted;
+
+        /// <summary>
+        /// The luck of the battle: shuffling the deck, a target at random, a chance to play twice
+        /// and the enemies' choices. Unity's random numbers unless a test hands in its own.
+        /// </summary>
+        public BattleDice Dice
+        {
+            get => drawPile.Dice;
+            set => drawPile.Dice = value ?? UnityDice;
+        }
 
         /// <summary>True while cards are being dealt; cards cannot be pressed nor the turn ended.</summary>
         public bool Dealing => dealing != null;
@@ -809,10 +843,14 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>Where the card rests in the fan now (it springs there when not held).</summary>
         public Vector2 RestPosition(int index) => motion[index].Rest.Position;
 
-        /// <summary>Energy starts at 5 and its maximum grows by one each turn, up to 9.</summary>
-        public static int MaxEnergyAt(int turn) => Mathf.Min(MaxEnergyCap, 5 + turn - 1);
+        /// <summary>The energy every party turn begins with (doc/features/combat.md, エネルギーとコスト).</summary>
+        public const int EnergyPerTurn = 3;
 
-        public static string EnergyText(int energy, int max) => $"{energy}/{max}";
+        /// <summary>The energy a party turn begins with: the same every turn.</summary>
+        public static int MaxEnergyAt(int turn) => EnergyPerTurn;
+
+        /// <summary>The energy as shown: only what is left to pay, not the turn's amount (G3 layout).</summary>
+        public static string EnergyText(int energy, int max) => energy.ToString();
 
         /// <summary>The words of the turn band when the enemies' turn begins.</summary>
         public const string EnemyTurnText = "敵のターン";
@@ -829,16 +867,6 @@ namespace Baryonyx.Combat.Presentation
                 ? "<size=62%>連続！</size> もう一度 味方のターン"
                 : $"味方のターン<size=62%>　ターン{turn}</size>";
 
-        /// <summary>
-        /// The height of the end-turn button's middle above the bottom of the safe area: halfway
-        /// up the part of the middle card of the hand that is on screen, so the thumb finds it
-        /// beside the cards.
-        /// </summary>
-        public static float EndTurnMiddle(BattleInspectHandSettings settings, float cardHeight)
-        {
-            float top = settings.RestBottom + cardHeight * settings.CardScale;
-            return (Mathf.Max(0f, settings.RestBottom) + top) / 2f;
-        }
 
         /// <summary>
         /// How see-through a card the energy cannot pay for is: the settings' opacity in the hand,
@@ -1015,16 +1043,17 @@ namespace Baryonyx.Combat.Presentation
             RefreshAim();
         }
 
-        /// <summary>Keeps the end-turn button halfway up the cards on screen as the settings change.</summary>
+        /// <summary>The room under the end-turn button at the bottom-right corner (G3 layout).</summary>
+        public const float EndTurnBottom = 28f;
+
+        /// <summary>Keeps the end-turn button in the bottom-right corner, where the thumb rests.</summary>
         private void PlaceEndTurn()
         {
-            if (EndTurnButton == null || Cards.Length == 0)
+            if (EndTurnButton == null)
                 return;
             var button = (RectTransform)EndTurnButton.transform;
             var position = button.anchoredPosition;
-            position.y =
-                EndTurnMiddle(Settings, Cards[0].Body.rect.height)
-                + (button.pivot.y - 0.5f) * button.rect.height;
+            position.y = EndTurnBottom + button.pivot.y * button.rect.height;
             button.anchoredPosition = position;
         }
 
@@ -1101,6 +1130,13 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public void PressCard(int index, Vector2 screenPoint)
         {
+            // While the player picks cards to discard or take back, a tap picks one.
+            if (choosing != PileChoice.None)
+            {
+                if (!Dealing)
+                    PickCard(index);
+                return;
+            }
             if (pressing || Dealing || EnemyTurn || !Cards[index].InHand)
                 return;
             if (held >= 0 && held != index)
@@ -1169,7 +1205,7 @@ namespace Baryonyx.Combat.Presentation
             AddEveryTarget(card);
             if (!card.TargetsWholeSide && targets.Count > 0)
             {
-                int pick = targets[UnityEngine.Random.Range(0, targets.Count)];
+                int pick = Dice.Pick(targets);
                 targets.Clear();
                 targets.Add(pick);
             }
@@ -1506,7 +1542,7 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         private void EndTurnIfSpent()
         {
-            if (acting || Dealing || EnemyTurn || AnyAffordable())
+            if (acting || Dealing || EnemyTurn || choosing != PileChoice.None || AnyAffordable())
                 return;
             if (!Hand.gameObject.activeInHierarchy)
                 return;
@@ -1524,6 +1560,10 @@ namespace Baryonyx.Combat.Presentation
             // of them acts before the party's next turn. At the battle's start, the enemies
             // faster than the party (opening) act before its first turn.
             openingPhase = opening != null;
+            // The party's hand flows away once its played cards have acted (not before the
+            // battle's first turn, when no hand is dealt yet).
+            if (opening == null)
+                FlowHand();
             roundOrder = opening ?? EnemiesAfter(BattleTurn);
             bool enemiesAct = roundOrder.Count > 0;
             if (enemiesAct)
@@ -1620,12 +1660,8 @@ namespace Baryonyx.Combat.Presentation
             ShowPartyTurnBanner(again);
         }
 
-        /// <summary>
-        /// The cards dealt at the start of a turn: <see cref="BattleInspectHandSettings.TurnDraw"/>,
-        /// or more when the hand would still hold fewer than
-        /// <see cref="BattleInspectHandSettings.RefillTo"/>, to fill it up to that.
-        /// </summary>
-        public int TurnDraw() => Mathf.Max(Settings.TurnDraw, Settings.RefillTo - hand.Count);
+        /// <summary>The cards dealt at the start of a turn (<see cref="BattleInspectHandSettings.TurnDraw"/>).</summary>
+        public int TurnDraw() => Settings.TurnDraw;
 
         /// <summary>
         /// The enemies standing that act after the party's turn <paramref name="round"/> (1 for
@@ -1681,10 +1717,11 @@ namespace Baryonyx.Combat.Presentation
                 yield return Wait(Settings.EnemyGap);
                 yield break;
             }
-            int target = standing[UnityEngine.Random.Range(0, standing.Count)];
-            int taunting = standing.Find(ally => HasStatus(true, ally, CardStatus.Taunt));
-            if (HasStatus(true, taunting, CardStatus.Taunt))
-                target = taunting;
+            int target = BattleBlows.Taunted(
+                Dice.Pick(standing),
+                standing,
+                ally => HasStatus(true, ally, CardStatus.Taunt)
+            );
             target = CoverTarget(target);
             yield return Perform(
                 enemy.SkillName,
@@ -1760,14 +1797,10 @@ namespace Baryonyx.Combat.Presentation
             dealing = null;
             ClearTable();
             if (order != null)
-            {
-                drawPile.Clear();
-                foreach (int deckIndex in order)
-                    if (!Benched(deckIndex))
-                        drawPile.Add(deckIndex);
-            }
+                drawPile.Stack(order, Benched);
             RefreshDeck();
-            int opening = OpeningDraw();
+            // Every 初手 card is dealt, past the usual opening when there are more.
+            int opening = Mathf.Min(Settings.HandLimit, Mathf.Max(OpeningDraw(), InnateCount()));
             if (instant)
             {
                 for (int i = 0; i < opening && Draw(false); i++) { }
@@ -1777,7 +1810,10 @@ namespace Baryonyx.Combat.Presentation
                 dealing = StartCoroutine(Deal(opening, Settings.DealDelay));
         }
 
-        /// <summary>Puts every card on screen away, hidden, and shuffles the whole deck anew.</summary>
+        /// <summary>
+        /// Puts every card on screen away, hidden, and shuffles the whole deck anew: the discard
+        /// pile and the cards out of the battle come back too.
+        /// </summary>
         private void ClearTable()
         {
             PutBack();
@@ -1785,6 +1821,8 @@ namespace Baryonyx.Combat.Presentation
             hand.Clear();
             ClearOmens();
             ResetPassives();
+            AddFusions();
+            ResetPiles();
             foreach (var card in Cards)
                 card.Place = BattleInspectCardPlace.Deck;
             NoteFallen();
@@ -1793,17 +1831,13 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Fills the deck with every card of <see cref="Deck"/>, shuffled, whatever is in the hand:
-        /// a card in hand can be drawn again.
+        /// Fills the deck with every card of <see cref="Deck"/>, shuffled, and empties the
+        /// discard pile and the cards out of the battle.
         /// </summary>
         private void NewDeck()
         {
-            drawPile.Clear();
-            // A fallen ally's cards stay out (Fallen).
-            for (int i = 0; i < Deck.Length; i++)
-                if (!Benched(i))
-                    drawPile.Add(i);
-            Shuffle(drawPile);
+            // A fallen ally's cards stay out (Fallen), and the 初手 cards are dealt first.
+            drawPile.Renew(Deck.Length, Benched, Innate);
             RefreshDeck();
         }
 
@@ -1818,8 +1852,8 @@ namespace Baryonyx.Combat.Presentation
             Refresh();
             if (delay > 0f)
                 yield return new WaitForSeconds(delay);
-            // The deck never runs dry (it is dealt anew), so only the hand limit and the cards on
-            // screen bound the deal.
+            // The hand limit and the cards on screen bound the deal; the draw stops early when
+            // both piles are empty.
             int room = Mathf.Min(Settings.HandLimit, Cards.Length) - hand.Count;
             reserved = Deck.Length > 0 ? Mathf.Max(0, Mathf.Min(count, room)) : 0;
             while (reserved > 0 && Draw(true))
@@ -1828,6 +1862,8 @@ namespace Baryonyx.Combat.Presentation
             while (hand.Exists(IsFlying))
                 yield return null;
             dealing = null;
+            // Two cards marked to fuse that meet in the hand become one (合体).
+            Fuse();
             Refresh();
             // The cards a played card drew may cost nothing; with none, the spent energy ends the turn.
             EndTurnIfSpent();
@@ -1835,23 +1871,50 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// Draws the top card of the deck onto a card not in the hand and puts it at the left end
-        /// of the hand (the side of the deck). An empty deck is first dealt anew. Returns false,
-        /// drawing nothing, when the hand is full.
+        /// of the hand (the side of the deck). An empty deck is first made anew from the discard
+        /// pile. Returns false, drawing nothing, when the hand is full or both piles are empty.
         /// </summary>
         private bool Draw(bool fly)
         {
             int index = Array.FindIndex(Cards, card => !card.InHand);
             if (hand.Count >= Settings.HandLimit || index < 0 || Deck.Length == 0)
                 return false;
-            if (drawPile.Count == 0)
-                NewDeck();
-            // Every card left is a fallen ally's.
-            if (drawPile.Count == 0)
+            int top = drawPile.Draw(Benched);
+            // Both piles are empty: every card is in hand, out of the battle or a fallen ally's.
+            if (top < 0)
+            {
+                RefreshDeck();
                 return false;
-            Show(index, drawPile[0]);
+            }
+            PutInHand(index, top, fly);
+            return true;
+        }
+
+        /// <summary>
+        /// Draws the first card of the deck that <paramref name="wanted"/>, without dealing the
+        /// deck anew. False when there is none or the hand is full.
+        /// </summary>
+        private bool DrawWanted(Predicate<int> wanted, bool fly)
+        {
+            int index = Array.FindIndex(Cards, card => !card.InHand);
+            if (hand.Count >= Settings.HandLimit || index < 0 || Deck.Length == 0)
+                return false;
+            int card = drawPile.DrawFirst(wanted);
+            if (card < 0)
+                return false;
+            PutInHand(index, card, fly);
+            return true;
+        }
+
+        /// <summary>
+        /// Puts the card of the deck at <paramref name="top"/> onto the card on screen at
+        /// <paramref name="index"/> and at the left end of the hand (the side of the deck).
+        /// </summary>
+        private void PutInHand(int index, int top, bool fly)
+        {
+            Show(index, top);
             // A unique skill's card may light up as it comes into the hand, to evolve when used.
-            DrawOmen(drawPile[0]);
-            drawPile.RemoveAt(0);
+            DrawOmen(top);
             Cards[index].Place = BattleInspectCardPlace.Hand;
             hand.Insert(0, index);
             if (reserved > 0)
@@ -1866,7 +1929,6 @@ namespace Baryonyx.Combat.Presentation
             // where it last was (face up in the fan, or where it was played).
             ApplyMotion(index);
             RefreshDeck();
-            return true;
         }
 
         /// <summary>A small, tilted card over the deck's picture, where a dealt card starts.</summary>
@@ -1896,15 +1958,6 @@ namespace Baryonyx.Combat.Presentation
             return new Pose(pivot, angle, scale);
         }
 
-        private static void Shuffle(List<int> cards)
-        {
-            for (int i = cards.Count - 1; i > 0; i--)
-            {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                (cards[i], cards[j]) = (cards[j], cards[i]);
-            }
-        }
-
         /// <summary>Puts a card of the deck on a card on screen: its face and its rules.</summary>
         private void Show(int index, int deckIndex)
         {
@@ -1920,7 +1973,7 @@ namespace Baryonyx.Combat.Presentation
                 card.Face.Show(
                     data.Name,
                     data.Owner,
-                    data.Kind,
+                    data.Kind + SleepMarks(deckIndex),
                     data.Description,
                     data.Art,
                     data.Frame,
@@ -1934,8 +1987,16 @@ namespace Baryonyx.Combat.Presentation
         private void RefreshDeck()
         {
             if (DeckLabel != null)
-                DeckLabel.text = drawPile.Count.ToString();
+                DeckLabel.text = drawPile.Pile.Count.ToString();
+            if (DiscardLabel != null)
+                DiscardLabel.text = drawPile.DiscardPile.Count.ToString();
+            if (ExhaustLabel != null)
+                ExhaustLabel.text = drawPile.Exhausted.Count.ToString();
+            // Out of the battle shows only once a card has gone there.
+            if (ExhaustAnchor != null)
+                ExhaustAnchor.gameObject.SetActive(drawPile.Exhausted.Count > 0);
         }
+
 
         /// <summary>The upcoming turns from the current one, skipping defeated enemies.</summary>
         public int[] UpcomingTurns(int count)
@@ -1986,6 +2047,8 @@ namespace Baryonyx.Combat.Presentation
         private void StartOfTurn(int turn)
         {
             Turn = turn;
+            // A combo looks for its partner among the cards played this turn.
+            playedRoots.Clear();
             MaxEnergy = MaxEnergyAt(turn);
             Energy = MaxEnergy;
             StartTurnPassives();
@@ -2004,15 +2067,22 @@ namespace Baryonyx.Combat.Presentation
         {
             var card = Cards[index];
             Energy -= CostOf(card);
+            var data = Deck[card.DeckIndex];
+            var skill = SkillOf(data);
             // The free card is used up by the card that took it.
-            nextCardFree = false;
-            card.Place = BattleInspectCardPlace.Discard;
+            if (nextCardFree && Covers(nextFreeElements, skill?.Element ?? CardElement.None))
+                nextCardFree = false;
+            int boost = TakeBoost(card.DeckIndex, skill?.Element ?? CardElement.None);
+            // A combo (連携) works when its partner was played before it this turn.
+            bool combo = skill?.ComboWith != null && playedRoots.Contains(skill.ComboWith);
+            if (skill?.RootId != null)
+                playedRoots.Add(skill.RootId);
             hand.Remove(index);
+            PutAway(index, skill?.Has(CardTrait.Exhaust) ?? false);
             LayoutHand();
             Refresh();
 
             // The card on screen is reused by the next draw, so the action keeps its own copy.
-            var data = Deck[card.DeckIndex];
             int caster = card.Caster;
             var parts = Array.Empty<RectTransform>();
             var bases = Array.Empty<Vector2>();
@@ -2027,7 +2097,17 @@ namespace Baryonyx.Combat.Presentation
             if (TakeOmen(card.DeckIndex))
             {
                 Enqueue(
-                    EvolveThenPerform(card.DeckIndex, data, parts, bases, chosen, onEnemies, caster)
+                    EvolveThenPerform(
+                        card.DeckIndex,
+                        data,
+                        parts,
+                        bases,
+                        chosen,
+                        onEnemies,
+                        caster,
+                        combo,
+                        boost
+                    )
                 );
                 return;
             }
@@ -2037,12 +2117,12 @@ namespace Baryonyx.Combat.Presentation
                     parts,
                     bases,
                     Vector2.right,
-                    UseCard(data, chosen, onEnemies, caster),
+                    UseCard(data, chosen, onEnemies, caster, combo, boost),
                     caster
                 )
             );
             if (PlaysTwice(data, onEnemies, caster))
-                Enqueue(PerformAgain(data, parts, bases, chosen, caster));
+                Enqueue(PerformAgain(data, parts, bases, chosen, caster, boost));
         }
 
         public const string TwiceText = "2回発動";
@@ -2054,7 +2134,7 @@ namespace Baryonyx.Combat.Presentation
             && data.Effect
                 is (BattleInspectCardEffect.DamageOne or BattleInspectCardEffect.DamageAll)
             && Allies[caster].TwiceChance > 0
-            && UnityEngine.Random.Range(0, 100) < Allies[caster].TwiceChance;
+            && Dice.Chance(Allies[caster].TwiceChance);
 
         // 2回目は1回目と同じ相手を狙い、その相手が倒れていれば何も起きない。全体・ランダムの攻撃は残っている敵へ。
         private IEnumerator PerformAgain(
@@ -2062,7 +2142,8 @@ namespace Baryonyx.Combat.Presentation
             RectTransform[] parts,
             Vector2[] bases,
             List<int> chosen,
-            int caster
+            int caster,
+            int boost
         )
         {
             bool alive = false;
@@ -2077,7 +2158,7 @@ namespace Baryonyx.Combat.Presentation
                 parts,
                 bases,
                 Vector2.right,
-                UseCard(data, chosen, true, caster),
+                UseCard(data, chosen, true, caster, false, boost),
                 caster
             );
         }
@@ -2091,7 +2172,9 @@ namespace Baryonyx.Combat.Presentation
             Vector2[] bases,
             List<int> chosen,
             bool onEnemies,
-            int caster
+            int caster,
+            bool combo,
+            int boost
         )
         {
             var played = data;
@@ -2111,7 +2194,7 @@ namespace Baryonyx.Combat.Presentation
                 parts,
                 bases,
                 Vector2.right,
-                UseCard(played, chosen, onEnemies, caster),
+                UseCard(played, chosen, onEnemies, caster, combo, boost),
                 caster
             );
         }
@@ -2124,13 +2207,15 @@ namespace Baryonyx.Combat.Presentation
             BattleInspectCardData card,
             List<int> chosen,
             bool onEnemies,
-            int caster
+            int caster,
+            bool combo = false,
+            int boost = 0
         )
         {
             var skill = SkillOf(card);
             if (skill != null)
             {
-                yield return UseSkill(skill, card, chosen, onEnemies, caster);
+                yield return PlaySkill(skill, card, chosen, onEnemies, caster, combo, boost);
                 yield break;
             }
             if (Vfx == null)
@@ -2149,7 +2234,7 @@ namespace Baryonyx.Combat.Presentation
                 card.Name,
                 user != null ? user.TargetArea : PartyAnchor,
                 user != null ? user.Sprite.texture : null,
-                card.Cost >= Vfx.CutInCost,
+                false,
                 areas,
                 i => Land(card, chosen[i], onEnemies, i == 0)
             );
@@ -2590,7 +2675,8 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < Cards.Length; i++)
                 RefreshCard(i);
             if (EndTurnButton != null)
-                EndTurnButton.interactable = !Dealing && !EnemyTurn && AnyAffordable();
+                EndTurnButton.interactable =
+                    !Dealing && !EnemyTurn && choosing == PileChoice.None && AnyAffordable();
             if (EnergyLabel != null)
                 EnergyLabel.text = EnergyText(Energy, MaxEnergy);
             foreach (var enemy in Enemies)
@@ -2614,15 +2700,17 @@ namespace Baryonyx.Combat.Presentation
         private void RefreshCard(int index)
         {
             var card = Cards[index];
-            bool playable = Playable(index);
+            bool offered = card.Place == BattleInspectCardPlace.Choice;
+            bool playable = offered || Playable(index);
             // A card the energy cannot pay for is see-through in the hand, but not once raised,
-            // so its details can still be read.
+            // so its details can still be read. A card offered from the discard pile shows in full.
             float alpha =
-                !card.InHand ? 0f
+                offered ? 1f
+                : !card.InHand ? 0f
                 : playable ? 1f
                 : UnplayableAlpha(Settings, index == held);
             // The raised card takes taps too: a second tap on it plays it without a target.
-            bool blocks = card.InHand;
+            bool blocks = card.InHand || offered;
             // Set only on a change, as this runs every frame and a set dirties the canvas.
             if (card.Group.alpha != alpha)
                 card.Group.alpha = alpha;

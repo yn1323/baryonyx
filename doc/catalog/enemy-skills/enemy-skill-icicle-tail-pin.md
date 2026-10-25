@@ -9,7 +9,7 @@ category: enemy-skills
 
 # つらら刺し
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 つらら尾の狐の固有技。凍えて動きの鈍った獲物を、尾のつららで地面へ縫い止める。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[つらら尾の狐](../enemies/enemy-icicle-fox.md)の技として作った |
 | 役割・説明 | 凍えた味方を凍結させる単体攻撃 |
-| 関連する仕様・個別ID | 使う敵：[つらら尾の狐](../enemies/enemy-icicle-fox.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[つらら尾の狐](../enemies/enemy-icicle-fox.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

@@ -51,6 +51,9 @@ CIはプロジェクトのテストアセンブリだけを実行する。
 ホーム画面の [シーンテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeSceneTests.cs) は実シーンを使い、仮データと、保存済みの歩数を換算したACTの表示、タップ領域、ボタンの反応、歩数の同期を検査する。
 ルーンの獲得は、[演出のテスト](../../client/Assets/Baryonyx/Features/Home/Tests/PlayMode/HomeRuneTapTests.cs) が仮想入力で押し、同期したACTと同じ量が付与されて代役のサーバーに残ることを確かめる。
 Top・Home・案内人の画面のシーンテストは [TestGameServices](../../client/Assets/Baryonyx/Tests/PlayMode/Support/TestGameServices.cs) でHealth Connectとゲームサーバーを端末内の代役へ差し替え、設定アセットのサーバーURLへ接続しない。
+`TestGameServices` は、Unityの乱数と冒険の代役の道を決まった種から始め、終わるとアプリ全体の状態（staticな `〜Session`・`RuneBalance`・`SaveQueue` など）を初めに戻し、乱数を元の続きへ戻す。
+`TestGameServices` を使わない戦闘・デバッグルームのテストは、[FixedRandom](../../client/Assets/Baryonyx/Tests/PlayMode/Support/FixedRandom.cs) を準備で使い、片付けで乱数と `Time.timeScale` を戻す。
+戦闘の規則（山札・相手をランダムに選ぶ・確率）は `BattleInspectView.Dice` の乱数で決まり、テストは種を決めた `BattleDice` を渡せる。
 入力基盤の成功を、ゲームの主要操作の検証済みとは扱わない。
 
 ### シーンテストを軽く保つ
@@ -63,6 +66,7 @@ PlayModeの時間の大半は、シーンの読み込みと遷移演出（Topか
 - 同じ画面を往復する流れは、ボタンごとにテストを分けず、1件で順に通す。
 - ロジックの組み合わせ（計算・状態遷移）はEditModeで検査し、PlayModeでは画面とのつなぎ込みを1回確かめる。
 - 1画面の静的な確認（表示・タップ領域）で、演出の完了を待たない。演出を確かめるテストは、演出を待つ1件にまとめる。
+- デバッグルーム（ラボ）のテストは、読み込み、操作の押しやすさ、1つの操作のつなぎ込みだけを確かめる。そこで動かす規則は、EditModeと本番の画面のテストで確かめる。
 
 実画面のシナリオでは、ボタンのハンドラーを直接呼ぶ前に仮想入力から操作できるか確認する。
 端末機能はEditorで固定応答を返す境界へ差し替える。
@@ -78,7 +82,7 @@ Appの起動テストは `App/Tests/PlayMode/` に置き、起動シーンの読
 ## 作業中に実行するPlayModeテスト
 
 PlayModeテストはシーンの読み込みとフレームの経過を待つため、1件あたりの時間がEditModeより長い。
-2026-10-22にmacOSのEditor（背面で表示）で [run-editor-tests.py](../../client/ci/run-editor-tests.py) から全件を実行したときの所要時間（スクリプトの開始から終了まで）は、EditMode 557件で約50秒、PlayMode 145件で約6分（0件によるやり直し1回を含む）だった。PlayModeの2クラス8件は約15秒だった。
+2026-10-25にmacOSのEditor（背面で表示）で [run-editor-tests.py](../../client/ci/run-editor-tests.py) から全件を実行したときの所要時間（スクリプトの開始から終了まで）は、EditMode 661件で約45秒、PlayMode 170件で約7分（0件によるやり直し1回を含む）だった。テストの整理の前は、EditMode 702件で約55秒、PlayMode 190件で約9分40秒だった。PlayModeの2クラス8件は約15秒だった。
 作業中は関連するPlayModeテストだけを実行し、全件はcommit前に実行する（[commitの手順](../../AGENTS.md#commitの手順)）。影響が広い変更でも、作業中にPlayModeの全件は実行しない。
 EditModeは全件でも1分ほどで終わるため、作業中も `Baryonyx.EditModeTests` を全件実行する（`--mode editmode`）。
 

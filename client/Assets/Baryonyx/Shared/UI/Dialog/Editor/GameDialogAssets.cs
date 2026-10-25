@@ -13,7 +13,7 @@ namespace Baryonyx.UI.Editor
     /// and in the safe area the guide frame's window (<see cref="GuideFrameAssets.WindowFrame"/>)
     /// with the title, an optional picture, the body and five rows of choices as frosted glass
     /// cards (<see cref="GlassCardAssets"/>), like the formation's level-up. A screen that needs
-    /// more choices (Home's list of debugging rooms) asks for more, lower rows.
+    /// more choices (Home's list of debugging rooms) asks for more of them, in columns.
     /// </summary>
     public static class GameDialogAssets
     {
@@ -30,7 +30,8 @@ namespace Baryonyx.UI.Editor
             RectTransform parent,
             string name = "Dialog",
             int choiceCount = ChoiceCount,
-            float rowHeight = 112f
+            float rowHeight = 112f,
+            int columns = 1
         )
         {
             var root = Rect(name, parent);
@@ -86,11 +87,28 @@ namespace Baryonyx.UI.Editor
             dialog.Body.textWrappingMode = TextWrappingModes.Normal;
             dialog.Body.lineSpacing = 16f;
 
+            // 列に分けるときは、同じ形のカードを左から右へ、上の行から順に並べる。
+            var list = window;
+            if (columns > 1)
+            {
+                list = Rect("Choices", window);
+                var grid = list.gameObject.AddComponent<GridLayoutGroup>();
+                float width = window.sizeDelta.x - layout.padding.horizontal;
+                grid.cellSize = new Vector2(
+                    (width - layout.spacing * (columns - 1)) / columns,
+                    rowHeight
+                );
+                grid.spacing = new Vector2(layout.spacing, layout.spacing);
+                grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                grid.constraintCount = columns;
+                grid.childAlignment = TextAnchor.UpperCenter;
+            }
+
             var buttons = new List<Button>();
             var labels = new List<TMP_Text>();
             for (int i = 0; i < choiceCount; i++)
             {
-                var row = Rect("Choice" + i, window);
+                var row = Rect("Choice" + i, list);
                 var size = row.gameObject.AddComponent<LayoutElement>();
                 size.preferredHeight = size.minHeight = rowHeight;
                 // 選択肢は同じ形で縦に並べ、どれも模様のないすりガラスのカードにする。

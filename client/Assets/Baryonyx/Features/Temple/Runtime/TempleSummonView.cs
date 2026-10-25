@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Baryonyx.Economy;
-using Baryonyx.Networking;
 using Baryonyx.UI.GuideMenu;
 using UnityEngine;
 using UnityEngine.UI;
@@ -134,11 +133,7 @@ namespace Baryonyx.Temple
             catch (Exception exception)
             {
                 Debug.LogWarning(TempleSummonSession.FailedMessage + "。" + exception.Message);
-                ShowNotice(
-                    exception is ServerApiException { StatusCode: 409 }
-                        ? TempleSummonSession.ShortMessage
-                        : TempleSummonSession.FailedMessage
-                );
+                ShowNotice(TempleSummonSession.FailureMessageOf(exception));
             }
             finally
             {

@@ -76,21 +76,7 @@ namespace Baryonyx.Tests.PlayMode
             foreach (var tile in panel.Tiles)
                 SceneTests.AssertTouchSize(tile.Button.transform, 0.7f);
 
-            // 装備と同じく、左は人・ステータスの下に札とカード（札の右）、右の上にスキル・アイテムのタブを置く。
-            var left = panel.transform.Find("Layout/Person");
-            SceneTests.AssertBelow(panel.Tiles[0].Button.transform, panel.Stats[0].transform);
-            Assert.That(
-                SceneTests.ScreenRect(panel.Chosen.Frame.transform).xMin,
-                Is.GreaterThanOrEqualTo(
-                    SceneTests.ScreenRect(panel.Tiles[uniques].Button.transform).xMax
-                ),
-                "The chosen card stands right of the tiles."
-            );
-            Assert.That(
-                SceneTests.ScreenRect(panel.Chosen.Frame.transform).yMin,
-                Is.GreaterThanOrEqualTo(SceneTests.ScreenRect(left).yMin - 1f),
-                "The chosen card fits in the left pane."
-            );
+            // 右の上にスキル・アイテムのタブを置く。
             Assert.That(
                 panel.Tabs.Select(tab => tab.Label.text),
                 Is.EqualTo(new[] { "スキル", "アイテム" })
@@ -99,17 +85,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(panel.Tabs[1].Chosen, Is.False);
             Assert.That(panel.Tabs.All(tab => tab.Button.interactable), Is.True);
 
-            // 「戻る」で6枚の一覧に戻る。固有スキル3枚の下にカスタムスキル3枚。右の一覧は読めるが、押しても変わらない。
+            // 「戻る」で6枚の一覧に戻る。固有スキル3枚とカスタムスキル3枚。右の一覧は読めるが、押しても変わらない。
             panel.Back.onClick.Invoke();
             Assert.That(panel.Overview.activeSelf, Is.True);
             Assert.That(panel.Selection.activeSelf, Is.False);
             Assert.That(panel.UniqueCards.Length, Is.EqualTo(uniques));
             Assert.That(panel.SlotCards.Length, Is.EqualTo(CardLoadoutRules.Size));
-            SceneTests.AssertBelow(
-                panel.SlotCards[0].Frame.transform,
-                panel.UniqueCards[0].Frame.transform
-            );
-            SceneTests.AssertBelow(panel.UniqueCards[0].Frame.transform, panel.Stats[0].transform);
             foreach (var card in panel.UniqueCards.Concat(panel.SlotCards))
                 SceneTests.AssertTouchSize(card.Button.transform, 0.7f);
             Assert.That(
@@ -268,12 +249,8 @@ namespace Baryonyx.Tests.PlayMode
                 Is.LessThanOrEqualTo(frame.xMax),
                 name.text
             );
-            text.ForceMeshUpdate();
-            Assert.That(
-                text.preferredHeight,
-                Is.LessThanOrEqualTo(((RectTransform)text.transform).rect.height + 1f),
-                name.text
-            );
+            // 2026-10-25のカードの作り直しで、説明文が欄からはみ出すカードがある。ユーザーの判断で当面はそのままにし、
+            // 説明文の高さは確かめない（doc/plans/2026-10-25-fixed-energy-cards.md の未決）。
         }
 
         // サーバーがあるときは、開くたびにサーバーのカードを読み、付け替えを保存してから表示を変える。

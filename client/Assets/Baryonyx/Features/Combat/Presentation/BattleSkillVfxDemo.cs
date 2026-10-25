@@ -130,7 +130,7 @@ namespace Baryonyx.Combat.Presentation
                 skill.Name,
                 party[user],
                 art,
-                skill.Cost >= vfx.CutInCost,
+                skill.Has(CardTrait.CutIn),
                 hits,
                 _ => weight
             );

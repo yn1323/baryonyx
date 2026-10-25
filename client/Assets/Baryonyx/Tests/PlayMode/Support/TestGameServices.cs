@@ -4,9 +4,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.App;
+using Baryonyx.CardLoadout;
 using Baryonyx.Combat.Records;
+using Baryonyx.Economy;
+using Baryonyx.Enhancement;
+using Baryonyx.Equipment;
 using Baryonyx.Health;
+using Baryonyx.Library;
+using Baryonyx.Networking;
+using Baryonyx.Party;
+using Baryonyx.SkillEvolution;
+using Baryonyx.Temple;
+using Baryonyx.Training;
 using Baryonyx.UI;
+using Baryonyx.Workshop;
+using Baryonyx.WorldMap;
 
 namespace Baryonyx.Tests.PlayMode
 {
@@ -14,19 +26,26 @@ namespace Baryonyx.Tests.PlayMode
     // 設定アセットのサーバーURLへは接続しない。冒険はテストごとに新しい、アプリ内だけの冒険を使う。
     // 画面の切り替えを待つ時間を縮めるため、遷移演出も短くする。演出の動きを確かめるテストは
     // SceneTransitionController.DurationScale を1に戻す。
+    // Unityの乱数は決まった種から始め、終わると、テストの中で変えたアプリ全体の状態（static な Session など）を
+    // 初めに戻す。前のテストの状態が次のテストへ残らない。
     public sealed class TestGameServices : IDisposable
     {
         private const float FastTransitions = 0.05f;
+
+        private readonly FixedRandom random = FixedRandom.Use();
 
         private TestGameServices(HealthPermission permission)
         {
             SceneTransitionController.DurationScale = FastTransitions;
             Provider = new HealthScreenPreviewProvider(permission: permission);
             Server = new TestStepServer();
-            Adventure = new AdventureLocalSource();
+            // 冒険の道と中身も、いつも同じ種から作る。
+            Adventure = new AdventureLocalSource(seed: FixedRandom.DefaultSeed);
             AdventureSession.Reset();
             // 開示した弱点は、テストごとに空のアプリ内の記録から始める。
             RevealedWeaknessSession.Reset();
+            // 装備も、テストごとにアプリ内の初めの装備から始める。前のテストの付け替えを残さない。
+            EquipmentSession.Reset();
             GameServices.Override(
                 new GameServices(
                     new HealthStepLink(Provider, Server, new MemoryLinkStore()),
@@ -54,7 +73,23 @@ namespace Baryonyx.Tests.PlayMode
             GameServices.Override(null);
             AdventureSession.Reset();
             RevealedWeaknessSession.Reset();
+            EquipmentSession.Reset();
+            PartySession.Reset();
+            PartyUniqueSkills.Reset();
+            PartySkillAwakenings.Reset();
+            CardLoadoutSession.Reset();
+            UniqueSkillSession.Reset();
+            TrainingSession.Reset();
+            TrainingBond.Reset();
+            LibrarySession.Reset();
+            WorkshopSession.Reset();
+            EnhancementSession.Reset();
+            TempleSummonSession.Reset();
+            WorldMapSession.Reset();
+            RuneBalance.Reset();
+            SaveQueue.Reset();
             SceneTransitionController.DurationScale = 1f;
+            random.Dispose();
         }
 
         // 画面からの冒険の読み込みだけを AdventureLoadSeconds 遅らせ、ほかは代役へそのまま渡す。

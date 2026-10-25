@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 組み直し
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 骸骨兵の固有技。崩れて骨の山になっても、骨が寄り集まって組み上がり、もう一度立ち上がる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[骸骨兵](../enemies/enemy-skeleton-soldier.md)の技として作った |
 | 役割・説明 | 倒れたあとの自分の復活。崩れている間に弱点の打で砕けば止められる |
-| 関連する仕様・個別ID | 使う敵：[骸骨兵](../enemies/enemy-skeleton-soldier.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[骸骨兵](../enemies/enemy-skeleton-soldier.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

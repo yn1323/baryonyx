@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 死の回転
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 骨背の大ワニの固有技。味方1人にかみついたまま体ごと回り、沼の底へ引きずり込む大技である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[骨背の大ワニ](../enemies/enemy-bone-croc.md)の技として作った |
 | 役割・説明 | 後半の大技。単体への大きなダメージと、次の行動を休ませる妨害 |
-| 関連する仕様・個別ID | 使う敵：[骨背の大ワニ](../enemies/enemy-bone-croc.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[骨背の大ワニ](../enemies/enemy-bone-croc.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

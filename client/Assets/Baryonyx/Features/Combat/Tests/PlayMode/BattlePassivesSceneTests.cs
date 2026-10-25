@@ -17,6 +17,12 @@ namespace Baryonyx.Tests.PlayMode
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
         private Scene loadedScene;
 
+        private FixedRandom random;
+
+        // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
+        [SetUp]
+        public void FixRandom() => random = FixedRandom.Use();
+
         [UnityTest]
         public IEnumerator HeadStartDealsOneMoreCardToOpenWith()
         {
@@ -36,13 +42,13 @@ namespace Baryonyx.Tests.PlayMode
             yield return Load(value => view = value);
             UseParty(view, 0, new[] { CombatPassiveKind.StarChart });
             view.RestartDeal(instant: true);
-            Assert.That(view.Energy, Is.EqualTo(5));
+            Assert.That(view.Energy, Is.EqualTo(3));
 
             view.EndTurn();
             Assert.That(view.CarriedEnergy, Is.EqualTo(1));
             yield return WaitEnemyTurn(view);
-            Assert.That(view.MaxEnergy, Is.EqualTo(6));
-            Assert.That(view.Energy, Is.EqualTo(7), "The turn's 6 and the 1 carried over.");
+            Assert.That(view.MaxEnergy, Is.EqualTo(3));
+            Assert.That(view.Energy, Is.EqualTo(4), "The turn's 3 and the 1 carried over.");
             Assert.That(view.CarriedEnergy, Is.EqualTo(0));
         }
 
@@ -75,8 +81,10 @@ namespace Baryonyx.Tests.PlayMode
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
+            // A card that only strikes: not one that discards the hand first (千刃乱舞).
             var repeated = CardSkills.All.First(skill =>
-                skill.Cost <= 5
+                skill.Cost <= BattleInspectView.EnergyPerTurn
+                && skill.Actions.All(action => action.Kind != CardActionKind.Discard)
                 && skill.Actions.Any(action =>
                     action.Kind == CardActionKind.Damage
                     && action.Hits > 1
@@ -369,6 +377,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
+            Time.timeScale = 1f;
+            random?.Dispose();
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }

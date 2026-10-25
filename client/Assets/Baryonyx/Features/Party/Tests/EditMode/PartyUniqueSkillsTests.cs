@@ -75,6 +75,8 @@ namespace Baryonyx.Tests.EditMode
         [SetUp]
         public void Forget()
         {
+            PartySession.Reset();
+            SaveQueue.Reset();
             UniqueSkillSession.Reset();
             PartyUniqueSkills.Reset();
         }
@@ -82,7 +84,8 @@ namespace Baryonyx.Tests.EditMode
         [TearDown]
         public void PutBack()
         {
-            PartySession.Source = null;
+            PartySession.Reset();
+            SaveQueue.Reset();
             UniqueSkillSession.Reset();
             PartyUniqueSkills.Reset();
         }

@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 二段突き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。槍・角・針で、味方1人を素早く2回突く物理の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 単体への2回の物理・貫の攻撃。ブロックを2回に分けて削る |
-| 関連する仕様・個別ID | 使う敵：[どんぐり兵](../enemies/enemy-acorn-soldier.md)、[水晶角うさぎ](../enemies/enemy-crystal-hare.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[サボテン戦士](../enemies/enemy-cactus-warrior.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[氷槍のペンギン兵](../enemies/enemy-ice-penguin.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[どんぐり兵](../enemies/enemy-acorn-soldier.md)、[水晶角うさぎ](../enemies/enemy-crystal-hare.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[サボテン戦士](../enemies/enemy-cactus-warrior.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[氷槍のペンギン兵](../enemies/enemy-ice-penguin.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

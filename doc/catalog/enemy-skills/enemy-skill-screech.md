@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 金切り声
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。耳をつんざく声で、味方全体の手元を鈍らせる弱体の技である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 全体への麻痺 |
-| 関連する仕様・個別ID | 使う敵：[大耳コウモリ](../enemies/enemy-big-eared-bat.md)、[鬼火](../enemies/enemy-will-o-wisp.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[大耳コウモリ](../enemies/enemy-big-eared-bat.md)、[鬼火](../enemies/enemy-will-o-wisp.md)、[炎尾の鳥](../enemies/enemy-flame-tail-bird.md)、[墓守りの大鴉](../enemies/enemy-grave-raven.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

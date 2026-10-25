@@ -75,33 +75,6 @@ namespace Baryonyx.Tests.PlayMode
             enemy.Weaknesses.Select(weakness => weakness.Revealed).ToArray();
 
         [UnityTest]
-        public IEnumerator TheEnemiesCarryTheirKindsAndWeaknesses()
-        {
-            var encounter = EnterTheFirstBattle();
-            var bootstrap = default(BattleBootstrap);
-            yield return LoadBattle(value => bootstrap = value);
-            var enemies = bootstrap.Battle.Enemies;
-            // The battle has the room's kinds (a small and a middle-sized enemy of the forest),
-            // each with its own weaknesses.
-            var kinds = encounter.Kinds.Take(2).Select(CombatEnemies.Find).ToArray();
-            Assert.That(kinds, Has.None.Null);
-            Assert.That(
-                enemies.Take(2).Select(enemy => enemy.Id),
-                Is.EqualTo(kinds.Select(kind => kind.Id))
-            );
-            Assert.That(enemies[2].Alive, Is.False);
-            var area = AdventureCatalog.Area(AdventureCatalog.ForestRuins);
-            Assert.That(area.Small, Does.Contain(kinds[0].Id));
-            Assert.That(area.Medium, Does.Contain(kinds[1].Id));
-            for (int i = 0; i < kinds.Length; i++)
-                Assert.That(
-                    enemies[i]
-                        .Weaknesses.Select(weakness => BattleCardText.ElementOf(weakness.Element)),
-                    Is.EqualTo(kinds[i].Weaknesses)
-                );
-        }
-
-        [UnityTest]
         public IEnumerator OnlyTheWeaknessesRevealedBeforeShowFromTheStart()
         {
             var encounter = EnterTheFirstBattle();
@@ -124,7 +97,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AWeaknessHitIsRecordedAndShowsInTheNextBattle()
+        public IEnumerator TheEnemiesCarryTheirWeaknessesAndAHitOneShowsInTheNextBattle()
         {
             var encounter = EnterTheFirstBattle();
             var medium = CombatEnemies.Find(encounter.Kinds[Wolf]);
@@ -132,6 +105,25 @@ namespace Baryonyx.Tests.PlayMode
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
+            // The battle has the room's kinds (a small and a middle-sized enemy of the forest),
+            // each with its own weaknesses, all hidden at first.
+            var kinds = encounter.Kinds.Take(2).Select(CombatEnemies.Find).ToArray();
+            Assert.That(kinds, Has.None.Null);
+            Assert.That(
+                battle.Enemies.Take(2).Select(enemy => enemy.Id),
+                Is.EqualTo(kinds.Select(kind => kind.Id))
+            );
+            Assert.That(battle.Enemies[2].Alive, Is.False);
+            var area = AdventureCatalog.Area(AdventureCatalog.ForestRuins);
+            Assert.That(area.Small, Does.Contain(kinds[0].Id));
+            Assert.That(area.Medium, Does.Contain(kinds[1].Id));
+            for (int i = 0; i < kinds.Length; i++)
+                Assert.That(
+                    battle
+                        .Enemies[i]
+                        .Weaknesses.Select(weakness => BattleCardText.ElementOf(weakness.Element)),
+                    Is.EqualTo(kinds[i].Weaknesses)
+                );
             Assert.That(
                 Shown(battle.Enemies[Wolf]),
                 Is.EqualTo(medium.Weaknesses.Select(_ => false).ToArray())

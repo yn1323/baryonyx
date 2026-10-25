@@ -13,6 +13,13 @@ namespace Baryonyx.Tests.EditMode
     /// <summary>The parts of the automatic battles that need no battle: the request, the encounters and the sums.</summary>
     public sealed class BattleBalanceResultTests
     {
+        // 前のテストが読んだ編成を使わず、読んだ編成を次のテストへ残さない。
+        [SetUp]
+        public void ForgetThePartyRead() => PartySession.Reset();
+
+        [TearDown]
+        public void LeaveNoPartyRead() => PartySession.Reset();
+
         [Test]
         public void ARequestLeftOutKeepsItsDefaults()
         {

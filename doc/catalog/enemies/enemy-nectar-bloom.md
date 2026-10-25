@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/NectarBloom.ase
 
 # 蜜吸い花
 
-[敵の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 森に出る雑魚のうち、中くらいの大きさで、相手を弱らせて吸い取る敵である。
 弱点の実行上の正本は [CombatEnemies](../../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatEnemies.cs)、サーバーで記録できる敵のIDは [catalog.ts](../../../server/src/features/combat/catalog.ts) の `ENEMY_IDS` とする。
@@ -169,7 +169,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/NectarBloom.ase
 | 数値 | ステータス、行動の割合、激化の倍率は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
 | 出現する場所 | 出現する行き先・マス・敵の組み合わせ・Lv |
 | 速度・会心・幸運 | 速度は、味方の合計と比べる方法（[ターン順](../../features/combat.md#ターン順)）が決まったら尺度を合わせ直す。会心と幸運は、使い道（[候補](../../features/party.md#ステータスの項目)）が決まったら見直す |
-| 味方に付く防御ダウン | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の案（カードの防御ダウンと同じ効果）で決める |
+| 味方に付く防御ダウン | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)の案（カードの防御ダウンと同じ効果）で決める |
 | 行動順のコマ | 1枚絵から切り出す位置 |
 | 実装 | 冒険の戦闘では、ステータスと技1つ（吸い取り）だけを使う。ほかの技と行動パターンは未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動も増やす |
 
@@ -177,5 +177,5 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/NectarBloom.ase
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[属性と弱点](../../features/combat.md#属性と弱点) |
+| 2026-10-19 | 定義を作り、生息する地域・ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた。弱点とLv100のステータスは試作の設計値を使った | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[属性と弱点](../../features/combat.md#属性と弱点) |
 | 2026-10-20 | ミストラ遺跡の戦闘に出るようにし、Lv100のステータスと技「吸い取り」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

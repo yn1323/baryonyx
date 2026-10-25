@@ -253,7 +253,7 @@ namespace Baryonyx.Combat.Presentation
                 return null;
             enemy.PhysicalAttack = EnemyStats.At(stats.PhysicalAttack, enemy.Level);
             enemy.MagicAttack = EnemyStats.At(stats.MagicAttack, enemy.Level);
-            enemy.Brain = new EnemyBrain(behavior, n => UnityEngine.Random.Range(0, n));
+            enemy.Brain = new EnemyBrain(behavior, n => Dice.Below(n));
             return enemy.Brain;
         }
 

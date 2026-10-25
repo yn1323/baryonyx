@@ -56,6 +56,48 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public async Task AFailedSaveAfterConnectingCanBeRetried()
+        {
+            server.FailSaves = true;
+            await flow.StartAsync(CancellationToken.None);
+            Assert.That(server.Connects, Is.EqualTo(1));
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
+            Assert.That(flow.FailureMessage, Is.EqualTo("通信に失敗しました"));
+            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.False);
+
+            server.FailSaves = false;
+            await flow.RetryAsync(CancellationToken.None);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(server.Saves, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task AHealthConnectErrorShowsNoDetailsAndCanBeRetried()
+        {
+            provider.Fail = true;
+            await flow.StartAsync(CancellationToken.None);
+            // 端末のエラー内容は画面へ出さず、通信の失敗と同じ案内で再試行させる。
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Failed));
+            Assert.That(flow.FailureMessage, Is.EqualTo("通信に失敗しました"));
+            Assert.That(server.Saves, Is.Zero);
+
+            provider.Fail = false;
+            await flow.RetryAsync(CancellationToken.None);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(server.Saves, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task AFailedCheckBeforeStartingDoesNotHoldTheStartBack()
+        {
+            await flow.StartAsync(CancellationToken.None);
+            provider.Fail = true;
+            Assert.That(await flow.ConfirmStartAsync(CancellationToken.None), Is.True);
+            Assert.That(flow.Phase, Is.EqualTo(HealthStartupPhase.Ready));
+            Assert.That(server.Saves, Is.EqualTo(1), "起動時に同期済みなので同期し直さない。");
+        }
+
+        [Test]
         public async Task ReadFailureIsRetryableWithItsOwnMessage()
         {
             provider.ReadStatus = HealthReadStatus.Failed;
@@ -221,12 +263,19 @@ namespace Baryonyx.Tests.EditMode
             public string TodayStepsStatus = "success";
             public HealthReadStatus ReadStatus = HealthReadStatus.Success;
             public bool Grants = true;
+
+            // 端末側の確認がエラーで返る（Health Connectの "failed"）。
+            public bool Fail;
             public int Requests;
             public int PermissionChecks;
             public int SettingsOpened;
 
             public Task<HealthAvailability> GetAvailabilityAsync(CancellationToken token) =>
-                Task.FromResult(Availability);
+                Fail
+                    ? Task.FromException<HealthAvailability>(
+                        new InvalidOperationException("failed")
+                    )
+                    : Task.FromResult(Availability);
 
             public Task<HealthPermission> GetStepsPermissionAsync(CancellationToken token)
             {
@@ -268,6 +317,9 @@ namespace Baryonyx.Tests.EditMode
         private sealed class Server : IHealthStepServer
         {
             public bool Fail;
+
+            // 接続はできて、保存だけが失敗する。
+            public bool FailSaves;
             public int Connects;
             public int Saves;
             public HealthDay[] Saved = Array.Empty<HealthDay>();
@@ -282,7 +334,7 @@ namespace Baryonyx.Tests.EditMode
 
             public Task SaveAsync(HealthDay[] days, CancellationToken token)
             {
-                if (Fail)
+                if (Fail || FailSaves)
                     throw new InvalidOperationException("offline");
                 Saves++;
                 Saved = days;

@@ -334,7 +334,8 @@ namespace Baryonyx.Training
                 Data,
                 worn,
                 source != null ? LevelUpAsync : null,
-                source is IPartyBondSource ? DeepenBondAsync : null
+                source is IPartyBondSource ? DeepenBondAsync : null,
+                ItemArt
             );
         }
 
@@ -433,7 +434,8 @@ namespace Baryonyx.Training
             TrainingMockData data,
             EquipmentState equipment,
             Func<string, int, int, Task> levelUp = null,
-            Func<string, int, Task> deepenBond = null
+            Func<string, int, Task> deepenBond = null,
+            ItemArt itemArt = null
         ) =>
             new(
                 view,
@@ -446,7 +448,8 @@ namespace Baryonyx.Training
                 (_, card) => CardText.Description(card),
                 new CardLoadoutSessionStore(party, data).UniqueCardOf,
                 deepenBond,
-                (id, stats) => EquipmentStats.With(stats, equipment, id)
+                (id, stats) => EquipmentStats.With(stats, equipment, id),
+                id => itemArt != null ? itemArt.TextureOf(id) : null
             );
 
         // 武器・防具と、アクセサリーの3つの枠に付けている装備。

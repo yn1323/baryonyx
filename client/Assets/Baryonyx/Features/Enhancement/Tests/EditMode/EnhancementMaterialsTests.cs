@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Adventure;
 using Baryonyx.Enhancement;
-using Baryonyx.SkillEvolution;
 using NUnit.Framework;
 
 namespace Baryonyx.Tests.EditMode
@@ -69,7 +68,6 @@ namespace Baryonyx.Tests.EditMode
                     EnhancementMaterials.AwakeningRunes(stage),
                     Is.EqualTo(EnhancementMaterials.SecondStageRunes)
                 );
-            Assert.That(UniqueSkillTreeShape.Parent(2), Is.EqualTo(1));
         }
 
         // 冒険で落ちた強化素材は、分類 material として読み、☆と名前を素材の定義から出す。

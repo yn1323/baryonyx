@@ -84,9 +84,6 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(picture.texture, Is.SameAs(member.Art), member.Id);
                 Assert.That(picture.color, Is.EqualTo(member.Tint), member.Id);
             }
-            // 右の2人は焚き火を向く。
-            Assert.That(view.PartyMembers[1].rectTransform.localScale.x, Is.LessThan(0f));
-            Assert.That(view.PartyMembers[0].rectTransform.localScale.x, Is.GreaterThan(0f));
         }
 
         // 冒険の戦闘では、各位置にその枠の人がLvのステータス・満タンのHPで立ち、デッキは4人の

@@ -328,6 +328,8 @@ namespace Baryonyx.Tests.EditMode
                 PartySession.Reset();
                 PartySession.SetLevel("toma", 20);
                 Assert.That(PartySession.LevelOf(data, "toma"), Is.EqualTo(20));
+                // 仮データそのものは書き換えない。
+                Assert.That(data.Members[0].Level, Is.EqualTo(12));
 
                 PartySession.Use(
                     data,

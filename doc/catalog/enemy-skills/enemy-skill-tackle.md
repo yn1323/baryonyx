@@ -9,7 +9,7 @@ category: enemy-skills
 
 # たいあたり
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。手足や武器を持たない敵が、体ごとぶつかる攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔スライム](../enemies/enemy-moss-slime.md)の技を共通技として作った |
 | 役割・説明 | 単体への基本の物理攻撃 |
-| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[朝露ぷるん](../enemies/enemy-dew-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[泥人形](../enemies/enemy-mud-golem.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[朝露ぷるん](../enemies/enemy-dew-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[泥人形](../enemies/enemy-mud-golem.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 戦闘画面のモックで、苔スライムの攻撃として名前と単体攻撃だけを使っている（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)の `Skill`）。ほかの効果と演出は未実装 |
 
 ## 確定した設定

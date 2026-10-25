@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 雪山のしかかり
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 雪原のマンモスの固有技。雪を積もらせた巨体ごと前脚を上げてのしかかり、味方全体を押しつぶす大技。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)の技として作った |
 | 役割・説明 | 激化後の大技。全体への物理・打の攻撃で、自分のブロックが多いほど重い |
-| 関連する仕様・個別ID | 使う敵：[雪原のマンモス](../enemies/enemy-snow-mammoth.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[雪原のマンモス](../enemies/enemy-snow-mammoth.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

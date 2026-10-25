@@ -56,11 +56,11 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(empty.From, Is.Null);
         }
 
+        // ローカルの代役は、サーバーと同じ決まりで付け替える。
         [Test]
-        public async Task TheLocalSourceFollowsTheServersRules()
+        public async Task TheLocalSourceStartsWithTheStarterEquipment()
         {
-            var source = new EquipmentLocalSource();
-            var state = await source.LoadAsync(CancellationToken.None);
+            var state = await new EquipmentLocalSource().LoadAsync(CancellationToken.None);
             Assert.That(state.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count));
             foreach (var (character, weapon, armor) in EquipmentCatalog.StarterEquipped)
             {
@@ -73,10 +73,15 @@ namespace Baryonyx.Tests.EditMode
                     Is.EqualTo(armor)
                 );
             }
-            string sword = Item(state, "iron-sword");
-            string robe = Item(state, "magic-robe");
+        }
 
-            // ほかのキャラの装備は、そのキャラから外して付け替える。
+        // ほかのキャラの装備は、そのキャラから外して付け替える。
+        [Test]
+        public async Task TheLocalSourceMovesAnItemFromWhoeverWearsIt()
+        {
+            var source = new EquipmentLocalSource();
+            var state = await source.LoadAsync(CancellationToken.None);
+            string sword = Item(state, "iron-sword");
             var moved = await source.EquipAsync(
                 "toma",
                 EquipmentSlot.Weapon,
@@ -86,10 +91,18 @@ namespace Baryonyx.Tests.EditMode
             Assert.That((moved.Change, moved.From), Is.EqualTo(("move", "aria")));
             Assert.That(moved.ItemIn("aria", EquipmentSlot.Weapon), Is.Null);
             Assert.That(moved.WornBy(sword), Is.EqualTo("toma"));
+        }
 
-            // 同じ装備、枠に合わない装備、持っていない装備では何も変わらない。
+        // 同じ装備、枠に合わない装備、持っていない装備、空いた枠を外すときは何も変わらない。
+        [Test]
+        public async Task TheLocalSourceChangesNothingForAChangeThatCannotBeMade()
+        {
+            var source = new EquipmentLocalSource();
+            var state = await source.LoadAsync(CancellationToken.None);
+            string worn = state.ItemIn("toma", EquipmentSlot.Weapon);
+            string robe = Item(state, "magic-robe");
             Assert.That(
-                (await source.EquipAsync("toma", EquipmentSlot.Weapon, sword, default)).Change,
+                (await source.EquipAsync("toma", EquipmentSlot.Weapon, worn, default)).Change,
                 Is.EqualTo("none")
             );
             Assert.That(
@@ -100,7 +113,20 @@ namespace Baryonyx.Tests.EditMode
                 (await source.EquipAsync("toma", EquipmentSlot.Weapon, "nothing", default)).Change,
                 Is.EqualTo("none")
             );
+            await source.UnequipAsync("aria", EquipmentSlot.Weapon, default);
+            Assert.That(
+                (await source.UnequipAsync("aria", EquipmentSlot.Weapon, default)).Change,
+                Is.EqualTo("none")
+            );
+        }
 
+        // 空いた枠に付ける、付けている物と替える、外す。
+        [Test]
+        public async Task TheLocalSourceEquipsReplacesAndRemoves()
+        {
+            var source = new EquipmentLocalSource();
+            var state = await source.LoadAsync(CancellationToken.None);
+            await source.UnequipAsync("aria", EquipmentSlot.Weapon, default);
             var equipped = await source.EquipAsync(
                 "aria",
                 EquipmentSlot.Weapon,
@@ -120,10 +146,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(removed.Change, Is.EqualTo("remove"));
             Assert.That(removed.ItemIn("aria", EquipmentSlot.Weapon), Is.Null);
             Assert.That(removed.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count));
-            Assert.That(
-                (await source.UnequipAsync("aria", EquipmentSlot.Weapon, default)).Change,
-                Is.EqualTo("none")
-            );
         }
 
         private static string Item(EquipmentState state, string equipmentId) =>

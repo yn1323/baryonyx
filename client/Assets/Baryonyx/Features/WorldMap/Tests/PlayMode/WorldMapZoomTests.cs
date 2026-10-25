@@ -31,9 +31,9 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 指を広げると近づき、2本の中点の下にあった地図の場所は中点の下に残る。
-        // 狭めると、地図が画面を埋めるところで止まる。
+        // 狭めると、地図が画面を埋めるところで止まる。ホイールでも近づき、離れる。
         [UnityTest]
-        public IEnumerator PinchingZoomsAroundTheFingers()
+        public IEnumerator PinchingAndTheWheelZoomAroundTheFingers()
         {
             var map = default(WorldMapBootstrap);
             yield return SceneTests.LoadWorldMap(value => map = value);
@@ -68,25 +68,16 @@ namespace Baryonyx.Tests.PlayMode
             AssertMapCoversScreen(view);
             drag.OnEndDrag(Finger(1, moved));
             drag.OnEndDrag(Finger(0, moved));
-        }
 
-        // ホイールを奥へ回すと近づき、手前へ回すと離れる。近づく上限で止まる。
-        [UnityTest]
-        public IEnumerator TheWheelZooms()
-        {
-            var map = default(WorldMapBootstrap);
-            yield return SceneTests.LoadWorldMap(value => map = value);
-            var view = map.View;
-            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
-
-            view.Drag.OnScroll(Wheel(center, 1f));
-            Assert.That(view.Zoom, Is.GreaterThan(1f));
-            for (int i = 0; i < 20; i++)
-                view.Drag.OnScroll(Wheel(center, 1f));
-            Assert.That(view.Zoom, Is.EqualTo(WorldMapView.MaxZoom));
-
+            // ホイールを奥へ回すと近づき、近づく上限で止まる。手前へ回すと離れる。
+            float before = view.Zoom;
+            drag.OnScroll(Wheel(center, 1f));
+            Assert.That(view.Zoom, Is.GreaterThan(before));
             for (int i = 0; i < 40; i++)
-                view.Drag.OnScroll(Wheel(center, -1f));
+                drag.OnScroll(Wheel(center, 1f));
+            Assert.That(view.Zoom, Is.EqualTo(WorldMapView.MaxZoom));
+            for (int i = 0; i < 60; i++)
+                drag.OnScroll(Wheel(center, -1f));
             Assert.That(view.Zoom, Is.LessThan(1f));
             AssertMapCoversScreen(view);
         }

@@ -13,10 +13,14 @@ namespace Baryonyx.Networking
     {
         public long StatusCode { get; }
 
-        public ServerApiException(long statusCode)
+        // サーバーが返したエラーの種類（`{"error":"destination_locked"}` の値）。返さなければnull。
+        public string Error { get; }
+
+        public ServerApiException(long statusCode, string error = null)
             : base("Server API request failed")
         {
             StatusCode = statusCode;
+            Error = string.IsNullOrEmpty(error) ? null : error;
         }
     }
 
@@ -94,15 +98,45 @@ namespace Baryonyx.Networking
                     )
                 );
             if (request.result != UnityWebRequest.Result.Success)
-                throw new ServerApiException(request.responseCode);
+                throw new ServerApiException(
+                    request.responseCode,
+                    ErrorOf(request.downloadHandler?.text)
+                );
             return request.responseCode == 204
                 ? new T()
                 : JsonUtility.FromJson<T>(request.downloadHandler.text);
         }
 
+        [Serializable]
+        private sealed class ErrorBody
+        {
+            public string error;
+        }
+
+        /// <summary>
+        /// The kind of error in a refused request's body (server/src/shared/http.ts), or null
+        /// when the body has none (a lost connection, or a page that is not the server's).
+        /// </summary>
+        internal static string ErrorOf(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+                return null;
+            try
+            {
+                var parsed = JsonUtility.FromJson<ErrorBody>(body);
+                return string.IsNullOrEmpty(parsed?.error) ? null : parsed.error;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
         // サーバーの Server-Timing のうち、処理の合計（total）と、DBとの往復の時間・回数（d1）。
         private static readonly Regex TotalMetric = new(@"(?:^|,)\s*total;dur=([\d.]+)");
-        private static readonly Regex D1Metric = new(@"(?:^|,)\s*d1;dur=([\d.]+);desc=""(\d+) calls""");
+        private static readonly Regex D1Metric = new(
+            @"(?:^|,)\s*d1;dur=([\d.]+);desc=""(\d+) calls"""
+        );
 
         /// <summary>
         /// The log line of one request: the time until it finished, and the server's own time and

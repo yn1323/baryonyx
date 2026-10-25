@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 壺の吸い込み
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 割れ壺の番の固有技。口を大きく開いて中の闇へ風を引き込み、相手がまとった力を呑み込んでから噛みつく。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[割れ壺の番](../enemies/enemy-cracked-urn.md)の技として作った |
 | 役割・説明 | 味方単体の強化を消す弱体と、小さな単体攻撃 |
-| 関連する仕様・個別ID | 使う敵：[割れ壺の番](../enemies/enemy-cracked-urn.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[割れ壺の番](../enemies/enemy-cracked-urn.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

@@ -35,21 +35,19 @@ namespace Baryonyx.Workshop
         /// shown balance at once and the balance becomes the server's when it answers; if the
         /// save fails, the price comes back and <paramref name="failedMessage"/> goes to the
         /// notice band (<see cref="SaveQueue.Failed"/>), wherever the player is by then.
+        /// True once it was saved.
         /// </summary>
-        public static async Task BuyAsync(WorkshopGood good, string failedMessage)
+        public static async Task<bool> BuyAsync(WorkshopGood good, string failedMessage)
         {
             if (good == null)
                 throw new ArgumentNullException(nameof(good));
             var source = Source;
             if (source == null)
-            {
-                await Spend(Local, good, failedMessage);
-                return;
-            }
+                return await Spend(Local, good, failedMessage);
             RuneBalance.Reserve(good.Price);
             try
             {
-                await Spend(source, good, failedMessage, SaveQueue.Enqueue);
+                return await Spend(source, good, failedMessage, SaveQueue.Enqueue);
             }
             finally
             {
@@ -96,7 +94,7 @@ namespace Baryonyx.Workshop
             CancellationToken token
         ) => Source is { } source ? SaveQueue.Enqueue(t => send(source, t)) : send(Local, token);
 
-        private static async Task Spend(
+        private static async Task<bool> Spend(
             IWorkshopSource source,
             WorkshopGood good,
             string failedMessage,
@@ -110,13 +108,18 @@ namespace Baryonyx.Workshop
                     source.BuyAsync(good, token);
                 var purchase = await (send != null ? send(buy) : buy(CancellationToken.None));
                 RuneBalance.Set(purchase.BalanceAfter);
+                return true;
             }
             // アプリを止めたときだけ取り消される。
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
             catch (Exception exception)
             {
                 Debug.LogWarning(failedMessage + "。" + exception.Message);
                 SaveQueue.Report(failedMessage);
+                return false;
             }
         }
 

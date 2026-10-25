@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 胞子ばらまき
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。体に生えた苔やきのこから胞子を飛ばし、味方全体を毒にする。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔スライム](../enemies/enemy-moss-slime.md)の技を共通技として作った |
 | 役割・説明 | 味方全体に毒を重ね、長い戦闘でじわじわ削る |
-| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔スライム](../enemies/enemy-moss-slime.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -63,7 +63,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 味方に付く毒の量 | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の案（重なった数×最大HPの3%）で決める |
+| 味方に付く毒の量 | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)の案（重なった数×最大HPの3%）で決める |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

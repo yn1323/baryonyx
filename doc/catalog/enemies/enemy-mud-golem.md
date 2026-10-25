@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MudGolem.asepri
 
 # 泥人形
 
-[敵の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 沼に棲む、中くらいの大きさの敵である。
 崩れても泥を寄せ集めて元に戻る体で、自分の泥を分けて仲間の傷を埋め、重い拳で味方の守りを崩す。
@@ -182,5 +182,5 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/MudGolem.asepri
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技5つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
 | 2026-10-20 | しじまの沼の戦闘に出るようにし、Lv100のステータスと技「たいあたり」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

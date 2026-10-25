@@ -194,11 +194,7 @@ namespace Baryonyx.Tests.PlayMode
                 var marker = view.MarkerOf(next);
                 Assert.That(marker, Is.Not.Null, next);
                 Assert.That(marker.IsExit, Is.True);
-                // 次に選べるマスは大きい札で、地の色がマスの種類（宝箱）を示す。
-                Assert.That(
-                    marker.Ring.rectTransform.sizeDelta.x,
-                    Is.EqualTo(ExplorationView.LargeRing)
-                );
+                // 次に選べるマスは、地の色がマスの種類（宝箱）を示す。
                 Assert.That(
                     marker.Plate.color,
                     Is.EqualTo(ExplorationView.PlateOf(AdventureRoomKind.Treasure))

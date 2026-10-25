@@ -455,6 +455,7 @@ namespace Baryonyx.Combat.Editor
                 BuildKeywordTips(safe, view);
                 BuildStatusList(safe, view);
                 BuildEndTurn(safe, view);
+                BuildDiscard(safe, view);
                 BuildAim(safe, view);
                 BuildPopup(screen, view);
                 // 固有スキルの進化先を選ぶ画面。操作の上に重ねる（doc/features/skill-evolution.md）。
@@ -1361,15 +1362,17 @@ namespace Baryonyx.Combat.Editor
         /// </summary>
         private static void BuildEnergy(RectTransform safe, BattleInspectView view)
         {
-            // Baked with the opening turn so the screen reads the same outside Play Mode.
+            // Baked with the opening turn so the screen reads the same outside Play Mode. Only
+            // the energy left, beside a thin diamond, with no band (G3 layout).
             int maxEnergy = BattleInspectView.MaxEnergyAt(view.StartTurn);
             var (label, _) = CornerCounter(
                 safe,
                 "Energy",
                 EnergyBottom,
                 BattleInspectView.EnergyText(maxEnergy, maxEnergy),
-                "Gem",
-                Art("EnergyGem")
+                "Diamond",
+                Art("EnergyDiamond"),
+                flat: true
             );
             view.EnergyLabel = label;
         }
@@ -1388,30 +1391,79 @@ namespace Baryonyx.Combat.Editor
                 DeckBottom,
                 Mathf.Max(0, left).ToString(),
                 "Stack",
-                Art("DeckIcon")
+                Art("DeckIcon"),
+                flat: true
             );
             view.DeckLabel = label;
             view.DeckAnchor = counter;
         }
 
-        /// <summary>A picture and a number on the dark translucent band, in the bottom-left corner.</summary>
+        /// <summary>
+        /// The cards out of the battle (消滅; shown once there is one) and the discard pile side by
+        /// side over the end-turn button, the discard pile at the right (G3 layout).
+        /// </summary>
+        private static void BuildDiscard(RectTransform safe, BattleInspectView view)
+        {
+            var button = Art("EndTurnCapsule");
+            float bottom = BattleInspectView.EndTurnBottom + button.height + 12f;
+            var (discard, discardCounter) = CornerCounter(
+                safe,
+                "Discard",
+                bottom,
+                "0",
+                "Pile",
+                Art("DiscardIcon"),
+                right: true,
+                flat: true
+            );
+            view.DiscardLabel = discard;
+            view.DiscardAnchor = discardCounter;
+            var (exhaust, exhaustCounter) = CornerCounter(
+                safe,
+                "Exhaust",
+                bottom,
+                "0",
+                "Wisp",
+                Art("ExhaustIcon"),
+                right: true,
+                flat: true,
+                fromRight: 32f + 168f
+            );
+            view.ExhaustLabel = exhaust;
+            view.ExhaustAnchor = exhaustCounter;
+            exhaustCounter.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// A picture and a number on the dark translucent band, in the bottom-left corner (or the
+        /// bottom-right, <paramref name="right"/>).
+        /// </summary>
         private static (TMP_Text label, RectTransform counter) CornerCounter(
             RectTransform safe,
             string name,
             float bottom,
             string text,
             string iconName,
-            Texture2D art
+            Texture2D art,
+            bool right = false,
+            bool flat = false,
+            float fromRight = 32f
         )
         {
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, name, safe);
             var rect = (RectTransform)instance.transform;
-            Corner(rect, Vector2.zero, new Vector2(32, bottom), new Vector2(232, 80));
+            // A flat counter (G3 layout) is narrower: the picture and the number alone.
+            var size = flat ? new Vector2(160, 72) : new Vector2(232, 80);
+            if (right)
+                Corner(rect, new Vector2(1, 0), new Vector2(-fromRight, bottom), size);
+            else
+                Corner(rect, Vector2.zero, new Vector2(32, bottom), size);
             var panel = instance.GetComponent<TranslucentTextPanel>();
-            // Darker than Top's gray band so it reads over the lit floor of the battlefield.
+            // Darker than Top's gray band so it reads over the lit floor of the battlefield. A
+            // flat counter has no band, only the number's dark outline.
             panel.Backdrop.color = new Color(0.02f, 0.025f, 0.04f);
             panel.SetBackdropSize(new Vector2(320, 104));
-            panel.SetBackdropAlpha(0.8f);
+            panel.SetBackdropAlpha(flat ? 0f : 0.8f);
             panel.SetFontSize(52);
             panel.SetText(text);
             panel.Label.rectTransform.offsetMin = new Vector2(56, 0);
@@ -1423,8 +1475,12 @@ namespace Baryonyx.Combat.Editor
             PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Label.rectTransform);
 
             var icon = Rect(iconName, rect);
-            Place(icon, new Vector2(-64, 0), new Vector2(art.width, art.height) * DotSize);
+            // Pixel art is drawn a dot to DotSize pixels; the flat pieces (PNG) at their own size.
+            float dot = AssetDatabase.GetAssetPath(art).EndsWith(".png") ? 1f : DotSize;
+            Place(icon, new Vector2(flat ? -40 : -64, 0), new Vector2(art.width, art.height) * dot);
             AddRaw(icon, art);
+            if (flat)
+                panel.Label.rectTransform.offsetMin = new Vector2(40, 0);
             return (panel.Label, rect);
         }
 
@@ -1668,29 +1724,24 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// A quiet end-turn button: a thin muted-gold frame around a dark inside, at the right
-        /// halfway up the cards on screen. When no card can be paid for it greys out, words and all.
+        /// The end-turn button with no words (G3 layout): a flat capsule, deep navy inside a thin
+        /// white line, with a ▶, in the bottom-right corner where the thumb rests. When it cannot
+        /// be pressed (the enemies' turn, or no card can be paid for) it greys out, ▶ and all.
         /// </summary>
         private static void BuildEndTurn(RectTransform safe, BattleInspectView view)
         {
-            var art = Art("EndTurnFrame");
+            var art = Art("EndTurnCapsule");
             var button = Rect("EndTurn", safe);
-            var size = new Vector2(art.width, art.height) * DotSize;
-            float middle = BattleInspectView.EndTurnMiddle(view.Settings, CardHeight);
-            Corner(button, new Vector2(1, 0), new Vector2(-40, middle - size.y / 2f), size);
+            var size = new Vector2(art.width, art.height);
+            Corner(button, new Vector2(1, 0), new Vector2(-32, BattleInspectView.EndTurnBottom), size);
             var face = AddRaw(button, art);
             face.raycastTarget = true;
-            var label = Label(
-                button,
-                "Label",
-                "ターン終了",
-                34,
-                new Color(0.84f, 0.86f, 0.91f),
-                TextAlignmentOptions.Center
-            );
-            Stretch(label.rectTransform);
+            var arrowArt = Art("EndTurnArrow");
+            var arrow = Rect("Arrow", button);
+            Place(arrow, new Vector2(4, 0), new Vector2(arrowArt.width, arrowArt.height));
+            AddRaw(arrow, arrowArt).raycastTarget = false;
             var endTurn = (TintGroupButton)AddTintButton(button, face);
-            endTurn.SetTintGraphics(new Graphic[] { label });
+            endTurn.SetTintGraphics(new Graphic[] { arrow.GetComponent<RawImage>() });
             view.EndTurnButton = endTurn;
         }
 

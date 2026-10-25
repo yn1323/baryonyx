@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 白霧の大息吹
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 霧の竜の固有技で、激化のあとに使う大技。胸いっぱいに霧を吸い込み、真っ白な息で一帯を凍らせて覆い隠す。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[霧の竜](../enemies/enemy-mist-dragon.md)の技として作った |
 | 役割・説明 | 激化のあとの大技。味方全体への大きな魔法・氷のダメージと、次のターンの手札を減らす妨害 |
-| 関連する仕様・個別ID | 使う敵：[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

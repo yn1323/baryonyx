@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 喉笛狙い
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 苔むした狼の固有技。弱った獲物を見抜き、喉元へ一気に飛びかかる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やす。その敵が持っていそうな技にする）で、[苔むした狼](../enemies/enemy-moss-wolf.md)の技として作った |
 | 役割・説明 | HPの減った味方へのとどめ |
-| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

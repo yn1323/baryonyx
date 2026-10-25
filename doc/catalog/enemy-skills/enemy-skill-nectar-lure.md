@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 甘い蜜の香り
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 蜜吸い花の固有技。花を大きく開いて甘い香りを漂わせ、うっとりした相手に身構えを解かせる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[蜜吸い花](../enemies/enemy-nectar-bloom.md)の技として作った |
 | 役割・説明 | 味方全体の守りを緩める弱体 |
-| 関連する仕様・個別ID | 使う敵：[蜜吸い花](../enemies/enemy-nectar-bloom.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[蜜吸い花](../enemies/enemy-nectar-bloom.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -57,7 +57,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 味方に付く防御ダウン | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の案（カードの防御ダウンと同じ効果）で決める。状態異常の付与率を掛けるか |
+| 味方に付く防御ダウン | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)の案（カードの防御ダウンと同じ効果）で決める。状態異常の付与率を掛けるか |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

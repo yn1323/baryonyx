@@ -29,9 +29,19 @@ namespace Baryonyx.Tests.PlayMode
         public static readonly string ResultPath = Path.Combine(Folder, "result.json");
         public static readonly string TablePath = Path.Combine(Folder, "result.md");
 
+        private FixedRandom random;
+
+        // 自動対戦は1戦ごとに種からUnityの乱数を作り直す。終わったら元の乱数の続きへ戻す。
+        [SetUp]
+        public void SaveRandom() => random = FixedRandom.Use();
+
         // テストは全体で、会心なし・状態異常は必ず付くに固定している（BattleOddsSetUp）。自動対戦が変えた確率を戻す。
         [TearDown]
-        public void FixOdds() => BattleOdds.Fix(critical: false, lands: true);
+        public void FixOdds()
+        {
+            BattleOdds.Fix(critical: false, lands: true);
+            random?.Dispose();
+        }
 
         [UnityTest]
         [Timeout(3600000)]

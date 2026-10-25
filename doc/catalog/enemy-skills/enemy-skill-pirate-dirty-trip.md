@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 卑怯な足払い
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 骸骨海賊の固有技。甲板での喧嘩仕込みの汚い手で足を払い、相手の体勢を崩して、次の動きを鈍らせる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)の技として作った |
 | 役割・説明 | 単体への小さなダメージと、次の味方ターンのエネルギーを減らす妨害 |
-| 関連する仕様・個別ID | 使う敵：[骸骨海賊](../enemies/enemy-skeleton-pirate.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[エネルギーとコスト](../../features/combat.md#エネルギーとコスト) |
+| 関連する仕様・個別ID | 使う敵：[骸骨海賊](../enemies/enemy-skeleton-pirate.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[エネルギーとコスト](../../features/combat.md#エネルギーとコスト) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

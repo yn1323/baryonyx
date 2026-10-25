@@ -65,6 +65,10 @@ namespace Baryonyx.Combat
                 Text = Rewrite(card, actions),
                 Actions = Array.AsReadOnly(actions),
                 BorrowedArt = card.BorrowedArt,
+                Traits = card.Traits,
+                FuseWith = card.FuseWith,
+                FusesInto = card.FusesInto,
+                ComboWith = card.ComboWith,
                 MaxMultiplier = limit > 0f ? limit : card.MaxMultiplier,
                 FoilStyle = card.FoilStyle,
                 Multiplier = m,
@@ -79,6 +83,7 @@ namespace Baryonyx.Combat
             {
                 Kind = from.Kind,
                 Target = from.Target,
+                Phase = from.Phase,
                 Stat = from.Stat,
                 Percent = from.HasPower ? Quality.Amount(from.Percent, m) : from.Percent,
                 Hits =
@@ -88,8 +93,14 @@ namespace Baryonyx.Combat
                 Status = from.Status,
                 Turns = from.Turns > 0 ? Quality.Count(from.Turns, m) : from.Turns,
                 Chance = from.Chance > 0 ? Quality.Chance(from.Chance, m) : from.Chance,
+                // 捨てる枚数・拾う枚数・次のカードの上乗せは、説明文の書き方が決まっていないため伸ばさない。
                 Amount =
-                    from.Amount <= 0 ? from.Amount
+                    from.Amount <= 0
+                    || from.Kind
+                        is CardActionKind.Discard
+                            or CardActionKind.TakeFromDiscard
+                            or CardActionKind.NextCardBoost
+                        ? from.Amount
                     : from.Kind == CardActionKind.Revive ? Quality.Chance(from.Amount, m)
                     : Quality.Amount(from.Amount, m),
                 Elements = from.Elements,
@@ -98,6 +109,9 @@ namespace Baryonyx.Combat
                 BonusPercent = from.BonusPercent,
                 ActStepPercent = from.ActStepPercent,
                 ActCapPercent = from.ActCapPercent,
+                BlockPercent = from.BlockPercent,
+                PerDiscarded = from.PerDiscarded,
+                MakesFree = from.MakesFree,
             };
             return to;
         }

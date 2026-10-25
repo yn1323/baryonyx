@@ -232,11 +232,27 @@ namespace Baryonyx.Workshop
                 return;
             ShowNotice(BoughtText(good));
             bought++;
-            BuyTask = WorkshopSession.BuyAsync(good, BuyFailedMessage);
+            var buying = WorkshopSession.BuyAsync(good, BuyFailedMessage);
             if (owned != null)
                 owned = owned
                     .Append(new WorkshopOwned { Kind = good.Kind, KindId = good.Id })
                     .ToArray();
+            BuyTask = TakeBackIfFailedAsync(buying, good);
+            RefreshConfirm();
+        }
+
+        // 保存できなかったら、値段と一緒に、手元で足した持っている数の1つも戻す。
+        private async Task TakeBackIfFailedAsync(Task<bool> buying, WorkshopGood good)
+        {
+            if (await buying || this == null || owned == null)
+                return;
+            int index = -1;
+            for (int i = owned.Count - 1; i >= 0 && index < 0; i--)
+                if (owned[i].Kind == good.Kind && owned[i].KindId == good.Id)
+                    index = i;
+            if (index < 0)
+                return;
+            owned = owned.Where((_, i) => i != index).ToArray();
             RefreshConfirm();
         }
 

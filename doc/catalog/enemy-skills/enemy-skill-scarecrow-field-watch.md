@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 畑の見張り番
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 かぼちゃ頭の案山子の固有技。畑を荒らす鳥を追い払っていたころのように、仲間に手を出した者へ藁の腕を振り下ろす。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)の技として作った |
 | 役割・説明 | 仲間を守る見張り。仲間を単体攻撃した味方へ反撃する |
-| 関連する仕様・個別ID | 使う敵：[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

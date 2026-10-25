@@ -13,7 +13,7 @@ updated: 2026-10-25
 
 | 構成 | 現在の責務・確認元 |
 |---|---|
-| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[GameServices](../client/Assets/Baryonyx/App/Runtime/GameServices.cs)がAndroidの実ProviderとEditor等のプレビューを選び、サーバーとの接続とゲストのセッションをアプリの終了まで全画面で共有する。[HealthRuntime](../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs)は削除前の健康データ画面用で、現在はどの画面からも使わない |
+| Unity App | [TopSceneController](../client/Assets/Baryonyx/App/Runtime/TopSceneController.cs)・[HomeBootstrap](../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が起動画面を組み立てる。[GameServices](../client/Assets/Baryonyx/App/Runtime/GameServices.cs)がAndroidの実ProviderとEditor等のプレビューを選び、サーバーとの接続とゲストのセッションをアプリの終了まで全画面で共有する |
 | Unity Health | [健康データ仕様](features/health-data.md)と[起動時の同期](features/startup-sync.md)に従い、権限・取得・サーバー保存を扱う。日別一覧の画面は削除済み |
 | Unityの各機能 | 編成（パーティ・装備・育成・スキル）と冒険は、画面を開くたびにサーバーから読み、操作ごとに保存する（[保存先の決め方](rules/data-storage.md#サーバーに置くときの作り方)） |
 | Android連携 | [Androidライブラリ](../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/)からHealth Connectへ接続する |

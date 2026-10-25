@@ -21,12 +21,20 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
+            Time.timeScale = 1f;
+            random?.Dispose();
             BattleOdds.Fix(critical: false, lands: true);
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }
 
         // 会心の一撃は1.5倍のダメージになり、数字の上に「会心！」と出る。
+        private FixedRandom random;
+
+        // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
+        [SetUp]
+        public void FixRandom() => random = FixedRandom.Use();
+
         [UnityTest]
         public IEnumerator ACriticalHitDealsHalfAsMuchAgainAndSaysSo()
         {
@@ -58,6 +66,8 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var target = view.Enemies[1];
+            // The wolf outlasts both blows, so the status has someone to land on.
+            target.Hp = target.MaxHp = 999999;
 
             BattleOdds.Fix(critical: false, lands: false);
             var words = new List<string>();

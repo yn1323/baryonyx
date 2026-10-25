@@ -161,6 +161,7 @@ namespace Baryonyx.Editor.CI
                         name = result.FullName,
                         status = result.TestStatus.ToString(),
                         message = passed ? "" : result.Message ?? "",
+                        duration = result.Duration,
                     }
                 );
             }
@@ -185,6 +186,9 @@ namespace Baryonyx.Editor.CI
             public string name;
             public string status;
             public string message;
+
+            // Seconds the test took, to find the slow ones.
+            public double duration;
         }
     }
 }

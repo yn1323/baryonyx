@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 引き裂き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。爪で傷を負わせ、出血させる攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔むした狼](../enemies/enemy-moss-wolf.md)の技を共通技として作った |
 | 役割・説明 | 単体へのダメージと出血。威力は低いが、カードを使うたびに削る |
-| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[いばら蛇](../enemies/enemy-thorn-serpent.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[いばら蛇](../enemies/enemy-thorn-serpent.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[骸骨海賊](../enemies/enemy-skeleton-pirate.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -69,7 +69,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 味方に付く出血の量 | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の案（カードを使うたびに最大HPの4%）で決める |
+| 味方に付く出血の量 | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)の案（カードを使うたびに最大HPの4%）で決める |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

@@ -98,7 +98,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(best.Quality, Is.EqualTo(ItemQuality.S));
             Assert.That(best.Base, Is.SameAs(fire));
             Assert.That(best.Cost, Is.EqualTo(1));
-            Assert.That(best.Actions[0].Percent, Is.EqualTo(240));
+            Assert.That(best.Actions[0].Percent, Is.EqualTo(360));
             Assert.That(best.Actions[0].Hits, Is.EqualTo(2));
             Assert.That(best.Actions[1].Turns, Is.EqualTo(5));
             // 60%の確率も伸び、100%に届くと説明文から消える。
@@ -110,9 +110,9 @@ namespace Baryonyx.Tests.EditMode
             var half = fire.WithMultiplier(1.5f);
             Assert.That(half.Actions[1].Chance, Is.EqualTo(90));
             Assert.That(half.Text, Does.Contain("[弱点]を突くと90%で[やけど]"));
-            Assert.That(CardRules.Describe(best), Does.Contain("属攻の240%ダメージ×2"));
+            Assert.That(CardRules.Describe(best), Does.Contain("属攻の360%ダメージ×2"));
             // The definition itself stays at ×1.00.
-            Assert.That(fire.Actions[0].Percent, Is.EqualTo(100));
+            Assert.That(fire.Actions[0].Percent, Is.EqualTo(150));
         }
 
         [Test]
@@ -134,15 +134,15 @@ namespace Baryonyx.Tests.EditMode
         {
             Assert.That(
                 CardSkills.Find("Scout").WithMultiplier(1.5f).Text,
-                Is.EqualTo("カードを3枚引く。")
+                Is.EqualTo("カードを3枚引き、手札を1枚[捨てる]。")
             );
             Assert.That(
                 CardSkills.Find("WarCry").WithMultiplier(1.5f).Text,
-                Is.EqualTo("味方全体の攻撃力を3ターン38%上げる。")
+                Is.EqualTo("味方全体の攻撃力を3ターン38%上げる。[初手]。")
             );
             Assert.That(
                 CardSkills.Find("Resurrection").WithMultiplier(1.5f).Text,
-                Is.EqualTo("味方1体のHPを最大の75%回復。倒れていれば復活。")
+                Is.EqualTo("味方1体のHPを最大の75%回復。倒れていれば復活。[消滅]。")
             );
         }
 

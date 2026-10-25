@@ -149,7 +149,10 @@ namespace Baryonyx.Tests.EditMode
             );
             var won = Run(source.ClearAsync(state.Run.RoomId, default));
             Assert.That(Ordinary(won.Drops).Length, Is.InRange(2, 4));
-            Assert.That(Ordinary(won.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(
+                Ordinary(won.Drops).Select(drop => drop.Stars),
+                Is.All.GreaterThanOrEqualTo(3)
+            );
         }
 
         // 開けずに通り過ぎると、何も落とさずに終える。開けていない怪しい宝箱は、通り過ぎるほかに終えられない。
@@ -200,7 +203,10 @@ namespace Baryonyx.Tests.EditMode
                 )
             );
             Assert.That(Ordinary(met.Drops).Length, Is.InRange(2, 4));
-            Assert.That(Ordinary(met.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(
+                Ordinary(met.Drops).Select(drop => drop.Stars),
+                Is.All.GreaterThanOrEqualTo(3)
+            );
 
             var (other, missedAt) = WalkTo(AdventureRoomKind.Trial);
             var missed = Run(other.ClearAsync(missedAt.Run.RoomId, default));
@@ -251,7 +257,10 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(opened.StepDoor.Steps, Is.EqualTo(8000));
             Assert.That(opened.StepDoor.Tier, Is.EqualTo(3));
             Assert.That(Ordinary(opened.Drops).Length, Is.InRange(2, 4));
-            Assert.That(Ordinary(opened.Drops).Select(drop => drop.Stars), Is.All.GreaterThanOrEqualTo(3));
+            Assert.That(
+                Ordinary(opened.Drops).Select(drop => drop.Stars),
+                Is.All.GreaterThanOrEqualTo(3)
+            );
         }
 
         // 行商人は、スキル3つと装備2つを並べ、☆と品質の値段で売る。売れた物と、ルーンが足りない物は買えない。
@@ -342,6 +351,8 @@ namespace Baryonyx.Tests.EditMode
         {
             var party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             var training = AssetDatabase.LoadAssetAtPath<TrainingMockData>(TrainingAssets.DataPath);
+            // 前のテストが読んだ編成や進み具合を使わない。
+            PartySession.Reset();
             UniqueSkillSession.Reset();
             try
             {
@@ -372,6 +383,7 @@ namespace Baryonyx.Tests.EditMode
             }
             finally
             {
+                PartySession.Reset();
                 UniqueSkillSession.Reset();
             }
         }

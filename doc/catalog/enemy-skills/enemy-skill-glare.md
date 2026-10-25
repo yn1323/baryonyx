@@ -9,7 +9,7 @@ category: enemy-skills
 
 # にらみつけ
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。鋭い目でにらみ、味方1人の手元を鈍らせる弱体の技である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 単体への麻痺 |
-| 関連する仕様・個別ID | 使う敵：[いばら蛇](../enemies/enemy-thorn-serpent.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[浮遊する魔導書](../enemies/enemy-floating-grimoire.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[いばら蛇](../enemies/enemy-thorn-serpent.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[浮遊する魔導書](../enemies/enemy-floating-grimoire.md)、[沼のカエル王](../enemies/enemy-frog-king.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

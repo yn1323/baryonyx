@@ -27,19 +27,6 @@ namespace Baryonyx.ExerciseRewards
                 token
             );
 
-        public Task<RewardDays> ReadDaysAsync(
-            AccountSession session,
-            string sourceId,
-            CancellationToken token
-        ) =>
-            server.SendAsync<RewardDays>(
-                "/v1/exercise/rewards/days?sourceId=" + Uri.EscapeDataString(sourceId),
-                "GET",
-                null,
-                session.Token,
-                token
-            );
-
         public Task<RuneBalance> ReadBalanceAsync(
             AccountSession session,
             CancellationToken token
@@ -57,12 +44,6 @@ namespace Baryonyx.ExerciseRewards
         {
             public long grantedRunes;
             public long balance;
-            public RewardDay[] days;
-        }
-
-        [Serializable]
-        public sealed class RewardDays
-        {
             public RewardDay[] days;
         }
 

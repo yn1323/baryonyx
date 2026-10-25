@@ -9,10 +9,12 @@ using Random = UnityEngine.Random;
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
-    /// An ally whose HP runs out acts no more. The moment it falls, its cards leave the hand and
-    /// the deck, and a deck dealt anew leaves them out; those in hand crumble away as a beaten
-    /// enemy does (BattleSkillVfx.Defeat.cs). Its cards are shuffled back into the deck when it
-    /// stands up again. Only a card that revives can be used on it while it is down.
+    /// An ally whose HP runs out acts no more. The moment it falls, its cards leave the hand, the
+    /// deck and the discard pile, and a deck dealt anew leaves them out; those in hand crumble
+    /// away as a beaten enemy does (BattleSkillVfx.Defeat.cs). When it stands up again in the
+    /// party's turn, its cards, with those it lost to 消滅, are shuffled back into the deck and
+    /// two of them are drawn (doc/features/combat.md, 倒れた味方). Only a card that revives can
+    /// be used on it while it is down.
     /// </summary>
     public sealed partial class BattleInspectView
     {
@@ -42,6 +44,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>True when the card of the deck at <paramref name="deckIndex"/> belongs to an ally who is down.</summary>
         private bool Benched(int deckIndex)
         {
+            // A fused card is made for the battle and never dealt.
+            if (Deck[deckIndex].Generated)
+                return true;
             int caster = Deck[deckIndex].Caster;
             return caster >= 0 && caster < Allies.Length && Allies[caster].Down;
         }
@@ -82,17 +87,31 @@ namespace Baryonyx.Combat.Presentation
             }
         }
 
-        /// <summary>The fallen ally's cards leave the deck, and those in hand crumble away.</summary>
+        /// <summary>The fallen ally's cards leave the deck and the discard pile, and those in hand crumble away.</summary>
         private void TakeOutCards(int ally)
         {
-            drawPile.RemoveAll(deckIndex => Deck[deckIndex].Caster == ally);
+            drawPile.TakeOut(deckIndex => Deck[deckIndex].Caster == ally);
             RefreshDeck();
             if (held >= 0 && Cards[held].Caster == ally)
                 PutBack();
             for (int slot = hand.Count - 1; slot >= 0; slot--)
             {
                 int index = hand[slot];
-                if (Cards[index].Caster != ally)
+                // A fused card parts when either of its two cards' ally falls; the other card goes
+                // to the discard pile.
+                bool theirs = Cards[index].Caster == ally;
+                if (fused.TryGetValue(index, out var parts))
+                {
+                    theirs |= Deck[parts.first].Caster == ally || Deck[parts.second].Caster == ally;
+                    if (theirs)
+                    {
+                        fused.Remove(index);
+                        foreach (int part in new[] { parts.first, parts.second })
+                            if (Deck[part].Caster != ally)
+                                drawPile.Discard(part);
+                    }
+                }
+                if (!theirs)
                     continue;
                 // A copy crumbles where the card stood, and the card goes back to be drawn again.
                 // Not where the hand is put away (the labs).
@@ -109,13 +128,23 @@ namespace Baryonyx.Combat.Presentation
             LayoutHand();
         }
 
-        /// <summary>The ally's cards go back into the deck, each at a place at random.</summary>
+        /// <summary>The cards an ally draws of its own as it stands up again in the party's turn.</summary>
+        public const int RisingDraw = 2;
+
+        /// <summary>
+        /// The ally's cards, with those it lost to 消滅, go back into the deck, each at a place at
+        /// random. Raised in the party's turn (a card that revives), the ally then draws
+        /// <see cref="RisingDraw"/> of them; the whole party rising again after a defeat deals
+        /// the hand anew instead (Moments).
+        /// </summary>
         private void ShuffleInCards(int ally)
         {
-            for (int i = 0; i < Deck.Length; i++)
-                if (Deck[i].Caster == ally)
-                    drawPile.Insert(Random.Range(0, drawPile.Count + 1), i);
+            drawPile.Return(Deck.Length, i => Deck[i].Caster == ally);
             RefreshDeck();
+            if (EnemyTurn || !Application.isPlaying)
+                return;
+            for (int i = 0; i < RisingDraw && DrawWanted(card => Deck[card].Caster == ally, true); i++) { }
+            Refresh();
         }
 
         /// <summary>

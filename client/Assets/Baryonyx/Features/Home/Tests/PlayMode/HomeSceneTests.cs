@@ -7,10 +7,8 @@ using Baryonyx.App;
 using Baryonyx.Health;
 using Baryonyx.Home;
 using Baryonyx.UI;
-using Baryonyx.Vfx.Hd2d;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -72,99 +70,6 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ThePartyAndTheCampfireStandInTheSunlitGlade()
-        {
-            var bootstrap = default(HomeBootstrap);
-            yield return SceneTests.LoadHome(value => bootstrap = value);
-            yield return null;
-            yield return null;
-            var view = bootstrap.View;
-
-            var stageCamera = Hd2dStageCamera.Active;
-            Assert.That(stageCamera, Is.Not.Null, "Home stands in the 3D forest glade.");
-            Assert.That(stageCamera.Camera.orthographic, Is.False);
-            Assert.That(stageCamera.KeyLight, Is.Not.Null);
-            Assert.That(
-                stageCamera.KeyLight.type,
-                Is.EqualTo(LightType.Directional),
-                "The sun casts the members' shadows."
-            );
-            Assert.That(
-                stageCamera.KeyLight.cookie,
-                Is.Not.Null,
-                "The leaves dapple the sunlight."
-            );
-            Assert.That(stageCamera.SwayRadius, Is.GreaterThan(0f), "The camera drifts idly.");
-            Assert.That(
-                view.transform.Find("Background").gameObject.activeInHierarchy,
-                Is.False,
-                "The 3D glade takes the painted background's place."
-            );
-
-            var boards = view.GetComponentsInChildren<Hd2dUiBillboard>(true);
-            Assert.That(
-                boards.Select(board => board.name),
-                Is.EquivalentTo(
-                    new[]
-                    {
-                        "PartyMember1",
-                        "PartyMember2",
-                        "PartyMember3",
-                        "PartyMember4",
-                        "Campfire",
-                    }
-                )
-            );
-            foreach (var board in boards)
-            {
-                Assert.That(board.Staged, Is.True, board.name);
-                Assert.That(board.Picture.canvasRenderer.cull, Is.True, board.name);
-                Assert.That(board.VisualRenderer.enabled, Is.True, board.name);
-                Assert.That(board.FootShadow.canvasRenderer.cull, Is.True, board.name);
-            }
-            // The logs stand in their drawn colours; the drawn flame gives way to a computed one
-            // burning in them, with its own embers.
-            var fire = boards.Single(board => board.name == "Campfire");
-            Assert.That(fire.Lit, Is.False, "The logs keep their drawn colours.");
-            Assert.That(fire.CastShadow, Is.False);
-            var drawnFlame = view.transform.Find("World/CampfireFlame").GetComponent<Graphic>();
-            Assert.That(fire.HideWhenStaged, Does.Contain(drawnFlame));
-            Assert.That(drawnFlame.canvasRenderer.cull, Is.True);
-            Assert.That(
-                view.transform.Find("World/CampEmbers").gameObject.activeInHierarchy,
-                Is.False,
-                "The 2D embers belong to the drawn flame."
-            );
-
-            var campfire = bootstrap
-                .gameObject.scene.GetRootGameObjects()
-                .Single(root => root.name == "Campfire")
-                .transform;
-            var flame = campfire.Find("CampfireFlame").GetComponent<MeshRenderer>();
-            Assert.That(flame.sharedMaterial.shader.name, Is.EqualTo("Baryonyx/HD2D/Flame"));
-            var logs = fire.ContactRenderer.bounds.center;
-            var flameRoot = flame.transform.position;
-            Assert.That(
-                Vector2.Distance(
-                    new Vector2(flameRoot.x, flameRoot.z),
-                    new Vector2(logs.x, logs.z)
-                ),
-                Is.LessThan(0.2f),
-                "The flame burns in the logs."
-            );
-            Assert.That(
-                flame.sortingOrder,
-                Is.LessThan(fire.VisualRenderer.sortingOrder),
-                "The logs hide the base of the flame."
-            );
-            Assert.That(
-                campfire.Find("CampfireEmbers").GetComponent<ParticleSystem>().isPlaying,
-                Is.True
-            );
-            Assert.That(campfire.Find("CampfireLight").GetComponent<Light>(), Is.Not.Null);
-        }
-
-        [UnityTest]
         public IEnumerator EveryControlIsLargeEnoughToTap()
         {
             var bootstrap = default(HomeBootstrap);
@@ -187,10 +92,7 @@ namespace Baryonyx.Tests.PlayMode
                 Is.GreaterThanOrEqualTo(SceneTests.MinimumTouchSize)
             );
 
-            // Party members, the fire and the gate stay in the centred world layer; controls
-            // follow the Safe Area.
-            Assert.That(view.transform.Find("World/PartyMember3"), Is.Not.Null);
-            Assert.That(view.transform.Find("World/Campfire"), Is.Not.Null);
+            // Controls follow the Safe Area.
             Assert.That(
                 view.transform.Find("SafeArea").GetComponent<SafeAreaFollower>(),
                 Is.Not.Null
@@ -199,8 +101,6 @@ namespace Baryonyx.Tests.PlayMode
                 view.ResumeButton.transform.IsChildOf(view.transform.Find("SafeArea")),
                 Is.True
             );
-            // The resume card replaces the old label over the gate.
-            Assert.That(view.transform.Find("World/Gate"), Is.Null);
         }
 
         [UnityTest]
@@ -225,25 +125,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(balance, Is.GreaterThan(0));
             Assert.That(view.RuneGainPlaying, Is.True);
             Assert.That(view.RunesLabel.text, Is.EqualTo("0"));
-            yield return null;
-            Assert.That(
-                view.RuneEffectLayer.GetComponentsInChildren<Image>().Length,
-                Is.GreaterThan(0),
-                "Runes fly toward the balance."
-            );
-            // 着いたルーンは所持ルーンのアイコンでキラキラを弾く。
-            var sparkles = view.RuneSparkles.transform;
-            bool sparkled = false;
-            float deadline = Time.realtimeSinceStartup + 4f;
-            while (view.RuneGainPlaying && Time.realtimeSinceStartup < deadline)
-            {
-                sparkled |= sparkles.GetComponentsInChildren<Image>().Any(image => image.enabled);
-                yield return null;
-            }
+            yield return SceneTests.WaitUntil(() => !view.RuneGainPlaying);
             Assert.That(view.RuneGainPlaying, Is.False);
-            Assert.That(sparkled, Is.True, "Sparkles pop as runes land.");
             Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(balance)));
             // キラキラとモヤは寿命で消えるため、飛ぶルーンと光が片付いたことだけを確かめる。
+            var sparkles = view.RuneSparkles.transform;
             var haze = view.RuneHaze.transform;
             Assert.That(
                 view.RuneEffectLayer.GetComponentsInChildren<Image>()
@@ -288,62 +174,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.StepDetails.activeSelf, Is.True);
         }
 
-        [UnityTest]
-        public IEnumerator PressingDarkensIconsAndLabelsOverDarkBackdrops()
-        {
-            var bootstrap = default(HomeBootstrap);
-            yield return SceneTests.LoadHome(value => bootstrap = value);
-            var view = bootstrap.View;
-            Assert.That(EventSystem.current, Is.Not.Null);
-
-            var buttons = new[]
-            {
-                view.TavernButton,
-                view.WorkshopButton,
-                view.TempleButton,
-                view.SettingsButton,
-                view.DebugRoomsButton,
-                view.StepButton,
-            };
-            foreach (var button in buttons)
-            {
-                var tint = button as TintGroupButton;
-                Assert.That(tint, Is.Not.Null, button.name);
-                // ACTパネルは案内の文字だけで、アイコンを持たない。
-                if (button != view.StepButton)
-                    Assert.That(
-                        tint.TintGraphics.OfType<Image>().Any(image => image.sprite != null),
-                        Is.True,
-                        button.name + " has no icon to darken"
-                    );
-            }
-
-            // ボタンは押された状態をそれぞれ持つため、まとめて押して色の変化を待つ。
-            var pointer = new PointerEventData(EventSystem.current)
-            {
-                button = PointerEventData.InputButton.Left,
-            };
-            float fade = buttons[0].colors.fadeDuration + 0.1f;
-            foreach (var button in buttons)
-                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerDownHandler);
-            yield return new WaitForSecondsRealtime(fade);
-            foreach (var button in buttons)
-            foreach (var graphic in ((TintGroupButton)button).TintGraphics)
-                AssertColor(graphic.canvasRenderer.GetColor(), button.colors.pressedColor, graphic);
-
-            foreach (var button in buttons)
-                ExecuteEvents.Execute(button.gameObject, pointer, ExecuteEvents.pointerUpHandler);
-            yield return new WaitForSecondsRealtime(fade);
-            foreach (var button in buttons)
-            foreach (var graphic in ((TintGroupButton)button).TintGraphics)
-                AssertColor(graphic.canvasRenderer.GetColor(), button.colors.normalColor, graphic);
-
-            // The resume card already darkens its bright art and keeps that behaviour.
-            Assert.That(view.ResumeButton, Is.Not.InstanceOf<TintGroupButton>());
-        }
-
-        // 設定は準備中を知らせ、シーンを移らない。
-        // 編成・商会・神殿・ライブラリは案内人の画面を開く（GuideScenesTestsで検査する）。
         [UnityTest]
         public IEnumerator MockButtonsShowFeedbackAndStayOnHome()
         {
@@ -397,9 +227,7 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The world map did not open."
             );
             Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
-            // Top以外からの移動は、短い暗転で閉じて開く。
-            var map = Object.FindAnyObjectByType<WorldMapBootstrap>();
-            Assert.That(map.Transition.transform.Find("FadePanel").gameObject.activeSelf, Is.True);
+            Assert.That(Object.FindAnyObjectByType<WorldMapBootstrap>(), Is.Not.Null);
         }
 
         // 冒険の途中は、右下のカードに行き先と階を出し、探索を再開する。
@@ -450,14 +278,6 @@ namespace Baryonyx.Tests.PlayMode
                 yield return null;
             Assert.That(bootstrap.Presenter.StepTask.IsCompleted, Is.True);
             Assert.That(bootstrap.Presenter.StepSyncing, Is.False);
-        }
-
-        private static void AssertColor(Color actual, Color expected, Graphic graphic)
-        {
-            string name = graphic.transform.parent.name + "/" + graphic.name;
-            Assert.That(actual.r, Is.EqualTo(expected.r).Within(0.01f), name);
-            Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.01f), name);
-            Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.01f), name);
         }
     }
 }

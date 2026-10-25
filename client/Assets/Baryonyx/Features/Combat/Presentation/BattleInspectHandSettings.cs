@@ -67,19 +67,13 @@ namespace Baryonyx.Combat.Presentation
         public float RestBottom = -122f;
 
         [Header("山札と配り方")]
-        [Tooltip("戦闘の開始時に配る枚数。")]
+        [Tooltip("戦闘の開始時に配る枚数（doc/features/combat.md の手札）。")]
         [Min(0)]
-        public int OpeningDraw = 6;
+        public int OpeningDraw = 5;
 
         [Tooltip("2ターン目から、ターンの開始時に引く枚数。")]
         [Min(0)]
-        public int TurnDraw = 3;
-
-        [Tooltip(
-            "TurnDraw枚を引いても手札がこの枚数に足りないときは、この枚数になるまで引く（doc/features/combat.md の手札）。"
-        )]
-        [Min(0)]
-        public int RefillTo = 5;
+        public int TurnDraw = 5;
 
         [Tooltip("手札の上限。上限に届いたら、残りは引かずに山札に残す。")]
         [Min(1)]

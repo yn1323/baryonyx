@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 八腕の乱れ打ち
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 沖の大ダコの固有技で、激化のあとに使う大技。八本の触手を同時に振るい、味方1人に2本ずつ、岩場ごと叩きつける。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[沖の大ダコ](../enemies/enemy-giant-octopus.md)の技として作った |
 | 役割・説明 | 激化のあとの大技。味方全体に2回ずつ当たる |
-| 関連する仕様・個別ID | 使う敵：[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -60,7 +60,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と回数は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 予告 | [大技までのターン数の予告](../../features/combat.md#敵の行動の仮設定)は森羅の鉄槌と同じ形にする。2回当たることを予告の数字にどう出すか |
+| 予告 | [大技までのターン数の予告](../../features/combat-enemy-behavior.md)は森羅の鉄槌と同じ形にする。2回当たることを予告の数字にどう出すか |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

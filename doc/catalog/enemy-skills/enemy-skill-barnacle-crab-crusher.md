@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 大ばさみ砕き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 フジツボ大ガニの固有技。大きなはさみで、構えた守りごと叩き砕く。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)の技として作った |
 | 役割・説明 | 味方のブロックを大きく削る単体攻撃 |
-| 関連する仕様・個別ID | 使う敵：[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

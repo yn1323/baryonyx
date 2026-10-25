@@ -9,7 +9,7 @@ category: enemy-skills
 
 # かみつき
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。牙を持つ獣の基本の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[苔むした狼](../enemies/enemy-moss-wolf.md)の技を共通技として作った |
 | 役割・説明 | 単体への基本の物理攻撃 |
-| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[いばら蛇](../enemies/enemy-thorn-serpent.md)、[割れ壺の番](../enemies/enemy-cracked-urn.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[苔むした狼](../enemies/enemy-moss-wolf.md)、[いばら蛇](../enemies/enemy-thorn-serpent.md)、[割れ壺の番](../enemies/enemy-cracked-urn.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[包帯の山犬](../enemies/enemy-wrapped-jackal.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[つらら尾の狐](../enemies/enemy-icicle-fox.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 戦闘画面のモックで、苔むした狼の攻撃として名前と単体攻撃だけを使っている（[BattleInspectAssets](../../../client/Assets/Baryonyx/Features/Combat/Editor/BattleInspectAssets.cs)の `Skill`）。ほかの効果と演出は未実装 |
 
 ## 確定した設定

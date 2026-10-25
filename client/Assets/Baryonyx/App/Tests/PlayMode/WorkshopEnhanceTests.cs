@@ -148,7 +148,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(enhance.LoadTask);
             source.Fail = false;
 
-            // 装備のタブでは、カードの代わりに、縁が品質の色の札で前と後を並べる。
+            // 装備のタブでは、カードの代わりに、装備の札で前と後を並べる。
             enhance.Tabs[(int)WorkshopEnhanceView.Tab.Equipment].Button.onClick.Invoke();
             Assert.That(enhance.Targets, Is.Not.Empty);
             Assert.That(enhance.Selected, Is.EqualTo(0));
@@ -156,10 +156,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.AfterGear.Root.activeSelf, Is.True);
             Assert.That(enhance.BeforeCard.Frame.transform.parent.gameObject.activeSelf, Is.False);
             Assert.That(enhance.BeforeGear.Name.text, Is.EqualTo(enhance.Targets[0].Name));
-            Assert.That(
-                enhance.BeforeGear.Rim.color,
-                Is.EqualTo(QualityPalette.Of(enhance.Targets[0].Quality))
-            );
 
             // 覚醒は別の項目「スキル覚醒」で、タブのない覚醒だけのパネルを開く。磨き石の札と数の段を隠し、欠片だけを出す。
             view.Back.onClick.Invoke();

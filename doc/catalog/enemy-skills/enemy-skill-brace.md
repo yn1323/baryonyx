@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 身を固める
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。体を固めてブロックを張り、次の攻撃に備える。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やし、共通化できるものも入れる）で、[森の守り手](../enemies/enemy-forest-guardian.md)の技を共通技として作った |
 | 役割・説明 | 自分のブロック |
-| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[どんぐり兵](../enemies/enemy-acorn-soldier.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[割れ壺の番](../enemies/enemy-cracked-urn.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[泥人形](../enemies/enemy-mud-golem.md)、[吸血大ヒル](../enemies/enemy-blood-leech.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂サソリ](../enemies/enemy-sand-scorpion.md)、[砂時計の精](../enemies/enemy-hourglass-sprite.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[溶岩スライム](../enemies/enemy-lava-slime.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)、[どんぐり兵](../enemies/enemy-acorn-soldier.md)、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[石のガーゴイル](../enemies/enemy-stone-gargoyle.md)、[割れ壺の番](../enemies/enemy-cracked-urn.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[泥人形](../enemies/enemy-mud-golem.md)、[吸血大ヒル](../enemies/enemy-blood-leech.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂サソリ](../enemies/enemy-sand-scorpion.md)、[砂時計の精](../enemies/enemy-hourglass-sprite.md)、[雪玉ころん](../enemies/enemy-snowball.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[溶岩スライム](../enemies/enemy-lava-slime.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)、[死霊の魔導師](../enemies/enemy-lich.md)、[迷い道標](../enemies/enemy-lost-signpost.md)、[金貨袋](../enemies/enemy-coin-pouch.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -87,7 +87,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 敵のブロックが消えるタイミング | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)で決める |
+| 敵のブロックが消えるタイミング | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)で決める |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

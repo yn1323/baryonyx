@@ -117,6 +117,36 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(issued, Has.Count.EqualTo(2));
         }
 
+        [TestCase(0)]
+        [TestCase(409)]
+        [TestCase(500)]
+        public void AFailureOtherThanARejectedSessionReachesTheCallerWithoutSigningInAgain(
+            int status
+        )
+        {
+            var runner = Runner();
+            int calls = 0;
+
+            var exception = Assert.Throws<ServerApiException>(() =>
+                runner
+                    .WithSessionAsync<string>(
+                        _ =>
+                        {
+                            calls++;
+                            throw new ServerApiException(status);
+                        },
+                        CancellationToken.None
+                    )
+                    .GetAwaiter()
+                    .GetResult()
+            );
+
+            Assert.That(exception.StatusCode, Is.EqualTo(status));
+            Assert.That(calls, Is.EqualTo(1));
+            Assert.That(issued, Has.Count.EqualTo(1));
+            Assert.That(runner.Current, Is.SameAs(issued[0]), "セッションは捨てない。");
+        }
+
         [Test]
         public void EndForgetsTheSession()
         {

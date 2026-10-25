@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 狩りの狂乱
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 砂鮫の固有技。獲物の気配に我を忘れ、休む間もなく続けて襲いかかるようになる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[砂鮫](../enemies/enemy-sand-shark.md)の技として作った |
 | 役割・説明 | 激化の合図。1回の行動の番に技を2つ使うようにし、行動パターンを後半へ切り替える |
-| 関連する仕様・個別ID | 使う敵：[砂鮫](../enemies/enemy-sand-shark.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[防御と敵の激化](../../features/combat.md#防御と敵の激化) |
+| 関連する仕様・個別ID | 使う敵：[砂鮫](../enemies/enemy-sand-shark.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[防御と敵の激化](../../features/combat.md#防御と敵の激化) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

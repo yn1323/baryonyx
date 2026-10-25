@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 炉心の全開
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 真鍮の番人の固有技。胸の炉の扉を開き、からくりを限界まで回す。速く強くなる代わりに、熱で自分の体も傷む。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[真鍮の番人](../enemies/enemy-brass-warden.md)の技として作った |
 | 役割・説明 | 激化の合図。戦闘の終わりまでの強化と、自分への傷み |
-| 関連する仕様・個別ID | 使う敵：[真鍮の番人](../enemies/enemy-brass-warden.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[真鍮の番人](../enemies/enemy-brass-warden.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

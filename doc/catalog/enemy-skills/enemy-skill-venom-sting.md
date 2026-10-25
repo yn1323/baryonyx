@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 毒針
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。針・牙・とげから毒を流し込む物理の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 単体への物理・貫の攻撃と毒 |
-| 関連する仕様・個別ID | 使う敵：[砂サソリ](../enemies/enemy-sand-scorpion.md)、[クラゲの亡霊](../enemies/enemy-ghost-jelly.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[砂サソリ](../enemies/enemy-sand-scorpion.md)、[クラゲの亡霊](../enemies/enemy-ghost-jelly.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

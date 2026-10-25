@@ -64,7 +64,7 @@ namespace Baryonyx.Adventure
             if (run != null)
                 return run.DestinationId == destinationId && run.Route.Count == 1
                     ? Answer(token, State())
-                    : Fail(token, 409);
+                    : Fail(token, 409, TravelDeparture.InProgressError);
             run = new Run(
                 destinationId,
                 AdventureCatalog.Route(
@@ -427,10 +427,14 @@ namespace Baryonyx.Adventure
                 ? Task.FromCanceled<AdventureState>(token)
                 : Task.FromResult(state);
 
-        private static Task<AdventureState> Fail(CancellationToken token, long status) =>
+        private static Task<AdventureState> Fail(
+            CancellationToken token,
+            long status,
+            string error = null
+        ) =>
             token.IsCancellationRequested
                 ? Task.FromCanceled<AdventureState>(token)
-                : Task.FromException<AdventureState>(new ServerApiException(status));
+                : Task.FromException<AdventureState>(new ServerApiException(status, error));
 
         private sealed class Run
         {

@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 力を溜める
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。力を溜め、次の攻撃を強める。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（共通化できる技も入れる）で、今の3体では使わない共通技として作った |
 | 役割・説明 | 次の攻撃の予告を重くし、プレイヤーに防御を促す |
-| 関連する仕様・個別ID | 使う敵：[水晶角うさぎ](../enemies/enemy-crystal-hare.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[古王国の空鎧](../enemies/enemy-hollow-armor.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[砂サソリ](../enemies/enemy-sand-scorpion.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[水晶角うさぎ](../enemies/enemy-crystal-hare.md)、[切り株猪](../enemies/enemy-stump-boar.md)、[古王国の空鎧](../enemies/enemy-hollow-armor.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[鉱石喰いモグラ](../enemies/enemy-ore-mole.md)、[砂サソリ](../enemies/enemy-sand-scorpion.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)、[かぼちゃ頭の案山子](../enemies/enemy-pumpkin-scarecrow.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

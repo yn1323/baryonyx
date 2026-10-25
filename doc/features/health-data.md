@@ -21,9 +21,10 @@ Google接続は任意の独立した操作とし、健康データの読み取�
 
 2026-09-24に、健康データを表示していた `Main`・`Wireframe` シーン、歩数画面のUI（View・Prefab）、冒険の試作画面を削除した。
 現在の起動経路では、TopとHomeがゲストのセッションで直近7日分の歩数をサーバーへ同期し、Homeに今日の歩数をACTで表示する。
-日別一覧・JSON詳細・Google接続の画面はなく、Google認証と、削除した画面が使っていた運動報酬の請求の経路は呼ばれていない。
+日別一覧・JSON詳細・Google接続の画面はなく、Google認証は呼ばれていない。
 削除した画面の構成・文言・寸法と検証記録は[削除した歩数画面の記録](../archive/health-data-local-screen.md)に移した。
-それらを新しい画面から使うときは、[HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) でProviderの選択とPresenterの生成を行い、画面側でPresenterの状態を描画する。
+その画面が使っていた `HealthRuntime`・`HealthScreenPresenter`・利用条件の確認（`Requirements`）と、Googleのサインイン後に7日分を保存してからルーンを請求する経路は、どの画面からも使われていなかったため2026-10-25に削除した。
+Google認証の契約とUMoth接続（[Account/Runtime](../../client/Assets/Baryonyx/Features/Account/Runtime)）は残している。
 
 2026-09-27の企画見直しで、ゲームが扱う運動データを歩数だけにし、Health Connectの権限も歩数の読み取りだけとした（[運動データとルーン換算](exercise-rewards.md)）。
 起動時の同期は歩数だけを要求して読むが、[Androidライブラリのマニフェスト](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/AndroidManifest.xml)は16種類（歩数、体重、体脂肪率、身長、血圧、心拍、安静時心拍、酸素飽和度、呼吸数、体温、血糖値、睡眠、距離、活動時消費カロリー、総消費カロリー、運動記録）の読み取り権限を宣言したままである。
@@ -46,7 +47,7 @@ Androidをビルド対象にしたEditorやDevice Simulatorもプレビューに
 | [HealthServerSync.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthServerSync.cs) | 歩数の保存とルーン請求の実行順と、ユーザーごとの取得元ID |
 | [AccountSessionRunner.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountSessionRunner.cs) | ゲストのログイン、期限の5分前の取り直し、401のときの1回だけのやり直し。全機能で1つを共有する |
 | [HealthApiClient.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync/HealthApiClient.cs) | 歩数の保存要求 |
-| [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs)・[ExerciseRewardsApiClient.cs](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs) | サーバーへのログイン・ログアウト、ルーン請求・履歴・残高の要求 |
+| [AccountApiClient.cs](../../client/Assets/Baryonyx/Features/Account/Runtime/AccountApiClient.cs)・[ExerciseRewardsApiClient.cs](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime/ExerciseRewardsApiClient.cs) | サーバーへのログイン・ログアウト、ルーン請求・残高の要求 |
 | [ServerApi.cs](../../client/Assets/Baryonyx/Shared/Networking/ServerApi.cs) | サーバーURLの検証とHTTP送信 |
 | [HealthConnectProvider.cs](../../client/Assets/Baryonyx/Features/Health/Runtime/HealthConnectProvider.cs) | UnityからAndroidへの呼び出し |
 | [Android連携コード](../../client/Assets/Plugins/Android/BaryonyxHealth.androidlib/src/main/kotlin/com/baryonyx/health/HealthBridge.kt) | Health Connectの権限確認と日別集計 |
@@ -106,8 +107,6 @@ WebクライアントIDやAndroidクライアントの作成は今回行って�
 ゲストのセッションで7日分を保存し、HomeのACTパネルでは続けてルーンを請求する（[起動時の連携と歩数の同期](startup-sync.md)）。
 選んだ環境のURLが空なら、歩数を端末のメモリだけに保持する。
 
-削除した歩数画面が使っていた `HealthRuntime`・`HealthScreenPresenter` の経路（Googleのサインイン後にサーバーへログインし、7日分を保存してからルーンを請求する）はコードに残っているが、どの画面からも呼ばない。
-この経路の操作と同期は、`HealthScreenOperations` の世代管理で多重実行と遅延結果を防ぐ。
 以前の `HealthClient` と `HealthSyncService` は起動シーンから使われていなかったため、2026-09-23に削除した。
 
 EditorではOSの認証・健康データ取得を実行しない。
@@ -179,7 +178,7 @@ Android CIはビルドの成否確認とAPK保存に絞り、この追加検査�
 
 ## 検証と残る確認
 
-自動テストは [Unityの画面操作テスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Presentation/HealthScreenPresenterTests.cs)、[署名検証テスト](../../server/src/features/accounts/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
+自動テストは [Unityの連携と同期のテスト](../../client/Assets/Baryonyx/Features/Health/Tests/EditMode/Link/HealthStartupFlowTests.cs)、[署名検証テスト](../../server/src/features/accounts/auth.test.ts)、[入力検証テスト](../../server/src/features/health/schema.test.ts)、[APIシナリオ](../../server/tests/scenarios/) に置く。
 Unity側は既存の `Baryonyx.EditModeTests` アセンブリへ含め、CIの実行対象を維持する。
 サーバーの健康データ専用 [fixture](../../server/src/features/health/fixtures.ts) は機能内に置き、認証・同期・保存・取得を通すAPIシナリオからも参照する。
 

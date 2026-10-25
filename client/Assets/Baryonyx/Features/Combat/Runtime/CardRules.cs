@@ -132,6 +132,9 @@ namespace Baryonyx.Combat
                 CardActionKind.Draw => "山札",
                 CardActionKind.Energy => "エネルギー",
                 CardActionKind.NextCardFree => "次のカード",
+                CardActionKind.NextCardBoost => "次のカード",
+                CardActionKind.Discard => "手札",
+                CardActionKind.TakeFromDiscard => "捨て札",
                 CardActionKind.Status when first.Status == CardStatus.Thundercloud => "敵ランダム",
                 _ => "全体",
             };

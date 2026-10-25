@@ -16,6 +16,11 @@ namespace Baryonyx.Adventure
         public const string InProgressMessage =
             "冒険の途中です。ホームの行き先カードから再開してください";
 
+        public const string StartFailedMessage = "冒険を始められませんでした";
+
+        // 冒険の途中で始めようとしたときに、サーバーが断る理由（server/src/features/adventure/run.ts）。
+        public const string InProgressError = "adventure_in_progress";
+
         private readonly Action<string> notice;
         private readonly IAdventureSource source;
         private readonly Func<bool> explore;
@@ -86,14 +91,15 @@ namespace Baryonyx.Adventure
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("冒険を始められませんでした。" + exception.Message);
+                Debug.LogWarning(StartFailedMessage + "。" + exception.Message);
                 if (disposed)
                     return;
                 starting = false;
+                // 解放していない行き先（destination_locked）など、冒険の途中でない断りには、再開を勧めない。
                 notice(
-                    exception is ServerApiException { StatusCode: 409 }
+                    exception is ServerApiException { StatusCode: 409, Error: InProgressError }
                         ? InProgressMessage
-                        : "冒険を始められませんでした"
+                        : StartFailedMessage
                 );
                 return;
             }

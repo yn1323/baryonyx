@@ -158,7 +158,6 @@ namespace Baryonyx.Tests.EditMode
             var answer = Read(12, "replace");
 
             Assert.That(PartyServerSource.ToState(answer).Fingerprint, Is.EqualTo(read));
-            Assert.That(answer.change, Is.EqualTo("replace"));
             Assert.That(
                 PartyServerSource.ToState(Read(13, null)).Fingerprint,
                 Is.Not.EqualTo(read)

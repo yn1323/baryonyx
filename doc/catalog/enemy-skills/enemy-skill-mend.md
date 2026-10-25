@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 傷ふさぎ
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。体の傷をふさぎ、しばらく少しずつ治り続ける回復の技である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 自分の回復と、続けて回復するリジェネ |
-| 関連する仕様・個別ID | 使う敵：[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[ツチボタル](../enemies/enemy-glow-worm.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[泥人形](../enemies/enemy-mud-golem.md)、[サボテン戦士](../enemies/enemy-cactus-warrior.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[毒胞子オオダケ](../enemies/enemy-spore-cap.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[ツチボタル](../enemies/enemy-glow-worm.md)、[地底湖の盲魚人](../enemies/enemy-blind-fishman.md)、[泥人形](../enemies/enemy-mud-golem.md)、[サボテン戦士](../enemies/enemy-cactus-warrior.md)、[火とかげ](../enemies/enemy-fire-lizard.md)、[沖の大ダコ](../enemies/enemy-giant-octopus.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

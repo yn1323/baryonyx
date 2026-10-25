@@ -130,6 +130,52 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(failures, Is.EqualTo(new[] { "編成を保存できませんでした" }));
         }
 
+        // サーバーが断ったとき（409）は、手元の確かめた状態が古いので、読み直した状態へ戻す。
+        [Test]
+        public async Task ARefusedChangeShowsThePartyReadAgain()
+        {
+            // ほかの端末で、ルカを2枠目に入れてあった。
+            server.State = server.State.WithSlot(2, "luka");
+            server.Fail = new ServerApiException(409);
+
+            var saved = await PartySession.SetSlotAsync(1, "luka", "編成を保存できませんでした");
+
+            Assert.That(saved.Member(1), Is.Null);
+            Assert.That(saved.Member(2), Is.EqualTo("luka"));
+            Assert.That(PartySession.Formation(data).Member(2), Is.EqualTo("luka"));
+            Assert.That(failures, Is.EqualTo(new[] { "編成を保存できませんでした" }));
+        }
+
+        [Test]
+        public async Task ARefusedLevelUpGivesTheRunesBackAndShowsTheBalanceReadAgain()
+        {
+            // ほかの画面でルーンを使っていて、サーバーの残高は手元より少ない。
+            server.State = new PartyState(
+                server.State.Owned,
+                new[] { "toma", null, null, null },
+                200,
+                30,
+                100
+            );
+            server.Fail = new ServerApiException(409);
+
+            await PartySession.LevelUpAsync(
+                "toma",
+                12,
+                13,
+                300,
+                _ => "レベルアップできませんでした"
+            );
+
+            Assert.That(PartySession.LevelOf(data, "toma"), Is.EqualTo(12));
+            Assert.That(
+                RuneBalance.Known,
+                Is.EqualTo(200),
+                "取り置きを戻し、読み直した残高を出す。"
+            );
+            Assert.That(failures, Is.EqualTo(new[] { "レベルアップできませんでした" }));
+        }
+
         [Test]
         public void AReadWhileSavingKeepsTheShownParty()
         {

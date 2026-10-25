@@ -38,6 +38,13 @@ namespace Baryonyx.Combat
         private const CardStat Mag = CardStat.MagicAttack;
         private const CardStat Def = CardStat.PhysicalDefense;
 
+        private static readonly CardElement[] Magic =
+        {
+            CardElement.Fire,
+            CardElement.Ice,
+            CardElement.Thunder,
+        };
+
         public static readonly IReadOnlyList<CardSkillAwakening> All = Array.AsReadOnly(
             new[]
             {
@@ -52,10 +59,10 @@ namespace Baryonyx.Combat
                         CardKind.Attack,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。60%で[出血]2ターン。",
-                        Damage(Enemy, Phy, 100).Bonus(CardCondition.OnBleeding, 50),
+                        "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。60%で[出血]2ターン。[合体]フレイムエンチャント。",
+                        Damage(Enemy, Phy, 140).Bonus(CardCondition.OnBleeding, 50),
                         Apply(Enemy, CardStatus.Bleed, 2).WithChance(60)
-                    ),
+                    ).Fuses("FlameEnchant", "FlameSlash"),
                     // 2本目の枝：斬りながら構えて身を守る。
                     Stage(
                         "Slash",
@@ -64,10 +71,10 @@ namespace Baryonyx.Combat
                         CardKind.Attack,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。自分に[ブロック]{1}。",
-                        Damage(Enemy, Phy, 90).Bonus(CardCondition.OnBleeding, 50),
-                        Block(Self, Def, 20)
-                    )
+                        "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。自分に[ブロック]{1}。[合体]フレイムエンチャント。",
+                        Damage(Enemy, Phy, 120).Bonus(CardCondition.OnBleeding, 50),
+                        Block(Self, Def, 30)
+                    ).Fuses("FlameEnchant", "FlameSlash")
                 ),
                 Of(
                     "Fire",
@@ -78,12 +85,10 @@ namespace Baryonyx.Combat
                         "ファイア・灼",
                         CardKind.Attack,
                         Enemy,
-                        2,
+                        1,
                         "敵1体に{0}ダメージ。[やけど]中の敵には1.5倍。[弱点]を突くと60%で[やけど]2ターン。",
-                        Damage(Enemy, Mag, 100).Bonus(CardCondition.OnBurning, 50),
-                        Apply(Enemy, CardStatus.Burn, 2)
-                            .WithChance(60)
-                            .Only(CardCondition.OnWeakness)
+                        Damage(Enemy, Mag, 130).Bonus(CardCondition.OnBurning, 50),
+                        Apply(Enemy, CardStatus.Burn, 2).WithChance(60).Only(CardCondition.OnWeakness)
                     ),
                     // 2本目の枝：小さな火球を2つ続けて放つ。
                     Stage(
@@ -92,12 +97,10 @@ namespace Baryonyx.Combat
                         "ファイア・連",
                         CardKind.Attack,
                         Enemy,
-                        2,
+                        1,
                         "敵1体に{0}ダメージ×2。[弱点]を突くと60%で[やけど]2ターン。",
-                        Damage(Enemy, Mag, 60, hits: 2),
-                        Apply(Enemy, CardStatus.Burn, 2)
-                            .WithChance(60)
-                            .Only(CardCondition.OnWeakness)
+                        Damage(Enemy, Mag, 80, hits: 2),
+                        Apply(Enemy, CardStatus.Burn, 2).WithChance(60).Only(CardCondition.OnWeakness)
                     )
                 ),
                 Of(
@@ -109,11 +112,11 @@ namespace Baryonyx.Combat
                         "アイスランス・穿",
                         CardKind.Attack,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。60%で[凍え]2ターン。",
-                        Damage(Enemy, Mag, 85).Bonus(CardCondition.OnChilled, 50),
+                        1,
+                        "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。60%で[凍え]2ターン。[合体]ライトニングボルト。",
+                        Damage(Enemy, Mag, 110).Bonus(CardCondition.OnChilled, 50),
                         Apply(Enemy, CardStatus.Chill, 2).WithChance(60)
-                    ),
+                    ).Fuses("LightningBolt", "FrostSpear"),
                     // 2本目の枝：刺さった所から霜を広げる。
                     Stage(
                         "Ice",
@@ -121,11 +124,11 @@ namespace Baryonyx.Combat
                         "アイスランス・霜",
                         CardKind.Attack,
                         Enemy,
-                        3,
-                        "敵1体に{0}ダメージ。敵全体に60%で[凍え]2ターン。",
-                        Damage(Enemy, Mag, 85),
+                        2,
+                        "敵1体に{0}ダメージ。敵全体に60%で[凍え]2ターン。[合体]ライトニングボルト。",
+                        Damage(Enemy, Mag, 120),
                         Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
-                    )
+                    ).Fuses("LightningBolt", "FrostSpear")
                 ),
                 Of(
                     "Thunder",
@@ -136,12 +139,10 @@ namespace Baryonyx.Combat
                         "サンダー・痺",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ。[麻痺]中の敵には1.5倍。[弱点]を突いた敵を60%で[麻痺]1ターン。",
-                        Damage(Enemies, Mag, 65).Bonus(CardCondition.OnParalyzed, 50),
-                        Apply(Enemies, CardStatus.Paralysis, 1)
-                            .WithChance(60)
-                            .Only(CardCondition.OnWeakness)
+                        Damage(Enemies, Mag, 90).Bonus(CardCondition.OnParalyzed, 50),
+                        Apply(Enemies, CardStatus.Paralysis, 1).WithChance(60).Only(CardCondition.OnWeakness)
                     ),
                     // 2本目の枝：雷を1体に束ねて落とす。
                     Stage(
@@ -150,9 +151,9 @@ namespace Baryonyx.Combat
                         "サンダー・落雷",
                         CardKind.Attack,
                         Enemy,
-                        3,
+                        2,
                         "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。",
-                        Damage(Enemy, Mag, 150).Bonus(CardCondition.OnParalyzed, 50)
+                        Damage(Enemy, Mag, 220).Bonus(CardCondition.OnParalyzed, 50)
                     )
                 ),
                 Of(
@@ -166,7 +167,7 @@ namespace Baryonyx.Combat
                         Ally,
                         1,
                         "味方1体のHPを{0}回復し、[状態異常]を消す。",
-                        Heal(Ally, Mag, 60),
+                        Heal(Ally, Mag, 90),
                         Simple(CardActionKind.Cleanse, Ally)
                     ),
                     // 2本目の枝：癒やしを全員に広げる。
@@ -176,9 +177,9 @@ namespace Baryonyx.Combat
                         "ヒール・円",
                         CardKind.Heal,
                         Allies,
-                        2,
+                        1,
                         "味方全体のHPを{0}回復する。",
-                        Heal(Allies, Mag, 35)
+                        Heal(Allies, Mag, 45)
                     )
                 ),
                 Of(
@@ -190,10 +191,11 @@ namespace Baryonyx.Combat
                         "ガード・堅",
                         CardKind.Guard,
                         Allies,
-                        2,
-                        "味方全体に[ブロック]{0}。受けるダメージを1ターン15%減らす。",
+                        1,
+                        "味方全体に[ブロック]{0}。受けるダメージを1ターン15%減らす。捨てたとき：自分に[ブロック]{1}。",
                         Block(Allies, Def, 30),
-                        Apply(Allies, CardStatus.Protect, 1, 15)
+                        Apply(Allies, CardStatus.Protect, 1, 15),
+                        Block(Self, Def, 50).WhenDiscarded()
                     ),
                     // 2本目の枝：守りながら次の手を整える。
                     Stage(
@@ -203,9 +205,10 @@ namespace Baryonyx.Combat
                         CardKind.Guard,
                         Allies,
                         1,
-                        "味方全体に[ブロック]{0}。カードを1枚引く。",
+                        "味方全体に[ブロック]{0}。カードを1枚引く。捨てたとき：自分に[ブロック]{1}。",
                         Block(Allies, Def, 30),
-                        Simple(CardActionKind.Draw, Nobody, 1)
+                        Simple(CardActionKind.Draw, Nobody, 1),
+                        Block(Self, Def, 50).WhenDiscarded()
                     )
                 ),
                 // --- アリア：斬・打と、仲間の守り ---
@@ -218,9 +221,9 @@ namespace Baryonyx.Combat
                         "旋風斬・裂",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ。[出血]中の敵には1.5倍。60%で[出血]2ターン。",
-                        Damage(Enemies, Phy, 55).Bonus(CardCondition.OnBleeding, 50),
+                        Damage(Enemies, Phy, 80).Bonus(CardCondition.OnBleeding, 50),
                         Apply(Enemies, CardStatus.Bleed, 2).WithChance(60)
                     ),
                     // 2本目の枝：2回転して斬る。
@@ -230,9 +233,9 @@ namespace Baryonyx.Combat
                         "旋風斬・嵐",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ×2。60%で[出血]2ターン。",
-                        Damage(Enemies, Phy, 35, hits: 2),
+                        Damage(Enemies, Phy, 50, hits: 2),
                         Apply(Enemies, CardStatus.Bleed, 2).WithChance(60)
                     )
                 ),
@@ -245,11 +248,11 @@ namespace Baryonyx.Combat
                         "居合一閃・断",
                         CardKind.Attack,
                         Enemy,
-                        5,
-                        "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。60%で[出血]3ターン。",
-                        Damage(Enemy, Phy, 260).Bonus(CardCondition.OnWounded, 50),
+                        3,
+                        "敵1体に{0}ダメージ。HPが半分以下の敵には1.5倍。60%で[出血]3ターン。[保持]。",
+                        Damage(Enemy, Phy, 400).Bonus(CardCondition.OnWounded, 50),
                         Apply(Enemy, CardStatus.Bleed, 3).WithChance(60)
-                    ),
+                    ).Is(CardTrait.Retain | CardTrait.CutIn),
                     // 2本目の枝：抜いて返す2太刀にする。
                     Stage(
                         "Iai",
@@ -257,10 +260,10 @@ namespace Baryonyx.Combat
                         "居合一閃・燕",
                         CardKind.Attack,
                         Enemy,
-                        5,
-                        "敵1体に{0}ダメージ×2。HPが半分以下の敵には1.5倍。",
-                        Damage(Enemy, Phy, 150, hits: 2).Bonus(CardCondition.OnWounded, 50)
-                    )
+                        3,
+                        "敵1体に{0}ダメージ×2。HPが半分以下の敵には1.5倍。[保持]。",
+                        Damage(Enemy, Phy, 220, hits: 2).Bonus(CardCondition.OnWounded, 50)
+                    ).Is(CardTrait.Retain | CardTrait.CutIn)
                 ),
                 Of(
                     "BladeDance",
@@ -271,22 +274,25 @@ namespace Baryonyx.Combat
                         "千刃乱舞・紅",
                         CardKind.Attack,
                         Random,
-                        6,
-                        "ランダムな敵に{0}ダメージ×7。敵全体に60%で[出血]2ターン。",
-                        Damage(Random, Phy, 45, hits: 7),
+                        2,
+                        "手札をすべて[捨てる]。ランダムな敵に{0}ダメージ×3（＋捨てた枚数）。敵全体に60%で[出血]2ターン。[消滅]。",
+                        Discard(-1),
+                        Damage(Random, Phy, 45, hits: 3).Discarded(),
                         Apply(Enemies, CardStatus.Bleed, 2).WithChance(60)
-                    ),
-                    // 2本目の枝：刃が弱点を探して突く。
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn),
+                    // 2本目の枝：散った刃の分だけ手を引き直す。
                     Stage(
                         "BladeDance",
                         2,
                         "千刃乱舞・閃",
                         CardKind.Attack,
                         Random,
-                        6,
-                        "ランダムな敵に{0}ダメージ×7。[弱点]を突くと威力+50%。",
-                        Damage(Random, Phy, 45, hits: 7).Bonus(CardCondition.OnWeakness, 50)
-                    )
+                        2,
+                        "手札をすべて[捨てる]。ランダムな敵に{0}ダメージ×3（＋捨てた枚数）。捨てた枚数だけカードを引く。[消滅]。",
+                        Discard(-1),
+                        Damage(Random, Phy, 50, hits: 3).Discarded(),
+                        Simple(CardActionKind.Draw, Nobody, 0).Discarded()
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn)
                 ),
                 Of(
                     "Hone",
@@ -298,21 +304,23 @@ namespace Baryonyx.Combat
                         CardKind.Support,
                         Nobody,
                         0,
-                        "手札の斬属性カードのコストをすべて1下げる。カードを1枚引く。",
-                        CostDown(1, CardElement.Slash),
-                        Simple(CardActionKind.Draw, Nobody, 1)
-                    ),
-                    // 2本目の枝：斬だけでなく打と貫も軽くする。
+                        "次に使う斬カードの威力+50%。カードを2枚引き、手札を1枚[捨てる]。[霧散]。",
+                        NextCardBoost(50, CardElement.Slash),
+                        Simple(CardActionKind.Draw, Nobody, 2),
+                        Discard(1)
+                    ).Is(CardTrait.Ethereal),
+                    // 2本目の枝：斬だけでなく打と貫も研ぐ。
                     Stage(
                         "Hone",
                         2,
                         "研ぎ澄ます・刃",
                         CardKind.Support,
                         Nobody,
-                        1,
-                        "手札の斬・打・貫属性カードのコストをすべて1下げる。",
-                        CostDown(1, CardElement.Slash, CardElement.Blunt, CardElement.Pierce)
-                    )
+                        0,
+                        "次に使う斬・打・貫カードの威力+50%。カードを1枚引く。[霧散]。",
+                        NextCardBoost(50, CardElement.Slash, CardElement.Blunt, CardElement.Pierce),
+                        Simple(CardActionKind.Draw, Nobody, 1)
+                    ).Is(CardTrait.Ethereal)
                 ),
                 Of(
                     "ShieldBash",
@@ -323,11 +331,10 @@ namespace Baryonyx.Combat
                         "シールドバッシュ・震",
                         CardKind.Attack,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせる。味方全体に[ブロック]{1}。",
-                        Damage(Enemy, Def, 90),
-                        Simple(CardActionKind.Delay, Enemy, 1),
-                        Block(Allies, Def, 15)
+                        1,
+                        "敵1体に{0}と、自分の[ブロック]の50%のダメージ。その敵の行動順を1つ遅らせる。",
+                        Damage(Enemy, Def, 80).WithBlock(50),
+                        Simple(CardActionKind.Delay, Enemy, 1)
                     ),
                     // 2本目の枝：構えたまま打つと重くなる。
                     Stage(
@@ -337,9 +344,8 @@ namespace Baryonyx.Combat
                         CardKind.Attack,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。自分に[ブロック]があれば1.5倍。味方全体に[ブロック]{1}。",
-                        Damage(Enemy, Def, 90).Bonus(CardCondition.OnGuarded, 50),
-                        Block(Allies, Def, 15)
+                        "敵1体に{0}と、自分の[ブロック]の50%のダメージ。自分に[ブロック]があれば1.5倍。",
+                        Damage(Enemy, Def, 80).WithBlock(50).Bonus(CardCondition.OnGuarded, 50)
                     )
                 ),
                 Of(
@@ -351,11 +357,11 @@ namespace Baryonyx.Combat
                         "鎧砕き・崩",
                         CardKind.Debuff,
                         Enemies,
-                        3,
-                        "敵全体に{0}ダメージ。[防御ダウン]2ターン。",
-                        Damage(Enemies, Phy, 50),
+                        2,
+                        "敵全体に{0}ダメージ。[防御ダウン]2ターン。[初手]。",
+                        Damage(Enemies, Phy, 60),
                         Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(100)
-                    ),
+                    ).Is(CardTrait.Innate),
                     // 2本目の枝：鎧とともに強化も剥がす。
                     Stage(
                         "ArmorBreak",
@@ -363,12 +369,12 @@ namespace Baryonyx.Combat
                         "鎧砕き・剥",
                         CardKind.Debuff,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。[防御ダウン]2ターン。[強化]を1つ消す。",
+                        1,
+                        "敵1体に{0}ダメージ。[防御ダウン]2ターン。[強化]を1つ消す。[初手]。",
                         Damage(Enemy, Phy, 80),
                         Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(100),
                         Simple(CardActionKind.Dispel, Enemy, 1)
-                    )
+                    ).Is(CardTrait.Innate)
                 ),
                 Of(
                     "EarthSplitter",
@@ -379,10 +385,10 @@ namespace Baryonyx.Combat
                         "大地割り・崩",
                         CardKind.Attack,
                         Enemies,
-                        5,
+                        3,
                         "敵全体に[防御ダウン]2ターン。敵全体に{0}ダメージ。[防御ダウン]中の敵には1.5倍。",
                         Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(100),
-                        Damage(Enemies, Phy, 75).Bonus(CardCondition.OnVulnerable, 50)
+                        Damage(Enemies, Phy, 110).Bonus(CardCondition.OnVulnerable, 50)
                     ),
                     // 2本目の枝：割れ目から岩の壁を起こす。
                     Stage(
@@ -391,9 +397,9 @@ namespace Baryonyx.Combat
                         "大地割り・岩陣",
                         CardKind.Attack,
                         Enemies,
-                        5,
+                        2,
                         "敵全体に{0}ダメージ。[防御ダウン]中の敵には1.5倍。味方全体に[ブロック]{1}。",
-                        Damage(Enemies, Phy, 85).Bonus(CardCondition.OnVulnerable, 50),
+                        Damage(Enemies, Phy, 100).Bonus(CardCondition.OnVulnerable, 50),
                         Block(Allies, Def, 20)
                     )
                 ),
@@ -406,11 +412,11 @@ namespace Baryonyx.Combat
                         "ギガントインパクト・要塞",
                         CardKind.Attack,
                         Enemy,
-                        8,
-                        "自分に[ブロック]{0}。敵1体に{1}ダメージ。自分に[ブロック]があれば2倍。",
+                        3,
+                        "自分に[ブロック]{0}。敵1体に{1}ダメージ。自分に[ブロック]があれば1.5倍。[眠り札]。",
                         Block(Self, Def, 60),
-                        Damage(Enemy, Phy, 400).Bonus(CardCondition.OnGuarded, 100)
-                    ),
+                        Damage(Enemy, Phy, 360).Bonus(CardCondition.OnGuarded, 50)
+                    ).Is(CardTrait.Sleeper | CardTrait.CutIn),
                     // 2本目の枝：衝撃を周りにも広げる。
                     Stage(
                         "GiantImpact",
@@ -418,11 +424,11 @@ namespace Baryonyx.Combat
                         "ギガントインパクト・衝",
                         CardKind.Attack,
                         Enemy,
-                        7,
-                        "敵1体に{0}ダメージ。自分に[ブロック]があれば2倍。さらに敵全体に{1}ダメージ。",
-                        Damage(Enemy, Phy, 320).Bonus(CardCondition.OnGuarded, 100),
-                        Damage(Enemies, Phy, 60)
-                    )
+                        3,
+                        "敵1体に{0}、さらに敵全体に{1}ダメージ。自分に[ブロック]があれば1.5倍。[眠り札]。",
+                        Damage(Enemy, Phy, 300).Bonus(CardCondition.OnGuarded, 50),
+                        Damage(Enemies, Phy, 60).Bonus(CardCondition.OnGuarded, 50)
+                    ).Is(CardTrait.Sleeper | CardTrait.CutIn)
                 ),
                 Of(
                     "StrideStrike",
@@ -433,9 +439,9 @@ namespace Baryonyx.Combat
                         "健脚の一撃・駆",
                         CardKind.Attack,
                         Enemy,
-                        3,
-                        "敵1体に{0}ダメージ。今日のACTが多いほど強い。カードを1枚引く。",
-                        Damage(Enemy, Phy, 110).WithAct(10, 100),
+                        1,
+                        "敵1体に{0}ダメージ。[歩み]。カードを1枚引く。",
+                        Damage(Enemy, Phy, 130).WithAct(10, 100),
                         Simple(CardActionKind.Draw, Nobody, 1)
                     ),
                     // 2本目の枝：踏み鳴らして全体を揺らす。
@@ -445,9 +451,9 @@ namespace Baryonyx.Combat
                         "健脚の一撃・踏",
                         CardKind.Attack,
                         Enemies,
-                        4,
-                        "敵全体に{0}ダメージ。今日のACTが多いほど強い。",
-                        Damage(Enemies, Phy, 70).WithAct(10, 100)
+                        2,
+                        "敵全体に{0}ダメージ。[歩み]。",
+                        Damage(Enemies, Phy, 100).WithAct(10, 100)
                     )
                 ),
                 Of(
@@ -459,12 +465,12 @@ namespace Baryonyx.Combat
                         "守護の誓い・不動",
                         CardKind.Guard,
                         Self,
-                        3,
-                        "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。受けるダメージを2ターン25%減らす。",
-                        Block(Self, Def, 85),
+                        2,
+                        "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつけ、受けるダメージを25%減らす。[保持]。",
+                        Block(Self, Def, 90),
                         Apply(Self, CardStatus.Taunt, 2),
                         Apply(Self, CardStatus.Protect, 2, 25)
-                    ),
+                    ).Is(CardTrait.Retain),
                     // 2本目の枝：引きつけた攻撃を返す。
                     Stage(
                         "GuardianOath",
@@ -472,12 +478,12 @@ namespace Baryonyx.Combat
                         "守護の誓い・報復",
                         CardKind.Guard,
                         Self,
-                        3,
-                        "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。次に受ける単体攻撃を1回はね返す。",
+                        2,
+                        "自分に[ブロック]{0}。2ターン、敵の攻撃を引きつける。次に受ける単体攻撃を1回はね返す。[保持]。",
                         Block(Self, Def, 70),
                         Apply(Self, CardStatus.Taunt, 2),
                         Apply(Self, CardStatus.Reflect, 1)
-                    )
+                    ).Is(CardTrait.Retain)
                 ),
                 Of(
                     "WarCry",
@@ -488,11 +494,11 @@ namespace Baryonyx.Combat
                         "鬨の声・猛",
                         CardKind.Buff,
                         Allies,
-                        2,
-                        "味方全体の攻撃力を2ターン25%上げる。エネルギー+1。",
+                        1,
+                        "味方全体の攻撃力を2ターン25%上げる。エネルギー+1。[初手]。[消滅]。",
                         Apply(Allies, CardStatus.AttackUp, 2, 25),
                         Simple(CardActionKind.Energy, Nobody, 1)
-                    ),
+                    ).Is(CardTrait.Innate | CardTrait.Exhaust),
                     // 2本目の枝：攻めながら陣を固める。
                     Stage(
                         "WarCry",
@@ -500,11 +506,11 @@ namespace Baryonyx.Combat
                         "鬨の声・陣",
                         CardKind.Buff,
                         Allies,
-                        2,
-                        "味方全体の攻撃力を2ターン20%上げる。味方全体に[ブロック]{0}。",
+                        1,
+                        "味方全体の攻撃力を2ターン20%上げる。味方全体に[ブロック]{0}。[初手]。",
                         Apply(Allies, CardStatus.AttackUp, 2, 20),
                         Block(Allies, Def, 20)
-                    )
+                    ).Is(CardTrait.Innate)
                 ),
                 // --- トーマ：炎と氷 ---
                 Of(
@@ -516,10 +522,11 @@ namespace Baryonyx.Combat
                         "火の粉・散",
                         CardKind.Attack,
                         Random,
-                        2,
-                        "ランダムな敵に{0}ダメージ×3。敵全体に60%で[やけど]2ターン。",
+                        1,
+                        "ランダムな敵に{0}ダメージ×3。敵全体に60%で[やけど]2ターン。捨てたとき：敵全体に60%で[やけど]1ターン。",
                         Damage(Random, Mag, 30, hits: 3),
-                        Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
+                        Apply(Enemies, CardStatus.Burn, 2).WithChance(60),
+                        Apply(Enemies, CardStatus.Burn, 1).WithChance(60).WhenDiscarded()
                     ),
                     // 2本目の枝：小さな火で次の手を照らす。
                     Stage(
@@ -528,11 +535,11 @@ namespace Baryonyx.Combat
                         "火の粉・灯",
                         CardKind.Attack,
                         Enemy,
-                        1,
-                        "敵1体に{0}ダメージ。60%で[やけど]3ターン。カードを1枚引く。",
-                        Damage(Enemy, Mag, 45),
-                        Apply(Enemy, CardStatus.Burn, 3).WithChance(60),
-                        Simple(CardActionKind.Draw, Nobody, 1)
+                        0,
+                        "敵1体に60%で[やけど]2ターン。カードを1枚引く。捨てたとき：ランダムな敵に60%で[やけど]2ターン。",
+                        Apply(Enemy, CardStatus.Burn, 2).WithChance(60),
+                        Simple(CardActionKind.Draw, Nobody, 1),
+                        Apply(Random, CardStatus.Burn, 2).WithChance(60).WhenDiscarded()
                     )
                 ),
                 Of(
@@ -544,10 +551,10 @@ namespace Baryonyx.Combat
                         "フレイムピラー・業火",
                         CardKind.Attack,
                         Enemy,
-                        4,
-                        "敵1体に[やけど]2ターン。{0}ダメージ。[やけど]中の敵には1.5倍。",
+                        3,
+                        "敵1体に[やけど]2ターン。敵1体に{0}ダメージ。[やけど]中の敵には1.5倍。",
                         Apply(Enemy, CardStatus.Burn, 2).WithChance(100),
-                        Damage(Enemy, Mag, 110).Bonus(CardCondition.OnBurning, 50)
+                        Damage(Enemy, Mag, 220).Bonus(CardCondition.OnBurning, 50)
                     ),
                     // 2本目の枝：柱を2体に立てる。
                     Stage(
@@ -556,9 +563,9 @@ namespace Baryonyx.Combat
                         "フレイムピラー・連柱",
                         CardKind.Attack,
                         Chain,
-                        3,
+                        2,
                         "敵1体に{0}ダメージ×2。1回ごとに別の敵へ移る。[やけど]中の敵には1.5倍。",
-                        Damage(Chain, Mag, 70, hits: 2).Bonus(CardCondition.OnBurning, 50)
+                        Damage(Chain, Mag, 120, hits: 2).Bonus(CardCondition.OnBurning, 50)
                     )
                 ),
                 Of(
@@ -570,9 +577,9 @@ namespace Baryonyx.Combat
                         "ファイアストーム・烈",
                         CardKind.Attack,
                         Enemies,
-                        4,
+                        2,
                         "敵全体に{0}ダメージ。[やけど]中の敵には1.5倍。60%で[やけど]2ターン。",
-                        Damage(Enemies, Mag, 65).Bonus(CardCondition.OnBurning, 50),
+                        Damage(Enemies, Mag, 90).Bonus(CardCondition.OnBurning, 50),
                         Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
                     ),
                     // 2本目の枝：炎を2度巻きつける。
@@ -582,9 +589,9 @@ namespace Baryonyx.Combat
                         "ファイアストーム・渦",
                         CardKind.Attack,
                         Enemies,
-                        4,
+                        2,
                         "敵全体に{0}ダメージ×2。60%で[やけど]2ターン。",
-                        Damage(Enemies, Mag, 40, hits: 2),
+                        Damage(Enemies, Mag, 55, hits: 2),
                         Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
                     )
                 ),
@@ -597,11 +604,11 @@ namespace Baryonyx.Combat
                         "爆炎の刻印・連鎖",
                         CardKind.Attack,
                         Enemy,
-                        3,
-                        "敵1体に[刻印]と[やけど]2ターン。次のターン、敵全体に{0}ダメージ。",
+                        1,
+                        "敵1体に[刻印]と[やけど]2ターン。次のターン、敵全体に{0}ダメージ。[初手]。",
                         Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150),
                         Apply(Enemy, CardStatus.Burn, 2).WithChance(100)
-                    ),
+                    ).Is(CardTrait.Innate),
                     // 2本目の枝：刻んだ瞬間にも火を噴く。
                     Stage(
                         "BlastSigil",
@@ -609,11 +616,11 @@ namespace Baryonyx.Combat
                         "爆炎の刻印・即爆",
                         CardKind.Attack,
                         Enemy,
-                        3,
-                        "敵1体に{0}ダメージ。[刻印]。次のターン、敵全体に{1}ダメージ。",
-                        Damage(Enemy, Mag, 60),
-                        Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 120)
-                    )
+                        2,
+                        "敵1体に{0}ダメージ。[刻印]。次のターン、敵全体に{1}ダメージ。[初手]。",
+                        Damage(Enemy, Mag, 100),
+                        Apply(Enemy, CardStatus.BlastSigil, 1, Mag, 150)
+                    ).Is(CardTrait.Innate)
                 ),
                 Of(
                     "Meteor",
@@ -624,11 +631,11 @@ namespace Baryonyx.Combat
                         "メテオ・焔",
                         CardKind.Attack,
                         Enemies,
-                        9,
-                        "敵全体に[やけど]2ターン。敵全体に{0}ダメージ。[やけど]中の敵には2倍。",
+                        3,
+                        "敵全体に[やけど]2ターン。敵全体に{0}ダメージ。[やけど]中の敵には2倍。[眠り札]。",
                         Apply(Enemies, CardStatus.Burn, 2).WithChance(100),
-                        Damage(Enemies, Mag, 400).Bonus(CardCondition.OnBurning, 100)
-                    ),
+                        Damage(Enemies, Mag, 220).Bonus(CardCondition.OnBurning, 100)
+                    ).Is(CardTrait.Sleeper | CardTrait.CutIn),
                     // 2本目の枝：隕石を4つに割って降らせる。
                     Stage(
                         "Meteor",
@@ -636,10 +643,10 @@ namespace Baryonyx.Combat
                         "メテオ・流星",
                         CardKind.Attack,
                         Random,
-                        9,
-                        "ランダムな敵に{0}ダメージ×4。[やけど]中の敵には2倍。",
-                        Damage(Random, Mag, 150, hits: 4).Bonus(CardCondition.OnBurning, 100)
-                    )
+                        3,
+                        "ランダムな敵に{0}ダメージ×4。[やけど]中の敵には2倍。[眠り札]。",
+                        Damage(Random, Mag, 110, hits: 4).Bonus(CardCondition.OnBurning, 100)
+                    ).Is(CardTrait.Sleeper | CardTrait.CutIn)
                 ),
                 Of(
                     "FlameEnchant",
@@ -650,10 +657,10 @@ namespace Baryonyx.Combat
                         "フレイムエンチャント・陣",
                         CardKind.Buff,
                         Allies,
-                        3,
-                        "味方全体の攻撃に、2ターン炎属性を加える。",
+                        2,
+                        "味方全体の攻撃に、2ターン炎属性を加える。[合体]斬り払い。",
                         Apply(Allies, CardStatus.FireBlade, 2)
-                    ),
+                    ).Fuses("Slash", "FlameSlash"),
                     // 2本目の枝：1人の攻撃を燃え上がらせる。
                     Stage(
                         "FlameEnchant",
@@ -661,11 +668,11 @@ namespace Baryonyx.Combat
                         "フレイムエンチャント・猛",
                         CardKind.Buff,
                         Ally,
-                        3,
-                        "味方1体の攻撃に3ターン炎属性を加え、攻撃力を3ターン20%上げる。",
+                        1,
+                        "味方1体の攻撃に3ターン炎属性を加え、攻撃力を3ターン20%上げる。[合体]斬り払い。",
                         Apply(Ally, CardStatus.FireBlade, 3),
                         Apply(Ally, CardStatus.AttackUp, 3, 20)
-                    )
+                    ).Fuses("Slash", "FlameSlash")
                 ),
                 Of(
                     "Icicles",
@@ -676,10 +683,11 @@ namespace Baryonyx.Combat
                         "つらら落とし・凍",
                         CardKind.Attack,
                         Random,
-                        3,
-                        "ランダムな敵に{0}ダメージ×4。敵全体に60%で[凍え]1ターン。",
+                        1,
+                        "ランダムな敵に{0}ダメージ×4。敵全体に60%で[凍え]1ターン。捨てたとき：ランダムな敵に{1}ダメージ×2。",
                         Damage(Random, Mag, 35, hits: 4),
-                        Apply(Enemies, CardStatus.Chill, 1).WithChance(60)
+                        Apply(Enemies, CardStatus.Chill, 1).WithChance(60),
+                        Damage(Random, Mag, 40, hits: 2).WhenDiscarded()
                     ),
                     // 2本目の枝：凍えた敵に深く刺さる。
                     Stage(
@@ -688,9 +696,10 @@ namespace Baryonyx.Combat
                         "つらら落とし・鋭",
                         CardKind.Attack,
                         Random,
-                        2,
-                        "ランダムな敵に{0}ダメージ×4。[凍え]中の敵には1.5倍。",
-                        Damage(Random, Mag, 35, hits: 4).Bonus(CardCondition.OnChilled, 50)
+                        1,
+                        "ランダムな敵に{0}ダメージ×4。[凍え]中の敵には1.5倍。捨てたとき：ランダムな敵に{1}ダメージ×3。",
+                        Damage(Random, Mag, 35, hits: 4).Bonus(CardCondition.OnChilled, 50),
+                        Damage(Random, Mag, 40, hits: 3).WhenDiscarded()
                     )
                 ),
                 Of(
@@ -702,11 +711,11 @@ namespace Baryonyx.Combat
                         "ブリザード・凍",
                         CardKind.Attack,
                         Enemies,
-                        4,
-                        "敵全体に{0}ダメージ。[凍え]中の敵には1.5倍。60%で[凍え]2ターン。",
+                        2,
+                        "敵全体に{0}ダメージ。[凍え]中の敵には1.5倍。60%で[凍え]2ターン。[眠り札]。",
                         Damage(Enemies, Mag, 80).Bonus(CardCondition.OnChilled, 50),
                         Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
-                    ),
+                    ).Is(CardTrait.Sleeper),
                     // 2本目の枝：吹雪の中に氷の壁を立てる。
                     Stage(
                         "Blizzard",
@@ -714,12 +723,12 @@ namespace Baryonyx.Combat
                         "ブリザード・氷壁",
                         CardKind.Attack,
                         Enemies,
-                        5,
-                        "敵全体に{0}ダメージ。60%で[凍え]2ターン。味方全体に[ブロック]{1}。",
+                        2,
+                        "敵全体に{0}ダメージ。60%で[凍え]2ターン。味方全体に[ブロック]{1}。[眠り札]。",
                         Damage(Enemies, Mag, 70),
                         Apply(Enemies, CardStatus.Chill, 2).WithChance(60),
                         Block(Allies, Def, 20)
-                    )
+                    ).Is(CardTrait.Sleeper)
                 ),
                 Of(
                     "IceMirror",
@@ -730,10 +739,10 @@ namespace Baryonyx.Combat
                         "アイスミラー・双",
                         CardKind.Guard,
                         Allies,
-                        4,
-                        "味方全体が次に受ける単体攻撃を、1回はね返す。",
+                        2,
+                        "味方全体が次に受ける単体攻撃を、1回はね返す。[保持]。",
                         Apply(Allies, CardStatus.Reflect, 1)
-                    ),
+                    ).Is(CardTrait.Retain),
                     // 2本目の枝：鏡に厚い氷を重ねる。
                     Stage(
                         "IceMirror",
@@ -741,11 +750,11 @@ namespace Baryonyx.Combat
                         "アイスミラー・氷華",
                         CardKind.Guard,
                         Ally,
-                        3,
-                        "味方1体に[ブロック]{0}。次に受ける単体攻撃を、1回はね返す。",
+                        1,
+                        "味方1体に[ブロック]{0}。次に受ける単体攻撃を、1回はね返す。[保持]。",
                         Block(Ally, Def, 40),
                         Apply(Ally, CardStatus.Reflect, 1)
-                    )
+                    ).Is(CardTrait.Retain)
                 ),
                 Of(
                     "AbsoluteZero",
@@ -756,12 +765,12 @@ namespace Baryonyx.Combat
                         "絶対零度・氷河",
                         CardKind.Attack,
                         Enemy,
-                        8,
-                        "敵全体に[凍え]2ターン。敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。40%で[凍結]させる。",
+                        3,
+                        "敵全体に[凍え]2ターン。敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。40%で[凍結]させる。[消滅]。",
                         Apply(Enemies, CardStatus.Chill, 2).WithChance(100),
-                        Damage(Enemy, Mag, 320).Bonus(CardCondition.OnChilled, 50),
+                        Damage(Enemy, Mag, 420).Bonus(CardCondition.OnChilled, 50),
                         Apply(Enemy, CardStatus.Freeze, 1).WithChance(40)
-                    ),
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn),
                     // 2本目の枝：凍気を全体に広げる。
                     Stage(
                         "AbsoluteZero",
@@ -769,13 +778,11 @@ namespace Baryonyx.Combat
                         "絶対零度・氷葬",
                         CardKind.Attack,
                         Enemies,
-                        9,
-                        "敵全体に{0}ダメージ。[凍え]中の敵には1.5倍。[弱点]を突いた敵を40%で[凍結]させる。",
-                        Damage(Enemies, Mag, 200).Bonus(CardCondition.OnChilled, 50),
-                        Apply(Enemies, CardStatus.Freeze, 1)
-                            .WithChance(40)
-                            .Only(CardCondition.OnWeakness)
-                    )
+                        3,
+                        "敵全体に{0}ダメージ。[凍え]中の敵には1.5倍。[弱点]を突いた敵を40%で[凍結]させる。[消滅]。",
+                        Damage(Enemies, Mag, 220).Bonus(CardCondition.OnChilled, 50),
+                        Apply(Enemies, CardStatus.Freeze, 1).WithChance(40).Only(CardCondition.OnWeakness)
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn)
                 ),
                 Of(
                     "QuickCast",
@@ -787,22 +794,21 @@ namespace Baryonyx.Combat
                         CardKind.Support,
                         Nobody,
                         0,
-                        "手札の炎・氷・雷カードのコストをすべて1下げる。カードを1枚引く。",
-                        CostDown(1, CardElement.Fire, CardElement.Ice, CardElement.Thunder),
+                        "次に使う炎・氷・雷カードのコストを0にする。カードを1枚引く。[霧散]。",
+                        NextCardFree(Magic),
                         Simple(CardActionKind.Draw, Nobody, 1)
-                    ),
-                    // 2本目の枝：詠唱を縮めて魔力も戻す。
+                    ).Is(CardTrait.Ethereal),
+                    // 2本目の枝：縮めた詠唱を取っておく。
                     Stage(
                         "QuickCast",
                         2,
                         "詠唱短縮・瞬",
                         CardKind.Support,
                         Nobody,
-                        1,
-                        "手札の炎・氷・雷カードのコストをすべて1下げる。エネルギー+1。",
-                        CostDown(1, CardElement.Fire, CardElement.Ice, CardElement.Thunder),
-                        Simple(CardActionKind.Energy, Nobody, 1)
-                    )
+                        0,
+                        "次に使う炎・氷・雷カードのコストを0にする。[保持]。",
+                        NextCardFree(Magic)
+                    ).Is(CardTrait.Retain)
                 ),
                 // --- ルカ：貫・雷と、搦め手 ---
                 Of(
@@ -816,7 +822,7 @@ namespace Baryonyx.Combat
                         Enemy,
                         1,
                         "敵1体に{0}ダメージ。[弱点]を突くと威力+50%、エネルギー+1。",
-                        Damage(Enemy, Phy, 90).Bonus(CardCondition.OnWeakness, 50),
+                        Damage(Enemy, Phy, 120).Bonus(CardCondition.OnWeakness, 50),
                         Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
                     ),
                     // 2本目の枝：2度突いて急所を探る。
@@ -828,7 +834,7 @@ namespace Baryonyx.Combat
                         Enemy,
                         1,
                         "敵1体に{0}ダメージ×2。[弱点]を突くとエネルギー+1。",
-                        Damage(Enemy, Phy, 50, hits: 2),
+                        Damage(Enemy, Phy, 70, hits: 2),
                         Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
                     )
                 ),
@@ -842,9 +848,10 @@ namespace Baryonyx.Combat
                         CardKind.Debuff,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。[毒]がある敵には1.5倍。[毒]を3つ重ねる。",
-                        Damage(Enemy, Phy, 35).Bonus(CardCondition.OnPoisoned, 50),
-                        Apply(Enemy, CardStatus.Poison, 0, 3).WithChance(100)
+                        "敵1体に{0}ダメージ。[毒]がある敵には1.5倍。[毒]を4つ重ねる。捨てたとき：ランダムな敵に[毒]を2つ重ねる。",
+                        Damage(Enemy, Phy, 50).Bonus(CardCondition.OnPoisoned, 50),
+                        Apply(Enemy, CardStatus.Poison, 0, 4).WithChance(100),
+                        Apply(Random, CardStatus.Poison, 0, 2).WithChance(100).WhenDiscarded()
                     ),
                     // 2本目の枝：毒を全体へ撒く。
                     Stage(
@@ -853,10 +860,11 @@ namespace Baryonyx.Combat
                         "毒針・散",
                         CardKind.Debuff,
                         Random,
-                        2,
-                        "ランダムな敵に{0}ダメージ×3。敵全体に[毒]を1つ重ねる。",
-                        Damage(Random, Phy, 25, hits: 3),
-                        Apply(Enemies, CardStatus.Poison, 0, 1).WithChance(100)
+                        1,
+                        "ランダムな敵に{0}ダメージ×3。敵全体に[毒]を1つ重ねる。捨てたとき：敵全体に[毒]を1つ重ねる。",
+                        Damage(Random, Phy, 30, hits: 3),
+                        Apply(Enemies, CardStatus.Poison, 0, 1).WithChance(100),
+                        Apply(Enemies, CardStatus.Poison, 0, 1).WithChance(100).WhenDiscarded()
                     )
                 ),
                 Of(
@@ -868,11 +876,12 @@ namespace Baryonyx.Combat
                         "影縫い・縛",
                         CardKind.Debuff,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせ、60%で[麻痺]1ターン。",
-                        Damage(Enemy, Phy, 60),
+                        1,
+                        "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせ、60%で[麻痺]1ターン。捨てたとき：ランダムな敵の行動順を1つ遅らせる。",
+                        Damage(Enemy, Phy, 80),
                         Simple(CardActionKind.Delay, Enemy, 1),
-                        Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
+                        Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60),
+                        Simple(CardActionKind.Delay, Random, 1).WhenDiscarded()
                     ),
                     // 2本目の枝：縫い止めて次の手へ走る。
                     Stage(
@@ -882,10 +891,11 @@ namespace Baryonyx.Combat
                         CardKind.Debuff,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせる。カードを1枚引く。",
-                        Damage(Enemy, Phy, 60),
+                        "敵1体に{0}ダメージ。その敵の行動順を1つ遅らせる。カードを1枚引く。捨てたとき：ランダムな敵の行動順を1つ遅らせる。",
+                        Damage(Enemy, Phy, 80),
                         Simple(CardActionKind.Delay, Enemy, 1),
-                        Simple(CardActionKind.Draw, Nobody, 1)
+                        Simple(CardActionKind.Draw, Nobody, 1),
+                        Simple(CardActionKind.Delay, Random, 1).WhenDiscarded()
                     )
                 ),
                 Of(
@@ -897,12 +907,12 @@ namespace Baryonyx.Combat
                         "看破の矢・射抜",
                         CardKind.Debuff,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜き、60%で[防御ダウン]2ターン。",
-                        Damage(Enemy, Phy, 70),
+                        1,
+                        "敵1体に{0}ダメージ。その敵の[弱点]をすべて見抜き、60%で[防御ダウン]2ターン。[初手]。",
+                        Damage(Enemy, Phy, 90),
                         Simple(CardActionKind.RevealWeakness, Enemy),
                         Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(60)
-                    ),
+                    ).Is(CardTrait.Innate),
                     // 2本目の枝：全員の弱点を一度に見抜く。
                     Stage(
                         "InsightArrow",
@@ -910,11 +920,11 @@ namespace Baryonyx.Combat
                         "看破の矢・千里眼",
                         CardKind.Debuff,
                         Enemies,
-                        3,
-                        "敵全体に{0}ダメージ。敵全体の[弱点]をすべて見抜く。",
-                        Damage(Enemies, Phy, 40),
+                        2,
+                        "敵全体に{0}ダメージ。敵全体の[弱点]をすべて見抜く。[初手]。",
+                        Damage(Enemies, Phy, 50),
                         Simple(CardActionKind.RevealWeakness, Enemies)
-                    )
+                    ).Is(CardTrait.Innate)
                 ),
                 Of(
                     "ArrowRain",
@@ -925,7 +935,7 @@ namespace Baryonyx.Combat
                         "アローレイン・毒",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ×2。[毒]がある敵には1.5倍。60%で[毒]を1つ重ねる。",
                         Damage(Enemies, Phy, 45, hits: 2).Bonus(CardCondition.OnPoisoned, 50),
                         Apply(Enemies, CardStatus.Poison, 0, 1).WithChance(60)
@@ -937,10 +947,11 @@ namespace Baryonyx.Combat
                         "アローレイン・豪",
                         CardKind.Attack,
                         Enemies,
-                        4,
-                        "敵全体に{0}ダメージ×3。[毒]がある敵には1.5倍。",
-                        Damage(Enemies, Phy, 40, hits: 3).Bonus(CardCondition.OnPoisoned, 50)
-                    )
+                        3,
+                        "敵全体に{0}ダメージ×3。[毒]がある敵には1.5倍。[連携]毒針：先に敵全体へ[毒]を2つ重ねる。",
+                        Damage(Enemies, Phy, 45, hits: 3).Bonus(CardCondition.OnPoisoned, 50),
+                        Apply(Enemies, CardStatus.Poison, 0, 2).WithChance(100).OnCombo()
+                    ).Combo("PoisonNeedle")
                 ),
                 Of(
                     "ShadowSnipe",
@@ -951,11 +962,11 @@ namespace Baryonyx.Combat
                         "シャドウスナイプ・必中",
                         CardKind.Attack,
                         Enemy,
-                        5,
-                        "敵1体の[弱点]をすべて見抜き、{0}ダメージ。[弱点]を突くと威力+50%。",
+                        3,
+                        "敵1体の[弱点]をすべて見抜き、{0}ダメージ。[弱点]を突くと威力+50%。[保持]。",
                         Simple(CardActionKind.RevealWeakness, Enemy),
-                        Damage(Enemy, Phy, 260).Bonus(CardCondition.OnWeakness, 50)
-                    ),
+                        Damage(Enemy, Phy, 380).Bonus(CardCondition.OnWeakness, 50)
+                    ).Is(CardTrait.Retain | CardTrait.CutIn),
                     // 2本目の枝：仕留めた隙に次の手を打つ。
                     Stage(
                         "ShadowSnipe",
@@ -963,11 +974,11 @@ namespace Baryonyx.Combat
                         "シャドウスナイプ・影",
                         CardKind.Attack,
                         Enemy,
-                        5,
-                        "敵1体に{0}ダメージ。[弱点]を突くと威力+50%、次に使うカードのコストを0にする。",
-                        Damage(Enemy, Phy, 240).Bonus(CardCondition.OnWeakness, 50),
-                        Simple(CardActionKind.NextCardFree).Only(CardCondition.OnWeakness)
-                    )
+                        3,
+                        "敵1体に{0}ダメージ。[弱点]を突くと威力+50%、次に使うカードのコストを0にする。[保持]。",
+                        Damage(Enemy, Phy, 350).Bonus(CardCondition.OnWeakness, 50),
+                        NextCardFree().Only(CardCondition.OnWeakness)
+                    ).Is(CardTrait.Retain | CardTrait.CutIn)
                 ),
                 Of(
                     "LightningBolt",
@@ -979,10 +990,10 @@ namespace Baryonyx.Combat
                         CardKind.Attack,
                         Enemy,
                         1,
-                        "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。60%で[麻痺]1ターン。",
-                        Damage(Enemy, Mag, 70).Bonus(CardCondition.OnParalyzed, 50),
+                        "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。60%で[麻痺]1ターン。[合体]アイスランス。",
+                        Damage(Enemy, Mag, 100).Bonus(CardCondition.OnParalyzed, 50),
                         Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
-                    ),
+                    ).Fuses("Ice", "FrostSpear"),
                     // 2本目の枝：一瞬で撃って次の手へ。
                     Stage(
                         "LightningBolt",
@@ -990,12 +1001,12 @@ namespace Baryonyx.Combat
                         "ライトニングボルト・迅",
                         CardKind.Attack,
                         Enemy,
-                        2,
-                        "敵1体に{0}ダメージ。60%で[麻痺]1ターン。カードを1枚引く。",
-                        Damage(Enemy, Mag, 70),
+                        1,
+                        "敵1体に{0}ダメージ。60%で[麻痺]1ターン。カードを1枚引く。[合体]アイスランス。",
+                        Damage(Enemy, Mag, 90),
                         Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60),
                         Simple(CardActionKind.Draw, Nobody, 1)
-                    )
+                    ).Fuses("Ice", "FrostSpear")
                 ),
                 Of(
                     "ChainLightning",
@@ -1006,9 +1017,9 @@ namespace Baryonyx.Combat
                         "チェインライトニング・痺",
                         CardKind.Attack,
                         Chain,
-                        3,
+                        2,
                         "敵1体に{0}ダメージ×3。1回ごとに別の敵へ移る。[麻痺]中の敵には1.5倍。",
-                        Damage(Chain, Mag, 65, hits: 3).Bonus(CardCondition.OnParalyzed, 50)
+                        Damage(Chain, Mag, 90, hits: 3).Bonus(CardCondition.OnParalyzed, 50)
                     ),
                     // 2本目の枝：跳ねる回数を増やす。
                     Stage(
@@ -1017,9 +1028,9 @@ namespace Baryonyx.Combat
                         "チェインライトニング・連鎖",
                         CardKind.Attack,
                         Chain,
-                        4,
+                        3,
                         "敵1体に{0}ダメージ×5。1回ごとに別の敵へ移る。",
-                        Damage(Chain, Mag, 50, hits: 5)
+                        Damage(Chain, Mag, 80, hits: 5)
                     )
                 ),
                 Of(
@@ -1031,11 +1042,11 @@ namespace Baryonyx.Combat
                         "雷雲・嵐",
                         CardKind.Attack,
                         Enemies,
-                        5,
-                        "敵全体に{0}ダメージ。3ターンの間、毎ターンランダムな敵1体に{1}ダメージ。",
-                        Damage(Enemies, Mag, 40),
-                        Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 80)
-                    ),
+                        3,
+                        "敵全体に{0}ダメージ。3ターンの間、毎ターンランダムな敵1体に{1}ダメージ。[消滅]。",
+                        Damage(Enemies, Mag, 60),
+                        Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 100)
+                    ).Is(CardTrait.Exhaust),
                     // 2本目の枝：雲を呼びながら次の手を整える。
                     Stage(
                         "Thundercloud",
@@ -1043,11 +1054,11 @@ namespace Baryonyx.Combat
                         "雷雲・充",
                         CardKind.Attack,
                         Nobody,
-                        4,
-                        "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。カードを1枚引く。",
-                        Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 80),
+                        2,
+                        "3ターンの間、毎ターンランダムな敵1体に{0}ダメージ。カードを1枚引く。[消滅]。",
+                        Apply(Nobody, CardStatus.Thundercloud, 3, Mag, 100),
                         Simple(CardActionKind.Draw, Nobody, 1)
-                    )
+                    ).Is(CardTrait.Exhaust)
                 ),
                 Of(
                     "ThunderSpear",
@@ -1058,26 +1069,26 @@ namespace Baryonyx.Combat
                         "雷神の槍・神鳴",
                         CardKind.Attack,
                         Enemy,
-                        6,
-                        "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。さらに敵全体に{1}ダメージ。",
-                        Damage(Enemy, Mag, 280).Bonus(CardCondition.OnParalyzed, 50),
-                        Damage(Enemies, Mag, 50)
-                    ),
-                    // 2本目の枝：轟音で弱点の敵を痺れさせる。
+                        3,
+                        "手札を1枚[捨てる]。敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。さらに敵全体に{1}ダメージ。",
+                        Discard(1),
+                        Damage(Enemy, Mag, 360).Bonus(CardCondition.OnParalyzed, 50),
+                        Damage(Enemies, Mag, 60)
+                    ).Is(CardTrait.CutIn),
+                    // 2本目の枝：手札2枚を雷に変えて重くする。
                     Stage(
                         "ThunderSpear",
                         2,
                         "雷神の槍・轟",
                         CardKind.Attack,
                         Enemy,
-                        7,
-                        "敵1体に{0}、さらに敵全体に{1}ダメージ。[弱点]を突いた敵を60%で[麻痺]1ターン。",
-                        Damage(Enemy, Mag, 260),
-                        Damage(Enemies, Mag, 50),
-                        Apply(Enemies, CardStatus.Paralysis, 1)
-                            .WithChance(60)
-                            .Only(CardCondition.OnWeakness)
-                    )
+                        3,
+                        "手札を2枚[捨てる]。敵1体に{0}、さらに敵全体に{1}ダメージ。敵全体に60%で[麻痺]1ターン。",
+                        Discard(2),
+                        Damage(Enemy, Mag, 420),
+                        Damage(Enemies, Mag, 80),
+                        Apply(Enemies, CardStatus.Paralysis, 1).WithChance(60)
+                    ).Is(CardTrait.CutIn)
                 ),
                 Of(
                     "Gale",
@@ -1088,11 +1099,11 @@ namespace Baryonyx.Combat
                         "疾風迅雷・迅",
                         CardKind.Buff,
                         Allies,
-                        2,
-                        "味方全体の速度を2ターン上げる。カードを1枚引く。",
+                        1,
+                        "味方全体の速度を2ターン上げる。カードを2枚引く。[初手]。",
                         Apply(Allies, CardStatus.SpeedUp, 2, 30),
-                        Simple(CardActionKind.Draw, Nobody, 1)
-                    ),
+                        Simple(CardActionKind.Draw, Nobody, 2)
+                    ).Is(CardTrait.Innate),
                     // 2本目の枝：速さに雷の力を乗せる。
                     Stage(
                         "Gale",
@@ -1100,9 +1111,9 @@ namespace Baryonyx.Combat
                         "疾風迅雷・雷纏",
                         CardKind.Buff,
                         Allies,
-                        3,
+                        1,
                         "味方全体の速度を2ターン上げ、攻撃力を2ターン15%上げる。",
-                        Apply(Allies, CardStatus.SpeedUp, 2, 25),
+                        Apply(Allies, CardStatus.SpeedUp, 2, 30),
                         Apply(Allies, CardStatus.AttackUp, 2, 15)
                     )
                 ),
@@ -1115,9 +1126,10 @@ namespace Baryonyx.Combat
                         "偵察・看破",
                         CardKind.Support,
                         Nobody,
-                        1,
-                        "カードを2枚引く。敵全体の[弱点]をすべて見抜く。",
+                        0,
+                        "カードを2枚引き、手札を1枚[捨てる]。敵全体の[弱点]をすべて見抜く。",
                         Simple(CardActionKind.Draw, Nobody, 2),
+                        Discard(1),
                         Simple(CardActionKind.RevealWeakness, Enemies)
                     ),
                     // 2本目の枝：敵の足を止めて先手を取る。
@@ -1127,9 +1139,10 @@ namespace Baryonyx.Combat
                         "偵察・待ち伏せ",
                         CardKind.Support,
                         Enemy,
-                        1,
-                        "カードを2枚引く。敵1体の行動順を1つ遅らせる。",
+                        0,
+                        "カードを2枚引き、手札を1枚[捨てる]。敵1体の行動順を1つ遅らせる。",
                         Simple(CardActionKind.Draw, Nobody, 2),
+                        Discard(1),
                         Simple(CardActionKind.Delay, Enemy, 1)
                     )
                 ),
@@ -1143,9 +1156,9 @@ namespace Baryonyx.Combat
                         "万歩の祈り・清",
                         CardKind.Heal,
                         Allies,
-                        3,
-                        "味方全体のHPを{0}回復し、[状態異常]を消す。今日のACTが多いほど回復。",
-                        Heal(Allies, Mag, 40).WithAct(10, 100),
+                        2,
+                        "味方全体のHPを{0}回復し、[状態異常]を消す。[歩み]。",
+                        Heal(Allies, Mag, 70).WithAct(10, 100),
                         Simple(CardActionKind.Cleanse, Allies)
                     ),
                     // 2本目の枝：歩いた分だけ守る。
@@ -1155,9 +1168,9 @@ namespace Baryonyx.Combat
                         "万歩の祈り・守",
                         CardKind.Heal,
                         Allies,
-                        4,
-                        "味方全体のHPを{0}回復。今日のACTが多いほど回復。味方全体に[ブロック]{1}。",
-                        Heal(Allies, Mag, 40).WithAct(10, 100),
+                        2,
+                        "味方全体のHPを{0}回復。味方全体に[ブロック]{1}。[歩み]。",
+                        Heal(Allies, Mag, 60).WithAct(10, 100),
                         Block(Allies, Def, 20)
                     )
                 ),
@@ -1170,10 +1183,10 @@ namespace Baryonyx.Combat
                         "リジェネ・広",
                         CardKind.Heal,
                         Allies,
-                        3,
-                        "味方全体を、3ターンの間、毎ターン{0}回復する。",
+                        2,
+                        "味方全体を、3ターンの間、毎ターン{0}回復する。[眠り札]。",
                         Apply(Allies, CardStatus.Regen, 3, Mag, 20)
-                    ),
+                    ).Is(CardTrait.Sleeper),
                     // 2本目の枝：すぐの回復を足す。
                     Stage(
                         "Regen",
@@ -1181,11 +1194,11 @@ namespace Baryonyx.Combat
                         "リジェネ・即",
                         CardKind.Heal,
                         Ally,
-                        3,
-                        "味方1体のHPを{0}回復し、3ターンの間、毎ターン{1}回復する。",
+                        1,
+                        "味方1体のHPを{0}回復し、3ターンの間、毎ターン{1}回復する。[眠り札]。",
                         Heal(Ally, Mag, 40),
                         Apply(Ally, CardStatus.Regen, 3, Mag, 30)
-                    )
+                    ).Is(CardTrait.Sleeper)
                 ),
                 Of(
                     "Resurrection",
@@ -1196,11 +1209,11 @@ namespace Baryonyx.Combat
                         "リザレクション・加護",
                         CardKind.Heal,
                         Ally,
-                        6,
-                        "味方1体のHPを最大の半分回復。倒れていれば復活。受けるダメージを2ターン25%減らす。",
+                        3,
+                        "味方1体のHPを最大の半分回復。倒れていれば復活。受けるダメージを2ターン25%減らす。[消滅]。",
                         Simple(CardActionKind.Revive, Ally, 50),
                         Apply(Ally, CardStatus.Protect, 2, 25)
-                    ),
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn),
                     // 2本目の枝：起こした仲間を癒やし続ける。
                     Stage(
                         "Resurrection",
@@ -1208,11 +1221,11 @@ namespace Baryonyx.Combat
                         "リザレクション・息吹",
                         CardKind.Heal,
                         Ally,
-                        5,
-                        "味方1体のHPを最大の半分回復。倒れていれば復活。3ターンの間、毎ターン{0}回復する。",
+                        2,
+                        "味方1体のHPを最大の半分回復。倒れていれば復活。3ターンの間、毎ターン{0}回復する。[消滅]。",
                         Simple(CardActionKind.Revive, Ally, 50),
                         Apply(Ally, CardStatus.Regen, 3, Mag, 25)
-                    )
+                    ).Is(CardTrait.Exhaust | CardTrait.CutIn)
                 ),
                 Of(
                     "HolyHammer",
@@ -1223,9 +1236,9 @@ namespace Baryonyx.Combat
                         "聖なる鉄槌・裁",
                         CardKind.Attack,
                         Enemy,
-                        3,
+                        2,
                         "敵1体に{0}ダメージ。[強化]を1つ消し、60%で[防御ダウン]2ターン。",
-                        Damage(Enemy, Mag, 140),
+                        Damage(Enemy, Mag, 210),
                         Simple(CardActionKind.Dispel, Enemy, 1),
                         Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(60)
                     ),
@@ -1238,9 +1251,9 @@ namespace Baryonyx.Combat
                         Enemy,
                         2,
                         "敵1体に{0}ダメージ。[強化]を1つ消す。味方全体のHPを{1}回復。",
-                        Damage(Enemy, Mag, 120),
+                        Damage(Enemy, Mag, 190),
                         Simple(CardActionKind.Dispel, Enemy, 1),
-                        Heal(Allies, Mag, 15)
+                        Heal(Allies, Mag, 20)
                     )
                 ),
                 Of(
@@ -1252,11 +1265,11 @@ namespace Baryonyx.Combat
                         "プロテクト・清",
                         CardKind.Guard,
                         Allies,
-                        3,
-                        "味方全体の受けるダメージを、2ターン25%減らす。味方全体の[状態異常]を消す。",
+                        1,
+                        "味方全体の受けるダメージを、2ターン25%減らす。味方全体の[状態異常]を消す。[保持]。",
                         Apply(Allies, CardStatus.Protect, 2, 25),
                         Simple(CardActionKind.Cleanse, Allies)
-                    ),
+                    ).Is(CardTrait.Retain),
                     // 2本目の枝：障壁の中で癒やす。
                     Stage(
                         "Protect",
@@ -1264,11 +1277,11 @@ namespace Baryonyx.Combat
                         "プロテクト・祈",
                         CardKind.Guard,
                         Allies,
-                        3,
-                        "味方全体の受けるダメージを、2ターン25%減らす。2ターンの間、毎ターン{0}回復する。",
+                        2,
+                        "味方全体の受けるダメージを、2ターン25%減らす。2ターンの間、毎ターン{0}回復する。[保持]。",
                         Apply(Allies, CardStatus.Protect, 2, 25),
                         Apply(Allies, CardStatus.Regen, 2, Mag, 15)
-                    )
+                    ).Is(CardTrait.Retain)
                 ),
                 Of(
                     "Purify",
@@ -1279,12 +1292,12 @@ namespace Baryonyx.Combat
                         "浄化の光・聖",
                         CardKind.Heal,
                         Allies,
-                        2,
-                        "味方全体の[状態異常]を消し、HPを{0}回復。受けるダメージを1ターン15%減らす。",
+                        0,
+                        "味方全体の[状態異常]を消し、HPを{0}回復。受けるダメージを1ターン15%減らす。[霧散]。",
                         Simple(CardActionKind.Cleanse, Allies),
-                        Heal(Allies, Mag, 20),
+                        Heal(Allies, Mag, 25),
                         Apply(Allies, CardStatus.Protect, 1, 15)
-                    ),
+                    ).Is(CardTrait.Ethereal),
                     // 2本目の枝：清めて次の手を巡らせる。
                     Stage(
                         "Purify",
@@ -1292,12 +1305,12 @@ namespace Baryonyx.Combat
                         "浄化の光・巡",
                         CardKind.Heal,
                         Allies,
-                        1,
-                        "味方全体の[状態異常]を消し、HPを{0}回復。カードを1枚引く。",
+                        0,
+                        "味方全体の[状態異常]を消し、HPを{0}回復。カードを1枚引く。[霧散]。",
                         Simple(CardActionKind.Cleanse, Allies),
-                        Heal(Allies, Mag, 20),
+                        Heal(Allies, Mag, 25),
                         Simple(CardActionKind.Draw, Nobody, 1)
-                    )
+                    ).Is(CardTrait.Ethereal)
                 ),
                 Of(
                     "ManaPrayer",
@@ -1308,11 +1321,11 @@ namespace Baryonyx.Combat
                         "マナの祈り・満",
                         CardKind.Support,
                         Nobody,
-                        1,
-                        "エネルギーを2回復する。カードを1枚引く。",
+                        0,
+                        "エネルギー+2。カードを1枚引く。[消滅]。",
                         Simple(CardActionKind.Energy, Nobody, 2),
                         Simple(CardActionKind.Draw, Nobody, 1)
-                    ),
+                    ).Is(CardTrait.Exhaust),
                     // 2本目の枝：魔力を仲間の癒やしにも分ける。
                     Stage(
                         "ManaPrayer",
@@ -1320,15 +1333,15 @@ namespace Baryonyx.Combat
                         "マナの祈り・共鳴",
                         CardKind.Support,
                         Nobody,
-                        2,
-                        "エネルギーを2回復する。味方全体のHPを{0}回復。",
+                        0,
+                        "エネルギー+2。味方全体のHPを{0}回復。[消滅]。",
                         Simple(CardActionKind.Energy, Nobody, 2),
-                        Heal(Allies, Mag, 15)
-                    )
+                        Heal(Allies, Mag, 20)
+                    ).Is(CardTrait.Exhaust)
                 ),
                 Of(
                     "Revelation",
-                    // 1本目の枝：閃きで次の手を引き寄せる。
+                    // 1本目の枝：閃きで拾った手を軽くする。
                     Stage(
                         "Revelation",
                         1,
@@ -1336,11 +1349,10 @@ namespace Baryonyx.Combat
                         CardKind.Support,
                         Nobody,
                         1,
-                        "次に使うカードのコストを0にする。カードを1枚引く。",
-                        Simple(CardActionKind.NextCardFree),
-                        Simple(CardActionKind.Draw, Nobody, 1)
-                    ),
-                    // 2本目の枝：導きで次の一撃を強くする。
+                        "捨て札からカードを1枚選び、手札に加える。そのカードのコストを、このターンだけ0にする。[消滅]。",
+                        TakeFromDiscard(1, free: true)
+                    ).Is(CardTrait.Exhaust),
+                    // 2本目の枝：拾い直しながら次の手も引く。
                     Stage(
                         "Revelation",
                         2,
@@ -1348,10 +1360,10 @@ namespace Baryonyx.Combat
                         CardKind.Support,
                         Nobody,
                         1,
-                        "次に使うカードのコストを0にする。味方全体の攻撃力を1ターン15%上げる。",
-                        Simple(CardActionKind.NextCardFree),
-                        Apply(Allies, CardStatus.AttackUp, 1, 15)
-                    )
+                        "捨て札からカードを1枚選び、手札に加える。カードを1枚引く。[消滅]。",
+                        TakeFromDiscard(1),
+                        Simple(CardActionKind.Draw, Nobody, 1)
+                    ).Is(CardTrait.Exhaust)
                 ),
                 Of(
                     "HolyLight",
@@ -1362,10 +1374,10 @@ namespace Baryonyx.Combat
                         "ホーリーライト・浄",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ。味方全体のHPを{1}回復し、[状態異常]を消す。",
-                        Damage(Enemies, Mag, 50),
-                        Heal(Allies, Mag, 25),
+                        Damage(Enemies, Mag, 70),
+                        Heal(Allies, Mag, 30),
                         Simple(CardActionKind.Cleanse, Allies)
                     ),
                     // 2本目の枝：光の温もりを残す。
@@ -1375,10 +1387,10 @@ namespace Baryonyx.Combat
                         "ホーリーライト・陽",
                         CardKind.Attack,
                         Enemies,
-                        3,
+                        2,
                         "敵全体に{0}ダメージ。味方全体を、2ターンの間、毎ターン{1}回復する。",
-                        Damage(Enemies, Mag, 50),
-                        Apply(Allies, CardStatus.Regen, 2, Mag, 15)
+                        Damage(Enemies, Mag, 70),
+                        Apply(Allies, CardStatus.Regen, 2, Mag, 20)
                     )
                 ),
                 Of(
@@ -1390,10 +1402,10 @@ namespace Baryonyx.Combat
                         "ディバインシールド・聖域",
                         CardKind.Guard,
                         Allies,
-                        6,
-                        "味方全体は、次のターンまでダメージを受けない。",
+                        3,
+                        "味方全体は、次のターンまでダメージを受けない。[消滅]。",
                         Apply(Allies, CardStatus.Invincible, 1)
-                    ),
+                    ).Is(CardTrait.Exhaust),
                     // 2本目の枝：守りに癒やしを添える。
                     Stage(
                         "DivineShield",
@@ -1401,11 +1413,11 @@ namespace Baryonyx.Combat
                         "ディバインシールド・祝福",
                         CardKind.Guard,
                         Ally,
-                        3,
-                        "味方1体は、次のターンまでダメージを受けない。HPを{0}回復。",
+                        2,
+                        "味方1体は、次のターンまでダメージを受けない。HPを{0}回復。[消滅]。",
                         Apply(Ally, CardStatus.Invincible, 1),
-                        Heal(Ally, Mag, 40)
-                    )
+                        Heal(Ally, Mag, 50)
+                    ).Is(CardTrait.Exhaust)
                 ),
             }
         );
@@ -1475,6 +1487,28 @@ namespace Baryonyx.Combat
                 Skill = skill,
                 Branches = Array.AsReadOnly(new[] { first, second }),
             };
+        }
+
+        // 段階に、消滅・保持・霧散・初手・眠り札とカットインを付ける。
+        private static CardSkill Is(this CardSkill card, CardTrait traits)
+        {
+            card.Traits |= traits;
+            return card;
+        }
+
+        // 手札にそろうと into に合体する相手を付ける。
+        private static CardSkill Fuses(this CardSkill card, string partner, string into)
+        {
+            card.FuseWith = partner;
+            card.FusesInto = into;
+            return card;
+        }
+
+        // 同じターンに先に使っていると、連携の効果が出る相手を付ける。
+        private static CardSkill Combo(this CardSkill card, string partner)
+        {
+            card.ComboWith = partner;
+            return card;
         }
 
         private static CardSkill Stage(

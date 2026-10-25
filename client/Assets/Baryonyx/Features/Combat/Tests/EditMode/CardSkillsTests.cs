@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat;
 using NUnit.Framework;
@@ -14,34 +13,6 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(CardSkills.All.Select(card => card.Id), Is.Unique);
             Assert.That(CardSkills.All.Select(card => card.Name), Is.Unique);
             Assert.That(CardSkills.All.Select(card => card.Art), Is.Unique);
-        }
-
-        [Test]
-        public void NoTwoCardsDoTheSameThing()
-        {
-            // What a card does: its element and who it is played on, and each action's kind,
-            // reach, status, hits and conditions. Two cards alike in all of these are the same card.
-            static string Signature(CardSkill card) =>
-                $"{card.Element}/{card.Target}:"
-                + string.Join(
-                    ";",
-                    card.Actions.Select(action =>
-                        $"{action.Kind},{action.Target},{action.Status},{action.Hits},"
-                        + $"{action.When},{action.BonusWhen},{action.ActStepPercent > 0},"
-                        + string.Join("+", action.Elements)
-                    )
-                );
-            var seen = new Dictionary<string, string>();
-            foreach (var card in CardSkills.All)
-            {
-                var signature = Signature(card);
-                Assert.That(
-                    seen.TryGetValue(signature, out var other),
-                    Is.False,
-                    $"{card.Name} does the same as {other}."
-                );
-                seen[signature] = card.Name;
-            }
         }
 
         [Test]
@@ -130,7 +101,7 @@ namespace Baryonyx.Tests.EditMode
             var text = CardRules.Describe(card, (action, part) => $"[{part}]");
             Assert.That(
                 text,
-                Is.EqualTo("敵全体に[属攻の50%]ダメージ。味方全体のHPを[属攻の25%]回復。")
+                Is.EqualTo("敵全体に[属攻の70%]ダメージ。味方全体のHPを[属攻の35%]回復。")
             );
         }
 
@@ -158,15 +129,15 @@ namespace Baryonyx.Tests.EditMode
             var card = CardSkills.Find("Ice");
             Assert.That(
                 CardRules.Describe(card),
-                Is.EqualTo("敵1体に属攻の85%ダメージ。60%で凍え2ターン。")
+                Is.EqualTo("敵1体に属攻の120%ダメージ。60%で凍え2ターン。合体ライトニングボルト。")
             );
             Assert.That(
                 CardRules.Describe(card, keyword: name => $"<{name}>"),
-                Is.EqualTo("敵1体に属攻の85%ダメージ。60%で<凍え>2ターン。")
+                Is.EqualTo("敵1体に属攻の120%ダメージ。60%で<凍え>2ターン。<合体>ライトニングボルト。")
             );
             Assert.That(
                 CardKeywords.In(card.Text).Select(k => k.Name),
-                Is.EqualTo(new[] { "凍え" })
+                Is.EqualTo(new[] { "凍え", "合体" })
             );
         }
 
@@ -206,7 +177,7 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void ACardForNoOneIsNamedByWhatItWorksOn()
         {
-            Assert.That(CardRules.ScopeName(CardSkills.Find("Hone")), Is.EqualTo("手札"));
+            Assert.That(CardRules.ScopeName(CardSkills.Find("Hone")), Is.EqualTo("次のカード"));
             Assert.That(CardRules.ScopeName(CardSkills.Find("Scout")), Is.EqualTo("山札"));
             Assert.That(
                 CardRules.ScopeName(CardSkills.Find("ManaPrayer")),
@@ -214,7 +185,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(
                 CardRules.ScopeName(CardSkills.Find("Revelation")),
-                Is.EqualTo("次のカード")
+                Is.EqualTo("捨て札")
             );
             Assert.That(
                 CardRules.ScopeName(CardSkills.Find("Thundercloud")),

@@ -258,7 +258,7 @@ namespace Baryonyx.Combat.Presentation
             if (enemy.PowerUp > 0)
                 power *= 1f + enemy.PowerUp / 100f;
             if (HasStatus(false, index, CardStatus.Paralysis))
-                power *= 1f - ParalysisCut;
+                power *= 1f - BattleBlows.ParalysisCut;
             return Mathf.Max(1, Mathf.RoundToInt(power));
         }
 
@@ -271,7 +271,7 @@ namespace Baryonyx.Combat.Presentation
                     standing.Add(i);
             if (standing.Count == 0 || aim == EnemyAim.All)
                 return standing;
-            int target = standing[UnityEngine.Random.Range(0, standing.Count)];
+            int target = Dice.Pick(standing);
             if (aim == EnemyAim.Weakest)
                 target = standing.Find(i =>
                     standing.TrueForAll(other =>
@@ -284,9 +284,11 @@ namespace Baryonyx.Combat.Presentation
                     standing.TrueForAll(other => BlockOf(i) >= BlockOf(other))
                 );
             // A taunting ally draws the blows aimed at one, and Aria may take them for a low ally.
-            int taunting = standing.Find(ally => HasStatus(true, ally, CardStatus.Taunt));
-            if (HasStatus(true, taunting, CardStatus.Taunt))
-                target = taunting;
+            target = BattleBlows.Taunted(
+                target,
+                standing,
+                ally => HasStatus(true, ally, CardStatus.Taunt)
+            );
             return new List<int> { CoverTarget(target) };
         }
 
@@ -416,7 +418,7 @@ namespace Baryonyx.Combat.Presentation
             var enemy = Enemies[index];
             if (enemy.Block <= 0 || damage <= 0)
                 return damage;
-            int absorbed = Mathf.Min(enemy.Block, damage);
+            int absorbed = BattleBlows.Soaked(enemy.Block, damage);
             SetEnemyBlock(index, enemy.Block - absorbed);
             ShowPopup(enemy.TargetArea, $"ブロック -{absorbed}", GuardColor, 36f);
             return damage - absorbed;

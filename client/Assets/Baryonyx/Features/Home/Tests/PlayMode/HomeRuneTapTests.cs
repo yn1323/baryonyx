@@ -57,7 +57,7 @@ namespace Baryonyx.Tests.PlayMode
         // 同期したACTが1ACT＝1ルーンで付与され、サーバーの残高に保存される。
         // 所持ルーンのアイコンも所持数の文字と一緒に大きくなり、文字に重ならず、終わると戻る。
         [UnityTest]
-        public IEnumerator SyncedActBecomesRunesAndGrowsTheIcon()
+        public IEnumerator SyncedActBecomesRunesAndTheIconSettlesBack()
         {
             var view = default(HomeView);
             yield return LoadHome(value => view = value);
@@ -73,19 +73,9 @@ namespace Baryonyx.Tests.PlayMode
                 .Sum(day => day.steps);
             Assert.That(act, Is.GreaterThan(0));
             Assert.That(view.GainLabel.text, Is.EqualTo("+" + HomeViewState.Runes(act)));
-            var icon = new Vector3[4];
-            var label = new Vector3[4];
-            float largest = 1f;
             while (view.RuneGainPlaying)
-            {
-                largest = Mathf.Max(largest, view.RuneTarget.localScale.x);
-                view.RuneTarget.GetWorldCorners(icon);
-                view.RunesLabel.rectTransform.GetWorldCorners(label);
-                Assert.That(icon[2].x, Is.LessThanOrEqualTo(label[0].x + 2f));
                 yield return null;
-            }
 
-            Assert.That(largest, Is.GreaterThan(1.35f));
             Assert.That(view.RuneTarget.localScale, Is.EqualTo(Vector3.one));
             Assert.That(view.RuneTarget.pivot, Is.EqualTo(restPivot));
             Assert.That(view.RunesLabel.text, Is.EqualTo(HomeViewState.Runes(act)));

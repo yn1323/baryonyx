@@ -40,19 +40,19 @@ MonoBehaviour:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
       Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: ManaBurst
       Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
     - Name: "\u661F\u964D\u308A"
       Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B5\u56DE\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: StarFall
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
     - Name: "\u9B54\u773C"
       Description: "\u6575\u5168\u4F53\u306E\u5F31\u70B9\u3092\u898B\u629C\u304D\u30011\u679A\u5F15\u304F"
       UnlockLevel: 30
-      Energy: 1
+      Energy: 0
       Tree: ArcaneEye
       Icon: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
     UniqueProgress:
@@ -88,13 +88,13 @@ MonoBehaviour:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: ThunderArrow
       Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
     - Name: "\u77E2\u306E\u96E8"
       Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
     - Name: "\u901F\u5C04"
@@ -139,13 +139,13 @@ MonoBehaviour:
     - Name: "\u4E00\u9583"
       Description: "\u65751\u4F53\u306B \u7269\u653B\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: Issen
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
     - Name: "\u9F13\u821E"
       Description: "\u5473\u65B9\u5168\u4F53\u306B\u30D6\u30ED\u30C3\u30AF\u3001\u653B\u6483\u529B\u30A2\u30C3\u30D7"
       UnlockLevel: 30
-      Energy: 2
+      Energy: 1
       Tree: Rally
       Icon: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
     UniqueProgress: []
@@ -178,19 +178,19 @@ MonoBehaviour:
     - Name: "\u7652\u3057\u306E\u98A8"
       Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: HealingWind
       Icon: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
     - Name: "\u8607\u751F"
       Description: "\u5012\u308C\u305F\u5473\u65B91\u4EBA\u3092\u5FA9\u6D3B\u3055\u305B\u308B"
       UnlockLevel: 10
-      Energy: 5
+      Energy: 3
       Tree: Revive
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
     - Name: "\u88C1\u304D\u306E\u5149"
       Description: "\u6575\u5168\u4F53\u306B\u30C0\u30E1\u30FC\u30B8\u3001\u5473\u65B9\u5168\u4F53\u3092\u56DE\u5FA9"
       UnlockLevel: 30
-      Energy: 3
+      Energy: 2
       Tree: Judgment
       Icon: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
     UniqueProgress: []
@@ -229,13 +229,13 @@ MonoBehaviour:
     - Name: "\u4E00\u9583"
       Description: "\u65751\u4F53\u306B \u7269\u653B\u306E200% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: Issen
       Icon: {fileID: -6622703189942226176, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
     - Name: "\u9F13\u821E"
       Description: "\u5473\u65B9\u5168\u4F53\u306B\u30D6\u30ED\u30C3\u30AF\u3001\u653B\u6483\u529B\u30A2\u30C3\u30D7"
       UnlockLevel: 30
-      Energy: 2
+      Energy: 1
       Tree: Rally
       Icon: {fileID: -6622703189942226176, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
     UniqueProgress: []
@@ -268,13 +268,13 @@ MonoBehaviour:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: ThunderArrow
       Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
     - Name: "\u77E2\u306E\u96E8"
       Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
     - Name: "\u901F\u5C04"
@@ -313,19 +313,19 @@ MonoBehaviour:
     - Name: "\u30DE\u30CA\u30D0\u30FC\u30B9\u30C8"
       Description: "\u6575\u5168\u4F53\u306B \u5C5E\u653B\u306E80% \u306E\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: ManaBurst
       Icon: {fileID: -6622703189942226176, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
     - Name: "\u661F\u964D\u308A"
       Description: "\u30E9\u30F3\u30C0\u30E0\u306A\u6575\u306B5\u56DE\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: StarFall
       Icon: {fileID: -6622703189942226176, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
     - Name: "\u9B54\u773C"
       Description: "\u6575\u5168\u4F53\u306E\u5F31\u70B9\u3092\u898B\u629C\u304D\u30011\u679A\u5F15\u304F"
       UnlockLevel: 30
-      Energy: 1
+      Energy: 0
       Tree: ArcaneEye
       Icon: {fileID: -6622703189942226176, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
     UniqueProgress: []
@@ -358,19 +358,19 @@ MonoBehaviour:
     - Name: "\u7652\u3057\u306E\u98A8"
       Description: "\u5473\u65B9\u5168\u4F53\u306EHP\u3092\u56DE\u5FA9"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: HealingWind
       Icon: {fileID: -6622703189942226176, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
     - Name: "\u8607\u751F"
       Description: "\u5012\u308C\u305F\u5473\u65B91\u4EBA\u3092\u5FA9\u6D3B\u3055\u305B\u308B"
       UnlockLevel: 10
-      Energy: 5
+      Energy: 3
       Tree: Revive
       Icon: {fileID: -6622703189942226176, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
     - Name: "\u88C1\u304D\u306E\u5149"
       Description: "\u6575\u5168\u4F53\u306B\u30C0\u30E1\u30FC\u30B8\u3001\u5473\u65B9\u5168\u4F53\u3092\u56DE\u5FA9"
       UnlockLevel: 30
-      Energy: 3
+      Energy: 2
       Tree: Judgment
       Icon: {fileID: -6622703189942226176, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
     UniqueProgress: []
@@ -403,13 +403,13 @@ MonoBehaviour:
     - Name: "\u96F7\u6483\u306E\u77E2"
       Description: "\u65751\u4F53\u306B\u96F7\u306E\u30C0\u30E1\u30FC\u30B8\u3002\u307E\u3072\u3055\u305B\u308B"
       UnlockLevel: 1
-      Energy: 2
+      Energy: 1
       Tree: ThunderArrow
       Icon: {fileID: -6622703189942226176, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
     - Name: "\u77E2\u306E\u96E8"
       Description: "\u6575\u5168\u4F53\u306B3\u56DE\u30C0\u30E1\u30FC\u30B8"
       UnlockLevel: 10
-      Energy: 3
+      Energy: 2
       Tree: ArrowStorm
       Icon: {fileID: -6622703189942226176, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
     - Name: "\u901F\u5C04"

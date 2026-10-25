@@ -20,6 +20,12 @@ namespace Baryonyx.Tests.PlayMode
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
         private Scene loadedScene;
 
+        private FixedRandom random;
+
+        // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
+        [SetUp]
+        public void FixRandom() => random = FixedRandom.Use();
+
         [UnityTest]
         public IEnumerator AUniqueSkillUsedEvolvesIntoTheStagePickedAndThatStageIsPlayed()
         {
@@ -57,6 +63,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Choice.AcquiredTags[0].activeSelf, Is.False);
             Assert.That(view.Hand.GetComponent<CanvasGroup>().alpha, Is.Zero);
             Assert.That(evolved, Is.Empty, "Nothing evolves before the pick.");
+            // A unique skill's choice has no way to leave it as it is: it goes back in the formation.
+            Assert.That(view.Choice.CanDecline, Is.False);
+            Assert.That(view.Choice.DeclineButton.gameObject.activeInHierarchy, Is.False);
 
             view.Choice.Select(1);
             view.Choice.Confirm();
@@ -141,7 +150,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitUntil(() => view.Choice.IsOpen, "Its stage is shown.");
             Assert.That(view.Choice.Count, Is.EqualTo(1));
             // 1つでも、押して選んで決めるまで待つ。
-            yield return new WaitForSecondsRealtime(1.5f);
+            for (int frame = 0; frame < 90; frame++)
+                yield return null;
             Assert.That(view.Choice.IsOpen, Is.True, "It waits for a tap.");
             Assert.That(view.Deck[deck].Skill, Is.EqualTo("ManaBurst.1"));
             view.Choice.Select(0);
@@ -212,24 +222,6 @@ namespace Baryonyx.Tests.PlayMode
             int dealt = DealInto(view, deck);
             Assert.That(view.Glints(dealt), Is.False, "It does not light again in the battle.");
             Assert.That(draws, Is.EqualTo(1));
-        }
-
-        // A unique skill's choice has no way to leave it as it is: it goes back in the formation.
-        [UnityTest]
-        public IEnumerator AUniqueSkillCannotBeLeftAsItIs()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            UseParty(view, "ManaBurst");
-            view.Evolution = new BattleEvolution { Chance = level => 1f, Draw = () => 0f };
-            int deck = DeckOf(view, "ManaBurst");
-            Play(view, DealInto(view, deck), view.Enemies[0].TargetArea);
-            yield return WaitUntil(() => view.Choice.IsOpen, "The stages are offered.");
-            Assert.That(view.Choice.CanDecline, Is.False);
-            Assert.That(view.Choice.DeclineButton.gameObject.activeInHierarchy, Is.False);
-            view.Choice.Select(0);
-            view.Choice.Confirm();
-            yield return WaitActions(view);
         }
 
         // The battle's own party, the first ally bringing the owned card of a card skill.
@@ -367,6 +359,7 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator UnloadScene()
         {
             Time.timeScale = 1f;
+            random?.Dispose();
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }

@@ -372,10 +372,14 @@ namespace Baryonyx.Combat.Presentation
         /// The adventure's revive: the fallen party stands up again, then its next turn begins and
         /// the cards are dealt under the band of the party's turn.
         /// </summary>
+        // ルーン復活：ターンを最初からやり直し、ターン数と激化も1ターン目から数え、
+        // 全員のカードを山札に戻して初めの手札を配り直す（doc/features/combat.md#敗北とルーン復活）。
         private IEnumerator Revived()
         {
             yield return ReviveMoment(turnBanner: false);
-            BeginPartyTurn(again: false);
+            EnemyTurn = false;
+            StartOfTurn(StartTurn);
+            DealOpeningHand();
         }
 
         private IEnumerator ReviveMoment(bool turnBanner = true)

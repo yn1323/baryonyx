@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 打ち砕き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。重い一撃で、味方1人の守りを崩す物理の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 単体への物理・打の攻撃と防御ダウン |
-| 関連する仕様・個別ID | 使う敵：[古王国の空鎧](../enemies/enemy-hollow-armor.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[泥人形](../enemies/enemy-mud-golem.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[古王国の空鎧](../enemies/enemy-hollow-armor.md)、[人食い宝箱](../enemies/enemy-chest-mimic.md)、[真鍮の番人](../enemies/enemy-brass-warden.md)、[水晶ヤドカリ](../enemies/enemy-crystal-hermit.md)、[岩肌トロル](../enemies/enemy-rock-troll.md)、[泥人形](../enemies/enemy-mud-golem.md)、[霜の大猿人](../enemies/enemy-frost-ape.md)、[雪原のマンモス](../enemies/enemy-snow-mammoth.md)、[黒曜石の巨像](../enemies/enemy-obsidian-colossus.md)、[骸骨兵](../enemies/enemy-skeleton-soldier.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

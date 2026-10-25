@@ -57,15 +57,18 @@ namespace Baryonyx.Tests.EditMode
         [Test]
         public void NoStageDoesTheSameAsAnotherCard()
         {
-            // As CardSkillsTests: the element and who it is played on, and each action's kind,
-            // reach, status, hits and conditions.
+            // What a card does: the element and who it is played on, how it moves between the
+            // piles (its keywords, a fusion or a combo), and each action's kind, reach, status,
+            // hits, conditions and when it works.
             static string Signature(CardSkill card) =>
-                $"{card.Element}/{card.Target}:"
+                $"{card.Element}/{card.Target}/{card.Traits}/{card.FuseWith}/{card.ComboWith}:"
                 + string.Join(
                     ";",
                     card.Actions.Select(action =>
                         $"{action.Kind},{action.Target},{action.Status},{action.Hits},"
                         + $"{action.When},{action.BonusWhen},{action.ActStepPercent > 0},"
+                        + $"{action.Phase},{action.BlockPercent > 0},{action.PerDiscarded},"
+                        + $"{action.MakesFree},"
                         + string.Join("+", action.Elements)
                     )
                 );
@@ -124,7 +127,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(grown.Multiplier, Is.EqualTo(2f).Within(1e-4f));
             Assert.That(
                 grown.Actions[0].Percent,
-                Is.EqualTo(200),
+                Is.EqualTo(260),
                 "Its power grows as the card skill's does."
             );
             Assert.That(

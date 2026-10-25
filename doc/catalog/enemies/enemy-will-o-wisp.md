@@ -15,7 +15,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WillOWisp.asepr
 
 # 鬼火
 
-[敵の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 沼に出る、小さな敵である。
 素早く、緑の火の玉でやけどを負わせ、味方のカードの狙いを狂わせる。
@@ -180,5 +180,5 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/Enemies/WillOWisp.asepr
 
 | 日付 | 変更・判断 | 理由・根拠 | 影響するID・仕様 |
 |---|---|---|---|
-| 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
+| 2026-10-19 | 画像を生成して取り込み、定義を作った。ステータス・技3つ・行動パターン・演出・外見・性格を候補として書いた | ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる） | [敵の行動の仮設定](../../features/combat-enemy-behavior.md)、[ステータスの項目](../../features/party.md#ステータスの項目)、[レベルとステータス](../../features/progression.md#レベルとステータス) |
 | 2026-10-20 | しじまの沼・月影の墓所・ヴォルガン火山の戦闘に出るようにし、Lv100のステータスと技「火の玉」を戦闘で使うようにした | ユーザーの依頼（行き先を増やし、行き先ごとの敵を増やす） | [行き先と敵](../../features/stage-progression.md#行き先と敵) |

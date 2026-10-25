@@ -39,6 +39,7 @@ namespace Baryonyx.Tests.PlayMode
             }
         }
 
+        // 開発用の画面なので、読み込みと、光の切り替え・10回の再生のつなぎ込みだけを確かめる。
         // 開くと虹（昇格あり）の1回召喚を再生し、光を替えると見本を引き直して最初から再生する。
         [UnityTest]
         public IEnumerator TheSummoningPlaysAndEachLightCanBeChosen()
@@ -52,9 +53,6 @@ namespace Baryonyx.Tests.PlayMode
                 .SelectMany(root => root.GetComponentsInChildren<TempleSummonLab>(true))
                 .Single();
             Assert.That(lab.Show, Is.Not.Null, "The lab plays the summoning presentation.");
-            var canvas = lab.Show.GetComponent<Canvas>();
-            Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
-            Assert.That(canvas.worldCamera, Is.Not.Null, "A camera draws it for Bloom.");
 
             Assert.That(lab.Plays, Is.EqualTo(1));
             Assert.That(lab.Tier, Is.EqualTo(TempleSummonTier.Rainbow));
@@ -72,35 +70,11 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo((int)TempleSummonTier.Gold)
             );
 
-            // 最後のコマ：窓は砕け、札が降りて止まっている。
-            lab.Show.Skip();
-            Assert.That(lab.Show.Playing, Is.False);
-            Assert.That(lab.Show.Window.gameObject.activeSelf, Is.False);
-            Assert.That(lab.Show.Hole.gameObject.activeSelf, Is.True);
-            Assert.That(lab.Show.Card.gameObject.activeSelf, Is.True);
-            Assert.That(lab.Show.Card.anchoredPosition, Is.EqualTo(lab.Show.CardRest));
-
-            // 10回：窓の壁に切り替え、札は表を向いて出る。押すと札が並んだところまで飛び、もう一度押すと終わる。
+            // 10回は窓の壁に切り替えて再生する。演出の流れは神殿の画面のテスト（GuideScenesTests）が確かめる。
             lab.PlayTenButton.onClick.Invoke();
             Assert.That(lab.Ten, Is.True);
-            var ten = lab.TenShow;
-            Assert.That(ten.gameObject.activeInHierarchy, Is.True);
+            Assert.That(lab.TenShow.Playing, Is.True);
             Assert.That(lab.Show.gameObject.activeInHierarchy, Is.False);
-            Assert.That(ten.Panes, Has.Length.EqualTo(TempleSummon.TenCount));
-            Assert.That(ten.Playing, Is.True);
-            ten.Tap();
-            yield return null;
-            Assert.That(ten.Playing, Is.True, "The cards stay out for a moment.");
-            Assert.That(ten.Panes.All(pane => pane.Card.gameObject.activeSelf), Is.True);
-            ten.Tap();
-            float waited = 0f;
-            while (ten.Playing && waited < 5f)
-            {
-                waited += Time.unscaledDeltaTime;
-                yield return null;
-            }
-            Assert.That(ten.Playing, Is.False);
-            Assert.That(lab.Plays, Is.EqualTo(4));
         }
 
         [UnityTearDown]

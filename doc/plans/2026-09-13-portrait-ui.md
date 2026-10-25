@@ -47,7 +47,7 @@
 
 ### 状態ごとの操作
 
-操作の可否は [HealthScreenPresenter](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenPresenter.cs) の既存状態に従い、表示の優先順位を次のようにする。
+操作の可否は `HealthScreenPresenter`（削除済み） の既存状態に従い、表示の優先順位を次のようにする。
 
 | 状態 | 優先する表示と操作 |
 |---|---|

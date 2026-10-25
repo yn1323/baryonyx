@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 森羅の鉄槌
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 森の守り手の固有技。森全体の重さを両腕に込め、広間ごと叩き割る大技である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-04、ユーザーの依頼（敵の技を増やす。その敵が持っていそうな技にする）で、[森の守り手](../enemies/enemy-forest-guardian.md)の技として作った |
 | 役割・説明 | 予告つきの大技。プレイヤーに防御で備えさせる |
-| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[森の守り手](../enemies/enemy-forest-guardian.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -54,7 +54,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 割合と持続ターンは仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 大技までのターン数の予告 | 予告の見せ方（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)） |
+| 大技までのターン数の予告 | 予告の見せ方（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)） |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

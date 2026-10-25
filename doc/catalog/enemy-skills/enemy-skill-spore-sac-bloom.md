@@ -9,7 +9,7 @@ category: enemy-skills
 
 # 胞子の芽吹き
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 毒胞子オオダケの固有技。胞子袋を震わせて合図を送り、相手が吸い込んだ胞子を体の中で一斉に芽吹かせる。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵50体を試作し、文書カタログ・クライアント・サーバーにそろえる）で、[毒胞子オオダケ](../enemies/enemy-spore-cap.md)の技として作った |
 | 役割・説明 | 味方に付いている毒を増やす弱体 |
-| 関連する仕様・個別ID | 使う敵：[毒胞子オオダケ](../enemies/enemy-spore-cap.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[毒胞子オオダケ](../enemies/enemy-spore-cap.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定
@@ -57,7 +57,7 @@ category: enemy-skills
 | 項目 | 決める内容・先に必要な判断 |
 |---|---|
 | 数値 | 倍にする量は仮。[戦闘の未決事項](../../features/combat.md#未決事項)の数値が決まったら見直す |
-| 毒の上限 | 味方に付く毒（[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定)の、最大HPの割合で決める案）の重なりに上限を設けるか |
+| 毒の上限 | 味方に付く毒（[敵の行動の仮設定](../../features/combat-enemy-behavior.md)の、最大HPの割合で決める案）の重なりに上限を設けるか |
 | 実装 | 未実装。実装するときは[敵の挙動デバッグルーム](../../features/screens/debug-rooms.md#敵の挙動デバッグルーム)の行動にも加える |
 
 ## 変更と判断の記録

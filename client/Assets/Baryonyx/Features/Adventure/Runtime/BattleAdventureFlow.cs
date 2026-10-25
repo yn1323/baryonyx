@@ -400,6 +400,8 @@ namespace Baryonyx.Adventure
 
         private async Task EndAsync(AdventureEndReason reason)
         {
+            // 戦闘中にやめるときは、失敗したら戦闘へ戻れるように、始める前の状態を覚えておく。
+            bool wasBusy = busy;
             busy = true;
             AdventureState ended;
             try
@@ -419,6 +421,7 @@ namespace Baryonyx.Adventure
                 Debug.LogWarning("冒険を終えられませんでした。" + exception.Message);
                 if (disposed)
                     return;
+                busy = wasBusy;
                 overlay.ShowNotice(AdventureTexts.SaveFailed);
                 Dialog.Resume();
                 return;

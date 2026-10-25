@@ -9,7 +9,7 @@ category: enemy-skills
 
 # なぎ払い
 
-[敵の技の定義](README.md) / [関連仕様](../../features/combat.md#敵の行動の仮設定)
+[敵の技の定義](README.md) / [関連仕様](../../features/combat-enemy-behavior.md)
 
 共通技。長い腕・尾・武器で、味方全体をまとめてなぎ払う物理の攻撃である。
 
@@ -19,7 +19,7 @@ category: enemy-skills
 |---|---|
 | 定義の根拠・決定日・参照元 | 2026-10-19、ユーザーの依頼（敵を50体に増やし、文書カタログ・クライアント・サーバーにそろえる）で、既存の共通技では足りない攻撃の型として作った |
 | 役割・説明 | 全体への物理・斬の攻撃 |
-| 関連する仕様・個別ID | 使う敵：[いばら蛇](../enemies/enemy-thorn-serpent.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat.md#敵の行動の仮設定) |
+| 関連する仕様・個別ID | 使う敵：[いばら蛇](../enemies/enemy-thorn-serpent.md)、[蜜吸い花](../enemies/enemy-nectar-bloom.md)、[骨背の大ワニ](../enemies/enemy-bone-croc.md)、[砂鮫](../enemies/enemy-sand-shark.md)、[フジツボ大ガニ](../enemies/enemy-barnacle-crab.md)、[霧の竜](../enemies/enemy-mist-dragon.md)。[敵の行動の仮設定](../../features/combat-enemy-behavior.md) |
 | 実装・ゲームマスタの場所 | 未実装 |
 
 ## 確定した設定

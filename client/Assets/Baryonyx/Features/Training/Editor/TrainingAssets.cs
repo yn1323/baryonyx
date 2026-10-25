@@ -307,7 +307,9 @@ namespace Baryonyx.Training.Editor
             BuildCelebration((RectTransform)view.transform, view);
 
             // 停止中のPrefabでも1人目が読めるよう、仮の装備で生成時に一度描く。
-            TrainingView.Build(view, party, data, EquipmentLocalSource.Starter()).Dispose();
+            TrainingView
+                .Build(view, party, data, EquipmentLocalSource.Starter(), itemArt: view.ItemArt)
+                .Dispose();
             BakeCelebration(view, party, data);
             return view.gameObject;
         }

@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・TempLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
@@ -80,6 +80,7 @@ client/
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
+│   │   ├── Features/TempLab/            TempLabで試す仮の実装。Runtime
 │   │   ├── Features/Wireframe/          削除した操作試作の画像だけを保管
 │   │   │   └── UI/Art/                  出発地点・坑道の背景とボタン・パネルの枠
 │   │   ├── Shared/
@@ -175,6 +176,7 @@ client/
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
 | `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens/debug-rooms.md#戦闘の演出デバッグルーム) |
 | `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens/debug-rooms.md#探索の演出デバッグルーム) |
+| `Debug/TempLab.unity` | 聞かれたことを仮に組んで撮影するデバッグルーム。夕暮れの高原の3Dの舞台と空のCanvasだけを置く | `Baryonyx > App > Create Temp Lab Scene` | [TempLab](../features/screens/debug-rooms.md#templab) |
 
 Top・Home・BattleLab・Battleは、3Dの地面と背景にドット絵のキャラを立たせるHD-2Dの構成である（[3Dの舞台](../art/hd2d-stage.md)）。
 3Dに立ったキャラと影は、停止中のシーンでもPlay Mode中でも表示する。
@@ -204,35 +206,25 @@ Top・Home・BattleLabを開くと、Sceneタブは舞台のカメラから見�
 |---|---|
 | [App/Runtime/GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs) | 実行環境に応じたProviderと保存先の選択。アプリの終了までTopとHomeで同じ接続を共有する。テストでは差し替える |
 | [Health/Runtime/Link/](../../client/Assets/Baryonyx/Features/Health/Runtime/Link) | 連携の確認・許可の要求・同期（`HealthStepLink`）、Topの起動処理の状態（`HealthStartupFlow`）、連携モーダルの描画 |
-| [App/Runtime/HealthRuntime](../../client/Assets/Baryonyx/App/Runtime/HealthRuntime.cs) | 実行環境に応じたProviderの選択、Presenterの生成、初回の接続開始、破棄。現在はどのシーンからも使っていない |
-| [Health/Runtime/Presentation/](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation) | Presenterの状態遷移、操作の多重起動防止と前面復帰待ち、日別JSONの解析 |
-| [Health/Runtime/Requirements/](../../client/Assets/Baryonyx/Features/Health/Runtime/Requirements) | 利用条件の確認インターフェース、判定結果、表示する案内 |
 | [Health/Runtime/Preview/](../../client/Assets/Baryonyx/Features/Health/Runtime/Preview) | EditorとAndroid以外の環境に返すサンプルデータ |
 | [Health/Runtime/Sync/](../../client/Assets/Baryonyx/Features/Health/Runtime/Sync) | 歩数の保存APIと、歩数の保存・ルーン請求を順に行う `HealthServerSync`。[GameServices](../../client/Assets/Baryonyx/App/Runtime/GameServices.cs)が作り、TopとHomeが使う |
 | [Account/Runtime/](../../client/Assets/Baryonyx/Features/Account/Runtime) | Google認証の契約とUMoth接続、ログイン・ログアウトAPI、ゲストの秘密値、全機能で共有するゲストのセッション（`AccountSessionRunner`。ログイン、期限の5分前の取り直し、401のときの1回だけのやり直し） |
-| [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・履歴・残高のAPIと応答の型 |
+| [ExerciseRewards/Runtime/](../../client/Assets/Baryonyx/Features/ExerciseRewards/Runtime) | ルーン請求・残高のAPIと応答の型 |
 | [Shared/Networking/](../../client/Assets/Baryonyx/Shared/Networking) | ゲームサーバーのURL検証、HTTP送信、失敗時の例外、開発ビルドでの要求ごとの時間のログ（[処理時間の計測](backend-design.md#処理時間の計測server-timing)）。パスと入出力の型は各機能が持つ |
 | [Health/Editor/HealthScreenAssets](../../client/Assets/Baryonyx/Features/Health/Editor/HealthScreenAssets.cs) | 接続設定アセットと共有フォントを生成する |
 
-HealthのPresenterは、認証・権限・取得結果に応じた画面状態と、次に実行する操作を決める。
-[HealthScreenOperations](../../client/Assets/Baryonyx/Features/Health/Runtime/Presentation/HealthScreenOperations.cs) は多重起動の防止、キャンセル、OS画面からの前面復帰待ち、操作世代と寿命を管理する。
-通常の背面移行では取得を中断し、OSの認証・権限画面は結果と前面復帰を待つ。
-設定画面への移動は、Presenterが未移動・移動待ち・復帰待ちの状態で管理する。
-
-健康データの画面（View・Prefab）は2026-09-24に削除した。
-新しい画面から使うときは、HealthRuntimeでPresenterを生成し、画面側でPresenterの状態を描画する。
+健康データの画面（View・Prefab）は2026-09-24に、その画面が使っていたPresenterとProviderの選択（`HealthRuntime`）は2026-10-25に削除した。
 
 AppのRuntimeはHealth機能を組み立て、HealthのRuntimeはAppへ依存しない。
 依存方向はApp → Health → ExerciseRewards → Account → Shared、App → Home → Sharedとし、逆向きに参照しない。
 HomeはHealth・ExerciseRewardsを参照せず、Appの[HomeBootstrap](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs)が仮データからPresenterを組み立てる。
 今日の歩数はHomeが定義する `IHomeStepSource` を通して受け取り、Appの [HomeStepSource](../../client/Assets/Baryonyx/App/Runtime/HomeStepSource.cs) がHealthの `HealthStepLink` へつなぐ。
 キャラクターや素材など、ゲーム内の対象の画像は[ゲーム内の対象の画像](#ゲーム内の対象の画像)に従って `Shared/Art/<分類>/` に置く。
-ルーンの残高と請求結果は現在HealthScreenPresenterが保持しており、報酬画面を独立させる時点でExerciseRewards側の表示状態へ移す。
 HealthのEditor処理はAppのオブジェクトを生成しない。
 接続設定アセットの生成メニューは `Baryonyx/Health/Create Screen Assets` である。
 
-EditorとAndroid以外では、HealthRuntimeがプレビュー用Providerを選び、`Preview` を `true` にする。
-認証・健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
+EditorとAndroid以外では、GameServicesがプレビュー用Providerを選び、`Preview` を `true` にする。
+健康データのサンプル応答はProviderが返し、自動テストの固定データはテスト側に置く。
 機能の詳しい動作は [健康データの機能文書](../features/health-data.md) を参照する。
 
 Combatの戦闘計算（`Runtime/`）はApp・Unityの画面へ依存しない。
