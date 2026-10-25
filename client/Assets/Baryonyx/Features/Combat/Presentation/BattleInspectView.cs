@@ -206,6 +206,10 @@ namespace Baryonyx.Combat.Presentation
         [NonSerialized]
         public IReadOnlyList<float> Percents = Array.Empty<float>();
 
+        /// <summary>The chance in percent that the ally's attack card plays once more (BattlePartyMember).</summary>
+        [NonSerialized]
+        public int TwiceChance;
+
         [NonSerialized]
         public int Hp;
 
@@ -252,6 +256,10 @@ namespace Baryonyx.Combat.Presentation
         public int Level;
         public int PhysicalDefense;
         public int MagicDefense;
+
+        /// <summary>How often its blows land as critical hits, and how well it keeps statuses off.</summary>
+        public int Critical;
+        public int Luck;
 
         /// <summary>It attacks with spells, softened by the ally's magic defense instead of the physical.</summary>
         public bool Magic;
@@ -467,6 +475,11 @@ namespace Baryonyx.Combat.Presentation
         // One dot of the 4x pixel art; idle motion moves in whole dots.
         private const float Dot = 4f;
         private const float WeakMultiplier = 1.5f;
+
+        /// <summary>The word over a critical hit, its colour, and how much larger its number shows.</summary>
+        public const string CriticalText = "会心！";
+        public static readonly Color CriticalColor = new(1f, 0.9f, 0.3f);
+        public const float CriticalNumberScale = 1.3f;
 
         // Numbers start just under the top of the drawn body, above the character, not at its middle.
         private const float NumberBelowTop = 10f;
@@ -1662,7 +1675,7 @@ namespace Baryonyx.Combat.Presentation
             if (standing.Count == 0)
                 yield break;
             var enemy = Enemies[index];
-            if (TakeStatus(false, index, CardStatus.Freeze))
+            if (Frozen(index))
             {
                 ShowPopup(enemy.TargetArea, "凍結で動けない", StatusColor(CardStatus.Freeze), 40f);
                 yield return Wait(Settings.EnemyGap);
@@ -1707,7 +1720,18 @@ namespace Baryonyx.Combat.Presentation
                 allyBlock[target] = 0;
                 RefreshBlock(target);
             }
-            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true });
+            // An enemy's blow may land as a critical hit, by its critical stat (doc/features/combat.md).
+            bool critical =
+                attacker >= 0
+                && BattleOdds.Critical(
+                    CombatFormula.CriticalChance(
+                        Enemies[attacker].Critical,
+                        Enemies[attacker].Level
+                    )
+                );
+            if (critical)
+                power = CombatFormula.Critical(power);
+            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true }, critical: critical);
             if (Vfx != null)
                 Vfx.Strike(
                     Allies[target].TargetArea,
@@ -2016,6 +2040,45 @@ namespace Baryonyx.Combat.Presentation
                     UseCard(data, chosen, onEnemies, caster),
                     caster
                 )
+            );
+            if (PlaysTwice(data, onEnemies, caster))
+                Enqueue(PerformAgain(data, parts, bases, chosen, caster));
+        }
+
+        public const string TwiceText = "2回発動";
+
+        // 装備の効果で、攻撃のカードはその確率でもう一度効果を起こす（doc/features/equipment.md#装備の効果）。
+        private bool PlaysTwice(BattleInspectCardData data, bool onEnemies, int caster) =>
+            onEnemies
+            && caster >= 0
+            && data.Effect
+                is (BattleInspectCardEffect.DamageOne or BattleInspectCardEffect.DamageAll)
+            && Allies[caster].TwiceChance > 0
+            && UnityEngine.Random.Range(0, 100) < Allies[caster].TwiceChance;
+
+        // 2回目は1回目と同じ相手を狙い、その相手が倒れていれば何も起きない。全体・ランダムの攻撃は残っている敵へ。
+        private IEnumerator PerformAgain(
+            BattleInspectCardData data,
+            RectTransform[] parts,
+            Vector2[] bases,
+            List<int> chosen,
+            int caster
+        )
+        {
+            bool alive = false;
+            foreach (var enemy in Enemies)
+                alive |= enemy.Alive;
+            bool single = data.Effect == BattleInspectCardEffect.DamageOne && chosen.Count > 0;
+            if (!alive || (single && !Enemies[chosen[0]].Alive))
+                yield break;
+            ShowPopup(Allies[caster].TargetArea, TwiceText, CriticalColor, 44f);
+            yield return Perform(
+                data.Name,
+                parts,
+                bases,
+                Vector2.right,
+                UseCard(data, chosen, true, caster),
+                caster
             );
         }
 
@@ -2357,13 +2420,17 @@ namespace Baryonyx.Combat.Presentation
                 line.rectTransform.localScale = new Vector3(width, 1f, 1f);
         }
 
-        /// <summary>Damages an enemy and tells how hard the blow hit it.</summary>
+        /// <summary>
+        /// Damages an enemy and tells how hard the blow hit it. A <paramref name="critical"/> hit
+        /// shows a larger number under the word for it.
+        /// </summary>
         private BattleHitWeight Hit(
             int index,
             int power,
             BattleInspectElement element,
             BattleInspectElement extra = BattleInspectElement.None,
-            bool lasting = false
+            bool lasting = false,
+            bool critical = false
         )
         {
             var enemy = Enemies[index];
@@ -2396,7 +2463,15 @@ namespace Baryonyx.Combat.Presentation
             RefreshEnemy(enemy);
 
             // A weakness shows in the number's colour and size, without words.
-            ShowNumber(weak ? WeakNumber : DamageNumber, enemy.TargetArea, damage.ToString());
+            if (critical)
+                ShowCritical(enemy.TargetArea);
+            var number = ShowNumber(
+                weak ? WeakNumber : DamageNumber,
+                enemy.TargetArea,
+                damage.ToString()
+            );
+            if (critical && number != null)
+                number.fontSize *= CriticalNumberScale;
             StartCoroutine(
                 HitReaction(index, element == BattleInspectElement.Ice ? FrozenTint : HitTint)
             );
@@ -2451,7 +2526,7 @@ namespace Baryonyx.Combat.Presentation
                 sprite.material = ActorMaterial;
         }
 
-        private void HitAlly(int index, int damage, bool pastBlock = false)
+        private void HitAlly(int index, int damage, bool pastBlock = false, bool critical = false)
         {
             var ally = Allies[index];
             if (!pastBlock)
@@ -2461,7 +2536,11 @@ namespace Baryonyx.Combat.Presentation
             // Its cards leave the hand and the deck the moment it falls.
             RefreshFallen();
             ShowBoostsTurnedOn();
-            ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
+            if (critical)
+                ShowCritical(ally.TargetArea);
+            var number = ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
+            if (critical && number != null)
+                number.fontSize *= CriticalNumberScale;
             StartCoroutine(AllyHitReaction(index));
         }
 
@@ -2583,14 +2662,25 @@ namespace Baryonyx.Combat.Presentation
             popup.fontSize = size;
         }
 
-        private void ShowNumber(TMP_Text template, RectTransform anchor, string text)
+        private TMP_Text ShowNumber(TMP_Text template, RectTransform anchor, string text)
         {
             if (template == null || anchor == null)
-                return;
+                return null;
             var rect = anchor.rect;
             var start = new Vector2(rect.center.x, rect.yMax - NumberBelowTop);
-            Spawn(template, anchor, start, text, NumberRise, template.fontSize * PopupLineHeight);
+            return Spawn(
+                template,
+                anchor,
+                start,
+                text,
+                NumberRise,
+                template.fontSize * PopupLineHeight
+            );
         }
+
+        /// <summary>The word over a critical hit, shown just before its number.</summary>
+        private void ShowCritical(RectTransform anchor) =>
+            ShowPopup(anchor, CriticalText, CriticalColor, 44f);
 
         /// <summary>
         /// Puts a copy of a popup template over <paramref name="anchor"/>, starting at

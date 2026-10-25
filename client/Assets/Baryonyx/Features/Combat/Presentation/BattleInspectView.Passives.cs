@@ -307,7 +307,14 @@ namespace Baryonyx.Combat.Presentation
                 skill.Element == CardElement.Blunt
                 && Enemies[enemy].Alive
                 && HasPassive(caster, CombatPassiveKind.HolyFlameHammer)
-                && UnityEngine.Random.Range(0, 100) < CombatPassiveRules.HolyFlameChance
+                && BattleOdds.Lands(
+                    CombatFormula.StatusChance(
+                        CombatPassiveRules.HolyFlameChance,
+                        StatsNow(caster).Luck,
+                        Allies[caster].Level,
+                        Enemies[enemy].Luck
+                    )
+                )
             )
             {
                 ShowPassiveForCard(caster, CombatPassiveKind.HolyFlameHammer);

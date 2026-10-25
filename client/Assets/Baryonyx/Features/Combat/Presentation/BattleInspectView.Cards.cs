@@ -19,6 +19,13 @@ namespace Baryonyx.Combat.Presentation
     {
         // Damage up and down from statuses (provisional).
         private const float VulnerableBonus = 0.25f;
+
+        /// <summary>The words over an enemy a status missed, and their colour.</summary>
+        public const string ResistedText = "効かなかった";
+        private static readonly Color ResistedColor = new(0.72f, 0.72f, 0.76f);
+
+        // 凍結が解けて、次に動くまでは凍結にかからない敵。
+        private readonly HashSet<int> thawed = new();
         private const float ParalysisCut = 0.25f;
         private const float ProtectCut = 0.25f;
 
@@ -197,7 +204,8 @@ namespace Baryonyx.Combat.Presentation
                         break;
                     }
                     case CardActionKind.Status:
-                        AddStatus(hit.Ally, hit.Index, action, caster);
+                        if (hit.Ally || Lands(hit.Index, action, caster))
+                            AddStatus(hit.Ally, hit.Index, action, caster);
                         break;
                     case CardActionKind.Energy:
                         Energy = Mathf.Min(MaxEnergyCap, Energy + action.Amount);
@@ -275,12 +283,18 @@ namespace Baryonyx.Combat.Presentation
                 DefenseOf(target, action.Stat),
                 Allies[caster].Level
             );
+            // Each blow may land as a critical hit, by the user's critical stat (doc/features/combat.md).
+            bool critical = BattleOdds.Critical(
+                CombatFormula.CriticalChance(StatsNow(caster).Critical, Allies[caster].Level)
+            );
+            if (critical)
+                power = CombatFormula.Critical(power);
             var element = BattleCardText.ElementOf(skill.Element);
             var extra = HasStatus(true, caster, CardStatus.FireBlade)
                 ? BattleInspectElement.Fire
                 : BattleInspectElement.None;
             int before = target.Hp;
-            var weight = Hit(enemy, power, element, extra);
+            var weight = Hit(enemy, power, element, extra, critical: critical);
             AfterCardBlow(skill, enemy, caster, before - target.Hp);
             return weight;
         }
@@ -428,9 +442,55 @@ namespace Baryonyx.Combat.Presentation
             ShowPopup(area, name, StatusColor(action.Status), 40f);
         }
 
+        /// <summary>
+        /// True when a card's status lands on an enemy (doc/features/combat.md, how easily
+        /// statuses land): a bad status lands by its chance moved by the luck of the user and the
+        /// enemy, and an enemy that has just come out of a freeze cannot be frozen until it acts
+        /// again. A miss shows over the enemy.
+        /// </summary>
+        private bool Lands(int enemy, CardAction action, int caster)
+        {
+            if (!CardRules.IsBad(action.Status))
+                return true;
+            bool guarded = action.Status == CardStatus.Freeze && thawed.Contains(enemy);
+            if (!guarded && action.Chance <= 0)
+                return true;
+            if (
+                !guarded
+                && BattleOdds.Lands(
+                    CombatFormula.StatusChance(
+                        action.Chance,
+                        StatsNow(caster).Luck,
+                        Allies[caster].Level,
+                        Enemies[enemy].Luck
+                    )
+                )
+            )
+                return true;
+            ShowPopup(Enemies[enemy].TargetArea, ResistedText, ResistedColor, 40f);
+            return false;
+        }
+
+        /// <summary>
+        /// True when the enemy is frozen and loses its action, which thaws it. Until it next acts,
+        /// it cannot be frozen again, so no enemy stays frozen turn after turn.
+        /// </summary>
+        private bool Frozen(int index)
+        {
+            if (TakeStatus(false, index, CardStatus.Freeze))
+            {
+                thawed.Add(index);
+                return true;
+            }
+            thawed.Remove(index);
+            return false;
+        }
+
         /// <summary>Forgets every status of one side (the enemies, or the allies).</summary>
         private void ClearStatuses(bool allies)
         {
+            if (!allies)
+                thawed.Clear();
             int count = allies ? Allies.Length : Enemies.Length;
             for (int i = 0; i < count; i++)
                 StatusesOf(allies, i).Clear();

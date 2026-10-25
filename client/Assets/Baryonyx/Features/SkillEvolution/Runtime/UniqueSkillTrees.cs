@@ -147,9 +147,9 @@ namespace Baryonyx.SkillEvolution
                     Random,
                     3,
                     "UniqueStarFall1",
-                    "ランダムな敵に{0}ダメージ×5。敵全体に[やけど]2ターン。",
+                    "ランダムな敵に{0}ダメージ×5。敵全体に60%で[やけど]2ターン。",
                     Damage(Random, Mag, 40, hits: 5),
-                    Apply(Enemies, CardStatus.Burn, 2)
+                    Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
                 ),
                 Stage(
                     "StarFall.2",
@@ -161,7 +161,7 @@ namespace Baryonyx.SkillEvolution
                     5,
                     "UniqueStarFall2",
                     "敵全体に[やけど]2ターン。ランダムな敵に{0}ダメージ×6。[やけど]中は1.5倍。",
-                    Apply(Enemies, CardStatus.Burn, 2),
+                    Apply(Enemies, CardStatus.Burn, 2).WithChance(100),
                     Damage(Random, Mag, 40, hits: 6).Bonus(CardCondition.OnBurning, 50)
                 ),
                 // 2本目の枝：氷の星にする。
@@ -174,9 +174,9 @@ namespace Baryonyx.SkillEvolution
                     Random,
                     3,
                     "UniqueStarFall3",
-                    "ランダムな敵に{0}ダメージ×5。敵全体に[凍え]2ターン。",
+                    "ランダムな敵に{0}ダメージ×5。敵全体に60%で[凍え]2ターン。",
                     Damage(Random, Mag, 40, hits: 5),
-                    Apply(Enemies, CardStatus.Chill, 2)
+                    Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
                 ),
                 Stage(
                     "StarFall.4",
@@ -187,9 +187,9 @@ namespace Baryonyx.SkillEvolution
                     Random,
                     4,
                     "UniqueStarFall4",
-                    "ランダムな敵に{0}ダメージ×6。[凍え]中は1.5倍。敵全体に[凍え]2ターン。",
+                    "ランダムな敵に{0}ダメージ×6。[凍え]中は1.5倍。敵全体に60%で[凍え]2ターン。",
                     Damage(Random, Mag, 45, hits: 6).Bonus(CardCondition.OnChilled, 50),
-                    Apply(Enemies, CardStatus.Chill, 2)
+                    Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
                 ),
                 // 3本目の枝：1体に集める。
                 Stage(
@@ -230,9 +230,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     2,
                     "UniqueThunderArrow0",
-                    "敵1体に{0}ダメージ。[麻痺]1ターン。",
+                    "敵1体に{0}ダメージ。60%で[麻痺]1ターン。",
                     Damage(Enemy, Phy, 120),
-                    Apply(Enemy, CardStatus.Paralysis, 1)
+                    Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
                 ),
                 // 1本目の枝：麻痺で縛る。
                 Stage(
@@ -244,9 +244,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     2,
                     "UniqueThunderArrow1",
-                    "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。[麻痺]2ターン。",
+                    "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。60%で[麻痺]2ターン。",
                     Damage(Enemy, Phy, 120).Bonus(CardCondition.OnParalyzed, 50),
-                    Apply(Enemy, CardStatus.Paralysis, 2)
+                    Apply(Enemy, CardStatus.Paralysis, 2).WithChance(60)
                 ),
                 Stage(
                     "ThunderArrow.2",
@@ -257,9 +257,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     3,
                     "UniqueThunderArrow2",
-                    "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。[麻痺]2ターン。行動順を1つ遅らせる。",
+                    "敵1体に{0}ダメージ。[麻痺]中の敵には1.5倍。60%で[麻痺]2ターン。行動順を1つ遅らせる。",
                     Damage(Enemy, Phy, 140).Bonus(CardCondition.OnParalyzed, 50),
-                    Apply(Enemy, CardStatus.Paralysis, 2),
+                    Apply(Enemy, CardStatus.Paralysis, 2).WithChance(60),
                     Simple(CardActionKind.Delay, Enemy, 1)
                 ),
                 // 2本目の枝：敵から敵へ渡る。
@@ -297,9 +297,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     1,
                     "UniqueThunderArrow5",
-                    "敵1体に{0}ダメージ。[麻痺]1ターン。[弱点]を突くとエネルギー+1。",
+                    "敵1体に{0}ダメージ。60%で[麻痺]1ターン。[弱点]を突くとエネルギー+1。",
                     Damage(Enemy, Phy, 100),
-                    Apply(Enemy, CardStatus.Paralysis, 1),
+                    Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60),
                     Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
                 ),
                 Stage(
@@ -311,9 +311,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     0,
                     "UniqueThunderArrow6",
-                    "敵1体に{0}ダメージ。[麻痺]1ターン。[弱点]を突くとエネルギー+1、カードを1枚引く。",
+                    "敵1体に{0}ダメージ。60%で[麻痺]1ターン。[弱点]を突くとエネルギー+1、カードを1枚引く。",
                     Damage(Enemy, Phy, 100),
-                    Apply(Enemy, CardStatus.Paralysis, 1),
+                    Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60),
                     Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness),
                     Simple(CardActionKind.Draw, Nobody, 1).Only(CardCondition.OnWeakness)
                 )
@@ -343,9 +343,9 @@ namespace Baryonyx.SkillEvolution
                     Enemies,
                     3,
                     "UniqueArrowStorm1",
-                    "敵全体に{0}ダメージ×3。[毒]を2つ重ねる。",
+                    "敵全体に{0}ダメージ×3。60%で[毒]を2つ重ねる。",
                     Damage(Enemies, Phy, 40, hits: 3),
-                    Apply(Enemies, CardStatus.Poison, 0, 2)
+                    Apply(Enemies, CardStatus.Poison, 0, 2).WithChance(60)
                 ),
                 Stage(
                     "ArrowStorm.2",
@@ -356,9 +356,9 @@ namespace Baryonyx.SkillEvolution
                     Enemies,
                     4,
                     "UniqueArrowStorm2",
-                    "敵全体に{0}ダメージ×3。[毒]がある敵には1.5倍。[毒]を3つ重ねる。",
+                    "敵全体に{0}ダメージ×3。[毒]がある敵には1.5倍。60%で[毒]を3つ重ねる。",
                     Damage(Enemies, Phy, 40, hits: 3).Bonus(CardCondition.OnPoisoned, 50),
-                    Apply(Enemies, CardStatus.Poison, 0, 3)
+                    Apply(Enemies, CardStatus.Poison, 0, 3).WithChance(60)
                 ),
                 // 2本目の枝：鎧を穿つ。
                 Stage(
@@ -370,9 +370,9 @@ namespace Baryonyx.SkillEvolution
                     Enemies,
                     3,
                     "UniqueArrowStorm3",
-                    "敵全体に{0}ダメージ×3。[防御ダウン]2ターン。",
+                    "敵全体に{0}ダメージ×3。60%で[防御ダウン]2ターン。",
                     Damage(Enemies, Phy, 40, hits: 3),
-                    Apply(Enemies, CardStatus.Vulnerable, 2)
+                    Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(60)
                 ),
                 Stage(
                     "ArrowStorm.4",
@@ -383,9 +383,9 @@ namespace Baryonyx.SkillEvolution
                     Enemies,
                     5,
                     "UniqueArrowStorm4",
-                    "敵全体に{0}ダメージ×4。[防御ダウン]中は1.5倍。[防御ダウン]2ターン。",
+                    "敵全体に{0}ダメージ×4。[防御ダウン]中は1.5倍。60%で[防御ダウン]2ターン。",
                     Damage(Enemies, Phy, 40, hits: 4).Bonus(CardCondition.OnVulnerable, 50),
-                    Apply(Enemies, CardStatus.Vulnerable, 2)
+                    Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(60)
                 ),
                 // 3本目の枝：速く射て手を回す。
                 Stage(
@@ -540,9 +540,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     3,
                     "UniqueIssen1",
-                    "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。[出血]2ターン。",
+                    "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。60%で[出血]2ターン。",
                     Damage(Enemy, Phy, 200).Bonus(CardCondition.OnBleeding, 50),
-                    Apply(Enemy, CardStatus.Bleed, 2)
+                    Apply(Enemy, CardStatus.Bleed, 2).WithChance(60)
                 ),
                 Stage(
                     "Issen.2",
@@ -553,9 +553,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     4,
                     "UniqueIssen2",
-                    "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。[出血]3ターン。",
+                    "敵1体に{0}ダメージ。[出血]中の敵には1.5倍。60%で[出血]3ターン。",
                     Damage(Enemy, Phy, 280).Bonus(CardCondition.OnBleeding, 50),
-                    Apply(Enemy, CardStatus.Bleed, 3)
+                    Apply(Enemy, CardStatus.Bleed, 3).WithChance(60)
                 ),
                 // 2本目の枝：軽く速くする。
                 Stage(
@@ -605,9 +605,9 @@ namespace Baryonyx.SkillEvolution
                     Enemies,
                     4,
                     "UniqueIssen6",
-                    "敵全体に{0}ダメージ。[防御ダウン]2ターン。",
+                    "敵全体に{0}ダメージ。60%で[防御ダウン]2ターン。",
                     Damage(Enemies, Phy, 110),
-                    Apply(Enemies, CardStatus.Vulnerable, 2)
+                    Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(60)
                 )
             ),
             // --- The healer (ミナ・リタ) -------------------------------------------------------
@@ -850,10 +850,10 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     3,
                     "LightningBolt",
-                    "敵全体の[弱点]をすべて見抜く。敵1体に{0}ダメージ。[防御ダウン]2ターン。",
+                    "敵全体の[弱点]をすべて見抜く。敵1体に{0}ダメージ。60%で[防御ダウン]2ターン。",
                     Simple(CardActionKind.RevealWeakness, Enemies),
                     Damage(Enemy, Mag, 170),
-                    Apply(Enemy, CardStatus.Vulnerable, 2)
+                    Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(60)
                 ),
                 // 2本目の枝：手札を増やす。
                 Stage(
@@ -990,9 +990,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     1,
                     "ShadowSnipe",
-                    "敵1体に{0}ダメージ×2。[防御ダウン]1ターン。",
+                    "敵1体に{0}ダメージ×2。60%で[防御ダウン]1ターン。",
                     Damage(Enemy, Phy, 45, hits: 2),
-                    Apply(Enemy, CardStatus.Vulnerable, 1)
+                    Apply(Enemy, CardStatus.Vulnerable, 1).WithChance(60)
                 ),
                 Stage(
                     "QuickShot.6",
@@ -1003,9 +1003,9 @@ namespace Baryonyx.SkillEvolution
                     Enemy,
                     2,
                     "ShadowSnipe",
-                    "敵1体に{0}ダメージ×3。[防御ダウン]中は1.5倍。[防御ダウン]2ターン。",
+                    "敵1体に{0}ダメージ×3。[防御ダウン]中は1.5倍。60%で[防御ダウン]2ターン。",
                     Damage(Enemy, Phy, 50, hits: 3).Bonus(CardCondition.OnVulnerable, 50),
-                    Apply(Enemy, CardStatus.Vulnerable, 2)
+                    Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(60)
                 )
             ),
             // The knight: 味方全体を守りながら奮い立たせる。

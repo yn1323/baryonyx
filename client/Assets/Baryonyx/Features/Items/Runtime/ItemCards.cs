@@ -121,7 +121,7 @@ namespace Baryonyx.Items
                     Enemies,
                     1,
                     "敵全体に[毒]を2つ重ねる。",
-                    Apply(Enemies, CardStatus.Poison, 0, 2)
+                    Apply(Enemies, CardStatus.Poison, 0, 2).WithChance(100)
                 ),
                 Item(
                     "guardian-seed",
@@ -190,7 +190,7 @@ namespace Baryonyx.Items
                     Enemy,
                     1,
                     "敵1体に墨を浴びせ、2ターンの間[防御ダウン]にする。",
-                    Apply(Enemy, CardStatus.Vulnerable, 2)
+                    Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(100)
                 ),
                 Item(
                     "pirate-rum",
@@ -246,9 +246,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemies,
                     1,
-                    "敵全体に{0}ダメージ。[凍え]2ターン。",
+                    "敵全体に{0}ダメージ。60%で[凍え]2ターン。",
                     Damage(Enemies, Mag, 40),
-                    Apply(Enemies, CardStatus.Chill, 2)
+                    Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
                 ),
                 Item(
                     "troll-stoneskin",
@@ -292,9 +292,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemy,
                     1,
-                    "敵1体に{0}ダメージ。[やけど]2ターン。",
+                    "敵1体に{0}ダメージ。60%で[やけど]2ターン。",
                     Damage(Enemy, Mag, 50),
-                    Apply(Enemy, CardStatus.Burn, 2)
+                    Apply(Enemy, CardStatus.Burn, 2).WithChance(60)
                 ),
                 Item(
                     "bog-venom",
@@ -305,7 +305,7 @@ namespace Baryonyx.Items
                     Enemies,
                     1,
                     "敵全体に[毒]を3つ重ねる。",
-                    Apply(Enemies, CardStatus.Poison, 0, 3)
+                    Apply(Enemies, CardStatus.Poison, 0, 3).WithChance(100)
                 ),
                 Item(
                     "croc-tear",
@@ -339,9 +339,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemy,
                     0,
-                    "敵1体に{0}ダメージ。[毒]を1つ重ねる。",
+                    "敵1体に{0}ダメージ。60%で[毒]を1つ重ねる。",
                     Damage(Enemy, Phy, 70),
-                    Apply(Enemy, CardStatus.Poison, 0, 1)
+                    Apply(Enemy, CardStatus.Poison, 0, 1).WithChance(60)
                 ),
                 Item(
                     "hourglass-sand",
@@ -466,9 +466,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemies,
                     1,
-                    "敵全体に{0}ダメージ。[やけど]2ターン。",
+                    "敵全体に{0}ダメージ。60%で[やけど]2ターン。",
                     Damage(Enemies, Mag, 45),
-                    Apply(Enemies, CardStatus.Burn, 2)
+                    Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
                 ),
                 Item(
                     "flametail-plume",
@@ -490,9 +490,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemies,
                     2,
-                    "敵全体に{0}ダメージ。[防御ダウン]2ターン。",
+                    "敵全体に{0}ダメージ。60%で[防御ダウン]2ターン。",
                     Damage(Enemies, Phy, 110),
-                    Apply(Enemies, CardStatus.Vulnerable, 2)
+                    Apply(Enemies, CardStatus.Vulnerable, 2).WithChance(60)
                 ),
                 // --- 白嶺ネーヴェ（Lv 40） ---------------------------------------------------
                 Item(
@@ -536,9 +536,9 @@ namespace Baryonyx.Items
                     CardKind.Attack,
                     Enemy,
                     2,
-                    "敵1体に{0}ダメージ。[凍結]させる。",
+                    "敵1体に{0}ダメージ。40%で[凍結]させる。",
                     Damage(Enemy, Mag, 120),
-                    Apply(Enemy, CardStatus.Freeze, 1)
+                    Apply(Enemy, CardStatus.Freeze, 1).WithChance(40)
                 ),
                 Item(
                     "mistdragon-scale",

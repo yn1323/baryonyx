@@ -646,11 +646,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.010025
+      value: 103.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -774,7 +774,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E598%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u3002<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
+      value: "\u65751\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E598%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51CD\u3048</u></color></nobr>\u4E2D\u306E\u6575\u306B\u306F1.5\u500D\u300270%\u3067<nobr><color=#96d6ff><u>\u51CD\u7D50</u></color></nobr>\u3055\u305B\u308B\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
@@ -794,11 +794,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.010025
+      value: 103.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -844,15 +844,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.010067
+      value: 59.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 93.00995
+      value: 93.01012
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -996,15 +996,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.010067
+      value: 59.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 93.00995
+      value: 93.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -1054,7 +1054,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.01
+      value: 123.01004
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -1214,7 +1214,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.01
+      value: 123.01004
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -1260,15 +1260,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.010067
+      value: 59.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 108.00995
+      value: 108.01012
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -1416,15 +1416,15 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.010067
+      value: 59.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 108.00995
+      value: 108.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -2060,11 +2060,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.009983
+      value: 60.01002
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 147.00998
+      value: 147.01001
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2208,11 +2208,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 45510a39ed1c0460d9924f51fc678464, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.009983
+      value: 60.01002
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 147.00998
+      value: 147.01001
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2250,11 +2250,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2398,11 +2398,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2448,11 +2448,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.00999
+      value: 125.010025
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2596,11 +2596,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.00999
+      value: 125.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2642,11 +2642,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.010025
+      value: 45.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.010025
+      value: 125.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -2794,11 +2794,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.010025
+      value: 45.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.010025
+      value: 125.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -3256,11 +3256,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -3412,11 +3412,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -3466,11 +3466,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 169.01007
+      value: 169.00989
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -3626,11 +3626,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 169.01007
+      value: 169.00989
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -3854,11 +3854,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.009983
+      value: 60.01002
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 188.99998
+      value: 189.00003
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -4010,11 +4010,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: b013b1a4cf4ba428c8683162ee5f63ca, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.009983
+      value: 60.01002
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 188.99998
+      value: 189.00003
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -4470,6 +4470,10 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[1]'
       value: 125.009995
       objectReference: {fileID: 0}
+    - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
+      objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
       value: 15_StrideStrike
@@ -4614,6 +4618,10 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[1]'
       value: 125.009995
       objectReference: {fileID: 0}
+    - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
+      objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
       value: 14
@@ -4659,6 +4667,10 @@ PrefabInstance:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
       value: 125.009995
+      objectReference: {fileID: 0}
+    - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -4811,6 +4823,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
       value: 125.009995
+      objectReference: {fileID: 0}
+    - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -5052,6 +5068,10 @@ PrefabInstance:
       propertyPath: 'LineEnds.Array.data[1]'
       value: 189
       objectReference: {fileID: 0}
+    - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
+      objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
       value: 35_LightningBolt
@@ -5195,6 +5215,10 @@ PrefabInstance:
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
       value: 189
+      objectReference: {fileID: 0}
+    - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
+      propertyPath: 'LineEnds.Array.data[2]'
+      value: 108.01004
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -5446,11 +5470,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 81.010025
+      value: 81.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -5606,11 +5630,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 81.010025
+      value: 81.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -5656,11 +5680,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -5812,11 +5836,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.01007
+      value: 103.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -5862,11 +5886,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 188.99998
+      value: 189.00003
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -6018,11 +6042,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 24e9d679459a7487b94cc095f4558c75, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 188.99998
+      value: 189.00003
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -6852,15 +6876,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 189.00006
+      value: 188.99991
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.00995
+      value: 123.01012
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -7012,15 +7036,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.01007
+      value: 45.009903
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 189.00006
+      value: 188.99991
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.00995
+      value: 123.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -7268,11 +7292,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.010025
+      value: 45.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.01002
+      value: 59.009937
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -7424,11 +7448,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.010025
+      value: 45.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 59.01002
+      value: 59.009937
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -7478,11 +7502,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 81.010025
+      value: 81.00994
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -7606,7 +7630,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E93%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u3002<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u7269\u653B\u306E93%</color></nobr>\u30C0\u30E1\u30FC\u30B8\xD72\u300293%\u3067<nobr><color=#96d6ff><u>\u51FA\u8840</u></color></nobr>3\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
@@ -7626,11 +7650,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.01002
+      value: 60.009937
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 81.010025
+      value: 81.00994
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -7672,11 +7696,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 169.01007
+      value: 169.00989
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -7812,11 +7836,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: 49e974873b5314cd6a48c7532947120b, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 169.01007
+      value: 169.00989
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -9074,15 +9098,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 189.00006
+      value: 188.99991
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 108.00995
+      value: 108.01012
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -9202,7 +9226,7 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
     - target: {fileID: 4415766973367343890, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_text
-      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E87%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u3002<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
+      value: "\u6575\u5168\u4F53\u306B<nobr><color=#ffce60>\u5C5E\u653B\u306E87%</color></nobr>\u30C0\u30E1\u30FC\u30B8\u300274%\u3067<nobr><color=#96d6ff><u>\u3084\u3051\u3069</u></color></nobr>2\u30BF\u30FC\u30F3\u3002"
       objectReference: {fileID: 0}
     - target: {fileID: 4624699430801738883, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Color.g
@@ -9214,15 +9238,15 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 189.00006
+      value: 188.99991
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 108.00995
+      value: 108.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -9680,11 +9704,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.00999
+      value: 103.010025
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -9828,11 +9852,11 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: e043fd0bb51324659a68206e1c3cd8a6, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 45.009987
+      value: 45.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 103.00999
+      value: 103.010025
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
@@ -9886,7 +9910,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.01
+      value: 123.01004
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -10046,7 +10070,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 123.01
+      value: 123.01004
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style
@@ -10092,15 +10116,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.01007
+      value: 125.0099
       objectReference: {fileID: 0}
     - target: {fileID: 779092875985937859, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 93.00995
+      value: 93.01012
       objectReference: {fileID: 0}
     - target: {fileID: 2253439295054605743, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: m_Name
@@ -10248,15 +10272,15 @@ PrefabInstance:
       objectReference: {fileID: -6622703189942226176, guid: c48ff8983364a4ca28e3cb8722fdd9f4, type: 3}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[0]'
-      value: 60.010067
+      value: 60.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[1]'
-      value: 125.01007
+      value: 125.0099
       objectReference: {fileID: 0}
     - target: {fileID: 5310762490193678314, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: 'LineEnds.Array.data[2]'
-      value: 93.00995
+      value: 93.01012
       objectReference: {fileID: 0}
     - target: {fileID: 5331052302697383702, guid: 2a2d673618fec47d5b69c0ccf4a9748d, type: 3}
       propertyPath: Style

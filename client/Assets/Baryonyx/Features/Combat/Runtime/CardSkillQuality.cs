@@ -87,6 +87,7 @@ namespace Baryonyx.Combat
                         : from.Hits,
                 Status = from.Status,
                 Turns = from.Turns > 0 ? Quality.Count(from.Turns, m) : from.Turns,
+                Chance = from.Chance > 0 ? Quality.Chance(from.Chance, m) : from.Chance,
                 Amount =
                     from.Amount <= 0 ? from.Amount
                     : from.Kind == CardActionKind.Revive ? Quality.Chance(from.Amount, m)
@@ -117,6 +118,20 @@ namespace Baryonyx.Combat
                     int index = power++;
                     if (from.Kind == CardActionKind.Damage && to.Hits != from.Hits)
                         RewriteHits(text, index, to.Hits, edits);
+                }
+                // 確率は100%に届いたら書かない（必ず付く状態と同じ書き方にする）。
+                if (from.Chance > 0 && from.Chance < 100 && to.Chance != from.Chance)
+                {
+                    if (to.Chance >= 100)
+                        Replace(text, $"(?<![0-9]){from.Chance}%で", "", edits, ref cursor);
+                    else
+                        Replace(
+                            text,
+                            $"(?<![0-9]){from.Chance}(?=%で)",
+                            to.Chance,
+                            edits,
+                            ref cursor
+                        );
                 }
                 if (from.Turns > 0 && to.Turns != from.Turns)
                     Replace(text, $"(?<![0-9]){from.Turns}(?=ターン)", to.Turns, edits, ref cursor);

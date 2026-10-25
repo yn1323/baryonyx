@@ -101,10 +101,15 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(best.Actions[0].Percent, Is.EqualTo(240));
             Assert.That(best.Actions[0].Hits, Is.EqualTo(2));
             Assert.That(best.Actions[1].Turns, Is.EqualTo(5));
+            // 60%の確率も伸び、100%に届くと説明文から消える。
+            Assert.That(best.Actions[1].Chance, Is.EqualTo(100));
             Assert.That(
                 best.Text,
                 Is.EqualTo("敵1体に{0}ダメージ×2。[弱点]を突くと[やけど]5ターン。")
             );
+            var half = fire.WithMultiplier(1.5f);
+            Assert.That(half.Actions[1].Chance, Is.EqualTo(90));
+            Assert.That(half.Text, Does.Contain("[弱点]を突くと90%で[やけど]"));
             Assert.That(CardRules.Describe(best), Does.Contain("属攻の240%ダメージ×2"));
             // The definition itself stays at ×1.00.
             Assert.That(fire.Actions[0].Percent, Is.EqualTo(100));
@@ -171,10 +176,10 @@ namespace Baryonyx.Tests.EditMode
             var dagger = EquipmentCatalog.Find("flame-dagger");
             Assert.That(dagger.MaxMultiplier, Is.EqualTo(1.8f));
             Assert.That(dagger.DetailAt(1f), Is.EqualTo(dagger.Detail));
-            Assert.That(dagger.DetailAt(1.8f), Is.EqualTo("速度の 225%｜斬・炎｜4回攻撃"));
+            Assert.That(dagger.DetailAt(1.8f), Is.EqualTo("速度 +23%｜攻撃スキルが18%で2回発動"));
             Assert.That(
                 EquipmentCatalog.Find("iron-helm").DetailAt(1.5f),
-                Is.EqualTo("物防の 173%｜HP +60")
+                Is.EqualTo("物防 +18%｜HP +5%")
             );
             Assert.That(dagger.QualityOf(1.8f), Is.EqualTo(ItemQuality.S));
         }

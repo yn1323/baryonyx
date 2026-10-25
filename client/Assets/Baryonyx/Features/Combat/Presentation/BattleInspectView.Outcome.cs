@@ -121,6 +121,8 @@ namespace Baryonyx.Combat.Presentation
             enemy.PhysicalAttack = EnemyStats.At(stats.PhysicalAttack, enemy.Level);
             enemy.MagicAttack = EnemyStats.At(stats.MagicAttack, enemy.Level);
             enemy.Speed = EnemyStats.At(stats.Speed, enemy.Level);
+            enemy.Critical = EnemyStats.At(stats.Critical, enemy.Level);
+            enemy.Luck = EnemyStats.At(stats.Luck, enemy.Level);
             enemy.AttackScale = 1f;
             enemy.Block = 0;
             enemy.PowerUp = 0;

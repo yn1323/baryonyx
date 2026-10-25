@@ -196,6 +196,12 @@ namespace Baryonyx.Combat
         public CardStatus Status;
         public int Turns;
 
+        /// <summary>
+        /// The base chance in percent that a bad status lands on an enemy, before luck
+        /// (<see cref="CombatFormula.StatusChance"/>); 0 for a status that always lands.
+        /// </summary>
+        public int Chance;
+
         /// <summary>Energy, cards drawn, cost lowered, poison stacks, or percent of the maximum HP revived.</summary>
         public int Amount;
 
@@ -308,6 +314,13 @@ namespace Baryonyx.Combat
         {
             BonusWhen = when;
             BonusPercent = percent;
+            return this;
+        }
+
+        /// <summary>The same status, landing with <paramref name="percent"/>% before luck.</summary>
+        public CardAction WithChance(int percent)
+        {
+            Chance = percent;
             return this;
         }
 

@@ -1741,15 +1741,30 @@ namespace Baryonyx.Combat.Editor
             var samples = new[]
             {
                 ("通常", "128", DamageNumberAssets.Normal),
+                ("会心", "192", DamageNumberAssets.Normal),
                 ("弱点", "192", DamageNumberAssets.Weak),
                 ("回復", "40", DamageNumberAssets.Heal),
             };
             for (int i = 0; i < samples.Length; i++)
             {
                 var (caption, text, style) = samples[i];
-                float x = (i - 1) * 440f;
+                float x = (i - 1.5f) * 400f;
                 var number = DamageNumberAssets.Label(root, caption, text, style);
                 number.rectTransform.anchoredPosition = new Vector2(x, 0f);
+                // 会心の一撃は数字を大きくし、上に「会心！」を出す（BattleInspectView の会心と同じ）。
+                if (caption == "会心")
+                {
+                    number.fontSize *= BattleInspectView.CriticalNumberScale;
+                    var word = Label(
+                        root,
+                        "CriticalWord",
+                        BattleInspectView.CriticalText,
+                        44,
+                        BattleInspectView.CriticalColor,
+                        TextAlignmentOptions.Center
+                    );
+                    Place(word.rectTransform, new Vector2(x, 130f), new Vector2(320, 60));
+                }
                 var label = Label(
                     root,
                     caption + "Caption",
@@ -1899,7 +1914,7 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// A unit's HP bar as pixel art on 4px dots (doc/features/screens.md, the battle mock):
+        /// A unit's HP bar as pixel art on 4px dots (doc/features/screens/battle-deck.md, the battle mock):
         /// a dark outline with its corners cut, the empty part dark with a darker top row, the
         /// fill and its trail shaded in steps, a tick in the bottom row every quarter, and the HP
         /// (<paramref name="hp"/> until the screen sets it) written in the middle.

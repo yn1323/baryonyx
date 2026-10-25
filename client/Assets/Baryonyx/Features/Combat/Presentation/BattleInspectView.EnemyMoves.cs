@@ -60,7 +60,7 @@ namespace Baryonyx.Combat.Presentation
             }
             if (Array.TrueForAll(Allies, ally => ally.Down))
                 yield break;
-            if (TakeStatus(false, index, CardStatus.Freeze))
+            if (Frozen(index))
             {
                 ShowPopup(enemy.TargetArea, "凍結で動けない", StatusColor(CardStatus.Freeze), 40f);
                 yield return Wait(Settings.EnemyGap);

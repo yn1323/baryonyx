@@ -60,9 +60,9 @@ namespace Baryonyx.Combat
                 Enemy,
                 2,
                 2.4f,
-                "敵1体に{0}ダメージ。[弱点]を突くと[やけど]2ターン。",
+                "敵1体に{0}ダメージ。[弱点]を突くと60%で[やけど]2ターン。",
                 Damage(Enemy, Mag, 100),
-                Apply(Enemy, CardStatus.Burn, 2).Only(CardCondition.OnWeakness)
+                Apply(Enemy, CardStatus.Burn, 2).WithChance(60).Only(CardCondition.OnWeakness)
             ),
             Card(
                 "Ice",
@@ -73,9 +73,9 @@ namespace Baryonyx.Combat
                 Enemy,
                 2,
                 2.2f,
-                "敵1体に{0}ダメージ。[凍え]2ターン。",
+                "敵1体に{0}ダメージ。60%で[凍え]2ターン。",
                 Damage(Enemy, Mag, 85),
-                Apply(Enemy, CardStatus.Chill, 2)
+                Apply(Enemy, CardStatus.Chill, 2).WithChance(60)
             ),
             Card(
                 "Thunder",
@@ -123,9 +123,9 @@ namespace Baryonyx.Combat
                 Enemies,
                 3,
                 2f,
-                "敵全体に{0}ダメージ。[出血]2ターン。",
+                "敵全体に{0}ダメージ。60%で[出血]2ターン。",
                 Damage(Enemies, Phy, 60),
-                Apply(Enemies, CardStatus.Bleed, 2)
+                Apply(Enemies, CardStatus.Bleed, 2).WithChance(60)
             ),
             Card(
                 "Iai",
@@ -187,7 +187,7 @@ namespace Baryonyx.Combat
                 2.2f,
                 "敵1体に{0}ダメージ。[防御ダウン]2ターン。",
                 Damage(Enemy, Phy, 80),
-                Apply(Enemy, CardStatus.Vulnerable, 2)
+                Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(100)
             ),
             Card(
                 "EarthSplitter",
@@ -260,9 +260,9 @@ namespace Baryonyx.Combat
                 Enemy,
                 1,
                 2.2f,
-                "敵1体に{0}ダメージ。[やけど]3ターン。",
+                "敵1体に{0}ダメージ。60%で[やけど]3ターン。",
                 Damage(Enemy, Mag, 45),
-                Apply(Enemy, CardStatus.Burn, 3)
+                Apply(Enemy, CardStatus.Burn, 3).WithChance(60)
             ),
             Card(
                 "FlamePillar",
@@ -285,9 +285,9 @@ namespace Baryonyx.Combat
                 Enemies,
                 4,
                 2.2f,
-                "敵全体に{0}ダメージ。[やけど]2ターン。",
+                "敵全体に{0}ダメージ。60%で[やけど]2ターン。",
                 Damage(Enemies, Mag, 70),
-                Apply(Enemies, CardStatus.Burn, 2)
+                Apply(Enemies, CardStatus.Burn, 2).WithChance(60)
             ),
             Card(
                 "BlastSigil",
@@ -346,9 +346,9 @@ namespace Baryonyx.Combat
                 Enemies,
                 4,
                 2.2f,
-                "敵全体に{0}ダメージ。[凍え]2ターン。",
+                "敵全体に{0}ダメージ。60%で[凍え]2ターン。",
                 Damage(Enemies, Mag, 90),
-                Apply(Enemies, CardStatus.Chill, 2)
+                Apply(Enemies, CardStatus.Chill, 2).WithChance(60)
             ),
             Card(
                 "IceMirror",
@@ -371,9 +371,9 @@ namespace Baryonyx.Combat
                 Enemy,
                 8,
                 2.4f,
-                "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。[凍結]させる。",
+                "敵1体に{0}ダメージ。[凍え]中の敵には1.5倍。40%で[凍結]させる。",
                 Damage(Enemy, Mag, 340).Bonus(CardCondition.OnChilled, 50),
-                Apply(Enemy, CardStatus.Freeze, 1)
+                Apply(Enemy, CardStatus.Freeze, 1).WithChance(40)
             ),
             Card(
                 "QuickCast",
@@ -412,7 +412,7 @@ namespace Baryonyx.Combat
                 2.2f,
                 "敵1体に{0}ダメージ。[毒]を2つ重ねる。",
                 Damage(Enemy, Phy, 35),
-                Apply(Enemy, CardStatus.Poison, 0, 2)
+                Apply(Enemy, CardStatus.Poison, 0, 2).WithChance(100)
             ),
             Card(
                 "ShadowStitch",
@@ -473,9 +473,9 @@ namespace Baryonyx.Combat
                 Enemy,
                 1,
                 2.2f,
-                "敵1体に{0}ダメージ。[麻痺]1ターン。",
+                "敵1体に{0}ダメージ。60%で[麻痺]1ターン。",
                 Damage(Enemy, Mag, 70),
-                Apply(Enemy, CardStatus.Paralysis, 1)
+                Apply(Enemy, CardStatus.Paralysis, 1).WithChance(60)
             ),
             Card(
                 "ChainLightning",
@@ -684,11 +684,11 @@ namespace Baryonyx.Combat
                     Enemy,
                     2,
                     1.6f,
-                    "敵1体に{0}ダメージ×2。[出血]・[毒]・[防御ダウン]。[弱点]でエネルギー+1。",
+                    "敵1体に{0}ダメージ×2。60%で[出血]・[毒]・[防御ダウン]。[弱点]でエネルギー+1。",
                     Damage(Enemy, Phy, 45, hits: 2),
-                    Apply(Enemy, CardStatus.Bleed, 2),
-                    Apply(Enemy, CardStatus.Poison, 0, 2),
-                    Apply(Enemy, CardStatus.Vulnerable, 2),
+                    Apply(Enemy, CardStatus.Bleed, 2).WithChance(60),
+                    Apply(Enemy, CardStatus.Poison, 0, 2).WithChance(60),
+                    Apply(Enemy, CardStatus.Vulnerable, 2).WithChance(60),
                     Simple(CardActionKind.Energy, Nobody, 1).Only(CardCondition.OnWeakness)
                 )
             )

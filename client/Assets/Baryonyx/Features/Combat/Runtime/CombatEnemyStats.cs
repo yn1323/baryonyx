@@ -33,6 +33,8 @@ namespace Baryonyx.Combat
             int magicAttack,
             int magicDefense,
             int speed,
+            int critical,
+            int luck,
             string skill
         )
         {
@@ -44,6 +46,8 @@ namespace Baryonyx.Combat
             MagicAttack = magicAttack;
             MagicDefense = magicDefense;
             Speed = speed;
+            Critical = critical;
+            Luck = luck;
             Skill = skill;
         }
 
@@ -57,6 +61,12 @@ namespace Baryonyx.Combat
 
         /// <summary>The speed the turn order compares with the party's (<see cref="CombatTurnOrder"/>).</summary>
         public int Speed { get; }
+
+        /// <summary>How often its blows land as critical hits (<see cref="CombatFormula.CriticalChance"/>).</summary>
+        public int Critical { get; }
+
+        /// <summary>How well it puts statuses on and keeps them off (<see cref="CombatFormula.StatusChance"/>).</summary>
+        public int Luck { get; }
 
         /// <summary>The name of its attack, shown while it attacks.</summary>
         public string Skill { get; }
@@ -77,13 +87,97 @@ namespace Baryonyx.Combat
     {
         public static readonly IReadOnlyList<EnemyStats> All = new EnemyStats[]
         {
-            new("moss-slime", EnemyBody.Small, 3000, 760, 330, 650, 160, 790, "たいあたり"),
-            new("moss-wolf", EnemyBody.Medium, 6500, 1250, 490, 240, 320, 1910, "かみつき"),
-            new("forest-guardian", EnemyBody.Large, 17300, 1940, 1300, 970, 650, 590, "大地の拳"),
-            new("dew-slime", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "たいあたり"),
-            new("acorn-soldier", EnemyBody.Small, 3500, 1040, 350, 420, 300, 990, "どんぐりつぶて"),
-            new("spore-cap", EnemyBody.Medium, 7300, 610, 520, 1200, 760, 940, "たいあたり"),
-            new("thorn-serpent", EnemyBody.Medium, 5200, 1260, 400, 800, 450, 2180, "とげのとぐろ"),
+            new(
+                "moss-slime",
+                EnemyBody.Small,
+                3000,
+                760,
+                330,
+                650,
+                160,
+                790,
+                150,
+                300,
+                "たいあたり"
+            ),
+            new(
+                "moss-wolf",
+                EnemyBody.Medium,
+                6500,
+                1250,
+                490,
+                240,
+                320,
+                1910,
+                800,
+                400,
+                "かみつき"
+            ),
+            new(
+                "forest-guardian",
+                EnemyBody.Large,
+                17300,
+                1940,
+                1300,
+                970,
+                650,
+                590,
+                300,
+                900,
+                "大地の拳"
+            ),
+            new(
+                "dew-slime",
+                EnemyBody.Small,
+                2900,
+                480,
+                240,
+                900,
+                420,
+                1110,
+                300,
+                300,
+                "たいあたり"
+            ),
+            new(
+                "acorn-soldier",
+                EnemyBody.Small,
+                3500,
+                1040,
+                350,
+                420,
+                300,
+                990,
+                390,
+                300,
+                "どんぐりつぶて"
+            ),
+            new(
+                "spore-cap",
+                EnemyBody.Medium,
+                7300,
+                610,
+                520,
+                1200,
+                760,
+                940,
+                400,
+                400,
+                "たいあたり"
+            ),
+            new(
+                "thorn-serpent",
+                EnemyBody.Medium,
+                5200,
+                1260,
+                400,
+                800,
+                450,
+                2180,
+                600,
+                400,
+                "とげのとぐろ"
+            ),
             new(
                 "crystal-hare",
                 EnemyBody.Small,
@@ -93,11 +187,49 @@ namespace Baryonyx.Combat
                 600,
                 300,
                 1780,
+                450,
+                300,
                 "水晶角の照り返し"
             ),
-            new("stump-boar", EnemyBody.Medium, 8900, 1330, 750, 560, 540, 870, "牙のかち上げ"),
-            new("nectar-bloom", EnemyBody.Medium, 5800, 720, 350, 1200, 630, 1360, "吸い取り"),
-            new("hollow-armor", EnemyBody.Medium, 8100, 1020, 750, 800, 540, 940, "空ろの鎧ばらし"),
+            new(
+                "stump-boar",
+                EnemyBody.Medium,
+                8900,
+                1330,
+                750,
+                560,
+                540,
+                870,
+                520,
+                400,
+                "牙のかち上げ"
+            ),
+            new(
+                "nectar-bloom",
+                EnemyBody.Medium,
+                5800,
+                720,
+                350,
+                1200,
+                630,
+                1360,
+                400,
+                400,
+                "吸い取り"
+            ),
+            new(
+                "hollow-armor",
+                EnemyBody.Medium,
+                8100,
+                1020,
+                750,
+                800,
+                540,
+                940,
+                400,
+                400,
+                "空ろの鎧ばらし"
+            ),
             new(
                 "stone-gargoyle",
                 EnemyBody.Medium,
@@ -107,15 +239,101 @@ namespace Baryonyx.Combat
                 800,
                 540,
                 940,
+                400,
+                400,
                 "屋根からの急降下"
             ),
-            new("cracked-urn", EnemyBody.Small, 4000, 680, 520, 600, 360, 790, "壺の吸い込み"),
-            new("chest-mimic", EnemyBody.Medium, 7200, 1560, 500, 560, 450, 1240, "欲張りな舌"),
-            new("floating-grimoire", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "頁の詠唱"),
-            new("brass-warden", EnemyBody.Large, 21200, 1620, 1650, 1300, 960, 590, "蒼炉の砲撃"),
-            new("cursed-candelabra", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "火の玉"),
-            new("big-eared-bat", EnemyBody.Small, 2600, 840, 280, 600, 300, 1780, "吸い取り"),
-            new("crystal-hermit", EnemyBody.Medium, 8100, 1020, 750, 800, 540, 940, "斬りつけ"),
+            new(
+                "cracked-urn",
+                EnemyBody.Small,
+                4000,
+                680,
+                520,
+                600,
+                360,
+                790,
+                300,
+                300,
+                "壺の吸い込み"
+            ),
+            new(
+                "chest-mimic",
+                EnemyBody.Medium,
+                7200,
+                1560,
+                500,
+                560,
+                450,
+                1240,
+                520,
+                400,
+                "欲張りな舌"
+            ),
+            new(
+                "floating-grimoire",
+                EnemyBody.Small,
+                2900,
+                480,
+                240,
+                900,
+                420,
+                1110,
+                300,
+                300,
+                "頁の詠唱"
+            ),
+            new(
+                "brass-warden",
+                EnemyBody.Large,
+                21200,
+                1620,
+                1650,
+                1300,
+                960,
+                590,
+                300,
+                700,
+                "蒼炉の砲撃"
+            ),
+            new(
+                "cursed-candelabra",
+                EnemyBody.Small,
+                2900,
+                480,
+                240,
+                900,
+                420,
+                1110,
+                300,
+                300,
+                "火の玉"
+            ),
+            new(
+                "big-eared-bat",
+                EnemyBody.Small,
+                2600,
+                840,
+                280,
+                600,
+                300,
+                1780,
+                450,
+                300,
+                "吸い取り"
+            ),
+            new(
+                "crystal-hermit",
+                EnemyBody.Medium,
+                8100,
+                1020,
+                750,
+                800,
+                540,
+                940,
+                400,
+                400,
+                "斬りつけ"
+            ),
             new(
                 "ore-mole",
                 EnemyBody.Medium,
@@ -125,13 +343,63 @@ namespace Baryonyx.Combat
                 560,
                 450,
                 1240,
+                520,
+                400,
                 "地中からの突き上げ"
             ),
-            new("glow-worm", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "電撃"),
-            new("rock-troll", EnemyBody.Large, 18700, 2470, 1100, 910, 800, 790, "肩石投げ"),
-            new("blind-fishman", EnemyBody.Medium, 6500, 1200, 500, 800, 450, 1360, "波紋聞き"),
-            new("frog-king", EnemyBody.Medium, 5800, 720, 350, 1200, 630, 1360, "舌のかすめ取り"),
-            new("mud-golem", EnemyBody.Medium, 8100, 1020, 750, 800, 540, 940, "たいあたり"),
+            new("glow-worm", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, 300, 300, "電撃"),
+            new(
+                "rock-troll",
+                EnemyBody.Large,
+                18700,
+                2470,
+                1100,
+                910,
+                800,
+                790,
+                390,
+                700,
+                "肩石投げ"
+            ),
+            new(
+                "blind-fishman",
+                EnemyBody.Medium,
+                6500,
+                1200,
+                500,
+                800,
+                450,
+                1360,
+                400,
+                400,
+                "波紋聞き"
+            ),
+            new(
+                "frog-king",
+                EnemyBody.Medium,
+                5800,
+                720,
+                350,
+                1200,
+                630,
+                1360,
+                400,
+                400,
+                "舌のかすめ取り"
+            ),
+            new(
+                "mud-golem",
+                EnemyBody.Medium,
+                8100,
+                1020,
+                750,
+                800,
+                540,
+                940,
+                400,
+                400,
+                "たいあたり"
+            ),
             new(
                 "blood-leech",
                 EnemyBody.Small,
@@ -141,19 +409,129 @@ namespace Baryonyx.Combat
                 600,
                 300,
                 1110,
+                300,
+                300,
                 "ふさがらない噛み傷"
             ),
-            new("will-o-wisp", EnemyBody.Small, 2300, 500, 200, 900, 420, 1780, "火の玉"),
-            new("bone-croc", EnemyBody.Large, 18700, 2470, 1100, 910, 800, 790, "血の匂い"),
-            new("sand-scorpion", EnemyBody.Medium, 7200, 1560, 500, 560, 450, 1240, "毒まわし"),
-            new("cactus-warrior", EnemyBody.Small, 3200, 800, 350, 600, 300, 1110, "針千本"),
-            new("wrapped-jackal", EnemyBody.Medium, 5200, 1260, 400, 800, 450, 2180, "かみつき"),
-            new("sand-shark", EnemyBody.Large, 15000, 2590, 880, 910, 800, 1240, "砂の大波"),
-            new("hourglass-sprite", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "電撃"),
-            new("snowball", EnemyBody.Small, 4000, 680, 520, 600, 360, 790, "たいあたり"),
-            new("icicle-fox", EnemyBody.Medium, 4700, 760, 280, 1200, 630, 2180, "つらら刺し"),
-            new("frost-ape", EnemyBody.Large, 18700, 2470, 1100, 910, 800, 790, "雪崩おとし"),
-            new("ice-penguin", EnemyBody.Small, 3200, 800, 350, 600, 300, 1110, "二段突き"),
+            new("will-o-wisp", EnemyBody.Small, 2300, 500, 200, 900, 420, 1780, 450, 300, "火の玉"),
+            new(
+                "bone-croc",
+                EnemyBody.Large,
+                18700,
+                2470,
+                1100,
+                910,
+                800,
+                790,
+                390,
+                700,
+                "血の匂い"
+            ),
+            new(
+                "sand-scorpion",
+                EnemyBody.Medium,
+                7200,
+                1560,
+                500,
+                560,
+                450,
+                1240,
+                520,
+                400,
+                "毒まわし"
+            ),
+            new(
+                "cactus-warrior",
+                EnemyBody.Small,
+                3200,
+                800,
+                350,
+                600,
+                300,
+                1110,
+                300,
+                300,
+                "針千本"
+            ),
+            new(
+                "wrapped-jackal",
+                EnemyBody.Medium,
+                5200,
+                1260,
+                400,
+                800,
+                450,
+                2180,
+                600,
+                400,
+                "かみつき"
+            ),
+            new(
+                "sand-shark",
+                EnemyBody.Large,
+                15000,
+                2590,
+                880,
+                910,
+                800,
+                1240,
+                580,
+                700,
+                "砂の大波"
+            ),
+            new(
+                "hourglass-sprite",
+                EnemyBody.Small,
+                2900,
+                480,
+                240,
+                900,
+                420,
+                1110,
+                300,
+                300,
+                "電撃"
+            ),
+            new("snowball", EnemyBody.Small, 4000, 680, 520, 600, 360, 790, 300, 300, "たいあたり"),
+            new(
+                "icicle-fox",
+                EnemyBody.Medium,
+                4700,
+                760,
+                280,
+                1200,
+                630,
+                2180,
+                600,
+                400,
+                "つらら刺し"
+            ),
+            new(
+                "frost-ape",
+                EnemyBody.Large,
+                18700,
+                2470,
+                1100,
+                910,
+                800,
+                790,
+                390,
+                700,
+                "雪崩おとし"
+            ),
+            new(
+                "ice-penguin",
+                EnemyBody.Small,
+                3200,
+                800,
+                350,
+                600,
+                300,
+                1110,
+                300,
+                300,
+                "二段突き"
+            ),
             new(
                 "snow-mammoth",
                 EnemyBody.Large,
@@ -163,10 +541,24 @@ namespace Baryonyx.Combat
                 1300,
                 960,
                 590,
+                300,
+                700,
                 "雪山のしかかり"
             ),
-            new("fire-lizard", EnemyBody.Medium, 5800, 720, 350, 1200, 630, 1360, "火の玉"),
-            new("lava-slime", EnemyBody.Small, 4000, 680, 520, 600, 360, 790, "殻はじけ"),
+            new(
+                "fire-lizard",
+                EnemyBody.Medium,
+                5800,
+                720,
+                350,
+                1200,
+                630,
+                1360,
+                400,
+                400,
+                "火の玉"
+            ),
+            new("lava-slime", EnemyBody.Small, 4000, 680, 520, 600, 360, 790, 300, 300, "殻はじけ"),
             new(
                 "flame-tail-bird",
                 EnemyBody.Medium,
@@ -176,6 +568,8 @@ namespace Baryonyx.Combat
                 1200,
                 630,
                 2180,
+                600,
+                400,
                 "火の尾羽落とし"
             ),
             new(
@@ -187,10 +581,24 @@ namespace Baryonyx.Combat
                 1300,
                 960,
                 590,
+                300,
+                700,
                 "黒曜の破片嵐"
             ),
-            new("barnacle-crab", EnemyBody.Medium, 8100, 1020, 750, 800, 540, 940, "大ばさみ砕き"),
-            new("ghost-jelly", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, "火の玉"),
+            new(
+                "barnacle-crab",
+                EnemyBody.Medium,
+                8100,
+                1020,
+                750,
+                800,
+                540,
+                940,
+                400,
+                400,
+                "大ばさみ砕き"
+            ),
+            new("ghost-jelly", EnemyBody.Small, 2900, 480, 240, 900, 420, 1110, 300, 300, "火の玉"),
             new(
                 "skeleton-pirate",
                 EnemyBody.Medium,
@@ -200,12 +608,50 @@ namespace Baryonyx.Combat
                 800,
                 450,
                 2180,
+                600,
+                400,
                 "卑怯な足払い"
             ),
-            new("giant-octopus", EnemyBody.Large, 17000, 1900, 1100, 1300, 800, 870, "絡め取り"),
-            new("skeleton-soldier", EnemyBody.Medium, 6500, 1200, 500, 800, 450, 1360, "斬りつけ"),
-            new("grave-raven", EnemyBody.Medium, 4700, 760, 280, 1200, 630, 2180, "鴉のものまね"),
-            new("lich", EnemyBody.Large, 15300, 1140, 770, 1950, 1120, 870, "王冠の覚醒"),
+            new(
+                "giant-octopus",
+                EnemyBody.Large,
+                17000,
+                1900,
+                1100,
+                1300,
+                800,
+                870,
+                300,
+                700,
+                "絡め取り"
+            ),
+            new(
+                "skeleton-soldier",
+                EnemyBody.Medium,
+                6500,
+                1200,
+                500,
+                800,
+                450,
+                1360,
+                400,
+                400,
+                "斬りつけ"
+            ),
+            new(
+                "grave-raven",
+                EnemyBody.Medium,
+                4700,
+                760,
+                280,
+                1200,
+                630,
+                2180,
+                600,
+                400,
+                "鴉のものまね"
+            ),
+            new("lich", EnemyBody.Large, 15300, 1140, 770, 1950, 1120, 870, 300, 700, "王冠の覚醒"),
             new(
                 "pumpkin-scarecrow",
                 EnemyBody.Medium,
@@ -215,11 +661,49 @@ namespace Baryonyx.Combat
                 800,
                 450,
                 1360,
+                400,
+                400,
                 "畑の見張り番"
             ),
-            new("lost-signpost", EnemyBody.Small, 3200, 800, 350, 600, 300, 1110, "たいあたり"),
-            new("coin-pouch", EnemyBody.Small, 2600, 840, 280, 600, 300, 1780, "たいあたり"),
-            new("mist-dragon", EnemyBody.Large, 16800, 1480, 770, 1360, 1120, 790, "迷い路の霧"),
+            new(
+                "lost-signpost",
+                EnemyBody.Small,
+                3200,
+                800,
+                350,
+                600,
+                300,
+                1110,
+                300,
+                300,
+                "たいあたり"
+            ),
+            new(
+                "coin-pouch",
+                EnemyBody.Small,
+                2600,
+                840,
+                280,
+                600,
+                300,
+                1780,
+                450,
+                300,
+                "たいあたり"
+            ),
+            new(
+                "mist-dragon",
+                EnemyBody.Large,
+                16800,
+                1480,
+                770,
+                1360,
+                1120,
+                790,
+                390,
+                700,
+                "迷い路の霧"
+            ),
         };
 
         public static EnemyStats Find(string id)

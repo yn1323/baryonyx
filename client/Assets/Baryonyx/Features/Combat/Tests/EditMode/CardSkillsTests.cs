@@ -158,11 +158,11 @@ namespace Baryonyx.Tests.EditMode
             var card = CardSkills.Find("Ice");
             Assert.That(
                 CardRules.Describe(card),
-                Is.EqualTo("敵1体に属攻の85%ダメージ。凍え2ターン。")
+                Is.EqualTo("敵1体に属攻の85%ダメージ。60%で凍え2ターン。")
             );
             Assert.That(
                 CardRules.Describe(card, keyword: name => $"<{name}>"),
-                Is.EqualTo("敵1体に属攻の85%ダメージ。<凍え>2ターン。")
+                Is.EqualTo("敵1体に属攻の85%ダメージ。60%で<凍え>2ターン。")
             );
             Assert.That(
                 CardKeywords.In(card.Text).Select(k => k.Name),
