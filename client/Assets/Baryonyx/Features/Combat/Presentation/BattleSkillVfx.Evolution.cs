@@ -51,6 +51,9 @@ namespace Baryonyx.Combat.Presentation
         private Vector2 evolvingRest;
         private float evolvingScale = EvolutionCardScale;
         private float evolvingShiver;
+
+        // The jolt of the last snap of the cracks (px), dying away in a few frames.
+        private Vector2 evolvingKick;
         private LightSource haloLight;
         private Coroutine hover;
         private readonly List<Shot> omenShots = new();
@@ -127,7 +130,7 @@ namespace Baryonyx.Combat.Presentation
                 var at = Vector2.LerpUnclamped(from, rest, EaseOut(k));
                 Place(
                     card,
-                    at + Bob(t) * k + Shiver(evolvingShiver),
+                    at + Bob(t) * k + Shiver(evolvingShiver) + Kicked(),
                     Mathf.LerpUnclamped(0.35f, EvolutionCardScale, BackOut(k)),
                     Mathf.Lerp(-12f, 0f, EaseOut(k)),
                     Mathf.Clamp01(t / 0.12f)
@@ -403,6 +406,20 @@ namespace Baryonyx.Combat.Presentation
             haloLight = null;
             // A card hovering smaller (while picked from) bursts a little smaller.
             float f = Mathf.Lerp(1f, evolvingScale / EvolutionCardScale, 0.6f);
+            // The instant it gives: every crack runs to the edge at once and flashes white.
+            var flash = Spawn(
+                frontLight,
+                BattleVfxShape.Crack,
+                at,
+                new Vector2(CardHeight, CardHeight) * (1.15f * f),
+                Color.white
+            );
+            flash.Image.material = RichMaterialOf(BattleVfxShape.Crack, CardCrackLook);
+            Animate(
+                flash,
+                0.07f,
+                (s, k) => Show(s, Color.white, CardSnapAt.Length + k * 0.99f, k, CoreBright * 1.5f)
+            );
 
             HitStop(deep ? 0.12f : 0.09f);
             Shake(deep ? 0.55f : 0.4f, Vector2.up);
@@ -423,9 +440,33 @@ namespace Baryonyx.Combat.Presentation
             Halo(at, color, (deep ? 760f : 680f) * f);
             Illuminate(at, color, 1f, 640f, 0.12f, 0.6f);
 
-            // Glass: shards in front, bright enough to glint through the Bloom, flung every way
-            // from where the card was and falling; a few large ones behind.
+            // Glass: shards in front, flung every way from where the card was and falling, most
+            // clear (a half-clear body with a hard bright rim that glints as it turns), some
+            // catching the light bright enough to glint through the Bloom; a few large ones behind.
             var glass = new Color(1f, 0.97f, 0.88f, 0.95f);
+            Spray(
+                frontLight,
+                at,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Chip,
+                    Material = RichMaterialOf(BattleVfxShape.Chip),
+                    From = glass,
+                    To = new Color(color.r, color.g, color.b, 0f),
+                    Speed = new Vector2(380f, 1200f),
+                    Direction = 90f,
+                    Spread = 360f,
+                    Life = new Vector2(0.55f, 1.05f),
+                    Size = new Vector2(30f, 70f),
+                    Aspect = 1.5f,
+                    Shrink = 0.6f,
+                    Spin = 900f,
+                    Gravity = 1100f,
+                    Drag = 2.2f,
+                    Area = CardWidth * 0.4f,
+                },
+                deep ? 30 : 22
+            );
             Spray(
                 frontLight,
                 at,
@@ -447,7 +488,7 @@ namespace Baryonyx.Combat.Presentation
                     Drag = 2.2f,
                     Area = CardWidth * 0.4f,
                 },
-                deep ? 52 : 36
+                deep ? 26 : 18
             );
             Spray(
                 evolutionHalo,
@@ -518,7 +559,7 @@ namespace Baryonyx.Combat.Presentation
                 if (evolving != null)
                     Place(
                         evolving,
-                        evolvingRest + Bob(t) + Shiver(evolvingShiver),
+                        evolvingRest + Bob(t) + Shiver(evolvingShiver) + Kicked(),
                         evolvingScale,
                         0f,
                         1f
@@ -636,7 +677,21 @@ namespace Baryonyx.Combat.Presentation
             return shot;
         }
 
-        // Cracks of light spreading over the card from its middle, held glowing until let go.
+        // When the cracks snap a step further over the card (s after they start), as glass that
+        // is stressed cracks: in sudden snaps (ぴき), each reaching at once a step further out,
+        // nothing growing between them (doc/features/skill-evolution.md#覚醒のエフェクト).
+        private static readonly float[] CardSnapAt = { 0f, 0.11f, 0.2f, 0.3f };
+
+        // How long the cracks a snap has just broken stay white (s).
+        private const float CardSnapGlint = 0.09f;
+
+        // The crack shader's look for light leaking through thin cracks in a card (snaps in k).
+        private const float CardCrackLook = 3f;
+
+        // Cracks of light over the card from its middle, held glowing until let go: thin lines
+        // that snap outward step by step (CardSnapAt), the stretch each snap breaks flashing
+        // white; at each snap the card jolts a dot, a chip of light is flicked off and the light
+        // leaking through it pulses on those near.
         private Shot HeldCrack(Vector2 at, float turn, float size)
         {
             var shot = Spawn(
@@ -646,23 +701,65 @@ namespace Baryonyx.Combat.Presentation
                 new Vector2(CardHeight, CardHeight) * size,
                 Evolution
             );
+            shot.Image.material = RichMaterialOf(BattleVfxShape.Crack, CardCrackLook);
             shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, turn);
+            int snapped = 0;
             Animate(
                 shot,
                 Held,
                 (s, k) =>
                 {
                     float age = k * Held;
-                    // The cracks reach their full length by a quarter of their progress.
-                    float grow = EaseOut(Mathf.Min(1f, age / 0.35f));
-                    float flicker = 0.85f + 0.15f * Mathf.PerlinNoise(s.Seed * 9f, age * 12f);
-                    s.Holder.anchoredPosition = evolving != null ? evolving.anchoredPosition : at;
+                    int made = 0;
+                    while (made < CardSnapAt.Length && age >= CardSnapAt[made])
+                        made++;
+                    float since = made > 0 ? age - CardSnapAt[made - 1] : 0f;
+                    float snaps = made + Mathf.Min(0.99f, since / CardSnapGlint);
+                    var center = evolving != null ? evolving.anchoredPosition : at;
+                    if (made > snapped)
+                    {
+                        snapped = made;
+                        Snap(center, made);
+                    }
+                    float flicker = 0.88f + 0.12f * Mathf.PerlinNoise(s.Seed * 9f, age * 12f);
+                    s.Holder.anchoredPosition = center;
                     float scale = evolvingScale / EvolutionCardScale;
                     s.Holder.localScale = new Vector3(scale, scale, 1f);
-                    Show(s, Evolution * flicker, 0.27f * grow, 0f, CoreBright);
+                    Show(s, Evolution * flicker, snaps, 0f, CoreBright);
                 }
             );
             return shot;
+        }
+
+        // One snap of the card's cracks: a jolt of a dot, a chip of light flicked off where it
+        // broke and the light through the cracks pulsing a little stronger each time.
+        private void Snap(Vector2 at, int step)
+        {
+            float scale = evolvingScale / EvolutionCardScale;
+            var off = UnityEngine.Random.insideUnitCircle.normalized * CardWidth * 0.3f * scale;
+            evolvingKick = off.normalized * Dot;
+            Spray(
+                frontLight,
+                at + off,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Streak,
+                    Bright = CoreBright,
+                    From = Color.white,
+                    To = new Color(Evolution.r, Evolution.g, Evolution.b, 0f),
+                    Speed = new Vector2(300f, 700f),
+                    Direction = Angle(off),
+                    Spread = 60f,
+                    Life = new Vector2(0.08f, 0.16f),
+                    Size = new Vector2(4f, 7f),
+                    Stretch = 0.05f,
+                    Drag = 5f,
+                    Gravity = 900f,
+                },
+                3
+            );
+            Illuminate(at, Evolution, 0.4f + 0.12f * step, 420f, 0.03f, 0.15f, spill: false);
+            Shake(0.02f + 0.01f * step, Vector2.zero);
         }
 
         // Lets a held shape go: it swells a little and is eaten away.
@@ -712,6 +809,18 @@ namespace Baryonyx.Combat.Presentation
             card.localEulerAngles = new Vector3(0f, 0f, tilt);
             if (evolvingGroup != null)
                 evolvingGroup.alpha = alpha;
+        }
+
+        // The jolt of a snap of the cracks, dying away.
+        private Vector2 Kicked()
+        {
+            var kick = evolvingKick;
+            evolvingKick = Vector2.MoveTowards(
+                evolvingKick,
+                Vector2.zero,
+                Dot * 25f * Time.unscaledDeltaTime
+            );
+            return kick;
         }
 
         // A slow rise and fall while it floats.

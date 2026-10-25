@@ -182,15 +182,15 @@ namespace Baryonyx.Combat.Presentation
                 ),
                 ["AbsoluteZero.2"] = new AwakenedLook(Starlight, AwakenedMark.Core),
                 ["QuickCast.1"] = new AwakenedLook(Arcane, AwakenedMark.Glint),
-                ["QuickCast.2"] = new AwakenedLook(Gold, AwakenedMark.Glint),
+                ["QuickCast.2"] = new AwakenedLook(Gold, AwakenedMark.Shield),
                 ["VitalThrust.1"] = new AwakenedLook(Blood, AwakenedMark.Core),
                 ["VitalThrust.2"] = new AwakenedLook(Teal, AwakenedMark.Gale),
                 ["PoisonNeedle.1"] = new AwakenedLook(Venom, AwakenedMark.Venom),
-                ["PoisonNeedle.2"] = new AwakenedLook(Violet, AwakenedMark.Venom),
+                ["PoisonNeedle.2"] = new AwakenedLook(Violet, AwakenedMark.Gale),
                 ["ShadowStitch.1"] = new AwakenedLook(Violet, AwakenedMark.Chain),
                 ["ShadowStitch.2"] = new AwakenedLook(Arcane, AwakenedMark.Gale),
                 ["InsightArrow.1"] = new AwakenedLook(Teal, AwakenedMark.Glint),
-                ["InsightArrow.2"] = new AwakenedLook(Starlight, AwakenedMark.Glint),
+                ["InsightArrow.2"] = new AwakenedLook(Starlight, AwakenedMark.Chain),
                 ["ArrowRain.1"] = new AwakenedLook(Venom, AwakenedMark.Venom),
                 ["ArrowRain.2"] = new AwakenedLook(Steel, AwakenedMark.Gale),
                 ["ShadowSnipe.1"] = new AwakenedLook(Teal, AwakenedMark.Core),
@@ -441,71 +441,243 @@ namespace Baryonyx.Combat.Presentation
             return new Renumbering(list, index);
         }
 
-        /// <summary>The stage's mark on one place it reaches (the <paramref name="order"/>th of its wave).</summary>
+        // Where the last mark of a chain twinkled, so the next is linked to it by a line of light.
+        private Vector2 chainLast;
+
+        /// <summary>
+        /// The stage's mark on one place it reaches (the <paramref name="order"/>th of its wave),
+        /// each built as the thing it shows really is, in about four layers apart in their cover
+        /// and time (doc/features/skill-awakening.md#しるし): for example frost freezes over the
+        /// floor in clear plates while cold air sinks and creeps along it and chips of ice glint,
+        /// and a quake cracks the floor outward in snaps, pebbles hopping and dust puffing out.
+        /// </summary>
         private void Mark(AwakenedLook look, RectTransform caster, BattleSkillHit hit, int order)
         {
             if (hit.Area == null || FrontLayer == null)
                 return;
             var color = look.Color;
+            var hot = Color.Lerp(color, Color.white, 0.55f);
             var at = Center(FrontLayer, hit.Area);
             var feet = Feet(FrontLayer, hit.Area);
+            var (min, max) = Bounds(FrontLayer, hit.Area);
+            float width = Mathf.Max(80f, max.x - min.x);
+            float height = Mathf.Max(120f, max.y - min.y);
             switch (look.Mark)
             {
                 case AwakenedMark.Core:
-                    HotFlash(at, color, 260f);
-                    Star(at, Color.white, 260f, 0.22f);
+                    // 白熱：白い芯が一瞬、細い光の筋が外へ、色のにじみが奥に長く残る。
+                    HotFlash(at, Color.white, 220f);
+                    Star(at, hot, 300f, 0.2f);
+                    Rays(at, color, 12, 0.7f);
+                    Radiance(backLight, at, color, 460f, 0.5f, 0.03f, 0.05f, 0.45f);
+                    Pool(feet, color, 300f, 0.05f, 0.35f);
                     break;
                 case AwakenedMark.Petals:
-                    Drops(at, color, 10);
-                    Leaves(frontLight, at + Vector2.up * 40f, color, 8, 90f, 200f);
+                    // 花びら：一度外へはじけ、空気に支えられてひらひらと落ちる。速い小片と遅い大片。
+                    Spray(frontLight, at, Petal(color, 1f), 10);
+                    Spray(backLight, at + Vector2.up * 30f, Petal(color, 0.6f), 6);
+                    Radiance(backLight, at, color, 340f, 0.3f, 0.05f, 0.1f, 0.5f);
                     break;
                 case AwakenedMark.Shield:
-                    Shockwave(feet, 320f, 0.4f);
-                    Rise(feet, color, 14);
-                    Illuminate(at, color, 0.5f, 300f, 0.1f, 0.4f, spill: false);
+                    // 盾：胸の前に光の盾が立って削れ、足元の輪と、膜の中を昇る細い線。
+                    Bloom(
+                        frontLight,
+                        BattleVfxShape.Crest,
+                        at + Vector2.up * 20f,
+                        new Vector2(120f, 150f),
+                        color,
+                        0.55f,
+                        0.35f,
+                        ErodeBright
+                    );
+                    Circle(feet, color, 0.7f);
+                    for (int i = 0; i < 8; i++)
+                        RiseLine(
+                            i % 3 == 0 ? frontLight : backLight,
+                            OnBody(min, width, height, 0.3f),
+                            hot,
+                            color,
+                            new Vector2(3f, 5f),
+                            new Vector2(300f, 560f),
+                            new Vector2(0.22f, 0.36f),
+                            0.2f * UnityEngine.Random.value,
+                            CoreBright
+                        );
+                    Pool(feet, color, 280f, 0.15f, 0.4f);
                     break;
                 case AwakenedMark.Frost:
-                    Shockwave(feet, 420f, 0.5f);
-                    Sparks(at, Color.Lerp(color, Color.white, 0.5f), 12, 0.7f, Vector2.up);
-                    Illuminate(at, color, 0.45f, 320f, 0.1f, 0.4f, spill: false);
+                    // 霜：床が透ける氷の板で凍り、冷えた空気が沈んで床を這い、氷のかけらが光る。
+                    FloorMark(
+                        BattleVfxShape.Frost,
+                        feet,
+                        new Vector2(420f, 420f),
+                        color,
+                        0.9f,
+                        1.2f,
+                        flat: true
+                    );
+                    ColdMist(feet, 380f, 1.1f, 0.7f, 0.05f);
+                    Spray(
+                        frontLight,
+                        at,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Chip,
+                            Material = RichMaterialOf(BattleVfxShape.Chip),
+                            From = IceFrost,
+                            To = new Color(IceFrost.r, IceFrost.g, IceFrost.b, 0f),
+                            Speed = new Vector2(200f, 520f),
+                            Direction = 90f,
+                            Spread = 200f,
+                            Life = new Vector2(0.4f, 0.7f),
+                            Size = new Vector2(14f, 26f),
+                            Spin = 540f,
+                            Gravity = 1200f,
+                            Drag = 1f,
+                            Area = 30f,
+                        },
+                        8
+                    );
+                    Radiance(backLight, at, IceLight, 380f, 0.35f, 0.05f, 0.1f, 0.4f);
                     break;
                 case AwakenedMark.Venom:
-                    Rise(feet, color, 16);
-                    Drops(at, color, 6);
+                    // 毒霧：足元から重い毒の気が湧いてゆっくり昇り、泡がはじけ、しずくが落ちる。
+                    Spray(
+                        frontSmoke,
+                        feet + Vector2.up * 30f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Smoke,
+                            Bright = 0.8f,
+                            From = new Color(color.r, color.g, color.b, 0.4f),
+                            To = new Color(color.r, color.g, color.b, 0.4f),
+                            Speed = new Vector2(20f, 60f),
+                            Direction = 90f,
+                            Spread = 70f,
+                            Life = new Vector2(0.9f, 1.4f),
+                            Size = new Vector2(90f, 150f),
+                            Aspect = 0.8f,
+                            Grow = 0.4f,
+                            Shrink = 1.5f,
+                            Gravity = -20f,
+                            Drag = 1f,
+                            Spin = 20f,
+                            Hold = 0.3f,
+                            Area = width * 0.4f,
+                            Delay = new Vector2(0f, 0.2f),
+                        },
+                        4
+                    );
+                    Bubbles(at, color, Color.Lerp(color, Violet, 0.5f), 5);
+                    Drops(at, color, 5);
                     break;
                 case AwakenedMark.Bolt:
-                    Sparks(at, color, 18, 1.3f, Vector2.up);
-                    Star(at, color, 160f, 0.12f);
+                    // 稲妻：体の上で小さな放電が一度走って光り直し、火花がはじける。
+                    var a = at + new Vector2(-width * 0.4f, height * 0.25f);
+                    var b = at + new Vector2(width * 0.35f, -height * 0.2f);
+                    Channel(a, b, BoltLight(color), BoltTraceOf(color), 0.03f, JumpStrokes, 120f);
+                    HotFlash(at, Color.white, 160f);
+                    Sparks(at, color, 14, 1.2f, Vector2.up);
+                    StartCoroutine(Crackle(hit.Area, color));
+                    Illuminate(at, color, 0.7f, 280f, 0.03f, 0.2f, spill: false);
                     break;
                 case AwakenedMark.Holy:
-                    Rise(feet, color, 18);
+                    // 聖光：足元に光がたまり、細い光の線と粒が昇り、体を柔らかく照らす。
+                    Uplift(hit.Area, color, 0, false);
                     Illuminate(at, color, 0.6f, 360f, 0.15f, 0.5f, spill: false);
                     break;
                 case AwakenedMark.Gale:
-                    Sparks(at + Vector2.up * 30f, color, 14, 1.4f, Vector2.right);
-                    Sparks(at - Vector2.up * 30f, Color.white, 8, 1.2f, Vector2.right);
+                    // 疾風：細い風の筋が相手を横切って流れ、足元の塵が風下へ流される。
+                    Spray(
+                        frontLight,
+                        at + new Vector2(-width, 0f),
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Streak,
+                            Bright = ErodeBright,
+                            From = new Color(hot.r, hot.g, hot.b, 0.8f),
+                            To = new Color(color.r, color.g, color.b, 0f),
+                            Speed = new Vector2(1400f, 2000f),
+                            Direction = 0f,
+                            Spread = 3f,
+                            Life = new Vector2(0.14f, 0.24f),
+                            Size = new Vector2(3f, 6f),
+                            Stretch = 0.12f,
+                            Area = height * 0.5f,
+                            Delay = new Vector2(0f, 0.12f),
+                        },
+                        10
+                    );
+                    DustKick(feet, Vector2.right, 220f);
+                    Leaves(frontLight, at, color, 5, 0f, 520f, -10f);
                     break;
                 case AwakenedMark.Quake:
-                    Shockwave(feet, 720f, 1f);
-                    Shake(0.35f, Vector2.down);
+                    // 地鳴り：足元の床が「ぴき、ぴき」と外へ割れ、小石が跳ねて土ぼこりが出る。
+                    Rupture(feet, 420f, 0.06f, 0f, 1.1f);
+                    Grit(feet, 0.6f, Vector2.up);
+                    Shake(0.3f, Vector2.down);
                     break;
                 case AwakenedMark.Glint:
                     if (caster != null && order == 0)
                     {
+                        // 閃き：使い手の頭上で星が瞬き、相手から光の筋が使い手へ寄る。
                         var head = Center(FrontLayer, caster) + new Vector2(30f, 90f);
-                        Twinkle(head, color, 200f, 0.5f, 0f, 1f);
-                        Rise(Feet(FrontLayer, caster), color, 10);
+                        Twinkle(head, color, 200f, 0.5f, 0.1f, 1f);
+                        for (int i = 0; i < 6; i++)
+                            DrawIn(
+                                frontLight,
+                                at + UnityEngine.Random.insideUnitCircle * 60f,
+                                head,
+                                color,
+                                0.3f,
+                                0.02f * i,
+                                UnityEngine.Random.Range(4f, 7f)
+                            );
+                        Radiance(backLight, head, color, 260f, 0.4f, 0.2f, 0.1f, 0.4f, delay: 0.2f);
                     }
                     Twinkle(at + Vector2.up * 50f, color, 120f, 0.35f, 0.05f, 1f);
                     break;
                 case AwakenedMark.Chain:
-                    Twinkle(at + Vector2.up * 60f, color, 150f, 0.4f, order * 0.06f, 1f);
+                    // 連なり：相手の上で光の点が順に瞬き、前の点から細い光の線でつながる。
+                    var point = at + Vector2.up * 60f;
+                    Twinkle(point, color, 150f, 0.4f, order * 0.06f, 1f);
+                    if (order > 0)
+                        StartCoroutine(
+                            After(
+                                order * 0.06f,
+                                () => Line(frontLight, chainLast, point, hot, 5f, 0.4f, 0.4f)
+                            )
+                        );
+                    chainLast = point;
                     break;
                 case AwakenedMark.Ember:
-                    Rise(feet, color, 14);
-                    Sparks(at, color, 10, 0.6f, Vector2.up);
+                    // 火の粉：熱で照らされ、火の粉が熱い空気に乗って揺れながら昇る。
+                    var ember = Embered(color);
+                    ember.Area = width * 0.4f;
+                    ember.Life = new Vector2(0.5f, 1f);
+                    ember.Delay = new Vector2(0f, 0.25f);
+                    Spray(frontLight, feet + Vector2.up * 40f, ember, 16);
+                    Radiance(backLight, at, color, 360f, 0.4f, 0.05f, 0.15f, 0.5f);
+                    Pool(feet, color, 260f, 0.1f, 0.4f);
                     break;
             }
         }
+
+        // Petals thrown out and fluttering down, held up by the air; size above 1 makes them larger and slower.
+        private static Burst Petal(Color color, float size) =>
+            new()
+            {
+                Shape = BattleVfxShape.Leaf,
+                From = Color.Lerp(color, Color.white, 0.35f),
+                To = new Color(color.r * 0.8f, color.g * 0.5f, color.b * 0.5f, 0f),
+                Speed = new Vector2(150f, 480f) * size,
+                Spread = 360f,
+                Life = new Vector2(0.8f, 1.4f),
+                Size = new Vector2(14f, 26f) * (0.6f + 0.4f * size),
+                Gravity = 140f,
+                Drag = 3f,
+                Spin = 420f,
+                Area = 40f,
+            };
     }
 }

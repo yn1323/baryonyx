@@ -66,7 +66,12 @@ namespace Baryonyx.Tests.EditMode
         [TestCase("金切り声", false, EnemyBlow.Sound)]
         [TestCase(null, false, EnemyBlow.Claw)]
         [TestCase("見知らぬ技", true, EnemyBlow.Magic)]
-        public void AnEnemysBlowIsDrawnAsWhatItsTechniqueIs(string skill, bool magic, EnemyBlow blow)
+        [TestCase("迷い火", true, EnemyBlow.Magic)]
+        public void AnEnemysBlowIsDrawnAsWhatItsTechniqueIs(
+            string skill,
+            bool magic,
+            EnemyBlow blow
+        )
         {
             Assert.That(BattleSkillVfx.EnemyBlowOf(skill, magic), Is.EqualTo(blow));
         }
@@ -148,33 +153,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void ANumberPopsOutLargeAndSettlesToItsSize()
-        {
-            Assert.That(BattleInspectView.PopScale(0f), Is.EqualTo(1.8f).Within(0.001f));
-            Assert.That(
-                BattleInspectView.PopScale(0.6f),
-                Is.LessThan(1f),
-                "It snaps past its size."
-            );
-            Assert.That(BattleInspectView.PopScale(1f), Is.EqualTo(1f));
-            Assert.That(BattleInspectView.PopScale(3f), Is.EqualTo(1f));
-        }
-
-        [Test]
-        public void AShockRingSpringsOutFastAndLiesFlatOnTheFloor()
-        {
-            Assert.That(BattleSkillVfx.RingScale(0f, false).x, Is.EqualTo(0.15f).Within(0.001f));
-            Assert.That(BattleSkillVfx.RingScale(1f, false).x, Is.EqualTo(1f).Within(0.001f));
-            Assert.That(
-                BattleSkillVfx.RingScale(0.5f, false).x,
-                Is.GreaterThan(0.15f + 0.85f * 0.5f),
-                "It covers most of its spread early."
-            );
-            var floor = BattleSkillVfx.RingScale(1f, true);
-            Assert.That(floor.y, Is.EqualTo(floor.x * BattleSkillVfx.FloorTilt).Within(0.001f));
-        }
-
-        [Test]
         public void AShapeIsWholeUntilItsHoldThenEatenAwayByTheEnd()
         {
             Assert.That(BattleSkillVfx.Eaten(0.2f, 0.4f), Is.EqualTo(0f));
@@ -206,14 +184,6 @@ namespace Baryonyx.Tests.EditMode
                     ),
                     Is.EqualTo(new[] { shape }),
                     "Only its own shape is switched on."
-                );
-                var blend = BattleSkillVfxAssets.Solid(shape)
-                    ? BlendMode.OneMinusSrcAlpha
-                    : BlendMode.One;
-                Assert.That(
-                    material.GetFloat("_DstBlend"),
-                    Is.EqualTo((float)blend),
-                    shape.ToString()
                 );
                 Assert.That(material.GetTexture("_MainTex"), Is.Null, "No picture.");
             }

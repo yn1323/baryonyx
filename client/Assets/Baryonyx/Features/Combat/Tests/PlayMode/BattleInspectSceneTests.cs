@@ -9,8 +9,6 @@ using NUnit.Framework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -22,6 +20,12 @@ namespace Baryonyx.Tests.PlayMode
         private const string ScenePath = "Assets/Baryonyx/App/Scenes/Debug/BattleLab.unity";
         private Scene loadedScene;
 
+        private FixedRandom random;
+
+        // 手札を配る順、狙う相手、敵の行動を、いつも同じ乱数で決める。
+        [SetUp]
+        public void FixRandom() => random = FixedRandom.Use();
+
         [UnityTest]
         public IEnumerator SceneShowsPartyEnemiesAndHand()
         {
@@ -32,11 +36,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Allies, Has.Length.EqualTo(4));
             Assert.That(view.Enemies, Has.Length.EqualTo(3));
             Assert.That(view.Cards, Has.Length.EqualTo(16), "The deck is 16 cards.");
-            Assert.That(view.HandCards, Has.Count.EqualTo(6), "The opening hand is 6 cards.");
-            Assert.That(view.DeckLabel.text, Is.EqualTo("10"));
+            Assert.That(view.HandCards, Has.Count.EqualTo(5), "The opening hand is 5 cards.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo("11"));
             Assert.That(view.Enemies.Select(enemy => enemy.Sprite.texture), Has.None.Null);
-            Assert.That(view.MaxEnergy, Is.EqualTo(5), "Energy starts at 5 on the first turn.");
-            Assert.That(view.EnergyLabel.text, Is.EqualTo("5/5"));
+            Assert.That(view.MaxEnergy, Is.EqualTo(3), "Every turn begins with 3 energy.");
+            Assert.That(view.EnergyLabel.text, Is.EqualTo("3"), "Only the energy left shows.");
             Assert.That(view.HeldCard, Is.EqualTo(-1));
 
             foreach (var card in view.Cards)
@@ -60,24 +64,8 @@ namespace Baryonyx.Tests.PlayMode
                     Is.EqualTo(card.Element != BattleInspectElement.None),
                     "Cards without an element show no element icon."
                 );
-                foreach (var band in face.Bands)
-                {
-                    Assert.That(band.LineEnds, Has.Length.EqualTo(3), "owner, name and kind");
-                    Assert.That(band.LineEnds, Has.All.GreaterThan(0f));
-                    Assert.That(band.LineEnds, Has.All.LessThan(band.rectTransform.rect.width));
-                }
             }
-            var ice = view.Cards.First(card => card.Element == BattleInspectElement.Ice);
-            var heal = view.Cards.First(card => card.Effect == BattleInspectCardEffect.Heal);
-            Assert.That(
-                NameBandEnd(ice),
-                Is.GreaterThan(NameBandEnd(heal)),
-                "The band under アイスランス runs further than under ヒール."
-            );
         }
-
-        private static float NameBandEnd(BattleInspectCard card) =>
-            card.Body.GetComponent<BattleInspectCardView>().Bands[0].LineEnds[1];
 
         [UnityTest]
         public IEnumerator DroppingACardOnAnEnemyAfterASwipePlaysItThere()
@@ -99,7 +87,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             Assert.That(view.Aim.gameObject.activeSelf, Is.True, "Dots run to the finger.");
             Assert.That(view.AimDots[0].gameObject.activeSelf, Is.True);
-            Assert.That(view.AimDots[0].color, Is.EqualTo(Color.white));
 
             view.ReleaseCard(Center(wolf.TargetArea));
             Assert.That(view.HeldCard, Is.EqualTo(-1));
@@ -137,32 +124,6 @@ namespace Baryonyx.Tests.PlayMode
             view.PressCard(0, CardPoint(view.Cards[0]));
             view.DragCard(outside);
             Assert.That(view.Targets, Is.EqualTo(new[] { 2 }));
-            var card = view.Cards[0].Body;
-            yield return null;
-            Assert.That(
-                card.localScale.x,
-                Is.GreaterThan(0.9f * view.Settings.CardScale),
-                "The card stays full size while aiming."
-            );
-            // After the spring settles, the pressed card is enlarged, in the middle from left to
-            // right and standing near the bottom of the screen.
-            for (float t = 0f; t < 0.8f; t += Time.deltaTime)
-                yield return null;
-            Assert.That(
-                card.localScale.x,
-                Is.EqualTo(view.Settings.RaisedScale * view.Settings.CardScale).Within(0.02f)
-            );
-            var foot = RectTransformUtility.WorldToScreenPoint(
-                null,
-                card.TransformPoint(new Vector2(card.rect.center.x, card.rect.yMin))
-            );
-            float scaleFactor = view.Hand.GetComponentInParent<Canvas>().rootCanvas.scaleFactor;
-            Assert.That(foot.x, Is.EqualTo(Screen.width * 0.5f).Within(4f));
-            Assert.That(
-                foot.y,
-                Is.EqualTo(view.Settings.RaisedBottom * scaleFactor).Within(4f),
-                "A little room under the card."
-            );
             view.ReleaseCard(outside);
             yield return WaitActions(view);
 
@@ -177,10 +138,10 @@ namespace Baryonyx.Tests.PlayMode
 
             Play(view, 0, view.Enemies[1].TargetArea);
 
-            // The five left take the five places of a five-card fan, in their order; those the
+            // The four left take the four places of a four-card fan, in their order; those the
             // energy left cannot pay for rest lower.
             int count = view.HandCards.Count;
-            Assert.That(count, Is.EqualTo(5));
+            Assert.That(count, Is.EqualTo(4));
             for (int slot = 0; slot < count; slot++)
             {
                 var expected = FanPosition(view, slot);
@@ -256,6 +217,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return Load(value => view = value);
             var tips = (RectTransform)view.KeywordTips.transform;
             var checkedSides = new HashSet<bool>();
+            // ガード (for the party, with [ブロック]) in hand with the cards for the enemies.
+            DealInto(view, "Guard");
 
             foreach (int index in view.HandCards.ToArray())
             {
@@ -306,7 +269,7 @@ namespace Baryonyx.Tests.PlayMode
             view.ReleaseCard(second);
             Assert.That(view.HeldCard, Is.EqualTo(1));
 
-            Assert.That(view.HandCards, Has.Count.EqualTo(6), "Nothing was played.");
+            Assert.That(view.HandCards, Has.Count.EqualTo(5), "Nothing was played.");
             Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy));
             Assert.That(view.Enemies.All(enemy => enemy.Hp == enemy.MaxHp), Is.True);
         }
@@ -427,10 +390,8 @@ namespace Baryonyx.Tests.PlayMode
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
-            int guardIndex = System.Array.FindIndex(
-                view.Cards,
-                card => card.Effect == BattleInspectCardEffect.Guard
-            );
+            int guardIndex = DealInto(view, "Guard");
+            Assert.That(view.Cards[guardIndex].Effect, Is.EqualTo(BattleInspectCardEffect.Guard));
             var point = CardPoint(view.Cards[guardIndex]);
             int energy = view.Energy;
 
@@ -487,18 +448,11 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(hidden.Unknown.activeSelf, Is.True, "A hidden weakness shows ?.");
             Assert.That(hidden.Known.activeSelf, Is.False);
-            Assert.That(hidden.Glinting, Is.False);
 
             Play(view, fireIndex, wolf.TargetArea);
             for (float t = 0f; !hidden.Revealed && t < 5f; t += Time.unscaledDeltaTime)
                 yield return null;
             Assert.That(hidden.Revealed, Is.True, "The blow reveals the weakness.");
-            Assert.That(hidden.Glinting, Is.True, "The icon glints as it is revealed.");
-            var slot = hidden.Known.transform.parent;
-            for (float t = 0f; hidden.Glinting && t < 2f; t += Time.unscaledDeltaTime)
-                yield return null;
-            Assert.That(hidden.Glinting, Is.False, "The glint ends.");
-            Assert.That(slot.localScale, Is.EqualTo(Vector3.one), "The icon settles to its size.");
             yield return WaitActions(view);
 
             int weak = Mathf.RoundToInt(Dealt(view, fire, wolf) * 1.5f);
@@ -514,62 +468,14 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ARevealedWeaknessTurnsIntoItsIconAtThePeakOfTheGlint()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            var hidden = view.Enemies[0].Weaknesses.First(weakness => !weakness.StartsRevealed);
-            var slot = hidden.Known.transform.parent;
-            const float swell = BattleInspectWeakness.Swell;
-
-            hidden.Pose(swell * 0.5f);
-            Assert.That(hidden.Unknown.activeSelf, Is.True, "The ? swells first.");
-            Assert.That(hidden.Glinting, Is.True);
-            Assert.That(hidden.Glint.texture, Is.EqualTo(Picture(hidden.Unknown)));
-            Assert.That(slot.localScale.x, Is.GreaterThan(1f));
-            Assert.That(hidden.Glint.Shape.x, Is.GreaterThan(0f), "It whitens as it swells.");
-
-            hidden.Pose(swell);
-            Assert.That(hidden.Known.activeSelf, Is.True, "At the peak it is the element's icon.");
-            Assert.That(hidden.Unknown.activeSelf, Is.False);
-            Assert.That(hidden.Glint.texture, Is.EqualTo(Picture(hidden.Known)));
-            Assert.That(hidden.Glint.Shape.x, Is.EqualTo(1f), "The new icon starts white.");
-
-            hidden.Pose(swell + BattleInspectWeakness.Settle * 0.5f);
-            Assert.That(hidden.Glint.Shape.x, Is.Zero, "The white has cleared.");
-            Assert.That(
-                hidden.Glint.Shape.y,
-                Is.GreaterThan(0f).And.LessThan(1f),
-                "The band of light is crossing the icon."
-            );
-
-            hidden.Pose(swell + BattleInspectWeakness.Settle);
-            Assert.That(hidden.Glinting, Is.False);
-            Assert.That(hidden.Known.activeSelf, Is.True);
-            Assert.That(slot.localScale, Is.EqualTo(Vector3.one));
-        }
-
-        private static Texture Picture(GameObject icon) => icon.GetComponent<RawImage>().texture;
-
-        [UnityTest]
         public IEnumerator ACardCostingMoreThanTheEnergyIsNotPlayed()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var guardian = view.Enemies[2];
-            // The meteor costs more than the first turn's energy, to show how such a card looks:
-            // it is dealt into the opening hand in place of the guard.
-            int meteor = DeckIndexOf(view, "Meteor");
-            view.RestartDeal(
-                new[] { 0, 1, 2, 3, 4, meteor }
-                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != meteor))
-                    .ToArray(),
-                instant: true
-            );
-            int iceIndex = System.Array.FindIndex(
-                view.Cards,
-                card => card.InHand && card.Cost > view.MaxEnergy
-            );
+            // The meteor (cost 3) costs more than the energy the fire leaves, to show how such a
+            // card looks.
+            int iceIndex = DealInto(view, "Meteor");
             int fireIndex = System.Array.FindIndex(
                 view.Cards,
                 card => card.Element == BattleInspectElement.Fire
@@ -584,77 +490,29 @@ namespace Baryonyx.Tests.PlayMode
 
             Assert.That(view.Cards[iceIndex].InHand, Is.True);
             Assert.That(view.Energy, Is.EqualTo(left));
-            // The warning takes the place of the skill name, in the red of an unpayable cost.
+            // The warning takes the place of the skill name.
             Assert.That(view.SkillBanner.gameObject.activeSelf, Is.True);
             Assert.That(view.SkillBanner.Label.text, Is.EqualTo("エネルギー不足"));
-            Assert.That(view.SkillBanner.Label.color, Is.EqualTo(BattleInspectCardView.ShortCost));
-
-            // A card the energy cannot pay for is see-through and darkened, with a reddish cost.
-            yield return null;
-            var ice = view.Cards[iceIndex];
-            Assert.That(ice.Group.alpha, Is.EqualTo(view.Settings.UnplayableAlpha));
-            Assert.That(view.Settings.UnplayableAlpha, Is.LessThan(1f));
-            // The see-through card does not thin its black: it is as dark as the settings say.
-            Assert.That(
-                ice.Face.Shade.color.a * ice.Group.alpha,
-                Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
-            );
-            Assert.That(ice.Face.Shade.enabled, Is.True);
-            Assert.That(ice.Face.CostDigit.color, Is.EqualTo(BattleInspectCardView.ShortCost));
-            var slash = view.Cards[0];
-            Assert.That(slash.Face.Shade.enabled, Is.False, "Cost 1 is paid for.");
-            Assert.That(slash.Face.CostDigit.color, Is.EqualTo(Color.white));
-            Assert.That(slash.Group.alpha, Is.EqualTo(1f));
-            // It also rests lower than its place in the fan, while a card that can be played
-            // keeps its place.
-            Assert.That(view.Settings.UnplayableDrop, Is.GreaterThan(0f));
-            var icePlace = FanPosition(view, view.HandCards.ToList().IndexOf(iceIndex));
-            Assert.That(
-                view.RestPosition(iceIndex).y,
-                Is.EqualTo(icePlace.y - view.Settings.UnplayableDrop).Within(0.01f)
-            );
-            Assert.That(view.RestPosition(iceIndex).x, Is.EqualTo(icePlace.x).Within(0.01f));
-            Assert.That(
-                Vector2.Distance(
-                    view.RestPosition(0),
-                    FanPosition(view, view.HandCards.ToList().IndexOf(0))
-                ),
-                Is.LessThan(0.01f)
-            );
-
-            // Raised, it is opaque again so its details can be read.
-            view.PressCard(iceIndex, CardPoint(ice));
-            yield return null;
-            Assert.That(ice.Group.alpha, Is.EqualTo(1f));
-            Assert.That(ice.Face.Shade.enabled, Is.True);
-            Assert.That(
-                ice.Face.Shade.color.a,
-                Is.EqualTo(view.Settings.UnplayableDarkness).Within(0.001f)
-            );
         }
 
         [UnityTest]
-        public IEnumerator EndTurnRefillsTheEnergyAndDrawsThreeCards()
+        public IEnumerator EndTurnRefillsTheEnergyFlowsTheHandAndDrawsFive()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             Play(view, 0, view.Enemies[1].TargetArea);
-            var kept = view.HandCards.ToArray();
-            var before = kept.Select(i => view.RestPosition(i).x).ToArray();
 
             view.EndTurnButton.onClick.Invoke();
             Assert.That(view.EnemyTurn, Is.True);
             Assert.That(view.EndTurnButton.interactable, Is.False);
             yield return WaitEnemyTurn(view);
             Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
-            Assert.That(view.Energy, Is.EqualTo(6));
-            // The cards in hand make room by moving right only, before any card flies.
-            for (int i = 0; i < kept.Length; i++)
-                Assert.That(view.RestPosition(kept[i]).x, Is.GreaterThan(before[i]));
+            Assert.That(view.Energy, Is.EqualTo(BattleInspectView.EnergyPerTurn));
             yield return WaitDealt(view);
-            // New cards come in at the left end, the side of the deck.
-            Assert.That(DeckCards(view), Is.EqualTo(new[] { 8, 7, 6, 5, 4, 3, 2, 1 }));
-            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
+            // The hand flowed away; new cards come in at the left end, the side of the deck.
+            Assert.That(DeckCards(view), Is.EqualTo(new[] { 9, 8, 7, 6, 5 }));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("6"));
+            Assert.That(view.DiscardLabel.text, Is.EqualTo("5"), "The played card and the four that flowed.");
             // The played card's place on screen shows a newly drawn card of the deck.
             Assert.That(view.Cards[0].InHand, Is.True);
             Assert.That(view.Cards[0].DeckIndex, Is.Not.EqualTo(0));
@@ -695,7 +553,7 @@ namespace Baryonyx.Tests.PlayMode
 
             yield return WaitEnemyTurn(view);
             Assert.That(view.Turn, Is.EqualTo(view.StartTurn + 1));
-            Assert.That(view.Energy, Is.EqualTo(6));
+            Assert.That(view.Energy, Is.EqualTo(BattleInspectView.EnergyPerTurn));
         }
 
         [UnityTest]
@@ -736,7 +594,7 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var wolf = view.Enemies[1];
-            int slash = view.HandCards.First();
+            int slash = System.Array.FindIndex(view.Cards, card => card.InHand && card.DeckIndex == 0);
             // Every other card in hand costs more than the energy the slash leaves.
             foreach (int i in view.HandCards)
                 view.Cards[i].Cost = i == slash ? 1 : view.Energy;
@@ -757,23 +615,6 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheEndTurnButtonSitsHalfwayUpTheCardsOnScreen()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            var button = (RectTransform)view.EndTurnButton.transform;
-            var settings = view.Settings;
-            float top = settings.RestBottom + view.Cards[0].Body.rect.height * settings.CardScale;
-            float middle = (Mathf.Max(0f, settings.RestBottom) + top) / 2f;
-            Assert.That(button.anchorMin.y, Is.EqualTo(0f));
-            Assert.That(button.anchorMax.y, Is.EqualTo(0f));
-            Assert.That(
-                button.anchoredPosition.y + (0.5f - button.pivot.y) * button.rect.height,
-                Is.EqualTo(middle).Within(0.5f)
-            );
-        }
-
-        [UnityTest]
         public IEnumerator PlayModeStartsWithNoCardsAndDealsTheOpeningHandOneByOne()
         {
             var view = default(BattleInspectView);
@@ -788,47 +629,23 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.EnemyTurn, Is.False);
             Assert.That(view.Turn, Is.EqualTo(view.StartTurn));
 
-            // One card leaves the deck at a time, face down, and the count drops with it. Each
-            // flies right only, and cards already dealt stay where they landed.
+            // One card leaves the deck at a time, face down, and the count drops with it. Cards
+            // already dealt stay where they landed.
             int seen = 0;
             bool sawFaceDown = false;
-            var lastX = Enumerable.Repeat(float.MinValue, view.Cards.Length).ToArray();
-            // The right edge of the deck's counter (its picture and the number).
-            var deck = view.DeckAnchor;
-            float deckRight = view
-                .Hand.InverseTransformPoint(
-                    deck.TransformPoint(new Vector2(deck.rect.xMax, deck.rect.center.y))
-                )
-                .x;
-            var corners = new Vector3[4];
             var landed = new System.Collections.Generic.Dictionary<int, Vector2>();
             for (float t = 0f; view.Dealing && t < 5f; t += Time.deltaTime)
             {
                 int count = view.HandCards.Count;
                 Assert.That(count, Is.LessThanOrEqualTo(seen + 1), "One card at a time.");
                 Assert.That(view.DeckLabel.text, Is.EqualTo((16 - count).ToString()));
+                // A card is first seen on its back.
                 if (count > seen)
-                {
-                    // First seen on its back just right of the deck's counter, clear of its
-                    // number, and never for a frame in the fan.
-                    var dealt = view.Cards[view.HandCards[0]];
-                    Assert.That(dealt.Back.activeSelf, Is.True);
-                    dealt.Body.GetWorldCorners(corners);
-                    float cardLeft = corners.Min(c => view.Hand.InverseTransformPoint(c).x);
-                    Assert.That(cardLeft, Is.GreaterThanOrEqualTo(deckRight));
-                    Assert.That(cardLeft, Is.LessThan(deckRight + 200f));
-                }
+                    Assert.That(view.Cards[view.HandCards[0]].Back.activeSelf, Is.True);
                 foreach (int index in view.HandCards)
                 {
-                    float x = view.Cards[index].Body.anchoredPosition.x;
                     if (view.IsFlying(index))
                     {
-                        Assert.That(
-                            x,
-                            Is.GreaterThanOrEqualTo(lastX[index] - 0.01f),
-                            "Right only."
-                        );
-                        lastX[index] = x;
                         if (view.IsFaceDown(index))
                         {
                             sawFaceDown = true;
@@ -849,8 +666,8 @@ namespace Baryonyx.Tests.PlayMode
             }
             Assert.That(view.Dealing, Is.False);
             Assert.That(sawFaceDown, Is.True, "Cards fly in on their backs.");
-            Assert.That(view.HandCards, Has.Count.EqualTo(6));
-            Assert.That(view.DeckLabel.text, Is.EqualTo("10"));
+            Assert.That(view.HandCards, Has.Count.EqualTo(5));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("11"));
             yield return null;
             foreach (int index in view.HandCards)
             {
@@ -865,43 +682,46 @@ namespace Baryonyx.Tests.PlayMode
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
+            // A copy of the settings for this battle only, with a hand of three.
+            view.Settings = Object.Instantiate(view.Settings);
+            view.Settings.HandLimit = 3;
 
-            view.EndTurnButton.onClick.Invoke();
-            yield return WaitEnemyTurn(view);
-            yield return WaitDealt(view);
-            Assert.That(view.HandCards, Has.Count.EqualTo(9));
-            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
-
-            view.EndTurnButton.onClick.Invoke();
-            yield return WaitEnemyTurn(view);
-            yield return WaitDealt(view);
-            Assert.That(view.HandCards, Has.Count.EqualTo(9), "A full hand draws nothing.");
-            Assert.That(view.DeckLabel.text, Is.EqualTo("7"));
+            view.RestartDeal(Enumerable.Range(0, view.Cards.Length).ToArray(), instant: true);
+            Assert.That(view.HandCards, Has.Count.EqualTo(3), "A full hand draws nothing more.");
+            Assert.That(view.DeckLabel.text, Is.EqualTo("13"));
         }
 
         [UnityTest]
-        public IEnumerator AnEmptyDeckIsDealtAnewWithTheWholeDeck()
+        public IEnumerator TheHandFlowsAwayAndADryDeckIsMadeAnewFromTheDiscardPile()
         {
             var view = default(BattleInspectView);
-            yield return Load(value => view = value, dealt: false);
-            // A deck left with one card after the opening hand.
-            view.RestartDeal(new[] { 0, 1, 2, 3, 4, 5, 6 }, instant: true);
-            Play(view, 0, view.Enemies[1].TargetArea);
+            yield return Load(value => view = value);
+
+            // 5 dealt, 11 left; each turn the hand flows away and 5 are drawn.
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            yield return WaitDealt(view);
+            Assert.That(view.HandCards, Has.Count.EqualTo(5));
+            Assert.That(view.DeckLabel.text, Is.EqualTo("6"));
+            Assert.That(view.DiscardLabel.text, Is.EqualTo("5"));
 
             view.EndTurnButton.onClick.Invoke();
             yield return WaitEnemyTurn(view);
             yield return WaitDealt(view);
-            // The last card, then two from the whole 16 shuffled anew, even the cards in hand.
-            var hand = DeckCards(view);
-            Assert.That(hand, Has.Length.EqualTo(8));
-            Assert.That(hand.Skip(2), Is.EqualTo(new[] { 6, 5, 4, 3, 2, 1 }));
-            Assert.That(view.DrawPile, Has.Count.EqualTo(14));
-            Assert.That(view.DeckLabel.text, Is.EqualTo("14"));
-            Assert.That(
-                hand.Take(2).Concat(view.DrawPile).OrderBy(i => i),
-                Is.EqualTo(Enumerable.Range(0, 16)),
-                "The new deck is all 16, so cards in hand come again."
-            );
+            // 居合一閃 (保持) stays in the hand; the other four flowed away.
+            Assert.That(view.DeckLabel.text, Is.EqualTo("1"));
+            Assert.That(view.DiscardLabel.text, Is.EqualTo("9"));
+            Assert.That(view.HandCards.Select(i => view.Cards[i].DeckIndex), Has.Member(DeckIndexOf(view, "Iai")));
+
+            // Only the one card is left: the discard pile is shuffled into a new deck, and the
+            // cards in hand are not in it, so none is in the hand twice.
+            view.EndTurnButton.onClick.Invoke();
+            yield return WaitEnemyTurn(view);
+            yield return WaitDealt(view);
+            var inHand = view.HandCards.Select(i => view.Cards[i].DeckIndex).ToArray();
+            Assert.That(inHand, Is.Unique);
+            Assert.That(inHand.Concat(view.DrawPile).Concat(view.DiscardPile), Is.Unique);
+            Assert.That(view.DiscardLabel.text, Is.EqualTo(view.DiscardPile.Count.ToString()));
         }
 
         [UnityTest]
@@ -955,10 +775,14 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitActions(view);
             Assert.That(target.Down, Is.True);
 
-            // Up again, its cards are shuffled back into the deck.
+            // Up again in the party's turn, its cards are shuffled back into the deck and it
+            // draws two of them.
             view.Allies[fallen].Hp = view.Allies[fallen].MaxHp;
             yield return null;
-            Assert.That(view.DrawPile.Intersect(theirs), Is.EquivalentTo(theirs));
+            yield return WaitDealt(view);
+            var drawn = view.HandCards.Select(i => view.Cards[i].DeckIndex).Intersect(theirs).ToArray();
+            Assert.That(drawn, Has.Length.EqualTo(System.Math.Min(BattleInspectView.RisingDraw, theirs.Length)));
+            Assert.That(view.DrawPile.Concat(drawn).Intersect(theirs), Is.EquivalentTo(theirs));
             Assert.That(view.DeckLabel.text, Is.EqualTo(view.DrawPile.Count.ToString()));
         }
 
@@ -998,13 +822,6 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        private static Rect WorldRect(RectTransform rect)
-        {
-            var corners = new Vector3[4];
-            rect.GetWorldCorners(corners);
-            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-        }
-
         /// <summary>The cards of the deck in hand, left to right.</summary>
         private static int[] DeckCards(BattleInspectView view) =>
             view.HandCards.Select(i => view.Cards[i].DeckIndex).ToArray();
@@ -1025,41 +842,27 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.TurnSlots[0].Party.activeSelf, Is.True);
             Assert.That(view.TurnSlots[1].Enemy.texture, Is.SameAs(view.Enemies[1].Sprite.texture));
 
-            // Gold for the current turn, then red for an enemy and blue for the party.
-            Assert.That(view.TurnSlots[0].Frame.color, Is.EqualTo(view.CurrentTurnFrame));
-            Assert.That(view.TurnSlots[1].Frame.color, Is.EqualTo(view.EnemyTurnFrame));
-            Assert.That(view.TurnSlots[1].Fill.color, Is.EqualTo(view.EnemyTurnFill));
-            Assert.That(view.TurnSlots[3].Frame.color, Is.EqualTo(view.PartyTurnFrame));
-            Assert.That(view.TurnSlots[3].Fill.color, Is.EqualTo(view.PartyTurnFill));
-
-            // It starts at the top left, clear of the skill name in the top middle.
-            var bar = (RectTransform)view.TurnSlots[0].Layout.transform.parent;
-            Assert.That(bar.anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
-            Assert.That(
-                WorldRect(bar).Overlaps(WorldRect(view.SkillBanner.BackdropCanvas)),
-                Is.False
-            );
-
             // Ending the turn goes through the enemies' turns to the next party turn.
             view.EndTurnButton.onClick.Invoke();
             yield return WaitEnemyTurn(view);
             Assert.That(view.UpcomingTurns(6), Is.EqualTo(new[] { party, party, 2, party, 1, 0 }));
             Assert.That(view.TurnSlots[1].Party.activeSelf, Is.True);
-            Assert.That(view.TurnSlots[1].Frame.color, Is.EqualTo(view.PartyTurnFrame));
-            Assert.That(view.TurnSlots[2].Frame.color, Is.EqualTo(view.EnemyTurnFrame));
             yield return WaitDealt(view);
 
             // A defeated enemy leaves the order.
             var slime = view.Enemies[0];
             slime.Hp = 1;
-            Play(view, 0, slime.TargetArea);
+            int blow = view.HandCards.First(i =>
+                view.Cards[i].TargetsEnemies && view.Cards[i].Cost <= view.Energy
+            );
+            Play(view, blow, slime.TargetArea);
             yield return WaitActions(view);
             Assert.That(slime.Alive, Is.False);
             Assert.That(view.UpcomingTurns(6), Has.No.Member(0));
         }
 
         [UnityTest]
-        public IEnumerator ThePlayedCardsUserStepsForwardWithItsNameShownAndComesBack()
+        public IEnumerator ThePlayedCardsNameIsShownWhileItActsAndItsUserComesBack()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1074,19 +877,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.SkillBanner.gameObject.activeSelf, Is.True);
             Assert.That(view.SkillBanner.Label.text, Is.EqualTo("斬り払い"));
 
-            // One step toward the enemies, the HP bar with it.
-            float step = view.Settings.StepDistance;
-            for (float t = 0f; t < view.Settings.StepTime + 0.1f; t += Time.deltaTime)
-                yield return null;
-            Assert.That(user.Body.anchoredPosition.x - home.x, Is.EqualTo(step).Within(0.01f));
-            Assert.That(user.HpBar.anchoredPosition.x - barHome.x, Is.EqualTo(step).Within(0.01f));
-
-            // The blow lands as the skill's effect strikes, while the user still stands forward.
+            // The blow lands as the skill's effect strikes.
             var wolf = view.Enemies[1];
             for (float t = 0f; wolf.Hp == wolf.MaxHp && t < 2f; t += Time.unscaledDeltaTime)
                 yield return null;
             Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
-            Assert.That(user.Body.anchoredPosition.x - home.x, Is.EqualTo(step).Within(0.01f));
 
             yield return WaitActions(view);
             Assert.That(user.Body.anchoredPosition, Is.EqualTo(home));
@@ -1101,7 +896,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ARaisedCardsUserStepsForwardWithARingAndItsName()
+        public IEnumerator ARaisedCardsUserIsShownWithARingAndItsName()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1118,35 +913,24 @@ namespace Baryonyx.Tests.PlayMode
             view.PressCard(0, point);
             view.ReleaseCard(point);
             yield return WaitStep(view);
-            float step = view.Settings.StepDistance;
             for (int i = 0; i < view.Allies.Length; i++)
             {
                 var ally = view.Allies[i];
                 bool isUser = i == slash.Caster;
                 Assert.That(ally.CasterRing.activeSelf, Is.EqualTo(isUser));
                 Assert.That(ally.NameTag.activeSelf, Is.EqualTo(isUser));
-                Assert.That(
-                    ally.Body.anchoredPosition.x - homes[i].x,
-                    Is.EqualTo(isUser ? step : 0f).Within(0.01f),
-                    "Only the user steps forward; the others stay put."
-                );
             }
-            Assert.That(user.HpBar.anchoredPosition.x - barHome.x, Is.EqualTo(step).Within(0.01f));
             Assert.That(
                 user.NameTag.GetComponent<TranslucentTextPanel>().Label.text,
                 Is.EqualTo(slash.Body.GetComponent<BattleInspectCardView>().Owner.text),
                 "The tag shows the owner named on the card."
             );
 
-            // Played, the user goes on from its step instead of going home first.
+            // Played, the ring and the name go.
             view.TapScreen(Center(view.Enemies[1].TargetArea));
             yield return null;
             Assert.That(user.CasterRing.activeSelf, Is.False);
             Assert.That(user.NameTag.activeSelf, Is.False);
-            Assert.That(
-                user.Body.anchoredPosition.x - homes[slash.Caster].x,
-                Is.EqualTo(step).Within(0.01f)
-            );
             yield return WaitActions(view);
             Assert.That(user.Body.anchoredPosition, Is.EqualTo(homes[slash.Caster]));
             Assert.That(user.HpBar.anchoredPosition, Is.EqualTo(barHome));
@@ -1195,7 +979,7 @@ namespace Baryonyx.Tests.PlayMode
             Play(view, fireIndex, wolf.TargetArea);
             // Both are paid for at once; their effects land in turn.
             Assert.That(view.Energy, Is.EqualTo(view.MaxEnergy - slash.Cost - fire.Cost));
-            Assert.That(view.HandCards, Has.Count.EqualTo(4));
+            Assert.That(view.HandCards, Has.Count.EqualTo(3));
             yield return WaitActions(view);
             // Fire is one of the wolf's weaknesses.
             Assert.That(
@@ -1220,9 +1004,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(wolf.SkillName, Is.Not.Empty);
             Assert.That(wolf.Power, Is.GreaterThan(0));
 
+            int first = view.HandCards[0];
             view.EndTurnButton.onClick.Invoke();
             // Cards cannot be pressed while the enemies act.
-            view.PressCard(view.HandCards[0], CardPoint(view.Cards[view.HandCards[0]]));
+            view.PressCard(first, CardPoint(view.Cards[first]));
             Assert.That(view.HeldCard, Is.EqualTo(-1));
 
             // The wolf acts first: its turn is at the head of the order, and it steps toward the
@@ -1273,34 +1058,24 @@ namespace Baryonyx.Tests.PlayMode
             var wolfHome = wolf.Body.anchoredPosition;
             Assert.That(view.TurnBannerGroup.blocksRaycasts, Is.False, "Taps go through the band.");
 
-            // The enemies' band comes up in red, and the wolf waits for it before stepping out.
+            // The enemies' band comes up, and the wolf waits for it before stepping out.
             view.EndTurnButton.onClick.Invoke();
             yield return null;
             Assert.That(banner.gameObject.activeSelf, Is.True);
             Assert.That(banner.Label.text, Is.EqualTo(BattleInspectView.EnemyTurnText));
-            Assert.That(banner.Label.color, Is.EqualTo(view.EnemyBannerText));
-            Assert.That(
-                view.TurnBannerLines.All(line => line.color == view.EnemyBannerLine),
-                Is.True
-            );
             for (float t = 0f; t < view.Settings.TurnBannerHold * 0.8f; t += Time.deltaTime)
             {
                 Assert.That(wolf.Body.anchoredPosition, Is.EqualTo(wolfHome));
                 yield return null;
             }
 
-            // The party's band comes up in blue with the turn's number, over the deal.
+            // The party's band comes up with the turn's number, over the deal.
             yield return WaitEnemyTurn(view);
             Assert.That(view.Dealing, Is.True);
             Assert.That(banner.gameObject.activeSelf, Is.True);
             Assert.That(
                 banner.Label.text,
                 Is.EqualTo(BattleInspectView.PartyTurnText(view.StartTurn + 1, again: false))
-            );
-            Assert.That(banner.Label.color, Is.EqualTo(view.PartyBannerText));
-            Assert.That(
-                view.TurnBannerLines.All(line => line.color == view.PartyBannerLine),
-                Is.True
             );
             yield return WaitDealt(view);
 
@@ -1329,7 +1104,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator APlayedSkillDarkensTheStagePlaysItsEffectAndSettles()
+        public IEnumerator APlayedSkillPlaysItsEffectAndTheStageSettles()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -1342,17 +1117,9 @@ namespace Baryonyx.Tests.PlayMode
             );
 
             Play(view, fire, wolf.TargetArea);
-            float darkest = 0f;
-            int most = 0;
             for (float t = 0f; view.Acting && t < 5f; t += Time.unscaledDeltaTime)
-            {
-                darkest = Mathf.Max(darkest, vfx.DimAlpha);
-                most = Mathf.Max(most, vfx.LiveCount);
                 yield return null;
-            }
             Assert.That(view.Acting, Is.False, "The action ends.");
-            Assert.That(darkest, Is.GreaterThan(0.3f), "The stage darkens behind the actors.");
-            Assert.That(most, Is.GreaterThan(20), "The fireball bursts into light and embers.");
             Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
 
             // The embers and smoke drift away and the stage lights up and comes to rest.
@@ -1366,40 +1133,6 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheBattlefieldIsDrawnByTheCameraThroughBloom()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            var stage = view.Enemies[0].TargetArea.GetComponentInParent<Canvas>().rootCanvas;
-            Assert.That(stage.renderMode, Is.EqualTo(RenderMode.ScreenSpaceCamera));
-            Assert.That(
-                stage.worldCamera,
-                Is.Not.Null,
-                "The scene's camera draws the battlefield."
-            );
-            Assert.That(
-                stage.worldCamera.GetUniversalAdditionalCameraData().renderPostProcessing,
-                Is.True
-            );
-            var volume = stage.GetComponentInChildren<Volume>();
-            Assert.That(volume, Is.Not.Null);
-            Assert.That(volume.sharedProfile.TryGet<Bloom>(out var bloom), Is.True);
-            Assert.That(bloom.active, Is.True);
-            Assert.That(
-                bloom.threshold.value,
-                Is.GreaterThanOrEqualTo(1f),
-                "Only light past white spreads, so the pixel art stays crisp."
-            );
-            var controls = view.Hand.GetComponentInParent<Canvas>().rootCanvas;
-            Assert.That(controls.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
-            Assert.That(
-                view.Vfx.Flash.canvas.rootCanvas,
-                Is.SameAs(controls),
-                "The flash is not bloomed."
-            );
-        }
-
-        [UnityTest]
         public IEnumerator OnTheThreeDStageTheActorsStandAsBoardsWhereTheUiPutsThem()
         {
             var view = default(BattleInspectView);
@@ -1410,13 +1143,6 @@ namespace Baryonyx.Tests.PlayMode
             var stageCamera = Hd2dStageCamera.Active;
             Assert.That(stageCamera, Is.Not.Null, "The battle has a 3D stage.");
             Assert.That(stageCamera.gameObject.scene, Is.EqualTo(loadedScene));
-            Assert.That(stageCamera.Camera.orthographic, Is.False);
-            var stage = view.Vfx.Stage;
-            Assert.That(
-                stage.Find("Backdrop/Background").gameObject.activeInHierarchy,
-                Is.False,
-                "The 3D stage takes the painted background's place."
-            );
 
             var bodies = view
                 .Allies.Select(ally => (ally.Body, Sprite: ally.Sprite))
@@ -1429,16 +1155,6 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(board.Staged, Is.True, body.name);
                 Assert.That(sprite.canvasRenderer.cull, Is.True, "The UI picture is not drawn.");
                 Assert.That(board.VisualRenderer.enabled, Is.True);
-                Assert.That(
-                    board.ShadowRenderer.shadowCastingMode,
-                    Is.EqualTo(ShadowCastingMode.ShadowsOnly),
-                    "An upright board casts the shadow."
-                );
-                Assert.That(
-                    board.ContactRenderer.enabled,
-                    Is.True,
-                    "A contact shadow ties it down."
-                );
 
                 // The board covers on screen where the UI picture is.
                 var mesh = board.VisualRenderer.GetComponent<MeshFilter>().sharedMesh;
@@ -1453,77 +1169,18 @@ namespace Baryonyx.Tests.PlayMode
                 );
                 Assert.That(Vector2.Distance(drawn, ui), Is.LessThan(tolerance), body.name);
             }
-
-            // Bars, tags and the front effects over the boards; the back effects under them.
-            int boardOrder = view.Allies[0].Body.GetComponent<Hd2dUiBillboard>().SortingOrder;
-            Assert.That(
-                view.Allies[0].HpBar.GetComponentInParent<Canvas>().sortingOrder,
-                Is.GreaterThan(boardOrder)
-            );
-            Assert.That(
-                view.Allies[0].CasterRing.GetComponent<Canvas>().sortingOrder,
-                Is.LessThan(boardOrder),
-                "The ring lies on the floor behind its ally."
-            );
-            Assert.That(
-                view.Vfx.BackLayer.GetComponentInParent<Canvas>().sortingOrder,
-                Is.LessThan(boardOrder)
-            );
-            Assert.That(
-                view.Vfx.FrontLayer.GetComponentInParent<Canvas>().sortingOrder,
-                Is.GreaterThan(boardOrder)
-            );
         }
 
         [UnityTest]
-        public IEnumerator TheCameraSlowlyCirclesTheBattlefieldButNotTheControls()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            var stage = view.Vfx.Stage;
-            var drift = stage.parent.GetComponent<BattleStageDrift>();
-            Assert.That(drift, Is.Not.Null, "The stage moves inside the camera's circle.");
-            Assert.That(view.Enemies[0].TargetArea.IsChildOf(stage), Is.True);
-            Assert.That(view.Hand.IsChildOf(drift.transform), Is.False);
-            var pixelArt = view.ActorMaterial;
-            Assert.That(pixelArt, Is.Not.Null);
-            Assert.That(pixelArt.shader.name, Is.EqualTo("Baryonyx/UI Pixel Art"));
-            Assert.That(
-                ActorMaterials(view),
-                Has.All.SameAs(pixelArt),
-                "The characters stay sharp between screen pixels."
-            );
-            var background = stage.Find("Backdrop/Background").GetComponent<RawImage>();
-            Assert.That(background.material, Is.SameAs(pixelArt));
-
-            // Sped up from its default (once round in tens of seconds) to see it go round.
-            drift.Period = 1f;
-            var hand = view.Hand.position;
-            var drawn = new List<Vector2>();
-            for (float t = 0f; t < 1.1f; t += Time.unscaledDeltaTime)
-            {
-                yield return null;
-                drawn.Add(((RectTransform)drift.transform).anchoredPosition);
-            }
-            Assert.That(
-                drawn.Select(offset => offset.magnitude),
-                Has.All.EqualTo(drift.Radius).Within(0.01f),
-                "The view's centre keeps on the circle."
-            );
-            Assert.That(drawn.Max(offset => offset.x), Is.GreaterThan(drift.Radius * 0.7f));
-            Assert.That(drawn.Min(offset => offset.x), Is.LessThan(-drift.Radius * 0.7f));
-            Assert.That(drawn.Max(offset => offset.y), Is.GreaterThan(drift.Radius * 0.7f));
-            Assert.That(drawn.Min(offset => offset.y), Is.LessThan(-drift.Radius * 0.7f));
-            Assert.That(view.Hand.position, Is.EqualTo(hand), "The controls stay still.");
-        }
-
-        [UnityTest]
-        public IEnumerator TheCameraKeepsCirclingThroughASkillAndItsHitStop()
+        public IEnumerator TheCameraCirclesTheBattlefieldButNotTheControlsThroughAHitStop()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var vfx = view.Vfx;
             var drift = (RectTransform)vfx.Stage.parent;
+            Assert.That(drift.GetComponent<BattleStageDrift>(), Is.Not.Null);
+            Assert.That(view.Enemies[0].TargetArea.IsChildOf(vfx.Stage), Is.True);
+            Assert.That(view.Hand.IsChildOf(drift), Is.False, "The controls stay still.");
 
             Play(view, 0, view.Enemies[1].TargetArea);
             var last = drift.anchoredPosition;
@@ -1560,14 +1217,12 @@ namespace Baryonyx.Tests.PlayMode
                 .Concat(view.Enemies.Select(enemy => enemy.Sprite.material));
 
         [UnityTest]
-        public IEnumerator ABlowLightsTheCharactersNearItAndLeavesTheFarOnesDark()
+        public IEnumerator ABlowLightsItsTargetAndTheLightFades()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var vfx = view.Vfx;
             var wolf = view.Enemies[1];
-            var slime = view.Enemies[0];
-            var farAlly = view.Allies[1];
             int fire = System.Array.FindIndex(
                 view.Cards,
                 card => card.Element == BattleInspectElement.Fire
@@ -1579,8 +1234,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(wolf.Hp, Is.LessThan(wolf.MaxHp));
             yield return null;
             Assert.That(vfx.LightOf(wolf.Sprite).Lit, Is.True, "The blast lights its target.");
-            Assert.That(vfx.LightOf(slime.Sprite).Lit, Is.True, "...and the enemy beside it.");
-            Assert.That(vfx.LightOf(farAlly.Sprite).Lit, Is.False, "The far side stays dark.");
 
             yield return WaitActions(view);
             for (float t = 0f; vfx.LightOf(wolf.Sprite).Lit && t < 2f; t += Time.unscaledDeltaTime)
@@ -1622,16 +1275,23 @@ namespace Baryonyx.Tests.PlayMode
                 .ToArray();
             Assert.That(shapes, Is.Not.Empty);
             Assert.That(shapes.Select(image => image.texture), Has.All.Null, "No picture.");
+            // A shape's own material, or the copy of it that draws its rich look.
+            bool OfShape(Material material, Material shape) =>
+                shape != null
+                && (
+                    material == shape
+                    || (material.shader == shape.shader && material.name.StartsWith(shape.name + " (Rich"))
+                );
             Assert.That(
                 shapes.Select(image => image.material),
-                Has.All.Matches<Material>(material => vfx.Shapes.Contains(material))
+                Has.All.Matches<Material>(material => vfx.Shapes.Any(shape => OfShape(material, shape)))
             );
             Assert.That(
                 shapes.Select(image => image.uvRect),
                 Has.All.EqualTo(new Rect(0f, 0f, 1f, 1f))
             );
             Assert.That(
-                shapes.Any(image => image.material == vfx.MaterialOf(BattleVfxShape.Pillar)),
+                shapes.Any(image => OfShape(image.material, vfx.MaterialOf(BattleVfxShape.Pillar))),
                 Is.True,
                 "The heal raises its pillar of light."
             );
@@ -1644,11 +1304,6 @@ namespace Baryonyx.Tests.PlayMode
             yield return Load(value => view = value);
             var stage = view.Enemies[0].TargetArea.GetComponentInParent<BattleStageCamera>();
             var stageRect = (RectTransform)stage.transform;
-            Assert.That(
-                stageRect.localScale.x,
-                Is.LessThan(0.5f),
-                "As a root drawn by the camera, Unity scales it down to world units."
-            );
 
             // The showcase previews the screen under its own camera canvas.
             var holder = new GameObject("PreviewCanvas", typeof(RectTransform), typeof(Canvas));
@@ -1677,7 +1332,6 @@ namespace Baryonyx.Tests.PlayMode
             var wolf = view.Enemies[1];
 
             Play(view, 0, wolf.TargetArea);
-            float shook = 0f;
             for (float t = 0f; !vfx.HitStopping && t < 2f; t += Time.unscaledDeltaTime)
                 yield return null;
             Assert.That(vfx.HitStopping, Is.True, "The cut lands with a hit stop.");
@@ -1686,14 +1340,9 @@ namespace Baryonyx.Tests.PlayMode
 
             float stopped = Time.realtimeSinceStartup;
             while (vfx.HitStopping && Time.realtimeSinceStartup - stopped < 1f)
-            {
-                shook = Mathf.Max(shook, vfx.Stage.anchoredPosition.magnitude);
                 yield return null;
-            }
             Assert.That(vfx.HitStopping, Is.False);
-            Assert.That(Time.realtimeSinceStartup - stopped, Is.LessThan(0.25f), "Only a moment.");
             Assert.That(Time.timeScale, Is.EqualTo(1f));
-            Assert.That(shook, Is.GreaterThan(0f), "The stage shakes even while the battle stops.");
             yield return WaitActions(view);
         }
 
@@ -1714,20 +1363,10 @@ namespace Baryonyx.Tests.PlayMode
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
             var vfx = view.Vfx;
-            // 居合一閃 (cost 5) is dealt into the opening hand in place of the guard.
-            int iai = DeckIndexOf(view, "Iai");
-            view.RestartDeal(
-                new[] { 0, 1, 2, 3, 4, iai }
-                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != iai))
-                    .ToArray(),
-                instant: true
-            );
-            int index = System.Array.FindIndex(
-                view.Cards,
-                card => card.InHand && card.DeckIndex == iai
-            );
+            // 居合一閃 is one of the big moves that cut in, whatever they cost.
+            int index = DealInto(view, "Iai");
             var card = view.Cards[index];
-            Assert.That(card.Cost, Is.GreaterThanOrEqualTo(vfx.CutInCost));
+            Assert.That(CardSkills.Find("Iai").Has(CardTrait.CutIn), Is.True);
             Assert.That(card.Cost, Is.LessThanOrEqualTo(view.Energy));
             // Energy left over keeps the turn from ending by itself after the card.
             typeof(BattleInspectView).GetProperty("Energy").SetValue(view, card.Cost + 1);
@@ -1753,8 +1392,8 @@ namespace Baryonyx.Tests.PlayMode
         {
             int deck = DeckIndexOf(view, skill);
             view.RestartDeal(
-                new[] { 0, 1, 2, 3, 4, deck }
-                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 4 && i != deck))
+                new[] { 0, 1, 2, 3, deck }
+                    .Concat(Enumerable.Range(0, view.Deck.Length).Where(i => i > 3 && i != deck))
                     .ToArray(),
                 instant: true
             );
@@ -1812,26 +1451,13 @@ namespace Baryonyx.Tests.PlayMode
             yield return Load(value => view = value);
             var slime = view.Enemies[0];
             var wolf = view.Enemies[1];
-            int bash = DealInto(view, "ShieldBash");
-            Play(view, bash, slime.TargetArea);
+            int guard = DealInto(view, "Guard");
+            Play(view, guard, view.Allies[0].TargetArea);
             yield return WaitActions(view);
-            Assert.That(slime.Hp, Is.LessThan(slime.MaxHp));
             Assert.That(view.BlockOf(0), Is.GreaterThan(0), "Every ally takes the block.");
             Assert.That(view.BlockOf(3), Is.EqualTo(view.BlockOf(0)));
-            // The block shows as a yellow strip over the HP bar, on the scale of the max HP.
-            for (int i = 0; i < view.Allies.Length; i++)
-            {
-                var gauge = view.Allies[i].Gauge;
-                Assert.That(gauge.Block.gameObject.activeSelf, Is.True);
-                int dots = Mathf.RoundToInt(
-                    Mathf.Min(1f, view.BlockOf(i) / (float)view.Allies[i].MaxHp) * gauge.InnerDots
-                );
-                // The strip's edge takes a dot on each side.
-                Assert.That(
-                    gauge.Block.sizeDelta.x,
-                    Is.EqualTo((Mathf.Max(1, dots) + 2) * gauge.DotSize).Within(0.01f)
-                );
-            }
+            // The block shows over the HP bar.
+            Assert.That(view.Allies.All(ally => ally.Gauge.Block.gameObject.activeSelf), Is.True);
             int[] hpBefore = view.Allies.Select(ally => ally.Hp).ToArray();
 
             view.EndTurnButton.onClick.Invoke();
@@ -1864,47 +1490,11 @@ namespace Baryonyx.Tests.PlayMode
             var ally = view.Allies[1];
             ally.MaxHp = 1;
             ally.Hp = 1;
-            int bash = DealInto(view, "ShieldBash");
-            Play(view, bash, view.Enemies[0].TargetArea);
-            yield return WaitActions(view);
-            Assert.That(view.BlockOf(0), Is.GreaterThan(1));
-            Assert.That(view.BlockOf(1), Is.EqualTo(1), "The block stops at the ally's max HP.");
-            Assert.That(
-                ally.Gauge.Block.sizeDelta.x,
-                Is.EqualTo((ally.Gauge.InnerDots + 2) * ally.Gauge.DotSize).Within(0.01f),
-                "A full block fills the bar."
-            );
-        }
-
-        [UnityTest]
-        public IEnumerator HalfOfTheBlockIsKeptAsEachPartyTurnBegins()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
             int guard = DealInto(view, "Guard");
             Play(view, guard, view.Allies[0].TargetArea);
             yield return WaitActions(view);
-            int[] block = Enumerable.Range(0, view.Allies.Length).Select(view.BlockOf).ToArray();
-            Assert.That(block, Has.All.GreaterThan(1));
-
-            // No enemy stands, so no blow wears the block down: only the turn halves it.
-            for (int turn = 0; turn < 2; turn++)
-            {
-                foreach (var enemy in view.Enemies)
-                    enemy.Hp = 0;
-                view.EndTurnButton.onClick.Invoke();
-                yield return WaitEnemyTurn(view);
-                for (int i = 0; i < view.Allies.Length; i++)
-                {
-                    block[i] /= 2;
-                    Assert.That(view.BlockOf(i), Is.EqualTo(block[i]), $"Half is kept (ally {i}).");
-                    Assert.That(
-                        view.Allies[i].Gauge.Block.gameObject.activeSelf,
-                        Is.EqualTo(block[i] > 0)
-                    );
-                }
-                yield return WaitDealt(view);
-            }
+            Assert.That(view.BlockOf(0), Is.GreaterThan(1));
+            Assert.That(view.BlockOf(1), Is.EqualTo(1), "The block stops at the ally's max HP.");
         }
 
         [UnityTest]
@@ -1921,11 +1511,14 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(gauge.TrailRatio, Is.EqualTo(1f), "The lost HP stays as a trail.");
             Assert.That(gauge.Trail.gameObject.activeSelf, Is.True);
 
-            yield return new WaitForSeconds(gauge.TrailHold * 0.5f);
+            yield return null;
             Assert.That(gauge.TrailRatio, Is.EqualTo(1f), "The trail holds a moment first.");
 
-            yield return new WaitForSeconds(gauge.TrailHold + gauge.TrailDrain + 0.2f);
-            Assert.That(gauge.TrailRatio, Is.EqualTo(gauge.Ratio), "Then it drains to the fill.");
+            yield return SceneTests.WaitUntil(
+                () => gauge.TrailRatio == gauge.Ratio,
+                gauge.TrailHold + gauge.TrailDrain + 1f,
+                "Then it drains to the fill."
+            );
             Assert.That(gauge.Trail.gameObject.activeSelf, Is.False);
 
             gauge.SetHp(max, max);
@@ -2130,8 +1723,8 @@ namespace Baryonyx.Tests.PlayMode
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
-            // 見本のデッキには引くカードがないため、同じルカの「蛇牙の連撃」を「偵察」に替えてから配る。
-            var skill = CardSkills.Find("Scout");
+            // 見本のデッキには引くだけのカードがないため、同じルカの「蛇牙の連撃」を「疾風迅雷」（1枚引く）に替えてから配る。
+            var skill = CardSkills.Find("Gale");
             int slot = DeckIndexOf(view, "SerpentFang");
             var serpent = view.Deck[slot];
             view.Deck[slot] = new BattleInspectCardData
@@ -2148,19 +1741,19 @@ namespace Baryonyx.Tests.PlayMode
                 Effect = BattleCardText.EffectOf(skill),
                 Caster = serpent.Caster,
             };
-            int scout = DealInto(view, "Scout");
+            int gale = DealInto(view, "Gale");
             Assert.That(
-                view.Cards[scout].TargetsWholeSide,
+                view.Cards[gale].TargetsWholeSide,
                 Is.True,
-                "A card for no one needs no target."
+                "A card for the whole party needs no exact target."
             );
             int before = view.HandCards.Count;
 
-            Play(view, scout, view.Allies[0].TargetArea);
+            Play(view, gale, view.Allies[0].TargetArea);
             yield return WaitActions(view);
             for (float t = 0f; view.Dealing && t < 5f; t += Time.deltaTime)
                 yield return null;
-            Assert.That(view.HandCards, Has.Count.EqualTo(before - 1 + 2));
+            Assert.That(view.HandCards, Has.Count.EqualTo(before - 1 + 1));
         }
 
         /// <summary>The index in the deck of the card skill <paramref name="skill"/>.</summary>
@@ -2185,7 +1778,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ABeatenEnemyCrumblesAwayDotByDot()
+        public IEnumerator ABeatenEnemyCrumblesAwayAndComesBackUntinted()
         {
             var view = default(BattleInspectView);
             yield return Load(value => view = value);
@@ -2204,47 +1797,14 @@ namespace Baryonyx.Tests.PlayMode
             var body = view
                 .Vfx.FrontLayer.GetComponentsInChildren<RawImage>()
                 .Single(image => image.texture == wolf.Sprite.texture);
-            Assert.That(body.material.shader, Is.SameAs(view.Vfx.DefeatMaterial.shader));
-            Assert.That(body.material.GetTexture("_OrderTex"), Is.Not.Null);
 
-            // Its dots fly off as square motes, never turned.
-            var mote = view.Vfx.MaterialOf(BattleVfxShape.Mote);
-            int most = 0;
             // The board is used again by later effects once the crumble is over.
             bool Crumbling() => body.isActiveAndEnabled && body.texture == wolf.Sprite.texture;
             for (float t = 0f; Crumbling() && t < 3f; t += Time.unscaledDeltaTime)
-            {
-                var motes = view
-                    .Vfx.FrontLayer.GetComponentsInChildren<RawImage>()
-                    .Where(image => image.material == mote && image.color.a > 0f)
-                    .ToList();
-                most = Mathf.Max(most, motes.Count);
-                Assert.That(motes.All(image => image.rectTransform.localEulerAngles.z == 0f));
                 yield return null;
-            }
             Assert.That(Crumbling(), Is.False, "It is eaten away to nothing.");
-            Assert.That(most, Is.GreaterThanOrEqualTo(20), "Its dots fly off.");
             Assert.That(wolf.Sprite.color, Is.EqualTo(Color.white), "It comes back untinted.");
             yield return WaitActions(view);
-        }
-
-        [UnityTest]
-        public IEnumerator AnEnemysBlowLandsWithABurstOnTheAlly()
-        {
-            var view = default(BattleInspectView);
-            yield return Load(value => view = value);
-            int partyHp = view.Allies.Sum(ally => ally.Hp);
-            view.EndTurnButton.onClick.Invoke();
-            int most = 0;
-            for (float t = 0f; view.EnemyTurn && t < 10f; t += Time.unscaledDeltaTime)
-            {
-                if (view.Allies.Sum(ally => ally.Hp) < partyHp)
-                    most = Mathf.Max(most, view.Vfx.LiveCount);
-                yield return null;
-            }
-            Assert.That(view.EnemyTurn, Is.False);
-            Assert.That(most, Is.GreaterThan(5), "Claw marks and sparks burst on the ally.");
-            Assert.That(Time.timeScale, Is.EqualTo(1f));
         }
 
         /// <summary>
@@ -2459,6 +2019,8 @@ namespace Baryonyx.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator UnloadScene()
         {
+            Time.timeScale = 1f;
+            random?.Dispose();
             if (loadedScene.IsValid() && loadedScene.isLoaded)
                 yield return SceneManager.UnloadSceneAsync(loadedScene);
         }

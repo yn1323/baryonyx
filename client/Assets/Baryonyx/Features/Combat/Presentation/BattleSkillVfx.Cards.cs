@@ -270,6 +270,27 @@ namespace Baryonyx.Combat.Presentation
                         },
                         1
                     );
+                    // Grit caught up and spun round in it.
+                    Spray(
+                        frontLight,
+                        s.Holder.anchoredPosition + Vector2.up * 20f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Chip,
+                            From = new Color(0.45f, 0.37f, 0.3f),
+                            To = new Color(0.32f, 0.27f, 0.22f, 0f),
+                            Speed = new Vector2(200f, 520f),
+                            Direction = 75f,
+                            Spread = 60f,
+                            Life = new Vector2(0.4f, 0.7f),
+                            Size = new Vector2(4f, 9f),
+                            Gravity = 900f,
+                            Drag = 1f,
+                            Spin = 900f,
+                            Area = 50f,
+                        },
+                        2
+                    );
                 }
             );
             // The wind's leaves and streaks swirl along with it.
@@ -307,7 +328,7 @@ namespace Baryonyx.Combat.Presentation
                 last = reach;
                 Arc(backLight, at, 30f, false, color, 0.9f);
                 Arc(frontLight, at + new Vector2(0f, -10f), -20f, true, color, 0.8f);
-                Sparks(at, color, 10, 0.8f, Vector2.right);
+                Sparks(at, BladeSpark, 10, 0.8f, Vector2.right);
                 var weight = land(index);
                 Impact(
                     hits[index].Area,
@@ -352,25 +373,15 @@ namespace Baryonyx.Combat.Presentation
             {
                 var at = Center(FrontLayer, hits[index].Area);
                 float y = at.y;
-                // The cut: a hair-thin line across the whole battlefield, at the enemy's height.
-                Line(
-                    frontLight,
-                    new Vector2(-1100f, y + 30f),
-                    new Vector2(1100f, y - 30f),
-                    Color.white,
-                    26f,
-                    0.55f,
-                    0.35f
-                );
-                Line(
-                    backLight,
-                    new Vector2(-1100f, y + 30f),
-                    new Vector2(1100f, y - 30f),
-                    color,
-                    90f,
-                    0.6f,
-                    0.3f
-                );
+                // The cut: a hair-thin line across the whole battlefield, at the enemy's height, in
+                // three layers that go at different times: the haze of lit air round it, wide and
+                // soft, the white-hot core, gone at once, and the afterimage, a thinner line left
+                // in the eye that wears away from its ends slowest.
+                var cutFrom = new Vector2(-1100f, y + 30f);
+                var cutTo = new Vector2(1100f, y - 30f);
+                Line(backLight, cutFrom, cutTo, color, 90f, 0.45f, 0.2f);
+                Line(frontLight, cutFrom, cutTo, new Color(color.r, color.g, color.b, 0.7f), 10f, 0.95f, 0.35f);
+                Line(frontLight, cutFrom, cutTo, Color.white, 22f, 0.22f, 0.4f);
                 Shake(0.12f, Vector2.right);
                 yield return Wait(0.12f);
                 var weight = land(index);
@@ -393,6 +404,7 @@ namespace Baryonyx.Combat.Presentation
                     }
                 );
                 Impact(hits[index].Area, at, color, weight, 1f, Vector2.right, flashScreen: true);
+                Sparks(at, BladeSpark, 18, 1f, Vector2.right);
                 HitStop(0.16f);
                 Punch(at, 0.03f);
                 Spray(
@@ -499,7 +511,7 @@ namespace Baryonyx.Combat.Presentation
                 );
                 yield return Wait(0.09f);
                 Arc(frontLight, at, UnityEngine.Random.Range(-60f, 60f), n % 2 == 1, color, 0.7f);
-                Sparks(at, color, 8, 0.7f, (at - start).normalized);
+                Sparks(at, BladeSpark, 8, 0.7f, (at - start).normalized);
                 var weight = land(index);
                 bool final = n == wave.Count - 1;
                 if (final)
@@ -629,26 +641,9 @@ namespace Baryonyx.Combat.Presentation
                     turn: false
                 );
                 var weight = land(index);
-                var ring = Spawn(
-                    frontLight,
-                    BattleVfxShape.Ring,
-                    at - new Vector2(30f, 0f),
-                    new Vector2(360f, 360f),
-                    color
-                );
-                Animate(
-                    ring,
-                    0.35f,
-                    (s, k) =>
-                    {
-                        s.Holder.localScale = new Vector3(
-                            RingScale(k, false).x * 0.45f,
-                            RingScale(k, false).y,
-                            1f
-                        );
-                        Show(s, color, k, k);
-                    }
-                );
+                // Metal meets the enemy: no ring in the air, but scraps, sparks and dust.
+                Sparks(at - new Vector2(40f, 0f), BladeSpark, 12, 0.8f, Vector2.right);
+                Grit(Feet(FrontLayer, hits[index].Area), 0.7f, Vector2.right);
                 Impact(
                     hits[index].Area,
                     at,
@@ -739,6 +734,7 @@ namespace Baryonyx.Combat.Presentation
                     flashScreen: false
                 );
                 Debris(at, new Color(0.62f, 0.64f, 0.7f), 16, Vector2.up);
+                Sparks(at, BladeSpark, 14, 0.9f, Vector2.down);
                 Bloom(
                     frontLight,
                     BattleVfxShape.Chevron,
@@ -756,9 +752,12 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 大地割り, a rumble: the user's blow strikes the floor with a ring of shock, glowing cracks
-        /// run along the ground toward the enemies, and the ground bursts up under each one in
-        /// rocks and dust, the stage shaking hard.
+        /// 大地割り, a rumble, as stone breaks (doc/catalog/skills/skill-earth-splitter.md#演出の時間設計):
+        /// the ground cracks round the user's feet (<see cref="Tremor"/>), the blow lands on the
+        /// floor and dust is driven out low; then the crack runs to the enemies in snaps (ぴき),
+        /// hairline slits that show by their shadow, a chip hopping at each; under each enemy the
+        /// ground bursts up, big rocks thrown slow and heavy and small chips fast, dust boiling up
+        /// behind that stays after the rocks fall, the stage shaking hard. The ground never glows.
         /// </summary>
         private IEnumerator EarthSplitter(
             RectTransform caster,
@@ -769,33 +768,19 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("EarthSplitter");
             var feet = Feet(FrontLayer, caster) + new Vector2(80f, 0f);
             DimTo(0.42f, 0.15f);
-            // The ground cracks round the user's feet first, then splits toward the enemies.
             yield return Tremor(caster, 0.4f);
             Shockwave(feet, 500f, 1f);
             Shake(0.45f, Vector2.down);
             HitStop(0.05f);
-            Puffs(backSmoke, feet, new Color(0.45f, 0.38f, 0.3f, 0.7f), 4, 60f, 1f);
             var wave = Wave(hits, 0);
             var goal = MidFeet(hits, 0);
-            // Cracks in steps along the floor from the user to the enemies.
+            // The crack runs along the floor in snaps, each a new stretch a step further on.
             for (int n = 1; n <= 4; n++)
             {
-                var step = Vector2.Lerp(feet, goal, n / 4f);
-                var crack = Spawn(
-                    backSmoke,
-                    BattleVfxShape.Crack,
-                    step,
-                    new Vector2(320f, 320f),
-                    color
-                );
-                // The floor splits open dark, as a real crack shows by its shadow.
-                crack.Image.material = RichMaterialOf(BattleVfxShape.Crack);
-                crack.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
-                Animate(
-                    crack,
-                    0.9f,
-                    (s, k) => Show(s, color, Mathf.Min(1f, k * 2f), Eaten(k, 0.4f), CoreBright)
-                );
+                var step = Vector2.Lerp(feet, goal, n / 4f) + new Vector2(0f, UnityEngine.Random.Range(-8f, 8f));
+                Rupture(step, 340f, 0.035f, 0f, 1.3f);
+                Hop(step, 90f, 2, 0.7f);
+                Shake(0.06f, Vector2.down);
                 yield return Wait(0.05f);
             }
             foreach (int index in wave)
@@ -804,61 +789,28 @@ namespace Baryonyx.Combat.Presentation
                 var at = Center(FrontLayer, area);
                 var under = Feet(FrontLayer, area);
                 var weight = land(index);
-                Spray(
-                    frontLight,
-                    under,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Chip,
-                        From = new Color(0.42f, 0.32f, 0.24f),
-                        To = new Color(0.3f, 0.24f, 0.2f, 0f),
-                        Speed = new Vector2(400f, 900f),
-                        Direction = 90f,
-                        Spread = 50f,
-                        Life = new Vector2(0.6f, 1f),
-                        Size = new Vector2(14f, 30f),
-                        Gravity = 1800f,
-                        Drag = 0.5f,
-                        Spin = 600f,
-                        Area = 50f,
-                    },
-                    14
-                );
-                Spray(
-                    backSmoke,
-                    under + Vector2.up * 20f,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Smoke,
-                        From = new Color(0.5f, 0.42f, 0.34f, 0.8f),
-                        To = new Color(0.4f, 0.36f, 0.33f, 0.8f),
-                        Speed = new Vector2(80f, 260f),
-                        Direction = 90f,
-                        Spread = 70f,
-                        Life = new Vector2(0.8f, 1.3f),
-                        Size = new Vector2(120f, 200f),
-                        Grow = 0.4f,
-                        Shrink = 1.8f,
-                        Gravity = -40f,
-                        Drag = 1.5f,
-                        Spin = 20f,
-                        Hold = 0.3f,
-                        Area = 50f,
-                    },
-                    5
-                );
-                Impact(area, at, color, weight, 0.7f, Vector2.up, flashScreen: false, rays: false);
-                Pool(under, color, 380f, 0.1f, 0.5f);
+                Rocks(under, 1f);
+                Rupture(under, 420f, 0.03f, 0f, 1.5f);
+                Shockwave(under, Weighted(320f, weight), 0.8f);
+                HitStop(Weighted(0.06f, weight));
+                Shake(Weighted(0.4f, weight), Vector2.up);
+                if (weight != BattleHitWeight.Normal)
+                    ScreenFlash(Color.Lerp(Color.white, color, 0.4f), 0.2f);
+                // Light off the struck body only; the ground does not glow.
+                Illuminate(at, Color.Lerp(color, Color.white, 0.4f), 0.5f, 260f, 0.04f, 0.25f, spill: false);
                 yield return Wait(0.06f);
             }
             Shake(0.35f, Vector2.up);
-            yield return Wait(0.4f);
+            yield return Wait(0.45f);
         }
 
         /// <summary>
-        /// ギガントインパクト, crushing weight: the sky darkens and a great golden light gathers high
-        /// over the enemy, then a column of light slams down on it like a giant's fist; the floor
-        /// cracks and rings twice, dust and rocks fly both ways, and the time stops and slows.
+        /// ギガントインパクト, crushing weight (doc/catalog/skills/skill-giant-impact.md#演出の時間設計):
+        /// the sky darkens and a great golden light gathers high over the enemy while its light
+        /// grows on the floor under it; then a shaft of light slams down on it like a giant's fist,
+        /// a white-hot core in it for an instant; the floor breaks in snaps round the feet, rocks
+        /// burst up (big and slow, small and fast), dust is driven out both ways and boils up
+        /// behind, and the time stops and slows. The cracks show by their shadow, not as light.
         /// </summary>
         private IEnumerator GiantImpact(
             RectTransform caster,
@@ -876,36 +828,31 @@ namespace Baryonyx.Combat.Presentation
                 var above = new Vector2(at.x, FrontLayer.rect.yMax - 120f);
                 Glow(frontLight, above, color, 520f, 0.6f, 0.9f);
                 Gather(above, color, 24, 280f, 0.5f);
+                // The light overhead falls on the floor, growing as it comes.
+                var spot = Spawn(backLight, BattleVfxShape.Glow, feet, new Vector2(420f, 420f), color);
+                spot.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
+                Animate(
+                    spot,
+                    0.62f,
+                    (s, k) =>
+                    {
+                        float grow = 0.4f + 0.6f * EaseIn(k);
+                        s.Holder.localScale = new Vector3(grow, grow * FloorTilt, 1f);
+                        Show(s, new Color(color.r, color.g, color.b, 0.6f * EaseIn(k)), k, 0f);
+                    }
+                );
                 Shake(0.1f, Vector2.zero);
                 yield return Wait(0.5f);
-                Column(
-                    frontLight,
-                    feet,
-                    color,
-                    new Vector2(460f, (above.y - feet.y) / 0.9f + 80f),
-                    0.75f,
-                    down: true,
-                    fast: true
-                );
+                LightColumn(feet, new Vector2(460f, (above.y - feet.y) / 0.9f + 80f), color, 0.75f, down: true);
                 yield return Wait(0.08f);
                 var weight = land(index);
-                Bloom(
-                    backSmoke,
-                    BattleVfxShape.Crack,
-                    feet,
-                    new Vector2(560f, 560f),
-                    color,
-                    1.2f,
-                    0.5f,
-                    CoreBright,
-                    floor: true
-                );
+                Rupture(feet, 640f, 0.03f, 0f, 1.6f);
                 Shockwave(feet, 860f, 1f);
-                Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: true);
+                Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: true, rays: false);
                 HitStop(0.16f);
                 SlowMotion(0.4f, 0.25f);
                 Punch(at, 0.045f);
-                Debris(feet + Vector2.up * 20f, new Color(0.4f, 0.32f, 0.25f), 20, Vector2.up);
+                Rocks(feet, 1.2f);
                 foreach (float side in new[] { 0f, 180f })
                     Spray(
                         backSmoke,
@@ -913,6 +860,7 @@ namespace Baryonyx.Combat.Presentation
                         new Burst
                         {
                             Shape = BattleVfxShape.Smoke,
+                            Bright = 0.55f,
                             From = new Color(0.55f, 0.48f, 0.4f, 0.75f),
                             To = new Color(0.42f, 0.4f, 0.38f, 0.75f),
                             Speed = new Vector2(300f, 700f),
@@ -925,7 +873,7 @@ namespace Baryonyx.Combat.Presentation
                             Shrink = 1.9f,
                             Drag = 3f,
                             Gravity = -15f,
-                            Spin = 10f,
+                            Level = true,
                             Hold = 0.25f,
                             Area = 30f,
                         },
@@ -955,6 +903,12 @@ namespace Baryonyx.Combat.Presentation
                 var at = Center(FrontLayer, area);
                 var to = Feet(FrontLayer, area) - new Vector2(80f, 0f);
                 var prints = Footsteps(from, to, color, 6, 0.06f);
+                // Each step kicks a little dust back off the floor.
+                for (int p = 0; p < prints.Count; p++)
+                {
+                    var print = prints[p];
+                    StartCoroutine(After(p * 0.06f, () => DustKick(print, Vector2.left, 90f)));
+                }
                 yield return Wait(0.36f);
                 StartCoroutine(
                     Shoot(
@@ -1185,14 +1139,20 @@ namespace Baryonyx.Combat.Presentation
                     rays: false
                 );
                 Licks(area, 7, 0.9f);
+                // The little fire lights the floor under it, flickering.
+                HotFloor(Feet(FrontLayer, area), 200f, 0.5f, 0.4f, color);
             }
             yield return Wait(0.4f);
         }
 
         /// <summary>
-        /// フレイムピラー, an eruption: a red circle opens under the enemy and spins faster, then a
-        /// column of fire roars up from it, licks of flame and lumps rising inside it, lighting the
-        /// enemy from below; smoke and a scorch are left.
+        /// フレイムピラー, an eruption, as a jet of fire out of the ground behaves
+        /// (doc/catalog/skills/skill-flame-pillar.md#演出の時間設計): a red circle opens under the
+        /// enemy and spins faster while the ground under it heats, glowing, spitting sparks and
+        /// wisps of smoke; then fire shoots up out of it with a white-hot core at its foot, the
+        /// enemy standing in the fire (its body behind, tongues in front), lit from below with a
+        /// flickering light; soot boils off its top and keeps rising, embers drift, and a scorch
+        /// is left. A single-target spell of cost 2: no flash of the screen but on a weakness.
         /// </summary>
         private IEnumerator FlamePillar(
             RectTransform caster,
@@ -1203,6 +1163,7 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("FlamePillar");
             DimTo(SpellDim, 0.15f);
             Glow(frontLight, Center(FrontLayer, caster), color, 220f, 0.4f, 0.5f);
+            const float omen = 0.4f;
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
@@ -1223,95 +1184,33 @@ namespace Baryonyx.Combat.Presentation
                         s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, -k * k * 900f);
                         float grow = EaseOut(Mathf.Min(1f, k * 4f));
                         s.Holder.localScale = new Vector3(grow, grow * FloorTilt, 1f);
-                        Show(s, color, Mathf.Min(1f, k * 1.5f), Eaten(k, 0.7f), ErodeBright * 1.2f);
+                        Show(s, color, Mathf.Min(1f, k * 1.5f), Eaten(k, 0.6f), ErodeBright * 1.2f);
                     }
                 );
-                Illuminate(feet, color, 0.5f, 300f, 0.35f, 0.2f, spill: false);
-                yield return Wait(0.35f);
-                Column(
-                    backLight,
-                    feet,
-                    color,
-                    new Vector2(300f, 760f),
-                    0.9f,
-                    down: false,
-                    fast: true,
-                    fire: true
-                );
-                Spray(
-                    backLight,
-                    feet + Vector2.up * 20f,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.FlameTongue,
-                        Bright = ErodeBright,
-                        Fire = true,
-                        Speed = new Vector2(500f, 900f),
-                        Direction = 90f,
-                        Spread = 18f,
-                        Life = new Vector2(0.4f, 0.7f),
-                        Size = new Vector2(90f, 170f),
-                        Grow = 0.5f,
-                        Shrink = 1.2f,
-                        Gravity = -200f,
-                        Drag = 1.2f,
-                        Spin = 10f,
-                        Hold = 0.2f,
-                        Area = 40f,
-                    },
-                    12
-                );
-                Spray(
-                    frontLight,
-                    feet + Vector2.up * 40f,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Flame,
-                        Bright = ErodeBright,
-                        Fire = true,
-                        Speed = new Vector2(500f, 1000f),
-                        Direction = 90f,
-                        Spread = 14f,
-                        Life = new Vector2(0.3f, 0.55f),
-                        Size = new Vector2(60f, 110f),
-                        Grow = 0.5f,
-                        Shrink = 1.1f,
-                        Drag = 1.5f,
-                        Spin = 40f,
-                        Hold = 0.15f,
-                        Area = 30f,
-                    },
-                    6
-                );
+                // The ground heats before it bursts: a dull glow that brightens, sparks and wisps.
+                HotFloor(feet, 260f, omen, 0.15f, FireColor(0.4f));
+                Spit(feet, 260f, omen);
+                Illuminate(feet, FireColor(0.3f), 0.45f, 300f, omen, 0.2f, spill: false, flicker: 0.3f);
+                yield return Wait(omen);
                 var weight = land(index);
-                Impact(area, at, color, weight, 0.85f, Vector2.up, flashScreen: true, rays: false);
-                Illuminate(feet + Vector2.down * 40f, color, 1f, 420f, 0.4f, 0.4f, flicker: 0.4f);
-                FloorMark(
-                    BattleVfxShape.Scorch,
-                    feet,
-                    Vector2.one * 260f,
-                    new Color(0.06f, 0.045f, 0.04f),
-                    0.8f,
-                    1.6f,
-                    flat: true
-                );
-                Puffs(
-                    backSmoke,
-                    at + Vector2.up * 120f,
-                    new Color(0.18f, 0.15f, 0.14f, 0.7f),
-                    5,
-                    60f,
-                    1.6f,
-                    160f
-                );
+                FireColumn(feet, 300f, 780f, 1.1f, color);
+                // No white flash over the body: the fire itself lights it, so the target stays seen.
+                HitStop(Weighted(0.08f, weight));
+                Shake(Weighted(0.45f, weight), Vector2.up);
+                if (weight != BattleHitWeight.Normal)
+                    ScreenFlash(Color.Lerp(Color.white, color, 0.4f), 0.26f);
             }
-            yield return Wait(0.5f);
+            yield return Wait(0.6f);
         }
 
         /// <summary>
-        /// ファイアストーム, a raging blaze: a whirlwind of fire rises amid the enemies and sweeps
-        /// across them, flames thrown out of it; each enemy is caught as it passes, and embers and
-        /// smoke are left swirling.
+        /// ファイアストーム, a raging blaze, as a fire whirl behaves
+        /// (doc/catalog/skills/skill-fire-storm.md#演出の時間設計): after the burning circle, two
+        /// whirls of fire rise amid the enemies and sweep across them past each other; each is a
+        /// column of fire (drawn as density, behind the enemies) wrapped in a faint swirl of hot
+        /// air that shows it turning, soot torn off its top and rising, embers spun up out of it.
+        /// Each enemy is caught as they pass, flames clinging to it in front; the floor glows hot
+        /// along their path and is left scorched, smoke rising after.
         /// </summary>
         private IEnumerator FireStorm(
             RectTransform caster,
@@ -1323,61 +1222,131 @@ namespace Baryonyx.Combat.Presentation
             yield return FireCharge(caster, 0.4f);
             var wave = Wave(hits, 0);
             var mid = MidFeet(hits, 0);
-            float left = mid.x - 260f;
-            float right = mid.x + 260f;
-            foreach (float offset in new[] { -1f, 1f })
+            float left = Inside(mid, 600f).x - 200f;
+            float right = Inside(mid, 600f).x + 200f;
+            const float sweep = 1.1f;
+            foreach (float side in new[] { -1f, 1f })
             {
-                var storm = Spawn(
+                float start = side < 0f ? left : right;
+                float end = side < 0f ? right : left;
+                float seed = UnityEngine.Random.value;
+                float lag = side < 0f ? 0f : 0.08f;
+                var body = Spawn(
                     backLight,
-                    BattleVfxShape.Tornado,
-                    new Vector2(mid.x, mid.y),
-                    new Vector2(460f, 720f),
-                    color,
-                    new Vector2(0.5f, 0.05f)
+                    BattleVfxShape.Pillar,
+                    new Vector2(start, mid.y),
+                    new Vector2(side < 0f ? 540f : 460f, side < 0f ? 760f : 660f),
+                    Color.clear,
+                    new Vector2(0.5f, 0.1f)
                 );
-                float side = offset;
+                body.Seed = seed;
+                body.Image.material = RichMaterialOf(BattleVfxShape.Pillar, PillarFire);
+                float nextSoot = 0f;
                 Animate(
-                    storm,
-                    1.1f,
+                    body,
+                    sweep + lag,
                     (s, k) =>
                     {
-                        float x = Mathf.Lerp(
-                            side < 0 ? left : right,
-                            side < 0 ? right : left,
-                            EaseOut(k)
+                        float t = k * (sweep + lag) - lag;
+                        if (t < 0f)
+                        {
+                            Show(s, Color.clear, 0f, 0f);
+                            return;
+                        }
+                        float u = t / sweep;
+                        var at = new Vector2(Mathf.Lerp(start, end, EaseOut(u)), mid.y);
+                        s.Holder.anchoredPosition = at;
+                        float rise = EaseOut(Mathf.Clamp01(t / 0.15f));
+                        // It writhes as it turns, and thins as it burns out.
+                        float girth =
+                            (0.85f + 0.15f * Mathf.Sin(t * 9f + seed * 6f))
+                            * Mathf.Lerp(1f, 0.55f, EaseIn(Mathf.Clamp01((u - 0.55f) / 0.45f)));
+                        s.Holder.localScale = new Vector3(girth, 0.05f + 0.95f * rise, 1f);
+                        var tint = Color.Lerp(Color.Lerp(color, Color.white, 0.2f), FireColor(0.35f), u);
+                        Show(s, tint, t * 1.4f, Eaten(u, 0.5f), ErodeBright * 1.3f);
+                        if (t < nextSoot || u > 0.8f)
+                            return;
+                        nextSoot = t + 0.08f;
+                        Spray(
+                            backSmoke,
+                            at + Vector2.up * 420f,
+                            new Burst
+                            {
+                                Shape = BattleVfxShape.Smoke,
+                                Bright = 0.4f,
+                                From = new Color(0.4f, 0.25f, 0.15f, Soot.a),
+                                To = Soot,
+                                Speed = new Vector2(60f, 180f),
+                                Direction = 90f,
+                                Spread = 60f,
+                                Life = new Vector2(1f, 1.6f),
+                                Size = new Vector2(150f, 240f),
+                                Grow = 0.45f,
+                                Shrink = 1.8f,
+                                Gravity = -80f,
+                                Drag = 1.2f,
+                                Spin = 60f,
+                                Hold = 0.35f,
+                                Area = 60f,
+                            },
+                            1
                         );
-                        s.Holder.anchoredPosition = new Vector2(x, mid.y);
-                        float grow = EaseOut(Mathf.Min(1f, k * 6f));
-                        s.Holder.localScale = new Vector3(side < 0 ? 1f : 0.8f, grow, 1f);
-                        s.Image.color = Color.Lerp(Color.white, color, 0.3f + 0.5f * k);
-                        s.Image.SetShape(s.Seed, k, Eaten(k, 0.55f), CoreBright);
+                        Spray(
+                            frontLight,
+                            at + Vector2.up * 120f,
+                            new Burst
+                            {
+                                Shape = BattleVfxShape.Spark,
+                                Bright = CoreBright,
+                                From = new Color(1f, 0.92f, 0.6f),
+                                To = new Color(1f, 0.3f, 0.06f, 0f),
+                                Speed = new Vector2(250f, 700f),
+                                Direction = 90f + side * 30f,
+                                Spread = 80f,
+                                Life = new Vector2(0.5f, 1.2f),
+                                Size = new Vector2(5f, 10f),
+                                Gravity = -150f,
+                                Drag = 2f,
+                                Area = 80f,
+                            },
+                            3
+                        );
+                    }
+                );
+                // The swirl of hot air round it, faint, so it shows turning.
+                var swirl = Spawn(
+                    backLight,
+                    BattleVfxShape.Tornado,
+                    new Vector2(start, mid.y),
+                    new Vector2(side < 0f ? 440f : 380f, side < 0f ? 700f : 600f),
+                    Color.clear,
+                    new Vector2(0.5f, 0.05f)
+                );
+                Animate(
+                    swirl,
+                    sweep + lag,
+                    (s, k) =>
+                    {
+                        float t = k * (sweep + lag) - lag;
+                        float u = Mathf.Clamp01(t / sweep);
+                        s.Holder.anchoredPosition = new Vector2(Mathf.Lerp(start, end, EaseOut(u)), mid.y);
+                        s.Holder.localScale = new Vector3(side < 0f ? 1f : -1f, EaseOut(Mathf.Clamp01(t / 0.2f)), 1f);
+                        var tint = new Color(1f, 0.72f, 0.42f, 0.4f * Envelope(t, 0.05f, 0.15f, 0.6f, sweep));
+                        Show(s, tint, u, Eaten(u, 0.6f), 1f);
                     }
                 );
             }
-            Spray(
-                backLight,
-                mid + Vector2.up * 200f,
-                new Burst
-                {
-                    Shape = BattleVfxShape.Flame,
-                    Bright = ErodeBright,
-                    Fire = true,
-                    Speed = new Vector2(200f, 500f),
-                    Spread = 360f,
-                    Life = new Vector2(0.5f, 0.9f),
-                    Size = new Vector2(90f, 160f),
-                    Grow = 0.4f,
-                    Shrink = 1.3f,
-                    Gravity = -250f,
-                    Drag = 2f,
-                    Spin = 200f,
-                    Hold = 0.2f,
-                    Area = 220f,
-                    Delay = new Vector2(0f, 0.5f),
-                },
-                20
+            Illuminate(mid + Vector2.up * 150f, color, 1f, 700f, 0.7f, 0.5f, flicker: 0.45f);
+            HotFloor(mid, 760f, 0.9f, 0.6f, color);
+            FloorMark(
+                BattleVfxShape.Scorch,
+                mid,
+                new Vector2(620f, 620f),
+                new Color(0.06f, 0.045f, 0.04f),
+                0.75f,
+                2.2f,
+                flat: true
             );
-            Illuminate(mid + Vector2.up * 150f, color, 1f, 700f, 0.7f, 0.5f, flicker: 0.4f);
             ScreenFlash(color, 0.18f);
             foreach (int index in wave)
             {
@@ -1394,18 +1363,9 @@ namespace Baryonyx.Combat.Presentation
                     flashScreen: false,
                     rays: false
                 );
-                Licks(area, 4, 0.7f);
+                Licks(area, 5, 0.8f);
             }
-            Puffs(
-                backSmoke,
-                mid + Vector2.up * 300f,
-                new Color(0.16f, 0.13f, 0.13f, 0.7f),
-                7,
-                200f,
-                1.8f,
-                200f
-            );
-            yield return Wait(0.55f);
+            yield return Wait(0.6f);
         }
 
         /// <summary>
@@ -1466,6 +1426,7 @@ namespace Baryonyx.Combat.Presentation
                     }
                 );
                 HotFlash(at, color, 200f);
+                Spray(frontLight, at, Embered(color), 10);
                 Shake(0.12f, Vector2.right);
                 Illuminate(at, color, 0.6f, 280f, 0.4f, 0.4f, spill: false, flicker: 0.3f);
                 land(index);
@@ -1490,6 +1451,19 @@ namespace Baryonyx.Combat.Presentation
             var mid = MidFeet(hits, 0) + Vector2.up * 60f;
             var sky = new Vector2(FrontLayer.rect.xMax - 120f, FrontLayer.rect.yMax + 120f);
             Glow(frontLight, sky + new Vector2(-120f, -160f), color, 700f, 0.9f, 0.8f);
+            // Its light falls on the floor ahead of it, growing and warming as it nears.
+            var spot = Spawn(backLight, BattleVfxShape.Glow, mid, new Vector2(900f, 900f), color);
+            Animate(
+                spot,
+                0.95f,
+                (s, k) =>
+                {
+                    float grow = 0.3f + 0.7f * EaseIn(k);
+                    s.Holder.localScale = new Vector3(grow, grow * FloorTilt, 1f);
+                    var tint = Color.Lerp(FireColor(0.4f), Color.Lerp(color, Color.white, 0.3f), k);
+                    Show(s, new Color(tint.r, tint.g, tint.b, 0.7f * EaseIn(k)), k, 0f);
+                }
+            );
             for (int n = 0; n < 6; n++)
             {
                 Shake(0.08f, Vector2.zero);
@@ -1521,7 +1495,8 @@ namespace Baryonyx.Combat.Presentation
                     Spin = 90f,
                     Hold = 0.2f,
                     Area = 60f,
-                }
+                },
+                material: RichMaterialOf(BattleVfxShape.Fireball)
             );
             ScreenFlash(new Color(1f, 0.85f, 0.6f), MaxFlash);
             HitStop(0.18f);
@@ -1529,6 +1504,9 @@ namespace Baryonyx.Combat.Presentation
             Punch(mid, 0.05f);
             Shake(1f, Vector2.down);
             Shockwave(mid, 1100f, 1f);
+            Rupture(mid, 900f, 0.03f, 0f, 2f);
+            Rocks(mid, 1.4f);
+            HotFloor(mid, 900f, 0.6f, 0.9f, color);
             Illuminate(mid + Vector2.up * 100f, color, 1f, 1200f, 0.4f, 0.8f, flicker: 0.4f);
             foreach (int index in Wave(hits, 0))
             {
@@ -1653,15 +1631,17 @@ namespace Baryonyx.Combat.Presentation
                 yield return Shoot(
                     BattleVfxShape.IceSpike,
                     start,
-                    at,
+                    at + Vector2.up * 110f,
                     new Vector2(70f, 170f),
                     new Vector2(0.5f, 0.03f),
                     0.13f,
                     0f,
-                    Color.white,
-                    90f,
+                    color,
+                    // Turned over, so its point leads as it falls.
+                    180f,
                     null,
-                    turn: false
+                    turn: false,
+                    material: RichMaterialOf(BattleVfxShape.IceSpike)
                 );
                 var weight = land(index);
                 Spray(
@@ -1670,8 +1650,9 @@ namespace Baryonyx.Combat.Presentation
                     new Burst
                     {
                         Shape = BattleVfxShape.Chip,
-                        From = Color.white,
-                        To = new Color(0.8f, 0.92f, 1f, 0f),
+                        Material = RichMaterialOf(BattleVfxShape.Chip),
+                        From = color,
+                        To = color,
                         Speed = new Vector2(150f, 450f),
                         Direction = 90f,
                         Spread = 160f,
@@ -1680,6 +1661,7 @@ namespace Baryonyx.Combat.Presentation
                         Gravity = 1400f,
                         Drag = 1f,
                         Spin = 360f,
+                        Hold = 0.6f,
                         Area = 20f,
                     },
                     10
@@ -1693,7 +1675,11 @@ namespace Baryonyx.Combat.Presentation
                     1.2f,
                     flat: false
                 );
-                Star(at, color, 200f, 0.16f);
+                // Ice breaks with a glint, not a star of light; cold air spills off it.
+                HotFlash(at, IceLight, 150f);
+                Twinkle(at + new Vector2(10f, 20f), Color.Lerp(IceLight, Color.white, 0.5f), 140f, 0.22f, 0f, 1f);
+                Pool(Feet(FrontLayer, area), IceLight, 240f, 0.05f, 0.35f);
+                ColdMist(Feet(FrontLayer, area), 220f, 1f, 0.5f);
                 HitStop(Weighted(0.03f, weight));
                 Shake(Weighted(0.2f, weight), Vector2.down);
                 Illuminate(at, color, 0.6f, 260f, 0.03f, 0.25f, spill: false);
@@ -1898,16 +1884,17 @@ namespace Baryonyx.Combat.Presentation
                     var start = pane + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 240f;
                     StartCoroutine(
                         Shoot(
-                            BattleVfxShape.Shard,
+                            BattleVfxShape.Chip,
                             start,
                             pane + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 40f,
-                            new Vector2(16f, 40f),
+                            new Vector2(30f, 30f),
                             new Vector2(0.5f, 0.5f),
-                            0.22f,
+                            0.22f + 0.02f * (n % 3),
                             0f,
-                            Color.white,
+                            color,
                             -90f,
-                            null
+                            null,
+                            material: RichMaterialOf(BattleVfxShape.Chip)
                         )
                     );
                 }
@@ -1952,7 +1939,8 @@ namespace Baryonyx.Combat.Presentation
                     0.35f,
                     0.3f
                 );
-                Illuminate(at, color, 0.6f, 260f, 0.4f, 0.4f, spill: false);
+                Illuminate(at, IceLight, 0.6f, 260f, 0.4f, 0.4f, spill: false);
+                ColdMist(Feet(FrontLayer, area), 240f, 1f, 0.4f);
                 Ring(backLight, Feet(FrontLayer, area), color, 300f, 0.5f, floor: true);
                 land(index);
             }
@@ -1999,19 +1987,19 @@ namespace Baryonyx.Combat.Presentation
                     (s, k) =>
                     {
                         s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, k * 30f);
+                        // A pale crystal the stage shows through, not a white sign over it; it
+                        // flashes once as the prison closes.
                         float flash = k > 0.38f && k < 0.45f ? 1.6f : 1f;
-                        Show(
-                            s,
-                            Color.Lerp(Color.white, color, 0.3f) * flash,
-                            Mathf.Min(1f, k * 1.4f),
-                            Eaten(k, 0.6f),
-                            CoreBright
-                        );
+                        var tint = Color.Lerp(Color.white, color, 0.45f);
+                        tint.a = 0.55f;
+                        Show(s, tint, Mathf.Min(1f, k * 1.4f), Eaten(k, 0.6f), ErodeBright * flash);
                     }
                 );
                 Gather(at, color, 20, 300f, 0.6f);
                 yield return Wait(0.62f);
-                // The prison: tall spikes all round, closing in at once.
+                // The prison: tall spikes of clear ice all round, closing in at once; they all
+                // break together a little later (パリーン).
+                const float breakAt = 0.6f;
                 for (int n = 0; n < 12; n++)
                 {
                     bool front = n >= 8;
@@ -2020,48 +2008,36 @@ namespace Baryonyx.Combat.Presentation
                         + UnityEngine.Random.Range(-10f, 10f);
                     float height =
                         (front ? 200f : 330f) * (0.75f + 0.5f * (1f - Mathf.Abs(x) / 170f));
-                    Spike(
+                    ClearSpike(
                         front ? frontLight : backLight,
                         feet + new Vector2(x, front ? -14f : 8f),
                         height,
                         -x * 0.12f,
                         front ? 0.04f : 0f,
-                        front
+                        breakAt
                     );
                 }
                 var weight = land(index);
-                Impact(area, at, color, weight, 1f, Vector2.right, flashScreen: true, rays: false);
+                // Not a white flash over the screen (it lifts the deep night to grey): its own cold light.
+                Impact(area, at, IceLight, weight, 1f, Vector2.right, flashScreen: false, rays: false);
                 HitStop(0.18f);
                 Punch(at, 0.035f);
-                Illuminate(at, color, 1f, 600f, 0.6f, 0.6f);
-                yield return Wait(0.5f);
-                Spray(
-                    frontLight,
-                    at,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Chip,
-                        From = Color.white,
-                        To = new Color(0.8f, 0.92f, 1f, 0f),
-                        Speed = new Vector2(200f, 700f),
-                        Direction = 90f,
-                        Spread = 220f,
-                        Life = new Vector2(0.6f, 1f),
-                        Size = new Vector2(16f, 40f),
-                        Gravity = 1400f,
-                        Drag = 1f,
-                        Spin = 400f,
-                        Area = 120f,
-                    },
-                    30
-                );
+                Pool(feet, IceLight, 520f, breakAt, 0.5f);
+                Illuminate(at, IceLight, 1f, 600f, breakAt, 0.6f);
+                // The air chilled to nothing sinks and floods out along the floor.
+                ColdMist(feet, 520f, 1.8f, 1f, 0.1f);
+                StartCoroutine(Shatter(at, feet, 340f, breakAt));
+                yield return Wait(breakAt + 0.1f);
             }
             yield return Wait(0.4f);
         }
 
         /// <summary>
-        /// 詠唱短縮, quickening: a circle of runes turns faster and faster over the user, rings close
-        /// in on it, and a blue arrow pointing down (costs falling) sinks.
+        /// 詠唱短縮, quickening (doc/catalog/skills/skill-quick-cast.md): a circle of runes on the
+        /// floor under the user turns faster and faster, lighting it from below; rings close in
+        /// on it, each sooner than the last, and motes are drawn in; then the gathered tempo is let
+        /// go in a short white flash, a pool of light at its feet and a blue arrow sinking (costs
+        /// falling), while the circle wears away.
         /// </summary>
         private IEnumerator QuickCast(
             RectTransform caster,
@@ -2070,61 +2046,78 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("QuickCast");
-            var at = Center(FrontLayer, caster) + new Vector2(0f, 150f);
+            var feet = Feet(FrontLayer, caster);
+            var chest = Center(FrontLayer, caster) + new Vector2(0f, 30f);
             DimTo(0.36f, 0.15f);
-            var circle = Spawn(
-                frontLight,
-                BattleVfxShape.MagicCircle,
-                at,
-                new Vector2(240f, 240f),
-                color
-            );
-            Animate(
-                circle,
-                0.9f,
-                (s, k) =>
-                {
-                    s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, -k * k * 1400f);
-                    float grow = EaseOut(Mathf.Min(1f, k * 4f));
-                    s.Holder.localScale = new Vector3(grow, grow * 0.55f, 1f);
-                    Show(s, color, Mathf.Min(1f, k * 2f), Eaten(k, 0.7f), CoreBright);
-                }
-            );
+            if (backLight != null)
+            {
+                var circle = Spawn(
+                    backLight,
+                    BattleVfxShape.MagicCircle,
+                    feet,
+                    new Vector2(320f, 320f),
+                    color
+                );
+                Animate(
+                    circle,
+                    0.95f,
+                    (s, k) =>
+                    {
+                        // Spinning up: the angle grows with the square of the time.
+                        s.Image.rectTransform.localEulerAngles = new Vector3(
+                            0f,
+                            0f,
+                            -k * k * 1500f
+                        );
+                        float grow = EaseOut(Mathf.Min(1f, k * 4f));
+                        s.Holder.localScale = new Vector3(grow, grow * FloorTilt, 1f);
+                        Show(s, color, Mathf.Min(1f, k * 2f), Eaten(k, 0.6f), CoreBright);
+                    }
+                );
+            }
+            Illuminate(feet + Vector2.down * 80f, color, 0.7f, 280f, 0.45f, 0.3f, spill: false);
+            Gather(chest, color, 14, 210f, 0.42f);
+            // Rings closing in, each sooner and quicker than the last (a quickening beat).
+            float[] starts = { 0f, 0.15f, 0.26f };
+            float[] lives = { 0.42f, 0.3f, 0.2f };
             for (int n = 0; n < 3; n++)
             {
                 var ring = Spawn(
                     frontLight,
                     BattleVfxShape.Ring,
-                    at,
+                    chest,
                     new Vector2(420f, 420f),
                     color
                 );
-                float delay = n * 0.12f;
+                float delay = starts[n];
+                float life = lives[n];
                 Animate(
                     ring,
-                    0.5f + delay,
+                    delay + life,
                     (s, t) =>
                     {
-                        float time = t * (0.5f + delay) - delay;
+                        float time = t * (delay + life) - delay;
                         if (time < 0f)
                         {
                             Show(s, Color.clear, 0f, 0f);
                             return;
                         }
-                        float k = time / 0.5f;
+                        float k = time / life;
                         // Closing in rather than spreading out.
-                        float size = 1f - 0.85f * EaseOut(k);
+                        float size = 1f - 0.85f * EaseIn(k);
                         s.Holder.localScale = new Vector3(size, size * 0.55f, 1f);
-                        Show(s, color, 0.3f, 0.3f + 0.6f * k);
+                        Show(s, color, 0.3f, 0.2f + 0.6f * k);
                     }
                 );
             }
-            yield return Wait(0.45f);
-            Twinkle(at, Color.white, 160f, 0.35f, 0f, -1f);
+            yield return Wait(0.46f);
+            Glow(frontLight, chest, Color.white, 150f, 0.12f, 0.9f);
+            FlashPool(feet, color, 380f, 0.7f);
+            Twinkle(chest + new Vector2(0f, 80f), Color.white, 150f, 0.3f, 0f, -1f);
             Bloom(
                 frontLight,
                 BattleVfxShape.Chevron,
-                Center(FrontLayer, caster) + new Vector2(0f, 60f),
+                chest + new Vector2(0f, 20f),
                 new Vector2(110f, 150f),
                 color,
                 0.7f,
@@ -2140,9 +2133,11 @@ namespace Baryonyx.Combat.Presentation
         // --- Luka ------------------------------------------------------------------------------
 
         /// <summary>
-        /// 急所突き, a pinpoint: a red sight closes in on the enemy, a thin glint darts to it, and a
-        /// tight hot burst pierces straight through, shards flying out of its back. A blow on a
-        /// weakness sends gold motes flying back to the user (the energy won).
+        /// 急所突き, a pinpoint (doc/catalog/skills/skill-vital-thrust.md): a red sight closes in
+        /// on the enemy, a glint darts to it, and a thrust of light runs straight through it in
+        /// four layers (a red haze and body behind, a white core for an instant and a red trace in
+        /// front), shards and drops of blood flying out of its back; the enemy is lit red. A blow
+        /// on a weakness sends gold motes back to the user (the energy won).
         /// </summary>
         private IEnumerator VitalThrust(
             RectTransform caster,
@@ -2173,7 +2168,7 @@ namespace Baryonyx.Combat.Presentation
                     BattleVfxShape.Streak,
                     from,
                     at,
-                    new Vector2(40f, 260f),
+                    new Vector2(30f, 220f),
                     new Vector2(0.5f, 0.85f),
                     0.08f,
                     0f,
@@ -2182,11 +2177,11 @@ namespace Baryonyx.Combat.Presentation
                     null
                 );
                 var weight = land(index);
-                Star(at, Color.white, 240f, 0.18f);
                 var dir = (at - from).normalized;
+                Shaft(at - dir * 180f, at + dir * 300f, color, 44f, 0.03f, 0.22f);
                 Spray(
                     frontLight,
-                    at,
+                    at + dir * 30f,
                     new Burst
                     {
                         Shape = BattleVfxShape.Shard,
@@ -2204,7 +2199,9 @@ namespace Baryonyx.Combat.Presentation
                     },
                     10
                 );
-                Impact(area, at, color, weight, 0.6f, dir, flashScreen: false);
+                Drops(at + dir * 40f, color, 8);
+                Impact(area, at, color, weight, 0.6f, dir, flashScreen: false, rays: false);
+                Illuminate(at, color, 0.8f, 260f, 0.06f, 0.35f, spill: false);
                 if (weight != BattleHitWeight.Normal)
                     for (int n = 0; n < 5; n++)
                         StartCoroutine(
@@ -2226,8 +2223,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 毒針, a slow sting: three green needles fly in quick turn, a sickly flash, and bubbles of
-        /// poison and purple wisps rise from the enemy for a while.
+        /// 毒針, a slow sting (doc/catalog/skills/skill-poison-needle.md): three green needles fly
+        /// in quick turn, a sickly flash, and the poison works out of the enemy as a heavy gas:
+        /// it rolls down off it, sinks to the floor and creeps out round its feet in four layers
+        /// (a dark body, billows, tatters, a dim green light in it), bubbles rising in it and
+        /// bursting; the enemy is lit a flickering green from below.
         /// </summary>
         private IEnumerator PoisonNeedle(
             RectTransform caster,
@@ -2238,10 +2238,23 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("PoisonNeedle");
             var from = Center(FrontLayer, caster) + new Vector2(50f, 20f);
             DimTo(0.38f, 0.12f);
+            var trail = new Burst
+            {
+                Shape = BattleVfxShape.Spark,
+                Bright = ErodeBright,
+                From = new Color(color.r, color.g, color.b, 0.7f),
+                To = new Color(0.4f, 0.2f, 0.5f, 0f),
+                Speed = new Vector2(10f, 40f),
+                Spread = 40f,
+                Life = new Vector2(0.15f, 0.3f),
+                Size = new Vector2(4f, 7f),
+                Area = 3f,
+            };
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
+                var feet = Feet(FrontLayer, area);
                 for (int n = 0; n < 3; n++)
                 {
                     StartCoroutine(
@@ -2255,14 +2268,13 @@ namespace Baryonyx.Combat.Presentation
                             20f,
                             color,
                             0f,
-                            null
+                            trail
                         )
                     );
                     yield return Wait(0.06f);
                 }
                 yield return Wait(0.12f);
                 var weight = land(index);
-                Star(at, color, 180f, 0.16f);
                 Impact(
                     area,
                     at,
@@ -2273,16 +2285,41 @@ namespace Baryonyx.Combat.Presentation
                     flashScreen: false,
                     rays: false
                 );
-                Bubbles(at, color, Violet, 10);
-                PoisonBlow(at, Feet(FrontLayer, area), Vector2.right);
+                Gas(
+                    at,
+                    feet,
+                    PoisonGas,
+                    new Color(color.r, color.g, color.b, 0.45f),
+                    320f,
+                    1.5f,
+                    0.45f
+                );
+                Bubbles(feet + Vector2.up * 70f, color, Violet, 6);
+                Illuminate(
+                    feet + Vector2.down * 40f,
+                    color,
+                    0.55f,
+                    260f,
+                    0.3f,
+                    0.7f,
+                    spill: false,
+                    flicker: 0.5f
+                );
             }
-            yield return Wait(0.6f);
+            yield return Wait(0.7f);
         }
 
+        // The gas of poison: a murky olive, sickly where its light shows through.
+        private static readonly Color PoisonGas = new(0.3f, 0.46f, 0.14f);
+
+        // The gas of a shadow: a deep violet, near black.
+        private static readonly Color ShadowGas = new(0.16f, 0.09f, 0.24f);
+
         /// <summary>
-        /// 影縫い, pinning: a dark blade flies down into the enemy's shadow at its feet, dark cracks
-        /// and a creeping shadow spread from it, and threads of shadow rise round the enemy and hold
-        /// it a moment.
+        /// 影縫い, pinning (doc/catalog/skills/skill-shadow-stitch.md): a dark blade flies down
+        /// into the enemy's shadow at its feet with a cold violet flash; a crack opens there, the
+        /// shadow pools and creeps out along the floor as a heavy dark gas lit violet at its edge,
+        /// and thin threads of shadow rise round the enemy, before and behind it, holding it.
         /// </summary>
         private IEnumerator ShadowStitch(
             RectTransform caster,
@@ -2311,6 +2348,14 @@ namespace Baryonyx.Combat.Presentation
                     null
                 );
                 var weight = land(index);
+                Glow(
+                    frontLight,
+                    feet + Vector2.up * 10f,
+                    Color.Lerp(color, Color.white, 0.6f),
+                    140f,
+                    0.12f,
+                    0.9f
+                );
                 var crack = Spawn(
                     backSmoke,
                     BattleVfxShape.Crack,
@@ -2325,51 +2370,20 @@ namespace Baryonyx.Combat.Presentation
                     1.1f,
                     (s, k) => Show(s, color, Mathf.Min(1f, k * 2f), Eaten(k, 0.6f), ErodeBright)
                 );
-                Spray(
-                    backSmoke,
+                Gas(
+                    feet + Vector2.up * 30f,
                     feet,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Smoke,
-                        From = new Color(0.12f, 0.06f, 0.18f, 0.75f),
-                        To = new Color(0.08f, 0.04f, 0.12f, 0.75f),
-                        Speed = new Vector2(60f, 180f),
-                        Direction = 0f,
-                        Spread = 360f,
-                        Life = new Vector2(0.9f, 1.3f),
-                        Size = new Vector2(120f, 180f),
-                        Aspect = 0.4f,
-                        Grow = 0.5f,
-                        Shrink = 1.6f,
-                        Drag = 2f,
-                        Spin = 10f,
-                        Hold = 0.3f,
-                        Area = 40f,
-                    },
-                    6
+                    ShadowGas,
+                    new Color(color.r, color.g, color.b, 0.22f),
+                    380f,
+                    1.3f,
+                    0.9f
                 );
-                // Threads of shadow rising round the enemy.
-                Spray(
-                    frontLight,
-                    feet,
-                    new Burst
-                    {
-                        Shape = BattleVfxShape.Streak,
-                        Bright = ErodeBright,
-                        From = color,
-                        To = new Color(color.r * 0.4f, color.g * 0.3f, color.b * 0.6f, 0f),
-                        Speed = new Vector2(300f, 500f),
-                        Direction = 90f,
-                        Spread = 30f,
-                        Life = new Vector2(0.4f, 0.7f),
-                        Size = new Vector2(6f, 10f),
-                        Stretch = 0.25f,
-                        Drag = 4f,
-                        Area = 80f,
-                        Delay = new Vector2(0f, 0.3f),
-                    },
-                    14
-                );
+                // The rim of the pooled shadow catches a cold violet light.
+                Pool(feet, color, 300f, 0.2f, 0.7f);
+                Illuminate(feet + Vector2.down * 60f, color, 0.6f, 240f, 0.3f, 0.5f, spill: false);
+                // Threads of shadow rising round the enemy and holding it.
+                RisingLines(feet, Color.Lerp(color, ShadowGas, 0.3f), 16, 140f, 0.35f);
                 Impact(
                     area,
                     at,
@@ -2385,8 +2399,9 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 看破の矢, seeing through: a teal arrow flies to the enemy and a magic eye opens over it,
-        /// a band of light scanning down its body.
+        /// 看破の矢, seeing through (doc/catalog/skills/skill-insight-arrow.md): a teal arrow flies
+        /// to the enemy, a magic eye opens over it, and a line of light scans down its body, a
+        /// thin white core in a teal haze, lighting it as it passes.
         /// </summary>
         private IEnumerator InsightArrow(
             RectTransform caster,
@@ -2412,10 +2427,9 @@ namespace Baryonyx.Combat.Presentation
                     30f,
                     color,
                     0f,
-                    null
+                    ArrowTrail(color)
                 );
                 var weight = land(index);
-                Star(at, color, 220f, 0.18f);
                 Impact(
                     area,
                     at,
@@ -2437,35 +2451,82 @@ namespace Baryonyx.Combat.Presentation
                     CoreBright,
                     spin: 120f
                 );
-                var scan = Spawn(
-                    frontLight,
-                    BattleVfxShape.Beam,
-                    new Vector2(at.x, high.y),
-                    new Vector2((high.x - low.x) + 80f, 40f),
-                    color
-                );
+                Twinkle(new Vector2(at.x, high.y + 40f), Color.white, 140f, 0.4f, 0.1f, 1f);
+                float wide = (high.x - low.x) + 80f;
                 float top = high.y;
                 float bottom = low.y;
-                Animate(
-                    scan,
+                // The scan: a haze band behind, a thin white core in front, sweeping down.
+                for (int layer = 0; layer < 2; layer++)
+                {
+                    bool core = layer == 1;
+                    var scan = Spawn(
+                        core ? frontLight : backLight,
+                        BattleVfxShape.Beam,
+                        new Vector2(at.x - wide * 0.5f, top),
+                        new Vector2(wide, core ? 14f : 70f),
+                        core ? Color.white : color,
+                        new Vector2(0f, 0.5f)
+                    );
+                    scan.Image.material = RichMaterialOf(
+                        BattleVfxShape.Beam,
+                        core ? ShaftCore : ShaftHaze
+                    );
+                    float life = core ? 0.5f : 0.7f;
+                    Animate(
+                        scan,
+                        life,
+                        (s, k) =>
+                        {
+                            float t = k * life;
+                            s.Holder.anchoredPosition = new Vector2(
+                                at.x - wide * 0.5f,
+                                Mathf.Lerp(top, bottom, EaseOut(Mathf.Min(1f, t / 0.45f)))
+                            );
+                            var tint = core ? Color.white : color;
+                            tint.a = core ? 1f : 0.7f;
+                            Show(
+                                s,
+                                tint,
+                                0.25f + t * 0.4f,
+                                Eaten(k, core ? 0.6f : 0.5f),
+                                core ? 2f : 1f
+                            );
+                        }
+                    );
+                }
+                Illuminate(
+                    (Vector2)at + Vector2.up * 60f,
+                    color,
                     0.6f,
-                    (s, k) =>
-                    {
-                        s.Holder.anchoredPosition = new Vector2(
-                            at.x,
-                            Mathf.Lerp(top, bottom, EaseOut(k))
-                        );
-                        Show(s, color, Mathf.Min(1f, k * 4f), Eaten(k, 0.7f), ErodeBright);
-                    }
+                    260f,
+                    0.4f,
+                    0.3f,
+                    spill: false
                 );
-                Twinkle(new Vector2(at.x, high.y + 40f), Color.white, 140f, 0.4f, 0.1f, 1f);
             }
             yield return Wait(0.5f);
         }
 
+        /// <summary>The trail an arrow of light sheds: small motes of its colour, cooling as they drift back.</summary>
+        private static Burst ArrowTrail(Color color) =>
+            new()
+            {
+                Shape = BattleVfxShape.Spark,
+                Bright = ErodeBright,
+                From = Color.Lerp(Color.white, color, 0.4f),
+                To = new Color(color.r, color.g, color.b, 0f),
+                Speed = new Vector2(10f, 50f),
+                Spread = 30f,
+                Life = new Vector2(0.12f, 0.25f),
+                Size = new Vector2(4f, 8f),
+                Area = 3f,
+            };
+
         /// <summary>
-        /// アローレイン, a downpour: arrows are loosed high off the top, then fall in two volleys
-        /// slanting across all the enemies, kicking up dust where they land.
+        /// アローレイン, a downpour (doc/catalog/skills/skill-arrow-rain.md): arrows are loosed high
+        /// off the top, then fall in two volleys slanting across all the enemies, each landing on
+        /// its own beat with a spark, a little grit and a flicker on the floor; dust runs out
+        /// along the floor at each enemy.
         /// </summary>
         private IEnumerator ArrowRain(
             RectTransform caster,
@@ -2488,7 +2549,7 @@ namespace Baryonyx.Combat.Presentation
                         0f,
                         color,
                         0f,
-                        null
+                        ArrowTrail(color)
                     )
                 );
             yield return Wait(0.3f);
@@ -2509,18 +2570,7 @@ namespace Baryonyx.Combat.Presentation
                             );
                         var start = end + new Vector2(-260f, top - end.y);
                         StartCoroutine(
-                            Shoot(
-                                BattleVfxShape.Arrow,
-                                start,
-                                end,
-                                new Vector2(140f, 40f),
-                                new Vector2(0.82f, 0.5f),
-                                UnityEngine.Random.Range(0.18f, 0.26f),
-                                0f,
-                                color,
-                                0f,
-                                null
-                            )
+                            FallingArrow(start, end, UnityEngine.Random.Range(0.16f, 0.27f), color)
                         );
                     }
                 }
@@ -2530,16 +2580,8 @@ namespace Baryonyx.Combat.Presentation
                     var area = hits[index].Area;
                     var weight = land(index);
                     var feet = Feet(FrontLayer, area);
-                    Puffs(
-                        backSmoke,
-                        feet + Vector2.up * 10f,
-                        new Color(0.45f, 0.4f, 0.35f, 0.6f),
-                        3,
-                        70f,
-                        0.8f,
-                        90f
-                    );
-                    Sparks(Center(FrontLayer, area), color, 6, 0.5f, Vector2.down);
+                    DustKick(feet, Vector2.left, 200f);
+                    DustKick(feet, Vector2.right, 200f);
                     HitStop(Weighted(0.02f, weight));
                     Illuminate(
                         Center(FrontLayer, area),
@@ -2557,10 +2599,32 @@ namespace Baryonyx.Combat.Presentation
             yield return Wait(0.3f);
         }
 
+        /// <summary>One arrow of a downpour falling to <paramref name="end"/> and striking there: a spark, a bit of grit and a flicker of light on the floor.</summary>
+        private IEnumerator FallingArrow(Vector2 start, Vector2 end, float seconds, Color color)
+        {
+            yield return Shoot(
+                BattleVfxShape.Arrow,
+                start,
+                end,
+                new Vector2(140f, 40f),
+                new Vector2(0.82f, 0.5f),
+                seconds,
+                0f,
+                color,
+                0f,
+                ArrowTrail(color)
+            );
+            Glow(frontLight, end, Color.Lerp(color, Color.white, 0.5f), 70f, 0.1f, 0.9f);
+            Sparks(end, color, 3, 0.4f, Vector2.up);
+            FlashPool(end + Vector2.down * 10f, color, 160f, 0.5f);
+        }
+
         /// <summary>
-        /// シャドウスナイプ, silence then a hole: it goes almost black, a gold sight locks on slowly
-        /// with a faint aiming line, then one arrow crosses in a blink and a line of light bursts
-        /// through and past the enemy, shards blowing out of its back.
+        /// シャドウスナイプ, silence then a hole (doc/catalog/skills/skill-shadow-snipe.md): it goes
+        /// almost black, a gold sight locks on slowly with a faint aiming line, then one arrow
+        /// crosses in a blink and a shaft of light bursts through and past the enemy in four
+        /// layers (a violet haze and body behind it, a white core for an instant and a violet
+        /// trace in front), shards blowing out of its back and the field lit along the line.
         /// </summary>
         private IEnumerator ShadowSnipe(
             RectTransform caster,
@@ -2626,8 +2690,8 @@ namespace Baryonyx.Combat.Presentation
                     null
                 );
                 var weight = land(index);
-                Line(frontLight, at - dir * 120f, at + dir * 1100f, Color.white, 60f, 0.45f, 0.25f);
-                Line(backLight, at - dir * 120f, at + dir * 1100f, color, 160f, 0.5f, 0.2f);
+                Shaft(at - dir * 140f, at + dir * 1100f, color, 80f, 0.03f, 0.32f);
+                Illuminate(at + dir * 300f, color, 1f, 700f, 0.05f, 0.4f);
                 Spray(
                     frontLight,
                     at,
@@ -2658,8 +2722,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// ライトニングボルト, a running flash: a jagged bolt leaps sideways from the user to the
-        /// enemy, crackles run round it and it twitches with small sparks (numbed).
+        /// ライトニングボルト, a running flash, as a real discharge looks: a faint leader feels its
+        /// way sideways from the user to the enemy, the channel it opened burns white (the core)
+        /// in a hazy yellow glow and lights again twice down the same path, the field lit with
+        /// each stroke; a yellow trace is left in the eye and breaks up; crackles run round the
+        /// enemy (numbed).
         /// </summary>
         private IEnumerator LightningBolt(
             RectTransform caster,
@@ -2672,23 +2739,21 @@ namespace Baryonyx.Combat.Presentation
             DimTo(0.5f, 0.12f);
             Glow(frontLight, from, color, 200f, 0.25f, 0.7f);
             yield return Wait(0.14f);
+            const float leader = 0.08f;
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
-                Zap(from, at, Color.white, 0.32f);
-                var weight = land(index);
-                Star(at, color, 240f, 0.2f);
-                Impact(
-                    area,
-                    at,
-                    color,
-                    weight,
-                    0.55f,
-                    Vector2.right,
-                    flashScreen: false,
-                    rays: false
+                Channel(from, at, BoltLight(color), BoltTraceOf(color), leader, BoltStrokes, 420f);
+                StartCoroutine(
+                    ChannelLights(from, at, Feet(FrontLayer, area), color, leader, BoltStrokes, 1f)
                 );
+                yield return Wait(leader);
+                var weight = land(index);
+                Glow(frontLight, at, Color.white, 170f, 0.14f, 0.9f);
+                Sparks(at, color, 12, 0.8f, (at - from).normalized);
+                HitStop(Weighted(0.05f, weight));
+                Shake(Weighted(0.28f, weight), (at - from).normalized);
                 StartCoroutine(Crackle(area, color));
                 StartCoroutine(Crackle(area, Violet));
             }
@@ -2696,8 +2761,12 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// チェインライトニング, jumping: a bolt leaps from the user to the first enemy, then from
-        /// each enemy hit to the next, each landing with its own flash, ring and light.
+        /// チェインライトニング, jumping (doc/catalog/skills/skill-chain-lightning.md): a bolt
+        /// leaps from the user to the first enemy and on from each enemy hit to the next, each
+        /// jump a real discharge in four layers on one path (a faint leader, the white core at
+        /// the stroke and once more on the same path, a hazy glow, a trace left in the eye), so
+        /// the path it took stays in the eye a moment as a chain. Each landing lights the field
+        /// and the floor, flares, throws sparks and leaves a wisp of scorched smoke.
         /// </summary>
         private IEnumerator ChainLightning(
             RectTransform caster,
@@ -2709,23 +2778,57 @@ namespace Baryonyx.Combat.Presentation
             var from = Center(FrontLayer, caster) + new Vector2(60f, 30f);
             DimTo(0.55f, 0.12f);
             yield return StaticCharge(caster, 0.35f);
+            const float leader = 0.06f;
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
-                Zap(from, at, Color.white, 0.24f);
+                var feet = Feet(FrontLayer, area);
+                var dir = (at - from).normalized;
+                Channel(from, at, BoltLight(color), BoltTraceOf(color), leader, JumpStrokes, 300f);
+                StartCoroutine(ChannelLights(from, at, feet, color, leader, JumpStrokes, 0.85f));
+                yield return Wait(leader);
                 var weight = land(index);
-                Star(at, color, 220f, 0.18f);
-                Puffs(backSmoke, at, new Color(0.18f, 0.17f, 0.2f, 0.5f), 1, 20f, 0.8f, 100f);
-                Sparks(at, color, 10, 0.8f, (at - from).normalized);
+                Glow(frontLight, at, Color.white, 150f, 0.12f, 0.9f);
+                Spray(
+                    backSmoke,
+                    at + Vector2.down * 20f,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = 0.4f,
+                        From = new Color(0.3f, 0.28f, 0.32f, 0.5f),
+                        To = new Color(0.3f, 0.28f, 0.32f, 0.5f),
+                        Speed = new Vector2(20f, 60f),
+                        Direction = 90f,
+                        Spread = 40f,
+                        Life = new Vector2(0.7f, 1f),
+                        Size = new Vector2(60f, 100f),
+                        Grow = 0.4f,
+                        Shrink = 1.6f,
+                        Drag = 0.8f,
+                        Hold = 0.35f,
+                        Area = 20f,
+                        Delay = new Vector2(0.08f, 0.2f),
+                    },
+                    2
+                );
+                Sparks(at, color, 10, 0.8f, dir);
+                StartCoroutine(Crackle(area, color));
                 HitStop(Weighted(0.04f, weight));
-                Shake(Weighted(0.22f, weight), (at - from).normalized);
-                Illuminate(at, color, 0.8f, 320f, 0.05f, 0.3f);
+                Shake(Weighted(0.22f, weight), dir);
                 from = at;
-                yield return Wait(0.14f);
+                yield return Wait(0.16f);
             }
-            yield return Wait(0.3f);
+            yield return Wait(0.35f);
         }
+
+        /// <summary>The glow of the air round a bolt of <paramref name="color"/>: a paler, whiter tone of it.</summary>
+        private static Color BoltLight(Color color) => Color.Lerp(color, Color.white, 0.35f);
+
+        /// <summary>The trace a bolt of <paramref name="color"/> leaves in the eye: a deeper tone of it.</summary>
+        private static Color BoltTraceOf(Color color) =>
+            new(color.r, color.g * 0.8f, color.b * 0.6f);
 
         /// <summary>
         /// 雷雲, called: the user gathers violet light for the storm. The cloud itself comes only
@@ -2745,9 +2848,12 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 雷神の槍, judgement: the sky darkens, a spear of lightning forms high over the enemy and
-        /// charges, then drops onto it with a bolt, a great ring and a stop; the lightning runs on
-        /// along the floor to every enemy, striking each.
+        /// 雷神の槍, judgement (doc/catalog/skills/skill-thunder-spear.md): the sky goes to night,
+        /// motes of light are drawn up high over the enemy into a spear of lightning that
+        /// crackles in place, lighting the field from above; then it drops: the bolt runs from
+        /// the spear down to the enemy in four layers on one path and lights again twice, the
+        /// screen flashes once, the floor is lit wide and scorched, dust runs out and the battle
+        /// stops; the lightning runs on low along the floor to every other enemy, striking each.
         /// </summary>
         private IEnumerator ThunderSpear(
             RectTransform caster,
@@ -2756,6 +2862,8 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("ThunderSpear");
+            var halo = BoltLight(color);
+            var trace = BoltTraceOf(color);
             DimTo(NightDim, 0.2f);
             yield return StaticCharge(caster, 0.45f);
             foreach (int index in Wave(hits, 0))
@@ -2763,44 +2871,44 @@ namespace Baryonyx.Combat.Presentation
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
                 var feet = Feet(FrontLayer, area);
-                var high = new Vector2(at.x, FrontLayer.rect.yMax - 160f);
-                Clouds(high + Vector2.up * 60f, 6, 1.4f);
-                var spear = Spawn(
-                    frontLight,
-                    BattleVfxShape.IceSpear,
-                    high,
-                    new Vector2(420f, 120f),
-                    color,
-                    new Vector2(0.93f, 0.5f)
+                var high = new Vector2(at.x, FrontLayer.rect.yMax - 170f);
+                // The spear forming: motes drawn up into it, and the spear itself crackling in
+                // place, the same short channel lit again and again, brighter each time.
+                Gather(high, color, 18, 260f, 0.45f);
+                Glow(backLight, high, color, 380f, 0.65f, 0.6f);
+                Channel(
+                    high + Vector2.up * 150f,
+                    high + Vector2.down * 150f,
+                    halo,
+                    trace,
+                    0.05f,
+                    SpearCharge,
+                    120f
                 );
-                spear.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, -90f);
-                Animate(
-                    spear,
-                    0.5f,
-                    (s, k) =>
-                    {
-                        float pulse = 0.8f + 0.3f * Mathf.Sin(k * 60f);
-                        s.Holder.localScale = Vector3.one * (0.6f + 0.4f * EaseOut(k));
-                        Show(s, Color.Lerp(Color.white, color, 0.4f) * pulse, k, 0f, CoreBright);
-                    }
+                Illuminate(high, color, 0.7f, 600f, 0.45f, 0.2f, spill: false, flicker: 0.6f);
+                yield return Wait(0.55f);
+                // The drop: one bolt from the spear to the enemy.
+                const float leader = 0.04f;
+                var top = high + Vector2.up * 150f;
+                Channel(top, feet + Vector2.up * 6f, halo, trace, leader, BoltStrokes, 380f);
+                StartCoroutine(
+                    ChannelLights(
+                        top,
+                        feet + Vector2.up * 6f,
+                        feet,
+                        color,
+                        leader,
+                        BoltStrokes,
+                        1.5f
+                    )
                 );
-                Glow(frontLight, high, color, 360f, 0.5f, 0.8f);
-                yield return Wait(0.5f);
-                yield return Shoot(
-                    BattleVfxShape.IceSpear,
-                    high,
-                    at,
-                    new Vector2(420f, 120f),
-                    new Vector2(0.93f, 0.5f),
-                    0.06f,
-                    0f,
-                    color,
-                    0f,
-                    null
-                );
-                Bolt(feet);
+                yield return Wait(leader);
                 var weight = land(index);
                 ScreenFlash(new Color(1f, 0.95f, 0.75f), MaxFlash);
+                // The dark lifts with the flash and comes back.
+                DimTo(0.2f, 0f);
+                StartCoroutine(After(0.1f, () => DimTo(NightDim, 0.4f)));
+                Glow(frontLight, feet + Vector2.up * 10f, Color.white, 240f, 0.16f, 0.95f);
                 Shockwave(feet, 700f, 1f);
                 FloorMark(
                     BattleVfxShape.Scorch,
@@ -2811,31 +2919,48 @@ namespace Baryonyx.Combat.Presentation
                     1.6f,
                     flat: false
                 );
-                Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: false);
-                HitStop(0.14f);
+                Sparks(feet + Vector2.up * 10f, color, 18, 1f, Vector2.up);
+                HitStop(Weighted(0.14f, weight));
+                Shake(Weighted(0.45f, weight), Vector2.down);
                 Punch(at, 0.04f);
                 StartCoroutine(Crackle(area, Violet));
+                StartCoroutine(Rumble());
                 yield return Wait(0.2f);
+                var from = feet + Vector2.up * 10f;
                 foreach (int other in Wave(hits, 1))
                 {
                     var otherArea = hits[other].Area;
                     var otherFeet = Feet(FrontLayer, otherArea);
-                    Zap(feet + Vector2.up * 10f, otherFeet + Vector2.up * 10f, color, 0.2f);
+                    var to = otherFeet + Vector2.up * 10f;
+                    // Low along the floor: it hardly swings up off it.
+                    Channel(from, to, halo, trace, 0.05f, JumpStrokes, 90f);
+                    StartCoroutine(
+                        ChannelLights(from, to, otherFeet, color, 0.05f, JumpStrokes, 0.7f)
+                    );
+                    yield return Wait(0.05f);
                     var otherWeight = land(other);
-                    Star(Center(FrontLayer, otherArea), color, 200f, 0.16f);
-                    Pool(otherFeet, color, 300f, 0.05f, 0.35f);
+                    Glow(frontLight, to, Color.white, 130f, 0.12f, 0.9f);
                     HitStop(Weighted(0.03f, otherWeight));
                     StartCoroutine(Crackle(otherArea, color));
                     yield return Wait(0.06f);
                 }
             }
-            yield return Wait(0.4f);
+            yield return Wait(0.45f);
         }
 
+        // The spear of lightning crackling in place before it drops: the same short channel lit
+        // again and again, brighter as it charges.
+        private static readonly (float[] times, float[] peaks) SpearCharge = (
+            new[] { 0f, 0.12f, 0.22f, 0.3f, 0.36f, 0.41f },
+            new[] { 0.3f, 0.35f, 0.45f, 0.55f, 0.7f, 0.85f }
+        );
+
         /// <summary>
-        /// 疾風迅雷, light on the feet: a gust sweeps through the party from the left, white streaks
-        /// and feathers riding it, and each ally twitches with yellow sparks under an arrow
-        /// pointing up.
+        /// 疾風迅雷, light on the feet (doc/catalog/skills/skill-gale.md): a gust sweeps through the
+        /// party from the left as wind looks, not as light: long thin streams of driven air,
+        /// one behind and one in front of the party, fibrous and gusting as they run past, fast
+        /// white streaks and leaves riding them; then each ally twitches with yellow sparks, thin
+        /// lines rise off it and an arrow points up.
         /// </summary>
         private IEnumerator Gale(
             RectTransform caster,
@@ -2846,21 +2971,41 @@ namespace Baryonyx.Combat.Presentation
             var color = ColorOf("Gale");
             DimTo(0.36f, 0.15f);
             var mid = MidFeet(hits, 0) + Vector2.up * 120f;
-            // Bands of wind racing across the party from the left, one after another.
+            var air = Color.Lerp(Color.white, color, 0.3f);
+            // The streams of air, behind and in front of the party, running left to right.
+            for (int layer = 0; layer < 2; layer++)
+            {
+                var host = layer == 0 ? backLight : frontLight;
+                if (host == null)
+                    continue;
+                var stream = Spawn(
+                    host,
+                    BattleVfxShape.Tornado,
+                    mid + new Vector2(0f, layer == 0 ? 60f : -60f),
+                    new Vector2(1500f, layer == 0 ? 360f : 260f),
+                    air
+                );
+                stream.Image.material = RichMaterialOf(BattleVfxShape.Tornado);
+                float life = layer == 0 ? 0.8f : 0.65f;
+                float strength = layer == 0 ? 0.8f : 0.6f;
+                Animate(
+                    stream,
+                    life,
+                    (s, k) =>
+                    {
+                        float gust =
+                            Mathf.Min(1f, k * 6f)
+                            * (1f - EaseIn(Mathf.Clamp01((k - 0.45f) / 0.55f)));
+                        Show(s, new Color(air.r, air.g, air.b, strength * gust), k * 1.2f, 0f);
+                    }
+                );
+            }
+            // Fast streaks racing across, row by row.
             for (int n = 0; n < 4; n++)
             {
                 float y = mid.y - 180f + n * 110f;
-                Line(
-                    frontLight,
-                    new Vector2(mid.x - 700f, y),
-                    new Vector2(mid.x + 500f, y + 30f),
-                    Color.Lerp(Color.white, color, 0.4f),
-                    26f,
-                    0.4f,
-                    0.35f
-                );
                 Spray(
-                    frontLight,
+                    n % 2 == 0 ? frontLight : backLight,
                     new Vector2(mid.x - 600f, y),
                     new Burst
                     {
@@ -2872,12 +3017,12 @@ namespace Baryonyx.Combat.Presentation
                         Direction = 2f,
                         Spread = 5f,
                         Life = new Vector2(0.4f, 0.6f),
-                        Size = new Vector2(8f, 14f),
+                        Size = new Vector2(5f, 9f),
                         Stretch = 0.08f,
                         Area = 50f,
                         Delay = new Vector2(0f, 0.15f),
                     },
-                    8
+                    7
                 );
                 yield return Wait(0.05f);
             }
@@ -2896,7 +3041,7 @@ namespace Baryonyx.Combat.Presentation
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
                 StartCoroutine(Crackle(area, color));
-                Sparks(at, color, 10, 0.6f, Vector2.up);
+                RisingLines(Feet(FrontLayer, area), color, 10, 120f, 0.25f);
                 Bloom(
                     frontLight,
                     BattleVfxShape.Chevron,
@@ -2915,8 +3060,9 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 偵察, a look round: a teal sight sweeps across the enemy side, and two twinkles fly back
-        /// up from it (the cards drawn).
+        /// 偵察, a look round (doc/catalog/skills/skill-scout.md): a teal sight sweeps across the
+        /// enemy side over a patch of light on the floor that follows it, lighting each enemy as
+        /// it passes, and two twinkles fly back up from it (the cards drawn).
         /// </summary>
         private IEnumerator Scout(
             RectTransform caster,
@@ -2948,6 +3094,55 @@ namespace Baryonyx.Combat.Presentation
                     Show(s, color, 0.2f + 0.3f * k, Eaten(k, 0.75f), CoreBright);
                 }
             );
+            if (backLight != null)
+            {
+                // The patch of light the sight casts on the floor, following it.
+                float floor = MidFeet(hits, -1).y;
+                var patch = Spawn(
+                    backLight,
+                    BattleVfxShape.Glow,
+                    new Vector2(300f, floor),
+                    new Vector2(300f, 300f),
+                    color
+                );
+                Animate(
+                    patch,
+                    0.7f,
+                    (s, k) =>
+                    {
+                        s.Holder.anchoredPosition = new Vector2(
+                            Mathf.Lerp(300f, 820f, EaseOut(k)),
+                            floor
+                        );
+                        s.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
+                        Show(
+                            s,
+                            new Color(color.r, color.g, color.b, 0.5f * Mathf.Sin(k * Mathf.PI)),
+                            k,
+                            0f
+                        );
+                    }
+                );
+            }
+            for (int n = 0; n < 3; n++)
+            {
+                float x = Mathf.Lerp(380f, 780f, n / 2f);
+                StartCoroutine(
+                    After(
+                        0.12f + n * 0.12f,
+                        () =>
+                            Illuminate(
+                                new Vector2(x, 60f),
+                                color,
+                                0.5f,
+                                220f,
+                                0.05f,
+                                0.3f,
+                                spill: false
+                            )
+                    )
+                );
+            }
             yield return Wait(0.6f);
             for (int n = 0; n < 2; n++)
                 StartCoroutine(
@@ -2961,7 +3156,7 @@ namespace Baryonyx.Combat.Presentation
                         200f,
                         Color.white,
                         0f,
-                        null
+                        ArrowTrail(color)
                     )
                 );
             yield return Wait(0.36f);
@@ -2974,8 +3169,11 @@ namespace Baryonyx.Combat.Presentation
         // --- Mina ------------------------------------------------------------------------------
 
         /// <summary>
-        /// 万歩の祈り, every step counting: golden footprints light up along the floor through the
-        /// party, then a green light rises from each ally with leaves and twinkles drifting up.
+        /// 万歩の祈り, every step counting (doc/catalog/skills/skill-step-prayer.md): golden
+        /// footprints light up along the floor through the party, then healing rises off each ally
+        /// from the floor up: a pool of light at its feet first, thin lines of light rising
+        /// round it, before and behind, a soft glow settling on its body last, and a few leaves
+        /// drifting up.
         /// </summary>
         private IEnumerator StepPrayer(
             RectTransform caster,
@@ -3004,26 +3202,12 @@ namespace Baryonyx.Combat.Presentation
             {
                 var area = hits[index].Area;
                 var feet = Feet(FrontLayer, area);
-                Column(
-                    backLight,
-                    feet,
-                    color,
-                    new Vector2(300f, 380f),
-                    1f,
-                    down: false,
-                    fast: false
-                );
-                Leaves(frontLight, feet + Vector2.up * 30f, color, 5, 90f, 120f);
-                Pool(feet, color, 300f, 0.4f, 0.5f);
-                Illuminate(
-                    Center(FrontLayer, area),
-                    Color.Lerp(color, Gold, 0.3f),
-                    0.6f,
-                    260f,
-                    0.4f,
-                    0.5f,
-                    spill: false
-                );
+                var at = Center(FrontLayer, area);
+                Pool(feet, color, 300f, 0.5f, 0.5f);
+                RisingLines(feet, Color.Lerp(color, Gold, 0.25f), 16, 140f, 0.5f);
+                SoftHalo(at, Color.Lerp(color, Gold, 0.2f), 300f, 0.15f, 1f);
+                Leaves(frontLight, feet + Vector2.up * 30f, color, 4, 90f, 120f);
+                Illuminate(at, Color.Lerp(color, Gold, 0.3f), 0.6f, 260f, 0.4f, 0.5f, spill: false);
                 land(index);
                 yield return Wait(0.05f);
             }
@@ -3031,8 +3215,44 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// リジェネ, budding: a soft green ring opens under the ally and leaves spiral up round it,
-        /// a gentle glow settling in.
+        /// A soft glow settling on a body behind it: it comes up slowly after
+        /// <paramref name="delay"/>, breathes once and fades over about <paramref name="seconds"/>
+        /// (a heal's warmth, never a flash).
+        /// </summary>
+        private void SoftHalo(Vector2 at, Color color, float size, float delay, float seconds)
+        {
+            if (backLight == null)
+                return;
+            var shot = Spawn(backLight, BattleVfxShape.Glow, at, new Vector2(size, size), color);
+            float total = delay + seconds;
+            Animate(
+                shot,
+                total,
+                (s, t) =>
+                {
+                    float time = t * total - delay;
+                    if (time < 0f)
+                    {
+                        Show(s, Color.clear, 0f, 0f);
+                        return;
+                    }
+                    float k = time / seconds;
+                    // A slow rise, one gentle breath, then a long fall (F3 with a smooth pulse).
+                    float envelope =
+                        Mathf.SmoothStep(0f, 1f, k / 0.35f)
+                        * (1f - Mathf.SmoothStep(0f, 1f, (k - 0.55f) / 0.45f));
+                    float breath = 0.85f + 0.15f * Mathf.Sin(k * Mathf.PI * 2f);
+                    s.Holder.localScale = Vector3.one * (0.85f + 0.2f * k);
+                    Show(s, new Color(color.r, color.g, color.b, 0.55f * envelope * breath), k, 0f);
+                }
+            );
+        }
+
+        /// <summary>
+        /// リジェネ, budding (doc/catalog/skills/skill-regen.md): a ring of green spreads on the
+        /// floor under the ally, then leaves and motes bud round its feet and spiral up round it,
+        /// passing behind and in front of it, opening out as they rise; a gentle warmth settles on
+        /// it. (Each turn after, <see cref="StatusTick"/> shows only a quiet pulse of it.)
         /// </summary>
         private IEnumerator Regen(
             RectTransform caster,
@@ -3048,17 +3268,84 @@ namespace Baryonyx.Combat.Presentation
                 var area = hits[index].Area;
                 var feet = Feet(FrontLayer, area);
                 Ring(backLight, feet, color, 260f, 0.7f, floor: true);
-                Spiral(feet, color, 10, 1f);
-                Glow(backLight, Center(FrontLayer, area), color, 300f, 1f, 0.45f);
+                Pool(feet, color, 260f, 0.6f, 0.6f);
+                Sprout(feet, color, 14, 1.1f);
+                SoftHalo(Center(FrontLayer, area), color, 300f, 0.25f, 1.1f);
                 land(index);
             }
-            yield return Wait(0.7f);
+            yield return Wait(0.9f);
         }
 
         /// <summary>
-        /// リザレクション, a call from above: the stage dims, a white-gold circle opens under the
-        /// ally and a beam of light comes slowly down onto it with feathers drifting; the ally
-        /// flares white and a ring and twinkles burst out.
+        /// Leaves (and, every third, a mote) budding round <paramref name="feet"/> one after
+        /// another and spiralling up round the body over about <paramref name="seconds"/>,
+        /// opening out as they rise; each passes behind the body on the far side of its turn and
+        /// in front of it on the near side.
+        /// </summary>
+        private void Sprout(Vector2 feet, Color color, int count, float seconds)
+        {
+            if (backLight == null || frontLight == null)
+                return;
+            for (int n = 0; n < count; n++)
+            {
+                bool leaf = n % 3 != 2;
+                var shot = Spawn(
+                    frontLight,
+                    leaf ? BattleVfxShape.Leaf : BattleVfxShape.Sparkle,
+                    feet,
+                    leaf ? new Vector2(20f, 36f) : new Vector2(22f, 22f),
+                    color
+                );
+                float phase = n * (360f / count) + UnityEngine.Random.Range(-15f, 15f);
+                float delay = n * seconds * 0.35f / count;
+                float life = seconds * UnityEngine.Random.Range(0.75f, 1f);
+                float rise = UnityEngine.Random.Range(220f, 320f);
+                float total = delay + life;
+                Animate(
+                    shot,
+                    total,
+                    (s, t) =>
+                    {
+                        float time = t * total - delay;
+                        if (time < 0f)
+                        {
+                            Show(s, Color.clear, 0f, 0f);
+                            return;
+                        }
+                        float k = time / life;
+                        float angle = (phase + k * 320f) * Mathf.Deg2Rad;
+                        float radius = 90f * (0.35f + 0.65f * EaseOut(k));
+                        float depth = Mathf.Sin(angle);
+                        var layer = depth > 0f ? backLight : frontLight;
+                        if (s.Holder.parent != layer)
+                            s.Holder.SetParent(layer, false);
+                        // A smooth climb, slow at first and last.
+                        float up = rise * Mathf.SmoothStep(0f, 1f, k);
+                        s.Holder.anchoredPosition =
+                            feet
+                            + new Vector2(
+                                Mathf.Cos(angle) * radius,
+                                20f + up + depth * radius * 0.3f
+                            );
+                        s.Image.rectTransform.localEulerAngles = new Vector3(
+                            0f,
+                            0f,
+                            angle * Mathf.Rad2Deg
+                        );
+                        var tint = new Color(color.r, color.g, color.b, Mathf.Min(1f, k * 6f));
+                        Show(s, tint, k, Eaten(k, 0.6f), depth > 0f ? 1f : ErodeBright);
+                    }
+                );
+            }
+        }
+
+        /// <summary>
+        /// リザレクション, a call from above (doc/catalog/skills/skill-resurrection.md): the stage
+        /// dims, a white-gold circle opens on the floor under the ally and a shaft of light comes
+        /// slowly down onto it as real light does, seen in the dust (a wide haze and its body
+        /// behind the ally, a white core and a gold trace in front), specks drifting down in it;
+        /// motes are drawn into the ally, then it flares white, a ring runs out on the floor, thin
+        /// lines of light rise off it and twinkles burst out.
         /// </summary>
         private IEnumerator Resurrection(
             RectTransform caster,
@@ -3086,20 +3373,27 @@ namespace Baryonyx.Combat.Presentation
                     spin: -120f
                 );
                 float top = FrontLayer.rect.yMax + 40f;
-                Column(
-                    frontLight,
-                    feet,
-                    color,
-                    new Vector2(240f, (top - feet.y) / 0.9f),
-                    1.4f,
-                    down: true,
-                    fast: false
-                );
+                Shaft(new Vector2(at.x, top), feet, Color.Lerp(color, Gold, 0.3f), 220f, 0.4f, 1f);
+                Pool(feet, color, 380f, 0.9f, 0.6f);
                 DustInLight(new Vector2(at.x, top - 80f), Gold, -1f);
-                yield return Wait(0.6f);
+                Illuminate(
+                    new Vector2(at.x, top - 200f),
+                    color,
+                    0.6f,
+                    500f,
+                    0.6f,
+                    0.4f,
+                    spill: false
+                );
+                yield return Wait(0.2f);
+                Gather(at, Gold, 18, 230f, 0.4f);
+                yield return Wait(0.4f);
                 land(index);
+                Glow(frontLight, at, Color.white, 220f, 0.16f, 0.95f);
+                SoftHalo(at, Color.Lerp(color, Gold, 0.4f), 380f, 0.05f, 1.1f);
                 Illuminate(at, Color.white, 1f, 360f, 0.4f, 0.6f);
                 Ring(backLight, feet, color, 520f, 0.6f, floor: true);
+                RisingLines(feet, Gold, 18, 160f, 0.4f);
                 Spray(
                     frontLight,
                     at,
@@ -3112,13 +3406,13 @@ namespace Baryonyx.Combat.Presentation
                         Speed = new Vector2(100f, 400f),
                         Spread = 360f,
                         Life = new Vector2(0.6f, 1f),
-                        Size = new Vector2(16f, 36f),
+                        Size = new Vector2(14f, 30f),
                         Gravity = -120f,
                         Drag = 2f,
                         Spin = 200f,
                         Area = 40f,
                     },
-                    20
+                    12
                 );
                 ScreenFlash(Color.white, 0.18f);
             }
@@ -3126,9 +3420,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 聖なる鉄槌, judgement: a golden circle opens in the air over the enemy and a heavy column
-        /// of gold slams down from it; the floor cracks gold, chips fly, and pale shards of a broken
-        /// blessing fly off the enemy.
+        /// 聖なる鉄槌, judgement (doc/catalog/skills/skill-holy-hammer.md): a golden circle opens
+        /// in the air over the enemy and a heavy shaft of gold slams down from it in four layers
+        /// (a gold haze and body behind the enemy, a white core for an instant and a gold trace
+        /// in front); the floor cracks, chips fly, a wide pool of gold lies on the floor, pale
+        /// shards of a broken blessing fly off the enemy and specks of light rise in what is left.
         /// </summary>
         private IEnumerator HolyHammer(
             RectTransform caster,
@@ -3156,16 +3452,9 @@ namespace Baryonyx.Combat.Presentation
                     CoreBright,
                     spin: 160f
                 );
+                Illuminate(sky, color, 0.5f, 400f, 0.3f, 0.2f, spill: false);
                 yield return Wait(0.35f);
-                Column(
-                    frontLight,
-                    feet,
-                    color,
-                    new Vector2(300f, (sky.y - feet.y) / 0.9f),
-                    0.6f,
-                    down: true,
-                    fast: true
-                );
+                Shaft(sky, feet + Vector2.down * 10f, color, 340f, 0.06f, 0.35f);
                 yield return Wait(0.06f);
                 var weight = land(index);
                 Bloom(
@@ -3180,6 +3469,7 @@ namespace Baryonyx.Combat.Presentation
                     floor: true
                 );
                 Impact(area, at, color, weight, 0.85f, Vector2.down, flashScreen: true);
+                Pool(feet, color, 520f, 0.1f, 0.5f);
                 Debris(feet + Vector2.up * 20f, new Color(0.5f, 0.42f, 0.3f), 10, Vector2.up);
                 Spray(
                     frontLight,
@@ -3204,13 +3494,16 @@ namespace Baryonyx.Combat.Presentation
                     },
                     12
                 );
+                DustInLight(feet + Vector2.up * 60f, color, 1f);
             }
             yield return Wait(0.45f);
         }
 
         /// <summary>
-        /// プロテクト, gently wrapped: small crests circle each ally and fold into a soft bubble of
-        /// pale light round it.
+        /// プロテクト, gently wrapped (doc/catalog/skills/skill-protect.md): small crests circle
+        /// each ally, passing behind and in front of it, and fold into a soft barrier round it: a
+        /// membrane behind and a faint rim in front, so the ally stands inside, a ring spreading
+        /// on the floor as it closes.
         /// </summary>
         private IEnumerator Protect(
             RectTransform caster,
@@ -3242,6 +3535,9 @@ namespace Baryonyx.Combat.Presentation
                         {
                             float angle = (phase + k * 400f) * Mathf.Deg2Rad;
                             float radius = 140f * (1f - 0.7f * EaseIn(k));
+                            var layer = Mathf.Sin(angle) > 0f ? backLight : frontLight;
+                            if (layer != null && s.Holder.parent != layer)
+                                s.Holder.SetParent(layer, false);
                             s.Holder.anchoredPosition =
                                 at
                                 + new Vector2(
@@ -3252,16 +3548,20 @@ namespace Baryonyx.Combat.Presentation
                         }
                     );
                 }
-                Bloom(
-                    backLight,
-                    BattleVfxShape.Bubble,
+                Barrier(
                     at,
                     new Vector2(260f, 300f),
                     Color.Lerp(color, Gold, 0.3f),
                     1.1f,
-                    0.7f,
-                    ErodeBright,
-                    delay: 0.45f
+                    0.45f,
+                    0.7f
+                );
+                StartCoroutine(
+                    After(
+                        0.45f,
+                        () =>
+                            Ring(backLight, Feet(FrontLayer, area), color, 300f, 0.5f, floor: true)
+                    )
                 );
                 land(index);
                 yield return Wait(0.04f);
@@ -3270,8 +3570,56 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 浄化の光, clearing: a light rain of twinkles falls over the party, dark wisps rise off
-        /// each ally and fade, and a clear ring and glow are left.
+        /// A barrier round a body at <paramref name="at"/>, springing up after
+        /// <paramref name="delay"/>: the membrane behind the body and a faint rim of it in front
+        /// (<paramref name="front"/> as strong), so the body stands inside it, lasting
+        /// <paramref name="seconds"/> and worn away.
+        /// </summary>
+        private void Barrier(
+            Vector2 at,
+            Vector2 size,
+            Color color,
+            float seconds,
+            float delay,
+            float hold,
+            float front = 0.35f
+        )
+        {
+            // Drawn as a film of light (the bubble's rich look): a Fresnel rim, a thin film with
+            // a fine hexagon pattern, a ripple running in from the rim, worn away cell by cell.
+            var film = RichMaterialOf(BattleVfxShape.Bubble);
+            var back = Bloom(
+                backLight,
+                BattleVfxShape.Bubble,
+                at,
+                size,
+                color,
+                seconds,
+                hold,
+                ErodeBright,
+                delay: delay
+            );
+            var rim = Bloom(
+                frontLight,
+                BattleVfxShape.Bubble,
+                at,
+                size,
+                new Color(color.r, color.g, color.b, front),
+                seconds,
+                hold,
+                1f,
+                delay: delay
+            );
+            if (back != null)
+                back.Image.material = film;
+            if (rim != null)
+                rim.Image.material = film;
+        }
+
+        /// <summary>
+        /// 浄化の光, clearing (doc/catalog/skills/skill-purify.md): a soft, wide light comes down
+        /// over the party, a light rain of twinkles falling through it; dark wisps are driven up
+        /// off each ally and dissolve, and a clear ring and a cool warmth are left.
         /// </summary>
         private IEnumerator Purify(
             RectTransform caster,
@@ -3280,8 +3628,18 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("Purify");
+            var clear = new Color(0.6f, 0.95f, 1f);
             DimTo(0.3f, 0.2f);
             var mid = MidFeet(hits, 0);
+            Shaft(
+                new Vector2(mid.x, FrontLayer.rect.yMax + 40f),
+                mid + Vector2.down * 140f,
+                clear,
+                560f,
+                0.35f,
+                0.9f,
+                core: 0f
+            );
             Spray(
                 frontLight,
                 new Vector2(mid.x, FrontLayer.rect.yMax),
@@ -3289,7 +3647,7 @@ namespace Baryonyx.Combat.Presentation
                 {
                     Shape = BattleVfxShape.Sparkle,
                     From = Color.white,
-                    To = new Color(0.6f, 0.95f, 1f, 0f),
+                    To = new Color(clear.r, clear.g, clear.b, 0f),
                     Speed = new Vector2(150f, 300f),
                     Direction = -90f,
                     Spread = 20f,
@@ -3299,23 +3657,40 @@ namespace Baryonyx.Combat.Presentation
                     Area = 360f,
                     Delay = new Vector2(0f, 0.5f),
                 },
-                30
+                26
             );
             yield return Wait(0.35f);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
-                Puffs(backSmoke, at, new Color(0.22f, 0.12f, 0.28f, 0.5f), 4, 50f, 1f, 90f);
-                Ring(
-                    backLight,
-                    Feet(FrontLayer, area),
-                    new Color(0.6f, 0.95f, 1f),
-                    280f,
-                    0.6f,
-                    floor: true
+                // The taint driven up out of the ally, dissolving as it rises.
+                Spray(
+                    backSmoke,
+                    at,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = 0.35f,
+                        From = new Color(0.24f, 0.13f, 0.3f, 0.5f),
+                        To = new Color(0.24f, 0.13f, 0.3f, 0.5f),
+                        Speed = new Vector2(60f, 160f),
+                        Direction = 90f,
+                        Spread = 50f,
+                        Life = new Vector2(0.6f, 0.9f),
+                        Size = new Vector2(60f, 110f),
+                        Grow = 0.5f,
+                        Shrink = 1.5f,
+                        Gravity = -120f,
+                        Drag = 1f,
+                        Spin = 30f,
+                        Hold = 0.2f,
+                        Area = 50f,
+                    },
+                    4
                 );
-                Glow(frontLight, at, new Color(0.7f, 0.95f, 1f), 260f, 0.8f, 0.45f);
+                Ring(backLight, Feet(FrontLayer, area), clear, 280f, 0.6f, floor: true);
+                SoftHalo(at, Color.Lerp(clear, Color.white, 0.2f), 280f, 0.1f, 0.8f);
                 land(index);
                 yield return Wait(0.04f);
             }
@@ -3323,8 +3698,10 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// マナの祈り, filling up: blue motes are drawn into the user, a blue column rises and two
-        /// orbs of light float up and away (the energy).
+        /// マナの祈り, filling up (doc/catalog/skills/skill-mana-prayer.md): blue motes are drawn
+        /// into the user from all round, its body breathes with a blue glow that swells as it
+        /// fills, thin blue lines rise round it, and two orbs of light float up and away
+        /// trailing motes (the energy).
         /// </summary>
         private IEnumerator ManaPrayer(
             RectTransform caster,
@@ -3333,17 +3710,12 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             var color = ColorOf("ManaPrayer");
-            yield return Charge(caster, color, 0.3f, big: false);
             var at = Center(FrontLayer, caster);
-            Column(
-                backLight,
-                Feet(FrontLayer, caster),
-                color,
-                new Vector2(240f, 360f),
-                0.9f,
-                down: false,
-                fast: false
-            );
+            var feet = Feet(FrontLayer, caster);
+            Gather(at, color, 16, 300f, 0.5f);
+            yield return Charge(caster, color, 0.3f, big: false);
+            SoftHalo(at, color, 320f, 0f, 0.9f);
+            RisingLines(feet, color, 14, 140f, 0.35f);
             for (int n = 0; n < 2; n++)
                 StartCoroutine(
                     Shoot(
@@ -3356,7 +3728,7 @@ namespace Baryonyx.Combat.Presentation
                         40f,
                         color,
                         0f,
-                        null
+                        ArrowTrail(color)
                     )
                 );
             Illuminate(at, color, 0.6f, 260f, 0.3f, 0.4f, spill: false);
@@ -3366,8 +3738,10 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// 天啓, a flash of insight: a thin shaft of gold comes down on the user, a great twinkle
-        /// flares over its head and a gold ring spreads at its feet.
+        /// 天啓, a flash of insight (doc/catalog/skills/skill-revelation.md): a thin shaft of gold
+        /// comes down on the user as real light does (a haze and its body behind it, a white
+        /// core for a moment and a gold trace in front), specks of dust drifting in it; a great
+        /// twinkle flares over its head and a gold ring spreads at its feet.
         /// </summary>
         private IEnumerator Revelation(
             RectTransform caster,
@@ -3379,15 +3753,9 @@ namespace Baryonyx.Combat.Presentation
             DimTo(0.42f, 0.2f);
             var feet = Feet(FrontLayer, caster);
             var head = Bounds(FrontLayer, caster).max;
-            Column(
-                frontLight,
-                feet,
-                color,
-                new Vector2(140f, (FrontLayer.rect.yMax + 40f - feet.y) / 0.9f),
-                0.9f,
-                down: true,
-                fast: false
-            );
+            var center = Center(FrontLayer, caster);
+            Shaft(new Vector2(center.x, FrontLayer.rect.yMax + 40f), feet, color, 120f, 0.3f, 0.7f);
+            DustInLight(new Vector2(center.x, head.y + 60f), color, -1f);
             yield return Wait(0.35f);
             Twinkle(
                 new Vector2((feet.x + head.x) * 0.5f, head.y + 30f),
@@ -3397,6 +3765,7 @@ namespace Baryonyx.Combat.Presentation
                 0f,
                 1f
             );
+            Pool(feet, color, 300f, 0.2f, 0.5f);
             Ring(backLight, feet, color, 360f, 0.5f, floor: true);
             Illuminate(feet + Vector2.up * 100f, color, 0.7f, 300f, 0.2f, 0.4f);
             foreach (int index in Wave(hits, 0))
@@ -3407,12 +3776,13 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// ホーリーライト, a flood of light, as strong light from above looks in real air: a small,
         /// blinding source high in the middle with a glare round it; shafts of light from it to
-        /// every enemy, seen because the dust in the air scatters them, specks of that dust
-        /// glinting in them; where each lands, a pool of light on the floor, the enemy lit gold and
-        /// a glare; then light falls on every ally, a warm pool at their feet and a gold-green light
-        /// on them, with specks of dust drifting down through it as they heal. No cloud: light
-        /// makes none. Its light is gold and burns white only at its brightest; the screen does
-        /// not flash.
+        /// every enemy, seen because the dust in the air scatters them, each in four layers (a
+        /// haze and the shaft behind the enemy, a white core at the instant it lands and a gold
+        /// trace in front), specks of that dust glinting in them; where each lands, a pool of
+        /// light on the floor, the enemy lit gold and a glare; then light falls on every ally, a
+        /// warm pool at their feet and a gold-green light on them, with specks of dust drifting
+        /// down through it as they heal. No cloud: light makes none. Its light is gold and burns
+        /// white only at its brightest; the screen does not flash.
         /// </summary>
         private IEnumerator HolyLight(
             RectTransform caster,
@@ -3434,7 +3804,7 @@ namespace Baryonyx.Combat.Presentation
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
                 var feet = Feet(FrontLayer, area);
-                Line(frontLight, source, at, gold, 150f, 0.5f, 0.35f);
+                Shaft(source, at, gold, 150f, 0.05f, 0.4f);
                 var weight = land(index);
                 Twinkle(at, white, Weighted(220f, weight), 0.3f, 0f, 1f);
                 HitStop(Weighted(0.06f, weight));
@@ -3486,8 +3856,11 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// ディバインシールド, absolute: a golden bubble springs up round the ally, a great crest
-        /// flashes before it, feathers drift down and a gold ring spreads; the bubble holds a while.
+        /// ディバインシールド, absolute (doc/catalog/skills/skill-divine-shield.md): a thin shaft of
+        /// gold comes down onto the ally first, then a golden barrier springs up round it (the
+        /// membrane behind, its rim in front), a great crest flashes before it, thin gold lines
+        /// rise inside, specks drift down and a gold ring spreads on the floor; the barrier holds
+        /// a while.
         /// </summary>
         private IEnumerator DivineShield(
             RectTransform caster,
@@ -3503,51 +3876,54 @@ namespace Baryonyx.Combat.Presentation
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
                 var feet = Feet(FrontLayer, area);
-                Bloom(
-                    backLight,
-                    BattleVfxShape.Bubble,
-                    at,
-                    new Vector2(320f, 360f),
+                Shaft(
+                    new Vector2(at.x, FrontLayer.rect.yMax + 40f),
+                    feet,
                     color,
-                    1.6f,
-                    0.8f,
-                    CoreBright
+                    130f,
+                    0.18f,
+                    0.5f
                 );
-                Bloom(
-                    frontLight,
-                    BattleVfxShape.Bubble,
-                    at,
-                    new Vector2(320f, 360f),
-                    new Color(color.r, color.g, color.b, 0.3f),
-                    1.6f,
-                    0.8f,
-                    1f
+                StartCoroutine(
+                    After(
+                        0.18f,
+                        () =>
+                        {
+                            Barrier(at, new Vector2(320f, 360f), color, 1.6f, 0f, 0.8f, 0.4f);
+                            Bloom(
+                                frontLight,
+                                BattleVfxShape.Crest,
+                                at + new Vector2(110f, 0f),
+                                new Vector2(180f, 220f),
+                                Color.white,
+                                0.6f,
+                                0.5f,
+                                CoreBright
+                            );
+                            RisingLines(feet, Gold, 14, 200f, 0.6f);
+                            Ring(backLight, feet, color, 420f, 0.6f, floor: true);
+                            Pool(feet, color, 420f, 0.5f, 0.7f);
+                            Illuminate(at, color, 0.8f, 320f, 0.4f, 0.6f);
+                            Shake(0.1f, Vector2.zero);
+                        }
+                    )
                 );
-                Bloom(
-                    frontLight,
-                    BattleVfxShape.Crest,
-                    at + new Vector2(110f, 0f),
-                    new Vector2(180f, 220f),
-                    Color.white,
-                    0.6f,
-                    0.5f,
-                    CoreBright
-                );
-                Ring(backLight, feet, color, 420f, 0.6f, floor: true);
                 DustInLight(at + Vector2.up * 220f, Gold, -1f);
-                Illuminate(at, color, 0.8f, 320f, 0.4f, 0.6f);
-                Shake(0.1f, Vector2.zero);
                 land(index);
             }
-            yield return Wait(0.7f);
+            yield return Wait(0.9f);
         }
 
         // --- Statuses that act later -----------------------------------------------------------
 
         /// <summary>
-        /// A status working on a character at the start of a turn: a burn licks at it, poison
-        /// bubbles up, a wound bleeds, or regen lets leaves rise. <paramref name="land"/> is
-        /// called as it takes effect.
+        /// A status working on a character at the start of a turn, each its own and none the card
+        /// that put it there played again (doc/art/direction.md, effects that act later): a burn
+        /// licks at it, smoke curling up behind and its light flickering on it; poison wells up in
+        /// bubbles and drips off it heavily, a sickly light pulsing in it; a wound spurts dark
+        /// drops that fall, with a small red glint; regen breathes a quiet warmth into it, a pool
+        /// on the floor and a few motes rising like dew. <paramref name="land"/> is called as it
+        /// takes effect.
         /// </summary>
         public IEnumerator StatusTick(CardStatus status, RectTransform target, Action land)
         {
@@ -3557,10 +3933,36 @@ namespace Baryonyx.Combat.Presentation
                 yield break;
             }
             var at = Center(FrontLayer, target);
+            var feet = Feet(FrontLayer, target);
             switch (status)
             {
                 case CardStatus.Burn:
                     Licks(target, 6, 0.7f);
+                    Spray(
+                        backSmoke,
+                        at + Vector2.up * 40f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Smoke,
+                            Bright = 0.35f,
+                            From = new Color(0.25f, 0.2f, 0.18f, 0.5f),
+                            To = new Color(0.25f, 0.2f, 0.18f, 0.5f),
+                            Speed = new Vector2(30f, 70f),
+                            Direction = 90f,
+                            Spread = 30f,
+                            Life = new Vector2(0.7f, 1f),
+                            Size = new Vector2(60f, 100f),
+                            Grow = 0.4f,
+                            Shrink = 1.6f,
+                            Gravity = -60f,
+                            Drag = 0.8f,
+                            Spin = 20f,
+                            Hold = 0.3f,
+                            Area = 30f,
+                            Delay = new Vector2(0.1f, 0.3f),
+                        },
+                        3
+                    );
                     Illuminate(
                         at,
                         ColorOf(BattleSkillVfxKind.Fire),
@@ -3573,16 +3975,80 @@ namespace Baryonyx.Combat.Presentation
                     );
                     break;
                 case CardStatus.Poison:
-                    Bubbles(at, Venom, Violet, 8);
-                    Glow(frontLight, at, Venom, 200f, 0.4f, 0.4f);
+                    Bubbles(at, Venom, Violet, 6);
+                    Spray(
+                        frontLight,
+                        at + Vector2.down * 20f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Spark,
+                            Bright = ErodeBright,
+                            From = new Color(Venom.r, Venom.g, Venom.b, 0.9f),
+                            To = new Color(0.4f, 0.2f, 0.5f, 0f),
+                            Speed = new Vector2(10f, 40f),
+                            Direction = -90f,
+                            Spread = 40f,
+                            Life = new Vector2(0.5f, 0.8f),
+                            Size = new Vector2(6f, 10f),
+                            Aspect = 1.6f,
+                            Gravity = 500f,
+                            Drag = 3f,
+                            Area = 50f,
+                            Delay = new Vector2(0f, 0.3f),
+                        },
+                        7
+                    );
+                    Illuminate(at, Venom, 0.5f, 220f, 0.15f, 0.4f, spill: false, flicker: 0.6f);
                     break;
                 case CardStatus.Bleed:
-                    Drops(at, Blood, 10);
-                    Star(at, Blood, 140f, 0.14f);
+                    Spray(
+                        frontSmoke,
+                        at,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Chip,
+                            From = new Color(0.5f, 0.04f, 0.05f),
+                            To = new Color(0.3f, 0.02f, 0.03f, 0f),
+                            Speed = new Vector2(120f, 320f),
+                            Direction = 90f,
+                            Spread = 120f,
+                            Life = new Vector2(0.4f, 0.7f),
+                            Size = new Vector2(5f, 10f),
+                            Gravity = 1300f,
+                            Drag = 0.5f,
+                            Spin = 300f,
+                            Area = 24f,
+                        },
+                        10
+                    );
+                    Drops(at, Blood, 4);
+                    Star(at, Blood, 110f, 0.12f);
                     break;
                 case CardStatus.Regen:
-                    Spiral(Feet(FrontLayer, target), ColorOf(BattleSkillVfxKind.Heal), 6, 0.8f);
-                    Glow(backLight, at, ColorOf(BattleSkillVfxKind.Heal), 240f, 0.6f, 0.4f);
+                    var heal = ColorOf(BattleSkillVfxKind.Heal);
+                    Pool(feet, heal, 240f, 0.3f, 0.5f);
+                    SoftHalo(at, heal, 260f, 0f, 0.8f);
+                    Spray(
+                        frontLight,
+                        feet + Vector2.up * 60f,
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Spark,
+                            Bright = CoreBright,
+                            From = Color.Lerp(Color.white, heal, 0.4f),
+                            To = new Color(heal.r, heal.g, heal.b, 0f),
+                            Speed = new Vector2(30f, 80f),
+                            Direction = 90f,
+                            Spread = 30f,
+                            Life = new Vector2(0.6f, 1f),
+                            Size = new Vector2(5f, 9f),
+                            Gravity = -60f,
+                            Drag = 1f,
+                            Area = 60f,
+                            Delay = new Vector2(0f, 0.3f),
+                        },
+                        8
+                    );
                     break;
             }
             yield return Wait(0.12f);
@@ -3592,8 +4058,10 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// The blast sigil on <paramref name="marked"/> blowing up: it flares and swells, then every
-        /// enemy is caught in an explosion. <paramref name="land"/> is called with each enemy's index.
+        /// The blast sigil on <paramref name="marked"/> blowing up: motes are sucked into it as it
+        /// swells and spins up, its light flickering harder on everyone near; it burns white for an
+        /// instant, then every enemy is caught in an explosion. <paramref name="land"/> is called
+        /// with each enemy's index.
         /// </summary>
         public IEnumerator Detonate(
             RectTransform marked,
@@ -3620,12 +4088,15 @@ namespace Baryonyx.Combat.Presentation
                     {
                         float grow = 1f + 2.5f * EaseIn(k);
                         s.Holder.localScale = new Vector3(grow, grow, 1f);
-                        s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, -k * 500f);
+                        s.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, -k * k * 700f);
                         Show(s, Color.Lerp(color, Color.white, k), 1f, Eaten(k, 0.7f), CoreBright);
                     }
                 );
+                Gather(at, color, 14, 260f, 0.36f);
                 Illuminate(at, color, 0.8f, 400f, 0.3f, 0.2f, flicker: 0.5f);
-                yield return Wait(0.38f);
+                yield return Wait(0.36f);
+                Glow(frontLight, at, Color.white, 260f, 0.12f, 1f);
+                yield return Wait(0.02f);
             }
             ScreenFlash(new Color(1f, 0.8f, 0.5f), 0.25f);
             for (int i = 0; i < enemies.Count; i++)
@@ -3985,6 +4456,473 @@ namespace Baryonyx.Combat.Presentation
             );
         }
 
+        // --- Layered building blocks (vfx-authoring: four layers, each its own cover and time) --
+
+        // The strokes of a bolt jumping between two points: one discharge, then the same path lit
+        // again a tenth of a second later, weaker.
+        private static readonly (float[] times, float[] peaks) JumpStrokes = (
+            new[] { 0f, 0.09f },
+            new[] { 1f, 0.55f }
+        );
+
+        // The strokes of a bolt let fly at one enemy: the discharge and two restrikes.
+        private static readonly (float[] times, float[] peaks) BoltStrokes = (
+            new[] { 0f, 0.1f, 0.2f },
+            new[] { 1f, 0.65f, 0.45f }
+        );
+
+        /// <summary>
+        /// Lightning from <paramref name="from"/> to <paramref name="to"/> (its foot) as four
+        /// layers on one channel (one seed), the layers of <see cref="StormBolt"/> laid along any
+        /// line: the <paramref name="halo"/> of lit air, faint while the leader feels its way over
+        /// <paramref name="leader"/> s and swelling with each stroke; the afterimage, a thin
+        /// <paramref name="trace"/> left in the eye that breaks up last; the channel and its
+        /// branches; and the white-hot core, seen only at each of the <paramref name="strokes"/>,
+        /// which light the same path again. <paramref name="wander"/> caps how far it swings
+        /// sideways (px). The lights it throws come from <see cref="ChannelLights"/>.
+        /// </summary>
+        private void Channel(
+            Vector2 from,
+            Vector2 to,
+            Color halo,
+            Color trace,
+            float leader,
+            (float[] times, float[] peaks) strokes,
+            float wander = 360f
+        )
+        {
+            if (frontLight == null)
+                return;
+            // The bolt's foot is at 9% of its board's height and its top 4% from the top.
+            float height = Mathf.Max(140f, Vector2.Distance(from, to) / 0.87f);
+            var size = new Vector2(Mathf.Min(height * 0.62f, wander), height);
+            float seed = UnityEngine.Random.value;
+            float angle = Angle(from - to) - 90f;
+            float last = strokes.times[^1];
+            float lead = Mathf.Max(leader, 0.001f);
+            Shot Layer(float look, Color color)
+            {
+                var shot = Spawn(
+                    frontLight,
+                    BattleVfxShape.Lightning,
+                    to,
+                    size,
+                    color,
+                    new Vector2(0.5f, 0.09f)
+                );
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Lightning, look);
+                shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, angle);
+                return shot;
+            }
+            float Stage(float t) =>
+                t < leader
+                    ? 0.5f * t / lead
+                    : 0.5f + 0.5f * Mathf.Clamp01((t - leader) / (0.45f + last));
+            float Strokes(float t) => t < leader ? 0f : BlinkLight(t - leader, strokes);
+
+            float haloLife = leader + last + 0.4f;
+            Animate(
+                Layer(BoltHalo, halo),
+                haloLife,
+                (s, k) =>
+                {
+                    float t = k * haloLife;
+                    float light = t < leader ? 0.35f : 0.2f + Strokes(t);
+                    Show(
+                        s,
+                        new Color(halo.r, halo.g, halo.b, Mathf.Clamp01(light)),
+                        Stage(t),
+                        Eaten(k, 0.6f),
+                        1f + Strokes(t)
+                    );
+                }
+            );
+            float traceLife = leader + last + 0.7f;
+            Animate(
+                Layer(BoltTrace, trace),
+                traceLife,
+                (s, k) =>
+                {
+                    float t = k * traceLife;
+                    // Left in the eye after the last stroke, broken up as it fades.
+                    float since = Mathf.Max(0f, t - leader - last);
+                    float alpha = t < leader ? 0f : 0.75f * Mathf.Exp(-since / 0.3f);
+                    Show(
+                        s,
+                        new Color(trace.r, trace.g, trace.b, alpha),
+                        Stage(t),
+                        Eaten(since / (traceLife - leader - last), 0.25f)
+                    );
+                }
+            );
+            float channelLife = leader + last + 0.3f;
+            Animate(
+                Layer(BoltChannel, halo),
+                channelLife,
+                (s, k) =>
+                {
+                    float t = k * channelLife;
+                    float alpha = t < leader ? 0.8f : Mathf.Clamp01(0.12f + Strokes(t));
+                    Show(
+                        s,
+                        new Color(halo.r, halo.g, halo.b, alpha),
+                        Stage(t),
+                        Eaten(k, 0.55f),
+                        1f + 1.5f * Strokes(t)
+                    );
+                }
+            );
+            float coreLife = leader + last + 0.2f;
+            Animate(
+                Layer(BoltCore, Color.white),
+                coreLife,
+                (s, k) =>
+                {
+                    float t = k * coreLife;
+                    float light = Strokes(t);
+                    Show(
+                        s,
+                        new Color(1f, 1f, 1f, Mathf.Clamp01(light * 1.5f)),
+                        Stage(t),
+                        0f,
+                        1f + 6f * light
+                    );
+                }
+            );
+        }
+
+        /// <summary>
+        /// The light of a <see cref="Channel"/>, in real time: at each stroke the characters along
+        /// it are lit from the whole path, the one it meets at <paramref name="to"/> whiter and
+        /// nearer, and the floor at <paramref name="feet"/> in a pool of light, each as bright as
+        /// the stroke times <paramref name="power"/>. Only the first stroke lights the background.
+        /// </summary>
+        private IEnumerator ChannelLights(
+            Vector2 from,
+            Vector2 to,
+            Vector2 feet,
+            Color color,
+            float leader,
+            (float[] times, float[] peaks) strokes,
+            float power
+        )
+        {
+            var middle = Vector2.Lerp(from, to, 0.5f);
+            float reach = Vector2.Distance(from, to) * 0.6f + 300f;
+            int next = 0;
+            for (
+                float t = 0f;
+                next < strokes.times.Length;
+                t += Mathf.Min(Time.unscaledDeltaTime, 0.1f)
+            )
+            {
+                while (next < strokes.times.Length && t >= leader + strokes.times[next])
+                {
+                    float peak = strokes.peaks[next] * power;
+                    Illuminate(middle, color, 1.3f * peak, reach, 0.02f, 0.16f, spill: false);
+                    // The first stroke brings the background a little out of the dark, too.
+                    if (next == 0)
+                        Illuminate(middle, color, 0.4f * peak, reach * 0.6f, 0.02f, 0.2f);
+                    Illuminate(to, Color.white, 1.1f * peak, 300f, 0.02f, 0.12f, spill: false);
+                    FlashPool(feet, color, 520f * Mathf.Sqrt(power), 0.6f * peak);
+                    next++;
+                }
+                yield return null;
+            }
+        }
+
+        /// <summary>A pool of light laid on the floor at <paramref name="feet"/> by a flash, <paramref name="peak"/> bright, gone in a fifth of a second.</summary>
+        private void FlashPool(Vector2 feet, Color color, float size, float peak)
+        {
+            if (backLight == null)
+                return;
+            var pool = Spawn(backLight, BattleVfxShape.Glow, feet, new Vector2(size, size), color);
+            pool.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
+            Animate(
+                pool,
+                0.24f,
+                (s, k) =>
+                {
+                    float t = k * 0.24f;
+                    float alpha = peak * (t < 0.03f ? 1f : 1f - EaseIn((t - 0.03f) / 0.21f));
+                    Show(s, new Color(color.r, color.g, color.b, alpha), k, 0f);
+                }
+            );
+        }
+
+        // The shader's _Rich for each layer of a shaft of light (drawn on a beam).
+        private const float ShaftBody = 1f;
+        private const float ShaftHaze = 2f;
+        private const float ShaftCore = 3f;
+        private const float ShaftTrace = 4f;
+
+        /// <summary>
+        /// A shaft of light from <paramref name="from"/> to <paramref name="to"/>,
+        /// <paramref name="width"/> px wide, drawn in over <paramref name="draw"/> s and peaking
+        /// as it arrives, as four layers on one seed, each its own width and time (vfx-authoring,
+        /// a line of light): behind the characters the haze (twice as wide, faint, the longest)
+        /// and the body (the shaft seen in the dust); in front of them the white core (a third as
+        /// wide, only at the peak) and the afterimage (a thin trace of the colour left once the
+        /// core is gone, breaking up last). So it passes through what it strikes, and its colour
+        /// lives in the haze and the trace while only its core burns white.
+        /// <paramref name="seconds"/> is how long the body lasts; a soft light with no hot core
+        /// passes a <paramref name="core"/> of 0.
+        /// </summary>
+        private void Shaft(
+            Vector2 from,
+            Vector2 to,
+            Color color,
+            float width,
+            float draw,
+            float seconds,
+            float core = 1f
+        )
+        {
+            float length = Vector2.Distance(from, to);
+            float angle = Angle(to - from);
+            float seed = UnityEngine.Random.value;
+            float lead = Mathf.Max(draw, 0.001f);
+            Shot Layer(RectTransform layer, float look, float wide, Color tint)
+            {
+                if (layer == null)
+                    return null;
+                var shot = Spawn(
+                    layer,
+                    BattleVfxShape.Beam,
+                    from,
+                    new Vector2(length, wide),
+                    tint,
+                    new Vector2(0f, 0.5f)
+                );
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Beam, look);
+                shot.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, angle);
+                return shot;
+            }
+            // The beam's shape is drawn in over the first quarter of its progress.
+            float Drawn(float t) => t < draw ? 0.25f * t / lead : 0.25f + 0.4f * (t - draw);
+            void Run(
+                Shot shot,
+                float life,
+                Func<float, Color> tint,
+                Func<float, float> eaten,
+                float bright
+            )
+            {
+                if (shot == null)
+                    return;
+                Animate(
+                    shot,
+                    life,
+                    (s, k) =>
+                    {
+                        float t = k * life;
+                        Show(s, tint(t), Drawn(t), eaten(t), bright);
+                    }
+                );
+            }
+            float hazeLife = draw + seconds * 1.4f;
+            Run(
+                Layer(backLight, ShaftHaze, width * 2.2f, color),
+                hazeLife,
+                t => new Color(
+                    color.r,
+                    color.g,
+                    color.b,
+                    0.55f * Mathf.Min(1f, t / (draw + 0.06f))
+                ),
+                t => Eaten(t / hazeLife, 0.45f),
+                1f
+            );
+            // A soft light (no core) has no hot shaft either: only its haze and trace.
+            float bodyLife = draw + seconds;
+            Run(
+                core > 0f ? Layer(backLight, ShaftBody, width, color) : null,
+                bodyLife,
+                t => color,
+                t => Eaten(t / bodyLife, 0.4f),
+                CoreBright
+            );
+            float coreLife = draw + 0.14f;
+            Run(
+                core > 0f ? Layer(frontLight, ShaftCore, width * 0.34f, Color.white) : null,
+                coreLife,
+                t => new Color(
+                    1f,
+                    1f,
+                    1f,
+                    core * (t < draw ? 0.6f : Mathf.Exp(-(t - draw) / 0.05f))
+                ),
+                t => 0f,
+                2.4f
+            );
+            float traceLife = draw + seconds * 1.6f;
+            Run(
+                Layer(frontLight, ShaftTrace, width * 0.3f, color),
+                traceLife,
+                t => new Color(
+                    color.r,
+                    color.g,
+                    color.b,
+                    t < draw ? 0f : 0.8f * Mathf.Exp(-(t - draw) / (seconds * 0.6f))
+                ),
+                t => Eaten(Mathf.Max(0f, t - draw) / (traceLife - draw), 0.2f),
+                1.4f
+            );
+        }
+
+        /// <summary>
+        /// A heavy gas (poison, shadow) let out at <paramref name="at"/> that sinks to the floor at
+        /// <paramref name="feet"/> and creeps out along it, <paramref name="width"/> px across,
+        /// for about <paramref name="seconds"/>, in four layers from the back: the dark body, broad
+        /// sheets lying on the floor and creeping slowly out, covering about half; billows rolling
+        /// down off the target, heavier than air, sinking as they swell; thin tatters running fast
+        /// along the floor, mostly holes; and the <paramref name="light"/> in the gas, dim spots
+        /// glowing here and there (none when its alpha is 0). The gas is drawn darker by
+        /// <paramref name="dark"/> (0 to 1).
+        /// </summary>
+        private void Gas(
+            Vector2 at,
+            Vector2 feet,
+            Color body,
+            Color light,
+            float width,
+            float seconds,
+            float dark
+        )
+        {
+            for (int side = 0; side < 2; side++)
+                Spray(
+                    backSmoke,
+                    feet + Vector2.up * 6f,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = Mathf.Lerp(0.55f, 0.22f, dark),
+                        From = new Color(body.r, body.g, body.b, 0.9f),
+                        To = new Color(body.r, body.g, body.b, 0.9f),
+                        Speed = new Vector2(30f, 110f),
+                        Direction = side == 0 ? 0f : 180f,
+                        Spread = 30f,
+                        Life = new Vector2(seconds * 0.8f, seconds),
+                        Size = new Vector2(0.8f, 1.1f) * width,
+                        Aspect = 0.32f,
+                        Grow = 0.4f,
+                        Shrink = 1.5f,
+                        Drag = 1.6f,
+                        Level = true,
+                        Hold = 0.45f,
+                        Area = 30f,
+                    },
+                    3
+                );
+            Spray(
+                frontSmoke,
+                Vector2.Lerp(at, feet, 0.5f),
+                new Burst
+                {
+                    Shape = BattleVfxShape.Smoke,
+                    Bright = Mathf.Lerp(0.7f, 0.35f, dark),
+                    From = new Color(body.r, body.g, body.b, 0.7f),
+                    To = new Color(body.r, body.g, body.b, 0.7f),
+                    Speed = new Vector2(40f, 120f),
+                    Direction = -90f,
+                    Spread = 200f,
+                    Life = new Vector2(seconds * 0.5f, seconds * 0.8f),
+                    Size = new Vector2(0.4f, 0.6f) * width,
+                    Aspect = 0.7f,
+                    Grow = 0.5f,
+                    Shrink = 1.4f,
+                    Gravity = 70f,
+                    Drag = 3f,
+                    Spin = 20f,
+                    Hold = 0.4f,
+                    Area = 40f,
+                    Delay = new Vector2(0f, 0.25f),
+                },
+                6
+            );
+            for (int side = 0; side < 2; side++)
+                Spray(
+                    frontSmoke,
+                    feet,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = Mathf.Lerp(0.85f, 0.45f, dark),
+                        From = new Color(body.r, body.g, body.b, 0.5f),
+                        To = new Color(body.r, body.g, body.b, 0.5f),
+                        Speed = new Vector2(160f, 340f),
+                        Direction = side == 0 ? 0f : 180f,
+                        Spread = 16f,
+                        Life = new Vector2(0.5f, 0.8f),
+                        Size = new Vector2(0.35f, 0.5f) * width,
+                        Aspect = 0.22f,
+                        Shrink = 1.6f,
+                        Drag = 3f,
+                        Level = true,
+                        Hold = 0.2f,
+                        Area = 24f,
+                        Delay = new Vector2(0.05f, 0.35f),
+                    },
+                    3
+                );
+            if (light.a <= 0f)
+                return;
+            Spray(
+                backLight,
+                feet + Vector2.up * 24f,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Glow,
+                    From = new Color(light.r, light.g, light.b, light.a),
+                    To = new Color(light.r, light.g, light.b, 0f),
+                    Speed = new Vector2(10f, 50f),
+                    Direction = 0f,
+                    Spread = 360f,
+                    Life = new Vector2(0.35f, 0.8f),
+                    Size = new Vector2(0.2f, 0.4f) * width,
+                    Aspect = 0.55f,
+                    Area = width * 0.3f,
+                    Delay = new Vector2(0f, seconds * 0.5f),
+                },
+                7
+            );
+        }
+
+        /// <summary>
+        /// Thin lines of light, 4 to 6 px, born round <paramref name="feet"/> one after another
+        /// over <paramref name="seconds"/>, rising faster as they go and each gone within a third
+        /// of a second (an aura, a heal rising): half behind the target and half in front, so they
+        /// rise round it.
+        /// </summary>
+        private void RisingLines(Vector2 feet, Color color, int count, float width, float seconds)
+        {
+            for (int side = 0; side < 2; side++)
+                Spray(
+                    side == 0 ? backLight : frontLight,
+                    feet + Vector2.up * 60f,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Streak,
+                        Bright = CoreBright,
+                        From = Color.Lerp(Color.white, color, 0.35f),
+                        To = new Color(color.r, color.g, color.b, 0f),
+                        Speed = new Vector2(60f, 180f),
+                        Direction = 90f,
+                        Spread = 4f,
+                        Life = new Vector2(0.22f, 0.36f),
+                        Size = new Vector2(4f, 6f),
+                        Stretch = 0.22f,
+                        Gravity = -1500f,
+                        Area = width * 0.5f,
+                        Delay = new Vector2(0f, seconds),
+                    },
+                    (count + 1 - side) / 2
+                );
+        }
+
         /// <summary>
         /// A column of light (or of fire) standing on <paramref name="feet"/>: rising out of the
         /// floor, or coming <paramref name="down"/> from above onto it; <paramref name="fast"/>
@@ -4323,32 +5261,6 @@ namespace Baryonyx.Combat.Presentation
                 );
             }
         }
-
-        /// <summary>Dark clouds rolling in at <paramref name="at"/> and staying a while (behind the light).</summary>
-        private void Clouds(Vector2 at, int count, float seconds) =>
-            Spray(
-                backSmoke,
-                at,
-                new Burst
-                {
-                    Shape = BattleVfxShape.Smoke,
-                    From = new Color(0.16f, 0.15f, 0.22f, 0.9f),
-                    To = new Color(0.1f, 0.1f, 0.15f, 0.9f),
-                    Speed = new Vector2(20f, 90f),
-                    Direction = 0f,
-                    Spread = 360f,
-                    Life = new Vector2(seconds * 0.8f, seconds),
-                    Size = new Vector2(260f, 420f),
-                    Aspect = 0.5f,
-                    Grow = 0.5f,
-                    Shrink = 1.4f,
-                    Drag = 1.5f,
-                    Spin = 8f,
-                    Hold = 0.45f,
-                    Area = 260f,
-                },
-                count
-            );
 
         // --- The thundercloud ------------------------------------------------------------------
 

@@ -9,9 +9,14 @@
 // - 作り込んだ見た目（_Rich）：1にすると、現実の見え方で描く。氷の槍・棘・破片を透ける氷、霜を床に広がる氷の板、
 //   煙を陰影のある煙・土ぼこり・湯気、亀裂を影で見える割れ目、竜巻を風で流れる雪、
 //   斬撃・十字の斬撃を細い筋と短い残像、光線を塵で見える光の柱として描く。
+//   炎の塊・炎の舌・火球を冷えた先端の煤の覆いを持つ炎、光の柱を塵で見える光の柱（2で火柱）、
+//   ドームと泡を結界の膜として描く。
 //   稲妻は値で層を選ぶ（1 芯、2 通り道と枝・先駆放電、3 にじみ、4 残像）。
+//   斬撃の弧と光線は2以上で層だけを描く（2 にじみ、3 芯、4 残像）。亀裂は2で踏まれて割れる床、3で割れるガラス。
 //   煙は2以上で雷雲の層になる（2 盛り上がり、3 暗い本体、4 ちぎれ雲、5 中の稲光の光）。
 //   雷雲の層は明るさの倍率を全体に掛けず、中の稲光の強さとして使う。
+// - どの形も板の端の手前で0にし、光と覆いがある所だけに8ビットの1段に満たないノイズ（ディザ）を足して、
+//   広く薄いにじみの帯（バンディング）を散らす。
 //   乗算済みアルファ（One OneMinusSrcAlpha）用で、アルファで奥を暗くするか覆い、色で光を足す。
 //   マテリアルの複製に、合成と一緒に設定する。
 Shader "Baryonyx/Combat/Battle Vfx Shape"
@@ -154,7 +159,10 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_STAR)
                 shape = ShapeStar(s);
                 #elif defined(_SHAPE_SLASHARC)
-                if (_Rich > 0.5)
+                // A sword arc's layers on boards of their own (2 halo, 3 core, 4 afterimage).
+                if (_Rich > 1.5)
+                    shape = half4(SlashArcLayer(s, _Rich), 0);
+                else if (_Rich > 0.5)
                     shape = ShapeRichSlashArc(s);
                 else
                     shape = ShapeSlashArc(s);
@@ -164,7 +172,10 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeSlashCross(s);
                 #elif defined(_SHAPE_FIREBALL)
-                shape = ShapeFireball(s);
+                if (_Rich > 0.5)
+                    shape = FlameRich(FireballLook(s));
+                else
+                    shape = ShapeFireball(s);
                 #elif defined(_SHAPE_ICESPEAR)
                 if (_Rich > 0.5)
                     shape = ShapeClearIceSpear(s);
@@ -176,9 +187,17 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeLightning(s);
                 #elif defined(_SHAPE_PILLAR)
-                shape = ShapePillar(s);
+                if (_Rich > 1.5)
+                    shape = ShapeFirePillar(s);
+                else if (_Rich > 0.5)
+                    shape = ShapeDustPillar(s);
+                else
+                    shape = ShapePillar(s);
                 #elif defined(_SHAPE_DOME)
-                shape = ShapeDome(s);
+                if (_Rich > 0.5)
+                    shape = ShapeRichDome(s);
+                else
+                    shape = ShapeDome(s);
                 #elif defined(_SHAPE_MAGICCIRCLE)
                 // The layered circle's parts, each on a board of its own (BattleSkillVfx.HotCircle).
                 if (_Rich > 3.5)
@@ -200,9 +219,15 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_SHARD)
                 shape = ShapeShard(s);
                 #elif defined(_SHAPE_FLAME)
-                shape = ShapeFlame(s);
+                if (_Rich > 0.5)
+                    shape = FlameRich(FlameLook(s));
+                else
+                    shape = ShapeFlame(s);
                 #elif defined(_SHAPE_FLAMETONGUE)
-                shape = ShapeFlameTongue(s);
+                if (_Rich > 0.5)
+                    shape = FlameRich(FlameTongueLook(s));
+                else
+                    shape = ShapeFlameTongue(s);
                 #elif defined(_SHAPE_SMOKE)
                 if (_Rich > 1.5)
                 {
@@ -241,14 +266,19 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 #elif defined(_SHAPE_CUTINSTREAKS)
                 shape = ShapeCutInStreaks(s);
                 #elif defined(_SHAPE_BEAM)
-                if (_Rich > 0.5)
+                // A shaft's layers on boards of their own (2 halo, 3 core, 4 afterimage).
+                if (_Rich > 1.5)
+                    shape = half4(BeamLayer(s, _Rich), 0);
+                else if (_Rich > 0.5)
                     shape = ShapeRichBeam(s);
                 else
                     shape = ShapeBeam(s);
                 #elif defined(_SHAPE_ARROW)
                 shape = ShapeArrow(s);
                 #elif defined(_SHAPE_CRACK)
-                if (_Rich > 1.5)
+                if (_Rich > 2.5)
+                    shape = ShapeGlassCrack(s);
+                else if (_Rich > 1.5)
                     shape = ShapeRupture(s);
                 else if (_Rich > 0.5)
                     shape = ShapeFissure(s);
@@ -260,7 +290,10 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 else
                     shape = ShapeTornado(s);
                 #elif defined(_SHAPE_BUBBLE)
-                shape = ShapeBubble(s);
+                if (_Rich > 0.5)
+                    shape = ShapeBarrierBubble(s);
+                else
+                    shape = ShapeBubble(s);
                 #elif defined(_SHAPE_LEAF)
                 shape = ShapeLeaf(s);
                 #elif defined(_SHAPE_CHEVRON)
@@ -277,6 +310,15 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 shape = ShapeGlow(s);
                 #endif
 
+                // Every shape is gone before the edge of its board, so the square never shows (the
+                // cut-in's streaks tile, and the magic circle's veil stands on its bottom edge).
+                #if !defined(_SHAPE_CUTINSTREAKS) && !defined(_SHAPE_MAGICCIRCLE)
+                float2 side = abs(s.p);
+                half edge = 1 - smoothstep(0.93, 1.0, max(side.x, side.y));
+                shape.a *= edge;
+                shape.rgb *= lerp(1, edge, step(0.5, _Rich));
+                #endif
+
                 half fade = IN.color.a * _Color.a;
 
                 #ifdef UNITY_UI_CLIP_RECT
@@ -287,6 +329,12 @@ Shader "Baryonyx/Combat/Battle Vfx Shape"
                 // A premultiplied shape's light thins with it too, not only its cover.
                 half3 rgb = shape.rgb * (_Intensity * bright) * lerp(1, fade, step(0.5, _Rich));
                 half4 color = half4(rgb, shape.a * fade);
+
+                // A faint noise of under one step of 8 bits, only where there is light or cover, so
+                // wide, soft glows and veils do not band (interleaved gradient noise).
+                float dither = frac(52.9829189 * frac(dot(IN.vertex.xy, float2(0.06711056, 0.00583715)))) - 0.5;
+                color.rgb = max(0, color.rgb + dither / 255.0 * saturate(max(color.r, max(color.g, color.b)) * 64));
+                color.a = saturate(color.a + dither / 255.0 * saturate(color.a * 64));
 
                 #ifdef UNITY_UI_ALPHACLIP
                 clip(color.a - 0.001);

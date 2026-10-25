@@ -48,9 +48,9 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// An enemy landing on the field: dust kicked up at its feet behind it and a little in
-        /// front, a faint ring along the floor and a small knock of the stage. A
-        /// <paramref name="boss"/> lands heavily: more dust, a wider ring, a red glow rising behind
-        /// it and a harder knock.
+        /// front, dust driven out along the floor with a little grit, and a small knock of the
+        /// stage. A <paramref name="boss"/> lands heavily: more dust driven further, a red glow
+        /// rising behind it and a harder knock.
         /// </summary>
         public void Arrive(RectTransform target, bool boss)
         {
@@ -68,14 +68,9 @@ namespace Baryonyx.Combat.Presentation
                 boss ? 0.9f : 0.6f,
                 90f
             );
-            Ring(
-                backLight,
-                feet,
-                new Color(1f, 0.95f, 0.85f, 0.5f),
-                boss ? width * 2.6f : width * 1.6f,
-                boss ? 0.55f : 0.4f,
-                floor: true
-            );
+            // The weight landing drives dust out along the floor and flicks up grit, as a real
+            // landing does; no ring of light, which a landing does not make.
+            Shockwave(feet, boss ? width * 2.6f : width * 1.6f, boss ? 0.9f : 0.3f);
             if (!boss)
             {
                 Shake(0.12f, Vector2.down);

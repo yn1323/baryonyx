@@ -89,9 +89,18 @@ namespace Baryonyx.Combat.Presentation
                 Motes(art, min, size, direction, hold, time, boss);
             }
 
-            // The light of the burning body on the background and on those near.
+            // The light of the burning body: a soft halo on the background close round it (not
+            // one wide disc), a pool on the floor under it, and its light on those near.
             float reach = Mathf.Max(size.x, size.y);
-            Glow(backLight, center, CrumbleHot, reach * 1.2f, hold + time, boss ? 0.32f : 0.22f);
+            Glow(backLight, center, CrumbleHot, reach * 0.9f, hold + time, boss ? 0.26f : 0.18f);
+            BlowPool(
+                feet,
+                CrumbleHot,
+                reach * 1.6f,
+                boss ? 0.6f : 0.45f,
+                hold + time * 0.2f,
+                time * 0.8f
+            );
             Illuminate(center, CrumbleHot, boss ? 1f : 0.75f, reach * 1.3f, hold, time * 0.8f);
             // Dust thrown out along the floor both ways as it falls apart.
             foreach (float side in new[] { 0f, 180f })

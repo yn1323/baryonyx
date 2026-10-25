@@ -1064,7 +1064,8 @@ namespace Baryonyx.Combat.Presentation
                     new Vector2(0.85f, 0.5f),
                     0.26f,
                     90f,
-                    color
+                    color,
+                    RichMaterialOf(BattleVfxShape.Fireball)
                 );
                 var weight = land(i);
                 Explosion(targets[i], at, weight);
@@ -1122,6 +1123,8 @@ namespace Baryonyx.Combat.Presentation
                 Shake(Weighted(0.52f, weight), Vector2.right);
                 HotFlash(at, IceLight, Weighted(200f, weight));
                 ClearIce(targets[i], at, weight);
+                // The air chilled by the ice sinks and spills along the floor as it breaks.
+                ColdMist(Feet(FrontLayer, targets[i]), 300f, 1.3f, 0.7f, IceBreakAt - 0.1f);
                 if (big)
                     Punch(at, 0.035f);
             }
@@ -1130,9 +1133,14 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// Luka's thunder (a cut-in skill on every enemy), violent: the sky goes dark and a bolt
-        /// strikes each enemy in turn, striking again in new shapes, with crackles running round
-        /// the target, a ring on the floor and a yellow light. Only the first strike flashes.
+        /// Luka's thunder (a cut-in skill on every enemy), violent, as cloud-to-ground lightning
+        /// strikes (doc/catalog/skills/skill-thunder.md#演出の時間設計): the sky goes dark and,
+        /// enemy by enemy, a stepped leader forks down from above the screen, the channel it joins
+        /// flashes white and the same channel strikes again twice, weaker (<see cref="Bolt"/>);
+        /// each stroke lights everyone from the channel and the floor round its foot. Where it
+        /// meets the ground, sparks splash, dust is blown out low both ways, a scorch is left and
+        /// thin smoke rises from it after; small sparks keep running over the target. Only the first
+        /// strike flashes the screen; thunder rolls after the last.
         /// </summary>
         private IEnumerator Thunder(
             RectTransform caster,
@@ -1150,8 +1158,9 @@ namespace Baryonyx.Combat.Presentation
                 var feet = Feet(FrontLayer, targets[i]);
                 var at = Center(FrontLayer, targets[i]);
                 Bolt(feet);
+                yield return Wait(StormLeader);
                 var weight = land(i);
-                Star(at, color, 300f, 0.26f);
+                StartCoroutine(StrokeLights(new Vector2(at.x, at.y + 260f), feet));
                 FloorMark(
                     BattleVfxShape.Scorch,
                     feet,
@@ -1161,17 +1170,35 @@ namespace Baryonyx.Combat.Presentation
                     1.4f,
                     flat: false
                 );
-                Pool(feet, color, 420f, 0.1f, 0.5f);
-                Illuminate(at, Color.Lerp(color, Color.white, 0.3f), 1f, 460f, 0.12f, 0.45f);
-                Sparks(at, color, 22, 1.1f, Vector2.down);
+                Sparks(feet + Vector2.up * 16f, color, 22, 1.1f, Vector2.up);
+                DustKick(feet, Vector2.right, 220f);
+                DustKick(feet, Vector2.left, 220f);
                 StartCoroutine(Crackle(targets[i], violet));
-                Puffs(
+                // Thin smoke off the scorch once the strokes are over.
+                Spray(
                     backSmoke,
-                    feet + Vector2.up * 30f,
-                    new Color(0.12f, 0.1f, 0.14f, 0.55f),
-                    3,
-                    60f,
-                    1.1f
+                    feet + Vector2.up * 16f,
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Smoke,
+                        Bright = 0.6f,
+                        From = new Color(0.22f, 0.2f, 0.24f, 0.4f),
+                        To = new Color(0.22f, 0.2f, 0.24f, 0.4f),
+                        Speed = new Vector2(30f, 90f),
+                        Direction = 90f,
+                        Spread = 30f,
+                        Life = new Vector2(0.7f, 1.1f),
+                        Size = new Vector2(50f, 90f),
+                        Aspect = 1.6f,
+                        Grow = 0.4f,
+                        Shrink = 1.7f,
+                        Gravity = -50f,
+                        Drag = 1f,
+                        Hold = 0.3f,
+                        Delay = new Vector2(0.25f, 0.5f),
+                        Area = 40f,
+                    },
+                    3
                 );
                 if (i == 0)
                 {
@@ -1183,13 +1210,17 @@ namespace Baryonyx.Combat.Presentation
                 Shake(Weighted(0.42f, weight), Vector2.down);
                 yield return Wait(0.17f);
             }
-            yield return Wait(0.24f);
+            StartCoroutine(Rumble());
+            yield return Wait(0.3f);
         }
 
         /// <summary>
-        /// Mina's heal, warm and calm: a soft green circle under her, then a pillar of light rises
-        /// behind the ally, sparkles drift up in front, and a gentle green light settles on the ally
-        /// and the floor. No shake, stop nor screen flash.
+        /// Mina's heal, warm and calm, its light rising from the ground to the body in order
+        /// (doc/catalog/skills/skill-heal.md#演出の時間設計): a soft green circle under her; then
+        /// under the ally a pool of light spreads on the floor first, a shaft of light rises
+        /// slowly round the ally (<see cref="Pillar"/>), motes drift up at different speeds as it
+        /// lands, and last a soft halo settles on the body and fades slowest. No shake, stop nor
+        /// screen flash.
         /// </summary>
         private IEnumerator Heal(
             RectTransform caster,
@@ -1205,34 +1236,60 @@ namespace Baryonyx.Combat.Presentation
             {
                 var feet = Feet(FrontLayer, targets[i]);
                 var at = Center(FrontLayer, targets[i]);
-                Pillar(feet);
+                Pool(feet, color, 380f, 0.5f, 0.7f);
                 Ring(backLight, feet, color, 360f, 0.7f, floor: true);
-                Pool(feet, color, 380f, 0.5f, 0.6f);
-                Illuminate(at, Color.Lerp(color, gold, 0.3f), 0.75f, 300f, 0.5f, 0.6f);
+                Pillar(feet);
                 yield return Wait(0.14f);
                 land(i);
+                // Slow motes and quicker sparkles, so the rise is never one even drift.
+                Spray(
+                    frontLight,
+                    feet + new Vector2(0f, 30f),
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Spark,
+                        Bright = ErodeBright,
+                        From = new Color(0.85f, 1f, 0.85f),
+                        To = new Color(color.r, color.g, color.b, 0f),
+                        Speed = new Vector2(20f, 70f),
+                        Direction = 90f,
+                        Spread = 40f,
+                        Life = new Vector2(0.9f, 1.5f),
+                        Size = new Vector2(6f, 12f),
+                        Gravity = -60f,
+                        Drag = 0.5f,
+                        Area = 80f,
+                        Delay = new Vector2(0f, 0.4f),
+                    },
+                    16
+                );
                 Spray(
                     frontLight,
                     feet + new Vector2(0f, 40f),
                     new Burst
                     {
                         Shape = BattleVfxShape.Sparkle,
+                        Bright = CoreBright,
                         From = Color.white,
                         To = new Color(gold.r, gold.g, gold.b, 0f),
-                        Speed = new Vector2(50f, 200f),
+                        Speed = new Vector2(80f, 220f),
                         Direction = 90f,
-                        Spread = 50f,
-                        Life = new Vector2(0.6f, 1.2f),
-                        Size = new Vector2(16f, 40f),
+                        Spread = 40f,
+                        Life = new Vector2(0.5f, 0.9f),
+                        Size = new Vector2(14f, 34f),
                         Shrink = 0.2f,
-                        Gravity = -140f,
+                        Gravity = -160f,
                         Spin = 160f,
-                        Area = 70f,
+                        Area = 60f,
+                        Delay = new Vector2(0f, 0.2f),
                     },
-                    22
+                    12
                 );
+                // Last, the body is wrapped in a soft halo that fades slowest.
+                StartCoroutine(After(0.12f, () => Glow(backLight, at, Color.Lerp(color, gold, 0.3f), 300f, 0.9f, 0.45f)));
+                Illuminate(at, Color.Lerp(color, gold, 0.3f), 0.75f, 300f, 0.5f, 0.7f);
             }
-            yield return Wait(0.3f);
+            yield return Wait(0.35f);
         }
 
         /// <summary>
@@ -1467,7 +1524,14 @@ namespace Baryonyx.Combat.Presentation
             var shot = Spawn(frontLight, shape, from, size, color, head);
             if (material != null)
                 shot.Image.material = material;
+            bool fire = shape == BattleVfxShape.Fireball;
+            // The halo of hot air round a fireball, drawn apart from its body so it can be wider,
+            // dimmer and slower to fade than the white-hot head.
+            Shot halo = null;
+            if (fire && backLight != null)
+                halo = Spawn(backLight, BattleVfxShape.Glow, from, size * 0.9f, color);
             float trail = 0f;
+            float soot = 0f;
             var last = from;
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
@@ -1506,18 +1570,59 @@ namespace Baryonyx.Combat.Presentation
                         2
                     );
                 }
+                if (halo != null)
+                {
+                    halo.Holder.anchoredPosition = position - heading.normalized * (size.x * 0.12f);
+                    Show(halo, new Color(color.r, color.g, color.b, 0.4f + 0.1f * flicker), k, 0f);
+                }
+                // A fireball leaves soot behind it, drawn behind the light, that lingers and rises.
+                soot += Time.deltaTime;
+                while (fire && soot > 0.04f)
+                {
+                    soot -= 0.04f;
+                    Spray(
+                        backSmoke,
+                        position - heading.normalized * (size.x * 0.25f),
+                        new Burst
+                        {
+                            Shape = BattleVfxShape.Smoke,
+                            Bright = 0.6f,
+                            From = new Color(0.3f, 0.22f, 0.18f, 0.5f),
+                            To = new Color(0.22f, 0.21f, 0.21f, 0.5f),
+                            Speed = new Vector2(10f, 50f),
+                            Direction = 90f,
+                            Spread = 90f,
+                            Life = new Vector2(0.5f, 0.8f),
+                            Size = new Vector2(0.18f, 0.28f) * size.x,
+                            Grow = 0.4f,
+                            Shrink = 1.6f,
+                            Gravity = -60f,
+                            Drag = 1.5f,
+                            Hold = 0.3f,
+                            Area = 10f,
+                        },
+                        1
+                    );
+                }
                 last = position;
                 yield return null;
             }
             shot.Live = false;
             shot.Holder.gameObject.SetActive(false);
+            if (halo != null)
+            {
+                halo.Live = false;
+                halo.Holder.gameObject.SetActive(false);
+            }
         }
 
         /// <summary>
-        /// One sweeping sword arc: it swells and sweeps a little along its curve as it cuts, then
-        /// is eaten away from its thin tips toward the thick middle. It is drawn as a real blade
-        /// swung fast looks: thin strands (its afterimages) and a short motion blur behind its
-        /// white-hot edge, in its colour (see <see cref="RichMaterialOf"/>).
+        /// One sweeping sword arc, as a real blade swung fast looks: it swells and sweeps a little
+        /// along its curve as it cuts, drawn in four layers on one stroke (one seed), each with its
+        /// own cover and time, back to front: a haze of light round it that comes first and lingers
+        /// a little; the afterimage, thin strands that stay after it and break up as they are
+        /// eaten; the body, its strands and edge in its colour, eaten from its thin tips; and the
+        /// white-hot leading edge, there only while the blade passes. No mist: a blade makes none.
         /// </summary>
         private void Arc(
             RectTransform layer,
@@ -1528,31 +1633,60 @@ namespace Baryonyx.Combat.Presentation
             float scale
         )
         {
-            var shot = Spawn(
-                layer,
-                BattleVfxShape.SlashArc,
-                at,
-                new Vector2(420f, 420f) * scale,
-                Color.white
-            );
-            shot.Image.material = RichMaterialOf(BattleVfxShape.SlashArc);
-            shot.Image.rectTransform.localScale = new Vector3(mirror ? -1f : 1f, 1f, 1f);
+            float seed = UnityEngine.Random.value;
             float sweep = mirror ? -24f : 24f;
-            Animate(
-                shot,
-                0.26f,
-                (s, k) =>
+            var size = new Vector2(420f, 420f) * scale;
+            void Layer(float look, float life, Func<float, (Color tint, float eaten, float bright)> show)
+            {
+                var shot = Spawn(layer, BattleVfxShape.SlashArc, at, size, Color.clear);
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.SlashArc, look);
+                shot.Image.rectTransform.localScale = new Vector3(mirror ? -1f : 1f, 1f, 1f);
+                Animate(
+                    shot,
+                    life,
+                    (s, k) =>
+                    {
+                        float t = k * life;
+                        // Every layer moves and is drawn in on the body's clock.
+                        float stroke = Mathf.Min(1f, t / ArcDraw);
+                        float grow = 0.75f + 0.35f * EaseOut(Mathf.Min(1f, stroke * 2.5f));
+                        s.Holder.localScale = new Vector3(grow, grow, 1f);
+                        s.Image.rectTransform.localEulerAngles = new Vector3(
+                            0f,
+                            0f,
+                            angle + sweep * EaseOut(Mathf.Min(1f, stroke * 2f))
+                        );
+                        var (tint, eaten, bright) = show(t);
+                        Show(s, tint, stroke, eaten, bright);
+                    }
+                );
+            }
+            var haze = new Color(color.r, color.g, color.b, 0f);
+            Layer(
+                ArcHaze,
+                0.36f,
+                t =>
                 {
-                    float grow = 0.75f + 0.35f * EaseOut(Mathf.Min(1f, k * 2.5f));
-                    s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    s.Image.rectTransform.localEulerAngles = new Vector3(
-                        0f,
-                        0f,
-                        angle + sweep * EaseOut(Mathf.Min(1f, k * 2f))
-                    );
-                    // It keeps its colour and burns white only along its edge.
-                    Show(s, color, k, Eaten(k, 0.3f), CoreBright);
+                    haze.a = 0.6f * Envelope(t, 0f, 0.03f, 0.1f, 0.36f);
+                    return (haze, Eaten(t / 0.36f, 0.4f), 1f);
                 }
+            );
+            Layer(
+                ArcTrace,
+                0.5f,
+                t =>
+                {
+                    var trace = new Color(color.r, color.g, color.b, 0.8f * Envelope(t, 0.04f, 0.04f, 0.14f, 0.5f));
+                    return (trace, Eaten(t / 0.5f, 0.2f), 1f);
+                }
+            );
+            // It keeps its colour and burns white only along its edge.
+            Layer(ArcBody, ArcDraw, t => (color, Eaten(t / ArcDraw, 0.3f), CoreBright));
+            Layer(
+                ArcCore,
+                0.12f,
+                t => (new Color(1f, 1f, 1f, Envelope(t, 0f, 0.01f, 0.05f, 0.12f)), 0f, CoreBright * 2f)
             );
         }
 
@@ -1616,6 +1750,7 @@ namespace Baryonyx.Combat.Presentation
                     new Burst
                     {
                         Shape = BattleVfxShape.Smoke,
+                        Bright = 0.5f,
                         From = new Color(0.45f, 0.38f, 0.32f, 0.7f),
                         To = new Color(0.32f, 0.3f, 0.3f, 0.7f),
                         Speed = new Vector2(220f, 520f) * scale,
@@ -1642,6 +1777,8 @@ namespace Baryonyx.Combat.Presentation
                 new Burst
                 {
                     Shape = BattleVfxShape.Smoke,
+                    // Dim, so it reads as soot rather than pale steam.
+                    Bright = 0.3f,
                     From = new Color(0.42f, 0.27f, 0.17f, 0.92f),
                     To = new Color(0.13f, 0.13f, 0.14f, 0.92f),
                     Speed = new Vector2(60f, 200f),
@@ -1680,8 +1817,12 @@ namespace Baryonyx.Combat.Presentation
                 Delay = new Vector2(0f, 0.08f),
                 Area = 40f * scale,
             };
+            // Behind, the cooling tips leave a veil of soot over what is behind (the rich look),
+            // so the fireball reads on a bright stage too.
+            fireball.Material = RichMaterialOf(BattleVfxShape.Flame);
             Spray(backLight, at, fireball, 16);
             // A few smaller, shorter ones in front: the target is caught inside, not hidden.
+            fireball.Material = null;
             fireball.Size = new Vector2(70f, 130f) * scale;
             fireball.Life = new Vector2(0.28f, 0.5f);
             Spray(frontLight, at, fireball, 6);
@@ -2119,60 +2260,16 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// A lightning bolt from above the screen down to <paramref name="feet"/>. It strikes
-        /// three times in new shapes (a new seed, narrowed or widened, nudged sideways), with a
-        /// thinner bolt beside it on the second, and breaks up at the end.
+        /// A bolt of lightning from above the screen down to <paramref name="feet"/>, leaning a
+        /// little: one channel (one seed) in four layers, its stepped leader coming down for
+        /// <see cref="StormLeader"/> s, then struck and struck again on the same channel
+        /// (<see cref="StormBolt"/>), not redrawn in a new shape each time.
         /// </summary>
         private void Bolt(Vector2 feet)
         {
-            // The bolt's foot is at 9% of its board's height.
             float top = FrontLayer.rect.yMax + 60f;
-            float height = Mathf.Max(600f, (top - feet.y) / 0.88f);
-            var size = new Vector2(height * 0.62f, height);
-            var pivot = new Vector2(0.5f, 0.09f);
-            var main = Spawn(frontLight, BattleVfxShape.Lightning, feet, size, Color.white, pivot);
-            var widths = new[] { 1f, 0.8f, 1.2f };
-            var shifts = new[] { 0f, -22f, 18f };
-            float seed = main.Seed;
-            Animate(
-                main,
-                0.36f,
-                (s, k) =>
-                {
-                    int strike = Mathf.Min(2, Mathf.FloorToInt(k * 3.2f));
-                    // Each strike is a new bolt: a new seed draws a new path.
-                    s.Seed = Mathf.Repeat(seed + strike * 0.318f, 1f);
-                    s.Image.rectTransform.localScale = new Vector3(widths[strike], 1f, 1f);
-                    s.Image.rectTransform.anchoredPosition = new Vector2(shifts[strike], 0f);
-                    s.Image.rectTransform.localEulerAngles = new Vector3(
-                        0f,
-                        0f,
-                        strike == 2 ? -3f : 0f
-                    );
-                    Show(s, Color.white, k, Eaten(k, 0.6f), CoreBright);
-                }
-            );
-            var branch = Spawn(
-                frontLight,
-                BattleVfxShape.Lightning,
-                feet + new Vector2(40f, 0f),
-                size * 0.75f,
-                new Color(0.8f, 0.7f, 1f, 0f),
-                pivot
-            );
-            branch.Image.rectTransform.localScale = new Vector3(0.7f, 1f, 1f);
-            branch.Image.rectTransform.localEulerAngles = new Vector3(0f, 0f, 7f);
-            Animate(
-                branch,
-                0.3f,
-                (s, k) =>
-                {
-                    // Only from the second strike, then gone with the first.
-                    var tint = new Color(0.8f, 0.7f, 1f, k < 0.3f ? 0f : 1f);
-                    float eaten = k < 0.3f ? 0f : Eaten((k - 0.3f) / 0.7f, 0.3f);
-                    Show(s, tint, k, eaten, ErodeBright);
-                }
-            );
+            float lean = UnityEngine.Random.Range(-0.12f, 0.12f) * (top - feet.y);
+            StormBolt(new Vector2(feet.x + lean, top), feet);
         }
 
         /// <summary>Short sparks of electricity that keep running round the target for a moment after the strike.</summary>
@@ -2208,30 +2305,47 @@ namespace Baryonyx.Combat.Presentation
         }
 
         /// <summary>
-        /// The heal's pillar of light behind the ally, rising from the feet and eaten away slowly
-        /// from its faint edges up.
+        /// The heal's shaft of light over the ally, as light falling through dusty air looks (the
+        /// shader's lit dust): it rises gently from the feet behind the ally, with a narrower,
+        /// fainter shaft in front so the ally stands inside it; the front one goes first and the
+        /// back one is eaten slowly from its faint edges up.
         /// </summary>
         private void Pillar(Vector2 feet)
         {
             var color = ColorOf(BattleSkillVfxKind.Heal);
-            var shot = Spawn(
-                backLight,
-                BattleVfxShape.Pillar,
-                feet,
-                new Vector2(400f, 400f),
-                color,
-                new Vector2(0.5f, 0.1f)
-            );
-            Animate(
-                shot,
-                1.1f,
-                (s, k) =>
-                {
-                    float rise = EaseOut(Mathf.Min(1f, k * 4f));
-                    s.Holder.localScale = new Vector3(0.7f + 0.3f * rise, 0.2f + 1.05f * rise, 1f);
-                    Show(s, color, k, Eaten(k, 0.55f), ErodeBright);
-                }
-            );
+            float seed = UnityEngine.Random.value;
+            void Shaft(RectTransform layer, float width, float life, float strength, float start)
+            {
+                var shot = Spawn(
+                    layer,
+                    BattleVfxShape.Pillar,
+                    feet,
+                    new Vector2(width, 420f),
+                    Color.clear,
+                    new Vector2(0.5f, 0.1f)
+                );
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Pillar, PillarLight);
+                Animate(
+                    shot,
+                    life,
+                    (s, k) =>
+                    {
+                        float t = k * life;
+                        float rise = EaseOut(Mathf.Clamp01((t - start) / 0.3f));
+                        s.Holder.localScale = new Vector3(0.75f + 0.25f * rise, 0.15f + 1.1f * rise, 1f);
+                        var tint = new Color(
+                            color.r,
+                            color.g,
+                            color.b,
+                            strength * Envelope(t, start, 0.12f, life * 0.5f, life)
+                        );
+                        Show(s, tint, t * 0.8f, Eaten(k, 0.55f), ErodeBright);
+                    }
+                );
+            }
+            Shaft(backLight, 400f, 1.15f, 1f, 0f);
+            Shaft(frontLight, 220f, 0.8f, 0.35f, 0.08f);
         }
 
         /// <summary>
@@ -2255,6 +2369,8 @@ namespace Baryonyx.Combat.Presentation
                 color,
                 new Vector2(0.5f, 0.16f)
             );
+            // A thin film with a bright rim and a ripple running down from the top (the rich look).
+            shot.Image.material = RichMaterialOf(BattleVfxShape.Dome);
             Animate(
                 shot,
                 0.95f,
@@ -2660,11 +2776,15 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The material that draws a shape in the rich look (the shader's _Rich): the ice lance,
-        /// spikes and chips as clear ice, smoke as a sheet of gas along the floor, a glow as a
-        /// nebula-like cloud of light, sword arcs, cross cuts and beams as thin strands in a
-        /// haze of light, and lightning as the core of a stroke; a <paramref name="look"/> above 1
-        /// picks another layer of a lightning flash, or of a thundercloud drawn on smoke (see
-        /// <see cref="StormBolt"/> and <see cref="StormBank"/>). It is a copy of the
+        /// spikes and chips as clear ice, smoke as gas, frost as a sheet of ice, sword arcs,
+        /// cross cuts and beams as thin strands in a haze of light, lightning as the core of a
+        /// stroke, flames and fireballs with the soot of their cooled tips, a pillar as a shaft
+        /// of light in dusty air, a dome or a bubble as a barrier's film, cracks as fissures;
+        /// a <paramref name="look"/> above 1 picks another layer or look: a lightning flash's or
+        /// a thundercloud's layers (see <see cref="StormBolt"/> and <see cref="StormBank"/>),
+        /// a sword arc's or a beam's halo (2), core (3) and afterimage (4), a pillar of fire (2),
+        /// the ground cracked round a point (crack 2) or a card cracking like glass (crack 3),
+        /// and a magic circle's parts. It is a copy of the
         /// shape's material blended premultiplied, so its cover darkens or veils what is behind
         /// it and its light is added. Null when the shape's material is missing.
         /// </summary>

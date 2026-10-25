@@ -115,7 +115,9 @@ namespace Baryonyx.Combat.Presentation
             var center = Center(FrontLayer, caster);
             var feet = Feet(FrontLayer, caster);
             HotCircle(feet, seconds);
-            Glow(frontLight, center, color, 280f, seconds + 0.2f, 0.6f);
+            // A wide, faint halo and a small hot core apart from it, the core swelling last.
+            Glow(frontLight, center, color, 300f, seconds + 0.2f, 0.35f);
+            ChargeCore(center, color, 110f, seconds);
             Illuminate(
                 feet + Vector2.down * 90f,
                 color,
@@ -369,6 +371,34 @@ namespace Baryonyx.Combat.Presentation
             );
         }
 
+        /// <summary>
+        /// The hot core of a charge at <paramref name="at"/>, apart from its halo: small and dim at
+        /// first, it swells and whitens as the charge ends (an ease-in, as energy gathering does),
+        /// flares as it is let go and is gone at once.
+        /// </summary>
+        private void ChargeCore(Vector2 at, Color color, float size, float seconds)
+        {
+            if (frontLight == null)
+                return;
+            var core = Spawn(frontLight, BattleVfxShape.Glow, at, Vector2.one * size, Color.clear);
+            float total = seconds + 0.08f;
+            Animate(
+                core,
+                total,
+                (s, k) =>
+                {
+                    float t = k * total;
+                    float q = Mathf.Clamp01(t / seconds);
+                    float gone = t < seconds ? 0f : (t - seconds) / 0.08f;
+                    float grow = (0.3f + 0.7f * EaseIn(q)) * (1f + 0.4f * gone);
+                    s.Holder.localScale = new Vector3(grow, grow, 1f);
+                    var tint = Color.Lerp(color, Color.white, 0.2f + 0.6f * q);
+                    tint.a = (0.25f + 0.75f * EaseIn(q)) * (1f - gone);
+                    Show(s, tint, k, 0f, CoreBright);
+                }
+            );
+        }
+
         /// <summary>The colour of a line heated to <paramref name="heat"/> (0 dark red, 1 yellow; its white-hot core is the shader's).</summary>
         private static Color HeatColor(float heat) => FireColor(Mathf.Lerp(0.62f, 0.12f, heat));
 
@@ -486,19 +516,21 @@ namespace Baryonyx.Combat.Presentation
             // Rings closing in, one on the floor and one round the body, and the core swelling.
             Converge(backLight, feet, color, 520f, seconds * 0.9f, 0f, floor: true);
             Converge(frontLight, heart, color, 360f, seconds * 0.7f, seconds * 0.3f, floor: false);
-            var core = Spawn(frontLight, BattleVfxShape.Glow, heart, Vector2.one * 240f, color);
+            // The halo of what has gathered, wide and faint, and its hot core apart from it.
+            var halo = Spawn(frontLight, BattleVfxShape.Glow, heart, Vector2.one * 260f, color);
             Animate(
-                core,
+                halo,
                 seconds + 0.12f,
                 (s, k) =>
                 {
                     float t = k * (seconds + 0.12f);
                     float grow = t < seconds ? 0.25f + 0.75f * EaseIn(t / seconds) : 1f;
                     s.Holder.localScale = new Vector3(grow, grow, 1f);
-                    float alpha = t < seconds ? 0.9f * EaseIn(t / seconds) : 0.9f;
+                    float alpha = t < seconds ? 0.5f * EaseIn(t / seconds) : 0.5f;
                     Show(s, new Color(color.r, color.g, color.b, alpha), k, 0f, ErodeBright);
                 }
             );
+            ChargeCore(heart, color, 100f, seconds + 0.08f);
             Illuminate(heart, color, 0.6f, 300f, seconds, 0.3f, spill: false);
             yield return Wait(seconds);
             // Held for an instant, all of it gathered, then let go.
@@ -671,13 +703,15 @@ namespace Baryonyx.Combat.Presentation
                 14
             );
 
-            // The body lit in pulses, stronger each time.
+            // The body lit in pulses, stronger each time, and the floor at its feet with it.
             for (int pulse = 0; pulse < 3; pulse++)
             {
                 Illuminate(center, color, 0.35f + 0.15f * pulse, 260f, 0.08f, 0.14f, spill: false);
+                BlowPool(feet, color, 220f + 40f * pulse, 0.2f + 0.1f * pulse, 0.08f, 0.16f);
                 yield return Wait(seconds / 3f);
             }
             Illuminate(center, color, 0.9f, 320f, 0.05f, 0.3f, spill: false);
+            BlowPool(feet, color, 340f, 0.55f, 0.05f, 0.3f);
             Twinkle(new Vector2(center.x, max.y), color, 200f, 0.3f, 0f, 1f);
         }
 
@@ -989,7 +1023,7 @@ namespace Baryonyx.Combat.Presentation
                     from
                     + UnityEngine.Random.insideUnitCircle.normalized
                         * UnityEngine.Random.Range(40f, 80f);
-                Zap(from, to, Color.Lerp(color, Color.white, 0.3f), 0.08f);
+                Discharge(from, to, color, t / seconds);
                 Sparks(to, color, 2, 0.25f, to - from);
                 float gap = Mathf.Lerp(0.12f, 0.04f, t / seconds);
                 yield return Wait(gap);
@@ -997,6 +1031,70 @@ namespace Baryonyx.Combat.Presentation
             }
             HotFlash(center, Color.Lerp(color, Color.white, 0.5f), 200f);
             Sparks(center, color, 10, 0.6f, Vector2.up);
+        }
+
+        /// <summary>
+        /// A small discharge between two points on a charged body, as a spark gap does: one channel
+        /// (one seed) in three layers, its halo of lit air, its violet channel and a white-hot
+        /// core, that flashes twice on the same path in a few hundredths of a second and leaves
+        /// its halo a moment longer; stronger as the charge <paramref name="built"/> (0 to 1)
+        /// grows. It lights the body round it for an instant.
+        /// </summary>
+        private void Discharge(Vector2 from, Vector2 to, Color color, float built)
+        {
+            if (frontLight == null)
+                return;
+            float height = Mathf.Max(40f, Vector2.Distance(from, to) / 0.87f);
+            float seed = UnityEngine.Random.value;
+            float strength = 0.6f + 0.4f * built;
+            // Two flashes on the same path, each dying in a few hundredths of a second.
+            float Light(float t) =>
+                strength
+                * (
+                    Mathf.Exp(-t / 0.018f)
+                    + 0.6f * (t >= 0.035f ? Mathf.Exp(-(t - 0.035f) / 0.018f) : 0f)
+                );
+            void Layer(float look, Color tint, float life, float glow)
+            {
+                var shot = Spawn(
+                    frontLight,
+                    BattleVfxShape.Lightning,
+                    to,
+                    new Vector2(height * 0.62f, height),
+                    Color.clear,
+                    new Vector2(0.5f, 0.09f)
+                );
+                shot.Seed = seed;
+                shot.Image.material = RichMaterialOf(BattleVfxShape.Lightning, look);
+                shot.Image.rectTransform.localEulerAngles = new Vector3(
+                    0f,
+                    0f,
+                    Angle(from - to) - 90f
+                );
+                Animate(
+                    shot,
+                    life,
+                    (s, k) =>
+                    {
+                        float light = Light(k * life);
+                        var c = tint;
+                        c.a = Mathf.Clamp01(glow + light);
+                        Show(s, c, 0.5f + 0.5f * k, Eaten(k, 0.5f), 1f + 3f * light);
+                    }
+                );
+            }
+            Layer(BlowBoltHalo, color, 0.16f, 0.25f);
+            Layer(BlowBoltChannel, Color.Lerp(color, Color.white, 0.3f), 0.09f, 0.1f);
+            Layer(BlowBoltCore, Color.white, 0.06f, 0f);
+            Illuminate(
+                Vector2.Lerp(from, to, 0.5f),
+                color,
+                0.35f * strength,
+                160f,
+                0.02f,
+                0.08f,
+                spill: false
+            );
         }
 
         // The crack's material look that splits the ground open round a point (ShapeRupture).
@@ -1187,6 +1285,9 @@ namespace Baryonyx.Combat.Presentation
                     spill: false
                 );
                 yield return Wait(step * 0.85f);
+                // The last step lets it go: a white-hot flash under the twinkle.
+                if (level == colors.Length - 1)
+                    HotFlash(center, color, 220f);
                 Twinkle(
                     center + new Vector2(16f, 24f),
                     color,
