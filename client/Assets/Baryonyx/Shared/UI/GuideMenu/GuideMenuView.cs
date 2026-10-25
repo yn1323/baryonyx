@@ -29,6 +29,10 @@ namespace Baryonyx.UI.GuideMenu
 
         // 「もどる」の右のパンくず（例：編成 › 冒険者 › アリア）と、×の左の所持ルーン。
         public TMP_Text Breadcrumb;
+
+        // パンくずの最初の見出しを、定義の題の代わりに出す（冒険から開いたときの「冒険」）。空なら定義の題。
+        [NonSerialized]
+        public string TitleOverride;
         public TMP_Text Runes;
 
         // 左の案内人。項目の専用のパネルが画面を広く使うときは隠す。
@@ -232,7 +236,7 @@ namespace Baryonyx.UI.GuideMenu
             var parts = new List<string>();
             if (Definition == null)
                 return parts;
-            parts.Add(Definition.Title);
+            parts.Add(string.IsNullOrEmpty(TitleOverride) ? Definition.Title : TitleOverride);
             bool open =
                 Definition.Layout != GuideMenuLayout.Destinations
                 && state.Page == GuideMenuPage.List
@@ -272,6 +276,9 @@ namespace Baryonyx.UI.GuideMenu
             ItemPressed?.Invoke(index);
             return true;
         }
+
+        /// <summary>The index of the item with <paramref name="key"/>, or -1.</summary>
+        public int IndexOfItem(string key) => IndexOf(key);
 
         private int IndexOf(string key) =>
             Definition == null || string.IsNullOrEmpty(key)

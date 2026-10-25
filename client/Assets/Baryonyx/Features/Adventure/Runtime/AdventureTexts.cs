@@ -30,6 +30,9 @@ namespace Baryonyx.Adventure
             "今いるマスから、ホームの行き先カードで再開できます。\n戦闘の途中なら、その戦闘の始めからになります。";
 
         public const string SaveFailed = "冒険を保存できませんでした";
+
+        // 探索から装備の付け替えを開けなかったとき。
+        public const string EquipmentFailed = "装備の画面を開けませんでした";
         public const string Rested = "焚き火で休んで、全員のHPが回復した";
 
         // 休憩の焚き火（doc/features/stage-progression.md の休憩の鍛える）。

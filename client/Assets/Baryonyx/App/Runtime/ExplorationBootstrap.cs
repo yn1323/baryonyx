@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Health;
 using Baryonyx.Party;
+using Baryonyx.Tavern;
 using Baryonyx.Training;
 using Baryonyx.UI;
 using UnityEngine;
@@ -87,7 +88,8 @@ namespace Baryonyx.App
                             party,
                             training
                         )
-                        : Array.Empty<Combat.Presentation.BattlePartyMember>()
+                        : Array.Empty<Combat.Presentation.BattlePartyMember>(),
+                OpenEquipment
             );
             flow.Start();
             PartyTask = UsePartyAsync();
@@ -114,6 +116,23 @@ namespace Baryonyx.App
                 Debug.LogWarning("編成を取得できませんでした。" + exception.Message);
             }
         }
+
+        // 酒場の装備の人選びを、冒険の見出しで開く。もどる・×は、どちらも探索へ戻る。
+        private bool OpenEquipment()
+        {
+            GuideSceneEntry.Open(
+                AdventurerPickerView.GuideItemKey,
+                AdventureEquipmentTitle,
+                SceneNames.Exploration
+            );
+            bool left = Leave(SceneNames.Pub);
+            if (!left)
+                GuideSceneEntry.Clear();
+            return left;
+        }
+
+        // 冒険から開いた装備の画面のパンくずの見出し（「冒険 › 装備」）。
+        public const string AdventureEquipmentTitle = "冒険";
 
         // 開く演出の途中では次の演出を始められない。サーバーの返事が演出より早く届き、冒険がなくて
         // ホームへ戻るときなどは、開き終えてから移る。断ると「読み込み中…」のまま止まるため。

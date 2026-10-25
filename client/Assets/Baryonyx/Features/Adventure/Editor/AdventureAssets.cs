@@ -83,6 +83,13 @@ namespace Baryonyx.Adventure.Editor
         private const float MenuWidth = 128f;
         private const float MenuHeight = 168f;
 
+        // メニューとその下の装備のボタンの間。
+        private const float MenuGap = 8f;
+
+        // 装備のボタンのアイコン。酒場のメニューの「装備」と同じ、付け替えの絵を使う。
+        private const string EquipmentIconPath =
+            "Assets/Baryonyx/Features/Tavern/UI/Art/IconChangeGear.png";
+
         [MenuItem("Baryonyx/Adventure/Create Screen Assets")]
         public static void CreateAssets()
         {
@@ -229,6 +236,14 @@ namespace Baryonyx.Adventure.Editor
 
             var safe = SafeArea(root);
             view.MenuButton = BuildMenuButton(safe);
+            view.EquipmentButton = BuildCornerButton(
+                safe,
+                "Equipment",
+                EquipmentIconPath,
+                "装備",
+                false,
+                MenuHeight + MenuGap
+            );
             view.Location = Label(
                 safe,
                 "Location",
@@ -457,13 +472,24 @@ namespace Baryonyx.Adventure.Editor
 
         // The menu at the top left like the guide screens' back button, or at the top right over
         // the battle, where the turn order takes the top left.
-        private static Button BuildMenuButton(RectTransform safe, bool right = false)
+        private static Button BuildMenuButton(RectTransform safe, bool right = false) =>
+            BuildCornerButton(safe, "Menu", UiArt.IconCompassPath, "メニュー", right, 0f);
+
+        // 上の角のボタン：アイコンと下の名前を、ぼかした影の上に置く。below は角から下へずらす量。
+        private static Button BuildCornerButton(
+            RectTransform safe,
+            string name,
+            string iconPath,
+            string text,
+            bool right,
+            float below
+        )
         {
-            var menu = Rect("Menu", safe);
+            var menu = Rect(name, safe);
             Corner(
                 menu,
                 right ? Vector2.one : new Vector2(0, 1),
-                right ? new Vector2(-40, -24) : new Vector2(40, -24),
+                right ? new Vector2(-40, -24 - below) : new Vector2(40, -24 - below),
                 new Vector2(MenuWidth, MenuHeight)
             );
             var shadow = Rect("Shadow", menu);
@@ -479,8 +505,8 @@ namespace Baryonyx.Adventure.Editor
                 new Vector2(0, 24),
                 new Vector2(GuideMenuAssets.IconSize, GuideMenuAssets.IconSize)
             );
-            SpriteImage(icon, UiArt.IconCompassPath, Color.white);
-            var label = Label(menu, "Label", "メニュー", 32, TextMain, TextAlignmentOptions.Center);
+            SpriteImage(icon, iconPath, Color.white);
+            var label = Label(menu, "Label", text, 32, TextMain, TextAlignmentOptions.Center);
             Place(
                 (RectTransform)label.transform,
                 new Vector2(0, -60),

@@ -152,6 +152,9 @@ namespace Baryonyx.Adventure
         public TMP_Text Location;
         public TMP_Text Prompt;
         public Button MenuButton;
+
+        // メニューの下の「装備」。冒険を続けたまま、酒場の装備の付け替えを開く。
+        public Button EquipmentButton;
         public GameDialog Dialog;
         public NoticeBand Notice;
 
@@ -226,6 +229,7 @@ namespace Baryonyx.Adventure
         public event Action<string> RoomPressed;
         public event Action ChestPressed;
         public event Action MenuPressed;
+        public event Action EquipmentPressed;
 
         // 端末の戻るキー。開いているダイアログが先に受け取り、なければメニューを開く。
         public event Action BackPressed;
@@ -345,6 +349,8 @@ namespace Baryonyx.Adventure
                 ChestButton.onClick.AddListener(() => ChestPressed?.Invoke());
             if (MenuButton != null)
                 MenuButton.onClick.AddListener(() => MenuPressed?.Invoke());
+            if (EquipmentButton != null)
+                EquipmentButton.onClick.AddListener(() => EquipmentPressed?.Invoke());
             if (LegendButton != null)
                 LegendButton.onClick.AddListener(ToggleLegend);
             if (Legend != null && Legend.GetComponent<Button>() is { } close)

@@ -40,6 +40,9 @@ namespace Baryonyx.App
 
         private GuideMenuPresenter presenter;
         private TravelDeparture departure;
+
+        // ほかの画面から1つの項目のために開いたとき（冒険の装備）の、もどる・×の戻り先。
+        private string returnScene;
         private readonly CancellationTokenSource lifetime = new();
 
         // 所持ルーンの読み込み。テストで完了を待つために公開する。
@@ -54,7 +57,12 @@ namespace Baryonyx.App
         public TravelDeparture Departure => departure;
         public string HomeSceneName => homeSceneName;
         public string BackSceneName =>
-            string.IsNullOrEmpty(backSceneName) ? homeSceneName : backSceneName;
+            !string.IsNullOrEmpty(returnScene) ? returnScene
+            : string.IsNullOrEmpty(backSceneName) ? homeSceneName
+            : backSceneName;
+
+        // ほかの画面から1つの項目のために開いたときの戻り先。Homeから開いたときは空。
+        public string ReturnScene => returnScene;
 
         private void Awake()
         {
@@ -78,6 +86,15 @@ namespace Baryonyx.App
                     () => SceneLoader.Load(SceneNames.Exploration, transition, this)
                 );
             }
+            // 冒険の装備のように、ほかの画面から項目を指して開いたときは、その項目から始め、
+            // もどる・×で元の画面へ戻る（doc/features/screens/guide.md）。
+            var entry = GuideSceneEntry.Take();
+            int entryItem = entry != null ? view.IndexOfItem(entry.ItemKey) : -1;
+            if (entryItem >= 0)
+            {
+                returnScene = entry.ReturnScene;
+                view.TitleOverride = entry.Title;
+            }
             presenter = new GuideMenuPresenter(
                 view,
                 view.Definition,
@@ -85,6 +102,8 @@ namespace Baryonyx.App
                 departure != null ? Depart : null,
                 ReturnHome
             );
+            if (entryItem >= 0)
+                presenter.OpenAsRoot(entryItem);
             RunesTask = LoadRunesAsync();
             if (departs)
                 UnlockTask = ShowUnlockedAsync();
@@ -150,13 +169,13 @@ namespace Baryonyx.App
             return departure.Depart(destinations[index].Id);
         }
 
-        private bool ReturnHome() => SceneLoader.Load(homeSceneName, transition, this);
-
-        private bool GoBack() =>
+        private bool ReturnHome() =>
             SceneLoader.Load(
-                string.IsNullOrEmpty(backSceneName) ? homeSceneName : backSceneName,
+                string.IsNullOrEmpty(returnScene) ? homeSceneName : returnScene,
                 transition,
                 this
             );
+
+        private bool GoBack() => SceneLoader.Load(BackSceneName, transition, this);
     }
 }

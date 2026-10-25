@@ -47,9 +47,11 @@ namespace Baryonyx.Adventure
             Action<AdventureRun> entered = null,
             Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices = null,
             Action<AdventureAltar.Choice, int> evolve = null,
-            Func<IReadOnlyList<BattlePartyMember>> party = null
+            Func<IReadOnlyList<BattlePartyMember>> party = null,
+            Func<bool> toEquipment = null
         )
         {
+            this.toEquipment = toEquipment;
             this.altarChoices = altarChoices;
             this.evolve = evolve;
             this.party = party;
@@ -62,7 +64,11 @@ namespace Baryonyx.Adventure
             view.ChestPressed += OnChest;
             view.MenuPressed += OpenMenu;
             view.BackPressed += OpenMenu;
+            view.EquipmentPressed += OpenEquipment;
         }
+
+        // 冒険を続けたまま、装備の付け替えへ移る（酒場の装備の画面。閉じると探索へ戻る）。
+        private readonly Func<bool> toEquipment;
 
         // 進化の祭壇で進められる固有スキルと、進化させる処理（編成と育成の仮データを持つシーンが渡す）。
         private readonly Func<IReadOnlyList<AdventureAltar.Choice>> altarChoices;
@@ -678,6 +684,24 @@ namespace Baryonyx.Adventure
             );
         }
 
+        // 次のマスを選んでいるときだけ、装備の付け替えへ移る。冒険はサーバーに残っていて、戻ると読み直す。
+        private void OpenEquipment()
+        {
+            if (
+                toEquipment == null
+                || busy
+                || Leaving
+                || State?.Run == null
+                || view.Dialog.IsShown
+                || (view.Boons != null && view.Boons.IsOpen)
+                || (view.Campfire != null && view.Campfire.IsOpen)
+            )
+                return;
+            Leaving = toEquipment();
+            if (!Leaving)
+                view.ShowNotice(AdventureTexts.EquipmentFailed);
+        }
+
         private void ConfirmQuit() =>
             AdventureDialogs.ConfirmQuit(
                 view.Dialog,
@@ -748,6 +772,7 @@ namespace Baryonyx.Adventure
             view.ChestPressed -= OnChest;
             view.MenuPressed -= OpenMenu;
             view.BackPressed -= OpenMenu;
+            view.EquipmentPressed -= OpenEquipment;
         }
     }
 }

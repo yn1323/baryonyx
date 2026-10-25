@@ -46,6 +46,9 @@ namespace Baryonyx.UI.GuideMenu
         // 右上の×の行き先。なければ「もどる」と同じ所へ戻る。
         private readonly Func<bool> home;
         private GuideMenuState state = new(GuideMenuPage.Menu, -1, -1);
+
+        // 開いたときに直接出した項目。ここから戻ると、メニューを挟まずに画面を離れる。
+        private int rootItem = -1;
         private bool left;
         private bool disposed;
 
@@ -83,6 +86,18 @@ namespace Baryonyx.UI.GuideMenu
             if (index < 0 || index >= definition.Items.Length)
                 return;
             Show(new GuideMenuState(GuideMenuPage.List, index, -1));
+        }
+
+        /// <summary>
+        /// Opens the item <paramref name="index"/> as the screen's first page: back from it leaves
+        /// the screen at once instead of showing the menu (a screen opened from elsewhere for one
+        /// thing, such as the equipment from an adventure).
+        /// </summary>
+        public void OpenAsRoot(int index)
+        {
+            SelectItem(index);
+            if (state.Page == GuideMenuPage.List && state.Item == index)
+                rootItem = index;
         }
 
         public void SelectEntry(int index)
@@ -129,7 +144,7 @@ namespace Baryonyx.UI.GuideMenu
         {
             if (disposed || left)
                 return;
-            if (state.Page == GuideMenuPage.List)
+            if (state.Page == GuideMenuPage.List && state.Item != rootItem)
             {
                 Show(new GuideMenuState(GuideMenuPage.Menu, -1, -1));
                 return;
