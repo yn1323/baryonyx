@@ -1,13 +1,50 @@
-# VFX制作の調査資料
+# 参考資料
 
-調査日は2026-10-01。
-2026-10-23に追加した資料は、「取得」の欄に日付を添える。
-URLと内容は更新されるため、実装へ反映するときは、プロジェクトのUnity `6000.6.0f1` とURP `17.6.0` に対応する公式マニュアルを確かめ直す。
+章番号は元のガイド「RPG戦闘VFX：専門用語・計算式・Claudeへの指示ガイド」（2026-10-26）の番号である。第1章・第7章・第8章は [SKILL.md](../SKILL.md)、第2〜3章は [glossary.md](glossary.md)、第4章（F1〜F12）は [formulas.md](formulas.md)、第5章は [recipes.md](recipes.md)、第6章は [prompts.md](prompts.md)、第9章は [sources.md](sources.md)、第10章（P1〜P6）は [procedural.md](procedural.md)、第11章は [lessons.md](lessons.md) にある。[S1] などの記号は [sources.md](sources.md) の資料を指す。
 
-「取得」の欄は、ページ本文を読んで確かめたもの（本文）、検索結果の要約だけで確かめたもの（要約）、読めなかったもの（未取得）を区別する。
-要約と未取得の資料は、本文で裏付けが取れるまで、内容を断定の根拠にしない。
+2026年10月26日に確認。公式資料の機能説明と、作者本人の制作事例を分けている。リンク先のバージョン・対応パイプラインが現在のプロジェクトと一致するとは限らない。以下の資料が本書のすべてのレシピや数式を保証するわけではない。
 
-## 設計の原則
+## Unity公式：描画と実装
+
+- [S1：ShaderLabのブレンドモード](https://docs.unity.com/en-us/engine/6000.6/manual/materials-and-shaders/shaders/writing-custom/shader-writing/sl/writing-shader-render-state-commands/blending-modes) — 通常α・Premultiplied・加算・乗算のBlend設定。
+- [S2：Particle System Noise](https://docs.unity3d.com/2020.1/Documentation/Manual/PartSysNoiseModule.html) — 粒子の乱れ、Curl Noiseベースの説明。旧バージョン資料のため現環境で設定を確認する。
+- [S3：Particle System Trails API](https://docs.unity3d.com/ja/2022.3/ScriptReference/ParticleSystem.TrailModule.html) — 軌跡、色、幅などの制御。
+- [S4：Fresnel Effectノード](https://docs.unity3d.com/ja/Packages/com.unity.shadergraph@10.0/manual/Fresnel-Effect-Node.html) — 視線と法線の角度に応じた値、リム表現。
+- [S5：URP AssetのOpaque Texture](https://docs.unity.com/en-us/engine/6000.5/manual/render-pipelines/universal-render-pipeline/urp-reference/universalrp-asset) — 透明描画前の背景取得、屈折や熱波への利用。
+- [S6：Texture Sheet Animation](https://docs.unity3d.com/6000.2/Documentation/Manual/PartSysTexSheetAnimModule.html) — 用語の背景資料。今回の方針では外部の連続画像素材を採用しない。
+- [S8：URP Bloom](https://docs.unity.com/en-us/engine/6000.6/manual/post-processing-and-full-screen-effects/urp/effect-list/bloom) — にじみの閾値や強度など。
+- [HDRP：屈折マテリアルの作成](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.high-definition/Documentation~/create-a-refractive-material.md) — HDRP固有の方法。URPの手順として扱わない。
+- [Unity公式：高度なVFXのガイド](https://create.unity.com/definitive-guide-to-creating-advanced-visual-effects) — UnityのVFX制作ツールの概要。
+
+## 作者本人の解説・作例
+
+- [S7：Discharge Strike — Illusorisch](https://realtimevfx.com/t/discharge-strike-vfx-breakdown/10878) — 雷のメッシュ、流れるテクスチャ、タイミング、ライト、火花、歪み、衝撃波の分解。Unreal／Houdini使用で、Unityの操作手順ではない。
+- [S9：Blood and Poison — Gabriel Aguiar](https://gabrielaguiarproductions.artstation.com/projects/nQO44o) — Photoshop素材を使う例のため、見た目・構成のみ参考にする。素材制作手順は今回の方針に採用しない。
+- [S10：Weapon Trails — Gabriel Aguiar](https://gabrielaguiarproductions.artstation.com/projects/wDr9Z) — Unityの剣の軌跡と斬撃の作例・チュートリアル。
+- [S11：Healing Spell FX](https://realtimevfxstore.com/products/healing-spell-fx) — 魔法の輪、上昇する光、粒子への展開。商品作例であり詳細な解説記事ではない。掲載対応はBuilt-in。
+- [S12：Shield Effect — Gabriel Aguiar](https://gabrielaguiarproductions.artstation.com/projects/owb1O) — Unityの結界の作例。古い制作環境の例。
+- [Gabriel Aguiar：公式サイト](https://www.gabrielaguiarprod.com/) — 属性・武器・魔法などの制作例。教材やプロジェクトファイルには有料のものもある。
+
+## AIへの指示・制作ワークフロー
+
+- [Coplay：We Taught AI to Build VFX in Unity. It Kinda Worked.](https://coplay.dev/blog/ai-vfx) — AIによるシェーダー選択や構成の問題を、制作レシピ・テクスチャ・視覚フィードバックで改善した開発記録。
+- [Unity＋Claude Codeで炎を制作する日本語記事](https://qitz-plus.x0.com/unity-claude-code-%E3%81%A7-particlesystem%EF%BC%88%E7%82%8E%E3%82%A8%E3%83%95%E3%82%A7%E3%82%AF%E3%83%88%EF%BC%89%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95/) — 外部スプライトを使う以前の調査例。今回の実装手順には採用せず、コードへ制御を任せる例としてのみ残す。
+
+## 外部画像なしの技術（P-S）
+
+- [P-S1：Unity Shader Graph Proceduralノード](https://docs.unity3d.com/ja/Packages/com.unity.shadergraph@10.0/manual/Procedural-Nodes.html) — 座標からの形、Gradient Noise、Simple Noise、Voronoi。記載版は古いため現在のパッケージで確認する。
+- [P-S2：Alan Zucconi — Volumetric Rendering](https://www.alanzucconi.com/2016/07/01/volumetric-rendering/) — Unityでのボリューム描画、レイマーチング、距離関数の導入。古いパイプライン用コードはそのまま移植せず、現環境に合わせる。本書の密度積分式は設計用の補足であり、リンク先のコードの転載ではない。
+- [P-S3：Catlike Coding — Pseudorandom Noise](https://catlikecoding.com/unity/tutorials/pseudorandom-noise/) — ハッシュ、Value、Perlin、Voronoi、Simplexノイズの実装を学べる作者のシリーズ。
+- [補助資料：Texture Distortion](https://catlikecoding.com/unity/tutorials/flow/texture-distortion/) — 流れによる座標変形の考え方。元記事は画像を使うため、その素材手順は採用しない。座標変形の原理だけを手続き的ノイズへ応用する。
+
+本資料は指示・設計ガイド。実際のプロジェクトに対する実装・動作確認・描画品質や性能の検証はまだ行っていない。
+
+## これまでの調査（2026-10-01〜10-23）
+
+旧版のスキルで原則・技法・HD-2Dとの組み合わせ・AIでの制作の根拠にした資料である。[lessons.md](lessons.md) の経験の背景として残す。
+「取得」の欄は、ページ本文を読んで確かめたもの（本文）、検索結果の要約だけで確かめたもの（要約）、読めなかったもの（未取得）を区別する。要約と未取得の資料は、本文で裏付けが取れるまで、内容を断定の根拠にしない。
+
+### 設計の原則
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
@@ -25,7 +62,7 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [Give me your Feedback and Critique Please（realtimevfx）](https://realtimevfx.com/t/give-me-your-feedback-and-critique-please/23059) | 二次（講評） | 要素が一瞬で現れて消えるのは現実ではまれ、透明度やノイズで溶かす、雷は消えたあとも像が残る | 本文（2026-10-23） |
 | [色相のずらし方の議論（Pixel Joint）](https://pixeljoint.com/forum/forum_posts.asp?TID=15138) | 二次（フォーラム） | 色の段階で色相をずらしてコントラストを上げ、単調さを避ける。明るい側と暗い側を補色に寄せる | 本文（2026-10-23） |
 
-## 技法
+### 技法
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
@@ -45,7 +82,7 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [Are transparent quads ok on mobile?（Unity Discussions）](https://discussions.unity.com/t/are-transparent-quads-ok-on-mobile/857421) | 二次（フォーラム） | 透明な板の重さは、数より重なりの度合いと画面に占める大きさで決まる | 本文（2026-10-23） |
 | [How to fix perf overdraw from stacked transparent shader fillrate（bugnet）](https://bugnet.io/blog/how-to-fix-perf-overdraw-from-stacked-transparent-shader-fillrate) | 二次 | 透明な板を見える形に合わせて小さくする | 要約（2026-10-23） |
 
-## 計算で描く形
+### 計算で描く形
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
@@ -63,7 +100,7 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 | [EStampes: Sketch #15 WIP（realtimevfx）](https://realtimevfx.com/t/estampes-sketch-15-wip/5388) | 二次（講評） | 浸食が一様に濃い面で止まり、縁が硬くなる。値を0〜1になだらかに分布させる | 本文（2026-10-23） |
 | [Gradient banding issue on mobile（Unity Discussions）](https://discussions.unity.com/t/gradient-banding-issue-on-mobile/810994) | 二次（フォーラム） | 8ビットの段差をごく弱いノイズで散らす。ノイズを画面のピクセルに対応させる。圧縮で細かいノイズが消える | 本文（2026-10-23） |
 
-## HD-2Dとの組み合わせ
+### HD-2Dとの組み合わせ
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
@@ -86,21 +123,21 @@ URLと内容は更新されるため、実装へ反映するときは、プロ�
 
 HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査資料](../../hd2d-lighting-vfx/references/research-sources.md) にもまとめている。
 
-## 画面効果と手応え
+### 画面効果と手応え
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
 | [Math for Game Programmers: Juicing Your Cameras With Math（GDC 2016、Squirrel Eiserloh氏）の紹介](https://www.gamedeveloper.com/programming/video-sprucing-up-cameras-with-math) | 一次（講演動画の紹介） | トラウマ値とノイズによる画面揺れ | 要約 |
 | [Where Does Game Feel Come From（eastondev）](https://eastondev.com/blog/en/posts/dev/20260521-game-feedback-feel/) | 二次 | 「Juice it or lose it」（GDC 2012）の紹介、ヒットストップの目安 | 要約 |
 
-## 安全
+### 安全
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
 | [Xbox Accessibility Guideline 118（Microsoft）](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/118) | 一次 | 明滅の頻度（約3回/秒）、面積（約20%）、赤の明滅、縞模様の基準、Harding FPAテスト | 本文 |
 | [Understanding SC 2.3.1 Three Flashes or Below Threshold（W3C）](https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html) | 一次 | 1秒間に3回を超える明滅を避ける基準 | 未取得（既知の基準として参照） |
 
-## Unityの公式資料
+### Unityの公式資料
 
 | 資料 | 使った内容 | 取得 |
 |---|---|---|
@@ -117,13 +154,13 @@ HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査
 | [Practical guide to optimization for mobiles](https://docs.unity3d.com/2017.3/Documentation/Manual/MobileOptimisation.html) | 描画の負荷とオーバードロー、粒には単純なシェーダー | 要約（旧版の資料） |
 | [The definitive guide to creating advanced visual effects in Unity（Unity 6 edition）](https://unity.com/resources/creating-advanced-vfx-unity6) | VFX Graphを使う場合の入口 | 要約 |
 
-## プラグイン
+### プラグイン
 
 | 資料 | 使った内容 | 取得 |
 |---|---|---|
 | [ParticleEffectForUGUI（mob-sakai）](https://github.com/mob-sakai/ParticleEffectForUGUI) | MITライセンス、uGUIでParticle Systemを描く、URP対応、すべてのRender Mode、マスクと並び順、Unity 6の明記なし | 本文（README） |
 
-## 現象（雷と雲）
+### 現象（雷と雲）
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
@@ -132,16 +169,10 @@ HD-2Dの作品の光と奥行きの構成要素は、[hd2d-lighting-vfxの調査
 | [Cumulonimbus clouds（Met Office）](https://weather.metoffice.gov.uk/learn-about/weather/types-of-weather/clouds/low-level-clouds/cumulonimbus) | 一次 | 積乱雲の底は平らで、暗い | 未取得（404）。検索結果の要約で確認（2026-10-23） |
 | [Cumulonimbus（オクラホマ大学）](https://weather.ou.edu/~broberts/METR2011/clouds/types/cb.html) | 二次（講義資料） | 真下から見ると底は黒に近い灰色。カリフラワーのような上部 | 要約（2026-10-23） |
 
-## AIで作るとき
+### AIで作るとき
 
 | 資料 | 種類 | 使った内容 | 取得 |
 |---|---|---|---|
 | [AI-generated GLSL shaders（14islands）](https://www.14islands.com/journal/ai-generated-glsl-shaders) | 二次（制作会社の実験記事） | AIは結果を見ないため美的判断が弱い、計画を先に作らせると質が上がりエラーが減る、同じ指示でも結果がぶれる、重くなりやすい | 本文（2026-10-23） |
 | [AI VFX（Coplay）](https://coplay.dev/blog/ai-vfx) | 二次（ツール開発会社の記事） | AIは空間の推論が弱い、静止画では動きと時間を判断できない、レシピと描画して見る工程が効いた | 本文（2026-10-23） |
 
-## 読み方
-
-Unityの公式資料は、API、対応条件、性能上の制約の根拠に使う。
-講演とスタイルガイドは、設計の原則の根拠に使う。
-フォーラムの投稿と解説記事は、技法の具体例として使い、採用前にUnityの対象バージョンで確かめる。
-特定の作品の内部実装は、開発者が公開した範囲を超えて推測しない。
