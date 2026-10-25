@@ -67,11 +67,6 @@ namespace Baryonyx.App
 
         private void Awake()
         {
-            Screen.autorotateToPortrait = false;
-            Screen.autorotateToPortraitUpsideDown = false;
-            Screen.autorotateToLandscapeLeft = false;
-            Screen.autorotateToLandscapeRight = false;
-            Screen.orientation = ScreenOrientation.LandscapeLeft;
             Application.targetFrameRate = 60;
 
             continueButton = GetComponent<Button>();

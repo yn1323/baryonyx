@@ -9,9 +9,9 @@ uGUIで作るゲームの画面（Top・Home・案内人の画面・冒険・戦
 
 ## 画面方向と拡縮
 
-アプリの通常の向きはPlayer設定の `LandscapeLeft` とする。
-起動時にも自動回転を無効にする。
-自動回転の許可値は対象画面の向きに揃え、画面ごとの処理から向きを繰り返し設定しない。
+アプリの向きはPlayer設定の `Auto Rotation` とし、自動回転を許す向きは `Landscape Left` と `Landscape Right` だけにする。
+Androidの `Auto Rotation Behavior` は `Sensor` とし、端末の自動回転がオフでも、横画面のまま傾きに合わせて左右を反転させる（マニフェストの `screenOrientation` は `sensorLandscape`）。
+向きはPlayer設定だけで決め、起動時や画面ごとの処理から `Screen.orientation` や自動回転の許可値を設定しない。
 AndroidとiOSで共有される設定であるため、検証したOSの範囲は機能仕様に明記する。[UnityのPlayer設定](https://docs.unity3d.com/6000.6/Documentation/Manual/class-PlayerSettingsAndroid.html)
 
 CanvasScalerの `Scale With Screen Size` を使い、基準解像度を設計上の座標として扱う。
