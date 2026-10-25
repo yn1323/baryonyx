@@ -1107,7 +1107,7 @@ namespace Baryonyx.Stages.Editor
             );
             var flame = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
             var ember = AssetDatabase.LoadAssetAtPath<Material>(EmberMaterialPath);
-            var mote = AssetDatabase.LoadAssetAtPath<Material>(MoteMaterialPath);
+            var firefly = AssetDatabase.LoadAssetAtPath<Material>(FireflyMaterialPath);
             var gateGlow = GlowMaterial(
                 StarlitDirectory + "/StarlitGateGlow.mat",
                 new Color(0.42f, 0.62f, 1f),
@@ -1347,13 +1347,14 @@ namespace Baryonyx.Stages.Editor
                         false
                     );
 
-                // Fireflies drifting over the grass along the path.
+                // Fireflies drifting over the grass along the path, each glowing and fading on
+                // its own.
                 Motes(
                     root,
                     "Fireflies",
                     new Vector3(0f, 1.1f, 9f),
                     new Vector3(13f, 1.8f, 12f),
-                    mote,
+                    firefly,
                     36,
                     new Color(0.7f, 1f, 0.55f)
                 );
@@ -1465,6 +1466,7 @@ namespace Baryonyx.Stages.Editor
             var flame = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
             var ember = AssetDatabase.LoadAssetAtPath<Material>(EmberMaterialPath);
             var mote = AssetDatabase.LoadAssetAtPath<Material>(MoteMaterialPath);
+            var smoke = AssetDatabase.LoadAssetAtPath<Material>(SmokeMaterialPath);
 
             var store = new MeshStore(DuskDirectory + "/DuskHighlandStageMeshes.asset");
             var stage = new GameObject("DuskHighlandStage");
@@ -1618,6 +1620,21 @@ namespace Baryonyx.Stages.Editor
                         4f,
                         0.12f,
                         0.08f
+                    );
+                    // Smoke rising from the fire against the dusk sky, lit by it from below and
+                    // leaning with the evening wind.
+                    Smoke(
+                        fires,
+                        "Smoke" + label,
+                        tip + Vector3.up * 0.75f,
+                        smoke,
+                        5f,
+                        0.12f,
+                        0.5f,
+                        2.3f,
+                        0.75f,
+                        4.2f,
+                        new Vector2(0.18f, 0f)
                     );
                 }
 

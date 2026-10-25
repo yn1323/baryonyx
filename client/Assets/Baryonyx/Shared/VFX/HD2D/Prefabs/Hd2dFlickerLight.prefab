@@ -85,8 +85,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dFlickerLight
   LightLayer: {fileID: 3633922731359134621}
-  GlowSprite: {fileID: 21300000, guid: 91f5ade2f630f48a78063be14e8fd94d, type: 3}
-  AdditiveMaterial: {fileID: 2100000, guid: 19125986337014913a0805e307f06bdc, type: 2}
+  CoreMaterial: {fileID: 2100000, guid: f6dcabed704ef41b280cf13c115b5456, type: 2}
+  HaloMaterial: {fileID: 2100000, guid: 786a50d32a7da4c07affcace4ddcf33a, type: 2}
+  ReflectionMaterial: {fileID: 2100000, guid: f240fa653832f40a0875c982d059a25a, type: 2}
   PlayOnEnable: 1
   Animate: 1
   UseUnscaledTime: 1

@@ -4,9 +4,11 @@ using UnityEngine;
 namespace Baryonyx.Vfx.Hd2d
 {
     /// <summary>
-    /// UI-based soft light shafts for a ScreenSpaceOverlay background.
-    /// Each shaft starts outside the top edge, widens and fades toward the floor,
-    /// and can carry dust motes and a floor light pool.
+    /// UI-based soft light shafts over a painted background, computed by the ambient shader
+    /// (<c>Baryonyx/HD2D/UI Ambient</c>, beam shape) without an image. Each shaft starts outside
+    /// the top edge, widens and fades toward the floor, is streaked where the light came through
+    /// gaps, and lights the specks of dust drifting inside it; a floor light pool shows where it
+    /// lands.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -14,7 +16,9 @@ namespace Baryonyx.Vfx.Hd2d
     {
         [Header("レイヤーと素材")]
         public RectTransform ShaftLayer;
-        public Sprite ShaftSprite;
+
+        [Tooltip("光芒の形（Baryonyx/HD2D/UI Ambient の Beam）のマテリアル。光芒ごとに複製して使います。")]
+        public Material BeamMaterial;
 
         [Header("再生")]
         public bool PlayOnEnable = true;
@@ -44,14 +48,15 @@ namespace Baryonyx.Vfx.Hd2d
         public Vector2 RotationRange = new Vector2(-110f, -106f);
 
         [Header("本数ごとの太さ")]
-        [Tooltip("複数本を同じ画像で描くときの細い線から太い線への倍率です。")]
+        [Tooltip("複数本を描くときの細い線から太い線への倍率です。")]
         public Vector2 WidthScaleRange = new Vector2(0.55f, 1.35f);
 
         [Tooltip("光芒ごとの濃さの倍率です。差を付けると筋が見分けやすくなります。")]
         public Vector2 OpacityRange = new Vector2(0.5f, 1f);
 
         [Header("床の光だまり")]
-        public Sprite FloorPoolSprite;
+        [Tooltip("床の光だまり（Baryonyx/HD2D/UI Ambient の Pool）のマテリアルです。")]
+        public Material FloorPoolMaterial;
 
         [Tooltip("光だまりの中心。画面の正規化座標です。")]
         public Vector2 FloorPoolAnchor = new Vector2(0.49f, 0.25f);
@@ -62,18 +67,19 @@ namespace Baryonyx.Vfx.Hd2d
         public float FloorPoolAlpha = 0.4f;
 
         [Header("光の中の埃")]
-        [Tooltip("未指定の場合は、ドット絵に合わせた四角い点で描きます。")]
-        public Sprite MoteSprite;
-
         [Min(0)]
+        [Tooltip("1本あたりのおよその数です。光芒の中だけで光り、外では見えません。")]
         public int MotesPerShaft = 18;
         public Color MoteColor = new Color(0.85f, 0.92f, 1f, 0.95f);
-        public Vector2 MoteSizeRange = new Vector2(3f, 5f);
+
+        [Tooltip("粒の芯の大きさ（px）。周りに3倍の淡い光が付きます。")]
+        public Vector2 MoteSizeRange = new Vector2(1f, 1.6f);
 
         [Tooltip("光芒に沿って流れる速さ（px/秒）です。")]
         public Vector2 MoteSpeedRange = new Vector2(6f, 16f);
 
         [Min(0f)]
+        [Tooltip("横ゆれの大きさ（px）です。")]
         public float MoteSway = 10f;
 
         [Header("ゆらぎ")]
@@ -89,8 +95,16 @@ namespace Baryonyx.Vfx.Hd2d
         [Min(0f)]
         public float MotionSpeed = 0.14f;
 
-        private const float MoteAlongStart = 0.06f;
-        private const float MoteAlongSpan = 0.86f;
+        // One chance of a speck per cell of this size (px) along the shaft.
+        private const float MoteCellSize = 28f;
+
+        // The part of a shaft's rectangle that is lit enough to show its specks.
+        private const float LitShare = 0.45f;
+
+        private static readonly int MotesId = Shader.PropertyToID("_Motes");
+        private static readonly int MoteColorId = Shader.PropertyToID("_MoteColor");
+        private static readonly int MoteSwayId = Shader.PropertyToID("_MoteSway");
+        private static readonly int SeedId = Shader.PropertyToID("_Seed");
 
         private readonly List<ShaftState> shafts = new List<ShaftState>();
         private UnityEngine.UI.Image floorPool;
@@ -125,8 +139,8 @@ namespace Baryonyx.Vfx.Hd2d
             if (!initialized || !Animate || !playing)
                 return;
 
-            var time = UseUnscaledTime ? Time.unscaledTime : Time.time;
-            ApplyAllVisuals(time);
+            Hd2dAmbientClock.Publish(UseUnscaledTime);
+            ApplyAllVisuals(UseUnscaledTime ? Time.unscaledTime : Time.time);
         }
 
         private void OnValidate()
@@ -149,7 +163,7 @@ namespace Baryonyx.Vfx.Hd2d
             FloorPoolSize = ClampSize(FloorPoolSize);
             FloorPoolAlpha = Mathf.Clamp01(FloorPoolAlpha);
             MotesPerShaft = Mathf.Max(0, MotesPerShaft);
-            MoteSizeRange = NormalizeRange(MoteSizeRange, 0.1f);
+            MoteSizeRange = NormalizeRange(MoteSizeRange, 0.3f);
             MoteSpeedRange = NormalizeRange(MoteSpeedRange, 0f);
             MoteSway = Mathf.Max(0f, MoteSway);
             FlickerAmount = Mathf.Clamp01(FlickerAmount);
@@ -160,7 +174,7 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
-        /// Recreates the small image pool using the current Inspector values.
+        /// Recreates the shafts using the current Inspector values.
         /// </summary>
         public void RebuildShafts()
         {
@@ -174,7 +188,7 @@ namespace Baryonyx.Vfx.Hd2d
                 return;
 
             CacheShaftLayer();
-            if (ShaftLayer == null || ShaftSprite == null)
+            if (ShaftLayer == null || BeamMaterial == null)
                 return;
 
             random = new System.Random(RandomSeed);
@@ -191,35 +205,26 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
-        /// Relative brightness along a shaft: 0 is the source and 1 is the far end.
-        /// The shaft texture and the dust motes share this profile.
+        /// Shows the shafts as they are <paramref name="time"/> seconds into play, without
+        /// playing: for captures and previews.
         /// </summary>
-        public static float EvaluateBeamIntensity(float along)
+        public void ShowAt(float time)
         {
-            along = Mathf.Clamp01(along);
-            var fadeIn = Mathf.Clamp01(along * 5f + 0.2f);
-            return Mathf.Clamp01(Mathf.Pow(1f - along, 1.3f) * fadeIn / 0.8f);
+            if (!initialized)
+                RebuildShafts();
+            ApplyAllVisuals(time);
+            Hd2dAmbientClock.Set(time);
         }
 
         /// <summary>
-        /// Half width of the visible beam relative to the half height of the texture.
-        /// The beam widens from the source toward the far end.
+        /// The share of the shader's cells that hold a speck, so that a shaft of
+        /// <paramref name="length"/> by <paramref name="width"/> px shows about
+        /// <paramref name="count"/> specks in its lit part.
         /// </summary>
-        public static float EvaluateBeamHalfWidth(float along)
+        public static float EvaluateMoteShare(int count, float length, float width)
         {
-            return Mathf.Lerp(0.42f, 0.9f, Mathf.Clamp01(along));
-        }
-
-        /// <summary>
-        /// Alpha of the shaft texture. <paramref name="across"/> is -1 to 1 from the center line.
-        /// </summary>
-        public static float EvaluateBeamAlpha(float along, float across)
-        {
-            var distance = Mathf.Abs(across);
-            var ratio = distance / EvaluateBeamHalfWidth(along);
-            var core = Mathf.Exp(-ratio * ratio * 2.2f);
-            var edge = 1f - Hd2dMath.SmoothUnit((distance - 0.9f) / 0.1f);
-            return Mathf.Clamp01(core * edge * EvaluateBeamIntensity(along));
+            var cells = Mathf.Max(1f, length * width * LitShare / (MoteCellSize * MoteCellSize));
+            return Mathf.Clamp01(count / cells);
         }
 
         private void CacheShaftLayer()
@@ -242,10 +247,10 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void AddFloorPool()
         {
-            if (FloorPoolSprite == null || FloorPoolAlpha <= 0f)
+            if (FloorPoolMaterial == null || FloorPoolAlpha <= 0f)
                 return;
 
-            floorPool = CreateImage("FloorPool", ShaftLayer, FloorPoolSprite);
+            floorPool = CreateImage("FloorPool", ShaftLayer, FloorPoolMaterial);
             var rect = floorPool.rectTransform;
             rect.anchorMin = rect.anchorMax = FloorPoolAnchor;
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -270,7 +275,13 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void AddShaft(string name, int index, int slot)
         {
-            var image = CreateImage(name, ShaftLayer, ShaftSprite);
+            // Each shaft has its own streaks and dust, so it reads its own copy of the material.
+            var material = new Material(BeamMaterial)
+            {
+                name = BeamMaterial.name + " (" + name + ")",
+                hideFlags = HideFlags.DontSave,
+            };
+            var image = CreateImage(name, ShaftLayer, material);
             var rect = image.rectTransform;
             var slotPosition = ShaftCount <= 1 ? 0.5f : slot / (float)(ShaftCount - 1);
             var source = new Vector2(
@@ -295,6 +306,7 @@ namespace Baryonyx.Vfx.Hd2d
             {
                 Rect = rect,
                 Image = image,
+                Material = material,
                 Length = RandomRange(LengthRange.x, LengthRange.y),
                 Width = RandomRange(WidthRange.x, WidthRange.y) * widthScale,
                 Rotation = RandomRange(RotationRange.x, RotationRange.y),
@@ -306,42 +318,33 @@ namespace Baryonyx.Vfx.Hd2d
                 FlickerPhase = RandomRange(0f, 100f),
                 Opacity = RandomRange(OpacityRange.x, OpacityRange.y),
             };
-            AddMotes(shaft, index);
+
+            // A separate sequence keeps the shaft layout stable when only the dust changes.
+            var moteRandom = new System.Random(RandomSeed + 7919 * (index + 1));
+            material.SetVector(
+                SeedId,
+                new Vector4(
+                    RandomRange(moteRandom, 0f, 40f),
+                    RandomRange(moteRandom, 0f, 40f),
+                    RandomRange(moteRandom, 0f, 400f),
+                    RandomRange(moteRandom, 0f, 400f)
+                )
+            );
+            material.SetVector(
+                MotesId,
+                new Vector4(
+                    MoteCellSize,
+                    EvaluateMoteShare(MotesPerShaft, shaft.Length, shaft.Width),
+                    RandomRange(moteRandom, MoteSizeRange.x, MoteSizeRange.y),
+                    RandomRange(moteRandom, MoteSpeedRange.x, MoteSpeedRange.y)
+                )
+            );
+            material.SetColor(MoteColorId, MoteColor);
+            material.SetFloat(MoteSwayId, MoteSway);
             shafts.Add(shaft);
         }
 
-        private void AddMotes(ShaftState shaft, int shaftIndex)
-        {
-            if (MotesPerShaft <= 0)
-                return;
-
-            // A separate sequence keeps the shaft layout stable when only the dust count changes.
-            var moteRandom = new System.Random(RandomSeed + 7919 * (shaftIndex + 1));
-            for (var index = 0; index < MotesPerShaft; index++)
-            {
-                var image = CreateImage("Mote_" + index.ToString("00"), shaft.Rect, MoteSprite);
-                var rect = image.rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
-                rect.pivot = new Vector2(0.5f, 0.5f);
-                // Whole pixels keep the square motes crisp next to the pixel art.
-                var size = Mathf.Round(RandomRange(moteRandom, MoteSizeRange.x, MoteSizeRange.y));
-                rect.sizeDelta = new Vector2(size, size);
-                shaft.Motes.Add(
-                    new MoteState
-                    {
-                        Rect = rect,
-                        Image = image,
-                        Along = (float)moteRandom.NextDouble(),
-                        Across = RandomRange(moteRandom, -1f, 1f),
-                        Speed = RandomRange(moteRandom, MoteSpeedRange.x, MoteSpeedRange.y),
-                        SwayPhase = RandomRange(moteRandom, 0f, Mathf.PI * 2f),
-                        TwinklePhase = RandomRange(moteRandom, 0f, 100f),
-                    }
-                );
-            }
-        }
-
-        private UnityEngine.UI.Image CreateImage(string name, Transform parent, Sprite sprite)
+        private UnityEngine.UI.Image CreateImage(string name, Transform parent, Material material)
         {
             var imageObject = new GameObject(
                 name,
@@ -353,7 +356,7 @@ namespace Baryonyx.Vfx.Hd2d
             imageObject.transform.SetParent(parent, false);
 
             var image = imageObject.GetComponent<UnityEngine.UI.Image>();
-            image.sprite = sprite;
+            image.material = material;
             image.preserveAspect = false;
             image.raycastTarget = false;
             return image;
@@ -399,41 +402,6 @@ namespace Baryonyx.Vfx.Hd2d
             var color = ShaftColor;
             color.a = Mathf.Clamp01(ShaftColor.a * shaft.Opacity * flicker);
             shaft.Image.color = color;
-            shaft.Image.raycastTarget = false;
-
-            foreach (var mote in shaft.Motes)
-                ApplyMote(shaft, mote, time, flicker);
-        }
-
-        private void ApplyMote(ShaftState shaft, MoteState mote, float time, float flicker)
-        {
-            if (mote.Rect == null || mote.Image == null)
-                return;
-
-            // Motes drift from the source toward the floor and wrap inside the lit part.
-            var travel = shaft.Length > 0f ? time * mote.Speed / shaft.Length : 0f;
-            var along =
-                MoteAlongStart + Mathf.Repeat(mote.Along * MoteAlongSpan + travel, MoteAlongSpan);
-            var halfWidth = EvaluateBeamHalfWidth(along) * shaft.Width * 0.5f * 0.7f;
-            var sway = Mathf.Sin(mote.SwayPhase + time * 0.6f) * MoteSway;
-            mote.Rect.anchoredPosition = new Vector2(
-                along * shaft.Length,
-                mote.Across * halfWidth + sway
-            );
-            // Cancel the shaft rotation so the motes stay aligned with the screen pixels.
-            mote.Rect.localEulerAngles = new Vector3(0f, 0f, -shaft.Rotation);
-
-            var twinkle = Mathf.Lerp(
-                0.45f,
-                1f,
-                Mathf.PerlinNoise(mote.TwinklePhase + time * 0.8f, mote.TwinklePhase * 0.53f)
-            );
-            var fadeAtEnds = Hd2dMath.SmoothUnit((along - MoteAlongStart) / 0.08f);
-            var color = MoteColor;
-            // The square root keeps motes visible in the dimmer lower part of the shaft.
-            var brightness = Mathf.Sqrt(EvaluateBeamIntensity(along));
-            color.a = Mathf.Clamp01(MoteColor.a * brightness * twinkle * fadeAtEnds * flicker);
-            mote.Image.color = color;
         }
 
         private float EvaluateFlicker(float phase, float time, float amountScale)
@@ -449,9 +417,16 @@ namespace Baryonyx.Vfx.Hd2d
         private void ClearShafts()
         {
             initialized = false;
-            // Destroying a shaft also destroys its child motes.
             foreach (var shaft in shafts)
+            {
                 DestroyGenerated(shaft.Image);
+                if (shaft.Material == null)
+                    continue;
+                if (Application.IsPlaying(gameObject))
+                    Destroy(shaft.Material);
+                else
+                    DestroyImmediate(shaft.Material);
+            }
             shafts.Clear();
             DestroyGenerated(floorPool);
             floorPool = null;
@@ -495,6 +470,7 @@ namespace Baryonyx.Vfx.Hd2d
         {
             public RectTransform Rect;
             public UnityEngine.UI.Image Image;
+            public Material Material;
             public float Length;
             public float Width;
             public float Rotation;
@@ -502,18 +478,6 @@ namespace Baryonyx.Vfx.Hd2d
             public float Phase;
             public float FlickerPhase;
             public float Opacity;
-            public readonly List<MoteState> Motes = new List<MoteState>();
-        }
-
-        private sealed class MoteState
-        {
-            public RectTransform Rect;
-            public UnityEngine.UI.Image Image;
-            public float Along;
-            public float Across;
-            public float Speed;
-            public float SwayPhase;
-            public float TwinklePhase;
         }
     }
 }

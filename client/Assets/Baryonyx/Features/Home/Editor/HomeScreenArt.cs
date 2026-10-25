@@ -42,9 +42,6 @@ namespace Baryonyx.Home.Editor
         // The clear margin that separates a front part from the part behind it (design units).
         private const float PartGap = 2.6f;
 
-        // The 5x5 four-point star of the rune sparkles, white so the emitter can tint it.
-        public const string RuneTwinklePath = ArtFolder + "/RuneTwinkle.png";
-
         // Drawn in Aseprite (24x24, full colour).
         public const string IconRunePath =
             "Assets/Baryonyx/Shared/Art/GameResources/IconRune.aseprite";
@@ -143,16 +140,6 @@ namespace Baryonyx.Home.Editor
             ".DDDD.DDDD.",
         };
 
-        // A bright centre, the arms a little dimmer and faint tips, so it twinkles as a star.
-        private static readonly string[] RuneTwinkle =
-        {
-            "..+..",
-            "..#..",
-            "+#O#+",
-            "..#..",
-            "..+..",
-        };
-
         public static void EnsureAll()
         {
             UiArt.EnsureAll();
@@ -166,18 +153,6 @@ namespace Baryonyx.Home.Editor
             Flask().Save(IconDebugRoomsPath, NavIconTextureSize);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
             ArtAssets.ImportDrawn(IconRunePath, mipmaps: true);
-            ArtAssets.WritePattern(
-                RuneTwinklePath,
-                RuneTwinkle,
-                c =>
-                    c switch
-                    {
-                        'O' => Color.white,
-                        '#' => new Color(1f, 1f, 1f, 0.8f),
-                        '+' => new Color(1f, 1f, 1f, 0.4f),
-                        _ => Color.clear,
-                    }
-            );
             ArtAssets.WriteSmooth(
                 ShadeHorizontalPath,
                 64,

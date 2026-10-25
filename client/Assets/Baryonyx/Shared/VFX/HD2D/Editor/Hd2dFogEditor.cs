@@ -16,7 +16,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var root = new VisualElement();
             root.Add(
                 new HelpBox(
-                    "霧のレイヤーごとに範囲・色・流れを調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。",
+                    "霧のレイヤーごとに範囲・色・流れを調整できます。霧は画像を使わず、ノイズを2回ゆがめて計算で描きます。再生を停止した状態で変更し、シーンを保存すると値が残ります。",
                     HelpBoxMessageType.Info
                 )
             );
@@ -34,7 +34,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             var assets = new Foldout { text = "素材", value = false };
             AddField(assets, "FogLayer", "描画レイヤー");
-            AddField(assets, "NoiseTexture", "ノイズ画像");
+            AddField(assets, "FogMaterial", "霧のマテリアル");
             root.Add(assets);
 
             root.Add(
@@ -68,10 +68,11 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(foldout, property, "Softness", "縁のぼかし（px）");
             AddField(foldout, property, "TileSize", "模様の大きさ（px）");
             AddField(foldout, property, "ScrollSpeed", "流れる速さ（px/秒）");
-            AddField(foldout, property, "DetailOpacity", "逆向きの細かい模様");
+            AddField(foldout, property, "DetailOpacity", "逆向きの細かい切れ端");
+            AddField(foldout, property, "Settle", "床に沈む度合い");
+            AddField(foldout, property, "Churn", "渦を巻く速さ");
             AddField(foldout, property, "BreathAmount", "濃さの増減");
             AddField(foldout, property, "BreathSpeed", "増減の速さ");
-            AddField(foldout, property, "Texture", "画像（未指定で共通ノイズ）");
             return foldout;
         }
     }

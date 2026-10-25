@@ -115,7 +115,7 @@ namespace Baryonyx.App.Editor
                 sun.color = Moonlight;
                 sun.intensity *= MoonShare;
             }
-            HomeSceneSetup.AddCampfire(scene, FireIntensity, FireRange);
+            HomeSceneSetup.AddCampfire(scene, FireIntensity, FireRange, daylight: false);
             Hd2dStageSceneSetup.AddVolume(
                 scene,
                 "CampfireLook",

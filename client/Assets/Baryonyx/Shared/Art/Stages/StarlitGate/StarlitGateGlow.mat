@@ -26,7 +26,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _Core: 0.01
+    - _CoreBoost: 2
+    - _Halo: 1
+    - _HaloSize: 0.3
     - _Intensity: 0.9
+    - _Occlude: 0
+    - _Twinkle: 0
+    - _TwinkleSpeed: 2
     m_Colors:
     - _Color: {r: 0.42, g: 0.62, b: 1, a: 1}
   m_BuildTextureStacks: []

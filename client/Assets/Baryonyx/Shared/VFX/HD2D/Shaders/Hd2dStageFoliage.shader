@@ -1,6 +1,7 @@
 // 3Dの舞台に立てる草・シダ・茂み・枝葉の切り抜きの板のシェーダー。
 // 葉は薄く光を透かすため、カメラを向く板の裏から当たる月明かりや松明の光も弱めて受ける（Simple Litでは裏の光が届かず、黒い塊に見えた）。
 // 主光源の影と木漏れ日のクッキー、点光源、環境光、霧を受け、穂先（または垂れた枝先）を風でゆっくり揺らす。
+// 風は一様に吹かず、強い風の塊（風の息）が地面を渡っていく。塊が通った所の草だけが大きくなびき、風下へ傾く。
 // 不透明の列で深度を書くため、舞台のレンズで地面と同じようにぼける。
 Shader "Baryonyx/HD2D/Stage Foliage"
 {
@@ -28,6 +29,7 @@ Shader "Baryonyx/HD2D/Stage Foliage"
 
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Hd2dStageAir.hlsl"
 
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
@@ -43,14 +45,19 @@ Shader "Baryonyx/HD2D/Stage Foliage"
         CBUFFER_END
 
         // 板の上端（垂れる枝葉は下端）ほど大きく、場所ごとに位相をずらした2つの波で横へ揺らす。
+        // 風の息は、風の向き（+x）へ流れる大きなノイズで決め、通った所だけ揺れを強め、風下へ傾ける。
         float3 Swayed(float3 positionWS, float2 uv)
         {
             float tip = lerp(uv.y, 1.0 - uv.y, _HangDown);
             float phase = dot(positionWS.xz, float2(0.37, 0.23));
-            float t = _Time.y * _SwaySpeed;
+            float clock = Hd2dTime();
+            float t = clock * _SwaySpeed;
             float wave = sin(t + phase) + 0.35 * sin(t * 2.3 + phase * 1.7);
-            positionWS.x += wave * _Sway * tip;
-            positionWS.z += 0.3 * wave * _Sway * tip;
+            float gust = Hd2dNoise(float3(positionWS.x * 0.16 - clock * 0.45, positionWS.z * 0.16, clock * 0.06));
+            gust = smoothstep(0.4, 0.85, gust);
+            float sway = wave * (0.55 + 0.65 * gust) + gust * 0.6;
+            positionWS.x += sway * _Sway * tip;
+            positionWS.z += 0.3 * sway * _Sway * tip;
             return positionWS;
         }
         ENDHLSL

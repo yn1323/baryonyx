@@ -34,8 +34,9 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             var assets = new Foldout { text = "素材", value = false };
             AddField(assets, "LightLayer", "描画レイヤー");
-            AddField(assets, "GlowSprite", "光の画像");
-            AddField(assets, "AdditiveMaterial", "加算合成マテリアル");
+            AddField(assets, "CoreMaterial", "芯のマテリアル");
+            AddField(assets, "HaloMaterial", "周りを照らす光のマテリアル");
+            AddField(assets, "ReflectionMaterial", "照り返しのマテリアル");
             root.Add(assets);
 
             root.Add(

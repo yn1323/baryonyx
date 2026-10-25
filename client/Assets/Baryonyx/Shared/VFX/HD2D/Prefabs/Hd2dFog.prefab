@@ -85,7 +85,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dFog
   FogLayer: {fileID: 5889404197329397295}
-  NoiseTexture: {fileID: 2800000, guid: f79ca2d1acf53409bb3a0923aba23d0a, type: 3}
+  FogMaterial: {fileID: 2100000, guid: 9c554ac1eb69145328c5d0ac9b4ca4a7, type: 2}
   PlayOnEnable: 1
   Animate: 1
   UseUnscaledTime: 1
@@ -94,24 +94,26 @@ MonoBehaviour:
   Intensity: 1
   Layers:
   - Name: FloorMistFar
-    AnchorMin: {x: -0.05, y: 0.18}
+    AnchorMin: {x: -0.05, y: 0.08}
     AnchorMax: {x: 1.05, y: 0.4}
-    Color: {r: 0.55, g: 0.64, b: 0.8, a: 0.16}
+    Color: {r: 0.55, g: 0.64, b: 0.8, a: 0.24}
     Softness: {x: 240, y: 70}
     TileSize: {x: 640, y: 150}
     ScrollSpeed: {x: 8, y: 0}
     DetailOpacity: 0.5
+    Settle: 0.6
+    Churn: 0.2
     BreathAmount: 0.15
     BreathSpeed: 0.18
-    Texture: {fileID: 0}
   - Name: FloorMistNear
     AnchorMin: {x: -0.05, y: -0.06}
-    AnchorMax: {x: 1.05, y: 0.2}
-    Color: {r: 0.6, g: 0.68, b: 0.82, a: 0.2}
+    AnchorMax: {x: 1.05, y: 0.24}
+    Color: {r: 0.6, g: 0.68, b: 0.82, a: 0.28}
     Softness: {x: 240, y: 80}
     TileSize: {x: 900, y: 220}
     ScrollSpeed: {x: -16, y: 0}
-    DetailOpacity: 0.5
+    DetailOpacity: 0.6
+    Settle: 0.7
+    Churn: 0.3
     BreathAmount: 0.15
     BreathSpeed: 0.22
-    Texture: {fileID: 0}

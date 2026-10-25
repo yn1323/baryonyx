@@ -38,8 +38,8 @@ disable-model-invocation: true
 ## 表現を分解して選ぶ
 
 HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層を必要な分だけ組み合わせる。
-光・霧・粒の形を新しく作る・作り直すときは、[エフェクトの描き方](../../../doc/art/direction.md#エフェクトの描き方)に従い、画像を貼らずに計算で描く。式の組み立ては [vfx-authoringの計算で形を描く](../vfx-authoring/references/procedural-shapes.md) を使う。
-画像で作った既存の部品は、作り直すまで現行のまま扱う。
+光・霧・粒の形を新しく作る・作り直すときは、[エフェクトの描き方](../../../doc/art/direction.md#エフェクトの描き方)に従い、画像を貼らずに計算で描く。式の組み立ては [vfx-authoringの外部画像なしで質感を補う技術](../vfx-authoring/references/procedural.md)と[計算で描くときのつまずき](../vfx-authoring/references/lessons.md#計算で描くときのつまずき) を使う。
+共通の部品（下の表）は、2026-10-26に霧のシェーダー `Baryonyx/HD2D/UI Fog` と、光・粒のシェーダー `Baryonyx/HD2D/UI Ambient`（形ごとのマテリアル）で計算して描くように作り直した。形を足すときも画像を足さず、このシェーダーの形かマテリアルを足す。
 技法ごとの前提、難易度、採用状況は [references/technique-catalog.md](references/technique-catalog.md) にまとめる。
 
 | 層 | 役割 | 第一候補 | 採用条件・注意点 |
@@ -98,13 +98,13 @@ HD-2D風の見た目を一つのエフェクトで作ろうとせず、次の層
 ### ポストプロセス
 
 - URPのCameraでPost Processingを有効にし、Volume Profileを画面またはシーン単位で所有する。
-- Bloomの仕組み、`Screen Space - Overlay` のUIにポストプロセスが掛からないこと、Bloomを通らない経路でグローで代えることは、[vfx-authoringの明るさと光のにじみ](../vfx-authoring/references/techniques.md#明るさと光のにじみ)に従う。発光素材を少数に絞り、Threshold、Intensity、Scatter、Downscale、Qualityを調整する。ドットの輪郭と文字がにじむ場合は、発光用レイヤーを分離するか強度を下げる。
+- Bloomの仕組み、`Screen Space - Overlay` のUIにポストプロセスが掛からないこと、Bloomを通らない経路でグローで代えることは、[vfx-authoringのBloomが掛かる経路](../vfx-authoring/references/lessons.md#bloomが掛かる経路)に従う。発光素材を少数に絞り、Threshold、Intensity、Scatter、Downscale、Qualityを調整する。ドットの輪郭と文字がにじむ場合は、発光用レイヤーを分離するか強度を下げる。
 - Color Adjustmentsで環境の明暗・色温度・彩度を揃える。Vignetteは中央へ視線を集めるために弱く使う。
 - 描いた背景には深度がないため、URPのDepth of Fieldではなく、画面の位置でぼかす疑似ティルトシフトを使う。
 
 ### パーティクル
 
-- 通常の環境粒子と数千程度までのキラキラは、組み込みのParticle Systemを第一候補にする。Emission、Shape、Velocity/Force over Lifetime、Noise、Color/Size over Lifetime、Rendererを役割ごとに設定する。VFX Graphを使う条件は[vfx-authoringのUnityでの実装経路](../vfx-authoring/references/techniques.md#unityでの実装経路)に従う。
+- 通常の環境粒子と数千程度までのキラキラは、組み込みのParticle Systemを第一候補にする。Emission、Shape、Velocity/Force over Lifetime、Noise、Color/Size over Lifetime、Rendererを役割ごとに設定する。VFX Graphを使う条件は[vfx-authoringの実装経路の選び方](../vfx-authoring/references/lessons.md#実装経路の選び方)に従う。
 - 透明な埃や霧はAlphaまたはPremultiply、星やグローはAdditiveを候補にする。Additiveは暗い背景では映えるが、重ねすぎると白飛びするため上限を決める。
 - 四芒星は単一の巨大な形で描かず、中心点、縦横の短い光、ぼかした円を組み合わせる。新しく作る場合は、それぞれを計算で描く。少数をランダムに大きくし、全粒子の周期を揃えない。
 - `Simulation Space`は、背景の埃や霧はWorld、キャラクター紹介に追従する粒子はLocal、画面に固定する光点はUIまたはCustomを選ぶ。粒子の目的と追従対象を一致させる。

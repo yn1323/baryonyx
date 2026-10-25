@@ -5,7 +5,9 @@ using UnityEngine;
 namespace Baryonyx.Vfx.Hd2d
 {
     /// <summary>
-    /// Shape of one ember. Small points are the base; crosses glow and streaks trail a tail.
+    /// Shape of one ember. Points (a round glowing head with a short tail) are the base; crosses
+    /// twinkle as glints (a four-pointed star, or the emitter's own glint shape) and streaks trail
+    /// a long tail.
     /// </summary>
     public enum Hd2dEmberShape
     {
@@ -76,16 +78,16 @@ namespace Baryonyx.Vfx.Hd2d
 
         [Min(1)]
         [Tooltip(
-            "粒を描く1ドットの大きさ（px）。点は1〜2ドット、十字と尾を引く粒は画像のドット数で描きます。"
+            "粒の大きさの単位（px）。点の頭は1〜2単位、尾を引く粒の頭は1.5単位、きらめきは発生器のきらめきの大きさの単位数で描きます。"
         )]
         public int DotSize = 2;
 
         [Range(0f, 1f)]
-        [Tooltip("十字の粒の割合です。中心だけ明るく、光る粒に見えます。")]
+        [Tooltip("きらめく粒の割合です。白い芯から四方へ細い光が伸び、光る粒に見えます。")]
         public float CrossShare = 0.3f;
 
         [Range(0f, 1f)]
-        [Tooltip("尾を引く粒の割合です。出る向きの反対へ尾が伸びます。残りは点になります。")]
+        [Tooltip("長い尾を引く粒の割合です。進む向きの反対へ細い尾が伸びます。残りは短い尾の点になります。")]
         public float StreakShare = 0.15f;
 
         [Tooltip("出たときの色です。")]
@@ -100,7 +102,10 @@ namespace Baryonyx.Vfx.Hd2d
     }
 
     /// <summary>
-    /// UI-based particles emitted from points, drawn above a ScreenSpaceOverlay background.
+    /// UI-based particles emitted from points, drawn above a painted background. Each particle is
+    /// a plain board that the ambient shader (<c>Baryonyx/HD2D/UI Ambient</c>) fills without an
+    /// image: an ember is a round white-hot head with a thin tail that cools behind it, turned to
+    /// its direction of travel and lengthened with its speed; a glint is a four-pointed twinkle.
     /// The launch, buoyancy and sway are evaluated from each particle's age; the curl-noise
     /// drift is integrated in fixed steps and replayed on rebuild, so an Editor preview
     /// matches the first frame of Play Mode.
@@ -112,16 +117,21 @@ namespace Baryonyx.Vfx.Hd2d
         [Header("レイヤーと素材")]
         public RectTransform ParticleLayer;
 
-        [Tooltip("十字の粒の画像。未指定の場合は点で描きます。")]
-        public Sprite CrossSprite;
+        [Tooltip("火の粉（Baryonyx/HD2D/UI Ambient の Ember）のマテリアル。点と尾を引く粒に使います。")]
+        public Material EmberMaterial;
 
         [Tooltip(
-            "尾を引く粒の画像。尾を下にして描き、出る向きに合わせて回します。未指定の場合は点で描きます。"
+            "きらめく粒のマテリアル。既定は四芒星（Star）で、もや（Puff）などに差し替えられます。未指定の場合は点で描きます。"
         )]
-        public Sprite StreakSprite;
+        public Material GlintMaterial;
 
-        [Tooltip("加算合成のマテリアル。未指定の場合は通常の半透明で描きます。")]
-        public Material AdditiveMaterial;
+        [Min(1)]
+        [Tooltip("きらめく粒の大きさ（発生源の大きさの単位の数）です。")]
+        public int GlintDots = 5;
+
+        [Range(0f, 360f)]
+        [Tooltip("きらめく粒を傾ける角度のばらつき（度）です。")]
+        public float GlintSpin = 20f;
 
         [Header("再生")]
         public bool PlayOnEnable = true;
@@ -151,6 +161,14 @@ namespace Baryonyx.Vfx.Hd2d
 
         // Offset in noise space for the finite differences of the stream function.
         private const float CurlEpsilon = 0.01f;
+
+        // An ember's tail is the path of its last moment: the eye keeps the hot head for about
+        // this long. Streaks are faster in the eye and leave a longer trail.
+        private const float PointTailSeconds = 0.1f;
+        private const float StreakTailSeconds = 0.25f;
+
+        // The board is this many head widths high, so the head's glow fits inside it.
+        private const float HeadBoardRatio = 3f;
 
         private readonly List<SourceState> states = new List<SourceState>();
         private System.Random random;
@@ -184,6 +202,7 @@ namespace Baryonyx.Vfx.Hd2d
             if (!initialized || !Animate || !playing)
                 return;
 
+            Hd2dAmbientClock.Publish(UseUnscaledTime);
             var deltaTime = UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
             if (deltaTime > 0f)
                 Step(deltaTime);
@@ -254,6 +273,18 @@ namespace Baryonyx.Vfx.Hd2d
                 foreach (var particle in state.Particles)
                     ApplyParticle(state.Settings, particle);
             }
+        }
+
+        /// <summary>
+        /// Shows the particles as they are <paramref name="time"/> seconds into play, without
+        /// playing: for captures and previews.
+        /// </summary>
+        public void ShowAt(float time)
+        {
+            RebuildParticles();
+            for (var elapsed = 0f; elapsed < time; elapsed += 1f / 30f)
+                Step(Mathf.Min(1f / 30f, time - elapsed));
+            Hd2dAmbientClock.Set(time);
         }
 
         /// <summary>
@@ -377,12 +408,12 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
-        /// Rotation (degrees) that turns an upward streak toward <paramref name="direction"/>.
-        /// Quarter turns only, so the dots stay on the pixel grid.
+        /// Length (px) of an ember's tail moving at <paramref name="speed"/> px/s: the path of
+        /// the last <paramref name="seconds"/>, at least one head long and at most twelve.
         /// </summary>
-        public static float StreakRotation(float direction)
+        public static float EvaluateTailLength(float speed, float seconds, float head)
         {
-            return Mathf.Repeat(Mathf.Round((direction - 90f) / 90f) * 90f, 360f);
+            return Mathf.Clamp(speed * seconds, head, head * 12f);
         }
 
         private void Step(float deltaTime)
@@ -504,8 +535,6 @@ namespace Baryonyx.Vfx.Hd2d
                 rect.pivot = new Vector2(0.5f, 0.5f);
 
                 var image = imageObject.GetComponent<UnityEngine.UI.Image>();
-                image.material = AdditiveMaterial;
-                image.preserveAspect = true;
                 image.raycastTarget = false;
 
                 var particle = new ParticleState
@@ -551,24 +580,74 @@ namespace Baryonyx.Vfx.Hd2d
         private void ApplyShape(Hd2dEmberSource source, ParticleState particle)
         {
             var shape = ChooseShape(RandomRange(0f, 1f), source.CrossShare, source.StreakShare);
-            var sprite =
-                shape == Hd2dEmberShape.Cross ? CrossSprite
-                : shape == Hd2dEmberShape.Streak ? StreakSprite
-                : null;
-            if (sprite == null)
+            if (shape == Hd2dEmberShape.Cross && GlintMaterial == null)
                 shape = Hd2dEmberShape.Point;
 
-            // Whole dots keep the embers crisp next to the pixel art.
-            var dots =
-                shape == Hd2dEmberShape.Point
-                    ? Vector2.one * (RandomRange(0f, 1f) < 0.5f ? 1f : 2f)
-                    : sprite.rect.size;
-            particle.Image.sprite = sprite;
-            particle.Rect.sizeDelta = dots * Mathf.Max(1, source.DotSize);
-            particle.Rect.localRotation =
-                shape == Hd2dEmberShape.Streak
-                    ? Quaternion.Euler(0f, 0f, StreakRotation(source.Direction))
-                    : Quaternion.identity;
+            var unit = Mathf.Max(1, source.DotSize);
+            var pointHead = RandomRange(0f, 1f) < 0.5f ? 1f : 2f;
+            particle.Shape = shape;
+            particle.Head =
+                shape == Hd2dEmberShape.Streak ? unit * 1.5f
+                : shape == Hd2dEmberShape.Cross ? unit * Mathf.Max(1, GlintDots)
+                : unit * pointHead;
+            particle.GlintAngle = RandomRange(-GlintSpin, GlintSpin) * 0.5f;
+            particle.Image.material = shape == Hd2dEmberShape.Cross ? GlintMaterial : EmberMaterial;
+            particle.Rect.pivot = new Vector2(0.5f, 0.5f);
+            particle.Rect.localRotation = Quaternion.identity;
+        }
+
+        // Turns an ember's board to its direction of travel and stretches its tail with the
+        // speed; a glint keeps its square board and tilt.
+        private void ApplyTrail(Hd2dEmberSource source, ParticleState particle)
+        {
+            if (particle.Shape == Hd2dEmberShape.Cross)
+            {
+                particle.Rect.sizeDelta = Vector2.one * particle.Head;
+                particle.Rect.localRotation = Quaternion.Euler(0f, 0f, particle.GlintAngle);
+                return;
+            }
+
+            var velocity = Velocity(source, particle);
+            var speed = velocity.magnitude;
+            var height = particle.Head * HeadBoardRatio;
+            var seconds =
+                particle.Shape == Hd2dEmberShape.Streak ? StreakTailSeconds : PointTailSeconds;
+            var tail = speed > 0.01f ? EvaluateTailLength(speed, seconds, particle.Head) : 0f;
+            var width = height + tail;
+            particle.Rect.sizeDelta = new Vector2(width, height);
+            // The head's centre is the particle's position; the tail trails behind it.
+            particle.Rect.pivot = new Vector2(1f - height * 0.5f / width, 0.5f);
+            var angle =
+                speed > 0.01f
+                    ? Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg
+                    : source.Direction;
+            particle.Rect.localRotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        // Velocity (px/s) of a particle now: the launch, the buoyancy, the sway and the eddies.
+        private Vector2 Velocity(Hd2dEmberSource source, ParticleState particle)
+        {
+            var age = particle.Age;
+            var velocity = particle.Velocity + new Vector2(0f, source.Buoyancy * age);
+            if (source.Sway > 0f)
+                velocity.x +=
+                    Mathf.Cos(particle.SwayPhase + age * source.SwaySpeed)
+                    * source.Sway
+                    * source.SwaySpeed;
+            if (source.Curl > 0f)
+            {
+                var position =
+                    particle.Origin + BaseOffset(source, particle, age) + particle.CurlOffset;
+                velocity +=
+                    CurlVelocity(
+                        position + particle.FieldOffset,
+                        fieldTime,
+                        source.CurlScale,
+                        source.CurlSpeed
+                    )
+                    * (source.Curl * Hd2dMath.SmoothUnit(age / CurlRampSeconds));
+            }
+            return velocity;
         }
 
         private void ApplyParticle(Hd2dEmberSource source, ParticleState particle)
@@ -585,6 +664,7 @@ namespace Baryonyx.Vfx.Hd2d
             var life01 = particle.Lifetime > 0f ? particle.Age / particle.Lifetime : 1f;
             particle.Rect.anchoredPosition =
                 particle.Origin + BaseOffset(source, particle, particle.Age) + particle.CurlOffset;
+            ApplyTrail(source, particle);
 
             var twinkle =
                 source.Twinkle > 0f
@@ -658,6 +738,11 @@ namespace Baryonyx.Vfx.Hd2d
             public float Age;
             public float SwayPhase;
             public float TwinklePhase;
+            public Hd2dEmberShape Shape;
+
+            // Diameter (px) of an ember's head, or the size of a glint's board.
+            public float Head;
+            public float GlintAngle;
         }
     }
 }

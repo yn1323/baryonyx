@@ -25,8 +25,14 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Core: 0.18
+    - _Core: 0.16
+    - _CoreBoost: 2
+    - _Halo: 0.7
+    - _HaloSize: 0.3
     - _Intensity: 2
+    - _Occlude: 0
+    - _Twinkle: 0.7
+    - _TwinkleSpeed: 1.4
     m_Colors:
     - _Color: {r: 1, g: 0.95, b: 0.75, a: 1}
   m_BuildTextureStacks: []

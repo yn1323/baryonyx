@@ -84,9 +84,9 @@ namespace Baryonyx.Home.Editor
         private static Texture2D destinationArt;
         private static Texture2D travelArt;
 
-        // デバッグルームの一覧の行（「ルーン+10000」、7つのルーム、「閉じる」）と、その高さ。
-        private const int DebugRoomChoices = 9;
-        private const float DebugRoomRowHeight = 76f;
+        // デバッグルームの一覧の選択肢（「ルーン+10000」、8つのルーム、「閉じる」）と、それを並べる列の数。
+        private const int DebugRoomChoices = 10;
+        private const int DebugRoomColumns = 2;
 
         public const string RoomReturnPath =
             "Assets/Baryonyx/Features/Home/UI/DebugRoomReturn.prefab";
@@ -169,13 +169,13 @@ namespace Baryonyx.Home.Editor
                 BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
-                // The list of debugging rooms: "ルーン+10000", seven rooms and "閉じる", in lower rows than the
-                // usual five so they fit the screen.
+                // The list of debugging rooms: "ルーン+10000", eight rooms and "閉じる", in two columns
+                // of the usual rows so they fit the screen.
                 view.Dialog = GameDialogAssets.Build(
                     root,
                     "DebugRooms",
                     DebugRoomChoices,
-                    DebugRoomRowHeight
+                    columns: DebugRoomColumns
                 );
                 view.RoomReturn = BuildRoomReturn();
 
@@ -814,25 +814,31 @@ namespace Baryonyx.Home.Editor
             Stretch(layer);
             view.RuneEffectLayer = layer;
 
-            // A soft additive light over the balance icon, under the runes and the sparkles.
+            // A computed light over the balance icon, under the runes and the sparkles: a white
+            // core and a soft halo, added to what is behind.
             var glow = Rect("RuneGlow", layer);
             Place(glow, Vector2.zero, new Vector2(BalanceRuneSize, BalanceRuneSize) * 2.2f);
-            view.RuneGlow = SpriteImage(glow, Hd2dAssets.GlowTexturePath, RuneGlowColor);
+            view.RuneGlow = AddImage(glow, RuneGlowColor, false);
             view.RuneGlow.material = AssetDatabase.LoadAssetAtPath<Material>(
-                Hd2dAssets.AdditiveMaterialPath
+                Hd2dAssets.GlowCoreMaterialPath
             );
             glow.gameObject.SetActive(false);
 
             // A haze of soft light drifts behind the sparkles and the runes: a puff where the
             // runes burst out, a mist along their paths and a bloom where they land. It uses
-            // the same sources as the sparkles, with the soft glow as its only shape.
+            // the same sources as the sparkles, with a computed puff whose rim drifts as its
+            // only shape (128 or 192 px across).
             var haze = Vfx<Hd2dEmberEmitter>(
                 Hd2dAssets.EmberEmitterPrefabPath,
                 "RuneHaze",
                 layer,
                 0f
             );
-            haze.CrossSprite = ArtAssets.LoadSprite(Hd2dAssets.GlowTexturePath);
+            haze.GlintMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                Hd2dAssets.PuffMaterialPath
+            );
+            haze.GlintDots = 64;
+            haze.GlintSpin = 360f;
             haze.Sources = new List<Hd2dEmberSource>
             {
                 RuneHazeSource(
@@ -880,16 +886,17 @@ namespace Baryonyx.Home.Editor
 
             // Sparkles pop from the balance icon as each rune lands, with a bigger burst for
             // the last one; they lean left, away from the balance digits. The runes also burst
-            // out with a spray of sparkles and leave a short sparkling trail as they fly. All
-            // are drawn in 4 px dots like the 4x rune, the stars from a 5x5 twinkle. The order
-            // matches HomeView's sources.
+            // out with a spray of sparkles and leave a short sparkling trail as they fly. The
+            // stars are computed four-pointed twinkles 20 px across (5 units of 4 px, the dot of
+            // the 4x rune) and the rest small glowing points. The order matches HomeView's
+            // sources.
             var sparkles = Vfx<Hd2dEmberEmitter>(
                 Hd2dAssets.EmberEmitterPrefabPath,
                 "RuneSparkles",
                 layer,
                 0f
             );
-            sparkles.CrossSprite = ArtAssets.LoadSprite(HomeScreenArt.RuneTwinklePath);
+            sparkles.GlintDots = 5;
             sparkles.Sources = new List<Hd2dEmberSource>
             {
                 RuneSparkSource(

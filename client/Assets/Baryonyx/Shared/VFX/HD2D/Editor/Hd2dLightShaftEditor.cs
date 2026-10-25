@@ -16,7 +16,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var root = new VisualElement();
             root.Add(
                 new HelpBox(
-                    "TopBackdropCanvas > TopHd2dLightShaft で調整できます。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
+                    "光芒は画像を使わず計算で描き、光の中の埃も光芒の中だけで光ります。再生を停止した状態で変更し、シーンを保存すると値が残ります。範囲のXは最小、Yは最大です。",
                     HelpBoxMessageType.Info
                 )
             );
@@ -56,7 +56,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(floorPool, "FloorPoolAlpha", "濃さ（0で非表示）");
             AddField(floorPool, "FloorPoolAnchor", "中心位置（X: 左右 / Y: 上下）");
             AddField(floorPool, "FloorPoolSize", "大きさ");
-            AddField(floorPool, "FloorPoolSprite", "画像");
+            AddField(floorPool, "FloorPoolMaterial", "マテリアル");
             root.Add(floorPool);
 
             var motes = new Foldout { text = "光の中の埃", value = false };
@@ -65,7 +65,6 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(motes, "MoteSizeRange", "大きさの範囲（px）");
             AddField(motes, "MoteSpeedRange", "流れる速さの範囲（px/秒）");
             AddField(motes, "MoteSway", "横ゆれの幅");
-            AddField(motes, "MoteSprite", "画像（未指定で四角い点）");
             root.Add(motes);
 
             var variation = new Foldout { text = "ばらつき・ゆらぎ", value = false };
@@ -80,7 +79,7 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             var assets = new Foldout { text = "素材・再生設定", value = false };
             AddField(assets, "ShaftLayer", "描画レイヤー");
-            AddField(assets, "ShaftSprite", "光芒の画像");
+            AddField(assets, "BeamMaterial", "光芒のマテリアル");
             AddField(assets, "PlayOnEnable", "有効時に自動表示");
             AddField(assets, "UseUnscaledTime", "ゲーム速度に影響されない");
             root.Add(assets);

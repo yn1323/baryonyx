@@ -202,9 +202,9 @@ namespace Baryonyx.Stages.Editor
                         1.5f,
                         0.85f
                     );
-                    // Shadows of the clouds drift over the field (the leaves' mask laid large), so
-                    // sun and shade alternate on the ground instead of lighting it evenly.
-                    LeafCookie(sun, 34f);
+                    // Shadows of the clouds drift over the field with the wind, so sun and shade
+                    // alternate on the ground instead of lighting it evenly.
+                    CloudCookie(sun, 34f, new Vector2(0.5f, 0.12f));
                     // Sunbeams through the oaks' leaves at the corners and a broad one through a
                     // gap in the clouds, each landing in a pool of light.
                     var beam = new Color(1f, 0.93f, 0.72f);
@@ -298,6 +298,33 @@ namespace Baryonyx.Stages.Editor
                         (10f, 16.4f, 2.6f, 1f)
                     );
                     b.Motes(new Color(1f, 0.92f, 0.7f), 60);
+                    // The morning mist the night left between the trunks: deep and pale, lit warm
+                    // where the low sun reaches it, slowly lifting and drifting.
+                    b.Mist(
+                        new MistLook(
+                            new Color(0.82f, 0.88f, 0.86f),
+                            0.4f,
+                            0.48f,
+                            0.42f,
+                            new Vector2(0.14f, 0.03f),
+                            stretch: 1.6f,
+                            evolve: 0.04f,
+                            wisps: 0.5f,
+                            streaks: 0.3f,
+                            ambient: 1.1f,
+                            sun: 0.6f,
+                            rim: 0.8f
+                        ),
+                        0.3f,
+                        (0.12f, 0.9f),
+                        (0.55f, 0.6f),
+                        (1.3f, 0.35f)
+                    );
+                    b.MistBanks(
+                        (-11f, 16.2f, 9f, 4.5f, 0.85f),
+                        (0f, 17.1f, 12f, 3.6f, 0.7f),
+                        (11f, 16.4f, 9f, 4.5f, 0.85f)
+                    );
                 }
             ),
             // A mine underground: timber props holding up the rock, a cart of ore, and lanterns
@@ -532,7 +559,7 @@ namespace Baryonyx.Stages.Editor
                         1.55f,
                         0.85f
                     );
-                    LeafCookie(sun, 40f);
+                    CloudCookie(sun, 40f, new Vector2(0.7f, -0.1f));
                     // Broad, faint rays through the towering cloud over the sea.
                     var beam = new Color(1f, 0.97f, 0.88f);
                     b.Shafts(
@@ -653,6 +680,34 @@ namespace Baryonyx.Stages.Editor
                         (5.5f, 4.1f, 2.2f, 0.8f)
                     );
                     b.Motes(new Color(0.6f, 1f, 0.75f), 36);
+                    // The cold evening mist lying on the water: low and thick, greyish green,
+                    // lit green round the will-o'-the-wisps, creeping slowly.
+                    b.Mist(
+                        new MistLook(
+                            new Color(0.72f, 0.8f, 0.74f),
+                            0.4f,
+                            0.48f,
+                            0.45f,
+                            new Vector2(0.1f, 0.04f),
+                            stretch: 1.8f,
+                            evolve: 0.035f,
+                            wisps: 0.55f,
+                            streaks: 0.4f,
+                            ambient: 1.2f,
+                            sun: 0.5f,
+                            rim: 0.7f,
+                            lamps: 1.6f
+                        ),
+                        0.3f,
+                        (0.1f, 1f),
+                        (0.32f, 0.7f),
+                        (0.8f, 0.4f)
+                    );
+                    b.MistBanks(
+                        (-11.5f, 15.8f, 10f, 3.2f, 0.9f),
+                        (0f, 17f, 13f, 2.6f, 0.75f),
+                        (11.5f, 16.2f, 10f, 3.2f, 0.9f)
+                    );
                 }
             ),
             // A snowfield on a grey winter day: snow-laden firs, rocks and ice, a traveller's
@@ -718,6 +773,28 @@ namespace Baryonyx.Stages.Editor
                         (9.2f, 12.8f, 3.2f, 1f)
                     );
                     b.Snowfall();
+                    // Snow blown low along the ground by the wind (drifting snow), and the far
+                    // haze of falling snow; nothing lies still.
+                    b.Mist(
+                        new MistLook(
+                            new Color(0.9f, 0.93f, 1f),
+                            0.5f,
+                            0.5f,
+                            0.5f,
+                            new Vector2(1.1f, 0.12f),
+                            stretch: 3f,
+                            evolve: 0.12f,
+                            wisps: 0.7f,
+                            streaks: 0.1f,
+                            ambient: 1.9f,
+                            sun: 0.55f,
+                            rim: 0.4f
+                        ),
+                        0.55f,
+                        (0.1f, 0.9f),
+                        (0.28f, 0.45f)
+                    );
+                    b.MistBanks((-10f, 16.8f, 12f, 5f, 0.6f), (10f, 16.8f, 12f, 5f, 0.6f));
                 }
             ),
             // A volcano: black basalt under a sky of smoke, rivers of lava glowing, a charred
@@ -805,16 +882,33 @@ namespace Baryonyx.Stages.Editor
                         (-2.5f, 16.4f, 4.4f, 1f),
                         (3.5f, 2.2f, 4.4f, 0.8f)
                     );
-                    b.Shafts(
-                        "HeatColumns",
-                        glow,
-                        0.45f,
-                        Vector3.down,
-                        4.5f,
-                        (-9.2f, 10f, 1.8f),
-                        (8.8f, 12.5f, 1.8f),
-                        (-2.5f, 16.4f, 1.6f)
+                    // Fumes rising from the vents at the back: grey ash and steam, lit orange
+                    // from below by the lava while they are low, cooling dark as they rise and
+                    // drifting downwind. The vent in front sends none, so the fight stays clear.
+                    var fumes = SmokeMaterial(
+                        b.PartPath("Fumes") + ".mat",
+                        new Color(0.3f, 0.28f, 0.27f),
+                        new Color(0.09f, 0.06f, 0.06f),
+                        0.65f,
+                        new Color(2.2f, 0.7f, 0.2f),
+                        1.1f,
+                        3.5f
                     );
+                    (float x, float z)[] plumes = { (-9.2f, 10f), (8.8f, 12.5f), (-2.5f, 16.4f) };
+                    for (int i = 0; i < plumes.Length; i++)
+                        Smoke(
+                            heat,
+                            "Fumes" + i,
+                            new Vector3(plumes[i].x, 0.15f, plumes[i].z),
+                            fumes,
+                            4.8f,
+                            0.5f,
+                            0.9f,
+                            3.2f,
+                            0.8f,
+                            5.5f,
+                            new Vector2(0.35f, 0.05f)
+                        );
                     b.Motes(new Color(1f, 0.55f, 0.3f), 48);
                 }
             ),
@@ -885,6 +979,29 @@ namespace Baryonyx.Stages.Editor
                         (-6.4f, 14.2f, 2.8f, 1f)
                     );
                     b.Motes(new Color(0.6f, 0.85f, 1f), 32);
+                    // On a clear, still night the cold ground breeds a thin fog among the
+                    // stones, pale blue under the moon, warmed round the lanterns.
+                    b.Mist(
+                        new MistLook(
+                            new Color(0.62f, 0.72f, 0.92f),
+                            0.55f,
+                            0.5f,
+                            0.45f,
+                            new Vector2(0.08f, 0.02f),
+                            stretch: 1.8f,
+                            evolve: 0.03f,
+                            wisps: 0.5f,
+                            streaks: 0.35f,
+                            ambient: 2.4f,
+                            sun: 1.1f,
+                            rim: 1f,
+                            lamps: 1.2f
+                        ),
+                        0.35f,
+                        (0.1f, 0.9f),
+                        (0.35f, 0.5f)
+                    );
+                    b.MistBanks((-11f, 16.4f, 10f, 2.6f, 0.75f), (11f, 16.4f, 10f, 2.6f, 0.75f));
                 }
             ),
             // The great hall of an old castle at night: moonlight through stained glass, stone
@@ -988,6 +1105,9 @@ namespace Baryonyx.Stages.Editor
             }
 
             private string Path(string part) => $"{set.Directory}/{set.Prefix}{part}";
+
+            /// <summary>The path of one of this stage's own assets, without its extension.</summary>
+            public string PartPath(string part) => Path(part);
 
             // The ground round the floor, a little lower so the two never fight over depth.
             public void Ground(Color tint, float relief = 2f)
@@ -1369,6 +1489,7 @@ namespace Baryonyx.Stages.Editor
                 var fires = Group(Root, "Braziers", Vector3.zero).transform;
                 var flame = AssetDatabase.LoadAssetAtPath<Material>(FlameMaterialPath);
                 var ember = AssetDatabase.LoadAssetAtPath<Material>(EmberMaterialPath);
+                var smoke = AssetDatabase.LoadAssetAtPath<Material>(SmokeMaterialPath);
                 foreach (float side in new[] { -1f, 1f })
                 {
                     var label = side < 0f ? "Left" : "Right";
@@ -1408,6 +1529,20 @@ namespace Baryonyx.Stages.Editor
                         4f,
                         0.12f,
                         0.08f
+                    );
+                    // Smoke rising from the fire into the dark, lit by it from below.
+                    Smoke(
+                        fires,
+                        "Smoke" + label,
+                        bowl + Vector3.up * 0.9f,
+                        smoke,
+                        5f,
+                        0.12f,
+                        0.5f,
+                        2.2f,
+                        0.7f,
+                        4f,
+                        new Vector2(0.08f, 0f)
                     );
                 }
                 // The fire's light lies on the floor round the stands.
@@ -1465,7 +1600,7 @@ namespace Baryonyx.Stages.Editor
                 params (float x, float z, float size, float strength)[] pools
             )
             {
-                var material = StageSetAssets.GlowMaterial(Path(name) + ".mat", color, intensity);
+                var material = PoolMaterial(Path(name) + ".mat", color, intensity);
                 var pieces = new List<Piece>();
                 foreach (var (x, z, size, strength) in pools)
                     pieces.Add(
@@ -1511,12 +1646,7 @@ namespace Baryonyx.Stages.Editor
                 if (created)
                     material = new Material(shader);
                 material.shader = shader;
-                material.SetColor("_Color", color);
-                material.SetFloat("_Intensity", intensity);
-                material.SetFloat("_EdgeSoftness", 0.7f);
-                material.SetFloat("_StripeScale", 3f);
-                material.SetFloat("_StripeAmount", 0.5f);
-                material.SetFloat("_Speed", 0.1f);
+                SetBeam(material, color, intensity);
                 if (created)
                     AssetDatabase.CreateAsset(material, path);
                 else
@@ -1536,17 +1666,69 @@ namespace Baryonyx.Stages.Editor
                     tint
                 );
 
+            /// <summary>
+            /// Mist lying over the field in layers (each height in m with its thickness), thinner
+            /// over the middle of the floor where the battle is, so the characters' feet read.
+            /// </summary>
+            public void Mist(
+                MistLook look,
+                float clearing,
+                params (float height, float strength)[] layers
+            )
+            {
+                var material = MistMaterial(Path("Mist") + ".mat", look, seed % 50);
+                MistLayers(
+                    Root,
+                    Store,
+                    "Mist",
+                    material,
+                    new Vector3(0f, 0f, 9f),
+                    new Vector2(44f, 22f),
+                    layers,
+                    Centre,
+                    new Vector2(13f, 10f),
+                    clearing
+                );
+            }
+
+            /// <summary>
+            /// Banks of mist standing far back on the ground (x, width, height in m and
+            /// thickness), between the frame's scenery and the painted distance.
+            /// </summary>
+            public void MistBanks(
+                params (float x, float z, float width, float height, float strength)[] banks
+            )
+            {
+                var material = AssetDatabase.LoadAssetAtPath<Material>(Path("Mist") + ".mat");
+                var group = Group(Root, "MistBanks", Vector3.zero).transform;
+                for (int i = 0; i < banks.Length; i++)
+                {
+                    var (x, z, width, height, strength) = banks[i];
+                    MistBank(
+                        group,
+                        Store,
+                        "MistBank" + i,
+                        material,
+                        new Vector3(x, 0f, z),
+                        new Vector2(width, height),
+                        strength
+                    );
+                }
+            }
+
             /// <summary>Snow falling slowly over the whole field.</summary>
             public void Snowfall()
             {
+                // Flakes do not glow: soft white flakes hiding what is behind them, carried by
+                // the wind and fluttering as they fall.
                 var snow = Hd2dStageKit.Motes(
                     Root,
                     "Snowfall",
                     new Vector3(0f, 4.5f, 10f),
                     new Vector3(28f, 6f, 16f),
-                    AssetDatabase.LoadAssetAtPath<Material>(MoteMaterialPath),
+                    AssetDatabase.LoadAssetAtPath<Material>(SnowMaterialPath),
                     160,
-                    new Color(0.95f, 0.97f, 1f)
+                    Color.white
                 );
                 var main = snow.main;
                 main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.11f);
@@ -1554,9 +1736,13 @@ namespace Baryonyx.Stages.Editor
                 var velocity = snow.velocityOverLifetime;
                 velocity.enabled = true;
                 velocity.space = ParticleSystemSimulationSpace.World;
-                velocity.x = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
+                velocity.x = new ParticleSystem.MinMaxCurve(0.25f, 0.6f);
                 velocity.y = new ParticleSystem.MinMaxCurve(-0.9f, -0.55f);
                 velocity.z = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+                var flutter = snow.noise;
+                flutter.strength = 0.3f;
+                flutter.frequency = 0.6f;
+                flutter.scrollSpeed = 0.3f;
             }
 
             /// <summary>Beds the standing things in tufts, shades them and saves the prefab.</summary>

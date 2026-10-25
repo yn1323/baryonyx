@@ -55,8 +55,10 @@ namespace Baryonyx.Vfx.Hd2d
     }
 
     /// <summary>
-    /// UI-based flickering lights with a bright core, a wide halo and a floor reflection,
-    /// drawn with additive blending over a ScreenSpaceOverlay background.
+    /// UI-based flickering lights over a painted background: a white-hot core, a wide coloured
+    /// halo whose air shimmers, and a reflection on the uneven floor, each computed by the ambient
+    /// shader (<c>Baryonyx/HD2D/UI Ambient</c>) and added to the background without an image.
+    /// The core and the halo are separate pictures, so the core stays sharp while the halo spreads.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -64,10 +66,15 @@ namespace Baryonyx.Vfx.Hd2d
     {
         [Header("レイヤーと素材")]
         public RectTransform LightLayer;
-        public Sprite GlowSprite;
 
-        [Tooltip("加算合成のマテリアル。未指定の場合は通常の半透明で描きます。")]
-        public Material AdditiveMaterial;
+        [Tooltip("芯（Baryonyx/HD2D/UI Ambient の Glow）のマテリアル。白く熱い小さな光です。")]
+        public Material CoreMaterial;
+
+        [Tooltip("周りを照らす光（Glow）のマテリアル。色の付いた広い光で、空気がゆらぎます。")]
+        public Material HaloMaterial;
+
+        [Tooltip("床の照り返し（Pool）のマテリアル。縁が床の凹凸で崩れます。")]
+        public Material ReflectionMaterial;
 
         [Header("再生")]
         public bool PlayOnEnable = true;
@@ -121,6 +128,7 @@ namespace Baryonyx.Vfx.Hd2d
             if (!initialized || !Animate || !playing)
                 return;
 
+            Hd2dAmbientClock.Publish(UseUnscaledTime);
             ApplyAllVisuals(UseUnscaledTime ? Time.unscaledTime : Time.time);
         }
 
@@ -162,7 +170,7 @@ namespace Baryonyx.Vfx.Hd2d
                 return;
 
             CacheLightLayer();
-            if (LightLayer == null || GlowSprite == null || Sources == null)
+            if (LightLayer == null || CoreMaterial == null || HaloMaterial == null || Sources == null)
                 return;
 
             var random = new System.Random(RandomSeed);
@@ -178,6 +186,18 @@ namespace Baryonyx.Vfx.Hd2d
                 ? (UseUnscaledTime ? Time.unscaledTime : Time.time)
                 : 0f;
             ApplyAllVisuals(time);
+        }
+
+        /// <summary>
+        /// Shows the lights as they are <paramref name="time"/> seconds into play, without
+        /// playing: for captures and previews.
+        /// </summary>
+        public void ShowAt(float time)
+        {
+            if (!initialized)
+                RebuildLights();
+            ApplyAllVisuals(time);
+            Hd2dAmbientClock.Set(time);
         }
 
         /// <summary>
@@ -223,16 +243,20 @@ namespace Baryonyx.Vfx.Hd2d
             {
                 Settings = source,
                 Reflection =
-                    source.ReflectionAlpha > 0f
-                        ? CreateImage(prefix + "_Reflection", source.ReflectionAnchor)
+                    source.ReflectionAlpha > 0f && ReflectionMaterial != null
+                        ? CreateImage(
+                            prefix + "_Reflection",
+                            source.ReflectionAnchor,
+                            ReflectionMaterial
+                        )
                         : null,
-                Halo = CreateImage(prefix + "_Halo", source.Anchor),
-                Core = CreateImage(prefix + "_Core", source.Anchor),
+                Halo = CreateImage(prefix + "_Halo", source.Anchor, HaloMaterial),
+                Core = CreateImage(prefix + "_Core", source.Anchor, CoreMaterial),
                 Phase = (float)random.NextDouble() * 100f,
             };
         }
 
-        private UnityEngine.UI.Image CreateImage(string name, Vector2 anchor)
+        private UnityEngine.UI.Image CreateImage(string name, Vector2 anchor, Material material)
         {
             var imageObject = new GameObject(
                 name,
@@ -249,8 +273,7 @@ namespace Baryonyx.Vfx.Hd2d
             rect.anchoredPosition = Vector2.zero;
 
             var image = imageObject.GetComponent<UnityEngine.UI.Image>();
-            image.sprite = GlowSprite;
-            image.material = AdditiveMaterial;
+            image.material = material;
             image.preserveAspect = false;
             image.raycastTarget = false;
             return image;

@@ -32,14 +32,13 @@ namespace Baryonyx.Tests.EditMode
             var lighting = root.GetComponent<Hd2dLightingVfx>();
             Assert.That(lighting, Is.Not.Null);
             Assert.That(lighting.ParticleLayer, Is.Not.Null);
-            Assert.That(lighting.DustSprite, Is.Not.Null);
-            Assert.That(lighting.SparkleSprite, Is.Not.Null);
+            AssertComputed(lighting.DustMaterial, "_SHAPE_MOTE");
+            AssertComputed(lighting.SparkleMaterial, "_SHAPE_STAR");
 
-            Assert.That(
-                root.GetComponentsInChildren<UnityEngine.UI.Image>(true)
-                    .All(image => !image.raycastTarget),
-                Is.True
-            );
+            var images = root.GetComponentsInChildren<UnityEngine.UI.Image>(true);
+            Assert.That(images.All(image => !image.raycastTarget), Is.True);
+            // Every light is computed: no picture is drawn.
+            Assert.That(images.All(image => image.sprite == null), Is.True);
         }
 
         [Test]
@@ -70,6 +69,21 @@ namespace Baryonyx.Tests.EditMode
                     generated.All(rect => rect.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
+                var images = lighting.ParticleLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
+                    true
+                );
+                Assert.That(
+                    images
+                        .Where(image => image.name.StartsWith("Dust_"))
+                        .All(image => image.material == lighting.DustMaterial),
+                    Is.True
+                );
+                Assert.That(
+                    images
+                        .Where(image => image.name.StartsWith("Sparkle_"))
+                        .All(image => image.material == lighting.SparkleMaterial),
+                    Is.True
+                );
             }
             finally
             {
@@ -86,14 +100,17 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(lightPointComponent, Is.Not.Null);
             Assert.That(lightPointComponent.Glow, Is.Not.Null);
             Assert.That(lightPointComponent.Ray, Is.Not.Null);
+            Assert.That(lightPointComponent.Glow.sprite, Is.Null);
+            AssertComputed(lightPointComponent.Glow.material, "_SHAPE_GLOW");
+            AssertComputed(lightPointComponent.Ray.material, "_SHAPE_BEAM");
 
             var particleField = AssetDatabase.LoadAssetAtPath<GameObject>(ParticleFieldPrefabPath);
             Assert.That(particleField, Is.Not.Null, ParticleFieldPrefabPath);
             var particleComponent = particleField.GetComponent<Hd2dLightingVfx>();
             Assert.That(particleComponent, Is.Not.Null);
             Assert.That(particleComponent.ParticleLayer, Is.Not.Null);
-            Assert.That(particleComponent.DustSprite, Is.Not.Null);
-            Assert.That(particleComponent.SparkleSprite, Is.Not.Null);
+            AssertComputed(particleComponent.DustMaterial, "_SHAPE_MOTE");
+            AssertComputed(particleComponent.SparkleMaterial, "_SHAPE_STAR");
         }
 
         [Test]
@@ -105,8 +122,8 @@ namespace Baryonyx.Tests.EditMode
             var shaft = prefab.GetComponent<Hd2dLightShaft>();
             Assert.That(shaft, Is.Not.Null);
             Assert.That(shaft.ShaftLayer, Is.Not.Null);
-            Assert.That(shaft.ShaftSprite, Is.Not.Null);
-            Assert.That(shaft.FloorPoolSprite, Is.Not.Null);
+            AssertComputed(shaft.BeamMaterial, "_SHAPE_BEAM");
+            AssertComputed(shaft.FloorPoolMaterial, "_SHAPE_POOL");
 
             var instance = Object.Instantiate(prefab);
             try
@@ -125,13 +142,26 @@ namespace Baryonyx.Tests.EditMode
                     shafts.Select(rect => rect.anchorMin.x).Distinct().Count(),
                     Is.EqualTo(shaft.ShaftCount)
                 );
-                Assert.That(
-                    generated.Count(rect => rect.name.StartsWith("Mote_")),
-                    Is.EqualTo(shaft.ShaftCount * shaft.MotesPerShaft)
-                );
                 Assert.That(generated.Count(rect => rect.name == "FloorPool"), Is.EqualTo(1));
                 var images = layer.GetComponentsInChildren<UnityEngine.UI.Image>(true);
                 Assert.That(images.All(image => !image.raycastTarget), Is.True);
+                // Each shaft reads its own unsaved copy of the beam, with its own dust.
+                var beams = images
+                    .Where(image => image.name.StartsWith("Shaft_"))
+                    .Select(image => image.material)
+                    .ToArray();
+                Assert.That(beams.Distinct().Count(), Is.EqualTo(shaft.ShaftCount));
+                Assert.That(
+                    beams.All(material =>
+                        material.shader == shaft.BeamMaterial.shader
+                        && material.hideFlags == HideFlags.DontSave
+                    ),
+                    Is.True
+                );
+                Assert.That(
+                    beams.Select(material => material.GetVector("_Seed")).Distinct().Count(),
+                    Is.EqualTo(shaft.ShaftCount)
+                );
             }
             finally
             {
@@ -140,20 +170,20 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void FogNoiseTilesSeamlessly()
+        public void FogFlowsWithTheWindAndShowsMoreSpecksInLongerShafts()
         {
-            for (var step = 0; step <= 8; step++)
-            {
-                var t = step / 8f;
-                Assert.That(
-                    Hd2dFog.EvaluateNoiseDensity(0f, t, 1234),
-                    Is.EqualTo(Hd2dFog.EvaluateNoiseDensity(1f, t, 1234)).Within(1e-4f)
-                );
-                Assert.That(
-                    Hd2dFog.EvaluateNoiseDensity(t, 0f, 1234),
-                    Is.EqualTo(Hd2dFog.EvaluateNoiseDensity(t, 1f, 1234)).Within(1e-4f)
-                );
-            }
+            // Reading the noise further back moves the pattern forward, in tiles per second.
+            var flow = Hd2dFog.EvaluateFlow(new Vector2(16f, -4f), new Vector2(800f, 200f), 10f);
+            Assert.That(flow.x, Is.EqualTo(-0.2f).Within(1e-5f));
+            Assert.That(flow.y, Is.EqualTo(0.2f).Within(1e-5f));
+            Assert.That(Hd2dFog.EvaluateFlow(Vector2.one, Vector2.one, 0f), Is.EqualTo(Vector2.zero));
+
+            Assert.That(Hd2dLightShaft.EvaluateMoteShare(0, 1300f, 200f), Is.EqualTo(0f));
+            Assert.That(
+                Hd2dLightShaft.EvaluateMoteShare(18, 1300f, 200f),
+                Is.GreaterThan(Hd2dLightShaft.EvaluateMoteShare(18, 2600f, 200f))
+            );
+            Assert.That(Hd2dLightShaft.EvaluateMoteShare(100000, 10f, 10f), Is.EqualTo(1f));
         }
 
         [Test]
@@ -165,35 +195,39 @@ namespace Baryonyx.Tests.EditMode
             var fog = prefab.GetComponent<Hd2dFog>();
             Assert.That(fog, Is.Not.Null);
             Assert.That(fog.FogLayer, Is.Not.Null);
-            Assert.That(fog.NoiseTexture, Is.Not.Null);
+            Assert.That(fog.FogMaterial, Is.Not.Null);
+            Assert.That(fog.FogMaterial.shader.name, Is.EqualTo("Baryonyx/HD2D/UI Fog"));
+            Assert.That(fog.FogMaterial.shader.isSupported, Is.True);
 
             var instance = Object.Instantiate(prefab);
             try
             {
                 var instanceFog = instance.GetComponent<Hd2dFog>();
                 instanceFog.RebuildLayers();
-                var banks = instanceFog
-                    .FogLayer.GetComponentsInChildren<UnityEngine.UI.RectMask2D>(true)
-                    .ToArray();
-                Assert.That(banks, Has.Length.EqualTo(fog.Layers.Count));
-                Assert.That(
-                    banks.Select(bank => bank.softness),
-                    Is.EqualTo(fog.Layers.Select(layer => layer.Softness))
-                );
-
-                var sheets = instanceFog.FogLayer.GetComponentsInChildren<UnityEngine.UI.RawImage>(
+                var banks = instanceFog.FogLayer.GetComponentsInChildren<UnityEngine.UI.RawImage>(
                     true
                 );
-                Assert.That(
-                    sheets,
-                    Has.Length.EqualTo(fog.Layers.Sum(layer => layer.DetailOpacity > 0f ? 2 : 1))
-                );
-                Assert.That(sheets.All(sheet => !sheet.raycastTarget), Is.True);
-                Assert.That(sheets.All(sheet => sheet.texture == fog.NoiseTexture), Is.True);
+                Assert.That(banks, Has.Length.EqualTo(fog.Layers.Count));
+                Assert.That(banks.All(bank => !bank.raycastTarget), Is.True);
+                Assert.That(banks.All(bank => bank.texture == null), Is.True);
                 Assert.That(
                     banks.All(bank => bank.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
+                // Each bank reads its own part of the noise from an unsaved copy of the material.
+                Assert.That(banks.Select(bank => bank.material).Distinct().Count(), Is.EqualTo(banks.Length));
+                Assert.That(
+                    banks.All(bank =>
+                        bank.material.shader == fog.FogMaterial.shader
+                        && bank.material.hideFlags == HideFlags.DontSave
+                    ),
+                    Is.True
+                );
+
+                // Later moments move the pattern with the wind.
+                var before = banks[0].material.GetVector("_Flow");
+                instanceFog.ShowAt(5f);
+                Assert.That(banks[0].material.GetVector("_Flow"), Is.Not.EqualTo(before));
             }
             finally
             {
@@ -226,9 +260,9 @@ namespace Baryonyx.Tests.EditMode
             var light = prefab.GetComponent<Hd2dFlickerLight>();
             Assert.That(light, Is.Not.Null);
             Assert.That(light.LightLayer, Is.Not.Null);
-            Assert.That(light.GlowSprite, Is.Not.Null);
-            Assert.That(light.AdditiveMaterial, Is.Not.Null);
-            Assert.That(light.AdditiveMaterial.shader.isSupported, Is.True);
+            AssertComputed(light.CoreMaterial, "_SHAPE_GLOW");
+            AssertComputed(light.HaloMaterial, "_SHAPE_GLOW");
+            AssertComputed(light.ReflectionMaterial, "_SHAPE_POOL");
 
             var instance = Object.Instantiate(prefab);
             try
@@ -240,7 +274,21 @@ namespace Baryonyx.Tests.EditMode
                 );
                 var expected = light.Sources.Sum(source => source.ReflectionAlpha > 0f ? 3 : 2);
                 Assert.That(images, Has.Length.EqualTo(expected));
-                Assert.That(images.All(image => image.material == light.AdditiveMaterial), Is.True);
+                // The core and the halo are separate pictures, so each keeps its own spread.
+                Assert.That(
+                    images.Where(image => image.name.EndsWith("_Core")).All(image => image.material == light.CoreMaterial),
+                    Is.True
+                );
+                Assert.That(
+                    images.Where(image => image.name.EndsWith("_Halo")).All(image => image.material == light.HaloMaterial),
+                    Is.True
+                );
+                Assert.That(
+                    images
+                        .Where(image => image.name.EndsWith("_Reflection"))
+                        .All(image => image.material == light.ReflectionMaterial),
+                    Is.True
+                );
                 Assert.That(images.All(image => !image.raycastTarget), Is.True);
                 Assert.That(
                     images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
@@ -333,11 +381,13 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo(Hd2dEmberShape.Point)
             );
 
-            // Streaks turn in quarter turns so that the tail trails the direction of travel.
-            Assert.That(Hd2dEmberEmitter.StreakRotation(90f), Is.EqualTo(0f));
-            Assert.That(Hd2dEmberEmitter.StreakRotation(100f), Is.EqualTo(0f));
-            Assert.That(Hd2dEmberEmitter.StreakRotation(270f), Is.EqualTo(180f));
-            Assert.That(Hd2dEmberEmitter.StreakRotation(0f), Is.EqualTo(270f));
+            // The tail is the path of the last moment: longer when faster, within limits.
+            Assert.That(
+                Hd2dEmberEmitter.EvaluateTailLength(200f, 0.05f, 2f),
+                Is.EqualTo(10f).Within(1e-4f)
+            );
+            Assert.That(Hd2dEmberEmitter.EvaluateTailLength(0f, 0.05f, 2f), Is.EqualTo(2f));
+            Assert.That(Hd2dEmberEmitter.EvaluateTailLength(10000f, 0.14f, 2f), Is.EqualTo(24f));
         }
 
         [Test]
@@ -349,7 +399,8 @@ namespace Baryonyx.Tests.EditMode
             var emitter = prefab.GetComponent<Hd2dEmberEmitter>();
             Assert.That(emitter, Is.Not.Null);
             Assert.That(emitter.ParticleLayer, Is.Not.Null);
-            Assert.That(emitter.AdditiveMaterial, Is.Not.Null);
+            AssertComputed(emitter.EmberMaterial, "_SHAPE_EMBER");
+            AssertComputed(emitter.GlintMaterial, "_SHAPE_STAR");
 
             var instance = Object.Instantiate(prefab);
             try
@@ -369,11 +420,22 @@ namespace Baryonyx.Tests.EditMode
                     images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
-                var dotSize = emitter.Sources[0].DotSize;
+                Assert.That(images.All(image => image.sprite == null), Is.True);
                 Assert.That(
                     images.All(image =>
-                        image.rectTransform.sizeDelta.x % dotSize == 0f
-                        && image.rectTransform.sizeDelta.y % dotSize == 0f
+                        image.material == emitter.EmberMaterial
+                        || image.material == emitter.GlintMaterial
+                    ),
+                    Is.True
+                );
+                // An ember's board is turned to its travel and is at least as long as it is high,
+                // with its tail behind the head.
+                var embers = images.Where(image => image.material == emitter.EmberMaterial).ToArray();
+                Assert.That(embers, Is.Not.Empty);
+                Assert.That(
+                    embers.All(image =>
+                        image.rectTransform.sizeDelta.x >= image.rectTransform.sizeDelta.y
+                        && image.rectTransform.pivot.x > 0.5f
                     ),
                     Is.True
                 );
@@ -413,6 +475,15 @@ namespace Baryonyx.Tests.EditMode
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        // A computed light: the ambient shader, built for this platform, with the given shape.
+        private static void AssertComputed(Material material, string shapeKeyword)
+        {
+            Assert.That(material, Is.Not.Null);
+            Assert.That(material.shader.name, Is.EqualTo("Baryonyx/HD2D/UI Ambient"));
+            Assert.That(material.shader.isSupported, Is.True);
+            Assert.That(material.IsKeywordEnabled(shapeKeyword), Is.True, material.name);
         }
 
         [Test]

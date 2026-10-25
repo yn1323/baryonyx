@@ -16,7 +16,7 @@ description: >
 
 | 参照文書 | 扱うこと |
 |---|---|
-| [camera-light.md](references/camera-light.md) | カメラと配置の計算、キャラの板と影、描く順番、炎とライト、昼・夜・夕暮れの光、光芒と光だまり、レンズと色、カメラの動き、自作シェーダーとRender Graph、停止中とSceneタブの表示 |
+| [camera-light.md](references/camera-light.md) | カメラと配置の計算、キャラの板と影、描く順番、炎とライト、昼・夜・夕暮れの光、光芒と光だまり、霧、木漏れ日と雲の影のマスク、レンズと色、カメラの動き、自作シェーダーとRender Graph、停止中とSceneタブの表示 |
 | [stage-building.md](references/stage-building.md) | 床・壁・遠景・書き割りの組み方、マテリアルの選び方、テクスチャの作り方、法線マップ、草と葉のシェーダー |
 | [set-dressing.md](references/set-dressing.md) | 小物・草の房・地面の汚し・足元の陰の密度の決め方、置き方の手順、撮影での点検 |
 | [Unity EditorとCLIの知見](../shared/unity-editor-notes.md) | Editorの状態、CLIのコマンドの時間切れ、撮影の方法、テストの注意 |

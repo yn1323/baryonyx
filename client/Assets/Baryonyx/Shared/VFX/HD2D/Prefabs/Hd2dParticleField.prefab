@@ -53,9 +53,10 @@ MonoBehaviour:
   AnimateParticles: 1
   UseUnscaledTime: 1
   RandomSeed: 2048
+  PreviewInEditor: 1
   ParticleLayer: {fileID: 6209188185608669637}
-  DustSprite: {fileID: 21300000, guid: 049fa69323df843569973c3fc82ea4c0, type: 3}
-  SparkleSprite: {fileID: 21300000, guid: 1df18d16804284e9ca080bc71d995c7b, type: 3}
+  DustMaterial: {fileID: 2100000, guid: 3cd70d32add0a4295a70194d3ade847d, type: 2}
+  SparkleMaterial: {fileID: 2100000, guid: c5e4a2e5020764cac8352dddbfbf30a0, type: 2}
   ReferenceAreaSize: {x: 1920, y: 1080}
   ParticleAreaPadding: {x: 80, y: 100}
   DustCount: 34

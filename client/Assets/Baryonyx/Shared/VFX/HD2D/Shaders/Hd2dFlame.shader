@@ -8,8 +8,14 @@
 // 四角形はオブジェクトの原点を中心にカメラへ向け直す。炎の根元は板の下から _Base の高さにあり、
 // 炎は板の中央の幅 _FlameWidth・高さ _FlameHeight（板に対する割合）に収まる。上の残りには、ちぎれた舌の先と周りの光を描く（置き方は Hd2dStageKit.Flame）。
 // 揺れ方は置いた位置から決まるため、同じマテリアルの炎どうしも揃って揺れない。
+// 層（ガイドの炎のレシピ：明るい芯／薄い炎の舌／煙／火の粉／熱の色）のうち、この板は次の3つを描く。
+// - 本体：根元の太い塊を、時間で形の変わる4段のfBm（座標を大きな渦でゆがめる）で舌に割った、縁の鋭い炎。温度で色と明るさを決める。
+// - 薄い炎の舌（_Veil）：本体の外側で、より細かく速いノイズで揺れる暗い赤橙の薄い炎。縁は柔らかく、奥が透ける。
+// - 熱の色（_Halo）：炎の周りの空気が照らされた光。ふくらみに合わせて明るさが揺れる。
+// 煙と火の粉は、炎の数倍の高さまで昇らせるため、別の粒（Hd2dStageKit.Smoke・Embers）で描く。
 // 昼の明るい地面の上では、足した炎が地面の色と一緒に白く飛び、形が読めなくなる。
 // _Cover を上げると、炎の面の分だけ奥を隠してから足す（0なら加算だけ）。
+// 薄い光の階調の段差は、画素ごとのごく弱い揺らぎで散らす。
 Shader "Baryonyx/HD2D/Flame"
 {
     Properties
@@ -28,6 +34,7 @@ Shader "Baryonyx/HD2D/Flame"
         _FlameHeight ("Flame Height", Range(0.1, 1)) = 0.5
         _FlameWidth ("Flame Width", Range(0.1, 1)) = 0.5
         _Cover ("Cover", Range(0, 1)) = 0
+        _Veil ("Veil (thin outer tongues)", Range(0, 1)) = 0.5
     }
 
     SubShader
@@ -59,6 +66,7 @@ Shader "Baryonyx/HD2D/Flame"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Hd2dStageAir.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _CoreColor;
@@ -75,6 +83,7 @@ Shader "Baryonyx/HD2D/Flame"
                 half _FlameHeight;
                 half _FlameWidth;
                 half _Cover;
+                half _Veil;
             CBUFFER_END
 
             struct Attributes
@@ -115,45 +124,15 @@ Shader "Baryonyx/HD2D/Flame"
                 return output;
             }
 
-            // 格子点ごとの乱数（PCG2D）。整数で計算するため、座標が大きくなっても模様が崩れない。
-            float Hash(float2 cell)
-            {
-                uint2 v = (uint2)(int2)cell * 1664525u + 1013904223u;
-                v.x += v.y * 1664525u;
-                v.y += v.x * 1664525u;
-                v ^= v >> 16u;
-                v.x += v.y * 1664525u;
-                v.y += v.x * 1664525u;
-                v ^= v >> 16u;
-                return (v.x ^ v.y) * (1.0 / 4294967295.0);
-            }
-
-            float Noise(float2 p)
-            {
-                float2 i = floor(p);
-                float2 f = frac(p);
-                float2 u = f * f * (3.0 - 2.0 * f);
-                float a = Hash(i);
-                float b = Hash(i + float2(1, 0));
-                float c = Hash(i + float2(0, 1));
-                float d = Hash(i + float2(1, 1));
-                return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
-            }
-
             float Fbm2(float2 p)
             {
-                return Noise(p) * 0.667 + Noise(p * 2.03 + 17.1) * 0.333;
-            }
-
-            float Fbm3(float2 p)
-            {
-                return Noise(p) * 0.571 + Noise(p * 2.03 + 17.1) * 0.286 + Noise(p * 4.07 + 41.3) * 0.143;
+                return Hd2dNoise(p) * 0.667 + Hd2dNoise(p * 2.03 + 17.1) * 0.333;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
                 // 長く起動していても乱数の座標の精度を保つよう、時刻を20分で巻き戻す。
-                float t = fmod(_Time.y, 1200.0) + input.motion.x;
+                float t = fmod(Hd2dTime(), 1200.0) + input.motion.x;
                 float aspect = input.motion.y;
                 float puffRate = input.motion.z;
                 float scroll = t * input.motion.w;
@@ -166,7 +145,7 @@ Shader "Baryonyx/HD2D/Flame"
 
                 // 大きな渦と、ゆっくり変わる風で炎を曲げる。根元は動かさず、上ほど大きく振る。
                 float eddy = Fbm2(float2(f.x * aspect * 1.6, flow * 2.2 - scroll * 0.55)) - 0.5;
-                float lean = (Noise(float2(t * 0.45, input.motion.x)) - 0.5) * 0.35;
+                float lean = (Hd2dNoise(float2(t * 0.45, input.motion.x)) - 0.5) * 0.35;
                 f.x += (eddy * 0.9 * _Turbulence + lean) * h * (0.35 + 0.65 * h);
 
                 // ふくらみ：根元から昇るふくらみとくびれが、一定の周期で先をちぎる。
@@ -181,7 +160,8 @@ Shader "Baryonyx/HD2D/Flame"
                 float body = 1.0 - across * across;
 
                 // 舌：縦に伸びた乱流のノイズで塊を削る。根元は少しだけ削り、上ほど強く削って舌に割る。
-                float n = Fbm3(float2(f.x * aspect * 5.0 + eddy * 0.8, flow * 5.0 - scroll * 1.6));
+                // 3次元目に時刻を入れ、模様が昇るだけでなく形も変わり続けるようにする。
+                float n = Hd2dFbm(float3(f.x * aspect * 5.0 + eddy * 0.8, flow * 5.0 - scroll * 1.6, t * 0.7), 4);
                 float heat = body - (1.0 - n) * lerp(0.3, 1.25, h) * _Turbulence;
                 // 先へ行くほど冷えて燃え尽きる。ノイズの山だけが、ちぎれた舌として少し上に残る。
                 heat -= smoothstep(0.5, 1.45, f.y) * 0.9;
@@ -209,9 +189,19 @@ Shader "Baryonyx/HD2D/Flame"
                 float halo = exp(-(g.x * g.x * 14.0 + g.y * g.y * 9.0)) * fade;
                 halo *= 0.85 + 0.15 * sin(6.2831853 * (0.9 - t * puffRate));
 
+                // 薄い炎の舌：本体の外側を、より細かく速いノイズで揺れる薄い炎が包む。本体より少し広く高く、縁は柔らかい。
+                float veilNoise = Hd2dFbm(float3(f.x * aspect * 9.0 - eddy * 0.6, flow * 8.0 - scroll * 2.6, t * 1.3 + 3.7), 3);
+                float veilHeat = body * 1.1 + 0.18 - (1.0 - veilNoise) * lerp(0.45, 1.35, h) * _Turbulence
+                    - smoothstep(0.3, 1.35, f.y) * 0.85;
+                float veil = smoothstep(0.0, 0.22, veilHeat) * (1.0 - flame) * _Veil;
+                half3 veilColor = lerp(_EdgeColor.rgb, _MidColor.rgb, 0.35 * veilNoise) * _Intensity * 0.45;
+                fire += veilColor * veil * fade;
+
                 // 奥を隠すのは明るく光る熱い所だけにする。冷えた縁や舌の先まで隠すと、くすんだ膜に見える。
                 float cover = flame * fade * _Cover * smoothstep(0.05, 0.45, temperature);
-                return half4(fire + _HaloColor.rgb * halo * _Halo, cover);
+                half3 color2 = fire + _HaloColor.rgb * halo * _Halo;
+                color2 += Hd2dDither(input.positionCS.xy) * saturate(halo * 40.0);
+                return half4(max(color2, 0.0), cover);
             }
             ENDHLSL
         }

@@ -3,7 +3,8 @@ using UnityEngine;
 namespace Baryonyx.Vfx.Hd2d
 {
     /// <summary>
-    /// A reusable warm light made from a soft glow and a thin light ray.
+    /// A reusable warm light made from a soft glow and a thin light ray, both computed by the
+    /// ambient shader (<c>Baryonyx/HD2D/UI Ambient</c>: Glow and Beam) without an image.
     /// This is UI based so it can sit above a ScreenSpaceOverlay background.
     /// </summary>
     [DisallowMultipleComponent]
@@ -55,8 +56,11 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void Update()
         {
-            if (Animate)
-                ApplyVisual(Time.unscaledTime);
+            if (!Animate)
+                return;
+            if (Application.isPlaying)
+                Hd2dAmbientClock.Publish(true);
+            ApplyVisual(Time.unscaledTime);
         }
 
         private void OnValidate()

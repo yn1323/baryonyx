@@ -4,7 +4,9 @@ using UnityEngine;
 namespace Baryonyx.Vfx.Hd2d
 {
     /// <summary>
-    /// Lightweight UI particles for atmosphere around a 2D scene.
+    /// Lightweight UI particles for atmosphere around a 2D scene: many faint specks of dust and a
+    /// few four-pointed twinkles, each a plain board that the ambient shader
+    /// (<c>Baryonyx/HD2D/UI Ambient</c>) fills with a computed shape, without an image.
     /// The component owns its small image pool and exposes all tuning values in the Inspector.
     /// Outside Play Mode it shows a still preview of the same seeded layout.
     /// </summary>
@@ -24,8 +26,12 @@ namespace Baryonyx.Vfx.Hd2d
 
         [Header("レイヤーと素材")]
         public RectTransform ParticleLayer;
-        public Sprite DustSprite;
-        public Sprite SparkleSprite;
+
+        [Tooltip("塵（Baryonyx/HD2D/UI Ambient の Mote）のマテリアル。芯が少し明るい柔らかい点です。")]
+        public Material DustMaterial;
+
+        [Tooltip("きらめき（Star）のマテリアル。白い芯と細い四方の光です。")]
+        public Material SparkleMaterial;
 
         [Header("発生範囲")]
         public Vector2 ReferenceAreaSize = new Vector2(1920f, 1080f);
@@ -119,10 +125,26 @@ namespace Baryonyx.Vfx.Hd2d
             if (!initialized || !AnimateParticles)
                 return;
 
+            Hd2dAmbientClock.Publish(UseUnscaledTime);
             var deltaTime = UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            if (deltaTime <= 0f)
-                return;
+            if (deltaTime > 0f)
+                Step(deltaTime);
+        }
 
+        /// <summary>
+        /// Shows the particles as they are <paramref name="time"/> seconds into play, without
+        /// playing: for captures and previews.
+        /// </summary>
+        public void ShowAt(float time)
+        {
+            RebuildParticles();
+            for (var elapsed = 0f; elapsed < time; elapsed += 1f / 30f)
+                Step(Mathf.Min(1f / 30f, time - elapsed));
+            Hd2dAmbientClock.Set(time);
+        }
+
+        private void Step(float deltaTime)
+        {
             var area = GetAreaSize();
             foreach (var particle in particles)
             {
@@ -183,11 +205,11 @@ namespace Baryonyx.Vfx.Hd2d
             random = new System.Random(RandomSeed);
             var area = GetAreaSize();
             for (var index = 0; index < DustCount; index++)
-                AddParticle("Dust_" + index.ToString("00"), DustSprite, DustColor, false, area);
+                AddParticle("Dust_" + index.ToString("00"), DustMaterial, DustColor, false, area);
             for (var index = 0; index < SparkleCount; index++)
                 AddParticle(
                     "Sparkle_" + index.ToString("00"),
-                    SparkleSprite,
+                    SparkleMaterial,
                     SparkleColor,
                     true,
                     area
@@ -231,13 +253,13 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void AddParticle(
             string name,
-            Sprite sprite,
+            Material material,
             Color color,
             bool sparkle,
             Vector2 area
         )
         {
-            if (sprite == null)
+            if (material == null)
                 return;
 
             var particleObject = new GameObject(
@@ -253,8 +275,7 @@ namespace Baryonyx.Vfx.Hd2d
             rect.pivot = Vector2.one * 0.5f;
 
             var image = particleObject.GetComponent<UnityEngine.UI.Image>();
-            image.sprite = sprite;
-            image.preserveAspect = true;
+            image.material = material;
             image.raycastTarget = false;
 
             var particle = new ParticleState

@@ -25,11 +25,17 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _Band: 0.55
+    - _Density: 0.6
+    - _DensityScale: 0.7
+    - _Dust: 0.35
+    - _DustBrightness: 3
     - _EdgeSoftness: 0.7
+    - _Halo: 0.35
     - _Intensity: 0.6
     - _Seed: 0
-    - _Speed: 0.1
-    - _StripeAmount: 0.5
+    - _Speed: 0.12
+    - _StripeAmount: 0.45
     - _StripeScale: 3
     m_Colors:
     - _Color: {r: 1, g: 0.9, b: 0.66, a: 1}

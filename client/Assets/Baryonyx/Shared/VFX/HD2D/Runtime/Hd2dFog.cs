@@ -21,18 +21,26 @@ namespace Baryonyx.Vfx.Hd2d
 
         public Color Color = new Color(0.62f, 0.7f, 0.82f, 0.18f);
 
-        [Tooltip("範囲の縁をぼかす幅（Canvas基準のpx）。Xは左右、Yは上下です。")]
+        [Tooltip("範囲の縁をぼかす幅（Canvas基準のpx）。Xは左右、Yは上下です。縁は霧の形に沿って崩れます。")]
         public Vector2Int Softness = new Vector2Int(220, 80);
 
-        [Tooltip("ノイズ模様1枚分の大きさ（Canvas基準のpx）。横長にすると流れる霧らしくなります。")]
+        [Tooltip("大きな模様1つ分の大きさ（Canvas基準のpx）。横長にすると流れる霧らしくなります。")]
         public Vector2 TileSize = new Vector2(760f, 200f);
 
         [Tooltip("霧が流れる速さ（px/秒）。符号で向きが変わります。")]
         public Vector2 ScrollSpeed = new Vector2(12f, 0f);
 
         [Range(0f, 1f)]
-        [Tooltip("逆向きに流れる細かい模様の濃さ。0で1枚だけになり、動きが単調になります。")]
+        [Tooltip("逆向きに流れる細かい切れ端の濃さ。0で大きな模様だけになり、動きが単調になります。")]
         public float DetailOpacity = 0.5f;
+
+        [Range(0f, 1f)]
+        [Tooltip("床に沈む度合い。上げるほど下が濃く、上が切れ端に崩れます。")]
+        public float Settle = 0.5f;
+
+        [Min(0f)]
+        [Tooltip("霧が渦を巻いて形を変える速さです。0で形を保ったまま流れます。")]
+        public float Churn = 0.25f;
 
         [Range(0f, 1f)]
         [Tooltip("濃さがゆっくり増減する量です。")]
@@ -40,14 +48,13 @@ namespace Baryonyx.Vfx.Hd2d
 
         [Min(0f)]
         public float BreathSpeed = 0.2f;
-
-        [Tooltip("未指定の場合は、コンポーネントのノイズ画像を使います。")]
-        public Texture Texture;
     }
 
     /// <summary>
-    /// UI-based layered fog for a ScreenSpaceOverlay background. Each layer is a soft-edged
-    /// rect filled with two tileable noise sheets that drift in opposite directions.
+    /// UI-based layered fog over a painted background. Each layer is a soft-edged bank that the
+    /// fog shader (<c>Baryonyx/HD2D/UI Fog</c>) fills with five octaves of noise read through two
+    /// rounds of domain warping: drifting shapes with lit rims, dark folds and torn wisps instead
+    /// of a sliding picture. No image is used.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -56,8 +63,8 @@ namespace Baryonyx.Vfx.Hd2d
         [Header("レイヤーと素材")]
         public RectTransform FogLayer;
 
-        [Tooltip("継ぎ目なく並べられる白いノイズ画像。Wrap ModeをRepeatにします。")]
-        public Texture NoiseTexture;
+        [Tooltip("霧のシェーダー（Baryonyx/HD2D/UI Fog）のマテリアル。霧の範囲ごとに複製して使います。")]
+        public Material FogMaterial;
 
         [Header("再生")]
         public bool PlayOnEnable = true;
@@ -77,11 +84,17 @@ namespace Baryonyx.Vfx.Hd2d
         [Header("霧のレイヤー")]
         public List<Hd2dFogLayer> Layers = new List<Hd2dFogLayer>();
 
-        private const float DetailTileScale = 0.55f;
+        // The torn wisps drift against the wind, a little slower, and rise a little.
         private const float DetailSpeedScale = -0.6f;
         private const float DetailVerticalDrift = 0.35f;
-        private const int NoiseBaseCells = 4;
-        private const int NoiseOctaves = 4;
+
+        private static readonly int TilesId = Shader.PropertyToID("_Tiles");
+        private static readonly int FlowId = Shader.PropertyToID("_Flow");
+        private static readonly int EvolveId = Shader.PropertyToID("_Evolve");
+        private static readonly int SeedId = Shader.PropertyToID("_Seed");
+        private static readonly int EdgeId = Shader.PropertyToID("_Edge");
+        private static readonly int DetailId = Shader.PropertyToID("_Detail");
+        private static readonly int SettleId = Shader.PropertyToID("_Settle");
 
         private readonly List<LayerState> states = new List<LayerState>();
         private bool initialized;
@@ -118,7 +131,7 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void OnRectTransformDimensionsChange()
         {
-            // The noise tiling depends on the layer size, so refresh it after a resize.
+            // The pattern scale depends on the layer size, so refresh it after a resize.
             if (initialized)
                 ApplyAllVisuals(CurrentTime());
         }
@@ -141,6 +154,8 @@ namespace Baryonyx.Vfx.Hd2d
                         Mathf.Max(1f, layer.TileSize.y)
                     );
                     layer.DetailOpacity = Mathf.Clamp01(layer.DetailOpacity);
+                    layer.Settle = Mathf.Clamp01(layer.Settle);
+                    layer.Churn = Mathf.Max(0f, layer.Churn);
                     layer.BreathAmount = Mathf.Clamp01(layer.BreathAmount);
                     layer.BreathSpeed = Mathf.Max(0f, layer.BreathSpeed);
                 }
@@ -149,7 +164,7 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
-        /// Recreates the fog images using the current Inspector values.
+        /// Recreates the fog banks using the current Inspector values.
         /// </summary>
         public void RebuildLayers()
         {
@@ -163,19 +178,15 @@ namespace Baryonyx.Vfx.Hd2d
                 return;
 
             CacheFogLayer();
-            if (FogLayer == null || Layers == null)
+            if (FogLayer == null || Layers == null || FogMaterial == null)
                 return;
 
             var random = new System.Random(RandomSeed);
             for (var index = 0; index < Layers.Count; index++)
             {
                 var settings = Layers[index];
-                if (settings == null)
-                    continue;
-                var texture = settings.Texture != null ? settings.Texture : NoiseTexture;
-                if (texture == null)
-                    continue;
-                states.Add(CreateLayer(index, settings, texture, random));
+                if (settings != null)
+                    states.Add(CreateLayer(index, settings, random));
             }
 
             initialized = true;
@@ -183,33 +194,29 @@ namespace Baryonyx.Vfx.Hd2d
         }
 
         /// <summary>
-        /// Tileable fog density for the generated noise texture. The pattern repeats every
-        /// 1 in both <paramref name="u"/> and <paramref name="v"/>.
+        /// Shows the fog as it is <paramref name="time"/> seconds into play, without playing:
+        /// for captures and previews.
         /// </summary>
-        public static float EvaluateNoiseDensity(float u, float v, int seed)
+        public void ShowAt(float time)
         {
-            var sum = 0f;
-            var weight = 0f;
-            var amplitude = 1f;
-            for (var octave = 0; octave < NoiseOctaves; octave++)
-            {
-                var cells = NoiseBaseCells << octave;
-                sum +=
-                    PeriodicValueNoise(u * cells, v * cells, cells, seed + octave * 131)
-                    * amplitude;
-                weight += amplitude;
-                amplitude *= 0.5f;
-            }
-            return sum / weight;
+            if (!initialized)
+                RebuildLayers();
+            ApplyAllVisuals(time);
+            Hd2dAmbientClock.Set(time);
         }
 
         /// <summary>
-        /// Alpha of the generated noise texture: a thin veil everywhere with denser wisps.
+        /// The pattern offset of a bank after <paramref name="time"/> seconds: the pattern moves
+        /// with <paramref name="scrollSpeed"/> (px/s), measured in tiles of
+        /// <paramref name="tileSize"/> px.
         /// </summary>
-        public static float EvaluateNoiseAlpha(float u, float v, int seed)
+        public static Vector2 EvaluateFlow(Vector2 scrollSpeed, Vector2 tileSize, float time)
         {
-            var density = EvaluateNoiseDensity(u, v, seed);
-            return Mathf.Clamp01(0.2f + 0.8f * Hd2dMath.SmoothUnit((density - 0.3f) / 0.45f));
+            // Reading the noise further back makes the visible pattern move forward.
+            return new Vector2(
+                -scrollSpeed.x / Mathf.Max(1f, tileSize.x) * time,
+                -scrollSpeed.y / Mathf.Max(1f, tileSize.y) * time
+            );
         }
 
         private void CacheFogLayer()
@@ -230,18 +237,13 @@ namespace Baryonyx.Vfx.Hd2d
             }
         }
 
-        private LayerState CreateLayer(
-            int index,
-            Hd2dFogLayer settings,
-            Texture texture,
-            System.Random random
-        )
+        private LayerState CreateLayer(int index, Hd2dFogLayer settings, System.Random random)
         {
             var name = string.IsNullOrWhiteSpace(settings.Name) ? "Fog" : settings.Name;
             var bankObject = new GameObject(
                 "Fog_" + index.ToString("00") + "_" + name,
                 typeof(RectTransform),
-                typeof(UnityEngine.UI.RectMask2D)
+                typeof(UnityEngine.UI.RawImage)
             );
             bankObject.hideFlags = HideFlags.DontSave;
             bankObject.layer = FogLayer.gameObject.layer;
@@ -254,47 +256,26 @@ namespace Baryonyx.Vfx.Hd2d
             bank.offsetMax = Vector2.zero;
             bank.pivot = new Vector2(0.5f, 0.5f);
 
-            var mask = bankObject.GetComponent<UnityEngine.UI.RectMask2D>();
-            mask.softness = settings.Softness;
+            // Each bank reads its own part of the noise and moves on its own, so it needs its
+            // own copy of the material. The copy is never saved.
+            var material = new Material(FogMaterial)
+            {
+                name = FogMaterial.name + " (" + name + ")",
+                hideFlags = HideFlags.DontSave,
+            };
+            var image = bankObject.GetComponent<UnityEngine.UI.RawImage>();
+            image.raycastTarget = false;
+            image.material = material;
 
-            var state = new LayerState
+            return new LayerState
             {
                 Settings = settings,
                 Bank = bank,
-                Base = CreateSheet("Base", bank, texture),
-                Detail = settings.DetailOpacity > 0f ? CreateSheet("Detail", bank, texture) : null,
-                BaseOffset = new Vector2(RandomRange(random), RandomRange(random)),
-                DetailOffset = new Vector2(RandomRange(random), RandomRange(random)),
+                Image = image,
+                Material = material,
+                Seed = new Vector2(RandomRange(random) * 50f, RandomRange(random) * 50f),
                 BreathPhase = RandomRange(random) * 100f,
             };
-            return state;
-        }
-
-        private static UnityEngine.UI.RawImage CreateSheet(
-            string name,
-            RectTransform parent,
-            Texture texture
-        )
-        {
-            var sheetObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(UnityEngine.UI.RawImage)
-            );
-            sheetObject.hideFlags = HideFlags.DontSave;
-            sheetObject.layer = parent.gameObject.layer;
-            sheetObject.transform.SetParent(parent, false);
-
-            var rect = (RectTransform)sheetObject.transform;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var image = sheetObject.GetComponent<UnityEngine.UI.RawImage>();
-            image.texture = texture;
-            image.raycastTarget = false;
-            return image;
         }
 
         private void ApplyAllVisuals(float time)
@@ -305,45 +286,41 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void ApplyVisual(LayerState state, float time)
         {
-            if (state.Bank == null || state.Base == null)
+            if (state.Bank == null || state.Image == null || state.Material == null)
                 return;
 
             var settings = state.Settings;
             var size = state.Bank.rect.size;
-            var tiles = new Vector2(size.x / settings.TileSize.x, size.y / settings.TileSize.y);
-            var scroll = new Vector2(
-                settings.ScrollSpeed.x / settings.TileSize.x,
-                settings.ScrollSpeed.y / settings.TileSize.y
+            var tiles = new Vector2(
+                Mathf.Max(0.01f, size.x / settings.TileSize.x),
+                Mathf.Max(0.01f, size.y / settings.TileSize.y)
             );
-            var breath = EvaluateBreath(state, time);
-
-            // The base sheet moves with the wind; texture offsets wrap to keep float precision.
-            // Moving the UVs toward negative X makes the visible pattern flow toward positive X.
-            var baseOffset = Wrap(state.BaseOffset - scroll * time);
-            state.Base.uvRect = new Rect(baseOffset, tiles);
-            state.Base.color = WithAlpha(
-                settings.Color,
-                1f - settings.DetailOpacity * 0.5f,
-                breath
+            var flow = EvaluateFlow(settings.ScrollSpeed, settings.TileSize, time);
+            // The wisps ride the wind with the large shapes; this is their drift against them.
+            var detail = new Vector2(
+                flow.x * (DetailSpeedScale - 1f),
+                flow.y * (DetailSpeedScale - 1f) - Mathf.Abs(flow.x) * DetailVerticalDrift
             );
-
-            if (state.Detail == null)
-                return;
-
-            // A finer sheet drifting against the base reads as churning fog, not a sliding image.
-            var detailScroll = new Vector2(
-                scroll.x * DetailSpeedScale,
-                scroll.y * DetailSpeedScale + Mathf.Abs(scroll.x) * DetailVerticalDrift
+            var material = state.Material;
+            material.SetVector(TilesId, tiles);
+            material.SetVector(FlowId, new Vector4(flow.x, flow.y, detail.x, detail.y));
+            material.SetFloat(EvolveId, time * settings.Churn);
+            material.SetVector(SeedId, state.Seed);
+            material.SetVector(
+                EdgeId,
+                new Vector4(
+                    size.x > 1f ? settings.Softness.x / size.x : 0.1f,
+                    size.y > 1f ? settings.Softness.y / size.y : 0.1f,
+                    0.6f,
+                    0f
+                )
             );
-            var detailOffset = Wrap(state.DetailOffset - detailScroll * time);
-            state.Detail.uvRect = new Rect(detailOffset, tiles / DetailTileScale);
-            state.Detail.color = WithAlpha(settings.Color, settings.DetailOpacity * 0.5f, breath);
-        }
+            material.SetFloat(DetailId, settings.DetailOpacity);
+            material.SetFloat(SettleId, settings.Settle);
 
-        private Color WithAlpha(Color color, float share, float breath)
-        {
-            color.a = Mathf.Clamp01(color.a * share * breath * Intensity);
-            return color;
+            var color = settings.Color;
+            color.a = Mathf.Clamp01(color.a * EvaluateBreath(state, time) * Intensity);
+            state.Image.color = color;
         }
 
         private static float EvaluateBreath(LayerState state, float time)
@@ -369,50 +346,25 @@ namespace Baryonyx.Vfx.Hd2d
         private void ClearLayers()
         {
             initialized = false;
-            // Destroying a bank also destroys its noise sheets.
             foreach (var state in states)
             {
-                if (state.Bank == null)
-                    continue;
-                state.Bank.gameObject.SetActive(false);
-                if (Application.IsPlaying(gameObject))
-                    Destroy(state.Bank.gameObject);
-                else
-                    DestroyImmediate(state.Bank.gameObject);
+                if (state.Bank != null)
+                {
+                    state.Bank.gameObject.SetActive(false);
+                    if (Application.IsPlaying(gameObject))
+                        Destroy(state.Bank.gameObject);
+                    else
+                        DestroyImmediate(state.Bank.gameObject);
+                }
+                if (state.Material != null)
+                {
+                    if (Application.IsPlaying(gameObject))
+                        Destroy(state.Material);
+                    else
+                        DestroyImmediate(state.Material);
+                }
             }
             states.Clear();
-        }
-
-        private static float PeriodicValueNoise(float x, float y, int period, int seed)
-        {
-            var x0 = Mathf.FloorToInt(x);
-            var y0 = Mathf.FloorToInt(y);
-            var fx = Hd2dMath.SmoothUnit(x - x0);
-            var fy = Hd2dMath.SmoothUnit(y - y0);
-            var a = Hash(x0, y0, period, seed);
-            var b = Hash(x0 + 1, y0, period, seed);
-            var c = Hash(x0, y0 + 1, period, seed);
-            var d = Hash(x0 + 1, y0 + 1, period, seed);
-            return Mathf.Lerp(Mathf.Lerp(a, b, fx), Mathf.Lerp(c, d, fx), fy);
-        }
-
-        private static float Hash(int x, int y, int period, int seed)
-        {
-            // Wrapping the lattice makes the noise tile seamlessly.
-            x = ((x % period) + period) % period;
-            y = ((y % period) + period) % period;
-            unchecked
-            {
-                var h = x * 374761393 + y * 668265263 + seed * 982451653;
-                h = (h ^ (h >> 13)) * 1274126177;
-                h ^= h >> 16;
-                return (h & 0xffff) / 65535f;
-            }
-        }
-
-        private static Vector2 Wrap(Vector2 value)
-        {
-            return new Vector2(Mathf.Repeat(value.x, 1f), Mathf.Repeat(value.y, 1f));
         }
 
         private static float RandomRange(System.Random random)
@@ -424,10 +376,9 @@ namespace Baryonyx.Vfx.Hd2d
         {
             public Hd2dFogLayer Settings;
             public RectTransform Bank;
-            public UnityEngine.UI.RawImage Base;
-            public UnityEngine.UI.RawImage Detail;
-            public Vector2 BaseOffset;
-            public Vector2 DetailOffset;
+            public UnityEngine.UI.RawImage Image;
+            public Material Material;
+            public Vector2 Seed;
             public float BreathPhase;
         }
     }

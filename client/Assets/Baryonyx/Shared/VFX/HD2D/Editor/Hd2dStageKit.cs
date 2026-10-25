@@ -31,8 +31,14 @@ namespace Baryonyx.Vfx.Hd2d.Editor
         public const string EmberMaterialPath = MaterialDirectory + "/Hd2dEmberGlow.mat";
         public const string LightBeamMaterialPath = MaterialDirectory + "/Hd2dLightBeam.mat";
         public const string MoteMaterialPath = MaterialDirectory + "/Hd2dMoteGlow.mat";
+        public const string FireflyMaterialPath = MaterialDirectory + "/Hd2dFireflyGlow.mat";
+        public const string SnowMaterialPath = MaterialDirectory + "/Hd2dSnowFlake.mat";
+        public const string SmokeMaterialPath = MaterialDirectory + "/Hd2dSmoke.mat";
         public const string PropShadeMaterialPath = MaterialDirectory + "/Hd2dPropShade.mat";
-        public const string LeafCookiePath =
+        private const string GeneratedDirectory = "Assets/Baryonyx/Shared/VFX/HD2D/Generated";
+        public const string LeafCookiePath = GeneratedDirectory + "/Hd2dLeafCookie.asset";
+        public const string CloudCookiePath = GeneratedDirectory + "/Hd2dCloudCookie.asset";
+        private const string OldLeafCookiePath =
             "Assets/Baryonyx/Shared/VFX/HD2D/Textures/Hd2dLeafCookie.png";
 
         private const string SimpleLitShader = "Universal Render Pipeline/Simple Lit";
@@ -87,8 +93,11 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                     material.SetFloat("_Base", 0.1f);
                     material.SetFloat("_FlameWidth", 0.5f);
                     material.SetFloat("_FlameHeight", 0.5f);
+                    material.SetFloat("_Veil", 0.55f);
                 }
             );
+            // Sparks: a small white-hot core in a red-orange glow, flickering fast as they spin
+            // and cool, each spark at its own pace.
             EnsureMaterial(
                 EmberMaterialPath,
                 ShaderDirectory + "/Hd2dGlowParticle.shader",
@@ -96,23 +105,38 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 {
                     material.SetColor("_Color", new Color(1f, 0.62f, 0.25f, 1f));
                     material.SetFloat("_Intensity", 2.5f);
+                    material.SetFloat("_Core", 0.22f);
+                    material.SetFloat("_CoreBoost", 2.4f);
+                    material.SetFloat("_Halo", 0.75f);
+                    material.SetFloat("_HaloSize", 0.28f);
+                    material.SetFloat("_Twinkle", 0.85f);
+                    material.SetFloat("_TwinkleSpeed", 9f);
+                    material.SetFloat("_Occlude", 0f);
                 }
+            );
+            // The smoke over a fire: grey, lit by the fire from below while it is young.
+            EnsureMaterial(
+                SmokeMaterialPath,
+                ShaderDirectory + "/Hd2dStageSmoke.shader",
+                material =>
+                    SetSmoke(
+                        material,
+                        new Color(0.42f, 0.4f, 0.41f),
+                        new Color(0.1f, 0.09f, 0.1f),
+                        0.6f,
+                        new Color(1.6f, 0.55f, 0.15f),
+                        2f,
+                        2.5f
+                    )
             );
             // Sunlight through the leaves: warm, soft beams and the dust and pollen floating in
             // them, both added on top of the stage.
             EnsureMaterial(
                 LightBeamMaterialPath,
                 ShaderDirectory + "/Hd2dLightBeam.shader",
-                material =>
-                {
-                    material.SetColor("_Color", new Color(1f, 0.9f, 0.66f, 1f));
-                    material.SetFloat("_Intensity", 0.6f);
-                    material.SetFloat("_EdgeSoftness", 0.7f);
-                    material.SetFloat("_StripeScale", 3f);
-                    material.SetFloat("_StripeAmount", 0.5f);
-                    material.SetFloat("_Speed", 0.1f);
-                }
+                material => SetBeam(material, new Color(1f, 0.9f, 0.66f, 1f), 0.6f)
             );
+            // Dust and pollen in the light: a soft speck that glints when it turns to the light.
             EnsureMaterial(
                 MoteMaterialPath,
                 ShaderDirectory + "/Hd2dGlowParticle.shader",
@@ -120,67 +144,438 @@ namespace Baryonyx.Vfx.Hd2d.Editor
                 {
                     material.SetColor("_Color", new Color(1f, 0.95f, 0.75f, 1f));
                     material.SetFloat("_Intensity", 2f);
+                    material.SetFloat("_Core", 0.16f);
+                    material.SetFloat("_CoreBoost", 2f);
+                    material.SetFloat("_Halo", 0.7f);
+                    material.SetFloat("_HaloSize", 0.3f);
+                    material.SetFloat("_Twinkle", 0.7f);
+                    material.SetFloat("_TwinkleSpeed", 1.4f);
+                    material.SetFloat("_Occlude", 0f);
                 }
             );
-            EnsureLeafCookie();
+            // Fireflies: a slow glow that swells and fades away, each on its own.
+            EnsureMaterial(
+                FireflyMaterialPath,
+                ShaderDirectory + "/Hd2dGlowParticle.shader",
+                material =>
+                {
+                    material.SetColor("_Color", new Color(1f, 1f, 1f, 1f));
+                    material.SetFloat("_Intensity", 2.2f);
+                    material.SetFloat("_Core", 0.14f);
+                    material.SetFloat("_CoreBoost", 2.6f);
+                    material.SetFloat("_Halo", 1.1f);
+                    material.SetFloat("_HaloSize", 0.32f);
+                    material.SetFloat("_Twinkle", 1f);
+                    material.SetFloat("_TwinkleSpeed", 0.55f);
+                    material.SetFloat("_Occlude", 0f);
+                }
+            );
+            // Snowflakes do not glow: soft white flakes that hide what is behind them.
+            EnsureMaterial(
+                SnowMaterialPath,
+                ShaderDirectory + "/Hd2dGlowParticle.shader",
+                material =>
+                {
+                    material.SetColor("_Color", new Color(0.86f, 0.89f, 0.95f, 1f));
+                    material.SetFloat("_Intensity", 1f);
+                    material.SetFloat("_Core", 0.3f);
+                    material.SetFloat("_CoreBoost", 0.35f);
+                    material.SetFloat("_Halo", 0.9f);
+                    material.SetFloat("_HaloSize", 0.26f);
+                    material.SetFloat("_Twinkle", 0f);
+                    material.SetFloat("_TwinkleSpeed", 1f);
+                    material.SetFloat("_Occlude", 1f);
+                }
+            );
+            EnsureCookies();
         }
 
-        // A tiling mask of light and leaf shade for the sun's cookie: soft clusters of leaves
-        // over full light, so the ground and scenery under the trees catch dappled sunlight.
-        private static void EnsureLeafCookie()
+        /// <summary>
+        /// The light beam's look (<c>Baryonyx/HD2D/Light Beam</c>): its colour and strength, a
+        /// soft band with drifting clouds of dust, streaks along the light, a wide faint halo and
+        /// specks of dust glinting in it.
+        /// </summary>
+        public static void SetBeam(Material material, Color color, float intensity)
         {
-            const int size = 128;
-            if (!File.Exists(LeafCookiePath))
+            material.SetColor("_Color", color);
+            material.SetFloat("_Intensity", intensity);
+            material.SetFloat("_Band", BeamBand);
+            material.SetFloat("_EdgeSoftness", 0.7f);
+            material.SetFloat("_Halo", 0.35f);
+            material.SetFloat("_Density", 0.6f);
+            material.SetFloat("_DensityScale", 0.7f);
+            material.SetFloat("_StripeScale", 3f);
+            material.SetFloat("_StripeAmount", 0.45f);
+            material.SetFloat("_Speed", 0.12f);
+            material.SetFloat("_Dust", 0.35f);
+            material.SetFloat("_DustBrightness", 3f);
+        }
+
+        // The beam's band takes this part of its board; the halo spreads over the rest.
+        private const float BeamBand = 0.55f;
+
+        /// <summary>
+        /// A pool of light on the ground (<c>Baryonyx/HD2D/Light Pool</c>): where a beam lands,
+        /// under a lamp, round lava or crystals. Its edge is broken and its light mottled by what
+        /// the light passes through, drifting slowly.
+        /// </summary>
+        public static Material PoolMaterial(string path, Color color, float intensity)
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                ShaderDirectory + "/Hd2dLightPool.shader"
+            );
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
             {
-                var random = new System.Random(2718);
-                var blobs = new List<Vector4>();
-                for (int i = 0; i < 70; i++)
-                    blobs.Add(
-                        new Vector4(
-                            (float)random.NextDouble() * size,
-                            (float)random.NextDouble() * size,
-                            8f + (float)random.NextDouble() * 18f,
-                            0.35f + (float)random.NextDouble() * 0.5f
-                        )
-                    );
-                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-                try
-                {
-                    for (int y = 0; y < size; y++)
-                    for (int x = 0; x < size; x++)
-                    {
-                        float shade = 0f;
-                        foreach (var blob in blobs)
-                        {
-                            // The shortest way round the tile, so the mask repeats seamlessly.
-                            float dx = Mathf.Abs(x - blob.x);
-                            float dy = Mathf.Abs(y - blob.y);
-                            dx = Mathf.Min(dx, size - dx);
-                            dy = Mathf.Min(dy, size - dy);
-                            float distance = Mathf.Sqrt(dx * dx + dy * dy * 1.6f) / blob.z;
-                            shade += blob.w * (1f - Mathf.SmoothStep(0.55f, 1f, distance));
-                        }
-                        float light = 1f - Mathf.Clamp01(shade) * 0.6f;
-                        texture.SetPixel(x, y, new Color(light, light, light, light));
-                    }
-                    texture.Apply();
-                    File.WriteAllBytes(LeafCookiePath, texture.EncodeToPNG());
-                }
-                finally
-                {
-                    Object.DestroyImmediate(texture);
-                }
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
             }
-            AssetDatabase.ImportAsset(LeafCookiePath, ImportAssetOptions.ForceSynchronousImport);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(LeafCookiePath);
-            importer.textureType = TextureImporterType.Default;
-            importer.wrapMode = TextureWrapMode.Repeat;
-            importer.filterMode = FilterMode.Bilinear;
-            importer.mipmapEnabled = true;
-            importer.sRGBTexture = false;
-            importer.alphaSource = TextureImporterAlphaSource.FromInput;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
+            material.shader = shader;
+            material.SetColor("_Color", color);
+            material.SetFloat("_Intensity", intensity);
+            material.SetFloat("_Core", 0.45f);
+            material.SetFloat("_Mottle", 0.5f);
+            material.SetFloat("_MottleScale", 0.9f);
+            material.SetFloat("_EdgeBreak", 0.35f);
+            material.SetFloat("_Speed", 0.15f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>The smoke's look (<c>Baryonyx/HD2D/Stage Smoke</c>).</summary>
+        public static void SetSmoke(
+            Material material,
+            Color lit,
+            Color shade,
+            float opacity,
+            Color glow,
+            float glowAmount,
+            float glowFade = 2.5f
+        )
+        {
+            material.SetColor("_Color", lit);
+            material.SetColor("_ShadeColor", shade);
+            material.SetFloat("_Opacity", opacity);
+            material.SetColor("_GlowColor", glow);
+            material.SetFloat("_Glow", glowAmount);
+            material.SetFloat("_GlowFade", glowFade);
+            material.SetFloat("_Detail", 2.2f);
+            material.SetFloat("_Erode", 0.85f);
+        }
+
+        /// <summary>A smoke material of a stage's own (a volcano's fumes, say).</summary>
+        public static Material SmokeMaterial(
+            string path,
+            Color lit,
+            Color shade,
+            float opacity,
+            Color glow,
+            float glowAmount,
+            float glowFade = 2.5f
+        )
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                ShaderDirectory + "/Hd2dStageSmoke.shader"
+            );
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            SetSmoke(material, lit, shade, opacity, glow, glowAmount, glowFade);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>
+        /// How a stage's mist looks (<c>Baryonyx/HD2D/Stage Mist</c>): its colour, how thick and
+        /// how much of the ground it covers, the size of its billows, the wind, how fast it
+        /// changes, how much the fine wisps eat its edges, the dark streaks, and how strongly the
+        /// sky, the sun (its edge) and the lamps light it.
+        /// </summary>
+        public readonly struct MistLook
+        {
+            public readonly Color Color;
+            public readonly float Density;
+            public readonly float Coverage;
+            public readonly float Scale;
+            public readonly Vector2 Wind;
+            public readonly float Stretch;
+            public readonly float Evolve;
+            public readonly float Wisps;
+            public readonly float Streaks;
+            public readonly float Ambient;
+            public readonly float Sun;
+            public readonly float Rim;
+            public readonly float Lamps;
+
+            public MistLook(
+                Color color,
+                float density,
+                float coverage,
+                float scale,
+                Vector2 wind,
+                float stretch = 2f,
+                float evolve = 0.05f,
+                float wisps = 0.5f,
+                float streaks = 0.35f,
+                float ambient = 1.2f,
+                float sun = 0.8f,
+                float rim = 0.9f,
+                float lamps = 1f
+            )
+            {
+                Color = color;
+                Density = density;
+                Coverage = coverage;
+                Scale = scale;
+                Wind = wind;
+                Stretch = stretch;
+                Evolve = evolve;
+                Wisps = wisps;
+                Streaks = streaks;
+                Ambient = ambient;
+                Sun = sun;
+                Rim = rim;
+                Lamps = lamps;
+            }
+        }
+
+        /// <summary>A mist material of a stage's own, made or set again from <paramref name="look"/>.</summary>
+        public static Material MistMaterial(string path, MistLook look, float seed = 0f)
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                ShaderDirectory + "/Hd2dStageMist.shader"
+            );
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            material.SetColor("_Color", look.Color);
+            material.SetFloat("_Density", look.Density);
+            material.SetFloat("_Coverage", look.Coverage);
+            material.SetFloat("_Scale", look.Scale);
+            material.SetFloat("_Stretch", look.Stretch);
+            material.SetVector("_Wind", new Vector4(look.Wind.x, look.Wind.y, 0f, 0f));
+            material.SetFloat("_Evolve", look.Evolve);
+            material.SetFloat("_Wisps", look.Wisps);
+            material.SetFloat("_Streaks", look.Streaks);
+            material.SetFloat("_Ambient", look.Ambient);
+            material.SetFloat("_SunLight", look.Sun);
+            material.SetFloat("_RimLight", look.Rim);
+            material.SetFloat("_LampLight", look.Lamps);
+            material.SetFloat("_Softness", 0.3f);
+            material.SetFloat("_HeightFade", 1.6f);
+            material.SetFloat("_Seed", seed);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        // The sun's cookies are worked out here from fixed seeds and kept as generated textures
+        // (.asset), never as pictures: the code below is their source.
+        private static void EnsureCookies()
+        {
+            AssetFolders.Ensure(GeneratedDirectory);
+            if (File.Exists(OldLeafCookiePath))
+                AssetDatabase.DeleteAsset(OldLeafCookiePath);
+            SaveCookie(LeafCookiePath, LeafCookieMask(256, 2718));
+            SaveCookie(CloudCookiePath, CloudCookieMask(256, 3141));
+        }
+
+        /// <summary>
+        /// Sunlight through a canopy (komorebi), one tile of <paramref name="size"/> dots that
+        /// repeats seamlessly. Clusters of leaves cast soft shade (a warped fBm of the canopy),
+        /// light comes through the larger gaps, and the small gaps act like pinholes that cast
+        /// round images of the sun: bright spots of a similar size scattered through the shade.
+        /// The darkest shade still lets 40% of the light through, so it never hides the
+        /// characters' shadows. On the ground the light's slant stretches the spots into
+        /// ellipses by itself.
+        /// </summary>
+        internal static float[] LeafCookieMask(int size, int seed)
+        {
+            const int period = 6;
+            var light = new float[size * size];
+            var random = new System.Random(seed);
+            // The pinhole spots, on a jittered grid that wraps round the tile.
+            const int grid = 14;
+            var spots = new List<Vector4>();
+            for (int gy = 0; gy < grid; gy++)
+            for (int gx = 0; gx < grid; gx++)
+            {
+                if (random.NextDouble() > 0.62)
+                    continue;
+                float cell = size / (float)grid;
+                spots.Add(
+                    new Vector4(
+                        (gx + 0.2f + 0.6f * (float)random.NextDouble()) * cell,
+                        (gy + 0.2f + 0.6f * (float)random.NextDouble()) * cell,
+                        2.6f + 3.4f * (float)random.NextDouble(),
+                        0.55f + 0.45f * (float)random.NextDouble()
+                    )
+                );
+            }
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = x * period / (float)size;
+                float v = y * period / (float)size;
+                float canopy = WarpedNoise(u, v, period, seed, 0.4f);
+                float shade = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.42f, 0.56f, canopy));
+                // The leaves inside a cluster let some light through between them.
+                float leaves = PeriodicFbm(u * 4f, v * 4f, period * 4, seed + 7, 3);
+                shade *= Mathf.Clamp01(0.7f + 0.6f * leaves);
+                float spot = 0f;
+                foreach (var s in spots)
+                {
+                    float dx = Mathf.Abs(x - s.x);
+                    float dy = Mathf.Abs(y - s.y);
+                    dx = Mathf.Min(dx, size - dx);
+                    dy = Mathf.Min(dy, size - dy);
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    float edge = Mathf.InverseLerp(s.z - 1f, s.z + 0.8f, d);
+                    spot = Mathf.Max(spot, s.w * (1f - Mathf.SmoothStep(0f, 1f, edge)));
+                }
+                // Spots only show where the leaves would otherwise shade the ground.
+                float lit = 1f - 0.6f * shade;
+                lit = Mathf.Lerp(lit, 1f, spot * shade);
+                light[y * size + x] = lit;
+            }
+            return light;
+        }
+
+        /// <summary>
+        /// The shadows of clouds drifting over an open field, one tile of <paramref name="size"/>
+        /// dots that repeats: large soft patches with frayed edges (a warped fBm), the sun still
+        /// letting 45% through the thickest cloud.
+        /// </summary>
+        internal static float[] CloudCookieMask(int size, int seed)
+        {
+            const int period = 3;
+            var light = new float[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = x * period / (float)size;
+                float v = y * period / (float)size;
+                float cloud = WarpedNoise(u, v, period, seed, 0.55f);
+                float shade = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.34f, 0.54f, cloud));
+                light[y * size + x] = 1f - 0.55f * shade;
+            }
+            return light;
+        }
+
+        private static void SaveCookie(string path, float[] light)
+        {
+            int size = (int)Mathf.Sqrt(light.Length);
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true, true)
+            {
+                name = Path.GetFileNameWithoutExtension(path),
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+            };
+            var pixels = new Color32[light.Length];
+            for (int i = 0; i < light.Length; i++)
+            {
+                byte value = (byte)Mathf.RoundToInt(Mathf.Clamp01(light[i]) * 255f);
+                pixels[i] = new Color32(value, value, value, value);
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(true, false);
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (existing == null)
+            {
+                AssetDatabase.CreateAsset(texture, path);
+                return;
+            }
+            // Kept in place (lights refer to it), filled again from the code.
+            existing.Reinitialize(size, size, TextureFormat.RGBA32, true);
+            existing.wrapMode = TextureWrapMode.Repeat;
+            existing.filterMode = FilterMode.Bilinear;
+            existing.SetPixels32(pixels);
+            existing.Apply(true, false);
+            Object.DestroyImmediate(texture);
+            EditorUtility.SetDirty(existing);
+            AssetDatabase.SaveAssetIfDirty(existing);
+        }
+
+        // A value noise in [0, 1] that repeats every `period` cells (so the tile is seamless),
+        // summed over five octaves whose periods double with their frequency, and read at a
+        // point moved twice by its own noise (domain warping), for frayed, swirling edges.
+        private static float WarpedNoise(float u, float v, int period, int seed, float warp)
+        {
+            float qx = PeriodicFbm(u + 0.0f, v + 0.0f, period, seed + 11, 2) * 2f - 1f;
+            float qy = PeriodicFbm(u + 5.2f, v + 1.3f, period, seed + 23, 2) * 2f - 1f;
+            float rx = PeriodicFbm(
+                u + warp * qx + 1.7f,
+                v + warp * qy + 9.2f,
+                period,
+                seed + 37,
+                3
+            );
+            float ry = PeriodicFbm(
+                u + warp * qx + 8.3f,
+                v + warp * qy + 2.8f,
+                period,
+                seed + 41,
+                3
+            );
+            return PeriodicFbm(
+                u + warp * (rx * 2f - 1f),
+                v + warp * (ry * 2f - 1f),
+                period,
+                seed,
+                5
+            );
+        }
+
+        private static float PeriodicFbm(float u, float v, int period, int seed, int octaves)
+        {
+            float sum = 0f;
+            float amplitude = 0.5f;
+            float total = 0f;
+            for (int i = 0; i < octaves; i++)
+            {
+                sum += amplitude * PeriodicNoise(u, v, period, seed + i * 101);
+                total += amplitude;
+                u *= 2f;
+                v *= 2f;
+                period *= 2;
+                amplitude *= 0.5f;
+            }
+            return sum / total;
+        }
+
+        private static float PeriodicNoise(float u, float v, int period, int seed)
+        {
+            int x0 = Mathf.FloorToInt(u);
+            int y0 = Mathf.FloorToInt(v);
+            float fx = u - x0;
+            float fy = v - y0;
+            fx = fx * fx * (3f - 2f * fx);
+            fy = fy * fy * (3f - 2f * fy);
+            float a = Lattice(x0, y0, period, seed);
+            float b = Lattice(x0 + 1, y0, period, seed);
+            float c = Lattice(x0, y0 + 1, period, seed);
+            float d = Lattice(x0 + 1, y0 + 1, period, seed);
+            return Mathf.Lerp(Mathf.Lerp(a, b, fx), Mathf.Lerp(c, d, fx), fy);
+        }
+
+        private static float Lattice(int x, int y, int period, int seed)
+        {
+            x = ((x % period) + period) % period;
+            y = ((y % period) + period) % period;
+            unchecked
+            {
+                uint h = (uint)(x * 374761393 + y * 668265263 + seed * 1274126177);
+                h = (h ^ (h >> 13)) * 1274126177u;
+                h ^= h >> 16;
+                return (h & 0xffffff) / 16777216f;
+            }
         }
 
         // Made once, then set again on every build so a changed value in code reaches the asset.
@@ -1012,7 +1407,12 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             return flame;
         }
 
-        /// <summary>Embers rising from a flame: a few glowing dots drifting up and fading.</summary>
+        /// <summary>
+        /// Sparks rising from a flame. Like real sparks, they shoot up fast on the hot air, slow
+        /// down as they leave it and wander on the eddies, flicker as they tumble, and cool from
+        /// white-yellow to a dull red before they go out; the fast ones are stretched into short
+        /// streaks. Each spark gets its own random number (the shader's flicker).
+        /// </summary>
         public static ParticleSystem Embers(
             Transform parent,
             string name,
@@ -1028,55 +1428,196 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var main = embers.main;
             main.loop = true;
             main.playOnAwake = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 2.2f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.25f, 0.6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.5f, size);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.9f, 2.1f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.3f);
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.4f, size);
             main.startColor = new ParticleSystem.MinMaxGradient(
-                new Color(1f, 0.85f, 0.5f, 1f),
-                new Color(1f, 0.5f, 0.2f, 1f)
+                new Color(1f, 0.92f, 0.62f, 1f),
+                new Color(1f, 0.6f, 0.26f, 1f)
             );
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 48;
-            main.gravityModifier = -0.04f;
+            main.maxParticles = 64;
+            main.gravityModifier = -0.03f;
             var emission = embers.emission;
             emission.rateOverTime = rate;
             var shape = embers.shape;
             shape.shapeType = ParticleSystemShapeType.Cone;
-            shape.angle = 18f;
+            shape.angle = 16f;
             shape.radius = spread;
+            // Out of the hot air the sparks slow down and drift.
+            var drag = embers.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.limit = 3f;
+            drag.drag = 1.1f;
             var noise = embers.noise;
             noise.enabled = true;
-            noise.strength = 0.35f;
-            noise.frequency = 0.6f;
-            noise.scrollSpeed = 0.4f;
+            noise.strength = new ParticleSystem.MinMaxCurve(
+                0.7f,
+                AnimationCurve.Linear(0f, 0.25f, 1f, 1f)
+            );
+            noise.frequency = 0.8f;
+            noise.scrollSpeed = 0.6f;
+            noise.octaveCount = 2;
+            var shrink = embers.sizeOverLifetime;
+            shrink.enabled = true;
+            shrink.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                AnimationCurve.Linear(0f, 1f, 1f, 0.35f)
+            );
             var color = embers.colorOverLifetime;
             color.enabled = true;
             var gradient = new Gradient();
             gradient.SetKeys(
                 new[]
                 {
-                    new GradientColorKey(new Color(1f, 0.9f, 0.6f), 0f),
-                    new GradientColorKey(new Color(1f, 0.35f, 0.1f), 1f),
+                    new GradientColorKey(new Color(1f, 0.95f, 0.75f), 0f),
+                    new GradientColorKey(new Color(1f, 0.55f, 0.18f), 0.4f),
+                    new GradientColorKey(new Color(0.8f, 0.16f, 0.05f), 1f),
                 },
                 new[]
                 {
                     new GradientAlphaKey(0f, 0f),
-                    new GradientAlphaKey(1f, 0.15f),
+                    new GradientAlphaKey(1f, 0.06f),
+                    new GradientAlphaKey(0.85f, 0.6f),
                     new GradientAlphaKey(0f, 1f),
                 }
             );
             color.color = gradient;
             var renderer = embers.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = material;
-            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = 0.1f;
+            renderer.lengthScale = 1.2f;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+            GiveRandom(renderer, false);
             return embers;
+        }
+
+        // Each particle hands the shader its own random numbers (TEXCOORD0.zw) and, for smoke,
+        // how far through its life it is (TEXCOORD1.x).
+        private static void GiveRandom(ParticleSystemRenderer renderer, bool age)
+        {
+            var streams = new List<ParticleSystemVertexStream>
+            {
+                ParticleSystemVertexStream.Position,
+                ParticleSystemVertexStream.Normal,
+                ParticleSystemVertexStream.Color,
+                ParticleSystemVertexStream.UV,
+                ParticleSystemVertexStream.StableRandomXY,
+            };
+            if (age)
+                streams.Add(ParticleSystemVertexStream.AgePercent);
+            renderer.SetActiveVertexStreams(streams);
+        }
+
+        /// <summary>
+        /// Smoke (or a volcano's fumes) rising from <paramref name="position"/>: soft billows
+        /// that rise, slow down, swell from <paramref name="startSize"/> to
+        /// <paramref name="endSize"/> m, turn on the eddies, drift downwind and fray away; the
+        /// young smoke is lit from below by the fire (the material's glow).
+        /// </summary>
+        public static ParticleSystem Smoke(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Material material,
+            float rate,
+            float radius,
+            float startSize,
+            float endSize,
+            float rise,
+            float lifetime,
+            Vector2 wind
+        )
+        {
+            var smoke = Group(parent, name, position).AddComponent<ParticleSystem>();
+            smoke.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
+            var main = smoke.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.prewarm = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(lifetime * 0.75f, lifetime);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(rise * 0.7f, rise);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 1f, 1f, 1f),
+                new Color(0.85f, 0.85f, 0.88f, 1f)
+            );
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = Mathf.CeilToInt(rate * lifetime * 1.3f) + 4;
+            main.gravityModifier = -0.01f;
+            var emission = smoke.emission;
+            emission.rateOverTime = rate;
+            var shape = smoke.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 8f;
+            shape.radius = radius;
+            var drag = smoke.limitVelocityOverLifetime;
+            drag.enabled = true;
+            drag.limit = 5f;
+            drag.drag = 0.35f;
+            var drift = smoke.velocityOverLifetime;
+            drift.enabled = true;
+            drift.space = ParticleSystemSimulationSpace.World;
+            drift.x = new ParticleSystem.MinMaxCurve(
+                wind.x,
+                AnimationCurve.Linear(0f, 0.1f, 1f, 1f)
+            );
+            drift.y = new ParticleSystem.MinMaxCurve(0f, AnimationCurve.Linear(0f, 0f, 1f, 0f));
+            drift.z = new ParticleSystem.MinMaxCurve(
+                wind.y,
+                AnimationCurve.Linear(0f, 0.1f, 1f, 1f)
+            );
+            var noise = smoke.noise;
+            noise.enabled = true;
+            noise.strength = new ParticleSystem.MinMaxCurve(
+                0.35f,
+                AnimationCurve.Linear(0f, 0.2f, 1f, 1f)
+            );
+            noise.frequency = 0.45f;
+            noise.scrollSpeed = 0.25f;
+            noise.octaveCount = 2;
+            var swell = smoke.sizeOverLifetime;
+            swell.enabled = true;
+            float growth = Mathf.Max(endSize / startSize, 1f);
+            swell.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                new AnimationCurve(new Keyframe(0f, 1f / growth), new Keyframe(1f, 1f, 0.6f, 0.2f))
+            );
+            main.startSize = new ParticleSystem.MinMaxCurve(endSize * 0.85f, endSize * 1.15f);
+            // Not turned: the bottom of each billow stays down, where the fire lights it.
+            var fade = smoke.colorOverLifetime;
+            fade.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(Color.white, 1f),
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0f, 0f),
+                    new GradientAlphaKey(1f, 0.12f),
+                    new GradientAlphaKey(0.7f, 0.65f),
+                    new GradientAlphaKey(0f, 1f),
+                }
+            );
+            fade.color = gradient;
+            var renderer = smoke.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sortMode = ParticleSystemSortMode.Distance;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            GiveRandom(renderer, true);
+            return smoke;
         }
 
         /// <summary>
         /// Lays the leaf mask (<see cref="LeafCookiePath"/>) over a directional light, one tile
-        /// every <paramref name="size"/> m, for sunlight dappled by the trees above.
+        /// every <paramref name="size"/> m, for sunlight dappled by the trees above; in Play Mode
+        /// the dapples sway a little with the leaves.
         /// </summary>
         public static void LeafCookie(Light sun, float size)
         {
@@ -1084,12 +1625,36 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var data = sun.GetUniversalAdditionalLightData();
             data.lightCookieSize = new Vector2(size, size);
             data.lightCookieOffset = Vector2.zero;
+            var drift = sun.gameObject.GetComponent<Hd2dCookieDrift>();
+            if (drift == null)
+                drift = sun.gameObject.AddComponent<Hd2dCookieDrift>();
+            drift.Drift = Vector2.zero;
+            drift.Sway = size * 0.006f;
+            drift.SwayPeriod = 3.4f;
+        }
+
+        /// <summary>
+        /// Lays the clouds' shadows (<see cref="CloudCookiePath"/>) over a directional light, one
+        /// tile every <paramref name="size"/> m, drifting with the wind in Play Mode.
+        /// </summary>
+        public static void CloudCookie(Light sun, float size, Vector2 wind)
+        {
+            sun.cookie = AssetDatabase.LoadAssetAtPath<Texture2D>(CloudCookiePath);
+            var data = sun.GetUniversalAdditionalLightData();
+            data.lightCookieSize = new Vector2(size, size);
+            data.lightCookieOffset = Vector2.zero;
+            var drift = sun.gameObject.GetComponent<Hd2dCookieDrift>();
+            if (drift == null)
+                drift = sun.gameObject.AddComponent<Hd2dCookieDrift>();
+            drift.Drift = wind;
+            drift.Sway = 0f;
         }
 
         /// <summary>
         /// A beam of light from <paramref name="top"/> down towards <paramref name="bottom"/>,
         /// <paramref name="width"/> m wide, drawn by the light beam shader on a board that turns
-        /// round the beam to the camera.
+        /// round the beam to the camera. The board is wider than the beam by the material's band
+        /// (<c>_Band</c>), to hold the faint halo round it.
         /// </summary>
         public static GameObject LightBeam(
             Transform parent,
@@ -1104,16 +1669,22 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             var beam = Renderer(parent, name, quad, material, false);
             beam.GetComponent<MeshRenderer>().receiveShadows = false;
             var axis = top - bottom;
+            float band = material.HasFloat("_Band") ? material.GetFloat("_Band") : 1f;
             beam.transform.position = (top + bottom) * 0.5f;
             beam.transform.rotation = Quaternion.FromToRotation(Vector3.up, axis.normalized);
-            beam.transform.localScale = new Vector3(width, axis.magnitude, 1f);
+            beam.transform.localScale = new Vector3(
+                width / Mathf.Max(band, 0.1f),
+                axis.magnitude,
+                1f
+            );
             return beam;
         }
 
         /// <summary>
         /// Dust and pollen floating in sunlight (or fireflies at night): soft specks drifting
         /// slowly in a box of <paramref name="size"/> m around <paramref name="center"/>, fading in
-        /// and out. <paramref name="tint"/> colours them (warm white when left out).
+        /// and out. <paramref name="tint"/> colours them (warm white when left out). Each speck
+        /// glints or glows at its own pace (the material's twinkle).
         /// </summary>
         public static ParticleSystem Motes(
             Transform parent,
@@ -1175,7 +1746,118 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+            GiveRandom(renderer, false);
             return motes;
+        }
+
+        /// <summary>
+        /// Mist lying on the ground: boards laid flat one above another (one per height in
+        /// <paramref name="layers"/>, with its strength), the lowest the thickest, over
+        /// <paramref name="size"/> m round <paramref name="center"/>. Each board is a grid whose
+        /// corners carry how thick the mist is there, thinning to <paramref name="clearing"/> of
+        /// it in an ellipse of <paramref name="clearSize"/> m round <paramref name="clearCenter"/>
+        /// (where the battle is), so the characters' feet still read.
+        /// </summary>
+        public static GameObject MistLayers(
+            Transform parent,
+            MeshStore store,
+            string name,
+            Material material,
+            Vector3 center,
+            Vector2 size,
+            (float height, float strength)[] layers,
+            Vector2 clearCenter,
+            Vector2 clearSize,
+            float clearing
+        )
+        {
+            var group = Group(parent, name, Vector3.zero);
+            const int columns = 16;
+            const int rows = 10;
+            for (int layer = 0; layer < layers.Length; layer++)
+            {
+                var (height, strength) = layers[layer];
+                var mesh = new Mesh { name = name + layer };
+                var vertices = new List<Vector3>();
+                var uvs = new List<Vector2>();
+                var colors = new List<Color>();
+                var normals = new List<Vector3>();
+                var triangles = new List<int>();
+                for (int row = 0; row <= rows; row++)
+                for (int column = 0; column <= columns; column++)
+                {
+                    var uv = new Vector2(column / (float)columns, row / (float)rows);
+                    var at = new Vector3(
+                        center.x + (uv.x - 0.5f) * size.x,
+                        height,
+                        center.z + (uv.y - 0.5f) * size.y
+                    );
+                    float dx = (at.x - clearCenter.x) / (clearSize.x * 0.5f);
+                    float dz = (at.z - clearCenter.y) / (clearSize.y * 0.5f);
+                    float inside = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Sqrt(dx * dx + dz * dz));
+                    vertices.Add(at);
+                    uvs.Add(uv);
+                    normals.Add(Vector3.up);
+                    colors.Add(new Color(1f, 1f, 1f, strength * Mathf.Lerp(1f, clearing, inside)));
+                }
+                for (int row = 0; row < rows; row++)
+                for (int column = 0; column < columns; column++)
+                {
+                    int i = row * (columns + 1) + column;
+                    triangles.AddRange(
+                        new[] { i, i + columns + 1, i + columns + 2, i + columns + 2, i + 1, i }
+                    );
+                }
+                mesh.SetVertices(vertices);
+                mesh.SetUVs(0, uvs);
+                mesh.SetNormals(normals);
+                mesh.SetColors(colors);
+                mesh.SetTriangles(triangles, 0);
+                mesh.RecalculateBounds();
+                var board = Renderer(group.transform, mesh.name, store.Add(mesh), material, false);
+                board.GetComponent<MeshRenderer>().receiveShadows = false;
+            }
+            return group;
+        }
+
+        /// <summary>
+        /// A bank of mist standing on the ground at <paramref name="bottomCenter"/>, facing the
+        /// camera (like <see cref="Flat"/>), thickest at the foot and thinning upwards: mist
+        /// gathered between far trees or over far water.
+        /// </summary>
+        public static GameObject MistBank(
+            Transform parent,
+            MeshStore store,
+            string name,
+            Material material,
+            Vector3 bottomCenter,
+            Vector2 size,
+            float strength
+        )
+        {
+            var left = bottomCenter - Vector3.right * size.x * 0.5f;
+            var mesh = new Mesh { name = name };
+            mesh.vertices = new[]
+            {
+                left,
+                left + Vector3.up * size.y,
+                left + new Vector3(size.x, size.y, 0f),
+                left + Vector3.right * size.x,
+            };
+            mesh.uv = new[]
+            {
+                new Vector2(0f, 0f),
+                new Vector2(0f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(1f, 0f),
+            };
+            mesh.normals = new[] { Vector3.back, Vector3.back, Vector3.back, Vector3.back };
+            var thickness = new Color(1f, 1f, 1f, strength);
+            mesh.colors = new[] { thickness, thickness, thickness, thickness };
+            mesh.triangles = new[] { 0, 1, 2, 2, 3, 0 };
+            var bank = Renderer(parent, name, store.Add(mesh), material, false);
+            bank.GetComponent<MeshRenderer>().receiveShadows = false;
+            return bank;
         }
 
         /// <summary>

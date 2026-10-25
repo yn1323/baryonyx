@@ -34,9 +34,10 @@ namespace Baryonyx.Vfx.Hd2d.Editor
 
             var assets = new Foldout { text = "素材", value = false };
             AddField(assets, "ParticleLayer", "描画レイヤー");
-            AddField(assets, "CrossSprite", "十字の画像（未指定で点）");
-            AddField(assets, "StreakSprite", "尾を引く粒の画像（未指定で点）");
-            AddField(assets, "AdditiveMaterial", "加算合成マテリアル");
+            AddField(assets, "EmberMaterial", "火の粉のマテリアル");
+            AddField(assets, "GlintMaterial", "きらめく粒のマテリアル（未指定で点）");
+            AddField(assets, "GlintDots", "きらめく粒の大きさ（単位の数）");
+            AddField(assets, "GlintSpin", "きらめく粒の傾きのばらつき（度）");
             root.Add(assets);
 
             root.Add(
@@ -78,9 +79,9 @@ namespace Baryonyx.Vfx.Hd2d.Editor
             AddField(foldout, property, "Curl", "カールノイズの強さ（px/秒、0で無効）");
             AddField(foldout, property, "CurlScale", "渦の大きさ（px）");
             AddField(foldout, property, "CurlSpeed", "流れが変わる速さ");
-            AddField(foldout, property, "DotSize", "1ドットの大きさ（px）");
-            AddField(foldout, property, "CrossShare", "十字の割合");
-            AddField(foldout, property, "StreakShare", "尾を引く粒の割合（残りは点）");
+            AddField(foldout, property, "DotSize", "大きさの単位（px）");
+            AddField(foldout, property, "CrossShare", "きらめく粒の割合");
+            AddField(foldout, property, "StreakShare", "長い尾を引く粒の割合（残りは短い尾の点）");
             AddField(foldout, property, "StartColor", "出たときの色");
             AddField(foldout, property, "EndColor", "消える直前の色");
             AddField(foldout, property, "Twinkle", "ちらつき");

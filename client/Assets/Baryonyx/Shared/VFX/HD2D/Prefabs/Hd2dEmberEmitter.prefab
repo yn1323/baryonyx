@@ -85,9 +85,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Vfx.Hd2d.Hd2dEmberEmitter
   ParticleLayer: {fileID: 6839887756182597750}
-  CrossSprite: {fileID: 21300000, guid: 2bb51b842a1344f4eb72882869431720, type: 3}
-  StreakSprite: {fileID: 21300000, guid: 4aee0a16a216b40ceac290b608507e6b, type: 3}
-  AdditiveMaterial: {fileID: 2100000, guid: 19125986337014913a0805e307f06bdc, type: 2}
+  EmberMaterial: {fileID: 2100000, guid: eeae55be7744442ae9bbbbab0b360dea, type: 2}
+  GlintMaterial: {fileID: 2100000, guid: c5e4a2e5020764cac8352dddbfbf30a0, type: 2}
+  GlintDots: 5
+  GlintSpin: 20
   PlayOnEnable: 1
   Animate: 1
   UseUnscaledTime: 1

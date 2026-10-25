@@ -95,13 +95,19 @@ namespace Baryonyx.App.Editor
             ShowcaseCatalogBuilder.RefreshCatalog();
         }
 
+        internal const string CampfireSmokeMaterialPath =
+            "Assets/Baryonyx/Features/Home/Vfx/CampfireSmoke.mat";
+        internal const string CampfireNightSmokeMaterialPath =
+            "Assets/Baryonyx/Features/Home/Vfx/CampfireNightSmoke.mat";
+
         // The campfire burns where the UI stands its logs: a computed flame rising out of the
-        // logs, its embers and its small warm light. In the day the sun casts the shadows; the
+        // logs, its embers, its smoke and its small warm light. In the day the sun casts the shadows; the
         // night's campfire of the adventure's rest (CampfireSceneArt) lights the camp brighter.
         internal static void AddCampfire(
             Scene scene,
             float lightIntensity = 1.6f,
-            float lightRange = 4.5f
+            float lightRange = 4.5f,
+            bool daylight = true
         )
         {
             var ground = Hd2dStageSceneSetup.GroundUnder(
@@ -129,6 +135,39 @@ namespace Baryonyx.App.Editor
                 4f,
                 0.1f,
                 0.07f
+            );
+            // Smoke rising from the fire, lit from below while it is low and leaning with the
+            // breeze through the glade: pale against the day, dark blue in the night.
+            var smoke = daylight
+                ? Hd2dStageKit.SmokeMaterial(
+                    CampfireSmokeMaterialPath,
+                    new Color(0.8f, 0.82f, 0.86f),
+                    new Color(0.4f, 0.42f, 0.48f),
+                    0.24f,
+                    new Color(1.4f, 0.5f, 0.15f),
+                    0.6f,
+                    4f
+                )
+                : Hd2dStageKit.SmokeMaterial(
+                    CampfireNightSmokeMaterialPath,
+                    new Color(0.24f, 0.26f, 0.34f),
+                    new Color(0.06f, 0.06f, 0.09f),
+                    0.36f,
+                    new Color(1.6f, 0.55f, 0.15f),
+                    1.2f
+                );
+            Hd2dStageKit.Smoke(
+                parent,
+                "CampfireSmoke",
+                root + Vector3.up * 0.65f,
+                smoke,
+                5f,
+                0.1f,
+                0.45f,
+                2f,
+                0.6f,
+                4.2f,
+                new Vector2(0.12f, 0.02f)
             );
             Hd2dStageKit.PointLight(
                 parent,
