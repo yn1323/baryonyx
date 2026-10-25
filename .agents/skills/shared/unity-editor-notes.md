@@ -47,6 +47,7 @@ Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Pla
 **再コンパイルの直後に `editor_play` を送ると、Play Modeに入らないことがある。**
 2026-10-23、再コンパイルの完了を待たずにPlay Modeへ入ろうとしたところ、停止したままで、続けて送った撮影の台本が空振りした。
 `recompile_status` が完了を返したあとも、`editor_status` で `status` が `ready`、`compiling` と `domainReloadInProgress` が False になるまで待ってから `editor_play` を送り、Play Modeに入ったことを確かめてから撮る。
+再コンパイルとその完了待ちだけなら、[テストの実行](../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプトを `--compile-only` で1回呼ぶ。札を取ってから再コンパイルし、Editorが空くまでスクリプトの中で待って、エラーの行だけを出す。`editor_status` を何度も呼ばない。
 
 **コンソールの記録には古いエラーも残る。**
 `console` は過去のエントリーも返すため、作業の前に最後の番号（seq）を控え、それより後のエントリーだけを見る。

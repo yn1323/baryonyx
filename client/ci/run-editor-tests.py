@@ -1,10 +1,12 @@
 """Run EditMode or PlayMode tests in the connected Unity Editor in one run.
 
-The named classes (or the whole test assembly) run through Baryonyx.Editor.CI.EditorTestRun, which
-saves the open scenes and starts the run in the same eval, so Unity never asks to save a scene.
-The script checks that tests were found, reloads the scripts and retries once when none were,
-waits for the result file, and compares each class with the tests it contains.
-The Editor lock is held throughout.
+The named classes or tests (Class or Class.Method; none for the whole test assembly) run through
+Baryonyx.Editor.CI.EditorTestRun, which saves the open scenes and starts the run in the same eval,
+so Unity never asks to save a scene. With --recompile the scripts are compiled first and the run
+stops at the first compile errors; --compile-only does only that. The script checks that tests
+were found, reloads the scripts and retries once when none were, waits for the result file, and
+compares each class or test with what it contains. Only a summary is printed; the failed tests and
+the compile errors are listed, never the log. The Editor lock is held throughout.
 """
 
 import argparse
@@ -34,9 +36,17 @@ EXIT_FAILED = 1
 EXIT_USAGE = 2
 EXIT_BUSY = 3
 EXIT_EDITOR = 5
+EXIT_COMPILE = 6
+COMPILE_SECONDS = 300
+COMPILE_ERRORS_SHOWN = 20
+# recompile_status once nothing is left to compile ("up_to_date" when there was nothing to do).
+COMPILE_DONE = {"completed", "up_to_date"}
 
 ASSEMBLIES = {"editmode": "Baryonyx.EditModeTests", "playmode": "Baryonyx.PlayModeTests"}
-CLASS_NAME = re.compile(r"\w+")
+# A class, or a class and one of its tests. Every test class ends in Tests, which keeps a
+# namespaced class (PlayMode.HomeSceneTests) out.
+SELECTOR = re.compile(r"\w+|\w+Tests\.\w+")
+COMPILE_ERROR = re.compile(r"^.*error CS\d{4}:.*$", re.MULTILINE)
 RELOADING = "Begin MonoManager ReloadAssembly"
 RELOAD_SCRIPTS = 'UnityEditor.EditorUtility.RequestScriptReload(); return "reload";'
 CANCEL_RUN = "return Baryonyx.Editor.CI.EditorTestRun.Cancel();"
@@ -75,11 +85,27 @@ def class_of(full_name):
     return full_name.split("(")[0].split(".")[-2]
 
 
-def group_pattern(classes):
-    """A regex for Filter.groupNames; the dots on both sides keep TopHomeSceneTests out of HomeSceneTests."""
-    if not classes:
+def method_of(full_name):
+    """The test segment of a test's full name, without its arguments, e.g. Misses for ....Misses(2)."""
+    return full_name.split("(")[0].split(".")[-1]
+
+
+def selects(selector, full_name):
+    """Whether a selector (Class or Class.Method) picks the test with this full name."""
+    owner, _, method = selector.partition(".")
+    return class_of(full_name) == owner and (not method or method_of(full_name) == method)
+
+
+def group_pattern(selectors):
+    """A regex for Filter.groupNames; the dots on both sides keep TopHomeSceneTests out of HomeSceneTests,
+    and a test's name ends at its arguments or the end, so Opens does not pick OpensTwice."""
+    if not selectors:
         return ""
-    return r"^Baryonyx\.Tests\.(?:\w+\.)*(?:" + "|".join(classes) + r")\."
+    parts = []
+    for selector in selectors:
+        owner, _, method = selector.partition(".")
+        parts.append(owner + r"\." + (method + r"(?:\(|$)" if method else ""))
+    return r"^Baryonyx\.Tests\.(?:\w+\.)*(?:" + "|".join(parts) + ")"
 
 
 def start_code(run_id, mode, classes):
@@ -129,7 +155,7 @@ class Runner:
         ]
         if not classes:
             return {ASSEMBLIES[mode]: len(listed)}
-        return {name: sum(1 for test in listed if class_of(test["FullName"]) == name) for name in classes}
+        return {name: sum(1 for test in listed if selects(name, test["FullName"])) for name in classes}
 
     def wait_ready(self):
         deadline = self.now() + READY_SECONDS
@@ -185,6 +211,62 @@ class Runner:
         if reply != "started":
             raise EditorTrouble(f"the run did not start: {reply}")
 
+    def recompile(self):
+        """Compile the scripts and wait until the Editor is ready again. Returns the compile errors
+        (each line once, at most COMPILE_ERRORS_SHOWN), or an empty list."""
+        offset = self.log_size()
+        self.prepare()
+        self.command("recompile")
+        # Right after the request the Editor may still report ready; give it a moment to begin.
+        begun_by = self.now() + START_SECONDS
+        while self.now() < begun_by:
+            log = self.log_since(offset)
+            if "Tundra build" in log or RELOADING in log or COMPILE_ERROR.search(log):
+                break
+            try:
+                # "completed" may still be the last compile's; anything else means this one began
+                # (or found nothing to do).
+                if self.command("recompile_status").get("status") != "completed":
+                    break
+            except EditorTrouble:
+                break
+            self.sleep(POLL_SECONDS)
+        deadline = self.now() + COMPILE_SECONDS
+        while True:
+            try:
+                status = self.command("recompile_status")
+            except EditorTrouble as trouble:
+                status = {"status": str(trouble)}
+            if status.get("status") in COMPILE_DONE:
+                break
+            if self.now() >= deadline:
+                raise EditorTrouble(f"the scripts did not compile within {COMPILE_SECONDS}s: {status}")
+            self.sleep(POLL_SECONDS)
+        self.wait_ready()
+        errors = []
+        for line in COMPILE_ERROR.findall(self.log_since(offset)) + [
+            error if isinstance(error, str) else json.dumps(error, ensure_ascii=False)
+            for error in status.get("errors") or []
+        ]:
+            line = line.strip()[:300]
+            if line not in errors:
+                errors.append(line)
+        if status.get("failed") and not errors:
+            errors.append("the compile failed; see client/Logs/Editor.log")
+        return errors[:COMPILE_ERRORS_SHOWN]
+
+    def compile_step(self):
+        """Recompile and print one line, or the errors. True when it compiled."""
+        started = self.now()
+        errors = self.recompile()
+        if errors:
+            self.out(f"FAIL: compile errors ({self.now() - started:.0f}s)")
+            for line in errors:
+                self.out(f"    {line}")
+            return False
+        self.out(f"compiled ({self.now() - started:.0f}s)")
+        return True
+
     def stop_run(self):
         self.evaluate(CANCEL_RUN)
         if self.command("editor_status")["playMode"] != "stopped":
@@ -231,10 +313,11 @@ class Runner:
     def report(self, mode, classes, expected, result, elapsed):
         """Print one line per class (or for the assembly) and the tests that did not pass."""
         tests = result["tests"]
-        groups = {name: [test for test in tests if class_of(test["name"]) == name] for name in classes}
+        groups = {name: [test for test in tests if selects(name, test["name"])] for name in classes}
         if not classes:
             groups = {ASSEMBLIES[mode]: tests}
-        all_ok = sum(len(group) for group in groups.values()) == result["total"]
+        # A class and one of its tests may both be named; count each test once.
+        all_ok = len({test["name"] for group in groups.values() for test in group}) == result["total"]
         for name, group in groups.items():
             passed = sum(test["status"] == "Passed" for test in group)
             failed = sum(test["status"] == "Failed" for test in group)
@@ -270,29 +353,52 @@ class Runner:
 
 def main(argv=None, runner=None, lock_file=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("classes", nargs="*", help="test class names, e.g. HomeSceneTests; none runs the whole assembly")
+    parser.add_argument(
+        "classes",
+        nargs="*",
+        help="test classes or tests, e.g. HomeSceneTests or HomeSceneTests.Opens; none runs the whole assembly",
+    )
     parser.add_argument("--mode", choices=sorted(ASSEMBLIES), default="playmode", help="test mode (default: playmode)")
     parser.add_argument("--owner", default="editor tests", help="name shown to other chats waiting for the Editor")
     parser.add_argument("--token", help="an Editor lock token this chat already holds; it is renewed, not released")
     parser.add_argument("--lock-wait", type=float, default=DEFAULT_LOCK_WAIT, help="seconds to wait for the Editor")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT, help="seconds allowed for the run")
+    parser.add_argument("--recompile", action="store_true", help="compile the scripts first; stop at compile errors")
+    parser.add_argument("--compile-only", action="store_true", help="compile the scripts and run no tests")
     args = parser.parse_args(argv)
     runner = runner or Runner()
     lock_file = lock_file or editor_lock.LOCK_FILE
 
-    malformed = [name for name in args.classes if not CLASS_NAME.fullmatch(name)]
+    malformed = [name for name in args.classes if not SELECTOR.fullmatch(name)]
     if malformed:
-        runner.out(f"not a class name: {', '.join(malformed)} (use class names without the namespace)")
+        runner.out(
+            f"not a class or test name: {', '.join(malformed)} (use Class or Class.Method without the namespace)"
+        )
         return EXIT_USAGE
-    try:
+    compile_first = args.recompile or args.compile_only
+
+    def expected_tests():
+        """The tests per class, or None after printing why the names do not run."""
         expected = runner.expected_counts(args.mode, args.classes)
-    except EditorTrouble as trouble:
-        runner.out(f"editor: {trouble}")
-        return EXIT_EDITOR
-    unknown = [name for name, count in expected.items() if count == 0]
-    if unknown:
-        runner.out(f"no {args.mode} tests in: {', '.join(unknown)} (use class names without the namespace)")
-        return EXIT_USAGE
+        unknown = [name for name, count in expected.items() if count == 0]
+        if unknown:
+            runner.out(
+                f"no {args.mode} tests in: {', '.join(unknown)} (use Class or Class.Method without the namespace)"
+            )
+            return None
+        return expected
+
+    # Without a compile the names are checked before the Editor is taken; after one they can only
+    # be checked once the new tests are compiled.
+    expected = None
+    if not compile_first:
+        try:
+            expected = expected_tests()
+        except EditorTrouble as trouble:
+            runner.out(f"editor: {trouble}")
+            return EXIT_EDITOR
+        if expected is None:
+            return EXIT_USAGE
 
     # The pid in the lock keeps the end-of-turn hook from returning the lock while this script runs.
     token = args.token
@@ -315,6 +421,15 @@ def main(argv=None, runner=None, lock_file=None):
 
     try:
         editor_lock.renew(lock_file, token, editor_lock.DEFAULT_LEASE_SECONDS, pid=os.getpid())
+        if compile_first:
+            if not runner.compile_step():
+                return EXIT_COMPILE
+            renew()
+            if args.compile_only:
+                return 0
+            expected = expected_tests()
+            if expected is None:
+                return EXIT_USAGE
         ok = runner.run(args.mode, args.classes, expected, args.timeout, renew)
         renew()
         return 0 if ok else EXIT_FAILED

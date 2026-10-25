@@ -69,7 +69,7 @@ grep -rnE "(private|internal|public) static [A-Za-z<>, \[\]\?]+ [A-Z][A-Za-z]*\(
 
 ## 5. 検証と文書
 
-- Unityの再コンパイル（`recompile_status`）、CSharpierの整形と検査、EditModeの全件、関連するPlayModeのテストを実行する。
+- CSharpierの整形と検査、Unityの再コンパイルとEditModeの全件、関連するPlayModeのテストを実行する。再コンパイルからテストまでは、[テストの実行](../../../../doc/rules/client-testing.md#作業中に実行するplaymodeテスト)のスクリプトの `--recompile` で1回にまとめる。
 - PlayModeテストを直した場合は、変更前と後の件数と所要時間を記録し、流れを1回ずつ通せていることを確かめる。
 - 移したファイルへのリンクは[文書検査](../../../../doc/tools/README.md)で見つかる。構成の正本（[クライアントの構成と依存関係](../../../../doc/rules/frontend-design.md)）と、移したアセットを載せた文書を同じ変更で直す。
 - 移したアセットの展示室の登録は、カタログの自動更新で新しいパスと名前に変わる。差分がパスと名前だけであることを確かめる。

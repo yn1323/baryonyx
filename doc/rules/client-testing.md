@@ -93,10 +93,14 @@ EditModeは全件でも1分ほどで終わるため、作業中も `Baryonyx.Edi
 並べたクラスは1回の実行にまとめ、再生の開始と停止も1回で済ませる。
 EditModeは `--mode editmode` を付ける。クラス名を省くと、そのモードのアセンブリ（`Baryonyx.PlayModeTests`・`Baryonyx.EditModeTests`）を全件実行する（例：`python3 client/ci/run-editor-tests.py --mode editmode --owner "<作業の名前>"`）。
 クラス名は名前空間を付けずに書く。スクリプトはテストの完全名のうちクラスの部分を前後の `.` で区切って照らすため、`HomeSceneTests` に `TopHomeSceneTests` は含まれない。
+直したテストが1件や数件なら、クラス全体ではなく `クラス名.テスト名` で書く（例：`python3 client/ci/run-editor-tests.py AdventureLoopTests.TheCampfireTakesTapsOnItsThingsAndTags --owner "<作業の名前>"`）。テスト名は引数の前か名前の終わりで区切って照らすため、`Opens` に `OpensTwice` は含まれない。2026-10-25の計測では、24件のクラスを流すと約113秒、その中の1件だけなら約9秒だった。クラス名とテスト名は混ぜて並べてよい。
+C#を変えたあとは `--recompile` を付ける。札を取ってから再コンパイルし、完了を待ってコンパイルエラーを確かめ、そのままテストへ進む。エラーがあればテストを始めず、エラーの行だけを出して止める。コンパイルだけを確かめるときは `--compile-only` を付ける（テストは実行しない）。
 スクリプトは[実行と結果確認](#実行と結果確認)の手順を順に行い、クラスごとの成否と件数を1行ずつ出す。
 札を自分で取らずにスクリプトに取らせる。すでに札を持っているときは `--token <token>` を渡すと、札を延長し、返さずに終わる。
-クラス名の誤りは、札を取る前に `list_tests` の一覧と照らして止める。
-数分かかることがあるため、バックグラウンドで1回だけ実行し、終了の通知を待つ。終了コードは、すべて成功で0、失敗ありで1、クラス名の誤りで2、札が取れないと3、Editorの異常や時間切れで5である。
+クラス名・テスト名の誤りは、札を取る前に `list_tests` の一覧と照らして止める。`--recompile` のときは、新しいテストを読み込んでから照らすため、再コンパイルのあとに照らす。
+出力は要約だけにする。成功なら `compiled (12s)` とクラスまたはテストごとの1行と合計の1行だけを出し、失敗したテストとコンパイルエラーの行だけを足す。Editorのログは出さない。
+数分かかることがあるため、バックグラウンドで1回だけ実行し、終了の通知を待つ。終了コードは、すべて成功で0、失敗ありで1、クラス名・テスト名の誤りで2、札が取れないと3、Editorの異常や時間切れで5、コンパイルエラーで6である。
+札の待ち（既定は10分。`--lock-wait` で変える）、コンパイルの完了待ち、テストの完了待ちは、すべてスクリプトの中で行う。待っている間に `editor_status` や `echo` を別に呼ばない。
 
 接続中のEditorで `run_tests` を直接使うと、クラスを1つずつしか絞り込めない（`--filter` に `;` 区切りや「A|B」で複数のクラスを渡すと0件になる）。
 保存の確認ダイアログも防げないため、スクリプトを使う。
@@ -163,8 +167,8 @@ Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実
 スクリプトは次の順に進める。
 
 1. Editorの札を取る（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）。
-2. 再生中なら止め、コンパイルや再読み込みが終わるのを待つ。
-3. `eval` の1回の呼び出しで [EditorTestRun](../../client/Assets/Baryonyx/Editor/CI/EditorTestRun.cs) の `Start` を呼ぶ。`Start` は開いているシーンを保存し（`EditorSceneManager.SaveOpenScenes`）、同じ呼び出しの中で `TestRunnerApi.Execute` を呼んで実行を始める。複数のクラスは `Filter.groupNames` の正規表現で1回の実行にまとめる。
+2. 再生中なら止め、コンパイルや再読み込みが終わるのを待つ。`--recompile`・`--compile-only` のときは、ここで再コンパイルを頼み、`recompile_status` が終わりを返し、Editorが空くまで待つ（上限5分）。そのあと、Editorのログの今回の分と `recompile_status` から `error CS` の行を集め、重複を除いて最大20行だけを出す。エラーがあれば終了コード6で止める。`--compile-only` はここで終わる。
+3. `eval` の1回の呼び出しで [EditorTestRun](../../client/Assets/Baryonyx/Editor/CI/EditorTestRun.cs) の `Start` を呼ぶ。`Start` は開いているシーンを保存し（`EditorSceneManager.SaveOpenScenes`）、同じ呼び出しの中で `TestRunnerApi.Execute` を呼んで実行を始める。複数のクラスやテストは `Filter.groupNames` の正規表現で1回の実行にまとめる。
 4. `EditorTestRun` が `client/Temp/editor-test-run.json` に書く今回の結果を待つ。開始の件数が0なら、テストを見つけられていない。
 5. 0のときは、完了を待たずにすぐ止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
 6. 完了を待つ時間には上限を設ける（既定は10分。`--timeout` で変える）。上限を超えたら止めて、終了コード5で終わる。

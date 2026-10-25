@@ -7,3 +7,6 @@
 
 # Python bytecode caches (for example, from scripts under .agents/skills/).
 __pycache__/
+
+# Claude Code のこのプロジェクトだけの個人設定（使わないプラグインを外すなど）
+.claude/settings.local.json

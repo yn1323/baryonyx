@@ -16,7 +16,7 @@ editor_lock = runner_module.editor_lock
 
 TESTS = {
     "playmode": {
-        "Baryonyx.Tests.PlayMode.HomeSceneTests": ["Opens", "Closes"],
+        "Baryonyx.Tests.PlayMode.HomeSceneTests": ["Opens", "Closes", "OpensTwice"],
         "Baryonyx.Tests.PlayMode.TopHomeSceneTests": ["Starts"],
         "Baryonyx.Tests.PlayMode.TavernTrainingTests": ["Trains", "Explicitly"],
     },
@@ -56,6 +56,9 @@ class FakeEditor:
         self.eval_timeouts = 0
         self.start_timeouts = 0
         self.start_reply = "started"
+        self.compile_errors = []
+        self.compiling = 0
+        self.up_to_date = False
 
     def write_log(self, line):
         with self.log.open("a", encoding="utf-8") as stream:
@@ -108,6 +111,21 @@ class FakeEditor:
                 self.unreachable -= 1
                 raise runner_module.EditorTrouble("No Unity Editor instances found")
             return {"status": "ready", "compiling": False, "domainReloadInProgress": False, "playMode": "stopped"}
+        if name == "recompile" and self.up_to_date:
+            return {"status": "up_to_date"}
+        if name == "recompile_status" and self.up_to_date:
+            return {"status": "up_to_date", "failed": False, "errors": []}
+        if name == "recompile":
+            self.compiling = 2
+            self.write_log("*** Tundra build success")
+            for error in self.compile_errors:
+                self.write_log(error)
+            return {"status": "compiling"}
+        if name == "recompile_status":
+            if self.compiling:
+                self.compiling -= 1
+                return {"status": "compiling"}
+            return {"status": "completed", "failed": bool(self.compile_errors), "errors": []}
         if name == "eval":
             code = parameters["code"]
             if "EditorTestRun.Start" in code:
@@ -170,15 +188,15 @@ class RunEditorTestsTests(unittest.TestCase):
         self.assertEqual(self.main("HomeSceneTests", "TavernTrainingTests", "--owner", "skills"), 0)
         self.assertEqual(len(self.editor.starts()), 1)
         self.assertEqual(self.editor.holders, ["skills"])
-        self.assertIn("PASS HomeSceneTests: 2/2 passed, 0 failed, 2 expected", self.output)
+        self.assertIn("PASS HomeSceneTests: 3/3 passed, 0 failed, 3 expected", self.output)
         self.assertIn("PASS TavernTrainingTests: 1/1 passed, 0 failed, 1 expected", self.output)
-        self.assertEqual(self.output[-1], "3/3 passed, 0 failed (2s)")
+        self.assertEqual(self.output[-1], "4/4 passed, 0 failed (2s)")
         self.assertIsNone(editor_lock.read(self.lock_path))
 
     def test_the_pattern_keeps_a_longer_class_name_out(self):
         self.main("HomeSceneTests")
         self.assertNotIn("TopHomeSceneTests", "".join(self.output))
-        self.assertIn("PASS HomeSceneTests: 2/2 passed, 0 failed, 2 expected", self.output)
+        self.assertIn("PASS HomeSceneTests: 3/3 passed, 0 failed, 3 expected", self.output)
 
     def test_saving_and_starting_are_one_eval(self):
         self.main("HomeSceneTests")
@@ -205,7 +223,7 @@ class RunEditorTestsTests(unittest.TestCase):
         reloads = [p for name, p in self.editor.calls if name == "eval" and "RequestScriptReload" in p["code"]]
         self.assertEqual(len(reloads), 1)
         self.assertEqual(self.output[0], "no tests found; reloading scripts and retrying once")
-        self.assertIn("PASS HomeSceneTests: 2/2 passed, 0 failed, 2 expected", self.output)
+        self.assertIn("PASS HomeSceneTests: 3/3 passed, 0 failed, 3 expected", self.output)
 
     def test_a_run_that_still_finds_no_tests_fails_without_a_third_try(self):
         self.editor.zero_runs = 2
@@ -216,7 +234,7 @@ class RunEditorTestsTests(unittest.TestCase):
     def test_a_failed_test_is_listed_and_fails_only_its_class(self):
         self.editor.failing = {"Baryonyx.Tests.PlayMode.HomeSceneTests.Closes"}
         self.assertEqual(self.main("HomeSceneTests", "TavernTrainingTests"), runner_module.EXIT_FAILED)
-        self.assertIn("FAIL HomeSceneTests: 1/2 passed, 1 failed, 2 expected", self.output)
+        self.assertIn("FAIL HomeSceneTests: 2/3 passed, 1 failed, 3 expected", self.output)
         self.assertIn("    Failed: Baryonyx.Tests.PlayMode.HomeSceneTests.Closes (Expected: 1)", self.output)
         self.assertIn("PASS TavernTrainingTests: 1/1 passed, 0 failed, 1 expected", self.output)
 
@@ -248,7 +266,7 @@ class RunEditorTestsTests(unittest.TestCase):
 
     def test_explicit_tests_are_not_expected(self):
         counts = self.runner.expected_counts("playmode", ["TavernTrainingTests", "HomeSceneTests"])
-        self.assertEqual(counts, {"TavernTrainingTests": 1, "HomeSceneTests": 2})
+        self.assertEqual(counts, {"TavernTrainingTests": 1, "HomeSceneTests": 3})
 
     def test_a_held_token_is_renewed_but_not_released(self):
         token = editor_lock.acquire(self.lock_path, "skills", 0, 600)
@@ -261,6 +279,55 @@ class RunEditorTestsTests(unittest.TestCase):
         self.assertEqual(self.editor.holder_pids, [runner_module.os.getpid()])
         self.assertIsNone(editor_lock.read(self.lock_path)["pid"])
         self.assertTrue(editor_lock.release_session(self.lock_path, "chat"))
+
+    def test_a_test_name_runs_only_that_test_and_not_one_whose_name_it_begins(self):
+        self.assertEqual(self.main("HomeSceneTests.Opens"), 0)
+        self.assertIn("PASS HomeSceneTests.Opens: 1/1 passed, 0 failed, 1 expected", self.output)
+        self.assertEqual(self.output[-1], "1/1 passed, 0 failed (2s)")
+
+    def test_a_test_with_arguments_is_picked_by_its_name(self):
+        self.assertEqual(self.main("--mode", "editmode", "CombatTests.Misses"), 0)
+        self.assertIn("PASS CombatTests.Misses: 1/1 passed, 0 failed, 1 expected", self.output)
+
+    def test_a_class_and_one_of_its_tests_count_the_test_once(self):
+        self.assertEqual(self.main("HomeSceneTests", "HomeSceneTests.Opens"), 0)
+        self.assertEqual(len(self.editor.starts()), 1)
+
+    def test_an_unknown_test_name_stops_before_taking_the_lock(self):
+        self.assertEqual(self.main("HomeSceneTests.Flies"), runner_module.EXIT_USAGE)
+        self.assertEqual(self.editor.starts(), [])
+        self.assertFalse(self.lock_path.exists())
+
+    def test_recompile_compiles_under_the_lock_then_runs(self):
+        self.assertEqual(self.main("HomeSceneTests.Opens", "--recompile"), 0)
+        names = self.editor.names()
+        self.assertLess(names.index("recompile"), names.index("list_tests"))
+        self.assertTrue(self.output[0].startswith("compiled ("))
+        self.assertIn("PASS HomeSceneTests.Opens: 1/1 passed, 0 failed, 1 expected", self.output)
+        self.assertIsNone(editor_lock.read(self.lock_path))
+
+    def test_compile_errors_stop_before_the_tests_and_show_only_the_error_lines(self):
+        self.editor.compile_errors = [
+            "Assets/A.cs(3,1): error CS1002: ; expected",
+            "Assets/A.cs(3,1): error CS1002: ; expected",
+        ]
+        self.assertEqual(self.main("HomeSceneTests", "--recompile"), runner_module.EXIT_COMPILE)
+        self.assertEqual(self.editor.starts(), [])
+        self.assertTrue(self.output[0].startswith("FAIL: compile errors"))
+        self.assertEqual(self.output[1:], ["    Assets/A.cs(3,1): error CS1002: ; expected"])
+        self.assertIsNone(editor_lock.read(self.lock_path))
+
+    def test_nothing_to_compile_goes_on_to_the_tests(self):
+        self.editor.up_to_date = True
+        self.assertEqual(self.main("HomeSceneTests.Opens", "--recompile"), 0)
+        self.assertTrue(self.output[0].startswith("compiled ("))
+        self.assertLess(self.clock.current - 1000.0, 60)
+
+    def test_compile_only_runs_no_tests(self):
+        self.assertEqual(self.main("--compile-only"), 0)
+        self.assertEqual(self.editor.starts(), [])
+        self.assertNotIn("list_tests", self.editor.names())
+        self.assertEqual(len(self.output), 1)
 
     def test_a_busy_editor_returns_busy_without_running(self):
         editor_lock.acquire(self.lock_path, "other chat", 0, 600)
