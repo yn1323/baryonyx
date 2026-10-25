@@ -11,9 +11,9 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// The highway's world map (doc/features/stage-progression.md#街道とダンジョン): a big picture
-    /// seen through the screen and dragged in any direction, with sugoroku squares and straight
-    /// lines over it. Tapping a cleared or open square walks the party there by the shortest way
-    /// over cleared squares. The progress is read from <see cref="WorldMapSession"/> when the map
+    /// seen through the screen, dragged in any direction and pinched to zoom, with sugoroku
+    /// squares and straight lines over it. Tapping a cleared or open square walks the party there
+    /// by the shortest way over cleared squares. The progress is read from <see cref="WorldMapSession"/> when the map
     /// opens and each square reached is saved there. Reaching an open square with a battle asks
     /// for the battle (<see cref="BattleRequested"/>), which clears it when won; any other open
     /// square is cleared on reaching it, and a treasure square shows what its chest held once
@@ -68,6 +68,9 @@ namespace Baryonyx.WorldMap
         private const float FollowSharpness = 8f;
         private const float GlideDecay = 5f;
 
+        // 近づける上限。離すほうは、地図が画面を埋めるところまで。
+        public const float MaxZoom = 2f;
+
         public event Action BackPressed;
         public event Action DungeonsPressed;
 
@@ -80,6 +83,7 @@ namespace Baryonyx.WorldMap
         private int partyAt;
         private Vector2 partyDesign;
         private Vector2 scroll;
+        private float zoom = 1f;
         private Vector2 glide;
         private bool holding;
         private readonly List<Vector2> walk = new();
@@ -92,6 +96,7 @@ namespace Baryonyx.WorldMap
         public int PartyAt => partyAt;
         public bool Walking => walk.Count > 0;
         public Vector2 Scroll => scroll;
+        public float Zoom => zoom;
 
         // 戦闘の画面へ移るところ。マスを押しても歩かない。
         public bool Fighting { get; private set; }
@@ -131,6 +136,7 @@ namespace Baryonyx.WorldMap
             if (Drag != null)
             {
                 Drag.Dragged += Look;
+                Drag.Pinched += Pinch;
                 Drag.Holding += Hold;
             }
             if (Back != null)
@@ -146,6 +152,7 @@ namespace Baryonyx.WorldMap
             if (Drag != null)
             {
                 Drag.Dragged -= Look;
+                Drag.Pinched -= Pinch;
                 Drag.Holding -= Hold;
             }
             if (Back != null)
@@ -202,7 +209,7 @@ namespace Baryonyx.WorldMap
         {
             Refresh();
             PlaceParty(DesignOf(partyAt));
-            scroll = Clamp(DesignOf(partyAt) - ViewSize * 0.5f);
+            scroll = Clamp(DesignOf(partyAt) - SeenSize * 0.5f);
             ApplyScroll();
         }
 
@@ -256,7 +263,7 @@ namespace Baryonyx.WorldMap
             PlaceParty(moved);
             if ((moved - next).sqrMagnitude < 0.01f)
                 walk.RemoveAt(0);
-            var want = Clamp(moved - ViewSize * 0.5f);
+            var want = Clamp(moved - SeenSize * 0.5f);
             scroll = Vector2.Lerp(scroll, want, 1f - Mathf.Exp(-FollowSharpness * dt));
             ApplyScroll();
             if (Walking)
@@ -356,7 +363,7 @@ namespace Baryonyx.WorldMap
         {
             if (Walking)
                 return;
-            var move = new Vector2(-delta.x, delta.y);
+            var move = new Vector2(-delta.x, delta.y) / zoom;
             MoveBy(move);
             float dt = Mathf.Max(Time.unscaledDeltaTime, 1f / 120f);
             glide = Vector2.Lerp(glide, move / dt, 0.5f);
@@ -368,6 +375,30 @@ namespace Baryonyx.WorldMap
             ApplyScroll();
         }
 
+        // 2本指の中点の下にある地図の場所を、動いた後の中点の下へ運びながら大きさを変える。
+        private void Pinch(Vector2 before, Vector2 after, float ratio)
+        {
+            var under = scroll + FromTopLeft(before) / zoom;
+            zoom = ClampZoom(zoom * ratio);
+            scroll = Clamp(under - FromTopLeft(after) / zoom);
+            glide = Vector2.zero;
+            ApplyScroll();
+        }
+
+        private float MinZoom => Mathf.Max(ViewSize.x / MapSize.x, ViewSize.y / MapSize.y);
+
+        private float ClampZoom(float value) =>
+            Mathf.Clamp(value, Mathf.Min(MinZoom, MaxZoom), MaxZoom);
+
+        // 指の位置（Viewport の中の設計座標、y が上）を、画面の左上から見た位置（y が下）にする。
+        private Vector2 FromTopLeft(Vector2 local)
+        {
+            if (Viewport == null)
+                return local;
+            var rect = Viewport.rect;
+            return new Vector2(local.x - rect.xMin, rect.yMax - local.y);
+        }
+
         private Vector2 ViewSize =>
             Viewport != null && Viewport.rect.width > 0f
                 ? Viewport.rect.size
@@ -375,17 +406,25 @@ namespace Baryonyx.WorldMap
 
         private Vector2 MapSize => WorldMapCatalog.PictureSize * Scale;
 
-        // scroll は地図の左上から見た、画面の左上の位置（y は下向き）。
+        // 画面に入る地図の広さ（地図の設計座標）。
+        private Vector2 SeenSize => ViewSize / zoom;
+
+        // scroll は地図の左上から見た、画面の左上の位置（地図の設計座標、y は下向き）。
         private Vector2 Clamp(Vector2 value)
         {
-            var max = Vector2.Max(Vector2.zero, MapSize - ViewSize);
+            var max = Vector2.Max(Vector2.zero, MapSize - SeenSize);
             return new Vector2(Mathf.Clamp(value.x, 0f, max.x), Mathf.Clamp(value.y, 0f, max.y));
         }
 
         private void ApplyScroll()
         {
-            if (Map != null)
-                Map.anchoredPosition = new Vector2(-Mathf.Round(scroll.x), Mathf.Round(scroll.y));
+            if (Map == null)
+                return;
+            Map.localScale = new Vector3(zoom, zoom, 1f);
+            Map.anchoredPosition = new Vector2(
+                -Mathf.Round(scroll.x * zoom),
+                Mathf.Round(scroll.y * zoom)
+            );
         }
 
         // マスの設計座標（地図の左上から、y は下向き）。
@@ -410,7 +449,7 @@ namespace Baryonyx.WorldMap
                 image.sprite =
                     state == WorldNodeState.Hidden
                         ? HiddenSprite
-                        : KindSprites[(int)graph.Nodes[i].Kind];
+                        : KindSprites[(int)ShownKind(graph.Nodes[i].Kind, state)];
                 image.color = state == WorldNodeState.Seen ? SeenTint : Color.white;
                 Nodes[i].localScale = Vector3.one;
             }
@@ -426,6 +465,15 @@ namespace Baryonyx.WorldMap
             if (Place != null)
                 Place.text = graph.Nodes[partyAt].Name;
         }
+
+        /// <summary>
+        /// The kind of platform a square shows. A cleared square has nothing left to happen on
+        /// it, so any square but a town shows the empty platform once cleared.
+        /// </summary>
+        public static WorldNodeKind ShownKind(WorldNodeKind kind, WorldNodeState state) =>
+            state == WorldNodeState.Cleared && kind != WorldNodeKind.Town
+                ? WorldNodeKind.Empty
+                : kind;
 
         private static Color LineColor(WorldNodeState a, WorldNodeState b)
         {

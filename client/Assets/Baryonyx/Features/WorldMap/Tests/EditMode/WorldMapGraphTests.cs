@@ -100,6 +100,32 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(graph.PathTo(porta, graph.IndexOf("n6-4"), states), Is.Empty);
         }
 
+        // クリアしたマスは出来事を終えたため、街のほかは何もないマスの台を見せる。
+        [Test]
+        public void AClearedSquareShowsTheEmptyPlatformUnlessItIsATown()
+        {
+            var events = new[]
+            {
+                WorldNodeKind.Battle,
+                WorldNodeKind.Treasure,
+                WorldNodeKind.Story,
+                WorldNodeKind.Boss,
+            };
+            foreach (var kind in events)
+            {
+                Assert.That(
+                    WorldMapView.ShownKind(kind, WorldNodeState.Cleared),
+                    Is.EqualTo(WorldNodeKind.Empty)
+                );
+                Assert.That(WorldMapView.ShownKind(kind, WorldNodeState.Open), Is.EqualTo(kind));
+                Assert.That(WorldMapView.ShownKind(kind, WorldNodeState.Seen), Is.EqualTo(kind));
+            }
+            Assert.That(
+                WorldMapView.ShownKind(WorldNodeKind.Town, WorldNodeState.Cleared),
+                Is.EqualTo(WorldNodeKind.Town)
+            );
+        }
+
         [Test]
         public void LevelSignsSitOnThePicture()
         {
