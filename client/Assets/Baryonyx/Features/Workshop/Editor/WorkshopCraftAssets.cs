@@ -4,6 +4,7 @@ using Baryonyx.Library.Editor;
 using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
@@ -59,6 +60,8 @@ namespace Baryonyx.Workshop.Editor
             craft.Content = content;
             craft.List = scroll;
             craft.Template = ListRow(content, "Template", RowHeight, RowArt);
+            // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
+            GlassCardAssets.AddBack(craft.Template.Card);
             craft.Template.gameObject.SetActive(false);
             // 仮の記録と仮の持ち物の最初のタブ（武器）で描き、Prefabを開くと停止中でも読めるようにする。
             var stock = WorkshopStock.Mock();
@@ -69,6 +72,7 @@ namespace Baryonyx.Workshop.Editor
             for (int i = 0; i < recipes.Length; i++)
             {
                 var row = ListRow(content, "Recipe" + i, RowHeight, RowArt);
+                GlassCardAssets.AddBack(row.Card);
                 WorkshopCraftView.Paint(
                     row,
                     recipes[i],

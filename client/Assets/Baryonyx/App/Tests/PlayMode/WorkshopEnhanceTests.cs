@@ -9,6 +9,7 @@ using Baryonyx.Economy;
 using Baryonyx.Enhancement;
 using Baryonyx.Inventory;
 using Baryonyx.SkillEvolution;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.Workshop;
 using NUnit.Framework;
@@ -71,6 +72,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.gameObject.activeInHierarchy, Is.True);
             Assert.That(view.GuideArt.activeSelf, Is.False);
             yield return SceneTests.WaitForTask(enhance.LoadTask);
+            // 読み終えたら伏せた行をすべてめくり、強化できる物のない場所の行は消えていく。
+            Assert.That(enhance.Rows[0].GetComponent<GlassCardBack>(), Is.Not.Null);
+            yield return TurnedFaceUp(enhance);
 
             // 初めはスキルのタブ。サーバーがないときは、仮の編成のカードを×1.00で並べる。
             Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Skills));
@@ -168,6 +172,11 @@ namespace Baryonyx.Tests.PlayMode
             view.MenuItems[awakenItem].onClick.Invoke();
             Assert.That(enhance.gameObject.activeInHierarchy, Is.True);
             yield return SceneTests.WaitForTask(enhance.LoadTask);
+            yield return TurnedFaceUp(enhance);
+            Assert.That(
+                enhance.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(enhance.Awakenings.Count)
+            );
             Assert.That(enhance.Tabs, Is.Empty);
             Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Awakening));
             Assert.That(enhance.Chips[0].gameObject.activeSelf, Is.False);
@@ -203,6 +212,16 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(enhance.gameObject.activeInHierarchy, Is.False);
         }
+
+        private static IEnumerator TurnedFaceUp(WorkshopEnhanceView enhance) =>
+            SceneTests.WaitUntil(
+                () =>
+                    enhance.Rows.All(row =>
+                        row.GetComponent<GlassCardBack>() is not { } back
+                        || !(back.FaceDown || back.Flipping || back.Leaving)
+                    ),
+                message: "The rows did not turn face up."
+            );
 
         // 素材とルーンを覚える強化の代役。Hold のあいだは答えを止め、Answer で答える。Fail で断る。
         private sealed class FakeEnhancement : IEnhancementSource

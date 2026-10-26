@@ -30,6 +30,9 @@ namespace Baryonyx.Workshop
         public const string FailedMessage = "合成できませんでした";
         public const string NoMaterialsText = "使える材料がありません";
 
+        // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
+        public const int CoverRows = 7;
+
         public LibraryData Data;
         public PartyMockData Party;
         public float ArtBox = 80f;
@@ -64,6 +67,7 @@ namespace Baryonyx.Workshop
         public Button Confirm;
 
         private readonly HashSet<Component> bound = new();
+        private readonly GlassCardCover cover = new();
         private readonly List<int> picked = new();
         private IReadOnlyList<WorkshopRecipe> recipes = Array.Empty<WorkshopRecipe>();
         private IReadOnlyList<WorkshopRecipe> shown = Array.Empty<WorkshopRecipe>();
@@ -156,6 +160,11 @@ namespace Baryonyx.Workshop
             selected = -1;
             PaintRows();
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
+            // 作れる物のない場所の伏せた行も、めくってから静かに消す。
+            cover.Reveal(
+                Rows.Take(shown.Count).Select(row => row.gameObject),
+                Rows.Skip(shown.Count).Take(CoverRows - shown.Count).Select(row => row.gameObject)
+            );
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             // 右の面が空にならないよう、先頭の物を選んでおく。
@@ -324,12 +333,9 @@ namespace Baryonyx.Workshop
             if (row.Card != null)
             {
                 row.Card.Selected = false;
-                if (row.Card.Group != null)
-                    row.Card.Group.alpha = canMake ? 1f : DimAlpha;
+                row.Card.Dimmed = !canMake;
             }
         }
-
-        private const float DimAlpha = 0.5f;
 
         private void ShowMaterials(WorkshopRecipe recipe)
         {
@@ -502,18 +508,27 @@ namespace Baryonyx.Workshop
             rect.localScale = Vector3.one;
         }
 
+        // 読み込むまで、一覧の見える所をカードの裏で埋める。
         private void ShowLoading()
         {
             recipes = shown = Array.Empty<WorkshopRecipe>();
             selected = -1;
-            foreach (var row in Rows)
-                if (row != null)
-                    row.gameObject.SetActive(false);
-            Set(Status, LoadingText);
+            EnsureRows(CoverRows);
+            for (int i = 0; i < Rows.Count; i++)
+                Rows[i].gameObject.SetActive(i < CoverRows);
+            cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
+            Set(Status, "");
             ShowMaterials(null);
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var row in Rows)
+                if (row != null)
+                    row.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
         private static void Set(TMP_Text label, string text)
         {

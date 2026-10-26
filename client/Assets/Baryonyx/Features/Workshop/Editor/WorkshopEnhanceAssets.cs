@@ -281,6 +281,8 @@ namespace Baryonyx.Workshop.Editor
             enhance.Content = content;
             enhance.List = scroll;
             enhance.Template = ListRow(content, "Template", RowHeight, ArtBox, 38f, ValueWidth);
+            // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
+            GlassCardAssets.AddBack(enhance.Template.Card);
             enhance.Template.gameObject.SetActive(false);
             // 仮の編成のスキルで描き、Prefabを開くと停止中でも一覧が読めるようにする。覚醒は実行中に読む。
             var formation = PartyFormation.From(enhance.Party);
@@ -294,6 +296,7 @@ namespace Baryonyx.Workshop.Editor
             for (int i = 0; i < (awakening ? 0 : mock.Count); i++)
             {
                 var row = ListRow(content, "Row" + i, RowHeight, ArtBox, 38f, ValueWidth);
+                GlassCardAssets.AddBack(row.Card);
                 var entry =
                     enhance.Data != null
                         ? enhance.Data.Entries.FirstOrDefault(e =>

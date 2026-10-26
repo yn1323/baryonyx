@@ -61,6 +61,28 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.GuideArt.activeSelf, Is.False);
             Assert.That(view.Framed, Is.True);
             yield return SceneTests.WaitForTask(craft.LoadTask);
+            // 読み終えたら伏せた行をすべてめくり、作れる物のない場所の行は消えていく。
+            Assert.That(craft.Rows[0].GetComponent<GlassCardBack>(), Is.Not.Null);
+            yield return SceneTests.WaitUntil(
+                () =>
+                    craft.Rows.All(row =>
+                        row.GetComponent<GlassCardBack>() is not { } back
+                        || !(back.FaceDown || back.Flipping || back.Leaving)
+                    ),
+                message: "The rows did not turn face up."
+            );
+            Assert.That(
+                craft.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(craft.Shown.Count)
+            );
+            // めくり終えても、材料の足りない物は薄いまま。
+            for (int i = 0; i < craft.Shown.Count; i++)
+                Assert.That(
+                    craft.Rows[i].Card.Group.alpha,
+                    Is.EqualTo(WorkshopCraft.CanMake(craft.Shown[i], craft.Owned) ? 1f : 0.5f)
+                        .Within(0.001f),
+                    craft.Shown[i].Name
+                );
 
             // サーバーがないときは、ライブラリの仮の記録と仮の持ち物を使う。初めは武器のタブ。
             Assert.That(craft.Shown, Is.Not.Empty);

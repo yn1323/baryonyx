@@ -39,6 +39,9 @@ namespace Baryonyx.Workshop
         public const string PolishLabel = "強化";
         public const string AwakenLabel = "覚醒";
 
+        // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
+        public const int CoverRows = 7;
+
         public enum Tab
         {
             Skills,
@@ -106,6 +109,7 @@ namespace Baryonyx.Workshop
         public RectTransform GaugeAfter;
 
         private readonly HashSet<Component> bound = new();
+        private readonly GlassCardCover cover = new();
         private IReadOnlyList<EnhancementTarget> skills = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<EnhancementTarget> equipment = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<EnhancementTarget> uniques = Array.Empty<EnhancementTarget>();
@@ -287,6 +291,11 @@ namespace Baryonyx.Workshop
                     Rows[i].Card.Selected = false;
             }
             Set(Status, RowCount == 0 ? EmptyText(tab) : "");
+            // 強化できる物のない場所の伏せた行も、めくってから静かに消す。
+            cover.Reveal(
+                Rows.Take(RowCount).Select(row => row.gameObject),
+                Rows.Skip(RowCount).Take(CoverRows - RowCount).Select(row => row.gameObject)
+            );
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             Set(ConfirmLabel, tab == Tab.Awakening ? AwakenLabel : PolishLabel);
@@ -908,18 +917,27 @@ namespace Baryonyx.Workshop
             rect.localScale = Vector3.one;
         }
 
+        // 読み込むまで、一覧の見える所をカードの裏で埋める。
         private void ShowLoading()
         {
             selected = -1;
-            foreach (var row in Rows)
-                if (row != null)
-                    row.gameObject.SetActive(false);
-            Set(Status, LoadingText);
+            EnsureRows(CoverRows);
+            for (int i = 0; i < Rows.Count; i++)
+                Rows[i].gameObject.SetActive(i < CoverRows);
+            cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
+            Set(Status, "");
             RefreshMaterials();
             RefreshInfo();
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var row in Rows)
+                if (row != null)
+                    row.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
         private static void Set(TMP_Text label, string text)
         {
@@ -935,16 +953,16 @@ namespace Baryonyx.Workshop
         {
             if (index == 0)
             {
+                cover.Clear();
                 foreach (var row in Rows)
                     if (row != null)
                         row.gameObject.SetActive(true);
                 Set(Status, "");
                 return;
             }
-            foreach (var row in Rows)
-                if (row != null)
-                    row.gameObject.SetActive(false);
-            Set(Status, index == 2 ? LoadFailedText : LoadingText);
+            ShowLoading();
+            if (index == 2)
+                ShowLoadFailed();
         }
     }
 }
