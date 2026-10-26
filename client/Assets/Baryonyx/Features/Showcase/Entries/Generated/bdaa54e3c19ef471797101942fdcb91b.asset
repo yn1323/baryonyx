@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: bdaa54e3c19ef471797101942fdcb91b
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: bdaa54e3c19ef471797101942fdcb91b
+  DisplayName: TapSparklePreview
+  Description: Assets/Baryonyx/Shared/UI/TapSparkle/TapSparklePreview.prefab
+  Category: 9
+  Asset: {fileID: 2461741823360548112, guid: bdaa54e3c19ef471797101942fdcb91b, type: 3}
+  PreviewPrefab: {fileID: 2461741823360548112, guid: bdaa54e3c19ef471797101942fdcb91b, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1
