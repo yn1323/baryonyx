@@ -54,6 +54,9 @@ namespace Baryonyx.UI
             }
         }
 
+        /// <summary>The card's opacity when face up: faded while it takes no taps.</summary>
+        public float RestingAlpha => interactable ? 1f : DisabledAlpha;
+
         /// <summary>Whether the card takes taps; a card that does not is drawn faded.</summary>
         public bool Interactable
         {
@@ -62,7 +65,16 @@ namespace Baryonyx.UI
             {
                 interactable = value;
                 if (Group != null)
-                    Group.alpha = value ? 1f : DisabledAlpha;
+                {
+                    // 伏せている間は裏を透かさない。表になるときに GlassCardBack が戻す。
+                    if (
+                        !(
+                            TryGetComponent(out GlassCardBack back)
+                            && (back.FaceDown || back.Leaving)
+                        )
+                    )
+                        Group.alpha = RestingAlpha;
+                }
                 if (!value)
                     Cancel();
             }

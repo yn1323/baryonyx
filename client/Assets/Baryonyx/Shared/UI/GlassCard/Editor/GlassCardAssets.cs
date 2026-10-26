@@ -27,6 +27,12 @@ namespace Baryonyx.UI.Editor
         public const string DashedPath = Folder + "/GlassCardDashed.png";
         public const string RosePath = Folder + "/GlassCardRose.png";
 
+        // 裏面：革の地と箔押しの飾り（生成画像。client/ArtSource/UI/GlassCard）、内側の金の線と左右の線の玉（コードで描く）。
+        public const string BackLeatherPath = Folder + "/GlassCardBackLeather.png";
+        public const string BackEmblemPath = Folder + "/GlassCardBackEmblem.png";
+        public const string BackRingPath = Folder + "/GlassCardBackRing.png";
+        public const string BackBeadPath = Folder + "/GlassCardBackBead.png";
+
         // 角丸の半径（1ピクセル = Canvasの1単位）。
         public const int Radius = 22;
 
@@ -34,6 +40,10 @@ namespace Baryonyx.UI.Editor
         public static readonly Color RoseColor = new(1f, 0.85f, 0.55f, 0.5f);
         public static readonly Color GoldColor = new(1f, 0.84f, 0.4f, 1f);
         public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.55f);
+
+        // 裏面の内側の線と、左右の線と玉の古金色。
+        public static readonly Color BackRingColor = new(0.87f, 0.77f, 0.54f, 0.22f);
+        public static readonly Color BackLineColor = new(0.77f, 0.66f, 0.44f, 1f);
 
         // 案内人の画面の透ける面を通さず、景色や絵の上に直に置くカードの板の色。面と同じ紺を濃く敷き、
         // 下の景色に負けずに文字が読めるようにする（探索の札・ダイアログの外の画面・デバッグルーム）。
@@ -49,6 +59,17 @@ namespace Baryonyx.UI.Editor
 
         private const int PlateSize = 64;
         private const int PlateBorder = 26;
+
+        // 裏面の内側の線の、カードの縁からの距離と、角丸を小さく線を細くする倍率（Image.pixelsPerUnitMultiplier）。
+        private const float BackRingInset = 9f;
+        private const float BackRingScale = 1.5f;
+        private const int BackBeadSize = 16;
+
+        // 飾りを置く枠（カードに対する割合）。左右の線は、この枠に収めた飾りを避けて引く。
+        private static readonly Vector2 BackEmblemMin = new(
+            (1f - GlassCardBackLine.EmblemWidth) / 2f,
+            (1f - GlassCardBackLine.EmblemHeight) / 2f
+        );
         private const int ShadowSize = 112;
         private const int ShadowBorder = 48;
 
@@ -153,6 +174,101 @@ namespace Baryonyx.UI.Editor
         /// <summary>The plate of a card built on <paramref name="rect"/>, e.g. to mask a picture to its shape.</summary>
         public static Image FillOf(RectTransform rect) =>
             rect.Find("Body/Fill").GetComponent<Image>();
+
+        /// <summary>
+        /// Gives <paramref name="card"/> a back over its contents, face up (hidden) until a list
+        /// covers it (<see cref="GlassCardCover"/>): the leather tiled to the card's shape, a thin
+        /// gold line inside the edge, the gold-tooled ornament in the middle, and on a wide card
+        /// gold lines threaded with beads to either side. Its parts follow the card's size, so the
+        /// same back fits every list.
+        /// </summary>
+        public static GlassCardBack AddBack(GlassCard card)
+        {
+            EnsureBackArt();
+            var face = Rect("Back", card.Body);
+            Stretch(face);
+
+            var leather = face.gameObject.AddComponent<Image>();
+            leather.sprite = ArtAssets.LoadSprite(BackLeatherPath);
+            leather.type = Image.Type.Tiled;
+            leather.raycastTarget = false;
+
+            var ring = Rect("Ring", face);
+            Stretch(ring);
+            ring.offsetMin = Vector2.one * BackRingInset;
+            ring.offsetMax = -Vector2.one * BackRingInset;
+            var line = Plate(ring, BackRingPath, BackRingColor);
+            line.pixelsPerUnitMultiplier = BackRingScale;
+
+            var emblemSprite = ArtAssets.LoadSprite(BackEmblemPath);
+            var lines = Rect("Lines", face);
+            Stretch(lines);
+            var graphic = lines.gameObject.AddComponent<GlassCardBackLine>();
+            graphic.color = BackLineColor;
+            graphic.raycastTarget = false;
+            graphic.BeadTexture = ArtAssets.LoadSprite(BackBeadPath).texture;
+            graphic.EmblemAspect = emblemSprite.rect.width / emblemSprite.rect.height;
+
+            var emblem = Rect("Emblem", face);
+            emblem.anchorMin = BackEmblemMin;
+            emblem.anchorMax = Vector2.one - BackEmblemMin;
+            emblem.offsetMin = emblem.offsetMax = Vector2.zero;
+            var picture = emblem.gameObject.AddComponent<Image>();
+            picture.sprite = emblemSprite;
+            picture.preserveAspect = true;
+            picture.raycastTarget = false;
+
+            // 革の上にも、すりガラスと同じ左上から照らした縁を重ねる。
+            Plate(Stretched("Rim", face), RimPath, Color.white);
+            face.gameObject.SetActive(false);
+
+            var back = card.gameObject.AddComponent<GlassCardBack>();
+            back.Card = card;
+            back.Face = face.gameObject;
+            return back;
+        }
+
+        // 裏面の画像：コードで描く線と玉がなければ描き、生成画像の革と飾りの読み込みを揃える。
+        private static void EnsureBackArt()
+        {
+            EnsureArt();
+            if (AssetDatabase.LoadAssetAtPath<Sprite>(BackBeadPath) == null)
+            {
+                WriteRing(BackRingPath, 1.5f);
+                ArtAssets.WriteSmooth(
+                    BackBeadPath,
+                    BackBeadSize,
+                    BackBeadSize,
+                    Vector4.zero,
+                    (u, v) =>
+                    {
+                        float r = new Vector2(u - 0.5f, v - 0.5f).magnitude * BackBeadSize;
+                        return new Color(1f, 1f, 1f, Mathf.Clamp01(BackBeadSize / 2f - 0.5f - r));
+                    }
+                );
+            }
+            ImportBackPicture(BackLeatherPath, Vector4.one * PlateBorder, fullRect: true, false);
+            ImportBackPicture(BackEmblemPath, Vector4.zero, fullRect: false, true);
+        }
+
+        // 生成画像をSpriteとして読み込む。並べる革は四角形全体を使い、縮めて出す飾りはミップマップを使う。
+        private static void ImportBackPicture(
+            string path,
+            Vector4 border,
+            bool fullRect,
+            bool mipmaps
+        )
+        {
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (
+                importer.textureType == TextureImporterType.Sprite
+                && importer.spriteBorder == border
+                && importer.mipmapEnabled == mipmaps
+                && importer.filterMode == FilterMode.Bilinear
+            )
+                return;
+            ArtAssets.ImportSprite(path, border, FilterMode.Bilinear, fullRect, mipmaps);
+        }
 
         private static (
             RectTransform Body,
