@@ -125,7 +125,7 @@ Editorは、再コンパイルとテストを一度に1つずつしか処理で�
 
 | 札 | 操作 |
 |---|---|
-| 必要 | `recompile`、`run_tests`、`editor_play`、シーンを開く・保存する、Prefabやアセットの生成し直し、Gameビューの撮影、`eval`・`run_script` での変更 |
+| 必要 | `recompile`、`run_tests`、`editor_play`、シーンを開く・保存する、Prefabやアセットの生成し直し、Gameビューの撮影・録画、`eval`・`run_script` での変更 |
 | 不要 | `unity status`・`editor_status`・`console`・`get_*`・`find_*` などの読み取り、ファイルの編集、CSharpierでの整形と検査 |
 
 札は次の順に使う。
@@ -299,6 +299,22 @@ Editorの札は1回15分までのため（[複数のチャットで1台のEditor
 | カードの選び方（差し替えられる） | [BattleAutoPolicy](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleAutoPolicy.cs) |
 | 集計と表 | [BattleBalanceResult](../../client/Assets/Baryonyx/Features/Adventure/Runtime/Balance/BattleBalanceResult.cs) |
 | 実行の入口と確認のテスト | [BattleBalanceTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/PlayMode/BattleBalanceTests.cs)・[BattleBalanceResultTests](../../client/Assets/Baryonyx/Features/Adventure/Tests/EditMode/BattleBalanceResultTests.cs) |
+
+## 動画の録画
+
+Editorの画面を動画で確かめるときは、Play中のGameビューを [Unity Recorder](https://docs.unity3d.com/Packages/com.unity.recorder@5.1/manual/index.html)（`com.unity.recorder`）で録画する（2026-10-26、ユーザーの依頼）。
+スマホで見るため、画質より容量を優先する。
+
+| 項目 | 値 |
+|---|---|
+| Gameビュー | 録画中は、Recorderが書き出しと同じ大きさに変え、終わっても戻さない。録画のあとで1920x1080の横向き（`PlayModeWindow.SetCustomRenderingResolution(1920, 1080, "Baryonyx Landscape")`）へ戻す |
+| 書き出し | 960x540、H.264のMP4、30fps、音声なし |
+| 保存先 | `client/Temp/Recordings/`（Git対象外）。`Assets/` には置かない（Unityが動画として取り込むため） |
+| 長さ | 見せたい動きの前に0.5秒ほど余白を取り、終わったら止める。前後の切り替わりや止まった部分は ffmpeg で切り落とす |
+
+録画は `eval` で `RecorderController` を手動モードで始め、Play中の処理で止める。
+Editorの状態を変える操作なので、Editorの札を取ってから行う（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）。
+録画中はゲームの時間が1コマ1/30秒で進むため、`Time.unscaledDeltaTime` など実時間で進む演出は実際と違う速さで写ることがある。
 
 ## 関連手順
 

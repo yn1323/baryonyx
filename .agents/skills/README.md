@@ -49,6 +49,12 @@
 |---|---|---|---|---|
 | [unity-csharp-differences](unity-csharp-differences/SKILL.md) | Unity 6のC#を書く・リファクタする・レビューする。生成スクリプトの結果が変わらないことの確かめ方 | 自動 | [クライアントの構成と依存関係](../../doc/rules/frontend-design.md) | テストの実行は [UnityのテストとCI](../../doc/rules/client-testing.md) |
 
+## 録画
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [unity-video-recording](unity-video-recording/SKILL.md) | 頼まれた場面をEditorのPlay中にUnity RecorderでMP4に録画し、確かめてから送る | 自動 | [動画の録画](../../doc/rules/client-testing.md#動画の録画) | 演出を作る・直すのは vfx-authoring。静止画の撮影は [unity-editor-notes.md](shared/unity-editor-notes.md) |
+
 ## Android
 
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
@@ -111,6 +117,7 @@
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 敵が硬い・弱い、戦闘が長い・危ない、倍率や数値を変えたあとに測り直す | battle-balance（手動専用。使ってよいかユーザーに確認する） |
 | 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
+| この場面・動き・スキルの演出を動画で撮って見せて | unity-video-recording |
 | 保存する処理を足す、保存先を聞かれた | data-storage |
 | サーバーのAPIを足す・直す、APIが遅い | server-api-authoring。保存先が未決なら先に data-storage |
 | APKを作る・配る → 端末で確かめる | unity-android-ci-distribution → unity-android-device-validation |
@@ -126,7 +133,7 @@
 | [prompts/pixel-style.ja.txt](shared/prompts/pixel-style.ja.txt) | ドット絵の規格を指示文にした固定文。正本は[ドット絵の制作規格](../../doc/art/direction.md#ドット絵の制作規格) | pixel-art-standards、character-sprite-sheet、item-icon、hd2d-stage-set |
 | [scripts/pixel_style.py](shared/scripts/pixel_style.py) | 上の固定文を部品ごとに読み、組み合わせて出力する | pixel-art-standards、item-icon、hd2d-stage-set |
 | [character-pipeline.md](shared/character-pipeline.md) | キャラ制作の共通手順（出力先、キャラ設定の探し方、必ず残す特徴の1行、Codexへの依頼、見せ方） | character-sprite-sheet、character-illustration |
-| [unity-editor-notes.md](shared/unity-editor-notes.md) | Unity EditorとCLIの操作・撮影で得た知見 | hd2d-stage-set、vfx-authoring、hd2d-lighting-vfx |
+| [unity-editor-notes.md](shared/unity-editor-notes.md) | Unity EditorとCLIの操作・撮影で得た知見 | hd2d-stage-set、vfx-authoring、hd2d-lighting-vfx、unity-video-recording |
 
 ## スキルを足す・直すとき
 

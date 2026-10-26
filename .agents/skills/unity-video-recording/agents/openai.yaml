@@ -1,0 +1,7 @@
+interface:
+  display_name: "画面を動画で録画する"
+  short_description: "Unity EditorのPlay中の場面をUnity RecorderでMP4に録画し、小さな確認画像で中身を確かめてから送る手順"
+  default_prompt: "Use $unity-video-recording to record the requested scene in the Unity Editor as an MP4, check it, and send it to the user."
+
+policy:
+  allow_implicit_invocation: true
