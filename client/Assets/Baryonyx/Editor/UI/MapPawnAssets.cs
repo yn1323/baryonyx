@@ -1,4 +1,5 @@
 using Baryonyx.Editor.Art;
+using Baryonyx.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
@@ -8,8 +9,8 @@ namespace Baryonyx.Editor.UI
     /// <summary>
     /// Builds the wooden pawn that stands for the party on the exploration's map and the
     /// highway's world map (doc/features/stage-progression.md): the picture standing on its
-    /// feet with a soft shadow under them. The picture is smooth (not pixel art), so it is
-    /// drawn with bilinear filtering.
+    /// feet with a soft shadow under them, hopping from square to square (<see cref="MapPawnHop"/>).
+    /// The picture is smooth (not pixel art), so it is drawn with bilinear filtering.
     /// </summary>
     public static class MapPawnAssets
     {
@@ -23,7 +24,7 @@ namespace Baryonyx.Editor.UI
             var body = Rect(name, parent);
             Place(body, Vector2.zero, Vector2.zero);
             float width = height * texture.width / texture.height;
-            Picture(
+            var shadow = Picture(
                 body,
                 "Shadow",
                 ArtAssets.LoadSprite(UiArt.ShadowPath),
@@ -39,6 +40,10 @@ namespace Baryonyx.Editor.UI
             var image = picture.gameObject.AddComponent<RawImage>();
             image.texture = texture;
             image.raycastTarget = false;
+            // マスからマスへ跳ねる動き。
+            var hop = body.gameObject.AddComponent<MapPawnHop>();
+            hop.Picture = picture;
+            hop.Shadow = shadow.rectTransform;
             return body;
         }
     }

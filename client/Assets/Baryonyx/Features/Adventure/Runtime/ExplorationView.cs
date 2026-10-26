@@ -36,13 +36,13 @@ namespace Baryonyx.Adventure
     /// </summary>
     public sealed partial class ExplorationView : MonoBehaviour, IEditModePreview
     {
-        // 移動の時間：4人が道を歩く時間と、地図が4人に追いつくまでの時間（どれもマスを押してからの秒数）。
-        public const float WalkSeconds = 1.0f;
-        public const float CameraSeconds = 1.1f;
+        // 移動の時間：駒が次のマスへ跳ぶ空中の時間と、地図が駒に追いつくまでの時間（どれもマスを押してからの秒数）。
+        public const float WalkSeconds = MapPawnHop.AirSeconds;
+        public const float CameraSeconds = 0.6f;
 
-        // マスの印が消える時間。選んだマスの印は、4人が着く少し前に消す。
+        // マスの印が消える時間。選んだマスの印は、駒が着くときに消えきる。
         public const float MarkerFadeSeconds = 0.3f;
-        private const float ChosenFadeDelaySeconds = 0.6f;
+        private const float ChosenFadeDelaySeconds = WalkSeconds - MarkerFadeSeconds;
 
         // 地図の寸法（設計座標）：階の間隔、入口と最奥の間の外の余白、マスが並ぶ上下の幅と中心。
         // 上の行き先の文字と、下の位置のバーに掛からないよう、少し下に寄せる。
@@ -141,6 +141,9 @@ namespace Baryonyx.Adventure
         // 地図の上でパーティを表す駒と、マスの中心からの足元の位置（設計座標）。
         public RectTransform[] Party = Array.Empty<RectTransform>();
         public Vector2[] Formation = Array.Empty<Vector2>();
+
+        // 駒の跳ねる動き。次のマスへ1回跳ぶ。
+        public MapPawnHop PawnHop;
         public RectTransform Chest;
         public CanvasGroup ChestGroup;
         public Button ChestButton;
@@ -808,7 +811,7 @@ namespace Baryonyx.Adventure
         // --- Walking -------------------------------------------------------------------------
 
         /// <summary>
-        /// The party walks the road to the room with the map following it, then
+        /// The party's pawn hops along the road to the room with the map following it, then
         /// <paramref name="arrived"/> runs. The road chosen is drawn as walked at once, the other
         /// roads as closed, and the rooms not chosen fade.
         /// </summary>
@@ -846,7 +849,7 @@ namespace Baryonyx.Adventure
                 run.Floor + 1
             );
             PlaceRoads(run, shownRoom, walked);
-            // 選んだマスの印は着く少し前に、ほかの次に進めたマスの印はすぐに薄れて消える。
+            // 選んだマスの印は着くときに、ほかの次に進めたマスの印はすぐに薄れて消える。
             foreach (var marker in shown.Values)
                 if (marker.IsExit)
                 {
@@ -855,6 +858,8 @@ namespace Baryonyx.Adventure
                     marker.Button.interactable = false;
                 }
             chestTarget = 0f;
+            if (PawnHop != null && Application.isPlaying)
+                PawnHop.Play(to.x - partyAt.x);
             Animate();
         }
 
@@ -895,14 +900,15 @@ namespace Baryonyx.Adventure
             return x * x * (3f - 2f * x);
         }
 
-        // 1コマ進める：4人と地図を道に沿って動かし、印と宝箱を薄れさせる。まだ動いている物があれば true。
+        // 1コマ進める：駒と地図を道に沿って動かし、印と宝箱を薄れさせる。まだ動いている物があれば true。
         private bool Step(float seconds)
         {
             bool moving = false;
             if (move != null)
             {
                 move.Elapsed += seconds;
-                float walked = Ease(move.Elapsed / WalkSeconds);
+                // 駒は空中を一定の速さで進み、地図はゆっくり出てゆっくり止まる。
+                float walked = Mathf.Clamp01(move.Elapsed / WalkSeconds);
                 float followed = Ease(move.Elapsed / CameraSeconds);
                 partyAt = Vector2.Lerp(move.From, move.To, walked);
                 scroll = Mathf.Lerp(move.ScrollFrom, move.ScrollTo, followed);

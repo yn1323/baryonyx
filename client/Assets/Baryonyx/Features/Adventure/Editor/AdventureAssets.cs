@@ -447,6 +447,7 @@ namespace Baryonyx.Adventure.Editor
             pawn.anchoredPosition = PawnFeet;
             view.Party = new[] { pawn };
             view.Formation = new[] { PawnFeet };
+            view.PawnHop = pawn.GetComponent<MapPawnHop>();
         }
 
         private static void BuildChest(RectTransform map, ExplorationView view)

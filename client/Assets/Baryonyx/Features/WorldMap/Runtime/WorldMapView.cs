@@ -42,6 +42,9 @@ namespace Baryonyx.WorldMap
         public Image[] LineEdges = Array.Empty<Image>();
 
         public RectTransform Party;
+
+        // パーティの駒の跳ねる動き。マスからマスへ1回ずつ跳ぶ。
+        public MapPawnHop PawnHop;
         public TMP_Text Place;
         public Button Back;
         public Button Dungeons;
@@ -64,7 +67,8 @@ namespace Baryonyx.WorldMap
         public static readonly Color EdgeColor = new(0.32f, 0.2f, 0.12f, 1f);
         private static readonly Color SeenTint = new(0.62f, 0.62f, 0.68f, 1f);
 
-        private const float WalkSpeed = 1400f;
+        // 途中のマスに着いてから、次のマスへ跳ぶまでの間（秒）。
+        private const float HopPauseSeconds = 0.1f;
         private const float FollowSharpness = 8f;
         private const float GlideDecay = 5f;
 
@@ -88,6 +92,10 @@ namespace Baryonyx.WorldMap
         private bool holding;
         private readonly List<Vector2> walk = new();
         private int walkTarget = -1;
+        private bool hopping;
+        private float hopElapsed;
+        private float hopPause;
+        private Vector2 hopFrom;
         private float pulse;
         private float noticeLeft;
 
@@ -237,6 +245,8 @@ namespace Baryonyx.WorldMap
                 walk.Add(DesignOf(path[i]));
             walkTarget = index;
             glide = Vector2.zero;
+            hopping = false;
+            hopPause = 0f;
             return true;
         }
 
@@ -255,15 +265,29 @@ namespace Baryonyx.WorldMap
             FadeNotice(dt);
         }
 
-        // 選んだマスへ、通ったマスを1つずつ直線で歩く。カメラはパーティを追う。
+        // 選んだマスへ、通るマスに1つずつ跳んで移る。1回の跳躍は一定の時間で、空中を直線で進む。
+        // 途中のマスでは少し間を置いてから次へ跳ぶ。カメラはパーティを追う。
         private void Step(float dt)
         {
-            var next = walk[0];
-            var moved = Vector2.MoveTowards(partyDesign, next, WalkSpeed * dt);
-            PlaceParty(moved);
-            if ((moved - next).sqrMagnitude < 0.01f)
-                walk.RemoveAt(0);
-            var want = Clamp(moved - SeenSize * 0.5f);
+            if (!hopping)
+            {
+                hopPause -= dt;
+                if (hopPause <= 0f)
+                    TakeOff();
+            }
+            if (hopping)
+            {
+                hopElapsed += dt;
+                float x = Mathf.Clamp01(hopElapsed / MapPawnHop.AirSeconds);
+                PlaceParty(Vector2.Lerp(hopFrom, walk[0], x));
+                if (x >= 1f)
+                {
+                    walk.RemoveAt(0);
+                    hopping = false;
+                    hopPause = HopPauseSeconds;
+                }
+            }
+            var want = Clamp(partyDesign - SeenSize * 0.5f);
             scroll = Vector2.Lerp(scroll, want, 1f - Mathf.Exp(-FollowSharpness * dt));
             ApplyScroll();
             if (Walking)
@@ -289,6 +313,15 @@ namespace Baryonyx.WorldMap
                 clear && graph.Nodes[partyAt].Kind == WorldNodeKind.Treasure
                     ? OpenChestAsync(id)
                     : SaveAsync(id, clear);
+        }
+
+        private void TakeOff()
+        {
+            hopping = true;
+            hopElapsed = 0f;
+            hopFrom = partyDesign;
+            if (PawnHop != null)
+                PawnHop.Play(walk[0].x - hopFrom.x);
         }
 
         // 宝箱のマスのクリアを保存し、もらった中身を見せる。失敗したら保存先の進み具合へ戻す。

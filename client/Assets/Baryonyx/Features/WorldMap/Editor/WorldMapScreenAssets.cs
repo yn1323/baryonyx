@@ -146,6 +146,9 @@ namespace Baryonyx.WorldMap.Editor
             BuildNodes(Layer("Nodes", map), graph, view);
             BuildLevels(Layer("Levels", map), graph);
             view.Party = BuildParty(Layer("Party", map));
+            view.PawnHop = view.Party.GetComponentInChildren<MapPawnHop>();
+            // 世界地図は、ゲームの時間の速さによらず歩く。
+            view.PawnHop.UnscaledTime = true;
         }
 
         private static RectTransform Layer(string name, RectTransform map)
