@@ -307,14 +307,14 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        // 値段：☆1が300、☆が1つ増えるごとに倍、品質C1.0・B1.25・A1.5・S2.0、10の位で丸める（サーバーの merchant.ts と同じ）。
+        // 値段：☆1が1,500、☆が1つ増えるごとに倍、品質C1.0・B1.25・A1.5・S2.0、10の位で丸める（サーバーの merchant.ts と同じ）。
         [Test]
         public void ThePricesFollowTheStarsAndTheQuality()
         {
-            Assert.That(AdventureWares.PriceOf(1, ItemQuality.C), Is.EqualTo(300));
-            Assert.That(AdventureWares.PriceOf(1, ItemQuality.B), Is.EqualTo(380));
-            Assert.That(AdventureWares.PriceOf(3, ItemQuality.A), Is.EqualTo(1800));
-            Assert.That(AdventureWares.PriceOf(5, ItemQuality.S), Is.EqualTo(9600));
+            Assert.That(AdventureWares.PriceOf(1, ItemQuality.C), Is.EqualTo(1500));
+            Assert.That(AdventureWares.PriceOf(1, ItemQuality.B), Is.EqualTo(1880));
+            Assert.That(AdventureWares.PriceOf(3, ItemQuality.A), Is.EqualTo(9000));
+            Assert.That(AdventureWares.PriceOf(5, ItemQuality.S), Is.EqualTo(48000));
         }
 
         // サーバーの応答の、ミミック・試練の条件・行商人の品物・歩数の扉を読む。

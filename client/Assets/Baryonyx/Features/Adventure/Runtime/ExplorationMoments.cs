@@ -153,7 +153,15 @@ namespace Baryonyx.Adventure
             Play(Encounter(kind, intoBattle));
 
         /// <summary>The chest in the party's room opens on <paramref name="item"/> (null: nothing found).</summary>
-        public void PlayChest(RewardItem item) => Play(Chest(item));
+        public void PlayChest(RewardItem item) =>
+            PlayChest(item != null ? new[] { item } : Array.Empty<RewardItem>());
+
+        /// <summary>
+        /// The chest opens on <paramref name="items"/> (the best first, which sets its light) and
+        /// shows them all together.
+        /// </summary>
+        public void PlayChest(IReadOnlyList<RewardItem> items) =>
+            Play(Chest(items ?? Array.Empty<RewardItem>()));
 
         private void Play(IEnumerator moment)
         {
@@ -377,10 +385,11 @@ namespace Baryonyx.Adventure
                 _ => 0.35f,
             };
 
-        private IEnumerator Chest(RewardItem item)
+        private IEnumerator Chest(IReadOnlyList<RewardItem> items)
         {
             if (View == null)
                 yield break;
+            var item = items.Count > 0 ? items[0] : null;
             View.ShowChestHere(open: false);
             int grade = Grade(item);
             var color =
@@ -460,8 +469,8 @@ namespace Baryonyx.Adventure
             if (grade >= 3)
                 Light(GlowShape, at, 2200f, Color.Lerp(Color.white, color, 0.5f), 0.5f, 0.6f);
             if (Reveal != null)
-                Reveal.Show(item);
-            yield return Wait(0.6f);
+                Reveal.ShowAll(items);
+            yield return Wait(0.6f + RewardReveal.Stagger * (items.Count - 1));
             if (grade >= 2)
                 StartCoroutine(FadeTo(Dim, new Color(0.02f, 0.02f, 0.05f), 0f, 0.6f));
             yield return Wait(0.8f);

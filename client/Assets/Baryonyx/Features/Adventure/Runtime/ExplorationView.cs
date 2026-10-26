@@ -158,6 +158,9 @@ namespace Baryonyx.Adventure
 
         // メニューの下の「装備」。冒険を続けたまま、酒場の装備の付け替えを開く。
         public Button EquipmentButton;
+
+        // 上の中央：4人のHPと、倒れている人（次のマスを選ぶ前に分かるように）。
+        public ExplorationPartyStatus PartyStatus;
         public GameDialog Dialog;
         public NoticeBand Notice;
 

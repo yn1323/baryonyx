@@ -156,16 +156,6 @@ namespace Baryonyx.Adventure
                 new DialogChoice(KeepChoice, back)
             );
 
-        // 宝箱の中身を演出の札で1つずつ見せたあとの、題だけのダイアログ。
-        public static void TreasureOpened(GameDialog dialog, Action close) =>
-            dialog.Show(
-                TreasureTitle,
-                null,
-                null,
-                close,
-                new DialogChoice(AdventureTexts.NextChoice, close)
-            );
-
         // 手に入れた物は、ダイアログの前にドロップの演出の札で1つずつ見せるため、本文には書かない。
         // 冒険が終わった勝利（最奥の主を倒した）は、「つぎへ」で結果へ進む。
         public static void Victory(GameDialog dialog, bool ended, Action next) =>

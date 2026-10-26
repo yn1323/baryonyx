@@ -83,12 +83,12 @@ namespace Baryonyx.Adventure.Editor
         private const float MenuWidth = 128f;
         private const float MenuHeight = 168f;
 
-        // メニューとその下の装備のボタンの間。
+        // メニューとその下の育成のボタンの間。
         private const float MenuGap = 8f;
 
-        // 装備のボタンのアイコン。酒場のメニューの「装備」と同じ、付け替えの絵を使う。
+        // 育成のボタンのアイコン。酒場のメニューの「育成」と同じ絵を使う（2026-10-26に「装備」から改めた）。
         private const string EquipmentIconPath =
-            "Assets/Baryonyx/Features/Tavern/UI/Art/IconChangeGear.png";
+            "Assets/Baryonyx/Features/Tavern/UI/Art/IconGrowth.png";
 
         [MenuItem("Baryonyx/Adventure/Create Screen Assets")]
         public static void CreateAssets()
@@ -240,7 +240,7 @@ namespace Baryonyx.Adventure.Editor
                 safe,
                 "Equipment",
                 EquipmentIconPath,
-                "装備",
+                "育成",
                 false,
                 MenuHeight + MenuGap
             );
@@ -259,6 +259,7 @@ namespace Baryonyx.Adventure.Editor
                 new Vector2(900, 80)
             );
             view.Prompt = BuildPrompt(safe);
+            view.PartyStatus = ExplorationPartyStatusAssets.BuildRow(safe);
             BuildScrollBar(safe, view);
             view.LegendButton = BuildLegendButton(safe);
             view.Legend = BuildLegend(safe);

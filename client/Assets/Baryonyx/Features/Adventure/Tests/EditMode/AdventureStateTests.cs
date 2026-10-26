@@ -329,8 +329,8 @@ namespace Baryonyx.Tests.EditMode
                 Is.EqualTo(
                     Forest
                         + "　第3層まで到達\n最深記録 第4層\n"
-                        + "持ち帰った物：アイテム 2・武器 1・スキル 1\n"
-                        + "目玉：★★★★ 研ぎ澄ます C・★ 木の剣 S"
+                        + "持ち帰った物\nアイテム 2・武器 1・スキル 1\n"
+                        + "目玉\n★★★★ 研ぎ澄ます C・★ 木の剣 S"
                 )
             );
             Assert.That(

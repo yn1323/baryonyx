@@ -29,6 +29,9 @@ namespace Baryonyx.Adventure
         // 宝箱の2つ目からの中身の札を開いてから、次（最後ならダイアログ）までの読む間。
         public const float ItemReadSeconds = 1.1f;
 
+        // 宝箱の中身をまとめて見せるとき、2つ目から1つごとに延ばす読む間。
+        public const float ExtraReadSeconds = 0.5f;
+
         private readonly ExplorationView view;
         private readonly IAdventureSource source;
         private readonly Func<bool> toHome;
@@ -134,6 +137,8 @@ namespace Baryonyx.Adventure
             room = ExplorationRoom.From(state.Run);
             entered?.Invoke(state.Run);
             view.Render(room);
+            if (view.PartyStatus != null)
+                view.PartyStatus.Show(Party(), AdventureVitals.Of(state.Run?.Id));
             busy = false;
             var run = state.Run;
             if (run != null && !run.RoomCleared && run.Contents.Revealed is { } revealed)
@@ -224,7 +229,8 @@ namespace Baryonyx.Adventure
                     Rest(
                         runId => AdventureVitals.HoneCard(runId, slot, card.Id),
                         AdventureTexts.HonedCard(card.Name)
-                    )
+                    ),
+                AdventureVitals.Of(State?.Run?.Id)
             );
         }
 
@@ -624,14 +630,16 @@ namespace Baryonyx.Adventure
                 state.Run?.Contents.Awakening == true && AltarChoices().Count > 0
                     ? OpenChestAwakening
                     : CloseReward;
-            // 手に入れた物を演出の札で見せたあとは、ダイアログの本文に書かない。
+            // 手に入れた物を演出の札で見せたあとは、ダイアログを挟まずにそのまま次のマスを選べる
+            // （2026-10-26、「宝箱を開けた！」の「先へ進む」を押す手間をなくした）。
             if (shown)
-                AdventureDialogs.TreasureOpened(view.Dialog, next);
+                next();
             else
                 AdventureDialogs.Treasure(view.Dialog, state.Drops, next, view.ItemArt);
         }
 
-        // 宝箱が震えて開き、中身を札で1つずつ見せる。宝箱は一番良い物の品質の色で光り、その札から開く。
+        // 宝箱が震えて開き、中身をすべての札でまとめて見せる。宝箱は一番良い物の品質の色で光る。
+        // 読む間は、中身の数に合わせて少し延ばす（2026-10-26、1つずつ替えると手間だったため）。
         private async Task<bool> ChestAsync(
             ExplorationMoments moments,
             IReadOnlyList<AdventureDrop> drops
@@ -644,15 +652,15 @@ namespace Baryonyx.Adventure
                 .ToList();
             try
             {
-                moments.PlayChest(items.Count > 0 ? items[0] : null);
+                moments.PlayChest(items);
                 if (!await WhileBusy(moments))
                     return false;
                 var reveal = moments.Reveal;
-                for (int i = 1; i < items.Count && reveal != null; i++)
-                {
-                    reveal.Show(items[i]);
-                    await Awaitable.WaitForSecondsAsync(ItemReadSeconds, lifetime.Token);
-                }
+                if (reveal != null && items.Count > 1)
+                    await Awaitable.WaitForSecondsAsync(
+                        ExtraReadSeconds * (items.Count - 1),
+                        lifetime.Token
+                    );
                 if (reveal != null)
                     reveal.Hide();
                 return !disposed;

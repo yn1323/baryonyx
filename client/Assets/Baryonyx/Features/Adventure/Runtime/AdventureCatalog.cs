@@ -90,9 +90,9 @@ namespace Baryonyx.Adventure
         public const float PackPowerScale = 2.0f;
 
         // 強敵の部屋は、同じ行き先の敵のLvを上げ、HPと攻撃を増やして出す。
-        public const int EliteLevelUp = 8;
-        public const float EliteHpScale = 4.0f;
-        public const float ElitePowerScale = 3.3f;
+        public const int EliteLevelUp = 5;
+        public const float EliteHpScale = 4.6f;
+        public const float ElitePowerScale = 2.7f;
 
         // 最奥の主は、道中より少し高いLvで、HPと攻撃を増やして待つ。
         public const int BossLevelUp = 2;

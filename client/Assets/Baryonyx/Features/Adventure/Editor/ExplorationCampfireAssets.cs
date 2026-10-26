@@ -94,12 +94,13 @@ namespace Baryonyx.Adventure.Editor
         private const float TrainDot = 4f;
 
         // 研鑽：列のx、仲間の絵の足元の高さ、カードの中心の高さと倍率と間隔。
-        private static readonly float[] StudyColumns = { -630, -210, 210, 630 };
+        // カードの説明文を読めるよう、窓の幅いっぱいに大きく並べる（2026-10-26に0.74倍から上げた）。
+        private static readonly float[] StudyColumns = { -645, -215, 215, 645 };
         private const float StudySpriteFeet = 170f;
         private const float StudyDot = 3f;
-        private const float CardY = -40f;
-        private const float CardScale = 0.74f;
-        private const float CardGap = 14f;
+        private const float CardY = -56f;
+        private const float CardScale = 0.98f;
+        private const float CardGap = 12f;
         private static readonly Vector2 CardSize = new(210, 294);
 
         public static ExplorationCampfire Build(RectTransform parent)
@@ -228,6 +229,10 @@ namespace Baryonyx.Adventure.Editor
             }
             campfire.Party = party.ToArray();
             campfire.PartyShadows = shadows.ToArray();
+            campfire.Status = ExplorationPartyStatusAssets.BuildUnder(
+                world,
+                PartyPlaces.Select(place => place.Feet).ToArray()
+            );
             var logs = Picture(
                 world,
                 "CampfireLogs",

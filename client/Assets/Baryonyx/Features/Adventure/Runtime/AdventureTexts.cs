@@ -118,7 +118,9 @@ namespace Baryonyx.Adventure
 
         public static string ReviveBody(int cost, long runes) =>
             "手に入れた物は持ち帰れます。\n"
-            + "復活すると、敵の傷はそのままで、味方が全快して戦闘を続けます。\n"
+            // 1行に収まる長さで、文の途中で折り返さないよう2つに分ける（2026-10-26）。
+            + "復活すると、味方が全快して戦闘を続けます。\n"
+            + "敵の傷はそのまま残ります。\n"
             + $"所持ルーン {runes:N0}"
             + (runes < cost ? $"（{cost - runes:N0} 足りません）" : "");
 
@@ -200,11 +202,14 @@ namespace Baryonyx.Adventure
                 .OrderBy(group => group.Key)
                 .Select(group => $"{AdventureDrops.NameOf(group.Key)} {group.Count()}")
                 .ToArray();
-            lines.Add(
-                counts.Length == 0
-                    ? "持ち帰った物：なし"
-                    : "持ち帰った物：" + string.Join("・", counts)
-            );
+            // 名前の途中で折り返さないよう、行を分けて並べる（2026-10-26、「スキ／ル」と割れていたため）。
+            if (counts.Length == 0)
+                lines.Add("持ち帰った物：なし");
+            else
+            {
+                lines.Add("持ち帰った物");
+                lines.AddRange(Rows(counts, CountsPerRow));
+            }
             var best = result
                 .Drops.Where(Highlight)
                 .OrderByDescending(drop => drop.Stars)
@@ -216,8 +221,21 @@ namespace Baryonyx.Adventure
                 )
                 .ToArray();
             if (best.Length > 0)
-                lines.Add("目玉：" + string.Join("・", best));
+            {
+                lines.Add("目玉");
+                lines.AddRange(Rows(best, BestPerRow));
+            }
             return string.Join("\n", lines);
+        }
+
+        // 結果の1行に並べる、持ち帰った物の分類の数と、目玉の数。
+        private const int CountsPerRow = 3;
+        private const int BestPerRow = 2;
+
+        private static IEnumerable<string> Rows(IReadOnlyList<string> parts, int perRow)
+        {
+            for (int i = 0; i < parts.Count; i += perRow)
+                yield return string.Join("・", parts.Skip(i).Take(perRow));
         }
     }
 }

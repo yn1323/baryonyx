@@ -42,6 +42,9 @@ namespace Baryonyx.Adventure
         public RawImage[] Party = Array.Empty<RawImage>();
         public Graphic[] PartyShadows = Array.Empty<Graphic>();
 
+        // 4人の足元のHP。休むかを、今のHPと倒れている人を見て決められるようにする。
+        public ExplorationPartyStatus Status;
+
         [Tooltip("絵の中の物と、その札。押すと休む・鍛える・研鑽になる。")]
         public Button RestButton;
         public Button TrainButton;
@@ -169,7 +172,8 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>
-        /// Opens the camp with the party (in slot order, null for an empty slot) round the fire.
+        /// Opens the camp with the party (in slot order, null for an empty slot) round the fire,
+        /// each with the share of maximum HP it carries (<paramref name="shares"/>, full when null).
         /// <paramref name="honedCards"/> are the cards studied already in this adventure
         /// (<see cref="AdventureVitals.CardKey"/>), which are not laid out again.
         /// </summary>
@@ -178,7 +182,8 @@ namespace Baryonyx.Adventure
             IReadOnlyCollection<string> honedCards,
             Action onRest,
             Action<int> onTrain,
-            Action<int, CardSkill> onStudy
+            Action<int, CardSkill> onStudy,
+            IReadOnlyList<float> shares = null
         )
         {
             Wire();
@@ -190,10 +195,14 @@ namespace Baryonyx.Adventure
             for (int slot = 0; slot < Party.Length; slot++)
             {
                 var member = MemberAt(slot);
-                Paint(Party[slot], member, NightTint);
+                // 倒れている人は、焚き火の色ではなく、色を抜いて暗く描く。
+                bool down = shares != null && slot < shares.Count && shares[slot] <= 0f;
+                Paint(Party[slot], member, down ? ExplorationPartyStatus.DownTint : NightTint);
                 if (slot < PartyShadows.Length && PartyShadows[slot] != null)
                     PartyShadows[slot].gameObject.SetActive(member != null);
             }
+            if (Status != null)
+                Status.Show(members, shares);
             ShowCamp();
         }
 

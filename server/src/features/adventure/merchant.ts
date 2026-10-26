@@ -39,13 +39,13 @@ const MERCHANT_ROW: RewardRow = "elite";
 const EQUIPMENT_CATEGORIES = ["accessory", "weapon", "armor"] as const;
 
 // 値段（ルーン）。☆ごとの額に品質の倍率を掛け、10の位で丸める。
-// 仮の値（額は未決。doc/features/economy.md のルーンの用途）。
+// 仮の値（額は未決。doc/features/economy.md のルーンの用途）。2026-10-26に、商会と合わせて5倍にした。
 export const MERCHANT_STAR_PRICES: Record<Stars, number> = {
-  1: 300,
-  2: 600,
-  3: 1200,
-  4: 2400,
-  5: 4800,
+  1: 1500,
+  2: 3000,
+  3: 6000,
+  4: 12000,
+  5: 24000,
 };
 
 export const MERCHANT_QUALITY_FACTORS: Record<Quality, number> = {

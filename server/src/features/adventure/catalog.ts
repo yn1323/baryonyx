@@ -178,7 +178,9 @@ export function stepDoorTier(steps: number): StepDoorTier {
 }
 
 // 復活に使うルーン。2回目以降は上がる（仮設定。doc/features/combat.md の未決事項）。
-export const REVIVE_COST_BASE = 100;
+// 2026-10-26に、1週間の歩数（約4万ルーン）に比べて負けたときの重みがなかったため、100から上げた
+// （2,000にしたが、ユーザーの判断で300にした）。
+export const REVIVE_COST_BASE = 300;
 
 export function reviveCost(revivesSoFar: number) {
   return REVIVE_COST_BASE * (revivesSoFar + 1);

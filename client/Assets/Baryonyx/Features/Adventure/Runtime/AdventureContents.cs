@@ -112,7 +112,7 @@ namespace Baryonyx.Adventure
     public static class AdventureWares
     {
         // 値段（ルーン）：☆ごとの元値に品質の倍率を掛け、10の位で丸める（仮）。
-        private static readonly int[] StarPrices = { 300, 600, 1200, 2400, 4800 };
+        private static readonly int[] StarPrices = { 1500, 3000, 6000, 12000, 24000 };
 
         // 品揃え：スキル3つと装備2つ。
         public const int Skills = 3;

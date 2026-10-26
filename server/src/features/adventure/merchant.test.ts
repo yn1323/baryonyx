@@ -16,13 +16,13 @@ function seeded(seed: number) {
 
 describe("行商人の値段", () => {
   it("☆ごとの額に品質の倍率を掛け、10の位で丸める", () => {
-    expect(merchantPrice(1, "C")).toBe(300);
-    // 300 × 1.25 = 375 は380にする。
-    expect(merchantPrice(1, "B")).toBe(380);
-    expect(merchantPrice(2, "A")).toBe(900);
-    expect(merchantPrice(3, "C")).toBe(1200);
-    expect(merchantPrice(4, "B")).toBe(3000);
-    expect(merchantPrice(5, "S")).toBe(9600);
+    expect(merchantPrice(1, "C")).toBe(1500);
+    // 1500 × 1.25 = 1875 は1880にする。
+    expect(merchantPrice(1, "B")).toBe(1880);
+    expect(merchantPrice(2, "A")).toBe(4500);
+    expect(merchantPrice(3, "C")).toBe(6000);
+    expect(merchantPrice(4, "B")).toBe(15000);
+    expect(merchantPrice(5, "S")).toBe(48000);
   });
 });
 
@@ -82,20 +82,20 @@ describe("行商人の品ぞろえ", () => {
     );
     // 乱数が0なら、どの分類も一覧の初めの物から、品質Cの最小の倍率で並ぶ。
     expect(rollMerchantGoods("forest-ruins", () => 0)).toEqual([
-      { category: "skill", id: "Slash", multiplierPercent: 100, price: 300 },
-      { category: "skill", id: "Fire", multiplierPercent: 100, price: 300 },
-      { category: "skill", id: "Heal", multiplierPercent: 100, price: 300 },
+      { category: "skill", id: "Slash", multiplierPercent: 100, price: 1500 },
+      { category: "skill", id: "Fire", multiplierPercent: 100, price: 1500 },
+      { category: "skill", id: "Heal", multiplierPercent: 100, price: 1500 },
       {
         category: "accessory",
         id: "moss-charm",
         multiplierPercent: 100,
-        price: 300,
+        price: 1500,
       },
       {
         category: "accessory",
         id: "acorn-brooch",
         multiplierPercent: 100,
-        price: 600,
+        price: 3000,
       },
     ]);
   });

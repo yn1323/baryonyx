@@ -478,7 +478,7 @@ describe("冒険API", () => {
 
   it("負けた戦闘からルーンで復活し、2回目は費用が上がり、再送では二重に引かない", async () => {
     const user = await scenario.login("adventure-revive");
-    await scenario.setRunes(user.userId, 250);
+    await scenario.setRunes(user.userId, 750);
     await start(user.token);
     await move(user.token, rooms.battle);
     expect((await call(user.token, "/adventure")).run?.reviveCost).toBe(
@@ -492,9 +492,9 @@ describe("冒険API", () => {
     expect(first.revive).toEqual({
       roomId: "f2-0",
       runes: reviveCost(0),
-      balanceAfter: 150,
+      balanceAfter: 450,
     });
-    expect(first.runes).toBe(150);
+    expect(first.runes).toBe(450);
     expect(first.run?.revives).toBe(1);
     expect(first.run?.reviveCost).toBe(reviveCost(1));
 
@@ -502,10 +502,10 @@ describe("冒険API", () => {
       requestId: requestIds.first,
       roomId: "f2-0",
     });
-    expect(replay.runes).toBe(150);
+    expect(replay.runes).toBe(450);
     expect(replay.run?.revives).toBe(1);
 
-    // 2回目は200ルーン要り、150では足りない。
+    // 2回目は600ルーン要り、450では足りない。
     const short = await scenario.request(
       "/adventure/revive",
       "POST",
@@ -630,7 +630,7 @@ describe("冒険API", () => {
   it("怪しい宝箱を開けてミミックなら戦闘のマスになり、勝つと最大の報酬（主の物を除く）を落とす", async () => {
     const user = await scenario.login("adventure-mimic");
     const now = new Date().toISOString();
-    await scenario.setRunes(user.userId, 1000);
+    await scenario.setRunes(user.userId, 5000);
     await start(user.token);
     await walk(user.token, 4);
     const arrived = await move(user.token, {
@@ -1054,7 +1054,7 @@ describe("冒険API", () => {
         id: "Slash",
         multiplierPercent: 100,
         quality: "C",
-        price: 300,
+        price: 1500,
         sold: false,
       },
       {
@@ -1063,7 +1063,7 @@ describe("冒険API", () => {
         id: "Fire",
         multiplierPercent: 100,
         quality: "C",
-        price: 300,
+        price: 1500,
         sold: false,
       },
       {
@@ -1072,7 +1072,7 @@ describe("冒険API", () => {
         id: "Heal",
         multiplierPercent: 100,
         quality: "C",
-        price: 300,
+        price: 1500,
         sold: false,
       },
       {
@@ -1081,7 +1081,7 @@ describe("冒険API", () => {
         id: "moss-charm",
         multiplierPercent: 100,
         quality: "C",
-        price: 300,
+        price: 1500,
         sold: false,
       },
       {
@@ -1090,7 +1090,7 @@ describe("冒険API", () => {
         id: "acorn-brooch",
         multiplierPercent: 100,
         quality: "C",
-        price: 600,
+        price: 3000,
         sold: false,
       },
     ]);
@@ -1106,7 +1106,7 @@ describe("冒険API", () => {
       index,
     });
     // ルーンが足りなければ買えず、残高は変わらない。
-    await scenario.setRunes(user.userId, 500);
+    await scenario.setRunes(user.userId, 1000);
     await rejects(
       user.token,
       "/adventure/buy",
@@ -1126,9 +1126,10 @@ describe("冒険API", () => {
       buy(requestIds.first, 0, "f4-0"),
       "room_mismatch",
     );
-    expect((await call(user.token, "/adventure")).runes).toBe(500);
+    expect((await call(user.token, "/adventure")).runes).toBe(1000);
 
     // 買うと、値段を引いて持ち物に入れ、売れた印を付ける。道中で落ちた物とは別に1つ増える。
+    await scenario.setRunes(user.userId, 2000);
     const charms = async () =>
       (
         await scenario.read<{
@@ -1144,10 +1145,10 @@ describe("冒険API", () => {
     expect(bought.purchase).toEqual({
       roomId: "f4-1",
       index: 3,
-      runes: 300,
-      balanceAfter: 200,
+      runes: 1500,
+      balanceAfter: 500,
     });
-    expect(bought.runes).toBe(200);
+    expect(bought.runes).toBe(500);
     expect(bought.run?.merchant?.map((entry) => entry.sold)).toEqual([
       false,
       false,
@@ -1168,7 +1169,7 @@ describe("冒険API", () => {
       buy(requestIds.first, 3),
     );
     expect(replay.purchase).toEqual(bought.purchase);
-    expect(replay.runes).toBe(200);
+    expect(replay.runes).toBe(500);
     // 同じ要求IDで別の品物は買えない。売れた品物は、別の要求でも買えない。
     await rejects(
       user.token,
@@ -1187,7 +1188,7 @@ describe("冒険API", () => {
     const cleared = await clear(user.token, "f4-1");
     expect(cleared.drops).toEqual([]);
     expect(cleared.run?.merchant).toHaveLength(5);
-    await scenario.setRunes(user.userId, 1000);
+    await scenario.setRunes(user.userId, 2000);
     const slashes = async () =>
       (
         await scenario.env.DB.prepare(
@@ -1202,7 +1203,7 @@ describe("冒険API", () => {
       "/adventure/buy",
       buy(requestIds.third, 0),
     );
-    expect(skill.runes).toBe(700);
+    expect(skill.runes).toBe(500);
     expect(await slashes()).toHaveLength(before.length + 1);
     const library = await scenario.read<{
       discoveries: { kind: string; entryId: string }[];

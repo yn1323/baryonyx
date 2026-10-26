@@ -129,10 +129,13 @@ namespace Baryonyx.Tests.PlayMode
             var view = bootstrap.View;
             view.MarkerOf(here.Next[0]).Button.onClick.Invoke();
             var dialog = view.Dialog;
-            yield return WaitForDialog(dialog, AdventureDialogs.TreasureTitle, VictorySeconds);
+            // 中身を札で見せたら、「宝箱を開けた！」を挟まずに覚醒を選ばせる。
+            yield return WaitForDialog(
+                dialog,
+                AdventureDialogs.ChestAwakeningTitle,
+                VictorySeconds
+            );
             Assert.That(AdventureSession.Current.Run.Contents.Awakening, Is.True);
-            dialog.Choose(AdventureTexts.NextChoice);
-            yield return WaitForDialog(dialog, AdventureDialogs.ChestAwakeningTitle);
             Assert.That(dialog.BodyText, Is.EqualTo(AdventureDialogs.ChestAwakeningBody));
             // 選ぶまで閉じない：閉じる選択肢がなく、戻るキーでも閉じない。
             Assert.That(dialog.ChoiceLabels, Has.No.Member(AdventureTexts.CloseChoice));
@@ -253,7 +256,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.PromptText, Is.Empty);
             Assert.That(view.ShownMarkers.Where(marker => marker.IsExit), Is.Empty);
 
-            // 宝箱は押さなくても震えてから開き、中身を札で見せる。ダイアログは札を閉じてから、題だけで出す。
+            // 宝箱は押さなくても震えてから開き、中身をすべての札でまとめて見せる。札を閉じたら、
+            // ダイアログを挟まずに次のマスを選べる。
             var reveal = view.Moments.Reveal;
             yield return SceneTests.WaitUntil(
                 () => reveal.Shown,
@@ -261,9 +265,14 @@ namespace Baryonyx.Tests.PlayMode
                 "The chest's plate did not open."
             );
             Assert.That(view.Dialog.IsShown, Is.False);
-            yield return WaitForDialog(view.Dialog, "宝箱を開けた！");
-            Assert.That(view.Dialog.BodyText, Is.Empty);
-            Assert.That(view.Dialog.Choose(AdventureTexts.NextChoice), Is.True);
+            int plates = reveal.ShownCount;
+            yield return SceneTests.WaitUntil(
+                () => !bootstrap.Flow.Busy,
+                8f,
+                "The chest did not close."
+            );
+            yield return SceneTests.WaitUntil(() => !reveal.Shown, 2f, "The plates did not close.");
+            Assert.That(plates, Is.EqualTo(Mathf.Max(1, AdventureSession.Current.Drops.Count)));
             Assert.That(view.Dialog.IsShown, Is.False);
             Assert.That(view.ChestSprite.texture, Is.SameAs(view.ChestOpen));
             Assert.That(
@@ -706,8 +715,15 @@ namespace Baryonyx.Tests.PlayMode
                 "The drop was not shown."
             );
             Assert.That(dialog.IsShown, Is.False);
+            // 勝つと手札は片付き、ドロップの札と強化の3枚に重ならない。
+            Assert.That(battle.HandPutAway, Is.True, "The hand is put away on the win.");
             yield return WaitForBoons(bootstrap);
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Victory));
+            Assert.That(
+                battle.Hand.GetComponent<CanvasGroup>().alpha,
+                Is.EqualTo(0f),
+                "No card shows under the boons."
+            );
             Assert.That(AdventureSession.Current.Run.RoomCleared, Is.True);
             var boons = bootstrap.Overlay.Boons;
             Assert.That(boons.Offers.Count, Is.EqualTo(AdventureBoons.OfferCount));
@@ -1118,6 +1134,7 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator AMysteryRoomTurnsIntoWhatItHolds()
         {
             services.Adventure.MysteryKind = AdventureRoomKind.Treasure;
+            services.Adventure.NextAwakening = false;
             var mystery = WalkTo(AdventureRoomKind.Mystery);
             var run = AdventureSession.Current.Run;
             Assert.That(run.Map.Find(mystery.Id).Kind, Is.EqualTo(AdventureRoomKind.Mystery));
@@ -1128,8 +1145,13 @@ namespace Baryonyx.Tests.PlayMode
                 value => value.Flow != null,
                 value => bootstrap = value
             );
-            // 宝箱になったマスは、着くとすぐに宝箱を開ける。
-            yield return WaitForDialog(bootstrap.View.Dialog, AdventureDialogs.TreasureTitle);
+            // 宝箱になったマスは、着くとすぐに宝箱を開け、中身を見せたらダイアログなしで次のマスを選べる。
+            yield return SceneTests.WaitUntil(
+                () => AdventureSession.Current.Run.RoomCleared && !bootstrap.Flow.Busy,
+                VictorySeconds,
+                "The chest did not open."
+            );
+            Assert.That(bootstrap.View.Dialog.IsShown, Is.False);
             Assert.That(
                 bootstrap.View.Notice.LastMessage,
                 Is.EqualTo(AdventureTexts.Revealed(AdventureRoomKind.Treasure))

@@ -116,8 +116,8 @@ namespace Baryonyx.Combat
             new(
                 "forest-guardian",
                 EnemyBody.Large,
-                17300,
-                1940,
+                25000,
+                2550,
                 1300,
                 970,
                 650,
