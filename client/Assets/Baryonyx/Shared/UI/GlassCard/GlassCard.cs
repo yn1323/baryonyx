@@ -117,8 +117,16 @@ namespace Baryonyx.UI
                 return;
             }
             if (!eventData.dragging)
+            {
+                Audio.UiSounds.Play(Pressable() ? Audio.UiSound.Press : Audio.UiSound.Denied);
                 Click();
+            }
         }
+
+        // Buttonと組み合わせたカードは、Buttonが押せないときも押せない。
+        private bool Pressable() =>
+            interactable
+            && !(TryGetComponent(out UnityEngine.UI.Button button) && !button.IsInteractable());
 
         private void Update()
         {

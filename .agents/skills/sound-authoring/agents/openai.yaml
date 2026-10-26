@@ -1,0 +1,7 @@
+interface:
+  display_name: "効果音とBGMを付ける"
+  short_description: "フリー素材から音の候補を出して選んでもらい、演出に合わせて加工し、Unityで鳴らして展示室で確かめる"
+  default_prompt: "Use $sound-authoring when adding, replacing or reviewing sound effects or music, so sources, editing, placement and credits follow the project's rules."
+
+policy:
+  allow_implicit_invocation: true

@@ -33,6 +33,8 @@
 | APKをビルド・配布する | [手動実行用ショートカットの動作](rules/local-shortcuts.md) | [Androidビルドと実機確認](rules/client-android-testing.md)・[実行環境と接続先](features/startup-sync.md#実行環境と接続先)・[エミュレーター](rules/client-android-emulator.md) |
 | キャラ・敵・スキルを足す | [データ索引](catalog/README.md) | [外見・性格の比較索引](art/visual-index.md)・[戦闘システム](features/combat.md)・[キャラクターとパーティ編成](features/party.md) |
 | 画像・3Dの舞台を作る | [アート方針](art/direction.md) | [3Dの舞台（HD-2D）](art/hd2d-stage.md)・[ゲーム内の対象の画像](rules/frontend-design.md#ゲーム内の対象の画像) |
+| 外部の素材（効果音・BGM・フォントなど）を使う | [外部素材のクレジット](rules/credits.md) | 配布元の規約 |
+| 効果音・BGMを付ける | [効果音とBGM](rules/sound.md) | [外部素材のクレジット](rules/credits.md)・[クライアントアセット展示室](features/showcase.md) |
 | 設定値を探す | [設定索引](settings/README.md) | 各行の正本・確認先 |
 | ユーザーの困りごとに答える | [QA索引](qa/README.md) | [起動時の連携と歩数の同期](features/startup-sync.md) |
 | 経緯を調べる | [計画索引](plans/README.md) | 各文書の「変更と判断の記録」（大きな文書は同じフォルダーの `<文書名>-history.md`）・[企画索引](game/README.md)の記録・[資料の保管庫](archive/README.md) |

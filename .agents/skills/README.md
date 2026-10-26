@@ -101,6 +101,12 @@
 | [card-foil-sparkle](card-foil-sparkle/SKILL.md) | カード・UIの絵に、品質に応じたラメ・光の帯・漂う光の粒・ホロの虹色を重ねる | 自動 | [カードのキラキラ](../../doc/art/direction.md#カードのキラキラ) | スキルを使ったときの演出は vfx-authoring |
 | [hd2d-lighting-vfx](hd2d-lighting-vfx/SKILL.md) | 描いた2D背景に常に出す光芒・霧・揺らぐ光・火の粉・ポストプロセスと、キラキラ粒子 | 手動 | [展示室の仕様](../../doc/features/showcase.md)（部品の調整項目） | 3Dの舞台は hd2d-stage-set。HD-2Dの調査資料と技法の一覧は両方のスキルが使う |
 
+## 音
+
+| スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
+|---|---|---|---|---|
+| [sound-authoring](sound-authoring/SKILL.md) | 効果音とBGMをフリー素材から選び、演出に合わせて伸ばす・切る・重ねる加工をして、Unityで鳴らす・直す・レビューする。音は必ず、鳴らす場面の動画に重ねてユーザーに聞かせてから決める。音を測る・加工する・動画に重ねるスクリプトを持つ | 自動 | [効果音とBGM](../../doc/rules/sound.md)、[外部素材のクレジット](../../doc/rules/credits.md) | 演出の見た目は vfx-authoring。場面の録画は unity-video-recording |
+
 ## 迷ったとき
 
 | 依頼の例 | 使うスキル |
@@ -109,6 +115,7 @@
 | 3Dの舞台の背景が寂しい・平ら、地面・遠景・小物・草・テクスチャを足す | hd2d-stage-set |
 | 技の攻撃・回復・防御、被弾、撃破、カットイン、報酬を受け取る瞬間の演出 | vfx-authoring |
 | カードやキャラの絵をレアっぽくキラキラさせる（ラメ・光の帯・ホロ） | card-foil-sparkle |
+| ボタン・技・被弾・報酬に効果音を付ける、BGMを付ける、音が短い・長い・遅れる | sound-authoring。技の音は vfx-authoring の演出の拍に合わせる |
 | 3Dの舞台がない画面（描いた2D背景）の光・霧・火の粉、キャラ紹介やホームのキラキラ | hd2d-lighting-vfx（手動専用。使ってよいかユーザーに確認する） |
 | 2Dの背景画像を新しく描く | 専用のスキルはない。pixel-art-standards の規格を依頼文に入れ、Codex CLIの画像生成（shared/scripts/codex_image.py）で作る |
 | キャラ・敵・アイテムのドット絵を作る、生成画像を採用する | pixel-art-standards と、対象の生成スキル |
