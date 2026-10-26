@@ -162,6 +162,7 @@ namespace Baryonyx.CardLoadout.Editor
             var card = widget.Card;
             card.Button = button;
             card.Selected = selected;
+            GlassCardAssets.AddBack(button.GetComponent<GlassCard>());
 
             var content = Rect("Content", row);
             Stretch(content);
@@ -434,6 +435,9 @@ namespace Baryonyx.CardLoadout.Editor
             // One row per card in the catalog's order; the view shows only the cards the person
             // can set, by cost.
             view.Rows = CardSkills.All.Select(card => BuildRow(content, card, view)).ToArray();
+            // 読み込む間に伏せるのは先頭の行だけ（CardLoadoutView.CoverRows）。足りない行は1行目を写すので、写しも裏を持つ。
+            foreach (var row in view.Rows.Take(CardLoadoutView.CoverRows))
+                GlassCardAssets.AddBack(row.Button.GetComponent<GlassCard>());
             view.Remove = BuildRemove(content);
 
             view.List = Layout.Scroll(panel, viewport, content);

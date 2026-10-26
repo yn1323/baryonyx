@@ -752,13 +752,14 @@
 
 ## [features/screens/guide.md](features/screens/guide.md)
 
-17KB・95行
+20KB・123行
 
 - 8: # 画面一覧：編成・商会・神殿・旅の案内所の共通
 - 12: ## 編成・商会・神殿・旅の案内所の画面
 - 46: ### 停止中の確認
 - 52: ### 枠つきの表示
 - 75: ### すりガラスのカード
+- 97: #### カードの裏面
 
 ## [features/screens/implementation.md](features/screens/implementation.md)
 

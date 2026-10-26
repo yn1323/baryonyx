@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.App;
 using Baryonyx.Library;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine.TestTools;
@@ -56,6 +57,14 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(LibraryReadAgainTests));
         }
 
+        private static bool FaceDown(GlassCard card) =>
+            card != null && card.GetComponent<GlassCardBack>() is { FaceDown: true };
+
+        private static bool FaceUp(GlassCard card) =>
+            card == null
+            || card.GetComponent<GlassCardBack>() is not { } back
+            || (!back.FaceDown && !back.Flipping && !back.Leaving);
+
         private static LibraryRecords Records(LibraryCatalogView catalog, int found, int days) =>
             new(
                 catalog.Tiles.Take(found).Select(tile => (catalog.Kind, tile.Id, 0)),
@@ -65,7 +74,7 @@ namespace Baryonyx.Tests.PlayMode
                     .ToArray()
             );
 
-        // 初めて開くと読み終えるまで「読み込み中…」を出す。開き直すと、前に読んだ記録をすぐ出して裏で読み直し、
+        // 初めて開くと読み終えるまで、一覧の先頭をカードの裏で埋め、読み終えたらめくる。開き直すと、前に読んだ記録をすぐ出して裏で読み直し、
         // 変わっていれば描き直す。読み直せなかったときは、出している記録を残して通知の帯で知らせる。
         // 日々の歩数も、前に読んだ記録をすぐ出す。
         [UnityTest]
@@ -89,18 +98,24 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(catalog.Tiles.Length, Is.GreaterThanOrEqualTo(2));
             int total = catalog.Tiles.Length;
 
-            // 初めて開いたときは、読み終えるまでどれを見つけたかを見せない。
+            // 初めて開いたときは、読み終えるまでどれを見つけたかを見せず、先頭のカードを伏せて並べる。
             Assert.That(LibrarySession.Known, Is.Null);
             library.Records = Records(catalog, 1, 2);
             library.Gate = new TaskCompletionSource<bool>();
             view.MenuItems[weapons].onClick.Invoke();
-            Assert.That(catalog.Status.text, Is.EqualTo(GuidePanel.LoadingText));
+            int covered = Math.Min(total, LibraryCatalogView.CoverCards);
+            Assert.That(catalog.Status.text, Is.Empty);
             Assert.That(
-                catalog.Tiles.Any(tile => tile.Card != null && tile.Card.gameObject.activeSelf),
-                Is.False
+                catalog.Tiles.Count(tile => tile.Card != null && tile.Card.gameObject.activeSelf),
+                Is.EqualTo(covered)
             );
+            Assert.That(catalog.Tiles.Take(covered).All(tile => FaceDown(tile.Card)), Is.True);
             library.Gate.SetResult(true);
             yield return SceneTests.WaitForTask(catalog.LoadTask);
+            yield return SceneTests.WaitUntil(
+                () => catalog.Tiles.All(tile => FaceUp(tile.Card)),
+                message: "The cards did not turn face up."
+            );
             Assert.That(catalog.Count.text, Is.EqualTo($"1/{total}"));
             // 右の面が空にならないよう、最初の見つけた物を選んでおく。
             var first = catalog.Tiles[0];
@@ -119,6 +134,8 @@ namespace Baryonyx.Tests.PlayMode
                 catalog.Tiles.All(tile => tile.Card == null || tile.Card.gameObject.activeSelf),
                 Is.True
             );
+            // 前の記録をすぐ出すときは、伏せもめくりもしない。
+            Assert.That(catalog.Tiles.All(tile => FaceUp(tile.Card)), Is.True);
             Assert.That(catalog.Count.text, Is.EqualTo($"1/{total}"));
             library.Gate.SetResult(true);
             yield return SceneTests.WaitForTask(catalog.LoadTask);

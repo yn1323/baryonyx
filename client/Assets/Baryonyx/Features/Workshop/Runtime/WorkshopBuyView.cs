@@ -33,6 +33,9 @@ namespace Baryonyx.Workshop
         public const string EmptyText = "まだ手に入れた物がありません";
         public const string QualityText = "品質C（×1.00）";
 
+        // 読み込む間に伏せて並べるカードの数（4列×3段で一覧の見える所を埋める）。
+        public const int CoverCards = 12;
+
         public static readonly string[] TabLabels = { "武器", "防具", "アクセサリー", "スキル" };
 
         public LibraryData Data;
@@ -73,6 +76,7 @@ namespace Baryonyx.Workshop
         public Button Confirm;
 
         private readonly HashSet<Component> bound = new();
+        private readonly GlassCardCover cover = new();
         private IReadOnlyList<WorkshopGood> goods = Array.Empty<WorkshopGood>();
         private IReadOnlyList<WorkshopGood> shown = Array.Empty<WorkshopGood>();
         private IReadOnlyList<WorkshopOwned> owned;
@@ -212,6 +216,11 @@ namespace Baryonyx.Workshop
                     Rows[0].Card.Selected = true;
             }
             Set(Status, goods.Count == 0 ? EmptyText : "");
+            // 品物のない場所の伏せたカードも、めくってから静かに消す。
+            cover.Reveal(
+                Rows.Take(shown.Count).Select(row => row.gameObject),
+                Rows.Skip(shown.Count).Take(CoverCards - shown.Count).Select(row => row.gameObject)
+            );
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             RefreshConfirm();
@@ -339,19 +348,31 @@ namespace Baryonyx.Workshop
             LibraryCatalogView.PaintArt(row.Art, good.Entry, true, artBox);
         }
 
-        // 品物を読むまで、カードを出さない。
+        // 品物を読むまで、一覧の見える所をカードの裏で埋める。
         private void ShowLoading()
         {
             goods = shown = Array.Empty<WorkshopGood>();
             selected = -1;
-            foreach (var row in Rows)
-                if (row != null)
-                    row.gameObject.SetActive(false);
-            Set(Status, LoadingText);
+            EnsureRows(CoverCards);
+            for (int i = 0; i < Rows.Count; i++)
+            {
+                Rows[i].gameObject.SetActive(i < CoverCards);
+                if (Rows[i].Card != null)
+                    Rows[i].Card.Selected = false;
+            }
+            cover.Cover(Rows.Take(CoverCards).Select(row => row.gameObject));
+            Set(Status, "");
             RefreshConfirm();
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var row in Rows)
+                if (row != null)
+                    row.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
         public static string PriceText(int price) => $"{price:N0} ルーン";
 

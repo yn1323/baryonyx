@@ -114,6 +114,7 @@ namespace Baryonyx.Tavern.Editor
         {
             var rect = Rect("Member_" + member.Id, content);
             var (card, inside) = GlassCardAssets.Build(rect);
+            GlassCardAssets.AddBack(card);
             var widget = new AdventurerPickWidget { Id = member.Id, Card = card };
             Card.Figure(inside, member, shadow, CardHeight);
             Card.Name(inside, member.Name, 20f, TextWidth);

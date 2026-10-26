@@ -58,12 +58,15 @@ namespace Baryonyx.Workshop.Editor
             sell.Content = content;
             sell.List = scroll;
             sell.Template = OwnedCard(content, "Template", cell, CardArt);
+            // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
+            GlassCardAssets.AddBack(sell.Template.Card);
             sell.Template.gameObject.SetActive(false);
             var mock = WorkshopStock.Mock();
             var first = WorkshopStock.OfKind(mock, WorkshopStock.Kinds[0]);
             for (int i = 0; i < first.Count; i++)
             {
                 var row = OwnedCard(content, "Owned" + i, cell, CardArt);
+                GlassCardAssets.AddBack(row.Card);
                 WorkshopSellView.Paint(row, first[i], EntryOf(sell.Data, first[i]), CardArt);
                 sell.Rows.Add(row);
             }

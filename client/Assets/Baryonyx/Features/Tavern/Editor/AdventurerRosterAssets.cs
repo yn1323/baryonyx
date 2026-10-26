@@ -125,6 +125,7 @@ namespace Baryonyx.Tavern.Editor
                         CardHeight
                     );
                     var (card, content) = GlassCardAssets.Build(rect);
+                    GlassCardAssets.AddBack(card);
                     var widget = new AdventurerSlotWidget { Card = card };
                     (widget.Figure, widget.Shadow) = Card.Figure(
                         content,
@@ -206,6 +207,7 @@ namespace Baryonyx.Tavern.Editor
         {
             var rect = Rect("Member_" + member.Id, content);
             var (card, inside) = GlassCardAssets.Build(rect);
+            GlassCardAssets.AddBack(card);
             var widget = new AdventurerTileWidget { Id = member.Id, Card = card };
             var (figure, _) = Card.Figure(inside, member, shadow, CardHeight);
             PartyArt.Paint(figure, member, trim: true);

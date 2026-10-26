@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baryonyx.App;
 using Baryonyx.Economy;
 using Baryonyx.Library;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.Workshop;
 using NUnit.Framework;
@@ -66,6 +67,15 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.GuideArt.activeSelf, Is.False);
             Assert.That(view.Framed, Is.True);
             yield return SceneTests.WaitForTask(buy.LoadTask);
+            // 読み終えたら伏せたカードをすべてめくり、品物のない場所のカードは消えていく。
+            yield return SceneTests.WaitUntil(
+                () =>
+                    buy.Rows.All(row =>
+                        row.GetComponent<GlassCardBack>() is not { } back
+                        || !(back.FaceDown || back.Flipping || back.Leaving)
+                    ),
+                message: "The cards did not turn face up."
+            );
 
             // サーバーがないときは、ライブラリの仮の記録で見つけた物を並べる。初めは武器のタブ。
             var all = WorkshopGoods.Of(buy.Data, LibraryMemorySource.Mock());

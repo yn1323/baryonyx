@@ -76,6 +76,9 @@ namespace Baryonyx.Tavern
         // 外せる人を選んでいないときの「パーティから外す」の濃さ。
         private const float RemoveIdleAlpha = 0.5f;
 
+        // 読み込む間に右の一覧で伏せて並べるカードの数（2列×2段）。左のパーティの4枠もすべて伏せる。
+        public const int CoverTiles = 4;
+
         public PartyMockData Party;
 
         public AdventurerSlotWidget[] Slots = Array.Empty<AdventurerSlotWidget>();
@@ -93,6 +96,7 @@ namespace Baryonyx.Tavern
 
         private PartyRosterPresenter presenter;
         private readonly List<(GlassCard Card, Action Click)> bindings = new();
+        private readonly GlassCardCover cover = new();
 
         public event Action<int> SlotPressed;
         public event Action<string> BenchPressed;
@@ -179,12 +183,19 @@ namespace Baryonyx.Tavern
             );
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var tile in Tiles)
+                if (tile.Card != null)
+                    tile.Card.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
-        // 読み込むまで、仮データの編成を本当の編成として見せない。
+        // 読み込むまで、仮データの編成を本当の編成として見せない。パーティの枠と一覧の先頭はカードの裏で埋める。
         private void ShowLoading()
         {
-            Set(Status, LoadingText);
+            Set(Status, "");
             foreach (var slot in Slots)
             {
                 ShowSlot(slot, null, 1, null, false);
@@ -196,6 +207,13 @@ namespace Baryonyx.Tavern
                     tile.Card.gameObject.SetActive(false);
             if (Remove != null)
                 Remove.gameObject.SetActive(false);
+            cover.Cover(
+                Slots
+                    .Select(slot => slot.Card)
+                    .Concat(Tiles.Select(tile => tile.Card).Take(CoverTiles))
+                    .Where(card => card != null)
+                    .Select(card => card.gameObject)
+            );
             ShowChosen(null);
         }
 
@@ -261,6 +279,33 @@ namespace Baryonyx.Tavern
                     Remove.Group.alpha = state.CanRemove ? 1f : RemoveIdleAlpha;
             }
             ShowChosen(Party.Find(state.Chosen));
+            // 読み込みを待っていたら、パーティの枠から一覧の順にめくる。一覧の伏せた場所のうち、
+            // 人も「パーティから外す」も来ない場所のカードは、めくってから消す（外すの後ろへ回す）。
+            var benchCards = Tiles
+                .Select(tile => tile.Card)
+                .Where(card => card != null && card.gameObject.activeSelf)
+                .OrderBy(card => card.transform.GetSiblingIndex())
+                .ToArray();
+            int taken =
+                benchCards.Length + (Remove != null && Remove.gameObject.activeSelf ? 1 : 0);
+            var empty = cover.Covered
+                ? Tiles
+                    .Select(tile => tile.Card)
+                    .Where(card => card != null && !card.gameObject.activeSelf)
+                    .Take(CoverTiles - taken)
+                    .Select(card => card.gameObject)
+                    .ToArray()
+                : Array.Empty<GameObject>();
+            foreach (var card in empty)
+                card.transform.SetAsLastSibling();
+            cover.Reveal(
+                Slots
+                    .Select(slot => slot.Card)
+                    .Concat(benchCards)
+                    .Where(card => card != null)
+                    .Select(card => card.gameObject),
+                empty
+            );
         }
 
         // 下の帯に選んでいる人を出す。選んでいなければ空けて、「装備・スキル」を押せなくする。

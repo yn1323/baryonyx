@@ -4,6 +4,7 @@ using Baryonyx.App;
 using Baryonyx.Party;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using NUnit.Framework;
 using UnityEngine;
@@ -163,13 +164,28 @@ namespace Baryonyx.Tests.PlayMode
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
             var roster = view.PanelFor(item).GetComponent<AdventurerRosterView>();
-            Assert.That(roster.Status.text, Is.EqualTo(AdventurerRosterView.LoadingText));
-            Assert.That(Shown(roster), Is.Empty);
+            // 読み込む間は、文字の代わりにパーティの枠と一覧の先頭をカードの裏で埋める。
+            Assert.That(roster.Status.text, Is.Empty);
+            Assert.That(roster.Slots.All(slot => FaceDown(slot.Card)), Is.True);
+            Assert.That(Shown(roster), Has.Length.EqualTo(AdventurerRosterView.CoverTiles));
+            Assert.That(
+                roster
+                    .Tiles.Where(tile => tile.Card.gameObject.activeSelf)
+                    .All(tile => FaceDown(tile.Card)),
+                Is.True
+            );
             Assert.That(roster.Remove.gameObject.activeSelf, Is.False);
             Assert.That(roster.Slots[0].Name.text, Is.Empty);
             yield return SceneTests.WaitUntil(
                 () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
+            );
+            // 読み終えたら、伏せたカードをめくって表にする。人のいない場所のカードは消えていく。
+            yield return SceneTests.WaitUntil(
+                () =>
+                    roster.Slots.All(slot => FaceUp(slot.Card))
+                    && roster.Tiles.All(tile => FaceUp(tile.Card)),
+                message: "The cards did not turn face up."
             );
 
             // サーバーの持っているキャラ・編成・Lvを出す。
@@ -228,6 +244,13 @@ namespace Baryonyx.Tests.PlayMode
                 .OrderBy(tile => tile.Card.transform.GetSiblingIndex())
                 .Select(tile => tile.Id)
                 .ToArray();
+
+        private static bool FaceDown(GlassCard card) =>
+            card.GetComponent<GlassCardBack>() is { FaceDown: true };
+
+        private static bool FaceUp(GlassCard card) =>
+            card.GetComponent<GlassCardBack>() is not { } back
+            || (!back.FaceDown && !back.Flipping && !back.Leaving);
 
         private static int LastSibling(AdventurerRosterView roster) =>
             roster.Remove.transform.parent.childCount - 1;

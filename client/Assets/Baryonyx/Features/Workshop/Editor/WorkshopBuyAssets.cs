@@ -5,6 +5,7 @@ using Baryonyx.Party;
 using Baryonyx.Party.Editor;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
+using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
@@ -58,6 +59,8 @@ namespace Baryonyx.Workshop.Editor
             buy.Content = content;
             buy.List = scroll;
             buy.Template = GoodCard(content, "Template", cell, CardArt);
+            // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
+            GlassCardAssets.AddBack(buy.Template.Card);
             buy.Template.gameObject.SetActive(false);
             // 仮の記録の最初のタブ（武器）の品物で描き、Prefabを開くと停止中でも品物が読めるようにする。
             var goods = WorkshopGoods
@@ -67,6 +70,7 @@ namespace Baryonyx.Workshop.Editor
             for (int i = 0; i < goods.Length; i++)
             {
                 var row = GoodCard(content, "Good" + i, cell, CardArt);
+                GlassCardAssets.AddBack(row.Card);
                 WorkshopBuyView.Paint(row, goods[i], CardArt);
                 buy.Rows.Add(row);
             }

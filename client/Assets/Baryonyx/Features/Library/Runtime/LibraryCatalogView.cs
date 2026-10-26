@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,9 @@ namespace Baryonyx.Library
     {
         public const string LoadFailedMessage = "ライブラリを取得できませんでした";
         public const string PreparingText = "準備中";
+
+        // 読み込む間に伏せる、先頭のカードの数（4列×3段で、開いたときに見える所）。
+        public const int CoverCards = 12;
 
         // まだ見つけていない絵の影の色。
         public static readonly Color ShadowTint = new(0.02f, 0.03f, 0.08f, 0.88f);
@@ -87,6 +91,7 @@ namespace Baryonyx.Library
         private readonly List<(GlassCard Card, Action Click)> bindings = new();
         private readonly List<(Button Button, UnityEngine.Events.UnityAction Click)> tabBindings =
             new();
+        private readonly GlassCardCover cover = new();
         private LibraryRecords records = LibraryRecords.Empty;
         private string selected;
 
@@ -215,6 +220,9 @@ namespace Baryonyx.Library
                     tile.New.SetActive(seen.IsNew(records, Kind, tile.Id));
             }
             Set(Count, $"{found}/{Tiles.Length}");
+            cover.Reveal(
+                Tiles.Where(tile => tile.Card != null).Select(tile => tile.Card.gameObject)
+            );
             ShowDetail(selected);
         }
 
@@ -372,19 +380,30 @@ namespace Baryonyx.Library
             icon.gameObject.SetActive(shown);
         }
 
-        // 読み込むまで、どれを見つけたかを見せない。
+        // 読み込むまで、どれを見つけたかを見せない。先頭のカードは伏せて並べ、残りは隠す。
         private void ShowLoading()
         {
-            Set(Status, LoadingText);
+            Set(Status, "");
             Set(Count, "");
+            var covered = Tiles.Take(CoverCards).Where(tile => tile.Card != null).ToArray();
             foreach (var tile in Tiles)
                 if (tile.Card != null)
                     tile.Card.gameObject.SetActive(false);
+            cover.Cover(covered.Select(tile => tile.Card.gameObject));
+            foreach (var tile in covered)
+                tile.Card.Selected = false;
             if (Detail != null)
                 Detail.SetActive(false);
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var tile in Tiles)
+                if (tile.Card != null)
+                    tile.Card.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
         private void ShowPreparing()
         {

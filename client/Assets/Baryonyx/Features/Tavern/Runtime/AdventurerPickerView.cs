@@ -54,6 +54,9 @@ namespace Baryonyx.Tavern
         // 付けていない枠のアイコンの濃さ。
         private const float EmptyAlpha = 0.3f;
 
+        // 読み込む間に伏せて並べるカードの数（3列×2段で一覧の見える所を埋める）。
+        public const int CoverCards = 6;
+
         public PartyMockData Party;
 
         public TMP_Text Status;
@@ -61,6 +64,7 @@ namespace Baryonyx.Tavern
         public ScrollRect List;
 
         private readonly List<(GlassCard Card, Action Pressed)> bindings = new();
+        private readonly GlassCardCover cover = new();
         private bool ready;
 
         private void OnEnable()
@@ -139,15 +143,29 @@ namespace Baryonyx.Tavern
             ready = true;
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
-
-        // 読み込むまで、仮データの編成と装備を本当のものとして見せない。
-        private void ShowLoading()
+        private void ShowLoadFailed()
         {
-            Set(Status, LoadingText);
+            cover.Clear();
             foreach (var widget in Cards)
                 if (widget.Card != null)
                     widget.Card.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
+
+        // 読み込むまで、仮データの編成と装備を本当のものとして見せない。一覧の見える所はカードの裏で埋める。
+        private void ShowLoading()
+        {
+            Set(Status, "");
+            foreach (var widget in Cards)
+                if (widget.Card != null)
+                    widget.Card.gameObject.SetActive(false);
+            cover.Cover(
+                Cards
+                    .Where(widget => widget.Card != null)
+                    .OrderBy(widget => widget.Card.transform.GetSiblingIndex())
+                    .Take(CoverCards)
+                    .Select(widget => widget.Card.gameObject)
+            );
         }
 
         // 停止中の表示の切り替え：サーバーから読み込む間と、読めなかったときの表示。
@@ -193,6 +211,22 @@ namespace Baryonyx.Tavern
                 );
                 ShowGear(widget.ArmorIcon, widget.Armor, equipment, widget.Id, EquipmentSlot.Armor);
             }
+            // 読み込みを待っていたら、並べた順にめくる。人のいない場所の伏せたカードも、めくってから消す。
+            var shownCards = Cards
+                .Where(widget => widget.Card != null && widget.Card.gameObject.activeSelf)
+                .OrderBy(widget => widget.Card.transform.GetSiblingIndex())
+                .Select(widget => widget.Card.gameObject)
+                .ToArray();
+            var empty = cover.Covered
+                ? Cards
+                    .Where(widget => widget.Card != null && !widget.Card.gameObject.activeSelf)
+                    .Take(CoverCards - shownCards.Length)
+                    .Select(widget => widget.Card.gameObject)
+                    .ToArray()
+                : Array.Empty<GameObject>();
+            foreach (var card in empty)
+                card.transform.SetAsLastSibling();
+            cover.Reveal(shownCards, empty);
         }
 
         /// <summary>The characters' ids in the order they are shown: the party, then the bench.</summary>

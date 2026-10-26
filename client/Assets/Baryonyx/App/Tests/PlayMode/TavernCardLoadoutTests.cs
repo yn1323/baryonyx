@@ -7,6 +7,7 @@ using Baryonyx.Party;
 using Baryonyx.SkillEvolution;
 using Baryonyx.Tavern;
 using Baryonyx.Training;
+using Baryonyx.UI;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -262,9 +263,16 @@ namespace Baryonyx.Tests.PlayMode
             page.Sheet.Tabs[2].Button.onClick.Invoke();
             var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
                 .GetComponent<CardLoadoutView>();
-            // ステータスのタブで読んだ編成をすぐ出し、読み直しを待たない（読み込み中…を出さない）。
+            // ステータスのタブで読んだ編成をすぐ出し、読み直しを待たない（カードを伏せない）。
             Assert.That(panel.LoadTask.IsCompleted, Is.False);
             Assert.That(panel.Status.text, Is.Not.EqualTo(CardLoadoutView.LoadingText));
+            Assert.That(
+                panel
+                    .UniqueRows.Concat(panel.SlotRows)
+                    .Select(row => row.Card.Button.GetComponent<GlassCardBack>())
+                    .All(back => back != null && !back.FaceDown && !back.Flipping),
+                Is.True
+            );
             Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));
             yield return SceneTests.WaitUntil(
                 () => panel.LoadTask.IsCompleted,

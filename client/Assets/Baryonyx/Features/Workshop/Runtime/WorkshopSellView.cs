@@ -32,6 +32,9 @@ namespace Baryonyx.Workshop
         // 1回で売れる数。サーバーの SELL_LIMIT（server/src/features/workshop/catalog.ts）と同じ。
         public const int MaxChosen = 50;
 
+        // 読み込む間に伏せて並べるカードの数（5列×3段で一覧の見える所を埋める）。
+        public const int CoverCards = 15;
+
         public PartyMockData Party;
         public LibraryData Data;
         public float ArtBox = 112f;
@@ -52,6 +55,7 @@ namespace Baryonyx.Workshop
         public Button Confirm;
 
         private readonly HashSet<Component> bound = new();
+        private readonly GlassCardCover cover = new();
         private readonly List<WorkshopOwned> chosen = new();
         private IReadOnlyList<WorkshopOwned> owned = Array.Empty<WorkshopOwned>();
         private IReadOnlyList<WorkshopOwned> shown = Array.Empty<WorkshopOwned>();
@@ -131,6 +135,11 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], shown[i], EntryOf(shown[i]), ArtBox);
             }
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
+            // 持ち物のない場所の伏せたカードも、めくってから静かに消す。
+            cover.Reveal(
+                Rows.Take(shown.Count).Select(row => row.gameObject),
+                Rows.Skip(shown.Count).Take(CoverCards - shown.Count).Select(row => row.gameObject)
+            );
             RefreshChosen();
         }
 
@@ -349,19 +358,28 @@ namespace Baryonyx.Workshop
             }
         }
 
+        // 読み込むまで、一覧の見える所をカードの裏で埋める。
         private void ShowLoading()
         {
             busy = false;
             owned = shown = Array.Empty<WorkshopOwned>();
             chosen.Clear();
-            foreach (var row in Rows)
-                if (row != null)
-                    row.gameObject.SetActive(false);
-            Set(Status, LoadingText);
+            EnsureRows(CoverCards);
+            for (int i = 0; i < Rows.Count; i++)
+                Rows[i].gameObject.SetActive(i < CoverCards);
+            cover.Cover(Rows.Take(CoverCards).Select(row => row.gameObject));
+            Set(Status, "");
             RefreshChosen();
         }
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            foreach (var row in Rows)
+                if (row != null)
+                    row.gameObject.SetActive(false);
+            Set(Status, LoadFailedText);
+        }
 
         private static void Set(TMP_Text label, string text)
         {

@@ -464,6 +464,9 @@ namespace Baryonyx.Library.Editor
                 Columns
             );
             view.Tiles = entries.Select(entry => BuildTile(cards, entry)).ToArray();
+            // 読み込む間に伏せるのは、開いたときに見える先頭のカードだけ（LibraryCatalogView.CoverCards）。
+            foreach (var tile in view.Tiles.Take(LibraryCatalogView.CoverCards))
+                GlassCardAssets.AddBack(tile.Card);
             view.List = Layout.Scroll(list, viewport, cards);
             view.Status = Layout.Text(
                 layer,

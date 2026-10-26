@@ -132,6 +132,9 @@ namespace Baryonyx.CardLoadout
     {
         public const string LoadFailedMessage = "スキルを取得できませんでした";
 
+        // 読み込む間に右の一覧で伏せて並べる行の数（一覧の見える所）。左の6行もすべて伏せる。
+        public const int CoverRows = 5;
+
         // まだ解放していない固有スキルの挿絵の色。
         private static readonly Color LockedArt = new(0.25f, 0.25f, 0.3f, 1f);
 
@@ -174,6 +177,7 @@ namespace Baryonyx.CardLoadout
 
         private CardLoadoutPresenter presenter;
         private readonly ButtonBindings bindings = new();
+        private readonly GlassCardCover cover = new();
 
         public event Action PrevPressed;
         public event Action NextPressed;
@@ -265,7 +269,12 @@ namespace Baryonyx.CardLoadout
         private static Task Save(string id, int slot, string key) =>
             PartySession.SetCardAsync(id, slot, key, CardLoadoutPresenter.SaveFailedMessage);
 
-        private void ShowLoadFailed() => Set(Status, LoadFailedText);
+        private void ShowLoadFailed()
+        {
+            cover.Clear();
+            HideRows();
+            Set(Status, LoadFailedText);
+        }
 
         private void Present(PartyFormation formation, Func<string, int, string, Task> save)
         {
@@ -280,18 +289,28 @@ namespace Baryonyx.CardLoadout
             );
         }
 
-        // 読み込むまで、仮データのカードを本当のカードとして見せない。
+        // 読み込むまで、仮データのカードを本当のカードとして見せない。左の6行と右の一覧の先頭はカードの裏で埋める。
         private void ShowLoading()
         {
             ShowTree(false);
             ShowTabs(CardLoadoutPresenter.SkillTab);
-            Set(Status, LoadingText);
+            Set(Status, "");
             if (UsableLine != null)
                 UsableLine.SetActive(false);
             foreach (var row in UniqueRows.Concat(SlotRows))
                 ShowDeckRow(row, null, false, false, 0);
             ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
             HideRows();
+            if (Remove != null)
+                Remove.gameObject.SetActive(false);
+            cover.Cover(
+                UniqueRows
+                    .Concat(SlotRows)
+                    .Select(row => row.Card.Button)
+                    .Concat(Rows.Take(CoverRows).Select(row => row.Button))
+                    .Where(button => button != null)
+                    .Select(button => button.gameObject)
+            );
         }
 
         // 右に、タブと一覧の代わりに進化ツリーを出す（false で戻す）。
@@ -437,6 +456,28 @@ namespace Baryonyx.CardLoadout
             else
                 shownTree = null;
             ShowTree(state.Tree != null);
+            // 読み込みを待っていたら、左の6行から右の一覧の順にめくる。一覧の伏せた場所のうち、
+            // カードも「スキルを外す」も来ない場所の行は、めくってから消す（外すの後ろへ回す）。
+            int taken =
+                state.Choices.Count + (Remove != null && Remove.gameObject.activeSelf ? 1 : 0);
+            var empty = cover.Covered
+                ? Rows.Skip(state.Choices.Count)
+                    .Take(CoverRows - taken)
+                    .Where(row => row.Button != null)
+                    .Select(row => row.Button.gameObject)
+                    .ToArray()
+                : Array.Empty<GameObject>();
+            foreach (var row in empty)
+                row.transform.SetAsLastSibling();
+            cover.Reveal(
+                UniqueRows
+                    .Concat(SlotRows)
+                    .Select(row => row.Card.Button)
+                    .Concat(Rows.Take(state.Choices.Count).Select(row => row.Button))
+                    .Where(button => button != null)
+                    .Select(button => button.gameObject),
+                empty
+            );
         }
 
         // 左の6行のうち、選んでいる固有スキル（unique）かカスタムスキルの枠（slot）を金の枠で囲む。
