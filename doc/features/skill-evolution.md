@@ -511,7 +511,7 @@ Lvの差による下限を0にしないのは、もう覚醒しない状態が�
 | 冒険での確率の材料（部屋の種類・推奨Lv）と、マスを終えたときに残すこと | [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs)・[BattleAdventureFlow](../../client/Assets/Baryonyx/Features/Adventure/Runtime/BattleAdventureFlow.cs)。固有スキルのカードに誰の何番目かを持たせるのは [AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs) |
 | サーバーへの保存（クライアント） | [PartyUniqueSkills](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyUniqueSkills.cs)・[PartyApiClient](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyApiClient.cs) |
 | サーバーへの保存（サーバー） | `GET /v1/party` の各キャラの `uniques`、`PUT /v1/party/characters/:characterId/uniques/:index`（セット）、`POST /v1/party/characters/:characterId/uniques/:index/evolve`（覚醒）。[routes](../../server/src/features/party/routes.ts)・[repository](../../server/src/features/party/repository.ts)・テーブル `party_unique_skills`（[db-schema](../../server/src/features/party/db-schema.ts)、マイグレーション0016）。解放のLv（1つ目はLv1、2つ目はLv10、3つ目はLv30。2026-10-24）はサーバーの [catalog](../../server/src/features/party/catalog.ts) が判定に使う |
-| 付け替えの画面での表示と操作 | [プレゼンター](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
+| 冒険者のスキルのタブでの表示と操作 | [プレゼンター](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
 
 仮データと実装の差は次のとおりである。
 
@@ -520,8 +520,8 @@ Lvの差による下限を0にしないのは、もう覚醒しない状態が�
 - 試練の部屋は確率の仕様にないため、強い魔物の部屋と同じ8%にした（仮）。
 - 1つ目・2つ目の固有スキルは、各段階に専用の挿絵がある（`CardUnique<ツリー><段階>.aseprite`、[技・カードの定義](../catalog/skills/README.md)と同じ規格）。Codex CLIの画像生成で、ツリーごとに7枚を1枚のシートに描き、切り出して64×58・32色にした（2026-10-19）。
 - 3つ目の固有スキルは、専用の挿絵がまだない（2026-10-23）。挿絵は枝ごとに近いカードスキルのもの（魔眼は偵察・ライトニングボルト・マナの祈り・詠唱短縮など）を借りる。エフェクトは2026-10-26に専用の演出にした（[ツリーごとの演出](#ツリーごとの演出)）。
-- [育成](screens/adventurers.md#育成)の個別の画面の固有スキルも、セットしている段階のカードを出す。冒険の戦闘のデッキには、編成でセットしている段階のカードが入る。
-- [展示室](showcase.md)では、編成の画面のPrefabの `CardLoadout` を開き、停止中の表示の切り替えの「固有スキルの選択モード」で、先頭の人（トーマ）の1つ目の固有スキルのツリーを確かめられる。
+- [冒険者のスキルのタブ](screens/loadout.md#スキル)の左の行の固有スキルも、セットしている段階のカードを出す。冒険の戦闘のデッキには、編成でセットしている段階のカードが入る。
+- [展示室](showcase.md)では、編成の画面のPrefabの `CardLoadout` を開き、停止中の表示の切り替えの「固有スキルを選んだとき」で、先頭の人（トーマ）の1つ目の固有スキルのツリーを確かめられる。
 
 ## 変更と判断の記録
 

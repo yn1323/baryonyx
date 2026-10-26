@@ -8,12 +8,7 @@ import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
 import { discoveryStatements } from "../library/discoveries.js";
 import { partyProfiles } from "../party/db-schema.js";
 import { partyStarterStatements } from "../party/starter.js";
-import {
-  type EquipmentId,
-  STARTER_EQUIPPED,
-  STARTER_ITEMS,
-  slotOf,
-} from "./catalog.js";
+import { STARTER_ITEMS, STARTER_PIECES, slotOf } from "./catalog.js";
 import {
   equipmentCharacterSlots,
   equipmentItems,
@@ -31,9 +26,7 @@ function equipmentStarterStatements(db: Database, userId: string, now: string) {
     eq(equipmentProfiles.userId, userId),
     eq(equipmentProfiles.grantId, grantId),
   )})`;
-  const ids = STARTER_ITEMS.map(() => crypto.randomUUID());
-  const itemOf = (equipmentId: EquipmentId) =>
-    ids[STARTER_ITEMS.indexOf(equipmentId)];
+  const ids = STARTER_PIECES.map(() => crypto.randomUUID());
   return [
     db
       .insert(equipmentProfiles)
@@ -42,10 +35,10 @@ function equipmentStarterStatements(db: Database, userId: string, now: string) {
     insertRowsWhen(
       db,
       equipmentItems,
-      STARTER_ITEMS.map((equipmentId, index) => ({
+      STARTER_PIECES.map((piece, index) => ({
         id: ids[index],
         userId,
-        equipmentId,
+        equipmentId: piece.equipmentId,
         multiplierPercent: MIN_MULTIPLIER_PERCENT,
         acquiredAt: now,
       })),
@@ -64,15 +57,13 @@ function equipmentStarterStatements(db: Database, userId: string, now: string) {
     insertRowsWhen(
       db,
       equipmentCharacterSlots,
-      STARTER_EQUIPPED.flatMap((entry) =>
-        (["weapon", "armor"] as const).map((slot) => ({
-          userId,
-          characterId: entry.characterId,
-          slot,
-          itemId: itemOf(entry[slot]),
-          updatedAt: now,
-        })),
-      ),
+      STARTER_PIECES.map((piece, index) => ({
+        userId,
+        characterId: piece.characterId,
+        slot: piece.slot,
+        itemId: ids[index],
+        updatedAt: now,
+      })),
       granted,
     ),
   ];

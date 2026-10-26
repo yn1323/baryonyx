@@ -134,7 +134,7 @@ namespace Baryonyx.Temple
             if (summoned.Kind == LibraryKind.Character && result.Bond != null)
                 return result.Bond.IsNew ? "新しい仲間"
                     : result.Bond.Shards > 0 ? $"かけら+{result.Bond.Shards}"
-                    : "絆のしるし+1";
+                    : "突破のしるし+1";
             if (summoned.Stars <= 0)
                 return kind;
             string stars = new('★', summoned.Stars);

@@ -133,7 +133,7 @@ namespace Baryonyx.Workshop
                 Render(WorkshopCraft.Recipes(Data, records), held);
         }
 
-        /// <summary>Takes what can be made and what is held, and shows the chosen tab's, none chosen.</summary>
+        /// <summary>Takes what can be made and what is held, and shows the chosen tab's, the first chosen.</summary>
         public void Render(
             IReadOnlyList<WorkshopRecipe> nextRecipes,
             IReadOnlyList<WorkshopOwned> nextOwned
@@ -158,7 +158,11 @@ namespace Baryonyx.Workshop
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
-            ShowMaterials(null);
+            // 右の面が空にならないよう、先頭の物を選んでおく。
+            if (shown.Count > 0)
+                Select(0);
+            else
+                ShowMaterials(null);
         }
 
         public void Select(int index)
@@ -375,7 +379,7 @@ namespace Baryonyx.Workshop
             var recipe = SelectedRecipe;
             if (DetailArt != null)
             {
-                // 選ぶまでは、絵の後ろの光ごと隠す。
+                // 作れる物がないときは、絵の後ろの光ごと隠す。
                 DetailArt.transform.parent.gameObject.SetActive(recipe != null);
                 if (recipe != null)
                     LibraryCatalogView.PaintArt(DetailArt, recipe.Entry, true, DetailArtBox);

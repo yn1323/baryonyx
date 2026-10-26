@@ -118,9 +118,10 @@ describe("装備API", () => {
   it("空いた枠に付け、付けている装備を替え、外す", async () => {
     const user = await scenario.login("equipment-change");
     // 最初の装備はどれも初めの4人が付けているため、外して空いた装備を使う。
+    // 樫の杖はトマとミナが1本ずつ持つので、トマが付けていた1本を選ぶ。
     const state = await read(user.token);
-    const staff = itemOf(state, "oak-staff");
-    const leather = itemOf(state, "leather-armor");
+    const staff = character(state, "toma")?.weapon ?? "";
+    const leather = character(state, "mina")?.armor ?? "";
     await remove(user.token, "toma", "weapon");
     await remove(user.token, "mina", "armor");
 

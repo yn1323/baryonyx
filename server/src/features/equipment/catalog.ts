@@ -134,11 +134,26 @@ export const STARTER_EQUIPPED: readonly {
   { characterId: "toma", weapon: "oak-staff", armor: "magic-robe" },
   { characterId: "luka", weapon: "short-bow", armor: "traveler-cloak" },
   { characterId: "aria", weapon: "iron-sword", armor: "chainmail" },
-  { characterId: "mina", weapon: "war-hammer", armor: "leather-armor" },
+  // ミナのカード（ヒール・聖なる鉄槌）は属攻で決まるため、属攻を上げる杖にする（2026-10-26）。
+  { characterId: "mina", weapon: "oak-staff", armor: "leather-armor" },
 ];
 
-// 仮データの順に並べる。
-export const STARTER_ITEMS: readonly EquipmentId[] = EQUIPMENT_IDS.filter(
-  (id) =>
-    STARTER_EQUIPPED.some((entry) => entry.weapon === id || entry.armor === id),
+// 最初から持っている装備の1つずつ。2人が同じ種類を付けていれば2つ持つ。仮データの順に並べる。
+export const STARTER_PIECES: readonly {
+  characterId: CharacterId;
+  slot: "weapon" | "armor";
+  equipmentId: EquipmentId;
+}[] = STARTER_EQUIPPED.flatMap((entry) =>
+  (["weapon", "armor"] as const).map((slot) => ({
+    characterId: entry.characterId,
+    slot,
+    equipmentId: entry[slot],
+  })),
+).sort(
+  (a, b) =>
+    EQUIPMENT_IDS.indexOf(a.equipmentId) - EQUIPMENT_IDS.indexOf(b.equipmentId),
+);
+
+export const STARTER_ITEMS: readonly EquipmentId[] = STARTER_PIECES.map(
+  (piece) => piece.equipmentId,
 );

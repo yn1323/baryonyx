@@ -20,7 +20,7 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
-    /// The formation's equipment item: a card for every mock character, three to a row, baked
+    /// The formation's growth item (育成): a card for every mock character, three to a row, baked
     /// into the formation prefab by its generator (<see cref="BuildPanel"/>) so they read in the
     /// editor without Play Mode. The cards are the adventurers' frosted glass
     /// (<see cref="GlassCardAssets"/>) inside the guide screen's frame
@@ -32,7 +32,7 @@ namespace Baryonyx.Tavern.Editor
         private const int Columns = 3;
         private const float CardGap = Card.CardGap;
 
-        // 見出しは付けない。何の画面かは、上の帯のパンくず（編成 › 装備）と、武器・防具の並んだカードでわかる。
+        // 見出しは付けない。何の画面かは、上の帯のパンくず（編成 › 育成）と、Lvと武器・防具の並んだカードでわかる。
         private const float ListTop = Frame.HeaderHeight;
         private const float CardWidth =
             (1920f - Frame.Margin * 2f - CardGap * (Columns - 1)) / Columns;

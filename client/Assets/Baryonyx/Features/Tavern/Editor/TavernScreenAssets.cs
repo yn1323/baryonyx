@@ -16,10 +16,10 @@ namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
     /// The formation screen (編成; the code keeps the Tavern name): the tavern girl guides the
-    /// adventurers and the equipment. The equipment opens a card for every character, and
-    /// tapping one opens their page. The adventurers open the list of every character; from
-    /// there one character's page (the training item) opens, and from the page the equipment
-    /// and card skills change screens. Those three items are hidden from the menu.
+    /// adventurers and their growth (育成). The growth item opens a card for every character,
+    /// and tapping one opens their tabs. The adventurers open the list of every character; from
+    /// there one character's tabs open too: the stats (the training item), the equipment, the
+    /// card skills and the breakthrough, each an item hidden from the menu.
     /// The characters, levels and cards are mock values until the party has data; every item
     /// shows its own panel instead of a list.
     /// </summary>
@@ -32,10 +32,13 @@ namespace Baryonyx.Tavern.Editor
         public const string BackgroundPath = Folder + "/UI/Art/TavernBackground.png";
 
         // The menu's icons are plain shapes without outlines, like the home buttons: a roster for
-        // the adventurers and a breastplate between two turning arrows for changing equipment.
+        // the adventurers and a person beside a rising arrow for their growth (育成).
         // The other guide screens list coloured pixel art with the same white tint, so the text
         // colour is baked in.
         public const string IconFormationPath = Folder + "/UI/Art/IconFormation.png";
+        public const string IconGrowthPath = Folder + "/UI/Art/IconGrowth.png";
+
+        // 胸当てを回る2本の矢印。探索の「装備」ボタンがまだこの絵を使うため、書き出しを残す。
         public const string IconChangeGearPath = Folder + "/UI/Art/IconChangeGear.png";
 
         [MenuItem("Baryonyx/Tavern/Create Screen Assets")]
@@ -66,6 +69,8 @@ namespace Baryonyx.Tavern.Editor
                             safe,
                             view
                         ),
+                        TrainingSession.BreakthroughItemKey =>
+                            TrainingAssets.BuildBreakthroughPanel(safe, view),
                         EquipmentSession.GuideItemKey => EquipmentAssets.BuildPanel(safe, view),
                         CardLoadoutSession.GuideItemKey => CardLoadoutAssets.BuildPanel(safe, view),
                         _ => null,
@@ -80,10 +85,11 @@ namespace Baryonyx.Tavern.Editor
             d.Items = new[]
             {
                 Adventurers(),
-                Gear(),
+                Growth(),
                 Hidden("育成", TrainingSession.GuideItemKey),
                 Hidden("装備", EquipmentSession.GuideItemKey),
                 Hidden("スキル", CardLoadoutSession.GuideItemKey),
+                Hidden("突破", TrainingSession.BreakthroughItemKey),
             };
         }
 
@@ -96,20 +102,31 @@ namespace Baryonyx.Tavern.Editor
             return item;
         }
 
-        // The equipment item opens a card for every character instead of a list: tapping one opens
-        // their page, where the weapon and armour slots change what they wear.
-        private static GuideMenuItem Gear()
+        // 育成は、全員のカードを並べた人選びを開く。1人を押すと、Lv上げ・スキル・装備をまとめた
+        // その人の冒険者のタブへ進む（2026-10-26、「装備」から改めた。開く先の中身に名前を合わせる）。
+        private static GuideMenuItem Growth()
         {
-            var item = Item("装備", "選ぶ", Icon(IconChangeGearPath));
+            var item = Item(GrowthLabel, "選ぶ", Icon(IconGrowthPath));
             item.Key = AdventurerPickerView.GuideItemKey;
             return item;
         }
 
+        /// <summary>The growth item's name, also the breadcrumb of the picker and the pages it opens.</summary>
+        public const string GrowthLabel = "育成";
+
         private static void WriteMenuIcons()
         {
             Roster().Save(IconFormationPath, SmoothIconTextureSize, UiPalette.TextMain);
+            GrowthIcon().Save(IconGrowthPath, SmoothIconTextureSize, UiPalette.TextMain);
             ChangeGear().Save(IconChangeGearPath, SmoothIconTextureSize, UiPalette.TextMain);
         }
+
+        // 人の上半身と、その右に伸びる上向きの矢印。矢印の周りを少し空けて人と分ける。
+        private static VectorIcon GrowthIcon() =>
+            new VectorIcon()
+                .Fill(IconShape.Circle(22f, 21f, 9.5f))
+                .Fill(IconShape.Path("M3 58 Q3 36 22 36 Q41 36 41 58Z"))
+                .Fill(IconShape.Path("M35 28 L48.5 8 L62 28 L53 28 L53 58 L44 58 L44 28Z"), 3f);
 
         // A sheet with a folded corner, a person at the top left and the lines of the list.
         private static VectorIcon Roster() =>

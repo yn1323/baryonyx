@@ -102,6 +102,12 @@ namespace Baryonyx.Tests.PlayMode
             library.Gate.SetResult(true);
             yield return SceneTests.WaitForTask(catalog.LoadTask);
             Assert.That(catalog.Count.text, Is.EqualTo($"1/{total}"));
+            // 右の面が空にならないよう、最初の見つけた物を選んでおく。
+            var first = catalog.Tiles[0];
+            Assert.That(catalog.Selected, Is.EqualTo(first.Id));
+            Assert.That(first.Card.Selected, Is.True);
+            Assert.That(catalog.Detail.activeSelf, Is.True);
+            Assert.That(catalog.DetailName.text, Is.EqualTo(first.Name.text));
 
             // 開き直すと、読み直しを待たずに前の記録を出す。読み直して変わっていれば描き直す。
             view.Back.onClick.Invoke();

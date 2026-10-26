@@ -78,12 +78,12 @@ describe("商会API", () => {
     for (const entry of EQUIPMENT) {
       expect(workshopPrice(entry.slot, entry.id)).toBeGreaterThan(0);
     }
-    // ☆1の200から、☆が1つ増えるごとに倍になる。
-    expect(workshopPrice("skill", "Fire")).toBe(200);
-    expect(workshopPrice("weapon", "iron-sword")).toBe(400);
-    expect(workshopPrice("armor", "traveler-cloak")).toBe(800);
-    expect(workshopPrice("skill", "Hone")).toBe(1600);
-    expect(workshopPrice("accessory", "kraken-pearl")).toBe(3200);
+    // ☆1の1,000から、☆が1つ増えるごとに倍になる。
+    expect(workshopPrice("skill", "Fire")).toBe(1000);
+    expect(workshopPrice("weapon", "iron-sword")).toBe(2000);
+    expect(workshopPrice("armor", "traveler-cloak")).toBe(4000);
+    expect(workshopPrice("skill", "Hone")).toBe(8000);
+    expect(workshopPrice("accessory", "kraken-pearl")).toBe(16000);
     // 分類が違う物は売らない。
     expect(workshopPrice("weapon", "Fire")).toBeUndefined();
     expect(workshopPrice("armor", "iron-sword")).toBeUndefined();
@@ -113,7 +113,7 @@ describe("商会API", () => {
     const user = await scenario.login("workshop-buy");
     // ライブラリを読むと、初めの装備とカードを配り、見つけた記録を残す。
     await scenario.read("/library", user.token);
-    await scenario.setRunes(user.userId, 500);
+    await scenario.setRunes(user.userId, 2500);
 
     // 売らない物は404。
     expect(
@@ -137,10 +137,10 @@ describe("商会API", () => {
       itemId: expect.any(String),
       multiplier: 1,
       quality: "C",
-      runes: 400,
-      balanceAfter: 100,
+      runes: 2000,
+      balanceAfter: 500,
     });
-    expect(await scenario.runesOf(user.token)).toBe(100);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     const swordsAfter = await equipmentOf(user.token, "iron-sword");
     expect(swordsAfter).toHaveLength(swordsBefore.length + 1);
     expect(swordsAfter).toContainEqual(
@@ -159,7 +159,7 @@ describe("商会API", () => {
         id: "iron-sword",
       }),
     ).toEqual(bought);
-    expect(await scenario.runesOf(user.token)).toBe(100);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     expect(await equipmentOf(user.token, "iron-sword")).toHaveLength(
       swordsAfter.length,
     );
@@ -180,13 +180,13 @@ describe("商会API", () => {
         409,
       ),
     ).toEqual({ error: "insufficient_runes" });
-    expect(await scenario.runesOf(user.token)).toBe(100);
+    expect(await scenario.runesOf(user.token)).toBe(500);
     expect(await skillCardsOf(user.userId, "Fire")).toHaveLength(
       firesBefore.length,
     );
 
     // まだ手に入れていない物は、ルーンがあっても買えない。
-    await scenario.setRunes(user.userId, 1000);
+    await scenario.setRunes(user.userId, 5000);
     expect(
       await buy(
         user.token,
@@ -198,7 +198,7 @@ describe("商会API", () => {
         409,
       ),
     ).toEqual({ error: "not_discovered" });
-    expect(await scenario.runesOf(user.token)).toBe(1000);
+    expect(await scenario.runesOf(user.token)).toBe(5000);
 
     // 冒険で見つけたアクセサリーは買える。断った要求IDも、あとで使える。
     await scenario.env.DB.prepare(
@@ -211,7 +211,7 @@ describe("商会API", () => {
       category: "accessory",
       id: "moss-charm",
     });
-    expect(charm.purchase).toMatchObject({ runes: 200, balanceAfter: 800 });
+    expect(charm.purchase).toMatchObject({ runes: 1000, balanceAfter: 4000 });
     expect(await equipmentOf(user.token, "moss-charm")).toEqual([
       expect.objectContaining({ multiplier: 1, quality: "C" }),
     ]);
@@ -225,7 +225,7 @@ describe("商会API", () => {
     expect(fires.filter((card) => card.multiplier_percent === 100).length).toBe(
       fires.length,
     );
-    expect(await scenario.runesOf(user.token)).toBe(400);
+    expect(await scenario.runesOf(user.token)).toBe(2000);
   });
 
   it("ほかのユーザーが見つけた物は買えない", async () => {

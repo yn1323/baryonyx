@@ -142,7 +142,7 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(state.Raise.PhysicalAttack, Is.Zero);
 
             // 付けている樫の杖の行は出さず、氷晶のワンド（属攻 +14%・会心 +5%）は属攻と会心が上がる。
-            var worn = state.Choices.Single(choice => choice.Name == "樫の杖");
+            var worn = state.Choices.Single(choice => choice.Name == "樫の杖" && choice.Worn);
             Assert.That(worn.Changes, Is.Empty);
             var wand = state.Choices.Single(choice => choice.Name == "氷晶のワンド");
             Assert.That(wand.Changes, Is.EqualTo(new[] { (3, 8), (6, 2) })); // 282 × 26% = 73.32
@@ -179,7 +179,14 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(
                 state.Choices.Select(choice => choice.EquipmentId),
                 Is.EqualTo(
-                    weapons.OrderByDescending(entry => entry.Rarity).Select(entry => entry.Id)
+                    weapons
+                        .OrderByDescending(entry => entry.Rarity)
+                        // 樫の杖は、トーマとミナの2本を持っている。
+                        .SelectMany(entry =>
+                            entry.Id == "oak-staff"
+                                ? new[] { entry.Id, entry.Id }
+                                : new[] { entry.Id }
+                        )
                 )
             );
             // 自分が付けている装備は「装備中」、ほかの人の装備は誰が付けているかを出す。
@@ -395,9 +402,9 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(view.Last.PersonId, Is.EqualTo("mina"));
             Assert.That(
                 view.Last.Slots.Select(slot => slot.Name),
-                Is.EqualTo(new[] { "戦鎚", "革の鎧" })
+                Is.EqualTo(new[] { "樫の杖", "革の鎧" })
             );
-            // 個別の画面で押した枠（防具）を選んで開く。
+            // 渡された枠（防具）を選んで開く。
             Assert.That(view.Last.Slot, Is.EqualTo(EquipmentSlot.Armor));
         }
 
@@ -432,7 +439,11 @@ namespace Baryonyx.Tests.EditMode
                     : view.Last.Accessory < 0 && view.Last.Slot == slot;
             if (!chosen)
                 view.Slot(slot);
-            return view.Last.Choices.Single(choice => choice.EquipmentId == equipmentId);
+            // 同じ種類を2つ持つ物（トーマとミナの樫の杖）は、仮データで先に作った1つ目（トーマの物）を返す。
+            return view
+                .Last.Choices.Where(choice => choice.EquipmentId == equipmentId)
+                .OrderBy(choice => int.Parse(choice.ItemId.Substring("local-".Length)))
+                .First();
         }
 
         private static PartyMember Member(string id, string name) => new() { Id = id, Name = name };

@@ -36,8 +36,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernGearPickerTests));
         }
 
-        // 編成のメニューの「装備」は、冒険者の次に並び、全員のカード（パーティが先）を開く。
-        // 1人を押すとその人の個別の画面へ進み、個別の画面の「もどる」で人選びへ戻る。
+        // 編成のメニューの「育成」は、冒険者の次に並び、全員のカード（パーティが先）を開く。
+        // 1人を押すとその人の冒険者のタブへ進み、タブの「もどる」で人選びへ戻る。
         [UnityTest]
         public IEnumerator GearOpensThePageOfTheChosenAdventurer()
         {
@@ -47,7 +47,7 @@ namespace Baryonyx.Tests.PlayMode
             var items = view.Definition.Items;
             int item = ItemOf(view, AdventurerPickerView.GuideItemKey);
             Assert.That(item, Is.EqualTo(ItemOf(view, PartySession.GuideItemKey) + 1));
-            Assert.That(items[item].Label, Is.EqualTo("装備"));
+            Assert.That(items[item].Label, Is.EqualTo("育成"));
             Assert.That(items[item].Hidden, Is.False);
             Assert.That(view.MenuItems[item], Is.Not.Null);
 
@@ -57,7 +57,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.GuideArt.activeSelf, Is.False);
             yield return SceneTests.WaitForTask(picker.LoadTask);
             yield return null;
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "装備")));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成")));
 
             // パーティを枠の順に、続けて控えを並べる。パーティの人だけ「パーティ」の札を出す。
             var formation = PartySession.Formation(picker.Party);
@@ -97,7 +97,7 @@ namespace Baryonyx.Tests.PlayMode
                 Is.True
             );
 
-            // 控えの1人を押すと、その人の個別の画面を開く。パンくずは「編成 › 装備 › 名前」。
+            // 控えの1人を押すと、その人の冒険者のタブ（ステータス）を開く。パンくずは「編成 › 育成 › 名前」。
             var chosen = shown.Last();
             chosen.Card.Click();
             var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
@@ -107,22 +107,23 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitForTask(page.LoadTask);
             string name = formation.Name(chosen.Id);
             Assert.That(page.Name.text, Is.EqualTo(name));
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "装備", name)));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成", name)));
 
-            // 個別の画面の「もどる」で人選びへ、もう一度でメニューへ戻る。
+            // タブの「もどる」で人選びへ、もう一度でメニューへ戻る。
             view.Back.onClick.Invoke();
             Assert.That(picker.gameObject.activeInHierarchy, Is.True);
-            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "装備")));
+            Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "育成")));
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(guide.Presenter.Left, Is.False);
 
-            // 冒険者の一覧から開いた個別の画面は、これまでどおり冒険者の一覧へ戻る。
+            // 冒険者の一覧から開いた冒険者のタブは、これまでどおり冒険者の一覧へ戻る。
             int roster = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[roster].onClick.Invoke();
             var list = view.PanelFor(roster).GetComponent<AdventurerRosterView>();
             yield return SceneTests.WaitForTask(list.LoadTask);
-            list.Slots[0].Card.Hold();
+            list.Slots[0].Card.Click();
+            list.Chosen.Detail.onClick.Invoke();
             yield return SceneTests.WaitForTask(page.LoadTask);
             string first = formation.Name(formation.Member(0));
             Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first)));

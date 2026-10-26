@@ -23,9 +23,6 @@ namespace Baryonyx.Tests.EditMode
             public event Action<string> CardPressed;
             public event Action<int> UniquePressed;
             public event Action<int> StagePressed;
-            public event Action BackPressed;
-            public event Action DeckPressed;
-            public event Action DeckClosed;
 
             public CardLoadoutState Last;
             public readonly List<string> Notices = new();
@@ -54,12 +51,6 @@ namespace Baryonyx.Tests.EditMode
             public void Unique(int index) => UniquePressed?.Invoke(index);
 
             public void Stage(int stage) => StagePressed?.Invoke(stage);
-
-            public void Back() => BackPressed?.Invoke();
-
-            public void Deck() => DeckPressed?.Invoke();
-
-            public void CloseDeck() => DeckClosed?.Invoke();
         }
 
         private sealed class FakeStore : ICardLoadoutStore
@@ -140,7 +131,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void WithoutASlotItOpensOnTheSixCardsWhereTheListDoesNothing()
+        public void WithoutASlotItOpensOnTheFirstCustomSlot()
         {
             presenter.Dispose();
             presenter = new CardLoadoutPresenter(
@@ -149,39 +140,33 @@ namespace Baryonyx.Tests.EditMode
                 store
             );
             view.Person("toma");
-            Assert.That(view.Last.Selecting, Is.False);
-            Assert.That(view.Last.Slot, Is.EqualTo(-1));
+            // 左の6枚のうち、いつもどれか1つを選んでいる。何も渡さなければ1つ目のカスタムスキルの枠。
+            Assert.That(view.Last.Slot, Is.EqualTo(0));
             Assert.That(view.Last.Unique, Is.EqualTo(-1));
             Assert.That(view.Last.Tree, Is.Null);
-            Assert.That(view.Last.Choices, Is.Not.Empty);
-            view.Card("Embers");
-            Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Ice" }));
-
-            // 枠を選ぶと選択モードになり、「戻る」で6枚の一覧に戻る。
             view.Slot(2);
-            Assert.That(view.Last.Selecting, Is.True);
-            Assert.That(view.Last.Slot, Is.EqualTo(2));
             view.Card("Embers");
             Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Ice", "Embers" }));
-            view.Back();
-            Assert.That(view.Last.Selecting, Is.False);
+
+            // 固有スキルを選ぶと、右は進化ツリーになり、カードは入らない。
             view.Unique(0);
             Assert.That(view.Last.Unique, Is.EqualTo(0));
             Assert.That(view.Last.Slot, Is.EqualTo(-1));
-            view.Back();
-            Assert.That(view.Last.Tree, Is.Null);
+            Assert.That(view.Last.Tree, Is.Not.Null);
+            view.Card("Thunder");
+            Assert.That(store.Cards["toma"], Is.EqualTo(new[] { "Fire", "Ice", "Embers" }));
         }
 
         [Test]
-        public void TheDeckOpensOverTheScreenAndCloses()
+        public void ThePeoplesColumnShowsThePersonPressedKeepingTheSlot()
         {
-            Assert.That(view.Last.DeckOpen, Is.False);
-            view.Deck();
-            Assert.That(view.Last.DeckOpen, Is.True);
-            // 全画面を出していても、枠の選択はそのまま残る。
-            Assert.That(view.Last.Slot, Is.EqualTo(0));
-            view.CloseDeck();
-            Assert.That(view.Last.DeckOpen, Is.False);
+            view.Slot(1);
+            presenter.Select("anselm");
+            Assert.That(view.Last.PersonId, Is.EqualTo("anselm"));
+            Assert.That(view.Last.Slot, Is.EqualTo(1));
+            Assert.That(store.Selected, Is.EqualTo("anselm"));
+            presenter.Select("nobody");
+            Assert.That(view.Last.PersonId, Is.EqualTo("anselm"));
         }
 
         [Test]
@@ -579,7 +564,7 @@ namespace Baryonyx.Tests.EditMode
 
         private CardLoadoutPresenter Open(Func<string, int, string, Task> save = null)
         {
-            // 個別の画面でカスタムスキルの1枚目を押して開いたときと同じ、1枚目の選択モードで開く。
+            // スキルのタブを開いたときと同じ、1つ目のカスタムスキルの枠を選んで開く。
             return new CardLoadoutPresenter(
                 view,
                 CardLoadoutPresenter.People(formation),

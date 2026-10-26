@@ -117,7 +117,7 @@ namespace Baryonyx.App
             }
         }
 
-        // 酒場の装備の人選びを、冒険の見出しで開く。もどる・×は、どちらも探索へ戻る。
+        // 酒場の育成の人選びを、冒険の見出しで開く。もどる・×は、どちらも探索へ戻る。
         private bool OpenEquipment()
         {
             GuideSceneEntry.Open(
@@ -131,7 +131,7 @@ namespace Baryonyx.App
             return left;
         }
 
-        // 冒険から開いた装備の画面のパンくずの見出し（「冒険 › 装備」）。
+        // 冒険から開いた育成の人選びのパンくずの見出し（「冒険 › 育成」）。
         public const string AdventureEquipmentTitle = "冒険";
 
         // 開く演出の途中では次の演出を始められない。サーバーの返事が演出より早く届き、冒険がなくて

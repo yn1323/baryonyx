@@ -18,10 +18,10 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 namespace Baryonyx.Equipment.Editor
 {
     /// <summary>
-    /// The formation's equipment change screen. The formation's generator calls
-    /// <see cref="BuildPanel"/> for its equipment item, so the person, the weapon, armour and
-    /// accessory slots, the stats and the item rows are baked into the formation prefab and
-    /// read in the editor without Play Mode. The items are the mock catalog's
+    /// The adventurer's equipment tab of the formation. The formation's generator calls
+    /// <see cref="BuildPanel"/> for its equipment item, so the people's column and the tabs, the
+    /// weapon, armour and accessory slots, the stats and the item rows are baked into the
+    /// formation prefab and read in the editor without Play Mode. The items are the mock catalog's
     /// (doc/features/equipment.md); the people are the party's mock data.
     /// </summary>
     public static class EquipmentAssets
@@ -30,15 +30,16 @@ namespace Baryonyx.Equipment.Editor
         public const string IconWeaponPath = Folder + "/UI/Art/IconWeapon.aseprite";
         public const string IconArmorPath = Folder + "/UI/Art/IconArmor.aseprite";
 
-        // 枠つきの表示（GuideFramedPanel）で、左の面に人・枠・ステータス、金の2本線の右の面に
-        // 持っている装備を置く（PartyChangeScreenAssets）。設計座標、左上から。
-        private static readonly Rect Left = ChangeScreen.Left;
-        private static readonly Rect Right = ChangeScreen.Right;
+        // 枠つきの表示（GuideFramedPanel）で、人の列とタブの間の左の面にステータスと枠、金の2本線の
+        // 右の面に持っている装備を置く（PartyChangeScreenAssets）。右の行の効果と増減が入るよう、
+        // 左の面を狭くする。設計座標、左上から。
+        private const float Split = 760f;
+        private static readonly Rect Left = ChangeScreen.LeftOf(Split);
 
-        // 左は上から人・ステータス・5つの枠。枠は面の下端（設計座標で1036）まで並べる。
-        private const float SlotTop = 280f;
-        private const float SlotHeight = 118f;
-        private const float SlotStep = 130f;
+        // 左は上からステータス・5つの枠。枠は面の下の方（設計座標で1020）まで並べる。
+        private const float SlotTop = 146f;
+        private const float SlotHeight = 140f;
+        private const float SlotStep = 154f;
 
         // 枠の文字は、高さ100の枠のときの位置から、縦の中央へずらして置く。
         private const float SlotInset = (SlotHeight - 100f) / 2f;
@@ -77,12 +78,7 @@ namespace Baryonyx.Equipment.Editor
 
             RectTransform left,
                 right;
-            (left, right, view.Swipe, view.Person) = ChangeScreen.Build(
-                layer,
-                "ItemsPane",
-                "Items",
-                people.FirstOrDefault()
-            );
+            (left, right, view.Swipe) = ChangeScreen.Build(layer, Split, "ItemsPane", "Items");
             view.Slots = new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor }
                 .Select(slot => BuildSlot(left, slot))
                 .ToArray();
@@ -90,12 +86,19 @@ namespace Baryonyx.Equipment.Editor
                 .Range(0, AccessorySlots.Count)
                 .Select(i => BuildAccessory(left, i))
                 .ToArray();
-            // ステータスは人のすぐ下に置き、その下に線を引いて枠と分ける。装備の上昇分を添えても
+            // ステータスは左の上に置き、その下に線を引いて枠と分ける。装備の上昇分を添えても
             // 収まるよう、値は縮めて入れる。
             view.Stats = ChangeScreen.Stats(left);
             foreach (var value in view.Stats)
                 Guide.Shrink(value, 20);
             BuildItems(right, view);
+            view.Sheet = PartySheetAssets.Build(
+                layer,
+                guide,
+                party,
+                EquipmentSession.GuideItemKey,
+                TrainingAssets.SheetTabs
+            );
 
             // 仮データの最初の人と仮の装備で描き、Prefabを開くと停止中でも文字と絵が読めるようにする。
             new EquipmentPresenter(
@@ -118,9 +121,9 @@ namespace Baryonyx.Equipment.Editor
                 Layout.Box(
                     panel,
                     "Slot_" + slot,
-                    24,
+                    0,
                     SlotTop + index * SlotStep,
-                    Left.width - 48,
+                    Left.width,
                     SlotHeight
                 ),
                 pattern: false
@@ -153,7 +156,7 @@ namespace Baryonyx.Equipment.Editor
                 TextAlignmentOptions.BottomLeft,
                 SlotTextLeft,
                 38 + SlotInset,
-                Left.width - 48 - SlotTextLeft - 150,
+                Left.width - SlotTextLeft - 150,
                 46
             );
             Guide.Shrink(widget.Name, 22);
@@ -164,7 +167,7 @@ namespace Baryonyx.Equipment.Editor
                 26,
                 UiPalette.Gold,
                 TextAlignmentOptions.BottomRight,
-                Left.width - 48 - 170,
+                Left.width - 170,
                 38 + SlotInset,
                 150,
                 46
@@ -179,9 +182,9 @@ namespace Baryonyx.Equipment.Editor
                 Layout.Box(
                     panel,
                     "Accessory" + index,
-                    24,
+                    0,
                     SlotTop + (2 + index) * SlotStep,
-                    Left.width - 48,
+                    Left.width,
                     SlotHeight
                 ),
                 dashed: true,
@@ -219,7 +222,7 @@ namespace Baryonyx.Equipment.Editor
                 TextAlignmentOptions.BottomLeft,
                 SlotTextLeft,
                 38 + SlotInset,
-                Left.width - 48 - SlotTextLeft - 24,
+                Left.width - SlotTextLeft - 24,
                 46
             );
             return widget;

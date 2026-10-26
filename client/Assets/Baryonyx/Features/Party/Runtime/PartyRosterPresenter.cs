@@ -22,6 +22,9 @@ namespace Baryonyx.Party
 
         // 「パーティから外す」で外せる人を選んでいる（最後の1人は外せない）。
         public bool CanRemove { get; internal set; }
+
+        // 下の帯に出す、選んでいる人（パーティの枠の人か、一覧の人）のID。選んでいなければnull。
+        public string Chosen { get; internal set; }
     }
 
     /// <summary>
@@ -29,7 +32,8 @@ namespace Baryonyx.Party
     /// outside the party on the right, ending with "remove from the party". Tapping a party slot
     /// and then a character on the right swaps them (or fills the empty slot); tapping in the
     /// other order does the same. With a slot chosen, "remove" empties it. Tapping the chosen card
-    /// again lets it go. Holding a character opens their page (equipment, card skills, training).
+    /// again lets it go. The person chosen (in a slot or on the right) shows on the band at the
+    /// bottom, whose button opens their tabs (stats, equipment, card skills).
     /// A change shows no notice (the cards show it); only refusals and failures do. A change
     /// shows at once; with a <c>save</c> function it is then saved on the server behind it, and
     /// the formation is drawn again from the saved one, or put back when the save failed (the
@@ -64,7 +68,7 @@ namespace Baryonyx.Party
             view.SlotPressed += PressSlot;
             view.BenchPressed += PressBench;
             view.RemovePressed += PressRemove;
-            view.Held += Hold;
+            view.DetailPressed += PressDetail;
             Refresh();
         }
 
@@ -115,10 +119,11 @@ namespace Baryonyx.Party
             ChangeTask = ChangeAsync(selectedSlot, null);
         }
 
-        // 長押し。その人の個別の画面（装備・スキル・育成）を開く。
-        public void Hold(string id)
+        // 下の帯の「装備・スキル」。選んでいる人の冒険者のタブ（ステータス・装備・スキル）を開く。
+        public void PressDetail()
         {
-            if (disposed || formation.Find(id) == null)
+            string id = State?.Chosen;
+            if (disposed || id == null || formation.Find(id) == null)
                 return;
             view.OpenDetail(id);
         }
@@ -170,6 +175,8 @@ namespace Baryonyx.Party
                     selectedSlot >= 0
                     && formation.Member(selectedSlot) != null
                     && formation.Count > 1,
+                Chosen =
+                    selectedBench ?? (selectedSlot >= 0 ? formation.Member(selectedSlot) : null),
             };
             view.Render(State);
         }
@@ -182,7 +189,7 @@ namespace Baryonyx.Party
             view.SlotPressed -= PressSlot;
             view.BenchPressed -= PressBench;
             view.RemovePressed -= PressRemove;
-            view.Held -= Hold;
+            view.DetailPressed -= PressDetail;
         }
     }
 
@@ -192,15 +199,15 @@ namespace Baryonyx.Party
         event Action<string> BenchPressed;
         event Action RemovePressed;
 
-        // 人のカードを長押しした（その人のID）。
-        event Action<string> Held;
+        // 下の帯の「装備・スキル」を押した。
+        event Action DetailPressed;
 
         void Render(PartyRosterState state);
 
         // 操作を求めない通知（共通の通知の帯）を出す。
         void ShowNotice(string message);
 
-        // その人の個別の画面（装備・スキル・育成）を開く。
+        // その人の冒険者のタブ（ステータス・装備・スキル）を開く。
         void OpenDetail(string id);
     }
 }

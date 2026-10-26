@@ -44,7 +44,8 @@ namespace Baryonyx.UI.Editor
         /// <summary>
         /// The eight stats in <see cref="CharacterStats"/> order: four columns (HP・物攻・属攻・会心
         /// over 速度・物防・属防・幸運) or two (HP・物攻, 属攻・速度, 会心・物防, 属防・幸運).
-        /// Returns the value labels for <see cref="StatGrid.Show"/>.
+        /// Returns the value labels for <see cref="StatGrid.Show"/>. With <paramref name="centerValue"/>
+        /// each value sits in the middle of its cell instead of at its right end.
         /// </summary>
         public static TMP_Text[] Build(
             RectTransform parent,
@@ -52,7 +53,10 @@ namespace Baryonyx.UI.Editor
             float y,
             float width,
             int columns,
-            float rowHeight = 46f
+            float rowHeight = 46f,
+            float labelSize = 24f,
+            float valueSize = 32f,
+            bool centerValue = false
         )
         {
             var cells = columns >= 4 ? Cells : CellsNarrow;
@@ -76,20 +80,26 @@ namespace Baryonyx.UI.Editor
                         row,
                         "Label",
                         CharacterStats.Labels[i],
-                        24,
+                        labelSize,
                         UiPalette.TextSub,
                         TextAlignmentOptions.BottomLeft
                     );
-                    Layout.At(label, 0, 0, 80, rowHeight - 4);
+                    // 項目名の幅と値の左端は、文字の大きさ（24ptのとき80・70）に合わせて広げる。
+                    float scale = labelSize / 24f;
+                    Layout.At(label, 0, 0, 80f * scale, rowHeight - 4);
+                    // 値は右寄せ。centerValue なら、項目名を左に残して枠の中央に置く（幅の広い2列）。
                     var value = Label(
                         row,
                         "Value",
                         "",
-                        32,
+                        valueSize,
                         UiPalette.TextMain,
-                        TextAlignmentOptions.BottomRight
+                        centerValue ? TextAlignmentOptions.Bottom : TextAlignmentOptions.BottomRight
                     );
-                    Layout.At(value, 70, 0, cell - 70, rowHeight - 4);
+                    if (centerValue)
+                        Layout.At(value, 0, 0, cell, rowHeight - 4);
+                    else
+                        Layout.At(value, 70f * scale, 0, cell - 70f * scale, rowHeight - 4);
                     return value;
                 })
                 .ToArray();

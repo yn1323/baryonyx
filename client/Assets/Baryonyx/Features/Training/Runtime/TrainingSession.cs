@@ -14,10 +14,13 @@ namespace Baryonyx.Training
     /// </summary>
     public static class TrainingSession
     {
-        // 編成の「育成」の項目のキー。メニューには出さず、冒険者の一覧から1人の個別の画面として開く。
+        // 編成の冒険者の「ステータス」のタブの項目のキー。メニューには出さず、冒険者の一覧から開く。
         public const string GuideItemKey = "training";
 
-        // 個別の画面を開いた編成の項目のキー（「もどる」の行き先とパンくず）。nullなら冒険者の一覧。
+        // 編成の冒険者の「突破」のタブの項目のキー。メニューには出さず、冒険者のタブから開く。
+        public const string BreakthroughItemKey = "breakthrough";
+
+        // 冒険者のタブを開いた編成の項目のキー（「もどる」の行き先とパンくず）。nullなら冒険者の一覧。
         public static string ReturnKey { get; set; }
 
         // 「もどる」で戻る編成の項目のキー。
@@ -36,26 +39,17 @@ namespace Baryonyx.Training
             return guide.OpenItem(GuideItemKey);
         }
 
-        // 付け替えの画面から、同じ人を選んだまま個別の画面へ戻る。
-        public static bool BackToPage(GuideMenuView guide) =>
-            guide != null && guide.HasItem(GuideItemKey) && guide.OpenItem(GuideItemKey);
-
-        // 個別の画面から、開いた項目（冒険者の一覧か装備の人選び）へ戻る。
+        // 冒険者のタブ（ステータス・装備・スキル）から、開いた項目（冒険者の一覧か育成の人選び）へ戻る。
         public static bool LeavePage(GuideMenuView guide) =>
             guide != null && guide.HasItem(ReturnKeyOrRoster) && guide.OpenItem(ReturnKeyOrRoster);
 
         /// <summary>
-        /// The breadcrumb of a change screen opened from the page: the item the page was opened
-        /// from, the person (empty until read) and the change screen's item <paramref name="key"/>,
-        /// e.g. 「冒険者 › アリア › 装備」.
+        /// The breadcrumb of the adventurer's tabs: the item they were opened from and the person
+        /// (empty until read), e.g. 「冒険者 › アリア」. The tab itself shows which one is open.
         /// </summary>
-        public static IReadOnlyList<string> ChangeTrail(
-            GuideMenuView guide,
-            string person,
-            string key
-        ) =>
+        public static IReadOnlyList<string> Trail(GuideMenuView guide, string person) =>
             guide != null
-                ? new[] { guide.LabelOf(ReturnKeyOrRoster), person, guide.LabelOf(key) }
+                ? new[] { guide.LabelOf(ReturnKeyOrRoster), person }
                 : Array.Empty<string>();
 
         // サーバーがないときに育成で使ったルーンの合計。

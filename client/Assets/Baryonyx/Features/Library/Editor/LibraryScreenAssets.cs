@@ -235,6 +235,10 @@ namespace Baryonyx.Library.Editor
 
         // --- The entries, from each feature's own definitions -------------------------------
 
+        /// <summary>The kind line of a card's entry (a skill's or an item's): its kind and target, and its cost.</summary>
+        public static string KindLineOf(CardSkill card, int cost) =>
+            $"{CardText.KindLine(card)}　コスト {cost}";
+
         public static LibraryData CreateData()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(DataPath));
@@ -313,7 +317,7 @@ namespace Baryonyx.Library.Editor
                         Number = index + 1,
                         Name = item.Name,
                         Rarity = item.Rarity,
-                        KindLine = $"{CardText.KindLine(item.Card)}　コスト {item.Cost}",
+                        KindLine = KindLineOf(item.Card, item.Cost),
                         Description = CardText.Description(item.Card),
                         Art = itemArt.TextureOf(item.Id),
                     }
@@ -328,7 +332,7 @@ namespace Baryonyx.Library.Editor
                         Name = card.Name,
                         // ☆は、冒険のドロップの一覧が持つ（doc/features/drops.md）。
                         Rarity = AdventureDrops.StarsOf(AdventureDropCategory.Skill, card.Id),
-                        KindLine = $"{CardText.KindLine(card)}　コスト {card.Cost}",
+                        KindLine = KindLineOf(card, card.Cost),
                         Description = CardText.Description(card),
                         Art = party.ArtOf(card.Id),
                     }

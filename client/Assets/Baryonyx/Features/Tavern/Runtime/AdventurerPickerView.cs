@@ -16,7 +16,7 @@ using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Tavern
 {
-    /// <summary>One character's card on the equipment's picker, baked by the generator for every mock character.</summary>
+    /// <summary>One character's card on the growth picker, baked by the generator for every mock character.</summary>
     [Serializable]
     public sealed class AdventurerPickWidget
     {
@@ -35,9 +35,9 @@ namespace Baryonyx.Tavern
     }
 
     /// <summary>
-    /// The formation's equipment item: every owned character as a card (the party first, then
+    /// The formation's growth item (育成): every owned character as a card (the party first, then
     /// the bench), with the weapon and armour they wear. Tapping one opens their page (the
-    /// training item), where the equipment slots change it; back on the page returns here.
+    /// training item: levels, skills and equipment); back on the page returns here.
     /// AdventurerPickerAssets bakes the cards into the formation prefab, so they read in the
     /// editor; this view orders them and fills in the levels and equipment. With a server
     /// (<see cref="PartySession.Source"/>) it reads the party on opening; otherwise it uses the
@@ -45,7 +45,7 @@ namespace Baryonyx.Tavern
     /// </summary>
     public sealed class AdventurerPickerView : GuidePanel, IEditModePreview
     {
-        // 編成のメニューの「装備」の項目のキー。リストの代わりにこの人選びを開く。
+        // 編成のメニューの「育成」の項目のキー。リストの代わりにこの人選びを開く（冒険中の探索からも開く）。
         public const string GuideItemKey = "gear";
 
         public const string LoadFailedMessage = "編成を取得できませんでした";

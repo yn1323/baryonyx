@@ -2,9 +2,12 @@ using System.Linq;
 using Baryonyx.Combat;
 using Baryonyx.Editor.Art;
 using Baryonyx.Editor.UI;
+using Baryonyx.Equipment;
 using Baryonyx.Party;
+using Baryonyx.Party.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
+using Baryonyx.UI.GuideMenu;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEditor;
@@ -16,28 +19,19 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.Training.Editor
 {
-    // 絆（doc/features/monetization.md）：右上の「絆」のボタン、重ねて開く窓、深めた瞬間の演出。
+    // 限界突破（doc/features/monetization.md。コードとサーバーでは bond と呼ぶ）：突破のタブと、突破した瞬間の演出。
     public static partial class TrainingAssets
     {
         public const string BondLitPath = Folder + "/Art/BondStone.png";
         public const string BondDarkPath = Folder + "/Art/BondStoneDark.png";
 
-        // 右上の「レベルアップ」と、その左の「絆」（設計座標、右の面の左上から）。
-        private const float LevelUpWidth = 330f;
-        private static float LevelUpX => Panel.width - PanelPad - LevelUpWidth;
-        private const float BondWidth = 220f;
-        private const float BondGap = 12f;
-
-        // 「絆」の中の6つのしるし（11×11ドットを2倍）。
-        private const float PipDot = 2f;
-        private const float PipGap = 4f;
-
-        // 重ねて開く絆の窓。レベルアップの窓より、段の石の列の分だけ高い。
-        private static readonly Rect BondModal = new(460, 144, 1000, 792);
-        private const float StonesY = 150f;
-        private const float StoneDot = 6f;
-        private const float StoneGap = 60f;
-        private const float BondDiffTop = 252f;
+        // 突破のタブの右の面（左上から）：見出しの下の6段の札。石は11×11ドットを6倍で出す。
+        private const float StagesTop = 84f;
+        private const float StageHeight = 134f;
+        private const float StageGap = 10f;
+        private const float StageStoneDot = 6f;
+        private const float StageActionWidth = 220f;
+        private const float StageButtonHeight = 96f;
 
         // 深めた瞬間：イラスト（2:3）と、それを囲む6つの石の弧、右の札。
         private static readonly Rect CelebrationArt = new(480, 70, 640, 960);
@@ -93,207 +87,168 @@ namespace Baryonyx.Training.Editor
             return (ArtAssets.LoadSprite(BondLitPath), ArtAssets.LoadSprite(BondDarkPath));
         }
 
-        // 右上の「絆」（すりガラスのカード）。灯った段を6つのしるしで見せ、押すと重ねた窓を開く。
-        private static void BuildBond(RectTransform panel, TrainingView view)
+        // --- The breakthrough tab ---------------------------------------------------------
+
+        /// <summary>
+        /// Builds the adventurer's breakthrough tab over the guide screen's safe area: the same
+        /// illustration as the stats tab on the left, and on the right 「限界突破」 over the six
+        /// stages, each a glass card with its stone, number and effect, 「突破済み」 once reached and
+        /// 「限界突破」 on the next stage; the stage lighting up shows over everything after it.
+        /// </summary>
+        public static GameObject BuildBreakthroughPanel(RectTransform safe, GuideMenuView guide)
         {
-            var (lit, dark) = BondArt();
-            view.BondLit = lit;
-            view.BondDark = dark;
-            var (button, _, bond) = GlassCardAssets.Choice(
-                Layout.Box(panel, "Bond", LevelUpX - BondGap - BondWidth, 18, BondWidth, 96),
-                pattern: false
+            var party = PartyAssets.CreateData();
+            var data = CreateData();
+
+            var (view, layer) = GuideFrameAssets.FramedPanel<TrainingView>(safe, "Breakthrough");
+            view.Party = party;
+            view.Data = data;
+            view.Guide = guide;
+            (view.BondLit, view.BondDark) = BondArt();
+
+            GuideFrameAssets.SplitPanes(
+                layer,
+                Split,
+                "PortraitPane",
+                "StagesPane",
+                divider: false,
+                from: Left,
+                to: PartySheetAssets.ContentRight
             );
-            view.Bond = button;
-            var label = Label(
-                bond,
-                "Label",
-                "絆",
-                30,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
+            view.Swipe = layer.gameObject.AddComponent<GuideSwipe>();
+            BuildPortrait(layer, view, party);
+            GuideFrameAssets.Divider(layer, Split, Portrait.y);
+            BuildStages(layer, view);
+            view.Sheet = PartySheetAssets.Build(
+                layer,
+                guide,
+                party,
+                TrainingSession.BreakthroughItemKey,
+                SheetTabs
             );
-            Layout.At(label, 20, 0, 40, 96);
-            float pip = StoneSize * PipDot;
-            view.BondPips = Enumerable
-                .Range(0, TrainingBond.Max)
-                .Select(i =>
-                {
-                    var rect = Layout.Box(
-                        bond,
-                        "Pip" + i,
-                        60 + i * (pip + PipGap),
-                        (96 - pip) / 2f,
-                        pip,
-                        pip
-                    );
-                    var image = rect.gameObject.AddComponent<Image>();
-                    image.sprite = dark;
-                    image.raycastTarget = false;
-                    return image;
-                })
-                .ToArray();
+            BuildCelebration((RectTransform)view.transform, view);
+
+            TrainingView.Build(view, party, data, EquipmentLocalSource.Starter()).Dispose();
+            BakeCelebration(view, party, data);
+            return view.gameObject;
         }
 
-        // --- The bond dialog, over the whole screen ---------------------------------------
-
-        private static void BuildBondDialog(RectTransform root, TrainingView view)
+        // 右の面：見出し「限界突破」の下に、6段を上から縦に並べる。効果の文が2〜3行になっても読めるよう、
+        // 札は面の幅いっぱいに取り、文の右に「突破済み」か「限界突破」を置く。
+        private static void BuildStages(RectTransform layer, TrainingView view)
         {
-            var dialog = Rect("BondDialog", root);
-            Stretch(dialog);
-            view.BondDialog = dialog.gameObject;
-            var dim = Rect("Dim", dialog);
-            Stretch(dim);
-            dim.offsetMin = new Vector2(-400, -400);
-            dim.offsetMax = new Vector2(400, 400);
-            AddImage(dim, Dim, true);
-
-            var layer = Layout.Layer(dialog, "Layout");
-            var modal = GuideFrameAssets.Window(
-                layer,
-                "Modal",
-                BondModal.x,
-                BondModal.y,
-                BondModal.width,
-                BondModal.height
-            );
-
-            // 上の段：今の段と深めたあとの段（レベルアップの窓のLvと同じ組み方）。上限では次の段を隠す。
-            var stages = Layout.Row(
-                modal,
-                "Stages",
-                ModalPad,
-                TopY + DigitLift,
-                DiffWidth,
-                TopHeight,
-                22,
-                TextAnchor.MiddleLeft
-            );
-            Layout.Fit(
-                Label(
-                    stages,
-                    "FromTag",
-                    "絆",
-                    36,
-                    UiPalette.TextSub,
-                    TextAlignmentOptions.Baseline
-                ),
-                0
-            );
-            view.BondFrom = Label(stages, "From", "", 64, Before, TextAlignmentOptions.Baseline);
-            Layout.Fit(view.BondFrom, 0);
-            var next = Rect("Next", stages);
-            view.BondNext = next.gameObject;
-            var nextGroup = next.gameObject.AddComponent<HorizontalLayoutGroup>();
-            nextGroup.spacing = 22;
-            nextGroup.childAlignment = TextAnchor.MiddleLeft;
-            nextGroup.childControlWidth = nextGroup.childControlHeight = true;
-            nextGroup.childForceExpandWidth = false;
-            nextGroup.childForceExpandHeight = true;
-            var arrowCell = Rect("Arrow", next);
-            Layout.Fit(arrowCell, 5 * LevelArrowScale);
-            var arrow = Rect("Image", arrowCell);
-            Place(arrow, new Vector2(0, DigitLift), new Vector2(5, 9) * LevelArrowScale);
-            SpriteImage(arrow, Guide.ArrowPath, UiPalette.Gold);
-            Layout.Fit(
-                Label(next, "ToTag", "絆", 36, UiPalette.TextSub, TextAlignmentOptions.Baseline),
-                0
-            );
-            view.BondTo = Label(next, "To", "", 64, UiPalette.Gold, TextAlignmentOptions.Baseline);
-            Layout.Fit(view.BondTo, 0);
-
-            // 6つの段の石。次に灯る石は、後ろの光で囲む。
-            var glow = Rect("Glow", modal);
-            Place(glow, Vector2.zero, Vector2.one * 150);
-            SpriteImage(glow, Guide.SoftSpotPath, new Color(1f, 0.82f, 0.4f, 0.3f));
-            view.BondGlow = glow;
-            float stone = StoneSize * StoneDot;
-            float row = stone * TrainingBond.Max + StoneGap * (TrainingBond.Max - 1);
-            view.BondStones = Enumerable
+            var panel = Layout.Box(layer, "Stages", Panel.x, Panel.y, Panel.width, Panel.height);
+            float width = Panel.width - PanelPad * 2;
+            GuideFrameAssets.Heading(panel, "Title", "限界突破", PanelPad - 4, 18, 400, 48, 30);
+            view.Stages = Enumerable
                 .Range(0, TrainingBond.Max)
                 .Select(i =>
-                    StoneImage(
-                        modal,
-                        "Stone" + i,
-                        view.BondDark,
-                        new Vector2(
-                            (BondModal.width - row) / 2f + stone / 2f + i * (stone + StoneGap),
-                            StonesY + stone / 2f
-                        ),
-                        BondModal.size,
-                        stone
+                    BuildStage(
+                        panel,
+                        i,
+                        PanelPad,
+                        StagesTop + i * (StageHeight + StageGap),
+                        width,
+                        view.BondDark
                     )
                 )
                 .ToArray();
+        }
 
-            view.BondDiffs = Enumerable
-                .Range(0, CharacterStats.Count)
-                .Select(i => BuildDiff(modal, i, ModalPad, BondDiffTop + i * DiffHeight))
-                .ToArray();
+        private static TrainingStageWidget BuildStage(
+            RectTransform panel,
+            int index,
+            float x,
+            float y,
+            float width,
+            Sprite dark
+        )
+        {
+            var rect = Layout.Box(panel, "Stage" + (index + 1), x, y, width, StageHeight);
+            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
+            var widget = new TrainingStageWidget { Card = card };
 
-            // 下の段：左に「やめる」、右にその人の絆のしるしを添えた「絆を深める」。
-            float footY = BondModal.height - ModalPad - FootHeight;
-            float confirmWidth = DiffWidth - CancelWidth - 24;
-            float confirmX = BondModal.width - ModalPad - confirmWidth;
-            var (cancelButton, _, cancel) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Cancel", ModalPad, footY, CancelWidth, FootHeight),
+            // 段の石（11×11ドットを6倍）と、その上の段の番号。
+            float stone = StoneSize * StageStoneDot;
+            var stoneRect = Layout.Box(
+                inside,
+                "Stone",
+                30,
+                (StageHeight - stone) / 2f,
+                stone,
+                stone
+            );
+            widget.Stone = stoneRect.gameObject.AddComponent<Image>();
+            widget.Stone.sprite = dark;
+            widget.Stone.raycastTarget = false;
+            widget.Number = Layout.Text(
+                stoneRect,
+                "Number",
+                (index + 1).ToString(),
+                30,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center,
+                0,
+                0,
+                stone,
+                stone
+            );
+
+            const float textLeft = 130f;
+            float actionLeft = width - StageActionWidth - 24;
+            widget.Effect = Layout.Text(
+                inside,
+                "Effect",
+                "",
+                28,
+                UiPalette.TextMain,
+                TextAlignmentOptions.MidlineLeft,
+                textLeft,
+                0,
+                actionLeft - textLeft - 16,
+                StageHeight
+            );
+            // 効果は3行まで折り返し、入りきらない長い文だけ少し縮める。
+            widget.Effect.textWrappingMode = TextWrappingModes.Normal;
+            Guide.Shrink(widget.Effect, 22);
+
+            widget.Done = Layout
+                .Text(
+                    inside,
+                    "Done",
+                    "突破済み",
+                    24,
+                    UiPalette.Gold,
+                    TextAlignmentOptions.MidlineRight,
+                    actionLeft,
+                    0,
+                    StageActionWidth,
+                    StageHeight
+                )
+                .gameObject;
+
+            var (button, _, label) = GlassCardAssets.Choice(
+                Layout.Box(
+                    inside,
+                    "BreakThrough",
+                    actionLeft,
+                    (StageHeight - StageButtonHeight) / 2f,
+                    StageActionWidth,
+                    StageButtonHeight
+                ),
                 pattern: false
             );
-            view.BondCancel = cancelButton;
-            Stretch(
-                (RectTransform)
-                    Label(
-                        cancel,
-                        "Label",
-                        "やめる",
-                        40,
-                        UiPalette.TextMain,
-                        TextAlignmentOptions.Center
-                    ).transform
-            );
-            var (confirmButton, confirmRim, confirm) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Confirm", confirmX, footY, confirmWidth, FootHeight),
-                pattern: false
-            );
-            confirmRim.SetActive(true);
-            view.BondConfirm = confirmButton;
-            view.BondConfirmLabel = Label(
-                confirm,
+            widget.BreakThrough = button;
+            var text = Label(
+                label,
                 "Label",
-                "絆を深める",
-                42,
+                "限界突破",
+                28,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center
             );
-            Layout.At(view.BondConfirmLabel, 0, 14, confirmWidth, 56);
-            const float tokenSize = 48f;
-            var cost = Layout.Row(
-                confirm,
-                "Cost",
-                0,
-                72,
-                confirmWidth,
-                tokenSize,
-                10,
-                TextAnchor.MiddleCenter
-            );
-            view.BondCost = cost.gameObject;
-            var tokenCell = Rect("Token", cost);
-            Layout.Fit(tokenCell, tokenSize);
-            var token = Rect("Image", tokenCell);
-            Place(token, Vector2.zero, Vector2.one * tokenSize);
-            view.BondToken = token.gameObject.AddComponent<RawImage>();
-            view.BondToken.raycastTarget = false;
-            view.BondTokens = Label(
-                cost,
-                "Value",
-                "",
-                34,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Layout.Fit(view.BondTokens, 0);
-
-            dialog.gameObject.SetActive(false);
+            Stretch((RectTransform)text.transform);
+            return widget;
         }
 
         // --- The moment the bond deepens ---------------------------------------------------
@@ -379,7 +334,7 @@ namespace Baryonyx.Training.Editor
                 )
                 .ToArray();
 
-            // 右の札：名前、絆の段、上がるステータス。
+            // 右の札：名前、突破の段、上がるステータス。
             var card = Layout.Box(
                 layer,
                 "Card",
@@ -415,7 +370,14 @@ namespace Baryonyx.Training.Editor
                 TextAnchor.MiddleCenter
             );
             Layout.Fit(
-                Label(stageRow, "Tag", "絆", 52, UiPalette.TextMain, TextAlignmentOptions.Baseline),
+                Label(
+                    stageRow,
+                    "Tag",
+                    "突破",
+                    52,
+                    UiPalette.TextMain,
+                    TextAlignmentOptions.Baseline
+                ),
                 0
             );
             celebration.Stage = Label(
@@ -444,7 +406,7 @@ namespace Baryonyx.Training.Editor
             rect.gameObject.SetActive(false);
         }
 
-        // 停止中の表示の切り替え（「絆の演出」）で見られるよう、1人目が次の段を灯した姿で作り込む。
+        // 停止中の表示の切り替え（「限界突破の演出」）で見られるよう、1人目が次の段を灯した姿で作り込む。
         private static void BakeCelebration(
             TrainingView view,
             PartyMockData party,

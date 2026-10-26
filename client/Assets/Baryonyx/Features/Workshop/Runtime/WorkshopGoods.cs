@@ -43,8 +43,8 @@ namespace Baryonyx.Workshop
             LibraryKind.Skill,
         };
 
-        // 値段（ルーン）：☆1の200から、☆が1つ増えるごとに倍にする（仮）。
-        private static readonly int[] StarPrices = { 200, 400, 800, 1600, 3200 };
+        // 値段（ルーン）：☆1の1,000から、☆が1つ増えるごとに倍にする（仮）。
+        private static readonly int[] StarPrices = { 1000, 2000, 4000, 8000, 16000 };
 
         /// <summary>The stars of a kind, from the adventure's drop lists (0 when no list has it).</summary>
         public static int StarsOf(LibraryKind kind, string id) =>

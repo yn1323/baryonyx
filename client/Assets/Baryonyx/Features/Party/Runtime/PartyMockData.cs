@@ -23,7 +23,7 @@ namespace Baryonyx.Party
         // 属性ごとのアイコン（CardElementの値の順。Noneはnull）。カードは属性から絵を引く。
         public Sprite[] ElementIcons = Array.Empty<Sprite>();
 
-        // スキルの挿絵（64×58のドット絵）。冒険者の一覧と個別の画面で、スキルの枠に出す。
+        // スキルの挿絵（64×58のドット絵）。冒険者の一覧とタブで、スキルの枠に出す。
         public PartySkillArt[] SkillArts = Array.Empty<PartySkillArt>();
 
         public PartyMember Find(string id) =>
@@ -66,7 +66,7 @@ namespace Baryonyx.Party
         // 64×64の戦闘のドット絵。4倍で表示する。
         public Texture2D Art;
 
-        // 縦長（2:3）の背景付きのイラスト。冒険者の個別の画面の左に出す。ない人は空。
+        // 縦長（2:3）の背景付きのイラスト。冒険者のステータスのタブの左に出す。ない人は空。
         public Texture2D Illustration;
 
         // 絵のないキャラは、既存の絵に色を掛け、左右を反転して仮に見分ける。

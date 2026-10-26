@@ -33,6 +33,22 @@ namespace Baryonyx.Tavern
         public TMP_Text Empty;
     }
 
+    /// <summary>The band at the bottom: the person chosen and the button that opens their tabs.</summary>
+    [Serializable]
+    public sealed class AdventurerChosenWidget
+    {
+        // 立ち姿（周りの余白を切って2倍）。選んでいないときは隠す。
+        public RawImage Figure;
+        public TMP_Text Name;
+        public GameObject LevelLine;
+        public TMP_Text Level;
+        public Image[] Elements = Array.Empty<Image>();
+
+        // その人の冒険者のタブ（ステータス・装備・スキル）を開く。選んでいないときは押せず、薄くする。
+        public Button Detail;
+        public CanvasGroup DetailGroup;
+    }
+
     /// <summary>One character's card in the list on the right, baked for every mock character.</summary>
     [Serializable]
     public sealed class AdventurerTileWidget
@@ -46,9 +62,10 @@ namespace Baryonyx.Tavern
     /// <summary>
     /// The formation's adventurers inside the guide screen's frame: the party's four slots on
     /// the left and the owned characters outside the party on the right, as glass cards, the
-    /// list ending with "remove from the party". AdventurerRosterAssets bakes the cards into the
-    /// formation prefab, so they read in the editor; this view wires them up and drives the
-    /// party's roster presenter. Holding a character opens their page. When the app has a server
+    /// list ending with "remove from the party", and the band at the bottom with the person
+    /// chosen and the button that opens their tabs (stats, equipment, card skills).
+    /// AdventurerRosterAssets bakes the cards into the formation prefab, so they read in the
+    /// editor; this view wires them up and drives the party's roster presenter. When the app has a server
     /// (<see cref="PartySession.Source"/>), it reads the party on opening and saves every change
     /// there; otherwise it uses the mock data. Changes are told on the guide screen's notice band.
     /// </summary>
@@ -71,14 +88,16 @@ namespace Baryonyx.Tavern
         // 読み込み中と、読めなかったときだけ一覧の面に出す文字。
         public TMP_Text Status;
 
+        // 下の帯：選んでいる人と、その人の冒険者のタブを開く「装備・スキル」。
+        public AdventurerChosenWidget Chosen = new();
+
         private PartyRosterPresenter presenter;
-        private PartyRosterState state;
-        private readonly List<(GlassCard Card, Action Click, Action Hold)> bindings = new();
+        private readonly List<(GlassCard Card, Action Click)> bindings = new();
 
         public event Action<int> SlotPressed;
         public event Action<string> BenchPressed;
         public event Action RemovePressed;
-        public event Action<string> Held;
+        public event Action DetailPressed;
 
         public PartyRosterPresenter Presenter => presenter;
 
@@ -87,29 +106,20 @@ namespace Baryonyx.Tavern
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
-                Bind(
-                    Slots[i].Card,
-                    () => SlotPressed?.Invoke(index),
-                    () =>
-                    {
-                        string id =
-                            state != null && index < state.Party.Count ? state.Party[index] : null;
-                        if (id != null)
-                            Held?.Invoke(id);
-                    }
-                );
+                Bind(Slots[i].Card, () => SlotPressed?.Invoke(index));
             }
             foreach (var tile in Tiles)
             {
                 string id = tile.Id;
-                Bind(tile.Card, () => BenchPressed?.Invoke(id), () => Held?.Invoke(id));
+                Bind(tile.Card, () => BenchPressed?.Invoke(id));
             }
-            Bind(Remove, () => RemovePressed?.Invoke(), null);
+            Bind(Remove, () => RemovePressed?.Invoke());
+            if (Chosen.Detail != null)
+                Chosen.Detail.onClick.AddListener(PressDetail);
 
             // 開くたびに、サーバーの編成（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
             presenter = null;
-            state = null;
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
             if (Party == null)
@@ -134,15 +144,15 @@ namespace Baryonyx.Tavern
             );
         }
 
-        private void Bind(GlassCard card, Action click, Action hold)
+        private void Bind(GlassCard card, Action click)
         {
             if (card == null)
                 return;
             card.Clicked += click;
-            if (hold != null)
-                card.Held += hold;
-            bindings.Add((card, click, hold));
+            bindings.Add((card, click));
         }
+
+        private void PressDetail() => DetailPressed?.Invoke();
 
         private async Task LoadAsync(IPartySource source, bool shown, CancellationToken token)
         {
@@ -186,6 +196,7 @@ namespace Baryonyx.Tavern
                     tile.Card.gameObject.SetActive(false);
             if (Remove != null)
                 Remove.gameObject.SetActive(false);
+            ShowChosen(null);
         }
 
         // 停止中の表示の切り替え：サーバーから読み込む間と、読めなかったときの表示。
@@ -201,22 +212,18 @@ namespace Baryonyx.Tavern
         private void OnDisable()
         {
             Load.Cancel();
-            foreach (var (card, click, hold) in bindings)
-            {
-                if (card == null)
-                    continue;
-                card.Clicked -= click;
-                if (hold != null)
-                    card.Held -= hold;
-            }
+            foreach (var (card, click) in bindings)
+                if (card != null)
+                    card.Clicked -= click;
             bindings.Clear();
+            if (Chosen.Detail != null)
+                Chosen.Detail.onClick.RemoveListener(PressDetail);
             presenter?.Dispose();
             presenter = null;
         }
 
-        public void Render(PartyRosterState next)
+        public void Render(PartyRosterState state)
         {
-            state = next;
             for (int i = 0; i < Slots.Length && i < state.Party.Count; i++)
             {
                 string id = state.Party[i];
@@ -253,9 +260,19 @@ namespace Baryonyx.Tavern
                 if (Remove.Group != null)
                     Remove.Group.alpha = state.CanRemove ? 1f : RemoveIdleAlpha;
             }
+            ShowChosen(Party.Find(state.Chosen));
         }
 
-        /// <summary>Opens the person's page (equipment, card skills, training); back there returns here.</summary>
+        // 下の帯に選んでいる人を出す。選んでいなければ空けて、「装備・スキル」を押せなくする。
+        private void ShowChosen(PartyMember member) =>
+            ShowChosen(
+                Chosen,
+                member,
+                member != null ? PartySession.LevelOf(Party, member.Id) : 0,
+                member != null ? ElementsOf(member.Id) : null
+            );
+
+        /// <summary>Opens the person's tabs (stats, equipment, card skills); back there returns here.</summary>
         public void OpenDetail(string id) => TrainingSession.OpenPage(Guide, id, null);
 
         // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
@@ -292,6 +309,35 @@ namespace Baryonyx.Tavern
             ShowElements(widget.Elements, filled ? elements : null);
             if (widget.Empty != null)
                 widget.Empty.gameObject.SetActive(!filled);
+        }
+
+        /// <summary>
+        /// Shows the person chosen (or nobody) on the band at the bottom. The generator calls it
+        /// too, so the prefab shows the empty band.
+        /// </summary>
+        public static void ShowChosen(
+            AdventurerChosenWidget widget,
+            PartyMember member,
+            int level,
+            IReadOnlyList<Sprite> elements
+        )
+        {
+            bool chosen = member != null;
+            if (widget.Figure != null)
+            {
+                widget.Figure.gameObject.SetActive(chosen && member.Art != null);
+                if (chosen)
+                    PartyArt.Paint(widget.Figure, member, trim: true);
+            }
+            Set(widget.Name, chosen ? member.Name : "");
+            if (widget.LevelLine != null)
+                widget.LevelLine.SetActive(chosen);
+            Set(widget.Level, chosen ? level.ToString() : "");
+            ShowElements(widget.Elements, chosen ? elements : null);
+            if (widget.Detail != null)
+                widget.Detail.interactable = chosen;
+            if (widget.DetailGroup != null)
+                widget.DetailGroup.alpha = chosen ? 1f : RemoveIdleAlpha;
         }
 
         public static void ShowElements(Image[] icons, IReadOnlyList<Sprite> elements)

@@ -49,14 +49,14 @@ namespace Baryonyx.Equipment
     }
 
     /// <summary>
-    /// The formation's equipment change screen over the guide screen: the person (◀ ▶, figure,
-    /// name and level), their weapon, armour and the accessory slots that are not ready yet,
-    /// and their stats on the left; the owned items for the chosen slot and "外す" on the
-    /// right. EquipmentAssets bakes the parts into the formation prefab with the mock data, so
+    /// The adventurer's equipment tab of the formation over the guide screen: the person's stats,
+    /// weapon, armour and accessory slots on the left; the owned items for the chosen slot and
+    /// "外す" on the right, between the people's column and the tabs (<see cref="PartySheet"/>).
+    /// EquipmentAssets bakes the parts into the formation prefab with the mock data, so
     /// they read in the editor; this view wires them up and drives its own presenter. It reads
     /// the party and the equipment on opening (the server's, or the app's memory without one)
     /// and saves every change through <see cref="EquipmentSession.SourceOrLocal"/>. Back
-    /// returns to the adventurer's page. Changes are told on the guide screen's notice band.
+    /// returns to the adventurers' list. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class EquipmentView
         : GuidePanel,
@@ -72,10 +72,10 @@ namespace Baryonyx.Equipment
         // ステータスは育成の仮データの成長から、今のレベルの値を出す。
         public TrainingMockData Training;
 
-        // 左上の人（立ち姿・名前・Lv）。
-        public PartyPersonHeader Person = new();
+        // 左の人の列と右のタブ。
+        public PartySheet Sheet;
 
-        // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
+        // 左の面の上の左右のフリックで人を替える（ステータスのタブと同じ）。
         public GuideSwipe Swipe;
 
         // 武器・防具の順の2つの枠。
@@ -121,6 +121,8 @@ namespace Baryonyx.Equipment
             person = null;
             if (Swipe != null)
                 Swipe.Flicked += Flick;
+            if (Sheet != null)
+                Sheet.PersonPressed += Choose;
             for (int i = 0; i < Slots.Length; i++)
             {
                 int index = i;
@@ -277,7 +279,6 @@ namespace Baryonyx.Equipment
         private void ShowLoading()
         {
             Set(Status, LoadingText);
-            Person.ShowLoading(LoadingText);
             foreach (var widget in Slots)
                 ShowSlot(widget, null, null, false);
             StatGrid.Show(Stats, null);
@@ -302,20 +303,24 @@ namespace Baryonyx.Equipment
             bindings.Clear();
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
+            if (Sheet != null)
+                Sheet.PersonPressed -= Choose;
             presenter?.Dispose();
             presenter = null;
         }
 
-        // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
-        // パンくずの「冒険者 › アリア › 装備」（個別の画面を装備から開いたら「装備 › アリア › 装備」）。
+        // 左の列で押した人を出す。選んでいる枠はそのまま。
+        private void Choose(string id) => presenter?.Select(id);
+
+        // パンくずの「冒険者 › アリア」（育成の人選びから開いたら「育成 › アリア」）。どのタブかはタブでわかる。
         // 読み込むまでは人の名前を出さない。
-        public IReadOnlyList<string> Trail =>
-            TrainingSession.ChangeTrail(Guide, person, EquipmentSession.GuideItemKey);
+        public IReadOnlyList<string> Trail => TrainingSession.Trail(Guide, person);
 
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        public bool HandleBack() => TrainingSession.BackToPage(Guide);
+        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。
+        public bool HandleBack() => TrainingSession.LeavePage(Guide);
 
         public void Render(EquipmentViewState state)
         {
@@ -324,7 +329,13 @@ namespace Baryonyx.Equipment
             if (Guide != null && !previewing)
                 Guide.RefreshTrail();
             int level = LevelOf(state.PersonId);
-            Person.Show(member, level, Elements(state.PersonId));
+            if (Sheet != null && Party != null)
+            {
+                var (people, partyCount) = (
+                    previewing ? PartyFormation.From(Party) : PartySession.Formation(Party)
+                ).TabOrder();
+                Sheet.Show(people, partyCount, state.PersonId);
+            }
             bool accessory = state.Accessory >= 0;
             for (int i = 0; i < Slots.Length; i++)
             {
@@ -409,14 +420,6 @@ namespace Baryonyx.Equipment
         }
 
         // その人が付けているカードの属性のアイコン（重ねずに、カードの順）。
-        private IReadOnlyList<Sprite> Elements(string id) =>
-            Party == null ? Array.Empty<Sprite>()
-            : previewing
-                ? Party.IconsOf(
-                    Party.Find(id)?.Cards.Select(card => card.Skill) ?? Array.Empty<string>()
-                )
-            : PartySession.ElementIconsOf(Party, id);
-
         // 持っている装備の行を並べ、足りなければ行を写して増やす。最後に「外す」。
         private void ShowRows(EquipmentViewState state)
         {

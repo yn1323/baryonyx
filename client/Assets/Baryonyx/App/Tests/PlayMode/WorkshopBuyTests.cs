@@ -16,6 +16,9 @@ namespace Baryonyx.Tests.PlayMode
 {
     public sealed class WorkshopBuyTests
     {
+        // ☆5の品物を2つ買える残高。
+        private const long Balance = 100000;
+
         private TestGameServices services;
         private FakeWorkshop shop;
 
@@ -40,7 +43,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 商会の「買う」は、案内人を隠して画面いっぱいに、これまでに手に入れたスキル・武器・防具・アクセサリーを
-        // 分類のタブごとに並べ、選んだ品物を右に大きく出す。「買う」を押すと品質の最低で1つ買い、所持ルーンを
+        // 分類のタブごとに並べ、選んだ品物を右に大きく出す。開いたときとタブを替えたときは、先頭の品物を選んでおく。「買う」を押すと品質の最低で1つ買い、所持ルーンを
         // 減らして知らせる。続けて同じ物も買える。ルーンが足りない物は選べても買えず、足りない数を出す。
         [UnityTest]
         public IEnumerator BuyListsTheFoundGoodsAndBuysTheChosenOne()
@@ -48,7 +51,7 @@ namespace Baryonyx.Tests.PlayMode
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
             yield return SceneTests.WaitForTask(guide.RunesTask);
-            RuneBalance.Set(1000);
+            RuneBalance.Set(Balance);
             var view = guide.View;
             int item = Array.FindIndex(
                 view.Definition.Items,
@@ -79,16 +82,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(rows[0].Price.text, Is.EqualTo(expected[0].Price.ToString("N0")));
             Assert.That(rows[0].Art.enabled, Is.True);
             Assert.That(buy.Status.text, Is.Empty);
-            // 選ぶ前は、右に何も出さない。
-            Assert.That(buy.DetailName.text, Is.Empty);
-            // 絵の後ろの光も出さない。
-            Assert.That(buy.DetailArt.transform.parent.gameObject.activeSelf, Is.False);
-            Assert.That(buy.Price.activeSelf, Is.False);
-            Assert.That(buy.Confirm.interactable, Is.False);
             SceneTests.AssertTouchSize(buy.Confirm.transform, 0.7f);
 
-            // 押すとすぐ知らせ、値段を残高から引いて見せたまま、裏でサーバーに保存する。
-            rows[0].Card.Click();
+            // 開いたときは、右の面が空にならないよう先頭の品物を選んでおく。
             Assert.That(buy.Selected, Is.EqualTo(0));
             Assert.That(rows[0].Card.Selected, Is.True);
             Assert.That(buy.DetailName.text, Is.EqualTo(expected[0].Name));
@@ -104,40 +100,40 @@ namespace Baryonyx.Tests.PlayMode
             shop.Hold = true;
             buy.Confirm.onClick.Invoke();
             Assert.That(view.ToastMessage, Is.EqualTo(WorkshopBuyView.BoughtText(expected[0])));
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - price));
+            Assert.That(RuneBalance.Known, Is.EqualTo(Balance - price));
             Assert.That(buy.BuyTask.IsCompleted, Is.False);
             // 保存を待つ間も、同じ物を続けて買える。
             Assert.That(buy.Confirm.interactable, Is.True);
             shop.Hold = false;
             buy.Confirm.onClick.Invoke();
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - price * 2));
+            Assert.That(RuneBalance.Known, Is.EqualTo(Balance - price * 2));
             shop.Answer();
             yield return SceneTests.WaitForTask(buy.BuyTask);
             Assert.That(shop.Bought, Is.EqualTo(new[] { expected[0].Id, expected[0].Id }));
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - price * 2));
+            Assert.That(RuneBalance.Known, Is.EqualTo(Balance - price * 2));
 
             RuneBalance.Set(price - 1);
             Assert.That(buy.Confirm.interactable, Is.False);
             Assert.That(buy.Missing.text, Is.EqualTo("ルーンが 1 足りません"));
 
             // 保存できなかったときは、引いた値段を戻して知らせる。
-            RuneBalance.Set(1000);
+            RuneBalance.Set(Balance);
             shop.Fail = true;
             string ownedBefore = buy.DetailOwned.text;
             buy.Confirm.onClick.Invoke();
             yield return SceneTests.WaitForTask(buy.BuyTask);
             Assert.That(view.ToastMessage, Is.EqualTo(WorkshopBuyView.BuyFailedMessage));
-            Assert.That(RuneBalance.Known, Is.EqualTo(1000));
+            Assert.That(RuneBalance.Known, Is.EqualTo(Balance));
             // 手元で足した持っている数も戻す。
             Assert.That(buy.DetailOwned.text, Is.EqualTo(ownedBefore));
             Assert.That(buy.Confirm.interactable, Is.True);
 
-            // 防具のタブに切り替えると、防具だけを並べ、選び直しになる。
+            // 防具のタブに切り替えると、防具だけを並べ、先頭の品物を選び直す。
             buy.Tabs[1].Button.onClick.Invoke();
             Assert.That(buy.Shown, Is.Not.Empty);
             Assert.That(buy.Shown.All(good => good.Kind == LibraryKind.Armor), Is.True);
-            Assert.That(buy.Selected, Is.EqualTo(-1));
-            Assert.That(buy.DetailName.text, Is.Empty);
+            Assert.That(buy.Selected, Is.EqualTo(0));
+            Assert.That(buy.DetailName.text, Is.EqualTo(buy.Shown[0].Name));
 
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
@@ -153,7 +149,7 @@ namespace Baryonyx.Tests.PlayMode
                 WorkshopGood Good,
                 TaskCompletionSource<WorkshopPurchase> Answer
             )> held = new();
-            public long Runes { get; set; } = 1000;
+            public long Runes { get; set; } = Balance;
             public bool Hold { get; set; }
             public bool Fail { get; set; }
 

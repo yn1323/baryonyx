@@ -11,74 +11,105 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 namespace Baryonyx.Party.Editor
 {
     /// <summary>
-    /// The layout the formation's change screens share (the equipment and the card skills, opened
-    /// from the adventurer's page): in the guide frame, the person, their stats and slots on the
-    /// left pane, which takes the flick that changes the person, and the tabs and the list on
-    /// the right pane; the scene shows through both. Design pixels from the top left of
-    /// the 1920x1080 layer (<see cref="Layout"/>).
+    /// The layout the adventurer's equipment and card skills tabs share: in the guide frame,
+    /// between the people's column and the tabs (<see cref="PartySheetAssets"/>), the person's
+    /// slots on the left pane, which takes the flick that changes the person, and the tabs and
+    /// the list on the right pane; the scene shows through both. Each screen splits the panes
+    /// where its own contents fit. Design pixels from the top left of the 1920x1080 layer
+    /// (<see cref="Layout"/>).
     /// </summary>
     public static class PartyChangeScreenAssets
     {
-        public const float Split = 800f;
-        public static readonly Rect Left = new(36, Frame.HeaderHeight + 6, 740, 956);
-        public static readonly Rect Right = new(
-            Split,
-            Frame.HeaderHeight + 6,
-            1920 - Split - 24,
-            956
-        );
+        private const float Top = Frame.HeaderHeight + 6;
+        private const float Height = 956f;
 
-        // 左は上から人・ステータス・枠。ステータスの下に線を引いて枠と分ける。
-        public const float StatsTop = 156f;
-        public const float StatsLineTop = 262f;
+        /// <summary>The left pane's contents when the panes split at <paramref name="split"/>.</summary>
+        public static Rect LeftOf(float split) =>
+            new(
+                PartySheetAssets.ContentLeft + 24,
+                Top,
+                split - PartySheetAssets.ContentLeft - 48,
+                Height
+            );
+
+        /// <summary>The right pane's contents when the panes split at <paramref name="split"/>.</summary>
+        public static Rect RightOf(float split) =>
+            new(split, Top, PartySheetAssets.ContentRight - split - 16, Height);
+
+        // 左の上のステータスと、その下に引いて枠と分ける線。
+        public const float StatsTop = 20f;
+        public const float StatsLineTop = 126f;
 
         // 右の上の、面の幅いっぱいのタブ。
         public const float TabHeight = 76f;
 
         /// <summary>
-        /// The two panes, the left frame with the person at its top (drawn with
-        /// <paramref name="first"/> so the prefab reads in the editor) and the right frame named
-        /// <paramref name="rightName"/>.
+        /// The two panes split at <paramref name="split"/>, the left frame and the right frame
+        /// named <paramref name="rightName"/>.
         /// </summary>
-        public static (
-            RectTransform Left,
-            RectTransform Right,
-            GuideSwipe Swipe,
-            PartyPersonHeader Person
-        ) Build(RectTransform layer, string rightPane, string rightName, PartyMember first)
+        public static (RectTransform Left, RectTransform Right, GuideSwipe Swipe) Build(
+            RectTransform layer,
+            float split,
+            string rightPane,
+            string rightName
+        )
         {
-            Frame.SplitPanes(layer, Split, "PersonPane", rightPane);
-            var left = Layout.Box(layer, "Person", Left.x, Left.y, Left.width, Left.height);
+            Frame.SplitPanes(
+                layer,
+                split,
+                "PersonPane",
+                rightPane,
+                from: PartySheetAssets.ContentLeft,
+                to: PartySheetAssets.ContentRight
+            );
+            var leftRect = LeftOf(split);
+            var rightRect = RightOf(split);
+            var left = Layout.Box(
+                layer,
+                "Person",
+                leftRect.x,
+                leftRect.y,
+                leftRect.width,
+                leftRect.height
+            );
             // 左の面の上の左右のフリックで人を替える。枠を押したところから動かしても届くよう、左全体で受ける。
             AddImage(left, Color.clear, true);
             var swipe = left.gameObject.AddComponent<GuideSwipe>();
-            var right = Layout.Box(layer, rightName, Right.x, Right.y, Right.width, Right.height);
-
-            var person = PartyHeaderAssets.Build(left, 10, Left.width, first);
-            Layout.Line(left, "HeaderLine", 24, 142, Left.width - 48, 2);
-            return (left, right, swipe, person);
+            var right = Layout.Box(
+                layer,
+                rightName,
+                rightRect.x,
+                rightRect.y,
+                rightRect.width,
+                rightRect.height
+            );
+            return (left, right, swipe);
         }
 
-        /// <summary>The person's stats right under them, with a line below.</summary>
+        /// <summary>The person's stats at the top of the left frame, with a line below.</summary>
         public static TMP_Text[] Stats(RectTransform left)
         {
-            var stats = StatGridAssets.Build(left, 30, StatsTop, Left.width - 60, 4);
-            Layout.Line(left, "StatsLine", 24, StatsLineTop, Left.width - 48, 2);
+            float width = left.rect.width;
+            var stats = StatGridAssets.Build(left, 6, StatsTop, width - 12, 4);
+            Layout.Line(left, "StatsLine", 0, StatsLineTop, width, 2);
             return stats;
         }
 
         /// <summary>The tabs across the top of the right frame.</summary>
-        public static GuideTab[] Tabs(RectTransform right, params string[] labels) =>
-            Frame.Tabs(
+        public static GuideTab[] Tabs(RectTransform right, params string[] labels)
+        {
+            float width = right.rect.width - 48;
+            return Frame.Tabs(
                 right,
                 "Tabs",
                 labels,
                 24,
                 4,
-                (Right.width - 48) / labels.Length,
+                width / labels.Length,
                 TabHeight,
-                Right.width - 48
+                width
             );
+        }
 
         // 一覧の上下の縁で行を薄く消す幅。途中で切れた行が、縁でぱっつり切れて見えないようにする。
         public const int ListFade = 24;
@@ -120,7 +151,7 @@ namespace Baryonyx.Party.Editor
                 TextAlignmentOptions.Center,
                 24,
                 100,
-                Right.width - 48,
+                right.rect.width - 48,
                 140
             );
     }

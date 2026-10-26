@@ -23,27 +23,15 @@ namespace Baryonyx.Tests.EditMode
             public event Action MaxPressed;
             public event Action CancelPressed;
             public event Action ConfirmPressed;
-            public event Action<int> GearPressed;
-            public event Action<int> CardPressed;
-            public event Action<int> UniquePressed;
-            public event Action BondPressed;
-            public event Action BondCancelPressed;
-            public event Action BondConfirmPressed;
+            public event Action BreakThroughPressed;
             public event Action CelebrationClosed;
 
             public TrainingState Last;
             public readonly List<string> Notices = new();
-            public readonly List<string> Opened = new();
 
             public void Render(TrainingState state) => Last = state;
 
             public void ShowNotice(string message) => Notices.Add(message);
-
-            public void OpenGear(string id, int slot) => Opened.Add($"gear {id} {slot}");
-
-            public void OpenCards(string id, int slot) => Opened.Add($"cards {id} {slot}");
-
-            public void OpenUnique(string id, int index) => Opened.Add($"unique {id} {index}");
 
             public void Prev() => PrevPressed?.Invoke();
 
@@ -61,17 +49,7 @@ namespace Baryonyx.Tests.EditMode
 
             public void Confirm() => ConfirmPressed?.Invoke();
 
-            public void Gear(int slot) => GearPressed?.Invoke(slot);
-
-            public void Card(int slot) => CardPressed?.Invoke(slot);
-
-            public void Unique(int index) => UniquePressed?.Invoke(index);
-
-            public void Bond() => BondPressed?.Invoke();
-
-            public void BondCancel() => BondCancelPressed?.Invoke();
-
-            public void BondConfirm() => BondConfirmPressed?.Invoke();
+            public void BreakThrough() => BreakThroughPressed?.Invoke();
 
             public void CloseCelebration() => CelebrationClosed?.Invoke();
         }
@@ -176,14 +154,8 @@ namespace Baryonyx.Tests.EditMode
                 new TrainingMember(Member("aria", "アリア"), data.Find("aria")),
             };
 
-        // スキルの説明は、キャラのIDとスキルのIDを並べた文にして、どのキャラの数字で作ったかを確かめる。
         private TrainingPresenter Open() =>
-            presenter = new TrainingPresenter(
-                view,
-                Roster(),
-                store,
-                describe: (id, card) => $"{id}:{card.Id}"
-            );
+            presenter = new TrainingPresenter(view, Roster(), store);
 
         [Test]
         public void CostsGrowWithTheLevel()
@@ -251,75 +223,6 @@ namespace Baryonyx.Tests.EditMode
                 state.Passives.Select(skill => skill.Name),
                 Is.EqualTo(new[] { "魔力の泉", "炎の心得" })
             );
-
-            // デッキの4枚：固有スキル2枚（エネルギーをコストに、未解放は解放するLv）と、カスタムスキル2枚。
-            Assert.That(
-                state.Uniques.Select(card => card.Name),
-                Is.EqualTo(new[] { "マナバースト", "星降り" })
-            );
-            Assert.That(state.Uniques.Select(card => card.Cost), Is.EqualTo(new[] { 2, 3 }));
-            Assert.That(
-                state.Uniques.Select(card => card.Locked),
-                Is.EqualTo(new[] { false, true })
-            );
-            Assert.That(state.Uniques[1].UnlockLevel, Is.EqualTo(20));
-            Assert.That(state.Uniques[0].Type, Is.EqualTo(TrainingCardState.UniqueType));
-            Assert.That(state.Uniques[0].Element, Is.EqualTo(CardElement.None));
-            // カスタムスキルの名前・コスト・属性は、スキルの定義から引き、説明はそのキャラで作る。
-            Assert.That(
-                state.Cards.Select(card => card.Name),
-                Is.EqualTo(new[] { "ファイア", "アイスランス", TrainingPresenter.EmptyName })
-            );
-            Assert.That(state.Cards.Select(card => card.Cost), Is.EqualTo(new[] { 1, 1, 0 }));
-            Assert.That(
-                state.Cards.Select(card => card.Element),
-                Is.EqualTo(new[] { CardElement.Fire, CardElement.Ice, CardElement.None })
-            );
-            // 3枚目のカスタムスキルの枠は空き。
-            Assert.That(state.Cards[2].Filled, Is.False);
-            Assert.That(state.Cards[0].Type, Is.EqualTo(TrainingCardState.SkillType));
-            Assert.That(state.Cards[0].Description, Is.EqualTo("toma:Fire"));
-            Assert.That(state.Cards[0].Kind, Is.Not.Empty);
-        }
-
-        [Test]
-        public void AnEmptyCustomSlotShowsAsEmpty()
-        {
-            store.Cards["toma"] = new[] { "Fire" };
-            Open();
-
-            // カスタムスキルはいつも3枠。足りない枠は「空き」。
-            Assert.That(view.Last.Cards.Count, Is.EqualTo(TrainingPresenter.CustomSlots));
-            Assert.That(view.Last.Cards[1].Filled, Is.False);
-            Assert.That(view.Last.Cards[1].Name, Is.EqualTo(TrainingPresenter.EmptyName));
-        }
-
-        [Test]
-        public void AnItemInACustomSlotShowsTheItemArt()
-        {
-            var skillArt = new Texture2D(64, 58);
-            var itemArt = new Texture2D(32, 32);
-            try
-            {
-                store.Cards["toma"] = new[] { "Fire", PartyCardKey.Item("lizard-tail") };
-                presenter = new TrainingPresenter(
-                    view,
-                    Roster(),
-                    store,
-                    artOf: id => id == "Fire" ? skillArt : null,
-                    itemArtOf: id => id == "lizard-tail" ? itemArt : null
-                );
-
-                // スキルはスキルの挿絵、アイテムはアイテムの絵を出す。
-                Assert.That(view.Last.Cards[0].Art, Is.SameAs(skillArt));
-                Assert.That(view.Last.Cards[1].Name, Is.EqualTo("火とかげのしっぽ"));
-                Assert.That(view.Last.Cards[1].Art, Is.SameAs(itemArt));
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(skillArt);
-                UnityEngine.Object.DestroyImmediate(itemArt);
-            }
         }
 
         [Test]
@@ -338,6 +241,22 @@ namespace Baryonyx.Tests.EditMode
             view.Prev();
             Assert.That(view.Last.Name, Is.EqualTo("アリア"));
             Assert.That(view.Last.CanSwitch, Is.True);
+        }
+
+        [Test]
+        public void ThePeoplesColumnShowsTheCharacterPressed()
+        {
+            Open();
+            presenter.Select("aria");
+            Assert.That(view.Last.Name, Is.EqualTo("アリア"));
+            Assert.That(store.Selected, Is.EqualTo("aria"));
+
+            // 知らない人や、重ねた画面を開いている間は替えない。
+            presenter.Select("nobody");
+            Assert.That(view.Last.Name, Is.EqualTo("アリア"));
+            view.LevelUp();
+            presenter.Select("toma");
+            Assert.That(view.Last.Name, Is.EqualTo("アリア"));
         }
 
         [Test]
@@ -556,87 +475,6 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void SlotsOpenTheirChangeScreensForTheCharacterOnScreen()
-        {
-            Open();
-            view.Gear(1);
-            view.Card(1);
-            view.Next();
-            view.Gear(0);
-            // 開いていないアクセサリーの枠も、付け替えの画面を開く。
-            view.Gear(3);
-            // 固有スキルは、未解放のものも、進化ツリーを出した付け替えの画面を開く。
-            view.Unique(1);
-            Assert.That(
-                view.Opened,
-                Is.EqualTo(
-                    new[]
-                    {
-                        "gear toma 1",
-                        "cards toma 1",
-                        "gear luka 0",
-                        "gear luka 3",
-                        "unique luka 1",
-                    }
-                )
-            );
-
-            // 枠の外は開かない。重ねた画面を開いている間も開かない。
-            view.Gear(5);
-            view.Gear(-1);
-            view.Unique(2);
-            view.LevelUp();
-            view.Gear(0);
-            view.Card(0);
-            view.Unique(0);
-            Assert.That(view.Opened.Count, Is.EqualTo(5));
-            Assert.That(view.Notices, Is.Empty);
-        }
-
-        [Test]
-        public void ShowsTheEquipmentAndTheAccessorySlotsThatAreNotReady()
-        {
-            presenter = new TrainingPresenter(
-                view,
-                Roster(),
-                store,
-                gearOf: id =>
-                    id == "toma"
-                        ? new[]
-                        {
-                            TrainingGearState.Worn("武器", "樫の杖", "★"),
-                            TrainingGearState.Worn("防具", null, null),
-                        }
-                        : Array.Empty<TrainingGearState>()
-            );
-
-            var gear = view.Last.Gear;
-            Assert.That(gear.Count, Is.EqualTo(TrainingPresenter.GearSlots));
-            Assert.That(
-                gear.Select(slot => slot.Slot),
-                Is.EqualTo(new[] { "武器", "防具", "アクセサリー", "アクセサリー", "アクセサリー" })
-            );
-            Assert.That(gear[0].Filled, Is.True);
-            Assert.That(gear[0].Name, Is.EqualTo("樫の杖"));
-            Assert.That(gear[1].Filled, Is.False);
-            // アクセサリーの1つ目はLv1から開き、ほかはLvで開くまで解放するLvを出す。
-            Assert.That(
-                gear.Select(slot => slot.Locked).ToArray(),
-                Is.EqualTo(new[] { false, false, false, true, true })
-            );
-            Assert.That(gear[2].UnlockText, Is.Empty);
-            Assert.That(gear[3].UnlockText, Is.EqualTo(AccessorySlots.UnlockText(1)));
-            Assert.That(gear[0].UnlockText, Is.Empty);
-
-            // 装備がわからない人は、武器と防具を空きとして出す。
-            view.Next();
-            Assert.That(
-                view.Last.Gear.Take(2).Select(slot => slot.Filled),
-                Is.EqualTo(new[] { false, false })
-            );
-        }
-
-        [Test]
         public void EachBondStageRaisesEveryStatByTwoPercentUpToSix()
         {
             var growth = data.Find("toma");
@@ -679,7 +517,7 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void TheBondDialogShowsTheNextStageAndDeepeningLightsItUp()
+        public void BreakingThroughRaisesTheStageAtOnceAndLightsItUp()
         {
             store.Bonds["toma"] = 2;
             store.Tokens["toma"] = 1;
@@ -687,26 +525,20 @@ namespace Baryonyx.Tests.EditMode
             var growth = data.Find("toma");
             Assert.That(view.Last.Bond, Is.EqualTo(2));
             Assert.That(view.Last.Stats, Is.EqualTo(growth.StatsAt(12, 2)));
-
-            view.Bond();
-            Assert.That(view.Last.BondOpen, Is.True);
-            Assert.That(view.Last.BondTarget, Is.EqualTo(3));
-            Assert.That(view.Last.BondStats, Is.EqualTo(growth.StatsAt(12, 3)));
             Assert.That(view.Last.CanDeepen, Is.True);
-            // 重ねた窓の間は、人を替えず、レベルアップも開かない。
+
+            // 窓を開かず、押すとその場でしるしを使って1段上げ、演出を出す。
+            view.BreakThrough();
+            Assert.That(store.BondOf("toma"), Is.EqualTo(3));
+            Assert.That(store.BondTokensOf("toma"), Is.EqualTo(0));
+            Assert.That(view.Last.Celebrated, Is.EqualTo(3));
+            Assert.That(view.Last.Stats, Is.EqualTo(growth.StatsAt(12, 3)));
+            Assert.That(view.Last.CanDeepen, Is.False);
+            // 演出の間は、人を替えず、レベルアップも開かない。
             view.Next();
             view.LevelUp();
             Assert.That(view.Last.Name, Is.EqualTo("トーマ"));
             Assert.That(view.Last.DialogOpen, Is.False);
-
-            view.BondConfirm();
-            Assert.That(store.BondOf("toma"), Is.EqualTo(3));
-            Assert.That(store.BondTokensOf("toma"), Is.EqualTo(0));
-            Assert.That(view.Last.BondOpen, Is.False);
-            Assert.That(view.Last.Celebrated, Is.EqualTo(3));
-            Assert.That(view.Last.Stats, Is.EqualTo(growth.StatsAt(12, 3)));
-            view.Next();
-            Assert.That(view.Last.Name, Is.EqualTo("トーマ"));
 
             // 戻る操作は、演出を先に閉じる。
             Assert.That(presenter.Back(), Is.True);
@@ -715,30 +547,39 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void WithoutATokenOrAtTheCapTheBondDoesNotDeepen()
+        public void WithoutATokenOrAtTheCapTheStageDoesNotRise()
         {
             store.Bonds["toma"] = 2;
             store.Bonds["luka"] = TrainingBond.Max;
             store.Tokens["luka"] = 3;
             Open();
 
-            view.Bond();
             Assert.That(view.Last.CanDeepen, Is.False);
-            view.BondConfirm();
+            view.BreakThrough();
             Assert.That(store.BondOf("toma"), Is.EqualTo(2));
             Assert.That(view.Last.Celebrated, Is.EqualTo(0));
-            view.BondCancel();
-            Assert.That(view.Last.BondOpen, Is.False);
 
             view.Next();
-            view.Bond();
             Assert.That(view.Last.BondMaxed, Is.True);
-            Assert.That(view.Last.BondTarget, Is.EqualTo(TrainingBond.Max));
             Assert.That(view.Last.CanDeepen, Is.False);
-            view.BondConfirm();
+            view.BreakThrough();
             Assert.That(store.BondTokensOf("luka"), Is.EqualTo(3));
-            Assert.That(presenter.Back(), Is.True);
-            Assert.That(view.Last.BondOpen, Is.False);
+
+            // レベルアップの窓を開いている間も突破しない。
+            view.Prev();
+            store.Tokens["toma"] = 1;
+            view.LevelUp();
+            view.BreakThrough();
+            Assert.That(store.BondOf("toma"), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void EachStageSaysWhatItAdds()
+        {
+            Assert.That(TrainingBond.EffectOf(1), Is.EqualTo("全ステータス +2%"));
+            Assert.That(TrainingBond.EffectOf(TrainingBond.Max), Is.Not.Empty);
+            Assert.That(TrainingBond.EffectOf(0), Is.Empty);
+            Assert.That(TrainingBond.EffectOf(TrainingBond.Max + 1), Is.Empty);
         }
     }
 }

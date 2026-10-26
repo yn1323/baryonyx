@@ -7,8 +7,9 @@ using UnityEngine;
 namespace Baryonyx.Training
 {
     /// <summary>
-    /// The character's bond (絆): a copy of a character the player already has becomes a token of
-    /// that character, and each token deepens the bond one stage, up to <see cref="Max"/>
+    /// The character's breakthrough (限界突破; the code and the server call it the bond): a copy of a
+    /// character the player already has becomes a token of that character, and each token raises
+    /// it one stage, up to <see cref="Max"/>
     /// (doc/features/monetization.md). Each stage raises every stat by
     /// <see cref="PercentPerStage"/> percent, the mock effect until each character has its own.
     /// With a server, the stages and tokens are the party's (<see cref="PartySession.State"/>) and
@@ -20,7 +21,7 @@ namespace Baryonyx.Training
         public const int Max = 6;
         public const int PercentPerStage = 2;
 
-        // 1段深めるのに使う絆のしるし。
+        // 1段突破するのに使うしるし。
         public const int TokensPerStage = 1;
 
         private static readonly Dictionary<string, int> stages = new();
@@ -30,6 +31,10 @@ namespace Baryonyx.Training
         public static int PercentAt(int stage) => Clamp(stage) * PercentPerStage;
 
         public static double RateOf(int stage) => 1.0 + PercentAt(stage) / 100.0;
+
+        /// <summary>What reaching <paramref name="stage"/> adds, as the breakthrough tab writes it.</summary>
+        public static string EffectOf(int stage) =>
+            stage >= 1 && stage <= Max ? $"全ステータス +{PercentPerStage}%" : "";
 
         public static int StageOf(TrainingCharacter character) =>
             character == null ? 0

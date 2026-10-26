@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,22 +14,43 @@ namespace Baryonyx.Equipment
     {
         private EquipmentState state = Starter();
 
-        /// <summary>The mock items (one of each, ids "local-1"…) and what the first four wear.</summary>
+        /// <summary>
+        /// The mock items (one of each, ids "local-1"…, and one more of a kind two of the first
+        /// four wear) and what the first four wear.
+        /// </summary>
         public static EquipmentState Starter()
         {
             var owned = EquipmentCatalog
                 .All.Select((entry, i) => new EquipmentItem($"local-{i + 1}", entry.Id))
-                .ToArray();
-            string ItemOf(string equipmentId) =>
-                owned.First(item => item.EquipmentId == equipmentId).Id;
-            var equipped = EquipmentCatalog.StarterEquipped.SelectMany(entry =>
-                new[]
+                .ToList();
+            var worn = new HashSet<string>();
+            string ItemOf(string equipmentId)
+            {
+                var item = owned.FirstOrDefault(item =>
+                    item.EquipmentId == equipmentId && !worn.Contains(item.Id)
+                );
+                if (item == null)
                 {
-                    (entry.Character, (EquipmentPlace)EquipmentSlot.Weapon, ItemOf(entry.Weapon)),
-                    (entry.Character, EquipmentSlot.Armor, ItemOf(entry.Armor)),
+                    item = new EquipmentItem($"local-{owned.Count + 1}", equipmentId);
+                    owned.Add(item);
                 }
-            );
-            return new EquipmentState(owned, equipped);
+                worn.Add(item.Id);
+                return item.Id;
+            }
+            var equipped = EquipmentCatalog
+                .StarterEquipped.SelectMany(entry =>
+                    new[]
+                    {
+                        (
+                            entry.Character,
+                            (EquipmentPlace)EquipmentSlot.Weapon,
+                            ItemOf(entry.Weapon)
+                        ),
+                        (entry.Character, EquipmentSlot.Armor, ItemOf(entry.Armor)),
+                    }
+                )
+                .ToArray();
+            return new EquipmentState(owned.ToArray(), equipped);
         }
 
         public Task<EquipmentState> LoadAsync(CancellationToken token) =>

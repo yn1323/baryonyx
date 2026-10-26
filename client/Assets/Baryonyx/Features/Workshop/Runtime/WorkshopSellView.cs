@@ -279,7 +279,7 @@ namespace Baryonyx.Workshop
 
         /// <summary>
         /// The provisional price, the server's too (server/src/features/workshop/catalog.ts): a
-        /// quarter of the buy price by the stars, times the multiplier, rounded half up; items ten
+        /// twentieth of the buy price by the stars, times the multiplier, rounded half up; items ten
         /// runes at ☆1, doubled for each star, times the count.
         /// </summary>
         public static int PriceOf(WorkshopOwned thing)
@@ -289,7 +289,7 @@ namespace Baryonyx.Workshop
             if (thing.Kind == LibraryKind.Item)
                 return 10 * (1 << Math.Max(0, thing.Stars - 1)) * thing.Count;
             return Quality.Amount(
-                WorkshopGoods.PriceOfStars(Math.Max(1, thing.Stars)) / 4,
+                WorkshopGoods.PriceOfStars(Math.Max(1, thing.Stars)) / 20,
                 thing.Multiplier
             );
         }

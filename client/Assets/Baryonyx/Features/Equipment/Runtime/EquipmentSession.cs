@@ -12,7 +12,7 @@ namespace Baryonyx.Equipment
     /// </summary>
     public static class EquipmentSession
     {
-        // 編成の「装備」の項目のキー。メニューには出さず、冒険者の個別の画面から付け替えの画面として開く。
+        // 編成の冒険者の「装備」のタブの項目のキー。メニューには出さず、冒険者のタブから開く。
         public const string GuideItemKey = "equipment";
 
         private static EquipmentLocalSource local;
@@ -45,7 +45,7 @@ namespace Baryonyx.Equipment
             set => PartySession.Selected = value;
         }
 
-        // 次に開いたときに選んでおく枠。個別の画面で押した枠を渡す。
+        // 次に開いたときに選んでおく枠。決めていなければ武器。
         public static EquipmentSlot OpenSlot { get; set; } = EquipmentSlot.Weapon;
 
         // 次に開いたときに選んでおくアクセサリーの枠（0〜2）。武器・防具を開くときは-1。

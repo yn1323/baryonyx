@@ -1090,6 +1090,7 @@ MonoBehaviour:
   view: {fileID: 964895536}
   transition: {fileID: 166172}
   homeSceneName: Home
+  backSceneName: 
   departs: 0
 --- !u!4 &490612815
 Transform:
@@ -1207,6 +1208,10 @@ PrefabInstance:
     - target: {fileID: 1063851744487524234, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1127911045536631095, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1920
       objectReference: {fileID: 0}
     - target: {fileID: 1127911045536631095, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.y
@@ -1344,6 +1349,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5753918908284436497, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8927992
+      objectReference: {fileID: 0}
+    - target: {fileID: 5753918908284436497, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8927992
+      objectReference: {fileID: 0}
     - target: {fileID: 6410150841124729424, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
@@ -1371,6 +1384,10 @@ PrefabInstance:
     - target: {fileID: 7374419097398602824, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7513210326640828662, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 8100350418001225895, guid: c1bd24a3ac49c497e9e5b08397d8313d, type: 3}
       propertyPath: m_AnchorMax.y

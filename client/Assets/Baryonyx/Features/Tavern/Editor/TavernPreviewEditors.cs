@@ -11,8 +11,8 @@ namespace Baryonyx.Tavern.Editor
     public sealed class AdventurerRosterViewEditor : EditModePreviewEditor { }
 
     /// <summary>
-    /// The equipment's picker inspector. Its states are switched from the guide screen that
-    /// opens the panel ("装備 › 読み込み中").
+    /// The growth picker inspector. Its states are switched from the guide screen that
+    /// opens the panel ("育成 › 読み込み中").
     /// </summary>
     [CustomEditor(typeof(AdventurerPickerView))]
     public sealed class AdventurerPickerViewEditor : EditModePreviewEditor { }

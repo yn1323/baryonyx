@@ -140,7 +140,7 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(view.MenuItems.Length, Is.EqualTo(definition.Items.Length));
                 for (int i = 0; i < definition.Items.Length; i++)
                 {
-                    // ほかのパネルから開く項目（編成の個別・付け替えの画面）は、メニューに行を出さない。
+                    // ほかのパネルから開く項目（編成の冒険者のタブ）は、メニューに行を出さない。
                     Assert.That(view.MenuItems[i] == null, Is.EqualTo(definition.Items[i].Hidden));
                     if (definition.Items[i].Hidden)
                         continue;

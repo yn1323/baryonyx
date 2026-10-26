@@ -184,11 +184,17 @@ namespace Baryonyx.Library
             Render(await reading);
         }
 
-        /// <summary>Draws the records: found entries, shadows, new marks and the count.</summary>
+        /// <summary>
+        /// Draws the records: found entries, shadows, new marks and the count. When none is chosen
+        /// yet, chooses the first found entry, leaving its new mark.
+        /// </summary>
         public void Render(LibraryRecords next)
         {
             records = next ?? LibraryRecords.Empty;
             Set(Status, "");
+            // 右の面が空にならないよう、まだ選んでいなければ最初の見つけた物を選んでおく。新しく載った印は、
+            // 押して見るまで残す。見つけた物がなければ空のままにする。
+            selected ??= Array.Find(Tiles, tile => records.IsFound(Kind, tile.Id))?.Id;
             int found = 0;
             var seen = LibrarySession.Seen;
             foreach (var tile in Tiles)

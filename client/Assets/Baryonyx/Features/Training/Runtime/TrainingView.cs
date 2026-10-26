@@ -36,9 +36,9 @@ namespace Baryonyx.Training
     }
 
     /// <summary>
-    /// One of the four deck cards on the page, laid out as the battle's card (70x98 dots at 3x):
-    /// the element's frame, the illustration, the cost and element on its top corners, the type,
-    /// name and kind on a dark band, and the effect below. A custom skill's card is a button.
+    /// A deck card laid out as the battle's card (70x98 dots at 3x): the element's frame, the
+    /// illustration, the cost and element on its top corners, the type, name and kind on a dark
+    /// band, and the effect below (the shop's cards). It can be a button.
     /// </summary>
     [Serializable]
     public sealed class TrainingCardWidget
@@ -72,25 +72,19 @@ namespace Baryonyx.Training
         public TMP_Text When;
     }
 
-    /// <summary>One equipment slot's tile on the page: the icon, slot, rarity, name and effect.</summary>
+    /// <summary>
+    /// One stage of the breakthrough tab: a glass card with the stage's stone and number and its
+    /// effect, 「突破済み」 once reached, and 「限界突破」 on the next stage.
+    /// </summary>
     [Serializable]
-    public sealed class TrainingGearWidget
+    public sealed class TrainingStageWidget
     {
-        public Button Button;
-        public Image Icon;
-
-        // アイコンに重ねる品質のキラキラ（S・Aだけ光る）。武器・防具の枠だけにある。
-        public CardFoil Foil;
-
-        // 「武器」「防具」「アクセサリー 1」。
-        public TMP_Text Slot;
-        public TMP_Text Name;
-        public TMP_Text Stars;
-        public TMP_Text Detail;
-
-        // まだ開いていない枠（アクセサリー）に出す錠前と、解放するLv（「Lv 20で解放」）。
-        public GameObject Lock;
-        public TMP_Text When;
+        public GlassCard Card;
+        public Image Stone;
+        public TMP_Text Number;
+        public TMP_Text Effect;
+        public GameObject Done;
+        public Button BreakThrough;
     }
 
     /// <summary>One stat's row in the level-up dialog: before, after and the gain.</summary>
@@ -103,13 +97,14 @@ namespace Baryonyx.Training
     }
 
     /// <summary>
-    /// The adventurer's page of the formation over the guide screen: the illustration with the
-    /// battle sprite in its corner on the left, and on the right the name and level-up, the stats
-    /// beside the passives, the four deck cards (two unique skills, two custom skills) and the
-    /// five equipment slots, with the level-up and bond dialogs over them and the bond's stage
-    /// lighting up after it deepens (<see cref="TrainingBondCelebration"/>). A flick over the page changes
-    /// the person; a custom skill or weapon or armour slot opens its change screen for the
-    /// character, and back returns to the adventurers' list.
+    /// The adventurer's stats tab and breakthrough tab of the formation over the guide screen
+    /// (one view, baked twice with the parts each tab has): the illustration with the battle
+    /// sprite in its corner on the left; on the right, the stats tab shows the name, level-up,
+    /// stats and passives with the level-up dialog over them, and the breakthrough tab the six
+    /// stages with 「限界突破」 and the stage lighting up after it
+    /// (<see cref="TrainingBondCelebration"/>). The people's column and the tabs around it
+    /// (<see cref="PartySheet"/>) change the person and open the other tabs; a flick over the page
+    /// changes the person too, and back returns to the adventurers' list.
     /// TrainingAssets bakes every widget into the formation prefab, so the text reads in the
     /// editor; this view wires them up and drives its own presenter. When the app has a server
     /// (<see cref="PartySession.Source"/>), it reads the party and runes on opening and raises
@@ -126,6 +121,10 @@ namespace Baryonyx.Training
     {
         public const string LoadFailedMessage = "キャラを取得できませんでした";
 
+        // まだ突破していない段の濃さと、灯った金の石の上に書く段の番号の色。
+        private const float FutureAlpha = 0.5f;
+        private static readonly Color LitNumber = new(0.24f, 0.11f, 0.02f);
+
         // 足りないルーン・未解放のスキルの色。ほかの文字の色は UiPalette を使う。
         private static readonly Color Short = new(1f, 0.45f, 0.4f);
         private static readonly Color LockedIcon = new(0.25f, 0.25f, 0.3f, 1f);
@@ -138,6 +137,9 @@ namespace Baryonyx.Training
         public TrainingMockData Data;
 
         [Header("Detail")]
+        // 左の人の列と右のタブ。
+        public PartySheet Sheet;
+
         // ページの上の左右のフリックで人を替える。
         public GuideSwipe Swipe;
         public TMP_Text Name;
@@ -158,19 +160,6 @@ namespace Baryonyx.Training
         public TMP_Text[] Stats = Array.Empty<TMP_Text>();
         public TrainingSkillWidget[] Passives = Array.Empty<TrainingSkillWidget>();
 
-        // 固有スキル2枚とカスタムスキル2枚。枠の画像は属性（CardElement の順）で選ぶ。
-        public TrainingCardWidget[] Uniques = Array.Empty<TrainingCardWidget>();
-        public TrainingCardWidget[] CardSlots = Array.Empty<TrainingCardWidget>();
-        public Texture[] CardFrames = Array.Empty<Texture>();
-
-        // 武器・防具・アクセサリー3つ。
-        public TrainingGearWidget[] Gear = Array.Empty<TrainingGearWidget>();
-        public Sprite WeaponIcon;
-        public Sprite ArmorIcon;
-
-        // 装備の種類ごとの絵。絵のない種類と空いた枠は、枠ごとのアイコンを出す。
-        public ItemArt ItemArt;
-
         [Header("Level-up dialog")]
         public GameObject Dialog;
         public TMP_Text From;
@@ -185,31 +174,13 @@ namespace Baryonyx.Training
         // 使うルーン。足りないときは赤くする。
         public TMP_Text Cost;
 
-        [Header("Bond")]
-        // 右上の「レベルアップ」の左の「絆」と、その中の6つのしるし（灯った段は金）。
-        public Button Bond;
-        public Image[] BondPips = Array.Empty<Image>();
+        [Header("Breakthrough")]
+        // 突破した段と、まだの段の石（突破のタブの段と、突破した演出が使う）。
         public Sprite BondLit;
         public Sprite BondDark;
 
-        [Header("Bond dialog")]
-        public GameObject BondDialog;
-        public TMP_Text BondFrom;
-        public GameObject BondNext;
-        public TMP_Text BondTo;
-
-        // 6つの段の石と、次に灯る石を囲む光。
-        public Image[] BondStones = Array.Empty<Image>();
-        public RectTransform BondGlow;
-        public TrainingDiffWidget[] BondDiffs = Array.Empty<TrainingDiffWidget>();
-        public Button BondCancel;
-        public Button BondConfirm;
-        public TMP_Text BondConfirmLabel;
-
-        // 「絆を深める」に添える、その人の絆のしるし（ドット絵）と「持っている数 / 使う数」。
-        public GameObject BondCost;
-        public RawImage BondToken;
-        public TMP_Text BondTokens;
+        // 突破のタブの6段（1段目から）。ステータスのタブでは空。
+        public TrainingStageWidget[] Stages = Array.Empty<TrainingStageWidget>();
 
         [Header("Bond celebration")]
         public TrainingBondCelebration Celebration;
@@ -228,12 +199,7 @@ namespace Baryonyx.Training
         public event Action MaxPressed;
         public event Action CancelPressed;
         public event Action ConfirmPressed;
-        public event Action<int> GearPressed;
-        public event Action<int> CardPressed;
-        public event Action<int> UniquePressed;
-        public event Action BondPressed;
-        public event Action BondCancelPressed;
-        public event Action BondConfirmPressed;
+        public event Action BreakThroughPressed;
         public event Action CelebrationClosed;
 
         public TrainingPresenter Presenter => presenter;
@@ -243,34 +209,18 @@ namespace Baryonyx.Training
             person = null;
             if (Swipe != null)
                 Swipe.Flicked += Flick;
+            if (Sheet != null)
+                Sheet.PersonPressed += Choose;
             bindings.Bind(LevelUp, () => LevelUpPressed?.Invoke());
             bindings.Bind(Less, () => LessPressed?.Invoke());
             bindings.Bind(More, () => MorePressed?.Invoke());
             bindings.Bind(Max, () => MaxPressed?.Invoke());
             bindings.Bind(Cancel, () => CancelPressed?.Invoke());
             bindings.Bind(Confirm, () => ConfirmPressed?.Invoke());
-            bindings.Bind(Bond, () => BondPressed?.Invoke());
-            bindings.Bind(BondCancel, () => BondCancelPressed?.Invoke());
-            bindings.Bind(BondConfirm, () => BondConfirmPressed?.Invoke());
+            foreach (var stage in Stages)
+                bindings.Bind(stage.BreakThrough, () => BreakThroughPressed?.Invoke());
             if (Celebration != null)
                 Celebration.Closed += CloseCelebration;
-            for (int i = 0; i < Gear.Length; i++)
-            {
-                int index = i;
-                bindings.Bind(Gear[i].Button, () => GearPressed?.Invoke(index));
-            }
-            for (int i = 0; i < CardSlots.Length; i++)
-            {
-                int index = i;
-                if (CardSlots[i].Button != null)
-                    bindings.Bind(CardSlots[i].Button, () => CardPressed?.Invoke(index));
-            }
-            for (int i = 0; i < Uniques.Length; i++)
-            {
-                int index = i;
-                if (Uniques[i].Button != null)
-                    bindings.Bind(Uniques[i].Button, () => UniquePressed?.Invoke(index));
-            }
 
             // 開くたびに、サーバーのレベル・所持ルーン・編成・装備（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
@@ -334,10 +284,12 @@ namespace Baryonyx.Training
                 Data,
                 worn,
                 source != null ? LevelUpAsync : null,
-                source is IPartyBondSource ? DeepenBondAsync : null,
-                ItemArt
+                source is IPartyBondSource ? DeepenBondAsync : null
             );
         }
+
+        // 左の列で押した人を出す。
+        private void Choose(string id) => presenter?.Select(id);
 
         // 左へのフリックで次の人、右へのフリックで前の人。
         private void Flick(int step)
@@ -387,31 +339,25 @@ namespace Baryonyx.Training
                 LevelUp.interactable = false;
             if (LevelUpCost != null)
                 LevelUpCost.SetActive(false);
-            if (Bond != null)
-                Bond.interactable = false;
-            foreach (var pip in BondPips)
-                if (pip != null)
-                    pip.sprite = BondDark;
             foreach (var stat in Stats)
                 Set(stat, "");
             foreach (var skill in Passives)
                 ShowSkill(skill, null);
-            foreach (var gear in Gear)
-                ShowGear(gear, null, null);
-            foreach (var card in Uniques.Concat(CardSlots))
-                ShowCard(card, null, null);
             if (Dialog != null)
                 Dialog.SetActive(false);
-            if (BondDialog != null)
-                BondDialog.SetActive(false);
             if (Celebration != null)
                 Celebration.Hide();
+            foreach (var stage in Stages)
+                if (stage.Card != null)
+                    stage.Card.gameObject.SetActive(false);
         }
 
         private void OnDisable()
         {
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
+            if (Sheet != null)
+                Sheet.PersonPressed -= Choose;
             if (Celebration != null)
             {
                 Celebration.Closed -= CloseCelebration;
@@ -424,9 +370,10 @@ namespace Baryonyx.Training
         }
 
         /// <summary>
-        /// A presenter over the running app's party, runes and <paramref name="equipment"/>,
-        /// raising levels with <paramref name="levelUp"/> when the app has a server. The
-        /// generator uses it too, so the prefab shows the first character in the editor.
+        /// A presenter over the running app's party, runes and <paramref name="equipment"/>
+        /// (it raises the stats), raising levels with <paramref name="levelUp"/> when the app has
+        /// a server. The generator uses it too, so the prefab shows the first character in the
+        /// editor.
         /// </summary>
         public static TrainingPresenter Build(
             ITrainingView view,
@@ -434,8 +381,7 @@ namespace Baryonyx.Training
             TrainingMockData data,
             EquipmentState equipment,
             Func<string, int, int, Task> levelUp = null,
-            Func<string, int, Task> deepenBond = null,
-            ItemArt itemArt = null
+            Func<string, int, Task> deepenBond = null
         ) =>
             new(
                 view,
@@ -443,52 +389,11 @@ namespace Baryonyx.Training
                 new TrainingSessionStore(party, data),
                 party.IconOf,
                 levelUp,
-                id => GearOf(equipment, id),
-                party.ArtOf,
-                (_, card) => CardText.Description(card),
-                new CardLoadoutSessionStore(party, data).UniqueCardOf,
                 deepenBond,
-                (id, stats) => EquipmentStats.With(stats, equipment, id),
-                id => itemArt != null ? itemArt.TextureOf(id) : null
+                (id, stats) => EquipmentStats.With(stats, equipment, id)
             );
 
-        // 武器・防具と、アクセサリーの3つの枠に付けている装備。
-        public static IReadOnlyList<TrainingGearState> GearOf(
-            EquipmentState equipment,
-            string id
-        ) =>
-            new[]
-            {
-                (EquipmentPlace)EquipmentSlot.Weapon,
-                EquipmentSlot.Armor,
-                EquipmentPlace.Accessory(0),
-                EquipmentPlace.Accessory(1),
-                EquipmentPlace.Accessory(2),
-            }
-                .Select(place =>
-                {
-                    var slot = place.Slot;
-                    var item = equipment?.Find(equipment.ItemIn(id, place));
-                    var definition = EquipmentCatalog.Find(item?.EquipmentId);
-                    var quality = definition?.QualityOf(item.Multiplier) ?? ItemQuality.C;
-                    // レア度の★に続けて、その1つの品質の文字を出す。説明の数字は倍率を掛けた値。
-                    return TrainingGearState.Worn(
-                        EquipmentCatalog.NameOf(slot),
-                        definition?.Name,
-                        definition != null
-                            ? EquipmentCatalog.Stars(definition.Rarity)
-                                + "　"
-                                + QualityPalette.Painted(quality)
-                            : null,
-                        definition?.DetailAt(item.Multiplier),
-                        quality,
-                        definition != null ? EquipmentCatalog.FoilStyleOf(definition.Id) : 0,
-                        definition?.Id
-                    );
-                })
-                .ToArray();
-
-        // 個別の画面で戻ると、開いた項目（冒険者の一覧か装備の人選び）へ戻る（同じ人を選んだまま）。重ねた画面は先に閉じる。
+        // ステータスのタブで戻ると、開いた項目（冒険者の一覧か装備の人選び）へ戻る（同じ人を選んだまま）。重ねた画面は先に閉じる。
         public bool HandleBack()
         {
             if (presenter != null && presenter.Back())
@@ -510,33 +415,39 @@ namespace Baryonyx.Training
                 Guide.RefreshTrail();
         }
 
-        // パンくずの「冒険者 › アリア」（装備から開いたら「装備 › アリア」）。読み込むまでは人の名前を出さない。
+        // パンくずの「冒険者 › アリア」（育成の人選びから開いたら「育成 › アリア」）。読み込むまでは人の名前を出さない。
         public IReadOnlyList<string> Trail =>
             new[] { Guide != null ? Guide.LabelOf(TrainingSession.ReturnKeyOrRoster) : "", person };
 
-        // 停止中の表示の切り替え：レベルアップと絆のダイアログ、深めた演出（生成時に1人目の値で作り込んである）と、
-        // サーバーから読み込む間・読めなかったときの表示。
+        // 停止中の表示の切り替え：このタブが持つ重ねた画面（ステータスのタブはレベルアップ、突破のタブは
+        // 突破した演出。生成時に1人目の値で作り込んである）と、サーバーから読み込む間・読めなかったときの表示。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "レベルアップ", "絆", "絆の演出" }
+            Overlays()
+                .Select(overlay => overlay.Label)
                 .Concat(GuidePanelLoad.PreviewStates)
                 .ToArray();
 
         public void ShowPreviewState(int index)
         {
-            var overlay =
-                index == 0 ? Dialog
-                : index == 1 ? BondDialog
-                : index == 2 && Celebration != null ? Celebration.gameObject
-                : null;
-            if (index < 3)
+            var overlays = Overlays();
+            if (index < overlays.Count)
             {
-                if (overlay != null)
-                    overlay.SetActive(true);
+                overlays[index].Overlay.SetActive(true);
                 return;
             }
             ShowLoading();
-            if (index == 4)
+            if (index == overlays.Count + 1)
                 ShowLoadFailed();
+        }
+
+        private List<(string Label, GameObject Overlay)> Overlays()
+        {
+            var overlays = new List<(string, GameObject)>();
+            if (Dialog != null)
+                overlays.Add(("レベルアップ", Dialog));
+            if (Celebration != null)
+                overlays.Add(("限界突破の演出", Celebration.gameObject));
+            return overlays;
         }
 
         private void RenderDetail(TrainingState state)
@@ -572,23 +483,10 @@ namespace Baryonyx.Training
             StatGrid.Show(Stats, state.Member != null ? state.Stats : (CharacterStats?)null);
             for (int i = 0; i < Passives.Length; i++)
                 ShowSkill(Passives[i], i < state.Passives.Count ? state.Passives[i] : null);
-            ShowCards(Uniques, state.Uniques);
-            ShowCards(CardSlots, state.Cards);
-            for (int i = 0; i < Gear.Length; i++)
+            if (Sheet != null && Party != null)
             {
-                var gear = i < state.Gear.Count ? state.Gear[i] : null;
-                var art =
-                    ItemArt != null && gear?.EquipmentId != null
-                        ? ItemArt.Find(gear.EquipmentId)
-                        : null;
-                ShowGear(
-                    Gear[i],
-                    gear,
-                    art != null ? art
-                        : i == 0 ? WeaponIcon
-                        : i == 1 ? ArmorIcon
-                        : null
-                );
+                var (people, partyCount) = PartySession.Formation(Party).TabOrder();
+                Sheet.Show(people, partyCount, state.Member?.Id);
             }
         }
 
@@ -603,21 +501,6 @@ namespace Baryonyx.Training
             Header.sizeDelta = new Vector2(width, Header.sizeDelta.y);
             LayoutRebuilder.ForceRebuildLayoutImmediate(Header);
             Header.localScale = Vector3.one * (HeaderWidth / width);
-        }
-
-        private void ShowCards(TrainingCardWidget[] widgets, IReadOnlyList<TrainingCardState> cards)
-        {
-            for (int i = 0; i < widgets.Length; i++)
-            {
-                var card = i < cards.Count ? cards[i] : null;
-                ShowCard(widgets[i], card, FrameOf(card));
-            }
-        }
-
-        private Texture FrameOf(TrainingCardState card)
-        {
-            int element = (int)(card?.Element ?? CardElement.None);
-            return element < CardFrames.Length ? CardFrames[element] : null;
         }
 
         private void RenderDialog(TrainingState state)
@@ -645,52 +528,37 @@ namespace Baryonyx.Training
                 Cost.color = state.CanAfford ? UiPalette.TextMain : Short;
         }
 
+        // 突破のタブの6段。突破した段は石を灯して「突破済み」、次の段は金の縁で囲んで「限界突破」を出し、
+        // まだの段は薄くする。しるしがないときや上限では「限界突破」を押せない。
         private void RenderBond(TrainingState state)
         {
             bool shown = state.Member != null;
-            if (Bond != null)
-                Bond.interactable = shown;
-            for (int i = 0; i < BondPips.Length; i++)
-                if (BondPips[i] != null)
-                    BondPips[i].sprite = shown && i < state.Bond ? BondLit : BondDark;
-
-            if (BondDialog != null)
-                BondDialog.SetActive(state.BondOpen);
-            Set(BondFrom, state.Bond.ToString(CultureInfo.InvariantCulture));
-            // 上限では次の段を出さない。
-            if (BondNext != null)
-                BondNext.SetActive(!state.BondMaxed);
-            Set(BondTo, state.BondTarget.ToString(CultureInfo.InvariantCulture));
-            for (int i = 0; i < BondStones.Length; i++)
-                if (BondStones[i] != null)
-                    BondStones[i].sprite = i < state.Bond ? BondLit : BondDark;
-            if (BondGlow != null)
+            for (int i = 0; i < Stages.Length; i++)
             {
-                BondGlow.gameObject.SetActive(!state.BondMaxed && state.Bond < BondStones.Length);
-                if (!state.BondMaxed && state.Bond < BondStones.Length)
-                    BondGlow.anchoredPosition = BondStones[state.Bond]
-                        .rectTransform
-                        .anchoredPosition;
+                var widget = Stages[i];
+                int stage = i + 1;
+                bool done = shown && stage <= state.Bond;
+                bool next = shown && stage == state.Bond + 1;
+                if (widget.Card != null)
+                {
+                    widget.Card.gameObject.SetActive(shown);
+                    widget.Card.Selected = next;
+                    if (widget.Card.Group != null)
+                        widget.Card.Group.alpha = done || next ? 1f : FutureAlpha;
+                }
+                if (widget.Stone != null)
+                    widget.Stone.sprite = done ? BondLit : BondDark;
+                if (widget.Number != null)
+                    widget.Number.color = done ? LitNumber : UiPalette.TextMain;
+                Set(widget.Effect, TrainingBond.EffectOf(stage));
+                if (widget.Done != null)
+                    widget.Done.SetActive(done);
+                if (widget.BreakThrough != null)
+                {
+                    widget.BreakThrough.gameObject.SetActive(next);
+                    widget.BreakThrough.interactable = next && state.CanDeepen;
+                }
             }
-            for (int i = 0; i < BondDiffs.Length && i < CharacterStats.Count; i++)
-            {
-                int before = state.Stats[i];
-                int after = state.BondStats[i];
-                Set(BondDiffs[i].Before, before.ToString(CultureInfo.InvariantCulture));
-                Set(BondDiffs[i].After, after.ToString(CultureInfo.InvariantCulture));
-                Set(BondDiffs[i].Gain, $"+{after - before}");
-            }
-            if (BondConfirm != null)
-                BondConfirm.interactable = state.CanDeepen;
-            Set(BondConfirmLabel, state.BondMaxed ? "絆は上限です" : "絆を深める");
-            if (BondCost != null)
-                BondCost.SetActive(!state.BondMaxed);
-            if (BondToken != null && state.Member != null)
-                PartyArt.Paint(BondToken, state.Member, trim: true);
-            Set(BondTokens, $"{state.BondTokens} / {TrainingBond.TokensPerStage}");
-            if (BondTokens != null)
-                BondTokens.color =
-                    state.BondTokens >= TrainingBond.TokensPerStage ? UiPalette.TextMain : Short;
 
             if (Celebration == null)
                 return;
@@ -781,84 +649,6 @@ namespace Baryonyx.Training
             if (widget.Lock != null)
                 widget.Lock.SetActive(locked);
             Set(widget.When, locked ? $"Lv {card.UnlockLevel}で解放" : "");
-        }
-
-        /// <summary>One equipment slot's tile; the generator calls it too.</summary>
-        public static void ShowGear(TrainingGearWidget widget, TrainingGearState gear, Sprite icon)
-        {
-            bool locked = gear != null && gear.Locked;
-            if (widget.Icon != null)
-            {
-                PixelIcon.Show(widget.Icon, icon);
-                widget.Icon.enabled = icon != null && !locked;
-                widget.Icon.color =
-                    gear != null && gear.Filled ? Color.white : new Color(1f, 1f, 1f, 0.35f);
-            }
-            // 付けている装備の品質のキラキラを、種類ごとの光り方で重ねる。空いた枠では出さない。
-            if (widget.Foil != null)
-            {
-                bool filled = gear != null && gear.Filled && !locked;
-                widget.Foil.Show(
-                    filled ? icon : null,
-                    filled ? gear.Quality : ItemQuality.C,
-                    filled ? gear.FoilStyle : 0
-                );
-            }
-            Set(
-                widget.Name,
-                locked ? ""
-                    : gear == null ? ""
-                    : gear.Filled ? gear.Name
-                    : "なし"
-            );
-            SetRich(widget.Stars, gear != null && gear.Filled ? gear.Stars : "");
-            Set(widget.Detail, gear != null && gear.Filled ? gear.Detail : "");
-            if (widget.Lock != null)
-                widget.Lock.SetActive(locked);
-            Set(widget.When, gear?.UnlockText ?? "");
-            // 開いていないアクセサリーの枠も押せ、付け替えの画面のアクセサリーのタブを開く。
-            if (widget.Button != null)
-                widget.Button.interactable = gear != null;
-        }
-
-        /// <summary>
-        /// Moves to the equipment's change screen with this character and slot chosen. Its back
-        /// comes back here, where the same character is still on screen.
-        /// </summary>
-        public void OpenGear(string id, int slot)
-        {
-            if (Guide == null || !Guide.HasItem(EquipmentSession.GuideItemKey))
-                return;
-            EquipmentSession.Selected = id;
-            // 0 武器、1 防具、2〜4 アクセサリー。
-            bool accessory = slot >= TrainingPresenter.OpenGearSlots;
-            EquipmentSession.OpenSlot = accessory ? EquipmentSlot.Weapon : (EquipmentSlot)slot;
-            EquipmentSession.OpenAccessory = accessory
-                ? slot - TrainingPresenter.OpenGearSlots
-                : -1;
-            Guide.OpenItem(EquipmentSession.GuideItemKey);
-        }
-
-        /// <summary>Moves to the card skills' change screen with this character and slot chosen.</summary>
-        public void OpenCards(string id, int slot)
-        {
-            if (Guide == null || !Guide.HasItem(CardLoadoutSession.GuideItemKey))
-                return;
-            CardLoadoutSession.Selected = id;
-            CardLoadoutSession.OpenSlot = slot;
-            CardLoadoutSession.OpenUnique = -1;
-            Guide.OpenItem(CardLoadoutSession.GuideItemKey);
-        }
-
-        /// <summary>Moves to the card skills' change screen with this character's unique skill and its tree shown.</summary>
-        public void OpenUnique(string id, int index)
-        {
-            if (Guide == null || !Guide.HasItem(CardLoadoutSession.GuideItemKey))
-                return;
-            CardLoadoutSession.Selected = id;
-            CardLoadoutSession.OpenSlot = -1;
-            CardLoadoutSession.OpenUnique = index;
-            Guide.OpenItem(CardLoadoutSession.GuideItemKey);
         }
 
         private static string Number(long value) =>

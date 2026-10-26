@@ -40,7 +40,7 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 商会の「合成」は、案内人を隠して画面いっぱいに、作れる物を分類のタブごとに並べる。選ぶと、☆が1つ低い
-        // 同じ分類の使っていない物を材料に並べ、品質の低い3つを選んでおく。「合成」を押すと、サーバーの答えを
+        // 同じ分類の使っていない物を材料に並べ、品質の低い3つを選んでおく。開いたときは先頭の物を選んでおく。「合成」を押すと、サーバーの答えを
         // 待ってから材料を減らし、出来た物を持ち物に足して知らせる。材料が3つでなければ押せない。
         [UnityTest]
         public IEnumerator CraftMakesTheChosenThingFromThreeMaterials()
@@ -67,8 +67,10 @@ namespace Baryonyx.Tests.PlayMode
                 craft.Shown.All(recipe => recipe.Kind == LibraryKind.Weapon && recipe.Stars >= 2),
                 Is.True
             );
-            Assert.That(craft.DetailName.text, Is.Empty);
-            Assert.That(craft.Confirm.interactable, Is.False);
+            // 右の面が空にならないよう、先頭の物を選んでおく。
+            Assert.That(craft.Selected, Is.EqualTo(0));
+            Assert.That(craft.Rows[0].Card.Selected, Is.True);
+            Assert.That(craft.DetailName.text, Is.EqualTo(craft.Shown[0].Name));
             SceneTests.AssertTouchSize(craft.Confirm.transform, 0.7f);
 
             int index = craft

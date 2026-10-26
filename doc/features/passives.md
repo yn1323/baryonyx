@@ -189,7 +189,7 @@ Overwatchの開発も、目に見えないパッシブを少なく保つ方針�
 | 18個の定義（持ち主・解放するLv・名前・説明文）と数値 | [CombatPassives](../../client/Assets/Baryonyx/Features/Combat/Runtime/CombatPassives.cs) |
 | 戦闘での働き | [BattleInspectView.Passives](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Passives.cs)（呼ぶ所は手札・ターン・カード・敵の攻撃の各処理） |
 | 編成から戦闘へ渡す | [AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs) |
-| 育成の画面の表示 | 仮データ（`TrainingMockData`）を [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) が定義から作る（[育成](screens/adventurers.md#育成)） |
+| 育成の画面の表示 | 仮データ（`TrainingMockData`）を [TrainingAssets](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) が定義から作る（[ステータスのタブ](screens/adventurers.md#ステータス)） |
 | アイコン | `client/Assets/Baryonyx/Features/Combat/UI/Art/Passives/Passive<種類>.aseprite`（24×24ドット）。指示文と作り方は [prompts.json](../../client/ArtSource/UI/Passives/prompts.json) |
 | テスト | EditModeの `CombatPassivesTests`、PlayModeの `BattlePassivesSceneTests`・`AdventurePartyTests`・`TavernTrainingTests` |
 

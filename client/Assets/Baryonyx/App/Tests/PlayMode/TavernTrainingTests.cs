@@ -43,8 +43,8 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(TavernTrainingTests));
         }
 
-        // 冒険者の一覧の「装備・スキル・育成」は、その人の個別の画面を開く。左にイラストと右下のドット絵、
-        // 右にステータスとパッシブ、デッキの4枚（固有スキル2・カスタムスキル2）、装備5枠。左右のフリックで
+        // 冒険者の一覧の帯の「装備・スキル」は、その人の冒険者のタブ（ステータス）を開く。左にイラストと右下の
+        // ドット絵、右にステータスとパッシブとレベルアップ、両端に人の列とタブ。左右のフリックか人の列で
         // 人を替え、「レベルアップ」で重ねて開いた画面で上げる数を選んでから上げる。戻る操作は重ねた画面を
         // 先に閉じ、次に一覧へ戻る。
         [UnityTest]
@@ -58,7 +58,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ListPanel.activeSelf, Is.False);
             Assert.That(view.GuideArt.activeSelf, Is.False);
             Assert.That(training.Dialog.activeSelf, Is.False);
-            // 個別の画面はメニューに出さない。
+            // 冒険者のタブはメニューに出さない。
             int item = ItemOf(view, TrainingSession.GuideItemKey);
             Assert.That(view.Definition.Items[item].Hidden, Is.True);
             Assert.That(view.MenuItems[item], Is.Null);
@@ -73,12 +73,20 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Illustration.texture, Is.Not.Null);
             // 横に長いボタンは、メニューの行と同じく高さを7割まで許す。
             SceneTests.AssertTouchSize(training.LevelUp.transform, 0.7f);
-            foreach (var gear in training.Gear)
-                SceneTests.AssertTouchSize(gear.Button.transform);
-            foreach (var card in training.CardSlots)
-                SceneTests.AssertTouchSize(card.Button.transform);
+            // 左の人の列と右のタブも、指で押せる大きさで「もどる」より下。
+            foreach (var tab in training.Sheet.Tabs)
+            {
+                SceneTests.AssertTouchSize(tab.transform);
+                SceneTests.AssertBelow(tab.transform, view.Back.transform);
+            }
+            SceneTests.AssertTouchSize(training.Sheet.People[0].Button.transform);
+            Assert.That(
+                training.Sheet.Tabs.Select(tab => tab.Label.text),
+                Is.EqualTo(new[] { "ステータス", "装備", "スキル", "突破" })
+            );
+            Assert.That(training.Sheet.Tabs[0].Chosen, Is.True);
 
-            // 最初はパーティの1人目。ステータス・スキル・装備・カードは今のレベルの値。
+            // 最初はパーティの1人目。ステータスとパッシブは今のレベルの値。
             var party = PartySession.Formation(training.Party);
             var first = party.Find(party.Member(0));
             var growth = training.Data.Find(first.Id);
@@ -105,54 +113,9 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(locked ? $"Lv {growth.Passives[1].UnlockLevel}で解放" : "")
             );
             Assert.That(training.Passives[0].Icon.texture, Is.Not.Null);
-            // 固有スキルは押せる小さなカードで、セットしている進化の段階を出す。未解放のものは暗くして
-            // 解放するレベルを重ねる。効果の文は出さず、カードを押して開く付け替えの画面で読む。
-            Assert.That(
-                training.Uniques[0].Name.text,
-                Is.EqualTo(
-                    new CardLoadoutSessionStore(training.Party, training.Data)
-                        .UniqueCardOf(first.Id, 0)
-                        .Name
-                )
-            );
-            Assert.That(training.Uniques[0].Description, Is.Null);
-            // 1つ目はLv1、2つ目はLv10で開き、Lv12の先頭の人は3つ目（Lv30）だけがまだ開いていない。
-            Assert.That(training.Uniques[0].Lock.activeSelf, Is.False);
-            Assert.That(training.Uniques[1].Lock.activeSelf, Is.False);
-            Assert.That(training.Uniques[2].Lock.activeSelf, Is.True);
-            Assert.That(
-                training.Uniques[2].When.text,
-                Is.EqualTo($"Lv {growth.Uniques[2].UnlockLevel}で解放")
-            );
-            foreach (var card in training.Uniques)
-                SceneTests.AssertTouchSize(card.Button.transform);
-            // カスタムスキルは3枠で、枠は属性の枠。仮データの人は2枚を付け、3枚目の枠は空き。
-            Assert.That(training.CardSlots.Length, Is.EqualTo(TrainingPresenter.CustomSlots));
-            Assert.That(training.CardSlots.All(card => card.Name.text != ""), Is.True);
-            Assert.That(training.CardSlots.Take(2).All(card => card.Art.enabled), Is.True);
-            Assert.That(training.CardSlots.All(card => card.Frame.texture != null), Is.True);
-            Assert.That(training.CardSlots[2].Name.text, Is.EqualTo(TrainingPresenter.EmptyName));
-            Assert.That(training.CardSlots[2].Art.enabled, Is.False);
-            Assert.That(training.Gear[0].Slot.text, Is.EqualTo("武器"));
-            Assert.That(training.Gear[0].Name.text, Is.Not.Empty);
-            Assert.That(training.Gear[0].Detail.text, Is.Not.Empty);
-            Assert.That(training.Gear[0].Icon.enabled, Is.True);
-            // アクセサリーの1つ目はLv1から開き、2つ目と3つ目はLvで開くまで錠前と解放するLvを出す。
-            // 押すと付け替えの画面を開ける。
-            Assert.That(training.Gear[4].Slot.text, Is.EqualTo("アクセサリー 3"));
-            Assert.That(training.Gear[2].Lock.activeSelf, Is.False);
-            Assert.That(training.Gear.Skip(3).All(gear => gear.Lock.activeSelf), Is.True);
-            Assert.That(
-                training.Gear.Skip(3).Select(gear => gear.When.text),
-                Is.EqualTo(new[] { AccessorySlots.UnlockText(1), AccessorySlots.UnlockText(2) })
-            );
-            Assert.That(training.Gear.All(gear => gear.Button.interactable), Is.True);
-
             // 左へのフリックで次の人、右へのフリックで前の人。枠の上から動かしてもフリックとして届く。
             Assert.That(
-                ExecuteEvents.GetEventHandler<IEndDragHandler>(
-                    training.CardSlots[0].Button.gameObject
-                ),
+                ExecuteEvents.GetEventHandler<IEndDragHandler>(training.LevelUp.gameObject),
                 Is.SameAs(training.Swipe.gameObject)
             );
             Flick(training, -1);
@@ -209,43 +172,43 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(training.Level.text, Is.EqualTo(target.ToString()));
             Assert.That(view.ToastMessage, Does.StartWith($"{first.Name}が Lv {target} になり"));
 
-            // カスタムスキルの枠は、その人とその枠を選んだスキルの付け替えの画面へ移り、戻ると個別の画面に帰る。
+            // 右のタブの「スキル」は、同じ人の1つ目のカスタムスキルの枠を選んで開く。
             Flick(training, -1);
             string second = party.Member(1);
-            training.CardSlots[1].Button.onClick.Invoke();
+            training.Sheet.Tabs[2].Button.onClick.Invoke();
             var cards = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey));
+            var loadout = cards.GetComponent<CardLoadoutView>();
             Assert.That(cards.activeInHierarchy, Is.True);
             Assert.That(training.gameObject.activeSelf, Is.False);
-            Assert.That(CardLoadoutSession.Selected, Is.EqualTo(second));
-            Assert.That(
-                cards
-                    .GetComponent<CardLoadoutView>()
-                    .Tiles[CardLoadoutPresenter.UniqueCount + 1]
-                    .Selected.activeSelf,
-                Is.True
-            );
-            view.Back.onClick.Invoke();
+            Assert.That(loadout.Presenter.State.PersonId, Is.EqualTo(second));
+            Assert.That(loadout.Sheet.Tabs[2].Chosen, Is.True);
+            Assert.That(loadout.SlotRows[0].Card.Selected.activeSelf, Is.True);
+
+            // 固有スキルの行を押すと、右にその進化ツリーを出す。
+            loadout.UniqueRows[1].Card.Button.onClick.Invoke();
+            Assert.That(loadout.UniqueRows[1].Card.Selected.activeSelf, Is.True);
+            Assert.That(loadout.SlotRows.Any(row => row.Card.Selected.activeSelf), Is.False);
+            Assert.That(loadout.Tree.Root.activeSelf, Is.True);
+
+            // 「ステータス」のタブへ戻ると同じ人。左の列で人を替えられる。
+            loadout.Sheet.Tabs[0].Button.onClick.Invoke();
             Assert.That(cards.activeSelf, Is.False);
             Assert.That(training.gameObject.activeSelf, Is.True);
             Assert.That(training.Name.text, Is.EqualTo(party.Name(second)));
+            training.Sheet.People.Single(person => person.Id == first.Id).Button.onClick.Invoke();
+            Assert.That(training.Name.text, Is.EqualTo(first.Name));
+            Assert.That(
+                training.Sheet.People.Single(person => person.Id == first.Id).Selected.activeSelf,
+                Is.True
+            );
 
-            // 固有スキルは、その固有スキルの進化ツリーを出したスキルの付け替えの画面へ移る。
-            training.Uniques[1].Button.onClick.Invoke();
-            var loadout = cards.GetComponent<CardLoadoutView>();
-            Assert.That(cards.activeInHierarchy, Is.True);
-            Assert.That(loadout.Tiles[1].Selected.activeSelf, Is.True);
-            Assert.That(loadout.Tiles.Count(tile => tile.Selected.activeSelf), Is.EqualTo(1));
-            Assert.That(loadout.Tree.Root.activeSelf, Is.True);
-            view.Back.onClick.Invoke();
-            Assert.That(training.gameObject.activeSelf, Is.True);
-
-            // 「もどる」で冒険者の一覧へ戻る。パーティの先頭を長押しして開き直すと、アプリを動かしている間はレベルが残る。
+            // 「もどる」で冒険者の一覧へ戻る。パーティの先頭を選んで開き直すと、アプリを動かしている間はレベルが残る。
             view.Back.onClick.Invoke();
             var roster = view.PanelFor(ItemOf(view, PartySession.GuideItemKey))
                 .GetComponent<AdventurerRosterView>();
             Assert.That(roster.gameObject.activeSelf, Is.True);
             Assert.That(training.gameObject.activeSelf, Is.False);
-            roster.Slots[0].Card.Hold();
+            Open(roster);
             Assert.That(training.Name.text, Is.EqualTo(first.Name));
             Assert.That(training.Level.text, Is.EqualTo(target.ToString()));
             yield return null;
@@ -270,7 +233,7 @@ namespace Baryonyx.Tests.PlayMode
                 () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
-            roster.Slots[0].Card.Hold();
+            Open(roster);
             var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             Assert.That(training.Name.text, Is.EqualTo(TrainingView.LoadingText));
@@ -314,10 +277,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.LevelUpFailedMessage));
         }
 
-        // 右上の「絆」は、灯った段を6つのしるしで見せ、押すと次の段で上がるステータスを重ねた窓に出す。
-        // 「絆を深める」で絆のしるしを使って1段上げ、灯った段の演出を出す。戻る操作は演出を先に閉じる。
+        // 右のタブの「突破」は、6段を上から並べ、突破した段に「突破済み」、次の段に「限界突破」を出す。
+        // 「限界突破」でしるしを使ってその場で1段上げ、灯った段の演出を出す。戻る操作は演出を先に閉じる。
         [UnityTest]
-        public IEnumerator TheBondDeepensFromThePageAndLightsUp()
+        public IEnumerator TheBreakthroughTabRaisesTheStageAndLightsItUp()
         {
             TrainingBond.Reset();
             try
@@ -325,45 +288,46 @@ namespace Baryonyx.Tests.PlayMode
                 var guide = default(GuideSceneBootstrap);
                 yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
                 var view = guide.View;
-                var training = OpenPage(view);
-                var party = PartySession.Formation(training.Party);
+                var page = OpenPage(view);
+                var party = PartySession.Formation(page.Party);
                 var first = party.Find(party.Member(0));
-                var growth = training.Data.Find(first.Id);
+                var growth = page.Data.Find(first.Id);
                 int stage = TrainingBond.StageOf(growth);
                 Assert.That(stage, Is.LessThan(TrainingBond.Max - 1));
                 Assert.That(TrainingBond.TokensOf(growth), Is.EqualTo(1));
 
-                SceneTests.AssertTouchSize(training.Bond.transform, 0.7f);
-                Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage));
-
-                training.Bond.onClick.Invoke();
-                Assert.That(training.BondDialog.activeSelf, Is.True);
-                Assert.That(training.BondFrom.text, Is.EqualTo(stage.ToString()));
-                Assert.That(training.BondTo.text, Is.EqualTo((stage + 1).ToString()));
-                Assert.That(Lit(training, training.BondStones), Is.EqualTo(stage));
-                Assert.That(
-                    training.BondDiffs[0].After.text,
-                    Is.EqualTo(Worn(growth.StatsAt(first.Level, stage + 1), first.Id).Hp.ToString())
-                );
-                Assert.That(training.BondTokens.text, Is.EqualTo("1 / 1"));
-                Assert.That(training.BondConfirm.interactable, Is.True);
-                // 重ねた窓が配置されてから、「絆を深める」が背面より手前で押せることを確かめる。
+                page.Sheet.Tabs[3].Button.onClick.Invoke();
+                var training = view.PanelFor(ItemOf(view, TrainingSession.BreakthroughItemKey))
+                    .GetComponent<TrainingView>();
+                Assert.That(training.gameObject.activeInHierarchy, Is.True);
+                Assert.That(page.gameObject.activeSelf, Is.False);
+                Assert.That(training.Sheet.Tabs[3].Chosen, Is.True);
+                Assert.That(training.Sheet.Tabs[3].Label.text, Is.EqualTo("突破"));
+                Assert.That(view.Breadcrumb.text, Is.EqualTo(Trail("編成", "冒険者", first.Name)));
                 yield return null;
-                Assert.That(
-                    TopHit(training.BondConfirm.transform)
-                        .transform.IsChildOf(training.BondConfirm.transform),
-                    Is.True
-                );
 
-                training.BondConfirm.onClick.Invoke();
-                Assert.That(training.BondDialog.activeSelf, Is.False);
+                // 突破した段は石を灯して「突破済み」、次の段は金の縁と「限界突破」、まだの段は薄い。
+                Assert.That(training.Stages, Has.Length.EqualTo(TrainingBond.Max));
+                for (int i = 0; i < training.Stages.Length; i++)
+                {
+                    var row = training.Stages[i];
+                    Assert.That(row.Effect.text, Is.EqualTo(TrainingBond.EffectOf(i + 1)));
+                    Assert.That(row.Done.activeSelf, Is.EqualTo(i < stage));
+                    Assert.That(row.BreakThrough.gameObject.activeSelf, Is.EqualTo(i == stage));
+                    Assert.That(row.Card.Selected, Is.EqualTo(i == stage));
+                    Assert.That(
+                        row.Stone.sprite,
+                        Is.EqualTo(i < stage ? training.BondLit : training.BondDark)
+                    );
+                }
+                var next = training.Stages[stage].BreakThrough;
+                Assert.That(next.interactable, Is.True);
+                SceneTests.AssertTouchSize(next.transform, 0.7f);
+
+                next.onClick.Invoke();
                 Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
                 Assert.That(TrainingBond.StageOf(growth), Is.EqualTo(stage + 1));
-                Assert.That(
-                    training.Stats.Select(label => label.text),
-                    Is.EqualTo(Values(Worn(growth.StatsAt(first.Level, stage + 1), first.Id)))
-                );
-                Assert.That(Lit(training, training.BondPips), Is.EqualTo(stage + 1));
+                Assert.That(training.Stages[stage].Done.activeSelf, Is.True);
                 var celebration = training.Celebration;
                 Assert.That(celebration.Name.text, Is.EqualTo(first.Name));
                 Assert.That(celebration.Stage.text, Is.EqualTo((stage + 1).ToString()));
@@ -373,21 +337,23 @@ namespace Baryonyx.Tests.PlayMode
                 );
                 yield return SceneTests.WaitUntil(
                     () => celebration.Card.alpha >= 1f,
-                    message: "The bond's moment did not finish."
+                    message: "The breakthrough's moment did not finish."
                 );
                 Assert.That(celebration.Stones[stage].sprite, Is.EqualTo(training.BondLit));
                 Assert.That(celebration.Stones[stage + 1].sprite, Is.EqualTo(training.BondDark));
 
-                // 戻る操作は演出だけを閉じる。しるしを使い切ると、深められない。
+                // 戻る操作は演出だけを閉じる。しるしを使い切ると、次の段の「限界突破」は押せない。
                 view.Back.onClick.Invoke();
                 Assert.That(celebration.gameObject.activeSelf, Is.False);
                 Assert.That(training.gameObject.activeSelf, Is.True);
-                training.Bond.onClick.Invoke();
-                Assert.That(training.BondTokens.text, Is.EqualTo("0 / 1"));
-                Assert.That(training.BondConfirm.interactable, Is.False);
-                view.Back.onClick.Invoke();
-                Assert.That(training.BondDialog.activeSelf, Is.False);
-                Assert.That(training.gameObject.activeSelf, Is.True);
+                Assert.That(training.Stages[stage + 1].BreakThrough.interactable, Is.False);
+
+                // ステータスのタブへ戻ると、突破で上がったステータスを出す。
+                training.Sheet.Tabs[0].Button.onClick.Invoke();
+                Assert.That(
+                    page.Stats.Select(label => label.text),
+                    Is.EqualTo(Values(Worn(growth.StatsAt(first.Level, stage + 1), first.Id)))
+                );
             }
             finally
             {
@@ -395,10 +361,10 @@ namespace Baryonyx.Tests.PlayMode
             }
         }
 
-        // サーバーがあるときは、サーバーの絆としるしを読み、保存を待たずに演出を出してサーバーで深める。
+        // サーバーがあるときは、サーバーの段としるしを読み、保存を待たずに演出を出してサーバーで上げる。
         // 保存できなければ、演出を閉じて元の段に戻し、通知の帯で知らせる。
         [UnityTest]
-        public IEnumerator TrainingDeepensTheBondOnTheServer()
+        public IEnumerator TheBreakthroughIsSavedOnTheServer()
         {
             var server = new FakePartySource(5000, "toma", "luka")
                 .With("toma", 12, "Fire", "Ice")
@@ -415,18 +381,23 @@ namespace Baryonyx.Tests.PlayMode
                 () => roster.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
-            roster.Slots[0].Card.Hold();
-            var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+            Open(roster);
+            var page = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
+                .GetComponent<TrainingView>();
+            yield return SceneTests.WaitUntil(
+                () => page.LoadTask.IsCompleted,
+                message: "The party did not load."
+            );
+            page.Sheet.Tabs[3].Button.onClick.Invoke();
+            var training = view.PanelFor(ItemOf(view, TrainingSession.BreakthroughItemKey))
                 .GetComponent<TrainingView>();
             yield return SceneTests.WaitUntil(
                 () => training.LoadTask.IsCompleted,
                 message: "The party did not load."
             );
-            Assert.That(Lit(training, training.BondPips), Is.EqualTo(2));
+            Assert.That(training.Presenter.State.Bond, Is.EqualTo(2));
 
-            training.Bond.onClick.Invoke();
-            Assert.That(training.BondTokens.text, Is.EqualTo("2 / 1"));
-            training.BondConfirm.onClick.Invoke();
+            training.Stages[2].BreakThrough.onClick.Invoke();
             Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
             Assert.That(training.Celebration.Stage.text, Is.EqualTo("3"));
             Assert.That(training.Presenter.DeepenTask.IsCompleted, Is.False);
@@ -434,27 +405,23 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(server.Calls, Is.EqualTo(new[] { "bond toma 3" }));
             Assert.That(server.BondOf("toma"), Is.EqualTo((3, 1)));
             Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
-            Assert.That(Lit(training, training.BondPips), Is.EqualTo(3));
+            Assert.That(training.Presenter.State.Bond, Is.EqualTo(3));
             view.Back.onClick.Invoke();
 
             // 保存できなければ、演出を閉じて段としるしを戻す。
             server.Fail = true;
-            training.Bond.onClick.Invoke();
-            training.BondConfirm.onClick.Invoke();
+            training.Stages[3].BreakThrough.onClick.Invoke();
             Assert.That(training.Celebration.gameObject.activeSelf, Is.True);
             yield return SceneTests.WaitUntil(() => training.Presenter.DeepenTask.IsCompleted);
             Assert.That(training.Celebration.gameObject.activeSelf, Is.False);
-            Assert.That(Lit(training, training.BondPips), Is.EqualTo(3));
+            Assert.That(training.Presenter.State.Bond, Is.EqualTo(3));
             Assert.That(view.ToastMessage, Is.EqualTo(TrainingPresenter.DeepenFailedMessage));
         }
-
-        private static int Lit(TrainingView training, IEnumerable<UnityEngine.UI.Image> stones) =>
-            stones.Count(stone => stone.sprite == training.BondLit);
 
         private static int ItemOf(Baryonyx.UI.GuideMenu.GuideMenuView view, string key) =>
             System.Array.FindIndex(view.Definition.Items, entry => entry.Key == key);
 
-        // メニューの「冒険者」から一覧を開き、選んでいる人の個別の画面を開く。
+        // メニューの「冒険者」から一覧を開き、選んでいる人の冒険者のタブを開く。
         private static string Trail(params string[] parts) =>
             string.Join(Baryonyx.UI.GuideMenu.GuideMenuView.TrailSeparator, parts);
 
@@ -462,9 +429,16 @@ namespace Baryonyx.Tests.PlayMode
         {
             int item = ItemOf(view, PartySession.GuideItemKey);
             view.MenuItems[item].onClick.Invoke();
-            view.PanelFor(item).GetComponent<AdventurerRosterView>().Slots[0].Card.Hold();
+            Open(view.PanelFor(item).GetComponent<AdventurerRosterView>());
             return view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
+        }
+
+        // 冒険者の一覧でパーティの先頭を選び、下の帯の「装備・スキル」でその人のタブを開く。
+        private static void Open(AdventurerRosterView roster)
+        {
+            roster.Slots[0].Card.Click();
+            roster.Chosen.Detail.onClick.Invoke();
         }
 
         // 指を横へ400（設計座標）動かして離したことにする。-1は左へ（次の人）、1は右へ（前の人）。

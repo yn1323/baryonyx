@@ -266,7 +266,7 @@ namespace Baryonyx.Workshop
                 .ToArray();
         }
 
-        /// <summary>Shows the tab's rows, none chosen.</summary>
+        /// <summary>Shows the tab's rows, the first chosen.</summary>
         public void ShowTab(Tab next)
         {
             tab = next;

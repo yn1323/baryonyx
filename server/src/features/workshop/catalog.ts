@@ -18,15 +18,16 @@ export type WorkshopCategory = (typeof WORKSHOP_CATEGORIES)[number];
 // 売る物の倍率（百分率）。品質の幅の下限で、どの種類も品質Cになる。
 export const WORKSHOP_MULTIPLIER_PERCENT = MIN_MULTIPLIER_PERCENT;
 
-// 値段（ルーン）。☆1の200から、☆が1つ増えるごとに倍にする。品質を選べない代わりに、行商人の品質Cの値段
-// （☆1で300）より安くした。仮の値（doc/features/economy.md のルーンの用途）。
+// 値段（ルーン）。☆1の1,000から、☆が1つ増えるごとに倍にする。品質を選べない代わりに、行商人の品質Cの値段
+// （☆1で1,500）より安くした。仮の値（doc/features/economy.md のルーンの用途）。
+// 2026-10-26に、1週間の歩数（約4万ルーン）に比べて軽すぎたため、☆1の200から5倍にした。
 // クライアントの WorkshopGoods が同じ値を持つ。
 export const WORKSHOP_STAR_PRICES: Record<Stars, number> = {
-  1: 200,
-  2: 400,
-  3: 800,
-  4: 1600,
-  5: 3200,
+  1: 1000,
+  2: 2000,
+  3: 4000,
+  4: 8000,
+  5: 16000,
 };
 
 // 冒険のドロップの一覧（行き先ごと）での、種類の載り方。載っていない物は undefined。
@@ -121,13 +122,14 @@ export const SELL_LIMIT = 50;
 // アイテムの☆1の売値（1つ分）。☆が1つ増えるごとに倍にする。
 export const SELL_ITEM_STAR1_RUNES = 10;
 
-// スキル・装備の売値。買う値段の4分の1に倍率を掛け、四捨五入する。冒険のドロップの一覧にない物は☆1とする。
+// スキル・装備の売値。買う値段の20分の1に倍率を掛け、四捨五入する。冒険のドロップの一覧にない物は☆1とする。
+// 2026-10-26に買う値段を5倍にしたとき、売値は変えないよう4分の1から20分の1にした。
 export function sellPrice(
   category: WorkshopCategory,
   id: string,
   percent: number,
 ): number {
-  const base = WORKSHOP_STAR_PRICES[workshopStarsOf(category, id) ?? 1] / 4;
+  const base = WORKSHOP_STAR_PRICES[workshopStarsOf(category, id) ?? 1] / 20;
   return Math.round((base * percent) / 100);
 }
 

@@ -38,19 +38,23 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// One of the six small tiles over the chosen card in the selection mode: the card's art,
-    /// lit gold when it is the slot chosen. Pressing another tile chooses that slot.
+    /// One of the person's six cards in the left frame (a unique skill or a custom skill's
+    /// slot), as a row like the list's: the art, the name and kind and the whole effect. Pressing
+    /// it chooses that slot; a unique skill not unlocked yet is dimmed under a lock with its
+    /// level, and an empty slot shows only 「空き」.
     /// </summary>
     [Serializable]
-    public sealed class CardLoadoutTileWidget
+    public sealed class CardLoadoutDeckRowWidget
     {
-        public Button Button;
-        public GameObject Selected;
-        public RawImage Art;
+        public CardLoadoutSlotWidget Card = new();
 
-        // 未解放の固有スキルの錠前と、空いた枠の「＋」。
-        public GameObject Lock;
+        // 絵・名前・効果。空いた枠では隠して「空き」を出す。
+        public GameObject Content;
         public GameObject Empty;
+
+        // 未解放の固有スキルの錠前と、効果の代わりに出す解放するLv（「Lv 30で解放」）。
+        public GameObject Lock;
+        public TMP_Text When;
     }
 
     /// <summary>One stage of the evolution tree on the right, baked by the generator.</summary>
@@ -108,17 +112,16 @@ namespace Baryonyx.CardLoadout
     }
 
     /// <summary>
-    /// The formation's card skills change screen over the guide screen, laid out like the
-    /// equipment's: the person (name, level, elements) and their stats on the left, then either
-    /// their six cards (three unique skills and three custom skills, as small cards) or, in the
-    /// selection mode, six tiles over the chosen slot's card shown large; the skill and item
-    /// tabs and the cards they can set on the right, or the evolution tree of the unique skill
-    /// chosen. 「今のデッキ」 lays the six cards out whole over the screen.
+    /// The adventurer's card skills tab of the formation over the guide screen, between the
+    /// people's column and the tabs (<see cref="PartySheet"/>): the person's six cards (three
+    /// unique skills and three custom skills) as rows with their whole effects on the left, one
+    /// of them always chosen; on the right, the skill and item tabs and the cards that can go in
+    /// the chosen custom skill's slot, or the evolution tree of the unique skill chosen.
     /// CardLoadoutAssets bakes the parts and rows into the formation prefab,
     /// so they read in the editor; this view wires them up and drives its own presenter. When
     /// the app has a server (<see cref="PartySession.Source"/>), it reads the party on opening
     /// and saves every change there; otherwise it uses the mock data. Back returns to the
-    /// adventurer's page. Changes are told on the guide screen's notice band.
+    /// adventurers' list. Changes are told on the guide screen's notice band.
     /// </summary>
     public sealed class CardLoadoutView
         : GuidePanel,
@@ -138,40 +141,18 @@ namespace Baryonyx.CardLoadout
         // アイテムの絵（種類のIDで引く）。
         public ItemArt ItemArt;
 
-        // 左上の人（立ち姿・名前・Lv）。
-        public PartyPersonHeader Person = new();
+        // 左の人の列と右のタブ。
+        public PartySheet Sheet;
 
-        // 左の面の上の左右のフリックで人を替える（個別の画面と同じ）。
+        // 左の面の上の左右のフリックで人を替える（ステータスのタブと同じ）。
         public GuideSwipe Swipe;
 
-        // 開いたときの6枚の一覧：固有スキル3枚とカスタムスキル3枚の小さなカードと「今のデッキ」。
-        // カードを押すと、その枠の選択モードになる（固有スキルは右に進化ツリーを出す）。
-        public GameObject Overview;
-        public TrainingCardWidget[] UniqueCards = Array.Empty<TrainingCardWidget>();
-        public TrainingCardWidget[] SlotCards = Array.Empty<TrainingCardWidget>();
-        public Button DeckButton;
-
-        // 選択モード：6枚の札（固有スキル3つ、続けてカスタムスキル3つ）と、選んでいる枠の今のカード、戻る。
-        public GameObject Selection;
-        public CardLoadoutTileWidget[] Tiles = Array.Empty<CardLoadoutTileWidget>();
-        public TrainingCardWidget Chosen = new();
-        public Button Back;
-
-        // 今のデッキの全画面：「〇〇のデッキ」と閉じる×、固有スキル3枚とカスタムスキル3枚。
-        public GameObject Deck;
-        public TMP_Text DeckTitle;
-        public Button DeckClose;
-        public TrainingCardWidget[] DeckUniques = Array.Empty<TrainingCardWidget>();
-        public TrainingCardWidget[] DeckSlots = Array.Empty<TrainingCardWidget>();
-
-        // CardElement の順の、戦闘のカードの属性ごとの枠。
-        public Texture[] CardFrames = Array.Empty<Texture>();
+        // 左の6行：固有スキル3つと、カスタムスキルの3つの枠。押すとその枠を選ぶ。
+        public CardLoadoutDeckRowWidget[] UniqueRows = Array.Empty<CardLoadoutDeckRowWidget>();
+        public CardLoadoutDeckRowWidget[] SlotRows = Array.Empty<CardLoadoutDeckRowWidget>();
 
         // 固有スキルを選んでいるときに、タブと一覧の代わりに右に出す進化ツリー。
         public CardLoadoutTreeWidget Tree = new();
-
-        // 選んでいる人のステータス（CharacterStats の順）。
-        public TMP_Text[] Stats = Array.Empty<TMP_Text>();
 
         // 右の上のスキル・アイテムのタブ（CardLoadoutPresenter.SkillTab・ItemTab の順）。
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
@@ -201,18 +182,8 @@ namespace Baryonyx.CardLoadout
         public event Action<string> CardPressed;
         public event Action<int> UniquePressed;
         public event Action<int> StagePressed;
-        public event Action BackPressed;
-        public event Action DeckPressed;
-        public event Action DeckClosed;
 
         public CardLoadoutPresenter Presenter => presenter;
-
-        // 最後に描いた状態。戻るで今のデッキを閉じるために使う。
-        private CardLoadoutState shown;
-
-        // 付けている装備。ステータスを装備で上げて出す（doc/features/equipment.md#装備の効果）。
-        // 開くたびに読み直し、読めたらステータスを描き直す。
-        private EquipmentState worn;
 
         private void OnEnable()
         {
@@ -220,35 +191,18 @@ namespace Baryonyx.CardLoadout
             shownTree = null;
             if (Swipe != null)
                 Swipe.Flicked += Flick;
-            shown = null;
-            for (int i = 0; i < SlotCards.Length; i++)
+            if (Sheet != null)
+                Sheet.PersonPressed += Choose;
+            for (int i = 0; i < SlotRows.Length; i++)
             {
                 int index = i;
-                bindings.Bind(SlotCards[i].Button, () => SlotPressed?.Invoke(index));
+                bindings.Bind(SlotRows[i].Card.Button, () => SlotPressed?.Invoke(index));
             }
-            for (int i = 0; i < UniqueCards.Length; i++)
+            for (int i = 0; i < UniqueRows.Length; i++)
             {
                 int index = i;
-                bindings.Bind(UniqueCards[i].Button, () => UniquePressed?.Invoke(index));
+                bindings.Bind(UniqueRows[i].Card.Button, () => UniquePressed?.Invoke(index));
             }
-            // 札は固有スキル3つ、続けてカスタムスキル3つ。
-            for (int i = 0; i < Tiles.Length; i++)
-            {
-                int index = i;
-                bindings.Bind(
-                    Tiles[i].Button,
-                    () =>
-                    {
-                        if (index < UniqueCards.Length)
-                            UniquePressed?.Invoke(index);
-                        else
-                            SlotPressed?.Invoke(index - UniqueCards.Length);
-                    }
-                );
-            }
-            bindings.Bind(Back, () => BackPressed?.Invoke());
-            bindings.Bind(DeckButton, () => DeckPressed?.Invoke());
-            bindings.Bind(DeckClose, () => DeckClosed?.Invoke());
             for (int i = 0; i < Tree.Stages.Length; i++)
             {
                 int stage = i;
@@ -263,8 +217,6 @@ namespace Baryonyx.CardLoadout
             foreach (var row in Rows)
                 BindRow(row);
             BindRemove();
-            worn = EquipmentSession.Known;
-            _ = ReadGearAsync();
 
             // 開くたびに、サーバーの編成とカード（なければアプリを動かしている間のもの）を読み直す。
             presenter?.Dispose();
@@ -310,37 +262,6 @@ namespace Baryonyx.CardLoadout
             Present(formation, Save);
         }
 
-        private async Task ReadGearAsync()
-        {
-            EquipmentState gear;
-            try
-            {
-                gear = await EquipmentSession.SourceOrLocal.LoadAsync(destroyCancellationToken);
-            }
-            catch (Exception)
-            {
-                // 読めなければ、前に読んだ装備のまま出す。
-                return;
-            }
-            if (this == null || !isActiveAndEnabled)
-                return;
-            worn = gear;
-            if (shown != null)
-                ShowStats(shown.PersonId);
-        }
-
-        private void ShowStats(string personId)
-        {
-            var growth = Training != null ? Training.Find(personId) : null;
-            int level = PartySession.LevelOf(Party, personId);
-            StatGrid.Show(
-                Stats,
-                growth != null
-                    ? EquipmentStats.With(TrainingBond.StatsOf(growth, level), worn, personId)
-                    : null
-            );
-        }
-
         private static Task Save(string id, int slot, string key) =>
             PartySession.SetCardAsync(id, slot, key, CardLoadoutPresenter.SaveFailedMessage);
 
@@ -367,14 +288,8 @@ namespace Baryonyx.CardLoadout
             Set(Status, LoadingText);
             if (UsableLine != null)
                 UsableLine.SetActive(false);
-            Person.ShowLoading(LoadingText);
-            StatGrid.Show(Stats, null);
-            ShowMode(false, false);
-            foreach (var widget in UniqueCards.Concat(SlotCards))
-            {
-                TrainingView.ShowCard(widget, null, null);
-                Set(widget.Name, "");
-            }
+            foreach (var row in UniqueRows.Concat(SlotRows))
+                ShowDeckRow(row, null, false, false, 0);
             ShowUsable(Usable, Array.Empty<CardElement>(), IconOf);
             HideRows();
         }
@@ -425,14 +340,12 @@ namespace Baryonyx.CardLoadout
         // アイテムのタブで、アイテムを1つも持っていないときの一覧の面の文字。
         public const string NoItemText = "持っているアイテムはありません";
 
-        // 停止中の表示の切り替え（doc/rules/ui-design.md#停止中の表示の切り替え）。最初の表示は6枚の一覧とスキルのタブ。
-        public const string TreePreviewState = "固有スキルの選択モード";
-        public const string DeckPreviewState = "今のデッキ";
+        // 停止中の表示の切り替え（doc/rules/ui-design.md#停止中の表示の切り替え）。最初の表示は、
+        // 1つ目のカスタムスキルの枠を選んだスキルのタブ。
+        public const string TreePreviewState = "固有スキルを選んだとき";
 
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "アイテム", TreePreviewState, DeckPreviewState }
-                .Concat(GuidePanelLoad.PreviewStates)
-                .ToArray();
+            new[] { "アイテム", TreePreviewState }.Concat(GuidePanelLoad.PreviewStates).ToArray();
 
         public void ShowPreviewState(int index)
         {
@@ -444,42 +357,14 @@ namespace Baryonyx.CardLoadout
                     HideRows();
                     return;
                 case 1:
-                    // 生成時に作り込んだ、先頭の人の1つ目の固有スキルの選択モードと進化ツリー。
-                    ShowMode(true, false);
-                    ShowTiles(0);
+                    // 生成時に作り込んだ、先頭の人の1つ目の固有スキルの進化ツリー。
+                    ShowChosen(0, -1);
                     ShowTree(true);
-                    return;
-                case 2:
-                    ShowMode(false, true);
                     return;
             }
             ShowLoading();
-            if (index == 4)
+            if (index == 3)
                 ShowLoadFailed();
-        }
-
-        // 左を、6枚の一覧か選択モードにし、今のデッキの全画面を出すか隠す。
-        private void ShowMode(bool selecting, bool deck)
-        {
-            if (Overview != null)
-                Overview.SetActive(!selecting);
-            if (Selection != null)
-                Selection.SetActive(selecting);
-            if (Deck != null)
-            {
-                Deck.SetActive(deck);
-                // 後から足された部品があっても、全画面はいつも一番手前に描く。
-                if (deck)
-                    Deck.transform.SetAsLastSibling();
-            }
-        }
-
-        // 選択モードで選んでいる札（固有スキル3つ、続けてカスタムスキル3つの順）に金の枠を付ける。
-        private void ShowTiles(int chosen)
-        {
-            for (int i = 0; i < Tiles.Length; i++)
-                if (Tiles[i].Selected != null)
-                    Tiles[i].Selected.SetActive(i == chosen);
         }
 
         // 左へのフリックで次の人、右へのフリックで前の人。
@@ -497,28 +382,23 @@ namespace Baryonyx.CardLoadout
             bindings.Clear();
             if (Swipe != null)
                 Swipe.Flicked -= Flick;
+            if (Sheet != null)
+                Sheet.PersonPressed -= Choose;
             presenter?.Dispose();
             presenter = null;
         }
 
-        // 付け替えの画面で戻ると、冒険者の個別の画面へ戻る（同じ人を選んだまま）。
-        // パンくずの「冒険者 › アリア › スキル」。読み込むまでは人の名前を出さない。
-        public IReadOnlyList<string> Trail =>
-            TrainingSession.ChangeTrail(Guide, person, CardLoadoutSession.GuideItemKey);
+        // 左の列で押した人を出す。選んでいる枠とタブはそのまま。
+        private void Choose(string id) => presenter?.Select(id);
+
+        // パンくずの「冒険者 › アリア」。どのタブかはタブでわかる。読み込むまでは人の名前を出さない。
+        public IReadOnlyList<string> Trail => TrainingSession.Trail(Guide, person);
 
         // パンくずに出す、表示している人の名前。
         private string person;
 
-        // 今のデッキを出しているときは、閉じるだけにする。
-        public bool HandleBack()
-        {
-            if (shown != null && shown.DeckOpen)
-            {
-                DeckClosed?.Invoke();
-                return true;
-            }
-            return TrainingSession.BackToPage(Guide);
-        }
+        // 戻ると、タブを開いた項目（冒険者の一覧か育成の人選び）へ戻る。
+        public bool HandleBack() => TrainingSession.LeavePage(Guide);
 
         public void Render(CardLoadoutState state)
         {
@@ -526,46 +406,29 @@ namespace Baryonyx.CardLoadout
             person = member?.Name;
             if (Guide != null)
                 Guide.RefreshTrail();
-            int level = PartySession.LevelOf(Party, state.PersonId);
-            Person.Show(
-                member,
-                level,
-                state
-                    .Slots.Select(card => IconOf(card.Element))
-                    .Where(icon => icon != null)
-                    .Distinct()
-                    .ToArray()
-            );
-            ShowStats(state.PersonId);
-            shown = state;
-            var uniques = Enumerable
-                .Range(0, UniqueCards.Length)
-                .Select(i =>
-                    UniqueCard(
-                        state.Uniques != null && i < state.Uniques.Count ? state.Uniques[i] : null
-                    )
-                )
-                .ToArray();
-            var slots = Enumerable
-                .Range(0, SlotCards.Length)
-                .Select(i => SlotCard(i < state.Slots.Count ? state.Slots[i] : null))
-                .ToArray();
-            ShowMode(state.Selecting, state.DeckOpen);
-            ShowCards(UniqueCards, uniques);
-            ShowCards(SlotCards, slots);
-            ShowCards(DeckUniques, uniques);
-            ShowCards(DeckSlots, slots);
-            Set(DeckTitle, $"{state.Name}のデッキ");
-            if (state.Selecting)
+            if (Sheet != null && Party != null)
             {
-                int chosen = state.Unique >= 0 ? state.Unique : uniques.Length + state.Slot;
-                var all = uniques.Concat(slots).ToArray();
-                for (int i = 0; i < Tiles.Length; i++)
-                    ShowTile(Tiles[i], i < all.Length ? all[i] : null);
-                ShowTiles(chosen);
-                var card = chosen < all.Length ? all[chosen] : null;
-                TrainingView.ShowCard(Chosen, card, FrameOf(card));
+                var (people, partyCount) = PartySession.Formation(Party).TabOrder();
+                Sheet.Show(people, partyCount, state.PersonId);
             }
+            for (int i = 0; i < UniqueRows.Length; i++)
+            {
+                var unique =
+                    state.Uniques != null && i < state.Uniques.Count ? state.Uniques[i] : null;
+                ShowDeckRow(
+                    UniqueRows[i],
+                    unique?.Card,
+                    unique?.Card != null,
+                    unique != null && unique.Locked,
+                    unique?.UnlockLevel ?? 0
+                );
+            }
+            for (int i = 0; i < SlotRows.Length; i++)
+            {
+                var card = i < state.Slots.Count ? state.Slots[i] : null;
+                ShowDeckRow(SlotRows[i], card, card != null && card.Id != null, false, 0);
+            }
+            ShowChosen(state.Unique, state.Slot);
             ShowUsable(Usable, state.Usable, IconOf);
             ShowTabs(state.Tab, state.Choices.Count == 0);
             ShowRows(state);
@@ -576,93 +439,52 @@ namespace Baryonyx.CardLoadout
             ShowTree(state.Tree != null);
         }
 
-        // 左の小さなカード・大きなカード・全画面のデッキは、個別の画面と同じ戦闘のカードの組み方で出す。
-        private void ShowCards(TrainingCardWidget[] widgets, IReadOnlyList<TrainingCardState> cards)
+        // 左の6行のうち、選んでいる固有スキル（unique）かカスタムスキルの枠（slot）を金の枠で囲む。
+        private void ShowChosen(int unique, int slot)
         {
-            for (int i = 0; i < widgets.Length; i++)
-            {
-                var card = i < cards.Count ? cards[i] : null;
-                TrainingView.ShowCard(widgets[i], card, FrameOf(card));
-            }
+            for (int i = 0; i < UniqueRows.Length; i++)
+                if (UniqueRows[i].Card.Selected != null)
+                    UniqueRows[i].Card.Selected.SetActive(i == unique);
+            for (int i = 0; i < SlotRows.Length; i++)
+                if (SlotRows[i].Card.Selected != null)
+                    SlotRows[i].Card.Selected.SetActive(i == slot);
         }
-
-        private Texture FrameOf(TrainingCardState card)
-        {
-            int element = (int)(card?.Element ?? CardElement.None);
-            return element < CardFrames.Length ? CardFrames[element] : null;
-        }
-
-        // 固有スキルのカード。未解放なら錠前と解放するLvを重ねる。
-        private TrainingCardState UniqueCard(CardLoadoutUniqueState unique)
-        {
-            var card = unique?.Card;
-            if (card == null)
-                return null;
-            return TrainingCardState.Of(
-                card.Id,
-                TrainingCardState.UniqueType,
-                card.Name,
-                card.KindLine,
-                card.Description,
-                card.Cost,
-                card.Quality,
-                card.FoilStyle,
-                card.Element,
-                IconOf(card.Element),
-                ArtOf(card),
-                unique.Locked,
-                unique.UnlockLevel
-            );
-        }
-
-        // カスタムスキルの枠のカード。空いていれば「空き」。
-        private TrainingCardState SlotCard(CardLoadoutCardState card) =>
-            card == null || card.Id == null
-                ? TrainingCardState.Of(
-                    null,
-                    "",
-                    TrainingPresenter.EmptyName,
-                    "",
-                    "",
-                    0,
-                    ItemQuality.C,
-                    0,
-                    CardElement.None,
-                    null,
-                    null
-                )
-                : TrainingCardState.Of(
-                    card.Id,
-                    TrainingCardState.SkillType,
-                    card.Name,
-                    card.KindLine,
-                    card.Description,
-                    card.Cost,
-                    card.Quality,
-                    card.FoilStyle,
-                    card.Element,
-                    IconOf(card.Element),
-                    ArtOf(card)
-                );
 
         /// <summary>
-        /// One tile of the selection mode: the card's art, darkened under a lock for a unique
-        /// skill not unlocked yet, or 「＋」 for an empty slot.
+        /// One of the six rows on the left: <paramref name="card"/>'s art, name, kind and effect
+        /// (<paramref name="filled"/>), or 「空き」; a unique skill not unlocked yet is dimmed
+        /// under a lock, with its level in place of the effect.
         /// </summary>
-        public static void ShowTile(CardLoadoutTileWidget widget, TrainingCardState card)
+        private void ShowDeckRow(
+            CardLoadoutDeckRowWidget widget,
+            CardLoadoutCardState card,
+            bool filled,
+            bool locked,
+            int unlockLevel
+        )
         {
-            bool filled = card != null && card.Filled;
-            bool locked = filled && card.Locked;
-            if (widget.Art != null)
-            {
-                widget.Art.texture = card?.Art;
-                widget.Art.enabled = filled && card.Art != null;
-                widget.Art.color = locked ? LockedArt : Color.white;
-            }
+            var selected = widget.Card.Selected != null && widget.Card.Selected.activeSelf;
+            ShowSlot(
+                widget.Card,
+                filled ? card : null,
+                filled ? ArtOf(card) : null,
+                filled ? IconOf(card.Element) : null,
+                selected
+            );
+            if (widget.Content != null)
+                widget.Content.SetActive(filled);
+            if (widget.Empty != null)
+                widget.Empty.SetActive(!filled && card != null);
+            if (widget.Card.Art != null)
+                widget.Card.Art.color = locked ? LockedArt : Color.white;
+            // 鍵のかかったカードは光らせない。
+            if (widget.Card.Foil != null && locked)
+                widget.Card.Foil.Image.enabled = false;
+            if (widget.Card.Description != null)
+                widget.Card.Description.gameObject.SetActive(!locked);
             if (widget.Lock != null)
                 widget.Lock.SetActive(locked);
-            if (widget.Empty != null)
-                widget.Empty.SetActive(!filled);
+            Set(widget.When, locked ? UnlockText(unlockLevel) : "");
         }
 
         private static string UnlockText(int level) => $"Lv {level}で解放";

@@ -32,6 +32,9 @@ namespace Baryonyx.UI.GuideMenu.Editor
 
         // ヘッダーの下の線の位置（Safe Areaの上端から）と、横線の両端の余白。
         public const float HeaderHeight = 112f;
+
+        // 設計座標の画面の幅（Layout.Design.x）。
+        private const float Width = 1920f;
         public const float Margin = 48f;
 
         // 板や帯は、Safe Areaや設計座標の外（切り欠きの裏、画面の端）までこれだけ伸ばす。
@@ -207,17 +210,21 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// pane the scene shows through, so the two sides read as one surface. The gold double
         /// line goes between them unless
         /// <paramref name="divider"/> is false, for a panel that draws it over its own contents.
+        /// The panes span <paramref name="from"/> to <paramref name="to"/> (the whole width unless
+        /// given) and reach past the screen's edge only where they touch it.
         /// </summary>
         public static void SplitPanes(
             RectTransform layer,
             float split,
             string leftName,
             string rightName,
-            bool divider = true
+            bool divider = true,
+            float from = 0f,
+            float to = Width
         )
         {
-            Pane(layer, leftName, 0f, split, HeaderHeight, PaneLight, true, false);
-            Pane(layer, rightName, split, Layout.Design.x, HeaderHeight, PaneLight, false, true);
+            Pane(layer, leftName, from, split, HeaderHeight, PaneLight, from <= 0f, false);
+            Pane(layer, rightName, split, to, HeaderHeight, PaneLight, false, to >= Width);
             if (divider)
                 Divider(layer, split, HeaderHeight);
         }

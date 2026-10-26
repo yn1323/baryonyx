@@ -32,9 +32,10 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         // 編成の「冒険者」は、案内人の画面の枠の中に冒険者の一覧を開く。左にパーティの4枚、右にパーティにいない
-        // 人と最後に「パーティから外す」。パーティの枠と一覧の人を順に押すと入れ替え、長押しで個別の画面へ移る。
+        // 人と最後に「パーティから外す」、下に選んだ人の帯。パーティの枠と一覧の人を順に押すと入れ替え、
+        // 選んだ人は帯の「装備・スキル」で冒険者のタブへ移る。
         [UnityTest]
-        public IEnumerator AdventurersSwapThePartyAndOpenAPageOnHold()
+        public IEnumerator AdventurersSwapThePartyAndOpenTheTabsFromTheBand()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Pub, value => guide = value);
@@ -61,7 +62,11 @@ namespace Baryonyx.Tests.PlayMode
             {
                 SceneTests.AssertBelow(slot.Card.transform, view.Back.transform);
                 SceneTests.AssertTouchSize(slot.Card.transform);
+                // カードは帯と重ならない。
+                SceneTests.AssertBelow(roster.Chosen.Detail.transform, slot.Card.transform);
             }
+            // 横に長いボタンは、メニューの行と同じく高さを7割まで許す。
+            SceneTests.AssertTouchSize(roster.Chosen.Detail.transform, 0.7f);
             Assert.That(
                 SceneTests.ScreenRect(roster.Slots[0].Card.transform).xMax,
                 Is.LessThanOrEqualTo(SceneTests.ScreenRect(roster.List.transform).xMin)
@@ -73,9 +78,12 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(Tile(roster, id).Card.transform);
             SceneTests.AssertTouchSize(roster.Remove.transform);
 
-            // 最初は何も選んでいない。パーティの名前とLvはパーティの順に出す。
+            // 最初は何も選んでいない。帯は空いていて、「装備・スキル」は押せない。
+            // パーティの名前とLvはパーティの順に出す。
             var first = party.Find(party.Member(0));
             Assert.That(roster.Slots.Any(slot => slot.Card.Selected), Is.False);
+            Assert.That(roster.Chosen.Name.text, Is.Empty);
+            Assert.That(roster.Chosen.Detail.interactable, Is.False);
             Assert.That(roster.Slots[0].Name.text, Is.EqualTo(first.Name));
             Assert.That(roster.Slots[0].Level.text, Is.EqualTo(first.Level.ToString()));
             Assert.That(roster.Slots[0].Figure.gameObject.activeSelf, Is.True);
@@ -85,6 +93,8 @@ namespace Baryonyx.Tests.PlayMode
             string before = party.Member(1);
             roster.Slots[1].Card.Click();
             Assert.That(roster.Slots[1].Card.Selected, Is.True);
+            Assert.That(roster.Chosen.Name.text, Is.EqualTo(party.Name(before)));
+            Assert.That(roster.Chosen.Detail.interactable, Is.True);
             Tile(roster, bench).Card.Click();
             Assert.That(party.Member(1), Is.EqualTo(bench));
             Assert.That(roster.Slots[1].Name.text, Is.EqualTo(party.Name(bench)));
@@ -99,14 +109,22 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(party.Member(1), Is.Null);
             Assert.That(roster.Slots[1].Empty.gameObject.activeSelf, Is.True);
             Assert.That(roster.Slots[1].Figure.gameObject.activeSelf, Is.False);
+            // 空いた枠を選んでも、帯には誰も出さない。
+            roster.Slots[1].Card.Click();
+            Assert.That(roster.Chosen.Detail.interactable, Is.False);
+            roster.Slots[1].Card.Click();
             Tile(roster, before).Card.Click();
             Assert.That(Tile(roster, before).Card.Selected, Is.True);
             roster.Slots[1].Card.Click();
             Assert.That(party.Member(1), Is.EqualTo(before));
             Assert.That(roster.LastNotice, Is.Empty);
 
-            // 長押しで、その人の個別の画面を開く。「もどる」で一覧へ、もう一度でメニューへ戻り、枠を消す。
+            // 長押しでは開かない。選んだ人の帯の「装備・スキル」で、その人のステータスのタブを開く。
+            // 「もどる」で一覧へ、もう一度でメニューへ戻り、枠を消す。
             roster.Slots[1].Card.Hold();
+            Assert.That(roster.gameObject.activeSelf, Is.True);
+            roster.Slots[1].Card.Click();
+            roster.Chosen.Detail.onClick.Invoke();
             var training = view.PanelFor(ItemOf(view, TrainingSession.GuideItemKey))
                 .GetComponent<TrainingView>();
             Assert.That(training.gameObject.activeInHierarchy, Is.True);
@@ -115,7 +133,10 @@ namespace Baryonyx.Tests.PlayMode
             view.Back.onClick.Invoke();
             Assert.That(roster.gameObject.activeSelf, Is.True);
             Assert.That(view.Framed, Is.True);
-            Tile(roster, bench).Card.Hold();
+            // 一覧の人も、選んで帯から開く。
+            Tile(roster, bench).Card.Click();
+            roster.Chosen.Detail.onClick.Invoke();
+            Assert.That(training.gameObject.activeInHierarchy, Is.True);
             Assert.That(training.Name.text, Is.EqualTo(party.Name(bench)));
             view.Back.onClick.Invoke();
             view.Back.onClick.Invoke();

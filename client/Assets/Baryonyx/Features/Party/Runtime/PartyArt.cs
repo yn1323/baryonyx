@@ -11,6 +11,9 @@ namespace Baryonyx.Party
         // 左右の余白を同じだけ切るため、左右を反転しても同じ範囲になる。
         public static readonly RectInt Figure = new(8, 12, 48, 52);
 
+        // 頭から胸までの上半身（ドット、絵の左上が原点）。冒険者のタブの左の列の札に大きく出す。
+        public static readonly RectInt Bust = new(14, 12, 36, 32);
+
         public static string LevelText(int level) => $"Lv {level}";
 
         /// <summary>
@@ -24,19 +27,33 @@ namespace Baryonyx.Party
             image.color = member != null ? member.Tint : Color.white;
             if (member == null || member.Art == null)
                 return;
+            image.uvRect = Crop(
+                member,
+                trim ? Figure : new RectInt(0, 0, member.Art.width, member.Art.height)
+            );
+        }
+
+        /// <summary>Draws only the <see cref="Bust"/> of the member's sprite, with their tint and facing.</summary>
+        public static void PaintBust(RawImage image, PartyMember member)
+        {
+            image.texture = member?.Art;
+            image.color = member != null ? member.Tint : Color.white;
+            if (member != null && member.Art != null)
+                image.uvRect = Crop(member, Bust);
+        }
+
+        // 絵のうち dots の範囲を出す uvRect。左右を反転する人は反転する（範囲は左右の中央にあるので同じ所）。
+        private static Rect Crop(PartyMember member, RectInt dots)
+        {
             float width = member.Art.width;
             float height = member.Art.height;
-            var uv = trim
-                ? new Rect(
-                    Figure.x / width,
-                    1f - Figure.yMax / height,
-                    Figure.width / width,
-                    Figure.height / height
-                )
-                : new Rect(0f, 0f, 1f, 1f);
-            if (member.Flip)
-                uv = new Rect(uv.xMax, uv.y, -uv.width, uv.height);
-            image.uvRect = uv;
+            var uv = new Rect(
+                dots.x / width,
+                1f - dots.yMax / height,
+                dots.width / width,
+                dots.height / height
+            );
+            return member.Flip ? new Rect(uv.xMax, uv.y, -uv.width, uv.height) : uv;
         }
 
         /// <summary>

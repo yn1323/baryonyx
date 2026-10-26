@@ -171,6 +171,17 @@ namespace Baryonyx.Equipment
             Refresh();
         }
 
+        /// <summary>Shows the person <paramref name="id"/>, keeping the slot (pressed in the people's column).</summary>
+        public void Select(string id)
+        {
+            int at = IndexOf(id);
+            if (disposed || at < 0 || at == person)
+                return;
+            person = at;
+            remember?.Invoke(id);
+            Refresh();
+        }
+
         /// <summary>
         /// Chooses a slot by its place on the left: 0 the weapon, 1 the armour, 2 to 4 the
         /// accessories. An accessory slot not open yet lists nothing.

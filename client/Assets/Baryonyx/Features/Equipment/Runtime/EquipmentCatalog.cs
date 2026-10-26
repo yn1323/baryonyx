@@ -210,7 +210,8 @@ namespace Baryonyx.Equipment
 
         public static IReadOnlyList<EquipmentDefinition> All => all;
 
-        // 最初から持っている装備（1つずつ）と、初めの4人が付けている装備。サーバーの初期データと同じ。
+        // 初めの4人が付けている装備。最初から持っている装備はこれだけで、サーバーの初期データと同じ。
+        // ミナのカードは属攻で決まるため、トーマと同じ属攻の杖を付ける（2026-10-26）。
         public static readonly IReadOnlyList<(
             string Character,
             string Weapon,
@@ -220,7 +221,7 @@ namespace Baryonyx.Equipment
             ("toma", "oak-staff", "magic-robe"),
             ("luka", "short-bow", "traveler-cloak"),
             ("aria", "iron-sword", "chainmail"),
-            ("mina", "war-hammer", "leather-armor"),
+            ("mina", "oak-staff", "leather-armor"),
         };
 
         public static EquipmentDefinition Find(string id) =>

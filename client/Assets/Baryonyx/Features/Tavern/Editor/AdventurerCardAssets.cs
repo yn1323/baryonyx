@@ -11,7 +11,7 @@ namespace Baryonyx.Tavern.Editor
 {
     /// <summary>
     /// The parts the formation's adventurer cards share (the adventurers' list and the
-    /// equipment's picker): the scrolling grid of glass cards, the standing figure on the left of
+    /// growth picker): the scrolling grid of glass cards, the standing figure on the left of
     /// a card, and the name and level beside it. Design pixels from the top left of the card or
     /// the 1920x1080 layer (<see cref="Layout"/>).
     /// </summary>
@@ -27,8 +27,9 @@ namespace Baryonyx.Tavern.Editor
 
         /// <summary>
         /// The cards' visible area from (<paramref name="x"/>, <paramref name="top"/>) to the
-        /// layer's right and bottom edges, and the grid the cards go in. The area is wider than
-        /// the cards so their shadows and the chosen card's glow are not cut off.
+        /// layer's right edge and <paramref name="bottom"/> (the layer's bottom edge unless
+        /// given), and the grid the cards go in. The area is wider than the cards so their
+        /// shadows and the chosen card's glow are not cut off.
         /// </summary>
         public static (RectTransform List, RectTransform Viewport, RectTransform Cards) Grid(
             RectTransform layer,
@@ -36,17 +37,11 @@ namespace Baryonyx.Tavern.Editor
             float top,
             Vector2 cell,
             RectOffset padding,
-            int columns
+            int columns,
+            float bottom = 1080f
         )
         {
-            var list = Layout.Box(
-                layer,
-                "List",
-                x,
-                top,
-                Layout.Design.x - x,
-                Layout.Design.y - top
-            );
+            var list = Layout.Box(layer, "List", x, top, Layout.Design.x - x, bottom - top);
             var viewport = Layout.Viewport(list);
             var cards = Layout.Grid(viewport, "Cards", cell, CardGap, padding, columns);
             return (list, viewport, cards);
@@ -82,8 +77,17 @@ namespace Baryonyx.Tavern.Editor
             return (image, feet.gameObject);
         }
 
-        /// <summary>The name right of the figure, <paramref name="y"/> from the card's top.</summary>
-        public static TMP_Text Name(RectTransform card, string text, float y, float width)
+        /// <summary>
+        /// The name right of the figure, <paramref name="y"/> from the card's top and
+        /// <paramref name="left"/> (<see cref="TextLeft"/> unless given) from its left.
+        /// </summary>
+        public static TMP_Text Name(
+            RectTransform card,
+            string text,
+            float y,
+            float width,
+            float left = TextLeft
+        )
         {
             var name = Layout.Text(
                 card,
@@ -92,7 +96,7 @@ namespace Baryonyx.Tavern.Editor
                 44,
                 UiPalette.TextMain,
                 TextAlignmentOptions.BottomLeft,
-                TextLeft,
+                left,
                 y,
                 width,
                 60f

@@ -171,18 +171,27 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
-        public void HoldingACharacterOpensTheirPage()
+        public void TheBandOpensTheTabsOfThePersonChosen()
         {
             var view = new FakeView();
             using var presenter = new PartyRosterPresenter(view, Full());
 
-            view.Hold("aria");
-            view.Hold("greta");
-            view.Hold("nobody");
+            // 選んでいなければ、帯は空いていて開かない。
+            Assert.That(view.State.Chosen, Is.Null);
+            view.PressDetail();
+            Assert.That(view.Opened, Is.Empty);
+
+            // パーティの枠の人も、一覧の人も、選ぶと帯に出て、帯のボタンでその人を開く。
+            view.PressSlot(2);
+            Assert.That(view.State.Chosen, Is.EqualTo("aria"));
+            view.PressDetail();
+            view.PressSlot(2);
+            view.PressBench("greta");
+            Assert.That(view.State.Chosen, Is.EqualTo("greta"));
+            view.PressDetail();
             Assert.That(view.Opened, Is.EqualTo(new[] { "aria", "greta" }));
-            // 長押しは選び方を変えない。
-            Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
-            Assert.That(view.State.SelectedBench, Is.Null);
+            // 開いても選び方は変えない。
+            Assert.That(view.State.SelectedBench, Is.EqualTo("greta"));
         }
 
         [Test]
@@ -234,7 +243,8 @@ namespace Baryonyx.Tests.EditMode
             view.PressSlot(2);
             view.PressBench("greta");
             Assert.That(view.State.Party[2], Is.EqualTo("greta"));
-            view.Hold("toma");
+            view.PressSlot(0);
+            view.PressDetail();
             Assert.That(calls, Is.EqualTo(new[] { (1, "anselm"), (2, "greta") }));
             Assert.That(view.Opened, Is.EqualTo(new[] { "toma" }));
 
@@ -367,7 +377,7 @@ namespace Baryonyx.Tests.EditMode
             view.PressSlot(2);
             view.PressBench("greta");
             view.PressRemove();
-            view.Hold("toma");
+            view.PressDetail();
             Assert.That(view.State.SelectedSlot, Is.EqualTo(-1));
             Assert.That(view.Notices, Is.Empty);
             Assert.That(view.Opened, Is.Empty);
@@ -378,7 +388,7 @@ namespace Baryonyx.Tests.EditMode
             public event Action<int> SlotPressed;
             public event Action<string> BenchPressed;
             public event Action RemovePressed;
-            public event Action<string> Held;
+            public event Action DetailPressed;
 
             public PartyRosterState State { get; private set; }
             public List<string> Notices { get; } = new();
@@ -396,7 +406,7 @@ namespace Baryonyx.Tests.EditMode
 
             public void PressRemove() => RemovePressed?.Invoke();
 
-            public void Hold(string id) => Held?.Invoke(id);
+            public void PressDetail() => DetailPressed?.Invoke();
         }
     }
 }

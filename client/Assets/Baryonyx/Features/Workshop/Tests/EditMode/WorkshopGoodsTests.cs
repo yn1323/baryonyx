@@ -36,20 +36,20 @@ namespace Baryonyx.Tests.EditMode
         [TearDown]
         public void DestroyData() => Object.DestroyImmediate(data);
 
-        // 値段はサーバー（server/src/features/workshop/catalog.ts）と同じで、☆1の200から☆ごとに倍になる。
+        // 値段はサーバー（server/src/features/workshop/catalog.ts）と同じで、☆1の1,000から☆ごとに倍になる。
         [Test]
         public void PricesDoubleWithEachStarAsTheServers()
         {
-            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Skill, "Fire"), Is.EqualTo(200));
-            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Weapon, "iron-sword"), Is.EqualTo(400));
+            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Skill, "Fire"), Is.EqualTo(1000));
+            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Weapon, "iron-sword"), Is.EqualTo(2000));
             Assert.That(
                 WorkshopGoods.PriceOf(LibraryKind.Armor, "traveler-cloak"),
-                Is.EqualTo(800)
+                Is.EqualTo(4000)
             );
-            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Skill, "Hone"), Is.EqualTo(1600));
+            Assert.That(WorkshopGoods.PriceOf(LibraryKind.Skill, "Hone"), Is.EqualTo(8000));
             Assert.That(
                 WorkshopGoods.PriceOf(LibraryKind.Accessory, "kraken-pearl"),
-                Is.EqualTo(3200)
+                Is.EqualTo(16000)
             );
             // アイテムと、分類の違う物は売らない。
             Assert.That(WorkshopGoods.PriceOf(LibraryKind.Item, "herb"), Is.Zero);
@@ -106,7 +106,7 @@ namespace Baryonyx.Tests.EditMode
             );
             Assert.That(
                 goods.Select(good => good.Price),
-                Is.EqualTo(new[] { 200, 1600, 200, 200, 1600 })
+                Is.EqualTo(new[] { 1000, 8000, 1000, 1000, 8000 })
             );
             Assert.That(WorkshopGoods.Of(data, LibraryRecords.Empty), Is.Empty);
         }

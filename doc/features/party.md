@@ -115,9 +115,10 @@ Lvが低いうちはデッキが少ないが、ユーザーはそれでよいと
 | 対象 | 入口 |
 |---|---|
 | 編成の冒険者の一覧（入れ替え） | [入れ替えの決まり](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyFormation.cs)・[一覧の操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyRosterPresenter.cs)・[表示](../../client/Assets/Baryonyx/Features/Tavern/Runtime/AdventurerRosterView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Tavern/Editor/AdventurerRosterAssets.cs)・[仮データ（絵・イラスト）の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyAssets.cs) |
-| 冒険者の個別の画面（デッキの4枚・装備・左右のフリック） | [表示](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[フリック](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideSwipe.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
-| 付け替えの画面（装備・スキル）の共通の配置と、上の人（立ち姿・名前・Lv） | [配置の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyChangeScreenAssets.cs)・[人の表示](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyPersonHeader.cs)・[人の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyHeaderAssets.cs) |
-| 編成のスキルの付け替え（仲間ごとのカスタムスキル3枚） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
+| 冒険者のタブの共通の枠（左の人の列・右のタブ） | [表示と操作](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySheet.cs)・[生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartySheetAssets.cs)・[フリック](../../client/Assets/Baryonyx/Shared/UI/GuideMenu/GuideSwipe.cs) |
+| 冒険者のステータスのタブ（ステータス・パッシブ・レベルアップ・絆） | [表示](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingView.cs)・[操作](../../client/Assets/Baryonyx/Features/Training/Runtime/TrainingPresenter.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/Training/Editor/TrainingAssets.cs) |
+| 装備とスキルのタブの共通の配置（左右の面・ステータス・タブ・一覧） | [配置の生成](../../client/Assets/Baryonyx/Features/Party/Editor/PartyChangeScreenAssets.cs) |
+| 冒険者のスキルのタブ（仲間ごとのカスタムスキル3枚） | [付け替えの決まり](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutRules.cs)・[表示と操作](../../client/Assets/Baryonyx/Features/CardLoadout/Runtime/CardLoadoutView.cs)・[パネルの生成](../../client/Assets/Baryonyx/Features/CardLoadout/Editor/CardLoadoutAssets.cs) |
 | Home・冒険の地図・冒険の戦闘に出す今の編成 | [戦闘の4人とデッキの組み立て](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)・[戦闘の味方の差し替え](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Party.cs)・[戦闘での読み込み](../../client/Assets/Baryonyx/App/Runtime/BattleBootstrap.cs)・[地図での読み込み](../../client/Assets/Baryonyx/App/Runtime/ExplorationBootstrap.cs)・[Homeでの読み込み](../../client/Assets/Baryonyx/App/Runtime/HomeBootstrap.cs) |
 | キャラ・Lv・カード・編成のサーバーとの読み書き | [サーバーとの読み書き](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySource.cs)・[アプリ内での保持](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySession.cs)・[DB操作](../../server/src/features/party/repository.ts) |
 
@@ -149,7 +150,7 @@ Lvが低いうちはデッキが少ないが、ユーザーはそれでよいと
 | `party_profiles` | 初期データを付与済みのユーザー。付与した要求を `grant_id` で見分け、同時に届いたログインで初めのカードを二重に入れない |
 
 サーバーはキャラとカスタムスキルのカードのIDだけを持ち、名前・絵・ステータス・固有スキル・パッシブ・カードの属性はクライアントの仮データが持つ。
-クライアントの仮データ（[育成](screens/adventurers.md#育成)・[スキル](screens/loadout.md#スキル)・[戦闘画面](screens/battle.md#戦闘画面の見た目モック)のモック）は、[ステータスの項目](#ステータスの項目)の8つをLv100の値で持ち、各キャラのLvでの値を成長率から出す（[自キャラのLv100のステータス](progression.md#自キャラのlv100のステータス)）。
+クライアントの仮データ（[ステータス](screens/adventurers.md#ステータス)・[スキル](screens/loadout.md#スキル)・[戦闘画面](screens/battle.md#戦闘画面の見た目モック)のモック）は、[ステータスの項目](#ステータスの項目)の8つをLv100の値で持ち、各キャラのLvでの値を成長率から出す（[自キャラのLv100のステータス](progression.md#自キャラのlv100のステータス)）。
 キャラごとに付けられる属性の判定は、決まりが仮のため、クライアントだけで行う（2026-10-04、ユーザー決定）。
 初期データ（9人のLv 12〜1、各2枚のカスタムスキル、トーマ・ルカ・アリア・ミナの編成）とLvの決まり（上限Lv 100（2026-10-23に30から改めた）、Lv n から n+1 へ n×100ルーン）は、クライアントの仮データと同じ値をサーバーの[定義](../../server/src/features/party/catalog.ts)にも置いた仮設定である。
 サーバーの接続先がないとき（展示室のプレビューなど）だけ、クライアントは仮データを使い、変更はアプリを動かしている間だけ残す。

@@ -42,43 +42,37 @@ namespace Baryonyx.Training.Editor
         private const float Dot = Guide.DotScale;
         private static readonly Vector2 Design = Layout.Design;
 
-        // 枠つきの表示（GuideFramedPanel）で、左の面いっぱいにイラスト、その右下にドット絵、
-        // 金の2本線の右の透ける面に詳細を置く（設計座標、左上から）。
-        private const float Split = 640f;
+        // 枠つきの表示（GuideFramedPanel）で、左の人の列と右のタブの列（PartySheetAssets）の間に、
+        // 左のイラストとその右下のドット絵、金の2本線の右の透ける面に詳細を置く（設計座標、左上から）。
+        private const float Left = PartySheetAssets.ContentLeft;
+        private const float Split = 760f;
         private static readonly Rect Portrait = new(
-            0,
+            Left,
             GuideFrameAssets.HeaderHeight,
-            Split,
+            Split - Left,
             1080 - GuideFrameAssets.HeaderHeight
         );
-        private static readonly Vector2 FigureFeet = new(520, 1028);
+        private static readonly Vector2 FigureFeet = new(680, 1028);
         private static readonly Rect Panel = new(
             Split + 14,
             GuideFrameAssets.HeaderHeight + 6,
-            1210,
+            PartySheetAssets.ContentRight - Split - 28,
             956
         );
         private const float PortraitFade = 140f;
         private const float PanelPad = 34f;
 
-        // 右の面の中（左上から）：ステータス（2列4行）とその右のパッシブ、デッキの6枚、装備の5枠。
-        // 画面の下端（設計座標で1040）まで使い、段の間を空けて詰まって見えないようにする。
-        private const float StatsTop = 148f;
-        private const float StatsWidth = 520f;
-        private const float StatRow = 42f;
-        private static readonly Rect Passives = new(586, 140, 590, 200);
-        private const float PassiveRow = 76f;
-        private const float DeckTop = 400f;
-        private const float CardGap = 12f;
-        private const float PairGap = 40f;
-        private const float GearTop = 680f;
-        private const float GearGap = 13f;
-        private const float GearHeight = 168f;
-
-        // デッキのカードは、戦闘のカードを効果の文の上で切った小さなカード（70×66ドット）を2.5倍で出す。
-        // 6枚が面の幅（1142）いっぱいに並ぶ大きさにした（2026-10-24、ユーザーの「もうちょい大きく」）。
-        // 効果はカードを押して開くスキルの付け替えの画面で読む。
-        private const float CardDot = 2.5f;
+        // 右の面の中（左上から）：名前の行とその右端の「レベルアップ」、ステータス（2列4行）、パッシブ。
+        // スキル・装備・突破は、それぞれのタブで出す（2026-10-26）。空いた分、ステータスの行間を広げて
+        // 読みやすくし、パッシブは文字を大きくしたまま、行の高さを中身に合わせる。
+        private const float StatsTop = 150f;
+        private const float StatRow = 76f;
+        private static readonly Rect Passives = new(16, 480, 916, 442);
+        private const float PassiveRow = 168f;
+        private const float PassiveGap = 16f;
+        private const float LevelUpWidth = 240f;
+        private const float LevelUpHeight = 112f;
+        private static float LevelUpX => Panel.width - PanelPad - LevelUpWidth;
 
         // －＋の押せる範囲。
         private const float HitSize = Layout.HitSize;
@@ -291,28 +285,47 @@ namespace Baryonyx.Training.Editor
             view.Party = party;
             view.Data = data;
             view.Guide = guide;
-            view.WeaponIcon = Guide.Icon(EquipmentAssets.IconWeaponPath);
-            view.ArmorIcon = Guide.Icon(EquipmentAssets.IconArmorPath);
-            view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
 
             // 金の2本線は、左のイラストの上に重ねる。
-            GuideFrameAssets.SplitPanes(layer, Split, "PortraitPane", "DetailPane", divider: false);
+            GuideFrameAssets.SplitPanes(
+                layer,
+                Split,
+                "PortraitPane",
+                "DetailPane",
+                divider: false,
+                from: Left,
+                to: PartySheetAssets.ContentRight
+            );
             // ページの上の左右のフリックで人を替える。枠とボタンの上から動かしても届くよう、両方を載せる層で受ける。
             view.Swipe = layer.gameObject.AddComponent<GuideSwipe>();
             BuildPortrait(layer, view, party);
             GuideFrameAssets.Divider(layer, Split, Portrait.y);
             BuildDetail(layer, view);
+            view.Sheet = PartySheetAssets.Build(
+                layer,
+                guide,
+                party,
+                TrainingSession.GuideItemKey,
+                SheetTabs
+            );
             BuildDialog((RectTransform)view.transform, view);
-            BuildBondDialog((RectTransform)view.transform, view);
-            BuildCelebration((RectTransform)view.transform, view);
 
             // 停止中のPrefabでも1人目が読めるよう、仮の装備で生成時に一度描く。
-            TrainingView
-                .Build(view, party, data, EquipmentLocalSource.Starter(), itemArt: view.ItemArt)
-                .Dispose();
-            BakeCelebration(view, party, data);
+            TrainingView.Build(view, party, data, EquipmentLocalSource.Starter()).Dispose();
             return view.gameObject;
         }
+
+        /// <summary>
+        /// The adventurer's tabs (<see cref="PartySheet"/>): the page's stats, the equipment and
+        /// the card skills, each the formation's item of its own.
+        /// </summary>
+        public static readonly (string Key, string Label)[] SheetTabs =
+        {
+            (TrainingSession.GuideItemKey, "ステータス"),
+            (EquipmentSession.GuideItemKey, "装備"),
+            (CardLoadout.CardLoadoutSession.GuideItemKey, "スキル"),
+            (TrainingSession.BreakthroughItemKey, "突破"),
+        };
 
         // --- Left: the illustration and the battle sprite in its corner ---------------------
 
@@ -365,15 +378,15 @@ namespace Baryonyx.Training.Editor
             view.Figure = PixelActor(layer, "Figure", party.Members[0].Art, feet, Dot);
         }
 
-        // --- Right: the person, the deck's four cards and the equipment in one frame -------
+        // --- Right: the person, the stats, the passives and the level-up -----------------
 
         private static void BuildDetail(RectTransform layer, TrainingView view)
         {
             var panel = Layout.Box(layer, "Detail", Panel.x, Panel.y, Panel.width, Panel.height);
             float width = Panel.width - PanelPad * 2;
 
-            // 行は左の中央を起点にし、縮めても上下の中央が「絆」「レベルアップ」とそろう。
-            float headerWidth = LevelUpX - BondGap - BondWidth - BondGap - PanelPad;
+            // 行は左の中央を起点にし、縮めても上下の中央が「レベルアップ」とそろう。
+            float headerWidth = LevelUpX - 16 - PanelPad;
             var header = Layout.Row(panel, "Header", PanelPad, 18, headerWidth, 92, 14);
             header.pivot = new Vector2(0f, 0.5f);
             header.anchoredPosition = new Vector2(PanelPad, -18 - 92 / 2f);
@@ -412,102 +425,30 @@ namespace Baryonyx.Training.Editor
                 .Range(0, 3)
                 .Select(i => Layout.RowIcon(header, "Element" + i, 12f * Dot))
                 .ToArray();
-            BuildLevelUp(panel, view);
-            BuildBond(panel, view);
 
-            // キャラ自身：ステータス（2列4行）と、その右にパッシブ2つ。
-            view.Stats = StatGridAssets.Build(panel, PanelPad, StatsTop, StatsWidth, 2, StatRow);
-            view.Passives = BuildPassives(panel);
-
-            // デッキに入る6枚：固有スキル3枚と、カスタムスキル3枚。戦闘のカードと同じ組み方の小さなカード。
-            var cardSize = DeckCardAssets.Size(CardDot, small: true);
-            int half = TrainingPresenter.CustomSlots;
-            float deckWidth = cardSize.x * half * 2 + CardGap * (half - 1) * 2 + PairGap;
-            float deckLeft = (Panel.width - deckWidth) / 2f;
-            var cardX = Enumerable
-                .Range(0, half * 2)
-                .Select(i =>
-                    deckLeft + (cardSize.x + CardGap) * i - (i >= half ? CardGap - PairGap : 0)
-                )
-                .ToArray();
-            GuideFrameAssets.Heading(
+            // キャラ自身：ステータス（2列4行）と、その下にパッシブ2つ。
+            view.Stats = StatGridAssets.Build(
                 panel,
-                "UniquesTitle",
-                "固有スキル",
-                cardX[0] - 4,
-                DeckTop - 40,
-                300,
-                36,
-                26
-            );
-            var customTitle = Layout.Row(
-                panel,
-                "CustomTitle",
-                cardX[half],
-                DeckTop - 36,
-                420,
-                32,
-                14,
-                TextAnchor.LowerLeft
-            );
-            Layout.Fit(
-                Label(
-                    customTitle,
-                    "Title",
-                    "カスタムスキル",
-                    24,
-                    UiPalette.Gold,
-                    TextAlignmentOptions.BottomLeft
-                ),
-                0
-            );
-            GuideFrameAssets.HeadingRow(customTitle, 26);
-            Layout.Line(
-                panel,
-                "DeckLine",
-                cardX[half - 1] + cardSize.x + PairGap / 2f - 1,
-                DeckTop + 8,
+                PanelPad,
+                StatsTop,
+                width,
                 2,
-                cardSize.y - 16
+                StatRow,
+                labelSize: 28,
+                valueSize: 40,
+                centerValue: true
             );
-            view.CardFrames = Enum.GetValues(typeof(CardElement))
-                .Cast<CardElement>()
-                .Select(element => (Texture)CardArt($"CardFrame{element}"))
-                .ToArray();
-            view.Uniques = Enumerable
-                .Range(0, CardLoadout.CardLoadoutPresenter.UniqueCount)
-                .Select(i => Card(panel, "Unique" + i, cardX[i]))
-                .ToArray();
-            view.CardSlots = Enumerable
-                .Range(0, TrainingPresenter.CustomSlots)
-                .Select(i => Card(panel, "Custom" + i, cardX[half + i]))
-                .ToArray();
-
-            // 武器・防具・アクセサリー3つを同じ大きさの枠で並べる。
-            GuideFrameAssets.Heading(
-                panel,
-                "GearTitle",
-                "装備",
-                PanelPad - 4,
-                GearTop - 40,
-                300,
-                36,
-                26
-            );
-            float gear =
-                (width - GearGap * (TrainingPresenter.GearSlots - 1)) / TrainingPresenter.GearSlots;
-            view.Gear = Enumerable
-                .Range(0, TrainingPresenter.GearSlots)
-                .Select(i => BuildGear(panel, i, PanelPad + i * (gear + GearGap), GearTop, gear))
-                .ToArray();
+            view.Passives = BuildPassives(panel);
+            BuildLevelUp(panel, view);
         }
 
-        // 右上の「レベルアップ」（すりガラスのカード）。1レベル上げるのに要るルーンを添え、押すと重ねた画面を開く。
+        // 名前の行の右端の「レベルアップ」（模様のない小さなすりガラスのカード）。1段目に「レベルアップ」、
+        // 2段目に1レベル上げるのに要るルーンを添え、押すと重ねた画面を開く。Lvのすぐ横に置き、目立ちすぎない
+        // よう金の縁は付けない（2026-10-26）。
         private static void BuildLevelUp(RectTransform panel, TrainingView view)
         {
-            // 金の縁と光（選んだ印）は出さず、背景の模様も付けない。
             var (button, _, levelUp) = GlassCardAssets.Choice(
-                Layout.Box(panel, "LevelUp", LevelUpX, 18, LevelUpWidth, 96),
+                Layout.Box(panel, "LevelUp", LevelUpX, 8, LevelUpWidth, LevelUpHeight),
                 pattern: false
             );
             view.LevelUp = button;
@@ -515,26 +456,34 @@ namespace Baryonyx.Training.Editor
                 levelUp,
                 "Label",
                 "レベルアップ",
-                30,
+                26,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
+                TextAlignmentOptions.Bottom
             );
-            Layout.At(view.LevelUpLabel, 22, 0, 184, 96);
-            Guide.Shrink(view.LevelUpLabel, 22);
-            var cost = Layout.Box(levelUp, "Cost", 214, 0, LevelUpWidth - 218, 96);
+            Layout.At(view.LevelUpLabel, 0, 12, LevelUpWidth, 44);
+            Guide.Shrink(view.LevelUpLabel, 20);
+            // 使うルーンは、右上の所持ルーンと同じアイコンで添える。
+            var cost = Layout.Row(
+                levelUp,
+                "Cost",
+                0,
+                58,
+                LevelUpWidth,
+                40,
+                8,
+                TextAnchor.MiddleCenter
+            );
             view.LevelUpCost = cost.gameObject;
-            var icon = Icon(cost, "Icon", Guide.IconRunePath);
-            Layout.At(icon, 0, 29, 38, 38);
+            Layout.RowIcon(cost, "Icon", 30).sprite = ArtAssets.LoadSprite(Guide.IconRunePath);
             view.LevelUpCostLabel = Label(
                 cost,
                 "Value",
                 "",
-                28,
+                24,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineRight
+                TextAlignmentOptions.MidlineLeft
             );
-            Layout.At(view.LevelUpCostLabel, 40, 0, LevelUpWidth - 262, 96);
-            Guide.Shrink(view.LevelUpCostLabel, 20);
+            Layout.Fit(view.LevelUpCostLabel, 0);
         }
 
         // パッシブ2つを、見出しの下に1行ずつ（アイコン、名前、効果）。未解放は名前の行の右に解放するLv。
@@ -549,8 +498,16 @@ namespace Baryonyx.Training.Editor
                 Passives.height
             );
             // カードにはせず、見出しと2行だけを面の上に置く。
-            GuideFrameAssets.Heading(box, "Title", "パッシブ", 14, 6, 240, 34, 22);
-            Layout.Line(box, "Line", 18, 42 + PassiveRow, Passives.width - 36, 2);
+            const float rowsTop = 60f;
+            GuideFrameAssets.Heading(box, "Title", "パッシブ", 14, 6, 300, 40, 26);
+            Layout.Line(
+                box,
+                "Line",
+                18,
+                rowsTop + PassiveRow + PassiveGap / 2f - 1f,
+                Passives.width - 36,
+                2
+            );
             return Enumerable
                 .Range(0, 2)
                 .Select(i =>
@@ -559,150 +516,52 @@ namespace Baryonyx.Training.Editor
                         box,
                         "Passive" + i,
                         0,
-                        44 + i * (PassiveRow + 4),
+                        rowsTop + i * (PassiveRow + PassiveGap),
                         Passives.width,
                         PassiveRow
                     );
                     var widget = new TrainingSkillWidget();
-                    (widget.Icon, widget.Lock) = SkillIcon(
-                        Layout.Box(row, "Icon", 18, (PassiveRow - 48) / 2f, 48, 48)
-                    );
-                    // パッシブのアイコンは24×24ドットの絵そのもの（2倍）で、挿絵の切り抜きではない。
+                    // アイコンは名前の行にそろえて、行の上寄せにする。
+                    (widget.Icon, widget.Lock) = SkillIcon(Layout.Box(row, "Icon", 18, 4, 72, 72));
+                    // パッシブのアイコンは24×24ドットの絵そのもの（3倍）で、挿絵の切り抜きではない。
                     widget.Icon.uvRect = new Rect(0, 0, 1, 1);
 
-                    const float textX = 82;
+                    const float textX = 108;
+                    const float whenWidth = 240;
                     widget.Name = Label(
                         row,
                         "Name",
                         "",
-                        24,
+                        36,
                         UiPalette.TextMain,
                         TextAlignmentOptions.TopLeft
                     );
-                    Layout.At(widget.Name, textX, 4, 300, 30);
-                    Guide.Shrink(widget.Name, 18);
+                    Layout.At(widget.Name, textX, 0, Passives.width - textX - 28 - whenWidth, 48);
+                    Guide.Shrink(widget.Name, 26);
                     widget.When = Label(
                         row,
                         "When",
                         "",
-                        18,
+                        28,
                         UiPalette.Gold,
                         TextAlignmentOptions.TopRight
                     );
-                    Layout.At(widget.When, Passives.width - 18 - 200, 8, 200, 24);
+                    Layout.At(widget.When, Passives.width - 18 - whenWidth, 8, whenWidth, 36);
                     widget.Description = Label(
                         row,
                         "Description",
                         "",
-                        18,
+                        30,
                         UiPalette.TextSub,
                         TextAlignmentOptions.TopLeft
                     );
-                    // 説明は2行まで折り返す。
+                    // 説明は2行まで折り返し、入りきらない長い説明だけ少し縮める。
                     widget.Description.textWrappingMode = TextWrappingModes.Normal;
-                    Layout.At(widget.Description, textX, 32, Passives.width - textX - 18, 42);
-                    Guide.Shrink(widget.Description, 15);
+                    Layout.At(widget.Description, textX, 56, Passives.width - textX - 18, 100);
+                    Guide.Shrink(widget.Description, 24);
                     return widget;
                 })
                 .ToArray();
-        }
-
-        // デッキの小さなカード1枚。押すと、その枠を選んだスキルの付け替えの画面を開く。
-        private static TrainingCardWidget Card(RectTransform panel, string name, float x) =>
-            DeckCardAssets.Build(panel, name, x, DeckTop, CardDot, button: true, small: true);
-
-        private static Texture2D CardArt(string name) => DeckCardAssets.CardArt(name);
-
-        // 装備の枠1つ。上にアイコン・枠の名前・星、下に名前と効果。武器・防具は押すと付け替えの画面を開く。
-        // アクセサリーは決まりがないため、枠の名前と錠前・「準備中」だけを出して押せなくする。
-        private static TrainingGearWidget BuildGear(
-            RectTransform panel,
-            int index,
-            float x,
-            float y,
-            float width
-        )
-        {
-            // 装備の枠は小さいので、カードの模様は付けない。まだ付けられないアクセサリーは点線にする。
-            var (button, _, cell) = GlassCardAssets.Choice(
-                Layout.Box(panel, "Gear" + index, x, y, width, GearHeight),
-                dashed: index >= TrainingPresenter.OpenGearSlots,
-                pattern: false
-            );
-            var widget = new TrainingGearWidget { Button = button };
-            var icon = Layout.Box(cell, "Icon", 14, 14, 48, 48);
-            widget.Icon = icon.gameObject.AddComponent<Image>();
-            widget.Icon.raycastTarget = false;
-            // 武器・防具のアイコンには、付けている装備の品質のキラキラを重ねる。
-            if (index < TrainingPresenter.OpenGearSlots)
-                widget.Foil = CardFoilAssets.Add(widget.Icon);
-            widget.Slot = Label(
-                cell,
-                "Slot",
-                index < TrainingPresenter.OpenGearSlots
-                    ? TrainingPresenter.GearLabels[index]
-                    : $"{TrainingPresenter.GearLabels[2]} {index - TrainingPresenter.OpenGearSlots + 1}",
-                18,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            // アクセサリーはアイコンがまだないため、枠の名前を中央に置く。
-            if (index < TrainingPresenter.OpenGearSlots)
-                Layout.At(widget.Slot, 72, 14, width - 80, 24);
-            else
-            {
-                widget.Slot.alignment = TextAlignmentOptions.Top;
-                Layout.At(widget.Slot, 8, 18, width - 16, 24);
-            }
-            Guide.Shrink(widget.Slot, 14);
-            widget.Stars = Label(
-                cell,
-                "Stars",
-                "",
-                20,
-                UiPalette.Gold,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(widget.Stars, 72, 40, width - 80, 24);
-            widget.Name = Label(
-                cell,
-                "Name",
-                "",
-                22,
-                UiPalette.TextMain,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(widget.Name, 14, 74, width - 28, 30);
-            Guide.Shrink(widget.Name, 16);
-            widget.Detail = Label(
-                cell,
-                "Detail",
-                "",
-                18,
-                UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft
-            );
-            Layout.At(widget.Detail, 14, 106, width - 28, GearHeight - 118);
-            widget.Detail.textWrappingMode = TextWrappingModes.Normal;
-
-            var locked = Rect("Lock", cell);
-            Stretch(locked);
-            var lockImage = Layout.Box(locked, "Image", (width - 9 * 4) / 2f, 62, 9 * 4, 10 * 4);
-            SpriteImage(lockImage, GuideFrameAssets.LockPath, Color.white);
-            // 開いていないアクセサリーの枠は、解放するLv（「Lv 20で解放」）を出す。
-            int accessory = index - TrainingPresenter.OpenGearSlots;
-            widget.When = Label(
-                locked,
-                "When",
-                accessory >= 0 ? AccessorySlots.UnlockText(accessory) : "",
-                22,
-                UiPalette.Gold,
-                TextAlignmentOptions.Center
-            );
-            Layout.At(widget.When, 8, 112, width - 16, 30);
-            widget.Lock = locked.gameObject;
-            locked.gameObject.SetActive(false);
-            return widget;
         }
 
         // --- The level-up dialog, over the whole screen ----------------------------------

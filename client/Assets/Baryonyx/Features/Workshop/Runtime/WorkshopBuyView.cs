@@ -54,7 +54,7 @@ namespace Baryonyx.Workshop
         // 読み込み中・読めなかったとき・品物がないときだけ一覧に出す文字。
         public TMP_Text Status;
 
-        // 右の面：選んだ品物の絵・名前・☆と品質・効果・持っている数。選ぶ前は何も出さない。
+        // 右の面：選んだ品物の絵・名前・☆と品質・効果・持っている数。品物がないときは何も出さない。
         public RawImage DetailArt;
         public TMP_Text DetailName;
         public TMP_Text DetailLine;
@@ -177,14 +177,14 @@ namespace Baryonyx.Workshop
             }
         }
 
-        /// <summary>Takes the goods and shows the chosen tab's, none chosen.</summary>
+        /// <summary>Takes the goods and shows the chosen tab's, the first chosen.</summary>
         public void Render(IReadOnlyList<WorkshopGood> next)
         {
             goods = next ?? Array.Empty<WorkshopGood>();
             ShowTab(tab);
         }
 
-        /// <summary>Shows the goods of the tab <paramref name="index"/> (<see cref="WorkshopGoods.Kinds"/>), none chosen.</summary>
+        /// <summary>Shows the goods of the tab <paramref name="index"/> (<see cref="WorkshopGoods.Kinds"/>), the first chosen.</summary>
         public void ShowTab(int index)
         {
             tab = Mathf.Clamp(index, 0, WorkshopGoods.Kinds.Count - 1);
@@ -203,6 +203,13 @@ namespace Baryonyx.Workshop
                 Paint(Rows[i], shown[i], ArtBox);
                 if (Rows[i].Card != null)
                     Rows[i].Card.Selected = false;
+            }
+            // 右の面が空にならないよう、先頭の品物を選んでおく。
+            if (shown.Count > 0)
+            {
+                selected = 0;
+                if (Rows.Count > 0 && Rows[0].Card != null)
+                    Rows[0].Card.Selected = true;
             }
             Set(Status, goods.Count == 0 ? EmptyText : "");
             if (List != null)
@@ -287,7 +294,7 @@ namespace Baryonyx.Workshop
             );
             if (DetailArt != null)
             {
-                // 選ぶまでは、絵の後ろの光ごと隠す。
+                // 品物がないときは、絵の後ろの光ごと隠す。
                 DetailArt.transform.parent.gameObject.SetActive(good != null && card == null);
                 if (good != null && card == null)
                     LibraryCatalogView.PaintArt(DetailArt, good.Entry, true, DetailArtBox);

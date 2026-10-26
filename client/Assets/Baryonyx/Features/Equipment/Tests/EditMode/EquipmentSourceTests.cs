@@ -61,7 +61,12 @@ namespace Baryonyx.Tests.EditMode
         public async Task TheLocalSourceStartsWithTheStarterEquipment()
         {
             var state = await new EquipmentLocalSource().LoadAsync(CancellationToken.None);
-            Assert.That(state.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count));
+            // 1つずつに、2人が付ける種類（トーマとミナの樫の杖）をもう1つ足す。
+            Assert.That(state.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count + 1));
+            Assert.That(
+                state.ItemIn("toma", EquipmentSlot.Weapon),
+                Is.Not.EqualTo(state.ItemIn("mina", EquipmentSlot.Weapon))
+            );
             foreach (var (character, weapon, armor) in EquipmentCatalog.StarterEquipped)
             {
                 Assert.That(
@@ -145,7 +150,7 @@ namespace Baryonyx.Tests.EditMode
             var removed = await source.UnequipAsync("aria", EquipmentSlot.Weapon, default);
             Assert.That(removed.Change, Is.EqualTo("remove"));
             Assert.That(removed.ItemIn("aria", EquipmentSlot.Weapon), Is.Null);
-            Assert.That(removed.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count));
+            Assert.That(removed.Items.Count, Is.EqualTo(EquipmentCatalog.All.Count + 1));
         }
 
         private static string Item(EquipmentState state, string equipmentId) =>
