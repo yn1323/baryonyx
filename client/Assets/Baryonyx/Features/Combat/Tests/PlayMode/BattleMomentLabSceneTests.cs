@@ -80,12 +80,18 @@ namespace Baryonyx.Tests.PlayMode
 
             yield return Press(lab, BattleMoment.Victory);
             Assert.That(view.Enemies.All(enemy => !enemy.Alive), Is.True, "The party has won.");
+            Assert.That(view.HandPutAway, Is.True, "The hand goes away on a win.");
 
             Assert.That(
                 PlayerPrefs.GetInt(BattleMomentLab.MomentKey),
                 Is.EqualTo((int)BattleMoment.Victory),
                 "The moment last pressed is remembered."
             );
+
+            // 最奥の主に勝つと、暗がりで一拍おいてから大きく祝い、暗さは晴れて終わる。
+            yield return Press(lab, BattleMoment.BossVictory, 8f);
+            Assert.That(view.Enemies.All(enemy => !enemy.Alive), Is.True, "The boss is beaten.");
+            Assert.That(view.Vfx.DimAlpha, Is.LessThan(0.01f), "The dark has lifted.");
         }
 
         private static IEnumerator Press(

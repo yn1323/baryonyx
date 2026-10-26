@@ -133,9 +133,11 @@ namespace Baryonyx.Combat.Presentation
         /// in, wind streams through, a shriek pulses the dust, and a spell bursts in the way its
         /// kind does. A breath, a throw or a bolt comes from <paramref name="attacker"/> (its
         /// drawn body, when known). Milder than the party's skills: short stops and shakes, and
-        /// no flash of the screen but the light of lightning.
+        /// no flash of the screen but the light of lightning. Tells how long (real time) the blow
+        /// takes to reach the ally after it starts (<see cref="EnemyContactOf"/>), so the hit can
+        /// show on the ally as it does.
         /// </summary>
-        public void Strike(
+        public float Strike(
             RectTransform target,
             string skill = null,
             RectTransform attacker = null,
@@ -143,7 +145,7 @@ namespace Baryonyx.Combat.Presentation
         )
         {
             if (FrontLayer == null || target == null)
-                return;
+                return 0f;
             var at = Center(FrontLayer, target);
             var feet = Feet(FrontLayer, target);
             var from = attacker != null ? Center(FrontLayer, attacker) : at + Vector2.right * 420f;
@@ -205,6 +207,78 @@ namespace Baryonyx.Combat.Presentation
                 default:
                     ClawBlow(at, feet, toward);
                     break;
+            }
+            return EnemyContactOf(skill, magic);
+        }
+
+        /// <summary>
+        /// An enemy dashing in toward <paramref name="direction"/> (in the layers' space): thin
+        /// streaks of the air it cuts through slip back past its body and thin out at once, and its
+        /// feet scrape a little dust as they push off. No mist and no trail of light: a body moving
+        /// fast leaves only these.
+        /// </summary>
+        public void Rush(RectTransform attacker, Vector2 direction)
+        {
+            if (FrontLayer == null || attacker == null || direction.sqrMagnitude < 0.01f)
+                return;
+            var at = Center(FrontLayer, attacker);
+            var feet = Feet(FrontLayer, attacker);
+            var (low, high) = Bounds(FrontLayer, attacker);
+            float size = Mathf.Max(120f, high.y - low.y);
+            float back = Angle(-direction);
+            for (int front = 0; front < 2; front++)
+                Spray(
+                    front == 0 ? backLight : frontLight,
+                    at + direction.normalized * (size * 0.2f),
+                    new Burst
+                    {
+                        Shape = BattleVfxShape.Streak,
+                        Bright = front == 0 ? 0.9f : 1.1f,
+                        From = new Color(1f, 1f, 1f, front == 0 ? 0.55f : 0.4f),
+                        To = new Color(0.85f, 0.88f, 1f, 0f),
+                        Speed = new Vector2(1100f, 1800f),
+                        Direction = back,
+                        Spread = 6f,
+                        Life = new Vector2(0.08f, 0.16f),
+                        Size = new Vector2(3f, 5f),
+                        Stretch = 0.06f,
+                        Drag = 4f,
+                        Area = size * 0.45f,
+                        Delay = new Vector2(0f, 0.04f),
+                    },
+                    front == 0 ? 7 : 4
+                );
+            DustKick(feet, -direction, 120f);
+        }
+
+        /// <summary>
+        /// How long (real time) the technique <paramref name="skill"/> takes from its start to
+        /// reach the ally: the jaws closing, the needle driven in, the stone's last stretch, the
+        /// stepped leader, a curse drawing the light in; 0 for a blow that lands as it starts.
+        /// </summary>
+        public static float EnemyContactOf(string skill, bool magic)
+        {
+            switch (EnemyBlowOf(skill, magic))
+            {
+                case EnemyBlow.Bite:
+                    return JawClose;
+                case EnemyBlow.Pierce:
+                    return PierceDrive;
+                case EnemyBlow.Rock:
+                    return StoneFlight;
+                case EnemyBlow.Thunder:
+                    return BlowLeader;
+                case EnemyBlow.Magic:
+                    bool other =
+                        skill != null
+                        && (
+                            skill.Contains("光", StringComparison.Ordinal)
+                            || skill.Contains("水晶", StringComparison.Ordinal)
+                            || skill.Contains("迷い火", StringComparison.Ordinal)
+                        );
+                    return other ? 0f : CurseGather;
+                default:
+                    return 0f;
             }
         }
 
@@ -320,6 +394,19 @@ namespace Baryonyx.Combat.Presentation
         // How long jaws take to close before they snap (s).
         private const float JawClose = 0.06f;
 
+        // The size of the jaws' streaks on the slash arc's shape: large enough to close over the
+        // ally's body (at 0.48 they were a small white arc by its chest, 2026-10-26).
+        private const float JawSize = 0.72f;
+
+        // How long a thrust takes to drive its needle in (s).
+        private const float PierceDrive = 0.05f;
+
+        // How far back along a thrust its needle comes from, and its trace reaches (px).
+        private const float PierceTrail = 120f;
+
+        // How long a curse draws the light in before its sigil shows (s).
+        private const float CurseGather = 0.1f;
+
         /// <summary>
         /// Jaws snapping shut, as a bite is: the upper and lower jaw close on the ally from above
         /// and below (not a sweep across, as claws are) and meet with a snap: a dark-red haze, the
@@ -331,8 +418,8 @@ namespace Baryonyx.Combat.Presentation
             for (int jaw = 0; jaw < 2; jaw++)
             {
                 bool upper = jaw == 0;
-                var center = at + (upper ? Vector2.up : Vector2.down) * 30f;
-                var travel = (upper ? Vector2.up : Vector2.down) * 50f;
+                var center = at + (upper ? Vector2.up : Vector2.down) * 42f;
+                var travel = (upper ? Vector2.up : Vector2.down) * 80f;
                 float angle = upper ? 180f : 0f;
                 float seed = UnityEngine.Random.value;
                 var layer = upper ? backLight : frontLight;
@@ -344,7 +431,7 @@ namespace Baryonyx.Combat.Presentation
                     angle,
                     false,
                     haze,
-                    0.48f,
+                    JawSize,
                     RakeHaze,
                     seed,
                     0f,
@@ -361,7 +448,7 @@ namespace Baryonyx.Combat.Presentation
                     angle,
                     false,
                     trace,
-                    0.48f,
+                    JawSize,
                     RakeTrace,
                     seed,
                     JawClose,
@@ -378,7 +465,7 @@ namespace Baryonyx.Combat.Presentation
                     angle,
                     false,
                     JawStreak,
-                    0.48f,
+                    JawSize,
                     RakeBody,
                     seed,
                     0f,
@@ -395,7 +482,7 @@ namespace Baryonyx.Combat.Presentation
                     angle,
                     false,
                     Color.white,
-                    0.48f,
+                    JawSize,
                     RakeCore,
                     seed,
                     JawClose - 0.01f,
@@ -409,7 +496,7 @@ namespace Baryonyx.Combat.Presentation
                 for (int tooth = 0; tooth < 4; tooth++)
                     Spray(
                         frontLight,
-                        at + new Vector2(-48f + tooth * 32f, upper ? 14f : -14f),
+                        at + new Vector2(-66f + tooth * 44f, upper ? 18f : -18f),
                         new Burst
                         {
                             Shape = BattleVfxShape.Spark,
@@ -419,7 +506,7 @@ namespace Baryonyx.Combat.Presentation
                             Speed = new Vector2(0f, 10f),
                             Direction = upper ? 270f : 90f,
                             Life = new Vector2(0.1f, 0.14f),
-                            Size = new Vector2(7f, 9f),
+                            Size = new Vector2(9f, 12f),
                             Aspect = 3f,
                             Level = true,
                             Delay = new Vector2(JawClose, JawClose + 0.02f),
@@ -483,24 +570,34 @@ namespace Baryonyx.Combat.Presentation
         /// A thrust or a sting driven straight in, as a real one is: a needle of light rushes in
         /// along the thrust and stops in the ally, a thin trace of its path is left that breaks up,
         /// a soft haze lies along the path behind, a glint flares at the point where it goes in,
-        /// and sparks and a puff of dust burst out the far side.
+        /// and sparks and a puff of dust burst out the far side. The trace and the haze reach only
+        /// <see cref="PierceTrail"/> back along the thrust and go first: a longer line hung in the
+        /// air between the allies, apart from the one it hit (2026-10-26).
         /// </summary>
         private void PierceBlow(Vector2 at, Vector2 feet, Vector2 toward)
         {
-            const float drive = 0.05f;
+            const float drive = PierceDrive;
             var hot = Color.Lerp(ClawStreak, Color.white, 0.55f);
             BlowHaze(
                 backLight,
-                at - toward * 240f,
+                at - toward * PierceTrail,
                 at + toward * 40f,
-                80f,
+                70f,
                 ClawStreak,
                 0.3f,
                 0f,
-                0.3f
+                0.22f
             );
-            Line(frontLight, at - toward * 240f, at + toward * 30f, ClawStreak, 12f, 0.45f, 0.3f);
-            BlowNeedle(at - toward * 200f, at + toward * 26f, hot, drive);
+            Line(
+                frontLight,
+                at - toward * PierceTrail,
+                at + toward * 30f,
+                ClawStreak,
+                10f,
+                0.28f,
+                0.15f
+            );
+            BlowNeedle(at - toward * PierceTrail, at + toward * 26f, hot, drive);
             Twinkle(at, hot, 120f, 0.16f, drive, 1f);
             Spray(
                 frontLight,
@@ -560,14 +657,40 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// A slam, as a real blow of a weight is: a white-hot flash at the point of contact in a
-        /// soft warm glow, dust knocked off the body along the blow, grit flung that way, the
-        /// shock driving dust out along the floor, and dust settling a moment later; a heavy jolt.
+        /// soft warm glow, short thin rays of the shock bursting from it and a few thin streaks
+        /// flung along the blow, dust knocked off the body along the blow, grit flung that way, the
+        /// shock driving dust out along the floor, and dust settling a moment later; a heavy jolt
+        /// with a slight push in. The dust stays thin: it is the after-effect, not the blow
+        /// (2026-10-26, when the slam was a puff of dust and little else).
         /// </summary>
         private void BluntBlow(Vector2 at, Vector2 feet, Vector2 toward)
         {
             var warm = new Color(1f, 0.72f, 0.55f);
-            HotFlash(at, warm, 190f);
-            Glow(backLight, at, warm, 300f, 0.28f, 0.35f);
+            var contact = at + toward * -18f;
+            HotFlash(contact, warm, 230f);
+            Star(contact, Color.Lerp(warm, Color.white, 0.55f), 230f, 0.14f);
+            Glow(backLight, at, warm, 320f, 0.28f, 0.35f);
+            // The shock flung along the blow as thin, fast streaks that slow at once.
+            Spray(
+                frontLight,
+                contact,
+                new Burst
+                {
+                    Shape = BattleVfxShape.Streak,
+                    Bright = CoreBright,
+                    From = Color.white,
+                    To = new Color(warm.r, warm.g, warm.b, 0f),
+                    Speed = new Vector2(900f, 1700f),
+                    Direction = Angle(toward),
+                    Spread = 110f,
+                    Life = new Vector2(0.08f, 0.18f),
+                    Size = new Vector2(5f, 8f),
+                    Stretch = 0.05f,
+                    Drag = 6f,
+                    Area = 12f,
+                },
+                12
+            );
             for (int front = 0; front < 2; front++)
                 Spray(
                     front == 0 ? backSmoke : frontSmoke,
@@ -576,8 +699,8 @@ namespace Baryonyx.Combat.Presentation
                     {
                         Shape = BattleVfxShape.Smoke,
                         Bright = 0.5f,
-                        From = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.5f),
-                        To = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.5f),
+                        From = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.35f),
+                        To = new Color(KickedDust.r, KickedDust.g, KickedDust.b, 0.35f),
                         Speed = new Vector2(300f, 650f),
                         Direction = Angle(toward),
                         Spread = 70f,
@@ -612,7 +735,7 @@ namespace Baryonyx.Combat.Presentation
                 },
                 8
             );
-            Shockwave(feet, 320f, 0.8f);
+            Shockwave(feet, 320f, 0.6f);
             Spray(
                 backSmoke,
                 feet + Vector2.up * 10f,
@@ -640,8 +763,9 @@ namespace Baryonyx.Combat.Presentation
             );
             Illuminate(at, warm, 0.4f, 240f, 0.03f, 0.2f, spill: false);
             BlowPool(feet, warm, 220f, 0.3f, 0.03f, 0.2f);
-            HitStop(0.07f);
-            Shake(0.45f, toward);
+            HitStop(0.08f);
+            Shake(0.55f, toward);
+            Punch(at, 0.012f);
         }
 
         // How long a thrown stone takes over its last stretch to the ally (s).
@@ -1868,7 +1992,7 @@ namespace Baryonyx.Combat.Presentation
         // A curse: drawn in for an instant, then a sigil on the ally in a dark clinging mist.
         private void CurseMark(Vector2 at, Vector2 feet, Color color)
         {
-            const float gather = 0.1f;
+            const float gather = CurseGather;
             Gather(at, color, 10, 170f, gather);
             Spray(
                 backSmoke,

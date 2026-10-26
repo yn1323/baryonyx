@@ -19,8 +19,9 @@ namespace Baryonyx.Combat.Presentation
         // Attack up on an enemy is the cards' 25%.
         private const int EnemyAttackUp = 25;
 
-        // The pause between the hits of a skill that lands more than once.
-        private const float EnemyHitGap = 0.18f;
+        // The pause between the hits of a skill that lands more than once (each hit is a dash of
+        // its own, which spaces them out too).
+        private const float EnemyHitGap = 0.04f;
 
         // How long the word of its enrage or of its gathering shows before it acts.
         private const float EnemyCryHold = 0.55f;
@@ -140,7 +141,8 @@ namespace Baryonyx.Combat.Presentation
                     new[] { enemy.Body },
                     new[] { enemyBase[index] },
                     Vector2.left,
-                    Gather(index, step, with)
+                    Gather(index, step, with),
+                    hold: EnemyActionHold
                 );
                 yield break;
             }
@@ -149,7 +151,8 @@ namespace Baryonyx.Combat.Presentation
                 new[] { enemy.Body },
                 new[] { enemyBase[index] },
                 Vector2.left,
-                UseMove(index, step)
+                UseMove(index, step),
+                hold: EnemyActionHold
             );
         }
 
@@ -209,12 +212,19 @@ namespace Baryonyx.Combat.Presentation
                 var aimed = Aimed(aim);
                 if (aimed.Count == 0)
                     break;
+                // It dashes at the one it aims at (the middle one of several) and strikes.
+                yield return Lunge(
+                    index,
+                    aimed[aimed.Count / 2],
+                    move.Stat == CardStat.MagicAttack
+                );
                 foreach (int target in aimed)
                     yield return Strike(target, power, index, move);
                 if (splash > 0 && aimed.Count == 1)
                     for (int i = 0; i < Allies.Length; i++)
                         if (i != aimed[0] && !Allies[i].Down)
                             yield return Strike(i, splash, index, move);
+                yield return LungeBack(index);
                 // A blow thrown back (反射, 切り返し) may beat it before its next hit.
                 if (!enemy.Alive)
                     break;

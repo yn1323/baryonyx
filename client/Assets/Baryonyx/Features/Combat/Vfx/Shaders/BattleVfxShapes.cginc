@@ -8,6 +8,8 @@
 // - bright：明るさの倍率（1が通常）。ふつうは描いたあとに全体へ掛けるが、雷雲は中の稲光の強さとして使う。
 // 描き方の共通の約束（vfx-authoring の formulas.md・procedural.md）：
 // - 濃淡は回転付きの多段ノイズ（Fbm4・Fbm5）で作り、読む座標を別のノイズでゆがめる（Warp）。
+//   値ノイズの格子の乱数は、1画素ごとにハッシュせず、コードで作った表（BattleVfxNoise.cs、
+//   グローバルの _BattleVfxNoise）を1段につき1回読む。表は画像ファイルにしない。
 //   乱数の種は SeedOffset で小さなずらしに直して足し、座標に掛けない。
 // - 光は白い芯と色のにじみを別の幅のガウスにし（F2）、芯だけを1より明るくする。
 // - 細い線は Line で、fwidth から求めた1画素より細くしない（細くなる分は暗くする）。
@@ -47,22 +49,21 @@ float Hash1(float i, float seed)
     return Hash(float3(i, seed * 97.0, 17.17));
 }
 
-// Smooth value noise (0 to 1).
+// The lattice's random values, made in code (BattleVfxNoise.cs): 256 by 256, repeating, read
+// bilinearly. r is the corner (x, y), and g the corner (x + 37, y + 17), the next slice in z.
+sampler2D _BattleVfxNoise;
+
+// Smooth value noise (0 to 1). One read of the table gives both slices around p.z already
+// blended in x and y (the smooth step is put into the coordinates, so the hardware's linear
+// blend follows the same curve), instead of hashing all eight corners per pixel.
 float Noise(float3 p)
 {
     float3 i = floor(p);
     float3 f = frac(p);
     f = f * f * (3 - 2 * f);
-    return lerp(
-        lerp(
-            lerp(Hash(i), Hash(i + float3(1, 0, 0)), f.x),
-            lerp(Hash(i + float3(0, 1, 0)), Hash(i + float3(1, 1, 0)), f.x),
-            f.y),
-        lerp(
-            lerp(Hash(i + float3(0, 0, 1)), Hash(i + float3(1, 0, 1)), f.x),
-            lerp(Hash(i + float3(0, 1, 1)), Hash(i + float3(1, 1, 1)), f.x),
-            f.y),
-        f.z);
+    float2 uv = i.xy + float2(37.0, 17.0) * i.z + f.xy;
+    float2 slices = tex2Dlod(_BattleVfxNoise, float4((uv + 0.5) / 256.0, 0, 0)).rg;
+    return lerp(slices.x, slices.y, f.z);
 }
 
 // Three octaves of noise, each twice as fine and half as strong (fBM).

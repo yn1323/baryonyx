@@ -111,7 +111,9 @@ namespace Baryonyx.Combat.Presentation
                 user != null ? user.Sprite.texture : null,
                 skill.Has(CardTrait.CutIn),
                 hits,
-                i => ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave)
+                AtContact(i =>
+                    ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave)
+                )
             );
             EndCardPassives(skill, caster);
             Refresh();
@@ -215,21 +217,41 @@ namespace Baryonyx.Combat.Presentation
                         break;
                     case CardActionKind.Energy:
                         Energy = Mathf.Min(MaxEnergyCap, Energy + action.Amount);
-                        ShowPopup(AreaOf(hit), $"エネルギー +{action.Amount}", Gold, 42f);
+                        ShowPopup(
+                            PopupAreaOf(hit, action, caster),
+                            $"エネルギー +{action.Amount}",
+                            Gold,
+                            42f
+                        );
                         break;
                     case CardActionKind.Draw:
-                        ShowPopup(AreaOf(hit), $"{action.Amount}枚引く", SupportColor, 42f);
+                        ShowPopup(
+                            PopupAreaOf(hit, action, caster),
+                            $"{action.Amount}枚引く",
+                            SupportColor,
+                            42f
+                        );
                         if (dealing == null)
                             dealing = StartCoroutine(Deal(action.Amount, 0f));
                         break;
                     case CardActionKind.CostDown:
                         LowerCosts(action);
-                        ShowPopup(AreaOf(hit), $"コスト -{action.Amount}", SupportColor, 42f);
+                        ShowPopup(
+                            PopupAreaOf(hit, action, caster),
+                            $"コスト -{action.Amount}",
+                            SupportColor,
+                            42f
+                        );
                         break;
                     case CardActionKind.NextCardFree:
                         nextCardFree = true;
                         nextFreeElements = action.Elements;
-                        ShowPopup(AreaOf(hit), "次のカード コスト0", Gold, 42f);
+                        ShowPopup(
+                            PopupAreaOf(hit, action, caster),
+                            "次のカード コスト0",
+                            Gold,
+                            42f
+                        );
                         break;
                     case CardActionKind.NextCardBoost:
                         nextBoost = action.Amount;
@@ -341,7 +363,8 @@ namespace Baryonyx.Combat.Presentation
         // 眠り札の段と次のカードの上乗せ（cardBoost）は、使っているカードの威力・回復量・ブロックに掛かる。
         private int Power(CardAction action, int caster) =>
             Mathf.RoundToInt(
-                CardRules.Power(action, StatOf(caster, action.Stat), TodayAct) * (1f + cardBoost / 100f)
+                CardRules.Power(action, StatOf(caster, action.Stat), TodayAct)
+                    * (1f + cardBoost / 100f)
             );
 
         /// <summary>
@@ -390,6 +413,12 @@ namespace Baryonyx.Combat.Presentation
 
         private RectTransform AreaOf(BattleCardPlan.Hit hit) =>
             hit.Ally ? Allies[hit.Index].TargetArea : Enemies[hit.Index].TargetArea;
+
+        // 誰にも向かない働き（エネルギー・手札など）は、敵への当たりに載っていても使い手の上に知らせる。
+        private RectTransform PopupAreaOf(BattleCardPlan.Hit hit, CardAction action, int caster) =>
+            action.Target == CardTarget.None && caster >= 0 && caster < Allies.Length
+                ? Allies[caster].TargetArea
+                : AreaOf(hit);
 
         // --- Statuses ------------------------------------------------------------------------
 

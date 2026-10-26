@@ -25,6 +25,7 @@ namespace Baryonyx.Combat.Presentation
         // How long the band of a turning point stays: longer than a turn's, as each is rarer.
         private const float EncounterHold = 0.7f;
         private const float VictoryHold = 1.1f;
+        private const float BossVictoryHold = 1.6f;
         private const float WipeoutHold = 1.2f;
         private const float ReviveHold = 0.7f;
 
@@ -70,8 +71,14 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The warning in place of the skill name when the energy cannot pay for a card.</summary>
         public void PlayNoEnergy() => Enqueue(Notice(NoEnergyText));
 
-        /// <summary>The enemies still standing are beaten, and the party wins.</summary>
-        public void PlayVictory() => Enqueue(Victory());
+        /// <summary>
+        /// The enemies still standing are beaten, and the party wins: bigger after the boss's
+        /// battle (<see cref="BossEncounter"/>).
+        /// </summary>
+        public void PlayVictory() => PlayVictory(BossEncounter);
+
+        /// <summary>The win, bigger when <paramref name="boss"/>.</summary>
+        public void PlayVictory(bool boss) => Enqueue(Victory(boss));
 
         /// <summary>
         /// <paramref name="drop"/> (null for nothing found) falls from the last enemy beaten and
@@ -83,7 +90,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The win, then the drop.</summary>
         public void PlayVictoryAndDrop(RewardItem drop, RewardReveal reveal)
         {
-            Enqueue(Victory());
+            Enqueue(Victory(BossEncounter));
             Enqueue(DropMoment(drop, reveal));
         }
 
@@ -100,6 +107,8 @@ namespace Baryonyx.Combat.Presentation
         public void MomentRestore()
         {
             LabRestore();
+            BringHandBack();
+            UnpunchBand();
             for (int i = 0; i < Enemies.Length; i++)
             {
                 Enemies[i].Body.anchoredPosition = enemyBase[i];
@@ -257,8 +266,11 @@ namespace Baryonyx.Combat.Presentation
         // The enemy a drop falls from: the last one beaten.
         private int lastBeaten = -1;
 
-        private IEnumerator Victory()
+        private IEnumerator Victory(bool boss)
         {
+            // The battle is over: the hand and its counters go away at once, and stay away
+            // through the drops and the boons that follow.
+            StartCoroutine(PutHandAway());
             // The enemies still standing fall, one after another, as to a last blow.
             bool any = false;
             for (int i = 0; i < Enemies.Length; i++)
@@ -274,9 +286,17 @@ namespace Baryonyx.Combat.Presentation
             }
             if (any)
                 yield return Wait(Vfx != null ? 0.75f : 0.6f);
-            // A breath of quiet before the cheer.
-            yield return Wait(0.2f);
-            ShowBand(VictoryText, VictoryBannerLine, VictoryBannerText, VictoryHold);
+            // A breath of quiet before the cheer; after the boss, a hush in the dark.
+            if (boss && Vfx != null)
+            {
+                Vfx.DimTo(0.55f, 0.25f);
+                yield return Wait(BattleSkillVfx.TriumphHush);
+            }
+            else
+                yield return Wait(0.2f);
+            float hold = boss ? BossVictoryHold : VictoryHold;
+            ShowBand(VictoryText, VictoryBannerLine, VictoryBannerText, hold);
+            StartPunch(boss);
             var cheering = new List<RectTransform>();
             for (int i = 0; i < Allies.Length; i++)
             {
@@ -286,8 +306,12 @@ namespace Baryonyx.Combat.Presentation
                 StartCoroutine(Hop(i, i * 0.06f));
             }
             if (Vfx != null)
-                Vfx.Cheer(cheering);
-            yield return Wait(BandTime(VictoryHold));
+                Vfx.Triumph(
+                    cheering,
+                    TurnBanner != null ? (RectTransform)TurnBanner.transform : null,
+                    boss
+                );
+            yield return Wait(BandTime(hold));
         }
 
         /// <summary>An ally hops twice for joy, after <paramref name="delay"/>, in whole dots.</summary>
@@ -377,6 +401,7 @@ namespace Baryonyx.Combat.Presentation
         private IEnumerator Revived()
         {
             yield return ReviveMoment(turnBanner: false);
+            BringHandBack();
             EnemyTurn = false;
             StartOfTurn(StartTurn);
             DealOpeningHand();

@@ -172,6 +172,14 @@ namespace Baryonyx.Combat.Presentation
         // The longest one hit stop may freeze the battle (s).
         private const float MaxHitStop = 0.2f;
 
+        /// <summary>
+        /// How long after a blow lands (its land is called, the moment the effect's body reaches
+        /// the target) the hit shows on the target in real time: its number, its words and its
+        /// white blink. The body is spawned as it lands and takes this long to rise to its full
+        /// shape (a spike, a shaft, a cross), so the number never shows before it (2026-10-26).
+        /// </summary>
+        public const float ContactLag = 0.06f;
+
         // Floor effects (magic circles, rings, pools of light) are flattened to lie on the ground.
         public const float FloorTilt = 0.32f;
 
@@ -1286,7 +1294,12 @@ namespace Baryonyx.Combat.Presentation
                     12
                 );
                 // Last, the body is wrapped in a soft halo that fades slowest.
-                StartCoroutine(After(0.12f, () => Glow(backLight, at, Color.Lerp(color, gold, 0.3f), 300f, 0.9f, 0.45f)));
+                StartCoroutine(
+                    After(
+                        0.12f,
+                        () => Glow(backLight, at, Color.Lerp(color, gold, 0.3f), 300f, 0.9f, 0.45f)
+                    )
+                );
                 Illuminate(at, Color.Lerp(color, gold, 0.3f), 0.75f, 300f, 0.5f, 0.7f);
             }
             yield return Wait(0.35f);
@@ -1636,7 +1649,11 @@ namespace Baryonyx.Combat.Presentation
             float seed = UnityEngine.Random.value;
             float sweep = mirror ? -24f : 24f;
             var size = new Vector2(420f, 420f) * scale;
-            void Layer(float look, float life, Func<float, (Color tint, float eaten, float bright)> show)
+            void Layer(
+                float look,
+                float life,
+                Func<float, (Color tint, float eaten, float bright)> show
+            )
             {
                 var shot = Spawn(layer, BattleVfxShape.SlashArc, at, size, Color.clear);
                 shot.Seed = seed;
@@ -1677,7 +1694,12 @@ namespace Baryonyx.Combat.Presentation
                 0.5f,
                 t =>
                 {
-                    var trace = new Color(color.r, color.g, color.b, 0.8f * Envelope(t, 0.04f, 0.04f, 0.14f, 0.5f));
+                    var trace = new Color(
+                        color.r,
+                        color.g,
+                        color.b,
+                        0.8f * Envelope(t, 0.04f, 0.04f, 0.14f, 0.5f)
+                    );
                     return (trace, Eaten(t / 0.5f, 0.2f), 1f);
                 }
             );
@@ -1686,7 +1708,12 @@ namespace Baryonyx.Combat.Presentation
             Layer(
                 ArcCore,
                 0.12f,
-                t => (new Color(1f, 1f, 1f, Envelope(t, 0f, 0.01f, 0.05f, 0.12f)), 0f, CoreBright * 2f)
+                t =>
+                    (
+                        new Color(1f, 1f, 1f, Envelope(t, 0f, 0.01f, 0.05f, 0.12f)),
+                        0f,
+                        CoreBright * 2f
+                    )
             );
         }
 
@@ -2333,7 +2360,11 @@ namespace Baryonyx.Combat.Presentation
                     {
                         float t = k * life;
                         float rise = EaseOut(Mathf.Clamp01((t - start) / 0.3f));
-                        s.Holder.localScale = new Vector3(0.75f + 0.25f * rise, 0.15f + 1.1f * rise, 1f);
+                        s.Holder.localScale = new Vector3(
+                            0.75f + 0.25f * rise,
+                            0.15f + 1.1f * rise,
+                            1f
+                        );
                         var tint = new Color(
                             color.r,
                             color.g,

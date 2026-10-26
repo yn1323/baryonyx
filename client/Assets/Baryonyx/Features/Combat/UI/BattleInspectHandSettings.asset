@@ -37,6 +37,6 @@ MonoBehaviour:
   StepDistance: 64
   StepTime: 0.12
   ActionHold: 0.45
-  EnemyGap: 0.25
+  EnemyGap: 0.15
   Stiffness: 320
   Damping: 17

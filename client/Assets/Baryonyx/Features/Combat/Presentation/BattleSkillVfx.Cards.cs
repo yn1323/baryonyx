@@ -45,6 +45,9 @@ namespace Baryonyx.Combat.Presentation
         // white, and burns white only at its brightest.
         private static readonly Color HolyGold = new(1f, 0.78f, 0.36f);
 
+        // How long a shaft of ホーリーライト takes to reach down to the enemy (s, real time).
+        private const float HolyDraw = 0.05f;
+
         /// <summary>The colour of a card's light (its cut-in, its glow), by the card's id.</summary>
         public static Color ColorOf(string id) =>
             id switch
@@ -380,7 +383,15 @@ namespace Baryonyx.Combat.Presentation
                 var cutFrom = new Vector2(-1100f, y + 30f);
                 var cutTo = new Vector2(1100f, y - 30f);
                 Line(backLight, cutFrom, cutTo, color, 90f, 0.45f, 0.2f);
-                Line(frontLight, cutFrom, cutTo, new Color(color.r, color.g, color.b, 0.7f), 10f, 0.95f, 0.35f);
+                Line(
+                    frontLight,
+                    cutFrom,
+                    cutTo,
+                    new Color(color.r, color.g, color.b, 0.7f),
+                    10f,
+                    0.95f,
+                    0.35f
+                );
                 Line(frontLight, cutFrom, cutTo, Color.white, 22f, 0.22f, 0.4f);
                 Shake(0.12f, Vector2.right);
                 yield return Wait(0.12f);
@@ -777,7 +788,9 @@ namespace Baryonyx.Combat.Presentation
             // The crack runs along the floor in snaps, each a new stretch a step further on.
             for (int n = 1; n <= 4; n++)
             {
-                var step = Vector2.Lerp(feet, goal, n / 4f) + new Vector2(0f, UnityEngine.Random.Range(-8f, 8f));
+                var step =
+                    Vector2.Lerp(feet, goal, n / 4f)
+                    + new Vector2(0f, UnityEngine.Random.Range(-8f, 8f));
                 Rupture(step, 340f, 0.035f, 0f, 1.3f);
                 Hop(step, 90f, 2, 0.7f);
                 Shake(0.06f, Vector2.down);
@@ -797,7 +810,15 @@ namespace Baryonyx.Combat.Presentation
                 if (weight != BattleHitWeight.Normal)
                     ScreenFlash(Color.Lerp(Color.white, color, 0.4f), 0.2f);
                 // Light off the struck body only; the ground does not glow.
-                Illuminate(at, Color.Lerp(color, Color.white, 0.4f), 0.5f, 260f, 0.04f, 0.25f, spill: false);
+                Illuminate(
+                    at,
+                    Color.Lerp(color, Color.white, 0.4f),
+                    0.5f,
+                    260f,
+                    0.04f,
+                    0.25f,
+                    spill: false
+                );
                 yield return Wait(0.06f);
             }
             Shake(0.35f, Vector2.up);
@@ -829,7 +850,13 @@ namespace Baryonyx.Combat.Presentation
                 Glow(frontLight, above, color, 520f, 0.6f, 0.9f);
                 Gather(above, color, 24, 280f, 0.5f);
                 // The light overhead falls on the floor, growing as it comes.
-                var spot = Spawn(backLight, BattleVfxShape.Glow, feet, new Vector2(420f, 420f), color);
+                var spot = Spawn(
+                    backLight,
+                    BattleVfxShape.Glow,
+                    feet,
+                    new Vector2(420f, 420f),
+                    color
+                );
                 spot.Holder.localScale = new Vector3(1f, FloorTilt, 1f);
                 Animate(
                     spot,
@@ -843,12 +870,27 @@ namespace Baryonyx.Combat.Presentation
                 );
                 Shake(0.1f, Vector2.zero);
                 yield return Wait(0.5f);
-                LightColumn(feet, new Vector2(460f, (above.y - feet.y) / 0.9f + 80f), color, 0.75f, down: true);
+                LightColumn(
+                    feet,
+                    new Vector2(460f, (above.y - feet.y) / 0.9f + 80f),
+                    color,
+                    0.75f,
+                    down: true
+                );
                 yield return Wait(0.08f);
                 var weight = land(index);
                 Rupture(feet, 640f, 0.03f, 0f, 1.6f);
                 Shockwave(feet, 860f, 1f);
-                Impact(area, at, color, Weighted2(weight), 1f, Vector2.down, flashScreen: true, rays: false);
+                Impact(
+                    area,
+                    at,
+                    color,
+                    Weighted2(weight),
+                    1f,
+                    Vector2.down,
+                    flashScreen: true,
+                    rays: false
+                );
                 HitStop(0.16f);
                 SlowMotion(0.4f, 0.25f);
                 Punch(at, 0.045f);
@@ -1190,7 +1232,16 @@ namespace Baryonyx.Combat.Presentation
                 // The ground heats before it bursts: a dull glow that brightens, sparks and wisps.
                 HotFloor(feet, 260f, omen, 0.15f, FireColor(0.4f));
                 Spit(feet, 260f, omen);
-                Illuminate(feet, FireColor(0.3f), 0.45f, 300f, omen, 0.2f, spill: false, flicker: 0.3f);
+                Illuminate(
+                    feet,
+                    FireColor(0.3f),
+                    0.45f,
+                    300f,
+                    omen,
+                    0.2f,
+                    spill: false,
+                    flicker: 0.3f
+                );
                 yield return Wait(omen);
                 var weight = land(index);
                 FireColumn(feet, 300f, 780f, 1.1f, color);
@@ -1262,7 +1313,11 @@ namespace Baryonyx.Combat.Presentation
                             (0.85f + 0.15f * Mathf.Sin(t * 9f + seed * 6f))
                             * Mathf.Lerp(1f, 0.55f, EaseIn(Mathf.Clamp01((u - 0.55f) / 0.45f)));
                         s.Holder.localScale = new Vector3(girth, 0.05f + 0.95f * rise, 1f);
-                        var tint = Color.Lerp(Color.Lerp(color, Color.white, 0.2f), FireColor(0.35f), u);
+                        var tint = Color.Lerp(
+                            Color.Lerp(color, Color.white, 0.2f),
+                            FireColor(0.35f),
+                            u
+                        );
                         Show(s, tint, t * 1.4f, Eaten(u, 0.5f), ErodeBright * 1.3f);
                         if (t < nextSoot || u > 0.8f)
                             return;
@@ -1329,9 +1384,21 @@ namespace Baryonyx.Combat.Presentation
                     {
                         float t = k * (sweep + lag) - lag;
                         float u = Mathf.Clamp01(t / sweep);
-                        s.Holder.anchoredPosition = new Vector2(Mathf.Lerp(start, end, EaseOut(u)), mid.y);
-                        s.Holder.localScale = new Vector3(side < 0f ? 1f : -1f, EaseOut(Mathf.Clamp01(t / 0.2f)), 1f);
-                        var tint = new Color(1f, 0.72f, 0.42f, 0.4f * Envelope(t, 0.05f, 0.15f, 0.6f, sweep));
+                        s.Holder.anchoredPosition = new Vector2(
+                            Mathf.Lerp(start, end, EaseOut(u)),
+                            mid.y
+                        );
+                        s.Holder.localScale = new Vector3(
+                            side < 0f ? 1f : -1f,
+                            EaseOut(Mathf.Clamp01(t / 0.2f)),
+                            1f
+                        );
+                        var tint = new Color(
+                            1f,
+                            0.72f,
+                            0.42f,
+                            0.4f * Envelope(t, 0.05f, 0.15f, 0.6f, sweep)
+                        );
                         Show(s, tint, u, Eaten(u, 0.6f), 1f);
                     }
                 );
@@ -1677,7 +1744,14 @@ namespace Baryonyx.Combat.Presentation
                 );
                 // Ice breaks with a glint, not a star of light; cold air spills off it.
                 HotFlash(at, IceLight, 150f);
-                Twinkle(at + new Vector2(10f, 20f), Color.Lerp(IceLight, Color.white, 0.5f), 140f, 0.22f, 0f, 1f);
+                Twinkle(
+                    at + new Vector2(10f, 20f),
+                    Color.Lerp(IceLight, Color.white, 0.5f),
+                    140f,
+                    0.22f,
+                    0f,
+                    1f
+                );
                 Pool(Feet(FrontLayer, area), IceLight, 240f, 0.05f, 0.35f);
                 ColdMist(Feet(FrontLayer, area), 220f, 1f, 0.5f);
                 HitStop(Weighted(0.03f, weight));
@@ -2019,7 +2093,16 @@ namespace Baryonyx.Combat.Presentation
                 }
                 var weight = land(index);
                 // Not a white flash over the screen (it lifts the deep night to grey): its own cold light.
-                Impact(area, at, IceLight, weight, 1f, Vector2.right, flashScreen: false, rays: false);
+                Impact(
+                    area,
+                    at,
+                    IceLight,
+                    weight,
+                    1f,
+                    Vector2.right,
+                    flashScreen: false,
+                    rays: false
+                );
                 HitStop(0.18f);
                 Punch(at, 0.035f);
                 Pool(feet, IceLight, 520f, breakAt, 0.5f);
@@ -3799,12 +3882,15 @@ namespace Baryonyx.Combat.Presentation
             Twinkle(source, white, 280f, 0.6f, 0.08f, 1f);
             Illuminate(source, gold, 0.6f, 800f, 0.5f, 0.6f);
             yield return Wait(0.3f);
+            // Every shaft is drawn down first, and each blow lands as its shaft reaches the enemy.
+            foreach (int index in Wave(hits, 0))
+                Shaft(source, Center(FrontLayer, hits[index].Area), gold, 150f, HolyDraw, 0.4f);
+            yield return WaitReal(HolyDraw);
             foreach (int index in Wave(hits, 0))
             {
                 var area = hits[index].Area;
                 var at = Center(FrontLayer, area);
                 var feet = Feet(FrontLayer, area);
-                Shaft(source, at, gold, 150f, 0.05f, 0.4f);
                 var weight = land(index);
                 Twinkle(at, white, Weighted(220f, weight), 0.3f, 0f, 1f);
                 HitStop(Weighted(0.06f, weight));

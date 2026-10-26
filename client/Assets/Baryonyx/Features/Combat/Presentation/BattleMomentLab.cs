@@ -33,6 +33,9 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The last enemies fall, the "勝利！" band, the party's light and hops.</summary>
         Victory,
 
+        /// <summary>The win after the boss's battle: a hush in the dark, then the bigger light.</summary>
+        BossVictory,
+
         /// <summary>A drop of the chosen quality falls from the last enemy beaten and opens.</summary>
         Drop,
 
@@ -252,7 +255,10 @@ namespace Baryonyx.Combat.Presentation
                     View.PlayNoEnergy();
                     break;
                 case BattleMoment.Victory:
-                    View.PlayVictory();
+                    View.PlayVictory(boss: false);
+                    break;
+                case BattleMoment.BossVictory:
+                    View.PlayVictory(boss: true);
                     break;
                 case BattleMoment.Drop:
                     View.PlayDrop(NextDrop(), Reveal);

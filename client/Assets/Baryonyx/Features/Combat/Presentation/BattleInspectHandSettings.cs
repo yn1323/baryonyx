@@ -130,7 +130,7 @@ namespace Baryonyx.Combat.Presentation
 
         [Tooltip("敵のターンで、敵が1体ずつ動き出す前の間（秒）。")]
         [Min(0f)]
-        public float EnemyGap = 0.25f;
+        public float EnemyGap = 0.15f;
 
         [Header("ターンの切り替え")]
         [Tooltip(

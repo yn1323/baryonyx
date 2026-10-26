@@ -504,7 +504,13 @@ namespace Baryonyx.Combat.Presentation
         private const float NoticeHold = 0.9f;
 
         private static readonly Color GuardColor = new(0.55f, 0.75f, 1f);
-        private static readonly Color HitTint = new(1f, 0.45f, 0.4f);
+
+        // The red a character reels back in once its white blink is over: light enough that
+        // its picture still reads under the words over it.
+        private static readonly Color HitTint = new(1f, 0.62f, 0.56f);
+
+        // How white the blink of a hit is: not a flat white shape, so the words over it read.
+        private const float BlinkAmount = 0.55f;
 
         // An enemy caught in ice goes pale and cold instead of red.
         private static readonly Color FrozenTint = new(0.62f, 0.82f, 1f);
@@ -867,7 +873,6 @@ namespace Baryonyx.Combat.Presentation
                 ? "<size=62%>連続！</size> もう一度 味方のターン"
                 : $"味方のターン<size=62%>　ターン{turn}</size>";
 
-
         /// <summary>
         /// How see-through a card the energy cannot pay for is: the settings' opacity in the hand,
         /// none once raised so its details can be read.
@@ -955,8 +960,9 @@ namespace Baryonyx.Combat.Presentation
             {
                 flash = new Material(TargetFlash);
                 hitFlash = new Material(TargetFlash);
-                hitFlash.SetFloat("_FlashAmount", 1f);
+                hitFlash.SetFloat("_FlashAmount", BlinkAmount);
             }
+            SetUpReadability();
             if (EndTurnButton != null)
                 EndTurnButton.onClick.AddListener(EndTurn);
             foreach (var template in new[] { PopupTemplate, DamageNumber, WeakNumber, HealNumber })
@@ -996,6 +1002,8 @@ namespace Baryonyx.Combat.Presentation
                 Destroy(flash);
             if (hitFlash != null)
                 Destroy(hitFlash);
+            if (popupMaterial != null)
+                Destroy(popupMaterial);
         }
 
         private void Update()
@@ -1728,17 +1736,55 @@ namespace Baryonyx.Combat.Presentation
                 new[] { enemy.Body },
                 new[] { enemyBase[index] },
                 Vector2.left,
-                Strike(target, EnemyPower(index), index)
+                LungeStrike(index, target),
+                hold: EnemyActionHold
             );
             // A bleeding enemy loses blood as it moves.
             yield return Bleed(index);
         }
 
-        /// <summary>An enemy's blow landing on an ally, with its burst when there are effects.</summary>
+        // The mock's one attack: the enemy dashes in and strikes, then goes back.
+        private IEnumerator LungeStrike(int index, int target)
+        {
+            yield return Lunge(index, target, Enemies[index].Magic);
+            yield return Strike(target, EnemyPower(index), index);
+            yield return LungeBack(index);
+        }
+
+        /// <summary>
+        /// An enemy's blow landing on an ally, with its burst when there are effects. The effect
+        /// starts first, and the hit (its number, its words, the blink) shows as the effect
+        /// reaches the ally.
+        /// </summary>
         private IEnumerator Strike(int target, int power, int attacker = -1, EnemyMove move = null)
         {
+            float contact = 0f;
+            if (Vfx != null)
+                contact =
+                    BattleSkillVfx.EnemyContactOf(
+                        move != null ? move.Name
+                            : attacker >= 0 ? Enemies[attacker].SkillName
+                            : null,
+                        move != null
+                            ? move.Stat == CardStat.MagicAttack
+                            : attacker >= 0 && Enemies[attacker].Magic
+                    ) + BattleSkillVfx.ContactLag;
+            showDelay = contact;
+            try
+            {
+                StrikeNow(target, power, attacker, move);
+            }
+            finally
+            {
+                showDelay = 0f;
+            }
+            yield break;
+        }
+
+        private void StrikeNow(int target, int power, int attacker, EnemyMove move)
+        {
             if (Guarded(target, ref power, attacker))
-                yield break;
+                return;
             // The ally's defense softens the blow: magic defense against an enemy's spell,
             // physical defense against its blow. A skill's spell is one of 属攻.
             bool magic =
@@ -1768,7 +1814,6 @@ namespace Baryonyx.Combat.Presentation
                 );
             if (critical)
                 power = CombatFormula.Critical(power);
-            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true }, critical: critical);
             if (Vfx != null)
                 Vfx.Strike(
                     Allies[target].TargetArea,
@@ -1778,8 +1823,8 @@ namespace Baryonyx.Combat.Presentation
                     attacker >= 0 ? Enemies[attacker].Body : null,
                     magic
                 );
+            HitAlly(target, power, pastBlock: move is { IgnoreBlock: true }, critical: critical);
             Riposte(target, attacker);
-            yield break;
         }
 
         // --- Deck ----------------------------------------------------------------------------
@@ -1996,7 +2041,6 @@ namespace Baryonyx.Combat.Presentation
             if (ExhaustAnchor != null)
                 ExhaustAnchor.gameObject.SetActive(drawPile.Exhausted.Count > 0);
         }
-
 
         /// <summary>The upcoming turns from the current one, skipping defeated enemies.</summary>
         public int[] UpcomingTurns(int count)
@@ -2236,7 +2280,7 @@ namespace Baryonyx.Combat.Presentation
                 user != null ? user.Sprite.texture : null,
                 false,
                 areas,
-                i => Land(card, chosen[i], onEnemies, i == 0)
+                AtContact(i => Land(card, chosen[i], onEnemies, i == 0))
             );
             Refresh();
         }
@@ -2303,7 +2347,8 @@ namespace Baryonyx.Combat.Presentation
             Vector2[] bases,
             Vector2 forward,
             IEnumerator effect,
-            int ally = -1
+            int ally = -1,
+            float hold = -1f
         )
         {
             // An ally fallen after its card was played does not act.
@@ -2320,7 +2365,7 @@ namespace Baryonyx.Combat.Presentation
             if (from != front)
                 yield return Slide(parts, bases, from, front);
             yield return effect;
-            yield return Wait(Settings.ActionHold);
+            yield return Wait(hold >= 0f ? hold : Settings.ActionHold);
             yield return Slide(parts, bases, front, Vector2.zero);
             if (ally >= 0)
             {
@@ -2533,7 +2578,7 @@ namespace Baryonyx.Combat.Presentation
             // A weakness found by this blow glints as it turns from ? into its icon.
             if (weak && !weakness.Revealed)
             {
-                StartCoroutine(weakness.Reveal(Vfx, () => enemy.Alive));
+                StartCoroutine(Later(showDelay, weakness.Reveal(Vfx, () => enemy.Alive)));
                 OnWeaknessRevealed(enemy, weakness);
             }
             int damage = weak ? Mathf.RoundToInt(power * WeakMultiplier) : power;
@@ -2558,7 +2603,11 @@ namespace Baryonyx.Combat.Presentation
             if (critical && number != null)
                 number.fontSize *= CriticalNumberScale;
             StartCoroutine(
-                HitReaction(index, element == BattleInspectElement.Ice ? FrozenTint : HitTint)
+                HitReaction(
+                    index,
+                    element == BattleInspectElement.Ice ? FrozenTint : HitTint,
+                    showDelay
+                )
             );
             return !enemy.Alive ? BattleHitWeight.Defeat
                 : weak ? BattleHitWeight.Weak
@@ -2568,11 +2617,14 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// The enemy blinks white as the blow lands, then reels back in <paramref name="tint"/> (red,
         /// or a cold blue for ice) and trembles, through the hit stop too. A beaten enemy crumbles
-        /// away dot by dot (or, with no effects, fades away).
+        /// away dot by dot (or, with no effects, fades away). It waits <paramref name="delay"/> s of
+        /// real time first, until the blow's effect reaches it.
         /// </summary>
-        private IEnumerator HitReaction(int index, Color tint)
+        private IEnumerator HitReaction(int index, Color tint, float delay = 0f)
         {
             var enemy = Enemies[index];
+            for (float t = 0f; t < delay; t += Time.unscaledDeltaTime)
+                yield return null;
             yield return Blink(enemy.Sprite);
             if (!enemy.Alive)
                 lastBeaten = index;
@@ -2617,7 +2669,11 @@ namespace Baryonyx.Combat.Presentation
             if (!pastBlock)
                 damage = Absorb(index, damage);
             ally.Hp = Mathf.Max(0, ally.Hp - damage);
-            RefreshAlly(ally);
+            // The bar drops as the blow reaches the ally, with its number.
+            if (showDelay > 0f)
+                StartCoroutine(Later(showDelay, Then(() => RefreshAlly(ally))));
+            else
+                RefreshAlly(ally);
             // Its cards leave the hand and the deck the moment it falls.
             RefreshFallen();
             ShowBoostsTurnedOn();
@@ -2626,16 +2682,18 @@ namespace Baryonyx.Combat.Presentation
             var number = ShowNumber(DamageNumber, ally.TargetArea, damage.ToString());
             if (critical && number != null)
                 number.fontSize *= CriticalNumberScale;
-            StartCoroutine(AllyHitReaction(index));
+            StartCoroutine(AllyHitReaction(index, showDelay));
         }
 
-        private IEnumerator AllyHitReaction(int index)
+        private IEnumerator AllyHitReaction(int index, float delay = 0f)
         {
             var ally = Allies[index];
             // The shake starts from home, so any stance is dropped.
             allyBusy[index]++;
             allyStance[index] = 0f;
             ally.HpBar.anchoredPosition = allyBarBase[index];
+            for (float t = 0f; t < delay; t += Time.unscaledDeltaTime)
+                yield return null;
             yield return Blink(ally.Sprite);
             ally.Sprite.color = HitTint;
             yield return Shake(ally.Body, allyBase[index], 10f, 0.3f, Vector2.left * 24f);
@@ -2798,27 +2856,48 @@ namespace Baryonyx.Combat.Presentation
             );
             popup.transform.position = world;
             var rect = (RectTransform)popup.transform;
+            // Off the HP bars and weakness icons of the others above (enemies stand close).
+            float lower = KeepUnderBars(
+                anchor,
+                parent,
+                parent.InverseTransformPoint(world),
+                popup.GetPreferredValues(text).x * 0.5f,
+                lineHeight,
+                ref rise
+            );
+            rect.anchoredPosition += Vector2.down * lower;
+            // A hit's popups show as the blow's effect reaches the character.
+            float delay = showDelay;
             float drop = popupStack.Place(
                 anchor,
                 rect.anchoredPosition.y + rise,
                 lineHeight,
                 rise,
-                Time.unscaledTime,
+                Time.unscaledTime + delay,
                 PopupDuration
             );
             rect.anchoredPosition += Vector2.down * drop;
-            StartCoroutine(Rise(popup, rise));
+            StartCoroutine(Rise(popup, rise, delay));
             return popup;
         }
 
         /// <summary>
         /// A popup bursts out large and snaps to its size, jumps up, hangs and fades. It runs on
-        /// real time, so it pops even while a hit stop holds the battle.
+        /// real time, so it pops even while a hit stop holds the battle. It stays hidden for
+        /// <paramref name="delay"/> s first.
         /// </summary>
-        private static IEnumerator Rise(TMP_Text popup, float distance)
+        private static IEnumerator Rise(TMP_Text popup, float distance, float delay = 0f)
         {
             var rect = (RectTransform)popup.transform;
             var start = rect.anchoredPosition;
+            // Hidden by turning the text off: its colour is still set after this starts.
+            if (delay > 0f)
+            {
+                popup.enabled = false;
+                for (float t = 0f; t < delay; t += Time.unscaledDeltaTime)
+                    yield return null;
+                popup.enabled = true;
+            }
             const float duration = PopupDuration;
             const float pop = 0.16f;
             for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)

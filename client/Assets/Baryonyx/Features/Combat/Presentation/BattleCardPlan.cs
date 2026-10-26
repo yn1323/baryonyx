@@ -48,6 +48,18 @@ namespace Baryonyx.Combat.Presentation
                     || action.Kind is CardActionKind.Discard or CardActionKind.TakeFromDiscard
                 )
                     continue;
+                // 誰にも向かない働きのうち、当たりで決まる条件（[弱点]を突くとエネルギー+1など）は、
+                // 直前の当たりに載せる。使い手への別の当たりにすると、条件をその当たりで確かめられず、
+                // 満たしていないのに使い手に演出が出る。
+                if (
+                    action.Target == CardTarget.None
+                    && action.When != CardCondition.Always
+                    && last != null
+                )
+                {
+                    last[^1].Actions.Add(action);
+                    continue;
+                }
                 var rounds = TargetsOf(action, enemies, allies, picked, onEnemies, user, random);
                 if (rounds.Count == 0)
                     continue;
