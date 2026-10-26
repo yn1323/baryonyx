@@ -83,6 +83,26 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ADimmedCardStaysDimAfterTurning()
+        {
+            var cards = Cards(1);
+            var card = cards[0];
+            var cover = new GlassCardCover();
+
+            cover.Cover(cards.Select(item => item.gameObject));
+            // 伏せている間に薄くしても、裏は透かさない。
+            card.Dimmed = true;
+            Assert.That(card.Group.alpha, Is.EqualTo(1f));
+
+            cover.Clear();
+            Assert.That(card.Group.alpha, Is.EqualTo(card.RestingAlpha));
+            Assert.That(card.RestingAlpha, Is.LessThan(1f));
+            Assert.That(card.Interactable, Is.True);
+            card.Dimmed = false;
+            Assert.That(card.Group.alpha, Is.EqualTo(1f));
+        }
+
+        [Test]
         public void ARevealTurnsTheShownCardsInOrderAndTheRestAtOnce()
         {
             var cards = Cards(4);

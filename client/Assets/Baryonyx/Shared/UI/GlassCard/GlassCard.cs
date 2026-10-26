@@ -35,11 +35,15 @@ namespace Baryonyx.UI
         private const float SinkDistance = 3f;
         private const float DisabledAlpha = 0.55f;
 
+        // 押せるが、選んでも決められない物（材料の足りない合成など）の薄さ。
+        private const float DimmedAlpha = 0.5f;
+
         private PointerEventData press;
         private float pressedAt;
         private bool held;
         private bool sunk;
         private bool interactable = true;
+        private bool dimmed;
 
         public event Action Clicked;
         public event Action Held;
@@ -54,8 +58,11 @@ namespace Baryonyx.UI
             }
         }
 
-        /// <summary>The card's opacity when face up: faded while it takes no taps.</summary>
-        public float RestingAlpha => interactable ? 1f : DisabledAlpha;
+        /// <summary>The card's opacity when face up: faded while it takes no taps, or is dimmed.</summary>
+        public float RestingAlpha =>
+            !interactable ? DisabledAlpha
+            : dimmed ? DimmedAlpha
+            : 1f;
 
         /// <summary>Whether the card takes taps; a card that does not is drawn faded.</summary>
         public bool Interactable
@@ -64,20 +71,31 @@ namespace Baryonyx.UI
             set
             {
                 interactable = value;
-                if (Group != null)
-                {
-                    // 伏せている間は裏を透かさない。表になるときに GlassCardBack が戻す。
-                    if (
-                        !(
-                            TryGetComponent(out GlassCardBack back)
-                            && (back.FaceDown || back.Leaving)
-                        )
-                    )
-                        Group.alpha = RestingAlpha;
-                }
+                ShowRestingAlpha();
                 if (!value)
                     Cancel();
             }
+        }
+
+        /// <summary>Whether the card is drawn faded while still taking taps.</summary>
+        public bool Dimmed
+        {
+            get => dimmed;
+            set
+            {
+                dimmed = value;
+                ShowRestingAlpha();
+            }
+        }
+
+        private void ShowRestingAlpha()
+        {
+            if (Group == null)
+                return;
+            // 伏せている間は裏を透かさない。表になるときに GlassCardBack が戻す。
+            if (TryGetComponent(out GlassCardBack back) && (back.FaceDown || back.Leaving))
+                return;
+            Group.alpha = RestingAlpha;
         }
 
         /// <summary>Taps the card, as a finger lifting on it would.</summary>
