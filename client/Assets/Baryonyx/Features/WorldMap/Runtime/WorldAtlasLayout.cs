@@ -19,8 +19,11 @@ namespace Baryonyx.WorldMap
         // 世界地図の地域のマスのIDは、この接頭辞に地域のキーを付ける。
         public const string RegionPrefix = "region-";
 
-        // 地域どうしの入口のマスのIDは、この接頭辞に2つの地域のキーを「-」でつなぐ。
+        // エリアマップの入口のマスのIDは、この接頭辞に地域のキーを付ける。地域に1つだけ置く。
         public const string GatePrefix = "gate-";
+
+        // 世界地図で冒険を始めるマス（マリーナ海岸の入口から北へ5マス）。
+        public const string StartSquare = "world-start";
 
         [Serializable]
         public sealed class Node
@@ -68,12 +71,5 @@ namespace Baryonyx.WorldMap
                 "gate" => WorldNodeKind.Gate,
                 _ => WorldNodeKind.Empty,
             };
-
-        /// <summary>The region on the other side of a gate seen from <paramref name="region"/>.</summary>
-        public static string OtherSide(string gateId, string region)
-        {
-            var parts = gateId.Substring(GatePrefix.Length).Split('-');
-            return parts[0] == region ? parts[1] : parts[0];
-        }
     }
 }

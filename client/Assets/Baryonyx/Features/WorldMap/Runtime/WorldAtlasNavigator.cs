@@ -10,7 +10,7 @@ namespace Baryonyx.WorldMap
     /// (doc/plans/2026-10-27-world-map-rune-squares.md#2026-10-27入れ子の地図の試作):
     /// the world map shows a square for each region, with squares along the roads between them
     /// that open one by one. Stopping on a region's square dives into that region's area map at
-    /// its first town; stopping on an area map's gate climbs back to the world map, on that
+    /// its entrance; stopping on an area map's gate climbs back to the world map, on that
     /// region's square. Each map is loaded from Resources only while it is shown, since its
     /// background is large, and each map's cleared squares are kept only while the app runs.
     /// </summary>
@@ -37,7 +37,7 @@ namespace Baryonyx.WorldMap
         private void Start()
         {
             if (current == null)
-                Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.RegionPrefix + "verde");
+                Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare);
         }
 
         /// <summary>
@@ -155,10 +155,14 @@ namespace Baryonyx.WorldMap
                 ? group
                 : view.gameObject.AddComponent<CanvasGroup>();
 
-        // 世界地図から地域に入ったときに立つマス：その地域の最初の町（なければ最初のマス）。
+        // 世界地図から地域に入ったときに立つマス：その地域の入口（gate-<地域>）。
+        // 入口がなければ最初の町（なければ最初のマス）。
         private static string EntryOf(WorldMapView view)
         {
             var layout = WorldAtlasLayout.Parse(view.Layout.text);
+            foreach (var node in layout.nodes)
+                if (node.id == WorldAtlasLayout.GatePrefix + layout.key)
+                    return node.id;
             foreach (var node in layout.nodes)
                 if (node.kind == "town")
                     return node.id;

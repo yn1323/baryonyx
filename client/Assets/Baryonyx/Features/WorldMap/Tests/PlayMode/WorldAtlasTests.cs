@@ -50,9 +50,12 @@ namespace Baryonyx.Tests.PlayMode
             yield return null;
             Assert.That(navigator.CurrentKey, Is.EqualTo(WorldAtlasLayout.WorldKey));
 
-            // 世界地図は、はじめの地域から隣のマスへ1つずつ進む。遠い地域へはまだ行けない。
+            // 世界地図は、はじめのマスから隣のマスへ1つずつ進む。遠い地域へはまだ行けない。
             var world = navigator.Current;
-            Assert.That(world.Graph.Nodes[world.PartyAt].Id, Is.EqualTo("region-verde"));
+            Assert.That(
+                world.Graph.Nodes[world.PartyAt].Id,
+                Is.EqualTo(WorldAtlasLayout.StartSquare)
+            );
             Assert.That(world.Back.gameObject.activeSelf, Is.False);
             Assert.That(world.Tap(world.Graph.IndexOf("region-oro")), Is.False);
             int next = world.Graph.LinksOf(world.PartyAt)[0];
@@ -65,26 +68,28 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(world.States[next], Is.EqualTo(WorldNodeState.Cleared));
             Assert.That(navigator.CurrentKey, Is.EqualTo(WorldAtlasLayout.WorldKey));
 
-            // 開いた隣のマスから地域のマスへ戻って止まると、その地域のエリアマップの町に入る。
-            Assert.That(world.Tap(world.Graph.IndexOf("region-verde")), Is.True);
-            yield return WaitForSwitch(navigator, "verde");
-            var plain = navigator.Current;
-            Assert.That(plain.Graph.Nodes[plain.PartyAt].Id, Is.EqualTo("porta"));
-            Assert.That(plain.Back.gameObject.activeSelf, Is.True);
-
-            // 入口に止まると、世界地図のその地域のマスへ戻る。開けたマスは残る。
-            navigator.Open("verde", "gate-oro-verde");
+            // 地域のマスの隣から地域のマスへ進んで止まると、その地域のエリアマップの入口に入る。
+            int marina = world.Graph.IndexOf("region-marina");
+            int before = world.Graph.LinksOf(marina)[0];
+            navigator.Open(WorldAtlasLayout.WorldKey, world.Graph.Nodes[before].Id);
             yield return null;
-            plain = navigator.Current;
-            plain.Tap(plain.PartyAt);
+            world = navigator.Current;
+            Assert.That(world.Tap(marina), Is.True);
+            yield return WaitForSwitch(navigator, "marina");
+            var coast = navigator.Current;
+            Assert.That(coast.Graph.Nodes[coast.PartyAt].Id, Is.EqualTo("gate-marina"));
+            Assert.That(coast.Back.gameObject.activeSelf, Is.True);
+
+            // 入口をもう一度押すと、世界地図のその地域のマスへ戻る。開けたマスは残る。
+            coast.Tap(coast.PartyAt);
             yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
             var back = navigator.Current;
-            Assert.That(back.Graph.Nodes[back.PartyAt].Id, Is.EqualTo("region-verde"));
+            Assert.That(back.Graph.Nodes[back.PartyAt].Id, Is.EqualTo("region-marina"));
             Assert.That(back.States[next], Is.EqualTo(WorldNodeState.Cleared));
 
             // 地域から入り直し、もどるでも世界地図へ戻る。
             back.Tap(back.PartyAt);
-            yield return WaitForSwitch(navigator, "verde");
+            yield return WaitForSwitch(navigator, "marina");
             navigator.Current.Back.onClick.Invoke();
             yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
         }
