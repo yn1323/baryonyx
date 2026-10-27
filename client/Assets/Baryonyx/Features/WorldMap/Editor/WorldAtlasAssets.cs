@@ -45,7 +45,7 @@ namespace Baryonyx.WorldMap.Editor
         // 背景を分けた1枚の大きさの上限。古い端末でも読めるよう、1辺4096までにする。
         public const int MaxPiece = 4096;
 
-        // 世界地図は5倍の背景（7680×5120）を半分の大きさで出し、縮めて見るのでミップマップを使う。
+        // 世界地図は5倍の背景（7680×5120）を半分の大きさで出す。
         // 網の目の道にマスが多いので、マスは出来事のアイコンが描ける程度にとどめ、地域のマスだけ大きくする。
         // 駒はマスより少し大きい程度に縮め、開いたときは少し近づけて、マスと駒が見分けやすいようにする。
         // エリアマップは背景を等倍で出し、マスと道は背景に描いた道に合わせて細くする。
@@ -111,7 +111,7 @@ namespace Baryonyx.WorldMap.Editor
                 float height = 0f;
                 foreach (var piece in row.OrderBy(p => p.Column))
                 {
-                    var texture = ImportPicture(piece.Path, mipmaps: world);
+                    var texture = ImportPicture(piece.Path);
                     pictures.Add((texture, new Rect(x, y, texture.width, texture.height)));
                     x += texture.width;
                     height = texture.height;
@@ -166,12 +166,14 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 背景の1枚を、スマホではASTC 6×6に圧縮して取り込む（2026-10-27、ユーザー決定）。
-        private static Texture2D ImportPicture(string path, bool mipmaps)
+        // ミップマップを使うと、ASTCに圧縮されずにRGBA32のまま入る（2026-10-27、3840×2560の世界地図で
+        // 1枚50MBになった）ため、どの地図も使わない。
+        private static Texture2D ImportPicture(string path)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Default;
             importer.filterMode = FilterMode.Bilinear;
-            importer.mipmapEnabled = mipmaps;
+            importer.mipmapEnabled = false;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = MaxPiece;

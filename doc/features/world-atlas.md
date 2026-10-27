@@ -122,7 +122,7 @@ updated: 2026-10-27
 | 置き場所 | 中身 |
 |---|---|
 | `Atlas/Layouts/<キー>.json` | 地図ごとのマスと線（[WorldAtlasLayout](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasLayout.cs)、背景の左上からの画素） |
-| `Atlas/Art/<キー>_<行><列>.jpg` | 背景を1辺4096以下に分けたJPEG（品質90）。Android・iOSではASTC 6×6、世界地図だけミップマップを使う |
+| `Atlas/Art/<キー>_<行><列>.jpg` | 背景を1辺4096以下に分けたJPEG（品質90）。Android・iOSではASTC 6×6。ミップマップを使うとASTCに圧縮されずにRGBA32のまま入る（世界地図の1枚が50MBになった）ため、どの地図もミップマップを使わない |
 | `Atlas/Resources/WorldAtlas/<キー>.prefab` | 地図ごとの画面。見ている地図だけを読み込み、切り替えたら前の地図の背景をメモリーから外す |
 | `Atlas/WorldAtlas.prefab` | 地図を切り替えるナビ |
 
@@ -130,7 +130,7 @@ updated: 2026-10-27
 画面とシーンは、Unityのメニュー `Baryonyx > World Map > Create Atlas Assets` で作る（[WorldAtlasAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasAssets.cs)）。
 
 背景のJPEGの容量は、世界地図が約20MB（4枚）、オーロ砂漠が約10MB（2枚）である。
-ASTC 6×6で取り込んだときのゲームの中の容量は、世界地図で約17.5MBである。
+ASTC 6×6で取り込んだときのゲームの中の容量は、世界地図で約17.5MBである。2026-10-27のDev向けAPKは、入れ子の地図の背景（APKの中で約66MB）を入れて、246MBから304MBになった。
 
 ## 未決事項
 
@@ -158,4 +158,5 @@ ASTC 6×6で取り込んだときのゲームの中の容量は、世界地図�
 
 ## 変更と判断の記録
 
+- 2026-10-27：世界地図の背景をミップマップ付きで取り込んだら、ASTCに圧縮されずRGBA32のまま入り、APKの中で1枚50MBになったため、ミップマップを外した。Unityの増分ビルドで、APKに前のビルドの空き（約137MB）が残り441MBになったため、Gradleが出力したAPK（`Library/Bee/Android/Prj/IL2CPP/Gradle/launcher/build/outputs/apk/debug/launcher-debug.apk`）を消してビルドし直した。
 - 2026-10-27：ユーザーとの相談で、入れ子の地図の試作を作った。網の目の道、地形だけの背景、5倍の背景、エリアマップの細かい背景、マスの大きさ、切り替えの演出、デバッグルームからの入口の経緯は[計画](../plans/2026-10-27-world-map-rune-squares.md)に記した。
