@@ -136,7 +136,7 @@
 
 | ファイル | 内容 | 使うスキル |
 |---|---|---|
-| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する | character-sprite-sheet、character-illustration、item-icon、hd2d-stage-set |
+| [scripts/codex_image.py](shared/scripts/codex_image.py) | Codex CLIの画像生成で1枚作り、加工せずに回収する。どの依頼にも「細碎な点状テクスチャが多すぎるので抑える」を足す（[AGENTS.md](../../AGENTS.md#作業の基本)） | character-sprite-sheet、character-illustration、item-icon、hd2d-stage-set |
 | [prompts/pixel-style.ja.txt](shared/prompts/pixel-style.ja.txt) | ドット絵の規格を指示文にした固定文。正本は[ドット絵の制作規格](../../doc/art/direction.md#ドット絵の制作規格) | pixel-art-standards、character-sprite-sheet、item-icon、hd2d-stage-set |
 | [scripts/pixel_style.py](shared/scripts/pixel_style.py) | 上の固定文を部品ごとに読み、組み合わせて出力する | pixel-art-standards、item-icon、hd2d-stage-set |
 | [character-pipeline.md](shared/character-pipeline.md) | キャラ制作の共通手順（出力先、キャラ設定の探し方、必ず残す特徴の1行、Codexへの依頼、見せ方） | character-sprite-sheet、character-illustration |

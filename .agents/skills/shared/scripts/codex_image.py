@@ -29,6 +29,8 @@ CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
 # Codex本体のモデルと推論の強さは固定する。~/.codex/config.toml の設定や呼び出し側の指定には任せない
 MODEL = "gpt-6.1-sol"
 REASONING_EFFORT = "high"
+# どの依頼にも必ず入れる画風の指示（AGENTS.md の「画像の生成」）。呼び出し側では外せない
+ALWAYS_IN_REQUEST = ["細碎な点状テクスチャが多すぎるので抑える"]
 
 
 def png_size(path):
@@ -53,7 +55,9 @@ def build_instruction(request, profile, image_roles):
         lines.append("- 添付画像の扱い：")
         for i, role in enumerate(image_roles, start=1):
             lines.append(f"  - 画像{i}：{role}")
-    lines += ["", "# 依頼", "", request.strip(), ""]
+    lines += ["", "# 依頼", "", request.strip(), "", "## 必ず守ること", ""]
+    lines += [f"- {rule}" for rule in ALWAYS_IN_REQUEST]
+    lines.append("")
     if profile is not None:
         lines += ["# キャラ設定（全文）", "", profile.strip(), ""]
     return "\n".join(lines)
