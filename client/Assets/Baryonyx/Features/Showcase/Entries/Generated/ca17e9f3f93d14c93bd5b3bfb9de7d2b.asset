@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: ca17e9f3f93d14c93bd5b3bfb9de7d2b
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: ca17e9f3f93d14c93bd5b3bfb9de7d2b
+  DisplayName: fiamma_21
+  Description: Assets/Baryonyx/Features/WorldMap/Atlas/Art/fiamma_21.jpg
+  Category: 1
+  Asset: {fileID: 2800000, guid: ca17e9f3f93d14c93bd5b3bfb9de7d2b, type: 3}
+  PreviewPrefab: {fileID: 0}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

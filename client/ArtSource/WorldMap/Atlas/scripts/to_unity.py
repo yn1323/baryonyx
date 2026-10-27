@@ -69,7 +69,7 @@ def art(key, png):
         for c in range(cols):
             box = (W * c // cols, H * r // rows, W * (c + 1) // cols, H * (r + 1) // rows)
             path = ATLAS + f"Art/{key}_{r}{c}.jpg"
-            im.crop(box).save(path, quality=90, subsampling=0)
+            im.crop(box).save(path, quality=85, subsampling=2)
             total += os.path.getsize(path)
     print(key, f"{W}x{H} -> {cols}x{rows} pieces, {total / 1e6:.1f}MB")
 
