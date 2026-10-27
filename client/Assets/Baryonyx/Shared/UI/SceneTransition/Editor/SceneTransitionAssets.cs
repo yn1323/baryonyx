@@ -23,6 +23,10 @@ namespace Baryonyx.UI.Editor
         // TopからHomeへ入るときだけ、上下のシャッターで間を取る。
         private const float TopShutterDuration = 0.75f;
 
+        // 世界地図は、読み込むまで覆ったまま待ち、左右のシャッターで開く。
+        // 戦闘から何度も戻るため、Topより短くする。
+        private const float WorldMapShutterDuration = 0.5f;
+
         /// <summary>Makes the transition prefab, or repairs its root canvas when it exists.</summary>
         public static void EnsurePrefab()
         {
@@ -169,6 +173,17 @@ namespace Baryonyx.UI.Editor
             SetDurations(controller, "defaultSettings", TopShutterDuration);
             SetEnum(controller, "enterSettings.type", SceneTransitionType.Fade);
             SetDurations(controller, "enterSettings", TopShutterDuration);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
+        }
+
+        /// <summary>
+        /// Makes the world map open with the side shutter, from whatever closed the scene before.
+        /// </summary>
+        public static void ConfigureWorldMap(SceneTransitionController controller)
+        {
+            SetEnum(controller, "enterSettings.type", SceneTransitionType.Shutter);
+            SetEnum(controller, "enterSettings.shutterAxis", SceneTransitionShutterAxis.Horizontal);
+            SetDurations(controller, "enterSettings", WorldMapShutterDuration);
             PrefabUtility.RecordPrefabInstancePropertyModifications(controller);
         }
 

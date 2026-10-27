@@ -35,11 +35,13 @@ namespace Baryonyx.App.Editor
                         "WorldMapBootstrap"
                     );
                     ScreenScenes.AddEventSystem(scene);
+                    // 地図を今いるマスへ置くまで覆い、開くのはWorldMapBootstrapに任せる。
                     var transition = SceneTransitionAssets.AddTransition(
                         scene,
                         startCovered: true,
-                        revealOnStart: true
+                        revealOnStart: false
                     );
+                    SceneTransitionAssets.ConfigureWorldMap(transition);
                     var serialized = new SerializedObject(bootstrap);
                     serialized.FindProperty("view").objectReferenceValue =
                         screen.GetComponent<WorldMapView>();

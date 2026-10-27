@@ -74,7 +74,10 @@ namespace Baryonyx.Tests.PlayMode
             Load<WorldMapBootstrap>(WorldMapPath, WorldMapReady, found);
 
         public static bool WorldMapReady(WorldMapBootstrap map) =>
-            map.View != null && map.View.Loaded && !map.Transition.IsPlaying;
+            map.View != null
+            && map.View.Loaded
+            && !map.Transition.IsPlaying
+            && !map.Transition.IsCovered;
 
         public static bool HomeReady(HomeBootstrap home) =>
             home.Presenter != null && !home.Transition.IsPlaying;
