@@ -1,0 +1,2962 @@
+{
+ "key": "bosco",
+ "name": "ボスコ大森林",
+ "width": 4608,
+ "height": 5120,
+ "nodes": [
+  {
+   "id": "campanella",
+   "x": 2532.0,
+   "y": 1348.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-bosco-fiamma",
+   "x": 3116.0,
+   "y": 1940.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-bosco-oro",
+   "x": 1868.0,
+   "y": 4308.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-bosco-verde",
+   "x": 292.0,
+   "y": 2204.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-bosco-gelo",
+   "x": 580.0,
+   "y": 1044.0,
+   "kind": "gate"
+  },
+  {
+   "id": "bosco-135",
+   "x": 2812.0,
+   "y": 2428.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-141",
+   "x": 2860.0,
+   "y": 2516.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-132",
+   "x": 2715.6,
+   "y": 2347.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-125",
+   "x": 2644.0,
+   "y": 2265.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-114",
+   "x": 2630.1,
+   "y": 2139.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-109",
+   "x": 2508.7,
+   "y": 2092.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-106",
+   "x": 2390.4,
+   "y": 2041.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-100",
+   "x": 2280.9,
+   "y": 1978.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-99",
+   "x": 2148.0,
+   "y": 1972.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-129",
+   "x": 2860.0,
+   "y": 2319.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-121",
+   "x": 2962.4,
+   "y": 2253.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-117",
+   "x": 3053.3,
+   "y": 2170.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-110",
+   "x": 3101.8,
+   "y": 2060.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-184",
+   "x": 3060.0,
+   "y": 2972.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-180",
+   "x": 3012.0,
+   "y": 2908.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-208",
+   "x": 3188.0,
+   "y": 3372.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-219",
+   "x": 3084.5,
+   "y": 3475.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-230",
+   "x": 3020.0,
+   "y": 3604.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-216",
+   "x": 3238.9,
+   "y": 3450.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-225",
+   "x": 3316.0,
+   "y": 3500.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-204",
+   "x": 3133.1,
+   "y": 3279.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-200",
+   "x": 3060.4,
+   "y": 3198.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-194",
+   "x": 3040.7,
+   "y": 3089.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-188",
+   "x": 2972.0,
+   "y": 3010.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-175",
+   "x": 804.0,
+   "y": 2924.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-176",
+   "x": 898.6,
+   "y": 2913.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-166",
+   "x": 972.0,
+   "y": 2852.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-185",
+   "x": 721.4,
+   "y": 3009.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-195",
+   "x": 771.4,
+   "y": 3107.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-198",
+   "x": 802.0,
+   "y": 3216.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-205",
+   "x": 814.9,
+   "y": 3332.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-213",
+   "x": 889.4,
+   "y": 3425.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-220",
+   "x": 969.6,
+   "y": 3512.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-221",
+   "x": 1086.6,
+   "y": 3537.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-222",
+   "x": 1201.1,
+   "y": 3509.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-214",
+   "x": 1293.1,
+   "y": 3436.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-209",
+   "x": 1396.0,
+   "y": 3388.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-206",
+   "x": 1492.0,
+   "y": 3324.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-165",
+   "x": 722.7,
+   "y": 2834.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-159",
+   "x": 635.9,
+   "y": 2747.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-147",
+   "x": 572.0,
+   "y": 2646.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-137",
+   "x": 527.4,
+   "y": 2535.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-133",
+   "x": 454.7,
+   "y": 2454.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-130",
+   "x": 540.0,
+   "y": 2372.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-264",
+   "x": 2852.0,
+   "y": 4228.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-259",
+   "x": 2749.0,
+   "y": 4205.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-255",
+   "x": 2677.1,
+   "y": 4121.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-254",
+   "x": 2563.3,
+   "y": 4099.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-251",
+   "x": 2459.5,
+   "y": 4049.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-247",
+   "x": 2406.4,
+   "y": 3957.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-243",
+   "x": 2425.7,
+   "y": 3849.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-241",
+   "x": 2385.9,
+   "y": 3745.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-234",
+   "x": 2348.0,
+   "y": 3636.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-273",
+   "x": 2844.0,
+   "y": 4350.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-279",
+   "x": 2807.5,
+   "y": 4464.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-281",
+   "x": 2700.0,
+   "y": 4521.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-280",
+   "x": 2582.6,
+   "y": 4510.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-278",
+   "x": 2464.4,
+   "y": 4492.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-277",
+   "x": 2346.1,
+   "y": 4466.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-276",
+   "x": 2227.0,
+   "y": 4454.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-275",
+   "x": 2116.1,
+   "y": 4401.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-268",
+   "x": 2020.4,
+   "y": 4334.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-263",
+   "x": 1965.4,
+   "y": 4236.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-223",
+   "x": 1692.0,
+   "y": 3516.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-215",
+   "x": 1589.3,
+   "y": 3426.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-217",
+   "x": 1811.2,
+   "y": 3468.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-210",
+   "x": 1910.0,
+   "y": 3383.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-207",
+   "x": 2013.4,
+   "y": 3306.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-201",
+   "x": 2124.0,
+   "y": 3252.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-227",
+   "x": 1734.6,
+   "y": 3614.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-236",
+   "x": 1836.7,
+   "y": 3666.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-232",
+   "x": 1931.1,
+   "y": 3656.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-237",
+   "x": 2049.6,
+   "y": 3668.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-233",
+   "x": 2158.1,
+   "y": 3621.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-238",
+   "x": 2252.0,
+   "y": 3692.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-104",
+   "x": 2026.6,
+   "y": 2000.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-103",
+   "x": 1900.6,
+   "y": 2013.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-108",
+   "x": 1790.9,
+   "y": 2067.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-116",
+   "x": 1732.0,
+   "y": 2178.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-128",
+   "x": 1708.7,
+   "y": 2302.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-134",
+   "x": 1716.0,
+   "y": 2428.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-95",
+   "x": 2116.0,
+   "y": 1844.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-160",
+   "x": 1061.8,
+   "y": 2804.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-161",
+   "x": 1177.5,
+   "y": 2802.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-154",
+   "x": 1261.6,
+   "y": 2721.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-148",
+   "x": 1340.0,
+   "y": 2636.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-181",
+   "x": 1052.4,
+   "y": 2946.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-186",
+   "x": 1158.5,
+   "y": 3003.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-189",
+   "x": 1274.6,
+   "y": 3045.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-192",
+   "x": 1396.0,
+   "y": 3084.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-244",
+   "x": 2916.0,
+   "y": 3828.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-240",
+   "x": 2916.0,
+   "y": 3716.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-245",
+   "x": 3034.5,
+   "y": 3847.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-246",
+   "x": 3145.2,
+   "y": 3890.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-249",
+   "x": 3250.6,
+   "y": 3944.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-250",
+   "x": 3366.2,
+   "y": 3973.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-253",
+   "x": 3459.2,
+   "y": 4047.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-258",
+   "x": 3452.0,
+   "y": 4164.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-77",
+   "x": 1572.0,
+   "y": 1612.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-78",
+   "x": 1694.5,
+   "y": 1605.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-75",
+   "x": 1774.8,
+   "y": 1565.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-73",
+   "x": 1881.9,
+   "y": 1516.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-70",
+   "x": 2001.0,
+   "y": 1479.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-71",
+   "x": 2111.1,
+   "y": 1479.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-74",
+   "x": 2212.0,
+   "y": 1540.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-69",
+   "x": 1549.3,
+   "y": 1499.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-67",
+   "x": 1507.4,
+   "y": 1399.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-66",
+   "x": 1435.7,
+   "y": 1313.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-60",
+   "x": 1412.9,
+   "y": 1201.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-53",
+   "x": 1380.0,
+   "y": 1092.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-76",
+   "x": 580.0,
+   "y": 1620.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-80",
+   "x": 648.9,
+   "y": 1667.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-84",
+   "x": 668.0,
+   "y": 1764.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-118",
+   "x": 852.0,
+   "y": 2252.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-111",
+   "x": 796.9,
+   "y": 2132.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-101",
+   "x": 747.9,
+   "y": 2016.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-96",
+   "x": 714.7,
+   "y": 1888.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-115",
+   "x": 952.2,
+   "y": 2167.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-112",
+   "x": 1076.0,
+   "y": 2132.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-126",
+   "x": 768.4,
+   "y": 2335.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-131",
+   "x": 659.9,
+   "y": 2378.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-202",
+   "x": 2219.4,
+   "y": 3292.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-203",
+   "x": 2332.0,
+   "y": 3276.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-196",
+   "x": 2202.8,
+   "y": 3162.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-190",
+   "x": 2265.9,
+   "y": 3054.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-183",
+   "x": 2186.2,
+   "y": 2951.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-169",
+   "x": 2140.8,
+   "y": 2830.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-157",
+   "x": 2140.0,
+   "y": 2700.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-5",
+   "x": 2764.0,
+   "y": 412.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-2",
+   "x": 2788.0,
+   "y": 340.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-9",
+   "x": 2851.8,
+   "y": 498.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-11",
+   "x": 2976.0,
+   "y": 532.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-12",
+   "x": 3105.9,
+   "y": 532.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-13",
+   "x": 3228.0,
+   "y": 532.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-10",
+   "x": 2707.4,
+   "y": 509.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-16",
+   "x": 2629.9,
+   "y": 576.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-24",
+   "x": 2668.0,
+   "y": 684.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-123",
+   "x": 471.7,
+   "y": 2296.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-122",
+   "x": 364.4,
+   "y": 2281.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-136",
+   "x": 1468.0,
+   "y": 2476.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-138",
+   "x": 1356.8,
+   "y": 2517.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-127",
+   "x": 1420.0,
+   "y": 2332.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-139",
+   "x": 1605.7,
+   "y": 2511.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-212",
+   "x": 3444.0,
+   "y": 3412.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-231",
+   "x": 3248.5,
+   "y": 3597.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-235",
+   "x": 3135.9,
+   "y": 3643.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-224",
+   "x": 2387.7,
+   "y": 3531.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-211",
+   "x": 2436.0,
+   "y": 3412.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-49",
+   "x": 1484.0,
+   "y": 948.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-46",
+   "x": 1595.1,
+   "y": 886.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-33",
+   "x": 1688.5,
+   "y": 795.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-27",
+   "x": 1776.4,
+   "y": 703.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-28",
+   "x": 1900.5,
+   "y": 702.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-31",
+   "x": 2021.4,
+   "y": 754.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-34",
+   "x": 2138.2,
+   "y": 811.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-35",
+   "x": 2266.8,
+   "y": 796.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-36",
+   "x": 2396.0,
+   "y": 780.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-226",
+   "x": 2532.0,
+   "y": 3572.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-228",
+   "x": 2435.1,
+   "y": 3592.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-218",
+   "x": 2515.1,
+   "y": 3471.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-229",
+   "x": 2664.0,
+   "y": 3584.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-239",
+   "x": 2766.2,
+   "y": 3661.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-242",
+   "x": 2852.0,
+   "y": 3756.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-248",
+   "x": 2836.6,
+   "y": 3942.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-252",
+   "x": 2861.3,
+   "y": 4051.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-256",
+   "x": 2892.0,
+   "y": 4172.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-81",
+   "x": 1524.0,
+   "y": 1692.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-82",
+   "x": 1409.4,
+   "y": 1732.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-92",
+   "x": 1324.0,
+   "y": 1804.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-93",
+   "x": 1516.0,
+   "y": 1809.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-98",
+   "x": 1538.3,
+   "y": 1922.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-105",
+   "x": 1568.5,
+   "y": 2030.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-113",
+   "x": 1529.3,
+   "y": 2139.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-120",
+   "x": 1445.9,
+   "y": 2223.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-143",
+   "x": 1956.0,
+   "y": 2596.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-140",
+   "x": 1844.7,
+   "y": 2505.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-144",
+   "x": 2044.0,
+   "y": 2596.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-156",
+   "x": 1891.1,
+   "y": 2708.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-168",
+   "x": 1867.3,
+   "y": 2832.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-172",
+   "x": 1758.5,
+   "y": 2897.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-177",
+   "x": 1644.8,
+   "y": 2924.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-187",
+   "x": 1531.1,
+   "y": 2988.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-85",
+   "x": 800.7,
+   "y": 1751.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-89",
+   "x": 926.9,
+   "y": 1783.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-90",
+   "x": 1057.8,
+   "y": 1802.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-91",
+   "x": 1191.7,
+   "y": 1804.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-182",
+   "x": 1376.8,
+   "y": 2951.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-167",
+   "x": 1426.3,
+   "y": 2847.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-155",
+   "x": 1404.2,
+   "y": 2732.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-47",
+   "x": 2436.0,
+   "y": 884.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-197",
+   "x": 2381.5,
+   "y": 3171.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-193",
+   "x": 2430.1,
+   "y": 3071.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-191",
+   "x": 2535.1,
+   "y": 3027.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-179",
+   "x": 2508.0,
+   "y": 2932.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-260",
+   "x": 3004.9,
+   "y": 4198.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-261",
+   "x": 3119.9,
+   "y": 4204.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-262",
+   "x": 3236.7,
+   "y": 4204.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-257",
+   "x": 3342.9,
+   "y": 4156.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-199",
+   "x": 1425.1,
+   "y": 3209.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-68",
+   "x": 2414.0,
+   "y": 1386.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-72",
+   "x": 2318.7,
+   "y": 1472.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-65",
+   "x": 2652.0,
+   "y": 1260.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-61",
+   "x": 2548.0,
+   "y": 1220.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-62",
+   "x": 2789.2,
+   "y": 1256.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-63",
+   "x": 2915.5,
+   "y": 1220.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-64",
+   "x": 3050.9,
+   "y": 1232.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-59",
+   "x": 3156.0,
+   "y": 1148.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-1",
+   "x": 788.0,
+   "y": 300.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-3",
+   "x": 718.7,
+   "y": 394.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-6",
+   "x": 648.3,
+   "y": 488.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-18",
+   "x": 628.2,
+   "y": 603.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-22",
+   "x": 689.7,
+   "y": 697.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-25",
+   "x": 796.9,
+   "y": 724.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-30",
+   "x": 900.0,
+   "y": 772.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-29",
+   "x": 2538.0,
+   "y": 737.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-37",
+   "x": 2660.0,
+   "y": 820.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-107",
+   "x": 1179.2,
+   "y": 2074.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-102",
+   "x": 1276.4,
+   "y": 2010.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-97",
+   "x": 1333.1,
+   "y": 1907.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-119",
+   "x": 1169.4,
+   "y": 2226.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-124",
+   "x": 1289.2,
+   "y": 2284.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-145",
+   "x": 2171.0,
+   "y": 2604.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-149",
+   "x": 2289.5,
+   "y": 2644.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-151",
+   "x": 2409.6,
+   "y": 2684.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-152",
+   "x": 2535.2,
+   "y": 2664.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-150",
+   "x": 2660.0,
+   "y": 2644.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-163",
+   "x": 2588.0,
+   "y": 2820.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-171",
+   "x": 2698.4,
+   "y": 2840.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-173",
+   "x": 2801.5,
+   "y": 2881.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-174",
+   "x": 2894.1,
+   "y": 2892.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-158",
+   "x": 2614.0,
+   "y": 2727.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-50",
+   "x": 2481.9,
+   "y": 997.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-58",
+   "x": 2526.6,
+   "y": 1106.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-43",
+   "x": 2543.5,
+   "y": 836.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-142",
+   "x": 2756.5,
+   "y": 2568.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-146",
+   "x": 2932.9,
+   "y": 2592.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-153",
+   "x": 2941.4,
+   "y": 2698.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-164",
+   "x": 2964.0,
+   "y": 2804.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-162",
+   "x": 2220.1,
+   "y": 2780.6,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-170",
+   "x": 2310.1,
+   "y": 2856.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-178",
+   "x": 2401.4,
+   "y": 2936.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-79",
+   "x": 2196.3,
+   "y": 1649.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-88",
+   "x": 2177.7,
+   "y": 1756.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-42",
+   "x": 1463.3,
+   "y": 830.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-26",
+   "x": 1468.6,
+   "y": 714.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-20",
+   "x": 1452.2,
+   "y": 625.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-19",
+   "x": 1341.8,
+   "y": 584.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-8",
+   "x": 1354.5,
+   "y": 478.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-4",
+   "x": 1307.8,
+   "y": 412.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-7",
+   "x": 1226.9,
+   "y": 491.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-15",
+   "x": 1135.6,
+   "y": 553.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-14",
+   "x": 1018.6,
+   "y": 568.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-23",
+   "x": 953.0,
+   "y": 665.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-45",
+   "x": 1360.6,
+   "y": 898.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-48",
+   "x": 1235.1,
+   "y": 907.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-44",
+   "x": 1111.1,
+   "y": 877.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-41",
+   "x": 997.8,
+   "y": 837.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-54",
+   "x": 682.3,
+   "y": 1106.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-55",
+   "x": 792.4,
+   "y": 1133.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-56",
+   "x": 917.4,
+   "y": 1131.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-57",
+   "x": 1038.4,
+   "y": 1121.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-52",
+   "x": 1150.4,
+   "y": 1070.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-51",
+   "x": 1269.7,
+   "y": 1040.9,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-265",
+   "x": 3465.0,
+   "y": 4251.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-269",
+   "x": 3498.9,
+   "y": 4326.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-270",
+   "x": 3615.9,
+   "y": 4336.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-267",
+   "x": 3737.8,
+   "y": 4295.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-271",
+   "x": 3855.7,
+   "y": 4335.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-274",
+   "x": 3981.1,
+   "y": 4343.3,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-272",
+   "x": 4096.4,
+   "y": 4319.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-266",
+   "x": 4188.0,
+   "y": 4236.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-17",
+   "x": 3324.0,
+   "y": 540.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-83",
+   "x": 1656.4,
+   "y": 1708.8,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-86",
+   "x": 1769.8,
+   "y": 1762.5,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-87",
+   "x": 1891.1,
+   "y": 1755.7,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-94",
+   "x": 2001.5,
+   "y": 1793.1,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-38",
+   "x": 2781.6,
+   "y": 804.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-39",
+   "x": 2905.1,
+   "y": 799.0,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-40",
+   "x": 3021.2,
+   "y": 803.2,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-32",
+   "x": 3123.6,
+   "y": 750.4,
+   "kind": "empty"
+  },
+  {
+   "id": "bosco-21",
+   "x": 3172.6,
+   "y": 642.2,
+   "kind": "empty"
+  }
+ ],
+ "lines": [
+  {
+   "a": "bosco-45",
+   "b": "bosco-49"
+  },
+  {
+   "a": "bosco-186",
+   "b": "bosco-189"
+  },
+  {
+   "a": "bosco-28",
+   "b": "bosco-31"
+  },
+  {
+   "a": "bosco-215",
+   "b": "bosco-223"
+  },
+  {
+   "a": "bosco-196",
+   "b": "bosco-190"
+  },
+  {
+   "a": "bosco-142",
+   "b": "bosco-141"
+  },
+  {
+   "a": "bosco-87",
+   "b": "bosco-94"
+  },
+  {
+   "a": "bosco-165",
+   "b": "bosco-159"
+  },
+  {
+   "a": "bosco-101",
+   "b": "bosco-96"
+  },
+  {
+   "a": "bosco-127",
+   "b": "bosco-136"
+  },
+  {
+   "a": "bosco-3",
+   "b": "bosco-6"
+  },
+  {
+   "a": "bosco-169",
+   "b": "bosco-157"
+  },
+  {
+   "a": "bosco-267",
+   "b": "bosco-271"
+  },
+  {
+   "a": "bosco-143",
+   "b": "bosco-144"
+  },
+  {
+   "a": "bosco-180",
+   "b": "bosco-184"
+  },
+  {
+   "a": "bosco-69",
+   "b": "bosco-77"
+  },
+  {
+   "a": "bosco-271",
+   "b": "bosco-274"
+  },
+  {
+   "a": "bosco-123",
+   "b": "bosco-122"
+  },
+  {
+   "a": "bosco-80",
+   "b": "bosco-84"
+  },
+  {
+   "a": "bosco-146",
+   "b": "bosco-141"
+  },
+  {
+   "a": "bosco-213",
+   "b": "bosco-220"
+  },
+  {
+   "a": "bosco-44",
+   "b": "bosco-41"
+  },
+  {
+   "a": "bosco-15",
+   "b": "bosco-14"
+  },
+  {
+   "a": "bosco-167",
+   "b": "bosco-155"
+  },
+  {
+   "a": "bosco-195",
+   "b": "bosco-198"
+  },
+  {
+   "a": "bosco-80",
+   "b": "bosco-76"
+  },
+  {
+   "a": "bosco-185",
+   "b": "bosco-175"
+  },
+  {
+   "a": "bosco-62",
+   "b": "bosco-63"
+  },
+  {
+   "a": "bosco-105",
+   "b": "bosco-113"
+  },
+  {
+   "a": "bosco-224",
+   "b": "bosco-211"
+  },
+  {
+   "a": "bosco-139",
+   "b": "bosco-136"
+  },
+  {
+   "a": "bosco-273",
+   "b": "bosco-264"
+  },
+  {
+   "a": "bosco-274",
+   "b": "bosco-272"
+  },
+  {
+   "a": "bosco-265",
+   "b": "bosco-269"
+  },
+  {
+   "a": "bosco-199",
+   "b": "bosco-206"
+  },
+  {
+   "a": "bosco-185",
+   "b": "bosco-195"
+  },
+  {
+   "a": "bosco-61",
+   "b": "campanella"
+  },
+  {
+   "a": "bosco-227",
+   "b": "bosco-236"
+  },
+  {
+   "a": "bosco-187",
+   "b": "bosco-192"
+  },
+  {
+   "a": "bosco-217",
+   "b": "bosco-210"
+  },
+  {
+   "a": "bosco-260",
+   "b": "bosco-261"
+  },
+  {
+   "a": "bosco-117",
+   "b": "bosco-110"
+  },
+  {
+   "a": "bosco-228",
+   "b": "bosco-234"
+  },
+  {
+   "a": "bosco-204",
+   "b": "bosco-200"
+  },
+  {
+   "a": "bosco-218",
+   "b": "bosco-226"
+  },
+  {
+   "a": "bosco-128",
+   "b": "bosco-134"
+  },
+  {
+   "a": "bosco-111",
+   "b": "bosco-101"
+  },
+  {
+   "a": "bosco-202",
+   "b": "bosco-201"
+  },
+  {
+   "a": "bosco-171",
+   "b": "bosco-163"
+  },
+  {
+   "a": "bosco-168",
+   "b": "bosco-172"
+  },
+  {
+   "a": "bosco-203",
+   "b": "bosco-211"
+  },
+  {
+   "a": "bosco-61",
+   "b": "bosco-65"
+  },
+  {
+   "a": "bosco-114",
+   "b": "bosco-109"
+  },
+  {
+   "a": "bosco-21",
+   "b": "bosco-13"
+  },
+  {
+   "a": "bosco-10",
+   "b": "bosco-5"
+  },
+  {
+   "a": "bosco-205",
+   "b": "bosco-213"
+  },
+  {
+   "a": "bosco-77",
+   "b": "bosco-81"
+  },
+  {
+   "a": "bosco-48",
+   "b": "bosco-44"
+  },
+  {
+   "a": "bosco-138",
+   "b": "bosco-148"
+  },
+  {
+   "a": "bosco-46",
+   "b": "bosco-33"
+  },
+  {
+   "a": "bosco-249",
+   "b": "bosco-250"
+  },
+  {
+   "a": "bosco-228",
+   "b": "bosco-226"
+  },
+  {
+   "a": "bosco-181",
+   "b": "bosco-166"
+  },
+  {
+   "a": "bosco-126",
+   "b": "bosco-118"
+  },
+  {
+   "a": "bosco-156",
+   "b": "bosco-143"
+  },
+  {
+   "a": "bosco-64",
+   "b": "bosco-59"
+  },
+  {
+   "a": "bosco-8",
+   "b": "bosco-4"
+  },
+  {
+   "a": "bosco-73",
+   "b": "bosco-70"
+  },
+  {
+   "a": "bosco-259",
+   "b": "bosco-255"
+  },
+  {
+   "a": "bosco-193",
+   "b": "bosco-191"
+  },
+  {
+   "a": "bosco-162",
+   "b": "bosco-157"
+  },
+  {
+   "a": "bosco-45",
+   "b": "bosco-48"
+  },
+  {
+   "a": "bosco-232",
+   "b": "bosco-237"
+  },
+  {
+   "a": "bosco-217",
+   "b": "bosco-223"
+  },
+  {
+   "a": "bosco-245",
+   "b": "bosco-244"
+  },
+  {
+   "a": "bosco-131",
+   "b": "bosco-130"
+  },
+  {
+   "a": "bosco-237",
+   "b": "bosco-233"
+  },
+  {
+   "a": "bosco-219",
+   "b": "bosco-230"
+  },
+  {
+   "a": "bosco-90",
+   "b": "bosco-91"
+  },
+  {
+   "a": "bosco-19",
+   "b": "bosco-8"
+  },
+  {
+   "a": "bosco-218",
+   "b": "bosco-211"
+  },
+  {
+   "a": "bosco-265",
+   "b": "bosco-258"
+  },
+  {
+   "a": "bosco-165",
+   "b": "bosco-175"
+  },
+  {
+   "a": "bosco-82",
+   "b": "bosco-81"
+  },
+  {
+   "a": "bosco-94",
+   "b": "bosco-95"
+  },
+  {
+   "a": "bosco-181",
+   "b": "bosco-186"
+  },
+  {
+   "a": "bosco-119",
+   "b": "bosco-112"
+  },
+  {
+   "a": "bosco-158",
+   "b": "bosco-150"
+  },
+  {
+   "a": "bosco-125",
+   "b": "bosco-114"
+  },
+  {
+   "a": "bosco-219",
+   "b": "bosco-208"
+  },
+  {
+   "a": "bosco-56",
+   "b": "bosco-57"
+  },
+  {
+   "a": "bosco-39",
+   "b": "bosco-40"
+  },
+  {
+   "a": "bosco-151",
+   "b": "bosco-152"
+  },
+  {
+   "a": "bosco-209",
+   "b": "bosco-206"
+  },
+  {
+   "a": "bosco-234",
+   "b": "bosco-238"
+  },
+  {
+   "a": "bosco-233",
+   "b": "bosco-238"
+  },
+  {
+   "a": "bosco-86",
+   "b": "bosco-87"
+  },
+  {
+   "a": "bosco-27",
+   "b": "bosco-28"
+  },
+  {
+   "a": "bosco-7",
+   "b": "bosco-15"
+  },
+  {
+   "a": "bosco-42",
+   "b": "bosco-26"
+  },
+  {
+   "a": "bosco-240",
+   "b": "bosco-242"
+  },
+  {
+   "a": "bosco-47",
+   "b": "bosco-36"
+  },
+  {
+   "a": "bosco-160",
+   "b": "bosco-166"
+  },
+  {
+   "a": "bosco-110",
+   "b": "gate-bosco-fiamma"
+  },
+  {
+   "a": "bosco-75",
+   "b": "bosco-73"
+  },
+  {
+   "a": "bosco-111",
+   "b": "bosco-118"
+  },
+  {
+   "a": "bosco-235",
+   "b": "bosco-230"
+  },
+  {
+   "a": "bosco-230",
+   "b": "bosco-240"
+  },
+  {
+   "a": "bosco-240",
+   "b": "bosco-244"
+  },
+  {
+   "a": "bosco-145",
+   "b": "bosco-144"
+  },
+  {
+   "a": "bosco-246",
+   "b": "bosco-249"
+  },
+  {
+   "a": "bosco-79",
+   "b": "bosco-74"
+  },
+  {
+   "a": "bosco-71",
+   "b": "bosco-74"
+  },
+  {
+   "a": "bosco-65",
+   "b": "campanella"
+  },
+  {
+   "a": "bosco-163",
+   "b": "bosco-179"
+  },
+  {
+   "a": "bosco-222",
+   "b": "bosco-214"
+  },
+  {
+   "a": "bosco-35",
+   "b": "bosco-36"
+  },
+  {
+   "a": "bosco-121",
+   "b": "bosco-117"
+  },
+  {
+   "a": "bosco-207",
+   "b": "bosco-201"
+  },
+  {
+   "a": "bosco-156",
+   "b": "bosco-168"
+  },
+  {
+   "a": "bosco-66",
+   "b": "bosco-60"
+  },
+  {
+   "a": "bosco-183",
+   "b": "bosco-169"
+  },
+  {
+   "a": "bosco-132",
+   "b": "bosco-125"
+  },
+  {
+   "a": "bosco-135",
+   "b": "bosco-141"
+  },
+  {
+   "a": "bosco-29",
+   "b": "bosco-24"
+  },
+  {
+   "a": "bosco-42",
+   "b": "bosco-49"
+  },
+  {
+   "a": "bosco-121",
+   "b": "bosco-129"
+  },
+  {
+   "a": "bosco-216",
+   "b": "bosco-225"
+  },
+  {
+   "a": "bosco-229",
+   "b": "bosco-226"
+  },
+  {
+   "a": "bosco-89",
+   "b": "bosco-90"
+  },
+  {
+   "a": "bosco-11",
+   "b": "bosco-12"
+  },
+  {
+   "a": "bosco-277",
+   "b": "bosco-276"
+  },
+  {
+   "a": "bosco-104",
+   "b": "bosco-103"
+  },
+  {
+   "a": "bosco-46",
+   "b": "bosco-49"
+  },
+  {
+   "a": "bosco-260",
+   "b": "bosco-256"
+  },
+  {
+   "a": "bosco-137",
+   "b": "bosco-133"
+  },
+  {
+   "a": "bosco-263",
+   "b": "gate-bosco-oro"
+  },
+  {
+   "a": "bosco-231",
+   "b": "bosco-235"
+  },
+  {
+   "a": "bosco-149",
+   "b": "bosco-151"
+  },
+  {
+   "a": "bosco-93",
+   "b": "bosco-98"
+  },
+  {
+   "a": "bosco-82",
+   "b": "bosco-92"
+  },
+  {
+   "a": "bosco-153",
+   "b": "bosco-164"
+  },
+  {
+   "a": "bosco-18",
+   "b": "bosco-22"
+  },
+  {
+   "a": "bosco-239",
+   "b": "bosco-242"
+  },
+  {
+   "a": "bosco-13",
+   "b": "bosco-17"
+  },
+  {
+   "a": "bosco-197",
+   "b": "bosco-193"
+  },
+  {
+   "a": "bosco-34",
+   "b": "bosco-35"
+  },
+  {
+   "a": "bosco-160",
+   "b": "bosco-161"
+  },
+  {
+   "a": "bosco-216",
+   "b": "bosco-208"
+  },
+  {
+   "a": "bosco-85",
+   "b": "bosco-89"
+  },
+  {
+   "a": "bosco-38",
+   "b": "bosco-39"
+  },
+  {
+   "a": "bosco-16",
+   "b": "bosco-24"
+  },
+  {
+   "a": "bosco-215",
+   "b": "bosco-206"
+  },
+  {
+   "a": "bosco-58",
+   "b": "bosco-61"
+  },
+  {
+   "a": "bosco-60",
+   "b": "bosco-53"
+  },
+  {
+   "a": "bosco-182",
+   "b": "bosco-192"
+  },
+  {
+   "a": "bosco-104",
+   "b": "bosco-99"
+  },
+  {
+   "a": "bosco-83",
+   "b": "bosco-86"
+  },
+  {
+   "a": "bosco-88",
+   "b": "bosco-95"
+  },
+  {
+   "a": "bosco-20",
+   "b": "bosco-19"
+  },
+  {
+   "a": "bosco-107",
+   "b": "bosco-102"
+  },
+  {
+   "a": "bosco-189",
+   "b": "bosco-192"
+  },
+  {
+   "a": "bosco-85",
+   "b": "bosco-84"
+  },
+  {
+   "a": "bosco-123",
+   "b": "bosco-130"
+  },
+  {
+   "a": "bosco-50",
+   "b": "bosco-47"
+  },
+  {
+   "a": "bosco-140",
+   "b": "bosco-134"
+  },
+  {
+   "a": "bosco-93",
+   "b": "bosco-81"
+  },
+  {
+   "a": "bosco-154",
+   "b": "bosco-148"
+  },
+  {
+   "a": "bosco-281",
+   "b": "bosco-280"
+  },
+  {
+   "a": "bosco-37",
+   "b": "bosco-24"
+  },
+  {
+   "a": "bosco-3",
+   "b": "bosco-1"
+  },
+  {
+   "a": "bosco-253",
+   "b": "bosco-258"
+  },
+  {
+   "a": "bosco-199",
+   "b": "bosco-192"
+  },
+  {
+   "a": "bosco-96",
+   "b": "bosco-84"
+  },
+  {
+   "a": "bosco-221",
+   "b": "bosco-222"
+  },
+  {
+   "a": "bosco-268",
+   "b": "bosco-263"
+  },
+  {
+   "a": "bosco-106",
+   "b": "bosco-100"
+  },
+  {
+   "a": "bosco-31",
+   "b": "bosco-34"
+  },
+  {
+   "a": "bosco-251",
+   "b": "bosco-247"
+  },
+  {
+   "a": "bosco-100",
+   "b": "bosco-99"
+  },
+  {
+   "a": "bosco-146",
+   "b": "bosco-153"
+  },
+  {
+   "a": "bosco-41",
+   "b": "bosco-30"
+  },
+  {
+   "a": "bosco-33",
+   "b": "bosco-27"
+  },
+  {
+   "a": "bosco-245",
+   "b": "bosco-246"
+  },
+  {
+   "a": "bosco-119",
+   "b": "bosco-124"
+  },
+  {
+   "a": "bosco-70",
+   "b": "bosco-71"
+  },
+  {
+   "a": "bosco-98",
+   "b": "bosco-105"
+  },
+  {
+   "a": "bosco-9",
+   "b": "bosco-5"
+  },
+  {
+   "a": "bosco-26",
+   "b": "bosco-20"
+  },
+  {
+   "a": "bosco-270",
+   "b": "bosco-267"
+  },
+  {
+   "a": "bosco-248",
+   "b": "bosco-252"
+  },
+  {
+   "a": "bosco-62",
+   "b": "bosco-65"
+  },
+  {
+   "a": "bosco-120",
+   "b": "bosco-127"
+  },
+  {
+   "a": "bosco-190",
+   "b": "bosco-183"
+  },
+  {
+   "a": "bosco-229",
+   "b": "bosco-239"
+  },
+  {
+   "a": "bosco-162",
+   "b": "bosco-170"
+  },
+  {
+   "a": "bosco-243",
+   "b": "bosco-241"
+  },
+  {
+   "a": "bosco-32",
+   "b": "bosco-21"
+  },
+  {
+   "a": "bosco-10",
+   "b": "bosco-16"
+  },
+  {
+   "a": "bosco-55",
+   "b": "bosco-56"
+  },
+  {
+   "a": "bosco-6",
+   "b": "bosco-18"
+  },
+  {
+   "a": "bosco-133",
+   "b": "bosco-130"
+  },
+  {
+   "a": "bosco-152",
+   "b": "bosco-150"
+  },
+  {
+   "a": "bosco-122",
+   "b": "gate-bosco-verde"
+  },
+  {
+   "a": "bosco-252",
+   "b": "bosco-256"
+  },
+  {
+   "a": "bosco-50",
+   "b": "bosco-58"
+  },
+  {
+   "a": "bosco-78",
+   "b": "bosco-75"
+  },
+  {
+   "a": "bosco-2",
+   "b": "bosco-5"
+  },
+  {
+   "a": "bosco-177",
+   "b": "bosco-187"
+  },
+  {
+   "a": "bosco-40",
+   "b": "bosco-32"
+  },
+  {
+   "a": "bosco-95",
+   "b": "bosco-99"
+  },
+  {
+   "a": "bosco-254",
+   "b": "bosco-251"
+  },
+  {
+   "a": "bosco-115",
+   "b": "bosco-112"
+  },
+  {
+   "a": "bosco-257",
+   "b": "bosco-258"
+  },
+  {
+   "a": "bosco-272",
+   "b": "bosco-266"
+  },
+  {
+   "a": "bosco-145",
+   "b": "bosco-149"
+  },
+  {
+   "a": "bosco-52",
+   "b": "bosco-51"
+  },
+  {
+   "a": "bosco-147",
+   "b": "bosco-137"
+  },
+  {
+   "a": "bosco-43",
+   "b": "bosco-47"
+  },
+  {
+   "a": "bosco-250",
+   "b": "bosco-253"
+  },
+  {
+   "a": "bosco-97",
+   "b": "bosco-92"
+  },
+  {
+   "a": "bosco-83",
+   "b": "bosco-77"
+  },
+  {
+   "a": "bosco-182",
+   "b": "bosco-167"
+  },
+  {
+   "a": "bosco-259",
+   "b": "bosco-264"
+  },
+  {
+   "a": "bosco-142",
+   "b": "bosco-150"
+  },
+  {
+   "a": "bosco-188",
+   "b": "bosco-180"
+  },
+  {
+   "a": "bosco-67",
+   "b": "bosco-66"
+  },
+  {
+   "a": "bosco-159",
+   "b": "bosco-147"
+  },
+  {
+   "a": "bosco-279",
+   "b": "bosco-281"
+  },
+  {
+   "a": "bosco-227",
+   "b": "bosco-223"
+  },
+  {
+   "a": "bosco-54",
+   "b": "bosco-55"
+  },
+  {
+   "a": "bosco-164",
+   "b": "bosco-180"
+  },
+  {
+   "a": "bosco-176",
+   "b": "bosco-166"
+  },
+  {
+   "a": "bosco-178",
+   "b": "bosco-179"
+  },
+  {
+   "a": "bosco-139",
+   "b": "bosco-134"
+  },
+  {
+   "a": "bosco-197",
+   "b": "bosco-203"
+  },
+  {
+   "a": "bosco-214",
+   "b": "bosco-209"
+  },
+  {
+   "a": "bosco-108",
+   "b": "bosco-116"
+  },
+  {
+   "a": "bosco-278",
+   "b": "bosco-277"
+  },
+  {
+   "a": "bosco-68",
+   "b": "campanella"
+  },
+  {
+   "a": "bosco-109",
+   "b": "bosco-106"
+  },
+  {
+   "a": "bosco-194",
+   "b": "bosco-188"
+  },
+  {
+   "a": "bosco-220",
+   "b": "bosco-221"
+  },
+  {
+   "a": "bosco-161",
+   "b": "bosco-154"
+  },
+  {
+   "a": "bosco-23",
+   "b": "bosco-30"
+  },
+  {
+   "a": "bosco-172",
+   "b": "bosco-177"
+  },
+  {
+   "a": "bosco-14",
+   "b": "bosco-23"
+  },
+  {
+   "a": "bosco-242",
+   "b": "bosco-244"
+  },
+  {
+   "a": "bosco-68",
+   "b": "bosco-72"
+  },
+  {
+   "a": "bosco-212",
+   "b": "bosco-225"
+  },
+  {
+   "a": "bosco-170",
+   "b": "bosco-178"
+  },
+  {
+   "a": "bosco-49",
+   "b": "bosco-53"
+  },
+  {
+   "a": "bosco-241",
+   "b": "bosco-234"
+  },
+  {
+   "a": "bosco-248",
+   "b": "bosco-244"
+  },
+  {
+   "a": "bosco-107",
+   "b": "bosco-112"
+  },
+  {
+   "a": "bosco-103",
+   "b": "bosco-108"
+  },
+  {
+   "a": "bosco-63",
+   "b": "bosco-64"
+  },
+  {
+   "a": "bosco-113",
+   "b": "bosco-120"
+  },
+  {
+   "a": "bosco-126",
+   "b": "bosco-131"
+  },
+  {
+   "a": "bosco-255",
+   "b": "bosco-254"
+  },
+  {
+   "a": "bosco-204",
+   "b": "bosco-208"
+  },
+  {
+   "a": "bosco-102",
+   "b": "bosco-97"
+  },
+  {
+   "a": "bosco-176",
+   "b": "bosco-175"
+  },
+  {
+   "a": "bosco-138",
+   "b": "bosco-136"
+  },
+  {
+   "a": "bosco-275",
+   "b": "bosco-268"
+  },
+  {
+   "a": "bosco-198",
+   "b": "bosco-205"
+  },
+  {
+   "a": "bosco-269",
+   "b": "bosco-270"
+  },
+  {
+   "a": "bosco-22",
+   "b": "bosco-25"
+  },
+  {
+   "a": "bosco-43",
+   "b": "bosco-37"
+  },
+  {
+   "a": "bosco-51",
+   "b": "bosco-53"
+  },
+  {
+   "a": "bosco-116",
+   "b": "bosco-128"
+  },
+  {
+   "a": "bosco-57",
+   "b": "bosco-52"
+  },
+  {
+   "a": "bosco-173",
+   "b": "bosco-174"
+  },
+  {
+   "a": "bosco-25",
+   "b": "bosco-30"
+  },
+  {
+   "a": "bosco-144",
+   "b": "bosco-157"
+  },
+  {
+   "a": "bosco-115",
+   "b": "bosco-118"
+  },
+  {
+   "a": "bosco-262",
+   "b": "bosco-257"
+  },
+  {
+   "a": "bosco-54",
+   "b": "gate-bosco-gelo"
+  },
+  {
+   "a": "bosco-236",
+   "b": "bosco-232"
+  },
+  {
+   "a": "bosco-124",
+   "b": "bosco-127"
+  },
+  {
+   "a": "bosco-79",
+   "b": "bosco-88"
+  },
+  {
+   "a": "bosco-273",
+   "b": "bosco-279"
+  },
+  {
+   "a": "bosco-29",
+   "b": "bosco-36"
+  },
+  {
+   "a": "bosco-155",
+   "b": "bosco-148"
+  },
+  {
+   "a": "bosco-210",
+   "b": "bosco-207"
+  },
+  {
+   "a": "bosco-4",
+   "b": "bosco-7"
+  },
+  {
+   "a": "bosco-247",
+   "b": "bosco-243"
+  },
+  {
+   "a": "bosco-78",
+   "b": "bosco-77"
+  },
+  {
+   "a": "bosco-132",
+   "b": "bosco-135"
+  },
+  {
+   "a": "bosco-191",
+   "b": "bosco-179"
+  },
+  {
+   "a": "bosco-224",
+   "b": "bosco-234"
+  },
+  {
+   "a": "bosco-129",
+   "b": "bosco-135"
+  },
+  {
+   "a": "bosco-72",
+   "b": "bosco-74"
+  },
+  {
+   "a": "bosco-276",
+   "b": "bosco-275"
+  },
+  {
+   "a": "bosco-174",
+   "b": "bosco-180"
+  },
+  {
+   "a": "bosco-12",
+   "b": "bosco-13"
+  },
+  {
+   "a": "bosco-202",
+   "b": "bosco-203"
+  },
+  {
+   "a": "bosco-280",
+   "b": "bosco-278"
+  },
+  {
+   "a": "bosco-140",
+   "b": "bosco-143"
+  },
+  {
+   "a": "bosco-196",
+   "b": "bosco-201"
+  },
+  {
+   "a": "bosco-91",
+   "b": "bosco-92"
+  },
+  {
+   "a": "bosco-231",
+   "b": "bosco-225"
+  },
+  {
+   "a": "bosco-9",
+   "b": "bosco-11"
+  },
+  {
+   "a": "bosco-200",
+   "b": "bosco-194"
+  },
+  {
+   "a": "bosco-158",
+   "b": "bosco-163"
+  },
+  {
+   "a": "bosco-69",
+   "b": "bosco-67"
+  },
+  {
+   "a": "bosco-38",
+   "b": "bosco-37"
+  },
+  {
+   "a": "bosco-171",
+   "b": "bosco-173"
+  },
+  {
+   "a": "bosco-261",
+   "b": "bosco-262"
+  }
+ ]
+}

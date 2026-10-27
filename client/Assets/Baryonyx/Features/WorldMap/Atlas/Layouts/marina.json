@@ -1,0 +1,926 @@
+{
+ "key": "marina",
+ "name": "マリーナ海岸",
+ "width": 2304,
+ "height": 3584,
+ "nodes": [
+  {
+   "id": "portoria",
+   "x": 1100.0,
+   "y": 1716.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-marina-nebbia",
+   "x": 1260.0,
+   "y": 2804.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-marina-verde",
+   "x": 2036.0,
+   "y": 1964.0,
+   "kind": "gate"
+  },
+  {
+   "id": "marina-78",
+   "x": 1252.0,
+   "y": 2716.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-79",
+   "x": 1154.5,
+   "y": 2777.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-82",
+   "x": 1041.7,
+   "y": 2793.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-81",
+   "x": 932.2,
+   "y": 2819.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-84",
+   "x": 833.9,
+   "y": 2883.3,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-83",
+   "x": 716.0,
+   "y": 2876.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-55",
+   "x": 292.0,
+   "y": 1940.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-50",
+   "x": 339.6,
+   "y": 1823.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-42",
+   "x": 402.8,
+   "y": 1726.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-43",
+   "x": 521.0,
+   "y": 1707.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-38",
+   "x": 646.4,
+   "y": 1696.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-39",
+   "x": 772.5,
+   "y": 1692.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-44",
+   "x": 897.3,
+   "y": 1704.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-45",
+   "x": 1020.0,
+   "y": 1732.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-61",
+   "x": 1372.0,
+   "y": 2068.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-60",
+   "x": 1252.1,
+   "y": 2038.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-59",
+   "x": 1132.5,
+   "y": 2011.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-58",
+   "x": 1012.0,
+   "y": 1996.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-56",
+   "x": 1326.0,
+   "y": 1972.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-53",
+   "x": 1264.4,
+   "y": 1882.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-49",
+   "x": 1204.0,
+   "y": 1796.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-74",
+   "x": 292.0,
+   "y": 2652.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-75",
+   "x": 411.3,
+   "y": 2661.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-77",
+   "x": 526.5,
+   "y": 2713.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-80",
+   "x": 627.2,
+   "y": 2786.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-85",
+   "x": 681.3,
+   "y": 2993.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-86",
+   "x": 659.6,
+   "y": 3110.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-87",
+   "x": 668.0,
+   "y": 3236.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-54",
+   "x": 1973.9,
+   "y": 1862.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-48",
+   "x": 1892.0,
+   "y": 1780.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-41",
+   "x": 1852.9,
+   "y": 1668.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-37",
+   "x": 1753.3,
+   "y": 1596.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-36",
+   "x": 1644.0,
+   "y": 1548.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-34",
+   "x": 1596.0,
+   "y": 1460.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-35",
+   "x": 1755.1,
+   "y": 1460.6,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-33",
+   "x": 1845.6,
+   "y": 1390.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-30",
+   "x": 1916.2,
+   "y": 1290.6,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-28",
+   "x": 1974.6,
+   "y": 1183.3,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-24",
+   "x": 2011.4,
+   "y": 1071.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-20",
+   "x": 1941.8,
+   "y": 974.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-19",
+   "x": 1827.2,
+   "y": 974.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-16",
+   "x": 1726.0,
+   "y": 932.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-13",
+   "x": 1620.9,
+   "y": 899.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-15",
+   "x": 1501.4,
+   "y": 920.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-18",
+   "x": 1398.0,
+   "y": 967.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-23",
+   "x": 1332.0,
+   "y": 1060.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-5",
+   "x": 740.0,
+   "y": 540.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-4",
+   "x": 655.3,
+   "y": 459.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-3",
+   "x": 598.3,
+   "y": 362.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-2",
+   "x": 511.0,
+   "y": 283.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-1",
+   "x": 412.0,
+   "y": 228.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-6",
+   "x": 820.0,
+   "y": 596.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-7",
+   "x": 724.0,
+   "y": 644.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-57",
+   "x": 1404.1,
+   "y": 1968.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-52",
+   "x": 1404.0,
+   "y": 1855.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-47",
+   "x": 1428.0,
+   "y": 1748.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-63",
+   "x": 1468.1,
+   "y": 2161.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-65",
+   "x": 1461.8,
+   "y": 2275.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-68",
+   "x": 1452.0,
+   "y": 2385.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-70",
+   "x": 1488.2,
+   "y": 2496.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-73",
+   "x": 1457.2,
+   "y": 2606.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-76",
+   "x": 1366.1,
+   "y": 2676.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-51",
+   "x": 1052.0,
+   "y": 1836.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-8",
+   "x": 947.1,
+   "y": 621.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-9",
+   "x": 1042.3,
+   "y": 698.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-12",
+   "x": 1060.1,
+   "y": 825.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-14",
+   "x": 1129.9,
+   "y": 925.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-22",
+   "x": 1206.2,
+   "y": 1028.7,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-46",
+   "x": 1316.3,
+   "y": 1762.8,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-40",
+   "x": 1521.2,
+   "y": 1672.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-62",
+   "x": 981.8,
+   "y": 2104.5,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-64",
+   "x": 935.3,
+   "y": 2208.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-66",
+   "x": 872.2,
+   "y": 2300.6,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-67",
+   "x": 966.0,
+   "y": 2371.3,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-69",
+   "x": 1039.7,
+   "y": 2463.1,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-71",
+   "x": 1110.3,
+   "y": 2554.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-72",
+   "x": 1220.9,
+   "y": 2589.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-32",
+   "x": 1487.5,
+   "y": 1388.4,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-31",
+   "x": 1366.8,
+   "y": 1338.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-29",
+   "x": 1358.0,
+   "y": 1249.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-27",
+   "x": 1417.5,
+   "y": 1154.2,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-26",
+   "x": 244.0,
+   "y": 1148.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-25",
+   "x": 359.7,
+   "y": 1109.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-21",
+   "x": 461.4,
+   "y": 1043.3,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-17",
+   "x": 553.3,
+   "y": 958.0,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-11",
+   "x": 572.0,
+   "y": 835.9,
+   "kind": "empty"
+  },
+  {
+   "id": "marina-10",
+   "x": 636.2,
+   "y": 731.5,
+   "kind": "empty"
+  }
+ ],
+ "lines": [
+  {
+   "a": "marina-44",
+   "b": "marina-45"
+  },
+  {
+   "a": "marina-29",
+   "b": "marina-27"
+  },
+  {
+   "a": "marina-72",
+   "b": "marina-78"
+  },
+  {
+   "a": "marina-5",
+   "b": "marina-7"
+  },
+  {
+   "a": "marina-33",
+   "b": "marina-30"
+  },
+  {
+   "a": "marina-86",
+   "b": "marina-87"
+  },
+  {
+   "a": "portoria",
+   "b": "marina-45"
+  },
+  {
+   "a": "marina-31",
+   "b": "marina-29"
+  },
+  {
+   "a": "marina-56",
+   "b": "marina-53"
+  },
+  {
+   "a": "marina-57",
+   "b": "marina-61"
+  },
+  {
+   "a": "marina-82",
+   "b": "marina-81"
+  },
+  {
+   "a": "marina-35",
+   "b": "marina-33"
+  },
+  {
+   "a": "marina-66",
+   "b": "marina-67"
+  },
+  {
+   "a": "marina-75",
+   "b": "marina-77"
+  },
+  {
+   "a": "portoria",
+   "b": "marina-51"
+  },
+  {
+   "a": "marina-34",
+   "b": "marina-36"
+  },
+  {
+   "a": "marina-48",
+   "b": "marina-41"
+  },
+  {
+   "a": "marina-71",
+   "b": "marina-72"
+  },
+  {
+   "a": "marina-18",
+   "b": "marina-23"
+  },
+  {
+   "a": "marina-63",
+   "b": "marina-61"
+  },
+  {
+   "a": "marina-51",
+   "b": "marina-58"
+  },
+  {
+   "a": "marina-39",
+   "b": "marina-44"
+  },
+  {
+   "a": "marina-80",
+   "b": "marina-83"
+  },
+  {
+   "a": "marina-73",
+   "b": "marina-76"
+  },
+  {
+   "a": "marina-27",
+   "b": "marina-23"
+  },
+  {
+   "a": "marina-54",
+   "b": "marina-48"
+  },
+  {
+   "a": "marina-8",
+   "b": "marina-6"
+  },
+  {
+   "a": "marina-75",
+   "b": "marina-74"
+  },
+  {
+   "a": "marina-19",
+   "b": "marina-16"
+  },
+  {
+   "a": "marina-60",
+   "b": "marina-59"
+  },
+  {
+   "a": "marina-37",
+   "b": "marina-36"
+  },
+  {
+   "a": "marina-2",
+   "b": "marina-1"
+  },
+  {
+   "a": "marina-21",
+   "b": "marina-17"
+  },
+  {
+   "a": "marina-22",
+   "b": "marina-23"
+  },
+  {
+   "a": "marina-24",
+   "b": "marina-20"
+  },
+  {
+   "a": "marina-41",
+   "b": "marina-37"
+  },
+  {
+   "a": "marina-13",
+   "b": "marina-15"
+  },
+  {
+   "a": "marina-63",
+   "b": "marina-65"
+  },
+  {
+   "a": "marina-50",
+   "b": "marina-42"
+  },
+  {
+   "a": "marina-4",
+   "b": "marina-5"
+  },
+  {
+   "a": "marina-70",
+   "b": "marina-73"
+  },
+  {
+   "a": "marina-52",
+   "b": "marina-47"
+  },
+  {
+   "a": "marina-50",
+   "b": "marina-55"
+  },
+  {
+   "a": "marina-85",
+   "b": "marina-83"
+  },
+  {
+   "a": "marina-85",
+   "b": "marina-86"
+  },
+  {
+   "a": "marina-20",
+   "b": "marina-19"
+  },
+  {
+   "a": "marina-4",
+   "b": "marina-3"
+  },
+  {
+   "a": "marina-11",
+   "b": "marina-10"
+  },
+  {
+   "a": "marina-62",
+   "b": "marina-58"
+  },
+  {
+   "a": "marina-84",
+   "b": "marina-83"
+  },
+  {
+   "a": "marina-8",
+   "b": "marina-9"
+  },
+  {
+   "a": "marina-17",
+   "b": "marina-11"
+  },
+  {
+   "a": "marina-5",
+   "b": "marina-6"
+  },
+  {
+   "a": "marina-65",
+   "b": "marina-68"
+  },
+  {
+   "a": "marina-43",
+   "b": "marina-38"
+  },
+  {
+   "a": "marina-6",
+   "b": "marina-7"
+  },
+  {
+   "a": "marina-53",
+   "b": "marina-49"
+  },
+  {
+   "a": "marina-62",
+   "b": "marina-64"
+  },
+  {
+   "a": "marina-46",
+   "b": "marina-47"
+  },
+  {
+   "a": "marina-79",
+   "b": "marina-82"
+  },
+  {
+   "a": "marina-38",
+   "b": "marina-39"
+  },
+  {
+   "a": "marina-45",
+   "b": "marina-51"
+  },
+  {
+   "a": "marina-56",
+   "b": "marina-61"
+  },
+  {
+   "a": "marina-9",
+   "b": "marina-12"
+  },
+  {
+   "a": "marina-32",
+   "b": "marina-31"
+  },
+  {
+   "a": "marina-43",
+   "b": "marina-42"
+  },
+  {
+   "a": "marina-10",
+   "b": "marina-7"
+  },
+  {
+   "a": "marina-57",
+   "b": "marina-52"
+  },
+  {
+   "a": "marina-60",
+   "b": "marina-61"
+  },
+  {
+   "a": "marina-81",
+   "b": "marina-84"
+  },
+  {
+   "a": "marina-40",
+   "b": "marina-47"
+  },
+  {
+   "a": "marina-78",
+   "b": "gate-marina-nebbia"
+  },
+  {
+   "a": "marina-46",
+   "b": "marina-49"
+  },
+  {
+   "a": "marina-59",
+   "b": "marina-58"
+  },
+  {
+   "a": "marina-79",
+   "b": "marina-78"
+  },
+  {
+   "a": "marina-54",
+   "b": "gate-marina-verde"
+  },
+  {
+   "a": "marina-3",
+   "b": "marina-2"
+  },
+  {
+   "a": "marina-32",
+   "b": "marina-34"
+  },
+  {
+   "a": "marina-40",
+   "b": "marina-36"
+  },
+  {
+   "a": "marina-35",
+   "b": "marina-36"
+  },
+  {
+   "a": "marina-28",
+   "b": "marina-24"
+  },
+  {
+   "a": "marina-68",
+   "b": "marina-70"
+  },
+  {
+   "a": "marina-67",
+   "b": "marina-69"
+  },
+  {
+   "a": "marina-15",
+   "b": "marina-18"
+  },
+  {
+   "a": "marina-64",
+   "b": "marina-66"
+  },
+  {
+   "a": "marina-77",
+   "b": "marina-80"
+  },
+  {
+   "a": "marina-16",
+   "b": "marina-13"
+  },
+  {
+   "a": "marina-12",
+   "b": "marina-14"
+  },
+  {
+   "a": "marina-25",
+   "b": "marina-21"
+  },
+  {
+   "a": "marina-25",
+   "b": "marina-26"
+  },
+  {
+   "a": "marina-30",
+   "b": "marina-28"
+  },
+  {
+   "a": "marina-69",
+   "b": "marina-71"
+  },
+  {
+   "a": "marina-14",
+   "b": "marina-22"
+  },
+  {
+   "a": "marina-76",
+   "b": "marina-78"
+  }
+ ]
+}

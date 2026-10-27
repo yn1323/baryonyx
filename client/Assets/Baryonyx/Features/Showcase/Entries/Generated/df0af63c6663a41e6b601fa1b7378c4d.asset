@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
+  m_Name: df0af63c6663a41e6b601fa1b7378c4d
+  m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
+  Id: df0af63c6663a41e6b601fa1b7378c4d
+  DisplayName: oro
+  Description: Assets/Baryonyx/Features/WorldMap/Atlas/Resources/WorldAtlas/oro.prefab
+  Category: 13
+  Asset: {fileID: 8802356703495974492, guid: df0af63c6663a41e6b601fa1b7378c4d, type: 3}
+  PreviewPrefab: {fileID: 8802356703495974492, guid: df0af63c6663a41e6b601fa1b7378c4d, type: 3}
+  PreviewAnimation: {fileID: 0}
+  AnimationStateName: 
+  ScenePath: 
+  Enabled: 1

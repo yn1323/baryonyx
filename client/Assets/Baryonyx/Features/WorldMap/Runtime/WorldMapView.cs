@@ -24,6 +24,13 @@ namespace Baryonyx.WorldMap
         // 背景の絵の1画素を、設計座標で何pxに出すか。
         public float Scale = 3f;
 
+        // 入れ子の地図の試作の1枚（WorldAtlasLayout のJSON）。あるときは、この地図のマスを使い、
+        // 進み具合は読みも保存もせず、WorldAtlasNavigator がこの画面の中だけで持つ。
+        public TextAsset Layout;
+
+        // 入れ子の地図で、地図を開いたときの拡大率。
+        public float StartZoom = 1f;
+
         public RectTransform Viewport;
         public RectTransform Map;
         public WorldMapDrag Drag;
@@ -81,6 +88,9 @@ namespace Baryonyx.WorldMap
         // 戦闘のあるマスに着いた。引数はマスのID。
         public event Action<string> BattleRequested;
 
+        // 入れ子の地図の試作で、マスに着いた（今いるマスを押したときも）。引数はマスのID。
+        public event Action<string> Arrived;
+
         private WorldMapGraph graph;
         private readonly HashSet<string> cleared = new();
         private WorldNodeState[] states = Array.Empty<WorldNodeState>();
@@ -127,9 +137,13 @@ namespace Baryonyx.WorldMap
         {
             if (graph == null)
             {
-                graph = WorldMapCatalog.Build();
+                graph = BuildGraph();
                 walk.Clear();
-                Apply(WorldMapSession.Known ?? WorldMapProgress.Start);
+                Apply(
+                    InAtlas
+                        ? WorldMapProgress.Start
+                        : WorldMapSession.Known ?? WorldMapProgress.Start
+                );
                 Loaded = false;
                 if (Place != null)
                     Place.text = LoadingText;
@@ -178,8 +192,53 @@ namespace Baryonyx.WorldMap
             LoadTask = LoadAsync();
         }
 
+        private bool InAtlas => Layout != null;
+
+        private WorldAtlasLayout atlasLayout;
+
+        private WorldAtlasLayout AtlasLayout =>
+            atlasLayout ??= InAtlas ? WorldAtlasLayout.Parse(Layout.text) : null;
+
+        private WorldMapGraph BuildGraph() =>
+            InAtlas ? AtlasLayout.Build() : WorldMapCatalog.Build();
+
+        /// <summary>
+        /// Zooms to <paramref name="value"/> with the party at the middle of the screen, past
+        /// the usual limits (the nested map prototype's switch between maps).
+        /// </summary>
+        public void FrameAt(float value)
+        {
+            zoom = Mathf.Max(0.05f, value);
+            glide = Vector2.zero;
+            scroll = partyDesign - SeenSize * 0.5f;
+            ApplyScroll();
+        }
+
+        /// <summary>The squares cleared on this map.</summary>
+        public IReadOnlyCollection<string> Cleared => cleared;
+
+        /// <summary>
+        /// Puts the party on <paramref name="at"/> with <paramref name="clearedSquares"/> cleared
+        /// (the nested map prototype, which keeps the progress itself).
+        /// </summary>
+        public void StartAt(string at, IEnumerable<string> clearedSquares)
+        {
+            graph ??= BuildGraph();
+            walk.Clear();
+            zoom = ClampZoom(StartZoom);
+            Apply(new WorldMapProgress(at, clearedSquares));
+            Loaded = true;
+            Refresh();
+        }
+
         private async System.Threading.Tasks.Task LoadAsync()
         {
+            if (InAtlas)
+            {
+                Loaded = true;
+                Refresh();
+                return;
+            }
             try
             {
                 var progress = await WorldMapSession.LoadAsync(destroyCancellationToken);
@@ -209,7 +268,10 @@ namespace Baryonyx.WorldMap
             foreach (var id in progress.Cleared)
                 cleared.Add(id);
             int at = graph.IndexOf(progress.At);
-            partyAt = at >= 0 ? at : graph.IndexOf(WorldMapCatalog.Start);
+            if (at < 0)
+                at = graph.IndexOf(WorldMapCatalog.Start);
+            // 入れ子の地図の試作には最初の街がないため、地図の最初のマスに置く。
+            partyAt = Mathf.Max(0, at);
             Home();
         }
 
@@ -235,8 +297,15 @@ namespace Baryonyx.WorldMap
         /// <summary>Taps a square: walks there when it can be reached.</summary>
         public bool Tap(int index)
         {
-            if (!Loaded || Walking || Fighting || Opening || index == partyAt)
+            if (!Loaded || Walking || Fighting || Opening)
                 return false;
+            if (index == partyAt)
+            {
+                // 入れ子の地図では、今いる地域や入口をもう一度押すと、その先へ入る。
+                if (InAtlas)
+                    Arrived?.Invoke(graph.Nodes[index].Id);
+                return false;
+            }
             var path = graph.PathTo(partyAt, index, states);
             if (path.Count < 2)
                 return false;
@@ -308,6 +377,11 @@ namespace Baryonyx.WorldMap
             if (clear)
                 cleared.Add(id);
             Refresh();
+            if (InAtlas)
+            {
+                Arrived?.Invoke(id);
+                return;
+            }
             // 宝箱は、初めてクリアしたときに中身をもらう。中身は保存できてから見せる。
             SaveTask =
                 clear && graph.Nodes[partyAt].Kind == WorldNodeKind.Treasure
@@ -437,7 +511,8 @@ namespace Baryonyx.WorldMap
                 ? Viewport.rect.size
                 : new Vector2(1920f, 1080f);
 
-        private Vector2 MapSize => WorldMapCatalog.PictureSize * Scale;
+        private Vector2 MapSize =>
+            (InAtlas ? AtlasLayout.PictureSize : WorldMapCatalog.PictureSize) * Scale;
 
         // 画面に入る地図の広さ（地図の設計座標）。
         private Vector2 SeenSize => ViewSize / zoom;
@@ -501,10 +576,11 @@ namespace Baryonyx.WorldMap
 
         /// <summary>
         /// The kind of platform a square shows. A cleared square has nothing left to happen on
-        /// it, so any square but a town shows the empty platform once cleared.
+        /// it, so any square but a town, a region or a gate shows the empty platform once cleared.
         /// </summary>
         public static WorldNodeKind ShownKind(WorldNodeKind kind, WorldNodeState state) =>
-            state == WorldNodeState.Cleared && kind != WorldNodeKind.Town
+            state == WorldNodeState.Cleared
+            && kind is not (WorldNodeKind.Town or WorldNodeKind.Region or WorldNodeKind.Gate)
                 ? WorldNodeKind.Empty
                 : kind;
 

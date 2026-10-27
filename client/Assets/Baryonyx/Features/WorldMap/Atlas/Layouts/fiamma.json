@@ -1,0 +1,2224 @@
+{
+ "key": "fiamma",
+ "name": "フィアンマ火山帯",
+ "width": 3072,
+ "height": 5120,
+ "nodes": [
+  {
+   "id": "forgia",
+   "x": 1644.0,
+   "y": 2604.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-bosco-fiamma",
+   "x": 756.0,
+   "y": 1940.0,
+   "kind": "gate"
+  },
+  {
+   "id": "fiamma-155",
+   "x": 2324.0,
+   "y": 2780.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-158",
+   "x": 2412.6,
+   "y": 2848.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-163",
+   "x": 2502.9,
+   "y": 2933.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-169",
+   "x": 2580.0,
+   "y": 3024.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-175",
+   "x": 2604.0,
+   "y": 3148.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-161",
+   "x": 2236.0,
+   "y": 2869.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-166",
+   "x": 2186.4,
+   "y": 2979.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-170",
+   "x": 2100.0,
+   "y": 3068.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-148",
+   "x": 2372.1,
+   "y": 2668.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-137",
+   "x": 2444.1,
+   "y": 2572.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-128",
+   "x": 2476.0,
+   "y": 2452.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-140",
+   "x": 1519.3,
+   "y": 2616.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-145",
+   "x": 1413.5,
+   "y": 2643.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-144",
+   "x": 1304.3,
+   "y": 2620.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-146",
+   "x": 1205.0,
+   "y": 2667.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-149",
+   "x": 1100.0,
+   "y": 2700.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-133",
+   "x": 1564.0,
+   "y": 2511.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-127",
+   "x": 1596.0,
+   "y": 2404.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-103",
+   "x": 773.0,
+   "y": 2053.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-108",
+   "x": 780.0,
+   "y": 2171.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-117",
+   "x": 861.2,
+   "y": 2265.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-122",
+   "x": 951.1,
+   "y": 2350.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-130",
+   "x": 988.0,
+   "y": 2460.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-182",
+   "x": 2844.0,
+   "y": 3284.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-178",
+   "x": 2939.0,
+   "y": 3197.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-171",
+   "x": 3012.7,
+   "y": 3091.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-167",
+   "x": 3060.0,
+   "y": 2971.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-159",
+   "x": 3060.0,
+   "y": 2841.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-151",
+   "x": 3028.0,
+   "y": 2716.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-177",
+   "x": 2732.6,
+   "y": 3197.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-48",
+   "x": 2028.0,
+   "y": 1076.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-43",
+   "x": 1943.9,
+   "y": 999.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-35",
+   "x": 1904.9,
+   "y": 893.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-30",
+   "x": 1892.0,
+   "y": 780.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-40",
+   "x": 2088.2,
+   "y": 972.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-37",
+   "x": 2201.1,
+   "y": 917.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-31",
+   "x": 2281.4,
+   "y": 821.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-27",
+   "x": 2348.1,
+   "y": 715.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-24",
+   "x": 2440.6,
+   "y": 629.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-17",
+   "x": 2532.0,
+   "y": 548.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-58",
+   "x": 1996.0,
+   "y": 1236.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-18",
+   "x": 2676.0,
+   "y": 572.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-13",
+   "x": 2684.0,
+   "y": 452.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-96",
+   "x": 2116.0,
+   "y": 1924.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-97",
+   "x": 2268.0,
+   "y": 1940.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-91",
+   "x": 2047.4,
+   "y": 1850.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-88",
+   "x": 1996.0,
+   "y": 1780.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-95",
+   "x": 1965.5,
+   "y": 1932.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-101",
+   "x": 1828.0,
+   "y": 1988.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-200",
+   "x": 2212.0,
+   "y": 4092.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-204",
+   "x": 2261.0,
+   "y": 4202.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-208",
+   "x": 2326.8,
+   "y": 4276.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-209",
+   "x": 2449.7,
+   "y": 4267.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-206",
+   "x": 2564.0,
+   "y": 4228.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-201",
+   "x": 2340.0,
+   "y": 4113.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-202",
+   "x": 2457.3,
+   "y": 4170.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-55",
+   "x": 1885.0,
+   "y": 1196.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-54",
+   "x": 1766.0,
+   "y": 1204.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-53",
+   "x": 1644.0,
+   "y": 1196.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-143",
+   "x": 3020.0,
+   "y": 2612.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-132",
+   "x": 3017.5,
+   "y": 2485.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-125",
+   "x": 2980.0,
+   "y": 2365.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-116",
+   "x": 2974.3,
+   "y": 2237.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-107",
+   "x": 2916.0,
+   "y": 2124.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-138",
+   "x": 2925.1,
+   "y": 2543.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-129",
+   "x": 2835.1,
+   "y": 2459.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-124",
+   "x": 2750.8,
+   "y": 2366.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-115",
+   "x": 2684.0,
+   "y": 2260.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-154",
+   "x": 1772.0,
+   "y": 2788.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-153",
+   "x": 1641.8,
+   "y": 2788.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-152",
+   "x": 1516.0,
+   "y": 2756.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-160",
+   "x": 1831.3,
+   "y": 2863.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-165",
+   "x": 1844.0,
+   "y": 2964.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-150",
+   "x": 1711.8,
+   "y": 2711.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-172",
+   "x": 1868.0,
+   "y": 3132.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-168",
+   "x": 1964.0,
+   "y": 3044.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-16",
+   "x": 2419.4,
+   "y": 558.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-20",
+   "x": 2307.3,
+   "y": 580.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-23",
+   "x": 2205.7,
+   "y": 628.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-22",
+   "x": 2094.1,
+   "y": 651.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-26",
+   "x": 2008.7,
+   "y": 730.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-121",
+   "x": 1548.5,
+   "y": 2301.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-111",
+   "x": 1492.6,
+   "y": 2204.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-106",
+   "x": 1420.0,
+   "y": 2124.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-118",
+   "x": 1642.8,
+   "y": 2293.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-112",
+   "x": 1703.8,
+   "y": 2192.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-104",
+   "x": 1756.7,
+   "y": 2086.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-100",
+   "x": 1436.0,
+   "y": 1988.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-109",
+   "x": 1316.2,
+   "y": 2172.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-114",
+   "x": 1224.4,
+   "y": 2242.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-120",
+   "x": 1133.8,
+   "y": 2314.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-126",
+   "x": 1092.3,
+   "y": 2418.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-131",
+   "x": 2365.5,
+   "y": 2496.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-135",
+   "x": 2248.0,
+   "y": 2522.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-134",
+   "x": 2129.5,
+   "y": 2537.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-136",
+   "x": 2013.2,
+   "y": 2541.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-142",
+   "x": 1907.6,
+   "y": 2596.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-141",
+   "x": 1788.2,
+   "y": 2611.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-123",
+   "x": 2556.0,
+   "y": 2356.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-62",
+   "x": 1444.0,
+   "y": 1348.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-67",
+   "x": 1474.3,
+   "y": 1455.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-75",
+   "x": 1397.9,
+   "y": 1543.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-81",
+   "x": 1318.5,
+   "y": 1621.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-86",
+   "x": 1324.1,
+   "y": 1736.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-90",
+   "x": 1364.0,
+   "y": 1844.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-66",
+   "x": 1366.8,
+   "y": 1443.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-71",
+   "x": 1270.1,
+   "y": 1537.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-74",
+   "x": 1140.0,
+   "y": 1564.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-176",
+   "x": 2348.0,
+   "y": 3196.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-184",
+   "x": 2332.0,
+   "y": 3364.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-173",
+   "x": 2188.0,
+   "y": 3172.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-174",
+   "x": 2470.2,
+   "y": 3148.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-157",
+   "x": 1413.1,
+   "y": 2850.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-162",
+   "x": 1288.9,
+   "y": 2915.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-164",
+   "x": 1164.0,
+   "y": 2980.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-147",
+   "x": 1579.6,
+   "y": 2692.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-180",
+   "x": 1892.0,
+   "y": 3260.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-183",
+   "x": 1789.0,
+   "y": 3332.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-185",
+   "x": 1754.1,
+   "y": 3455.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-189",
+   "x": 1697.4,
+   "y": 3571.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-192",
+   "x": 1704.6,
+   "y": 3685.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-194",
+   "x": 1799.6,
+   "y": 3775.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-196",
+   "x": 1867.0,
+   "y": 3883.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-198",
+   "x": 1926.9,
+   "y": 3994.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-199",
+   "x": 2045.7,
+   "y": 4047.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-181",
+   "x": 2000.1,
+   "y": 3282.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-179",
+   "x": 2104.2,
+   "y": 3247.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-119",
+   "x": 2524.0,
+   "y": 2276.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-70",
+   "x": 1033.3,
+   "y": 1505.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-65",
+   "x": 940.9,
+   "y": 1426.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-60",
+   "x": 923.0,
+   "y": 1334.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-56",
+   "x": 1009.1,
+   "y": 1246.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-50",
+   "x": 1094.1,
+   "y": 1159.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-52",
+   "x": 1207.9,
+   "y": 1183.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-46",
+   "x": 1290.8,
+   "y": 1095.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-41",
+   "x": 1348.0,
+   "y": 988.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-84",
+   "x": 1204.7,
+   "y": 1667.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-34",
+   "x": 1710.8,
+   "y": 883.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-39",
+   "x": 1583.5,
+   "y": 948.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-45",
+   "x": 1476.0,
+   "y": 1020.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-36",
+   "x": 1827.6,
+   "y": 919.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-42",
+   "x": 1769.6,
+   "y": 1015.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-47",
+   "x": 1686.0,
+   "y": 1093.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-1",
+   "x": 2700.0,
+   "y": 68.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-4",
+   "x": 2782.6,
+   "y": 144.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-6",
+   "x": 2771.7,
+   "y": 249.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-10",
+   "x": 2711.8,
+   "y": 344.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-21",
+   "x": 1829.6,
+   "y": 635.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-15",
+   "x": 1812.0,
+   "y": 515.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-11",
+   "x": 1800.1,
+   "y": 394.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-8",
+   "x": 1748.0,
+   "y": 296.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-3",
+   "x": 1724.1,
+   "y": 178.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-2",
+   "x": 1644.6,
+   "y": 147.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-5",
+   "x": 1580.1,
+   "y": 250.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-7",
+   "x": 1470.6,
+   "y": 269.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-9",
+   "x": 1384.8,
+   "y": 341.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-12",
+   "x": 1307.3,
+   "y": 428.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-14",
+   "x": 1211.6,
+   "y": 501.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-19",
+   "x": 1148.0,
+   "y": 601.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-25",
+   "x": 1219.7,
+   "y": 683.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-29",
+   "x": 1284.8,
+   "y": 787.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-33",
+   "x": 1354.2,
+   "y": 871.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-64",
+   "x": 2091.3,
+   "y": 1382.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-72",
+   "x": 2101.1,
+   "y": 1500.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-77",
+   "x": 2187.4,
+   "y": 1572.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-78",
+   "x": 2306.8,
+   "y": 1572.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-80",
+   "x": 2411.7,
+   "y": 1611.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-82",
+   "x": 2524.0,
+   "y": 1636.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-63",
+   "x": 1943.2,
+   "y": 1360.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-69",
+   "x": 1933.1,
+   "y": 1467.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-76",
+   "x": 1931.8,
+   "y": 1579.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-85",
+   "x": 1978.2,
+   "y": 1674.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-156",
+   "x": 1116.9,
+   "y": 2845.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-139",
+   "x": 1028.0,
+   "y": 2587.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-51",
+   "x": 1498.3,
+   "y": 1154.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-79",
+   "x": 2606.5,
+   "y": 1572.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-73",
+   "x": 2700.0,
+   "y": 1532.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-87",
+   "x": 2438.3,
+   "y": 1737.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-92",
+   "x": 2362.3,
+   "y": 1845.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-113",
+   "x": 2803.2,
+   "y": 2199.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-188",
+   "x": 2212.0,
+   "y": 3532.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-186",
+   "x": 2240.0,
+   "y": 3425.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-191",
+   "x": 2124.4,
+   "y": 3609.4,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-193",
+   "x": 2116.6,
+   "y": 3729.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-195",
+   "x": 2178.4,
+   "y": 3825.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-197",
+   "x": 2167.4,
+   "y": 3944.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-190",
+   "x": 2311.6,
+   "y": 3555.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-187",
+   "x": 2333.6,
+   "y": 3458.1,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-203",
+   "x": 2680.2,
+   "y": 4156.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-205",
+   "x": 2807.3,
+   "y": 4191.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-207",
+   "x": 2908.0,
+   "y": 4260.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-102",
+   "x": 2836.3,
+   "y": 2019.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-94",
+   "x": 2793.5,
+   "y": 1897.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-89",
+   "x": 2724.0,
+   "y": 1789.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-83",
+   "x": 2716.1,
+   "y": 1656.0,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-105",
+   "x": 2322.3,
+   "y": 2070.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-110",
+   "x": 2425.4,
+   "y": 2169.8,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-93",
+   "x": 1891.7,
+   "y": 1884.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-98",
+   "x": 1552.5,
+   "y": 1969.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-99",
+   "x": 1666.7,
+   "y": 1960.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-68",
+   "x": 2740.3,
+   "y": 1423.5,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-61",
+   "x": 2814.1,
+   "y": 1329.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-59",
+   "x": 2897.3,
+   "y": 1243.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-49",
+   "x": 2907.3,
+   "y": 1125.9,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-44",
+   "x": 2876.0,
+   "y": 1014.2,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-38",
+   "x": 2811.7,
+   "y": 923.6,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-32",
+   "x": 2728.0,
+   "y": 837.7,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-28",
+   "x": 2668.0,
+   "y": 739.3,
+   "kind": "empty"
+  },
+  {
+   "id": "fiamma-57",
+   "x": 1552.2,
+   "y": 1249.2,
+   "kind": "empty"
+  }
+ ],
+ "lines": [
+  {
+   "a": "fiamma-83",
+   "b": "fiamma-73"
+  },
+  {
+   "a": "fiamma-161",
+   "b": "fiamma-155"
+  },
+  {
+   "a": "fiamma-131",
+   "b": "fiamma-128"
+  },
+  {
+   "a": "fiamma-87",
+   "b": "fiamma-82"
+  },
+  {
+   "a": "fiamma-6",
+   "b": "fiamma-10"
+  },
+  {
+   "a": "fiamma-137",
+   "b": "fiamma-128"
+  },
+  {
+   "a": "fiamma-66",
+   "b": "fiamma-62"
+  },
+  {
+   "a": "fiamma-133",
+   "b": "forgia"
+  },
+  {
+   "a": "fiamma-81",
+   "b": "fiamma-86"
+  },
+  {
+   "a": "fiamma-27",
+   "b": "fiamma-24"
+  },
+  {
+   "a": "fiamma-208",
+   "b": "fiamma-209"
+  },
+  {
+   "a": "fiamma-168",
+   "b": "fiamma-170"
+  },
+  {
+   "a": "fiamma-57",
+   "b": "fiamma-62"
+  },
+  {
+   "a": "fiamma-50",
+   "b": "fiamma-52"
+  },
+  {
+   "a": "fiamma-147",
+   "b": "forgia"
+  },
+  {
+   "a": "fiamma-67",
+   "b": "fiamma-75"
+  },
+  {
+   "a": "fiamma-185",
+   "b": "fiamma-189"
+  },
+  {
+   "a": "fiamma-113",
+   "b": "fiamma-107"
+  },
+  {
+   "a": "fiamma-179",
+   "b": "fiamma-173"
+  },
+  {
+   "a": "fiamma-148",
+   "b": "fiamma-155"
+  },
+  {
+   "a": "fiamma-71",
+   "b": "fiamma-74"
+  },
+  {
+   "a": "fiamma-174",
+   "b": "fiamma-176"
+  },
+  {
+   "a": "fiamma-94",
+   "b": "fiamma-89"
+  },
+  {
+   "a": "fiamma-48",
+   "b": "fiamma-58"
+  },
+  {
+   "a": "fiamma-42",
+   "b": "fiamma-47"
+  },
+  {
+   "a": "fiamma-34",
+   "b": "fiamma-30"
+  },
+  {
+   "a": "fiamma-191",
+   "b": "fiamma-193"
+  },
+  {
+   "a": "fiamma-29",
+   "b": "fiamma-33"
+  },
+  {
+   "a": "fiamma-31",
+   "b": "fiamma-27"
+  },
+  {
+   "a": "fiamma-64",
+   "b": "fiamma-72"
+  },
+  {
+   "a": "fiamma-96",
+   "b": "fiamma-97"
+  },
+  {
+   "a": "fiamma-20",
+   "b": "fiamma-23"
+  },
+  {
+   "a": "fiamma-201",
+   "b": "fiamma-202"
+  },
+  {
+   "a": "fiamma-24",
+   "b": "fiamma-17"
+  },
+  {
+   "a": "fiamma-116",
+   "b": "fiamma-107"
+  },
+  {
+   "a": "fiamma-199",
+   "b": "fiamma-200"
+  },
+  {
+   "a": "fiamma-161",
+   "b": "fiamma-166"
+  },
+  {
+   "a": "fiamma-117",
+   "b": "fiamma-122"
+  },
+  {
+   "a": "fiamma-26",
+   "b": "fiamma-30"
+  },
+  {
+   "a": "fiamma-89",
+   "b": "fiamma-83"
+  },
+  {
+   "a": "fiamma-115",
+   "b": "fiamma-119"
+  },
+  {
+   "a": "fiamma-98",
+   "b": "fiamma-100"
+  },
+  {
+   "a": "fiamma-156",
+   "b": "fiamma-149"
+  },
+  {
+   "a": "fiamma-2",
+   "b": "fiamma-5"
+  },
+  {
+   "a": "fiamma-194",
+   "b": "fiamma-196"
+  },
+  {
+   "a": "fiamma-129",
+   "b": "fiamma-124"
+  },
+  {
+   "a": "fiamma-140",
+   "b": "fiamma-145"
+  },
+  {
+   "a": "fiamma-102",
+   "b": "fiamma-94"
+  },
+  {
+   "a": "fiamma-10",
+   "b": "fiamma-13"
+  },
+  {
+   "a": "fiamma-186",
+   "b": "fiamma-184"
+  },
+  {
+   "a": "fiamma-55",
+   "b": "fiamma-58"
+  },
+  {
+   "a": "fiamma-112",
+   "b": "fiamma-104"
+  },
+  {
+   "a": "fiamma-4",
+   "b": "fiamma-6"
+  },
+  {
+   "a": "fiamma-113",
+   "b": "fiamma-115"
+  },
+  {
+   "a": "fiamma-104",
+   "b": "fiamma-101"
+  },
+  {
+   "a": "fiamma-90",
+   "b": "fiamma-100"
+  },
+  {
+   "a": "fiamma-34",
+   "b": "fiamma-39"
+  },
+  {
+   "a": "fiamma-54",
+   "b": "fiamma-53"
+  },
+  {
+   "a": "fiamma-60",
+   "b": "fiamma-56"
+  },
+  {
+   "a": "fiamma-12",
+   "b": "fiamma-14"
+  },
+  {
+   "a": "fiamma-201",
+   "b": "fiamma-200"
+  },
+  {
+   "a": "fiamma-8",
+   "b": "fiamma-3"
+  },
+  {
+   "a": "fiamma-142",
+   "b": "fiamma-141"
+  },
+  {
+   "a": "fiamma-177",
+   "b": "fiamma-182"
+  },
+  {
+   "a": "fiamma-174",
+   "b": "fiamma-175"
+  },
+  {
+   "a": "fiamma-150",
+   "b": "forgia"
+  },
+  {
+   "a": "fiamma-209",
+   "b": "fiamma-206"
+  },
+  {
+   "a": "fiamma-167",
+   "b": "fiamma-159"
+  },
+  {
+   "a": "fiamma-138",
+   "b": "fiamma-143"
+  },
+  {
+   "a": "fiamma-36",
+   "b": "fiamma-30"
+  },
+  {
+   "a": "fiamma-69",
+   "b": "fiamma-76"
+  },
+  {
+   "a": "fiamma-43",
+   "b": "fiamma-35"
+  },
+  {
+   "a": "fiamma-16",
+   "b": "fiamma-17"
+  },
+  {
+   "a": "fiamma-165",
+   "b": "fiamma-168"
+  },
+  {
+   "a": "fiamma-125",
+   "b": "fiamma-116"
+  },
+  {
+   "a": "fiamma-148",
+   "b": "fiamma-137"
+  },
+  {
+   "a": "fiamma-41",
+   "b": "fiamma-45"
+  },
+  {
+   "a": "fiamma-146",
+   "b": "fiamma-149"
+  },
+  {
+   "a": "fiamma-66",
+   "b": "fiamma-71"
+  },
+  {
+   "a": "fiamma-119",
+   "b": "fiamma-123"
+  },
+  {
+   "a": "fiamma-98",
+   "b": "fiamma-99"
+  },
+  {
+   "a": "fiamma-114",
+   "b": "fiamma-120"
+  },
+  {
+   "a": "fiamma-131",
+   "b": "fiamma-135"
+  },
+  {
+   "a": "fiamma-15",
+   "b": "fiamma-11"
+  },
+  {
+   "a": "fiamma-78",
+   "b": "fiamma-80"
+  },
+  {
+   "a": "fiamma-139",
+   "b": "fiamma-130"
+  },
+  {
+   "a": "fiamma-124",
+   "b": "fiamma-115"
+  },
+  {
+   "a": "fiamma-193",
+   "b": "fiamma-195"
+  },
+  {
+   "a": "fiamma-111",
+   "b": "fiamma-106"
+  },
+  {
+   "a": "fiamma-35",
+   "b": "fiamma-30"
+  },
+  {
+   "a": "fiamma-205",
+   "b": "fiamma-207"
+  },
+  {
+   "a": "fiamma-171",
+   "b": "fiamma-167"
+  },
+  {
+   "a": "fiamma-70",
+   "b": "fiamma-74"
+  },
+  {
+   "a": "fiamma-143",
+   "b": "fiamma-151"
+  },
+  {
+   "a": "fiamma-46",
+   "b": "fiamma-41"
+  },
+  {
+   "a": "fiamma-123",
+   "b": "fiamma-128"
+  },
+  {
+   "a": "fiamma-32",
+   "b": "fiamma-28"
+  },
+  {
+   "a": "fiamma-109",
+   "b": "fiamma-114"
+  },
+  {
+   "a": "fiamma-51",
+   "b": "fiamma-62"
+  },
+  {
+   "a": "fiamma-86",
+   "b": "fiamma-84"
+  },
+  {
+   "a": "fiamma-126",
+   "b": "fiamma-130"
+  },
+  {
+   "a": "fiamma-181",
+   "b": "fiamma-180"
+  },
+  {
+   "a": "fiamma-77",
+   "b": "fiamma-78"
+  },
+  {
+   "a": "fiamma-157",
+   "b": "fiamma-152"
+  },
+  {
+   "a": "fiamma-122",
+   "b": "fiamma-130"
+  },
+  {
+   "a": "fiamma-121",
+   "b": "fiamma-127"
+  },
+  {
+   "a": "fiamma-134",
+   "b": "fiamma-135"
+  },
+  {
+   "a": "fiamma-39",
+   "b": "fiamma-45"
+  },
+  {
+   "a": "fiamma-47",
+   "b": "fiamma-53"
+  },
+  {
+   "a": "fiamma-14",
+   "b": "fiamma-19"
+  },
+  {
+   "a": "fiamma-178",
+   "b": "fiamma-182"
+  },
+  {
+   "a": "fiamma-178",
+   "b": "fiamma-171"
+  },
+  {
+   "a": "fiamma-110",
+   "b": "fiamma-119"
+  },
+  {
+   "a": "fiamma-202",
+   "b": "fiamma-206"
+  },
+  {
+   "a": "fiamma-183",
+   "b": "fiamma-185"
+  },
+  {
+   "a": "fiamma-133",
+   "b": "fiamma-127"
+  },
+  {
+   "a": "fiamma-192",
+   "b": "fiamma-194"
+  },
+  {
+   "a": "fiamma-163",
+   "b": "fiamma-169"
+  },
+  {
+   "a": "fiamma-70",
+   "b": "fiamma-65"
+  },
+  {
+   "a": "fiamma-203",
+   "b": "fiamma-205"
+  },
+  {
+   "a": "fiamma-158",
+   "b": "fiamma-155"
+  },
+  {
+   "a": "fiamma-177",
+   "b": "fiamma-175"
+  },
+  {
+   "a": "fiamma-109",
+   "b": "fiamma-106"
+  },
+  {
+   "a": "fiamma-102",
+   "b": "fiamma-107"
+  },
+  {
+   "a": "fiamma-103",
+   "b": "fiamma-108"
+  },
+  {
+   "a": "fiamma-11",
+   "b": "fiamma-8"
+  },
+  {
+   "a": "fiamma-80",
+   "b": "fiamma-82"
+  },
+  {
+   "a": "fiamma-190",
+   "b": "fiamma-188"
+  },
+  {
+   "a": "fiamma-21",
+   "b": "fiamma-30"
+  },
+  {
+   "a": "fiamma-186",
+   "b": "fiamma-188"
+  },
+  {
+   "a": "fiamma-95",
+   "b": "fiamma-96"
+  },
+  {
+   "a": "fiamma-147",
+   "b": "fiamma-152"
+  },
+  {
+   "a": "fiamma-165",
+   "b": "fiamma-172"
+  },
+  {
+   "a": "fiamma-121",
+   "b": "fiamma-111"
+  },
+  {
+   "a": "fiamma-189",
+   "b": "fiamma-192"
+  },
+  {
+   "a": "fiamma-145",
+   "b": "fiamma-144"
+  },
+  {
+   "a": "fiamma-5",
+   "b": "fiamma-7"
+  },
+  {
+   "a": "fiamma-159",
+   "b": "fiamma-151"
+  },
+  {
+   "a": "fiamma-156",
+   "b": "fiamma-164"
+  },
+  {
+   "a": "fiamma-153",
+   "b": "fiamma-154"
+  },
+  {
+   "a": "fiamma-87",
+   "b": "fiamma-92"
+  },
+  {
+   "a": "fiamma-204",
+   "b": "fiamma-208"
+  },
+  {
+   "a": "fiamma-157",
+   "b": "fiamma-162"
+  },
+  {
+   "a": "fiamma-181",
+   "b": "fiamma-179"
+  },
+  {
+   "a": "fiamma-93",
+   "b": "fiamma-88"
+  },
+  {
+   "a": "fiamma-64",
+   "b": "fiamma-58"
+  },
+  {
+   "a": "fiamma-191",
+   "b": "fiamma-188"
+  },
+  {
+   "a": "fiamma-170",
+   "b": "fiamma-173"
+  },
+  {
+   "a": "fiamma-44",
+   "b": "fiamma-38"
+  },
+  {
+   "a": "fiamma-115",
+   "b": "fiamma-123"
+  },
+  {
+   "a": "fiamma-138",
+   "b": "fiamma-129"
+  },
+  {
+   "a": "fiamma-160",
+   "b": "fiamma-154"
+  },
+  {
+   "a": "fiamma-43",
+   "b": "fiamma-48"
+  },
+  {
+   "a": "fiamma-76",
+   "b": "fiamma-85"
+  },
+  {
+   "a": "fiamma-68",
+   "b": "fiamma-73"
+  },
+  {
+   "a": "fiamma-91",
+   "b": "fiamma-96"
+  },
+  {
+   "a": "fiamma-150",
+   "b": "fiamma-154"
+  },
+  {
+   "a": "fiamma-9",
+   "b": "fiamma-12"
+  },
+  {
+   "a": "fiamma-203",
+   "b": "fiamma-206"
+  },
+  {
+   "a": "fiamma-118",
+   "b": "fiamma-127"
+  },
+  {
+   "a": "fiamma-153",
+   "b": "fiamma-152"
+  },
+  {
+   "a": "fiamma-68",
+   "b": "fiamma-61"
+  },
+  {
+   "a": "fiamma-100",
+   "b": "fiamma-106"
+  },
+  {
+   "a": "fiamma-120",
+   "b": "fiamma-126"
+  },
+  {
+   "a": "fiamma-187",
+   "b": "fiamma-184"
+  },
+  {
+   "a": "fiamma-40",
+   "b": "fiamma-37"
+  },
+  {
+   "a": "fiamma-136",
+   "b": "fiamma-142"
+  },
+  {
+   "a": "fiamma-168",
+   "b": "fiamma-172"
+  },
+  {
+   "a": "fiamma-196",
+   "b": "fiamma-198"
+  },
+  {
+   "a": "fiamma-162",
+   "b": "fiamma-164"
+  },
+  {
+   "a": "fiamma-197",
+   "b": "fiamma-200"
+  },
+  {
+   "a": "fiamma-13",
+   "b": "fiamma-17"
+  },
+  {
+   "a": "fiamma-132",
+   "b": "fiamma-125"
+  },
+  {
+   "a": "fiamma-52",
+   "b": "fiamma-46"
+  },
+  {
+   "a": "fiamma-25",
+   "b": "fiamma-29"
+  },
+  {
+   "a": "fiamma-190",
+   "b": "fiamma-187"
+  },
+  {
+   "a": "fiamma-93",
+   "b": "fiamma-101"
+  },
+  {
+   "a": "fiamma-23",
+   "b": "fiamma-22"
+  },
+  {
+   "a": "fiamma-176",
+   "b": "fiamma-184"
+  },
+  {
+   "a": "fiamma-7",
+   "b": "fiamma-9"
+  },
+  {
+   "a": "fiamma-72",
+   "b": "fiamma-77"
+  },
+  {
+   "a": "fiamma-160",
+   "b": "fiamma-165"
+  },
+  {
+   "a": "fiamma-49",
+   "b": "fiamma-44"
+  },
+  {
+   "a": "fiamma-56",
+   "b": "fiamma-50"
+  },
+  {
+   "a": "fiamma-183",
+   "b": "fiamma-180"
+  },
+  {
+   "a": "fiamma-51",
+   "b": "fiamma-45"
+  },
+  {
+   "a": "fiamma-166",
+   "b": "fiamma-170"
+  },
+  {
+   "a": "fiamma-16",
+   "b": "fiamma-20"
+  },
+  {
+   "a": "fiamma-3",
+   "b": "fiamma-2"
+  },
+  {
+   "a": "fiamma-59",
+   "b": "fiamma-49"
+  },
+  {
+   "a": "fiamma-103",
+   "b": "gate-bosco-fiamma"
+  },
+  {
+   "a": "fiamma-38",
+   "b": "fiamma-32"
+  },
+  {
+   "a": "fiamma-4",
+   "b": "fiamma-1"
+  },
+  {
+   "a": "fiamma-134",
+   "b": "fiamma-136"
+  },
+  {
+   "a": "fiamma-132",
+   "b": "fiamma-143"
+  },
+  {
+   "a": "fiamma-140",
+   "b": "forgia"
+  },
+  {
+   "a": "fiamma-55",
+   "b": "fiamma-54"
+  },
+  {
+   "a": "fiamma-169",
+   "b": "fiamma-175"
+  },
+  {
+   "a": "fiamma-65",
+   "b": "fiamma-60"
+  },
+  {
+   "a": "fiamma-36",
+   "b": "fiamma-42"
+  },
+  {
+   "a": "fiamma-63",
+   "b": "fiamma-69"
+  },
+  {
+   "a": "fiamma-105",
+   "b": "fiamma-110"
+  },
+  {
+   "a": "fiamma-28",
+   "b": "fiamma-18"
+  },
+  {
+   "a": "fiamma-92",
+   "b": "fiamma-97"
+  },
+  {
+   "a": "fiamma-144",
+   "b": "fiamma-146"
+  },
+  {
+   "a": "fiamma-195",
+   "b": "fiamma-197"
+  },
+  {
+   "a": "fiamma-61",
+   "b": "fiamma-59"
+  },
+  {
+   "a": "fiamma-21",
+   "b": "fiamma-15"
+  },
+  {
+   "a": "fiamma-91",
+   "b": "fiamma-88"
+  },
+  {
+   "a": "fiamma-17",
+   "b": "fiamma-18"
+  },
+  {
+   "a": "fiamma-22",
+   "b": "fiamma-26"
+  },
+  {
+   "a": "fiamma-173",
+   "b": "fiamma-176"
+  },
+  {
+   "a": "fiamma-204",
+   "b": "fiamma-200"
+  },
+  {
+   "a": "fiamma-99",
+   "b": "fiamma-101"
+  },
+  {
+   "a": "fiamma-139",
+   "b": "fiamma-149"
+  },
+  {
+   "a": "fiamma-105",
+   "b": "fiamma-97"
+  },
+  {
+   "a": "fiamma-33",
+   "b": "fiamma-41"
+  },
+  {
+   "a": "fiamma-95",
+   "b": "fiamma-101"
+  },
+  {
+   "a": "fiamma-118",
+   "b": "fiamma-112"
+  },
+  {
+   "a": "fiamma-141",
+   "b": "forgia"
+  },
+  {
+   "a": "fiamma-198",
+   "b": "fiamma-199"
+  },
+  {
+   "a": "fiamma-19",
+   "b": "fiamma-25"
+  },
+  {
+   "a": "fiamma-37",
+   "b": "fiamma-31"
+  },
+  {
+   "a": "fiamma-85",
+   "b": "fiamma-88"
+  },
+  {
+   "a": "fiamma-13",
+   "b": "fiamma-18"
+  },
+  {
+   "a": "fiamma-108",
+   "b": "fiamma-117"
+  },
+  {
+   "a": "fiamma-172",
+   "b": "fiamma-180"
+  },
+  {
+   "a": "fiamma-158",
+   "b": "fiamma-163"
+  },
+  {
+   "a": "fiamma-75",
+   "b": "fiamma-81"
+  },
+  {
+   "a": "fiamma-67",
+   "b": "fiamma-62"
+  },
+  {
+   "a": "fiamma-84",
+   "b": "fiamma-74"
+  },
+  {
+   "a": "fiamma-57",
+   "b": "fiamma-53"
+  },
+  {
+   "a": "fiamma-79",
+   "b": "fiamma-73"
+  },
+  {
+   "a": "fiamma-79",
+   "b": "fiamma-82"
+  },
+  {
+   "a": "fiamma-63",
+   "b": "fiamma-58"
+  },
+  {
+   "a": "fiamma-86",
+   "b": "fiamma-90"
+  },
+  {
+   "a": "fiamma-40",
+   "b": "fiamma-48"
+  }
+ ]
+}

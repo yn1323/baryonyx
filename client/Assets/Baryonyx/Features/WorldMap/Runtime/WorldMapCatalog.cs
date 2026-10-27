@@ -12,15 +12,17 @@ namespace Baryonyx.WorldMap
         Story,
         Boss,
         Town,
+
+        // 入れ子の地図の試作（WorldAtlasLayout）で使う。世界地図の地域と、地域どうしの入口。
+        Region,
+        Gate,
     }
 
     /// <summary>
     /// The highway's world map (街道, doc/features/stage-progression.md#街とダンジョン仮), drawn as a
-    /// grid of characters like a sugoroku board: a letter is a square, and two squares in the same
-    /// row or column are linked when they touch or when only <c>-</c> (across) or <c>|</c> (down)
-    /// lies between them, so every line is straight. The web has two rings around the first town,
-    /// roads out to the other towns behind a boss, and dead ends to wander into. All names,
-    /// levels and squares are provisional.
+    /// grid of characters like a sugoroku board (<see cref="WorldMapGrid"/>). The web has two
+    /// rings around the first town, roads out to the other towns behind a boss, and dead ends to
+    /// wander into. All names, levels and squares are provisional.
     /// </summary>
     public static class WorldMapCatalog
     {
@@ -74,7 +76,7 @@ namespace Baryonyx.WorldMap
                 ['G'] = ("forgia", "鍛冶町フォルジャ"),
             };
 
-        private static readonly IReadOnlyDictionary<char, WorldNodeKind> Kinds = new Dictionary<
+        internal static readonly IReadOnlyDictionary<char, WorldNodeKind> Kinds = new Dictionary<
             char,
             WorldNodeKind
         >
@@ -119,66 +121,12 @@ namespace Baryonyx.WorldMap
             "n11-4",
         };
 
-        public static Vector2 PointOf(Vector2 cell) => Origin + cell * Cell;
+        private static readonly WorldMapGrid Grid = new(Rows, Cell, Origin, "n", Kinds);
 
-        public static string IdAt(int column, int row)
-        {
-            char c = Rows[row][column];
-            return Towns.TryGetValue(c, out var town) ? town.Id : $"n{column}-{row}";
-        }
+        public static Vector2 PointOf(Vector2 cell) => Grid.PointOf(cell);
 
-        public static WorldMapGraph Build()
-        {
-            var graph = new WorldMapGraph();
-            for (int row = 0; row < Rows.Length; row++)
-            for (int column = 0; column < Rows[row].Length; column++)
-            {
-                char c = Rows[row][column];
-                var point = PointOf(new Vector2(column, row));
-                if (Towns.TryGetValue(c, out var town))
-                    graph.Add(town.Id, WorldNodeKind.Town, point, town.Name);
-                else if (Kinds.TryGetValue(c, out var kind))
-                    graph.Add(IdAt(column, row), kind, point, "街道");
-            }
-            for (int row = 0; row < Rows.Length; row++)
-            for (int column = 0; column < Rows[row].Length; column++)
-            {
-                if (!IsSquare(column, row))
-                    continue;
-                LinkAlong(graph, column, row, 1, 0, '-');
-                LinkAlong(graph, column, row, 0, 1, '|');
-            }
-            foreach (var (level, cell) in Levels)
-                graph.AddLevel(level, PointOf(cell));
-            return graph;
-        }
+        public static string IdAt(int column, int row) => Grid.IdAt(column, row);
 
-        private static bool IsSquare(int column, int row) =>
-            row >= 0
-            && row < Rows.Length
-            && column >= 0
-            && column < Rows[row].Length
-            && (Towns.ContainsKey(Rows[row][column]) || Kinds.ContainsKey(Rows[row][column]));
-
-        // 右か下へ、道の文字をたどって次のマスまで結ぶ。
-        private static void LinkAlong(
-            WorldMapGraph graph,
-            int column,
-            int row,
-            int dx,
-            int dy,
-            char road
-        )
-        {
-            int x = column + dx;
-            int y = row + dy;
-            while (y < Rows.Length && x < Rows[y].Length && Rows[y][x] == road)
-            {
-                x += dx;
-                y += dy;
-            }
-            if (IsSquare(x, y))
-                graph.Link(IdAt(column, row), IdAt(x, y));
-        }
+        public static WorldMapGraph Build() => Grid.Build(Levels);
     }
 }

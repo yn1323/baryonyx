@@ -1,0 +1,1516 @@
+{
+ "key": "verde",
+ "name": "ヴェルデ平原",
+ "width": 3840,
+ "height": 3072,
+ "nodes": [
+  {
+   "id": "porta",
+   "x": 1964.0,
+   "y": 1588.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-marina-verde",
+   "x": 236.0,
+   "y": 924.0,
+   "kind": "gate"
+  },
+  {
+   "id": "brezza",
+   "x": 900.0,
+   "y": 844.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-gelo-verde",
+   "x": 1252.0,
+   "y": 324.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-bosco-verde",
+   "x": 3284.0,
+   "y": 548.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-oro-verde",
+   "x": 2988.0,
+   "y": 2484.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-nebbia-verde",
+   "x": 812.0,
+   "y": 2028.0,
+   "kind": "gate"
+  },
+  {
+   "id": "verde-83",
+   "x": 2996.0,
+   "y": 1484.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-79",
+   "x": 2880.9,
+   "y": 1421.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-78",
+   "x": 2756.8,
+   "y": 1425.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-66",
+   "x": 2642.6,
+   "y": 1377.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-65",
+   "x": 2524.0,
+   "y": 1340.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-84",
+   "x": 3100.0,
+   "y": 1476.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-92",
+   "x": 2899.8,
+   "y": 1564.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-99",
+   "x": 2849.1,
+   "y": 1684.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-106",
+   "x": 2761.6,
+   "y": 1780.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-111",
+   "x": 2692.0,
+   "y": 1876.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-114",
+   "x": 2655.4,
+   "y": 1996.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-121",
+   "x": 2601.2,
+   "y": 2116.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-123",
+   "x": 2514.7,
+   "y": 2212.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-126",
+   "x": 2396.0,
+   "y": 2260.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-63",
+   "x": 1836.0,
+   "y": 1372.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-71",
+   "x": 1963.8,
+   "y": 1388.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-75",
+   "x": 2082.9,
+   "y": 1428.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-76",
+   "x": 2212.0,
+   "y": 1452.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-57",
+   "x": 1763.1,
+   "y": 1291.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-51",
+   "x": 1684.4,
+   "y": 1216.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-45",
+   "x": 1620.0,
+   "y": 1132.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-55",
+   "x": 1004.0,
+   "y": 1268.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-59",
+   "x": 909.2,
+   "y": 1308.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-58",
+   "x": 813.9,
+   "y": 1338.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-73",
+   "x": 764.0,
+   "y": 1428.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-49",
+   "x": 1028.0,
+   "y": 1163.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-39",
+   "x": 1009.7,
+   "y": 1053.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-33",
+   "x": 956.0,
+   "y": 956.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-68",
+   "x": 1075.8,
+   "y": 1385.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-81",
+   "x": 1180.0,
+   "y": 1468.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-22",
+   "x": 331.3,
+   "y": 893.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-23",
+   "x": 445.2,
+   "y": 886.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-29",
+   "x": 550.6,
+   "y": 924.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-30",
+   "x": 665.8,
+   "y": 911.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-24",
+   "x": 780.0,
+   "y": 892.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-95",
+   "x": 2140.0,
+   "y": 1588.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-103",
+   "x": 2138.7,
+   "y": 1701.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-105",
+   "x": 2164.0,
+   "y": 1812.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-82",
+   "x": 2049.6,
+   "y": 1498.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-61",
+   "x": 1412.0,
+   "y": 1356.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-74",
+   "x": 1301.9,
+   "y": 1429.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-56",
+   "x": 1484.9,
+   "y": 1290.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-50",
+   "x": 1564.8,
+   "y": 1219.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-62",
+   "x": 1521.9,
+   "y": 1356.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-69",
+   "x": 1626.0,
+   "y": 1384.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-70",
+   "x": 1734.5,
+   "y": 1396.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-131",
+   "x": 1404.0,
+   "y": 2348.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-130",
+   "x": 1275.3,
+   "y": 2341.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-129",
+   "x": 1149.0,
+   "y": 2342.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-127",
+   "x": 1039.2,
+   "y": 2273.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-122",
+   "x": 987.6,
+   "y": 2170.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-115",
+   "x": 908.8,
+   "y": 2068.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-124",
+   "x": 1388.9,
+   "y": 2228.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-119",
+   "x": 1406.0,
+   "y": 2116.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-118",
+   "x": 1292.3,
+   "y": 2123.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-117",
+   "x": 1172.1,
+   "y": 2108.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-116",
+   "x": 1064.7,
+   "y": 2096.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-112",
+   "x": 1043.2,
+   "y": 1975.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-109",
+   "x": 969.4,
+   "y": 1874.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-108",
+   "x": 852.0,
+   "y": 1844.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-132",
+   "x": 1511.7,
+   "y": 2393.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-135",
+   "x": 1608.5,
+   "y": 2457.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-138",
+   "x": 1675.4,
+   "y": 2551.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-139",
+   "x": 1721.5,
+   "y": 2657.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-140",
+   "x": 1756.0,
+   "y": 2764.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-91",
+   "x": 1090.7,
+   "y": 1570.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-90",
+   "x": 964.0,
+   "y": 1572.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-67",
+   "x": 3027.4,
+   "y": 1371.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-54",
+   "x": 3038.8,
+   "y": 1250.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-47",
+   "x": 3021.8,
+   "y": 1129.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-42",
+   "x": 3125.4,
+   "y": 1059.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-43",
+   "x": 3251.5,
+   "y": 1038.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-48",
+   "x": 3363.5,
+   "y": 1102.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-44",
+   "x": 3492.0,
+   "y": 1092.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-85",
+   "x": 3228.5,
+   "y": 1463.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-88",
+   "x": 3346.5,
+   "y": 1514.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-96",
+   "x": 3447.6,
+   "y": 1584.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-97",
+   "x": 3551.1,
+   "y": 1644.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-98",
+   "x": 3673.3,
+   "y": 1648.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-89",
+   "x": 3708.0,
+   "y": 1531.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-72",
+   "x": 3684.2,
+   "y": 1405.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-60",
+   "x": 3588.8,
+   "y": 1321.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-52",
+   "x": 3550.2,
+   "y": 1202.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-41",
+   "x": 1620.0,
+   "y": 1052.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-2",
+   "x": 740.0,
+   "y": 236.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-6",
+   "x": 788.0,
+   "y": 355.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-8",
+   "x": 839.7,
+   "y": 471.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-11",
+   "x": 875.6,
+   "y": 590.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-17",
+   "x": 875.9,
+   "y": 717.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-3",
+   "x": 876.4,
+   "y": 228.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-5",
+   "x": 1006.9,
+   "y": 260.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-4",
+   "x": 1136.7,
+   "y": 247.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-1",
+   "x": 660.0,
+   "y": 204.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-94",
+   "x": 833.9,
+   "y": 1611.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-101",
+   "x": 829.5,
+   "y": 1709.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-86",
+   "x": 851.9,
+   "y": 1515.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-87",
+   "x": 1897.7,
+   "y": 1503.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-14",
+   "x": 3322.5,
+   "y": 657.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-19",
+   "x": 3382.2,
+   "y": 756.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-28",
+   "x": 3419.9,
+   "y": 868.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-38",
+   "x": 3449.9,
+   "y": 982.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-102",
+   "x": 1970.8,
+   "y": 1702.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-104",
+   "x": 2050.0,
+   "y": 1786.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-110",
+   "x": 2260.2,
+   "y": 1892.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-113",
+   "x": 2337.5,
+   "y": 1989.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-120",
+   "x": 2316.6,
+   "y": 2109.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-125",
+   "x": 2293.7,
+   "y": 2231.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-134",
+   "x": 2901.8,
+   "y": 2398.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-137",
+   "x": 2795.9,
+   "y": 2438.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-136",
+   "x": 2682.0,
+   "y": 2438.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-133",
+   "x": 2567.6,
+   "y": 2407.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-128",
+   "x": 2484.9,
+   "y": 2332.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-53",
+   "x": 2551.9,
+   "y": 1224.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-46",
+   "x": 2556.6,
+   "y": 1120.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-37",
+   "x": 2534.4,
+   "y": 1005.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-35",
+   "x": 2418.5,
+   "y": 972.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-32",
+   "x": 2402.3,
+   "y": 901.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-21",
+   "x": 2389.1,
+   "y": 796.1,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-16",
+   "x": 2411.2,
+   "y": 683.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-10",
+   "x": 2420.0,
+   "y": 567.3,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-7",
+   "x": 2383.7,
+   "y": 455.8,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-9",
+   "x": 2308.4,
+   "y": 512.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-12",
+   "x": 2215.3,
+   "y": 584.7,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-13",
+   "x": 2110.5,
+   "y": 636.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-15",
+   "x": 1996.8,
+   "y": 668.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-18",
+   "x": 1913.8,
+   "y": 752.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-20",
+   "x": 1801.2,
+   "y": 781.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-27",
+   "x": 1728.2,
+   "y": 869.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-34",
+   "x": 1633.5,
+   "y": 944.5,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-64",
+   "x": 2420.3,
+   "y": 1378.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-77",
+   "x": 2326.0,
+   "y": 1444.6,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-107",
+   "x": 725.5,
+   "y": 1859.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-100",
+   "x": 671.5,
+   "y": 1739.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-93",
+   "x": 692.0,
+   "y": 1610.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-80",
+   "x": 654.8,
+   "y": 1483.2,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-25",
+   "x": 1028.1,
+   "y": 860.0,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-26",
+   "x": 1153.5,
+   "y": 883.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-31",
+   "x": 1269.3,
+   "y": 933.4,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-36",
+   "x": 1384.6,
+   "y": 988.9,
+   "kind": "empty"
+  },
+  {
+   "id": "verde-40",
+   "x": 1492.8,
+   "y": 1054.2,
+   "kind": "empty"
+  }
+ ],
+ "lines": [
+  {
+   "a": "verde-72",
+   "b": "verde-60"
+  },
+  {
+   "a": "verde-14",
+   "b": "verde-19"
+  },
+  {
+   "a": "verde-71",
+   "b": "verde-63"
+  },
+  {
+   "a": "verde-95",
+   "b": "verde-76"
+  },
+  {
+   "a": "verde-122",
+   "b": "verde-115"
+  },
+  {
+   "a": "verde-6",
+   "b": "verde-2"
+  },
+  {
+   "a": "verde-1",
+   "b": "verde-2"
+  },
+  {
+   "a": "verde-64",
+   "b": "verde-77"
+  },
+  {
+   "a": "verde-50",
+   "b": "verde-45"
+  },
+  {
+   "a": "verde-128",
+   "b": "verde-126"
+  },
+  {
+   "a": "verde-13",
+   "b": "verde-15"
+  },
+  {
+   "a": "verde-139",
+   "b": "verde-140"
+  },
+  {
+   "a": "verde-46",
+   "b": "verde-37"
+  },
+  {
+   "a": "verde-34",
+   "b": "verde-41"
+  },
+  {
+   "a": "verde-36",
+   "b": "verde-40"
+  },
+  {
+   "a": "verde-51",
+   "b": "verde-45"
+  },
+  {
+   "a": "verde-134",
+   "b": "gate-oro-verde"
+  },
+  {
+   "a": "verde-57",
+   "b": "verde-63"
+  },
+  {
+   "a": "verde-82",
+   "b": "verde-76"
+  },
+  {
+   "a": "verde-130",
+   "b": "verde-131"
+  },
+  {
+   "a": "verde-96",
+   "b": "verde-97"
+  },
+  {
+   "a": "verde-124",
+   "b": "verde-119"
+  },
+  {
+   "a": "verde-87",
+   "b": "verde-63"
+  },
+  {
+   "a": "verde-23",
+   "b": "verde-29"
+  },
+  {
+   "a": "verde-89",
+   "b": "verde-72"
+  },
+  {
+   "a": "verde-32",
+   "b": "verde-21"
+  },
+  {
+   "a": "verde-133",
+   "b": "verde-128"
+  },
+  {
+   "a": "verde-103",
+   "b": "verde-105"
+  },
+  {
+   "a": "verde-102",
+   "b": "verde-104"
+  },
+  {
+   "a": "verde-113",
+   "b": "verde-120"
+  },
+  {
+   "a": "verde-6",
+   "b": "verde-8"
+  },
+  {
+   "a": "verde-132",
+   "b": "verde-135"
+  },
+  {
+   "a": "verde-107",
+   "b": "verde-100"
+  },
+  {
+   "a": "verde-27",
+   "b": "verde-34"
+  },
+  {
+   "a": "verde-22",
+   "b": "verde-23"
+  },
+  {
+   "a": "verde-14",
+   "b": "gate-bosco-verde"
+  },
+  {
+   "a": "verde-24",
+   "b": "brezza"
+  },
+  {
+   "a": "verde-56",
+   "b": "verde-50"
+  },
+  {
+   "a": "verde-94",
+   "b": "verde-101"
+  },
+  {
+   "a": "verde-91",
+   "b": "verde-81"
+  },
+  {
+   "a": "verde-79",
+   "b": "verde-83"
+  },
+  {
+   "a": "verde-11",
+   "b": "verde-17"
+  },
+  {
+   "a": "verde-136",
+   "b": "verde-133"
+  },
+  {
+   "a": "verde-29",
+   "b": "verde-30"
+  },
+  {
+   "a": "verde-134",
+   "b": "verde-137"
+  },
+  {
+   "a": "verde-62",
+   "b": "verde-69"
+  },
+  {
+   "a": "verde-116",
+   "b": "verde-112"
+  },
+  {
+   "a": "verde-106",
+   "b": "verde-111"
+  },
+  {
+   "a": "verde-92",
+   "b": "verde-99"
+  },
+  {
+   "a": "verde-108",
+   "b": "gate-nebbia-verde"
+  },
+  {
+   "a": "verde-132",
+   "b": "verde-131"
+  },
+  {
+   "a": "verde-39",
+   "b": "verde-33"
+  },
+  {
+   "a": "verde-94",
+   "b": "verde-90"
+  },
+  {
+   "a": "verde-86",
+   "b": "verde-73"
+  },
+  {
+   "a": "verde-130",
+   "b": "verde-129"
+  },
+  {
+   "a": "verde-117",
+   "b": "verde-116"
+  },
+  {
+   "a": "verde-85",
+   "b": "verde-84"
+  },
+  {
+   "a": "verde-109",
+   "b": "verde-108"
+  },
+  {
+   "a": "verde-53",
+   "b": "verde-65"
+  },
+  {
+   "a": "verde-25",
+   "b": "brezza"
+  },
+  {
+   "a": "verde-87",
+   "b": "porta"
+  },
+  {
+   "a": "verde-42",
+   "b": "verde-43"
+  },
+  {
+   "a": "verde-110",
+   "b": "verde-105"
+  },
+  {
+   "a": "verde-30",
+   "b": "verde-24"
+  },
+  {
+   "a": "verde-17",
+   "b": "brezza"
+  },
+  {
+   "a": "verde-84",
+   "b": "verde-83"
+  },
+  {
+   "a": "verde-112",
+   "b": "verde-109"
+  },
+  {
+   "a": "verde-114",
+   "b": "verde-121"
+  },
+  {
+   "a": "verde-49",
+   "b": "verde-55"
+  },
+  {
+   "a": "verde-77",
+   "b": "verde-76"
+  },
+  {
+   "a": "verde-19",
+   "b": "verde-28"
+  },
+  {
+   "a": "verde-135",
+   "b": "verde-138"
+  },
+  {
+   "a": "verde-85",
+   "b": "verde-88"
+  },
+  {
+   "a": "verde-22",
+   "b": "gate-marina-verde"
+  },
+  {
+   "a": "verde-53",
+   "b": "verde-46"
+  },
+  {
+   "a": "verde-78",
+   "b": "verde-66"
+  },
+  {
+   "a": "verde-35",
+   "b": "verde-32"
+  },
+  {
+   "a": "verde-18",
+   "b": "verde-20"
+  },
+  {
+   "a": "verde-121",
+   "b": "verde-123"
+  },
+  {
+   "a": "verde-38",
+   "b": "verde-44"
+  },
+  {
+   "a": "verde-37",
+   "b": "verde-35"
+  },
+  {
+   "a": "verde-120",
+   "b": "verde-125"
+  },
+  {
+   "a": "verde-60",
+   "b": "verde-52"
+  },
+  {
+   "a": "verde-3",
+   "b": "verde-2"
+  },
+  {
+   "a": "verde-33",
+   "b": "brezza"
+  },
+  {
+   "a": "verde-67",
+   "b": "verde-84"
+  },
+  {
+   "a": "verde-114",
+   "b": "verde-111"
+  },
+  {
+   "a": "verde-52",
+   "b": "verde-44"
+  },
+  {
+   "a": "verde-127",
+   "b": "verde-122"
+  },
+  {
+   "a": "verde-9",
+   "b": "verde-12"
+  },
+  {
+   "a": "verde-15",
+   "b": "verde-18"
+  },
+  {
+   "a": "verde-64",
+   "b": "verde-65"
+  },
+  {
+   "a": "verde-119",
+   "b": "verde-118"
+  },
+  {
+   "a": "verde-43",
+   "b": "verde-48"
+  },
+  {
+   "a": "verde-92",
+   "b": "verde-83"
+  },
+  {
+   "a": "verde-137",
+   "b": "verde-136"
+  },
+  {
+   "a": "verde-124",
+   "b": "verde-131"
+  },
+  {
+   "a": "verde-80",
+   "b": "verde-73"
+  },
+  {
+   "a": "verde-62",
+   "b": "verde-61"
+  },
+  {
+   "a": "verde-138",
+   "b": "verde-139"
+  },
+  {
+   "a": "verde-10",
+   "b": "verde-7"
+  },
+  {
+   "a": "verde-28",
+   "b": "verde-38"
+  },
+  {
+   "a": "verde-59",
+   "b": "verde-55"
+  },
+  {
+   "a": "verde-129",
+   "b": "verde-127"
+  },
+  {
+   "a": "verde-68",
+   "b": "verde-55"
+  },
+  {
+   "a": "verde-71",
+   "b": "verde-75"
+  },
+  {
+   "a": "verde-66",
+   "b": "verde-65"
+  },
+  {
+   "a": "verde-57",
+   "b": "verde-51"
+  },
+  {
+   "a": "verde-3",
+   "b": "verde-5"
+  },
+  {
+   "a": "verde-107",
+   "b": "gate-nebbia-verde"
+  },
+  {
+   "a": "verde-26",
+   "b": "verde-31"
+  },
+  {
+   "a": "verde-104",
+   "b": "verde-105"
+  },
+  {
+   "a": "verde-75",
+   "b": "verde-76"
+  },
+  {
+   "a": "verde-21",
+   "b": "verde-16"
+  },
+  {
+   "a": "verde-74",
+   "b": "verde-81"
+  },
+  {
+   "a": "verde-86",
+   "b": "verde-90"
+  },
+  {
+   "a": "verde-58",
+   "b": "verde-73"
+  },
+  {
+   "a": "verde-4",
+   "b": "gate-gelo-verde"
+  },
+  {
+   "a": "verde-97",
+   "b": "verde-98"
+  },
+  {
+   "a": "verde-93",
+   "b": "verde-80"
+  },
+  {
+   "a": "verde-69",
+   "b": "verde-70"
+  },
+  {
+   "a": "verde-12",
+   "b": "verde-13"
+  },
+  {
+   "a": "verde-88",
+   "b": "verde-96"
+  },
+  {
+   "a": "verde-102",
+   "b": "porta"
+  },
+  {
+   "a": "verde-101",
+   "b": "verde-108"
+  },
+  {
+   "a": "verde-123",
+   "b": "verde-126"
+  },
+  {
+   "a": "verde-115",
+   "b": "gate-nebbia-verde"
+  },
+  {
+   "a": "verde-100",
+   "b": "verde-93"
+  },
+  {
+   "a": "verde-125",
+   "b": "verde-126"
+  },
+  {
+   "a": "verde-118",
+   "b": "verde-117"
+  },
+  {
+   "a": "verde-20",
+   "b": "verde-27"
+  },
+  {
+   "a": "verde-31",
+   "b": "verde-36"
+  },
+  {
+   "a": "verde-67",
+   "b": "verde-54"
+  },
+  {
+   "a": "verde-49",
+   "b": "verde-39"
+  },
+  {
+   "a": "verde-25",
+   "b": "verde-26"
+  },
+  {
+   "a": "verde-8",
+   "b": "verde-11"
+  },
+  {
+   "a": "verde-91",
+   "b": "verde-90"
+  },
+  {
+   "a": "verde-74",
+   "b": "verde-61"
+  },
+  {
+   "a": "verde-110",
+   "b": "verde-113"
+  },
+  {
+   "a": "verde-40",
+   "b": "verde-41"
+  },
+  {
+   "a": "verde-48",
+   "b": "verde-44"
+  },
+  {
+   "a": "verde-98",
+   "b": "verde-89"
+  },
+  {
+   "a": "verde-54",
+   "b": "verde-47"
+  },
+  {
+   "a": "verde-5",
+   "b": "verde-4"
+  },
+  {
+   "a": "verde-68",
+   "b": "verde-81"
+  },
+  {
+   "a": "verde-16",
+   "b": "verde-10"
+  },
+  {
+   "a": "verde-95",
+   "b": "verde-103"
+  },
+  {
+   "a": "verde-7",
+   "b": "verde-9"
+  },
+  {
+   "a": "verde-47",
+   "b": "verde-42"
+  },
+  {
+   "a": "verde-99",
+   "b": "verde-106"
+  },
+  {
+   "a": "verde-59",
+   "b": "verde-58"
+  },
+  {
+   "a": "verde-79",
+   "b": "verde-78"
+  },
+  {
+   "a": "verde-70",
+   "b": "verde-63"
+  },
+  {
+   "a": "verde-56",
+   "b": "verde-61"
+  },
+  {
+   "a": "verde-82",
+   "b": "porta"
+  },
+  {
+   "a": "verde-41",
+   "b": "verde-45"
+  }
+ ]
+}

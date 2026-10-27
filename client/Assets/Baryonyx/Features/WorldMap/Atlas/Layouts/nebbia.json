@@ -1,0 +1,1560 @@
+{
+ "key": "nebbia",
+ "name": "ネッビア湿原",
+ "width": 3840,
+ "height": 4096,
+ "nodes": [
+  {
+   "id": "palude",
+   "x": 1612.0,
+   "y": 1996.0,
+   "kind": "town"
+  },
+  {
+   "id": "gate-nebbia-verde",
+   "x": 2604.0,
+   "y": 972.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-marina-nebbia",
+   "x": 1260.0,
+   "y": 708.0,
+   "kind": "gate"
+  },
+  {
+   "id": "gate-nebbia-oro",
+   "x": 2972.0,
+   "y": 2020.0,
+   "kind": "gate"
+  },
+  {
+   "id": "nebbia-33",
+   "x": 2372.0,
+   "y": 1388.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-43",
+   "x": 2298.7,
+   "y": 1473.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-42",
+   "x": 2179.9,
+   "y": 1462.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-36",
+   "x": 2058.7,
+   "y": 1460.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-35",
+   "x": 1941.6,
+   "y": 1429.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-41",
+   "x": 1830.1,
+   "y": 1465.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-46",
+   "x": 1724.0,
+   "y": 1516.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-30",
+   "x": 2472.8,
+   "y": 1303.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-22",
+   "x": 2586.8,
+   "y": 1251.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-23",
+   "x": 2715.9,
+   "y": 1225.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-17",
+   "x": 2829.8,
+   "y": 1214.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-27",
+   "x": 2937.7,
+   "y": 1289.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-34",
+   "x": 2972.0,
+   "y": 1404.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-65",
+   "x": 932.0,
+   "y": 1828.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-60",
+   "x": 820.0,
+   "y": 1796.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-68",
+   "x": 892.0,
+   "y": 1924.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-61",
+   "x": 1034.7,
+   "y": 1782.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-57",
+   "x": 1134.1,
+   "y": 1723.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-49",
+   "x": 1158.1,
+   "y": 1608.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-44",
+   "x": 1247.5,
+   "y": 1534.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-39",
+   "x": 1340.0,
+   "y": 1468.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-89",
+   "x": 1908.0,
+   "y": 2340.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-88",
+   "x": 1789.3,
+   "y": 2329.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-84",
+   "x": 1693.8,
+   "y": 2257.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-83",
+   "x": 1573.2,
+   "y": 2254.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-82",
+   "x": 1460.0,
+   "y": 2220.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-91",
+   "x": 2020.1,
+   "y": 2348.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-96",
+   "x": 2084.5,
+   "y": 2414.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-100",
+   "x": 2141.1,
+   "y": 2505.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-102",
+   "x": 2242.6,
+   "y": 2579.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-103",
+   "x": 2364.0,
+   "y": 2588.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-85",
+   "x": 1926.5,
+   "y": 2234.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-79",
+   "x": 1827.0,
+   "y": 2173.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-77",
+   "x": 1735.8,
+   "y": 2101.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-113",
+   "x": 2596.0,
+   "y": 2756.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-107",
+   "x": 2497.1,
+   "y": 2646.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-117",
+   "x": 2498.7,
+   "y": 2861.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-120",
+   "x": 2404.0,
+   "y": 2964.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-111",
+   "x": 2700.0,
+   "y": 2715.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-108",
+   "x": 2790.1,
+   "y": 2650.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-104",
+   "x": 2892.0,
+   "y": 2612.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-132",
+   "x": 1436.0,
+   "y": 3188.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-133",
+   "x": 1545.8,
+   "y": 3213.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-126",
+   "x": 1646.6,
+   "y": 3156.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-127",
+   "x": 1763.3,
+   "y": 3155.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-134",
+   "x": 1875.2,
+   "y": 3189.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-137",
+   "x": 1967.6,
+   "y": 3263.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-138",
+   "x": 2083.4,
+   "y": 3284.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-140",
+   "x": 2196.0,
+   "y": 3316.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-124",
+   "x": 1417.2,
+   "y": 3067.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-123",
+   "x": 1292.0,
+   "y": 3036.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-121",
+   "x": 1176.3,
+   "y": 2984.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-118",
+   "x": 1068.0,
+   "y": 2916.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-131",
+   "x": 1327.4,
+   "y": 3209.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-130",
+   "x": 1228.7,
+   "y": 3209.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-136",
+   "x": 1151.7,
+   "y": 3290.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-139",
+   "x": 1051.9,
+   "y": 3332.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-141",
+   "x": 940.0,
+   "y": 3348.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-110",
+   "x": 2404.9,
+   "y": 2710.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-116",
+   "x": 2388.1,
+   "y": 2836.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-81",
+   "x": 1368.1,
+   "y": 2242.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-87",
+   "x": 1284.0,
+   "y": 2284.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-75",
+   "x": 1522.0,
+   "y": 2137.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-76",
+   "x": 1626.3,
+   "y": 2129.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-72",
+   "x": 940.2,
+   "y": 2021.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-73",
+   "x": 1026.7,
+   "y": 2082.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-74",
+   "x": 1131.3,
+   "y": 2119.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-80",
+   "x": 1204.7,
+   "y": 2203.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-125",
+   "x": 2384.0,
+   "y": 3070.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-128",
+   "x": 2341.0,
+   "y": 3170.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-135",
+   "x": 2256.1,
+   "y": 3235.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-9",
+   "x": 2494.0,
+   "y": 993.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-13",
+   "x": 2444.0,
+   "y": 1104.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-21",
+   "x": 2445.6,
+   "y": 1226.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-40",
+   "x": 1473.4,
+   "y": 1476.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-45",
+   "x": 1594.5,
+   "y": 1512.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-26",
+   "x": 2270.0,
+   "y": 1281.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-20",
+   "x": 2172.8,
+   "y": 1220.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-15",
+   "x": 2066.2,
+   "y": 1178.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-12",
+   "x": 1961.0,
+   "y": 1135.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-11",
+   "x": 1856.1,
+   "y": 1085.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-10",
+   "x": 1748.0,
+   "y": 1060.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-8",
+   "x": 1700.0,
+   "y": 941.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-7",
+   "x": 1669.2,
+   "y": 813.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-5",
+   "x": 1667.9,
+   "y": 683.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-3",
+   "x": 1700.0,
+   "y": 556.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-14",
+   "x": 1671.5,
+   "y": 1144.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-16",
+   "x": 1585.7,
+   "y": 1219.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-25",
+   "x": 1499.7,
+   "y": 1294.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-29",
+   "x": 1396.4,
+   "y": 1325.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-122",
+   "x": 876.0,
+   "y": 3044.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-119",
+   "x": 924.0,
+   "y": 2956.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-51",
+   "x": 1661.1,
+   "y": 1610.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-53",
+   "x": 1588.5,
+   "y": 1696.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-62",
+   "x": 1556.0,
+   "y": 1804.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-6",
+   "x": 1394.8,
+   "y": 724.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-4",
+   "x": 1505.2,
+   "y": 683.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-2",
+   "x": 1565.3,
+   "y": 572.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-114",
+   "x": 888.3,
+   "y": 2848.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-112",
+   "x": 836.0,
+   "y": 2750.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-105",
+   "x": 825.8,
+   "y": 2637.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-101",
+   "x": 754.1,
+   "y": 2548.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-99",
+   "x": 654.5,
+   "y": 2503.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-92",
+   "x": 612.0,
+   "y": 2404.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-98",
+   "x": 1164.0,
+   "y": 2500.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-95",
+   "x": 1239.6,
+   "y": 2400.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-97",
+   "x": 1041.2,
+   "y": 2496.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-94",
+   "x": 960.5,
+   "y": 2404.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-90",
+   "x": 855.9,
+   "y": 2376.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-93",
+   "x": 735.8,
+   "y": 2404.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-106",
+   "x": 1195.7,
+   "y": 2621.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-109",
+   "x": 1127.1,
+   "y": 2729.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-115",
+   "x": 1068.0,
+   "y": 2844.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-70",
+   "x": 3014.7,
+   "y": 1921.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-66",
+   "x": 3101.5,
+   "y": 1840.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-63",
+   "x": 3217.5,
+   "y": 1797.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-54",
+   "x": 3285.7,
+   "y": 1696.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-52",
+   "x": 3254.2,
+   "y": 1585.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-47",
+   "x": 3180.8,
+   "y": 1501.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-37",
+   "x": 3103.7,
+   "y": 1427.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-55",
+   "x": 660.0,
+   "y": 1716.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-59",
+   "x": 542.9,
+   "y": 1763.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-64",
+   "x": 486.6,
+   "y": 1845.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-67",
+   "x": 595.2,
+   "y": 1915.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-71",
+   "x": 588.0,
+   "y": 2035.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-78",
+   "x": 575.1,
+   "y": 2162.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-86",
+   "x": 591.6,
+   "y": 2282.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-48",
+   "x": 702.1,
+   "y": 1600.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-38",
+   "x": 763.5,
+   "y": 1487.9,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-31",
+   "x": 801.1,
+   "y": 1364.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-18",
+   "x": 787.9,
+   "y": 1240.3,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-19",
+   "x": 881.9,
+   "y": 1243.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-24",
+   "x": 993.0,
+   "y": 1300.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-28",
+   "x": 1118.4,
+   "y": 1325.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-32",
+   "x": 1241.9,
+   "y": 1356.8,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-56",
+   "x": 752.1,
+   "y": 1730.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-145",
+   "x": 1756.0,
+   "y": 3708.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-147",
+   "x": 1883.4,
+   "y": 3740.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-146",
+   "x": 2009.6,
+   "y": 3738.4,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-144",
+   "x": 2067.8,
+   "y": 3619.1,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-143",
+   "x": 2091.1,
+   "y": 3494.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-142",
+   "x": 2207.6,
+   "y": 3447.7,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-129",
+   "x": 916.0,
+   "y": 3200.2,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-58",
+   "x": 1441.9,
+   "y": 1717.6,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-50",
+   "x": 1353.4,
+   "y": 1609.0,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-69",
+   "x": 1584.3,
+   "y": 1903.5,
+   "kind": "empty"
+  },
+  {
+   "id": "nebbia-1",
+   "x": 1788.0,
+   "y": 460.0,
+   "kind": "empty"
+  }
+ ],
+ "lines": [
+  {
+   "a": "nebbia-131",
+   "b": "nebbia-130"
+  },
+  {
+   "a": "nebbia-48",
+   "b": "nebbia-38"
+  },
+  {
+   "a": "nebbia-91",
+   "b": "nebbia-89"
+  },
+  {
+   "a": "nebbia-72",
+   "b": "nebbia-68"
+  },
+  {
+   "a": "nebbia-14",
+   "b": "nebbia-16"
+  },
+  {
+   "a": "nebbia-84",
+   "b": "nebbia-83"
+  },
+  {
+   "a": "nebbia-79",
+   "b": "nebbia-77"
+  },
+  {
+   "a": "nebbia-25",
+   "b": "nebbia-16"
+  },
+  {
+   "a": "nebbia-8",
+   "b": "nebbia-10"
+  },
+  {
+   "a": "nebbia-30",
+   "b": "nebbia-22"
+  },
+  {
+   "a": "nebbia-28",
+   "b": "nebbia-32"
+  },
+  {
+   "a": "nebbia-8",
+   "b": "nebbia-7"
+  },
+  {
+   "a": "nebbia-6",
+   "b": "nebbia-4"
+  },
+  {
+   "a": "nebbia-133",
+   "b": "nebbia-126"
+  },
+  {
+   "a": "nebbia-66",
+   "b": "nebbia-63"
+  },
+  {
+   "a": "nebbia-136",
+   "b": "nebbia-139"
+  },
+  {
+   "a": "nebbia-1",
+   "b": "nebbia-3"
+  },
+  {
+   "a": "nebbia-138",
+   "b": "nebbia-140"
+  },
+  {
+   "a": "nebbia-58",
+   "b": "nebbia-50"
+  },
+  {
+   "a": "nebbia-77",
+   "b": "palude"
+  },
+  {
+   "a": "nebbia-75",
+   "b": "nebbia-76"
+  },
+  {
+   "a": "nebbia-31",
+   "b": "nebbia-18"
+  },
+  {
+   "a": "nebbia-60",
+   "b": "nebbia-68"
+  },
+  {
+   "a": "nebbia-32",
+   "b": "nebbia-39"
+  },
+  {
+   "a": "nebbia-129",
+   "b": "nebbia-122"
+  },
+  {
+   "a": "nebbia-116",
+   "b": "nebbia-120"
+  },
+  {
+   "a": "nebbia-130",
+   "b": "nebbia-136"
+  },
+  {
+   "a": "nebbia-107",
+   "b": "nebbia-103"
+  },
+  {
+   "a": "nebbia-57",
+   "b": "nebbia-49"
+  },
+  {
+   "a": "nebbia-143",
+   "b": "nebbia-142"
+  },
+  {
+   "a": "nebbia-9",
+   "b": "nebbia-13"
+  },
+  {
+   "a": "nebbia-111",
+   "b": "nebbia-108"
+  },
+  {
+   "a": "nebbia-108",
+   "b": "nebbia-104"
+  },
+  {
+   "a": "nebbia-21",
+   "b": "nebbia-33"
+  },
+  {
+   "a": "nebbia-24",
+   "b": "nebbia-28"
+  },
+  {
+   "a": "nebbia-100",
+   "b": "nebbia-102"
+  },
+  {
+   "a": "nebbia-47",
+   "b": "nebbia-37"
+  },
+  {
+   "a": "nebbia-85",
+   "b": "nebbia-89"
+  },
+  {
+   "a": "nebbia-124",
+   "b": "nebbia-132"
+  },
+  {
+   "a": "nebbia-125",
+   "b": "nebbia-128"
+  },
+  {
+   "a": "nebbia-59",
+   "b": "nebbia-64"
+  },
+  {
+   "a": "nebbia-56",
+   "b": "nebbia-60"
+  },
+  {
+   "a": "nebbia-117",
+   "b": "nebbia-120"
+  },
+  {
+   "a": "nebbia-118",
+   "b": "nebbia-119"
+  },
+  {
+   "a": "nebbia-114",
+   "b": "nebbia-112"
+  },
+  {
+   "a": "nebbia-129",
+   "b": "nebbia-141"
+  },
+  {
+   "a": "nebbia-106",
+   "b": "nebbia-109"
+  },
+  {
+   "a": "nebbia-83",
+   "b": "nebbia-82"
+  },
+  {
+   "a": "nebbia-121",
+   "b": "nebbia-118"
+  },
+  {
+   "a": "nebbia-12",
+   "b": "nebbia-11"
+  },
+  {
+   "a": "nebbia-144",
+   "b": "nebbia-143"
+  },
+  {
+   "a": "nebbia-127",
+   "b": "nebbia-134"
+  },
+  {
+   "a": "nebbia-124",
+   "b": "nebbia-123"
+  },
+  {
+   "a": "nebbia-29",
+   "b": "nebbia-39"
+  },
+  {
+   "a": "nebbia-67",
+   "b": "nebbia-71"
+  },
+  {
+   "a": "nebbia-26",
+   "b": "nebbia-20"
+  },
+  {
+   "a": "nebbia-35",
+   "b": "nebbia-41"
+  },
+  {
+   "a": "nebbia-88",
+   "b": "nebbia-84"
+  },
+  {
+   "a": "nebbia-14",
+   "b": "nebbia-10"
+  },
+  {
+   "a": "nebbia-9",
+   "b": "gate-nebbia-verde"
+  },
+  {
+   "a": "nebbia-52",
+   "b": "nebbia-47"
+  },
+  {
+   "a": "nebbia-110",
+   "b": "nebbia-103"
+  },
+  {
+   "a": "nebbia-27",
+   "b": "nebbia-34"
+  },
+  {
+   "a": "nebbia-15",
+   "b": "nebbia-12"
+  },
+  {
+   "a": "nebbia-135",
+   "b": "nebbia-140"
+  },
+  {
+   "a": "nebbia-64",
+   "b": "nebbia-67"
+  },
+  {
+   "a": "nebbia-49",
+   "b": "nebbia-44"
+  },
+  {
+   "a": "nebbia-81",
+   "b": "nebbia-82"
+  },
+  {
+   "a": "nebbia-134",
+   "b": "nebbia-137"
+  },
+  {
+   "a": "nebbia-131",
+   "b": "nebbia-132"
+  },
+  {
+   "a": "nebbia-48",
+   "b": "nebbia-55"
+  },
+  {
+   "a": "nebbia-53",
+   "b": "nebbia-62"
+  },
+  {
+   "a": "nebbia-80",
+   "b": "nebbia-87"
+  },
+  {
+   "a": "nebbia-61",
+   "b": "nebbia-57"
+  },
+  {
+   "a": "nebbia-70",
+   "b": "gate-nebbia-oro"
+  },
+  {
+   "a": "nebbia-23",
+   "b": "nebbia-17"
+  },
+  {
+   "a": "nebbia-5",
+   "b": "nebbia-3"
+  },
+  {
+   "a": "nebbia-43",
+   "b": "nebbia-33"
+  },
+  {
+   "a": "nebbia-105",
+   "b": "nebbia-101"
+  },
+  {
+   "a": "nebbia-123",
+   "b": "nebbia-121"
+  },
+  {
+   "a": "nebbia-40",
+   "b": "nebbia-45"
+  },
+  {
+   "a": "nebbia-2",
+   "b": "nebbia-3"
+  },
+  {
+   "a": "nebbia-91",
+   "b": "nebbia-96"
+  },
+  {
+   "a": "nebbia-95",
+   "b": "nebbia-98"
+  },
+  {
+   "a": "nebbia-63",
+   "b": "nebbia-54"
+  },
+  {
+   "a": "nebbia-38",
+   "b": "nebbia-31"
+  },
+  {
+   "a": "nebbia-19",
+   "b": "nebbia-24"
+  },
+  {
+   "a": "nebbia-96",
+   "b": "nebbia-100"
+  },
+  {
+   "a": "nebbia-86",
+   "b": "nebbia-92"
+  },
+  {
+   "a": "nebbia-110",
+   "b": "nebbia-116"
+  },
+  {
+   "a": "nebbia-78",
+   "b": "nebbia-86"
+  },
+  {
+   "a": "nebbia-133",
+   "b": "nebbia-132"
+  },
+  {
+   "a": "nebbia-18",
+   "b": "nebbia-19"
+  },
+  {
+   "a": "nebbia-4",
+   "b": "nebbia-2"
+  },
+  {
+   "a": "nebbia-41",
+   "b": "nebbia-46"
+  },
+  {
+   "a": "nebbia-75",
+   "b": "nebbia-82"
+  },
+  {
+   "a": "nebbia-51",
+   "b": "nebbia-46"
+  },
+  {
+   "a": "nebbia-126",
+   "b": "nebbia-127"
+  },
+  {
+   "a": "nebbia-45",
+   "b": "nebbia-46"
+  },
+  {
+   "a": "nebbia-107",
+   "b": "nebbia-113"
+  },
+  {
+   "a": "nebbia-139",
+   "b": "nebbia-141"
+  },
+  {
+   "a": "nebbia-147",
+   "b": "nebbia-146"
+  },
+  {
+   "a": "nebbia-22",
+   "b": "nebbia-23"
+  },
+  {
+   "a": "nebbia-97",
+   "b": "nebbia-94"
+  },
+  {
+   "a": "nebbia-13",
+   "b": "nebbia-21"
+  },
+  {
+   "a": "nebbia-25",
+   "b": "nebbia-29"
+  },
+  {
+   "a": "nebbia-101",
+   "b": "nebbia-99"
+  },
+  {
+   "a": "nebbia-43",
+   "b": "nebbia-42"
+  },
+  {
+   "a": "nebbia-71",
+   "b": "nebbia-78"
+  },
+  {
+   "a": "nebbia-115",
+   "b": "nebbia-118"
+  },
+  {
+   "a": "nebbia-65",
+   "b": "nebbia-68"
+  },
+  {
+   "a": "nebbia-69",
+   "b": "nebbia-62"
+  },
+  {
+   "a": "nebbia-20",
+   "b": "nebbia-15"
+  },
+  {
+   "a": "nebbia-93",
+   "b": "nebbia-92"
+  },
+  {
+   "a": "nebbia-147",
+   "b": "nebbia-145"
+  },
+  {
+   "a": "nebbia-137",
+   "b": "nebbia-138"
+  },
+  {
+   "a": "nebbia-97",
+   "b": "nebbia-98"
+  },
+  {
+   "a": "nebbia-40",
+   "b": "nebbia-39"
+  },
+  {
+   "a": "nebbia-114",
+   "b": "nebbia-119"
+  },
+  {
+   "a": "nebbia-70",
+   "b": "nebbia-66"
+  },
+  {
+   "a": "nebbia-73",
+   "b": "nebbia-74"
+  },
+  {
+   "a": "nebbia-54",
+   "b": "nebbia-52"
+  },
+  {
+   "a": "nebbia-99",
+   "b": "nebbia-92"
+  },
+  {
+   "a": "nebbia-7",
+   "b": "nebbia-5"
+  },
+  {
+   "a": "nebbia-85",
+   "b": "nebbia-79"
+  },
+  {
+   "a": "nebbia-17",
+   "b": "nebbia-27"
+  },
+  {
+   "a": "nebbia-117",
+   "b": "nebbia-113"
+  },
+  {
+   "a": "nebbia-95",
+   "b": "nebbia-87"
+  },
+  {
+   "a": "nebbia-60",
+   "b": "nebbia-65"
+  },
+  {
+   "a": "nebbia-56",
+   "b": "nebbia-55"
+  },
+  {
+   "a": "nebbia-88",
+   "b": "nebbia-89"
+  },
+  {
+   "a": "nebbia-36",
+   "b": "nebbia-42"
+  },
+  {
+   "a": "nebbia-128",
+   "b": "nebbia-135"
+  },
+  {
+   "a": "nebbia-30",
+   "b": "nebbia-33"
+  },
+  {
+   "a": "nebbia-125",
+   "b": "nebbia-120"
+  },
+  {
+   "a": "nebbia-72",
+   "b": "nebbia-73"
+  },
+  {
+   "a": "nebbia-146",
+   "b": "nebbia-144"
+  },
+  {
+   "a": "nebbia-11",
+   "b": "nebbia-10"
+  },
+  {
+   "a": "nebbia-44",
+   "b": "nebbia-39"
+  },
+  {
+   "a": "nebbia-90",
+   "b": "nebbia-93"
+  },
+  {
+   "a": "nebbia-36",
+   "b": "nebbia-35"
+  },
+  {
+   "a": "nebbia-6",
+   "b": "gate-marina-nebbia"
+  },
+  {
+   "a": "nebbia-76",
+   "b": "palude"
+  },
+  {
+   "a": "nebbia-109",
+   "b": "nebbia-115"
+  },
+  {
+   "a": "nebbia-50",
+   "b": "nebbia-39"
+  },
+  {
+   "a": "nebbia-51",
+   "b": "nebbia-53"
+  },
+  {
+   "a": "nebbia-58",
+   "b": "nebbia-62"
+  },
+  {
+   "a": "nebbia-142",
+   "b": "nebbia-140"
+  },
+  {
+   "a": "nebbia-61",
+   "b": "nebbia-65"
+  },
+  {
+   "a": "nebbia-102",
+   "b": "nebbia-103"
+  },
+  {
+   "a": "nebbia-119",
+   "b": "nebbia-122"
+  },
+  {
+   "a": "nebbia-74",
+   "b": "nebbia-80"
+  },
+  {
+   "a": "nebbia-106",
+   "b": "nebbia-98"
+  },
+  {
+   "a": "nebbia-94",
+   "b": "nebbia-90"
+  },
+  {
+   "a": "nebbia-81",
+   "b": "nebbia-87"
+  },
+  {
+   "a": "nebbia-37",
+   "b": "nebbia-34"
+  },
+  {
+   "a": "nebbia-69",
+   "b": "palude"
+  },
+  {
+   "a": "nebbia-26",
+   "b": "nebbia-33"
+  },
+  {
+   "a": "nebbia-59",
+   "b": "nebbia-55"
+  },
+  {
+   "a": "nebbia-112",
+   "b": "nebbia-105"
+  },
+  {
+   "a": "nebbia-111",
+   "b": "nebbia-113"
+  }
+ ]
+}
