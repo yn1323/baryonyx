@@ -30,7 +30,12 @@ CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
 MODEL = "gpt-6.1-sol"
 REASONING_EFFORT = "high"
 # どの依頼にも必ず入れる画風の指示（AGENTS.md の「画像の生成」）。呼び出し側では外せない
-ALWAYS_IN_REQUEST = ["細碎な点状テクスチャが多すぎるので抑える"]
+ALWAYS_IN_REQUEST = [
+    "細碎な点状テクスチャが多すぎるので抑える",
+    "細かい点・粒・ざらつき・ノイズのような模様を描かない。点描のような質感にしない",
+    "地面・水・岩・雪などの面は、2〜3色のなめらかな色の面とやわらかい影で塗り、面の中に小さな点や粒を散らさない",
+    "木や草むらは、はっきりした形のかたまりとして描き、細かい粒の集まりにしない",
+]
 
 
 def png_size(path):
