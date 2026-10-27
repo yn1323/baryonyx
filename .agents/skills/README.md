@@ -91,6 +91,7 @@
 | [character-sprite-sheet](character-sprite-sheet/SKILL.md) | キャラ設定から全動作のドット絵スプライトシートをCodex CLIで生成する | 手動 | [アート方針](../../doc/art/direction.md) | [キャラ制作の共通手順](shared/character-pipeline.md)、pixel-art-standards |
 | [character-illustration](character-illustration/SKILL.md) | キャラ設定から背景付きのイラストをCodex CLIで生成する | 手動 | — | [キャラ制作の共通手順](shared/character-pipeline.md) |
 | [item-icon](item-icon/SKILL.md) | アイテム・武器・防具・素材のアイコン候補をCodex CLIで作り、32×32に直した一覧から選ばせる | 手動 | [アート方針](../../doc/art/direction.md) | pixel-art-standards |
+| [image-compression](image-compression/SKILL.md) | 画像をUnityへ追加・差し替えるとき、元の画像を残してスマホ向けにASTCで圧縮し、容量を確かめる。APKが重いとき | 自動 | [画像の圧縮](../../doc/rules/frontend-design.md#画像の圧縮) | `.aseprite` のドット絵は pixel-art-standards、APKのビルドは unity-android-ci-distribution |
 
 ## HD-2DとVFX
 
@@ -117,7 +118,7 @@
 | カードやキャラの絵をレアっぽくキラキラさせる（ラメ・光の帯・ホロ） | card-foil-sparkle |
 | ボタン・技・被弾・報酬に効果音を付ける、BGMを付ける、音が短い・長い・遅れる | sound-authoring。技の音は vfx-authoring の演出の拍に合わせる |
 | 3Dの舞台がない画面（描いた2D背景）の光・霧・火の粉、キャラ紹介やホームのキラキラ | hd2d-lighting-vfx（手動専用。使ってよいかユーザーに確認する） |
-| 2Dの背景画像を新しく描く | 専用のスキルはない。pixel-art-standards の規格を依頼文に入れ、Codex CLIの画像生成（shared/scripts/codex_image.py）で作る |
+| 2Dの背景画像を新しく描く | 専用のスキルはない。pixel-art-standards の規格を依頼文に入れ、Codex CLIの画像生成（shared/scripts/codex_image.py）で作る。ゲームに入れるときは image-compression |
 | キャラ・敵・アイテムのドット絵を作る、生成画像を採用する | pixel-art-standards と、対象の生成スキル |
 | 新しいキャラを考える → 絵にする | rpg-character-profile → character-sprite-sheet・character-illustration |
 | カードスキルを足す・文言を直す | card-skill-authoring |
@@ -128,6 +129,7 @@
 | 保存する処理を足す、保存先を聞かれた | data-storage |
 | サーバーのAPIを足す・直す、APIが遅い | server-api-authoring。保存先が未決なら先に data-storage |
 | APKを作る・配る → 端末で確かめる | unity-android-ci-distribution → unity-android-device-validation |
+| APKが大きい・重い、画像をゲームに入れる | image-compression |
 | 文書・PR本文を書く。長い読み物を書く | japanese-tech-writing。長い読み物では cognitive-rhythm-writing も |
 
 ## shared/ の役割

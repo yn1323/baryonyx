@@ -303,7 +303,7 @@ Unityが使わない制作元が必要になった場合だけ `client/ArtSource
   - Prefab・データ・展示室は、追加したSpriteとテクスチャを参照する。生成スクリプトからは `AsepriteCanvasImport.LoadSprite`・`LoadTexture` で読み込む。`AssetDatabase.LoadAssetAtPath` では、Importerが作った余白つきのテクスチャや、切り取った絵のSpriteが返ることがある。
   - Importerが作るAnimation ClipはSpriteRendererの絵を切り替えるもので、uGUIのImageには使えない。UIでアニメーションを再生する方法は、最初のアニメーション素材を作るときに決める。
   - [AsepriteCanvasImportTests](../../client/Assets/Baryonyx/Tests/EditMode/AsepriteCanvasImportTests.cs) は、全ての `.aseprite` に、キャンバスと同じ大きさのSpriteがフレームの数だけあることを検査する。
-- PNGの画像（生成画像など）は、フィルターをPoint、ミップマップなし、非圧縮にし、元の大きさのまま読み込む。2の累乗への拡大（Non-Power of 2の既定値）はドットをぼかすため行わない。画像に文字を焼き込まず、ゲームの状態に応じた文字はTextMeshProで表示する。
+- PNGの画像（生成画像など）は、フィルターをPoint、ミップマップなしにし、元の大きさのまま読み込む。スマホ向けには[画像の圧縮](#画像の圧縮)に従って圧縮する。2の累乗への拡大（Non-Power of 2の既定値）はドットをぼかすため行わない。画像に文字を焼き込まず、ゲームの状態に応じた文字はTextMeshProで表示する。
 - ドット絵にしないUIアイコン（ホームの左下のボタンと設定の歯車、編成と商会のメニュー、案内人の画面の「もどる」と×。[アート方針の例外](../art/direction.md#例外)）は、64×64の設計座標に置いた形を [VectorIcon](../../client/Assets/Baryonyx/Editor/Art/VectorIcon.cs) で描いてPNGに保存し、Bilinear・ミップマップありで読み込む。表示より大きく描いて縮めるため、ドット絵のように元の大きさで表示しない。白で描いて使う側で色を付けるが、色付きのドット絵と同じ白で置く場所（案内人の画面のメニューと帯）では、保存するときに文字の色を焼き込む。
 - 1つの対象の画像が複数になったら、分類の下に対象名のフォルダーを作る（例：`Characters/Toma/`）。
 - 画像を置いたら、対象の個別文書の `art_files` に画像のパス（`.aseprite` またはPNG）を書き、[比較索引](../art/visual-index.md)を再生成する。比較索引が、どの対象の画像がどこにあるかの目次になる。
@@ -336,6 +336,19 @@ Driveのフォルダーのパスは、WindowsとmacOSで異なるため、PCご�
 - 受け渡したときの各ファイルのSHA-256を、Driveのフォルダーの隣の `<フォルダー名>-sync.tsv` に記録する。WindowsとmacOSで同じ記録を使う。コピー先がこの記録から変わっていないときだけ上書きする。
 - コピー先も記録から変わっている、または記録がない状態で内容が異なるファイルは、両方で編集された可能性がある。上書きするかをダイアログで確認し、上書きする場合はコピー先の今のファイルを、Driveのフォルダーの隣の `<フォルダー名>-backup/<日時>/<PCまたはDrive>/` へ退避する。
 - Driveからの取り込みのあとは、`git status` で差分を確認してコミットする。新しいファイルは、Unityが作る `.meta` も同じコミットに含める。
+
+### 画像の圧縮
+
+2026-10-28、ユーザーの決定で、画像の圧縮を必須にした。
+デバッグのたびにAPKを受け渡すため、容量を減らすことを画質の少しの劣化より優先する。Dev向けと本番向けで設定は分けない。
+
+- プロジェクトに置く画像（PNG・JPEG）は、元の画質のまま残す。圧縮はUnityの取り込みでだけ行い、元の画像を圧縮した画像で上書きしない。
+- `Assets/Baryonyx/` の画像のうち、長い辺が512画素以上のものは、AndroidとiOSで必ずASTCに圧縮する。入れ子の地図の背景（`Features/WorldMap/Atlas/Art/`）はASTC 8×8、そのほかはASTC 6×6とする。
+- 長い辺が512画素より小さい画像は圧縮しない。容量はほとんど減らず、細い線や小さな絵がにじむ。`.aseprite` のドット絵はAseprite Importerが読み込み、この決まりの対象外とする。
+- 2の累乗でない大きさの画像はミップマップを使わない。ミップマップを付けるとASTCに圧縮されず、RGBA32のまま入る（2026-10-27、3840×2560の世界地図で1枚50MBになった）。
+- 圧縮は [MobileTextureCompression](../../client/Assets/Baryonyx/Editor/Art/MobileTextureCompression.cs) が取り込みのたびに掛ける。生成メニューが画像の設定を書き換えて読み込み直しても、圧縮は外れない。圧縮の決まりを変えたら `GetVersion` を上げ、対象の画像をすべて読み込み直させる。
+- [MobileTextureCompressionTests](../../client/Assets/Baryonyx/Tests/EditMode/MobileTextureCompressionTests.cs) は、長い辺が512画素以上の画像に、AndroidとiOSのASTCの設定があることを検査する。
+- 容量は、APKのビルドのログ（`client/Logs/Editor.log`）の「Used Assets and files」の行で確かめる。
 
 ### テストとアセンブリの境界
 

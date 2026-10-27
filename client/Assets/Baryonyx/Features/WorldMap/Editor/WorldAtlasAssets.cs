@@ -165,7 +165,7 @@ namespace Baryonyx.WorldMap.Editor
             return pieces;
         }
 
-        // 背景の1枚を、スマホではASTC 6×6に圧縮して取り込む（2026-10-27、ユーザー決定）。
+        // 背景の1枚を取り込む。スマホでの圧縮（ASTC 8×8）は MobileTextureCompression が掛ける。
         // ミップマップを使うと、ASTCに圧縮されずにRGBA32のまま入る（2026-10-27、3840×2560の世界地図で
         // 1枚50MBになった）ため、どの地図も使わない。
         private static Texture2D ImportPicture(string path)
@@ -178,14 +178,6 @@ namespace Baryonyx.WorldMap.Editor
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = MaxPiece;
             importer.textureCompression = TextureImporterCompression.Compressed;
-            foreach (var platform in new[] { "Android", "iPhone" })
-            {
-                var settings = importer.GetPlatformTextureSettings(platform);
-                settings.overridden = true;
-                settings.maxTextureSize = MaxPiece;
-                settings.format = TextureImporterFormat.ASTC_6x6;
-                importer.SetPlatformTextureSettings(settings);
-            }
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }

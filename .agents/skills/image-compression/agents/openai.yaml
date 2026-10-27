@@ -1,0 +1,5 @@
+interface:
+  display_name: "画像の圧縮"
+  short_description: "画像をUnityへ追加・差し替えるとき、元の画像を残してスマホ向けにASTCで圧縮し、APKの容量を確かめる"
+policy:
+  allow_implicit_invocation: true

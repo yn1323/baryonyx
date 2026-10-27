@@ -1714,7 +1714,7 @@
 
 ## [rules/frontend-design.md](rules/frontend-design.md)
 
-45KB・362行
+47KB・375行
 
 - 8: # クライアントの構成と依存関係
 - 16: ## 現在のディレクトリ構成
@@ -1725,8 +1725,9 @@
 - 267: ### コードとアセットの配置
 - 282: ### ゲーム内の対象の画像
 - 313: #### タブレットとの受け渡し
-- 340: ### テストとアセンブリの境界
-- 349: ## AndroidとUnity外の検証処理
+- 340: ### 画像の圧縮
+- 353: ### テストとアセンブリの境界
+- 362: ## AndroidとUnity外の検証処理
 
 ## [rules/local-shortcuts.md](rules/local-shortcuts.md)
 
