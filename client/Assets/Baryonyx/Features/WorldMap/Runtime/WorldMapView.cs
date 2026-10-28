@@ -64,6 +64,9 @@ namespace Baryonyx.WorldMap
         public GameDialog Dialog;
         public ItemArt ItemArt;
 
+        // 入れ子の地図で、マスの出来事をマスから開いて見せる窓。
+        public WorldMapEventWindow EventWindow;
+
         public const string LoadingText = "読み込み中…";
         private const float NoticeSeconds = 2.5f;
 
@@ -88,8 +91,9 @@ namespace Baryonyx.WorldMap
         // 戦闘のあるマスに着いた。引数はマスのID。
         public event Action<string> BattleRequested;
 
-        // 入れ子の地図の試作で、マスに着いた（今いるマスを押したときも）。引数はマスのID。
-        public event Action<string> Arrived;
+        // 入れ子の地図の試作で、マスに着いた（今いるマスを押したときも）。
+        // 引数はマスのIDと、そのマスを今クリアしたか。
+        public event Action<string, bool> Arrived;
 
         private WorldMapGraph graph;
         private readonly HashSet<string> cleared = new();
@@ -108,6 +112,9 @@ namespace Baryonyx.WorldMap
         private Vector2 hopFrom;
         private float pulse;
         private float noticeLeft;
+
+        // 出来事の窓を開く間に、地図を滑らせて見せる位置（scroll の行き先）。なければ止まっている。
+        private Vector2? aim;
 
         public WorldMapGraph Graph => graph;
         public IReadOnlyList<WorldNodeState> States => states;
@@ -299,11 +306,13 @@ namespace Baryonyx.WorldMap
         {
             if (!Loaded || Walking || Fighting || Opening)
                 return false;
+            if (EventWindow != null && EventWindow.IsShown)
+                return false;
             if (index == partyAt)
             {
                 // 入れ子の地図では、今いる地域や入口をもう一度押すと、その先へ入る。
                 if (InAtlas)
-                    Arrived?.Invoke(graph.Nodes[index].Id);
+                    Arrived?.Invoke(graph.Nodes[index].Id, false);
                 return false;
             }
             var path = graph.PathTo(partyAt, index, states);
@@ -314,6 +323,7 @@ namespace Baryonyx.WorldMap
                 walk.Add(DesignOf(path[i]));
             walkTarget = index;
             glide = Vector2.zero;
+            aim = null;
             hopping = false;
             hopPause = 0f;
             return true;
@@ -325,6 +335,8 @@ namespace Baryonyx.WorldMap
             pulse += dt;
             if (Walking)
                 Step(dt);
+            else if (aim.HasValue)
+                Slide(dt);
             else if (!holding && glide.sqrMagnitude > 1f)
             {
                 MoveBy(glide * dt);
@@ -379,7 +391,7 @@ namespace Baryonyx.WorldMap
             Refresh();
             if (InAtlas)
             {
-                Arrived?.Invoke(id);
+                Arrived?.Invoke(id, clear);
                 return;
             }
             // 宝箱は、初めてクリアしたときに中身をもらう。中身は保存できてから見せる。
@@ -387,6 +399,27 @@ namespace Baryonyx.WorldMap
                 clear && graph.Nodes[partyAt].Kind == WorldNodeKind.Treasure
                     ? OpenChestAsync(id)
                     : SaveAsync(id, clear);
+        }
+
+        /// <summary>
+        /// Slides the map until the party stands <paramref name="offset"/> from the middle of the
+        /// screen (design pixels, y up), as far as the map's edges allow.
+        /// </summary>
+        public void SlidePartyTo(Vector2 offset)
+        {
+            glide = Vector2.zero;
+            aim = Clamp(partyDesign - (SeenSize * 0.5f + new Vector2(offset.x, -offset.y) / zoom));
+        }
+
+        private void Slide(float dt)
+        {
+            scroll = Vector2.Lerp(scroll, aim.Value, 1f - Mathf.Exp(-FollowSharpness * dt));
+            if ((scroll - aim.Value).sqrMagnitude < 0.25f)
+            {
+                scroll = aim.Value;
+                aim = null;
+            }
+            ApplyScroll();
         }
 
         private void TakeOff()

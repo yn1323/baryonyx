@@ -44,6 +44,9 @@ namespace Baryonyx.WorldMap.Editor
             public float Town = 140f;
             public float Boss = 128f;
 
+            // マスの押せる範囲の幅。台より小さければ台の大きさのまま押す。
+            public float Hit;
+
             // 道の太さ。縁の上に地の色を重ねる。
             public float LineEdge = 32f;
             public float LineFill = 20f;
@@ -114,14 +117,16 @@ namespace Baryonyx.WorldMap.Editor
                 WorldMapCatalog.Build(),
                 WorldMapCatalog.PictureSize,
                 pictures,
-                layout: null
+                layout: null,
+                dungeons: true
             );
         }
 
         /// <summary>
         /// Builds one map's screen. <paramref name="pictures"/> are the background's pieces with
         /// the pixels of the whole picture each covers. A <paramref name="layout"/> makes it a
-        /// map of the nested world map prototype, without the list of dungeons.
+        /// map of the nested world map. <paramref name="dungeons"/> adds the button at the bottom
+        /// right that opens the list of dungeons.
         /// </summary>
         public static GameObject Build(
             string rootName,
@@ -130,7 +135,8 @@ namespace Baryonyx.WorldMap.Editor
             WorldMapGraph graph,
             Vector2 pictureSize,
             IReadOnlyList<(Texture2D Texture, Rect Pixels)> pictures,
-            TextAsset layout
+            TextAsset layout,
+            bool dungeons
         )
         {
             look = screenLook;
@@ -150,9 +156,12 @@ namespace Baryonyx.WorldMap.Editor
                 view.KindSprites = kinds;
                 view.HiddenSprite = hidden;
                 BuildMap(root, view, graph, pictureSize, pictures);
-                BuildControls(root, view, dungeons: layout == null);
+                BuildControls(root, view, dungeons);
                 view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
                 view.Dialog = GameDialogAssets.Build(root);
+                // 入れ子の地図では、マスの出来事をマスから開く窓で見せる。
+                if (layout != null)
+                    view.EventWindow = WorldMapEventWindowAssets.Build(root);
                 CollectTintGraphics(root);
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
                 look = new Look();
@@ -320,10 +329,22 @@ namespace Baryonyx.WorldMap.Editor
                 rects.Add(rect);
                 images.Add(image);
                 buttons.Add(AddButton(rect, image));
+                if (look.Hit > width)
+                    HitArea(rect, (look.Hit - width) / 2f);
             }
             view.Nodes = rects.ToArray();
             view.NodeImages = images.ToArray();
             view.NodeButtons = buttons.ToArray();
+        }
+
+        // 台の絵の大きさを変えずに、押せる範囲だけを広げる透明な子。
+        private static void HitArea(RectTransform node, float margin)
+        {
+            var hit = Rect("HitArea", node);
+            Stretch(hit);
+            hit.offsetMin = -Vector2.one * margin;
+            hit.offsetMax = Vector2.one * margin;
+            AddImage(hit, Color.clear, true);
         }
 
         private static RectTransform BuildParty(RectTransform layer)

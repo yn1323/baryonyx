@@ -31,6 +31,33 @@ namespace Baryonyx.WorldMap
         public WorldMapView Current => current;
         public string CurrentKey => currentKey;
 
+        // 世界地図のもどるで出る先と、ダンジョン一覧を開く処理。冒険の世界地図のシーンが渡す。
+        // 渡さなければ（デバッグルームの試作では）、世界地図にもどるとダンジョン一覧を出さない。
+        public Action Leave { get; set; }
+        public Action OpenDungeons { get; set; }
+
+        // 初めて止まった何もないマスで、出来事の見本の窓を開くか。デバッグルームの試作だけで開き、
+        // 冒険の世界地図のシーンは切る（マスの出来事はまだ決めていない）。
+        public bool TrialEvents { get; set; } = true;
+
+        // 戦闘の見本で「たたかう」を押したときに、マスのIDを渡して戦闘の画面を開く処理。
+        // 渡さなければ（試作では）、白く覆ったあと地図へ戻る。
+        public Action<string> StartBattle { get; set; }
+
+        // 見本は、初めて止まった何もないマスごとに、この順で1つずつ開く。
+        public static readonly WorldEventKind[] TrialOrder =
+        {
+            WorldEventKind.Meet,
+            WorldEventKind.Choice,
+            WorldEventKind.HiddenChest,
+            WorldEventKind.Pickup,
+            WorldEventKind.Peddler,
+            WorldEventKind.Bet,
+            WorldEventKind.Battle,
+        };
+
+        private int trials;
+
         // 地図を切り替える演出の途中。テストが待つ。
         public bool Switching { get; private set; }
 
@@ -61,9 +88,13 @@ namespace Baryonyx.WorldMap
             currentKey = key;
             current.Arrived += Arrive;
             current.BackPressed += Back;
-            // 世界地図からは、もどるで出る先がない。
+            current.DungeonsPressed += PressDungeons;
             if (current.Back != null)
-                current.Back.gameObject.SetActive(key != WorldAtlasLayout.WorldKey);
+                current.Back.gameObject.SetActive(
+                    key != WorldAtlasLayout.WorldKey || Leave != null
+                );
+            if (current.Dungeons != null)
+                current.Dungeons.gameObject.SetActive(OpenDungeons != null);
             at ??= EntryOf(current);
             if (!cleared.TryGetValue(key, out var squares))
                 cleared[key] = squares = new HashSet<string>();
@@ -80,10 +111,29 @@ namespace Baryonyx.WorldMap
                 cleared[currentKey] = new HashSet<string>(current.Cleared);
         }
 
-        private void Arrive(string id)
+        private void Arrive(string id, bool first)
         {
             if (Switching)
                 return;
+            int index = current.Graph.IndexOf(id);
+            if (
+                TrialEvents
+                && first
+                && current.EventWindow != null
+                && current.Graph.Nodes[index].Kind == WorldNodeKind.Empty
+            )
+            {
+                current.SlidePartyTo(WorldMapEventWindow.SquareAt);
+                var kind = TrialOrder[trials++ % TrialOrder.Length];
+                var start = StartBattle;
+                current.EventWindow.Open(
+                    current.Nodes[index],
+                    kind,
+                    null,
+                    start == null ? null : () => start(id)
+                );
+                return;
+            }
             if (currentKey == WorldAtlasLayout.WorldKey)
             {
                 if (id.StartsWith(WorldAtlasLayout.RegionPrefix, StringComparison.Ordinal))
@@ -97,9 +147,19 @@ namespace Baryonyx.WorldMap
             }
         }
 
+        private void PressDungeons()
+        {
+            if (!Switching)
+                OpenDungeons?.Invoke();
+        }
+
         private void Back()
         {
-            if (!Switching && currentKey != WorldAtlasLayout.WorldKey)
+            if (Switching)
+                return;
+            if (currentKey == WorldAtlasLayout.WorldKey)
+                Leave?.Invoke();
+            else
                 StartCoroutine(
                     Switch(
                         WorldAtlasLayout.WorldKey,

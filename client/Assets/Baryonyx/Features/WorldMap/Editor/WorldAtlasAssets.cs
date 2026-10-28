@@ -14,9 +14,10 @@ namespace Baryonyx.WorldMap.Editor
     /// the world map and for each region's area map from its layout (Atlas/Layouts/&lt;key&gt;.json)
     /// and the pieces of its background (Atlas/Art/&lt;key&gt;_&lt;row&gt;&lt;column&gt;.jpg), the
     /// navigator prefab that loads them from Resources, and a scene to try them in, opened from
-    /// Home's list of debugging rooms.
+    /// Home's list of debugging rooms. The adventure's world map scene (WorldSceneSetup) uses
+    /// the same navigator.
     /// The backgrounds are generated pictures used as they are (doc/art/direction.md#例外),
-    /// compressed to ASTC 6x6 on phones.
+    /// compressed to ASTC 8x8 on phones.
     /// </summary>
     public static class WorldAtlasAssets
     {
@@ -49,6 +50,8 @@ namespace Baryonyx.WorldMap.Editor
         // 網の目の道にマスが多いので、マスは出来事のアイコンが描ける程度にとどめ、地域のマスだけ大きくする。
         // 駒はマスより少し大きい程度に縮め、開いたときは少し近づけて、マスと駒が見分けやすいようにする。
         // エリアマップは背景を等倍で出し、マスと道は背景に描いた道に合わせて細くする。
+        // 小さなマスは押しにくいため、押せる範囲を台より広げる。いちばん近いマスどうしの間
+        // （世界地図76、エリアマップ94）でも、押せる範囲が隣のマスの台にかからない幅にする。
         private static WorldMapScreenAssets.Look LookOf(string key) =>
             key == WorldAtlasLayout.WorldKey
                 ? new WorldMapScreenAssets.Look
@@ -57,6 +60,7 @@ namespace Baryonyx.WorldMap.Editor
                     Node = 50f,
                     Town = 88f,
                     Boss = 68f,
+                    Hit = 80f,
                     LineEdge = 12f,
                     LineFill = 6f,
                     Pawn = 0.5f,
@@ -68,6 +72,7 @@ namespace Baryonyx.WorldMap.Editor
                     Node = 56f,
                     Town = 92f,
                     Boss = 76f,
+                    Hit = 100f,
                     LineEdge = 10f,
                     LineFill = 5f,
                     Pawn = 0.55f,
@@ -125,7 +130,9 @@ namespace Baryonyx.WorldMap.Editor
                 layout.Build(),
                 layout.PictureSize,
                 pictures,
-                layoutAsset
+                layoutAsset,
+                // 冒険の世界地図のシーンでは、世界地図からダンジョン一覧を開く。
+                dungeons: world
             );
             return prefab.GetComponent<WorldMapView>();
         }
