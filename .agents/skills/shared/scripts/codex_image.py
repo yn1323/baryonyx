@@ -27,8 +27,8 @@ from pathlib import Path
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
 # Codex本体のモデルと推論の強さは固定する。~/.codex/config.toml の設定や呼び出し側の指定には任せない
-MODEL = "gpt-6.1-sol"
-REASONING_EFFORT = "high"
+MODEL = "gpt-6.1-terra"
+REASONING_EFFORT = "xhigh"
 # どの依頼にも必ず入れる画風の指示（AGENTS.md の「画像の生成」）。呼び出し側では外せない
 ALWAYS_IN_REQUEST = [
     "細碎な点状テクスチャが多すぎるので抑える",
