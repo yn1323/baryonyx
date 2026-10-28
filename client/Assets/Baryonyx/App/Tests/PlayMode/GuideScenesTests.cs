@@ -315,7 +315,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.DestinationPanel.activeSelf, Is.True);
             // 世界地図のダンジョン一覧として開くため、案内人を置かない。
             Assert.That(view.GuideArt, Is.Null);
-            Assert.That(guide.BackSceneName, Is.EqualTo(SceneNames.WorldMap));
+            Assert.That(guide.BackSceneName, Is.EqualTo(SceneNames.World));
             // 行き先のリストは、編成の冒険者と同じ枠の中に出す。
             Assert.That(view.Framed, Is.True);
             // 見ればわかるため、リストに題名を付けない。
@@ -377,17 +377,20 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
-        // 街道の世界地図の右下のボタンでダンジョン一覧（旅の案内所）を開き、「もどる」で世界地図へ、
+        // 冒険の世界地図の右下のボタンでダンジョン一覧（旅の案内所）を開き、「もどる」で世界地図へ、
         // ×でHomeへ戻る。世界地図の左上のボタンはHomeへ戻る。
         [UnityTest]
         public IEnumerator WorldMapOpensTheDungeonListAndBackReturnsToTheMap()
         {
-            var map = default(WorldMapBootstrap);
-            yield return SceneTests.LoadWorldMap(value => map = value);
-            SceneTests.AssertTouchSize(map.View.Dungeons.transform);
-            SceneTests.AssertTouchSize(map.View.Back.transform);
+            var map = default(WorldBootstrap);
+            yield return SceneTests.LoadWorld(value => map = value);
+            var view = map.Navigator.Current;
+            Assert.That(view.Dungeons.gameObject.activeSelf, Is.True);
+            Assert.That(view.Back.gameObject.activeSelf, Is.True);
+            SceneTests.AssertTouchSize(view.Dungeons.transform);
+            SceneTests.AssertTouchSize(view.Back.transform);
 
-            map.View.Dungeons.onClick.Invoke();
+            view.Dungeons.onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.TravelOffice,
                 seconds: 10f,
@@ -397,14 +400,14 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.WaitUntil(() => SceneTests.GuideReady(guide));
             guide.Presenter.Back();
             yield return SceneTests.WaitUntil(
-                () => SceneManager.GetActiveScene().name == SceneNames.WorldMap,
+                () => SceneManager.GetActiveScene().name == SceneNames.World,
                 seconds: 10f,
                 message: "Back did not return to the world map."
             );
 
-            map = Object.FindAnyObjectByType<WorldMapBootstrap>();
-            yield return SceneTests.WaitUntil(() => SceneTests.WorldMapReady(map));
-            map.View.Dungeons.onClick.Invoke();
+            map = Object.FindAnyObjectByType<WorldBootstrap>();
+            yield return SceneTests.WaitUntil(() => SceneTests.WorldReady(map));
+            map.Navigator.Current.Dungeons.onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.TravelOffice,
                 seconds: 10f,
@@ -419,8 +422,8 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The close button did not return to Home."
             );
 
-            yield return SceneTests.LoadWorldMap(value => map = value);
-            map.View.Back.onClick.Invoke();
+            yield return SceneTests.LoadWorld(value => map = value);
+            map.Navigator.Current.Back.onClick.Invoke();
             yield return SceneTests.WaitUntil(
                 () => SceneManager.GetActiveScene().name == SceneNames.Home,
                 seconds: 10f,

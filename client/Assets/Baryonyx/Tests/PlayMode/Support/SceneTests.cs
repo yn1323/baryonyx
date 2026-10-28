@@ -21,6 +21,7 @@ namespace Baryonyx.Tests.PlayMode
         public const string ExplorationPath = ScenesFolder + "/Exploration.unity";
         public const string BattlePath = ScenesFolder + "/Battle.unity";
         public const string WorldMapPath = ScenesFolder + "/WorldMap.unity";
+        public const string WorldPath = ScenesFolder + "/World.unity";
 
         // UI設計ルールで決めた、指で押せる大きさの下限（1920x1080の設計の単位）。
         public const float MinimumTouchSize = 128f;
@@ -78,6 +79,15 @@ namespace Baryonyx.Tests.PlayMode
             && map.View.Loaded
             && !map.Transition.IsPlaying
             && !map.Transition.IsCovered;
+
+        public static IEnumerator LoadWorld(Action<WorldBootstrap> found) =>
+            Load<WorldBootstrap>(WorldPath, WorldReady, found);
+
+        public static bool WorldReady(WorldBootstrap world) =>
+            world.Navigator.Current != null
+            && !world.Navigator.Switching
+            && !world.Transition.IsPlaying
+            && !world.Transition.IsCovered;
 
         public static bool HomeReady(HomeBootstrap home) =>
             home.Presenter != null && !home.Transition.IsPlaying;

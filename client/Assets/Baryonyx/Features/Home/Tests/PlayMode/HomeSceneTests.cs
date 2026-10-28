@@ -203,7 +203,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(HomeScenePath));
         }
 
-        // 冒険していないとき、右下のカードは街道の世界地図を開く。
+        // 冒険していないとき、右下のカードは冒険の世界地図を開く。
         [UnityTest]
         public IEnumerator CardOpensTheWorldMapWithNoAdventure()
         {
@@ -223,11 +223,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(bootstrap.Transition.IsPlaying, Is.True);
 
             yield return SceneTests.WaitUntil(
-                () => SceneManager.GetActiveScene().name == SceneNames.WorldMap,
+                () => SceneManager.GetActiveScene().name == SceneNames.World,
                 message: "The world map did not open."
             );
             Assert.That(Object.FindAnyObjectByType<HomeBootstrap>(), Is.Null);
-            Assert.That(Object.FindAnyObjectByType<WorldMapBootstrap>(), Is.Not.Null);
+            Assert.That(Object.FindAnyObjectByType<WorldBootstrap>(), Is.Not.Null);
         }
 
         // 冒険の途中は、右下のカードに行き先と階を出し、探索を再開する。

@@ -15,7 +15,10 @@ namespace Baryonyx.App
         // 手に入れた物・遭遇した敵・日々の歩数を見返すライブラリ。Homeの左下のボタンが開く。
         public const string Library = "Library";
 
-        // 街道の世界地図（試作）。冒険していないときのHomeの右下のカードと、ダンジョン一覧の「もどる」が開く。
+        // 冒険の世界地図（入れ子の地図）。冒険していないときのHomeの右下のカードと、ダンジョン一覧の「もどる」が開く。
+        public const string World = "World";
+
+        // 前の街道の世界地図。戦闘と宝箱のマスを確かめるため、デバッグルームの一覧から開く。
         public const string WorldMap = "WorldMap";
 
         // 冒険の探索。Homeの右下の行き先カード（再開）と、旅の案内所の出発が開く。
@@ -74,6 +77,7 @@ namespace Baryonyx.App
             ("召喚の演出デバッグルーム", TempleSummonLab, false, DebugRoomCorner.TopRight),
             ("TempLab", TempLab, false, DebugRoomCorner.TopRight),
             ("入れ子の地図（試作）", WorldAtlas, false, DebugRoomCorner.BottomLeft),
+            ("前の街道の世界地図", WorldMap, true, DebugRoomCorner.TopRight),
         };
 
         // Homeの左下のボタンと、冒険していないときの右下のカード（旅の案内所）が開く案内人の画面。

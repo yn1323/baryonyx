@@ -152,7 +152,7 @@ namespace Baryonyx.App
             );
         }
 
-        // 冒険の途中なら探索を再開し、そうでなければ街道の世界地図を開く。
+        // 冒険の途中なら探索を再開し、そうでなければ冒険の世界地図を開く。
         private bool OpenDestination()
         {
             if (!adventureKnown)
@@ -162,7 +162,7 @@ namespace Baryonyx.App
             }
             bool inProgress = AdventureSession.Current?.InProgress ?? false;
             return SceneLoader.Load(
-                inProgress ? adventureSceneName : SceneNames.WorldMap,
+                inProgress ? adventureSceneName : SceneNames.World,
                 transition,
                 this
             );

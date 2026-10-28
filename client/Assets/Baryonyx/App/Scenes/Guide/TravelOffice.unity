@@ -151,7 +151,7 @@ MonoBehaviour:
   view: {fileID: 1457471431}
   transition: {fileID: 811084077}
   homeSceneName: Home
-  backSceneName: WorldMap
+  backSceneName: World
   departs: 1
 --- !u!4 &66545917
 Transform:

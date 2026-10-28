@@ -2,7 +2,7 @@
 id: client-showcase
 type: specification
 status: 一部確定
-updated: 2026-10-24
+updated: 2026-10-28
 ---
 
 # クライアントアセット展示室
@@ -310,7 +310,7 @@ Playせずに確認する場合は、Unity Editorの `Baryonyx > Showcase > Open
 編成と戦闘画面で使う4人のドット絵（`BattleToma` など、`Shared/Art/Characters/`）はキャラクター、属性のアイコン（`ElementFire` など、`Shared/Art/Attributes/`）は画像のカテゴリに入る。
 [冒険の画面](screens/adventure.md#冒険の画面)は、UIカテゴリの `ExplorationScreen`（探索）と `AdventureOverlay`（戦闘に重ねるメニューとダイアログ）Prefabで確認する。探索の地図と街道の世界地図でパーティを表す木の駒の絵（`MapPawn`、`Shared/UI/Art/`）はUIのカテゴリに入り、地図の上の見え方は `ExplorationScreen` と `WorldMapScreen` で確かめ、マスへ跳ねて移る動き（`MapPawnHop`）はPlay Modeでマスを押して確かめる。[戦闘後の強化](stage-progression.md#戦闘後の強化)の3枚のカードは、`AdventureOverlay` の停止中の表示の「戦闘後の強化」で、白・金・虹の見本を1枚ずつ出して確かめる（同じ窓は `ExplorationScreen` にも入っている）。`ExplorationScreen` は3Dの舞台がない展示室では森の遺跡の描いた背景の上にパーティの木の駒と門を表示する。Play Modeで押すと、サーバーの接続先がなくても、アプリの中だけの冒険で門・宝箱・メニュー・ルートを操作できる。探索と冒険の戦闘は、シーンのカテゴリの `Exploration` と `Battle` から開く（冒険を始めずに開いた `Battle` は戦闘画面のモックのまま）。門と宝箱の絵（`RuinDoor`・`ChestClosed`・`ChestOpen`、`Shared/Art/Stages/Exploration/`）は背景・環境、マスの種類のアイコン（`IconRoomBattle`・`IconRoomElite`・`IconRoomTreasure`・`IconRoomBoss`と、2026-10-22に足した `IconRoomRest`・`IconRoomMerchant`・`IconRoomShadyChest`・`IconRoomTrial`・`IconRoomStepDoor`・`IconRoomAltar`、`Features/Adventure/UI/Art/`）はアイテムのカテゴリに入り、地図の札と右下の凡例では `ExplorationScreen` で確かめる。
 [街道の世界地図](stage-progression.md#世界地図の形と試作2026-10-24)は、UIカテゴリの `WorldMapScreen` Prefabとシーンのカテゴリの `WorldMap` で確認する。
-入れ子の地図の試作（[計画](../plans/2026-10-27-world-map-rune-squares.md#2026-10-27入れ子の地図の試作)）は、シーンのカテゴリの `WorldAtlas` で、世界地図と地域のエリアマップを行き来して確かめる。地図ごとの画面はUIカテゴリの `world`・`verde` などのPrefab（`Features/WorldMap/Atlas/Resources/WorldAtlas/`）、背景は画像のカテゴリの `world_00` などの分けた絵（`Features/WorldMap/Atlas/Art/`）に入る。
+[入れ子の地図](world-atlas.md)は、シーンのカテゴリの `World`（冒険の世界地図。世界地図の左上のもどるでHome、右下のボタンでダンジョン一覧へ移る）と `WorldAtlas`（試作）で、世界地図と地域のエリアマップを行き来して確かめる。地図ごとの画面はUIカテゴリの `world`・`verde` などのPrefab（`Features/WorldMap/Atlas/Resources/WorldAtlas/`）、背景は画像のカテゴリの `world_00` などの分けた絵（`Features/WorldMap/Atlas/Art/`）に入る。
 マスの台の絵（`WorldNodeBattle`・`WorldNodeTreasure` など、`Features/WorldMap/UI/Art/`）は画像のカテゴリに入る。
 Play Modeで押すと、サーバーの接続先がなくても仮の進み具合で歩け、宝箱のマスに初めて着くと中身のダイアログを出す（[街道の宝箱と街](stage-progression.md#街道の宝箱と街2026-10-25)）。
 2026-10-25に歩数の関所をなくし、その台の絵（`WorldNodeStepGate`）と展示室の登録を削除した。
