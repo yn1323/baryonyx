@@ -56,16 +56,8 @@ updated: 2026-10-26
 戦闘中の覚醒は、固有スキルと同じ[覚醒先を選ぶ画面](skill-evolution.md#覚醒先を選ぶ画面)で選ぶ。
 候補は、まだ覚醒していない1枚の2つの枝である。
 
-スキルの選択画面には、2つの枝のほかに「覚醒しない」を置く（2026-10-24、ユーザー決定。見せ方はこちらで決めた）。
-固有スキルは編成で前の段階に戻せるが、スキルは戻せないため、戦闘の途中で戻せない選択を必ずさせないようにする。
-固有スキルの選択画面には出さない。
-
-| 項目 | 決まり |
-|---|---|
-| 置き場所 | 候補の下の「この覚醒にする」の左に並べる。「この覚醒にする」は右へ寄せる。文字は控えめな色にし、決定より目立たせない |
-| 押せるとき | 候補を選んでいなくても押せる |
-| 押したあと | 選択画面が消え、カードは割れない。魔法陣と光が静まり、ひびの入ったカードが少し沈んでから、淡い光の尾を引いて使い手へ戻る。そのあと、元の段階のまま効果を出す |
-| その後 | その1枚は、その戦闘ではもう光らず、抽選もしない。次の戦闘では、また抽選する。サーバーへは何も送らない |
+覚醒をやめる操作（「覚醒しない」）は置かない（2026-10-29、ユーザー決定）。
+固有スキルと同じく、光ったカードを使えば、2つの枝のどちらかへ必ず覚醒する。
 
 ### 保存
 
@@ -236,7 +228,7 @@ updated: 2026-10-26
 | 演出 | [BattleSkillVfx.Awakened](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleSkillVfx.Awakened.cs)。段階ごとの色としるしの表（`Looks`）と、溜め・先に付ける状態・元のスキルの演出・増えた当たり・足した働きの順に流す処理。元のスキルの演出は [BattleSkillVfx.Cards](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleSkillVfx.Cards.cs) の `CardEffect` を使う。当たりの波は、戦闘と同じ [BattleCardPlan](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleCardPlan.cs) で数える |
 | サーバー | `skill_cards` の `awakened_branch`（[0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql)）。`GET /v1/party` の `skillCards[].awakenedBranch`（1・2、覚醒していなければnull）。戦闘の覚醒は `POST /v1/party/skill-cards/:cardId/awaken`（本文 `branch`。同じ枝の再送は何も変えず、別の枝は409 `already_awakened`、冒険の時間外は409 `not_in_adventure`。時間の判定は固有スキルの覚醒と同じ）。商会は `POST /v1/enhancement/awaken` の本文 `{requestId, cardId, branch}`（覚醒の欠片1個とルーン1,000、覚醒済みは409 `already_awakened`）。[party/routes](../../server/src/features/party/routes.ts)・[enhancement/routes](../../server/src/features/enhancement/routes.ts) |
 | 持ち物（クライアント） | [PartySkillCard](../../client/Assets/Baryonyx/Features/Party/Runtime/PartyCards.cs) の `AwakenedBranch`・`StageId`。覚醒した1枚は覚醒版のカード（`CardSkills.Find` が `Fire.1` も引く）として、倍率をそのまま持つ。戦闘で覚醒した1枚は、マスを終えたときに [PartySkillAwakenings](../../client/Assets/Baryonyx/Features/Party/Runtime/PartySkillAwakenings.cs) が送る |
-| 戦闘 | [BattleInspectView.Evolution](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Evolution.cs)。デッキのカードに持っているスキルの1枚のID（`OwnedCard`）を持たせ（[AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)）、固有スキルと同じ予兆の抽選に載せる。確率は [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs) の `AwakenChance`（固有スキルの半分）。「覚醒しない」は [BattleEvolutionChoice](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleEvolutionChoice.cs) の `DeclineButton` と、演出の `EvolutionSettle` |
+| 戦闘 | [BattleInspectView.Evolution](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleInspectView.Evolution.cs)。デッキのカードに持っているスキルの1枚のID（`OwnedCard`）を持たせ（[AdventureParty](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureParty.cs)）、固有スキルと同じ予兆の抽選に載せる。確率は [AdventureEvolution](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureEvolution.cs) の `AwakenChance`（固有スキルの半分）。選ぶ画面は固有スキルと同じ [BattleEvolutionChoice](../../client/Assets/Baryonyx/Features/Combat/Presentation/BattleEvolutionChoice.cs) |
 | 商会 | 「スキル覚醒」の一覧に、固有スキルの段階のあとへ、覚醒していない1枚ずつの2つの枝を並べる（[EnhancementTargets](../../client/Assets/Baryonyx/Features/Enhancement/Runtime/EnhancementTargets.cs) の `SkillAwakenings`、[WorkshopEnhanceView](../../client/Assets/Baryonyx/Features/Workshop/Runtime/WorkshopEnhanceView.cs)）。2行目は「付けている人｜元の名前から覚醒（元に戻せない）」 |
 | 演出の確認 | [スキルのデバッグルーム](screens/debug-rooms.md#スキルのデバッグルーム)の一覧の「覚醒版」のタブ（[CardSkillLab](../../client/Assets/Baryonyx/Features/Combat/Presentation/CardSkillLab.cs)）。PlayModeテストの `CardSkillLabSceneTests` が、しるしの種類と効果の並びが一通りそろう16の段階を最後まで流す |
 
@@ -255,6 +247,7 @@ Codexは [codex_image.py](../../.agents/skills/shared/scripts/codex_image.py) �
 
 ## 変更と判断の記録
 
+- 2026-10-29：ユーザーの指示「覚醒しないという選択肢はなくして」を受け、選択画面の「覚醒しない」と、その演出（光が静まって使い手へ戻る）を消した。
 - 2026-10-24：ユーザーの依頼「覚醒版カードを実際の戦闘で使う組み込みもお願いします。覚醒しないも選べるようにしてください。どうやってするのか考えてください。覚醒が起きる場所は戦闘と商会だけ」を受け、戦闘・商会・サーバーへの保存を作った。「覚醒しない」の見せ方（決定の左に置く、割れずに光が静まって使い手へ戻る、その戦闘ではもう光らない）は、こちらで決めた。
 - 2026-10-24：ユーザーの指示「エフェクトも専用で作る。元のスキルと近しい感じでも構わない」を受け、100の段階に専用の演出を作った（[演出](#演出)）。元のスキルの演出を土台にし、段階ごとの色と12種類のしるしの組み合わせ、先に付ける状態・増えた当たり・足した働きの見せ方は、こちらで決めた。
 - 2026-10-24：ユーザーの指示「挿絵はCodexの画像の作成スキルを使ってよい」を受け、100の段階の挿絵を作った（[挿絵の作り方](#挿絵の作り方)）。候補から選ぶ手順は取らず、1種類につき1回描いたものをそのまま採った。

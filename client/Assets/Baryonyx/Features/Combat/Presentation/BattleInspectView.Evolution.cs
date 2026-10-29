@@ -176,8 +176,7 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The awakening of the card used: its omen, the pick of the stage, its burst into that
-        /// stage, which becomes the card of the deck; or, for an owned skill card left as it is,
-        /// its light settling and the card going back. <paramref name="done"/> is told the card
+        /// stage, which becomes the card of the deck. <paramref name="done"/> is told the card
         /// played from now on.
         /// </summary>
         private IEnumerator Evolve(
@@ -217,24 +216,10 @@ namespace Baryonyx.Combat.Presentation
             const int none = -1;
             int pick = none;
             SetHandAside(true);
-            Choice.Open(
-                OptionsOf(data, into, stages),
-                Vfx.EvolvingScreenPoint(),
-                p => pick = p,
-                canDecline: owned
-            );
+            Choice.Open(OptionsOf(data, into, stages), Vfx.EvolvingScreenPoint(), p => pick = p);
             while (pick == none)
                 yield return null;
             SetHandAside(false);
-
-            if (pick == BattleEvolutionChoice.Declined)
-            {
-                // 覚醒しない：光が静まり、元のカードのまま使い手へ戻って使われる。
-                yield return Vfx.EvolutionSettle();
-                Evolving = false;
-                done(data);
-                yield break;
-            }
 
             pick = Mathf.Clamp(pick, 0, into.Count - 1);
             // 覚醒しても、品質強化で上げた倍率を引き継ぐ。
@@ -359,15 +344,16 @@ namespace Baryonyx.Combat.Presentation
             return evolvingFace;
         }
 
-        // While the stage is picked, the hand steps aside for the stages offered.
+        // While the stage is picked, the hand and its counters step aside for the stages offered,
+        // and the end of the turn for the check that confirms in its place.
         private void SetHandAside(bool aside)
         {
-            if (Hand == null)
-                return;
-            if (handGroup == null && !Hand.TryGetComponent(out handGroup))
-                handGroup = Hand.gameObject.AddComponent<CanvasGroup>();
-            handGroup.alpha = aside ? 0f : 1f;
-            handGroup.blocksRaycasts = !aside;
+            foreach (var group in ControlGroups())
+                if (group != null)
+                {
+                    group.alpha = aside ? 0f : 1f;
+                    group.blocksRaycasts = !aside;
+                }
         }
     }
 }

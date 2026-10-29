@@ -461,10 +461,7 @@ namespace Baryonyx.Combat.Editor
                 // 固有スキルの進化先を選ぶ画面。操作の上に重ねる（doc/features/skill-evolution.md）。
                 view.Choice = BattleEvolutionChoiceAssets.Build(
                     screen,
-                    view.Vfx.MaterialOf(BattleVfxShape.Beam),
-                    view.Vfx.MaterialOf(BattleVfxShape.Glow),
-                    view.Vfx.MaterialOf(BattleVfxShape.FlameTongue),
-                    view.Vfx.MaterialOf(BattleVfxShape.Sparkle)
+                    view.Vfx.MaterialOf(BattleVfxShape.Beam)
                 );
 
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
@@ -1073,7 +1070,7 @@ namespace Baryonyx.Combat.Editor
             return icon.gameObject;
         }
 
-        private static RawImage AddRaw(RectTransform rect, Texture2D texture)
+        internal static RawImage AddRaw(RectTransform rect, Texture2D texture)
         {
             var image = rect.gameObject.AddComponent<RawImage>();
             image.texture = texture;

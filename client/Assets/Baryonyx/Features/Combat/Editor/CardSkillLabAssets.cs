@@ -101,10 +101,7 @@ namespace Baryonyx.Combat.Editor
                 // Over the controls (hidden while choosing) and under the list.
                 lab.Choice = BattleEvolutionChoiceAssets.Build(
                     screen,
-                    lab.Vfx.MaterialOf(BattleVfxShape.Beam),
-                    lab.Vfx.MaterialOf(BattleVfxShape.Glow),
-                    lab.Vfx.MaterialOf(BattleVfxShape.FlameTongue),
-                    lab.Vfx.MaterialOf(BattleVfxShape.Sparkle)
+                    lab.Vfx.MaterialOf(BattleVfxShape.Beam)
                 );
                 BuildPicker(screen, lab);
                 lab.HiddenWhilePicking = new[]
