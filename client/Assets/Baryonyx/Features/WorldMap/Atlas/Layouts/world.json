@@ -1,6 +1,8 @@
 {
  "key": "world",
  "name": "世界地図",
+ "level": 10,
+ "base": 200,
  "width": 7680,
  "height": 5120,
  "nodes": [
@@ -8,445 +10,538 @@
    "id": "region-fiamma",
    "x": 6435.0,
    "y": 2130.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-bosco",
    "x": 5650.0,
    "y": 1060.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-verde",
    "x": 2765.0,
    "y": 2155.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-nebbia",
    "x": 835.0,
    "y": 3180.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-marina",
    "x": 1040.0,
    "y": 1955.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-oro",
    "x": 3410.0,
    "y": 3460.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "region-gelo",
    "x": 2555.0,
    "y": 1255.0,
-   "kind": "region"
+   "kind": "region",
+   "price": 400
   },
   {
    "id": "world-65",
    "x": 4165.0,
    "y": 2880.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 200
   },
   {
    "id": "world-64",
    "x": 3957.0,
    "y": 2940.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-69",
    "x": 3750.1,
    "y": 2988.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-68",
    "x": 3540.6,
    "y": 3046.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-73",
    "x": 3335.0,
    "y": 3115.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-58",
    "x": 4130.4,
    "y": 2662.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-49",
    "x": 4120.0,
    "y": 2442.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-43",
    "x": 4085.0,
    "y": 2227.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-39",
    "x": 3984.8,
    "y": 2034.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-35",
    "x": 3896.1,
    "y": 1834.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-29",
    "x": 3795.0,
    "y": 1640.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-66",
    "x": 4389.0,
    "y": 2945.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-70",
    "x": 4618.3,
    "y": 2975.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-67",
    "x": 4820.3,
    "y": 2874.7,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-61",
    "x": 5019.1,
    "y": 2765.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-59",
    "x": 5225.9,
    "y": 2679.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-55",
    "x": 5387.8,
    "y": 2507.7,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-50",
    "x": 5590.5,
    "y": 2414.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-44",
    "x": 5734.9,
    "y": 2237.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-41",
    "x": 5920.0,
    "y": 2120.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-40",
    "x": 5790.0,
    "y": 1950.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-32",
    "x": 5838.3,
    "y": 1746.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-26",
    "x": 5906.2,
    "y": 1542.2,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-17",
    "x": 5946.2,
    "y": 1327.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-15",
    "x": 5985.0,
    "y": 1115.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-46",
    "x": 6099.1,
    "y": 2289.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-47",
    "x": 6250.0,
    "y": 2275.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-14",
    "x": 5808.2,
    "y": 1129.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-12",
    "x": 5940.2,
    "y": 902.2,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-11",
    "x": 5730.9,
    "y": 870.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-10",
    "x": 5527.9,
    "y": 796.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-8",
    "x": 5416.5,
    "y": 614.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 200
   },
   {
    "id": "world-6",
    "x": 5242.5,
    "y": 490.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-4",
    "x": 5056.1,
    "y": 375.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-2",
    "x": 4841.4,
    "y": 330.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-1",
    "x": 4642.3,
    "y": 337.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-3",
    "x": 4441.1,
    "y": 415.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-5",
    "x": 4246.0,
    "y": 502.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "peddler",
+   "price": 300
   },
   {
    "id": "world-7",
    "x": 4068.5,
    "y": 631.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-9",
    "x": 4058.6,
    "y": 829.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-13",
    "x": 4097.8,
    "y": 1042.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-16",
    "x": 3997.9,
    "y": 1242.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-22",
    "x": 3903.5,
    "y": 1445.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-38",
    "x": 2731.0,
    "y": 1978.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-34",
    "x": 2695.0,
    "y": 1805.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-48",
    "x": 1115.0,
    "y": 2390.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "bet",
+   "price": 250
   },
   {
    "id": "world-45",
    "x": 1265.6,
    "y": 2329.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-42",
    "x": 1355.0,
    "y": 2185.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-52",
    "x": 1290.0,
    "y": 2510.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-53",
    "x": 1510.2,
    "y": 2495.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-54",
    "x": 1726.2,
    "y": 2475.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "peddler",
+   "price": 300
   },
   {
    "id": "world-56",
    "x": 1886.3,
    "y": 2577.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-60",
    "x": 1970.9,
    "y": 2779.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-63",
    "x": 2108.8,
    "y": 2946.3,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 200
   },
   {
    "id": "world-72",
    "x": 2291.4,
    "y": 3071.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-74",
    "x": 2468.4,
    "y": 3203.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-77",
    "x": 2647.9,
    "y": 3269.9,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-75",
    "x": 2824.7,
    "y": 3193.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-76",
    "x": 3042.9,
    "y": 3162.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-78",
    "x": 3218.4,
    "y": 3252.2,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "meet",
+   "price": 250
   },
   {
    "id": "world-51",
    "x": 950.9,
    "y": 2549.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-57",
    "x": 793.5,
    "y": 2716.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-62",
    "x": 631.2,
    "y": 2878.8,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 200
   },
   {
    "id": "world-71",
    "x": 640.5,
    "y": 3085.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-36",
    "x": 1232.9,
    "y": 2022.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-37",
    "x": 1490.0,
    "y": 2029.6,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-33",
    "x": 1548.8,
    "y": 1808.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-start",
@@ -458,67 +553,81 @@
    "id": "world-18",
    "x": 1693.9,
    "y": 1399.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-19",
    "x": 1924.1,
    "y": 1395.1,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   },
   {
    "id": "world-20",
    "x": 2149.2,
    "y": 1385.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-23",
    "x": 2330.0,
    "y": 1520.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-79",
    "x": 3415.0,
    "y": 3276.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-21",
    "x": 2409.7,
    "y": 1355.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-28",
    "x": 3561.1,
    "y": 1585.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-25",
    "x": 3324.2,
    "y": 1539.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-24",
    "x": 3097.1,
    "y": 1535.3,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 250
   },
   {
    "id": "world-31",
    "x": 2895.7,
    "y": 1670.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "world-30",
    "x": 2498.5,
    "y": 1683.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 200
   }
  ],
  "lines": [

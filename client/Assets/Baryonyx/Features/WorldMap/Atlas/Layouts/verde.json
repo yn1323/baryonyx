@@ -1,6 +1,8 @@
 {
  "key": "verde",
  "name": "ヴェルデ平原",
+ "level": 10,
+ "base": 200,
  "width": 8448,
  "height": 6400,
  "nodes": [
@@ -8,7 +10,8 @@
    "id": "porta",
    "x": 4316.0,
    "y": 3308.0,
-   "kind": "town"
+   "kind": "town",
+   "price": 400
   },
   {
    "id": "gate-verde",
@@ -20,625 +23,729 @@
    "id": "brezza",
    "x": 2164.0,
    "y": 1820.0,
-   "kind": "town"
+   "kind": "town",
+   "price": 400
   },
   {
    "id": "verde-54",
    "x": 4111.5,
    "y": 3244.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-53",
    "x": 3938.1,
    "y": 3232.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-50",
    "x": 3776.5,
    "y": 3180.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-49",
    "x": 3600.6,
    "y": 3180.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-48",
    "x": 3424.6,
    "y": 3180.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-46",
    "x": 3256.9,
    "y": 3152.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-39",
    "x": 3126.3,
    "y": 3035.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-38",
    "x": 2953.8,
    "y": 3036.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-37",
    "x": 2780.0,
    "y": 3052.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-42",
    "x": 4236.0,
    "y": 3097.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-31",
    "x": 4202.5,
    "y": 2922.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-22",
    "x": 4148.0,
    "y": 2757.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-97",
    "x": 4508.0,
    "y": 3900.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-94",
    "x": 4420.0,
    "y": 3784.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-74",
    "x": 4402.0,
    "y": 3633.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-65",
    "x": 4340.1,
    "y": 3490.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-88",
    "x": 4590.7,
    "y": 3746.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-75",
    "x": 4740.0,
    "y": 3652.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-102",
    "x": 4540.0,
    "y": 4116.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-83",
    "x": 5492.0,
    "y": 3708.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-70",
    "x": 5549.5,
    "y": 3555.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-62",
    "x": 5611.1,
    "y": 3406.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-57",
    "x": 5726.7,
    "y": 3288.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-47",
    "x": 5791.6,
    "y": 3152.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-36",
    "x": 5750.2,
    "y": 2998.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-28",
    "x": 5692.0,
    "y": 2850.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-20",
    "x": 5628.0,
    "y": 2708.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-81",
    "x": 5355.1,
    "y": 3660.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-80",
    "x": 5201.1,
    "y": 3660.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-77",
    "x": 5047.9,
    "y": 3653.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-76",
    "x": 4894.0,
    "y": 3652.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-95",
    "x": 5630.2,
    "y": 3803.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-89",
    "x": 5796.8,
    "y": 3770.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-90",
    "x": 5947.0,
    "y": 3768.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-91",
    "x": 6111.0,
    "y": 3747.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-78",
    "x": 6241.7,
    "y": 3638.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-68",
    "x": 6364.6,
    "y": 3516.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-64",
    "x": 6524.0,
    "y": 3452.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-15",
    "x": 5868.0,
    "y": 2644.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-25",
    "x": 5964.9,
    "y": 2794.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-32",
    "x": 6082.8,
    "y": 2930.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-44",
    "x": 6183.0,
    "y": 3078.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-56",
    "x": 6261.4,
    "y": 3227.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-59",
    "x": 6406.1,
    "y": 3334.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-13",
    "x": 6013.4,
    "y": 2596.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-16",
    "x": 6166.0,
    "y": 2620.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-17",
    "x": 6323.6,
    "y": 2622.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-19",
    "x": 6468.0,
    "y": 2668.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-14",
    "x": 5739.9,
    "y": 2647.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-63",
    "x": 4189.7,
    "y": 3429.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-66",
    "x": 4055.0,
    "y": 3513.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-73",
    "x": 3935.6,
    "y": 3624.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-79",
    "x": 3796.0,
    "y": 3700.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-100",
    "x": 3196.0,
    "y": 3988.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-98",
    "x": 3015.2,
    "y": 3973.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-92",
    "x": 3004.0,
    "y": 3796.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-61",
    "x": 4489.3,
    "y": 3385.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-67",
    "x": 4619.4,
    "y": 3515.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-1",
    "x": 2348.4,
    "y": 1873.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-2",
    "x": 2506.4,
    "y": 1914.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-4",
    "x": 2634.7,
    "y": 2024.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-5",
    "x": 2793.0,
    "y": 2081.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-6",
    "x": 2945.5,
    "y": 2134.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-8",
    "x": 3028.0,
    "y": 2277.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-10",
    "x": 2996.0,
    "y": 2441.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-12",
    "x": 2957.9,
    "y": 2603.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-21",
    "x": 2900.0,
    "y": 2753.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-30",
    "x": 2862.3,
    "y": 2909.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-3",
    "x": 2205.7,
    "y": 2029.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-7",
    "x": 2220.0,
    "y": 2196.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-9",
    "x": 2221.4,
    "y": 2374.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-11",
    "x": 2304.4,
    "y": 2528.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-18",
    "x": 2362.4,
    "y": 2690.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-26",
    "x": 2454.7,
    "y": 2835.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-35",
    "x": 2548.4,
    "y": 2985.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-41",
    "x": 2692.0,
    "y": 3084.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-29",
    "x": 6436.8,
    "y": 2827.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-34",
    "x": 6508.4,
    "y": 2976.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-45",
    "x": 6592.4,
    "y": 3122.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-58",
    "x": 6596.0,
    "y": 3290.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-52",
    "x": 2662.7,
    "y": 3252.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-60",
    "x": 2715.5,
    "y": 3408.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-69",
    "x": 2800.4,
    "y": 3544.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-72",
    "x": 2934.8,
    "y": 3647.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-85",
    "x": 3154.2,
    "y": 3755.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-86",
    "x": 3318.0,
    "y": 3764.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-87",
    "x": 3481.1,
    "y": 3764.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-82",
    "x": 3636.5,
    "y": 3724.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-71",
    "x": 6596.0,
    "y": 3589.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-84",
    "x": 6556.0,
    "y": 3708.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-24",
    "x": 5481.4,
    "y": 2775.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-23",
    "x": 5312.0,
    "y": 2777.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-27",
    "x": 5172.0,
    "y": 2843.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-33",
    "x": 5071.7,
    "y": 2966.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-40",
    "x": 4916.8,
    "y": 3028.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-43",
    "x": 4768.2,
    "y": 3098.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-51",
    "x": 4631.7,
    "y": 3195.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-55",
    "x": 4466.4,
    "y": 3221.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-103",
    "x": 4548.0,
    "y": 4316.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-101",
    "x": 4404.6,
    "y": 3998.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-99",
    "x": 4228.5,
    "y": 3964.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-96",
    "x": 4110.9,
    "y": 3836.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   },
   {
    "id": "verde-93",
    "x": 3929.0,
    "y": 3812.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 200
   }
  ],
  "lines": [

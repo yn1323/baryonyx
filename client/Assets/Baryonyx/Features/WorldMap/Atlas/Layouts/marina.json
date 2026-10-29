@@ -1,6 +1,8 @@
 {
  "key": "marina",
  "name": "マリーナ海岸",
+ "level": 14,
+ "base": 240,
  "width": 4992,
  "height": 7168,
  "nodes": [
@@ -8,7 +10,8 @@
    "id": "portoria",
    "x": 2204.0,
    "y": 3436.0,
-   "kind": "town"
+   "kind": "town",
+   "price": 480
   },
   {
    "id": "gate-marina",
@@ -20,481 +23,585 @@
    "id": "marina-5",
    "x": 708.0,
    "y": 2036.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-10",
    "x": 788.0,
    "y": 2148.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "peddler",
+   "price": 360
   },
   {
    "id": "marina-9",
    "x": 560.8,
    "y": 2143.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-12",
    "x": 476.0,
    "y": 2284.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-4",
    "x": 778.0,
    "y": 1874.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-3",
    "x": 740.0,
    "y": 1725.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-2",
    "x": 672.1,
    "y": 1564.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-1",
    "x": 548.0,
    "y": 1428.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "chest",
+   "price": 480
   },
   {
    "id": "marina-38",
    "x": 2043.5,
    "y": 3428.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "bet",
+   "price": 300
   },
   {
    "id": "marina-37",
    "x": 1889.4,
    "y": 3428.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-36",
    "x": 1735.3,
    "y": 3428.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-35",
    "x": 1582.1,
    "y": 3436.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-34",
    "x": 1428.0,
    "y": 3436.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-44",
    "x": 2124.0,
    "y": 3597.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-49",
    "x": 2108.0,
    "y": 3777.8,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-58",
    "x": 2061.0,
    "y": 3948.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-61",
    "x": 2004.0,
    "y": 4116.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-47",
    "x": 1204.0,
    "y": 3748.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-41",
    "x": 1231.6,
    "y": 3558.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-50",
    "x": 1076.0,
    "y": 3804.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-51",
    "x": 1349.8,
    "y": 3812.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-52",
    "x": 1518.1,
    "y": 3807.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-54",
    "x": 1683.3,
    "y": 3828.9,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-55",
    "x": 1836.0,
    "y": 3892.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-43",
    "x": 1093.6,
    "y": 3615.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 300
   },
   {
    "id": "marina-40",
    "x": 1194.3,
    "y": 3470.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-56",
    "x": 986.6,
    "y": 3932.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-60",
    "x": 962.6,
    "y": 4101.1,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-62",
    "x": 820.4,
    "y": 4185.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-64",
    "x": 804.0,
    "y": 4364.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-59",
    "x": 2585.0,
    "y": 3972.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-57",
    "x": 2450.7,
    "y": 3912.3,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-53",
    "x": 2343.4,
    "y": 3781.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-45",
    "x": 2308.0,
    "y": 3616.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-19",
    "x": 2180.0,
    "y": 2556.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-18",
    "x": 2015.6,
    "y": 2508.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-17",
    "x": 1843.0,
    "y": 2500.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-15",
    "x": 1703.3,
    "y": 2407.3,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 300
   },
   {
    "id": "marina-14",
    "x": 1578.9,
    "y": 2284.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-11",
    "x": 1421.1,
    "y": 2228.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-8",
    "x": 1278.6,
    "y": 2127.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "bet",
+   "price": 300
   },
   {
    "id": "marina-7",
    "x": 1106.0,
    "y": 2123.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-6",
    "x": 942.2,
    "y": 2076.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-25",
    "x": 420.0,
    "y": 2748.0,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "chest",
+   "price": 480
   },
   {
    "id": "marina-20",
    "x": 348.0,
    "y": 2595.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-16",
    "x": 381.1,
    "y": 2426.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-28",
    "x": 3196.0,
    "y": 3012.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-27",
    "x": 3096.5,
    "y": 2892.4,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "meet",
+   "price": 300
   },
   {
    "id": "marina-26",
    "x": 2976.4,
    "y": 2790.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-24",
    "x": 2832.8,
    "y": 2736.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-23",
    "x": 2705.5,
    "y": 2644.7,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 300
   },
   {
    "id": "marina-22",
    "x": 2547.0,
    "y": 2644.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-21",
    "x": 2389.8,
    "y": 2652.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-29",
    "x": 3204.0,
    "y": 3132.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-13",
    "x": 659.3,
    "y": 2281.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-66",
    "x": 773.5,
    "y": 4466.6,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-69",
    "x": 772.0,
    "y": 4635.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-72",
    "x": 772.0,
    "y": 4803.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-74",
    "x": 772.0,
    "y": 4972.5,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "peddler",
+   "price": 360
   },
   {
    "id": "marina-76",
    "x": 821.7,
    "y": 5129.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-79",
    "x": 868.1,
    "y": 5285.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-80",
    "x": 988.3,
    "y": 5395.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-78",
    "x": 976.8,
    "y": 5249.6,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-77",
    "x": 979.8,
    "y": 5116.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-75",
    "x": 1102.8,
    "y": 5001.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-73",
    "x": 1222.1,
    "y": 4881.9,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-71",
    "x": 1341.4,
    "y": 4762.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-70",
    "x": 1459.1,
    "y": 4643.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-68",
    "x": 1580.6,
    "y": 4550.7,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-67",
    "x": 1738.9,
    "y": 4497.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-65",
    "x": 1892.0,
    "y": 4452.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-48",
    "x": 1753.3,
    "y": 3756.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-46",
    "x": 1614.9,
    "y": 3679.6,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-42",
    "x": 1525.6,
    "y": 3563.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-63",
    "x": 1899.3,
    "y": 4268.7,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "pickup",
+   "price": 240
   },
   {
    "id": "marina-39",
    "x": 2426.7,
    "y": 3420.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-33",
    "x": 2594.6,
    "y": 3389.1,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "battle",
+   "price": 240
   },
   {
    "id": "marina-32",
    "x": 2750.4,
    "y": 3320.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-31",
    "x": 2912.9,
    "y": 3270.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 240
   },
   {
    "id": "marina-30",
    "x": 3076.4,
    "y": 3213.8,
-   "kind": "empty"
+   "kind": "empty",
+   "event": "choice",
+   "price": 300
   }
  ],
  "lines": [

@@ -6,8 +6,8 @@ namespace Baryonyx.WorldMap
 {
     /// <summary>
     /// A window for what happens on a square, opened from the square itself with the map left
-    /// behind it (doc/features/world-atlas.md#マスの出来事の見本): the map slides the square below
-    /// the window's place, the square lights up and thin lines of light rise from it, then the
+    /// behind it (doc/features/world-atlas.md#マスの出来事の見本): the map stays where it is,
+    /// the square lights up and thin lines of light rise from it, then the
     /// window grows up out of the square with a slight overshoot while the map dims, and the
     /// event's characters and things drop in. What happens inside is the open
     /// <see cref="WorldEventPanel"/>'s. Closing shrinks the window back into the square; a battle
@@ -62,10 +62,8 @@ namespace Baryonyx.WorldMap
         public const float DepartSeconds = 0.45f;
         private const float ReturnSeconds = 0.5f;
 
-        // 窓の置き場所（画面の中央）と、そのとき地図を滑らせてマスを見せる位置（画面の中央から、
-        // 設計座標、y が上）。マスは窓の下の端より下に見え、光の線がマスから窓へ昇る。
+        // 窓の置き場所（画面の中央）。地図は動かさず、窓はマスのある場所から育つ。
         public static readonly Vector2 Home = Vector2.zero;
-        public static readonly Vector2 SquareAt = new(0f, -485f);
 
         private const float StartScale = 0.08f;
         private const float ArriveDrop = 130f;

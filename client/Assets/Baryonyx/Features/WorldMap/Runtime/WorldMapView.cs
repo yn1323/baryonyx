@@ -44,6 +44,11 @@ namespace Baryonyx.WorldMap
         public Sprite[] KindSprites = Array.Empty<Sprite>();
         public Sprite HiddenSprite;
 
+        // 入れ子の地図で、マスに置いた出来事（WorldEventKind の値。何も起きないマスは -1）と、
+        // 出来事ごとの台（WorldEventKind の順）。クリアしたマスは何もない台に戻す。
+        public int[] NodeEvents = Array.Empty<int>();
+        public Sprite[] EventSprites = Array.Empty<Sprite>();
+
         // マスを結ぶ線。並びは WorldMapGraph.Lines。
         public Image[] LineFills = Array.Empty<Image>();
         public Image[] LineEdges = Array.Empty<Image>();
@@ -75,6 +80,9 @@ namespace Baryonyx.WorldMap
         public static readonly Color SeenLine = new(0.78f, 0.76f, 0.72f, 0.75f);
         public static readonly Color HiddenLine = new(0.45f, 0.45f, 0.5f, 0.45f);
         public static readonly Color EdgeColor = new(0.32f, 0.2f, 0.12f, 1f);
+
+        // 確かめている道の線。
+        public static readonly Color RouteLine = new(1f, 0.93f, 0.62f, 1f);
         private static readonly Color SeenTint = new(0.62f, 0.62f, 0.68f, 1f);
 
         // 途中のマスに着いてから、次のマスへ跳ぶまでの間（秒）。
@@ -105,7 +113,22 @@ namespace Baryonyx.WorldMap
         private Vector2 glide;
         private bool holding;
         private readonly List<Vector2> walk = new();
+
+        // 歩く先のマス（walk と同じ並び）。
+        private readonly List<int> walkSquares = new();
         private int walkTarget = -1;
+
+        // 入れ子の地図で、マスごとの初めて入る値段（配置の並び）と、払っている途中のマス。
+        private int[] prices = Array.Empty<int>();
+        private string paying;
+        private System.Threading.Tasks.Task<WorldAtlasPayment> payment;
+
+        // 途中のマスの出来事の窓を開いている間は、続きを歩かない。
+        private bool held;
+
+        // 確かめの窓を開いている間、光らせる道（マスの並び）。
+        private readonly HashSet<int> route = new();
+        private readonly HashSet<(int, int)> routeLines = new();
         private bool hopping;
         private float hopElapsed;
         private float hopPause;
@@ -113,13 +136,46 @@ namespace Baryonyx.WorldMap
         private float pulse;
         private float noticeLeft;
 
-        // 出来事の窓を開く間に、地図を滑らせて見せる位置（scroll の行き先）。なければ止まっている。
-        private Vector2? aim;
+        /// <summary>
+        /// Pays for the square with the given ID before the party hops onto it (the nested world
+        /// map). Without it, or while <see cref="WorldAtlasSession.Charging"/> is off, every
+        /// square is free.
+        /// </summary>
+        public Func<string, System.Threading.Tasks.Task<WorldAtlasPayment>> Pay { get; set; }
+
+        /// <summary>Whether a square with the given ID was paid for earlier (the nested world map).</summary>
+        public Func<string, bool> IsPaid { get; set; }
+
+        // 払うマスを含む道を押した。引数は道（今いるマスから行き先まで）と、払うルーンの合計。
+        // 受け取った側が確かめてから Go を呼ぶ。受け取る先がなければ、そのまま歩く。
+        public event Action<IReadOnlyList<int>, int> MoveAsked;
+
+        // 道の途中で、出来事を置いたマスに初めて着いた。窓を閉じたら Resume で続きを歩く。
+        public event Action<string> EventReached;
+
+        // 開けたマスと残高をまだ読めていないのに、払うマスを押した。読み直してもらう。
+        public event Action LoadNeeded;
+
+        // マスの色を塗り直した。
+        public event Action Refreshed;
 
         public WorldMapGraph Graph => graph;
         public IReadOnlyList<WorldNodeState> States => states;
         public int PartyAt => partyAt;
         public bool Walking => walk.Count > 0;
+
+        /// <summary>The squares still to walk to, in order.</summary>
+        public IReadOnlyList<int> WalkSquares => walkSquares;
+
+        /// <summary>Walking, and not held by an event on the way: the walk can be stopped.</summary>
+        public bool CanStop => Walking && !held;
+
+        /// <summary>Whether moving onto a square not yet entered costs runes now.</summary>
+        public bool Charging => InAtlas && Pay != null && WorldAtlasSession.Charging;
+
+        /// <summary>This map's level and the base price of a square (the nested world map).</summary>
+        public int Level => InAtlas ? AtlasLayout.level : 0;
+        public int BaseCost => InAtlas ? AtlasLayout.@base : 0;
         public Vector2 Scroll => scroll;
         public float Zoom => zoom;
 
@@ -146,6 +202,7 @@ namespace Baryonyx.WorldMap
             {
                 graph = BuildGraph();
                 walk.Clear();
+                walkSquares.Clear();
                 Apply(
                     InAtlas
                         ? WorldMapProgress.Start
@@ -206,8 +263,39 @@ namespace Baryonyx.WorldMap
         private WorldAtlasLayout AtlasLayout =>
             atlasLayout ??= InAtlas ? WorldAtlasLayout.Parse(Layout.text) : null;
 
-        private WorldMapGraph BuildGraph() =>
-            InAtlas ? AtlasLayout.Build() : WorldMapCatalog.Build();
+        private WorldMapGraph BuildGraph()
+        {
+            if (!InAtlas)
+                return WorldMapCatalog.Build();
+            var nodes = AtlasLayout.nodes;
+            prices = new int[nodes.Length];
+            for (int i = 0; i < nodes.Length; i++)
+                prices[i] = nodes[i].price;
+            WorldAtlasSession.Register(AtlasLayout);
+            return AtlasLayout.Build();
+        }
+
+        /// <summary>
+        /// The runes that entering the square <paramref name="index"/> costs now: 0 when it was
+        /// entered or paid for before, or while charging is off.
+        /// </summary>
+        public int PriceOf(int index)
+        {
+            if (!Charging || index < 0 || index >= prices.Length)
+                return 0;
+            string id = graph.Nodes[index].Id;
+            return cleared.Contains(id) || (IsPaid?.Invoke(id) ?? false) ? 0 : prices[index];
+        }
+
+        /// <summary>Marks squares paid for elsewhere as entered (the nested world map's saved squares).</summary>
+        public void Merge(IEnumerable<string> squares)
+        {
+            foreach (var id in squares)
+                if (graph.IndexOf(id) >= 0)
+                    cleared.Add(id);
+            if (!Walking)
+                Refresh();
+        }
 
         /// <summary>
         /// Zooms to <paramref name="value"/> with the party at the middle of the screen, past
@@ -232,6 +320,7 @@ namespace Baryonyx.WorldMap
         {
             graph ??= BuildGraph();
             walk.Clear();
+            walkSquares.Clear();
             zoom = ClampZoom(StartZoom);
             Apply(new WorldMapProgress(at, clearedSquares));
             Loaded = true;
@@ -315,18 +404,91 @@ namespace Baryonyx.WorldMap
                     Arrived?.Invoke(graph.Nodes[index].Id, false);
                 return false;
             }
+            if (InAtlas)
+                return TapAtlas(index);
             var path = graph.PathTo(partyAt, index, states);
             if (path.Count < 2)
                 return false;
-            walk.Clear();
+            Go(path);
+            return true;
+        }
+
+        // 入れ子の地図では、開けていない先のマスまで、払うルーンがいちばん少ない道で一度に進める。
+        // 払うマスがあれば、MoveAsked で確かめてもらってから歩く。
+        private bool TapAtlas(int index)
+        {
+            if (Charging && !WorldAtlasSession.Loaded)
+            {
+                LoadNeeded?.Invoke();
+                return false;
+            }
+            var path = graph.CheapestPathTo(partyAt, index, states, PriceOf);
+            if (path.Count < 2)
+                return false;
+            int total = 0;
             for (int i = 1; i < path.Count; i++)
+                total += PriceOf(path[i]);
+            if (total > 0 && MoveAsked != null)
+            {
+                MoveAsked(path, total);
+                return true;
+            }
+            Go(path);
+            return true;
+        }
+
+        /// <summary>
+        /// Walks <paramref name="path"/> (from the party's square). On the nested world map, each
+        /// square not yet entered is paid for just before the party hops onto it.
+        /// </summary>
+        public void Go(IReadOnlyList<int> path)
+        {
+            if (path == null || path.Count < 2 || path[0] != partyAt || Walking)
+                return;
+            walk.Clear();
+            walkSquares.Clear();
+            for (int i = 1; i < path.Count; i++)
+            {
                 walk.Add(DesignOf(path[i]));
-            walkTarget = index;
+                walkSquares.Add(path[i]);
+            }
+            walkTarget = path[^1];
             glide = Vector2.zero;
-            aim = null;
             hopping = false;
             hopPause = 0f;
-            return true;
+            held = false;
+            PayAhead();
+        }
+
+        /// <summary>
+        /// Stops the walk without going on to the next square: the party stays where it stands,
+        /// or lands on the square it is in the air to. Squares further on are not paid for.
+        /// </summary>
+        public void Stop()
+        {
+            if (!CanStop)
+                return;
+            if (hopping)
+            {
+                walk.RemoveRange(1, walk.Count - 1);
+                walkSquares.RemoveRange(1, walkSquares.Count - 1);
+                walkTarget = walkSquares[0];
+                return;
+            }
+            Halt();
+        }
+
+        /// <summary>Walks on after the event on the way has been closed.</summary>
+        public void Resume() => held = false;
+
+        private void Halt()
+        {
+            walk.Clear();
+            walkSquares.Clear();
+            walkTarget = -1;
+            hopping = false;
+            held = false;
+            Refresh();
         }
 
         private void Update()
@@ -335,8 +497,6 @@ namespace Baryonyx.WorldMap
             pulse += dt;
             if (Walking)
                 Step(dt);
-            else if (aim.HasValue)
-                Slide(dt);
             else if (!holding && glide.sqrMagnitude > 1f)
             {
                 MoveBy(glide * dt);
@@ -353,7 +513,7 @@ namespace Baryonyx.WorldMap
             if (!hopping)
             {
                 hopPause -= dt;
-                if (hopPause <= 0f)
+                if (hopPause <= 0f && ReadyToHop())
                     TakeOff();
             }
             if (hopping)
@@ -364,14 +524,18 @@ namespace Baryonyx.WorldMap
                 if (x >= 1f)
                 {
                     walk.RemoveAt(0);
+                    int landed = walkSquares[0];
+                    walkSquares.RemoveAt(0);
                     hopping = false;
                     hopPause = HopPauseSeconds;
+                    if (InAtlas)
+                        Landed(landed);
                 }
             }
             var want = Clamp(partyDesign - SeenSize * 0.5f);
             scroll = Vector2.Lerp(scroll, want, 1f - Mathf.Exp(-FollowSharpness * dt));
             ApplyScroll();
-            if (Walking)
+            if (Walking || InAtlas)
                 return;
             partyAt = walkTarget;
             walkTarget = -1;
@@ -389,11 +553,6 @@ namespace Baryonyx.WorldMap
             if (clear)
                 cleared.Add(id);
             Refresh();
-            if (InAtlas)
-            {
-                Arrived?.Invoke(id, clear);
-                return;
-            }
             // 宝箱は、初めてクリアしたときに中身をもらう。中身は保存できてから見せる。
             SaveTask =
                 clear && graph.Nodes[partyAt].Kind == WorldNodeKind.Treasure
@@ -401,25 +560,82 @@ namespace Baryonyx.WorldMap
                     : SaveAsync(id, clear);
         }
 
-        /// <summary>
-        /// Slides the map until the party stands <paramref name="offset"/> from the middle of the
-        /// screen (design pixels, y up), as far as the map's edges allow.
-        /// </summary>
-        public void SlidePartyTo(Vector2 offset)
+        // 次のマスへ跳んでよいか。開けていないマスは、跳ぶ直前に払い、払い終えてから跳ぶ。払えなければ、
+        // そこで止まる。止めたときに入っていないマスを払わないよう、前もっては払わない。
+        private bool ReadyToHop()
         {
-            glide = Vector2.zero;
-            aim = Clamp(partyDesign - (SeenSize * 0.5f + new Vector2(offset.x, -offset.y) / zoom));
+            if (held)
+                return false;
+            int next = walkSquares[0];
+            if (PriceOf(next) == 0)
+                return true;
+            string id = graph.Nodes[next].Id;
+            if (payment == null || paying != id)
+                StartPaying(id);
+            if (!payment.IsCompleted)
+                return false;
+            var result = payment.Status == System.Threading.Tasks.TaskStatus.RanToCompletion
+                ? payment.Result
+                : WorldAtlasPayment.Failed(WorldAtlasSession.FailedMessage);
+            payment = null;
+            paying = null;
+            if (result.Paid)
+                return true;
+            Halt();
+            ShowNotice(result.Message);
+            return false;
         }
 
-        private void Slide(float dt)
+        // 歩き始めた最初のマスの支払いを、すぐに始める。
+        private void PayAhead()
         {
-            scroll = Vector2.Lerp(scroll, aim.Value, 1f - Mathf.Exp(-FollowSharpness * dt));
-            if ((scroll - aim.Value).sqrMagnitude < 0.25f)
+            if (walkSquares.Count == 0 || held || PriceOf(walkSquares[0]) == 0)
+                return;
+            string id = graph.Nodes[walkSquares[0]].Id;
+            if (payment == null || paying != id)
+                StartPaying(id);
+        }
+
+        private void StartPaying(string id)
+        {
+            paying = id;
+            payment = Pay(id);
+        }
+
+        // 入れ子の地図で、道のマスに着いた。行き先なら Arrived で知らせ、途中で出来事を置いたマスに初めて
+        // 着いたら、止まって EventReached で窓を開いてもらう。
+        private void Landed(int at)
+        {
+            partyAt = at;
+            string id = graph.Nodes[at].Id;
+            bool first = cleared.Add(id);
+            Refresh();
+            if (walk.Count == 0)
             {
-                scroll = aim.Value;
-                aim = null;
+                walkTarget = -1;
+                Arrived?.Invoke(id, first);
+                return;
             }
-            ApplyScroll();
+            if (first && TryEventAt(at, out _) && EventReached != null)
+            {
+                held = true;
+                EventReached(id);
+            }
+        }
+
+        /// <summary>Lights the squares and lines of <paramref name="path"/>; null puts them out.</summary>
+        public void Highlight(IReadOnlyList<int> path)
+        {
+            route.Clear();
+            routeLines.Clear();
+            if (path != null)
+                for (int i = 0; i < path.Count; i++)
+                {
+                    route.Add(path[i]);
+                    if (i > 0)
+                        routeLines.Add((Mathf.Min(path[i - 1], path[i]), Mathf.Max(path[i - 1], path[i])));
+                }
+            Refresh();
         }
 
         private void TakeOff()
@@ -587,24 +803,47 @@ namespace Baryonyx.WorldMap
             {
                 var state = states[i];
                 var image = NodeImages[i];
+                // 出来事の台は、まだ行けないマスでも暗くせず、先の目当てとして見せる。
+                var happening = default(WorldEventKind);
+                bool happens =
+                    state is not (WorldNodeState.Hidden or WorldNodeState.Cleared)
+                    && TryEventAt(i, out happening);
                 image.sprite =
-                    state == WorldNodeState.Hidden
-                        ? HiddenSprite
-                        : KindSprites[(int)ShownKind(graph.Nodes[i].Kind, state)];
-                image.color = state == WorldNodeState.Seen ? SeenTint : Color.white;
+                    state == WorldNodeState.Hidden ? HiddenSprite
+                    : happens ? EventSprites[(int)happening]
+                    : KindSprites[(int)ShownKind(graph.Nodes[i].Kind, state)];
+                image.color =
+                    state == WorldNodeState.Seen && !happens && !route.Contains(i)
+                        ? SeenTint
+                        : Color.white;
                 Nodes[i].localScale = Vector3.one;
             }
             for (int i = 0; i < LineFills.Length && i < graph.Lines.Count; i++)
             {
                 var (from, to) = graph.Lines[i];
-                var color = LineColor(states[from], states[to]);
+                var color = routeLines.Contains((Mathf.Min(from, to), Mathf.Max(from, to)))
+                    ? RouteLine
+                    : LineColor(states[from], states[to]);
                 LineFills[i].color = color;
                 var edge = EdgeColor;
                 edge.a = color.a;
                 LineEdges[i].color = edge;
             }
             if (Place != null)
-                Place.text = graph.Nodes[partyAt].Name;
+                Place.text = InAtlas
+                    ? $"{graph.Nodes[partyAt].Name}  Lv{AtlasLayout.level}"
+                    : graph.Nodes[partyAt].Name;
+            Refreshed?.Invoke();
+        }
+
+        /// <summary>The event placed on the square <paramref name="index"/>, if any.</summary>
+        public bool TryEventAt(int index, out WorldEventKind kind)
+        {
+            kind = default;
+            if (index < 0 || index >= NodeEvents.Length || NodeEvents[index] < 0)
+                return false;
+            kind = (WorldEventKind)NodeEvents[index];
+            return true;
         }
 
         /// <summary>
@@ -636,7 +875,7 @@ namespace Baryonyx.WorldMap
         {
             float scale = 1f + 0.08f * (0.5f + 0.5f * Mathf.Sin(pulse * 4f));
             for (int i = 0; i < Nodes.Length && i < states.Length; i++)
-                if (states[i] == WorldNodeState.Open)
+                if (states[i] == WorldNodeState.Open || (route.Count > 0 && route.Contains(i) && i != partyAt))
                     Nodes[i].localScale = Vector3.one * scale;
         }
     }

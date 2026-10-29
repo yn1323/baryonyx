@@ -80,6 +80,19 @@ namespace Baryonyx.WorldMap.Editor
             "WorldNodeGate",
         };
 
+        // 入れ子の地図のマスに置く出来事の台。WorldEventKind の順に WorldEvent<名前>.png。
+        // 生成の依頼文は client/ArtSource/WorldMap/Atlas/requests/event_squares*.txt。
+        private static readonly string[] EventArt =
+        {
+            "WorldEventMeet",
+            "WorldEventChoice",
+            "WorldEventHiddenChest",
+            "WorldEventPickup",
+            "WorldEventPeddler",
+            "WorldEventBet",
+            "WorldEventBattle",
+        };
+
         // ダンジョン一覧のボタンの城門（白一色の形。ホームのボタンのアイコンと同じ描き方）。
         private static readonly string[] DungeonsIcon =
         {
@@ -159,9 +172,13 @@ namespace Baryonyx.WorldMap.Editor
                 BuildControls(root, view, dungeons);
                 view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
                 view.Dialog = GameDialogAssets.Build(root);
-                // 入れ子の地図では、マスの出来事をマスから開く窓で見せる。
+                // 入れ子の地図では、マスに置いた出来事を台の絵で見せ、マスから開く窓で見せる。
                 if (layout != null)
+                {
+                    PlaceEvents(view, layout);
+                    WorldAtlasTollAssets.Build(root, view);
                     view.EventWindow = WorldMapEventWindowAssets.Build(root);
+                }
                 CollectTintGraphics(root);
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root.gameObject, prefabPath);
                 look = new Look();
@@ -181,6 +198,21 @@ namespace Baryonyx.WorldMap.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ArtAssets.ImportSprite(IconDungeonsPath, Vector4.zero, FilterMode.Point);
             return ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
+        }
+
+        // マスの並びは、配置のJSONのマスの並び（WorldAtlasLayout.Build と同じ）。
+        private static void PlaceEvents(WorldMapView view, TextAsset layout)
+        {
+            var sprites = new Sprite[EventArt.Length];
+            for (int i = 0; i < EventArt.Length; i++)
+                sprites[i] = ImportNode($"{ArtFolder}/{EventArt[i]}.png");
+            view.EventSprites = sprites;
+            var nodes = WorldAtlasLayout.Parse(layout.text).nodes;
+            view.NodeEvents = new int[nodes.Length];
+            for (int i = 0; i < nodes.Length; i++)
+                view.NodeEvents[i] = WorldAtlasLayout.EventOf(nodes[i].@event) is { } kind
+                    ? (int)kind
+                    : -1;
         }
 
         private static Sprite ImportNode(string path)

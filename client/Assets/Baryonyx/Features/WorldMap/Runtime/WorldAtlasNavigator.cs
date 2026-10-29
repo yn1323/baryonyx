@@ -36,27 +36,9 @@ namespace Baryonyx.WorldMap
         public Action Leave { get; set; }
         public Action OpenDungeons { get; set; }
 
-        // 初めて止まった何もないマスで、出来事の見本の窓を開くか。デバッグルームの試作だけで開き、
-        // 冒険の世界地図のシーンは切る（マスの出来事はまだ決めていない）。
-        public bool TrialEvents { get; set; } = true;
-
         // 戦闘の見本で「たたかう」を押したときに、マスのIDを渡して戦闘の画面を開く処理。
         // 渡さなければ（試作では）、白く覆ったあと地図へ戻る。
         public Action<string> StartBattle { get; set; }
-
-        // 見本は、初めて止まった何もないマスごとに、この順で1つずつ開く。
-        public static readonly WorldEventKind[] TrialOrder =
-        {
-            WorldEventKind.Meet,
-            WorldEventKind.Choice,
-            WorldEventKind.HiddenChest,
-            WorldEventKind.Pickup,
-            WorldEventKind.Peddler,
-            WorldEventKind.Bet,
-            WorldEventKind.Battle,
-        };
-
-        private int trials;
 
         // 地図を切り替える演出の途中。テストが待つ。
         public bool Switching { get; private set; }
@@ -65,6 +47,33 @@ namespace Baryonyx.WorldMap
         {
             if (current == null)
                 Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare);
+            LoadPaid();
+        }
+
+        // ルーンを払って開けたマスと残高を読み、読めたら開けたマスとして地図へ足す。
+        private async void LoadPaid()
+        {
+            try
+            {
+                await WorldAtlasSession.LoadAsync(destroyCancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(WorldAtlasSession.LoadFailedMessage + "。" + exception.Message);
+                if (current != null)
+                    current.ShowNotice(WorldAtlasSession.LoadFailedMessage);
+                return;
+            }
+            if (this == null)
+                return;
+            foreach (var pair in cleared)
+                pair.Value.UnionWith(WorldAtlasSession.OpenedOn(pair.Key));
+            if (current != null)
+                current.Merge(WorldAtlasSession.OpenedOn(currentKey));
         }
 
         /// <summary>
@@ -87,6 +96,12 @@ namespace Baryonyx.WorldMap
             current = Instantiate(prefab, transform);
             currentKey = key;
             current.Arrived += Arrive;
+            current.EventReached += ReachEvent;
+            current.LoadNeeded += LoadPaid;
+            // 開けていないマスは、跳ぶ直前に1マスずつ払う。払ったマスは、次から払わずに通れる。
+            string map = key;
+            current.Pay = square => WorldAtlasSession.OpenAsync(map, square);
+            current.IsPaid = square => WorldAtlasSession.IsOpened(map, square);
             current.BackPressed += Back;
             current.DungeonsPressed += PressDungeons;
             if (current.Back != null)
@@ -99,6 +114,7 @@ namespace Baryonyx.WorldMap
             if (!cleared.TryGetValue(key, out var squares))
                 cleared[key] = squares = new HashSet<string>();
             squares.Add(at);
+            squares.UnionWith(WorldAtlasSession.OpenedOn(key));
             current.StartAt(at, squares);
             // 前の地図の大きな背景を、メモリーから外す。
             Resources.UnloadUnusedAssets();
@@ -116,15 +132,9 @@ namespace Baryonyx.WorldMap
             if (Switching)
                 return;
             int index = current.Graph.IndexOf(id);
-            if (
-                TrialEvents
-                && first
-                && current.EventWindow != null
-                && current.Graph.Nodes[index].Kind == WorldNodeKind.Empty
-            )
+            // 出来事を置いたマスに初めて止まると、地図を動かさずに、その出来事の見本の窓を開く。
+            if (first && current.EventWindow != null && current.TryEventAt(index, out var kind))
             {
-                current.SlidePartyTo(WorldMapEventWindow.SquareAt);
-                var kind = TrialOrder[trials++ % TrialOrder.Length];
                 var start = StartBattle;
                 current.EventWindow.Open(
                     current.Nodes[index],
@@ -145,6 +155,29 @@ namespace Baryonyx.WorldMap
             {
                 Back();
             }
+        }
+
+        // 道の途中の出来事を置いたマスで止まり、窓を閉じたら続きを歩く。戦闘へ移るときは、そこで終わる。
+        private void ReachEvent(string id)
+        {
+            int index = current.Graph.IndexOf(id);
+            if (current.EventWindow == null || !current.TryEventAt(index, out var kind))
+            {
+                current.Resume();
+                return;
+            }
+            var view = current;
+            var start = StartBattle;
+            current.EventWindow.Open(
+                current.Nodes[index],
+                kind,
+                () =>
+                {
+                    if (view != null)
+                        view.Resume();
+                },
+                start == null ? null : () => start(id)
+            );
         }
 
         private void PressDungeons()

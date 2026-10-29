@@ -33,7 +33,8 @@ namespace Baryonyx.App
             IWorkshopSource workshop = null,
             IEnhancementSource enhancement = null,
             ITempleSummonSource summon = null,
-            IWorldMapSource worldMap = null
+            IWorldMapSource worldMap = null,
+            IWorldAtlasSource worldAtlas = null
         )
         {
             Health = health ?? throw new ArgumentNullException(nameof(health));
@@ -47,6 +48,7 @@ namespace Baryonyx.App
             Enhancement = enhancement;
             Summon = summon;
             WorldMap = worldMap;
+            WorldAtlas = worldAtlas;
         }
 
         public HealthStepLink Health { get; }
@@ -79,6 +81,9 @@ namespace Baryonyx.App
         // 街道の世界地図の進み具合を読み書きするサーバー。接続先がなければnull。
         public IWorldMapSource WorldMap { get; }
 
+        // 入れ子の地図でルーンを払って開けたマスを読み書きするサーバー。接続先がなければnull。
+        public IWorldAtlasSource WorldAtlas { get; }
+
         // デバッグルームの一覧の「ルーン+10000」。サーバーがなければ画面の残高に足す。
         public DebugRunes DebugRunes { get; private set; } = DebugRunes.Offline;
 
@@ -108,6 +113,7 @@ namespace Baryonyx.App
             EnhancementSession.Source = services?.Enhancement;
             TempleSummonSession.Source = services?.Summon;
             WorldMapSession.Source = services?.WorldMap;
+            WorldAtlasSession.Source = services?.WorldAtlas;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -164,6 +170,9 @@ namespace Baryonyx.App
                     : null,
                 sync != null
                     ? new WorldMapServerSource(sync.Sessions, new WorldMapApiClient(server))
+                    : null,
+                sync != null
+                    ? new WorldAtlasServerSource(sync.Sessions, new WorldAtlasApiClient(server))
                     : null
             );
             if (sync != null)

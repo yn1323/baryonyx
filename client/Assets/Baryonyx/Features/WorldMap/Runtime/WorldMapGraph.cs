@@ -159,5 +159,62 @@ namespace Baryonyx.WorldMap
             path.Reverse();
             return path;
         }
+
+        /// <summary>
+        /// The way from <paramref name="from"/> to <paramref name="to"/> over any square that is
+        /// not hidden, both ends included, that costs the fewest runes (<paramref name="costOf"/>
+        /// is what entering a square costs), and of those the one with the fewest squares. Empty
+        /// when it cannot be reached.
+        /// </summary>
+        public List<int> CheapestPathTo(
+            int from,
+            int to,
+            IReadOnlyList<WorldNodeState> states,
+            System.Func<int, int> costOf
+        )
+        {
+            var path = new List<int>();
+            if (from < 0 || to < 0 || from == to || states[to] == WorldNodeState.Hidden)
+                return path;
+            // ルーンを先に比べ、同じならマスの数で比べる。マスは数百なので、配列で素直に探す。
+            const long PerRune = 4096;
+            var best = new long[nodes.Count];
+            var previous = new int[nodes.Count];
+            var done = new bool[nodes.Count];
+            for (int i = 0; i < best.Length; i++)
+            {
+                best[i] = long.MaxValue;
+                previous[i] = -1;
+            }
+            best[from] = 0;
+            while (true)
+            {
+                int at = -1;
+                for (int i = 0; i < best.Length; i++)
+                    if (!done[i] && best[i] != long.MaxValue && (at < 0 || best[i] < best[at]))
+                        at = i;
+                if (at < 0 || at == to)
+                    break;
+                done[at] = true;
+                foreach (int next in links[at])
+                {
+                    if (done[next] || states[next] == WorldNodeState.Hidden)
+                        continue;
+                    long cost = best[at] + costOf(next) * PerRune + 1;
+                    if (cost < best[next])
+                    {
+                        best[next] = cost;
+                        previous[next] = at;
+                    }
+                }
+            }
+            if (previous[to] < 0)
+                return path;
+            for (int at = to; at != from; at = previous[at])
+                path.Add(at);
+            path.Add(from);
+            path.Reverse();
+            return path;
+        }
     }
 }

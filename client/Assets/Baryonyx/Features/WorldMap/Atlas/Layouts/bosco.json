@@ -1,6 +1,8 @@
 {
  "key": "bosco",
  "name": "ボスコ大森林",
+ "level": 30,
+ "base": 400,
  "width": 8448,
  "height": 9472,
  "nodes": [
@@ -8,7 +10,8 @@
    "id": "campanella",
    "x": 4676.0,
    "y": 2708.0,
-   "kind": "town"
+   "kind": "town",
+   "price": 800
   },
   {
    "id": "gate-bosco",
@@ -20,1735 +23,2024 @@
    "id": "bosco-93",
    "x": 4958.1,
    "y": 2702.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-88",
    "x": 4832.9,
    "y": 2621.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-214",
    "x": 2604.0,
    "y": 6012.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-206",
    "x": 2604.0,
    "y": 5852.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-197",
    "x": 2572.0,
    "y": 5700.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-217",
    "x": 2480.0,
    "y": 6112.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-222",
    "x": 2357.3,
    "y": 6205.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-225",
    "x": 2252.0,
    "y": 6324.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-220",
    "x": 2612.0,
    "y": 6166.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-226",
    "x": 2652.1,
    "y": 6307.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-232",
    "x": 2764.0,
    "y": 6396.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-98",
    "x": 3764.0,
    "y": 2796.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-91",
    "x": 3608.4,
    "y": 2726.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-90",
    "x": 3437.8,
    "y": 2734.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-94",
    "x": 3271.9,
    "y": 2772.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-97",
    "x": 3113.5,
    "y": 2814.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-104",
    "x": 3051.9,
    "y": 2973.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-109",
    "x": 3020.8,
    "y": 3140.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-113",
    "x": 2954.9,
    "y": 3297.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-117",
    "x": 2956.0,
    "y": 3444.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-87",
    "x": 3833.9,
    "y": 2624.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-84",
    "x": 3948.0,
    "y": 2491.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-81",
    "x": 3916.0,
    "y": 2304.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-76",
    "x": 3940.0,
    "y": 2124.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-284",
    "x": 4292.0,
    "y": 7644.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-283",
    "x": 4412.0,
    "y": 7540.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-184",
    "x": 3060.0,
    "y": 4836.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-183",
    "x": 2901.8,
    "y": 4796.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-180",
    "x": 2737.9,
    "y": 4763.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-174",
    "x": 2668.0,
    "y": 4628.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-187",
    "x": 3196.0,
    "y": 4915.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-188",
    "x": 3327.9,
    "y": 5015.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-190",
    "x": 3454.2,
    "y": 5130.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-191",
    "x": 3599.9,
    "y": 5205.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-193",
    "x": 3649.9,
    "y": 5345.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-195",
    "x": 3601.2,
    "y": 5507.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-199",
    "x": 3556.0,
    "y": 5668.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-178",
    "x": 3051.8,
    "y": 4667.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-170",
    "x": 3081.4,
    "y": 4515.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-162",
    "x": 3156.0,
    "y": 4372.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-138",
    "x": 1980.0,
    "y": 3764.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-140",
    "x": 2148.1,
    "y": 3804.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-141",
    "x": 2305.0,
    "y": 3790.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-145",
    "x": 2468.0,
    "y": 3844.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-148",
    "x": 2289.1,
    "y": 3908.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-150",
    "x": 2468.0,
    "y": 3964.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-105",
    "x": 3895.2,
    "y": 3007.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-110",
    "x": 4020.0,
    "y": 3148.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-99",
    "x": 3986.6,
    "y": 2798.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-95",
    "x": 4176.0,
    "y": 2762.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-96",
    "x": 4372.0,
    "y": 2748.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-252",
    "x": 3844.0,
    "y": 6804.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-254",
    "x": 3704.1,
    "y": 6854.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-251",
    "x": 3583.3,
    "y": 6745.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-249",
    "x": 3424.9,
    "y": 6706.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-248",
    "x": 3266.3,
    "y": 6684.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-245",
    "x": 3116.0,
    "y": 6636.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-256",
    "x": 3957.6,
    "y": 6909.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-259",
    "x": 4067.7,
    "y": 7019.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-262",
    "x": 4177.8,
    "y": 7129.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-270",
    "x": 4268.0,
    "y": 7252.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-246",
    "x": 3900.0,
    "y": 6652.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-250",
    "x": 2982.3,
    "y": 6756.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-255",
    "x": 2863.2,
    "y": 6864.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-258",
    "x": 2781.0,
    "y": 7011.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-261",
    "x": 2661.0,
    "y": 7131.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-275",
    "x": 2572.0,
    "y": 7271.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-279",
    "x": 2433.1,
    "y": 7351.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-274",
    "x": 2276.3,
    "y": 7292.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-273",
    "x": 2112.3,
    "y": 7263.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-267",
    "x": 1993.5,
    "y": 7142.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-257",
    "x": 2033.1,
    "y": 6990.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-253",
    "x": 2069.8,
    "y": 6830.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-247",
    "x": 2033.5,
    "y": 6681.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-242",
    "x": 2003.7,
    "y": 6540.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-230",
    "x": 2114.9,
    "y": 6413.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-237",
    "x": 3011.1,
    "y": 6523.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-235",
    "x": 2876.7,
    "y": 6481.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-177",
    "x": 2556.0,
    "y": 4668.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-233",
    "x": 4012.0,
    "y": 6420.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-234",
    "x": 4124.0,
    "y": 6428.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-223",
    "x": 4071.1,
    "y": 6264.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-219",
    "x": 4140.0,
    "y": 6118.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-213",
    "x": 4056.9,
    "y": 5976.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-210",
    "x": 3924.8,
    "y": 5869.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-203",
    "x": 3788.0,
    "y": 5788.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-241",
    "x": 3924.0,
    "y": 6508.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-9",
    "x": 4044.0,
    "y": 460.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-22",
    "x": 3932.8,
    "y": 565.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-29",
    "x": 3934.6,
    "y": 723.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-32",
    "x": 3911.6,
    "y": 874.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-34",
    "x": 3822.5,
    "y": 1001.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-38",
    "x": 3710.8,
    "y": 1113.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-40",
    "x": 3599.1,
    "y": 1224.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-43",
    "x": 3492.0,
    "y": 1340.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-4",
    "x": 4018.7,
    "y": 292.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-3",
    "x": 3867.2,
    "y": 261.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-5",
    "x": 3722.1,
    "y": 362.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-8",
    "x": 3586.9,
    "y": 477.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-14",
    "x": 3418.6,
    "y": 508.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-13",
    "x": 3241.6,
    "y": 516.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-12",
    "x": 3064.0,
    "y": 520.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-21",
    "x": 2893.6,
    "y": 550.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-11",
    "x": 2748.0,
    "y": 508.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-7",
    "x": 4206.2,
    "y": 397.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-23",
    "x": 4286.4,
    "y": 545.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-25",
    "x": 4442.0,
    "y": 596.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-26",
    "x": 4620.0,
    "y": 595.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-15",
    "x": 4776.2,
    "y": 514.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-16",
    "x": 4948.2,
    "y": 501.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-27",
    "x": 5089.9,
    "y": 594.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-30",
    "x": 5132.0,
    "y": 764.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-33",
    "x": 5156.0,
    "y": 940.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-85",
    "x": 4667.3,
    "y": 2532.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-83",
    "x": 4562.6,
    "y": 2410.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-80",
    "x": 4454.1,
    "y": 2294.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-78",
    "x": 4327.4,
    "y": 2197.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-74",
    "x": 4212.0,
    "y": 2100.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-73",
    "x": 4092.0,
    "y": 2076.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-69",
    "x": 4335.0,
    "y": 2006.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-64",
    "x": 4455.5,
    "y": 1880.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-59",
    "x": 4578.9,
    "y": 1757.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-52",
    "x": 4702.3,
    "y": 1633.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-50",
    "x": 4845.0,
    "y": 1549.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-45",
    "x": 4939.4,
    "y": 1409.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-41",
    "x": 4907.0,
    "y": 1242.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-37",
    "x": 4856.8,
    "y": 1084.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-35",
    "x": 5007.7,
    "y": 1018.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-280",
    "x": 4337.7,
    "y": 7397.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-271",
    "x": 4435.4,
    "y": 7248.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-263",
    "x": 4562.8,
    "y": 7136.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-264",
    "x": 4732.2,
    "y": 7132.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-265",
    "x": 4902.4,
    "y": 7132.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-268",
    "x": 5060.0,
    "y": 7172.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-152",
    "x": 3900.0,
    "y": 3996.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-149",
    "x": 4041.6,
    "y": 3911.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-139",
    "x": 4130.3,
    "y": 3768.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-130",
    "x": 4235.8,
    "y": 3645.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-131",
    "x": 4407.1,
    "y": 3676.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-136",
    "x": 4578.2,
    "y": 3702.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-144",
    "x": 4669.3,
    "y": 3818.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-151",
    "x": 4732.0,
    "y": 3964.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-155",
    "x": 3797.7,
    "y": 4130.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-157",
    "x": 3633.5,
    "y": 4182.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-159",
    "x": 3487.1,
    "y": 4274.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-160",
    "x": 3325.8,
    "y": 4328.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-164",
    "x": 2986.4,
    "y": 4396.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-169",
    "x": 2850.9,
    "y": 4509.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-202",
    "x": 3421.6,
    "y": 5802.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-209",
    "x": 3260.0,
    "y": 5852.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-201",
    "x": 3682.8,
    "y": 5707.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-231",
    "x": 2588.4,
    "y": 6396.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-228",
    "x": 2420.2,
    "y": 6362.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-266",
    "x": 5204.0,
    "y": 7100.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-269",
    "x": 5346.1,
    "y": 7194.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-278",
    "x": 5470.0,
    "y": 7314.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-282",
    "x": 5468.0,
    "y": 7485.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-285",
    "x": 5558.8,
    "y": 7622.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-286",
    "x": 5710.1,
    "y": 7692.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-287",
    "x": 5882.6,
    "y": 7707.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-288",
    "x": 6054.2,
    "y": 7732.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-289",
    "x": 6204.0,
    "y": 7804.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-260",
    "x": 5244.0,
    "y": 7004.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-236",
    "x": 3227.9,
    "y": 6480.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-227",
    "x": 3228.0,
    "y": 6308.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-218",
    "x": 3244.0,
    "y": 6139.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-215",
    "x": 3323.9,
    "y": 5992.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-243",
    "x": 3293.4,
    "y": 6579.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-238",
    "x": 3443.3,
    "y": 6527.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-239",
    "x": 3603.0,
    "y": 6516.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-240",
    "x": 3763.1,
    "y": 6509.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-166",
    "x": 2576.4,
    "y": 4479.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-161",
    "x": 2594.0,
    "y": 4344.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-156",
    "x": 2612.1,
    "y": 4191.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-153",
    "x": 2570.8,
    "y": 4067.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-143",
    "x": 3892.0,
    "y": 3804.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-142",
    "x": 3733.3,
    "y": 3789.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-135",
    "x": 3574.6,
    "y": 3722.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-128",
    "x": 3429.6,
    "y": 3634.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-124",
    "x": 3275.0,
    "y": 3566.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-120",
    "x": 3116.3,
    "y": 3509.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-129",
    "x": 3885.8,
    "y": 3632.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-121",
    "x": 4002.6,
    "y": 3500.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-114",
    "x": 4020.0,
    "y": 3326.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-126",
    "x": 2052.9,
    "y": 3657.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-125",
    "x": 2210.5,
    "y": 3616.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-119",
    "x": 2338.1,
    "y": 3511.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-118",
    "x": 2495.8,
    "y": 3471.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-116",
    "x": 2640.1,
    "y": 3380.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-112",
    "x": 2746.5,
    "y": 3257.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-108",
    "x": 2776.9,
    "y": 3097.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-103",
    "x": 2685.2,
    "y": 2958.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-100",
    "x": 2576.8,
    "y": 2843.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-89",
    "x": 2484.0,
    "y": 2704.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-86",
    "x": 2429.8,
    "y": 2544.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-82",
    "x": 2400.1,
    "y": 2386.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-79",
    "x": 2274.8,
    "y": 2272.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-77",
    "x": 2136.6,
    "y": 2188.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-75",
    "x": 1985.0,
    "y": 2129.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-72",
    "x": 1828.0,
    "y": 2076.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-133",
    "x": 1766.4,
    "y": 3737.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-137",
    "x": 1628.0,
    "y": 3772.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-53",
    "x": 3028.0,
    "y": 1660.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-61",
    "x": 3111.4,
    "y": 1799.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-63",
    "x": 3251.3,
    "y": 1852.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-67",
    "x": 3387.5,
    "y": 1941.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-68",
    "x": 3546.4,
    "y": 1972.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-70",
    "x": 3696.1,
    "y": 2024.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-71",
    "x": 3860.0,
    "y": 2036.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-54",
    "x": 2875.4,
    "y": 1722.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-57",
    "x": 2714.9,
    "y": 1749.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-56",
    "x": 2557.1,
    "y": 1780.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-55",
    "x": 2389.7,
    "y": 1780.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-60",
    "x": 2223.4,
    "y": 1790.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-62",
    "x": 2072.7,
    "y": 1857.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-66",
    "x": 1950.5,
    "y": 1969.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-182",
    "x": 2460.0,
    "y": 4787.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-186",
    "x": 2418.6,
    "y": 4923.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-189",
    "x": 2332.0,
    "y": 5036.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-47",
    "x": 3145.4,
    "y": 1434.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-44",
    "x": 3320.5,
    "y": 1380.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-46",
    "x": 3000.5,
    "y": 1442.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-42",
    "x": 2895.0,
    "y": 1304.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-39",
    "x": 2756.7,
    "y": 1196.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-36",
    "x": 2724.0,
    "y": 1037.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-31",
    "x": 2724.0,
    "y": 859.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-28",
    "x": 2724.0,
    "y": 681.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-20",
    "x": 2594.8,
    "y": 556.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-19",
    "x": 2423.8,
    "y": 564.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-18",
    "x": 2252.6,
    "y": 572.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-17",
    "x": 2080.6,
    "y": 572.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-24",
    "x": 1910.1,
    "y": 580.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-10",
    "x": 1765.0,
    "y": 525.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-6",
    "x": 1643.3,
    "y": 403.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-2",
    "x": 1525.5,
    "y": 278.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-1",
    "x": 1364.0,
    "y": 260.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-134",
    "x": 2550.7,
    "y": 3719.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-127",
    "x": 2698.7,
    "y": 3640.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-123",
    "x": 2849.1,
    "y": 3558.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-101",
    "x": 4660.0,
    "y": 2883.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-107",
    "x": 4691.9,
    "y": 3046.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-111",
    "x": 4732.0,
    "y": 3204.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-115",
    "x": 4748.0,
    "y": 3369.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-122",
    "x": 4786.2,
    "y": 3529.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-132",
    "x": 4860.9,
    "y": 3676.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-146",
    "x": 4836.4,
    "y": 3837.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-92",
    "x": 4512.8,
    "y": 2716.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-229",
    "x": 4274.4,
    "y": 6364.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-224",
    "x": 4422.8,
    "y": 6296.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-221",
    "x": 4516.0,
    "y": 6165.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-216",
    "x": 4572.0,
    "y": 6012.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-244",
    "x": 4020.0,
    "y": 6548.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-196",
    "x": 2489.9,
    "y": 5543.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-194",
    "x": 2397.9,
    "y": 5389.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-192",
    "x": 2329.5,
    "y": 5221.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-198",
    "x": 2725.6,
    "y": 5693.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-200",
    "x": 2867.1,
    "y": 5703.4,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-207",
    "x": 2942.1,
    "y": 5833.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-208",
    "x": 3100.6,
    "y": 5852.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-102",
    "x": 4282.3,
    "y": 2901.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-106",
    "x": 4161.8,
    "y": 3038.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-281",
    "x": 4520.4,
    "y": 7415.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-276",
    "x": 4628.1,
    "y": 7292.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-277",
    "x": 4777.7,
    "y": 7296.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-272",
    "x": 4925.2,
    "y": 7250.8,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-204",
    "x": 4138.2,
    "y": 5788.1,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-205",
    "x": 4308.0,
    "y": 5812.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-211",
    "x": 4443.3,
    "y": 5899.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-147",
    "x": 1604.0,
    "y": 3937.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-154",
    "x": 1590.2,
    "y": 4101.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-158",
    "x": 1544.5,
    "y": 4256.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-163",
    "x": 1609.8,
    "y": 4409.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-171",
    "x": 1596.0,
    "y": 4564.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-65",
    "x": 4044.0,
    "y": 1932.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-212",
    "x": 4684.0,
    "y": 5876.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-175",
    "x": 1560.0,
    "y": 4674.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-181",
    "x": 1556.0,
    "y": 4820.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-165",
    "x": 1712.5,
    "y": 4482.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-167",
    "x": 1849.5,
    "y": 4523.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-168",
    "x": 1979.3,
    "y": 4511.7,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-172",
    "x": 2100.0,
    "y": 4564.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-185",
    "x": 2255.2,
    "y": 4879.5,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-179",
    "x": 2163.7,
    "y": 4730.0,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-58",
    "x": 4047.9,
    "y": 1762.3,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-51",
    "x": 3920.7,
    "y": 1633.2,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-49",
    "x": 3756.8,
    "y": 1569.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-48",
    "x": 3606.6,
    "y": 1475.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-173",
    "x": 2236.9,
    "y": 4611.9,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   },
   {
    "id": "bosco-176",
    "x": 2381.8,
    "y": 4665.6,
-   "kind": "empty"
+   "kind": "empty",
+   "price": 400
   }
  ],
  "lines": [

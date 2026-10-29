@@ -85,6 +85,37 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
+        // マスの出来事は、何もないマスにだけ置き、道のりで2マス以上を空ける
+        // （doc/features/world-atlas.md#マスに置いた出来事）。
+        [Test]
+        public void EventsSitOnEmptySquaresWithRoomBetween()
+        {
+            foreach (var key in new[] { WorldAtlasLayout.WorldKey, "marina" })
+            {
+                var layout = Load(key);
+                var graph = layout.Build();
+                var placed = new List<int>();
+                for (int i = 0; i < layout.nodes.Length; i++)
+                {
+                    var node = layout.nodes[i];
+                    if (string.IsNullOrEmpty(node.@event))
+                        continue;
+                    Assert.That(WorldAtlasLayout.EventOf(node.@event), Is.Not.Null, node.id);
+                    Assert.That(node.kind, Is.EqualTo("empty"), node.id);
+                    placed.Add(i);
+                }
+                Assert.That(placed, Is.Not.Empty, key);
+                foreach (int at in placed)
+                foreach (int next in graph.LinksOf(at))
+                {
+                    Assert.That(placed, Has.No.Member(next), key);
+                    foreach (int beyond in graph.LinksOf(next))
+                        if (beyond != at)
+                            Assert.That(placed, Has.No.Member(beyond), key);
+                }
+            }
+        }
+
         [Test]
         public void TheWorldHasASquareForEveryRegionAndSquaresOnTheWay()
         {

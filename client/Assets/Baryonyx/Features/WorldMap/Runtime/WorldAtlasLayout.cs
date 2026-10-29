@@ -32,6 +32,12 @@ namespace Baryonyx.WorldMap
             public float x;
             public float y;
             public string kind;
+
+            // マスに置いた出来事（EventOf の名前）。何も起きないマスは空。
+            public string @event;
+
+            // 初めて入るときに払うルーン。地図の始まりのマスは0（タダ）。
+            public int price;
         }
 
         [Serializable]
@@ -43,12 +49,20 @@ namespace Baryonyx.WorldMap
 
         public string key;
         public string name;
+
+        // 地図の推奨Lv（仮）と、1マスの基本の値段（100＋Lv×10）。マスの値段は基本の値段に種類の倍率を掛ける
+        // （doc/features/world-atlas.md#マスを開くルーン）。
+        public int level;
+        public int @base;
         public int width;
         public int height;
         public Node[] nodes = Array.Empty<Node>();
         public Line[] lines = Array.Empty<Line>();
 
         public Vector2 PictureSize => new(width, height);
+
+        /// <summary>The square the party starts on in this map: free, and always open.</summary>
+        public string Start => key == WorldKey ? StartSquare : GatePrefix + key;
 
         public static WorldAtlasLayout Parse(string json) =>
             JsonUtility.FromJson<WorldAtlasLayout>(json);
@@ -62,6 +76,20 @@ namespace Baryonyx.WorldMap
                 graph.Link(line.a, line.b);
             return graph;
         }
+
+        /// <summary>The event placed on a square, or null when nothing happens there.</summary>
+        public static WorldEventKind? EventOf(string name) =>
+            name switch
+            {
+                "meet" => WorldEventKind.Meet,
+                "choice" => WorldEventKind.Choice,
+                "chest" => WorldEventKind.HiddenChest,
+                "pickup" => WorldEventKind.Pickup,
+                "peddler" => WorldEventKind.Peddler,
+                "bet" => WorldEventKind.Bet,
+                "battle" => WorldEventKind.Battle,
+                _ => null,
+            };
 
         public static WorldNodeKind KindOf(string kind) =>
             kind switch
