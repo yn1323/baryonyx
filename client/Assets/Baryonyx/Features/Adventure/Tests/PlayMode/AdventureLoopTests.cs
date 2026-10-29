@@ -203,6 +203,8 @@ namespace Baryonyx.Tests.PlayMode
                     Is.SameAs(view.KindIcon(AdventureRoomKind.Treasure))
                 );
                 Assert.That(marker.Icon.color, Is.EqualTo(Color.white));
+                // 次に進めるマスは脈打つ道で示し、台の後ろに光は置かない。
+                Assert.That(marker.Glow.gameObject.activeSelf, Is.False, next);
                 SceneTests.AssertTouchSize(marker.Button.transform);
             }
             // 最奥の間・入口・今いるマスは、押しても進まない。
@@ -280,6 +282,11 @@ namespace Baryonyx.Tests.PlayMode
                 view.ShownMarkers.Where(marker => marker.IsExit).Select(marker => marker.RoomId),
                 Is.EquivalentTo(AdventureSession.Current.Run.Room.Next)
             );
+            // 着いたマスにも、何があったかの印（宝箱）をそのまま残す。
+            var arrived = view.MarkerOf(chosen);
+            Assert.That(arrived.Icon.sprite, Is.SameAs(view.KindIcon(AdventureRoomKind.Treasure)));
+            Assert.That(arrived.Icon.color, Is.EqualTo(Color.white));
+            Assert.That(arrived.Group.alpha, Is.EqualTo(1f));
         }
 
         // 1本指で地図を左右に動かすと道の先を見られ、先のマスはどれも種類が分かる。マスを押すと、

@@ -42,7 +42,6 @@ namespace Baryonyx.Adventure
 
         // マスの印が消える時間。選んだマスの印は、駒が着くときに消えきる。
         public const float MarkerFadeSeconds = 0.3f;
-        private const float ChosenFadeDelaySeconds = WalkSeconds - MarkerFadeSeconds;
 
         // 地図の寸法（設計座標）：階の間隔、入口と最奥の間の外の余白、マスが並ぶ上下の幅と中心。
         // 上の行き先の文字と、下の位置のバーに掛からないよう、少し下に寄せる。
@@ -60,28 +59,27 @@ namespace Baryonyx.Adventure
         // 地面の絵1枚の大きさ（設計座標）。地図いっぱいに並べて敷く。
         public const float GroundTile = 512f;
 
-        // マスの台の幅（px）：次に進めるマスは大きく、最奥の間はさらに大きく、ほかのマスは小さく。
+        // マスの台の幅（px）：どのマスも同じ大きさで、最奥の間だけ大きい。次に進めるマスは光で見せ、
+        // 大きさでは分けない（2026-10-29、次に進めるマスの140pxにそろえた）。
         // 台は世界地図のマスと同じ、少し斜め上から見た楕円の石の台で、絵の高さも幅と同じ正方形に描いてある。
-        public const float LargeRing = 140f;
-        public const float SmallRing = 100f;
+        public const float RoomRing = 140f;
         public const float BossRing = 170f;
-        public const float HereRing = 120f;
 
         // 道の太さ（px）：光の芯と、まわりの淡い光。
         private const float RoadCore = 7f;
         private const float RoadGlow = 22f;
 
-        private static readonly Color ExitGlow = new(1f, 0.82f, 0.36f, 0.6f);
         private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.55f);
         private static readonly Color BossGlow = new(0.6f, 0.3f, 0.95f, 0.7f);
         // 行けないマスの台は、暗くして少し透かす。
         private static readonly Color Faded = new(0.5f, 0.52f, 0.56f, 0.8f);
 
-        // 道の色：次に進める道は金、その先の行ける道は淡い青、通った道は暗い金、行けなくなった道は消えかけ。
+        // 道の色：次に進める道は金、その先の行ける道は淡い青、通った道は落ち着いた金、行けなくなった道は灰。
+        // 通った道も行けなくなった道も、来た道と地図の形が分かるよう消さずに残す（2026-10-29）。
         private static readonly Color RoadExit = new(1f, 0.84f, 0.42f);
         private static readonly Color RoadAhead = new(0.56f, 0.82f, 1f, 0.95f);
-        private static readonly Color RoadWalked = new(0.72f, 0.62f, 0.4f, 0.55f);
-        private static readonly Color RoadClosed = new(0.55f, 0.6f, 0.66f, 0.16f);
+        private static readonly Color RoadWalked = new(0.86f, 0.7f, 0.42f, 0.9f);
+        private static readonly Color RoadClosed = new(0.55f, 0.6f, 0.66f, 0.5f);
 
 
         [Header("地図")]
@@ -590,7 +588,7 @@ namespace Baryonyx.Adventure
                 : null;
         }
 
-        // 次に進める道と、次に進めるマスの光を、ゆっくり脈打たせる。
+        // 次に進める道を、ゆっくり脈打たせる。
         private void Pulse(float time)
         {
             if (!Application.isPlaying)
@@ -604,14 +602,6 @@ namespace Baryonyx.Adventure
                         RoadExit.b,
                         0.18f + 0.3f * beat
                     );
-            foreach (var marker in shown.Values)
-                if (marker.IsExit && marker.Glow != null && marker.Glow.gameObject.activeSelf)
-                    marker.Glow.color = new Color(
-                        ExitGlow.r,
-                        ExitGlow.g,
-                        ExitGlow.b,
-                        0.3f + 0.4f * beat
-                    );
         }
 
         // --- Rooms ---------------------------------------------------------------------------
@@ -623,7 +613,7 @@ namespace Baryonyx.Adventure
             shown.Clear();
         }
 
-        // マスの印を置く。今いるマスは4人が立つ台だけ、通ったマスと行けなくなったマスは暗く沈める。
+        // マスの印を置く。行けなくなったマスは暗く沈め、通ったマスと今いるマスは印を残す。
         private void PlaceMarkers(AdventureRun run, ExplorationRoom room)
         {
             HideMarkers();
@@ -692,33 +682,21 @@ namespace Baryonyx.Adventure
             bool lit = exit || reachable || boss;
             marker.Body.anchoredPosition = PointOf(room.Id);
 
-            // マスの種類の台を出す。今いるマスと入口は、印のない台にする。
-            float size =
-                boss ? BossRing
-                : exit ? LargeRing
-                : here ? HereRing
-                : SmallRing;
+            // マスの種類の台を出す。入口だけ印のない台にし、今いるマスと通ったマスは、何があったか
+            // 分かるよう印をそのまま残す（2026-10-29）。
+            float size = boss ? BossRing : RoomRing;
             marker.Icon.rectTransform.sizeDelta = Vector2.one * size;
-            marker.Icon.sprite = KindIcon(here || start ? AdventureRoomKind.Start : room.Kind);
+            marker.Icon.sprite = KindIcon(start ? AdventureRoomKind.Start : room.Kind);
             marker.Icon.enabled = marker.Icon.sprite != null;
-            marker.Icon.color = lit || here || start ? Color.white : Faded;
+            marker.Icon.color = lit || here || start || passed ? Color.white : Faded;
 
-            // 次に進めるマスは金の光、行ける先の強い魔物は赤い光、最奥の間は紫の光で見せる。
+            // 行ける先の強い魔物は赤い光、最奥の間は紫の光で見せる。次に進めるマスは脈打つ金の道で
+            // 示し、台の後ろに光は置かない（2026-10-29）。
             bool eliteGlow = reachable && !exit && room.Kind == AdventureRoomKind.Elite;
-            marker.Glow.gameObject.SetActive(exit || boss || eliteGlow);
-            marker.Glow.color =
-                exit ? ExitGlow
-                : boss ? BossGlow
-                : EliteGlow;
-            marker.Glow.rectTransform.sizeDelta =
-                Vector2.one
-                * (
-                    boss ? 300
-                    : exit ? 220
-                    : 150
-                );
-            // 通ったマスは、来た道が分かるよう薄く残す。
-            marker.Alpha = marker.TargetAlpha = passed && !here ? 0.55f : 1f;
+            marker.Glow.gameObject.SetActive(boss || eliteGlow);
+            marker.Glow.color = boss ? BossGlow : EliteGlow;
+            marker.Glow.rectTransform.sizeDelta = Vector2.one * (boss ? 300 : 150);
+            marker.Alpha = marker.TargetAlpha = 1f;
 
             marker.Button.interactable = exit;
             if (marker.Button.targetGraphic != null)
@@ -802,12 +780,13 @@ namespace Baryonyx.Adventure
                 run.Floor + 1
             );
             PlaceRoads(run, shownRoom, walked);
-            // 選んだマスの印は着くときに、ほかの次に進めたマスの印はすぐに薄れて消える。
+            // 選ばなかった次に進めたマスの印は、すぐに薄れる。選んだマスの印は残る。
             foreach (var marker in shown.Values)
                 if (marker.IsExit)
                 {
-                    marker.TargetAlpha = marker.RoomId == roomId ? 0f : 0.45f;
-                    marker.Wait = marker.RoomId == roomId ? ChosenFadeDelaySeconds : 0f;
+                    if (marker.RoomId != roomId)
+                        marker.TargetAlpha = 0.45f;
+                    marker.Wait = 0f;
                     marker.Button.interactable = false;
                 }
             chestTarget = 0f;

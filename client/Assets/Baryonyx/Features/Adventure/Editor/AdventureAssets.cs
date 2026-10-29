@@ -339,7 +339,7 @@ namespace Baryonyx.Adventure.Editor
             marker.Glow.raycastTarget = false;
 
             var icon = Rect("Plate", body);
-            Place(icon, Vector2.zero, Vector2.one * ExplorationView.SmallRing);
+            Place(icon, Vector2.zero, Vector2.one * ExplorationView.RoomRing);
             marker.Icon = icon.gameObject.AddComponent<Image>();
             marker.Icon.sprite = ArtAssets.LoadSprite(RoomPlatePath(AdventureRoomKind.Battle));
             marker.Icon.preserveAspect = true;

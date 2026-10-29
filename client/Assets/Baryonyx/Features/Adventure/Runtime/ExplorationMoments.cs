@@ -216,7 +216,10 @@ namespace Baryonyx.Adventure
             yield return Wipe(close: false, Color.black);
         }
 
-        /// <summary>The top middle of the party, in the overlay's space (world), a little above the heads.</summary>
+        /// <summary>
+        /// The top middle of the party, in the overlay's space (world), a little above the heads.
+        /// A pawn is measured by its picture: its body is only the point at its feet.
+        /// </summary>
         private Vector3 PartyTop()
         {
             if (View == null || View.Party.Length == 0)
@@ -224,8 +227,10 @@ namespace Baryonyx.Adventure
             var corners = new Vector3[4];
             var middle = Vector3.zero;
             float top = float.NegativeInfinity;
-            foreach (var body in View.Party)
+            foreach (var party in View.Party)
             {
+                var hop = party.GetComponent<MapPawnHop>();
+                var body = hop != null && hop.Picture != null ? hop.Picture : party;
                 body.GetWorldCorners(corners);
                 middle += (corners[0] + corners[2]) * 0.5f / View.Party.Length;
                 top = Mathf.Max(top, corners[1].y);
