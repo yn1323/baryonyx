@@ -298,33 +298,6 @@ namespace Baryonyx.Stages.Editor
                         (10f, 16.4f, 2.6f, 1f)
                     );
                     b.Motes(new Color(1f, 0.92f, 0.7f), 60);
-                    // The morning mist the night left between the trunks: deep and pale, lit warm
-                    // where the low sun reaches it, slowly lifting and drifting.
-                    b.Mist(
-                        new MistLook(
-                            new Color(0.82f, 0.88f, 0.86f),
-                            0.4f,
-                            0.48f,
-                            0.42f,
-                            new Vector2(0.14f, 0.03f),
-                            stretch: 1.6f,
-                            evolve: 0.04f,
-                            wisps: 0.5f,
-                            streaks: 0.3f,
-                            ambient: 1.1f,
-                            sun: 0.6f,
-                            rim: 0.8f
-                        ),
-                        0.3f,
-                        (0.12f, 0.9f),
-                        (0.55f, 0.6f),
-                        (1.3f, 0.35f)
-                    );
-                    b.MistBanks(
-                        (-11f, 16.2f, 9f, 4.5f, 0.85f),
-                        (0f, 17.1f, 12f, 3.6f, 0.7f),
-                        (11f, 16.4f, 9f, 4.5f, 0.85f)
-                    );
                 }
             ),
             // A mine underground: timber props holding up the rock, a cart of ore, and lanterns
@@ -680,34 +653,6 @@ namespace Baryonyx.Stages.Editor
                         (5.5f, 4.1f, 2.2f, 0.8f)
                     );
                     b.Motes(new Color(0.6f, 1f, 0.75f), 36);
-                    // The cold evening mist lying on the water: low and thick, greyish green,
-                    // lit green round the will-o'-the-wisps, creeping slowly.
-                    b.Mist(
-                        new MistLook(
-                            new Color(0.72f, 0.8f, 0.74f),
-                            0.4f,
-                            0.48f,
-                            0.45f,
-                            new Vector2(0.1f, 0.04f),
-                            stretch: 1.8f,
-                            evolve: 0.035f,
-                            wisps: 0.55f,
-                            streaks: 0.4f,
-                            ambient: 1.2f,
-                            sun: 0.5f,
-                            rim: 0.7f,
-                            lamps: 1.6f
-                        ),
-                        0.3f,
-                        (0.1f, 1f),
-                        (0.32f, 0.7f),
-                        (0.8f, 0.4f)
-                    );
-                    b.MistBanks(
-                        (-11.5f, 15.8f, 10f, 3.2f, 0.9f),
-                        (0f, 17f, 13f, 2.6f, 0.75f),
-                        (11.5f, 16.2f, 10f, 3.2f, 0.9f)
-                    );
                 }
             ),
             // A snowfield on a grey winter day: snow-laden firs, rocks and ice, a traveller's
@@ -773,28 +718,6 @@ namespace Baryonyx.Stages.Editor
                         (9.2f, 12.8f, 3.2f, 1f)
                     );
                     b.Snowfall();
-                    // Snow blown low along the ground by the wind (drifting snow), and the far
-                    // haze of falling snow; nothing lies still.
-                    b.Mist(
-                        new MistLook(
-                            new Color(0.9f, 0.93f, 1f),
-                            0.5f,
-                            0.5f,
-                            0.5f,
-                            new Vector2(1.1f, 0.12f),
-                            stretch: 3f,
-                            evolve: 0.12f,
-                            wisps: 0.7f,
-                            streaks: 0.1f,
-                            ambient: 1.9f,
-                            sun: 0.55f,
-                            rim: 0.4f
-                        ),
-                        0.55f,
-                        (0.1f, 0.9f),
-                        (0.28f, 0.45f)
-                    );
-                    b.MistBanks((-10f, 16.8f, 12f, 5f, 0.6f), (10f, 16.8f, 12f, 5f, 0.6f));
                 }
             ),
             // A volcano: black basalt under a sky of smoke, rivers of lava glowing, a charred
@@ -979,29 +902,6 @@ namespace Baryonyx.Stages.Editor
                         (-6.4f, 14.2f, 2.8f, 1f)
                     );
                     b.Motes(new Color(0.6f, 0.85f, 1f), 32);
-                    // On a clear, still night the cold ground breeds a thin fog among the
-                    // stones, pale blue under the moon, warmed round the lanterns.
-                    b.Mist(
-                        new MistLook(
-                            new Color(0.62f, 0.72f, 0.92f),
-                            0.55f,
-                            0.5f,
-                            0.45f,
-                            new Vector2(0.08f, 0.02f),
-                            stretch: 1.8f,
-                            evolve: 0.03f,
-                            wisps: 0.5f,
-                            streaks: 0.35f,
-                            ambient: 2.4f,
-                            sun: 1.1f,
-                            rim: 1f,
-                            lamps: 1.2f
-                        ),
-                        0.35f,
-                        (0.1f, 0.9f),
-                        (0.35f, 0.5f)
-                    );
-                    b.MistBanks((-11f, 16.4f, 10f, 2.6f, 0.75f), (11f, 16.4f, 10f, 2.6f, 0.75f));
                 }
             ),
             // The great hall of an old castle at night: moonlight through stained glass, stone
@@ -1665,56 +1565,6 @@ namespace Baryonyx.Stages.Editor
                     count,
                     tint
                 );
-
-            /// <summary>
-            /// Mist lying over the field in layers (each height in m with its thickness), thinner
-            /// over the middle of the floor where the battle is, so the characters' feet read.
-            /// </summary>
-            public void Mist(
-                MistLook look,
-                float clearing,
-                params (float height, float strength)[] layers
-            )
-            {
-                var material = MistMaterial(Path("Mist") + ".mat", look, seed % 50);
-                MistLayers(
-                    Root,
-                    Store,
-                    "Mist",
-                    material,
-                    new Vector3(0f, 0f, 9f),
-                    new Vector2(44f, 22f),
-                    layers,
-                    Centre,
-                    new Vector2(13f, 10f),
-                    clearing
-                );
-            }
-
-            /// <summary>
-            /// Banks of mist standing far back on the ground (x, width, height in m and
-            /// thickness), between the frame's scenery and the painted distance.
-            /// </summary>
-            public void MistBanks(
-                params (float x, float z, float width, float height, float strength)[] banks
-            )
-            {
-                var material = AssetDatabase.LoadAssetAtPath<Material>(Path("Mist") + ".mat");
-                var group = Group(Root, "MistBanks", Vector3.zero).transform;
-                for (int i = 0; i < banks.Length; i++)
-                {
-                    var (x, z, width, height, strength) = banks[i];
-                    MistBank(
-                        group,
-                        Store,
-                        "MistBank" + i,
-                        material,
-                        new Vector3(x, 0f, z),
-                        new Vector2(width, height),
-                        strength
-                    );
-                }
-            }
 
             /// <summary>Snow falling slowly over the whole field.</summary>
             public void Snowfall()
