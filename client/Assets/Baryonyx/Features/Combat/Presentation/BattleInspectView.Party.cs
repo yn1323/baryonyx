@@ -181,6 +181,8 @@ namespace Baryonyx.Combat.Presentation
                 && ally.NameTag.GetComponent<TranslucentTextPanel>() is { } tag
             )
                 tag.SetText(ally.Name);
+            // The HP it comes in with shows at once: it was lost before this battle, not in it.
+            ally.Gauge.ShowHpNow(ally.Hp, ally.MaxHp);
             RefreshAlly(ally);
         }
 

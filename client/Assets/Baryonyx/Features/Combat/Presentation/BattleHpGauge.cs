@@ -113,6 +113,26 @@ namespace Baryonyx.Combat.Presentation
             ShowTrail();
         }
 
+        /// <summary>
+        /// Shows the HP at once, with no trail nor flash, as an HP that was so already (a party
+        /// coming into a battle hurt), not one just lost.
+        /// </summary>
+        public void ShowHpNow(int hp, int max)
+        {
+            started = true;
+            trailColor = TrailBody != null && flash <= 0f ? TrailBody.color : trailColor;
+            if (TrailBody != null && flash > 0f)
+                TrailBody.color = trailColor;
+            ShowNumber(hp);
+            dots = DotsOf(hp, max);
+            trail = Ratio;
+            hold = 0f;
+            drain = 0f;
+            flash = 0f;
+            Fill.anchorMax = new Vector2(Ratio, 1f);
+            ShowTrail();
+        }
+
         /// <summary>Shows a block on the scale of the max HP; a block over it fills the bar.</summary>
         public void SetBlock(int block, int max)
         {

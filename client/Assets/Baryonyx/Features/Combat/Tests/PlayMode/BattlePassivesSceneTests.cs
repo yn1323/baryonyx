@@ -105,6 +105,43 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(seen.Texts, Does.Contain("連ね矢"));
         }
 
+        // マスの間で減ったHPで戦闘に入ると、HPの棒ははじめから減った長さで出し、満タンから減らさない。
+        [UnityTest]
+        public IEnumerator APartyComingInHurtShowsItsHpAtOnce()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            yield return null;
+            var slots = new BattlePartyMember[view.Allies.Length];
+            for (int place = 0; place < view.Allies.Length; place++)
+            {
+                var ally = view.Allies[place];
+                slots[ally.Slot] = new BattlePartyMember
+                {
+                    Name = ally.Name,
+                    Art = ally.Sprite.texture,
+                    Level = ally.Level,
+                    Stats = ally.Stats,
+                    Cards = view
+                        .Deck.Where(data => data.Caster == place)
+                        .Take(2)
+                        .Select(data => new BattlePartyCard { Skill = BattleInspectView.SkillOf(data) })
+                        .Where(card => card.Skill != null)
+                        .ToArray(),
+                    Passives = new CombatPassiveKind[0],
+                    HpShare = 0.4f,
+                };
+            }
+            view.UseParty(slots);
+            yield return null;
+            foreach (var ally in view.Allies)
+            {
+                Assert.That(ally.Hp, Is.LessThan(ally.MaxHp));
+                Assert.That(ally.Gauge.Ratio, Is.LessThan(1f));
+                Assert.That(ally.Gauge.TrailRatio, Is.EqualTo(ally.Gauge.Ratio), "No HP drains away.");
+            }
+        }
+
         // 連続攻撃の途中で倒れた敵は、最後の一撃まで残ってから崩れる。ランダムの残りの撃は、
         // 倒れた敵を狙わず、立っている敵へ向かう（doc/features/combat.md#スキルの仮設定）。
         [UnityTest]
