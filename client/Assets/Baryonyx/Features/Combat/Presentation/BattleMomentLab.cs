@@ -87,8 +87,6 @@ namespace Baryonyx.Combat.Presentation
         [Tooltip("ドロップの見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
         public RewardItem[] Samples = Array.Empty<RewardItem>();
 
-        [Tooltip("ドロップの下に出す一言。")]
-        public string SampleNote = "持ち物に加えました";
 
         // 1回のドロップでまとめて落とす数。冒険の戦闘のように、手に入れた物を一度に見せる。
         public const int DropsAtOnce = 3;
@@ -226,7 +224,6 @@ namespace Baryonyx.Combat.Presentation
                 Icon = source.Icon,
                 FoilStyle = source.FoilStyle,
                 Quality = chosen.Value,
-                Note = SampleNote,
             };
         }
 

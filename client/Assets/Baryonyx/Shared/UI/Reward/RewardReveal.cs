@@ -9,8 +9,8 @@ using UnityEngine.UI;
 namespace Baryonyx.UI
 {
     /// <summary>
-    /// One thing found (a beaten enemy's drop, a chest's content): its icon, name, quality,
-    /// sparkle and what became of it.
+    /// One thing found (a beaten enemy's drop, a chest's content): its icon, name, quality and
+    /// sparkle.
     /// </summary>
     [System.Serializable]
     public sealed class RewardItem
@@ -27,9 +27,6 @@ namespace Baryonyx.UI
 
         /// <summary>How it sparkles (<see cref="CardFoil.Style"/>), the kind's own.</summary>
         public int FoilStyle;
-
-        /// <summary>The line under it: that it was added to the belongings.</summary>
-        public string Note = "";
     }
 
     /// <summary>
@@ -58,7 +55,6 @@ namespace Baryonyx.UI
         public TMP_Text Kind;
         public TMP_Text Name;
         public TMP_Text Quality;
-        public TMP_Text Note;
 
         [Tooltip("何も見つからなかったときに出す文。")]
         public TMP_Text Nothing;
@@ -208,7 +204,6 @@ namespace Baryonyx.UI
                 Kind = Kind,
                 Name = Name,
                 Quality = Quality,
-                Note = Note,
                 Nothing = Nothing,
             };
 
@@ -232,7 +227,6 @@ namespace Baryonyx.UI
             public TMP_Text Kind;
             public TMP_Text Name;
             public TMP_Text Quality;
-            public TMP_Text Note;
             public TMP_Text Nothing;
 
             // The copy's parts at the same places under it as the original's under the plate.
@@ -247,7 +241,6 @@ namespace Baryonyx.UI
                     Kind = Same(own.Kind, plate, copy),
                     Name = Same(own.Name, plate, copy),
                     Quality = Same(own.Quality, plate, copy),
-                    Note = Same(own.Note, plate, copy),
                     Nothing = Same(own.Nothing, plate, copy),
                 };
 
@@ -274,7 +267,6 @@ namespace Baryonyx.UI
             SetShown(plate.Kind, found);
             SetShown(plate.Name, found);
             SetShown(plate.Quality, graded);
-            SetShown(plate.Note, found);
             SetShown(plate.Nothing, !found);
             var color = graded ? QualityPalette.Of(drop.Quality) : UiPalette.TextMain;
             if (plate.Rim != null)
@@ -291,7 +283,6 @@ namespace Baryonyx.UI
                 plate.Foil.Show(drop.Icon, drop.Quality, drop.FoilStyle);
             UiText.Set(plate.Kind, drop.Kind);
             UiText.Set(plate.Name, drop.Name);
-            UiText.Set(plate.Note, drop.Note);
             if (plate.Quality != null)
             {
                 plate.Quality.text = Inventory.Quality.Letter(drop.Quality);

@@ -18,7 +18,7 @@ namespace Baryonyx.UI.Editor
 
         /// <summary>
         /// The plate over <paramref name="parent"/>, its middle at <paramref name="center"/>: a dark plate whose rim takes the quality's colour, the icon (with its
-        /// sparkle) at the left, the kind, the name and what became of it at the right, and the
+        /// sparkle) at the left, the kind and the name at the right, and the
         /// quality's letter large at the top right.
         /// </summary>
         public static RewardReveal Build(RectTransform parent, Vector2 center)
@@ -55,7 +55,7 @@ namespace Baryonyx.UI.Editor
                 "Kind",
                 26,
                 UiPalette.TextSub,
-                58f,
+                27f,
                 textLeft,
                 textWidth
             );
@@ -64,18 +64,9 @@ namespace Baryonyx.UI.Editor
                 "Name",
                 44,
                 UiPalette.TextMain,
-                4f,
+                -27f,
                 textLeft,
                 textWidth
-            );
-            reveal.Note = TextLine(
-                content,
-                "Note",
-                26,
-                UiPalette.TextSub,
-                -58f,
-                textLeft,
-                PlateSize.x - textLeft - 32f
             );
 
             var quality = Label(content, "Quality", "S", 104, Gold, TextAlignmentOptions.Center);

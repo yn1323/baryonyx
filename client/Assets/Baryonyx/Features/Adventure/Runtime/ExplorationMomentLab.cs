@@ -50,8 +50,6 @@ namespace Baryonyx.Adventure
         [Tooltip("宝箱の中身の見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
         public RewardItem[] Samples = Array.Empty<RewardItem>();
 
-        [Tooltip("宝箱の中身の下に出す一言。")]
-        public string SampleNote = "持ち物に加えました";
 
         public Button QualityButton;
         public TMP_Text QualityLabel;
@@ -184,7 +182,6 @@ namespace Baryonyx.Adventure
                 Icon = source.Icon,
                 FoilStyle = source.FoilStyle,
                 Quality = chosen.Value,
-                Note = SampleNote,
             };
         }
 

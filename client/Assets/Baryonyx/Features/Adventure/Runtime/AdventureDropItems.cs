@@ -6,9 +6,9 @@ namespace Baryonyx.Adventure
 {
     /// <summary>
     /// A drop as the plate that shows what was found draws it (<see cref="RewardReveal"/>): the
-    /// category and the stars above the name, the quality and the sparkle of the kind, and that
-    /// it was added to the belongings. The items, accessories, weapons and armour show their own
-    /// art (<see cref="AdventureTexts.DropIcon(AdventureDrop, ItemArt)"/>).
+    /// category and the stars above the name, and the quality and the sparkle of the kind. The
+    /// items, accessories, weapons and armour show their own art
+    /// (<see cref="AdventureTexts.DropIcon(AdventureDrop, ItemArt)"/>).
     /// </summary>
     public static class AdventureDropItems
     {
@@ -25,7 +25,6 @@ namespace Baryonyx.Adventure
                 Quality = drop.Quality ?? ItemQuality.C,
                 Graded = drop.Quality.HasValue,
                 FoilStyle = FoilStyleOf(drop),
-                Note = AdventureCatalog.AddedNote,
             };
         }
 

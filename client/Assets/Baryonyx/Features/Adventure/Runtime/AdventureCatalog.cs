@@ -392,9 +392,6 @@ namespace Baryonyx.Adventure
         private static string Pick(string[] kinds, int variant, int stride) =>
             kinds.Length == 0 ? null : kinds[variant / Math.Max(1, stride) % kinds.Length];
 
-        // 手に入れた物の下に添える一言。落ちた物は、いつも持ち物に加わる。
-        public const string AddedNote = "持ち物に加えた";
-
         public static string StatusTitle(AdventureEndStatus status) =>
             status switch
             {
