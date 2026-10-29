@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.Health;
 using Baryonyx.Home;
+using Baryonyx.Networking;
 using Baryonyx.Party;
 using Baryonyx.UI;
 using UnityEngine;
@@ -68,6 +69,8 @@ namespace Baryonyx.App
 
         private void Start()
         {
+            // 冒険のデバッグルームの代役で遊んだあとは、ホームへ戻った時点でサーバーの冒険へ戻す。
+            AdventureLab.End();
             if (view == null || data == null)
             {
                 Debug.LogError("HomeBootstrap requires a view and mock data.", this);
@@ -195,8 +198,21 @@ namespace Baryonyx.App
                     )
                 )
                 .Append(new DialogChoice(CloseChoice, dialog.Hide))
-                .ToArray();
-            dialog.Show(DebugRoomsTitle, null, null, dialog.Hide, choices);
+                .ToList();
+            // 通信の遅れと失敗：押すたびに、ふつう→遅い→とても遅い→失敗する→ふつうと替え、一覧を開き直す。
+            if (DebugNetwork.CanSwitch)
+                choices.Insert(
+                    1,
+                    new DialogChoice(
+                        DebugNetwork.Label(DebugNetwork.Current),
+                        () =>
+                        {
+                            DebugNetwork.Next();
+                            ShowDebugRooms();
+                        }
+                    )
+                );
+            dialog.Show(DebugRoomsTitle, null, null, dialog.Hide, choices.ToArray());
         }
 
         // 直前の「ルーン+10000」。テストで完了を待つために公開する。

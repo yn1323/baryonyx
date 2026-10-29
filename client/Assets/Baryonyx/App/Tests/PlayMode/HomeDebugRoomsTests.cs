@@ -3,6 +3,7 @@ using System.Linq;
 using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Home;
+using Baryonyx.Networking;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -45,11 +46,29 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(
                     SceneNames
                         .DebugRooms.Select(room => room.Name)
+                        .Prepend(DebugNetwork.Label(DebugNetwork.Mode.Normal))
                         .Prepend(HomeBootstrap.DebugRunesChoice)
                         .Append(HomeBootstrap.CloseChoice)
                         .ToArray()
                 )
             );
+            // 通信の遅れと失敗は、押すたびに次へ替わり、一覧を開いたまま名前が変わる。最後はふつうへ戻す。
+            try
+            {
+                Assert.That(view.Dialog.Choose(DebugNetwork.Label(DebugNetwork.Mode.Normal)), Is.True);
+                Assert.That(DebugNetwork.Current, Is.EqualTo(DebugNetwork.Mode.Slow));
+                Assert.That(view.Dialog.IsShown, Is.True);
+                Assert.That(
+                    view.Dialog.ChoiceLabels,
+                    Has.Member(DebugNetwork.Label(DebugNetwork.Mode.Slow))
+                );
+            }
+            finally
+            {
+                DebugNetwork.Reset();
+            }
+            view.Dialog.Choose(HomeBootstrap.CloseChoice);
+            view.DebugRoomsButton.onClick.Invoke();
             foreach (var room in SceneNames.DebugRooms)
                 Assert.That(Application.CanStreamedLevelBeLoaded(room.Scene), Is.True, room.Scene);
 

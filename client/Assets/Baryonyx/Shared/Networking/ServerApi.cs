@@ -58,6 +58,8 @@ namespace Baryonyx.Networking
             where T : new()
         {
             token.ThrowIfCancellationRequested();
+            // 開発ビルドとEditorでは、デバッグ用に要求を遅らせたり失敗させたりできる。
+            await DebugNetwork.BeforeAsync(token);
             using var request = new UnityWebRequest(baseUrl + path, method)
             {
                 downloadHandler = new DownloadHandlerBuffer(),

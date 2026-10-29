@@ -68,5 +68,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Baryonyx/App/Scenes/World.unity
     guid: 38bac1bd3dee34d4285e9d5f938f1a74
+  - enabled: 1
+    path: Assets/Baryonyx/App/Scenes/Debug/AdventureLab.unity
+    guid: ef5cd276a7b824c34aadc57f5e7a8ce6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

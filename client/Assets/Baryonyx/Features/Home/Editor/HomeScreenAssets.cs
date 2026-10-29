@@ -85,8 +85,8 @@ namespace Baryonyx.Home.Editor
         private static Texture2D travelArt;
 
         // デバッグルームの一覧の選択肢（「ルーン+10000」、8つのルーム、「閉じる」）と、それを並べる列の数。
-        private const int DebugRoomChoices = 12;
-        private const int DebugRoomColumns = 2;
+        private const int DebugRoomChoices = 15;
+        private const int DebugRoomColumns = 3;
 
         public const string RoomReturnPath =
             "Assets/Baryonyx/Features/Home/UI/DebugRoomReturn.prefab";
@@ -169,8 +169,8 @@ namespace Baryonyx.Home.Editor
                 BuildRuneGain(root, safe, view);
                 BuildToast(root, view);
                 CollectTintGraphics(root);
-                // The list of debugging rooms: "ルーン+10000", nine rooms and "閉じる", in two columns
-                // of the usual rows so they fit the screen.
+                // The list of debugging rooms: "ルーン+10000", the network switch, the rooms and
+                // "閉じる", in three columns of the usual rows so they fit the screen.
                 view.Dialog = GameDialogAssets.Build(
                     root,
                     "DebugRooms",

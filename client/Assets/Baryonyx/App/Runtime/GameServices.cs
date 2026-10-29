@@ -105,7 +105,8 @@ namespace Baryonyx.App
         {
             current = services;
             PartySession.Source = services?.Party;
-            AdventureSession.Source = services?.Adventure;
+            // 冒険のデバッグルームで遊んでいる間は、その代役を使い続け、サーバーはホームへ戻るまで取っておく。
+            AdventureSession.Source = AdventureLab.Keep(services?.Adventure);
             EquipmentSession.Source = services?.Equipment;
             RevealedWeaknessSession.Source = services?.Weaknesses;
             LibrarySession.Source = services?.Library;
