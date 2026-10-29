@@ -26,8 +26,8 @@ namespace Baryonyx.Combat.Editor
         private static readonly Vector2 SlotSize = new(70 * 3 * CardScale, 98 * 3 * CardScale);
 
         // How far past its card the haze behind the stage picked may reach (px): the board it is
-        // drawn on, on every side.
-        private const float AuraMargin = 230f;
+        // drawn on, on every side. The haze is an oval about twice the card's size (2026-10-29).
+        private const float AuraMargin = 330f;
 
         private const string AuraShaderPath =
             "Assets/Baryonyx/Features/Combat/Vfx/Shaders/BattleCardAura.shader";
@@ -129,7 +129,10 @@ namespace Baryonyx.Combat.Editor
                 material = new Material(shader) { name = "VfxCardAura" };
                 AssetDatabase.CreateAsset(material, AuraMaterialPath);
             }
-            material.shader = shader;
+            // Back to the shader's own values each time, so names it no longer has do not stay.
+            var fresh = new Material(shader) { name = "VfxCardAura" };
+            EditorUtility.CopySerialized(fresh, material);
+            Object.DestroyImmediate(fresh);
             EditorUtility.SetDirty(material);
             return material;
         }
