@@ -1,15 +1,17 @@
-using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Baryonyx.Combat.Presentation
 {
     /// <summary>
     /// The light on a card of the hand that evolves when used (doc/features/skill-evolution.md#覚醒の予兆):
-    /// a soft gold light behind it that breathes, a rim of flowing light just outside its edges,
-    /// and the star of an idea twinkling on its upper corner, as the omen of an evolution shows.
-    /// It flares as it comes on, when the card turns face up in the hand. Made under the card by
-    /// <see cref="Make"/>: the light and the rim as its first child, behind the card, the star
-    /// as its last, over it.
+    /// the same haze of light as behind the stage picked in <see cref="BattleEvolutionChoice"/>
+    /// (Battle Card Aura: an oval of haze, platinum near the card and amber further out, coming
+    /// apart like mist, with no lines), breathing behind it, and the star of an idea twinkling
+    /// on its upper corner, as the omen of an evolution shows (2026-10-29: the soft light and
+    /// the rim of flowing beams it had were changed for the haze). It flares as it comes on,
+    /// when the card turns face up in the hand. Made under the card by <see cref="Make"/>: the
+    /// haze as its first child, behind the card, the star as its last, over it.
     /// </summary>
     public sealed class BattleEvolutionGlint : MonoBehaviour
     {
@@ -17,60 +19,76 @@ namespace Baryonyx.Combat.Presentation
         public const float FlareSeconds = 0.5f;
 
         private static readonly Color Gold = new(1f, 0.84f, 0.42f);
-        private static readonly Color RimColor = new(1f, 0.86f, 0.46f, 1f);
-        private static readonly Color GlowColor = new(1f, 0.8f, 0.4f, 0.5f);
 
-        // The rim's beams: how thick, how far outside the edge their core runs and how far past
-        // the corners they reach, for the card at its own size.
-        private const float RimWidth = 22f;
-        private const float RimOut = 3f;
-        private const float RimReach = 12f;
         private const float StarSize = 64f;
+
+        // The haze's board around the card, as a multiple of the card's size, so the oval (about
+        // twice the card) fades out inside it; and the haze's own sizes at the choice's card
+        // (half of it 257 px wide), scaled to the card of the hand.
+        private static readonly Vector2 HazeBoard = new(2.2f, 2.5f);
+
+        // In the hand the cards overlap, so mostly the haze over the card's top shows: there it
+        // is taller and brighter than behind the stage picked.
+        private static readonly Vector4 HazeRadius = new(1.6f, 1.75f, 0f, 0f);
+        private const float HazeIntensity = 2.2f;
+        private const float ChoiceCardHalf = 257f;
+        private const float HazeScale = 230f;
+        private const float HazeRimReach = 26f;
 
         [SerializeField]
         private RectTransform card;
 
         [SerializeField]
-        private BattleVfxImage glow;
-
-        [SerializeField]
-        private BattleVfxImage[] rims = Array.Empty<BattleVfxImage>();
+        private RawImage haze;
 
         [SerializeField]
         private BattleVfxImage star;
 
         private float age;
         private bool lit;
+        private Vector2 sized;
+
+        // The haze's own material, made by Make (a copy of the card has none of its own).
+        private Material made;
 
         /// <summary>True while the light is on.</summary>
         public bool Lit => lit;
 
         /// <summary>
-        /// The light under <paramref name="card"/>, hidden until lit, drawn with the effects'
-        /// materials: <paramref name="glowMaterial"/> the soft light, <paramref name="beam"/> the
-        /// rim and <paramref name="sparkle"/> the star. Null when a material is missing.
+        /// The light under <paramref name="card"/>, hidden until lit: the haze drawn with its own
+        /// copy of <paramref name="hazeMaterial"/> (Battle Card Aura) and the star with the
+        /// effects' material <paramref name="sparkle"/>. Null when a material is missing.
         /// </summary>
         public static BattleEvolutionGlint Make(
             RectTransform card,
-            Material glowMaterial,
-            Material beam,
+            Material hazeMaterial,
             Material sparkle
         )
         {
-            if (card == null || glowMaterial == null || beam == null || sparkle == null)
+            if (card == null || hazeMaterial == null || sparkle == null)
                 return null;
             BattleVfxImage.EnableShapeChannel(card);
             var back = Part("EvolutionGlint", card);
             back.SetAsFirstSibling();
             var glint = back.gameObject.AddComponent<BattleEvolutionGlint>();
             glint.card = card;
-            glint.glow = Shape("Glow", back, glowMaterial);
-            glint.rims = new BattleVfxImage[4];
-            for (int i = 0; i < 4; i++)
+            var hazePart = Part("Haze", back);
+            glint.haze = hazePart.gameObject.AddComponent<RawImage>();
+            glint.haze.raycastTarget = false;
+            glint.haze.color = Color.clear;
+            glint.made = new Material(hazeMaterial)
             {
-                glint.rims[i] = Shape("Rim" + i, back, beam);
-                glint.rims[i].rectTransform.pivot = new Vector2(0f, 0.5f);
-            }
+                name = hazeMaterial.name + " (Hand)",
+                hideFlags = HideFlags.DontSave,
+            };
+            glint.haze.material = glint.made;
+            glint.haze.material.SetTexture("_Noise", BattleCardAuraNoise.Texture);
+            glint.haze.material.SetVector("_GlowRadius", HazeRadius);
+            glint.haze.material.SetFloat("_GlowIntensity", HazeIntensity);
+            glint.haze.material.SetVector(
+                "_Seed",
+                new Vector4(Random.value * 40f, 3.1f, 1.7f, 0f)
+            );
             var front = Part("EvolutionGlintStar", card);
             front.SetAsLastSibling();
             glint.star = Shape("Star", front, sparkle);
@@ -117,6 +135,16 @@ namespace Baryonyx.Combat.Presentation
             Paint();
         }
 
+        private void OnDestroy()
+        {
+            if (made == null)
+                return;
+            if (Application.isPlaying)
+                Destroy(made);
+            else
+                DestroyImmediate(made);
+        }
+
         private void Update()
         {
             if (!lit)
@@ -133,54 +161,33 @@ namespace Baryonyx.Combat.Presentation
                 star.transform.parent.gameObject.SetActive(shown);
         }
 
-        // A breathing light, a flowing rim and a twinkling star, all brighter and larger for a
+        // The haze, breathing by itself, and a twinkling star, both brighter and larger for a
         // moment as the light comes on.
         private void Paint()
         {
             if (card == null)
                 return;
             var size = card.rect.size;
-            var half = size * 0.5f;
             float flare = 1f - Mathf.Clamp01(age / FlareSeconds);
             flare *= flare;
-            float breath = 0.5f + 0.5f * Mathf.Sin(age * 2.4f);
 
-            if (glow != null)
+            if (haze != null)
             {
-                glow.rectTransform.sizeDelta = new Vector2(
-                    size.x * (1.45f + 0.35f * flare),
-                    size.y * (1.25f + 0.3f * flare)
-                );
-                var tint = GlowColor;
-                tint.a = Mathf.Lerp(0.35f + 0.2f * breath, 1f, flare);
-                glow.color = tint;
-                glow.SetShape(0f, 0f, 0f, 1f + flare);
-            }
-
-            for (int i = 0; i < rims.Length && i < 4; i++)
-            {
-                var rim = rims[i];
-                if (rim == null)
-                    continue;
-                bool across = i < 2;
-                float side = i % 2 == 0 ? 1f : -1f;
-                var rect = rim.rectTransform;
-                // Top and bottom run left to right; the sides run up.
-                rect.anchoredPosition = across
-                    ? new Vector2(-half.x - RimReach, side * (half.y + RimOut))
-                    : new Vector2(side * (half.x + RimOut), -half.y - RimReach);
-                rect.sizeDelta = new Vector2(
-                    (across ? half.x : half.y) * 2f + RimReach * 2f,
-                    RimWidth * (1f + flare)
-                );
-                rect.localEulerAngles = new Vector3(0f, 0f, across ? 0f : 90f);
-                rim.color = RimColor;
-                rim.SetShape(
-                    0.21f * i,
-                    0.28f + (age * 0.25f + i * 0.17f) % 0.7f,
-                    0f,
-                    1.1f + 0.3f * breath + flare
-                );
+                var rect = haze.rectTransform;
+                // The board and the card's shape in it follow the card's size.
+                if (size != sized)
+                {
+                    sized = size;
+                    rect.sizeDelta = Vector2.Scale(size, HazeBoard);
+                    var material = haze.material;
+                    float k = size.x * 0.5f / ChoiceCardHalf;
+                    material.SetVector("_Size", rect.sizeDelta);
+                    material.SetVector("_CardHalf", size * 0.5f);
+                    material.SetFloat("_GlowScale", HazeScale * k);
+                    material.SetFloat("_RimReach", HazeRimReach * k);
+                }
+                rect.localScale = Vector3.one * (1f + 0.12f * flare);
+                haze.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.85f, 1f, flare));
             }
 
             if (star != null)

@@ -33,9 +33,9 @@ namespace Baryonyx.Tests.EditMode
         public void TheLightIsMadeHiddenBehindTheCardWithItsStarOverIt()
         {
             var card = Card("Face");
-            Assert.That(BattleEvolutionGlint.Make(card, material, null, material), Is.Null);
+            Assert.That(BattleEvolutionGlint.Make(card, material, null), Is.Null);
 
-            var glint = BattleEvolutionGlint.Make(card, material, material, material);
+            var glint = BattleEvolutionGlint.Make(card, material, material);
             Assert.That(glint, Is.Not.Null);
             Assert.That(
                 glint.transform.GetSiblingIndex(),
@@ -61,7 +61,7 @@ namespace Baryonyx.Tests.EditMode
         public void ACopyOfTheCardIsLeftWithoutTheLight()
         {
             var card = Card("Face");
-            BattleEvolutionGlint.Make(card, material, material, material).SetLit(true);
+            BattleEvolutionGlint.Make(card, material, material).SetLit(true);
             var copy = Object.Instantiate(card.gameObject, root.transform, false);
 
             BattleEvolutionGlint.StripFrom(copy);

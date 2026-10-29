@@ -164,13 +164,13 @@ namespace Baryonyx.Combat.Presentation
             glint.SetLit(lit);
         }
 
+        // The card's light is the haze behind the stage picked in the choice (its material).
         private BattleEvolutionGlint MakeGlint(int index) =>
-            Vfx == null
+            Vfx == null || Choice == null || Choice.Auras.Length == 0 || Choice.Auras[0] == null
                 ? null
                 : BattleEvolutionGlint.Make(
                     Cards[index].Body,
-                    Vfx.MaterialOf(BattleVfxShape.Glow),
-                    Vfx.MaterialOf(BattleVfxShape.Beam),
+                    Choice.Auras[0].material,
                     Vfx.MaterialOf(BattleVfxShape.Sparkle)
                 );
 
