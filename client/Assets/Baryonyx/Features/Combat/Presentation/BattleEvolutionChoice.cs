@@ -302,8 +302,8 @@ namespace Baryonyx.Combat.Presentation
             branch.SetShape(0.37f, 0.28f * drawn + flow, 0f, picked ? 1.6f : 1f);
         }
 
-        // Each aura gets its own copy of the haze's material, told its board and card sizes and
-        // its own seed, so neighbouring stages do not breathe alike.
+        // Each aura gets its own copy of the haze's material, told its board and card sizes, its
+        // own seed (so neighbouring stages do not breathe alike) and the noise it reads.
         private void SetUpAuras()
         {
             for (int i = 0; i < Auras.Length; i++)
@@ -323,6 +323,8 @@ namespace Baryonyx.Combat.Presentation
                 material.SetVector("_Size", aura.rectTransform.rect.size);
                 material.SetVector("_CardHalf", card * 0.5f);
                 material.SetVector("_Seed", new Vector4(i * 17.3f, i * 5.1f, i * 2.9f, 0f));
+                // The haze reads its noise from a small square made once in code.
+                material.SetTexture("_Noise", BattleCardAuraNoise.Texture);
                 aura.material = material;
             }
         }
