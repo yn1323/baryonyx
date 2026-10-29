@@ -377,6 +377,9 @@ namespace Baryonyx.Tests.PlayMode
             yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
             var back = navigator.Current;
             Assert.That(back.Graph.Nodes[back.PartyAt].Id, Is.EqualTo("region-marina"));
+            // 戻った世界地図は、駒が地図の端に近くても、地図の外（黒）を写さない。
+            Assert.That(back.Scroll.x, Is.InRange(0f, back.MaxScroll.x));
+            Assert.That(back.Scroll.y, Is.InRange(0f, back.MaxScroll.y));
             Assert.That(back.States[next], Is.EqualTo(WorldNodeState.Cleared));
 
             // 地域から入り直し、もどるでも世界地図へ戻る。

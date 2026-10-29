@@ -117,6 +117,7 @@ namespace Baryonyx.WorldMap
         private Vector2 scroll;
         private float zoom = 1f;
         private Vector2 glide;
+        private Vector2 fittedView;
         private bool holding;
         private readonly List<Vector2> walk = new();
 
@@ -185,6 +186,9 @@ namespace Baryonyx.WorldMap
         public int Level => InAtlas ? AtlasLayout.level : 0;
         public int BaseCost => InAtlas ? AtlasLayout.@base : 0;
         public Vector2 Scroll => scroll;
+
+        /// <summary>How far <see cref="Scroll"/> may go before the screen shows past the map.</summary>
+        public Vector2 MaxScroll => MapSize - SeenSize;
         public float Zoom => zoom;
 
         // 戦闘の画面へ移るところ。マスを押しても歩かない。
@@ -306,14 +310,15 @@ namespace Baryonyx.WorldMap
         }
 
         /// <summary>
-        /// Zooms to <paramref name="value"/> with the party at the middle of the screen, past
-        /// the usual limits (the nested map prototype's switch between maps).
+        /// Zooms to <paramref name="value"/> with the party as near the middle of the screen as
+        /// the map's edges allow, past the usual zoom limits (the nested map prototype's switch
+        /// between maps). Where the map is narrower than the screen it stays in the middle.
         /// </summary>
         public void FrameAt(float value)
         {
             zoom = Mathf.Max(0.05f, value);
             glide = Vector2.zero;
-            scroll = partyDesign - SeenSize * 0.5f;
+            scroll = Clamp(partyDesign - SeenSize * 0.5f);
             ApplyScroll();
         }
 
@@ -504,6 +509,14 @@ namespace Baryonyx.WorldMap
         {
             float dt = Time.unscaledDeltaTime;
             pulse += dt;
+            // 開いた直後は画面の大きさが決まっていないことがある。決まったら、地図の外が写らない
+            // 位置へ置き直す。
+            if (Loaded && ViewSize != fittedView)
+            {
+                fittedView = ViewSize;
+                scroll = Clamp(scroll);
+                ApplyScroll();
+            }
             if (Walking)
                 Step(dt);
             else if (!holding && glide.sqrMagnitude > 1f)
@@ -830,11 +843,16 @@ namespace Baryonyx.WorldMap
         private Vector2 SeenSize => ViewSize / zoom;
 
         // scroll は地図の左上から見た、画面の左上の位置（地図の設計座標、y は下向き）。
+        // 地図の外が写らないよう縁で止める。地図が画面より狭い向きは、地図を画面の中央に置く
+        // （地図を切り替える演出で大きく引いたとき）。
         private Vector2 Clamp(Vector2 value)
         {
-            var max = Vector2.Max(Vector2.zero, MapSize - SeenSize);
-            return new Vector2(Mathf.Clamp(value.x, 0f, max.x), Mathf.Clamp(value.y, 0f, max.y));
+            var max = MapSize - SeenSize;
+            return new Vector2(Fit(value.x, max.x), Fit(value.y, max.y));
         }
+
+        private static float Fit(float value, float max) =>
+            max >= 0f ? Mathf.Clamp(value, 0f, max) : max * 0.5f;
 
         private void ApplyScroll()
         {
