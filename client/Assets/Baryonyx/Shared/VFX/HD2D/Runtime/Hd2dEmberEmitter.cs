@@ -312,20 +312,34 @@ namespace Baryonyx.Vfx.Hd2d
             EmitBurst(sourceIndex, count, point - anchor);
         }
 
+        // Counts the bursts, so a burst takes each particle once.
+        private int burstStamp;
+
         private void EmitBurst(int sourceIndex, int count, Vector2 offset)
         {
             if (!initialized || sourceIndex < 0 || sourceIndex >= states.Count || count <= 0)
                 return;
 
             var state = states[sourceIndex];
-            var ordered = new List<ParticleState>(state.Particles);
-            // Dead particles first, then the oldest live ones.
-            ordered.Sort((a, b) => Remaining(a).CompareTo(Remaining(b)));
-            for (var index = 0; index < Mathf.Min(count, ordered.Count); index++)
+            // Dead particles first, then the oldest live ones: each time the one with the least
+            // time left that this burst has not taken yet. No list is made or sorted, since a
+            // trail bursts one at a time many times a second.
+            burstStamp++;
+            for (var index = 0; index < count; index++)
             {
-                Respawn(state.Settings, ordered[index], 0f);
-                ordered[index].Origin += offset;
-                ApplyParticle(state.Settings, ordered[index]);
+                ParticleState next = null;
+                foreach (var particle in state.Particles)
+                    if (
+                        particle.Burst != burstStamp
+                        && (next == null || Remaining(particle) < Remaining(next))
+                    )
+                        next = particle;
+                if (next == null)
+                    break;
+                next.Burst = burstStamp;
+                Respawn(state.Settings, next, 0f);
+                next.Origin += offset;
+                ApplyParticle(state.Settings, next);
             }
         }
 
@@ -743,6 +757,9 @@ namespace Baryonyx.Vfx.Hd2d
             // Diameter (px) of an ember's head, or the size of a glint's board.
             public float Head;
             public float GlintAngle;
+
+            // The last burst that took this particle.
+            public int Burst;
         }
     }
 }

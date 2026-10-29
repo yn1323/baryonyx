@@ -603,6 +603,9 @@ namespace Baryonyx.Home.Editor
 
             var pill = Rect("RunePill", safe);
             Corner(pill, Vector2.one, new Vector2(-(64 + 88 + 16), -40), new Vector2(0, 88));
+            // The balance swells and counts up while runes fly into it: on a Canvas of its own, so
+            // the rest of the home is not rebuilt each frame with it (2026-10-29).
+            pill.gameObject.AddComponent<Canvas>();
             // The same soft dark plate as the step panel, but reaching past the pill with a
             // twice as wide fade, so it thins out gradually toward every edge.
             var plate = Rect("RuneShade", pill);
@@ -813,6 +816,10 @@ namespace Baryonyx.Home.Editor
             var layer = Rect("RuneEffect", root);
             Stretch(layer);
             view.RuneEffectLayer = layer;
+            // The flying runes, sparkles and haze move every frame: on a Canvas of their own, so
+            // the rest of the home is not rebuilt with them (2026-10-29, the gain felt heavy). It
+            // draws in its place among the home's parts and takes no taps.
+            layer.gameObject.AddComponent<Canvas>();
 
             // A computed light over the balance icon, under the runes and the sparkles: a white
             // core and a soft halo, added to what is behind.
@@ -946,6 +953,7 @@ namespace Baryonyx.Home.Editor
 
             // The gained amount appears under the balance while the counter rises.
             var gain = Rect("RuneGain", safe);
+            gain.gameObject.AddComponent<Canvas>();
             Corner(
                 gain,
                 Vector2.one,

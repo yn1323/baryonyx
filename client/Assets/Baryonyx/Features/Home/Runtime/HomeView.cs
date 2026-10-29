@@ -248,6 +248,26 @@ namespace Baryonyx.Home
         // 直前の演出でルーンが弾けた中心（演出の層の座標）。テストで確かめる。
         internal Vector3 BurstOrigin { get; private set; }
 
+        // The runes that fly are made before the first gain, so it does not start with a stall.
+        private void Start()
+        {
+            if (Application.isPlaying)
+                MakeRuneParticles(RuneParticleMax);
+        }
+
+        private void MakeRuneParticles(int count)
+        {
+            if (RuneParticle == null || RuneEffectLayer == null)
+                return;
+            while (particles.Count < count)
+            {
+                var copy = Instantiate(RuneParticle, RuneEffectLayer);
+                copy.name = RuneParticle.name;
+                copy.gameObject.SetActive(false);
+                particles.Add(copy);
+            }
+        }
+
         private void OnEnable()
         {
             Bind(StepButton, HomeAction.SyncSteps);
@@ -510,12 +530,7 @@ namespace Baryonyx.Home
                 fly[i] = RuneFlySeconds * UnityEngine.Random.Range(1f - jitter, 1f + jitter);
                 nextTrail[i] = UnityEngine.Random.Range(0f, RuneTrailSeconds);
             }
-            while (particles.Count < count)
-            {
-                var copy = Instantiate(RuneParticle, RuneEffectLayer);
-                copy.name = RuneParticle.name;
-                particles.Add(copy);
-            }
+            MakeRuneParticles(count);
             // キラキラはルーンの手前に描く。後ろでは96pxのルーンに隠れて見えない。
             if (RuneSparkles != null)
                 RuneSparkles.transform.SetAsLastSibling();
