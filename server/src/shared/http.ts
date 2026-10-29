@@ -50,6 +50,7 @@ const NOT_FOUND_ERRORS = new Set([
   "item_not_owned",
   "target_not_found",
   "goods_not_found",
+  "square_not_found",
 ]);
 
 export function errorStatus(error: string): ContentfulStatusCode {

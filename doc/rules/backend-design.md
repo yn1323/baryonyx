@@ -266,6 +266,7 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0024_remove_step_bonus.sql](../../server/migrations/0024_remove_step_bonus.sql) は、ACTボーナスをなくしたため（2026-10-24）、その3テーブルを消し、冒険の報酬から `bonus` の分類と、ボーナスだけが使った結果（`updated`・`discarded`）を外す。表を作り直すため、Drizzle Kitが生成したSQLのうち、外部キーの向きに合わせて枠の表を先に消す順に直し、`bonus` の行を移さず、結果を `added` にして写すよう手で直した。`PRAGMA` は0002と同じく `defer_foreign_keys` に書き換えた。
 [0025_world_map.sql](../../server/migrations/0025_world_map.sql) は、[街道の世界地図](../features/stage-progression.md#世界地図の形と試作2026-10-24)のクリアしたマス（`world_map_squares`）と今いるマス（`world_map_positions`）の2テーブルを作る。
 [0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql) は、持っているスキルの1枚が覚醒した枝（`skill_cards.awakened_branch`、NULLか1・2）を足す（[カスタムスキルの覚醒](../features/skill-awakening.md)）。制約を足すため表を作り直すSQLになり、0022と同じく `PRAGMA` を `defer_foreign_keys` に書き換え、元の表にない列を読む部分を `NULL` に直した。
+[0030_world_atlas.sql](../../server/migrations/0030_world_atlas.sql) は、[入れ子の地図](../features/world-atlas.md#マスを開くルーン)でルーンを払って開けたマス（`world_atlas_squares`）を作る。行は払ったルーンの記録を兼ね、要求IDとマスのそれぞれに一意インデックスを持つ。
 
 ```sh
 pnpm db:generate --name add_example

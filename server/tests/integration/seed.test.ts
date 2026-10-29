@@ -13,6 +13,7 @@ import {
   UNIQUE_UNLOCK_LEVELS,
   uniqueMaxPercent,
 } from "../../src/features/party/catalog.js";
+import { squareOf } from "../../src/features/world-atlas/catalog.js";
 import { qualityOf } from "../../src/shared/quality.js";
 import {
   type ApiScenario,
@@ -256,6 +257,17 @@ describe("開発用のプレイヤー（seed）", () => {
       expect(map.cleared.slice(1).sort()).toEqual(
         [...(seed.worldMap?.cleared ?? [])].sort(),
       );
+
+      const atlas = await scenario.read<{
+        opened: { map: string; square: string }[];
+      }>("/world-atlas", token);
+      expect(atlas.opened).toEqual(
+        (seed.worldAtlas ?? []).map(({ map, square }) => ({ map, square })),
+      );
+      // seedの払ったルーンは、地図の定義の値段と同じにする。
+      for (const opened of seed.worldAtlas ?? []) {
+        expect(opened.runes).toBe(squareOf(opened.map, opened.square)?.price);
+      }
 
       const library = await scenario.read<Library>("/library", token);
       const entries = (kind: string) =>

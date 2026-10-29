@@ -56,6 +56,8 @@ export type SeedPlayer = {
   weaknesses: readonly { enemyId: string; element: string }[];
   // 街道の世界地図の進み具合（今いるマスと、最初の街のほかにクリアしたマス）。なければ最初の街にいる。
   worldMap?: { at: string; cleared: readonly string[] };
+  // 入れ子の地図で、ルーンを払って開けたマス（開けた順）と払ったルーン（地図の定義の値段）。
+  worldAtlas?: readonly { map: string; square: string; runes: number }[];
   // 戦闘で遭遇した敵と倒した数（ライブラリ）。キャラ・カード・装備の見つけた記録は、持ち物から作る。
   enemies: readonly { enemyId: string; defeated: number }[];
 };
@@ -224,6 +226,11 @@ export const SEED_PLAYERS: readonly SeedPlayer[] = [
     ],
     shards: 3,
     records: [{ destinationId: "forest-ruins", bestFloor: 10, clears: 3 }],
+    worldAtlas: [
+      { map: "world", square: "world-33", runes: 200 },
+      { map: "world", square: "world-18", runes: 200 },
+      { map: "world", square: "world-19", runes: 200 },
+    ],
     worldMap: {
       at: "pino",
       cleared: [
@@ -655,6 +662,19 @@ function playerStatements(player: SeedPlayer, now: string) {
       player.worldMap
         ? [{ user_id: userId, square_id: player.worldMap.at, updated_at: now }]
         : [],
+    ),
+    ...insert(
+      "world_atlas_squares",
+      (player.worldAtlas ?? []).map((opened, index) => ({
+        id: stableUuid(`seed:${player.id}:atlas:${index}`),
+        user_id: userId,
+        request_id: stableUuid(`seed:${player.id}:atlas-request:${index}`),
+        map_key: opened.map,
+        square_id: opened.square,
+        runes: opened.runes,
+        balance_after: player.runes,
+        created_at: new Date(Date.parse(now) + index).toISOString(),
+      })),
     ),
     ...insert(
       "combat_revealed_weaknesses",
