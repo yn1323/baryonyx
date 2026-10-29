@@ -37,10 +37,24 @@ Material:
     - _Evolve: 0.16
     - _HaloAmount: 0.14
     - _HaloReach: 1.5
+    - _HazeAmount: 0.45
     - _Intensity: 1.1
     - _MoteRise: 14
     - _Motes: 0.25
     - _Reach: 36
+    - _Ribbon: 1.4
+    - _RibbonBlur: 14
+    - _RibbonBody: 7
+    - _RibbonBreak: 0.75
+    - _RibbonCount: 3
+    - _RibbonEvolve: 0.15
+    - _RibbonGap: 24
+    - _RibbonLift: 0.8
+    - _RibbonRound: 0.7
+    - _RibbonSpin: 0.22
+    - _RibbonWave: 70
+    - _RibbonWaves: 1.4
+    - _RibbonWidth: 2
     - _Scale: 105
     - _Soft: 2.4
     - _Stencil: 0
@@ -56,6 +70,8 @@ Material:
     - _Core: {r: 1, g: 0.97999996, b: 0.9, a: 1}
     - _Halo: {r: 1, g: 0.7, b: 0.31999996, a: 1}
     - _Haze: {r: 1, g: 0.88, b: 0.6, a: 1}
+    - _RibbonCore: {r: 1, g: 0.96999997, b: 0.88, a: 1}
+    - _RibbonGlow: {r: 1, g: 0.78, b: 0.39999998, a: 1}
     - _Seed: {r: 0, g: 0, b: 0, a: 0}
     - _Size: {r: 975, g: 1180, b: 0, a: 0}
   m_BuildTextureStacks: []

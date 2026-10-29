@@ -443,6 +443,13 @@ namespace Baryonyx.Combat.Editor
                 Hd2dStageKit.SortLayer(world, Hd2dStageKit.BoardOrder + 10);
                 Hd2dStageKit.SortLayer(front, Hd2dStageKit.BoardOrder + 11);
                 view.Vfx = BattleSkillVfxAssets.Attach(screen, stage, dim, back, front);
+                // 戦闘で手に入れた物は、探索と同じ宝箱に入れて出す。
+                view.ChestClosed = ArtAssets.LoadTexture(
+                    Baryonyx.Adventure.Editor.AdventureAssets.ChestClosedPath
+                );
+                view.ChestOpen = ArtAssets.LoadTexture(
+                    Baryonyx.Adventure.Editor.AdventureAssets.ChestOpenPath
+                );
                 BuildTapArea(screen, view);
 
                 var safe = SafeArea(screen);

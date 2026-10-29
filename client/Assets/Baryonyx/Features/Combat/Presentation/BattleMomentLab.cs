@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Baryonyx.Inventory;
 using Baryonyx.UI;
 using TMPro;
@@ -36,7 +37,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>The win after the boss's battle: a hush in the dark, then the bigger light.</summary>
         BossVictory,
 
-        /// <summary>A drop of the chosen quality falls from the last enemy beaten and opens.</summary>
+        /// <summary>Drops of the chosen quality fall together from the last enemy beaten and open.</summary>
         Drop,
 
         /// <summary>The win, then the drop, as a battle ends.</summary>
@@ -88,6 +89,9 @@ namespace Baryonyx.Combat.Presentation
 
         [Tooltip("ドロップの下に出す一言。")]
         public string SampleNote = "持ち物に加えました";
+
+        // 1回のドロップでまとめて落とす数。冒険の戦闘のように、手に入れた物を一度に見せる。
+        public const int DropsAtOnce = 3;
 
         public Button QualityButton;
         public TMP_Text QualityLabel;
@@ -226,6 +230,23 @@ namespace Baryonyx.Combat.Presentation
             };
         }
 
+        /// <summary>
+        /// The next drops of a battle: <see cref="DropsAtOnce"/> samples in turn, at the chosen
+        /// quality, or none for nothing found.
+        /// </summary>
+        public List<RewardItem> NextDrops()
+        {
+            var drops = new List<RewardItem>();
+            for (int i = 0; i < DropsAtOnce; i++)
+            {
+                var drop = NextDrop();
+                if (drop == null)
+                    break;
+                drops.Add(drop);
+            }
+            return drops;
+        }
+
         /// <summary>Sets the battlefield the moment starts from, then plays it.</summary>
         private void Play(BattleMoment which)
         {
@@ -261,10 +282,10 @@ namespace Baryonyx.Combat.Presentation
                     View.PlayVictory(boss: true);
                     break;
                 case BattleMoment.Drop:
-                    View.PlayDrop(NextDrop(), Reveal);
+                    View.PlayDrops(NextDrops(), Reveal);
                     break;
                 case BattleMoment.VictoryAndDrop:
-                    View.PlayVictoryAndDrop(NextDrop(), Reveal);
+                    View.PlayVictoryAndDrops(NextDrops(), Reveal);
                     break;
                 case BattleMoment.Wipeout:
                     View.PlayWipeout();

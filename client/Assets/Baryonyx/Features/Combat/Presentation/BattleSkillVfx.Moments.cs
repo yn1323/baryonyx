@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Baryonyx.Inventory;
+using Baryonyx.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Baryonyx.Combat.Presentation
 {
@@ -306,6 +308,137 @@ namespace Baryonyx.Combat.Presentation
             yield return Wait(fade + 0.2f);
             DimTo(0f, 0.6f);
             yield return Wait(grade >= 2 ? 1.2f : 0.7f);
+        }
+
+        // How many of the enemies' dots one dot of the battle's chest is.
+        private const float ChestDots = 1.6f;
+
+        // The battle's chest, made the first time one is opened and used again after.
+        private RawImage chest;
+
+        /// <summary>
+        /// How long a chest of <paramref name="quality"/> trembles before it opens: longer for a
+        /// better one, as the exploration's chest.
+        /// </summary>
+        public static float ChestWait(ItemQuality quality) =>
+            quality switch
+            {
+                ItemQuality.S => 1.1f,
+                ItemQuality.A => 0.75f,
+                ItemQuality.B => 0.5f,
+                _ => 0.35f,
+            };
+
+        /// <summary>
+        /// What the battle left, as a chest on the floor where <paramref name="enemy"/> (the last
+        /// enemy beaten) stood, drawn in its dots (<paramref name="closed"/>, then
+        /// <paramref name="open"/>). Nothing falls: the chest wells up out of a soft light, then
+        /// trembles harder and harder as the quality's light leaks out of it (longer for a better
+        /// one; at A and S a circle opens under it), and flies open in the drop's burst
+        /// (<see cref="Open"/>), when <paramref name="burst"/> is called to show everything that
+        /// was in it together. It stays open while the light falls off, then fades. The chest
+        /// stands among the characters (beside the enemy's picture), not on the effects' layers,
+        /// so the stage's depth and darkening treat it as one of them. Ends when the last light
+        /// is gone.
+        /// </summary>
+        public IEnumerator Chest(
+            RawImage enemy,
+            ItemQuality quality,
+            Texture closed,
+            Texture open,
+            Action burst
+        )
+        {
+            // The layer the characters stand on: the enemy's picture is in its pose, in its body.
+            var world = enemy != null ? enemy.rectTransform.parent : null;
+            for (int up = 0; up < 2 && world != null; up++)
+                world = world.parent;
+            if (FrontLayer == null || world == null || closed == null)
+            {
+                burst?.Invoke();
+                yield break;
+            }
+            int grade = Quality.Grade(quality);
+            var color = QualityPalette.Of(quality);
+            var area = enemy.rectTransform;
+            var land = Inside(Feet(FrontLayer, area) + new Vector2(-70f, -10f), 640f);
+            // One dot of the chest is a little more than one of the enemies', so it reads on the floor.
+            var corners = new Vector3[4];
+            area.GetWorldCorners(corners);
+            float enemyWidth = Mathf.Abs(corners[2].x - corners[0].x) / Mathf.Abs(world.lossyScale.x);
+            float dots = enemy.texture != null ? enemy.texture.width * enemy.uvRect.width : 0f;
+            float dot = (dots > 0f ? enemyWidth / dots : 3f) * ChestDots;
+            var size = new Vector2(closed.width, closed.height) * dot;
+            // Where it stands, among the characters.
+            Vector2 feet = world.InverseTransformPoint(FrontLayer.TransformPoint(land));
+            var layer = (RectTransform)world;
+            // Its size on the effects' layer, for the light round it.
+            float across = size.x * Mathf.Abs(world.lossyScale.x / FrontLayer.lossyScale.x);
+
+            if (chest == null)
+            {
+                chest = new GameObject("BattleChest", typeof(RectTransform)).AddComponent<RawImage>();
+                chest.raycastTarget = false;
+                chest.rectTransform.anchorMin = chest.rectTransform.anchorMax = Vector2.one * 0.5f;
+                chest.rectTransform.pivot = new Vector2(0.5f, 0f);
+            }
+            var rect = chest.rectTransform;
+            rect.SetParent(layer, false);
+            // Lit and drawn as the characters are.
+            chest.material = enemy.material;
+            rect.SetAsLastSibling();
+            rect.sizeDelta = size;
+            chest.texture = closed;
+            chest.color = new Color(1f, 1f, 1f, 0f);
+            chest.gameObject.SetActive(true);
+
+            const float appear = 0.3f;
+            float wait = ChestWait(quality);
+            float after = 0.55f + (grade >= 2 ? 1.2f : 0.7f);
+            float total = appear + wait + after;
+            bool woundUp = false;
+            bool opened = false;
+            // A soft light on the floor it comes out of.
+            Pool(land, color, across * 2f, 0.25f, appear + 0.3f);
+            Ring(backLight, land, Color.Lerp(color, Color.white, 0.5f), across * 2.4f, 0.45f, floor: true);
+            for (float t = 0f; t < total; t += Time.deltaTime)
+            {
+                if (!woundUp && t >= appear)
+                {
+                    // The wind-up: its light leaks out round it as it shakes. The stage is not
+                    // darkened round it, which would darken the chest with the characters.
+                    woundUp = true;
+                    var middle = land + Vector2.up * (across * 0.4f);
+                    Glow(backLight, middle, color, across * (1.6f + 0.3f * Mathf.Max(0, grade)), wait + 0.15f, 0.35f + 0.1f * grade);
+                    if (grade >= 1)
+                        Gather(middle, color, 4 + 5 * grade, 160f + 50f * grade, wait);
+                    if (grade >= 2)
+                        Circle(land, color, wait + 0.45f);
+                }
+                if (!opened && t >= appear + wait)
+                {
+                    // The burst: it flies open, and what was in it comes out together.
+                    opened = true;
+                    if (open != null)
+                        chest.texture = open;
+                    burst?.Invoke();
+                    Open(land + Vector2.up * (across * 0.4f - DropLift), color, grade);
+                }
+                // It wells up from the floor, springing a little past its size, then trembles
+                // harder and harder until it opens, by whole dots.
+                float rise = Mathf.Clamp01(t / appear);
+                float scale = rise < 1f ? Mathf.Max(0f, RewardReveal.SpringOut(rise)) : 1f;
+                float shaking = Mathf.Clamp01((t - appear) / wait);
+                float tremble =
+                    woundUp && !opened
+                        ? (Mathf.Repeat(t, 0.08f) < 0.04f ? 1f : -1f) * dot * (shaking < 0.5f ? 1f : 2f)
+                        : 0f;
+                rect.anchoredPosition = feet + new Vector2(tremble, 0f);
+                rect.localScale = new Vector3(scale, scale, 1f);
+                chest.color = new Color(1f, 1f, 1f, Mathf.Clamp01(rise * 3f) * Mathf.Clamp01((total - t) / 0.4f));
+                yield return null;
+            }
+            chest.gameObject.SetActive(false);
         }
 
         /// <summary>

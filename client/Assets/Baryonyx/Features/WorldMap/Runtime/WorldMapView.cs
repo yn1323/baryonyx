@@ -65,15 +65,21 @@ namespace Baryonyx.WorldMap
         public TMP_Text Notice;
         public CanvasGroup NoticeGroup;
 
-        // 宝箱の中身を見せるダイアログと、中身の絵。
+        // 札がないときに宝箱の中身を見せるダイアログと、中身の絵。
         public GameDialog Dialog;
         public ItemArt ItemArt;
+
+        [Tooltip("宝箱の中身をまとめて見せる札。冒険の宝箱と同じ部品。")]
+        public RewardReveal Reveal;
 
         // 入れ子の地図で、マスの出来事をマスから開いて見せる窓。
         public WorldMapEventWindow EventWindow;
 
         public const string LoadingText = "読み込み中…";
         private const float NoticeSeconds = 2.5f;
+
+        // 宝箱の札が開いてから閉じるまで（中身1つのとき）。
+        private const float ChestReadSeconds = RewardReveal.OpenTime + ExplorationFlow.ItemReadSeconds;
 
         public static readonly Color ClearedLine = new(1f, 0.96f, 0.86f, 1f);
         public static readonly Color OpenLine = new(1f, 0.82f, 0.3f, 1f);
@@ -370,14 +376,14 @@ namespace Baryonyx.WorldMap
                 at = graph.IndexOf(WorldMapCatalog.Start);
             // 入れ子の地図の試作には最初の街がないため、地図の最初のマスに置く。
             partyAt = Mathf.Max(0, at);
+            trail.Clear();
+            trail.Add(partyAt);
             Home();
         }
 
         private void Home()
         {
             Refresh();
-            trail.Clear();
-            trail.Add(partyAt);
             PlaceParty(DesignOf(partyAt));
             scroll = Clamp(DesignOf(partyAt) - SeenSize * 0.5f);
             ApplyScroll();
@@ -620,13 +626,13 @@ namespace Baryonyx.WorldMap
         private void Landed(int at)
         {
             partyAt = at;
+            trail.Add(at);
             string id = graph.Nodes[at].Id;
             bool first = cleared.Add(id);
             Refresh();
             if (walk.Count == 0)
             {
                 walkTarget = -1;
-            trail.Add(at);
                 Arrived?.Invoke(id, first);
                 return;
             }
@@ -676,12 +682,55 @@ namespace Baryonyx.WorldMap
                 ShowNotice(WorldMapSession.SaveFailedMessage);
                 return;
             }
+            if (Reveal != null)
+            {
+                await RevealChestAsync(chest);
+                return;
+            }
             if (Dialog == null)
             {
                 Opening = false;
                 return;
             }
             AdventureDialogs.Treasure(Dialog, chest, CloseChest, ItemArt);
+        }
+
+        // 冒険の宝箱と同じく、中身を良い物からすべての札でまとめて見せ、読む間をおいて閉じる。
+        // 読む間は中身の数に合わせて少し延ばす（2026-10-29、ダイアログの文字から札へそろえた）。
+        private async System.Threading.Tasks.Task RevealChestAsync(
+            IReadOnlyList<AdventureDrop> chest
+        )
+        {
+            var items = new List<RewardItem>();
+            foreach (var drop in chest)
+            {
+                var item = AdventureDropItems.From(drop, ItemArt);
+                if (item != null)
+                    items.Add(item);
+            }
+            items.Sort(
+                (a, b) =>
+                    (b.Graded ? Quality.Grade(b.Quality) : -1)
+                    - (a.Graded ? Quality.Grade(a.Quality) : -1)
+            );
+            if (items.Count == 0)
+                Reveal.Show(null);
+            else
+                Reveal.ShowAll(items);
+            try
+            {
+                await Awaitable.WaitForSecondsAsync(
+                    ChestReadSeconds
+                        + ExplorationFlow.ExtraReadSeconds * Mathf.Max(0, items.Count - 1),
+                    destroyCancellationToken
+                );
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            Reveal.Hide();
+            Opening = false;
         }
 
         private void CloseChest()

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Combat.Records;
+using Baryonyx.Inventory;
 using Baryonyx.Networking;
 using Baryonyx.UI;
 using UnityEngine;
@@ -263,26 +264,26 @@ namespace Baryonyx.Adventure
             );
         }
 
-        // ドロップを1つずつ、最後に倒した敵から落として札で見せる。何もなければ「何も見つからなかった」。
+        // ドロップを宝箱と同じく、最後に倒した敵からまとめて落とし、すべての札で一度に見せる。
+        // 良い物から並べ、読む間は数に合わせて少し延ばす（2026-10-29、1つずつ替わるのが手間だったため）。
+        // 何もなければ「何も見つからなかった」。
         private async Task<bool> ShowDrops(IReadOnlyList<AdventureDrop> drops)
         {
             var reveal = overlay.Reveal;
-            if (drops == null || drops.Count == 0)
-            {
-                if (!await Play(() => battle.PlayDrop(null, reveal)))
-                    return false;
-            }
-            else
-            {
-                foreach (var drop in drops)
-                {
-                    var item = AdventureDropItems.From(drop, overlay.ItemArt);
-                    if (!await Play(() => battle.PlayDrop(item, reveal)))
-                        return false;
-                    if (!await Pause(DropReadSeconds))
-                        return false;
-                }
-            }
+            var items = (drops ?? Array.Empty<AdventureDrop>())
+                .Select(drop => AdventureDropItems.From(drop, overlay.ItemArt))
+                .Where(item => item != null)
+                .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
+                .ToList();
+            if (!await Play(() => battle.PlayDrops(items, reveal)))
+                return false;
+            if (
+                items.Count > 0
+                && !await Pause(
+                    DropReadSeconds + ExplorationFlow.ExtraReadSeconds * (items.Count - 1)
+                )
+            )
+                return false;
             if (reveal != null)
                 reveal.Hide();
             return true;

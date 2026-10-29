@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Linq;
-using Baryonyx.Adventure;
 using Baryonyx.App;
 using Baryonyx.WorldMap;
 using NUnit.Framework;
@@ -36,7 +35,7 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(WorldMapChestTests));
         }
 
-        // 初めて着くと、宝箱の中身をダイアログで見せる。閉じるまでマスを押しても歩かない。
+        // 初めて着くと、宝箱の中身を冒険の宝箱と同じ札でまとめて見せる。札が閉じるまでマスを押しても歩かない。
         [UnityTest]
         public IEnumerator ReachingAChestShowsWhatItHeldOnce()
         {
@@ -48,23 +47,29 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.States[chest], Is.EqualTo(WorldNodeState.Open));
             Assert.That(view.Tap(chest), Is.True);
 
-            var dialog = view.Dialog;
+            var reveal = view.Reveal;
+            Assert.That(reveal, Is.Not.Null);
             yield return SceneTests.WaitUntil(
-                () => dialog.IsShown && dialog.TitleText == AdventureDialogs.TreasureTitle,
+                () => reveal.Shown,
                 10f,
-                "The chest's dialog did not show."
+                "The chest's plates did not show."
             );
-            Assert.That(
-                dialog.BodyText,
-                Is.EqualTo(AdventureTexts.DropsBody(WorldMapChests.Of(Chest)))
-            );
+            Assert.That(reveal.ShownCount, Is.EqualTo(WorldMapChests.Of(Chest).Count));
+            Assert.That(view.Dialog.IsShown, Is.False);
             Assert.That(WorldMapSession.Known.Cleared, Has.Member(Chest));
             Assert.That(view.Opening, Is.True);
             Assert.That(view.Tap(before), Is.False);
 
-            dialog.Choose(AdventureTexts.NextChoice);
-            Assert.That(dialog.IsShown, Is.False);
-            Assert.That(view.Opening, Is.False);
+            yield return SceneTests.WaitUntil(
+                () => !view.Opening,
+                10f,
+                "The chest's plates did not close."
+            );
+            yield return SceneTests.WaitUntil(
+                () => !reveal.Shown,
+                2f,
+                "The chest's plates stayed."
+            );
 
             // クリアした宝箱へ戻っても、もう開けない。
             Assert.That(view.Tap(before), Is.True);
@@ -72,7 +77,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Tap(chest), Is.True);
             yield return SceneTests.WaitUntil(() => !view.Walking, 10f, "The party did not stop.");
             yield return SceneTests.WaitForTask(view.SaveTask);
-            Assert.That(dialog.IsShown, Is.False);
+            Assert.That(reveal.Shown, Is.False);
             Assert.That(view.Opening, Is.False);
         }
     }

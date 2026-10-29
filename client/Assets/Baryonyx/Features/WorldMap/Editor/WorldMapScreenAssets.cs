@@ -62,6 +62,9 @@ namespace Baryonyx.WorldMap.Editor
         private const float ButtonSize = 128f;
         private const float Margin = 24f;
 
+        // 宝箱の中身の札の中心（安全領域の中央から）。冒険の宝箱と同じ。
+        private static readonly Vector2 ChestPlateCenter = new(0f, -40f);
+
         // パーティを表す木の駒の高さと、マスの中心からの足元の位置（設計座標、y が上）。
         private const float PawnHeight = 140f;
         private static readonly Vector2 PawnFeet = new(0, -12);
@@ -171,6 +174,7 @@ namespace Baryonyx.WorldMap.Editor
                 BuildMap(root, view, graph, pictureSize, pictures);
                 BuildControls(root, view, dungeons);
                 view.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
+                view.Reveal = RewardRevealAssets.Build(SafeArea(root), ChestPlateCenter);
                 view.Dialog = GameDialogAssets.Build(root);
                 // 入れ子の地図では、マスに置いた出来事を台の絵で見せ、マスから開く窓で見せる。
                 if (layout != null)

@@ -81,17 +81,19 @@ namespace Baryonyx.Combat.Presentation
         public void PlayVictory(bool boss) => Enqueue(Victory(boss));
 
         /// <summary>
-        /// <paramref name="drop"/> (null for nothing found) falls from the last enemy beaten and
-        /// opens on <paramref name="reveal"/>. Enemies still standing are taken away first.
+        /// Everything in <paramref name="drops"/> (best first; empty for nothing found) comes in a
+        /// chest where the last enemy beaten stood, in the light of the best, and opens together
+        /// on <paramref name="reveal"/>, as the exploration's chest does. Enemies still standing
+        /// are taken away first.
         /// </summary>
-        public void PlayDrop(RewardItem drop, RewardReveal reveal) =>
-            Enqueue(DropMoment(drop, reveal));
+        public void PlayDrops(IReadOnlyList<RewardItem> drops, RewardReveal reveal) =>
+            Enqueue(DropMoment(drops, reveal));
 
-        /// <summary>The win, then the drop.</summary>
-        public void PlayVictoryAndDrop(RewardItem drop, RewardReveal reveal)
+        /// <summary>The win, then the drops together (best first; empty for nothing found).</summary>
+        public void PlayVictoryAndDrops(IReadOnlyList<RewardItem> drops, RewardReveal reveal)
         {
             Enqueue(Victory(BossEncounter));
-            Enqueue(DropMoment(drop, reveal));
+            Enqueue(DropMoment(drops, reveal));
         }
 
         /// <summary>Every ally still standing falls, and the party is wiped out.</summary>
@@ -263,8 +265,14 @@ namespace Baryonyx.Combat.Presentation
 
         // --- The win and the drop ----------------------------------------------------------------
 
-        // The enemy a drop falls from: the last one beaten.
+        // Where the drops' chest comes: in front of the last enemy beaten.
         private int lastBeaten = -1;
+
+        [Header("Chest")]
+        [Tooltip("戦闘で手に入れた物を入れて出す宝箱の絵（閉じた・開いた）。探索の宝箱と同じ絵。")]
+        public Texture ChestClosed;
+
+        public Texture ChestOpen;
 
         // While a card's blows are landing: an enemy beaten by one stays, reeling, until the last
         // has landed, and only then crumbles away (2026-10-29).
@@ -341,8 +349,9 @@ namespace Baryonyx.Combat.Presentation
             allyBusy[index]--;
         }
 
-        private IEnumerator DropMoment(RewardItem drop, RewardReveal reveal)
+        private IEnumerator DropMoment(IReadOnlyList<RewardItem> drops, RewardReveal reveal)
         {
+            var drop = drops != null && drops.Count > 0 ? drops[0] : null;
             if (reveal != null)
                 reveal.HideNow();
             // The enemies still standing are taken away at once: the drop comes after the win.
@@ -358,8 +367,12 @@ namespace Baryonyx.Combat.Presentation
             RefreshTurnOrder();
             void ShowDrop()
             {
-                if (reveal != null)
-                    reveal.Show(drop);
+                if (reveal == null)
+                    return;
+                if (drop == null)
+                    reveal.Show(null);
+                else
+                    reveal.ShowAll(drops);
             }
             int from =
                 lastBeaten >= 0 && lastBeaten < Enemies.Length ? lastBeaten : Enemies.Length - 1;
@@ -370,7 +383,18 @@ namespace Baryonyx.Combat.Presentation
                 yield return Wait(RewardReveal.OpenTime + 0.6f);
                 yield break;
             }
-            yield return Vfx.Drop(Enemies[from].TargetArea, drop.Quality, ShowDrop);
+            // What the battle left comes in a chest where the last enemy stood (2026-10-29: a
+            // drop falling from the enemy was not liked), as the exploration's chest.
+            if (ChestClosed != null)
+                yield return Vfx.Chest(
+                    Enemies[from].Sprite,
+                    drop.Quality,
+                    ChestClosed,
+                    ChestOpen,
+                    ShowDrop
+                );
+            else
+                yield return Vfx.Drop(Enemies[from].TargetArea, drop.Quality, ShowDrop);
         }
 
         // --- The wipe-out and the revive ---------------------------------------------------------
