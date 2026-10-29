@@ -1,11 +1,14 @@
-// 選んでいるカードの後ろに立つ白金の後光の靄を、画像を使わずに計算で描くuGUI用のシェーダー（覚醒先を選ぶ画面で使う）。
+// 選んでいるカードの後ろに立つ白金の後光の靄と絹の光の帯を、画像を使わずに計算で描くuGUI用のシェーダー（覚醒先を選ぶ画面で使う）。
 // カードより一回り大きい板に掛け、板の中央にカードの形（角の四角い長方形）を置いて、その縁からの距離で靄の濃さを決める。
 // どの色の枠のカードにも合うよう、色は白に近い淡い金に限り、向きの偏りを付けずに全周へ均等に広げる。
 // 靄の輪郭は2回ゆがめたfBm（Hd2dWarpedFbm）のふくらみと細かな切れ端で崩し、外ほど大きく崩して四角く見せない。
 // 動きは流れを持たず、形がゆっくり変わり続け、全体がその場で呼吸するように膨らんで縮む。
 // 層（すべて加算。カードの奥に描き、カードの絵と説明文には掛からない）：
 // - 後光（Halo）：遠くまで薄く届く琥珀色のにじみ。いちばん柔らかく、いちばん暗い。
-// - 靄（Haze）：縁から外へ薄れていく淡い金の雲。輪郭がもくもくと崩れる主役。
+// - 靄（Haze）：縁から外へ薄れていく淡い金の雲。輪郭がもくもくと崩れ、光の帯の居場所になる。
+// - 光の帯（Ribbons）：カードのまわりを絹のようにたなびき、ゆっくり巡る細い光の筋。
+//   カードの輪郭から少しずつ離した数本の線を、輪郭に沿った向きのノイズでうねらせ、巡る向きに流す。
+//   画面の画素で決めた細さの白い芯と、その外のにじみで描き、別のノイズで途切れさせて先が細く消える切れ端にする。
 // - 芯（Core）：縁のすぐ外の白に近い光。ノイズで太さと明るさを揺らし、まっすぐな線に見せない。
 // - 光の粒（Motes）：靄の中をゆっくり昇って瞬く、まばらな点。
 // 頂点色のアルファで全体を出し入れする。
@@ -37,6 +40,24 @@ Shader "Baryonyx/Combat/Battle Card Aura"
         _Breath ("呼吸の大きさ（距離の割合）", Range(0, 0.4)) = 0.12
         _BreathSpeed ("呼吸の速さ（rad/秒）", Float) = 1.6
         _Seed ("模様の開始位置", Vector) = (0, 0, 0, 0)
+
+        _HazeAmount ("靄の明るさ", Range(0, 2)) = 0.45
+
+        _RibbonCore ("光の帯の芯の色", Color) = (1, 0.97, 0.88, 1)
+        _RibbonGlow ("光の帯のにじみの色", Color) = (1, 0.78, 0.4, 1)
+        _Ribbon ("光の帯の明るさ", Range(0, 3)) = 1.4
+        _RibbonCount ("光の帯の本数（1〜4）", Range(1, 4)) = 3
+        _RibbonWidth ("光の帯の芯の太さ（画面の画素）", Float) = 2
+        _RibbonBlur ("光の帯のにじみの幅（画面の画素）", Float) = 14
+        _RibbonBody ("光の帯の体の幅（画面の画素）", Float) = 7
+        _RibbonRound ("外の帯ほど丸くなる割合", Range(0, 1)) = 0.7
+        _RibbonGap ("光の帯どうしの間（px）", Float) = 24
+        _RibbonWave ("光の帯のうねりの大きさ（px）", Float) = 70
+        _RibbonWaves ("ひと回りのうねりの数", Float) = 1.4
+        _RibbonSpin ("光の帯の巡る速さ（rad/秒）", Float) = 0.22
+        _RibbonLift ("上ほど離れる割合", Range(0, 3)) = 0.8
+        _RibbonEvolve ("光の帯の形の変わる速さ", Float) = 0.15
+        _RibbonBreak ("光の帯の途切れ（0で途切れない）", Range(0, 1)) = 0.75
 
         _Motes ("光の粒の多さ", Range(0, 1)) = 0.25
         _MoteRise ("光の粒の昇る速さ（px/秒）", Float) = 14
@@ -126,6 +147,22 @@ Shader "Baryonyx/Combat/Battle Card Aura"
             float _Breath;
             float _BreathSpeed;
             float4 _Seed;
+            half _HazeAmount;
+            half4 _RibbonCore;
+            half4 _RibbonGlow;
+            half _Ribbon;
+            float _RibbonCount;
+            float _RibbonWidth;
+            float _RibbonBlur;
+            float _RibbonBody;
+            float _RibbonRound;
+            float _RibbonGap;
+            float _RibbonWave;
+            float _RibbonWaves;
+            float _RibbonSpin;
+            float _RibbonLift;
+            float _RibbonEvolve;
+            half _RibbonBreak;
             half _Motes;
             float _MoteRise;
 
@@ -160,6 +197,45 @@ Shader "Baryonyx/Combat/Battle Card Aura"
                 return shown * twinkle * twinkle * (smoothstep(2.6, 0.0, r) + 0.3 * smoothstep(8.0, 0.0, r));
             }
 
+            // The silky ribbons: a few lines set out from the card's outline one after another,
+            // waving by a noise read round the card (on a circle, so it has no seam) and carried
+            // round it, each its own way. Each has a thin white core (pixels on screen, so it
+            // stays thin at any size) inside a wider glow, and is torn into strands whose ends
+            // fade, the strands further out fainter.
+            void Ribbons(float2 p, float d, float t, out float core, out float glow)
+            {
+                core = 0.0;
+                glow = 0.0;
+                float angle = atan2(p.y / _CardHalf.y, p.x / _CardHalf.x);
+                // A rounder distance (a superellipse round the card), so the outer strands sweep
+                // in ovals instead of following the card's square corners.
+                float2 q = abs(p) / _CardHalf.xy;
+                float rounded = (pow(pow(q.x, 4.0) + pow(q.y, 4.0), 0.25) - 1.0) * (_CardHalf.x + _CardHalf.y) * 0.5;
+                float top = saturate(p.y / _CardHalf.y * 0.5 + 0.5);
+                [unroll]
+                for (int i = 0; i < 4; i++)
+                {
+                    if (i >= (int)_RibbonCount)
+                        break;
+                    float way = i % 2 == 0 ? 1.0 : -0.7;
+                    float turn = angle + t * _RibbonSpin * way * (1.0 + i * 0.25);
+                    float2 round = float2(cos(turn), sin(turn)) * _RibbonWaves;
+                    float3 at = float3(round, t * _RibbonEvolve) + _Seed.xyz + i * 7.31;
+                    float wave = (Hd2dFbm(at, 3) - 0.5) * 2.0 * _RibbonWave;
+                    float set = _RibbonGap * (0.6 + i) * (1.0 + _RibbonLift * top * top);
+                    float path = lerp(d, rounded, _RibbonRound * (0.4 + 0.2 * i));
+                    float px = abs(path - set - wave) / max(fwidth(path), 1e-3);
+                    float strand = Hd2dFbm(float3(round * 1.7, t * _RibbonEvolve * 1.3) + _Seed.zxy + i * 3.7, 2);
+                    float kept = lerp(1.0, smoothstep(0.42, 0.62, strand), _RibbonBreak);
+                    float fade = kept / (1.0 + i * 0.6);
+                    // Thickest in the middle of a strand, thinning to its ends.
+                    float width = _RibbonWidth * (0.4 + 0.8 * kept);
+                    core += (1.0 - smoothstep(width * 0.5, width, px)) * fade;
+                    core += exp(-px * px / (_RibbonBody * _RibbonBody)) * 0.45 * fade;
+                    glow += exp(-px / _RibbonBlur) * fade;
+                }
+            }
+
             half4 frag(v2f IN) : SV_Target
             {
                 float t = Hd2dTime();
@@ -185,7 +261,12 @@ Shader "Baryonyx/Combat/Battle Card Aura"
                 float halo = exp(-d / (reach * _HaloReach)) * _HaloAmount * lerp(0.6, 1.2, puff);
                 float core = exp(-d / (reach * _CoreWidth)) * lerp(0.5, 1.0, wisp);
 
-                half3 light = _Halo.rgb * halo + _Haze.rgb * haze * 0.7 + _Core.rgb * core * 0.8;
+                float ribbon;
+                float ribbonGlow;
+                Ribbons(p, d, t, ribbon, ribbonGlow);
+
+                half3 light = _Halo.rgb * halo + _Haze.rgb * haze * 0.7 * _HazeAmount + _Core.rgb * core * 0.8;
+                light += (_RibbonGlow.rgb * ribbonGlow * 0.45 + _RibbonCore.rgb * ribbon) * _Ribbon;
                 light += _Core.rgb * Motes(p, t) * saturate(haze * 1.4 + halo);
                 light *= _Intensity;
 
