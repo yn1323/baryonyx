@@ -131,6 +131,8 @@ updated: 2026-10-29
 - ルーンが足りないときは、「ルーンが足りません（あと○歩）」と出し、OKを押せなくする。1歩で1ルーンになるため、足りない分を歩数で出す。1マスだけのときは、下の知らせで出す。
 - 道は、払うルーンがいちばん少ない道を選び、同じ値段ならマスの少ない道にする。
 - 払うのは、駒が次のマスへ跳ぶ直前に1マスずつである。払うたびに、持っているルーンの下から「-200」が浮かんで消える。
+- 支払いは、サーバーの答えを待たずにすぐ決める（楽観的更新、[保存先の決め方](../rules/data-storage.md#サーバーに置くときの作り方)）。手元の配置の値段と表示中の残高で払えるかを決め、マスを開けて値段を引いた残高を出して、そのまま跳ぶ。サーバーへは書き込みの待ち行列で順に送り、答えた残高を確かめた残高にする。足りないときは、サーバーへ送らずにその場で止まる（2026-10-29、ユーザーの依頼「ルーンの消費が直列になっているので楽観的更新に」）。
+- サーバーが支払いを受けなかったとき（通信の失敗など）は、そのマスと、あとから払ったマスを開けていないマスへ戻し、残高も戻す。歩いていれば止め、駒は通ってきたマスのうち、まだ開けているマスまで戻して、地図の下の知らせで伝える。
 - 道の途中の、出来事を置いたマスに初めて着くと、止まってその出来事の窓を開き、閉じたら続きを歩く。戦闘は画面が切り替わるため、そこで終わる。
 - 歩いている間は、左下の隅に文字のない止めるボタン（四角の印）を出す。押すと次のマスへは跳ばずに止まり、先のマスは払わない。跳んでいる途中なら、着いたマスで止まる。
 - 開発用のビルドとEditorだけ、左上（もどるの右）に消費のオンオフを出す。OFFのときは値札を出さず、確かめずにタダで歩く。切り替えは端末に残す（`PlayerPrefs` の `WorldAtlas.Charging`）。
@@ -293,13 +295,14 @@ JPEGの品質はAPKの大きさを変えず、Gitに入る大きさだけを変�
 - マスの出来事の窓：[WorldMapEventWindow](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapEventWindow.cs)・[WorldMapEventWindowAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldMapEventWindowAssets.cs)
 - マスに置いた出来事：[WorldAtlasLayout](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasLayout.cs) の `EventOf`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `NodeEvents`・`EventSprites`・`TryEventAt`
 - 出来事の見本：[Events/](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/Events/WorldEvents.cs)（種類ごとの中身と文面）・[WorldEventPanelAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldEventPanelAssets.cs)（配置）
-- マスを開くルーン：[WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（読み込み・1マスの支払い・オンオフ・確認を省く選択）・[WorldAtlasToll](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasToll.cs)（残高・値札・確認の窓・止めるボタン）・[WorldAtlasTollAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasTollAssets.cs)（配置）・[WorldMapGraph](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapGraph.cs) の `CheapestPathTo`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `Pay`・`Go`・`Stop`・`Resume`、サーバーは [world-atlas/](../../server/src/features/world-atlas/routes.ts)
+- マスを開くルーン：[WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（読み込み・1マスの支払い（`OptimisticState` と `SaveQueue` による楽観的更新）・受けなかった支払いの知らせ `Refused`・オンオフ・確認を省く選択）・[WorldAtlasToll](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasToll.cs)（残高・値札・確認の窓・止めるボタン）・[WorldAtlasTollAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasTollAssets.cs)（配置）・[WorldMapGraph](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapGraph.cs) の `CheapestPathTo`・[WorldMapView](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldMapView.cs) の `Pay`・`Go`・`Stop`・`Resume`・`Unpaid`（受けなかった支払いを戻す）、[WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs) の `TakeBack`、サーバーは [world-atlas/](../../server/src/features/world-atlas/routes.ts)
 - 画面とシーンの生成：[WorldAtlasAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldAtlasAssets.cs)・[WorldMapScreenAssets](../../client/Assets/Baryonyx/Features/WorldMap/Editor/WorldMapScreenAssets.cs)
 - 入口：[SceneNames](../../client/Assets/Baryonyx/App/Runtime/SceneNames.cs) の `WorldAtlas` と `DebugRooms`
 - テスト：配置は [WorldAtlasLayoutTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasLayoutTests.cs)、道と支払いは [WorldAtlasTollTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/EditMode/WorldAtlasTollTests.cs)、切り替えと払って歩くことは [WorldAtlasTests](../../client/Assets/Baryonyx/Features/WorldMap/Tests/PlayMode/WorldAtlasTests.cs)、サーバーは [routes.test.ts](../../server/src/features/world-atlas/routes.test.ts)
 
 ## 変更と判断の記録
 
+- 2026-10-29：ユーザーの依頼「ワールドマップ移動時にルーンの消費が直列になっているので、楽観的更新にしてください」で、マスの支払いをサーバーの答えを待たずに決めるようにした。前は跳ぶ直前の支払いがサーバーの答え（1往復約250ms）を待つため、複数マスを歩くとマスごとに止まっていた。編成のレベルアップと同じ作り（`OptimisticState`・`SaveQueue`）にし、受けなかった支払いは、あとから払ったマスとまとめて取り消して駒を戻す。
 - 2026-10-29：ユーザーの依頼で、まだ入っていないマスに入るときにルーンを払うようにした。払うのは初めて入るときだけにし、値段は計画の値段表、払ったマスはサーバーに残す。見せ方はユーザーが5案から次のマスの値札と地図の基本の値段を選んだ（基本の値段の札は、あとでユーザーの指示で外した）。続けてユーザーの依頼で、2マス以上先へ一度に進めるようにし、合計を確かめる窓（中央、行き先の絵なし、「次回起動まで確認しない」）、左上の開発用の消費のオンオフ、左下の文字のない止めるボタン、払うたびの「-200」を加えた。途中の出来事では止まって続きを歩く形を、ユーザーが2案から選んだ。止めたときに入っていないマスを払わないよう、支払いは跳ぶ直前に1マスずつにした。
 - 2026-10-29：ユーザーの指摘で、出来事のマスに止まると地図が画面の半分ほど上へ滑ってから窓が開いていたのをやめ、地図を動かさずに開くようにした。出来事の台も、平らな輪から何もないマスと同じ段のある石の台に作り直した。
 - 2026-10-29：ユーザーとの相談で、出来事は一部のマスにだけ置くことにし、世界地図とマリーナ海岸に約3割ずつ試しに置いた。試作の窓は、初めて止まった何もないマスに順番に見本を出す形をやめ、置いた出来事のマスでだけ開くようにし、冒険の世界地図でも開くようにした。

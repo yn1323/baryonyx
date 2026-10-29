@@ -118,10 +118,11 @@ namespace Baryonyx.WorldMap
         private readonly List<int> walkSquares = new();
         private int walkTarget = -1;
 
-        // 入れ子の地図で、マスごとの初めて入る値段（配置の並び）と、払っている途中のマス。
+        // 入れ子の地図で、マスごとの初めて入る値段（配置の並び）。
         private int[] prices = Array.Empty<int>();
-        private string paying;
-        private System.Threading.Tasks.Task<WorldAtlasPayment> payment;
+
+        // 入れ子の地図で、パーティが立ったマスの並び。支払いを断られたとき、まだ開けているマスまで戻る。
+        private readonly List<int> trail = new();
 
         // 途中のマスの出来事の窓を開いている間は、続きを歩かない。
         private bool held;
@@ -137,11 +138,12 @@ namespace Baryonyx.WorldMap
         private float noticeLeft;
 
         /// <summary>
-        /// Pays for the square with the given ID before the party hops onto it (the nested world
-        /// map). Without it, or while <see cref="WorldAtlasSession.Charging"/> is off, every
-        /// square is free.
+        /// Pays for the square with the given ID as the party hops onto it (the nested world
+        /// map), at once without waiting for the server (<see cref="Unpaid"/> takes it back when
+        /// the server does not take it). Without it, or while
+        /// <see cref="WorldAtlasSession.Charging"/> is off, every square is free.
         /// </summary>
-        public Func<string, System.Threading.Tasks.Task<WorldAtlasPayment>> Pay { get; set; }
+        public Func<string, WorldAtlasPayment> Pay { get; set; }
 
         /// <summary>Whether a square with the given ID was paid for earlier (the nested world map).</summary>
         public Func<string, bool> IsPaid { get; set; }
@@ -374,6 +376,8 @@ namespace Baryonyx.WorldMap
         private void Home()
         {
             Refresh();
+            trail.Clear();
+            trail.Add(partyAt);
             PlaceParty(DesignOf(partyAt));
             scroll = Clamp(DesignOf(partyAt) - SeenSize * 0.5f);
             ApplyScroll();
@@ -457,7 +461,6 @@ namespace Baryonyx.WorldMap
             hopping = false;
             hopPause = 0f;
             held = false;
-            PayAhead();
         }
 
         /// <summary>
@@ -560,8 +563,8 @@ namespace Baryonyx.WorldMap
                     : SaveAsync(id, clear);
         }
 
-        // 次のマスへ跳んでよいか。開けていないマスは、跳ぶ直前に払い、払い終えてから跳ぶ。払えなければ、
-        // そこで止まる。止めたときに入っていないマスを払わないよう、前もっては払わない。
+        // 次のマスへ跳んでよいか。開けていないマスは、跳ぶ直前に払う。支払いはサーバーを待たずに決まるため、
+        // そのまま跳ぶ。払えなければ、そこで止まる。止めたときに入っていないマスを払わないよう、前もっては払わない。
         private bool ReadyToHop()
         {
             if (held)
@@ -569,16 +572,7 @@ namespace Baryonyx.WorldMap
             int next = walkSquares[0];
             if (PriceOf(next) == 0)
                 return true;
-            string id = graph.Nodes[next].Id;
-            if (payment == null || paying != id)
-                StartPaying(id);
-            if (!payment.IsCompleted)
-                return false;
-            var result = payment.Status == System.Threading.Tasks.TaskStatus.RanToCompletion
-                ? payment.Result
-                : WorldAtlasPayment.Failed(WorldAtlasSession.FailedMessage);
-            payment = null;
-            paying = null;
+            var result = Pay(graph.Nodes[next].Id);
             if (result.Paid)
                 return true;
             Halt();
@@ -586,20 +580,39 @@ namespace Baryonyx.WorldMap
             return false;
         }
 
-        // 歩き始めた最初のマスの支払いを、すぐに始める。
-        private void PayAhead()
+        /// <summary>
+        /// Takes back the square <paramref name="id"/> whose payment the server did not take: it
+        /// is no longer cleared, the walk stops, and a party standing on a square no longer paid
+        /// for goes back to the last square on its way that still is. <paramref name="message"/>
+        /// (when given) is told below the map.
+        /// </summary>
+        public void Unpaid(string id, string message)
         {
-            if (walkSquares.Count == 0 || held || PriceOf(walkSquares[0]) == 0)
+            if (!string.IsNullOrEmpty(message))
+                ShowNotice(message);
+            if (graph == null)
                 return;
-            string id = graph.Nodes[walkSquares[0]].Id;
-            if (payment == null || paying != id)
-                StartPaying(id);
-        }
-
-        private void StartPaying(string id)
-        {
-            paying = id;
-            payment = Pay(id);
+            // 払ったマスへ跳んでいる途中なら、まだ着いていないので、止めて元のマスへ戻す。
+            if (!cleared.Remove(id) && !Walking)
+                return;
+            if (Walking)
+                Halt();
+            // 開けたマスか、値段のないマスまで戻る。
+            int back = trail.Count - 1;
+            while (
+                back > 0
+                && !cleared.Contains(graph.Nodes[trail[back]].Id)
+                && trail[back] < prices.Length
+                && prices[trail[back]] > 0
+            )
+                back--;
+            // 立ち始めたマスは、開けたマスかタダのマスなので、そこより前へは戻らない。
+            if (back >= 0 && back < trail.Count - 1)
+            {
+                trail.RemoveRange(back + 1, trail.Count - back - 1);
+                partyAt = trail[back];
+            }
+            Home();
         }
 
         // 入れ子の地図で、道のマスに着いた。行き先なら Arrived で知らせ、途中で出来事を置いたマスに初めて
@@ -613,6 +626,7 @@ namespace Baryonyx.WorldMap
             if (walk.Count == 0)
             {
                 walkTarget = -1;
+            trail.Add(at);
                 Arrived?.Invoke(id, first);
                 return;
             }

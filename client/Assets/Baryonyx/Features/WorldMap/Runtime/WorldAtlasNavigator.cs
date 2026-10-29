@@ -47,7 +47,21 @@ namespace Baryonyx.WorldMap
         {
             if (current == null)
                 Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare);
+            WorldAtlasSession.Refused += TakeBack;
             LoadPaid();
+        }
+
+        private void OnDestroy() => WorldAtlasSession.Refused -= TakeBack;
+
+        // サーバーが支払いを受けなかったマスを、開けていないマスへ戻す。今の地図なら、駒もまだ開けているマスへ戻す。
+        private void TakeBack(string map, string square, string message)
+        {
+            if (cleared.TryGetValue(map, out var squares))
+                squares.Remove(square);
+            if (current != null && map == currentKey)
+                current.Unpaid(square, message);
+            else if (current != null && !string.IsNullOrEmpty(message))
+                current.ShowNotice(message);
         }
 
         // ルーンを払って開けたマスと残高を読み、読めたら開けたマスとして地図へ足す。
@@ -100,7 +114,7 @@ namespace Baryonyx.WorldMap
             current.LoadNeeded += LoadPaid;
             // 開けていないマスは、跳ぶ直前に1マスずつ払う。払ったマスは、次から払わずに通れる。
             string map = key;
-            current.Pay = square => WorldAtlasSession.OpenAsync(map, square);
+            current.Pay = square => WorldAtlasSession.Open(map, square);
             current.IsPaid = square => WorldAtlasSession.IsOpened(map, square);
             current.BackPressed += Back;
             current.DungeonsPressed += PressDungeons;

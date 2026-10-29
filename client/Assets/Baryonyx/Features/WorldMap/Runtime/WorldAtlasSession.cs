@@ -30,9 +30,13 @@ namespace Baryonyx.WorldMap
     /// The runes of the nested world map while the app runs
     /// (doc/features/world-atlas.md#マスを開くルーン): the squares paid for and the balance, read
     /// from <see cref="Source"/> (the game server, set by the app) when the map opens, and the
-    /// payment for one square just before the party hops onto it. Without a server, a local
-    /// stand-in keeps them while the app runs. The switch that stops charging and the choice to
-    /// skip the confirmation also live here.
+    /// payment for one square just before the party hops onto it. A payment is shown at once
+    /// (optimistic update, doc/rules/data-storage.md): the square opens and its price comes off
+    /// the balance as the party hops, while the server is told behind it through the one line of
+    /// writes. When the server refuses, that square and those paid after it are taken back and
+    /// <see cref="Refused"/> tells the map. Without a server, a local stand-in keeps them while
+    /// the app runs. The switch that stops charging and the choice to skip the confirmation also
+    /// live here.
     /// </summary>
     public static class WorldAtlasSession
     {
@@ -53,6 +57,9 @@ namespace Baryonyx.WorldMap
         private static WorldAtlasMemorySource local;
         private static Task loading;
 
+        // サーバーが確かめた開けたマスと残高に、保存を待っている支払いを当てたもの。
+        private static OptimisticState<WorldAtlasState> saves;
+
         /// <summary>The server that keeps the squares. Without it, a local stand-in is used.</summary>
         public static IWorldAtlasSource Source { get; set; }
 
@@ -62,8 +69,8 @@ namespace Baryonyx.WorldMap
         /// <summary>The squares paid for and the balance have been read.</summary>
         public static bool Loaded { get; private set; }
 
-        /// <summary>The balance last read or left after a payment.</summary>
-        public static int Runes { get; private set; }
+        /// <summary>The balance as shown: the one read, less the payments still being saved.</summary>
+        public static int Runes => saves?.Current.Runes ?? 0;
 
         /// <summary>
         /// Whether moving onto a new square costs runes. Only development builds and the Editor
@@ -94,6 +101,13 @@ namespace Baryonyx.WorldMap
 
         /// <summary>Called with the runes taken each time a square is paid for.</summary>
         public static event Action<int> Spent;
+
+        /// <summary>
+        /// Called with the map and the square whose payment the server did not take (or that was
+        /// taken back because one before it was not), and what to tell (null when an earlier
+        /// refusal already told it). The square is no longer open.
+        /// </summary>
+        public static event Action<string, string, string> Refused;
 
         /// <summary>Remembers a map's prices, for the local stand-in.</summary>
         public static void Register(WorldAtlasLayout layout)
@@ -126,12 +140,16 @@ namespace Baryonyx.WorldMap
             try
             {
                 var state = await SourceOrLocal.LoadAsync(token);
-                opened.Clear();
-                foreach (var (map, square) in state.Opened)
-                    Keep(map, square);
-                Runes = state.Runes;
+                if (saves == null)
+                {
+                    saves = new OptimisticState<WorldAtlasState>(state, SourceOrLocal.LoadAsync);
+                    saves.Changed += Show;
+                }
+                // 支払いを保存している間に読んだ状態は、支払いの前のものなので使わない。
+                else if (!saves.Pending)
+                    saves.Confirm(state);
                 Loaded = true;
-                Changed?.Invoke();
+                Show();
             }
             finally
             {
@@ -141,37 +159,63 @@ namespace Baryonyx.WorldMap
         }
 
         /// <summary>
-        /// Pays for the square <paramref name="square"/> of <paramref name="map"/>. A square
-        /// already paid for costs nothing. Never throws: a failure comes back with what to tell.
+        /// Pays for the square <paramref name="square"/> of <paramref name="map"/> at once, from
+        /// the balance as shown and the square's price on the layout: it opens and the price
+        /// comes off before the server answers (<see cref="Refused"/> tells when it does not take
+        /// it). A square already paid for costs nothing. Fails without a word to the server when
+        /// the runes shown are short or the squares have not been read.
         /// </summary>
-        public static async Task<WorldAtlasPayment> OpenAsync(string map, string square)
+        public static WorldAtlasPayment Open(string map, string square)
         {
             if (IsOpened(map, square))
                 return WorldAtlasPayment.Done;
-            try
-            {
-                int before = Runes;
-                Runes = await SourceOrLocal.OpenAsync(
-                    Guid.NewGuid().ToString(),
-                    map,
-                    square,
-                    CancellationToken.None
-                );
-                Keep(map, square);
-                Changed?.Invoke();
-                if (before > Runes)
-                    Spent?.Invoke(before - Runes);
-                return WorldAtlasPayment.Done;
-            }
-            catch (ServerApiException exception) when (exception.Error == InsufficientRunesError)
-            {
+            if (saves == null)
+                return WorldAtlasPayment.Failed(LoadFailedMessage);
+            int price = PriceOf(map, square);
+            if (price > Runes)
                 return WorldAtlasPayment.Failed(ShortMessage);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning(FailedMessage + "。" + exception.Message);
-                return WorldAtlasPayment.Failed(FailedMessage);
-            }
+            _ = PayAsync(saves, map, square, price);
+            if (price > 0)
+                Spent?.Invoke(price);
+            return WorldAtlasPayment.Done;
+        }
+
+        // 開けたマスと値段を引いた残高をすぐに出し、サーバーへは書き込みの待ち行列の順に送る。
+        // サーバーの答えた残高を確かめた残高にする。値段はサーバーが決めるため、手元の値段と違えば答えにそろう。
+        private static async Task PayAsync(
+            OptimisticState<WorldAtlasState> states,
+            string map,
+            string square,
+            int price
+        )
+        {
+            string requestId = Guid.NewGuid().ToString();
+            string told = null;
+            bool saved = await states.ChangeAsync(
+                state => state.With(map, square, state.Runes - price),
+                async token =>
+                {
+                    int balance = await SourceOrLocal.OpenAsync(requestId, map, square, token);
+                    return states.Confirmed.With(map, square, balance);
+                },
+                exception =>
+                    told =
+                        exception is ServerApiException { Error: InsufficientRunesError }
+                            ? ShortMessage
+                            : FailedMessage
+            );
+            if (!saved && states == saves && !IsOpened(map, square))
+                Refused?.Invoke(map, square, told);
+        }
+
+        // 確かめた状態に支払いを当てた中身を、開けたマスの一覧へ写して知らせる。
+        private static void Show()
+        {
+            opened.Clear();
+            if (saves != null)
+                foreach (var (map, square) in saves.Current.Opened)
+                    Keep(map, square);
+            Changed?.Invoke();
         }
 
         private static void Keep(string map, string square)
@@ -193,13 +237,14 @@ namespace Baryonyx.WorldMap
             Source = null;
             local = null;
             loading = null;
+            saves = null;
             opened.Clear();
             prices.Clear();
             Loaded = false;
-            Runes = 0;
             SkipConfirm = false;
             Changed = null;
             Spent = null;
+            Refused = null;
         }
     }
 }

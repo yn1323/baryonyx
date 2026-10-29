@@ -18,6 +18,15 @@ namespace Baryonyx.WorldMap
 
         public IReadOnlyList<(string Map, string Square)> Opened { get; }
         public int Runes { get; }
+
+        /// <summary>This state with <paramref name="square"/> of <paramref name="map"/> opened and <paramref name="runes"/> left.</summary>
+        public WorldAtlasState With(string map, string square, int runes)
+        {
+            var opened = new List<(string, string)>(Opened);
+            if (!opened.Contains((map, square)))
+                opened.Add((map, square));
+            return new WorldAtlasState(opened, runes);
+        }
     }
 
     /// <summary>Where the squares paid for on the nested world map are kept.</summary>

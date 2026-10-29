@@ -377,9 +377,11 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator FarSquaresAskThenPayOneByOneAndStopLeavesTheRestUnpaid()
         {
             WorldAtlasNavigator navigator = null;
+            // サーバーの値段は、歩き出す前の画面の値段を控えて使う。画面の値段は、払ったとたんに0になる。
+            var prices = new System.Collections.Generic.Dictionary<string, int>();
             WorldAtlasSession.Source = new WorldAtlasMemorySource(
                 600,
-                (map, square) => navigator.Current.PriceOf(navigator.Current.Graph.IndexOf(square))
+                (map, square) => prices.TryGetValue(square, out int price) ? price : 0
             );
             navigator = Spawn();
             yield return SceneTests.WaitUntil(
@@ -387,6 +389,8 @@ namespace Baryonyx.Tests.PlayMode
                 message: "The runes were not read."
             );
             var world = navigator.Current;
+            for (int i = 0; i < world.Graph.Nodes.Count; i++)
+                prices[world.Graph.Nodes[i].Id] = world.PriceOf(i);
             var toll = world.GetComponent<WorldAtlasToll>();
             Assert.That(toll, Is.Not.Null);
             var path = QuietPath(world, 3);
@@ -441,6 +445,12 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(world.PartyAt, Is.EqualTo(path[3]));
             Assert.That(WorldAtlasSession.Runes, Is.EqualTo(600 - each * 3));
+
+            // サーバーが受けなかった支払いは取り消され、駒はまだ開けているマスまで戻る。
+            string last = world.Graph.Nodes[path[3]].Id;
+            world.Unpaid(last, WorldAtlasSession.FailedMessage);
+            Assert.That(world.PartyAt, Is.EqualTo(path[2]));
+            Assert.That(world.Cleared, Does.Not.Contain(last));
         }
     }
 }
