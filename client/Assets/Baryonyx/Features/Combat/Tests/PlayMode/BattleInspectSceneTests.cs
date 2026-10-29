@@ -1789,9 +1789,9 @@ namespace Baryonyx.Tests.PlayMode
             for (float t = 0f; wolf.Alive && t < 3f; t += Time.unscaledDeltaTime)
                 yield return null;
             Assert.That(wolf.Alive, Is.False);
-            for (float t = 0f; wolf.Group.alpha > 0f && t < 1f; t += Time.unscaledDeltaTime)
+            for (float t = 0f; wolf.Group.alpha > 0f && t < 3f; t += Time.unscaledDeltaTime)
                 yield return null;
-            Assert.That(wolf.Group.alpha, Is.EqualTo(0f), "The wolf is gone at once.");
+            Assert.That(wolf.Group.alpha, Is.EqualTo(0f), "The wolf is gone once the card is over.");
 
             // Its picture is drawn again where it stood, to be eaten away.
             var body = view

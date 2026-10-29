@@ -434,21 +434,24 @@ namespace Baryonyx.Combat.Presentation
             return damage - absorbed;
         }
 
-        /// <summary>Regen heals the enemies as the party's turn comes round.</summary>
-        private IEnumerator EnemyRegen()
+        /// <summary>
+        /// Regen heals the enemies as the party's turn comes round: their ticks, to be played
+        /// together with the party's.
+        /// </summary>
+        private List<IEnumerator> EnemyRegen()
         {
+            var ticks = new List<IEnumerator>();
             for (int i = 0; i < Enemies.Length; i++)
             {
                 var regen = Find(false, i, CardStatus.Regen);
                 if (regen == null || !Enemies[i].Alive)
                     continue;
                 int enemy = i;
-                yield return Tick(
-                    CardStatus.Regen,
-                    Enemies[i].TargetArea,
-                    () => HealEnemy(enemy, regen.Power)
+                ticks.Add(
+                    Tick(CardStatus.Regen, Enemies[i].TargetArea, () => HealEnemy(enemy, regen.Power))
                 );
             }
+            return ticks;
         }
 
         /// <summary>A gathering enemy glows warm, unless a hit's tint is on it.</summary>

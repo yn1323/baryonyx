@@ -18,6 +18,16 @@ namespace Baryonyx.Combat.Presentation
             public int Index;
             public int Wave;
             public readonly List<CardAction> Actions = new();
+
+            /// <summary>Its enemy was picked at random (or by a chain), not chosen nor all.</summary>
+            public bool AtRandom =>
+                Actions.Exists(action =>
+                    action.Target is CardTarget.RandomEnemies or CardTarget.ChainEnemies
+                );
+
+            /// <summary>It is a link of a chain, which does not hit the same enemy twice in a row.</summary>
+            public bool Chained =>
+                Actions.Exists(action => action.Target == CardTarget.ChainEnemies);
         }
 
         /// <summary>

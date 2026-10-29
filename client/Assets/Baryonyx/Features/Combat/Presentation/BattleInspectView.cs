@@ -2617,7 +2617,7 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>
         /// The enemy blinks white as the blow lands, then reels back in <paramref name="tint"/> (red,
         /// or a cold blue for ice) and trembles, through the hit stop too. A beaten enemy crumbles
-        /// away dot by dot (or, with no effects, fades away). It waits <paramref name="delay"/> s of
+        /// away dot by dot (or, with no effects, fades away), once the card's blows are over. It waits <paramref name="delay"/> s of
         /// real time first, until the blow's effect reaches it.
         /// </summary>
         private IEnumerator HitReaction(int index, Color tint, float delay = 0f)
@@ -2628,6 +2628,18 @@ namespace Baryonyx.Combat.Presentation
             yield return Blink(enemy.Sprite);
             if (!enemy.Alive)
                 lastBeaten = index;
+            // Beaten in the middle of a card's blows: it reels like any hit and stands there
+            // until the last blow has landed.
+            if (!enemy.Alive && holdingDefeats > 0)
+            {
+                enemy.Sprite.color = tint;
+                yield return Shake(enemy.Body, enemyBase[index], 10f, 0.3f, Vector2.right * 24f);
+                enemy.Sprite.color = Color.white;
+                while (holdingDefeats > 0 && !enemy.Alive)
+                    yield return null;
+                if (enemy.Alive)
+                    yield break;
+            }
             if (!enemy.Alive && Vfx != null)
             {
                 enemy.Sprite.color = Color.white;

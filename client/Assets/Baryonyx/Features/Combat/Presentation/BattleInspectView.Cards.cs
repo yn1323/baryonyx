@@ -89,7 +89,10 @@ namespace Baryonyx.Combat.Presentation
             if (Vfx == null)
             {
                 for (int i = 0; i < plan.Count; i++)
+                {
+                    Retarget(plan, null, i);
                     ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave);
+                }
                 EndCardPassives(skill, caster);
                 Refresh();
                 yield break;
@@ -104,19 +107,63 @@ namespace Baryonyx.Combat.Presentation
                     )
                 );
             var user = caster >= 0 ? Allies[caster] : null;
-            yield return Vfx.PlayCard(
-                skill.Id,
-                skill.Name,
-                user != null ? user.TargetArea : PartyAnchor,
-                user != null ? user.Sprite.texture : null,
-                skill.Has(CardTrait.CutIn),
-                hits,
-                AtContact(i =>
-                    ApplyHit(skill, plan[i], caster, i == 0 || plan[i].Wave != plan[i - 1].Wave)
-                )
-            );
+            // An enemy beaten by one of its blows stays until the last has landed (HitReaction).
+            holdingDefeats++;
+            try
+            {
+                yield return Vfx.PlayCard(
+                    skill.Id,
+                    skill.Name,
+                    user != null ? user.TargetArea : PartyAnchor,
+                    user != null ? user.Sprite.texture : null,
+                    skill.Has(CardTrait.CutIn),
+                    hits,
+                    AtContact(i =>
+                    {
+                        Retarget(plan, hits, i);
+                        var weight = ApplyHit(
+                            skill,
+                            plan[i],
+                            caster,
+                            i == 0 || plan[i].Wave != plan[i - 1].Wave
+                        );
+                        for (int j = i + 1; j < plan.Count; j++)
+                            Retarget(plan, hits, j);
+                        return weight;
+                    })
+                );
+            }
+            finally
+            {
+                holdingDefeats--;
+            }
             EndCardPassives(skill, caster);
             Refresh();
+        }
+
+        /// <summary>
+        /// A blow on an enemy picked at random (or by a chain) whose enemy is already beaten goes
+        /// to another still standing instead, picked at random too (and, in a chain, not the one
+        /// the blow before hit when another can be). Blows on a chosen enemy, or on all, stay.
+        /// <paramref name="hits"/> (the effect's) follows, for the blows it has not drawn yet.
+        /// </summary>
+        private void Retarget(List<BattleCardPlan.Hit> plan, List<BattleSkillHit> hits, int index)
+        {
+            var hit = plan[index];
+            if (hit.Ally || Enemies[hit.Index].Alive || !hit.AtRandom)
+                return;
+            var standing = new List<int>();
+            for (int i = 0; i < Enemies.Length; i++)
+                if (Enemies[i].Alive)
+                    standing.Add(i);
+            if (standing.Count == 0)
+                return;
+            int before = index > 0 && !plan[index - 1].Ally ? plan[index - 1].Index : -1;
+            if (hit.Chained && standing.Count > 1)
+                standing.Remove(before);
+            hit.Index = standing[Dice.Below(standing.Count)];
+            if (hits != null)
+                hits[index] = new BattleSkillHit(Enemies[hit.Index].TargetArea, false, hit.Wave);
         }
 
         /// <summary>Who each action of a card lands on, among the enemies and allies still standing.</summary>
@@ -545,13 +592,16 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>
         /// The start of a party turn: burns and poison hurt the enemies, sigils blow up, regen
-        /// heals, clouds strike, then every status counts down a turn. Block stays.
+        /// heals, clouds strike, then every status counts down a turn. Block stays. Each of the
+        /// burns, the poison and the regen works on everyone it is on at once, not one by one
+        /// (2026-10-29).
         /// </summary>
         private IEnumerator PartyTurnStatuses()
         {
-            for (int i = 0; i < Enemies.Length; i++)
+            foreach (var status in new[] { CardStatus.Burn, CardStatus.Poison })
             {
-                foreach (var status in new[] { CardStatus.Burn, CardStatus.Poison })
+                var ticks = new List<IEnumerator>();
+                for (int i = 0; i < Enemies.Length; i++)
                 {
                     var active = Find(false, i, status);
                     if (active == null || !Enemies[i].Alive)
@@ -559,14 +609,17 @@ namespace Baryonyx.Combat.Presentation
                     int damage =
                         status == CardStatus.Poison ? active.Power * active.Amount : active.Power;
                     int enemy = i;
-                    yield return Tick(
-                        status,
-                        Enemies[i].TargetArea,
-                        () => Hit(enemy, damage, BattleInspectElement.None, lasting: true)
+                    ticks.Add(
+                        Tick(
+                            status,
+                            Enemies[i].TargetArea,
+                            () => Hit(enemy, damage, BattleInspectElement.None, lasting: true)
+                        )
                     );
                     if (status == CardStatus.Poison && --active.Amount <= 0)
                         StatusesOf(false, i).Remove(active);
                 }
+                yield return Together(ticks);
             }
             for (int i = 0; i < Enemies.Length; i++)
             {
@@ -576,19 +629,22 @@ namespace Baryonyx.Combat.Presentation
                 StatusesOf(false, i).Remove(sigil);
                 yield return Detonate(i, sigil.Power, sigil.Source);
             }
-            yield return EnemyRegen();
+            var regens = EnemyRegen();
             for (int i = 0; i < Allies.Length; i++)
             {
                 var regen = Find(true, i, CardStatus.Regen);
                 if (regen == null || Allies[i].Down)
                     continue;
                 int ally = i;
-                yield return Tick(
-                    CardStatus.Regen,
-                    Allies[i].TargetArea,
-                    () => HealFrom(ally, regen.Power, regen.Source)
+                regens.Add(
+                    Tick(
+                        CardStatus.Regen,
+                        Allies[i].TargetArea,
+                        () => HealFrom(ally, regen.Power, regen.Source)
+                    )
                 );
             }
+            yield return Together(regens);
             for (int i = 0; i < Allies.Length; i++)
             {
                 var cloud = Find(true, i, CardStatus.Thundercloud);
@@ -616,6 +672,22 @@ namespace Baryonyx.Combat.Presentation
                 }
             }
             Refresh();
+        }
+
+        /// <summary>Plays <paramref name="routines"/> side by side and ends when the last has.</summary>
+        private IEnumerator Together(List<IEnumerator> routines)
+        {
+            int running = routines.Count;
+            foreach (var routine in routines)
+                StartCoroutine(Then(routine, () => running--));
+            while (running > 0)
+                yield return null;
+        }
+
+        private static IEnumerator Then(IEnumerator routine, Action done)
+        {
+            yield return routine;
+            done();
         }
 
         private IEnumerator Tick(CardStatus status, RectTransform target, Action land)

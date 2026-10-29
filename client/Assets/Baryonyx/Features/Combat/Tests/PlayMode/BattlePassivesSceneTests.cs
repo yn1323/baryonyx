@@ -105,6 +105,54 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(seen.Texts, Does.Contain("連ね矢"));
         }
 
+        // 連続攻撃の途中で倒れた敵は、最後の一撃まで残ってから崩れる。ランダムの残りの撃は、
+        // 倒れた敵を狙わず、立っている敵へ向かう（doc/features/combat.md#スキルの仮設定）。
+        [UnityTest]
+        public IEnumerator AnEnemyBeatenMidwayStaysUntilTheLastBlowAndTheRestGoElsewhere()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var repeated = CardSkills.All.First(skill =>
+                skill.Cost <= BattleInspectView.EnergyPerTurn
+                && skill.Actions.All(action => action.Kind != CardActionKind.Discard)
+                && skill.Actions.Any(action =>
+                    action.Kind == CardActionKind.Damage
+                    && action.Hits > 1
+                    && action.Target == CardTarget.RandomEnemies
+                )
+            );
+            int hits = repeated.Actions.First(action => action.Hits > 1).Hits;
+            UseParty(view, 1, new CombatPassiveKind[0], repeated);
+            int card = DealInto(view, 1, repeated.Id);
+            // Every blow is rolled onto the last enemy standing, which the first blow beats.
+            view.Dice = new BattleDice(count => count - 1);
+            var standing = view.Enemies[0];
+            var beaten = view.Enemies[^1];
+            for (int i = 1; i < view.Enemies.Length - 1; i++)
+                view.Enemies[i].Hp = 0;
+            standing.Hp = standing.MaxHp = 999999;
+            beaten.Hp = 1;
+
+            var seen = new Seen();
+            float shownAtLastBlow = -1f;
+            Play(view, card, standing.TargetArea);
+            for (float t = 0f; view.Acting && t < 10f; t += Time.deltaTime)
+            {
+                yield return null;
+                seen.Look(view);
+                if (shownAtLastBlow < 0f && seen.Numbers.Count >= hits)
+                    shownAtLastBlow = beaten.Group.alpha;
+            }
+            Assert.That(view.Acting, Is.False, "The actions end.");
+            Assert.That(beaten.Alive, Is.False);
+            Assert.That(seen.Numbers, Has.Count.EqualTo(hits), "No blow is lost on the beaten.");
+            Assert.That(standing.Hp, Is.LessThan(standing.MaxHp), "The rest go to the one standing.");
+            Assert.That(shownAtLastBlow, Is.EqualTo(1f), "The beaten one is there at the last blow.");
+            for (float t = 0f; beaten.Group.alpha > 0f && t < 2f; t += Time.deltaTime)
+                yield return null;
+            Assert.That(beaten.Group.alpha, Is.EqualTo(0f), "Then it crumbles away.");
+        }
+
         // 装備の「攻撃スキルが2回発動」（doc/features/equipment.md#装備の効果）も、ここで確かめる。
         // 確率が100%なら、攻撃のカードの効果が同じ敵にもう一度起きる。
         [UnityTest]

@@ -266,6 +266,10 @@ namespace Baryonyx.Combat.Presentation
         // The enemy a drop falls from: the last one beaten.
         private int lastBeaten = -1;
 
+        // While a card's blows are landing: an enemy beaten by one stays, reeling, until the last
+        // has landed, and only then crumbles away (2026-10-29).
+        private int holdingDefeats;
+
         private IEnumerator Victory(bool boss)
         {
             // The battle is over: the hand and its counters go away at once, and stay away
