@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
+using Baryonyx.Combat;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
 using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.Items;
+using Baryonyx.Party.Editor;
 using UnityEditor;
 
 namespace Baryonyx.Inventory.Editor
@@ -12,7 +14,7 @@ namespace Baryonyx.Inventory.Editor
     /// <summary>
     /// Bakes <see cref="ItemArt"/> from the 32×32 art of the items, enhancement materials,
     /// accessories, weapons and armour in Shared/Art (doc/rules/frontend-design.md, the art of
-    /// the things in the game).
+    /// the things in the game), and from the skills' card art, which the things found show.
     /// The screens' generators call <see cref="Load"/> to hand it to their views.
     /// </summary>
     public static class ItemArtAssets
@@ -62,6 +64,8 @@ namespace Baryonyx.Inventory.Editor
                 Add(gear.Id, PathOf(FolderOf(gear.Slot), gear.Id));
             foreach (var material in EnhancementMaterials.All)
                 Add(material.Id, PathOf("Materials", material.Id));
+            foreach (var card in CardSkills.All)
+                Add(card.Id, $"{PartyAssets.SkillArtFolder}/Card{card.Id}.aseprite");
             art.Entries = entries.ToArray();
             EditorUtility.SetDirty(art);
             return art;

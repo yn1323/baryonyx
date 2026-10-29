@@ -45,6 +45,14 @@ namespace Baryonyx.UI
         public const float LetterTime = 0.22f;
         public const float HideTime = 0.15f;
 
+        // アイコンの枠。四角い絵は枠いっぱいに出す。横長のスキルの挿絵は、ほかの物より目立つよう
+        // 3倍で大きく出し、左の余白を詰めて種類と名前をその分右へ寄せる（2026-10-29、ユーザーの依頼）。
+        public const float IconBox = 144f;
+        public const float IconLeft = 40f;
+        public const float TextGap = 32f;
+        public const float WideIconScale = 3f;
+        public const float WideIconLeft = 24f;
+
         public RectTransform Plate;
         public CanvasGroup Group;
 
@@ -273,14 +281,23 @@ namespace Baryonyx.UI
                 plate.Rim.color = new Color(color.r, color.g, color.b, graded ? 1f : 0.4f);
             if (!found)
                 return;
+            var size = IconSizeOf(drop.Icon);
+            float left = IsWide(drop.Icon) ? WideIconLeft : IconLeft;
             if (plate.Icon != null)
             {
                 plate.Icon.texture = drop.Icon != null ? drop.Icon.texture : null;
                 plate.Icon.uvRect = CardFoil.UvOf(drop.Icon);
                 plate.Icon.enabled = plate.Icon.texture != null;
+                Lay(plate.Icon.rectTransform, left, size);
             }
             if (plate.Foil != null)
+            {
                 plate.Foil.Show(drop.Icon, drop.Quality, drop.FoilStyle);
+                Lay((RectTransform)plate.Foil.transform, left, size);
+            }
+            float textLeft = left + size.x + TextGap;
+            StartText(plate.Kind, textLeft);
+            StartText(plate.Name, textLeft);
             UiText.Set(plate.Kind, drop.Kind);
             UiText.Set(plate.Name, drop.Name);
             if (plate.Quality != null)
@@ -288,6 +305,33 @@ namespace Baryonyx.UI
                 plate.Quality.text = Inventory.Quality.Letter(drop.Quality);
                 plate.Quality.color = color;
             }
+        }
+
+        /// <summary>
+        /// The icon's size: a square picture fills <see cref="IconBox"/>; a wide one (a skill's
+        /// card art, 64×58) is shown larger, at <see cref="WideIconScale"/> times its dots.
+        /// </summary>
+        public static Vector2 IconSizeOf(Sprite icon) =>
+            IsWide(icon) ? icon.rect.size * WideIconScale : Vector2.one * IconBox;
+
+        private static bool IsWide(Sprite icon) =>
+            icon != null && icon.rect.width > icon.rect.height;
+
+        private static void Lay(RectTransform rect, float left, Vector2 size)
+        {
+            rect.anchoredPosition = new Vector2(left, rect.anchoredPosition.y);
+            rect.sizeDelta = size;
+        }
+
+        // 文字の行の左端を動かし、右端（品質の文字の手前）はそのままにする。
+        private static void StartText(TMP_Text text, float left)
+        {
+            if (text == null)
+                return;
+            var rect = text.rectTransform;
+            float right = rect.anchoredPosition.x + rect.sizeDelta.x;
+            rect.anchoredPosition = new Vector2(left, rect.anchoredPosition.y);
+            rect.sizeDelta = new Vector2(right - left, rect.sizeDelta.y);
         }
 
         private static void SetShown(Component part, bool shown)

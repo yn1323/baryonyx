@@ -13,7 +13,7 @@ namespace Baryonyx.UI.Editor
     public static class RewardRevealAssets
     {
         public static readonly Vector2 PlateSize = new(600f, 236f);
-        private const float IconSize = 144f;
+        private const float IconSize = RewardReveal.IconBox;
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
 
         /// <summary>
@@ -42,13 +42,18 @@ namespace Baryonyx.UI.Editor
             reveal.Rim = GlassCardAssets.RimOf(plate);
 
             var iconRect = Rect("Icon", content);
-            Corner(iconRect, new Vector2(0f, 0.5f), new Vector2(40f, 0f), Vector2.one * IconSize);
+            Corner(
+                iconRect,
+                new Vector2(0f, 0.5f),
+                new Vector2(RewardReveal.IconLeft, 0f),
+                Vector2.one * IconSize
+            );
             var icon = iconRect.gameObject.AddComponent<RawImage>();
             icon.raycastTarget = false;
             reveal.Icon = icon;
             reveal.Foil = CardFoilAssets.Add(icon);
 
-            const float textLeft = 40f + IconSize + 32f;
+            const float textLeft = RewardReveal.IconLeft + IconSize + RewardReveal.TextGap;
             float textWidth = PlateSize.x - textLeft - 130f;
             reveal.Kind = TextLine(
                 content,

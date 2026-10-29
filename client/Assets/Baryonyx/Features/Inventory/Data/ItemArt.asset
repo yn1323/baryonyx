@@ -231,3 +231,103 @@ MonoBehaviour:
     Sprite: {fileID: 5349011544834349465, guid: 036be9ef0a17248d79647971a4e22e2b, type: 3}
   - Id: awakening-shard
     Sprite: {fileID: 5349011544834349465, guid: 8ef325244f31a40fa8d500912af939ab, type: 3}
+  - Id: Slash
+    Sprite: {fileID: 5349011544834349465, guid: 4f1bf86aa23663f458bd6832aef91787, type: 3}
+  - Id: Fire
+    Sprite: {fileID: 5349011544834349465, guid: 1c71f99b82009e14e8c763b470641745, type: 3}
+  - Id: Ice
+    Sprite: {fileID: 5349011544834349465, guid: 44db660941fa6c44ba973b85ae4e830b, type: 3}
+  - Id: Thunder
+    Sprite: {fileID: 5349011544834349465, guid: 35db9db0e6c090a4ca6429d6e89ca9f5, type: 3}
+  - Id: Heal
+    Sprite: {fileID: 5349011544834349465, guid: 09ca9014589779740b5384747e23b2a5, type: 3}
+  - Id: Guard
+    Sprite: {fileID: 5349011544834349465, guid: d9ca4308889d5a4429d718733246fe04, type: 3}
+  - Id: Whirlwind
+    Sprite: {fileID: 5349011544834349465, guid: a09d0f84140a546cd80288ef5c6ffd7a, type: 3}
+  - Id: Iai
+    Sprite: {fileID: 5349011544834349465, guid: 722dfa955b32f4ad998631a872bcf3f1, type: 3}
+  - Id: BladeDance
+    Sprite: {fileID: 5349011544834349465, guid: fdd08f55ab2bc479ab0943f2cedfa709, type: 3}
+  - Id: Hone
+    Sprite: {fileID: 5349011544834349465, guid: 2ff2f3287470d47d8bb20022ba79a8a4, type: 3}
+  - Id: ShieldBash
+    Sprite: {fileID: 5349011544834349465, guid: 2ef37e46ed43848b69edaa7bcc9e911b, type: 3}
+  - Id: ArmorBreak
+    Sprite: {fileID: 5349011544834349465, guid: b31a536d5d0b44472b162e5fcd4a2044, type: 3}
+  - Id: EarthSplitter
+    Sprite: {fileID: 5349011544834349465, guid: 2a350d98fefb94f3dbbac8525a21e04b, type: 3}
+  - Id: GiantImpact
+    Sprite: {fileID: 5349011544834349465, guid: 4e6b03f8387bf426d906447a5cf562ea, type: 3}
+  - Id: StrideStrike
+    Sprite: {fileID: 5349011544834349465, guid: 0be0ebd730afd4786a67c699548fbb4d, type: 3}
+  - Id: GuardianOath
+    Sprite: {fileID: 5349011544834349465, guid: 204e77ce155f14c53aef5c79f721eaf7, type: 3}
+  - Id: WarCry
+    Sprite: {fileID: 5349011544834349465, guid: d6cb8fb3a2c9341319e5cdc089991cef, type: 3}
+  - Id: Embers
+    Sprite: {fileID: 5349011544834349465, guid: f5136e1860d674e74867dc0ae29f0855, type: 3}
+  - Id: FlamePillar
+    Sprite: {fileID: 5349011544834349465, guid: 49e974873b5314cd6a48c7532947120b, type: 3}
+  - Id: FireStorm
+    Sprite: {fileID: 5349011544834349465, guid: f6ea7c1e98a2c44628e07413e7d343bf, type: 3}
+  - Id: BlastSigil
+    Sprite: {fileID: 5349011544834349465, guid: d9177c5b8cd564c12826a94ce7778644, type: 3}
+  - Id: Meteor
+    Sprite: {fileID: 5349011544834349465, guid: d656afe69d1bd4b74aa4f62929879a68, type: 3}
+  - Id: FlameEnchant
+    Sprite: {fileID: 5349011544834349465, guid: 727746c21f5cd4849ba125612958ba7b, type: 3}
+  - Id: Icicles
+    Sprite: {fileID: 5349011544834349465, guid: 94465e77857754831a8dfaba63190b27, type: 3}
+  - Id: Blizzard
+    Sprite: {fileID: 5349011544834349465, guid: 9c1db89367064424c98cf7b1a349d325, type: 3}
+  - Id: IceMirror
+    Sprite: {fileID: 5349011544834349465, guid: e70b8aee1804e4502ad9857c09270c70, type: 3}
+  - Id: AbsoluteZero
+    Sprite: {fileID: 5349011544834349465, guid: ddb834ebdaadb4b4284254c0c5c2c113, type: 3}
+  - Id: QuickCast
+    Sprite: {fileID: 5349011544834349465, guid: 5a16a3638866f4d98a1861918714e0d1, type: 3}
+  - Id: VitalThrust
+    Sprite: {fileID: 5349011544834349465, guid: cccfe4b3cd70d4aa1a1b6bcf7503f6bb, type: 3}
+  - Id: PoisonNeedle
+    Sprite: {fileID: 5349011544834349465, guid: b04d6fc883add4b90a3e4a79fe170710, type: 3}
+  - Id: ShadowStitch
+    Sprite: {fileID: 5349011544834349465, guid: 82da91fd08c5c496d81937b0f169240b, type: 3}
+  - Id: InsightArrow
+    Sprite: {fileID: 5349011544834349465, guid: 27a435024417142ccbf6c14fa7cb3226, type: 3}
+  - Id: ArrowRain
+    Sprite: {fileID: 5349011544834349465, guid: 786aa833a51d344008a3741d9d6d84b3, type: 3}
+  - Id: ShadowSnipe
+    Sprite: {fileID: 5349011544834349465, guid: d65f133c7f15742b1b092e2287ec3792, type: 3}
+  - Id: LightningBolt
+    Sprite: {fileID: 5349011544834349465, guid: 05ed0f2bf75304a28a9b8dd5847bb37c, type: 3}
+  - Id: ChainLightning
+    Sprite: {fileID: 5349011544834349465, guid: 7c77087a8245640a2bf06c529d82e64d, type: 3}
+  - Id: Thundercloud
+    Sprite: {fileID: 5349011544834349465, guid: cf1e22047dbc8414ebe8b2307d2ebc75, type: 3}
+  - Id: ThunderSpear
+    Sprite: {fileID: 5349011544834349465, guid: f8cc3435adc9c4c20af83ba5dd4dfa05, type: 3}
+  - Id: Gale
+    Sprite: {fileID: 5349011544834349465, guid: 83dd745a7e50d41549b48b4f7d8ed508, type: 3}
+  - Id: Scout
+    Sprite: {fileID: 5349011544834349465, guid: a7bb73cda233c47159f02931d7c8eb73, type: 3}
+  - Id: StepPrayer
+    Sprite: {fileID: 5349011544834349465, guid: 30b4a8d82cd2b4ad4a64b79788797191, type: 3}
+  - Id: Regen
+    Sprite: {fileID: 5349011544834349465, guid: 010a752b231ef4dfcba24c86b34552a3, type: 3}
+  - Id: Resurrection
+    Sprite: {fileID: 5349011544834349465, guid: 2db154821264b43a38fb1cf909e624a8, type: 3}
+  - Id: HolyHammer
+    Sprite: {fileID: 5349011544834349465, guid: 72596b624f220491ea36f5072d0b414e, type: 3}
+  - Id: Protect
+    Sprite: {fileID: 5349011544834349465, guid: 7ad90e3ea09cb43eb89cd5b400ac5186, type: 3}
+  - Id: Purify
+    Sprite: {fileID: 5349011544834349465, guid: 23fb03913331e469ca965e6e9f63c519, type: 3}
+  - Id: ManaPrayer
+    Sprite: {fileID: 5349011544834349465, guid: 27d2fe6dd23d14517940ff53bae7e8e0, type: 3}
+  - Id: Revelation
+    Sprite: {fileID: 5349011544834349465, guid: ccc6ecb9fd2984681923259fbc4f43a4, type: 3}
+  - Id: HolyLight
+    Sprite: {fileID: 5349011544834349465, guid: acadca3b790c74ead80733947bb9f3bd, type: 3}
+  - Id: DivineShield
+    Sprite: {fileID: 5349011544834349465, guid: 0d13533795a2d4cd89dfeba83dba1ae0, type: 3}

@@ -5,7 +5,8 @@ namespace Baryonyx.Inventory
 {
     /// <summary>
     /// The art of each kind of item, accessory, weapon and armour (32×32 dot art in
-    /// Shared/Art/Items, Accessories, Weapons and Armor), by the kind's id. ItemArtAssets bakes
+    /// Shared/Art/Items, Accessories, Weapons and Armor), and the card art of each skill (64×58,
+    /// for the things found), by the kind's id. ItemArtAssets bakes
     /// it from the art files, and the screens that show a kind's own picture read it; a kind
     /// without art falls back to the screen's icon for its slot or category.
     /// </summary>

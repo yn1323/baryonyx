@@ -165,14 +165,12 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The picture of one drop: the kind's own art for an item, an enhancement material, an
-        /// accessory, a weapon or armour (<see cref="ItemArt"/>). Null for a skill or a kind
-        /// without art.
+        /// accessory, a weapon or armour, and the card's art for a skill (<see cref="ItemArt"/>).
+        /// Null for a kind without art.
         /// </summary>
         public static Sprite DropIcon(AdventureDrop drop, ItemArt art)
         {
-            if (drop == null)
-                return null;
-            if (drop.Category == AdventureDropCategory.Skill || art == null)
+            if (drop == null || art == null)
                 return null;
             return art.Find(drop.Id);
         }
