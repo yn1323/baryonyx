@@ -2,7 +2,9 @@ using System.Collections;
 using System.Linq;
 using Baryonyx.Adventure;
 using Baryonyx.App;
+using Baryonyx.Networking;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -84,6 +86,44 @@ namespace Baryonyx.Tests.PlayMode
             AdventureLab.End();
             Assert.That(AdventureLab.Active, Is.False);
             Assert.That(AdventureSession.Source, Is.SameAs(server));
+        }
+
+        // 通信が遅くても、探索の幕はマスと道を描き終えてから開く。駒だけが先に見えない。
+        [UnityTest]
+        public IEnumerator TheExplorationStaysCoveredUntilTheMapIsDrawn()
+        {
+            var lab = default(AdventureLab);
+            opened = true;
+            yield return SceneTests.Load<AdventureLab>(LabPath, _ => true, value => lab = value);
+            DebugNetwork.Current = DebugNetwork.Mode.Slow;
+            try
+            {
+                Assert.That(lab.Go(), Is.True);
+                var exploration = default(ExplorationBootstrap);
+                yield return SceneTests.WaitUntil(
+                    () => (exploration = Object.FindAnyObjectByType<ExplorationBootstrap>()) != null,
+                    10f,
+                    "The exploration did not open."
+                );
+                bool sawCovered = false;
+                float deadline = Time.realtimeSinceStartup + 10f;
+                while (!exploration.Transition.IsPlaying && Time.realtimeSinceStartup < deadline)
+                {
+                    if (exploration.View.ShownRun == null)
+                    {
+                        sawCovered = true;
+                        Assert.That(exploration.Transition.IsCovered, Is.True);
+                    }
+                    yield return null;
+                }
+                Assert.That(sawCovered, Is.True, "The slow load was not seen.");
+                Assert.That(exploration.Transition.IsPlaying, Is.True, "The exploration never opened.");
+                Assert.That(exploration.View.ShownRun, Is.Not.Null);
+            }
+            finally
+            {
+                DebugNetwork.Reset();
+            }
         }
     }
 }

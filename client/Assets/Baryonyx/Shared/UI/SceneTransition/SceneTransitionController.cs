@@ -44,6 +44,10 @@ namespace Baryonyx.UI
         private bool covered;
         private SceneTransitionSettings coveredWith;
 
+        // 開く前に画面の準備（読み込み）を待つシーンが、Startで開かずに取っておいた開く演出。
+        private bool holdReveal;
+        private SceneTransitionSettings heldEnter;
+
         // 閉じた演出を、読み込んだ先のシーンが同じ演出で開くために渡す。
         // 遷移元ごとに演出の長さを変え、TopからHomeだけ長いシャッターにする。
         private static SceneTransitionSettings handOff;
@@ -60,6 +64,25 @@ namespace Baryonyx.UI
         public SceneTransitionSettings EnterSettings => enterSettings;
         public bool IsPlaying => playing;
         public bool IsCovered => covered;
+
+        /// <summary>Whether the opening waits for <see cref="Reveal"/>.</summary>
+        public bool IsHeld => heldEnter != null;
+
+        /// <summary>
+        /// Keeps the scene covered at Start instead of opening it, until <see cref="Reveal"/>
+        /// (call it in Awake): for a screen that must be drawn before it is seen.
+        /// </summary>
+        public void HoldReveal() => holdReveal = true;
+
+        /// <summary>Plays the opening held back by <see cref="HoldReveal"/>.</summary>
+        public bool Reveal()
+        {
+            if (heldEnter == null)
+                return false;
+            var enter = heldEnter;
+            heldEnter = null;
+            return PlayIn(enter);
+        }
 
         private void Awake()
         {
@@ -83,7 +106,12 @@ namespace Baryonyx.UI
             ApplyProgress(initialSettings, 1f, startCovered);
             SetInputBlocked(startCovered);
             if (startCovered && revealOnStart)
-                PlayIn(enter);
+            {
+                if (holdReveal)
+                    heldEnter = enter;
+                else
+                    PlayIn(enter);
+            }
         }
 
         private void OnDisable()
@@ -135,6 +163,14 @@ namespace Baryonyx.UI
         {
             if (!TryPrepare(settings, defaultSettings, out var prepared))
                 return false;
+            // 開く前（覆ったまま）なら、開いてから閉じ直さずに、そのまま次へ移る。
+            if (covered)
+            {
+                heldEnter = null;
+                coveredWith = prepared;
+                onCovered?.Invoke();
+                return true;
+            }
             playing = true;
             StartCoroutine(PlayRoutine(prepared, true, onCovered));
             return true;

@@ -53,10 +53,14 @@ namespace Baryonyx.App
         public Task PartyTask { get; private set; } = Task.CompletedTask;
 
         // 冒険の流れが地図を描くため、見本の道は描かせない。
+        // 幕は、冒険を読んでマスと道を描き終えてから開く。開いた瞬間に駒だけが見え、あとから
+        // マスと道が現れないようにする（2026-10-30、ユーザーの指摘）。
         private void Awake()
         {
             if (view != null)
                 view.SampleSeed = 0;
+            if (transition != null)
+                transition.HoldReveal();
         }
 
         private void Start()
@@ -93,6 +97,16 @@ namespace Baryonyx.App
             );
             flow.Start();
             PartyTask = UsePartyAsync();
+            StartCoroutine(RevealWhenDrawn());
+        }
+
+        // 部屋を描いた（読めずに知らせを出した）ら幕を開ける。冒険がなくホームへ戻るときは開けない。
+        private IEnumerator RevealWhenDrawn()
+        {
+            while (flow != null && flow.Busy && !flow.Work.IsCompleted)
+                yield return null;
+            if (flow != null && !flow.Leaving && transition != null)
+                transition.Reveal();
         }
 
         private async Task UsePartyAsync()
