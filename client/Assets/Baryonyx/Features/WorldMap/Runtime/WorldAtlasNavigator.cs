@@ -19,6 +19,11 @@ namespace Baryonyx.WorldMap
         // 地図のPrefabを読む Resources のフォルダー。地図ごとに <キー>.prefab を置く。
         public const string ResourceFolder = "WorldAtlas/";
 
+        // 駒が最後に立っていた地図とマスを端末に残すキー（地図のキーとマスのIDを改行でつなぐ）。
+        // ダンジョン一覧や戦闘からシーンを戻ったとき、アプリを開き直したときに、そこから始める
+        // （2026-10-29、ユーザーの依頼。端末に置けばよいと言われた）。
+        public const string PositionKey = "WorldAtlas.Position";
+
         // 切り替えの片道の秒数と、近づく・離れる倍率。
         public const float HalfSeconds = 0.5f;
         private const float DiveZoom = 2.4f;
@@ -46,7 +51,11 @@ namespace Baryonyx.WorldMap
         private void Start()
         {
             if (current == null)
-                Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare);
+            {
+                var (map, square) = Remembered();
+                if (map == null || !Open(map, square))
+                    Open(WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare);
+            }
             WorldAtlasSession.Refused += TakeBack;
             LoadPaid();
         }
@@ -59,7 +68,10 @@ namespace Baryonyx.WorldMap
             if (cleared.TryGetValue(map, out var squares))
                 squares.Remove(square);
             if (current != null && map == currentKey)
+            {
                 current.Unpaid(square, message);
+                Remember(currentKey, current.Graph.Nodes[current.PartyAt].Id);
+            }
             else if (current != null && !string.IsNullOrEmpty(message))
                 current.ShowNotice(message);
         }
@@ -124,12 +136,15 @@ namespace Baryonyx.WorldMap
                 );
             if (current.Dungeons != null)
                 current.Dungeons.gameObject.SetActive(OpenDungeons != null);
-            at ??= EntryOf(current);
+            // 覚えていたマスが地図からなくなっていれば、その地図の始まりに立つ。
+            if (at == null || !Has(current, at))
+                at = key == WorldAtlasLayout.WorldKey ? WorldAtlasLayout.StartSquare : EntryOf(current);
             if (!cleared.TryGetValue(key, out var squares))
                 cleared[key] = squares = new HashSet<string>();
             squares.Add(at);
             squares.UnionWith(WorldAtlasSession.OpenedOn(key));
             current.StartAt(at, squares);
+            Remember(key, at);
             // 前の地図の大きな背景を、メモリーから外す。
             Resources.UnloadUnusedAssets();
             return true;
@@ -145,6 +160,7 @@ namespace Baryonyx.WorldMap
         {
             if (Switching)
                 return;
+            Remember(currentKey, id);
             int index = current.Graph.IndexOf(id);
             // 出来事を置いたマスに初めて止まると、地図を動かさずに、その出来事の見本の窓を開く。
             if (first && current.EventWindow != null && current.TryEventAt(index, out var kind))
@@ -174,6 +190,7 @@ namespace Baryonyx.WorldMap
         // 道の途中の出来事を置いたマスで止まり、窓を閉じたら続きを歩く。戦闘へ移るときは、そこで終わる。
         private void ReachEvent(string id)
         {
+            Remember(currentKey, id);
             int index = current.Graph.IndexOf(id);
             if (current.EventWindow == null || !current.TryEventAt(index, out var kind))
             {
@@ -261,6 +278,36 @@ namespace Baryonyx.WorldMap
             view.TryGetComponent<CanvasGroup>(out var group)
                 ? group
                 : view.gameObject.AddComponent<CanvasGroup>();
+
+        /// <summary>Keeps on the device that the party stands on <paramref name="square"/> of <paramref name="map"/>.</summary>
+        public static void Remember(string map, string square)
+        {
+            if (string.IsNullOrEmpty(map) || string.IsNullOrEmpty(square))
+                return;
+            PlayerPrefs.SetString(PositionKey, map + "\n" + square);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>The map and the square the party last stood on, or nulls when none is kept.</summary>
+        public static (string map, string square) Remembered()
+        {
+            string kept = PlayerPrefs.GetString(PositionKey, "");
+            int split = kept.IndexOf('\n');
+            return split <= 0 || split == kept.Length - 1
+                ? (null, null)
+                : (kept.Substring(0, split), kept.Substring(split + 1));
+        }
+
+        /// <summary>Forgets where the party stood, so the world map starts at its first square.</summary>
+        public static void Forget() => PlayerPrefs.DeleteKey(PositionKey);
+
+        private static bool Has(WorldMapView view, string id)
+        {
+            foreach (var node in WorldAtlasLayout.Parse(view.Layout.text).nodes)
+                if (node.id == id)
+                    return true;
+            return false;
+        }
 
         // 世界地図から地域に入ったときに立つマス：その地域の入口（gate-<地域>）。
         // 入口がなければ最初の町（なければ最初のマス）。

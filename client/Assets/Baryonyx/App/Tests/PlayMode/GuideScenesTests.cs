@@ -8,6 +8,7 @@ using Baryonyx.Temple;
 using Baryonyx.TravelOffice;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
+using Baryonyx.WorldMap;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -25,6 +26,8 @@ namespace Baryonyx.Tests.PlayMode
         public void UseTestServices()
         {
             services = TestGameServices.Use();
+            // 世界地図は、端末に残した駒の場所ではなく、はじめのマスから始める。
+            WorldAtlasNavigator.Forget();
         }
 
         [UnityTearDown]
@@ -32,6 +35,7 @@ namespace Baryonyx.Tests.PlayMode
         {
             services?.Dispose();
             services = null;
+            WorldAtlasNavigator.Forget();
             yield return SceneTests.UnloadAll(nameof(GuideScenesTests));
         }
 

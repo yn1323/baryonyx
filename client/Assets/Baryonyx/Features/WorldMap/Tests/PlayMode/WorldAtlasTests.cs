@@ -26,6 +26,7 @@ namespace Baryonyx.Tests.PlayMode
             charging = WorldAtlasSession.Charging;
             WorldAtlasSession.Reset();
             WorldAtlasSession.Charging = true;
+            WorldAtlasNavigator.Forget();
         }
 
         [UnityTearDown]
@@ -37,7 +38,52 @@ namespace Baryonyx.Tests.PlayMode
                 Object.Destroy(events);
             WorldAtlasSession.Reset();
             WorldAtlasSession.Charging = charging;
+            WorldAtlasNavigator.Forget();
             yield return null;
+        }
+
+        // 駒が最後に立っていたマスは端末に残り、地図を開き直すと（ダンジョン一覧や戦闘から戻ると）
+        // そこから始まる。覚えていたマスが地図にないときは、はじめのマスから始める。
+        [UnityTest]
+        public IEnumerator TheMapOpensAgainWhereThePartyLastStood()
+        {
+            var navigator = Spawn();
+            yield return null;
+            var world = navigator.Current;
+            yield return SceneTests.WaitUntil(() => WorldAtlasSession.Loaded);
+            int next = PathToNearestEvent(world)[0];
+            string square = world.Graph.Nodes[next].Id;
+            Assert.That(world.Tap(next), Is.True);
+            yield return SceneTests.WaitUntil(
+                () => !world.Walking,
+                seconds: 5f,
+                message: "The party did not reach the next square."
+            );
+            Assert.That(
+                WorldAtlasNavigator.Remembered(),
+                Is.EqualTo((WorldAtlasLayout.WorldKey, square))
+            );
+
+            Object.Destroy(atlas);
+            Object.Destroy(events);
+            yield return null;
+            navigator = Spawn();
+            yield return null;
+            Assert.That(navigator.CurrentKey, Is.EqualTo(WorldAtlasLayout.WorldKey));
+            world = navigator.Current;
+            Assert.That(world.Graph.Nodes[world.PartyAt].Id, Is.EqualTo(square));
+
+            Object.Destroy(atlas);
+            Object.Destroy(events);
+            yield return null;
+            WorldAtlasNavigator.Remember(WorldAtlasLayout.WorldKey, "no-such-square");
+            navigator = Spawn();
+            yield return null;
+            world = navigator.Current;
+            Assert.That(
+                world.Graph.Nodes[world.PartyAt].Id,
+                Is.EqualTo(WorldAtlasLayout.StartSquare)
+            );
         }
 
         private WorldAtlasNavigator Spawn()

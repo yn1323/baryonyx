@@ -74,6 +74,7 @@ updated: 2026-10-25
 | ライブラリで新しく載った項目を見た記録 | 実装済み | [LibrarySeen](../../client/Assets/Baryonyx/Features/Library/Runtime/LibrarySeen.cs)（`Library.Seen.<ユーザーID>`） |
 | 冒険中のHPと倒れているか（冒険ごと） | 実装済み | [AdventureVitals](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureVitals.cs)（`Adventure.Vitals`。冒険のIDと、編成の枠ごとの最大HPに対する割合）。[冒険中の状態の保存先](../features/stage-progression.md#冒険中の状態の保存先)。ユーザーの「保存先はClientでいいかな」（2026-10-21）による |
 | 最後に開いたタブなど、表示上の記憶 | 案 | 必要になった機能の仕様 |
+| 入れ子の地図で駒が最後に立っていた地図とマス | 実装済み | [WorldAtlasNavigator](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasNavigator.cs)（`WorldAtlas.Position`）。駒が止まるたびに書く。消えても、世界地図のはじめのマスから始まるだけで困らない（2026-10-29、ユーザーが「クライアント側で覚えておくで大丈夫」とした） |
 | 入れ子の地図のルーンの消費のオンオフ（開発用のビルドとEditorだけ） | 実装済み | [WorldAtlasSession](../../client/Assets/Baryonyx/Features/WorldMap/Runtime/WorldAtlasSession.cs)（`WorldAtlas.Charging`）。[マスを開くルーン](../features/world-atlas.md#マスを開くルーン)。製品のビルドでは常にONで、キーを読まない |
 
 ### 保存しないもの
