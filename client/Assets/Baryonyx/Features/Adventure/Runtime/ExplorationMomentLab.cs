@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Inventory;
 using Baryonyx.UI;
@@ -33,26 +34,36 @@ namespace Baryonyx.Adventure
     /// The exploration moment lab, a debugging room for the turning points of the exploration
     /// (doc/features/screens/debug-rooms.md): the exploration screen on its sample route, with no adventure
     /// behind it, where a button plays one moment at once (<see cref="ExplorationMoments"/>).
-    /// Each run starts from the sample route's entrance. The chest's quality can be chosen, and
-    /// the moment, the quality and whether it repeats are remembered between Plays.
+    /// Each run starts from the sample route's entrance. The chest's contents (their kind, how
+    /// many and their quality) can be chosen, and the choices and whether it repeats are
+    /// remembered between Plays.
     /// </summary>
     public sealed class ExplorationMomentLab : MonoBehaviour
     {
         public const string MomentKey = "Baryonyx.ExplorationMomentLab.Moment";
         public const string QualityKey = "Baryonyx.ExplorationMomentLab.Quality";
         public const string RepeatKey = "Baryonyx.ExplorationMomentLab.Repeat";
+        public const string KindKey = "Baryonyx.ExplorationMomentLab.Kind";
+        public const string CountKey = "Baryonyx.ExplorationMomentLab.Count";
 
         [Tooltip("演出を重ねる探索画面。空なら何もしない（展示室のプレビュー）。")]
         public ExplorationView View;
 
         public ExplorationMoments Moments;
 
-        [Tooltip("宝箱の中身の見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
-        public RewardItem[] Samples = Array.Empty<RewardItem>();
-
+        [Tooltip("宝箱の中身の見本（武器・防具・アクセサリー・アイテム・スキル・強化素材）。種類ごとに順に使う。")]
+        public RewardSampleSet[] SampleSets = Array.Empty<RewardSampleSet>();
 
         public Button QualityButton;
         public TMP_Text QualityLabel;
+
+        [Tooltip("宝箱の中身の種類を切り替えるボタン（種類のあとに「混ぜる」）。")]
+        public Button KindButton;
+        public TMP_Text KindLabel;
+
+        [Tooltip("宝箱の中身の数を切り替えるボタン。")]
+        public Button CountButton;
+        public TMP_Text CountLabel;
         public Button RepeatButton;
         public TMP_Text RepeatLabel;
         public Button ResetButton;
@@ -71,6 +82,8 @@ namespace Baryonyx.Adventure
 
         private ExplorationMoment moment;
         private int quality = 3;
+        private int kind;
+        private int count;
         private int sample;
         private bool repeat;
         private Coroutine routine;
@@ -79,6 +92,12 @@ namespace Baryonyx.Adventure
 
         /// <summary>The quality of the next chest, or null for nothing found.</summary>
         public ItemQuality? Quality => BattleMomentLab.DropQualities[quality];
+
+        /// <summary>The kind of the chest's contents (in <see cref="SampleSets"/>; the mix after them).</summary>
+        public int Kind => kind;
+
+        /// <summary>How many things the chest holds.</summary>
+        public int Count => RewardLabSamples.Counts[count];
 
         public bool Repeat => repeat;
 
@@ -89,6 +108,8 @@ namespace Baryonyx.Adventure
             if (View == null || Moments == null)
                 return;
             Listen(QualityButton, () => SetQuality(quality + 1));
+            Listen(KindButton, () => SetKind(kind + 1));
+            Listen(CountButton, () => SetCount(count + 1));
             Listen(RepeatButton, () => SetRepeat(!repeat));
             Listen(ResetButton, ResetRoom);
             Listen(OtherLabButton, () => SceneManager.LoadScene(OtherLabScene));
@@ -143,6 +164,23 @@ namespace Baryonyx.Adventure
             Refresh();
         }
 
+        public void SetKind(int index)
+        {
+            int kinds = RewardLabSamples.KindCount(SampleSets);
+            kind = ((index % kinds) + kinds) % kinds;
+            sample = 0;
+            Save();
+            Refresh();
+        }
+
+        public void SetCount(int index)
+        {
+            int counts = RewardLabSamples.Counts.Length;
+            count = ((index % counts) + counts) % counts;
+            Save();
+            Refresh();
+        }
+
         public void SetRepeat(bool value)
         {
             repeat = value;
@@ -167,23 +205,12 @@ namespace Baryonyx.Adventure
             View.RenderSample(View.SampleSeed);
         }
 
-        /// <summary>The next chest's content: a sample in turn, at the chosen quality, or null for nothing found.</summary>
-        public RewardItem NextItem()
-        {
-            var chosen = Quality;
-            if (chosen == null || Samples.Length == 0)
-                return null;
-            var source = Samples[sample % Samples.Length];
-            sample++;
-            return new RewardItem
-            {
-                Kind = source.Kind,
-                Name = source.Name,
-                Icon = source.Icon,
-                FoilStyle = source.FoilStyle,
-                Quality = chosen.Value,
-            };
-        }
+        /// <summary>
+        /// The next chest's contents: <see cref="Count"/> things of the chosen kind in turn, at the
+        /// chosen quality where they have one, best first; none for nothing found.
+        /// </summary>
+        public List<RewardItem> NextItems() =>
+            RewardLabSamples.Pick(SampleSets, kind, Count, Quality, ref sample);
 
         private void Play(ExplorationMoment which)
         {
@@ -200,7 +227,7 @@ namespace Baryonyx.Adventure
                     Moments.PlayEncounter(AdventureRoomKind.Boss);
                     break;
                 case ExplorationMoment.Chest:
-                    Moments.PlayChest(NextItem());
+                    Moments.PlayChest(NextItems());
                     break;
                 case ExplorationMoment.Walk:
                     var exits = View.ShownRun?.Exits;
@@ -244,6 +271,10 @@ namespace Baryonyx.Adventure
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
             if (QualityLabel != null)
                 QualityLabel.text = QualityText(Quality);
+            if (KindLabel != null)
+                KindLabel.text = "中身：" + RewardLabSamples.KindName(SampleSets, kind);
+            if (CountLabel != null)
+                CountLabel.text = "数：" + Count;
             for (int i = 0; i < MomentButtons.Length; i++)
                 if (
                     MomentButtons[i] != null
@@ -266,6 +297,8 @@ namespace Baryonyx.Adventure
                 BattleMomentLab.DropQualities.Length - 1
             );
             repeat = PlayerPrefs.GetInt(RepeatKey, 0) != 0;
+            kind = Mathf.Clamp(PlayerPrefs.GetInt(KindKey, 0), 0, RewardLabSamples.KindCount(SampleSets) - 1);
+            count = Mathf.Clamp(PlayerPrefs.GetInt(CountKey, 0), 0, RewardLabSamples.Counts.Length - 1);
         }
 
         private void Save()
@@ -273,6 +306,8 @@ namespace Baryonyx.Adventure
             PlayerPrefs.SetInt(MomentKey, (int)moment);
             PlayerPrefs.SetInt(QualityKey, quality);
             PlayerPrefs.SetInt(RepeatKey, repeat ? 1 : 0);
+            PlayerPrefs.SetInt(KindKey, kind);
+            PlayerPrefs.SetInt(CountKey, count);
         }
     }
 }

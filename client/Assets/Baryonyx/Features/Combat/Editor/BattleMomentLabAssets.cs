@@ -21,15 +21,12 @@ namespace Baryonyx.Combat.Editor
     /// screen in the lab's scene where the hand and its controls are put away: the room's name at
     /// the top right, the plate that shows what a drop held over the middle, and along the bottom
     /// two rows of buttons, one for each moment of the battle (<see cref="BattleMomentLab"/>),
-    /// with the drop's quality, the repeat and the reset.
+    /// with the drop's kind, count and quality, the repeat and the reset.
     /// </summary>
     public static class BattleMomentLabAssets
     {
         public const string PrefabPath =
             "Assets/Baryonyx/Features/Combat/UI/BattleMomentLabPanel.prefab";
-
-        // How many pieces of each slot the drops take in turn.
-        private const int SamplesPerSlot = 2;
 
         // The words on the moment buttons, in BattleMoment's order.
         private static readonly string[] MomentLabels =
@@ -74,51 +71,13 @@ namespace Baryonyx.Combat.Editor
                 lab.Reveal = RewardRevealAssets.Build(safe, PlateCenter);
                 EnemyLabAssets.BuildStrip(safe);
                 BuildRows(safe, lab);
-                lab.Samples = RewardSamples();
+                lab.SampleSets = Baryonyx.Adventure.Editor.AdventureRewardSamples.Sets(
+                    ItemArtAssets.Load()
+                );
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
             AssetDatabase.SaveAssets();
-        }
-
-        /// <summary>
-        /// The rarest weapons, armour and accessories with art, the slots in turn: what the labs'
-        /// drops and chests hold, shown as a real drop of them is.
-        /// </summary>
-        public static RewardItem[] RewardSamples()
-        {
-            var art = ItemArtAssets.Load();
-            var slots = EquipmentCatalog
-                .All.Where(gear => art.Find(gear.Id) != null)
-                .GroupBy(gear => gear.Slot)
-                .OrderBy(slot => slot.Key)
-                .Select(slot =>
-                    slot.OrderByDescending(gear => gear.Rarity).Take(SamplesPerSlot).ToArray()
-                )
-                .ToArray();
-            var samples = new List<RewardItem>();
-            for (int i = 0; i < SamplesPerSlot; i++)
-            {
-                foreach (var slot in slots)
-                {
-                    if (i >= slot.Length)
-                        continue;
-                    var gear = slot[i];
-                    samples.Add(
-                        new RewardItem
-                        {
-                            Kind =
-                                $"{EquipmentCatalog.NameOf(gear.Slot)}　{EquipmentCatalog.Stars(gear.Rarity)}",
-                            Name = gear.Name,
-                            Icon = art.Find(gear.Id),
-                            FoilStyle = EquipmentCatalog.FoilStyleOf(gear.Id),
-                        }
-                    );
-                }
-            }
-            if (samples.Count == 0)
-                throw new InvalidOperationException("No weapon, armour or accessory has art.");
-            return samples.ToArray();
         }
 
         /// <summary>
@@ -145,6 +104,12 @@ namespace Baryonyx.Combat.Editor
                 250f
             );
             lab.ResetButton = EnemyLabAssets.ControlButton(upper, "Reset", "元に戻す", 210f).button;
+            (lab.KindButton, lab.KindLabel) = EnemyLabAssets.ControlButton(
+                upper,
+                "Kind",
+                "中身：アクセサリー",
+                300f
+            );
             (lab.QualityButton, lab.QualityLabel) = EnemyLabAssets.ControlButton(
                 lower,
                 "Quality",
@@ -153,6 +118,12 @@ namespace Baryonyx.Combat.Editor
             );
             // The quality's letter is painted in its colour.
             lab.QualityLabel.richText = true;
+            (lab.CountButton, lab.CountLabel) = EnemyLabAssets.ControlButton(
+                lower,
+                "Count",
+                "数：6",
+                150f
+            );
             lab.OtherLabButton = EnemyLabAssets
                 .ControlButton(lower, "OtherLab", "探索の演出へ", 250f)
                 .button;

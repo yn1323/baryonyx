@@ -3,6 +3,7 @@ using Baryonyx.Combat.Editor;
 using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
 using Baryonyx.Inventory;
+using Baryonyx.Inventory.Editor;
 using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
@@ -52,7 +53,7 @@ namespace Baryonyx.Adventure.Editor
                 BuildTitle(safe);
                 BuildStrip(safe);
                 BuildRows(safe, lab);
-                lab.Samples = BattleMomentLabAssets.RewardSamples();
+                lab.SampleSets = AdventureRewardSamples.Sets(ItemArtAssets.Load());
                 PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
                 AssetDatabase.SaveAssetIfDirty(font);
             }
@@ -138,6 +139,18 @@ namespace Baryonyx.Adventure.Editor
                 0f
             );
             lab.ResetButton = EnemyLabAssets.ControlButton(lower, "Reset", "元に戻す", 0f).button;
+            (lab.KindButton, lab.KindLabel) = EnemyLabAssets.ControlButton(
+                lower,
+                "Kind",
+                "中身：アクセサリー",
+                0f
+            );
+            (lab.CountButton, lab.CountLabel) = EnemyLabAssets.ControlButton(
+                lower,
+                "Count",
+                "数：6",
+                0f
+            );
             lab.OtherLabButton = EnemyLabAssets
                 .ControlButton(lower, "OtherLab", "戦闘の演出へ", 0f)
                 .button;

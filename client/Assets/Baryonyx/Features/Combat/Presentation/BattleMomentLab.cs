@@ -65,6 +65,8 @@ namespace Baryonyx.Combat.Presentation
         public const string MomentKey = "Baryonyx.BattleMomentLab.Moment";
         public const string QualityKey = "Baryonyx.BattleMomentLab.Quality";
         public const string RepeatKey = "Baryonyx.BattleMomentLab.Repeat";
+        public const string KindKey = "Baryonyx.BattleMomentLab.Kind";
+        public const string CountKey = "Baryonyx.BattleMomentLab.Count";
 
         /// <summary>The drop's qualities in the order the button steps through, then nothing found.</summary>
         public static readonly ItemQuality?[] DropQualities =
@@ -84,15 +86,19 @@ namespace Baryonyx.Combat.Presentation
         [Tooltip("ドロップした物を見せる札。")]
         public RewardReveal Reveal;
 
-        [Tooltip("ドロップの見本（装備の名前・アイコン・光り方）。1回ごとに順に使う。")]
-        public RewardItem[] Samples = Array.Empty<RewardItem>();
-
-
-        // 1回のドロップでまとめて落とす数。冒険の戦闘のように、手に入れた物を一度に見せる。
-        public const int DropsAtOnce = 3;
+        [Tooltip("ドロップの見本（武器・防具・アクセサリー・アイテム・スキル・強化素材）。種類ごとに順に使う。")]
+        public RewardSampleSet[] SampleSets = Array.Empty<RewardSampleSet>();
 
         public Button QualityButton;
         public TMP_Text QualityLabel;
+
+        [Tooltip("ドロップの中身の種類を切り替えるボタン（種類のあとに「混ぜる」）。")]
+        public Button KindButton;
+        public TMP_Text KindLabel;
+
+        [Tooltip("1回のドロップの数を切り替えるボタン。")]
+        public Button CountButton;
+        public TMP_Text CountLabel;
         public Button RepeatButton;
         public TMP_Text RepeatLabel;
         public Button ResetButton;
@@ -112,6 +118,8 @@ namespace Baryonyx.Combat.Presentation
 
         private BattleMoment moment;
         private int quality = 3;
+        private int kind;
+        private int count = 2;
         private int sample;
         private bool repeat;
         private Coroutine routine;
@@ -120,6 +128,12 @@ namespace Baryonyx.Combat.Presentation
 
         /// <summary>The quality of the next drop, or null for nothing found.</summary>
         public ItemQuality? Quality => DropQualities[quality];
+
+        /// <summary>The kind of the drops (in <see cref="SampleSets"/>; the mix after them).</summary>
+        public int Kind => kind;
+
+        /// <summary>How many things a drop holds.</summary>
+        public int Count => RewardLabSamples.Counts[count];
 
         public bool Repeat => repeat;
 
@@ -131,6 +145,8 @@ namespace Baryonyx.Combat.Presentation
             if (View == null)
                 return;
             Listen(QualityButton, () => SetQuality(quality + 1));
+            Listen(KindButton, () => SetKind(kind + 1));
+            Listen(CountButton, () => SetCount(count + 1));
             Listen(RepeatButton, () => SetRepeat(!repeat));
             Listen(ResetButton, ResetRoom);
             Listen(OtherLabButton, () => SceneManager.LoadScene(OtherLabScene));
@@ -189,6 +205,25 @@ namespace Baryonyx.Combat.Presentation
             Refresh();
         }
 
+        /// <summary>Chooses the drops' kind at <paramref name="index"/> (the mix after the kinds), wrapping round.</summary>
+        public void SetKind(int index)
+        {
+            int kinds = RewardLabSamples.KindCount(SampleSets);
+            kind = ((index % kinds) + kinds) % kinds;
+            sample = 0;
+            Save();
+            Refresh();
+        }
+
+        /// <summary>Chooses how many things a drop holds, at <paramref name="index"/> of <see cref="RewardLabSamples.Counts"/>, wrapping round.</summary>
+        public void SetCount(int index)
+        {
+            int counts = RewardLabSamples.Counts.Length;
+            count = ((index % counts) + counts) % counts;
+            Save();
+            Refresh();
+        }
+
         /// <summary>Repeats the moment over and over, or stops after the run under way.</summary>
         public void SetRepeat(bool value)
         {
@@ -209,40 +244,12 @@ namespace Baryonyx.Combat.Presentation
             View.MomentRestore();
         }
 
-        /// <summary>The next drop: a sample in turn, at the chosen quality, or null for nothing found.</summary>
-        public RewardItem NextDrop()
-        {
-            var chosen = Quality;
-            if (chosen == null || Samples.Length == 0)
-                return null;
-            var source = Samples[sample % Samples.Length];
-            sample++;
-            return new RewardItem
-            {
-                Kind = source.Kind,
-                Name = source.Name,
-                Icon = source.Icon,
-                FoilStyle = source.FoilStyle,
-                Quality = chosen.Value,
-            };
-        }
-
         /// <summary>
-        /// The next drops of a battle: <see cref="DropsAtOnce"/> samples in turn, at the chosen
-        /// quality, or none for nothing found.
+        /// The next drops of a battle: <see cref="Count"/> things of the chosen kind in turn, at
+        /// the chosen quality where they have one, best first; none for nothing found.
         /// </summary>
-        public List<RewardItem> NextDrops()
-        {
-            var drops = new List<RewardItem>();
-            for (int i = 0; i < DropsAtOnce; i++)
-            {
-                var drop = NextDrop();
-                if (drop == null)
-                    break;
-                drops.Add(drop);
-            }
-            return drops;
-        }
+        public List<RewardItem> NextDrops() =>
+            RewardLabSamples.Pick(SampleSets, kind, Count, Quality, ref sample);
 
         /// <summary>Sets the battlefield the moment starts from, then plays it.</summary>
         private void Play(BattleMoment which)
@@ -330,6 +337,10 @@ namespace Baryonyx.Combat.Presentation
                 RepeatLabel.text = repeat ? "くり返し：入" : "くり返し：切";
             if (QualityLabel != null)
                 QualityLabel.text = QualityText(Quality);
+            if (KindLabel != null)
+                KindLabel.text = "中身：" + RewardLabSamples.KindName(SampleSets, kind);
+            if (CountLabel != null)
+                CountLabel.text = "数：" + Count;
             // 選んでいる演出は、すりガラスのカードの金の縁と光で示す。
             for (int i = 0; i < MomentButtons.Length; i++)
                 if (
@@ -349,6 +360,8 @@ namespace Baryonyx.Combat.Presentation
                 Mathf.Clamp(PlayerPrefs.GetInt(MomentKey, 0), 0, (int)BattleMoment.Revive);
             quality = Mathf.Clamp(PlayerPrefs.GetInt(QualityKey, 3), 0, DropQualities.Length - 1);
             repeat = PlayerPrefs.GetInt(RepeatKey, 0) != 0;
+            kind = Mathf.Clamp(PlayerPrefs.GetInt(KindKey, 0), 0, RewardLabSamples.KindCount(SampleSets) - 1);
+            count = Mathf.Clamp(PlayerPrefs.GetInt(CountKey, 2), 0, RewardLabSamples.Counts.Length - 1);
         }
 
         private void Save()
@@ -356,6 +369,8 @@ namespace Baryonyx.Combat.Presentation
             PlayerPrefs.SetInt(MomentKey, (int)moment);
             PlayerPrefs.SetInt(QualityKey, quality);
             PlayerPrefs.SetInt(RepeatKey, repeat ? 1 : 0);
+            PlayerPrefs.SetInt(KindKey, kind);
+            PlayerPrefs.SetInt(CountKey, count);
         }
     }
 }

@@ -59,8 +59,27 @@ namespace Baryonyx.Tests.PlayMode
                 lab.MomentButtons,
                 Has.Length.EqualTo(Enum.GetValues(typeof(BattleMoment)).Length)
             );
-            Assert.That(lab.Samples, Is.Not.Empty, "The drops hold pieces of equipment.");
-            Assert.That(lab.Samples, Has.All.Matches<RewardItem>(drop => drop.Icon != null));
+            // The drops hold weapons, armour, accessories, items, skills and materials, each kind
+            // with its own samples, and the kind and the count can be chosen.
+            Assert.That(
+                lab.SampleSets.Select(set => set.Name),
+                Is.EquivalentTo(new[] { "武器", "防具", "アクセサリー", "アイテム", "スキル", "強化素材" })
+            );
+            Assert.That(lab.SampleSets, Has.All.Matches<RewardSampleSet>(set => set.Items.Length > 0));
+            lab.SetQuality(3);
+            lab.SetKind(3);
+            lab.SetCount(4);
+            var drops = lab.NextDrops();
+            Assert.That(drops, Has.Count.EqualTo(RewardLabSamples.Counts[4]));
+            Assert.That(drops, Has.All.Matches<RewardItem>(drop => !drop.Graded), "Items have no quality.");
+            lab.SetKind(lab.SampleSets.Length);
+            Assert.That(
+                lab.NextDrops().Select(drop => drop.Kind.Split('　')[0]).Distinct().Count(),
+                Is.GreaterThan(1),
+                "The mix holds several kinds."
+            );
+            lab.SetKind(0);
+            lab.SetCount(2);
 
             // The first Play opens on the enemies appearing.
             Assert.That(lab.Moment, Is.EqualTo(BattleMoment.Encounter));

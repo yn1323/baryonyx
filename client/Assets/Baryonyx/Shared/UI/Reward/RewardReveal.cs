@@ -110,10 +110,11 @@ namespace Baryonyx.UI
             KeepHome();
             count = Mathf.Max(1, drops?.Count ?? 0);
             var plates = PlatesFor(count);
+            var fitted = home + Vector2.up * FitOf(count);
             for (int i = 0; i < plates.Count; i++)
             {
                 Fill(plates[i], drops != null && i < drops.Count ? drops[i] : null);
-                plates[i].Plate.anchoredPosition = home + OffsetOf(i, count);
+                plates[i].Plate.anchoredPosition = fitted + OffsetOf(i, count);
                 plates[i].Plate.gameObject.SetActive(true);
             }
             if (showing != null)
@@ -173,6 +174,29 @@ namespace Baryonyx.UI
             float y = ((rows - 1) / 2f - row) * (size.y + RowGap);
             return new Vector2(x, y);
         }
+
+        /// <summary>
+        /// How far up (negative: down) the set of <paramref name="total"/> plates moves from the
+        /// plate's place so that every plate stays on the screen (inside the plate's parent, with
+        /// a margin), as many rows reach past it from a place high up (2026-10-29).
+        /// </summary>
+        public float FitOf(int total)
+        {
+            if (Plate == null || Plate.parent is not RectTransform parent)
+                return 0f;
+            float height = Plate.rect.height;
+            int columns = total > OneColumnMost ? 2 : 1;
+            int rows = (total + columns - 1) / columns;
+            float half = (rows * height + (rows - 1) * RowGap) * 0.5f;
+            float limit = parent.rect.height * 0.5f - FitMargin;
+            float at = homeKept ? home.y : Plate.anchoredPosition.y;
+            if (half >= limit)
+                return -at;
+            return Mathf.Clamp(at, -limit + half, limit - half) - at;
+        }
+
+        // 札の組を画面の縁からどれだけ離すか。
+        private const float FitMargin = 16f;
 
         private void KeepHome()
         {
