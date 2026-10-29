@@ -75,8 +75,9 @@ namespace Baryonyx.Adventure.Editor
         };
         private static readonly Color SpotShadow = new(0.012f, 0.02f, 0.04f, 0.78f);
 
-        // 勝った戦闘のドロップの札の中心。戦闘の演出デバッグルームと同じく、敵と味方の上に出す。
-        private static readonly Vector2 DropPlateCenter = new(40f, 250f);
+        // 勝った戦闘のドロップの札の中心。戦闘の演出デバッグルームと同じく、札の組を画面の上下左右の
+        // 中央に出す（2026-10-30、上に寄って見えるとユーザーの指摘）。
+        private static readonly Vector2 DropPlateCenter = Vector2.zero;
 
         private const float MenuWidth = 128f;
         private const float MenuHeight = 168f;

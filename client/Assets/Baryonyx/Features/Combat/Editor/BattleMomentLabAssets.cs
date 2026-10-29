@@ -48,8 +48,8 @@ namespace Baryonyx.Combat.Editor
         // Which row each moment's button is on: the battle going on above, its end below.
         private const int FirstEndingMoment = (int)BattleMoment.Victory;
 
-        // The drop's plate, high over the middle of the battlefield, above the party's heads.
-        private static readonly Vector2 PlateCenter = new(40f, 250f);
+        // The drop's plates, the set in the middle of the screen (2026-10-30).
+        private static readonly Vector2 PlateCenter = Vector2.zero;
 
         [MenuItem("Baryonyx/Combat/Create Battle Moment Lab Assets")]
         public static void CreateAssets()
