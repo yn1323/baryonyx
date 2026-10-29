@@ -98,6 +98,58 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.MarkerOf(chosen).Button.interactable, Is.True);
         }
 
+        // 中身をサーバーが決めない部屋へは、保存を待たずに入る（楽観的更新）。あとから保存できなかったと
+        // 分かったら、知らせて保存先の冒険を読み直し、入口へ戻す。
+        [UnityTest]
+        public IEnumerator ARoomIsEnteredBeforeItIsSavedAndTakenBackWhenTheSaveFails()
+        {
+            AdventureSession.Use(
+                services
+                    .Adventure.StartAsync(AdventureCatalog.ForestRuins, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult()
+            );
+            var bootstrap = default(ExplorationBootstrap);
+            yield return SceneTests.Load<ExplorationBootstrap>(
+                SceneTests.ExplorationPath,
+                ExplorationReady,
+                value => bootstrap = value
+            );
+            var view = bootstrap.View;
+            var start = AdventureSession.Current;
+            var exit = System.Linq.Enumerable.First(
+                start.Run.Exits,
+                room => ExplorationFlow.Arrive(start, room) != null
+            );
+            int loads = adventure.Loads;
+
+            adventure.HoldNextMove = true;
+            view.MarkerOf(exit.Id).Button.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => AdventureSession.Current.Run.RoomId == exit.Id,
+                4f,
+                "The room was not entered before the server answered."
+            );
+            Assert.That(adventure.Holding, Is.True, "The server has not answered yet.");
+
+            LogAssert.Expect(
+                LogType.Warning,
+                new System.Text.RegularExpressions.Regex("マスを選べませんでした")
+            );
+            adventure.Answer(fail: true);
+            yield return SceneTests.WaitUntil(
+                () => adventure.Loads > loads && ExplorationReady(bootstrap),
+                8f,
+                "The exploration did not read the adventure again."
+            );
+            Assert.That(view.Notice.Message, Is.EqualTo(AdventureTexts.SaveFailed));
+            Assert.That(
+                AdventureSession.Current.Run.RoomId,
+                Is.EqualTo(AdventureRouteMap.EntranceId)
+            );
+            Assert.That(view.MarkerOf(exit.Id).Button.interactable, Is.True);
+        }
+
         // 戦闘中に冒険をやめる知らせが届かなかったら、知らせて戦闘へ戻り、メニューをまた開ける。
         [UnityTest]
         public IEnumerator AQuitThatFailedToSaveDuringABattleGoesBackToTheBattle()
@@ -166,6 +218,21 @@ namespace Baryonyx.Tests.PlayMode
             public bool FailNextEnd;
             public int Loads;
 
+            // The next move waits for the test to answer it (Answer).
+            public bool HoldNextMove;
+            private TaskCompletionSource<AdventureState> held;
+            private AdventureRoom heldRoom;
+
+            public bool Holding => held != null && !held.Task.IsCompleted;
+
+            public void Answer(bool fail)
+            {
+                if (fail)
+                    held.SetException(new ServerApiException(0));
+                else
+                    held.SetResult(inner.MoveAsync(heldRoom, CancellationToken.None).GetAwaiter().GetResult());
+            }
+
             public Task<AdventureState> LoadAsync(CancellationToken token)
             {
                 Loads++;
@@ -177,6 +244,13 @@ namespace Baryonyx.Tests.PlayMode
 
             public Task<AdventureState> MoveAsync(AdventureRoom room, CancellationToken token)
             {
+                if (HoldNextMove)
+                {
+                    HoldNextMove = false;
+                    heldRoom = room;
+                    held = new TaskCompletionSource<AdventureState>();
+                    return held.Task;
+                }
                 if (!FailNextMove)
                     return inner.MoveAsync(room, token);
                 FailNextMove = false;

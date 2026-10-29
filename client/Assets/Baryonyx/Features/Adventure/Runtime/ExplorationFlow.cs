@@ -165,6 +165,8 @@ namespace Baryonyx.Adventure
         )
         {
             busy = true;
+            if (!await MoveSaved())
+                return;
             var kind = State.Run.Room?.Kind ?? AdventureRoomKind.Rest;
             AdventureState state;
             try
@@ -362,6 +364,8 @@ namespace Baryonyx.Adventure
         {
             busy = true;
             view.Dialog.Hide();
+            if (!await MoveSaved())
+                return;
             AdventureState state;
             try
             {
@@ -427,6 +431,8 @@ namespace Baryonyx.Adventure
         {
             busy = true;
             view.Dialog.Hide();
+            if (!await MoveSaved())
+                return;
             AdventureState state;
             try
             {
@@ -476,6 +482,10 @@ namespace Baryonyx.Adventure
                 view.ShowNotice(AdventureTexts.TrialNotice(State.Run.Contents.Trial));
             if (!await EncounterAsync(State.Run.Room?.Kind ?? AdventureRoomKind.Battle))
                 return;
+            // The battle opens from the room as the server keeps it (saved while the monsters
+            // showed themselves).
+            if (!await MoveSaved())
+                return;
             if (disposed || Leaving)
                 return;
             Leaving = toBattle();
@@ -517,6 +527,9 @@ namespace Baryonyx.Adventure
             return !disposed && moments != null;
         }
 
+        // 保存を待たずに入った部屋の保存。済むまで、その部屋でのサーバーへの次の要求を待たせる。
+        private Task<bool> moveSaved = Task.FromResult(true);
+
         private void OnRoom(string roomId)
         {
             if (busy || Leaving || room == null)
@@ -529,16 +542,32 @@ namespace Baryonyx.Adventure
                 }
         }
 
-        // 道を歩きながら選んだ部屋を保存し、両方が済んでから、着いた部屋から見た地図を見せる。
+        // 選んだ部屋へ歩きながら保存する。中身をサーバーが決める部屋（「？」・行商人・試練）でなければ、
+        // 保存を待たずに、着いたらすぐその部屋を見せる（楽観的更新。2026-10-29、ユーザーの依頼）。
+        // その部屋でのサーバーへの次の要求（出来事を終える・戦闘へ移るなど）は、保存が済むまで待つ。
+        // 保存できなければ「冒険を保存できませんでした」と知らせ、保存先の冒険を読み直して戻す。
         private async Task MoveAsync(ExplorationExit exit)
         {
             busy = true;
             var walked = new TaskCompletionSource<bool>();
             view.WalkTo(exit.Id, () => walked.TrySetResult(true));
+            var saving = source.MoveAsync(exit.Room, lifetime.Token);
+            var guess = Arrive(State, exit.Room);
+            if (guess != null)
+            {
+                var saved = ConfirmMoveAsync(saving);
+                moveSaved = saved;
+                await walked.Task;
+                // 歩く間に保存できなかったと分かったら、読み直しに任せる。
+                if (disposed || (saved.IsCompleted && !saved.Result))
+                    return;
+                Enter(guess);
+                return;
+            }
             AdventureState state;
             try
             {
-                state = await source.MoveAsync(exit.Room, lifetime.Token);
+                state = await saving;
             }
             catch (OperationCanceledException)
             {
@@ -557,6 +586,76 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             Enter(state);
+        }
+
+        // 保存を待たずに入った部屋の保存が済んだか。済んでいなければ待ち、できなかったら false。
+        private Task<bool> MoveSaved() => moveSaved;
+
+        private async Task<bool> ConfirmMoveAsync(Task<AdventureState> saving)
+        {
+            AdventureState state;
+            try
+            {
+                state = await saving;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("マスを選べませんでした。" + exception.Message);
+                if (disposed)
+                    return false;
+                if (view.Dialog != null)
+                    view.Dialog.Hide();
+                if (view.Moments != null)
+                    view.Moments.Clear();
+                view.ShowNotice(AdventureTexts.SaveFailed);
+                Work = LoadAsync();
+                return false;
+            }
+            if (disposed)
+                return false;
+            // サーバーの答えを、先に入った部屋の正しい中身にする（宝箱の覚醒の当たりなど）。
+            if (State?.Run != null && State.Run.RoomId == state.Run?.RoomId && !State.Run.RoomCleared)
+            {
+                State = AdventureSession.Use(state);
+                room = ExplorationRoom.From(state.Run);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// The adventure as it is once the party has gone into <paramref name="target"/>, without
+        /// the server: only for rooms whose contents the server does not draw as they are entered
+        /// (not a mystery, a merchant nor a trial); null for those.
+        /// </summary>
+        public static AdventureState Arrive(AdventureState state, AdventureRoom target)
+        {
+            var run = state?.Run;
+            if (run == null || target == null)
+                return null;
+            if (
+                target.Kind
+                is AdventureRoomKind.Mystery
+                    or AdventureRoomKind.Merchant
+                    or AdventureRoomKind.Trial
+            )
+                return null;
+            var arrived = new AdventureRun(
+                run.Id,
+                run.DestinationId,
+                target.Id,
+                target.Kind == AdventureRoomKind.Start,
+                run.Route.Append(target.Id).ToArray(),
+                run.Revives,
+                run.ReviveCost,
+                run.Map,
+                run.Drops,
+                target.Floor
+            );
+            return new AdventureState(arrived, state.Records, state.Runes);
         }
 
         private void OnChest()
@@ -588,6 +687,8 @@ namespace Baryonyx.Adventure
         private async Task OpenChestAsync(bool open = false)
         {
             busy = true;
+            if (!await MoveSaved())
+                return;
             var run = State.Run;
             AdventureState state;
             try
@@ -721,6 +822,8 @@ namespace Baryonyx.Adventure
         private async Task QuitAsync()
         {
             busy = true;
+            // 入ったばかりの部屋の保存より先に、冒険を終えない。
+            await MoveSaved();
             AdventureState state;
             try
             {
