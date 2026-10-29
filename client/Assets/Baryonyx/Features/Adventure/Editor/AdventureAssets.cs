@@ -31,17 +31,15 @@ namespace Baryonyx.Adventure.Editor
         public const string ExplorationPrefabPath = Folder + "/UI/ExplorationScreen.prefab";
         public const string OverlayPrefabPath = Folder + "/UI/AdventureOverlay.prefab";
         public const string ArtFolder = Folder + "/UI/Art";
-        public const string IconBattlePath = ArtFolder + "/IconRoomBattle.aseprite";
-        public const string IconElitePath = ArtFolder + "/IconRoomElite.aseprite";
+        // マスの種類ごとの台の絵（AdventureRoomKind の名前）。世界地図のマスと同じ石の台に印を載せる
+        // （doc/features/screens/adventure.md の地図のマス）。
+        public static string RoomPlatePath(AdventureRoomKind kind) => $"{ArtFolder}/RoomPlate{kind}.png";
+
+        // 「？」の凡例の台の絵。地図のマスと同じ台に、印を潰さずに貼る。
+        public static string RoomLegendPath(AdventureRoomKind kind) => $"{ArtFolder}/RoomLegend{kind}.png";
+
+        // 宝箱のドット絵。旅の案内所のお宝の札が使う（地図のマスは台の絵を使う）。
         public const string IconTreasurePath = ArtFolder + "/IconRoomTreasure.aseprite";
-        public const string IconBossPath = ArtFolder + "/IconRoomBoss.aseprite";
-        public const string IconRestPath = ArtFolder + "/IconRoomRest.aseprite";
-        public const string IconMerchantPath = ArtFolder + "/IconRoomMerchant.aseprite";
-        public const string IconShadyChestPath = ArtFolder + "/IconRoomShadyChest.aseprite";
-        public const string IconTrialPath = ArtFolder + "/IconRoomTrial.aseprite";
-        public const string IconStepDoorPath = ArtFolder + "/IconRoomStepDoor.aseprite";
-        public const string IconAltarPath = ArtFolder + "/IconRoomAltar.aseprite";
-        public const string IconMysteryPath = ArtFolder + "/IconRoomMystery.aseprite";
 
         public const string StageArtFolder = "Assets/Baryonyx/Shared/Art/Stages/Exploration";
         public const string ChestClosedPath = StageArtFolder + "/ChestClosed.aseprite";
@@ -98,22 +96,6 @@ namespace Baryonyx.Adventure.Editor
             AssetDatabase.Refresh();
             UiArt.EnsureAll();
             GuideMenuAssets.CreateSharedArt();
-            foreach (
-                var path in new[]
-                {
-                    IconBattlePath,
-                    IconElitePath,
-                    IconTreasurePath,
-                    IconBossPath,
-                    IconRestPath,
-                    IconMerchantPath,
-                    IconShadyChestPath,
-                    IconTrialPath,
-                    IconStepDoorPath,
-                    IconAltarPath,
-                }
-            )
-                ArtAssets.ImportDrawn(path);
             foreach (var path in new[] { ChestClosedPath, ChestOpenPath })
                 ArtAssets.ImportTexture(path, FilterMode.Point);
             ArtAssets.ImportDrawn(UiArt.IconCompassPath);
@@ -131,21 +113,15 @@ namespace Baryonyx.Adventure.Editor
         }
 
         private static Sprite[] KindIcons() =>
-            new[]
-            {
-                null,
-                ArtAssets.LoadSprite(IconBattlePath),
-                ArtAssets.LoadSprite(IconElitePath),
-                ArtAssets.LoadSprite(IconTreasurePath),
-                ArtAssets.LoadSprite(IconBossPath),
-                ArtAssets.LoadSprite(IconRestPath),
-                ArtAssets.LoadSprite(IconMerchantPath),
-                ArtAssets.LoadSprite(IconShadyChestPath),
-                ArtAssets.LoadSprite(IconTrialPath),
-                ArtAssets.LoadSprite(IconStepDoorPath),
-                ArtAssets.LoadSprite(IconAltarPath),
-                ArtAssets.LoadSprite(IconMysteryPath),
-            };
+            ((AdventureRoomKind[])Enum.GetValues(typeof(AdventureRoomKind)))
+                .Select(kind => PlateSprite(RoomPlatePath(kind)))
+                .ToArray();
+
+        private static Sprite PlateSprite(string path)
+        {
+            ArtAssets.ImportSprite(path, Vector4.zero, FilterMode.Bilinear, mipmaps: true);
+            return ArtAssets.LoadSprite(path);
+        }
 
         // --- Ground --------------------------------------------------------------------------
 
@@ -362,24 +338,11 @@ namespace Baryonyx.Adventure.Editor
             marker.Glow = SpriteImage(glow, UiArt.SoftSpotPath, Color.white);
             marker.Glow.raycastTarget = false;
 
-            var ring = Rect("Ring", body);
-            Place(ring, Vector2.zero, new Vector2(96, 96));
-            marker.Ring = SpriteImage(ring, UiArt.CirclePath, Color.white);
-            marker.Ring.raycastTarget = false;
-            var plate = Rect("Plate", body);
-            Place(plate, Vector2.zero, new Vector2(84, 84));
-            marker.Plate = SpriteImage(
-                plate,
-                UiArt.CirclePath,
-                ExplorationView.PlateOf(AdventureRoomKind.Battle)
-            );
-            marker.Plate.raycastTarget = false;
-
-            var icon = Rect("Icon", body);
-            // 24x24のアイコンを3倍にして、1ドットを整数のピクセルにする。
-            Place(icon, Vector2.zero, new Vector2(72, 72));
+            var icon = Rect("Plate", body);
+            Place(icon, Vector2.zero, Vector2.one * ExplorationView.SmallRing);
             marker.Icon = icon.gameObject.AddComponent<Image>();
-            marker.Icon.sprite = ArtAssets.LoadSprite(IconBattlePath);
+            marker.Icon.sprite = ArtAssets.LoadSprite(RoomPlatePath(AdventureRoomKind.Battle));
+            marker.Icon.preserveAspect = true;
             marker.Icon.raycastTarget = false;
 
             // 押せる範囲は、指で押しやすい150px四方にする。
@@ -388,7 +351,7 @@ namespace Baryonyx.Adventure.Editor
             return marker;
         }
 
-        // 「？」で開く凡例：マスの札と同じ色の小さい札とアイコンに、マスの種類の名前を添えて2列に並べる。
+        // 「？」で開く凡例：マスと同じ台（印は潰さずに貼る）を小さくし、マスの種類の名前を添えて2列に並べる。
         private static RectTransform BuildLegend(RectTransform safe)
         {
             const float Cell = 224f;
@@ -418,17 +381,11 @@ namespace Baryonyx.Adventure.Editor
                     -Padding - (i / 2) * Row
                 );
                 entry.sizeDelta = new Vector2(Cell, Row);
-                var ring = Rect("Ring", entry);
-                Place(ring, new Vector2(-Cell / 2 + 28, 0), new Vector2(52, 52));
-                SpriteImage(ring, UiArt.CirclePath, ExplorationView.AccentOf(kind));
-                var plate = Rect("Plate", ring);
-                Place(plate, Vector2.zero, new Vector2(46, 46));
-                SpriteImage(plate, UiArt.CirclePath, ExplorationView.PlateOf(kind));
-                var icon = Rect("Icon", ring);
-                // 24x24のアイコンを2倍にする（地図の小さい札と同じ）。
-                Place(icon, Vector2.zero, new Vector2(48, 48));
+                var icon = Rect("Plate", entry);
+                Place(icon, new Vector2(-Cell / 2 + 30, 0), new Vector2(58, 58));
                 var image = icon.gameObject.AddComponent<Image>();
-                image.sprite = KindIcons()[(int)kind];
+                image.sprite = PlateSprite(RoomLegendPath(kind));
+                image.preserveAspect = true;
                 image.raycastTarget = false;
                 var label = Label(entry, "Name", name, 26, TextMain, TextAlignmentOptions.Left);
                 var rect = (RectTransform)label.transform;

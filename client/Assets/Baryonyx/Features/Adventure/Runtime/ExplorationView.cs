@@ -60,24 +60,22 @@ namespace Baryonyx.Adventure
         // 地面の絵1枚の大きさ（設計座標）。地図いっぱいに並べて敷く。
         public const float GroundTile = 512f;
 
-        // 印の大きさ（px）：次に進めるマスは大きく、最奥の間はさらに大きく、ほかのマスは小さく。
-        public const float LargeRing = 112f;
-        public const float SmallRing = 80f;
-        public const float BossRing = 136f;
-        public const float HereRing = 96f;
+        // マスの台の幅（px）：次に進めるマスは大きく、最奥の間はさらに大きく、ほかのマスは小さく。
+        // 台は世界地図のマスと同じ、少し斜め上から見た楕円の石の台で、絵の高さも幅と同じ正方形に描いてある。
+        public const float LargeRing = 140f;
+        public const float SmallRing = 100f;
+        public const float BossRing = 170f;
+        public const float HereRing = 120f;
 
         // 道の太さ（px）：光の芯と、まわりの淡い光。
         private const float RoadCore = 7f;
         private const float RoadGlow = 22f;
 
-        private static readonly Color RingExit = new(1f, 0.86f, 0.45f);
-        private static readonly Color RingHere = new(1f, 0.95f, 0.78f);
-        private static readonly Color RingFaint = new(0.28f, 0.31f, 0.33f);
-        private static readonly Color PlateFaint = new(0.12f, 0.14f, 0.15f, 0.92f);
         private static readonly Color ExitGlow = new(1f, 0.82f, 0.36f, 0.6f);
         private static readonly Color EliteGlow = new(1f, 0.35f, 0.23f, 0.55f);
         private static readonly Color BossGlow = new(0.6f, 0.3f, 0.95f, 0.7f);
-        private static readonly Color Faded = new(0.55f, 0.55f, 0.55f, 0.7f);
+        // 行けないマスの台は、暗くして少し透かす。
+        private static readonly Color Faded = new(0.5f, 0.52f, 0.56f, 0.8f);
 
         // 道の色：次に進める道は金、その先の行ける道は淡い青、通った道は暗い金、行けなくなった道は消えかけ。
         private static readonly Color RoadExit = new(1f, 0.84f, 0.42f);
@@ -85,44 +83,6 @@ namespace Baryonyx.Adventure
         private static readonly Color RoadWalked = new(0.72f, 0.62f, 0.4f, 0.55f);
         private static readonly Color RoadClosed = new(0.55f, 0.6f, 0.66f, 0.16f);
 
-        // マスの種類ごとの札の地の色と、縁の明るい色（AdventureRoomKind の順）。
-        // いちばん多い魔物は目立たない青灰色にし、強い魔物は赤、宝箱は金、最奥の間は紫で目を引く。
-        // 休憩は焚き火の橙、行商人は革の茶、怪しい宝箱はくすんだ紫、試練は深紅、歩数の扉は緑、
-        // 進化の祭壇は青白い光の色、「？」は中身の分からない灰青にする。
-        private static readonly Color[] KindPlates =
-        {
-            new(0.11f, 0.165f, 0.19f, 0.96f),
-            new(0.15f, 0.19f, 0.23f, 0.96f),
-            new(0.46f, 0.08f, 0.08f, 0.96f),
-            new(0.42f, 0.30f, 0.05f, 0.96f),
-            new(0.26f, 0.11f, 0.42f, 0.96f),
-            new(0.42f, 0.19f, 0.05f, 0.96f),
-            new(0.30f, 0.21f, 0.12f, 0.96f),
-            new(0.20f, 0.16f, 0.25f, 0.96f),
-            new(0.40f, 0.06f, 0.22f, 0.96f),
-            new(0.07f, 0.30f, 0.14f, 0.96f),
-            new(0.08f, 0.22f, 0.42f, 0.96f),
-            new(0.18f, 0.22f, 0.27f, 0.96f),
-        };
-        private static readonly Color[] KindAccents =
-        {
-            new(0.42f, 0.48f, 0.47f),
-            new(0.60f, 0.67f, 0.75f),
-            new(1f, 0.34f, 0.26f),
-            new(1f, 0.80f, 0.30f),
-            new(0.70f, 0.45f, 0.98f),
-            new(1f, 0.62f, 0.28f),
-            new(0.92f, 0.72f, 0.44f),
-            new(0.68f, 0.58f, 0.80f),
-            new(1f, 0.40f, 0.62f),
-            new(0.46f, 1f, 0.55f),
-            new(0.56f, 0.86f, 1f),
-            new(0.86f, 0.80f, 0.62f),
-        };
-
-        public static Color PlateOf(AdventureRoomKind kind) => KindPlates[(int)kind];
-
-        public static Color AccentOf(AdventureRoomKind kind) => KindAccents[(int)kind];
 
         [Header("地図")]
         // 画面いっぱいの地図の窓。中の Content を左右に動かして、道の先を見る。
@@ -174,11 +134,12 @@ namespace Baryonyx.Adventure
         public RectTransform ScrollTrack;
         public RectTransform ScrollThumb;
 
-        // 右下の「？」と、押すと開く凡例：札の色とアイコンが、どのマスの種類かを示す。
+        // 右下の「？」と、押すと開く凡例：台の絵が、どのマスの種類かを示す。
         public Button LegendButton;
         public RectTransform Legend;
 
-        // マスの種類ごとのアイコン（AdventureRoomKind の順）。
+        // マスの種類ごとの台の絵（AdventureRoomKind の順）。種類の色の縁の石の台に、種類の印を載せてある。
+        // 入口（Start）は印のない台で、今いるマスにも使う。
         public Sprite[] KindIcons = Array.Empty<Sprite>();
 
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
@@ -731,27 +692,16 @@ namespace Baryonyx.Adventure
             bool lit = exit || reachable || boss;
             marker.Body.anchoredPosition = PointOf(room.Id);
 
-            // 大きい札は24ドットのアイコンを3倍、小さい札は2倍で出す。今いるマスと入口は台だけ。
-            float ring =
+            // マスの種類の台を出す。今いるマスと入口は、印のない台にする。
+            float size =
                 boss ? BossRing
                 : exit ? LargeRing
                 : here ? HereRing
                 : SmallRing;
-            marker.Ring.rectTransform.sizeDelta = Vector2.one * ring;
-            marker.Plate.rectTransform.sizeDelta = Vector2.one * (ring - (exit || boss ? 12 : 8));
-            marker.Icon.rectTransform.sizeDelta = Vector2.one * (exit || boss ? 72 : 48);
-            marker.Ring.color =
-                here ? RingHere
-                : exit ? RingExit
-                : lit ? AccentOf(room.Kind)
-                : RingFaint;
-            marker.Plate.color =
-                here || start ? PlateFaint
-                : lit ? PlateOf(room.Kind)
-                : PlateFaint;
-            marker.Icon.sprite = KindIcon(room.Kind);
-            marker.Icon.enabled = marker.Icon.sprite != null && !here && !start;
-            marker.Icon.color = lit ? Color.white : Faded;
+            marker.Icon.rectTransform.sizeDelta = Vector2.one * size;
+            marker.Icon.sprite = KindIcon(here || start ? AdventureRoomKind.Start : room.Kind);
+            marker.Icon.enabled = marker.Icon.sprite != null;
+            marker.Icon.color = lit || here || start ? Color.white : Faded;
 
             // 次に進めるマスは金の光、行ける先の強い魔物は赤い光、最奥の間は紫の光で見せる。
             bool eliteGlow = reachable && !exit && room.Kind == AdventureRoomKind.Elite;

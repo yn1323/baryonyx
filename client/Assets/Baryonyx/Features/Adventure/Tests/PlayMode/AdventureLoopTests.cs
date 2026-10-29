@@ -197,11 +197,12 @@ namespace Baryonyx.Tests.PlayMode
                 var marker = view.MarkerOf(next);
                 Assert.That(marker, Is.Not.Null, next);
                 Assert.That(marker.IsExit, Is.True);
-                // 次に選べるマスは、地の色がマスの種類（宝箱）を示す。
+                // 次に選べるマスは、マスの種類（宝箱）の台を暗くせずに出す。
                 Assert.That(
-                    marker.Plate.color,
-                    Is.EqualTo(ExplorationView.PlateOf(AdventureRoomKind.Treasure))
+                    marker.Icon.sprite,
+                    Is.SameAs(view.KindIcon(AdventureRoomKind.Treasure))
                 );
+                Assert.That(marker.Icon.color, Is.EqualTo(Color.white));
                 SceneTests.AssertTouchSize(marker.Button.transform);
             }
             // 最奥の間・入口・今いるマスは、押しても進まない。

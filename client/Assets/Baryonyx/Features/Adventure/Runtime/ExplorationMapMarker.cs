@@ -4,8 +4,9 @@ using UnityEngine.UI;
 namespace Baryonyx.Adventure
 {
     /// <summary>
-    /// One room on the exploration map (doc/features/screens/adventure.md): its round pedestal coloured by
-    /// the room's kind and its kind icon, the glow of a room to go to next or of the deepest room,
+    /// One room on the exploration map (doc/features/screens/adventure.md): its stone platform with
+    /// the room kind's rim and mark (like the world map's squares), the glow of a room to go to next
+    /// or of the deepest room,
     /// and where it is tapped. <see cref="ExplorationView"/> makes one from the template for each
     /// room of the route, and fades out the rooms not chosen as the party walks on.
     /// </summary>
@@ -14,8 +15,8 @@ namespace Baryonyx.Adventure
         public RectTransform Body;
         public CanvasGroup Group;
         public Image Glow;
-        public Image Ring;
-        public Image Plate;
+
+        // マスの種類の台の絵（ExplorationView.KindIcons）。
         public Image Icon;
         public Button Button;
 
