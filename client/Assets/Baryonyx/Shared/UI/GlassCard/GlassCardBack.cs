@@ -7,7 +7,8 @@ namespace Baryonyx.UI
     /// over the contents while a list reads what to show (doc/features/screens/guide.md#カードの裏面).
     /// <see cref="FlipUp"/> turns the card face up over <see cref="HalfSeconds"/> twice: it turns
     /// about its upright axis, narrowing to an edge with the back showing and widening with the
-    /// face, lifting a little on the way. <see cref="FlipAway"/> turns a card that has nothing to
+    /// face, lifting a little on the way; a <see cref="Vertical"/> card turns about its level
+    /// axis instead, narrowing in height. <see cref="FlipAway"/> turns a card that has nothing to
     /// show the same way, to an empty face, then fades it out over <see cref="FadeSeconds"/> and
     /// hides it. A card lying face down or leaving takes no taps. GlassCardAssets.AddBack builds
     /// the back; <see cref="GlassCardCover"/> lays a list's cards down and turns them up.
@@ -28,6 +29,9 @@ namespace Baryonyx.UI
 
         // 中身の上に重ねる裏面（革の地・内側の金の線・飾り・左右の線）。
         public GameObject Face;
+
+        // 横の軸で回し、高さを縮めて上下にめくる。カードスキルの横長の行だけ（ユーザーの指定、2026-10-30）。
+        public bool Vertical;
 
         private float delay;
         private float elapsed = float.PositiveInfinity;
@@ -180,12 +184,14 @@ namespace Baryonyx.UI
                 contents.gameObject.SetActive(shown);
         }
 
-        // 板と影と選んだときの縁を、カードの中心を軸に横へ縮め、lift だけ大きくする。
+        // 板と影と選んだときの縁を、カードの中心を軸に横（Vertical なら縦）へ縮め、lift だけ大きくする。
         private void Narrow(float width, float lift)
         {
             if (Card == null)
                 return;
-            var scale = new Vector3(width * lift, lift, 1f);
+            var scale = Vertical
+                ? new Vector3(lift, width * lift, 1f)
+                : new Vector3(width * lift, lift, 1f);
             if (Card.Body != null)
                 Card.Body.localScale = scale;
             if (Card.Shadow != null)

@@ -180,9 +180,10 @@ namespace Baryonyx.UI.Editor
         /// covers it (<see cref="GlassCardCover"/>): the leather tiled to the card's shape, a thin
         /// gold line inside the edge, the gold-tooled ornament in the middle, and on a wide card
         /// gold lines threaded with beads to either side. Its parts follow the card's size, so the
-        /// same back fits every list.
+        /// same back fits every list. A <paramref name="vertical"/> back turns up and down
+        /// (<see cref="GlassCardBack.Vertical"/>).
         /// </summary>
-        public static GlassCardBack AddBack(GlassCard card)
+        public static GlassCardBack AddBack(GlassCard card, bool vertical = false)
         {
             EnsureBackArt();
             var face = Rect("Back", card.Body);
@@ -225,6 +226,7 @@ namespace Baryonyx.UI.Editor
             var back = card.gameObject.AddComponent<GlassCardBack>();
             back.Card = card;
             back.Face = face.gameObject;
+            back.Vertical = vertical;
             return back;
         }
 

@@ -264,13 +264,20 @@ namespace Baryonyx.Tests.PlayMode
             var panel = view.PanelFor(ItemOf(view, CardLoadoutSession.GuideItemKey))
                 .GetComponent<CardLoadoutView>();
             // ステータスのタブで読んだ編成をすぐ出し、読み直しを待たない（カードを伏せない）。
+            // 横長の行は、伏せるときに上下にめくる。
             Assert.That(panel.LoadTask.IsCompleted, Is.False);
             Assert.That(panel.Status.text, Is.Not.EqualTo(CardLoadoutView.LoadingText));
             Assert.That(
                 panel
                     .UniqueRows.Concat(panel.SlotRows)
                     .Select(row => row.Card.Button.GetComponent<GlassCardBack>())
-                    .All(back => back != null && !back.FaceDown && !back.Flipping),
+                    .All(back => back != null && back.Vertical && !back.FaceDown && !back.Flipping),
+                Is.True
+            );
+            Assert.That(
+                panel
+                    .Rows.Take(CardLoadoutView.CoverRows)
+                    .All(row => row.Button.GetComponent<GlassCardBack>() is { Vertical: true }),
                 Is.True
             );
             Assert.That(panel.Presenter.State.PersonId, Is.EqualTo("toma"));

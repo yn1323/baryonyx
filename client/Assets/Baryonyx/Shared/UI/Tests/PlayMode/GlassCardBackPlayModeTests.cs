@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Baryonyx.Tests.PlayMode
 {
-    // 伏せたカードが、待ってから横に縮んで表へ替わり、元の幅で押せるようになる。
+    // 伏せたカードが、待ってから横（Vertical なら縦）に縮んで表へ替わり、元の幅で押せるようになる。
     public sealed class GlassCardBackPlayModeTests
     {
         private GameObject root;
@@ -49,6 +49,34 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(back.FaceDown, Is.False);
             Assert.That(back.Card.Body.localScale, Is.EqualTo(Vector3.one));
             Assert.That(back.Card.Group.blocksRaycasts, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator AVerticalCardTurnsUpAndDown()
+        {
+            var back = MakeCard();
+            back.Vertical = true;
+            back.ShowFaceDown();
+
+            back.FlipUp();
+            float started = Time.time;
+            bool lowered = false;
+            bool narrowed = false;
+            while (back.Flipping && Time.time - started < 2f)
+            {
+                var scale = back.Card.Body.localScale;
+                if (scale.y < 0.9f)
+                    lowered = true;
+                if (scale.x < 1f)
+                    narrowed = true;
+                yield return null;
+            }
+
+            Assert.That(back.Flipping, Is.False, "The flip did not end");
+            Assert.That(lowered, Is.True, "The card never lowered");
+            Assert.That(narrowed, Is.False, "The card narrowed in width");
+            Assert.That(back.FaceDown, Is.False);
+            Assert.That(back.Card.Body.localScale, Is.EqualTo(Vector3.one));
         }
 
         [UnityTest]

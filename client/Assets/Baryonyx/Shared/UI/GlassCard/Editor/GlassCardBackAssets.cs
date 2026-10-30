@@ -17,18 +17,25 @@ namespace Baryonyx.UI.Editor
         public const string PreviewPath =
             "Assets/Baryonyx/Shared/UI/GlassCard/GlassCardBackPreview.prefab";
 
-        // 一覧ごとのカードの大きさ（設計座標）と、見本での左上の位置。Empty は出す物がない場所の見本。
-        private static readonly (string Name, Vector2 Position, Vector2 Size, bool Empty)[] Cards =
+        // 一覧ごとのカードの大きさ（設計座標）と、見本での左上の位置。Empty は出す物がない場所の見本、
+        // Vertical は上下にめくる見本（カードスキルの行）。
+        private static readonly (
+            string Name,
+            Vector2 Position,
+            Vector2 Size,
+            bool Empty,
+            bool Vertical
+        )[] Cards =
         {
-            ("CardSkill", new Vector2(64, 96), new Vector2(812, 140), false),
-            ("CardSkillEmpty", new Vector2(64, 252), new Vector2(812, 140), true),
-            ("Adventurer", new Vector2(940, 84), new Vector2(588, 168), false),
-            ("AdventurerEmpty", new Vector2(940, 268), new Vector2(588, 168), true),
-            ("Picker", new Vector2(64, 470), new Vector2(597, 291), false),
-            ("Buy", new Vector2(725, 470), new Vector2(256, 272), false),
-            ("Sell", new Vector2(1045, 470), new Vector2(200, 200), false),
-            ("SellEmpty", new Vector2(1045, 692), new Vector2(200, 200), true),
-            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false),
+            ("CardSkill", new Vector2(64, 96), new Vector2(812, 140), false, true),
+            ("CardSkillEmpty", new Vector2(64, 252), new Vector2(812, 140), true, true),
+            ("Adventurer", new Vector2(940, 84), new Vector2(588, 168), false, false),
+            ("AdventurerEmpty", new Vector2(940, 268), new Vector2(588, 168), true, false),
+            ("Picker", new Vector2(64, 470), new Vector2(597, 291), false, false),
+            ("Buy", new Vector2(725, 470), new Vector2(256, 272), false, false),
+            ("Sell", new Vector2(1045, 470), new Vector2(200, 200), false, false),
+            ("SellEmpty", new Vector2(1045, 692), new Vector2(200, 200), true, false),
+            ("Library", new Vector2(1309, 470), new Vector2(265, 300), false, false),
         };
 
         // 案内人の画面の面に近い、暗い紺の背景。
@@ -62,7 +69,7 @@ namespace Baryonyx.UI.Editor
                 stage.sizeDelta = new Vector2(1920, 1080);
                 var cards = new List<GameObject>();
                 var empty = new List<GameObject>();
-                foreach (var (name, position, size, isEmpty) in Cards)
+                foreach (var (name, position, size, isEmpty, vertical) in Cards)
                 {
                     var rect = Child(name, stage);
                     rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
@@ -73,7 +80,7 @@ namespace Baryonyx.UI.Editor
                         -position.y - size.y / 2f
                     );
                     var (card, _) = GlassCardAssets.Build(rect);
-                    GlassCardAssets.AddBack(card);
+                    GlassCardAssets.AddBack(card, vertical);
                     (isEmpty ? empty : cards).Add(rect.gameObject);
                 }
                 var preview = root.AddComponent<GlassCardBackPreview>();
