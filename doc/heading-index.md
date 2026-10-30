@@ -715,13 +715,15 @@
 
 ## [features/screens/battle.md](features/screens/battle.md)
 
-32KB・177行
+34KB・196行
 
 - 8: # 画面一覧：戦闘画面
 - 12: ## 戦闘画面の見た目モック
-- 157: ### 勝ったあとの手札
-- 165: #### 変更と判断の記録
-- 171: ## 戦闘の背景を選べる戦闘シーン
+- 157: ### 山札と捨て札の一覧
+- 171: #### 変更と判断の記録
+- 176: ### 勝ったあとの手札
+- 184: #### 変更と判断の記録
+- 190: ## 戦闘の背景を選べる戦闘シーン
 
 ## [features/screens/common.md](features/screens/common.md)
 
@@ -819,7 +821,7 @@
 
 ## [features/showcase.md](features/showcase.md)
 
-53KB・328行
+54KB・329行
 
 - 8: # クライアントアセット展示室
 - 12: ## 目的
@@ -836,7 +838,7 @@
 - 255: ## 実装入口
 - 264: ## Unityでの確認手順
 - 274: ## 横画面UIの確認
-- 322: ## 実装状況
+- 323: ## 実装状況
 
 ## [features/skill-awakening.md](features/skill-awakening.md)
 

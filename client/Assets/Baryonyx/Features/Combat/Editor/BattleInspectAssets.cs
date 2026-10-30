@@ -465,6 +465,8 @@ namespace Baryonyx.Combat.Editor
                 BuildDiscard(safe, view);
                 BuildAim(safe, view);
                 BuildPopup(screen, view);
+                // 山札・捨て札・消滅を押して開く、カードの一覧（doc/features/screens/battle.md#山札と捨て札の一覧）。
+                view.PileList = BattlePileListAssets.Build(screen);
                 // 固有スキルの進化先を選ぶ画面。操作の上に重ねる（doc/features/skill-evolution.md）。
                 view.Choice = BattleEvolutionChoiceAssets.Build(
                     screen,
@@ -1400,6 +1402,7 @@ namespace Baryonyx.Combat.Editor
             );
             view.DeckLabel = label;
             view.DeckAnchor = counter;
+            view.DeckButton = CounterTap(counter);
         }
 
         /// <summary>
@@ -1422,6 +1425,7 @@ namespace Baryonyx.Combat.Editor
             );
             view.DiscardLabel = discard;
             view.DiscardAnchor = discardCounter;
+            view.DiscardButton = CounterTap(discardCounter);
             var (exhaust, exhaustCounter) = CornerCounter(
                 safe,
                 "Exhaust",
@@ -1435,7 +1439,25 @@ namespace Baryonyx.Combat.Editor
             );
             view.ExhaustLabel = exhaust;
             view.ExhaustAnchor = exhaustCounter;
+            view.ExhaustButton = CounterTap(exhaustCounter);
             exhaustCounter.gameObject.SetActive(false);
+        }
+
+        // Room around a counter that still takes its tap, as the counter is smaller than a finger.
+        private const float CounterTapMargin = 16f;
+
+        /// <summary>A tap on a counter, a little larger than it, that opens its pile's list.</summary>
+        internal static Button CounterTap(RectTransform counter)
+        {
+            var tap = Rect("Tap", counter);
+            Stretch(tap);
+            tap.offsetMin = -Vector2.one * CounterTapMargin;
+            tap.offsetMax = Vector2.one * CounterTapMargin;
+            var button = tap.gameObject.AddComponent<Button>();
+            button.targetGraphic = AddImage(tap, Color.clear, true);
+            button.transition = Selectable.Transition.None;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            return button;
         }
 
         /// <summary>

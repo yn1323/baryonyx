@@ -965,6 +965,7 @@ namespace Baryonyx.Combat.Presentation
             SetUpReadability();
             if (EndTurnButton != null)
                 EndTurnButton.onClick.AddListener(EndTurn);
+            SetUpPileList();
             foreach (var template in new[] { PopupTemplate, DamageNumber, WeakNumber, HealNumber })
             {
                 if (template != null)
@@ -2040,6 +2041,7 @@ namespace Baryonyx.Combat.Presentation
             // Out of the battle shows only once a card has gone there.
             if (ExhaustAnchor != null)
                 ExhaustAnchor.gameObject.SetActive(drawPile.Exhausted.Count > 0);
+            RefreshPileList();
         }
 
         /// <summary>The upcoming turns from the current one, skipping defeated enemies.</summary>

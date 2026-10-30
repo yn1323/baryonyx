@@ -69,6 +69,7 @@ namespace Baryonyx.Combat.Presentation
             if (handAway || Hand == null)
                 yield break;
             handAway = true;
+            ClosePileList();
             if (held >= 0)
                 PutBack();
             if (TapArea != null)

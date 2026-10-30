@@ -28,6 +28,7 @@ namespace Baryonyx.Combat.Presentation
                 "状態の一覧",
                 "覚醒の予兆（光るカード）",
                 "キーワードの説明札（味方向け）",
+                "山札の一覧",
             };
 
         public void ShowPreviewState(int index)
@@ -78,6 +79,9 @@ namespace Baryonyx.Combat.Presentation
                 case 13:
                     RaisePreviewCard(PreviewPartyCardWithKeywords(), withKeywords: true);
                     break;
+                case 14:
+                    ListPreviewDeck();
+                    break;
             }
         }
 
@@ -101,6 +105,22 @@ namespace Baryonyx.Combat.Presentation
             var glint = index >= 0 ? MakeGlint(index) : null;
             if (glint != null)
                 glint.ShowAt(1f);
+        }
+
+        // 初めの手札に配られていない山札のカードを、引く順を隠したコスト順で並べた一覧。
+        private void ListPreviewDeck()
+        {
+            if (PileList == null || Settings == null)
+                return;
+            int dealt = Mathf.Min(Settings.OpeningDraw, Settings.HandLimit, Cards.Length);
+            var inHand = new HashSet<int>();
+            for (int i = 0; i < dealt; i++)
+                inHand.Add(Cards[i].DeckIndex);
+            var rest = new List<int>();
+            for (int i = 0; i < Deck.Length; i++)
+                if (!inHand.Contains(i) && !Deck[i].Generated)
+                    rest.Add(i);
+            ShowPile(BattlePile.Draw, ByCost(rest));
         }
 
         // 2体目の敵（狼）に見本の状態を付け、HPを減らして、その一覧を開く。

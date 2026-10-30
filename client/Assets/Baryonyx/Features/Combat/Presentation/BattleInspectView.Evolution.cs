@@ -215,6 +215,7 @@ namespace Baryonyx.Combat.Presentation
 
             const int none = -1;
             int pick = none;
+            ClosePileList();
             SetHandAside(true);
             Choice.Open(OptionsOf(data, into, stages), Vfx.EvolvingScreenPoint(), p => pick = p);
             while (pick == none)

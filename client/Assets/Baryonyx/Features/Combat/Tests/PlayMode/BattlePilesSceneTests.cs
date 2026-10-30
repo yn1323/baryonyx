@@ -4,6 +4,7 @@ using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -177,6 +178,53 @@ namespace Baryonyx.Tests.PlayMode
             var fused = view.HandCards.Select(i => view.Deck[view.Cards[i].DeckIndex]).Single(data => data.Generated);
             Assert.That(fused.Skill, Is.EqualTo("FlameSlash"));
             Assert.That(DeckInHand(view), Has.No.Member(0).And.No.Member(enchant));
+        }
+
+        [UnityTest]
+        public IEnumerator ATapOnAPileListsItsCardsAndATapAnywhereClosesIt()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            foreach (var enemy in view.Enemies)
+                enemy.Hp = enemy.MaxHp = 999999;
+            typeof(BattleInspectView).GetProperty("Energy").SetValue(view, 9);
+            // 斬り払いとファイアを使い、捨て札を2枚にする。
+            Play(view, DealFirst(view, 0), view.Enemies[1].TargetArea);
+            Play(view, DealFirst(view, 1), view.Enemies[1].TargetArea);
+            yield return WaitActions(view);
+            var list = view.PileList;
+
+            // 捨て札：新しいほうから並べ、開いている間は後ろの手札を押せない。
+            Assert.That(TopHit(Center(view.DiscardAnchor)), Is.EqualTo(view.DiscardButton.gameObject));
+            view.DiscardButton.onClick.Invoke();
+            yield return null;
+            Assert.That(view.PileListOpen, Is.True, "A tap on the discard pile opens its list.");
+            Assert.That(list.Pile, Is.EqualTo(BattlePile.Discard));
+            Assert.That(view.PileOrder(BattlePile.Discard), Is.EqualTo(view.DiscardPile.Reverse()));
+            Assert.That(list.Shown, Is.EqualTo(2));
+            Assert.That(list.Cards[0].Name.text, Is.EqualTo(view.Deck[view.DiscardPile[^1]].Name));
+            var hand = view.Cards[view.HandCards[0]].Body;
+            var behind = TopHit(Center(hand));
+            Assert.That(behind.transform.IsChildOf(list.transform), Is.True, $"The list takes the tap, not {behind.name}.");
+            list.Backdrop.onClick.Invoke();
+            Assert.That(view.PileListOpen, Is.False, "A tap anywhere closes the list.");
+
+            // 山札：引く順を隠して、コストと名前の順に並べる。
+            view.DeckButton.onClick.Invoke();
+            var order = view.PileOrder(BattlePile.Draw);
+            Assert.That(order, Is.EquivalentTo(view.DrawPile));
+            Assert.That(order.Select(i => view.Deck[i].Cost), Is.Ordered);
+            Assert.That(list.Shown, Is.EqualTo(view.DrawPile.Count));
+            list.CloseButton.onClick.Invoke();
+            Assert.That(view.PileListOpen, Is.False);
+        }
+
+        // 画面の点で、いちばん手前にあって押せるもの。
+        private static GameObject TopHit(Vector2 point)
+        {
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = point }, hits);
+            return hits.Count > 0 ? hits[0].gameObject : null;
         }
 
         // 見本の山札の slot 番目を、同じ使い手のまま skill のカードに替える。
