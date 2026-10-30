@@ -219,6 +219,83 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.PileListOpen, Is.False);
         }
 
+        [UnityTest]
+        public IEnumerator ATapOnACardOfTheListShowsItLargeAndTheNextTapPutsItBack()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            view.DeckButton.onClick.Invoke();
+            yield return null;
+            var list = view.PileList;
+            var card = (RectTransform)list.Cards[1].transform;
+            var finger = new PointerEventData(EventSystem.current) { position = Center(card), pointerId = 0 };
+
+            // カードを押す：元の場所から画面の中央へ大きくなり、一覧の元のカードは隠れる。
+            Tap(list, finger);
+            yield return WaitUnscaled(list.ZoomInTime + 0.1f);
+            Assert.That(view.PileListOpen, Is.True, "A tap on a card keeps the list open.");
+            Assert.That(list.Zoomed, Is.EqualTo(1), "A tap on a card shows it large.");
+            Assert.That(list.ZoomCard.gameObject.activeSelf, Is.True);
+            Assert.That(list.Cards[1].gameObject.activeSelf, Is.False);
+            Assert.That(list.ZoomCard.Name.text, Is.EqualTo(list.Cards[1].Name.text));
+            Assert.That(list.ZoomCard.transform.localScale.x, Is.GreaterThan(list.CardScale * 2f));
+            var middle = Center((RectTransform)list.Scroll.transform.parent);
+            Assert.That(Vector2.Distance(Center((RectTransform)list.ZoomCard.transform), middle), Is.LessThan(2f));
+
+            // もう一度押すと、どこを押しても元の場所へ戻り、一覧は閉じない。
+            Tap(list, finger);
+            Assert.That(view.PileListOpen, Is.True, "The next tap puts the card back, not closes the list.");
+            yield return WaitUnscaled(list.ZoomOutTime + 0.1f);
+            Assert.That(list.Zoomed, Is.EqualTo(-1));
+            Assert.That(list.ZoomCard.gameObject.activeSelf, Is.False);
+            Assert.That(list.Cards[1].gameObject.activeSelf, Is.True);
+
+            // カードのない場所を押すと閉じる。
+            list.Backdrop.onClick.Invoke();
+            Assert.That(view.PileListOpen, Is.False, "A tap off the cards closes the list.");
+        }
+
+        [UnityTest]
+        public IEnumerator TheHeaderStaysAtTheTopWhileTheRowsOfALongPileScroll()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            var list = view.PileList;
+            var cards = Enumerable
+                .Range(0, 24)
+                .Select(i => view.Deck[i % view.Deck.Length])
+                .Select(d => new BattlePileList.Entry { Name = d.Name, Owner = d.Owner, Kind = d.Kind, Description = d.Description, Art = d.Art, Frame = d.Frame, Element = d.ElementIcon, Cost = d.Cost })
+                .ToList();
+            list.Open(BattlePile.Draw, cards);
+            yield return null;
+            Assert.That(list.Scroll.vertical, Is.True, "Four rows run past the screen and scroll.");
+            var header = Center(list.Header);
+            var first = Center((RectTransform)list.Cards[0].transform);
+
+            list.Scroll.verticalNormalizedPosition = 0f;
+            yield return null;
+            Assert.That(Vector2.Distance(Center(list.Header), header), Is.LessThan(0.5f), "The header does not scroll.");
+            Assert.That(Center((RectTransform)list.Cards[0].transform).y, Is.GreaterThan(first.y + 100f), "The rows scroll up.");
+            // 見出しの下へ流れたカードは切り取られ、押しても大きくならない。
+            var hidden = Center((RectTransform)list.Cards[0].transform);
+            Tap(list, new PointerEventData(EventSystem.current) { position = hidden, pointerId = 0 });
+            Assert.That(list.Zoomed, Is.EqualTo(-1));
+            Assert.That(view.PileListOpen, Is.False);
+        }
+
+        // 一覧の上の1回のタップ（押した場所を一覧に渡してから、押下を閉じるボタンへ届ける）。
+        private static void Tap(BattlePileList list, PointerEventData finger)
+        {
+            ExecuteEvents.Execute(list.gameObject, finger, ExecuteEvents.pointerDownHandler);
+            list.Backdrop.onClick.Invoke();
+        }
+
+        private static IEnumerator WaitUnscaled(float seconds)
+        {
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+                yield return null;
+        }
+
         // 画面の点で、いちばん手前にあって押せるもの。
         private static GameObject TopHit(Vector2 point)
         {

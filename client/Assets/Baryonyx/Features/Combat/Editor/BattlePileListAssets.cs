@@ -11,8 +11,9 @@ namespace Baryonyx.Combat.Editor
     /// <summary>
     /// Builds the list of a pile's cards (<see cref="BattlePileList"/>) on a screen's controls
     /// canvas: a dark veil over the whole battle that closes the list on a tap, and over it a
-    /// scrolling block of a header (the pile's picture, its name and count, and a cross) and
-    /// the battle's card to copy for each card of the pile.
+    /// header (the pile's picture, its name and count, and a cross) above a scrolling, clipped
+    /// room for the battle's card to copy for each card of the pile; over all of it a second veil
+    /// and the card shown large after a tap on one.
     /// </summary>
     public static class BattlePileListAssets
     {
@@ -39,11 +40,12 @@ namespace Baryonyx.Combat.Editor
             list.Backdrop.transition = Selectable.Transition.None;
             list.Backdrop.navigation = new Navigation { mode = Navigation.Mode.None };
 
-            // The whole safe area scrolls; a drag on it scrolls rather than closes.
+            // The safe area under the header scrolls; a drag on it scrolls rather than closes.
             var safe = SafeArea(root);
             var scroll = Rect("Scroll", safe);
             Stretch(scroll);
             AddImage(scroll, Color.clear, true);
+            scroll.gameObject.AddComponent<RectMask2D>();
             var scrollRect = scroll.gameObject.AddComponent<ScrollRect>();
             scrollRect.horizontal = false;
             scrollRect.viewport = scroll;
@@ -59,8 +61,9 @@ namespace Baryonyx.Combat.Editor
 
             var cardSize = new Vector2(70f, 98f) * 3f * list.CardScale;
             float rowWidth = list.Columns * (cardSize.x + list.Gap.x) - list.Gap.x;
-            BuildHeader(content, list, rowWidth);
+            BuildHeader(safe, list, rowWidth);
             BuildTemplate(content, list);
+            BuildZoom(root, list);
 
             root.gameObject.SetActive(false);
             return list;
@@ -68,9 +71,9 @@ namespace Baryonyx.Combat.Editor
 
         // The pile's picture (one for each pile, the shown one only), its name and count, and the
         // cross at the right end of the rows.
-        private static void BuildHeader(RectTransform content, BattlePileList list, float width)
+        private static void BuildHeader(RectTransform safe, BattlePileList list, float width)
         {
-            var header = Rect("Header", content);
+            var header = Rect("Header", safe);
             Corner(header, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(width, HeaderHeight));
             list.Header = header;
 
@@ -104,17 +107,33 @@ namespace Baryonyx.Combat.Editor
             SpriteImage(mark, GuideMenuAssets.IconClosePath, Color.white);
         }
 
-        // The battle's card the list copies for each card, face up and taking no taps (a tap on
-        // it closes the list like one anywhere else).
+        // The battle's card the list copies for each card, face up and taking no taps (the list
+        // finds the card under a tap and shows it large).
         private static void BuildTemplate(RectTransform content, BattlePileList list)
         {
-            var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, "Card", content);
+            list.Template = FaceUpCard(content, "Card", new Vector2(0.5f, 1f), list.CardScale);
+        }
+
+        // The veil and the card shown large after a tap on one, over the list and taking no taps
+        // (the next tap reaches the list, which puts the card back).
+        private static void BuildZoom(RectTransform root, BattlePileList list)
+        {
+            var veil = Rect("ZoomVeil", root);
+            Stretch(veil);
+            list.ZoomVeil = AddImage(veil, new Color(Veil.r, Veil.g, Veil.b, 0f), false);
+            veil.gameObject.SetActive(false);
+            list.ZoomCard = FaceUpCard(root, "ZoomCard", new Vector2(0.5f, 0.5f), list.CardScale);
+        }
+
+        private static BattleInspectCardView FaceUpCard(RectTransform parent, string name, Vector2 anchor, float scale)
+        {
+            var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, name, parent);
             var card = (RectTransform)instance.transform;
-            card.anchorMin = card.anchorMax = new Vector2(0.5f, 1f);
+            card.anchorMin = card.anchorMax = anchor;
             card.pivot = new Vector2(0.5f, 0.5f);
             card.anchoredPosition = Vector2.zero;
             card.localRotation = Quaternion.identity;
-            card.localScale = Vector3.one * list.CardScale;
+            card.localScale = Vector3.one * scale;
             var input = instance.GetComponent<BattleInspectCardInput>();
             if (input != null)
                 Object.DestroyImmediate(input);
@@ -123,8 +142,8 @@ namespace Baryonyx.Combat.Editor
             var back = card.Find("Back");
             if (back != null)
                 back.gameObject.SetActive(false);
-            list.Template = instance.GetComponent<BattleInspectCardView>();
             instance.SetActive(false);
+            return instance.GetComponent<BattleInspectCardView>();
         }
     }
 }

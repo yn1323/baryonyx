@@ -29,6 +29,7 @@ namespace Baryonyx.Combat.Presentation
                 "覚醒の予兆（光るカード）",
                 "キーワードの説明札（味方向け）",
                 "山札の一覧",
+                "山札の一覧（カードを拡大）",
             };
 
         public void ShowPreviewState(int index)
@@ -81,6 +82,11 @@ namespace Baryonyx.Combat.Presentation
                     break;
                 case 14:
                     ListPreviewDeck();
+                    break;
+                case 15:
+                    ListPreviewDeck();
+                    if (PileList != null && PileList.Shown > 0)
+                        PileList.ShowZoomed(0);
                     break;
             }
         }
