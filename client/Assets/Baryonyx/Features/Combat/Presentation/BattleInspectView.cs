@@ -801,6 +801,37 @@ namespace Baryonyx.Combat.Presentation
             return (position, -angle * Mathf.Rad2Deg);
         }
 
+        /// <summary>
+        /// The room between the hand at its fullest and the energy, the piles and the end-turn
+        /// button beside it (doc/features/screens/battle.md#戦闘画面の見た目モック).
+        /// </summary>
+        public const float HandSideGap = 24f;
+
+        /// <summary>
+        /// How far the hand reaches from the middle of the screen at its fullest (as many cards
+        /// as <see cref="BattleInspectHandSettings.HandLimit"/>): to the outer corner of its end
+        /// card, a card being <paramref name="cardSize"/> before its scale.
+        /// </summary>
+        public static float HandReach(BattleInspectHandSettings settings, Vector2 cardSize)
+        {
+            int count = Mathf.Max(1, settings.HandLimit);
+            var (position, angle) = FanPose(
+                count - 1,
+                count,
+                FanStepFor(count, settings.FanStep, settings.FanMaxSpread),
+                settings.FanRadius,
+                settings.FanDrop,
+                settings.RestBottom
+            );
+            var half = cardSize * settings.CardScale * 0.5f;
+            float a = angle * Mathf.Deg2Rad;
+            float reach = float.MinValue;
+            // The card turns about the middle of its foot.
+            foreach (var corner in new[] { new Vector2(-half.x, 0f), new Vector2(half.x, 0f), new Vector2(-half.x, half.y * 2f), new Vector2(half.x, half.y * 2f) })
+                reach = Mathf.Max(reach, position.x + corner.x * Mathf.Cos(a) - corner.y * Mathf.Sin(a));
+            return reach;
+        }
+
 #if UNITY_EDITOR
         /// <summary>
         /// Lays the whole hand out as the settings say, outside Play Mode, to check a change to
@@ -1052,10 +1083,13 @@ namespace Baryonyx.Combat.Presentation
             RefreshAim();
         }
 
-        /// <summary>The room under the end-turn button at the bottom-right corner (G3 layout).</summary>
-        public const float EndTurnBottom = 28f;
+        /// <summary>
+        /// The room under the end-turn button's picture, at the right of the hand: its circle
+        /// stands 20 px higher, over the faint glow drawn round it.
+        /// </summary>
+        public const float EndTurnBottom = 40f;
 
-        /// <summary>Keeps the end-turn button in the bottom-right corner, where the thumb rests.</summary>
+        /// <summary>Keeps the end-turn button at its height at the right of the hand, where the thumb rests.</summary>
         private void PlaceEndTurn()
         {
             if (EndTurnButton == null)

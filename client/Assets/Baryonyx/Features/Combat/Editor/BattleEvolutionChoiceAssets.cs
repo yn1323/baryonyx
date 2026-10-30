@@ -1,7 +1,5 @@
 using Baryonyx.Combat.Presentation;
-using Baryonyx.Editor.Art;
 using Baryonyx.UI;
-using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -21,7 +19,7 @@ namespace Baryonyx.Combat.Editor
         private static readonly Color Gold = new(0.98f, 0.8f, 0.36f);
 
         // The stages' cards: the battle card (70x98 dots at 3 px) as large as fits between the
-        // hovering card above and the check in the bottom-right corner.
+        // hovering card above and the check at the right of the hand.
         private const float CardScale = 2.45f;
         private static readonly Vector2 SlotSize = new(70 * 3 * CardScale, 98 * 3 * CardScale);
 
@@ -80,32 +78,32 @@ namespace Baryonyx.Combat.Editor
             return choice;
         }
 
-        // The check that confirms, in the end-turn button's place and shape (its capsule, a check
-        // where its arrow is), over a glow that breathes while it can be pressed.
+        // The check that confirms, in the end-turn button's place and shape (its circle, a gold
+        // check where its white tick is), over a glow that breathes while it can be pressed.
         private static void BuildConfirm(RectTransform root, BattleEvolutionChoice choice)
         {
             var safe = SafeArea(root);
-            var art = BattleInspectAssets.Art("EndTurnCapsule");
-            var size = new Vector2(art.width, art.height);
-            var corner = new Vector2(-32, BattleInspectView.EndTurnBottom);
+            var art = BattleInspectAssets.Art("EndTurnCircle");
+            float circle = art.width - BattleInspectAssets.EndTurnGlow * 2f;
 
-            // The glow hugs the capsule, whose ends are as round as the glow's corners drawn twice as large.
-            const float spread = 16f * 2f;
+            // The glow round the circle (white, coloured by the choice), as far out on every side.
+            var haloArt = BattleInspectAssets.Art("EndTurnHalo");
+            float spread = (haloArt.width - circle) * 0.5f;
             var glow = Rect("ConfirmGlow", safe);
-            Corner(
+            BattleInspectAssets.BesideHand(
                 glow,
-                new Vector2(1, 0),
-                corner + new Vector2(spread, -spread),
-                size + Vector2.one * spread * 2f
+                true,
+                BattleInspectView.EndTurnBottom + BattleInspectAssets.EndTurnGlow - spread,
+                new Vector2(haloArt.width, haloArt.height),
+                -spread
             );
-            var light = Plate(glow, GlassCardAssets.GlowPath, 2f);
+            var light = BattleInspectAssets.AddRaw(glow, haloArt);
+            light.raycastTarget = false;
             light.color = Color.clear;
             choice.ConfirmGlow = light;
 
             var button = Rect("Confirm", safe);
-            Corner(button, new Vector2(1, 0), corner, size);
-            var face = BattleInspectAssets.AddRaw(button, art);
-            face.raycastTarget = true;
+            var face = BattleInspectAssets.EndTurnCircle(button);
             var checkArt = BattleInspectAssets.Art("ConfirmCheck");
             var check = Rect("Check", button);
             Place(check, Vector2.zero, new Vector2(checkArt.width, checkArt.height));
@@ -153,15 +151,6 @@ namespace Baryonyx.Combat.Editor
         }
 
         // A sliced picture of the glass card's, its border drawn <paramref name="scale"/> times as large.
-        private static Image Plate(RectTransform rect, string path, float scale)
-        {
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = ArtAssets.LoadSprite(path);
-            image.type = Image.Type.Sliced;
-            image.pixelsPerUnitMultiplier = 1f / scale;
-            image.raycastTarget = false;
-            return image;
-        }
 
         // One stage: a button the size of its card, the battle's card over it, a veil that
         // darkens it while another is picked, and the acquired tag.

@@ -95,8 +95,20 @@ namespace Baryonyx.Combat.Editor
         private const int DeckSize = 16;
 
         // The deck in the bottom-left corner and the energy just above it.
-        private const float DeckBottom = 40f;
-        private const float EnergyBottom = 136f;
+        private const float DeckBottom = 72f;
+        private const float EnergyBottom = 168f;
+
+        // How far above the discard pile the cards out of the battle stand, when there are some.
+        private const float ExhaustRise = 96f;
+
+        /// <summary>
+        /// The faint glow round the end-turn button's circle, inside its picture (EndTurnCircle):
+        /// the circle itself starts this far in from each side.
+        /// </summary>
+        public const float EndTurnGlow = 20f;
+
+        // The room between the end-turn button's circle and the discard pile over it.
+        private const float DiscardGap = 8f;
 
         // The turn order: 24x24-dot icons (the UI icon size) in a 1-dot frame, from the top left.
         private const int TurnSlotCount = 6;
@@ -1364,7 +1376,7 @@ namespace Baryonyx.Combat.Editor
 
         /// <summary>
         /// The energy: a small gem and the number on the soft dark band that Top shows behind
-        /// "LOADING...", in the bottom-left corner beside the hand, above the deck.
+        /// "LOADING...", at the left of the hand, above the deck.
         /// </summary>
         private static void BuildEnergy(RectTransform safe, BattleInspectView view)
         {
@@ -1406,13 +1418,15 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// The cards out of the battle (消滅; shown once there is one) and the discard pile side by
-        /// side over the end-turn button, the discard pile at the right (G3 layout).
+        /// The discard pile right over the end-turn button at the right of the hand, and the cards
+        /// out of the battle (消滅; shown once there is one) over it.
         /// </summary>
         private static void BuildDiscard(RectTransform safe, BattleInspectView view)
         {
-            var button = Art("EndTurnCapsule");
-            float bottom = BattleInspectView.EndTurnBottom + button.height + 12f;
+            var button = Art("EndTurnCircle");
+            float bottom = BattleInspectView.EndTurnBottom + button.height - EndTurnGlow + DiscardGap;
+            // Centred over the circle (the counters are the circle's picture's width less this).
+            float over = (button.width - FlatCounterSize.x) * 0.5f - EndTurnGlow;
             var (discard, discardCounter) = CornerCounter(
                 safe,
                 "Discard",
@@ -1421,7 +1435,8 @@ namespace Baryonyx.Combat.Editor
                 "Pile",
                 Art("DiscardIcon"),
                 right: true,
-                flat: true
+                flat: true,
+                outward: over
             );
             view.DiscardLabel = discard;
             view.DiscardAnchor = discardCounter;
@@ -1429,19 +1444,22 @@ namespace Baryonyx.Combat.Editor
             var (exhaust, exhaustCounter) = CornerCounter(
                 safe,
                 "Exhaust",
-                bottom,
+                bottom + ExhaustRise,
                 "0",
                 "Wisp",
                 Art("ExhaustIcon"),
                 right: true,
                 flat: true,
-                fromRight: 32f + 168f
+                outward: over
             );
             view.ExhaustLabel = exhaust;
             view.ExhaustAnchor = exhaustCounter;
             view.ExhaustButton = CounterTap(exhaustCounter);
             exhaustCounter.gameObject.SetActive(false);
         }
+
+        // A flat counter (G3 layout) is narrower: the picture and the number alone.
+        private static readonly Vector2 FlatCounterSize = new(160, 72);
 
         // Room around a counter that still takes its tap, as the counter is smaller than a finger.
         private const float CounterTapMargin = 16f;
@@ -1461,8 +1479,32 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// A picture and a number on the dark translucent band, in the bottom-left corner (or the
-        /// bottom-right, <paramref name="right"/>).
+        /// Puts <paramref name="rect"/> beside the hand at its fullest (doc/features/screens/battle.md#戦闘画面の見た目モック):
+        /// held from the bottom middle of the screen, so a wider screen does not take it to its
+        /// corner, its side nearer the hand <see cref="BattleInspectView.HandSideGap"/> past the
+        /// hand's end card (on the right when <paramref name="right"/>), <paramref name="outward"/>
+        /// further out.
+        /// </summary>
+        public static void BesideHand(RectTransform rect, bool right, float bottom, Vector2 size, float outward = 0f)
+        {
+            float side = HandSide() + outward;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(right ? 0f : 1f, 0f);
+            rect.anchoredPosition = new Vector2(right ? side : -side, bottom);
+            rect.sizeDelta = size;
+        }
+
+        // From the middle of the screen to where the pieces beside the hand begin.
+        private static float HandSide()
+        {
+            var card = AssetDatabase.LoadAssetAtPath<GameObject>(CardPrefabPath);
+            var size = ((RectTransform)card.transform).rect.size;
+            return BattleInspectView.HandReach(EnsureHandSettings(), size) + BattleInspectView.HandSideGap;
+        }
+
+        /// <summary>
+        /// A picture and a number on the dark translucent band, at the left of the hand (or the
+        /// right, <paramref name="right"/>).
         /// </summary>
         private static (TMP_Text label, RectTransform counter) CornerCounter(
             RectTransform safe,
@@ -1473,17 +1515,13 @@ namespace Baryonyx.Combat.Editor
             Texture2D art,
             bool right = false,
             bool flat = false,
-            float fromRight = 32f
+            float outward = 0f
         )
         {
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, name, safe);
             var rect = (RectTransform)instance.transform;
-            // A flat counter (G3 layout) is narrower: the picture and the number alone.
-            var size = flat ? new Vector2(160, 72) : new Vector2(232, 80);
-            if (right)
-                Corner(rect, new Vector2(1, 0), new Vector2(-fromRight, bottom), size);
-            else
-                Corner(rect, Vector2.zero, new Vector2(32, bottom), size);
+            var size = flat ? FlatCounterSize : new Vector2(232, 80);
+            BesideHand(rect, right, bottom, size, outward);
             var panel = instance.GetComponent<TranslucentTextPanel>();
             // Darker than Top's gray band so it reads over the lit floor of the battlefield. A
             // flat counter has no band, only the number's dark outline.
@@ -1750,25 +1788,39 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// The end-turn button with no words (G3 layout): a flat capsule, deep navy inside a thin
-        /// white line, with a ▶, in the bottom-right corner where the thumb rests. When it cannot
-        /// be pressed (the enemies' turn, or no card can be paid for) it greys out, ▶ and all.
+        /// The end-turn button with no words (2026-10-30, the user's pick E2): a deep navy circle
+        /// in a double ring of muted gold, faintly glowing, with a white tick written as with a
+        /// brush, at the right of the hand where the thumb rests. When it cannot be pressed (the
+        /// enemies' turn, or no card can be paid for) it greys out, tick and all.
         /// </summary>
         private static void BuildEndTurn(RectTransform safe, BattleInspectView view)
         {
-            var art = Art("EndTurnCapsule");
             var button = Rect("EndTurn", safe);
-            var size = new Vector2(art.width, art.height);
-            Corner(button, new Vector2(1, 0), new Vector2(-32, BattleInspectView.EndTurnBottom), size);
+            var face = EndTurnCircle(button);
+            var tickArt = Art("EndTurnCheck");
+            var tick = Rect("Check", button);
+            Place(tick, EndTurnTickAt, new Vector2(tickArt.width, tickArt.height));
+            AddRaw(tick, tickArt).raycastTarget = false;
+            var endTurn = (TintGroupButton)AddTintButton(button, face);
+            endTurn.SetTintGraphics(new Graphic[] { tick.GetComponent<RawImage>() });
+            view.EndTurnButton = endTurn;
+        }
+
+        /// <summary>Where the tick stands in the circle: a little left, as its long stroke reaches right.</summary>
+        public static readonly Vector2 EndTurnTickAt = new(-1f, 0f);
+
+        /// <summary>
+        /// The end-turn button's circle (its glow included) on <paramref name="button"/>, beside
+        /// the hand at the end-turn button's place, taking taps; the evolution's check stands
+        /// on the same.
+        /// </summary>
+        public static RawImage EndTurnCircle(RectTransform button)
+        {
+            var art = Art("EndTurnCircle");
+            BesideHand(button, true, BattleInspectView.EndTurnBottom, new Vector2(art.width, art.height), -EndTurnGlow);
             var face = AddRaw(button, art);
             face.raycastTarget = true;
-            var arrowArt = Art("EndTurnArrow");
-            var arrow = Rect("Arrow", button);
-            Place(arrow, new Vector2(4, 0), new Vector2(arrowArt.width, arrowArt.height));
-            AddRaw(arrow, arrowArt).raycastTarget = false;
-            var endTurn = (TintGroupButton)AddTintButton(button, face);
-            endTurn.SetTintGraphics(new Graphic[] { arrow.GetComponent<RawImage>() });
-            view.EndTurnButton = endTurn;
+            return face;
         }
 
         private static void BuildPopup(RectTransform root, BattleInspectView view)

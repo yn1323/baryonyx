@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: f6563cbd5779f4471ae5685cbaed3b26
+  m_Name: 348ce8be44254302ab17cfc899e7549e
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: f6563cbd5779f4471ae5685cbaed3b26
-  DisplayName: EndTurnArrow
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/EndTurnArrow.png
+  Id: 348ce8be44254302ab17cfc899e7549e
+  DisplayName: EndTurnCheck
+  Description: Assets/Baryonyx/Features/Combat/UI/Art/EndTurnCheck.png
   Category: 9
-  Asset: {fileID: 2800000, guid: f6563cbd5779f4471ae5685cbaed3b26, type: 3}
+  Asset: {fileID: 2800000, guid: 348ce8be44254302ab17cfc899e7549e, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 
