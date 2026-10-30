@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b840e69afabe41cf8f8842a1fe99a83a, type: 3}
-  m_Name: 21e936b16a3234aec836bb9e0c04b578
+  m_Name: 3c7a022171f04e8ca23f26e3b86e08b2
   m_EditorClassIdentifier: Baryonyx.Runtime::Baryonyx.Showcase.ShowcaseEntry
-  Id: 21e936b16a3234aec836bb9e0c04b578
-  DisplayName: EnergyDiamond
-  Description: Assets/Baryonyx/Features/Combat/UI/Art/EnergyDiamond.png
+  Id: 3c7a022171f04e8ca23f26e3b86e08b2
+  DisplayName: CounterPill
+  Description: Assets/Baryonyx/Features/Combat/UI/Art/CounterPill.png
   Category: 9
-  Asset: {fileID: 2800000, guid: 21e936b16a3234aec836bb9e0c04b578, type: 3}
+  Asset: {fileID: 2800000, guid: 3c7a022171f04e8ca23f26e3b86e08b2, type: 3}
   PreviewPrefab: {fileID: 0}
   PreviewAnimation: {fileID: 0}
   AnimationStateName: 

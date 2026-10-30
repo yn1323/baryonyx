@@ -107,6 +107,7 @@ namespace Baryonyx.Tests.PlayMode
             int deck = DeckOf(view, "ManaBurst");
             int dealt = DealInto(view, deck);
             Assert.That(view.Glints(dealt), Is.True);
+            Assert.That(view.DeckSparkles, Is.False, "A lit card in the hand does not make the deck twinkle.");
 
             // Left in the hand at the end of the turn, it is discarded still lit (in this small
             // deck the discard pile is shuffled back into the deck for the next hand).
@@ -118,6 +119,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.HasOmen(deck), Is.True, "Its light stays until it is used.");
 
             var pile = view.DiscardPile.Contains(deck) ? BattlePile.Discard : BattlePile.Draw;
+            // The deck's counter twinkles while the lit card is in the deck, not in the discard pile.
+            Assert.That(view.DeckSparkles, Is.EqualTo(pile == BattlePile.Draw));
             view.OpenPile(pile);
             var list = view.PileList;
             int lit = view.PileOrder(pile).ToList().IndexOf(deck);

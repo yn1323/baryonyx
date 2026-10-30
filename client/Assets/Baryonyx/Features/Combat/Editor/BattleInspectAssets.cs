@@ -1375,13 +1375,13 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// The energy: a small gem and the number on the soft dark band that Top shows behind
-        /// "LOADING...", at the left of the hand, above the deck.
+        /// The energy on its pill (F4) at the left of the hand, above the deck: a gold diamond in
+        /// the round picture and the energy left.
         /// </summary>
         private static void BuildEnergy(RectTransform safe, BattleInspectView view)
         {
             // Baked with the opening turn so the screen reads the same outside Play Mode. Only
-            // the energy left, beside a thin diamond, with no band (G3 layout).
+            // the energy left, with no heading.
             int maxEnergy = BattleInspectView.MaxEnergyAt(view.StartTurn);
             var (label, _) = CornerCounter(
                 safe,
@@ -1389,15 +1389,16 @@ namespace Baryonyx.Combat.Editor
                 EnergyBottom,
                 BattleInspectView.EnergyText(maxEnergy, maxEnergy),
                 "Diamond",
-                Art("EnergyDiamond"),
-                flat: true
+                Art("CounterEnergyIcon"),
+                pill: true
             );
             view.EnergyLabel = label;
         }
 
         /// <summary>
-        /// The deck under the energy: a small stack of card backs and the number of cards left.
-        /// Dealt cards come out of the right edge of this counter.
+        /// The deck on its pill (F4) under the energy: two cards drawn in white lines in the round
+        /// picture and the number of cards left. Dealt cards come out of the right edge of this
+        /// counter, which twinkles while the deck holds a card that awakens when used.
         /// </summary>
         private static void BuildDeck(RectTransform safe, BattleInspectView view)
         {
@@ -1409,8 +1410,8 @@ namespace Baryonyx.Combat.Editor
                 DeckBottom,
                 Mathf.Max(0, left).ToString(),
                 "Stack",
-                Art("DeckIcon"),
-                flat: true
+                Art("CounterDeckIcon"),
+                pill: true
             );
             view.DeckLabel = label;
             view.DeckAnchor = counter;
@@ -1418,25 +1419,26 @@ namespace Baryonyx.Combat.Editor
         }
 
         /// <summary>
-        /// The discard pile right over the end-turn button at the right of the hand, and the cards
-        /// out of the battle (消滅; shown once there is one) over it.
+        /// The discard pile in the row over the end-turn button at the right of the hand, its
+        /// picture's left edge on the line of the circle's right edge, and the cards out of the
+        /// battle (消滅; shown once there is one) over it on the same line.
         /// </summary>
         private static void BuildDiscard(RectTransform safe, BattleInspectView view)
         {
             var button = Art("EndTurnCircle");
             float bottom = BattleInspectView.EndTurnBottom + button.height - EndTurnGlow + DiscardGap;
-            // Centred over the circle (the counters are the circle's picture's width less this).
-            float over = (button.width - FlatCounterSize.x) * 0.5f - EndTurnGlow;
+            var discardIcon = Art("DiscardIcon");
+            var exhaustIcon = Art("ExhaustIcon");
             var (discard, discardCounter) = CornerCounter(
                 safe,
                 "Discard",
                 bottom,
                 "0",
                 "Pile",
-                Art("DiscardIcon"),
+                discardIcon,
                 right: true,
                 flat: true,
-                outward: over
+                outward: PastCircle(discardIcon)
             );
             view.DiscardLabel = discard;
             view.DiscardAnchor = discardCounter;
@@ -1447,10 +1449,10 @@ namespace Baryonyx.Combat.Editor
                 bottom + ExhaustRise,
                 "0",
                 "Wisp",
-                Art("ExhaustIcon"),
+                exhaustIcon,
                 right: true,
                 flat: true,
-                outward: over
+                outward: PastCircle(exhaustIcon)
             );
             view.ExhaustLabel = exhaust;
             view.ExhaustAnchor = exhaustCounter;
@@ -1458,8 +1460,47 @@ namespace Baryonyx.Combat.Editor
             exhaustCounter.gameObject.SetActive(false);
         }
 
-        // A flat counter (G3 layout) is narrower: the picture and the number alone.
+        // A flat counter (G3 layout) is narrower: the picture and the number alone, the picture
+        // this far left of its middle.
         private static readonly Vector2 FlatCounterSize = new(160, 72);
+        private const float FlatIconAt = -40f;
+
+        // The numbers on the energy's and the deck's pills, a size smaller than the others'.
+        private const float PillFontSize = 44f;
+
+        /// <summary>
+        /// How far right of the end-turn circle's left edge a flat counter starts, so that its
+        /// picture's left edge stands on the line of the circle's right edge.
+        /// </summary>
+        private static float PastCircle(Texture2D icon) =>
+            Art("EndTurnCircle").width - EndTurnGlow * 2f - FlatCounterSize.x * 0.5f - FlatIconAt + IconSize(icon).x * 0.5f;
+
+        // Pixel art is drawn a dot to DotSize pixels; the flat pieces (PNG) at their own size.
+        private static Vector2 IconSize(Texture2D art) =>
+            new Vector2(art.width, art.height) * (AssetDatabase.GetAssetPath(art).EndsWith(".png") ? 1f : DotSize);
+
+        // The energy's and the deck's pill (CounterPill), wide enough for two digits.
+        private static readonly Vector2 PillCounterSize = new(176, 72);
+
+        /// <summary>
+        /// Lays a counter on its pill (2026-10-30, the user's pick F4): a deep navy rounded bar
+        /// in a thin line of muted gold, as the end-turn button is, its round picture
+        /// <paramref name="icon"/> at the left end and the number centred in the rest.
+        /// </summary>
+        public static void DressPill(RectTransform counter, TMP_Text label, string iconName, Texture2D icon)
+        {
+            var pill = Rect("Pill", counter);
+            Stretch(pill);
+            pill.SetAsFirstSibling();
+            AddRaw(pill, Art("CounterPill")).raycastTarget = false;
+            float height = counter.sizeDelta.y;
+            var badge = Rect(iconName, counter);
+            Place(badge, new Vector2((height - counter.sizeDelta.x) * 0.5f, 0f), Vector2.one * height);
+            AddRaw(badge, icon).raycastTarget = false;
+            label.rectTransform.offsetMin = new Vector2(height, 0f);
+            label.rectTransform.offsetMax = new Vector2(-8f, 0f);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(label.rectTransform);
+        }
 
         // Room around a counter that still takes its tap, as the counter is smaller than a finger.
         private const float CounterTapMargin = 16f;
@@ -1515,12 +1556,13 @@ namespace Baryonyx.Combat.Editor
             Texture2D art,
             bool right = false,
             bool flat = false,
-            float outward = 0f
+            float outward = 0f,
+            bool pill = false
         )
         {
             var instance = InstantiatePrefab(TranslucentTextPanelAssets.PrefabPath, name, safe);
             var rect = (RectTransform)instance.transform;
-            var size = flat ? FlatCounterSize : new Vector2(232, 80);
+            var size = pill ? PillCounterSize : flat ? FlatCounterSize : new Vector2(232, 80);
             BesideHand(rect, right, bottom, size, outward);
             var panel = instance.GetComponent<TranslucentTextPanel>();
             // Darker than Top's gray band so it reads over the lit floor of the battlefield. A
@@ -1528,7 +1570,7 @@ namespace Baryonyx.Combat.Editor
             panel.Backdrop.color = new Color(0.02f, 0.025f, 0.04f);
             panel.SetBackdropSize(new Vector2(320, 104));
             panel.SetBackdropAlpha(flat ? 0f : 0.8f);
-            panel.SetFontSize(52);
+            panel.SetFontSize(pill ? PillFontSize : 52f);
             panel.SetText(text);
             panel.Label.rectTransform.offsetMin = new Vector2(56, 0);
             PrefabUtility.RecordPrefabInstancePropertyModifications(rect);
@@ -1538,10 +1580,14 @@ namespace Baryonyx.Combat.Editor
             PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Label);
             PrefabUtility.RecordPrefabInstancePropertyModifications(panel.Label.rectTransform);
 
+            if (pill)
+            {
+                panel.SetBackdropAlpha(0f);
+                DressPill(rect, panel.Label, iconName, art);
+                return (panel.Label, rect);
+            }
             var icon = Rect(iconName, rect);
-            // Pixel art is drawn a dot to DotSize pixels; the flat pieces (PNG) at their own size.
-            float dot = AssetDatabase.GetAssetPath(art).EndsWith(".png") ? 1f : DotSize;
-            Place(icon, new Vector2(flat ? -40 : -64, 0), new Vector2(art.width, art.height) * dot);
+            Place(icon, new Vector2(flat ? FlatIconAt : -64, 0), IconSize(art));
             AddRaw(icon, art);
             if (flat)
                 panel.Label.rectTransform.offsetMin = new Vector2(40, 0);

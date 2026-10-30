@@ -64,6 +64,7 @@ namespace Baryonyx.Combat.Presentation
         private BattleInspectCardData[] evolvedDeck;
         private BattleInspectCardView evolvingFace;
         private BattleEvolutionGlint[] glints = Array.Empty<BattleEvolutionGlint>();
+        private BattlePileSparkle deckSparkle;
         private CanvasGroup handGroup;
 
         /// <summary>True from the omen of an evolution until the evolved card has gone into its user.</summary>
@@ -79,6 +80,9 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public bool HasOmen(int deckIndex) =>
             ReferenceEquals(evolvedDeck, Deck) && omenCards.Contains(deckIndex);
+
+        /// <summary>Whether the deck's counter twinkles: the deck holds a card that awakens when used.</summary>
+        public bool DeckSparkles => deckSparkle != null && deckSparkle.Lit;
 
         /// <summary>Whether the card on screen at <paramref name="index"/> shows its light.</summary>
         public bool Glints(int index) =>
@@ -165,6 +169,25 @@ namespace Baryonyx.Combat.Presentation
         }
 
         private BattleEvolutionGlint MakeGlint(int index) => MakeGlint(Cards[index].Body);
+
+        // The deck's counter twinkles while a card lit in the hand and put away unused is back in
+        // the deck (the discard pile does not twinkle); its stars are made the first time.
+        private void RefreshDeckSparkle()
+        {
+            bool lit = false;
+            foreach (int deckIndex in drawPile.Pile)
+                if (HasOmen(deckIndex))
+                {
+                    lit = true;
+                    break;
+                }
+            if (deckSparkle == null && (!lit || (deckSparkle = MakeDeckSparkle()) == null))
+                return;
+            deckSparkle.SetLit(lit);
+        }
+
+        private BattlePileSparkle MakeDeckSparkle() =>
+            Vfx == null ? null : BattlePileSparkle.Make(DeckAnchor, Vfx.MaterialOf(BattleVfxShape.Sparkle));
 
         // The card's light is the haze behind the stage picked in the choice (its material).
         private BattleEvolutionGlint MakeGlint(RectTransform card) =>

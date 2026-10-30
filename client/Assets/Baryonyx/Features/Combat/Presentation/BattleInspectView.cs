@@ -2075,6 +2075,7 @@ namespace Baryonyx.Combat.Presentation
             // Out of the battle shows only once a card has gone there.
             if (ExhaustAnchor != null)
                 ExhaustAnchor.gameObject.SetActive(drawPile.Exhausted.Count > 0);
+            RefreshDeckSparkle();
             RefreshPileList();
         }
 
