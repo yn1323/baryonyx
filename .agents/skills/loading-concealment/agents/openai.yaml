@@ -1,0 +1,7 @@
+interface:
+  display_name: "読み込みの待ち時間を見せない"
+  short_description: "画面の切り替えやサーバーの読み込みの待ち時間を、楽観的更新・前回の内容の先出し・幕を閉じたまま待つ・カードを伏せる形で見せないようにする"
+  default_prompt: "Use $loading-concealment when adding or reviewing a scene transition, a screen that reads from the server, or a report that something flashes or waits while loading."
+
+policy:
+  allow_implicit_invocation: true
