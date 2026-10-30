@@ -30,6 +30,7 @@ namespace Baryonyx.Combat.Presentation
                 "キーワードの説明札（味方向け）",
                 "山札の一覧",
                 "山札の一覧（カードを拡大）",
+                "山札の一覧（覚醒するカード）",
             };
 
         public void ShowPreviewState(int index)
@@ -88,6 +89,9 @@ namespace Baryonyx.Combat.Presentation
                     if (PileList != null && PileList.Shown > 0)
                         PileList.ShowZoomed(0);
                     break;
+                case 16:
+                    ListPreviewDeck(withOmen: true);
+                    break;
             }
         }
 
@@ -114,7 +118,8 @@ namespace Baryonyx.Combat.Presentation
         }
 
         // 初めの手札に配られていない山札のカードを、引く順を隠したコスト順で並べた一覧。
-        private void ListPreviewDeck()
+        // withOmen では、先頭のカードを覚醒が当たったまま山札へ戻ったカードとして光らせる。
+        private void ListPreviewDeck(bool withOmen = false)
         {
             if (PileList == null || Settings == null)
                 return;
@@ -126,7 +131,16 @@ namespace Baryonyx.Combat.Presentation
             for (int i = 0; i < Deck.Length; i++)
                 if (!inHand.Contains(i) && !Deck[i].Generated)
                     rest.Add(i);
-            ShowPile(BattlePile.Draw, ByCost(rest));
+            var order = ByCost(rest);
+            if (!withOmen || order.Count == 0)
+            {
+                ShowPile(BattlePile.Draw, order);
+                return;
+            }
+            evolvedDeck = Deck;
+            omenCards.Add(order[0]);
+            ShowPile(BattlePile.Draw, order);
+            omenCards.Remove(order[0]);
         }
 
         // 2体目の敵（狼）に見本の状態を付け、HPを減らして、その一覧を開く。

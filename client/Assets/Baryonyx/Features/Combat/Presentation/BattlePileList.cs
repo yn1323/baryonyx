@@ -23,7 +23,9 @@ namespace Baryonyx.Combat.Presentation
     /// block in the middle of the screen. When the rows run past the screen, the header stays at
     /// the top and the rows scroll under it. A tap on a card grows it out of its place to fill
     /// the middle of the screen, and the next tap anywhere puts it back; a tap anywhere else but
-    /// a drag closes the list, as the cross does. Nothing behind it is pressed while open.
+    /// a drag closes the list, as the cross does. A card that awakens when used shows the light
+    /// it has in the hand; its haze lies behind all the cards and fades out under the header
+    /// rather than being cut where the rows are. Nothing behind it is pressed while open.
     /// </summary>
     public sealed class BattlePileList : MonoBehaviour, IPointerDownHandler
     {
@@ -40,6 +42,9 @@ namespace Baryonyx.Combat.Presentation
             public int Cost;
             public ItemQuality Quality;
             public int FoilStyle;
+
+            /// <summary>Awakens when used: it shows the light it has in the hand.</summary>
+            public bool Omen;
         }
 
         public static readonly string[] Titles = { "山札", "捨て札", "消滅" };
@@ -103,10 +108,30 @@ namespace Baryonyx.Combat.Presentation
         [Tooltip("もう一度押してから元の場所へ戻る時間（秒）。")]
         public float ZoomOutTime = 0.16f;
 
+        [Tooltip("覚醒するカードの霞が、カードの流れる範囲の上下の端で消えていく幅（px）。")]
+        public int GlintFade = 90;
+
+        /// <summary>
+        /// Makes the light of a card that awakens when used (<see cref="BattleEvolutionGlint"/>)
+        /// under the card given, or null; the battle gives it.
+        /// </summary>
+        [NonSerialized]
+        public Func<RectTransform, BattleEvolutionGlint> MakeGlint;
+
         private static readonly string CountHex = "FACC5C";
 
         private readonly List<BattleInspectCardView> cards = new();
         private readonly List<Entry> entries = new();
+        private readonly Dictionary<BattleInspectCardView, BattleEvolutionGlint> glints = new();
+
+        // The haze of each lit card of the list, moved out of the card into a layer behind all
+        // the cards that follows the room the rows scroll in, softly cut at its edges.
+        private readonly Dictionary<BattleInspectCardView, RectTransform> hazes = new();
+        private RectTransform hazeLayer;
+
+        // Where the rows' room begins under the header, from the top of the safe area: the haze
+        // fades out there whether the rows scroll or not.
+        private float rowsTop;
         private BattlePile pile;
         private int shown;
 
@@ -147,6 +172,12 @@ namespace Baryonyx.Combat.Presentation
         /// <summary>True while the card shown large is growing or still, not on its way back.</summary>
         public bool ZoomShown => zoomed >= 0 && zoomingIn;
 
+        /// <summary>Whether the <paramref name="index"/>th card laid out shows the light of a card that awakens when used.</summary>
+        public bool Glints(int index) => index >= 0 && index < shown && Lit(cards[index]);
+
+        /// <summary>Whether the card shown large shows that light.</summary>
+        public bool ZoomGlints => zoomed >= 0 && Lit(ZoomCard);
+
         private void Awake()
         {
             if (Backdrop != null)
@@ -163,6 +194,8 @@ namespace Baryonyx.Combat.Presentation
             pressPoint = null;
             EndZoom();
         }
+
+        private void LateUpdate() => PlaceHazes();
 
         private void Update()
         {
@@ -184,6 +217,7 @@ namespace Baryonyx.Combat.Presentation
             ZoomIn(index);
             zoomTime = zoomDuration;
             Place(1f);
+            PlaceHazes();
         }
 
         /// <summary>Opens the list on <paramref name="cardsOf"/>, the cards of <paramref name="which"/> in order.</summary>
@@ -214,6 +248,7 @@ namespace Baryonyx.Combat.Presentation
                 ShowCard(cards[i], cardsOf[i]);
             }
             Layout();
+            PlaceHazes();
         }
 
         /// <summary>Closes the list.</summary>
@@ -236,7 +271,7 @@ namespace Baryonyx.Combat.Presentation
                 Close();
         }
 
-        private static void ShowCard(BattleInspectCardView view, Entry card)
+        private void ShowCard(BattleInspectCardView view, Entry card)
         {
             view.Show(
                 card.Name,
@@ -251,7 +286,77 @@ namespace Baryonyx.Combat.Presentation
                 card.FoilStyle
             );
             view.SetPlayable(true, 0f);
+            ShowGlint(view, card.Omen);
         }
+
+        // The light of a card that awakens when used, as the hand shows it but settled: it does
+        // not flare as the list opens.
+        private void ShowGlint(BattleInspectCardView view, bool lit)
+        {
+            glints.TryGetValue(view, out var glint);
+            if (glint == null)
+            {
+                if (!lit || MakeGlint == null || (glint = MakeGlint((RectTransform)view.transform)) == null)
+                    return;
+                glints[view] = glint;
+                if (view != ZoomCard)
+                    MoveHaze(view, glint);
+            }
+            if (!lit)
+                glint.SetLit(false);
+            else if (!glint.Lit)
+                glint.ShowAt(BattleEvolutionGlint.FlareSeconds);
+        }
+
+        // The haze (the light's back half; its star stays on the card) into the layer behind the cards.
+        private void MoveHaze(BattleInspectCardView view, BattleEvolutionGlint glint)
+        {
+            var holder = new GameObject("Glint", typeof(RectTransform)).GetComponent<RectTransform>();
+            holder.SetParent(HazeLayer(), false);
+            holder.anchorMin = holder.anchorMax = holder.pivot = new Vector2(0.5f, 0.5f);
+            holder.sizeDelta = Vector2.zero;
+            glint.transform.SetParent(holder, false);
+            hazes[view] = holder;
+        }
+
+        private RectTransform HazeLayer()
+        {
+            if (hazeLayer != null)
+                return hazeLayer;
+            hazeLayer = new GameObject("Glints", typeof(RectTransform)).GetComponent<RectTransform>();
+            hazeLayer.SetParent(Scroll.transform.parent, false);
+            hazeLayer.SetSiblingIndex(Scroll.transform.GetSiblingIndex());
+            hazeLayer.gameObject.AddComponent<RectMask2D>().softness = new Vector2Int(0, GlintFade);
+            return hazeLayer;
+        }
+
+        // Each haze over its card, shown while the card is (not while it is shown large), in the
+        // room the rows scroll in.
+        private void PlaceHazes()
+        {
+            if (hazeLayer == null)
+                return;
+            var viewport = (RectTransform)Scroll.transform;
+            hazeLayer.anchorMin = viewport.anchorMin;
+            hazeLayer.anchorMax = viewport.anchorMax;
+            hazeLayer.offsetMin = viewport.offsetMin;
+            hazeLayer.offsetMax = new Vector2(viewport.offsetMax.x, -rowsTop);
+            foreach (var pair in hazes)
+            {
+                var card = pair.Key.transform;
+                var holder = pair.Value;
+                bool shown = pair.Key.gameObject.activeInHierarchy;
+                if (holder.gameObject.activeSelf != shown)
+                    holder.gameObject.SetActive(shown);
+                if (!shown)
+                    continue;
+                holder.position = card.position;
+                holder.localScale = Vector3.one * (card.lossyScale.x / hazeLayer.lossyScale.x);
+            }
+        }
+
+        private bool Lit(BattleInspectCardView view) =>
+            view != null && glints.TryGetValue(view, out var glint) && glint != null && glint.Lit;
 
         // The laid-out card under a point of the screen, or -1 (also for a card scrolled under the header).
         private int CardAt(Vector2 screenPoint)
@@ -406,7 +511,8 @@ namespace Baryonyx.Combat.Presentation
             bool fits = block + Margin * 2f <= room;
             float top = fits ? (room - block) * 0.5f : Margin;
             // The rows scroll below a line halfway between the header and the first row.
-            float cut = fits ? 0f : top + headerHeight + HeaderGap * 0.5f;
+            rowsTop = top + headerHeight + HeaderGap * 0.5f;
+            float cut = fits ? 0f : rowsTop;
             var viewport = (RectTransform)Scroll.transform;
             viewport.offsetMax = new Vector2(viewport.offsetMax.x, -cut);
             Content.sizeDelta = new Vector2(Content.sizeDelta.x, fits ? room : HeaderGap * 0.5f + grid + Margin);

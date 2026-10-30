@@ -98,6 +98,46 @@ namespace Baryonyx.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ALitCardPutAwayUnusedShowsItsLightInThePileList()
+        {
+            var view = default(BattleInspectView);
+            yield return Load(value => view = value);
+            UseParty(view, "ManaBurst");
+            view.Evolution = new BattleEvolution { Chance = level => 1f, Draw = () => 0f };
+            int deck = DeckOf(view, "ManaBurst");
+            int dealt = DealInto(view, deck);
+            Assert.That(view.Glints(dealt), Is.True);
+
+            // Left in the hand at the end of the turn, it is discarded still lit (in this small
+            // deck the discard pile is shuffled back into the deck for the next hand).
+            view.EndTurn();
+            for (float t = 0f; (view.EnemyTurn || view.Dealing) && t < 15f; t += Time.unscaledDeltaTime)
+                yield return null;
+            Assert.That(view.EnemyTurn || view.Dealing, Is.False, "The next turn is dealt.");
+            Assert.That(view.Cards.Any(card => card.InHand && card.DeckIndex == deck), Is.False);
+            Assert.That(view.HasOmen(deck), Is.True, "Its light stays until it is used.");
+
+            var pile = view.DiscardPile.Contains(deck) ? BattlePile.Discard : BattlePile.Draw;
+            view.OpenPile(pile);
+            var list = view.PileList;
+            int lit = view.PileOrder(pile).ToList().IndexOf(deck);
+            Assert.That(lit, Is.GreaterThanOrEqualTo(0), "The card is in the pile.");
+            Assert.That(list.Glints(lit), Is.True, "The card lit shows its light in the list.");
+            for (int i = 0; i < list.Shown; i++)
+                if (i != lit)
+                    Assert.That(list.Glints(i), Is.False, "The others stay unlit.");
+
+            // Shown large, it keeps its light; another card shown large has none.
+            list.ShowZoomed(lit);
+            Assert.That(list.ZoomGlints, Is.True);
+            if (list.Shown > 1)
+            {
+                list.ShowZoomed(lit == 0 ? 1 : 0);
+                Assert.That(list.ZoomGlints, Is.False);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator NothingEvolvesWhenTheDrawMissesOrOutsideAnAdventure()
         {
             var view = default(BattleInspectView);

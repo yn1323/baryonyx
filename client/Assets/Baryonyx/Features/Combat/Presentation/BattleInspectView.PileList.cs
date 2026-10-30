@@ -74,8 +74,12 @@ namespace Baryonyx.Combat.Presentation
         private void ShowPile(BattlePile pile) =>
             ShowPile(pile, PileOrder(pile));
 
-        private void ShowPile(BattlePile pile, IReadOnlyList<int> cards) =>
+        private void ShowPile(BattlePile pile, IReadOnlyList<int> cards)
+        {
+            if (PileList.MakeGlint == null)
+                PileList.MakeGlint = MakeGlint;
             PileList.Open(pile, cards.Select(PileEntry).ToList());
+        }
 
         // Keeps the open list up to date as cards move between the piles.
         private void RefreshPileList()
@@ -84,7 +88,8 @@ namespace Baryonyx.Combat.Presentation
                 ShowPile(PileList.Pile);
         }
 
-        // A card of the deck as the hand shows it: its cost with the passives and its sleeping stage.
+        // A card of the deck as the hand shows it: its cost with the passives, its sleeping stage
+        // and its light when it awakens when used (lit in the hand and put away unused).
         private BattlePileList.Entry PileEntry(int deckIndex)
         {
             var data = Deck[deckIndex];
@@ -100,6 +105,7 @@ namespace Baryonyx.Combat.Presentation
                 Cost = CostWithPassives(data),
                 Quality = data.Quality,
                 FoilStyle = data.FoilStyle,
+                Omen = HasOmen(deckIndex),
             };
         }
     }

@@ -10,6 +10,7 @@
 // - 外のにじみ（Spill）：霞の縁の外へ、琥珀色がわずかに漏れて背景に溶ける。
 // ノイズは画素ごとに計算せず、コードで一度だけ作る小さなノイズの絵（BattleCardAuraNoise）を数回読む。
 // カードに隠れる内側は描かない（スマホで重くならないように。2026-10-29）。頂点色のアルファで全体を出し入れする。
+// RectMask2D の切り抜きは、その softness のぼかしに従う（札置き場の一覧で、見出しの下でふわっと消すため）。
 Shader "Baryonyx/Combat/Battle Card Aura"
 {
     Properties
@@ -102,10 +103,13 @@ Shader "Baryonyx/Combat/Battle Card Aura"
                 fixed4 color : COLOR;
                 float2 uv : TEXCOORD0;
                 float4 worldPosition : TEXCOORD1;
+                float4 mask : TEXCOORD2;
             };
 
             fixed4 _Color;
             float4 _ClipRect;
+            float _UIMaskSoftnessX;
+            float _UIMaskSoftnessY;
             sampler2D _Noise;
             float4 _Size;
             float4 _CardHalf;
@@ -132,6 +136,14 @@ Shader "Baryonyx/Combat/Battle Card Aura"
                 v2f OUT;
                 OUT.worldPosition = v.vertex;
                 OUT.vertex = UnityObjectToClipPos(v.vertex);
+                // The clip rect's soft edge, as Unity's own UI shader works it out.
+                float2 pixelSize = OUT.vertex.w;
+                pixelSize /= abs(mul((float2x2)UNITY_MATRIX_P, _ScreenParams.xy));
+                float4 clampedRect = clamp(_ClipRect, -2e10, 2e10);
+                OUT.mask = float4(
+                    v.vertex.xy * 2.0 - clampedRect.xy - clampedRect.zw,
+                    0.25 / (0.25 * half2(_UIMaskSoftnessX, _UIMaskSoftnessY) + abs(pixelSize.xy))
+                );
                 OUT.uv = v.texcoord;
                 OUT.color = v.color * _Color;
                 return OUT;
@@ -201,7 +213,8 @@ Shader "Baryonyx/Combat/Battle Card Aura"
 
                 half a = IN.color.a * keep;
                 #ifdef UNITY_UI_CLIP_RECT
-                a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
+                half2 inside = saturate((_ClipRect.zw - _ClipRect.xy - abs(IN.mask.xy)) * IN.mask.zw);
+                a *= inside.x * inside.y;
                 #endif
                 half3 rgb = light * IN.color.rgb * a + Hd2dDither(IN.vertex.xy);
                 return half4(max(rgb, 0.0), 0.0);
