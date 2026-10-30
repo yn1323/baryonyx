@@ -4,7 +4,9 @@ using Baryonyx.Health;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Baryonyx.Editor.CI
 {
@@ -60,6 +62,7 @@ namespace Baryonyx.Editor.CI
                 // Never let a failed build leave an old APK looking like a new result.
                 if (File.Exists(OutputPath))
                     File.Delete(OutputPath);
+                SaveModifiedScenes();
                 var report = BuildPipeline.BuildPlayer(
                     new BuildPlayerOptions
                     {
@@ -89,6 +92,19 @@ namespace Baryonyx.Editor.CI
                 PlayerSettings.Android.bundleVersionCode = versionCode;
                 EditorUserBuildSettings.buildAppBundle = appBundle;
                 EditorUserBuildSettings.exportAsGoogleAndroidProject = exportProject;
+            }
+        }
+
+        // 開いているシーンに未保存の変更があると、BuildPlayerが「Scene(s) Have Been Modified」の
+        // 確認を出して止まり、AIからのビルドでは誰も押せない。Editorのテスト実行と同じく先に保存する。
+        // 一度も保存していないシーン（Untitled）は保存先がないため、そのままにする。
+        private static void SaveModifiedScenes()
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.isDirty && !string.IsNullOrEmpty(scene.path))
+                    EditorSceneManager.SaveScene(scene);
             }
         }
 
