@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { invalidRequest, parseJson, respond } from "../../shared/http.js";
 import { requireSession, type SessionEnv } from "../accounts/session.js";
 import { createEnhancementRepository } from "./repository.js";
-import { awakenSchema, polishSchema } from "./schema.js";
+import { awakenSchema, combineSchema, polishSchema } from "./schema.js";
 
 export function createEnhancementApi() {
   const api = new Hono<SessionEnv>();
@@ -20,6 +20,18 @@ export function createEnhancementApi() {
     const body = await parseJson(c, polishSchema);
     if (!body.success) return invalidRequest(c);
     const result = await createEnhancementRepository(c.env.DB).polish(
+      c.get("userId"),
+      body.data,
+      new Date().toISOString(),
+    );
+    return respond(c, result);
+  });
+
+  // 磨き石の合成。1つ下の色3個とルーンで、上の色を作る。
+  api.post("/enhancement/combine", async (c) => {
+    const body = await parseJson(c, combineSchema);
+    if (!body.success) return invalidRequest(c);
+    const result = await createEnhancementRepository(c.env.DB).combine(
       c.get("userId"),
       body.data,
       new Date().toISOString(),

@@ -94,6 +94,17 @@ namespace Baryonyx.Enhancement
                 }
             );
 
+        /// <summary>
+        /// Makes <paramref name="count"/> of <paramref name="made"/> from three each of the colour
+        /// below and waits for the result: the stones held go to the counts it gave.
+        /// </summary>
+        public static Task<EnhancementOutcome> CombineAsync(EnhancementMaterial made, int count) =>
+            Send(
+                (made?.CombineRunes ?? 0) * count,
+                (source, token) => source.CombineAsync(made, count, token),
+                _ => { }
+            );
+
         private static async Task<EnhancementOutcome> Send(
             int runes,
             Func<IEnhancementSource, CancellationToken, Task<EnhancementOutcome>> send,

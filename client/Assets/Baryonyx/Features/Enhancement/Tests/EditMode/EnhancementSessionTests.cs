@@ -37,6 +37,12 @@ namespace Baryonyx.Tests.EditMode
                 AwakeningOption option,
                 CancellationToken token
             ) => throw new NotSupportedException();
+
+            public Task<EnhancementOutcome> CombineAsync(
+                EnhancementMaterial made,
+                int count,
+                CancellationToken token
+            ) => throw new NotSupportedException();
         }
 
         [SetUp]

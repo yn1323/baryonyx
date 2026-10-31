@@ -17,7 +17,7 @@ import {
   uniqueMaxPercent,
 } from "../party/catalog.js";
 import { partyUniqueSkills, skillCards } from "../party/db-schema.js";
-import { POLISHES, polishedPercent } from "./catalog.js";
+import { POLISHES, polishCeilingPercent, polishedPercent } from "./catalog.js";
 import { type RecordRow, type Records, uniqueTarget } from "./records.js";
 import type { Polish } from "./schema.js";
 
@@ -181,8 +181,8 @@ export function createPolishOperation(db: Database, records: Records) {
     row.materialId === request.materialId &&
     row.materialCount === request.count;
 
-  // 1つの物の倍率を、磨き石とルーンで上げる（doc/features/enhancement.md の品質強化）。上限を超える分は上限で止め、
-  // 最後の1つが何も上げない数は受け付けない。要求IDで再送を見分け、二重に使わない。
+  // 1つの物の倍率を、磨き石とルーンで上げる（doc/features/enhancement.md の品質強化）。色の上限を超える分は上限で止め、
+  // 色の上限に届いた物と、最後の1つが何も上げない数は受け付けない。要求IDで再送を見分け、二重に使わない。
   async function polish(userId: string, request: Polish, now: string) {
     const [found, held, ...rows] = await db.batch([
       records.findRecord(userId, request.requestId),
@@ -201,6 +201,8 @@ export function createPolishOperation(db: Database, records: Records) {
     if (target.error !== undefined) return { error: target.error };
     const { percent, maxPercent } = target;
     if (percent >= maxPercent) return { error: "already_max" as const };
+    const ceiling = polishCeilingPercent(request.materialId, maxPercent);
+    if (percent >= ceiling) return { error: "polish_ceiling" as const };
     if (
       request.count > 1 &&
       polishedPercent(
@@ -208,7 +210,7 @@ export function createPolishOperation(db: Database, records: Records) {
         request.materialId,
         request.count - 1,
         maxPercent,
-      ) >= maxPercent
+      ) >= ceiling
     ) {
       return { error: "too_many_materials" as const };
     }

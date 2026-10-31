@@ -15,7 +15,9 @@ import {
 } from "../party/catalog.js";
 import {
   AWAKENING_RUNES,
+  COMBINES,
   POLISHES,
+  polishCeilingPercent,
   polishStep,
   SKILL_AWAKENING_RUNES,
 } from "./catalog.js";
@@ -49,6 +51,17 @@ type Polished = {
     before: { multiplier: number; quality: string };
     multiplier: number;
     quality: string;
+    runes: number;
+    balanceAfter: number;
+  };
+  materials?: Materials;
+  error?: string;
+};
+type Combined = {
+  combine?: {
+    materialId: string;
+    from: string;
+    count: number;
     runes: number;
     balanceAfter: number;
   };
@@ -107,6 +120,8 @@ describe("強化API", () => {
     post<Polished>("/enhancement/polish", token, body, expected);
   const awaken = (token: string, body: unknown, expected = 200) =>
     post<Awakened>("/enhancement/awaken", token, body, expected);
+  const combine = (token: string, body: unknown, expected = 200) =>
+    post<Combined>("/enhancement/combine", token, body, expected);
 
   const materialsOf = async (token: string) =>
     (await scenario.read<{ materials: Materials }>("/enhancement", token))
@@ -346,6 +361,141 @@ describe("強化API", () => {
       ).error,
     ).toBe("target_not_found");
     expect(await countOf(user.token, "polish-gold")).toBe(2);
+  });
+
+  it("色ごとの上限で止め、上限に届いた色と、上限を超えて何も上げない数は受け付けない", async () => {
+    const user = await scenario.login("enhancement-ceiling");
+    const card = (await scenario.read<Party>("/party", user.token))
+      .skillCards[0];
+    const maxPercent = skillMaxPercent(card.skillId as CardSkillId);
+    const ceiling = polishCeilingPercent("polish-white", maxPercent);
+    const need = Math.ceil(
+      (ceiling - 100) / polishStep("polish-white", maxPercent),
+    );
+    await give(user.userId, { "polish-white": need + 1, "polish-blue": 1 });
+    await scenario.setRunes(user.userId, 100_000);
+
+    const body = { category: "skill", itemId: card.id };
+    // 白はBの入口で止まるため、入口に届く数より1つ多いと、最後の1つが何も上げない。
+    expect(
+      (
+        await polish(
+          user.token,
+          {
+            ...body,
+            requestId: requestId(1),
+            materialId: "polish-white",
+            count: need + 1,
+          },
+          409,
+        )
+      ).error,
+    ).toBe("too_many_materials");
+    const raised = await polish(user.token, {
+      ...body,
+      requestId: requestId(2),
+      materialId: "polish-white",
+      count: need,
+    });
+    expect(raised.enhancement).toMatchObject({
+      multiplier: ceiling / 100,
+      quality: "B",
+    });
+    // Bの入口に届いたら、白はもう使えない。
+    expect(
+      (
+        await polish(
+          user.token,
+          {
+            ...body,
+            requestId: requestId(3),
+            materialId: "polish-white",
+            count: 1,
+          },
+          409,
+        )
+      ).error,
+    ).toBe("polish_ceiling");
+    expect(await countOf(user.token, "polish-white")).toBe(1);
+    // 青はAの入口まで上げられる。
+    const blue = await polish(user.token, {
+      ...body,
+      requestId: requestId(4),
+      materialId: "polish-blue",
+      count: 1,
+    });
+    expect(blue.enhancement).toMatchObject({
+      multiplier:
+        Math.min(
+          polishCeilingPercent("polish-blue", maxPercent),
+          ceiling + polishStep("polish-blue", maxPercent),
+        ) / 100,
+      quality: "B",
+    });
+  });
+
+  it("下の色3個とルーンで上の色を作り、再送では二重に作らず、足りない・白を作る要求を拒む", async () => {
+    const user = await scenario.login("enhancement-combine");
+    await give(user.userId, { "polish-white": 7, "polish-purple": 3 });
+    await scenario.setRunes(user.userId, 1000);
+
+    const body = {
+      requestId: requestId(1),
+      materialId: "polish-blue",
+      count: 2,
+    };
+    const first = await combine(user.token, body);
+    expect(first.combine).toEqual({
+      materialId: "polish-blue",
+      from: "polish-white",
+      count: 2,
+      runes: COMBINES["polish-blue"].runes * 2,
+      balanceAfter: 1000 - COMBINES["polish-blue"].runes * 2,
+    });
+    expect(first.materials).toEqual([
+      { id: "polish-white", count: 1 },
+      { id: "polish-blue", count: 2 },
+      { id: "polish-purple", count: 3 },
+      { id: "polish-gold", count: 0 },
+      { id: "awakening-shard", count: 0 },
+    ]);
+
+    // 同じ要求の再送は、記録した結果を返し、もう一度は作らない。
+    const replay = await combine(user.token, body);
+    expect(replay.combine).toEqual(first.combine);
+    expect(await countOf(user.token, "polish-blue")).toBe(2);
+    expect(await countOf(user.token, "polish-white")).toBe(1);
+    expect((await combine(user.token, { ...body, count: 1 }, 409)).error).toBe(
+      "request_conflict",
+    );
+
+    // 白が1個では、青は作れない。
+    expect(
+      (
+        await combine(
+          user.token,
+          { ...body, requestId: requestId(2), count: 1 },
+          409,
+        )
+      ).error,
+    ).toBe("insufficient_materials");
+    // 紫3個はあっても、金に払うルーンが足りない。
+    expect(
+      (
+        await combine(
+          user.token,
+          { requestId: requestId(3), materialId: "polish-gold", count: 1 },
+          409,
+        )
+      ).error,
+    ).toBe("insufficient_runes");
+    expect(await countOf(user.token, "polish-purple")).toBe(3);
+    // 白は作れない。
+    await combine(
+      user.token,
+      { requestId: requestId(4), materialId: "polish-white", count: 1 },
+      400,
+    );
   });
 
   it("固有スキルの倍率を上げ、編成の応答に倍率と品質を出す。解放前の固有スキルは扱わない", async () => {

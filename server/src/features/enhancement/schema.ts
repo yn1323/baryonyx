@@ -4,7 +4,7 @@ import {
   skillAwakeningBranchSchema,
   skillCardIdSchema,
 } from "../party/schema.js";
-import { POLISH_IDS } from "./catalog.js";
+import { COMBINE_IDS, POLISH_IDS } from "./catalog.js";
 
 const requestId = z.string().regex(/^[a-f0-9-]{36}$/);
 const characterId = z.enum(CHARACTER_IDS);
@@ -35,6 +35,15 @@ export const polishSchema = z.discriminatedUnion("category", [
 ]);
 
 export type Polish = z.infer<typeof polishSchema>;
+
+// 磨き石の合成。作る色（青・紫・金）と、作る数。
+export const combineSchema = z.object({
+  requestId,
+  materialId: z.enum(COMBINE_IDS),
+  count: z.number().int().min(1).max(99),
+});
+
+export type Combine = z.infer<typeof combineSchema>;
 
 // 覚醒。固有スキルを、まだ取得していない段階（1〜6）へ1段進める。
 export const awakenUniqueSchema = z.object({

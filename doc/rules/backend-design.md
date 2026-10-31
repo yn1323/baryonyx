@@ -267,6 +267,7 @@ SQLiteは列の制約を変更できないため表を作り直す。D1はトラ
 [0025_world_map.sql](../../server/migrations/0025_world_map.sql) は、[街道の世界地図](../features/stage-progression.md#世界地図の形と試作2026-10-24)のクリアしたマス（`world_map_squares`）と今いるマス（`world_map_positions`）の2テーブルを作る。
 [0026_skill_awakening.sql](../../server/migrations/0026_skill_awakening.sql) は、持っているスキルの1枚が覚醒した枝（`skill_cards.awakened_branch`、NULLか1・2）を足す（[カスタムスキルの覚醒](../features/skill-awakening.md)）。制約を足すため表を作り直すSQLになり、0022と同じく `PRAGMA` を `defer_foreign_keys` に書き換え、元の表にない列を読む部分を `NULL` に直した。
 [0030_world_atlas.sql](../../server/migrations/0030_world_atlas.sql) は、[入れ子の地図](../features/world-atlas.md#マスを開くルーン)でルーンを払って開けたマス（`world_atlas_squares`）を作る。行は払ったルーンの記録を兼ね、要求IDとマスのそれぞれに一意インデックスを持つ。
+[0031_enhancement_combine.sql](../../server/migrations/0031_enhancement_combine.sql) は、強化の記録（`enhancement_records`）の種類に[磨き石の合成](../features/enhancement.md#磨き石の合成)（`combine`）を、分類に `material` を足す。制約を変えるため表を作り直すSQLになり、0026と同じく `PRAGMA` を `defer_foreign_keys` に書き換えた。
 
 ```sh
 pnpm db:generate --name add_example

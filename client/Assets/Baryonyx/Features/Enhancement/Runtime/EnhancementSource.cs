@@ -46,6 +46,13 @@ namespace Baryonyx.Enhancement
         );
 
         Task<EnhancementOutcome> AwakenAsync(AwakeningOption option, CancellationToken token);
+
+        /// <summary>Makes <paramref name="count"/> of <paramref name="made"/> from three each of the colour below.</summary>
+        Task<EnhancementOutcome> CombineAsync(
+            EnhancementMaterial made,
+            int count,
+            CancellationToken token
+        );
     }
 
     /// <summary>Enhances on the game server with the shared session. The server decides the result and the cost.</summary>
@@ -153,6 +160,35 @@ namespace Baryonyx.Enhancement
             );
         }
 
+        public async Task<EnhancementOutcome> CombineAsync(
+            EnhancementMaterial made,
+            int count,
+            CancellationToken token
+        )
+        {
+            if (made == null)
+                throw new ArgumentNullException(nameof(made));
+            // 応答が届かずに送り直しても、同じ要求IDで二重に作らない。
+            var request = new EnhancementApiClient.CombineRequest
+            {
+                requestId = Guid.NewGuid().ToString("D"),
+                materialId = made.Id,
+                count = count,
+            };
+            var result = await sessions.WithSessionAsync(
+                session => api.CombineAsync(session, request, token),
+                token
+            );
+            var combined =
+                result?.combine ?? throw new InvalidOperationException("合成の結果がありません。");
+            return new EnhancementOutcome(
+                0f,
+                -1,
+                combined.balanceAfter,
+                CountsOf(result.materials)
+            );
+        }
+
         private static IReadOnlyDictionary<string, int> CountsOf(
             IEnumerable<EnhancementApiClient.Material> materials
         ) =>
@@ -216,6 +252,8 @@ namespace Baryonyx.Enhancement
                 return Fail("強化できない組み合わせです。");
             if (target.AtMax)
                 return Fail("上限に届いています。");
+            if (!EnhancementMaterials.CanRaise(target.Multiplier, stone, target.MaxMultiplier))
+                return Fail("この色の上限に届いています。");
             if (
                 count
                 > EnhancementMaterials.UsefulCount(target.Multiplier, stone, target.MaxMultiplier)
@@ -248,6 +286,30 @@ namespace Baryonyx.Enhancement
             )
                 return Fail(reason);
             return Task.FromResult(new EnhancementOutcome(0f, option.Stage, runes, Snapshot()));
+        }
+
+        public Task<EnhancementOutcome> CombineAsync(
+            EnhancementMaterial made,
+            int count,
+            CancellationToken token
+        )
+        {
+            token.ThrowIfCancellationRequested();
+            var from = EnhancementMaterials.CombineFrom(made);
+            if (from == null || count < 1)
+                return Fail("合成できない色です。");
+            if (
+                !Spend(
+                    from.Id,
+                    EnhancementMaterials.CombineInputs * count,
+                    made.CombineRunes * count,
+                    out string reason
+                )
+            )
+                return Fail(reason);
+            materials.TryGetValue(made.Id, out int held);
+            materials[made.Id] = held + count;
+            return Task.FromResult(new EnhancementOutcome(0f, -1, runes, Snapshot()));
         }
 
         private bool Spend(string materialId, int count, int cost, out string reason)

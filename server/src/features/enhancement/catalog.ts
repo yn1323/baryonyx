@@ -1,4 +1,8 @@
-import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
+import {
+  MIN_MULTIPLIER_PERCENT,
+  percentRange,
+  type Quality,
+} from "../../shared/quality.js";
 import type { RewardRow } from "../adventure/drops.js";
 import type { Stars } from "../inventory/catalog.js";
 import { uniqueParent } from "../party/catalog.js";
@@ -22,15 +26,40 @@ export const MATERIAL_IDS = [...POLISH_IDS, AWAKENING_SHARD_ID] as const;
 
 export type MaterialId = (typeof MATERIAL_IDS)[number];
 
-// 磨き石の色ごとの☆・上げ幅（倍率の幅に対する百分率）・1つあたりのルーン。
+// 磨き石の色ごとの☆・上げ幅（倍率の幅に対する百分率）・1つあたりのルーン・上げられる上限。
+// 上限は、その品質の入口の倍率で止める。白はBの入口、青はAの入口、紫はSの入口までで、金は種類の上限まで上げる。
+// 低い色をいくつ使っても、上の品質へは突破できない（2026-10-31、ユーザーの指示）。
 export const POLISHES: Record<
   PolishId,
-  { stars: Stars; ratePercent: number; runes: number }
+  {
+    stars: Stars;
+    ratePercent: number;
+    runes: number;
+    ceiling: Exclude<Quality, "C"> | null;
+  }
 > = {
-  "polish-white": { stars: 1, ratePercent: 5, runes: 100 },
-  "polish-blue": { stars: 2, ratePercent: 10, runes: 200 },
-  "polish-purple": { stars: 3, ratePercent: 25, runes: 500 },
-  "polish-gold": { stars: 4, ratePercent: 50, runes: 1000 },
+  "polish-white": { stars: 1, ratePercent: 5, runes: 100, ceiling: "B" },
+  "polish-blue": { stars: 2, ratePercent: 10, runes: 200, ceiling: "A" },
+  "polish-purple": { stars: 3, ratePercent: 25, runes: 500, ceiling: "S" },
+  "polish-gold": { stars: 4, ratePercent: 50, runes: 1000, ceiling: null },
+};
+
+// 磨き石の合成：1つ下の色を COMBINE_INPUTS 個とルーンで、上の色を1個作る（2026-10-31、ユーザーの指示）。
+// 白は作れない。ルーンは仮の値で、上の色ほど3倍にする。
+export const COMBINE_INPUTS = 3;
+
+export const COMBINE_IDS = [
+  "polish-blue",
+  "polish-purple",
+  "polish-gold",
+] as const satisfies readonly PolishId[];
+
+export type CombineId = (typeof COMBINE_IDS)[number];
+
+export const COMBINES: Record<CombineId, { from: PolishId; runes: number }> = {
+  "polish-blue": { from: "polish-white", runes: 100 },
+  "polish-purple": { from: "polish-blue", runes: 300 },
+  "polish-gold": { from: "polish-purple", runes: 900 },
 };
 
 export const AWAKENING_SHARD_STARS: Stars = 4;
@@ -46,14 +75,25 @@ export function polishStep(id: PolishId, maxPercent: number): number {
   );
 }
 
-// 磨き石を count 個使ったあとの倍率。上限を超える分は上限で止める。
+// 磨き石の色で上げられる倍率の上限。上限の品質の入口（境目ちょうどは上の品質に入る）で、種類の上限は超えない。
+export function polishCeilingPercent(id: PolishId, maxPercent: number): number {
+  const ceiling = POLISHES[id].ceiling;
+  return ceiling === null
+    ? maxPercent
+    : Math.min(maxPercent, percentRange(ceiling, maxPercent).min);
+}
+
+// 磨き石を count 個使ったあとの倍率。色の上限を超える分は上限で止める。
 export function polishedPercent(
   percent: number,
   id: PolishId,
   count: number,
   maxPercent: number,
 ): number {
-  return Math.min(maxPercent, percent + polishStep(id, maxPercent) * count);
+  return Math.min(
+    polishCeilingPercent(id, maxPercent),
+    percent + polishStep(id, maxPercent) * count,
+  );
 }
 
 // 覚醒で1段進めるのに払う欠片の数とルーン。1段目へ進めるときと2段目へ進めるときで、ルーンだけが違う。
@@ -70,11 +110,12 @@ export function awakeningRunes(stage: number): number {
 export const SKILL_AWAKENING_RUNES = AWAKENING_RUNES.first;
 
 // 出来事を終えたマスごとの、磨き石が落ちる確率（千分率）。ふつうのドロップとは別に1回だけ抽選する。
+// 1周で約4.6個は出過ぎのため、約1.8個に下げた（2026-10-31、ユーザーの指示）。
 export const POLISH_DROP_CHANCE: Record<RewardRow, number> = {
-  battle: 300,
-  elite: 600,
-  treasure: 600,
-  boss: 1000,
+  battle: 100,
+  elite: 200,
+  treasure: 200,
+  boss: 600,
 };
 
 // 磨き石の色の重みを分ける、行き先の深さ。浅い（敵のLv10〜14）は白がほとんどで金はまれ、奥（Lv30〜40）でも
