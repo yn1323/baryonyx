@@ -21,7 +21,8 @@ namespace Baryonyx.Party.Editor
     public static class PartyChangeScreenAssets
     {
         private const float Top = Frame.HeaderHeight + 6;
-        private const float Height = 956f;
+        // 左右の面の中身の高さ。
+        public const float Height = 956f;
 
         /// <summary>The left pane's contents when the panes split at <paramref name="split"/>.</summary>
         public static Rect LeftOf(float split) =>
@@ -36,9 +37,10 @@ namespace Baryonyx.Party.Editor
         public static Rect RightOf(float split) =>
             new(split, Top, PartySheetAssets.ContentRight - split - 16, Height);
 
-        // 左の上のステータスと、その下に引いて枠と分ける線。
-        public const float StatsTop = 20f;
-        public const float StatsLineTop = 126f;
+        // 左の上のステータス（4列2行で、項目名の下に数字を中央に積む）と、その下に引いて枠と分ける線。
+        public const float StatsTop = 12f;
+        private const float StatsRow = 88f;
+        public const float StatsLineTop = StatsTop + StatsRow * 2 + 14f;
 
         // 右の上の、面の幅いっぱいのタブ。
         public const float TabHeight = 76f;
@@ -86,11 +88,25 @@ namespace Baryonyx.Party.Editor
             return (left, right, swipe);
         }
 
-        /// <summary>The person's stats at the top of the left frame, with a line below.</summary>
+        /// <summary>
+        /// The person's stats at the top of the left frame, each label over its value, both
+        /// centred, with a line below.
+        /// </summary>
         public static TMP_Text[] Stats(RectTransform left)
         {
             float width = left.rect.width;
-            var stats = StatGridAssets.Build(left, 6, StatsTop, width - 12, 4);
+            var stats = StatGridAssets.Build(
+                left,
+                6,
+                StatsTop,
+                width - 12,
+                4,
+                StatsRow,
+                labelSize: 26,
+                valueSize: 40,
+                stacked: true,
+                gap: 12
+            );
             Layout.Line(left, "StatsLine", 0, StatsLineTop, width, 2);
             return stats;
         }

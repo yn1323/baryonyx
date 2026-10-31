@@ -44,8 +44,16 @@ namespace Baryonyx.Equipment
         // まだ開いていない枠の錠前。開いた枠では隠す。
         public GameObject Lock;
 
-        // 「Lv 20で解放」、開いた枠では「なし」。
+        // 付けているアクセサリーの絵と、品質のキラキラ。付けていなければ隠す。
+        public Image Icon;
+        public CardFoil Foil;
+
+        // 「Lv 20で解放」、開いた枠では付けている物の名前か「なし」。
         public TMP_Text Name;
+        public TMP_Text Stars;
+
+        // 付けているアクセサリーの効果。
+        public TMP_Text Detail;
     }
 
     /// <summary>
@@ -81,14 +89,11 @@ namespace Baryonyx.Equipment
         // 武器・防具の順の2つの枠。
         public EquipmentSlotWidget[] Slots = Array.Empty<EquipmentSlotWidget>();
 
-        // アクセサリーの3つの枠。押すとアクセサリーのタブに移る（アクセサリーはまだ持てない）。
+        // アクセサリーの3つの枠。押すと右の一覧がアクセサリーに替わる。
         public EquipmentAccessoryWidget[] Accessories = Array.Empty<EquipmentAccessoryWidget>();
 
         // 選んでいる人のステータス（CharacterStats の順）。
         public TMP_Text[] Stats = Array.Empty<TMP_Text>();
-
-        // 右の上の武器・防具・アクセサリーのタブ（枠と同じ順）。左の枠と連動し、アクセサリーは準備中で押せない。
-        public GuideTab[] Tabs = Array.Empty<GuideTab>();
 
         // 読み込み中と、読めなかったときだけ一覧の面に出す文字。
         public TMP_Text Status;
@@ -132,13 +137,6 @@ namespace Baryonyx.Equipment
             {
                 int index = Slots.Length + i;
                 bindings.Bind(Accessories[i].Button, () => SlotPressed?.Invoke(index));
-            }
-            // タブは左の枠と連動する。アクセサリーのタブは、選んでいたアクセサリーの枠（なければ1つ目）を選ぶ。
-            for (int i = 0; i < Tabs.Length; i++)
-            {
-                int index = i;
-                if (Tabs[i] != null)
-                    bindings.Bind(Tabs[i].Button, () => SlotPressed?.Invoke(TabTarget(index)));
             }
             foreach (var row in Rows)
                 BindRow(row);
@@ -353,9 +351,11 @@ namespace Baryonyx.Equipment
                     i,
                     member != null ? level : 0,
                     i == state.Accessory,
-                    i < state.Accessories.Count ? state.Accessories[i] : null
+                    i < state.Accessories.Count ? state.Accessories[i] : null,
+                    i < state.Accessories.Count ? ArtOf(state.Accessories[i]) : null
                 );
-            StatGrid.Show(Stats, state.Stats, state.Raise);
+            // ステータスは装備を入れた値だけを出す。上昇分は添えない。
+            StatGrid.Show(Stats, state.Stats);
             // 一覧の面の文字は、アクセサリーの枠を選んでいて、付けられる物がないときだけ出す
             // （開いていなければ解放するLv）。
             Set(
@@ -364,49 +364,51 @@ namespace Baryonyx.Equipment
                     : AccessorySlots.IsOpen(state.Accessory, level) ? NoAccessoryText
                     : AccessorySlots.UnlockText(state.Accessory)
             );
-            for (int i = 0; i < Tabs.Length; i++)
-                if (Tabs[i] != null)
-                    Tabs[i].Chosen = i == (accessory ? AccessoryTab : (int)state.Slot);
             ShowRows(state);
         }
 
         // アクセサリーの枠を選んでいて、開いているが持っていないときの一覧の面の文字。
         public const string NoAccessoryText = "持っているアクセサリーはありません";
-        private const int AccessoryTab = 2;
-
-        // タブを押したときに選ぶ左の枠（0 武器、1 防具、2〜4 アクセサリー）。
-        private int TabTarget(int tab)
-        {
-            if (tab < AccessoryTab)
-                return tab;
-            int current = presenter?.State?.Accessory ?? -1;
-            return Slots.Length + Math.Max(0, current);
-        }
 
         /// <summary>
-        /// One accessory slot: locked with the level it opens at, or once open, the name of the
-        /// accessory worn there ("なし" when empty).
+        /// One accessory slot: locked with the level it opens at, or once open, the accessory
+        /// worn there with its picture, rarity and effect ("なし" when empty).
         /// </summary>
         public static void ShowAccessory(
             EquipmentAccessoryWidget widget,
             int index,
             int level,
             bool selected,
-            EquipmentItemState worn = null
+            EquipmentItemState worn = null,
+            Sprite art = null
         )
         {
             bool open = AccessorySlots.IsOpen(index, level);
+            bool filled = open && worn?.ItemId != null;
             if (widget.Selected != null)
                 widget.Selected.SetActive(selected);
             if (widget.Lock != null)
                 widget.Lock.SetActive(!open);
+            if (widget.Icon != null)
+            {
+                widget.Icon.gameObject.SetActive(filled && art != null);
+                if (filled && art != null)
+                    PixelIcon.Show(widget.Icon, art);
+            }
+            ShowFoil(widget.Foil, filled && art != null ? worn : null, art);
             Set(
                 widget.Name,
                 !open ? AccessorySlots.UnlockText(index)
-                    : worn?.ItemId != null ? worn.Name
+                    : filled ? worn.Name
                     : "なし"
             );
+            SetRich(widget.Stars, filled ? Grade(worn) : "");
+            Set(widget.Detail, filled ? worn.Detail : "");
         }
+
+        // 装備の種類ごとの絵。絵がなければ null。
+        private Sprite ArtOf(EquipmentItemState item) =>
+            ItemArt != null && item?.ItemId != null ? ItemArt.Find(item.EquipmentId) : null;
 
         public Sprite IconOf(EquipmentSlot slot) =>
             slot == EquipmentSlot.Weapon ? WeaponIcon : ArmorIcon;
@@ -414,8 +416,7 @@ namespace Baryonyx.Equipment
         /// <summary>The item's own picture, or the slot's icon for an empty slot or a kind without art.</summary>
         public Sprite IconOf(EquipmentItemState item, EquipmentSlot slot)
         {
-            var art =
-                ItemArt != null && item?.ItemId != null ? ItemArt.Find(item.EquipmentId) : null;
+            var art = ArtOf(item);
             return art != null ? art : IconOf(slot);
         }
 

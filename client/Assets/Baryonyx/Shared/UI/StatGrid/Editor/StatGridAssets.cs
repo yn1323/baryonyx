@@ -41,11 +41,16 @@ namespace Baryonyx.UI.Editor
 
         private const float Gap = 24f;
 
+        // 縦に積むとき（stacked）の、項目名の行の高さ。数字はその下の残りに置く。
+        private const float StackedLabelHeight = 32f;
+
         /// <summary>
         /// The eight stats in <see cref="CharacterStats"/> order: four columns (HP・物攻・属攻・会心
         /// over 速度・物防・属防・幸運) or two (HP・物攻, 属攻・速度, 会心・物防, 属防・幸運).
         /// Returns the value labels for <see cref="StatGrid.Show"/>. With <paramref name="centerValue"/>
-        /// each value sits in the middle of its cell instead of at its right end.
+        /// each value sits in the middle of its cell instead of at its right end. With
+        /// <paramref name="stacked"/> the label sits on top and the value under it, both centred
+        /// in the cell, so the label and the value never pull to opposite sides.
         /// </summary>
         public static TMP_Text[] Build(
             RectTransform parent,
@@ -56,12 +61,14 @@ namespace Baryonyx.UI.Editor
             float rowHeight = 46f,
             float labelSize = 24f,
             float valueSize = 32f,
-            bool centerValue = false
+            bool centerValue = false,
+            bool stacked = false,
+            float gap = Gap
         )
         {
             var cells = columns >= 4 ? Cells : CellsNarrow;
             int count = columns >= 4 ? 4 : 2;
-            float cell = (width - Gap * (count - 1)) / count;
+            float cell = (width - gap * (count - 1)) / count;
             var stats = Layout.Box(parent, "Stats", x, y, width, rowHeight * (8 / count));
             return Enumerable
                 .Range(0, CharacterStats.Count)
@@ -70,12 +77,14 @@ namespace Baryonyx.UI.Editor
                     var row = Layout.Box(
                         stats,
                         "Stat" + i,
-                        cells[i].x * (cell + Gap),
+                        cells[i].x * (cell + gap),
                         cells[i].y * rowHeight,
                         cell,
                         rowHeight
                     );
                     Layout.Line(row, "Line", 0, rowHeight - 2, cell, 2);
+                    if (stacked)
+                        return StackedCell(row, i, cell, rowHeight, labelSize, valueSize);
                     var label = Label(
                         row,
                         "Label",
@@ -103,6 +112,40 @@ namespace Baryonyx.UI.Editor
                     return value;
                 })
                 .ToArray();
+        }
+
+        // 項目名を上、数字をその下に、どちらも枠の中央に置く。上昇分を添えても収まるよう、数字は縮めて入れる。
+        private static TMP_Text StackedCell(
+            RectTransform row,
+            int index,
+            float cell,
+            float rowHeight,
+            float labelSize,
+            float valueSize
+        )
+        {
+            var label = Label(
+                row,
+                "Label",
+                CharacterStats.Labels[index],
+                labelSize,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Bottom
+            );
+            Layout.At(label, 0, 0, cell, StackedLabelHeight);
+            var value = Label(
+                row,
+                "Value",
+                "",
+                valueSize,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Bottom
+            );
+            Layout.At(value, 0, StackedLabelHeight, cell, rowHeight - StackedLabelHeight - 6);
+            value.enableAutoSizing = true;
+            value.fontSizeMin = valueSize * 0.75f;
+            value.fontSizeMax = valueSize;
+            return value;
         }
     }
 }

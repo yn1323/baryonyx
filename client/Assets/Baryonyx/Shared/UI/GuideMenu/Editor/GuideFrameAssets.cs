@@ -421,6 +421,48 @@ namespace Baryonyx.UI.GuideMenu.Editor
         }
 
         /// <summary>
+        /// One tab of a column of tabs at (x, y) from the top left of <paramref name="parent"/>:
+        /// the label in the middle, a thin line under it, and while chosen the gold bar on its
+        /// left (as gold as the row's underline).
+        /// </summary>
+        public static GuideTab SideTab(
+            RectTransform parent,
+            string name,
+            string label,
+            float x,
+            float y,
+            float width,
+            float height
+        )
+        {
+            var rect = Layout.Box(parent, name, x, y, width, height);
+            var tab = rect.gameObject.AddComponent<GuideTab>();
+            tab.Button = GuideMenuAssets.AddButton(rect, AddImage(rect, Color.clear, true));
+            var bar = Layout.Box(rect, "Selected", 6f, 20f, SideTabBar, height - 40f);
+            AddImage(bar, UiPalette.Gold, false);
+            bar.gameObject.SetActive(false);
+            tab.Selected = bar.gameObject;
+            tab.Label = Layout.Text(
+                rect,
+                "Label",
+                label,
+                34,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                SideTabBar + 12f,
+                0f,
+                width - SideTabBar - 24f,
+                height
+            );
+            GuideMenuAssets.Shrink(tab.Label, 24);
+            Layout.Line(rect, "Line", 20f, height - 2f, width - 40f, 2f);
+            return tab;
+        }
+
+        // 縦のタブで、選んだときに左に引く金の縦線の太さ。
+        private const float SideTabBar = 8f;
+
+        /// <summary>
         /// A row of tabs at (x, y) from the top left of <paramref name="parent"/>, each
         /// <paramref name="width"/> wide, over a thin gold line across <paramref name="lineWidth"/>.
         /// The tabs whose index is in <paramref name="locked"/> show the lock and take no taps.

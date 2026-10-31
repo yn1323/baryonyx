@@ -3,12 +3,10 @@ using System.Linq;
 using Baryonyx.UI;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static Baryonyx.Editor.UI.UiBuild;
 using Frame = Baryonyx.UI.GuideMenu.Editor.GuideFrameAssets;
-using Guide = Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 
 namespace Baryonyx.Party.Editor
@@ -32,9 +30,8 @@ namespace Baryonyx.Party.Editor
         private const float TileGap = 12f;
         private const float TileInset = 16f;
 
-        // 縦のタブ1つの高さと、選んだときに左に引く金の縦線の太さ。
+        // 縦のタブ1つの高さ。
         private const float TabHeight = 128f;
-        private const float TabBar = 8f;
 
         /// <summary>
         /// Builds the frame over <paramref name="layer"/> for the tab <paramref name="current"/>
@@ -145,37 +142,15 @@ namespace Baryonyx.Party.Editor
             sheet.TabKeys = tabs.Select(tab => tab.Key).ToArray();
             sheet.Tabs = tabs.Select(
                     (tab, i) =>
-                    {
-                        var rect = Layout.Box(
+                        Frame.SideTab(
                             root,
                             "Tab_" + tab.Key,
+                            tab.Label,
                             ContentRight,
                             Frame.HeaderHeight + 24f + i * TabHeight,
                             width,
                             TabHeight
-                        );
-                        var guideTab = rect.gameObject.AddComponent<GuideTab>();
-                        guideTab.Button = Guide.AddButton(rect, AddImage(rect, Color.clear, true));
-                        var bar = Layout.Box(rect, "Selected", 6f, 20f, TabBar, TabHeight - 40f);
-                        AddImage(bar, UiPalette.Gold, false);
-                        bar.gameObject.SetActive(false);
-                        guideTab.Selected = bar.gameObject;
-                        guideTab.Label = Layout.Text(
-                            rect,
-                            "Label",
-                            tab.Label,
-                            34,
-                            UiPalette.TextSub,
-                            TextAlignmentOptions.Center,
-                            TabBar + 12f,
-                            0f,
-                            width - TabBar - 24f,
-                            TabHeight
-                        );
-                        Guide.Shrink(guideTab.Label, 24);
-                        Layout.Line(rect, "Line", 20f, TabHeight - 2f, width - 40f, 2f);
-                        return guideTab;
-                    }
+                        )
                 )
                 .ToArray();
         }
