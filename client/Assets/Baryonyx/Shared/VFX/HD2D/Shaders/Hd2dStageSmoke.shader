@@ -95,6 +95,13 @@ Shader "Baryonyx/HD2D/Stage Smoke"
                 float age = input.age;
                 float seed = (input.uv.z + input.uv.w) * 4.0;
 
+                // 板の縁の円の外、削れ切った所、まだ・もう見えない粒は何も描かない。
+                // 濃さは縁の円（outer）の1.3倍を超えないため、ノイズを読む前に0と分かる所を飛ばす（結果は同じ）。
+                float outer = 1.0 - smoothstep(0.75, 1.0, length(input.uv.xy * 2.0 - 1.0));
+                float threshold = lerp(-0.1, _Erode, age * age);
+                if (outer <= 0.0 || outer * 1.3 <= threshold || age <= 0.0 || input.color.a <= 0.0)
+                    return half4(0.0, 0.0, 0.0, 0.0);
+
                 // 昇る流れに沿って模様もゆっくり巻く。粒ごとに模様をずらす。
                 float3 p = float3(input.uv.xy * _Detail + seed, age * 1.4 + t * 0.12 + seed);
                 float3 swirl;
@@ -102,12 +109,10 @@ Shader "Baryonyx/HD2D/Stage Smoke"
                 // 塊の形：輪郭そのものを渦でゆがめ、丸い玉に見せない。中央ほど濃く、板の縁より内側で0にする。
                 float2 d = input.uv.xy * 2.0 - 1.0 + swirl.xy * 0.45;
                 float radius = length(d);
-                float shape = (1.0 - smoothstep(0.05, 0.9, radius))
-                    * (1.0 - smoothstep(0.75, 1.0, length(input.uv.xy * 2.0 - 1.0)));
+                float shape = (1.0 - smoothstep(0.05, 0.9, radius)) * outer;
                 float density = shape * (0.15 + 1.15 * n);
 
-                // 寿命が進むほど、薄い所から削れて切れ端になり、消える（F5）。
-                float threshold = lerp(-0.1, _Erode, age * age);
+                // 寿命が進むほど、薄い所から削れて切れ端になり、消える（F5）。threshold は上で求めた。
                 // 濃さは中ほどまでなだらかに残し、削れる縁だけを切る（平らな円盤に見せない）。
                 float body = saturate(density * 1.2) * smoothstep(threshold, threshold + 0.25, density);
                 // 生まれたてはぼんやり現れる。

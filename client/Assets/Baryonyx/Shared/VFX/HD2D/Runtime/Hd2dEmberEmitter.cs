@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Baryonyx.Vfx.Hd2d
 {
@@ -104,7 +105,7 @@ namespace Baryonyx.Vfx.Hd2d
     /// <summary>
     /// UI-based particles emitted from points, drawn above a painted background. Each particle is
     /// a plain board that the ambient shader (<c>Baryonyx/HD2D/UI Ambient</c>) fills without an
-    /// image: an ember is a round white-hot head with a thin tail that cools behind it, turned to
+    /// image, and the boards of one material are drawn together as one mesh (<see cref="Hd2dEmberBatch"/>): an ember is a round white-hot head with a thin tail that cools behind it, turned to
     /// its direction of travel and lengthened with its speed; a glint is a four-pointed twinkle.
     /// The launch, buoyancy and sway are evaluated from each particle's age; the curl-noise
     /// drift is integrated in fixed steps and replayed on rebuild, so an Editor preview
@@ -171,6 +172,13 @@ namespace Baryonyx.Vfx.Hd2d
         private const float HeadBoardRatio = 3f;
 
         private readonly List<SourceState> states = new List<SourceState>();
+
+        // 点と尾を引く粒、きらめく粒を、それぞれ1つのメッシュで描く部品。
+        private Hd2dEmberBatch emberBatch;
+        private Hd2dEmberBatch glintBatch;
+
+        // 前のフレームに出ていた粒があったか。粒が1つもないままのフレームは、メッシュを作り直さない。
+        private bool anyAlive;
         private System.Random random;
         private float fieldTime;
         private bool initialized;
@@ -205,7 +213,10 @@ namespace Baryonyx.Vfx.Hd2d
             Hd2dAmbientClock.Publish(UseUnscaledTime);
             var deltaTime = UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
             if (deltaTime > 0f)
+            {
                 Step(deltaTime);
+                Redraw();
+            }
         }
 
         private void OnValidate()
@@ -260,6 +271,8 @@ namespace Baryonyx.Vfx.Hd2d
 
             random = new System.Random(RandomSeed);
             fieldTime = 0f;
+            emberBatch = CreateBatch("Embers", EmberMaterial, false);
+            glintBatch = GlintMaterial != null ? CreateBatch("Glints", GlintMaterial, true) : null;
             for (var index = 0; index < Sources.Count; index++)
             {
                 var source = Sources[index];
@@ -273,6 +286,111 @@ namespace Baryonyx.Vfx.Hd2d
                 foreach (var particle in state.Particles)
                     ApplyParticle(state.Settings, particle);
             }
+            Redraw();
+        }
+
+        private Hd2dEmberBatch CreateBatch(string name, Material material, bool glints)
+        {
+            var batchObject = new GameObject(
+                "EmberBatch_" + name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Hd2dEmberBatch)
+            );
+            batchObject.hideFlags = HideFlags.DontSave;
+            batchObject.layer = ParticleLayer.gameObject.layer;
+            var rect = (RectTransform)batchObject.transform;
+            rect.SetParent(ParticleLayer, false);
+            // 粒の層いっぱいに広げ、軸をそろえて、層と同じ座標で頂点を置く。
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = ParticleLayer.pivot;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            var batch = batchObject.GetComponent<Hd2dEmberBatch>();
+            batch.Emitter = this;
+            batch.Glints = glints;
+            batch.material = material;
+            batch.raycastTarget = false;
+            return batch;
+        }
+
+        // 出ている粒が変わったときだけ、メッシュを作り直す。
+        private void Redraw()
+        {
+            var alive = false;
+            foreach (var state in states)
+            {
+                foreach (var particle in state.Particles)
+                {
+                    if (particle.Alive)
+                    {
+                        alive = true;
+                        break;
+                    }
+                }
+                if (alive)
+                    break;
+            }
+            if (!alive && !anyAlive)
+                return;
+            anyAlive = alive;
+            if (emberBatch != null)
+                emberBatch.SetVerticesDirty();
+            if (glintBatch != null)
+                glintBatch.SetVerticesDirty();
+        }
+
+        /// <summary>
+        /// Adds the boards of the live particles of one material, in the particle layer's
+        /// coordinates: the same quads, UVs and colours their own images used to draw.
+        /// </summary>
+        internal void FillBatch(VertexHelper vertices, bool glints)
+        {
+            if (ParticleLayer == null)
+                return;
+            var layer = ParticleLayer.rect;
+            var vertex = UIVertex.simpleVert;
+            foreach (var state in states)
+            {
+                foreach (var particle in state.Particles)
+                {
+                    if (!particle.Alive || particle.Glint != glints)
+                        continue;
+                    var anchor = layer.min + Vector2.Scale(layer.size, particle.Anchor);
+                    var center = anchor + particle.Position;
+                    var min = -Vector2.Scale(particle.Pivot, particle.Size);
+                    var max = min + particle.Size;
+                    var radians = particle.Angle * Mathf.Deg2Rad;
+                    var cos = Mathf.Cos(radians);
+                    var sin = Mathf.Sin(radians);
+                    var start = vertices.currentVertCount;
+                    vertex.color = particle.Color;
+                    AddCorner(vertices, ref vertex, center, min.x, min.y, cos, sin, 0f, 0f);
+                    AddCorner(vertices, ref vertex, center, min.x, max.y, cos, sin, 0f, 1f);
+                    AddCorner(vertices, ref vertex, center, max.x, max.y, cos, sin, 1f, 1f);
+                    AddCorner(vertices, ref vertex, center, max.x, min.y, cos, sin, 1f, 0f);
+                    vertices.AddTriangle(start, start + 1, start + 2);
+                    vertices.AddTriangle(start + 2, start + 3, start);
+                }
+            }
+        }
+
+        private static void AddCorner(
+            VertexHelper vertices,
+            ref UIVertex vertex,
+            Vector2 center,
+            float x,
+            float y,
+            float cos,
+            float sin,
+            float u,
+            float v
+        )
+        {
+            vertex.position = new Vector3(center.x + x * cos - y * sin, center.y + x * sin + y * cos);
+            vertex.uv0 = new Vector4(u, v, 0f, 0f);
+            vertices.AddVert(vertex);
         }
 
         /// <summary>
@@ -284,6 +402,7 @@ namespace Baryonyx.Vfx.Hd2d
             RebuildParticles();
             for (var elapsed = 0f; elapsed < time; elapsed += 1f / 30f)
                 Step(Mathf.Min(1f / 30f, time - elapsed));
+            Redraw();
             Hd2dAmbientClock.Set(time);
         }
 
@@ -341,6 +460,7 @@ namespace Baryonyx.Vfx.Hd2d
                 next.Origin += offset;
                 ApplyParticle(state.Settings, next);
             }
+            Redraw();
         }
 
         /// <summary>
@@ -437,6 +557,9 @@ namespace Baryonyx.Vfx.Hd2d
             {
                 foreach (var particle in state.Particles)
                 {
+                    // 消えた粒は、出直すか Burst で出るまで動かさない。
+                    if (!state.Settings.Loop && particle.Age >= particle.Lifetime)
+                        continue;
                     var previousAge = particle.Age;
                     particle.Age += deltaTime;
                     if (particle.Age >= particle.Lifetime && state.Settings.Loop)
@@ -527,36 +650,9 @@ namespace Baryonyx.Vfx.Hd2d
             var state = new SourceState { Settings = source };
             // Each source reads its own part of the field, so torches do not swirl in step.
             var fieldOffset = new Vector2(index * 997f, index * 613f);
-            var name = string.IsNullOrWhiteSpace(source.Name) ? "Embers" : source.Name;
             for (var particleIndex = 0; particleIndex < source.Count; particleIndex++)
             {
-                var imageObject = new GameObject(
-                    "Ember_"
-                        + index.ToString("00")
-                        + "_"
-                        + name
-                        + "_"
-                        + particleIndex.ToString("00"),
-                    typeof(RectTransform),
-                    typeof(UnityEngine.UI.Image)
-                );
-                imageObject.hideFlags = HideFlags.DontSave;
-                imageObject.layer = ParticleLayer.gameObject.layer;
-                imageObject.transform.SetParent(ParticleLayer, false);
-
-                var rect = (RectTransform)imageObject.transform;
-                rect.anchorMin = rect.anchorMax = source.Anchor;
-                rect.pivot = new Vector2(0.5f, 0.5f);
-
-                var image = imageObject.GetComponent<UnityEngine.UI.Image>();
-                image.raycastTarget = false;
-
-                var particle = new ParticleState
-                {
-                    Rect = rect,
-                    Image = image,
-                    FieldOffset = fieldOffset,
-                };
+                var particle = new ParticleState { Anchor = source.Anchor, FieldOffset = fieldOffset };
                 Respawn(source, particle, 0f);
                 // Looping streams start mid-flow; one-shot sources wait for a Burst.
                 if (source.Loop)
@@ -605,9 +701,9 @@ namespace Baryonyx.Vfx.Hd2d
                 : shape == Hd2dEmberShape.Cross ? unit * Mathf.Max(1, GlintDots)
                 : unit * pointHead;
             particle.GlintAngle = RandomRange(-GlintSpin, GlintSpin) * 0.5f;
-            particle.Image.material = shape == Hd2dEmberShape.Cross ? GlintMaterial : EmberMaterial;
-            particle.Rect.pivot = new Vector2(0.5f, 0.5f);
-            particle.Rect.localRotation = Quaternion.identity;
+            particle.Glint = shape == Hd2dEmberShape.Cross;
+            particle.Pivot = new Vector2(0.5f, 0.5f);
+            particle.Angle = 0f;
         }
 
         // Turns an ember's board to its direction of travel and stretches its tail with the
@@ -616,8 +712,8 @@ namespace Baryonyx.Vfx.Hd2d
         {
             if (particle.Shape == Hd2dEmberShape.Cross)
             {
-                particle.Rect.sizeDelta = Vector2.one * particle.Head;
-                particle.Rect.localRotation = Quaternion.Euler(0f, 0f, particle.GlintAngle);
+                particle.Size = Vector2.one * particle.Head;
+                particle.Angle = particle.GlintAngle;
                 return;
             }
 
@@ -628,14 +724,13 @@ namespace Baryonyx.Vfx.Hd2d
                 particle.Shape == Hd2dEmberShape.Streak ? StreakTailSeconds : PointTailSeconds;
             var tail = speed > 0.01f ? EvaluateTailLength(speed, seconds, particle.Head) : 0f;
             var width = height + tail;
-            particle.Rect.sizeDelta = new Vector2(width, height);
+            particle.Size = new Vector2(width, height);
             // The head's centre is the particle's position; the tail trails behind it.
-            particle.Rect.pivot = new Vector2(1f - height * 0.5f / width, 0.5f);
-            var angle =
+            particle.Pivot = new Vector2(1f - height * 0.5f / width, 0.5f);
+            particle.Angle =
                 speed > 0.01f
                     ? Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg
                     : source.Direction;
-            particle.Rect.localRotation = Quaternion.Euler(0f, 0f, angle);
         }
 
         // Velocity (px/s) of a particle now: the launch, the buoyancy, the sway and the eddies.
@@ -666,17 +761,12 @@ namespace Baryonyx.Vfx.Hd2d
 
         private void ApplyParticle(Hd2dEmberSource source, ParticleState particle)
         {
-            if (particle.Rect == null || particle.Image == null)
-                return;
-
-            var alive = particle.Age < particle.Lifetime;
-            if (particle.Image.enabled != alive)
-                particle.Image.enabled = alive;
-            if (!alive)
+            particle.Alive = particle.Age < particle.Lifetime;
+            if (!particle.Alive)
                 return;
 
             var life01 = particle.Lifetime > 0f ? particle.Age / particle.Lifetime : 1f;
-            particle.Rect.anchoredPosition =
+            particle.Position =
                 particle.Origin + BaseOffset(source, particle, particle.Age) + particle.CurlOffset;
             ApplyTrail(source, particle);
 
@@ -694,7 +784,7 @@ namespace Baryonyx.Vfx.Hd2d
                     * twinkle
                     * Intensity
             );
-            particle.Image.color = color;
+            particle.Color = color;
         }
 
         private static float Remaining(ParticleState particle)
@@ -705,20 +795,23 @@ namespace Baryonyx.Vfx.Hd2d
         private void ClearParticles()
         {
             initialized = false;
-            foreach (var state in states)
-            {
-                foreach (var particle in state.Particles)
-                {
-                    if (particle.Rect == null)
-                        continue;
-                    particle.Rect.gameObject.SetActive(false);
-                    if (Application.IsPlaying(gameObject))
-                        Destroy(particle.Rect.gameObject);
-                    else
-                        DestroyImmediate(particle.Rect.gameObject);
-                }
-            }
+            DestroyBatch(emberBatch);
+            DestroyBatch(glintBatch);
+            emberBatch = null;
+            glintBatch = null;
+            anyAlive = false;
             states.Clear();
+        }
+
+        private void DestroyBatch(Hd2dEmberBatch batch)
+        {
+            if (batch == null)
+                return;
+            batch.gameObject.SetActive(false);
+            if (Application.IsPlaying(gameObject))
+                Destroy(batch.gameObject);
+            else
+                DestroyImmediate(batch.gameObject);
         }
 
         private float RandomRange(float min, float max)
@@ -740,10 +833,29 @@ namespace Baryonyx.Vfx.Hd2d
             public readonly List<ParticleState> Particles = new List<ParticleState>();
         }
 
-        private sealed class ParticleState
+        // 今の粒。テストで、板の形と出ている粒を確かめる。
+        internal IEnumerable<ParticleState> Particles
         {
-            public RectTransform Rect;
-            public UnityEngine.UI.Image Image;
+            get
+            {
+                foreach (var state in states)
+                    foreach (var particle in state.Particles)
+                        yield return particle;
+            }
+        }
+
+        internal sealed class ParticleState
+        {
+            // 板の置き方（粒の層の中の基準点、そこからの位置、大きさ、軸、向き）と色。
+            // 1つのメッシュに描くとき（FillBatch）に、RectTransform と同じ形で頂点にする。
+            public Vector2 Anchor;
+            public Vector2 Position;
+            public Vector2 Size;
+            public Vector2 Pivot;
+            public float Angle;
+            public Color Color;
+            public bool Alive;
+            public bool Glint;
             public Vector2 Origin;
             public Vector2 Velocity;
             public Vector2 CurlOffset;

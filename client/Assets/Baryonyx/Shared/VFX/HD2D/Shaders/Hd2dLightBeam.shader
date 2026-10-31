@@ -154,21 +154,28 @@ Shader "Baryonyx/HD2D/Light Beam"
                                   m.y * _DensityScale * 0.45,
                                   t * 0.035) + input.seed;
                 float cloud = Hd2dSpread(Hd2dWarpedFbm(p, 1.6), 2.2);
-                float density = lerp(1.0, 0.25 + 1.5 * cloud, _Density);
-
-                // 筋：光の向きに沿って伸びた細い明暗。横は細かく、縦はほとんど変わらない。
-                float3 s = float3(m.x * _StripeScale, m.y * 0.05, t * 0.04 + input.seed);
-                float streak = Hd2dSpread(Hd2dFbm(s, 3), 2.0);
-                float streaks = lerp(1.0, 0.35 + 1.3 * streak, _StripeAmount);
 
                 // 前の版（縞で揺れる一様な帯）と、光の柱1本あたりの明るさの平均をそろえる係数。
                 const float level = 0.62;
-                float body = band * density * streaks;
-                float glow = (body + halo * _Halo * lerp(0.7, 1.3, cloud)) * ends * level;
-
-                // 塵の粒は帯の中でだけ光る（光の当たらない所の塵は見えない）。
+                // 画素の大きさは分岐の外で求める（隣の画素との差を使うため）。
                 float pixel = max(fwidth(m.y), fwidth(m.x));
-                float specks = DustSpecks(m, t, input.seed, pixel) * band * ends * _DustBrightness;
+                float body = 0.0;
+                float specks = 0.0;
+                // 帯の外（にじみだけの所）では、筋と塵は帯の値0を掛けて消えるため読まない（結果は同じ）。
+                if (band > 0.0)
+                {
+                    float density = lerp(1.0, 0.25 + 1.5 * cloud, _Density);
+
+                    // 筋：光の向きに沿って伸びた細い明暗。横は細かく、縦はほとんど変わらない。
+                    float3 s = float3(m.x * _StripeScale, m.y * 0.05, t * 0.04 + input.seed);
+                    float streak = Hd2dSpread(Hd2dFbm(s, 3), 2.0);
+                    float streaks = lerp(1.0, 0.35 + 1.3 * streak, _StripeAmount);
+                    body = band * density * streaks;
+
+                    // 塵の粒は帯の中でだけ光る（光の当たらない所の塵は見えない）。
+                    specks = DustSpecks(m, t, input.seed, pixel) * band * ends * _DustBrightness;
+                }
+                float glow = (body + halo * _Halo * lerp(0.7, 1.3, cloud)) * ends * level;
 
                 half3 color = _Color.rgb * _Intensity * (glow + specks) * input.facing;
                 // 薄い光の階調の段差を散らす。光のない所は暗くしない。

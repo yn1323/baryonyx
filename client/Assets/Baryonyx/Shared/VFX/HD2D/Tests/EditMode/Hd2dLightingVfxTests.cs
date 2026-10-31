@@ -407,35 +407,35 @@ namespace Baryonyx.Tests.EditMode
             {
                 var instanceEmitter = instance.GetComponent<Hd2dEmberEmitter>();
                 instanceEmitter.RebuildParticles();
-                var images =
+                // The particles of one material are drawn as one mesh, not one image each.
+                Assert.That(
                     instanceEmitter.ParticleLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
                         true
-                    );
-                Assert.That(
-                    images,
-                    Has.Length.EqualTo(emitter.Sources.Sum(source => source.Count))
-                );
-                Assert.That(images.All(image => !image.raycastTarget), Is.True);
-                Assert.That(
-                    images.All(image => image.gameObject.hideFlags == HideFlags.DontSave),
-                    Is.True
-                );
-                Assert.That(images.All(image => image.sprite == null), Is.True);
-                Assert.That(
-                    images.All(image =>
-                        image.material == emitter.EmberMaterial
-                        || image.material == emitter.GlintMaterial
                     ),
+                    Is.Empty
+                );
+                var batches = instanceEmitter.ParticleLayer.GetComponentsInChildren<Hd2dEmberBatch>(
+                    true
+                );
+                Assert.That(
+                    batches.Select(batch => batch.material),
+                    Is.EquivalentTo(new[] { emitter.EmberMaterial, emitter.GlintMaterial })
+                );
+                Assert.That(batches.All(batch => !batch.raycastTarget), Is.True);
+                Assert.That(
+                    batches.All(batch => batch.gameObject.hideFlags == HideFlags.DontSave),
                     Is.True
                 );
+                var particles = instanceEmitter.Particles.ToArray();
+                Assert.That(particles, Has.Length.EqualTo(emitter.Sources.Sum(source => source.Count)));
+                Assert.That(Quads(instanceEmitter), Is.EqualTo(particles.Count(particle => particle.Alive)));
                 // An ember's board is turned to its travel and is at least as long as it is high,
                 // with its tail behind the head.
-                var embers = images.Where(image => image.material == emitter.EmberMaterial).ToArray();
+                var embers = particles.Where(particle => particle.Alive && !particle.Glint).ToArray();
                 Assert.That(embers, Is.Not.Empty);
                 Assert.That(
-                    embers.All(image =>
-                        image.rectTransform.sizeDelta.x >= image.rectTransform.sizeDelta.y
-                        && image.rectTransform.pivot.x > 0.5f
+                    embers.All(particle =>
+                        particle.Size.x >= particle.Size.y && particle.Pivot.x > 0.5f
                     ),
                     Is.True
                 );
@@ -443,13 +443,11 @@ namespace Baryonyx.Tests.EditMode
                 // A one-shot source stays hidden until a burst emits it.
                 instanceEmitter.Sources[0].Loop = false;
                 instanceEmitter.RebuildParticles();
-                images =
-                    instanceEmitter.ParticleLayer.GetComponentsInChildren<UnityEngine.UI.Image>(
-                        true
-                    );
-                Assert.That(images.Count(image => image.enabled), Is.EqualTo(0));
+                Assert.That(instanceEmitter.Particles.Count(particle => particle.Alive), Is.EqualTo(0));
+                Assert.That(Quads(instanceEmitter), Is.EqualTo(0));
                 instanceEmitter.Burst(0, 3);
-                Assert.That(images.Count(image => image.enabled), Is.EqualTo(3));
+                Assert.That(instanceEmitter.Particles.Count(particle => particle.Alive), Is.EqualTo(3));
+                Assert.That(Quads(instanceEmitter), Is.EqualTo(3));
 
                 // BurstAt centres the burst on a world position instead of the anchor.
                 instanceEmitter.RebuildParticles();
@@ -458,10 +456,7 @@ namespace Baryonyx.Tests.EditMode
                 var offset = new Vector2(50f, 30f);
                 var anchorPoint = layer.rect.min + Vector2.Scale(layer.rect.size, source.Anchor);
                 instanceEmitter.BurstAt(0, 1, layer.TransformPoint(anchorPoint + offset));
-                var burst = layer
-                    .GetComponentsInChildren<UnityEngine.UI.Image>(true)
-                    .Single(image => image.enabled);
-                var position = burst.rectTransform.anchoredPosition;
+                var position = instanceEmitter.Particles.Single(particle => particle.Alive).Position;
                 Assert.That(
                     Mathf.Abs(position.x - offset.x),
                     Is.LessThanOrEqualTo(source.SpawnArea.x * 0.5f + 0.01f)
@@ -475,6 +470,19 @@ namespace Baryonyx.Tests.EditMode
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        // The boards both batches of an emitter draw: four corners each.
+        private static int Quads(Hd2dEmberEmitter emitter)
+        {
+            int count = 0;
+            foreach (var glints in new[] { false, true })
+            {
+                using var vertices = new UnityEngine.UI.VertexHelper();
+                emitter.FillBatch(vertices, glints);
+                count += vertices.currentVertCount / 4;
+            }
+            return count;
         }
 
         // A computed light: the ambient shader, built for this platform, with the given shape.
