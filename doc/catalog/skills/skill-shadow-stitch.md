@@ -2,7 +2,7 @@
 id: skill-shadow-stitch
 type: visual-entity
 status: 候補
-updated: 2026-10-25
+updated: 2026-10-31
 name: 影縫い
 category: skills
 silhouette: 影に突き立つ短剣と鎖
@@ -58,6 +58,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardShadowStitch.asepri
 | 属性 | 貫 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 1 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。カットインは大技の8枚だけ（[スキルの仮設定](../../features/combat.md#スキルの仮設定)） | 仮 |
 | 倍率の上限 | ×2.0 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
+| 合成の材料 | ツチボタルの灯×2・地底湖の清水×2 | ☆3。費用400ルーン。材料はすべて使う。（特別）は品質を持つ材料で、出来上がる品質はその品質の平均。ないときは品質C。[合成](../../features/synthesis.md#レシピ) | 仮 |
 | 威力・回復量 | 物攻の90% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | なし | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Combat;
 using Baryonyx.Economy;
+using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Party;
 using Baryonyx.Training;
@@ -31,7 +32,12 @@ namespace Baryonyx.Workshop
         public const string LoadFailedMessage = "品物を取得できませんでした";
         public const string BuyFailedMessage = "買えませんでした";
         public const string EmptyText = "まだ手に入れた物がありません";
-        public const string QualityText = "品質C（×1.00）";
+
+        // 買う物の品質。絵（スキルはカード）の真上の1行に、品質の文字を品質の色で大きく、横に倍率を書く。
+        // 「品質」とは書かない。装備もスキルも同じ位置・同じ形にする。
+        public const ItemQuality BoughtQuality = ItemQuality.C;
+        public static readonly string QualityText =
+            $"<size=300%>{QualityPalette.Painted(BoughtQuality)}</size><voffset=0.3em>　{Inventory.Quality.Times(Inventory.Quality.MinMultiplier)}</voffset>";
 
         // 読み込む間に伏せて並べるカードの数（4列×3段で一覧の見える所を埋める）。
         public const int CoverCards = 12;
@@ -57,7 +63,8 @@ namespace Baryonyx.Workshop
         // 読み込み中・読めなかったとき・品物がないときだけ一覧に出す文字。
         public TMP_Text Status;
 
-        // 右の面：選んだ品物の絵・名前・☆と品質・効果・持っている数。品物がないときは何も出さない。
+        // 右の面：上から品質、選んだ品物の絵・名前・☆・効果・持っている数。品物がないときは何も出さない。
+        public TMP_Text DetailQuality;
         public RawImage DetailArt;
         public TMP_Text DetailName;
         public TMP_Text DetailLine;
@@ -308,8 +315,9 @@ namespace Baryonyx.Workshop
                 if (good != null && card == null)
                     LibraryCatalogView.PaintArt(DetailArt, good.Entry, true, DetailArtBox);
             }
+            Set(DetailQuality, good != null ? QualityText : "");
             Set(DetailName, card == null ? good?.Name : "");
-            Set(DetailLine, good != null ? $"{StarsText(good.Stars)}　{QualityText}" : "");
+            Set(DetailLine, good != null ? StarsText(good.Stars) : "");
             Set(DetailEffect, good != null && card == null ? EffectOf(good) : "");
             Set(
                 DetailOwned,
@@ -317,6 +325,19 @@ namespace Baryonyx.Workshop
                     ? OwnedText(WorkshopStock.CountOf(owned, good.Kind, good.Id))
                     : ""
             );
+            // 右の面は中身を上下中央に並べるため、書くことのない行は詰める。
+            foreach (
+                var label in new[]
+                {
+                    DetailQuality,
+                    DetailName,
+                    DetailLine,
+                    DetailEffect,
+                    DetailOwned,
+                }
+            )
+                if (label != null)
+                    label.gameObject.SetActive(label.text.Length > 0);
             if (Price != null)
                 Price.SetActive(good != null);
             Set(PriceLabel, good != null ? good.Price.ToString("N0") : "");
@@ -344,6 +365,12 @@ namespace Baryonyx.Workshop
         {
             Set(row.Name, good.Name);
             Set(row.Price, good.Price.ToString("N0"));
+            // 買う物はいつも品質C。売るの札と同じく左上に品質の色で書く。
+            if (row.Quality != null)
+            {
+                row.Quality.text = Inventory.Quality.Letter(BoughtQuality);
+                row.Quality.color = QualityPalette.Of(BoughtQuality);
+            }
             Set(row.Detail, new string('★', good.Stars));
             LibraryCatalogView.PaintArt(row.Art, good.Entry, true, artBox);
         }
@@ -379,7 +406,10 @@ namespace Baryonyx.Workshop
         public static string StarsText(int stars) =>
             $"<color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{new string('★', stars)}</color>";
 
-        /// <summary>The good's kind and effect: the skill's kind, target and cost, or the equipment's effect.</summary>
+        /// <summary>
+        /// The good's effect: the skill's kind, target and cost over its text, or the equipment's
+        /// effect alone, since the tab already says which kind it is.
+        /// </summary>
         public static string EffectOf(WorkshopGood good)
         {
             var entry = good.Entry;
@@ -387,7 +417,7 @@ namespace Baryonyx.Workshop
                 ? Join(LibraryKinds.Label(LibraryKind.Skill), entry.KindLine)
                     + "\n"
                     + entry.Description
-                : Join(entry.KindLine, entry.Description);
+                : entry.Description;
         }
 
         public static string OwnedText(int count) => $"持っている数　{count}";

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Baryonyx.Tests.EditMode
 {
-    // 商会の「合成」の決まり（doc/features/synthesis.md の仮設定）。サーバー（server/src/features/workshop）と同じ。
+    // 商会の「合成」の決まり（doc/features/synthesis.md のレシピ）。サーバー（server/src/features/workshop）と同じ。
     public sealed class WorkshopCraftTests
     {
         private LibraryData data;
@@ -17,175 +17,177 @@ namespace Baryonyx.Tests.EditMode
         public void CreateData()
         {
             data = ScriptableObject.CreateInstance<LibraryData>();
-            data.Entries = new[]
-            {
-                Entry(LibraryKind.Weapon, "wooden-sword"),
-                Entry(LibraryKind.Weapon, "iron-sword"),
-                Entry(LibraryKind.Weapon, "war-hammer"),
-                Entry(LibraryKind.Accessory, "acorn-brooch"),
-                Entry(LibraryKind.Accessory, "guardian-circlet"),
-                Entry(LibraryKind.Item, "herb"),
-                Entry(LibraryKind.Item, "moss-wad"),
-            };
+            data.Entries = WorkshopRecipes
+                .All.Select(recipe => Entry(recipe.Kind, recipe.Id))
+                .Append(Entry(LibraryKind.Accessory, "guardian-circlet"))
+                .ToArray();
         }
 
         [TearDown]
         public void DestroyData() => Object.DestroyImmediate(data);
 
-        // 作れるのは見つけた☆2以上の物で、主の物（最奥の間でだけ落ちる物）と☆1は作れない。
+        // レシピは、作れる☆2以上の物だけにあり、材料は多くて4種類で、同じ装備・スキルは1つまで。
         [Test]
-        public void RecipesAreTheFoundThingsOfTwoStarsOrMoreButNotTheLords()
+        public void RecipesMakeTwoStarsOrMoreFromAtMostFourKinds()
         {
-            var records = new LibraryRecords(
-                new (LibraryKind, string, int)[]
-                {
-                    (LibraryKind.Weapon, "wooden-sword", 0),
-                    (LibraryKind.Weapon, "iron-sword", 0),
-                    (LibraryKind.Accessory, "acorn-brooch", 0),
-                    (LibraryKind.Accessory, "guardian-circlet", 0),
-                    (LibraryKind.Item, "moss-wad", 0),
-                },
-                new LibraryStepDay[0]
-            );
-            var recipes = WorkshopCraft.Recipes(data, records);
-            Assert.That(
-                recipes.Select(recipe => recipe.Id),
-                Is.EqualTo(new[] { "iron-sword", "acorn-brooch", "moss-wad" })
-            );
-            Assert.That(
-                recipes.Select(recipe => recipe.Runes),
-                Is.EqualTo(new[] { 200, 200, 200 })
-            );
-            Assert.That(WorkshopCraft.BossOnly(LibraryKind.Accessory, "guardian-circlet"), Is.True);
+            foreach (var recipe in WorkshopRecipes.All)
+            {
+                Assert.That(
+                    WorkshopStock.StarsOf(recipe.Kind, recipe.Id),
+                    Is.GreaterThanOrEqualTo(2),
+                    recipe.Id
+                );
+                Assert.That(WorkshopCraft.BossOnly(recipe.Kind, recipe.Id), Is.False, recipe.Id);
+                Assert.That(recipe.Materials.Count, Is.InRange(1, 4), recipe.Id);
+                Assert.That(
+                    recipe
+                        .Materials.Where(material => !material.IsItem)
+                        .All(material => material.Count == 1),
+                    Is.True,
+                    recipe.Id
+                );
+            }
+            Assert.That(WorkshopRecipes.Find(LibraryKind.Weapon, "wooden-sword"), Is.Null);
             Assert.That(WorkshopCraft.RunesOf(1), Is.Zero);
             Assert.That(WorkshopCraft.RunesOf(5), Is.EqualTo(1600));
         }
 
-        // 材料は同じ分類で☆が1つ低い、誰も使っていない物で、品質の低い順に並ぶ。
-        // アイテムは1つずつの札にし、同じ種類は3つまで、デッキに入れている枠の数は残す。
+        // 一覧に出るのは、材料のどれか1つでも手に入れたことのある物。作る物を手に入れていなければ伏せる。
         [Test]
-        public void MaterialsAreUnusedThingsOneStarLowerTheWorseFirst()
+        public void RecipesShowOnceAnyMaterialIsFound()
+        {
+            var records = Records(
+                (LibraryKind.Item, "dried-fish"),
+                (LibraryKind.Weapon, "war-hammer")
+            );
+            var recipes = WorkshopCraft.Recipes(data, records);
+            // 干し魚を使う物：戦鎚（武器）・旅人のマント（防具）・サンダー・偵察・マナの祈り（スキル）。
+            Assert.That(
+                recipes.Select(recipe => recipe.Id),
+                Is.EquivalentTo(
+                    new[] { "war-hammer", "traveler-cloak", "Thunder", "Scout", "ManaPrayer" }
+                )
+            );
+            Assert.That(recipes.Single(recipe => recipe.Id == "war-hammer").Found, Is.True);
+            Assert.That(recipes.Single(recipe => recipe.Id == "traveler-cloak").Found, Is.False);
+            // 分類の順（武器・防具・アクセサリー・スキル）、同じ分類は☆の低い順。
+            Assert.That(recipes[0].Id, Is.EqualTo("war-hammer"));
+            Assert.That(recipes.Select(recipe => recipe.Runes).First(), Is.EqualTo(200));
+        }
+
+        // アイテムはデッキに入れている数を残した数、装備・スキルは誰も使っていない物の数が使える数。
+        // 特別な材料は、初めは品質の低い物を選んでおく。材料がすべてそろえば作れる。
+        [Test]
+        public void MaterialsCountItemsLessTheDeckAndPiecesNobodyUses()
         {
             var stock = WorkshopStock.Mock();
-            var sword = Recipe(LibraryKind.Weapon, "iron-sword", 2);
-            var materials = WorkshopCraft.Materials(sword, stock);
+            var herb = new RecipeMaterial(LibraryKind.Item, "herb", 1);
+            Assert.That(WorkshopCraft.HaveOf(herb, stock), Is.EqualTo(4));
+            var sword = new RecipeMaterial(LibraryKind.Weapon, "iron-sword", 1);
+            Assert.That(WorkshopCraft.HaveOf(sword, stock), Is.EqualTo(2));
             Assert.That(
-                materials.All(thing =>
-                    thing.Kind == LibraryKind.Weapon && thing.Stars == 1 && thing.User == null
-                ),
-                Is.True
+                WorkshopCraft.ChoicesOf(sword, stock).Select(thing => thing.RowId),
+                Is.EqualTo(new[] { "mock-w9", "mock-w10" })
             );
-            Assert.That(materials.Select(thing => thing.RowId), Does.Not.Contain("mock-w1"));
-            Assert.That(
-                materials.Select(thing => thing.Multiplier),
-                Is.EqualTo(materials.Select(thing => thing.Multiplier).OrderBy(value => value))
-            );
-            Assert.That(WorkshopCraft.FirstChoice(materials), Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(WorkshopCraft.PiecesOf(sword, stock).Count, Is.EqualTo(3));
 
-            var moss = Recipe(LibraryKind.Item, "moss-wad", 2);
-            var units = WorkshopCraft.Materials(moss, stock);
-            // 薬草は5つのうちデッキの1つを残して3つまで、どんぐりは2つ。
-            Assert.That(units.Count(thing => thing.KindId == "herb"), Is.EqualTo(3));
-            Assert.That(units.Count(thing => thing.KindId == "acorn"), Is.EqualTo(2));
-            Assert.That(units.All(thing => thing.Count == 1), Is.True);
-            Assert.That(WorkshopCraft.CanMake(moss, stock), Is.True);
+            var recipes = WorkshopCraft.Recipes(data, LibraryMemorySource.Mock());
+            var ironSword = recipes.Single(recipe => recipe.Id == "iron-sword");
+            var dagger = recipes.Single(recipe => recipe.Id == "flame-dagger");
+            Assert.That(WorkshopCraft.CanMake(ironSword, stock), Is.True);
+            // 海賊のラム酒がない。
+            Assert.That(WorkshopCraft.CanMake(dagger, stock), Is.False);
             Assert.That(
-                WorkshopCraft.CanMake(Recipe(LibraryKind.Armor, "chainmail", 3), stock),
-                Is.False
+                WorkshopCraft.FirstChoice(dagger, stock).Select(thing => thing.RowId),
+                Is.EqualTo(new[] { "mock-w9" })
             );
+            Assert.That(WorkshopCraft.FirstChoice(ironSword, stock), Is.Empty);
         }
 
-        // 出来上がる物の倍率は、材料の倍率の幅の中の位置の平均を、出来上がる物の幅に当てはめる。アイテムは×1.00。
+        // 出来上がる物の倍率は、特別な材料の倍率の幅の中の位置の平均を、出来上がる物の幅に当てはめる。
+        // アイテムだけのレシピは×1.00（品質C）。
         [Test]
-        public void TheMadeMultiplierIsTheMaterialsAveragePlace()
+        public void TheMadeMultiplierIsTheSpecialMaterialsAveragePlace()
         {
-            var sword = Recipe(LibraryKind.Weapon, "iron-sword", 2);
-            var materials = new[] { Owned(1.0f, 2.0f), Owned(1.5f, 2.0f), Owned(1.9f, 2.0f) };
-            // 位置は 0・0.5・0.9 で平均0.4667。鉄の剣の幅に当てはめて四捨五入する。
-            int width = Inventory.Quality.Percent(sword.MaxMultiplier) - 100;
-            float expected = (100 + Mathf.RoundToInt(0.46666667f * width)) / 100f;
+            var recipes = WorkshopCraft.Recipes(data, LibraryMemorySource.Mock());
+            var dagger = recipes.Single(recipe => recipe.Id == "flame-dagger");
+            // 鉄の剣（上限×2.0）の×1.5は位置0.5。炎のダガーの幅に当てはめる。
+            int width = Inventory.Quality.Percent(dagger.MaxMultiplier) - 100;
+            float expected = (100 + Mathf.RoundToInt(0.5f * width)) / 100f;
             Assert.That(
-                WorkshopCraft.Multiplier(sword, materials),
+                WorkshopCraft.Multiplier(dagger, new[] { Owned("iron-sword", 1.5f, 2.0f) }),
                 Is.EqualTo(expected).Within(0.0001f)
             );
-            Assert.That(
-                WorkshopCraft.Multiplier(
-                    sword,
-                    new[] { Owned(1f, 2f), Owned(1f, 2f), Owned(1f, 2f) }
-                ),
-                Is.EqualTo(1f)
-            );
-            Assert.That(
-                WorkshopCraft.Multiplier(Recipe(LibraryKind.Item, "moss-wad", 2), materials),
-                Is.EqualTo(1f)
-            );
+            var ironSword = recipes.Single(recipe => recipe.Id == "iron-sword");
+            Assert.That(WorkshopCraft.Multiplier(ironSword, new WorkshopOwned[0]), Is.EqualTo(1f));
         }
 
-        // 合成すると材料が消え（アイテムは数が減り）、出来た物が増える。
+        // 合成すると、アイテムは数が減り（使いきった種類は消え）、特別な材料が消え、出来た物が増える。
         [Test]
         public void ApplyingACraftTakesTheMaterialsAndAddsTheMadeThing()
         {
             var stock = WorkshopStock.Mock();
-            var sword = Recipe(LibraryKind.Weapon, "iron-sword", 2);
-            var used = WorkshopCraft.Materials(sword, stock).Take(3).ToArray();
+            var recipes = WorkshopCraft.Recipes(data, LibraryMemorySource.Mock());
+            var ironSword = recipes.Single(recipe => recipe.Id == "iron-sword");
             var after = WorkshopCraftView.Applied(
                 stock,
-                sword,
-                used,
-                new WorkshopCrafted("new-sword", 1.4f, 200, 800)
+                ironSword,
+                new WorkshopOwned[0],
+                new WorkshopCrafted("new-sword", 1f, 200, 800)
             );
-            Assert.That(after.Count, Is.EqualTo(stock.Count - 2));
-            Assert.That(
-                after.Any(thing => used.Any(material => material.RowId == thing.RowId)),
-                Is.False
-            );
+            // 貝殻のつぶて2つは使いきって消え、船乗りのロープは3つから1つ減る。
+            Assert.That(after.Any(thing => thing.KindId == "shell-shard"), Is.False);
+            Assert.That(after.Single(thing => thing.KindId == "sailor-rope").Count, Is.EqualTo(2));
             var made = after.Single(thing => thing.RowId == "new-sword");
             Assert.That(made.KindId, Is.EqualTo("iron-sword"));
-            Assert.That(made.Multiplier, Is.EqualTo(1.4f));
 
-            var moss = Recipe(LibraryKind.Item, "moss-wad", 2);
-            var units = WorkshopCraft
-                .Materials(moss, stock)
-                .Where(thing => thing.KindId == "herb")
-                .ToArray();
-            var items = WorkshopCraftView.Applied(
+            var dagger = recipes.Single(recipe => recipe.Id == "flame-dagger");
+            var piece = stock.Single(thing => thing.RowId == "mock-w9");
+            var withSword = WorkshopCraftView.Applied(
                 stock,
-                moss,
-                units,
-                new WorkshopCrafted("moss-wad", 1f, 200, 600)
+                dagger,
+                new[] { piece },
+                new WorkshopCrafted("new-dagger", 1.4f, 800, 0)
             );
-            Assert.That(items.Single(thing => thing.KindId == "herb").Count, Is.EqualTo(2));
-            Assert.That(items.Single(thing => thing.KindId == "moss-wad").Count, Is.EqualTo(2));
+            Assert.That(withSword.Any(thing => thing.RowId == "mock-w9"), Is.False);
+            Assert.That(
+                withSword.Single(thing => thing.RowId == "new-dagger").Multiplier,
+                Is.EqualTo(1.4f)
+            );
         }
 
-        // サーバーがないときは、仮の残高から費用を引き、材料が3つでなければ断る。
+        // サーバーがないときは、仮の残高から費用を引き、特別な材料の数が合わなければ断る。
         [Test]
         public void TheMemorySourceCraftsWithAMockBalance()
         {
             RuneBalance.Reset();
-            var source = new WorkshopMemorySource(300);
-            var sword = Recipe(LibraryKind.Weapon, "iron-sword", 2);
-            var used = WorkshopCraft.Materials(sword, WorkshopStock.Mock()).Take(3).ToArray();
-            var crafted = source.CraftAsync(sword, used, CancellationToken.None).Result;
-            Assert.That(crafted.Runes, Is.EqualTo(200));
-            Assert.That(crafted.BalanceAfter, Is.EqualTo(100));
-            Assert.That(crafted.Multiplier, Is.EqualTo(WorkshopCraft.Multiplier(sword, used)));
-            Assert.That(source.CraftAsync(sword, used, CancellationToken.None).IsFaulted, Is.True);
+            var source = new WorkshopMemorySource(1000);
+            var recipes = WorkshopCraft.Recipes(data, LibraryMemorySource.Mock());
+            var dagger = recipes.Single(recipe => recipe.Id == "flame-dagger");
+            var used = new[] { Owned("iron-sword", 1.5f, 2.0f) };
+            var crafted = source.CraftAsync(dagger, used, CancellationToken.None).Result;
+            Assert.That(crafted.Runes, Is.EqualTo(800));
+            Assert.That(crafted.BalanceAfter, Is.EqualTo(200));
+            Assert.That(crafted.Multiplier, Is.EqualTo(WorkshopCraft.Multiplier(dagger, used)));
+            Assert.That(source.CraftAsync(dagger, used, CancellationToken.None).IsFaulted, Is.True);
             Assert.That(
-                source.CraftAsync(sword, used.Take(2).ToArray(), CancellationToken.None).IsFaulted,
+                new WorkshopMemorySource(1000)
+                    .CraftAsync(dagger, new WorkshopOwned[0], CancellationToken.None)
+                    .IsFaulted,
                 Is.True
             );
         }
 
-        private WorkshopRecipe Recipe(LibraryKind kind, string id, int stars) =>
-            new(Entry(kind, id), stars, WorkshopCraft.MaxOf(kind, id));
+        private static LibraryRecords Records(params (LibraryKind Kind, string Id)[] found) =>
+            new(found.Select(entry => (entry.Kind, entry.Id, 0)).ToArray(), new LibraryStepDay[0]);
 
-        private static WorkshopOwned Owned(float multiplier, float max) =>
+        private static WorkshopOwned Owned(string id, float multiplier, float max) =>
             new()
             {
                 Kind = LibraryKind.Weapon,
                 RowId = "m" + multiplier,
-                Stars = 1,
+                KindId = id,
+                Stars = 2,
                 Multiplier = multiplier,
                 MaxMultiplier = max,
             };

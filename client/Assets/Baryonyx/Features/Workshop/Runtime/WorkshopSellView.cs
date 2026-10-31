@@ -32,8 +32,8 @@ namespace Baryonyx.Workshop
         // 1回で売れる数。サーバーの SELL_LIMIT（server/src/features/workshop/catalog.ts）と同じ。
         public const int MaxChosen = 50;
 
-        // 読み込む間に伏せて並べるカードの数（5列×3段で一覧の見える所を埋める）。
-        public const int CoverCards = 15;
+        // 読み込む間に伏せて並べるカードの数（4列×3段で一覧の見える所を埋める）。
+        public const int CoverCards = 12;
 
         public PartyMockData Party;
         public LibraryData Data;
@@ -51,7 +51,6 @@ namespace Baryonyx.Workshop
         public WorkshopGoodRow ChosenTemplate;
         public List<WorkshopGoodRow> ChosenRows = new();
         public TMP_Text Total;
-        public Button Clear;
         public Button Confirm;
 
         private readonly HashSet<Component> bound = new();
@@ -89,8 +88,6 @@ namespace Baryonyx.Workshop
                 int index = i;
                 item.Button.onClick.AddListener(() => ShowTab(index));
             }
-            if (Clear != null && bound.Add(Clear))
-                Clear.onClick.AddListener(ClearChosen);
             if (Confirm != null && bound.Add(Confirm))
                 Confirm.onClick.AddListener(Sell);
         }
@@ -155,14 +152,6 @@ namespace Baryonyx.Workshop
                     return;
                 chosen.Add(thing);
             }
-            RefreshChosen();
-        }
-
-        public void ClearChosen()
-        {
-            if (busy)
-                return;
-            chosen.Clear();
             RefreshChosen();
         }
 
@@ -233,8 +222,6 @@ namespace Baryonyx.Workshop
                     PaintChosen(ChosenRows[i], chosen[i], EntryOf(chosen[i]), ChosenArtBox);
             }
             Set(Total, "+" + chosen.Sum(PriceOf).ToString("N0"));
-            if (Clear != null)
-                Clear.interactable = !busy && chosen.Count > 0;
             if (Confirm != null)
                 Confirm.interactable = !busy && chosen.Count > 0;
         }
@@ -248,10 +235,15 @@ namespace Baryonyx.Workshop
         )
         {
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
+            Set(row.Name, thing.Name);
+            Set(row.Detail, new string('★', Math.Max(1, thing.Stars)));
+            Set(row.Price, PriceOf(thing).ToString("N0"));
             if (row.Quality != null)
             {
                 row.Quality.text = thing.HasQuality ? Quality.Letter(thing.Quality) : "";
                 row.Quality.color = QualityPalette.Of(thing.Quality);
+                // 品質のないアイテムでは、品質の文字の枠ごと隠す。
+                row.Quality.transform.parent.gameObject.SetActive(thing.HasQuality);
             }
             Set(row.Count, thing.Kind == LibraryKind.Item ? "×" + thing.Count : "");
             if (row.InUse != null)
@@ -276,14 +268,23 @@ namespace Baryonyx.Workshop
         {
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
             Set(row.Name, thing.Name);
-            string quality = thing.HasQuality
-                ? $"<color=#{QualityPalette.Hex(thing.Quality)}>品質{Quality.Letter(thing.Quality)}</color>（{Quality.Times(thing.Multiplier)}）"
-                : "×" + thing.Count;
+            Set(row.Detail, ChosenLine(thing));
+            Set(row.Price, PriceOf(thing).ToString("N0"));
+        }
+
+        /// <summary>
+        /// The line under a chosen thing's name: the quality's letter in its color, larger, and
+        /// the multiplier, as on the buy panel (no "quality" label), with equipment's effect after
+        /// it; the count for items.
+        /// </summary>
+        public static string ChosenLine(WorkshopOwned thing)
+        {
+            if (!thing.HasQuality)
+                return "×" + thing.Count;
+            string quality =
+                $"<size=150%>{QualityPalette.Painted(thing.Quality)}</size>　{Quality.Times(thing.Multiplier)}";
             string effect = GearEffectOf(thing);
-            Set(row.Detail, effect != null ? quality + "\n" + effect : quality);
-            Set(row.Price, WorkshopBuyView.PriceText(PriceOf(thing)));
-            if (row.Price != null)
-                row.Price.color = UiPalette.Gold;
+            return effect != null ? $"{quality}　{effect}" : quality;
         }
 
         /// <summary>

@@ -91,6 +91,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(rows[0].Name.text, Is.EqualTo(expected[0].Name));
             Assert.That(rows[0].Price.text, Is.EqualTo(expected[0].Price.ToString("N0")));
             Assert.That(rows[0].Art.enabled, Is.True);
+            // 札の左上に、買う物の品質（いつもC）を書く。
+            Assert.That(rows[0].Quality.text, Is.EqualTo("C"));
             Assert.That(buy.Status.text, Is.Empty);
             SceneTests.AssertTouchSize(buy.Confirm.transform, 0.7f);
 
@@ -100,7 +102,11 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(buy.DetailName.text, Is.EqualTo(expected[0].Name));
             Assert.That(buy.DetailArt.transform.parent.gameObject.activeSelf, Is.True);
             Assert.That(buy.DetailArt.enabled, Is.True);
-            Assert.That(buy.DetailLine.text, Does.Contain(WorkshopBuyView.QualityText));
+            // 品質は「品質」と書かずに、絵の真上の1行に品質の文字と倍率を出す。
+            Assert.That(buy.DetailQuality.text, Is.EqualTo(WorkshopBuyView.QualityText));
+            Assert.That(buy.DetailQuality.text, Does.Contain(">C<").And.Contain("×1.00"));
+            Assert.That(buy.DetailQuality.text, Does.Not.Contain("品質"));
+            Assert.That(buy.DetailLine.text, Does.Contain("★"));
             Assert.That(buy.PriceLabel.text, Is.EqualTo(expected[0].Price.ToString("N0")));
             // 仮の持ち物の数を添える。
             Assert.That(buy.DetailOwned.text, Does.StartWith("持っている数"));

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.App;
 using Baryonyx.Economy;
+using Baryonyx.Enhancement;
 using Baryonyx.Library;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
@@ -37,14 +38,73 @@ namespace Baryonyx.Tests.PlayMode
             services = null;
             LibrarySession.Reset();
             WorkshopSession.Reset();
+            EnhancementSession.Reset();
             yield return SceneTests.UnloadAll(nameof(WorkshopCraftTests));
         }
 
-        // 商会の「合成」は、案内人を隠して画面いっぱいに、作れる物を分類のタブごとに並べる。選ぶと、☆が1つ低い
-        // 同じ分類の使っていない物を材料に並べ、品質の低い3つを選んでおく。開いたときは先頭の物を選んでおく。「合成」を押すと、サーバーの答えを
-        // 待ってから材料を減らし、出来た物を持ち物に足して知らせる。材料が3つでなければ押せない。
+        // 合成の最後のタブ「磨き石」は、合成で作れる青・紫・金を並べ、選ぶと1つ下の色の札を材料に1枚出す。
+        // 下の色3個とルーンがそろうと押せ、演出が流れ、サーバーの答えで石の数と残高を書き換える。
         [UnityTest]
-        public IEnumerator CraftMakesTheChosenThingFromThreeMaterials()
+        public IEnumerator StonesTabMakesOneStoneFromThreeOfTheColourBelow()
+        {
+            EnhancementSession.Source = new EnhancementMemorySource(
+                new Dictionary<string, int> { [EnhancementMaterials.White] = 7 },
+                1000,
+                shownBalance: false
+            );
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            yield return SceneTests.WaitForTask(guide.RunesTask);
+            RuneBalance.Set(1000);
+            var view = guide.View;
+            int item = Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == WorkshopSession.CraftItemKey
+            );
+            var craft = view.PanelFor(item).GetComponent<WorkshopCraftView>();
+            view.MenuItems[item].onClick.Invoke();
+            yield return SceneTests.WaitForTask(craft.LoadTask);
+
+            craft.Tabs[WorkshopCraft.Kinds.Count].Button.onClick.Invoke();
+            Assert.That(craft.StonesTab, Is.True);
+            Assert.That(
+                craft.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(WorkshopCraftView.Stones.Count)
+            );
+            Assert.That(craft.Rows[0].Name.text, Is.EqualTo("青い磨き石"));
+            // 青がないので、紫は作れず薄い。先頭の青を選んでおく。
+            Assert.That(craft.Rows[1].Card.Dimmed, Is.True);
+            Assert.That(craft.Selected, Is.EqualTo(0));
+            Assert.That(craft.DetailName.text, Is.EqualTo("青い磨き石"));
+            Assert.That(craft.MaterialRows.Count(row => row.gameObject.activeSelf), Is.EqualTo(1));
+            Assert.That(craft.MaterialRows[0].Count.text, Is.EqualTo("7/3"));
+            Assert.That(craft.MaterialRows[0].Name.text, Is.EqualTo("白い磨き石"));
+            var blue = EnhancementMaterials.Find(EnhancementMaterials.Blue);
+            Assert.That(craft.PriceLabel.text, Is.EqualTo(blue.CombineRunes.ToString("N0")));
+            Assert.That(craft.Confirm.interactable, Is.True);
+
+            craft.Confirm.onClick.Invoke();
+            Assert.That(craft.Swirl.Playing, Is.True);
+            yield return SceneTests.WaitForTask(craft.Work);
+            craft.Swirl.Finish();
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.CombinedText(blue)));
+            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.EqualTo(4));
+            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.Blue), Is.EqualTo(1));
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - blue.CombineRunes));
+            Assert.That(craft.MaterialRows[0].Count.text, Is.EqualTo("4/3"));
+
+            // 紫は、青が2つ足りない。
+            craft.Rows[1].Card.Click();
+            Assert.That(craft.Confirm.interactable, Is.False);
+            Assert.That(craft.Missing.text, Is.EqualTo("青い磨き石が 2 つ足りません"));
+        }
+
+        // 商会の「合成」は、案内人を隠して画面いっぱいに、レシピの材料を1つでも見つけた物を分類のタブごとに並べる。
+        // 選ぶと、レシピの材料を札で横に並べ、持っている数と要る数を出す。特別な材料（装備）の札を押すと使う物を
+        // 選ぶ画面を開き、品質の違う物に替えられる。「合成」を押すと、サーバーの答えを待たずに材料を減らし、
+        // 出来た物を持ち物に足して知らせる。保存に失敗したら知らせて読み直す。材料がそろわなければ押せない。
+        [UnityTest]
+        public IEnumerator CraftMakesTheChosenThingFromItsRecipe()
         {
             var guide = default(GuideSceneBootstrap);
             yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
@@ -62,7 +122,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(view.Framed, Is.True);
             yield return SceneTests.WaitForTask(craft.LoadTask);
             // 読み終えたら伏せた行をすべてめくり、作れる物のない場所の行は消えていく。
-            Assert.That(craft.Rows[0].GetComponent<GlassCardBack>(), Is.Not.Null);
             yield return SceneTests.WaitUntil(
                 () =>
                     craft.Rows.All(row =>
@@ -71,108 +130,135 @@ namespace Baryonyx.Tests.PlayMode
                     ),
                 message: "The rows did not turn face up."
             );
+            Assert.That(craft.Tabs.Length, Is.EqualTo(WorkshopCraft.TabLabels.Length));
             Assert.That(
                 craft.Rows.Count(row => row.gameObject.activeSelf),
                 Is.EqualTo(craft.Shown.Count)
             );
-            // めくり終えても、材料の足りない物は薄いまま。
+            // めくり終えても、材料の足りない物は薄いまま。まだ手に入れていない物は名前を伏せる。
             for (int i = 0; i < craft.Shown.Count; i++)
+            {
                 Assert.That(
                     craft.Rows[i].Card.Group.alpha,
                     Is.EqualTo(WorkshopCraft.CanMake(craft.Shown[i], craft.Owned) ? 1f : 0.5f)
                         .Within(0.001f),
                     craft.Shown[i].Name
                 );
-
-            // サーバーがないときは、ライブラリの仮の記録と仮の持ち物を使う。初めは武器のタブ。
-            Assert.That(craft.Shown, Is.Not.Empty);
-            Assert.That(
-                craft.Shown.All(recipe => recipe.Kind == LibraryKind.Weapon && recipe.Stars >= 2),
-                Is.True
-            );
-            // 右の面が空にならないよう、先頭の物を選んでおく。
+                Assert.That(
+                    craft.Rows[i].Name.text,
+                    Is.EqualTo(
+                        craft.Shown[i].Found ? craft.Shown[i].Name : WorkshopCraftView.Hidden
+                    )
+                );
+            }
+            Assert.That(craft.Shown.All(recipe => recipe.Kind == LibraryKind.Weapon), Is.True);
             Assert.That(craft.Selected, Is.EqualTo(0));
-            Assert.That(craft.Rows[0].Card.Selected, Is.True);
-            Assert.That(craft.DetailName.text, Is.EqualTo(craft.Shown[0].Name));
             SceneTests.AssertTouchSize(craft.Confirm.transform, 0.7f);
 
-            int index = craft
-                .Shown.ToList()
-                .FindIndex(recipe => WorkshopCraft.CanMake(recipe, craft.Owned));
-            Assert.That(index, Is.GreaterThanOrEqualTo(0));
-            var chosen = craft.Shown[index];
-            craft.Rows[index].Card.Click();
-            Assert.That(craft.DetailName.text, Is.EqualTo(chosen.Name));
-            // 材料は☆が1つ低い同じ分類で、使っている物は入らない。品質の低い3つを選んでおく。
+            // 炎のダガー：鉄の剣（特別）と、海賊のラム酒が足りない。
+            int dagger = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "flame-dagger");
+            Assert.That(dagger, Is.GreaterThanOrEqualTo(0));
+            craft.Rows[dagger].Card.Click();
             Assert.That(
-                craft.Materials.Count,
-                Is.GreaterThanOrEqualTo(WorkshopCraft.MaterialCount)
+                craft.MaterialRows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(craft.Shown[dagger].Materials.Count)
             );
+            Assert.That(craft.Confirm.interactable, Is.False);
+            Assert.That(craft.Missing.text, Does.Contain("足りません"));
+            // 鉄の剣は、使っていない物のうち品質の低い物を選んでおき、札の左上に品質を出す。
+            Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w9"));
             Assert.That(
-                craft.Materials.All(thing =>
-                    thing.Kind == chosen.Kind
-                    && thing.Stars == chosen.Stars - 1
-                    && thing.User == null
-                ),
+                craft.MaterialRows[0].Quality.transform.parent.gameObject.activeSelf,
                 Is.True
             );
-            Assert.That(craft.Picked, Is.EqualTo(new[] { 0, 1, 2 }));
-            Assert.That(craft.MaterialRows[0].Card.Selected, Is.True);
-            Assert.That(craft.MaterialCount.text, Is.EqualTo("3 / 3"));
-            Assert.That(craft.DetailQuality.text, Does.Contain("品質"));
+            craft.MaterialRows[0].Card.Click();
+            var picker = craft.Picker;
+            Assert.That(picker.IsOpen, Is.True);
+            // 持っている3つを並べ、付けている物は選べない。
+            Assert.That(picker.Pieces.Count, Is.EqualTo(3));
+            int worn = picker.Pieces.ToList().FindIndex(piece => piece.User != null);
+            Assert.That(picker.Rows[worn].InUse.activeSelf, Is.True);
+            picker.Rows[worn].Card.Click();
+            Assert.That(picker.Selected, Is.Not.EqualTo(worn));
+            string before = craft.DetailQuality.text;
+            int best = picker.Pieces.ToList().FindIndex(piece => piece.RowId == "mock-w10");
+            picker.Rows[best].Card.Click();
+            picker.Confirm.onClick.Invoke();
+            Assert.That(picker.IsOpen, Is.False);
+            Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w10"));
+            Assert.That(craft.DetailQuality.text, Is.Not.EqualTo(before));
+            // 暗い所を押すと、替えずに閉じる。
+            craft.MaterialRows[0].Card.Click();
+            picker.Rows[0].Card.Click();
+            picker.Dim.onClick.Invoke();
+            Assert.That(picker.IsOpen, Is.False);
+            Assert.That(craft.Special.Single().RowId, Is.EqualTo("mock-w10"));
+            // アイテムの札は押しても開かない。
+            craft.MaterialRows[1].Card.Click();
+            Assert.That(picker.IsOpen, Is.False);
+
+            // 鉄の剣：アイテムだけのレシピ。材料がそろうと押せ、品質Cで出来上がる。
+            int sword = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "iron-sword");
+            var chosen = craft.Shown[sword];
+            craft.Rows[sword].Card.Click();
+            Assert.That(craft.Special, Is.Empty);
+            Assert.That(craft.DetailQuality.text, Does.Contain("C").And.Contain("×1.00"));
+            Assert.That(craft.DetailQuality.text, Does.Not.Contain("品質"));
+            Assert.That(craft.MaterialRows[0].Count.text, Is.EqualTo("2/2"));
             Assert.That(craft.PriceLabel.text, Is.EqualTo(chosen.Runes.ToString("N0")));
             Assert.That(craft.Confirm.interactable, Is.True);
 
-            // 1つ外すと押せない。4つ目は選べない。
-            craft.ToggleMaterial(0);
-            Assert.That(craft.Picked.Count, Is.EqualTo(2));
-            Assert.That(craft.Confirm.interactable, Is.False);
-            Assert.That(craft.DetailQuality.text, Is.Empty);
-            craft.ToggleMaterial(craft.Materials.Count - 1);
-            Assert.That(craft.Picked.Count, Is.EqualTo(3));
-            if (craft.Materials.Count > 3)
-            {
-                craft.ToggleMaterial(0);
-                Assert.That(craft.Picked.Count, Is.EqualTo(3));
-            }
-
-            // 失敗したら知らせ、読み直す。持ち物は変わらない。
+            // 押すとすぐ出来上がりを見せ、保存に失敗したら知らせて読み直す。持ち物は元に戻る。
             shop.Fail = true;
+            shop.Hold = new TaskCompletionSource<bool>();
             craft.Confirm.onClick.Invoke();
+            // 押すと画面全体の演出が流れ、出来た物が右上へ戻ってから知らせる。
+            Assert.That(craft.Swirl.Playing, Is.True);
+            Assert.That(craft.Swirl.Dim.gameObject.activeInHierarchy, Is.True);
+            craft.Swirl.Finish();
+            Assert.That(craft.Swirl.gameObject.activeSelf, Is.False);
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.CraftedText(chosen, 1f)));
+            Assert.That(craft.Owned.Any(thing => thing.KindId == "shell-shard"), Is.False);
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - chosen.Runes));
+            shop.Hold.SetResult(true);
             yield return SceneTests.WaitForTask(craft.Work);
             Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.FailedMessage));
             yield return SceneTests.WaitForTask(craft.LoadTask);
             Assert.That(shop.Crafted, Is.Empty);
+            Assert.That(craft.Owned.Any(thing => thing.KindId == "shell-shard"), Is.True);
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000));
             shop.Fail = false;
-            craft.Rows[index].Card.Click();
-            Assert.That(craft.Picked.Count, Is.EqualTo(WorkshopCraft.MaterialCount));
+            sword = craft.Shown.ToList().FindIndex(recipe => recipe.Id == "iron-sword");
+            craft.Rows[sword].Card.Click();
 
-            var used = craft.Picked.Select(i => craft.Materials[i]).ToArray();
-            int before = craft.Owned.Count(thing => thing.Kind == chosen.Kind);
+            // サーバーの答えを待たずに、材料を消し、出来た物を足し、ルーンを引いて見せる。
+            shop.Hold = new TaskCompletionSource<bool>();
             craft.Confirm.onClick.Invoke();
-            yield return SceneTests.WaitForTask(craft.Work);
-            Assert.That(shop.Crafted.Single().Recipe, Is.EqualTo(chosen.Id));
-            Assert.That(
-                shop.Crafted.Single().Materials,
-                Is.EqualTo(used.Select(thing => thing.RowId))
-            );
-            float made = WorkshopCraft.Multiplier(chosen, used);
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.CraftedText(chosen, made)));
+            // 押すと画面全体の演出が流れ、出来た物が右上へ戻ってから知らせる。
+            Assert.That(craft.Swirl.Playing, Is.True);
+            Assert.That(craft.Swirl.Dim.gameObject.activeInHierarchy, Is.True);
+            craft.Swirl.Finish();
+            Assert.That(craft.Swirl.gameObject.activeSelf, Is.False);
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopCraftView.CraftedText(chosen, 1f)));
             Assert.That(RuneBalance.Known, Is.EqualTo(1000 - chosen.Runes));
-            // 材料3つが消え、出来た物が1つ増える。
+            // 貝殻のつぶて2つを使いきり、出来た物が1つ増える。もう材料がそろわない。
+            Assert.That(craft.Owned.Any(thing => thing.KindId == "shell-shard"), Is.False);
             Assert.That(
-                craft.Owned.Count(thing => thing.Kind == chosen.Kind),
-                Is.EqualTo(before - 2)
+                craft.Owned.Count(thing => thing.KindId == "iron-sword"),
+                Is.GreaterThan(0)
             );
+            Assert.That(craft.Confirm.interactable, Is.False);
+            shop.Hold.SetResult(true);
+            yield return SceneTests.WaitForTask(craft.Work);
+            Assert.That(shop.Crafted.Single().Recipe, Is.EqualTo("iron-sword"));
+            Assert.That(shop.Crafted.Single().Materials, Is.Empty);
+            Assert.That(RuneBalance.Known, Is.EqualTo(1000 - chosen.Runes));
+            // 答えが届いたら、出来た物の行IDをサーバーの物にする。
             Assert.That(
                 craft.Owned.Any(thing =>
-                    thing.RowId == shop.LastItemId && thing.KindId == chosen.Id
+                    thing.RowId == shop.LastItemId && thing.KindId == "iron-sword"
                 ),
                 Is.True
-            );
-            Assert.That(
-                craft.Owned.Any(thing => used.Any(material => material.RowId == thing.RowId)),
-                Is.False
             );
 
             view.Back.onClick.Invoke();
@@ -214,6 +300,12 @@ namespace Baryonyx.Tests.PlayMode
             // 同じ種類でも、1つずつ別の札にし、数は出さない。
             Assert.That(rows.All(row => row.Count.text == ""), Is.True);
             Assert.That(rows.All(row => row.Quality.text.Length == 1), Is.True);
+            // 札は買うと同じく、名前・☆・ルーンの値段を出す。
+            Assert.That(rows[0].Name.text, Is.EqualTo(sell.Shown[0].Name));
+            Assert.That(
+                rows[0].Price.text,
+                Is.EqualTo(WorkshopSellView.PriceOf(sell.Shown[0]).ToString("N0"))
+            );
             int worn = sell.Shown.ToList().FindIndex(thing => thing.User != null);
             Assert.That(rows[worn].InUse.activeSelf, Is.True);
             Assert.That(sell.Confirm.interactable, Is.False);
@@ -233,8 +325,17 @@ namespace Baryonyx.Tests.PlayMode
             int total = free.Sum(i => WorkshopSellView.PriceOf(sell.Shown[i]));
             Assert.That(sell.Total.text, Is.EqualTo("+" + total.ToString("N0")));
 
-            // 選び直すと、何も選んでいない状態に戻る。
-            sell.Clear.onClick.Invoke();
+            // 右の行は、品質を「品質」と書かずに文字と倍率で出し、値段は数だけ（ルーンはアイコン）。
+            var line = sell.ChosenRows[0];
+            Assert.That(line.Detail.text, Does.Not.Contain("品質"));
+            Assert.That(
+                line.Price.text,
+                Is.EqualTo(WorkshopSellView.PriceOf(sell.Chosen[0]).ToString("N0"))
+            );
+
+            // もう一度押すと、選ぶのをやめる。
+            foreach (int i in free)
+                rows[i].Card.Click();
             Assert.That(sell.Chosen, Is.Empty);
             Assert.That(sell.Total.text, Is.EqualTo("+0"));
 
@@ -308,26 +409,27 @@ namespace Baryonyx.Tests.PlayMode
                 return Task.FromResult(new WorkshopSale(runes, (RuneBalance.Known ?? 0) + runes));
             }
 
-            public Task<WorkshopCrafted> CraftAsync(
+            // 置くと、合成の答えをこれが終わるまで待たせる。
+            public TaskCompletionSource<bool> Hold { get; set; }
+
+            public async Task<WorkshopCrafted> CraftAsync(
                 WorkshopRecipe recipe,
                 IReadOnlyList<WorkshopOwned> materials,
                 CancellationToken token
             )
             {
+                if (Hold != null)
+                    await Hold.Task;
                 if (Fail)
-                    return Task.FromException<WorkshopCrafted>(
-                        new InvalidOperationException("作れない設定")
-                    );
+                    throw new InvalidOperationException("作れない設定");
                 Crafted.Add((recipe.Id, materials.Select(thing => thing.RowId).ToArray()));
                 Runes -= recipe.Runes;
                 LastItemId = "made-" + Crafted.Count;
-                return Task.FromResult(
-                    new WorkshopCrafted(
-                        LastItemId,
-                        WorkshopCraft.Multiplier(recipe, materials),
-                        recipe.Runes,
-                        Runes
-                    )
+                return new WorkshopCrafted(
+                    LastItemId,
+                    WorkshopCraft.Multiplier(recipe, materials),
+                    recipe.Runes,
+                    Runes
                 );
             }
         }

@@ -35,27 +35,37 @@ namespace Baryonyx.Workshop.Editor
     /// </summary>
     public static class WorkshopEnhanceAssets
     {
-        // 左の面（一覧）と右の面（選んだ物）の境。合成と同じ。
-        public const float Split = WorkshopCraftAssets.Split;
         private const float RowHeight = 112f;
         private const float ArtBox = 80f;
 
         // 強化する前と後のカード（70×98ドットを4倍）と、間の矢印。
         private const float CardDot = 4f;
         private const float CardsTop = 232f;
-        private const float ArrowWidth = 120f;
+        private const float ArrowWidth = 96f;
+
+        // 足りない石を作る確かめの画面：中央の列の幅、1行の高さ、石の絵（32ドットを2倍）、矢印の幅、行の片側の幅。
+        private const float PromptWidth = 760f;
+        private const float PromptLine = 64f;
+        private const float PromptArt = 64f;
+        private const float PromptArrow = 96f;
+        private const float PromptSide = 180f;
         private const float GearArt = 128f;
 
         // 行の右端の品質・費用の幅。
         private const float ValueWidth = 230f;
 
-        // 素材の段：磨き石と欠片の札、使う数の「－」「＋」。
-        private const float BarHeight = 136f;
-        private const float ChipWidth = 120f;
-        private const float ChipGap = 12f;
+        // 素材の段：磨き石と欠片の札、使う数の「－」「＋」。その下に、費用と足りない物を1行で書く。
+        private const float MaterialsTop = 776f;
+        private const float BarHeight = 120f;
+        private const float InfoHeight = 48f;
+        private const float ChipWidth = 100f;
+        private const float ChipGap = 8f;
         private const float ChipArt = 64f;
-        private const float StepButton = 88f;
-        private const float StepCount = 96f;
+
+        // 磨き石の札の右上の赤い×：押せる広さと、×の絵の一辺、色。
+        private const float CancelHit = 64f;
+        private const float CancelDisc = 36f;
+        private static readonly Color CancelRed = new(1f, 0.32f, 0.3f);
 
         // 強化する前と後：スキル・固有スキルのデッキのカードと、装備の札を同じ位置に重ねて作り、選んだ物で出し分ける。
         // 間に金の矢印を置き、それぞれの下に品質と倍率を書く。
@@ -217,6 +227,10 @@ namespace Baryonyx.Workshop.Editor
         private static readonly Color GaugeBack = new(0.02f, 0.03f, 0.08f, 0.8f);
         private static readonly Color GaugeGain = new(0.5f, 0.89f, 1f, 1f);
 
+        // 選んだ色で届かない所は赤みで覆い、上限には太い壁の線を立てる。
+        private static readonly Color GaugeBlocked = new(0.62f, 0.13f, 0.16f, 0.6f);
+        private const float GaugeWall = 8f;
+
         /// <summary>
         /// Builds the polishing panel (skills, equipment and unique skills in tabs), or with
         /// <paramref name="awakening"/> the awakening panel: the unique skills that can awaken
@@ -228,10 +242,11 @@ namespace Baryonyx.Workshop.Editor
             bool awakening = false
         )
         {
+            // 覚醒はタブを持たないため、縦のタブの列を置かず、一覧を左端から並べる。
             var (enhance, layer) = Panel<WorkshopEnhanceView>(
                 safe,
                 awakening ? "WorkshopAwaken" : "WorkshopEnhance",
-                Split
+                rail: !awakening
             );
             enhance.TabOrder = awakening
                 ? WorkshopEnhanceView.AwakenTabs
@@ -264,18 +279,19 @@ namespace Baryonyx.Workshop.Editor
                     layer,
                     enhance
                         .TabOrder.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab])
-                        .ToArray(),
-                    Split
+                        .ToArray()
                 );
 
+            float listLeft = awakening ? 0f : Rail;
+            float listTop = awakening ? BodyTop : ListTop;
             var (content, scroll) = Column(
                 layer,
                 "Targets",
-                0f,
+                listLeft,
                 Split,
-                BodyTop,
+                listTop,
                 1080f,
-                (int)Edge,
+                (int)(awakening ? Edge : Inner),
                 (int)Inner
             );
             enhance.Content = content;
@@ -306,7 +322,7 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopEnhanceView.PaintTarget(row, mock[i], entry?.KindLine, entry, ArtBox);
                 enhance.Rows.Add(row);
             }
-            enhance.Status = Status(layer, 0f, Split, BodyTop);
+            enhance.Status = Status(layer, listLeft, Split, listTop);
 
             float left = Split + Inner;
             float right = Layout.Design.x - Edge;
@@ -340,35 +356,35 @@ namespace Baryonyx.Workshop.Editor
             BuildCards(layer, enhance, left + 16f, right);
             BuildGauge(layer, enhance, left + 16f, right);
 
-            BuildMaterials(layer, enhance, left + 16f, right, 790f);
+            BuildMaterials(layer, enhance, left + 16f, right, MaterialsTop);
 
             var info = Layout.Text(
                 layer,
                 "Info",
                 "",
-                30,
+                28,
                 UiPalette.TextSub,
                 TextAlignmentOptions.MidlineLeft,
                 left + 16f,
-                ConfirmTop,
-                right - left - 16f - ConfirmWidth - Inner,
-                ConfirmHeight
+                MaterialsTop + BarHeight + 4f,
+                right - left - 16f,
+                InfoHeight
             );
             info.richText = true;
-            info.textWrappingMode = TextWrappingModes.Normal;
-            info.overflowMode = TextOverflowModes.Ellipsis;
+            info.textWrappingMode = TextWrappingModes.NoWrap;
             Shrink(info, 20);
             enhance.Info = info;
             (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
                 layer,
                 awakening ? WorkshopEnhanceView.AwakenLabel : WorkshopEnhanceView.PolishLabel
             );
+            if (!awakening)
+                enhance.Prompt = BuildCombinePrompt((RectTransform)enhance.transform);
             if (awakening)
             {
-                // 覚醒は磨き石と数の段を使わず、覚醒の欠片だけを出す（実行中の ShowTab と同じ見た目）。
+                // 覚醒は磨き石の札を使わず、覚醒の欠片だけを出す（実行中の ShowTab と同じ見た目）。
                 foreach (var chip in enhance.Chips)
                     chip.gameObject.SetActive(!chip.gameObject.activeSelf);
-                enhance.Stepper.SetActive(false);
             }
             return enhance.gameObject;
         }
@@ -387,8 +403,18 @@ namespace Baryonyx.Workshop.Editor
             float barTop = GaugeTop + 44f;
             var bar = Layout.Box(gauge, "Bar", left, barTop, width, GaugeBar);
             AddImage(bar, GaugeBack, false);
+            // 選んだ色で届かない所の覆い。位置は表示のときに上限から決める。
+            enhance.GaugeBlocked = FillBar(bar, "Blocked", GaugeBlocked);
+            enhance.GaugeBlocked.gameObject.SetActive(false);
             enhance.GaugeAfter = FillBar(bar, "After", GaugeGain);
             enhance.GaugeNow = FillBar(bar, "Now", UiPalette.TextMain);
+            // 選んだ色の上限に立てる壁の線。棒より上下にはみ出させ、境目の細い線と見分ける。
+            var wall = Rect("Wall", bar);
+            wall.anchorMin = wall.anchorMax = new Vector2(0.4f, 0.5f);
+            wall.pivot = new Vector2(0.5f, 0.5f);
+            wall.sizeDelta = new Vector2(GaugeWall, GaugeBar + 32f);
+            enhance.GaugeWall = AddImage(wall, Color.white, false);
+            wall.gameObject.SetActive(false);
             foreach (
                 var (letter, place) in new[] { ("C", 0f), ("B", 0.4f), ("A", 0.7f), ("S", 0.9f) }
             )
@@ -428,6 +454,124 @@ namespace Baryonyx.Workshop.Editor
             return fill;
         }
 
+        // 足りない石を作る確かめの画面：画面全体を薄暗くし、中央に一文と、変換する石を小さな絵と矢印の行
+        // （「白×6 ▶ 青×2」）で下の色から並べ、下に払うルーン（変換と強化の合計）、右下に戦闘と同じ丸いチェック。
+        // 合成の演出のような大きな札は使わない（2026-10-31、ユーザーの指示「そんなにガッツリ合成っぽく見せなくていい」）。
+        // 行は実行中に使う数だけ出し、中央に寄る。
+        private static WorkshopCombinePrompt BuildCombinePrompt(RectTransform root)
+        {
+            var screen = Rect("CombinePrompt", root);
+            Stretch(screen);
+            var prompt = screen.gameObject.AddComponent<WorkshopCombinePrompt>();
+            prompt.ArtBox = PromptArt;
+            var art = ItemArtAssets.Load();
+            prompt.StoneArts = EnhancementMaterials
+                .Polishes.Select(stone => (Texture)art.TextureOf(stone.Id))
+                .ToArray();
+
+            // 背面の「もどる」や強化を押せないよう、Safe Areaの外まで暗くする。暗い所を押すと閉じる。
+            var dim = Rect("Dim", screen);
+            Stretch(dim);
+            dim.offsetMin = new Vector2(-400, -400);
+            dim.offsetMax = new Vector2(400, 400);
+            prompt.Dim = GuideMenuAssets.AddButton(
+                dim,
+                AddImage(dim, new Color(0f, 0f, 0.02f, 0.78f), true)
+            );
+
+            var layer = Layout.Layer(screen, "Layout");
+            var column = Layout.Box(layer, "Steps", 0f, 0f, Layout.Design.x, Layout.Design.y);
+            var group = column.gameObject.AddComponent<VerticalLayoutGroup>();
+            group.childAlignment = TextAnchor.MiddleCenter;
+            group.spacing = 12f;
+            group.childControlWidth = group.childControlHeight = true;
+            group.childForceExpandWidth = group.childForceExpandHeight = false;
+
+            var message = Layout.Text(
+                column,
+                "Message",
+                WorkshopCombinePrompt.Message,
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center,
+                0f,
+                0f,
+                PromptWidth,
+                PromptLine
+            );
+            var messageElement = message.gameObject.AddComponent<LayoutElement>();
+            messageElement.preferredWidth = PromptWidth;
+            messageElement.preferredHeight = PromptLine + 16f;
+
+            int steps = EnhancementMaterials.Polishes.Count - 1;
+            prompt.Steps = new GameObject[steps];
+            prompt.From = new WorkshopGoodRow[steps];
+            prompt.To = new WorkshopGoodRow[steps];
+            float half = PromptWidth / 2f;
+            for (int i = 0; i < steps; i++)
+            {
+                var step = Rect("Step" + i, column);
+                var element = step.gameObject.AddComponent<LayoutElement>();
+                element.preferredWidth = PromptWidth;
+                element.preferredHeight = PromptLine;
+                prompt.From[i] = PromptStone(step, "From", half - PromptArrow / 2f - PromptSide);
+                prompt.To[i] = PromptStone(step, "To", half + PromptArrow / 2f);
+                var mark = Layout.Box(
+                    step,
+                    "Arrow",
+                    half - PromptArrow / 4f,
+                    PromptLine / 4f,
+                    PromptArrow / 2f,
+                    PromptLine / 2f
+                );
+                SpriteImage(mark, ArrowPath, UiPalette.Gold).preserveAspect = true;
+                prompt.Steps[i] = step.gameObject;
+            }
+            var runes = Rect("Runes", column);
+            var runesElement = runes.gameObject.AddComponent<LayoutElement>();
+            runesElement.preferredWidth = PromptWidth;
+            runesElement.preferredHeight = PromptLine + 8f;
+            prompt.Runes = RunePrice(
+                runes,
+                "Price",
+                0f,
+                8f,
+                PromptWidth,
+                PromptLine,
+                40f,
+                TextAnchor.MiddleCenter
+            );
+
+            prompt.Confirm = RoundCheck(layer);
+            screen.gameObject.SetActive(false);
+            return prompt;
+        }
+
+        // 確かめの画面の行の片側：石の絵と、その右に数（「×6」）。
+        private static WorkshopGoodRow PromptStone(RectTransform step, string name, float x)
+        {
+            var side = Layout.Box(step, name, x, 0f, PromptSide, PromptLine);
+            var row = side.gameObject.AddComponent<WorkshopGoodRow>();
+            var box = Layout.Box(side, "Art", 0f, 0f, PromptLine, PromptLine);
+            var image = Rect("Image", box);
+            Place(image, Vector2.zero, Vector2.one * PromptArt);
+            row.Art = image.gameObject.AddComponent<RawImage>();
+            row.Art.raycastTarget = false;
+            row.Count = Layout.Text(
+                side,
+                "Count",
+                "",
+                34,
+                UiPalette.TextMain,
+                TextAlignmentOptions.MidlineLeft,
+                PromptLine + 4f,
+                0f,
+                PromptSide - PromptLine - 4f,
+                PromptLine
+            );
+            return row;
+        }
+
         // 素材の段：左から磨き石4色と覚醒の欠片の札（覚醒のタブでは欠片だけを出す）、右端に使う数。
         private static void BuildMaterials(
             RectTransform layer,
@@ -460,7 +604,7 @@ namespace Baryonyx.Workshop.Editor
                     inside,
                     "Art",
                     (ChipWidth - ChipArt) / 2f,
-                    16f,
+                    12f,
                     ChipArt,
                     ChipArt
                 );
@@ -476,7 +620,7 @@ namespace Baryonyx.Workshop.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.Center,
                     0f,
-                    16f,
+                    12f,
                     ChipWidth,
                     ChipArt
                 );
@@ -488,55 +632,39 @@ namespace Baryonyx.Workshop.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.Center,
                     0f,
-                    16f + ChipArt + 8f,
+                    12f + ChipArt + 4f,
                     ChipWidth,
-                    BarHeight - ChipArt - 32f
+                    BarHeight - ChipArt - 22f
                 );
+                // 使う数を水色で「3/8」と書くため、色の指定を読む。
+                chip.Count.richText = true;
+                if (materials[i].IsPolish)
+                    chip.Cancel = CancelMark(rect);
                 enhance.Chips[i] = chip;
                 // 欠片は覚醒のタブでだけ出す。
                 rect.gameObject.SetActive(materials[i].IsPolish);
             }
-
-            var stepper = Layout.Box(
-                layer,
-                "Stepper",
-                right - StepButton * 2f - StepCount,
-                top,
-                StepButton * 2f + StepCount,
-                BarHeight
-            );
-            enhance.Stepper = stepper.gameObject;
-            enhance.Fewer = StepperButton(stepper, "Fewer", "－", 0f);
-            enhance.CountLabel = Layout.Text(
-                stepper,
-                "Count",
-                "1",
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center,
-                StepButton,
-                0f,
-                StepCount,
-                BarHeight
-            );
-            enhance.More = StepperButton(stepper, "More", "＋", StepButton + StepCount);
         }
 
-        private static Button StepperButton(RectTransform parent, string name, string text, float x)
+        // 使っている色の札の右上に出す、選ぶのをやめる赤い×。押せる広さは指で押せる大きさにし、絵は小さく置く。
+        private static Button CancelMark(RectTransform chip)
         {
-            var (button, _, content) = GlassCardAssets.Choice(
-                Layout.Box(parent, name, x, 8f, StepButton, BarHeight - 16f),
-                pattern: false
+            var hit = Layout.Box(
+                chip,
+                "Cancel",
+                ChipWidth - CancelHit / 2f - 10f,
+                -CancelHit / 2f + 10f,
+                CancelHit,
+                CancelHit
             );
-            var label = Label(
-                content,
-                "Label",
-                text,
-                48,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+            var button = Baryonyx.Editor.UI.UiBuild.AddButton(
+                hit,
+                AddImage(hit, Color.clear, true)
             );
-            Stretch((RectTransform)label.transform);
+            var disc = Rect("Disc", hit);
+            Place(disc, Vector2.zero, Vector2.one * CancelDisc);
+            SpriteImage(disc, IconClosePath, CancelRed);
+            hit.gameObject.SetActive(false);
             return button;
         }
     }

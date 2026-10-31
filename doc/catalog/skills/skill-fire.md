@@ -2,7 +2,7 @@
 id: skill-fire
 type: visual-entity
 status: 候補
-updated: 2026-10-25
+updated: 2026-10-31
 name: ファイア
 category: skills
 silhouette: 尾を引く火球
@@ -58,6 +58,7 @@ art_files: client/Assets/Baryonyx/Features/Combat/UI/Art/CardFire.aseprite
 | 属性 | 炎 | [属性と弱点](../../features/combat.md#属性と弱点) | 仮 |
 | コスト | 1 | [エネルギーとコスト](../../features/combat.md#エネルギーとコスト)。カットインは大技の8枚だけ（[スキルの仮設定](../../features/combat.md#スキルの仮設定)） | 仮 |
 | 倍率の上限 | ×2.4 | 1枚ずつの倍率の幅（×1.00〜上限）。[上限の決め方](../../features/inventory.md#上限の決め方) | 仮 |
+| 合成の材料 | なし | ☆1のため合成では作らない（[作れる物の範囲](../../features/synthesis.md#作れる物の範囲)） | 仮 |
 | 威力・回復量 | 属攻の150% | 使い手のステータスの割合（[威力の決め方](../../features/combat.md#威力の決め方)） | 仮 |
 | 持続ターン | 2ターン | [カードの状態の仮設定](../../features/combat.md#カードの状態の仮設定) | 仮 |
 | ACTによる威力の変化 | なし | [スキルの仮設定](../../features/combat.md#スキルの仮設定) | 仮 |

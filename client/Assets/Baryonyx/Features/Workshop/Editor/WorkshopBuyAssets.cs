@@ -11,6 +11,7 @@ using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 using static Baryonyx.UI.GuideMenu.Editor.GuideMenuAssets;
 using static Baryonyx.Workshop.Editor.WorkshopPanelAssets;
 using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
@@ -26,35 +27,41 @@ namespace Baryonyx.Workshop.Editor
     /// </summary>
     public static class WorkshopBuyAssets
     {
-        // 左の面（一覧）と右の面（選んだ品物）の境。一覧を広く取る。
-        public const float Split = 1160f;
         private const int Columns = 4;
         private const float CardHeight = 272f;
         private const float CardArt = 128f;
         private const float DetailArt = 256f;
+
+        // 右の面の中身の間と、足りないルーンの行の高さ。
+        private const float DetailGap = 12f;
+        private const float MissingHeight = 44f;
+
+        // 絵・カードの真上の品質の1行の高さ（品質の文字は3倍の120px）。
+        private const float QualityHeight = 130f;
 
         // スキルのデッキのカード（1ドットを4画素、280×392）。名前の行の下端まで使う。
         private const float CardDot = 4f;
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (buy, layer) = Panel<WorkshopBuyView>(safe, "WorkshopBuy", Split);
+            var (buy, layer) = Panel<WorkshopBuyView>(safe, "WorkshopBuy");
             buy.Guide = view;
             buy.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             buy.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             buy.ArtBox = CardArt;
             buy.DetailArtBox = DetailArt;
-            buy.Tabs = Tabs(layer, WorkshopBuyView.TabLabels, Split);
+            buy.Tabs = Tabs(layer, WorkshopBuyView.TabLabels);
 
             var (content, scroll, cell) = Grid(
                 layer,
                 "Goods",
-                0f,
+                Rail,
                 Split,
-                BodyTop,
+                ListTop,
                 1080f,
                 Columns,
-                CardHeight
+                CardHeight,
+                Inner
             );
             buy.Content = content;
             buy.List = scroll;
@@ -74,84 +81,116 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopBuyView.Paint(row, goods[i], CardArt);
                 buy.Rows.Add(row);
             }
-            buy.Status = Status(layer, 0f, Split, BodyTop);
+            buy.Status = Status(layer, Rail, Split, ListTop);
 
             float left = Split + Inner;
             float right = Layout.Design.x - Edge;
             float width = right - left;
-            buy.DetailArt = ArtStage(
+
+            // 右の面の中身（品質、絵かカード、名前、☆、効果、持っている数）を縦に並べ、
+            // ヘッダーの下から足りないルーンの行の上までの間で上下中央に置く。
+            float detailTop = GuideFrameAssets.HeaderHeight;
+            var detail = Layout.Box(
                 layer,
-                "DetailArt",
-                left + (width - DetailArt) / 2f,
-                150f,
-                DetailArt
+                "Detail",
+                left,
+                detailTop,
+                width,
+                ConfirmTop - MissingHeight - 12f - detailTop
             );
+            var stack = detail.gameObject.AddComponent<VerticalLayoutGroup>();
+            stack.childAlignment = TextAnchor.MiddleCenter;
+            stack.spacing = DetailGap;
+            stack.childControlWidth = false;
+            stack.childControlHeight = true;
+            stack.childForceExpandWidth = stack.childForceExpandHeight = false;
+
+            // 品質の1行：絵・カードの真上に、品質の文字を大きく、横に倍率。
+            buy.DetailQuality = Layout.Text(
+                detail,
+                "DetailQuality",
+                "",
+                40,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center,
+                0f,
+                0f,
+                width,
+                QualityHeight
+            );
+            buy.DetailQuality.richText = true;
+            Fixed(buy.DetailQuality.transform, QualityHeight);
+            buy.DetailArt = ArtStage(detail, "DetailArt", 0f, 0f, DetailArt);
+            Fixed(buy.DetailArt.transform.parent, DetailArt + DetailGap * 2f);
             var cardSize = DeckCardAssets.Size(CardDot, small: false);
             buy.DetailCard = DeckCardAssets.Build(
-                layer,
+                detail,
                 "DetailCard",
-                left + (width - cardSize.x) / 2f,
-                512f - cardSize.y,
+                0f,
+                0f,
                 CardDot,
                 button: false
             );
-            buy.DetailCard.Frame.transform.parent.gameObject.SetActive(false);
+            var cardRoot = buy.DetailCard.Frame.transform.parent;
+            Fixed(cardRoot, cardSize.y);
+            cardRoot.gameObject.SetActive(false);
             buy.CardFrames = DeckCardFrames();
             buy.ElementIcons = ElementIcons();
             buy.DetailName = Layout.Text(
-                layer,
+                detail,
                 "DetailName",
                 "",
                 56,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center,
-                left,
-                440f,
+                0f,
+                0f,
                 width,
                 72f
             );
             Shrink(buy.DetailName, 32);
+            Fixed(buy.DetailName.transform, 72f);
             buy.DetailLine = Layout.Text(
-                layer,
+                detail,
                 "DetailLine",
+                "",
+                34,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                0f,
+                0f,
+                width,
+                56f
+            );
+            buy.DetailLine.richText = true;
+            Fixed(buy.DetailLine.transform, 56f);
+            buy.DetailEffect = Layout.Text(
+                detail,
+                "DetailEffect",
                 "",
                 32,
                 UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                left,
-                516f,
-                width,
-                48f
-            );
-            buy.DetailLine.richText = true;
-            buy.DetailEffect = Layout.Text(
-                layer,
-                "DetailEffect",
-                "",
-                30,
-                UiPalette.TextSub,
                 TextAlignmentOptions.Top,
-                left,
-                572f,
+                0f,
+                0f,
                 width,
                 100f
             );
             buy.DetailEffect.richText = true;
             buy.DetailEffect.textWrappingMode = TextWrappingModes.Normal;
-            buy.DetailEffect.overflowMode = TextOverflowModes.Ellipsis;
-            Shrink(buy.DetailEffect, 22);
             buy.DetailOwned = Layout.Text(
-                layer,
+                detail,
                 "DetailOwned",
                 "",
                 30,
                 UiPalette.TextMain,
                 TextAlignmentOptions.Center,
-                left,
-                692f,
+                0f,
+                0f,
                 width,
                 48f
             );
+            Fixed(buy.DetailOwned.transform, 48f);
             buy.Missing = Layout.Text(
                 layer,
                 "Missing",
@@ -160,9 +199,9 @@ namespace Baryonyx.Workshop.Editor
                 new Color(1f, 0.54f, 0.48f),
                 TextAlignmentOptions.Right,
                 left,
-                ConfirmTop - 56f,
+                ConfirmTop - MissingHeight - 12f,
                 width,
-                44f
+                MissingHeight
             );
 
             buy.PriceLabel = RunePrice(
@@ -180,5 +219,9 @@ namespace Baryonyx.Workshop.Editor
             (buy.Confirm, _) = ConfirmButton(layer, "買う");
             return buy.gameObject;
         }
+
+        // 並べる段の高さを決める（並べ方が中身から高さを測らないようにする）。
+        private static void Fixed(Transform part, float height) =>
+            part.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
     }
 }

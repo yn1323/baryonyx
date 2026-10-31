@@ -12,7 +12,8 @@ namespace Baryonyx.Workshop
     /// The trading house while the app runs: buys, sells and makes on <see cref="Source"/> (the
     /// game server, set by the app), or on a mock balance without one. A purchase on the server shows at once
     /// (doc/rules/data-storage.md, optimistic updates): its price is taken off the shown balance
-    /// until the server answers, and the write goes in the app's one line of saves.
+    /// until the server answers, and the write goes in the app's one line of saves. A craft shows
+    /// at once the same way.
     /// </summary>
     public static class WorkshopSession
     {
@@ -56,9 +57,10 @@ namespace Baryonyx.Workshop
         }
 
         /// <summary>
-        /// Makes <paramref name="recipe"/> from <paramref name="materials"/>, and sets the balance
-        /// to the server's when it answers. The screen shows the made thing only then, since its
-        /// quality is the server's to decide; a failure is thrown to the screen.
+        /// Makes <paramref name="recipe"/> from its items and the special <paramref name="materials"/>
+        /// (equipment and skills). With a server, the runes are reserved from the shown balance at
+        /// once, as the screen has already shown the made thing, and the balance becomes the
+        /// server's when it answers; a failure gives the runes back and is thrown to the screen.
         /// </summary>
         public static async Task<WorkshopCrafted> CraftAsync(
             WorkshopRecipe recipe,
@@ -68,6 +70,25 @@ namespace Baryonyx.Workshop
         {
             if (recipe == null)
                 throw new ArgumentNullException(nameof(recipe));
+            if (Source == null)
+                return await Make(recipe, materials, token);
+            RuneBalance.Reserve(recipe.Runes);
+            try
+            {
+                return await Make(recipe, materials, token);
+            }
+            finally
+            {
+                RuneBalance.Release(recipe.Runes);
+            }
+        }
+
+        private static async Task<WorkshopCrafted> Make(
+            WorkshopRecipe recipe,
+            IReadOnlyList<WorkshopOwned> materials,
+            CancellationToken token
+        )
+        {
             var crafted = await Send((source, t) => source.CraftAsync(recipe, materials, t), token);
             RuneBalance.Set(crafted.BalanceAfter);
             return crafted;

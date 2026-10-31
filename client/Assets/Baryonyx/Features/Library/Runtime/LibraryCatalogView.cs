@@ -53,6 +53,10 @@ namespace Baryonyx.Library
         public LibraryKind Kind;
         public LibraryData Data;
 
+        // 合成のレシピ（武器・防具・アクセサリー・スキル）：見出しと材料の札。レシピのない物には出さない。
+        public GameObject Recipe;
+        public List<Workshop.WorkshopGoodRow> RecipeRows = new();
+
         // キャラの固有スキルのツリーと、進化の仮の進み具合。
         public TrainingMockData Training;
 
@@ -259,9 +263,50 @@ namespace Baryonyx.Library
             Set(DetailBody, found ? entry.Description : "");
             Set(DetailExtra, found ? ExtraOf(entry) : "");
             ShowWeaknesses(found ? entry.Id : null);
+            ShowRecipe(found ? Workshop.WorkshopRecipes.Find(Kind, entry.Id) : null);
         }
 
         public static string NumberText(int number) => $"No.{number:000}";
+
+        // 合成のレシピ（doc/features/library.md の合成のレシピ）。材料を1種類ずつ、絵と要る数と名前で並べる。
+        // まだ見つけていない材料は影にして名前を伏せる。持っている数は出さない。
+        private void ShowRecipe(Workshop.RecipeDefinition recipe)
+        {
+            if (Recipe != null)
+                Recipe.SetActive(recipe != null);
+            if (recipe == null)
+                return;
+            for (int i = 0; i < RecipeRows.Count; i++)
+            {
+                var row = RecipeRows[i];
+                bool visible = i < recipe.Materials.Count;
+                row.gameObject.SetActive(visible);
+                if (!visible)
+                    continue;
+                var material = recipe.Materials[i];
+                bool found = records.IsFound(material.Kind, material.Id);
+                var entry =
+                    Data != null
+                        ? Array.Find(
+                            Data.Entries,
+                            e => e != null && e.Kind == material.Kind && e.Id == material.Id
+                        )
+                        : null;
+                Workshop.WorkshopCraftView.PaintMaterial(
+                    row,
+                    material,
+                    entry,
+                    found,
+                    material.Count,
+                    null,
+                    RecipeArtBox
+                );
+                Set(row.Count, "×" + material.Count);
+            }
+        }
+
+        // 合成のレシピの材料の絵の枠の一辺。
+        public float RecipeArtBox = 64f;
 
         private LibraryEntryData EntryOf(string id)
         {

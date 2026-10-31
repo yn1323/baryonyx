@@ -1,4 +1,9 @@
 using System.Linq;
+using Baryonyx.Combat.Editor;
+using Baryonyx.Combat.Presentation;
+using Baryonyx.Editor;
+using Baryonyx.Enhancement;
+using Baryonyx.Inventory.Editor;
 using Baryonyx.Library;
 using Baryonyx.Library.Editor;
 using Baryonyx.Party;
@@ -26,35 +31,54 @@ namespace Baryonyx.Workshop.Editor
     /// </summary>
     public static class WorkshopCraftAssets
     {
-        // 左の面（作れる物）と右の面（出来上がる物と材料）の境。右に材料を並べるため、右を広く取る。
-        public const float Split = 800f;
         private const float RowHeight = 112f;
         private const float RowArt = 80f;
-        private const float DetailArt = 224f;
-        private const int MaterialColumns = 6;
-        private const float MaterialHeight = 168f;
-        private const float MaterialArt = 96f;
+        private const float DetailArt = 192f;
         private const float MaterialsTop = 440f;
+
+        // 材料の札：一辺160の正方形を4つ横に並べ、下に名前。レシピの材料は多くて4種類。
+        private const int MaterialSlots = 4;
+        private const float MaterialTile = 160f;
+        private const float MaterialArt = 96f;
+
+        // 右の面の☆の欄の幅（☆5つ）。残りに出来上がる品質を書く。
+        private const float StarsWidth = 180f;
+
+        // 使う物を選ぶ画面：札を4列で、画面の上から下まで並べる。
+        private const int PieceColumns = 4;
+        private static readonly Vector2 PieceCell = new(222f, 236f);
+        private const float PieceGap = 18f;
+        private const float PieceArt = 96f;
+
+        // 合成の演出の渦の線のシェーダーとマテリアル。
+        private const string SwirlShaderPath =
+            WorkshopScreenAssets.Folder + "/Vfx/Shaders/WorkshopCraftSwirl.shader";
+        private const string SwirlMaterialFolder = WorkshopScreenAssets.Folder + "/Vfx/Materials";
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (craft, layer) = Panel<WorkshopCraftView>(safe, "WorkshopCraft", Split);
+            var (craft, layer) = Panel<WorkshopCraftView>(safe, "WorkshopCraft");
             craft.Guide = view;
             craft.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             craft.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             craft.ArtBox = RowArt;
             craft.DetailArtBox = DetailArt;
             craft.MaterialArtBox = MaterialArt;
-            craft.Tabs = Tabs(layer, WorkshopStock.TabLabels, Split);
+            craft.Tabs = Tabs(layer, WorkshopCraft.TabLabels);
+            // 磨き石のタブの石の絵。強化の画面と同じ ItemArt から写す。
+            var itemArt = ItemArtAssets.Load();
+            craft.StoneArts = EnhancementMaterials
+                .Polishes.Select(stone => (Texture)itemArt.TextureOf(stone.Id))
+                .ToArray();
 
             var (content, scroll) = Column(
                 layer,
                 "Recipes",
-                0f,
+                Rail,
                 Split,
-                BodyTop,
+                ListTop,
                 1080f,
-                (int)Edge,
+                (int)Inner,
                 (int)Inner
             );
             craft.Content = content;
@@ -67,7 +91,7 @@ namespace Baryonyx.Workshop.Editor
             var stock = WorkshopStock.Mock();
             var recipes = WorkshopCraft
                 .Recipes(craft.Data, LibraryMemorySource.Mock())
-                .Where(recipe => recipe.Kind == WorkshopStock.Kinds[0])
+                .Where(recipe => recipe.Kind == WorkshopCraft.Kinds[0])
                 .ToArray();
             for (int i = 0; i < recipes.Length; i++)
             {
@@ -81,11 +105,11 @@ namespace Baryonyx.Workshop.Editor
                 );
                 craft.Rows.Add(row);
             }
-            craft.Status = Status(layer, 0f, Split, BodyTop);
+            craft.Status = Status(layer, Rail, Split, ListTop);
 
             float left = Split + Inner;
             float right = Layout.Design.x - Edge;
-            float textLeft = left + DetailArt + 48f;
+            float textLeft = left + DetailArt + 40f;
             craft.DetailArt = ArtStage(layer, "DetailArt", left + 16f, 140f, DetailArt);
             craft.DetailName = Layout.Text(
                 layer,
@@ -109,7 +133,7 @@ namespace Baryonyx.Workshop.Editor
                 TextAlignmentOptions.MidlineLeft,
                 textLeft,
                 212f,
-                300f,
+                StarsWidth,
                 44f
             );
             craft.DetailStars.richText = true;
@@ -120,10 +144,10 @@ namespace Baryonyx.Workshop.Editor
                 34,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight,
-                textLeft + 300f,
-                212f,
-                right - textLeft - 300f,
-                44f
+                textLeft + StarsWidth,
+                200f,
+                right - textLeft - StarsWidth,
+                64f
             );
             craft.DetailQuality.richText = true;
             craft.DetailEffect = Layout.Text(
@@ -143,7 +167,7 @@ namespace Baryonyx.Workshop.Editor
             craft.DetailEffect.overflowMode = TextOverflowModes.Ellipsis;
             Shrink(craft.DetailEffect, 20);
 
-            // 材料：見出しと選んだ数、その下に材料の札。
+            // 材料：見出しと、レシピの材料の札を横に並べる。
             var titleGroup = Rect("MaterialsTitle", layer);
             Stretch(titleGroup);
             GuideFrameAssets.Heading(
@@ -155,45 +179,22 @@ namespace Baryonyx.Workshop.Editor
                 300f,
                 60f
             );
-            craft.MaterialCount = Layout.Text(
-                titleGroup,
-                "MaterialCount",
-                "",
-                34,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineRight,
-                right - 240f,
-                MaterialsTop - 64f,
-                240f,
-                60f
-            );
             craft.MaterialsTitle = titleGroup.gameObject;
             titleGroup.gameObject.SetActive(false);
-
-            float materialsBottom = ConfirmTop - 64f;
-            var (materials, materialScroll, cell) = Grid(
-                layer,
-                "Materials",
-                Split,
-                Layout.Design.x,
-                MaterialsTop,
-                materialsBottom,
-                MaterialColumns,
-                MaterialHeight,
-                Inner,
-                Edge
-            );
-            craft.MaterialContent = materials;
-            craft.MaterialList = materialScroll;
-            craft.MaterialTemplate = OwnedCard(materials, "Template", cell, MaterialArt);
-            craft.MaterialTemplate.gameObject.SetActive(false);
-            for (int i = 0; i < MaterialColumns; i++)
+            float gap = (right - left - MaterialTile * MaterialSlots) / (MaterialSlots - 1);
+            for (int i = 0; i < MaterialSlots; i++)
             {
-                var row = OwnedCard(materials, "Material" + i, cell, MaterialArt);
-                row.gameObject.SetActive(false);
-                craft.MaterialRows.Add(row);
+                var tile = MaterialTile(
+                    layer,
+                    "Material" + i,
+                    left + i * (MaterialTile + gap),
+                    MaterialsTop,
+                    MaterialTile,
+                    MaterialArt
+                );
+                tile.gameObject.SetActive(false);
+                craft.MaterialRows.Add(tile);
             }
-            craft.MaterialStatus = Status(layer, Split, Layout.Design.x, MaterialsTop);
 
             float width = right - left;
             craft.Missing = Layout.Text(
@@ -221,7 +222,191 @@ namespace Baryonyx.Workshop.Editor
             craft.Price = craft.PriceLabel.transform.parent.gameObject;
             craft.Price.SetActive(false);
             (craft.Confirm, _) = ConfirmButton(layer, "合成");
+            craft.Picker = BuildPicker((RectTransform)craft.transform);
+            craft.Swirl = BuildSwirl((RectTransform)craft.transform);
             return craft.gameObject;
+        }
+
+        // 合成の演出（光の渦）：画面全体の暗転と、計算で描く光の板（doc/features/synthesis.md 合成の演出）。
+        // 渦の線は専用のシェーダー、ほかの光は戦闘の形のマテリアルを使う。押すまで隠しておく。
+        private static WorkshopCraftSwirl BuildSwirl(RectTransform root)
+        {
+            var screen = Rect("CraftSwirl", root);
+            Stretch(screen);
+            var swirl = screen.gameObject.AddComponent<WorkshopCraftSwirl>();
+
+            // Safe Areaの外まで暗くし、押すと演出を飛ばす。
+            var dim = Rect("Dim", screen);
+            Stretch(dim);
+            dim.offsetMin = new Vector2(-400, -400);
+            dim.offsetMax = new Vector2(400, 400);
+            swirl.Dim = AddImage(dim, new Color(0.02f, 0.03f, 0.08f, 0f), true);
+            swirl.Skip = GuideMenuAssets.AddButton(dim, swirl.Dim);
+            swirl.Skip.transition = UnityEngine.UI.Selectable.Transition.None;
+
+            // 渦の見た目（通常・金・虹）ごとのマテリアル。腕の数と淡い虹の強さを変える。
+            swirl.HaloLooks = new[]
+            {
+                SwirlMaterial("CraftSwirlHalo", 0f, 6f, 0f),
+                SwirlMaterial("CraftSwirlHaloGold", 0f, 8f, 0f),
+                SwirlMaterial("CraftSwirlHaloRainbow", 0f, 8f, 1f),
+            };
+            swirl.LineLooks = new[]
+            {
+                SwirlMaterial("CraftSwirlLine", 1f, 6f, 0f),
+                SwirlMaterial("CraftSwirlLineGold", 1f, 8f, 0f),
+                SwirlMaterial("CraftSwirlLineRainbow", 1f, 8f, 1f),
+            };
+            swirl.SwirlHalo = Board(screen, "SwirlHalo", swirl.HaloLooks[0]);
+            swirl.SwirlLine = Board(screen, "SwirlLine", swirl.LineLooks[0]);
+            swirl.Glints = Boards(screen, "Glint", 8, Shape("Sparkle"));
+            swirl.Converge = Boards(screen, "Converge", 20, Shape("Streak"));
+            swirl.OrbHalo = Board(screen, "OrbHalo", Shape("Glow"));
+            const int pieces = MaterialSlots;
+            swirl.PieceTrails = Boards(screen, "PieceTrail", pieces, Shape("Streak"));
+            swirl.PieceGlows = Boards(screen, "PieceGlow", pieces, Shape("Glow"));
+            swirl.Pieces = new UnityEngine.UI.RawImage[pieces];
+            for (int i = 0; i < pieces; i++)
+            {
+                var piece = Rect("Piece" + i, screen);
+                Center(piece);
+                var art = piece.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+                art.raycastTarget = false;
+                piece.gameObject.SetActive(false);
+                swirl.Pieces[i] = art;
+            }
+            swirl.Sparks = Boards(screen, "Spark", 12, Shape("Spark"));
+            swirl.OrbCore = Board(screen, "OrbCore", Shape("Glow"));
+            swirl.ItemRings = Boards(screen, "ItemRing", 2, Shape("Ring"));
+            swirl.Ring = Board(screen, "Ring", Shape("Ring"));
+            swirl.MoreRings = Boards(screen, "MoreRing", 3, Shape("Ring"));
+            swirl.Rays = Board(screen, "Rays", Shape("Star"));
+            swirl.MoreRays = Board(screen, "MoreRays", Shape("Star"));
+            swirl.Flakes = Boards(screen, "Flake", 16, Shape("Shard"));
+            swirl.Prisms = Boards(screen, "Prism", 18, Shape("Sparkle"));
+            swirl.ItemGlow = Board(screen, "ItemGlow", Shape("Glow"));
+            var item = Rect("Item", screen);
+            Center(item);
+            swirl.Item = item.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            swirl.Item.raycastTarget = false;
+            item.gameObject.SetActive(false);
+            swirl.Sheen = Board(screen, "Sheen", Shape("Sparkle"));
+            swirl.Twinkles = Boards(screen, "Twinkle", 6, Shape("Sparkle"));
+
+            BattleVfxImage.EnableShapeChannel(screen);
+            screen.gameObject.SetActive(false);
+            return swirl;
+        }
+
+        private static BattleVfxImage[] Boards(
+            RectTransform parent,
+            string name,
+            int count,
+            Material material
+        )
+        {
+            var boards = new BattleVfxImage[count];
+            for (int i = 0; i < count; i++)
+                boards[i] = Board(parent, name + i, material);
+            return boards;
+        }
+
+        private static BattleVfxImage Board(RectTransform parent, string name, Material material)
+        {
+            var rect = Rect(name, parent);
+            Center(rect);
+            var board = rect.gameObject.AddComponent<BattleVfxImage>();
+            board.material = material;
+            board.raycastTarget = false;
+            rect.gameObject.SetActive(false);
+            return board;
+        }
+
+        private static void Center(RectTransform rect)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+        }
+
+        private static Material Shape(string name)
+        {
+            var path = $"{BattleSkillVfxAssets.MaterialFolder}/VfxShape{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+                throw new System.InvalidOperationException("Missing material: " + path);
+            return material;
+        }
+
+        private static Material SwirlMaterial(string name, float layer, float arms, float rainbow)
+        {
+            AssetFolders.Ensure(SwirlMaterialFolder);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(SwirlShaderPath);
+            if (shader == null)
+                throw new System.InvalidOperationException("Missing shader: " + SwirlShaderPath);
+            var path = $"{SwirlMaterialFolder}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            material.SetFloat("_Layer", layer);
+            material.SetFloat("_Arms", arms);
+            material.SetFloat("_Rainbow", rainbow);
+            material.SetFloat("_Intensity", layer < 0.5f ? 1f : 1.3f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        // 使う物を選ぶ画面：画面全体を薄暗くし、手前に札を4列で並べて上下に動かし、右下に戦闘と同じ丸いチェック。
+        // 枠・背景の板・見出しは置かない（doc/features/screens/shop.md の使う物を選ぶ画面）。
+        private static WorkshopMaterialPicker BuildPicker(RectTransform root)
+        {
+            var screen = Rect("MaterialPicker", root);
+            Stretch(screen);
+            var picker = screen.gameObject.AddComponent<WorkshopMaterialPicker>();
+            picker.ArtBox = PieceArt;
+
+            // 背面の「もどる」や合成を押せないよう、Safe Areaの外まで暗くする。札の外を押すと閉じる。
+            var dim = Rect("Dim", screen);
+            Stretch(dim);
+            dim.offsetMin = new Vector2(-400, -400);
+            dim.offsetMax = new Vector2(400, 400);
+            picker.Dim = GuideMenuAssets.AddButton(
+                dim,
+                AddImage(dim, new Color(0f, 0f, 0.02f, 0.72f), true)
+            );
+
+            var layer = Layout.Layer(screen, "Layout");
+            float gridWidth = PieceColumns * PieceCell.x + (PieceColumns - 1) * PieceGap;
+            float x = (Layout.Design.x - gridWidth) / 2f;
+            var viewport = Layout.Box(
+                layer,
+                "PiecesViewport",
+                x - 16f,
+                0f,
+                gridWidth + 32f,
+                Layout.Design.y
+            );
+            Layout.Mask(viewport);
+            var content = Layout.Grid(
+                viewport,
+                "Pieces",
+                PieceCell,
+                PieceGap,
+                new RectOffset(16, 16, 40, 40),
+                PieceColumns
+            );
+            picker.Content = content;
+            picker.List = Layout.Scroll(viewport, viewport, content);
+            picker.Template = PieceCard(content, "Template", PieceCell, PieceArt);
+            picker.Template.gameObject.SetActive(false);
+
+            // 右下の丸いチェック（戦闘のターン終了と同じ絵）。
+            picker.Confirm = RoundCheck(layer);
+            screen.gameObject.SetActive(false);
+            return picker;
         }
     }
 }

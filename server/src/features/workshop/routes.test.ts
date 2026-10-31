@@ -3,9 +3,11 @@ import {
   type ApiScenario,
   createApiScenario,
 } from "../../../tests/support/api-scenario.js";
-import { EQUIPMENT } from "../equipment/catalog.js";
+import { EQUIPMENT, slotOf } from "../equipment/catalog.js";
+import { ITEM_IDS } from "../items/catalog.js";
 import { CARD_SKILL_IDS } from "../party/catalog.js";
-import { workshopPrice } from "./catalog.js";
+import { craftStarsOf, workshopPrice } from "./catalog.js";
+import { CRAFT_RECIPES } from "./recipes.js";
 
 type Purchase = {
   category: string;
@@ -327,14 +329,6 @@ describe("商会の合成API", () => {
     return id;
   };
 
-  const discover = async (userId: string, kind: string, entryId: string) => {
-    await scenario.env.DB.prepare(
-      "INSERT INTO library_discoveries (user_id, kind, entry_id, discovered_at) VALUES (?, ?, ?, ?)",
-    )
-      .bind(userId, kind, entryId, now())
-      .run();
-  };
-
   const skillCardsOf = async (userId: string, ids: readonly string[]) =>
     (
       await scenario.env.DB.prepare(
@@ -355,10 +349,48 @@ describe("商会の合成API", () => {
       ).results.map((row) => [row.item_id, row.count]),
     );
 
-  it("☆2以上で主の物でない物だけを作り、作れない物を404で、不正な入力を400で拒否する", async () => {
+  const addItems = async (userId: string, counts: Record<string, number>) => {
+    for (const [itemId, count] of Object.entries(counts)) {
+      await scenario.env.DB.prepare(
+        "INSERT INTO item_holdings (user_id, item_id, count, acquired_at, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (user_id, item_id) DO UPDATE SET count = excluded.count",
+      )
+        .bind(userId, itemId, count, now(), now())
+        .run();
+    }
+  };
+
+  const discovered = async (userId: string, kind: string, entryId: string) =>
+    (
+      await scenario.env.DB.prepare(
+        "SELECT entry_id FROM library_discoveries WHERE user_id = ? AND kind = ? AND entry_id = ?",
+      )
+        .bind(userId, kind, entryId)
+        .all()
+    ).results.length > 0;
+
+  it("レシピは、作れる☆の物だけを、あるアイテム・装備・スキルで作り、同じ装備・スキルは1つまで使う", () => {
+    for (const recipe of CRAFT_RECIPES) {
+      expect(craftStarsOf(recipe.category, recipe.id)).toBeDefined();
+      for (const material of recipe.materials) {
+        if (material.category === "item") {
+          expect(ITEM_IDS).toContain(material.id);
+        } else if (material.category === "skill") {
+          expect(CARD_SKILL_IDS).toContain(material.id);
+          expect(material.count).toBe(1);
+        } else {
+          expect(slotOf(material.id)).toBe(material.category);
+          expect(material.count).toBe(1);
+        }
+      }
+    }
+    // ☆1・主の物・レシピのない物は作れない。
+    expect(craftStarsOf("skill", "Fire")).toBeUndefined();
+    expect(craftStarsOf("accessory", "guardian-circlet")).toBeUndefined();
+    expect(craftStarsOf("weapon", "wooden-sword")).toBeUndefined();
+  });
+
+  it("作れない物を404で、不正な入力を400で拒否する", async () => {
     const user = await start("craft-invalid", 5000);
-    const materialIds = ["a", "b", "c"];
-    // ☆1・主の物・一覧にない物は作れない。
     for (const [category, id] of [
       ["skill", "Fire"],
       ["accessory", "guardian-circlet"],
@@ -367,145 +399,117 @@ describe("商会の合成API", () => {
       expect(
         await craft(
           user.token,
-          { requestId: requestIds.first, category, id, materialIds },
+          { requestId: requestIds.first, category, id, materialIds: [] },
           404,
         ),
       ).toEqual({ error: "goods_not_found" });
     }
-    expect(
-      await craft(
-        user.token,
-        {
-          requestId: requestIds.first,
-          category: "item",
-          id: "guardian-seed",
-          items: [{ id: "spore-powder", count: 3 }],
-        },
-        404,
-      ),
-    ).toEqual({ error: "goods_not_found" });
-
-    // 材料は重ならない3つ、アイテムは種類を重ねずに合計3個。
+    // アイテムは作れない。材料の行のIDは重ねない。
     for (const body of [
-      { category: "weapon", id: "iron-sword", materialIds: ["a", "b"] },
-      { category: "weapon", id: "iron-sword", materialIds: ["a", "a", "b"] },
-      { category: "weapon", id: "iron-sword", items: [{ id: "a", count: 3 }] },
-      { category: "item", id: "moss-wad", items: [{ id: "herb", count: 2 }] },
-      {
-        category: "item",
-        id: "moss-wad",
-        items: [
-          { id: "herb", count: 2 },
-          { id: "herb", count: 1 },
-        ],
-      },
-      { category: "item", id: "moss-wad", materialIds },
-      { category: "unknown", id: "luck", materialIds },
+      { category: "item", id: "moss-wad", materialIds: [] },
+      { category: "weapon", id: "flame-dagger", materialIds: ["a", "a"] },
+      { category: "unknown", id: "luck", materialIds: [] },
     ]) {
       await craft(user.token, { requestId: requestIds.first, ...body }, 400);
     }
     expect(await scenario.runesOf(user.token)).toBe(5000);
   });
 
-  it("スキルを合成すると、材料の位置の平均で倍率が決まり、ルーンを引いて材料を消し、1枚足す。再送は二重に作らない", async () => {
-    const user = await start("craft-skill", 1000);
-    // 盾打ち（☆2・上限220）を、☆1のスキル3枚から作る。初めのカードにあるため見つけている。
-    const materialIds = [
-      await addSkillCard(user.userId, "Fire", 240), // 位置1
-      await addSkillCard(user.userId, "Slash", 100), // 位置0
-      await addSkillCard(user.userId, "Ice", 166), // 位置66/120
-    ];
-    const body = {
-      requestId: requestIds.first,
-      category: "skill",
-      id: "ShieldBash",
-      materialIds,
-      // クライアント（JsonUtility）は、使わない方の配列も空で送る。
-      items: [],
-    };
-    const made = await craft(user.token, body);
-    // 位置の平均（1 + 0 + 0.55）/ 3 に幅120を掛けて62。
-    expect(made.craft).toEqual({
-      category: "skill",
-      id: "ShieldBash",
-      itemId: expect.any(String),
-      multiplier: 1.62,
-      quality: "B",
-      runes: 200,
-      balanceAfter: 800,
-      materials: materialIds,
-    });
-    expect(await scenario.runesOf(user.token)).toBe(800);
-    expect(await skillCardsOf(user.userId, materialIds)).toEqual([]);
-    expect(
-      await scenario.env.DB.prepare(
-        "SELECT skill_id, multiplier_percent FROM skill_cards WHERE id = ?",
-      )
-        .bind(made.craft?.itemId)
-        .first(),
-    ).toEqual({ skill_id: "ShieldBash", multiplier_percent: 162 });
-
-    // 同じ要求の再送は、材料の順が違っても同じ結果を返し、二重に引かない。
-    expect(
-      await craft(user.token, {
-        ...body,
-        materialIds: [...materialIds].reverse(),
-      }),
-    ).toEqual(made);
-    expect(await scenario.runesOf(user.token)).toBe(800);
-    // 同じ要求IDで中身の違う要求は断る。
-    expect(
-      await craft(
-        user.token,
-        { ...body, materialIds: [...materialIds.slice(0, 2), "other"] },
-        409,
-      ),
-    ).toEqual({ error: "request_conflict" });
-    expect(await craft(user.token, { ...body, id: "Embers" }, 409)).toEqual({
-      error: "request_conflict",
-    });
-  });
-
-  it("装備は付けている物・☆の違う物・分類の違う物を材料にできず、合う3つで作れる", async () => {
-    const user = await start("craft-weapon", 1000);
-    const worn = await scenario.env.DB.prepare(
-      "SELECT s.item_id AS id FROM equipment_character_slots s JOIN equipment_items i ON i.id = s.item_id WHERE s.user_id = ? AND i.equipment_id = 'short-bow'",
+  it("アイテムだけのレシピは、数から引いて使いきった種類を消し、デッキの数を残して、品質Cの物を作る。再送は二重に作らない", async () => {
+    const user = await start("craft-items", 1000);
+    // 鉄の剣（☆2）：貝殻のつぶて×2・船乗りのロープ×1。
+    await addItems(user.userId, { "shell-shard": 2, "sailor-rope": 2 });
+    await scenario.env.DB.prepare(
+      "INSERT INTO party_character_cards (user_id, character_id, slot, card_id, item_id, updated_at) VALUES (?, 'toma', 2, NULL, 'sailor-rope', ?)",
     )
-      .bind(user.userId)
-      .first<{ id: string }>();
-    const sword = await addEquipment(user.userId, "wooden-sword", 140); // 位置0.5
-    const bow = await addEquipment(user.userId, "short-bow", 150); // 位置0.5
-    const staff = await addEquipment(user.userId, "oak-staff", 200); // 位置1
-    const hammer = await addEquipment(user.userId, "war-hammer", 100); // ☆2
-    const leather = await addEquipment(user.userId, "leather-armor", 100); // 防具の☆1
-    const request = (materialIds: string[]) => ({
+      .bind(user.userId, now())
+      .run();
+    const body = {
       requestId: requestIds.first,
       category: "weapon",
       id: "iron-sword",
+      materialIds: [],
+    };
+    const made = await craft(user.token, body);
+    expect(made.craft).toEqual({
+      category: "weapon",
+      id: "iron-sword",
+      itemId: expect.any(String),
+      multiplier: 1,
+      quality: "C",
+      runes: 200,
+      balanceAfter: 800,
+      materials: [],
+    });
+    // 貝殻のつぶては使いきって消え、ロープはデッキの1つが残る。
+    expect(await itemCountsOf(user.userId)).toEqual({ "sailor-rope": 1 });
+    expect(
+      await craft(user.token, body), // 再送は同じ結果
+    ).toEqual(made);
+    expect(await scenario.runesOf(user.token)).toBe(800);
+
+    // デッキに入れている1つは使えないため、もう作れない。
+    await addItems(user.userId, { "shell-shard": 2 });
+    expect(
+      await craft(user.token, { ...body, requestId: requestIds.second }, 409),
+    ).toEqual({ error: "invalid_materials" });
+    // 特別な材料のないレシピに、行のIDは送れない。
+    await addItems(user.userId, { "sailor-rope": 3 });
+    const extra = await addEquipment(user.userId, "short-bow", 100);
+    expect(
+      await craft(
+        user.token,
+        { ...body, requestId: requestIds.second, materialIds: [extra] },
+        409,
+      ),
+    ).toEqual({ error: "invalid_materials" });
+  });
+
+  it("特別な装備を使うレシピは、その装備1つの品質で作り、付けている物・違う種類は使えない", async () => {
+    const user = await start("craft-weapon", 1000);
+    // 炎のダガー（☆4・上限180）：鉄の剣×1（特別）・海賊のラム酒×1・墨つぼ×1・船乗りのロープ×2。
+    await addItems(user.userId, {
+      "pirate-rum": 1,
+      "ink-pot": 1,
+      "sailor-rope": 2,
+    });
+    const worn = await scenario.env.DB.prepare(
+      "SELECT s.item_id AS id FROM equipment_character_slots s JOIN equipment_items i ON i.id = s.item_id WHERE s.user_id = ? AND i.equipment_id = 'iron-sword'",
+    )
+      .bind(user.userId)
+      .first<{ id: string }>();
+    const bow = await addEquipment(user.userId, "short-bow", 150);
+    const sword = await addEquipment(user.userId, "iron-sword", 150); // 位置0.5
+    const request = (materialIds: string[]) => ({
+      requestId: requestIds.first,
+      category: "weapon",
+      id: "flame-dagger",
       materialIds,
     });
     for (const materialIds of [
-      [sword, bow, worn?.id as string],
-      [sword, bow, hammer],
-      [sword, bow, leather],
-      [sword, bow, crypto.randomUUID()],
+      [worn?.id as string],
+      [bow],
+      [],
+      [sword, bow],
+      [crypto.randomUUID()],
     ]) {
       expect(await craft(user.token, request(materialIds), 409)).toEqual({
         error: "invalid_materials",
       });
     }
+    await scenario.setRunes(user.userId, 1000);
     expect(await scenario.runesOf(user.token)).toBe(1000);
 
-    // 鉄の剣（☆2・上限200）を作る。位置の平均2/3に幅100を掛けて67。
-    const made = await craft(user.token, request([sword, bow, staff]));
+    // 位置0.5を、炎のダガーの幅80に当てて140。
+    const made = await craft(user.token, request([sword]));
     expect(made.craft).toMatchObject({
       category: "weapon",
-      id: "iron-sword",
-      multiplier: 1.67,
+      id: "flame-dagger",
+      multiplier: 1.4,
       quality: "B",
-      runes: 200,
-      balanceAfter: 800,
-      materials: [sword, bow, staff],
+      runes: 800,
+      balanceAfter: 200,
+      materials: [sword],
     });
     const items = (
       await scenario.read<{
@@ -513,178 +517,61 @@ describe("商会の合成API", () => {
       }>("/equipment", user.token)
     ).items;
     expect(items.map((item) => item.id)).not.toContain(sword);
-    expect(items.map((item) => item.id)).not.toContain(staff);
     expect(items).toContainEqual(
       expect.objectContaining({
         id: made.craft?.itemId,
-        equipmentId: "iron-sword",
-        multiplier: 1.67,
+        equipmentId: "flame-dagger",
+        multiplier: 1.4,
       }),
     );
-
-    // 消えた材料は、別の要求IDでも使えない。
-    expect(
-      await craft(
-        user.token,
-        { ...request([sword, bow, staff]), requestId: requestIds.second },
-        409,
-      ),
-    ).toEqual({ error: "invalid_materials" });
+    expect(await itemCountsOf(user.userId)).toEqual({});
+    // まだ手に入れていなかった物も作れ、作ると見つけた記録に載る。
+    expect(await discovered(user.userId, "weapon", "flame-dagger")).toBe(true);
   });
 
-  it("アイテムは数から引き、使いきった種類を消し、デッキに入れている数を残す", async () => {
-    const user = await start("craft-item", 1000);
-    await discover(user.userId, "item", "moss-wad");
-    await scenario.env.DB.batch([
-      scenario.env.DB.prepare(
-        "INSERT INTO item_holdings (user_id, item_id, count, acquired_at, updated_at) VALUES (?, 'herb', 3, ?, ?), (?, 'acorn', 1, ?, ?)",
-      ).bind(user.userId, now(), now(), user.userId, now(), now()),
-      // トーマの3つ目の枠に薬草を1つ入れている。
-      scenario.env.DB.prepare(
-        "INSERT INTO party_character_cards (user_id, character_id, slot, card_id, item_id, updated_at) VALUES (?, 'toma', 2, NULL, 'herb', ?)",
-      ).bind(user.userId, now()),
-    ]);
-
-    // デッキに入れている1つを残すため、薬草は2つまでしか使えない。
-    expect(
-      await craft(
-        user.token,
-        {
-          requestId: requestIds.first,
-          category: "item",
-          id: "moss-wad",
-          items: [{ id: "herb", count: 3 }],
-          materialIds: [],
-        },
-        409,
-      ),
-    ).toEqual({ error: "invalid_materials" });
-
-    const made = await craft(user.token, {
-      requestId: requestIds.first,
-      category: "item",
-      id: "moss-wad",
-      items: [
-        { id: "herb", count: 2 },
-        { id: "acorn", count: 1 },
-      ],
-      // クライアント（JsonUtility）は、使わない方の配列も空で送る。
-      materialIds: [],
-    });
-    expect(made.craft).toEqual({
-      category: "item",
-      id: "moss-wad",
-      itemId: "moss-wad",
-      multiplier: null,
-      quality: null,
-      runes: 200,
-      balanceAfter: 800,
-      materials: [
-        { id: "herb", count: 2 },
-        { id: "acorn", count: 1 },
-      ],
-    });
-    // 使いきったどんぐりの行は消え、薬草はデッキの1つが残る。
-    expect(await itemCountsOf(user.userId)).toEqual({
-      herb: 1,
-      "moss-wad": 1,
-    });
-
-    // ☆の違うアイテムは材料にできない。
-    await scenario.env.DB.prepare(
-      "INSERT INTO item_holdings (user_id, item_id, count, acquired_at, updated_at) VALUES (?, 'sea-salt', 3, ?, ?)",
-    )
-      .bind(user.userId, now(), now())
-      .run();
-    expect(
-      await craft(
-        user.token,
-        {
-          requestId: requestIds.second,
-          category: "item",
-          id: "moss-wad",
-          items: [{ id: "sea-salt", count: 3 }],
-        },
-        409,
-      ),
-    ).toEqual({ error: "invalid_materials" });
-    expect(await scenario.runesOf(user.token)).toBe(800);
-  });
-
-  it("見つけていない物とルーン不足を拒み、材料も残高も変えない", async () => {
-    const user = await start("craft-reject", 100);
-    const materialIds = [
-      await addSkillCard(user.userId, "Fire", 100),
-      await addSkillCard(user.userId, "Fire", 100),
-      await addSkillCard(user.userId, "Heal", 100),
-    ];
-
-    // 火の粉（☆2）は、まだ見つけていない。
-    await scenario.setRunes(user.userId, 1000);
-    expect(
-      await craft(
-        user.token,
-        {
-          requestId: requestIds.first,
-          category: "skill",
-          id: "Embers",
-          materialIds,
-        },
-        409,
-      ),
-    ).toEqual({ error: "not_discovered" });
-
-    // 盾打ち（☆2）の費用200に、ルーンが足りない。断った要求IDも、あとで使える。
-    await scenario.setRunes(user.userId, 199);
-    const body = {
-      requestId: requestIds.first,
-      category: "skill",
-      id: "ShieldBash",
-      materialIds,
-    };
-    expect(await craft(user.token, body, 409)).toEqual({
-      error: "insufficient_runes",
-    });
-    expect(await scenario.runesOf(user.token)).toBe(199);
-    expect(await skillCardsOf(user.userId, materialIds)).toHaveLength(3);
-
-    await scenario.setRunes(user.userId, 200);
-    const made = await craft(user.token, body);
-    expect(made.craft).toMatchObject({
-      multiplier: 1,
-      quality: "C",
-      runes: 200,
-      balanceAfter: 0,
-    });
-  });
-
-  it("キャラのデッキに入れているスキルは材料にできない", async () => {
-    const user = await start("craft-deck", 1000);
-    // 初めのカードは、どれもキャラの枠に入れている。
-    const fire = await scenario.env.DB.prepare(
-      "SELECT c.card_id AS id FROM party_character_cards c JOIN skill_cards s ON s.id = c.card_id WHERE c.user_id = ? AND s.skill_id = 'Fire'",
+  it("特別なスキルを使うレシピは、デッキに入れている物を使えず、ルーン不足では材料も残高も変えない", async () => {
+    const user = await start("craft-skill", 100);
+    // リザレクション（☆4）：ヒール×1（特別）・聖水×2・墓前のろうそく×2。
+    await addItems(user.userId, { "holy-water": 2, "grave-candle": 2 });
+    const decked = await scenario.env.DB.prepare(
+      "SELECT c.card_id AS id FROM party_character_cards c JOIN skill_cards s ON s.id = c.card_id WHERE c.user_id = ? AND s.skill_id = 'Heal'",
     )
       .bind(user.userId)
       .first<{ id: string }>();
-    const materialIds = [
-      fire?.id as string,
-      await addSkillCard(user.userId, "Fire", 100),
-      await addSkillCard(user.userId, "Fire", 100),
-    ];
-    expect(
-      await craft(
-        user.token,
-        {
-          requestId: requestIds.first,
-          category: "skill",
-          id: "ShieldBash",
-          materialIds,
-        },
-        409,
-      ),
-    ).toEqual({ error: "invalid_materials" });
-    expect(await skillCardsOf(user.userId, materialIds)).toHaveLength(3);
-    expect(await scenario.runesOf(user.token)).toBe(1000);
+    const heal = await addSkillCard(user.userId, "Heal", 250); // 上限250の位置1
+    const body = (materialIds: string[]) => ({
+      requestId: requestIds.first,
+      category: "skill",
+      id: "Resurrection",
+      materialIds,
+    });
+    await scenario.setRunes(user.userId, 1000);
+    expect(await craft(user.token, body([decked?.id as string]), 409)).toEqual({
+      error: "invalid_materials",
+    });
+
+    // 費用800に、ルーンが足りない。断った要求IDも、あとで使える。
+    await scenario.setRunes(user.userId, 799);
+    expect(await craft(user.token, body([heal]), 409)).toEqual({
+      error: "insufficient_runes",
+    });
+    expect(await scenario.runesOf(user.token)).toBe(799);
+    expect(await skillCardsOf(user.userId, [heal])).toHaveLength(1);
+    expect(await itemCountsOf(user.userId)).toEqual({
+      "holy-water": 2,
+      "grave-candle": 2,
+    });
+
+    await scenario.setRunes(user.userId, 800);
+    const made = await craft(user.token, body([heal]));
+    expect(made.craft).toMatchObject({
+      category: "skill",
+      id: "Resurrection",
+      quality: "S",
+      runes: 800,
+      balanceAfter: 0,
+    });
+    expect(await skillCardsOf(user.userId, [heal])).toEqual([]);
   });
 });
 

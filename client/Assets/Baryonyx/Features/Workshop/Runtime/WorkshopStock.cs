@@ -296,6 +296,10 @@ namespace Baryonyx.Workshop
                     Gear("mock-w5", "oak-staff", 100),
                     Gear("mock-w6", "oak-staff", 171, "トーマ"),
                     Gear("mock-w7", "wooden-sword", 189),
+                    // 合成の特別な材料に使う鉄の剣（炎のダガー・氷河の大剣）。
+                    Gear("mock-w8", "iron-sword", 100, "アリア"),
+                    Gear("mock-w9", "iron-sword", 150),
+                    Gear("mock-w10", "iron-sword", 176),
                     Gear("mock-a1", "leather-armor", 100, "アリア"),
                     Gear("mock-a2", "leather-armor", 126),
                     Gear("mock-a3", "wooden-shield", 108),
@@ -312,6 +316,10 @@ namespace Baryonyx.Workshop
                     Item("herb", 5, "ミナ"),
                     Item("acorn", 2),
                     Item("moss-wad", 1),
+                    // 合成の材料：鉄の剣は作れ、炎のダガーは海賊のラム酒が足りない。
+                    Item("shell-shard", 2),
+                    Item("sailor-rope", 3),
+                    Item("ink-pot", 1),
                 }
             );
     }

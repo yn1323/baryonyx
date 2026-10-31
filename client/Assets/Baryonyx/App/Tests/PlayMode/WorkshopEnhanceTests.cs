@@ -92,17 +92,31 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.BeforeGear.Root.activeSelf, Is.False);
             Assert.That(enhance.BeforeCard.Name.text, Is.EqualTo(enhance.Targets[0].Name));
             Assert.That(enhance.Gauge.activeSelf, Is.True);
-            Assert.That(enhance.Confirm.interactable, Is.True);
+            // 初めは石を選んでいないため、押せない。
+            Assert.That(enhance.Confirm.interactable, Is.False);
             // 持っている数を札に出す。欠片は覚醒のタブでだけ出す。
             Assert.That(enhance.Chips[0].Count.text, Is.EqualTo("×3"));
             Assert.That(enhance.Chips[4].gameObject.activeSelf, Is.False);
             SceneTests.AssertTouchSize(enhance.Confirm.transform, 0.7f);
 
-            // 白い磨き石を2つ選んで押すと、答えを待ってから倍率を上げる。
+            // 白い磨き石の札を2回押すと2つ使う。押すと、答えを待ってから倍率を上げる。
             rows[0].Card.Click();
             var target = enhance.Targets[0];
             Assert.That(enhance.Stone.Id, Is.EqualTo(EnhancementMaterials.White));
-            enhance.More.onClick.Invoke();
+            enhance.Chips[0].Card.Click();
+            enhance.Chips[0].Card.Click();
+            Assert.That(enhance.Count, Is.EqualTo(2));
+            Assert.That(enhance.Chips[0].Count.text, Does.Contain("2</color>/3"));
+            Assert.That(enhance.Chips[0].Card.Selected, Is.True);
+            // 使っている色の札の右上の赤い×で、その色をやめる。使っていない色には出さない。
+            Assert.That(enhance.Chips[0].Cancel.gameObject.activeSelf, Is.True);
+            Assert.That(enhance.Chips[1].Cancel.gameObject.activeSelf, Is.False);
+            enhance.Chips[0].Cancel.onClick.Invoke();
+            Assert.That(enhance.Count, Is.Zero);
+            Assert.That(enhance.Chips[0].Cancel.gameObject.activeSelf, Is.False);
+            Assert.That(enhance.Confirm.interactable, Is.False);
+            enhance.Chips[0].Card.Click();
+            enhance.Chips[0].Card.Click();
             Assert.That(enhance.Count, Is.EqualTo(2));
             Assert.That(enhance.DetailName.text, Is.EqualTo(target.Name));
             Assert.That(enhance.Info.text, Does.Contain("200 ルーン"));
@@ -141,7 +155,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Confirm.interactable, Is.False);
             Assert.That(enhance.Info.text, Does.Contain("青い磨き石が足りません"));
             enhance.ChooseStone(0);
-            enhance.More.onClick.Invoke();
+            enhance.Chips[0].Card.Click();
             Assert.That(enhance.Count, Is.EqualTo(1));
 
             // 失敗したら知らせ、読み直す。
@@ -181,7 +195,6 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Awakening));
             Assert.That(enhance.Chips[0].gameObject.activeSelf, Is.False);
             Assert.That(enhance.Chips[4].gameObject.activeSelf, Is.True);
-            Assert.That(enhance.Stepper.activeSelf, Is.False);
             Assert.That(enhance.ConfirmLabel.text, Is.EqualTo(WorkshopEnhanceView.AwakenLabel));
             Assert.That(enhance.Awakenings, Is.Not.Empty);
             var option = enhance.Awakenings[0];
@@ -211,6 +224,133 @@ namespace Baryonyx.Tests.PlayMode
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
             Assert.That(enhance.gameObject.activeInHierarchy, Is.False);
+        }
+
+        // 白い磨き石はBの入口で止まる。札を何度押しても入口までの数しか選べず、届いたら白の札を暗くし、
+        // 押せなくして、白で上げられるのはBまでと書く。ゲージには上限の壁の線を立てる。選び直すと、上げられる色へ替える。
+        [UnityTest]
+        public IEnumerator WhiteStopsAtTheEntranceOfQualityB()
+        {
+            source = new FakeEnhancement(
+                new Dictionary<string, int>
+                {
+                    [EnhancementMaterials.White] = 20,
+                    [EnhancementMaterials.Blue] = 1,
+                }
+            );
+            EnhancementSession.Source = source;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            yield return SceneTests.WaitForTask(guide.RunesTask);
+            RuneBalance.Set(5000);
+            var view = guide.View;
+            int item = Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == EnhancementSession.GuideItemKey
+            );
+            var enhance = view.PanelFor(item).GetComponent<WorkshopEnhanceView>();
+            view.MenuItems[item].onClick.Invoke();
+            yield return SceneTests.WaitForTask(enhance.LoadTask);
+            yield return TurnedFaceUp(enhance);
+
+            var white = EnhancementMaterials.Polishes[0];
+            var target = enhance.Targets[0];
+            Assert.That(enhance.Stone, Is.EqualTo(white));
+            Assert.That(enhance.GaugeWall.gameObject.activeSelf, Is.True);
+            Assert.That(
+                enhance.GaugeWall.rectTransform.anchorMin.x,
+                Is.EqualTo(0.4f).Within(0.02f)
+            );
+            int useful = EnhancementMaterials.UsefulCount(1f, white, target.MaxMultiplier);
+            for (int i = 0; i < 30; i++)
+                enhance.Chips[0].Card.Click();
+            Assert.That(enhance.Count, Is.EqualTo(useful));
+            enhance.Confirm.onClick.Invoke();
+            yield return SceneTests.WaitForTask(enhance.Work);
+            Assert.That(enhance.Targets[0].Quality, Is.EqualTo(ItemQuality.B));
+
+            Assert.That(enhance.Stone, Is.EqualTo(white));
+            Assert.That(enhance.Chips[0].Card.Dimmed, Is.True);
+            Assert.That(enhance.Chips[1].Card.Dimmed, Is.False);
+            Assert.That(enhance.Confirm.interactable, Is.False);
+            Assert.That(enhance.Info.text, Is.EqualTo(WorkshopEnhanceView.CeilingText(white)));
+            // 行を選び直すと、上げられる色（青）へ替え、壁の線をAの入口へ移す。
+            enhance.Rows[0].Card.Click();
+            Assert.That(enhance.Stone.Id, Is.EqualTo(EnhancementMaterials.Blue));
+            Assert.That(
+                enhance.GaugeWall.rectTransform.anchorMin.x,
+                Is.EqualTo(0.7f).Within(0.02f)
+            );
+            enhance.ChooseStone(1);
+            Assert.That(enhance.Count, Is.EqualTo(1));
+            Assert.That(enhance.Confirm.interactable, Is.True);
+        }
+
+        // 選んだ色が足りなくても、下の色から作れる数までは選べる。「強化」で確かめの画面を開き、使う石と作る石、
+        // 合成と強化のルーンの合計を見せる。暗い所を押すと何も使わずに閉じ、チェックで作ってから強化する。
+        [UnityTest]
+        public IEnumerator ShortStonesAreMadeFromTheColourBelowAfterTheCheck()
+        {
+            source = new FakeEnhancement(
+                new Dictionary<string, int> { [EnhancementMaterials.White] = 6 }
+            );
+            EnhancementSession.Source = source;
+            var guide = default(GuideSceneBootstrap);
+            yield return SceneTests.LoadGuide(SceneNames.Shop, value => guide = value);
+            yield return SceneTests.WaitForTask(guide.RunesTask);
+            RuneBalance.Set(5000);
+            var view = guide.View;
+            int item = Array.FindIndex(
+                view.Definition.Items,
+                entry => entry.Key == EnhancementSession.GuideItemKey
+            );
+            var enhance = view.PanelFor(item).GetComponent<WorkshopEnhanceView>();
+            view.MenuItems[item].onClick.Invoke();
+            yield return SceneTests.WaitForTask(enhance.LoadTask);
+            yield return TurnedFaceUp(enhance);
+
+            var blue = EnhancementMaterials.Polishes[1];
+            var target = enhance.Targets[0];
+            enhance.ChooseStone(1);
+            Assert.That(enhance.Count, Is.EqualTo(1));
+            // 白6個から青は2個まで作れる。
+            for (int i = 0; i < 5; i++)
+                enhance.Chips[1].Card.Click();
+            Assert.That(enhance.Count, Is.EqualTo(2));
+            int runes = blue.Runes * 2 + blue.CombineRunes * 2;
+            Assert.That(enhance.Info.text, Does.Contain("（2個は合成）"));
+            Assert.That(enhance.Info.text, Does.Contain($"{runes:N0} ルーン"));
+            Assert.That(enhance.Confirm.interactable, Is.True);
+
+            var prompt = enhance.Prompt;
+            enhance.Confirm.onClick.Invoke();
+            Assert.That(prompt.IsOpen, Is.True);
+            Assert.That(
+                prompt.Dim.GetComponent<UnityEngine.UI.Image>().color.a,
+                Is.GreaterThan(0.5f)
+            );
+            Assert.That(prompt.Steps[0].activeSelf, Is.True);
+            Assert.That(prompt.Steps[1].activeSelf, Is.False);
+            Assert.That(prompt.From[0].Count.text, Is.EqualTo("×6"));
+            Assert.That(prompt.To[0].Count.text, Is.EqualTo("×2"));
+            Assert.That(prompt.Runes.text, Is.EqualTo(runes.ToString("N0")));
+            // 暗い所を押すと、何も使わずに閉じる。
+            prompt.Dim.onClick.Invoke();
+            Assert.That(prompt.IsOpen, Is.False);
+            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.EqualTo(6));
+
+            enhance.Confirm.onClick.Invoke();
+            prompt.Confirm.onClick.Invoke();
+            Assert.That(prompt.IsOpen, Is.False);
+            yield return SceneTests.WaitForTask(enhance.Work);
+            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.White), Is.Zero);
+            Assert.That(EnhancementSession.CountOf(EnhancementMaterials.Blue), Is.Zero);
+            Assert.That(RuneBalance.Known, Is.EqualTo(5000 - runes));
+            Assert.That(
+                enhance.Targets[0].Multiplier,
+                Is.EqualTo(EnhancementMaterials.Polished(1f, blue, 2, target.MaxMultiplier))
+                    .Within(0.001f)
+            );
         }
 
         private static IEnumerator TurnedFaceUp(WorkshopEnhanceView enhance) =>
@@ -252,6 +392,12 @@ namespace Baryonyx.Tests.PlayMode
                 AwakeningOption option,
                 CancellationToken token
             ) => Run(() => memory.AwakenAsync(option, token));
+
+            public Task<EnhancementOutcome> CombineAsync(
+                EnhancementMaterial made,
+                int count,
+                CancellationToken token
+            ) => Run(() => memory.CombineAsync(made, count, token));
 
             private Task<EnhancementOutcome> Run(Func<Task<EnhancementOutcome>> run)
             {

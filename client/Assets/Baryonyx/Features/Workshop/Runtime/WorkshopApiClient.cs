@@ -37,18 +37,17 @@ namespace Baryonyx.Workshop
                 token
             );
 
-        // 装備・スキルは持ち物の行のIDを、アイテムは種類ごとの数を送る。
+        // アイテムの材料はレシピで決まるため送らず、特別な材料（装備・スキル）の持ち物の行のIDだけを送る。
         public Task<CraftResult> CraftAsync(
             AccountSession session,
             string requestId,
             string category,
             string id,
-            IReadOnlyList<WorkshopOwned> materials,
+            IReadOnlyList<WorkshopOwned> special,
             CancellationToken token
         )
         {
-            var things = materials ?? Array.Empty<WorkshopOwned>();
-            bool items = category == "item";
+            var things = special ?? Array.Empty<WorkshopOwned>();
             return server.SendAsync<CraftResult>(
                 "/v1/workshop/craft",
                 "POST",
@@ -57,17 +56,7 @@ namespace Baryonyx.Workshop
                     requestId = requestId,
                     category = category,
                     id = id,
-                    materialIds = items ? null : things.Select(thing => thing.RowId).ToArray(),
-                    items = items
-                        ? things
-                            .GroupBy(thing => thing.KindId)
-                            .Select(group => new CraftItem
-                            {
-                                id = group.Key,
-                                count = group.Sum(thing => thing.Count),
-                            })
-                            .ToArray()
-                        : null,
+                    materialIds = things.Select(thing => thing.RowId).ToArray(),
                 },
                 session.Token,
                 token
@@ -137,7 +126,6 @@ namespace Baryonyx.Workshop
             public string category;
             public string id;
             public string[] materialIds;
-            public CraftItem[] items;
         }
 
         [Serializable]

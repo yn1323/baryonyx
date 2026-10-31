@@ -1,9 +1,8 @@
 import { z } from "zod";
-import {
-  CRAFT_MATERIAL_COUNT,
-  SELL_LIMIT,
-  WORKSHOP_CATEGORIES,
-} from "./catalog.js";
+import { SELL_LIMIT, WORKSHOP_CATEGORIES } from "./catalog.js";
+
+// 1回の合成で送れる特別な材料（装備・スキル）の数の上限。今のレシピは1つまで。
+const CRAFT_HELD_LIMIT = 5;
 
 const requestId = z.string().regex(/^[a-f0-9-]{36}$/);
 const entryId = z.string().min(1).max(64);
@@ -17,39 +16,20 @@ export const buySchema = z.object({
 
 export type Buy = z.infer<typeof buySchema>;
 
-// 商会で、☆が1つ低い同じ分類の物を合計3つ使い、1つ作る。費用と出来上がる物の倍率はサーバーが決める。
-// スキル・装備は持ち物の行のIDを重ねずに3つ、アイテムは種類ごとの数を、種類を重ねずに合計3個で選ぶ。
-export const craftSchema = z.discriminatedUnion("category", [
-  z.object({
-    requestId,
-    category: z.enum(WORKSHOP_CATEGORIES),
-    id: entryId,
-    materialIds: z
-      .array(z.string().min(1).max(64))
-      .length(CRAFT_MATERIAL_COUNT)
-      .refine((ids) => new Set(ids).size === ids.length),
-  }),
-  z.object({
-    requestId,
-    category: z.literal("item"),
-    id: entryId,
-    items: z
-      .array(
-        z.object({
-          id: entryId,
-          count: z.number().int().min(1).max(CRAFT_MATERIAL_COUNT),
-        }),
-      )
-      .min(1)
-      .max(CRAFT_MATERIAL_COUNT)
-      .refine(
-        (items) =>
-          new Set(items.map((item) => item.id)).size === items.length &&
-          items.reduce((sum, item) => sum + item.count, 0) ===
-            CRAFT_MATERIAL_COUNT,
-      ),
-  }),
-]);
+// 商会で、レシピの材料をすべて使って1つ作る。費用と出来上がる物の倍率はサーバーが決める。
+// アイテムの材料はレシピで決まるため送らない。装備・スキルの材料（特別な材料）は、使う持ち物の行のIDを重ねずに送る。
+// 同じ種類の装備・スキルはレシピに1つまでのため、行のIDの数はレシピの特別な材料の数と同じになる。
+// クライアント（JsonUtility）は空の配列も送るため、省略と空を受け付ける。
+export const craftSchema = z.object({
+  requestId,
+  category: z.enum(WORKSHOP_CATEGORIES),
+  id: entryId,
+  materialIds: z
+    .array(z.string().min(1).max(64))
+    .max(CRAFT_HELD_LIMIT)
+    .refine((ids) => new Set(ids).size === ids.length)
+    .default([]),
+});
 
 export type Craft = z.infer<typeof craftSchema>;
 

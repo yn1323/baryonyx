@@ -109,7 +109,17 @@ namespace Baryonyx.Library
             Add(LibraryKind.Weapon, 0, "oak-staff", "short-bow", "iron-sword", "war-hammer");
             Add(LibraryKind.Armor, 0, "magic-robe", "traveler-cloak", "chainmail", "leather-armor");
             Add(LibraryKind.Accessory, 0, "moss-charm", "acorn-brooch");
-            Add(LibraryKind.Item, 0, "herb", "acorn", "moss-wad", "dried-fish");
+            Add(
+                LibraryKind.Item,
+                0,
+                "herb",
+                "acorn",
+                "moss-wad",
+                "dried-fish",
+                "shell-shard",
+                "sailor-rope",
+                "ink-pot"
+            );
             found.Add((LibraryKind.Enemy, "moss-slime", 12));
             found.Add((LibraryKind.Enemy, "moss-wolf", 3));
             var steps = new[]

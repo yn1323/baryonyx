@@ -59,6 +59,7 @@ namespace Baryonyx.Workshop
 
         Task<WorkshopPurchase> BuyAsync(WorkshopGood good, CancellationToken token);
 
+        // materials は特別な材料（装備・スキル）の1つずつ。アイテムの材料はレシピで決まる。
         Task<WorkshopCrafted> CraftAsync(
             WorkshopRecipe recipe,
             IReadOnlyList<WorkshopOwned> materials,
@@ -203,15 +204,12 @@ namespace Baryonyx.Workshop
                 return Task.FromException<WorkshopCrafted>(
                     new InvalidOperationException("ルーンが足りません。")
                 );
-            if ((materials?.Count ?? 0) != WorkshopCraft.MaterialCount)
+            if ((materials?.Count ?? 0) != recipe.Materials.Count(material => !material.IsItem))
                 return Task.FromException<WorkshopCrafted>(
                     new InvalidOperationException("材料が足りません。")
                 );
             runes = balance - recipe.Runes;
-            string itemId =
-                recipe.Kind == Library.LibraryKind.Item
-                    ? recipe.Id
-                    : "local-" + Guid.NewGuid().ToString("N");
+            string itemId = "local-" + Guid.NewGuid().ToString("N");
             return Task.FromResult(
                 new WorkshopCrafted(
                     itemId,

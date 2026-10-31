@@ -1,6 +1,7 @@
 import { MIN_MULTIPLIER_PERCENT } from "../../shared/quality.js";
 import { DROP_POOLS } from "../adventure/drops.js";
 import type { Stars } from "../inventory/catalog.js";
+import { recipeOf } from "./recipes.js";
 
 // 商会の「買う」（doc/features/screens/shop.md の商会）。これまでに手に入れた（ライブラリに見つけた記録がある）
 // スキル・武器・防具・アクセサリーを、品質の最低（倍率×1.00）で、ルーンと引き換えに何度でも売る。
@@ -31,7 +32,7 @@ export const WORKSHOP_STAR_PRICES: Record<Stars, number> = {
 };
 
 // 冒険のドロップの一覧（行き先ごと）での、種類の載り方。載っていない物は undefined。
-function dropEntryOf(category: CraftCategory, id: string) {
+function dropEntryOf(category: DropCategory, id: string) {
   for (const pool of Object.values(DROP_POOLS)) {
     const entry = pool.find(
       (choice) => choice.category === category && choice.id === id,
@@ -42,9 +43,11 @@ function dropEntryOf(category: CraftCategory, id: string) {
 }
 
 // 種類の☆。冒険のドロップの一覧に載っている物だけを扱い、載っていない物は undefined。
-// 合成の材料の☆を確かめるのにも使うため、アイテムも受け取る。
+// 売るアイテムの値段にも使うため、アイテムも受け取る。
+type DropCategory = WorkshopCategory | "item";
+
 export function workshopStarsOf(
-  category: CraftCategory,
+  category: DropCategory,
   id: string,
 ): Stars | undefined {
   return dropEntryOf(category, id)?.stars;
@@ -59,14 +62,8 @@ export function workshopPrice(
   return stars === undefined ? undefined : WORKSHOP_STAR_PRICES[stars];
 }
 
-// 商会の「合成」（doc/features/screens/shop.md の商会）。同じ分類で☆がちょうど1つ低い物を合計3つ使い、
-// これまでに手に入れた（ライブラリに見つけた記録がある）☆2以上の物を1つ作る。アイテムも作れる。
-export const CRAFT_CATEGORIES = [...WORKSHOP_CATEGORIES, "item"] as const;
-
-export type CraftCategory = (typeof CRAFT_CATEGORIES)[number];
-
-// 1回の合成で使う材料の数。
-export const CRAFT_MATERIAL_COUNT = 3;
+// 商会の「合成」（doc/features/synthesis.md）。作る物ごとに決まった材料（recipes.ts のレシピ）をそろえ、
+// すべて使って、武器・防具・アクセサリー・カスタムスキルを1つ作る。アイテムは作らない。
 
 // 合成の費用（ルーン）。出来上がる物の☆で決め、買う値段の半分にする。☆1は作れない。仮の値。
 export const CRAFT_STAR_RUNES: Record<Exclude<Stars, 1>, number> = {
@@ -76,22 +73,24 @@ export const CRAFT_STAR_RUNES: Record<Exclude<Stars, 1>, number> = {
   5: 1600,
 };
 
-// 作れる物の☆。冒険のドロップの一覧に載っていて、☆2以上で、主の物（bossOnly）ではない物だけを作る。
-// 作れない物は undefined。
+// 作れる物の☆。レシピがあり、冒険のドロップの一覧に載っていて、☆2以上で、主の物（bossOnly）ではない物だけを
+// 作る。作れない物は undefined。
 export function craftStarsOf(
-  category: CraftCategory,
+  category: WorkshopCategory,
   id: string,
 ): Exclude<Stars, 1> | undefined {
   const entry = dropEntryOf(category, id);
-  if (!entry || entry.bossOnly || entry.stars === 1) return undefined;
+  if (!recipeOf(category, id) || !entry || entry.bossOnly || entry.stars === 1)
+    return undefined;
   return entry.stars;
 }
 
 // 四捨五入の境目ちょうどが、小数の誤差で下へ落ちないよう、わずかに足して丸める。
 const EPSILON = 1e-9;
 
-// 出来上がる物の倍率（百分率）。材料それぞれの、倍率の幅（×1.00〜上限）の中の位置を平均し、
-// 出来上がる物の幅の同じ位置にする。上限が×1.00の種類の位置は0とする。
+// 出来上がる物の倍率（百分率）。品質を持つ材料（装備・スキル）それぞれの、倍率の幅（×1.00〜上限）の中の
+// 位置を平均し、出来上がる物の幅の同じ位置にする。上限が×1.00の種類の位置は0とする。
+// アイテムは品質を持たないため平均に入れず、品質を持つ材料のないレシピは×1.00（品質C）になる。
 export function craftedPercent(
   materials: readonly { percent: number; maxPercent: number }[],
   maxPercent: number,
@@ -100,6 +99,7 @@ export function craftedPercent(
     max <= MIN_MULTIPLIER_PERCENT
       ? 0
       : (percent - MIN_MULTIPLIER_PERCENT) / (max - MIN_MULTIPLIER_PERCENT);
+  if (materials.length === 0) return MIN_MULTIPLIER_PERCENT;
   const average =
     materials.reduce(
       (sum, material) =>

@@ -659,6 +659,7 @@ namespace Baryonyx.Library.Editor
             );
             view.DetailExtra.richText = true;
             view.DetailExtra.textWrappingMode = TextWrappingModes.Normal;
+            BuildRecipe(detail, view, x, y + 4f);
 
             // 敵の開示した弱点。倒した数の下に、「弱点」と属性のアイコン（12×12を4倍）。
             var row = Layout.Row(detail, "Weakness", x, y + 48f, DetailWidth, 56f, 12f);
@@ -689,6 +690,40 @@ namespace Baryonyx.Library.Editor
             view.WeaknessRow = row.gameObject;
             row.gameObject.SetActive(false);
             detail.gameObject.SetActive(false);
+        }
+
+        // 合成のレシピ：見出しと、材料の札（絵と要る数、下に名前）を横に並べる。武器・防具・アクセサリー・スキルの
+        // 説明の下に出し、キャラ・敵の「倒した数」などの欄と同じ場所を使う（その分類では空いている）。
+        private const int RecipeSlots = 4;
+        private const float RecipeTile = 120f;
+        private const float RecipeArt = 64f;
+
+        private static void BuildRecipe(
+            RectTransform detail,
+            LibraryCatalogView view,
+            float x,
+            float y
+        )
+        {
+            var group = Rect("Recipe", detail);
+            Stretch(group);
+            Frame.Heading(group, "Title", "合成のレシピ", x, y, DetailWidth, 44f, 30f);
+            float gap = (DetailWidth - RecipeTile * RecipeSlots) / (RecipeSlots - 1);
+            for (int i = 0; i < RecipeSlots; i++)
+            {
+                var tile = Workshop.Editor.WorkshopPanelAssets.MaterialTile(
+                    group,
+                    "Material" + i,
+                    x + i * (RecipeTile + gap),
+                    y + 56f,
+                    RecipeTile,
+                    RecipeArt
+                );
+                tile.Card.Interactable = true;
+                view.RecipeRows.Add(tile);
+            }
+            group.gameObject.SetActive(false);
+            view.Recipe = group.gameObject;
         }
 
         // --- The daily steps -------------------------------------------------------------

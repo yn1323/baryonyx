@@ -9,39 +9,69 @@ using Baryonyx.Library;
 
 namespace Baryonyx.Workshop
 {
-    /// <summary>One thing the trading house can make: a found kind of ☆2 or more.</summary>
+    /// <summary>
+    /// One thing the trading house can make from its recipe: a weapon, armor, accessory or
+    /// custom skill of ☆2 or more, shown once any of its materials has been found.
+    /// </summary>
     public sealed class WorkshopRecipe
     {
-        public WorkshopRecipe(LibraryEntryData entry, int stars, float maxMultiplier)
+        public WorkshopRecipe(
+            LibraryEntryData entry,
+            RecipeDefinition definition,
+            int stars,
+            float maxMultiplier,
+            bool found
+        )
         {
             Entry = entry ?? throw new ArgumentNullException(nameof(entry));
+            Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             Stars = stars;
             MaxMultiplier = maxMultiplier;
+            Found = found;
         }
 
         public LibraryEntryData Entry { get; }
+        public RecipeDefinition Definition { get; }
         public LibraryKind Kind => Entry.Kind;
         public string Id => Entry.Id;
         public string Name => string.IsNullOrEmpty(Entry.Name) ? Entry.Id : Entry.Name;
         public int Stars { get; }
         public float MaxMultiplier { get; }
-        public int Runes => WorkshopCraft.RunesOf(Stars);
 
-        // 材料の☆。出来上がる物より1つ低い。
-        public int MaterialStars => Stars - 1;
+        // 作る物を手に入れたことがあるか。まだなら、絵を影にし、名前と効果を伏せる。
+        public bool Found { get; }
+        public int Runes => WorkshopCraft.RunesOf(Stars);
+        public IReadOnlyList<RecipeMaterial> Materials => Definition.Materials;
     }
 
     /// <summary>
-    /// The trading house's craft (doc/features/synthesis.md, provisional rules of 2026-10-24):
-    /// three things of the same kind one star lower make one found thing of the kind, for runes.
-    /// The made thing's quality is the materials' average place in their ranges, so better
-    /// materials make a better thing. Items have no quality. Things in use are not materials,
-    /// and an item keeps as many as the deck slots it is in. The server decides the same again
-    /// (server/src/features/workshop/catalog.ts and repository.ts).
+    /// The trading house's craft (doc/features/synthesis.md): every material of the made thing's
+    /// recipe, all used, and runes. Items are counted, keeping as many as the deck slots they are
+    /// in; equipment and skills (special materials) are one held piece each, nobody using it.
+    /// The made thing's quality is the special materials' average place in their ranges, ×1.00
+    /// (quality C) without any, as items have no quality. The server decides the same again
+    /// (server/src/features/workshop/catalog.ts and craft.ts).
     /// </summary>
     public static class WorkshopCraft
     {
-        public const int MaterialCount = 3;
+        // 合成のタブの分類と、その順。アイテムは作らない。
+        public static readonly IReadOnlyList<LibraryKind> Kinds = new[]
+        {
+            LibraryKind.Weapon,
+            LibraryKind.Armor,
+            LibraryKind.Accessory,
+            LibraryKind.Skill,
+        };
+
+        // タブの見出し。分類のタブのあとに、磨き石の合成のタブを置く（doc/features/enhancement.md）。
+        public static readonly string[] TabLabels =
+        {
+            "武器",
+            "防具",
+            "アクセサリー",
+            "スキル",
+            "磨き石",
+        };
 
         // 費用（ルーン）：出来上がる物の☆で、買う値段の半分（仮）。
         private static readonly int[] StarRunes = { 0, 200, 400, 800, 1600 };
@@ -50,9 +80,8 @@ namespace Baryonyx.Workshop
             stars >= 2 && stars <= StarRunes.Length ? StarRunes[stars - 1] : 0;
 
         /// <summary>
-        /// The things that can be made: found entries of the stock's kinds with ☆2 or more, but
-        /// not the lords' things (that fall only in the deepest room), kind by kind, the lower
-        /// stars first.
+        /// The things that can be made: those with a recipe, ☆2 or more and not a lord's, whose
+        /// materials have been found at least one, kind by kind, the lower stars first.
         /// </summary>
         public static IReadOnlyList<WorkshopRecipe> Recipes(
             LibraryData data,
@@ -61,86 +90,121 @@ namespace Baryonyx.Workshop
         {
             if (data == null || records == null)
                 return Array.Empty<WorkshopRecipe>();
-            return WorkshopStock
-                .Kinds.SelectMany(kind =>
-                    data.Entries.Where(entry =>
-                            entry != null && entry.Kind == kind && records.IsFound(kind, entry.Id)
+            return Kinds
+                .SelectMany(kind =>
+                    WorkshopRecipes
+                        .All.Where(definition =>
+                            definition.Kind == kind
+                            && definition.Materials.Any(material =>
+                                records.IsFound(material.Kind, material.Id)
+                            )
                         )
-                        .Select(entry => (entry, stars: WorkshopStock.StarsOf(kind, entry.Id)))
-                        .Where(pair => pair.stars >= 2 && !BossOnly(kind, pair.entry.Id))
-                        .OrderBy(pair => pair.stars)
-                        .Select(pair => new WorkshopRecipe(
-                            pair.entry,
-                            pair.stars,
-                            MaxOf(kind, pair.entry.Id)
-                        ))
+                        .Select(definition =>
+                        {
+                            var entry = data.Entries.FirstOrDefault(e =>
+                                e != null && e.Kind == kind && e.Id == definition.Id
+                            );
+                            int stars = WorkshopStock.StarsOf(kind, definition.Id);
+                            return entry == null || stars < 2 || BossOnly(kind, definition.Id)
+                                ? null
+                                : new WorkshopRecipe(
+                                    entry,
+                                    definition,
+                                    stars,
+                                    MaxOf(kind, definition.Id),
+                                    records.IsFound(kind, definition.Id)
+                                );
+                        })
+                        .Where(recipe => recipe != null)
+                        .OrderBy(recipe => recipe.Stars)
                 )
                 .ToArray();
         }
 
         /// <summary>
-        /// What can go into <paramref name="recipe"/>: the held things of its kind one star lower
-        /// that nobody uses, the worse first. Items come as one unit each, up to three of a kind,
-        /// keeping as many as the deck slots they are in.
+        /// How many of <paramref name="material"/> can be used: an item's count less the deck
+        /// slots it is in, or the held pieces of the kind nobody uses.
         /// </summary>
-        public static IReadOnlyList<WorkshopOwned> Materials(
+        public static int HaveOf(RecipeMaterial material, IEnumerable<WorkshopOwned> owned)
+        {
+            var things = (owned ?? Array.Empty<WorkshopOwned>()).Where(thing =>
+                thing.Kind == material.Kind && thing.KindId == material.Id
+            );
+            return material.IsItem
+                ? things.Sum(thing => Math.Max(0, thing.Count - thing.Reserved))
+                : things.Count(thing => thing.User == null);
+        }
+
+        /// <summary>The held pieces a special material can be, nobody using them, the worse first.</summary>
+        public static IReadOnlyList<WorkshopOwned> ChoicesOf(
+            RecipeMaterial material,
+            IEnumerable<WorkshopOwned> owned
+        ) =>
+            material.IsItem
+                ? Array.Empty<WorkshopOwned>()
+                : (owned ?? Array.Empty<WorkshopOwned>())
+                    .Where(thing =>
+                        thing.Kind == material.Kind
+                        && thing.KindId == material.Id
+                        && thing.User == null
+                    )
+                    .OrderBy(thing => Quality.Percent(thing.Multiplier))
+                    .ThenBy(thing => thing.RowId, StringComparer.Ordinal)
+                    .ToArray();
+
+        /// <summary>
+        /// Every piece held for a special material (those in use too, which cannot be chosen),
+        /// the worse first, for the picker.
+        /// </summary>
+        public static IReadOnlyList<WorkshopOwned> PiecesOf(
+            RecipeMaterial material,
+            IEnumerable<WorkshopOwned> owned
+        ) =>
+            material.IsItem
+                ? Array.Empty<WorkshopOwned>()
+                : (owned ?? Array.Empty<WorkshopOwned>())
+                    .Where(thing => thing.Kind == material.Kind && thing.KindId == material.Id)
+                    .OrderBy(thing => Quality.Percent(thing.Multiplier))
+                    .ThenBy(thing => thing.RowId, StringComparer.Ordinal)
+                    .ToArray();
+
+        /// <summary>Whether every material of <paramref name="recipe"/> is held enough.</summary>
+        public static bool CanMake(WorkshopRecipe recipe, IEnumerable<WorkshopOwned> owned)
+        {
+            var things = owned?.ToArray() ?? Array.Empty<WorkshopOwned>();
+            return recipe != null
+                && recipe.Materials.All(material => HaveOf(material, things) >= material.Count);
+        }
+
+        /// <summary>
+        /// The special materials chosen when a recipe opens, one per special material in the
+        /// recipe's order: the worst piece nobody uses, or null when none is held.
+        /// </summary>
+        public static IReadOnlyList<WorkshopOwned> FirstChoice(
             WorkshopRecipe recipe,
             IEnumerable<WorkshopOwned> owned
         )
         {
             if (recipe == null)
                 return Array.Empty<WorkshopOwned>();
-            var fit = (owned ?? Array.Empty<WorkshopOwned>()).Where(thing =>
-                thing.Kind == recipe.Kind && thing.Stars == recipe.MaterialStars
-            );
-            if (recipe.Kind != LibraryKind.Item)
-                return fit.Where(thing => thing.User == null)
-                    .OrderBy(thing => Quality.Percent(thing.Multiplier))
-                    .ThenBy(thing => thing.KindId, StringComparer.Ordinal)
-                    .ToArray();
-            var units = new List<WorkshopOwned>();
-            foreach (var item in fit.OrderByDescending(thing => thing.Count))
-            {
-                int spare = Math.Min(MaterialCount, item.Count - item.Reserved);
-                for (int i = 0; i < spare; i++)
-                {
-                    // デッキに入れた分は残してあるので、1つずつの札は使っていない物として扱う。
-                    var unit = item.Copy();
-                    unit.Count = 1;
-                    unit.User = null;
-                    unit.Reserved = 0;
-                    units.Add(unit);
-                }
-            }
-            return units;
+            var things = owned?.ToArray() ?? Array.Empty<WorkshopOwned>();
+            return recipe
+                .Materials.Where(material => !material.IsItem)
+                .Select(material => ChoicesOf(material, things).FirstOrDefault())
+                .ToArray();
         }
 
-        /// <summary>The materials chosen when a recipe opens: the worse ones first, up to three.</summary>
-        public static IReadOnlyList<int> FirstChoice(IReadOnlyList<WorkshopOwned> materials) =>
-            Enumerable.Range(0, Math.Min(MaterialCount, materials?.Count ?? 0)).ToArray();
-
-        /// <summary>Whether enough materials are held to make <paramref name="recipe"/>.</summary>
-        public static bool CanMake(WorkshopRecipe recipe, IEnumerable<WorkshopOwned> owned) =>
-            Materials(recipe, owned).Count >= MaterialCount;
-
         /// <summary>
-        /// The made thing's multiplier: the materials' average place in their ranges, put on the
-        /// made thing's range and rounded to a whole hundredth. ×1.00 for items.
+        /// The made thing's multiplier: the special materials' average place in their ranges, put
+        /// on the made thing's range and rounded to a whole hundredth; ×1.00 without any.
         /// </summary>
-        public static float Multiplier(
-            WorkshopRecipe recipe,
-            IReadOnlyList<WorkshopOwned> materials
-        )
+        public static float Multiplier(WorkshopRecipe recipe, IReadOnlyList<WorkshopOwned> special)
         {
-            if (
-                recipe == null
-                || recipe.Kind == LibraryKind.Item
-                || materials == null
-                || materials.Count == 0
-            )
+            var held = special?.Where(thing => thing != null).ToArray();
+            if (recipe == null || held == null || held.Length == 0)
                 return Quality.MinMultiplier;
             // サーバーと同じく百分率の整数で計算する。
-            double place = materials.Average(thing => (double)PlaceOf(thing));
+            double place = held.Average(thing => (double)PlaceOf(thing));
             int width = Quality.Percent(recipe.MaxMultiplier) - 100;
             return (100 + (int)Math.Round(place * width, MidpointRounding.AwayFromZero)) / 100f;
         }
