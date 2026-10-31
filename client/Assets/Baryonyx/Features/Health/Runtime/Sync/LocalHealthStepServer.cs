@@ -38,11 +38,12 @@ namespace Baryonyx.Health
             return Task.FromResult(runes);
         }
 
-        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token)
+        public Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
+            this.days = days ?? Array.Empty<HealthDay>();
             long granted = 0;
-            foreach (var day in days)
+            foreach (var day in this.days)
             {
                 if (day == null || !day.hasValue)
                     continue;

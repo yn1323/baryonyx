@@ -345,8 +345,14 @@ namespace Baryonyx.Tests.EditMode
 
             public Task<long> ReadRunesAsync(CancellationToken token) => Task.FromResult(0L);
 
-            public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
-                Task.FromResult(new HealthRuneClaim(0, 0));
+            public async Task<HealthRuneClaim> SaveAndClaimAsync(
+                HealthDay[] days,
+                CancellationToken token
+            )
+            {
+                await SaveAsync(days, token);
+                return new HealthRuneClaim(0, 0);
+            }
         }
 
         private sealed class Store : IHealthLinkStore

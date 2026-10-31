@@ -2,7 +2,7 @@
 id: rule-backend-design-history
 type: reference
 status: 記録
-updated: 2026-10-25
+updated: 2026-11-01
 ---
 
 # バックエンドの開発環境の変更と判断の記録
@@ -10,6 +10,7 @@ updated: 2026-10-25
 [バックエンドの開発環境](backend-design.md)
 
 
+- 2026-11-01：ユーザーの「タップでルーン獲得が重い」を受け、Homeの歩数のパネルを押したときの4回の要求（`POST /v1/health/syncs`・`PUT /v1/health/sources/:id/days`・`POST /v1/exercise/rewards/claim`・`GET /v1/health/sources/:id/days`）を、保存と請求を1回で行う `POST /v1/exercise/rewards/sync` にまとめた。D1との往復は、セッションを覚えたあとで版の発行・保存・請求の3回。あわせて請求（`claim`）の、要求IDの記録を先に読む往復と、書いたあとに読み直す2回の往復をやめ、記録と日ごとの変換を書き込みと同じbatchで読むようにした（[D1との往復と文の数](backend-design.md#d1との往復と文の数)）。再送は記録を書けずに前回の記録を読んで返すため、結果は変わらない。
 - 2026-10-25：ユーザーの「サーバーのリファクタ（マイグレーション以外）と、API読み込みのbatch化、セッション確認の1往復を減らす」を受け、次のように変えた。参考：[D1のbatch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)、[D1の上限](https://developers.cloudflare.com/d1/platform/limits/)。
   - 往復：書き込みのAPIは書き込みと書いたあとの読み込みを1回のbatchにし、[D1との往復と文の数](backend-design.md#d1との往復と文の数)を定めた。テストで数えたD1との往復（セッションの確認を含む平均）は、`POST /v1/adventure/buy` が7.7回から1.7回、`/adventure/end` が8.0回から2.0回、`/adventure/clear` が6.0回から1.9回、`/adventure/move` が5.0回から2.0回、`POST /v1/enhancement/polish`・`awaken` が約6回から1.8回、`POST /v1/workshop/craft`・`sell` が約5回から1.8回、`POST /v1/summon` が5.0回から1.5回、`GET /v1/library` が5.1回から1.6回になった。`POST /v1/exercise/rewards/claim`（5.8回）は今回変えていない。
   - セッション：確かめたセッションをWorkerのメモリに最長60秒覚えるようにした（ユーザーが3案から選んだ）。2回目からの一覧を読むGETは、D1との往復が1回になった。

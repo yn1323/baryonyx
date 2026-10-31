@@ -173,10 +173,11 @@ namespace Baryonyx.Tests.PlayMode
                 return store.ReadRunesAsync(token);
             }
 
-            public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token)
+            public Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token)
             {
                 ThrowIfFailing();
-                return store.ClaimRunesAsync(token);
+                Saves++;
+                return store.SaveAndClaimAsync(days, token);
             }
 
             private void ThrowIfFailing()

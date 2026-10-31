@@ -13,32 +13,12 @@ namespace Baryonyx.ExerciseRewards
         public ExerciseRewardsApiClient(ServerApi server) =>
             this.server = server ?? throw new ArgumentNullException(nameof(server));
 
-        public Task<RewardClaim> ClaimAsync(
-            AccountSession session,
-            string sourceId,
-            string requestId,
-            CancellationToken token
-        ) =>
-            server.SendAsync<RewardClaim>(
-                "/v1/exercise/rewards/claim",
-                "POST",
-                new ClaimRequest { sourceId = sourceId, requestId = requestId },
-                session.Token,
-                token
-            );
-
         public Task<RuneBalance> ReadBalanceAsync(
             AccountSession session,
             CancellationToken token
         ) => server.SendAsync<RuneBalance>("/v1/runes/balance", "GET", null, session.Token, token);
 
-        [Serializable]
-        private sealed class ClaimRequest
-        {
-            public string sourceId;
-            public string requestId;
-        }
-
+        // 歩数をルーンへ変換した結果（POST /v1/exercise/rewards/sync の応答。要求は HealthApiClient が送る）。
         [Serializable]
         public sealed class RewardClaim
         {

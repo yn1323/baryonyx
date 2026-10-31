@@ -71,6 +71,24 @@ namespace Baryonyx.Tests.EditMode
             Assert.That(server.Claims, Is.Zero);
         }
 
+        // 保存とルーンへの変換は1回の通信で行い、今日の歩数は読み直さずに読んだ値を使う。
+        [Test]
+        public async Task ASyncSavesAndClaimsInOneCallAndShowsTheStepsItRead()
+        {
+            server.Granted = 30;
+            server.Balance = 130;
+
+            var reading = await source.SyncAsync(CancellationToken.None);
+
+            Assert.That(reading.Result, Is.EqualTo(HomeStepResult.Updated));
+            Assert.That(server.Claims, Is.EqualTo(1));
+            Assert.That(server.Reads, Is.Zero, "保存した歩数を読み直さない。");
+            Assert.That(reading.Steps, Is.EqualTo(1006), "今日の歩数は読んだ7日分の最後の日。");
+            Assert.That(reading.Day, Is.EqualTo(Today));
+            Assert.That(reading.Runes, Is.EqualTo(130));
+            Assert.That(reading.GrantedRunes, Is.EqualTo(30));
+        }
+
         [Test]
         public void AFailedSaveReachesThePresenterWithoutClaiming()
         {
@@ -132,6 +150,9 @@ namespace Baryonyx.Tests.EditMode
             public bool FailSaves;
             public int Saves;
             public int Claims;
+            public int Reads;
+            public long Granted;
+            public long Balance;
 
             public Task ConnectAsync(CancellationToken token) => Task.CompletedTask;
 
@@ -143,15 +164,21 @@ namespace Baryonyx.Tests.EditMode
                 return Task.CompletedTask;
             }
 
-            public Task<HealthDay[]> ReadAsync(CancellationToken token) =>
-                Task.FromResult(Array.Empty<HealthDay>());
+            public Task<HealthDay[]> ReadAsync(CancellationToken token)
+            {
+                Reads++;
+                return Task.FromResult(Array.Empty<HealthDay>());
+            }
 
             public Task<long> ReadRunesAsync(CancellationToken token) => Task.FromResult(0L);
 
-            public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token)
+            public Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token)
             {
+                if (FailSaves)
+                    throw new InvalidOperationException("offline");
+                Saves++;
                 Claims++;
-                return Task.FromResult(new HealthRuneClaim(0, 0));
+                return Task.FromResult(new HealthRuneClaim(Granted, Balance));
             }
         }
 

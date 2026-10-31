@@ -998,7 +998,7 @@
 
 ## [features/startup-sync.md](features/startup-sync.md)
 
-18KB・196行
+19KB・198行
 
 - 8: # 起動時の連携と歩数の同期
 - 16: ## アカウント
@@ -1582,7 +1582,7 @@
 
 ## [rules/backend-design-history.md](rules/backend-design-history.md)
 
-7KB・26行
+8KB・27行
 
 - 8: # バックエンドの開発環境の変更と判断の記録
 

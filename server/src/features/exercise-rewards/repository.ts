@@ -1,5 +1,9 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { createDatabase } from "../../shared/db.js";
+import { and, desc, eq, type SQL, sql } from "drizzle-orm";
+import {
+  batchThenRead,
+  createDatabase,
+  type Statement,
+} from "../../shared/db.js";
 import { ACTIVITY_TYPE, METRIC_TYPE } from "./catalog.js";
 import {
   exerciseRewardDays,
@@ -22,7 +26,7 @@ type RewardSourceDay = {
 export function createExerciseRewardsRepository(binding: D1Database) {
   const db = createDatabase(binding);
 
-  async function listDays(userId: string, sourceId: string) {
+  function listDays(userId: string, sourceId: string | SQL) {
     return db
       .select({
         id: exerciseRewardDays.id,
@@ -46,11 +50,10 @@ export function createExerciseRewardsRepository(binding: D1Database) {
         ),
       )
       .orderBy(desc(exerciseRewardDays.day), desc(exerciseRewardDays.zone))
-      .limit(7)
-      .all();
+      .limit(7);
   }
 
-  async function findExistingClaim(userId: string, requestId: string) {
+  function findExistingClaim(userId: string, requestId: string) {
     return db
       .select({
         id: runeClaims.id,
@@ -62,7 +65,7 @@ export function createExerciseRewardsRepository(binding: D1Database) {
       .where(
         and(eq(runeClaims.userId, userId), eq(runeClaims.requestId, requestId)),
       )
-      .get();
+      .limit(1);
   }
 
   async function claim(
@@ -72,15 +75,8 @@ export function createExerciseRewardsRepository(binding: D1Database) {
     sourceDays: RewardSourceDay[],
     now: string,
   ) {
-    const existing = await findExistingClaim(userId, requestId);
-    if (existing) {
-      return {
-        grantedRunes: existing.grantedRunes,
-        balance: existing.balanceAfter,
-        days: await listDays(userId, existing.sourceId),
-      };
-    }
-
+    // 書き込みは、この請求の記録（claimId）を書けたときだけ進む。同じ要求IDの再送では記録を書けず、
+    // 何も変えずに前回の記録を読んで返す。確かめる読み込みを先に行わず、1回の往復で済ませる。
     const claimId = crypto.randomUUID();
     const claimOwner = sql`EXISTS (
       SELECT 1
@@ -262,13 +258,21 @@ export function createExerciseRewardsRepository(binding: D1Database) {
           ),
         ),
     ];
-    await db.batch(statements as unknown as Parameters<typeof db.batch>[0]);
-    const completed = await findExistingClaim(userId, requestId);
+    // 再送では、前回の請求の取得元の日ごとの記録を返す。
+    const claimedSource = sql`(SELECT ${runeClaims.sourceId} FROM ${runeClaims}
+      WHERE ${runeClaims.userId} = ${userId} AND ${runeClaims.requestId} = ${requestId})`;
+    const {
+      reads: [[completed], days],
+    } = await batchThenRead(
+      db,
+      statements as unknown as [Statement, ...Statement[]],
+      [findExistingClaim(userId, requestId), listDays(userId, claimedSource)],
+    );
     if (!completed) throw new Error("Rune claim reservation was not created");
     return {
       grantedRunes: completed.grantedRunes,
       balance: completed.balanceAfter,
-      days: await listDays(userId, completed.sourceId),
+      days,
     };
   }
 

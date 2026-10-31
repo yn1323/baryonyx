@@ -41,18 +41,7 @@ namespace Baryonyx.Health
 
         public Task SaveAsync(HealthDay[] days, CancellationToken token)
         {
-            if (days == null || days.Length != 7)
-                throw new ArgumentException(
-                    "Exactly seven health days are required.",
-                    nameof(days)
-                );
-            // サーバーは古い日から連続した区間とUTCの時刻を要求する。取得元ごとの並び順や
-            // 時差の表記に依存しないよう、送信用の複製をそろえる。
-            var ordered = days.OrderBy(day =>
-                    DateTimeOffset.Parse(day.startAt, CultureInfo.InvariantCulture)
-                )
-                .Select(ToServerDay)
-                .ToArray();
+            var ordered = ServerDays(days);
             return Sessions.WithSessionAsync(
                 async current =>
                 {
@@ -91,20 +80,41 @@ namespace Baryonyx.Health
                 token
             );
 
-        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
-            Sessions.WithSessionAsync(
+        public Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token)
+        {
+            var ordered = ServerDays(days);
+            return Sessions.WithSessionAsync(
                 async current =>
                 {
-                    var claim = await rewards.ClaimAsync(
+                    var claim = await health.SaveAndClaimAsync(
                         current,
                         sourceId,
+                        "health_connect",
                         Guid.NewGuid().ToString(),
+                        ordered,
                         token
                     );
                     return new HealthRuneClaim(claim.grantedRunes, claim.balance);
                 },
                 token
             );
+        }
+
+        // サーバーは古い日から連続した区間とUTCの時刻を要求する。取得元ごとの並び順や
+        // 時差の表記に依存しないよう、送信用の複製をそろえる。
+        private static HealthDay[] ServerDays(HealthDay[] days)
+        {
+            if (days == null || days.Length != 7)
+                throw new ArgumentException(
+                    "Exactly seven health days are required.",
+                    nameof(days)
+                );
+            return days.OrderBy(day =>
+                    DateTimeOffset.Parse(day.startAt, CultureInfo.InvariantCulture)
+                )
+                .Select(ToServerDay)
+                .ToArray();
+        }
 
         private static HealthDay ToServerDay(HealthDay day) =>
             new()

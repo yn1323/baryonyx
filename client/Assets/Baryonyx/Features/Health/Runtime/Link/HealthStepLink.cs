@@ -39,6 +39,21 @@ namespace Baryonyx.Health
         public long Steps { get; }
     }
 
+    // 歩数の同期とルーンへの変換の結果。同期できなかったとき（Status が Synced 以外）は Claim と Today を使わない。
+    public readonly struct HealthSyncClaim
+    {
+        public HealthSyncClaim(HealthSyncStatus status, HealthRuneClaim claim, HealthStepReading today)
+        {
+            Status = status;
+            Claim = claim;
+            Today = today;
+        }
+
+        public HealthSyncStatus Status { get; }
+        public HealthRuneClaim Claim { get; }
+        public HealthStepReading Today { get; }
+    }
+
     // 許可画面を閉じた回数。0に戻すのは許可を確認できたときだけ。
     public interface IHealthLinkStore
     {
@@ -127,34 +142,54 @@ namespace Baryonyx.Health
         // Health Connectの直近7日分を読み、サーバーへ保存する。通信の失敗は例外で返す。
         public async Task<HealthSyncStatus> SyncAsync(CancellationToken token)
         {
+            var (status, days) = await ReadRecentAsync(token);
+            if (status != HealthSyncStatus.Synced)
+                return status;
+            await server.SaveAsync(days, token);
+            return HealthSyncStatus.Synced;
+        }
+
+        // Health Connectの直近7日分を読み、サーバーへ保存して、同じ通信で未変換の分をルーンへ変換する。
+        // 付与済みの分は二重に付与しない。今日の歩数は、保存した値（読んだ値）から返す。通信の失敗は例外で返す。
+        public async Task<HealthSyncClaim> SyncAndClaimAsync(CancellationToken token)
+        {
+            var (status, days) = await ReadRecentAsync(token);
+            if (status != HealthSyncStatus.Synced)
+                return new HealthSyncClaim(status, default, default);
+            var claim = await server.SaveAndClaimAsync(days, token);
+            return new HealthSyncClaim(status, claim, TodayOf(days));
+        }
+
+        // 保存できる7日分を読む。読めなければ、その理由を返す。
+        private async Task<(HealthSyncStatus Status, HealthDay[] Days)> ReadRecentAsync(
+            CancellationToken token
+        )
+        {
             var read = await provider.ReadRecentStepsAsync(token);
             if (read.Status == HealthReadStatus.PermissionRequired)
-                return HealthSyncStatus.PermissionRequired;
+                return (HealthSyncStatus.PermissionRequired, null);
             if (read.Status != HealthReadStatus.Success || read.Days.Length != 7)
-                return HealthSyncStatus.ReadFailed;
+                return (HealthSyncStatus.ReadFailed, null);
             // 読み取り全体が成功しても、日ごとの歩数が未許可・失敗なら欠測として保存しない。
             if (read.Days.Any(day => day.stepsStatus == "permission_required"))
-                return HealthSyncStatus.PermissionRequired;
+                return (HealthSyncStatus.PermissionRequired, null);
             if (read.Days.Any(day => day.stepsStatus == "failed"))
-                return HealthSyncStatus.ReadFailed;
-            await server.SaveAsync(read.Days, token);
-            return HealthSyncStatus.Synced;
+                return (HealthSyncStatus.ReadFailed, null);
+            return (HealthSyncStatus.Synced, read.Days);
         }
 
         public Task<long> ReadRunesAsync(CancellationToken token) => server.ReadRunesAsync(token);
 
-        // サーバーに保存済みの歩数をルーンへ変換する。付与済みの分は二重に付与しない。
-        public Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token) =>
-            server.ClaimRunesAsync(token);
-
         // サーバーに保存済みの今日（朝4時区切り）の歩数を返す。
-        public async Task<HealthStepReading> ReadTodayAsync(CancellationToken token)
+        public async Task<HealthStepReading> ReadTodayAsync(CancellationToken token) =>
+            TodayOf(await server.ReadAsync(token));
+
+        // 日別の歩数から、今日（朝4時区切り）の歩数を返す。
+        private HealthStepReading TodayOf(HealthDay[] days)
         {
             var date = today().Date;
             string day = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var match = (await server.ReadAsync(token)).FirstOrDefault(value =>
-                value != null && value.day == day
-            );
+            var match = days?.FirstOrDefault(value => value != null && value.day == day);
             return match != null && match.hasValue
                 ? new HealthStepReading(date, true, match.steps)
                 : new HealthStepReading(date, false, 0);

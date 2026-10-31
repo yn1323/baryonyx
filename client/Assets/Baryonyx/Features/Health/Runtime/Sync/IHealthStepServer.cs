@@ -18,8 +18,8 @@ namespace Baryonyx.Health
         // 所持ルーンの残高を返す。
         Task<long> ReadRunesAsync(CancellationToken token);
 
-        // 保存済みの歩数のうち未変換の分をルーンへ変換し、今回の付与量と付与後の残高を返す。
-        Task<HealthRuneClaim> ClaimRunesAsync(CancellationToken token);
+        // 直近7日分を保存し、同じ通信で未変換の分をルーンへ変換して、今回の付与量と付与後の残高を返す。
+        Task<HealthRuneClaim> SaveAndClaimAsync(HealthDay[] days, CancellationToken token);
     }
 
     public readonly struct HealthRuneClaim

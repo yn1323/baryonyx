@@ -49,21 +49,15 @@ namespace Baryonyx.App
                 link.OpenSettings();
                 return Unlinked(HomeStepResult.SettingsOpened);
             }
-            var result = await link.SyncAsync(token);
-            if (result == HealthSyncStatus.PermissionRequired)
+            // 保存とルーンへの変換は1回の通信で行う。サーバーは日ごとに変換済みの歩数を保存しており、
+            // 前回の請求から増えたACTだけをルーンにする。今日の歩数は保存した値を使い、読み直さない。
+            var result = await link.SyncAndClaimAsync(token);
+            if (result.Status == HealthSyncStatus.PermissionRequired)
                 return Unlinked(HomeStepResult.Unlinked);
-            if (result == HealthSyncStatus.ReadFailed)
+            if (result.Status == HealthSyncStatus.ReadFailed)
                 return new HomeStepReading(HomeStepResult.Failed, HomeStepLink.Linked, 0);
-            // サーバーは日ごとに変換済みの歩数を保存しており、前回の請求から増えたACTだけをルーンにする。
-            var claim = await link.ClaimRunesAsync(token);
-            return await ReadAsync(claim.Balance, claim.Granted, token);
+            return Reading(result.Claim.Balance, result.Claim.Granted, result.Today);
         }
-
-        private async Task<HomeStepReading> ReadAsync(
-            long balance,
-            long grantedRunes,
-            CancellationToken token
-        ) => Reading(balance, grantedRunes, await link.ReadTodayAsync(token));
 
         private static HomeStepReading Reading(
             long balance,
