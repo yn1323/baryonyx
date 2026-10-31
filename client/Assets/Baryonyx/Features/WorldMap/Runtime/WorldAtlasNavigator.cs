@@ -98,8 +98,39 @@ namespace Baryonyx.WorldMap
                 return;
             foreach (var pair in cleared)
                 pair.Value.UnionWith(WorldAtlasSession.OpenedOn(pair.Key));
-            if (current != null)
+            if (current == null)
+                return;
+            if (current.Walking)
+            {
                 current.Merge(WorldAtlasSession.OpenedOn(currentKey));
+                return;
+            }
+            Keep();
+            var squares = cleared[currentKey];
+            squares.UnionWith(WorldAtlasSession.OpenedOn(currentKey));
+            string at = current.Graph.Nodes[current.PartyAt].Id;
+            int before = squares.Count;
+            string settled = Settle(currentKey, at, squares, StartOf(current, currentKey));
+            if (settled == at && squares.Count == before)
+            {
+                current.Merge(squares);
+                return;
+            }
+            current.StartAt(settled, squares);
+            Remember(currentKey, settled);
+        }
+
+        // 消費しているときは、開けたマスをサーバーで開けたマスと始まりのマスだけにし、駒がそれ以外に立っていれば
+        // 始まりへ戻す。端末に覚えた位置や通ったマスがサーバーとずれると（消費を止めて歩いた、DBを作り直した、
+        // 支払いを送る前にアプリを閉じた）、隣がつながっていないとして支払いを断られ、その先へ進めなくなるため。
+        // 読む前は、サーバーの開けたマスが分からないため、そのままにする。
+        private static string Settle(string key, string at, HashSet<string> squares, string start)
+        {
+            if (!WorldAtlasSession.Loaded || !WorldAtlasSession.Charging)
+                return at;
+            squares.RemoveWhere(id => id != start && !WorldAtlasSession.IsOpened(key, id));
+            squares.Add(start);
+            return squares.Contains(at) ? at : start;
         }
 
         /// <summary>
@@ -137,12 +168,14 @@ namespace Baryonyx.WorldMap
             if (current.Dungeons != null)
                 current.Dungeons.gameObject.SetActive(OpenDungeons != null);
             // 覚えていたマスが地図からなくなっていれば、その地図の始まりに立つ。
+            string start = StartOf(current, key);
             if (at == null || !Has(current, at))
-                at = key == WorldAtlasLayout.WorldKey ? WorldAtlasLayout.StartSquare : EntryOf(current);
+                at = start;
             if (!cleared.TryGetValue(key, out var squares))
                 cleared[key] = squares = new HashSet<string>();
             squares.Add(at);
             squares.UnionWith(WorldAtlasSession.OpenedOn(key));
+            at = Settle(key, at, squares, start);
             current.StartAt(at, squares);
             Remember(key, at);
             // 前の地図の大きな背景を、メモリーから外す。
@@ -308,6 +341,10 @@ namespace Baryonyx.WorldMap
                     return true;
             return false;
         }
+
+        // 地図の始まりのマス（サーバーでもタダで開いている）：世界地図は最初のマス、地域はその入口。
+        private static string StartOf(WorldMapView view, string key) =>
+            key == WorldAtlasLayout.WorldKey ? WorldAtlasLayout.StartSquare : EntryOf(view);
 
         // 世界地図から地域に入ったときに立つマス：その地域の入口（gate-<地域>）。
         // 入口がなければ最初の町（なければ最初のマス）。

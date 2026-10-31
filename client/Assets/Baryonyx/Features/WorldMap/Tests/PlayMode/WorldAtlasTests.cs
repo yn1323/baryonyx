@@ -86,6 +86,31 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        // 端末に覚えた位置が、開けていないマス（消費を止めて歩いた、DBを作り直した）なら、開けたマスを読んだあと
+        // 地図の始まりへ戻す。そのままだと、隣がつながっていないとしてサーバーに支払いを断られ、先へ進めない。
+        [UnityTest]
+        public IEnumerator APartyRememberedOnAnUnpaidSquareGoesBackToTheStart()
+        {
+            const string unpaid = "world-37";
+            WorldAtlasNavigator.Remember(WorldAtlasLayout.WorldKey, unpaid);
+            var navigator = Spawn();
+            yield return null;
+            var world = navigator.Current;
+            yield return SceneTests.WaitUntil(() => WorldAtlasSession.Loaded);
+            yield return null;
+            world = navigator.Current;
+            Assert.That(
+                world.Graph.Nodes[world.PartyAt].Id,
+                Is.EqualTo(WorldAtlasLayout.StartSquare)
+            );
+            Assert.That(world.Cleared, Does.Not.Contain(unpaid));
+            Assert.That(world.PriceOf(world.Graph.IndexOf(unpaid)), Is.GreaterThan(0));
+            Assert.That(
+                WorldAtlasNavigator.Remembered(),
+                Is.EqualTo((WorldAtlasLayout.WorldKey, WorldAtlasLayout.StartSquare))
+            );
+        }
+
         private WorldAtlasNavigator Spawn()
         {
 #if UNITY_EDITOR
@@ -363,7 +388,10 @@ namespace Baryonyx.Tests.PlayMode
             // 地域のマスの隣から地域のマスへ進んで止まると、その地域のエリアマップの入口に入る。
             int marina = world.Graph.IndexOf("region-marina");
             int before = world.Graph.LinksOf(marina)[0];
-            navigator.Open(WorldAtlasLayout.WorldKey, world.Graph.Nodes[before].Id);
+            // 隣のマスは、開けたことにしてから立たせる（開けていないマスに立たせると、始まりへ戻される）。
+            string beside = world.Graph.Nodes[before].Id;
+            Assert.That(WorldAtlasSession.Open(WorldAtlasLayout.WorldKey, beside).Paid, Is.True);
+            navigator.Open(WorldAtlasLayout.WorldKey, beside);
             yield return null;
             world = navigator.Current;
             Assert.That(world.Tap(marina), Is.True);
@@ -388,7 +416,8 @@ namespace Baryonyx.Tests.PlayMode
             navigator.Current.Back.onClick.Invoke();
             yield return WaitForSwitch(navigator, WorldAtlasLayout.WorldKey);
         }
-            // 始まりから、何もないマスか拾い物（自分で閉じる）だけを通って steps マス先にあるマスまでの道
+
+        // 始まりから、何もないマスか拾い物（自分で閉じる）だけを通って steps マス先にあるマスまでの道
         // （始まりを含む）。
         private static List<int> QuietPath(WorldMapView map, int steps)
         {
@@ -471,7 +500,10 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(world.PartyAt, Is.EqualTo(path[1]));
             Assert.That(WorldAtlasSession.Runes, Is.EqualTo(600 - each));
             Assert.That(
-                WorldAtlasSession.IsOpened(WorldAtlasLayout.WorldKey, world.Graph.Nodes[path[2]].Id),
+                WorldAtlasSession.IsOpened(
+                    WorldAtlasLayout.WorldKey,
+                    world.Graph.Nodes[path[2]].Id
+                ),
                 Is.False
             );
 
