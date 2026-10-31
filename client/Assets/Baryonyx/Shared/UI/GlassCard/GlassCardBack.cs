@@ -184,14 +184,21 @@ namespace Baryonyx.UI
                 contents.gameObject.SetActive(shown);
         }
 
-        // 板と影と選んだときの縁を、カードの中心を軸に横（Vertical なら縦）へ縮め、lift だけ大きくする。
+        /// <summary>
+        /// The scale of a card mid-flip: <paramref name="width"/> narrows it across its turning
+        /// axis and <paramref name="lift"/> enlarges it. A <paramref name="vertical"/> card grows
+        /// only in height and keeps its width, so a wide row never swells out to the sides, even
+        /// on the frame it is laid out.
+        /// </summary>
+        public static Vector3 FlipScale(float width, float lift, bool vertical) =>
+            vertical ? new Vector3(1f, width * lift, 1f) : new Vector3(width * lift, lift, 1f);
+
+        // 板と影と選んだときの縁を、カードの中心を軸に横（Vertical なら縦）へ縮め、lift だけ大きくする（Vertical は高さだけ）。
         private void Narrow(float width, float lift)
         {
             if (Card == null)
                 return;
-            var scale = Vertical
-                ? new Vector3(lift, width * lift, 1f)
-                : new Vector3(width * lift, lift, 1f);
+            var scale = FlipScale(width, lift, Vertical);
             if (Card.Body != null)
                 Card.Body.localScale = scale;
             if (Card.Shadow != null)

@@ -49,6 +49,22 @@ namespace Baryonyx.Tests.EditMode
         }
 
         [Test]
+        public void ACardTurningUpAndDownKeepsItsWidth()
+        {
+            float lift = 1f + GlassCardBack.Lift;
+
+            var scale = GlassCardBack.FlipScale(0.5f, lift, vertical: true);
+
+            // 横長の行は、一覧の幅が決まる前の1コマでも左右に膨らまない。
+            Assert.That(scale.x, Is.EqualTo(1f));
+            Assert.That(scale.y, Is.EqualTo(0.5f * lift).Within(0.0001f));
+            // 左右にめくるカードは、これまでどおり縦横に持ち上がる。
+            var sideways = GlassCardBack.FlipScale(0.5f, lift, vertical: false);
+            Assert.That(sideways.x, Is.EqualTo(0.5f * lift).Within(0.0001f));
+            Assert.That(sideways.y, Is.EqualTo(lift).Within(0.0001f));
+        }
+
+        [Test]
         public void ACoverLaysTheCardsDownAndTakesNoTaps()
         {
             var cards = Cards(3);

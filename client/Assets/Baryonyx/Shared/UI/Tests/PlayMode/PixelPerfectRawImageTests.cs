@@ -39,6 +39,31 @@ namespace Baryonyx.Tests.PlayMode
             Object.Destroy(texture);
         }
 
+        [UnityTest]
+        public IEnumerator ASquashedParentDoesNotStretchTheArtSideways()
+        {
+            // 上下にめくるカードは縦だけを縮める。そのとき絵を横へ伸ばさず、カードと一緒に縮ませる。
+            root = new GameObject("PixelPerfectOverlayCanvas", typeof(Canvas));
+            root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var card = new GameObject("Card", typeof(RectTransform));
+            card.transform.SetParent(root.transform, false);
+            var sprite = new GameObject("Sprite", typeof(RectTransform), typeof(RawImage));
+            sprite.transform.SetParent(card.transform, false);
+            var texture = new Texture2D(32, 32);
+            sprite.GetComponent<RawImage>().texture = texture;
+            sprite.AddComponent<PixelPerfectRawImage>().DotSize = 2f;
+
+            yield return null;
+            yield return null;
+            var rest = ((RectTransform)sprite.transform).sizeDelta;
+            card.transform.localScale = new Vector3(1f, 0.05f, 1f);
+            yield return null;
+            yield return null;
+
+            Assert.That(((RectTransform)sprite.transform).sizeDelta, Is.EqualTo(rest));
+            Object.Destroy(texture);
+        }
+
         [TearDown]
         public void DestroyCanvas()
         {

@@ -56,8 +56,13 @@ namespace Baryonyx.UI
                 return;
             }
 
+            // カードをめくる途中のように縦と横の倍率が違う間は、合わせ直さず親と一緒に伸び縮みさせる。
+            // 縦の倍率だけで大きさを決めると、上下にめくって縦が縮んだ分だけ絵が横へ伸びる。
+            var lossy = Vector3.Scale(parent.lossyScale, rect.localScale);
+            if (!Uniform(lossy))
+                return;
             // Screen pixels per local unit (on an overlay canvas, world units are screen pixels).
-            float scale = Mathf.Abs(parent.lossyScale.y * rect.localScale.y);
+            float scale = Mathf.Abs(lossy.y);
             if (scale <= 0f)
                 return;
             if (
@@ -86,6 +91,14 @@ namespace Baryonyx.UI
                 Mathf.Round(corner.y) - corner.y,
                 0f
             );
+        }
+
+        /// <summary>True when <paramref name="scale"/> is the same across and up (within 0.1%).</summary>
+        public static bool Uniform(Vector3 scale)
+        {
+            float x = Mathf.Abs(scale.x);
+            float y = Mathf.Abs(scale.y);
+            return Mathf.Abs(x - y) <= 0.001f * Mathf.Max(x, y);
         }
 
         private static Vector2 TexelSize(Texture texture, Rect uv) =>

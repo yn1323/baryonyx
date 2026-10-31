@@ -761,7 +761,7 @@
 
 ## [features/screens/guide.md](features/screens/guide.md)
 
-20KB・125行
+21KB・125行
 
 - 8: # 画面一覧：編成・商会・神殿・旅の案内所の共通
 - 12: ## 編成・商会・神殿・旅の案内所の画面
