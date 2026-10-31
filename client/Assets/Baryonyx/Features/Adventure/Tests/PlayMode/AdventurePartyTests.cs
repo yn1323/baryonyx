@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Baryonyx.Adventure;
 using Baryonyx.App;
 using Baryonyx.Combat.Presentation;
@@ -84,6 +85,43 @@ namespace Baryonyx.Tests.PlayMode
                 Assert.That(picture.texture, Is.SameAs(member.Art), member.Id);
                 Assert.That(picture.color, Is.EqualTo(member.Tint), member.Id);
             }
+        }
+
+        // 編成を読み終えるまで、戦闘の幕は閉じたまま。開いたときには、シーンに置いた仮の4人ではなく
+        // 編成の人のHPが出ていて、そこから伸びない（2026-10-31、ユーザーの指摘）。
+        [UnityTest]
+        public IEnumerator TheBattleStaysCoveredUntilThePartyIsRead()
+        {
+            var state = StartAdventure();
+            AdventureSession.Use(
+                services
+                    .Adventure.MoveAsync(state.Run.Exits[0], CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult()
+            );
+            var read = new TaskCompletionSource<bool>();
+            server.Hold = read.Task;
+            var bootstrap = default(BattleBootstrap);
+            yield return SceneTests.Load(
+                SceneTests.BattlePath,
+                (System.Func<BattleBootstrap, bool>)(_ => true),
+                value => bootstrap = value
+            );
+            for (int i = 0; i < 10; i++)
+                yield return null;
+            Assert.That(bootstrap.PartyTask.IsCompleted, Is.False);
+            Assert.That(bootstrap.Transition.IsCovered, Is.True);
+            Assert.That(bootstrap.Transition.IsPlaying, Is.False);
+
+            read.SetResult(true);
+            yield return SceneTests.WaitUntil(
+                () => bootstrap.Transition.IsPlaying || !bootstrap.Transition.IsCovered,
+                message: "The battle did not open once the party was read."
+            );
+            Assert.That(bootstrap.PartyTask.IsCompleted, Is.True);
+            var toma = bootstrap.Battle.Allies.Single(ally => ally.Slot == 1);
+            Assert.That(toma.MaxHp, Is.EqualTo(Mathf.Max(1, toma.Stats.Hp)));
+            Assert.That(toma.Gauge.Number.text, Is.EqualTo(BattleHpGauge.HpText(toma.Hp)));
         }
 
         // 冒険の戦闘では、各位置にその枠の人がLvのステータス・満タンのHPで立ち、デッキは4人の

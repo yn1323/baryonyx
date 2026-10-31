@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
@@ -23,7 +24,7 @@ namespace Baryonyx.App
     /// the Inspector. It sets the encounter and the formation's party (<see cref="AdventureParty"/>)
     /// after the battle screen has set itself up and before the battle begins, so it runs after
     /// the screen's Awake. When the party has not been read from the server yet in this run, the
-    /// battle waits for it to be read before it begins.
+    /// battle waits for it to be read before it begins, and the scene stays covered meanwhile.
     /// </summary>
     [DefaultExecutionOrder(100)]
     public sealed class BattleBootstrap : MonoBehaviour
@@ -49,6 +50,9 @@ namespace Baryonyx.App
 
         [SerializeField]
         private TrainingMockData training;
+
+        // 読み込みが遅いときは、これ以上覆ったまま待たせない（世界地図と同じ上限）。
+        private const float MaxCoveredSeconds = 3f;
 
         private BattleAdventureFlow flow;
         private WorldMapBattleFlow worldMapFlow;
@@ -90,7 +94,7 @@ namespace Baryonyx.App
                 );
                 battle.HoldEntrance = () =>
                     transition != null && (transition.IsCovered || transition.IsPlaying);
-                PartyTask = UsePartyAsync();
+                UsePartyCovered();
                 return;
             }
             var state = AdventureSession.Current;
@@ -117,7 +121,31 @@ namespace Baryonyx.App
             // 出現が埋もれないようにするため。
             battle.HoldEntrance = () =>
                 transition != null && (transition.IsCovered || transition.IsPlaying);
+            UsePartyCovered();
+        }
+
+        // 編成を読み終えるまで幕を開けない。開けてから読むと、シーンに置いた仮の4人のHPが見え、
+        // 読み終えた瞬間に本当のHPへ伸びてしまう（2026-10-31、ユーザーの指摘）。
+        private void UsePartyCovered()
+        {
+            if (transition != null)
+                transition.HoldReveal();
             PartyTask = UsePartyAsync();
+            StartCoroutine(RevealWhenPartyRead());
+        }
+
+        private IEnumerator RevealWhenPartyRead()
+        {
+            // 幕の Start が開くのを止めてから開ける。
+            yield return null;
+            float waited = 0f;
+            while (!PartyTask.IsCompleted && waited < MaxCoveredSeconds)
+            {
+                yield return null;
+                waited += Time.unscaledDeltaTime;
+            }
+            if (transition != null)
+                transition.Reveal();
         }
 
         // 編成の4人とデッキで戦う。読み終えるまで戦闘画面を止め、始まりの演出を待たせる。

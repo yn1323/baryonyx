@@ -28,6 +28,9 @@ namespace Baryonyx.Tests.PlayMode
         public int Loads { get; private set; }
         public List<string> Calls { get; } = new();
 
+        // 置くと、編成の読み込みはこれが終わるまで答えない（読み込みが遅いときを試す）。
+        public Task Hold { get; set; }
+
         public FakePartySource With(string id, int level, params string[] cards)
         {
             characters.Add((id, level, cards));
@@ -57,6 +60,8 @@ namespace Baryonyx.Tests.PlayMode
 
         public async Task<PartyState> LoadAsync(CancellationToken token)
         {
+            if (Hold != null)
+                await Hold;
             await Answer(token);
             Loads++;
             return State();
