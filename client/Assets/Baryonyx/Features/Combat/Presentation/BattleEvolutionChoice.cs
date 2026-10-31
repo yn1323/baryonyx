@@ -85,6 +85,12 @@ namespace Baryonyx.Combat.Presentation
         private const float PickedScale = 1.04f;
         private const float OtherScale = 0.96f;
 
+        /// <summary>
+        /// False while the stage picked cannot be paid for (the trading house's awakening takes a
+        /// shard and runes): the check stays dim and cannot be pressed. The battle leaves it true.
+        /// </summary>
+        public bool CanConfirm { get; set; } = true;
+
         /// <summary>True from <see cref="Open"/> until a stage is confirmed or it is closed.</summary>
         public bool IsOpen => Panel != null && Panel.gameObject.activeSelf;
 
@@ -200,6 +206,15 @@ namespace Baryonyx.Combat.Presentation
             then?.Invoke(picked);
         }
 
+        /// <summary>Jumps to where the stages and the pick have come in, for a still in the editor.</summary>
+        public void Settle()
+        {
+            if (!IsOpen)
+                return;
+            age = Mathf.Max(age, pickedAt) + 1f;
+            Step();
+        }
+
         /// <summary>Closes at once without a pick (an evolution cut short).</summary>
         public void Close()
         {
@@ -270,12 +285,12 @@ namespace Baryonyx.Combat.Presentation
                     Branch(Branches[i], slot.anchoredPosition, rise, picked);
             }
             if (ConfirmButton != null)
-                ConfirmButton.interactable = selected >= 0;
+                ConfirmButton.interactable = selected >= 0 && CanConfirm;
             if (ConfirmGlow != null)
             {
                 // The check breathes once there is something to confirm.
                 var tint = AuraColor;
-                tint.a *= picking * (0.7f + 0.3f * Mathf.Sin(age * 3f));
+                tint.a *= CanConfirm ? picking * (0.7f + 0.3f * Mathf.Sin(age * 3f)) : 0f;
                 ConfirmGlow.color = tint;
             }
         }

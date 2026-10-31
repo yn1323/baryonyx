@@ -65,6 +65,12 @@ namespace Baryonyx.Combat.Presentation
         /// </summary>
         public RectTransform EvolutionLayer => evolutionCard;
 
+        /// <summary>
+        /// False where the card rises from something that does not stand on the stage (a row of
+        /// the trading house's list): no circle, glow or pool of light is laid at its feet.
+        /// </summary>
+        public bool GroundUnderCaster { get; set; } = true;
+
         /// <summary>True from the omen until the evolved card has gone into its user.</summary>
         public bool Evolving => evolving != null;
 
@@ -114,9 +120,14 @@ namespace Baryonyx.Combat.Presentation
             if (dimTarget < EvolutionDim)
                 DimTo(EvolutionDim, 0.25f);
             // Under the user: a turning circle and a pool of light, lighting them from below.
-            omenShots.Add(HeldCircle(backLight, feet, Evolution, 380f, floor: true, spin: -50f));
-            omenShots.Add(HeldGlow(backLight, feet, Evolution, 360f, 0.7f, floor: true));
-            omenLights.Add(HeldLight(feet + Vector2.down * 80f, Evolution, 0.8f, 340f));
+            if (GroundUnderCaster)
+            {
+                omenShots.Add(
+                    HeldCircle(backLight, feet, Evolution, 380f, floor: true, spin: -50f)
+                );
+                omenShots.Add(HeldGlow(backLight, feet, Evolution, 360f, 0.7f, floor: true));
+                omenLights.Add(HeldLight(feet + Vector2.down * 80f, Evolution, 0.8f, 340f));
+            }
 
             float seconds = deep ? DeepOmenSeconds : OmenSeconds;
             bool halo = false;
@@ -284,7 +295,7 @@ namespace Baryonyx.Combat.Presentation
 
             swap?.Invoke();
             Shatter(at, color, deep);
-            if (caster != null)
+            if (caster != null && GroundUnderCaster)
             {
                 var feet = Feet(FrontLayer, caster);
                 Ring(backLight, feet, color, 560f, 0.5f, floor: true);
