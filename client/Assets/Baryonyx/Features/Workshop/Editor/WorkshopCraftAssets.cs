@@ -85,7 +85,7 @@ namespace Baryonyx.Workshop.Editor
             craft.List = scroll;
             craft.Template = ListRow(content, "Template", RowHeight, RowArt);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
-            GlassCardAssets.AddBack(craft.Template.Card);
+            GlassCardAssets.AddBack(craft.Template.Card, vertical: true);
             craft.Template.gameObject.SetActive(false);
             // 仮の記録と仮の持ち物の最初のタブ（武器）で描き、Prefabを開くと停止中でも読めるようにする。
             var stock = WorkshopStock.Mock();
@@ -96,7 +96,7 @@ namespace Baryonyx.Workshop.Editor
             for (int i = 0; i < recipes.Length; i++)
             {
                 var row = ListRow(content, "Recipe" + i, RowHeight, RowArt);
-                GlassCardAssets.AddBack(row.Card);
+                GlassCardAssets.AddBack(row.Card, vertical: true);
                 WorkshopCraftView.Paint(
                     row,
                     recipes[i],

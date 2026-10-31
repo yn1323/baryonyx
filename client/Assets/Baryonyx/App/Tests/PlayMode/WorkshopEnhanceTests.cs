@@ -13,7 +13,10 @@ using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
 using Baryonyx.Workshop;
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Baryonyx.Tests.PlayMode
 {
@@ -199,6 +202,8 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(entry.IsSkillCard, Is.False);
             Assert.That(awaken.Rows[0].Name.text, Is.EqualTo(entry.Card.Name));
             var option = entry.Options[0];
+            // 欠片が1つある間は、行の名前はいつもの色。
+            Assert.That(awaken.Rows[0].Name.color, Is.EqualTo(UiPalette.TextMain));
             // カードが行から浮き上がってひびが入り、上に移ってから覚醒先が並ぶ（戦闘と同じ演出）。
             awaken.Rows[0].Button.onClick.Invoke();
             Assert.That(awaken.SceneOpen, Is.True);
@@ -226,6 +231,8 @@ namespace Baryonyx.Tests.PlayMode
                 ),
                 Is.False
             );
+            // 欠片を使いきると、一覧の名前が赤くなる。
+            Assert.That(awaken.Rows[0].Name.color, Is.Not.EqualTo(UiPalette.TextMain));
             // 欠片を使いきると、覚醒の場面のチェックを押せない。もどるで場面を閉じ、もう1度でメニューへ戻る。
             awaken.Rows[0].Button.onClick.Invoke();
             yield return SceneTests.WaitUntil(
@@ -237,7 +244,12 @@ namespace Baryonyx.Tests.PlayMode
             // 払う物の札は、覚醒先を選ぶ間だけ出す。
             Assert.That(awaken.CostCard.activeSelf, Is.True);
             Assert.That(awaken.ShardCount.text, Is.EqualTo("1/0"));
-            view.Back.onClick.Invoke();
+            // 覚醒の場面は画面全体を暗く覆い、ヘッダーの「もどる」の所を押すと幕の上の「もどる」が受けて閉じる。
+            Assert.That(
+                TopHit(view.Back.transform).GetComponentInParent<Button>(),
+                Is.EqualTo(awaken.SceneBack)
+            );
+            awaken.SceneBack.onClick.Invoke();
             Assert.That(awaken.SceneOpen, Is.False);
             Assert.That(awaken.gameObject.activeInHierarchy, Is.True);
             view.Back.onClick.Invoke();
@@ -370,6 +382,19 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(EnhancementMaterials.Polished(1f, blue, 2, target.MaxMultiplier))
                     .Within(0.001f)
             );
+        }
+
+        // 画面のその位置を押したとき、いちばん手前で受け取るもの。
+        private static GameObject TopHit(Transform target)
+        {
+            var hits = new List<RaycastResult>();
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                position = SceneTests.ScreenRect(target).center,
+            };
+            EventSystem.current.RaycastAll(pointer, hits);
+            Assert.That(hits, Is.Not.Empty);
+            return hits[0].gameObject;
         }
 
         private static IEnumerator TurnedFaceUp(WorkshopEnhanceView enhance) =>

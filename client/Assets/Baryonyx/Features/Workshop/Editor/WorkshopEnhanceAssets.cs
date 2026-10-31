@@ -58,14 +58,18 @@ namespace Baryonyx.Workshop.Editor
         private const float MaterialsTop = 776f;
         private const float BarHeight = 120f;
         private const float InfoHeight = 48f;
-        private const float ChipWidth = 100f;
-        private const float ChipGap = 8f;
+        private const float ChipGap = 12f;
         private const float ChipArt = 64f;
 
-        // 磨き石の札の右上の赤い×：押せる広さと、×の絵の一辺、色。
+        // 磨き石の札の内側の右上に置く、赤い丸に白い×のボタン：押せる広さ、暗い縁と赤い丸の直径、×の一辺、
+        // 札の角からの間。
         private const float CancelHit = 64f;
-        private const float CancelDisc = 36f;
-        private static readonly Color CancelRed = new(1f, 0.32f, 0.3f);
+        private const float CancelRim = 46f;
+        private const float CancelDisc = 40f;
+        private const float CancelCross = 22f;
+        private const float CancelInset = 6f;
+        private static readonly Color CancelRed = new(0.86f, 0.2f, 0.2f);
+        private static readonly Color CancelRimColor = new(0.18f, 0.05f, 0.05f, 0.9f);
 
         // 強化する前と後：スキル・固有スキルのデッキのカードと、装備の札を同じ位置に重ねて作り、選んだ物で出し分ける。
         // 間に金の矢印を置き、それぞれの下に品質と倍率を書く。
@@ -270,7 +274,7 @@ namespace Baryonyx.Workshop.Editor
             enhance.List = scroll;
             enhance.Template = ListRow(content, "Template", RowHeight, ArtBox, 38f, ValueWidth);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
-            GlassCardAssets.AddBack(enhance.Template.Card);
+            GlassCardAssets.AddBack(enhance.Template.Card, vertical: true);
             enhance.Template.gameObject.SetActive(false);
             // 仮の編成のスキルで描き、Prefabを開くと停止中でも一覧が読めるようにする。覚醒は実行中に読む。
             var formation = PartyFormation.From(enhance.Party);
@@ -284,7 +288,7 @@ namespace Baryonyx.Workshop.Editor
             for (int i = 0; i < mock.Count; i++)
             {
                 var row = ListRow(content, "Row" + i, RowHeight, ArtBox, 38f, ValueWidth);
-                GlassCardAssets.AddBack(row.Card);
+                GlassCardAssets.AddBack(row.Card, vertical: true);
                 var entry =
                     enhance.Data != null
                         ? enhance.Data.Entries.FirstOrDefault(e =>
@@ -549,28 +553,23 @@ namespace Baryonyx.Workshop.Editor
             var art = ItemArtAssets.Load();
             var materials = EnhancementMaterials.Polishes;
             enhance.Chips = new WorkshopMaterialChip[materials.Count];
+            // 4色の札で右端までを等分する。
+            float width = (right - left - ChipGap * (materials.Count - 1)) / materials.Count;
             for (int i = 0; i < materials.Count; i++)
             {
                 var rect = Layout.Box(
                     layer,
                     "Chip" + i,
-                    left + i * (ChipWidth + ChipGap),
+                    left + i * (width + ChipGap),
                     top,
-                    ChipWidth,
+                    width,
                     BarHeight
                 );
                 var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
                 var chip = rect.gameObject.AddComponent<WorkshopMaterialChip>();
                 chip.Card = card;
                 // 絵を上に、持っている数をその下に置く。
-                var box = Layout.Box(
-                    inside,
-                    "Art",
-                    (ChipWidth - ChipArt) / 2f,
-                    12f,
-                    ChipArt,
-                    ChipArt
-                );
+                var box = Layout.Box(inside, "Art", (width - ChipArt) / 2f, 12f, ChipArt, ChipArt);
                 chip.Art = box.gameObject.AddComponent<RawImage>();
                 chip.Art.raycastTarget = false;
                 chip.Art.texture = art.TextureOf(materials[i].Id);
@@ -584,7 +583,7 @@ namespace Baryonyx.Workshop.Editor
                     TextAlignmentOptions.Center,
                     0f,
                     12f,
-                    ChipWidth,
+                    width,
                     ChipArt
                 );
                 chip.Count = Layout.Text(
@@ -596,37 +595,40 @@ namespace Baryonyx.Workshop.Editor
                     TextAlignmentOptions.Center,
                     0f,
                     12f + ChipArt + 4f,
-                    ChipWidth,
+                    width,
                     BarHeight - ChipArt - 22f
                 );
                 // 使う数を水色で「3/8」と書くため、色の指定を読む。
                 chip.Count.richText = true;
                 if (materials[i].IsPolish)
-                    chip.Cancel = CancelMark(rect);
+                    chip.Cancel = CancelMark(rect, width);
                 enhance.Chips[i] = chip;
                 // 欠片は覚醒のタブでだけ出す。
                 rect.gameObject.SetActive(materials[i].IsPolish);
             }
         }
 
-        // 使っている色の札の右上に出す、選ぶのをやめる赤い×。押せる広さは指で押せる大きさにし、絵は小さく置く。
-        private static Button CancelMark(RectTransform chip)
+        // 使っている色の札の内側の右上に出す、選ぶのをやめるボタン。暗い縁の赤い丸に白い×を描き、
+        // 札の上でもボタンと分かる形にする。押せる広さは札の角に収め、指で押せる大きさにする。
+        private static Button CancelMark(RectTransform chip, float width)
         {
-            var hit = Layout.Box(
-                chip,
-                "Cancel",
-                ChipWidth - CancelHit / 2f - 10f,
-                -CancelHit / 2f + 10f,
-                CancelHit,
-                CancelHit
-            );
+            var hit = Layout.Box(chip, "Cancel", width - CancelHit, 0f, CancelHit, CancelHit);
+            AddImage(hit, Color.clear, true);
+            // 丸の中心を札の角から CancelInset だけ内側に寄せる。押せる広さの中心からのずれ。
+            float shift = CancelHit / 2f - CancelInset - CancelRim / 2f;
+            var center = new Vector2(shift, shift);
+            var rim = Rect("Rim", hit);
+            Place(rim, center, Vector2.one * CancelRim);
+            SpriteImage(rim, UiArt.CirclePath, CancelRimColor);
+            var disc = Rect("Disc", hit);
+            Place(disc, center, Vector2.one * CancelDisc);
             var button = Baryonyx.Editor.UI.UiBuild.AddButton(
                 hit,
-                AddImage(hit, Color.clear, true)
+                SpriteImage(disc, UiArt.CirclePath, CancelRed)
             );
-            var disc = Rect("Disc", hit);
-            Place(disc, Vector2.zero, Vector2.one * CancelDisc);
-            SpriteImage(disc, IconClosePath, CancelRed);
+            var cross = Rect("Cross", hit);
+            Place(cross, center, Vector2.one * CancelCross);
+            SpriteImage(cross, IconClosePath, Color.white);
             hit.gameObject.SetActive(false);
             return button;
         }

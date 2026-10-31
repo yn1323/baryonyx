@@ -77,6 +77,9 @@ namespace Baryonyx.Workshop
         // チェックを押すと、欠片の札からカードへ飛び込む欠片の絵。
         public RawImage ShardFlight;
 
+        // 幕の上の「もどる」（ヘッダーの「もどる」と同じ所）。覚醒の場面を閉じる。
+        public Button SceneBack;
+
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
         private IReadOnlyList<AwakeningRow> rows = Array.Empty<AwakeningRow>();
@@ -87,6 +90,9 @@ namespace Baryonyx.Workshop
         private Coroutine running;
         private bool choosing;
         private bool busy;
+
+        // 持っている素材を読んだか。読むまでは、足りない行の名前を赤くしない。
+        private bool counted;
 
         /// <summary>The rows listed, in order.</summary>
         public IReadOnlyList<AwakeningRow> Entries => rows;
@@ -102,7 +108,9 @@ namespace Baryonyx.Workshop
         private void OnEnable()
         {
             BindRows();
-            RuneBalance.Changed += RefreshCost;
+            if (SceneBack != null && bound.Add(SceneBack))
+                SceneBack.onClick.AddListener(CloseScene);
+            RuneBalance.Changed += RefreshShards;
             CloseScene();
             ShowLoading();
             StartLoad(LoadAsync, LoadFailedMessage, ShowLoadFailed);
@@ -111,7 +119,7 @@ namespace Baryonyx.Workshop
         private void OnDisable()
         {
             Load.Cancel();
-            RuneBalance.Changed -= RefreshCost;
+            RuneBalance.Changed -= RefreshShards;
             StopScene();
         }
 
@@ -123,6 +131,7 @@ namespace Baryonyx.Workshop
             await Task.WhenAll(reading, materials);
             if (token.IsCancellationRequested)
                 return;
+            counted = true;
             Use(await reading, PartySession.State);
             Render();
             RefreshShards();
@@ -230,7 +239,6 @@ namespace Baryonyx.Workshop
             }
             if (row.Foil != null)
                 row.Foil.Show(art, entry.Quality, card?.FoilStyle ?? 0);
-            Set(row.Cost, card != null ? card.Cost.ToString() : "");
             if (row.Element != null)
             {
                 var icon = card != null ? At(ElementIcons, (int)card.Element) : null;
@@ -238,12 +246,20 @@ namespace Baryonyx.Workshop
                 row.Element.enabled = icon != null;
             }
             Set(row.Name, card?.Name ?? "");
+            PaintName(row, entry);
             Set(row.Kind, card != null ? CardText.KindLine(card) : "");
             Set(row.Description, card != null ? CardText.Description(card) : "");
             Set(row.QualityLetter, Quality.Letter(entry.Quality));
             if (row.QualityLetter != null)
                 row.QualityLetter.color = QualityPalette.Of(entry.Quality);
             Set(row.Multiplier, Quality.Times(entry.Multiplier));
+        }
+
+        // 覚醒の欠片かルーンが足りない行は、名前を足りない数と同じ赤にして、覚醒できないと示す。
+        private void PaintName(WorkshopAwakenRow row, AwakeningRow entry)
+        {
+            if (row.Name != null)
+                row.Name.color = !counted || Affords(entry) ? UiPalette.TextMain : Short;
         }
 
         private void EnsureRows(int count)
@@ -270,6 +286,7 @@ namespace Baryonyx.Workshop
         // 読み込むまで、一覧の見える所をカードの裏で埋める。
         private void ShowLoading()
         {
+            counted = false;
             EnsureRows(CoverRows);
             for (int i = 0; i < Rows.Count; i++)
                 Rows[i].gameObject.SetActive(i < CoverRows);
@@ -530,14 +547,17 @@ namespace Baryonyx.Workshop
             return RectTransformUtility.WorldToScreenPoint(eye, bottom);
         }
 
-        private int Runes => opened?.Options.FirstOrDefault()?.Runes ?? 0;
+        private int Runes => RunesOf(opened);
+
+        private static int RunesOf(AwakeningRow row) => row?.Options.FirstOrDefault()?.Runes ?? 0;
 
         private static int Shards => EnhancementSession.CountOf(EnhancementMaterials.Shard);
 
-        private bool CanAwaken =>
-            opened != null
-            && Shards >= EnhancementMaterials.ShardsPerStage
-            && (RuneBalance.Known is not { } balance || balance >= Runes);
+        private static bool Affords(AwakeningRow row) =>
+            Shards >= EnhancementMaterials.ShardsPerStage
+            && (RuneBalance.Known is not { } balance || balance >= RunesOf(row));
+
+        private bool CanAwaken => opened != null && Affords(opened);
 
         private void RefreshCost()
         {
@@ -555,7 +575,12 @@ namespace Baryonyx.Workshop
                 Choice.CanConfirm = CanAwaken;
         }
 
-        private void RefreshShards() => RefreshCost();
+        private void RefreshShards()
+        {
+            for (int i = 0; i < rows.Count && i < Rows.Count; i++)
+                PaintName(Rows[i], rows[i]);
+            RefreshCost();
+        }
 
         private void ShowCost(bool shown)
         {
@@ -581,16 +606,20 @@ namespace Baryonyx.Workshop
 
         // --- Previews in the editor ---------------------------------------------------------
 
-        // 停止中の表示の切り替え：仮データの一覧、先頭の行の覚醒の場面、読み込む間、読めなかったとき。
+        // 停止中の表示の切り替え：仮データの一覧、先頭の行の覚醒の場面、欠片が足りない一覧、読み込む間、読めなかったとき。
         public IReadOnlyList<string> PreviewStates =>
-            new[] { "一覧", "覚醒の場面" }.Concat(GuidePanelLoad.PreviewStates).ToArray();
+            new[] { "一覧", "覚醒の場面", "欠片が足りない" }
+                .Concat(GuidePanelLoad.PreviewStates)
+                .ToArray();
 
         public void ShowPreviewState(int index)
         {
             StopScene();
-            if (index <= 1)
+            if (index <= 2)
             {
                 cover.Clear();
+                // 停止中は素材を読まないため欠片は0個で、「欠片が足りない」では名前が赤くなる。
+                counted = index == 2;
                 Use(PartyFormation.From(Party), null);
                 Render();
                 RefreshShards();
@@ -606,7 +635,7 @@ namespace Baryonyx.Workshop
                 return;
             }
             ShowLoading();
-            if (index == 3)
+            if (index == 4)
                 ShowLoadFailed();
         }
     }

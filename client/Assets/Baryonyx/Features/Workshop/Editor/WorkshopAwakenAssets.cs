@@ -31,7 +31,7 @@ namespace Baryonyx.Workshop.Editor
     /// Builds the skill awakening panel (<see cref="WorkshopAwakenView"/>): one scrolling list
     /// across the screen, each row a glass card with the person who has the skill at its left
     /// (their battle sprite at 2x, behind a darker band and a thin gold line), the card's art
-    /// with its cost and element, the name, kind and effect as in the adventurer's skills tab,
+    /// with its element (no cost), the name, kind and effect as in the adventurer's skills tab,
     /// and the quality's letter and multiplier at the right end. Over it, hidden until a row is
     /// pressed, the awakening scene: a dark veil, the card hovering at the top and the battle's
     /// choice of the next stage (<see cref="BattleEvolutionChoiceAssets"/>), and the shard and
@@ -144,7 +144,7 @@ namespace Baryonyx.Workshop.Editor
             row.Button = button;
             row.Card = body.gameObject;
             // 読み込む間は、この行を伏せて一覧を埋める（GlassCardCover）。
-            GlassCardAssets.AddBack(body.GetComponent<GlassCard>());
+            GlassCardAssets.AddBack(body.GetComponent<GlassCard>(), vertical: true);
 
             var band = Rect("Person", inside);
             band.anchorMin = new Vector2(0f, 0f);
@@ -167,8 +167,10 @@ namespace Baryonyx.Workshop.Editor
             sprite.gameObject.AddComponent<PixelPerfectRawImage>().DotSize = PersonDot;
 
             var (art, cost, element) = CardLoadoutAssets.BuildThumb(inside, ThumbLeft);
+            // 一覧ではコストを出さない（左上の数字が覚醒の段階と紛らわしい。2026-11-01、ユーザーの指示）。
+            // コストは覚醒の場面のカードで出す。
+            UnityEngine.Object.DestroyImmediate(cost.transform.parent.gameObject);
             row.Art = art;
-            row.Cost = cost;
             row.Element = element;
             row.Foil = CardFoilAssets.Add(art);
             (row.Name, row.Kind) = CardLoadoutAssets.BuildNameLine(
@@ -228,13 +230,13 @@ namespace Baryonyx.Workshop.Editor
             return image;
         }
 
-        // 覚醒の場面：一覧の上を暗く覆い、戦闘と同じ覚醒の演出の層、浮かぶカード、覚醒先の選択、左下に払う物の札を置く。
-        // ヘッダーの「もどる」・所持ルーン・×は、パネルより後に作られるため、この上に出たまま押せる。
+        // 覚醒の場面：ヘッダーごと画面を暗く覆い、戦闘と同じ覚醒の演出の層、浮かぶカード、覚醒先の選択、左下に払う物の札、
+        // いちばん上にヘッダーと同じ所の「もどる」を置く。
         private static void BuildScene(RectTransform panel, WorkshopAwakenView view)
         {
             var scene = Rect("AwakenScene", panel);
             Stretch(scene);
-            // 後ろの一覧を押せないよう、幕でタップを受ける。
+            // 後ろの一覧とヘッダーを押せないよう、幕でタップを受ける。
             AddImage(scene, Veil, true);
             view.Scene = scene.gameObject;
 
@@ -274,7 +276,27 @@ namespace Baryonyx.Workshop.Editor
             view.ShardFlight = ShardImage(flight);
             flight.GetComponent<PixelPerfectRawImage>().DotSize = 3f;
             flight.gameObject.SetActive(false);
+            BuildBack(scene, view);
             scene.gameObject.SetActive(false);
+        }
+
+        // 幕の上の「もどる」：ヘッダーの「もどる」と同じ所に同じ白い矢印を置き、欠片が足りなくても場面を閉じられるようにする。
+        private static void BuildBack(RectTransform scene, WorkshopAwakenView view)
+        {
+            var header = (RectTransform)view.Guide.Back.transform;
+            var back = Rect("Back", scene);
+            back.anchorMin = header.anchorMin;
+            back.anchorMax = header.anchorMax;
+            back.pivot = header.pivot;
+            back.anchoredPosition = header.anchoredPosition;
+            back.sizeDelta = header.sizeDelta;
+            AddImage(back, Color.clear, true);
+            var icon = Rect("Icon", back);
+            Place(icon, Vector2.zero, Vector2.one * Guide.IconSize);
+            view.SceneBack = UiBuild.AddTintButton(
+                back,
+                SpriteImage(icon, Guide.IconBackPath, Color.white)
+            );
         }
 
         // 左下の払う物の札：覚醒の欠片の絵と「使う数/持っている数」、ルーンのアイコンと払う額。

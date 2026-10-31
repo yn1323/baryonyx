@@ -440,7 +440,7 @@
 
 ## [features/enhancement.md](features/enhancement.md)
 
-31KB・219行
+31KB・220行
 
 - 8: # 商会の強化（品質強化と覚醒）
 - 16: ## 確定している方針
