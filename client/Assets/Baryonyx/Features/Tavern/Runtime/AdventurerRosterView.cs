@@ -44,7 +44,7 @@ namespace Baryonyx.Tavern
         public TMP_Text Level;
         public Image[] Elements = Array.Empty<Image>();
 
-        // その人の冒険者のタブ（ステータス・装備・スキル）を開く。選んでいないときは押せず、薄くする。
+        // その人の冒険者のタブ（ステータス・装備・スキル）を開く。選んでいないときは出さない。
         public Button Detail;
         public CanvasGroup DetailGroup;
     }
@@ -308,7 +308,7 @@ namespace Baryonyx.Tavern
             );
         }
 
-        // 下の帯に選んでいる人を出す。選んでいなければ空けて、「装備・スキル」を押せなくする。
+        // 下の帯に選んでいる人を出す。選んでいなければ空けて、「装備・スキル」を隠す。
         private void ShowChosen(PartyMember member) =>
             ShowChosen(
                 Chosen,
@@ -380,9 +380,12 @@ namespace Baryonyx.Tavern
             Set(widget.Level, chosen ? level.ToString() : "");
             ShowElements(widget.Elements, chosen ? elements : null);
             if (widget.Detail != null)
+            {
                 widget.Detail.interactable = chosen;
+                widget.Detail.gameObject.SetActive(chosen);
+            }
             if (widget.DetailGroup != null)
-                widget.DetailGroup.alpha = chosen ? 1f : RemoveIdleAlpha;
+                widget.DetailGroup.alpha = 1f;
         }
 
         public static void ShowElements(Image[] icons, IReadOnlyList<Sprite> elements)

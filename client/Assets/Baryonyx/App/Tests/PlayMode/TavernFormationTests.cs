@@ -79,12 +79,12 @@ namespace Baryonyx.Tests.PlayMode
                 SceneTests.AssertTouchSize(Tile(roster, id).Card.transform);
             SceneTests.AssertTouchSize(roster.Remove.transform);
 
-            // 最初は何も選んでいない。帯は空いていて、「装備・スキル」は押せない。
+            // 最初は何も選んでいない。帯は空いていて、「装備・スキル」は出さない。
             // パーティの名前とLvはパーティの順に出す。
             var first = party.Find(party.Member(0));
             Assert.That(roster.Slots.Any(slot => slot.Card.Selected), Is.False);
             Assert.That(roster.Chosen.Name.text, Is.Empty);
-            Assert.That(roster.Chosen.Detail.interactable, Is.False);
+            Assert.That(roster.Chosen.Detail.gameObject.activeInHierarchy, Is.False);
             Assert.That(roster.Slots[0].Name.text, Is.EqualTo(first.Name));
             Assert.That(roster.Slots[0].Level.text, Is.EqualTo(first.Level.ToString()));
             Assert.That(roster.Slots[0].Figure.gameObject.activeSelf, Is.True);
@@ -95,6 +95,7 @@ namespace Baryonyx.Tests.PlayMode
             roster.Slots[1].Card.Click();
             Assert.That(roster.Slots[1].Card.Selected, Is.True);
             Assert.That(roster.Chosen.Name.text, Is.EqualTo(party.Name(before)));
+            Assert.That(roster.Chosen.Detail.gameObject.activeInHierarchy, Is.True);
             Assert.That(roster.Chosen.Detail.interactable, Is.True);
             Tile(roster, bench).Card.Click();
             Assert.That(party.Member(1), Is.EqualTo(bench));
@@ -112,7 +113,7 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(roster.Slots[1].Figure.gameObject.activeSelf, Is.False);
             // 空いた枠を選んでも、帯には誰も出さない。
             roster.Slots[1].Card.Click();
-            Assert.That(roster.Chosen.Detail.interactable, Is.False);
+            Assert.That(roster.Chosen.Detail.gameObject.activeInHierarchy, Is.False);
             roster.Slots[1].Card.Click();
             Tile(roster, before).Card.Click();
             Assert.That(Tile(roster, before).Card.Selected, Is.True);
