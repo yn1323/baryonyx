@@ -26,10 +26,10 @@ namespace Baryonyx.Workshop
     /// <summary>
     /// The trading house's "enhance" (doc/features/enhancement.md#強化の画面), filling the screen.
     /// The tabs on the left list the owned skills, the equipment and the unlocked unique skills
-    /// with their quality, and the stages the unique skills could awaken into. Choose a row, and
+    /// with their quality. Choose a row, and
     /// the right shows it: the quality and multiplier now and after, the effect's numbers that
     /// change, the quality gauge with the part the stones add, and the polishing stones and how
-    /// many (or the shard to awaken). Press the button: the result shows when the server
+    /// many. Press the button: the result shows when the server
     /// answers, since the next enhancement starts from it.
     /// </summary>
     public sealed class WorkshopEnhanceView : GuidePanel, IEditModePreview
@@ -37,7 +37,6 @@ namespace Baryonyx.Workshop
         public const string LoadFailedMessage = "強化できる物を取得できませんでした";
         public const string FailedMessage = "強化できませんでした";
         public const string PolishLabel = "強化";
-        public const string AwakenLabel = "覚醒";
 
         // 読み込む間に伏せて並べる行の数（一覧の見える所を埋める）。
         public const int CoverRows = 7;
@@ -47,14 +46,12 @@ namespace Baryonyx.Workshop
             Skills,
             Equipment,
             Uniques,
-            Awakening,
         }
 
-        public static readonly string[] TabLabels = { "スキル", "装備", "固有スキル", "覚醒" };
+        public static readonly string[] TabLabels = { "スキル", "装備", "固有スキル" };
 
-        // 品質強化のタブの順。スキル覚醒は別の項目（AwakeningItemKey）で、覚醒だけのパネルを開く。
+        // 品質強化のタブの順。スキル覚醒は別の項目（AwakeningItemKey）で、WorkshopAwakenView を開く。
         public static readonly Tab[] PolishTabs = { Tab.Skills, Tab.Equipment, Tab.Uniques };
-        public static readonly Tab[] AwakenTabs = { Tab.Awakening };
 
         /// <summary>The tabs this panel shows, in order; <see cref="Tabs"/> has a button for each (none when one).</summary>
         public Tab[] TabOrder = PolishTabs;
@@ -72,14 +69,14 @@ namespace Baryonyx.Workshop
         public List<WorkshopGoodRow> Rows = new();
         public TMP_Text Status;
 
-        // 一覧の下：磨き石4色と覚醒の欠片（素材の順）。札を押すたびにその色を使う数が増え、右上の×でやめる。
+        // 一覧の下：磨き石4色。札を押すたびにその色を使う数が増え、右上の×でやめる。
         public WorkshopMaterialChip[] Chips = Array.Empty<WorkshopMaterialChip>();
 
         public TMP_Text Info;
         public Button Confirm;
         public TMP_Text ConfirmLabel;
 
-        // 右の面：選んだ物の名前・分類と持ち主、強化する前と後のカード（覚醒は覚醒する前と後の段階）。
+        // 右の面：選んだ物の名前・分類と持ち主、強化する前と後のカード。
         public TMP_Text DetailName;
         public TMP_Text DetailSub;
 
@@ -116,7 +113,6 @@ namespace Baryonyx.Workshop
         private IReadOnlyList<EnhancementTarget> skills = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<EnhancementTarget> equipment = Array.Empty<EnhancementTarget>();
         private IReadOnlyList<EnhancementTarget> uniques = Array.Empty<EnhancementTarget>();
-        private IReadOnlyList<AwakeningOption> awakenings = Array.Empty<AwakeningOption>();
         private List<PartySkillCard> ownedCards = new();
         private Dictionary<string, string> owners = new();
         private IReadOnlyList<PartyMember> roster = Array.Empty<PartyMember>();
@@ -143,7 +139,7 @@ namespace Baryonyx.Workshop
         // 直前の強化。テストで完了を待つために公開する。
         public Task Work { get; private set; } = Task.CompletedTask;
 
-        /// <summary>The rows of the tab shown: the targets, or the awakening options on the last tab.</summary>
+        /// <summary>The rows of the tab shown.</summary>
         public IReadOnlyList<EnhancementTarget> Targets =>
             tab switch
             {
@@ -153,19 +149,10 @@ namespace Baryonyx.Workshop
                 _ => Array.Empty<EnhancementTarget>(),
             };
 
-        public IReadOnlyList<AwakeningOption> Awakenings => awakenings;
-
-        private int RowCount => tab == Tab.Awakening ? awakenings.Count : Targets.Count;
+        private int RowCount => Targets.Count;
 
         private EnhancementTarget SelectedTarget =>
-            tab != Tab.Awakening && selected >= 0 && selected < Targets.Count
-                ? Targets[selected]
-                : null;
-
-        private AwakeningOption SelectedOption =>
-            tab == Tab.Awakening && selected >= 0 && selected < awakenings.Count
-                ? awakenings[selected]
-                : null;
+            selected >= 0 && selected < Targets.Count ? Targets[selected] : null;
 
         private void OnEnable()
         {
@@ -273,11 +260,6 @@ namespace Baryonyx.Workshop
         private void RefreshUniques()
         {
             uniques = EnhancementTargets.Uniques(roster, Training, ProgressOf);
-            // 固有スキルの段階のあとに、持っているスキルの1枚ずつの2つの枝（doc/features/skill-awakening.md）。
-            awakenings = EnhancementTargets
-                .Awakenings(roster, Training, ProgressOf)
-                .Concat(EnhancementTargets.SkillAwakenings(ownedCards, owners))
-                .ToArray();
         }
 
         /// <summary>Shows the tab's rows, the first chosen.</summary>
@@ -308,7 +290,7 @@ namespace Baryonyx.Workshop
             );
             if (List != null)
                 List.verticalNormalizedPosition = 1f;
-            Set(ConfirmLabel, tab == Tab.Awakening ? AwakenLabel : PolishLabel);
+            Set(ConfirmLabel, PolishLabel);
             // 右の面が空にならないよう、先頭の行を選んでおく。
             if (RowCount > 0)
             {
@@ -316,8 +298,7 @@ namespace Baryonyx.Workshop
                 if (Rows.Count > 0 && Rows[0].Card != null)
                     Rows[0].Card.Selected = true;
             }
-            if (tab != Tab.Awakening)
-                stone = PreferredStone();
+            stone = PreferredStone();
             RefreshMaterials();
             RefreshInfo();
         }
@@ -327,8 +308,7 @@ namespace Baryonyx.Workshop
             {
                 Tab.Skills => "スキルを持っていません",
                 Tab.Equipment => "装備を持っていません",
-                Tab.Uniques => "解放した固有スキルがありません",
-                _ => "覚醒できる固有スキルがありません",
+                _ => "解放した固有スキルがありません",
             };
 
         public void Select(int index)
@@ -340,8 +320,7 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < RowCount && i < Rows.Count; i++)
                 if (Rows[i].Card != null)
                     Rows[i].Card.Selected = i == index;
-            if (tab != Tab.Awakening)
-                stone = PreferredStone();
+            stone = PreferredStone();
             RefreshMaterials();
             RefreshInfo();
         }
@@ -349,12 +328,7 @@ namespace Baryonyx.Workshop
         /// <summary>Chooses a colour and uses one more of it, when one more still raises the multiplier and can be had.</summary>
         public void ChooseStone(int index)
         {
-            if (
-                busy
-                || tab == Tab.Awakening
-                || index < 0
-                || index >= EnhancementMaterials.Polishes.Count
-            )
+            if (busy || index < 0 || index >= EnhancementMaterials.Polishes.Count)
                 return;
             stone = index;
             if (CanAdd(index))
@@ -434,18 +408,12 @@ namespace Baryonyx.Workshop
 
         /// <summary>
         /// Makes the chosen enhancement, and shows it when the server answers: the row's new
-        /// quality, or the awakened stage gone from the list. A failure is told and the lists are
-        /// read again.
+        /// quality. A failure is told and the lists are read again.
         /// </summary>
         public void Enhance()
         {
             if (!CanEnhance())
                 return;
-            if (tab == Tab.Awakening)
-            {
-                Work = AwakenAsync(SelectedOption);
-                return;
-            }
             var target = SelectedTarget;
             var counts = (int[])uses.Clone();
             var plan = PlanFor(counts);
@@ -509,38 +477,6 @@ namespace Baryonyx.Workshop
             }
         }
 
-        private async Task AwakenAsync(AwakeningOption option)
-        {
-            busy = true;
-            RefreshInfo();
-            try
-            {
-                var outcome = await EnhancementSession.AwakenAsync(option);
-                ShowNotice(AwakenedText(option));
-                // 覚醒したスキルの1枚は、もう一覧に出さない。
-                if (option.IsSkillCard)
-                    ownedCards = ownedCards
-                        .Select(card =>
-                            card.Id == option.OwnedCard ? card.Awakened(outcome.Stage) : card
-                        )
-                        .ToList();
-                RefreshUniques();
-                if (this != null && isActiveAndEnabled)
-                    ShowTab(Tab.Awakening);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception exception)
-            {
-                Failed(exception);
-            }
-            finally
-            {
-                busy = false;
-                if (this != null && isActiveAndEnabled)
-                    RefreshInfo();
-            }
-        }
-
         private void Failed(Exception exception)
         {
             Debug.LogWarning(FailedMessage + "。" + exception.Message, this);
@@ -564,14 +500,6 @@ namespace Baryonyx.Workshop
         {
             if (busy)
                 return false;
-            if (tab == Tab.Awakening)
-            {
-                var option = SelectedOption;
-                return option != null
-                    && EnhancementSession.CountOf(EnhancementMaterials.Shard)
-                        >= EnhancementMaterials.ShardsPerStage
-                    && Affordable(option.Runes);
-            }
             var target = SelectedTarget;
             if (target == null || target.AtMax || UsedCount() == 0)
                 return false;
@@ -591,7 +519,6 @@ namespace Baryonyx.Workshop
 
         private void RefreshMaterials()
         {
-            bool awakening = tab == Tab.Awakening;
             var target = SelectedTarget;
             for (int i = 0; i < Chips.Length; i++)
             {
@@ -599,27 +526,23 @@ namespace Baryonyx.Workshop
                 if (chip == null)
                     continue;
                 var material =
-                    i < EnhancementMaterials.All.Count ? EnhancementMaterials.All[i] : null;
-                bool shown = material != null && material.IsPolish != awakening;
+                    i < EnhancementMaterials.Polishes.Count
+                        ? EnhancementMaterials.Polishes[i]
+                        : null;
+                bool shown = material != null;
                 chip.gameObject.SetActive(shown);
                 if (!shown)
                     continue;
                 int used = material.IsPolish && i < uses.Length ? uses[i] : 0;
-                Set(
-                    chip.Count,
-                    awakening
-                        ? CountText(EnhancementSession.CountOf(material.Id))
-                        : UseText(used, EnhancementSession.CountOf(material.Id))
-                );
+                Set(chip.Count, UseText(used, EnhancementSession.CountOf(material.Id)));
                 if (chip.Card != null)
                 {
                     // 使う色を選んだ印にし、もう1つも増やせない色（上限に届いた・作れない）は暗くする。
-                    chip.Card.Selected = !awakening && used > 0;
-                    chip.Card.Dimmed =
-                        !awakening && target != null && !target.AtMax && used == 0 && !CanAdd(i);
+                    chip.Card.Selected = used > 0;
+                    chip.Card.Dimmed = target != null && !target.AtMax && used == 0 && !CanAdd(i);
                 }
                 if (chip.Cancel != null)
-                    chip.Cancel.gameObject.SetActive(!awakening && !busy && used > 0);
+                    chip.Cancel.gameObject.SetActive(!busy && used > 0);
             }
         }
 
@@ -633,7 +556,6 @@ namespace Baryonyx.Workshop
 
         private void ShowDetail()
         {
-            var option = SelectedOption;
             var target = SelectedTarget;
             string name = "",
                 sub = "",
@@ -649,27 +571,7 @@ namespace Baryonyx.Workshop
             float beforeMultiplier = 1f,
                 afterMultiplier = 1f,
                 max = 1f;
-            if (option != null)
-            {
-                // 覚醒は、覚醒する前と後の段階を、今の倍率のカードで並べる。
-                var progress = option.IsSkillCard
-                    ? null
-                    : uniques.FirstOrDefault(entry =>
-                        entry.CharacterId == option.CharacterId && entry.Index == option.Index
-                    );
-                beforeMultiplier = afterMultiplier =
-                    progress?.Multiplier ?? (option.IsSkillCard ? option.Multiplier : 1f);
-                max = progress?.MaxMultiplier ?? (option.IsSkillCard ? option.MaxMultiplier : 1f);
-                beforeCard = option.From;
-                afterCard = option.Card;
-                name = option.Card?.Name ?? "";
-                sub = AwakeningDetail(option);
-                before = after = QualityText(
-                    Inventory.Quality.Of(beforeMultiplier, max),
-                    beforeMultiplier
-                );
-            }
-            else if (target != null)
+            if (target != null)
             {
                 name = target.Name;
                 sub = DetailOf(target);
@@ -695,7 +597,7 @@ namespace Baryonyx.Workshop
                 gauge = true;
             }
             bool cards = beforeCard != null;
-            bool unique = option != null || target?.Category == EnhancementCategory.Unique;
+            bool unique = target?.Category == EnhancementCategory.Unique;
             ShowCard(BeforeCard, cards ? beforeCard : null, beforeMultiplier, max, unique);
             ShowCard(AfterCard, cards ? afterCard : null, afterMultiplier, max, unique);
             var entry = target != null && gear != null ? EntryOf(target) : null;
@@ -850,8 +752,6 @@ namespace Baryonyx.Workshop
 
         private string InfoText()
         {
-            if (tab == Tab.Awakening)
-                return SelectedOption is { } option ? AwakeningInfo(option, RuneBalance.Known) : "";
             return SelectedTarget is { } target
                 ? PolishInfo(
                     target,
@@ -916,19 +816,6 @@ namespace Baryonyx.Workshop
                 ? $"{stone.Name}で上げられるのは品質{Inventory.Quality.Letter(ceiling)}まで"
                 : "上限に届いています";
 
-        /// <summary>The shard and the runes beside the button, with what is missing.</summary>
-        public static string AwakeningInfo(AwakeningOption option, long? runes)
-        {
-            int shards = EnhancementSession.CountOf(EnhancementMaterials.Shard);
-            string missing =
-                shards < EnhancementMaterials.ShardsPerStage
-                    ? Missing($"{EnhancementMaterials.AwakeningShard.Name}が足りません")
-                : runes is { } balance && balance < option.Runes
-                    ? Missing($"ルーンが {option.Runes - balance:N0} 足りません")
-                : "";
-            return $"{EnhancementMaterials.AwakeningShard.Name}×{EnhancementMaterials.ShardsPerStage}・{option.Runes:N0} ルーン{missing}";
-        }
-
         private static string Missing(string text) => $"　<color=#ff8a7a>{text}</color>";
 
         public static string QualityText(ItemQuality quality, float multiplier) =>
@@ -943,22 +830,9 @@ namespace Baryonyx.Workshop
         public static string PolishedText(EnhancementTarget target) =>
             $"{target.Name}が品質{Inventory.Quality.Letter(target.Quality)}（{Inventory.Quality.Times(target.Multiplier)}）になった";
 
-        public static string AwakenedText(AwakeningOption option) =>
-            $"「{option.From?.Name}」が「{option.Card?.Name}」に覚醒した";
-
         private void PaintRow(int index)
         {
             var row = Rows[index];
-            if (tab == Tab.Awakening)
-            {
-                var option = awakenings[index];
-                Set(row.Name, option.Card?.Name ?? "");
-                Set(row.Price, $"{option.Runes:N0} ルーン");
-                row.Price.color = UiPalette.Gold;
-                Set(row.Detail, AwakeningDetail(option));
-                PaintTexture(row.Art, Party != null ? Party.ArtOf(option.Card?.Id) : null, ArtBox);
-                return;
-            }
             var target = Targets[index];
             PaintTarget(row, target, DetailOf(target), EntryOf(target), ArtBox);
             if (target.Category == EnhancementCategory.Unique)
@@ -999,15 +873,6 @@ namespace Baryonyx.Workshop
             Set(row.Detail, detail);
             LibraryCatalogView.PaintArt(row.Art, entry, true, artBox);
         }
-
-        private static string StepText(int stage) =>
-            UniqueSkillTreeShape.Step(stage) == 1 ? "1段目へ" : "2段目へ";
-
-        // 覚醒の行と右の面の2行目：誰の何から、どこへ。スキルの1枚は元に戻せない。
-        private static string AwakeningDetail(AwakeningOption option) =>
-            option.IsSkillCard
-                ? $"{option.CharacterName}｜{option.From?.Name}から覚醒（元に戻せない）"
-                : $"{option.CharacterName}｜{option.From?.Name}から{StepText(option.Stage)}";
 
         private string DetailOf(EnhancementTarget target)
         {

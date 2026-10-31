@@ -514,7 +514,7 @@ namespace Baryonyx.CardLoadout.Editor
         // --- Pieces shared by the slots and the rows ----------------------------------------
 
         // The card's illustration at 2x, with its cost and element over the top corners.
-        private static (RawImage Art, TMP_Text Cost, Image Element) BuildThumb(
+        internal static (RawImage Art, TMP_Text Cost, Image Element) BuildThumb(
             RectTransform parent,
             float left
         )
@@ -539,7 +539,7 @@ namespace Baryonyx.CardLoadout.Editor
         }
 
         // The name, then the kind line ("攻撃・敵単体") in its colours, on one baseline.
-        private static (TMP_Text Name, TMP_Text Kind) BuildNameLine(
+        internal static (TMP_Text Name, TMP_Text Kind) BuildNameLine(
             RectTransform parent,
             float inset,
             float left,
@@ -575,7 +575,7 @@ namespace Baryonyx.CardLoadout.Editor
         }
 
         // The description, with the numbers in colour, over up to two lines.
-        private static TMP_Text BuildDescription(
+        internal static TMP_Text BuildDescription(
             RectTransform parent,
             float inset,
             float height,

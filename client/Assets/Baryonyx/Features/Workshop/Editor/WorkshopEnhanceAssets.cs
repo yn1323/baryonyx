@@ -232,25 +232,13 @@ namespace Baryonyx.Workshop.Editor
         private const float GaugeWall = 8f;
 
         /// <summary>
-        /// Builds the polishing panel (skills, equipment and unique skills in tabs), or with
-        /// <paramref name="awakening"/> the awakening panel: the unique skills that can awaken
-        /// under a heading instead of tabs.
+        /// Builds the polishing panel: skills, equipment and unique skills in the tabs. The skill
+        /// awakening is a panel of its own (<see cref="WorkshopAwakenAssets"/>).
         /// </summary>
-        public static GameObject BuildPanel(
-            RectTransform safe,
-            GuideMenuView view,
-            bool awakening = false
-        )
+        public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            // 覚醒はタブを持たないため、縦のタブの列を置かず、一覧を左端から並べる。
-            var (enhance, layer) = Panel<WorkshopEnhanceView>(
-                safe,
-                awakening ? "WorkshopAwaken" : "WorkshopEnhance",
-                rail: !awakening
-            );
-            enhance.TabOrder = awakening
-                ? WorkshopEnhanceView.AwakenTabs
-                : WorkshopEnhanceView.PolishTabs;
+            var (enhance, layer) = Panel<WorkshopEnhanceView>(safe, "WorkshopEnhance");
+            enhance.TabOrder = WorkshopEnhanceView.PolishTabs;
             enhance.Guide = view;
             enhance.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             enhance.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
@@ -261,29 +249,13 @@ namespace Baryonyx.Workshop.Editor
             enhance.GearArtBox = GearArt;
             enhance.CardFrames = DeckCardFrames();
             enhance.ElementIcons = ElementIcons();
-            if (awakening)
-            {
-                enhance.Tabs = Array.Empty<GuideTab>();
-                GuideFrameAssets.Heading(
-                    layer,
-                    "ListTitle",
-                    "覚醒できる固有スキル",
-                    Edge,
-                    TabTop,
-                    Split - Edge - Inner,
-                    TabHeight
-                );
-            }
-            else
-                enhance.Tabs = Tabs(
-                    layer,
-                    enhance
-                        .TabOrder.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab])
-                        .ToArray()
-                );
+            enhance.Tabs = Tabs(
+                layer,
+                enhance.TabOrder.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab]).ToArray()
+            );
 
-            float listLeft = awakening ? 0f : Rail;
-            float listTop = awakening ? BodyTop : ListTop;
+            float listLeft = Rail;
+            float listTop = ListTop;
             var (content, scroll) = Column(
                 layer,
                 "Targets",
@@ -291,7 +263,7 @@ namespace Baryonyx.Workshop.Editor
                 Split,
                 listTop,
                 1080f,
-                (int)(awakening ? Edge : Inner),
+                (int)Inner,
                 (int)Inner
             );
             enhance.Content = content;
@@ -309,7 +281,7 @@ namespace Baryonyx.Workshop.Editor
                     )
                 )
             );
-            for (int i = 0; i < (awakening ? 0 : mock.Count); i++)
+            for (int i = 0; i < mock.Count; i++)
             {
                 var row = ListRow(content, "Row" + i, RowHeight, ArtBox, 38f, ValueWidth);
                 GlassCardAssets.AddBack(row.Card);
@@ -376,16 +348,9 @@ namespace Baryonyx.Workshop.Editor
             enhance.Info = info;
             (enhance.Confirm, enhance.ConfirmLabel) = ConfirmButton(
                 layer,
-                awakening ? WorkshopEnhanceView.AwakenLabel : WorkshopEnhanceView.PolishLabel
+                WorkshopEnhanceView.PolishLabel
             );
-            if (!awakening)
-                enhance.Prompt = BuildCombinePrompt((RectTransform)enhance.transform);
-            if (awakening)
-            {
-                // 覚醒は磨き石の札を使わず、覚醒の欠片だけを出す（実行中の ShowTab と同じ見た目）。
-                foreach (var chip in enhance.Chips)
-                    chip.gameObject.SetActive(!chip.gameObject.activeSelf);
-            }
+            enhance.Prompt = BuildCombinePrompt((RectTransform)enhance.transform);
             return enhance.gameObject;
         }
 
@@ -582,16 +547,14 @@ namespace Baryonyx.Workshop.Editor
         )
         {
             var art = ItemArtAssets.Load();
-            var materials = EnhancementMaterials.All;
+            var materials = EnhancementMaterials.Polishes;
             enhance.Chips = new WorkshopMaterialChip[materials.Count];
             for (int i = 0; i < materials.Count; i++)
             {
-                // 欠片は、覚醒のタブで磨き石の1つ目の位置に出す。
-                int slot = materials[i].IsPolish ? i : 0;
                 var rect = Layout.Box(
                     layer,
                     "Chip" + i,
-                    left + slot * (ChipWidth + ChipGap),
+                    left + i * (ChipWidth + ChipGap),
                     top,
                     ChipWidth,
                     BarHeight

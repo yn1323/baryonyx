@@ -60,10 +60,9 @@ namespace Baryonyx.Workshop.Editor
                             safe,
                             view
                         ),
-                        EnhancementSession.AwakeningItemKey => WorkshopEnhanceAssets.BuildPanel(
+                        EnhancementSession.AwakeningItemKey => WorkshopAwakenAssets.BuildPanel(
                             safe,
-                            view,
-                            awakening: true
+                            view
                         ),
                         _ => null,
                     }

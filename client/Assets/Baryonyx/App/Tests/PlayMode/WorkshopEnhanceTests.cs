@@ -51,9 +51,9 @@ namespace Baryonyx.Tests.PlayMode
             yield return SceneTests.UnloadAll(nameof(WorkshopEnhanceTests));
         }
 
-        // 商会の「強化」は、案内人を隠して画面いっぱいに、タブで持っているスキル・装備・固有スキルと覚醒できる段階を
-        // 並べ、選んだ物を右に出す。行と磨き石の色・数を選んで押すと、サーバーの答えを待ってから品質を書き換え、素材と所持ルーンを減らして知らせる。
-        // スキル覚醒の項目では欠片だけを出し、覚醒した段階は一覧から消える。失敗したら知らせて読み直す。
+        // 商会の「強化」は、案内人を隠して画面いっぱいに、タブで持っているスキル・装備・固有スキルを並べ、選んだ物を右に出す。
+        // 行と磨き石の色・数を選んで押すと、サーバーの答えを待ってから品質を書き換え、素材と所持ルーンを減らして知らせる。
+        // スキル覚醒の項目では1本の一覧から覚醒の場面を開いて覚醒させ、覚醒した段階は一覧から消える。失敗したら知らせて読み直す。
         [UnityTest]
         public IEnumerator EnhanceRaisesTheChosenQualityAndAwakensAUniqueSkill()
         {
@@ -94,9 +94,9 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.Gauge.activeSelf, Is.True);
             // 初めは石を選んでいないため、押せない。
             Assert.That(enhance.Confirm.interactable, Is.False);
-            // 持っている数を札に出す。欠片は覚醒のタブでだけ出す。
+            // 持っている数を札に出す。札は磨き石4色だけで、覚醒の欠片はスキル覚醒の画面で使う。
             Assert.That(enhance.Chips[0].Count.text, Is.EqualTo("×3"));
-            Assert.That(enhance.Chips[4].gameObject.activeSelf, Is.False);
+            Assert.That(enhance.Chips.Length, Is.EqualTo(EnhancementMaterials.Polishes.Count));
             SceneTests.AssertTouchSize(enhance.Confirm.transform, 0.7f);
 
             // 白い磨き石の札を2回押すと2つ使う。押すと、答えを待ってから倍率を上げる。
@@ -175,55 +175,74 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(enhance.BeforeCard.Frame.transform.parent.gameObject.activeSelf, Is.False);
             Assert.That(enhance.BeforeGear.Name.text, Is.EqualTo(enhance.Targets[0].Name));
 
-            // 覚醒は別の項目「スキル覚醒」で、タブのない覚醒だけのパネルを開く。磨き石の札と数の段を隠し、欠片だけを出す。
+            // 覚醒は別の項目「スキル覚醒」で、キャラごとに固有スキル・カスタムスキルを並べた1本の一覧を開く。
+            // 行を押すと覚醒の場面（戦闘と同じ覚醒先の選択）が開き、選んでチェックを押すと覚醒し、
+            // 覚醒しきった物は一覧から消える。
             view.Back.onClick.Invoke();
             int awakenItem = Array.FindIndex(
                 view.Definition.Items,
                 entry => entry.Key == EnhancementSession.AwakeningItemKey
             );
             Assert.That(awakenItem, Is.EqualTo(4));
-            enhance = view.PanelFor(awakenItem).GetComponent<WorkshopEnhanceView>();
+            var awaken = view.PanelFor(awakenItem).GetComponent<WorkshopAwakenView>();
             view.MenuItems[awakenItem].onClick.Invoke();
-            Assert.That(enhance.gameObject.activeInHierarchy, Is.True);
-            yield return SceneTests.WaitForTask(enhance.LoadTask);
-            yield return TurnedFaceUp(enhance);
+            Assert.That(awaken.gameObject.activeInHierarchy, Is.True);
+            yield return SceneTests.WaitForTask(awaken.LoadTask);
+            Assert.That(awaken.Entries, Is.Not.Empty);
             Assert.That(
-                enhance.Rows.Count(row => row.gameObject.activeSelf),
-                Is.EqualTo(enhance.Awakenings.Count)
+                awaken.Rows.Count(row => row.gameObject.activeSelf),
+                Is.EqualTo(awaken.Entries.Count)
             );
-            Assert.That(enhance.Tabs, Is.Empty);
-            Assert.That(enhance.Current, Is.EqualTo(WorkshopEnhanceView.Tab.Awakening));
-            Assert.That(enhance.Chips[0].gameObject.activeSelf, Is.False);
-            Assert.That(enhance.Chips[4].gameObject.activeSelf, Is.True);
-            Assert.That(enhance.ConfirmLabel.text, Is.EqualTo(WorkshopEnhanceView.AwakenLabel));
-            Assert.That(enhance.Awakenings, Is.Not.Empty);
-            var option = enhance.Awakenings[0];
-            int before = enhance.Awakenings.Count;
-            enhance.Rows[0].Card.Click();
-            Assert.That(enhance.DetailName.text, Is.EqualTo(option.Card.Name));
-            Assert.That(enhance.Gauge.activeSelf, Is.False);
-            enhance.Confirm.onClick.Invoke();
-            yield return SceneTests.WaitForTask(enhance.Work);
-            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopEnhanceView.AwakenedText(option)));
+            // 先頭はパーティの先頭の人の固有スキル。
+            var entry = awaken.Entries[0];
+            Assert.That(entry.Character, Is.Not.Null);
+            Assert.That(entry.IsSkillCard, Is.False);
+            Assert.That(awaken.Rows[0].Name.text, Is.EqualTo(entry.Card.Name));
+            var option = entry.Options[0];
+            // カードが行から浮き上がってひびが入り、上に移ってから覚醒先が並ぶ（戦闘と同じ演出）。
+            awaken.Rows[0].Button.onClick.Invoke();
+            Assert.That(awaken.SceneOpen, Is.True);
+            yield return SceneTests.WaitUntil(
+                () => awaken.Choice.IsOpen,
+                message: "The stages were not offered."
+            );
+            Assert.That(awaken.Choice.Count, Is.EqualTo(entry.Options.Count));
+            awaken.Choice.Select(0);
+            Assert.That(awaken.Choice.ConfirmButton.interactable, Is.True);
+            awaken.Choice.ConfirmButton.onClick.Invoke();
+            yield return SceneTests.WaitForTask(awaken.Work);
+            Assert.That(view.ToastMessage, Is.EqualTo(WorkshopAwakenView.AwakenedText(option)));
             var progress = UniqueSkillSession.ProgressOf(option.CharacterId, option.Index, null);
             Assert.That(progress.Has(option.Stage), Is.True);
             Assert.That(progress.Set, Is.EqualTo(option.Stage));
+            Assert.That(awaken.SceneOpen, Is.False);
             Assert.That(
-                enhance.Awakenings.Any(entry =>
-                    entry.CharacterId == option.CharacterId
-                    && entry.Index == option.Index
-                    && entry.Stage == option.Stage
+                awaken.Entries.Any(row =>
+                    row.Options.Any(next =>
+                        next.CharacterId == option.CharacterId
+                        && next.Index == option.Index
+                        && next.Stage == option.Stage
+                    )
                 ),
                 Is.False
             );
-            Assert.That(enhance.Awakenings.Count, Is.GreaterThanOrEqualTo(before - 1));
-            // 欠片を使いきると、ほかの段階は覚醒できない。
-            enhance.Rows[0].Card.Click();
-            Assert.That(enhance.Confirm.interactable, Is.False);
-
+            // 欠片を使いきると、覚醒の場面のチェックを押せない。もどるで場面を閉じ、もう1度でメニューへ戻る。
+            awaken.Rows[0].Button.onClick.Invoke();
+            yield return SceneTests.WaitUntil(
+                () => awaken.Choice.IsOpen,
+                message: "The stages were not offered again."
+            );
+            awaken.Choice.Select(0);
+            Assert.That(awaken.Choice.ConfirmButton.interactable, Is.False);
+            // 払う物の札は、覚醒先を選ぶ間だけ出す。
+            Assert.That(awaken.CostCard.activeSelf, Is.True);
+            Assert.That(awaken.ShardCount.text, Is.EqualTo("1/0"));
+            view.Back.onClick.Invoke();
+            Assert.That(awaken.SceneOpen, Is.False);
+            Assert.That(awaken.gameObject.activeInHierarchy, Is.True);
             view.Back.onClick.Invoke();
             Assert.That(view.MenuPanel.activeSelf, Is.True);
-            Assert.That(enhance.gameObject.activeInHierarchy, Is.False);
+            Assert.That(awaken.gameObject.activeInHierarchy, Is.False);
         }
 
         // 白い磨き石はBの入口で止まる。札を何度押しても入口までの数しか選べず、届いたら白の札を暗くし、
