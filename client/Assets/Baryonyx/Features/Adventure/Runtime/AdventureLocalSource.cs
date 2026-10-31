@@ -50,7 +50,7 @@ namespace Baryonyx.Adventure
         public bool? NextAwakening { get; set; }
 
         // 宝箱から覚醒が出る確率。サーバーの CHEST_AWAKENING_CHANCE と同じ。
-        public const double ChestAwakeningChance = 0.3;
+        public const double ChestAwakeningChance = 0.03;
 
         // 「？」のマスの中身の種類（テスト用）。null なら重みで決める。
         public AdventureRoomKind? MysteryKind { get; set; }

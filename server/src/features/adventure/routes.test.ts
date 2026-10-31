@@ -1010,7 +1010,7 @@ describe("冒険API", () => {
     // 乱数が覚醒の確率より小さければ、覚醒が出る。
     const moved = await createAdventureRepository(
       scenario.env.DB,
-      fixed(0.1),
+      fixed(0.01),
     ).move(user.userId, { roomId: "f6-0", floor: 6, kind: "treasure" }, now);
     expect("run" in moved && moved.run).toMatchObject({
       roomKind: "treasure",

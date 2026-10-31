@@ -139,9 +139,10 @@ export function pickMysteryKind(random: Random): MysteryKind {
 // 怪しい宝箱がミミックである確率（doc/features/stage-progression.md のマスの中身）。開けたときにサーバーが決める。
 export const MIMIC_CHANCE = 0.5;
 
-// 宝箱から固有スキルの覚醒が出る確率（仮。doc/features/skill-evolution.md の覚醒が起きる場面）。
+// 宝箱から固有スキルの覚醒が出る確率（doc/features/skill-evolution.md の覚醒が起きる場面）。
+// とても珍しい当たりにする（2026-10-31、ユーザー決定）。
 // 宝箱のマスに入ったときにサーバーが決める。覚醒はドロップに加えて出る。
-export const CHEST_AWAKENING_CHANCE = 0.3;
+export const CHEST_AWAKENING_CHANCE = 0.03;
 
 export function rollChestAwakening(random: Random): boolean {
   return random() < CHEST_AWAKENING_CHANCE;
