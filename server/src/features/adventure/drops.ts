@@ -110,12 +110,13 @@ export type Drop = {
   multiplierPercent: number | null;
 };
 
-// マスごとの、落ちる数の重み。
+// マスごとの、落ちる数の重み。宝箱は出過ぎていたため、ふつうは1つか2つ、3つはとても珍しい当たりにした
+// 最奥の間は2つか3つを半々にした（2026-10-31、ユーザーの指示）。
 export const DROP_COUNT_WEIGHTS: Record<RewardRow, Record<number, number>> = {
   battle: { 1: 70, 2: 30 },
   elite: { 1: 25, 2: 50, 3: 25 },
-  treasure: { 1: 25, 2: 50, 3: 25 },
-  boss: { 2: 30, 3: 45, 4: 25 },
+  treasure: { 1: 60, 2: 37, 3: 3 },
+  boss: { 2: 50, 3: 50 },
 };
 
 // 分類の重み。アイテム＞アクセサリー＞武器＝防具＞スキルの順に出やすい。

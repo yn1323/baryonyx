@@ -191,7 +191,7 @@ namespace Baryonyx.Tests.EditMode
             }
             Assert.That(counts[AdventureRoomKind.Battle], Is.EquivalentTo(new[] { 1, 2 }));
             Assert.That(counts[AdventureRoomKind.Elite], Is.EquivalentTo(new[] { 1, 2, 3 }));
-            Assert.That(counts[AdventureRoomKind.Boss], Is.EquivalentTo(new[] { 2, 3, 4 }));
+            Assert.That(counts[AdventureRoomKind.Boss], Is.EquivalentTo(new[] { 2, 3 }));
             Assert.That(counts[AdventureRoomKind.Rest], Is.EquivalentTo(new[] { 0 }));
             Assert.That(counts[AdventureRoomKind.Merchant], Is.EquivalentTo(new[] { 0 }));
             Assert.That(counts[AdventureRoomKind.ShadyChest], Is.EquivalentTo(new[] { 2, 3, 4 }));

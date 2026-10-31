@@ -86,7 +86,8 @@ namespace Baryonyx.Adventure
             kind switch
             {
                 AdventureRoomKind.Battle => new[] { (1, 70), (2, 30) },
-                AdventureRoomKind.Boss => new[] { (2, 30), (3, 45), (4, 25) },
+                AdventureRoomKind.Treasure => new[] { (1, 60), (2, 37), (3, 3) },
+                AdventureRoomKind.Boss => new[] { (2, 50), (3, 50) },
                 _ => new[] { (1, 25), (2, 50), (3, 25) },
             };
 
@@ -408,9 +409,9 @@ namespace Baryonyx.Adventure
         private static int PolishChance(AdventureRoomKind row) =>
             row switch
             {
-                AdventureRoomKind.Battle => 300,
-                AdventureRoomKind.Boss => 1000,
-                _ => 600,
+                AdventureRoomKind.Battle => 100,
+                AdventureRoomKind.Boss => 600,
+                _ => 200,
             };
 
         // 磨き石の色の重みを分ける行き先の深さ。サーバーの polishDepthOf と同じく、近い順の初めの2つを浅い、
