@@ -182,16 +182,20 @@ namespace Baryonyx.Adventure
     }
 
     /// <summary>
-    /// The boons after a won battle (doc/features/stage-progression.md, 戦闘後の強化): three are
-    /// offered and one is chosen; they last for the adventure only. The three are made from the
-    /// adventure's seed and the room, so the same win offers the same three on any device and
+    /// The boons after a won battle (doc/features/stage-progression.md, 戦闘後の強化): two for each
+    /// member are offered and one is chosen; they last for the adventure only. They are made from the
+    /// adventure's seed and the room, so the same win offers the same ones on any device and
     /// after resuming. A harder battle offers higher steps more often, and a run of offers with
     /// no rainbow raises its chance. The stats grow before each battle, added up with the rest's
     /// training (休憩の鍛える) and multiplied once.
     /// </summary>
     public static class AdventureBoons
     {
-        public const int OfferCount = 3;
+        // 仲間1人に出す候補の数。
+        public const int PerMember = 2;
+
+        // 段階を引く回数（候補が3つだったころと同じ。残りの候補はその戦闘の一番下の段階）。
+        public const int RankDraws = 3;
 
         // 修行で下がる戦闘の数。
         public const int TrainingBattles = 2;
@@ -483,11 +487,15 @@ namespace Baryonyx.Adventure
         }
 
         /// <summary>
-        /// The three boons offered after winning <paramref name="roomId"/>'s battle, made from the
-        /// adventure's <paramref name="seed"/>. <paramref name="pity"/> is how many offers in a row
-        /// came with no rainbow. <paramref name="members"/> are the party in slot order (null for
-        /// an empty slot). Each boon of one member points at a different member while there are
-        /// three or more, no kind comes twice, and a cost or training boon comes once at most.
+        /// The boons offered after winning <paramref name="roomId"/>'s battle, made from the
+        /// adventure's <paramref name="seed"/>: <see cref="PerMember"/> for each member there, in
+        /// slot order (the member's own first, then the next member's). <paramref name="pity"/>
+        /// is how many offers in a row came with no rainbow. <paramref name="members"/> are the
+        /// party in slot order (null for an empty slot). The steps are drawn
+        /// <see cref="RankDraws"/> times as before and the rest are the battle's lowest step, so
+        /// the more choices do not make better boons come more often. A member's two are of
+        /// different kinds, a boon for everyone comes once at most, and a cost or training boon
+        /// comes once at most.
         /// </summary>
         public static IReadOnlyList<AdventureBoon> Offer(
             int seed,
@@ -497,36 +505,52 @@ namespace Baryonyx.Adventure
             IReadOnlyList<BattlePartyMember> members
         )
         {
-            var present = Enumerable
-                .Range(0, members?.Count ?? 0)
-                .Where(slot => members[slot] != null)
-                .ToArray();
+            var present = Present(members);
             if (battle == AdventureBoonBattle.None || present.Length == 0)
                 return Array.Empty<AdventureBoon>();
             var random = new RouteRandom(Seed(seed, roomId));
-            var ranks = Ranks(random, battle, pity);
+            var ranks = Spread(random, Ranks(random, battle, pity), present.Length * PerMember, battle);
             var offers = new List<AdventureBoon>();
-            var used = new Dictionary<int, int>();
-            int perMember = present.Length >= OfferCount ? 1 : 2;
-            foreach (var rank in ranks)
+            for (int i = 0; i < ranks.Length; i++)
             {
+                int slot = present[i / PerMember];
+                var mine = offers.Skip(i / PerMember * PerMember).ToArray();
                 AdventureBoon? boon = null;
                 for (int attempt = 0; attempt < 64 && boon == null; attempt++)
-                    boon = Pick(random, rank, offers, present, used, perMember, members);
-                // 決まりで選べなかったら（仲間が少ないなど）、まだ出ていない全員の強化にする。
-                boon ??= Fallback(rank, offers);
-                if (boon is not { } chosen)
-                    continue;
-                offers.Add(chosen);
-                if (!chosen.Everyone)
-                    used[chosen.Slot] = used.TryGetValue(chosen.Slot, out int count)
-                        ? count + 1
-                        : 1;
+                    boon = Pick(random, ranks[i], slot, offers, mine, members);
+                // 決まりで選べなかったら、その仲間のまだ出ていない1人の強化にする。
+                offers.Add(boon ?? Fallback(ranks[i], slot, mine, members));
             }
             return offers;
         }
 
-        /// <summary>The steps of the three boons, each drawn on its own, then the battle's floor.</summary>
+        /// <summary>The slots of the members there, in slot order: one column of the offers each.</summary>
+        public static int[] Present(IReadOnlyList<BattlePartyMember> members) =>
+            Enumerable.Range(0, members?.Count ?? 0).Where(slot => members[slot] != null).ToArray();
+
+        // 引いた段階を count 個の候補のどこかへ散らし、残りをその戦闘の一番下の段階で埋める。
+        private static AdventureBoonRank[] Spread(
+            RouteRandom random,
+            AdventureBoonRank[] drawn,
+            int count,
+            AdventureBoonBattle battle
+        )
+        {
+            var lowest = (AdventureBoonRank)Array.FindIndex(WeightsOf(battle), weight => weight > 0);
+            var ranks = Enumerable.Repeat(lowest, count).ToArray();
+            var places = Enumerable.Range(0, count).ToList();
+            foreach (var rank in drawn)
+            {
+                if (places.Count == 0)
+                    break;
+                int at = random.Range(0, places.Count);
+                ranks[places[at]] = rank;
+                places.RemoveAt(at);
+            }
+            return ranks;
+        }
+
+        /// <summary>The <see cref="RankDraws"/> steps drawn, each on its own, then the battle's floor.</summary>
         public static AdventureBoonRank[] Ranks(
             RouteRandom random,
             AdventureBoonBattle battle,
@@ -541,7 +565,7 @@ namespace Baryonyx.Adventure
             int fromGold = Math.Min(extra - fromWhite, weights[1]);
             weights[1] -= fromGold;
             weights[2] += fromWhite + fromGold;
-            var ranks = new AdventureBoonRank[OfferCount];
+            var ranks = new AdventureBoonRank[RankDraws];
             int total = weights.Sum();
             for (int i = 0; i < ranks.Length; i++)
             {
@@ -576,10 +600,9 @@ namespace Baryonyx.Adventure
         private static AdventureBoon? Pick(
             RouteRandom random,
             AdventureBoonRank rank,
+            int slot,
             IReadOnlyList<AdventureBoon> offers,
-            int[] present,
-            IReadOnlyDictionary<int, int> used,
-            int perMember,
+            IReadOnlyList<AdventureBoon> mine,
             IReadOnlyList<BattlePartyMember> members
         )
         {
@@ -606,37 +629,35 @@ namespace Baryonyx.Adventure
                 }
                 roll -= entry.Weight;
             }
+            bool everyone = offers.Any(offer => offer.Everyone);
             var templates = Templates
                 .Where(template =>
-                    template.Family == family && offers.All(offer => offer.Id != template.Id)
+                    template.Family == family
+                    && mine.All(offer => offer.Id != template.Id)
+                    && !(template.Everyone && everyone)
                 )
                 .ToArray();
             if (templates.Length == 0)
                 return null;
             var picked = templates[random.Range(0, templates.Length)];
-            if (picked.Everyone)
-                return new AdventureBoon(picked.Id, rank, -1, CardStat.PhysicalAttack);
-            var free = present
-                .Where(slot => !used.TryGetValue(slot, out int count) || count < perMember)
-                .ToArray();
-            if (free.Length == 0)
-                return null;
-            int target = free[random.Range(0, free.Length)];
-            return new AdventureBoon(picked.Id, rank, target, AttackOf(members[target]));
+            return picked.Everyone
+                ? new AdventureBoon(picked.Id, rank, -1, CardStat.PhysicalAttack)
+                : new AdventureBoon(picked.Id, rank, slot, AttackOf(members[slot]));
         }
 
-        private static AdventureBoon? Fallback(
+        private static AdventureBoon Fallback(
             AdventureBoonRank rank,
-            IReadOnlyList<AdventureBoon> offers
+            int slot,
+            IReadOnlyList<AdventureBoon> mine,
+            IReadOnlyList<BattlePartyMember> members
         )
         {
-            var template = Templates.FirstOrDefault(template =>
-                template.Family == AdventureBoonFamily.Party
-                && offers.All(offer => offer.Id != template.Id)
-            );
-            return template == null
-                ? null
-                : new AdventureBoon(template.Id, rank, -1, CardStat.PhysicalAttack);
+            var template =
+                Templates.FirstOrDefault(template =>
+                    template.Family == AdventureBoonFamily.Single
+                    && mine.All(offer => offer.Id != template.Id)
+                ) ?? Templates[0];
+            return new AdventureBoon(template.Id, rank, slot, AttackOf(members[slot]));
         }
 
         private static bool IsCostly(AdventureBoonTemplate template) =>

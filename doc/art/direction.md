@@ -2,7 +2,7 @@
 id: art-direction
 type: specification
 status: 一部確定
-updated: 2026-10-24
+updated: 2026-10-31
 ---
 
 # アート方針
@@ -190,6 +190,7 @@ updated: 2026-10-24
 
 固有スキルは品質Cで始まるため、強化して品質がAかSに上がるまでキラキラを出さない。
 キラキラを付ける対象は、品質を持つスキル（カード）・装備（武器・防具・アクセサリー）である。
+品質を持たない[戦闘後の強化](../features/stage-progression.md#戦闘後の強化)の札も、段階を品質に見立てて枠の光とキラキラを使う（白はC、金はA、虹はS。2026-10-31）。札の枠は札の大きさに合わせてコードで描く（[AdventureBoonPicker](../../client/Assets/Baryonyx/Features/Adventure/Runtime/AdventureBoonPicker.cs)）。
 アイテムは品質を持たないため、キラキラを付けない。
 
 シェーダーは品質に結び付ける前に作った5段階を持ち、Sは5段階目、Aは3段階目を使う（[CardFoil](../../client/Assets/Baryonyx/Shared/UI/Cards/CardFoil.cs)）。

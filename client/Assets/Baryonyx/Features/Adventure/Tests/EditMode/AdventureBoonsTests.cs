@@ -31,23 +31,24 @@ namespace Baryonyx.Tests.EditMode
         private static BattlePartyMember[] Party() =>
             new[] { Member("トーマ"), Member("ルカ"), Member("アリア"), Member("ミナ") };
 
-        // 同じ冒険の同じマスなら、何度作っても同じ3つになる（中断して再開しても同じ候補）。
+        // 同じ冒険の同じマスなら、何度作っても同じ候補になる（中断して再開しても同じ候補）。
         [Test]
-        public void TheSameWinOffersTheSameThree()
+        public void TheSameWinOffersTheSameBoons()
         {
             var party = Party();
             for (int seed = 1; seed < 40; seed++)
             {
                 var first = AdventureBoons.Offer(seed, "f3-1", AdventureBoonBattle.Early, 0, party);
                 var again = AdventureBoons.Offer(seed, "f3-1", AdventureBoonBattle.Early, 0, party);
-                Assert.That(first.Count, Is.EqualTo(AdventureBoons.OfferCount));
+                Assert.That(first.Count, Is.EqualTo(party.Length * AdventureBoons.PerMember));
                 Assert.That(again, Is.EqualTo(first));
             }
         }
 
-        // 3つは別の種類で、1人の強化は別々の仲間を指し、代償つきと修行は1つまで。白には上の系統が出ない。
+        // 1人に2つずつ、その仲間の列に並ぶ。1人の2つは別の種類で、全員の強化と、代償つき・修行は
+        // それぞれ1つまで。白には上の系統が出ない。
         [Test]
-        public void TheThreeFollowTheRules()
+        public void TheBoonsFollowTheRules()
         {
             var party = Party();
             foreach (
@@ -62,9 +63,14 @@ namespace Baryonyx.Tests.EditMode
                 for (int seed = 0; seed < 300; seed++)
                 {
                     var offers = AdventureBoons.Offer(seed, "f4-2", battle, 0, party);
-                    Assert.That(offers.Select(boon => boon.Id).Distinct().Count(), Is.EqualTo(3));
-                    var slots = offers.Where(boon => !boon.Everyone).Select(boon => boon.Slot);
-                    Assert.That(slots.Distinct().Count(), Is.EqualTo(slots.Count()));
+                    for (int column = 0; column < party.Length; column++)
+                    {
+                        var mine = offers.Skip(column * AdventureBoons.PerMember).Take(AdventureBoons.PerMember).ToArray();
+                        Assert.That(mine.Select(boon => boon.Id).Distinct().Count(), Is.EqualTo(mine.Length));
+                        foreach (var boon in mine.Where(boon => !boon.Everyone))
+                            Assert.That(boon.Slot, Is.EqualTo(column));
+                    }
+                    Assert.That(offers.Count(boon => boon.Everyone), Is.LessThanOrEqualTo(1));
                     Assert.That(
                         offers.Count(boon =>
                             boon.Template.Family
@@ -81,7 +87,31 @@ namespace Baryonyx.Tests.EditMode
                     };
                     foreach (var boon in offers.Where(boon => boon.Rank == AdventureBoonRank.White))
                         Assert.That(plain, Does.Contain(boon.Template.Family));
+                    // 段階を引くのは3回だけで、残りはその戦闘の一番下の段階になる。
+                    var lowest = battle == AdventureBoonBattle.TrialMet
+                        ? AdventureBoonRank.Gold
+                        : AdventureBoonRank.White;
+                    Assert.That(
+                        offers.Count(boon => boon.Rank != lowest),
+                        Is.LessThanOrEqualTo(AdventureBoons.RankDraws)
+                    );
                 }
+        }
+
+        // 仲間が欠けていれば、いる仲間の分だけ出す。
+        [Test]
+        public void OnlyTheMembersThereGetBoons()
+        {
+            var party = new[] { Member("トーマ"), null, Member("アリア"), null };
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var offers = AdventureBoons.Offer(seed, "f2-0", AdventureBoonBattle.Early, 0, party);
+                Assert.That(offers.Count, Is.EqualTo(2 * AdventureBoons.PerMember));
+                Assert.That(
+                    offers.Where(boon => !boon.Everyone).Select(boon => boon.Slot).Distinct(),
+                    Is.SubsetOf(new[] { 0, 2 })
+                );
+            }
         }
 
         // 強い魔物の後は1つが金以上、条件を満たした試練の後は1つが虹。最奥の間の後は出ない。
@@ -120,7 +150,7 @@ namespace Baryonyx.Tests.EditMode
                     rainbow += AdventureBoons
                         .Ranks(new RouteRandom(seed * 7919 + 13), battle, pity)
                         .Count(rank => rank == AdventureBoonRank.Rainbow);
-                return rainbow / (Draws * 3.0);
+                return rainbow / (Draws * (double)AdventureBoons.RankDraws);
             }
             Assert.That(Rate(AdventureBoonBattle.Early, 0), Is.InRange(0.035, 0.065));
             Assert.That(Rate(AdventureBoonBattle.Late, 0), Is.InRange(0.06, 0.1));

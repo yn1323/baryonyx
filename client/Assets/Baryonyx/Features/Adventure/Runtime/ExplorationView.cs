@@ -125,7 +125,7 @@ namespace Baryonyx.Adventure
         // 休憩の焚き火（休む・鍛える・研鑽を選ぶ）。
         public ExplorationCampfire Campfire;
 
-        // 戦闘後の強化を選ぶ前にアプリが終わったとき、再開した探索で開き直す3枚のカード。
+        // 戦闘後の強化を選ぶ前にアプリが終わったとき、再開した探索で開き直す強化の窓。
         public AdventureBoonPicker Boons;
 
         // 地図のどこを見ているかを示す、下の細いバー。

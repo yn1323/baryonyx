@@ -705,7 +705,7 @@ namespace Baryonyx.Tests.PlayMode
             battle.EndTurn();
         }
 
-        // 勝つとドロップを札で見せ、戦闘後の強化を3枚から選ぶと、そのまま次のマスを選ぶ探索へ移る
+        // 勝つとドロップを札で見せ、戦闘後の強化を1人2つずつの中から選ぶと、そのまま次のマスを選ぶ探索へ移る
         // （doc/features/stage-progression.md の戦闘後の強化）。選んだ強化は冒険のあいだ残る。
         [UnityTest]
         public IEnumerator AVictoryGivesTheRoomsRewardAndABoonAndGoesOnToTheNextRoom()
@@ -723,7 +723,7 @@ namespace Baryonyx.Tests.PlayMode
                 "The drop was not shown."
             );
             Assert.That(dialog.IsShown, Is.False);
-            // 勝つと手札は片付き、ドロップの札と強化の3枚に重ならない。
+            // 勝つと手札は片付き、ドロップの札と強化に重ならない。
             Assert.That(battle.HandPutAway, Is.True, "The hand is put away on the win.");
             yield return WaitForBoons(bootstrap);
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Victory));
@@ -734,8 +734,8 @@ namespace Baryonyx.Tests.PlayMode
             );
             Assert.That(AdventureSession.Current.Run.RoomCleared, Is.True);
             var boons = bootstrap.Overlay.Boons;
-            Assert.That(boons.Offers.Count, Is.EqualTo(AdventureBoons.OfferCount));
-            // 選ぶまで「選ぶ」は押せず、戻るキーでも閉じない。
+            Assert.That(boons.Offers.Count, Is.EqualTo(4 * AdventureBoons.PerMember));
+            // 選ぶまでチェックは押せず、戻るキーでも閉じない。
             Assert.That(boons.Confirm.interactable, Is.False);
             bootstrap.Overlay.PressBack();
             Assert.That(boons.IsOpen, Is.True);
@@ -781,7 +781,12 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(boons.Offers, Is.EqualTo(offered));
             boons.Pick(0);
             boons.Choose();
-            Assert.That(boons.IsOpen, Is.False);
+            // 決めると、上がる仲間が光ってから閉じる。
+            yield return SceneTests.WaitUntil(
+                () => !boons.IsOpen,
+                AdventureBoonPicker.TakeSeconds + 1f,
+                "The boons did not close after choosing."
+            );
             Assert.That(AdventureVitals.Boons(runId), Is.EqualTo(new[] { offered[0] }));
             Assert.That(AdventureVitals.PendingBoon(runId), Is.Null);
         }

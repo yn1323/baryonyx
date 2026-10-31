@@ -27,7 +27,7 @@ namespace Baryonyx.Adventure
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
 
-        // 勝った戦闘のあとに選ぶ、戦闘後の強化の3枚のカード。
+        // 勝った戦闘のあとに選ぶ、戦闘後の強化（仲間ごとの4つの列）。
         public AdventureBoonPicker Boons;
 
         private bool wired;
@@ -89,18 +89,25 @@ namespace Baryonyx.Adventure
                 "結果（冒険の終わり）",
                 "保存できない",
                 "戦闘後の強化",
+                "戦闘後の強化 › 決めたとき",
             };
 
         public void ShowPreviewState(int index)
         {
             if (Boons != null)
                 Boons.Close();
-            if (index == PreviewStates.Count - 1)
+            int boons = PreviewStates.Count - 2;
+            if (index >= boons)
             {
                 if (Dialog != null)
                     Dialog.Hide();
                 if (Boons != null)
+                {
                     Boons.ShowSample();
+                    // 決めたとき：光の柱がいちばん明るい瞬間で止める。
+                    if (index > boons)
+                        Boons.ShowTake(Boons.Picked, AdventureBoonPicker.TakePeak);
+                }
                 return;
             }
             if (Dialog == null)
