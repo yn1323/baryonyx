@@ -40,7 +40,7 @@ namespace Baryonyx.Adventure
         /// <summary>How strong the enemies on the way are, in percent (85 to 115 on the way; ignored in the deepest room).</summary>
         public int depthPercent = 100;
 
-        /// <summary>The enemy combinations (<see cref="BattleBalanceEncounters"/>); empty fights every one.</summary>
+        /// <summary>The encounter numbers, each picking a formation and its enemies (<see cref="BattleBalanceEncounters"/>); empty fights the first <see cref="BattleBalanceEncounters.Samples"/>.</summary>
         public int[] variants = Array.Empty<int>();
 
         /// <summary>How many times each combination is fought in "single".</summary>

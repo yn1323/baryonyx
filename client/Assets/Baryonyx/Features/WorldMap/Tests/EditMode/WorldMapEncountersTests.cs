@@ -22,11 +22,18 @@ namespace Baryonyx.Tests.EditMode
                 {
                     case WorldNodeKind.Battle:
                         Assert.That(encounter, Is.Not.Null, node.Id);
-                        Assert.That(encounter.Enemies.Kinds[2], Is.Null, node.Id);
+                        Assert.That(
+                            Areas.Any(area => area.Bosses.Contains(encounter.Enemies.Kinds[2])),
+                            Is.False,
+                            node.Id
+                        );
                         break;
                     case WorldNodeKind.Boss:
                         Assert.That(encounter, Is.Not.Null, node.Id);
-                        Assert.That(encounter.Enemies.Kinds[2], Is.Not.Null, node.Id);
+                        Assert.That(
+                            Areas.Any(area => area.Bosses.Contains(encounter.Enemies.Kinds[2])),
+                            node.Id
+                        );
                         break;
                     default:
                         Assert.That(encounter, Is.Null, node.Id);
@@ -40,21 +47,37 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        // 戦闘画面の場所の大きさに合う敵を置く：手前は小さな敵、中ほどは中くらいの敵、奥は主。
+        // 戦闘のマスは、ダンジョンの魔物の気配の編成のどれかで立ち、その編成の倍率で強くなる。
+        // 関所のボスは、手前に小さな敵、中ほどに中くらいの敵、奥に主を置く。
         [Test]
-        public void EachEnemyStandsInThePlaceOfItsSize()
+        public void EachBattleStandsAsAFormationOfThePacks()
         {
+            var formations = new[] { 0, 0, 0, 0 };
             foreach (string id in WorldMapEncounters.Squares)
             {
-                var kinds = WorldMapEncounters.Of(id).Enemies.Kinds;
-                Assert.That(Areas.Any(area => area.Small.Contains(kinds[0])), id + " " + kinds[0]);
-                Assert.That(Areas.Any(area => area.Medium.Contains(kinds[1])), id + " " + kinds[1]);
-                if (kinds[2] != null)
-                    Assert.That(
-                        Areas.Any(area => area.Bosses.Contains(kinds[2])),
-                        id + " " + kinds[2]
-                    );
+                var enemies = WorldMapEncounters.Of(id).Enemies;
+                var kinds = enemies.Kinds;
+                if (Areas.Any(area => area.Bosses.Contains(kinds[2])))
+                {
+                    Assert.That(Areas.Any(area => area.Small.Contains(kinds[0])), id);
+                    Assert.That(Areas.Any(area => area.Medium.Contains(kinds[1])), id);
+                    continue;
+                }
+                int formation = AdventureCatalog
+                    .PackFormations.ToList()
+                    .FindIndex(each => each.Fits(kinds));
+                Assert.That(formation, Is.GreaterThanOrEqualTo(0), id);
+                formations[formation]++;
+                var scale = AdventureCatalog.PackFormations[formation];
+                Assert.That(
+                    enemies.HpScale,
+                    Is.EqualTo(AdventureCatalog.PackHpScale * scale.HpScale).Within(1e-4),
+                    id
+                );
+                Assert.That(kinds.Where(kind => kind != null), Is.Unique, id);
             }
+            // 1体から3体まで、どの編成も街道のどこかに出る。
+            Assert.That(formations, Has.All.GreaterThan(0));
         }
 
         [Test]

@@ -15,10 +15,6 @@ namespace Baryonyx.Tests.PlayMode
     // 記録はテストごとに空のアプリ内の記録（RevealedWeaknessSession）から始める。
     public sealed class BattleWeaknessRecordTests
     {
-        // 戦闘画面の手前の小さな敵と、中くらいの敵の場所。
-        private const int Slime = AdventureCatalog.SmallPlace;
-        private const int Wolf = AdventureCatalog.MediumPlace;
-
         private TestGameServices services;
 
         [SetUp]
@@ -78,21 +74,25 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator OnlyTheWeaknessesRevealedBeforeShowFromTheStart()
         {
             var encounter = EnterTheFirstBattle();
-            var small = CombatEnemies.Find(encounter.Kinds[Slime]);
-            var medium = CombatEnemies.Find(encounter.Kinds[Wolf]);
-            RevealedWeaknessSession.Record(small.Id, small.Weaknesses[0]);
+            // 編成のいちばん手前の敵と、いちばん奥の敵（種類はみな違う）。
+            Assert.That(encounter.Enemies, Has.Length.GreaterThanOrEqualTo(2));
+            int front = encounter.Enemies[0];
+            int back = encounter.Enemies[^1];
+            var frontKind = CombatEnemies.Find(encounter.Kinds[front]);
+            var backKind = CombatEnemies.Find(encounter.Kinds[back]);
+            RevealedWeaknessSession.Record(frontKind.Id, frontKind.Weaknesses[0]);
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
 
-            // 小さな敵は記録した1つ目の弱点だけが見え、中くらいの敵はどれも伏せる。
+            // 手前の敵は記録した1つ目の弱点だけが見え、奥の敵はどれも伏せる。
             Assert.That(
-                Shown(battle.Enemies[Slime]),
-                Is.EqualTo(small.Weaknesses.Select((_, i) => i == 0).ToArray())
+                Shown(battle.Enemies[front]),
+                Is.EqualTo(frontKind.Weaknesses.Select((_, i) => i == 0).ToArray())
             );
             Assert.That(
-                Shown(battle.Enemies[Wolf]),
-                Is.EqualTo(medium.Weaknesses.Select(_ => false).ToArray())
+                Shown(battle.Enemies[back]),
+                Is.EqualTo(backKind.Weaknesses.Select(_ => false).ToArray())
             );
         }
 
@@ -100,39 +100,42 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator TheEnemiesCarryTheirWeaknessesAndAHitOneShowsInTheNextBattle()
         {
             var encounter = EnterTheFirstBattle();
-            var medium = CombatEnemies.Find(encounter.Kinds[Wolf]);
-            var first = medium.Weaknesses[0];
+            int back = encounter.Enemies[^1];
+            var backKind = CombatEnemies.Find(encounter.Kinds[back]);
+            var first = backKind.Weaknesses[0];
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
-            // The battle has the room's kinds (a small and a middle-sized enemy of the forest),
-            // each with its own weaknesses, all hidden at first.
-            var kinds = encounter.Kinds.Take(2).Select(CombatEnemies.Find).ToArray();
-            Assert.That(kinds, Has.None.Null);
-            Assert.That(
-                battle.Enemies.Take(2).Select(enemy => enemy.Id),
-                Is.EqualTo(kinds.Select(kind => kind.Id))
-            );
-            Assert.That(battle.Enemies[2].Alive, Is.False);
+            // The battle has the room's kinds (enemies of the forest in the places of the room's
+            // formation), each with its own weaknesses, all hidden at first.
             var area = AdventureCatalog.Area(AdventureCatalog.ForestRuins);
-            Assert.That(area.Small, Does.Contain(kinds[0].Id));
-            Assert.That(area.Medium, Does.Contain(kinds[1].Id));
-            for (int i = 0; i < kinds.Length; i++)
+            for (int i = 0; i < battle.Enemies.Length; i++)
+            {
+                if (!encounter.Enemies.Contains(i))
+                {
+                    Assert.That(battle.Enemies[i].Alive, Is.False);
+                    continue;
+                }
+                var kind = CombatEnemies.Find(encounter.Kinds[i]);
+                Assert.That(kind, Is.Not.Null);
+                Assert.That(battle.Enemies[i].Id, Is.EqualTo(kind.Id));
+                Assert.That(area.Small.Concat(area.Medium), Does.Contain(kind.Id));
                 Assert.That(
                     battle
                         .Enemies[i]
                         .Weaknesses.Select(weakness => BattleCardText.ElementOf(weakness.Element)),
-                    Is.EqualTo(kinds[i].Weaknesses)
+                    Is.EqualTo(kind.Weaknesses)
                 );
+            }
             Assert.That(
-                Shown(battle.Enemies[Wolf]),
-                Is.EqualTo(medium.Weaknesses.Select(_ => false).ToArray())
+                Shown(battle.Enemies[back]),
+                Is.EqualTo(backKind.Weaknesses.Select(_ => false).ToArray())
             );
 
-            // 中くらいの敵の伏せた1つ目の弱点を突く。
-            battle.LabPlay(Wolf, EnemyLabAction.WeakHit);
+            // 奥の敵の伏せた1つ目の弱点を突く。
+            battle.LabPlay(back, EnemyLabAction.WeakHit);
             yield return SceneTests.WaitUntil(
-                () => RevealedWeaknessSession.IsRevealed(medium.Id, first),
+                () => RevealedWeaknessSession.IsRevealed(backKind.Id, first),
                 8f,
                 "The weakness hit was not recorded."
             );
@@ -145,13 +148,13 @@ namespace Baryonyx.Tests.PlayMode
                 .SourceOrLocal.LoadAsync(CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
-            Assert.That(kept, Is.EqualTo(new[] { new RevealedWeakness(medium.Id, first) }));
+            Assert.That(kept, Is.EqualTo(new[] { new RevealedWeakness(backKind.Id, first) }));
 
             // 同じ部屋の戦闘を開き直すと、その弱点を最初から見せる。
             yield return LoadBattle(value => bootstrap = value);
             Assert.That(
-                Shown(bootstrap.Battle.Enemies[Wolf]),
-                Is.EqualTo(medium.Weaknesses.Select((_, i) => i == 0).ToArray())
+                Shown(bootstrap.Battle.Enemies[back]),
+                Is.EqualTo(backKind.Weaknesses.Select((_, i) => i == 0).ToArray())
             );
         }
     }

@@ -76,7 +76,10 @@ namespace Baryonyx.Tests.PlayMode
             yield return session.Run();
 
             var battle = session.Result.battles[0];
-            Assert.That(battle.enemies, Is.EqualTo("moss-slime+moss-wolf"));
+            Assert.That(
+                battle.enemies,
+                Is.EqualTo(BattleBalanceEncounters.EnemiesOf("forest-ruins/pack/0"))
+            );
             Assert.That(battle.outcome, Is.EqualTo(BattleBalanceRecord.Victory), battle.enemyStats);
             Assert.That(battle.turns, Is.InRange(1, 10));
             Assert.That(battle.cards, Is.GreaterThan(0));

@@ -37,30 +37,19 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
-        // 森の小さな敵は4体、中くらいの敵は5体、最奥の主は1体。組み合わせの番号で、全部に1回ずつ会う。
+        // 番号を書かない依頼は、番号0から決まった数の戦闘に会う。番号ごとに編成と敵が変わる。
         [Test]
-        public void TheVariantsMeetEveryCombinationOnce()
+        public void TheVariantsMeetVariedFormations()
         {
             var request = new BattleBalanceRequest { room = "elite", depthPercent = 106 };
             var encounters = BattleBalanceEncounters.Of(request);
-            Assert.That(encounters.Count, Is.EqualTo(20));
+            Assert.That(encounters.Count, Is.EqualTo(BattleBalanceEncounters.Samples));
             Assert.That(encounters[0], Is.EqualTo("forest-ruins/elite/0/106"));
-            var pairs = encounters.Select(BattleBalanceEncounters.EnemiesOf).ToArray();
-            Assert.That(pairs, Is.Unique);
-            Assert.That(pairs, Does.Contain("dew-slime+nectar-bloom"));
+            var enemies = encounters.Select(BattleBalanceEncounters.EnemiesOf).ToArray();
+            Assert.That(enemies.Distinct().Count(), Is.GreaterThan(enemies.Length / 2));
             Assert.That(
-                BattleBalanceEncounters.CombinationCount(
-                    AdventureCatalog.ForestRuins,
-                    AdventureRoomKind.Boss
-                ),
-                Is.EqualTo(20)
-            );
-            Assert.That(
-                BattleBalanceEncounters.CombinationCount(
-                    AdventureCatalog.ForestRuins,
-                    AdventureRoomKind.ShadyChest
-                ),
-                Is.EqualTo(4)
+                enemies.Select(names => names.Split('+').Length).Distinct(),
+                Is.EquivalentTo(new[] { 2, 3 })
             );
             // 最奥の間は深さを付けない。
             request.room = "boss";

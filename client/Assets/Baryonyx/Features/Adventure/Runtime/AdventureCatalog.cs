@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baryonyx.Combat;
 using Baryonyx.Combat.Presentation;
 
 namespace Baryonyx.Adventure
 {
     /// <summary>
     /// The enemies a battle of the adventure is fought with: the kind of enemy in each place of
-    /// the battle screen (by place in BattleInspectView.Enemies: 0 the small one in front, 1 the
-    /// middle-sized one, 2 the large one at the back; null for an empty place), the level they
-    /// show up at and how much their HP and their attacks are scaled.
+    /// the battle screen (by place in BattleInspectView.Enemies: 0 in front, 1 in the middle, 2 at
+    /// the back, where the master stands; null for an empty place), the level they show up at
+    /// and how much their HP and their attacks are scaled.
     /// </summary>
     public sealed class AdventureEncounter
     {
@@ -43,6 +44,52 @@ namespace Baryonyx.Adventure
     }
 
     /// <summary>
+    /// How the enemies of a battle stand (doc/features/stage-progression.md の戦闘の編成): the
+    /// size of the enemy in each place of the battle screen (null for an empty place), how much
+    /// their HP and attacks are scaled against a small and a middle-sized enemy, and how often it
+    /// comes on the way's first floor and on its last.
+    /// </summary>
+    public sealed class AdventureFormation
+    {
+        public AdventureFormation(
+            EnemyBody?[] places,
+            float hpScale,
+            float powerScale,
+            int shallowWeight,
+            int deepWeight
+        )
+        {
+            Places = places;
+            HpScale = hpScale;
+            PowerScale = powerScale;
+            ShallowWeight = shallowWeight;
+            DeepWeight = deepWeight;
+        }
+
+        public IReadOnlyList<EnemyBody?> Places { get; }
+        public float HpScale { get; }
+        public float PowerScale { get; }
+        public int ShallowWeight { get; }
+        public int DeepWeight { get; }
+
+        /// <summary>How often it comes at <paramref name="depth"/> (0 the way's first floor, 1 its last).</summary>
+        public float WeightAt(float depth) => ShallowWeight + (DeepWeight - ShallowWeight) * depth;
+
+        /// <summary>True when <paramref name="kinds"/> stand as this formation, by place and size.</summary>
+        public bool Fits(IReadOnlyList<string> kinds) =>
+            kinds != null
+            && kinds.Count == Places.Count
+            && Places
+                .Select(
+                    (body, i) =>
+                        string.IsNullOrEmpty(kinds[i])
+                            ? body == null
+                            : body == CombatEnemyStats.Find(kinds[i])?.Body
+                )
+                .All(fits => fits);
+    }
+
+    /// <summary>
     /// One destination of the adventure: its name, its battle background, the rooms between the
     /// entrance and the deepest room (the same as the server's), the level its enemies show up
     /// at and the enemies that live there, by size (doc/features/stage-progression.md).
@@ -57,7 +104,7 @@ namespace Baryonyx.Adventure
         /// <summary>The level of the enemies on the way; a strong enemy's room is higher.</summary>
         public int Level { get; set; } = 10;
 
-        /// <summary>The small enemies (64 dots), standing in front.</summary>
+        /// <summary>The small enemies (64 dots).</summary>
         public string[] Small { get; set; } = Array.Empty<string>();
 
         /// <summary>The middle-sized enemies (96 dots).</summary>
@@ -77,10 +124,10 @@ namespace Baryonyx.Adventure
     {
         public const string ForestRuins = AdventureLocalSource.ForestRuins;
 
-        // 戦闘画面の敵の並び（BattleInspectView.Enemies）。小さな敵が手前、大きな敵が奥に立つ。
-        public const int SmallPlace = 0;
-        public const int MediumPlace = 1;
-        public const int LargePlace = 2;
+        // 戦闘画面の敵の立ち位置（BattleInspectView.Enemies）。だれが立つかは編成が決め、最奥の主は奥に立つ。
+        public const int FrontPlace = 0;
+        public const int MiddlePlace = 1;
+        public const int BackPlace = 2;
 
         // 倍率は、実際の戦闘画面での自動対戦で決めた仮の値（doc/features/stage-progression.md の
         // 戦闘の試し）。2026-10-22に敵が毎ターン動くようにしたため、決め直した。
@@ -109,10 +156,33 @@ namespace Baryonyx.Adventure
         public const float BossHpScale = 2.3f;
         public const float BossPowerScale = 1.8f;
 
+        private const EnemyBody Small = EnemyBody.Small;
+        private const EnemyBody Medium = EnemyBody.Medium;
+
+        // 魔物の気配の編成（doc/features/stage-progression.md の戦闘の編成）。小さな敵1体と中くらいの敵1体を
+        // 基準に、敵の合計のHPと1ターンの攻撃がおおよそ同じになるよう倍率を掛ける（小さな敵の平均はHP約3100・
+        // 攻撃約830、中くらいの敵はHP約6600・攻撃約1220）。浅い階は少ない敵、奥の階は多い敵がよく出る。
+        public static readonly IReadOnlyList<AdventureFormation> PackFormations = new[]
+        {
+            // 中くらいの敵1体。
+            new AdventureFormation(new EnemyBody?[] { null, Medium, null }, 1.4f, 1.4f, 3, 1),
+            new AdventureFormation(new EnemyBody?[] { Small, Medium, null }, 1f, 1f, 4, 3),
+            new AdventureFormation(new EnemyBody?[] { Small, Small, null }, 1.4f, 1.15f, 3, 1),
+            new AdventureFormation(new EnemyBody?[] { Small, Small, Medium }, 0.8f, 0.75f, 1, 3),
+        };
+
+        // 強い魔物の気配の編成。中くらいの敵を2体にして、道中の編成と見分けられるようにする。
+        // 倍率の基準は魔物の気配と同じ。
+        public static readonly IReadOnlyList<AdventureFormation> EliteFormations = new[]
+        {
+            new AdventureFormation(new EnemyBody?[] { null, Medium, Medium }, 0.75f, 0.85f, 1, 1),
+            new AdventureFormation(new EnemyBody?[] { Small, Medium, Medium }, 0.6f, 0.65f, 1, 1),
+        };
+
         /// <summary>
         /// The destinations, from the nearest to the deepest (2026-10-20). Each has the enemies of
-        /// its own land (doc/catalog/enemies, where each lives), and every enemy kind shows up
-        /// somewhere.
+        /// its own land (doc/catalog/enemies, where each lives) and some of its neighbors', and
+        /// every enemy kind shows up somewhere.
         /// </summary>
         public static readonly IReadOnlyList<AdventureArea> Areas = new[]
         {
@@ -123,7 +193,14 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.MistyWoods,
                 RoomCount = 8,
                 Level = 10,
-                Small = new[] { "moss-slime", "dew-slime", "acorn-soldier", "crystal-hare" },
+                Small = new[]
+                {
+                    "moss-slime",
+                    "dew-slime",
+                    "acorn-soldier",
+                    "crystal-hare",
+                    "lost-signpost",
+                },
                 Medium = new[]
                 {
                     "moss-wolf",
@@ -141,8 +218,22 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.RockyShore,
                 RoomCount = 9,
                 Level = 14,
-                Small = new[] { "ghost-jelly", "coin-pouch", "lost-signpost" },
-                Medium = new[] { "barnacle-crab", "skeleton-pirate", "pumpkin-scarecrow" },
+                Small = new[]
+                {
+                    "ghost-jelly",
+                    "coin-pouch",
+                    "lost-signpost",
+                    "will-o-wisp",
+                    "big-eared-bat",
+                },
+                Medium = new[]
+                {
+                    "barnacle-crab",
+                    "skeleton-pirate",
+                    "pumpkin-scarecrow",
+                    "crystal-hermit",
+                    "blind-fishman",
+                },
                 Bosses = new[] { "giant-octopus" },
             },
             new AdventureArea
@@ -152,7 +243,14 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.CrystalCavern,
                 RoomCount = 9,
                 Level = 18,
-                Small = new[] { "big-eared-bat", "glow-worm", "ice-penguin" },
+                Small = new[]
+                {
+                    "big-eared-bat",
+                    "glow-worm",
+                    "ice-penguin",
+                    "snowball",
+                    "crystal-hare",
+                },
                 Medium = new[] { "crystal-hermit", "ore-mole", "blind-fishman", "icicle-fox" },
                 Bosses = new[] { "rock-troll" },
             },
@@ -163,8 +261,22 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.MistySwamp,
                 RoomCount = 10,
                 Level = 22,
-                Small = new[] { "blood-leech", "will-o-wisp", "dew-slime" },
-                Medium = new[] { "frog-king", "mud-golem", "spore-cap" },
+                Small = new[]
+                {
+                    "blood-leech",
+                    "will-o-wisp",
+                    "dew-slime",
+                    "moss-slime",
+                    "glow-worm",
+                },
+                Medium = new[]
+                {
+                    "frog-king",
+                    "mud-golem",
+                    "spore-cap",
+                    "thorn-serpent",
+                    "nectar-bloom",
+                },
                 Bosses = new[] { "bone-croc" },
             },
             new AdventureArea
@@ -180,6 +292,7 @@ namespace Baryonyx.Adventure
                     "floating-grimoire",
                     "hourglass-sprite",
                     "cactus-warrior",
+                    "cursed-candelabra",
                 },
                 Medium = new[]
                 {
@@ -198,13 +311,21 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.MoonlitGraveyard,
                 RoomCount = 11,
                 Level = 30,
-                Small = new[] { "cursed-candelabra", "will-o-wisp", "floating-grimoire" },
+                Small = new[]
+                {
+                    "cursed-candelabra",
+                    "will-o-wisp",
+                    "floating-grimoire",
+                    "ghost-jelly",
+                    "cracked-urn",
+                },
                 Medium = new[]
                 {
                     "skeleton-soldier",
                     "grave-raven",
                     "hollow-armor",
                     "pumpkin-scarecrow",
+                    "skeleton-pirate",
                 },
                 Bosses = new[] { "lich" },
             },
@@ -215,8 +336,22 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.VolcanoCrater,
                 RoomCount = 11,
                 Level = 35,
-                Small = new[] { "lava-slime", "will-o-wisp", "big-eared-bat" },
-                Medium = new[] { "fire-lizard", "flame-tail-bird", "ore-mole" },
+                Small = new[]
+                {
+                    "lava-slime",
+                    "will-o-wisp",
+                    "big-eared-bat",
+                    "cactus-warrior",
+                    "glow-worm",
+                },
+                Medium = new[]
+                {
+                    "fire-lizard",
+                    "flame-tail-bird",
+                    "ore-mole",
+                    "stone-gargoyle",
+                    "sand-scorpion",
+                },
                 Bosses = new[] { "obsidian-colossus" },
             },
             new AdventureArea
@@ -226,8 +361,22 @@ namespace Baryonyx.Adventure
                 Stage = BattleStage.SnowField,
                 RoomCount = 12,
                 Level = 40,
-                Small = new[] { "snowball", "ice-penguin", "crystal-hare" },
-                Medium = new[] { "icicle-fox", "crystal-hermit", "stump-boar" },
+                Small = new[]
+                {
+                    "snowball",
+                    "ice-penguin",
+                    "crystal-hare",
+                    "will-o-wisp",
+                    "lost-signpost",
+                },
+                Medium = new[]
+                {
+                    "icicle-fox",
+                    "crystal-hermit",
+                    "stump-boar",
+                    "moss-wolf",
+                    "grave-raven",
+                },
                 Bosses = new[] { "frost-ape", "snow-mammoth", "mist-dragon" },
             },
         };
@@ -332,10 +481,13 @@ namespace Baryonyx.Adventure
 
         /// <summary>
         /// The enemies of an encounter ("port-portoria/pack/17", or "port-portoria/pack/17/92"
-        /// with the room's depth in percent): a pack has a small and a middle-sized enemy of the
-        /// destination, a strong enemy's room the same at a higher level and with more HP, and the
-        /// deepest room adds the destination's master behind them. The depth scales the HP and the
-        /// attack. An unknown encounter is the first destination's pack.
+        /// with the room's depth in percent). The number picks, as the seed of a small random
+        /// number generator, a formation (<see cref="PackFormations"/>, <see cref="EliteFormations"/>)
+        /// and the destination's enemies standing in it, all of different kinds. The deeper the
+        /// room, the more often a formation of many enemies comes, and the depth scales the HP
+        /// and the attack. The shady chest's mimic stands with a small enemy, and the deepest room
+        /// has a small and a middle-sized enemy before the destination's master. An unknown
+        /// encounter is the first destination's pack.
         /// </summary>
         public static AdventureEncounter Encounter(string id)
         {
@@ -343,54 +495,118 @@ namespace Baryonyx.Adventure
             var area = parts.Length is 3 or 4 ? Area(parts[0]) : null;
             if (area == null || !int.TryParse(parts[2], out int variant) || variant < 0)
                 return Encounter(EncounterOf(ForestRuins, AdventureRoomKind.Battle));
-            float depth =
-                parts.Length == 4 && int.TryParse(parts[3], out int percent) && percent > 0
-                    ? percent / 100f
-                    : 1f;
-            string small = Pick(area.Small, variant, 1);
-            string medium = Pick(area.Medium, variant, area.Small.Length);
-            return parts[1] switch
+            int percent =
+                parts.Length == 4 && int.TryParse(parts[3], out int given) && given > 0
+                    ? given
+                    : 100;
+            float depth = percent / 100f;
+            var random = new RouteRandom(variant);
+            var taken = new List<string>();
+            string Take(string[] kinds) => TakeOne(kinds, taken, random);
+            switch (parts[1])
             {
-                "elite" => new AdventureEncounter(
-                    id,
-                    new[] { small, medium, null },
-                    area.Level + EliteLevelUp,
-                    EliteHpScale * depth,
-                    ElitePowerScale * depth
-                ),
+                case "elite":
+                {
+                    var formation = Choose(EliteFormations, DepthOf(percent), random);
+                    return new AdventureEncounter(
+                        id,
+                        Fill(formation, area, Take),
+                        area.Level + EliteLevelUp,
+                        EliteHpScale * formation.HpScale * depth,
+                        ElitePowerScale * formation.PowerScale * depth
+                    );
+                }
                 // 宝箱ミミックに、行き先の小さな敵1体を加え、強い魔物と同じ強さにする。
-                "mimic" => new AdventureEncounter(
-                    id,
-                    new[] { small, MimicId, null },
-                    area.Level + EliteLevelUp,
-                    EliteHpScale * depth,
-                    ElitePowerScale * depth
-                ),
-                "boss" => new AdventureEncounter(
-                    id,
-                    new[]
-                    {
-                        small,
-                        medium,
-                        Pick(area.Bosses, variant, area.Small.Length * area.Medium.Length),
-                    },
-                    area.Level + BossLevelUp,
-                    BossHpScale,
-                    BossPowerScale
-                ),
-                _ => new AdventureEncounter(
-                    id,
-                    new[] { small, medium, null },
-                    area.Level,
-                    PackHpScale * depth,
-                    PackPowerScale * depth
-                ),
-            };
+                case "mimic":
+                    return new AdventureEncounter(
+                        id,
+                        new[] { Take(area.Small), MimicId, null },
+                        area.Level + EliteLevelUp,
+                        EliteHpScale * depth,
+                        ElitePowerScale * depth
+                    );
+                case "boss":
+                    return new AdventureEncounter(
+                        id,
+                        new[] { Take(area.Small), Take(area.Medium), Take(area.Bosses) },
+                        area.Level + BossLevelUp,
+                        BossHpScale,
+                        BossPowerScale
+                    );
+                default:
+                {
+                    var formation = Choose(PackFormations, DepthOf(percent), random);
+                    return new AdventureEncounter(
+                        id,
+                        Fill(formation, area, Take),
+                        area.Level,
+                        PackHpScale * formation.HpScale * depth,
+                        PackPowerScale * formation.PowerScale * depth
+                    );
+                }
+            }
         }
 
-        // 組み合わせの番号から、敵の一覧の1体を選ぶ。小・中・主の順に、番号の桁をずらして使う。
-        private static string Pick(string[] kinds, int variant, int stride) =>
-            kinds.Length == 0 ? null : kinds[variant / Math.Max(1, stride) % kinds.Length];
+        /// <summary>
+        /// The pack formation <paramref name="kinds"/> stand as, by place and size; the formation
+        /// of a small and a middle-sized enemy when none fits.
+        /// </summary>
+        public static AdventureFormation PackFormationOf(IReadOnlyList<string> kinds) =>
+            PackFormations.FirstOrDefault(formation => formation.Fits(kinds)) ?? PackFormations[1];
+
+        // 道中の深さ（%）を、最初の階の0から最奥の直前の階の1までにする。道中でない部屋は真ん中。
+        private static float DepthOf(int percent) =>
+            Math.Clamp(
+                (percent - FirstDepthPercent) / (float)(LastDepthPercent - FirstDepthPercent),
+                0f,
+                1f
+            );
+
+        // 深さに応じた重みで、編成を1つ選ぶ。
+        private static AdventureFormation Choose(
+            IReadOnlyList<AdventureFormation> formations,
+            float depth,
+            RouteRandom random
+        )
+        {
+            double roll = random.Next() * formations.Sum(formation => formation.WeightAt(depth));
+            foreach (var formation in formations)
+            {
+                roll -= formation.WeightAt(depth);
+                if (roll < 0)
+                    return formation;
+            }
+            return formations[formations.Count - 1];
+        }
+
+        // 編成の立ち位置に、その大きさの行き先の敵を入れる。
+        private static string[] Fill(
+            AdventureFormation formation,
+            AdventureArea area,
+            Func<string[], string> take
+        ) =>
+            formation
+                .Places.Select(body =>
+                    body switch
+                    {
+                        Small => take(area.Small),
+                        Medium => take(area.Medium),
+                        _ => null,
+                    }
+                )
+                .ToArray();
+
+        // 敵の一覧から、同じ戦闘にまだいない種類を1体選ぶ。みな出ていれば、一覧のどれでもよい。
+        private static string TakeOne(string[] kinds, List<string> taken, RouteRandom random)
+        {
+            if (kinds.Length == 0)
+                return null;
+            var left = kinds.Where(kind => !taken.Contains(kind)).ToArray();
+            var from = left.Length > 0 ? left : kinds;
+            string kind = from[random.Range(0, from.Length)];
+            taken.Add(kind);
+            return kind;
+        }
 
         public static string StatusTitle(AdventureEndStatus status) =>
             status switch

@@ -122,6 +122,7 @@ namespace Baryonyx.Tests.EditMode
                     AdventureCatalog.Encounter(room.Encounter).HpScale,
                     Is.EqualTo(
                             AdventureCatalog.PackHpScale
+                                * FormationOf(room.Encounter).HpScale
                                 * AdventureCatalog.DepthPercentOf(room.Id, 8)
                                 / 100f
                         )
@@ -135,27 +136,51 @@ namespace Baryonyx.Tests.EditMode
             );
         }
 
+        private static AdventureFormation FormationOf(string encounter) =>
+            AdventureCatalog.PackFormationOf(AdventureCatalog.Encounter(encounter).Kinds);
+
+        private static int Count(AdventureEncounter encounter) => encounter.Enemies.Length;
+
         [Test]
         public void AnEncounterPicksTheAreasEnemiesAtItsLevel()
         {
             var area = AdventureCatalog.Area("port-portoria");
             var pack = AdventureCatalog.Encounter("port-portoria/pack/4");
-            Assert.That(area.Small, Does.Contain(pack.Kinds[AdventureCatalog.SmallPlace]));
-            Assert.That(area.Medium, Does.Contain(pack.Kinds[AdventureCatalog.MediumPlace]));
-            Assert.That(pack.Kinds[AdventureCatalog.LargePlace], Is.Null);
-            Assert.That(pack.Enemies, Is.EqualTo(new[] { 0, 1 }));
+            var formation = FormationOf("port-portoria/pack/4");
+            Assert.That(formation.Fits(pack.Kinds), Is.True);
+            Assert.That(
+                pack.Kinds.Where(kind => kind != null),
+                Is.SubsetOf(area.Small.Concat(area.Medium))
+            );
+            Assert.That(pack.Kinds.Where(kind => kind != null), Is.Unique);
             Assert.That(pack.Level, Is.EqualTo(area.Level));
-            Assert.That(pack.HpScale, Is.EqualTo(AdventureCatalog.PackHpScale));
+            Assert.That(
+                pack.HpScale,
+                Is.EqualTo(AdventureCatalog.PackHpScale * formation.HpScale).Within(1e-4)
+            );
+            Assert.That(
+                pack.PowerScale,
+                Is.EqualTo(AdventureCatalog.PackPowerScale * formation.PowerScale).Within(1e-4)
+            );
 
+            // 強い魔物の気配は中くらいの敵を2体にし、Lvを上げる。
             var elite = AdventureCatalog.Encounter("port-portoria/elite/4");
-            Assert.That(elite.Kinds.Take(2), Is.EqualTo(pack.Kinds.Take(2)));
+            var strong = AdventureCatalog.EliteFormations.Single(each => each.Fits(elite.Kinds));
+            Assert.That(elite.Kinds.Count(kind => area.Medium.Contains(kind)), Is.EqualTo(2));
             Assert.That(elite.Level, Is.EqualTo(area.Level + AdventureCatalog.EliteLevelUp));
-            Assert.That(elite.HpScale, Is.EqualTo(AdventureCatalog.EliteHpScale));
-            Assert.That(elite.PowerScale, Is.EqualTo(AdventureCatalog.ElitePowerScale));
-            Assert.That(pack.PowerScale, Is.EqualTo(AdventureCatalog.PackPowerScale));
+            Assert.That(
+                elite.HpScale,
+                Is.EqualTo(AdventureCatalog.EliteHpScale * strong.HpScale).Within(1e-4)
+            );
+            Assert.That(
+                elite.PowerScale,
+                Is.EqualTo(AdventureCatalog.ElitePowerScale * strong.PowerScale).Within(1e-4)
+            );
 
             var boss = AdventureCatalog.Encounter("port-portoria/boss/4");
-            Assert.That(area.Bosses, Does.Contain(boss.Kinds[AdventureCatalog.LargePlace]));
+            Assert.That(area.Small, Does.Contain(boss.Kinds[AdventureCatalog.FrontPlace]));
+            Assert.That(area.Medium, Does.Contain(boss.Kinds[AdventureCatalog.MiddlePlace]));
+            Assert.That(area.Bosses, Does.Contain(boss.Kinds[AdventureCatalog.BackPlace]));
             Assert.That(boss.Enemies, Is.EqualTo(new[] { 0, 1, 2 }));
             Assert.That(boss.Level, Is.EqualTo(area.Level + AdventureCatalog.BossLevelUp));
             Assert.That(boss.HpScale, Is.EqualTo(AdventureCatalog.BossHpScale));
@@ -163,27 +188,53 @@ namespace Baryonyx.Tests.EditMode
 
             // 奥の階の敵ほど、HPと攻撃が少しずつ上がる（最奥の主には掛けない）。
             var deep = AdventureCatalog.Encounter("port-portoria/pack/4/115");
-            Assert.That(deep.Kinds, Is.EqualTo(pack.Kinds));
+            var deepFormation = FormationOf("port-portoria/pack/4/115");
             Assert.That(
                 deep.HpScale,
-                Is.EqualTo(AdventureCatalog.PackHpScale * 1.15f).Within(1e-4)
+                Is.EqualTo(AdventureCatalog.PackHpScale * deepFormation.HpScale * 1.15f)
+                    .Within(1e-4)
             );
             Assert.That(
                 deep.PowerScale,
-                Is.EqualTo(AdventureCatalog.PackPowerScale * 1.15f).Within(1e-4)
+                Is.EqualTo(AdventureCatalog.PackPowerScale * deepFormation.PowerScale * 1.15f)
+                    .Within(1e-4)
             );
             var shallowElite = AdventureCatalog.Encounter("port-portoria/elite/4/85");
+            var shallowStrong = AdventureCatalog.EliteFormations.Single(each =>
+                each.Fits(shallowElite.Kinds)
+            );
             Assert.That(
                 shallowElite.HpScale,
-                Is.EqualTo(AdventureCatalog.EliteHpScale * 0.85f).Within(1e-4)
+                Is.EqualTo(AdventureCatalog.EliteHpScale * shallowStrong.HpScale * 0.85f)
+                    .Within(1e-4)
             );
 
             // 知らない組み合わせは、森の魔物の気配にする。
+            var forest = AdventureCatalog.Area(AdventureCatalog.ForestRuins);
             var unknown = AdventureCatalog.Encounter("nowhere/pack/1");
             Assert.That(
-                AdventureCatalog.Area(AdventureCatalog.ForestRuins).Small,
-                Does.Contain(unknown.Kinds[0])
+                unknown.Kinds.Where(kind => kind != null),
+                Is.SubsetOf(forest.Small.Concat(forest.Medium))
             );
+        }
+
+        // 魔物の気配は1体から3体まで散らばり、浅い階は少ない敵、奥の階は多い敵がよく出る。
+        [Test]
+        public void ThePacksHaveOneToThreeEnemiesAndMoreOnTheDeepFloors()
+        {
+            var shallow = Enumerable
+                .Range(0, 400)
+                .Select(variant => AdventureCatalog.Encounter($"hush-mire/pack/{variant}/85"))
+                .ToArray();
+            var deep = Enumerable
+                .Range(0, 400)
+                .Select(variant => AdventureCatalog.Encounter($"hush-mire/pack/{variant}/115"))
+                .ToArray();
+            Assert.That(shallow.Select(Count).Distinct(), Is.EquivalentTo(new[] { 1, 2, 3 }));
+            Assert.That(deep.Select(Count).Distinct(), Is.EquivalentTo(new[] { 1, 2, 3 }));
+            Assert.That(deep.Average(Count), Is.GreaterThan(shallow.Average(Count) + 0.3));
+            foreach (var pack in shallow.Concat(deep))
+                Assert.That(pack.Kinds.Where(kind => kind != null), Is.Unique, pack.Id);
         }
 
         // 同じ冒険（種）は、どの端末でも同じ敵に会い、部屋ごとに違う組み合わせが出る。
