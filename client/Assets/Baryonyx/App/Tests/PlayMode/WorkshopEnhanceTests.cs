@@ -135,6 +135,8 @@ namespace Baryonyx.Tests.PlayMode
             source.Hold = true;
             enhance.Confirm.onClick.Invoke();
             Assert.That(enhance.Confirm.interactable, Is.False);
+            // 押した瞬間に、サーバーの答えを待たずに強化の演出が始まる（品質強化の演出）。
+            Assert.That(enhance.Flip.Playing, Is.True);
             Assert.That(RuneBalance.Known, Is.EqualTo(4800));
             source.Answer();
             yield return SceneTests.WaitForTask(enhance.Work);

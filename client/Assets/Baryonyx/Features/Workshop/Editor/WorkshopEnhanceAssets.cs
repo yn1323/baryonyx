@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baryonyx.Combat;
+using Baryonyx.Editor;
 using Baryonyx.Editor.UI;
 using Baryonyx.Enhancement;
 using Baryonyx.Inventory.Editor;
@@ -352,7 +353,196 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopEnhanceView.PolishLabel
             );
             enhance.Prompt = BuildCombinePrompt((RectTransform)enhance.transform);
+            enhance.Flip = BuildFlip((RectTransform)enhance.transform);
             return enhance.gameObject;
+        }
+
+        // 品質強化の演出（裏返して現れる）：画面全体の暗転、中央で回るカード、計算で描く光の板
+        // （doc/features/enhancement.md 品質強化の演出）。光は戦闘の形のマテリアルを使う。押すまで隠しておく。
+        private const string OrbitShaderPath =
+            WorkshopScreenAssets.Folder + "/Vfx/Shaders/WorkshopEnhanceOrbit.shader";
+        private const string OrbitMaterialFolder = WorkshopScreenAssets.Folder + "/Vfx/Materials";
+        private const int Orbits = 10;
+
+        // 光の軌跡の板（奥の半分・手前の半分のどちらかを描くマテリアル）。
+        private static Baryonyx.Combat.Presentation.BattleVfxImage[] OrbitBoards(
+            RectTransform screen,
+            string name,
+            bool front
+        ) =>
+            WorkshopCraftAssets.Boards(
+                screen,
+                name,
+                Orbits,
+                OrbitMaterial(front ? "EnhanceOrbitFront" : "EnhanceOrbitBack", front ? 1f : 0f)
+            );
+
+        private static Material OrbitMaterial(string name, float half)
+        {
+            AssetFolders.Ensure(OrbitMaterialFolder);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(OrbitShaderPath);
+            if (shader == null)
+                throw new InvalidOperationException("Missing shader: " + OrbitShaderPath);
+            var path = $"{OrbitMaterialFolder}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            material.SetFloat("_Half", half);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static WorkshopEnhanceFlip BuildFlip(RectTransform root)
+        {
+            var screen = Rect("EnhanceFlip", root);
+            Stretch(screen);
+            var flip = screen.gameObject.AddComponent<WorkshopEnhanceFlip>();
+
+            // Safe Areaの外まで暗くし、押すと演出を飛ばす。
+            var dim = Rect("Dim", screen);
+            Stretch(dim);
+            dim.offsetMin = new Vector2(-400, -400);
+            dim.offsetMax = new Vector2(400, 400);
+            flip.Dim = AddImage(dim, new Color(0.02f, 0.03f, 0.08f, 0f), true);
+            flip.Skip = GuideMenuAssets.AddButton(dim, flip.Dim);
+            flip.Skip.transition = Selectable.Transition.None;
+
+            flip.CardGlow = WorkshopCraftAssets.Board(
+                screen,
+                "CardGlow",
+                WorkshopCraftAssets.Shape("Glow")
+            );
+            // 表を向いたときの光線と輪は、カードの文字が読めるようカードの奥に置く。
+            flip.Rays = WorkshopCraftAssets.Board(screen, "Rays", WorkshopCraftAssets.Shape("Star"));
+            flip.MoreRays = WorkshopCraftAssets.Board(
+                screen,
+                "MoreRays",
+                WorkshopCraftAssets.Shape("Star")
+            );
+            flip.Ring = WorkshopCraftAssets.Board(screen, "Ring", WorkshopCraftAssets.Shape("Ring"));
+            flip.MoreRings = WorkshopCraftAssets.Boards(
+                screen,
+                "MoreRing",
+                3,
+                WorkshopCraftAssets.Shape("Ring")
+            );
+            var rim = Rect("Rim", screen);
+            WorkshopCraftAssets.Center(rim);
+            flip.Rim = Sliced(rim, UiArt.FeatherPath, Color.white);
+            flip.Rim.raycastTarget = false;
+            rim.gameObject.SetActive(false);
+
+            // 奥の半分の光の軌跡は、カードの奥を通る。
+            flip.OrbitBacks = OrbitBoards(screen, "OrbitBack", front: false);
+
+            // カード：表は押したときに強化する前と後の札を複製して入れ、裏は戦闘のカードの裏の絵。
+            var card = Rect("Card", screen);
+            WorkshopCraftAssets.Center(card);
+            flip.Card = card;
+            flip.BeforeFace = Rect("BeforeFace", card);
+            Stretch(flip.BeforeFace);
+            flip.AfterFace = Rect("AfterFace", card);
+            Stretch(flip.AfterFace);
+            var back = Rect("Back", card);
+            WorkshopCraftAssets.Center(back);
+            flip.Back = back.gameObject.AddComponent<RawImage>();
+            flip.Back.texture = Baryonyx.Combat.Editor.BattleInspectAssets.Art("CardBack");
+            flip.Back.raycastTarget = false;
+            back.gameObject.SetActive(false);
+            // 回る面の影：カードの裏の絵の形で、いちばん上に重ねる。
+            var shade = Rect("Shade", card);
+            Stretch(shade);
+            flip.Shade = shade.gameObject.AddComponent<RawImage>();
+            flip.Shade.texture = flip.Back.texture;
+            flip.Shade.color = new Color(0f, 0f, 0f, 0f);
+            flip.Shade.raycastTarget = false;
+            shade.gameObject.SetActive(false);
+
+            // 手前の半分の光の軌跡は、カードの手前を通る。
+            flip.OrbitFronts = OrbitBoards(screen, "OrbitFront", front: true);
+            flip.Absorb = WorkshopCraftAssets.Board(
+                screen,
+                "Absorb",
+                WorkshopCraftAssets.Shape("Glow")
+            );
+            const int stones = 5;
+            flip.StoneTrails = WorkshopCraftAssets.Boards(
+                screen,
+                "StoneTrail",
+                stones,
+                WorkshopCraftAssets.Shape("Streak")
+            );
+            flip.StoneGlows = WorkshopCraftAssets.Boards(
+                screen,
+                "StoneGlow",
+                stones,
+                WorkshopCraftAssets.Shape("Glow")
+            );
+            flip.Stones = new RawImage[stones];
+            for (int i = 0; i < stones; i++)
+            {
+                var stone = Rect("Stone" + i, screen);
+                WorkshopCraftAssets.Center(stone);
+                var art = stone.gameObject.AddComponent<RawImage>();
+                art.raycastTarget = false;
+                stone.gameObject.SetActive(false);
+                flip.Stones[i] = art;
+            }
+            flip.Embers = WorkshopCraftAssets.Boards(
+                screen,
+                "Ember",
+                18,
+                WorkshopCraftAssets.Shape("Spark")
+            );
+            flip.Converge = WorkshopCraftAssets.Boards(
+                screen,
+                "Converge",
+                20,
+                WorkshopCraftAssets.Shape("Streak")
+            );
+            flip.Bursts = WorkshopCraftAssets.Boards(
+                screen,
+                "Burst",
+                28,
+                WorkshopCraftAssets.Shape("Spark")
+            );
+            flip.Corners = WorkshopCraftAssets.Boards(
+                screen,
+                "Corner",
+                4,
+                WorkshopCraftAssets.Shape("Sparkle")
+            );
+            flip.Twinkles = WorkshopCraftAssets.Boards(
+                screen,
+                "Twinkle",
+                6,
+                WorkshopCraftAssets.Shape("Sparkle")
+            );
+            flip.Sheen = WorkshopCraftAssets.Board(
+                screen,
+                "Sheen",
+                WorkshopCraftAssets.Shape("Sparkle")
+            );
+            flip.Flakes = WorkshopCraftAssets.Boards(
+                screen,
+                "Flake",
+                16,
+                WorkshopCraftAssets.Shape("Shard")
+            );
+            flip.Prisms = WorkshopCraftAssets.Boards(
+                screen,
+                "Prism",
+                18,
+                WorkshopCraftAssets.Shape("Sparkle")
+            );
+
+            Baryonyx.Combat.Presentation.BattleVfxImage.EnableShapeChannel(screen);
+            screen.gameObject.SetActive(false);
+            return flip;
         }
 
         // 品質のゲージ：上にC・B・A・Sの境目の文字、下に暗い棒。棒には水色（上がった後）と白（今）を重ね、境目に細い線を引く。

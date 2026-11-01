@@ -112,6 +112,9 @@ namespace Baryonyx.Workshop
         // 選んだ色が足りないが下の色から作れるとき、「強化」で開く確かめの画面。
         public WorkshopCombinePrompt Prompt;
 
+        // 「強化」で流す、カードが中央で回って裏返る演出（doc/features/enhancement.md 品質強化の演出）。
+        public WorkshopEnhanceFlip Flip;
+
         private readonly HashSet<Component> bound = new();
         private readonly GlassCardCover cover = new();
         private IReadOnlyList<EnhancementTarget> skills = Array.Empty<EnhancementTarget>();
@@ -426,10 +429,94 @@ namespace Baryonyx.Workshop
             // 足りない色は、確かめの画面で下の色から作ってから使う。
             if (plan is { Count: > 0 } && Prompt != null)
             {
-                Prompt.Open(plan, RunesFor(plan), () => Work = PolishAsync(target, counts, plan));
+                Prompt.Open(
+                    plan,
+                    RunesFor(plan),
+                    () =>
+                    {
+                        PlayFlip(target, counts);
+                        Work = PolishAsync(target, counts, plan);
+                    }
+                );
                 return;
             }
+            PlayFlip(target, counts);
             Work = PolishAsync(target, counts, null);
+        }
+
+        // 押した瞬間に、右の面の強化する前と後の札で演出を流す。強化した後は石の数から決まるため、
+        // サーバーの答えを待たない。
+        private void PlayFlip(EnhancementTarget target, IReadOnlyList<int> counts)
+        {
+            if (Flip == null || target == null)
+                return;
+            var (before, after) = Faces();
+            if (before == null)
+                return;
+            Flip.UseFaces(before, after);
+            Flip.Play(FlipPlan(target, counts, before, UnityEngine.Random.value), null);
+        }
+
+        // 今出している強化する前と後の札（スキル・固有スキルはデッキのカード、装備は札）。
+        private (RectTransform before, RectTransform after) Faces()
+        {
+            RectTransform Root(GameObject card) =>
+                card != null && card.activeSelf ? (RectTransform)card.transform : null;
+            var before = Root(BeforeCard?.Frame != null ? BeforeCard.Frame.transform.parent.gameObject : null);
+            var after = Root(AfterCard?.Frame != null ? AfterCard.Frame.transform.parent.gameObject : null);
+            if (before != null)
+                return (before, after);
+            return (Root(BeforeGear?.Root), Root(AfterGear?.Root));
+        }
+
+        /// <summary>
+        /// What the flip shows for using <paramref name="counts"/> stones (white to gold) on
+        /// <paramref name="target"/>, whose card on the panel is <paramref name="card"/>: the
+        /// stones fly from their tiles, low colours first, and the quality after sets how rich it is.
+        /// </summary>
+        public WorkshopEnhanceFlip.Plan FlipPlan(
+            EnhancementTarget target,
+            IReadOnlyList<int> counts,
+            RectTransform card,
+            float seed
+        )
+        {
+            var plan = new WorkshopEnhanceFlip.Plan { Seed = seed };
+            if (Flip == null || target == null)
+                return plan;
+            if (card != null)
+            {
+                plan.CardHome = Flip.PlaceOf(card);
+                plan.CardSize = card.rect.size;
+            }
+            for (int i = 0; i < counts.Count && i < Chips.Length; i++)
+            {
+                if (counts[i] <= 0)
+                    continue;
+                plan.StoneColor = StoneColor(EnhancementMaterials.Polishes[i]);
+                var art = Chips[i] != null ? Chips[i].Art : null;
+                for (int n = 0; n < counts[i] && plan.Stones.Count < Flip.Stones.Length; n++)
+                    plan.Stones.Add(
+                        new WorkshopEnhanceFlip.Stone
+                        {
+                            Art = art != null ? art.texture : null,
+                            Size = art != null ? art.rectTransform.rect.size : new Vector2(64f, 64f),
+                            From = art != null ? Flip.PlaceOf(art.rectTransform) : Vector2.zero,
+                        }
+                    );
+            }
+            float after = target.AtMax
+                ? target.Multiplier
+                : EnhancementMaterials.PolishedAll(
+                    target.Multiplier,
+                    counts,
+                    target.MaxMultiplier,
+                    out _
+                );
+            plan.Look = WorkshopEnhanceFlip.LookOf(
+                Inventory.Quality.Of(after, target.MaxMultiplier)
+            );
+            return plan;
         }
 
         private async Task PolishAsync(
@@ -987,10 +1074,39 @@ namespace Baryonyx.Workshop
         public IReadOnlyList<string> PreviewStates =>
             new[] { "一覧", "色の上限", "足りない石を作る" }
                 .Concat(GuidePanelLoad.PreviewStates)
+                .Concat(FlipStates.Select(state => state.Name))
                 .ToArray();
+
+        // 強化の演出の止めたコマ：見た目、押してからの秒数（null は表を向いた直後）、元の品質の位置（0〜1）、使う石。
+        private static readonly (
+            string Name,
+            WorkshopEnhanceFlip.Look Look,
+            float? Seconds,
+            float Place,
+            int[] Stones
+        )[] FlipStates =
+        {
+            ("強化の演出・回る", WorkshopEnhanceFlip.Look.Plain, 0.4f, 0.1f, new[] { 1 }),
+            ("強化の演出・普通 現れる", WorkshopEnhanceFlip.Look.Plain, null, 0.1f, new[] { 1 }),
+            ("強化の演出・金 溜める", WorkshopEnhanceFlip.Look.Gold, 0.86f, 0.5f, new[] { 1, 1 }),
+            ("強化の演出・金 ピカーン", WorkshopEnhanceFlip.Look.Gold, null, 0.5f, new[] { 1, 1 }),
+            ("強化の演出・虹 溜める", WorkshopEnhanceFlip.Look.Rainbow, 1.12f, 0.8f, new[] { 2 }),
+            ("強化の演出・虹 キラーン", WorkshopEnhanceFlip.Look.Rainbow, null, 0.8f, new[] { 2 }),
+        };
 
         public void ShowPreviewState(int index)
         {
+            if (Flip != null)
+            {
+                Flip.UseFaces(null, null);
+                Flip.gameObject.SetActive(false);
+            }
+            int flipState = index - (3 + GuidePanelLoad.PreviewStates.Count);
+            if (flipState >= 0)
+            {
+                ShowFlipState(FlipStates[flipState]);
+                return;
+            }
             if (index == 0)
             {
                 cover.Clear();
@@ -1015,6 +1131,37 @@ namespace Baryonyx.Workshop
             ShowLoading();
             if (index == 4)
                 ShowLoadFailed();
+        }
+
+        // 仮の編成のスキルの先頭を品質の位置 place に置き、石を選んで、強化の演出をその秒数で止めて見せる。
+        private void ShowFlipState(
+            (string Name, WorkshopEnhanceFlip.Look Look, float? Seconds, float Place, int[] Stones) state
+        )
+        {
+            if (EnhancementSession.Source == null)
+                _ = EnhancementSession.LoadAsync(CancellationToken.None);
+            cover.Clear();
+            Use(PartyFormation.From(Party), null, null);
+            ShowTab(Tab.Skills);
+            if (skills.Count == 0 || Flip == null)
+                return;
+            var first = skills[0];
+            float multiplier = (float)
+                Math.Round(
+                    Inventory.Quality.MinMultiplier
+                        + (first.MaxMultiplier - Inventory.Quality.MinMultiplier) * state.Place,
+                    2
+                );
+            Replace(first, first.WithMultiplier(multiplier));
+            Select(0);
+            foreach (int stone in state.Stones)
+                ChooseStone(stone);
+            var (before, after) = Faces();
+            Flip.UseFaces(before, after);
+            var plan = FlipPlan(SelectedTarget, uses, before, 0.37f);
+            var beats = WorkshopEnhanceFlip.Beats.Of(plan.Look);
+            Flip.gameObject.SetActive(true);
+            Flip.Show(state.Seconds ?? beats.Burst + 0.06f, plan);
         }
 
         // 仮の素材（金1個・紫2個・青4個）で、品質Cの先頭のスキルの金の札を2回押して「強化」を押す。

@@ -309,7 +309,7 @@ namespace Baryonyx.Workshop.Editor
             return swirl;
         }
 
-        private static BattleVfxImage[] Boards(
+        internal static BattleVfxImage[] Boards(
             RectTransform parent,
             string name,
             int count,
@@ -322,7 +322,7 @@ namespace Baryonyx.Workshop.Editor
             return boards;
         }
 
-        private static BattleVfxImage Board(RectTransform parent, string name, Material material)
+        internal static BattleVfxImage Board(RectTransform parent, string name, Material material)
         {
             var rect = Rect(name, parent);
             Center(rect);
@@ -333,13 +333,13 @@ namespace Baryonyx.Workshop.Editor
             return board;
         }
 
-        private static void Center(RectTransform rect)
+        internal static void Center(RectTransform rect)
         {
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = Vector2.zero;
         }
 
-        private static Material Shape(string name)
+        internal static Material Shape(string name)
         {
             var path = $"{BattleSkillVfxAssets.MaterialFolder}/VfxShape{name}.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
