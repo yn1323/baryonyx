@@ -28,7 +28,7 @@ client/
 │   │   │   ├── Runtime/                 起動、Providerの選択、前面・背面通知、シーン名（SceneNames）
 │   │   │   ├── Scenes/                   Top.unity、Home.unity、Showcase.unity、Exploration.unity、Battle.unity
 │   │   │   │   ├── Guide/                案内人の画面（Pub・Shop・Temple・TravelOffice）
-│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・TempLab）
+│   │   │   │   └── Debug/                デバッグ用のシーン（BattleLab・CardSkillLab・EnemyLab・BattleMomentLab・ExplorationMomentLab・QualityLab・InventoryLab・TempLab）
 │   │   │   ├── Editor/                  シーンへの機能の配置、HD-2Dの演出と3Dの舞台のシーンへの配置
 │   │   │   └── Tests/                   EditMode（サーバーの接続先）とPlayMode（起動・案内人・展示室のシーン）
 │   │   ├── Features/Account/
@@ -76,7 +76,7 @@ client/
 │   │   ├── Features/Training/           編成の育成（1人の詳細と、重ねて開くレベルアップ）のモック。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/CardLoadout/        編成のスキル（仲間ごとの4枚の付け替え）のモック。Runtime・Editor・Tests
 │   │   ├── Features/Equipment/          編成の装備（仲間ごとの武器・防具の付け替えと、サーバーへの保存）。Runtime・Editor・UI・Tests
-│   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質のデバッグルーム。Runtime・Presentation・Editor・UI・Tests
+│   │   ├── Features/Inventory/          持ち物の品質の決まり（Runtime は Baryonyx.Combat に含める）と、品質・持ち物のデバッグルーム。Runtime・Presentation・Editor・UI・Tests
 │   │   ├── Features/Adventure/          冒険の状態とサーバーとの読み書き、探索の画面と地図、戦闘との受け渡し、旅の案内所の出発。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Library/            ライブラリ（見つけた物・敵・日々の歩数）の画面と、記録のサーバーからの読み込み。Runtime・Editor・Data・UI・Tests
 │   │   ├── Features/Showcase/           クライアントアセット展示室。Runtime・Editor・Data・Entries（自動登録の生成物）
@@ -175,6 +175,7 @@ client/
 | `Debug/BattleLab.unity` | 戦闘画面の見た目を確かめるモック。単体で開いて確認する | `Baryonyx > App > Create Battle Lab Scene` | [戦闘画面の見た目モック](../features/screens/battle.md#戦闘画面の見た目モック) |
 | `Debug/CardSkillLab.unity` | Play中に選んだスキルの演出をすぐ再生するデバッグルーム | `Baryonyx > App > Create Card Skill Lab Scene` | [スキルのデバッグルーム](../features/screens/debug-rooms.md#スキルのデバッグルーム) |
 | `Debug/QualityLab.unity` | スキル・装備・アクセサリーの倍率を動かし、品質の文字とキラキラを確かめるデバッグルーム | `Baryonyx > App > Create Quality Lab Scene` | [品質のデバッグルーム](../features/screens/debug-rooms.md#品質のデバッグルーム) |
+| `Debug/InventoryLab.unity` | 押した種類を、選んだ品質と数でサーバーの持ち物へ足すデバッグルーム | `Baryonyx > App > Create Inventory Lab Scene` | [持ち物のデバッグルーム](../features/screens/debug-rooms.md#持ち物のデバッグルーム) |
 | `Debug/EnemyLab.unity` | Play中に選んだ敵に、選んだ行動を戦闘画面のモックと同じ処理ですぐさせるデバッグルーム | `Baryonyx > App > Create Enemy Lab Scene` | [敵の挙動デバッグルーム](../features/screens/debug-rooms.md#敵の挙動デバッグルーム) |
 | `Debug/BattleMomentLab.unity` | 魔物の出現・ターンの帯・勝利・ドロップ・全滅・ルーン復活の演出を、戦闘画面のモックと同じ処理でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Battle Moment Lab Scene` | [戦闘の演出デバッグルーム](../features/screens/debug-rooms.md#戦闘の演出デバッグルーム) |
 | `Debug/ExplorationMomentLab.unity` | 探索の魔物の出現・宝箱・マスへ進む演出を、探索画面の見本の道の上でボタン1つで再生するデバッグルーム | `Baryonyx > App > Create Exploration Moment Lab Scene` | [探索の演出デバッグルーム](../features/screens/debug-rooms.md#探索の演出デバッグルーム) |

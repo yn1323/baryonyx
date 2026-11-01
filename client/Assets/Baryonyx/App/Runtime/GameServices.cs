@@ -6,6 +6,7 @@ using Baryonyx.Enhancement;
 using Baryonyx.Equipment;
 using Baryonyx.ExerciseRewards;
 using Baryonyx.Health;
+using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.Networking;
 using Baryonyx.Party;
@@ -87,6 +88,9 @@ namespace Baryonyx.App
         // デバッグルームの一覧の「ルーン+10000」。サーバーがなければ画面の残高に足す。
         public DebugRunes DebugRunes { get; private set; } = DebugRunes.Offline;
 
+        // 持ち物のデバッグルームが足す先。サーバーがなければnullで、足せない。
+        public IInventoryGrants DebugGrants { get; private set; }
+
         // 作った接続。まだ作っていなければnull（シーンを単体で開いたときなど）。
         public static GameServices Current => current;
 
@@ -115,6 +119,7 @@ namespace Baryonyx.App
             TempleSummonSession.Source = services?.Summon;
             WorldMapSession.Source = services?.WorldMap;
             WorldAtlasSession.Source = services?.WorldAtlas;
+            InventoryLab.Grants = services?.DebugGrants;
         }
 
         // Domain Reloadを省略したPlay開始でも、前回の接続先やセッションを持ち越さない。
@@ -177,7 +182,10 @@ namespace Baryonyx.App
                     : null
             );
             if (sync != null)
+            {
                 services.DebugRunes = new DebugRunes(sync.Sessions, server);
+                services.DebugGrants = new DebugGrants(sync.Sessions, server);
+            }
             return services;
         }
 

@@ -38,6 +38,9 @@ namespace Baryonyx.App
         // 品質のデバッグルーム。
         public const string QualityLab = "QualityLab";
 
+        // 持ち物のデバッグルーム。押した物をサーバーの持ち物へ足す。
+        public const string InventoryLab = "InventoryLab";
+
         // 敵の挙動デバッグルーム。
         public const string EnemyLab = "EnemyLab";
 
@@ -76,6 +79,7 @@ namespace Baryonyx.App
         {
             ("スキルのデバッグルーム", CardSkillLab, true, DebugRoomCorner.TopRight),
             ("品質のデバッグルーム", QualityLab, true, DebugRoomCorner.TopRight),
+            ("持ち物のデバッグルーム", InventoryLab, true, DebugRoomCorner.TopRight),
             ("戦闘画面のモック", BattleLab, false, DebugRoomCorner.TopRight),
             ("敵の挙動デバッグルーム", EnemyLab, false, DebugRoomCorner.TopRight),
             ("戦闘の演出デバッグルーム", BattleMomentLab, false, DebugRoomCorner.TopRight),
