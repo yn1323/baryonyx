@@ -19,11 +19,11 @@ namespace Baryonyx.Editor.Art
         private static readonly string[] Platforms = { "Android", "iPhone" };
 
         // 処理を変えたら上げる。対象の画像がすべて読み込み直される。
-        public override uint GetVersion() => 1;
+        public override uint GetVersion() => 2;
 
         public static TextureImporterFormat FormatOf(string path) =>
             path.StartsWith(AtlasArtFolder, StringComparison.Ordinal)
-                ? TextureImporterFormat.ASTC_8x8
+                ? TextureImporterFormat.ASTC_12x12
                 : TextureImporterFormat.ASTC_6x6;
 
         private void OnPreprocessTexture()

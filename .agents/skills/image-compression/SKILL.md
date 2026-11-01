@@ -20,5 +20,5 @@ description: >
 4. **確かめる**：
    - [MobileTextureCompressionTests](../../../client/Assets/Baryonyx/Tests/EditMode/MobileTextureCompressionTests.cs) を実行する。
    - 画面を撮り、にじみやブロックの境目が目立たないかを見る。
-   - APKをビルドしたときは、`client/Logs/Editor.log` の「Used Assets and files」で、追加した画像の容量を確かめる。圧縮されていれば、ASTC 6×6で1画素あたり約0.44バイト、8×8で約0.25バイトになる。1画素4バイト前後なら圧縮されていない。
+   - APKをビルドしたときは、`client/Logs/Editor.log` の「Used Assets and files」で、追加した画像の容量を確かめる。圧縮されていれば、ASTC 6×6で1画素あたり約0.44バイト、12×12で約0.11バイトになる。1画素4バイト前後なら圧縮されていない。
 5. **展示室**：画像を追加・変更したら、[クライアントアセット展示室](../../../doc/features/showcase.md)の登録とプレビューも更新する。
