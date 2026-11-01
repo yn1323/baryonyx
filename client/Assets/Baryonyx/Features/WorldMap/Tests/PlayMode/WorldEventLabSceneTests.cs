@@ -75,6 +75,7 @@ namespace Baryonyx.Tests.PlayMode
                     lab.ListButton,
                     lab.HelpButton,
                     lab.TryButton,
+                    lab.CopyButton,
                 }
             )
                 SceneTests.AssertTouchSize(button.transform);
@@ -186,6 +187,101 @@ namespace Baryonyx.Tests.PlayMode
             Assert.That(lab.Chosen, Is.EqualTo(-1));
             yield return null;
             Assert.That(lab.MapLabel.text, Does.Contain(lab.Navigator.Current.Atlas.name));
+        }
+
+        // 端末（配置へ残せない）では、配置の決まりをその場で確かめ、変えたマスを控えて、地図を開き直すと当て直し、
+        // 「コピー」でJSONにしてクリップボードへ写す（AIに貼って place_events.py apply で反映する）。
+        [UnityTest]
+        public IEnumerator OnAPhoneChangesAreKeptAndCopiedAsJson()
+        {
+            WorldEventLab.Save = null;
+            WorldEventLab.SaveSetting = null;
+            WorldEventLab lab = null;
+            yield return SceneTests.Load<WorldEventLab>(
+                ScenePath,
+                found => found.Navigator != null && found.Navigator.Current != null,
+                found => lab = found
+            );
+            var map = lab.Navigator.Current;
+            Assert.That(lab.Copy(), Is.False, "Nothing changed yet.");
+
+            // 出来事の隣の空きマスには置けない。消した出来事は、同じマスへ置き直せる。
+            int near = -1,
+                pickup = -1,
+                removed = -1;
+            for (int i = 0; i < map.Graph.Nodes.Count; i++)
+            {
+                if (map.TryEventAt(i, out var kind))
+                {
+                    if (kind == WorldEventKind.Pickup && pickup < 0)
+                        pickup = i;
+                    else if (kind != WorldEventKind.Battle && removed < 0)
+                        removed = i;
+                    continue;
+                }
+                if (map.Graph.Nodes[i].Kind != WorldNodeKind.Empty || near >= 0)
+                    continue;
+                foreach (int next in map.Graph.LinksOf(i))
+                    if (map.TryEventAt(next, out _))
+                        near = i;
+            }
+            Assert.That(near, Is.GreaterThanOrEqualTo(0), "An empty square next to an event.");
+            Assert.That(pickup, Is.GreaterThanOrEqualTo(0));
+            Assert.That(removed, Is.GreaterThanOrEqualTo(0));
+            Assert.That(lab.Choose(near), Is.True);
+            Assert.That(lab.Assign(WorldEventKind.Pickup, 0), Is.False);
+            Assert.That(map.TryEventAt(near, out _), Is.False);
+            Assert.That(lab.Choose(pickup), Is.True);
+            Assert.That(lab.Assign(null, 0), Is.True);
+            Assert.That(lab.Assign(WorldEventKind.Pickup, 0), Is.True);
+            Assert.That(lab.Choose(removed), Is.True);
+            Assert.That(lab.Assign(null, 0), Is.True);
+
+            // 戦闘のマスのLvを変える。
+            int battle = map.Graph.IndexOf(BattleSquare);
+            Assert.That(lab.Choose(battle), Is.True);
+            Assert.That(lab.SetLevel("12"), Is.True);
+            Assert.That(lab.ChangeCount, Is.EqualTo(3));
+
+            string json = lab.ChangesJson();
+            Assert.That(json, Does.Contain(WorldEventLab.ChangesFormat));
+            Assert.That(json, Does.Contain($"\"square\": \"{map.Graph.Nodes[pickup].Id}\""));
+            Assert.That(json, Does.Contain("\"event\": \"pickup\""));
+            Assert.That(json, Does.Contain("\"event\": \"none\""));
+            Assert.That(json, Does.Contain($"\"square\": \"{BattleSquare}\""));
+            Assert.That(json, Does.Contain("\"enemyLevel\": 12"));
+            Assert.That(UnityEngine.JsonUtility.FromJson<Copied>(json).changes, Has.Length.EqualTo(3));
+            Assert.That(lab.Copy(), Is.True);
+            Assert.That(UnityEngine.GUIUtility.systemCopyBuffer, Is.EqualTo(json));
+
+            // ほかの地図へ移って戻っても、変えたマスはそのまま（消したマスは消えたまま）。
+            Assert.That(lab.OpenMap("marina"), Is.True);
+            yield return SceneTests.WaitUntil(
+                () => !lab.Navigator.Switching && lab.Navigator.CurrentKey == "marina"
+            );
+            Assert.That(lab.OpenMap(WorldAtlasLayout.WorldKey), Is.True);
+            yield return SceneTests.WaitUntil(
+                () => !lab.Navigator.Switching && lab.Navigator.CurrentKey == WorldAtlasLayout.WorldKey
+            );
+            yield return null;
+            Assert.That(lab.Navigator.Current.TryEventAt(removed, out _), Is.False);
+            Assert.That(lab.Navigator.Current.TryEventAt(pickup, out var put), Is.True);
+            Assert.That(put, Is.EqualTo(WorldEventKind.Pickup));
+        }
+
+        [System.Serializable]
+        private sealed class Copied
+        {
+            public string format;
+            public Change[] changes;
+        }
+
+        [System.Serializable]
+        private sealed class Change
+        {
+            public string map;
+            public string square;
+            public string @event;
         }
     }
 }

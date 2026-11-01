@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +19,9 @@ namespace Baryonyx.WorldMap
     /// the map (the world map or a region's), lists the squares that hold an event, says whether a
     /// party member good at it is there (the helped answer and the bets' help), and tries the
     /// chosen square's event in its window. The buttons hide while a window is open.
+    /// On a phone nothing is saved, so every square changed is remembered (put back when its map
+    /// opens again) and "コピー" copies them as JSON (<see cref="ChangesJson"/>), to be pasted to
+    /// the AI and written into the layouts with place_events.py apply.
     /// </summary>
     public sealed class WorldEventLab : MonoBehaviour
     {
@@ -55,6 +60,7 @@ namespace Baryonyx.WorldMap
         public Button HelpButton;
         public TMP_Text HelpLabel;
         public Button TryButton;
+        public Button CopyButton;
 
         // 左の一覧（地図か、出来事を置いたマス）：一覧の枠、行を並べる所、行の見本。
         public CanvasGroup ListGroup;
@@ -104,6 +110,28 @@ namespace Baryonyx.WorldMap
             Maps,
             Squares,
         }
+
+        // 変えたマス（地図ごと・マスごとに1つ。変えた順）。コピーでJSONにし、端末では地図を開き直したときに当て直す。
+        private sealed class Change
+        {
+            public string Map;
+            public string Square;
+            public string Label;
+            public string Event;
+            public string Form;
+            public string Enemies;
+            public int EnemyLevel;
+            public string Strength;
+        }
+
+        private readonly List<Change> changes = new();
+        private WorldMapView shownView;
+
+        /// <summary>The marker the copied JSON starts with, so a paste is known for what it is.</summary>
+        public const string ChangesFormat = "baryonyx-world-event-lab";
+
+        // 出来事どうしの道のりの最小のマス数（place_events.py の GAP と同じ）。
+        private const int EventGap = 3;
 
         private readonly List<Button> rows = new();
         private readonly List<int> rowSquares = new();
@@ -156,6 +184,8 @@ namespace Baryonyx.WorldMap
             MapButton.onClick.AddListener(() => Toggle(ListMode.Maps));
             ListButton.onClick.AddListener(() => Toggle(ListMode.Squares));
             TryButton.onClick.AddListener(() => Try());
+            if (CopyButton != null)
+                CopyButton.onClick.AddListener(() => Copy());
             EnemiesInput.onEndEdit.AddListener(words => SetEnemies(words));
             LevelInput.onEndEdit.AddListener(text => SetLevel(text));
             StrengthButton.onClick.AddListener(NextStrength);
@@ -175,6 +205,11 @@ namespace Baryonyx.WorldMap
             Fade(InspectorGroup, chosen >= 0 && !open);
             if (view == null)
                 return;
+            if (view != shownView)
+            {
+                shownView = view;
+                PutBack(view);
+            }
             // 地図を移っても、マスを押すと選ぶ。選んだマスは息をするように大きさを変える。
             view.Picking = picking;
             if (MapLabel != null && view.Atlas != null)
@@ -236,6 +271,13 @@ namespace Baryonyx.WorldMap
             }
             string name = kind is { } placed ? WorldAtlasLayout.NameOf(placed) : "none";
             int price = node.price;
+            // 端末では配置へ残せないため、配置の決まり（place_events.py の set）をここで確かめる。
+            string refused = Save == null && kind != null ? RuleError(view, chosen, node, name) : null;
+            if (refused != null)
+            {
+                view.ShowNotice(refused);
+                return false;
+            }
             if (Save != null)
             {
                 var saved = Save(
@@ -265,8 +307,48 @@ namespace Baryonyx.WorldMap
             if (mode == ListMode.Squares)
                 FillSquares();
             ShowInspector();
+            Remember(node);
             return true;
         }
+
+        // 出来事を置ける所か（place_events.py の set と同じ決まり）。置けないときは理由を返す。
+        private string RuleError(WorldMapView view, int index, WorldAtlasLayout.Node node, string name)
+        {
+            var graph = view.Graph;
+            int start = graph != null ? graph.IndexOf(StartSquare()) : -1;
+            if (node.kind != "empty" || index == start)
+                return "出来事は、何もないマスにだけ置けます";
+            if (graph == null)
+                return null;
+            if (start >= 0)
+                foreach (int next in graph.LinksOf(start))
+                    if (next == index)
+                        return "始まりの隣には置けません";
+            // 道のりで GAP-1 マス以内に、ほかの出来事がないか。
+            var steps = new Dictionary<int, int> { [index] = 0 };
+            var queue = new Queue<int>();
+            queue.Enqueue(index);
+            while (queue.Count > 0)
+            {
+                int at = queue.Dequeue();
+                if (at != index && view.TryEventAt(at, out _))
+                    return "ほかの出来事と近すぎます（間に何もないマスを2つ以上空けます）";
+                if (steps[at] >= EventGap - 1)
+                    continue;
+                foreach (int next in graph.LinksOf(at))
+                    if (!steps.ContainsKey(next))
+                    {
+                        steps[next] = steps[at] + 1;
+                        queue.Enqueue(next);
+                    }
+            }
+            return null;
+        }
+
+        private string StartSquare() =>
+            Navigator.CurrentKey == WorldAtlasLayout.WorldKey
+                ? WorldAtlasLayout.StartSquare
+                : WorldAtlasLayout.GatePrefix + Navigator.CurrentKey;
 
         /// <summary>Opens the chosen square's event in its window, as stopping there does.</summary>
         public bool Try()
@@ -373,6 +455,7 @@ namespace Baryonyx.WorldMap
                 return false;
             node.enemies = words.Length > 0 ? words : null;
             Describe(node);
+            Remember(node);
             return true;
         }
 
@@ -394,6 +477,7 @@ namespace Baryonyx.WorldMap
                 return false;
             node.enemyLevel = level;
             Describe(node);
+            Remember(node);
             return true;
         }
 
@@ -412,6 +496,7 @@ namespace Baryonyx.WorldMap
             node.strength = name;
             StrengthLabel.text = StrengthText(next);
             Describe(node);
+            Remember(node);
         }
 
         // 設定を配置へ残す。残せないとき（Editorの外）は、アプリを閉じるまでだけ変える。
@@ -424,6 +509,123 @@ namespace Baryonyx.WorldMap
                 return true;
             View.ShowNotice(saved.Error);
             return false;
+        }
+
+        // --- 変えたマスの控えとコピー ---------------------------------------------------------
+
+        /// <summary>How many squares have been changed.</summary>
+        public int ChangeCount => changes.Count;
+
+        // 変えたマスの今の出来事と設定を控える（同じマスは上書きし、変えた順を保つ）。
+        private void Remember(WorldAtlasLayout.Node node)
+        {
+            string map = Navigator.CurrentKey;
+            var change = changes.Find(c => c.Map == map && c.Square == node.id);
+            if (change == null)
+            {
+                change = new Change { Map = map, Square = node.id };
+                changes.Add(change);
+            }
+            change.Label = InspectorTitle != null ? InspectorTitle.text : "";
+            change.Event = node.@event ?? "none";
+            change.Form = node.form;
+            change.Enemies = node.enemies;
+            change.EnemyLevel = node.enemyLevel;
+            change.Strength = node.strength;
+        }
+
+        // 端末では、地図を開くたびに配置から読み直されるため、その地図で変えたマスを当て直す。
+        private void PutBack(WorldMapView view)
+        {
+            if (Save != null || view.Atlas == null)
+                return;
+            foreach (var change in changes)
+            {
+                if (change.Map != Navigator.CurrentKey)
+                    continue;
+                int index = Array.FindIndex(view.Atlas.nodes, n => n.id == change.Square);
+                if (index < 0 || index >= view.Nodes.Length)
+                    continue;
+                var node = view.Atlas.nodes[index];
+                var kind = change.Event == "none" ? null : WorldAtlasLayout.EventOf(change.Event);
+                int form = WorldAtlasLayout.FormOf(change.Form) ?? 0;
+                node.@event = kind == null ? null : change.Event;
+                node.form = change.Form;
+                node.enemies = change.Enemies;
+                node.enemyLevel = change.EnemyLevel;
+                node.strength = change.Strength;
+                view.SetEvent(index, kind, form, node.price);
+            }
+        }
+
+        /// <summary>
+        /// Copies the squares changed as JSON to the clipboard, and says how many; with none
+        /// changed it says so and copies nothing.
+        /// </summary>
+        public bool Copy()
+        {
+            var view = View;
+            if (changes.Count == 0)
+            {
+                if (view != null)
+                    view.ShowNotice("変えたマスはまだありません");
+                return false;
+            }
+            GUIUtility.systemCopyBuffer = ChangesJson();
+            if (view != null)
+                view.ShowNotice($"変えた{changes.Count}マスをコピーしました");
+            return true;
+        }
+
+        /// <summary>
+        /// The squares changed, as the JSON place_events.py apply reads: for each square its
+        /// map, ID, title in the editor, event ("none" for nothing), a bet's way of playing, and a
+        /// battle's settings (an empty or 0 value is the map's own).
+        /// </summary>
+        public string ChangesJson()
+        {
+            var json = new StringBuilder();
+            json.Append("{\n  \"format\": \"").Append(ChangesFormat).Append("\",\n  \"changes\": [");
+            for (int i = 0; i < changes.Count; i++)
+            {
+                var change = changes[i];
+                json.Append(i == 0 ? "\n" : ",\n").Append("    {");
+                Field(json, "map", change.Map, true);
+                Field(json, "square", change.Square, false);
+                Field(json, "label", change.Label, false);
+                Field(json, "event", change.Event, false);
+                if (change.Form != null)
+                    Field(json, "form", change.Form, false);
+                if (change.Event == "battle")
+                {
+                    Field(json, "enemies", change.Enemies ?? "", false);
+                    json.Append(", \"enemyLevel\": ")
+                        .Append(change.EnemyLevel.ToString(CultureInfo.InvariantCulture));
+                    Field(json, "strength", change.Strength ?? "", false);
+                }
+                json.Append(" }");
+            }
+            json.Append(changes.Count > 0 ? "\n  ]\n}" : "]\n}");
+            return json.ToString();
+        }
+
+        private static void Field(StringBuilder json, string name, string value, bool first)
+        {
+            if (!first)
+                json.Append(',');
+            json.Append(" \"").Append(name).Append("\": \"");
+            foreach (char c in value ?? "")
+            {
+                if (c == '"' || c == '\\')
+                    json.Append('\\').Append(c);
+                else if (c == '\n')
+                    json.Append("\\n");
+                else if (c < ' ')
+                    json.Append(' ');
+                else
+                    json.Append(c);
+            }
+            json.Append('"');
         }
 
         // --- 左の一覧 -------------------------------------------------------------------
@@ -510,11 +712,7 @@ namespace Baryonyx.WorldMap
             var steps = new int[graph.Nodes.Count];
             for (int i = 0; i < steps.Length; i++)
                 steps[i] = int.MaxValue;
-            string start =
-                Navigator.CurrentKey == WorldAtlasLayout.WorldKey
-                    ? WorldAtlasLayout.StartSquare
-                    : WorldAtlasLayout.GatePrefix + Navigator.CurrentKey;
-            int from = graph.IndexOf(start);
+            int from = graph.IndexOf(StartSquare());
             if (from < 0)
                 return steps;
             var queue = new Queue<int>();

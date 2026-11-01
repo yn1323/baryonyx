@@ -4,6 +4,7 @@
 usage: place_events.py <key>...                          # e.g. place_events.py marina
        place_events.py set <key> <square> <event|none> [form]   # one square, by hand
        place_events.py setting <key> <square> <field> [value]    # a square's setting; no value removes it
+       place_events.py apply <file.json|->                       # the squares the map editor copied
 
 Run after to_unity.py layouts, which writes the layouts without events. A map in HAND_PLACED
 keeps the events written in its layout (the world map, 2026-11-01), and its squares are changed
@@ -21,7 +22,9 @@ rules below, and the same key always gives the same placement. Rules (仮):
 - The rest are battles, pickups and choices, and no two battles are 4 squares or nearer.
 """
 import json
+import os
 import random
+import subprocess
 import sys
 from collections import deque
 
@@ -227,12 +230,81 @@ def fail(message):
     sys.exit(1)
 
 
+# 地図エディターの「コピー」が写したJSON（WorldEventLab.ChangesJson）を、配置へまとめて書く。
+# 端末で決めたマスをAIに貼って反映するための入口（doc/features/screens/debug-rooms.md の地図エディター）。
+# 決まりに合うよう、先に出来事を消すマスと替えるマスを空け、次に出来事を置き、最後に設定を書く。
+# 書けなかったマスは理由を出して飛ばし、書けた地図の値段とサーバーのマスの表を作り直す。
+def apply_changes(source):
+    text = sys.stdin.read() if source == "-" else open(source, encoding="utf-8").read()
+    data = json.loads(text)
+    if data.get("format") != "baryonyx-world-event-lab":
+        fail("地図エディターのコピーではありません（format が baryonyx-world-event-lab ではない）")
+    changes = data.get("changes", [])
+    failures = []
+    maps = []
+
+    def attempt(change, step, action):
+        try:
+            action()
+            if change["map"] not in maps:
+                maps.append(change["map"])
+            return True
+        except SystemExit:
+            failures.append(f'{change["map"]} {change["square"]}（{change.get("label", "")}）の{step}')
+            return False
+
+    def current(change):
+        path = ATLAS + change["map"] + ".json"
+        layout = json.load(open(path, encoding="utf-8"))
+        node = next((n for n in layout["nodes"] if n["id"] == change["square"]), {})
+        return node.get("event"), node.get("form")
+
+    placed = []
+    for change in changes:
+        if current(change) != (None if change["event"] == "none" else change["event"], change.get("form")):
+            attempt(change, "出来事を消す", lambda c=change: set_square(c["map"], c["square"], "none"))
+    for change in changes:
+        if change["event"] == "none":
+            continue
+        if attempt(
+            change,
+            "出来事を置く",
+            lambda c=change: set_square(c["map"], c["square"], c["event"], c.get("form")),
+        ):
+            placed.append(change)
+    for change in placed:
+        for field in SETTINGS.get(change["event"], {}):
+            value = change.get(field)
+            value = "" if value in (None, 0) else str(value)
+            attempt(
+                change,
+                f"設定（{field}）",
+                lambda c=change, f=field, v=value: set_setting(c["map"], c["square"], f, v),
+            )
+
+    if maps:
+        here = os.path.dirname(os.path.abspath(__file__))
+        root = os.path.abspath(os.path.join(here, "../../../../.."))
+        subprocess.run([sys.executable, os.path.join(here, "price_squares.py"), *maps], check=True)
+        subprocess.run(
+            ["node", "scripts/world-atlas-catalog.mjs"], cwd=os.path.join(root, "server"), check=True
+        )
+    for failure in failures:
+        print("書けませんでした：" + failure, file=sys.stderr)
+    print(f"{len(changes)}マスのうち{len(changes) - len({f.split('（')[0] for f in failures})}マスを書きました")
+    if failures:
+        sys.exit(1)
+
+
 def main():
     if sys.argv[1:2] == ["set"]:
         set_square(*sys.argv[2:6])
         return
     if sys.argv[1:2] == ["setting"]:
         set_setting(*sys.argv[2:6])
+        return
+    if sys.argv[1:2] == ["apply"]:
+        apply_changes(sys.argv[2] if len(sys.argv) > 2 else "-")
         return
     for key in sys.argv[1:]:
         if key in HAND_PLACED:

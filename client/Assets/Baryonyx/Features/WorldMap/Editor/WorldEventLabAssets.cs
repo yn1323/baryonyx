@@ -29,7 +29,10 @@ namespace Baryonyx.WorldMap.Editor
         // 左下の隅（「ホームへ」と、歩いている間の止めるボタン）の右から並べる。
         private const float Left = 176f;
         private const float Bottom = 24f;
-        private const float ControlWidth = 420f;
+        private const float ControlWidth = 380f;
+
+        // 試す・コピーのボタンの幅。下の下の段が右端（設定の枠の下）からはみ出さない幅にする。
+        private const float ActionWidth = 240f;
         private const float Margin = 24f;
         private const float ListWidth = 480f;
         private const float InspectorWidth = 640f;
@@ -111,7 +114,11 @@ namespace Baryonyx.WorldMap.Editor
                 WorldEventLab.HelpText(true),
                 ControlWidth
             );
-            lab.TryButton = EnemyLabAssets.ControlButton(controls, "Try", "試す", 300f).button;
+            lab.TryButton = EnemyLabAssets.ControlButton(controls, "Try", "試す", ActionWidth).button;
+            // 端末で変えたマスをJSONにしてクリップボードへ写す（AIに貼って配置へ反映する）。
+            lab.CopyButton = EnemyLabAssets
+                .ControlButton(controls, "Copy", "コピー", ActionWidth)
+                .button;
         }
 
         // 左の縦に長い枠に、地図かマスの行を並べ、上下にスクロールする。行は Play 中に見本から作る。
