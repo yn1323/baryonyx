@@ -21,6 +21,7 @@ namespace Baryonyx.Party.Editor
     public static class PartyChangeScreenAssets
     {
         private const float Top = Frame.HeaderHeight + 6;
+
         // 左右の面の中身の高さ。
         public const float Height = 956f;
 
@@ -158,17 +159,6 @@ namespace Baryonyx.Party.Editor
 
         /// <summary>The text the right frame shows while reading, when the read failed, or when the list is empty.</summary>
         public static TMP_Text Status(RectTransform right) =>
-            Layout.Text(
-                right,
-                "Status",
-                "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                24,
-                100,
-                right.rect.width - 48,
-                140
-            );
+            Frame.ListStatus(right, 24f, right.rect.width - 24f, 100f - UiSpace.Pad);
     }
 }

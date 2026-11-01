@@ -18,20 +18,6 @@ using static Baryonyx.UI.UiText;
 
 namespace Baryonyx.Library
 {
-    /// <summary>One entry's card in the list, baked for every entry of the kind.</summary>
-    [Serializable]
-    public sealed class LibraryTileWidget
-    {
-        public string Id = "";
-        public GlassCard Card;
-        public RawImage Art;
-        public TMP_Text Number;
-        public TMP_Text Name;
-
-        // 新しく載った印。
-        public GameObject New;
-    }
-
     /// <summary>
     /// One kind of the library (doc/features/library.md) inside the guide screen's frame: the
     /// cards of every entry on the left, in the definitions' order, and the chosen entry on the
@@ -55,12 +41,12 @@ namespace Baryonyx.Library
 
         // 合成のレシピ（武器・防具・アクセサリー・スキル）：見出しと材料の札。レシピのない物には出さない。
         public GameObject Recipe;
-        public List<Workshop.WorkshopGoodRow> RecipeRows = new();
+        public List<ItemTile> RecipeRows = new();
 
         // キャラの固有スキルのツリーと、進化の仮の進み具合。
         public TrainingMockData Training;
 
-        public LibraryTileWidget[] Tiles = Array.Empty<LibraryTileWidget>();
+        public ItemTile[] Tiles = Array.Empty<ItemTile>();
 
         // 装備の武器・防具・アクセサリーを切り替えるタブと、それぞれが開く項目。タブのない分類は空。
         public GuideTab[] KindTabs = Array.Empty<GuideTab>();
@@ -203,7 +189,14 @@ namespace Baryonyx.Library
             Set(Status, "");
             // 右の面が空にならないよう、まだ選んでいなければ最初の見つけた物を選んでおく。新しく載った印は、
             // 押して見るまで残す。見つけた物がなければ空のままにする。
-            selected ??= Array.Find(Tiles, tile => records.IsFound(Kind, tile.Id))?.Id;
+            if (selected == null)
+            {
+                var first = Array.Find(
+                    Tiles,
+                    tile => tile != null && records.IsFound(Kind, tile.Id)
+                );
+                selected = first != null ? first.Id : null;
+            }
             int found = 0;
             var seen = LibrarySession.Seen;
             foreach (var tile in Tiles)
@@ -220,8 +213,8 @@ namespace Baryonyx.Library
                 PaintArt(tile.Art, entry, isFound, TileArtBox);
                 if (tile.Name != null)
                     tile.Name.gameObject.SetActive(isFound);
-                if (tile.New != null)
-                    tile.New.SetActive(seen.IsNew(records, Kind, tile.Id));
+                if (tile.Mark != null)
+                    tile.Mark.SetActive(seen.IsNew(records, Kind, tile.Id));
             }
             Set(Count, $"{found}/{Tiles.Length}");
             cover.Reveal(
@@ -240,8 +233,8 @@ namespace Baryonyx.Library
             {
                 if (tile.Card != null)
                     tile.Card.Selected = tile.Id == id;
-                if (tile.Id == id && tile.New != null)
-                    tile.New.SetActive(false);
+                if (tile.Id == id && tile.Mark != null)
+                    tile.Mark.SetActive(false);
             }
             ShowDetail(id);
         }

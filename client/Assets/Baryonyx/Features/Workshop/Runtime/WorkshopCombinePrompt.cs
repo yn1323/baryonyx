@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Baryonyx.Enhancement;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,8 +25,8 @@ namespace Baryonyx.Workshop
 
         // 変換の行（下の色から順に、多くて3行）：使う石と作る石の、絵と数。
         public GameObject[] Steps = Array.Empty<GameObject>();
-        public WorkshopGoodRow[] From = Array.Empty<WorkshopGoodRow>();
-        public WorkshopGoodRow[] To = Array.Empty<WorkshopGoodRow>();
+        public ItemTile[] From = Array.Empty<ItemTile>();
+        public ItemTile[] To = Array.Empty<ItemTile>();
         public TMP_Text Runes;
 
         // 磨き石の絵（白・青・紫・金の順）。生成で ItemArt から写す。
@@ -73,7 +74,7 @@ namespace Baryonyx.Workshop
         }
 
         // 石の絵と、使う・作る数。
-        private void Paint(WorkshopGoodRow row, EnhancementMaterial stone, int count)
+        private void Paint(ItemTile row, EnhancementMaterial stone, int count)
         {
             if (row == null || stone == null)
                 return;

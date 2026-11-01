@@ -241,7 +241,16 @@ namespace Baryonyx.Workshop.Editor
         /// </summary>
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (enhance, layer) = Panel<WorkshopEnhanceView>(safe, "WorkshopEnhance");
+            var tabLabels = WorkshopEnhanceView
+                .PolishTabs.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab])
+                .ToArray();
+            var (enhance, panel) = GuidePanelTemplate.RowsDetail<WorkshopEnhanceView>(
+                safe,
+                "WorkshopEnhance",
+                tabLabels[0],
+                tabLabels
+            );
+            var layer = panel.Layer;
             enhance.TabOrder = WorkshopEnhanceView.PolishTabs;
             enhance.Guide = view;
             enhance.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
@@ -253,25 +262,12 @@ namespace Baryonyx.Workshop.Editor
             enhance.GearArtBox = GearArt;
             enhance.CardFrames = DeckCardFrames();
             enhance.ElementIcons = ElementIcons();
-            enhance.Tabs = Tabs(
-                layer,
-                enhance.TabOrder.Select(tab => WorkshopEnhanceView.TabLabels[(int)tab]).ToArray()
-            );
-
-            float listLeft = Rail;
-            float listTop = ListTop;
-            var (content, scroll) = Column(
-                layer,
-                "Targets",
-                listLeft,
-                Split,
-                listTop,
-                1080f,
-                (int)Inner,
-                (int)Inner
-            );
+            enhance.Tabs = panel.Tabs;
+            enhance.ListTitle = panel.Title;
+            enhance.ListCount = panel.Count;
+            var content = panel.Content;
             enhance.Content = content;
-            enhance.List = scroll;
+            enhance.List = panel.Scroll;
             enhance.Template = ListRow(content, "Template", RowHeight, ArtBox, 38f, ValueWidth);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(enhance.Template.Card, vertical: true);
@@ -298,10 +294,11 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopEnhanceView.PaintTarget(row, mock[i], entry?.KindLine, entry, ArtBox);
                 enhance.Rows.Add(row);
             }
-            enhance.Status = Status(layer, listLeft, Split, listTop);
+            enhance.Status = panel.Status;
+            enhance.ListCount.text = UiText.Count(mock.Count);
 
-            float left = Split + Inner;
-            float right = Layout.Design.x - Edge;
+            float left = GuidePanelTemplate.DetailLeft;
+            float right = GuidePanelTemplate.DetailRight;
             enhance.DetailName = Layout.Text(
                 layer,
                 "DetailName",
@@ -474,8 +471,8 @@ namespace Baryonyx.Workshop.Editor
 
             int steps = EnhancementMaterials.Polishes.Count - 1;
             prompt.Steps = new GameObject[steps];
-            prompt.From = new WorkshopGoodRow[steps];
-            prompt.To = new WorkshopGoodRow[steps];
+            prompt.From = new ItemTile[steps];
+            prompt.To = new ItemTile[steps];
             float half = PromptWidth / 2f;
             for (int i = 0; i < steps; i++)
             {
@@ -517,10 +514,10 @@ namespace Baryonyx.Workshop.Editor
         }
 
         // 確かめの画面の行の片側：石の絵と、その右に数（「×6」）。
-        private static WorkshopGoodRow PromptStone(RectTransform step, string name, float x)
+        private static ItemTile PromptStone(RectTransform step, string name, float x)
         {
             var side = Layout.Box(step, name, x, 0f, PromptSide, PromptLine);
-            var row = side.gameObject.AddComponent<WorkshopGoodRow>();
+            var row = side.gameObject.AddComponent<ItemTile>();
             var box = Layout.Box(side, "Art", 0f, 0f, PromptLine, PromptLine);
             var image = Rect("Image", box);
             Place(image, Vector2.zero, Vector2.one * PromptArt);
@@ -626,9 +623,7 @@ namespace Baryonyx.Workshop.Editor
                 hit,
                 SpriteImage(disc, UiArt.CirclePath, CancelRed)
             );
-            var cross = Rect("Cross", hit);
-            Place(cross, center, Vector2.one * CancelCross);
-            SpriteImage(cross, IconClosePath, Color.white);
+            GuideFrameAssets.CrossIcon(hit, center, CancelCross);
             hit.gameObject.SetActive(false);
             return button;
         }

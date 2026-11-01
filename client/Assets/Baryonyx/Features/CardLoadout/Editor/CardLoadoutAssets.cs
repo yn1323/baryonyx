@@ -42,7 +42,7 @@ namespace Baryonyx.CardLoadout.Editor
         // 枠つきの表示（GuideFramedPanel）で、人の列とタブの間の左の面に6枚の行、金の2本線の右の面に
         // タブとカードの一覧を置く（PartyChangeScreenAssets）。左の行に効果の文が2行で入るよう、
         // 装備より左の面を広くする。設計座標、左上から。
-        private const float Split = 860f;
+        private const float Split = UiSpace.SheetSplitWide;
         private static readonly Rect Left = ChangeScreen.LeftOf(Split);
         private static readonly Rect Right = ChangeScreen.RightOf(Split);
 
@@ -451,25 +451,12 @@ namespace Baryonyx.CardLoadout.Editor
         {
             var row = Layout.ListItem(content, "Remove", RowHeight);
             var (button, _, inside) = GlassCardAssets.Choice(row, pattern: false, dashed: true);
-            var icon = Layout.Box(
+            Frame.RemoveFace(
                 inside,
-                "Icon",
-                (RowTextLeft - Guide.IconSize) / 2f,
-                (RowHeight - Guide.IconSize) / 2f,
-                Guide.IconSize,
-                Guide.IconSize
-            );
-            SpriteImage(icon, Guide.IconClosePath, Color.white);
-            Layout.Text(
-                inside,
-                "Label",
                 CardLoadoutPresenter.RemoveLabel,
-                40,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft,
+                (RowTextLeft - Guide.IconSize) / 2f,
                 RowTextLeft,
-                0f,
-                400f,
+                RowTextLeft + 400f,
                 RowHeight
             );
             row.gameObject.SetActive(false);

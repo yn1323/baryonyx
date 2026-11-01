@@ -12,6 +12,9 @@ namespace Baryonyx.UI
                 label.text = text ?? "";
         }
 
+        /// <summary>The count beside a list's heading (the shop's lists).</summary>
+        public static string Count(int count) => $"{count}件";
+
         /// <summary>The same, reading the colour tags in <paramref name="text"/> (rich text).</summary>
         public static void SetRich(TMP_Text label, string text)
         {

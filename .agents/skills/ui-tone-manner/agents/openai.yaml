@@ -1,0 +1,7 @@
+interface:
+  display_name: "UIのトンマナをそろえる"
+  short_description: "画面・窓・ボタン・分類・持ち物の札を、共通の部品と決まりに合わせて作り、撮って見比べて確かめる"
+  default_prompt: "Use $ui-tone-manner when adding or changing a screen, window, dialog, tab or item card, or when asked whether screens look consistent."
+
+policy:
+  allow_implicit_invocation: true

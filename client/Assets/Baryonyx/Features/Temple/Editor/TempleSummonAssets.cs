@@ -39,10 +39,11 @@ namespace Baryonyx.Temple.Editor
         private const float RatesButtonMargin = 32f;
 
         // 結果の窓。札を5列で2段まで並べ、右下に「もう一度」を置く。
-        private const float WindowWidth = 1400f;
+        private const Frame.WindowSize WindowKind = Frame.WindowSize.Medium;
+        private const float WindowWidth = UiSpace.WindowMedium;
         private const float WindowHeight = 928f;
-        private const float Pad = 56f;
-        private const float HeadHeight = 120f;
+        private const float Pad = Frame.WindowPad;
+        private const float HeadHeight = Frame.WindowHeadHeight;
         private static readonly Vector2 Card = new(236f, 300f);
         private const float CardGap = 24f;
         private const float CardArtBox = 128f;
@@ -56,8 +57,6 @@ namespace Baryonyx.Temple.Editor
         private const int EntryColumns = 5;
         private const float EntryHeight = 64f;
         private const float EntryGap = 12f;
-
-        private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.72f);
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
@@ -173,25 +172,19 @@ namespace Baryonyx.Temple.Editor
                 TextAlignmentOptions.Center
             );
             Band((RectTransform)label.transform, top: true, 16f, 60f, 16f, 16f);
-            var row = Rect("Price", inside);
-            Band(row, top: false, 14f, 48f, 16f, 16f);
-            var group = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            group.childAlignment = TextAnchor.MiddleCenter;
-            group.spacing = 10f;
-            group.childControlWidth = group.childControlHeight = true;
-            group.childForceExpandWidth = group.childForceExpandHeight = false;
-            var icon = Rect("RuneIcon", row);
-            SpriteImage(icon, IconRunePath, Color.white).raycastTarget = false;
-            var size = icon.gameObject.AddComponent<LayoutElement>();
-            size.preferredWidth = size.preferredHeight = RuneIconSize;
-            Label(
-                row,
-                "Price",
-                price.ToString("N0"),
-                38,
-                UiPalette.Gold,
-                TextAlignmentOptions.Midline
-            );
+            Frame
+                .RuneAmount(
+                    inside,
+                    "Price",
+                    16f,
+                    ButtonHeight - 14f - RuneIconSize,
+                    ButtonWidth - 32f,
+                    RuneIconSize,
+                    38f,
+                    TextAnchor.MiddleCenter,
+                    RuneIconSize
+                )
+                .text = price.ToString("N0");
             return button;
         }
 
@@ -221,48 +214,11 @@ namespace Baryonyx.Temple.Editor
             var root = Rect("SummonRates", parent);
             Stretch(root);
             var rates = root.gameObject.AddComponent<TempleSummonRates>();
-            var window = Rect("Window", root);
-            Stretch(window);
-            rates.Window = window.gameObject;
-            var veil = Rect("Veil", window);
-            Stretch(veil);
-            rates.Veil = Baryonyx.Editor.UI.UiBuild.AddButton(veil, AddImage(veil, Veil, true));
-            rates.Veil.transition = Selectable.Transition.None;
-
-            var layer = Layout.Layer(SafeArea(window), "Layout");
-            var modal = Frame.Window(
-                layer,
-                "Modal",
-                (Layout.Design.x - WindowWidth) / 2f,
-                (Layout.Design.y - RatesHeight) / 2f,
-                WindowWidth,
-                RatesHeight
-            );
-            Frame.Heading(modal, "Title", "提供割合", Pad, 16f, 900f, 96f, 44f);
-            var close = Layout.Box(
-                modal,
-                "Close",
-                WindowWidth - Layout.HitSize - 8f,
-                4f,
-                Layout.HitSize,
-                Layout.HitSize
-            );
-            rates.Close = Baryonyx.Editor.UI.UiBuild.AddButton(
-                close,
-                AddImage(close, Color.clear, true)
-            );
-            var cross = Rect("Icon", close);
-            Place(cross, Vector2.zero, Vector2.one * 64f);
-            SpriteImage(cross, IconClosePath, Color.white);
-            var line = Layout.Box(
-                modal,
-                "HeadLine",
-                Pad,
-                HeadHeight - 4f,
-                WindowWidth - Pad * 2f,
-                2f
-            );
-            AddImage(line, Frame.LineColor, false);
+            var parts = Frame.ListWindow(root, "Window", WindowKind, RatesHeight, "提供割合");
+            rates.Window = parts.Root.gameObject;
+            rates.Veil = parts.Veil;
+            rates.Close = parts.Close;
+            var modal = parts.Window;
 
             var viewport = Layout.Box(
                 modal,
@@ -299,7 +255,7 @@ namespace Baryonyx.Temple.Editor
             y = Entries(content, data, y, width);
             content.sizeDelta = new Vector2(0f, y + 32f);
             rates.Scroll = Layout.Scroll(viewport, viewport, content);
-            window.gameObject.SetActive(false);
+            parts.Root.gameObject.SetActive(false);
             return rates;
         }
 
@@ -428,49 +384,13 @@ namespace Baryonyx.Temple.Editor
             results.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             results.ArtBox = CardArtBox;
 
-            var window = Rect("Window", overlay);
-            Stretch(window);
+            var parts = Frame.ListWindow(overlay, "Window", WindowKind, WindowHeight);
+            var window = parts.Root;
             results.Window = window.gameObject;
-            // 幕は窓の親にしない。窓の中を押しても、幕のボタンへ伝わらないようにする。
-            var veil = Rect("Veil", window);
-            Stretch(veil);
-            results.Veil = Baryonyx.Editor.UI.UiBuild.AddButton(veil, AddImage(veil, Veil, true));
-            results.Veil.transition = Selectable.Transition.None;
-
-            var layer = Layout.Layer(SafeArea(window), "Layout");
-            var modal = Frame.Window(
-                layer,
-                "Modal",
-                (Layout.Design.x - WindowWidth) / 2f,
-                (Layout.Design.y - WindowHeight) / 2f,
-                WindowWidth,
-                WindowHeight
-            );
-            results.Title = Frame.Heading(modal, "Title", "", Pad, 16f, 900f, 96f, 44f);
-            var close = Layout.Box(
-                modal,
-                "Close",
-                WindowWidth - Layout.HitSize - 8f,
-                4f,
-                Layout.HitSize,
-                Layout.HitSize
-            );
-            results.Close = Baryonyx.Editor.UI.UiBuild.AddButton(
-                close,
-                AddImage(close, Color.clear, true)
-            );
-            var cross = Rect("Icon", close);
-            Place(cross, Vector2.zero, Vector2.one * 64f);
-            SpriteImage(cross, IconClosePath, Color.white);
-            var line = Layout.Box(
-                modal,
-                "HeadLine",
-                Pad,
-                HeadHeight - 4f,
-                WindowWidth - Pad * 2f,
-                2f
-            );
-            AddImage(line, Frame.LineColor, false);
+            results.Veil = parts.Veil;
+            results.Close = parts.Close;
+            results.Title = parts.Title;
+            var modal = parts.Window;
 
             var grid = Layout.Box(
                 modal,
@@ -488,32 +408,23 @@ namespace Baryonyx.Temple.Editor
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             layout.constraintCount = 5;
-            var cards = new TempleSummonCard[TempleSummon.TenCount];
+            var cards = new ItemTile[TempleSummon.TenCount];
             for (int i = 0; i < cards.Length; i++)
                 cards[i] = BuildCard(grid, "Card" + i);
             results.Cards = cards;
 
-            var (again, _, inside) = GlassCardAssets.Choice(
-                Layout.Box(
+            results.Again = Frame
+                .WindowButton(
                     modal,
                     "Again",
+                    "もう一度",
                     WindowWidth - Pad - ConfirmWidth,
                     WindowHeight - 24f - ConfirmHeight,
                     ConfirmWidth,
-                    ConfirmHeight
-                ),
-                pattern: false
-            );
-            var label = Label(
-                inside,
-                "Label",
-                "もう一度",
-                44,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)label.transform);
-            results.Again = again;
+                    ConfirmHeight,
+                    primary: true
+                )
+                .Button;
 
             // 停止中もPrefabを開けば札が読めるよう、決まった種で引いた10回の結果を焼いておき、窓を閉じる。
             results.ShowPreviewState(1);
@@ -521,15 +432,11 @@ namespace Baryonyx.Temple.Editor
             return results;
         }
 
-        // 結果の札：右上に品質の文字、上に絵、下に名前と、☆と分類の行。
-        internal static TempleSummonCard BuildCard(
-            RectTransform grid,
-            string name,
-            Color? fill = null
-        )
+        // 結果の札：左上に品質の文字、上に絵、下に名前と、☆と分類の行。
+        internal static ItemTile BuildCard(RectTransform grid, string name, Color? fill = null)
         {
             var rect = Rect(name, grid);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false, fill: fill);
+            var (tile, inside) = ItemTileAssets.Build(rect, fill: fill);
             var art = Rect("Art", inside);
             Place(
                 art,
@@ -538,16 +445,7 @@ namespace Baryonyx.Temple.Editor
             );
             var image = art.gameObject.AddComponent<RawImage>();
             image.raycastTarget = false;
-            var quality = Label(
-                inside,
-                "Quality",
-                "",
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.TopRight
-            );
-            Band((RectTransform)quality.transform, top: true, 10f, 48f, 12f, 16f);
-            quality.richText = true;
+            ItemTileAssets.QualityMark(tile, inside, UiType.Lead);
             var title = Label(
                 inside,
                 "Name",
@@ -569,14 +467,10 @@ namespace Baryonyx.Temple.Editor
             Band((RectTransform)stars.transform, top: false, 18f, 36f, 8f, 8f);
             stars.richText = true;
             Shrink(stars, 16);
-            return new TempleSummonCard
-            {
-                Card = card,
-                Art = image,
-                Name = title,
-                Stars = stars,
-                Quality = quality,
-            };
+            tile.Art = image;
+            tile.Name = title;
+            tile.Stars = stars;
+            return tile;
         }
     }
 }

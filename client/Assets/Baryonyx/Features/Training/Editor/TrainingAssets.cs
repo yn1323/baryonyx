@@ -45,7 +45,7 @@ namespace Baryonyx.Training.Editor
         // 枠つきの表示（GuideFramedPanel）で、左の人の列と右のタブの列（PartySheetAssets）の間に、
         // 左のイラストとその右下のドット絵、金の2本線の右の透ける面に詳細を置く（設計座標、左上から）。
         private const float Left = PartySheetAssets.ContentLeft;
-        private const float Split = 760f;
+        private const float Split = UiSpace.SheetSplit;
         private static readonly Rect Portrait = new(
             Left,
             GuideFrameAssets.HeaderHeight,
@@ -78,7 +78,12 @@ namespace Baryonyx.Training.Editor
         private const float HitSize = Layout.HitSize;
 
         // 重ねて開くレベルアップ。上下左右の中央に置く1列の窓。
-        private static readonly Rect Modal = new(460, 184, 1000, 712);
+        private static readonly Rect Modal = new(
+            (1920f - UiSpace.WindowSmall) / 2f,
+            184,
+            UiSpace.WindowSmall,
+            712
+        );
         private const float ModalPad = 48f;
 
         // レベルアップの下の段（「やめる」と、使うルーンを添えた「レベルアップ」）の高さと「やめる」の幅。
@@ -104,9 +109,7 @@ namespace Baryonyx.Training.Editor
         // カードの挿絵（64×58）の中央24×24ドット。スキルの仮のアイコンに使う（スキルの付け替えと共有）。
         public static readonly Rect SkillIconCrop = new(20f / 64f, 17f / 58f, 24f / 64f, 24f / 58f);
 
-        private static readonly Color Green = new(0.49f, 0.88f, 0.42f);
         private static readonly Color Before = new(0.72f, 0.75f, 0.83f);
-        private static readonly Color Dim = new(0.01f, 0.015f, 0.04f, 0.74f);
         private static readonly Color FigureSpot = new(0.01f, 0.015f, 0.04f, 0.7f);
 
         [MenuItem("Baryonyx/Training/Create Mock Data")]
@@ -463,27 +466,19 @@ namespace Baryonyx.Training.Editor
             Layout.At(view.LevelUpLabel, 0, 12, LevelUpWidth, 44);
             Guide.Shrink(view.LevelUpLabel, 20);
             // 使うルーンは、右上の所持ルーンと同じアイコンで添える。
-            var cost = Layout.Row(
+            view.LevelUpCostLabel = GuideFrameAssets.RuneAmount(
                 levelUp,
                 "Cost",
                 0,
                 58,
                 LevelUpWidth,
                 40,
-                8,
-                TextAnchor.MiddleCenter
-            );
-            view.LevelUpCost = cost.gameObject;
-            Layout.RowIcon(cost, "Icon", 30).sprite = ArtAssets.LoadSprite(Guide.IconRunePath);
-            view.LevelUpCostLabel = Label(
-                cost,
-                "Value",
-                "",
                 24,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
+                TextAnchor.MiddleCenter,
+                30f,
+                UiPalette.TextMain
             );
-            Layout.Fit(view.LevelUpCostLabel, 0);
+            view.LevelUpCost = view.LevelUpCostLabel.transform.parent.gameObject;
         }
 
         // パッシブ2つを、見出しの下に1行ずつ（アイコン、名前、効果）。未解放は名前の行の右に解放するLv。
@@ -577,16 +572,14 @@ namespace Baryonyx.Training.Editor
             Stretch(dim);
             dim.offsetMin = new Vector2(-400, -400);
             dim.offsetMax = new Vector2(400, 400);
-            AddImage(dim, Dim, true);
+            AddImage(dim, UiPalette.Veil, true);
 
             var layer = Layout.Layer(dialog, "Layout");
             // 枠つきの画面と同じ、濃い紺に金の細い線の窓。見出しや名前は出さず、Lvから始める。
-            var modal = GuideFrameAssets.Window(
+            var modal = GuideFrameAssets.CenteredWindow(
                 layer,
                 "Modal",
-                Modal.x,
-                Modal.y,
-                Modal.width,
+                GuideFrameAssets.WindowSize.Small,
                 Modal.height
             );
             float width = Modal.width;
@@ -651,62 +644,48 @@ namespace Baryonyx.Training.Editor
             float footY = Modal.height - ModalPad - FootHeight;
             float confirmWidth = DiffWidth - CancelWidth - 24;
             float confirmX = width - ModalPad - confirmWidth;
-            var (cancelButton, _, cancel) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Cancel", ModalPad, footY, CancelWidth, FootHeight),
-                pattern: false
-            );
-            view.Cancel = cancelButton;
-            var cancelLabel = Label(
-                cancel,
-                "Label",
-                "やめる",
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)cancelLabel.transform);
-
-            // 決める方は、育成の画面の「レベルアップ」と同じ金の縁と光のカードにする。
-            var (confirmButton, confirmRim, confirm) = GlassCardAssets.Choice(
-                Layout.Box(modal, "Confirm", confirmX, footY, confirmWidth, FootHeight),
-                pattern: false
-            );
-            confirmRim.SetActive(true);
-            view.Confirm = confirmButton;
-            var confirmLabel = Label(
-                confirm,
-                "Label",
+            view.Cancel = GuideFrameAssets
+                .WindowButton(
+                    modal,
+                    "Cancel",
+                    "やめる",
+                    ModalPad,
+                    footY,
+                    CancelWidth,
+                    FootHeight,
+                    primary: false,
+                    size: 40f
+                )
+                .Button;
+            // 決める方は金の縁と光のカード（窓のボタンの決まり）。使うルーンを下に添える。
+            var (confirmButton, confirmLabel, confirm) = GuideFrameAssets.WindowButton(
+                modal,
+                "Confirm",
                 "レベルアップ",
-                42,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
+                confirmX,
+                footY,
+                confirmWidth,
+                FootHeight,
+                primary: true,
+                size: 42f
             );
+            view.Confirm = confirmButton;
             Layout.At(confirmLabel, 0, 14, confirmWidth, 56);
             // 使うルーンは「レベルアップ」の下に、右上の所持ルーンと同じ大きさのアイコン（2倍）と
             // ステータスの数字の大きさで添える。
             const float runeSize = 24f * 2f;
-            var costRow = Layout.Row(
+            view.Cost = GuideFrameAssets.RuneAmount(
                 confirm,
                 "Cost",
                 0,
                 72,
                 confirmWidth,
                 runeSize,
-                10,
-                TextAnchor.MiddleCenter
+                UiType.Body,
+                TextAnchor.MiddleCenter,
+                runeSize,
+                UiPalette.TextMain
             );
-            Layout.RowIcon(costRow, "RuneIcon", runeSize).sprite = ArtAssets.LoadSprite(
-                Guide.IconRunePath
-            );
-            view.Cost = Label(
-                costRow,
-                "Value",
-                "",
-                34,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Layout.Fit(view.Cost, 0);
 
             dialog.gameObject.SetActive(false);
         }
@@ -742,7 +721,7 @@ namespace Baryonyx.Training.Editor
                     UiPalette.TextMain,
                     TextAlignmentOptions.BottomRight
                 ),
-                Gain = Label(row, "Gain", "", 28, Green, TextAlignmentOptions.BottomRight),
+                Gain = Label(row, "Gain", "", 28, UiPalette.Rise, TextAlignmentOptions.BottomRight),
             };
             Layout.At(widget.Before, 220, 0, 180, text);
             Arrow(row, "Arrow", 432, 9, 3);

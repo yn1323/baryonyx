@@ -14,6 +14,7 @@ using Baryonyx.Training;
 using Baryonyx.Training.Editor;
 using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu;
+using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -42,6 +43,9 @@ namespace Baryonyx.Workshop.Editor
     {
         // 行の高さ（冒険者のスキルの行と同じ）と、キャラが替わる行の上に空ける間。
         private const float RowHeight = 140f;
+
+        // 一覧の上の見出し。
+        private const string ListTitle = "覚醒できる固有スキル";
         private const float GroupGap = 36f;
 
         // 行の左のキャラの所：戦闘のドット絵（64×64）を2倍で、少し暗い地の上に置き、金の細い線で区切る。
@@ -56,23 +60,17 @@ namespace Baryonyx.Workshop.Editor
         private const float QualityWidth = 270f;
 
         // 覚醒の場面：一覧を覆う幕、上の中央に浮かぶ今のカード（戦闘のカードを縮めて）。
-        private static readonly Color Veil = new(0.01f, 0.015f, 0.05f, 0.93f);
+        private static readonly Color Veil = UiPalette.VeilDeep;
         private const float OriginTop = 22f;
         private const float OriginScale = 0.55f;
 
         /// <summary>The panel for the trading house's skill awakening item.</summary>
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView guide)
         {
-            var (view, layer) = Frame.FramedPanel<WorkshopAwakenView>(safe, "WorkshopAwaken");
-            Frame.Pane(
-                layer,
-                "ListPane",
-                0f,
-                Layout.Design.x,
-                Frame.HeaderHeight,
-                Frame.PaneLight,
-                true,
-                true
+            var (view, panel) = GuidePanelTemplate.FullList<WorkshopAwakenView>(
+                safe,
+                "WorkshopAwaken",
+                ListTitle
             );
             view.Guide = guide;
             view.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
@@ -94,21 +92,12 @@ namespace Baryonyx.Workshop.Editor
                 )
                 .ToArray();
 
-            var (content, scroll) = Column(
-                layer,
-                "Rows",
-                0f,
-                Layout.Design.x,
-                ListTop,
-                1080f,
-                (int)Edge,
-                (int)Edge
-            );
+            var content = panel.Content;
             view.Content = content;
-            view.List = scroll;
+            view.List = panel.Scroll;
             view.Template = BuildRow(content, "Template");
             view.Template.gameObject.SetActive(false);
-            view.Status = Status(layer, 0f, Layout.Design.x, ListTop);
+            view.Status = panel.Status;
 
             // 仮の編成の行を焼き込み、Prefabを開くと停止中でも一覧が読めるようにする。
             view.Use(PartyFormation.From(view.Party), null);
@@ -331,25 +320,24 @@ namespace Baryonyx.Workshop.Editor
                 new Vector2(20f + ShardArt + 10f, 0f),
                 new Vector2(120f, 60f)
             );
-            var rune = Rect("RuneIcon", inside);
-            Corner(rune, new Vector2(0f, 0.5f), new Vector2(230f, 0f), Vector2.one * 48f);
-            var icon = rune.gameObject.AddComponent<Image>();
-            icon.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(Guide.IconRunePath);
-            icon.preserveAspect = true;
-            icon.raycastTarget = false;
-            view.RuneCost = Label(
+            view.RuneCost = Frame.RuneAmount(
                 inside,
                 "RuneCost",
-                "0",
-                40,
-                UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft
+                0f,
+                0f,
+                220f,
+                60f,
+                UiType.Lead,
+                TextAnchor.MiddleLeft,
+                48f,
+                UiPalette.TextMain
             );
+            view.RuneCost.text = "0";
             Corner(
-                view.RuneCost.rectTransform,
+                (RectTransform)view.RuneCost.transform.parent,
                 new Vector2(0f, 0.5f),
-                new Vector2(290f, 0f),
-                new Vector2(140f, 60f)
+                new Vector2(230f, 0f),
+                new Vector2(220f, 60f)
             );
         }
     }

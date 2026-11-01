@@ -1,6 +1,7 @@
 using System.IO;
 using Baryonyx.Editor;
 using Baryonyx.Editor.Art;
+using Baryonyx.UI.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -40,15 +41,13 @@ namespace Baryonyx.UI.GuideMenu.Editor
         // 板や帯は、Safe Areaや設計座標の外（切り欠きの裏、画面の端）までこれだけ伸ばす。
         public const float Bleed = 400f;
 
-        // ヘッダーの帯と、景色が透ける面（左右とも同じ色）。濃い色は、面の上に重ねる窓に使う。
-        public static readonly Color HeaderColor = new(0.024f, 0.035f, 0.094f, 0.84f);
-        public static readonly Color PaneDark = new(0.024f, 0.035f, 0.094f, 0.965f);
-        public static readonly Color PaneLight = new(0.063f, 0.086f, 0.196f, 0.55f);
-
-        // 金の細い線。ヘッダーの区切りは淡く、面の仕切り（2本線）は少し濃い。
-        public static readonly Color LineColor = new(1f, 0.86f, 0.59f, 0.43f);
-        public static readonly Color SeparatorColor = new(1f, 0.86f, 0.59f, 0.5f);
-        public static readonly Color DividerColor = new(1f, 0.86f, 0.59f, 0.6f);
+        // ヘッダーの帯、面、金の細い線。値は UiPalette の役割の名前で持つ。
+        public static readonly Color HeaderColor = UiPalette.Band;
+        public static readonly Color PaneDark = UiPalette.SurfaceDark;
+        public static readonly Color PaneLight = UiPalette.SurfaceLight;
+        public static readonly Color LineColor = UiPalette.LineFaint;
+        public static readonly Color SeparatorColor = UiPalette.LineSeparator;
+        public static readonly Color DividerColor = UiPalette.LineDivider;
 
         // 背景をぼかすために縮める幅。Bilinearで引き伸ばすと、ぼけた絵になる。
         private const int BlurWidth = 240;
@@ -296,6 +295,401 @@ namespace Baryonyx.UI.GuideMenu.Editor
             return window;
         }
 
+        /// <summary>The three widths of the windows (<see cref="UiSpace"/>).</summary>
+        public enum WindowSize
+        {
+            // 確かめる窓（レベルアップ）。
+            Small,
+
+            // 知らせる窓、連携、結果、召喚の結果と確率。
+            Medium,
+
+            // 一覧の窓（お宝）。
+            Large,
+        }
+
+        public static float WidthOf(WindowSize size) =>
+            size switch
+            {
+                WindowSize.Small => UiSpace.WindowSmall,
+                WindowSize.Medium => UiSpace.WindowMedium,
+                _ => UiSpace.WindowLarge,
+            };
+
+        /// <summary>
+        /// A window of <paramref name="size"/> in the middle of a 1920x1080 layer,
+        /// <paramref name="height"/> high (<see cref="Window"/>).
+        /// </summary>
+        public static RectTransform CenteredWindow(
+            RectTransform layer,
+            string name,
+            WindowSize size,
+            float height
+        )
+        {
+            float width = WidthOf(size);
+            return Window(
+                layer,
+                name,
+                (Layout.Design.x - width) / 2f,
+                (Layout.Design.y - height) / 2f,
+                width,
+                height
+            );
+        }
+
+        // 中身で高さが決まる窓の、内側の余白（左右・上・下）。
+        private static readonly RectOffset MessagePadding = new(72, 72, 56, 64);
+
+        /// <summary>
+        /// A window of <paramref name="size"/> in the middle of the safe area whose height follows
+        /// its contents (the shared dialog, the link modal): <see cref="WindowFrame"/> with a
+        /// column that places the title in light gold at the top, then whatever the caller adds
+        /// (a picture, the message, the buttons) <paramref name="spacing"/> apart.
+        /// </summary>
+        public static (RectTransform Window, TMP_Text Title) MessageWindow(
+            RectTransform safe,
+            WindowSize size,
+            float spacing = 28f,
+            string name = "Window"
+        )
+        {
+            var window = Rect(name, safe);
+            window.anchorMin = window.anchorMax = new Vector2(0.5f, 0.5f);
+            window.pivot = new Vector2(0.5f, 0.5f);
+            window.sizeDelta = new Vector2(WidthOf(size), 0f);
+            WindowFrame(window);
+            var fitter = window.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var layout = window.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(
+                MessagePadding.left,
+                MessagePadding.right,
+                MessagePadding.top,
+                MessagePadding.bottom
+            );
+            layout.spacing = spacing;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            var title = Label(
+                window,
+                "Title",
+                "",
+                UiType.Heading,
+                UiPalette.GoldLight,
+                TextAlignmentOptions.Center
+            );
+            return (window, title);
+        }
+
+        /// <summary>
+        /// The row of buttons along the bottom of a <see cref="MessageWindow"/>, centred; add them
+        /// with the laid-out <see cref="WindowButton(RectTransform, string, string, float, float, bool, float)"/>,
+        /// the one that decides on the right.
+        /// </summary>
+        public static RectTransform ButtonRow(RectTransform window, float spacing = 32f)
+        {
+            var buttons = Rect("Buttons", window);
+            var row = buttons.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = spacing;
+            row.padding = new RectOffset(0, 0, (int)UiSpace.Inset, 0);
+            row.childAlignment = TextAnchor.MiddleCenter;
+            row.childControlWidth = row.childControlHeight = true;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = false;
+            return buttons;
+        }
+
+        // 一覧の窓の、見出しの段の高さと左右の余白。
+        public const float WindowHeadHeight = 120f;
+        public const float WindowPad = 56f;
+
+        /// <summary>The parts of a list window (<see cref="ListWindow"/>).</summary>
+        public readonly struct ListWindowParts
+        {
+            public ListWindowParts(
+                RectTransform root,
+                Button veil,
+                RectTransform window,
+                TMP_Text title,
+                Button close
+            )
+            {
+                Root = root;
+                Veil = veil;
+                Window = window;
+                Title = title;
+                Close = close;
+            }
+
+            /// <summary>The whole screen (veil and window); hide it to close the window.</summary>
+            public RectTransform Root { get; }
+
+            /// <summary>The dark veil over the screen; a tap on it closes the window.</summary>
+            public Button Veil { get; }
+
+            /// <summary>The window, laid out from its top left in design coordinates.</summary>
+            public RectTransform Window { get; }
+            public TMP_Text Title { get; }
+            public Button Close { get; }
+        }
+
+        /// <summary>
+        /// A list window in the middle of the screen (the treasures, the summon's results and
+        /// rates): the shared veil over the whole screen (a tap closes), the window
+        /// (<see cref="WindowFrame"/>), the heading with its diamond at the top left, × at the top
+        /// right and the gold line under the heading. Lay the body out from
+        /// <see cref="WindowHeadHeight"/> down and a bottom-right button with
+        /// <see cref="WindowButton"/>. The root is left shown.
+        /// </summary>
+        public static ListWindowParts ListWindow(
+            RectTransform parent,
+            string name,
+            WindowSize size,
+            float height,
+            string title = ""
+        )
+        {
+            float width = WidthOf(size);
+            var root = Rect(name, parent);
+            Stretch(root);
+            // 幕は窓の親にしない。窓の中を押しても、幕のボタンへ伝わらないようにする。
+            var veil = Rect("Veil", root);
+            Stretch(veil);
+            var veilButton = AddButton(veil, AddImage(veil, UiPalette.Veil, true));
+            veilButton.transition = Selectable.Transition.None;
+
+            var layer = Layout.Layer(SafeArea(root), "Layout");
+            var window = CenteredWindow(layer, "Modal", size, height);
+            var heading = Heading(
+                window,
+                "Title",
+                title,
+                WindowPad,
+                12f,
+                width - WindowPad - Layout.HitSize - 24f,
+                96f,
+                UiType.Title
+            );
+            var close = CloseButton(window, width - Layout.HitSize - 8f, 4f);
+            AddImage(
+                Layout.Box(
+                    window,
+                    "HeadLine",
+                    WindowPad,
+                    WindowHeadHeight - 4f,
+                    width - WindowPad * 2f,
+                    2f
+                ),
+                LineColor,
+                false
+            );
+            return new ListWindowParts(root, veilButton, window, heading, close);
+        }
+
+        // ×の絵の大きさ。押せる範囲（Layout.HitSize）の中央に置く。
+        public const float CloseIconSize = 64f;
+
+        /// <summary>
+        /// The × that closes a window or an overlay, at (x, y) from the top left of
+        /// <paramref name="parent"/>: a tap area <see cref="Layout.HitSize"/> square with the
+        /// cross in the middle, which tints when pressed. Every window and overlay uses this one.
+        /// </summary>
+        public static Button CloseButton(
+            RectTransform parent,
+            float x,
+            float y,
+            float iconSize = CloseIconSize,
+            string name = "Close"
+        ) => CloseMark(Layout.Box(parent, name, x, y, Layout.HitSize, Layout.HitSize), iconSize);
+
+        /// <summary>
+        /// Turns <paramref name="rect"/>, placed by the caller (e.g. at the right end of a band),
+        /// into the same ×: a clear tap area with the cross in the middle that tints when pressed.
+        /// Make it <see cref="Layout.HitSize"/> square.
+        /// </summary>
+        public static Button CloseMark(RectTransform rect, float iconSize = CloseIconSize)
+        {
+            var button = AddTintButton(rect, AddImage(rect, Color.clear, true));
+            CrossIcon(rect, Vector2.zero, iconSize);
+            return button;
+        }
+
+        /// <summary>
+        /// The face of a dashed card that takes something off (外す): the cross
+        /// <see cref="GuideMenuAssets.IconSize"/> square with its left edge at
+        /// <paramref name="iconLeft"/>, and the label from <paramref name="textLeft"/> to
+        /// <paramref name="textRight"/>, both centred in a card <paramref name="height"/> high.
+        /// </summary>
+        public static void RemoveFace(
+            RectTransform inside,
+            string label,
+            float iconLeft,
+            float textLeft,
+            float textRight,
+            float height
+        )
+        {
+            float icon = GuideMenuAssets.IconSize;
+            var box = Layout.Box(inside, "Icon", iconLeft, (height - icon) / 2f, icon, icon);
+            SpriteImage(box, GuideMenuAssets.IconClosePath, Color.white);
+            Layout.Text(
+                inside,
+                "Label",
+                label,
+                UiType.Lead,
+                UiPalette.TextSub,
+                TextAlignmentOptions.MidlineLeft,
+                textLeft,
+                0f,
+                textRight - textLeft,
+                height
+            );
+        }
+
+        /// <summary>
+        /// The cross alone, <paramref name="size"/> square centred at <paramref name="center"/>
+        /// from the middle of <paramref name="parent"/>, for a card that removes something.
+        /// </summary>
+        public static Image CrossIcon(RectTransform parent, Vector2 center, float size)
+        {
+            var cross = Rect("Icon", parent);
+            Place(cross, center, Vector2.one * size);
+            return SpriteImage(cross, GuideMenuAssets.IconClosePath, Color.white);
+        }
+
+        /// <summary>
+        /// The text in a list's place while it reads, fails or is empty ("読み込み中…",
+        /// "取得できませんでした"): centred in the list's top row, from <paramref name="left"/> to
+        /// <paramref name="right"/> and <paramref name="top"/> down. Every list uses this one.
+        /// </summary>
+        public static TMP_Text ListStatus(
+            RectTransform parent,
+            float left,
+            float right,
+            float top,
+            string name = "Status"
+        ) =>
+            Layout.Text(
+                parent,
+                name,
+                "",
+                UiType.Body,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center,
+                left,
+                top + UiSpace.Pad,
+                right - left,
+                GuideMenuAssets.EntryHeight
+            );
+
+        /// <summary>
+        /// An amount of runes at (x, y): the rune icon and the number after it, the pair aligned in
+        /// the box by <paramref name="alignment"/>. The icon is as high as the number's
+        /// <paramref name="size"/> unless <paramref name="iconSize"/> is given; the number is gold
+        /// (a price or a reward) unless <paramref name="color"/> is given (a cost under a button).
+        /// Returns the number's label; its parent is the row to show or hide. Prices, rewards and
+        /// costs all use this one.
+        /// </summary>
+        public static TMP_Text RuneAmount(
+            RectTransform parent,
+            string name,
+            float x,
+            float y,
+            float width,
+            float height,
+            float size,
+            TextAnchor alignment,
+            float iconSize = 0f,
+            Color? color = null
+        )
+        {
+            float icon = iconSize > 0f ? iconSize : size;
+            var row = Layout.Row(parent, name, x, y, width, height, size * 0.25f, alignment);
+            var cell = Rect("Icon", row);
+            Layout.Fit(cell, icon);
+            var image = Rect("Image", cell);
+            Place(image, Vector2.zero, Vector2.one * icon);
+            var sprite = SpriteImage(image, GuideMenuAssets.IconRunePath, Color.white);
+            sprite.preserveAspect = true;
+            sprite.raycastTarget = false;
+            var label = Label(
+                row,
+                "Value",
+                "",
+                size,
+                color ?? UiPalette.Gold,
+                TextAlignmentOptions.MidlineLeft
+            );
+            Layout.Fit(label, 0);
+            return label;
+        }
+
+        /// <summary>
+        /// A button of a window at (x, y) from the window's top left: a frosted glass card with
+        /// the label in the middle. The one that decides (<paramref name="primary"/>) keeps the
+        /// gold rim and light lit; the others (やめる・あとで) stay plain. Returns the button and
+        /// the label, and the card's inside for more parts (a cost under the label).
+        /// </summary>
+        public static (Button Button, TMP_Text Label, RectTransform Content) WindowButton(
+            RectTransform window,
+            string name,
+            string label,
+            float x,
+            float y,
+            float width,
+            float height,
+            bool primary,
+            float size = UiType.Title
+        ) => Decorate(Layout.Box(window, name, x, y, width, height), label, primary, size);
+
+        /// <summary>
+        /// The same window button for a window whose layout group places its parts (the shared
+        /// dialog's choices, the buttons in a row under a message): <paramref name="width"/> and
+        /// <paramref name="height"/> become the button's preferred size in the group.
+        /// </summary>
+        public static (Button Button, TMP_Text Label, RectTransform Content) WindowButton(
+            RectTransform parent,
+            string name,
+            string label,
+            float width,
+            float height,
+            bool primary,
+            float size = UiType.Title
+        )
+        {
+            var rect = Rect(name, parent);
+            var element = rect.gameObject.AddComponent<LayoutElement>();
+            if (width > 0f)
+                element.preferredWidth = width;
+            element.preferredHeight = element.minHeight = height;
+            return Decorate(rect, label, primary, size);
+        }
+
+        private static (Button Button, TMP_Text Label, RectTransform Content) Decorate(
+            RectTransform rect,
+            string label,
+            bool primary,
+            float size
+        )
+        {
+            var (button, rim, content) = GlassCardAssets.Choice(rect, pattern: false);
+            rim.SetActive(primary);
+            var text = Label(
+                content,
+                "Label",
+                label,
+                size,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
+            Stretch((RectTransform)text.transform);
+            GuideMenuAssets.Shrink(text, 24);
+            return (button, text, content);
+        }
+
         /// <summary>
         /// Turns <paramref name="window"/> into a window over a screen, whatever its size (a
         /// fixed one, or one that a layout group sizes to its contents such as the confirmation
@@ -305,8 +699,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         /// </summary>
         public static void WindowFrame(RectTransform window)
         {
-            // 後ろの画面の文字が透けないよう、濃い紺（PaneDark）で不透明に塗る（リニア色空間では少しの透けも目立つ）。
-            AddImage(window, new Color(PaneDark.r, PaneDark.g, PaneDark.b, 1f), true);
+            AddImage(window, UiPalette.WindowFill, true);
             // 上・下・左・右の辺に、2px の線を辺に沿わせて伸ばす。
             foreach (
                 var (min, max, offsetMin, offsetMax) in new[]
@@ -432,7 +825,8 @@ namespace Baryonyx.UI.GuideMenu.Editor
             float x,
             float y,
             float width,
-            float height
+            float height,
+            bool locked = false
         )
         {
             var rect = Layout.Box(parent, name, x, y, width, height);
@@ -456,7 +850,68 @@ namespace Baryonyx.UI.GuideMenu.Editor
             );
             GuideMenuAssets.Shrink(tab.Label, 24);
             Layout.Line(rect, "Line", 20f, height - 2f, width - 40f, 2f);
+            if (locked)
+            {
+                // 準備中のタブは、文字の左に錠前を置き、押せなくする。文字は錠前の右に寄せ、重ならないようにする。
+                float textLeft = SideTabBar + 16f + 27f + 8f;
+                Layout.At(tab.Label, textLeft, 0f, width - textLeft - 12f, height);
+                var lockIcon = Layout.Box(
+                    rect,
+                    "Lock",
+                    SideTabBar + 16f,
+                    (height - 30f) / 2f,
+                    27f,
+                    30f
+                );
+                SpriteImage(lockIcon, LockPath, new Color(1f, 1f, 1f, 0.6f));
+                tab.Lock = lockIcon.gameObject;
+                tab.Button.interactable = false;
+                tab.Chosen = false;
+            }
             return tab;
+        }
+
+        // 左の縦の分類の幅と、1つの高さ。
+        public const float SideRailWidth = 256f;
+        public const float SideTabHeight = 120f;
+
+        /// <summary>
+        /// The column of categories down the left edge of a framed panel (the shop, the library's
+        /// gear, the loadout's skills and items): one <see cref="SideTab"/> under another from the
+        /// header down, the gold double line on the column's right, and the first tab chosen. The
+        /// tabs whose index is in <paramref name="locked"/> show the lock and take no taps. Panels
+        /// put their lists right of <see cref="SideRailWidth"/>. Categories never go across the top
+        /// (doc/rules/ui-design.md の共通の部品).
+        /// </summary>
+        public static GuideTab[] SideTabs(
+            RectTransform layer,
+            string name,
+            string[] labels,
+            float left = 0f,
+            float top = HeaderHeight + 24f,
+            float width = SideRailWidth,
+            bool divider = true,
+            params int[] locked
+        )
+        {
+            var column = Layout.Box(layer, name, left, top, width, labels.Length * SideTabHeight);
+            var tabs = new GuideTab[labels.Length];
+            for (int i = 0; i < labels.Length; i++)
+                tabs[i] = SideTab(
+                    column,
+                    "Tab" + i,
+                    labels[i],
+                    0f,
+                    i * SideTabHeight,
+                    width,
+                    SideTabHeight,
+                    System.Array.IndexOf(locked, i) >= 0
+                );
+            if (tabs.Length > 0 && tabs[0].Lock == null)
+                tabs[0].Chosen = true;
+            if (divider)
+                Divider(layer, left + width, HeaderHeight);
+            return tabs;
         }
 
         // 縦のタブで、選んだときに左に引く金の縦線の太さ。

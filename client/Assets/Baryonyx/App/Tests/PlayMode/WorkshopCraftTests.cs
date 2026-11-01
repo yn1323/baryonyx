@@ -177,7 +177,7 @@ namespace Baryonyx.Tests.PlayMode
             // 持っている3つを並べ、付けている物は選べない。
             Assert.That(picker.Pieces.Count, Is.EqualTo(3));
             int worn = picker.Pieces.ToList().FindIndex(piece => piece.User != null);
-            Assert.That(picker.Rows[worn].InUse.activeSelf, Is.True);
+            Assert.That(picker.Rows[worn].Mark.activeSelf, Is.True);
             picker.Rows[worn].Card.Click();
             Assert.That(picker.Selected, Is.Not.EqualTo(worn));
             string before = craft.DetailQuality.text;
@@ -307,7 +307,7 @@ namespace Baryonyx.Tests.PlayMode
                 Is.EqualTo(WorkshopSellView.PriceOf(sell.Shown[0]).ToString("N0"))
             );
             int worn = sell.Shown.ToList().FindIndex(thing => thing.User != null);
-            Assert.That(rows[worn].InUse.activeSelf, Is.True);
+            Assert.That(rows[worn].Mark.activeSelf, Is.True);
             Assert.That(sell.Confirm.interactable, Is.False);
 
             // 使っている物は選べない。

@@ -68,6 +68,7 @@
 | スキル | 使う場面 | 呼び出し | 正本のdoc | 担当外・一緒に使うスキル |
 |---|---|---|---|---|
 | [ui-advisor](ui-advisor/SKILL.md) | スマホゲームのUI、画面構成、UX、報酬表示、保守を設計・実装・レビューする | 自動 | [UI設計ルール](../../doc/rules/ui-design.md)、[ゲーム概要](../../doc/game/overview.md) | 保存は data-storage、演出は vfx-authoring |
+| [ui-tone-manner](ui-tone-manner/SKILL.md) | 画面・窓・決めるボタン・分類・持ち物の札を、共通の部品と決まりに合わせて作る・直す。全画面を撮って見比べ、トンマナのずれを直す | 自動 | [共通の部品](../../doc/rules/ui-design.md#共通の部品) | 画面構成・UX全般は ui-advisor、待ちの見せ方は loading-concealment |
 | [loading-concealment](loading-concealment/SKILL.md) | 画面の切り替え・画面を開く・操作したときの読み込みの待ち時間を、楽観的更新・前回の内容の先出し・幕を閉じたまま待つ・カードを伏せる形で見せないようにする。「一瞬初期値が見える」などの指摘 | 自動 | [読み込みの待ち時間を見せない](../../doc/rules/ui-design.md#読み込みの待ち時間を見せない) | 保存先は data-storage、サーバーの往復を減らすのは server-api-authoring |
 
 ## 戦闘のカードとパッシブ
@@ -132,7 +133,8 @@
 | キャラのパッシブスキルを考える・直す | passive-skill-authoring |
 | 敵が硬い・弱い、戦闘が長い・危ない、倍率や数値を変えたあとに測り直す | battle-balance（手動専用。使ってよいかユーザーに確認する） |
 | 地図のマスの出来事・賭けの遊び方・戦闘の敵やLvの設定を足す・消す、どのマスに何を置くかを変える、地図エディターを直す | map-event-authoring |
-| 画面を作る・直す | ui-advisor。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
+| 画面を作る・直す | ui-advisor と ui-tone-manner。保存を伴えば data-storage、演出を伴えば vfx-authoring も |
+| 画面の見た目がばらばら、窓・ボタン・タブ・札をそろえたい、全画面を撮って見比べて | ui-tone-manner |
 | 画面の切り替えで一瞬別の姿が見える、開くのが遅い、「読み込み中」を出したくない | loading-concealment。サーバーが遅いなら server-api-authoring も |
 | この場面・動き・スキルの演出を動画で撮って見せて | unity-video-recording |
 | 保存する処理を足す、保存先を聞かれた | data-storage |

@@ -34,7 +34,8 @@ namespace Baryonyx.Workshop.Editor
         private const float RowHeight = 112f;
         private const float RowArt = 80f;
         private const float DetailArt = 192f;
-        private const float MaterialsTop = 440f;
+        private const float DetailTop = GuideFrameAssets.HeaderHeight + 24f;
+        private const float MaterialsTop = 620f;
 
         // 材料の札：一辺160の正方形を4つ横に並べ、下に名前。レシピの材料は多くて4種類。
         private const int MaterialSlots = 4;
@@ -57,32 +58,31 @@ namespace Baryonyx.Workshop.Editor
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (craft, layer) = Panel<WorkshopCraftView>(safe, "WorkshopCraft");
+            var (craft, panel) = GuidePanelTemplate.RowsDetail<WorkshopCraftView>(
+                safe,
+                "WorkshopCraft",
+                WorkshopCraft.TabLabels[0],
+                WorkshopCraft.TabLabels
+            );
+            var layer = panel.Layer;
             craft.Guide = view;
             craft.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             craft.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             craft.ArtBox = RowArt;
             craft.DetailArtBox = DetailArt;
             craft.MaterialArtBox = MaterialArt;
-            craft.Tabs = Tabs(layer, WorkshopCraft.TabLabels);
+            craft.Tabs = panel.Tabs;
+            craft.ListTitle = panel.Title;
+            craft.ListCount = panel.Count;
             // 磨き石のタブの石の絵。強化の画面と同じ ItemArt から写す。
             var itemArt = ItemArtAssets.Load();
             craft.StoneArts = EnhancementMaterials
                 .Polishes.Select(stone => (Texture)itemArt.TextureOf(stone.Id))
                 .ToArray();
 
-            var (content, scroll) = Column(
-                layer,
-                "Recipes",
-                Rail,
-                Split,
-                ListTop,
-                1080f,
-                (int)Inner,
-                (int)Inner
-            );
+            var content = panel.Content;
             craft.Content = content;
-            craft.List = scroll;
+            craft.List = panel.Scroll;
             craft.Template = ListRow(content, "Template", RowHeight, RowArt);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(craft.Template.Card, vertical: true);
@@ -105,62 +105,73 @@ namespace Baryonyx.Workshop.Editor
                 );
                 craft.Rows.Add(row);
             }
-            craft.Status = Status(layer, Rail, Split, ListTop);
+            craft.Status = panel.Status;
+            craft.ListCount.text = UiText.Count(recipes.Length);
 
-            float left = Split + Inner;
-            float right = Layout.Design.x - Edge;
-            float textLeft = left + DetailArt + 40f;
-            craft.DetailArt = ArtStage(layer, "DetailArt", left + 16f, 140f, DetailArt);
+            // 右の面は、買うの詳細と同じく、上の中央に絵、その下に名前、☆と出来上がる品質、効果を中央に並べる。
+            float left = GuidePanelTemplate.DetailLeft;
+            float right = GuidePanelTemplate.DetailRight;
+            float middle = (left + right) / 2f;
+            craft.DetailArt = ArtStage(
+                layer,
+                "DetailArt",
+                middle - DetailArt / 2f,
+                DetailTop,
+                DetailArt
+            );
+            float y = DetailTop + DetailArt + 8f;
             craft.DetailName = Layout.Text(
                 layer,
                 "DetailName",
                 "",
-                54,
+                UiType.Heading,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineLeft,
-                textLeft,
-                140f,
-                right - textLeft,
-                72f
+                TextAlignmentOptions.Center,
+                left,
+                y,
+                right - left,
+                64f
             );
             Shrink(craft.DetailName, 32);
+            y += 64f;
             craft.DetailStars = Layout.Text(
                 layer,
                 "DetailStars",
                 "",
                 32,
                 UiPalette.Gold,
-                TextAlignmentOptions.MidlineLeft,
-                textLeft,
-                212f,
+                TextAlignmentOptions.MidlineRight,
+                middle - 8f - StarsWidth,
+                y,
                 StarsWidth,
-                44f
+                52f
             );
             craft.DetailStars.richText = true;
             craft.DetailQuality = Layout.Text(
                 layer,
                 "DetailQuality",
                 "",
-                34,
+                UiType.Body,
                 UiPalette.TextMain,
-                TextAlignmentOptions.MidlineRight,
-                textLeft + StarsWidth,
-                200f,
-                right - textLeft - StarsWidth,
-                64f
+                TextAlignmentOptions.MidlineLeft,
+                middle + 8f,
+                y,
+                right - middle - 8f,
+                52f
             );
             craft.DetailQuality.richText = true;
+            y += 56f;
             craft.DetailEffect = Layout.Text(
                 layer,
                 "DetailEffect",
                 "",
                 28,
                 UiPalette.TextSub,
-                TextAlignmentOptions.TopLeft,
-                textLeft,
-                266f,
-                right - textLeft,
-                110f
+                TextAlignmentOptions.Top,
+                left,
+                y,
+                right - left,
+                MaterialsTop - 72f - y
             );
             craft.DetailEffect.richText = true;
             craft.DetailEffect.textWrappingMode = TextWrappingModes.Normal;

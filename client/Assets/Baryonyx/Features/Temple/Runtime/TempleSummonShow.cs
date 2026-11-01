@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Library;
+using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,7 +64,7 @@ namespace Baryonyx.Temple
         public Button TapArea;
 
         // 降りてくる札の表と、札に描く物の絵。
-        public TempleSummonCard CardFace;
+        public ItemTile CardFace;
         public LibraryData Data;
         public float CardArtBox = 128f;
 

@@ -36,7 +36,7 @@ namespace Baryonyx.UI.Editor
         // 角丸の半径（1ピクセル = Canvasの1単位）。
         public const int Radius = 22;
 
-        public static readonly Color FillColor = new(0.62f, 0.72f, 1f, 0.05f);
+        public static readonly Color FillColor = UiPalette.PlateGlass;
         public static readonly Color RoseColor = new(1f, 0.85f, 0.55f, 0.5f);
         public static readonly Color GoldColor = new(1f, 0.84f, 0.4f, 1f);
         public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.55f);
@@ -47,7 +47,7 @@ namespace Baryonyx.UI.Editor
 
         // 案内人の画面の透ける面を通さず、景色や絵の上に直に置くカードの板の色。面と同じ紺を濃く敷き、
         // 下の景色に負けずに文字が読めるようにする（探索の札・ダイアログの外の画面・デバッグルーム）。
-        public static readonly Color SceneFillColor = new(0.035f, 0.05f, 0.12f, 0.82f);
+        public static readonly Color SceneFillColor = UiPalette.PlateScene;
 
         // 影は少し下へずらし、周りへ広げる。選んだときの光も周りへ広げる。
         private const float ShadowDrop = 10f;

@@ -24,7 +24,7 @@ namespace Baryonyx.Adventure.Editor
     /// </summary>
     public static class AdventureBoonPickerAssets
     {
-        private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.78f);
+        private static readonly Color Veil = UiPalette.VeilDeep;
 
         // 列の板。後ろの戦闘が透けすぎないよう、ガラスの札より濃くする。
         private static readonly Color LaneFill = new(0.03f, 0.045f, 0.1f, 0.92f);
@@ -69,7 +69,8 @@ namespace Baryonyx.Adventure.Editor
             var pillars = new List<AdventureBoonPillar>();
             for (int column = 0; column < AdventureBoonPicker.Columns; column++)
             {
-                float x = (column - (AdventureBoonPicker.Columns - 1) / 2f) * (LaneSize.x + LaneGap);
+                float x =
+                    (column - (AdventureBoonPicker.Columns - 1) / 2f) * (LaneSize.x + LaneGap);
                 var lane = Rect($"Lane{column + 1}", safe);
                 Place(lane, new Vector2(x, LaneY), LaneSize);
                 lanes.Add(lane.gameObject.AddComponent<CanvasGroup>());
@@ -98,7 +99,9 @@ namespace Baryonyx.Adventure.Editor
                     rim.gameObject.SetActive(false);
                     var fill = GlassCardAssets.FillOf(card);
                     foils.Add(Layer<CardFoil>("Foil", fill.transform, CardFoilAssets.Material()));
-                    frames.Add(Layer<CardFrameFoil>("Frame", rim.transform, CardFoilAssets.FrameMaterial()));
+                    frames.Add(
+                        Layer<CardFrameFoil>("Frame", rim.transform, CardFoilAssets.FrameMaterial())
+                    );
                     var text = Label(
                         content,
                         "Text",
@@ -134,7 +137,11 @@ namespace Baryonyx.Adventure.Editor
             var face = BattleInspectAssets.EndTurnCircle(confirm);
             var tickArt = BattleInspectAssets.Art("EndTurnCheck");
             var tick = Rect("Check", confirm);
-            Place(tick, BattleInspectAssets.EndTurnTickAt, new Vector2(tickArt.width, tickArt.height));
+            Place(
+                tick,
+                BattleInspectAssets.EndTurnTickAt,
+                new Vector2(tickArt.width, tickArt.height)
+            );
             BattleInspectAssets.AddRaw(tick, tickArt).raycastTarget = false;
             var check = (TintGroupButton)AddTintButton(confirm, face);
             check.SetTintGraphics(new Graphic[] { tick.GetComponent<RawImage>() });
@@ -198,7 +205,12 @@ namespace Baryonyx.Adventure.Editor
         private static void Repaint(GameObject selected, RectTransform card)
         {
             foreach (var graphic in selected.GetComponentsInChildren<Graphic>(true))
-                graphic.color = new Color(PickedColor.r, PickedColor.g, PickedColor.b, graphic.color.a);
+                graphic.color = new Color(
+                    PickedColor.r,
+                    PickedColor.g,
+                    PickedColor.b,
+                    graphic.color.a
+                );
             var tint = card.Find("Body/SelectedTint").GetComponent<Graphic>();
             tint.color = new Color(PickedColor.r, PickedColor.g, PickedColor.b, tint.color.a);
         }

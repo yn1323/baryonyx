@@ -35,7 +35,6 @@ namespace Baryonyx.Adventure.Editor
         // 編成の枠ごとの、見本の仲間（AdventureAssets の Party と同じ割り当て）。
         private static readonly string[] SampleParty = { "Toma", "Luka", "Aria", "Mina" };
 
-        private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.72f);
         private static readonly Color Plate = new(0.03f, 0.05f, 0.1f, 0.92f);
 
         // 焚き火の絵の窓：野営地の絵（1920x1080）を縮めて、上下を少し切って見せる。
@@ -140,7 +139,7 @@ namespace Baryonyx.Adventure.Editor
         {
             var panel = Rect(name, root);
             Stretch(panel);
-            AddImage(panel, Veil, true);
+            AddImage(panel, UiPalette.Veil, true);
             var safe = SafeArea(panel);
             var window = Rect("Window", safe);
             Place(window, Vector2.zero, size);

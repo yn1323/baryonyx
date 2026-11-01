@@ -4,6 +4,7 @@ using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
+using Baryonyx.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -53,7 +54,7 @@ namespace Baryonyx.Adventure
         // 持ち帰った物の札を並べる中身と、複製する札（隠しておく）。物がなければ Empty を出す。
         public ScrollRect Scroll;
         public RectTransform Cells;
-        public AdventureResultCell CellTemplate;
+        public ItemTile CellTemplate;
         public TMP_Text Empty;
 
         public Button Home;
@@ -61,7 +62,7 @@ namespace Baryonyx.Adventure
         public Color FloorCleared = new(1f, 0.86f, 0.5f, 0.55f);
         public Color FloorEnded = new(0.6f, 0.7f, 1f, 0.22f);
 
-        private readonly List<AdventureResultCell> cells = new();
+        private readonly List<ItemTile> cells = new();
         private Action home;
         private bool cleared;
         private float openedAt;
@@ -81,7 +82,6 @@ namespace Baryonyx.Adventure
                 .Select(cell => cell.Name != null ? cell.Name.text : "")
                 .ToArray();
 
-
         private void Awake() => Wire();
 
         private void Wire()
@@ -94,7 +94,9 @@ namespace Baryonyx.Adventure
             if (Window != null)
                 windowHome = ((RectTransform)Window.transform).anchoredPosition;
             memberHomes = Members
-                .Select(member => member != null ? member.rectTransform.anchoredPosition : Vector2.zero)
+                .Select(member =>
+                    member != null ? member.rectTransform.anchoredPosition : Vector2.zero
+                )
                 .ToArray();
             if (CellTemplate != null)
                 CellTemplate.gameObject.SetActive(false);
@@ -252,14 +254,10 @@ namespace Baryonyx.Adventure
                 Scroll.verticalNormalizedPosition = 1f;
         }
 
-        private static void Paint(AdventureResultCell cell, AdventureDrop drop, int count, ItemArt art)
+        private static void Paint(ItemTile cell, AdventureDrop drop, int count, ItemArt art)
         {
             var icon = AdventureTexts.DropIcon(drop, art);
-            if (cell.Art != null)
-            {
-                cell.Art.sprite = icon;
-                cell.Art.enabled = icon != null;
-            }
+            cell.PaintSprite(icon);
             if (cell.Quality != null)
             {
                 cell.Quality.text = drop.Quality is { } quality ? Quality.Letter(quality) : "";
@@ -275,7 +273,8 @@ namespace Baryonyx.Adventure
 
         private void Animate()
         {
-            float t = (Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup) - openedAt;
+            float t =
+                (Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup) - openedAt;
 
             float open = Ease(t / OpenSeconds);
             if (Window != null)
@@ -311,7 +310,10 @@ namespace Baryonyx.Adventure
             // 光の筋はゆっくり息づき、きらめきは1つずつずれて瞬く。
             for (int i = 0; i < Rays.Length; i++)
                 if (Rays[i] != null)
-                    Rays[i].canvasRenderer.SetAlpha(open * (0.75f + 0.25f * Mathf.Sin(t * 1.4f + i * 1.3f)));
+                    Rays[i]
+                        .canvasRenderer.SetAlpha(
+                            open * (0.75f + 0.25f * Mathf.Sin(t * 1.4f + i * 1.3f))
+                        );
             for (int i = 0; i < Twinkles.Length; i++)
             {
                 if (Twinkles[i] == null)

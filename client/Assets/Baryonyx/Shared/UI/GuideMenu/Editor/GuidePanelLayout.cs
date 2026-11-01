@@ -16,7 +16,7 @@ namespace Baryonyx.UI.GuideMenu.Editor
         public static readonly Vector2 Design = new(1920, 1080);
 
         // 小さなボタン（レベルアップの－＋など）の押せる範囲。指で押しやすい大きさにする。
-        public const float HitSize = 128f;
+        public const float HitSize = UiSpace.Hit;
 
         /// <summary>A 1920x1080 layer in the middle that shrinks on screens narrower than 16:9.</summary>
         public static RectTransform Layer(RectTransform parent, string name)

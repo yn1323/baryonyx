@@ -49,10 +49,10 @@ namespace Baryonyx.TravelOffice.Editor
 
         // 画面の中央の窓。左に分類の名前、右にお宝の札を並べ、下に選んだお宝の名前と説明を出す。
         // 左にクリア回数の報酬の列、右にお宝の段を並べるため、窓を画面の幅いっぱいに近くする（2026-11-01、T2の案）。
-        private const float WindowWidth = 1840f;
+        private const float WindowWidth = UiSpace.WindowLarge;
         private const float WindowHeight = 1000f;
-        private const float Pad = 56f;
-        private const float HeadHeight = 136f;
+        private const float Pad = Frame.WindowPad;
+        private const float HeadHeight = Frame.WindowHeadHeight;
         private const float InfoHeight = 136f;
         private const float SectionLabelWidth = 160f;
         private const int Columns = 7;
@@ -78,10 +78,8 @@ namespace Baryonyx.TravelOffice.Editor
         private const float TileArtBox = 96f;
         private const float BossIconSize = 12f * DotScale;
 
-        private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.72f);
-
         // まだ見つけていないスキルの「？」。影と同じく目立たせず、札の地より少し明るくする。
-        private static readonly Color UnknownColor = new(0.42f, 0.47f, 0.62f, 1f);
+        private static readonly Color UnknownColor = ItemTileAssets.UnknownColor;
 
         [MenuItem("Baryonyx/Travel Office/Create Screen Assets")]
         public static void CreateAssets() =>
@@ -302,27 +300,16 @@ namespace Baryonyx.TravelOffice.Editor
             LibraryRecords mock
         )
         {
-            var root = Rect("Window", treasures);
-            Stretch(root);
+            var parts = Frame.ListWindow(treasures, "Window", Frame.WindowSize.Large, WindowHeight);
+            var root = parts.Root;
             view.Window = root.gameObject;
-            // 幕は窓の親にしない。窓の中を押しても、幕のボタンへ伝わらないようにする。
-            var veil = Rect("Veil", root);
-            Stretch(veil);
-            view.Veil = UiBuild.AddButton(veil, AddImage(veil, Veil, true));
-            view.Veil.transition = Selectable.Transition.None;
+            view.Veil = parts.Veil;
+            view.Close = parts.Close;
+            view.Title = parts.Title;
+            var window = parts.Window;
 
-            var layer = Layout.Layer(SafeArea(root), "Layout");
-            var window = Frame.Window(
-                layer,
-                "Modal",
-                (Layout.Design.x - WindowWidth) / 2f,
-                (Layout.Design.y - WindowHeight) / 2f,
-                WindowWidth,
-                WindowHeight
-            );
-
-            view.Title = Frame.Heading(window, "Title", "", Pad, 24f, 680f, 96f, 44f);
             BuildRewards(window, view);
+            // 見つけた数は、見出しの段の右（×の左）に置く。
             view.Count = Layout.Text(
                 window,
                 "Count",
@@ -331,26 +318,20 @@ namespace Baryonyx.TravelOffice.Editor
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight,
                 WindowWidth - Layout.HitSize - 8f - 24f - 200f,
-                24f,
+                12f,
                 200f,
                 96f
             );
-            var close = Layout.Box(
-                window,
-                "Close",
-                WindowWidth - Layout.HitSize - 8f,
-                4f,
-                Layout.HitSize,
-                Layout.HitSize
-            );
-            view.Close = AddTintButton(close, AddImage(close, Color.clear, true));
-            var cross = Rect("Icon", close);
-            Place(cross, Vector2.zero, Vector2.one * 64f);
-            SpriteImage(cross, IconClosePath, Color.white);
-            Rule(window, "HeadLine", HeadHeight - 4f);
 
             float viewportHeight = WindowHeight - HeadHeight - InfoHeight;
-            var divider = Layout.Box(window, "Divider", TreasuresLeft - 24f, HeadHeight + 24f, 2f, viewportHeight - 48f);
+            var divider = Layout.Box(
+                window,
+                "Divider",
+                TreasuresLeft - 24f,
+                HeadHeight + 24f,
+                2f,
+                viewportHeight - 48f
+            );
             AddImage(divider, Frame.LineColor, false);
             var viewport = Layout.Box(
                 window,
@@ -427,13 +408,21 @@ namespace Baryonyx.TravelOffice.Editor
                 72f
             );
             var rows = new TravelClearRewardRow[AdventureClearRewards.Count];
-            float centerOf(int i) => RewardRowsTop + i * (RewardRowHeight + RewardRowGap) + RewardRowHeight / 2f;
+            float centerOf(int i) =>
+                RewardRowsTop + i * (RewardRowHeight + RewardRowGap) + RewardRowHeight / 2f;
             for (int i = 0; i < rows.Length; i++)
             {
                 var row = new TravelClearRewardRow();
                 if (i + 1 < rows.Length)
                 {
-                    var link = Layout.Box(window, $"RewardLink{i + 1}", Pad + RewardMarkX - 3f, centerOf(i), 6f, centerOf(i + 1) - centerOf(i));
+                    var link = Layout.Box(
+                        window,
+                        $"RewardLink{i + 1}",
+                        Pad + RewardMarkX - 3f,
+                        centerOf(i),
+                        6f,
+                        centerOf(i + 1) - centerOf(i)
+                    );
                     row.Link = AddImage(link, RewardMarkDim, false);
                 }
                 var mark = Layout.Box(
@@ -454,10 +443,22 @@ namespace Baryonyx.TravelOffice.Editor
         }
 
         // 報酬の札：左に絵、右に名前（数）と☆・品質、右端にルーン。受け取った回はチェック、次の回は金の縁。
-        private static void BuildRewardCard(RectTransform window, TravelClearRewardRow row, int index, float top)
+        private static void BuildRewardCard(
+            RectTransform window,
+            TravelClearRewardRow row,
+            int index,
+            float top
+        )
         {
             float width = RewardsWidth - RewardCardX;
-            var rect = Layout.Box(window, $"Reward{index + 1}", Pad + RewardCardX, top, width, RewardRowHeight);
+            var rect = Layout.Box(
+                window,
+                $"Reward{index + 1}",
+                Pad + RewardCardX,
+                top,
+                width,
+                RewardRowHeight
+            );
             var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
             card.Group.blocksRaycasts = false;
             row.Card = card.Group;
@@ -469,12 +470,26 @@ namespace Baryonyx.TravelOffice.Editor
             Sliced(next, GlassCardAssets.RimPath, GlassCardAssets.GoldColor).raycastTarget = false;
             row.Next = next.gameObject;
 
-            var art = Layout.Box(inside, "Art", 16f, (RewardRowHeight - RewardArtSize) / 2f, RewardArtSize, RewardArtSize);
+            var art = Layout.Box(
+                inside,
+                "Art",
+                16f,
+                (RewardRowHeight - RewardArtSize) / 2f,
+                RewardArtSize,
+                RewardArtSize
+            );
             row.Art = art.gameObject.AddComponent<Image>();
             row.Art.preserveAspect = true;
             row.Art.raycastTarget = false;
 
-            var unknown = Label(inside, "Unknown", "？", 60, UnknownColor, TextAlignmentOptions.Center);
+            var unknown = Label(
+                inside,
+                "Unknown",
+                "？",
+                60,
+                UnknownColor,
+                TextAlignmentOptions.Center
+            );
             var unknownRect = (RectTransform)unknown.transform;
             unknownRect.anchorMin = unknownRect.anchorMax = art.anchorMin;
             unknownRect.pivot = art.pivot;
@@ -484,17 +499,45 @@ namespace Baryonyx.TravelOffice.Editor
             row.Unknown.SetActive(false);
 
             float textX = 16f + RewardArtSize + 16f;
-            row.Name = Layout.Text(inside, "Name", "", 32, UiPalette.TextMain, TextAlignmentOptions.MidlineLeft, textX, 12f, width - textX - 24f, 46f);
+            row.Name = Layout.Text(
+                inside,
+                "Name",
+                "",
+                32,
+                UiPalette.TextMain,
+                TextAlignmentOptions.MidlineLeft,
+                textX,
+                12f,
+                width - textX - 24f,
+                46f
+            );
             Shrink(row.Name, 20);
-            row.Grade = Layout.Text(inside, "Grade", "", 26, UiPalette.Gold, TextAlignmentOptions.MidlineLeft, textX, 58f, 220f, 40f);
+            row.Grade = Layout.Text(
+                inside,
+                "Grade",
+                "",
+                26,
+                UiPalette.Gold,
+                TextAlignmentOptions.MidlineLeft,
+                textX,
+                58f,
+                220f,
+                40f
+            );
             row.Grade.richText = true;
 
-            var rune = Layout.Box(inside, "Rune", width - 136f, 62f, 32f, 32f);
-            var runeIcon = rune.gameObject.AddComponent<Image>();
-            runeIcon.sprite = Icon(IconRunePath);
-            runeIcon.preserveAspect = true;
-            runeIcon.raycastTarget = false;
-            row.Runes = Layout.Text(inside, "Runes", "", 28, UiPalette.TextMain, TextAlignmentOptions.MidlineRight, width - 100f, 58f, 80f, 40f);
+            row.Runes = Frame.RuneAmount(
+                inside,
+                "Runes",
+                width - 200f,
+                58f,
+                180f,
+                40f,
+                28f,
+                TextAnchor.MiddleRight,
+                32f,
+                UiPalette.TextMain
+            );
 
             var check = Layout.Box(inside, "Received", width - 52f, 10f, 36f, 33f);
             var checkArt = check.gameObject.AddComponent<RawImage>();
@@ -576,31 +619,27 @@ namespace Baryonyx.TravelOffice.Editor
         {
             var rect = Rect("Treasure_" + treasure.Id, grid);
             // 小さな札のため、左上の模様は付けない。
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
+            var (face, inside) = ItemTileAssets.Build(rect);
             var art = Rect("Art", inside);
             Place(art, new Vector2(0f, 12f), Vector2.one * TileArtBox);
             var image = art.gameObject.AddComponent<RawImage>();
             image.raycastTarget = false;
             var stars = Label(inside, "Stars", "", 22, UiPalette.Gold, TextAlignmentOptions.Center);
             Band((RectTransform)stars.transform, top: false, 4f, 30f, 4f, 4f);
+            face.Id = treasure.Id;
+            face.Art = image;
+            face.Stars = stars;
             GameObject unknown = null;
             if (treasure.Kind == LibraryKind.Skill)
             {
                 // スキルの挿絵は四角いため、まだ見つけていない札は影の代わりに「？」を出す。
-                var mark = Label(
+                unknown = ItemTileAssets.UnknownMark(
+                    face,
                     inside,
-                    "Unknown",
-                    "？",
-                    72,
-                    UnknownColor,
-                    TextAlignmentOptions.Center
-                );
-                Place(
-                    (RectTransform)mark.transform,
                     new Vector2(0f, 12f),
-                    Vector2.one * TileArtBox
+                    TileArtBox,
+                    72f
                 );
-                unknown = mark.gameObject;
             }
             if (treasure.BossOnly)
             {
@@ -610,16 +649,14 @@ namespace Baryonyx.TravelOffice.Editor
                 var crown = boss.gameObject.AddComponent<Image>();
                 crown.sprite = Icon(IconBossOnlyPath);
                 crown.raycastTarget = false;
+                face.Mark = boss.gameObject;
             }
             var tile = new TravelTreasureTile
             {
                 Id = treasure.Id,
                 Kind = treasure.Kind,
                 BossOnly = treasure.BossOnly,
-                Card = card,
-                Art = image,
-                Stars = stars,
-                Unknown = unknown,
+                Tile = face,
             };
             var entry =
                 data != null

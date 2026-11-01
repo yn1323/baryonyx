@@ -53,9 +53,13 @@ namespace Baryonyx.Workshop
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
         public ScrollRect List;
         public RectTransform Content;
-        public WorkshopGoodRow Template;
-        public List<WorkshopGoodRow> Rows = new();
+        public ItemTile Template;
+        public List<ItemTile> Rows = new();
         public TMP_Text Status;
+
+        // 一覧の上の見出し（選んだ分類の名前）と、並べた物の数。
+        public TMP_Text ListTitle;
+        public TMP_Text ListCount;
 
         // 右の面：出来上がる物の絵・名前・☆・効果・出来上がる品質。
         public RawImage DetailArt;
@@ -66,7 +70,7 @@ namespace Baryonyx.Workshop
 
         // 材料：見出しと、レシピの材料の札（多くて4つ）。
         public GameObject MaterialsTitle;
-        public List<WorkshopGoodRow> MaterialRows = new();
+        public List<ItemTile> MaterialRows = new();
 
         // 特別な材料（装備・スキル）の、使う物を選ぶ画面。
         public WorkshopMaterialPicker Picker;
@@ -191,8 +195,10 @@ namespace Baryonyx.Workshop
             for (int i = 0; i < Tabs.Length; i++)
                 if (Tabs[i] != null)
                     Tabs[i].Chosen = i == tab;
+            Set(ListTitle, WorkshopCraft.TabLabels[tab]);
             if (StonesTab)
             {
+                Set(ListCount, "");
                 ShowStones();
                 return;
             }
@@ -200,6 +206,7 @@ namespace Baryonyx.Workshop
             selected = -1;
             PaintRows();
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopCraft.TabLabels[tab]) : "");
+            Set(ListCount, shown.Count == 0 ? "" : UiText.Count(shown.Count));
             // 作れる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(shown.Count).Select(row => row.gameObject),
@@ -508,12 +515,7 @@ namespace Baryonyx.Workshop
         /// Writes a recipe's row: shadowed and unnamed until made once, dim when the materials
         /// are short. The generator bakes the mock recipes with it too.
         /// </summary>
-        public static void Paint(
-            WorkshopGoodRow row,
-            WorkshopRecipe recipe,
-            bool canMake,
-            float artBox
-        )
+        public static void Paint(ItemTile row, WorkshopRecipe recipe, bool canMake, float artBox)
         {
             LibraryCatalogView.PaintArt(row.Art, recipe.Entry, recipe.Found, artBox);
             Set(row.Name, recipe.Found ? recipe.Name : Hidden);
@@ -567,7 +569,7 @@ namespace Baryonyx.Workshop
         /// quality at the top left.
         /// </summary>
         public static void PaintMaterial(
-            WorkshopGoodRow row,
+            ItemTile row,
             RecipeMaterial material,
             LibraryEntryData entry,
             bool found,
@@ -588,8 +590,8 @@ namespace Baryonyx.Workshop
                     row.Quality.color = QualityPalette.Of(piece.Quality);
                 }
             }
-            if (row.InUse != null)
-                row.InUse.SetActive(false);
+            if (row.Mark != null)
+                row.Mark.SetActive(false);
         }
 
         /// <summary>The held and needed counts, "1/2", the held red when short.</summary>
@@ -783,7 +785,7 @@ namespace Baryonyx.Workshop
 
         /// <summary>Writes a stone's row: its art, name and stars, dim when it cannot be made now.</summary>
         public static void PaintStone(
-            WorkshopGoodRow row,
+            ItemTile row,
             EnhancementMaterial stone,
             bool canMake,
             Texture art,
@@ -841,8 +843,8 @@ namespace Baryonyx.Workshop
                 );
                 if (row.Quality != null)
                     row.Quality.transform.parent.gameObject.SetActive(false);
-                if (row.InUse != null)
-                    row.InUse.SetActive(false);
+                if (row.Mark != null)
+                    row.Mark.SetActive(false);
             }
             if (Price != null)
                 Price.SetActive(made != null);
@@ -1045,6 +1047,8 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
             Set(Status, "");
+            // 数が読めないうちは「-」を出す。
+            Set(ListCount, "-");
             ShowMaterials(null);
         }
 
@@ -1055,6 +1059,7 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
+            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)

@@ -17,27 +17,20 @@ using Layout = Baryonyx.UI.GuideMenu.Editor.GuidePanelLayout;
 namespace Baryonyx.Workshop.Editor
 {
     /// <summary>
-    /// The parts the trading house's full-screen panels share (buy, sell, craft and enhance): the
-    /// column of tabs down the left edge, the list pane and the chosen thing's pane split by the
-    /// gold double line, the scrolling grid or list, the cards and rows, the big art on the right
-    /// with a soft light behind it, and a price with the rune icon. Positions are design pixels
+    /// The parts the trading house's full-screen panels share (buy, sell, craft and enhance) inside
+    /// the shared templates (<see cref="GuidePanelTemplate"/>): the scrolling column of chosen
+    /// rows, the cards and rows, the big art on the right with a soft light behind it, and a price
+    /// with the rune icon. Positions are design pixels
     /// from the top left of the 1920x1080 layer, as in the mockups.
     /// </summary>
     public static class WorkshopPanelAssets
     {
-        // 左端の縦のタブの列の幅と、タブ1つの高さ。
-        public const float Rail = 256f;
-        public const float SideTabHeight = 120f;
-
         // 一覧の面と、選んだ物を出す右の面の境。どの画面も右の面を同じ幅にする。
-        public const float Split = 1160f;
-
-        // 一覧の始まり。縦のタブの画面では、ヘッダーのすぐ下から並べる。
-        public const float ListTop = GuideFrameAssets.HeaderHeight + 12f;
+        public const float Split = GuidePanelTemplate.Split;
 
         // 面の上の見出し（売る物・覚醒できる固有スキル）と、その下の中身の始まり。
-        public const float TabTop = GuideFrameAssets.HeaderHeight + 12f;
-        public const float TabHeight = 72f;
+        public const float TabTop = GuideFrameAssets.HeaderHeight;
+        public const float TabHeight = GuidePanelTemplate.HeadingHeight;
         public const float BodyTop = TabTop + TabHeight + 8f;
 
         // 面の端と中身の間。左右の面とも、画面の端の側は枠と同じ48、区切りの線の側は24空ける。
@@ -51,105 +44,6 @@ namespace Baryonyx.Workshop.Editor
         public const float Gap = 22f;
 
         private static readonly Color Glow = new(1f, 0.82f, 0.5f, 0.14f);
-
-        /// <summary>
-        /// A full-screen panel with the view <typeparamref name="T"/>: with <paramref name="rail"/>
-        /// a pane for the tabs down the left edge, then the list pane and the chosen thing's pane
-        /// split at <see cref="Split"/>.
-        /// </summary>
-        public static (T View, RectTransform Layer) Panel<T>(
-            RectTransform safe,
-            string name,
-            bool rail = true
-        )
-            where T : Component
-        {
-            var (view, layer) = GuideFrameAssets.FramedPanel<T>(safe, name);
-            if (rail)
-                GuideFrameAssets.Pane(
-                    layer,
-                    "TabPane",
-                    0f,
-                    Rail,
-                    GuideFrameAssets.HeaderHeight,
-                    GuideFrameAssets.PaneLight,
-                    true,
-                    false
-                );
-            GuideFrameAssets.SplitPanes(
-                layer,
-                Split,
-                "LeftPane",
-                "RightPane",
-                from: rail ? Rail : 0f
-            );
-            if (rail)
-                GuideFrameAssets.Divider(layer, Rail, GuideFrameAssets.HeaderHeight);
-            return (view, layer);
-        }
-
-        /// <summary>The tabs down the left edge, one under another, the first chosen.</summary>
-        public static GuideTab[] Tabs(RectTransform layer, string[] labels)
-        {
-            float top = GuideFrameAssets.HeaderHeight + 24f;
-            var column = Layout.Box(layer, "Tabs", 0f, top, Rail, labels.Length * SideTabHeight);
-            var tabs = labels
-                .Select(
-                    (label, i) =>
-                        GuideFrameAssets.SideTab(
-                            column,
-                            "Tab" + i,
-                            label,
-                            0f,
-                            i * SideTabHeight,
-                            Rail,
-                            SideTabHeight
-                        )
-                )
-                .ToArray();
-            if (tabs.Length > 0)
-                tabs[0].Chosen = true;
-            return tabs;
-        }
-
-        /// <summary>
-        /// A scrolling grid of <paramref name="columns"/> cards between <paramref name="left"/> and
-        /// <paramref name="right"/>, the cards as wide as the room inside the padding allows.
-        /// </summary>
-        public static (RectTransform Content, ScrollRect Scroll, Vector2 Cell) Grid(
-            RectTransform layer,
-            string name,
-            float left,
-            float right,
-            float top,
-            float bottom,
-            int columns,
-            float cellHeight,
-            float padLeft = Edge,
-            float padRight = Inner
-        )
-        {
-            var viewport = Layout.Box(
-                layer,
-                name + "Viewport",
-                left,
-                top,
-                right - left,
-                bottom - top
-            );
-            Layout.Mask(viewport);
-            float width = right - left - padLeft - padRight;
-            var cell = new Vector2((width - Gap * (columns - 1)) / columns, cellHeight);
-            var content = Layout.Grid(
-                viewport,
-                name,
-                cell,
-                Gap,
-                new RectOffset((int)padLeft, (int)padRight, 14, (int)(Gap * 2f)),
-                columns
-            );
-            return (content, Layout.Scroll(viewport, viewport, content), cell);
-        }
 
         /// <summary>A scrolling column of rows between <paramref name="left"/> and <paramref name="right"/>.</summary>
         public static (RectTransform Content, ScrollRect Scroll) Column(
@@ -187,7 +81,7 @@ namespace Baryonyx.Workshop.Editor
         /// <paramref name="held"/> it also has the held thing's marks (<see cref="HeldMarks"/>),
         /// the count at the art's bottom right.
         /// </summary>
-        public static WorkshopGoodRow GoodCard(
+        public static ItemTile GoodCard(
             RectTransform content,
             string name,
             Vector2 cell,
@@ -195,10 +89,7 @@ namespace Baryonyx.Workshop.Editor
             bool held = false
         )
         {
-            var rect = Rect(name, content);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
-            var row = rect.gameObject.AddComponent<WorkshopGoodRow>();
-            row.Card = card;
+            var (row, inside) = ItemTileAssets.Build(Rect(name, content));
             row.Art = ArtBox(inside, (cell.x - artBox) / 2f, 18f, artBox);
             float y = 18f + artBox + 6f;
             row.Name = Layout.Text(
@@ -236,31 +127,9 @@ namespace Baryonyx.Workshop.Editor
                 32f,
                 TextAnchor.MiddleCenter
             );
-            QualityMark(inside, row);
+            ItemTileAssets.QualityMark(row, inside);
             if (held)
                 HeldMarks(inside, row, cell, 18f + artBox);
-            return row;
-        }
-
-        /// <summary>
-        /// A held thing's card (sell and the craft's materials): the art in the middle, the
-        /// quality's letter at the top left, the count at the bottom right, and an "E" tag at the
-        /// top right while someone uses it.
-        /// </summary>
-        public static WorkshopGoodRow OwnedCard(
-            RectTransform content,
-            string name,
-            Vector2 cell,
-            float artBox
-        )
-        {
-            var rect = Rect(name, content);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
-            var row = rect.gameObject.AddComponent<WorkshopGoodRow>();
-            row.Card = card;
-            row.Art = ArtBox(inside, (cell.x - artBox) / 2f, (cell.y - artBox) / 2f, artBox);
-            QualityMark(inside, row);
-            HeldMarks(inside, row, cell, cell.y - 10f);
             return row;
         }
 
@@ -269,7 +138,7 @@ namespace Baryonyx.Workshop.Editor
         /// art in the middle, the chosen piece's quality at the top left, the held and needed
         /// counts at the bottom right, and the name under the card.
         /// </summary>
-        public static WorkshopGoodRow MaterialTile(
+        public static ItemTile MaterialTile(
             RectTransform parent,
             string name,
             float x,
@@ -279,15 +148,13 @@ namespace Baryonyx.Workshop.Editor
         )
         {
             var tile = Layout.Box(parent, name, x, y, size, size + TileNameHeight);
-            var row = tile.gameObject.AddComponent<WorkshopGoodRow>();
+            var row = tile.gameObject.AddComponent<ItemTile>();
             var face = Layout.Box(tile, "Card", 0f, 0f, size, size);
             var (card, inside) = GlassCardAssets.Build(face, pattern: false);
             row.Card = card;
             row.Art = ArtBox(inside, (size - artBox) / 2f, (size - artBox) / 2f - 6f, artBox);
-            QualityMark(inside, row);
-            HeldMarks(inside, row, new Vector2(size, size), size - 8f);
-            row.Count.richText = true;
-            row.Count.fontSize = 28;
+            ItemTileAssets.QualityMark(row, inside);
+            HeldMarks(inside, row, new Vector2(size, size), size - 8f, UiType.Small);
             row.Name = Layout.Text(
                 tile,
                 "Name",
@@ -312,19 +179,16 @@ namespace Baryonyx.Workshop.Editor
         /// art, the multiplier and the effect at it, painted opaque; a piece in use is shaded
         /// with an "E" at the top right.
         /// </summary>
-        public static WorkshopGoodRow PieceCard(
+        public static ItemTile PieceCard(
             RectTransform content,
             string name,
             Vector2 cell,
             float artBox
         )
         {
-            var rect = Rect(name, content);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false, fill: PieceFill);
-            var row = rect.gameObject.AddComponent<WorkshopGoodRow>();
-            row.Card = card;
+            var (row, inside) = ItemTileAssets.Build(Rect(name, content), fill: PieceFill);
             row.Art = ArtBox(inside, (cell.x - artBox) / 2f, 24f, artBox);
-            QualityMark(inside, row);
+            ItemTileAssets.QualityMark(row, inside);
             row.Price = Layout.Text(
                 inside,
                 "Multiplier",
@@ -355,43 +219,16 @@ namespace Baryonyx.Workshop.Editor
             var used = Rect("InUse", inside);
             Stretch(used);
             AddImage(used, new Color(0.01f, 0.01f, 0.04f, 0.55f), false);
-            var tag = Layout.Box(used, "Tag", cell.x - 46f, 10f, 36f, 36f);
-            AddImage(tag, new Color(0.03f, 0.04f, 0.1f, 0.85f), false);
-            var letter = Label(
-                tag,
-                "Label",
-                "E",
-                26,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)letter.transform);
+            ItemTileAssets
+                .CornerTag(row, used, cell.x, "E", UiPalette.TextSub, plate: true, "Tag")
+                .SetActive(true);
             used.gameObject.SetActive(false);
-            row.InUse = used.gameObject;
+            row.Mark = used.gameObject;
             return row;
         }
 
         // 使う物を選ぶ画面の札の、透けない地の色。
         private static readonly Color PieceFill = new(0.09f, 0.11f, 0.22f, 1f);
-
-        /// <summary>
-        /// The quality's letter at a card's top left, in its color with the text's shadow and no
-        /// backing, in front of the art (hidden with its box for things without a quality).
-        /// </summary>
-        private static void QualityMark(RectTransform inside, WorkshopGoodRow row)
-        {
-            // 絵（左右の端は札の端から約34）にかからないよう、左上の角に寄せる。
-            var quality = Layout.Box(inside, "Quality", 4f, 2f, 40f, 48f);
-            row.Quality = Label(
-                quality,
-                "Label",
-                "",
-                36,
-                UiPalette.TextMain,
-                TextAlignmentOptions.Center
-            );
-            Stretch((RectTransform)row.Quality.transform);
-        }
 
         /// <summary>
         /// A held thing's marks on its card: the count with its bottom right at (cell's right
@@ -400,44 +237,29 @@ namespace Baryonyx.Workshop.Editor
         /// </summary>
         private static void HeldMarks(
             RectTransform inside,
-            WorkshopGoodRow row,
+            ItemTile row,
             Vector2 cell,
-            float countBottom
+            float countBottom,
+            float countSize = UiType.Caption
         )
         {
-            row.Count = Layout.Text(
+            ItemTileAssets.CountMark(row, inside, cell.x - 14f, countBottom, countSize);
+            ItemTileAssets.CornerTag(
+                row,
                 inside,
-                "Count",
-                "",
-                26,
-                UiPalette.TextMain,
-                TextAlignmentOptions.BottomRight,
-                cell.x - 96f,
-                countBottom - 36f,
-                82f,
-                36f
-            );
-
-            var tag = Layout.Box(inside, "InUse", cell.x - 46f, 10f, 36f, 36f);
-            AddImage(tag, new Color(0.03f, 0.04f, 0.1f, 0.85f), false);
-            var letter = Label(
-                tag,
-                "Label",
+                cell.x,
                 "E",
-                26,
                 UiPalette.TextSub,
-                TextAlignmentOptions.Center
+                plate: true,
+                "InUse"
             );
-            Stretch((RectTransform)letter.transform);
-            tag.gameObject.SetActive(false);
-            row.InUse = tag.gameObject;
         }
 
         /// <summary>
         /// Puts the rune icon before a row's value (<see cref="ListRow"/>): the value becomes a
         /// price <paramref name="valueWidth"/> wide at the row's right end.
         /// </summary>
-        public static void RuneValue(WorkshopGoodRow row, float valueWidth, float size)
+        public static void RuneValue(ItemTile row, float valueWidth, float size)
         {
             var inside = (RectTransform)row.Price.transform.parent;
             UnityEngine.Object.DestroyImmediate(row.Price.gameObject);
@@ -464,7 +286,7 @@ namespace Baryonyx.Workshop.Editor
         /// on the left, the name, a line under it, and a text <paramref name="valueWidth"/> wide at
         /// the right end, which the name and the line stop short of.
         /// </summary>
-        public static WorkshopGoodRow ListRow(
+        public static ItemTile ListRow(
             RectTransform content,
             string name,
             float height,
@@ -475,7 +297,7 @@ namespace Baryonyx.Workshop.Editor
         {
             var rect = Layout.ListItem(content, name, height);
             var (card, inside) = GlassCardAssets.Build(rect, pattern: false);
-            var row = rect.gameObject.AddComponent<WorkshopGoodRow>();
+            var row = rect.gameObject.AddComponent<ItemTile>();
             row.Card = card;
             var box = Rect("ArtBox", inside);
             Corner(box, new Vector2(0, 0.5f), new Vector2(20f, 0), Vector2.one * artBox);
@@ -558,7 +380,7 @@ namespace Baryonyx.Workshop.Editor
             return image;
         }
 
-        /// <summary>A price: the rune icon and the number after it, aligned by <paramref name="alignment"/>.</summary>
+        /// <summary>A price: the rune icon and the number after it (<see cref="GuideFrameAssets.RuneAmount"/>).</summary>
         public static TMP_Text RunePrice(
             RectTransform parent,
             string name,
@@ -568,25 +390,7 @@ namespace Baryonyx.Workshop.Editor
             float height,
             float size,
             TextAnchor alignment
-        )
-        {
-            var row = Layout.Row(parent, name, x, y, width, height, size * 0.25f, alignment);
-            var cell = Rect("Icon", row);
-            Layout.Fit(cell, size);
-            var icon = Rect("Image", cell);
-            Place(icon, Vector2.zero, Vector2.one * size);
-            SpriteImage(icon, IconRunePath, Color.white).preserveAspect = true;
-            var label = Label(
-                row,
-                "Value",
-                "",
-                size,
-                UiPalette.Gold,
-                TextAlignmentOptions.MidlineLeft
-            );
-            Layout.Fit(label, 0);
-            return label;
-        }
+        ) => GuideFrameAssets.RuneAmount(parent, name, x, y, width, height, size, alignment);
 
         // 戦闘のターン終了と同じ丸いチェックの絵。
         private const string CheckFolder = "Assets/Baryonyx/Features/Combat/UI/Art";
@@ -622,21 +426,6 @@ namespace Baryonyx.Workshop.Editor
             button.SetTintGraphics(new Graphic[] { tickImage });
             return button;
         }
-
-        /// <summary>The text shown in a list's place while it reads, fails or is empty.</summary>
-        public static TMP_Text Status(RectTransform layer, float left, float right, float top) =>
-            Layout.Text(
-                layer,
-                "Status",
-                "",
-                34,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                left,
-                top + 24f,
-                right - left,
-                EntryHeight
-            );
 
         private static RawImage ArtBox(RectTransform parent, float x, float y, float size)
         {

@@ -33,7 +33,7 @@ namespace Baryonyx.Equipment.Editor
         // 枠つきの表示（GuideFramedPanel）で、人の列とタブの間の左の面にステータスと枠、金の2本線の
         // 右の面に持っている装備を置く（PartyChangeScreenAssets）。右の行の効果と増減が入るよう、
         // 左の面を狭くする。設計座標、左上から。
-        private const float Split = 760f;
+        private const float Split = UiSpace.SheetSplit;
         private static readonly Rect Left = ChangeScreen.LeftOf(Split);
 
         // 左は上からステータス・5つの枠。ステータスの下から面の下の余白までを、武器・防具・アクセサリー3つの

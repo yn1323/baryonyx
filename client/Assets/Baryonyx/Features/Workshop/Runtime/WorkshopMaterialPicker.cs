@@ -23,8 +23,8 @@ namespace Baryonyx.Workshop
         public Button Confirm;
         public ScrollRect List;
         public RectTransform Content;
-        public WorkshopGoodRow Template;
-        public List<WorkshopGoodRow> Rows = new();
+        public ItemTile Template;
+        public List<ItemTile> Rows = new();
 
         private readonly HashSet<Component> bound = new();
         private IReadOnlyList<WorkshopOwned> pieces = Array.Empty<WorkshopOwned>();
@@ -94,7 +94,7 @@ namespace Baryonyx.Workshop
 
         /// <summary>Writes a piece's card: the quality's letter, the art, the multiplier and the effect at it.</summary>
         public static void Paint(
-            WorkshopGoodRow row,
+            ItemTile row,
             WorkshopOwned piece,
             LibraryEntryData entry,
             float artBox
@@ -109,8 +109,8 @@ namespace Baryonyx.Workshop
             Set(row.Price, Inventory.Quality.Times(piece.Multiplier));
             Set(row.Detail, WorkshopSellView.GearEffectOf(piece) ?? "");
             // 使っている物は影と「E」で示し、押しても選ばない（Choose）。札を薄くすると透けるため、押せるままにする。
-            if (row.InUse != null)
-                row.InUse.SetActive(piece.User != null);
+            if (row.Mark != null)
+                row.Mark.SetActive(piece.User != null);
         }
 
         private void PaintSelection()

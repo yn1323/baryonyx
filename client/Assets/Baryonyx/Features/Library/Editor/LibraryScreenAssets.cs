@@ -15,6 +15,7 @@ using Baryonyx.UI;
 using Baryonyx.UI.Cards;
 using Baryonyx.UI.Editor;
 using Baryonyx.UI.GuideMenu;
+using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -59,21 +60,18 @@ namespace Baryonyx.Library.Editor
         private const string EnemyArtFolder = "Assets/Baryonyx/Features/Combat/UI/Art/Enemies";
 
         // 一覧（左）と個別（右）の境目と、カードの大きさ。設計座標、左上から。
-        private const float Split = 1180f;
         private const float Gap = 24f;
-        private const float HeadingHeight = 76f;
-        private const float CardGap = 16f;
+        private const float HeadingHeight = GuidePanelTemplate.HeadingHeight;
         private const int Columns = 4;
-        private const float ListTop = Frame.HeaderHeight + HeadingHeight;
-        private static readonly float CardWidth =
-            (Split - Frame.Margin - Gap - CardGap * (Columns - 1)) / Columns;
+        private const float ListTop = GuidePanelTemplate.ListTop;
+
+        // 装備の一覧は左の縦の分類のぶん狭いため、3列にする。
+        private const int GearColumns = 3;
         private const float CardHeight = 300f;
         private const float TileArtBox = 176f;
-        private const float DetailLeft = Split + Gap + 8f;
-        private const float DetailWidth = 1920f - Frame.Margin - DetailLeft;
+        private const float DetailLeft = GuidePanelTemplate.DetailLeft;
+        private const float DetailWidth = GuidePanelTemplate.DetailWidth;
         private const float DetailArtBox = 300f;
-
-        private static readonly Color NewColor = new(1f, 0.843f, 0.4f);
 
         private const string GearLabel = "装備";
 
@@ -398,88 +396,45 @@ namespace Baryonyx.Library.Editor
         )
         {
             GlassCardAssets.EnsureArt();
-            var (view, layer) = Frame.FramedPanel<LibraryCatalogView>(safe, "Library" + kind);
+            // 装備（武器・防具・アクセサリー）は、左の縦の分類で切り替え、一覧を分類の右に置く（横のタブは置かない）。
+            bool gear = Array.IndexOf(GearTabs, kind) >= 0;
+            var (view, panel) = GuidePanelTemplate.GridDetail<LibraryCatalogView>(
+                safe,
+                "Library" + kind,
+                LibraryKinds.Label(kind),
+                gear ? GearColumns : Columns,
+                CardHeight,
+                gear ? GearTabs.Select(LibraryKinds.Label).ToArray() : null,
+                Array.IndexOf(GearTabs, LibraryKind.Accessory)
+            );
+            var layer = panel.Layer;
             view.Guide = guide;
             view.Kind = kind;
             view.Data = data;
             view.Training = training;
             view.TileArtBox = TileArtBox;
             view.DetailArtBox = DetailArtBox;
-
-            Frame.SplitPanes(layer, Split, "ListPane", "DetailPane");
-            if (Array.IndexOf(GearTabs, kind) >= 0)
+            if (gear)
             {
-                view.KindTabs = Frame.Tabs(
-                    layer,
-                    "KindTabs",
-                    GearTabs.Select(LibraryKinds.Label).ToArray(),
-                    Frame.Margin,
-                    Frame.HeaderHeight + 8f,
-                    240f,
-                    HeadingHeight - 16f,
-                    Split - Frame.Margin - Gap - 320f,
-                    Array.IndexOf(GearTabs, LibraryKind.Accessory)
-                );
+                view.KindTabs = panel.Tabs;
                 view.KindTabKeys = GearTabs.Select(LibraryKinds.GuideItemKey).ToArray();
                 for (int i = 0; i < view.KindTabs.Length; i++)
-                    view.KindTabs[i].Chosen = GearTabs[i] == kind;
+                    if (view.KindTabs[i].Lock == null)
+                        view.KindTabs[i].Chosen = GearTabs[i] == kind;
             }
-            else
-                Frame.Heading(
-                    layer,
-                    "ListTitle",
-                    LibraryKinds.Label(kind),
-                    Frame.Margin,
-                    Frame.HeaderHeight,
-                    600f,
-                    HeadingHeight
-                );
-            view.Count = Layout.Text(
-                layer,
-                "Count",
-                "",
-                34,
-                UiPalette.GoldLight,
-                TextAlignmentOptions.MidlineRight,
-                Split - Gap - 300f,
-                Frame.HeaderHeight,
-                300f,
-                HeadingHeight
-            );
+            view.Count = panel.Count;
 
             var entries = data.Entries.Where(entry => entry.Kind == kind).ToArray();
-            var list = Layout.Box(layer, "List", 0f, ListTop, Split, Layout.Design.y - ListTop);
-            var viewport = Layout.Viewport(list);
-            var cards = Layout.Grid(
-                viewport,
-                "Cards",
-                new Vector2(CardWidth, CardHeight),
-                CardGap,
-                new RectOffset(
-                    (int)Frame.Margin,
-                    (int)Gap,
-                    (int)CardGap,
-                    (int)(CardGap + Frame.Margin)
-                ),
-                Columns
-            );
-            view.Tiles = entries.Select(entry => BuildTile(cards, entry)).ToArray();
+            float cardWidth = panel.Cell.x;
+            view.Tiles = entries
+                .Select(entry => BuildTile(panel.Content, entry, cardWidth))
+                .ToArray();
             // 読み込む間に伏せるのは、開いたときに見える先頭のカードだけ（LibraryCatalogView.CoverCards）。
             foreach (var tile in view.Tiles.Take(LibraryCatalogView.CoverCards))
                 GlassCardAssets.AddBack(tile.Card);
-            view.List = Layout.Scroll(list, viewport, cards);
-            view.Status = Layout.Text(
-                layer,
-                "Status",
-                entries.Length == 0 ? LibraryCatalogView.PreparingText : "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                Frame.Margin,
-                ListTop + CardGap,
-                Split - Frame.Margin - Gap,
-                CardHeight
-            );
+            view.List = panel.Scroll;
+            view.Status = panel.Status;
+            view.Status.text = entries.Length == 0 ? LibraryCatalogView.PreparingText : "";
 
             BuildDetail(layer, view);
             // 仮の記録で描き、Prefabを開くと停止中でも一覧が読めるようにする。
@@ -494,16 +449,20 @@ namespace Baryonyx.Library.Editor
             return view.gameObject;
         }
 
-        private static LibraryTileWidget BuildTile(RectTransform content, LibraryEntryData entry)
+        private static ItemTile BuildTile(
+            RectTransform content,
+            LibraryEntryData entry,
+            float cardWidth
+        )
         {
             var rect = Rect("Entry_" + entry.Id, content);
-            var (card, inside) = GlassCardAssets.Build(rect);
-            var widget = new LibraryTileWidget { Id = entry.Id, Card = card };
+            var (widget, inside) = ItemTileAssets.Build(rect, pattern: true);
+            widget.Id = entry.Id;
 
             var box = Layout.Box(
                 inside,
                 "ArtBox",
-                (CardWidth - TileArtBox) / 2f,
+                (cardWidth - TileArtBox) / 2f,
                 20f,
                 TileArtBox,
                 TileArtBox
@@ -518,7 +477,7 @@ namespace Baryonyx.Library.Editor
                 TextAlignmentOptions.MidlineLeft,
                 20f,
                 CardHeight - 96f,
-                CardWidth - 40f,
+                cardWidth - 40f,
                 36f
             );
             widget.Name = Layout.Text(
@@ -530,24 +489,20 @@ namespace Baryonyx.Library.Editor
                 TextAlignmentOptions.MidlineLeft,
                 20f,
                 CardHeight - 60f,
-                CardWidth - 40f,
+                cardWidth - 40f,
                 44f
             );
             Shrink(widget.Name, 20);
-            var badge = Layout.Text(
+            // 新しく載った印は、ほかの札の印と同じく右上に置く。
+            ItemTileAssets.CornerTag(
+                widget,
                 inside,
-                "New",
+                cardWidth,
                 "NEW",
-                26,
-                NewColor,
-                TextAlignmentOptions.MidlineRight,
-                CardWidth - 120f,
-                CardHeight - 96f,
-                100f,
-                36f
+                UiPalette.Gold,
+                plate: false,
+                "New"
             );
-            badge.gameObject.SetActive(false);
-            widget.New = badge.gameObject;
             return widget;
         }
 
@@ -729,62 +684,20 @@ namespace Baryonyx.Library.Editor
         // --- The daily steps -------------------------------------------------------------
 
         private const float StepRowHeight = 96f;
-        private const float StepsLeft = 520f;
-        private const float StepsWidth = 1920f - StepsLeft * 2f;
+        private const float StepsWidth = 1920f - UiSpace.Edge * 2f;
 
         private static GameObject BuildStepsPanel(RectTransform safe, GuideMenuView guide)
         {
-            var (view, layer) = Frame.FramedPanel<LibraryStepsView>(safe, "LibrarySteps");
+            var (view, panel) = GuidePanelTemplate.FullList<LibraryStepsView>(
+                safe,
+                "LibrarySteps",
+                LibraryKinds.Label(LibraryKind.Steps)
+            );
             view.Guide = guide;
-            Frame.Pane(
-                layer,
-                "Pane",
-                0f,
-                Layout.Design.x,
-                Frame.HeaderHeight,
-                Frame.PaneLight,
-                true,
-                true
-            );
-            Frame.Heading(
-                layer,
-                "Title",
-                LibraryKinds.Label(LibraryKind.Steps),
-                StepsLeft,
-                Frame.HeaderHeight,
-                600f,
-                HeadingHeight
-            );
-            view.Count = Layout.Text(
-                layer,
-                "Count",
-                "",
-                34,
-                UiPalette.GoldLight,
-                TextAlignmentOptions.MidlineRight,
-                StepsLeft + StepsWidth - 300f,
-                Frame.HeaderHeight,
-                300f,
-                HeadingHeight
-            );
-
-            var list = Layout.Box(
-                layer,
-                "List",
-                StepsLeft,
-                ListTop,
-                StepsWidth,
-                Layout.Design.y - ListTop
-            );
-            var viewport = Layout.Viewport(list);
-            var rows = Layout.Column(
-                viewport,
-                "Rows",
-                8f,
-                new RectOffset(0, 0, 8, (int)Frame.Margin)
-            );
+            view.Count = panel.Count;
+            var rows = panel.Content;
             view.Rows = rows;
-            view.List = Layout.Scroll(list, viewport, rows);
+            view.List = panel.Scroll;
 
             var row = Layout.ListItem(rows, "Template", StepRowHeight);
             GlassCardAssets.Plaque(row, pattern: false);
@@ -808,9 +721,9 @@ namespace Baryonyx.Library.Editor
                 40,
                 UiPalette.TextMain,
                 TextAlignmentOptions.MidlineRight,
-                360f,
+                StepsWidth / 2f - 300f,
                 0f,
-                260f,
+                300f,
                 StepRowHeight
             );
             template.Steps.richText = true;
@@ -830,18 +743,7 @@ namespace Baryonyx.Library.Editor
             view.Template = template;
             LibraryStepsView.Paint(template, LibraryMemorySource.Mock().Steps[0]);
 
-            view.Status = Layout.Text(
-                layer,
-                "Status",
-                "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                StepsLeft,
-                ListTop + 16f,
-                StepsWidth,
-                StepRowHeight
-            );
+            view.Status = panel.Status;
             return view.gameObject;
         }
     }

@@ -36,27 +36,27 @@ namespace Baryonyx.Workshop.Editor
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (sell, layer) = Panel<WorkshopSellView>(safe, "WorkshopSell");
+            var (sell, panel) = GuidePanelTemplate.GridDetail<WorkshopSellView>(
+                safe,
+                "WorkshopSell",
+                WorkshopStock.TabLabels[0],
+                Columns,
+                CardHeight,
+                WorkshopStock.TabLabels
+            );
+            var layer = panel.Layer;
             sell.Guide = view;
             sell.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             sell.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             sell.ArtBox = CardArt;
             sell.ChosenArtBox = ChosenArt;
-            sell.Tabs = Tabs(layer, WorkshopStock.TabLabels);
-
-            var (content, scroll, cell) = Grid(
-                layer,
-                "Owned",
-                Rail,
-                Split,
-                ListTop,
-                1080f,
-                Columns,
-                CardHeight,
-                Inner
-            );
+            sell.Tabs = panel.Tabs;
+            sell.ListTitle = panel.Title;
+            sell.ListCount = panel.Count;
+            var content = panel.Content;
+            var cell = panel.Cell;
             sell.Content = content;
-            sell.List = scroll;
+            sell.List = panel.Scroll;
             sell.Template = GoodCard(content, "Template", cell, CardArt, held: true);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(sell.Template.Card);
@@ -70,10 +70,11 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopSellView.Paint(row, first[i], EntryOf(sell.Data, first[i]), CardArt);
                 sell.Rows.Add(row);
             }
-            sell.Status = Status(layer, Rail, Split, ListTop);
+            sell.Status = panel.Status;
+            sell.ListCount.text = UiText.Count(first.Count);
 
-            float left = Split + Inner;
-            float right = Layout.Design.x - Edge;
+            float left = GuidePanelTemplate.DetailLeft;
+            float right = GuidePanelTemplate.DetailRight;
             GuideFrameAssets.Heading(
                 layer,
                 "ChosenTitle",
@@ -145,7 +146,7 @@ namespace Baryonyx.Workshop.Editor
         }
 
         // 選んだ物の行：左に絵、名前と品質・効果、右端にルーンのアイコンつきの値段。
-        private static WorkshopGoodRow ChosenRow(RectTransform content, string name)
+        private static ItemTile ChosenRow(RectTransform content, string name)
         {
             var row = ListRow(content, name, ChosenHeight, ChosenArt, 34f, ChosenValue);
             RuneValue(row, ChosenValue, 34f);

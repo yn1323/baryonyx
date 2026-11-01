@@ -184,17 +184,11 @@ namespace Baryonyx.Tavern.Editor
 
             view.List = Layout.Scroll(list, viewport, content);
 
-            view.Status = Layout.Text(
+            view.Status = Frame.ListStatus(
                 layer,
-                "Status",
-                "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
                 ListLeft,
-                CardTop,
-                ListWidth,
-                CardHeight
+                ListLeft + ListWidth,
+                CardTop - UiSpace.Pad
             );
         }
 
@@ -225,25 +219,12 @@ namespace Baryonyx.Tavern.Editor
         {
             var rect = Rect("Remove", content);
             var (card, inside) = GlassCardAssets.Build(rect, dashed: true);
-            var icon = Layout.Box(
+            Frame.RemoveFace(
                 inside,
-                "Icon",
-                FigureCenter - Guide.IconSize / 2f,
-                (CardHeight - Guide.IconSize) / 2f,
-                Guide.IconSize,
-                Guide.IconSize
-            );
-            SpriteImage(icon, Guide.IconClosePath, Color.white);
-            Layout.Text(
-                inside,
-                "Label",
                 PartyRosterPresenter.RemoveLabel,
-                40,
-                UiPalette.TextSub,
-                TextAlignmentOptions.MidlineLeft,
+                FigureCenter - Guide.IconSize / 2f,
                 TextLeft,
-                0f,
-                ListCardWidth - TextLeft - 24f,
+                ListCardWidth - 24f,
                 CardHeight
             );
             return card;

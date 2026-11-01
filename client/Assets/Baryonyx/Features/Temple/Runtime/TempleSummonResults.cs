@@ -12,17 +12,6 @@ using UnityEngine.UI;
 
 namespace Baryonyx.Temple
 {
-    /// <summary>One result's card: the art, the name, the stars and the kind, and the quality's letter.</summary>
-    [Serializable]
-    public sealed class TempleSummonCard
-    {
-        public GlassCard Card;
-        public RawImage Art;
-        public TMP_Text Name;
-        public TMP_Text Stars;
-        public TMP_Text Quality;
-    }
-
     /// <summary>
     /// The window over the temple that shows what a summoning gave: one card, or ten in two rows.
     /// A character, ☆4 or more, and quality S light the card's gold rim. "Again" summons the same
@@ -40,7 +29,7 @@ namespace Baryonyx.Temple
         public Button Close;
         public Button Again;
         public TMP_Text Title;
-        public TempleSummonCard[] Cards = Array.Empty<TempleSummonCard>();
+        public ItemTile[] Cards = Array.Empty<ItemTile>();
 
         private IReadOnlyList<SummonResult> shown = Array.Empty<SummonResult>();
 
@@ -101,12 +90,7 @@ namespace Baryonyx.Temple
         }
 
         /// <summary>Draws one result on a card: its art, name, stars and kind, and quality.</summary>
-        public static void Paint(
-            TempleSummonCard card,
-            SummonResult result,
-            LibraryData data,
-            float artBox
-        )
+        public static void Paint(ItemTile card, SummonResult result, LibraryData data, float artBox)
         {
             var entry =
                 data != null

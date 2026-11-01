@@ -24,19 +24,24 @@ namespace Baryonyx.TravelOffice
         public TMP_Text Count;
     }
 
-    /// <summary>One treasure's tile in the window: its art (or shadow) and stars.</summary>
+    /// <summary>
+    /// One treasure's tile in the window: which treasure it is, and its card (the shared
+    /// <see cref="ItemTile"/>: the art or shadow, the stars, the "？" and the boss's crown).
+    /// </summary>
     [Serializable]
     public sealed class TravelTreasureTile
     {
         public string Id = "";
         public LibraryKind Kind;
         public bool BossOnly;
-        public GlassCard Card;
-        public RawImage Art;
-        public TMP_Text Stars;
+        public ItemTile Tile;
+
+        public GlassCard Card => Tile != null ? Tile.Card : null;
+        public RawImage Art => Tile != null ? Tile.Art : null;
+        public TMP_Text Stars => Tile != null ? Tile.Stars : null;
 
         // まだ見つけていないときに、影の代わりに出す「？」（スキルの札だけ）。
-        public GameObject Unknown;
+        public GameObject Unknown => Tile != null ? Tile.Unknown : null;
     }
 
     /// <summary>
@@ -314,8 +319,9 @@ namespace Baryonyx.TravelOffice
                 Set(
                     row.Grade,
                     !received ? ""
-                    : drop.Quality is { } quality ? $"{stars}  {QualityPalette.Painted(quality)}"
-                    : stars
+                        : drop.Quality is { } quality
+                            ? $"{stars}  {QualityPalette.Painted(quality)}"
+                        : stars
                 );
                 Set(row.Runes, rewards[i].Runes.ToString("N0"));
                 if (row.Received != null)

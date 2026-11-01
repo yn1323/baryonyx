@@ -69,6 +69,9 @@ Play Modeを止めた直後に `EditorSceneManager.OpenScene` を呼ぶと、Pla
 - GameビューのRender Texture（`PlayModeView.m_TargetTexture`）をリフレクションで描かせて読む方法も試したが、Gameビュー自身の描画の外では黒い画像になった。
 - 一時カメラやRender Textureを作って撮ったときは、`finally` で必ず破棄する。カメラが残るとGameビューを塗りつぶす。
 
+- **手前のUIは、カメラの最前面の層へ移して撮る**：3Dの舞台やドット絵の板がある画面（戦闘など）では、手前のCanvasを `Screen Space - Camera` にするだけだと、舞台の板がUIの上に描かれた。CanvasをいちばんのSorting Layerにし、`sortingOrder` を大きく足し、`planeDistance` をカメラのnearのすぐ先にして撮る。URPでは、深度だけを消す一時カメラやOverlayのカメラを重ねる方法では写らなかった。停止中の表示の複製（名前の末尾が「(停止中の表示)」）は `FindObjectsByType` で見つからないため、`Resources.FindObjectsOfTypeAll` で探す。複製は次のフレームで描かれるため、表示と撮影は別の評価に分ける。
+- **日本語が四角や別の字に化けたら、フォントと影付きの材質を読み直す**<a id="フォントのメモリだけの字化け"></a>：APKのビルドや全アセットの読み込み直しのあと、Editorのメモリの中だけでKiwi Maruの字の表やアトラスがずれ、撮った画面の文字が化けた。フォントの本体と部品を `Resources.UnloadAsset` で外して読み直し、`ReadFontAssetDefinition()` を呼ぶ。影付きの材質（`GuideMenu/GuideTextShadow.mat`・`Fonts/TextShadow.mat`）も外して読み直し、`TMP_MaterialManager.ClearMaterials()` を呼んで、開いているシーンを開き直す。アトラスは2枚あり、「… + Kiwi Maru - Regular Atlas 1」の材質は2枚目を指すため、名前で1枚目にそろえない。ファイルには差分を出さない。
+
 **変化が小さい効果は、切り出して並べて比べる。**
 見た目の変化が小さい効果（手前と奥のぼけ、弱い光など）は、全体を縮小した比較では見分けられなかった。
 変更前後の撮影から、同じ範囲（光源の周り、画面の下半分など）を元の解像度で切り出して並べて比べる。

@@ -86,18 +86,7 @@ namespace Baryonyx.Tavern.Editor
 
             view.List = Layout.Scroll(list, viewport, content);
 
-            view.Status = Layout.Text(
-                layer,
-                "Status",
-                "",
-                36,
-                UiPalette.TextSub,
-                TextAlignmentOptions.Center,
-                Frame.Margin,
-                ListTop + CardGap,
-                1920f - Frame.Margin * 2f,
-                CardHeight
-            );
+            view.Status = Frame.ListStatus(layer, Frame.Margin, 1920f - Frame.Margin, ListTop);
 
             // 仮データの編成と装備で描き、Prefabを開くと停止中でも読めるようにする。
             view.Render(PartyFormation.From(party), EquipmentLocalSource.Starter());

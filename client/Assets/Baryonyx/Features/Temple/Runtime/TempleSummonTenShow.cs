@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baryonyx.Combat.Presentation;
 using Baryonyx.Library;
+using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,7 +23,7 @@ namespace Baryonyx.Temple
         public BattleVfxImage CardGlow;
         public RectTransform Card;
         public CanvasGroup CardGroup;
-        public TempleSummonCard CardFace;
+        public ItemTile CardFace;
     }
 
     /// <summary>

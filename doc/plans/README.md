@@ -33,6 +33,7 @@
 | 2026-10-22 | [冒険の戦闘のターン順と敵の技](2026-10-22-enemy-skills-turn-order.md) | 完了（人が遊んだ感触は未確認） | [戦闘システム](../features/combat.md)・[探索とダンジョンの進行の戦闘の試し](../features/stage-progression.md#戦闘の試し) |
 | 2026-10-25 | [エネルギー3固定と捨て札のルール、カードの作り直し](2026-10-25-fixed-energy-cards.md) | 完了（commit前。実機と自動対戦は未確認） | [戦闘システム](../features/combat.md)・[技・カードの定義](../catalog/skills/README.md)・[固有スキルの各段階の効果](../features/skill-evolution.md#各段階の効果) |
 | 2026-10-27 | [街道の世界地図をルーンで開き、日・週・月の出来事を起こす](2026-10-27-world-map-rune-squares.md) | 進行中 | [探索とダンジョンの進行の街道](../features/stage-progression.md#街道を開くルーンと日週月の出来事2026-10-27)・[ルーンの用途](../features/economy.md#ルーンの用途) |
+| 2026-11-01 | [画面のデザインシステムとテンプレートで、似た画面を共通化する](2026-11-01-ui-design-system.md) | 進行中（第0段まで） | [UI設計ルールの共通の部品](../rules/ui-design.md#共通の部品)・[ui-tone-manner](../../.agents/skills/ui-tone-manner/SKILL.md) |
 
 Google認証をHealth Connect接続の前提とする古い計画がある。
 今は、Health Connectの連携とGoogle接続を独立して扱う（[健康データの読み取りと保存](../features/health-data.md)）。

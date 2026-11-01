@@ -23,8 +23,7 @@ namespace Baryonyx.Adventure.Editor
     /// </summary>
     public static class AdventureResultAssets
     {
-        private static readonly Color Veil = new(0.012f, 0.02f, 0.04f, 0.72f);
-        private static readonly Vector2 WindowSize = new(1440, 820);
+        private static readonly Vector2 WindowSize = new(UiSpace.WindowMedium, 820);
 
         // 見出しの行。
         private const float HeaderY = 320f;
@@ -60,7 +59,7 @@ namespace Baryonyx.Adventure.Editor
             var panel = root.gameObject.AddComponent<AdventureResultPanel>();
             panel.Panel = root;
             panel.Dot = Dot;
-            AddImage(root, Veil, true);
+            AddImage(root, UiPalette.Veil, true);
             var safe = SafeArea(root);
 
             var window = Rect("Window", safe);
@@ -83,13 +82,15 @@ namespace Baryonyx.Adventure.Editor
             var glow = Rect("Glow", window);
             Place(glow, new Vector2(-60, HeaderY), new Vector2(760, 170));
             var rays = new Graphic[] { SpriteImage(glow, UiArt.SoftSpotPath, GlowColor) }.ToList();
-            foreach (var (length, width, angle, y) in new[]
-            {
-                (820f, 8f, 5f, 4f),
-                (640f, 5f, -4f, -10f),
-                (720f, 6f, 13f, 14f),
-                (560f, 4f, -12f, -2f),
-            })
+            foreach (
+                var (length, width, angle, y) in new[]
+                {
+                    (820f, 8f, 5f, 4f),
+                    (640f, 5f, -4f, -10f),
+                    (720f, 6f, 13f, 14f),
+                    (560f, 4f, -12f, -2f),
+                }
+            )
             {
                 var ray = Rect("Ray", window);
                 Place(ray, new Vector2(-60, HeaderY + y), new Vector2(length, width));
@@ -99,14 +100,16 @@ namespace Baryonyx.Adventure.Editor
             panel.Rays = rays.ToArray();
 
             var twinkles = new List<CanvasGroup>();
-            foreach (var (at, size) in new[]
-            {
-                (new Vector2(-420, HeaderY + 40), 40f),
-                (new Vector2(-330, HeaderY - 48), 26f),
-                (new Vector2(-120, HeaderY + 70), 22f),
-                (new Vector2(330, HeaderY + 44), 34f),
-                (new Vector2(440, HeaderY - 30), 24f),
-            })
+            foreach (
+                var (at, size) in new[]
+                {
+                    (new Vector2(-420, HeaderY + 40), 40f),
+                    (new Vector2(-330, HeaderY - 48), 26f),
+                    (new Vector2(-120, HeaderY + 70), 22f),
+                    (new Vector2(330, HeaderY + 44), 34f),
+                    (new Vector2(440, HeaderY - 30), 24f),
+                }
+            )
                 twinkles.Add(Twinkle(window, at, size));
             panel.Twinkles = twinkles.ToArray();
 
@@ -117,8 +120,22 @@ namespace Baryonyx.Adventure.Editor
             row.childAlignment = TextAnchor.LowerCenter;
             row.childControlWidth = row.childControlHeight = true;
             row.childForceExpandWidth = row.childForceExpandHeight = false;
-            panel.Title = Label(header, "Title", "クリア！", TitleSize, UiPalette.GoldLight, TextAlignmentOptions.Bottom);
-            panel.Place = Label(header, "Place", "", PlaceSize, UiPalette.TextMain, TextAlignmentOptions.Bottom);
+            panel.Title = Label(
+                header,
+                "Title",
+                "クリア！",
+                TitleSize,
+                UiPalette.GoldLight,
+                TextAlignmentOptions.Bottom
+            );
+            panel.Place = Label(
+                header,
+                "Place",
+                "",
+                PlaceSize,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Bottom
+            );
             // 大きな見出しと小さな場所の文字の下の線をそろえる。
             panel.Place.margin = new Vector4(0, 0, 0, 14);
         }
@@ -152,8 +169,13 @@ namespace Baryonyx.Adventure.Editor
                 var rect = Rect($"Member{i + 1}", window);
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 0f);
-                rect.anchoredPosition = new Vector2((i - (members.Length - 1) / 2f) * MemberGap, FeetY - 14f);
-                var texture = ArtAssets.LoadTexture($"{CharacterArtFolder}/Battle{SampleParty[i]}.aseprite");
+                rect.anchoredPosition = new Vector2(
+                    (i - (members.Length - 1) / 2f) * MemberGap,
+                    FeetY - 14f
+                );
+                var texture = ArtAssets.LoadTexture(
+                    $"{CharacterArtFolder}/Battle{SampleParty[i]}.aseprite"
+                );
                 rect.sizeDelta = new Vector2(texture.width, texture.height) * Dot;
                 var image = rect.gameObject.AddComponent<RawImage>();
                 image.texture = texture;
@@ -199,34 +221,64 @@ namespace Baryonyx.Adventure.Editor
             panel.Cells = content;
             panel.CellTemplate = Cell(content);
 
-            panel.Empty = Label(window, "Empty", AdventureTexts.NothingBroughtBack, 36, UiPalette.TextSub, TextAlignmentOptions.Center);
-            Place((RectTransform)panel.Empty.transform, new Vector2(0, GridY), new Vector2(width, 60));
+            panel.Empty = Label(
+                window,
+                "Empty",
+                AdventureTexts.NothingBroughtBack,
+                36,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
+            Place(
+                (RectTransform)panel.Empty.transform,
+                new Vector2(0, GridY),
+                new Vector2(width, 60)
+            );
             panel.Empty.gameObject.SetActive(false);
         }
 
-        // 札：左に絵、右に品質の文字と☆と数、下に名前。
-        private static AdventureResultCell Cell(RectTransform content)
+        // 札：ほかの持ち物の札と同じく、左上に品質の文字、右下に数、下に名前（doc/rules/ui-design.md の共通の部品）。
+        // 絵は左寄せ、☆は絵の右に置く。
+        private static ItemTile Cell(RectTransform content)
         {
             var rect = Rect("CellTemplate", content);
-            var (card, inside) = GlassCardAssets.Build(rect, pattern: false, fill: GlassCardAssets.SceneFillColor);
-            var cell = rect.gameObject.AddComponent<AdventureResultCell>();
-            cell.Group = card.Group;
+            var (cell, inside) = ItemTileAssets.Build(rect, fill: GlassCardAssets.SceneFillColor);
 
             var art = Rect("Art", inside);
-            Place(art, new Vector2(-CellSize.x / 2f + 14f + ArtSize / 2f, 12f), Vector2.one * ArtSize);
-            cell.Art = art.gameObject.AddComponent<Image>();
-            cell.Art.preserveAspect = true;
+            Place(
+                art,
+                new Vector2(-CellSize.x / 2f + 18f + ArtSize / 2f, 10f),
+                Vector2.one * ArtSize
+            );
+            cell.Art = art.gameObject.AddComponent<RawImage>();
             cell.Art.raycastTarget = false;
 
-            cell.Quality = Label(inside, "Quality", "B", 36, UiPalette.TextMain, TextAlignmentOptions.Left);
-            Place((RectTransform)cell.Quality.transform, new Vector2(32f, 28f), new Vector2(52, 44));
-            cell.Count = Label(inside, "Count", "×1", 24, UiPalette.TextMain, TextAlignmentOptions.Right);
-            Place((RectTransform)cell.Count.transform, new Vector2(70f, 26f), new Vector2(40, 34));
-            cell.Stars = Label(inside, "Stars", "★", 20, UiPalette.GoldLight, TextAlignmentOptions.Left);
-            Place((RectTransform)cell.Stars.transform, new Vector2(46f, -6f), new Vector2(84, 28));
+            ItemTileAssets.QualityMark(cell, inside).text = "B";
+            cell.Stars = Label(
+                inside,
+                "Stars",
+                "★",
+                20,
+                UiPalette.GoldLight,
+                TextAlignmentOptions.Left
+            );
+            Place((RectTransform)cell.Stars.transform, new Vector2(52f, 22f), new Vector2(84, 28));
             GuideMenuAssets.Shrink(cell.Stars, 12);
-            cell.Name = Label(inside, "Name", "", 22, UiPalette.TextSub, TextAlignmentOptions.Center);
-            Place((RectTransform)cell.Name.transform, new Vector2(0f, -42f), new Vector2(CellSize.x - 16f, 30f));
+            // 数は、下端の名前の行の上の右端に置く。
+            ItemTileAssets.CountMark(cell, inside, CellSize.x - 10f, CellSize.y - 34f).text = "×1";
+            cell.Name = Label(
+                inside,
+                "Name",
+                "",
+                22,
+                UiPalette.TextSub,
+                TextAlignmentOptions.Center
+            );
+            Place(
+                (RectTransform)cell.Name.transform,
+                new Vector2(0f, -42f),
+                new Vector2(CellSize.x - 16f, 30f)
+            );
             GuideMenuAssets.Shrink(cell.Name, 14);
 
             rect.gameObject.SetActive(false);
@@ -239,7 +291,14 @@ namespace Baryonyx.Adventure.Editor
             var row = Rect("Home", window);
             Place(row, new Vector2(0, HomeY), HomeSize);
             var (button, _, card) = GlassCardAssets.Choice(row, pattern: false);
-            var label = Label(card, "Label", AdventureTexts.HomeChoice, 44, UiPalette.TextMain, TextAlignmentOptions.Center);
+            var label = Label(
+                card,
+                "Label",
+                AdventureTexts.HomeChoice,
+                44,
+                UiPalette.TextMain,
+                TextAlignmentOptions.Center
+            );
             Stretch((RectTransform)label.transform);
             panel.Home = button;
         }

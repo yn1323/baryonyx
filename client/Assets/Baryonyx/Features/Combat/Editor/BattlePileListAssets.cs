@@ -1,4 +1,5 @@
 using Baryonyx.Combat.Presentation;
+using Baryonyx.UI;
 using Baryonyx.UI.GuideMenu.Editor;
 using TMPro;
 using UnityEditor;
@@ -17,12 +18,10 @@ namespace Baryonyx.Combat.Editor
     /// </summary>
     public static class BattlePileListAssets
     {
-        // Linear colour makes a thin veil look thinner than its alpha: this one hides the battle.
-        private static readonly Color Veil = new(0.01f, 0.02f, 0.05f, 0.96f);
+        // Linear colour makes a thin veil look thinner than its alpha: the deep veil hides the battle.
+        private static readonly Color Veil = UiPalette.VeilDeep;
 
         private const float HeaderHeight = 96f;
-        private const float CrossHit = 96f;
-        private const float CrossSize = 64f;
 
         // The pictures of the counters, in the order of BattlePile.
         private static readonly string[] IconArt = { "DeckIcon", "DiscardIcon", "ExhaustIcon" };
@@ -92,19 +91,33 @@ namespace Baryonyx.Combat.Editor
                 list.Icons[i] = icon.gameObject;
             }
 
-            var title = Label(header, "Title", "", 50, Color.white, TextAlignmentOptions.MidlineLeft);
-            Corner(title.rectTransform, new Vector2(0f, 0.5f), new Vector2(110f, 0f), new Vector2(600f, HeaderHeight));
+            var title = Label(
+                header,
+                "Title",
+                "",
+                50,
+                Color.white,
+                TextAlignmentOptions.MidlineLeft
+            );
+            Corner(
+                title.rectTransform,
+                new Vector2(0f, 0.5f),
+                new Vector2(110f, 0f),
+                new Vector2(600f, HeaderHeight)
+            );
             title.textWrappingMode = TextWrappingModes.NoWrap;
             title.richText = true;
             title.raycastTarget = false;
             list.Title = title;
 
             var cross = Rect("Close", header);
-            Corner(cross, new Vector2(1f, 0.5f), Vector2.zero, Vector2.one * CrossHit);
-            list.CloseButton = AddTintButton(cross, AddImage(cross, Color.clear, true));
-            var mark = Rect("Icon", cross);
-            Place(mark, Vector2.zero, Vector2.one * CrossSize);
-            SpriteImage(mark, GuideMenuAssets.IconClosePath, Color.white);
+            Corner(
+                cross,
+                new Vector2(1f, 0.5f),
+                Vector2.zero,
+                Vector2.one * GuidePanelLayout.HitSize
+            );
+            list.CloseButton = GuideFrameAssets.CloseMark(cross);
         }
 
         // The battle's card the list copies for each card, face up and taking no taps (the list
@@ -125,7 +138,12 @@ namespace Baryonyx.Combat.Editor
             list.ZoomCard = FaceUpCard(root, "ZoomCard", new Vector2(0.5f, 0.5f), list.CardScale);
         }
 
-        private static BattleInspectCardView FaceUpCard(RectTransform parent, string name, Vector2 anchor, float scale)
+        private static BattleInspectCardView FaceUpCard(
+            RectTransform parent,
+            string name,
+            Vector2 anchor,
+            float scale
+        )
         {
             var instance = InstantiatePrefab(BattleInspectAssets.CardPrefabPath, name, parent);
             var card = (RectTransform)instance.transform;

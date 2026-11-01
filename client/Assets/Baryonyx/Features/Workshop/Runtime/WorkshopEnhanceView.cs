@@ -65,9 +65,13 @@ namespace Baryonyx.Workshop
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
         public ScrollRect List;
         public RectTransform Content;
-        public WorkshopGoodRow Template;
-        public List<WorkshopGoodRow> Rows = new();
+        public ItemTile Template;
+        public List<ItemTile> Rows = new();
         public TMP_Text Status;
+
+        // 一覧の上の見出し（選んだ分類の名前）と、並べた物の数。
+        public TMP_Text ListTitle;
+        public TMP_Text ListCount;
 
         // 一覧の下：磨き石4色。札を押すたびにその色を使う数が増え、右上の×でやめる。
         public WorkshopMaterialChip[] Chips = Array.Empty<WorkshopMaterialChip>();
@@ -283,6 +287,8 @@ namespace Baryonyx.Workshop
                     Rows[i].Card.Selected = false;
             }
             Set(Status, RowCount == 0 ? EmptyText(tab) : "");
+            Set(ListTitle, TabLabels[(int)tab]);
+            Set(ListCount, RowCount == 0 ? "" : UiText.Count(RowCount));
             // 強化できる物のない場所の伏せた行も、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(RowCount).Select(row => row.gameObject),
@@ -856,7 +862,7 @@ namespace Baryonyx.Workshop
 
         /// <summary>Writes a target on a row. The generator bakes the mock targets with it too.</summary>
         public static void PaintTarget(
-            WorkshopGoodRow row,
+            ItemTile row,
             EnhancementTarget target,
             string detail,
             LibraryEntryData entry,
@@ -955,6 +961,8 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverRows);
             cover.Cover(Rows.Take(CoverRows).Select(row => row.gameObject));
             Set(Status, "");
+            // 数が読めないうちは「-」を出す。
+            Set(ListCount, "-");
             RefreshMaterials();
             RefreshInfo();
         }
@@ -966,6 +974,7 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
+            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)

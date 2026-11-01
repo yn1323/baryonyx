@@ -44,27 +44,27 @@ namespace Baryonyx.Workshop.Editor
 
         public static GameObject BuildPanel(RectTransform safe, GuideMenuView view)
         {
-            var (buy, layer) = Panel<WorkshopBuyView>(safe, "WorkshopBuy");
+            var (buy, panel) = GuidePanelTemplate.GridDetail<WorkshopBuyView>(
+                safe,
+                "WorkshopBuy",
+                WorkshopBuyView.TabLabels[0],
+                Columns,
+                CardHeight,
+                WorkshopBuyView.TabLabels
+            );
+            var layer = panel.Layer;
             buy.Guide = view;
             buy.Data = AssetDatabase.LoadAssetAtPath<LibraryData>(LibraryScreenAssets.DataPath);
             buy.Party = AssetDatabase.LoadAssetAtPath<PartyMockData>(PartyAssets.DataPath);
             buy.ArtBox = CardArt;
             buy.DetailArtBox = DetailArt;
-            buy.Tabs = Tabs(layer, WorkshopBuyView.TabLabels);
-
-            var (content, scroll, cell) = Grid(
-                layer,
-                "Goods",
-                Rail,
-                Split,
-                ListTop,
-                1080f,
-                Columns,
-                CardHeight,
-                Inner
-            );
+            buy.Tabs = panel.Tabs;
+            buy.ListTitle = panel.Title;
+            buy.ListCount = panel.Count;
+            var content = panel.Content;
+            var cell = panel.Cell;
             buy.Content = content;
-            buy.List = scroll;
+            buy.List = panel.Scroll;
             buy.Template = GoodCard(content, "Template", cell, CardArt);
             // 読み込む間は、この写しを伏せて一覧を埋める（GlassCardCover）。
             GlassCardAssets.AddBack(buy.Template.Card);
@@ -81,10 +81,11 @@ namespace Baryonyx.Workshop.Editor
                 WorkshopBuyView.Paint(row, goods[i], CardArt);
                 buy.Rows.Add(row);
             }
-            buy.Status = Status(layer, Rail, Split, ListTop);
+            buy.Status = panel.Status;
+            buy.ListCount.text = UiText.Count(goods.Length);
 
-            float left = Split + Inner;
-            float right = Layout.Design.x - Edge;
+            float left = GuidePanelTemplate.DetailLeft;
+            float right = GuidePanelTemplate.DetailRight;
             float width = right - left;
 
             // 右の面の中身（品質、絵かカード、名前、☆、効果、持っている数）を縦に並べ、

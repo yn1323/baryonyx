@@ -42,14 +42,18 @@ namespace Baryonyx.Workshop
         public GuideTab[] Tabs = Array.Empty<GuideTab>();
         public ScrollRect List;
         public RectTransform Content;
-        public WorkshopGoodRow Template;
-        public List<WorkshopGoodRow> Rows = new();
+        public ItemTile Template;
+        public List<ItemTile> Rows = new();
         public TMP_Text Status;
+
+        // 一覧の上の見出し（選んだ分類の名前）と、並べた持ち物の数。
+        public TMP_Text ListTitle;
+        public TMP_Text ListCount;
 
         // 右の面：選んだ物の行と、合計。
         public RectTransform ChosenContent;
-        public WorkshopGoodRow ChosenTemplate;
-        public List<WorkshopGoodRow> ChosenRows = new();
+        public ItemTile ChosenTemplate;
+        public List<ItemTile> ChosenRows = new();
         public TMP_Text Total;
         public Button Confirm;
 
@@ -132,6 +136,8 @@ namespace Baryonyx.Workshop
                     Paint(Rows[i], shown[i], EntryOf(shown[i]), ArtBox);
             }
             Set(Status, shown.Count == 0 ? EmptyText(WorkshopStock.TabLabels[tab]) : "");
+            Set(ListTitle, WorkshopStock.TabLabels[tab]);
+            Set(ListCount, shown.Count == 0 ? "" : UiText.Count(shown.Count));
             // 持ち物のない場所の伏せたカードも、めくってから静かに消す。
             cover.Reveal(
                 Rows.Take(shown.Count).Select(row => row.gameObject),
@@ -228,7 +234,7 @@ namespace Baryonyx.Workshop
 
         /// <summary>Writes a held thing on its card. The generator bakes the mock things with it too.</summary>
         public static void Paint(
-            WorkshopGoodRow row,
+            ItemTile row,
             WorkshopOwned thing,
             LibraryEntryData entry,
             float artBox
@@ -246,8 +252,8 @@ namespace Baryonyx.Workshop
                 row.Quality.transform.parent.gameObject.SetActive(thing.HasQuality);
             }
             Set(row.Count, thing.Kind == LibraryKind.Item ? "×" + thing.Count : "");
-            if (row.InUse != null)
-                row.InUse.SetActive(thing.User != null);
+            if (row.Mark != null)
+                row.Mark.SetActive(thing.User != null);
             if (row.Card != null)
             {
                 row.Card.Selected = false;
@@ -260,7 +266,7 @@ namespace Baryonyx.Workshop
         /// its effect at its own multiplier under the quality.
         /// </summary>
         public static void PaintChosen(
-            WorkshopGoodRow row,
+            ItemTile row,
             WorkshopOwned thing,
             LibraryEntryData entry,
             float artBox
@@ -370,6 +376,8 @@ namespace Baryonyx.Workshop
                 Rows[i].gameObject.SetActive(i < CoverCards);
             cover.Cover(Rows.Take(CoverCards).Select(row => row.gameObject));
             Set(Status, "");
+            // 数が読めないうちは「-」を出す。
+            Set(ListCount, "-");
             RefreshChosen();
         }
 
@@ -380,6 +388,7 @@ namespace Baryonyx.Workshop
                 if (row != null)
                     row.gameObject.SetActive(false);
             Set(Status, LoadFailedText);
+            Set(ListCount, "-");
         }
 
         private static void Set(TMP_Text label, string text)
