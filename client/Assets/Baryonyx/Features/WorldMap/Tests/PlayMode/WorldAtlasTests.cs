@@ -86,6 +86,36 @@ namespace Baryonyx.Tests.PlayMode
             );
         }
 
+        // 冒険の世界地図では、エリアマップの左上（家）も世界地図を経ずにすぐHomeへ出る。駒の位置は
+        // そのエリアマップに残り、次に地図を開くとそこから始まる。
+        [UnityTest]
+        public IEnumerator HomeFromAnAreaMapLeavesAtOnceAndTheAreaOpensNextTime()
+        {
+            var navigator = Spawn();
+            int left = 0;
+            navigator.Leave = () => left++;
+            yield return null;
+            Assert.That(navigator.Open("marina", null), Is.True);
+            yield return null;
+            var coast = navigator.Current;
+            Assert.That(coast.Back.gameObject.activeSelf, Is.True);
+
+            coast.Back.onClick.Invoke();
+            Assert.That(left, Is.EqualTo(1));
+            Assert.That(navigator.Switching, Is.False);
+            Assert.That(navigator.CurrentKey, Is.EqualTo("marina"));
+            Assert.That(WorldAtlasNavigator.Remembered(), Is.EqualTo(("marina", "gate-marina")));
+
+            Object.Destroy(atlas);
+            Object.Destroy(events);
+            yield return null;
+            navigator = Spawn();
+            yield return null;
+            Assert.That(navigator.CurrentKey, Is.EqualTo("marina"));
+            coast = navigator.Current;
+            Assert.That(coast.Graph.Nodes[coast.PartyAt].Id, Is.EqualTo("gate-marina"));
+        }
+
         // 端末に覚えた位置が、開けていないマス（消費を止めて歩いた、DBを作り直した）なら、開けたマスを読んだあと
         // 地図の始まりへ戻す。そのままだと、隣がつながっていないとしてサーバーに支払いを断られ、先へ進めない。
         [UnityTest]

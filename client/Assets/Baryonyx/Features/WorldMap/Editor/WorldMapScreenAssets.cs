@@ -29,6 +29,7 @@ namespace Baryonyx.WorldMap.Editor
         public const string BackgroundPath = ArtFolder + "/WorldMapBackground.png";
         public const string HiddenNodePath = ArtFolder + "/WorldNodeLocked.png";
         public const string IconDungeonsPath = ArtFolder + "/IconDungeons.png";
+        public const string IconHomePath = ArtFolder + "/IconHome.png";
 
         // 背景の1画素を3pxで出す。地図は横に約2.4画面、縦に約2.8画面ぶんになる。
         private const float Scale = 3f;
@@ -202,6 +203,20 @@ namespace Baryonyx.WorldMap.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             ArtAssets.ImportSprite(IconDungeonsPath, Vector4.zero, FilterMode.Point);
             return ArtAssets.ImportTexture(BackgroundPath, FilterMode.Point);
+        }
+
+        /// <summary>
+        /// Draws the house on the nested world map's button back to Home, as a plain shape
+        /// like the guide's back arrow, with the colour of the text baked in.
+        /// </summary>
+        public static void WriteHomeIcon()
+        {
+            Directory.CreateDirectory(ArtFolder);
+            new VectorIcon()
+                .Stroke(IconShape.Path("M8 31 L32 10 L56 31"), 7f)
+                .Fill(IconShape.Path("M15 32 L32 17 L49 32 L49 56 L15 56Z"), 3.5f)
+                .Cut(IconShape.Rect(27f, 40f, 10f, 16f))
+                .Save(IconHomePath, GuideMenuAssets.SmoothIconTextureSize, UiPalette.TextMain);
         }
 
         // 出来事ごとの台。どのマスに何を置くかは、地図が Play 中に配置のJSONから読む。
@@ -389,6 +404,7 @@ namespace Baryonyx.WorldMap.Editor
         }
 
         // 画面の端の部品：左上のもどる、右上の今いる場所、右下のダンジョン一覧。
+        // 入れ子の地図の左上は、どの地図からでもHomeへ戻るため、家の形にする（2026-11-01、ユーザー）。
         private static void BuildControls(RectTransform root, WorldMapView view, bool dungeons)
         {
             var safe = SafeArea(root);
@@ -397,7 +413,7 @@ namespace Baryonyx.WorldMap.Editor
                 "Back",
                 new Vector2(0f, 1f),
                 new Vector2(Margin, -Margin),
-                GuideMenuAssets.IconBackPath
+                view.Layout != null ? IconHomePath : GuideMenuAssets.IconBackPath
             );
             if (dungeons)
                 view.Dungeons = RoundButton(

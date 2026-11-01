@@ -36,8 +36,11 @@ namespace Baryonyx.WorldMap
         public WorldMapView Current => current;
         public string CurrentKey => currentKey;
 
-        // 世界地図のもどるで出る先と、ダンジョン一覧を開く処理。冒険の世界地図のシーンが渡す。
-        // 渡さなければ（デバッグルームの試作では）、世界地図にもどるとダンジョン一覧を出さない。
+        // 左上のボタンで出る先と、ダンジョン一覧を開く処理。冒険の世界地図のシーンが渡す。
+        // 出る先を渡すと、エリアマップからも世界地図を経ずにすぐ出る。駒の位置は残るため、次に開くと
+        // そのエリアマップから始まる（2026-11-01、ユーザー）。
+        // 渡さなければ（デバッグルームの試作では）、世界地図にもどるとダンジョン一覧を出さず、
+        // エリアマップの左上は世界地図へ戻る。
         public Action Leave { get; set; }
         public Action OpenDungeons { get; set; }
 
@@ -271,9 +274,9 @@ namespace Baryonyx.WorldMap
         {
             if (Switching)
                 return;
-            if (currentKey == WorldAtlasLayout.WorldKey)
-                Leave?.Invoke();
-            else
+            if (Leave != null)
+                Leave();
+            else if (currentKey != WorldAtlasLayout.WorldKey)
                 StartCoroutine(
                     Switch(
                         WorldAtlasLayout.WorldKey,

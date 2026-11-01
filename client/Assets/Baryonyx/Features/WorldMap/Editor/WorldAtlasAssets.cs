@@ -84,6 +84,7 @@ namespace Baryonyx.WorldMap.Editor
         {
             EditorGuard.RequireEditMode();
             Directory.CreateDirectory(PrefabFolder);
+            WorldMapScreenAssets.WriteHomeIcon();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             foreach (var key in Keys)
                 BuildMap(key);

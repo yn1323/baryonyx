@@ -1039,7 +1039,7 @@
 
 ## [features/world-atlas.md](features/world-atlas.md)
 
-64KB・434行
+65KB・435行
 
 - 8: # 入れ子の地図（世界地図と地域のエリアマップ）
 - 19: ## 確定している方針
