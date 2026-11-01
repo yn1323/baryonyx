@@ -105,6 +105,17 @@ namespace Baryonyx.Tests.PlayMode
                 $"The dialog \"{title}\" did not show (it shows \"{dialog.TitleText}\")."
             );
 
+        private static IEnumerator WaitForResult(
+            AdventureResultPanel result,
+            string title,
+            float seconds = 8f
+        ) =>
+            SceneTests.WaitUntil(
+                () => result.IsOpen && result.TitleText == title,
+                seconds,
+                $"The result \"{title}\" did not show (it shows \"{result.TitleText}\")."
+            );
+
         // 宝箱から覚醒が出たら、中身を見せたあとに「宝箱の覚醒」を開き、祭壇と同じ手順で固有スキルを
         // 1段覚醒させる。選ぶまで閉じない（doc/features/skill-evolution.md の覚醒が起きる場面）。
         [UnityTest]
@@ -616,14 +627,15 @@ namespace Baryonyx.Tests.PlayMode
             view.Dialog.Choose(AdventureTexts.QuitChoice);
             Assert.That(view.Dialog.TitleText, Is.EqualTo(AdventureTexts.QuitTitle));
             view.Dialog.Choose(AdventureTexts.QuitChoice);
-            yield return WaitForDialog(view.Dialog, "帰還");
-            Assert.That(
-                view.Dialog.BodyText,
-                Does.StartWith(Forest + "　第2層まで到達\n最深記録を更新！")
-            );
+            yield return WaitForResult(view.Result, "帰還");
+            Assert.That(view.Dialog.IsShown, Is.False);
+            Assert.That(view.Result.PlaceText, Is.EqualTo(Forest + "　第2層　最深記録を更新！"));
             Assert.That(AdventureSession.Current.InProgress, Is.False);
+            // 端末の戻るキーでは閉じない。
+            view.PressBack();
+            Assert.That(view.Result.IsOpen, Is.True);
 
-            view.Dialog.Choose(AdventureTexts.HomeChoice);
+            view.Result.GoHome();
             yield return WaitForScene(SceneNames.Home);
         }
 
@@ -1208,9 +1220,10 @@ namespace Baryonyx.Tests.PlayMode
             battle.EndTurn();
             yield return WaitForDialog(dialog, BattleAdventureFlow.DefeatTitle);
             dialog.Choose(AdventureTexts.ReturnChoice);
-            yield return WaitForDialog(dialog, "冒険の終わり");
-            Assert.That(dialog.BodyText, Does.StartWith(Forest + "　第2層まで到達"));
-            dialog.Choose(AdventureTexts.HomeChoice);
+            var result = bootstrap.Overlay.Result;
+            yield return WaitForResult(result, "冒険の終わり");
+            Assert.That(result.PlaceText, Does.StartWith(Forest + "　第2層"));
+            result.GoHome();
             yield return WaitForScene(SceneNames.Home);
             Assert.That(AdventureSession.Current.InProgress, Is.False);
         }
@@ -1219,6 +1232,7 @@ namespace Baryonyx.Tests.PlayMode
         public IEnumerator BeatingTheBossEndsTheAdventureWithItsResult()
         {
             StartAt(9);
+            long runesBefore = services.Adventure.Runes;
             var bootstrap = default(BattleBootstrap);
             yield return LoadBattle(value => bootstrap = value);
             var battle = bootstrap.Battle;
@@ -1226,15 +1240,14 @@ namespace Baryonyx.Tests.PlayMode
             foreach (var enemy in battle.Enemies)
                 enemy.Hp = 0;
             battle.EndTurn();
-            var dialog = bootstrap.Overlay.Dialog;
-            yield return WaitForDialog(dialog, BattleAdventureFlow.VictoryTitle, VictorySeconds);
-            dialog.Choose(dialog.ChoiceLabels[0]);
-            yield return WaitForDialog(dialog, "踏破！");
-            Assert.That(
-                dialog.BodyText,
-                Does.StartWith(Forest + "　第10層まで到達\n最深記録を更新！")
-            );
-            dialog.Choose(AdventureTexts.HomeChoice);
+            // 最奥の主を倒したら、「勝利！」を挟まずに結果へ移る。
+            var result = bootstrap.Overlay.Result;
+            yield return WaitForResult(result, "クリア！", VictorySeconds);
+            Assert.That(bootstrap.Overlay.Dialog.IsShown, Is.False);
+            Assert.That(result.PlaceText, Is.EqualTo(Forest));
+            // 初回のクリアの報酬（朝露のペンダントと300ルーン）は、主のドロップの札と一緒に見せ、ルーンが増える。
+            Assert.That(services.Adventure.Runes, Is.EqualTo(runesBefore + 300));
+            result.GoHome();
             yield return WaitForScene(SceneNames.Home);
             var record = AdventureSession.Current.RecordOf(AdventureCatalog.ForestRuins);
             Assert.That(record.Clears, Is.EqualTo(1));

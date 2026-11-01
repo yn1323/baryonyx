@@ -246,6 +246,8 @@ namespace Baryonyx.Adventure.Editor
             view.Campfire = ExplorationCampfireAssets.Build(root);
             // 戦闘後の強化を選ぶ前にアプリが終わったときは、探索で開き直す。
             view.Boons = AdventureBoonPickerAssets.Build(root);
+            // 冒険の結果（やめたとき）は、地図と演出の上、通知とダイアログの下に重ねる。
+            view.Result = AdventureResultAssets.Build(root);
 
             view.Notice = NoticeBandAssets.Build(root);
             // 行商人の品物5つと「立ち去る」を並べるため、選択肢を6つにして行を少し低くする。
@@ -514,11 +516,14 @@ namespace Baryonyx.Adventure.Editor
             root.GetComponent<Canvas>().sortingOrder = 5;
             var overlay = root.gameObject.AddComponent<AdventureOverlay>();
             overlay.ItemArt = Baryonyx.Inventory.Editor.ItemArtAssets.Load();
+            overlay.RuneIcon = GuideMenuAssets.Icon(GuideMenuAssets.IconRunePath);
             var safe = SafeArea(root);
             overlay.MenuButton = BuildMenuButton(safe, right: true);
             overlay.Reveal = RewardRevealAssets.Build(safe, DropPlateCenter);
             // 戦闘後の強化は、ドロップの札の上、通知とダイアログの下に重ねる。
             overlay.Boons = AdventureBoonPickerAssets.Build(root);
+            // 冒険の結果は、戦闘とドロップの札の上、通知とダイアログの下に重ねる。
+            overlay.Result = AdventureResultAssets.Build(root);
             overlay.Notice = NoticeBandAssets.Build(root);
             overlay.Dialog = GameDialogAssets.Build(root);
             CollectTintGraphics(root);

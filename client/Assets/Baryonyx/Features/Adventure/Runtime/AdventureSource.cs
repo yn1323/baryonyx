@@ -250,8 +250,28 @@ namespace Baryonyx.Adventure
                 result.newRecord,
                 result.clears,
                 result.revives,
-                ToDrops(result.drops)
+                ToDrops(result.drops),
+                ToClearReward(result.clearReward)
             );
+        }
+
+        private static AdventureClearReward ToClearReward(AdventureApiClient.ClearReward reward)
+        {
+            if (reward == null || reward.clears <= 0)
+                return null;
+            var drop = ToDrop(
+                new AdventureApiClient.Drop
+                {
+                    roomId = "",
+                    category = reward.category,
+                    id = reward.id,
+                    multiplier = reward.multiplier,
+                    quality = reward.quality,
+                }
+            );
+            return drop == null
+                ? null
+                : new AdventureClearReward(reward.clears, drop, reward.count, reward.runes);
         }
     }
 }

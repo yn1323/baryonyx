@@ -245,9 +245,10 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             state = AdventureSession.Use(cleared);
-            if (!await ShowDrops(cleared.Drops))
-                return;
             var result = cleared.Result;
+            // 最奥の主を倒したときは、クリア回数の報酬を主のドロップと一緒に札で見せる。
+            if (!await ShowDrops(cleared.Drops, result?.ClearReward))
+                return;
             // 戦闘後の強化を選んでから、そのまま探索へ移る。
             if (
                 result == null
@@ -255,25 +256,32 @@ namespace Baryonyx.Adventure
                 && overlay.Boons.OpenPending(state.Run, Party, _ => GoExploreOrStay())
             )
                 return;
-            AdventureDialogs.Victory(
-                Dialog,
-                result != null,
-                result != null
-                    ? () => ExplorationFlow.ShowResult(Dialog, result, GoHome)
-                    : GoExplore
-            );
+            // 最奥の主を倒したら、「勝利！」を挟まずに冒険の結果へ移る（結果の画面で喜ぶ）。
+            if (result != null)
+            {
+                ShowResult(result);
+                return;
+            }
+            AdventureDialogs.Victory(Dialog, GoExplore);
         }
 
         // ドロップを宝箱と同じく、最後に倒した敵からまとめて落とし、すべての札で一度に見せる。
         // 良い物から並べ、読む間は数に合わせて少し延ばす（2026-10-29、1つずつ替わるのが手間だったため）。
         // 何もなければ「何も見つからなかった」。
-        private async Task<bool> ShowDrops(IReadOnlyList<AdventureDrop> drops)
+        private async Task<bool> ShowDrops(
+            IReadOnlyList<AdventureDrop> drops,
+            AdventureClearReward clearReward = null
+        )
         {
             var reveal = overlay.Reveal;
-            var items = (drops ?? Array.Empty<AdventureDrop>())
-                .Select(drop => AdventureDropItems.From(drop, overlay.ItemArt))
-                .Where(item => item != null)
-                .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
+            var items = AdventureDropItems
+                .FromClearReward(clearReward, overlay.ItemArt, overlay.RuneIcon)
+                .Concat(
+                    (drops ?? Array.Empty<AdventureDrop>())
+                        .Select(drop => AdventureDropItems.From(drop, overlay.ItemArt))
+                        .Where(item => item != null)
+                        .OrderByDescending(item => item.Graded ? Quality.Grade(item.Quality) : -1)
+                )
                 .ToList();
             if (!await Play(() => battle.PlayDrops(items, reveal)))
                 return false;
@@ -378,7 +386,7 @@ namespace Baryonyx.Adventure
 
         private void OpenMenu()
         {
-            if (busy || Leaving || Dialog.IsShown)
+            if (busy || Leaving || Dialog.IsShown || (overlay.Result != null && overlay.Result.IsOpen))
                 return;
             AdventureDialogs.Menu(
                 Dialog,
@@ -430,8 +438,11 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             state = AdventureSession.Use(ended);
-            ExplorationFlow.ShowResult(Dialog, ended.Result, GoHome);
+            ShowResult(ended.Result);
         }
+
+        private void ShowResult(AdventureResult result) =>
+            ExplorationFlow.ShowResult(overlay.Result, Dialog, result, Party, overlay.ItemArt, GoHome);
 
         /// <summary>The enemies of this battle by kind, with how many the party has beaten.</summary>
         public IReadOnlyList<AdventureEnemyTally> Tally() =>
@@ -457,7 +468,7 @@ namespace Baryonyx.Adventure
                 return;
             Leaving = toExploration();
             if (!Leaving)
-                AdventureDialogs.Victory(Dialog, false, GoExplore);
+                AdventureDialogs.Victory(Dialog, GoExplore);
         }
 
         private void GoHome()
@@ -465,8 +476,11 @@ namespace Baryonyx.Adventure
             if (Leaving)
                 return;
             Leaving = toHome();
-            if (!Leaving)
-                Dialog.Resume();
+            if (Leaving)
+                return;
+            Dialog.Resume();
+            if (overlay.Result != null)
+                overlay.Result.Resume();
         }
 
         public void Dispose()

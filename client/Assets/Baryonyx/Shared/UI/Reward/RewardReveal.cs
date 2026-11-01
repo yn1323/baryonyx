@@ -27,6 +27,9 @@ namespace Baryonyx.UI
 
         /// <summary>How it sparkles (<see cref="CardFoil.Style"/>), the kind's own.</summary>
         public int FoilStyle;
+
+        /// <summary>A small tag on the plate's top edge ("2回目のクリア報酬"); empty shows none.</summary>
+        public string Tag = "";
     }
 
     /// <summary>
@@ -63,6 +66,10 @@ namespace Baryonyx.UI
         public TMP_Text Kind;
         public TMP_Text Name;
         public TMP_Text Quality;
+
+        // 札の上の縁の右寄りに載せる小さな札（クリア報酬など）。RewardItem.Tag が空なら隠す。
+        public Graphic TagBack;
+        public TMP_Text Tag;
 
         [Tooltip("何も見つからなかったときに出す文。")]
         public TMP_Text Nothing;
@@ -236,6 +243,8 @@ namespace Baryonyx.UI
                 Kind = Kind,
                 Name = Name,
                 Quality = Quality,
+                TagBack = TagBack,
+                Tag = Tag,
                 Nothing = Nothing,
             };
 
@@ -259,6 +268,8 @@ namespace Baryonyx.UI
             public TMP_Text Kind;
             public TMP_Text Name;
             public TMP_Text Quality;
+            public Graphic TagBack;
+            public TMP_Text Tag;
             public TMP_Text Nothing;
 
             // The copy's parts at the same places under it as the original's under the plate.
@@ -273,6 +284,8 @@ namespace Baryonyx.UI
                     Kind = Same(own.Kind, plate, copy),
                     Name = Same(own.Name, plate, copy),
                     Quality = Same(own.Quality, plate, copy),
+                    TagBack = Same(own.TagBack, plate, copy),
+                    Tag = Same(own.Tag, plate, copy),
                     Nothing = Same(own.Nothing, plate, copy),
                 };
 
@@ -300,6 +313,10 @@ namespace Baryonyx.UI
             SetShown(plate.Name, found);
             SetShown(plate.Quality, graded);
             SetShown(plate.Nothing, !found);
+            bool tagged = found && !string.IsNullOrEmpty(drop.Tag);
+            SetShown(plate.TagBack, tagged);
+            if (tagged)
+                UiText.Set(plate.Tag, drop.Tag);
             var color = graded ? QualityPalette.Of(drop.Quality) : UiPalette.TextMain;
             if (plate.Rim != null)
                 plate.Rim.color = new Color(color.r, color.g, color.b, graded ? 1f : 0.4f);

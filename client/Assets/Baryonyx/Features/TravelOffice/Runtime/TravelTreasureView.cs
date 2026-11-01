@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baryonyx.Adventure;
+using Baryonyx.Inventory;
 using Baryonyx.Library;
 using Baryonyx.UI;
 using Baryonyx.UI.EditModePreview;
@@ -35,6 +36,28 @@ namespace Baryonyx.TravelOffice
         public TMP_Text Stars;
 
         // まだ見つけていないときに、影の代わりに出す「？」（スキルの札だけ）。
+        public GameObject Unknown;
+    }
+
+    /// <summary>
+    /// One clear's reward in the window's left column (doc/features/stage-progression.md,
+    /// ダンジョンのクリア回数の報酬): its mark on the line, the card with the art, name, stars and
+    /// quality and the runes, a check once received, and a gold rim on the next one.
+    /// </summary>
+    [Serializable]
+    public sealed class TravelClearRewardRow
+    {
+        public Image Mark;
+        public Image Link;
+        public CanvasGroup Card;
+        public Image Art;
+        public TMP_Text Name;
+        public TMP_Text Grade;
+        public TMP_Text Runes;
+        public GameObject Received;
+        public GameObject Next;
+
+        // まだ受け取っていないスキルの札の「？」（挿絵が四角く、影では形がわからないため）。
         public GameObject Unknown;
     }
 
@@ -75,8 +98,13 @@ namespace Baryonyx.TravelOffice
         public TMP_Text Title;
         public TMP_Text Count;
 
-        // その行き先をクリアした（最奥の主を倒した）回数。
+        // その行き先をクリアした（最奥の主を倒した）回数と、左の列のクリア回数の報酬（1〜5回目）。
         public TMP_Text Clears;
+        public TravelClearRewardRow[] Rewards = Array.Empty<TravelClearRewardRow>();
+        public ItemArt ItemArt;
+        public Color MarkLit = new(1f, 0.843f, 0.4f, 1f);
+        public Color MarkDim = new(0.2f, 0.24f, 0.33f, 1f);
+        public float ReceivedAlpha = 0.6f;
         public ScrollRect Scroll;
         public TravelTreasureList[] Lists = Array.Empty<TravelTreasureList>();
 
@@ -244,7 +272,63 @@ namespace Baryonyx.TravelOffice
                 return;
             string id = Lists[open].DestinationId;
             Set(Count, TravelTreasures.CountText(id, records));
-            Set(Clears, ClearsText(AdventureSession.Current, id));
+            var state = AdventureSession.Current;
+            Set(Clears, ClearsText(state, id));
+            ShowRewards(id, state == null ? -1 : state.RecordOf(id)?.Clears ?? 0);
+        }
+
+        /// <summary>
+        /// Paints the destination's five clear rewards: those already received dimmed with a
+        /// check, the next one in a gold rim, and the marks lit up to the clears. With
+        /// <paramref name="clears"/> below 0 (not read yet) none is received or next.
+        /// </summary>
+        public void ShowRewards(string destinationId, int clears)
+        {
+            var rewards = AdventureClearRewards.Of(destinationId);
+            for (int i = 0; i < Rewards.Length; i++)
+            {
+                var row = Rewards[i];
+                bool used = i < rewards.Count;
+                if (row.Card != null)
+                    row.Card.gameObject.SetActive(used);
+                if (!used)
+                    continue;
+                bool received = i < clears;
+                bool next = i == clears;
+                var drop = rewards[i].Drop;
+                // 受け取った回だけ絵と名前を出す。まだの回は形だけの影と「？？？」にし、ルーンだけを見せる
+                // （何をもらえるかは伏せ、影の形で種類だけわかる、2026-11-01、ユーザー）。
+                bool square = drop.Category == AdventureDropCategory.Skill;
+                var icon = AdventureTexts.DropIcon(drop, ItemArt);
+                if (row.Art != null)
+                {
+                    row.Art.sprite = icon;
+                    row.Art.enabled = icon != null && (received || !square);
+                    row.Art.color = received ? Color.white : LibraryCatalogView.ShadowTint;
+                }
+                if (row.Unknown != null)
+                    row.Unknown.SetActive(square && !received);
+                string count = rewards[i].Count > 1 ? $" ×{rewards[i].Count}" : "";
+                Set(row.Name, received ? AdventureTexts.DropName(drop) + count : HiddenName);
+                string stars = StarsText(drop.Stars);
+                Set(
+                    row.Grade,
+                    !received ? ""
+                    : drop.Quality is { } quality ? $"{stars}  {QualityPalette.Painted(quality)}"
+                    : stars
+                );
+                Set(row.Runes, rewards[i].Runes.ToString("N0"));
+                if (row.Received != null)
+                    row.Received.SetActive(received);
+                if (row.Next != null)
+                    row.Next.SetActive(next);
+                if (row.Card != null)
+                    row.Card.alpha = received ? ReceivedAlpha : 1f;
+                if (row.Mark != null)
+                    row.Mark.color = received ? MarkLit : MarkDim;
+                if (row.Link != null)
+                    row.Link.color = i + 1 < clears ? MarkLit : MarkDim;
+            }
         }
 
         /// <summary>
@@ -331,6 +415,11 @@ namespace Baryonyx.TravelOffice
             if (Scroll != null)
                 Scroll.content = Lists[index].Content;
             Set(Title, Lists[index].Title);
+            // 停止中は冒険の記録がないため、2回クリアした見本で報酬の列を見せる。
+            Set(Clears, $"クリア {PreviewClears}回");
+            ShowRewards(Lists[index].DestinationId, PreviewClears);
         }
+
+        public const int PreviewClears = 2;
     }
 }

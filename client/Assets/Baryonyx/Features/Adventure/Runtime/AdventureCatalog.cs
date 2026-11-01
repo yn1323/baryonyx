@@ -607,13 +607,5 @@ namespace Baryonyx.Adventure
             taken.Add(kind);
             return kind;
         }
-
-        public static string StatusTitle(AdventureEndStatus status) =>
-            status switch
-            {
-                AdventureEndStatus.Cleared => "踏破！",
-                AdventureEndStatus.Defeated => "冒険の終わり",
-                _ => "帰還",
-            };
     }
 }

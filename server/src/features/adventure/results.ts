@@ -1,6 +1,10 @@
 import { and, eq, type SQL, sql } from "drizzle-orm";
 import type { BatchResponse } from "drizzle-orm/batch";
 import { type Database, selectWhen } from "../../shared/db.js";
+import {
+  clearRewardResponse,
+  type RolledClearReward,
+} from "./clear-rewards.js";
 import { adventureRecords, adventureRuns } from "./db-schema.js";
 import {
   type DropRow,
@@ -74,14 +78,29 @@ export const bestFloorOf = (
   records.find((record) => record.destinationId === destinationId)?.bestFloor ??
   0;
 
-/** 冒険を終えた結果。最深到達の階と記録の更新、この冒険で手に入れた物。 */
+/** その行き先をクリアした回数。記録がなければ0。 */
+export const clearsOf = (
+  records: readonly { destinationId: string; clears: number }[],
+  destinationId: string,
+) =>
+  records.find((record) => record.destinationId === destinationId)?.clears ?? 0;
+
+/**
+ * 冒険を終えた結果。最深到達の階と記録の更新、この冒険で手に入れた物。
+ * クリア回数の報酬は、記録の回数がその報酬の回数に届いたとき（渡せたとき）だけ載せる。
+ */
 export function resultOf(
   ended: RunRow,
   record: typeof adventureRecords.$inferSelect | undefined,
   drops: readonly DropRow[],
   previousBest: number,
+  clearReward: RolledClearReward | null = null,
 ) {
   const floor = ended.floor;
+  const rewarded =
+    clearReward !== null &&
+    ended.status === "cleared" &&
+    record?.clears === clearReward.clears;
   return {
     runId: ended.id,
     destinationId: ended.destinationId,
@@ -92,5 +111,6 @@ export function resultOf(
     clears: record?.clears ?? 0,
     revives: ended.revives,
     drops: drops.map(dropOf),
+    ...(rewarded ? { clearReward: clearRewardResponse(clearReward) } : {}),
   };
 }

@@ -802,6 +802,7 @@ namespace Baryonyx.Adventure
                 || Leaving
                 || State?.Run == null
                 || view.Dialog.IsShown
+                || (view.Result != null && view.Result.IsOpen)
                 || (view.Boons != null && view.Boons.IsOpen)
                 || (view.Campfire != null && view.Campfire.IsOpen)
             )
@@ -846,18 +847,30 @@ namespace Baryonyx.Adventure
             if (disposed)
                 return;
             State = AdventureSession.Use(state);
-            ShowResult(view.Dialog, state.Result, GoHome);
+            ShowResult(view.Result, view.Dialog, state.Result, Party(), view.ItemArt, GoHome);
         }
 
-        /// <summary>The end of an adventure: how it ended and what it brought back, then Home.</summary>
-        public static void ShowResult(GameDialog dialog, AdventureResult result, Action home)
+        /// <summary>
+        /// The end of an adventure (<see cref="AdventureResultPanel"/>): how it ended, the party,
+        /// the times cleared and what it brought back, then Home. The dialog closes under it.
+        /// </summary>
+        public static void ShowResult(
+            AdventureResultPanel panel,
+            GameDialog dialog,
+            AdventureResult result,
+            IReadOnlyList<BattlePartyMember> party,
+            ItemArt art,
+            Action home
+        )
         {
-            if (result == null)
+            if (result == null || panel == null)
             {
                 home();
                 return;
             }
-            AdventureDialogs.Result(dialog, result, home);
+            if (dialog != null)
+                dialog.Hide();
+            panel.Open(result, party, art, home);
         }
 
         private void GoHome()
@@ -868,6 +881,8 @@ namespace Baryonyx.Adventure
             if (!Leaving)
             {
                 view.Dialog.Resume();
+                if (view.Result != null)
+                    view.Result.Resume();
                 view.ShowNotice("ホームへ戻れませんでした");
             }
         }

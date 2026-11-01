@@ -37,6 +37,16 @@ type Result = {
   clears: number;
   revives: number;
   drops: Drop[];
+  // 1〜5回目のクリアでもらった報酬。強化素材は倍率と品質を持たず、項目がない。
+  clearReward?: {
+    clears: number;
+    category: string;
+    id: string;
+    count: number;
+    runes: number;
+    multiplier?: number;
+    quality?: string;
+  };
 };
 
 type Goods = {
@@ -155,6 +165,27 @@ describe("冒険API", () => {
   }
 
   // 第2層から until の手前の階まで、魔物（第6層は宝箱）のマス「f階-0」を進んで終える。
+  // 冒険を始めて最奥のボスまで進み、倒す。第6層は宝箱、最奥の直前の第9層は休憩。
+  async function clearDungeon(token: string) {
+    await start(token);
+    for (let floor = 2; floor <= 9; floor++) {
+      const kind = floor === 6 ? "treasure" : floor === 9 ? "rest" : "battle";
+      await move(token, { roomId: `f${floor}-1`, floor, kind });
+      await clear(token, `f${floor}-1`);
+    }
+    await move(token, rooms.boss);
+    return clear(token, "boss");
+  }
+
+  // 行き先の記録のクリアの回数を直接書く。回数ごとの報酬の検査で、周回を省くために使う。
+  async function setClears(userId: string, clears: number) {
+    await scenario.env.DB.prepare(
+      "INSERT INTO adventure_records (user_id, destination_id, best_floor, clears, updated_at) VALUES (?, 'forest-ruins', 10, ?, ?)",
+    )
+      .bind(userId, clears, new Date().toISOString())
+      .run();
+  }
+
   async function walk(token: string, until: number) {
     for (let floor = 2; floor < until; floor++) {
       const roomId = `f${floor}-0`;
@@ -585,7 +616,7 @@ describe("冒険API", () => {
     expect(ended.result?.status).toBe("retreated");
   });
 
-  it("最奥のボスを倒すと冒険を終え、踏破の回数を数える", async () => {
+  it("最奥のボスを倒すと冒険を終え、クリアの回数を数える", async () => {
     const user = await scenario.login("adventure-clear");
     await start(user.token);
     // 第6層は宝箱、最奥の直前の第9層は休憩（落とす物はない）。
@@ -625,6 +656,51 @@ describe("冒険API", () => {
     expect((await call(user.token, "/adventure")).records).toEqual([
       { destinationId: "forest-ruins", bestFloor: 10, clears: 1 },
     ]);
+    // 初回のクリアの報酬：朝露のペンダント（品質A）と300ルーン。
+    expect(cleared.result?.clearReward).toMatchObject({
+      clears: 1,
+      category: "accessory",
+      id: "dew-pendant",
+      count: 1,
+      runes: 300,
+      quality: "A",
+    });
+    expect(cleared.runes).toBe(300);
+  });
+
+  it("2回目のクリアでは磨き石、6回目からは報酬がない", async () => {
+    const user = await scenario.login("adventure-clear-rewards");
+    await setClears(user.userId, 1);
+    const second = await clearDungeon(user.token);
+    expect(second.result?.clears).toBe(2);
+    expect(second.result?.clearReward).toEqual({
+      clears: 2,
+      category: "material",
+      id: "polish-blue",
+      count: 3,
+      runes: 300,
+    });
+    // 道中で落ちた青い磨き石に、報酬の3個が足される。
+    const dropped = (second.result?.drops ?? []).filter(
+      (drop) => drop.id === "polish-blue",
+    ).length;
+    const held = await scenario.env.DB.prepare(
+      "SELECT count FROM enhancement_materials WHERE user_id = ? AND material_id = 'polish-blue'",
+    )
+      .bind(user.userId)
+      .first<{ count: number }>();
+    expect(held?.count).toBe(dropped + 3);
+    expect(second.runes).toBe(300);
+
+    await scenario.env.DB.prepare(
+      "UPDATE adventure_records SET clears = 5 WHERE user_id = ?",
+    )
+      .bind(user.userId)
+      .run();
+    const sixth = await clearDungeon(user.token);
+    expect(sixth.result?.clears).toBe(6);
+    expect(sixth.result?.clearReward).toBeUndefined();
+    expect(sixth.runes).toBe(300);
   });
 
   it("怪しい宝箱を開けてミミックなら戦闘のマスになり、勝つと最大の報酬（主の物を除く）を落とす", async () => {

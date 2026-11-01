@@ -83,6 +83,18 @@ namespace Baryonyx.UI.Editor
             );
             reveal.Quality = quality;
 
+            // 上の縁の右寄り（品質の文字の左）に、縁をまたいで載せる小さな札。
+            var tagRect = Rect("Tag", plate);
+            tagRect.anchorMin = tagRect.anchorMax = Vector2.one;
+            tagRect.pivot = new Vector2(1f, 0.5f);
+            tagRect.anchoredPosition = new Vector2(-150f, 0f);
+            tagRect.sizeDelta = new Vector2(260f, 44f);
+            reveal.TagBack = Sliced(tagRect, UiArt.CapsulePath, Gold);
+            reveal.TagBack.raycastTarget = false;
+            reveal.Tag = Label(tagRect, "Label", "", 24, new Color(0.08f, 0.07f, 0.12f), TextAlignmentOptions.Center, shadow: false);
+            Stretch(reveal.Tag.rectTransform);
+            tagRect.gameObject.SetActive(false);
+
             var nothing = Label(
                 content,
                 "Nothing",

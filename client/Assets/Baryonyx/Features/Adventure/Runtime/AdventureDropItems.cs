@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using Baryonyx.Equipment;
 using Baryonyx.Inventory;
 using Baryonyx.UI;
+using UnityEngine;
 
 namespace Baryonyx.Adventure
 {
@@ -27,6 +29,43 @@ namespace Baryonyx.Adventure
                 FoilStyle = FoilStyleOf(drop),
             };
         }
+
+        /// <summary>
+        /// A clear's reward as the plates shown with the boss's drops: the thing (with its count)
+        /// and the runes, each tagged "N回目のクリア報酬" at the top right (2026-11-01, the user).
+        /// None when <paramref name="reward"/> is null.
+        /// </summary>
+        public static IReadOnlyList<RewardItem> FromClearReward(
+            AdventureClearReward reward,
+            ItemArt art,
+            Sprite runeIcon
+        )
+        {
+            if (reward == null)
+                return System.Array.Empty<RewardItem>();
+            string tag = ClearRewardTag(reward.Clears);
+            var thing = From(reward.Drop, art);
+            if (reward.Count > 1)
+                thing.Name += $" ×{reward.Count}";
+            thing.Tag = tag;
+            var items = new List<RewardItem> { thing };
+            if (reward.Runes > 0)
+                items.Add(
+                    new RewardItem
+                    {
+                        Kind = RunesKind,
+                        Name = reward.Runes.ToString("N0"),
+                        Icon = runeIcon,
+                        Graded = false,
+                        Tag = tag,
+                    }
+                );
+            return items;
+        }
+
+        public const string RunesKind = "ルーン";
+
+        public static string ClearRewardTag(int clears) => $"{clears}回目のクリア報酬";
 
         private static int FoilStyleOf(AdventureDrop drop) =>
             drop.Category switch

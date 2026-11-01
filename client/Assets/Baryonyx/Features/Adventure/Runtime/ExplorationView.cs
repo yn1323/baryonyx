@@ -128,6 +128,9 @@ namespace Baryonyx.Adventure
         // 戦闘後の強化を選ぶ前にアプリが終わったとき、再開した探索で開き直す強化の窓。
         public AdventureBoonPicker Boons;
 
+        // 冒険の結果（やめたとき）。
+        public AdventureResultPanel Result;
+
         // 地図のどこを見ているかを示す、下の細いバー。
         public RectTransform ScrollTrack;
         public RectTransform ScrollThumb;
@@ -338,6 +341,8 @@ namespace Baryonyx.Adventure
         public void PressBack()
         {
             if (Dialog != null && Dialog.HandleBack())
+                return;
+            if (Result != null && Result.HandleBack())
                 return;
             if (Boons != null && Boons.HandleBack())
                 return;
@@ -893,20 +898,22 @@ namespace Baryonyx.Adventure
                 Notice.Show(message);
         }
 
-        // 停止中の表示の切り替え：探索のダイアログを、ExplorationFlow と同じ AdventureDialogs で出す。
+        // 停止中の表示の切り替え：探索のダイアログを、ExplorationFlow と同じ AdventureDialogs で出す。結果は結果の画面で出す。
         public IReadOnlyList<string> PreviewStates =>
             new[]
             {
                 "メニュー",
                 "やめる確認",
                 "宝箱",
-                "結果（踏破）",
+                "結果（クリア）",
                 "結果（帰還）",
                 "取得できない",
             };
 
         public void ShowPreviewState(int index)
         {
+            if (Result != null)
+                Result.Close();
             if (Dialog == null)
                 return;
             Action none = () => { };
@@ -936,13 +943,12 @@ namespace Baryonyx.Adventure
                     break;
                 case 3:
                 case 4:
-                    AdventureDialogs.Result(
-                        Dialog,
-                        AdventureDialogSamples.Result(
-                            index == 3 ? AdventureEndStatus.Cleared : AdventureEndStatus.Retreated
-                        ),
-                        none
-                    );
+                    Dialog.Hide();
+                    if (Result != null)
+                        Result.ShowSample(
+                            index == 3 ? AdventureEndStatus.Cleared : AdventureEndStatus.Retreated,
+                            ItemArt
+                        );
                     break;
                 default:
                     AdventureDialogs.LoadFailed(Dialog, none, none);

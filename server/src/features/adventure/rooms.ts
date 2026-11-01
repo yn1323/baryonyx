@@ -10,10 +10,16 @@ import {
   MIMIC_CHANCE,
   stepDoorTier,
 } from "./catalog.js";
+import {
+  clearRewardStatements,
+  type RolledClearReward,
+  rollClearReward,
+} from "./clear-rewards.js";
 import { adventureDrops, adventureRuns } from "./db-schema.js";
 import { type Drop, rollRoomDrops } from "./drops.js";
 import {
   bestFloorOf,
+  clearsOf,
   recordStatement,
   resultOf,
   resultReads,
@@ -77,6 +83,8 @@ export function createRoomOperations(db: Database, random: Random) {
       enemies: Enemies;
       guard?: SQL;
       set?: Partial<typeof adventureRuns.$inferInsert>;
+      // 最奥のボスを倒したときの、クリア回数の報酬（doc/features/stage-progression.md）。
+      clearReward?: RolledClearReward | null;
     },
   ) {
     const roomId = run.roomId;
@@ -151,6 +159,16 @@ export function createRoomOperations(db: Database, random: Random) {
         .where(and(eq(adventureRuns.id, run.id), written)),
       ...inventoryGrants(db, written, userId, drops, now),
       ...(boss ? [recordStatement(db, run, "cleared", now, written)] : []),
+      ...(boss && options.clearReward
+        ? clearRewardStatements(
+            db,
+            userId,
+            run.destinationId,
+            options.clearReward,
+            now,
+            written,
+          )
+        : []),
       ...(battleRoom(run)
         ? enemyStatements(db, userId, options.enemies, now, written)
         : []),
@@ -160,7 +178,13 @@ export function createRoomOperations(db: Database, random: Random) {
     return {
       recorded: dropsInRoom(rows, roomId),
       result: (previousBest: number) =>
-        resultOf(ended[0], records[0], rows, previousBest),
+        resultOf(
+          ended[0],
+          records[0],
+          rows,
+          previousBest,
+          options.clearReward ?? null,
+        ),
       read: awarded,
     };
   }
@@ -223,8 +247,17 @@ export function createRoomOperations(db: Database, random: Random) {
     const previousBest = boss
       ? bestFloorOf(first.state.records, run.destinationId)
       : 0;
+    // 今回が何回目のクリアになるかは、倒す前の記録から決める。渡すのは記録の回数がそれに届いたときだけ。
+    const clearReward = boss
+      ? rollClearReward(
+          run.destinationId,
+          clearsOf(first.state.records, run.destinationId) + 1,
+          random,
+        )
+      : null;
     const awarded = await award(userId, run, rolled, now, {
       enemies,
+      clearReward,
       ...(steps === null ? {} : { set: { doorSteps: steps } }),
     });
     if (awarded.recorded.length === 0) {

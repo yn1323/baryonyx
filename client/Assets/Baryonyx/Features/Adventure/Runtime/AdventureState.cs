@@ -208,9 +208,11 @@ namespace Baryonyx.Adventure
             bool newRecord,
             int clears,
             int revives,
-            IReadOnlyList<AdventureDrop> drops
+            IReadOnlyList<AdventureDrop> drops,
+            AdventureClearReward clearReward = null
         )
         {
+            ClearReward = clearReward;
             DestinationId = destinationId ?? "";
             Status = status;
             Floor = floor;
@@ -231,6 +233,9 @@ namespace Baryonyx.Adventure
         public int Clears { get; }
         public int Revives { get; }
         public IReadOnlyList<AdventureDrop> Drops { get; }
+
+        // この冒険のクリアでもらったクリア回数の報酬（1〜5回目のクリアだけ）。なければ null。
+        public AdventureClearReward ClearReward { get; }
     }
 
     /// <summary>A destination's record: the deepest floor reached and the times it was cleared.</summary>

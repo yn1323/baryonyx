@@ -486,6 +486,19 @@ namespace Baryonyx.Tests.PlayMode
                 )
             );
             StringAssert.StartsWith("クリア ", treasures.Clears.text);
+            // 左の列に1〜5回目の報酬を並べ、受け取った回だけ名前を出す。次の回は金の縁で囲む。
+            int clears =
+                Baryonyx.Adventure.AdventureSession.Current.RecordOf(destinations[0].Id)?.Clears ?? 0;
+            Assert.That(treasures.Rewards, Has.Length.EqualTo(Baryonyx.Adventure.AdventureClearRewards.Count));
+            for (int i = 0; i < treasures.Rewards.Length; i++)
+            {
+                var reward = treasures.Rewards[i];
+                Assert.That(reward.Received.activeSelf, Is.EqualTo(i < clears), $"reward {i + 1}");
+                Assert.That(reward.Next.activeSelf, Is.EqualTo(i == clears), $"reward {i + 1}");
+                if (i >= clears)
+                    Assert.That(reward.Name.text, Is.EqualTo(TravelTreasureView.HiddenName));
+                Assert.That(reward.Runes.text, Is.EqualTo("300"));
+            }
             Assert.That(
                 treasures.Count.text,
                 Is.EqualTo(TravelTreasures.CountText(destinations[0].Id, records))

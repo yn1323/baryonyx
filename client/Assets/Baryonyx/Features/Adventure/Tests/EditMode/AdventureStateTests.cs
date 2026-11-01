@@ -292,51 +292,77 @@ namespace Baryonyx.Tests.EditMode
             }
         }
 
-        // 結果には、持ち帰った物を分類ごとに数え、☆4以上か品質Sの物を目玉として挙げる。
+        // 結果には、持ち帰った物を種類と品質ごとに1枚の札にまとめ、品質の高い順、☆の多い順に並べる。
         [Test]
-        public void TheResultCountsTheDropsKept()
+        public void TheResultGroupsTheDropsKeptBestFirst()
         {
-            var result = new AdventureResult(
-                "forest-ruins",
-                AdventureEndStatus.Retreated,
-                3,
-                4,
-                false,
-                0,
-                0,
-                new[]
-                {
-                    new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
-                    new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
-                    new AdventureDrop(
-                        "b",
-                        AdventureDropCategory.Weapon,
-                        "wooden-sword",
-                        1.8f,
-                        ItemQuality.S
-                    ),
-                    new AdventureDrop(
-                        "c",
-                        AdventureDropCategory.Skill,
-                        "Hone",
-                        1.2f,
-                        ItemQuality.C
-                    ),
-                }
-            );
+            var drops = new[]
+            {
+                new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
+                new AdventureDrop("a", AdventureDropCategory.Item, "herb"),
+                new AdventureDrop("b", AdventureDropCategory.Weapon, "wooden-sword", 1.8f, ItemQuality.S),
+                new AdventureDrop("c", AdventureDropCategory.Skill, "Hone", 1.2f, ItemQuality.C),
+                new AdventureDrop("d", AdventureDropCategory.Weapon, "wooden-sword", 1.3f, ItemQuality.B),
+                new AdventureDrop("e", AdventureDropCategory.Weapon, "wooden-sword", 1.9f, ItemQuality.S),
+            };
+            var kinds = AdventureResultPanel.Kinds(drops);
             Assert.That(
-                AdventureTexts.ResultBody(result),
+                kinds.Select(kind => (kind.Drop.Id, kind.Drop.Quality, kind.Count)),
                 Is.EqualTo(
-                    Forest
-                        + "　第3層まで到達\n最深記録 第4層\n"
-                        + "持ち帰った物\nアイテム 2・武器 1・スキル 1\n"
-                        + "目玉\n★★★★ 研ぎ澄ます C・★ 木の剣 S"
+                    new (string, ItemQuality?, int)[]
+                    {
+                        ("wooden-sword", ItemQuality.S, 2),
+                        ("wooden-sword", ItemQuality.B, 1),
+                        ("Hone", ItemQuality.C, 1),
+                        ("herb", null, 2),
+                    }
                 )
             );
             Assert.That(
                 AdventureTexts.ReviveBody(200, 150),
                 Does.EndWith("所持ルーン 150（50 足りません）")
             );
+        }
+
+        // クリア回数の報酬は、主のドロップと並ぶ札にする。物（数つき）とルーンの2枚に「N回目のクリア報酬」を付ける。
+        [Test]
+        public void AClearRewardBecomesTaggedPlates()
+        {
+            var second = AdventureClearRewards.At(AdventureCatalog.ForestRuins, 2);
+            var plates = AdventureDropItems.FromClearReward(second, null, null);
+            Assert.That(plates, Has.Count.EqualTo(2));
+            Assert.That(plates.Select(plate => plate.Tag), Is.All.EqualTo("2回目のクリア報酬"));
+            Assert.That(plates[0].Name, Does.EndWith("×3"));
+            Assert.That(plates[1].Kind, Is.EqualTo(AdventureDropItems.RunesKind));
+            Assert.That(plates[1].Name, Is.EqualTo("300"));
+            Assert.That(AdventureDropItems.FromClearReward(null, null, null), Is.Empty);
+            Assert.That(AdventureClearRewards.At(AdventureCatalog.ForestRuins, 6), Is.Null);
+            Assert.That(
+                AdventureClearRewards.Of(AdventureCatalog.ForestRuins).Select(reward => reward.Runes),
+                Is.All.EqualTo(AdventureClearRewards.Runes)
+            );
+        }
+
+        // 見出しは「踏破」と言わない。クリアしなければ、着いた階と記録の更新を場所に添える。
+        [Test]
+        public void TheResultNamesHowItEndedAndWhere()
+        {
+            AdventureResult Ended(AdventureEndStatus status, bool record) =>
+                new("forest-ruins", status, 3, 4, record, 2, 0, System.Array.Empty<AdventureDrop>());
+
+            Assert.That(AdventureTexts.ResultTitle(AdventureEndStatus.Cleared), Is.EqualTo("クリア！"));
+            Assert.That(AdventureTexts.ResultTitle(AdventureEndStatus.Defeated), Is.EqualTo("冒険の終わり"));
+            Assert.That(AdventureTexts.ResultTitle(AdventureEndStatus.Retreated), Is.EqualTo("帰還"));
+            Assert.That(AdventureTexts.ResultPlace(Ended(AdventureEndStatus.Cleared, true)), Is.EqualTo(Forest));
+            Assert.That(
+                AdventureTexts.ResultPlace(Ended(AdventureEndStatus.Retreated, false)),
+                Is.EqualTo(Forest + "　第3層")
+            );
+            Assert.That(
+                AdventureTexts.ResultPlace(Ended(AdventureEndStatus.Defeated, true)),
+                Is.EqualTo(Forest + "　第3層　最深記録を更新！")
+            );
+            Assert.That(AdventureTexts.ClearCount(3), Is.EqualTo("3回目"));
         }
 
         private static long Fails(System.Action action)

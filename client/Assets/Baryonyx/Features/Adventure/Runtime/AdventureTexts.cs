@@ -182,58 +182,31 @@ namespace Baryonyx.Adventure
                 .Select(drop => DropIcon(drop, art))
                 .FirstOrDefault(icon => icon != null);
 
-        // 結果に「目玉」として名前を挙げる物：☆4以上か、品質S。
-        private static bool Highlight(AdventureDrop drop) =>
-            drop.Stars >= 4 || drop.Quality == ItemQuality.S;
-
-        public static string ResultBody(AdventureResult result)
-        {
-            var lines = new List<string>
+        // 冒険の結果の見出し。クリアは「踏破」と言わず「クリア！」にする（2026-11-01、ユーザーの指定）。
+        public static string ResultTitle(AdventureEndStatus status) =>
+            status switch
             {
-                $"{AdventureCatalog.DestinationName(result.DestinationId)}　{AdventureCatalog.FloorText(result.Floor)}まで到達",
-                result.NewRecord
-                    ? "最深記録を更新！"
-                    : $"最深記録 {AdventureCatalog.FloorText(result.BestFloor)}",
+                AdventureEndStatus.Cleared => "クリア！",
+                AdventureEndStatus.Defeated => "冒険の終わり",
+                _ => "帰還",
             };
-            var counts = result
-                .Drops.GroupBy(drop => drop.Category)
-                .OrderBy(group => group.Key)
-                .Select(group => $"{AdventureDrops.NameOf(group.Key)} {group.Count()}")
-                .ToArray();
-            // 名前の途中で折り返さないよう、行を分けて並べる（2026-10-26、「スキ／ル」と割れていたため）。
-            if (counts.Length == 0)
-                lines.Add("持ち帰った物：なし");
-            else
-            {
-                lines.Add("持ち帰った物");
-                lines.AddRange(Rows(counts, CountsPerRow));
-            }
-            var best = result
-                .Drops.Where(Highlight)
-                .OrderByDescending(drop => drop.Stars)
-                .ThenByDescending(drop => drop.Quality ?? ItemQuality.C)
-                .Take(3)
-                .Select(drop =>
-                    $"{EquipmentCatalog.Stars(drop.Stars)} {DropName(drop)}"
-                    + (drop.Quality is { } quality ? $" {Quality.Letter(quality)}" : "")
-                )
-                .ToArray();
-            if (best.Length > 0)
-            {
-                lines.Add("目玉");
-                lines.AddRange(Rows(best, BestPerRow));
-            }
-            return string.Join("\n", lines);
-        }
 
-        // 結果の1行に並べる、持ち帰った物の分類の数と、目玉の数。
-        private const int CountsPerRow = 3;
-        private const int BestPerRow = 2;
-
-        private static IEnumerable<string> Rows(IReadOnlyList<string> parts, int perRow)
+        /// <summary>
+        /// The place beside the result's title: the destination, and when it was not cleared the
+        /// floor reached, with the record when it moved deeper.
+        /// </summary>
+        public static string ResultPlace(AdventureResult result)
         {
-            for (int i = 0; i < parts.Count; i += perRow)
-                yield return string.Join("・", parts.Skip(i).Take(perRow));
+            string name = AdventureCatalog.DestinationName(result.DestinationId);
+            if (result.Status == AdventureEndStatus.Cleared)
+                return name;
+            string place = $"{name}　{AdventureCatalog.FloorText(result.Floor)}";
+            return result.NewRecord ? place + "　最深記録を更新！" : place;
         }
+
+        /// <summary>"3回目": the times the destination has been cleared, this time included.</summary>
+        public static string ClearCount(int clears) => $"{clears}回目";
+
+        public const string NothingBroughtBack = "持ち帰った物はない";
     }
 }

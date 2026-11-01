@@ -336,6 +336,23 @@ namespace Baryonyx.Adventure
             public int clears;
             public int revives;
             public Drop[] drops;
+
+            // 1〜5回目のクリアでもらった報酬。なければ項目がなく、clears が0になる。
+            public ClearReward clearReward;
+        }
+
+        [Serializable]
+        public sealed class ClearReward
+        {
+            public int clears;
+            public string category;
+            public string id;
+            public int count;
+            public int runes;
+
+            // 強化素材は倍率と品質を持たず、項目がない。
+            public float multiplier;
+            public string quality;
         }
 
         [Serializable]

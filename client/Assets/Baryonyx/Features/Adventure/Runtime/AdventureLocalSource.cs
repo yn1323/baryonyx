@@ -367,6 +367,13 @@ namespace Baryonyx.Adventure
             int clears = (record?.Clears ?? 0) + (status == AdventureEndStatus.Cleared ? 1 : 0);
             var updated = new AdventureRecord(run.DestinationId, Math.Max(previous, floor), clears);
             records[run.DestinationId] = updated;
+            // クリア回数の報酬は、ルーンだけを足す（持ち物は持たない）。
+            var reward =
+                status == AdventureEndStatus.Cleared
+                    ? AdventureClearRewards.At(run.DestinationId, clears)
+                    : null;
+            if (reward != null)
+                runes += reward.Runes;
             var result = new AdventureResult(
                 run.DestinationId,
                 status,
@@ -375,7 +382,8 @@ namespace Baryonyx.Adventure
                 floor > previous,
                 clears,
                 run.Revives,
-                run.Drops.ToArray()
+                run.Drops.ToArray(),
+                reward
             );
             run = null;
             return result;

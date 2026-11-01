@@ -27,8 +27,14 @@ namespace Baryonyx.Adventure
         // ドロップのアイテム・装備の絵（種類のIDで引く）。
         public ItemArt ItemArt;
 
+        // クリア報酬のルーンの札の絵。
+        public Sprite RuneIcon;
+
         // 勝った戦闘のあとに選ぶ、戦闘後の強化（仲間ごとの4つの列）。
         public AdventureBoonPicker Boons;
+
+        // 冒険の結果（最奥の主を倒した・全滅して帰った・やめた）。
+        public AdventureResultPanel Result;
 
         private bool wired;
 
@@ -58,6 +64,8 @@ namespace Baryonyx.Adventure
         {
             if (Dialog != null && Dialog.HandleBack())
                 return;
+            if (Result != null && Result.HandleBack())
+                return;
             if (Boons != null && Boons.HandleBack())
                 return;
             BackPressed?.Invoke();
@@ -81,12 +89,13 @@ namespace Baryonyx.Adventure
             new[]
             {
                 "勝利",
-                "勝利（最奥）",
                 "全滅（復活できる）",
                 "全滅（ルーン不足）",
                 "メニュー",
                 "やめる確認",
+                "結果（クリア）",
                 "結果（冒険の終わり）",
+                "最奥のドロップ（クリア報酬）",
                 "保存できない",
                 "戦闘後の強化",
                 "戦闘後の強化 › 決めたとき",
@@ -96,6 +105,10 @@ namespace Baryonyx.Adventure
         {
             if (Boons != null)
                 Boons.Close();
+            if (Result != null)
+                Result.Close();
+            if (Reveal != null)
+                Reveal.HideNow();
             int boons = PreviewStates.Count - 2;
             if (index >= boons)
             {
@@ -117,10 +130,9 @@ namespace Baryonyx.Adventure
             switch (index)
             {
                 case 0:
-                case 1:
-                    AdventureDialogs.Victory(Dialog, index == 1, none);
+                    AdventureDialogs.Victory(Dialog, none);
                     break;
-                case 2:
+                case 1:
                     AdventureDialogs.Revive(
                         Dialog,
                         cost,
@@ -130,10 +142,10 @@ namespace Baryonyx.Adventure
                         none
                     );
                     break;
-                case 3:
+                case 2:
                     AdventureDialogs.Revive(Dialog, cost, cost / 3, false, none, none);
                     break;
-                case 4:
+                case 3:
                     AdventureDialogs.Menu(
                         Dialog,
                         AdventureDialogSamples.Run,
@@ -144,15 +156,29 @@ namespace Baryonyx.Adventure
                         none
                     );
                     break;
-                case 5:
+                case 4:
                     AdventureDialogs.ConfirmQuit(Dialog, none, none, none);
                     break;
+                case 5:
                 case 6:
-                    AdventureDialogs.Result(
-                        Dialog,
-                        AdventureDialogSamples.Result(AdventureEndStatus.Defeated),
-                        none
-                    );
+                    Dialog.Hide();
+                    if (Result != null)
+                        Result.ShowSample(
+                            index == 5 ? AdventureEndStatus.Cleared : AdventureEndStatus.Defeated,
+                            ItemArt
+                        );
+                    break;
+                case 7:
+                    // 最奥の主を倒したときに、主のドロップと並ぶクリア回数の報酬の札（開き終えた形）。
+                    Dialog.Hide();
+                    if (Reveal != null)
+                        Reveal.ShowStill(
+                            AdventureDropItems.FromClearReward(
+                                AdventureClearRewards.At(AdventureCatalog.ForestRuins, 2),
+                                ItemArt,
+                                RuneIcon
+                            )[0]
+                        );
                     break;
                 default:
                     AdventureDialogs.SaveFailed(Dialog, none);

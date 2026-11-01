@@ -17,7 +17,6 @@ namespace Baryonyx.Adventure
         public const string TreasureTitle = "宝箱を開けた！";
         public const string VictoryTitle = "勝利！";
         public const string DefeatTitle = "全滅してしまった…";
-        public const string ToResultChoice = "つぎへ";
 
         public static void LoadFailed(GameDialog dialog, Action retry, Action home) =>
             dialog.Show(
@@ -157,14 +156,14 @@ namespace Baryonyx.Adventure
             );
 
         // 手に入れた物は、ダイアログの前にドロップの演出の札で1つずつ見せるため、本文には書かない。
-        // 冒険が終わった勝利（最奥の主を倒した）は、「つぎへ」で結果へ進む。
-        public static void Victory(GameDialog dialog, bool ended, Action next) =>
+        // 冒険が終わった勝利（最奥の主を倒した）は、これを挟まずに冒険の結果へ移る。
+        public static void Victory(GameDialog dialog, Action next) =>
             dialog.Show(
                 VictoryTitle,
                 null,
                 null,
                 null,
-                new DialogChoice(ended ? ToResultChoice : AdventureTexts.NextChoice, next)
+                new DialogChoice(AdventureTexts.NextChoice, next)
             );
 
         // 復活と帰還を同じ重みで並べる。どちらを選んでも手に入れた物は残る。
@@ -219,16 +218,6 @@ namespace Baryonyx.Adventure
                 back,
                 new DialogChoice(AdventureTexts.QuitChoice, quit),
                 new DialogChoice(AdventureTexts.GoOnChoice, goOn)
-            );
-
-        /// <summary>The end of an adventure: how it ended and what it brought back, then Home.</summary>
-        public static void Result(GameDialog dialog, AdventureResult result, Action home) =>
-            dialog.Show(
-                AdventureCatalog.StatusTitle(result.Status),
-                AdventureTexts.ResultBody(result),
-                null,
-                null,
-                new DialogChoice(AdventureTexts.HomeChoice, home)
             );
     }
 }
