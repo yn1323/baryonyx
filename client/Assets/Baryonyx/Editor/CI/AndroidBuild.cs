@@ -97,16 +97,8 @@ namespace Baryonyx.Editor.CI
 
         // 開いているシーンに未保存の変更があると、BuildPlayerが「Scene(s) Have Been Modified」の
         // 確認を出して止まり、AIからのビルドでは誰も押せない。Editorのテスト実行と同じく先に保存する。
-        // 一度も保存していないシーン（Untitled）は保存先がないため、そのままにする。
-        private static void SaveModifiedScenes()
-        {
-            for (int i = 0; i < SceneManager.sceneCount; i++)
-            {
-                var scene = SceneManager.GetSceneAt(i);
-                if (scene.isDirty && !string.IsNullOrEmpty(scene.path))
-                    EditorSceneManager.SaveScene(scene);
-            }
-        }
+        // 一度も保存していないシーン（Untitled）は保存先がないため、そのままにする（EditorScenes）。
+        private static void SaveModifiedScenes() => EditorScenes.SaveNamed();
 
         // BuildPlayerの途中でアセットが読み込み直されるため、ビルド前のオブジェクトを使い回さず、
         // 毎回パスから読み込んで保存する。

@@ -23,7 +23,7 @@ Unity CLIの書き方とEditorの癖は [Unity EditorとCLIの操作・撮影で
 
 1. 札を取る。札が `busy` なら、取れるまで待つ。札の取得と次の操作を `;` で1行につながない。
 2. `python3 client/ci/run-editor-tests.py --compile-only --token <token>` でコンパイルが通ることを確かめる。エラーが別の作業のものなら、直さずにユーザーへ伝えて待つ。
-3. 開いているシーンの名前を控えて、`EditorSceneManager.SaveOpenScenes()` で保存してから、録るシーンを開く。
+3. 開いているシーンの名前を控えて、`Baryonyx.Editor.EditorScenes.SaveNamed()` で保存してから（`SaveOpenScenes` はUntitledのシーンで「名前を付けて保存」の窓を出してEditorを止めるため使わない）、録るシーンを開く。
 4. `editor_play` でPlayに入り、`editor_status` が `playing` になったことを確かめる。続けて、`eval` で `Application.runInBackground = true` にする。
 5. デバッグルームは、開いた直後に前回の演出を自動で再生する。5秒ほど待ってから録る。
 

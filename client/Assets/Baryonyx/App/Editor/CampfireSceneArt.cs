@@ -58,8 +58,8 @@ namespace Baryonyx.App.Editor
                 return;
             // 一時的なシーンで描くため、開いているシーンを保存してから閉じ、描き終えたら開き直す。
             var open = EditorSceneManager.GetActiveScene();
-            if (open.isDirty)
-                EditorSceneManager.SaveOpenScenes();
+            // 名前のないシーンは保存しない（「名前を付けて保存」の窓でEditorが止まるため）。
+            EditorScenes.SaveNamed();
             string back = open.path;
             Camera camera;
             try

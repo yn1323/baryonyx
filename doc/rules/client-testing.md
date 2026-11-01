@@ -172,7 +172,7 @@ Unity Test RunnerまたはUnity CLIで、対象アセンブリを指定して実
 
 1. Editorの札を取る（[複数のチャットで1台のEditorを使うとき](#複数のチャットで1台のeditorを使うとき)）。
 2. 再生中なら止め、コンパイルや再読み込みが終わるのを待つ。`--recompile`・`--compile-only` のときは、ここで再コンパイルを頼み、`recompile_status` が終わりを返し、Editorが空くまで待つ（上限5分）。そのあと、Editorのログの今回の分と `recompile_status` から `error CS` の行を集め、重複を除いて最大20行だけを出す。エラーがあれば終了コード6で止める。`--compile-only` はここで終わる。
-3. `eval` の1回の呼び出しで [EditorTestRun](../../client/Assets/Baryonyx/Editor/CI/EditorTestRun.cs) の `Start` を呼ぶ。`Start` は開いているシーンを保存し（`EditorSceneManager.SaveOpenScenes`）、同じ呼び出しの中で `TestRunnerApi.Execute` を呼んで実行を始める。複数のクラスやテストは `Filter.groupNames` の正規表現で1回の実行にまとめる。
+3. `eval` の1回の呼び出しで [EditorTestRun](../../client/Assets/Baryonyx/Editor/CI/EditorTestRun.cs) の `Start` を呼ぶ。`Start` は開いている名前のあるシーンを保存し（`EditorScenes.SaveNamed`。変更のあるUntitledのシーンがあれば、保存の窓を出さずにエラーで止める）、同じ呼び出しの中で `TestRunnerApi.Execute` を呼んで実行を始める。複数のクラスやテストは `Filter.groupNames` の正規表現で1回の実行にまとめる。
 4. `EditorTestRun` が `client/Temp/editor-test-run.json` に書く今回の結果を待つ。開始の件数が0なら、テストを見つけられていない。
 5. 0のときは、完了を待たずにすぐ止め、スクリプトの再読み込み（`EditorUtility.RequestScriptReload`。コンパイルは走らず2秒ほど）をしてから、1回だけやり直す。
 6. 完了を待つ時間には上限を設ける（既定は10分。`--timeout` で変える）。上限を超えたら止めて、終了コード5で終わる。

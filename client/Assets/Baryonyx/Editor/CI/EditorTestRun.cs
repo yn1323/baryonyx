@@ -38,13 +38,9 @@ namespace Baryonyx.Editor.CI
             if (!TryParseMode(mode, out var testMode))
                 return $"error: unknown mode {mode}";
 
-            for (var i = 0; i < SceneManager.sceneCount; i++)
-            {
-                var scene = SceneManager.GetSceneAt(i);
-                if (scene.isDirty && string.IsNullOrEmpty(scene.path))
-                    return "error: an untitled scene has unsaved changes; save or discard it by hand first";
-            }
-            if (!EditorSceneManager.SaveOpenScenes())
+            if (EditorScenes.HasUntitledChanges())
+                return "error: an untitled scene has unsaved changes; save or discard it by hand first";
+            if (!EditorScenes.SaveNamed())
                 return "error: the open scenes could not be saved";
 
             var filter = new Filter { testMode = testMode, assemblyNames = new[] { assembly } };
